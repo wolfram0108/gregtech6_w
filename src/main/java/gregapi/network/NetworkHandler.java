@@ -19,183 +19,224 @@
 
 package gregapi.network;
 
-import java.util.EnumMap;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import net.neoforged.fml.Logging;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.neoforged.api.distmarker.Dist;
 import gregapi.util.UT;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.MessageToMessageCodec;
-import net.minecraft.client.Minecraft;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.chunk.LevelChunk;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 /**
  * @author Gregorius Techneticies
  */
-@Sharable
-public final class NetworkHandler extends MessageToMessageCodec<CustomPacketPayload, IPacket> implements INetworkHandler {
-	private final EnumMap<Dist, PayloadRegistrar> mChannel;
+public final class NetworkHandler implements INetworkHandler {
+	private static final String NETWORK_VERSION = "1";
+	private static final List<NetworkHandler> HANDLERS = new ArrayList<>();
+
 	private final IPacket[] mPacketTypes;
 	private final String mModID;
-	
+	private final String mChannelName;
+	private final CustomPacketPayload.Type<GT6Payload> mPayloadType;
+	private final StreamCodec<RegistryFriendlyByteBuf, GT6Payload> mPayloadCodec;
+
 	/**
 	 * Just instantiate your Network Handler once with this simple Constructor and everything else should be done.
-	 * 
+	 *
 	 * For usage keep that instance in a Variable somewhere so you can send Packets.
-	 * 
+	 *
 	 * For an example look into the Main File (GT_API), where I initialise the API Network Handler.
-	 * 
+	 *
 	 * @param aModID the ID of your Mod.
 	 * @param aChannelName Name of your Channel (use 4 Characters or less, we don't want to Lag out the Connection), the GT Channel is called "GREG" and the API Channel is called "GAPI".
 	 * @param aPacketTypes An Array of your Packet Types (an empty instance of every Packet you want to use for decoding). Remember that "getPacketID" must return a for your Handler individual Number. All 256 Byte Values are possible. Yes I mean the negative ones.
 	 */
 	public NetworkHandler(String aModID, String aChannelName, IPacket... aPacketTypes) {
 		mModID = aModID;
+		mChannelName = aChannelName;
 		if (aChannelName.length() > 4) throw new IllegalArgumentException("String for Channel Name must contain 4 Characters or less!");
-		mChannel = PayloadRegistrar.INSTANCE.newChannel(aChannelName, this, FMLCommonHandler.instance().getSide()==Dist.CLIENT?new HandlerClient(this):new HandlerServer(this));
+		mPayloadType = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(identifierPart(aModID), "network/" + identifierPart(aChannelName)));
+		mPayloadCodec = GT6Payload.codec(mPayloadType);
 		mPacketTypes = new IPacket[256];
 		for (int i = 0; i < aPacketTypes.length; i++) {
 			int tID = UT.Code.unsignB(aPacketTypes[i].getPacketID());
 			if (mPacketTypes[tID] == null) mPacketTypes[tID] = aPacketTypes[i]; else throw new IllegalArgumentException("Duplicate Packet ID! " + tID);
 		}
-	}
-	
-	@Override
-	protected void encode(ChannelHandlerContext aContext, IPacket aPacket, List<Object> aOutput) throws Exception {
-		aOutput.add(new CustomPacketPayload(Unpooled.buffer().writeByte(aPacket.getPacketID()).writeBytes(aPacket.encode().toByteArray()), aContext.channel().attr(PayloadRegistrar.FML_CHANNEL).get()));
-	}
-	
-	@Override
-	protected void decode(ChannelHandlerContext aContext, CustomPacketPayload aPacket, List<Object> aOutput) throws Exception {
-		ByteArrayDataInput aData = ByteStreams.newDataInput(aPacket.payload().array());
-		int aID = UT.Code.unsignB(aData.readByte());
-		if (mPacketTypes[aID] == null) {
-			Logging.warning("Your Version of '" + mModID + "' definetly does not match the Version installed on the Server you joined! Do not report this as a Bug! You failed to install/update the proper Version of '" + mModID + "' all by yourself!");
-		} else {
-			aOutput.add(mPacketTypes[aID].decode(aData));
+		synchronized(HANDLERS) {
+			HANDLERS.add(this);
 		}
 	}
-	
+
+	public static void registerPayloadHandlers(RegisterPayloadHandlersEvent aEvent) {
+		List<NetworkHandler> tHandlers;
+		synchronized(HANDLERS) {
+			tHandlers = new ArrayList<>(HANDLERS);
+		}
+		PayloadRegistrar tRegistrar = aEvent.registrar(NETWORK_VERSION);
+		for (NetworkHandler tHandler : tHandlers) tHandler.registerPayload(tRegistrar);
+		// PORT-TODO(F7-lifecycle, гарантировать создание всех старых NetworkHandler до RegisterPayloadHandlersEvent при закрытии F12 lifecycle)
+	}
+
+	private void registerPayload(PayloadRegistrar aRegistrar) {
+		aRegistrar.playBidirectional(mPayloadType, mPayloadCodec, this::handlePayload, this::handlePayload);
+	}
+
+	private void handlePayload(GT6Payload aPayload, IPayloadContext aContext) {
+		IPacket tPacket = decode(aPayload.data());
+		if (tPacket == null) return;
+		aContext.enqueueWork(() -> tPacket.process(getProcessingWorld(aContext), this));
+	}
+
+	private BlockGetter getProcessingWorld(IPayloadContext aContext) {
+		if (aContext.flow() != PacketFlow.CLIENTBOUND) return null;
+		Player tPlayer = aContext.player();
+		return tPlayer == null ? null : tPlayer.level();
+	}
+
+	private GT6Payload payload(IPacket aPacket) {
+		ByteArrayDataOutput rOut = ByteStreams.newDataOutput();
+		rOut.writeByte(aPacket.getPacketID());
+		rOut.write(aPacket.encode().toByteArray());
+		return new GT6Payload(mPayloadType, rOut.toByteArray());
+	}
+
+	private IPacket decode(byte[] aData) {
+		if (aData == null || aData.length <= 0) return null;
+		ByteArrayDataInput tData = ByteStreams.newDataInput(aData);
+		int tID = UT.Code.unsignB(tData.readByte());
+		if (mPacketTypes[tID] == null) {
+			gregapi.data.CS.ERR.println("Your Version of '" + mModID + "' definetly does not match the Version installed on the Server you joined! Do not report this as a Bug! You failed to install/update the proper Version of '" + mModID + "' all by yourself!");
+			return null;
+		}
+		return mPacketTypes[tID].decode(tData);
+	}
+
 	@Override
 	public void sendToServer(IPacket aPacket) {
 		if (aPacket == null) return;
-		PayloadRegistrar tChannel = getChannel(Dist.CLIENT);
-		tChannel.attr(PacketDistributor.FML_MESSAGETARGET).set(PacketDistributor.OutboundTarget.TOSERVER);
-		tChannel.writeAndFlush(aPacket);
+		ClientPacketDistributor.sendToServer(payload(aPacket));
 	}
-	
+
 	@Override
 	public void sendToPlayer(IPacket aPacket, ServerPlayer aPlayer) {
-		if (aPacket == null) return;
-		PayloadRegistrar tChannel = getChannel(Dist.SERVER);
-		tChannel.attr(PacketDistributor.FML_MESSAGETARGET).set(PacketDistributor.OutboundTarget.PLAYER);
-		tChannel.attr(PacketDistributor.FML_MESSAGETARGETARGS).set(aPlayer);
-		tChannel.writeAndFlush(aPacket);
+		if (aPacket == null || aPlayer == null) return;
+		PacketDistributor.sendToPlayer(aPlayer, payload(aPacket));
 	}
-	
+
 	@Override
-	public void sendToAllAround(IPacket aPacket, PacketDistributor aPosition) {
-		if (aPacket == null) return;
-		PayloadRegistrar tChannel = getChannel(Dist.SERVER);
-		tChannel.attr(PacketDistributor.FML_MESSAGETARGET).set(PacketDistributor.OutboundTarget.ALLAROUNDPOINT);
-		tChannel.attr(PacketDistributor.FML_MESSAGETARGETARGS).set(aPosition);
-		tChannel.writeAndFlush(aPacket);
+	public void sendToAllAround(IPacket aPacket, TargetPoint aPosition) {
+		if (aPacket == null || aPosition == null || aPosition.mLevel == null) return;
+		PacketDistributor.sendToPlayersNear(aPosition.mLevel, aPosition.mExcluded, aPosition.mX, aPosition.mY, aPosition.mZ, aPosition.mRange, payload(aPacket));
 	}
-	
+
 	@Override public void sendToAllPlayersInRange(IPacket aPacket, Level aWorld, BlockPos aCoords) {sendToAllPlayersInRange(aPacket, aWorld, aCoords.getX(), aCoords.getZ());}
 	@Override public void sendToAllPlayersInRange(IPacket aPacket, Level aWorld, int aX, int aZ) {
 		if (aPacket == null) return;
-		if (aWorld != null && !aWorld.isRemote) for (Object tObject : aWorld.playerEntities) {
-			if (tObject instanceof ServerPlayer) {
-				ServerPlayer tPlayer = (ServerPlayer)tObject;
-				LevelChunk tChunk = aWorld.getChunkFromBlockCoords(aX, aZ);
-				if (tPlayer.getServerForPlayer().getPlayerManager().isPlayerWatchingChunk(tPlayer, tChunk.xPosition, tChunk.zPosition)) sendToPlayer(aPacket, tPlayer);
-			} else return;
-		}
+		ServerLevel tWorld = serverWorld(aWorld);
+		if (tWorld == null) return;
+		PacketDistributor.sendToPlayersTrackingChunk(tWorld, chunk(aX, aZ), payload(aPacket));
 	}
-	
+
 	@Override public void sendToPlayerIfInRange(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToPlayerIfInRange(aPacket, aPlayer, aWorld, aCoords.getX(), aCoords.getZ());}
 	@Override public void sendToPlayerIfInRange(IPacket aPacket, UUID aPlayer, Level aWorld, int aX, int aZ) {
-		if (aPacket == null) return;
-		if (aWorld != null && !aWorld.isRemote) for (Object tObject : aWorld.playerEntities) {
-			if (tObject instanceof ServerPlayer) {
-				ServerPlayer tPlayer = (ServerPlayer)tObject;
-				if (tPlayer.getUniqueID().equals(aPlayer)) {
-					LevelChunk tChunk = aWorld.getChunkFromBlockCoords(aX, aZ);
-					if (tPlayer.getServerForPlayer().getPlayerManager().isPlayerWatchingChunk(tPlayer, tChunk.xPosition, tChunk.zPosition)) {
-						sendToPlayer(aPacket, tPlayer);
-					}
-					return;
-				}
-			} else return;
+		if (aPacket == null || aPlayer == null) return;
+		ServerLevel tWorld = serverWorld(aWorld);
+		if (tWorld == null) return;
+		ChunkPos tChunk = chunk(aX, aZ);
+		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) if (aPlayer.equals(tPlayer.getUUID())) {
+			PacketDistributor.sendToPlayer(tPlayer, payload(aPacket));
+			return;
 		}
 	}
-	
+
 	@Override public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToAllPlayersInRangeExcept(aPacket, aPlayer, aWorld, aCoords.getX(), aCoords.getZ());}
 	@Override public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, int aX, int aZ) {
 		if (aPacket == null) return;
-		if (aWorld != null && !aWorld.isRemote) for (Object tObject : aWorld.playerEntities) {
-			if (tObject instanceof ServerPlayer) {
-				ServerPlayer tPlayer = (ServerPlayer)tObject;
-				if (!tPlayer.getUniqueID().equals(aPlayer)) {
-					LevelChunk tChunk = aWorld.getChunkFromBlockCoords(aX, aZ);
-					if (tPlayer.getServerForPlayer().getPlayerManager().isPlayerWatchingChunk(tPlayer, tChunk.xPosition, tChunk.zPosition)) {
-						sendToPlayer(aPacket, tPlayer);
-					}
-				}
-			} else return;
-		}
+		ServerLevel tWorld = serverWorld(aWorld);
+		if (tWorld == null) return;
+		ChunkPos tChunk = chunk(aX, aZ);
+		GT6Payload tPayload = payload(aPacket);
+		for (ServerPlayer tPlayer : tWorld.getChunkSource().chunkMap.getPlayers(tChunk, false)) if (aPlayer == null || !aPlayer.equals(tPlayer.getUUID())) PacketDistributor.sendToPlayer(tPlayer, tPayload);
 	}
-	
+
 	@Override
-	public PayloadRegistrar getChannel(Dist aSide) {
-		return mChannel.get(aSide);
+	public CustomPacketPayload.Type<GT6Payload> getChannel(Dist aSide) {
+		return mPayloadType;
 	}
-	
-	@Sharable
-	static final class HandlerClient extends SimpleChannelInboundHandler<IPacket> {
-		public final INetworkHandler mNetworkHandler;
-		
-		public HandlerClient(INetworkHandler aNetworkHandler) {
-			mNetworkHandler = aNetworkHandler;
+
+	public String getChannelName() {
+		return mChannelName;
+	}
+
+	private static ServerLevel serverWorld(Level aWorld) {
+		return aWorld instanceof ServerLevel ? (ServerLevel)aWorld : null;
+	}
+
+	private static ChunkPos chunk(int aX, int aZ) {
+		return ChunkPos.containing(new BlockPos(aX, 0, aZ));
+	}
+
+	private static String identifierPart(String aName) {
+		String tName = aName == null ? "gt6" : aName.toLowerCase(Locale.ROOT);
+		StringBuilder rName = new StringBuilder(tName.length());
+		for (int i = 0; i < tName.length(); i++) {
+			char tChar = tName.charAt(i);
+			rName.append((tChar >= 'a' && tChar <= 'z') || (tChar >= '0' && tChar <= '9') || tChar == '_' || tChar == '-' || tChar == '.' ? tChar : '_');
 		}
-		
-		@Override
-		protected void channelRead0(ChannelHandlerContext ctx, IPacket aPacket) throws Exception {
-			aPacket.process(Minecraft.getMinecraft().thePlayer == null ? null : Minecraft.getMinecraft().thePlayer.level(), mNetworkHandler);
-//          DEB.println(aPacket.getClass().getName());
-//          if (aPacket instanceof PacketCoordinates) DEB.println(" X: " + ((PacketCoordinates)aPacket).mX + " - Y: " + ((PacketCoordinates)aPacket).mY + " - Z: " + ((PacketCoordinates)aPacket).mZ);
+		return rName.length() <= 0 ? "gt6" : rName.toString();
+	}
+
+	public record GT6Payload(CustomPacketPayload.Type<GT6Payload> type, byte[] data) implements CustomPacketPayload {
+		public static StreamCodec<RegistryFriendlyByteBuf, GT6Payload> codec(CustomPacketPayload.Type<GT6Payload> aType) {
+			return StreamCodec.ofMember(GT6Payload::write, aBuffer -> read(aType, aBuffer));
+		}
+
+		private static GT6Payload read(CustomPacketPayload.Type<GT6Payload> aType, RegistryFriendlyByteBuf aBuffer) {
+			return new GT6Payload(aType, aBuffer.readByteArray());
+		}
+
+		public void write(RegistryFriendlyByteBuf aBuffer) {
+			aBuffer.writeByteArray(data);
 		}
 	}
-	
-	@Sharable
-	static final class HandlerServer extends SimpleChannelInboundHandler<IPacket> {
-		public final INetworkHandler mNetworkHandler;
-		
-		public HandlerServer(INetworkHandler aNetworkHandler) {
-			mNetworkHandler = aNetworkHandler;
+
+	public static final class TargetPoint {
+		public final ServerLevel mLevel;
+		public final ServerPlayer mExcluded;
+		public final double mX, mY, mZ, mRange;
+
+		public TargetPoint(ServerLevel aLevel, double aX, double aY, double aZ, double aRange) {
+			this(aLevel, null, aX, aY, aZ, aRange);
 		}
-		
-		@Override
-		protected void channelRead0(ChannelHandlerContext ctx, IPacket aPacket) throws Exception {
-			aPacket.process(null, mNetworkHandler);
+
+		public TargetPoint(ServerLevel aLevel, ServerPlayer aExcluded, double aX, double aY, double aZ, double aRange) {
+			mLevel = aLevel;
+			mExcluded = aExcluded;
+			mX = aX;
+			mY = aY;
+			mZ = aZ;
+			mRange = aRange;
 		}
 	}
 }

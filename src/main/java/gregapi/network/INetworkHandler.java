@@ -21,12 +21,13 @@ package gregapi.network;
 
 import java.util.UUID;
 
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.api.distmarker.Dist;
-import net.minecraft.server.level.ServerPlayer;
+import gregapi.network.NetworkHandler.GT6Payload;
+import gregapi.network.NetworkHandler.TargetPoint;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.neoforged.api.distmarker.Dist;
 
 /**
  * @author Gregorius Techneticies
@@ -37,7 +38,7 @@ public interface INetworkHandler {
 	/** It sends a Packet to the Player, who is mentioned inside the Parameter. */
 	public void sendToPlayer(IPacket aPacket, ServerPlayer aPlayer);
 	/** It sends a Packet to all Players, who are in the specified Range. */
-	public void sendToAllAround(IPacket aPacket, PacketDistributor aPosition);
+	public void sendToAllAround(IPacket aPacket, TargetPoint aPosition);
 	/** It sends a Packet to all Players, who watch the Chunk on these X/Z Coordinates. */
 	public void sendToAllPlayersInRange(IPacket aPacket, Level aWorld, int aX, int aZ);
 	/** It sends a Packet to all Players, who watch the Chunk on these X/Z Coordinates. */
@@ -50,7 +51,7 @@ public interface INetworkHandler {
 	public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, int aX, int aZ);
 	/** It sends a Packet to all Players, who watch the Chunk on these X/Z Coordinates. */
 	public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords);
-	
+
 	/** For very advanced usage only! */
-	public PayloadRegistrar getChannel(Dist aSide);
+	public CustomPacketPayload.Type<GT6Payload> getChannel(Dist aSide);
 }

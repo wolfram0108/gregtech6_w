@@ -21,7 +21,6 @@ package gregapi;
 
 import cpw.mods.fml.common.*;
 import cpw.mods.fml.common.event.*;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
@@ -732,7 +731,7 @@ public class GT_API extends Abstract_Mod {
 		// Initialises the Empty Slot Marker Item.
 		IL.Empty_Slot.set(new ItemEmptySlot());
 		// Register the GUI Handler.
-		PayloadRegistrar.INSTANCE.registerGuiHandler(this, api_proxy);
+		// PORT-TODO(F7-gui, заменить старый Forge GUI-handler на реальный NeoForge menu/screen путь после сверки с референсом)
 		// Fixing vanilla Oak Plank Slab Recipe.
 		CR.remove(ST.make(Blocks.planks, 1, 0), ST.make(Blocks.planks, 1, 1), ST.make(Blocks.planks, 1, 2));
 		CR.shaped(ST.make(Blocks.wooden_slab, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.planks, 1, 0));

@@ -86,7 +86,7 @@ public class PacketSyncDataCoverVisuals extends PacketCoordinates {
 	@Override
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 		if (aWorld != null) {
-			Block tBlock = aWorld.getBlock(mX, mY, mZ);
+			Block tBlock = getBlock(aWorld, mX, mY, mZ);
 			if (tBlock instanceof IBlockSyncDataAndCoversAndIDs) ((IBlockSyncDataAndCoversAndIDs)tBlock).receiveData(aWorld, mX, mY, mZ, aNetworkHandler, mCoverVisuals, mVisualsToSync);
 		}
 	}

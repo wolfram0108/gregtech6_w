@@ -21,6 +21,8 @@ package gregapi.network.packets;
 
 import static gregapi.data.CS.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -33,10 +35,16 @@ import gregapi.network.INetworkHandler;
 import gregapi.network.IPacket;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.BlockGetter;
 
 /**
@@ -44,59 +52,73 @@ import net.minecraft.world.level.BlockGetter;
  */
 public class PacketItemStackChat implements IPacket {
 	private ItemStack mStack;
-	
+
 	public PacketItemStackChat() {/**/}
-	
+
 	public PacketItemStackChat(ItemStack aStack) {
 		mStack = aStack;
 	}
-	
+
 	@Override
 	public byte getPacketID() {
 		return 125;
 	}
-	
+
 	@Override
 	public ByteArrayDataOutput encode() {
 		ByteArrayDataOutput aData = ByteStreams.newDataOutput();
-		aData.writeShort(ST.id(mStack));
+		aData.writeShort(ST.id_(mStack.getItem()));
 		aData.writeByte(mStack.getCount());
 		aData.writeShort(ST.meta_(mStack));
-		CompoundTag tNBT = mStack.getTagCompound();
+		CompoundTag tNBT = getCustomData(mStack);
 		if (tNBT == null) aData.writeShort(-1); else {
 			try {
-				byte[] tData = NbtIo.compress(tNBT);
+				ByteArrayOutputStream tBuffer = new ByteArrayOutputStream();
+				NbtIo.writeCompressed(tNBT, tBuffer);
+				byte[] tData = tBuffer.toByteArray();
 				aData.writeShort(tData.length);
 				aData.write(tData);
 			} catch (IOException e) {e.printStackTrace(ERR);}
 		}
 		return aData;
 	}
-	
+
 	@Override
 	public IPacket decode(ByteArrayDataInput aData) {
-		return new PacketItemStackChat(ST.make(aData.readShort(), aData.readByte(), aData.readShort(), readNBTTagCompoundFromBuffer(aData)));
+		return new PacketItemStackChat(setCustomData(ST.make(aData.readShort(), aData.readByte(), aData.readShort()), readNBTTagCompoundFromBuffer(aData)));
 	}
-	
+
 	public CompoundTag readNBTTagCompoundFromBuffer(ByteArrayDataInput aData) {
 		short tLength = aData.readShort();
 		if (tLength <= 0) return null;
 		byte[] tData = new byte[tLength];
 		aData.readFully(tData);
-		try {return NbtIo.func_152457_a(tData, new NbtAccounter(2097152L));} catch (IOException e) {e.printStackTrace(ERR);}
+		try {return NbtIo.readCompressed(new ByteArrayInputStream(tData), NbtAccounter.create(2097152L));} catch (IOException e) {e.printStackTrace(ERR);}
 		return null;
 	}
-	
+
+	private static CompoundTag getCustomData(ItemStack aStack) {
+		CustomData tData = aStack.get(DataComponents.CUSTOM_DATA);
+		return tData == null || tData.isEmpty() ? null : tData.copyTag();
+	}
+
+	private static ItemStack setCustomData(ItemStack aStack, CompoundTag aNBT) {
+		if (aStack != null && aNBT != null) aStack.set(DataComponents.CUSTOM_DATA, CustomData.of(aNBT));
+		return aStack;
+	}
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
+		if (mStack == null) return;
+		Player tPlayer = GT_API.api_proxy.getThePlayer();
 		DISPLAY_TEMP_TOOLTIP = F;
-		List<String> tList = mStack.getTooltip(GT_API.api_proxy.getThePlayer(), F);
+		List<Component> tList = mStack.getTooltipLines(Item.TooltipContext.of(tPlayer == null ? null : tPlayer.level(), tPlayer), tPlayer, TooltipFlag.NORMAL);
 		DISPLAY_TEMP_TOOLTIP = T;
 		if (tList != null && !tList.isEmpty()) {
-			UT.Entities.chat(GT_API.api_proxy.getThePlayer(), tList, F);
+			UT.Entities.chat(tPlayer, tList, F);
 		} else {
-			UT.Entities.chat(GT_API.api_proxy.getThePlayer(), mStack.func_151000_E());
+			UT.Entities.chat(tPlayer, mStack.getHoverName());
 		}
 	}
 }

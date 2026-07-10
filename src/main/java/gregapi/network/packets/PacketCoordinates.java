@@ -26,6 +26,8 @@ import com.google.common.io.ByteStreams;
 import gregapi.network.IPacket;
 import gregapi.util.UT;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.Block;
 
 /**
  * @author Gregorius Techneticies
@@ -80,6 +82,10 @@ public abstract class PacketCoordinates implements IPacket {
 		return decode2((mDecoderType&1)!=0?aData.readShort():aData.readInt(), (mDecoderType&2)!=0?UT.Code.unsignB(aData.readByte()):aData.readShort(), (mDecoderType&4)!=0?aData.readShort():aData.readInt(), aData);
 	}
 	
+	public static Block getBlock(BlockGetter aWorld, int aX, int aY, int aZ) {
+		return aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock();
+	}
+
 	public abstract byte getPacketIDOffset();
 	public abstract ByteArrayDataOutput encode2(ByteArrayDataOutput aData);
 	public abstract PacketCoordinates decode2(int aX, int aY, int aZ, ByteArrayDataInput aData);

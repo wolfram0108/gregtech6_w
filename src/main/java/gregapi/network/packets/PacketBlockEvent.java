@@ -68,6 +68,9 @@ public class PacketBlockEvent extends PacketCoordinates {
 	
 	@Override
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
-		if (aWorld instanceof Level) aWorld.getBlock(mX, mY, mZ).onBlockEventReceived((Level)aWorld, mX, mY, mZ, mID, mData);
+		if (aWorld instanceof Level) {
+			BlockPos tPos = new BlockPos(mX, mY, mZ);
+			((Level)aWorld).blockEvent(tPos, getBlock(aWorld, mX, mY, mZ), mID & 255, mData & 255);
+		}
 	}
 }

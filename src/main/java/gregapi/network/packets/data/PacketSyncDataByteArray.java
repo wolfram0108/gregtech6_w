@@ -75,7 +75,7 @@ public class PacketSyncDataByteArray extends PacketCoordinates {
 	@Override
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 		if (aWorld != null) {
-			Block tBlock = aWorld.getBlock(mX, mY, mZ);
+			Block tBlock = getBlock(aWorld, mX, mY, mZ);
 			if (tBlock instanceof IBlockSyncData) ((IBlockSyncData)tBlock).receiveDataByteArray(aWorld, mX, mY, mZ, mData, aNetworkHandler);
 		}
 	}

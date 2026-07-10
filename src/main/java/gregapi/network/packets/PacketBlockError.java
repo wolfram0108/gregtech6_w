@@ -68,7 +68,7 @@ public class PacketBlockError extends PacketCoordinates {
 	@Override
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 		if (aWorld instanceof Level) {
-			Block tBlock = aWorld.getBlock(mX, mY, mZ);
+			Block tBlock = getBlock(aWorld, mX, mY, mZ);
 			if (tBlock instanceof IBlockErrorable) ((IBlockErrorable)tBlock).receiveBlockError(aWorld, mX, mY, mZ, mError);
 		}
 	}

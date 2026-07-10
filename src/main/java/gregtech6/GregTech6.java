@@ -16,6 +16,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import gregapi.network.NetworkHandler;
 import org.slf4j.Logger;
 
 /**
@@ -56,6 +57,7 @@ public class GregTech6 {
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
+        modEventBus.addListener(NetworkHandler::registerPayloadHandlers);
         LOGGER.info("[GregTech6] skeleton loaded — NeoForge 26.1.2 toolchain bring-up");
     }
 }

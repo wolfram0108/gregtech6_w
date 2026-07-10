@@ -68,7 +68,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.core.Direction;
-import net.minecraftforge.fluids.*;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import gregapi.fluid.FluidTankInfo;
 import gregapi.oredict.OreDictionary;
 
 import java.io.File;
@@ -1417,7 +1420,7 @@ public class CS {
 		}
 		
 		public static long trash(FluidStack aFluid) {
-			return aFluid == null ? 0 : trash(aFluid, aFluid.amount);
+			return aFluid == null ? 0 : trash(aFluid, aFluid.getAmount());
 		}
 		public static long trash(FluidStack aFluid, long aAmount) {
 			if (aFluid == null || aAmount <= 0) return 0;
@@ -1433,7 +1436,7 @@ public class CS {
 		}
 		public static long trash(IFluidTank aTank, long aTrashed) {
 			if (aTank == null || aTrashed <= 0) return 0;
-			return aTank instanceof FluidTankGT ? trash(aTank.getFluid(), ((FluidTankGT)aTank).remove(aTrashed)) : trash(aTank.drain(UT.Code.bind31(aTrashed), T));
+			return aTank instanceof FluidTankGT ? trash(aTank.getFluid(), ((FluidTankGT)aTank).remove(aTrashed)) : trash(aTank.drain(UT.Code.bind31(aTrashed), FluidAction.EXECUTE));
 		}
 		public static long trash(IFluidTank[] aTanks) {
 			if (aTanks == null) return 0;

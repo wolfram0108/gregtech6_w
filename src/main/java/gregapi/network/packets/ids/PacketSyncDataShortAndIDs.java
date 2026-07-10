@@ -76,7 +76,7 @@ public class PacketSyncDataShortAndIDs extends PacketCoordinates {
 	@Override
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 		if (aWorld != null) {
-			Block tBlock = aWorld.getBlock(mX, mY, mZ);
+			Block tBlock = getBlock(aWorld, mX, mY, mZ);
 			if (tBlock instanceof IBlockSyncDataAndIDs) ((IBlockSyncDataAndIDs)tBlock).receiveDataShort(aWorld, mX, mY, mZ, mData, aNetworkHandler, mID1, mID2);
 		}
 	}

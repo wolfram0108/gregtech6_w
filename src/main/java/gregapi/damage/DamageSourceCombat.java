@@ -19,28 +19,27 @@
 
 package gregapi.damage;
 
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.LivingEntity;
 
 import static gregapi.data.CS.F;
 
 /**
  * @author Gregorius Techneticies
  */
-public class DamageSourceCombat extends DamageSource {
+public class DamageSourceCombat extends DamageSources.GregTechDamageSource {
 	private Component mDeathMessage;
 	public boolean mBeheadingDamage = F;
-	
+
 	public DamageSourceCombat(String aType, LivingEntity aPlayer, Component aDeathMessage) {this(aType, aPlayer, aDeathMessage, F);}
 	public DamageSourceCombat(String aType, LivingEntity aPlayer, Component aDeathMessage, boolean aBeheadingDamage) {
-		super(aType, aPlayer);
+		super(DamageSources.combatDefinition(aType), aPlayer);
 		mBeheadingDamage = aBeheadingDamage;
 		mDeathMessage = aDeathMessage;
 	}
-	
+
 	@Override
-	public Component func_151519_b(LivingEntity aTarget) {
-		return mDeathMessage == null ? super.func_151519_b(aTarget) : mDeathMessage;
+	public Component getLocalizedDeathMessage(LivingEntity aTarget) {
+		return mDeathMessage == null ? super.getLocalizedDeathMessage(aTarget) : mDeathMessage;
 	}
 }

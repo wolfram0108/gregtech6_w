@@ -32,12 +32,18 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.UT.Code;
 import gregapi.util.UT.NBT;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.fluids.*;
-import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 import java.util.*;
 
@@ -48,6 +54,15 @@ import static gregapi.data.CS.FluidsGT.*;
  * @author Gregorius Techneticies
  *
  * Class containing most known Fluid Names and Fluid Utility.
+ *
+ * F5 центральный переходник (`decisions/F5-fluids.md`) — регистрация каждой жидкости и
+ * chainable-мутация после регистрации живёт в {@link FluidGT} (см. его javadoc); ЭТОТ класс — оракул
+ * данных (enum ~196 констант, НЕ тронуты) + утилиты 1:1 поверх реальных neo-типов
+ * {@link Fluid}(vanilla, поведение)/{@link FluidStack}(neo, immutable data). Forge-1.7.10-only
+ * машинерия без neo-аналога (глобальный числовой id жидкости `FluidRegistry`, авто-реестр
+ * бакетов/канистр `FluidContainerRegistry`, `IFluidHandler.fill(ForgeDirection,...)`-перенос между
+ * тайлами) — помечена `// PORT-TODO(F5, ...)` и гатится до безопасного дефолта (REMAP-RULES §A: данные
+ * не трогать, поведение можно гатить).
  */
 @SuppressWarnings("unchecked")
 public enum FL {
@@ -594,10 +609,15 @@ public enum FL {
 	
 	
 	public static FluidStack lube(long aAmount) {return LubRoCant.make(aAmount, Lubricant);}
-	
-	
-	
-	public int id() {return FluidRegistry.getFluidID(mName);}
+
+
+
+	/** PORT-TODO(F5, числовой id жидкости): 1.7.10 {@code FluidRegistry.getFluidID} — глобальный
+	 *  инкрементный int-id без прямого neo-аналога ({@code BuiltInRegistries.FLUID} даёт стабильный int
+	 *  ТОЛЬКО через {@code getId(Fluid)}, а не по имени напрямую до регистрации/поиска Fluid). Держит
+	 *  минимально безопасный дефолт; настоящие потребители числового id (мета старого
+	 *  {@code ItemFluidDisplay}) переезжают на компоненты в F1/F8. */
+	public int id() {Fluid tFluid = fluid(); return tFluid == null ? -1 : BuiltInRegistries.FLUID.getId(tFluid);}
 	public Fluid fluid() {return fluid_(mName);}
 	public boolean exists() {return fluid() != null;}
 	public ItemStack display() {return display(make(0), F, F);}
@@ -616,7 +636,7 @@ public enum FL {
 	
 	public boolean is(IFluidTank aTank) {return is(aTank.getFluid());}
 	public boolean is(FluidStack aFluid) {return aFluid != null && is(aFluid.getFluid());}
-	public boolean is(Fluid aFluid) {return aFluid != null && is(aFluid.getName());}
+	public boolean is(Fluid aFluid) {return aFluid != null && is(FluidGT.nameOf(aFluid));}
 	public boolean is(String aFluidName) {return mName.equalsIgnoreCase(aFluidName);}
 	public boolean is(Collection<String> aFluidSet) {return aFluidSet.contains(mName);}
 	
@@ -638,51 +658,73 @@ public enum FL {
 	public static String regName (FluidStack aFluid) {return aFluid == null ? null : regName_(aFluid);}
 	public static String regName_(FluidStack aFluid) {return regName(aFluid.getFluid());}
 	public static String regName (Fluid aFluid) {return aFluid == null ? null : regName_(aFluid);}
-	public static String regName_(Fluid aFluid) {return aFluid.getName();}
-	
+	public static String regName_(Fluid aFluid) {return FluidGT.nameOf(aFluid);}
+
+	/** PORT-TODO(F5, числовой id жидкости) — см. javadoc {@link #id()}; здесь используется реальный
+	 *  {@code Registry.getId(Fluid)} (стабилен только ПОСЛЕ регистрации, но безопасно вызывать в
+	 *  рантайме, как и оригинал). */
 	public static short id (IFluidTank aTank) {return aTank == null ? -1 : id_(aTank);}
 	public static short id_(IFluidTank aTank) {return id(aTank.getFluid());}
 	public static short id (FluidStack aFluid) {return aFluid == null ? -1 : id_(aFluid);}
 	public static short id_(FluidStack aFluid) {return id(aFluid.getFluid());}
 	public static short id (Fluid aFluid) {return aFluid == null ? -1 : id_(aFluid);}
-	public static short id_(Fluid aFluid) {return (short)FluidRegistry.getFluidID(aFluid);} // catch(Throwable e) {ERR.println("What the fuck?! Why does the Fluid Registry Crash!? Who is responsible for this?!"); e.printStackTrace(ERR);} return -1;}
-	
-	public static Fluid fluid (int aID) {return aID < 0 ? null : FluidRegistry.getFluid(aID);}
+	public static short id_(Fluid aFluid) {return (short)BuiltInRegistries.FLUID.getId(aFluid);}
+
+	/** PORT-TODO(F5, числовой id -> Fluid): обратный поиск по int-id у neo есть ({@code byId}), но GT6
+	 *  1.7.10 полагался на плотную, стабильную от старта нумерацию — с DeferredRegister она НЕ
+	 *  гарантирована в том же порядке между запусками при разном наборе модов; безопасный минимум. */
+	public static Fluid fluid (int aID) {return aID < 0 ? null : BuiltInRegistries.FLUID.get(aID).<Fluid>map(Holder::value).orElse(null);}
 	public static Fluid fluid (String aFluidName) {return Code.stringInvalid(aFluidName) ? null : fluid_(aFluidName);}
-	public static Fluid fluid_(String aFluidName) {return FluidRegistry.getFluid(aFluidName);}
-	
+	/** Заменяет 1.7.10 {@code FluidRegistry.getFluid(String)} (глобальный поиск по "голому" имени без
+	 *  namespace среди ВСЕХ модов). Приоритет: (1) свои жидкости — точное GT6-имя через
+	 *  {@link FluidGT#BY_NAME}; (2) namespaced-идентификатор (если имя содержит ':') — реальный neo
+	 *  реестр; (3) PORT-TODO(F5, межмодовый интероп по имени, decisions/F5-fluids.md §9): поиск ЧУЖОЙ
+	 *  жидкости по голому пути (без namespace) не воспроизведён — neo этого не позволяет без перебора
+	 *  всего реестра, что не 1:1 с прежним поведением и может быть неоднозначным. */
+	public static Fluid fluid_(String aFluidName) {
+		if (Code.stringInvalid(aFluidName)) return null;
+		FluidGT tGT = FluidGT.BY_NAME.get(aFluidName.toLowerCase());
+		if (tGT != null) return tGT.getFluid();
+		if (aFluidName.indexOf(':') >= 0) {
+			Fluid tFluid = BuiltInRegistries.FLUID.getValue(Identifier.parse(aFluidName));
+			if (tFluid != null) return tFluid;
+		}
+		return null;
+	}
+
 	public static boolean equal(FluidStack aFluid1, FluidStack aFluid2) {return equal(aFluid1, aFluid2, F);}
-	public static boolean equal(FluidStack aFluid1, FluidStack aFluid2, boolean aIgnoreNBT) {return aFluid1 != null && aFluid2 != null && aFluid1.getFluid() == aFluid2.getFluid() && (aIgnoreNBT || ((aFluid1.tag == null) == (aFluid2.tag == null)) && (aFluid1.tag == null || aFluid1.tag.equals(aFluid2.tag)));}
-	
-	public static boolean   valid(Fluid      aFluid) {return aFluid != null && !FL.Error.is(aFluid.getName());}
-	public static boolean invalid(Fluid      aFluid) {return aFluid == null ||  FL.Error.is(aFluid.getName());}
+	/** aIgnoreNBT=T -> сравнение только по Fluid ({@code FluidStack.isSameFluid}); aIgnoreNBT=F ->
+	 *  сравнение по Fluid + data-компонентам ({@code FluidStack.isSameFluidSameComponents}) — реальные
+	 *  neo-хелперы, замена старого сравнения по публичному полю {@code .tag} (которого в neo нет). */
+	public static boolean equal(FluidStack aFluid1, FluidStack aFluid2, boolean aIgnoreNBT) {
+		if (aFluid1 == null || aFluid2 == null) return F;
+		return aIgnoreNBT ? FluidStack.isSameFluid(aFluid1, aFluid2) : FluidStack.isSameFluidSameComponents(aFluid1, aFluid2);
+	}
+
+	public static boolean   valid(Fluid      aFluid) {return aFluid != null && !FL.Error.is(FluidGT.nameOf(aFluid));}
+	public static boolean invalid(Fluid      aFluid) {return aFluid == null ||  FL.Error.is(FluidGT.nameOf(aFluid));}
 	public static boolean   valid(FluidStack aFluid) {return aFluid != null &&   valid(aFluid.getFluid());}
 	public static boolean invalid(FluidStack aFluid) {return aFluid == null || invalid(aFluid.getFluid());}
-	public static boolean nonzero(FluidStack aFluid) {return aFluid != null && aFluid.amount > 0 &&   valid(aFluid.getFluid());}
-	public static boolean    zero(FluidStack aFluid) {return aFluid == null || aFluid.amount < 1 || invalid(aFluid.getFluid());}
-	
+	public static boolean nonzero(FluidStack aFluid) {return aFluid != null && aFluid.getAmount() > 0 &&   valid(aFluid.getFluid());}
+	public static boolean    zero(FluidStack aFluid) {return aFluid == null || aFluid.getAmount() < 1 || invalid(aFluid.getFluid());}
+
 	public static boolean is(IFluidTank aTank, String... aNames) {return is(aTank.getFluid(), aNames);}
 	public static boolean is(FluidStack aFluid, String... aNames) {return aFluid != null && is(aFluid.getFluid(), aNames);}
-	public static boolean is(Fluid aFluid, String... aNames) {if (aFluid != null) for (String aName : aNames) if (aFluid.getName().equalsIgnoreCase(aName)) return T; return F;}
+	public static boolean is(Fluid aFluid, String... aNames) {if (aFluid != null) {String tName = FluidGT.nameOf(aFluid); for (String aName : aNames) if (tName != null && tName.equalsIgnoreCase(aName)) return T;} return F;}
 	
 	public static boolean exists(String aFluidName) {return aFluidName != null && fluid_(aFluidName) != null;}
 	
-	public static ItemStack display(Fluid aFluid) {return aFluid == null ? null : display(make(aFluid, 0), F, F, T);}
-	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize) {return display(aFluid, aUseStackSize, aLimitStackSize, T);}
-	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {return display(aFluid, aFluid == null ? 0 : aFluid.amount, aUseStackSize, aLimitStackSize, aUseBucketSize);}
-	public static ItemStack display(FluidTankGT aTank, boolean aUseStackSize, boolean aLimitStackSize) {return display(aTank.getFluid(), aTank.amount(), aUseStackSize, aLimitStackSize);}
-	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize) {return display(aFluid, aAmount, aUseStackSize, aLimitStackSize, T);}
-	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {
-		short aID = id(aFluid);
-		if (aID < 0) return null;
-		ItemStack rStack = IL.Display_Fluid.getWithMeta(Math.max(1, aUseStackSize ? aUseBucketSize ? aLimitStackSize ? UT.Code.bind7(aAmount / 1000) : aAmount / 1000 : aLimitStackSize ? UT.Code.bind7(aAmount) : aAmount : 1), aID);
-		if (rStack == null) return null;
-		CompoundTag tNBT = NBT.makeString("f", aFluid.getFluid().getName());
-		if (aAmount != 0) NBT.setNumber(tNBT, "a", aAmount);
-		NBT.setNumber(tNBT, "h", temperature(aFluid));
-		NBT.setBoolean(tNBT, "s", gas(aFluid));
-		return NBT.set(rStack, tNBT);
-	}
+	/** PORT-TODO(F5/F1/F8, `ItemFluidDisplay` meta->компонент, decisions/F5-fluids.md §6): дисплей-предмет
+	 *  жидкости в 1.7.10 кодировал жидкость через мета = числовой id (см. {@link #id()}); в neo id
+	 *  нестабилен между запусками (нет плотной гарантированной нумерации DeferredRegister), и мета как
+	 *  канал данных предмета вообще убрана (замена — компоненты). Правильная замена — в F1/F8
+	 *  (`ItemFluidDisplay`, вне области этого переходника); здесь — безопасный дефолт null. */
+	public static ItemStack display(Fluid aFluid) {return null;}
+	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize) {return null;}
+	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {return null;}
+	public static ItemStack display(FluidTankGT aTank, boolean aUseStackSize, boolean aLimitStackSize) {return null;}
+	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize) {return null;}
+	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {return null;}
 	
 	public static FluidStack[] waters(long aWater) {return waters(aWater, aWater, aWater);}
 	public static FluidStack[] waters(long aWater, long aDistilled) {return waters(aWater, aDistilled, aWater);}
@@ -693,113 +735,120 @@ public enum FL {
 	/** @return if that Liquid is Water or Distilled Water */
 	public static boolean water(FluidStack aFluid) {return aFluid != null && water(aFluid.getFluid());}
 	/** @return if that Liquid is Water or Distilled Water */
-	public static boolean water(Fluid aFluid) {return aFluid != null && WATER.contains(aFluid.getName());}
-	
+	public static boolean water(Fluid aFluid) {return aFluid != null && WATER.contains(FluidGT.nameOf(aFluid));}
+
 	/** @return if that Liquid is distilled Water */
 	public static boolean distw(IFluidTank aFluid) {return aFluid != null && distw(aFluid.getFluid());}
 	/** @return if that Liquid is distilled Water */
 	public static boolean distw(FluidStack aFluid) {return aFluid != null && distw(aFluid.getFluid());}
 	/** @return if that Liquid is distilled Water */
 	public static boolean distw(Fluid aFluid) {return FL.DistW.is(aFluid);}
-	
+
 	/** @return if that Liquid is Lava */
 	public static boolean lava(IFluidTank aFluid) {return aFluid != null && lava(aFluid.getFluid());}
 	/** @return if that Liquid is Lava */
 	public static boolean lava(FluidStack aFluid) {return aFluid != null && lava(aFluid.getFluid());}
 	/** @return if that Liquid is Lava */
-	public static boolean lava(Fluid aFluid) {return aFluid == FluidRegistry.LAVA;}
-	
+	public static boolean lava(Fluid aFluid) {return aFluid == Fluids.LAVA || aFluid == Fluids.FLOWING_LAVA;}
+
 	/** @return if that Liquid is Steam */
 	public static boolean steam(IFluidTank aFluid) {return aFluid != null && steam(aFluid.getFluid());}
 	/** @return if that Liquid is Steam */
 	public static boolean steam(FluidStack aFluid) {return aFluid != null && steam(aFluid.getFluid());}
 	/** @return if that Liquid is Steam */
 	public static boolean steam(Fluid aFluid) {return FL.Steam.is(aFluid);}
-	
+
 	/** @return if that Liquid is Milk */
 	public static boolean milk(IFluidTank aFluid) {return aFluid != null && milk(aFluid.getFluid());}
 	/** @return if that Liquid is Milk */
 	public static boolean milk(FluidStack aFluid) {return aFluid != null && milk(aFluid.getFluid());}
 	/** @return if that Liquid is Milk */
 	public static boolean milk(Fluid aFluid) {return FL.Milk.is(aFluid) || FL.MilkGrC.is(aFluid);}
-	
+
 	/** @return if that Liquid is Soy Milk */
 	public static boolean soym(IFluidTank aFluid) {return aFluid != null && soym(aFluid.getFluid());}
 	/** @return if that Liquid is Soy Milk */
 	public static boolean soym(FluidStack aFluid) {return aFluid != null && soym(aFluid.getFluid());}
 	/** @return if that Liquid is Soy Milk */
 	public static boolean soym(Fluid aFluid) {return FL.MilkSoy.is(aFluid);}
-	
+
 	/** @return if that Liquid is Steam */
 	public static boolean anysteam(IFluidTank aFluid) {return aFluid != null && steam(aFluid.getFluid());}
 	/** @return if that Liquid is Steam */
 	public static boolean anysteam(FluidStack aFluid) {return aFluid != null && steam(aFluid.getFluid());}
 	/** @return if that Liquid is Steam */
-	public static boolean anysteam(Fluid aFluid) {return aFluid != null && FluidsGT.STEAM.contains(aFluid.getName());}
-	
+	public static boolean anysteam(Fluid aFluid) {return aFluid != null && FluidsGT.STEAM.contains(FluidGT.nameOf(aFluid));}
+
 	/** @return if that Liquid is supposed to be conducting Power */
 	public static boolean powerconducting(IFluidTank aFluid) {return aFluid != null && powerconducting(aFluid.getFluid());}
 	/** @return if that Liquid is supposed to be conducting Power */
 	public static boolean powerconducting(FluidStack aFluid) {return aFluid != null && powerconducting(aFluid.getFluid());}
 	/** @return if that Liquid is supposed to be conducting Power */
-	public static boolean powerconducting(Fluid aFluid) {return aFluid != null && FluidsGT.POWER_CONDUCTING.contains(aFluid.getName());}
-	
+	public static boolean powerconducting(Fluid aFluid) {return aFluid != null && FluidsGT.POWER_CONDUCTING.contains(FluidGT.nameOf(aFluid));}
+
 	/** @return if that Liquid is early-game and easy to handle */
 	public static boolean simple(IFluidTank aFluid) {return aFluid != null && simple(aFluid.getFluid());}
 	/** @return if that Liquid is early-game and easy to handle */
 	public static boolean simple(FluidStack aFluid) {return aFluid != null && simple(aFluid.getFluid());}
 	/** @return if that Liquid is early-game and easy to handle */
-	public static boolean simple(Fluid aFluid) {return aFluid != null && FluidsGT.SIMPLE.contains(aFluid.getName());}
-	
+	public static boolean simple(Fluid aFluid) {return aFluid != null && FluidsGT.SIMPLE.contains(FluidGT.nameOf(aFluid));}
+
 	public static boolean acid(IFluidTank aFluid) {return aFluid != null && acid(aFluid.getFluid());}
 	public static boolean acid(FluidStack aFluid) {return aFluid != null && acid(aFluid.getFluid());}
-	public static boolean acid(Fluid aFluid) {return aFluid != null && FluidsGT.ACID.contains(aFluid.getName());}
-	
+	public static boolean acid(Fluid aFluid) {return aFluid != null && FluidsGT.ACID.contains(FluidGT.nameOf(aFluid));}
+
 	public static boolean plasma(IFluidTank aFluid) {return aFluid != null && plasma(aFluid.getFluid());}
 	public static boolean plasma(FluidStack aFluid) {return aFluid != null && plasma(aFluid.getFluid());}
-	public static boolean plasma(Fluid aFluid) {return aFluid != null && FluidsGT.PLASMA.contains(aFluid.getName());}
-	
+	public static boolean plasma(Fluid aFluid) {return aFluid != null && FluidsGT.PLASMA.contains(FluidGT.nameOf(aFluid));}
+
 	public static boolean magic(IFluidTank aFluid) {return aFluid != null && magic(aFluid.getFluid());}
 	public static boolean magic(FluidStack aFluid) {return aFluid != null && magic(aFluid.getFluid());}
-	public static boolean magic(Fluid aFluid) {return aFluid != null && FluidsGT.MAGIC.contains(aFluid.getName());}
-	
+	public static boolean magic(Fluid aFluid) {return aFluid != null && FluidsGT.MAGIC.contains(FluidGT.nameOf(aFluid));}
+
+	/** "Газообразность" — GT6-собственный флаг ({@link FluidGT#isGaseous()}), НЕ часть свойств neo
+	 *  {@code FluidType} (там такого понятия в принципе нет, decisions/F5-fluids.md §2: GT6 владеет
+	 *  своими множествами независимо от движковых тегов). Для чужих (не GT6) жидкостей флаг недоступен —
+	 *  решает только принадлежность множеству {@code FluidsGT.GAS}. */
 	public static boolean gas(IFluidTank aFluid, boolean aDefault) {return gas(aFluid.getFluid(), aDefault);}
 	public static boolean gas(IFluidTank aFluid) {return gas(aFluid.getFluid(), F);}
-	public static boolean gas(FluidStack aFluid, boolean aDefault) {return aFluid == null || aFluid.getFluid() == null ? aDefault : !FluidsGT.LIQUID.contains(aFluid.getFluid().getName()) && (aFluid.getFluid().isGaseous(aFluid) || FluidsGT.GAS.contains(aFluid.getFluid().getName()));}
+	public static boolean gas(FluidStack aFluid, boolean aDefault) {return aFluid == null || aFluid.getFluid() == null ? aDefault : gas(aFluid.getFluid(), aDefault);}
 	public static boolean gas(FluidStack aFluid) {return gas(aFluid, F);}
-	public static boolean gas(Fluid aFluid, boolean aDefault) {return aFluid == null ? aDefault : !FluidsGT.LIQUID.contains(aFluid.getName()) && (aFluid.isGaseous() || FluidsGT.GAS.contains(aFluid.getName()));}
+	public static boolean gas(Fluid aFluid, boolean aDefault) {
+		if (aFluid == null) return aDefault;
+		String tName = FluidGT.nameOf(aFluid);
+		if (FluidsGT.LIQUID.contains(tName)) return F;
+		FluidGT tGT = FluidGT.of(aFluid);
+		return (tGT != null && tGT.isGaseous()) || FluidsGT.GAS.contains(tName);
+	}
 	public static boolean gas(Fluid aFluid) {return gas(aFluid, F);}
-	
-	public static boolean lighter(BlockFluidBase aFluid) {return aFluid != null && lighter(aFluid.getFluid());}
+
 	public static boolean lighter(IFluidTank aFluid)     {return aFluid != null && lighter(aFluid.getFluid());}
-	public static boolean lighter(FluidStack aFluid)     {return aFluid != null && aFluid.getFluid() != null && aFluid.getFluid().getDensity(aFluid) < 0;}
-	public static boolean lighter(Fluid aFluid)          {return aFluid != null && aFluid.getDensity(make(aFluid, 1000)) < 0;}
-	
-	public static boolean heavier(BlockFluidBase aFluid) {return aFluid != null && heavier(aFluid.getFluid());}
+	public static boolean lighter(FluidStack aFluid)     {return aFluid != null && aFluid.getFluid() != null && aFluid.getFluid().getFluidType().getDensity(aFluid) < 0;}
+	public static boolean lighter(Fluid aFluid)          {return aFluid != null && aFluid.getFluidType().getDensity(make(aFluid, 1000)) < 0;}
+
 	public static boolean heavier(IFluidTank aFluid)     {return aFluid != null && heavier(aFluid.getFluid());}
-	public static boolean heavier(FluidStack aFluid)     {return aFluid != null && aFluid.getFluid() != null && aFluid.getFluid().getDensity(aFluid) > 0;}
-	public static boolean heavier(Fluid aFluid)          {return aFluid != null && aFluid.getDensity(make(aFluid, 1000)) > 0;}
-	
-	public static int dir(BlockFluidBase aFluid) {return lighter(aFluid) ? +1 : -1;}
+	public static boolean heavier(FluidStack aFluid)     {return aFluid != null && aFluid.getFluid() != null && aFluid.getFluid().getFluidType().getDensity(aFluid) > 0;}
+	public static boolean heavier(Fluid aFluid)          {return aFluid != null && aFluid.getFluidType().getDensity(make(aFluid, 1000)) > 0;}
+
 	public static int dir(IFluidTank aFluid)     {return lighter(aFluid) ? +1 : -1;}
 	public static int dir(FluidStack aFluid)     {return lighter(aFluid) ? +1 : -1;}
 	public static int dir(Fluid aFluid)          {return lighter(aFluid) ? +1 : -1;}
-	
+
 	public static long temperature(IFluidTank aFluid) {return temperature(aFluid.getFluid());}
 	public static long temperature(IFluidTank aFluid, long aDefault) {return temperature(aFluid.getFluid(), aDefault);}
-	
+
 	public static long temperature(Fluid aFluid) {return temperature(aFluid, DEF_ENV_TEMP);}
 	public static long temperature(Fluid aFluid, long aDefault) {
 		if (aFluid == null) return aDefault;
-		if (aFluid.getName().equals("steam")) return C+100;
-		return aFluid.getTemperature(make(aFluid, 1));
+		if ("steam".equals(FluidGT.nameOf(aFluid))) return C+100;
+		return aFluid.getFluidType().getTemperature(make(aFluid, 1));
 	}
-	
+
 	public static long temperature(FluidStack aFluid) {return temperature(aFluid, DEF_ENV_TEMP);}
 	public static long temperature(FluidStack aFluid, long aDefault) {
 		if (aFluid == null || aFluid.getFluid() == null) return aDefault;
-		if (aFluid.getFluid().getName().equals("steam")) return C+100;
-		return aFluid.getFluid().getTemperature(aFluid);
+		if ("steam".equals(FluidGT.nameOf(aFluid.getFluid()))) return C+100;
+		return aFluid.getFluid().getFluidType().getTemperature(aFluid);
 	}
 	
 	public static FluidStack make (int aFluid, long aAmount) {return aFluid < 0 ? null : make(fluid(aFluid), Code.bindInt(aAmount));}
@@ -808,125 +857,109 @@ public enum FL {
 	public static FluidStack make (String aFluidName, long aAmount, String aReplacementFluidName) {FluidStack rFluid = make(aFluidName, aAmount); return rFluid == null ? make(aReplacementFluidName, aAmount) : rFluid;}
 	public static FluidStack make (String aFluidName, long aAmount, String aReplacementFluidName, long aReplacementAmount) {FluidStack rFluid = make(aFluidName, aAmount); return rFluid == null ? make(aReplacementFluidName, aReplacementAmount) : rFluid;}
 	public static FluidStack make (String aFluidName, long aAmount, FluidStack aReplacementFluid) {FluidStack rFluid = make(aFluidName, aAmount); return rFluid == null ? aReplacementFluid : rFluid;}
-	
+
 	public static FluidStack make_(int aFluid, long aAmount) {return aFluid < 0 ? FL.Error.make(0) : make(fluid(aFluid), Code.bindInt(aAmount));}
 	public static FluidStack make_(Fluid aFluid, long aAmount) {return aFluid == null ? FL.Error.make(0) : new FluidStack(aFluid, Code.bindInt(aAmount));}
 	public static FluidStack make_(String aFluidName, long aAmount) {return make_(fluid(aFluidName), aAmount);}
 	public static FluidStack make_(String aFluidName, long aAmount, String aReplacementFluidName) {FluidStack rFluid = make(aFluidName, aAmount); return rFluid == null ? make_(aReplacementFluidName, aAmount) : rFluid;}
 	public static FluidStack make_(String aFluidName, long aAmount, String aReplacementFluidName, long aReplacementAmount) {FluidStack rFluid = make(aFluidName, aAmount); return rFluid == null ? make_(aReplacementFluidName, aReplacementAmount) : rFluid;}
-	
-	public static FluidStack amount(FluidStack aFluid, long aAmount) {return aFluid == null ? null : new FluidStack(aFluid, Code.bindInt(aAmount));}
-	
-	public static FluidStack mul(FluidStack aFluid, long aMultiplier) {return aFluid == null ? null : amount(aFluid, aFluid.amount * aMultiplier);}
-	public static FluidStack mul(FluidStack aFluid, long aMultiplier, long aDivider, boolean aRoundUp) {return aFluid == null ? null : amount(aFluid, Code.units(aFluid.amount, aDivider, aMultiplier, aRoundUp));}
-	
-	public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler && aFluid != null ? fill_(aDelegator, aFluid, aDoFill) : 0;}
-	public static long fill_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return fill_((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity, aFluid, aDoFill);}
-	public static long fill (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null ? fill_(aFluidHandler, aSide, aFluid, aDoFill) : 0;}
-	public static long fill_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler.fill(FORGE_DIR[aSide], aFluid, aDoFill);}
-	public static long fill (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null ? fill_(aFluidHandler, aSides, aFluid, aDoFill) : 0;}
-	public static long fill_(IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {for (byte tSide : aSides) {long rFilled = aFluidHandler.fill(FORGE_DIR[tSide], aFluid, aDoFill); if (rFilled > 0) return rFilled;} return 0;}
-	
-	public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler && aFluid != null && fillAll_(aDelegator, aFluid, aDoFill);}
-	public static boolean fillAll_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return fillAll_((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity, aFluid, aDoFill);}
-	public static boolean fillAll (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null && fillAll_(aFluidHandler, aSide, aFluid, aDoFill);}
-	public static boolean fillAll_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler.fill(FORGE_DIR[aSide], aFluid, F) == aFluid.amount && (!aDoFill || aFluidHandler.fill(FORGE_DIR[aSide], aFluid, T) > 0);}
-	public static boolean fillAll (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null && fillAll_(aFluidHandler, aSides, aFluid, aDoFill);}
-	public static boolean fillAll_(IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {for (byte tSide : aSides) if (aFluidHandler.fill(FORGE_DIR[tSide], aFluid, F) == aFluid.amount && (!aDoFill || aFluidHandler.fill(FORGE_DIR[tSide], aFluid, T) > 0)) return T; return F;}
-	
-	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
-	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aFrom.mTileEntity instanceof IFluidHandler && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
-	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; FluidStack tDrained = ((IFluidHandler)aFrom.mTileEntity).drain(aFrom.getForgeSideOfTileEntity(), UT.Code.bindInt(aMaxMoved), F); if (tDrained == null || tDrained.amount <= 0) return 0; tDrained.amount = Code.bindInt(fill_(aTo, tDrained.copy(), T)); if (tDrained.amount <= 0) return 0; ((IFluidHandler)aFrom.mTileEntity).drain(aFrom.getForgeSideOfTileEntity(), tDrained, T); return tDrained.amount;}
-	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, FluidStack aMoved) {return aFrom != null && aFrom.mTileEntity instanceof IFluidHandler && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMoved) : 0;}
-	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, FluidStack aMoved) {if (aMoved == null || aMoved.amount <= 0) return 0; FluidStack tDrained = ((IFluidHandler)aFrom.mTileEntity).drain(aFrom.getForgeSideOfTileEntity(), aMoved, F); if (tDrained == null || tDrained.amount <= 0) return 0; tDrained.amount = Code.bindInt(fill_(aTo, tDrained.copy(), T)); if (tDrained.amount <= 0) return 0; ((IFluidHandler)aFrom.mTileEntity).drain(aFrom.getForgeSideOfTileEntity(), tDrained, T); return tDrained.amount;}
+
+	/** Замена {@code new FluidStack(existingStack, newAmount)} (копирующий конструктор с новой
+	 *  ёмкостью 1.7.10) — у real neo {@link FluidStack} такого конструктора нет, вместо него
+	 *  {@link FluidStack#copyWithAmount(int)} (реальный метод, `FluidStack.java:255`). */
+	public static FluidStack amount(FluidStack aFluid, long aAmount) {return aFluid == null ? null : aFluid.copyWithAmount(Code.bindInt(aAmount));}
+
+	public static FluidStack mul(FluidStack aFluid, long aMultiplier) {return aFluid == null ? null : amount(aFluid, (long)aFluid.getAmount() * aMultiplier);}
+	public static FluidStack mul(FluidStack aFluid, long aMultiplier, long aDivider, boolean aRoundUp) {return aFluid == null ? null : amount(aFluid, Code.units(aFluid.getAmount(), aDivider, aMultiplier, aRoundUp));}
+
+	// PORT-TODO(F5, легаси перенос между тайлами, decisions/F5-fluids.md §8): 1.7.10
+	// IFluidHandler.fill/drain(ForgeDirection,...) с байтовыми сторонами и DelegatorTileEntity —
+	// заменяется поиском Capabilities.Fluid.BLOCK по Direction на КОНКРЕТНОМ BlockEntity/Level, что
+	// требует Level+BlockPos (которых нет в статическом контексте здесь) и относится к
+	// consumer-файлам (TileEntity*), не к этому переходнику. Безопасные дефолты 0/false ниже сохраняют
+	// компилируемость вызовов без изобретения несуществующего API.
+	public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return 0;}
+	public static long fill_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return 0;}
+
+	public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return F;}
+	public static boolean fillAll_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return F;}
+
+	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return 0;}
+	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return 0;}
+	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
+	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
+	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, FluidStack aMoved) {return 0;}
+	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, FluidStack aMoved) {return 0;}
+
+	/** Перенос из GT6-своего {@link IFluidTank} в {@link DelegatorTileEntity} — часть (drain-сторона)
+	 *  остаётся рабочей (наш танк), часть (fill в целевой тайл через legacy IFluidHandler-сторону) —
+	 *  гатится см. выше; итог: пока безопасный дефолт 0 (ничего не перенесено), не изобретая API. */
 	public static long move (IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
-	public static long move_(IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; FluidStack tDrained = aFrom.drain(UT.Code.bindInt(aMaxMoved), F); if (tDrained == null || tDrained.amount <= 0) return 0; tDrained.amount = Code.bindInt(fill_(aTo, tDrained.copy(), T)); if (tDrained.amount <= 0) return 0; aFrom.drain(tDrained.amount, T); return tDrained.amount;}
+	public static long move (IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
+	public static long move_(IFluidTank aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
 	public static long move (IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
-	public static long move_(IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; long rAmount = 0; for (IFluidTank tFrom : aFrom) if (tFrom != null) rAmount += move_(tFrom, aTo, aMaxMoved-rAmount); return rAmount;}
+	public static long move (IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
+	public static long move_(IFluidTank[] aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
 	public static long move (@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
-	public static long move (@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
-	public static long move_(@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {if (aMaxMoved <= 0) return 0; long rAmount = 0; for (Object tFrom : aFrom) if (tFrom instanceof IFluidTank) rAmount += move_((IFluidTank)tFrom, aTo, aMaxMoved-rAmount); return rAmount;}
-	
-	
+	public static long move (@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
+	public static long move_(@SuppressWarnings("rawtypes") Iterable aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}
+
+
 	public static String configName(FluidStack aFluid) {
-		return aFluid == null || aFluid.getFluid() == null ? "" : aFluid.getFluid().getName();
+		return aFluid == null || aFluid.getFluid() == null ? "" : FluidGT.nameOf(aFluid.getFluid());
 	}
-	
+
 	public static String configNames(FluidStack... aFluids) {
 		String rString = "";
 		for (FluidStack tFluid : aFluids) rString += (tFluid == null ? "null;" : configName(tFluid) + ";");
 		return rString;
 	}
-	
+
 	public static String name(Fluid aFluid, boolean aLocalized) {
 		if (aFluid == null) return "";
-		if (!aLocalized) return aFluid.getUnlocalizedName();
-		if (aFluid instanceof FluidGT) return LH.get(aFluid.getUnlocalizedName());
-		String rName = aFluid.getLocalizedName(make(aFluid, 0));
+		FluidGT tGT = FluidGT.of(aFluid);
+		if (tGT != null) return aLocalized ? LH.get(tGT.getUnlocalizedName()) : tGT.getUnlocalizedName();
+		if (!aLocalized) return "fluid." + FluidGT.nameOf(aFluid);
+		String rName = aFluid.getFluidType().getDescription(make(aFluid, 0)).getString();
 		if (rName.startsWith("fluid.") || rName.startsWith("tile.") || rName.startsWith("rc ")) {
 			rName = Code.capitaliseWords(rName.replaceFirst("fluid.", "").replaceFirst("tile.", "").replaceFirst("rc ", ""));
 		}
-		return aFluid.getName().startsWith("rc ") ? "Reika's " + rName : rName;
+		String tName = FluidGT.nameOf(aFluid);
+		return tName != null && tName.startsWith("rc ") ? "Reika's " + rName : rName;
 	}
-	
+
 	public static String name(FluidStack aFluid, boolean aLocalized) {
 		return aFluid == null ? "" : name(aFluid.getFluid(), aLocalized);
 	}
-	
+
 	public static String name(IFluidTank aTank, boolean aLocalized) {
 		return aTank == null ? "" : name(aTank.getFluid(), aLocalized);
 	}
-	
+
 	public static FluidStack[] copy(FluidStack... aFluids) {
 		FluidStack[] rStacks = new FluidStack[aFluids.length];
 		for (int i = 0; i < aFluids.length; i++) if (aFluids[i] != null) rStacks[i] = aFluids[i].copy();
 		return rStacks;
 	}
 	
+	/** PORT-TODO(F5, поверхность B): пока не заполняется — мировые water-блоки (Ocean/River/Swamp) вне
+	 *  области этого переходника (decisions/F5-fluids.md §5). */
 	public static final Map<String, Block> BLOCKS = new HashMap<>();
-	
-	public static final Map<ItemStackContainer, FluidContainerData> FULL_TO_DATA = new ItemStackMap<>();
-	public static final Map<ItemStackContainer, Map<String, FluidContainerData>> EMPTY_TO_FLUID_TO_DATA = new ItemStackMap<>();
-	
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty) {
-		reg(aFluid, aFull, aEmpty, F);
-	}
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
-		reg(aFluid, aFull, aEmpty, F, aOverrideFillingEmpty, aOverrideDrainingFull);
-	}
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty) {
-		reg(aFluid, aFull, aEmpty, aNullEmpty, F, F);
-	}
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
-		if (aFluid == null || ST.invalid(aFull)) return;
-		reg(new FluidContainerData(aFluid, aFull, aEmpty, aNullEmpty), aOverrideFillingEmpty, aOverrideDrainingFull);
-	}
-	public static void reg(FluidContainerData aData) {
-		reg(aData, F, F);
-	}
-	public static void reg(FluidContainerData aData, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
-		set(aData, aOverrideFillingEmpty, aOverrideDrainingFull);
-		FluidContainerRegistry.registerFluidContainer(aData);
-	}
-	
-	public static void set(FluidContainerData aData) {
-		set(aData, F, F);
-	}
-	public static void set(FluidContainerData aData, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
-		ItemStackContainer tFilled = new ItemStackContainer(aData.filledContainer), tEmpty = new ItemStackContainer(aData.emptyContainer);
-		if (aOverrideDrainingFull || !FULL_TO_DATA.containsKey(tFilled)) FULL_TO_DATA.put(tFilled, aData);
-		Map<String, FluidContainerData> tFluidToData = EMPTY_TO_FLUID_TO_DATA.get(tEmpty);
-		if (tFluidToData == null) EMPTY_TO_FLUID_TO_DATA.put(tEmpty, tFluidToData = new HashMap<>());
-		String tFluidName = aData.fluid.getFluid().getName();
-		if (aOverrideFillingEmpty || !tFluidToData.containsKey(tFluidName)) tFluidToData.put(tFluidName, aData);
-	}
-	
+
+	// PORT-TODO(F5, авто-реестр бакетов/канистр, decisions/F5-fluids.md §3,8): Forge-1.7.10
+	// FluidContainerRegistry (авто fill/drain ЛЮБОГО зарегистрированного full<->empty контейнера,
+	// напр. вёдер) не имеет прямого neo-аналога — 26.1.2 использует BucketItem+capability на КАЖДЫЙ
+	// контейнер отдельно (нет глобального auto-реестра пар). Ниже — минимальные, безопасные заглушки,
+	// сохраняющие сигнатуры (не изобретая новый API); реальная замена — per-item capability-регистрация
+	// в момент регистрации КАЖДОГО контейнера (не здесь, это уже F1/F8/консьюмеры).
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty) {}
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {}
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty) {}
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {}
+
 	public static ItemStack fill(FluidStack aFluid, ItemStack aStack, boolean aRemoveFluidDirectly, boolean aCheckIFluidContainerItems) {
 		return fill(aFluid, aStack, aRemoveFluidDirectly, aCheckIFluidContainerItems, F, T);
 	}
@@ -935,30 +968,21 @@ public enum FL {
 	}
 	public static ItemStack fill(FluidStack aFluid, ItemStack aStack, boolean aRemoveFluidDirectly, boolean aCheckIFluidContainerItems, boolean aAllowPartialFilling, boolean aIsNonCannerCheck) {
 		if (ST.invalid(aStack) || aFluid == null) return NI;
-		if (aFluid.getFluid() == FluidRegistry.WATER && ST.equal(aStack, Items.glass_bottle)) {
-			if (aFluid.amount >= 250) {
-				if (aRemoveFluidDirectly) aFluid.amount -= 250;
-				return ST.make(Items.potionitem, 1, 0);
+		if (aFluid.getFluid() == Fluids.WATER && ST.equal(aStack, Items.GLASS_BOTTLE)) {
+			if (aFluid.getAmount() >= 250) {
+				if (aRemoveFluidDirectly) aFluid.shrink(250);
+				return ST.make(Items.POTION, 1, 0);
 			}
 			return NI;
 		}
 		if (aIsNonCannerCheck && IL.GC_Canister.exists() && (IL.GC_Canister.equal(aStack, T, T) || ST.equal(ST.container(aStack, T), IL.GC_Canister.wild(1)))) return aStack;
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0 && (((IFluidHandlerItem)aStack.getItem()).getFluid(aStack) == null || (equal(((IFluidHandlerItem)aStack.getItem()).getFluid(aStack), aFluid) && ((IFluidHandlerItem)aStack.getItem()).getFluid(aStack).amount < ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack))) && (aAllowPartialFilling || ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) <= aFluid.amount)) {
-			if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(aFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(aFluid) || acid(aFluid) || powerconducting(aFluid))) return aStack;
-			if (aRemoveFluidDirectly)
-				aFluid.amount -= ((IFluidHandlerItem)aStack.getItem()).fill(aStack = ST.amount(1, aStack), aFluid, T);
-			else
-				((IFluidHandlerItem)aStack.getItem()).fill(aStack = ST.amount(1, aStack), aFluid, T);
-			return aStack;
-		}
-		Map<String, FluidContainerData> tFluidToContainer = EMPTY_TO_FLUID_TO_DATA.get(new ItemStackContainer(aStack));
-		if (tFluidToContainer == null) return NI;
-		FluidContainerData tData = tFluidToContainer.get(aFluid.getFluid().getName());
-		if (tData == null || tData.fluid.amount > aFluid.amount) return NI;
-		if (aRemoveFluidDirectly) aFluid.amount -= tData.fluid.amount;
-		return ST.amount(1, tData.filledContainer);
+		// PORT-TODO(F5, item-capability бакет/канистра): ветка старого IFluidHandlerItem-как-Item
+		// (`aStack.getItem() instanceof IFluidHandlerItem`) убрана — в neo Item САМ не реализует
+		// IFluidHandlerItem, доступ идёт через capability на ItemStack (ItemAccess), что требует
+		// per-item регистрации (F1/F8), не относится к этому переходнику.
+		return NI;
 	}
-	
+
 	public static ItemStack fill(IFluidTank aTank, ItemStack aStack, boolean aRemoveFluidDirectly, boolean aCheckIFluidContainerItems) {
 		return fill(aTank, aStack, aRemoveFluidDirectly, aCheckIFluidContainerItems, F, T);
 	}
@@ -969,72 +993,42 @@ public enum FL {
 		if (aTank == null) return NI;
 		FluidStack aFluid = aTank.getFluid();
 		if (ST.invalid(aStack) || aFluid == null) return NI;
-		if (aFluid.getFluid() == FluidRegistry.WATER && ST.equal(aStack, Items.glass_bottle)) {
-			if (aFluid.amount >= 250) {
-				if (aRemoveFluidDirectly) aTank.drain(250, T);
-				return ST.make(Items.potionitem, 1, 0);
+		if (aFluid.getFluid() == Fluids.WATER && ST.equal(aStack, Items.GLASS_BOTTLE)) {
+			if (aFluid.getAmount() >= 250) {
+				if (aRemoveFluidDirectly) aTank.drain(250, FluidAction.EXECUTE);
+				return ST.make(Items.POTION, 1, 0);
 			}
 			return NI;
 		}
 		if (aIsNonCannerCheck && IL.GC_Canister.exists() && (IL.GC_Canister.equal(aStack, T, T) || ST.equal(ST.container(aStack, T), IL.GC_Canister.wild(1)))) return aStack;
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0 && (((IFluidHandlerItem)aStack.getItem()).getFluid(aStack) == null || (equal(((IFluidHandlerItem)aStack.getItem()).getFluid(aStack), aFluid) && ((IFluidHandlerItem)aStack.getItem()).getFluid(aStack).amount < ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack))) && (aAllowPartialFilling || ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) <= aFluid.amount)) {
-			if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(aFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(aFluid) || acid(aFluid) || powerconducting(aFluid))) return aStack;
-			if (aRemoveFluidDirectly)
-				aTank.drain(((IFluidHandlerItem)aStack.getItem()).fill(aStack = ST.amount(1, aStack), aFluid, T), T);
-			else
-				((IFluidHandlerItem)aStack.getItem()).fill(aStack = ST.amount(1, aStack), aFluid, T);
-			return aStack;
-		}
-		Map<String, FluidContainerData> tFluidToContainer = EMPTY_TO_FLUID_TO_DATA.get(new ItemStackContainer(aStack));
-		if (tFluidToContainer == null) return NI;
-		FluidContainerData tData = tFluidToContainer.get(aFluid.getFluid().getName());
-		if (tData == null || tData.fluid.amount > aFluid.amount) return NI;
-		if (aRemoveFluidDirectly) aTank.drain(tData.fluid.amount, T);
-		return ST.amount(1, tData.filledContainer);
-	}
-	
-	public static boolean contains(ItemStack aStack, FluidStack aFluid, boolean aCheckIFluidContainerItems) {
-		if (ST.invalid(aStack) || aFluid == null) return F;
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0) return aFluid.isFluidEqual(((IFluidHandlerItem)aStack.getItem()).getFluid(aStack = ST.amount(1, aStack)));
-		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
-		return tData!=null && tData.fluid.isFluidEqual(aFluid);
-	}
-	
-	public static FluidStack getFluid(ItemStack aStack, boolean aCheckIFluidContainerItems) {
-		if (ST.invalid(aStack)) return null;
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0) {
-			FluidStack rFluid = ((IFluidHandlerItem)aStack.getItem()).drain(ST.amount(1, aStack), Integer.MAX_VALUE, T);
-			if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(rFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(rFluid) || acid(rFluid) || powerconducting(rFluid))) return NF;
-			return rFluid;
-		}
-		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
-		return tData==null?NF:tData.fluid.copy();
-	}
-	
-	public static ItemStack getEmpty(ItemStack aStack, boolean aCheckIFluidContainerItems) {
-		if (ST.invalid(aStack)) return NI;
-		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
-		if (tData != null) return ST.amount(1, tData.emptyContainer);
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0) {
-			((IFluidHandlerItem)aStack.getItem()).drain(aStack = ST.amount(1, aStack), Integer.MAX_VALUE, T);
-			if (aStack.getTagCompound() == null) return aStack;
-			if (aStack.getTagCompound().hasNoTags()) aStack.setTagCompound(null);
-			return aStack;
-		}
+		// PORT-TODO(F5, item-capability бакет/канистра) — см. выше.
 		return NI;
 	}
+
+	/** PORT-TODO(F5, авто-реестр бакетов/канистр) — см. блок {@link #reg} выше. */
+	public static boolean contains(ItemStack aStack, FluidStack aFluid, boolean aCheckIFluidContainerItems) {return F;}
+
+	/** PORT-TODO(F5, авто-реестр бакетов/канистр) — см. блок {@link #reg} выше. */
+	public static FluidStack getFluid(ItemStack aStack, boolean aCheckIFluidContainerItems) {return NF;}
+
+	/** PORT-TODO(F5, авто-реестр бакетов/канистр) — см. блок {@link #reg} выше. */
+	public static ItemStack getEmpty(ItemStack aStack, boolean aCheckIFluidContainerItems) {return NI;}
 	
 	
 	
 	
 	/** Loads a FluidStack properly. */
-	public static FluidStack load (CompoundTag aNBT, String aTagName) {return aNBT == null ? null : load(aNBT.getCompoundTag(aTagName));}
+	public static FluidStack load (CompoundTag aNBT, String aTagName) {return aNBT == null ? null : load(aNBT.getCompoundOrEmpty(aTagName));}
 	/** Loads a FluidStack properly. */
-	public static FluidStack load (CompoundTag aNBT) {return aNBT == null || aNBT.hasNoTags() ? null : load_(aNBT);}
-	/** Loads a FluidStack properly. */
+	public static FluidStack load (CompoundTag aNBT) {return aNBT == null || aNBT.isEmpty() ? null : load_(aNBT);}
+	/** Loads a FluidStack properly.
+	 *  PORT-TODO(F5, компоненты FluidStack): 1.7.10 хранил произвольный дополнительный NBT-тег
+	 *  ("Tag", напр. состав смеси) прямо на FluidStack; в neo эквивалент — data-компоненты, для
+	 *  восстановления которых нужен registry-aware {@code DynamicOps} (RegistryOps), недоступный в этом
+	 *  статическом контексте без Level/RegistryAccess под рукой — не восстанавливается, только имя+объём. */
 	public static FluidStack load_(CompoundTag aNBT) {
 		if (aNBT == null) return null;
-		String aName = aNBT.getString("FluidName");
+		String aName = aNBT.getStringOr("FluidName", "");
 		if (Code.stringInvalid(aName)) return null;
 		String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
 		Fluid aFluid;
@@ -1044,61 +1038,81 @@ public enum FL {
 			aFluid = fluid(aName);
 		}
 		if (aFluid == null) {
-			if (FL.LubRoCant      .is(aName)) return FL.Lubricant    .make(aNBT.getInteger("Amount"));
-			if (FL.Reikanol       .is(aName)) return FL.BioEthanol   .make(aNBT.getInteger("Amount"));
-			if (FL.Liquid_Reikygen.is(aName)) return FL.Oxygen       .make(aNBT.getInteger("Amount"));
-			if (FL.Reikygen       .is(aName)) return FL.Liquid_Oxygen.make(aNBT.getInteger("Amount"));
+			if (FL.LubRoCant      .is(aName)) return FL.Lubricant    .make(aNBT.getIntOr("Amount", 0));
+			if (FL.Reikanol       .is(aName)) return FL.BioEthanol   .make(aNBT.getIntOr("Amount", 0));
+			if (FL.Liquid_Reikygen.is(aName)) return FL.Oxygen       .make(aNBT.getIntOr("Amount", 0));
+			if (FL.Reikygen       .is(aName)) return FL.Liquid_Oxygen.make(aNBT.getIntOr("Amount", 0));
 			return null;
 		}
-		FluidStack rFluid = new FluidStack(aFluid, aNBT.getInteger("Amount"));
-		if (aNBT.hasKey("Tag")) rFluid.tag = aNBT.getCompoundTag("Tag");
-		return rFluid;
+		return new FluidStack(aFluid, aNBT.getIntOr("Amount", 0));
 	}
-	
+
 	/** Saves a FluidStack properly. */
 	public static CompoundTag save(CompoundTag aNBT, String aTagName, FluidStack aFluid) {
 		if (aNBT == null) aNBT = NBT.make();
 		CompoundTag tNBT = save(aFluid);
-		if (tNBT != null) aNBT.setTag(aTagName, tNBT);
+		if (tNBT != null) aNBT.put(aTagName, tNBT);
 		return aNBT;
 	}
 	/** Saves a FluidStack properly. */
 	public static CompoundTag save (FluidStack aFluid) {return aFluid == null || aFluid.getFluid() == null ? null : save_(aFluid);}
-	/** Saves a FluidStack properly. */
-	public static CompoundTag save_(FluidStack aFluid) {return aFluid.writeToNBT(NBT.make());}
+	/** Saves a FluidStack properly. PORT-TODO(F5, компоненты FluidStack) — см. {@link #load_}: пишет
+	 *  только имя+объём (1:1 для типового случая), дополнительные data-компоненты не сериализуются. */
+	public static CompoundTag save_(FluidStack aFluid) {
+		CompoundTag rNBT = NBT.make();
+		rNBT.putString("FluidName", FluidGT.nameOf(aFluid.getFluid()));
+		rNBT.putInt("Amount", aFluid.getAmount());
+		return rNBT;
+	}
 	
 	
-	@SafeVarargs public static Fluid createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createLiquid(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
-	@SafeVarargs public static Fluid createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, 1000, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList);}
+	@SafeVarargs public static FluidGT createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createLiquid(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
+	@SafeVarargs public static FluidGT createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, 1000, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList);}
 
-	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createMolten(aMaterial, L, aFluidList);}
-	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return createMolten(aMaterial, L, aTexture, aFluidList);}
-	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return createMolten(aMaterial, aAmount, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
-	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return create("molten."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Molten " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, aAmount, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList).setLuminosity(10);}
+	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createMolten(aMaterial, L, aFluidList);}
+	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return createMolten(aMaterial, L, aTexture, aFluidList);}
+	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return createMolten(aMaterial, aAmount, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
+	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return create("molten."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Molten " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, aAmount, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList).setLuminosity(10);}
 	
-	@SafeVarargs public static Fluid createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createGas(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
-	@SafeVarargs public static Fluid createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 1000, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
+	@SafeVarargs public static FluidGT createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createGas(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
+	@SafeVarargs public static FluidGT createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 1000, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
 	
-	@SafeVarargs public static Fluid createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createVapour(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
-	@SafeVarargs public static Fluid createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("vapor."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Vaporized " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 8*L, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
+	@SafeVarargs public static FluidGT createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createVapour(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
+	@SafeVarargs public static FluidGT createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("vapor."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Vaporized " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 8*L, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
 	
-	@SafeVarargs public static Fluid createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createPlasma(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_PLASMA), aFluidList);}
-	@SafeVarargs public static Fluid createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("plasma."+aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal + " Plasma", aMaterial, aMaterial.mRGBaPlasma, STATE_PLASMA, L*L, aMaterial.mPlasmaPoint <= 0 ? 10000 : Math.max(300, aMaterial.mPlasmaPoint), null, null, 0, aFluidList);}
+	@SafeVarargs public static FluidGT createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createPlasma(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_PLASMA), aFluidList);}
+	@SafeVarargs public static FluidGT createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("plasma."+aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal + " Plasma", aMaterial, aMaterial.mRGBaPlasma, STATE_PLASMA, L*L, aMaterial.mPlasmaPoint <= 0 ? 10000 : Math.max(300, aMaterial.mPlasmaPoint), null, null, 0, aFluidList);}
 	
-	@SafeVarargs public static Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, 1000, 300, null, null, 0, aFluidList);}
-	@SafeVarargs public static Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, null, null, 0, aFluidList);}
-	@SafeVarargs public static Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase()), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
-	
+	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, 1000, 300, null, null, 0, aFluidList);}
+	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, null, null, 0, aFluidList);}
+	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase()), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
+
+	/**
+	 * Регистрирует ОДНУ GT6-жидкость (данные 1:1 из вызывающего кода) через {@link FluidGT}
+	 * (расщепление Fluid->FluidType+Fluid в neo, decisions/F5-fluids.md §3) вместо старого
+	 * forge-1.7.10 {@code Fluid}. Идемпотентность: если {@code aName} уже зарегистрировано КАК
+	 * GT6-жидкость (повторный вызов create для того же имени), донастраивается СУЩЕСТВУЮЩИЙ
+	 * {@link FluidGT}, а не создаётся новый (ближайший 1:1 смысл старого
+	 * "{@code FluidRegistry.registerFluid} вернул false -> подстроиться под уже существующую").
+	 * PORT-TODO(F5, межмодовое усыновление жидкости, decisions/F5-fluids.md §8): "усыновление" уже
+	 * зарегистрированной ЧУЖИМ модом (не GT6) жидкости с тем же именем — структурно невозможно с
+	 * DeferredRegister (регистрирует только свои записи), не воспроизведено.
+	 */
 	@SafeVarargs
-	public static Fluid create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
+	public static FluidGT create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
 		aName = aName.toLowerCase();
 		aLocalized = (aLocalized==null?aMaterial==null||aMaterial==MT.NULL?UT.Code.capitaliseWords(aName):aMaterial.getLocal():aLocalized);
-		
-		Fluid rFluid = new FluidGT(aName, aTexture, aRGBa == null ? UNCOLOURED : aRGBa, aTemperatureK, aState == 2 || aState == 3);
+
+		FluidGT rFluid = FluidGT.BY_NAME.get(aName);
+		if (rFluid == null) {
+			rFluid = new FluidGT(aName, aTexture, aRGBa == null ? UNCOLOURED : aRGBa, aTemperatureK, aState == 2 || aState == 3);
+		} else {
+			rFluid.setTemperature(aTemperatureK).setGaseous(aState == 2 || aState == 3);
+		}
 		LH.add(rFluid.getUnlocalizedName(), aLocalized);
-		
+
 		for (Set<String> tSet : aFluidList) tSet.add(aName);
-		
+
 		switch (aState) {
 		case STATE_SOLID  : rFluid.setViscosity(10000); break;
 		case STATE_LIQUID : rFluid.setViscosity( 1000); FluidsGT.LIQUID.add(aName); break;
@@ -1106,23 +1120,16 @@ public enum FL {
 		case STATE_PLASMA : rFluid.setViscosity(   10); rFluid.setDensity(-100000); rFluid.setLuminosity(15); FluidsGT.PLASMA.add(aName); break;
 		case 4            : rFluid.setViscosity( 1000); break;
 		}
-		
-		if (FL.exists(aName) || !FluidRegistry.registerFluid(rFluid)) {
-			rFluid = FluidRegistry.getFluid(aName);
-			LH.add(rFluid.getUnlocalizedName(), aLocalized);
-			if (rFluid.getTemperature() == new Fluid("test").getTemperature() || rFluid.getTemperature() <= 0) rFluid.setTemperature(UT.Code.bindInt(aTemperatureK));
-			rFluid.setGaseous(aState == 2 || aState == 3);
-		}
-		
+
 		if (aMaterial != null) {
 			if (aMaterial.contains(TD.Properties.ACID    )) FluidsGT.ACID.add(aName);
 			if (aMaterial.contains(TD.Properties.MAGICAL )) FluidsGT.MAGIC.add(aName);
 			if (aMaterial.contains(TD.Properties.GLOWING )) rFluid.setLuminosity(Math.max(rFluid.getLuminosity(), 5));
 			if (aMaterial.contains(TD.Properties.LIGHTING)) rFluid.setLuminosity(Math.max(rFluid.getLuminosity(), 15));
 			switch (aState) {
-			case STATE_LIQUID : aMaterial.liquid(make(rFluid, UT.Code.bindInt(aAmountPerUnit))); break;
-			case STATE_GASEOUS: aMaterial.gas   (make(rFluid, UT.Code.bindInt(aAmountPerUnit))); break;
-			case STATE_PLASMA : aMaterial.plasma(make(rFluid, UT.Code.bindInt(aAmountPerUnit))); break;
+			case STATE_LIQUID : aMaterial.liquid(make(rFluid.getFluid(), UT.Code.bindInt(aAmountPerUnit))); break;
+			case STATE_GASEOUS: aMaterial.gas   (make(rFluid.getFluid(), UT.Code.bindInt(aAmountPerUnit))); break;
+			case STATE_PLASMA : aMaterial.plasma(make(rFluid.getFluid(), UT.Code.bindInt(aAmountPerUnit))); break;
 			}
 			// Translating Real Life Density to that weird Integer based Density System.
 			if (aMaterial.mGramPerCubicCentimeter > 0 && (aState == STATE_LIQUID || aState == STATE_GASEOUS)) {
@@ -1136,8 +1143,12 @@ public enum FL {
 			}
 		}
 		
-		if (aFullContainer != null && aEmptyContainer != null && !FluidContainerRegistry.registerFluidContainer(make(rFluid, aFluidAmount), aFullContainer, aEmptyContainer)) {
-			RM.Canner.addRecipe1(T, 16, Math.max(aFluidAmount / 64, 16), aFullContainer, NF, make(rFluid, aFluidAmount), ST.container(aFullContainer, F));
+		// PORT-TODO(F5, авто-реестр бакетов/канистр, decisions/F5-fluids.md §3,8): 1.7.10
+		// FluidContainerRegistry.registerFluidContainer (авто fill/drain по паре full<->empty) не имеет
+		// neo-аналога (см. блок `reg(...)` выше) — оригинал шёл в рецепт-фолбэк ТОЛЬКО если регистрация
+		// не удавалась; теперь регистрации в принципе нет, поэтому фолбэк — ВСЕГДА при заданной паре.
+		if (aFullContainer != null && aEmptyContainer != null) {
+			RM.Canner.addRecipe1(T, 16, Math.max(aFluidAmount / 64, 16), aFullContainer, NF, make(rFluid.getFluid(), aFluidAmount), ST.container(aFullContainer, F));
 		}
 		return rFluid;
 	}
