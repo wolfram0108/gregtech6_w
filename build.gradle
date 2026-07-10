@@ -26,8 +26,20 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache") // datagen cache files
 }
 
+// F10 (decisions/F10-external-mod-compat.md §3.2): ЦЕНТРАЛЬНОЕ ЗЕРКАЛО чужих API — единственная точка,
+// где живут compile-only декларации интерфейсов внешних модов (IC2/AE2/…), которые GregTech6 реализует.
+// Держит ядро компилируемым, пока интеграция с модами ОТЛОЖЕНА. Возврат к реальной интеграции = удалить
+// этот каталог и подключить настоящие зависимости — в ОДНОМ месте. Аналог compileOnly dev-jar'ов оракула.
+sourceSets.main.java.srcDir('src/compat-mirror/java')
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
+
+    // JEI (mezz.jei) — просмотрщик рецептов/предметов для визуальной приёмки. Репозиторий выверен по AE2.
+    maven {
+        url = 'https://maven.blamejared.com/'
+        content { includeGroup 'mezz.jei' }
+    }
 }
 
 base {
@@ -119,12 +131,15 @@ configurations {
 }
 
 dependencies {
-    // Example optional mod dependency with JEI
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
-    // compileOnly "mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}"
-    // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
-    // localRuntime "mezz.jei:jei-${mc_version}-neoforge:${jei_version}"
+    // JEI (аналог NEI) — инструмент визуальной приёмки. Координаты выверены по AE2, метаданные резолвятся.
+    // compileOnly-строки временно закомментированы: скачивание jar с maven.blamejared.com в этой среде
+    // отваливается по таймауту, а на compileClasspath они БЛОКИРУЮТ компиляцию ядра (которое JEI пока не
+    // импортирует — плагинов ещё нет). Раскомментировать при написании JEI-плагинов GregTech6 / когда сеть
+    // до blamejared будет стабильна. localRuntime оставлен (он на runtime-пути, компиляцию не трогает;
+    // подтянет полный JEI при запуске игры для приёмки визуала).
+    // compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
+    // compileOnly "mezz.jei:jei-${jei_minecraft_version}-neoforge-api:${jei_version}"
+    localRuntime "mezz.jei:jei-${jei_minecraft_version}-neoforge:${jei_version}"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
@@ -195,6 +210,7 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs << '-Xmaxerrs' << '3000' // ВРЕМЕННО (порт ядра): снять потолок в 100 ошибок, чтобы видеть хвост по всем швам
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

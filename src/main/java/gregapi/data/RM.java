@@ -1,0 +1,1178 @@
+/**
+ * Copyright (c) 2025 GregTech-6 Team
+ *
+ * This file is part of GregTech.
+ *
+ * GregTech is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GregTech is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package gregapi.data;
+
+import appeng.api.AEApi;
+import com.cricketcraft.chisel.api.carving.CarvingUtils;
+import net.neoforged.fml.InterModComms;
+import ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
+import ganymedes01.etfuturum.recipes.SmokerRecipes;
+import gregapi.code.ArrayListNoNulls;
+import gregapi.code.IItemContainer;
+import gregapi.config.ConfigCategories;
+import gregapi.item.multiitem.MultiItemRandom;
+import gregapi.oredict.OreDictMaterial;
+import gregapi.oredict.event.IOreDictListenerEvent;
+import gregapi.oredict.event.OreDictListenerEvent_Names;
+import gregapi.recipes.Recipe.RecipeMap;
+import gregapi.recipes.maps.*;
+import gregapi.util.CR;
+import gregapi.util.OM;
+import gregapi.util.ST;
+import gregapi.util.UT;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.nbt.CompoundTag;
+import net.neoforged.neoforge.fluids.FluidStack;
+import team.chisel.carving.Carving;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static gregapi.data.CS.*;
+
+/**
+ * @author Gregorius Techneticies
+ * 
+ * Class containing Recipe Maps, for Fuel Maps go into gregapi.data.FM
+ */
+@SuppressWarnings("deprecation")
+public class RM {
+	public static final RecipeMap
+	  DidYouKnow                = new RecipeMap                     (null, "gt.recipe.other"                        , "Did you know...?"                , null, 0, 1, RES_PATH_GUI+"machines/Default"                   ,/*IN-OUT-MIN-ITEM=*/ 6, 6, 0,/*IN-OUT-MIN-FLUID=*/ 3, 3, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , F, T, F, F, F, F, F), Other = DidYouKnow
+	, Autocrafter               = new RecipeMapAutocrafting         (null, "gt.recipe.autocrafting"                 , "Crafting"                        , null, 0, 1, RES_PATH_GUI+"machines/Crafting"                  ,/*IN-OUT-MIN-ITEM=*/ 9,12, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, F, F, T, F, T, T)
+	
+	, DistillationTower         = new RecipeMap                     (null, "gt.recipe.distillationtower"            , "Distillation Tower"              , null, 0, 1, RES_PATH_GUI+"machines/DistillationTower"         ,/*IN-OUT-MIN-ITEM=*/ 1, 3, 0,/*IN-OUT-MIN-FLUID=*/ 1, 9, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	, CryoDistillationTower     = new RecipeMap                     (null, "gt.recipe.cryodistillationtower"        , "Cryo Distillation Tower"         , null, 0, 1, RES_PATH_GUI+"machines/CryoDistillationTower"     ,/*IN-OUT-MIN-ITEM=*/ 1, 3, 0,/*IN-OUT-MIN-FLUID=*/ 1, 9, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	, SteamCracking             = new RecipeMap                     (null, "gt.recipe.steamcracking"                , "Steam Cracking"                  , null, 0, 1, RES_PATH_GUI+"machines/SteamCracking"             ,/*IN-OUT-MIN-ITEM=*/ 1, 3, 0,/*IN-OUT-MIN-FLUID=*/ 2, 9, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, CatalyticCracking         = new RecipeMap                     (null, "gt.recipe.catalyticcracking"            , "Catalytic Cracking"              , null, 0, 1, RES_PATH_GUI+"machines/CatalyticCracking"         ,/*IN-OUT-MIN-ITEM=*/ 1, 3, 0,/*IN-OUT-MIN-FLUID=*/ 2, 9, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Fermenter                 = new RecipeMap                     (null, "gt.recipe.fermenter"                    , "Fermenter"                       , null, 0, 1, RES_PATH_GUI+"machines/Fermenter"                 ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Distillery                = new RecipeMap                     (null, "gt.recipe.distillery"                   , "Distillery"                      , null, 0, 1, RES_PATH_GUI+"machines/Distillery"                ,/*IN-OUT-MIN-ITEM=*/ 1, 2, 1,/*IN-OUT-MIN-FLUID=*/ 1, 2, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	, Drying                    = new RecipeMap                     (null, "gt.recipe.drying"                       , "Dryer"                           , null, 0, 1, RES_PATH_GUI+"machines/Dryer"                     ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 0,/*IN-OUT-MIN-FLUID=*/ 1, 3, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Coagulator                = new RecipeMap                     (null, "gt.recipe.coagulator"                   , "Coagulator"                      , null, 0, 1, RES_PATH_GUI+"machines/Coagulator"                ,/*IN-OUT-MIN-ITEM=*/ 0, 1, 0,/*IN-OUT-MIN-FLUID=*/ 1, 0, 1,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, CrystallisationCrucible   = new RecipeMap                     (null, "gt.recipe.crystallisationcrucible"      , "Crystallisation Crucible"        , null, 0, 1, RES_PATH_GUI+"machines/CrystallisationCrucible"   ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 3, 0, 1,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Mixer                     = new RecipeMap                     (null, "gt.recipe.mixer"                        , "Mixer"                           , null, 0, 1, RES_PATH_GUI+"machines/Mixer"                     ,/*IN-OUT-MIN-ITEM=*/ 6, 1, 0,/*IN-OUT-MIN-FLUID=*/ 6, 2, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, HeatMixer                 = Mixer
+	, BurnMixer                 = new RecipeMap                     (null, "gt.recipe.burnmixer"                    , "Burner Mixer"                    , null, 0, 1, RES_PATH_GUI+"machines/BurnMixer"                 ,/*IN-OUT-MIN-ITEM=*/ 6, 1, 0,/*IN-OUT-MIN-FLUID=*/ 6, 2, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, CryoMixer                 = new RecipeMap                     (null, "gt.recipe.cryomixer"                    , "Cryo Mixer"                      , null, 0, 1, RES_PATH_GUI+"machines/CryoMixer"                 ,/*IN-OUT-MIN-ITEM=*/ 6, 1, 0,/*IN-OUT-MIN-FLUID=*/ 6, 2, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, CokeOven                  = new RecipeMap                     (null, "gt.recipe.cokeoven"                     , "Coke Oven"                       , null, 0, 1, RES_PATH_GUI+"machines/CokeOven"                  ,/*IN-OUT-MIN-ITEM=*/ 1, 9, 1,/*IN-OUT-MIN-FLUID=*/ 0, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Roasting                  = new RecipeMap                     (null, "gt.recipe.roaster"                      , "Roaster"                         , null, 0, 1, RES_PATH_GUI+"machines/Roaster"                   ,/*IN-OUT-MIN-ITEM=*/ 1, 3, 1,/*IN-OUT-MIN-FLUID=*/ 1, 1, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Bath                      = new RecipeMapBath                 (null, "gt.recipe.bath"                         , "Bath"                            , null, 0, 1, RES_PATH_GUI+"machines/Bath"                      ,/*IN-OUT-MIN-ITEM=*/ 6, 6, 1,/*IN-OUT-MIN-FLUID=*/ 1, 3, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Sluice                    = new RecipeMap                     (null, "gt.recipe.sluice"                       , "Sluice"                          , null, 0, 1, RES_PATH_GUI+"machines/Sluice"                    ,/*IN-OUT-MIN-ITEM=*/ 1, 9, 1,/*IN-OUT-MIN-FLUID=*/ 1, 1, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, MagneticSeparator         = new RecipeMap                     (null, "gt.recipe.magneticseparator"            , "Magnetic Separator"              , null, 0, 1, RES_PATH_GUI+"machines/MagneticSeparator"         ,/*IN-OUT-MIN-ITEM=*/ 1, 6, 0,/*IN-OUT-MIN-FLUID=*/ 1, 6, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Sifting                   = new RecipeMap                     (null, "gt.recipe.sifter"                       , "Sifter"                          , null, 2, 1, RES_PATH_GUI+"machines/Sifter"                    ,/*IN-OUT-MIN-ITEM=*/ 1,12, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	
+	, Calciner                  = new RecipeMap                     (null, "gt.recipe.calciner"                     , "Calciner"                        , null, 0, 1, RES_PATH_GUI+"machines/Calciner"                  ,/*IN-OUT-MIN-ITEM=*/ 3, 3, 0,/*IN-OUT-MIN-FLUID=*/ 3, 3, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, ImplosionCompressor       = new RecipeMap                     (null, "gt.recipe.implosioncompressor"          , "Implosion Compressor"            , null, 0, 1, RES_PATH_GUI+"machines/ImplosionCompressor"       ,/*IN-OUT-MIN-ITEM=*/ 3, 3, 3,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Compressor                = new RecipeMap                     (null, "gt.recipe.compressor"                   , "Compressor"                      , null, 0, 1, RES_PATH_GUI+"machines/Compressor"                ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Injector                  = new RecipeMap                     (null, "gt.recipe.injector"                     , "Injector"                        , null, 0, 1, RES_PATH_GUI+"machines/Injector"                  ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 0,/*IN-OUT-MIN-FLUID=*/ 2, 1, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Loom                      = new RecipeMap                     (null, "gt.recipe.loom"                         , "Loom"                            , null, 0, 1, RES_PATH_GUI+"machines/Loom"                      ,/*IN-OUT-MIN-ITEM=*/ 6, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Laminator                 = new RecipeMap                     (null, "gt.recipe.laminator"                    , "Laminator"                       , null, 0, 1, RES_PATH_GUI+"machines/Laminator"                 ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Autoclave                 = new RecipeMap                     (null, "gt.recipe.autoclave"                    , "Autoclave"                       , null, 0, 1, RES_PATH_GUI+"machines/Autoclave"                 ,/*IN-OUT-MIN-ITEM=*/ 2, 3, 2,/*IN-OUT-MIN-FLUID=*/ 1, 1, 1,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Freezer                   = new RecipeMap                     (null, "gt.recipe.freezer"                      , "Freezer"                         , null, 0, 1, RES_PATH_GUI+"machines/Freezer"                   ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Polarizer                 = new RecipeMap                     (null, "gt.recipe.polarizer"                    , "Polarizer"                       , null, 0, 1, RES_PATH_GUI+"machines/Polarizer"                 ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Lightning                 = new RecipeMap                     (null, "gt.recipe.lightning"                    , "Lightning Processor"             , null, 0, 1, RES_PATH_GUI+"machines/Lightning"                 ,/*IN-OUT-MIN-ITEM=*/ 6, 6, 0,/*IN-OUT-MIN-FLUID=*/ 6, 6, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	
+	, Slicer                    = new RecipeMap                     (null, "gt.recipe.slicer"                       , "Slicer"                          , null, 0, 1, RES_PATH_GUI+"machines/Slicer"                    ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Lathe                     = new RecipeMap                     (null, "gt.recipe.lathe"                        , "Lathe"                           , null, 0, 1, RES_PATH_GUI+"machines/Lathe"                     ,/*IN-OUT-MIN-ITEM=*/ 1, 2, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, PressureWasher            = new RecipeMap                     (null, "gt.recipe.pressurewasher"               , "Pressure Washer"                 , null, 0, 1, RES_PATH_GUI+"machines/PressureWasher"            ,/*IN-OUT-MIN-ITEM=*/ 1, 2, 1,/*IN-OUT-MIN-FLUID=*/ 1, 0, 1,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T), Debarker = PressureWasher
+	, Press                     = new RecipeMapFormingPress         (null, "gt.recipe.press"                        , "Press"                           , null, 0, 1, RES_PATH_GUI+"machines/Press"                     ,/*IN-OUT-MIN-ITEM=*/ 3, 1, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	
+	, Squeezer                  = new RecipeMap                     (null, "gt.recipe.squeezer"                     , "Squeezer"                        , null, 0, 1, RES_PATH_GUI+"machines/Squeezer"                  ,/*IN-OUT-MIN-ITEM=*/ 1, 2, 1,/*IN-OUT-MIN-FLUID=*/ 0, 1, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Juicer                    = new RecipeMap                     (null, "gt.recipe.juicer"                       , "Juicer"                          , null, 0, 1, RES_PATH_GUI+"machines/Juicer"                    ,/*IN-OUT-MIN-ITEM=*/ 1, 3, 1,/*IN-OUT-MIN-FLUID=*/ 0, 1, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Furnace                   = new RecipeMapFurnace              (null, "mc.recipe.furnace"                      , "Furnace"                         , "smelting", 0, 1, RES_PATH_GUI+"machines/Oven"                ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, F, T, F, F, F)
+	, Microwave                 = new RecipeMapMicrowave            (null, "gt.recipe.microwave"                    , "Microwave"                       , "smelting", 0, 1, RES_PATH_GUI+"machines/Oven"                ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, F, T, F, F, F)
+	, Cooking                   = new RecipeMap                     (null, "gt.recipe.cooker"                       , "Cooker"                          , null, 0, 1, RES_PATH_GUI+"machines/Cooker"                    ,/*IN-OUT-MIN-ITEM=*/ 9, 1, 1,/*IN-OUT-MIN-FLUID=*/ 3, 1, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, BumbleQueens              = new RecipeMap                     (null, "gt.recipe.bumblequeen"                  , "Bumblebee Queen"                 , null, 0, 1, RES_PATH_GUI+"machines/Default"                   ,/*IN-OUT-MIN-ITEM=*/ 2, 6, 0,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , F, T, F, T, F, T, T)
+	, Bumblelyzer               = new RecipeMapBumblelyzer          (null, "gt.recipe.bumblelyzer"                  , "Bumblelyzer"                     , null, 0, 1, RES_PATH_GUI+"machines/Bumblelyzer"               ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 0,/*IN-OUT-MIN-FLUID=*/ 1, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Trees                     = new RecipeMap                     (null, "gt.recipe.trees"                        , "Family Tree"                     , null, 0, 1, RES_PATH_GUI+"machines/FamilyTree"                ,/*IN-OUT-MIN-ITEM=*/ 3,12, 0,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , F, T, F, F, F, T, T)
+	, Plantalyzer               = new RecipeMapPlantalyzer          (null, "gt.recipe.plantalyzer"                  , "Plantalyzer"                     , null, 0, 1, RES_PATH_GUI+"machines/Plantalyzer"               ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 0,/*IN-OUT-MIN-FLUID=*/ 1, 0, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	
+	, Wiremill                  = new RecipeMap                     (null, "gt.recipe.wiremill"                     , "Wiremill"                        , null, 0, 1, RES_PATH_GUI+"machines/Wiremill"                  ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, ClusterMill               = new RecipeMap                     (null, "gt.recipe.clustermill"                  , "Cluster Mill"                    , null, 0, 1, RES_PATH_GUI+"machines/ClusterMill"               ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, RollingMill               = new RecipeMap                     (null, "gt.recipe.rollingmill"                  , "Rolling Mill"                    , null, 0, 1, RES_PATH_GUI+"machines/RollingMill"               ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, RollBender                = new RecipeMap                     (null, "gt.recipe.rollbender"                   , "Roll Bender"                     , null, 0, 1, RES_PATH_GUI+"machines/RollBender"                ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, RollFormer                = new RecipeMap                     (null, "gt.recipe.rollformer"                   , "Roll Former"                     , null, 0, 1, RES_PATH_GUI+"machines/RollFormer"                ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, LaserEngraver             = new RecipeMap                     (null, "gt.recipe.laserengraver"                , "Precision Laser Engraver"        , null, 0, 1, RES_PATH_GUI+"machines/LaserEngraver"             ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Welder                    = new RecipeMap                     (null, "gt.recipe.welder"                       , "Welding Machine"                 , null, 0, 1, RES_PATH_GUI+"machines/Welder"                    ,/*IN-OUT-MIN-ITEM=*/ 9, 1, 2,/*IN-OUT-MIN-FLUID=*/ 1, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Anvil                     = new RecipeMap                     (null, "gt.recipe.anvil"                        , "Anvil"                           , null, 2, 1, RES_PATH_GUI+"machines/Anvil"                     ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, AnvilBendSmall            = new RecipeMap                     (null, "gt.recipe.anvil.bend.small"             , "Anvil Bending (Small)"           , null, 2, 1, RES_PATH_GUI+"machines/AnvilBendingSmall"         ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, AnvilBendBig              = new RecipeMap                     (null, "gt.recipe.anvil.bend.big"               , "Anvil Bending (Big)"             , null, 2, 1, RES_PATH_GUI+"machines/AnvilBendingBig"           ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	
+	, Centrifuge                = new RecipeMap                     (null, "gt.recipe.centrifuge"                   , "Centrifuge"                      , null, 0, 1, RES_PATH_GUI+"machines/Centrifuge"                ,/*IN-OUT-MIN-ITEM=*/ 1, 6, 0,/*IN-OUT-MIN-FLUID=*/ 1, 6, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Electrolyzer              = new RecipeMap                     (null, "gt.recipe.electrolyzer"                 , "Electrolyzer"                    , null, 0, 1, RES_PATH_GUI+"machines/Electrolyzer"              ,/*IN-OUT-MIN-ITEM=*/ 2, 6, 1,/*IN-OUT-MIN-FLUID=*/ 2, 6, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	
+	, ToolHeads                 = new RecipeMap                     (null, "gt.recipe.toolhead"                     , "Craft Head on Handle"            , null, 0, 1, RES_PATH_GUI+"machines/Crafting2By2"              ,/*IN-OUT-MIN-ITEM=*/ 4, 1, 0,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 0, ""                    ,    1, ""      , F, T, F, F, F, F, F)
+	, Sharpening                = new RecipeMap                     (null, "gt.recipe.sharpener"                    , "Sharpener"                       , null, 0, 1, RES_PATH_GUI+"machines/Sharpener"                 ,/*IN-OUT-MIN-ITEM=*/ 1, 2, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	
+	, CrucibleAlloying          = new RecipeMap                     (null, "gt.recipe.cruciblealloying"             , "Combination Smelting"            , null, 0, 1, RES_PATH_GUI+"machines/Alloying"                  ,/*IN-OUT-MIN-ITEM=*/12,12, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, "Temperature: "       ,    1, " K"    , T, T, F, T, F, T, T)
+	, CrucibleSmelting          = new RecipeMapCrucible             (null, "gt.recipe.cruciblesmelting"             , "Crucible Smelting"               , null, 0, 1, RES_PATH_GUI+"machines/Default"                   ,/*IN-OUT-MIN-ITEM=*/ 6, 6, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, "Temperature: "       ,    1, " K"    , T, T, F, T, F, T, T)
+	, Cutter                    = new RecipeMap                     (null, "gt.recipe.cutter"                       , "Cutter"                          , null, 0, 1, RES_PATH_GUI+"machines/Cutter"                    ,/*IN-OUT-MIN-ITEM=*/ 1, 3, 1,/*IN-OUT-MIN-FLUID=*/ 1, 0, 1,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Melter                    = new RecipeMap                     (null, "gt.recipe.melter"                       , "Melter"                          , null, 0, 1, RES_PATH_GUI+"machines/Melter"                    ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 0,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Smelter                   = new RecipeMap                     (null, "gt.recipe.smelter"                      , "Smelter"                         , null, 0, 1, RES_PATH_GUI+"machines/Smelter"                   ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 0,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Mortar                    = new RecipeMap                     (null, "gt.recipe.mortar"                       , "Mortar"                          , null, 0, 1, RES_PATH_GUI+"machines/Mortar"                    ,/*IN-OUT-MIN-ITEM=*/ 1, 2, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Shredder                  = new RecipeMapShredder             (null, "gt.recipe.shredder"                     , "Shredder"                        , null, 0, 1, RES_PATH_GUI+"machines/Shredder"                  ,/*IN-OUT-MIN-ITEM=*/ 1,12, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Crusher                   = new RecipeMap                     (null, "gt.recipe.crusher"                      , "Crusher"                         , null, 0, 1, RES_PATH_GUI+"machines/Crusher"                   ,/*IN-OUT-MIN-ITEM=*/ 1,12, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Extruder                  = new RecipeMap                     (null, "gt.recipe.extruder"                     , "Extruder"                        , null, 0, 1, RES_PATH_GUI+"machines/Extruder"                  ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Hammer                    = new RecipeMapHammer               (null, "gt.recipe.hammer"                       , "Hammer"                          , null, 6, 3, RES_PATH_GUI+"machines/Hammer"                    ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Chisel                    = new RecipeMapChisel               (null, "gt.recipe.chisel"                       , "Chisel"                          , null, 0, 1, RES_PATH_GUI+"machines/Chisel"                    ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, F, T, T, F, T, T)
+	
+	, Nanofab                   = new RecipeMap                     (null, "gt.recipe.nanofab"                      , "Nanoscale Fabricator"            , null, 0, 1, RES_PATH_GUI+"machines/Nanofab"                   ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 0,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Printer                   = new RecipeMapPrinter              (null, "gt.recipe.printer"                      , "Printer"                         , null, 0, 1, RES_PATH_GUI+"machines/Printer"                   ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 1,/*IN-OUT-MIN-FLUID=*/ 6, 0, 1,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	, ScannerVisuals            = new RecipeMapScannerVisuals       (null, "gt.recipe.scannervisuals"               , "Scanner (Visuals)"               , null, 0, 1, RES_PATH_GUI+"machines/ScannerVisuals"            ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, ScannerMolecular          = new RecipeMapScannerMolecular     (null, "gt.recipe.scannermolecular"             , "Molecular Scanner"               , null, 0, 1, RES_PATH_GUI+"machines/ScannerMolecular"          ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	, Massfab                   = new RecipeMap                     (null, "gt.recipe.massfab"                      , "Matter Fabricator"               , null, 0, 1, RES_PATH_GUI+"machines/Massfab"                   ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 0,/*IN-OUT-MIN-FLUID=*/ 1, 2, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	, Replicator                = new RecipeMapReplicator           (null, "gt.recipe.replicator"                   , "Matter Replicator"               , null, 0, 1, RES_PATH_GUI+"machines/Replicator"                ,/*IN-OUT-MIN-ITEM=*/ 3, 3, 1,/*IN-OUT-MIN-FLUID=*/ 3, 3, 0,/*MIN*/ 2,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	, Fusion                    = new RecipeMap                     (null, "gt.recipe.fusionreactor"                , "Fusion Reactor"                  , null, 0, 1, RES_PATH_GUI+"machines/Fusion"                    ,/*IN-OUT-MIN-ITEM=*/ 2, 6, 1,/*IN-OUT-MIN-FLUID=*/ 2, 6, 0,/*MIN*/ 2,/*AMP=*/ 1, "Start: "             ,    1, " LU"   , T, T, T, T, F, T, T)
+	
+	, Canner                    = new RecipeMapFluidCanner          (null, "gt.recipe.canner"                       , "Canning Machine"                 , null, 0, 1, RES_PATH_GUI+"machines/Canner"                    ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 1,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Boxinator                 = new RecipeMap                     (null, "gt.recipe.boxinator"                    , "Boxinator"                       , null, 0, 1, RES_PATH_GUI+"machines/Boxinator"                 ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 2,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Unboxinator               = new RecipeMapUnboxinator          (null, "gt.recipe.unboxinator"                  , "Unboxinator"                     , null, 0, 1, RES_PATH_GUI+"machines/Unboxinator"               ,/*IN-OUT-MIN-ITEM=*/ 1,12, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, T, T)
+	, Generifier                = new RecipeMap                     (null, "gt.recipe.generifier"                   , "Generifier"                      , null, 0, 1, RES_PATH_GUI+"machines/Generifier"                ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 0,/*IN-OUT-MIN-FLUID=*/ 1, 1, 0,/*MIN*/ 1,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, T, T, F, F, F)
+	
+	, BedrockOreList            = new RecipeMap                     (null, "gt.recipe.bedrockorelist"               , "Bedrock Drill"                   , null, 0, 1, RES_PATH_GUI+"machines/BedrockOreList"            ,/*IN-OUT-MIN-ITEM=*/ 1,12, 1,/*IN-OUT-MIN-FLUID=*/ 1, 0, 1,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, F, T, F, F, F)
+	, ByProductList             = new RecipeMap                     (null, "gt.recipe.byproductlist"                , "Ore Byproduct List"              , null, 0, 1, RES_PATH_GUI+"machines/OreByproducts"             ,/*IN-OUT-MIN-ITEM=*/ 6,12, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, T, F, T, F, T, T)
+	
+	// Mostly unused Stuff from olden times
+	, BlastFurnace              = new RecipeMap                     (null, "gt.recipe.blastfurnace"                 , "Blast Furnace"                   , null, 0, 1, RES_PATH_GUI+"machines/Default"                   ,/*IN-OUT-MIN-ITEM=*/ 2, 2, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, "Heat Capacity: "     ,    1, " K"    , F, F/*T*/, F/*T*/, T, F, T, T)
+	, VacuumFreezer             = new RecipeMap                     (null, "gt.recipe.vacuumfreezer"                , "Vacuum Freezer"                  , null, 0, 1, RES_PATH_GUI+"machines/Default"                   ,/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, F/*T*/, F/*T*/, T, F, T, T)
+	, Assembler                 = new RecipeMapAssembler            (null, "gt.recipe.assembler"                    , "Assembler"                       , null, 0, 1, RES_PATH_GUI+"machines/Assembler"                 ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 1,/*IN-OUT-MIN-FLUID=*/ 1, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, F/*T*/, F/*T*/, T, F, T, T)
+	, CNC                       = new RecipeMap                     (null, "gt.recipe.cncmachine"                   , "CNC Machine"                     , null, 0, 1, RES_PATH_GUI+"machines/Default"                   ,/*IN-OUT-MIN-ITEM=*/ 2, 1, 2,/*IN-OUT-MIN-FLUID=*/ 1, 0, 1,/*MIN*/ 0,/*AMP=*/ 1, ""                    ,    1, ""      , T, F/*T*/, F/*T*/, T, F, T, T)
+	;
+	
+	// For Compatibility with old API Stuff. Well mainly for preventing crashes.
+	static {
+		RecipeMap.sFurnaceRecipes=Furnace;RecipeMap.sMicrowaveRecipes=Microwave;RecipeMap.sFurnaceFuel=FM.Furnace;RecipeMap.sByProductList=ByProductList;RecipeMap.sCrucibleSmelting=CrucibleSmelting;RecipeMap.sCrucibleAlloying=CrucibleAlloying;RecipeMap.sGenerifierRecipes=Generifier;RecipeMap.sSharpeningRecipes=Sharpening;RecipeMap.sSifterRecipes=Sifting;
+		RecipeMap.sHammerRecipes=Hammer;RecipeMap.sChiselRecipes=Chisel;RecipeMap.sShredderRecipes=Shredder;RecipeMap.sCrusherRecipes=Crusher;RecipeMap.sLatheRecipes=Lathe;RecipeMap.sCutterRecipes=Cutter;RecipeMap.sCoagulatorRecipes=Coagulator;RecipeMap.sSqueezerRecipes=Squeezer;RecipeMap.sJuicerRecipes=Juicer;RecipeMap.sMortarRecipes=Mortar;
+		RecipeMap.sCompressorRecipes=Compressor;RecipeMap.sCentrifugeRecipes=Centrifuge;RecipeMap.sElectrolyzerRecipes=Electrolyzer;RecipeMap.sRollingMillRecipes=RollingMill;RecipeMap.sRollBenderRecipes=RollBender;RecipeMap.sRollFormerRecipes=RollFormer;RecipeMap.sClusterMillRecipes=ClusterMill;RecipeMap.sWiremillRecipes=Wiremill;
+		RecipeMap.sMixerRecipes=Mixer;RecipeMap.sCannerRecipes=Canner;RecipeMap.sInjectorRecipes=Injector;RecipeMap.sRoastingRecipes=Roasting;RecipeMap.sDryingRecipes=Drying;RecipeMap.sFermenterRecipes=Fermenter;RecipeMap.sDistilleryRecipes=Distillery;RecipeMap.sExtruderRecipes=Extruder;RecipeMap.sPolarizerRecipes=Polarizer;RecipeMap.sLoomRecipes=Loom;
+		RecipeMap.sCookingRecipes=Cooking;RecipeMap.sPressRecipes=Press;RecipeMap.sBathRecipes=Bath;RecipeMap.sSmelterRecipes=Smelter;RecipeMap.sLaserEngraverRecipes=LaserEngraver;RecipeMap.sWelderRecipes=Welder;RecipeMap.sCrystallisationCrucibleRecipes=CrystallisationCrucible;RecipeMap.sScannerVisualsRecipes=ScannerVisuals;RecipeMap.sPrinterRecipes=Printer;
+		RecipeMap.sSluiceRecipes=Sluice;RecipeMap.sMagneticSeparatorRecipes=MagneticSeparator;RecipeMap.sAutocrafterRecipes=Autocrafter;RecipeMap.sMassfabRecipes=Massfab;RecipeMap.sScannerMolecularRecipes=ScannerMolecular;RecipeMap.sReplicatorRecipes=Replicator;RecipeMap.sSlicerRecipes=Slicer;RecipeMap.sCokeOvenRecipes=CokeOven;
+		RecipeMap.sDistillationTowerRecipes=DistillationTower;RecipeMap.sAutoclaveRecipes=Autoclave;RecipeMap.sBoxinatorRecipes=Boxinator;RecipeMap.sUnboxinatorRecipes=Unboxinator;RecipeMap.sFusionRecipes=Fusion;RecipeMap.sBlastRecipes=BlastFurnace;RecipeMap.sImplosionRecipes=ImplosionCompressor;RecipeMap.sVacuumRecipes=VacuumFreezer;
+		RecipeMap.sAssemblerRecipes=Assembler;RecipeMap.sCNCRecipes=CNC;RecipeMap.sFuelsBurn=FM.Burn;RecipeMap.sFuelsGas=FM.Gas;RecipeMap.sFuelsHot=FM.Hot;RecipeMap.sFuelsPlasma=FM.Plasma;RecipeMap.sFuelsEngine=FM.Engine;RecipeMap.sFuelsTurbine=FM.Turbine;RecipeMap.sFuelsMagic=FM.Magic;
+		
+		Furnace.mRecipeMachineList.add(ST.make(Blocks.furnace, 1, W));
+		Furnace.mRecipeMachineList.add(ST.make(Blocks.lit_furnace, 1, W));
+		ToolHeads.mRecipeMachineList.add(ST.make(Blocks.crafting_table, 1, W));
+		
+		RecipeMap.RECIPE_MAPS.put("gt.recipe.debarker", PressureWasher);
+	}
+	
+	public static boolean generify(ItemStack aStack1, ItemStack aStack2) {
+		if (ST.invalid(aStack1) || ST.invalid(aStack2)) return F;
+		return RM.Generifier.addRecipe1(F, T, F, F, F, 0, 1, aStack1, aStack2) != null;
+	}
+	public static boolean genericycle(ItemStack... aStacks) {
+		ArrayListNoNulls<ItemStack> aStackList = ST.arraylist(aStacks);
+		for (int i = 0; i < aStackList.size(); i++) if (ST.invalid(aStackList.get(i))) aStackList.remove(i--);
+		if (aStackList.size() < 2) return F;
+		for (int i = 0; i < aStackList.size(); i++) generify(aStackList.get(i), aStackList.get((i+1) % aStackList.size()));
+		return T;
+	}
+	
+	public static boolean generify(FluidStack aFluid1, FluidStack aFluid2) {
+		if (aFluid1 == null || aFluid2 == null) return F;
+		return RM.Generifier.addRecipe0(F, T, F, F, F, 0, 1, aFluid1, aFluid2, ZL_IS) != null;
+	}
+	public static boolean genericycle(FluidStack... aFluids) {
+		ArrayListNoNulls<FluidStack> aFluidList = new ArrayListNoNulls<>(F, aFluids);
+		for (int i = 0; i < aFluidList.size(); i++) if (FL.invalid(aFluidList.get(i))) aFluidList.remove(i--);
+		if (aFluidList.size() < 2) return F;
+		for (int i = 0; i < aFluidList.size(); i++) generify(aFluidList.get(i), aFluidList.get((i+1) % aFluidList.size()));
+		return T;
+	}
+	
+	public static boolean box(ItemStack aEmpty, ItemStack aFull, ItemStack aContent) {
+		if (ST.invalid(aEmpty) || ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Boxinator  .addRecipe2(T, 16, 16, aContent, aEmpty, aFull);
+		return T;
+	}
+	public static boolean unbox(ItemStack aEmpty, ItemStack aFull, ItemStack aContent) {
+		if (ST.invalid(aEmpty) || ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Unboxinator.addRecipe1(T, 16, 16, aFull, aContent, aEmpty);
+		return T;
+	}
+	public static boolean boxunbox(ItemStack aEmpty, ItemStack aFull, ItemStack aContent) {
+		if (ST.invalid(aEmpty) || ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Unboxinator.addRecipe1(T, 16, 16, aFull, aContent, aEmpty);
+		Boxinator  .addRecipe2(T, 16, 16, aContent, aEmpty, aFull);
+		return T;
+	}
+	
+	
+	public static boolean pack(ItemStack aContent, ItemStack aFull) {
+		if (ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Boxinator.addRecipe2(T, 16, 16, aContent, ST.tag(aContent.stackSize), aFull);
+		return T;
+	}
+	public static boolean pack(ItemStack aContent, long aAmount, ItemStack aFull) {
+		if (ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Boxinator.addRecipe2(T, 16, 16, ST.amount(aAmount, aContent), ST.tag(aAmount), aFull);
+		return T;
+	}
+	public static boolean unpack(ItemStack aFull, ItemStack aContent) {
+		if (ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Unboxinator.addRecipe1(T, 16, 16, aFull, aContent);
+		ic2_extractor(aFull, aContent);
+		return T;
+	}
+	public static boolean packunpack(ItemStack aContent, ItemStack aFull) {
+		return pack(aContent, aFull) && unpack(aFull, aContent);
+	}
+	public static boolean packunpack(ItemStack aContent, long aAmount, ItemStack aFull) {
+		return pack(aContent, aAmount, aFull) && unpack(aFull, ST.amount(aAmount, aContent));
+	}
+	
+	
+	public static boolean compact(ItemStack aContent, ItemStack aFull) {
+		if (ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Boxinator .addRecipe2(T, 16, 16, aContent, ST.tag(aContent.stackSize), aFull);
+		Compressor.addRecipe1(T, 16, 16, aContent, aFull);
+		ic2_compressor(aContent, aFull);
+		return T;
+	}
+	public static boolean compact(ItemStack aContent, long aAmount, ItemStack aFull) {
+		if (ST.invalid(aFull) || ST.invalid(aContent)) return F;
+		Boxinator .addRecipe2(T, 16, 16, ST.amount(aAmount, aContent), ST.tag(aAmount), aFull);
+		Compressor.addRecipe1(T, 16, 16, ST.amount(aAmount, aContent), aFull);
+		ic2_compressor(ST.amount(aAmount, aContent), aFull);
+		return T;
+	}
+	public static boolean smash(ItemStack aObject, ItemStack aOutput) {
+		if (ST.invalid(aObject) || ST.invalid(aOutput)) return F;
+		Hammer .addRecipe1(T, 16, 16, aObject, aOutput);
+		Crusher.addRecipe1(T, 16, 32, aObject, aOutput);
+		return T;
+	}
+	public static boolean smash(ItemStack aObject, ItemStack aOutput, long aAmount) {
+		if (ST.invalid(aObject) || ST.invalid(aOutput)) return F;
+		Hammer .addRecipe1(T, 16, 16, aObject, ST.amount(aAmount, aOutput));
+		Crusher.addRecipe1(T, 16, 32, aObject, ST.amount(aAmount, aOutput));
+		return T;
+	}
+	public static boolean compactsmash(ItemStack aContent, ItemStack aFull) {
+		return compact(aContent, aFull) && smash(aFull, aContent);
+	}
+	public static boolean compactsmash(ItemStack aContent, long aAmount, ItemStack aFull) {
+		return compact(aContent, aAmount, aFull) && smash(aFull, aContent, aAmount);
+	}
+	public static boolean compactunpack(ItemStack aContent, ItemStack aFull) {
+		return compact(aContent, aFull) && unpack(aFull, aContent);
+	}
+	public static boolean compactunpack(ItemStack aContent, long aAmount, ItemStack aFull) {
+		return compact(aContent, aAmount, aFull) && unpack(aFull, ST.amount(aAmount, aContent));
+	}
+	
+	
+	public static boolean glowstone(ItemStack aBlock, OreDictMaterial aMaterial) {
+		if (ST.invalid(aBlock)) return F;
+		RM.compactsmash(OP.dust.mat(aMaterial, 4), aBlock);
+		RM.compact     (OP.gem .mat(aMaterial, 4), aBlock);
+		RM.sawing      (16, 64, F, 25, aBlock, OP.plateGem.mat(aMaterial, 4));
+		RM.lathing     (16, 64, aBlock, OP.stickLong.mat(aMaterial, 2), OP.dust.mat(aMaterial, 2));
+		RM.generify    (aBlock, ST.make(Blocks.glowstone, 1, 0));
+		return T;
+	}
+	
+	public static boolean moss(ItemStack aClean, ItemStack aMossy) {
+		return cleanmoss(aClean, aMossy) && growmoss(aClean, aMossy);
+	}
+	public static boolean cleanmoss(ItemStack aClean, ItemStack aMossy) {
+		if (ST.invalid(aClean) || ST.invalid(aMossy)) return F;
+		pressurewash(aMossy, aClean);
+		return T;
+	}
+	public static boolean growmoss(ItemStack aClean, ItemStack aMossy) {
+		if (ST.invalid(aClean) || ST.invalid(aMossy)) return F;
+		CR.shapeless(aMossy, CR.DEF_NCC, new Object[] {aClean, OD.itemMoss});
+		CR.shapeless(aMossy, CR.DEF_NCC, new Object[] {aClean, Blocks.vine});
+		return T;
+	}
+	
+	public static ItemStack stoneshapes(final OreDictMaterial aMat, boolean aIsCobbleTarget, final ItemStack aBlock, final ItemStack aStair, final ItemStack aSlabs, final ItemStack aWalls, final ItemStack aPillar) {
+		
+		if (ST.valid(aBlock)) {
+			if (aMat != null) {
+				RM.Shredder.addRecipe1(T, 16, 16, aBlock, OP.blockDust.mat(aMat, 1));
+				
+				if (aIsCobbleTarget) {
+					RM.pack(OP.rockGt.mat(aMat, 4), aBlock);
+					CR.shaped(aBlock, CR.DEF_NCC, "BB", "BB", 'B', OP.rockGt.dat(aMat));
+				}
+			}
+			if (ST.valid(aStair)) {
+				CR.shaped(ST.amount(4, aStair), CR.DEF_NCC_MIR, "sB", "BB", 'B', aBlock);
+			}
+			if (ST.valid(aSlabs)) {
+				CR.shaped(ST.amount(2, aSlabs), CR.DEF_NCC, "sB", 'B', aBlock);
+				RM.sawing(16, 72, F, 3, aBlock, ST.amount(2, aSlabs));
+			}
+			if (ST.valid(aWalls)) {
+				CR.shaped(ST.amount(4, aWalls), CR.DEF_NCC, " B ", "BBB", 'B', aBlock);
+			}
+			if (ST.valid(aPillar)) {
+				CR.shaped(ST.amount(2, aPillar), CR.DEF_NCC, " B", " B", 'B', aBlock);
+			}
+		}
+		
+		if (ST.valid(aStair)) {
+			CR.remout(aStair);
+			
+			if (aMat != null) {
+				RM.Shredder.addRecipe1(T, 16, 16, aStair, OP.dustSmall.mat(aMat, 27));
+				
+				if (aIsCobbleTarget) {
+					RM.pack(OP.rockGt.mat(aMat, 3), aStair);
+					CR.shaped(aStair, CR.DEF_NCC_MIR, " B", "BB", 'B', OP.rockGt.dat(aMat));
+				}
+			}
+			if (ST.valid(aSlabs)) {
+				CR.shaped(aSlabs, CR.DEF_NCC, "sB", 'B', aStair);
+				RM.sawing(16, 72, F, 3, aStair, aSlabs, aMat == null ? NI : OP.dustSmall.mat(aMat, 9));
+			}
+		}
+		
+		if (ST.valid(aSlabs)) {
+			CR.remout(aSlabs);
+			
+			if (aMat != null) {
+				RM.Shredder.addRecipe1(T, 16, 16, aSlabs, OP.dustSmall.mat(aMat, 18));
+				
+				if (aIsCobbleTarget) {
+					RM.pack(OP.rockGt.mat(aMat, 2), aSlabs);
+					CR.shaped(aSlabs, CR.DEF_NCC, "BB", 'B', OP.rockGt.dat(aMat));
+				}
+			}
+			if (ST.valid(aStair)) {
+				CR.shaped(ST.amount(2, aStair), CR.DEF_NCC_MIR, "sB", "BB", 'B', aSlabs);
+			}
+		}
+		
+		if (ST.valid(aWalls)) {
+			CR.remout(aWalls);
+			
+			if (aMat != null) {
+				RM.Shredder.addRecipe1(T, 16, 16, aWalls, OP.blockDust.mat(aMat, 1));
+				
+				if (aIsCobbleTarget) {
+					CR.shaped(aWalls, CR.DEF_NCC, " B ", "BBB", 'B', OP.rockGt.dat(aMat));
+				}
+			}
+		}
+		
+		if (ST.valid(aPillar)) {
+			CR.remout(aPillar);
+			
+			if (aMat != null) {
+				RM.Shredder.addRecipe1(T, 16, 16, aPillar, OP.blockDust.mat(aMat, 1));
+				
+				if (aIsCobbleTarget) {
+					CR.shaped(aPillar, CR.DEF_NCC, "BBB", " B ", 'B', OP.rockGt.dat(aMat));
+				}
+			}
+		}
+		
+		return aBlock;
+	}
+	
+	public static boolean stonetypes(final OreDictMaterial aMat, boolean aIsMatTarget, final ItemStack aFourRocks, final ItemStack aDustBlock, final ItemStack aStone, final ItemStack aCobble, final ItemStack aBricks, final ItemStack aCracked, final ItemStack aChiseled, final ItemStack aSmooth, final ItemStack aTiles, final ItemStack aBricks2) {
+		for (ItemStack tStack : ST.array(aStone, aCobble, aBricks, aCracked, aChiseled, aSmooth, aTiles, aBricks2)) if (ST.valid(tStack)) {
+			RM.Shredder.addRecipe1(T, 16, 16, tStack, aDustBlock);
+		}
+		
+		for (ItemStack tStack : ST.array(aStone, aCobble, aSmooth, aDustBlock)) if (ST.valid(tStack)) {
+			if (aMat != null) {
+			RM.Extruder.addRecipe2(F, F, F, F, F, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Plate.get(0), OP.plate.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, F, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Plate_Curved.get(0), OP.plateCurved.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Rod.get(0), OP.stick.mat(aMat, 18));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Rod_Long.get(0), OP.stickLong.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Bolt.get(0), OP.bolt.mat(aMat, 64));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Shovel.get(0), OP.toolHeadRawShovel.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Sword.get(0), OP.toolHeadRawSword.mat(aMat, 4));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Hoe.get(0), OP.toolHeadRawHoe.mat(aMat, 4));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Pickaxe.get(0), OP.toolHeadRawPickaxe.mat(aMat, 3));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Axe.get(0), OP.toolHeadRawAxe.mat(aMat, 3));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Gear.get(0), OP.gearGt.mat(aMat, 2));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Gear_Small.get(0), OP.gearGtSmall.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, F, 16, 32, ST.amount(1, tStack), IL.Shape_Extruder_Hammer.get(0), OP.toolHeadHammer.mat(aMat, 1));
+			RM.Extruder.addRecipe2(F, F, F, F, F, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Plate.get(0), OP.plate.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, F, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Plate_Curved.get(0), OP.plateCurved.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Rod.get(0), OP.stick.mat(aMat, 18));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Rod_Long.get(0), OP.stickLong.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Bolt.get(0), OP.bolt.mat(aMat, 64));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Shovel.get(0), OP.toolHeadRawShovel.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Sword.get(0), OP.toolHeadRawSword.mat(aMat, 4));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Hoe.get(0), OP.toolHeadRawHoe.mat(aMat, 4));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Pickaxe.get(0), OP.toolHeadRawPickaxe.mat(aMat, 3));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Axe.get(0), OP.toolHeadRawAxe.mat(aMat, 3));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Gear.get(0), OP.gearGt.mat(aMat, 2));
+			RM.Extruder.addRecipe2(F, F, F, F, T, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Gear_Small.get(0), OP.gearGtSmall.mat(aMat, 9));
+			RM.Extruder.addRecipe2(F, F, F, F, F, 16, 32, ST.amount(1, tStack), IL.Shape_SimpleEx_Hammer.get(0), OP.toolHeadHammer.mat(aMat, 1));
+			}
+			
+			if (tStack != aDustBlock || aIsMatTarget) {
+				if (ST.valid(aStone)) {
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_Extruder_Block.get(0), aStone);
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_SimpleEx_Block.get(0), aStone);
+				} else if (ST.valid(aSmooth)) {
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_Extruder_Block.get(0), aSmooth);
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_SimpleEx_Block.get(0), aSmooth);
+				}
+				if (ST.valid(aBricks)) {
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_Extruder_Ingot.get(0), aBricks);
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_SimpleEx_Ingot.get(0), aBricks);
+				} else if (ST.valid(aCracked)) {
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_Extruder_Ingot.get(0), aCracked);
+					RM.Extruder.addRecipe2(F, F, F, F, T, 16,  32, ST.amount(1, tStack), IL.Shape_SimpleEx_Ingot.get(0), aCracked);
+				}
+			}
+		}
+		
+		if (ST.valid(aStone)) {
+			RM.generify(aStone, ST.make(Blocks.stone, 1, 0));
+			
+			if (aIsMatTarget && ST.valid(aDustBlock)) {
+				RM.add_smelting(aDustBlock, aStone, F, F, F);
+			}
+			if (ST.valid(aCobble)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aStone, aCobble);
+				RM.Crusher      .addRecipe1(T, 16, 16, aStone, aCobble);
+			} else if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aStone, aFourRocks);
+				RM.Crusher      .addRecipe1(T, 16, 16, aStone, aFourRocks);
+			}
+			if (ST.valid(aBricks)) {
+				CR.shaped(ST.amount(4, aBricks), CR.DEF_REM, "XX", "XX", 'X', aStone );
+			}
+			if (ST.valid(aChiseled)) {
+				if (FL.Mana_TE.exists())
+				RM.Bath         .addRecipe1(T,  0, 16, aStone, FL.Mana_TE.make(1), NF, aChiseled);
+				RM.Chisel       .addRecipe1(T, 16, 16, aStone, aChiseled);
+				CR.shaped(aChiseled, CR.DEF_REM, "y" , "X" , 'X', aStone);
+			}
+			if (ST.valid(aSmooth)) {
+				RM.add_smelting(aStone, aSmooth, T, F, F);
+			}
+			if (ST.valid(aTiles)) {
+				CR.shaped(ST.amount(2, aTiles), CR.DEF_REM, "X ", " X", 'X', aStone);
+			}
+		}
+		
+		if (ST.valid(aCobble)) {
+			RM.generify(aCobble, ST.make(Blocks.cobblestone, 1, 0));
+			if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16,  8000, aCobble, aFourRocks);
+				RM.Crusher      .addRecipe1(T, 16, 16       , aCobble, aFourRocks);
+			}
+			if (aIsMatTarget && aMat != null) {
+				RM.pack(OP.rockGt.mat(aMat, 4), aCobble);
+				CR.shaped(aCobble, CR.DEF_NCC, "BB", "BB", 'B', OP.rockGt.dat(aMat));
+			}
+			if (ST.valid(aStone)) {
+				RM.add_smelting(aCobble, aStone, T, F, F);
+			} else if (ST.valid(aSmooth)) {
+				RM.add_smelting(aCobble, aSmooth, T, F, F);
+			}
+		}
+		
+		if (ST.valid(aBricks)) {
+			CR.remout(aBricks);
+			RM.generify(aBricks, ST.make(Blocks.stonebrick, 1, 0));
+			
+			if (ST.valid(aStone)) {
+				RM.add_smelting(aBricks, aStone, T, F, F);
+			} else if (ST.valid(aSmooth)) {
+				RM.add_smelting(aBricks, aSmooth, T, F, F);
+			}
+			if (ST.valid(aCracked)) {
+				RM.Chisel       .addRecipe1(T, 16, 16, aBricks, aCracked);
+				RM.Hammer       .addRecipe1(T, 16, 16, aBricks, aCracked);
+				RM.Crusher      .addRecipe1(T, 16, 16, aBricks, aCracked);
+				CR.shaped(aCracked, CR.DEF_REM, "h" , "X" , 'X', aBricks);
+				CR.shaped(aCracked, CR.DEF_REM, "y" , "X" , 'X', aBricks);
+			} else if (ST.valid(aCobble)) {
+				RM.Chisel       .addRecipe1(T, 16, 16, aBricks, aCobble);
+				RM.Hammer       .addRecipe1(T, 16, 16, aBricks, aCobble);
+				RM.Crusher      .addRecipe1(T, 16, 16, aBricks, aCobble);
+				CR.shaped(aCobble, CR.DEF_REM, "h" , "X" , 'X', aBricks);
+				CR.shaped(aCobble, CR.DEF_REM, "y" , "X" , 'X', aBricks);
+			} else if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aBricks, aFourRocks);
+				RM.Crusher      .addRecipe1(T, 16, 16, aBricks, aFourRocks);
+				CR.shaped(aFourRocks, CR.DEF_REM, "h" , "X" , 'X', aBricks);
+				CR.shaped(aFourRocks, CR.DEF_REM, "y" , "X" , 'X', aBricks);
+			}
+			if (ST.valid(aBricks2)) {
+				CR.shaped(ST.amount(4, aBricks2), CR.DEF_REM, "XX", "XX", 'X', aBricks);
+			}
+		}
+		
+		if (ST.valid(aCracked)) {
+			CR.remout(aCracked);
+			RM.generify(aCracked, ST.make(Blocks.stonebrick, 1, 2));
+			
+			if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16,  7000, aCracked, aFourRocks);
+			}
+			if (ST.valid(aStone)) {
+				RM.add_smelting(aCracked, aStone, T, F, F);
+			} else if (ST.valid(aSmooth)) {
+				RM.add_smelting(aCracked, aSmooth, T, F, F);
+			}
+			if (ST.valid(aCobble)) {
+				RM.Crusher      .addRecipe1(T, 16, 16, aCracked, aCobble);
+			} else if (ST.valid(aFourRocks)) {
+				RM.Crusher      .addRecipe1(T, 16, 16, aCracked, aFourRocks);
+			}
+		}
+		
+		if (ST.valid(aChiseled)) {
+			CR.remout(aChiseled);
+			RM.generify(aChiseled, ST.make(Blocks.stonebrick, 1, 3));
+			
+			if (ST.valid(aStone)) {
+				RM.add_smelting(aChiseled, aStone, T, F, F);
+			} else if (ST.valid(aSmooth)) {
+				RM.add_smelting(aChiseled, aSmooth, T, F, F);
+			}
+			if (ST.valid(aCobble)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aChiseled, aCobble);
+				RM.Crusher      .addRecipe1(T, 16, 16, aChiseled, aCobble);
+			} else if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aChiseled, aFourRocks);
+				RM.Crusher      .addRecipe1(T, 16, 16, aChiseled, aFourRocks);
+			}
+		}
+		
+		if (ST.valid(aSmooth)) {
+			CR.remout(aSmooth);
+			RM.generify(aSmooth, ST.make(Blocks.double_stone_slab, 1, 8));
+			
+			if (ST.valid(aStone)) {
+				RM.add_smelting(aSmooth, aStone, T, F, F);
+			} else if (aIsMatTarget && ST.valid(aDustBlock)) {
+				RM.add_smelting(aDustBlock, aSmooth, T, F, F);
+			}
+			if (ST.valid(aCobble)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aSmooth, aCobble);
+				RM.Crusher      .addRecipe1(T, 16, 16, aSmooth, aCobble);
+			} else if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aSmooth, aFourRocks);
+				RM.Crusher      .addRecipe1(T, 16, 16, aSmooth, aFourRocks);
+			}
+			if (ST.valid(aBricks)) {
+				CR.shaped(ST.amount(4, aBricks), CR.DEF_REM, "XX", "XX", 'X', aSmooth);
+			}
+			if (ST.valid(aChiseled)) {
+				if (FL.Mana_TE.exists())
+				RM.Bath         .addRecipe1(T,  0, 16, aSmooth, FL.Mana_TE.make(1), NF, aChiseled);
+				RM.Chisel       .addRecipe1(T, 16, 16, aSmooth, aChiseled);
+				CR.shaped(aChiseled, CR.DEF_REM, "y" , "X" , 'X', aSmooth);
+			}
+			if (ST.valid(aTiles)) {
+				CR.shaped(ST.amount(2, aTiles), CR.DEF_REM, "X ", " X", 'X', aSmooth);
+			}
+		}
+		
+		if (ST.valid(aTiles)) {
+			CR.remout(aTiles);
+			RM.generify(aTiles, ST.make(Blocks.stonebrick, 1, 0));
+			
+			if (ST.valid(aStone)) {
+				RM.add_smelting(aTiles, aStone, T, F, F);
+			} else if (ST.valid(aSmooth)) {
+				RM.add_smelting(aTiles, aSmooth, T, F, F);
+			}
+			if (ST.valid(aCracked)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aTiles, aCracked);
+				RM.Crusher      .addRecipe1(T, 16, 16, aTiles, aCracked);
+			} else if (ST.valid(aCobble)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aTiles, aCobble);
+				RM.Crusher      .addRecipe1(T, 16, 16, aTiles, aCobble);
+			} else if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aTiles, aFourRocks);
+				RM.Crusher      .addRecipe1(T, 16, 16, aTiles, aFourRocks);
+			}
+		}
+		
+		if (ST.valid(aBricks2)) {
+			CR.remout(aBricks2);
+			RM.generify(aBricks2, ST.make(Blocks.stonebrick, 1, 0));
+			
+			if (ST.valid(aStone)) {
+				RM.add_smelting(aBricks2, aStone, T, F, F);
+			} else if (ST.valid(aSmooth)) {
+				RM.add_smelting(aBricks2, aSmooth, T, F, F);
+			}
+			if (ST.valid(aBricks)) {
+				CR.shaped(ST.amount(4, aBricks), CR.DEF_REM, "XX", "XX", 'X', aBricks2);
+			}
+			if (ST.valid(aCracked)) {
+				RM.Chisel       .addRecipe1(T, 16, 16, aBricks2, aCracked);
+				RM.Hammer       .addRecipe1(T, 16, 16, aBricks2, aCracked);
+				RM.Crusher      .addRecipe1(T, 16, 16, aBricks2, aCracked);
+				CR.shaped(aCracked, CR.DEF_REM, "h" , "X" , 'X', aBricks2);
+				CR.shaped(aCracked, CR.DEF_REM, "y" , "X" , 'X', aBricks2);
+			} else if (ST.valid(aCobble)) {
+				RM.Chisel       .addRecipe1(T, 16, 16, aBricks2, aCobble);
+				RM.Hammer       .addRecipe1(T, 16, 16, aBricks2, aCobble);
+				RM.Crusher      .addRecipe1(T, 16, 16, aBricks2, aCobble);
+				CR.shaped(aCobble, CR.DEF_REM, "h" , "X" , 'X', aBricks2);
+				CR.shaped(aCobble, CR.DEF_REM, "y" , "X" , 'X', aBricks2);
+			} else if (ST.valid(aFourRocks)) {
+				RM.Hammer       .addRecipe1(T, 16, 16, aBricks2, aFourRocks);
+				RM.Crusher      .addRecipe1(T, 16, 16, aBricks2, aFourRocks);
+				CR.shaped(aFourRocks, CR.DEF_REM, "h" , "X" , 'X', aBricks2);
+				CR.shaped(aFourRocks, CR.DEF_REM, "y" , "X" , 'X', aBricks2);
+			}
+		}
+		
+		if (ST.valid(aStone) || ST.valid(aSmooth)) new OreDictListenerEvent_Names() {@Override public void addAllListeners() {
+		if (ST.valid(aChiseled)) addListener(DYE_OREDICTS_LENS[DYE_INDEX_White], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
+			if (ST.valid(aStone )) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aStone ), ST.amount(0, aEvent.mStack), ST.amount(1, aChiseled));
+			if (ST.valid(aSmooth)) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aSmooth), ST.amount(0, aEvent.mStack), ST.amount(1, aChiseled));
+		}});
+		if (ST.valid(aTiles)) addListener(DYE_OREDICTS_LENS[DYE_INDEX_Red], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
+			if (ST.valid(aStone )) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aStone ), ST.amount(0, aEvent.mStack), ST.amount(1, aTiles));
+			if (ST.valid(aSmooth)) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aSmooth), ST.amount(0, aEvent.mStack), ST.amount(1, aTiles));
+		}});
+		if (ST.valid(aBricks)) addListener(DYE_OREDICTS_LENS[DYE_INDEX_Cyan], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
+			if (ST.valid(aStone )) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aStone ), ST.amount(0, aEvent.mStack), ST.amount(1, aBricks));
+			if (ST.valid(aSmooth)) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aSmooth), ST.amount(0, aEvent.mStack), ST.amount(1, aBricks));
+		}});
+		if (ST.valid(aBricks2)) addListener(DYE_OREDICTS_LENS[DYE_INDEX_Magenta], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
+			if (ST.valid(aStone )) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aStone ), ST.amount(0, aEvent.mStack), ST.amount(1, aBricks2));
+			if (ST.valid(aSmooth)) RM.LaserEngraver.addRecipe2(T, 16, 64, ST.amount(1, aSmooth), ST.amount(0, aEvent.mStack), ST.amount(1, aBricks2));
+		}});
+		}};
+		
+		return T;
+	}
+	
+	public static boolean replicateOrganic(long aTag1, long aTag2, ItemStack aOutput) {
+		if (ST.invalid(aOutput)) return F;
+		RM.Replicator.addRecipe2(T,  16, 256, ST.tag(aTag1), ST.tag(aTag2), FL.array(FL.MatterNeutral.make(1), FL.MatterCharged.make(1), FL.Biomass   .make(1000)), ZL_FS, aOutput);
+		RM.Replicator.addRecipe2(T,  16, 256, ST.tag(aTag1), ST.tag(aTag2), FL.array(FL.MatterNeutral.make(1), FL.MatterCharged.make(1), FL.BiomassIC2.make(1000)), ZL_FS, aOutput);
+		RM.Replicator.addRecipe2(T, 256, 256, ST.tag(aTag1), ST.tag(aTag2), FL.array(FL.UUM.make(10)                                   , FL.Biomass   .make(1000)), ZL_FS, aOutput);
+		RM.Replicator.addRecipe2(T, 256, 256, ST.tag(aTag1), ST.tag(aTag2), FL.array(FL.UUM.make(10)                                   , FL.BiomassIC2.make(1000)), ZL_FS, aOutput);
+		return T;
+	}
+	
+	
+	public static boolean biomass(ItemStack aBiomass) {return biomass(aBiomass, 64);}
+	public static boolean biomass(ItemStack aBiomass, long aSpeed) {
+		if (ST.invalid(aBiomass)) return F;
+		int tSize = aBiomass.stackSize;
+		if (tSize <= 0) return F;
+		aBiomass = ST.amount(1, aBiomass);
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 2) / tSize, aBiomass, FL.Rotten_Drink.make(              1080 / tSize), FL.BiomassIC2.make(3240   / tSize, FL.Biomass), ZL_IS);
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 2) / tSize, aBiomass, FL.Soup_Mushroom.make(             1080 / tSize), FL.BiomassIC2.make(3240   / tSize, FL.Biomass), ZL_IS);
+		for (String tFluid : FluidsGT.WATER) if (FL.exists(tFluid))
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 4) / tSize, aBiomass, FL.make(tFluid                   , 1080 / tSize), FL.BiomassIC2.make(1080   / tSize, FL.Biomass), ZL_IS);
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 4) / tSize, aBiomass, FL.MnWtr.make(                     1080 / tSize), FL.BiomassIC2.make(1080   / tSize, FL.Biomass), ZL_IS);
+		for (String tFluid : FluidsGT.MILK ) if (FL.exists(tFluid))
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 3) / tSize, aBiomass, FL.make(tFluid                   , 1080 / tSize), FL.BiomassIC2.make(2160   / tSize, FL.Biomass), ZL_IS);
+		for (String tFluid : FluidsGT.JUICE) if (FL.exists(tFluid) && !"potion.idunsapplejuice".equals(tFluid) && !"potion.goldenapplejuice".equals(tFluid) && !"goldencarrotjuice".equals(tFluid))
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 3) / tSize, aBiomass, FL.make(tFluid                   , 1080 / tSize), FL.BiomassIC2.make(3240   / tSize, FL.Biomass), ZL_IS);
+		RM.Fermenter.addRecipe1(F, 16,  aSpeed      / tSize, aBiomass, FL.make("potion.idunsapplejuice" , 1080 / tSize), FL.BiomassIC2.make(210600 / tSize, FL.Biomass), ZL_IS);
+		RM.Fermenter.addRecipe1(F, 16,  aSpeed      / tSize, aBiomass, FL.make("potion.goldenapplejuice", 1080 / tSize), FL.BiomassIC2.make(29160  / tSize, FL.Biomass), ZL_IS);
+		RM.Fermenter.addRecipe1(F, 16,  aSpeed      / tSize, aBiomass, FL.make("goldencarrotjuice"      , 1080 / tSize), FL.BiomassIC2.make(6480   / tSize, FL.Biomass), ZL_IS);
+		for (String tFluid : FluidsGT.HONEY) if (FL.exists(tFluid))
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 3) / tSize, aBiomass, FL.make(tFluid                   , 1080 / tSize), FL.BiomassIC2.make(3240   / tSize, FL.Biomass), ZL_IS);
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 2) / tSize, aBiomass, FL.Honeydew.make(                  1080 / tSize), FL.BiomassIC2.make(3240   / tSize, FL.Biomass), ZL_IS);
+		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 2) / tSize, aBiomass, FL.RoyalJelly.make(                1080 / tSize), FL.BiomassIC2.make(12560  / tSize, FL.Biomass), ZL_IS);
+		return T;
+	}
+	
+	public static boolean pressurewash(ItemStack aInput, ItemStack... aOutputs) {return pressurewash(16, 64, 200, aInput, aOutputs);}
+	public static boolean pressurewash(long aEUt, long aDuration, ItemStack aInput, ItemStack... aOutputs) {return pressurewash(aEUt, aDuration, 1000, aInput, aOutputs);}
+	public static boolean pressurewash(long aEUt, long aDuration, long aWater, ItemStack aInput, ItemStack... aOutputs) {
+		if (ST.invalid(aInput) || aOutputs.length <= 0 || ST.invalid(aOutputs[0])) return F;
+		for (FluidStack tWater : FL.waters(aWater < 1 ? 1 : aWater))
+		PressureWasher.addRecipe1(T, aEUt, aDuration, aInput, tWater, NF, aOutputs);
+		return T;
+	}
+	
+	@Deprecated public static boolean debarking(ItemStack aInput, ItemStack... aOutputs) {return pressurewash(16, 64, 1000, aInput, aOutputs);}
+	@Deprecated public static boolean debarking(long aEUt, long aDuration, ItemStack aInput, ItemStack... aOutputs) {return pressurewash(aEUt, aDuration, 1000, aInput, aOutputs);}
+	@Deprecated public static boolean debarking(long aEUt, long aDuration, long aWater, ItemStack aInput, ItemStack... aOutputs) {return pressurewash(aEUt, aDuration, aWater, aInput, aOutputs);}
+	
+	public static boolean sawing(long aEUt, long aDuration, boolean aIsFoodItem, long aLubricantAmount, ItemStack aInput, ItemStack... aOutputs) {
+		if (ST.invalid(aInput) || aOutputs.length <= 0 || ST.invalid(aOutputs[0])) return F;
+		if (aLubricantAmount <= 0) aLubricantAmount = 1;
+		Cutter.addRecipe1(T, aEUt, aDuration*4, aInput, FL.Water.make(aLubricantAmount*4), NF, aOutputs);
+		Cutter.addRecipe1(T, aEUt, aDuration*4, aInput, FL.SpDew.make(aLubricantAmount*4), NF, aOutputs);
+		Cutter.addRecipe1(T, aEUt, aDuration*4, aInput, FL.MnWtr.make(aLubricantAmount*4), NF, aOutputs);
+		Cutter.addRecipe1(T, aEUt, aDuration*3, aInput, FL.DistW.make(aLubricantAmount*3), NF, aOutputs);
+		if (!aIsFoodItem) for (String tFluidName : FluidsGT.LUBRICANT) {
+			FluidStack tFluid = FL.make(tFluidName, aLubricantAmount);
+			if (tFluid != null) Cutter.addRecipe1(T, aEUt, aDuration, aInput, tFluid, NF, aOutputs);
+		}
+		return T;
+	}
+	
+	public static boolean lathing(long aEUt, long aDuration, ItemStack aInput, ItemStack... aOutputs) {
+		if (ST.invalid(aInput) || aOutputs.length <= 0 || ST.invalid(aOutputs[0])) return F;
+		RM.Lathe.addRecipe1(T, aEUt, aDuration, aInput, aOutputs);
+		return T;
+	}
+	
+	public static boolean food_can(ItemStack aStack, int aFoodValue, String aCannedName, IItemContainer... aCans) {
+		if (ST.invalid(aStack) || aStack.getItem() == ItemsGT.CANS || IL.IC2_Food_Can_Filled.equal(aStack, T, T)) return F;
+		if (aFoodValue > 0) switch(aFoodValue / 2) {
+		case  0: case  1:                            return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(1), aCans[0].getWithName(1, aCannedName), ST.container(aStack, T));
+		case  2:                                     return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(1), aCans[1].getWithName(1, aCannedName), ST.container(aStack, T));
+		case  3:                                     return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(1), aCans[2].getWithName(1, aCannedName), ST.container(aStack, T));
+		case  4:                                     return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(1), aCans[3].getWithName(1, aCannedName), ST.container(aStack, T));
+		case  5:                                     return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(1), aCans[4].getWithName(1, aCannedName), ST.container(aStack, T));
+		case  8: case  9:                            return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(2), aCans[3].getWithName(2, aCannedName), ST.container(aStack, T));
+		case 10: case 11:                            return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(2), aCans[4].getWithName(2, aCannedName), ST.container(aStack, T));
+		case 15: case 16: case 17:                   return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(3), aCans[4].getWithName(3, aCannedName), ST.container(aStack, T));
+		case 20: case 21: case 22: case 23:          return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(4), aCans[4].getWithName(4, aCannedName), ST.container(aStack, T));
+		case 25: case 26: case 27: case 28: case 29: return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(5), aCans[4].getWithName(5, aCannedName), ST.container(aStack, T));
+		default:                                     return null != Canner.addRecipe2(T, 16, 16, aStack, IL.Food_Can_Empty.get(aFoodValue/12), aCans[5].getWithName(aFoodValue/12, aCannedName), ST.container(aStack, T));
+		}
+		return F;
+	}
+	
+	public static boolean crop_veggie(ItemStack aStack, FL aFluid, long aAmount                    , long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation) {return crop(aStack, aFluid    , aAmount, IL.Remains_Veggie.get( 1), aChance, aCannedName, IL.CANS_VEGGIE   , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, aRadiation);}
+	public static boolean crop_veggie(ItemStack aStack, FL aFluid, long aAmount, ItemStack aRemains, long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation) {return crop(aStack, aFluid    , aAmount, aRemains                 , aChance, aCannedName, IL.CANS_VEGGIE   , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, aRadiation);}
+	public static boolean crop_fruit (ItemStack aStack, FL aFluid, long aAmount                    , long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation) {return crop(aStack, aFluid    , aAmount, IL.Remains_Fruit .get( 1), aChance, aCannedName, IL.CANS_FRUIT    , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, aRadiation);}
+	public static boolean crop_fruit (ItemStack aStack, FL aFluid, long aAmount, ItemStack aRemains, long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation) {return crop(aStack, aFluid    , aAmount, aRemains                 , aChance, aCannedName, IL.CANS_FRUIT    , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, aRadiation);}
+	public static boolean crop_veggie(ItemStack aStack, FL aFluid, long aAmount                    , long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat                ) {return crop(aStack, aFluid    , aAmount, IL.Remains_Veggie.get( 1), aChance, aCannedName, IL.CANS_VEGGIE   , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0);}
+	public static boolean crop_veggie(ItemStack aStack, FL aFluid, long aAmount, ItemStack aRemains, long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat                ) {return crop(aStack, aFluid    , aAmount, aRemains                 , aChance, aCannedName, IL.CANS_VEGGIE   , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0);}
+	public static boolean crop_fruit (ItemStack aStack, FL aFluid, long aAmount                    , long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat                ) {return crop(aStack, aFluid    , aAmount, IL.Remains_Fruit .get( 1), aChance, aCannedName, IL.CANS_FRUIT    , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0);}
+	public static boolean crop_fruit (ItemStack aStack, FL aFluid, long aAmount, ItemStack aRemains, long aChance, String aCannedName, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat                ) {return crop(aStack, aFluid    , aAmount, aRemains                 , aChance, aCannedName, IL.CANS_FRUIT    , aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0);}
+	public static boolean crop_nut   (ItemStack aStack           , long aAmount                    , long aChance, String aCannedName                                                                                     ) {return crop(aStack, FL.Oil_Nut, aAmount, IL.Remains_Nut   .get( 1), aChance, aCannedName, IL.CANS_UNDEFINED, 0, 0, 0, 0,16,0);}
+	public static boolean crop_nut   (ItemStack aStack           , long aAmount, ItemStack aRemains, long aChance, String aCannedName                                                                                     ) {return crop(aStack, FL.Oil_Nut, aAmount, aRemains                 , aChance, aCannedName, IL.CANS_UNDEFINED, 0, 0, 0, 0,16,0);}
+	
+	public static boolean crop(ItemStack aStack, FL aFluid, long aAmount, ItemStack aRemains, long aChance, String aCannedName, IItemContainer[] aCans, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat) {return crop(aStack, aFluid, aAmount, aRemains, aChance, aCannedName, aCans, aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0);}
+	public static boolean crop(ItemStack aStack, FL aFluid, long aAmount, ItemStack aRemains, long aChance, String aCannedName, IItemContainer[] aCans, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation) {
+		if (aCans != null && UT.Code.stringValid(aCannedName)) food_can(aStack, Math.max(1, ST.food(aStack)), aCannedName, aCans);
+		if (aFluid   != null) Squeezer.addRecipe1(T, 16, 16, aChance-1000 , aStack, NF, (aFluid.exists()?aFluid:FL.Juice).make(aAmount)                                           , aRemains);
+		if (aFluid   != null) Juicer  .addRecipe1(T, 16, 16, aChance      , aStack, NF, (aFluid.exists()?aFluid:FL.Juice).make(aAmount-(aAmount<100?aAmount/3:1+(aAmount/250))*25), aRemains);
+		if (aRemains != null) Shredder.addRecipe1(T, 16, 16, aChance      , aStack, aRemains);
+		if (aRemains != null) Mortar  .addRecipe1(T, 16, 16, aChance/2    , aStack, aRemains);
+		if (!(aStack.getItem() instanceof MultiItemRandom)) FoodsGT.put(aStack, aAlcohol, aCaffeine, aDehydration, aSugar, aFat, aRadiation);
+		return T;
+	}
+	
+	public static ItemStack get_smelting(ItemStack aInput) {return get_smelting(aInput, F, NI);}
+	public static ItemStack get_smelting(ItemStack aInput, boolean aRemoveInput, ItemStack aOutputSlot) {
+		if (aInput == null || aInput.stackSize < 1) return NI;
+		ItemStack rStack = OM.get(RecipeManager.smelting().getSmeltingResult(aInput));
+		if (rStack != null && (aOutputSlot == null || (ST.equal(rStack, aOutputSlot) && rStack.stackSize + aOutputSlot.stackSize <= aOutputSlot.getMaxStackSize()))) {
+			if (aRemoveInput) aInput.stackSize--;
+			return rStack;
+		}
+		return NI;
+	}
+	public static boolean add_smelting(ItemStack aInput, ItemStack aOutput) {
+		return add_smelting(aInput, aOutput, 0, T);
+	}
+	public static boolean add_smelting(ItemStack aInput, ItemStack aOutput, boolean aRemoveOthers) {
+		return add_smelting(aInput, aOutput, 0, aRemoveOthers);
+	}
+	public static boolean add_smelting(ItemStack aInput, ItemStack aOutput, boolean aRemoveOthers, boolean aSmoker, boolean aBlast) {
+		return add_smelting(aInput, aOutput, 0, aRemoveOthers, aSmoker, aBlast);
+	}
+	public static boolean add_smelting(ItemStack aInput, ItemStack aOutput, float aEXP) {
+		return add_smelting(aInput, aOutput, aEXP, T);
+	}
+	public static boolean add_smelting(ItemStack aInput, ItemStack aOutput, float aEXP, boolean aRemoveOthers) {
+		return add_smelting(aInput, aOutput, aEXP, aRemoveOthers, F, F);
+	}
+	public static boolean add_smelting(ItemStack aInput, ItemStack aOutput, float aEXP, boolean aRemoveOthers, boolean aSmoker, boolean aBlast) {
+		if (ST.invalid(aInput) || ST.invalid(aOutput)) return F;
+		if (aRemoveOthers) rem_smelting(aInput);
+		aOutput = OM.get_(aOutput);
+		if (!ST.ingredable(aInput) || ST.equal_(aInput, aOutput, F) || !ConfigsGT.RECIPES.get(ConfigCategories.Machines.smelting, aInput, T)) return F;
+		RecipeManager.smelting().func_151394_a(aInput, ST.copy_(aOutput), aEXP);
+		if (MD.EtFu.mLoaded) try {
+			if ( aSmoker) SmokerRecipes      .smelting().addRecipe(aInput, ST.copy_(aOutput), aEXP);
+			if ( aBlast ) BlastFurnaceRecipes.smelting().addRecipe(aInput, ST.copy_(aOutput), aEXP);
+			if (!aSmoker) SmokerRecipes      .smelting().smeltingBlacklist.add(aInput);
+			if (!aBlast ) BlastFurnaceRecipes.smelting().smeltingBlacklist.add(aInput);
+		} catch(Throwable e) {
+			ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
+			e.printStackTrace(ERR);
+		}
+		return T;
+	}
+	
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	public static boolean rem_smelting(ItemStack aInput) {
+		if (ST.invalid(aInput)) return F;
+		ItemStack tPyrotheum = OP.dust.mat(MT.Pyrotheum, 1);
+		if (ST.valid(tPyrotheum)) CR.remove(aInput, tPyrotheum);
+		boolean rReturn = F;
+		Iterator<Entry<ItemStack, ItemStack>> tIterator = RecipeManager.smelting().getSmeltingList().entrySet().iterator();
+		while (tIterator.hasNext()) if (ST.equal(aInput, tIterator.next().getKey(), T)) {
+			tIterator.remove();
+			rReturn = T;
+		}
+		if (MD.EtFu.mLoaded) {
+			boolean tSuccess = F;
+			
+			try {
+				SmokerRecipes      .smelting().removeRecipe(aInput);
+				BlastFurnaceRecipes.smelting().removeRecipe(aInput);
+				tSuccess = T;
+			} catch(Throwable e) {
+				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
+				e.printStackTrace(ERR);
+			}
+			
+			if (!tSuccess) try {
+				Map
+				tMap = ((Map)UT.Reflection.getFieldContent(SmokerRecipes.smelting(), "smeltingList", T, D1));
+				if (tMap != null) {
+					tIterator = tMap.entrySet().iterator();
+					while (tIterator.hasNext()) if (ST.equal(aInput, tIterator.next().getKey(), T)) {
+						tIterator.remove();
+						rReturn = T;
+					}
+					tSuccess = T;
+				}
+				tMap = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));
+				if (tMap != null) {
+					tIterator = tMap.entrySet().iterator();
+					while (tIterator.hasNext()) if (ST.equal(aInput, tIterator.next().getKey(), T)) {
+						tIterator.remove();
+						rReturn = T;
+					}
+					tSuccess = T;
+				}
+			} catch(Throwable e) {
+				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
+				e.printStackTrace(ERR);
+			}
+		}
+		return rReturn;
+	}
+	
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	public static boolean rem_smelting(ItemStack aInput, ItemStack aOutput) {
+		if (ST.invalid(aInput) || ST.invalid(aOutput)) return F;
+		boolean rReturn = F;
+		Iterator<Entry<ItemStack, ItemStack>> tIterator = RecipeManager.smelting().getSmeltingList().entrySet().iterator();
+		while (tIterator.hasNext()) {
+			Entry<ItemStack, ItemStack> tEntry = tIterator.next();
+			if (ST.equal(aInput, tEntry.getKey(), T) && ST.equal(aOutput, tEntry.getValue(), T)) {
+				tIterator.remove();
+				rReturn = T;
+			}
+		}
+		if (MD.EtFu.mLoaded) {
+			boolean tSuccess = F;
+			
+			try {
+				if (ST.equal(aOutput, SmokerRecipes      .smelting().getSmeltingResult(aInput), T)) SmokerRecipes      .smelting().removeRecipe(aInput);
+				if (ST.equal(aOutput, BlastFurnaceRecipes.smelting().getSmeltingResult(aInput), T)) BlastFurnaceRecipes.smelting().removeRecipe(aInput);
+				tSuccess = T;
+			} catch(Throwable e) {
+				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
+				e.printStackTrace(ERR);
+			}
+			
+			if (!tSuccess) try {
+				Map
+				tMap = ((Map)UT.Reflection.getFieldContent(SmokerRecipes.smelting(), "smeltingList", T, D1));
+				if (tMap != null) {
+					tIterator = tMap.entrySet().iterator();
+					while (tIterator.hasNext()) {
+						Entry<ItemStack, ItemStack> tEntry = tIterator.next();
+						if (ST.equal(aInput, tEntry.getKey(), T) && ST.equal(aOutput, tEntry.getValue(), T)) {
+							tIterator.remove();
+							rReturn = T;
+						}
+					}
+					tSuccess = T;
+				}
+				tMap = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));
+				if (tMap != null) {
+					tIterator = tMap.entrySet().iterator();
+					while (tIterator.hasNext()) {
+						Entry<ItemStack, ItemStack> tEntry = tIterator.next();
+						if (ST.equal(aInput, tEntry.getKey(), T) && ST.equal(aOutput, tEntry.getValue(), T)) {
+							tIterator.remove();
+							rReturn = T;
+						}
+					}
+					tSuccess = T;
+				}
+			} catch(Throwable e) {
+				ERR.println("If you did not update Et Futurum Requiem, maybe you should.");
+				e.printStackTrace(ERR);
+			}
+		}
+		return rReturn;
+	}
+	
+	public static boolean chisel(String aName, ItemStack... aStacks) {
+		if (!MD.CHSL.mLoaded || UT.Code.stringInvalid(aName) || aStacks == null || aStacks.length < 1 || ST.invalid(aStacks[0])) return F;
+		try {
+			boolean temp = T;
+			for (int i = 0; i < aStacks.length; i++) if (ST.valid(aStacks[i])) {
+				Block tBlock = ST.block_(aStacks[i]);
+				if (tBlock == NB) continue;
+				short tMeta = ST.meta_(aStacks[i]);
+				if (tMeta == W) {
+					if (temp) {Carving.chisel.addGroup(CarvingUtils.getDefaultGroupFor(aName)); temp = F;}
+					for (int j = 0; j < 16; j++)
+					Carving.chisel.getGroup(aName).addVariation(CarvingUtils.getDefaultVariationFor(tBlock, j, i*16+j));
+				} else if (UT.Code.inside(0, 15, tMeta)) {
+					if (temp) {Carving.chisel.addGroup(CarvingUtils.getDefaultGroupFor(aName)); temp = F;}
+					Carving.chisel.getGroup(aName).addVariation(CarvingUtils.getDefaultVariationFor(tBlock, tMeta, i*16));
+				}
+			}
+			return T;
+		} catch(Throwable e) {e.printStackTrace(ERR);}
+		return F;
+	}
+	
+	public static boolean mortarize(ItemStack aInput, ItemStack aOutput) {return mortarize(1, aInput, aOutput, NI);}
+	public static boolean mortarize(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2) {return mortarize(1, aInput, aOutput1, aOutput2);}
+	public static boolean mortarize(long aPower, ItemStack aInput, ItemStack aOutput) {return mortarize(aPower, aInput, aOutput, NI);}
+	public static boolean mortarize(long aPower, ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2) {
+		if (ST.invalid(aInput) || ST.invalid(aOutput1)) return F;
+		RM.Mortar  .addRecipe1(T, 16, 16*aPower, aInput, aOutput1, aOutput2);
+		RM.Shredder.addRecipe1(T, 16, 16*aPower, aInput, aOutput1, aOutput2);
+		ae_grinder   (UT.Code.bindInt(   5*aPower), aInput, aOutput1, aOutput2, 1.0F);
+		te_pulverizer(UT.Code.bindInt(1000*aPower), aInput, aOutput1, aOutput2);
+		ic2_macerator(aInput, aOutput1);
+		return T;
+	}
+	
+	public static boolean ae_grinder(int aTurns, ItemStack aInput, ItemStack aOutput) {if (MD.AE.mLoaded && ST.valid(aInput) && ST.valid(aOutput)) try {AEApi.instance().registries().grinder().addRecipe(ST.copy_(aInput), ST.copy_(aOutput), Math.max(1, aTurns)); return T;} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
+	public static boolean ae_grinder(int aTurns, ItemStack aInput, ItemStack aOutput, ItemStack aOutput2, float aChance2) {if (MD.AE.mLoaded && ST.valid(aInput) && ST.valid(aOutput)) try {AEApi.instance().registries().grinder().addRecipe(ST.copy_(aInput), ST.copy_(aOutput), ST.copy(aOutput2), aChance2, Math.max(1, aTurns)); return T;} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
+	public static boolean ae_grinder(int aTurns, ItemStack aInput, ItemStack aOutput, ItemStack aOutput2, float aChance2, ItemStack aOutput3, float aChance3) {if (MD.AE.mLoaded && ST.valid(aInput) && ST.valid(aOutput)) try {AEApi.instance().registries().grinder().addRecipe(ST.copy_(aInput), ST.copy_(aOutput), ST.copy(aOutput2), aChance2, ST.copy(aOutput3), aChance3, Math.max(1, aTurns)); return T;} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
+	
+	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1) {return pulverizing(aInput, aOutput1, null, 0, F);}
+	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2) {return pulverizing(aInput, aOutput1, aOutput2, 100, F);}
+	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2, int aChance) {return pulverizing(aInput, aOutput1, aOutput2, aChance, F);}
+	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, boolean aOverwrite) {return pulverizing(aInput, aOutput1, null, 0, aOverwrite);}
+	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2, boolean aOverwrite) {return pulverizing(aInput, aOutput1, aOutput2, 100, aOverwrite);}
+	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2, int aChance, boolean aOverwrite) {return pulverizing(aInput, aOutput1, aOutput2, aChance, null, 0, aOverwrite);}
+	public static boolean pulverizing(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2, int aChance2, ItemStack aOutput3, int aChance3, boolean aOverwrite) {
+		if (ST.invalid(aInput) || ST.invalid(aOutput1)) return F;
+		aOutput1 = ST.validMeta(OM.get_(aOutput1));
+		aOutput2 = ST.validMeta(OM.get (aOutput2));
+		
+		if (ST.ingredable(aInput)) {
+			if (ENABLE_ADDING_IC2_MACERATOR_RECIPES) {
+				if (ConfigsGT.RECIPES.get(ConfigCategories.Machines.maceration, aInput, T)) {
+					UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.macerator, aInput, null, aOutput1);
+				} else {
+					UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.macerator.getRecipes(), null);
+				}
+			}
+			
+			if (!OP.log.contains(aInput) && ANY.Wood.contains(aOutput1)) {
+				if (ConfigsGT.RECIPES.get(ConfigCategories.Machines.pulverization, aInput, T)) {
+					if (aOutput2 == null)
+						te_sawmill(32000, ST.copy(aInput), ST.copy(aOutput1));
+					else
+						te_sawmill(32000, ST.copy(aInput), ST.copy(aOutput1), ST.copy(aOutput2), aChance2<=0?10:aChance2);
+				}
+			} else {
+				if (!OP.log.contains(aInput) && ConfigsGT.RECIPES.get(ConfigCategories.Machines.rockcrushing, aInput, ST.block(aInput) != NB)) {
+					try {
+						if (ST.block(aInput) != Blocks.obsidian && ST.block(aInput) != Blocks.gravel) {
+							mods.railcraft.api.crafting.IRockCrusherRecipe tRecipe = mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher.createNewRecipe(ST.amount(1, aInput), ST.meta_(aInput) != W, F);
+							tRecipe.addOutput(ST.copy(aOutput1), 1.0F/aInput.stackSize);
+							if (aOutput2 != null) tRecipe.addOutput(ST.copy(aOutput2), (0.01F*(aChance2<=0?10:aChance2))/aInput.stackSize);
+							if (aOutput3 != null) tRecipe.addOutput(ST.copy(aOutput3), (0.01F*(aChance3<=0?10:aChance3))/aInput.stackSize);
+						}
+					} catch(Throwable e) {/*Do nothing*/}
+				}
+				if (ConfigsGT.RECIPES.get(ConfigCategories.Machines.pulverization, aInput, T)) {
+					if (aOutput2 == null)
+						te_pulverizer(32000, ST.copy(aInput), ST.copy(aOutput1));
+					else
+						te_pulverizer(32000, ST.copy(aInput), ST.copy(aOutput1), ST.copy(aOutput2), aChance2<=0?10:aChance2);
+				}
+			}
+		}
+		return T;
+	}
+	public static boolean ic2_macerator(ItemStack aInput, ItemStack aOutput) {
+		if (!ENABLE_ADDING_IC2_MACERATOR_RECIPES || ST.invalid(aInput) || ST.invalid(aOutput)) return F;
+		aOutput = ST.validMeta(OM.get_(aOutput));
+		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.extractor, aInput, T)) {
+			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.macerator.getRecipes(), null);
+			return F;
+		}
+		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.macerator, aInput, null, aOutput);
+		return T;
+	}
+	public static boolean ic2_extractor(ItemStack aInput, ItemStack aOutput) {
+		if (!ENABLE_ADDING_IC2_EXTRACTOR_RECIPES || ST.invalid(aInput) || ST.invalid(aOutput)) return F;
+		aOutput = ST.validMeta(OM.get_(aOutput));
+		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.extractor, aInput, T)) {
+			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.extractor.getRecipes(), null);
+			return F;
+		}
+		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.extractor, aInput, null, aOutput);
+		return T;
+	}
+	public static boolean ic2_compressor(ItemStack aInput, ItemStack aOutput) {
+		if (!ENABLE_ADDING_IC2_COMPRESSOR_RECIPES || ST.invalid(aInput) || ST.invalid(aOutput)) return F;
+		aOutput = ST.validMeta(OM.get_(aOutput));
+		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.compression, aInput, T)) {
+			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.compressor.getRecipes(), null);
+			return F;
+		}
+		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.compressor, aInput, null, aOutput);
+		return T;
+	}
+	public static boolean ic2_orewasher(ItemStack aInput, long aWaterAmount, Object... aOutput) {
+		if (!ENABLE_ADDING_IC2_OREWASHER_RECIPES || ST.invalid(aInput) || aOutput == null || aOutput.length <= 0 || aOutput[0] == null) return F;
+		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.orewashing, aInput, T)) {
+			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.oreWashing.getRecipes(), null);
+			return F;
+		}
+		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.oreWashing, aInput, UT.NBT.makeLong("amount", aWaterAmount), aOutput);
+		return T;
+	}
+	public static boolean ic2_centrifuge(ItemStack aInput, long aHeat, Object... aOutput) {
+		if (!ENABLE_ADDING_IC2_CENTRIFUGE_RECIPES || ST.invalid(aInput) || aOutput == null || aOutput.length <= 0 || aOutput[0] == null) return F;
+		if (!ConfigsGT.RECIPES.get(ConfigCategories.Machines.thermalcentrifuge, aInput, T)) {
+			UT.removeSimpleIC2MachineRecipe(aInput, ic2.api.recipe.Recipes.centrifuge.getRecipes(), null);
+			return F;
+		}
+		UT.addSimpleIC2MachineRecipe(ic2.api.recipe.Recipes.centrifuge, aInput, UT.NBT.makeLong("minHeat", aHeat), aOutput);
+		return T;
+	}
+	
+	public static void te_furnace(int energy, ItemStack input, ItemStack output) {
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setInteger("energy", energy);
+		toSend.setTag("input", UT.NBT.make());
+		toSend.setTag("output", UT.NBT.make());
+		input.writeToNBT(toSend.getCompoundTag("input"));
+		output.writeToNBT(toSend.getCompoundTag("output"));
+		InterModComms.sendMessage("ThermalExpansion", "FurnaceRecipe", toSend);
+	}
+	public static void te_pulverizer(int energy, ItemStack input, ItemStack primaryOutput) {
+		te_pulverizer(energy, input, primaryOutput, null, 0);
+	}
+	public static void te_pulverizer(int energy, ItemStack input, ItemStack primaryOutput, ItemStack secondaryOutput) {
+		te_pulverizer(energy, input, primaryOutput, secondaryOutput, 100);
+	}
+	public static void te_pulverizer(int energy, ItemStack input, ItemStack primaryOutput, ItemStack secondaryOutput, int secondaryChance) {
+		if (input == null || primaryOutput == null) return;
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setInteger("energy", energy);
+		toSend.setTag("input", UT.NBT.make());
+		toSend.setTag("primaryOutput", UT.NBT.make());
+		toSend.setTag("secondaryOutput", UT.NBT.make());
+		input.writeToNBT(toSend.getCompoundTag("input"));
+		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
+		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
+		toSend.setInteger("secondaryChance", secondaryChance);
+		InterModComms.sendMessage("ThermalExpansion", "PulverizerRecipe", toSend);
+	}
+	public static void te_sawmill(int energy, ItemStack input, ItemStack primaryOutput) {
+		te_sawmill(energy, input, primaryOutput, null, 0);
+	}
+	public static void te_sawmill(int energy, ItemStack input, ItemStack primaryOutput, ItemStack secondaryOutput) {
+		te_sawmill(energy, input, primaryOutput, secondaryOutput, 100);
+	}
+	public static void te_sawmill(int energy, ItemStack input, ItemStack primaryOutput, ItemStack secondaryOutput, int secondaryChance) {
+		if (input == null || primaryOutput == null) return;
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setInteger("energy", energy);
+		toSend.setTag("input", UT.NBT.make());
+		toSend.setTag("primaryOutput", UT.NBT.make());
+		toSend.setTag("secondaryOutput", UT.NBT.make());
+		input.writeToNBT(toSend.getCompoundTag("input"));
+		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
+		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
+		toSend.setInteger("secondaryChance", secondaryChance);
+		InterModComms.sendMessage("ThermalExpansion", "SawmillRecipe", toSend);
+	}
+	public static void te_smelter(int energy, ItemStack primaryInput, ItemStack secondaryInput, ItemStack primaryOutput) {
+		te_smelter(energy, primaryInput, secondaryInput, primaryOutput, null, 0);
+	}
+	public static void te_smelter(int energy, ItemStack primaryInput, ItemStack secondaryInput, ItemStack primaryOutput, ItemStack secondaryOutput) {
+		te_smelter(energy, primaryInput, secondaryInput, primaryOutput, secondaryOutput, 100);
+	}
+	public static void te_smelter(int energy, ItemStack primaryInput, ItemStack secondaryInput, ItemStack primaryOutput, ItemStack secondaryOutput, int secondaryChance) {
+		if (primaryInput == null || secondaryInput == null || primaryOutput == null) return;
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setInteger("energy", energy);
+		toSend.setTag("primaryInput", UT.NBT.make());
+		toSend.setTag("secondaryInput", UT.NBT.make());
+		toSend.setTag("primaryOutput", UT.NBT.make());
+		toSend.setTag("secondaryOutput", UT.NBT.make());
+		primaryInput.writeToNBT(toSend.getCompoundTag("primaryInput"));
+		secondaryInput.writeToNBT(toSend.getCompoundTag("secondaryInput"));
+		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
+		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
+		toSend.setInteger("secondaryChance", secondaryChance);
+		InterModComms.sendMessage("ThermalExpansion", "SmelterRecipe", toSend);
+	}
+	public static void te_smelter_ore(OreDictMaterial aMaterial) {
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setString("oreType", aMaterial.toString());
+		InterModComms.sendMessage("ThermalExpansion", "SmelterBlastOreType", toSend);
+	}
+	public static void te_crucible(int energy, ItemStack input, FluidStack output) {
+		if (input == null || output == null) return;
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setInteger("energy", energy);
+		toSend.setTag("input", UT.NBT.make());
+		toSend.setTag("output", UT.NBT.make());
+		input.writeToNBT(toSend.getCompoundTag("input"));
+		output.writeToNBT(toSend.getCompoundTag("output"));
+		InterModComms.sendMessage("ThermalExpansion", "CrucibleRecipe", toSend);
+	}
+	public static void te_fill(int energy, ItemStack input, ItemStack output, FluidStack fluid, boolean reversible) {
+		if (input == null || output == null || fluid == null) return;
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setInteger("energy", energy);
+		toSend.setTag("input", UT.NBT.make());
+		toSend.setTag("output", UT.NBT.make());
+		toSend.setTag("fluid", UT.NBT.make());
+		input.writeToNBT(toSend.getCompoundTag("input"));
+		output.writeToNBT(toSend.getCompoundTag("output"));
+		UT.NBT.setBoolean(toSend, "reversible", reversible);
+		fluid.writeToNBT(toSend.getCompoundTag("fluid"));
+		InterModComms.sendMessage("ThermalExpansion", "TransposerFillRecipe", toSend);
+	}
+	public static void te_extract(int energy, ItemStack input, ItemStack output, FluidStack fluid, int chance, boolean reversible) {
+		if (input == null || output == null || fluid == null) return;
+		CompoundTag toSend = UT.NBT.make();
+		toSend.setInteger("energy", energy);
+		toSend.setTag("input", UT.NBT.make());
+		toSend.setTag("output", UT.NBT.make());
+		toSend.setTag("fluid", UT.NBT.make());
+		input.writeToNBT(toSend.getCompoundTag("input"));
+		output.writeToNBT(toSend.getCompoundTag("output"));
+		UT.NBT.setBoolean(toSend, "reversible", reversible);
+		toSend.setInteger("chance", chance);
+		fluid.writeToNBT(toSend.getCompoundTag("fluid"));
+		InterModComms.sendMessage("ThermalExpansion", "TransposerExtractRecipe", toSend);
+	}
+}
