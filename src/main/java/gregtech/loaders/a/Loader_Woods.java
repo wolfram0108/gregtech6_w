@@ -27,7 +27,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregtech.blocks.tree.*;
 import gregtech.blocks.wood.*;
-import net.minecraft.init.Blocks;
+import net.minecraft.world.level.block.Blocks;
 
 import static gregapi.data.CS.*;
 

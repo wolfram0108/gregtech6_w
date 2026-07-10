@@ -28,7 +28,7 @@ import gregapi.data.LH.Chat;
 import gregapi.data.TD;
 import gregapi.tileentity.machines.ITileEntityAdjacentOnOff;
 import gregapi.util.UT;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public abstract class TileEntityBase11Bipolar extends TileEntityBase10EnergyConverter implements ITileEntityAdjacentOnOff {
 	@Override

@@ -25,29 +25,29 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.EntityItem;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.entity.monster.*;
 import net.minecraft.entity.passive.*;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.DamageSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.damagesource.DamageSource;
 
 import java.util.List;
 
 import static gregapi.data.CS.*;
 
 public class Override_Drops {
-	public static void handleDrops(EntityLivingBase aDead, String aClass, List<EntityItem> aDrops, DamageSource aDamage, int aLooting, boolean aBurn, boolean aPlayerKill) {
+	public static void handleDrops(LivingEntity aDead, String aClass, List<ItemEntity> aDrops, DamageSource aDamage, int aLooting, boolean aBurn, boolean aPlayerKill) {
 		if (UT.Code.stringInvalid(aClass) || "EntityTFLichMinion".equalsIgnoreCase(aClass) || "EntitySkeletonBoss".equalsIgnoreCase(aClass)) return;
 		final boolean aSpace = aClass.startsWith("entityevolved") || aClass.startsWith("entityalien");
 		boolean tReplaceIron = aClass.startsWith("entitygaia");
 		
 		int tRandomNumber = RNGSUS.nextInt(Math.max(36, 144-aLooting*3)), tIntestinesAmount = 0;
 		
-		if (aDead instanceof EntityPlayer) {
+		if (aDead instanceof Player) {
 			// Do Nothing
 		} else if (aDead instanceof EntityAnimal && aDead.isChild()) {
 			tReplaceIron = T;
@@ -158,7 +158,7 @@ public class Override_Drops {
 			if (aPlayerKill) {
 			@SuppressWarnings("rawtypes")
 			List tList = aDead.worldObj.getEntitiesWithinAABBExcludingEntity(aDead, aDead.boundingBox.expand(32, 32, 32));
-			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof EntityPlayer) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof EntityPigZombie) ((EntityPigZombie)tList.get(j)).attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer)tList.get(i)), 0); break;}
+			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof EntityPigZombie) ((EntityPigZombie)tList.get(j)).attackEntityFrom(DamageSource.causePlayerDamage((Player)tList.get(i)), 0); break;}
 			
 			if (RNGSUS.nextInt( 2) == 0) aDrops.add(ST.entity(aDead, RNGSUS.nextBoolean()?OP.rockGt.mat(MT.Netherrack, 1):ST.make(Items.flint, 1, 0)));
 			if (RNGSUS.nextInt( 3) == 0) aDrops.add(ST.entity(aDead, Items.bone, 1, 0));
@@ -477,7 +477,7 @@ public class Override_Drops {
 			if (aLooting > 0) tAmount += RNGSUS.nextInt(aLooting+1);
 			while (tAmount-->0) aDrops.add(ST.entity(aDead, OP.stick.mat(MT.Blizz, 1)));
 		} else if (aClass.equalsIgnoreCase("EntityTFTowerGolem")) {
-			for (EntityItem tEntity : aDrops) {
+			for (ItemEntity tEntity : aDrops) {
 				ItemStack tStack = tEntity.getEntityItem();
 				if (OM.is("ingotAnyIronOrSteel", tStack)) ST.set(tStack, OP.ingot.mat(MT.IronWood, 1), F, F);
 			}
@@ -671,8 +671,8 @@ public class Override_Drops {
 		while (aDrops.remove(null));
 		
 		// All of this Drop replacement does NOT work with Mo'Creatures Mobs at all...
-		if (!(aDead instanceof EntityPlayer)) {
-			for (EntityItem tEntity : aDrops) if (tEntity != null) {ItemStack tStack = tEntity.getEntityItem(); if (ST.valid(tStack)) {
+		if (!(aDead instanceof Player)) {
+			for (ItemEntity tEntity : aDrops) if (tEntity != null) {ItemStack tStack = tEntity.getEntityItem(); if (ST.valid(tStack)) {
 				// Replace stupid Wooden and Stone Tools that clutter up Mob Farms for no reason, but only if nonplayerkill.
 				if (!aPlayerKill) {
 					Item tItem = ST.item_(tStack);
@@ -755,7 +755,7 @@ public class Override_Drops {
 			if (aDead instanceof EntityCreeper) {
 				aDrops.clear();
 				aDrops.add(ST.entity(aDead, ST.make(Items.skull, 1, 4)));
-			} else if (aDead instanceof EntityPlayer) {
+			} else if (aDead instanceof Player) {
 				// No Drop deletion for Players though.
 				aDrops.add(ST.entity(aDead, ST.skull(aDead)));
 			} else if (aDead.getClass() == EntityZombie.class) {

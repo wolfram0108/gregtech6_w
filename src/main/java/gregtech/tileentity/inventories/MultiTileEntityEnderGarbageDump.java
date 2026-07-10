@@ -35,13 +35,13 @@ import gregapi.tileentity.ITileEntityTapAccessible;
 import gregapi.tileentity.base.TileEntityBase07Paintable;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.ST;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidHandler;
-import net.minecraftforge.fluids.IFluidTank;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.IFluidTank;
 
 import java.util.List;
 
@@ -69,7 +69,7 @@ public class MultiTileEntityEnderGarbageDump extends TileEntityBase07Paintable i
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
-			DelegatorTileEntity<TileEntity> tDelegate = getAdjacentTileEntity(SIDE_BOTTOM, T, F);
+			DelegatorTileEntity<BlockEntity> tDelegate = getAdjacentTileEntity(SIDE_BOTTOM, T, F);
 			if (!(tDelegate.mTileEntity instanceof MultiTileEntityEnderGarbageBin)) {
 				if (!GarbageGT.GARBAGE_ITEMS.isEmpty()) ST.move(delegator(SIDE_BOTTOM), tDelegate);
 				if (!GarbageGT.GARBAGE_FLUIDS.isEmpty()) if (tDelegate.mTileEntity instanceof IFluidHandler) FL.move_(GarbageGT.GARBAGE_FLUIDS, tDelegate);
@@ -166,6 +166,6 @@ public class MultiTileEntityEnderGarbageDump extends TileEntityBase07Paintable i
 	@Override public String getTileEntityName() {return "gt.multitileentity.ender.garbage.dump";}
 	
 	@Override public int getInventoryStackLimit() {return Integer.MAX_VALUE;}
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return ZL_IS;}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return ZL_IS;}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 }

@@ -33,16 +33,16 @@ import gregapi.tileentity.machines.ITileEntityCrucible;
 import gregapi.tileentity.machines.ITileEntityMold;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.List;
 
@@ -57,14 +57,14 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	protected boolean mAcidProof = F, mAutoPull = F;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_MODE)) mAutoPull = aNBT.getBoolean(NBT_MODE);
 		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mAutoPull);
 	}
@@ -81,7 +81,7 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		if (aIsServerSide) {
 			if (mAutoPull ? SERVER_TIME % 20 == 5 : (mBlockUpdated && hasRedstoneIncoming())) {
-				DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(mFacing);
+				DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(mFacing);
 				if (tDelegator.mTileEntity instanceof ITileEntityCrucible) {
 					((ITileEntityCrucible)tDelegator.mTileEntity).fillMoldAtSide(this, tDelegator.mSideOfTileEntity, mFacing);
 				}
@@ -101,7 +101,7 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	
 	@Override
 	public long getMoldRequiredMaterialUnits() {
-		DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(SIDE_BOTTOM);
+		DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(SIDE_BOTTOM);
 		if (tDelegator.mTileEntity instanceof ITileEntityMold) return ((ITileEntityMold)tDelegator.mTileEntity).getMoldRequiredMaterialUnits();
 		if (tDelegator.mTileEntity instanceof MultiTileEntityBathingPot || tDelegator.mTileEntity instanceof MultiTileEntityMixingBowl) return U;
 		return 0;
@@ -114,7 +114,7 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
 			worldObj.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
 		}
-		DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(SIDE_BOTTOM);
+		DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(SIDE_BOTTOM);
 		while (tDelegator.mY > 0 && (tDelegator.mTileEntity instanceof MultiTileEntityFaucet || (!(tDelegator.mTileEntity instanceof MultiTileEntityBathingPot || tDelegator.mTileEntity instanceof MultiTileEntityMixingBowl || tDelegator.mTileEntity instanceof ITileEntityMold) && !WD.hasCollide(tDelegator.mWorld, tDelegator.mX, tDelegator.mY, tDelegator.mZ)))) {
 			tDelegator = WD.te(tDelegator.mWorld, tDelegator.mX, tDelegator.mY-1, tDelegator.mZ, SIDE_TOP, F);
 		}
@@ -135,9 +135,9 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(mFacing);
+			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(mFacing);
 			if (tDelegator.mTileEntity instanceof ITileEntityCrucible) {
 				((ITileEntityCrucible)tDelegator.mTileEntity).fillMoldAtSide(this, tDelegator.mSideOfTileEntity, mFacing);
 			}
@@ -146,7 +146,7 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_softhammer)) {
 			mAutoPull = F;
@@ -205,7 +205,7 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	}
 	
 	@Override
-	public AxisAlignedBB getSelectedBoundingBoxFromPool() {
+	public AABB getSelectedBoundingBoxFromPool() {
 		switch(mFacing) {
 		case SIDE_Z_NEG: return box(PX_P[ 5], PX_P[ 1], PX_P[ 0], PX_N[ 5], PX_N[10], PX_N[12]);
 		default        : return box(PX_P[ 5], PX_P[ 1], PX_P[12], PX_N[ 5], PX_N[10], PX_N[ 0]);

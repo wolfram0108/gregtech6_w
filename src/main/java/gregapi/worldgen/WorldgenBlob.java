@@ -20,12 +20,12 @@
 package gregapi.worldgen;
 
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.util.MathHelper;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.Collection;
 import java.util.List;
@@ -59,7 +59,7 @@ public abstract class WorldgenBlob extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(World aWorld, Chunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, BiomeGenBase[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (mBiomeList != null) {
 			boolean temp = T;
 			for (String tName : aBiomeNames) if (mBiomeList.contains(tName)) {temp = F; break;}
@@ -70,10 +70,10 @@ public abstract class WorldgenBlob extends WorldgenObject {
 				int tX = aMinX + aRandom.nextInt(16), tY = mMinY + aRandom.nextInt(mMaxY - mMinY), tZ = aMinZ + aRandom.nextInt(16);
 				if (mAllowToGenerateinVoid || !aWorld.getBlock(tX, tY, tZ).isAir(aWorld, tX, tY, tZ)) {
 					float var6 = aRandom.nextFloat() * (float)Math.PI;
-					double aX1 = ((tX + 8) + MathHelper.sin(var6) * mSize / 8);
-					double aX2 = ((tX + 8) - MathHelper.sin(var6) * mSize / 8);
-					double aZ1 = ((tZ + 8) + MathHelper.cos(var6) * mSize / 8);
-					double aZ2 = ((tZ + 8) - MathHelper.cos(var6) * mSize / 8);
+					double aX1 = ((tX + 8) + Mth.sin(var6) * mSize / 8);
+					double aX2 = ((tX + 8) - Mth.sin(var6) * mSize / 8);
+					double aZ1 = ((tZ + 8) + Mth.cos(var6) * mSize / 8);
+					double aZ2 = ((tZ + 8) - Mth.cos(var6) * mSize / 8);
 					double aY1 = (tY + aRandom.nextInt(3) - 2);
 					double aY2 = (tY + aRandom.nextInt(3) - 2);
 					
@@ -84,7 +84,7 @@ public abstract class WorldgenBlob extends WorldgenObject {
 					for (int j = 0; j < tRandoms.length; j++) tRandoms[j] = aRandom.nextDouble() * mSize / 16;
 					
 					for (int j = 0; j <= mSize; ++j) {
-						double bX = aX1 + (aX2 - aX1) * j / mSize, bY = aY1 + (aY2 - aY1) * j / mSize, bZ = aZ1 + (aZ2 - aZ1) * j / mSize, b = ((MathHelper.sin(j * (float)Math.PI / mSize) + 1) * tRandoms[j] + 1) / 2;
+						double bX = aX1 + (aX2 - aX1) * j / mSize, bY = aY1 + (aY2 - aY1) * j / mSize, bZ = aZ1 + (aZ2 - aZ1) * j / mSize, b = ((Mth.sin(j * (float)Math.PI / mSize) + 1) * tRandoms[j] + 1) / 2;
 						bMinX = Math.min(bMinX, UT.Code.roundDown(bX - b));
 						bMinY = Math.min(bMinY, Math.max(0, UT.Code.roundDown(bY - b)));
 						bMinZ = Math.min(bMinZ, UT.Code.roundDown(bZ - b));
@@ -96,7 +96,7 @@ public abstract class WorldgenBlob extends WorldgenObject {
 					boolean[][][] tCheck = new boolean[Math.max(4, bMaxX-bMinX+1)][Math.max(4, bMaxY-bMinY+1)][Math.max(4, bMaxZ-bMinZ+1)];
 					
 					for (int j = 0; j <= mSize; ++j) {
-						double bX = aX1 + (aX2 - aX1) * j / mSize, bY = aY1 + (aY2 - aY1) * j / mSize, bZ = aZ1 + (aZ2 - aZ1) * j / mSize, b = ((MathHelper.sin(j * (float)Math.PI / mSize) + 1) * tRandoms[j] + 1) / 2;
+						double bX = aX1 + (aX2 - aX1) * j / mSize, bY = aY1 + (aY2 - aY1) * j / mSize, bZ = aZ1 + (aZ2 - aZ1) * j / mSize, b = ((Mth.sin(j * (float)Math.PI / mSize) + 1) * tRandoms[j] + 1) / 2;
 						int tMinX = UT.Code.roundDown(bX - b);
 						int tMinY = Math.max(0, UT.Code.roundDown(bY - b));
 						int tMinZ = UT.Code.roundDown(bZ - b);
@@ -130,5 +130,5 @@ public abstract class WorldgenBlob extends WorldgenObject {
 		return F;
 	}
 	
-	public abstract boolean tryPlaceStuff(World aWorld, int aX, int aY, int aZ, Random aRandom);
+	public abstract boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom);
 }

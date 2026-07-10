@@ -23,13 +23,13 @@ import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.monster.EntityZombie;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionEffect;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 
 import java.util.List;
 
@@ -45,19 +45,19 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, Entity aEntity) {
+	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof EntityZombie && ((EntityZombie)aEntity).isVillager()) {
-			if (!mNeedsWeakness || ((EntityZombie)aEntity).isPotionActive(Potion.weakness)) {
+			if (!mNeedsWeakness || ((EntityZombie)aEntity).isPotionActive(MobEffect.weakness)) {
 				UT.Entities.consumeCurrentItem(aPlayer);
 				if (!(aEntity).worldObj.isRemote) {
 					int tCureTime = RNGSUS.nextInt(mAverageCureTime * 2) + 500;
-					NBTTagCompound tNBT = UT.NBT.make();
+					CompoundTag tNBT = UT.NBT.make();
 					aEntity.writeToNBT(tNBT);
 					tNBT.setInteger("ConversionTime", tCureTime);
 					aEntity.readFromNBT(tNBT);
 					aEntity.getDataWatcher().updateObject(14, Byte.valueOf((byte)1));
-					((EntityZombie)aEntity).removePotionEffect(Potion.weakness.id);
-					((EntityZombie)aEntity).addPotionEffect(new PotionEffect(Potion.damageBoost.id, tCureTime, Math.min(((EntityZombie)aEntity).worldObj.difficultySetting.getDifficultyId() - 1, 0)));
+					((EntityZombie)aEntity).removePotionEffect(MobEffect.weakness.id);
+					((EntityZombie)aEntity).addPotionEffect(new MobEffectInstance(MobEffect.damageBoost.id, tCureTime, Math.min(((EntityZombie)aEntity).worldObj.difficultySetting.getDifficultyId() - 1, 0)));
 					aEntity.worldObj.setEntityState(aEntity, (byte)16);
 				}
 				return T;

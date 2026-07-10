@@ -29,9 +29,9 @@ import gregapi.tileentity.data.ITileEntityWeight;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.machines.MultiTileEntitySensorTE;
 import gregapi.util.OM;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.Container;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * @author Gregorius Techneticies
@@ -43,18 +43,18 @@ public class MultiTileEntityWeightometerMedium extends MultiTileEntitySensorTE {
 	public static final double MAX_WEIGHT = B[16]-1;
 	
 	@Override
-	public long getCurrentValue(DelegatorTileEntity<TileEntity> aDelegator) {
+	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
 		double rWeightKG = 0;
 		if (aDelegator.mTileEntity instanceof ITileEntityWeight) {
 			rWeightKG = ((ITileEntityWeight)aDelegator.mTileEntity).getWeightValue(aDelegator.mSideOfTileEntity);
-		} else if (aDelegator.mTileEntity instanceof IInventory) {
-			if (aDelegator.mTileEntity instanceof ISidedInventory) {
-				for (int i : ((ISidedInventory)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity)) {
-					rWeightKG += OM.weight(((IInventory)aDelegator.mTileEntity).getStackInSlot(i));
+		} else if (aDelegator.mTileEntity instanceof Container) {
+			if (aDelegator.mTileEntity instanceof WorldlyContainer) {
+				for (int i : ((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity)) {
+					rWeightKG += OM.weight(((Container)aDelegator.mTileEntity).getStackInSlot(i));
 					if (rWeightKG >= MAX_WEIGHT) break;
 				}
-			} else for (int i = 0, j = ((IInventory)aDelegator.mTileEntity).getSizeInventory(); i < j; i++) {
-				rWeightKG += OM.weight(((IInventory)aDelegator.mTileEntity).getStackInSlot(i));
+			} else for (int i = 0, j = ((Container)aDelegator.mTileEntity).getSizeInventory(); i < j; i++) {
+				rWeightKG += OM.weight(((Container)aDelegator.mTileEntity).getStackInSlot(i));
 				if (rWeightKG >= MAX_WEIGHT) break;
 			}
 		}
@@ -63,7 +63,7 @@ public class MultiTileEntityWeightometerMedium extends MultiTileEntitySensorTE {
 	}
 	
 	@Override
-	public long getCurrentMax(DelegatorTileEntity<TileEntity> aDelegator) {
+	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
 		return B[16]-1;
 	}
 	

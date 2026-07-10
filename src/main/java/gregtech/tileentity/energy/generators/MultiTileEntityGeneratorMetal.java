@@ -26,7 +26,7 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.BlockTextureMulti;
 import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 /**
  * @author Gregorius Techneticies

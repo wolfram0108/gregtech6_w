@@ -28,12 +28,12 @@ import gregapi.damage.DamageSources;
 import gregapi.data.ANY;
 import gregapi.data.LH;
 import gregapi.util.WD;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.monster.EntityIronGolem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 public class BlockSpikeSteel extends BlockBaseSpike {
 	public BlockSpikeSteel(String aNameInternal) {
@@ -57,7 +57,7 @@ public class BlockSpikeSteel extends BlockBaseSpike {
 	}
 	
 	@Override
-	public void addInformation(ItemStack aStack, byte aMeta, EntityPlayer aPlayer, List<String> aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		aList.add(LH.Chat.ORANGE + "Deals above average Damage to anything touching it!");
 		aList.add(LH.Chat.ORANGE + "Doesn't work on Iron Golems.");
 		
@@ -67,9 +67,9 @@ public class BlockSpikeSteel extends BlockBaseSpike {
 	}
 	
 	@Override
-	public void onEntityCollidedWithBlock(World aWorld, int aX, int aY, int aZ, Entity aEntity) {
+	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
-		if (aEntity instanceof EntityLivingBase && !(aEntity instanceof EntityIronGolem)) {
+		if (aEntity instanceof LivingEntity && !(aEntity instanceof EntityIronGolem)) {
 			aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  8.0F :  4.0F));
 		}
 	}

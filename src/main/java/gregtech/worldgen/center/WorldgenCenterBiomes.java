@@ -33,12 +33,12 @@ import gregapi.util.ST;
 import gregapi.util.WD;
 import gregapi.worldgen.WorldgenObject;
 import gregtech.blocks.fluids.BlockRiver;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.gen.feature.WorldGenTrees;
 
 /**
@@ -55,32 +55,32 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean enabled(World aWorld, int aDimType) {
+	public boolean enabled(Level aWorld, int aDimType) {
 		return GENERATE_BIOMES && aWorld.provider.dimensionId == DIM_OVERWORLD;
 	}
 	
 	@Override
-	public void reset(World aWorld, Chunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, BiomeGenBase[][] aBiomes, Set<String> aBiomeNames) {
+	public void reset(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (GENERATE_BIOMES && aDimType == DIM_OVERWORLD && aMinX >= -96 && aMinX <= 80 && aMinZ >= -96 && aMinZ <= 80) GENERATING_SPECIAL = T;
 	}
 	
 	@Override
-	public boolean generate(World aWorld, Chunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, BiomeGenBase[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (aMinX >= -96 && aMinX <= 80 && aMinZ >= -96 && aMinZ <= 80) {
 			if (GENERATE_STREETS && aMinX >= -32 && aMinX <= 16 && aMinZ >= -32 && aMinZ <= 16) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.river.biomeID);
+				Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.river.biomeID);
 				return T;
 			}
 			if (GENERATE_NEXUS && aMinX == 16 && aMinZ == -48) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.plains.biomeID);
+				Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.plains.biomeID);
 				return T;
 			}
 			if (GENERATE_TESTING && (aMinX == 32 || aMinX == 48) && (aMinZ == -32 || aMinZ == -48)) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.plains.biomeID);
+				Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.plains.biomeID);
 				return T;
 			}
 			if (aMinX == -16 || aMinX == 0 || aMinZ == -16 || aMinZ == 0) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.river.biomeID);
+				Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.river.biomeID);
 				BlockRiver.PLACEMENT_ALLOWED = T;
 				for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 					for (int k = -3; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
@@ -100,7 +100,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 			if (aMinX < 0) {
 				if (aMinZ < 0) {
 					if ((aMinX == -80 || aMinX == -64) && (aMinZ == -80 || aMinZ == -64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.icePlains.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.icePlains.biomeID);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.ice, 0);
@@ -112,7 +112,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 							for (int k = 1; k < mHeight-5; k++) WD.set(aChunk, i, k, j, k < 32 ? BlocksGT.SchistGreen : BlocksGT.SchistBlue, aRandom.nextBoolean()?2:0);
 						}
 					} else {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.coldTaiga.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.coldTaiga.biomeID);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 2; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight+1, j, Blocks.snow_layer, aRandom.nextInt(2));
@@ -137,7 +137,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 					}
 				} else {
 					if ((aMinX == -80 || aMinX == -64) && (aMinZ == 48 || aMinZ == 64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.forest.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.forest.biomeID);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.grass, 0);
@@ -159,7 +159,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						new WorldGenTrees(F, 4+aRandom.nextInt(3), 0, 0, F).generate(aWorld, aRandom, aMinX+12, mHeight+1, aMinZ+12);
 					} else {
 						MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.plains.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.plains.biomeID);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.grass, 0);
@@ -192,7 +192,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 			} else {
 				if (aMinZ < 0) {
 					if ((aMinX == 48 || aMinX == 64) && (aMinZ == -80 || aMinZ == -64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.mesa.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.mesa.biomeID);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.sand, 1);
@@ -210,7 +210,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 							WD.set(aChunk, 12, mHeight+i, 12, Blocks.cactus, 0);
 						}
 					} else {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.desert.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.desert.biomeID);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.sand, 0);
@@ -224,7 +224,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 					}
 				} else {
 					if ((aMinX == 48 || aMinX == 64) && (aMinZ == 48 || aMinZ == 64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.swampland.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.swampland.biomeID);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.water, 0);
@@ -241,7 +241,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						WD.set(aChunk,  4, mHeight+1, 12, Blocks.waterlily, 0);
 						WD.set(aChunk, 12, mHeight+1, 12, Blocks.waterlily, 0);
 					} else {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)BiomeGenBase.jungle.biomeID);
+						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.jungle.biomeID);
 						if (IL.EtFu_Dirt.exists()) {
 							Block tBlock = IL.EtFu_Dirt.block();
 							for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {

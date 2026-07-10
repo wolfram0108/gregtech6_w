@@ -24,10 +24,10 @@ import static gregapi.data.CS.*;
 import gregapi.data.IL;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.ListTag;
 
 /**
  * @author Gregorius Techneticies
@@ -38,7 +38,7 @@ public class DungeonChunkRoomPortalNether extends DungeonChunkRoomPortal {
 		if (aData.mTags.contains(WorldgenDungeonGT.TAG_PORTAL_NETHER) || !super.generate(aData)) return F;
 		aData.mTags.add(WorldgenDungeonGT.TAG_PORTAL_NETHER);
 		
-		NBTTagList tInventory = new NBTTagList();
+		ListTag tInventory = new ListTag();
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Blocks.obsidian  , 16, 0)), "s", (short) 4));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Blocks.netherrack, 16, 0)), "s", (short)11));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Blocks.glowstone , 16, 0)), "s", (short)15));

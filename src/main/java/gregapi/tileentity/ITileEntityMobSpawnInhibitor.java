@@ -20,13 +20,13 @@
 package gregapi.tileentity;
 
 
-import net.minecraft.world.World;
-import net.minecraftforge.event.entity.living.LivingSpawnEvent;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 
 /**
  * @author Gregorius Techneticies
  */
 public interface ITileEntityMobSpawnInhibitor extends ITileEntityUnloadable, ITileEntityErrorable {
-	public boolean inhibitMobSpawn(LivingSpawnEvent.CheckSpawn aEvent, World aWorld, int aX, int aY, int aZ);
+	public boolean inhibitMobSpawn(MobSpawnEvent.CheckSpawn aEvent, Level aWorld, int aX, int aY, int aZ);
 	public void onUnregisterInhibitor();
 }

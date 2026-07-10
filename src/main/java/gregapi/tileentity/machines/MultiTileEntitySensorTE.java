@@ -29,12 +29,12 @@ import gregapi.tileentity.ITileEntityServerTickPost;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart;
 import gregapi.util.UT;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.List;
 
@@ -63,7 +63,7 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 	public int mIndex = 0, mCurrentValue = 0, mCurrentMax = 0;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mCurrentMax = aNBT.getInteger("gt.sensor.max");
 		mCurrentValue = aNBT.getInteger("gt.sensor.value");
@@ -78,7 +78,7 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, "gt.sensor.max", mCurrentMax);
 		UT.NBT.setNumber(aNBT, "gt.sensor.value", mCurrentValue);
@@ -87,7 +87,7 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 	}
 	
 	@Override
-	public NBTTagCompound writeItemNBT2(NBTTagCompound aNBT) {
+	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		aNBT = super.writeItemNBT2(aNBT);
 		if (mIndex != 0) aNBT.setInteger("gt.sensor.index", mIndex);
 		if (mValues.length > 1) aNBT.setIntArray("gt.sensor.array", new int[mValues.length]);
@@ -126,10 +126,10 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 			mIndex = ((mIndex + 1) % mValues.length);
 			mDisplayedNumber = mSetNumber = UT.Code.bind16(mSetNumber);
 			
-			DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(mSecondFacing);
+			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(mSecondFacing);
 			if (tDelegator.mTileEntity instanceof MultiTileEntityMultiBlockPart) {
 				if (((MultiTileEntityMultiBlockPart)tDelegator.mTileEntity).mTarget != null) {
-					tDelegator = new DelegatorTileEntity<>((TileEntity)((MultiTileEntityMultiBlockPart)tDelegator.mTileEntity).mTarget, tDelegator.mSideOfTileEntity);
+					tDelegator = new DelegatorTileEntity<>((BlockEntity)((MultiTileEntityMultiBlockPart)tDelegator.mTileEntity).mTarget, tDelegator.mSideOfTileEntity);
 				}
 			}
 			
@@ -161,7 +161,7 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aSide == mFacing) {
 			if (isServerSide()) {
 				if ((mMode & 127) != MODE_DISPLAY && (mMode & 127) != MODE_PERCENT && (mMode & 127) != MODE_FULL && (mMode & 127) != MODE_NOT_FULL) {
@@ -201,7 +201,7 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return 0;
 		long tDamage = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (tDamage > 0) return tDamage;
@@ -285,26 +285,26 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 	
 	public abstract IIconContainer getSymbolIcon();
 	public abstract short[] getSymbolColor();
-	public abstract long getCurrentValue(DelegatorTileEntity<TileEntity> aDelegator);
-	public abstract long getCurrentMax(DelegatorTileEntity<TileEntity> aDelegator);
+	public abstract long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator);
+	public abstract long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator);
 	
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 	
 	public static final String[] METHODS = {"getval", "getmax"}, ARGS = {"void", "void"}, HELPS = {"gets the value the sensor is reading for the object it is connected to", "gets the maximum value the sensor has for the object it is connected to"};
 	public static final Class<?>[] RETURNS = {int.class, int.class};
 	
-	@Override public String     getComputerizableName       (DelegatorTileEntity<TileEntity> aDelegator) {return "gt_sensor";}
-	@Override public String[]   allComputerizableArgs       (DelegatorTileEntity<TileEntity> aDelegator) {return ARGS;}
-	@Override public String[]   allComputerizableHelps      (DelegatorTileEntity<TileEntity> aDelegator) {return HELPS;}
-	@Override public String[]   allComputerizableMethods    (DelegatorTileEntity<TileEntity> aDelegator) {return METHODS;}
-	@Override public Class<?>[] allComputerizableReturns    (DelegatorTileEntity<TileEntity> aDelegator) {return RETURNS;}
-	@Override public String     getComputerizableArgs       (DelegatorTileEntity<TileEntity> aDelegator, int aFunctionIndex) {return ARGS[aFunctionIndex];}
-	@Override public String     getComputerizableHelp       (DelegatorTileEntity<TileEntity> aDelegator, int aFunctionIndex) {return HELPS[aFunctionIndex];}
-	@Override public String     getComputerizableMethod     (DelegatorTileEntity<TileEntity> aDelegator, int aFunctionIndex) {return METHODS[aFunctionIndex];}
-	@Override public Class<?>   getComputerizableReturn     (DelegatorTileEntity<TileEntity> aDelegator, int aFunctionIndex) {return RETURNS[aFunctionIndex];}
+	@Override public String     getComputerizableName       (DelegatorTileEntity<BlockEntity> aDelegator) {return "gt_sensor";}
+	@Override public String[]   allComputerizableArgs       (DelegatorTileEntity<BlockEntity> aDelegator) {return ARGS;}
+	@Override public String[]   allComputerizableHelps      (DelegatorTileEntity<BlockEntity> aDelegator) {return HELPS;}
+	@Override public String[]   allComputerizableMethods    (DelegatorTileEntity<BlockEntity> aDelegator) {return METHODS;}
+	@Override public Class<?>[] allComputerizableReturns    (DelegatorTileEntity<BlockEntity> aDelegator) {return RETURNS;}
+	@Override public String     getComputerizableArgs       (DelegatorTileEntity<BlockEntity> aDelegator, int aFunctionIndex) {return ARGS[aFunctionIndex];}
+	@Override public String     getComputerizableHelp       (DelegatorTileEntity<BlockEntity> aDelegator, int aFunctionIndex) {return HELPS[aFunctionIndex];}
+	@Override public String     getComputerizableMethod     (DelegatorTileEntity<BlockEntity> aDelegator, int aFunctionIndex) {return METHODS[aFunctionIndex];}
+	@Override public Class<?>   getComputerizableReturn     (DelegatorTileEntity<BlockEntity> aDelegator, int aFunctionIndex) {return RETURNS[aFunctionIndex];}
 	
 	@Override
-	public Object[] callComputerizableMethod(DelegatorTileEntity<TileEntity> aDelegator, int aFunctionIndex, Object[] aArguments) {
+	public Object[] callComputerizableMethod(DelegatorTileEntity<BlockEntity> aDelegator, int aFunctionIndex, Object[] aArguments) {
 		return new Object[] {aFunctionIndex == 1 ? mCurrentMax : mCurrentValue};
 	}
 }

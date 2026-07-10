@@ -21,14 +21,14 @@ package gregtech.blocks.fluids;
 
 import gregapi.code.ArrayListNoNulls;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.IIcon;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.material.Fluid;
 
 import java.util.Random;
 
@@ -46,7 +46,7 @@ public class BlockOcean extends BlockWaterlike {
 	}
 	
 	@Override
-	public void onBlockAdded(World aWorld, int aX, int aY, int aZ) {
+	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
 			if (UPDATE_TICK) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
 		} else {
@@ -55,13 +55,13 @@ public class BlockOcean extends BlockWaterlike {
 	}
 	
 	@Override
-	public void onNeighborBlockChange(World aWorld, int aX, int aY, int aZ, Block aBlock) {
+	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (aBlock == Blocks.dirt && aWorld.getBlock(aX, aY-1, aZ) == Blocks.grass) aWorld.setBlock(aX, aY-1, aZ, Blocks.dirt, 1, 2);
 		super.onNeighborBlockChange(aWorld, aX, aY, aZ, aBlock);
 	}
 	
 	@Override
-	public void updateTick(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = UPDATE_TICK = T;
 		
 		if (aWorld.doChunksNearChunkExist(aX, aY, aZ, 33)) {
@@ -89,24 +89,24 @@ public class BlockOcean extends BlockWaterlike {
 		
 		Block tBlock;
 		
-		BiomeGenBase tBiome = aWorld.getBiomeGenForCoords(aX, aZ);
+		Biome tBiome = aWorld.getBiomeGenForCoords(aX, aZ);
 		
 		boolean tHasNoOceanAround = T, tHasOceanBiome = BIOMES_OCEAN_BEACH.contains(tBiome.biomeName);
 		byte tOceanCounter = 0;
-		ArrayListNoNulls<ChunkCoordinates> tList = new ArrayListNoNulls<>();
+		ArrayListNoNulls<BlockPos> tList = new ArrayListNoNulls<>();
 		for (byte tSide : ALL_SIDES_HORIZONTAL) {
 			tBlock = WD.block(aWorld, aX, aY, aZ, tSide);
 			if (tBlock == this) {
 				tHasNoOceanAround = F;
 				if (tHasOceanBiome || WD.meta(aWorld, aX, aY, aZ, tSide) == 0) tOceanCounter++;
 			} else if (tBlock == BlocksGT.River) {
-				tList.add(new ChunkCoordinates(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
+				tList.add(new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
 				tOceanCounter++;
 			} else if (WD.water(tBlock)) {
-				tList.add(new ChunkCoordinates(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
+				tList.add(new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
 				if (tHasOceanBiome || WD.meta(aWorld, aX, aY, aZ, tSide) == 0) tOceanCounter++;
 			} else if (tHasOceanBiome && tBlock instanceof BlockWaterlike) {
-				tList.add(new ChunkCoordinates(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
+				tList.add(new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
 				tOceanCounter++;
 			}
 		}
@@ -146,7 +146,7 @@ public class BlockOcean extends BlockWaterlike {
 			}
 		}
 		
-		for (ChunkCoordinates tCoords : tList) {
+		for (BlockPos tCoords : tList) {
 			if (aWorld.setBlock(tCoords.posX, tCoords.posY, tCoords.posZ, this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 				if (aWorld.blockExists(tCoords.posX+i, tCoords.posY, tCoords.posZ+j)) {
 					tBlock = aWorld.getBlock(tCoords.posX+i, tCoords.posY, tCoords.posZ+j);
@@ -161,12 +161,12 @@ public class BlockOcean extends BlockWaterlike {
 	}
 	
 	@Override
-	public int getLightOpacity(IBlockAccess aWorld, int aX, int aY, int aZ) {
+	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {
 		// TODO FIX THIS SHIT
 		return aWorld.getBlockMetadata(aX, aY, aZ) == 0 && WD.air(aWorld.getBlock(aX, aY+1, aZ)) && WD.air(aWorld.getBlock(aX, aY+2, aZ)) && aWorld.getBlock(aX, aY-1, aZ).getLightOpacity(aWorld, aX, aY-1, aZ) < LIGHT_OPACITY_MAX ? 16 : LIGHT_OPACITY_NONE;
 	}
 	
 	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}
 	@Override public int getRenderColor(int aMeta) {return 0x00c0c0c0;}
-	@Override public int colorMultiplier(IBlockAccess aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
+	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
 }

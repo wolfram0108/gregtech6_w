@@ -31,10 +31,10 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.oredict.OreDictPrefix;
 import gregapi.render.BlockTextureCopied;
 import gregapi.util.ST;
-import net.minecraft.block.Block;
-import net.minecraft.block.Block.SoundType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.init.Blocks;
+import net.minecraft.world.level.block.Blocks;
 
 import static gregapi.data.CS.*;
 

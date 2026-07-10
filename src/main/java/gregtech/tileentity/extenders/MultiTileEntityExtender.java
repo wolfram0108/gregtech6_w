@@ -38,18 +38,18 @@ import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.delegate.ITileEntityDelegating;
 import gregapi.tileentity.machines.*;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.common.util.ForgeDirection;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import java.util.List;
 
@@ -64,7 +64,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	protected IIconContainer[] mTextures = L6_IICONCONTAINER;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_MODE)) mModes = aNBT.getByte(NBT_MODE);
 		
@@ -79,7 +79,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 				new Textures.BlockIcons.CustomIcon("machines/extenders/"+tTextureName+"/overlay/out"),
 				new Textures.BlockIcons.CustomIcon("machines/extenders/"+tTextureName+"/overlay/side")};
 			} else {
-				TileEntity tCanonicalTileEntity = MultiTileEntityRegistry.getCanonicalTileEntity(getMultiTileEntityRegistryID(), getMultiTileEntityID());
+				BlockEntity tCanonicalTileEntity = MultiTileEntityRegistry.getCanonicalTileEntity(getMultiTileEntityRegistryID(), getMultiTileEntityID());
 				if (tCanonicalTileEntity instanceof MultiTileEntityExtender) {
 					mTextures = ((MultiTileEntityExtender)tCanonicalTileEntity).mTextures;
 				}
@@ -127,9 +127,9 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	}
 	
 	@Override
-	public void adjacentInventoryUpdated(byte aSide, IInventory aTileEntity) {
+	public void adjacentInventoryUpdated(byte aSide, Container aTileEntity) {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<TileEntity> tDelegate = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<BlockEntity> tDelegate = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
 			if (tDelegate.mTileEntity instanceof ITileEntityAdjacentInventoryUpdatable) ((ITileEntityAdjacentInventoryUpdatable)tDelegate.mTileEntity).adjacentInventoryUpdated(tDelegate.mSideOfTileEntity, aTileEntity);
 		}
 	}
@@ -140,10 +140,10 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	// Relay TileEntities
 	
 	@Override
-	public DelegatorTileEntity<TileEntity> getDelegateTileEntity(byte aSide) {
+	public DelegatorTileEntity<BlockEntity> getDelegateTileEntity(byte aSide) {
 		if ((mModes & EXTENDER_ALL) == EXTENDER_ALL) return getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<TileEntity> rDelegator = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<BlockEntity> rDelegator = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
 			if (rDelegator.mTileEntity instanceof ITileEntityItemPipe) return rDelegator;
 		}
 		return delegator(aSide);
@@ -173,7 +173,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public ItemStack decrStackSize(int aSlot, int aDecrement) {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.decrStackSize(aSlot, aDecrement);
 		}
 		return null;
@@ -181,7 +181,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public ItemStack getStackInSlotOnClosing(int aSlot) {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getStackInSlotOnClosing(aSlot);
 		}
 		return null;
@@ -189,7 +189,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public ItemStack getStackInSlot(int aSlot) {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getStackInSlot(aSlot);
 		}
 		return null;
@@ -197,7 +197,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public String getInventoryName() {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryName();
 		}
 		return super.getInventoryName();
@@ -205,7 +205,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public int getSizeInventory() {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getSizeInventory();
 		}
 		return 0;
@@ -213,7 +213,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public int getInventoryStackLimit() {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryStackLimit();
 		}
 		return 0;
@@ -221,14 +221,14 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) tTileEntity.mTileEntity.setInventorySlotContents(aSlot, aStack);
 		}
 	}
 	@Override
 	public boolean hasCustomInventoryName() {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.hasCustomInventoryName();
 		}
 		return getCustomName() != null;
@@ -236,7 +236,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.isItemValidForSlot(aSlot, aStack);
 		}
 		return F;
@@ -248,8 +248,8 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public int[] getAccessibleSlotsFromSide2(byte aSide) {
 		mLastSide = aSide;
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity instanceof ISidedInventory) return ((ISidedInventory)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
 			if (tTileEntity.mTileEntity != null) return UT.Code.getAscendingArray(tTileEntity.mTileEntity.getSizeInventory());
 		}
 		return ZL_INTEGER;
@@ -258,8 +258,8 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {
 		mLastSide = aSide;
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity instanceof ISidedInventory) return ((ISidedInventory)tTileEntity.mTileEntity).canInsertItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canInsertItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
 			if (tTileEntity.mTileEntity != null) return T;
 		}
 		return F;
@@ -268,8 +268,8 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {
 		mLastSide = aSide;
 		if ((mModes & EXTENDER_INV) != 0) {
-			DelegatorTileEntity<IInventory> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity instanceof ISidedInventory) return ((ISidedInventory)tTileEntity.mTileEntity).canExtractItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
+			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canExtractItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
 			if (tTileEntity.mTileEntity != null) return T;
 		}
 		return F;
@@ -278,7 +278,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	// Relay Tanks
 	
 	@Override
-	public int fill(ForgeDirection aDirection, FluidStack aFluid, boolean doFill) {
+	public int fill(Direction aDirection, FluidStack aFluid, boolean doFill) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, aFluid)) return 0;
@@ -288,7 +288,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		return 0;
 	}
 	@Override
-	public FluidStack drain(ForgeDirection aDirection, FluidStack aFluid, boolean doDrain) {
+	public FluidStack drain(Direction aDirection, FluidStack aFluid, boolean doDrain) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, aFluid)) return null;
@@ -298,7 +298,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		return null;
 	}
 	@Override
-	public FluidStack drain(ForgeDirection aDirection, int maxDrain, boolean doDrain) {
+	public FluidStack drain(Direction aDirection, int maxDrain, boolean doDrain) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, null)) return null;
@@ -308,7 +308,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		return null;
 	}
 	@Override
-	public boolean canFill(ForgeDirection aDirection, Fluid aFluid) {
+	public boolean canFill(Direction aDirection, Fluid aFluid) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
@@ -318,7 +318,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		return F;
 	}
 	@Override
-	public boolean canDrain(ForgeDirection aDirection, Fluid aFluid) {
+	public boolean canDrain(Direction aDirection, Fluid aFluid) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
@@ -328,7 +328,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		return F;
 	}
 	@Override
-	public FluidTankInfo[] getTankInfo(ForgeDirection aDirection) {
+	public FluidTankInfo[] getTankInfo(Direction aDirection) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(UT.Code.side(aDirection)), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getTankInfo(tTileEntity.getForgeSideOfTileEntity());
@@ -340,7 +340,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public boolean getStateRunningPossible() {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntityRunningPossible) return ((ITileEntityRunningPossible)tTileEntity.mTileEntity).getStateRunningPossible();
 		}
 		return F;
@@ -348,7 +348,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public boolean getStateRunningPassively() {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntityRunningPassively) return ((ITileEntityRunningPassively)tTileEntity.mTileEntity).getStateRunningPassively();
 		}
 		return F;
@@ -356,7 +356,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public boolean getStateRunningActively() {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntityRunningActively) return ((ITileEntityRunningActively)tTileEntity.mTileEntity).getStateRunningActively();
 		}
 		return F;
@@ -364,7 +364,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public boolean getStateRunningSuccessfully() {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntityRunningSuccessfully) return ((ITileEntityRunningSuccessfully)tTileEntity.mTileEntity).getStateRunningSuccessfully();
 		}
 		return F;
@@ -372,7 +372,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public boolean getStateOnOff() {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntitySwitchableOnOff) return ((ITileEntitySwitchableOnOff)tTileEntity.mTileEntity).getStateOnOff();
 		}
 		return F;
@@ -380,7 +380,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public byte getStateMode() {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntitySwitchableMode) return ((ITileEntitySwitchableMode)tTileEntity.mTileEntity).getStateMode();
 		}
 		return 0;
@@ -388,7 +388,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public boolean setStateOnOff(boolean aOnOff) {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntitySwitchableOnOff) return ((ITileEntitySwitchableOnOff)tTileEntity.mTileEntity).setStateOnOff(aOnOff);
 		}
 		return F;
@@ -396,7 +396,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public byte setStateMode(byte aMode) {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(SIDE_UNDEFINED), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntitySwitchableMode) return ((ITileEntitySwitchableMode)tTileEntity.mTileEntity).setStateMode(aMode);
 		}
 		return 0;
@@ -404,7 +404,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public long getProgressValue(byte aSide) {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntityProgress) return ((ITileEntityProgress)tTileEntity.mTileEntity).getProgressValue(tTileEntity.mSideOfTileEntity);
 		}
 		return 0;
@@ -412,7 +412,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public long getProgressMax(byte aSide) {
 		if ((mModes & EXTENDER_CONTROL) != 0) {
-			DelegatorTileEntity<TileEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
+			DelegatorTileEntity<BlockEntity> tTileEntity = getAdjacentTileEntity(getExtenderTargetSide(aSide), F, T);
 			if (tTileEntity.mTileEntity instanceof ITileEntityProgress) return ((ITileEntityProgress)tTileEntity.mTileEntity).getProgressMax(tTileEntity.mSideOfTileEntity);
 		}
 		return 0;
@@ -421,7 +421,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	
 	public byte getExtenderTargetSide(byte aSide) {return aSide == mFacing ? mSecondFacing : mFacing;}
 	
-	@Override public boolean isUseableByPlayer(EntityPlayer aPlayer) {return aPlayer.getDistanceSq(xCoord+0.5, yCoord+0.5, zCoord+0.5) <= 64;}
+	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.getDistanceSq(xCoord+0.5, yCoord+0.5, zCoord+0.5) <= 64;}
 	@Override public void openInventory() {/**/}
 	@Override public void closeInventory() {/**/}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}

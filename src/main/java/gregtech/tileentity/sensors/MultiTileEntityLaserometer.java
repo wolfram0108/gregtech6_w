@@ -28,7 +28,7 @@ import gregapi.render.IIconContainer;
 import gregapi.tileentity.connectors.MultiTileEntityWireLaser;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.machines.MultiTileEntitySensorTE;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * @author Gregorius Techneticies
@@ -38,13 +38,13 @@ public class MultiTileEntityLaserometer extends MultiTileEntitySensorTE {
 	@Override public String getSensorDescription() {return LH.get("gt.tooltip.sensor.laserometer");}
 	
 	@Override
-	public long getCurrentValue(DelegatorTileEntity<TileEntity> aDelegator) {
+	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof MultiTileEntityWireLaser) return ((MultiTileEntityWireLaser)aDelegator.mTileEntity).mTransferredLast;
 		return 0;
 	}
 	
 	@Override
-	public long getCurrentMax(DelegatorTileEntity<TileEntity> aDelegator) {
+	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof MultiTileEntityWireLaser) return 65535;
 		return 0;
 	}

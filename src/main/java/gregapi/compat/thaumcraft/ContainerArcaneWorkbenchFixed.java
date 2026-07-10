@@ -24,9 +24,9 @@ import static gregapi.data.CS.*;
 import gregapi.util.CR;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.Item;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
 import thaumcraft.common.container.ContainerArcaneWorkbench;
 import thaumcraft.common.items.wands.ItemWandCasting;
 import thaumcraft.common.lib.crafting.ThaumcraftCraftingManager;
@@ -36,17 +36,17 @@ import thaumcraft.common.tiles.TileArcaneWorkbench;
 /** Was a bad Idea that does not work well. It works but the GUI loses persistence and Item dupes may randomly happen. */
 public class ContainerArcaneWorkbenchFixed extends ContainerArcaneWorkbench {
 	public TileArcaneWorkbench mTileEntity;
-	public InventoryPlayer mInventoryPlayer;
+	public Inventory mInventoryPlayer;
 	
 	public ContainerArcaneWorkbenchFixed(ContainerArcaneWorkbench aOriginal) {
-		super((InventoryPlayer)UT.Reflection.getFieldContent(aOriginal, "ip"), (TileArcaneWorkbench)UT.Reflection.getFieldContent(aOriginal, "tileEntity"));
-		mInventoryPlayer = (InventoryPlayer)UT.Reflection.getFieldContent(aOriginal, "ip");
+		super((Inventory)UT.Reflection.getFieldContent(aOriginal, "ip"), (TileArcaneWorkbench)UT.Reflection.getFieldContent(aOriginal, "tileEntity"));
+		mInventoryPlayer = (Inventory)UT.Reflection.getFieldContent(aOriginal, "ip");
 		mTileEntity  = (TileArcaneWorkbench)UT.Reflection.getFieldContent(aOriginal, "tileEntity");
 		onCraftMatrixChanged(mTileEntity);
 	}
 	
 	@Override
-	public void onCraftMatrixChanged(IInventory aInventory) {
+	public void onCraftMatrixChanged(Container aInventory) {
 		if (mInventoryPlayer == null || mTileEntity == null) return;
 		mTileEntity.setInventorySlotContentsSoftly(9, CR.getany(mTileEntity.getWorldObj(), mTileEntity.stackList));
 		Item tWand = ST.item(mTileEntity.getStackInSlot(10));

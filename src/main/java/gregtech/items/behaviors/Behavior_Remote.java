@@ -28,12 +28,12 @@ import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.tileentity.ITileEntityRemoteActivateable;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChunkCoordinates;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -44,11 +44,11 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	public static final IBehavior<MultiItem> INSTANCE = new Behavior_Remote();
 	
 	@Override
-	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aWorld.isRemote || aPlayer == null || !aPlayer.isSneaking() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
-		NBTTagCompound aNBT = UT.NBT.getNBT(aStack);
-		ArrayListNoNulls<ChunkCoordinates> tList = getCoords(aNBT, aWorld.provider.dimensionId);
-		ChunkCoordinates tCoords = new ChunkCoordinates(aX, aY, aZ);
+		CompoundTag aNBT = UT.NBT.getNBT(aStack);
+		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, aWorld.provider.dimensionId);
+		BlockPos tCoords = new BlockPos(aX, aY, aZ);
 		if (tList.contains(tCoords)) {
 			UT.Entities.sendchat(aPlayer, "Coordinates removed!");
 			UT.Sounds.send(SFX.GT_BEEP, 0.5F, 1.0F, aWorld, tCoords);
@@ -57,7 +57,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 			UT.Entities.sendchat(aPlayer, "Cant hold more than 64 Coordinates per Dimension!");
 			UT.Sounds.send(SFX.GT_BEEP, 0.5F, 0.5F, aWorld, tCoords);
 		} else {
-			TileEntity tTileEntity = WD.te(aWorld, tCoords, F);
+			BlockEntity tTileEntity = WD.te(aWorld, tCoords, F);
 			if (tTileEntity instanceof ITileEntityRemoteActivateable) {
 				UT.Entities.sendchat(aPlayer, "Coordinates added!");
 				UT.Sounds.send(SFX.GT_BEEP, 0.5F, 1.0F, aWorld, tCoords);
@@ -73,12 +73,12 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, World aWorld, EntityPlayer aPlayer) {
+	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (aWorld.isRemote || aPlayer.isSneaking() || !aStack.hasTagCompound()) return aStack;
-		ArrayListNoNulls<ChunkCoordinates> tToBeKept = new ArrayListNoNulls<>();
-		for (ChunkCoordinates tCoords : getCoords(aStack.getTagCompound(), aWorld.provider.dimensionId)) {
+		ArrayListNoNulls<BlockPos> tToBeKept = new ArrayListNoNulls<>();
+		for (BlockPos tCoords : getCoords(aStack.getTagCompound(), aWorld.provider.dimensionId)) {
 			if (Math.abs(tCoords.posX - aPlayer.posX) <= 128 && Math.abs(tCoords.posY - aPlayer.posY) <= 128 && Math.abs(tCoords.posZ - aPlayer.posZ) <= 128) {
-				TileEntity tTileEntity = WD.te(aWorld, tCoords, F);
+				BlockEntity tTileEntity = WD.te(aWorld, tCoords, F);
 				if (tTileEntity instanceof ITileEntityRemoteActivateable && ((ITileEntityRemoteActivateable)tTileEntity).remoteActivate()) tToBeKept.add(tCoords);
 			} else {
 				tToBeKept.add(tCoords);
@@ -89,13 +89,13 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		return aStack;
 	}
 	
-	public static boolean addCoords(ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ) {
-		NBTTagCompound aNBT = UT.NBT.getNBT(aStack);
-		ArrayListNoNulls<ChunkCoordinates> tList = getCoords(aNBT, aWorld.provider.dimensionId);
+	public static boolean addCoords(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
+		CompoundTag aNBT = UT.NBT.getNBT(aStack);
+		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, aWorld.provider.dimensionId);
 		if (tList.size() >= 64) return F;
-		ChunkCoordinates tCoords = new ChunkCoordinates(aX, aY, aZ);
+		BlockPos tCoords = new BlockPos(aX, aY, aZ);
 		if (tList.contains(tCoords)) return T;
-		TileEntity tTileEntity = WD.te(aWorld, tCoords, F);
+		BlockEntity tTileEntity = WD.te(aWorld, tCoords, F);
 		if (tTileEntity instanceof ITileEntityRemoteActivateable) {
 			UT.Sounds.send(SFX.GT_BEEP, 0.5F, 1.0F, aWorld, tCoords);
 			tList.add(tCoords);
@@ -107,24 +107,24 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		return F;
 	}
 	
-	public static ArrayListNoNulls<ChunkCoordinates> getCoords(NBTTagCompound aNBT, int aDimension) {
-		ArrayListNoNulls<ChunkCoordinates> rList = new ArrayListNoNulls<>();
+	public static ArrayListNoNulls<BlockPos> getCoords(CompoundTag aNBT, int aDimension) {
+		ArrayListNoNulls<BlockPos> rList = new ArrayListNoNulls<>();
 		if (aNBT == null) return rList;
-		NBTTagCompound tNBT = aNBT.getCompoundTag("gt.remote.dim."+aDimension);
+		CompoundTag tNBT = aNBT.getCompoundTag("gt.remote.dim."+aDimension);
 		if (tNBT.hasNoTags()) return rList;
 		int i = -1; while (tNBT.hasKey("c"+(++i))) {
-			rList.add(new ChunkCoordinates(tNBT.getInteger("x"+i), tNBT.getInteger("y"+i), tNBT.getInteger("z"+i)));
+			rList.add(new BlockPos(tNBT.getInteger("x"+i), tNBT.getInteger("y"+i), tNBT.getInteger("z"+i)));
 		}
 		return rList;
 	}
 	
-	public static void setCoords(NBTTagCompound aNBT, int aDimension, ArrayListNoNulls<ChunkCoordinates> aList) {
+	public static void setCoords(CompoundTag aNBT, int aDimension, ArrayListNoNulls<BlockPos> aList) {
 		if (aList.isEmpty()) {
 			aNBT.removeTag("gt.remote.dim."+aDimension);
 		} else {
-			NBTTagCompound tNBT = UT.NBT.make();
+			CompoundTag tNBT = UT.NBT.make();
 			for (int i = 0, j = aList.size(); i < j; i++) {
-				ChunkCoordinates tCoords = aList.get(i);
+				BlockPos tCoords = aList.get(i);
 				UT.NBT.setBoolean(tNBT, "c"+i, T);
 				UT.NBT.setNumber (tNBT, "x"+i, tCoords.posX);
 				UT.NBT.setNumber (tNBT, "y"+i, tCoords.posY);

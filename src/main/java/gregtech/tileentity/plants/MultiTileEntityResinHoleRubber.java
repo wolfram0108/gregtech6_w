@@ -28,10 +28,10 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.ITexture;
 import gregapi.tileentity.misc.MultiTileEntityTreeHole;
 import gregapi.util.ST;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +45,7 @@ public class MultiTileEntityResinHoleRubber extends MultiTileEntityTreeHole {
 	
 	public static List<MultiTileEntityResinHoleRubber> sListResinHoles = new ArrayListNoNulls<>();
 	
-	public static boolean nearby(World aWorld, int aX, int aY, int aZ) {
+	public static boolean nearby(Level aWorld, int aX, int aY, int aZ) {
 		Iterator<MultiTileEntityResinHoleRubber> tIterator = sListResinHoles.iterator();
 		while (tIterator.hasNext()) {
 			MultiTileEntityResinHoleRubber tHole = tIterator.next();

@@ -27,7 +27,7 @@ import codechicken.nei.guihook.GuiContainerManager;
 import codechicken.nei.guihook.IContainerInputHandler;
 import codechicken.nei.guihook.IContainerTooltipHandler;
 import codechicken.nei.recipe.*;
-import cpw.mods.fml.common.event.FMLInterModComms;
+import net.neoforged.fml.InterModComms;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemStackContainer;
 import gregapi.data.*;
@@ -41,15 +41,15 @@ import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -75,7 +75,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			API.registerRecipeHandler(this);
 			API.registerUsageHandler(this);
 			
-			NBTTagCompound tNBT = UT.NBT.make();
+			CompoundTag tNBT = UT.NBT.make();
 			tNBT.setString ("modId"            , MD.GT.mID);
 			tNBT.setString ("modName"          , MD.GT.mName);
 			tNBT.setString ("handler"          , mRecipeMap.mNameNEI);
@@ -85,13 +85,13 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			tNBT.setInteger("maxRecipesPerPage",   2);
 			tNBT.setInteger("yShift"           ,   6);
 			tNBT.setBoolean("modRequired"      ,   T);
-			FMLInterModComms.sendMessage("NotEnoughItems", "registerHandlerInfo", tNBT);
+			InterModComms.sendMessage("NotEnoughItems", "registerHandlerInfo", tNBT);
 		} else {
 			GuiCraftingRecipe.craftinghandlers.add(this);
 			GuiUsageRecipe.usagehandlers.add(this);
 		}
 		
-		FMLInterModComms.sendRuntimeMessage(GAPI, "NEIPlugins", "register-crafting-handler", MD.GAPI.mID+"@"+getRecipeName()+"@"+getOverlayIdentifier());
+		InterModComms.sendRuntimeMessage(GAPI, "NEIPlugins", "register-crafting-handler", MD.GAPI.mID+"@"+getRecipeName()+"@"+getOverlayIdentifier());
 		return this;
 	}
 	

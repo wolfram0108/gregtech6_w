@@ -33,18 +33,18 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 
 public class Behavior_Cropnalyzer extends AbstractBehaviorDefault {
 	public static final Behavior_Cropnalyzer INSTANCE = new Behavior_Cropnalyzer();
 	
 	@Override
-	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aPlayer instanceof EntityPlayerMP) {
+	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
+		if (aPlayer instanceof ServerPlayer) {
 			ArrayList<String> tList = new ArrayListNoNulls<>();
 			long tUsedEnergy = getCropScan(tList, aWorld, aX, aY, aZ);
 			if (tUsedEnergy <= 0) return F;
@@ -52,7 +52,7 @@ public class Behavior_Cropnalyzer extends AbstractBehaviorDefault {
 			return T;
 		}
 		UT.Sounds.play(SFX.IC_SCANNER, 20, 1.0F, aX, aY, aZ);
-		return aPlayer instanceof EntityPlayerMP;
+		return aPlayer instanceof ServerPlayer;
 	}
 	
 	static {
@@ -65,13 +65,13 @@ public class Behavior_Cropnalyzer extends AbstractBehaviorDefault {
 		return aList;
 	}
 	
-	public long getCropScan(ArrayList<String> aList, World aWorld, int aX, int aY, int aZ) {
+	public long getCropScan(ArrayList<String> aList, Level aWorld, int aX, int aY, int aZ) {
 		if (aList == null || !MD.IC2.mLoaded) return 0;
 		
 		ArrayList<String> rList = new ArrayListNoNulls<>();
 		long rEUAmount = 0;
 		
-		TileEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
+		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
 		if (tTileEntity instanceof ic2.api.crops.ICropTile) {
 			rList.add("--- X: " + aX + " Y: " + aY + " Z: " + aZ + " ---");

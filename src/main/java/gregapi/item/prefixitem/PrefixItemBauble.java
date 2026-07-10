@@ -28,9 +28,9 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.oredict.OreDictPrefix;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import thaumcraft.api.IWarpingGear;
 
 import static gregapi.data.CS.T;
@@ -52,20 +52,20 @@ public abstract class PrefixItemBauble extends PrefixItem implements IBauble, IW
 	}
 	
 	@Override
-	public int getWarp(ItemStack aStack, EntityPlayer aPlayer) {
+	public int getWarp(ItemStack aStack, Player aPlayer) {
 		OreDictMaterial tMat = getMaterial(ST.meta(aStack));
 		return tMat != null && tMat.contains(TD.Properties.WARPING) ? 1 : 0;
 	}
 	
 	@Override
-	public void onWornTick(ItemStack aStack, EntityLivingBase aPlayer) {
+	public void onWornTick(ItemStack aStack, LivingEntity aPlayer) {
 		if (aPlayer.ticksExisted % 120 == 0 && !UT.Entities.isInvincible(aPlayer)) {
 			UT.Entities.applyRadioactivity(aPlayer, UT.Entities.getRadioactivityLevel(aStack), aStack.stackSize);
 		}
 	}
 	
-	@Override public void onEquipped(ItemStack aStack, EntityLivingBase aPlayer) {/**/}
-	@Override public void onUnequipped(ItemStack aStack, EntityLivingBase aPlayer) {/**/}
-	@Override public boolean canEquip(ItemStack aStack, EntityLivingBase aPlayer) {return T;/*aStack != null && aStack.stackSize == 1;*/}
-	@Override public boolean canUnequip(ItemStack aStack, EntityLivingBase aPlayer) {return T;}
+	@Override public void onEquipped(ItemStack aStack, LivingEntity aPlayer) {/**/}
+	@Override public void onUnequipped(ItemStack aStack, LivingEntity aPlayer) {/**/}
+	@Override public boolean canEquip(ItemStack aStack, LivingEntity aPlayer) {return T;/*aStack != null && aStack.stackSize == 1;*/}
+	@Override public boolean canUnequip(ItemStack aStack, LivingEntity aPlayer) {return T;}
 }

@@ -20,10 +20,10 @@
 package gregtech;
 
 import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import cpw.mods.fml.common.eventhandler.Event.Result;
-import cpw.mods.fml.common.eventhandler.EventPriority;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
 import cpw.mods.fml.common.network.FMLNetworkEvent.ClientConnectedToServerEvent;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
@@ -46,37 +46,37 @@ import gregtech.entities.Override_Drops;
 import gregtech.entities.ai.EntityAIBetterAttackOnCollide;
 import gregtech.entities.projectiles.EntityArrow_Material;
 import gregtech.tileentity.misc.MultiTileEntityCertificate;
-import net.minecraft.block.Block;
-import net.minecraft.entity.EntityCreature;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.ai.EntityAIAttackOnCollide;
 import net.minecraft.entity.ai.EntityAITasks;
 import net.minecraft.entity.ai.EntityAITempt;
-import net.minecraft.entity.monster.EntityEnderman;
+import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityOcelot;
 import net.minecraft.entity.passive.EntityVillager;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.potion.Potion;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.phys.HitResult;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.EnderTeleportEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.terraingen.BiomeEvent;
 import net.minecraftforge.event.terraingen.DecorateBiomeEvent;
 import net.minecraftforge.event.terraingen.OreGenEvent.GenerateMinable;
 import net.minecraftforge.event.terraingen.OreGenEvent.GenerateMinable.EventType;
 import net.minecraftforge.event.terraingen.PopulateChunkEvent;
 import net.minecraftforge.event.terraingen.PopulateChunkEvent.Populate;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.level.material.Fluid;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -95,14 +95,14 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	public int mSkeletonsShootGTArrows = 16, mFlintChance = 30;
 	
 	public GT_Proxy() {
-		MinecraftForge.EVENT_BUS         .register(this);
-		MinecraftForge.ORE_GEN_BUS       .register(this);
-		MinecraftForge.TERRAIN_GEN_BUS   .register(this);
+		NeoForge.EVENT_BUS         .register(this);
+		NeoForge.ORE_GEN_BUS       .register(this);
+		NeoForge.TERRAIN_GEN_BUS   .register(this);
 		FMLCommonHandler.instance().bus().register(this);
 	}
 	
 	@Override
-	public void onProxyBeforePreInit(Abstract_Mod aMod, FMLPreInitializationEvent aEvent) {
+	public void onProxyBeforePreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		super.onProxyBeforePreInit(aMod, aEvent);
 		
 		// Because of the whole ban wave Mojang did with their new Microsoft Bullshit Auth System, I am not going to
@@ -131,7 +131,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onEndermanTeleportEvent(EnderTeleportEvent aEvent) {
-		if (aEvent.entityLiving instanceof EntityEnderman && aEvent.entityLiving.getActivePotionEffect(Potion.weakness) != null) aEvent.setCanceled(T);
+		if (aEvent.entityLiving instanceof EnderMan && aEvent.entityLiving.getActivePotionEffect(MobEffect.weakness) != null) aEvent.setCanceled(T);
 	}
 	
 	private static final EnumSet<EventType> PREVENTED_ORES = EnumSet.of(EventType.COAL, EventType.IRON, EventType.GOLD, EventType.DIAMOND, EventType.REDSTONE, EventType.LAPIS, EventType.QUARTZ);
@@ -209,8 +209,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 						return;
 					}
 					
-					MovingObjectPosition tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
-					if (tTarget == null || tTarget.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.blockX, tTarget.blockY, tTarget.blockZ) || !aEvent.entityPlayer.canPlayerEdit(tTarget.blockX, tTarget.blockY, tTarget.blockZ, tTarget.sideHit, aStack)) return;
+					HitResult tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
+					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.blockX, tTarget.blockY, tTarget.blockZ) || !aEvent.entityPlayer.canPlayerEdit(tTarget.blockX, tTarget.blockY, tTarget.blockZ, tTarget.sideHit, aStack)) return;
 					Block tBlock = aEvent.world.getBlock(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
 					
 					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
@@ -251,8 +251,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					return;
 				}
 				if (aStack.getItem() == Items.bucket) {
-					MovingObjectPosition tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
-					if (tTarget != null && tTarget.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+					HitResult tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
+					if (tTarget != null && tTarget.typeOfHit == HitResult.MovingObjectType.BLOCK) {
 						Block tBlock = aEvent.world.getBlock(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
 						if (tBlock instanceof BlockWaterlike && tBlock != BlocksGT.River) aEvent.setCanceled(T);
 					}
@@ -347,7 +347,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	}
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
-	public void onEntitySpawningEvent(EntityJoinWorldEvent aEvent) {
+	public void onEntitySpawningEvent(EntityJoinLevelEvent aEvent) {
 		if (aEvent.entity == null) return;
 		
 		if (aEvent.entity instanceof EntityLiving) {
@@ -355,10 +355,10 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			EntityAITasks tTasks = ((EntityLiving)aEvent.entity).tasks;
 			if (tTasks != null) {
 				if (aEvent.entity instanceof EntityVillager) {
-					tTasks.addTask(3, new EntityAITempt((EntityCreature)aEvent.entity, 0.6D, Items.emerald, F));
+					tTasks.addTask(3, new EntityAITempt((PathfinderMob)aEvent.entity, 0.6D, Items.emerald, F));
 				}
 				if (aEvent.entity instanceof EntityOcelot) {
-					if (ItemsGT.CANS != null) tTasks.addTask(3, new EntityAITempt((EntityCreature)aEvent.entity, 0.6D, ItemsGT.CANS, T));
+					if (ItemsGT.CANS != null) tTasks.addTask(3, new EntityAITempt((PathfinderMob)aEvent.entity, 0.6D, ItemsGT.CANS, T));
 				}
 				if (aEvent.entity instanceof EntityZombie) {
 					for (int i = 0; i < tTasks.taskEntries.size(); i++) {
@@ -387,8 +387,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		
 		if (aEvent.entity.worldObj.isRemote) return;
 		
-		if (mSkeletonsShootGTArrows > 0 && aEvent.entity.getClass() == EntityArrow.class && RNGSUS.nextInt(mSkeletonsShootGTArrows) == 0) {
-			if (((EntityArrow)aEvent.entity).shootingEntity instanceof EntitySkeleton) {
+		if (mSkeletonsShootGTArrows > 0 && aEvent.entity.getClass() == Arrow.class && RNGSUS.nextInt(mSkeletonsShootGTArrows) == 0) {
+			if (((Arrow)aEvent.entity).shootingEntity instanceof EntitySkeleton) {
 				OreDictMaterial tMaterial = MT.Craponite; // Just default to Anti-Bear989Sr Arrows
 				switch(RNGSUS.nextInt(10)) {
 				case 0: tMaterial = MT.Steel; break; // Sharpness 2
@@ -404,7 +404,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				}
 				ItemStack tArrow = OP.arrowGtWood.mat(tMaterial, 1);
 				if (ST.valid(tArrow)) {
-					aEvent.entity.worldObj.spawnEntityInWorld(new EntityArrow_Material((EntityArrow)aEvent.entity, tArrow));
+					aEvent.entity.worldObj.spawnEntityInWorld(new EntityArrow_Material((Arrow)aEvent.entity, tArrow));
 					aEvent.entity.setDead();
 				}
 			}
@@ -419,8 +419,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onEntityLivingFallEvent(LivingFallEvent aEvent) {
-		if (!aEvent.entity.worldObj.isRemote && aEvent.entity instanceof EntityPlayer) {
-			if (ST.equal(((EntityPlayer)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.SCISSORS) || ST.equal(((EntityPlayer)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.POCKET_SCISSORS)) aEvent.distance *= 2;
+		if (!aEvent.entity.worldObj.isRemote && aEvent.entity instanceof Player) {
+			if (ST.equal(((Player)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.SCISSORS) || ST.equal(((Player)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.POCKET_SCISSORS)) aEvent.distance *= 2;
 		}
 	}
 	

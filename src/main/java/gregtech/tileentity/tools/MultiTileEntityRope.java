@@ -32,13 +32,13 @@ import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 
 import static gregapi.data.CS.*;
 
@@ -47,12 +47,12 @@ import static gregapi.data.CS.*;
  */
 public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements ITileEntityQuickObstructionCheck, IMTE_IgnorePlayerCollisionWhenPlacing, IMTE_IsLadder, IMTE_OnBlockHarvested, IMTE_SetBlockBoundsBasedOnState, IMTE_GetCollisionBoundingBoxFromPool, IMTE_GetSelectedBoundingBoxFromPool {
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		ItemStack aStack = aPlayer.getCurrentEquippedItem();
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID());
 		if (tRegistry != null && ST.equal(aStack, toStack(), F)) {
 			if (isServerSide()) for (int tY = yCoord-1; tY >= 0; tY--) {
-				TileEntity tTileEntity = getTileEntity(xCoord, tY, zCoord);
+				BlockEntity tTileEntity = getTileEntity(xCoord, tY, zCoord);
 				if (tTileEntity instanceof MultiTileEntityRope) {
 					if (((MultiTileEntityRope)tTileEntity).getMultiTileEntityRegistryID() != getMultiTileEntityRegistryID()) return T;
 					if (((MultiTileEntityRope)tTileEntity).getMultiTileEntityID() != getMultiTileEntityID()) return T;
@@ -60,7 +60,7 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 					continue;
 				}
 				if (WD.air(worldObj, xCoord, tY, zCoord)) {
-					tRegistry.mBlock.placeBlock(worldObj, xCoord, tY, zCoord, SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(aStack.hasTagCompound()?(NBTTagCompound)aStack.getTagCompound().copy():null, NBT_FACING, mFacing), T, F);
+					tRegistry.mBlock.placeBlock(worldObj, xCoord, tY, zCoord, SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(aStack.hasTagCompound()?(CompoundTag)aStack.getTagCompound().copy():null, NBT_FACING, mFacing), T, F);
 					if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
 					UT.Sounds.send(SFX.MC_DIG_CLOTH, this, F);
 				}
@@ -72,9 +72,9 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	}
 	
 	@Override
-	public void onBlockHarvested(int aMetaData, EntityPlayer aPlayer) {
+	public void onBlockHarvested(int aMetaData, Player aPlayer) {
 		if (isServerSide() && aPlayer != null) {
-			TileEntity tTileEntity = getTileEntityAtSideAndDistance(SIDE_UP, 1);
+			BlockEntity tTileEntity = getTileEntityAtSideAndDistance(SIDE_UP, 1);
 			if (!(tTileEntity instanceof MultiTileEntityRope)) for (int tY = yCoord-1; tY >= 0; tY--) {
 				tTileEntity = getTileEntity(xCoord, tY, zCoord);
 				if (tTileEntity instanceof MultiTileEntityRope && ((MultiTileEntityRope)tTileEntity).mFacing == mFacing && ((MultiTileEntityRope)tTileEntity).getMultiTileEntityRegistryID() == getMultiTileEntityRegistryID() && ((MultiTileEntityRope)tTileEntity).getMultiTileEntityID() == getMultiTileEntityID()) {
@@ -122,7 +122,7 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	public static IIconContainer sColored = new Textures.BlockIcons.CustomIcon("machines/tools/rope/colored"), sOverlay = new Textures.BlockIcons.CustomIcon("machines/tools/rope/overlay");
 	
 	@Override
-	public AxisAlignedBB getCollisionBoundingBoxFromPool() {
+	public AABB getCollisionBoundingBoxFromPool() {
 		switch(mFacing) {
 		case SIDE_Z_POS: return box(PX_P[ 7], PX_P[ 0], PX_P[12], PX_N[ 7], PX_N[ 0], PX_N[ 2]);
 		case SIDE_Z_NEG: return box(PX_P[ 7], PX_P[ 0], PX_P[ 2], PX_N[ 7], PX_N[ 0], PX_N[12]);
@@ -135,7 +135,7 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	}
 	
 	@Override
-	public AxisAlignedBB getSelectedBoundingBoxFromPool() {
+	public AABB getSelectedBoundingBoxFromPool() {
 		switch(mFacing) {
 		case SIDE_Z_POS: return box(PX_P[ 6], PX_P[ 0], PX_P[12], PX_N[ 6], PX_N[ 0], PX_N[ 0]);
 		case SIDE_Z_NEG: return box(PX_P[ 6], PX_P[ 0], PX_P[ 0], PX_N[ 6], PX_N[ 0], PX_N[12]);
@@ -169,11 +169,11 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	@Override public boolean allowCovers           (byte aSide) {return F;}
 	@Override public boolean attachCoversFirst     (byte aSide) {return F;}
 	@Override public boolean isObstructingBlockAt  (byte aSide) {return F;}
-	@Override public boolean isLadder(EntityLivingBase aEntity) {return T;}
+	@Override public boolean isLadder(LivingEntity aEntity) {return T;}
 	@Override public boolean ignorePlayerCollisionWhenPlacing() {return T;}
 	@Override public boolean useSidePlacementRotation        () {return T;}
 	@Override public boolean useInversePlacementRotation     () {return T;}
-	@Override public boolean checkObstruction(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
+	@Override public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	@Override public byte getDefaultSide() {return SIDE_Y_NEG;}
 	@Override public boolean[] getValidSides() {return SIDES_VALID;}

@@ -21,12 +21,12 @@ package gregtech.worldgen;
 
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.util.UT;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.util.WeightedRandomChestContent;
-import net.minecraft.world.World;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ChestGenHooks;
 
 import java.lang.reflect.Field;
@@ -100,14 +100,14 @@ public class ChestGenHooksChestReplacer extends ChestGenHooks {
 		}
 		
 		@Override
-		protected ItemStack[] generateChestContent(Random aRandom, IInventory aInventory) {
+		protected ItemStack[] generateChestContent(Random aRandom, Container aInventory) {
 			// Only unmodified Vanilla Chests!
-			if (aInventory.getClass() != TileEntityChest.class) return generateChestContent2(aRandom, aInventory);
+			if (aInventory.getClass() != ChestBlockEntity.class) return generateChestContent2(aRandom, aInventory);
 			// We need a World Object.
-			World aWorld = ((TileEntityChest)aInventory).getWorldObj();
+			Level aWorld = ((ChestBlockEntity)aInventory).getWorldObj();
 			if (aWorld == null) return generateChestContent2(aRandom, aInventory);
 			// XYZ and check if the Block we replace is a regular Chest.
-			int aX = ((TileEntityChest)aInventory).xCoord, aY = ((TileEntityChest)aInventory).yCoord, aZ = ((TileEntityChest)aInventory).zCoord;
+			int aX = ((ChestBlockEntity)aInventory).xCoord, aY = ((ChestBlockEntity)aInventory).yCoord, aZ = ((ChestBlockEntity)aInventory).zCoord;
 			if (Blocks.chest != aWorld.getBlock(aX, aY, aZ)) return generateChestContent2(aRandom, aInventory);
 			// Does Greg's Registry exist?
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
@@ -124,9 +124,9 @@ public class ChestGenHooksChestReplacer extends ChestGenHooks {
 			return ZL_IS;
 		}
 		
-		protected ItemStack[] generateChestContent2(Random aRandom, IInventory aInventory) {
+		protected ItemStack[] generateChestContent2(Random aRandom, Container aInventory) {
 			try {
-				Method tMethod = mContent.getClass().getDeclaredMethod("generateChestContent", Random.class, IInventory.class);
+				Method tMethod = mContent.getClass().getDeclaredMethod("generateChestContent", Random.class, Container.class);
 				tMethod.setAccessible(T);
 				return (ItemStack[])tMethod.invoke(mContent, aRandom, aInventory);
 			} catch(Throwable e) {

@@ -20,7 +20,7 @@
 package gregapi.worldgen.dungeon;
 
 import gregapi.util.UT;
-import net.minecraft.init.Blocks;
+import net.minecraft.world.level.block.Blocks;
 
 import static gregapi.data.CS.*;
 

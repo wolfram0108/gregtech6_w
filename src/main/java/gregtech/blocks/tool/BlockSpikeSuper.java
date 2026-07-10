@@ -24,14 +24,14 @@ import gregapi.damage.DamageSources;
 import gregapi.data.LH;
 import gregapi.data.MT;
 import gregapi.util.WD;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.boss.EntityDragon;
-import net.minecraft.entity.boss.EntityWither;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -59,7 +59,7 @@ public class BlockSpikeSuper extends BlockBaseSpike {
 	}
 	
 	@Override
-	public void addInformation(ItemStack aStack, byte aMeta, EntityPlayer aPlayer, List<String> aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		if (aMeta < 8) {
 			aList.add(LH.Chat.ORANGE + "Deals huge Damage to anything touching it!");
 		} else {
@@ -71,9 +71,9 @@ public class BlockSpikeSuper extends BlockBaseSpike {
 	}
 	
 	@Override
-	public void onEntityCollidedWithBlock(World aWorld, int aX, int aY, int aZ, Entity aEntity) {
+	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
-		if (aEntity instanceof EntityLivingBase) {
+		if (aEntity instanceof LivingEntity) {
 			if (aMeta < 8) {
 				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 15.0F :  7.5F));
 			} else {
@@ -83,7 +83,7 @@ public class BlockSpikeSuper extends BlockBaseSpike {
 	}
 	
 	@Override
-	public boolean canEntityDestroy(IBlockAccess aWorld, int aX, int aY, int aZ, Entity aEntity) {
-		return WD.meta(aWorld, aX, aY, aZ) < 8 || !(aEntity instanceof EntityWither || aEntity instanceof EntityDragon);
+	public boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {
+		return WD.meta(aWorld, aX, aY, aZ) < 8 || !(aEntity instanceof WitherBoss || aEntity instanceof EnderDragon);
 	}
 }

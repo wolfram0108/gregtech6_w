@@ -29,9 +29,9 @@ import gregapi.data.LH;
 import gregapi.render.BlockTextureDefault;
 import gregapi.render.ITexture;
 import gregapi.util.ST;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * @author Gregorius Techneticies
@@ -40,7 +40,7 @@ public class MultiTileEntityPanelWood extends MultiTileEntityPanel implements IM
 	public short mIndex = 0;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mIndex = (short)(aNBT.getShort(NBT_TEXTURE) % PlankData.PLANK_ICONS.length);
 	}

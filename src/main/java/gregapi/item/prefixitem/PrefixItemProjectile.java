@@ -19,7 +19,7 @@
 
 package gregapi.item.prefixitem;
 
-import cpw.mods.fml.common.FMLLog;
+import net.neoforged.fml.Logging;
 import gregapi.code.ModData;
 import gregapi.code.ObjectStack;
 import gregapi.code.TagData;
@@ -30,20 +30,20 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.oredict.OreDictPrefix;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.BlockDispenser;
-import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
-import net.minecraft.dispenser.BehaviorProjectileDispense;
-import net.minecraft.dispenser.IBlockSource;
-import net.minecraft.dispenser.IPosition;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.IProjectile;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
+import net.minecraft.core.dispenser.ProjectileDispenseBehavior;
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.Position;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -70,12 +70,12 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		mSpeedMultiplier = aSpeedMultiplier;
 		mStabbing = aStabbing;
 		mIsBullet = aIsBullet;
-		if (aDispensable) BlockDispenser.dispenseBehaviorRegistry.putObject(this, new MetaItemDispense());
+		if (aDispensable) DispenserBlock.dispenseBehaviorRegistry.putObject(this, new MetaItemDispense());
 	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public void addInformation(ItemStack aStack, EntityPlayer aPlayer, List aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, Player aPlayer, List aList, boolean aF3_H) {
 		if (mIsBullet) {
 			OreDictMaterial tMat = getMaterial(ST.meta(aStack));
 			int tDamage = (int)((tMat == null ? 1.0 : tMat.getWeight(getPrefix(ST.meta(aStack)).mAmount) / 50.0) * 2.0F * TFC_DAMAGE_MULTIPLIER)+1;
@@ -90,33 +90,33 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 	}
 	
 	@Override
-	public EntityProjectile getProjectile(TagData aProjectileType, ItemStack aStack, World aWorld, double aX, double aY, double aZ) {
+	public EntityProjectile getProjectile(TagData aProjectileType, ItemStack aStack, Level aWorld, double aX, double aY, double aZ) {
 		if (!hasProjectile(aProjectileType, aStack)) return null;
 		try {
-			EntityProjectile tProjectile = mEntityClass.getConstructor(World.class, Double.TYPE, Double.TYPE, Double.TYPE).newInstance(aWorld, aX, aY, aZ);
+			EntityProjectile tProjectile = mEntityClass.getConstructor(Level.class, Double.TYPE, Double.TYPE, Double.TYPE).newInstance(aWorld, aX, aY, aZ);
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
 			return tProjectile;
-		} catch (Throwable e) {FMLLog.severe("Problems with '%s'", mEntityClass.getName()); FMLLog.severe(e.toString());}
+		} catch (Throwable e) {Logging.severe("Problems with '%s'", mEntityClass.getName()); Logging.severe(e.toString());}
 		return null;
 	}
 	
 	@Override
-	public EntityProjectile getProjectile(TagData aProjectileType, ItemStack aStack, World aWorld, EntityLivingBase aEntity, float aSpeed) {
+	public EntityProjectile getProjectile(TagData aProjectileType, ItemStack aStack, Level aWorld, LivingEntity aEntity, float aSpeed) {
 		if (!hasProjectile(aProjectileType, aStack)) return null;
 		try {
-			EntityProjectile tProjectile = mEntityClass.getConstructor(World.class, EntityLivingBase.class, Float.TYPE).newInstance(aWorld, aEntity, mSpeedMultiplier * aSpeed);
+			EntityProjectile tProjectile = mEntityClass.getConstructor(Level.class, LivingEntity.class, Float.TYPE).newInstance(aWorld, aEntity, mSpeedMultiplier * aSpeed);
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
 			return tProjectile;
-		} catch (Throwable e) {FMLLog.severe("Problems with '%s'", mEntityClass.getName()); FMLLog.severe(e.toString());}
+		} catch (Throwable e) {Logging.severe("Problems with '%s'", mEntityClass.getName()); Logging.severe(e.toString());}
 		return null;
 	}
 	
 	@Override
-	public boolean onLeftClickEntity(ItemStack aStack, EntityPlayer aPlayer, Entity aEntity) {
+	public boolean onLeftClickEntity(ItemStack aStack, Player aPlayer, Entity aEntity) {
 		super.onLeftClickEntity(aStack, aPlayer, aEntity);
-		if (aEntity instanceof EntityLivingBase) {
+		if (aEntity instanceof LivingEntity) {
 			if (mStabbing) {
-				UT.Enchantments.applyBullshitA((EntityLivingBase)aEntity, aPlayer, aStack);
+				UT.Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 				UT.Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 			}
 			ST.use(aPlayer, aStack);
@@ -137,7 +137,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		super.updateItemStack(aStack);
 		short aMetaData = ST.meta_(aStack);
 		if (UT.Code.exists(aMetaData, mMaterialList) && !mMaterialList[aMetaData].mEnchantmentAmmo.isEmpty()) {
-			NBTTagCompound tNBT = UT.NBT.getOrCreate(aStack);
+			CompoundTag tNBT = UT.NBT.getOrCreate(aStack);
 			if (!tNBT.getBoolean("gt.u")) {
 				tNBT.setBoolean("gt.u", T);
 				for (ObjectStack<Enchantment> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
@@ -147,10 +147,10 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		}
 	}
 	
-	public ItemStack onDispense(IBlockSource aSource, ItemStack aStack) {
-		World aWorld = aSource.getWorld();
-		IPosition tPosition = BlockDispenser.func_149939_a(aSource);
-		EnumFacing tFacing = BlockDispenser.func_149937_b(aSource.getBlockMetadata());
+	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
+		Level aWorld = aSource.getWorld();
+		Position tPosition = DispenserBlock.func_149939_a(aSource);
+		Direction tFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
 		EntityProjectile tProjectile = getProjectile(mProjectileType, aStack, aWorld, tPosition.getX(), tPosition.getY(), tPosition.getZ());
 		if (tProjectile != null) {
 			tProjectile.setThrowableHeading(tFacing.getFrontOffsetX(), (tFacing.getFrontOffsetY() + 0.1F), tFacing.getFrontOffsetZ(), mSpeedMultiplier * 1.10F, mPrecision);
@@ -162,15 +162,15 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		}
 		
 		// Default Item Dropping.
-		EnumFacing enumfacing = BlockDispenser.func_149937_b(aSource.getBlockMetadata());
-		IPosition iposition = BlockDispenser.func_149939_a(aSource);
+		Direction enumfacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
+		Position iposition = DispenserBlock.func_149939_a(aSource);
 		ItemStack itemstack1 = aStack.splitStack(1);
-		BehaviorDefaultDispenseItem.doDispense(aSource.getWorld(), itemstack1, 6, enumfacing, iposition);
+		DefaultDispenseItemBehavior.doDispense(aSource.getWorld(), itemstack1, 6, enumfacing, iposition);
 		return aStack;
 	}
 	
-	public static class MetaItemDispense extends BehaviorProjectileDispense {
-		@Override public ItemStack dispenseStack(IBlockSource aSource, ItemStack aStack) {return ((PrefixItemProjectile)aStack.getItem()).onDispense(aSource, aStack);}
-		@Override protected IProjectile getProjectileEntity(World aWorld, IPosition aPosition) {return null;}
+	public static class MetaItemDispense extends ProjectileDispenseBehavior {
+		@Override public ItemStack dispenseStack(BlockSource aSource, ItemStack aStack) {return ((PrefixItemProjectile)aStack.getItem()).onDispense(aSource, aStack);}
+		@Override protected Projectile getProjectileEntity(Level aWorld, Position aPosition) {return null;}
 	}
 }

@@ -32,14 +32,14 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.ITileEntityQuickObstructionCheck;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.logistics.ITileEntityLogistics;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * @author Gregorius Techneticies
  */
 public class MultiTileEntityWireLogistics extends TileEntityBase10ConnectorRendered implements ITileEntityQuickObstructionCheck, ITileEntityLogistics {
 	@Override
-	public boolean canConnect(byte aSide, DelegatorTileEntity<TileEntity> aDelegator) {
+	public boolean canConnect(byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof ITileEntityLogistics) return ((ITileEntityLogistics)aDelegator.mTileEntity).canLogistics(aDelegator.mSideOfTileEntity);
 		return F;
 	}

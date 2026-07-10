@@ -21,26 +21,26 @@ package gregapi.gui;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.tileentity.ITileEntityInventoryGUI;
-import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.world.entity.player.Inventory;
 
 /**
  * @author Gregorius Techneticies
  */
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ContainerClientDefault extends ContainerClient {
-	public ContainerClientDefault(InventoryPlayer aInventoryPlayer, ITileEntityInventoryGUI aTileEntity) {
+	public ContainerClientDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity) {
 		this(aInventoryPlayer, aTileEntity, RES_PATH_GUI + "chests/" + aTileEntity.getSizeInventoryGUI() + ".png");
 	}
-	public ContainerClientDefault(InventoryPlayer aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, String aBackgroundPath) {
+	public ContainerClientDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, String aBackgroundPath) {
 		this(aInventoryPlayer, aTileEntity, 0, aBackgroundPath);
 	}
-	public ContainerClientDefault(InventoryPlayer aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
+	public ContainerClientDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
 		this(aInventoryPlayer, aTileEntity, aGUIID, RES_PATH_GUI + "chests/" + aTileEntity.getSizeInventoryGUI() + ".png");
 	}
-	public ContainerClientDefault(InventoryPlayer aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID, String aBackgroundPath) {
+	public ContainerClientDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID, String aBackgroundPath) {
 		super(new ContainerCommonDefault(aInventoryPlayer, aTileEntity, aGUIID), aBackgroundPath);
 	}
 	public ContainerClientDefault(ContainerCommonDefault aContainer) {

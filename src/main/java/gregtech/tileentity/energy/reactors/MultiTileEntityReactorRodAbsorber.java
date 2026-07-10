@@ -24,7 +24,7 @@ import static gregapi.data.CS.*;
 import java.util.List;
 
 import gregapi.data.LH;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies

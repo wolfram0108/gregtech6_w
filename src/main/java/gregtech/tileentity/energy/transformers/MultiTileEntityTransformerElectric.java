@@ -28,7 +28,7 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.energy.ITileEntityEnergyElectricityAcceptor;
 import gregapi.tileentity.energy.TileEntityBase11Bidirectional;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 public class MultiTileEntityTransformerElectric extends TileEntityBase11Bidirectional implements ITileEntityEnergyElectricityAcceptor {
 	@Override

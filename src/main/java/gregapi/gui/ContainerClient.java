@@ -23,23 +23,23 @@ import static gregapi.data.CS.*;
 
 import org.lwjgl.opengl.GL11;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.util.ST;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.inventory.Slot;
-import net.minecraft.util.ResourceLocation;
+import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.resources.Identifier;
 
 /**
  * @author Gregorius Techneticies
  */
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ContainerClient extends GuiContainer {
 	
 	public boolean mCrashed = F;
 	
-	public ResourceLocation mBackground;
+	public Identifier mBackground;
 	
 	public String mNEI = "";
 	
@@ -51,7 +51,7 @@ public class ContainerClient extends GuiContainer {
 	public ContainerClient(ContainerCommon aContainer, String aBackgroundPath) {
 		super(aContainer);
 		mContainer = aContainer;
-		mBackground = new ResourceLocation(aBackgroundPath);
+		mBackground = new Identifier(aBackgroundPath);
 	}
 	
 	@Override
@@ -85,7 +85,7 @@ public class ContainerClient extends GuiContainer {
 		} catch (Throwable e) {
 			e.printStackTrace(ERR);
 			try {
-				Tessellator.instance.draw();
+				Tesselator.instance.draw();
 			} catch (Throwable f) {
 				f.printStackTrace(ERR);
 			}

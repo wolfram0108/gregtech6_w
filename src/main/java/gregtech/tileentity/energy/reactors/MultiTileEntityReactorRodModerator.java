@@ -25,8 +25,8 @@ import java.util.List;
 
 import gregapi.data.LH;
 import gregapi.util.UT;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * @author Gregorius Techneticies, Erik3003
@@ -43,21 +43,21 @@ public class MultiTileEntityReactorRodModerator extends MultiTileEntityReactorRo
 	}
 
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_NUCLEAR_MOD  )) mModeration     = aNBT.getShort(NBT_NUCLEAR_MOD);
 		if (aNBT.hasKey(NBT_NUCLEAR_MOD+".o")) oModeration      = aNBT.getShort(NBT_NUCLEAR_MOD+".o");
 	}
 
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_NUCLEAR_MOD, mModeration);
 		UT.NBT.setNumber(aNBT, NBT_NUCLEAR_MOD+".o", oModeration);
 	}
 
 	@Override
-	public NBTTagCompound writeItemNBT2(NBTTagCompound aNBT) {
+	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		UT.NBT.setNumber(aNBT, NBT_NUCLEAR_MOD, mModeration);
 		UT.NBT.setNumber(aNBT, NBT_NUCLEAR_MOD+".o", oModeration);
 		return super.writeItemNBT2(aNBT);

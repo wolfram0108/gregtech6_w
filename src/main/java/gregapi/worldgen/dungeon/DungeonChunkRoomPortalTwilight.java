@@ -25,10 +25,10 @@ import gregapi.data.CS.BlocksGT;
 import gregapi.data.IL;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.ListTag;
 
 /**
  * @author Gregorius Techneticies
@@ -39,7 +39,7 @@ public class DungeonChunkRoomPortalTwilight extends DungeonChunkRoomPortal {
 		if (aData.mTags.contains(WorldgenDungeonGT.TAG_PORTAL_TWILIGHT) || !super.generate(aData)) return F;
 		aData.mTags.add(WorldgenDungeonGT.TAG_PORTAL_TWILIGHT);
 		
-		NBTTagList tInventory = new NBTTagList();
+		ListTag tInventory = new ListTag();
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.book("Manual_Portal_TF")), "s", (short)22));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Items.diamond, 1, 0)), "s", (short)31));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)12));

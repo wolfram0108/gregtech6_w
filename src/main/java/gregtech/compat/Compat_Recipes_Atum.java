@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -35,15 +35,15 @@ import gregapi.oredict.event.IOreDictListenerEvent;
 import gregapi.oredict.event.OreDictListenerEvent_Names;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 public class Compat_Recipes_Atum extends CompatMods {
 	public Compat_Recipes_Atum(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Atum Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Atum Recipes.");
 		long[] tChances = new long[] {1666, 1666, 1666, 1666, 1666, 1666};
 		for (int i = 0; i < 5; i++) {
 		ItemStack[] tInputs = ST.array(ST.make(MD.ATUM, "item.loot", 1, 1+(i*32))), tOutputs = ST.array(ST.make(MD.ATUM, "item.loot", 1, 2+(i*32)), ST.make(MD.ATUM, "item.loot", 1, 4+(i*32)), ST.make(MD.ATUM, "item.loot", 1, 6+(i*32)), ST.make(MD.ATUM, "item.loot", 1, 8+(i*32)), ST.make(MD.ATUM, "item.loot", 1, 10+(i*32)), ST.make(MD.ATUM, "item.loot", 1, 12+(i*32)));

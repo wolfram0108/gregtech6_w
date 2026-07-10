@@ -25,7 +25,7 @@ import gregapi.block.IPrefixBlock;
 import gregapi.block.metatype.BlockStones;
 import gregapi.data.CS.BlocksGT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockSilverfish;
 import net.minecraft.block.material.Material;
 

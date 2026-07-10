@@ -19,7 +19,7 @@
 
 package gregapi.util;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.block.ItemBlockBase;
 import gregapi.code.*;
 import gregapi.data.*;
@@ -101,8 +101,8 @@ public class ST {
 	public static boolean equal (ItemStack aStack, Block aBlock                , long aMeta) {return aStack != null && aBlock != null && equal_(aStack, aBlock, aMeta);}
 	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta) {return equal(meta_(aStack), aMeta) && item_ (aStack) == aItem ;}
 	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta) {return equal(meta_(aStack), aMeta) && block_(aStack) == aBlock;}
-	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            ) {return equal(aStack, GameRegistry.findItem(aModID.mID, aItem));}
-	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta) {return equal(aStack, GameRegistry.findItem(aModID.mID, aItem), aMeta);}
+	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            ) {return equal(aStack, DeferredRegister.findItem(aModID.mID, aItem));}
+	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta) {return equal(aStack, DeferredRegister.findItem(aModID.mID, aItem), aMeta);}
 	
 	public static boolean equal (ItemStack aStack, Item  aItem                             , boolean aAllowNBT) {return aStack != null && aItem  != null && equal_(aStack, aItem , aAllowNBT);}
 	public static boolean equal (ItemStack aStack, Block aBlock                            , boolean aAllowNBT) {return aStack != null && aBlock != null && equal_(aStack, aBlock, aAllowNBT);}
@@ -112,8 +112,8 @@ public class ST {
 	public static boolean equal (ItemStack aStack, Block aBlock                , long aMeta, boolean aAllowNBT) {return aStack != null && aBlock != null && equal_(aStack, aBlock, aMeta, aAllowNBT);}
 	public static boolean equal_(ItemStack aStack, Item  aItem                 , long aMeta, boolean aAllowNBT) {return equal(meta_(aStack), aMeta) && item_ (aStack) == aItem  && aAllowNBT == aStack.hasTagCompound();}
 	public static boolean equal_(ItemStack aStack, Block aBlock                , long aMeta, boolean aAllowNBT) {return equal(meta_(aStack), aMeta) && block_(aStack) == aBlock && aAllowNBT == aStack.hasTagCompound();}
-	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            , boolean aAllowNBT) {return equal(aStack, GameRegistry.findItem(aModID.mID, aItem), aAllowNBT);}
-	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta, boolean aAllowNBT) {return equal(aStack, GameRegistry.findItem(aModID.mID, aItem), aMeta, aAllowNBT);}
+	public static boolean equal (ItemStack aStack, ModData aModID, String aItem            , boolean aAllowNBT) {return equal(aStack, DeferredRegister.findItem(aModID.mID, aItem), aAllowNBT);}
+	public static boolean equal (ItemStack aStack, ModData aModID, String aItem, long aMeta, boolean aAllowNBT) {return equal(aStack, DeferredRegister.findItem(aModID.mID, aItem), aMeta, aAllowNBT);}
 	
 	public static boolean equal (long aMeta1, long aMeta2) {return aMeta1 == aMeta2 || aMeta1 == W || aMeta2 == W;}
 	
@@ -230,11 +230,11 @@ public class ST {
 	public static boolean ownedBy_(String  aMod, String       aRegName                      ) {return aRegName.startsWith(aMod);}
 	
 	public static void register(Item aItem, String aRegistryName) {
-		GameRegistry.registerItem(aItem, aRegistryName);
+		DeferredRegister.registerItem(aItem, aRegistryName);
 	}
 	public static void register(Block aBlock, String aRegistryName) {register(aBlock, aRegistryName, null);}
 	public static void register(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
-		GameRegistry.registerBlock(aBlock, aItemClass == null ? ItemBlockBase.class : aItemClass, aRegistryName);
+		DeferredRegister.registerBlock(aBlock, aItemClass == null ? ItemBlockBase.class : aItemClass, aRegistryName);
 		if (COMPAT_IC2 != null) COMPAT_IC2.addToExplosionWhitelist(aBlock);
 	}
 	
@@ -353,10 +353,10 @@ public class ST {
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
 		if (!aModID.mLoaded || UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;
 		ItemStack
-		rStack = GameRegistry.findItemStack(aModID.mID, aItem, (int)aSize);
+		rStack = DeferredRegister.findItemStack(aModID.mID, aItem, (int)aSize);
 		if (valid(rStack)) return rStack;
 		if (aItem.length() < 5 || aItem.charAt(4) != '.' || !aItem.startsWith("tile")) return null;
-		return validate(GameRegistry.findItemStack(aModID.mID, aItem.substring(5), (int)aSize));
+		return validate(DeferredRegister.findItemStack(aModID.mID, aItem.substring(5), (int)aSize));
 	}
 	public static ItemStack mkic(String aItem, long aSize) {
 		if (UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;
@@ -926,7 +926,7 @@ public class ST {
 	/** @return the Value of this Stack, when burning inside a Furnace (200 = 1 Burn Process = 5000 HU, max = 32767 (that is 819175 HU)), limited to Short because the vanilla Furnace otherwise can't handle it properly, stupid Mojang... */
 	public static long fuel(ItemStack aStack) {
 		if (invalid(aStack)) return 0;
-		long rFuelValue = GameRegistry.getFuelValue(aStack);
+		long rFuelValue = DeferredRegister.getFuelValue(aStack);
 		if (rFuelValue > 0) return rFuelValue;
 		Item tItem = item_(aStack);
 		if (tItem instanceof ItemTool  && ((ItemTool )tItem).getToolMaterialName().equals("WOOD")) return 200;

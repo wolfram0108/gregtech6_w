@@ -19,7 +19,7 @@
 
 package gregapi.load;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.data.*;
 import gregapi.old.Textures;
 import gregapi.oredict.OreDictItemData;
@@ -30,9 +30,9 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.worldgen.StoneLayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
 
 import static gregapi.data.CS.*;
 
@@ -47,9 +47,9 @@ public class LoaderItemList implements Runnable {
 	
 	@Override
 	public void run() {
-		BlocksGT.EtFu_Beetroot_Crop              = GameRegistry.findBlock(MD.EtFu.mID, "beetroots");
-		BlocksGT.EtFu_Deepslate_Redstone_Ore     = GameRegistry.findBlock(MD.EtFu.mID, "deepslate_redstone_ore");
-		BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore = GameRegistry.findBlock(MD.EtFu.mID, "deepslate_lit_redstone_ore");
+		BlocksGT.EtFu_Beetroot_Crop              = DeferredRegister.findBlock(MD.EtFu.mID, "beetroots");
+		BlocksGT.EtFu_Deepslate_Redstone_Ore     = DeferredRegister.findBlock(MD.EtFu.mID, "deepslate_redstone_ore");
+		BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore = DeferredRegister.findBlock(MD.EtFu.mID, "deepslate_lit_redstone_ore");
 		
 		GarbageGT.BLACKLIST.add(ST.make(MD.TC, "ItemThaumonomicon"              , 1,42));
 		GarbageGT.BLACKLIST.add(ST.make(MD.RT, "opSpectreKey"                   , 1, W));

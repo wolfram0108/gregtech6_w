@@ -27,10 +27,10 @@ import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregtech.items.tools.machine.GT_Tool_Wrench;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.*;
 
@@ -42,7 +42,7 @@ public class GT_Tool_Wrench_LV extends GT_Tool_Wrench {
 	}
 	
 	@Override
-	public float getNormalDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getNormalDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		return aOriginalDamage;
 	}
 	

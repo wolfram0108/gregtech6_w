@@ -22,9 +22,9 @@ package gregapi.worldgen;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
 
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +47,7 @@ public class WorldgenOresVanilla extends WorldgenBlob {
 	}
 	
 	@Override
-	public boolean tryPlaceStuff(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		Block tTargetedBlock = aWorld.getBlock(aX, aY, aZ);
 		if (tTargetedBlock == NB || tTargetedBlock.isAir(aWorld, aX, aY, aZ)) return mAllowToGenerateinVoid && aWorld.setBlock(aX, aY, aZ, mBlock, mBlockMeta, 0);
 		return (mReplaceBlock == null ? !ST.isGT(tTargetedBlock) && tTargetedBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone) : tTargetedBlock == mReplaceBlock && WD.meta(aWorld, aX, aY, aZ) == mReplaceMeta) && aWorld.setBlock(aX, aY, aZ, mBlock, mBlockMeta, 0);

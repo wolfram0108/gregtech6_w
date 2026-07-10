@@ -34,12 +34,12 @@ import gregapi.tileentity.data.ITileEntitySurface;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.BlockFluidFinite;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 
@@ -51,21 +51,21 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	public boolean mActive = F;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey("gt.spring")) mFluid = FL.load(aNBT, "gt.spring");
 		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		FL.save(aNBT, "gt.spring", mFluid);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mActive);
 	}
 	
 	@Override
-	public final NBTTagCompound writeItemNBT(NBTTagCompound aNBT) {
+	public final CompoundTag writeItemNBT(CompoundTag aNBT) {
 		aNBT = super.writeItemNBT(aNBT);
 		FL.save(aNBT, "gt.spring", mFluid);
 		return aNBT;
@@ -74,7 +74,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	public static MultiTileEntityRegistry MTE_REGISTRY = null;
 	public static MultiTileEntityFluidSpring INSTANCE;
 	
-	public static boolean setBlock(World aWorld, int aX, int aY, int aZ, FluidStack aSpring) {
+	public static boolean setBlock(Level aWorld, int aX, int aY, int aZ, FluidStack aSpring) {
 		return MTE_REGISTRY.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UP, INSTANCE.getMultiTileEntityID(), UT.NBT.make("gt.spring", aSpring), T, F);
 	}
 	

@@ -26,11 +26,11 @@ import gregapi.player.EntityFoodTracker;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.item.EnumAction;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class FoodStat implements IFoodStat {
 	private final int mFoodLevel, mAlcohol, mCaffeine, mDehydration, mSugar, mFat, mRadiation;
 	private final int[] mPotionEffects;
 	private final float mSaturation, mHydration, mTemperature, mTemperatureEffect;
-	private final EnumAction mAction;
+	private final ItemUseAnimation mAction;
 	private final ItemStack mEmptyContainer;
 	private final boolean mAlwaysEdible, mInvisibleParticles, mIsRotten;
 	public boolean mExplosive = F, mMilk = F, mExtinguish = F, mUseAPC = T, mAutoDetectEmpty = F;
@@ -61,7 +61,7 @@ public class FoodStat implements IFoodStat {
 	 * Level of the Effect. [0, 1, 2] are for [I, II, III], negative to remove existing levels.
 	 * The likelihood that this Potion Effect takes place upon being eaten [1 - 100]
 	 */
-	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation, EnumAction aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
+	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation, ItemUseAnimation aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
 		mFoodLevel = aFoodLevel;
 		mSaturation = aSaturation;
 		mHydration = aHydration;
@@ -73,7 +73,7 @@ public class FoodStat implements IFoodStat {
 		mSugar = aSugar;
 		mFat = aFat;
 		mRadiation = aRadiation;
-		mAction = aAction==null?EnumAction.eat:aAction;
+		mAction = aAction==null?ItemUseAnimation.eat:aAction;
 		mPotionEffects = aPotionEffects;
 		mEmptyContainer = ST.copy(aEmptyContainer);
 		mInvisibleParticles = aInvisibleParticles;
@@ -82,10 +82,10 @@ public class FoodStat implements IFoodStat {
 		mIsRotten = aIsRotten;
 	}
 	
-	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, EnumAction aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
+	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, ItemUseAnimation aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
 		this(aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0, aAction, aEmptyContainer, aAlwaysEdible, aInvisibleParticles, aIsRotten, aAutoDetectEmpty, aPotionEffects);
 	}
-	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, EnumAction aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
+	public FoodStat(int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, ItemUseAnimation aAction, ItemStack aEmptyContainer, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, boolean aAutoDetectEmpty, int... aPotionEffects) {
 		this(aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, 0, 0, 0, 0, 0, 0, aAction, aEmptyContainer, aAlwaysEdible, aInvisibleParticles, aIsRotten, aAutoDetectEmpty, aPotionEffects);
 	}
 	
@@ -111,38 +111,38 @@ public class FoodStat implements IFoodStat {
 	}
 	
 	@Override
-	public int getFoodLevel(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public int getFoodLevel(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mFoodLevel;
 	}
 	
 	@Override
-	public float getSaturation(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getSaturation(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mSaturation;
 	}
 	
 	@Override
-	public float getHydration(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getHydration(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mHydration;
 	}
 	
 	@Override
-	public float getTemperature(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getTemperature(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mTemperature;
 	}
 	
 	@Override
-	public float getTemperatureEffect(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getTemperatureEffect(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mTemperatureEffect;
 	}
 	
 	@Override
 	@SuppressWarnings("deprecation")
-	public void onEaten(Item aItem, ItemStack aStack, EntityPlayer aPlayer, boolean aConsumeItem) {
+	public void onEaten(Item aItem, ItemStack aStack, Player aPlayer, boolean aConsumeItem) {
 		onEaten(aItem, aStack, aPlayer, aConsumeItem, T);
 	}
 	
 	@Override
-	public void onEaten(Item aItem, ItemStack aStack, EntityPlayer aPlayer, boolean aConsumeItem, boolean aMakeSound) {
+	public void onEaten(Item aItem, ItemStack aStack, Player aPlayer, boolean aConsumeItem, boolean aMakeSound) {
 		if (aConsumeItem && !UT.Entities.hasInfiniteItems(aPlayer)) {
 			aStack.stackSize--;
 			ItemStack tStack = OM.get(ST.copy(mEmptyContainer));
@@ -174,22 +174,22 @@ public class FoodStat implements IFoodStat {
 	}
 	
 	@Override
-	public EnumAction getFoodAction(Item aItem, ItemStack aStack) {
+	public ItemUseAnimation getFoodAction(Item aItem, ItemStack aStack) {
 		return mAction;
 	}
 	
 	@Override
-	public boolean alwaysEdible(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public boolean alwaysEdible(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mAlwaysEdible;
 	}
 	
 	@Override
-	public boolean isRotten(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public boolean isRotten(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mIsRotten;
 	}
 	
 	@Override
-	public boolean useAppleCoreFunctionality(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public boolean useAppleCoreFunctionality(Item aItem, ItemStack aStack, Player aPlayer) {
 		return MD.APC.mLoaded && mUseAPC;
 	}
 	

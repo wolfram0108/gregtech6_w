@@ -28,8 +28,8 @@ import gregapi.old.Textures;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -59,7 +59,7 @@ public class BlockFlowersA extends BlockBaseFlower implements Runnable {
 	}
 	
 	@Override
-	public void addInformation(ItemStack aStack, byte aMeta, EntityPlayer aPlayer, List<String> aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		switch(aMeta) {
 		case  0: aList.add("Indicates presence of a Gold Deposit nearby"       ); aList.add(LH.Chat.DGRAY + "* exists in Real Life"); break;
 		case  1: aList.add("Indicates presence of a Silver Deposit nearby"     ); aList.add(LH.Chat.DGRAY + "* exists in Real Life"); break;

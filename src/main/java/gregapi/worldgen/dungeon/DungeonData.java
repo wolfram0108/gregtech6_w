@@ -32,17 +32,17 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.random.WorldAndCoords;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tileentity.TileEntityFlowerPot;
-import net.minecraft.util.ChunkCoordinates;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ChestGenHooks;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.level.material.Fluid;
 
 import java.util.Random;
 
@@ -59,13 +59,13 @@ public class DungeonData extends WorldAndCoords {
 	public final long mKeyIDs[];
 	public final ItemStack mKeyStacks[];
 	public final boolean mGeneratedKeys[];
-	public final HashSetNoNulls<ChunkCoordinates> mLightUpdateCoords;
+	public final HashSetNoNulls<BlockPos> mLightUpdateCoords;
 	public final HashSetNoNulls<TagData> mTags;
 	public final WorldgenDungeonGT mStructure;
-	public final NBTTagCompound mCoin;
+	public final CompoundTag mCoin;
 	public final Random mRandom;
 	
-	public DungeonData(World aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<ChunkCoordinates> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, NBTTagCompound aCoin) {
+	public DungeonData(Level aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<BlockPos> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, CompoundTag aCoin) {
 		super(aWorld, aX, aY, aZ);
 		mStructure = aStructure;
 		mPrimary = aPrimaryBlock;
@@ -155,13 +155,13 @@ public class DungeonData extends WorldAndCoords {
 	public boolean colored    (int aX, int aY, int aZ) {return set(aX, aY, aZ, BlocksGT.Concrete, mColor, 2);}
 	
 	public boolean lamp(int aX, int aY, int aZ, Block aPrimary, Block aSecondary, int aGenerateRedstoneBrick) {
-		mLightUpdateCoords.add(new ChunkCoordinates(mX+aX, mY+aY, mZ+aZ));
+		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
 		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.redstone_lamp : Blocks.lit_redstone_lamp, 0, 2);
 	}
 	
 	public boolean lamp(int aX, int aY, int aZ, int aGenerateRedstoneBrick) {
-		mLightUpdateCoords.add(new ChunkCoordinates(mX+aX, mY+aY, mZ+aZ));
+		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
 		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.redstone_lamp : Blocks.lit_redstone_lamp, 0, 2);
 	}
@@ -184,16 +184,16 @@ public class DungeonData extends WorldAndCoords {
 	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
 	}
-	public boolean set(int aX, int aY, int aZ, long aMeta, NBTTagCompound aNBT) {
+	public boolean set(int aX, int aY, int aZ, long aMeta, CompoundTag aNBT) {
 		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, T, T);
 	}
-	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, NBTTagCompound aNBT) {
+	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT) {
 		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, T, T);
 	}
-	public boolean set(int aX, int aY, int aZ, long aMeta, NBTTagCompound aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+	public boolean set(int aX, int aY, int aZ, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
-	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, NBTTagCompound aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
 	
@@ -221,16 +221,16 @@ public class DungeonData extends WorldAndCoords {
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
 	}
-	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta, NBTTagCompound aNBT) {
+	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta, CompoundTag aNBT) {
 		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, T, T);
 	}
-	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, NBTTagCompound aNBT) {
+	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT) {
 		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, T, T);
 	}
-	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta, NBTTagCompound aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
-	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, NBTTagCompound aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
 	
@@ -281,25 +281,25 @@ public class DungeonData extends WorldAndCoords {
 	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String aLootFront) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", aLootFront));
 	}
-	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String aLootFront, NBTTagList aInventory) {
+	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String aLootFront, ListTag aInventory) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", aLootFront, NBT_INV_LIST, aInventory));
 	}
 	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String aLootFront, String aLootBack) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", aLootFront, "gt.dungeonloot.back", aLootBack));
 	}
-	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String aLootFront, String aLootBack, NBTTagList aInventory) {
+	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String aLootFront, String aLootBack, ListTag aInventory) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", aLootFront, "gt.dungeonloot.back", aLootBack, NBT_INV_LIST, aInventory));
 	}
 	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String[] aLootFront) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", UT.Code.select(ChestGenHooks.STRONGHOLD_LIBRARY, aLootFront)));
 	}
-	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String[] aLootFront, NBTTagList aInventory) {
+	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String[] aLootFront, ListTag aInventory) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", UT.Code.select(ChestGenHooks.STRONGHOLD_LIBRARY, aLootFront), NBT_INV_LIST, aInventory));
 	}
 	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String[] aLootFront, String[] aLootBack) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", UT.Code.select(ChestGenHooks.STRONGHOLD_LIBRARY, aLootFront), "gt.dungeonloot.back", UT.Code.select(ChestGenHooks.STRONGHOLD_LIBRARY, aLootBack)));
 	}
-	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String[] aLootFront, String[] aLootBack, NBTTagList aInventory) {
+	public boolean shelf(int aX, int aY, int aZ, long aMeta, byte aFacing, String[] aLootFront, String[] aLootBack, ListTag aInventory) {
 		return set(aX, aY, aZ, aMeta, UT.NBT.make(NBT_FACING, aFacing, "gt.dungeonloot.front", UT.Code.select(ChestGenHooks.STRONGHOLD_LIBRARY, aLootFront), "gt.dungeonloot.back", UT.Code.select(ChestGenHooks.STRONGHOLD_LIBRARY, aLootBack), NBT_INV_LIST, aInventory));
 	}
 	
@@ -328,7 +328,7 @@ public class DungeonData extends WorldAndCoords {
 	public boolean pot(int aX, int aY, int aZ) {
 		int tIndex = next(BlocksGT.POT_FLOWER_TILES.length);
 		set(aX, aY, aZ, Blocks.flower_pot, 0, 2);
-		TileEntity tTileEntity = mWorld.getTileEntity(mX+aX, mY+aY, mZ+aZ);
+		BlockEntity tTileEntity = mWorld.getTileEntity(mX+aX, mY+aY, mZ+aZ);
 		if (tTileEntity instanceof TileEntityFlowerPot) {
 			if (next1in2()) {
 				((TileEntityFlowerPot)tTileEntity).func_145964_a(ST.item(BlocksGT.POT_FLOWER_TILES[tIndex]), BlocksGT.POT_FLOWER_METAS[tIndex]);

@@ -24,19 +24,19 @@ import gregapi.code.HashSetNoNulls;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregapi.worldgen.WorldgenObject;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.potion.Potion;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tileentity.TileEntityBeacon;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.List;
 import java.util.Random;
@@ -58,12 +58,12 @@ public class WorldgenStreets extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean enabled(World aWorld, int aDimType) {
+	public boolean enabled(Level aWorld, int aDimType) {
 		return GENERATE_STREETS && aWorld.provider.dimensionId == DIM_OVERWORLD;
 	}
 	
 	@Override
-	public boolean generate(World aWorld, Chunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, BiomeGenBase[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (aMinX == -16 || aMinX == 0) {
 			if (aMinZ == -16 || aMinZ == 0) {
 				for (int i = -32; i < 32; i++) for (int j = -32; j < 32; j++) {
@@ -308,15 +308,15 @@ public class WorldgenStreets extends WorldgenObject {
 					for (int i = -3; i < 3; i++) for (int j = -3; j < 3; j++) WD.set(aWorld, i, mHeight-1, j, Blocks.iron_block, 0, 0);
 					for (int i = -2; i < 2; i++) for (int j = -2; j < 2; j++) WD.set(aWorld, i, mHeight  , j, Blocks.iron_block, 0, 0);
 					
-					TileEntity tTileEntity;
+					BlockEntity tTileEntity;
 					
 					WD.set(aWorld, -1, mHeight+1, -1, Blocks.beacon, 0, 3);
 					tTileEntity = WD.te(aWorld, -1, mHeight+1, -1, T);
 					if (tTileEntity instanceof TileEntityBeacon) {
-						NBTTagCompound tNBT = UT.NBT.make();
+						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", Potion.moveSpeed.id);
-						tNBT.setInteger("Secondary", Potion.moveSpeed.id);
+						tNBT.setInteger("Primary", MobEffect.moveSpeed.id);
+						tNBT.setInteger("Secondary", MobEffect.moveSpeed.id);
 						tNBT.setInteger("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
@@ -324,10 +324,10 @@ public class WorldgenStreets extends WorldgenObject {
 					WD.set(aWorld, -1, mHeight+1, 0, Blocks.beacon, 0, 3);
 					tTileEntity = WD.te(aWorld, -1, mHeight+1, 0, T);
 					if (tTileEntity instanceof TileEntityBeacon) {
-						NBTTagCompound tNBT = UT.NBT.make();
+						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", Potion.digSpeed.id);
-						tNBT.setInteger("Secondary", Potion.digSpeed.id);
+						tNBT.setInteger("Primary", MobEffect.digSpeed.id);
+						tNBT.setInteger("Secondary", MobEffect.digSpeed.id);
 						tNBT.setInteger("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
@@ -335,10 +335,10 @@ public class WorldgenStreets extends WorldgenObject {
 					WD.set(aWorld, 0, mHeight+1, -1, Blocks.beacon, 0, 3);
 					tTileEntity = WD.te(aWorld, 0, mHeight+1, -1, T);
 					if (tTileEntity instanceof TileEntityBeacon) {
-						NBTTagCompound tNBT = UT.NBT.make();
+						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", Potion.damageBoost.id);
-						tNBT.setInteger("Secondary", Potion.damageBoost.id);
+						tNBT.setInteger("Primary", MobEffect.damageBoost.id);
+						tNBT.setInteger("Secondary", MobEffect.damageBoost.id);
 						tNBT.setInteger("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
@@ -346,10 +346,10 @@ public class WorldgenStreets extends WorldgenObject {
 					WD.set(aWorld, 0, mHeight+1, 0, Blocks.beacon, 0, 3);
 					tTileEntity = WD.te(aWorld, 0, mHeight+1, 0, T);
 					if (tTileEntity instanceof TileEntityBeacon) {
-						NBTTagCompound tNBT = UT.NBT.make();
+						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", Potion.resistance.id);
-						tNBT.setInteger("Secondary", Potion.regeneration.id);
+						tNBT.setInteger("Primary", MobEffect.resistance.id);
+						tNBT.setInteger("Secondary", MobEffect.regeneration.id);
 						tNBT.setInteger("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
@@ -374,7 +374,7 @@ public class WorldgenStreets extends WorldgenObject {
 				}
 				aBiomeNames = new HashSetNoNulls<>(aBiomeNames);
 				for (int i = aMinZ; i <= aMaxZ; i++) for (int j = (aMinZ < 0 ? 0 : -16), k = (aMinZ < 0 ? 16 : 0); j < k; j++) {
-					BiomeGenBase tBiome = aWorld.getBiomeGenForCoords(j, i);
+					Biome tBiome = aWorld.getBiomeGenForCoords(j, i);
 					if (tBiome != null) aBiomeNames.add(tBiome.biomeName);
 				}
 				for (String tName : aBiomeNames) if (BIOMES_INFINITE_WATER.contains(tName)) {
@@ -401,7 +401,7 @@ public class WorldgenStreets extends WorldgenObject {
 				}
 				aBiomeNames = new HashSetNoNulls<>(aBiomeNames);
 				for (int i = aMinX; i <= aMaxX; i++) for (int j = (aMinZ < 0 ? 0 : -16), k = (aMinZ < 0 ? 16 : 0); j < k; j++) {
-					BiomeGenBase tBiome = aWorld.getBiomeGenForCoords(i, j);
+					Biome tBiome = aWorld.getBiomeGenForCoords(i, j);
 					if (tBiome != null) aBiomeNames.add(tBiome.biomeName);
 				}
 				for (String tName : aBiomeNames) if (BIOMES_INFINITE_WATER.contains(tName)) {
@@ -415,7 +415,7 @@ public class WorldgenStreets extends WorldgenObject {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public final boolean generateRoadX(World aWorld, int aMinZ, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
+	public final boolean generateRoadX(Level aWorld, int aMinZ, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
 		for (int i = 0; i < 16; i++) {
 			if (aLand) {
 				for (int j = mHeight+1; j > 0; j--) if (!WD.opq(aWorld, -13, j, aMinZ+i, T, T)) WD.set(aWorld, -13, j, aMinZ+i, Blocks.gravel, 1, 0, T); else break;
@@ -647,12 +647,12 @@ public class WorldgenStreets extends WorldgenObject {
 		}
 		
 		// Kill every living thing close by except Players.
-		for (EntityLivingBase tEntity : (List<EntityLivingBase>)aWorld.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(-16, mHeight, aMinZ, +16, mHeight+8, aMinZ+16))) if (!(tEntity instanceof EntityPlayer)) tEntity.setDead();
+		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesWithinAABB(LivingEntity.class, AABB.getBoundingBox(-16, mHeight, aMinZ, +16, mHeight+8, aMinZ+16))) if (!(tEntity instanceof Player)) tEntity.setDead();
 		return T;
 	}
 	
 	@SuppressWarnings("unchecked")
-	public final boolean generateRoadZ(World aWorld, int aMinX, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
+	public final boolean generateRoadZ(Level aWorld, int aMinX, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
 		for (int i = 0; i < 16; i++) {
 			if (aLand) {
 				for (int j = mHeight+1; j > 0; j--) if (!WD.opq(aWorld, aMinX+i, j, -13, T, T)) WD.set(aWorld, aMinX+i, j, -13, Blocks.gravel, 1, 0, T); else break;
@@ -884,7 +884,7 @@ public class WorldgenStreets extends WorldgenObject {
 		}
 		
 		// Kill every living thing close by except Players.
-		for (EntityLivingBase tEntity : (List<EntityLivingBase>)aWorld.getEntitiesWithinAABB(EntityLivingBase.class, AxisAlignedBB.getBoundingBox(aMinX, mHeight, -16, aMinX+16, mHeight+8, +16))) if (!(tEntity instanceof EntityPlayer)) tEntity.setDead();
+		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesWithinAABB(LivingEntity.class, AABB.getBoundingBox(aMinX, mHeight, -16, aMinX+16, mHeight+8, +16))) if (!(tEntity instanceof Player)) tEntity.setDead();
 		return T;
 	}
 }

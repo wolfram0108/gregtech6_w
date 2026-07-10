@@ -33,14 +33,14 @@ import gregapi.tileentity.base.TileEntityBase11AttachmentSmall;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.item.EntityXPOrb;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.fluids.FluidStack;
 import openblocks.common.LiquidXpUtils;
 import openmods.utils.EnchantmentUtils;
 
@@ -55,7 +55,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 	public boolean mAcidProof = F;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
 	}
@@ -68,9 +68,9 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(mFacing);
+			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(mFacing);
 			if (tDelegator.mTileEntity instanceof ITileEntityTapAccessible) {
 				ItemStack aStack = aPlayer.getCurrentEquippedItem();
 				if (ItemsGT.VOIDING_ITEMS.contains(aStack, F)) {
@@ -89,7 +89,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 									int tDrain = LiquidXpUtils.xpToLiquidRatio(tXP);
 									if (tDrain > 0 && tXP > 0) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tDrain, T);
-										worldObj.spawnEntityInWorld(new EntityXPOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
+										worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
 									}
 								} catch(Throwable e) {e.printStackTrace(ERR);}
 								return T;
@@ -98,7 +98,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 							int tXP = Math.min(50, aFluid.amount/20);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tXP*20, T);
-								worldObj.spawnEntityInWorld(new EntityXPOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
+								worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
 							}
 							return T;
 						}
@@ -107,7 +107,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 							int tXP = Math.min(50, (aFluid.amount*3)/200);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, (tXP*200)/3, T);
-								worldObj.spawnEntityInWorld(new EntityXPOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
+								worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
 							}
 							return T;
 						}
@@ -169,7 +169,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 	};
 	
 	@Override
-	public AxisAlignedBB getSelectedBoundingBoxFromPool() {
+	public AABB getSelectedBoundingBoxFromPool() {
 		switch(mFacing) {
 		case SIDE_Z_NEG: return box(PX_P[ 6], PX_P[ 3], PX_P[ 0], PX_N[ 6], PX_N[ 9], PX_N[10]);
 		default        : return box(PX_P[ 6], PX_P[ 3], PX_P[10], PX_N[ 6], PX_N[ 9], PX_N[ 0]);

@@ -23,8 +23,8 @@ import gregapi.data.MT;
 import gregapi.data.OP;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
 
 import static gregapi.data.CS.*;
 

@@ -19,8 +19,8 @@
 
 package gregtech.items;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.metatype.BlockStones;
 import gregapi.block.multitileentity.MultiTileEntityBlock;
 import gregapi.damage.DamageSources;
@@ -36,22 +36,22 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.blocks.BlockDiggable;
 import gregtech.tileentity.plants.MultiTileEntityResinHoleRubber;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntitySnowman;
 import net.minecraft.entity.passive.EntityHorse;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tileentity.TileEntityFlowerPot;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.IIcon;
-import net.minecraft.world.World;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Random;
@@ -213,7 +213,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	public ChunkCoordinates bumbleCanProduce(World aWorld, int aX, int aY, int aZ, ItemStack aBumbleBee, short aMetaData, int aDistance) {
+	public BlockPos bumbleCanProduce(Level aWorld, int aX, int aY, int aZ, ItemStack aBumbleBee, short aMetaData, int aDistance) {
 		boolean temp = T;
 		for (byte tSide : ALL_SIDES_VALID) if (WD.oxygen(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide])) {temp = F; break;}
 		if (temp) return null;
@@ -225,17 +225,17 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		switch(aMetaData / 100) {
 		case   1:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
-				if (WD.anywater(aWorld, aX+i, aY+j, aZ+k)) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (WD.anywater(aWorld, aX+i, aY+j, aZ+k)) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   2:
-			if (BIOMES_MAGICAL.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName)) return new ChunkCoordinates(aX, aY, aZ);
+			if (BIOMES_MAGICAL.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName)) return new BlockPos(aX, aY, aZ);
 			Block tThaumcraft = ST.block(MD.TC, "blockCustomPlant");
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
 				if (tBlock == NB) continue;
-				if (tBlock == tThaumcraft) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (tBlock == BlocksGT.Leaves_AB && (WD.meta(aWorld, aX+i, aY+j, aZ+k, F) & 7) == 7) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == tThaumcraft) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == BlocksGT.Leaves_AB && (WD.meta(aWorld, aX+i, aY+j, aZ+k, F) & 7) == 7) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   3: case 200:
@@ -246,14 +246,14 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
 				if (tBlock == NB) continue;
-				if (tBlock == Blocks.nether_wart     ) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (tBlock == tWartCrimson           ) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (tBlock == tWartWarped            ) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (tBlock == tWartSoggy             ) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (IL.NeLi_Wither_Rose.equal(tBlock)) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (IL.EtFu_Wither_Rose.equal(tBlock)) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.nether_wart     ) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == tWartCrimson           ) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == tWartWarped            ) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == tWartSoggy             ) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (IL.NeLi_Wither_Rose.equal(tBlock)) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (IL.EtFu_Wither_Rose.equal(tBlock)) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock == tFireFlower) {
-					if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 2) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+					if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 2) return new BlockPos(aX+i, aY+j, aZ+k);
 					continue;
 				}
 			}
@@ -261,59 +261,59 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case   4: case 202:
 			Block tChorusFlower = ST.block(MD.EtFu, "chorus_flower", null);
 			if (tChorusFlower == null) {
-				if (aWorld.provider.dimensionId == 1 || BIOMES_END.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName)) return new ChunkCoordinates(aX, aY, aZ);
+				if (aWorld.provider.dimensionId == 1 || BIOMES_END.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName)) return new BlockPos(aX, aY, aZ);
 				for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 					Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-					if (tBlock == Blocks.end_portal || tBlock == Blocks.dragon_egg) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+					if (tBlock == Blocks.end_portal || tBlock == Blocks.dragon_egg) return new BlockPos(aX+i, aY+j, aZ+k);
 				}
 				return null;
 			}
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == tChorusFlower || tBlock == Blocks.dragon_egg) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == tChorusFlower || tBlock == Blocks.dragon_egg) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   5: case 203:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.mossy_cobblestone || tBlock == Blocks.cobblestone || tBlock == Blocks.stone) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.mossy_cobblestone || tBlock == Blocks.cobblestone || tBlock == Blocks.stone) return new BlockPos(aX+i, aY+j, aZ+k);
 				byte tMeta = WD.meta(aWorld, aX+i, aY+j, aZ+k);
-				if (tBlock == Blocks.stonebrick && tMeta == 1) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (tBlock instanceof BlockStones && (BlockStones.SPAWNABLE[tMeta] || BlockStones.MOSSY[tMeta])) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
-				if (WD.stone(tBlock, tMeta)) return new ChunkCoordinates(aX+i, aY+j, aZ+k);;
+				if (tBlock == Blocks.stonebrick && tMeta == 1) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock instanceof BlockStones && (BlockStones.SPAWNABLE[tMeta] || BlockStones.MOSSY[tMeta])) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (WD.stone(tBlock, tMeta)) return new BlockPos(aX+i, aY+j, aZ+k);;
 			}
 			return null;
 		case   6:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
-				if (WD.block(aWorld, aX+i, aY+j, aZ+k, F) == Blocks.cocoa) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (WD.block(aWorld, aX+i, aY+j, aZ+k, F) == Blocks.cocoa) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   7: case 201:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.ice || tBlock == Blocks.snow_layer || tBlock == Blocks.snow || tBlock == Blocks.packed_ice) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.ice || tBlock == Blocks.snow_layer || tBlock == Blocks.snow || tBlock == Blocks.packed_ice) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   8:
 			Block tMushroom = ST.block(MD.BoP, "mushrooms", null);
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.mycelium || tBlock == Blocks.red_mushroom || tBlock == Blocks.brown_mushroom || tBlock == tMushroom || tBlock == Blocks.red_mushroom_block || tBlock == Blocks.brown_mushroom_block) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.mycelium || tBlock == Blocks.red_mushroom || tBlock == Blocks.brown_mushroom || tBlock == tMushroom || tBlock == Blocks.red_mushroom_block || tBlock == Blocks.brown_mushroom_block) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   9: case 105:
 			Block tCactus1 = ST.block(MD.BoP, "plants", null), tCactus2 = ST.block(MD.ARS, "desertNova", null);
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.cactus || tBlock == tCactus2 || tBlock == BlocksGT.FlowersB) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.cactus || tBlock == tCactus2 || tBlock == BlocksGT.FlowersB) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock == tCactus1) {
-					if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 12) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+					if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 12) return new BlockPos(aX+i, aY+j, aZ+k);
 					continue;
 				}
 				if (tBlock == Blocks.flower_pot) {
-					TileEntity tTileEntity = WD.te(aWorld, aX+i, aY+j, aZ+k, F);
+					BlockEntity tTileEntity = WD.te(aWorld, aX+i, aY+j, aZ+k, F);
 					if (tTileEntity instanceof TileEntityFlowerPot) {
-						if (Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem()) == Blocks.cactus) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+						if (Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem()) == Blocks.cactus) return new BlockPos(aX+i, aY+j, aZ+k);
 					}
 					continue;
 				}
@@ -322,27 +322,27 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case 100:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.clay || (tBlock == BlocksGT.Diggables && BlockDiggable.IS_CLAY[WD.meta(aWorld, aX+i, aY+j, aZ+k)])) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.clay || (tBlock == BlocksGT.Diggables && BlockDiggable.IS_CLAY[WD.meta(aWorld, aX+i, aY+j, aZ+k)])) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case 101:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
 				if (tBlock == NB) continue;
-				if (tBlock == IL.IC2_Log_Rubber.block()) {if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 0) continue; return new ChunkCoordinates(aX+i, aY+j, aZ+k);}
-				if (tBlock instanceof MultiTileEntityBlock && WD.te(aWorld, aX+i, aY+j, aZ+k, F) instanceof MultiTileEntityResinHoleRubber) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (tBlock == IL.IC2_Log_Rubber.block()) {if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 0) continue; return new BlockPos(aX+i, aY+j, aZ+k);}
+				if (tBlock instanceof MultiTileEntityBlock && WD.te(aWorld, aX+i, aY+j, aZ+k, F) instanceof MultiTileEntityResinHoleRubber) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case 103:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
-				if (OM.is(OD.soulsand, ST.make(WD.block(aWorld, aX+i, aY+j, aZ+k, F), 1, W))) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				if (OM.is(OD.soulsand, ST.make(WD.block(aWorld, aX+i, aY+j, aZ+k, F), 1, W))) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		default:
 			if (RNGSUS.nextBoolean()) {
-				for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) if (checkFlowers(aWorld, aX+i, aY+j, aZ+k)) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) if (checkFlowers(aWorld, aX+i, aY+j, aZ+k)) return new BlockPos(aX+i, aY+j, aZ+k);
 			} else {
-				for (int j : tOrderY) for (int k : tOrderZ) for (int i : tOrderX) if (checkFlowers(aWorld, aX+i, aY+j, aZ+k)) return new ChunkCoordinates(aX+i, aY+j, aZ+k);
+				for (int j : tOrderY) for (int k : tOrderZ) for (int i : tOrderX) if (checkFlowers(aWorld, aX+i, aY+j, aZ+k)) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		}
@@ -437,13 +437,13 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	public boolean bumbleAttack(ItemStack aBumbleBee, short aMetaData, EntityLivingBase aAttacked) {
+	public boolean bumbleAttack(ItemStack aBumbleBee, short aMetaData, LivingEntity aAttacked) {
 		if (UT.Entities.isWearingFullInsectHazmat(aAttacked)) return F;
 		boolean
 		  tSkeleton = (aAttacked instanceof EntitySkeleton || (aAttacked instanceof EntityHorse && ((EntityHorse)aAttacked).getHorseType() == 4))
 		, tSnowGolem = (aAttacked.getClass() == EntitySnowman.class)
 		, tIronGolem = (aAttacked instanceof EntityIronGolem)
-		, tPlayer = (aAttacked instanceof EntityPlayer)
+		, tPlayer = (aAttacked instanceof Player)
 		;
 		switch(aMetaData / 100) {
 		default: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.attackEntityFrom(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))  );
@@ -494,8 +494,8 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	public ChunkCoordinates bumbleCanProduct(World aWorld, int aX, int aY, int aZ, ItemStack aBumbleBee, short aMetaData, int aProductIndex) {
-		return new ChunkCoordinates(aX, aY, aZ);
+	public BlockPos bumbleCanProduct(Level aWorld, int aX, int aY, int aZ, ItemStack aBumbleBee, short aMetaData, int aProductIndex) {
+		return new BlockPos(aX, aY, aZ);
 	}
 	
 	@Override
@@ -503,7 +503,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		short aMeta = ST.meta_(aStack);
 		String tTooltip = getFlowerTooltip(aMeta);
 		if (UT.Code.stringValid(tTooltip)) aList.add(LH.Chat.CYAN + "Requirement:" + LH.Chat._WHITE + tTooltip);
-		NBTTagCompound aBumbleTag = null;
+		CompoundTag aBumbleTag = null;
 		if (aStack.hasTagCompound()) aBumbleTag = aStack.getTagCompound().getCompoundTag("gt.bumble");
 		if (aBumbleTag == null || aBumbleTag.hasNoTags()) {
 			aList.add(LH.Chat.BLINKING_RED + "No Genetic Data to display");
@@ -614,11 +614,11 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		RM.BumbleQueens.addFakeRecipe(F, ST.array(ST.make(this, 1, aSpeciesID+2), ST.make(this, 1, aSpeciesID+7)), tOutputs, null, tChances, null, null, 0, 0, 0);
 	}
 	
-	public static boolean checkFlowers(World aWorld, int aX, int aY, int aZ) {
+	public static boolean checkFlowers(Level aWorld, int aX, int aY, int aZ) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ, F);
 		if (aBlock == NB) return F;
 		if (aBlock == Blocks.flower_pot) {
-			TileEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
+			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
 			if (tTileEntity instanceof TileEntityFlowerPot) {
 				aBlock = Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem());
 				return aBlock == Blocks.yellow_flower || aBlock == Blocks.red_flower;
@@ -649,7 +649,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	
 	@Override public IIcon getIconIndex(ItemStack aStack) {return getIconFromDamage(ST.meta(aStack));}
 	@Override public IIcon getIconFromDamage(int aMetaData) {aMetaData /= 10; aMetaData *= 10; return UT.Code.exists(aMetaData, mIconList) && mIconList[aMetaData][0] != null ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);}
-	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass, EntityPlayer aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
+	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
 	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
 	
 	@Override public boolean requiresMultipleRenderPasses() {return T;}
@@ -664,7 +664,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	}
 	
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void registerIcons(IIconRegister aIconRegister) {
 		PRINCESS    = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
 		QUEEN       = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/overlay_queen");

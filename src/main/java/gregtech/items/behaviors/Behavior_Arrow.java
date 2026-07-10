@@ -29,17 +29,17 @@ import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
 import gregtech.entities.projectiles.EntityArrow_Material;
-import net.minecraft.block.BlockDispenser;
-import net.minecraft.dispenser.IBlockSource;
-import net.minecraft.dispenser.IPosition;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.Position;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 
 public class Behavior_Arrow extends AbstractBehaviorDefault {
 	public static Behavior_Arrow DEFAULT_WOODEN  = new Behavior_Arrow(EntityArrow_Material.class, 1.00F, 6.0F);
@@ -63,9 +63,9 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, Entity aEntity) {
-		if (aEntity instanceof EntityLivingBase) {
-			Enchantments.applyBullshitA((EntityLivingBase)aEntity, aPlayer, aStack);
+	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
+		if (aEntity instanceof LivingEntity) {
+			Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 			Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
 			if (aStack.stackSize <= 0) aPlayer.destroyCurrentEquippedItem();
@@ -77,7 +77,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	@Override
 	public boolean isItemStackUsable(MultiItem aItem, ItemStack aStack) {
 		if (mEnchantment != null && mLevel > 0) {
-			NBTTagCompound tNBT = UT.NBT.getNBT(aStack);
+			CompoundTag tNBT = UT.NBT.getNBT(aStack);
 			if (!tNBT.getBoolean("gt.u")) {
 				tNBT.setBoolean("gt.u", T);
 				UT.NBT.set(aStack, tNBT);
@@ -88,15 +88,15 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public boolean canDispense(MultiItem aItem, IBlockSource aSource, ItemStack aStack) {
+	public boolean canDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
 		return T;
 	}
 	
 	@Override
-	public ItemStack onDispense(MultiItem aItem, IBlockSource aSource, ItemStack aStack) {
-		World aWorld = aSource.getWorld();
-		IPosition tPosition = BlockDispenser.func_149939_a(aSource);
-		EnumFacing tFacing = BlockDispenser.func_149937_b(aSource.getBlockMetadata());
+	public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
+		Level aWorld = aSource.getWorld();
+		Position tPosition = DispenserBlock.func_149939_a(aSource);
+		Direction tFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
 		EntityProjectile tEntityArrow = getProjectile(aItem, TD.Projectiles.ARROW, aStack, aWorld, tPosition.getX(), tPosition.getY(), tPosition.getZ());
 		if (tEntityArrow != null) {
 			tEntityArrow.setThrowableHeading(tFacing.getFrontOffsetX(), (tFacing.getFrontOffsetY() + 0.1F), tFacing.getFrontOffsetZ(), mSpeedMultiplier * 1.10F, mPrecision);
@@ -115,7 +115,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, World aWorld, double aX, double aY, double aZ) {
+	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, Level aWorld, double aX, double aY, double aZ) {
 		if (!hasProjectile(aItem, aProjectileType, aStack)) return null;
 		EntityArrow_Material rArrow = (EntityArrow_Material)UT.Reflection.callConstructor(mArrow.getName(), -1, null, T, aWorld, aX, aY, aZ);
 		rArrow.setProjectileStack(aStack);
@@ -123,7 +123,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, World aWorld, EntityLivingBase aEntity, float aSpeed) {
+	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, Level aWorld, LivingEntity aEntity, float aSpeed) {
 		if (!hasProjectile(aItem, aProjectileType, aStack)) return null;
 		EntityArrow_Material rArrow = (EntityArrow_Material)UT.Reflection.callConstructor(mArrow.getName(), -1, null, T, aWorld, aEntity, mSpeedMultiplier * aSpeed);
 		rArrow.setProjectileStack(aStack);

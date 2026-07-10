@@ -24,7 +24,7 @@ import buildcraft.api.statements.IStatementParameter;
 import gregapi.code.TagData;
 import gregapi.data.MD;
 import gregapi.tileentity.energy.ITileEntityEnergyDataCapacitor;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class TriggerBC_Energy_Capacity_NotFull extends TriggerBC {
 	public final TagData mEnergyType;
@@ -35,12 +35,12 @@ public class TriggerBC_Energy_Capacity_NotFull extends TriggerBC {
 	}
 	
 	@Override
-	public boolean isActive(TileEntity aTarget, byte aSideOfTileEntity, IStatementContainer aSource, IStatementParameter[] aParameters) {
+	public boolean isActive(BlockEntity aTarget, byte aSideOfTileEntity, IStatementContainer aSource, IStatementParameter[] aParameters) {
 		return ((ITileEntityEnergyDataCapacitor)aTarget).getEnergyStored(mEnergyType, aSideOfTileEntity) < ((ITileEntityEnergyDataCapacitor)aTarget).getEnergyCapacity(mEnergyType, aSideOfTileEntity);
 	}
 	
 	@Override
-	public boolean isApplicable(TileEntity aTarget, byte aSideOfTileEntity) {
+	public boolean isApplicable(BlockEntity aTarget, byte aSideOfTileEntity) {
 		return aTarget instanceof ITileEntityEnergyDataCapacitor && ((ITileEntityEnergyDataCapacitor)aTarget).isEnergyCapacitorType(mEnergyType, aSideOfTileEntity);
 	}
 }

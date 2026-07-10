@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -32,12 +32,12 @@ import gregapi.data.OD;
 import gregapi.data.RM;
 import gregapi.util.CR;
 import gregapi.util.ST;
-import net.minecraft.item.Item;
+import net.minecraft.world.item.Item;
 
 public class Compat_Recipes_Voltz extends CompatMods {
 	public Compat_Recipes_Voltz(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Voltz Mod Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Voltz Mod Recipes.");
 		if (CR.remout(MD.ICBM, "icbmCAntidote")) {
 			RM.generify(MD.GC_GALAXYSPACE.mLoaded ? ST.make(MD.GC_GALAXYSPACE, "item.BasicItems", 1, 11) : IL.Pill_Iodine.get(1), ST.make(MD.ICBM, "icbmCAntidote", 1, 0));
 			CR.shapeless(ST.make(MD.ICBM, "icbmCAntidote", 1, 0), new Object[] {MD.GC_GALAXYSPACE.mLoaded ? ST.make(MD.GC_GALAXYSPACE, "item.BasicItems", 1, 11) : IL.Pill_Iodine});

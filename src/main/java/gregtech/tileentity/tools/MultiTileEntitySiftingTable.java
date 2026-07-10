@@ -37,12 +37,12 @@ import gregapi.tileentity.base.TileEntityBase07Paintable;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
@@ -58,7 +58,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 	public Recipe mLastRecipe = null;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_STATE)) mState = aNBT.getByte(NBT_STATE);
 		if (aNBT.hasKey(NBT_PROGRESS)) mClickCount = aNBT.getByte(NBT_PROGRESS);
@@ -66,7 +66,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		aNBT.setByte(NBT_STATE, mState);
 		aNBT.setByte(NBT_PROGRESS, mClickCount);
@@ -235,7 +235,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 			
 			if (aTimer % 5 == 0 && (mState & B[2]) != 0) {
 				mState &= ~B[2];
-				for (EntityPlayer tPlayer : UT.Entities.getPlayersWithLastTarget(this)) {
+				for (Player tPlayer : UT.Entities.getPlayersWithLastTarget(this)) {
 					mState |= B[2];
 					
 					boolean temp = T;
@@ -272,7 +272,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 	@Override public boolean attachCoversFirst(byte aSide) {return F;}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			if (SIDES_TOP[aSide]) {
 				float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
@@ -425,8 +425,8 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 4], PX_N[ 0]);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 4], PX_N[ 0]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 4], PX_N[ 0]);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 4], PX_N[ 0]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 4], PX_N[ 0]);}
 
 	@Override public float getSurfaceSize           (byte aSide) {return SIDES_VERTICAL[aSide]?1.0F:0.0F;}
@@ -438,7 +438,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 	@Override public boolean allowCovers            (byte aSide) {return F;}
 
 	// Inventory Stuff
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[13];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[13];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	@Override public int getInventoryStackLimit() {return 1;}
 

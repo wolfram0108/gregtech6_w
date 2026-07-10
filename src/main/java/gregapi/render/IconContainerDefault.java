@@ -22,37 +22,37 @@ package gregapi.render;
 import static gregapi.data.CS.*;
 
 import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.util.IIcon;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class IconContainerDefault implements IIconContainer {
-	public final ResourceLocation mTextureFile;
+	public final Identifier mTextureFile;
 	public final IIcon mIcon;
 	public final short[] mRGBa;
 	
-	public IconContainerDefault(IIcon aIcon, short[] aRGBa, ResourceLocation aTextureFile) {
+	public IconContainerDefault(IIcon aIcon, short[] aRGBa, Identifier aTextureFile) {
 		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = aTextureFile;
 	}
 	
 	public IconContainerDefault(IIcon aIcon, short[] aRGBa, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? TextureMap.locationBlocksTexture : TextureMap.locationItemsTexture);
+		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? TextureAtlas.locationBlocksTexture : TextureAtlas.locationItemsTexture);
 	}
 	
 	public IconContainerDefault(IIcon aIcon, short[] aRGBa) {
-		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = TextureMap.locationBlocksTexture;
+		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = TextureAtlas.locationBlocksTexture;
 	}
 	
-	public IconContainerDefault(IIcon aIcon, ResourceLocation aTextureFile) {
+	public IconContainerDefault(IIcon aIcon, Identifier aTextureFile) {
 		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = aTextureFile;
 	}
 	
 	public IconContainerDefault(IIcon aIcon, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? TextureMap.locationBlocksTexture : TextureMap.locationItemsTexture);
+		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? TextureAtlas.locationBlocksTexture : TextureAtlas.locationItemsTexture);
 	}
 	
 	public IconContainerDefault(IIcon aIcon) {
-		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = TextureMap.locationBlocksTexture;
+		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = TextureAtlas.locationBlocksTexture;
 	}
 	
 	@Override
@@ -76,7 +76,7 @@ public class IconContainerDefault implements IIconContainer {
 	}
 	
 	@Override
-	public ResourceLocation getTextureFile() {
+	public Identifier getTextureFile() {
 		return mTextureFile;
 	}
 	

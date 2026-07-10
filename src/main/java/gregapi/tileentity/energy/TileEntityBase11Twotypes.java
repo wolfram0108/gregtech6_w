@@ -31,14 +31,14 @@ import gregapi.data.LH.Chat;
 import gregapi.data.TD;
 import gregapi.tileentity.behavior.TE_Behavior_Energy_Stats;
 import gregapi.tileentity.machines.ITileEntityAdjacentOnOff;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 public abstract class TileEntityBase11Twotypes extends TileEntityBase10EnergyConverter implements ITileEntityAdjacentOnOff {
 	public TE_Behavior_Energy_Stats mEnergyOUT2 = null;
 	
 	@Override
-	public void readEnergyBehavior(NBTTagCompound aNBT) {
+	public void readEnergyBehavior(CompoundTag aNBT) {
 		super.readEnergyBehavior(aNBT);
 		mEnergyOUT2 = new TE_Behavior_Energy_Stats(this, aNBT, aNBT.hasKey(NBT_ENERGY_EMITTED_2) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED_2)) : TD.Energy.QU, mStorage, aNBT.getLong(NBT_OUTPUT) / 2, aNBT.getLong(NBT_OUTPUT), aNBT.getLong(NBT_OUTPUT) * 2);
 	}

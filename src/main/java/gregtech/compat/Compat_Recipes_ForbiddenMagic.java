@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -33,7 +33,7 @@ import gregapi.util.ST;
 public class Compat_Recipes_ForbiddenMagic extends CompatMods {
 	public Compat_Recipes_ForbiddenMagic(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing TC Forbidden Magic Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing TC Forbidden Magic Recipes.");
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TCFM, "InkFlower"  , 1, W), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Black], 2), ST.make(MD.TCFM, "FMResource", 1, 1));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TCFM, "UmbralBush" , 1, W), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Black], 4), ST.make(MD.TCFM, "FMResource", 2, 1));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.TCFM, "InkFlower"    , 1, W), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Black], 1), ST.make(MD.TCFM, "FMResource", 1, 1));

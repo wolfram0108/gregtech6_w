@@ -33,7 +33,7 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.energy.ITileEntityEnergyElectricityAcceptor;
 import gregapi.tileentity.energy.ITileEntityEnergyFluxHandler;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 
 /**

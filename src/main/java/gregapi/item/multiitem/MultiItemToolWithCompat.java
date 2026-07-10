@@ -32,9 +32,9 @@ import ic2.api.item.ISpecialElectricItem;
 import micdoodle8.mods.galacticraft.api.item.IItemElectric;
 import mods.railcraft.api.core.items.IToolCrowbar;
 import net.minecraft.entity.item.EntityMinecart;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import thaumcraft.api.IWarpingGear;
 
 import static gregapi.data.CS.F;
@@ -64,18 +64,18 @@ public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGe
 	public MultiItemToolWithCompat(String aModID, String aUnlocalized) {super(aModID, aUnlocalized);}
 	
 	@Override
-	public int getWarp(ItemStack aStack, EntityPlayer aPlayer) {
+	public int getWarp(ItemStack aStack, Player aPlayer) {
 		return getPrimaryMaterial(aStack).contains(TD.Properties.WARPING) || getSecondaryMaterial(aStack).contains(TD.Properties.WARPING) ? 1 : 0;
 	}
 	
 	@Override
-	public float getSaplingModifier(ItemStack aStack, World aWorld, EntityPlayer aPlayer, int aX, int aY, int aZ) {
+	public float getSaplingModifier(ItemStack aStack, Level aWorld, Player aPlayer, int aX, int aY, int aZ) {
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isGrafter() ? Math.min(100.0F, (1+UT.Code.bind4(getHarvestLevel(aStack, ""))) * 20.0F) : 0.0F;
 	}
 	
 	@Override
-	public boolean canWrench(EntityPlayer aPlayer, int aX, int aY, int aZ) {
+	public boolean canWrench(Player aPlayer, int aX, int aY, int aZ) {
 		ItemStack aStack = aPlayer.getCurrentEquippedItem();
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
@@ -83,47 +83,47 @@ public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGe
 	}
 	
 	@Override
-	public void wrenchUsed(EntityPlayer aPlayer, int aX, int aY, int aZ) {
+	public void wrenchUsed(Player aPlayer, int aX, int aY, int aZ) {
 		ItemStack aStack = aPlayer.getCurrentEquippedItem();
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
 	
 	@Override
-	public boolean canWhack(EntityPlayer aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
+	public boolean canWhack(Player aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
 	
 	@Override
-	public void onWhack(EntityPlayer aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
+	public void onWhack(Player aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
 	
 	@Override
-	public boolean canLink(EntityPlayer aPlayer, ItemStack aStack, EntityMinecart cart) {
+	public boolean canLink(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
 	
 	@Override
-	public void onLink(EntityPlayer aPlayer, ItemStack aStack, EntityMinecart cart) {
+	public void onLink(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, tStats.getToolDamagePerEntityAttack(), aPlayer, T);
 	}
 	
 	@Override
-	public boolean canBoost(EntityPlayer aPlayer, ItemStack aStack, EntityMinecart cart) {
+	public boolean canBoost(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
 	
 	@Override
-	public void onBoost(EntityPlayer aPlayer, ItemStack aStack, EntityMinecart cart) {
+	public void onBoost(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, tStats.getToolDamagePerEntityAttack(), aPlayer, T);
 	}

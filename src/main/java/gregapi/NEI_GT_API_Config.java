@@ -20,7 +20,7 @@
 package gregapi;
 
 import codechicken.nei.recipe.GuiUsageRecipe;
-import cpw.mods.fml.common.Loader;
+import net.neoforged.fml.ModList;
 import gregapi.data.MD;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.tileentity.tools.MultiTileEntityAdvancedCraftingTable.MultiTileEntityGUIClientAdvancedCraftingTable;
@@ -36,14 +36,14 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 	@Override
 	public void loadConfig() {
 		NEI = T;
-		NEI_NH = Loader.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH");
+		NEI_NH = ModList.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH");
 		if (GAPI_POST.mFinishedPostInit) run(); else GAPI_POST.mAfterPostInit.add(this);
 	}
 	
 	@Override
 	public void run() {
 		NEI = T;
-		NEI_NH = Loader.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH");
+		NEI_NH = ModList.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH");
 		
 		// Dont mess with NEI-NH, only mess with Vanilla NEI.
 		if (!NEI_NH) {

@@ -31,17 +31,17 @@ import gregapi.tileentity.ITileEntityQuickObstructionCheck;
 import gregapi.tileentity.base.TileEntityBase07Paintable;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.level.Level;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,7 +57,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	public TagData mType = TD.Energy.EU;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_INPUT)) mSizeRec = aNBT.getLong(NBT_INPUT);
 		mSizeMin = mSizeRec / 2; mSizeMax = mSizeRec * 2;
@@ -78,21 +78,21 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE_ENERGY, F);
 		super.writeToNBT2(aNBT);
 	}
 	
 	@Override
-	public NBTTagCompound writeItemNBT2(NBTTagCompound aNBT) {
+	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE_ENERGY, F);
 		return super.writeItemNBT2(aNBT);
 	}
 	
 	@Override
-	public ItemStack getPickBlock(MovingObjectPosition aTarget) {
+	public ItemStack getPickBlock(HitResult aTarget) {
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID());
 		if (tRegistry == null) return null;
 		long oEnergy = mEnergy;
@@ -108,7 +108,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	}
 	
 	@Override
-	public boolean getSubItems(MultiTileEntityBlockInternal aBlock, Item aItem, CreativeTabs aTab, List<ItemStack> aList, short aID) {
+	public boolean getSubItems(MultiTileEntityBlockInternal aBlock, Item aItem, CreativeModeTab aTab, List<ItemStack> aList, short aID) {
 		if (mMaterial.mHidden) return F;
 		aList.add(aBlock.mMultiTileEntityRegistry.getItem(aID));
 		if (mCapacity > 0)
@@ -117,7 +117,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		long rReturn = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (rReturn > 0 || isClientSide()) return rReturn;
 		if (aTool.equals(TOOL_magnifyingglass)) {
@@ -152,7 +152,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	}
 	
 	@Override
-	public long doEnergyInjection(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, IInventory aInventory, World aWorld, int aX, int aY, int aZ, boolean aDoInject) {
+	public long doEnergyInjection(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoInject) {
 		if (aAmount < 1 || mSizeRec < 1) return 0;
 		if (!canEnergyInjection(aEnergyType, aStack, aSize = Math.abs(aSize))) return 0;
 		if (mEnergy >= mCapacity) return 0;
@@ -163,7 +163,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	}
 	
 	@Override
-	public long doEnergyExtraction(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, IInventory aInventory, World aWorld, int aX, int aY, int aZ, boolean aDoExtract) {
+	public long doEnergyExtraction(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoExtract) {
 		if (aAmount < 1 || mSizeRec < 1) return 0;
 		if (!canEnergyExtraction(aEnergyType, aStack, aSize = Math.abs(aSize))) return 0;
 		if (mEnergy < aSize) return 0;
@@ -173,7 +173,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 		return rAmount;
 	}
 	
-	public ItemStack rechargeFromPlayer(TagData aEnergyType, ItemStack aStack, EntityLivingBase aPlayer, IInventory aInventory, World aWorld, int aX, int aY, int aZ) {
+	public ItemStack rechargeFromPlayer(TagData aEnergyType, ItemStack aStack, LivingEntity aPlayer, Container aInventory, Level aWorld, int aX, int aY, int aZ) {
 		if (COMPAT_EU_ITEM == null || aPlayer == null || aPlayer.worldObj.isRemote || aEnergyType != mType || aEnergyType != TD.Energy.EU) return aStack;
 		long tMinInput = getEnergySizeInputMin(aEnergyType, aStack);
 		boolean temp = F;
@@ -189,8 +189,8 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	}
 	
 	@Override
-	public boolean useEnergy(TagData aEnergyType, ItemStack aStack, long aEnergyAmount, EntityLivingBase aPlayer, IInventory aInventory, World aWorld, int aX, int aY, int aZ, boolean aDoUse) {
-		if (aPlayer instanceof EntityPlayer && ((EntityPlayer)aPlayer).capabilities.isCreativeMode) return T;
+	public boolean useEnergy(TagData aEnergyType, ItemStack aStack, long aEnergyAmount, LivingEntity aPlayer, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoUse) {
+		if (aPlayer instanceof Player && ((Player)aPlayer).capabilities.isCreativeMode) return T;
 		if (aEnergyType != mType && aEnergyType != null) return F;
 		rechargeFromPlayer(mType, aStack, aPlayer, aInventory, aWorld, aX, aY, aZ);
 		if (mEnergy >= aEnergyAmount) {

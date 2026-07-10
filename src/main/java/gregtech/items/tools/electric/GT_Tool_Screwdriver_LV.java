@@ -26,7 +26,7 @@ import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregtech.items.tools.machine.GT_Tool_Screwdriver;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_Screwdriver_LV extends GT_Tool_Screwdriver {
 	@Override

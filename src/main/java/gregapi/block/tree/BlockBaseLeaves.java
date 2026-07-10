@@ -20,8 +20,8 @@
 package gregapi.block.tree;
 
 import cpw.mods.fml.common.Optional;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.MD;
 import gregapi.data.OP;
@@ -30,20 +30,20 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.ColorizerFoliage;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.IShearable;
-import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraft.core.Direction;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -61,53 +61,53 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	public final Block[] mLogs;
 	public final byte[] mLogMetas;
 	
-	public BlockBaseLeaves(Class<? extends ItemBlock> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons, Block aSaplings, Block[] aLogs, byte[] aLogMetas) {
+	public BlockBaseLeaves(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons, Block aSaplings, Block[] aLogs, byte[] aLogMetas) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons);
-		setCreativeTab(CreativeTabs.tabDecorations);
+		setCreativeTab(CreativeModeTab.tabDecorations);
 		mSaplings = aSaplings;
 		mLogMetas = aLogMetas;
 		mLogs = aLogs;
 		setHardness(0.2F);
 	}
 	
-	@Override public boolean isFireSource(World aWorld, int aX, int aY, int aZ, ForgeDirection aSide) {return F;}
+	@Override public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	@Override public int getFlammability(byte aMeta) {return 30;}
 	@Override public int getFireSpreadSpeed(byte aMeta) {return 60;}
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}
-	@Override public int getDamageValue(World aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & 7;}
+	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & 7;}
 	@Override public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.getItemFromBlock(mSaplings);}
-	@Override public float getBlockHardness(World aWorld, int aX, int aY, int aZ) {return Blocks.leaves.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.leaves.getBlockHardness(aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.leaves.getExplosionResistance(null);}
 	@Override public boolean renderAsNormalBlock() {return F;}
-	@Override public boolean isNormalCube(IBlockAccess aWorld, int aX, int aY, int aZ)  {return F;}
+	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
 	@Override public boolean isOpaqueCube() {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
-	@Override public boolean isLeaves(IBlockAccess aWorld, int aX, int aY, int aZ) {return T;}
-	@Override public boolean isShearable(ItemStack aItem, IBlockAccess aWorld, int aX, int aY, int aZ) {return T;}
+	@Override public boolean isLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
+	@Override public boolean isShearable(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(Blocks.leaves.isOpaqueCube()?8:0)].getIcon(0);}
-	@Override public ArrayList<ItemStack> onSheared(ItemStack aItem, IBlockAccess aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool(World aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : super.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);}
-	@Override public void onOxygenAdded(World aWorld, int aX, int aY, int aZ) {/**/}
-	@Override public void onOxygenRemoved(World aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}}
+	@Override public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
+	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : super.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);}
+	@Override public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
+	@Override public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}}
 	
 	@Override
-	public void onBlockAdded2(World aWorld, int aX, int aY, int aZ) {
+	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {
 		if (!aWorld.isRemote && !WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}
 	}
 	
 	@Override
-	@SideOnly(Side.CLIENT)
-	public boolean shouldSideBeRendered(IBlockAccess aWorld, int aX, int aY, int aZ, int aSide) {
+	@OnlyIn(Dist.CLIENT)
+	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = aWorld.getBlock(aX, aY, aZ);
 		return !(aBlock.isOpaqueCube() || (Blocks.leaves.isOpaqueCube() && aBlock instanceof BlockBaseLeaves));
 	}
 	
 	@Override
-	public void beginLeavesDecay(World aWorld, int aX, int aY, int aZ) {
+	public void beginLeavesDecay(Level aWorld, int aX, int aY, int aZ) {
 		if (aWorld.isRemote) return;
 		if (!WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}
 		if (WD.meta(aWorld, aX, aY, aZ) < 8) return;
@@ -115,7 +115,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	}
 	
 	@Override
-	public void updateTick2(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isRemote) return;
 		if (!WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.setBlockToAir(aX, aY, aZ); return;}
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
@@ -131,7 +131,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	}
 	
 	@Override
-	public ArrayList<ItemStack> getDrops(World aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		ArrayListNoNulls<ItemStack> rDrops = ST.arraylist();
 		int tChance = 50;
 		if (aFortune > 0) {
@@ -142,12 +142,12 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 		return rDrops;
 	}
 	
-	@Override @SideOnly(Side.CLIENT)
+	@Override @OnlyIn(Dist.CLIENT)
 	public int getBlockColor() {return ColorizerFoliage.getFoliageColor(0.5, 1.0);}
-	@Override @SideOnly(Side.CLIENT)
+	@Override @OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int p_149741_1_) {return ColorizerFoliage.getFoliageColorBasic();}
-	@Override @SideOnly(Side.CLIENT)
-	public int colorMultiplier(IBlockAccess aWorld, int aX, int aY, int aZ) {
+	@Override @OnlyIn(Dist.CLIENT)
+	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		int l = 0, i1 = 0, j1 = 0;
 		for (int k1 = -1; k1 <= 1; ++k1) for (int l1 = -1; l1 <= 1; ++l1) {
 			int i2 = aWorld.getBiomeGenForCoords(aX + l1, aZ + k1).getBiomeFoliageColor(aX + l1, aY, aZ + k1);

@@ -33,11 +33,11 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.ITileEntityKeyInteractable;
 import gregapi.tileentity.inventories.MultiTileEntitySafe;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
 
@@ -51,14 +51,14 @@ public class MultiTileEntitySafeKeyLocked extends MultiTileEntitySafe implements
 	public boolean mOpened = F;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_KEY)) mID = aNBT.getLong(NBT_KEY);
 		if (aNBT.hasKey(NBT_OPEN)) mOpened = aNBT.getBoolean(NBT_OPEN);
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_KEY, mID);
 		UT.NBT.setBoolean(aNBT, NBT_OPEN, mOpened);
@@ -76,7 +76,7 @@ public class MultiTileEntitySafeKeyLocked extends MultiTileEntitySafe implements
 	}
 	
 	@Override
-	public boolean useKey(EntityPlayer aPlayer, byte aSide, float hitX, float hitY, float hitZ, long... aKeys) {
+	public boolean useKey(Player aPlayer, byte aSide, float hitX, float hitY, float hitZ, long... aKeys) {
 		if (aKeys.length <= 0 || !isServerSide()) return F;
 		for (long tID : aKeys) {
 			if (mID == 0) mID = tID;
@@ -91,7 +91,7 @@ public class MultiTileEntitySafeKeyLocked extends MultiTileEntitySafe implements
 	}
 	
 	@Override
-	public boolean canCloneKey(EntityPlayer aPlayer, byte aSide, float hitX, float hitY, float hitZ) {
+	public boolean canCloneKey(Player aPlayer, byte aSide, float hitX, float hitY, float hitZ) {
 		return mOpened && mID != 0;
 	}
 	

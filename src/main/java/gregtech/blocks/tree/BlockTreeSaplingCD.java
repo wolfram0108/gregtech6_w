@@ -27,12 +27,12 @@ import gregapi.old.Textures;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Random;
@@ -66,7 +66,7 @@ public class BlockTreeSaplingCD extends BlockBaseSapling {
 	}
 	
 	@Override
-	public boolean grow(World aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom) {
+	public boolean grow(Level aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom) {
 		int tMaxHeight = 0;
 		switch(aMeta & 7) {
 		case 0:
@@ -105,7 +105,7 @@ public class BlockTreeSaplingCD extends BlockBaseSapling {
 	}
 	
 	@Override
-	public void addInformation(ItemStack aStack, byte aMeta, EntityPlayer aPlayer, List<String> aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		super.addInformation(aStack, aMeta, aPlayer, aList, aF3_H);
 		if (XMAS_IN_JULY && (aMeta & 7) == 0) {
 			aList.add(LH.Chat.RAINBOW_SLOW + "Save on everything at Christmas in July!");

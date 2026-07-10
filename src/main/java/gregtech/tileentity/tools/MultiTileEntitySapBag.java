@@ -38,12 +38,12 @@ import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
@@ -57,7 +57,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 	public FluidTankGT mTank = new FluidTankGT(8000);
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_ACTIVE)) mFull = aNBT.getBoolean(NBT_ACTIVE);
 		mTank.setCapacity(aNBT.getLong(NBT_TANK_CAPACITY));
@@ -65,7 +65,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mFull);
 		mTank.writeToNBT(aNBT, NBT_TANK);
@@ -80,7 +80,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
-			DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(mFacing);
+			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(mFacing);
 			if (tDelegator.mTileEntity instanceof ITileEntityTreeHole) {
 				if (((ITileEntityTreeHole)tDelegator.mTileEntity).hasResin(tDelegator.mSideOfTileEntity)) {
 					if (((ITileEntityTreeHole)tDelegator.mTileEntity).extractResin(tDelegator.mSideOfTileEntity)) {
@@ -96,7 +96,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			if (ST.add(aPlayer, slot(0), T)) {
 				slotKill(0);
@@ -148,10 +148,10 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 		new Textures.BlockIcons.CustomIcon("machines/tools/sapbag/overlay_full/side"),
 	};
 	
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return null;}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return null;}
 	
 	@Override
-	public AxisAlignedBB getSelectedBoundingBoxFromPool() {
+	public AABB getSelectedBoundingBoxFromPool() {
 		switch(mFacing) {
 		case SIDE_Z_NEG: return box(PX_P[ 5], PX_P[ 0], PX_P[ 0], PX_N[ 5], PX_N[ 9], PX_N[10]);
 		case SIDE_Z_POS: return box(PX_P[ 5], PX_P[ 0], PX_P[10], PX_N[ 5], PX_N[ 9], PX_N[ 0]);
@@ -170,7 +170,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 		}
 	}
 	
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[1];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[1];}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ZL_INTEGER;}
 	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {return F;}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}
@@ -184,7 +184,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 	@Override public boolean allowCovers            (byte aSide) {return F;}
 	@Override public boolean attachCoversFirst      (byte aSide) {return F;}
 	@Override public boolean isObstructingBlockAt   (byte aSide) {return aSide == mFacing;}
-	@Override public boolean checkObstruction(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
+	@Override public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
 	@Override public boolean useSidePlacementRotation       () {return T;}
 	@Override public boolean useInversePlacementRotation    () {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}

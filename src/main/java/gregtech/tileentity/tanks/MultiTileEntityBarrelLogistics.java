@@ -29,7 +29,7 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.logistics.ITileEntityLogisticsStorage;
 import gregapi.tileentity.tank.TileEntityBase08Barrel;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 /**
  * @author Gregorius Techneticies

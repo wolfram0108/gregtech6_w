@@ -36,19 +36,19 @@ import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregapi.worldgen.StoneLayer;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.DamageSource;
-import net.minecraft.world.ChunkPosition;
-import net.minecraft.world.Explosion;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
 
 import java.util.Iterator;
 import java.util.List;
@@ -64,7 +64,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	public long mMaxExplosionResistance = 10;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_STATE)) mCountDown = aNBT.getByte(NBT_STATE);
 		if (aNBT.hasKey(NBT_MODE)) mSunk = aNBT.getBoolean(NBT_MODE);
@@ -73,7 +73,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		aNBT.setByte(NBT_STATE, mCountDown);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mSunk);
@@ -91,7 +91,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		long rReturn = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (rReturn > 0) return rReturn;
 		
@@ -182,8 +182,8 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box(PX_P[SIDE_X_NEG==mFacing?mSunk?14:0:SIDE_X_POS==mFacing?0:5], PX_P[SIDE_Y_NEG==mFacing?mSunk?14:0:SIDE_Y_POS==mFacing?0:5], PX_P[SIDE_Z_NEG==mFacing?mSunk?14:0:SIDE_Z_POS==mFacing?0:5], PX_N[SIDE_X_POS==mFacing?mSunk?14:0:SIDE_X_NEG==mFacing?0:5], PX_N[SIDE_Y_POS==mFacing?mSunk?14:0:SIDE_Y_NEG==mFacing?0:5], PX_N[SIDE_Z_POS==mFacing?mSunk?14:0:SIDE_Z_NEG==mFacing?0:5]);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(PX_P[SIDE_X_NEG==mFacing?mSunk?14:0:SIDE_X_POS==mFacing?0:5], PX_P[SIDE_Y_NEG==mFacing?mSunk?14:0:SIDE_Y_POS==mFacing?0:5], PX_P[SIDE_Z_NEG==mFacing?mSunk?14:0:SIDE_Z_POS==mFacing?0:5], PX_N[SIDE_X_POS==mFacing?mSunk?14:0:SIDE_X_NEG==mFacing?0:5], PX_N[SIDE_Y_POS==mFacing?mSunk?14:0:SIDE_Y_NEG==mFacing?0:5], PX_N[SIDE_Z_POS==mFacing?mSunk?14:0:SIDE_Z_NEG==mFacing?0:5]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[SIDE_X_NEG==mFacing?mSunk?14:0:SIDE_X_POS==mFacing?0:5], PX_P[SIDE_Y_NEG==mFacing?mSunk?14:0:SIDE_Y_POS==mFacing?0:5], PX_P[SIDE_Z_NEG==mFacing?mSunk?14:0:SIDE_Z_POS==mFacing?0:5], PX_N[SIDE_X_POS==mFacing?mSunk?14:0:SIDE_X_NEG==mFacing?0:5], PX_N[SIDE_Y_POS==mFacing?mSunk?14:0:SIDE_Y_NEG==mFacing?0:5], PX_N[SIDE_Z_POS==mFacing?mSunk?14:0:SIDE_Z_NEG==mFacing?0:5]);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(PX_P[SIDE_X_NEG==mFacing?mSunk?14:0:SIDE_X_POS==mFacing?0:5], PX_P[SIDE_Y_NEG==mFacing?mSunk?14:0:SIDE_Y_POS==mFacing?0:5], PX_P[SIDE_Z_NEG==mFacing?mSunk?14:0:SIDE_Z_POS==mFacing?0:5], PX_N[SIDE_X_POS==mFacing?mSunk?14:0:SIDE_X_NEG==mFacing?0:5], PX_N[SIDE_Y_POS==mFacing?mSunk?14:0:SIDE_Y_NEG==mFacing?0:5], PX_N[SIDE_Z_POS==mFacing?mSunk?14:0:SIDE_Z_NEG==mFacing?0:5]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock)  {box(aBlock, PX_P[SIDE_X_NEG==mFacing?mSunk?14:0:SIDE_X_POS==mFacing?0:5], PX_P[SIDE_Y_NEG==mFacing?mSunk?14:0:SIDE_Y_POS==mFacing?0:5], PX_P[SIDE_Z_NEG==mFacing?mSunk?14:0:SIDE_Z_POS==mFacing?0:5], PX_N[SIDE_X_POS==mFacing?mSunk?14:0:SIDE_X_NEG==mFacing?0:5], PX_N[SIDE_Y_POS==mFacing?mSunk?14:0:SIDE_Y_NEG==mFacing?0:5], PX_N[SIDE_Z_POS==mFacing?mSunk?14:0:SIDE_Z_NEG==mFacing?0:5]);}
 	
 	@Override public byte isProvidingWeakPower2(byte aSide) {return (byte)(mCountDown != 0 ? 15 : 0);}
@@ -207,11 +207,11 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	@Override public String getTileEntityName() {return "gt.multitileentity.dynamite";}
 	
 	public static class DynamiteExplosion extends Explosion {
-		public World mWorld;
+		public Level mWorld;
 		public float mMaxExplosionResistance;
 		public byte mFortune;
 		
-		public DynamiteExplosion(World aWorld, double aX, double aY, double aZ, float aMaxExplosionResistance, byte aFortune) {
+		public DynamiteExplosion(Level aWorld, double aX, double aY, double aZ, float aMaxExplosionResistance, byte aFortune) {
 			super(aWorld, null, aX, aY, aZ, 1);
 			mMaxExplosionResistance = aMaxExplosionResistance;
 			mFortune = aFortune;
@@ -224,12 +224,12 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 			for (int tX = UT.Code.roundDown(explosionX) - 1; tX <= UT.Code.roundDown(explosionX) + 1; tX++) for (int tY = UT.Code.roundDown(explosionY) - 1; tY <= UT.Code.roundDown(explosionY) + 1; tY++) for (int tZ = UT.Code.roundDown(explosionZ) - 1; tZ <= UT.Code.roundDown(explosionZ) + 1; tZ++) {
 				Block tBlock = mWorld.getBlock(tX, tY, tZ);
 				if (tBlock == Blocks.mob_spawner || WD.bedrock(tBlock)) continue;
-				if (tBlock.getExplosionResistance(exploder, mWorld, tX, tY, tZ, explosionX, explosionY, explosionZ) <= mMaxExplosionResistance) affectedBlockPositions.add(new ChunkPosition(tX, tY, tZ));
+				if (tBlock.getExplosionResistance(exploder, mWorld, tX, tY, tZ, explosionX, explosionY, explosionZ) <= mMaxExplosionResistance) affectedBlockPositions.add(new BlockPos(tX, tY, tZ));
 			}
-			List tList = mWorld.getEntitiesWithinAABBExcludingEntity(exploder, AxisAlignedBB.getBoundingBox(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));
-			net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(mWorld, this, tList, explosionSize);
+			List tList = mWorld.getEntitiesWithinAABBExcludingEntity(exploder, AABB.getBoundingBox(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));
+			net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tList, explosionSize);
 			DamageSource tSource = DamageSource.setExplosionSource(this);
-			for (Object tEntity : tList) if (!(tEntity instanceof EntityItem)) ((Entity)tEntity).attackEntityFrom(tSource, 2*mMaxExplosionResistance*TFC_DAMAGE_MULTIPLIER);
+			for (Object tEntity : tList) if (!(tEntity instanceof ItemEntity)) ((Entity)tEntity).attackEntityFrom(tSource, 2*mMaxExplosionResistance*TFC_DAMAGE_MULTIPLIER);
 			explosionSize = 1F;
 		}
 		
@@ -243,14 +243,14 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 				mWorld.spawnParticle("largeexplode", explosionX, explosionY, explosionZ, 1, 0, 0);
 			}
 			Iterator iterator;
-			ChunkPosition tCoords;
+			BlockPos tCoords;
 			int i, j, k;
 			Block tBlock;
 			
 			if (isSmoking) {
 				iterator = affectedBlockPositions.iterator();
 				while (iterator.hasNext()) {
-					tCoords = (ChunkPosition)iterator.next();
+					tCoords = (BlockPos)iterator.next();
 					i = tCoords.chunkPosX;
 					j = tCoords.chunkPosY;
 					k = tCoords.chunkPosZ;

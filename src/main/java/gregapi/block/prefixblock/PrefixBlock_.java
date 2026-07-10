@@ -28,8 +28,8 @@ import gregapi.oredict.OreDictMaterialStack;
 import gregapi.oredict.OreDictPrefix;
 import gregapi.render.ITexture;
 import net.minecraft.block.material.Material;
-import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraft.world.level.Level;
+import net.minecraft.core.Direction;
 
 /**
  * @author Gregorius Techneticies
@@ -53,5 +53,5 @@ public class PrefixBlock_ extends PrefixBlock implements IBlockSealable {
 		super(aModIDOwner, aModIDTextures, aNameInternal, aPrefix, aHullMaterial, aItemClass, aDrops, aTexture, aVanillaMaterial, aSoundType, aTool, aBaseHardness, aBaseResistance, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ, aGravity, aBeaconBase, aEnderDragonProof, aWitherProof, aOpaque, aNormalCube, aPlacementChecksTemperature, aPlacementChecksAntimatter, aCanBurn, aCanExplode, aRenderOverlayInWorld, aCanGlow, aCanLight, aSpawnProof, aMaterialList);
 	}
 	
-	@Override public boolean isSealed(World aWorld, int aX, int aY, int aZ, ForgeDirection aDirection) {return mPrefix == OP.blockSolid;}
+	@Override public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return mPrefix == OP.blockSolid;}
 }

@@ -30,7 +30,7 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.inventories.MultiTileEntityMassStorage;
 import gregapi.tileentity.logistics.ITileEntityLogisticsStorage;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 /**
  * @author Gregorius Techneticies

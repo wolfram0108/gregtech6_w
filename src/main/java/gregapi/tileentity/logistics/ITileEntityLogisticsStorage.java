@@ -19,8 +19,8 @@
 
 package gregapi.tileentity.logistics;
 
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * @author Gregorius Techneticies

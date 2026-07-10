@@ -23,8 +23,8 @@ import static gregapi.data.CS.*;
 
 import gregapi.data.CS.BlocksGT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockFalling;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.FallingBlock;
 
 /**
  * @author Gregorius Techneticies
@@ -47,7 +47,7 @@ public class DungeonChunkPillar implements IDungeonChunk {
 			temp = F;
 			for (int tX = 6; tX <= 9 && !temp; tX++) for (int tZ = 6; tZ <= 9 && !temp; tZ++) {
 				Block tBlock = aData.mWorld.getBlock(aData.mX+tX, aData.mY+tY, aData.mZ+tZ);
-				if (tBlock instanceof BlockFalling || !tBlock.isOpaqueCube() || tBlock == BlocksGT.Sands || tBlock == BlocksGT.Diggables) temp = T;
+				if (tBlock instanceof FallingBlock || !tBlock.isOpaqueCube() || tBlock == BlocksGT.Sands || tBlock == BlocksGT.Diggables) temp = T;
 			}
 			if (temp) {
 				for (int tX =  6; tX <=  9; tX++) for (int tZ =  6; tZ <=  9; tZ++) {

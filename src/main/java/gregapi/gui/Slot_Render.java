@@ -22,8 +22,8 @@ package gregapi.gui;
 import static gregapi.data.CS.*;
 
 import gregapi.tileentity.ITileEntityInventoryGUI;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * @author Gregorius Techneticies
@@ -38,7 +38,7 @@ public class Slot_Render extends Slot_Holo {
 	 */
 	@Override
 	public void putStack(ItemStack aStack) {
-		if (inventory instanceof TileEntity && ((TileEntity)inventory).getWorldObj().isRemote) {
+		if (inventory instanceof BlockEntity && ((BlockEntity)inventory).getWorldObj().isRemote) {
 			inventory.setInventorySlotContents(getSlotIndex(), aStack);
 		}
 		onSlotChanged();

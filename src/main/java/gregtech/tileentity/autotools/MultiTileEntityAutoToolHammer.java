@@ -42,10 +42,10 @@ import gregapi.tileentity.machines.ITileEntityAnvil;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregtech.items.tools.early.GT_Tool_HardHammer;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle implements ITileEntityEnergy {
 	protected boolean mPullingBack = F;
@@ -54,7 +54,7 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 	protected TagData mEnergyTypeAccepted = TD.Energy.KU;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		if (aNBT.hasKey(NBT_STATE)) mPullingBack = aNBT.getBoolean(NBT_STATE);
@@ -64,7 +64,7 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
 		UT.NBT.setBoolean(aNBT, NBT_STATE, mPullingBack);
@@ -82,7 +82,7 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		if (aIsServerSide) {
 			if (mPullingBack && mEnergy > 0) {
-				DelegatorTileEntity<TileEntity> tD = getAdjacentTileEntity(mFacing);
+				DelegatorTileEntity<BlockEntity> tD = getAdjacentTileEntity(mFacing);
 				if (IBlockToolable.Util.onToolClick(TOOL_hammer, mEnergy * 10, mQuality, null, null, null, F, null, tD.mWorld, tD.mSideOfTileEntity, tD.mX, tD.mY, tD.mZ, 0.5F, 0.5F, 0.5F) > 0) {
 					mSendSound = 1;
 				} else {

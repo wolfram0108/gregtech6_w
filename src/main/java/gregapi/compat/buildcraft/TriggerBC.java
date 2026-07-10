@@ -35,9 +35,9 @@ import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;
 import gregapi.util.UT;
 import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.util.IIcon;
-import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraft.core.Direction;
 
 public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	public final String mModID, mName;
@@ -61,10 +61,10 @@ public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	@Override public String getDescription() {return LanguageHandler.translate("bc.trigger."+mModID+"."+mName);}
 	@Override public IStatementParameter createParameter(int aIndex) {return null;}
 	@Override public IStatement rotateLeft() {return null;}
-	@Override public boolean isTriggerActive(TileEntity aTarget, ForgeDirection aSide, IStatementContainer aSource, IStatementParameter[] aParameters) {return isApplicable(aTarget, UT.Code.side(aSide)) ? isActive(aTarget, UT.Code.side(aSide), aSource, aParameters) : false;}
+	@Override public boolean isTriggerActive(BlockEntity aTarget, Direction aSide, IStatementContainer aSource, IStatementParameter[] aParameters) {return isApplicable(aTarget, UT.Code.side(aSide)) ? isActive(aTarget, UT.Code.side(aSide), aSource, aParameters) : false;}
 	@Override public Collection<ITriggerInternal> getInternalTriggers(IStatementContainer container) {return null;}
-	@Override public Collection<ITriggerExternal> getExternalTriggers(ForgeDirection aSide, TileEntity aTarget) {return isApplicable(aTarget, UT.Code.side(aSide)) ? new ArrayListNoNulls<ITriggerExternal>(F, this) : null;}
+	@Override public Collection<ITriggerExternal> getExternalTriggers(Direction aSide, BlockEntity aTarget) {return isApplicable(aTarget, UT.Code.side(aSide)) ? new ArrayListNoNulls<ITriggerExternal>(F, this) : null;}
 	
-	public abstract boolean isActive(TileEntity aTarget, byte aSideOfTileEntity, IStatementContainer aSource, IStatementParameter[] aParameters);
-	public abstract boolean isApplicable(TileEntity aTarget, byte aSideOfTileEntity);
+	public abstract boolean isActive(BlockEntity aTarget, byte aSideOfTileEntity, IStatementContainer aSource, IStatementParameter[] aParameters);
+	public abstract boolean isApplicable(BlockEntity aTarget, byte aSideOfTileEntity);
 }

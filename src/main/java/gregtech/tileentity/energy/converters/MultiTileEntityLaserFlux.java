@@ -32,8 +32,8 @@ import gregapi.tileentity.energy.ITileEntityEnergyFluxHandler;
 import gregapi.tileentity.energy.TileEntityBase10EnergyConverter;
 import gregapi.tileentity.machines.ITileEntityAdjacentOnOff;
 import gregapi.tileentity.machines.ITileEntitySwitchableMode;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
 
 public class MultiTileEntityLaserFlux extends TileEntityBase10EnergyConverter implements ITileEntityEnergyFluxHandler, ITileEntityAdjacentOnOff, ITileEntitySwitchableMode {
 	@Override

@@ -29,8 +29,8 @@ import gregapi.item.multiitem.food.FoodStatFluid;
 import gregapi.oredict.OreDictItemData;
 import gregapi.util.CR;
 import gregapi.util.ST;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import static gregapi.data.CS.*;
 
@@ -437,5 +437,5 @@ public class MultiItemBottles extends MultiItemRandomWithCompat implements IItem
 		}
 	}
 	
-	@Override public ItemStack getRotten(ItemStack aStack, World aWorld, int aX, int aY, int aZ) {return getRotten(aStack);}
+	@Override public ItemStack getRotten(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {return getRotten(aStack);}
 }

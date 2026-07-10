@@ -21,7 +21,7 @@ package gregapi.compat.galacticraft;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import gregapi.compat.CompatBase;
 import gregapi.worldgen.GT6WorldGenerator;
 import micdoodle8.mods.galacticraft.api.event.wgen.GCCoreEventPopulate;
@@ -31,7 +31,7 @@ import micdoodle8.mods.galacticraft.api.power.IEnergyHandlerGC;
 import micdoodle8.mods.galacticraft.api.transmission.NetworkType;
 import micdoodle8.mods.galacticraft.api.transmission.tile.IConnector;
 import micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 
 public class CompatGC extends CompatBase implements ICompatGC {
 	public final EnergySourceAdjacent[] ENERGY_DIR = {new EnergySourceAdjacent(FORGE_DIR[0]), new EnergySourceAdjacent(FORGE_DIR[1]), new EnergySourceAdjacent(FORGE_DIR[2]), new EnergySourceAdjacent(FORGE_DIR[3]), new EnergySourceAdjacent(FORGE_DIR[4]), new EnergySourceAdjacent(FORGE_DIR[5]), new EnergySourceAdjacent(FORGE_DIR[6])};
@@ -42,7 +42,7 @@ public class CompatGC extends CompatBase implements ICompatGC {
 		IEnergyHandlerGC.class.getCanonicalName();
 		EnergySource.EnergySourceAdjacent.class.getCanonicalName();
 		EnergyConfigHandler.class.getCanonicalName();
-		MinecraftForge.EVENT_BUS.register(this);
+		NeoForge.EVENT_BUS.register(this);
 	}
 	
 	@Override public Object dir(byte aSide) {return ENERGY_DIR[aSide];}

@@ -21,9 +21,9 @@ package gregapi.old;
 
 import static gregapi.data.CS.*;
 
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 @Deprecated
 @SuppressWarnings("deprecation")

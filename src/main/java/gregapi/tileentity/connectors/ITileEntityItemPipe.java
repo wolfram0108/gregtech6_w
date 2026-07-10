@@ -25,7 +25,7 @@ import java.util.Map;
 
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.UT;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * @author Gregorius Techneticies
@@ -82,14 +82,14 @@ public interface ITileEntityItemPipe extends ITileEntityConnector {
 				for (byte aSide : ALL_SIDES_VALID) {
 					if (aSuckItems) {
 						if (aPipe.canAcceptItemsFrom(aSide, null)) {
-							DelegatorTileEntity<TileEntity> tDelegator = aPipe.getAdjacentTileEntity(aSide);
+							DelegatorTileEntity<BlockEntity> tDelegator = aPipe.getAdjacentTileEntity(aSide);
 							if (tDelegator.mTileEntity instanceof ITileEntityItemPipe && UT.Code.haveOneCommonElement(aPipe.getConnectorTypes(aSide), ((ITileEntityItemPipe)tDelegator.mTileEntity).getConnectorTypes(tDelegator.mSideOfTileEntity)) && ((ITileEntityItemPipe)tDelegator.mTileEntity).canEmitItemsTo(tDelegator.mSideOfTileEntity, null)) {
 								scanPipes((ITileEntityItemPipe)tDelegator.mTileEntity, aMap, aStep, aSuckItems, aIgnoreCapacity);
 							}
 						}
 					} else {
 						if (aPipe.canEmitItemsTo(aSide, null)) {
-							DelegatorTileEntity<TileEntity> tDelegator = aPipe.getAdjacentTileEntity(aSide);
+							DelegatorTileEntity<BlockEntity> tDelegator = aPipe.getAdjacentTileEntity(aSide);
 							if (tDelegator.mTileEntity instanceof ITileEntityItemPipe && UT.Code.haveOneCommonElement(aPipe.getConnectorTypes(aSide), ((ITileEntityItemPipe)tDelegator.mTileEntity).getConnectorTypes(tDelegator.mSideOfTileEntity)) && ((ITileEntityItemPipe)tDelegator.mTileEntity).canAcceptItemsFrom(tDelegator.mSideOfTileEntity, null)) {
 								scanPipes((ITileEntityItemPipe)tDelegator.mTileEntity, aMap, aStep, aSuckItems, aIgnoreCapacity);
 							}

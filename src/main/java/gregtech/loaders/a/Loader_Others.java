@@ -30,9 +30,9 @@ import gregapi.data.CS.Sandwiches;
 import gregapi.data.MD;
 import gregapi.render.BlockTextureDefault;
 import gregapi.render.IconContainerCopied;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.init.Blocks;
+import net.minecraft.world.level.block.Blocks;
 
 public class Loader_Others implements Runnable {
 	@Override

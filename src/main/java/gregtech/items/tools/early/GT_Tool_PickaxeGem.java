@@ -23,7 +23,7 @@ import gregapi.data.MT;
 import gregapi.data.OP;
 import gregapi.item.multiitem.MultiItemTool;
 import gregapi.render.IIconContainer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_PickaxeGem extends GT_Tool_Pickaxe {
 	@Override public float getMaxDurabilityMultiplier() {return super.getMaxDurabilityMultiplier() / 4;}

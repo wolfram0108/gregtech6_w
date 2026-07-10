@@ -26,13 +26,13 @@ import gregapi.item.multiitem.behaviors.Behavior_Place_Torch;
 import gregapi.item.multiitem.behaviors.Behavior_Plug_Leak;
 import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.render.IIconContainer;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockSilverfish;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.stats.AchievementList;
 
 import static gregapi.data.CS.T;
@@ -72,7 +72,7 @@ public class GT_Tool_Pickaxe extends ToolStats {
 	}
 	
 	@Override
-	public void onToolCrafted(ItemStack aStack, EntityPlayer aPlayer) {
+	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		super.onToolCrafted(aStack, aPlayer);
 		aPlayer.triggerAchievement(AchievementList.buildPickaxe);
 		aPlayer.triggerAchievement(AchievementList.buildBetterPickaxe);

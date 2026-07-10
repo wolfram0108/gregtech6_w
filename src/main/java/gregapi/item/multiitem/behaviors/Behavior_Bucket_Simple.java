@@ -30,24 +30,24 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import iguanaman.hungeroverhaul.config.IguanaConfig;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockCauldron;
-import net.minecraft.block.BlockDispenser;
-import net.minecraft.dispenser.IBlockSource;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CauldronBlock;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.passive.EntityCow;
 import net.minecraft.entity.passive.EntityMooshroom;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
 import net.minecraft.item.ItemBucket;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.world.World;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
 
 public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
@@ -59,16 +59,16 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		mDefaultFullBucket = aDefault;
 	}
 	
-	@Override public boolean canDispense(MultiItem aItem, IBlockSource aSource, ItemStack aStack) {return T;}
+	@Override public boolean canDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {return T;}
 	
 	@Override
-	public ItemStack onDispense(MultiItem aItem, IBlockSource aSource, ItemStack aStack) {
+	public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
 		if (aStack.stackSize > 1) return super.onDispense(aItem, aSource, aStack);
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		ItemStack tBucket = ST.make(Items.bucket, 1, 0);
 		
-		EnumFacing aFacing = BlockDispenser.func_149937_b(aSource.getBlockMetadata());
-		World aWorld = aSource.getWorld();
+		Direction aFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
+		Level aWorld = aSource.getWorld();
 		int aX = aSource.getXInt() + aFacing.getFrontOffsetX(), aY = aSource.getYInt() + aFacing.getFrontOffsetY(), aZ = aSource.getZInt() + aFacing.getFrontOffsetZ();
 		
 		if (mFluid == null) {
@@ -120,10 +120,10 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, World aWorld, EntityPlayer aPlayer) {
+	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		FluidStack mFluid = FL.getFluid(aStack, T);
-		MovingObjectPosition aTarget = WD.getMOP(aWorld, aPlayer, mFluid == null);
-		if (aTarget == null || aTarget.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) return aStack;
+		HitResult aTarget = WD.getMOP(aWorld, aPlayer, mFluid == null);
+		if (aTarget == null || aTarget.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
 		int aX = aTarget.blockX, aY = aTarget.blockY, aZ = aTarget.blockZ;
 		ItemStack tBucket = ST.make(Items.bucket, 1, 0);
 		
@@ -165,12 +165,12 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, Entity aEntity) {
-		if (FL.getFluid(aStack, T) == null && aEntity instanceof EntityLivingBase && !((EntityLivingBase)aEntity).isChild()) {
+	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
+		if (FL.getFluid(aStack, T) == null && aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isChild()) {
 			if (aPlayer.worldObj.isRemote) return T;
 			if (aEntity.getClass() == EntityCow.class || aEntity.getClass() == EntityMooshroom.class) {
 				if (MD.HO.mLoaded && IguanaConfig.milkedTimeout > 0 && !UT.Entities.hasInfiniteItems(aPlayer)) {
-					NBTTagCompound tNBT = aEntity.getEntityData();
+					CompoundTag tNBT = aEntity.getEntityData();
 					if (tNBT.hasKey("Milked")) return T;
 					tNBT.setInteger("Milked", IguanaConfig.milkedTimeout * 60);
 				}
@@ -182,15 +182,15 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
+	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aPlayer.worldObj.isRemote) return F;
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		if (mFluid == null) return F;
 		if (FL.water(mFluid) && mFluid.amount >= 1000) {
 			Block aBlock = aWorld.getBlock(aX, aY, aZ);
-			if (aBlock instanceof BlockCauldron) {
+			if (aBlock instanceof CauldronBlock) {
 				if (aWorld.getBlockMetadata(aX, aY, aZ) < 3) {
-					((BlockCauldron)aBlock).func_150024_a(aWorld, aX, aY, aZ, 3);
+					((CauldronBlock)aBlock).func_150024_a(aWorld, aX, aY, aZ, 3);
 					ST.set(aStack, ST.container(aStack, T));
 					return T;
 				}

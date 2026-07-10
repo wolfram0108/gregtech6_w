@@ -20,9 +20,9 @@
 package gregapi.compat.thaumcraft;
 
 import cpw.mods.fml.common.event.FMLModIdMappingEvent;
-import cpw.mods.fml.common.event.FMLServerStartedEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import cpw.mods.fml.common.event.FMLServerStoppingEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemStackContainer;
 import gregapi.compat.CompatBase;
@@ -35,12 +35,12 @@ import gregapi.oredict.OreDictManager;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.wooddict.WoodDictionary;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.resources.Identifier;
 import thaumcraft.api.ThaumcraftApi;
 import thaumcraft.api.ThaumcraftApiHelper;
 import thaumcraft.api.aspects.Aspect;
@@ -135,11 +135,11 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		TC.VITREUS          .mAspect = Aspect.CRYSTAL;
 		TC.VOLATUS          .mAspect = Aspect.FLIGHT;
 		
-		TC.STRONTIO         .mAspect = new Aspect("strontio"    , 0xeec2b3, new Aspect[] {Aspect.MIND, Aspect.ENTROPY}      , new ResourceLocation(RES_PATH_ASPECTS + "STRONTIO.png"), 1);
-		TC.NEBRISUM         .mAspect = new Aspect("nebrisum"    , 0xeeee7e, new Aspect[] {Aspect.MINE, Aspect.GREED}        , new ResourceLocation(RES_PATH_ASPECTS + "NEBRISUM.png"), 1);
-		TC.ELECTRUM         .mAspect = new Aspect("electrum"    , 0xc0eeee, new Aspect[] {Aspect.ENERGY, Aspect.MECHANISM}  , new ResourceLocation(RES_PATH_ASPECTS + "ELECTRUM.png"), 1);
-		TC.MAGNETO          .mAspect = new Aspect("magneto"     , 0xc0c0c0, new Aspect[] {Aspect.METAL, Aspect.TRAVEL}      , new ResourceLocation(RES_PATH_ASPECTS + "MAGNETO.png"), 1);
-		TC.RADIO            .mAspect = new Aspect("radio"       , 0xc0ffc0, new Aspect[] {Aspect.LIGHT, Aspect.ENERGY}      , new ResourceLocation(RES_PATH_ASPECTS + "RADIO.png"), 1);
+		TC.STRONTIO         .mAspect = new Aspect("strontio"    , 0xeec2b3, new Aspect[] {Aspect.MIND, Aspect.ENTROPY}      , new Identifier(RES_PATH_ASPECTS + "STRONTIO.png"), 1);
+		TC.NEBRISUM         .mAspect = new Aspect("nebrisum"    , 0xeeee7e, new Aspect[] {Aspect.MINE, Aspect.GREED}        , new Identifier(RES_PATH_ASPECTS + "NEBRISUM.png"), 1);
+		TC.ELECTRUM         .mAspect = new Aspect("electrum"    , 0xc0eeee, new Aspect[] {Aspect.ENERGY, Aspect.MECHANISM}  , new Identifier(RES_PATH_ASPECTS + "ELECTRUM.png"), 1);
+		TC.MAGNETO          .mAspect = new Aspect("magneto"     , 0xc0c0c0, new Aspect[] {Aspect.METAL, Aspect.TRAVEL}      , new Identifier(RES_PATH_ASPECTS + "MAGNETO.png"), 1);
+		TC.RADIO            .mAspect = new Aspect("radio"       , 0xc0ffc0, new Aspect[] {Aspect.LIGHT, Aspect.ENERGY}      , new Identifier(RES_PATH_ASPECTS + "RADIO.png"), 1);
 //      TC.REFLEXIO         .mAspect = new Aspect("reflexio"    , 0xf0f0f0, new Aspect[] {Aspect.ENERGY, Aspect.EXCHANGE}   , new ResourceLocation(RES_PATH_ASPECTS + "REFLEXIO.png"), 1);
 		
 		TC.REFLEXIO         .mAspect = Aspect.EXCHANGE;
@@ -206,7 +206,7 @@ public class CompatTC extends CompatBase implements ICompatTC {
 	}
 	
 	@Override
-	public void onServerStarting(FMLServerStartingEvent aEvent) {
+	public void onServerStarting(ServerStartingEvent aEvent) {
 		// These ItemStacks are Enchanted BEFORE being copied in Thaumcraft, which leads to them always having the SAME Enchantment...
 		for (WeightedRandomLoot tLoot : WeightedRandomLoot.lootBagCommon) {
 			if (tLoot != null && (ST.equal(tLoot.item, Items.book) || ST.equal(tLoot.item, Items.enchanted_book))) {
@@ -216,17 +216,17 @@ public class CompatTC extends CompatBase implements ICompatTC {
 	}
 	
 	@Override
-	public void onServerStarted(FMLServerStartedEvent aEvent) {
+	public void onServerStarted(ServerStartedEvent aEvent) {
 		validate();
 	}
 	
 	@Override
-	public void onServerStopping(FMLServerStoppingEvent aEvent) {
+	public void onServerStopping(ServerStoppingEvent aEvent) {
 		validate();
 	}
 	
 	@Override
-	public boolean scan(EntityPlayer aPlayer, ItemStack aStack) {
+	public boolean scan(Player aPlayer, ItemStack aStack) {
 		if (aPlayer == null || ST.invalid(aStack)) return F;
 		boolean rReturn = F;
 		ScanResult tScan;
@@ -317,7 +317,7 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		LH.add("tc.research_text."+aResearch, "[GT] " + aText);
 		for (Object tPage : aPages) if (tPage != null) {
 			if (tPage instanceof String                     ) {tPages.add(new ResearchPage((String                          )tPage)); continue;}
-			if (tPage instanceof IRecipe                    ) {tPages.add(new ResearchPage((IRecipe                         )tPage)); continue;}
+			if (tPage instanceof Recipe                    ) {tPages.add(new ResearchPage((Recipe                         )tPage)); continue;}
 			if (tPage instanceof IArcaneRecipe              ) {tPages.add(new ResearchPage((IArcaneRecipe                   )tPage)); continue;}
 			if (tPage instanceof CrucibleRecipe             ) {tPages.add(new ResearchPage((CrucibleRecipe                  )tPage)); continue;}
 			if (tPage instanceof InfusionRecipe             ) {tPages.add(new ResearchPage((InfusionRecipe                  )tPage)); continue;}

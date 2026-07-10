@@ -25,7 +25,7 @@ import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregtech.items.tools.early.GT_Tool_BranchCutter;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_Trimmer_LV extends GT_Tool_BranchCutter {
 	@Override

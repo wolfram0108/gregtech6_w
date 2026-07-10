@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -28,9 +28,9 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
 
 import java.util.Arrays;
 
@@ -40,7 +40,7 @@ import static gregapi.data.CS.*;
 public class Compat_Recipes_Thaumcraft extends CompatMods {
 	public Compat_Recipes_Thaumcraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing TC Recipes and Research.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing TC Recipes and Research.");
 		RM.food_can(IL.TC_Nugget_Chicken    .wild(9), 8, "Canned Chicken Nuggets", IL.CANS_MEAT);
 		RM.food_can(IL.TC_Nugget_Beef       .wild(9), 8, "Canned Beef Nuggets", IL.CANS_MEAT);
 		RM.food_can(IL.TC_Nugget_Pork       .wild(9), 8, "Canned Pork Nuggets", IL.CANS_MEAT);

@@ -33,15 +33,15 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.ShapedRecipes;
-import net.minecraft.item.crafting.ShapelessRecipes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.oredict.ShapedOreRecipe;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
@@ -122,17 +122,17 @@ public class Loader_Recipes_Replace implements Runnable {
 		List<ItemStack> tStickList = OreDictionary.getOres(OD.stickWood.toString());
 		HashSetNoNulls<Object> tAlreadyScannedItems = new HashSetNoNulls<>();
 		ArrayListNoNulls<RecipeReplacement> tList = new ArrayListNoNulls<>();
-		List<IRecipe> tRecipeList = CR.list();
+		List<Recipe> tRecipeList = CR.list();
 		boolean tUseProgressBar = UT.LoadingBar.start("Looking up Recipes", tRecipeList.size());
 		for (int l = 0; l < tRecipeList.size(); l++) {
-			IRecipe tRecipe = tRecipeList.get(l);
+			Recipe tRecipe = tRecipeList.get(l);
 			if (tUseProgressBar) UT.LoadingBar.step("");
 			ItemStack aOutput = tRecipe.getRecipeOutput();
 			if (ST.invalid(aOutput)) continue;
 			if (aOutput.stackSize != 1) continue;
 			if (aOutput.getMaxDamage() <= 0) continue;
 			if (aOutput.getMaxStackSize() != 1) continue;
-			if (tRecipe instanceof ShapelessRecipes) continue;
+			if (tRecipe instanceof ShapelessRecipe) continue;
 			if (tRecipe instanceof ShapelessOreRecipe) continue;
 			if (tRecipe instanceof ICraftingRecipeGT) continue;
 			if (ST.block(aOutput) != NB) continue;
@@ -145,8 +145,8 @@ public class Loader_Recipes_Replace implements Runnable {
 			
 			if (tRecipe instanceof ShapedOreRecipe) {
 				tRecipeInputs = ((ShapedOreRecipe)tRecipe).getInput();
-			} else if (tRecipe instanceof ShapedRecipes) {
-				tRecipeInputs = ((ShapedRecipes)tRecipe).recipeItems;
+			} else if (tRecipe instanceof ShapedRecipe) {
+				tRecipeInputs = ((ShapedRecipe)tRecipe).recipeItems;
 			} else if (MD.IC2.mLoaded && tRecipe instanceof ic2.core.AdvRecipe) {
 				tRecipeInputs = ((ic2.core.AdvRecipe)tRecipe).input;
 			}
@@ -263,10 +263,10 @@ public class Loader_Recipes_Replace implements Runnable {
 		if (tUseProgressBar) UT.LoadingBar.finish();
 	}
 	
-	public static ItemStack getRecipeOutput(IRecipe aRecipe, ItemStack... aStacks) {
+	public static ItemStack getRecipeOutput(Recipe aRecipe, ItemStack... aStacks) {
 		if (aRecipe == null || aStacks == null) return null;
 		for (byte i = 0; i < aStacks.length; i++) if (aStacks[i] != null) {
-			InventoryCrafting aCrafting = new InventoryCrafting(new Container() {@Override public boolean canInteractWith(EntityPlayer aPlayer) {return F;}}, 3, 3);
+			CraftingInput aCrafting = new CraftingInput(new AbstractContainerMenu() {@Override public boolean canInteractWith(Player aPlayer) {return F;}}, 3, 3);
 			for (int j = 0; j < 9 && j < aStacks.length; j++) aCrafting.setInventorySlotContents(j, aStacks[j]);
 			if (!aRecipe.matches(aCrafting, DW)) return null;
 			ItemStack rOutput = aRecipe.getCraftingResult(aCrafting);
@@ -277,10 +277,10 @@ public class Loader_Recipes_Replace implements Runnable {
 	}
 	
 	public static class RecipeReplacement {
-		public final IRecipe mRecipe;
+		public final Recipe mRecipe;
 		public final OreDictPrefix mPrefix;
 		public OreDictMaterial mMat, mRod;
-		public RecipeReplacement(IRecipe aRecipe, OreDictPrefix aPrefix, OreDictMaterial aMat, OreDictMaterial aRod) {mRecipe = aRecipe; mPrefix = aPrefix; mMat = aMat; mRod = aRod;}
+		public RecipeReplacement(Recipe aRecipe, OreDictPrefix aPrefix, OreDictMaterial aMat, OreDictMaterial aRod) {mRecipe = aRecipe; mPrefix = aPrefix; mMat = aMat; mRod = aRod;}
 	}
 	
 	public static class RecipeReplacer {

@@ -23,7 +23,7 @@ import gregapi.compat.CompatBase;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import ic2.api.item.IElectricItem;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.*;
 

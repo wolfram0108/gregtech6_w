@@ -19,7 +19,7 @@
 
 package gregapi.item;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
@@ -66,7 +66,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		super();
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
-		GameRegistry.registerItem(this, mName, MD.GAPI.mID);
+		DeferredRegister.registerItem(this, mName, MD.GAPI.mID);
 		if (ConfigsGT.CLIENT.get(ConfigCategories.visibility, "HiddenGTFluidDisplay", F)) ST.hide(this);
 		ItemsGT.DEBUG_ITEMS.add(this);
 		ItemsGT.ILLEGAL_DROPS.add(this);

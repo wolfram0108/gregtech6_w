@@ -39,9 +39,9 @@ import gregapi.tileentity.machines.ITileEntityRunningActively;
 import gregapi.tileentity.machines.ITileEntitySwitchableOnOff;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 public class MultiTileEntitySolarPanelElectric extends TileEntityBase09FacingSingle implements ITileEntityEnergyElectricityEmitter, ITileEntityRunningActively, ITileEntitySwitchableOnOff {
 	protected boolean mEmitsEnergy = F, mStopped = F, mActive = F, oActive = F, mCheck = T, mSky = F;
@@ -49,7 +49,7 @@ public class MultiTileEntitySolarPanelElectric extends TileEntityBase09FacingSin
 	protected TagData mEnergyTypeEmitted = TD.Energy.QU;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		if (aNBT.hasKey(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
@@ -60,7 +60,7 @@ public class MultiTileEntitySolarPanelElectric extends TileEntityBase09FacingSin
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mActive);

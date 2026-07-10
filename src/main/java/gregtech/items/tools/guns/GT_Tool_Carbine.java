@@ -23,7 +23,7 @@ import gregapi.item.multiitem.MultiItemTool;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregtech.items.behaviors.Behavior_Gun;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_Carbine extends GT_Tool_Pistol {
 	@Override public IIconContainer getIcon(boolean aIsToolHead, ItemStack aStack) {return !aIsToolHead ? Textures.ItemIcons.CARBINE : Textures.ItemIcons.HANDLE_CARBINE;}

@@ -19,7 +19,7 @@
 
 package gregtech.loaders.a;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.code.ICondition;
 import gregapi.code.ICondition.And;
 import gregapi.code.ICondition.Nor;
@@ -48,9 +48,9 @@ import gregtech.items.tools.guns.GT_Tool_Pistol;
 import gregtech.items.tools.guns.GT_Tool_Rifle;
 import gregtech.items.tools.machine.*;
 import gregtech.items.tools.pocket.*;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.*;
 import static gregapi.data.CS.ToolsGT.*;
@@ -329,25 +329,25 @@ public class Loader_Tools implements Runnable {
 		toolHeadHammer             .addListener(new OreProcessing_Tool(CLUB                  , tCategory + "Club"                ,T,F,0,0, null, new String[][] {{" II", "III", "HI "}, {" GG", "GGG", "HG "}, {" RR", "RRR", "HR "}}, null                                                                                , null         , null, null, null                              , null, new And(ANTIMATTER.NOT, MT.Wood.NOT)));
 		toolHeadArrow              .addListener(new OreProcessing_Tool(HAND_DRILL            , tCategory + "HandDrill"           ,T,F,0,0, null, new String[][] {{"  X", "HYH", "YH "}}                                              , null                                                                                , toolHeadArrow, bolt, null, null                              , null, new And(ANTIMATTER.NOT, MT.Wood.NOT, WOOD.NOT, BOUNCY.NOT, STRETCHY.NOT, typemin(2), qualmin(2))));
 		
-		GameRegistry.addRecipe(new AdvancedCraftingTool(MAGNIFYING_GLASS , lens                       , typemin(1), MT.Glass));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(HARDHAMMER       , toolHeadHammer             , new Nor(WOOD, BOUNCY, STRETCHY)));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(SOFTHAMMER       , toolHeadHammer             , new Or (WOOD, BOUNCY, STRETCHY), MT.Rubber));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(SWORD            , toolHeadSword              ));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(BUILDERWAND      , toolHeadBuilderwand        , MT.YellowSapphire)); // Suggests using Gems for those Wands since you usually only have one workable Gem per Type.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(CONSTRUCTION_PICK, toolHeadConstructionPickaxe));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(GEM_PICK         , toolHeadPickaxeGem         , MT.Amber)); // Amber, to show the Silk Touch usage first.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(PICKAXE          , toolHeadPickaxe            , MT.Bronze)); // Suggests Bronze for early Tools.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(SHOVEL           , toolHeadShovel             , MT.Bronze)); // Suggests Bronze for early Tools.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(SPADE            , toolHeadSpade              ));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(AXE              , toolHeadAxe                , MT.Bronze)); // Suggests Bronze for early Tools.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(DOUBLE_AXE       , toolHeadAxeDouble          ));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(HOE              , toolHeadHoe                , MT.WOODS.Birch)); // Suggests Wood for Hoes. Surely no particular reason to chose Birch there.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(SENSE            , toolHeadSense              ));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(PLOW             , toolHeadPlow               , MT.WOODS.Spruce)); // Suggests Wood for Plows.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(FILE             , toolHeadFile               , MT.Pb)); // Lead, to make it easier to see for Beginners.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(CHISEL           , toolHeadChisel             , MT.Pb)); // Lead, to make it easier to see for Beginners.
-		GameRegistry.addRecipe(new AdvancedCraftingTool(SCREWDRIVER      , toolHeadScrewdriver        ));
-		GameRegistry.addRecipe(new AdvancedCraftingTool(SAW              , toolHeadSaw                ));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(MAGNIFYING_GLASS , lens                       , typemin(1), MT.Glass));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(HARDHAMMER       , toolHeadHammer             , new Nor(WOOD, BOUNCY, STRETCHY)));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(SOFTHAMMER       , toolHeadHammer             , new Or (WOOD, BOUNCY, STRETCHY), MT.Rubber));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(SWORD            , toolHeadSword              ));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(BUILDERWAND      , toolHeadBuilderwand        , MT.YellowSapphire)); // Suggests using Gems for those Wands since you usually only have one workable Gem per Type.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(CONSTRUCTION_PICK, toolHeadConstructionPickaxe));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(GEM_PICK         , toolHeadPickaxeGem         , MT.Amber)); // Amber, to show the Silk Touch usage first.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(PICKAXE          , toolHeadPickaxe            , MT.Bronze)); // Suggests Bronze for early Tools.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(SHOVEL           , toolHeadShovel             , MT.Bronze)); // Suggests Bronze for early Tools.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(SPADE            , toolHeadSpade              ));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(AXE              , toolHeadAxe                , MT.Bronze)); // Suggests Bronze for early Tools.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(DOUBLE_AXE       , toolHeadAxeDouble          ));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(HOE              , toolHeadHoe                , MT.WOODS.Birch)); // Suggests Wood for Hoes. Surely no particular reason to chose Birch there.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(SENSE            , toolHeadSense              ));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(PLOW             , toolHeadPlow               , MT.WOODS.Spruce)); // Suggests Wood for Plows.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(FILE             , toolHeadFile               , MT.Pb)); // Lead, to make it easier to see for Beginners.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(CHISEL           , toolHeadChisel             , MT.Pb)); // Lead, to make it easier to see for Beginners.
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(SCREWDRIVER      , toolHeadScrewdriver        ));
+		DeferredRegister.addRecipe(new AdvancedCraftingTool(SAW              , toolHeadSaw                ));
 		
 		ICondition tCondition = new And(ANTIMATTER.NOT, WOOD.NOT, BOUNCY.NOT, STRETCHY.NOT, typemin(3), qualmin(1));
 		

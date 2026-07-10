@@ -25,8 +25,8 @@ import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregtech.items.behaviors.Behavior_Gun;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;

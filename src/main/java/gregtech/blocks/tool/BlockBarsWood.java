@@ -22,7 +22,7 @@ package gregtech.blocks.tool;
 import gregapi.block.misc.BlockBaseBars;
 import gregapi.data.ANY;
 import gregapi.data.LH;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
 
 public class BlockBarsWood extends BlockBaseBars {

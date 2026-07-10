@@ -26,12 +26,12 @@ import gregapi.item.IItemProjectile.EntityProjectile;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.util.UT;
 import gregtech.entities.projectiles.EntityArrow_Potion;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 public class Behavior_Arrow_Potion extends Behavior_Arrow {
 	private final int[] mPotions;
@@ -47,13 +47,13 @@ public class Behavior_Arrow_Potion extends Behavior_Arrow {
 	}
 	
 	@Override
-	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, Entity aEntity) {
-		if (aEntity instanceof EntityLivingBase) for (int i = 3; i < mPotions.length; i+=4) if (RNGSUS.nextInt(100) < mPotions[i]) UT.Entities.applyPotion(aEntity, mPotions[i-3], mPotions[i-2], mPotions[i-1], F);
+	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
+		if (aEntity instanceof LivingEntity) for (int i = 3; i < mPotions.length; i+=4) if (RNGSUS.nextInt(100) < mPotions[i]) UT.Entities.applyPotion(aEntity, mPotions[i-3], mPotions[i-2], mPotions[i-1], F);
 		return super.onLeftClickEntity(aItem, aStack, aPlayer, aEntity);
 	}
 	
 	@Override
-	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, World aWorld, double aX, double aY, double aZ) {
+	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, Level aWorld, double aX, double aY, double aZ) {
 		if (!hasProjectile(aItem, aProjectileType, aStack)) return null;
 		EntityArrow_Potion rArrow = new EntityArrow_Potion(aWorld, aX, aY, aZ);
 		rArrow.setProjectileStack(aStack);
@@ -62,7 +62,7 @@ public class Behavior_Arrow_Potion extends Behavior_Arrow {
 	}
 	
 	@Override
-	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, World aWorld, EntityLivingBase aEntity, float aSpeed) {
+	public EntityProjectile getProjectile(MultiItem aItem, TagData aProjectileType, ItemStack aStack, Level aWorld, LivingEntity aEntity, float aSpeed) {
 		if (!hasProjectile(aItem, aProjectileType, aStack)) return null;
 		EntityArrow_Potion rArrow = new EntityArrow_Potion(aWorld, aEntity, aSpeed);
 		rArrow.setProjectileStack(aStack);

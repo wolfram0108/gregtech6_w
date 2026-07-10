@@ -27,27 +27,27 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.monster.EntityCreeper;
-import net.minecraft.entity.monster.EntityEnderman;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.play.server.S2BPacketChangeGameState;
-import net.minecraft.potion.Potion;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.util.*;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 
 import java.util.List;
@@ -68,22 +68,22 @@ public class EntityArrow_Material extends EntityProjectile {
 	
 	private ItemStack mArrow = null;
 	
-	public EntityArrow_Material(World aWorld) {
+	public EntityArrow_Material(Level aWorld) {
 		super(aWorld);
 	}
 	
-	public EntityArrow_Material(World aWorld, double aX, double aY, double aZ) {
+	public EntityArrow_Material(Level aWorld, double aX, double aY, double aZ) {
 		super(aWorld, aX, aY, aZ);
 	}
 	
-	public EntityArrow_Material(World aWorld, EntityLivingBase aEntity, float aSpeed) {
+	public EntityArrow_Material(Level aWorld, LivingEntity aEntity, float aSpeed) {
 		super(aWorld, aEntity, aSpeed);
 	}
 	
-	public EntityArrow_Material(EntityArrow aArrow, ItemStack aStack) {
+	public EntityArrow_Material(Arrow aArrow, ItemStack aStack) {
 		super(aArrow.worldObj);
 		shootingEntity = aArrow.shootingEntity;
-		NBTTagCompound tNBT = UT.NBT.make();
+		CompoundTag tNBT = UT.NBT.make();
 		aArrow.writeToNBT(tNBT);
 		readFromNBT(tNBT);
 		setProjectileStack(aStack);
@@ -162,8 +162,8 @@ public class EntityArrow_Material extends EntityProjectile {
 			
 			if (tHitEntity != null) tVector = new MovingObjectPosition(tHitEntity);
 			
-			if (tVector != null && tHitEntity != null && tHitEntity instanceof EntityPlayer) {
-				if (((EntityPlayer)tHitEntity).capabilities.disableDamage || (tShootingEntity instanceof EntityPlayer && !((EntityPlayer)tShootingEntity).canAttackPlayer((EntityPlayer)tHitEntity))) tVector = null;
+			if (tVector != null && tHitEntity != null && tHitEntity instanceof Player) {
+				if (((Player)tHitEntity).capabilities.disableDamage || (tShootingEntity instanceof Player && !((Player)tShootingEntity).canAttackPlayer((Player)tHitEntity))) tVector = null;
 			}
 			
 			if (tVector != null) {
@@ -171,10 +171,10 @@ public class EntityArrow_Material extends EntityProjectile {
 					OreDictItemData tData = OM.anydata(mArrow);
 					
 					// To make Railcrafts Implosion Enchantment work...
-					if (tShootingEntity instanceof EntityPlayer) MinecraftForge.EVENT_BUS.post(new AttackEntityEvent((EntityPlayer)tShootingEntity, tHitEntity));
+					if (tShootingEntity instanceof Player) NeoForge.EVENT_BUS.post(new AttackEntityEvent((Player)tShootingEntity, tHitEntity));
 					
 					float
-					tMagicDamage = tHitEntity instanceof EntityLivingBase?EnchantmentHelper.func_152377_a(mArrow, ((EntityLivingBase)tHitEntity).getCreatureAttribute()):0,
+					tMagicDamage = tHitEntity instanceof LivingEntity?EnchantmentHelper.func_152377_a(mArrow, ((LivingEntity)tHitEntity).getCreatureAttribute()):0,
 					tDamage = UT.Code.roundUp(MathHelper.sqrt_double(motionX*motionX + motionY*motionY + motionZ*motionZ) * (getDamage() + Math.max(0, tData != null && tData.validMaterial() ? tData.mMaterial.mMaterial.mToolQuality-1 : 0)));
 					
 					if (getIsCritical()) tDamage += rand.nextInt((int)(tDamage / 2.0 + 2.0));
@@ -186,7 +186,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					tHitTimer   = -1;
 					
 					// Also work on Ghasts and such. But no double dipping on Anti Creeper Damage!
-					if (tImplosion > 0 && UT.Entities.isExplosiveCreature(tHitEntity) && !EntityCreeper.class.isInstance(tHitEntity)) tMagicDamage += 1.5F * tImplosion;
+					if (tImplosion > 0 && UT.Entities.isExplosiveCreature(tHitEntity) && !Creeper.class.isInstance(tHitEntity)) tMagicDamage += 1.5F * tImplosion;
 					
 					int[] tDamages = onHitEntity(tHitEntity, tShootingEntity==null?this:tShootingEntity, mArrow==null?ST.make(Items.arrow, 1, 0):mArrow, (int)(tDamage*2), (int)(tMagicDamage*2), tKnockback, tFireDamage, tHitTimer);
 					
@@ -197,11 +197,11 @@ public class EntityArrow_Material extends EntityProjectile {
 						tFireDamage  = tDamages[3];
 						tHitTimer    = tDamages[4];
 						
-						if (tFireDamage > 0 && !(tHitEntity instanceof EntityEnderman)) tHitEntity.setFire(tFireDamage);
+						if (tFireDamage > 0 && !(tHitEntity instanceof EnderMan)) tHitEntity.setFire(tFireDamage);
 						
-						if (!(tHitEntity instanceof EntityPlayer) && UT.NBT.getEnchantmentLevel(Enchantment.looting, mArrow) > 0) {
-							EntityPlayer tPlayer = null;
-							if (worldObj instanceof WorldServer) tPlayer = FakePlayerFactory.get((WorldServer)worldObj, new GameProfile(new UUID(0, 0), tShootingEntity instanceof EntityLivingBase?((EntityLivingBase)tShootingEntity).getCommandSenderName():"Arrow"));
+						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(Enchantment.looting, mArrow) > 0) {
+							Player tPlayer = null;
+							if (worldObj instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)worldObj, new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getCommandSenderName():"Arrow"));
 							if (tPlayer != null) {
 								tPlayer.inventory.currentItem = 0;
 								tPlayer.inventory.setInventorySlotContents(0, getArrowItem());
@@ -216,12 +216,12 @@ public class EntityArrow_Material extends EntityProjectile {
 						DamageSource tDamageSource = DamageSource.causeArrowDamage(this, tShootingEntity==null?this:tShootingEntity);
 						
 						if (tDamage + tMagicDamage > 0 && tHitEntity.attackEntityFrom(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
-							if (tHitEntity instanceof EntityLivingBase) {
+							if (tHitEntity instanceof LivingEntity) {
 								if (tHitTimer >= 0) tHitEntity.hurtResistantTime = tHitTimer;
 								
-								if (tHitEntity instanceof EntityCreeper && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 0 && tImplosion <= 0) ((EntityCreeper)tHitEntity).func_146079_cb();
+								if (tHitEntity instanceof Creeper && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 0 && tImplosion <= 0) ((Creeper)tHitEntity).func_146079_cb();
 								
-								EntityLivingBase tHitLivingEntity = (EntityLivingBase)tHitEntity;
+								LivingEntity tHitLivingEntity = (LivingEntity)tHitEntity;
 								
 								if (!worldObj.isRemote) tHitLivingEntity.setArrowCountInEntity(tHitLivingEntity.getArrowCountInEntity() + 1);
 								
@@ -231,16 +231,16 @@ public class EntityArrow_Material extends EntityProjectile {
 								}
 								
 								Enchantments.applyBullshitA(tHitLivingEntity                                                                  , tShootingEntity==null?this:tShootingEntity, mArrow);
-								Enchantments.applyBullshitB(tShootingEntity instanceof EntityLivingBase?(EntityLivingBase)tShootingEntity:null, tHitLivingEntity                          , mArrow);
+								Enchantments.applyBullshitB(tShootingEntity instanceof LivingEntity?(LivingEntity)tShootingEntity:null, tHitLivingEntity                          , mArrow);
 								
-								if (tShootingEntity != null && tHitLivingEntity != tShootingEntity && tHitLivingEntity instanceof EntityPlayer && tShootingEntity instanceof EntityPlayerMP) {
-									((EntityPlayerMP)tShootingEntity).playerNetServerHandler.sendPacket(new S2BPacketChangeGameState(6, 0.0F));
+								if (tShootingEntity != null && tHitLivingEntity != tShootingEntity && tHitLivingEntity instanceof Player && tShootingEntity instanceof ServerPlayer) {
+									((ServerPlayer)tShootingEntity).playerNetServerHandler.sendPacket(new ClientboundGameEventPacket(6, 0.0F));
 								}
 							}
 							
-							if (tShootingEntity instanceof EntityPlayer && tMagicDamage > 0.0F) ((EntityPlayer)tShootingEntity).onEnchantmentCritical(tHitEntity);
+							if (tShootingEntity instanceof Player && tMagicDamage > 0.0F) ((Player)tShootingEntity).onEnchantmentCritical(tHitEntity);
 							
-							if (!(tHitEntity instanceof EntityEnderman) || ((EntityEnderman)tHitEntity).getActivePotionEffect(Potion.weakness) != null) {
+							if (!(tHitEntity instanceof EnderMan) || ((EnderMan)tHitEntity).getActivePotionEffect(MobEffect.weakness) != null) {
 								if (tFireDamage > 0) tHitEntity.setFire(tFireDamage);
 								playSound("random.bowhit", 1.0F, 1.2F / (rand.nextFloat() * 0.2F + 0.9F));
 								setDead();
@@ -313,7 +313,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	}
 	
 	@Override
-	public void writeEntityToNBT(NBTTagCompound aNBT) {
+	public void writeEntityToNBT(CompoundTag aNBT) {
 		super.writeEntityToNBT(aNBT);
 		aNBT.setShort("xTile", (short)mHitBlockX);
 		aNBT.setShort("yTile", (short)mHitBlockY);
@@ -329,7 +329,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	}
 	
 	@Override
-	public void readEntityFromNBT(NBTTagCompound aNBT) {
+	public void readEntityFromNBT(CompoundTag aNBT) {
 		super.readEntityFromNBT(aNBT);
 		mHitBlockX = aNBT.getShort("xTile");
 		mHitBlockY = aNBT.getShort("yTile");
@@ -345,7 +345,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	}
 	
 	@Override
-	public void onCollideWithPlayer(EntityPlayer aPlayer) {
+	public void onCollideWithPlayer(Player aPlayer) {
 		if (!worldObj.isRemote && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.inventory.addItemStackToInventory(getArrowItem())) {
 			playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
 			aPlayer.onItemPickup(this, 1);

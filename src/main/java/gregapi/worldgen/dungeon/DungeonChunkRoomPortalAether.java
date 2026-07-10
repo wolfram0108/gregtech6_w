@@ -25,9 +25,9 @@ import gregapi.data.MT;
 import gregapi.data.OP;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.ListTag;
 
 import static gregapi.data.CS.*;
 
@@ -40,7 +40,7 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 		if (aData.mTags.contains(WorldgenDungeonGT.TAG_PORTAL_AETHER) || !super.generate(aData)) return F;
 		aData.mTags.add(WorldgenDungeonGT.TAG_PORTAL_AETHER);
 		
-		NBTTagList tInventory = new NBTTagList();
+		ListTag tInventory = new ListTag();
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Bottle_Holy_Water          .get(16)), "s", (short) 4));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.AETHER_Skyroot_Log         .get(64)), "s", (short)11));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Blocks.glowstone      , 16, 0)), "s", (short)15));

@@ -24,8 +24,8 @@ import static gregapi.data.CS.*;
 import gregapi.data.IL;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.nbt.ListTag;
 
 /**
  * @author Gregorius Techneticies
@@ -36,7 +36,7 @@ public class DungeonChunkRoomPortalMyst extends DungeonChunkRoomPortal {
 		if (aData.mTags.contains(WorldgenDungeonGT.TAG_PORTAL_MYST) || !super.generate(aData)) return F;
 		aData.mTags.add(WorldgenDungeonGT.TAG_PORTAL_MYST);
 		
-		NBTTagList tInventory = new NBTTagList();
+		ListTag tInventory = new ListTag();
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)12));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)13));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)14));

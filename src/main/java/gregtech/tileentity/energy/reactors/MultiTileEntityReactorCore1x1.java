@@ -29,13 +29,13 @@ import gregapi.render.*;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
 
@@ -85,11 +85,11 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 
 			// TODO Raycasting through Lead, Water and similar Blocks.
 			if (tCalc > 0 && SERVER_TIME % 20 == 10) {
-				for (Object tEntity : worldObj.loadedEntityList) if (tEntity instanceof EntityLivingBase) {
-					if (Math.abs(xCoord - ((EntityLivingBase)tEntity).posX) > 200) continue;
-					if (Math.abs(zCoord - ((EntityLivingBase)tEntity).posZ) > 200) continue;
-					int tStrength = UT.Code.bindInt((long)(tCalc - ((EntityLivingBase)tEntity).getDistance(xCoord, yCoord, zCoord)));
-					if (tStrength > 0) UT.Entities.applyRadioactivity((EntityLivingBase)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
+				for (Object tEntity : worldObj.loadedEntityList) if (tEntity instanceof LivingEntity) {
+					if (Math.abs(xCoord - ((LivingEntity)tEntity).posX) > 200) continue;
+					if (Math.abs(zCoord - ((LivingEntity)tEntity).posZ) > 200) continue;
+					int tStrength = UT.Code.bindInt((long)(tCalc - ((LivingEntity)tEntity).getDistance(xCoord, yCoord, zCoord)));
+					if (tStrength > 0) UT.Entities.applyRadioactivity((LivingEntity)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
 				}
 			}
 
@@ -173,11 +173,11 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 					slotKill(0);
 					UT.Sounds.send(SFX.MC_EXPLODE, this, F);
 					tCalc *= 2;
-					for (Object tEntity : worldObj.loadedEntityList) if (tEntity instanceof EntityLivingBase) {
-						if (Math.abs(xCoord - ((EntityLivingBase)tEntity).posX) > 500) continue;
-						if (Math.abs(zCoord - ((EntityLivingBase)tEntity).posZ) > 500) continue;
-						int tStrength = UT.Code.bindInt((long)(tCalc - ((EntityLivingBase)tEntity).getDistance(xCoord, yCoord, zCoord)));
-						if (tStrength > 0) UT.Entities.applyRadioactivity((EntityLivingBase)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
+					for (Object tEntity : worldObj.loadedEntityList) if (tEntity instanceof LivingEntity) {
+						if (Math.abs(xCoord - ((LivingEntity)tEntity).posX) > 500) continue;
+						if (Math.abs(zCoord - ((LivingEntity)tEntity).posZ) > 500) continue;
+						int tStrength = UT.Code.bindInt((long)(tCalc - ((LivingEntity)tEntity).getDistance(xCoord, yCoord, zCoord)));
+						if (tStrength > 0) UT.Entities.applyRadioactivity((LivingEntity)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
 					}
 					updateClientData();
 				}
@@ -224,7 +224,7 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 	}
 
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		long rReturn = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (rReturn > 0) return rReturn;
 
@@ -249,7 +249,7 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 	}
 
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && SIDES_TOP[aSide]) {
 			ItemStack aStack = aPlayer.getCurrentEquippedItem();
 			if (ST.item(aStack) instanceof IItemReactorRod && ((IItemReactorRod)ST.item_(aStack)).isReactorRod(aStack)) {
@@ -348,7 +348,7 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 		new Textures.BlockIcons.CustomIcon("machines/generators/reactor_core_1x1/overlay/face2")
 	};
 	
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[1];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[1];}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return aSide == SIDE_DOWN || aSide == SIDE_TOP ? UT.Code.getAscendingArray(1) : ZL_INTEGER;}
 	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {return mStopped && aStack != null && aSlot == 0 && !slotHas(aSlot) && ST.item(aStack) instanceof IItemReactorRod && ((IItemReactorRod)ST.item_(aStack)).isReactorRod(aStack);}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return mStopped && aStack != null && aSlot == 0;}

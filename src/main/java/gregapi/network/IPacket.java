@@ -23,7 +23,7 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.level.BlockGetter;
 
 /**
  * @author Gregorius Techneticies
@@ -53,7 +53,7 @@ public interface IPacket {
 	 * process the Packet after it has been received, inside this Function.
 	 * @param aWorld The World this Packet was sent for on the Client, or null on the Server Side.
 	 */
-	public void process(IBlockAccess aWorld, INetworkHandler aNetworkHandler);
+	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler);
 	
 	/**
 	 * This simple Class is an example on how to implement the Functions of this Interface properly.
@@ -83,7 +83,7 @@ public interface IPacket {
 		}
 		
 		@Override
-		public void process(IBlockAccess aWorld, INetworkHandler aNetworkHandler) {
+		public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 			// And here you can do something with mTransmittedData, instead of printing out Data for no apparent Reason.
 			System.out.println("We have received: " + mTransmittedData);
 		}

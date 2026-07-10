@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -32,12 +32,12 @@ import gregapi.oredict.event.OreDictListenerEvent_TwoNames;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
 import net.minecraft.item.ItemFood;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
 
@@ -48,7 +48,7 @@ import static gregapi.data.CS.*;
 public class Compat_Recipes_HarvestCraft extends CompatMods {
 	public Compat_Recipes_HarvestCraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing HarvestCraft Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing HarvestCraft Recipes.");
 		final ItemStack tYogurt = ST.make(MD.HaC, "plainyogurtItem", 1);
 		
 		CR.delate(MD.HaC, "boiledeggItem", "paneertikkamasalaItem", "mortarandpestleItem", "flourItem", "cornmealItem", "plainyogurtItem", "coconutcreamItem", "heavycreamItem", "mayoItem", "ketchupItem", "vinegarItem", "oliveoilItem", "saladdressingItem", "peanutbutterItem", "nutellaItem", "appleciderItem", "beefjerkyItem", "zombiejerkyItem", "peppermintItem", "doughItem", "marzipanItem", "chocolatemilkshakeItem", "strawberrymilkshakeItem", "bananamilkshakeItem", "gooseberrymilkshakeItem", "saltedsunflowerseedsItem", "cherryjuiceItem", "bananajuiceItem", "strawberryjuiceItem", "persimmonjuiceItem", "lemonaideItem", "applejuiceItem", "grapejuiceItem", "melonjuiceItem", "kiwijuiceItem", "raspberryjuiceItem", "blackberryjuiceItem", "blueberryjuiceItem", "cranberryjuiceItem", "gooseberryjuiceItem", "carrotjuiceItem", "grapefruitjuiceItem", "pearjuiceItem", "apricotjuiceItem", "plumjuiceItem", "peachjuiceItem", "limejuiceItem", "orangejuiceItem", "pomegranatejuiceItem", "mangojuiceItem", "figjuiceItem", "papayajuiceItem", "cactusfruitjuiceItem", "starfruitjuiceItem", "coconutmilkItem", "grapefruitsmoothieItem", "pearsmoothieItem", "apricotsmoothieItem", "plumsmoothieItem", "peachsmoothieItem", "limesmoothieItem", "orangesmoothieItem", "cranberrysmoothieItem", "cherrysmoothieItem", "bananasmoothieItem", "lemonsmoothieItem", "applesmoothieItem", "grapesmoothieItem", "melonsmoothieItem", "kiwismoothieItem", "raspberrysmoothieItem", "blackberrysmoothieItem", "blueberrysmoothieItem", "gooseberrysmoothieItem", "strawberrysmoothieItem", "pomegranatesmoothieItem", "persimmonsmoothieItem", "figsmoothieItem", "starfruitsmoothieItem", "mangosmoothieItem", "papayasmoothieItem", "coconutsmoothieItem", "chocolateyogurtItem", "vanillayogurtItem", "coconutyogurtItem", "papayayogurtItem", "figyogurtItem", "mangoyogurtItem", "starfruityogurtItem", "pomegranateyogurtItem", "grapefruityogurtItem", "persimmonyogurtItem", "pearyogurtItem", "apricotyogurtItem", "plumyogurtItem", "peachyogurtItem", "limeyogurtItem", "orangeyogurtItem", "cranberryyogurtItem", "pineappleyogurtItem", "cherryyogurtItem", "bananayogurtItem", "lemonyogurtItem", "appleyogurtItem", "grapeyogurtItem", "grapeyogurtItem", "melonyogurtItem", "kiwiyogurtItem", "raspberryyogurtItem", "blackberryyogurtItem", "blueberryyogurtItem", "gooseberryyogurtItem", "strawberryyogurtItem", "pumpkinyogurtItem", "icecreamItem", "strawberryicecreamItem", "cherryicecreamItem", "spumoniicecreamItem", "neapolitanicecreamItem", "vanillaicecreamItem", "chocolateicecreamItem", "pistachioicecreamItem", "mochaicecreamItem", "caramelicecreamItem", "mintchocolatechipicemcreamItem", "extremechiliItem", "batterItem", "eggnogItem", "caramelItem", "ricecakeItem", "garammasalaItem", "chocolatestrawberryItem", "chocolatecherryItem", "chocolatebaconItem", "maplecandiedbaconItem", "epicbaconItem", "chocolatedonutItem", "cinnamonsugardonutItem", "powdereddonutItem", "frosteddonutItem", "donutItem", "jellydonutItem");
@@ -65,7 +65,7 @@ public class Compat_Recipes_HarvestCraft extends CompatMods {
 		ArrayList<ItemStack> tListFoodBarley = OreDictionary.getOres("dustBarley"), tListCropBarley = OreDictionary.getOres("cropBarley");
 		ArrayList<ItemStack> tListFoodVanilla = OreDictionary.getOres("foodVanilla"), tListDustVanilla = OreDictionary.getOres("dustVanilla");
 		ArrayList<ItemStack> tListFoodOliveOil = OreDictionary.getOres("foodOliveoil"), tListFoodCookingOil = OreDictionary.getOres("listAllcookingoil");
-		for (IRecipe tRecipe : CR.list()) if (tRecipe.getClass() == ShapelessOreRecipe.class) {
+		for (Recipe tRecipe : CR.list()) if (tRecipe.getClass() == ShapelessOreRecipe.class) {
 			ItemStack tOutput = tRecipe.getRecipeOutput();
 			if (ST.valid(tOutput) && tOutput.getItem() instanceof ItemFood) {
 				ArrayList<Object> tInputs = ((ShapelessOreRecipe)tRecipe).getInput();

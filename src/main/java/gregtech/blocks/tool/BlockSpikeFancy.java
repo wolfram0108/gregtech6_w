@@ -29,18 +29,18 @@ import gregapi.data.LH;
 import gregapi.data.MT;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.EnumCreatureAttribute;
-import net.minecraft.entity.boss.EntityDragon;
-import net.minecraft.entity.boss.EntityWither;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntitySlime;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 public class BlockSpikeFancy extends BlockBaseSpike {
 	public BlockSpikeFancy(String aNameInternal) {
@@ -64,7 +64,7 @@ public class BlockSpikeFancy extends BlockBaseSpike {
 	}
 	
 	@Override
-	public void addInformation(ItemStack aStack, byte aMeta, EntityPlayer aPlayer, List<String> aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		if (aMeta < 8) {
 			aList.add(LH.Chat.ORANGE + "Deals huge Damage to any Undead touching it!");
 			aList.add(LH.Chat.ORANGE + "Does very low Damage to anything else!");
@@ -80,16 +80,16 @@ public class BlockSpikeFancy extends BlockBaseSpike {
 	}
 	
 	@Override
-	public void onEntityCollidedWithBlock(World aWorld, int aX, int aY, int aZ, Entity aEntity) {
+	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
-		if (aEntity instanceof EntityLivingBase) {
+		if (aEntity instanceof LivingEntity) {
 			if (aMeta < 8) {
-				if (((EntityLivingBase)aEntity).getCreatureAttribute() == EnumCreatureAttribute.UNDEAD)
+				if (((LivingEntity)aEntity).getCreatureAttribute() == EntityTypeTags.UNDEAD)
 				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 20.0F : 10.0F));
 				else if (!(aEntity instanceof EntityIronGolem || aEntity instanceof EntitySkeleton || aEntity instanceof EntitySlime))
 				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  2.0F :  1.0F));
 			} else {
-				if (UT.Entities.isEnderCreature((EntityLivingBase)aEntity) || UT.Entities.isWereCreature((EntityLivingBase)aEntity))
+				if (UT.Entities.isEnderCreature((LivingEntity)aEntity) || UT.Entities.isWereCreature((LivingEntity)aEntity))
 				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 20.0F : 10.0F));
 				else if (!(aEntity instanceof EntityIronGolem || aEntity instanceof EntitySkeleton || aEntity instanceof EntitySlime))
 				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  2.0F :  1.0F));
@@ -98,7 +98,7 @@ public class BlockSpikeFancy extends BlockBaseSpike {
 	}
 	
 	@Override
-	public boolean canEntityDestroy(IBlockAccess aWorld, int aX, int aY, int aZ, Entity aEntity) {
-		return WD.meta(aWorld, aX, aY, aZ) < 8 ? !(aEntity instanceof EntityWither) : !(aEntity instanceof EntityDragon);
+	public boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {
+		return WD.meta(aWorld, aX, aY, aZ) < 8 ? !(aEntity instanceof WitherBoss) : !(aEntity instanceof EnderDragon);
 	}
 }

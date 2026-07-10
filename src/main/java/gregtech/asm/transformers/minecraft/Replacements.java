@@ -21,18 +21,18 @@ package gregtech.asm.transformers.minecraft;
 
 import java.util.Random;
 
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockStaticLiquid;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.IEntityLivingData;
-import net.minecraft.entity.monster.EntityCreeper;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityVillager;
-import net.minecraft.init.Blocks;
-import net.minecraft.util.Vec3;
-import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
+import net.minecraft.core.Direction;
 
 /* This is a separate file so it class loads *while* minecraft loads,
    if we accessed world in the main transformer then we can miss out
@@ -46,7 +46,7 @@ public class Replacements {
 		// Just ALWAYS convert Villagers, not only sometimes or when the stupid Difficulty Setting is right.
 		if (aVictim instanceof EntityVillager) {
 			EntityVillager aVillager = (EntityVillager)aVictim;
-			World aWorld = aVillager.worldObj;
+			Level aWorld = aVillager.worldObj;
 			// Yep, new Zombie Object.
 			EntityZombie tZombieVillager = new EntityZombie(aWorld);
 			// Location and Head need to point to the right places.
@@ -74,7 +74,7 @@ public class Replacements {
 		}
 	}
 	
-	public static void BlockStaticLiquid_updateTick(BlockStaticLiquid self, World world, int x, int y, int z, Random rand) {
+	public static void BlockStaticLiquid_updateTick(BlockStaticLiquid self, Level world, int x, int y, int z, Random rand) {
 		if (self.getMaterial() == Material.lava)
 		{
 			int l = rand.nextInt(3);
@@ -90,12 +90,12 @@ public class Replacements {
 				if (block.getMaterial() == Material.air)
 				{
 					if (
-						BlockStaticLiquid_isFlammable(world, x - 1, y, z, ForgeDirection.EAST) ||
-						BlockStaticLiquid_isFlammable(world, x + 1, y, z, ForgeDirection.WEST) ||
-						BlockStaticLiquid_isFlammable(world, x, y, z - 1, ForgeDirection.SOUTH) ||
-						BlockStaticLiquid_isFlammable(world, x, y, z + 1, ForgeDirection.NORTH) ||
-						BlockStaticLiquid_isFlammable(world, x, y - 1, z, ForgeDirection.UP) ||
-						BlockStaticLiquid_isFlammable(world, x, y + 1, z, ForgeDirection.DOWN))
+						BlockStaticLiquid_isFlammable(world, x - 1, y, z, Direction.EAST) ||
+						BlockStaticLiquid_isFlammable(world, x + 1, y, z, Direction.WEST) ||
+						BlockStaticLiquid_isFlammable(world, x, y, z - 1, Direction.SOUTH) ||
+						BlockStaticLiquid_isFlammable(world, x, y, z + 1, Direction.NORTH) ||
+						BlockStaticLiquid_isFlammable(world, x, y - 1, z, Direction.UP) ||
+						BlockStaticLiquid_isFlammable(world, x, y + 1, z, Direction.DOWN))
 					{
 						world.setBlock(x, y, z, Blocks.fire);
 						return;
@@ -117,7 +117,7 @@ public class Replacements {
 					x = i1 + rand.nextInt(3) - 1;
 					z = k1 + rand.nextInt(3) - 1;
 
-					if (world.isAirBlock(x, y + 1, z) && BlockStaticLiquid_isFlammable(world, x, y, z, ForgeDirection.UP))
+					if (world.isAirBlock(x, y + 1, z) && BlockStaticLiquid_isFlammable(world, x, y, z, Direction.UP))
 					{
 						world.setBlock(x, y + 1, z, Blocks.fire);
 					}
@@ -126,16 +126,16 @@ public class Replacements {
 		}
 	}
 
-	public static boolean BlockStaticLiquid_isFlammable(World world, int x, int y, int z, ForgeDirection dir) {
+	public static boolean BlockStaticLiquid_isFlammable(Level world, int x, int y, int z, Direction dir) {
 		return world.getBlock(x, y, z).isFlammable(world, x, y, z, dir);
 	}
 
-	public static boolean BlockStaticLiquid_isFlammable(World world, int x, int y, int z) {
-		return world.getBlock(x, y, z).isFlammable(world, x, y, z, ForgeDirection.UNKNOWN);
+	public static boolean BlockStaticLiquid_isFlammable(Level world, int x, int y, int z) {
+		return world.getBlock(x, y, z).isFlammable(world, x, y, z, Direction.UNKNOWN);
 	}
 
-	public static boolean EntityAICreeperSwell_shouldExecute(EntityCreeper swellingCreeper) {
-		EntityLivingBase target = swellingCreeper.getAttackTarget();
+	public static boolean EntityAICreeperSwell_shouldExecute(Creeper swellingCreeper) {
+		LivingEntity target = swellingCreeper.getAttackTarget();
 		if(swellingCreeper.getCreeperState() > 0) return true;
 		if(target == null) return false;
 		double distSq = swellingCreeper.getDistanceSqToEntity(target);

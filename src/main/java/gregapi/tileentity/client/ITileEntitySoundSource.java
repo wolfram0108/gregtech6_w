@@ -21,39 +21,39 @@ package gregapi.tileentity.client;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.ITickableSound;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * @author Gregorius Techneticies
  */
 public interface ITileEntitySoundSource extends ITileEntityUnloadable {
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void startSound();
 	
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public void stopSound();
 	
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public static class SoundSourceTileEntity implements ITickableSound {
 		public boolean mRunning = F;
 		public float mSoundStrength, mSoundModulation;
 		public final IHasWorldAndCoords mTileEntity;
-		public final ResourceLocation mResource;
+		public final Identifier mResource;
 		
 		public SoundSourceTileEntity(IHasWorldAndCoords aTileEntity, boolean aRunning, String aSoundName, float aSoundStrength, float aSoundModulation) {
 			mTileEntity = aTileEntity;
-			mResource = new ResourceLocation(aSoundName);
+			mResource = new Identifier(aSoundName);
 			mSoundStrength = aSoundStrength;
 			mSoundModulation = aSoundModulation;
 		}
 		
-		@Override public ResourceLocation getPositionedSoundLocation() {return mResource;}
+		@Override public Identifier getPositionedSoundLocation() {return mResource;}
 		@Override public boolean canRepeat() {return mRunning;}
 		@Override public boolean isDonePlaying() {return !mRunning;}
 		@Override public int getRepeatDelay() {return 1;}

@@ -27,7 +27,7 @@ import gregapi.item.multiitem.behaviors.Behavior_Switch_Metadata;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregtech.items.tools.machine.GT_Tool_Screwdriver;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_Pocket_Screwdriver extends GT_Tool_Screwdriver {
 	@Override public float getMaxDurabilityMultiplier() {return 4.0F;}

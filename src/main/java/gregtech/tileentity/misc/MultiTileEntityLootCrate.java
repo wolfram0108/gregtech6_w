@@ -29,10 +29,10 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.ITexture;
 import gregapi.tileentity.notick.TileEntityBase03MultiTileEntities;
 import gregapi.util.ST;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ import static gregapi.data.CS.TOOL_crowbar;
  */
 public class MultiTileEntityLootCrate extends TileEntityBase03MultiTileEntities implements IMTE_AddToolTips, IMTE_OnToolClick {
 	@Override
-	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (!aTool.equals(TOOL_crowbar) || !isServerSide()) return 0;
 		if (setToAir()) {
 			ST.drop(worldObj, getCoords(), ST.generateOneVanillaLoot());

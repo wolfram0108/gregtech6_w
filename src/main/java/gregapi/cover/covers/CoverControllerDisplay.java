@@ -29,9 +29,9 @@ import gregapi.tileentity.machines.ITileEntityRunningPassively;
 import gregapi.tileentity.machines.ITileEntityRunningPossible;
 import gregapi.tileentity.machines.ITileEntitySwitchableOnOff;
 import gregapi.util.UT;
-import net.minecraft.entity.Entity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class CoverControllerDisplay extends AbstractCoverAttachmentController {
 	@Override public boolean interceptCoverPlacement(byte aCoverSide, CoverData aData, Entity aPlayer) {return !(aData.mTileEntity instanceof ITileEntityRunningPossible || aData.mTileEntity instanceof ITileEntitySwitchableOnOff);}
 	
 	@Override
-	public long onToolClick(byte aSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick(byte aSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_chisel) && sTexturesBase.length > 1) {
 			aData.visual(aSide, (short)((aData.mVisuals[aSide] & 1023) | ((((aData.mVisuals[aSide] >>> 10) + 1) % sTexturesBase.length) << 10)));
 			return 100;

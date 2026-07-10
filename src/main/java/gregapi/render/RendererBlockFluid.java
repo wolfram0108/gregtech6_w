@@ -19,7 +19,7 @@
 
 package gregapi.render;
 
-import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
+import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import gregapi.data.FL;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
@@ -36,7 +36,7 @@ import net.minecraftforge.fluids.IFluidBlock;
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
 
-public class RendererBlockFluid implements ISimpleBlockRenderingHandler {
+public class RendererBlockFluid implements DynamicBlockStateModel {
 	public static int RENDER_ID = FluidRegistry.renderIdFluid;
 	public static RendererBlockFluid INSTANCE;
 	

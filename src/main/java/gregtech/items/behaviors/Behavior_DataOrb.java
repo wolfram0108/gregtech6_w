@@ -25,9 +25,9 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 
 public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	@Override
@@ -49,27 +49,27 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	}
 	
 	public static String getDataName(ItemStack aStack) {
-		NBTTagCompound tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) return "";
 		return tNBT.getString("mDataName");
 	}
 	
 	public static String getDataTitle(ItemStack aStack) {
-		NBTTagCompound tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) return "";
 		return tNBT.getString("mDataTitle");
 	}
 	
-	public static NBTTagCompound setDataName(ItemStack aStack, String aDataName) {
-		NBTTagCompound tNBT = aStack.getTagCompound();
+	public static CompoundTag setDataName(ItemStack aStack, String aDataName) {
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) tNBT = UT.NBT.make();
 		tNBT.setString("mDataName", aDataName);
 		UT.NBT.set(aStack, tNBT);
 		return tNBT;
 	}
 	
-	public static NBTTagCompound setDataTitle(ItemStack aStack, String aDataTitle) {
-		NBTTagCompound tNBT = aStack.getTagCompound();
+	public static CompoundTag setDataTitle(ItemStack aStack, String aDataTitle) {
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) tNBT = UT.NBT.make();
 		tNBT.setString("mDataTitle", aDataTitle);
 		UT.NBT.set(aStack, tNBT);
@@ -78,12 +78,12 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	
 	public static ItemStack[] getNBTInventory(ItemStack aStack) {
 		ItemStack[] tInventory = new ItemStack[256];
-		NBTTagCompound tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) return tInventory;
 		
-		NBTTagList tNBT_ItemList = tNBT.getTagList("Inventory", 10);
+		ListTag tNBT_ItemList = tNBT.getTagList("Inventory", 10);
 		for (int i = 0; i < tNBT_ItemList.tagCount(); i++) {
-			NBTTagCompound tag = tNBT_ItemList.getCompoundTagAt(i);
+			CompoundTag tag = tNBT_ItemList.getCompoundTagAt(i);
 			byte slot = tag.getByte("Slot");
 			if (slot >= 0 && slot < tInventory.length) {
 				tInventory[slot] = ST.load(tag);
@@ -92,15 +92,15 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 		return tInventory;
 	}
 	
-	public static NBTTagCompound setNBTInventory(ItemStack aStack, ItemStack[] aInventory) {
-		NBTTagCompound tNBT = aStack.getTagCompound();
+	public static CompoundTag setNBTInventory(ItemStack aStack, ItemStack[] aInventory) {
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) tNBT = UT.NBT.make();
 		
-		NBTTagList tNBT_ItemList = new NBTTagList();
+		ListTag tNBT_ItemList = new ListTag();
 		for (int i = 0; i < aInventory.length; i++) {
 			ItemStack stack = aInventory[i];
 			if (stack != null) {
-				NBTTagCompound tag = UT.NBT.make();
+				CompoundTag tag = UT.NBT.make();
 				tag.setByte("Slot", (byte) i);
 				tNBT_ItemList.appendTag(ST.save(stack));
 			}

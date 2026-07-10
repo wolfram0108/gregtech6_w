@@ -22,12 +22,12 @@ package gregtech.blocks.fluids;
 import gregapi.data.FL;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.Random;
 
@@ -45,7 +45,7 @@ public class BlockRiver extends BlockWaterlike {
 	}
 	
 	@Override
-	public void onBlockAdded(World aWorld, int aX, int aY, int aZ) {
+	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
 			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
 		} else {
@@ -54,13 +54,13 @@ public class BlockRiver extends BlockWaterlike {
 	}
 	
 	@Override
-	public void onNeighborBlockChange(World aWorld, int aX, int aY, int aZ, Block aBlock) {
+	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (aWorld.getBlock(aX, aY-1, aZ) == Blocks.grass) aWorld.setBlock(aX, aY-1, aZ, Blocks.dirt, 1, 2);
 		super.onNeighborBlockChange(aWorld, aX, aY, aZ, aBlock);
 	}
 	
 	@Override
-	public void updateTick(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = T;
 		
 		if (aWorld.doChunksNearChunkExist(aX, aY, aZ, 33)) {
@@ -95,14 +95,14 @@ public class BlockRiver extends BlockWaterlike {
 	}
 	
 	@Override
-	public FluidStack drain(World aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
+	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		if (!isSourceBlock(aWorld, aX, aY, aZ)) return null;
 		if (aDoDrain) aWorld.setBlockToAir(aX, aY, aZ);
 		return FL.Water.make(1000);
 	}
 	
 	@Override
-	public int colorMultiplier(IBlockAccess aWorld, int aX, int aY, int aZ) {
+	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		int rR = 0, rG = 0, rB = 0;
 		for (int tX = -1; tX <= 1; tX++) for (int tZ = -1; tZ <= 1; tZ++) {
 			int tRGB = aWorld.getBiomeGenForCoords(aX+tX, aZ+tZ).getWaterColorMultiplier();

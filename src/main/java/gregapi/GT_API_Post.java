@@ -21,9 +21,9 @@ package gregapi;
 
 import appeng.api.AEApi;
 import cpw.mods.fml.common.LoadController;
-import cpw.mods.fml.common.Loader;
+import net.neoforged.fml.ModList;
 import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.ModContainer;
+import net.neoforged.fml.ModContainer;
 import cpw.mods.fml.common.event.*;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
@@ -41,8 +41,8 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.wooddict.*;
 import gregapi.worldgen.StoneLayer;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.item.Item;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.Item;
 import twilightforest.TFTreasure;
 import twilightforest.TFTreasureTable;
 
@@ -76,7 +76,7 @@ public class GT_API_Post extends Abstract_Mod {
 	@Override
 	public void onModPreInit2(FMLPreInitializationEvent aEvent) {
 		try {
-			LoadController tLoadController = ((LoadController)UT.Reflection.getFieldContent(Loader.instance(), "modController", T, T));
+			LoadController tLoadController = ((LoadController)UT.Reflection.getFieldContent(ModList.instance(), "modController", T, T));
 			List<ModContainer> tModList = tLoadController.getActiveModList(), tNewModsList = new ArrayList<>(tModList.size());
 			ModContainer tGregTech = null;
 			for (short i = 0; i < tModList.size(); i++) {

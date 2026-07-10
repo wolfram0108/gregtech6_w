@@ -27,8 +27,8 @@ import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.machines.MultiTileEntitySensorTE;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.WorldServer;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.server.level.ServerLevel;
 
 /**
  * @author Gregorius Techneticies
@@ -38,13 +38,13 @@ public class MultiTileEntityPlayerCounter extends MultiTileEntitySensorTE {
 	@Override public String getSensorDescription() {return LH.get("gt.tooltip.sensor.playercounter");}
 	
 	@Override
-	public long getCurrentValue(DelegatorTileEntity<TileEntity> aDelegator) {
-		return ((WorldServer)worldObj).func_73046_m().getCurrentPlayerCount();
+	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
+		return ((ServerLevel)worldObj).func_73046_m().getCurrentPlayerCount();
 	}
 	
 	@Override
-	public long getCurrentMax(DelegatorTileEntity<TileEntity> aDelegator) {
-		return ((WorldServer)worldObj).func_73046_m().getMaxPlayers();
+	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
+		return ((ServerLevel)worldObj).func_73046_m().getMaxPlayers();
 	}
 	
 	@Override public short[] getSymbolColor() {return CA_LIGHT_BLUE_255;}

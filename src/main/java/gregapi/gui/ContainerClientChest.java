@@ -23,20 +23,20 @@ import static gregapi.data.CS.*;
 
 import org.lwjgl.opengl.GL11;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.tileentity.ITileEntityInventoryGUI;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.util.StatCollector;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.client.resources.language.I18n;
 
 /**
  * @author Gregorius Techneticies
  */
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ContainerClientChest extends ContainerClient {
 	private int mRows;
 	
-	public ContainerClientChest(InventoryPlayer aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
+	public ContainerClientChest(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
 		this(new ContainerCommonChest(aInventoryPlayer, aTileEntity, aGUIID));
 	}
 	
@@ -50,7 +50,7 @@ public class ContainerClientChest extends ContainerClient {
 	@Override
 	protected void drawGuiContainerForegroundLayer(int p_146979_1_, int p_146979_2_) {
 		fontRendererObj.drawString(mContainer.mTileEntity.getInventoryNameGUI(), 8, 6, 4210752);
-		fontRendererObj.drawString(StatCollector.translateToLocal("container.inventory"), 8, ySize - 94, 4210752);
+		fontRendererObj.drawString(I18n.translateToLocal("container.inventory"), 8, ySize - 94, 4210752);
 	}
 	
 	@Override

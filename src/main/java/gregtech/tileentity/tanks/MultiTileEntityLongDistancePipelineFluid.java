@@ -42,35 +42,35 @@ import gregapi.tileentity.machines.ITileEntitySwitchableOnOff;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.blocks.tool.BlockLongDistPipe;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChunkCoordinates;
-import net.minecraftforge.common.util.ForgeDirection;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09FacingSingle implements IFluidHandler, ITileEntityCanDelegate, IMTE_HasMultiBlockMachineRelevantData, ITileEntityMachineBlockUpdateable, ITileEntitySwitchableOnOff {
 	protected boolean mStopped = F;
 	protected long mTemperature = 0;
 	protected MultiTileEntityLongDistancePipelineFluid mTarget = null, mSender = null;
-	protected ChunkCoordinates mTargetPos = null;
+	protected BlockPos mTargetPos = null;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
 		if (aNBT.hasKey(NBT_TEMPERATURE)) {mTemperature = aNBT.getLong(NBT_TEMPERATURE);}
-		if (aNBT.hasKey(NBT_TARGET)) {mTargetPos = new ChunkCoordinates(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
+		if (aNBT.hasKey(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		if (mTargetPos != null && mTarget != this) {
 		UT.NBT.setBoolean(aNBT, NBT_TARGET, T);
@@ -90,7 +90,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		long rReturn = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (rReturn > 0) return rReturn;
 		
@@ -122,7 +122,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 		} else if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
 			if (worldObj.blockExists(mTargetPos.posX, mTargetPos.posY, mTargetPos.posZ)) {
-				TileEntity tTileEntity = WD.te(worldObj, mTargetPos, T);
+				BlockEntity tTileEntity = WD.te(worldObj, mTargetPos, T);
 				if (tTileEntity instanceof MultiTileEntityLongDistancePipelineFluid) {
 					mTarget = (MultiTileEntityLongDistancePipelineFluid)tTileEntity;
 				} else {
@@ -147,25 +147,25 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 		if (aBlock instanceof BlockLongDistPipe) {
 			mTemperature = ((BlockLongDistPipe)aBlock).mTemperatures[aMetaData];
 			if (mTemperature <= 0) return;
-			HashSetNoNulls<ChunkCoordinates>
+			HashSetNoNulls<BlockPos>
 			tNewChecks  = new HashSetNoNulls<>(),
 			tOldChecks  = new HashSetNoNulls<>(F, getCoords()),
 			tToCheck    = new HashSetNoNulls<>(F, getOffsetN(mFacing, 1)),
 			tWires      = new HashSetNoNulls<>();
 			
 			while (!tToCheck.isEmpty()) {
-				for (ChunkCoordinates aCoords : tToCheck) {
+				for (BlockPos aCoords : tToCheck) {
 					if (getBlock(aCoords) == aBlock && getMetaData(aCoords) == aMetaData) {
 						tWires.add(aCoords);
-						ChunkCoordinates tCoords;
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX + 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX - 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY + 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY - 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY, aCoords.posZ + 1))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY, aCoords.posZ - 1))) tNewChecks.add(tCoords);
+						BlockPos tCoords;
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX + 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX - 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY + 1, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY - 1, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ + 1))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ - 1))) tNewChecks.add(tCoords);
 					} else {
-						TileEntity tTileEntity = getTileEntity(aCoords);
+						BlockEntity tTileEntity = getTileEntity(aCoords);
 						if (tTileEntity != this && tTileEntity instanceof MultiTileEntityLongDistancePipelineFluid) {
 							if (tWires.contains(((MultiTileEntityLongDistancePipelineFluid)tTileEntity).getOffset(((MultiTileEntityLongDistancePipelineFluid)tTileEntity).mFacing, 1))) {
 								mTarget = (MultiTileEntityLongDistancePipelineFluid)tTileEntity;
@@ -189,14 +189,14 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	@Override public boolean getStateOnOff() {return !mStopped;}
 	
 	@Override public void onCoordinateChange() {super.onCoordinateChange(); mTargetPos = null; mSender = null;}
-	@Override public void onMachineBlockUpdate(ChunkCoordinates aCoords, Block aBlock, byte aMeta, boolean aRemoved) {if (aBlock instanceof BlockLongDistPipe) {mTargetPos = null; mSender = null;}}
+	@Override public void onMachineBlockUpdate(BlockPos aCoords, Block aBlock, byte aMeta, boolean aRemoved) {if (aBlock instanceof BlockLongDistPipe) {mTargetPos = null; mSender = null;}}
 	@Override public boolean hasMultiBlockMachineRelevantData() {return T;}
 	
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 	@Override public boolean isExtender(byte aSide) {return F;}
 	
 	@Override
-	public int fill(ForgeDirection aSide, FluidStack aFluid, boolean aDoFill) {
+	public int fill(Direction aSide, FluidStack aFluid, boolean aDoFill) {
 		if (checkTarget() && FL.temperature(aFluid) <= mTemperature) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(tTileEntity.getForgeSideOfTileEntity(), aFluid, aDoFill);
@@ -204,15 +204,15 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 		return 0;
 	}
 	@Override
-	public FluidStack drain(ForgeDirection aSide, FluidStack aFluid, boolean aDoDrain) {
+	public FluidStack drain(Direction aSide, FluidStack aFluid, boolean aDoDrain) {
 		return null;
 	}
 	@Override
-	public FluidStack drain(ForgeDirection aSide, int aMaxDrain, boolean aDoDrain) {
+	public FluidStack drain(Direction aSide, int aMaxDrain, boolean aDoDrain) {
 		return null;
 	}
 	@Override
-	public boolean canFill(ForgeDirection aSide, Fluid aFluid) {
+	public boolean canFill(Direction aSide, Fluid aFluid) {
 		if (checkTarget() && FL.temperature(aFluid) <= mTemperature) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canFill(tTileEntity.getForgeSideOfTileEntity(), aFluid);
@@ -220,11 +220,11 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 		return F;
 	}
 	@Override
-	public boolean canDrain(ForgeDirection aSide, Fluid aFluid) {
+	public boolean canDrain(Direction aSide, Fluid aFluid) {
 		return F;
 	}
 	@Override
-	public FluidTankInfo[] getTankInfo(ForgeDirection aSide) {
+	public FluidTankInfo[] getTankInfo(Direction aSide) {
 		if (checkTarget()) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getTankInfo(tTileEntity.getForgeSideOfTileEntity());

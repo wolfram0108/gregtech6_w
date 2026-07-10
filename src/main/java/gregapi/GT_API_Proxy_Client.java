@@ -21,14 +21,14 @@ package gregapi;
 
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.client.registry.RenderingRegistry;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.EventPriority;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
-import cpw.mods.fml.common.gameevent.TickEvent.Phase;
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.api.Abstract_Mod;
 import gregapi.block.IBlockBase;
 import gregapi.block.ToolCompat;
@@ -55,22 +55,22 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.RenderFallingBlock;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.FurnaceRecipes;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
 import java.util.Arrays;
@@ -110,19 +110,19 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	
 	@Override
-	public EntityPlayer getThePlayer() {
+	public Player getThePlayer() {
 		return Minecraft.getMinecraft().thePlayer;
 	}
 	
 	@Override
-	public boolean sendUseItemPacket(EntityPlayer aPlayer, World aWorld, ItemStack aStack) {
+	public boolean sendUseItemPacket(Player aPlayer, Level aWorld, ItemStack aStack) {
 		Minecraft.getMinecraft().playerController.sendUseItem(aPlayer, aWorld, aStack);
 		return T;
 	}
 	
 	@Override
 	@SuppressWarnings("deprecation")
-	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLPreInitializationEvent aEvent) {
+	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		RenderingRegistry.registerEntityRenderingHandler(PrefixBlockFallingEntity.class, new RenderFallingBlock());
 		RenderingRegistry.registerBlockHandler(new RendererBlockFluid(RenderingRegistry.getNextAvailableRenderId()));
 		RenderingRegistry.registerBlockHandler(new RendererBlockTextured(RenderingRegistry.getNextAvailableRenderId()));
@@ -168,12 +168,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	
 	@Override
-	public void onProxyBeforeInit(Abstract_Mod aMod, FMLInitializationEvent aEvent) {
+	public void onProxyBeforeInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		for (OreDictMaterial tMaterial : OreDictMaterial.MATERIAL_MAP.values()) LH.add("gt.material." + tMaterial.mNameInternal, tMaterial.mNameLocal);
 	}
 	
 	@Override
-	public void onProxyAfterInit(Abstract_Mod aMod, FMLInitializationEvent aEvent) {
+	public void onProxyAfterInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) {
 			LH.add("oredict.prefix." + tPrefix.mNameInternal, tPrefix.mNameLocal);
 			tPrefix.mNameLocal = LH.get("oredict.prefix." + tPrefix.mNameInternal, tPrefix.mNameLocal);
@@ -181,7 +181,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	
 	@Override
-	public void onProxyAfterPostInit(Abstract_Mod aMod, FMLPostInitializationEvent aEvent) {
+	public void onProxyAfterPostInit(Abstract_Mod aMod, FMLLoadCompleteEvent aEvent) {
 		// Initialising the List of Decorative Plank Icons
 		for (int i = 0; i < PlankData.PLANKS.length; i++) {
 			Block tBlock = ST.block(PlankData.PLANKS[i]);
@@ -317,7 +317,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				aEvent.toolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_BEACON_PAYMENT));
 			}
 			
-			long tBurnValue = GameRegistry.getFuelValue(ST.amount(1, aEvent.itemStack));
+			long tBurnValue = DeferredRegister.getFuelValue(ST.amount(1, aEvent.itemStack));
 			if (tBurnValue > 0) aEvent.toolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FURNACE_FUEL) + LH.Chat.WHITE + tBurnValue + " ("+(tBurnValue*EU_PER_FURNACE_TICK)+LH.Chat._RED+"HU"+LH.Chat.WHITE+")");
 			
 			if (tData != null) {
@@ -519,17 +519,17 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST) 
 	public void onClientTickEvent(ClientTickEvent aEvent) {
-		if (aEvent.phase == Phase.END) {
+		if (aEvent.phase == ServerTickEvent.END) {
 			if (CLIENT_TIME == 10) {
 				// Initializing the Fake Furnace Recipe Map
-				if (FL.XP.exists()) for (Object tObject : FurnaceRecipes.smelting().getSmeltingList().keySet()) if (tObject instanceof ItemStack) {
+				if (FL.XP.exists()) for (Object tObject : RecipeManager.smelting().getSmeltingList().keySet()) if (tObject instanceof ItemStack) {
 					RM.Furnace.addFakeRecipe(F, RM.Furnace.findRecipe(null, null, F, Long.MAX_VALUE, NI, ZL_FS, ST.array((ItemStack)tObject)));
 				}
 				// Now for hiding stuff from NEI that should have never been there in the first place.
 				if (!SHOW_MICROBLOCKS && NEI) for (Item aItem : new Item[] {ST.item(MD.FMB, "microblock"), ST.item(MD.ExU, "microblocks"), ST.item(MD.ExS, "microblocks"), ST.item(MD.AE, "item.ItemFacade")}) if (aItem != null) {
 					ST.hide(aItem);
 					List<ItemStack> tList = new ArrayListNoNulls<>();
-					aItem.getSubItems(aItem, CreativeTabs.tabAllSearch, tList);
+					aItem.getSubItems(aItem, CreativeModeTab.tabAllSearch, tList);
 					for (ItemStack tStack : tList) ST.hide(tStack);
 				}
 			}
@@ -629,7 +629,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			return;
 		}
 		aBlock = aEvent.player.worldObj.getBlock(aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ);
-		TileEntity aTileEntity = WD.te(aEvent.player.worldObj, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, T);
+		BlockEntity aTileEntity = WD.te(aEvent.player.worldObj, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
 			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(aEvent.currentItem) && ToolsGT.contains(TOOL_wrench, aEvent.currentItem)) {
 				RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);

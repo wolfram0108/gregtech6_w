@@ -24,7 +24,7 @@ import static gregapi.data.CS.*;
 import gregapi.cover.CoverData;
 import gregapi.data.CS.SFX;
 import gregapi.render.ITexture;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 
 /**
  * @author Gregorius Techneticies

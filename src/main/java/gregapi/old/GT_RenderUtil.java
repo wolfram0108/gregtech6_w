@@ -19,7 +19,7 @@
 
 package gregapi.old;
 
-import net.minecraft.client.renderer.Tessellator;
+import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.util.IIcon;
 
 public class GT_RenderUtil {
@@ -29,19 +29,19 @@ public class GT_RenderUtil {
 	
 	public static void renderItemIcon(IIcon icon, double xStart, double yStart, double xEnd, double yEnd, double z, float nx, float ny, float nz) {
 		if (icon == null) return;
-		Tessellator.instance.startDrawingQuads();
-		Tessellator.instance.setNormal(nx, ny, nz);
+		Tesselator.instance.startDrawingQuads();
+		Tesselator.instance.setNormal(nx, ny, nz);
 		if (nz > 0) {
-			Tessellator.instance.addVertexWithUV(xStart, yStart, z, icon.getMinU(), icon.getMinV());
-			Tessellator.instance.addVertexWithUV(xEnd, yStart, z, icon.getMaxU(), icon.getMinV());
-			Tessellator.instance.addVertexWithUV(xEnd, yEnd, z, icon.getMaxU(), icon.getMaxV());
-			Tessellator.instance.addVertexWithUV(xStart, yEnd, z, icon.getMinU(), icon.getMaxV());
+			Tesselator.instance.addVertexWithUV(xStart, yStart, z, icon.getMinU(), icon.getMinV());
+			Tesselator.instance.addVertexWithUV(xEnd, yStart, z, icon.getMaxU(), icon.getMinV());
+			Tesselator.instance.addVertexWithUV(xEnd, yEnd, z, icon.getMaxU(), icon.getMaxV());
+			Tesselator.instance.addVertexWithUV(xStart, yEnd, z, icon.getMinU(), icon.getMaxV());
 		} else {
-			Tessellator.instance.addVertexWithUV(xStart, yEnd, z, icon.getMinU(), icon.getMaxV());
-			Tessellator.instance.addVertexWithUV(xEnd, yEnd, z, icon.getMaxU(), icon.getMaxV());
-			Tessellator.instance.addVertexWithUV(xEnd, yStart, z, icon.getMaxU(), icon.getMinV());
-			Tessellator.instance.addVertexWithUV(xStart, yStart, z, icon.getMinU(), icon.getMinV());
+			Tesselator.instance.addVertexWithUV(xStart, yEnd, z, icon.getMinU(), icon.getMaxV());
+			Tesselator.instance.addVertexWithUV(xEnd, yEnd, z, icon.getMaxU(), icon.getMaxV());
+			Tesselator.instance.addVertexWithUV(xEnd, yStart, z, icon.getMaxU(), icon.getMinV());
+			Tesselator.instance.addVertexWithUV(xStart, yStart, z, icon.getMinU(), icon.getMinV());
 		}
-		Tessellator.instance.draw();
+		Tesselator.instance.draw();
 	}
 }

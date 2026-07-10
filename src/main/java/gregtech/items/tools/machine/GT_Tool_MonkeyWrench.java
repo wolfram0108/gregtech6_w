@@ -24,8 +24,8 @@ import gregapi.item.multiitem.MultiItemTool;
 import gregapi.item.multiitem.behaviors.Behavior_Tool;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.T;
 import static gregapi.data.CS.TOOL_monkeywrench;

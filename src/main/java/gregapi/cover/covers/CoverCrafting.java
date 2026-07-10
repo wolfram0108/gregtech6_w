@@ -21,9 +21,9 @@ package gregapi.cover.covers;
 
 import gregapi.cover.CoverData;
 import gregapi.render.ITexture;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.inventory.ContainerWorkbench;
 import net.minecraft.network.play.server.S2DPacketOpenWindow;
 
@@ -44,12 +44,12 @@ public class CoverCrafting extends CoverTextureMulti {
 	
 	@Override
 	public boolean onCoverClickedRight(byte aSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
-		if (aPlayer instanceof EntityPlayerMP) {
-			((EntityPlayerMP)aPlayer).getNextWindowId();
-			((EntityPlayerMP)aPlayer).playerNetServerHandler.sendPacket(new S2DPacketOpenWindow(((EntityPlayerMP)aPlayer).currentWindowId, 1, "Crafting", 9, T));
-			((EntityPlayerMP)aPlayer).openContainer = new ContainerWorkbench(((EntityPlayerMP)aPlayer).inventory, ((EntityPlayerMP)aPlayer).worldObj, aData.mTileEntity.getX(), aData.mTileEntity.getY(), aData.mTileEntity.getZ()) {@Override public boolean canInteractWith(EntityPlayer par1EntityPlayer) {return T;}};
-			((EntityPlayerMP)aPlayer).openContainer.windowId = ((EntityPlayerMP)aPlayer).currentWindowId;
-			((EntityPlayerMP)aPlayer).openContainer.addCraftingToCrafters(((EntityPlayerMP)aPlayer));
+		if (aPlayer instanceof ServerPlayer) {
+			((ServerPlayer)aPlayer).getNextWindowId();
+			((ServerPlayer)aPlayer).playerNetServerHandler.sendPacket(new S2DPacketOpenWindow(((ServerPlayer)aPlayer).currentWindowId, 1, "Crafting", 9, T));
+			((ServerPlayer)aPlayer).openContainer = new ContainerWorkbench(((ServerPlayer)aPlayer).inventory, ((ServerPlayer)aPlayer).worldObj, aData.mTileEntity.getX(), aData.mTileEntity.getY(), aData.mTileEntity.getZ()) {@Override public boolean canInteractWith(Player par1EntityPlayer) {return T;}};
+			((ServerPlayer)aPlayer).openContainer.windowId = ((ServerPlayer)aPlayer).currentWindowId;
+			((ServerPlayer)aPlayer).openContainer.addCraftingToCrafters(((ServerPlayer)aPlayer));
 		}
 		return T;
 	}

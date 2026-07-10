@@ -28,9 +28,9 @@ import gregapi.oredict.event.IOreDictListenerEvent;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.FurnaceRecipes;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class Loader_Recipes_Furnace implements Runnable {
 	@Override
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void run() {
-		Map<ItemStack, ItemStack>[] tMaps = new Map[] {FurnaceRecipes.smelting().getSmeltingList(), null, null};
+		Map<ItemStack, ItemStack>[] tMaps = new Map[] {RecipeManager.smelting().getSmeltingList(), null, null};
 		if (MD.EtFu.mLoaded) try {
 			tMaps[1] = ((Map)UT.Reflection.getFieldContent(SmokerRecipes      .smelting(), "smeltingList", T, D1));
 			tMaps[2] = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));

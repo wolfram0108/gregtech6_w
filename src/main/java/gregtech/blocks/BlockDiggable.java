@@ -30,14 +30,14 @@ import gregapi.util.WD;
 import mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.block.BlockBush;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.EnumPlantType;
 import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraft.core.Direction;
 
 import java.util.ArrayList;
 
@@ -103,7 +103,7 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	}
 	
 	@Override
-	public boolean canSustainPlant(IBlockAccess aWorld, int aX, int aY, int aZ, ForgeDirection aSide, IPlantable aPlant) {
+	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
 		if (IS_CLAY[WD.meta(aWorld, aX, aY, aZ)]) return F;
 		if (aPlant == Blocks.reeds || aPlant instanceof BlockBush) return T;
 		EnumPlantType tType = aPlant.getPlantType(aWorld, aX+aSide.offsetX, aY+aSide.offsetY, aZ+aSide.offsetZ);
@@ -111,7 +111,7 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	}
 	
 	@Override
-	public ArrayList<ItemStack> getDrops(World aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		switch(aMeta) {
 		case  0: return ST.arraylist(IL.Mud_Ball.get(4));
 		case  1: return ST.arraylist(IL.Clay_Ball_Brown.get(4));
@@ -125,7 +125,7 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	}
 	
 	@Override
-	public void onWalkOver(EntityLivingBase aEntity, World aWorld, int aX, int aY, int aZ) {
+	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if (doesWalkSpeed(WD.meta(aWorld, aX, aY, aZ))) {aEntity.motionX *= 0.5; aEntity.motionZ *= 0.5;}
 	}
 	
@@ -136,6 +136,6 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	@Override public boolean isSealable      (byte aMeta, byte aSide) {return F;}
 	@Override public String getHarvestTool   (int  aMeta) {return TOOL_shovel;}
 	@Override public int getHarvestLevel     (int  aMeta) {return 0;}
-	@Override public float getBlockHardness(World aWorld, int aX, int aY, int aZ) {return Blocks.dirt.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.dirt.getBlockHardness(aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.dirt.getExplosionResistance(null);}
 }

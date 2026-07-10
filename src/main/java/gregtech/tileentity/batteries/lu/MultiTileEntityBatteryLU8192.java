@@ -26,8 +26,8 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.energy.TileEntityBase08Battery;
-import net.minecraft.block.Block;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.AABB;
 
 /**
  * @author Gregorius Techneticies
@@ -48,8 +48,8 @@ public class MultiTileEntityBatteryLU8192 extends TileEntityBase08Battery {
 	};
 	
 	@Override public boolean setBlockBounds2(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {box(aBlock    , PX_P[ 1], PX_P[ 0], PX_P[ 1], PX_N[ 1], PX_N[ 2], PX_N[ 1]); return T;}
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box                                            ( PX_P[ 1], PX_P[ 0], PX_P[ 1], PX_N[ 1], PX_N[ 2], PX_N[ 1]);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box                                            ( PX_P[ 1], PX_P[ 0], PX_P[ 1], PX_N[ 1], PX_N[ 2], PX_N[ 1]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box                                            ( PX_P[ 1], PX_P[ 0], PX_P[ 1], PX_N[ 1], PX_N[ 2], PX_N[ 1]);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box                                            ( PX_P[ 1], PX_P[ 0], PX_P[ 1], PX_N[ 1], PX_N[ 2], PX_N[ 1]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock                                              , PX_P[ 1], PX_P[ 0], PX_P[ 1], PX_N[ 1], PX_N[ 2], PX_N[ 1]);}
 	
 	@Override public byte getDisplayScaleMax() {return 127;}

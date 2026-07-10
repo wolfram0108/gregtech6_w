@@ -31,10 +31,10 @@ import gregapi.util.ST;
 import gregapi.util.WD;
 import mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.block.material.Material;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 
@@ -92,12 +92,12 @@ public class BlockVanillaOresA extends BlockBaseMeta {
 	}
 	
 	@Override
-	public ArrayList<ItemStack> getDrops(World aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		return ST.arraylist(OP.oreRaw.mat(ORE_MATERIALS[aMeta], aFortune>0?1+RNGSUS.nextInt(aFortune+1):1));
 	}
 	
 	@Override
-	public int getExpDrop(IBlockAccess aWorld, int aMeta, int aFortune) {
+	public int getExpDrop(BlockGetter aWorld, int aMeta, int aFortune) {
 		switch(aMeta) {
 		case  0: case  1:          return 0+RNGSUS.nextInt(3);
 		case  2: case  3: case  4: return 3+RNGSUS.nextInt(5);
@@ -115,6 +115,6 @@ public class BlockVanillaOresA extends BlockBaseMeta {
 	@Override public int getHarvestLevel(int aMeta) {return HARVEST_LEVELS[aMeta];}
 	@Override public int getFlammability(byte aMeta) {return BURN_LEVELS[aMeta];}
 	@Override public int getFireSpreadSpeed(byte aMeta) {return 0;}
-	@Override public float getBlockHardness(World aWorld, int aX, int aY, int aZ) {return Blocks.stone.getBlockHardness(aWorld, aX, aY, aZ) * HARDNESS_LEVELS[WD.meta(aWorld, aX, aY, aZ)];}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.stone.getBlockHardness(aWorld, aX, aY, aZ) * HARDNESS_LEVELS[WD.meta(aWorld, aX, aY, aZ)];}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.stone.getExplosionResistance(null);}
 }

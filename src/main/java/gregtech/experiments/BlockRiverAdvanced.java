@@ -22,13 +22,13 @@ package gregtech.experiments;
 import gregapi.data.FL;
 import gregapi.util.WD;
 import gregtech.blocks.fluids.BlockWaterlike;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.init.Blocks;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.Random;
 
@@ -44,12 +44,12 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 	}
 	
 	@Override
-	public void onBlockAdded(World aWorld, int aX, int aY, int aZ) {
+	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate);
 	}
 	
 	@Override
-	public void updateTick(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		// Scan surroundings.
 		Block[] aBlocks  = new Block[7];
 		byte [] aMetas   = new byte [7];
@@ -133,11 +133,11 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		WD.set(aWorld, aX, aY, aZ, Blocks.water, 0, 3, T);
 	}
 	
-	public boolean goThisWay(World aWorld, int aX, int aY, int aZ, byte aSide) {
+	public boolean goThisWay(Level aWorld, int aX, int aY, int aZ, byte aSide) {
 		return displaceIfPossible(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]) && WD.set(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], this, 0, 3, T) && WD.set(aWorld, aX, aY, aZ, this, aSide+1, 3, T);
 	}
 	
-	public boolean canDisplace(IBlockAccess aWorld, int aX, int aY, int aZ) {
+	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {
 		Block aBlock = aWorld.getBlock(aX, aY, aZ);
 		if (aBlock == this) return F;
 		if (WD.water(aBlock)) return aWorld.getBlockMetadata(aX, aY, aZ) > 0;
@@ -148,7 +148,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		return T;
 	}
 	
-	public boolean displaceIfPossible(World aWorld, int aX, int aY, int aZ) {
+	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {
 		Block aBlock = aWorld.getBlock(aX, aY, aZ);
 		if (aBlock == this) return F;
 		if (WD.water(aBlock)) return aWorld.getBlockMetadata(aX, aY, aZ) > 0;
@@ -167,12 +167,12 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 	}
 	
 	@Override
-	public int getQuantaValue(IBlockAccess aWorld, int aX, int aY, int aZ) {
+	public int getQuantaValue(BlockGetter aWorld, int aX, int aY, int aZ) {
 		return quantaPerBlock;
 	}
 	
 	@Override
-	public FluidStack drain(World aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
+	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		return FL.Water.make(1000);
 	}
 }

@@ -23,7 +23,7 @@ import static gregapi.data.CS.*;
 
 import org.lwjgl.opengl.GL11;
 
-import cpw.mods.fml.client.registry.ISimpleBlockRenderingHandler;
+import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
@@ -36,7 +36,7 @@ import net.minecraftforge.client.IItemRenderer;
 /**
  * @author Gregorius Techneticies
  */
-public class RendererBlockTextured implements ISimpleBlockRenderingHandler, IItemRenderer {
+public class RendererBlockTextured implements DynamicBlockStateModel, IItemRenderer {
 	public final int mRenderID;
 	public static RendererBlockTextured INSTANCE;
 	public static CompoundTag mUsedNBT = null;

@@ -35,12 +35,12 @@ import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.item.EntityXPOrb;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
@@ -55,20 +55,20 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 	protected Recipe mLastRecipe = null;
 
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_STATE)) mStone = aNBT.getByte(NBT_STATE);
 		if (aNBT.hasKey(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		aNBT.setByte(NBT_STATE, mStone);
 	}
 	
 	@Override
-	public NBTTagCompound writeItemNBT2(NBTTagCompound aNBT) {
+	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		aNBT.setByte(NBT_STATE, mStone);
 		return aNBT;
 	}
@@ -85,7 +85,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 	@Override public boolean attachCoversFirst(byte aSide) {return F;}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aSide != mFacing && !SIDES_TOP[aSide]) return F;
 		if (isServerSide()) {
 			if (SIDES_TOP[aSide]) {
@@ -132,7 +132,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 					int tXP = UT.NBT.getEnchantmentXP(aStack);
 					if (tXP > 0) {
 						ST.give(aPlayer, UT.NBT.removeEnchantments(ST.amount(1, aStack)), F);
-						worldObj.spawnEntityInWorld(new EntityXPOrb(worldObj, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
+						worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
 					} else {
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, F, V[1], null, ZL_FS, aStack);
 						if (tRecipe != null) {
@@ -149,7 +149,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 						ItemStack tOutput = ST.amount(1, aStack);
 						ST.use(aPlayer, T, F, aStack, 1);
 						ST.give(aPlayer, UT.NBT.removeEnchantments(tOutput), F);
-						worldObj.spawnEntityInWorld(new EntityXPOrb(worldObj, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
+						worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
 						UT.Entities.exhaust(aPlayer, 0.5F);
 					} else {
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, F, V[1], null, ZL_FS, aStack);
@@ -250,8 +250,8 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box(PX_P[2], PX_P[0], PX_P[2], PX_N[2], PX_N[1], PX_N[2]);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(PX_P[2], PX_P[0], PX_P[2], PX_N[2], PX_N[1], PX_N[2]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[2], PX_P[0], PX_P[2], PX_N[2], PX_N[1], PX_N[2]);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(PX_P[2], PX_P[0], PX_P[2], PX_N[2], PX_N[1], PX_N[2]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock, PX_P[2], PX_P[0], PX_P[2], PX_N[2], PX_N[1], PX_N[2]);}
 
 	@Override public float getSurfaceSize           (byte aSide) {return SIDES_BOTTOM[aSide]?1.0F:0.0F;}

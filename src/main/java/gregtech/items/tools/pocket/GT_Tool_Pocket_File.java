@@ -27,7 +27,7 @@ import gregapi.item.multiitem.behaviors.Behavior_Switch_Metadata;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregtech.items.tools.crafting.GT_Tool_File;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_Pocket_File extends GT_Tool_File {
 	@Override public float getMaxDurabilityMultiplier() {return 4.0F;}

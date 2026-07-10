@@ -29,11 +29,11 @@ import gregapi.cover.CoverRegistry;
 import gregapi.cover.ITileEntityCoverable;
 import gregapi.data.MD;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 
 import static gregapi.data.CS.*;
 
@@ -43,13 +43,13 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 	}
 	
 	@Override
-	public boolean isApplicable(Block aBlock, int aMeta, TileEntity aTileEntity) {
+	public boolean isApplicable(Block aBlock, int aMeta, BlockEntity aTileEntity) {
 		// Anything with Covers, including all directional Blocks, and the Chest which happens to be special.
 		return aTileEntity instanceof ITileEntityCoverable || aTileEntity instanceof MultiTileEntityChest;
 	}
 	
 	@Override
-	public int rotate(Block aBlock, int aMeta, NBTTagCompound aNBT, ITransformation aTransformation) {
+	public int rotate(Block aBlock, int aMeta, CompoundTag aNBT, ITransformation aTransformation) {
 		if (aTransformation.getRotationSteps() % 4 == 0) return aMeta;
 		
 		byte tConnections = aNBT.getByte(NBT_CONNECTION);
@@ -158,8 +158,8 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 		}
 	}
 	
-	@Override public boolean isJumpReady(Block aBlock, int aMeta, TileEntity aTileEntity, StringBuilder aStringBuilder) {return T;}
-	@Override public NBTBase saveExternals(World world, int aX, int aY, int aZ, Block aBlock, int aMeta, TileEntity aTileEntity) {return null;}
-	@Override public void removeExternals(World world, int aX, int aY, int aZ, Block aBlock, int aMeta, TileEntity aTileEntity) {/**/}
-	@Override public void restoreExternals(World world, int aX, int aY, int aZ, Block aBlock, int aMeta, TileEntity aTileEntity, ITransformation aTransformation, NBTBase aNBT) {/**/}
+	@Override public boolean isJumpReady(Block aBlock, int aMeta, BlockEntity aTileEntity, StringBuilder aStringBuilder) {return T;}
+	@Override public Tag saveExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity) {return null;}
+	@Override public void removeExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity) {/**/}
+	@Override public void restoreExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity, ITransformation aTransformation, Tag aNBT) {/**/}
 }

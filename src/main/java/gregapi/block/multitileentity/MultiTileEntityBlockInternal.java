@@ -39,7 +39,7 @@ import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.util.StatCollector;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 
@@ -82,7 +82,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	@Override public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?super.getRenderType():RendererBlockTextured.INSTANCE.mRenderID;}
 	@Override public final Block getBlock() {return this;}
 	@Override public final String getUnlocalizedName() {return mMultiTileEntityRegistry.mNameInternal;}
-	@Override public final String getLocalizedName() {return StatCollector.translateToLocal(mMultiTileEntityRegistry.mNameInternal);}
+	@Override public final String getLocalizedName() {return I18n.translateToLocal(mMultiTileEntityRegistry.mNameInternal);}
 	
 	@Override
 	public boolean placeBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {

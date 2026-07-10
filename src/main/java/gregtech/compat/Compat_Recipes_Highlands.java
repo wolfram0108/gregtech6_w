@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -30,12 +30,12 @@ import gregapi.data.MT;
 import gregapi.data.RM;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.init.Items;
+import net.minecraft.world.item.Items;
 
 public class Compat_Recipes_Highlands extends CompatMods {
 	public Compat_Recipes_Highlands(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Highlands Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Highlands Recipes.");
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HiL, "tile.hl_blueFlower"  , 1, W), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Cyan], ST.make(Items.dye, 1, DYE_INDEX_Cyan));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HiL, "tile.hl_lavender"    , 1, W), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 1, DYE_INDEX_Purple));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HiL, "tile.hl_whiteFlower" , 1, W), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], OM.dust(MT.White));

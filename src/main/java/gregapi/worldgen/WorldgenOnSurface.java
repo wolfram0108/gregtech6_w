@@ -26,11 +26,11 @@ import java.util.Random;
 import java.util.Set;
 
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
  * @author Gregorius Techneticies
@@ -46,7 +46,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(World aWorld, Chunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, BiomeGenBase[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		// How many times can we cast a ray downwards?
 		int aAmount = canGenerate(aWorld, aChunk, aDimType, aMinX, aMinZ, aMaxX, aMaxZ, aRandom, aBiomes, aBiomeNames);
 		if (aAmount <= 0) return F;
@@ -75,7 +75,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 		return rResult;
 	}
 	
-	public int canGenerate(World aWorld, Chunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, BiomeGenBase[][] aBiomes, Set<String> aBiomeNames) {return checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ) ? 0 : mAmount;}
+	public int canGenerate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {return checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ) ? 0 : mAmount;}
 	
-	public abstract boolean tryPlaceStuff(World aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact);
+	public abstract boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact);
 }

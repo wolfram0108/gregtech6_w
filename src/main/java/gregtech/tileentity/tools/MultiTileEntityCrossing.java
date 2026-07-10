@@ -32,10 +32,10 @@ import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.machines.ITileEntityCrucible;
 import gregapi.tileentity.machines.ITileEntityMold;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 
 import static gregapi.data.CS.*;
 
@@ -69,7 +69,7 @@ public class MultiTileEntityCrossing extends TileEntityBase07Paintable implement
 			if (mLock == sLockID) return F;
 			mLock = sLockID;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tSide != aSide) {
-				DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+				DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 				if (tDelegator.mTileEntity instanceof ITileEntityCrucible && ((ITileEntityCrucible)tDelegator.mTileEntity).fillMoldAtSide(aMold, tDelegator.mSideOfTileEntity, aSideOfMold)) return T;
 			}
 		} else {
@@ -111,8 +111,8 @@ public class MultiTileEntityCrossing extends TileEntityBase07Paintable implement
 	
 	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return mTexture;}
 	
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box(PX_P[ 0], PX_P[ 1], PX_P[ 0], PX_N[ 0], PX_N[10], PX_N[ 0]);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(PX_P[ 0], PX_P[ 1], PX_P[ 0], PX_N[ 0], PX_N[10], PX_N[ 0]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[ 0], PX_P[ 1], PX_P[ 0], PX_N[ 0], PX_N[10], PX_N[ 0]);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(PX_P[ 0], PX_P[ 1], PX_P[ 0], PX_N[ 0], PX_N[10], PX_N[ 0]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock)  {box(aBlock, PX_P[ 0], PX_P[ 1], PX_P[ 0], PX_N[ 0], PX_N[10], PX_N[ 0]);}
 	
 	@Override public byte isProvidingWeakPower2(byte aSide) {return (byte)(mRedstone && SIDES_HORIZONTAL[aSide] ? 1 : 0);}
@@ -126,7 +126,7 @@ public class MultiTileEntityCrossing extends TileEntityBase07Paintable implement
 	@Override public boolean allowCovers            (byte aSide) {return F;}
 	@Override public boolean attachCoversFirst      (byte aSide) {return F;}
 	@Override public boolean isObstructingBlockAt   (byte aSide) {return F;}
-	@Override public boolean checkObstruction(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
+	@Override public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	
 	@Override public boolean canDrop(int aInventorySlot) {return T;}

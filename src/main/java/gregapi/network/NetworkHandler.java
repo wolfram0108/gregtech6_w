@@ -28,11 +28,11 @@ import com.google.common.io.ByteStreams;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import net.neoforged.fml.Logging;
-import cpw.mods.fml.common.network.FMLEmbeddedChannel;
-import cpw.mods.fml.common.network.FMLOutboundHandler;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.network.NetworkRegistry.TargetPoint;
-import cpw.mods.fml.common.network.internal.FMLProxyPacket;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.api.distmarker.Dist;
 import gregapi.util.UT;
 import io.netty.buffer.Unpooled;
@@ -50,8 +50,8 @@ import net.minecraft.world.level.chunk.LevelChunk;
  * @author Gregorius Techneticies
  */
 @Sharable
-public final class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, IPacket> implements INetworkHandler {
-	private final EnumMap<Dist, FMLEmbeddedChannel> mChannel;
+public final class NetworkHandler extends MessageToMessageCodec<CustomPacketPayload, IPacket> implements INetworkHandler {
+	private final EnumMap<Dist, PayloadRegistrar> mChannel;
 	private final IPacket[] mPacketTypes;
 	private final String mModID;
 	
@@ -69,7 +69,7 @@ public final class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, 
 	public NetworkHandler(String aModID, String aChannelName, IPacket... aPacketTypes) {
 		mModID = aModID;
 		if (aChannelName.length() > 4) throw new IllegalArgumentException("String for Channel Name must contain 4 Characters or less!");
-		mChannel = NetworkRegistry.INSTANCE.newChannel(aChannelName, this, FMLCommonHandler.instance().getSide()==Dist.CLIENT?new HandlerClient(this):new HandlerServer(this));
+		mChannel = PayloadRegistrar.INSTANCE.newChannel(aChannelName, this, FMLCommonHandler.instance().getSide()==Dist.CLIENT?new HandlerClient(this):new HandlerServer(this));
 		mPacketTypes = new IPacket[256];
 		for (int i = 0; i < aPacketTypes.length; i++) {
 			int tID = UT.Code.unsignB(aPacketTypes[i].getPacketID());
@@ -79,11 +79,11 @@ public final class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, 
 	
 	@Override
 	protected void encode(ChannelHandlerContext aContext, IPacket aPacket, List<Object> aOutput) throws Exception {
-		aOutput.add(new FMLProxyPacket(Unpooled.buffer().writeByte(aPacket.getPacketID()).writeBytes(aPacket.encode().toByteArray()), aContext.channel().attr(NetworkRegistry.FML_CHANNEL).get()));
+		aOutput.add(new CustomPacketPayload(Unpooled.buffer().writeByte(aPacket.getPacketID()).writeBytes(aPacket.encode().toByteArray()), aContext.channel().attr(PayloadRegistrar.FML_CHANNEL).get()));
 	}
 	
 	@Override
-	protected void decode(ChannelHandlerContext aContext, FMLProxyPacket aPacket, List<Object> aOutput) throws Exception {
+	protected void decode(ChannelHandlerContext aContext, CustomPacketPayload aPacket, List<Object> aOutput) throws Exception {
 		ByteArrayDataInput aData = ByteStreams.newDataInput(aPacket.payload().array());
 		int aID = UT.Code.unsignB(aData.readByte());
 		if (mPacketTypes[aID] == null) {
@@ -96,26 +96,26 @@ public final class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, 
 	@Override
 	public void sendToServer(IPacket aPacket) {
 		if (aPacket == null) return;
-		FMLEmbeddedChannel tChannel = getChannel(Dist.CLIENT);
-		tChannel.attr(FMLOutboundHandler.FML_MESSAGETARGET).set(FMLOutboundHandler.OutboundTarget.TOSERVER);
+		PayloadRegistrar tChannel = getChannel(Dist.CLIENT);
+		tChannel.attr(PacketDistributor.FML_MESSAGETARGET).set(PacketDistributor.OutboundTarget.TOSERVER);
 		tChannel.writeAndFlush(aPacket);
 	}
 	
 	@Override
 	public void sendToPlayer(IPacket aPacket, ServerPlayer aPlayer) {
 		if (aPacket == null) return;
-		FMLEmbeddedChannel tChannel = getChannel(Dist.SERVER);
-		tChannel.attr(FMLOutboundHandler.FML_MESSAGETARGET).set(FMLOutboundHandler.OutboundTarget.PLAYER);
-		tChannel.attr(FMLOutboundHandler.FML_MESSAGETARGETARGS).set(aPlayer);
+		PayloadRegistrar tChannel = getChannel(Dist.SERVER);
+		tChannel.attr(PacketDistributor.FML_MESSAGETARGET).set(PacketDistributor.OutboundTarget.PLAYER);
+		tChannel.attr(PacketDistributor.FML_MESSAGETARGETARGS).set(aPlayer);
 		tChannel.writeAndFlush(aPacket);
 	}
 	
 	@Override
-	public void sendToAllAround(IPacket aPacket, TargetPoint aPosition) {
+	public void sendToAllAround(IPacket aPacket, PacketDistributor aPosition) {
 		if (aPacket == null) return;
-		FMLEmbeddedChannel tChannel = getChannel(Dist.SERVER);
-		tChannel.attr(FMLOutboundHandler.FML_MESSAGETARGET).set(FMLOutboundHandler.OutboundTarget.ALLAROUNDPOINT);
-		tChannel.attr(FMLOutboundHandler.FML_MESSAGETARGETARGS).set(aPosition);
+		PayloadRegistrar tChannel = getChannel(Dist.SERVER);
+		tChannel.attr(PacketDistributor.FML_MESSAGETARGET).set(PacketDistributor.OutboundTarget.ALLAROUNDPOINT);
+		tChannel.attr(PacketDistributor.FML_MESSAGETARGETARGS).set(aPosition);
 		tChannel.writeAndFlush(aPacket);
 	}
 	
@@ -165,7 +165,7 @@ public final class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, 
 	}
 	
 	@Override
-	public FMLEmbeddedChannel getChannel(Dist aSide) {
+	public PayloadRegistrar getChannel(Dist aSide) {
 		return mChannel.get(aSide);
 	}
 	

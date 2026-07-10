@@ -28,8 +28,8 @@ import gregapi.oredict.configurations.IOreDictConfigurationComponent;
 import gregapi.util.CR;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 

@@ -26,7 +26,7 @@ import java.util.List;
 import gregapi.cover.CoverData;
 import gregapi.data.LH;
 import gregapi.util.UT;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies

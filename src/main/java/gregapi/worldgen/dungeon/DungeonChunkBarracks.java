@@ -25,9 +25,9 @@ import gregapi.data.MT;
 import gregapi.data.OP;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.nbt.ListTag;
 import net.minecraftforge.common.ChestGenHooks;
 
 import static gregapi.data.CS.*;
@@ -108,8 +108,8 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		String[] tLoots = new String[] {ChestGenHooks.STRONGHOLD_LIBRARY, ChestGenHooks.STRONGHOLD_CORRIDOR, ChestGenHooks.STRONGHOLD_CROSSING, ChestGenHooks.PYRAMID_DESERT_CHEST, ChestGenHooks.PYRAMID_JUNGLE_CHEST, ChestGenHooks.VILLAGE_BLACKSMITH, ChestGenHooks.MINESHAFT_CORRIDOR, ChestGenHooks.DUNGEON_CHEST, ChestGenHooks.BONUS_CHEST};
 		
 		
-		NBTTagList
-		tList = new NBTTagList();
+		ListTag
+		tList = new ListTag();
 		if (!aData.mGeneratedKeys[0]) {
 			aData.mGeneratedKeys[0] = T;
 			short tKeySlot = (short)aData.next(28);
@@ -120,7 +120,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		aData.set( 4, 1,  1, SIDE_UNKNOWN,  3010, UT.NBT.make("gt.dungeonloot"      , UT.Code.select("", tLoots), NBT_FACING, SIDE_Z_POS, NBT_KEY, aData.mKeyIDs[0]), T, T);
 		aData.set( 3, 1,  1, SIDE_UNKNOWN,  7110, UT.NBT.make("gt.dungeonloot.front", UT.Code.select("", tLoots), NBT_FACING, SIDE_Z_POS, NBT_INV_LIST, tList), T, T);
 		
-		tList = new NBTTagList();
+		tList = new ListTag();
 		if (!aData.mGeneratedKeys[1]) {
 			aData.mGeneratedKeys[1] = T;
 			short tKeySlot = (short)aData.next(28);
@@ -131,7 +131,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		aData.set( 4, 1, 14, SIDE_UNKNOWN,  3010, UT.NBT.make("gt.dungeonloot"      , UT.Code.select("", tLoots), NBT_FACING, SIDE_Z_NEG, NBT_KEY, aData.mKeyIDs[1]), T, T);
 		aData.set( 3, 1, 14, SIDE_UNKNOWN,  7110, UT.NBT.make("gt.dungeonloot.front", UT.Code.select("", tLoots), NBT_FACING, SIDE_Z_NEG, NBT_INV_LIST, tList), T, T);
 		
-		tList = new NBTTagList();
+		tList = new ListTag();
 		if (!aData.mGeneratedKeys[3]) {
 			aData.mGeneratedKeys[3] = T;
 			short tKeySlot = (short)aData.next(28);
@@ -142,7 +142,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		aData.set(11, 1,  1, SIDE_UNKNOWN,  3010, UT.NBT.make("gt.dungeonloot"      , UT.Code.select("", tLoots), NBT_FACING, SIDE_Z_POS, NBT_KEY, aData.mKeyIDs[3]), T, T);
 		aData.set(12, 1,  1, SIDE_UNKNOWN,  7110, UT.NBT.make("gt.dungeonloot.front", UT.Code.select("", tLoots), NBT_FACING, SIDE_Z_POS, NBT_INV_LIST, tList), T, T);
 		
-		tList = new NBTTagList();
+		tList = new ListTag();
 		if (!aData.mGeneratedKeys[4]) {
 			aData.mGeneratedKeys[4] = T;
 			short tKeySlot = (short)aData.next(28);

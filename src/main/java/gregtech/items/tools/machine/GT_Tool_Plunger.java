@@ -30,9 +30,9 @@ import gregapi.render.IIconContainer;
 import gregapi.util.UT;
 import gregtech.items.behaviors.Behavior_Plunger_Fluid;
 import gregtech.items.behaviors.Behavior_Plunger_Item;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.*;
 

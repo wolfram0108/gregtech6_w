@@ -21,18 +21,18 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
 import gregapi.data.FL;
 import gregapi.data.RM;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 public class Compat_Recipes_Mystcraft extends CompatMods {
 	public Compat_Recipes_Mystcraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Mystcraft Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Mystcraft Recipes.");
 		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Black]) for (FluidStack tWater : FL.waters(125, 125, 100)) {
 		RM.Mixer            .addRecipe0(T, 16,   16, FL.array(tDye, tWater), FL.InkMyst.make(500), ZL_IS);
 		}

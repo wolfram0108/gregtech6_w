@@ -27,7 +27,7 @@ import gregapi.item.multiitem.behaviors.Behavior_Switch_Metadata;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregtech.items.tools.early.GT_Tool_Chisel;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_Pocket_Chisel extends GT_Tool_Chisel {
 	@Override public float getMaxDurabilityMultiplier() {return 4.0F;}

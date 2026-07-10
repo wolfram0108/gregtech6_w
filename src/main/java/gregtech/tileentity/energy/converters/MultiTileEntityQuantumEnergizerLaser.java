@@ -30,7 +30,7 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.energy.ITileEntityEnergyElectricityAcceptor;
 import gregapi.tileentity.energy.TileEntityBase10EnergyConverter;
 import gregapi.tileentity.machines.ITileEntityAdjacentOnOff;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 public class MultiTileEntityQuantumEnergizerLaser extends TileEntityBase10EnergyConverter implements ITileEntityEnergyElectricityAcceptor, ITileEntityAdjacentOnOff {
 	@Override public boolean isInput (byte aSide) {return mFacing == OPOS[aSide];}

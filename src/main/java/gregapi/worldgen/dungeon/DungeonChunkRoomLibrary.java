@@ -25,9 +25,9 @@ import gregapi.data.FL;
 import gregapi.data.MD;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.nbt.ListTag;
 import net.minecraftforge.common.ChestGenHooks;
 
 /**
@@ -120,10 +120,10 @@ public class DungeonChunkRoomLibrary extends DungeonChunkRoomEmpty {
 				aData.set( 1, tY, 13, Blocks.planks, tPlank);
 			} else {
 				int tIndex = aData.next(24), tKeyIndex = aData.next(3)+aData.next(3);
-				NBTTagList tList = null;
+				ListTag tList = null;
 				if (tKeyIndex < aData.mGeneratedKeys.length) {
 					aData.mGeneratedKeys[tKeyIndex] = T;
-					tList = new NBTTagList();
+					tList = new ListTag();
 					tList.appendTag(UT.NBT.makeShort(ST.save(aData.mKeyStacks[tKeyIndex]), "s", (short)aData.next(14)));
 				}
 				

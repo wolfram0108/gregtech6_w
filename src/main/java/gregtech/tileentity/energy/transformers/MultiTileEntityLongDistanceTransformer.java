@@ -46,14 +46,14 @@ import gregapi.tileentity.machines.ITileEntitySwitchableOnOff;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.blocks.tool.BlockLongDistWire;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChunkCoordinates;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
 
 public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09FacingSingle implements IMTE_HasMultiBlockMachineRelevantData, ITileEntityCanDelegate, ITileEntityMachineBlockUpdateable, ITileEntityRunningActively, ITileEntityEnergyElectricityAcceptor, ITileEntitySwitchableOnOff {
 	protected boolean mWasteEnergy = F, mStopped = F, mActive = F;
@@ -62,10 +62,10 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 	protected TagData mEnergyTypeAccepted = TD.Energy.EU;
 	protected TagData mEnergyTypeEmitted = TD.Energy.EU;
 	protected MultiTileEntityLongDistanceTransformer mTarget = null, mSender = null;
-	protected ChunkCoordinates mTargetPos = null;
+	protected BlockPos mTargetPos = null;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_WASTE_ENERGY)) mWasteEnergy = aNBT.getBoolean(NBT_WASTE_ENERGY);
 		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
@@ -75,13 +75,13 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 		if (aNBT.hasKey(NBT_OUTPUT)) {mOutput = aNBT.getLong(NBT_OUTPUT);}
 		if (aNBT.hasKey(NBT_DISTANCE)) {mDistance = aNBT.getLong(NBT_DISTANCE);}
 		if (aNBT.hasKey(NBT_THROUGHPUT)) {mThroughput = aNBT.getLong(NBT_THROUGHPUT);}
-		if (aNBT.hasKey(NBT_TARGET)) {mTargetPos = new ChunkCoordinates(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
+		if (aNBT.hasKey(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
 		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		if (mTargetPos != null && mTarget != this) {
 		UT.NBT.setBoolean(aNBT, NBT_TARGET, T);
@@ -105,7 +105,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		long rReturn = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (rReturn > 0) return rReturn;
 		
@@ -159,7 +159,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 		} else if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
 			if (worldObj.blockExists(mTargetPos.posX, mTargetPos.posY, mTargetPos.posZ)) {
-				TileEntity tTileEntity = WD.te(worldObj, mTargetPos, T);
+				BlockEntity tTileEntity = WD.te(worldObj, mTargetPos, T);
 				if (tTileEntity instanceof MultiTileEntityLongDistanceTransformer) {
 					mTarget = (MultiTileEntityLongDistanceTransformer)tTileEntity;
 				} else {
@@ -184,7 +184,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 		byte aMetaData = getMetaDataAtSide(OPOS[mFacing]);
 		if (aBlock instanceof BlockLongDistWire) {
 			mThroughput = VMAX[((BlockLongDistWire)aBlock).mTiers[aMetaData]];
-			HashSetNoNulls<ChunkCoordinates>
+			HashSetNoNulls<BlockPos>
 			tNewChecks  = new HashSetNoNulls<>(),
 			tOldChecks  = new HashSetNoNulls<>(F, getCoords()),
 			tToCheck    = new HashSetNoNulls<>(F, getOffsetN(mFacing, 1)),
@@ -193,22 +193,22 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 			mDistance = -1;
 			while (!tToCheck.isEmpty()) {
 				mDistance++;
-				for (ChunkCoordinates aCoords : tToCheck) {
+				for (BlockPos aCoords : tToCheck) {
 					if (getBlock(aCoords) == aBlock && getMetaData(aCoords) == aMetaData) {
 						tWires.add(aCoords);
-						ChunkCoordinates tCoords;
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX + 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX - 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY + 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY - 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY, aCoords.posZ + 1))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new ChunkCoordinates(aCoords.posX, aCoords.posY, aCoords.posZ - 1))) tNewChecks.add(tCoords);
+						BlockPos tCoords;
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX + 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX - 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY + 1, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY - 1, aCoords.posZ))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ + 1))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ - 1))) tNewChecks.add(tCoords);
 						if (aBurnWires) {
 							WD.burn(worldObj, aCoords, T, F);
 							worldObj.setBlock(aCoords.posX, aCoords.posY, aCoords.posZ, Blocks.fire, 0, 3);
 						}
 					} else {
-						TileEntity tTileEntity = getTileEntity(aCoords);
+						BlockEntity tTileEntity = getTileEntity(aCoords);
 						if (tTileEntity != this && tTileEntity instanceof MultiTileEntityLongDistanceTransformer) {
 							if (tWires.contains(((MultiTileEntityLongDistanceTransformer)tTileEntity).getOffset(((MultiTileEntityLongDistanceTransformer)tTileEntity).mFacing, 1))) {
 								mTarget = (MultiTileEntityLongDistanceTransformer)tTileEntity;
@@ -285,7 +285,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 	public boolean isOutput(byte aSide) {return aSide == OPOS[mFacing];}
 	
 	@Override public void onCoordinateChange() {super.onCoordinateChange(); mTargetPos = null; mSender = null;}
-	@Override public void onMachineBlockUpdate(ChunkCoordinates aCoords, Block aBlock, byte aMeta, boolean aRemoved) {if (aBlock instanceof BlockLongDistWire) {mTargetPos = null; mSender = null;}}
+	@Override public void onMachineBlockUpdate(BlockPos aCoords, Block aBlock, byte aMeta, boolean aRemoved) {if (aBlock instanceof BlockLongDistWire) {mTargetPos = null; mSender = null;}}
 	@Override public boolean hasMultiBlockMachineRelevantData() {return T;}
 	
 	@Override public boolean canDrop(int aInventorySlot) {return F;}

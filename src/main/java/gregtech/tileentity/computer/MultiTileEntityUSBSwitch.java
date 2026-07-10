@@ -35,10 +35,10 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.computer.TileEntityBase08DataSwitch;
 import gregapi.util.OM;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * @author Gregorius Techneticies
@@ -55,7 +55,7 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 	}
 	
 	@Override
-	public NBTTagCompound getUSBData(byte aSide, int aUSBTier) {
+	public CompoundTag getUSBData(byte aSide, int aUSBTier) {
 		ItemStack tUSB = slot(mMode);
 		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB) && tUSB.hasTagCompound() && tUSB.getTagCompound().getByte(NBT_USB_TIER) <= aUSBTier) {
 			return tUSB.getTagCompound().getCompoundTag(NBT_USB_DATA);
@@ -64,7 +64,7 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 	}
 	
 	@Override
-	public boolean setUSBData(byte aSide, int aUSBTier, NBTTagCompound aData) {
+	public boolean setUSBData(byte aSide, int aUSBTier, CompoundTag aData) {
 		ItemStack tUSB = slot(mMode);
 		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB)) {
 			if (!tUSB.hasTagCompound()) tUSB.setTagCompound(UT.NBT.make());
@@ -99,9 +99,9 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.usb.hub";}
 	
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[16];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[16];}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return OM.is(OD_USB_STICKS[0], aStack);}
 	
-	@Override public Object getGUIClient2(int aGUIID, EntityPlayer aPlayer) {return new ContainerClientDefault(aPlayer.inventory, this, aGUIID, RES_PATH_GUI + "machines/USBSwitch.png");}
-	@Override public Object getGUIServer2(int aGUIID, EntityPlayer aPlayer) {return new ContainerCommonDefault(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.inventory, this, aGUIID, RES_PATH_GUI + "machines/USBSwitch.png");}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.inventory, this, aGUIID);}
 }

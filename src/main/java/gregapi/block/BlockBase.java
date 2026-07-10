@@ -39,7 +39,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.util.IIcon;
-import net.minecraft.util.StatCollector;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.IPlantable;
@@ -66,7 +66,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	}
 	
 	@Override public final String getUnlocalizedName() {return mNameInternal;}
-	@Override public String getLocalizedName() {return StatCollector.translateToLocal(mNameInternal);}
+	@Override public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
 	@Override public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
 	@Override public boolean canSilkHarvest() {return canSilkHarvest((byte)0);}

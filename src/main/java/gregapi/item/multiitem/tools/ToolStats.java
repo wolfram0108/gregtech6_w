@@ -31,23 +31,23 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
-import net.minecraft.block.Block;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.potion.Potion;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.stats.AchievementList;
-import net.minecraft.stats.StatList;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.IChatComponent;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
-import net.minecraft.world.World;
-import net.minecraftforge.event.world.BlockEvent;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.event.level.BlockEvent;
 
 import java.util.List;
 
@@ -91,24 +91,24 @@ public abstract class ToolStats implements IToolStats {
 	}
 	
 	@Override
-	public float getMiningSpeed(Block aBlock, byte aMetaData, float aDefault, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ) {
+	public float getMiningSpeed(Block aBlock, byte aMetaData, float aDefault, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
 		return aDefault;
 	}
 	
 	@Override
-	public DamageSource getDamageSource(EntityLivingBase aPlayer, Entity aEntity) {
-		return DamageSources.getCombatDamage(aPlayer instanceof EntityPlayer ? "player" : "mob", aPlayer, aEntity instanceof EntityLivingBase ? getDeathMessage(aPlayer, (EntityLivingBase)aEntity, aPlayer == null ? "Someone" : UT.Code.stringValidate(aPlayer.getCommandSenderName(), "Someone"), UT.Code.stringValidate(aEntity.getCommandSenderName(), "Someone")) : null, canBehead());
+	public DamageSource getDamageSource(LivingEntity aPlayer, Entity aEntity) {
+		return DamageSources.getCombatDamage(aPlayer instanceof Player ? "player" : "mob", aPlayer, aEntity instanceof LivingEntity ? getDeathMessage(aPlayer, (LivingEntity)aEntity, aPlayer == null ? "Someone" : UT.Code.stringValidate(aPlayer.getCommandSenderName(), "Someone"), UT.Code.stringValidate(aEntity.getCommandSenderName(), "Someone")) : null, canBehead());
 	}
 	
-	public IChatComponent getDeathMessage(EntityLivingBase aPlayer, EntityLivingBase aEntity, String aNamePlayer, String aNameEntity) {return DamageSources.getDeathMessage(aPlayer, aEntity, aNamePlayer, aNameEntity, getDeathMessage());}
+	public Component getDeathMessage(LivingEntity aPlayer, LivingEntity aEntity, String aNamePlayer, String aNameEntity) {return DamageSources.getDeathMessage(aPlayer, aEntity, aNamePlayer, aNameEntity, getDeathMessage());}
 	public String getDeathMessage() {return "Why is there no custom Death Message for this Tool?";}
 	
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, EntityPlayer aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		return 0;
 	}
 	
-	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, EntityPlayer aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		if (aBlock == Blocks.tallgrass) {
 			switch(aMetaData) {
 			case 1: case 2: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
@@ -145,7 +145,7 @@ public abstract class ToolStats implements IToolStats {
 		return F;
 	}
 	
-	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, EntityPlayer aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		if (aBlock == Blocks.tallgrass) {
 			switch(aMetaData) {
 			case 0: aDrops.add(OP.stick.mat(MT.WOODS.Dead, 1+RNGSUS.nextInt(2+aFortune))); return T;
@@ -202,7 +202,7 @@ public abstract class ToolStats implements IToolStats {
 	}
 	
 	@Override
-	public void onToolCrafted(ItemStack aStack, EntityPlayer aPlayer) {
+	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		aPlayer.triggerAchievement(AchievementList.openInventory);
 		aPlayer.triggerAchievement(AchievementList.mineWood);
 		aPlayer.triggerAchievement(AchievementList.buildWorkBench);
@@ -214,21 +214,21 @@ public abstract class ToolStats implements IToolStats {
 	}
 	
 	@Override
-	public float getNormalDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getNormalDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		return aOriginalDamage;
 	}
 	
 	@Override
-	public float getMagicDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getMagicDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		return aOriginalDamage;
 	}
 	
 	@Override
-	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, EntityPlayer aPlayer) {
-		if (aEntity instanceof EntityLivingBase && aFireAspect > 0) aEntity.setFire(aFireAspect * 4);
-		int tKnockback = (aPlayer.isSprinting()?1:0) + (aEntity instanceof EntityLivingBase?EnchantmentHelper.getKnockbackModifier(aPlayer, (EntityLivingBase)aEntity):0);
+	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
+		if (aEntity instanceof LivingEntity && aFireAspect > 0) aEntity.setFire(aFireAspect * 4);
+		int tKnockback = (aPlayer.isSprinting()?1:0) + (aEntity instanceof LivingEntity?EnchantmentHelper.getKnockbackModifier(aPlayer, (LivingEntity)aEntity):0);
 		if (tKnockback > 0) {
-			aEntity.addVelocity(-MathHelper.sin((float)(aPlayer.rotationYaw * Math.PI / 180)) * tKnockback * 0.5, 0.1, MathHelper.cos((float)(aPlayer.rotationYaw * Math.PI / 180)) * tKnockback * 0.5);
+			aEntity.addVelocity(-Mth.sin((float)(aPlayer.rotationYaw * Math.PI / 180)) * tKnockback * 0.5, 0.1, Mth.cos((float)(aPlayer.rotationYaw * Math.PI / 180)) * tKnockback * 0.5);
 			aPlayer.motionX *= 0.6;
 			aPlayer.motionZ *= 0.6;
 			aPlayer.setSprinting(F);
@@ -237,18 +237,18 @@ public abstract class ToolStats implements IToolStats {
 		if (aMagicDamage > 0) aPlayer.onEnchantmentCritical(aEntity);
 		if (aNormalDamage+aMagicDamage >= 18) aPlayer.triggerAchievement(AchievementList.overkill);
 		aPlayer.setLastAttacker(aEntity);
-		if (aEntity instanceof EntityLivingBase) Enchantments.applyBullshitA((EntityLivingBase)aEntity, aPlayer, aStack);
+		if (aEntity instanceof LivingEntity) Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 		Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
-		if (aEntity instanceof EntityLivingBase) aPlayer.addStat(StatList.damageDealtStat, Math.round((aNormalDamage+aMagicDamage) * 10));
+		if (aEntity instanceof LivingEntity) aPlayer.addStat(Stats.damageDealtStat, Math.round((aNormalDamage+aMagicDamage) * 10));
 		aEntity.hurtResistantTime = Math.max(1, getHurtResistanceTime(aEntity.hurtResistantTime, aEntity));
 		UT.Entities.exhaust(aPlayer, getExhaustionPerAttack(aEntity));
 	}
 	
 	@Override
-	public void afterBreaking(ItemStack aStack, EntityPlayer aPlayer) {
+	public void afterBreaking(ItemStack aStack, Player aPlayer) {
 		// If you work so hard that your Tool breaks, you should probably take a break yourself. :P
-		UT.Entities.applyPotion(aPlayer, Potion.weakness   ,  300, 2, F);
-		UT.Entities.applyPotion(aPlayer, Potion.digSlowdown, 1200, 2, F);
+		UT.Entities.applyPotion(aPlayer, MobEffect.weakness   ,  300, 2, F);
+		UT.Entities.applyPotion(aPlayer, MobEffect.digSlowdown, 1200, 2, F);
 	}
 	
 	public IIconContainer getIcon(boolean aIsToolHead, ItemStack aStack) {

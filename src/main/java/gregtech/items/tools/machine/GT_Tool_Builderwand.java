@@ -27,9 +27,9 @@ import gregapi.item.multiitem.behaviors.Behavior_Tool;
 import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.render.IIconContainer;
 import gregtech.items.behaviors.Behavior_Builderwand;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.*;
 
@@ -69,7 +69,7 @@ public class GT_Tool_Builderwand extends ToolStats {
 	}
 	
 	@Override
-	public void afterBreaking(ItemStack aStack, EntityPlayer aPlayer) {
+	public void afterBreaking(ItemStack aStack, Player aPlayer) {
 		// No bad Effects for breaking this.
 	}
 }

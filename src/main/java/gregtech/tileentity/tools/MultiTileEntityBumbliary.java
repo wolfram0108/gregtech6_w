@@ -19,8 +19,8 @@
 
 package gregtech.tileentity.tools;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
 import gregapi.data.LH;
 import gregapi.data.LH.Chat;
@@ -39,14 +39,14 @@ import gregapi.tileentity.machines.ITileEntityRunningSuccessfully;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +63,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	public ItemStack[] mOffSpring = ZL_IS;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_PROGRESS)) mLife = aNBT.getLong(NBT_PROGRESS);
 		if (aNBT.hasKey(NBT_COOLDOWN)) mBreedingCountDown = aNBT.getLong(NBT_COOLDOWN);
@@ -74,7 +74,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_PROGRESS, mLife);
 		UT.NBT.setNumber(aNBT, NBT_COOLDOWN, mBreedingCountDown);
@@ -113,7 +113,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 			if (slotHas(SLOT_ROYAL) && slot(SLOT_ROYAL).getItem() instanceof IItemBumbleBee) {
 				ItemStack tRoyalStack = slot(SLOT_ROYAL);
 				IItemBumbleBee tRoyalItem = (IItemBumbleBee)tRoyalStack.getItem();
-				NBTTagCompound tRoyalTag = Util.getBumbleTag(tRoyalStack);
+				CompoundTag tRoyalTag = Util.getBumbleTag(tRoyalStack);
 				short tRoyalMeta = ST.meta_(tRoyalStack);
 				if (mLife > 0 && tRoyalItem.bumbleType(tRoyalStack) % 5 == 2) {
 					mBreedingCountDown = 1200;
@@ -163,7 +163,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 							}
 						} else {
 							if (mLife %  300 == 150 && rng(10000) < Util.getAggressiveness(tRoyalTag)) {
-								try {for (EntityLivingBase tEntity : (ArrayList<EntityLivingBase>)worldObj.getEntitiesWithinAABB(EntityLivingBase.class, box(-4, -4, -4, +5, +5, +5))) attackEntity(tEntity);} catch(Throwable e) {e.printStackTrace(ERR);}
+								try {for (LivingEntity tEntity : (ArrayList<LivingEntity>)worldObj.getEntitiesWithinAABB(LivingEntity.class, box(-4, -4, -4, +5, +5, +5))) attackEntity(tEntity);} catch(Throwable e) {e.printStackTrace(ERR);}
 							}
 							if (mLife % 1200 == 600 && rng(10000) < Util.getWorkForce(tRoyalTag) && checkWork(tRoyalTag)) {
 								if (null != tRoyalItem.bumbleCanProduce(worldObj, xCoord, yCoord, zCoord, tRoyalStack, tRoyalMeta, 3)) {
@@ -279,7 +279,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (SIDES_TOP[aSide]) {
 			if (aPlayer != null && isServerSide()) {
 				if (UT.Entities.isCreative(aPlayer)) {
@@ -296,7 +296,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_thermometer)) {
 			if (aChatReturn != null) aChatReturn.add("Temperature: " + mTemperature + "K - Humidity: " + mHumidity);
@@ -305,8 +305,8 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 		if (aTool.equals(TOOL_scoop)) {
 			if (SIDES_TOP[aSide]) {
 				if (!UT.Entities.isCreative(aPlayer)) mBreedingCountDown = 6000;
-				if (aPlayer instanceof EntityLivingBase) attackEntity((EntityLivingBase)aPlayer);
-				if (aPlayer instanceof EntityPlayer) openGUI((EntityPlayer)aPlayer, 1);
+				if (aPlayer instanceof LivingEntity) attackEntity((LivingEntity)aPlayer);
+				if (aPlayer instanceof Player) openGUI((Player)aPlayer, 1);
 				return 10000;
 			}
 			return 0;
@@ -326,9 +326,9 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	
 	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]])) : null;}
 	
-	@SideOnly(Side.CLIENT)
-	@Override public Object getGUIClient2(int aGUIID, EntityPlayer aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.inventory, this, aGUIID) : new MultiTileEntityGUIClientBumbliary(aPlayer.inventory, this, aGUIID);}
-	@Override public Object getGUIServer2(int aGUIID, EntityPlayer aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.inventory, this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.inventory, this, aGUIID);}
+	@OnlyIn(Dist.CLIENT)
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.inventory, this, aGUIID) : new MultiTileEntityGUIClientBumbliary(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.inventory, this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.inventory, this, aGUIID);}
 	
 	public static final int SLOT_ROYAL = 13, SLOT_DRONE = 22
 	, SLOTS_COMBS[] = {0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 24, 25, 26}
@@ -336,7 +336,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	, SLOTS_DEAD[] = {27, 28, 29, 30, 31, 32, 33, 34, 35}
 	;
 	
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[36];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[36];}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return SLOTS_DEAD;}
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return aSlot == SLOT_ROYAL ? 1 : 64;}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}
@@ -368,15 +368,15 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 		return aSlot != SLOT_ROYAL || !slotHas(aSlot) || !(slot(aSlot).getItem() instanceof IItemBumbleBee) || ((IItemBumbleBee)slot(aSlot).getItem()).bumbleType(slot(aSlot)) % 5 != 2;
 	}
 	
-	private boolean attackEntity(EntityLivingBase aEntity) {
+	private boolean attackEntity(LivingEntity aEntity) {
 		return slotHas(SLOT_ROYAL) && slot(SLOT_ROYAL).getItem() instanceof IItemBumbleBee && ((IItemBumbleBee)slot(SLOT_ROYAL).getItem()).bumbleType(slot(SLOT_ROYAL)) % 5 == 2 && ((IItemBumbleBee)slot(SLOT_ROYAL).getItem()).bumbleAttack(slot(SLOT_ROYAL), ST.meta_(slot(SLOT_ROYAL)), aEntity);
 	}
 	
-	private boolean checkEnvironment(NBTTagCompound aBumbleTag) {
+	private boolean checkEnvironment(CompoundTag aBumbleTag) {
 		return UT.Code.inside(Util.getTemperatureMin(aBumbleTag), Util.getTemperatureMax(aBumbleTag), mTemperature) && UT.Code.inside_(Util.getHumidityMin(aBumbleTag), Util.getHumidityMax(aBumbleTag), mHumidity) && (mSky ? Util.getOutsideActive(aBumbleTag) : Util.getInsideActive(aBumbleTag));
 	}
 	
-	private boolean checkWork(NBTTagCompound aBumbleTag) {
+	private boolean checkWork(CompoundTag aBumbleTag) {
 		if (mSky) {
 			if (worldObj.isThundering() && !Util.getStormproof(aBumbleTag)) return F;
 			if (worldObj.isRaining() && mHumidity > 0 && !Util.getRainproof(aBumbleTag)) return F;
@@ -387,12 +387,12 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	@Override public String getTileEntityName() {return "gt.multitileentity.bumbliary";}
 	
 	public class MultiTileEntityGUICommonBumbliary extends ContainerCommon {
-		public MultiTileEntityGUICommonBumbliary(InventoryPlayer aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
+		public MultiTileEntityGUICommonBumbliary(Inventory aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
 			super(aInventoryPlayer, aTileEntity, aGUIID);
 		}
 		
 		@Override
-		public int addSlots(InventoryPlayer aInventoryPlayer) {
+		public int addSlots(Inventory aInventoryPlayer) {
 			addSlotToContainer(new Slot_Normal(mTileEntity,  0,   8,  8).setCanPut(F));
 			addSlotToContainer(new Slot_Normal(mTileEntity,  1,  26,  8).setCanPut(F));
 			addSlotToContainer(new Slot_Normal(mTileEntity,  2,  44,  8).setCanPut(F));
@@ -441,12 +441,12 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	}
 
 	public class MultiTileEntityGUICommonBumbliaryScoop extends ContainerCommon {
-		public MultiTileEntityGUICommonBumbliaryScoop(InventoryPlayer aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
+		public MultiTileEntityGUICommonBumbliaryScoop(Inventory aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
 			super(aInventoryPlayer, aTileEntity, aGUIID);
 		}
 		
 		@Override
-		public int addSlots(InventoryPlayer aInventoryPlayer) {
+		public int addSlots(Inventory aInventoryPlayer) {
 			addSlotToContainer(new Slot_Normal(mTileEntity,  0,   8,  8).setCanPut(F));
 			addSlotToContainer(new Slot_Normal(mTileEntity,  1,  26,  8).setCanPut(F));
 			addSlotToContainer(new Slot_Normal(mTileEntity,  2,  44,  8).setCanPut(F));
@@ -494,16 +494,16 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 		@Override public int getShiftClickSlotCount() {return 36;}
 	}
 	
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public class MultiTileEntityGUIClientBumbliary extends ContainerClient {
-		public MultiTileEntityGUIClientBumbliary(InventoryPlayer aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
+		public MultiTileEntityGUIClientBumbliary(Inventory aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
 			super(new MultiTileEntityGUICommonBumbliary(aInventoryPlayer, aTileEntity, aGUIID), RES_PATH_GUI + "machines/Bumbliary.png");
 		}
 	}
 	
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public class MultiTileEntityGUIClientBumbliaryScoop extends ContainerClient {
-		public MultiTileEntityGUIClientBumbliaryScoop(InventoryPlayer aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
+		public MultiTileEntityGUIClientBumbliaryScoop(Inventory aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
 			super(new MultiTileEntityGUICommonBumbliaryScoop(aInventoryPlayer, aTileEntity, aGUIID), RES_PATH_GUI + "machines/Bumbliary.png");
 		}
 	}

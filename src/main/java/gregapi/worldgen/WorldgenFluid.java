@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Random;
 
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
 
 /**
  * @author Gregorius Techneticies
@@ -40,7 +40,7 @@ public class WorldgenFluid extends WorldgenBlob {
 	}
 	
 	@Override
-	public boolean tryPlaceStuff(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		Block tTargetedBlock = aWorld.getBlock(aX, aY, aZ);
 		if (tTargetedBlock == mBlock && aWorld.getBlockMetadata(aX, aY, aZ) == mBlockMeta) {
 			return T;
@@ -57,7 +57,7 @@ public class WorldgenFluid extends WorldgenBlob {
 		return F;
 	}
 	
-	public boolean doBedrockStuff(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public boolean doBedrockStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		return F;
 	}
 }

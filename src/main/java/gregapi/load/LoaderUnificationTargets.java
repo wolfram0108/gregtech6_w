@@ -24,8 +24,8 @@ import gregapi.data.MT;
 import gregapi.data.OP;
 import gregapi.oredict.OreDictManager;
 import gregapi.util.ST;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
 
 /**
  * @author Gregorius Techneticies

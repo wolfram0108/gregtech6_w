@@ -25,7 +25,7 @@ import gregapi.item.multiitem.MultiItemTool;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_MiningDrill_MV extends GT_Tool_MiningDrill_LV {
 	@Override

@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -34,13 +34,13 @@ import gregapi.data.OP;
 import gregapi.data.RM;
 import gregapi.util.CR;
 import gregapi.util.ST;
-import net.minecraft.init.Items;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 public class Compat_Recipes_GrowthCraft extends CompatMods {
 	public Compat_Recipes_GrowthCraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing GrowthCraft Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing GrowthCraft Recipes.");
 		RM.rem_smelting(ST.make(MD.GrC, "grccore.BottleFluidSaltWater", 1, 0));
 		RM.rem_smelting(ST.make(MD.GrC, "grccore.BucketFluidSaltWater", 1, 0));
 		

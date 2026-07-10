@@ -19,9 +19,9 @@
 
 package gregapi.render;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.block.Block;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 
 /**
@@ -29,6 +29,6 @@ import net.minecraft.client.renderer.RenderBlocks;
  */
 public interface IRenderedBlockObjectSideCheck {
 	/** returning false stops all the other Rendering from happening on that Side. */
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public boolean renderFullBlockSide(Block aBlock, RenderBlocks aRenderer, byte aSide);
 }

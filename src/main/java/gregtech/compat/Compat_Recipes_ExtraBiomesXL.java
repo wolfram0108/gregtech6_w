@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -29,12 +29,12 @@ import gregapi.data.IL;
 import gregapi.data.MD;
 import gregapi.data.RM;
 import gregapi.util.ST;
-import net.minecraft.init.Items;
+import net.minecraft.world.item.Items;
 
 public class Compat_Recipes_ExtraBiomesXL extends CompatMods {
 	public Compat_Recipes_ExtraBiomesXL(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing EBXL Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing EBXL Recipes.");
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.EBXL, "vines"      , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.dye, 1, DYE_INDEX_Red));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.EBXL, "waterplant1", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green], IL.Dye_Cactus.get(1));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.EBXL, "flower1"    , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 1, DYE_INDEX_LightBlue));

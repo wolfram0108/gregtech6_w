@@ -28,20 +28,20 @@ import li.cil.oc.api.machine.Context;
 import li.cil.oc.api.network.ManagedPeripheral;
 import li.cil.oc.api.network.Visibility;
 import li.cil.oc.api.prefab.ManagedEnvironment;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
 public class EnvironmentOC extends ManagedEnvironment implements ManagedPeripheral, NamedBlock {
-	public final DelegatorTileEntity<TileEntity> mDelegator;
+	public final DelegatorTileEntity<BlockEntity> mDelegator;
 	public final IComputerizable mDeviceType;
 	public final String mDeviceName;
 	public final String[] mDeviceMethods;
 	public final List<String> mDeviceMethodList;
 	
-	public EnvironmentOC(IComputerizable aDeviceType, DelegatorTileEntity<TileEntity> aDelegator) {
+	public EnvironmentOC(IComputerizable aDeviceType, DelegatorTileEntity<BlockEntity> aDelegator) {
 		mDelegator = aDelegator;
 		mDeviceType = aDeviceType;
 		mDeviceName = mDeviceType.getComputerizableName(mDelegator);

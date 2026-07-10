@@ -39,17 +39,17 @@ import gregapi.tileentity.multiblocks.*;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChunkCoordinates;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidHandler;
-import net.minecraftforge.fluids.IFluidTank;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.IFluidTank;
 
 import java.util.Collection;
 import java.util.List;
@@ -70,7 +70,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	public FluidTankGT[] mTanks = new FluidTankGT[MAX_STORAGE_CPU_COUNT];
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		mEnergy = aNBT.getLong(NBT_ENERGY);
@@ -91,7 +91,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, "gt.cpu.logic", mCPU_Logic);
 		UT.NBT.setNumber(aNBT, "gt.cpu.control", mCPU_Control);
@@ -106,7 +106,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	}
 	
 	@Override
-	public boolean checkStructure2(ChunkCoordinates aCoordinates, Entity aPlayer, IInventory aInventory) {
+	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
 		if (worldObj.blockExists(tX-2, tY, tZ-2) && worldObj.blockExists(tX+2, tY, tZ-2) && worldObj.blockExists(tX-2, tY, tZ+2) && worldObj.blockExists(tX+2, tY, tZ+2)) {
 			boolean tSuccess = T;
@@ -265,10 +265,10 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 				;
 				
 				Set<ITileEntityLogistics> tScanning = new HashSetNoNulls<>(), tScanningNext = new HashSetNoNulls<>();
-				Set<TileEntity> tScanned = new HashSetNoNulls<>();
+				Set<BlockEntity> tScanned = new HashSetNoNulls<>();
 				
 				for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
-					TileEntity tTileEntity = WD.te(worldObj, tX + i, tY + j, tZ + k, T);
+					BlockEntity tTileEntity = WD.te(worldObj, tX + i, tY + j, tZ + k, T);
 					if (tScanned.add(tTileEntity) && tTileEntity instanceof ITileEntityLogistics) tScanning.add((ITileEntityLogistics)tTileEntity);
 				}
 				
@@ -282,15 +282,15 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 							}
 							
 							switch (((ITileEntityLogisticsStorage)tLogistics).getLogisticsPriorityFluid()) {
-							case  1: tFluidStorageGeneric .add(new LogisticsData(new DelegatorTileEntity<>((TileEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterFluid())); break;
-							case  2: tFluidStorageSemi    .add(new LogisticsData(new DelegatorTileEntity<>((TileEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterFluid())); break;
-							case  3: tFluidStorageFiltered.add(new LogisticsData(new DelegatorTileEntity<>((TileEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterFluid())); break;
+							case  1: tFluidStorageGeneric .add(new LogisticsData(new DelegatorTileEntity<>((BlockEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterFluid())); break;
+							case  2: tFluidStorageSemi    .add(new LogisticsData(new DelegatorTileEntity<>((BlockEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterFluid())); break;
+							case  3: tFluidStorageFiltered.add(new LogisticsData(new DelegatorTileEntity<>((BlockEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterFluid())); break;
 							}
 							
 							switch (((ITileEntityLogisticsStorage)tLogistics).getLogisticsPriorityItem()) {
-							case  1: tStackStorageGeneric .add(new LogisticsData(new DelegatorTileEntity<>((TileEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterItem())); break;
-							case  2: tStackStorageSemi    .add(new LogisticsData(new DelegatorTileEntity<>((TileEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterItem())); break;
-							case  3: tStackStorageFiltered.add(new LogisticsData(new DelegatorTileEntity<>((TileEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterItem())); break;
+							case  1: tStackStorageGeneric .add(new LogisticsData(new DelegatorTileEntity<>((BlockEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterItem())); break;
+							case  2: tStackStorageSemi    .add(new LogisticsData(new DelegatorTileEntity<>((BlockEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterItem())); break;
+							case  3: tStackStorageFiltered.add(new LogisticsData(new DelegatorTileEntity<>((BlockEntity)tLogistics, SIDE_ANY), ((ITileEntityLogisticsStorage)tLogistics).getLogisticsFilterItem())); break;
 							}
 						}
 						
@@ -318,7 +318,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 									continue;
 								}
 								
-								DelegatorTileEntity<TileEntity> tAdjacent = tLogistics.getAdjacentTileEntity(tSide);
+								DelegatorTileEntity<BlockEntity> tAdjacent = tLogistics.getAdjacentTileEntity(tSide);
 								if (tAdjacent.mTileEntity instanceof ITileEntityLogistics && ((ITileEntityLogistics)tAdjacent.mTileEntity).canLogistics(SIDE_ANY)) {
 									// Ignore those ones to reduce likelihood of infinite Loops.
 								} else {
@@ -438,7 +438,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 							int tMaxDistance = Math.max(Math.abs(tLogistics.getOffsetX(tSide) - tX), Math.max(Math.abs(tLogistics.getOffsetY(tSide) - tY), Math.abs(tLogistics.getOffsetZ(tSide) - tZ)));
 							if (tMaxDistance <= mCPU_Control + 2) {
 								oCPU_Control = Math.max(oCPU_Control, tMaxDistance-2);
-								DelegatorTileEntity<TileEntity> tAdjacent = tLogistics.getAdjacentTileEntity(tSide);
+								DelegatorTileEntity<BlockEntity> tAdjacent = tLogistics.getAdjacentTileEntity(tSide);
 								if (tAdjacent.mTileEntity instanceof ITileEntityLogistics && ((ITileEntityLogistics)tAdjacent.mTileEntity).canLogistics(tAdjacent.mSideOfTileEntity) && tScanned.add(tAdjacent.mTileEntity)) tScanningNext.add((ITileEntityLogistics)tAdjacent.mTileEntity);
 							}
 						}
@@ -609,48 +609,48 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	}
 	
 	static class LogisticsData {
-		public final DelegatorTileEntity<TileEntity> mTarget;
+		public final DelegatorTileEntity<BlockEntity> mTarget;
 		public final Fluid mFluidFilter;
 		public final ItemStack mItemFilter;
 		public final int mStackSize;
 		
-		public LogisticsData(DelegatorTileEntity<TileEntity> aTarget, Fluid aFluidFilter, ItemStack aItemFilter, int aStackSize) {
+		public LogisticsData(DelegatorTileEntity<BlockEntity> aTarget, Fluid aFluidFilter, ItemStack aItemFilter, int aStackSize) {
 			mTarget = aTarget;
 			mFluidFilter = aFluidFilter;
 			mItemFilter = aItemFilter;
 			mStackSize = aStackSize;
 		}
-		public LogisticsData(DelegatorTileEntity<TileEntity> aTarget, Fluid aFluidFilter, ItemStack aItemFilter) {
+		public LogisticsData(DelegatorTileEntity<BlockEntity> aTarget, Fluid aFluidFilter, ItemStack aItemFilter) {
 			mTarget = aTarget;
 			mFluidFilter = aFluidFilter;
 			mItemFilter = aItemFilter;
 			mStackSize = 0;
 		}
-		public LogisticsData(DelegatorTileEntity<TileEntity> aTarget, ItemStack aItemFilter, int aStackSize) {
+		public LogisticsData(DelegatorTileEntity<BlockEntity> aTarget, ItemStack aItemFilter, int aStackSize) {
 			mTarget = aTarget;
 			mFluidFilter = null;
 			mItemFilter = aItemFilter;
 			mStackSize = aStackSize;
 		}
-		public LogisticsData(DelegatorTileEntity<TileEntity> aTarget, ItemStack aItemFilter) {
+		public LogisticsData(DelegatorTileEntity<BlockEntity> aTarget, ItemStack aItemFilter) {
 			mTarget = aTarget;
 			mFluidFilter = null;
 			mItemFilter = aItemFilter;
 			mStackSize = 0;
 		}
-		public LogisticsData(DelegatorTileEntity<TileEntity> aTarget, Fluid aFluidFilter) {
+		public LogisticsData(DelegatorTileEntity<BlockEntity> aTarget, Fluid aFluidFilter) {
 			mTarget = aTarget;
 			mFluidFilter = aFluidFilter;
 			mItemFilter = null;
 			mStackSize = 0;
 		}
-		public LogisticsData(DelegatorTileEntity<TileEntity> aTarget, int aStackSize) {
+		public LogisticsData(DelegatorTileEntity<BlockEntity> aTarget, int aStackSize) {
 			mTarget = aTarget;
 			mFluidFilter = null;
 			mItemFilter = null;
 			mStackSize = aStackSize;
 		}
-		public LogisticsData(DelegatorTileEntity<TileEntity> aTarget) {
+		public LogisticsData(DelegatorTileEntity<BlockEntity> aTarget) {
 			mTarget = aTarget;
 			mFluidFilter = null;
 			mItemFilter = null;
@@ -659,7 +659,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && aPlayer != null && checkStructure(F)) {
 			List<String> tChat = new ArrayListNoNulls<>();
 			tChat.add("Power: " + mEnergy + " EU");
@@ -708,7 +708,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	@Override protected IFluidTank[] getFluidTanks2(byte aSide) {return mTanks;}
 	
 	// Inventory Stuff
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[MAX_STORAGE_CPU_COUNT];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[MAX_STORAGE_CPU_COUNT];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ZL_INTEGER;}
 	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {return F;}

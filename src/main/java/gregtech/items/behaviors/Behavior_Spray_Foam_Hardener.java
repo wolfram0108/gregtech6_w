@@ -32,12 +32,12 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.blocks.BlockCFoamFresh;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -55,12 +55,12 @@ public class Behavior_Spray_Foam_Hardener extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
+	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aWorld.isRemote || aStack.stackSize != 1 || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
 		boolean rOutput = F;
 		
-		NBTTagCompound tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) tNBT = UT.NBT.make();
 		long tUses = tNBT.getLong("gt.remaining");
 		
@@ -92,10 +92,10 @@ public class Behavior_Spray_Foam_Hardener extends AbstractBehaviorDefault {
 		return rOutput;
 	}
 	
-	public long harden(World aWorld, int aX, int aY, int aZ, byte aSide, long aUses, EntityPlayer aPlayer, ItemStack aStack) {
+	public long harden(Level aWorld, int aX, int aY, int aZ, byte aSide, long aUses, Player aPlayer, ItemStack aStack) {
 		if (aUses < 1) return 0;
 		
-		DelegatorTileEntity<TileEntity> aTileEntity = WD.te(aWorld, aX, aY, aZ, aSide, T);
+		DelegatorTileEntity<BlockEntity> aTileEntity = WD.te(aWorld, aX, aY, aZ, aSide, T);
 		if (aTileEntity.mTileEntity instanceof ITileEntityFoamable) return ((ITileEntityFoamable)aTileEntity.mTileEntity).dryFoam(aTileEntity.mSideOfTileEntity, aPlayer) ? 10 : 0;
 		Block aBlock = aTileEntity.getBlock(); aWorld = aTileEntity.mWorld; aX = aTileEntity.mX; aY = aTileEntity.mY; aZ = aTileEntity.mZ;
 		if (aBlock instanceof IBlockFoamable) return ((IBlockFoamable)aBlock).dryFoam(aWorld, aX, aY, aZ, aTileEntity.mSideOfTileEntity) ? aBlock instanceof BlockCFoamFresh && SIDES_VALID[((BlockMetaType)aBlock).mSide] ? 5 : 10 : 0;
@@ -124,7 +124,7 @@ public class Behavior_Spray_Foam_Hardener extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.foamhardenerspray.tooltip"));
-		NBTTagCompound tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = aStack.getTagCompound();
 		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
 		aList.add(LH.get("gt.behaviour.hardenerspray.uses") + " " + (tRemaining / 10) + "." + (tRemaining % 10));
 		aList.add(LH.get("gt.behaviour.unstackable"));

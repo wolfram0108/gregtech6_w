@@ -26,12 +26,12 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.util.CR;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 @Deprecated
 public class GT_ModHandler {
@@ -47,13 +47,13 @@ public class GT_ModHandler {
 	@Deprecated public static int chargeElectricItem(ItemStack aStack, int aCharge, int aTier, boolean aIgnoreLimit, boolean aSimulate) {return COMPAT_EU_ITEM != null && ST.valid(aStack) && COMPAT_EU_ITEM.is(aStack) ? UT.Code.bindInt(COMPAT_EU_ITEM.charge(aStack, aCharge, !aSimulate)) : 0;}
 	@Deprecated public static int dischargeElectricItem(ItemStack aStack, int aCharge, int aTier, boolean aIgnoreLimit, boolean aSimulate, boolean aIgnoreDischargability) {return COMPAT_EU_ITEM != null && ST.valid(aStack) && COMPAT_EU_ITEM.is(aStack) ? UT.Code.bindInt(COMPAT_EU_ITEM.decharge(aStack, aCharge, !aSimulate)) : 0;}
 	@Deprecated public static boolean canUseElectricItem(ItemStack aStack, int aCharge) {return F;}
-	@Deprecated public static boolean useElectricItem(ItemStack aStack, int aCharge, EntityPlayer aPlayer) {return COMPAT_EU_ITEM != null && ST.valid(aStack) && COMPAT_EU_ITEM.is(aStack) && COMPAT_EU_ITEM.decharge(aStack, aCharge, T) > 0;}
+	@Deprecated public static boolean useElectricItem(ItemStack aStack, int aCharge, Player aPlayer) {return COMPAT_EU_ITEM != null && ST.valid(aStack) && COMPAT_EU_ITEM.is(aStack) && COMPAT_EU_ITEM.decharge(aStack, aCharge, T) > 0;}
 	@Deprecated public static boolean isChargerItem(ItemStack aStack) {return COMPAT_EU_ITEM != null && ST.valid(aStack) && COMPAT_EU_ITEM.is(aStack) && COMPAT_EU_ITEM.provider(aStack);}
 	@Deprecated public static boolean isElectricItem(ItemStack aStack) {return COMPAT_EU_ITEM != null && ST.valid(aStack) && COMPAT_EU_ITEM.is(aStack);}
 	@Deprecated public static boolean isElectricItem(ItemStack aStack, byte aTier) {return COMPAT_EU_ITEM != null && ST.valid(aStack) && COMPAT_EU_ITEM.is(aStack) && COMPAT_EU_ITEM.tier(aStack) == aTier;}
 	@Deprecated public static boolean isReactorItem(ItemStack aStack) {return COMPAT_IC2 != null && COMPAT_IC2.isReactorItem(aStack);}
-	@Deprecated public static boolean damageOrDechargeItem(ItemStack aStack, int aDamage, int aDecharge, EntityLivingBase aPlayer) {return F;}
-	@Deprecated public static boolean useSolderingIron(ItemStack aStack, EntityLivingBase aPlayer) {return F;}
+	@Deprecated public static boolean damageOrDechargeItem(ItemStack aStack, int aDamage, int aDecharge, LivingEntity aPlayer) {return F;}
+	@Deprecated public static boolean useSolderingIron(ItemStack aStack, LivingEntity aPlayer) {return F;}
 	@Deprecated public static boolean addSawmillRecipe(ItemStack aInput, ItemStack aOutput1, ItemStack aOutput2) {return F;}
 	@Deprecated public static boolean addAlloySmelterRecipe(ItemStack aInput1, ItemStack aInput2, ItemStack aOutput1, int aDuration, int aEUt, boolean aAllowSecondaryInputEmpty) {return F;}
 	@Deprecated public static boolean addInductionSmelterRecipe(ItemStack aInput1, ItemStack aInput2, ItemStack aOutput1, ItemStack aOutput2, int aEnergy, int aChance) {return F;}
@@ -84,7 +84,7 @@ public class GT_ModHandler {
 	@Deprecated public static ItemStack removeRecipe(ItemStack... aRecipe) {return CR.remove(aRecipe);}
 	@Deprecated public static boolean removeRecipeByOutput(ItemStack aOutput) {return CR.remout(aOutput, T, F, F, F);}
 	@Deprecated public static boolean removeRecipeByOutput(ItemStack aOutput, boolean aIgnoreNBT, boolean aNotRemoveShapelessRecipes, boolean aOnlyRemoveNativeHandlers, boolean aDontRemoveDyeingRecipes) {return CR.remout(aOutput, aIgnoreNBT, aNotRemoveShapelessRecipes, aOnlyRemoveNativeHandlers, aDontRemoveDyeingRecipes);}
-	@Deprecated public static ItemStack getAllRecipeOutput(World aWorld, ItemStack... aRecipe) {return CR.getany(aWorld, aRecipe);}
+	@Deprecated public static ItemStack getAllRecipeOutput(Level aWorld, ItemStack... aRecipe) {return CR.getany(aWorld, aRecipe);}
 	@Deprecated public static ItemStack getRecipeOutput(ItemStack... aRecipe) {return CR.get(aRecipe);}
 	@Deprecated public static ItemStack getRecipeOutput(boolean aUncopiedStack, ItemStack... aRecipe) {return CR.get(aUncopiedStack, aRecipe);}
 }

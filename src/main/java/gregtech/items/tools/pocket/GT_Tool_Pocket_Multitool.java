@@ -27,8 +27,8 @@ import gregapi.item.multiitem.behaviors.Behavior_Switch_Metadata;
 import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_Pocket_Multitool extends ToolStats {
 	@Override public float getMaxDurabilityMultiplier() {return 4.0F;}

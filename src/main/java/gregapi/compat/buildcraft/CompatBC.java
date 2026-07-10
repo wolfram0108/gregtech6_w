@@ -21,17 +21,17 @@ package gregapi.compat.buildcraft;
 
 import buildcraft.api.core.BuildCraftAPI;
 import buildcraft.core.properties.WorldPropertyIsWood;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import gregapi.code.TagData;
 import gregapi.compat.CompatBase;
 import gregapi.data.OP;
 import gregapi.data.TD;
 import gregapi.util.ST;
 import gregapi.wooddict.WoodDictionary;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockHugeMushroom;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HugeMushroomBlock;
+import net.minecraft.world.level.BlockGetter;
 
 import static gregapi.data.CS.T;
 
@@ -47,7 +47,7 @@ public class CompatBC extends CompatBase implements ICompatBC {
 	}
 	
 	@Override
-	public void onPostLoad(FMLPostInitializationEvent aEvent) {
+	public void onPostLoad(FMLLoadCompleteEvent aEvent) {
 		for (TagData tEnergyType : TD.Energy.ALL) {
 			new TriggerBC_Energy_Capacity_Empty(tEnergyType);
 			new TriggerBC_Energy_Capacity_Partial(tEnergyType);
@@ -57,14 +57,14 @@ public class CompatBC extends CompatBase implements ICompatBC {
 	}
 	
 	@Override
-	public void onServerStarting(FMLServerStartingEvent aEvent) {
+	public void onServerStarting(ServerStartingEvent aEvent) {
 		BuildCraftAPI.registerWorldProperty("wood", new WorldPropertyIsLog());
 	}
 	
 	public static class WorldPropertyIsLog extends WorldPropertyIsWood {
 		@Override
-		public boolean get(IBlockAccess aWorld, Block aBlock, int aMeta, int aX, int aY, int aZ) {
-			return aBlock instanceof BlockHugeMushroom || aBlock.isWood(aWorld, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T);
+		public boolean get(BlockGetter aWorld, Block aBlock, int aMeta, int aX, int aY, int aZ) {
+			return aBlock instanceof HugeMushroomBlock || aBlock.isWood(aWorld, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T);
 		}
 	}
 }

@@ -30,12 +30,12 @@ import gregapi.util.WD;
 import gregapi.worldgen.StoneLayer;
 import gregapi.worldgen.StoneLayerOres;
 import gregapi.worldgen.WorldgenObject;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.init.Blocks;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 
 import java.util.List;
@@ -55,7 +55,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(World aWorld, Chunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, BiomeGenBase[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (GENERATING_SPECIAL) return F;
 		
 		//final boolean tSlime = (aChunk.getRandomWithSeed(987234911L).nextInt(10) == 0);
@@ -70,7 +70,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 		
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 			final int tX = aMinX+i, tZ = aMinZ+j;
-			final BiomeGenBase aBiome = aBiomes[i][j];
+			final Biome aBiome = aBiomes[i][j];
 			
 			for (int k = 0; k < tScan.length; k++) {
 				tScan[k] = (StoneLayer.LAYERS.get(tNoise.get(tX, k-2, tZ, tListSize)));
@@ -199,5 +199,5 @@ public class WorldgenStoneLayers extends WorldgenObject {
 		return T;
 	}
 	
-	@Override public boolean enabled(World aWorld, int aDimType) {return GENERATE_STONE;}
+	@Override public boolean enabled(Level aWorld, int aDimType) {return GENERATE_STONE;}
 }

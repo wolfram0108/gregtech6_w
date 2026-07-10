@@ -19,8 +19,8 @@
 
 package gregtech.blocks.tree;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.tree.BlockBaseLeaves;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.CS.*;
@@ -31,11 +31,11 @@ import gregapi.data.OP;
 import gregapi.old.Textures;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 
@@ -105,7 +105,7 @@ public class BlockTreeLeavesAB extends BlockBaseLeaves implements Runnable {
 	@Override public int getLeavesRangeYPos(byte aMeta) {return 0;} // There is no instance where Leaves are below the Logs for these Trees.
 	
 	@Override
-	public ArrayList<ItemStack> getDrops(World aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		ArrayListNoNulls<ItemStack> rDrops = ST.arraylist();
 		int tChance = 50;
 		if (aFortune > 0) {
@@ -127,14 +127,14 @@ public class BlockTreeLeavesAB extends BlockBaseLeaves implements Runnable {
 	}
 	
 	@Override
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int aMeta) {
 		return (aMeta & 7) == 7 ? RAINBOW_ARRAY[(int)((CLIENT_TIME / 10) % RAINBOW_ARRAY.length)] : UNCOLORED;
 	}
 	
 	@Override
-	@SideOnly(Side.CLIENT)
-	public int colorMultiplier(IBlockAccess aWorld, int aX, int aY, int aZ) {
+	@OnlyIn(Dist.CLIENT)
+	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		return (aWorld.getBlockMetadata(aX, aY, aZ) & 7) == 7 ? RAINBOW_ARRAY[(Math.abs(aX) + Math.abs(aY) + Math.abs(aZ)) % RAINBOW_ARRAY.length] : UNCOLORED;
 	}
 }

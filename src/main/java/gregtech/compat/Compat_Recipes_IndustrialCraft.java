@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.code.ModData;
@@ -35,12 +35,12 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import ic2.api.crops.Crops;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.util.WeightedRandomChestContent;
 import net.minecraftforge.common.ChestGenHooks;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 
@@ -48,7 +48,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 	public Compat_Recipes_IndustrialCraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
 	@SuppressWarnings("deprecation")
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {if (MD.IC2C.mLoaded) OUT.println("GT_Mod: Doing IC2-Classic Things."); else OUT.println("GT_Mod: Doing IC2-Exp Things.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {if (MD.IC2C.mLoaded) OUT.println("GT_Mod: Doing IC2-Classic Things."); else OUT.println("GT_Mod: Doing IC2-Exp Things.");
 		MultiTileEntityRegistry aRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 		
 		String tName = "";

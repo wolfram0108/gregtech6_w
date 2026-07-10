@@ -25,8 +25,8 @@ import gregapi.data.CS.SFX;
 import gregapi.render.BlockTextureMulti;
 import gregapi.render.ITexture;
 import gregapi.util.UT;
-import net.minecraft.entity.Entity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;

@@ -25,9 +25,9 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.ITexture;
 import gregapi.tileentity.connectors.ITileEntityConnector;
 import gregapi.tileentity.logistics.ITileEntityLogistics;
-import net.minecraft.entity.Entity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -55,7 +55,7 @@ public abstract class AbstractCoverAttachmentLogistics extends AbstractCoverAtta
 	}
 	
 	@Override
-	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_screwdriver) && usePriorities()) {
 			aData.value(aCoverSide, (short)((aData.mValues[aCoverSide]&~3)|((aData.mValues[aCoverSide] + 1) & 3)));
 			if (aChatReturn != null) {

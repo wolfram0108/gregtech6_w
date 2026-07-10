@@ -19,11 +19,11 @@
 
 package gregapi.damage;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IChatComponent;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 
 /**
  * @author Gregorius Techneticies
@@ -36,7 +36,7 @@ public class DamageSourceCaffeine extends DamageSource {
 	}
 	
 	@Override
-	public IChatComponent func_151519_b(EntityLivingBase aTarget) {
-		return new ChatComponentText(EnumChatFormatting.RED+aTarget.getCommandSenderName()+EnumChatFormatting.WHITE + " overdosed on caffeine");
+	public Component func_151519_b(LivingEntity aTarget) {
+		return new Component(ChatFormatting.RED+aTarget.getCommandSenderName()+ChatFormatting.WHITE + " overdosed on caffeine");
 	}
 }

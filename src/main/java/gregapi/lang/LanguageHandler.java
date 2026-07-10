@@ -19,7 +19,7 @@
 
 package gregapi.lang;
 
-import cpw.mods.fml.common.registry.LanguageRegistry;
+import net.neoforged.neoforge.common.data.LanguageProvider;
 import gregapi.data.ANY;
 import gregapi.data.MT;
 import gregapi.data.OP;
@@ -30,7 +30,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.StatCollector;
+import net.minecraft.client.resources.language.I18n;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
 
@@ -60,7 +60,7 @@ public class LanguageHandler {
 		BACKUPMAP.put(aKey, aEnglish);
 		TEMPMAP.put(aKey        , aEnglish);
 		TEMPMAP.put(aKey+".name", aEnglish);
-		LanguageRegistry.instance().injectLanguage("en_US", TEMPMAP);
+		LanguageProvider.instance().injectLanguage("en_US", TEMPMAP);
 		TEMPMAP.clear();
 	}
 	
@@ -79,7 +79,7 @@ public class LanguageHandler {
 					ConfigValue tProperty = sLangFile.get("LanguageFile", tEntry.getKey(), tEntry.getValue());
 					TEMPMAP.put(tEntry.getKey()        , sUseFile?tProperty.getString():tEntry.getValue());
 					TEMPMAP.put(tEntry.getKey()+".name", sUseFile?tProperty.getString():tEntry.getValue());
-					LanguageRegistry.instance().injectLanguage("en_US", TEMPMAP);
+					LanguageProvider.instance().injectLanguage("en_US", TEMPMAP);
 					TEMPMAP.clear();
 				}
 				BUFFERMAP.clear();
@@ -88,7 +88,7 @@ public class LanguageHandler {
 			tSave |= tProperty.wasRead();
 			TEMPMAP.put(aKey        , sUseFile?tProperty.getString():aEnglish);
 			TEMPMAP.put(aKey+".name", sUseFile?tProperty.getString():aEnglish);
-			LanguageRegistry.instance().injectLanguage("en_US", TEMPMAP);
+			LanguageProvider.instance().injectLanguage("en_US", TEMPMAP);
 			TEMPMAP.clear();
 		}
 		if (tSave && mWritingEnabled) sLangFile.save();
@@ -115,18 +115,18 @@ public class LanguageHandler {
 		aKey = aKey.trim();
 		if (aKey.length() < 2) return "";
 		String
-		rTranslation = LanguageRegistry.instance().getStringLocalization(aKey);
+		rTranslation = LanguageProvider.instance().getStringLocalization(aKey);
 		if (UT.Code.stringValid(rTranslation) && !aKey.equals(rTranslation)) return rTranslation;
-		rTranslation = StatCollector.translateToLocal(aKey);
+		rTranslation = I18n.translateToLocal(aKey);
 		if (UT.Code.stringValid(rTranslation) && aKey != rTranslation) return rTranslation;
 		rTranslation = BACKUPMAP.get(aKey);
 		if (UT.Code.stringValid(rTranslation)) return rTranslation;
 		
 		aKey = (aKey.endsWith(".name") ? aKey.substring(0, aKey.length() - 5) : aKey + ".name");
 		
-		rTranslation = LanguageRegistry.instance().getStringLocalization(aKey);
+		rTranslation = LanguageProvider.instance().getStringLocalization(aKey);
 		if (UT.Code.stringValid(rTranslation) && !aKey.equals(rTranslation)) return rTranslation;
-		rTranslation = StatCollector.translateToLocal(aKey);
+		rTranslation = I18n.translateToLocal(aKey);
 		if (UT.Code.stringValid(rTranslation) && aKey != rTranslation) return rTranslation;
 		rTranslation = BACKUPMAP.get(aKey);
 		if (UT.Code.stringValid(rTranslation)) return rTranslation;

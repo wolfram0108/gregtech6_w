@@ -19,7 +19,7 @@
 
 package gregapi.compat.forestry;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import forestry.api.farming.Farmables;
 import forestry.api.farming.ICrop;
 import forestry.api.farming.IFarmable;
@@ -33,10 +33,10 @@ import gregapi.code.ItemStackSet;
 import gregapi.compat.CompatBase;
 import gregapi.data.MD;
 import gregapi.util.ST;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import static gregapi.data.CS.*;
 
@@ -44,7 +44,7 @@ public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	public ItemStackSet<ItemStackContainer> mWindfalls = ST.hashset();
 	
 	@Override
-	public void onPostLoad(FMLPostInitializationEvent aEvent) {
+	public void onPostLoad(FMLLoadCompleteEvent aEvent) {
 		Farmables.farmables.get("farmArboreal").add(this);
 	}
 	
@@ -58,12 +58,12 @@ public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	}
 	
 	@Override
-	public boolean isSaplingAt(World aWorld, int aX, int aY, int aZ) {
+	public boolean isSaplingAt(Level aWorld, int aX, int aY, int aZ) {
 		return aWorld.getBlock(aX, aY, aZ) instanceof BlockBaseSapling;
 	}
 	
 	@Override
-	public ICrop getCropAt(World aWorld, int aX, int aY, int aZ) {
+	public ICrop getCropAt(Level aWorld, int aX, int aY, int aZ) {
 		Block aBlock = aWorld.getBlock(aX, aY, aZ);
 		return aBlock.isWood(aWorld, aX, aY, aZ) ? new CropBlock(aWorld, aBlock, aWorld.getBlockMetadata(aX, aY, aZ), new Vect(aX, aY, aZ)) : null;
 	}
@@ -82,7 +82,7 @@ public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	}
 	
 	@Override
-	public boolean plantSaplingAt(EntityPlayer aPlayer, ItemStack aSeed, World aWorld, int aX, int aY, int aZ) {
+	public boolean plantSaplingAt(Player aPlayer, ItemStack aSeed, Level aWorld, int aX, int aY, int aZ) {
 		return aSeed.copy().tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY - 1, aZ, SIDE_UP, 0, 0, 0);
 	}
 }

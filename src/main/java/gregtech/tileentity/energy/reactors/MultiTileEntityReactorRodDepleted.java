@@ -22,7 +22,7 @@ package gregtech.tileentity.energy.reactors;
 import java.util.List;
 
 import gregapi.data.LH;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies

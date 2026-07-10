@@ -26,14 +26,14 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.WD;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.EnumPlantType;
 import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraft.core.Direction;
 
 import java.util.List;
 
@@ -62,7 +62,7 @@ public class BlockFlowersB extends BlockBaseFlower implements Runnable {
 	}
 	
 	@Override
-	public void addInformation(ItemStack aStack, byte aMeta, EntityPlayer aPlayer, List<String> aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		switch(aMeta) {
 		case  0: aList.add("Indicates presence of an Arsenic Deposit nearby" ); aList.add(LH.Chat.DGRAY + "* exists in Real Life"); break;
 		case  1: aList.add("Indicates presence of an Antimony Deposit nearby"); aList.add(LH.Chat.DGRAY + "* exists in Real Life"); break;
@@ -133,12 +133,12 @@ public class BlockFlowersB extends BlockBaseFlower implements Runnable {
 	}
 	
 	@Override
-	public boolean canBlockStay(World aWorld, int aX, int aY, int aZ) {
-		return WD.oxygen(aWorld, aX, aY, aZ) && aWorld.getBlock(aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, ForgeDirection.UP, (IPlantable)Blocks.cactus);
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {
+		return WD.oxygen(aWorld, aX, aY, aZ) && aWorld.getBlock(aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, (IPlantable)Blocks.cactus);
 	}
 	
 	@Override
-	public EnumPlantType getPlantType(IBlockAccess aWorld, int aX, int aY, int aZ) {
+	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {
 		return EnumPlantType.Desert;
 	}
 }

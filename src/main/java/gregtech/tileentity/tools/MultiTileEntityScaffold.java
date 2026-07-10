@@ -38,15 +38,15 @@ import gregapi.tileentity.ITileEntityQuickObstructionCheck;
 import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.Level;
 
 /**
  * @author Gregorius Techneticies
@@ -56,13 +56,13 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	protected boolean mBlockUpdatedLastTime = T;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_DESIGN)) mDesign = aNBT.getByte(NBT_DESIGN);
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		aNBT.setByte(NBT_DESIGN, mDesign);
 	}
@@ -103,7 +103,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 		if (isConnectedVertically()) return T;
 		Block tBlock = getBlock(getCoords());
 		for (byte tSide : SIDES_AXIS_X[mFacing] ? ALL_SIDES_X : ALL_SIDES_Z) for (int i = 1; i < 256; i++) if (tBlock == getBlockAtSideAndDistance(tSide, i)) {
-			TileEntity tTileEntity = getTileEntityAtSideAndDistance(tSide, i);
+			BlockEntity tTileEntity = getTileEntityAtSideAndDistance(tSide, i);
 			if (tTileEntity instanceof MultiTileEntityScaffold) {
 				if (((MultiTileEntityScaffold)tTileEntity).isConnectedVertically()) return T;
 			} else break;
@@ -164,7 +164,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	}
 	
 	@Override
-	public void addCollisionBoxesToList2(AxisAlignedBB aAABB, List<AxisAlignedBB> aList, Entity aEntity) {
+	public void addCollisionBoxesToList2(AABB aAABB, List<AABB> aList, Entity aEntity) {
 		switch(mDesign) {
 		default: box(aAABB, aList); return;
 		case  0: box(aAABB, aList, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return;
@@ -190,8 +190,8 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	@Override public byte getVisualData() {return mDesign;}
 	@Override public void setVisualData(byte aData) {mDesign = aData;}
 	@Override public boolean addDefaultCollisionBoxToList() {return F;}
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box(0, mDesign == 0 ? PX_P[14] : 0, 0, 1, 1, 1);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(0, mDesign == 0 ? PX_P[14] : 0, 0, 1, 1, 1);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box(0, mDesign == 0 ? PX_P[14] : 0, 0, 1, 1, 1);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(0, mDesign == 0 ? PX_P[14] : 0, 0, 1, 1, 1);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock , 0, mDesign == 0 ? PX_P[14] : 0, 0, 1, 1, 1);}
 	@Override public float getSurfaceSize          (byte aSide) {return SIDES_TOP[aSide] || mDesign == 3 ? 1 : 0;}
 	@Override public float getSurfaceSizeAttachable(byte aSide) {return SIDES_TOP[aSide] || mDesign == 3 ? 1 : 0;}
@@ -204,12 +204,12 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	@Override public boolean allowCoverHolders     (byte aSide) {return F;}
 	@Override public boolean attachCoversFirst     (byte aSide) {return F;}
 	@Override public boolean isObstructingBlockAt  (byte aSide) {return mDesign == 3;}
-	@Override public boolean isLadder(EntityLivingBase aEntity) {return mDesign != 3;}
+	@Override public boolean isLadder(LivingEntity aEntity) {return mDesign != 3;}
 	@Override public boolean ignorePlayerCollisionWhenPlacing() {return T;}
 	@Override public boolean useSidePlacementRotation        () {return F;}
-	@Override public boolean ignorePlayerCollisionWhenPlacing(ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer == null || !aPlayer.isSneaking();}
-	@Override public boolean useSidePlacementRotation        (ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer != null &&  aPlayer.isSneaking();}
-	@Override public boolean checkObstruction(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
+	@Override public boolean ignorePlayerCollisionWhenPlacing(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer == null || !aPlayer.isSneaking();}
+	@Override public boolean useSidePlacementRotation        (ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer != null &&  aPlayer.isSneaking();}
+	@Override public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	@Override public byte getDefaultSide() {return SIDE_FRONT;}
 	@Override public boolean[] getValidSides() {return SIDES_HORIZONTAL;}

@@ -20,8 +20,8 @@
 package gregapi.tileentity.tools;
 
 import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.FL;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -45,21 +45,21 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.stats.AchievementList;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.common.util.ForgeDirection;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +74,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	public String mGUITexture = RES_PATH_GUI + "machines/AdvancedCraftingTable.png";
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_MODE+".16.blocked")) mBlocked16 = aNBT.getBoolean(NBT_MODE+".16.blocked");
 		if (aNBT.hasKey(NBT_MODE+".36.blocked")) mBlocked36 = aNBT.getBoolean(NBT_MODE+".36.blocked");
@@ -88,7 +88,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_MODE+".16.blocked", mBlocked16);
 		UT.NBT.setBoolean(aNBT, NBT_MODE+".36.blocked", mBlocked36);
@@ -105,7 +105,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		mUpdatedGrid = T; // Just in case someone like Greg used NEI or something to delete all Slots or so.
 		if (aPlayer != null) {
 			aPlayer.triggerAchievement(AchievementList.openInventory);
@@ -118,7 +118,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		mUpdatedGrid = T; // Just in case someone like Greg used NEI or something to delete all Slots or so.
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_monkeywrench)) {
@@ -157,7 +157,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			}
 			if (mInventoryChanged) {
 				for (byte tSide : ALL_SIDES_VALID) {
-					DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+					DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 					if (tDelegator.mTileEntity instanceof ITileEntityAdjacentInventoryUpdatable) {
 						((ITileEntityAdjacentInventoryUpdatable)tDelegator.mTileEntity).adjacentInventoryUpdated(tDelegator.mSideOfTileEntity, this);
 					}
@@ -191,15 +191,15 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		if (aStack == null) aStack = slot(30);
 		if (!IL.Paper_Blueprint_Empty.equal(aStack, F, T)) return F;
 		UT.NBT.setBlueprintCrafting(aStack,
-		  slotHas(21) ? slot(21).getItem() instanceof IItemGTContainerTool ? ST.make(slot(21), (NBTTagCompound)null) : slot(21) : null
-		, slotHas(22) ? slot(22).getItem() instanceof IItemGTContainerTool ? ST.make(slot(22), (NBTTagCompound)null) : slot(22) : null
-		, slotHas(23) ? slot(23).getItem() instanceof IItemGTContainerTool ? ST.make(slot(23), (NBTTagCompound)null) : slot(23) : null
-		, slotHas(24) ? slot(24).getItem() instanceof IItemGTContainerTool ? ST.make(slot(24), (NBTTagCompound)null) : slot(24) : null
-		, slotHas(25) ? slot(25).getItem() instanceof IItemGTContainerTool ? ST.make(slot(25), (NBTTagCompound)null) : slot(25) : null
-		, slotHas(26) ? slot(26).getItem() instanceof IItemGTContainerTool ? ST.make(slot(26), (NBTTagCompound)null) : slot(26) : null
-		, slotHas(27) ? slot(27).getItem() instanceof IItemGTContainerTool ? ST.make(slot(27), (NBTTagCompound)null) : slot(27) : null
-		, slotHas(28) ? slot(28).getItem() instanceof IItemGTContainerTool ? ST.make(slot(28), (NBTTagCompound)null) : slot(28) : null
-		, slotHas(29) ? slot(29).getItem() instanceof IItemGTContainerTool ? ST.make(slot(29), (NBTTagCompound)null) : slot(29) : null
+		  slotHas(21) ? slot(21).getItem() instanceof IItemGTContainerTool ? ST.make(slot(21), (CompoundTag)null) : slot(21) : null
+		, slotHas(22) ? slot(22).getItem() instanceof IItemGTContainerTool ? ST.make(slot(22), (CompoundTag)null) : slot(22) : null
+		, slotHas(23) ? slot(23).getItem() instanceof IItemGTContainerTool ? ST.make(slot(23), (CompoundTag)null) : slot(23) : null
+		, slotHas(24) ? slot(24).getItem() instanceof IItemGTContainerTool ? ST.make(slot(24), (CompoundTag)null) : slot(24) : null
+		, slotHas(25) ? slot(25).getItem() instanceof IItemGTContainerTool ? ST.make(slot(25), (CompoundTag)null) : slot(25) : null
+		, slotHas(26) ? slot(26).getItem() instanceof IItemGTContainerTool ? ST.make(slot(26), (CompoundTag)null) : slot(26) : null
+		, slotHas(27) ? slot(27).getItem() instanceof IItemGTContainerTool ? ST.make(slot(27), (CompoundTag)null) : slot(27) : null
+		, slotHas(28) ? slot(28).getItem() instanceof IItemGTContainerTool ? ST.make(slot(28), (CompoundTag)null) : slot(28) : null
+		, slotHas(29) ? slot(29).getItem() instanceof IItemGTContainerTool ? ST.make(slot(29), (CompoundTag)null) : slot(29) : null
 		);
 		if (slotHas(31)) aStack.setStackDisplayName(slot(31).getDisplayName());
 		ST.set(aStack, IL.Paper_Blueprint_Used.get(1), F, F);
@@ -304,7 +304,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			if (tAmount >= SLOTS_CRAFTING.length) return tAmount;
 		}
 		for (byte tSide : ALL_SIDES_VALID) {
-			DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 			if (tDelegator.mTileEntity instanceof ITileEntityConnectedInventory) {
 				tAmount += ((ITileEntityConnectedInventory)tDelegator.mTileEntity).getAmountOfItemsInConnectedInventory(tDelegator.mSideOfTileEntity, aStack, SLOTS_CRAFTING.length-tAmount);
 				if (tAmount >= SLOTS_CRAFTING.length) return tAmount;
@@ -331,7 +331,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		return tList;
 	}
 	
-	public ItemStack consumeMaterials(EntityPlayer aPlayer, ItemStack aHoldStack, boolean aSubsequentClick) {
+	public ItemStack consumeMaterials(Player aPlayer, ItemStack aHoldStack, boolean aSubsequentClick) {
 		if (!slotHas(31)) return aHoldStack;
 		
 		if (aHoldStack != null) {
@@ -354,7 +354,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		
 		MultiItemTool.LAST_TOOL_COORDS_BEFORE_DAMAGE = getCoords();
 		
-		try {FMLCommonHandler.instance().firePlayerCraftingEvent(aPlayer, ST.copy(slot(31)), new InventoryCrafting(null, 3, 3));} catch(Throwable e) {e.printStackTrace(ERR);}
+		try {FMLCommonHandler.instance().firePlayerCraftingEvent(aPlayer, ST.copy(slot(31)), new CraftingInput(null, 3, 3));} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		ItemStack[] tRecipeStacks = {ST.amount(1, slot(21)), ST.amount(1, slot(22)), ST.amount(1, slot(23)), ST.amount(1, slot(24)), ST.amount(1, slot(25)), ST.amount(1, slot(26)), ST.amount(1, slot(27)), ST.amount(1, slot(28)), ST.amount(1, slot(29))};
 		
@@ -367,7 +367,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			if (ST.equal(tRecipeStacks[j], tContainer, F)) continue;
 			
 			if (isServerSide()) for (byte tSide : ALL_SIDES_VALID) {
-				DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+				DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 				if (tDelegator.mTileEntity instanceof ITileEntityConnectedInventory) {
 					if (((ITileEntityConnectedInventory)tDelegator.mTileEntity).removeStackFromConnectedInventory(tDelegator.mSideOfTileEntity, ST.amount(1, tRecipeStacks[j]), T) >= 1) {
 						tNeeds = F;
@@ -441,7 +441,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			FluidStack tFluidContained = FL.getFluid(slot(aSlot), T);
 			if (tFluidContained != null && ST.equal(slot(aSlot), FL.fill(tFluidContained, tContainer, F, T, F, T), F)) {
 				for (byte tSide : ALL_SIDES_VALID) {
-					DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+					DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 					if (tDelegator.mTileEntity instanceof ITileEntityConnectedTank && ((ITileEntityConnectedTank)tDelegator.mTileEntity).removeFluidFromConnectedTank(tDelegator.mSideOfTileEntity, tFluidContained, T) >= tFluidContained.amount) {
 						// Yay, we wont need to change anything inside the Slot!
 						return T;
@@ -450,7 +450,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			}
 			// Try to put empty Containers into adjacent connectable Inventories.
 			for (byte tSide : ALL_SIDES_VALID) {
-				DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+				DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 				if (tDelegator.mTileEntity instanceof ITileEntityConnectedInventory) {
 					tContainer.stackSize -= ((ITileEntityConnectedInventory)tDelegator.mTileEntity).addStackToConnectedInventory(tDelegator.mSideOfTileEntity, ST.copy(tContainer), T);
 					if (tContainer.stackSize < 1) {
@@ -509,7 +509,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return mBlocked16 ? mBlocked36 ? mFlushMode?SLOTS_FLUSHING:SLOTS : mFlushMode?SLOTS_36_FLUSHING:SLOTS_36 : mBlocked36 ? mFlushMode?SLOTS_16_FLUSHING:SLOTS_16 : mFlushMode?SLOTS_ALL_FLUSHING:SLOTS_ALL;}
 	@Override public boolean canDrop(int aInventorySlot) {return aInventorySlot < 31 || aInventorySlot > 32;}
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[71];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[71];}
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return aSlot == 30 ? 1 : 64;}
 	@Override public boolean allowCovers(byte aSide) {return SIDES_BOTTOM_HORIZONTAL[aSide] && !ALONG_AXIS[aSide][mFacing];}
 	@Override public boolean isItemValidForSlotGUI(int aSlot, ItemStack aStack) {return aSlot != 30 || ST.invalid(aStack) || IL.Paper_Blueprint_Empty.equal(aStack, F, T) || IL.Paper_Blueprint_Used.equal(aStack, F, T) || (IL.Circuit_Selector.equal(aStack, T, T) && UT.Code.inside(2, 9, ST.meta(aStack)));}
@@ -533,12 +533,12 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	}
 	
 	@Override
-	public boolean canFill(ForgeDirection aDirection, Fluid aFluid) {
+	public boolean canFill(Direction aDirection, Fluid aFluid) {
 		return aFluid != null && fill(aDirection, FL.make(aFluid, Integer.MAX_VALUE), F) > 0;
 	}
 	
 	@Override
-	public int fill(ForgeDirection aDirection, FluidStack aFluid, boolean aDoFill) {
+	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.amount <= 0) return 0;
 		
 		for (int i : SLOTS_TOOLS) {
@@ -576,19 +576,19 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		return fill(FORGE_DIR[aSide], aFluid, aDoFill);
 	}
 	
-	@Override public FluidStack drain(ForgeDirection aDirection, FluidStack aFluid, boolean aDoDrain) {return NF;}
-	@Override public FluidStack drain(ForgeDirection aDirection, int aAmountToDrain, boolean aDoDrain) {return NF;}
-	@Override public boolean canDrain(ForgeDirection aDirection, Fluid aFluid) {return F;}
-	@Override public FluidTankInfo[] getTankInfo(ForgeDirection aDirection) {return L1_FLUIDTANKINFO_DUMMY;}
+	@Override public FluidStack drain(Direction aDirection, FluidStack aFluid, boolean aDoDrain) {return NF;}
+	@Override public FluidStack drain(Direction aDirection, int aAmountToDrain, boolean aDoDrain) {return NF;}
+	@Override public boolean canDrain(Direction aDirection, Fluid aFluid) {return F;}
+	@Override public FluidTankInfo[] getTankInfo(Direction aDirection) {return L1_FLUIDTANKINFO_DUMMY;}
 	
-	@SideOnly(Side.CLIENT)
-	@Override public Object getGUIClient2(int aGUIID, EntityPlayer aPlayer) {return aGUIID == 1 ? new ContainerClientDefault(   new ContainerCommonDefault(aPlayer.inventory, this, aGUIID, 35, 36)) : new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.inventory, this, aGUIID);}
-	@Override public Object getGUIServer2(int aGUIID, EntityPlayer aPlayer) {return aGUIID == 1 ?                               new ContainerCommonDefault(aPlayer.inventory, this, aGUIID, 35, 36)  : new MultiTileEntityGUICommonAdvancedCraftingTable(aPlayer.inventory, this, aGUIID);}
+	@OnlyIn(Dist.CLIENT)
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new ContainerClientDefault(   new ContainerCommonDefault(aPlayer.inventory, this, aGUIID, 35, 36)) : new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ?                               new ContainerCommonDefault(aPlayer.inventory, this, aGUIID, 35, 36)  : new MultiTileEntityGUICommonAdvancedCraftingTable(aPlayer.inventory, this, aGUIID);}
 	
 	@Override public boolean needsToSyncEverything() {if (mSyncGUI) {mSyncGUI = F; return T;} return F;}
 	
 	@Override
-	public boolean interceptClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, EntityPlayer aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {
+	public boolean interceptClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, Player aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {
 		if (aGUIID != 0) return F;
 		slotNull(aInvSlot);
 		if (aInvSlot == 30 && !aRightclick && aShiftclick && setBluePrint(null)) return T;
@@ -596,7 +596,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	}
 	
 	@Override
-	public ItemStack slotClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, EntityPlayer aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {
+	public ItemStack slotClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, Player aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {
 		if (aInvSlot == 31) {
 			ItemStack tCraftedStack = getCraftingOutput(T), tStack;
 			if (tCraftedStack != null) {
@@ -682,12 +682,12 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	@Override public String getTileEntityName() {return "gt.multitileentity.crafting.advanced";}
 	
 	public class MultiTileEntityGUICommonAdvancedCraftingTable extends ContainerCommon {
-		public MultiTileEntityGUICommonAdvancedCraftingTable(InventoryPlayer aInventoryPlayer, MultiTileEntityAdvancedCraftingTable aTileEntity, int aGUIID) {
+		public MultiTileEntityGUICommonAdvancedCraftingTable(Inventory aInventoryPlayer, MultiTileEntityAdvancedCraftingTable aTileEntity, int aGUIID) {
 			super(aInventoryPlayer, aTileEntity, aGUIID);
 		}
 		
 		@Override
-		public int addSlots(InventoryPlayer aInventoryPlayer) {
+		public int addSlots(Inventory aInventoryPlayer) {
 			addSlotToContainer(new Slot_Normal(mTileEntity, 30, 135, 28).setTooltip(LH.ADVCRAFTING_INSERT_BLUEPRINT, LH.Chat.WHITE));
 			
 			addSlotToContainer(new Slot_Normal(mTileEntity,  0,   7,  8));
@@ -744,9 +744,9 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		}
 	}
 	
-	@SideOnly(Side.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public class MultiTileEntityGUIClientAdvancedCraftingTable extends ContainerClient {
-		public MultiTileEntityGUIClientAdvancedCraftingTable(InventoryPlayer aInventoryPlayer, MultiTileEntityAdvancedCraftingTable aTileEntity, int aGUIID) {
+		public MultiTileEntityGUIClientAdvancedCraftingTable(Inventory aInventoryPlayer, MultiTileEntityAdvancedCraftingTable aTileEntity, int aGUIID) {
 			super(new MultiTileEntityGUICommonAdvancedCraftingTable(aInventoryPlayer, aTileEntity, aGUIID), aTileEntity.mGUITexture);
 		}
 	}

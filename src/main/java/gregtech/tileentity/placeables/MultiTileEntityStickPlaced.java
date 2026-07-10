@@ -20,7 +20,7 @@
 package gregtech.tileentity.placeables;
 
 import gregapi.data.IL;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies

@@ -29,11 +29,11 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.energy.ITileEntityEnergyFluxHandler;
 import gregapi.tileentity.energy.TileEntityBase11Motor;
 import gregapi.tileentity.machines.ITileEntitySwitchableMode;
-import net.minecraft.block.Block;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.LivingEntity;
 
 public class MultiTileEntityMotorFlux extends TileEntityBase11Motor implements ITileEntityEnergyFluxHandler, ITileEntitySwitchableMode {
-	@Override public void onWalkOver2(EntityLivingBase aEntity) {if (SIDES_TOP[mFacing] && mActivity.mState>0) {aEntity.rotationYaw=aEntity.rotationYaw+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1); aEntity.rotationYawHead=aEntity.rotationYawHead+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1);}}
+	@Override public void onWalkOver2(LivingEntity aEntity) {if (SIDES_TOP[mFacing] && mActivity.mState>0) {aEntity.rotationYaw=aEntity.rotationYaw+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1); aEntity.rotationYawHead=aEntity.rotationYawHead+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1);}}
 	
 	@Override
 	public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {

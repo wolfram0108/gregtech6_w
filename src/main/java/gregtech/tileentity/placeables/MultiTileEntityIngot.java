@@ -28,10 +28,10 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.IIconContainer;
 import gregapi.tileentity.misc.MultiTileEntityPlaceable;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 
 /**
  * @author Gregorius Techneticies
@@ -127,10 +127,10 @@ public class MultiTileEntityIngot extends MultiTileEntityPlaceable {
 	}
 	
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock, 0, 0, 0, 1, UT.Code.divup(mSize, 8) / 8.0F, 1);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(0, 0, 0, 1, UT.Code.divup(mSize, 8) / 8.0F, 1);}
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return mSize < 8 ? null : box(0, 0, 0, 1, (mSize / 8) / 8.0F, 1);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(0, 0, 0, 1, UT.Code.divup(mSize, 8) / 8.0F, 1);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return mSize < 8 ? null : box(0, 0, 0, 1, (mSize / 8) / 8.0F, 1);}
 	
-	@Override public ItemStack getPickBlock(MovingObjectPosition aTarget) {return OP.ingot.mat(mMaterial, 1);}
+	@Override public ItemStack getPickBlock(HitResult aTarget) {return OP.ingot.mat(mMaterial, 1);}
 	@Override public ItemStack getStackFromBlock(byte aSide) {return OP.ingot.mat(mMaterial, 1);}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.ingot";}

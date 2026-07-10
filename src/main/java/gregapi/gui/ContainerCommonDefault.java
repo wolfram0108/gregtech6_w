@@ -22,18 +22,18 @@ package gregapi.gui;
 import static gregapi.data.CS.*;
 
 import gregapi.tileentity.ITileEntityInventoryGUI;
-import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.world.entity.player.Inventory;
 
 /**
  * @author Gregorius Techneticies
  */
 @invtweaks.api.container.ChestContainer
 public class ContainerCommonDefault extends ContainerCommon {
-	public ContainerCommonDefault(InventoryPlayer aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID, int aOffset, int aSlotCount) {
+	public ContainerCommonDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID, int aOffset, int aSlotCount) {
 		super(aInventoryPlayer, aTileEntity, aGUIID, aOffset, aSlotCount);
 	}
 	
-	public ContainerCommonDefault(InventoryPlayer aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
+	public ContainerCommonDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
 		super(aInventoryPlayer, aTileEntity, aGUIID);
 	}
 	

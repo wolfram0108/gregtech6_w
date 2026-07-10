@@ -21,9 +21,9 @@ package gregapi.block.behaviors;
 
 import gregapi.block.prefixblock.PrefixBlock;
 import gregapi.util.ST;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 
@@ -36,7 +36,7 @@ public class Drops_None extends Drops {
 	}
 	
 	@Override
-	public ArrayList<ItemStack> getDrops(PrefixBlock aBlock, World aWorld, int aX, int aY, int aZ, short aMetaData, TileEntity aTileEntity, int aFortune, boolean aSilkTouch) {
+	public ArrayList<ItemStack> getDrops(PrefixBlock aBlock, Level aWorld, int aX, int aY, int aZ, short aMetaData, BlockEntity aTileEntity, int aFortune, boolean aSilkTouch) {
 		return ST.arraylist();
 	}
 }

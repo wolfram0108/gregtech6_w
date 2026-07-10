@@ -43,22 +43,22 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.stats.Achievement;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.Level;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -90,7 +90,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	protected OreDictMaterialStack mContent = null;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey("gt.mold")) mShape = aNBT.getInteger("gt.mold");
 		if (aNBT.hasKey(NBT_MODE)) mUseRedstone = aNBT.getBoolean(NBT_MODE);
@@ -101,7 +101,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		aNBT.setByte(NBT_CONNECTION, mAutoPullDirections);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mUseRedstone);
@@ -111,7 +111,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	}
 	
 	@Override
-	public NBTTagCompound writeItemNBT2(NBTTagCompound aNBT) {
+	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		aNBT.setInteger("gt.mold", mShape);
 		aNBT.setByte(NBT_CONNECTION, mAutoPullDirections);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mUseRedstone);
@@ -169,7 +169,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (mContent == null) {
 			if (mAutoPullDirections != 0 && (mInventoryChanged || SERVER_TIME % 20 == 5 || (mBlockUpdated && mUseRedstone)) && (!mUseRedstone || hasRedstoneIncoming())) {
 				for (byte tSide : ALL_SIDES_VALID) if (FACE_CONNECTED[tSide][mAutoPullDirections]) {
-					DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+					DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 					if (tDelegator.mTileEntity instanceof ITileEntityCrucible && ((ITileEntityCrucible)tDelegator.mTileEntity).fillMoldAtSide(this, tDelegator.mSideOfTileEntity, tSide)) break;
 				}
 			}
@@ -264,14 +264,14 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (SIDES_TOP_HORIZONTAL[aSide]) {
 			if (isServerSide() && !pickUpItem(aPlayer, T) && SIDES_TOP[aSide]) {
 				byte tSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ);
 				if (SIDES_VERTICAL[tSide]) {
 					for (byte tSide2 : ALL_SIDES_HORIZONTAL) {
 						if (isMoldInputSide(tSide2)) {
-							DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide2);
+							DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide2);
 							if (tDelegator.mTileEntity instanceof ITileEntityCrucible) {
 								((ITileEntityCrucible)tDelegator.mTileEntity).fillMoldAtSide(this, tDelegator.mSideOfTileEntity, tSide2);
 								return T;
@@ -280,7 +280,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 					}
 				} else {
 					if (isMoldInputSide(tSide)) {
-						DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+						DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityCrucible) {
 							((ITileEntityCrucible)tDelegator.mTileEntity).fillMoldAtSide(this, tDelegator.mSideOfTileEntity, tSide);
 							return T;
@@ -293,11 +293,11 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		return F;
 	}
 	
-	public boolean pickUpItem(EntityPlayer aPlayer, boolean aCauseDamage) {
+	public boolean pickUpItem(Player aPlayer, boolean aCauseDamage) {
 		ItemStack tOutputStack = slot(0);
 		if (tOutputStack != null) {
 			OreDictItemData tData = OM.anyassociation(tOutputStack);
-			if (tData != null) for (Achievement tAchievement : tData.mMaterial.mMaterial.mAchievementsForCreation) ST.achieve(aPlayer, tAchievement);
+			if (tData != null) for (Advancement tAchievement : tData.mMaterial.mMaterial.mAchievementsForCreation) ST.achieve(aPlayer, tAchievement);
 			ItemStack aStack = aPlayer.getCurrentEquippedItem();
 			if (aStack == null) {
 				aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, tOutputStack);
@@ -322,7 +322,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_thermometer)) {if (aChatReturn != null) aChatReturn.add("Temperature: " + mTemperature + "K"); return 10000;}
 		if (aTool.equals(TOOL_chisel) && mContent == null && slot(0) == null && aHitX > PX_P[2] && aHitX < PX_N[2] && aHitZ > PX_P[2] && aHitZ < PX_N[2]) {
@@ -368,7 +368,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 			return 1;
 		}
 		if (aTool.equals(TOOL_pincers)) {
-			if (aPlayer instanceof EntityPlayer && pickUpItem((EntityPlayer)aPlayer, F)) {
+			if (aPlayer instanceof Player && pickUpItem((Player)aPlayer, F)) {
 				return 1000;
 			}
 		}
@@ -407,7 +407,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	}
 	
 	@Override
-	public boolean onPlaced(ItemStack aStack, EntityPlayer aPlayer, MultiTileEntityContainer aMTEContainer, World aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		mTemperature = WD.envTemp(worldObj, xCoord, yCoord, zCoord);
 		return T;
 	}
@@ -552,12 +552,12 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	}
 	
 	@Override
-	public boolean checkObstruction(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		return (SIDES_BOTTOM_HORIZONTAL[aSide] || getClass() != MultiTileEntityMold.class) && super.checkObstruction(aPlayer, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box(PX_P[ 2], PX_P[ 0], PX_P[ 2], PX_N[ 2], PX_N[14], PX_N[ 2]);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[13], PX_N[ 0]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[ 2], PX_P[ 0], PX_P[ 2], PX_N[ 2], PX_N[14], PX_N[ 2]);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[13], PX_N[ 0]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock)  {box(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[13], PX_N[ 0]);}
 	
 	@Override public float getSurfaceSize           (byte aSide) {return SIDES_VERTICAL[aSide]?1.0F:0.0F;}
@@ -579,7 +579,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	@Override public Collection<TagData> getEnergyTypes(byte aSide) {return TD.Energy.CU.AS_LIST;}
 	
 	// Inventory Stuff
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[1];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[1];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	
 	private static final int[] ACCESSIBLE_SLOTS = UT.Code.getAscendingArray(1);
@@ -589,12 +589,12 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return mTemperature - 50 < WD.envTemp(worldObj, xCoord, yCoord, zCoord);}
 	
 	@Override
-	public boolean canFill(ForgeDirection aDirection, Fluid aFluid) {
+	public boolean canFill(Direction aDirection, Fluid aFluid) {
 		return aFluid != null && fill(aDirection, FL.make(aFluid, Integer.MAX_VALUE), F) > 0;
 	}
 	
 	@Override
-	public int fill(ForgeDirection aDirection, FluidStack aFluid, boolean aDoFill) {
+	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.amount <= 0 || FL.gas(aFluid) || mContent != null || slotHas(0)) return 0;
 		OreDictMaterialStack aFluidRatio = OreDictMaterial.FLUID_MAP.get(aFluid.getFluid().getName()), aMaterial = null;
 		if (aFluidRatio == null || aFluidRatio.mAmount <= 0) return 0;
@@ -618,10 +618,10 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		return 0;
 	}
 	
-	@Override public FluidStack drain(ForgeDirection aDirection, FluidStack aFluid, boolean aDoDrain) {return NF;}
-	@Override public FluidStack drain(ForgeDirection aDirection, int aAmountToDrain, boolean aDoDrain) {return NF;}
-	@Override public boolean canDrain(ForgeDirection aDirection, Fluid aFluid) {return F;}
-	@Override public FluidTankInfo[] getTankInfo(ForgeDirection aDirection) {return L1_FLUIDTANKINFO_DUMMY;}
+	@Override public FluidStack drain(Direction aDirection, FluidStack aFluid, boolean aDoDrain) {return NF;}
+	@Override public FluidStack drain(Direction aDirection, int aAmountToDrain, boolean aDoDrain) {return NF;}
+	@Override public boolean canDrain(Direction aDirection, Fluid aFluid) {return F;}
+	@Override public FluidTankInfo[] getTankInfo(Direction aDirection) {return L1_FLUIDTANKINFO_DUMMY;}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.mold";}
 	

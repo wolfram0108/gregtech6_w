@@ -20,10 +20,10 @@
 package gregtech;
 
 import cpw.mods.fml.client.registry.RenderingRegistry;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent.Phase;
-import cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
 import gregapi.config.ConfigCategories;
@@ -35,11 +35,11 @@ import gregtech.render.GT_Renderer_Entity_Arrow;
 import gregtech.render.PlayerModelRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.entity.player.EntityPlayer;
+import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.event.ClickEvent;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.client.event.RenderBlockOverlayEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import org.lwjgl.opengl.GL11;
@@ -54,7 +54,7 @@ public class GT_Client extends GT_Proxy {
 	public GT_Client() {super();}
 	
 	@Override
-	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLPreInitializationEvent aEvent) {
+	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		super.onProxyAfterPreInit(aMod, aEvent);
 		new GT_Renderer_Entity_Arrow(EntityArrow_Material.class, "arrow");
 		new GT_Renderer_Entity_Arrow(EntityArrow_Potion.class, "arrow_potions");
@@ -64,24 +64,24 @@ public class GT_Client extends GT_Proxy {
 	
 	@SubscribeEvent
 	public void onPlayerTickEventClient(PlayerTickEvent aEvent) {
-		if (!aEvent.player.isDead && aEvent.phase == Phase.END && aEvent.side.isClient() && CLIENT_TIME > 20) {
+		if (!aEvent.player.isDead && aEvent.phase == ServerTickEvent.END && aEvent.side.isClient() && CLIENT_TIME > 20) {
 			if (aEvent.player == GT_API.api_proxy.getThePlayer()) {
 				if (FIRST_CLIENT_PLAYER_TICK) {
 					FIRST_CLIENT_PLAYER_TICK = F;
-					ChatComponentText tLink;
+					Component tLink;
 					if (!mMessage.isEmpty() && ConfigsGT.CLIENT.get(ConfigCategories.news, mMessage, T)) {
-						aEvent.player.addChatComponentMessage(new ChatComponentText(mMessage));
-						aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.DGRAY + ""));
-						tLink = new ChatComponentText(LH.Chat.DGRAY + "disable message in the clientside gregtech.cfg");
+						aEvent.player.addChatComponentMessage(new Component(mMessage));
+						aEvent.player.addChatComponentMessage(new Component(LH.Chat.DGRAY + ""));
+						tLink = new Component(LH.Chat.DGRAY + "disable message in the clientside gregtech.cfg");
 						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath()));
 						aEvent.player.addChatComponentMessage(tLink);
 					}
 					if (mVersionOutdated) {
-						aEvent.player.addChatComponentMessage(new ChatComponentText("Major GT6 Update released, for details visit"));
-						tLink = new ChatComponentText(LH.Chat.BLUE + "https://gregtech.mechaenetia.com/1.7.10");
+						aEvent.player.addChatComponentMessage(new Component("Major GT6 Update released, for details visit"));
+						tLink = new Component(LH.Chat.BLUE + "https://gregtech.mechaenetia.com/1.7.10");
 						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gregtech.mechaenetia.com/1.7.10"));
 						aEvent.player.addChatComponentMessage(tLink);
-						tLink = new ChatComponentText(LH.Chat.DGRAY + "disable checker in the clientside gregtech.cfg");
+						tLink = new Component(LH.Chat.DGRAY + "disable checker in the clientside gregtech.cfg");
 						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath()));
 						aEvent.player.addChatComponentMessage(tLink);
 					}
@@ -89,9 +89,9 @@ public class GT_Client extends GT_Proxy {
 						try {
 							int tVersion = Integer.parseInt(((String)Class.forName("ic2.core.IC2").getField("VERSION").get(null)).substring(4, 7));
 							if (tVersion < 827) {
-								aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.RED + "Please update IndustrialCraft!"));
+								aEvent.player.addChatComponentMessage(new Component(LH.Chat.RED + "Please update IndustrialCraft!"));
 								// IC2 Site doesn't support https.
-								tLink = new ChatComponentText(LH.Chat.BLUE + "http://ic2api.player.to:8080/job/IC2_experimental/827/");
+								tLink = new Component(LH.Chat.BLUE + "http://ic2api.player.to:8080/job/IC2_experimental/827/");
 								tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://ic2api.player.to:8080/job/IC2_experimental/827/"));
 								aEvent.player.addChatComponentMessage(tLink);
 							}
@@ -100,39 +100,39 @@ public class GT_Client extends GT_Proxy {
 					if (MD.TC.mLoaded) {
 						try {
 							if (Class.forName("com.chocohead.patcher.ThaumicFixer") != null) {
-								aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.RED + "Warning! Chocoheads ThaumicFixer needs to be uninstalled!"));
-								aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.ORANGE + "Not uninstalling it can lead to crashes when viewing Aspects."));
-								aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.ORANGE + "Lag is already fixed with a better Version of the ASM Code,"));
-								aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.ORANGE + "that doesn't obliterate the Thaumcraft API for no reason."));
+								aEvent.player.addChatComponentMessage(new Component(LH.Chat.RED + "Warning! Chocoheads ThaumicFixer needs to be uninstalled!"));
+								aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "Not uninstalling it can lead to crashes when viewing Aspects."));
+								aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "Lag is already fixed with a better Version of the ASM Code,"));
+								aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "that doesn't obliterate the Thaumcraft API for no reason."));
 							}
 						} catch(Throwable e) {/**/}
 					}
 					if (MD.COG.mLoaded && !MD.PFAA.mLoaded && ConfigsGT.CLIENT.get(ConfigCategories.general, "warnings_customoregen", T)) {
-						aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.RED + "Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!"));
-						aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.ORANGE + "If you don't even use CustomOreGen, I would highly recommend you to remove it."));
-						tLink = new ChatComponentText(LH.Chat.DGRAY + "disable warning in the clientside gregtech.cfg");
+						aEvent.player.addChatComponentMessage(new Component(LH.Chat.RED + "Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!"));
+						aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "If you don't even use CustomOreGen, I would highly recommend you to remove it."));
+						tLink = new Component(LH.Chat.DGRAY + "disable warning in the clientside gregtech.cfg");
 						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath()));
 						aEvent.player.addChatComponentMessage(tLink);
 					}
 					if (WOODMANS_BDAY) {
-						aEvent.player.addChatComponentMessage(new ChatComponentText(LH.Chat.WHITE+"<"+LH.Chat.GREEN+">:]"+LH.Chat.WHITE+"> Have a nice day!"));
+						aEvent.player.addChatComponentMessage(new Component(LH.Chat.WHITE+"<"+LH.Chat.GREEN+">:]"+LH.Chat.WHITE+"> Have a nice day!"));
 					}
 					if (APRIL_FOOLS) {
-						aEvent.player.addChatComponentMessage(new ChatComponentText(CHAT_GREG + "Watch your Calendar!"));
+						aEvent.player.addChatComponentMessage(new Component(CHAT_GREG + "Watch your Calendar!"));
 					}
 				}
 			}
 		}
 	}
 	
-	private ResourceLocation WATER_OVERLAY = new ResourceLocation("textures/misc/underwater.png");
+	private Identifier WATER_OVERLAY = new Identifier("textures/misc/underwater.png");
 	
 	@SubscribeEvent
 	public void receiveRenderEvent(RenderBlockOverlayEvent aEvent) {
 		if (aEvent.blockForOverlay == BlocksGT.Swamp) {
-			EntityPlayer aPlayer = GT_API.api_proxy.getThePlayer();
+			Player aPlayer = GT_API.api_proxy.getThePlayer();
 			Minecraft.getMinecraft().getTextureManager().bindTexture(WATER_OVERLAY);
-			Tessellator tessellator = Tessellator.instance;
+			Tesselator tessellator = Tesselator.instance;
 			GL11.glColor4f(0, aPlayer.getBrightness(aEvent.renderPartialTicks)/2, 0, 0.75F);
 			GL11.glEnable(GL11.GL_BLEND);
 			OpenGlHelper.glBlendFunc(770, 771, 1, 0);

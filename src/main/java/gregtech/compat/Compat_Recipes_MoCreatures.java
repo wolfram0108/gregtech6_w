@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -27,14 +27,14 @@ import gregapi.data.IL;
 import gregapi.data.MD;
 import gregapi.data.RM;
 import gregapi.util.ST;
-import net.minecraft.init.Items;
+import net.minecraft.world.item.Items;
 
 import static gregapi.data.CS.*;
 
 public class Compat_Recipes_MoCreatures extends CompatMods {
 	public Compat_Recipes_MoCreatures(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {
 		OUT.println("GT_Mod: Doing Mo'Creatures Recipes.");
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "fur", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.leather, 1, 0));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "furhelmet", 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "fur", 1));

@@ -27,7 +27,7 @@ import gregapi.render.BlockTextureMulti;
 import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.tank.TileEntityBase08Barrel;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 import static gregapi.data.CS.FACES_TBS;
 import static gregapi.data.CS.T;

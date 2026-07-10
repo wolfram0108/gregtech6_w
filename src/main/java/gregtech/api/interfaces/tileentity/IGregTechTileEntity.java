@@ -22,12 +22,12 @@ package gregtech.api.interfaces.tileentity;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.Level;
 
 @Deprecated
 /** Required to exist in GT6 because Immersive Engineering does not work otherwise. This File is likely not in the actual Builds of GT6! */
@@ -45,13 +45,13 @@ public interface IGregTechTileEntity {
 	@Deprecated public void setToFire();
 	@Deprecated public String setOwnerName(String aName);
 	@Deprecated public String getOwnerName();
-	@Deprecated public void setInitialValuesAsNBT(NBTTagCompound aNBT, short aID);
-	@Deprecated public void onLeftclick(EntityPlayer aPlayer);
-	@Deprecated public boolean onRightclick(EntityPlayer aPlayer, byte aSide, float par1, float par2, float par3);
+	@Deprecated public void setInitialValuesAsNBT(CompoundTag aNBT, short aID);
+	@Deprecated public void onLeftclick(Player aPlayer);
+	@Deprecated public boolean onRightclick(Player aPlayer, byte aSide, float par1, float par2, float par3);
 	@Deprecated public float getBlastResistance(byte aSide);
 	@Deprecated public ArrayList<ItemStack> getDrops();
 	@Deprecated public int getLightOpacity();
-	@Deprecated public void addCollisionBoxesToList(World aWorld, int aX, int aY, int aZ, AxisAlignedBB inputAABB, List<AxisAlignedBB> outputAABB, Entity collider);
-	@Deprecated public AxisAlignedBB getCollisionBoundingBoxFromPool(World aWorld, int aX, int aY, int aZ);
-	@Deprecated public void onEntityCollidedWithBlock(World aWorld, int aX, int aY, int aZ, Entity collider);
+	@Deprecated public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB inputAABB, List<AABB> outputAABB, Entity collider);
+	@Deprecated public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ);
+	@Deprecated public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity collider);
 }

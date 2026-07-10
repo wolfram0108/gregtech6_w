@@ -19,7 +19,7 @@
 
 package gregapi.util;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
@@ -3277,11 +3277,11 @@ public class UT {
 		@Deprecated public static Block block(String aModID, String aBlock) {return block(make(aModID, aBlock, 1, null));}
 		@Deprecated public static Block block(String aModID, String aBlock, Block aReplacement) {Block rBlock = block(aModID, aBlock); return rBlock == NB ? aReplacement : rBlock;}
 		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount) {return make(aModID, aItem, aAmount, null);}
-		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, ItemStack aReplacement) {if (!aModID.mLoaded || Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, GameRegistry.findItemStack(aModID.mID, aItem, (int)aAmount), GameRegistry.findItemStack(aModID.mID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, GameRegistry.findItemStack(aModID.mID, aItem, (int)aAmount), aReplacement);}
+		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, ItemStack aReplacement) {if (!aModID.mLoaded || Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, DeferredRegister.findItemStack(aModID.mID, aItem, (int)aAmount), DeferredRegister.findItemStack(aModID.mID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, DeferredRegister.findItemStack(aModID.mID, aItem, (int)aAmount), aReplacement);}
 		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, int aMeta) {ItemStack rStack = make(aModID, aItem, aAmount); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, int aMeta, ItemStack aReplacement) {ItemStack rStack = make(aModID, aItem, aAmount, aReplacement); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount) {return make(aModID, aItem, aAmount, null);}
-		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, ItemStack aReplacement) {if (Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, GameRegistry.findItemStack(aModID, aItem, (int)aAmount), GameRegistry.findItemStack(aModID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, GameRegistry.findItemStack(aModID, aItem, (int)aAmount), aReplacement);}
+		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, ItemStack aReplacement) {if (Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, DeferredRegister.findItemStack(aModID, aItem, (int)aAmount), DeferredRegister.findItemStack(aModID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, DeferredRegister.findItemStack(aModID, aItem, (int)aAmount), aReplacement);}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta) {ItemStack rStack = make(aModID, aItem, aAmount); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta, ItemStack aReplacement) {ItemStack rStack = make(aModID, aItem, aAmount, aReplacement); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData) {return aItemID==0?null:make(Item.getItemById((int)aItemID), aStacksize, aMetaData);}

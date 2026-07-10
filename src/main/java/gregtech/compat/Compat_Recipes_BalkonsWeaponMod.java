@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -32,7 +32,7 @@ import static gregapi.data.CS.OUT;
 public class Compat_Recipes_BalkonsWeaponMod extends CompatMods {
 	public Compat_Recipes_BalkonsWeaponMod(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Balkon's Weapon Mod Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Balkon's Weapon Mod Recipes.");
 		CR.shaped(ST.make(MD.BWM, "crossbow"            , 1, 0), CR.DEF_REM_REV_NCC , "OSP", "SWI", "PIW", 'P', OP.plate.dat(ANY.Steel), 'O', OP.ring.dat(ANY.Steel), 'I', "itemString", 'S', OP.stick.dat(ANY.Wood), 'W', OD.plankAnyWood);
 		CR.shaped(ST.make(MD.BWM, "gun-stock"           , 1, 0), CR.DEF_REM_REV_NCC , "SSW", " rf", 'S', OP.stick.dat(ANY.Wood), 'W', OD.plankAnyWood);
 		CR.shaped(ST.make(MD.BWM, "musket-ironpart"     , 1, 0), CR.DEF_REM_REV_NCC , "PPF", " hG", 'G', OP.gearGtSmall .dat(ANY.Steel), 'F', "itemFlint", 'P', OP.pipeSmall.dat(ANY.Steel));

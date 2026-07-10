@@ -29,11 +29,11 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregtech.tileentity.tools.MultiTileEntityMold;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.ListTag;
 import net.minecraftforge.common.ChestGenHooks;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 
@@ -60,8 +60,8 @@ public class DungeonChunkRoomWorkshop extends DungeonChunkRoomEmpty {
 		aData.set             ( 1, 1,  2, SIDE_UNKNOWN,    11, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T, NBT_FACING, SIDE_X_POS, "gt.dungeonloot", ChestGenHooks.DUNGEON_CHEST           ), T, T);
 		
 		
-		NBTTagList
-		tInventory = new NBTTagList();
+		ListTag
+		tInventory = new ListTag();
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
@@ -99,7 +99,7 @@ public class DungeonChunkRoomWorkshop extends DungeonChunkRoomEmpty {
 		aData.coins           ( 1, 3,  3);
 		
 		
-		tInventory = new NBTTagList();
+		tInventory = new ListTag();
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
 		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));

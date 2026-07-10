@@ -39,8 +39,8 @@ import gregapi.tileentity.ITileEntityQuickObstructionCheck;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.energy.ITileEntityEnergy;
 import gregapi.tileentity.energy.ITileEntityEnergyDataConductor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * @author Gregorius Techneticies
@@ -63,12 +63,12 @@ public class MultiTileEntityWireLaser extends TileEntityBase10ConnectorRendered 
 		}
 	}
 	
-	public long transferLaser(byte aSide, long aFrequency, long aStrength, long aChannel, HashSetNoNulls<TileEntity> aAlreadyPassed) {
+	public long transferLaser(byte aSide, long aFrequency, long aStrength, long aChannel, HashSetNoNulls<BlockEntity> aAlreadyPassed) {
 		long rUsedStrength = 0;
 		
 		for (byte tSide : ALL_SIDES_VALID_BUT[aSide]) if (canEmitEnergyTo(tSide)) {
 			if (aStrength <= rUsedStrength) break;
-			DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 			if (aAlreadyPassed.add(tDelegator.mTileEntity)) {
 				if (tDelegator.mTileEntity instanceof MultiTileEntityWireLaser) {
 					if (((MultiTileEntityWireLaser)tDelegator.mTileEntity).isEnergyAcceptingFrom(TD.Energy.LU, tDelegator.mSideOfTileEntity, F)) {
@@ -86,7 +86,7 @@ public class MultiTileEntityWireLaser extends TileEntityBase10ConnectorRendered 
 	}
 	
 	@Override
-	public boolean canConnect(byte aSide, DelegatorTileEntity<TileEntity> aDelegator) {
+	public boolean canConnect(byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof ITileEntityEnergy) return ((ITileEntityEnergy)aDelegator.mTileEntity).isEnergyAcceptingFrom(TD.Energy.LU, aDelegator.mSideOfTileEntity, T) || ((ITileEntityEnergy)aDelegator.mTileEntity).isEnergyEmittingTo(TD.Energy.LU, aDelegator.mSideOfTileEntity, T);
 		return F;
 	}
@@ -97,7 +97,7 @@ public class MultiTileEntityWireLaser extends TileEntityBase10ConnectorRendered 
 	@Override public boolean isEnergyEmittingTo   (TagData aEnergyType, byte aSide, boolean aTheoretical) {return isEnergyType(aEnergyType, aSide, T) && canEmitEnergyTo    (aSide);}
 	@Override public boolean isEnergyAcceptingFrom(TagData aEnergyType, byte aSide, boolean aTheoretical) {return isEnergyType(aEnergyType, aSide, F) && canAcceptEnergyFrom(aSide);}
 	@Override public synchronized long doEnergyExtraction(TagData aEnergyType, byte aSide, long aSize, long aAmount, boolean aDoExtract) {return 0;}
-	@Override public synchronized long doEnergyInjection (TagData aEnergyType, byte aSide, long aSize, long aAmount, boolean aDoInject ) {return aSize != 0 && isEnergyAcceptingFrom(aEnergyType, aSide, F) ?  aDoInject ? transferLaser(aSide, aSize, aAmount, -1, new HashSetNoNulls<TileEntity>(F, this)) : aAmount : 0;}
+	@Override public synchronized long doEnergyInjection (TagData aEnergyType, byte aSide, long aSize, long aAmount, boolean aDoInject ) {return aSize != 0 && isEnergyAcceptingFrom(aEnergyType, aSide, F) ?  aDoInject ? transferLaser(aSide, aSize, aAmount, -1, new HashSetNoNulls<BlockEntity>(F, this)) : aAmount : 0;}
 	@Override public long getEnergySizeOutputRecommended(TagData aEnergyType, byte aSide) {return Long.MAX_VALUE;}
 	@Override public long getEnergySizeOutputMin(TagData aEnergyType, byte aSide) {return 0;}
 	@Override public long getEnergySizeOutputMax(TagData aEnergyType, byte aSide) {return Long.MAX_VALUE;}

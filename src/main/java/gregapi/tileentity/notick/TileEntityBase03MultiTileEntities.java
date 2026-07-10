@@ -19,7 +19,7 @@
 
 package gregapi.tileentity.notick;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityClassContainer;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -65,7 +65,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	
 	@Override
 	public void onRegistrationFirst(MultiTileEntityRegistry aRegistry, short aID) {
-		GameRegistry.registerTileEntity(getClass(), getTileEntityName());
+		DeferredRegister.registerTileEntity(getClass(), getTileEntityName());
 	}
 	
 	@Override

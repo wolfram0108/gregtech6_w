@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -30,12 +30,12 @@ import gregapi.data.MD;
 import gregapi.data.RM;
 import gregapi.util.CR;
 import gregapi.util.ST;
-import net.minecraft.init.Items;
+import net.minecraft.world.item.Items;
 
 public class Compat_Recipes_Lycanites extends CompatMods {
 	public Compat_Recipes_Lycanites(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Lycanite Mobs Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Lycanite Mobs Recipes.");
 		CR.delate(MD.LycM_Inferno, "bucketpurelava");
 		if (FL.Lava_Pure.exists()) {
 			RM.Mixer.addRecipe1(T, 16, 16, ST.make(Items.ghast_tear, 1, W), FL.Lava         .make(1000), FL.Lava_Pure.make(1000), ZL_IS);

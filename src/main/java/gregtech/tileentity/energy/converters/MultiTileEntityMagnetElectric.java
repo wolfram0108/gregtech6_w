@@ -29,7 +29,7 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.energy.ITileEntityEnergyElectricityAcceptor;
 import gregapi.tileentity.energy.TileEntityBase11Bipolar;
 import gregapi.tileentity.machines.ITileEntitySwitchableMode;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 public class MultiTileEntityMagnetElectric extends TileEntityBase11Bipolar implements ITileEntityEnergyElectricityAcceptor, ITileEntitySwitchableMode {
 	@Override

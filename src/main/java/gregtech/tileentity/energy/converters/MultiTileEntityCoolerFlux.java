@@ -28,7 +28,7 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.energy.ITileEntityEnergyFluxHandler;
 import gregapi.tileentity.energy.TileEntityBase11Twotypes;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 public class MultiTileEntityCoolerFlux extends TileEntityBase11Twotypes implements ITileEntityEnergyFluxHandler {
 	@Override

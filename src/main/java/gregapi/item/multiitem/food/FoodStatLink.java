@@ -24,12 +24,12 @@ import static gregapi.data.CS.*;
 import java.util.List;
 
 import gregapi.data.CS.DrinksGT;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.EnumAction;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 public class FoodStatLink implements IFoodStat {
 	public final IFoodStat mStats;
@@ -48,58 +48,58 @@ public class FoodStatLink implements IFoodStat {
 	}
 	
 	@Override
-	public int getFoodLevel(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public int getFoodLevel(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.getFoodLevel(aItem, aStack, aPlayer);
 	}
 	
 	@Override
-	public float getSaturation(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getSaturation(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.getSaturation(aItem, aStack, aPlayer);
 	}
 	
 	@Override
-	public float getHydration(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getHydration(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.getHydration(aItem, aStack, aPlayer);
 	}
 	
 	@Override
-	public float getTemperature(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getTemperature(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.getTemperature(aItem, aStack, aPlayer);
 	}
 	
 	@Override
-	public float getTemperatureEffect(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public float getTemperatureEffect(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.getTemperatureEffect(aItem, aStack, aPlayer);
 	}
 	
 	@Override
-	public boolean alwaysEdible(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public boolean alwaysEdible(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.alwaysEdible(aItem, aStack, aPlayer);
 	}
 	
 	@Override
-	public boolean isRotten(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public boolean isRotten(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.isRotten(aItem, aStack, aPlayer);
 	}
 	
 	@Override
-	public EnumAction getFoodAction(Item aItem, ItemStack aStack) {
+	public ItemUseAnimation getFoodAction(Item aItem, ItemStack aStack) {
 		return mStats.getFoodAction(aItem, aStack);
 	}
 	
 	@Override
-	public boolean useAppleCoreFunctionality(Item aItem, ItemStack aStack, EntityPlayer aPlayer) {
+	public boolean useAppleCoreFunctionality(Item aItem, ItemStack aStack, Player aPlayer) {
 		return mStats.useAppleCoreFunctionality(aItem, aStack, aPlayer);
 	}
 	
 	@Override
 	@SuppressWarnings("deprecation")
-	public void onEaten(Item aItem, ItemStack aStack, EntityPlayer aPlayer, boolean aConsumeItem) {
+	public void onEaten(Item aItem, ItemStack aStack, Player aPlayer, boolean aConsumeItem) {
 		mStats.onEaten(aItem, aStack, aPlayer, aConsumeItem, T);
 	}
 	
 	@Override
-	public void onEaten(Item aItem, ItemStack aStack, EntityPlayer aPlayer, boolean aConsumeItem, boolean aMakeSound) {
+	public void onEaten(Item aItem, ItemStack aStack, Player aPlayer, boolean aConsumeItem, boolean aMakeSound) {
 		mStats.onEaten(aItem, aStack, aPlayer, aConsumeItem, aMakeSound);
 	}
 	

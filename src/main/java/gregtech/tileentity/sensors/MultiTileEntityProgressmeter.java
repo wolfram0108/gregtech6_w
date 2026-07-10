@@ -28,9 +28,9 @@ import gregapi.render.IIconContainer;
 import gregapi.tileentity.data.ITileEntityProgress;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.machines.MultiTileEntitySensorTE;
-import net.minecraft.tileentity.MobSpawnerBaseLogic;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityMobSpawner;
+import net.minecraft.world.level.BaseSpawner;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 
 /**
  * @author Gregorius Techneticies
@@ -40,19 +40,19 @@ public class MultiTileEntityProgressmeter extends MultiTileEntitySensorTE {
 	@Override public String getSensorDescription() {return LH.get("gt.tooltip.sensor.progressmeter");}
 	
 	@Override
-	public long getCurrentValue(DelegatorTileEntity<TileEntity> aDelegator) {
+	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof ITileEntityProgress) return ((ITileEntityProgress)aDelegator.mTileEntity).getProgressValue(aDelegator.mSideOfTileEntity);
-		if (aDelegator.mTileEntity instanceof TileEntityMobSpawner) {
-			MobSpawnerBaseLogic tLogic = ((TileEntityMobSpawner)aDelegator.mTileEntity).func_145881_a();
+		if (aDelegator.mTileEntity instanceof SpawnerBlockEntity) {
+			BaseSpawner tLogic = ((SpawnerBlockEntity)aDelegator.mTileEntity).func_145881_a();
 			if (tLogic != null) return tLogic.spawnDelay;
 		}
 		return 0;
 	}
 	@Override
-	public long getCurrentMax  (DelegatorTileEntity<TileEntity> aDelegator) {
+	public long getCurrentMax  (DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof ITileEntityProgress) return ((ITileEntityProgress)aDelegator.mTileEntity).getProgressMax(aDelegator.mSideOfTileEntity);
-		if (aDelegator.mTileEntity instanceof TileEntityMobSpawner) {
-			MobSpawnerBaseLogic tLogic = ((TileEntityMobSpawner)aDelegator.mTileEntity).func_145881_a();
+		if (aDelegator.mTileEntity instanceof SpawnerBlockEntity) {
+			BaseSpawner tLogic = ((SpawnerBlockEntity)aDelegator.mTileEntity).func_145881_a();
 			if (tLogic != null) return Long.MAX_VALUE;
 		}
 		return 0;

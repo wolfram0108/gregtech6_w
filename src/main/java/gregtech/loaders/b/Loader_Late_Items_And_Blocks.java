@@ -31,7 +31,7 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.render.BlockTextureCopied;
 import gregapi.util.ST;
 import gregtech.loaders.a.Loader_Ores;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 import static gregapi.data.CS.*;
 

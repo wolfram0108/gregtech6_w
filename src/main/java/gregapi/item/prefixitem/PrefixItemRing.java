@@ -25,7 +25,7 @@ import gregapi.code.ModData;
 import gregapi.data.CS.ModIDs;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.oredict.OreDictPrefix;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies

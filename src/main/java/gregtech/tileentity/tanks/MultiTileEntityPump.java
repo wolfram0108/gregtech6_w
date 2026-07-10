@@ -45,15 +45,15 @@ import gregapi.tileentity.machines.ITileEntityRunningActively;
 import gregapi.tileentity.machines.ITileEntitySwitchableOnOff;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.BlockPos;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fluids.IFluidHandler;
-import net.minecraftforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.IFluidTank;
 
 /**
  * @author Gregorius Techneticies
@@ -66,7 +66,7 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 	protected FluidTankGT mTank = new FluidTankGT();
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
@@ -78,7 +78,7 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_ACTIVE_DATA, mActiveData);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
@@ -102,9 +102,9 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		super.addToolTips(aList, aStack, aF3_H);
 	}
 	
-	public ArrayList<ChunkCoordinates> mCheckList = new ArrayList<>();
-	public LinkedList<ChunkCoordinates> mPumpList = new LinkedList<>();
-	public HashSetNoNulls<ChunkCoordinates> mChecked = new HashSetNoNulls<>();
+	public ArrayList<BlockPos> mCheckList = new ArrayList<>();
+	public LinkedList<BlockPos> mPumpList = new LinkedList<>();
+	public HashSetNoNulls<BlockPos> mChecked = new HashSetNoNulls<>();
 	public HashSetNoNulls<Block> mPumpedFluids = new HashSetNoNulls<>();
 	
 	@Override
@@ -148,10 +148,10 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 	}
 	
 	private void scanForFluid(int aX, int aZ) {
-		ChunkCoordinates[] tNeedsToBeChecked = mCheckList.toArray(ZL_COORDS);
+		BlockPos[] tNeedsToBeChecked = mCheckList.toArray(ZL_COORDS);
 		mCheckList.clear();
 		
-		for (ChunkCoordinates tPos : tNeedsToBeChecked) {
+		for (BlockPos tPos : tNeedsToBeChecked) {
 			if (mDir != 0 && mPumpedFluids.contains(getBlock(tPos.posX, tPos.posY + mDir, tPos.posZ))) {
 				mPumpList = new LinkedList<>();
 				mCheckList.clear();
@@ -198,7 +198,7 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 	}
 	
 	private boolean addToList(int aX, int aY, int aZ) {
-		ChunkCoordinates tCoordinate = new ChunkCoordinates(aX, aY, aZ);
+		BlockPos tCoordinate = new BlockPos(aX, aY, aZ);
 		if (mChecked.add(tCoordinate)) {
 			if (mPumpedFluids.contains(getBlock(aX, aY, aZ))) {
 				mPumpList.add(tCoordinate);
@@ -209,7 +209,7 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		return F;
 	}
 	
-	private boolean drainFluid(ChunkCoordinates aCoords) {
+	private boolean drainFluid(BlockPos aCoords) {
 		Block aBlock = getBlock(aCoords);
 		// Seems like someone removed or replaced a Fluid Block! Scan again!
 		if (!mPumpedFluids.contains(aBlock)) return F;

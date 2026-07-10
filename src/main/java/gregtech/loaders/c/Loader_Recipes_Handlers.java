@@ -19,7 +19,7 @@
 
 package gregtech.loaders.c;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.code.ICondition;
 import gregapi.code.ICondition.And;
 import gregapi.code.ICondition.Nor;
@@ -35,8 +35,8 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregtech.loaders.b.Loader_OreProcessing.OreProcessing_CraftFrom;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
 import static gregapi.data.OP.*;
@@ -549,71 +549,71 @@ public class Loader_Recipes_Handlers implements Runnable {
 		RM.Boxinator    .add(new RecipeMapHandlerPrefix(plateTiny                       , 9, NF,  16,16,     0, NF, casingSmall             , 2, ST.tag( 9), NI, F, F, F, new And(ANTIMATTER.NOT, EXPLODES_IN_NONVANILLA_CRAFTING_GRID.NOT)));
 		RM.Boxinator    .add(new RecipeMapHandlerPrefix(plateGemTiny                    , 9, NF,  16,16,     0, NF, casingSmall             , 2, ST.tag( 9), NI, F, F, F, new And(ANTIMATTER.NOT, EXPLODES_IN_NONVANILLA_CRAFTING_GRID.NOT)));
 		
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(oreRaw                      , gem                       , 1, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(oreRaw                      , rawOreChunk               , 3, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(crushed                     , crushedTiny               , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(crushed                     , gemFlawed                 , 1, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(crushedPurified             , crushedPurifiedTiny       , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(crushedPurified             , gemFlawed                 , 1, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(crushedCentrifuged          , crushedCentrifugedTiny    , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(crushedCentrifuged          , gemFlawed                 , 1, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(ingot                       , nugget                    , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(ingot                       , chunkGt                   , 4, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(billet                      , nugget                    , 6, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(dust                        , dustTiny                  , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(dust                        , dustSmall                 , 4, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(dustTiny                    , dustDiv72                 , 8, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(dustSmall                   , dustDiv72                 ,18, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockRaw                    , oreRaw                    , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockDust                   , dust                      , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockDust                   , dustSmall                 ,36, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockIngot                  , ingot                     , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockIngot                  , chunkGt                   ,36, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockGem                    , gem                       , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockPlate                  , plate                     , 9, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(blockPlateGem               , plateGem                  , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(oreRaw                      , gem                       , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(oreRaw                      , rawOreChunk               , 3, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(crushed                     , crushedTiny               , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(crushed                     , gemFlawed                 , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(crushedPurified             , crushedPurifiedTiny       , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(crushedPurified             , gemFlawed                 , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(crushedCentrifuged          , crushedCentrifugedTiny    , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(crushedCentrifuged          , gemFlawed                 , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(ingot                       , nugget                    , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(ingot                       , chunkGt                   , 4, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(billet                      , nugget                    , 6, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(dust                        , dustTiny                  , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(dust                        , dustSmall                 , 4, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(dustTiny                    , dustDiv72                 , 8, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(dustSmall                   , dustDiv72                 ,18, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockRaw                    , oreRaw                    , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockDust                   , dust                      , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockDust                   , dustSmall                 ,36, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockIngot                  , ingot                     , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockIngot                  , chunkGt                   ,36, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockGem                    , gem                       , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockPlate                  , plate                     , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(blockPlateGem               , plateGem                  , 9, F));
 		
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(rawOreChunk             ,  3, oreRaw                    , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(crushedTiny             ,  9, crushed                   , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(crushedPurifiedTiny     ,  9, crushedPurified           , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(crushedCentrifugedTiny  ,  9, crushedCentrifuged        , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  2, billet                    , 3, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  3, nugget                    ,27, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  4, billet                    , 6, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  5, nugget                    ,45, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  6, billet                    , 9, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  7, nugget                    ,63, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  8, billet                    ,12, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(ingot                   ,  9, blockIngot                , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  2, nugget                    ,12, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  3, ingot                     , 2, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  4, nugget                    ,24, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  5, nugget                    ,30, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  6, ingot                     , 4, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  7, nugget                    ,42, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  8, nugget                    ,48, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(billet                  ,  9, ingot                     , 6, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(chunkGt                 ,  4, ingot                     , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(chunkGt                 ,  8, billet                    , 3, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(nugget                  ,  6, billet                    , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(nugget                  ,  9, ingot                     , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(dustDiv72               ,  8, dustTiny                  , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(dustTiny                ,  9, dust                      , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(dustSmall               ,  4, dust                      , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(dustSmall               ,  8, dust                      , 2, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(oreRaw                  ,  9, blockRaw                  , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(dust                    ,  9, blockDust                 , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(gem                     ,  9, blockGem                  , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(plate                   ,  9, blockPlate                , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(plateGem                ,  9, blockPlateGem             , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(plateTiny               ,  5, casingSmall               , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(plateTiny               ,  9, casingSmall               , 2, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(plateGemTiny            ,  5, casingSmall               , 1, F));
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(plateGemTiny            ,  9, casingSmall               , 2, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(rawOreChunk             ,  3, oreRaw                    , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(crushedTiny             ,  9, crushed                   , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(crushedPurifiedTiny     ,  9, crushedPurified           , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(crushedCentrifugedTiny  ,  9, crushedCentrifuged        , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  2, billet                    , 3, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  3, nugget                    ,27, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  4, billet                    , 6, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  5, nugget                    ,45, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  6, billet                    , 9, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  7, nugget                    ,63, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  8, billet                    ,12, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(ingot                   ,  9, blockIngot                , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  2, nugget                    ,12, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  3, ingot                     , 2, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  4, nugget                    ,24, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  5, nugget                    ,30, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  6, ingot                     , 4, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  7, nugget                    ,42, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  8, nugget                    ,48, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(billet                  ,  9, ingot                     , 6, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(chunkGt                 ,  4, ingot                     , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(chunkGt                 ,  8, billet                    , 3, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(nugget                  ,  6, billet                    , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(nugget                  ,  9, ingot                     , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(dustDiv72               ,  8, dustTiny                  , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(dustTiny                ,  9, dust                      , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(dustSmall               ,  4, dust                      , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(dustSmall               ,  8, dust                      , 2, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(oreRaw                  ,  9, blockRaw                  , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(dust                    ,  9, blockDust                 , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(gem                     ,  9, blockGem                  , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(plate                   ,  9, blockPlate                , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(plateGem                ,  9, blockPlateGem             , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(plateTiny               ,  5, casingSmall               , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(plateTiny               ,  9, casingSmall               , 2, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(plateGemTiny            ,  5, casingSmall               , 1, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(plateGemTiny            ,  9, casingSmall               , 2, F));
 		
 		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) if (tPrefix != OP.oreRaw) {
-			if (tPrefix.contains(STANDARD_ORE)) GameRegistry.addRecipe(new AdvancedCrafting1ToY(tPrefix, oreRaw, 1, F));
-			if (tPrefix.contains(DENSE_ORE   )) GameRegistry.addRecipe(new AdvancedCrafting1ToY(tPrefix, oreRaw, 2, F));
+			if (tPrefix.contains(STANDARD_ORE)) DeferredRegister.addRecipe(new AdvancedCrafting1ToY(tPrefix, oreRaw, 1, F));
+			if (tPrefix.contains(DENSE_ORE   )) DeferredRegister.addRecipe(new AdvancedCrafting1ToY(tPrefix, oreRaw, 2, F));
 		}
 		
 		for (int tBig = 1; tBig <= 16; tBig++) for (int tSmall = 1; tSmall < tBig; tSmall++) if (tBig % tSmall == 0) {
@@ -621,8 +621,8 @@ public class Loader_Recipes_Handlers implements Runnable {
 		RM.Loom       .add(new RecipeMapHandlerPrefix(wireGt[tSmall-1], tAmount, NF, 16, 0, 64, NF, wireGt[tBig-1], 1, ST.tag(tBig), NI, F, F, F, ANTIMATTER.NOT));
 		RM.Unboxinator.add(new RecipeMapHandlerPrefix(wireGt[tBig-1], 1, NF, 16, 16, 0, NF, wireGt[tSmall-1], tAmount, NI, NI, T, F, F, ANTIMATTER.NOT));
 		if (tAmount < 10)
-		GameRegistry.addRecipe(new AdvancedCraftingXToY(wireGt[tSmall-1], tAmount, wireGt[tBig-1], 1, F));
-		GameRegistry.addRecipe(new AdvancedCrafting1ToY(wireGt[tBig-1], wireGt[tSmall-1], tAmount, F));
+		DeferredRegister.addRecipe(new AdvancedCraftingXToY(wireGt[tSmall-1], tAmount, wireGt[tBig-1], 1, F));
+		DeferredRegister.addRecipe(new AdvancedCrafting1ToY(wireGt[tBig-1], wireGt[tSmall-1], tAmount, F));
 		}
 		
 		FluidStack[] tFluids = FL.array(FL.Water.make(1000), FL.SpDew.make(1000), FL.DistW.make(1000), FL.Lubricant.make(1000), FL.LubRoCant.make(1000));

@@ -19,9 +19,9 @@
 
 package gregapi.compat.industrialcraft;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLServerStartedEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackSet;
 import gregapi.compat.CompatBase;
@@ -42,12 +42,12 @@ import ic2.api.recipe.RecipeInputItemStack;
 import ic2.api.recipe.RecipeInputOreDict;
 import ic2.api.recipe.RecipeOutput;
 import ic2.core.Ic2Items;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.common.NeoForge;
 
 import static gregapi.data.CS.*;
 
@@ -59,11 +59,11 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 		if (ic2.api.recipe.Recipes.scrapboxDrops == null) {/**/}
 		if (ic2.api.recipe.Recipes.recyclerBlacklist == null) {/**/}
 		if (ic2.api.recipe.Recipes.recyclerWhitelist == null) {/**/}
-		MinecraftForge.EVENT_BUS.register(this);
+		NeoForge.EVENT_BUS.register(this);
 	}
 	
 	@Override
-	public void onPostLoad(FMLPostInitializationEvent aEvent) {
+	public void onPostLoad(FMLLoadCompleteEvent aEvent) {
 		for (Object tOre : BlocksGT.stoneToSmallOres .values()) valuable((Block)tOre, 2);
 		for (Object tOre : BlocksGT.stoneToNormalOres.values()) valuable((Block)tOre, 3);
 		for (Object tOre : BlocksGT.stoneToBrokenOres.values()) valuable((Block)tOre, 3);
@@ -78,13 +78,13 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 	}
 	
 	@Override
-	public void onServerStarted(FMLServerStartedEvent aEvent) {
+	public void onServerStarted(ServerStartedEvent aEvent) {
 		if (MD.AA.mLoaded) Ic2Items.coffeeBeans = ST.make(MD.AA, "itemCoffeeBeans", 1, 0);
 	}
 	
 	@SubscribeEvent
 	public void onRetextureEvent(RetextureEvent aEvent) {
-		TileEntity tTileEntity = WD.te(aEvent.world, aEvent.x, aEvent.y, aEvent.z, T);
+		BlockEntity tTileEntity = WD.te(aEvent.world, aEvent.x, aEvent.y, aEvent.z, T);
 		if (tTileEntity instanceof ITileEntityCoverable) {
 			CoverData tData = ((ITileEntityCoverable)tTileEntity).getCoverData();
 			if (tData != null && tData.mBehaviours[aEvent.side] instanceof CoverTextureCanvas) {
@@ -154,7 +154,7 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 	
 	@Override public Object makeInput(ItemStack aStack) {return new RecipeInputItemStack(ST.copy(aStack), aStack.stackSize);}
 	@Override public Object makeInput(String aOreDict, long aAmount) {return new RecipeInputOreDict(aOreDict, UT.Code.bindStack(aAmount));}
-	@Override public Object makeOutput(NBTTagCompound aNBT, ItemStack... aStacks) {return new RecipeOutput(aNBT, aStacks);}
+	@Override public Object makeOutput(CompoundTag aNBT, ItemStack... aStacks) {return new RecipeOutput(aNBT, aStacks);}
 	@Override public boolean isReactorItem(ItemStack aStack) {try {return ST.valid(aStack) && aStack.getItem() instanceof ic2.api.reactor.IReactorComponent;} catch (Throwable e) {/*Do nothing*/} return F;}
 }
 

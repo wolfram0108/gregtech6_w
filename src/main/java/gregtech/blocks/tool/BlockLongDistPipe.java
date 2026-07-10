@@ -25,9 +25,9 @@ import gregapi.block.MaterialMachines;
 import gregapi.block.misc.BlockBaseMachineUpdate;
 import gregapi.data.LH;
 import gregapi.render.IIconContainer;
-import net.minecraft.entity.Entity;
-import net.minecraft.init.Blocks;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
 
 public class BlockLongDistPipe extends BlockBaseMachineUpdate {
 	public final long[] mTemperatures;
@@ -42,8 +42,8 @@ public class BlockLongDistPipe extends BlockBaseMachineUpdate {
 	@Override public String getHarvestTool(int aMeta) {return TOOL_wrench;}
 	@Override public int getHarvestLevel(int aMeta) {return 3;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return T;}
-	@Override public float getBlockHardness(World aWorld, int aX, int aY, int aZ) {return Blocks.iron_block.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(Entity aEntity, World aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return 20;}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.iron_block.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return 20;}
 	@Override public float getExplosionResistance(Entity aEntity) {return 20;}
 	@Override public float getExplosionResistance(byte aMeta) {return 20;}
 }

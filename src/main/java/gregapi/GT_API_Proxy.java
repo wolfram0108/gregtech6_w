@@ -23,7 +23,7 @@ import cofh.lib.util.ComparableItem;
 import cpw.mods.fml.common.FMLCommonHandler;
 import net.neoforged.fml.Logging;
 import net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent;
-import cpw.mods.fml.common.IWorldGenerator;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import cpw.mods.fml.common.eventhandler.Event.Result;
@@ -33,8 +33,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import cpw.mods.fml.common.network.IGuiHandler;
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.network.IContainerFactory;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import ganymedes01.etfuturum.entities.EntityHusk;
 import ganymedes01.etfuturum.entities.EntityStray;
 import ganymedes01.etfuturum.entities.EntityZombieVillager;
@@ -147,10 +147,10 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public abstract class GT_API_Proxy extends Abstract_Proxy implements IGuiHandler, FurnaceFuelBurnTimeEvent, IWorldGenerator {
+public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerFactory, FurnaceFuelBurnTimeEvent, Feature {
 	public GT_API_Proxy() {
-		GameRegistry.registerFuelHandler(this);
-		GameRegistry.registerWorldGenerator(this, Integer.MAX_VALUE);
+		DeferredRegister.registerFuelHandler(this);
+		DeferredRegister.registerWorldGenerator(this, Integer.MAX_VALUE);
 		NeoForge.EVENT_BUS.register(this);
 		FMLCommonHandler.instance().bus().register(this);
 	}

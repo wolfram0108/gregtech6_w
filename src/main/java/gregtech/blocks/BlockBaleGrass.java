@@ -28,10 +28,10 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeGenBase;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 
 import java.util.List;
 import java.util.Random;
@@ -84,13 +84,13 @@ public class BlockBaleGrass extends BlockBaseBale {
 	}
 	
 	@Override
-	public void onBlockAdded2(World aWorld, int aX, int aY, int aZ) {
+	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {
 		if ((WD.meta(aWorld, aX, aY, aZ) & 1) == 1) return;
 		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 2400 + RNGSUS.nextInt(2400));
 	}
 	
 	@Override
-	public void updateTick2(World aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if ((aMeta & 1) == 1) return;
 		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 1100 + RNGSUS.nextInt(200));
@@ -101,7 +101,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 		}
 		if (aRandom.nextInt(3) > 0 && WD.envTemp(aWorld, aX, aY, aZ) < C + 10) return;
 		if (aRandom.nextInt(3) > 0 && !(aWorld.isDaytime() && !aWorld.isRaining() && aWorld.canBlockSeeTheSky(aX, aY+2, aZ))) return;
-		BiomeGenBase tBiome = aWorld.getBiomeGenForCoords(aX, aZ);
+		Biome tBiome = aWorld.getBiomeGenForCoords(aX, aZ);
 		boolean tWet = (tBiome.rainfall > 0.8F || BIOMES_INFINITE_WATER.contains(tBiome.biomeName));
 		if (!tWet) for (byte tSide : ALL_SIDES_VALID) if (WD.anywater(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide])) {tWet = T; break;}
 		if ((aMeta & PILLAR_DATA) == 0) {
@@ -126,7 +126,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 	}
 	
 	@Override
-	public void addInformation(ItemStack aStack, byte aMeta, EntityPlayer aPlayer, List<String> aList, boolean aF3_H) {
+	public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {
 		super.addInformation(aStack, aMeta, aPlayer, aList, aF3_H);
 		if ((aMeta & 3) == 0) {
 			aList.add(LH.Chat.CYAN + LH.get("gt.tooltip.bale"));
@@ -135,7 +135,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 					aList.add(LH.Chat.YELLOW + LH.get("gt.tooltip.bale.dry"));
 				} else {
 					int aX = UT.Code.roundDown(aPlayer.posX), aY = UT.Code.roundDown(aPlayer.posY), aZ = UT.Code.roundDown(aPlayer.posZ);
-					BiomeGenBase tBiome = aPlayer.worldObj.getBiomeGenForCoords(aX, aZ);
+					Biome tBiome = aPlayer.worldObj.getBiomeGenForCoords(aX, aZ);
 					if (tBiome.rainfall > 0.8F || (aPlayer.worldObj.isRaining() && tBiome.rainfall > 0 && aPlayer.worldObj.getPrecipitationHeight(aX, aZ) <= aY+2)) {
 						aList.add(LH.Chat.ORANGE + LH.get("gt.tooltip.bale.rot"));
 					} else {

@@ -33,12 +33,12 @@ import gregapi.tileentity.base.TileEntityBase11AttachmentSmall;
 import gregapi.tileentity.energy.ITileEntityEnergy;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.entity.passive.EntityVillager;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
 
 import java.util.Collection;
 import java.util.List;
@@ -52,13 +52,13 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 	public boolean mActive = F;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mActive);
 	}
@@ -73,7 +73,7 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 		if (aIsServerSide) {
 			boolean oActive = mActive;
 			mActive = F;
-			if (oActive) for (EntityPlayer tPlayer : UT.Entities.getPlayersWithLastTarget(this)) {
+			if (oActive) for (Player tPlayer : UT.Entities.getPlayersWithLastTarget(this)) {
 				mActive = T;
 				if (ITileEntityEnergy.Util.emitEnergyToSide(TD.Energy.RU, mFacing, -UT.Code.divup(8L*UT.Entities.pot2Strength(tPlayer), UT.Entities.pot1Weakness(tPlayer)), UT.Entities.pot1Haste(tPlayer), this) > 0) UT.Entities.exhaust(tPlayer, 0.025);
 				tPlayer.swingItem();
@@ -100,7 +100,7 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			mActive = T;
 			updateClientData();
@@ -166,7 +166,7 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 	}
 	
 	@Override
-	public AxisAlignedBB getSelectedBoundingBoxFromPool() {
+	public AABB getSelectedBoundingBoxFromPool() {
 		return box(
 		  PX_P[SIDES_AXIS_X[mFacing] ? mFacing == SIDE_X_NEG ? 0 : 13 : 2]
 		, PX_P[SIDES_AXIS_Y[mFacing] ? mFacing == SIDE_Y_NEG ? 0 : 13 : 2]

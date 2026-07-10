@@ -26,8 +26,8 @@ import gregapi.data.MD;
 import gregapi.util.ST;
 import ic2.api.info.IC2Classic;
 import ic2.api.item.IWrenchHandler;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public class CompatIC2C extends CompatBase implements IWrenchHandler {
 	public CompatIC2C() {
@@ -36,6 +36,6 @@ public class CompatIC2C extends CompatBase implements IWrenchHandler {
 	}
 	
 	@Override public boolean supportsItem(ItemStack aWrench) {return ST.valid(aWrench) && ST.isGT_(aWrench);}
-	@Override public boolean canWrench(ItemStack aWrench, int aX, int aY, int aZ, EntityPlayer aPlayer) {return F;}
-	@Override public void useWrench(ItemStack aWrench, int aX, int aY, int aZ, EntityPlayer aPlayer) {/**/}
+	@Override public boolean canWrench(ItemStack aWrench, int aX, int aY, int aZ, Player aPlayer) {return F;}
+	@Override public void useWrench(ItemStack aWrench, int aX, int aY, int aZ, Player aPlayer) {/**/}
 }

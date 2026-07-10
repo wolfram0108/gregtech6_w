@@ -20,36 +20,36 @@
 package gregtech.entities.projectiles;
 
 import gregapi.util.UT;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 
 import static gregapi.data.CS.*;
 
 public class EntityArrow_Potion extends EntityArrow_Material {
 	
-	public EntityArrow_Potion(World aWorld) {
+	public EntityArrow_Potion(Level aWorld) {
 		super(aWorld);
 	}
 	
-	public EntityArrow_Potion(World aWorld, double aX, double aY, double aZ) {
+	public EntityArrow_Potion(Level aWorld, double aX, double aY, double aZ) {
 		super(aWorld, aX, aY, aZ);
 	}
 	
-	public EntityArrow_Potion(World aWorld, EntityLivingBase aEntity, float aSpeed) {
+	public EntityArrow_Potion(Level aWorld, LivingEntity aEntity, float aSpeed) {
 		super(aWorld, aEntity, aSpeed);
 	}
 	
 	@Override
-	public void writeEntityToNBT(NBTTagCompound aNBT) {
+	public void writeEntityToNBT(CompoundTag aNBT) {
 		super.writeEntityToNBT(aNBT);
 		aNBT.setIntArray("mPotions", mPotions);
 	}
 	
 	@Override
-	public void readEntityFromNBT(NBTTagCompound aNBT) {
+	public void readEntityFromNBT(CompoundTag aNBT) {
 		super.readEntityFromNBT(aNBT);
 		setPotions(aNBT.getIntArray("mPotions"));
 	}
@@ -78,7 +78,7 @@ public class EntityArrow_Potion extends EntityArrow_Material {
 	
 	@Override
 	public int[] onHitEntity(Entity aHitEntity, Entity aShootingEntity, ItemStack aArrow, int aRegularDamage, int aMagicDamage, int aKnockback, int aFireDamage, int aHitTimer) {
-		if (aHitEntity instanceof EntityLivingBase) for (int i = 3; i < mPotions.length; i+=4) {
+		if (aHitEntity instanceof LivingEntity) for (int i = 3; i < mPotions.length; i+=4) {
 			if (RNGSUS.nextInt(100) < mPotions[i]) {
 				UT.Entities.applyPotion(aHitEntity, mPotions[i-3], mPotions[i-2], mPotions[i-1], F);
 			}

@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -35,7 +35,7 @@ import gregapi.util.ST;
 public class Compat_Recipes_BetterRecords extends CompatMods {
 	public Compat_Recipes_BetterRecords(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Better Records Recipes.");
+	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Better Records Recipes.");
 		CR.shapeless(ST.make(MD.BETTER_RECORDS, "urlrecord", 1, 0), CR.DEF_NCC, new Object[] {OD.record, OP.gem.dat(MT.EnderEye)});
 	}
 }

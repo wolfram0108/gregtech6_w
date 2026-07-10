@@ -29,7 +29,7 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.energy.TileEntityBase10EnergyConverter;
 import gregapi.tileentity.machines.ITileEntityAdjacentOnOff;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 public class MultiTileEntityDynamoElectric extends TileEntityBase10EnergyConverter implements ITileEntityAdjacentOnOff {
 	@Override public boolean isInput (byte aSide) {return mFacing == OPOS[aSide];}

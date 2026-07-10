@@ -29,7 +29,7 @@ import gregapi.tileentity.energy.ITileEntityEnergy;
 import ic2.api.energy.EnergyNet;
 import ic2.api.energy.tile.IEnergySource;
 import ic2.api.energy.tile.IEnergyTile;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * @author Gregorius Techneticies
@@ -47,12 +47,12 @@ public class MultiTileEntityWireBundledElectric extends MultiTileEntityWireElect
 			mTransferredWattage = 0;
 			mTransferredAmperes = 0;
 			if (EnergyCompat.IC_ENERGY) for (byte tSide : ALL_SIDES_VALID) if (canAcceptEnergyFrom(tSide)) {
-				DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+				DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 				if (!(tDelegator.mTileEntity instanceof gregapi.tileentity.ITileEntityEnergy)) {
-					TileEntity tEmitter = tDelegator.mTileEntity instanceof IEnergyTile || EnergyNet.instance == null ? tDelegator.mTileEntity : EnergyNet.instance.getTileEntity(tDelegator.mWorld, tDelegator.mX, tDelegator.mY, tDelegator.mZ);
+					BlockEntity tEmitter = tDelegator.mTileEntity instanceof IEnergyTile || EnergyNet.instance == null ? tDelegator.mTileEntity : EnergyNet.instance.getTileEntity(tDelegator.mWorld, tDelegator.mX, tDelegator.mY, tDelegator.mZ);
 					if (tEmitter instanceof IEnergySource && ((IEnergySource)tEmitter).emitsEnergyTo(this, tDelegator.getForgeSideOfTileEntity())) {
 						long tEU = (long)((IEnergySource)tEmitter).getOfferedEnergy();
-						if (transferElectricity(tSide, tEU, 1, -1, new HashSetNoNulls<TileEntity>(F, this)) > 0) ((IEnergySource)tEmitter).drawEnergy(tEU);
+						if (transferElectricity(tSide, tEU, 1, -1, new HashSetNoNulls<BlockEntity>(F, this)) > 0) ((IEnergySource)tEmitter).drawEnergy(tEU);
 					}
 				}
 			}
@@ -60,7 +60,7 @@ public class MultiTileEntityWireBundledElectric extends MultiTileEntityWireElect
 	}
 	
 	@Override
-	public long transferElectricity(byte aSide, long aVoltage, long aAmperage, long aChannel, HashSetNoNulls<TileEntity> aAlreadyPassed) {
+	public long transferElectricity(byte aSide, long aVoltage, long aAmperage, long aChannel, HashSetNoNulls<BlockEntity> aAlreadyPassed) {
 		long rUsedAmperes = 0;
 		
 		if (mTimer < 1) return rUsedAmperes;
@@ -69,7 +69,7 @@ public class MultiTileEntityWireBundledElectric extends MultiTileEntityWireElect
 			if (aVoltage > 0) aVoltage -= mLoss; else aVoltage += mLoss;
 			for (byte tSide : ALL_SIDES_VALID_BUT[aSide]) if (canEmitEnergyTo(tSide)) {
 				if (aAmperage <= rUsedAmperes) break;
-				DelegatorTileEntity<TileEntity> tDelegator = getAdjacentTileEntity(tSide);
+				DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
 				if (aAlreadyPassed.add(tDelegator.mTileEntity)) {
 					if (tDelegator.mTileEntity instanceof MultiTileEntityWireElectric) {
 						if (((MultiTileEntityWireElectric)tDelegator.mTileEntity).isEnergyAcceptingFrom(TD.Energy.EU, tDelegator.mSideOfTileEntity, F)) {

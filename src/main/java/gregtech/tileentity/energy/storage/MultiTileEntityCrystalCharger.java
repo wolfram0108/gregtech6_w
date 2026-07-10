@@ -26,7 +26,7 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.tileentity.energy.ITileEntityEnergyElectricityAcceptor;
 import gregapi.tileentity.energy.TileEntityBase10EnergyBatBox;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 public class MultiTileEntityCrystalCharger extends TileEntityBase10EnergyBatBox implements ITileEntityEnergyElectricityAcceptor {
 	@Override

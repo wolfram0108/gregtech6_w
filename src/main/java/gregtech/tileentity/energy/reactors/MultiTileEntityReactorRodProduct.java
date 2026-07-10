@@ -25,8 +25,8 @@ import java.util.List;
 
 import gregapi.data.LH;
 import gregapi.util.ST;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * @author Gregorius Techneticies
@@ -36,7 +36,7 @@ public class MultiTileEntityReactorRodProduct extends MultiTileEntityReactorRodB
 	public String mBreedingName = "";
 
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_VALUE           ))  mBreeding        = aNBT.getShort(NBT_VALUE);
 	}

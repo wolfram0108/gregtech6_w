@@ -27,10 +27,10 @@ import gregapi.old.Textures;
 import gregapi.render.BlockTextureDefault;
 import gregapi.render.IIconContainer;
 import gregapi.tileentity.misc.MultiTileEntityPlaceable;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 
 /**
  * @author Gregorius Techneticies
@@ -49,10 +49,10 @@ public class MultiTileEntityScrap extends MultiTileEntityPlaceable {
 	
 	@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return box(aBlock, 0, 0, 0, 1, PX_OFFSET, 1);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock, 0, 0, 0, 1, PX_P[1], 1);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(0, 0, 0, 1, PX_P[1], 1);}
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return null;}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(0, 0, 0, 1, PX_P[1], 1);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return null;}
 	
-	@Override public ItemStack getPickBlock(MovingObjectPosition aTarget) {return OP.scrapGt.mat(mMaterial, 1);}
+	@Override public ItemStack getPickBlock(HitResult aTarget) {return OP.scrapGt.mat(mMaterial, 1);}
 	@Override public ItemStack getStackFromBlock(byte aSide) {return OP.scrapGt.mat(mMaterial, 1);}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.scrap";}

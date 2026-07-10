@@ -27,8 +27,8 @@ import gregapi.render.BlockTextureMulti;
 import gregapi.render.ITexture;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 	public boolean mModerated = F, oModerated = F;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mDurability = aNBT.getLong(aNBT.hasKey(NBT_DURABILITY) ? NBT_DURABILITY : NBT_MAXDURABILITY);
 		if (aNBT.hasKey(NBT_NUCLEAR_SELF    )) mNeutronSelf  = aNBT.getInteger(NBT_NUCLEAR_SELF );
@@ -57,7 +57,7 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_DURABILITY, mDurability);
 		UT.NBT.setBoolean(aNBT, NBT_NUCLEAR_MOD, mModerated);
@@ -65,7 +65,7 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 	}
 	
 	@Override
-	public NBTTagCompound writeItemNBT2(NBTTagCompound aNBT) {
+	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		UT.NBT.setNumber(aNBT, NBT_DURABILITY, mDurability);
 		UT.NBT.setBoolean(aNBT, NBT_NUCLEAR_MOD, mModerated);
 		UT.NBT.setBoolean(aNBT, NBT_NUCLEAR_MOD+".o", oModerated);

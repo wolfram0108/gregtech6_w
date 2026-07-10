@@ -36,13 +36,13 @@ import gregapi.tileentity.ITileEntityQuickObstructionCheck;
 import gregapi.tileentity.ITileEntityRemoteActivateable;
 import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
@@ -57,7 +57,7 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	public long mLength = 0, mMaxLength = 20;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mInverted     = aNBT.getBoolean(NBT_MODE);
 		mLampMode     = aNBT.getBoolean(NBT_MODE+".lamp");
@@ -71,7 +71,7 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mInverted);
 		UT.NBT.setBoolean(aNBT, NBT_MODE+".lamp", mLampMode);
@@ -85,7 +85,7 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	}
 	
 	@Override
-	public NBTTagCompound writeItemNBT2(NBTTagCompound aNBT) {
+	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mInverted);
 		UT.NBT.setBoolean(aNBT, NBT_MODE+".lamp", mLampMode);
 		UT.NBT.setBoolean(aNBT, NBT_VISUAL, mGlowInverted);
@@ -109,7 +109,7 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		
 		if (aTool.equals(TOOL_chisel)) {
@@ -179,7 +179,7 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && !mLampMode) {
 			if (mMaxLength > 0) {
 				mLength = mMaxLength;
@@ -274,8 +274,8 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return null;}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(PX_P[SIDE_X_NEG==mFacing?14:SIDE_X_POS==mFacing?0:4], PX_P[SIDE_Y_NEG==mFacing?14:SIDE_Y_POS==mFacing?0:4], PX_P[SIDE_Z_NEG==mFacing?14:SIDE_Z_POS==mFacing?0:4], PX_N[SIDE_X_POS==mFacing?14:SIDE_X_NEG==mFacing?0:4], PX_N[SIDE_Y_POS==mFacing?14:SIDE_Y_NEG==mFacing?0:4], PX_N[SIDE_Z_POS==mFacing?14:SIDE_Z_NEG==mFacing?0:4]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return null;}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(PX_P[SIDE_X_NEG==mFacing?14:SIDE_X_POS==mFacing?0:4], PX_P[SIDE_Y_NEG==mFacing?14:SIDE_Y_POS==mFacing?0:4], PX_P[SIDE_Z_NEG==mFacing?14:SIDE_Z_POS==mFacing?0:4], PX_N[SIDE_X_POS==mFacing?14:SIDE_X_NEG==mFacing?0:4], PX_N[SIDE_Y_POS==mFacing?14:SIDE_Y_NEG==mFacing?0:4], PX_N[SIDE_Z_POS==mFacing?14:SIDE_Z_NEG==mFacing?0:4]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock, PX_P[SIDE_X_NEG==mFacing?14:SIDE_X_POS==mFacing?0:4], PX_P[SIDE_Y_NEG==mFacing?14:SIDE_Y_POS==mFacing?0:4], PX_P[SIDE_Z_NEG==mFacing?14:SIDE_Z_POS==mFacing?0:4], PX_N[SIDE_X_POS==mFacing?14:SIDE_X_NEG==mFacing?0:4], PX_N[SIDE_Y_POS==mFacing?14:SIDE_Y_NEG==mFacing?0:4], PX_N[SIDE_Z_POS==mFacing?14:SIDE_Z_NEG==mFacing?0:4]);}
 	
 	@Override public float getSurfaceSize           (byte aSide) {return ALONG_AXIS[aSide][mFacing]?PX_P[14]:0.0F;}
@@ -288,7 +288,7 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 	@Override public boolean isObstructingBlockAt   (byte aSide) {return F;}
 	@Override public boolean useSidePlacementRotation       () {return T;}
 	@Override public boolean useInversePlacementRotation    () {return F;}
-	@Override public boolean checkObstruction(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
+	@Override public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
 	@Override public byte getDefaultSide() {return SIDE_FRONT;}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 	@Override public boolean ignorePlayerCollisionWhenPlacing() {return T;}

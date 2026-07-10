@@ -28,23 +28,23 @@ import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 import thaumcraft.api.nodes.INode;
 
 import static gregapi.data.CS.*;
 
 public class Behavior_Builderwand extends AbstractBehaviorDefault {
 	@Override
-	public boolean onItemUse(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aWorld.isRemote || aPlayer == null || !(aItem instanceof MultiItemTool) || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
-		TileEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
+		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
 		if (MD.TC.mLoaded && aTileEntity instanceof INode) {
 			for (int tX = -1; tX <= 1; tX++)
@@ -99,8 +99,8 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 				if (ST.invalid(tStack)) continue;
 				Block tBlock = ST.block(tStack);
 				if (ST.invalid(tBlock)) {
-					if (tStack.getItem() instanceof ItemBlock) {
-						tBlock = ((ItemBlock)tStack.getItem()).field_150939_a;
+					if (tStack.getItem() instanceof BlockItem) {
+						tBlock = ((BlockItem)tStack.getItem()).field_150939_a;
 						if (ST.invalid(tBlock)) continue;
 					} else continue;
 				}

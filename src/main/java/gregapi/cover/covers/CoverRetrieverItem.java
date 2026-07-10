@@ -31,11 +31,11 @@ import gregapi.tileentity.connectors.ITileEntityItemPipe;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,11 +64,11 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 			ArrayList<ITileEntityItemPipe> tUsedPipes = new ArrayListNoNulls<>();
 			ItemStack tStack = ST.load(aData.mNBTs[aSide], "gt.filter.item");
 			ItemStackSet<ItemStackContainer> tFilter = ST.invalid(tStack) ? null : ST.hashset(tStack);
-			DelegatorTileEntity<TileEntity> tTarget = aData.mTileEntity.getAdjacentTileEntity(aSide);
+			DelegatorTileEntity<BlockEntity> tTarget = aData.mTileEntity.getAdjacentTileEntity(aSide);
 			
 			for (ITileEntityItemPipe tPipe : UT.Code.sortByValuesAcending(ITileEntityItemPipe.Util.scanPipes((ITileEntityItemPipe)aData.mTileEntity, new HashMap<ITileEntityItemPipe, Long>(), 0, T, F)).keySet()) {
 				if (tUsedPipes.add(tPipe)) for (byte tSide : ALL_SIDES_VALID) if (tPipe.canAcceptItemsFrom(tSide, aData.mTileEntity) && (tSide != aSide || tPipe != aData.mTileEntity)) {
-					DelegatorTileEntity<IInventory> tDelegator = tPipe.getAdjacentInventory(tSide);
+					DelegatorTileEntity<Container> tDelegator = tPipe.getAdjacentInventory(tSide);
 					if (!(tDelegator.mTileEntity instanceof ITileEntityItemPipe) && ST.move(tDelegator, tTarget, tFilter, F, F, aData.mVisuals[aSide] != 0, T, 64, 1, 64, 1) > 0) {
 						for (ITileEntityItemPipe tUsedPipe : tUsedPipes) tUsedPipe.incrementTransferCounter(1);
 						return;
@@ -90,7 +90,7 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 	}
 	
 	@Override
-	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_screwdriver)) {
 			aData.visual(aCoverSide, (short)(aData.mVisuals[aCoverSide] == 0 ? 1 : 0));
 			if (aChatReturn != null) aChatReturn.add(aData.mVisuals[aCoverSide] == 0 ? "Normal Filter" : "Inverted Filter");
@@ -122,9 +122,9 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 	
 	@Override
 	public boolean onCoverClickedRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
-		if (aPlayer instanceof EntityPlayer && aData.mTileEntity.isServerSide()) {
+		if (aPlayer instanceof Player && aData.mTileEntity.isServerSide()) {
 			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].hasKey("gt.filter.item")) {
-				ItemStack tStack = ST.make(((EntityPlayer)aPlayer).getCurrentEquippedItem(), null, null);
+				ItemStack tStack = ST.make(((Player)aPlayer).getCurrentEquippedItem(), null, null);
 				if (ST.valid(tStack)) {
 					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", tStack);
 					UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);

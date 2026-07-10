@@ -21,9 +21,9 @@ package gregapi;
 
 import cpw.mods.fml.common.*;
 import cpw.mods.fml.common.event.*;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.registry.EntityRegistry;
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.api.Abstract_Mod;
@@ -701,7 +701,7 @@ public class GT_API extends Abstract_Mod {
 		, new PacketSyncDataByteArrayAndCoverVisuals    ( 0), new PacketSyncDataByteArrayAndCoverVisuals    ( 1), new PacketSyncDataByteArrayAndCoverVisuals    ( 2), new PacketSyncDataByteArrayAndCoverVisuals    ( 3), new PacketSyncDataByteArrayAndCoverVisuals    ( 4), new PacketSyncDataByteArrayAndCoverVisuals    ( 5), new PacketSyncDataByteArrayAndCoverVisuals    ( 6), new PacketSyncDataByteArrayAndCoverVisuals    ( 7)
 		);
 		// Registering the TileEntity used for Meta-Generated Blocks to store the 32000 variations.
-		GameRegistry.registerTileEntity(PrefixBlockTileEntity.class, "gt.MetaBlockTileEntity");
+		DeferredRegister.registerTileEntity(PrefixBlockTileEntity.class, "gt.MetaBlockTileEntity");
 		// Creating and loading the Lang File.
 		if (CODE_CLIENT) {
 			tFile = new File(DirectoriesGT.MINECRAFT, "GregTech.lang");
@@ -719,7 +719,7 @@ public class GT_API extends Abstract_Mod {
 		// Initialising the Re-Registrations.
 		new LoaderOreDictReRegistrations().run();
 		// Register the Falling MetaBlock Entity.
-		EntityRegistry.registerModEntity(PrefixBlockFallingEntity.class, "gt.MetaBlockFallingEntity", 0, this, 160, 1, T);
+		DeferredRegister.registerModEntity(PrefixBlockFallingEntity.class, "gt.MetaBlockFallingEntity", 0, this, 160, 1, T);
 		// Initialise Enchantments.
 		new Enchantment_WerewolfDamage();
 		new Enchantment_EnderDamage();
@@ -732,7 +732,7 @@ public class GT_API extends Abstract_Mod {
 		// Initialises the Empty Slot Marker Item.
 		IL.Empty_Slot.set(new ItemEmptySlot());
 		// Register the GUI Handler.
-		NetworkRegistry.INSTANCE.registerGuiHandler(this, api_proxy);
+		PayloadRegistrar.INSTANCE.registerGuiHandler(this, api_proxy);
 		// Fixing vanilla Oak Plank Slab Recipe.
 		CR.remove(ST.make(Blocks.planks, 1, 0), ST.make(Blocks.planks, 1, 1), ST.make(Blocks.planks, 1, 2));
 		CR.shaped(ST.make(Blocks.wooden_slab, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.planks, 1, 0));

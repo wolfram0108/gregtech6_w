@@ -56,16 +56,16 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	@Override public gregapi.api.Abstract_Proxy getProxy() {return PROXY;}
 	
 	// Do not change these 7 Functions. Just keep them this way.
-	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (cpw.mods.fml.common.event.FMLPreInitializationEvent    aEvent) {onModPreInit(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (cpw.mods.fml.common.event.FMLInitializationEvent       aEvent) {onModInit(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (cpw.mods.fml.common.event.FMLPostInitializationEvent   aEvent) {onModPostInit(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarting    (cpw.mods.fml.common.event.FMLServerStartingEvent       aEvent) {onModServerStarting(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarted     (cpw.mods.fml.common.event.FMLServerStartedEvent        aEvent) {onModServerStarted(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopping    (cpw.mods.fml.common.event.FMLServerStoppingEvent       aEvent) {onModServerStopping(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopped     (cpw.mods.fml.common.event.FMLServerStoppedEvent        aEvent) {onModServerStopped(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent       aEvent) {onModInit(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent   aEvent) {onModPostInit(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarting    (net.neoforged.neoforge.event.server.ServerStartingEvent       aEvent) {onModServerStarting(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarted     (net.neoforged.neoforge.event.server.ServerStartedEvent        aEvent) {onModServerStarted(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopping    (net.neoforged.neoforge.event.server.ServerStoppingEvent       aEvent) {onModServerStopping(aEvent);}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopped     (net.neoforged.neoforge.event.server.ServerStoppedEvent        aEvent) {onModServerStopped(aEvent);}
 	
 	@Override
-	public void onModPreInit2(cpw.mods.fml.common.event.FMLPreInitializationEvent aEvent) {
+	public void onModPreInit2(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent aEvent) {
 		// If you want to make yourself a new OreDict Prefix for your Component Items or similar.
 		final gregapi.oredict.OreDictPrefix tExamplePrefix = gregapi.oredict.OreDictPrefix.createPrefix("exampleprefix"); // This newly created OreDict Prefix is named "exampleprefix", so an Aluminium Item with this Prefix would be named "exampleprefixAluminium" in the OreDict.
 		tExamplePrefix.setCategoryName("Examples"); // That is what the Creative Tab of it would be named.
@@ -102,7 +102,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		
 		// If you want to make your Prefix a Block
 		// Creates the generic Block for the new Prefix. Assets go into "/assets/insert_your_modid_here/textures/blocks/materialicons". And yes, every TextureSet for every Material Type has its own Folder.
-		new gregapi.block.prefixblock.PrefixBlock_(MOD_ID, MOD_ID, "example.meta.block.exampleprefix", tExamplePrefix, null, null, null, null, net.minecraft.block.material.Material.rock, net.minecraft.block.Block.soundTypeStone, gregapi.data.CS.TOOL_pickaxe, 1.5F, 4.5F,   0,   0, 999, 0, 0, 0, 1, 1, 1, false, false, false, false, true, true, true, true, true, true, false, true, true, true, gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY); 
+		new gregapi.block.prefixblock.PrefixBlock_(MOD_ID, MOD_ID, "example.meta.block.exampleprefix", tExamplePrefix, null, null, null, null, net.minecraft.block.material.Material.rock, net.minecraft.world.level.block.Block.soundTypeStone, gregapi.data.CS.TOOL_pickaxe, 1.5F, 4.5F,   0,   0, 999, 0, 0, 0, 1, 1, 1, false, false, false, false, true, true, true, true, true, true, false, true, true, true, gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY); 
 		
 		// You may think that you don't want to add all the PrefixItems for all the Materials, since you only need certain ones yourself and don't want a clutter like the one GregTech itself causes.
 		// No Problem, you can add single Items too, if you just need those.
@@ -137,13 +137,13 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		new gregapi.block.multitileentity.MultiTileEntityRegistry("example.multitileentity");
 		
 		// Every Machine can have another Block, vanilla-material, vanilla-step-sound or Harvest Tool
-		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron"       , net.minecraft.block.material.Material.iron    , net.minecraft.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_pickaxe  , 0, 0, 15, false, false);
-		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_cutter   , 0, 0, 15, false, false);
-		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_wrench   , 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron"       , net.minecraft.block.material.Material.iron    , net.minecraft.world.level.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_pickaxe  , 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.world.level.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_cutter   , 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.world.level.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_wrench   , 0, 0, 15, false, false);
 	}
 	
 	@Override
-	public void onModInit2(cpw.mods.fml.common.event.FMLInitializationEvent aEvent) {
+	public void onModInit2(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent aEvent) {
 		// Gets your initialised Registry.
 		gregapi.block.multitileentity.MultiTileEntityRegistry tExampleRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("example.multitileentity");
 		
@@ -153,18 +153,18 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		// YES this Registry Stuff can and should be in @Init. That way, all the OreDict Items needed for Crafting Recipes are available and registered.
 		
 		// Take the Metal Block from the Set, that you initialised above in @PreInit.
-		gregapi.block.multitileentity.MultiTileEntityBlock tMetalBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron", net.minecraft.block.material.Material.iron, net.minecraft.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_pickaxe, 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock tMetalBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron", net.minecraft.block.material.Material.iron, net.minecraft.world.level.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_pickaxe, 0, 0, 15, false, false);
 		// Makes an Examplium Chest out of your Example Material.
 		// Note: the Crafting Recipe only works in conjunction with GT since you don't have the Stick, Ring and Plate PrefixItems.
 		tExampleRegistry.add(tExamplium.getLocal() + " Chest", "Chests", 0, 0, gregapi.block.multitileentity.example.MultiTileEntityChest.class, 0, 16, tMetalBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, tExamplium, gregapi.data.CS.NBT_INV_SIZE, 54, gregapi.data.CS.NBT_TEXTURE, "metalchest", gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(tExamplium.fRGBaSolid)), "sPw", "RSR", "PPP", 'P', gregapi.data.OP.plate.dat(tExamplium), 'R', gregapi.data.OP.ring.dat(tExamplium), 'S', gregapi.data.OP.stick.dat(tExamplium));
 		
 		// Take the Machine Block from the Set, that you initialised above in @PreInit.
-		gregapi.block.multitileentity.MultiTileEntityBlock tMachineBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_wrench, 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock tMachineBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.world.level.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_wrench, 0, 0, 15, false, false);
 		// Makes a vanilla Furnace out of your Example Material.
 		// Note: the Crafting Recipe only works in conjunction with GT since you don't have all the PrefixItems.
 		// GUI has to be at: "/assets/insert_your_modid_here/textures/gui/machines/Oven.png"
 		// Block Textures have to be at: "/assets/gregtech/textures/blocks/machines/basicmachines/oven/..." Yes that is not a Typo, it is actually the GregTech Mod-ID in that path. I noticed that flaw way too late to fix it. And look at how GT has the Textures for its Oven for Details.
-		tExampleRegistry.add("Oven ("+tExamplium.getLocal()+")", "Example Mod", 1, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, tExamplium.mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, tExamplium, gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(tExamplium.fRGBaSolid), gregapi.data.CS.NBT_INPUT, 128, gregapi.data.CS.NBT_TEXTURE, "oven", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/Oven", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.HU, gregapi.data.CS.NBT_RECIPEMAP, gregapi.data.RM.Furnace, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachine.dat(tExamplium), 'B', gregapi.util.ST.make(net.minecraft.init.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.OP.plateDouble.dat(gregapi.data.ANY.Cu));
+		tExampleRegistry.add("Oven ("+tExamplium.getLocal()+")", "Example Mod", 1, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, tExamplium.mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, tExamplium, gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(tExamplium.fRGBaSolid), gregapi.data.CS.NBT_INPUT, 128, gregapi.data.CS.NBT_TEXTURE, "oven", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/Oven", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.HU, gregapi.data.CS.NBT_RECIPEMAP, gregapi.data.RM.Furnace, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachine.dat(tExamplium), 'B', gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.OP.plateDouble.dat(gregapi.data.ANY.Cu));
 		
 		// The above just makes a vanilla Furnace that is made of Examplium, you cannot obtain the Examplium right now. For that you will need your own Recipe Handler.
 		gregapi.recipes.Recipe.RecipeMap tRecipeMap = new gregapi.recipes.Recipe.RecipeMap(null, "example.recipe.exampliumfurnace", "Examplium Furnace", null, 0, 1, MOD_ID+":textures/gui/machines/ExampliumFurnace",/*IN-OUT-MIN-ITEM=*/ 1, 1, 1,/*IN-OUT-MIN-FLUID=*/ 0, 0, 0,/*MIN*/ 0,/*AMP=*/ 1, "", 1, "", false, true, true, true, true, false, true, true);
@@ -179,16 +179,16 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		// Note: the Crafting Recipe only works in conjunction with GT since you don't have all the PrefixItems.
 		// GUI has to be at: "/assets/insert_your_modid_here/textures/gui/machines/Oven.png"
 		// Block Textures have to be at: "/assets/gregtech/textures/blocks/machines/basicmachines/exampliumfurnace/..." Yes that is not a Typo, it is actually the GregTech Mod-ID in that path. I noticed that flaw way too late to fix it. And look at how GT has the Textures for its Oven for Details.
-		tExampleRegistry.add("Examplium Furnace"            , "Example Mod", 2, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachine          .class, gregapi.data.MT.Fe      .mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, gregapi.data.MT.Fe   , gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(gregapi.data.MT.Fe   .fRGBaSolid), gregapi.data.CS.NBT_INPUT, 128, gregapi.data.CS.NBT_TEXTURE, "exampliumfurnace", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/ExampliumFurnace", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.HU, gregapi.data.CS.NBT_RECIPEMAP, tRecipeMap, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachineDouble.dat(gregapi.data.MT.Fe   ), 'B', gregapi.util.ST.make(net.minecraft.init.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.OP.plateDouble.dat(gregapi.data.ANY.Cu));
+		tExampleRegistry.add("Examplium Furnace"            , "Example Mod", 2, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachine          .class, gregapi.data.MT.Fe      .mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, gregapi.data.MT.Fe   , gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(gregapi.data.MT.Fe   .fRGBaSolid), gregapi.data.CS.NBT_INPUT, 128, gregapi.data.CS.NBT_TEXTURE, "exampliumfurnace", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/ExampliumFurnace", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.HU, gregapi.data.CS.NBT_RECIPEMAP, tRecipeMap, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachineDouble.dat(gregapi.data.MT.Fe   ), 'B', gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.OP.plateDouble.dat(gregapi.data.ANY.Cu));
 		
 		// Makes an electric Examplium Furnace out of Steel.
 		// Note: the Crafting Recipe only works in conjunction with GT since you don't have all the PrefixItems.
-		tExampleRegistry.add("Electric Examplium Furnace"   , "Example Mod", 3, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric  .class, gregapi.data.MT.Steel   .mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, gregapi.data.MT.Steel, gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(gregapi.data.MT.Steel.fRGBaSolid), gregapi.data.CS.NBT_INPUT, 128, gregapi.data.CS.NBT_TEXTURE, "exampliumfurnace", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/ExampliumFurnace", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.EU, gregapi.data.CS.NBT_RECIPEMAP, tRecipeMap, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachineDouble.dat(gregapi.data.MT.Steel), 'B', gregapi.util.ST.make(net.minecraft.init.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.MT.DATA.CIRCUITS[1]);
+		tExampleRegistry.add("Electric Examplium Furnace"   , "Example Mod", 3, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric  .class, gregapi.data.MT.Steel   .mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, gregapi.data.MT.Steel, gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(gregapi.data.MT.Steel.fRGBaSolid), gregapi.data.CS.NBT_INPUT, 128, gregapi.data.CS.NBT_TEXTURE, "exampliumfurnace", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/ExampliumFurnace", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.EU, gregapi.data.CS.NBT_RECIPEMAP, tRecipeMap, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachineDouble.dat(gregapi.data.MT.Steel), 'B', gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.MT.DATA.CIRCUITS[1]);
 		
 		// Makes a Flux Examplium Furnace out of Invar.
 		// Note: the Crafting Recipe only works in conjunction with GT since you don't have all the PrefixItems.
 		// Note: Since it takes RF, the Input has to be 4 times larger.
-		tExampleRegistry.add("Flux Examplium Furnace"       , "Example Mod", 4, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachineFlux      .class, gregapi.data.MT.Invar   .mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, gregapi.data.MT.Invar, gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(gregapi.data.MT.Invar.fRGBaSolid), gregapi.data.CS.NBT_INPUT, 512, gregapi.data.CS.NBT_TEXTURE, "exampliumfurnace", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/ExampliumFurnace", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.RF, gregapi.data.CS.NBT_RECIPEMAP, tRecipeMap, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachineDouble.dat(gregapi.data.MT.Invar), 'B', gregapi.util.ST.make(net.minecraft.init.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.MT.DATA.CIRCUITS[3]);
+		tExampleRegistry.add("Flux Examplium Furnace"       , "Example Mod", 4, 0, gregapi.tileentity.machines.MultiTileEntityBasicMachineFlux      .class, gregapi.data.MT.Invar   .mToolQuality, 16, tMachineBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, gregapi.data.MT.Invar, gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(gregapi.data.MT.Invar.fRGBaSolid), gregapi.data.CS.NBT_INPUT, 512, gregapi.data.CS.NBT_TEXTURE, "exampliumfurnace", gregapi.data.CS.NBT_GUI, MOD_ID+":textures/gui/machines/ExampliumFurnace", gregapi.data.CS.NBT_ENERGY_ACCEPTED, gregapi.data.TD.Energy.RF, gregapi.data.CS.NBT_RECIPEMAP, tRecipeMap, gregapi.data.CS.NBT_EFFICIENCY, 10000, gregapi.data.CS.NBT_INV_SIDE_IN, gregapi.data.CS.SBIT_L, gregapi.data.CS.NBT_INV_SIDE_AUTO_IN, gregapi.data.CS.SIDE_LEFT, gregapi.data.CS.NBT_INV_SIDE_OUT, gregapi.data.CS.SBIT_R, gregapi.data.CS.NBT_INV_SIDE_AUTO_OUT, gregapi.data.CS.SIDE_RIGHT, gregapi.data.CS.NBT_ENERGY_ACCEPTED_SIDES, gregapi.data.CS.SBIT_D), "wMh", "BCB", 'M', gregapi.data.OP.casingMachineDouble.dat(gregapi.data.MT.Invar), 'B', gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.brick_block, 1, gregapi.data.CS.W), 'C', gregapi.data.MT.DATA.CIRCUITS[3]);
 		
 		// Makes Examplium Fluid Pipes, which are as good as Stainless Steel ones of GT.
 		gregapi.tileentity.connectors.MultiTileEntityPipeFluid.addFluidPipes(30, 0, 250, true, true, false, false, true, false, true, true, tExampleRegistry, tMachineBlock, gregapi.tileentity.connectors.MultiTileEntityPipeFluid.class, (long)(tExamplium.mMeltingPoint * 1.25), tExamplium);
@@ -197,34 +197,34 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		gregapi.tileentity.connectors.MultiTileEntityPipeItem.addItemPipes(100, 0, 32768, 1, true, true, tExampleRegistry, tMetalBlock, gregapi.tileentity.connectors.MultiTileEntityPipeItem.class, gregapi.data.MT.Fe);
 		
 		// Take the Wire Block from the Set, that you initialised above in @PreInit.
-		gregapi.block.multitileentity.MultiTileEntityBlock tWireBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_cutter, 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock tWireBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.world.level.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_cutter, 0, 0, 15, false, false);
 		
 		// Makes Examplium Wires, which can carry twice the Voltage of Steel and have a lower loss.
 		gregapi.tileentity.connectors.MultiTileEntityWireElectric.addElectricWires(50, 0, gregapi.data.CS.VMAX[4], 1, 2, 1, true, false, true, tExampleRegistry, tWireBlock, gregapi.tileentity.connectors.MultiTileEntityWireElectric.class, tExamplium);
 	}
 	
 	@Override
-	public void onModPostInit2(cpw.mods.fml.common.event.FMLPostInitializationEvent aEvent) {
+	public void onModPostInit2(net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent aEvent) {
 		// Insert your PostInit Code here and not above
 	}
 	
 	@Override
-	public void onModServerStarting2(cpw.mods.fml.common.event.FMLServerStartingEvent aEvent) {
+	public void onModServerStarting2(net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {
 		// Insert your ServerStarting Code here and not above
 	}
 	
 	@Override
-	public void onModServerStarted2(cpw.mods.fml.common.event.FMLServerStartedEvent aEvent) {
+	public void onModServerStarted2(net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {
 		// Insert your ServerStarted Code here and not above
 	}
 	
 	@Override
-	public void onModServerStopping2(cpw.mods.fml.common.event.FMLServerStoppingEvent aEvent) {
+	public void onModServerStopping2(net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {
 		// Insert your ServerStopping Code here and not above
 	}
 	
 	@Override
-	public void onModServerStopped2(cpw.mods.fml.common.event.FMLServerStoppedEvent aEvent) {
+	public void onModServerStopped2(net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) {
 		// Insert your ServerStopped Code here and not above
 	}
 }

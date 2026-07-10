@@ -36,16 +36,16 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 
@@ -62,7 +62,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	public String mDungeonLootNameFront = "", mDungeonLootNameBack = "";
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey("gt.dungeonloot.front")) mDungeonLootNameFront = aNBT.getString("gt.dungeonloot.front");
 		if (aNBT.hasKey("gt.dungeonloot.back")) mDungeonLootNameBack = aNBT.getString("gt.dungeonloot.back");
@@ -80,7 +80,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		if (UT.Code.stringValid(mDungeonLootNameFront)) aNBT.setString("gt.dungeonloot.front", mDungeonLootNameFront);
 		if (UT.Code.stringValid(mDungeonLootNameBack)) aNBT.setString("gt.dungeonloot.back", mDungeonLootNameBack);
@@ -154,7 +154,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
-			if (aTimer % 300 == 0 && (UT.Code.stringValid(mDungeonLootNameFront) || UT.Code.stringValid(mDungeonLootNameBack)) && !worldObj.getEntitiesWithinAABB(EntityPlayer.class, box(-32, -32, -32, +33, +33, +33)).isEmpty()) generateDungeonLoot();
+			if (aTimer % 300 == 0 && (UT.Code.stringValid(mDungeonLootNameFront) || UT.Code.stringValid(mDungeonLootNameBack)) && !worldObj.getEntitiesWithinAABB(Player.class, box(-32, -32, -32, +33, +33, +33)).isEmpty()) generateDungeonLoot();
 			
 			if (mRedstoneDelay > 0) if (--mRedstoneDelay == 0) causeBlockUpdate();
 			
@@ -170,17 +170,17 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		long rReturn = super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (rReturn > 0 || isClientSide()) return rReturn;
-		if (aTool.equals(TOOL_magnifyingglass) && aPlayer instanceof EntityPlayerMP) {
+		if (aTool.equals(TOOL_magnifyingglass) && aPlayer instanceof ServerPlayer) {
 			float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
 			if (tCoords[0] >= PX_P[1] && tCoords[0] <= PX_N[1] && tCoords[1] >= PX_P[1] && tCoords[1] <= PX_N[1]) {
 				int tIndex = -1;
 				if (aSide == mFacing       ) tIndex = (tCoords[1] < PX_P[8]? 6:13)-(int)UT.Code.bind_(0, 6, (long)(8*(tCoords[0]-PX_P[1])));
 				if (aSide == OPOS[mFacing] ) tIndex = (tCoords[1] < PX_P[8]?20:27)-(int)UT.Code.bind_(0, 6, (long)(8*(tCoords[0]-PX_P[1])));
 				if (tIndex >= 0 && slotHas(tIndex)) {
-					NW_API.sendToPlayer(new PacketItemStackChat(slot(tIndex)), (EntityPlayerMP)aPlayer);
+					NW_API.sendToPlayer(new PacketItemStackChat(slot(tIndex)), (ServerPlayer)aPlayer);
 					return 1;
 				}
 			}
@@ -203,7 +203,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && isUseableByPlayerGUI(aPlayer)) generateDungeonLoot();
 		float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
 		if (tCoords[0] >= PX_P[1] && tCoords[0] <= PX_N[1] && tCoords[1] >= PX_P[1] && tCoords[1] <= PX_N[1]) {
@@ -219,7 +219,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 		return F;
 	}
 	
-	private boolean switchBooks(EntityPlayer aPlayer, int aSlot) {
+	private boolean switchBooks(Player aPlayer, int aSlot) {
 		if (slotHas(aSlot)) {
 			if (!aPlayer.isSneaking()) {
 				if (OD.button.is(slot(aSlot))) {
@@ -346,7 +346,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 		return (ALONG_AXIS[aSide][mFacing]?BooksGT.BOOK_TEXTURES_BACK:BooksGT.BOOK_TEXTURES_SIDE)[UT.Code.unsignB(mDisplay[aRenderPass-7])];
 	}
 	
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool() {return box(PX_P[SIDES_AXIS_X[mFacing]?2:0], 0, PX_P[SIDES_AXIS_Z[mFacing]?2:0], PX_N[SIDES_AXIS_X[mFacing]?2:0], 1, PX_N[SIDES_AXIS_Z[mFacing]?2:0]);}
+	@Override public AABB getSelectedBoundingBoxFromPool() {return box(PX_P[SIDES_AXIS_X[mFacing]?2:0], 0, PX_P[SIDES_AXIS_Z[mFacing]?2:0], PX_N[SIDES_AXIS_X[mFacing]?2:0], 1, PX_N[SIDES_AXIS_Z[mFacing]?2:0]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock) {box(aBlock, PX_P[SIDES_AXIS_X[mFacing]?2:0], 0, PX_P[SIDES_AXIS_Z[mFacing]?2:0], PX_N[SIDES_AXIS_X[mFacing]?2:0], 1, PX_N[SIDES_AXIS_Z[mFacing]?2:0]);}
 	
 	@Override public boolean isSurfaceSolid         (byte aSide) {return !ALONG_AXIS[aSide][mFacing];}
@@ -361,7 +361,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	// Inventory Stuff
 	@Override public int getInventoryStackLimit() {return 1;}
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return 1;}
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[mDisplay.length];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[mDisplay.length];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	@Override public ItemStack getDefaultStack(int aSlot) {return ST.make(Items.book, 1, 0);}
 	

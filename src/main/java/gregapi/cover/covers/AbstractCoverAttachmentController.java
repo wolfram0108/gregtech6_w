@@ -23,8 +23,8 @@ import static gregapi.data.CS.*;
 
 import gregapi.cover.CoverData;
 import gregapi.tileentity.machines.ITileEntitySwitchableOnOff;
-import net.minecraft.entity.Entity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies

@@ -32,12 +32,12 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.blocks.BlockCFoamFresh;
 import gregtech.tileentity.misc.MultiTileEntityCFoam;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -60,18 +60,18 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	}
 	
 	@Override
-	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, World aWorld, EntityPlayer aPlayer) {
+	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (aPlayer.isSneaking()) switchMode(aStack, aPlayer);
 		return super.onItemRightClick(aItem, aStack, aWorld, aPlayer);
 	}
 	
 	@Override
-	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
+	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aWorld.isRemote || aStack.stackSize != 1 || aPlayer.isSneaking() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
 		boolean rOutput = F;
 		
-		NBTTagCompound tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = aStack.getTagCompound();
 		if (tNBT == null) tNBT = UT.NBT.make();
 		long tUses = tNBT.getLong("gt.remaining");
 		
@@ -106,11 +106,11 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 		return rOutput;
 	}
 	
-	public long foam(World aWorld, int aX, int aY, int aZ, byte aSide, long aUses, EntityPlayer aPlayer, ItemStack aStack) {
+	public long foam(Level aWorld, int aX, int aY, int aZ, byte aSide, long aUses, Player aPlayer, ItemStack aStack) {
 		if (aUses < 1) return 0;
 		long rUses = 0;
 		
-		DelegatorTileEntity<TileEntity> aDelegator = WD.te(aWorld, aX, aY, aZ, aSide, T);
+		DelegatorTileEntity<BlockEntity> aDelegator = WD.te(aWorld, aX, aY, aZ, aSide, T);
 		if (aDelegator.mTileEntity instanceof ITileEntityFoamable && !((ITileEntityFoamable)aDelegator.mTileEntity).hasFoam(aDelegator.mSideOfTileEntity)) return ((ITileEntityFoamable)aDelegator.mTileEntity).applyFoam(aDelegator.mSideOfTileEntity, aPlayer, DYES[mColor], mColor, mOwned) ? 10 : 0;
 		Block aBlock = aDelegator.getBlock(); aWorld = aDelegator.mWorld; aX = aDelegator.mX; aY = aDelegator.mY; aZ = aDelegator.mZ;
 		if (aBlock instanceof IBlockFoamable && !((IBlockFoamable)aBlock).hasFoam(aWorld, aX, aY, aZ, aDelegator.mSideOfTileEntity)) return ((IBlockFoamable)aBlock).applyFoam(aWorld, aX, aY, aZ, aDelegator.mSideOfTileEntity, DYES[mColor], mColor) ? 10 : 0;
@@ -178,7 +178,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	}
 	
 	public void setMode(ItemStack aStack, long aMode) {
-		NBTTagCompound aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = aStack.getTagCompound();
 		if (aNBT == null) aNBT = UT.NBT.make();
 		UT.NBT.set(aStack, UT.NBT.setNumber(aNBT, NBT_MODE, aMode));
 	}
@@ -187,7 +187,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 		return UT.NBT.getNBT(aStack).getLong(NBT_MODE);
 	}
 	
-	public void switchMode(ItemStack aStack, EntityPlayer aPlayer) {
+	public void switchMode(ItemStack aStack, Player aPlayer) {
 		setMode(aStack, (getMode(aStack) + 1) % (mOwned?3:5));
 		switch ((int)getMode(aStack)) {
 		case 0: UT.Entities.sendchat(aPlayer, "Single Block Mode"); break;
@@ -206,7 +206,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.foamspray."+mColor+".tooltip"));
-		NBTTagCompound tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = aStack.getTagCompound();
 		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
 		aList.add(LH.get("gt.behaviour.foamspray.uses") + " " + (tRemaining / 10) + "." + (tRemaining % 10));
 		aList.add(LH.get("gt.behaviour.unstackable"));

@@ -35,14 +35,14 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.base.TileEntityBase09FacingSingle;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.List;
 
@@ -57,7 +57,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	public IIconContainer mIcon = Textures.BlockIcons.RENDERING_ERROR;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_TEXTURE)) {
 			short tShelfID = aNBT.getShort(NBT_TEXTURE);
@@ -101,12 +101,12 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	}
 	
 	@Override
-	public boolean onBlockActivated3(EntityPlayer aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) swapBottles(aPlayer, (aHitX<PX_P[5]+PX_P[1]/2?0:aHitX<PX_P[10]+PX_P[1]/2?1:2) + (aHitZ<PX_P[5]+PX_P[1]/2?0:aHitZ<PX_P[10]+PX_P[1]/2?3:6));
 		return T;
 	}
 	
-	private boolean swapBottles(EntityPlayer aPlayer, int aSlot) {
+	private boolean swapBottles(Player aPlayer, int aSlot) {
 		if (slotHas(aSlot)) {
 			if (ST.add(aPlayer, slot(aSlot), T)) {
 				slotKill(aSlot);
@@ -209,8 +209,8 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 		}
 	}
 	
-	@Override public AxisAlignedBB getCollisionBoundingBoxFromPool() {return box(PX_P[0],PX_P[0],PX_P[0],PX_N[0],PX_N[6],PX_N[0]);}
-	@Override public AxisAlignedBB getSelectedBoundingBoxFromPool () {return box(PX_P[0],PX_P[0],PX_P[0],PX_N[0],PX_P[6],PX_N[0]);}
+	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[0],PX_P[0],PX_P[0],PX_N[0],PX_N[6],PX_N[0]);}
+	@Override public AABB getSelectedBoundingBoxFromPool () {return box(PX_P[0],PX_P[0],PX_P[0],PX_N[0],PX_P[6],PX_N[0]);}
 	@Override public void setBlockBoundsBasedOnState(Block aBlock)   {box(aBlock,PX_P[0],PX_P[0],PX_P[0],PX_N[0],PX_P[6],PX_N[0]);}
 	
 	@Override public float getSurfaceSize           (byte aSide) {return 0;}
@@ -224,7 +224,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	@Override public boolean[] getValidSides() {return SIDES_HORIZONTAL;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	
-	@Override public ItemStack[] getDefaultInventory(NBTTagCompound aNBT) {return new ItemStack[mDisplay.length];}
+	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[mDisplay.length];}
 	@Override public boolean canDrop (int aSlot) {return F;}
 	@Override public boolean keepSlot(int aSlot) {return T;}
 	@Override public ItemStack getDefaultStack(int aSlot) {return IL.Bottle_Empty.get(1);}

@@ -25,14 +25,14 @@ import gregapi.block.misc.BlockBaseRail;
 import gregapi.render.IIconContainer;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.Block;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.item.EntityMinecart;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	}
 	
 	@Override
-	protected boolean func_150057_a(World aWorld, int aX, int aY, int aZ, boolean p_150057_5_, int p_150057_6_, int p_150057_7_) {
+	protected boolean func_150057_a(Level aWorld, int aX, int aY, int aZ, boolean p_150057_5_, int p_150057_6_, int p_150057_7_) {
 		if (aWorld.getBlock(aX, aY, aZ) == this) {
 			int tRailMeta = WD.meta(7, aWorld, aX, aY, aZ);
 			
@@ -59,9 +59,9 @@ public class BlockRailRoad extends BlockBaseRail {
 	}
 	
 	@Override
-	public void onNeighborBlockChange(World aWorld, int aX, int aY, int aZ, Block aBlock) {
+	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (!aWorld.isRemote) {
-			if (!World.doesBlockHaveSolidTopSurface(aWorld, aX, aY-1, aZ)) {
+			if (!Level.doesBlockHaveSolidTopSurface(aWorld, aX, aY-1, aZ)) {
 				dropBlockAsItem(aWorld, aX, aY, aZ, 0, 0);
 				aWorld.setBlockToAir(aX, aY, aZ);
 			}
@@ -69,27 +69,27 @@ public class BlockRailRoad extends BlockBaseRail {
 	}
 	
 	@Override
-	protected void func_150048_a(World aWorld, int aX, int aY, int aZ, int aMeta, int aData, Block aBlock) {
+	protected void func_150048_a(Level aWorld, int aX, int aY, int aZ, int aMeta, int aData, Block aBlock) {
 		// NO-OP
 	}
 	
 	@Override
-	protected void func_150052_a(World aWorld, int aX, int aY, int aZ, boolean p_150052_5_) {
+	protected void func_150052_a(Level aWorld, int aX, int aY, int aZ, boolean p_150052_5_) {
 		// NO-OP
 	}
 	
 	@Override
-	public void onBlockAdded(World aWorld, int aX, int aY, int aZ) {
+	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		// NO-OP
 	}
 	
 	@Override
-	public void breakBlock(World aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
+	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		// NO-OP
 	}
 	
 	@Override
-	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, World aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (!aWorld.isRemote) if (aTool.equals(TOOL_crowbar) || aTool.equals(TOOL_chisel) || aTool.equals(TOOL_shears) || aTool.equals(TOOL_scissors) || aTool.equals(TOOL_knife)) {
 			return aWorld.setBlock(aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0)?1000:0;
 		}
@@ -97,7 +97,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	}
 	
 	@Override
-	public void onMinecartPass(World aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
+	public void onMinecartPass(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
 		double tMotion = Math.sqrt(aCart.motionX*aCart.motionX + aCart.motionZ*aCart.motionZ);
 		if (tMotion > 0.01) {
 			aCart.motionX *= 2;
@@ -115,7 +115,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	}
 	
 	@Override
-	public boolean onItemUse(ItemBlockBase aItem, ItemStack aStack, EntityPlayer aPlayer, World aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
+	public boolean onItemUse(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aStack.stackSize == 0) return F;
 		
 		Block tBlock = aWorld.getBlock(aX, aY, aZ);
@@ -134,5 +134,5 @@ public class BlockRailRoad extends BlockBaseRail {
 		return T;
 	}
 	
-	@Override public float getBlockHardness(World aWorld, int aX, int aY, int aZ) {return Blocks.rail.getBlockHardness(aWorld, aX, aY, aZ) / 2;}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.rail.getBlockHardness(aWorld, aX, aY, aZ) / 2;}
 }

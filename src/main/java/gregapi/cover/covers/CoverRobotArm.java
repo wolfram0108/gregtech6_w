@@ -31,15 +31,15 @@ import gregapi.render.ITexture;
 import gregapi.tileentity.connectors.MultiTileEntityPipeItem;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.entity.Entity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies
  */
 public class CoverRobotArm extends AbstractCoverAttachment {
-	@Override public boolean interceptCoverPlacement(byte aCoverSide, CoverData aData, Entity aPlayer) {return !(aData.mTileEntity.canTick() && aData.mTileEntity instanceof IInventory);}
+	@Override public boolean interceptCoverPlacement(byte aCoverSide, CoverData aData, Entity aPlayer) {return !(aData.mTileEntity.canTick() && aData.mTileEntity instanceof Container);}
 	
 	public final int mTiming;
 	
@@ -57,7 +57,7 @@ public class CoverRobotArm extends AbstractCoverAttachment {
 	}
 	
 	@Override
-	public long onToolClick(byte aSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, IInventory aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick(byte aSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_monkeywrench)) {
 			if (aData.mTileEntity instanceof MultiTileEntityPipeItem) {
 				aData.visual(aSide, (short)1);
@@ -81,7 +81,7 @@ public class CoverRobotArm extends AbstractCoverAttachment {
 	
 	@Override
 	public void onTickPre(byte aSide, CoverData aData, long aTimer, boolean aIsServerSide, boolean aReceivedBlockUpdate, boolean aReceivedInventoryUpdate) {
-		if (aIsServerSide && SERVER_TIME % mTiming == 0 && !aData.mStopped && aData.mTileEntity instanceof IInventory) {
+		if (aIsServerSide && SERVER_TIME % mTiming == 0 && !aData.mStopped && aData.mTileEntity instanceof Container) {
 			if (aData.mValues[aSide] < 0) {
 				if (aData.mVisuals[aSide] == 0) {
 					ST.moveFrom(aData.delegator(aSide), aData.mTileEntity.getAdjacentTileEntity(aSide), -1-aData.mValues[aSide], null, T, F, F, T, 64, 1, 64, 1);

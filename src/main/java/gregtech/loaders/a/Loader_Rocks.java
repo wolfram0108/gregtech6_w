@@ -42,7 +42,7 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.util.CR;
 import gregapi.util.ST;
 import gregtech.blocks.stone.BlockStonesGT;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.block.material.Material;
 import team.chisel.carving.Carving;
 

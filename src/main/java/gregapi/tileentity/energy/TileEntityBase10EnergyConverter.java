@@ -31,8 +31,8 @@ import gregapi.tileentity.behavior.TE_Behavior_Energy_Stats;
 import gregapi.tileentity.machines.ITileEntityRunningActively;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 import java.util.Collection;
 import java.util.List;
@@ -52,7 +52,7 @@ public abstract class TileEntityBase10EnergyConverter extends TileEntityBase09Fa
 	public TE_Behavior_Active_Trinary mActivity = null;
 	
 	@Override
-	public void readFromNBT2(NBTTagCompound aNBT) {
+	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
 		if (aNBT.hasKey(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
@@ -62,7 +62,7 @@ public abstract class TileEntityBase10EnergyConverter extends TileEntityBase09Fa
 	}
 	
 	@Override
-	public void writeToNBT2(NBTTagCompound aNBT) {
+	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_STOPPED, mStopped);
 		aNBT.setByte(NBT_MODE, mMode);
@@ -70,18 +70,18 @@ public abstract class TileEntityBase10EnergyConverter extends TileEntityBase09Fa
 		writeEnergyBehavior(aNBT);
 	}
 	
-	public void readEnergyBehavior(NBTTagCompound aNBT) {
+	public void readEnergyBehavior(CompoundTag aNBT) {
 		long tInput = aNBT.getLong(NBT_INPUT), tOutput = aNBT.getLong(NBT_OUTPUT);
 		mStorage    = new TE_Behavior_Energy_Capacitor  (this, aNBT, tInput * 2);
 		mEnergyIN   = new TE_Behavior_Energy_Stats      (this, aNBT, aNBT.hasKey(NBT_ENERGY_ACCEPTED) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED)) : TD.Energy.QU   , mStorage, takesAnyLowerSize() || tInput <= 16 ? 1 : tInput / 2, tInput, tInput * 2);
 		mEnergyOUT  = new TE_Behavior_Energy_Stats      (this, aNBT, aNBT.hasKey(NBT_ENERGY_EMITTED ) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED )) : mEnergyIN.mType, mStorage, emitsAnyLowerSize() ? 1 : tOutput / 2, tOutput, tOutput * 2);
 	}
 	
-	public void readEnergyConverter(NBTTagCompound aNBT) {
+	public void readEnergyConverter(CompoundTag aNBT) {
 		mConverter  = new TE_Behavior_Energy_Converter  (this, aNBT, mStorage, mEnergyIN, mEnergyOUT, aNBT.hasKey(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1, aNBT.getBoolean(NBT_WASTE_ENERGY), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION));
 	}
 	
-	public void writeEnergyBehavior(NBTTagCompound aNBT) {
+	public void writeEnergyBehavior(CompoundTag aNBT) {
 		mStorage.save(aNBT);
 		mConverter.save(aNBT);
 	}

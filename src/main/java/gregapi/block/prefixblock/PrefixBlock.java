@@ -64,7 +64,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.util.StatCollector;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -586,7 +586,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override public final BlockEntity createTileEntity(Level aWorld, int aMeta) {return null;}
 	@Override public String toString() {return mNameInternal;}
 	@Override public String getUnlocalizedName() {return mNameInternal;}
-	@Override public String getLocalizedName() {return StatCollector.translateToLocal(mNameInternal);}
+	@Override public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
 	@Override public String getHarvestTool(int aMaterialToolQuality) {return mTool;}
 	@Override public boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
 	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX + mMinX, aY + mMinY, aZ + mMinZ, aX + mMaxX, aY + mMaxY, aZ + mMaxZ);}
