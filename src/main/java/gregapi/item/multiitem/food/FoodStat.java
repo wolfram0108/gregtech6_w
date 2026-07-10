@@ -144,13 +144,13 @@ public class FoodStat implements IFoodStat {
 	@Override
 	public void onEaten(Item aItem, ItemStack aStack, Player aPlayer, boolean aConsumeItem, boolean aMakeSound) {
 		if (aConsumeItem && !UT.Entities.hasInfiniteItems(aPlayer)) {
-			aStack.stackSize--;
+			aStack.setCount(aStack.getCount()-1);
 			ItemStack tStack = OM.get(ST.copy(mEmptyContainer));
 			if (tStack == null && mAutoDetectEmpty) tStack = ST.container(aStack, F);
 			ST.give(aPlayer, tStack, F);
 		}
-		if (aMakeSound) aPlayer.worldObj.playSoundAtEntity(aPlayer, "random.burp", 0.5F, RNGSUS.nextFloat() * 0.1F + 0.9F);
-		if (!aPlayer.worldObj.isRemote) {
+		if (aMakeSound) aPlayer.level().playSoundAtEntity(aPlayer, "random.burp", 0.5F, RNGSUS.nextFloat() * 0.1F + 0.9F);
+		if (!aPlayer.level().isRemote) {
 			if (mExtinguish) aPlayer.extinguish();
 			if (mRebreathe > 0) aPlayer.setAir(aPlayer.getAir()+mRebreathe);
 			if (mMilk) aPlayer.curePotionEffects(ST.make(Items.milk_bucket, 1, 0));
@@ -158,7 +158,7 @@ public class FoodStat implements IFoodStat {
 				UT.Entities.applyPotion(aPlayer, mPotionEffects[i-3], mPotionEffects[i-2], mPotionEffects[i-1], mInvisibleParticles);
 			}
 			if (mExplosive) {
-				aPlayer.worldObj.newExplosion(aPlayer, aPlayer.posX, aPlayer.posY, aPlayer.posZ, 4, T, T);
+				aPlayer.level().newExplosion(aPlayer, aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), 4, T, T);
 				aPlayer.attackEntityFrom(DamageSources.getExplodingDamage(), Float.MAX_VALUE);
 			}
 			EntityFoodTracker tTracker = EntityFoodTracker.get(aPlayer);

@@ -124,12 +124,12 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		if (aIsServerSide) {
-			if (SERVER_TIME % 600 == 10 && worldObj.isRaining() && getRainOffset(0, 1, 0)) {
+			if (SERVER_TIME % 600 == 10 && level.isRaining() && getRainOffset(0, 1, 0)) {
 				Biome tBiome = getBiome();
 				if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
 					Block tInFront = getBlockAtSide(SIDE_TOP);
-					if (!(tInFront instanceof BlockLiquid) && !(tInFront instanceof IFluidBlock) && !tInFront.isSideSolid(worldObj, xCoord, yCoord+1, zCoord, FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(worldObj, xCoord, yCoord+1, zCoord, FORGE_DIR[SIDE_TOP])) {
-						FluidStack tWater = FL.Water.make((long)Math.max(1, tBiome.rainfall*200) * (worldObj.isThundering()?2:1));
+					if (!(tInFront instanceof BlockLiquid) && !(tInFront instanceof IFluidBlock) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR[SIDE_TOP])) {
+						FluidStack tWater = FL.Water.make((long)Math.max(1, tBiome.rainfall*200) * (level.isThundering()?2:1));
 						if (tWater != null) {
 							IFluidTank tTank = getFluidTankFillable2(SIDE_TOP, tWater);
 							if (tTank != null) tTank.fill(tWater, T);
@@ -170,7 +170,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 
 	protected boolean canOutput(Recipe aRecipe) {
 		for (int i = 0; i < 6; i++) if (slot(i+6) != null) {
-			if (aRecipe.mNeedsEmptyOutput || (aRecipe.mOutputs.length > 0 && aRecipe.mOutputs[i] != null && (!ST.equal(slot(i+6), aRecipe.mOutputs[i], F) || slot(i+6).stackSize + aRecipe.mOutputs[i].stackSize > slot(i+6).getMaxStackSize()))) {
+			if (aRecipe.mNeedsEmptyOutput || (aRecipe.mOutputs.length > 0 && aRecipe.mOutputs[i] != null && (!ST.equal(slot(i+6), aRecipe.mOutputs[i], F) || slot(i+6).getCount() + aRecipe.mOutputs[i].getCount() > slot(i+6).getMaxStackSize()))) {
 				return F;
 			}
 		}
@@ -217,7 +217,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 			FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 			
 			if (aStack != null && tFluid != null && FL.fillAll_(this, SIDE_ANY, tFluid, T)) {
-				aStack.stackSize--;
+				aStack.setCount(aStack.getCount()-1);
 				ST.give(aPlayer, tStack, T);
 				return T;
 			}
@@ -226,23 +226,23 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 					if (ST.move(aPlayer.inventory, this, aPlayer.inventory.currentItem, i) > 0) return T;
 				}
 				if (aStack != null) for (FluidTankGT tTank : mTanksOutput) if ((tStack = FL.fill(tTank, ST.amount(1, aStack), T, T, T, T)) != null) {
-					aStack.stackSize--;
+					aStack.setCount(aStack.getCount()-1);
 					ST.give(aPlayer, tStack, T);
 					return T;
 				}
 				if (aStack != null) for (FluidTankGT tTank : mTanksInput) if ((tStack = FL.fill(tTank, ST.amount(1, aStack), T, T, T, T)) != null) {
-					aStack.stackSize--;
+					aStack.setCount(aStack.getCount()-1);
 					ST.give(aPlayer, tStack, T);
 					return T;
 				}
 			} else {
 				if (aStack != null) for (FluidTankGT tTank : mTanksOutput) if ((tStack = FL.fill(tTank, ST.amount(1, aStack), T, T, T, T)) != null) {
-					aStack.stackSize--;
+					aStack.setCount(aStack.getCount()-1);
 					ST.give(aPlayer, tStack, T);
 					return T;
 				}
 				if (aStack != null) for (FluidTankGT tTank : mTanksInput) if ((tStack = FL.fill(tTank, ST.amount(1, aStack), T, T, T, T)) != null) {
-					aStack.stackSize--;
+					aStack.setCount(aStack.getCount()-1);
 					ST.give(aPlayer, tStack, T);
 					return T;
 				}

@@ -56,10 +56,10 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 		if (aPlayer == null) {
 			IPacket tPacket = getClientDataPacket(aSendAll);
 			if (mOwner == null) {
-				getNetworkHandler().sendToAllPlayersInRange(tPacket, worldObj, getCoords());
+				getNetworkHandler().sendToAllPlayersInRange(tPacket, level, getCoords());
 			} else {
-				getNetworkHandler().sendToPlayerIfInRange(tPacket, mOwner, worldObj, getCoords());
-				getNetworkHandlerNonOwned().sendToAllPlayersInRangeExcept(tPacket, mOwner, worldObj, getCoords());
+				getNetworkHandler().sendToPlayerIfInRange(tPacket, mOwner, level, getCoords());
+				getNetworkHandlerNonOwned().sendToAllPlayersInRangeExcept(tPacket, mOwner, level, getCoords());
 			}
 		} else if (!mSendClientData) {
 			IPacket tPacket = getClientDataPacket(aSendAll);

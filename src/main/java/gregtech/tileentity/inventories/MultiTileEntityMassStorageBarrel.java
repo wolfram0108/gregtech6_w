@@ -102,13 +102,13 @@ public class MultiTileEntityMassStorageBarrel extends MultiTileEntityMassStorage
 			return BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[aIndex], mRGBa, mMaterial.contains(TD.Properties.GLOWING)), BlockTextureDefault.get(sOverlays[aIndex]), (mMode & B[3]) == 0 ? null : BlockTextureDefault.get(Textures.BlockIcons.DUCT_TAPE));
 		}
 		if (aSide == mFacing) {
-			if (slot(1).stackSize >= mMaxStorage) switch(aRenderPass) {
+			if (slot(1).getCount() >= mMaxStorage) switch(aRenderPass) {
 			case 1: return BlockTextureDefault.get(BI.CHAR_1        , CA_RED_255, F, T, T, T);
 			case 2: return BlockTextureDefault.get(BI.CHAR_0        , CA_RED_255, F, T, T, T);
 			case 3: return BlockTextureDefault.get(BI.CHAR_0        , CA_RED_255, F, T, T, T);
 			case 4: return BlockTextureDefault.get(BI.CHAR_PERCENT  , CA_RED_255, F, T, T, T);
 			}
-			return BlockTextureDefault.get(BI.decimalDigit(slot(1).stackSize, 4-aRenderPass), CA_GRAY_32, F, T, T, T);
+			return BlockTextureDefault.get(BI.decimalDigit(slot(1).getCount(), 4-aRenderPass), CA_GRAY_32, F, T, T, T);
 		}
 		return null;
 	}
@@ -116,9 +116,9 @@ public class MultiTileEntityMassStorageBarrel extends MultiTileEntityMassStorage
 	@Override
 	public boolean usesRenderPass2(int aRenderPass, boolean[] aShouldSideBeRendered) {
 		switch(aRenderPass) {
-		case 1: return slot(1).stackSize > 999;
-		case 2: return slot(1).stackSize > 99;
-		case 3: return slot(1).stackSize > 9;
+		case 1: return slot(1).getCount() > 999;
+		case 2: return slot(1).getCount() > 99;
+		case 3: return slot(1).getCount() > 9;
 		}
 		return T;
 	}

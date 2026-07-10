@@ -32,7 +32,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.player.Player;
@@ -85,19 +85,19 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && aTool.equals(TOOL_magnifyingglass)) {
 			if (aPlayer instanceof Player && aSneaking) {
-				ST.give(aPlayer, getRock(1), T, worldObj, xCoord+0.5, yCoord+0.5, zCoord+0.5);
+				ST.give(aPlayer, getRock(1), T, level, xCoord+0.5, yCoord+0.5, zCoord+0.5);
 				playCollect();
 				setToAir();
 				return 0;
 			}
 			if (aChatReturn == null) return 1;
 			if (mRock == null) {
-				if (worldObj.provider.dimensionId == -1)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rack"); return 1;}
-				if (worldObj.provider.dimensionId ==  0)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rock"); return 1;}
-				if (worldObj.provider.dimensionId == +1)         {aChatReturn.add(LH.Chat.GRAY + "There is definitely an End"); return 1;}
-				if (WD.dimAETHER(worldObj))                      {aChatReturn.add(LH.Chat.GRAY + "Holy $#!T, it's a Rock.."); return 1;}
-				if (WD.dimALF   (worldObj))                      {aChatReturn.add(LH.Chat.GRAY + "Wait that Rock is alive?!"); return 1;}
-				if (WD.dimTROPIC(worldObj))                      {aChatReturn.add(LH.Chat.GRAY + "Seems to be a Chunk o'Head"); return 1;}
+				if (level.provider.dimensionId == -1)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rack"); return 1;}
+				if (level.provider.dimensionId ==  0)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rock"); return 1;}
+				if (level.provider.dimensionId == +1)         {aChatReturn.add(LH.Chat.GRAY + "There is definitely an End"); return 1;}
+				if (WD.dimAETHER(level))                      {aChatReturn.add(LH.Chat.GRAY + "Holy $#!T, it's a Rock.."); return 1;}
+				if (WD.dimALF   (level))                      {aChatReturn.add(LH.Chat.GRAY + "Wait that Rock is alive?!"); return 1;}
+				if (WD.dimTROPIC(level))                      {aChatReturn.add(LH.Chat.GRAY + "Seems to be a Chunk o'Head"); return 1;}
 				if (BIOMES_MOON.contains(getBiome().biomeName))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely not made of Cheese"); return 1;}
 				if (BIOMES_MARS.contains(getBiome().biomeName))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely from Mars"); return 1;}
 				if (BIOMES_SPACE.contains(getBiome().biomeName)) {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Space Rock"); return 1;}
@@ -142,7 +142,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
-		ST.give(aPlayer, getRock(1), T, worldObj, xCoord+0.5, yCoord+0.5, zCoord+0.5);
+		ST.give(aPlayer, getRock(1), T, level, xCoord+0.5, yCoord+0.5, zCoord+0.5);
 		playCollect();
 		return setToAir();
 	}
@@ -150,13 +150,13 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	@Override
 	public void onNeighborBlockChange(Level aWorld, Block aBlock) {
 		if (isServerSide()) {
-			if (!worldObj.getBlock(xCoord, yCoord-1, zCoord).isSideSolid(worldObj, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_TOP])) {
-				ST.drop(worldObj, getCoords(), getRock(1));
+			if (!level.getBlock(xCoord, yCoord-1, zCoord).isSideSolid(level, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_TOP])) {
+				ST.drop(level, getCoords(), getRock(1));
 				setToAir();
 				return;
 			}
 			for (byte tSide : ALL_SIDES_HORIZONTAL_UP) if (WD.liquid(getBlockAtSide(tSide))) {
-				ST.drop(worldObj, getCoords(), getRock(1));
+				ST.drop(level, getCoords(), getRock(1));
 				setToAir();
 				return;
 			}
@@ -168,18 +168,18 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	}
 	public ItemStack getDefaultRock(int aAmount) {
 		// Tell WAILA and the NEI Overlay that this is a normal Rock.
-		if (worldObj == null || isClientSide()) return OP.rockGt.mat(MT.Stone, aAmount);
+		if (level == null || isClientSide()) return OP.rockGt.mat(MT.Stone, aAmount);
 		// Dimension and Biome specific Drops.
-		if (worldObj.provider.dimensionId == -1) return OP.rockGt.mat(MT.Netherrack, aAmount);
-		if (worldObj.provider.dimensionId ==  0) return OP.rockGt.mat(MT.Stone, aAmount);
-		if (worldObj.provider.dimensionId == +1) return OP.rockGt.mat(MT.Endstone, aAmount);
-		if (WD.dimAETHER(worldObj)) return OP.rockGt.mat(MT.STONES.Holystone, aAmount);
-		if (WD.dimERE   (worldObj)) return OP.rockGt.mat(MT.STONES.Umber, aAmount);
-		if (WD.dimBTL   (worldObj)) return OP.rockGt.mat(MT.STONES.Betweenstone, aAmount);
-		if (WD.dimATUM  (worldObj)) return OP.rockGt.mat(MT.STONES.Limestone, aAmount);
-		if (WD.dimTROPIC(worldObj)) return OP.rockGt.mat(MT.STONES.Basalt, aAmount);
-		if (WD.dimALF   (worldObj)) return OP.rockGt.mat(MT.STONES.Livingrock, aAmount);
-		if (WD.dimTF    (worldObj)) return OP.rockGt.mat(MT.Stone, aAmount);
+		if (level.provider.dimensionId == -1) return OP.rockGt.mat(MT.Netherrack, aAmount);
+		if (level.provider.dimensionId ==  0) return OP.rockGt.mat(MT.Stone, aAmount);
+		if (level.provider.dimensionId == +1) return OP.rockGt.mat(MT.Endstone, aAmount);
+		if (WD.dimAETHER(level)) return OP.rockGt.mat(MT.STONES.Holystone, aAmount);
+		if (WD.dimERE   (level)) return OP.rockGt.mat(MT.STONES.Umber, aAmount);
+		if (WD.dimBTL   (level)) return OP.rockGt.mat(MT.STONES.Betweenstone, aAmount);
+		if (WD.dimATUM  (level)) return OP.rockGt.mat(MT.STONES.Limestone, aAmount);
+		if (WD.dimTROPIC(level)) return OP.rockGt.mat(MT.STONES.Basalt, aAmount);
+		if (WD.dimALF   (level)) return OP.rockGt.mat(MT.STONES.Livingrock, aAmount);
+		if (WD.dimTF    (level)) return OP.rockGt.mat(MT.Stone, aAmount);
 		if (BIOMES_MOON .contains(getBiome().biomeName)) return OP.rockGt.mat(MT.STONES.MoonRock, aAmount);
 		if (BIOMES_MARS .contains(getBiome().biomeName)) return OP.rockGt.mat(MT.STONES.MarsRock, aAmount);
 		if (BIOMES_SPACE.contains(getBiome().biomeName)) return OP.rockGt.mat(MT.STONES.SpaceRock, aAmount);
@@ -190,7 +190,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	
 	@Override
 	public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {
-		if (worldObj == null) {mTexture = sStoneTexture; return 1;}
+		if (level == null) {mTexture = sStoneTexture; return 1;}
 		if (hasSnow()) {mTexture = SNOW_TEXTURE; return 2;}
 		
 		Block tBlock = getBlockAtSide(SIDE_BOTTOM);
@@ -213,16 +213,16 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 			mTexture = BlockTextureCopied.get(BlocksGT.GraniteBlack, SIDE_ANY, 0); return 1;
 		}
 		
-		if (worldObj.provider.dimensionId == -1) {mTexture = BlockTextureCopied.get(Blocks.netherrack); return 1;}
-		if (worldObj.provider.dimensionId ==  0) {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
-		if (worldObj.provider.dimensionId == +1) {mTexture = BlockTextureCopied.get(Blocks.end_stone); return 1;}
-		if (WD.dimTF(worldObj))                  {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
-		if (WD.dimERE(worldObj))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x907050, F, F, F); return 1;}
-		if (WD.dimBTL(worldObj))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x308030, F, F, F); return 1;}
-		if (WD.dimALF(worldObj))                 {mTexture = BlockTextureCopied.get(BlocksGT.Marble); return 1;}
-		if (WD.dimATUM(worldObj))                {mTexture = BlockTextureCopied.get(BlocksGT.Limestone); return 1;}
-		if (WD.dimAETHER(worldObj))              {mTexture = BlockTextureCopied.get(BlocksGT.Andesite); return 1;}
-		if (WD.dimTROPIC(worldObj))              {mTexture = BlockTextureCopied.get(BlocksGT.Basalt); return 1;}
+		if (level.provider.dimensionId == -1) {mTexture = BlockTextureCopied.get(Blocks.netherrack); return 1;}
+		if (level.provider.dimensionId ==  0) {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
+		if (level.provider.dimensionId == +1) {mTexture = BlockTextureCopied.get(Blocks.end_stone); return 1;}
+		if (WD.dimTF(level))                  {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
+		if (WD.dimERE(level))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x907050, F, F, F); return 1;}
+		if (WD.dimBTL(level))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x308030, F, F, F); return 1;}
+		if (WD.dimALF(level))                 {mTexture = BlockTextureCopied.get(BlocksGT.Marble); return 1;}
+		if (WD.dimATUM(level))                {mTexture = BlockTextureCopied.get(BlocksGT.Limestone); return 1;}
+		if (WD.dimAETHER(level))              {mTexture = BlockTextureCopied.get(BlocksGT.Andesite); return 1;}
+		if (WD.dimTROPIC(level))              {mTexture = BlockTextureCopied.get(BlocksGT.Basalt); return 1;}
 		
 		if (BIOMES_SPACE.contains(getBiome().biomeName)) {
 			if (tBlock.getMaterial() == Material.rock) {mTexture = BlockTextureCopied.get(tBlock, getMetaDataAtSide(SIDE_BOTTOM)); return 1;}

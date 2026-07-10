@@ -26,7 +26,7 @@ import java.util.List;
 import gregapi.block.tree.BlockBaseBeam;
 import gregapi.data.LH;
 import gregapi.old.Textures;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 

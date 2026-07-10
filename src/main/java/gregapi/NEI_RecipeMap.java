@@ -123,9 +123,9 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 				if (ST.meta_(tStack) == W) {
 					List<ItemStack> permutations = ItemList.itemMap.get(tStack.getItem());
 					if (!permutations.isEmpty()) {
-						for(ItemStack stack : permutations) tDisplayStacks.add(ST.amount(tStack.stackSize, stack));
+						for(ItemStack stack : permutations) tDisplayStacks.add(ST.amount(tStack.getCount(), stack));
 					} else {
-						ItemStack base = ST.make(tStack.getItem(), tStack.stackSize, 0);
+						ItemStack base = ST.make(tStack.getItem(), tStack.getCount(), 0);
 						base.stackTagCompound = tStack.stackTagCompound;
 						tDisplayStacks.add(base);
 					}
@@ -662,13 +662,13 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			for (PositionedStack tStack : tRecipe.mOutputs) if (aStack == tStack.item) {
 				if (tStack instanceof FixedPositionedStack && ((FixedPositionedStack)tStack).mChance > 0 && ((FixedPositionedStack)tStack).mChance != ((FixedPositionedStack)tStack).mMaxChance) {
 					long tChance = UT.Code.units(((FixedPositionedStack)tStack).mChance, ((FixedPositionedStack)tStack).mMaxChance, 10000, F);
-					currenttip.add(1, LH.Chat.BLINKING_CYAN + "Chance: " + (tChance / 100) + "." + ((tChance % 100)<10?"0"+(tChance % 100):(tChance % 100)) + "%" + (tStack.item.stackSize>1?" each":""));
+					currenttip.add(1, LH.Chat.BLINKING_CYAN + "Chance: " + (tChance / 100) + "." + ((tChance % 100)<10?"0"+(tChance % 100):(tChance % 100)) + "%" + (tStack.item.getCount()>1?" each":""));
 				}
 				break;
 			}
 			for (PositionedStack tStack : tRecipe.mInputs) if (aStack == tStack.item) {
 				if (!gregapi.data.IL.Display_Fluid.equal(tStack.item, T, T)) {
-					if (tStack.item.stackSize == 0) currenttip.add(1, LH.Chat.BLINKING_CYAN + "Does not get consumed in the process");
+					if (tStack.item.getCount() == 0) currenttip.add(1, LH.Chat.BLINKING_CYAN + "Does not get consumed in the process");
 				}
 				break;
 			}

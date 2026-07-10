@@ -28,7 +28,7 @@ import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.entity.Entity;
@@ -81,7 +81,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	}
 	
 	public EntityArrow_Material(Arrow aArrow, ItemStack aStack) {
-		super(aArrow.worldObj);
+		super(aArrow.level());
 		shootingEntity = aArrow.shootingEntity;
 		CompoundTag tNBT = UT.NBT.make();
 		aArrow.writeToNBT(tNBT);
@@ -92,7 +92,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	@Override
 	public void onUpdate() {
 		onEntityUpdate();
-		if (mArrow == null && !worldObj.isRemote) {
+		if (mArrow == null && !level().isRemote) {
 			setDead();
 			return;
 		}
@@ -107,18 +107,18 @@ public class EntityArrow_Material extends EntityProjectile {
 		
 		if (mTicksAlive++ == 3000) setDead();
 		
-		Block tBlock = worldObj.getBlock(mHitBlockX, mHitBlockY, mHitBlockZ);
+		Block tBlock = level().getBlock(mHitBlockX, mHitBlockY, mHitBlockZ);
 		
 		if (tBlock.getMaterial() != Material.air) {
-			tBlock.setBlockBoundsBasedOnState(worldObj, mHitBlockX, mHitBlockY, mHitBlockZ);
-			AxisAlignedBB axisalignedbb = tBlock.getCollisionBoundingBoxFromPool(worldObj, mHitBlockX, mHitBlockY, mHitBlockZ);
-			if (axisalignedbb != null && axisalignedbb.isVecInside(Vec3.createVectorHelper(posX, posY, posZ))) inGround = T;
+			tBlock.setBlockBoundsBasedOnState(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
+			AxisAlignedBB axisalignedbb = tBlock.getCollisionBoundingBoxFromPool(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
+			if (axisalignedbb != null && axisalignedbb.isVecInside(Vec3.createVectorHelper(getX(), getY(), getZ()))) inGround = T;
 		}
 		
 		if (arrowShake > 0) arrowShake--;
 		
 		if (inGround) {
-			int j = worldObj.getBlockMetadata(mHitBlockX, mHitBlockY, mHitBlockZ);
+			int j = level().getBlockMetadata(mHitBlockX, mHitBlockY, mHitBlockZ);
 			if (tBlock != mHitBlock || j != mHitBlockMeta) {
 				inGround = F;
 				motionX *= (rand.nextFloat() * 0.2F);
@@ -129,17 +129,17 @@ public class EntityArrow_Material extends EntityProjectile {
 			}
 		} else {
 			ticksInAir++;
-			Vec3 vec31 = Vec3.createVectorHelper(posX, posY, posZ);
-			Vec3 vec3 = Vec3.createVectorHelper(posX + motionX, posY + motionY, posZ + motionZ);
-			MovingObjectPosition tVector = worldObj.func_147447_a(vec31, vec3, F, T, F);
-			vec31 = Vec3.createVectorHelper(posX, posY, posZ);
-			vec3 = Vec3.createVectorHelper(posX + motionX, posY + motionY, posZ + motionZ);
+			Vec3 vec31 = Vec3.createVectorHelper(getX(), getY(), getZ());
+			Vec3 vec3 = Vec3.createVectorHelper(getX() + motionX, getY() + motionY, getZ() + motionZ);
+			MovingObjectPosition tVector = level().func_147447_a(vec31, vec3, F, T, F);
+			vec31 = Vec3.createVectorHelper(getX(), getY(), getZ());
+			vec3 = Vec3.createVectorHelper(getX() + motionX, getY() + motionY, getZ() + motionZ);
 			
 			if (tVector != null) vec3 = Vec3.createVectorHelper(tVector.hitVec.xCoord, tVector.hitVec.yCoord, tVector.hitVec.zCoord);
 			
 			Entity tHitEntity = null;
 			@SuppressWarnings("rawtypes")
-			List tAllPotentiallyHitEntities = worldObj.getEntitiesWithinAABBExcludingEntity(this, boundingBox.addCoord(motionX, motionY, motionZ).expand(1.0D, 1.0D, 1.0D));
+			List tAllPotentiallyHitEntities = level().getEntitiesWithinAABBExcludingEntity(this, boundingBox.addCoord(motionX, motionY, motionZ).expand(1.0D, 1.0D, 1.0D));
 			double tSmallestDistance = Double.MAX_VALUE;
 			
 			for (int i = 0; i < tAllPotentiallyHitEntities.size(); ++i) {
@@ -201,12 +201,12 @@ public class EntityArrow_Material extends EntityProjectile {
 						
 						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(Enchantment.looting, mArrow) > 0) {
 							Player tPlayer = null;
-							if (worldObj instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)worldObj, new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getCommandSenderName():"Arrow"));
+							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getCommandSenderName():"Arrow"));
 							if (tPlayer != null) {
 								tPlayer.inventory.currentItem = 0;
 								tPlayer.inventory.setInventorySlotContents(0, getArrowItem());
 								// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Arrow would do ZERO Damage.
-								if (WD.dimTF(worldObj)) tPlayer.capabilities.isCreativeMode = T;
+								if (WD.dimTF(level())) tPlayer.capabilities.isCreativeMode = T;
 								tShootingEntity = tPlayer;
 								tPlayer.setDead();
 							}
@@ -223,7 +223,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								
 								LivingEntity tHitLivingEntity = (LivingEntity)tHitEntity;
 								
-								if (!worldObj.isRemote) tHitLivingEntity.setArrowCountInEntity(tHitLivingEntity.getArrowCountInEntity() + 1);
+								if (!level().isRemote) tHitLivingEntity.setArrowCountInEntity(tHitLivingEntity.getArrowCountInEntity() + 1);
 								
 								if (tKnockback > 0) {
 									float tKnockbackDivider = MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ);
@@ -258,11 +258,11 @@ public class EntityArrow_Material extends EntityProjectile {
 					mHitBlockX = tVector.blockX;
 					mHitBlockY = tVector.blockY;
 					mHitBlockZ = tVector.blockZ;
-					mHitBlock = worldObj.getBlock(mHitBlockX, mHitBlockY, mHitBlockZ);
-					mHitBlockMeta = worldObj.getBlockMetadata(mHitBlockX, mHitBlockY, mHitBlockZ);
-					motionX = ((float)(tVector.hitVec.xCoord - posX));
-					motionY = ((float)(tVector.hitVec.yCoord - posY));
-					motionZ = ((float)(tVector.hitVec.zCoord - posZ));
+					mHitBlock = level().getBlock(mHitBlockX, mHitBlockY, mHitBlockZ);
+					mHitBlockMeta = level().getBlockMetadata(mHitBlockX, mHitBlockY, mHitBlockZ);
+					motionX = ((float)(tVector.hitVec.xCoord - getX()));
+					motionY = ((float)(tVector.hitVec.yCoord - getY()));
+					motionZ = ((float)(tVector.hitVec.zCoord - getZ()));
 					float f2 = MathHelper.sqrt_double(motionX * motionX + motionY * motionY + motionZ * motionZ);
 					posX -= motionX / f2 * 0.05000000074505806D;
 					posY -= motionY / f2 * 0.05000000074505806D;
@@ -272,15 +272,15 @@ public class EntityArrow_Material extends EntityProjectile {
 					arrowShake = 7;
 					setIsCritical(false);
 					
-					if (mHitBlock.getMaterial() != Material.air) mHitBlock.onEntityCollidedWithBlock(worldObj, mHitBlockX, mHitBlockY, mHitBlockZ, this);
+					if (mHitBlock.getMaterial() != Material.air) mHitBlock.onEntityCollidedWithBlock(level(), mHitBlockX, mHitBlockY, mHitBlockZ, this);
 					
-					if (!worldObj.isRemote && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 2) WD.burn(worldObj, mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
+					if (!level().isRemote && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
 					
 					if (breaksOnImpact()) setDead();
 				}
 			}
 			
-			if (getIsCritical()) for (int i = 0; i < 4; ++i) worldObj.spawnParticle("crit", posX + motionX * i / 4.0D, posY + motionY * i / 4.0D, posZ + motionZ * i / 4.0D, -motionX, -motionY + 0.2D, -motionZ);
+			if (getIsCritical()) for (int i = 0; i < 4; ++i) level().spawnParticle("crit", getX() + motionX * i / 4.0D, getY() + motionY * i / 4.0D, getZ() + motionZ * i / 4.0D, -motionX, -motionY + 0.2D, -motionZ);
 			
 			posX += motionX; posY += motionY; posZ += motionZ;
 			
@@ -297,7 +297,7 @@ public class EntityArrow_Material extends EntityProjectile {
 			float tFrictionMultiplier = 0.99F;
 			
 			if (isInWater()) {
-				for (int l = 0; l < 4; ++l) worldObj.spawnParticle("bubble", posX - motionX * 0.25, posY - motionY * 0.25, posZ - motionZ * 0.25, motionX, motionY, motionZ);
+				for (int l = 0; l < 4; ++l) level().spawnParticle("bubble", getX() - motionX * 0.25, getY() - motionY * 0.25, getZ() - motionZ * 0.25, motionX, motionY, motionZ);
 				tFrictionMultiplier = 0.8F;
 			}
 			
@@ -307,7 +307,7 @@ public class EntityArrow_Material extends EntityProjectile {
 			motionY *= tFrictionMultiplier;
 			motionZ *= tFrictionMultiplier;
 			motionY -= 0.05F;
-			setPosition(posX, posY, posZ);
+			setPosition(getX(), getY(), getZ());
 			func_145775_I();
 		}
 	}
@@ -346,7 +346,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	
 	@Override
 	public void onCollideWithPlayer(Player aPlayer) {
-		if (!worldObj.isRemote && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.inventory.addItemStackToInventory(getArrowItem())) {
+		if (!level().isRemote && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.inventory.addItemStackToInventory(getArrowItem())) {
 			playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
 			aPlayer.onItemPickup(this, 1);
 			setDead();

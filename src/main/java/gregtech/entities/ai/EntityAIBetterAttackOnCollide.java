@@ -47,7 +47,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 	public EntityAIBetterAttackOnCollide(EntityAIAttackOnCollide orig) {
 		mTargetClass = orig.classTarget;
 		mCreature = orig.attacker;
-		mWorld = mCreature.worldObj;
+		mWorld = mCreature.level();
 		mSpeedToTarget = orig.speedTowardsTarget;
 		mLastingMemory = orig.longMemory;
 		setMutexBits(3);
@@ -71,7 +71,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 	@Override
 	public boolean continueExecuting() {
 		LivingEntity tTarget = mCreature.getAttackTarget();
-		return tTarget != null && tTarget.isEntityAlive() && (!mLastingMemory ? !mCreature.getNavigator().noPath() : mCreature.isWithinHomeDistance(Mth.floor_double(tTarget.posX), Mth.floor_double(tTarget.posY), Mth.floor_double(tTarget.posZ)));
+		return tTarget != null && tTarget.isEntityAlive() && (!mLastingMemory ? !mCreature.getNavigator().noPath() : mCreature.isWithinHomeDistance(Mth.floor_double(tTarget.getX()), Mth.floor_double(tTarget.getY()), Mth.floor_double(tTarget.getZ())));
 	}
 	
 	@Override
@@ -89,11 +89,11 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 	public void updateTask() {
 		LivingEntity tTarget = mCreature.getAttackTarget();
 		mCreature.getLookHelper().setLookPositionWithEntity(tTarget, 30, 30);
-		double tTargetDistance = mCreature.getDistanceSq(tTarget.posX, tTarget.boundingBox.minY, tTarget.posZ);
+		double tTargetDistance = mCreature.getDistanceSq(tTarget.getX(), tTarget.boundingBox.minY, tTarget.getZ());
 		double tLookRadius = mCreature.width * mCreature.width * 4 + tTarget.width;
 		mPathCoolDown--;
 		if ((mLastingMemory || mCreature.getEntitySenses().canSee(tTarget)) && mPathCoolDown <= 0 && ((mX == 0 && mY == 0 && mZ == 0) || tTarget.getDistanceSq(mX, mY, mZ) >= 1 || mCreature.getRNG().nextFloat() < 0.05F)) {
-			mX = tTarget.posX; mY = tTarget.boundingBox.minY; mZ = tTarget.posZ;
+			mX = tTarget.getX(); mY = tTarget.boundingBox.minY; mZ = tTarget.getZ();
 			
 			mPathCoolDown = mFailedPathFindingPenalty + 4 + mCreature.getRNG().nextInt(7);
 			if (mCreature.getNavigator().getPath() != null) {
@@ -131,10 +131,11 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 					mAttackCoolDown = 20;
 					tAttacking = F;
 					
-					if (--tHeld.stackSize <= 0) mCreature.setCurrentItemOrArmor(0, NI);
+					tHeld.setCount(tHeld.getCount()-1);
+					if (tHeld.getCount() <= 0) mCreature.setCurrentItemOrArmor(0, NI);
 					
 					if (!mWorld.isRemote) {
-						PrimedTnt entitytntprimed = new PrimedTnt(mWorld, mCreature.posX, mCreature.posY, mCreature.posZ, mCreature);
+						PrimedTnt entitytntprimed = new PrimedTnt(mWorld, mCreature.getX(), mCreature.getY(), mCreature.getZ(), mCreature);
 						mWorld.spawnEntityInWorld(entitytntprimed);
 						mWorld.playSoundAtEntity(entitytntprimed, "game.tnt.primed", 1, 1);
 					}

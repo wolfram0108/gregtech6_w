@@ -132,7 +132,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 					int tXP = UT.NBT.getEnchantmentXP(aStack);
 					if (tXP > 0) {
 						ST.give(aPlayer, UT.NBT.removeEnchantments(ST.amount(1, aStack)), F);
-						worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
+						level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
 					} else {
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, F, V[1], null, ZL_FS, aStack);
 						if (tRecipe != null) {
@@ -149,7 +149,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 						ItemStack tOutput = ST.amount(1, aStack);
 						ST.use(aPlayer, T, F, aStack, 1);
 						ST.give(aPlayer, UT.NBT.removeEnchantments(tOutput), F);
-						worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
+						level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.5, yCoord+1.25, zCoord+0.5, tXP));
 						UT.Entities.exhaust(aPlayer, 0.5F);
 					} else {
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, F, V[1], null, ZL_FS, aStack);

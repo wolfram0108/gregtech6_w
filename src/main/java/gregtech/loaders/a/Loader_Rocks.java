@@ -43,7 +43,7 @@ import gregapi.util.CR;
 import gregapi.util.ST;
 import gregtech.blocks.stone.BlockStonesGT;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import team.chisel.carving.Carving;
 
 public class Loader_Rocks implements Runnable {

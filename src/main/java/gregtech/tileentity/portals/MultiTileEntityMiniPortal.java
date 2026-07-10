@@ -266,7 +266,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	
 	@Override public int getFireSpreadSpeed(byte aSide, boolean aDefault) {return 0;}
 	@Override public int getFlammability(byte aSide, boolean aDefault) {return 0;}
-	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return Blocks.stone.getExplosionResistance(null);}
 	
 	@Override
@@ -315,7 +315,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	
 	@Override
 	public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
-		return sRenderedSides[aRenderPass][aSide] ? aRenderPass == 0 ? mActive || worldObj == null ? aShouldSideBeRendered[aSide] ? getPortalTexture() : null : getInactiveTexture() : getFrameTexture() : null;
+		return sRenderedSides[aRenderPass][aSide] ? aRenderPass == 0 ? mActive || level == null ? aShouldSideBeRendered[aSide] ? getPortalTexture() : null : getInactiveTexture() : getFrameTexture() : null;
 	}
 	
 	public abstract ITexture getPortalTexture();

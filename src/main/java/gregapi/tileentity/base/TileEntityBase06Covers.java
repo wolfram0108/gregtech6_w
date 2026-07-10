@@ -117,16 +117,16 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 		}
 		if (attachCoversFirst(aSide)) {
 			ItemStack aStack = aPlayer.getCurrentEquippedItem();
-			if (aStack != null && aStack.stackSize > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+			if (aStack != null && aStack.getCount() > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 				return T;
 			}
 			return onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ);
 		}
 		if (onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ)) return T;
 		ItemStack aStack = aPlayer.getCurrentEquippedItem();
-		if (aStack != null && aStack.stackSize > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
-			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+		if (aStack != null && aStack.getCount() > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
+			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			return T;
 		}
 		return F;
@@ -146,7 +146,7 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 				ItemStack tStack = getCoverItem(tSide);
 				ICover tCover = mCovers.mBehaviours[tSide];
 				if (tStack != null && setCoverItem(tSide, null, aPlayer, F, T)) {
-					if (!ST.add(aPlayer, tStack, F)) ST.place(worldObj, getOffsetX(aSide)+0.5, getOffsetY(aSide)+0.5, getOffsetZ(aSide)+0.5, tStack);
+					if (!ST.add(aPlayer, tStack, F)) ST.place(level, getOffsetX(aSide)+0.5, getOffsetY(aSide)+0.5, getOffsetZ(aSide)+0.5, tStack);
 					if (tCover != null) tCover.onAfterCrowbar(this);
 					return 10000;
 				}
@@ -205,10 +205,10 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 	public void onTick2(long aTimer, boolean aIsServerSide) {/**/}
 	
 	public void checkCoverValidity() {
-		if (worldObj != null && isServerSide() && hasCovers()) for (byte tSide : ALL_SIDES_VALID) if (!allowCovers(tSide)) {
+		if (level != null && isServerSide() && hasCovers()) for (byte tSide : ALL_SIDES_VALID) if (!allowCovers(tSide)) {
 			ItemStack tStack = getCoverItem(tSide);
 			if (setCoverItem(tSide, null, null, T, T)) {
-				ST.place(worldObj, getOffset(tSide, 1), tStack);
+				ST.place(level, getOffset(tSide, 1), tStack);
 				UT.Sounds.send(SFX.MC_BREAK, 1.0F, -1.0F, this, F);
 			}
 		}
@@ -390,7 +390,7 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 			byte rRedstone = 0;
 			for (byte tSide : ALL_SIDES_VALID) {
 				if (mCovers.mBehaviours[tSide] == null) {
-					rRedstone = (byte)Math.max(rRedstone, worldObj.getIndirectPowerLevelTo(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide), tSide));
+					rRedstone = (byte)Math.max(rRedstone, level.getIndirectPowerLevelTo(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide), tSide));
 				} else {
 					rRedstone = (byte)Math.max(rRedstone, mCovers.mBehaviours[tSide].getRedstoneIn(tSide, mCovers));
 				}
@@ -398,7 +398,7 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 			}
 			return rRedstone;
 		}
-		return mCovers.mBehaviours[aSide] == null ? UT.Code.bind4(worldObj.getIndirectPowerLevelTo(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), aSide)) : mCovers.mBehaviours[aSide].getRedstoneIn(aSide, mCovers);
+		return mCovers.mBehaviours[aSide] == null ? UT.Code.bind4(level.getIndirectPowerLevelTo(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), aSide)) : mCovers.mBehaviours[aSide].getRedstoneIn(aSide, mCovers);
 	}
 	
 	@Override

@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.oredict.OreDictionary;
+import gregapi.oredict.OreDictionary;
 
 import static gregapi.data.CS.NI;
 import static gregapi.data.CS.W;

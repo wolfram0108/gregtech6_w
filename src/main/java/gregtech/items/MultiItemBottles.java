@@ -431,9 +431,9 @@ public class MultiItemBottles extends MultiItemRandomWithCompat implements IItem
 		
 		switch(aMeta) {
 		case    5: case    6: case    7: case 1102: case 1601: case 1700: return aStack;
-		case    0: case    1: case    2: case    3: case    4: return ST.make(this, aStack.stackSize, 5, aStack.getTagCompound());
-		case 1100: case 1200: return    ST.make(this, aStack.stackSize, 1102, aStack.getTagCompound());
-		default: return aMeta < 30000 ? ST.make(this, aStack.stackSize, 1601, aStack.getTagCompound()) : aStack;
+		case    0: case    1: case    2: case    3: case    4: return ST.make(this, aStack.getCount(), 5, aStack.getTagCompound());
+		case 1100: case 1200: return    ST.make(this, aStack.getCount(), 1102, aStack.getTagCompound());
+		default: return aMeta < 30000 ? ST.make(this, aStack.getCount(), 1601, aStack.getTagCompound()) : aStack;
 		}
 	}
 	

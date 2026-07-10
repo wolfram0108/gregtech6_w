@@ -62,8 +62,8 @@ public class Loader_Recipes_Furnace implements Runnable {
 				// Lots of RotaryCraft balance fixes and more Recipe Compat.
 				if (tFurnace && MD.RoC.owns(tReg1, "extracts")) {
 					if (tData2 != null && tData2.nonemptyData()) {
-						ItemStack tDust = OM.dust(tData2.mMaterial.mMaterial.mTargetCrushing.mMaterial, UT.Code.units(tData2.mMaterial.mAmount * tEntry.getValue().stackSize, U, tData2.mMaterial.mMaterial.mTargetCrushing.mAmount, F));
-						if (ST.invalid(tDust) && tDust.stackSize <= 0) tDust = null;
+						ItemStack tDust = OM.dust(tData2.mMaterial.mMaterial.mTargetCrushing.mMaterial, UT.Code.units(tData2.mMaterial.mAmount * tEntry.getValue().getCount(), U, tData2.mMaterial.mMaterial.mTargetCrushing.mAmount, F));
+						if (ST.invalid(tDust) && tDust.getCount() <= 0) tDust = null;
 						
 						if (tDust == null) {
 							// Output the random Items.
@@ -121,7 +121,7 @@ public class Loader_Recipes_Furnace implements Runnable {
 					}
 					if (tData2.mMaterial.mMaterial.contains(TD.Processing.NEVER_FURNACE)) {
 						// Unsmelt things that really do not belong in Furnace Recipes.
-						tEntry.setValue(OP.scrapGt.mat(tData2.mMaterial, (tData2.mMaterial.mAmount * tEntry.getValue().stackSize) / OP.scrapGt.mAmount));
+						tEntry.setValue(OP.scrapGt.mat(tData2.mMaterial, (tData2.mMaterial.mAmount * tEntry.getValue().getCount()) / OP.scrapGt.mAmount));
 						if (MD.EtFu.mLoaded) try {
 							SmokerRecipes      .smelting().smeltingBlacklist.add(tEntry.getKey());
 							BlastFurnaceRecipes.smelting().smeltingBlacklist.add(tEntry.getKey());

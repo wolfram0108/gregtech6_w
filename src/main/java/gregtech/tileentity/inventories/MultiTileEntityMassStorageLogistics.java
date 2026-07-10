@@ -115,7 +115,7 @@ public class MultiTileEntityMassStorageLogistics extends MultiTileEntityMassStor
 			return BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[aIndex], mRGBa, mMaterial.contains(TD.Properties.GLOWING)), BlockTextureDefault.get(sOverlays[aIndex]), (mMode & B[3]) == 0 ? null : BlockTextureDefault.get(Textures.BlockIcons.DUCT_TAPE));
 		}
 		if (aSide == mFacing) {
-			if (slot(1).stackSize >= mMaxStorage) switch(aRenderPass) {
+			if (slot(1).getCount() >= mMaxStorage) switch(aRenderPass) {
 			case 1: return null;
 			case 2: return BlockTextureDefault.get(BI.CHAR_1        , CA_RED_255, F, T, T, T);
 			case 3: return BlockTextureDefault.get(BI.CHAR_0        , CA_RED_255, F, T, T, T);
@@ -123,7 +123,7 @@ public class MultiTileEntityMassStorageLogistics extends MultiTileEntityMassStor
 			case 5: return BlockTextureDefault.get(BI.CHAR_PERCENT  , CA_RED_255, F, T, T, T);
 			case 6: return null;
 			}
-			return BlockTextureDefault.get(BI.decimalDigit(slot(1).stackSize, 6-aRenderPass), CA_CYAN_255, F, T, T, T);
+			return BlockTextureDefault.get(BI.decimalDigit(slot(1).getCount(), 6-aRenderPass), CA_CYAN_255, F, T, T, T);
 		}
 		return null;
 	}
@@ -131,11 +131,11 @@ public class MultiTileEntityMassStorageLogistics extends MultiTileEntityMassStor
 	@Override
 	public boolean usesRenderPass2(int aRenderPass, boolean[] aShouldSideBeRendered) {
 		switch(aRenderPass) {
-		case 1: return slot(1).stackSize > 99999;
-		case 2: return slot(1).stackSize > 9999;
-		case 3: return slot(1).stackSize > 999;
-		case 4: return slot(1).stackSize > 99;
-		case 5: return slot(1).stackSize > 9;
+		case 1: return slot(1).getCount() > 99999;
+		case 2: return slot(1).getCount() > 9999;
+		case 3: return slot(1).getCount() > 999;
+		case 4: return slot(1).getCount() > 99;
+		case 5: return slot(1).getCount() > 9;
 		}
 		return T;
 	}

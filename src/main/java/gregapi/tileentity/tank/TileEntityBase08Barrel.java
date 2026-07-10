@@ -164,7 +164,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 				if (!mMagicProof && FL.magic(tFluid)) {
 					UT.Sounds.send(SFX.MC_FIZZ, this, F);
 					GarbageGT.trash(mTank);
-					WD.set(worldObj, xCoord, yCoord, zCoord, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
+					WD.set(level, xCoord, yCoord, zCoord, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
 					return;
 				}
 				if (!mAcidProof && FL.acid(tFluid)) {
@@ -221,12 +221,12 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		if (FL.lava(mTank) && mTank.has(1000)) {
 			mTank.remove(1000);
 			GarbageGT.trash(mTank);
-			worldObj.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 0, 3);
+			level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 0, 3);
 		} else {
 			GarbageGT.trash(mTank);
 			setToFire();
 		}
-		WD.burn(worldObj, getCoords(), F, F);
+		WD.burn(level, getCoords(), F, F);
 		return T;
 	}
 	

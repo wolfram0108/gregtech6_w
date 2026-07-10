@@ -154,7 +154,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	
 	@Override
 	public void onServerTickPost(boolean aFirst) {
-		long tTemperature = WD.envTemp(worldObj, xCoord, yCoord, zCoord);
+		long tTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
 		short tDisplay = mDisplay;
 		
 		if (mTemperature > tTemperature) mTemperature -= Math.min(5, mTemperature-tTemperature); else if (mTemperature < tTemperature) mTemperature += Math.min(5, tTemperature-mTemperature);
@@ -181,7 +181,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 				mContent = null;
 				mDisplay = 0;
 				slotTrash(0);
-				worldObj.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
+				level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
 				return;
 			}
 			mDisplay = mContent.mMaterial.mID;
@@ -305,9 +305,9 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 				if (aCauseDamage) UT.Entities.applyTemperatureDamage(aPlayer, mTemperature, 1, 5.0F);
 				return T;
 			}
-			if (ST.equal(aStack, tOutputStack) && aStack.stackSize < aStack.getMaxStackSize()) {
-				int tDifference = Math.min(tOutputStack.stackSize, aStack.getMaxStackSize() - aStack.stackSize);
-				aStack.stackSize+=tDifference;
+			if (ST.equal(aStack, tOutputStack) && aStack.getCount() < aStack.getMaxStackSize()) {
+				int tDifference = Math.min(tOutputStack.getCount(), aStack.getMaxStackSize() - aStack.getCount());
+				aStack.setCount(aStack.getCount()+(tDifference));
 				decrStackSize(0, tDifference);
 				if (aCauseDamage) UT.Entities.applyTemperatureDamage(aPlayer, mTemperature, 1, 5.0F);
 				return T;
@@ -408,7 +408,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		mTemperature = WD.envTemp(worldObj, xCoord, yCoord, zCoord);
+		mTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
 		return T;
 	}
 	
@@ -586,7 +586,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ACCESSIBLE_SLOTS;}
 	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {return F;}
-	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return mTemperature - 50 < WD.envTemp(worldObj, xCoord, yCoord, zCoord);}
+	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return mTemperature - 50 < WD.envTemp(level, xCoord, yCoord, zCoord);}
 	
 	@Override
 	public boolean canFill(Direction aDirection, Fluid aFluid) {

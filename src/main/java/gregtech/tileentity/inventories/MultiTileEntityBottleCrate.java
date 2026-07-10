@@ -119,7 +119,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 		ItemStack tStack = aPlayer.getCurrentEquippedItem();
 		if (ST.valid(tStack) && canInsertItem2(aSlot, tStack, SIDE_TOP)) {
 			slot(aSlot, ST.copy(tStack));
-			tStack.stackSize = 0;
+			tStack.setCount(0);
 			updateInventory();
 			playCollect();
 			return T;

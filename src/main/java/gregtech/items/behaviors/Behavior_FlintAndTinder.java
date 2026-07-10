@@ -67,7 +67,7 @@ public class Behavior_FlintAndTinder extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aPlayer.worldObj.isRemote) return F;
+		if (aPlayer.level().isRemote) return F;
 		if (aEntity instanceof Creeper) {
 			((MultiItemTool)aItem).doDamage(aStack, 100, aPlayer, F);
 			UT.Sounds.send(SFX.MC_IGNITE, aEntity);

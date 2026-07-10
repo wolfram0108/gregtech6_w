@@ -76,11 +76,11 @@ public class MultiTileEntityFluidCapNozzle extends TileEntityBase11AttachmentSma
 						int tAmount = ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, F);
 						if (tAmount >= tFluid.amount && ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T) > 0) {
 							UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
-							aStack.stackSize--;
+							aStack.setCount(aStack.getCount()-1);
 							ST.give(aPlayer, ST.container(ST.amount(1, aStack), T), T);
 							return T;
 						}
-						if (aStack.getItem() instanceof IFluidHandlerItem && aStack.stackSize == 1) {
+						if (aStack.getItem() instanceof IFluidHandlerItem && aStack.getCount() == 1) {
 							UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
 							((IFluidHandlerItem)aStack.getItem()).drain(aStack, ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T), T);
 							return T;

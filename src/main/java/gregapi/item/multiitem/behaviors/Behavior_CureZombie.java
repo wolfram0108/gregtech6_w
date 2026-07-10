@@ -49,7 +49,7 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 		if (aEntity instanceof EntityZombie && ((EntityZombie)aEntity).isVillager()) {
 			if (!mNeedsWeakness || ((EntityZombie)aEntity).isPotionActive(MobEffect.weakness)) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				if (!(aEntity).worldObj.isRemote) {
+				if (!(aEntity).level().isRemote) {
 					int tCureTime = RNGSUS.nextInt(mAverageCureTime * 2) + 500;
 					CompoundTag tNBT = UT.NBT.make();
 					aEntity.writeToNBT(tNBT);
@@ -57,8 +57,8 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 					aEntity.readFromNBT(tNBT);
 					aEntity.getDataWatcher().updateObject(14, Byte.valueOf((byte)1));
 					((EntityZombie)aEntity).removePotionEffect(MobEffect.weakness.id);
-					((EntityZombie)aEntity).addPotionEffect(new MobEffectInstance(MobEffect.damageBoost.id, tCureTime, Math.min(((EntityZombie)aEntity).worldObj.difficultySetting.getDifficultyId() - 1, 0)));
-					aEntity.worldObj.setEntityState(aEntity, (byte)16);
+					((EntityZombie)aEntity).addPotionEffect(new MobEffectInstance(MobEffect.damageBoost.id, tCureTime, Math.min(((EntityZombie)aEntity).level().difficultySetting.getDifficultyId() - 1, 0)));
+					aEntity.level().setEntityState(aEntity, (byte)16);
 				}
 				return T;
 			}

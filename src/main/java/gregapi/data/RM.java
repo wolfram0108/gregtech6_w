@@ -222,7 +222,7 @@ public class RM {
 	
 	public static boolean pack(ItemStack aContent, ItemStack aFull) {
 		if (ST.invalid(aFull) || ST.invalid(aContent)) return F;
-		Boxinator.addRecipe2(T, 16, 16, aContent, ST.tag(aContent.stackSize), aFull);
+		Boxinator.addRecipe2(T, 16, 16, aContent, ST.tag(aContent.getCount()), aFull);
 		return T;
 	}
 	public static boolean pack(ItemStack aContent, long aAmount, ItemStack aFull) {
@@ -246,7 +246,7 @@ public class RM {
 	
 	public static boolean compact(ItemStack aContent, ItemStack aFull) {
 		if (ST.invalid(aFull) || ST.invalid(aContent)) return F;
-		Boxinator .addRecipe2(T, 16, 16, aContent, ST.tag(aContent.stackSize), aFull);
+		Boxinator .addRecipe2(T, 16, 16, aContent, ST.tag(aContent.getCount()), aFull);
 		Compressor.addRecipe1(T, 16, 16, aContent, aFull);
 		ic2_compressor(aContent, aFull);
 		return T;
@@ -682,7 +682,7 @@ public class RM {
 	public static boolean biomass(ItemStack aBiomass) {return biomass(aBiomass, 64);}
 	public static boolean biomass(ItemStack aBiomass, long aSpeed) {
 		if (ST.invalid(aBiomass)) return F;
-		int tSize = aBiomass.stackSize;
+		int tSize = aBiomass.getCount();
 		if (tSize <= 0) return F;
 		aBiomass = ST.amount(1, aBiomass);
 		RM.Fermenter.addRecipe1(F, 16, (aSpeed * 2) / tSize, aBiomass, FL.Rotten_Drink.make(              1080 / tSize), FL.BiomassIC2.make(3240   / tSize, FL.Biomass), ZL_IS);
@@ -779,10 +779,10 @@ public class RM {
 	
 	public static ItemStack get_smelting(ItemStack aInput) {return get_smelting(aInput, F, NI);}
 	public static ItemStack get_smelting(ItemStack aInput, boolean aRemoveInput, ItemStack aOutputSlot) {
-		if (aInput == null || aInput.stackSize < 1) return NI;
+		if (aInput == null || aInput.getCount() < 1) return NI;
 		ItemStack rStack = OM.get(RecipeManager.smelting().getSmeltingResult(aInput));
-		if (rStack != null && (aOutputSlot == null || (ST.equal(rStack, aOutputSlot) && rStack.stackSize + aOutputSlot.stackSize <= aOutputSlot.getMaxStackSize()))) {
-			if (aRemoveInput) aInput.stackSize--;
+		if (rStack != null && (aOutputSlot == null || (ST.equal(rStack, aOutputSlot) && rStack.getCount() + aOutputSlot.getCount() <= aOutputSlot.getMaxStackSize()))) {
+			if (aRemoveInput) aInput.setCount(aInput.getCount()-1);
 			return rStack;
 		}
 		return NI;
@@ -1000,9 +1000,9 @@ public class RM {
 					try {
 						if (ST.block(aInput) != Blocks.obsidian && ST.block(aInput) != Blocks.gravel) {
 							mods.railcraft.api.crafting.IRockCrusherRecipe tRecipe = mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher.createNewRecipe(ST.amount(1, aInput), ST.meta_(aInput) != W, F);
-							tRecipe.addOutput(ST.copy(aOutput1), 1.0F/aInput.stackSize);
-							if (aOutput2 != null) tRecipe.addOutput(ST.copy(aOutput2), (0.01F*(aChance2<=0?10:aChance2))/aInput.stackSize);
-							if (aOutput3 != null) tRecipe.addOutput(ST.copy(aOutput3), (0.01F*(aChance3<=0?10:aChance3))/aInput.stackSize);
+							tRecipe.addOutput(ST.copy(aOutput1), 1.0F/aInput.getCount());
+							if (aOutput2 != null) tRecipe.addOutput(ST.copy(aOutput2), (0.01F*(aChance2<=0?10:aChance2))/aInput.getCount());
+							if (aOutput3 != null) tRecipe.addOutput(ST.copy(aOutput3), (0.01F*(aChance3<=0?10:aChance3))/aInput.getCount());
 						}
 					} catch(Throwable e) {/*Do nothing*/}
 				}

@@ -23,7 +23,7 @@ import java.util.Random;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockStaticLiquid;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.world.entity.monster.Creeper;
@@ -46,7 +46,7 @@ public class Replacements {
 		// Just ALWAYS convert Villagers, not only sometimes or when the stupid Difficulty Setting is right.
 		if (aVictim instanceof EntityVillager) {
 			EntityVillager aVillager = (EntityVillager)aVictim;
-			Level aWorld = aVillager.worldObj;
+			Level aWorld = aVillager.level();
 			// Yep, new Zombie Object.
 			EntityZombie tZombieVillager = new EntityZombie(aWorld);
 			// Location and Head need to point to the right places.
@@ -68,7 +68,7 @@ public class Replacements {
 			// And put the new Zombie into the World!
 			aWorld.spawnEntityInWorld(tZombieVillager);
 			// With Sound ofcourse!
-			aWorld.playAuxSFXAtEntity(null, 1016, (int)tZombieVillager.posX, (int)tZombieVillager.posY, (int)tZombieVillager.posZ, 0);
+			aWorld.playAuxSFXAtEntity(null, 1016, (int)tZombieVillager.getX(), (int)tZombieVillager.getY(), (int)tZombieVillager.getZ(), 0);
 			// Villager? What Villager?
 			aWorld.removeEntity(aVillager);
 		}
@@ -142,8 +142,8 @@ public class Replacements {
 		if(distSq >= 9.0) return false;
 		// Do this last since it's the most 'work'
 		double facing = Vec3
-				.createVectorHelper(target.posX, target.posY, target.posZ)
-				.subtract(Vec3.createVectorHelper(swellingCreeper.posX, swellingCreeper.posY, swellingCreeper.posZ))
+				.createVectorHelper(target.getX(), target.getY(), target.getZ())
+				.subtract(Vec3.createVectorHelper(swellingCreeper.getX(), swellingCreeper.getY(), swellingCreeper.getZ()))
 				.normalize()
 				.dotProduct(target.getLookVec());
 		return facing >= -0.F;

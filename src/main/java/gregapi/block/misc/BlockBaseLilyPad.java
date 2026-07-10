@@ -40,7 +40,7 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.item.EntityBoat;
@@ -102,7 +102,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		if (!aWorld.canMineBlock(aPlayer, aX, aY, aZ) || !aPlayer.canPlayerEdit(aX, aY, aZ, tPos.sideHit, aStack)) return aStack;
 		if (aWorld.getBlock(aX, aY, aZ).getMaterial() == Material.water && WD.meta(aWorld, aX, aY, aZ) == 0 && aWorld.isAirBlock(aX, aY+1, aZ)) {
 			aWorld.setBlock(aX, aY+1, aZ, this, ST.meta_(aStack), 3);
-			if (!UT.Entities.hasInfiniteItems(aPlayer)) {aStack.stackSize--;}
+			if (!UT.Entities.hasInfiniteItems(aPlayer)) {aStack.setCount(aStack.getCount()-1);}
 		}
 		return aStack;
 	}

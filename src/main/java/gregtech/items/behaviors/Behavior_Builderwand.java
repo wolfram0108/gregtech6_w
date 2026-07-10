@@ -62,11 +62,11 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 					// Doublechecking Block Permissions at that location.
 					if (!aPlayer.canPlayerEdit(aX + tX, aY + tY, aZ + tZ, aSide, tStack)) continue;
 					
-					int tOldSize = tStack.stackSize;
+					int tOldSize = tStack.getCount();
 					if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX + tX, aY + tY, aZ + tZ, SIDE_TOP, 0.5F, 0.25F, 0.5F)) {
 						UT.Sounds.send(SFX.MC_XP, aWorld, aX + tX, aY + tY, aZ + tZ);
 						if (UT.Entities.hasInfiniteItems(aPlayer)) {
-							tStack.stackSize = tOldSize;
+							tStack.setCount(tOldSize);
 						} else {
 							ST.use(aPlayer, T, tStack, 0);
 							((MultiItemTool)aItem).doDamage(aStack, 1, aPlayer, F);
@@ -119,10 +119,10 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 				if (!aPlayer.canPlayerEdit(aX+tX            , aY+tY            , aZ+tZ            , aSide, tStack)) continue;
 				if (!aPlayer.canPlayerEdit(aX+tX+OFFX[aSide], aY+tY+OFFY[aSide], aZ+tZ+OFFZ[aSide], aSide, tStack)) continue;
 				
-				int tOldSize = tStack.stackSize;
+				int tOldSize = tStack.getCount();
 				if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX+tX, aY+tY, aZ+tZ, aSide, aHitX, aHitY, aHitZ)) {
 					if (UT.Entities.hasInfiniteItems(aPlayer)) {
-						tStack.stackSize = tOldSize;
+						tStack.setCount(tOldSize);
 					} else {
 						ST.use(aPlayer, T, tStack, 0);
 						((MultiItemTool)aItem).doDamage(aStack, 1, aPlayer, F);

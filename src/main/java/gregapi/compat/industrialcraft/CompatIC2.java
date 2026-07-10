@@ -125,7 +125,7 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 	public boolean scrapbox(float aChance, ItemStack aOutput) {
 		if (ST.invalid(aOutput) || aChance <= 0) return F;
 		aOutput = OM.get_(aOutput);
-		aOutput.stackSize = 1;
+		aOutput.setCount(1);
 		//if (Config.troll && !ST.equal(aOutput, ST.make(Items.wooden_hoe, 1, 0))) return F;
 		aChance = (float)ConfigsGT.RECIPES.get(ConfigCategories.Machines.scrapboxdrops, aOutput, aChance);
 		if (aChance <= 0) return F;
@@ -152,7 +152,7 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 		if (aBlock != null && aBlock != NB) ic2.api.tile.ExplosionWhitelist.addWhitelistedBlock(aBlock);
 	}
 	
-	@Override public Object makeInput(ItemStack aStack) {return new RecipeInputItemStack(ST.copy(aStack), aStack.stackSize);}
+	@Override public Object makeInput(ItemStack aStack) {return new RecipeInputItemStack(ST.copy(aStack), aStack.getCount());}
 	@Override public Object makeInput(String aOreDict, long aAmount) {return new RecipeInputOreDict(aOreDict, UT.Code.bindStack(aAmount));}
 	@Override public Object makeOutput(CompoundTag aNBT, ItemStack... aStacks) {return new RecipeOutput(aNBT, aStacks);}
 	@Override public boolean isReactorItem(ItemStack aStack) {try {return ST.valid(aStack) && aStack.getItem() instanceof ic2.api.reactor.IReactorComponent;} catch (Throwable e) {/*Do nothing*/} return F;}

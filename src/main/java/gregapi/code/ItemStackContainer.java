@@ -62,7 +62,7 @@ public class ItemStackContainer {
 		} else {
 			mItem = ST.item_(aStack);
 			mBlock = ST.block_(mItem);
-			mStackSize = (byte)aStack.stackSize;
+			mStackSize = (byte)aStack.getCount();
 			mMetaData = ST.meta_(aStack);
 		}
 	}
@@ -75,7 +75,7 @@ public class ItemStackContainer {
 		} else {
 			mItem = ST.item_(aStack);
 			mBlock = ST.block_(mItem);
-			mStackSize = (byte)aStack.stackSize;
+			mStackSize = (byte)aStack.getCount();
 			mMetaData = (short)aMetaData;
 		}
 	}

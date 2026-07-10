@@ -29,7 +29,7 @@ import gregapi.util.WD;
 import gregapi.worldgen.WorldgenObject;
 import gregtech.blocks.fluids.BlockWaterlike;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;

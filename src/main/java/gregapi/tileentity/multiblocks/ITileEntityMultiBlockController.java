@@ -48,7 +48,7 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 			BlockEntity tTileEntity = aController.getTileEntity(aX, aY, aZ);
 			if (tTileEntity == aController) return T;
 			
-			if ((aInventory != null || aPlayer != null) && (aClickedAt == null || (Math.abs(aX-aClickedAt.posX) < 2 && Math.abs(aY-aClickedAt.posY) < 2 && Math.abs(aZ-aClickedAt.posZ) < 2))) {
+			if ((aInventory != null || aPlayer != null) && (aClickedAt == null || (Math.abs(aX-aClickedAt.getX()) < 2 && Math.abs(aY-aClickedAt.getY()) < 2 && Math.abs(aZ-aClickedAt.getZ()) < 2))) {
 				ItemStack aStack = ST.make(aRegistryID, 1, aRegistryMeta);
 				if (WD.easyRep(aController.getWorld(), aX, aY, aZ) && UT.Entities.canEdit(aPlayer, aX, aY, aZ, aStack)) {
 					if (aInventory == null || UT.Entities.hasInfiniteItems(aPlayer)) {

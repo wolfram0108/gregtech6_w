@@ -104,7 +104,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 			if (slotHas(0) && (mContent == null || mContent.mAmount < DUST_TYPES[mMode].mAmount)) {
 				OreDictItemData tData = OM.anydata(slot(0));
 				if (OM.prefixcontainsmaterialmatches(tData, mContent == null || mContent.mMaterial == MT.NULL ? null : mContent.mMaterial, TD.Prefix.DUST_BASED)) {
-					int tSize = (int)Math.min(slot(0).stackSize, UT.Code.divup(DUST_TYPES[mMode].mAmount - (mContent == null ? 0 : mContent.mAmount), tData.mMaterial.mAmount));
+					int tSize = (int)Math.min(slot(0).getCount(), UT.Code.divup(DUST_TYPES[mMode].mAmount - (mContent == null ? 0 : mContent.mAmount), tData.mMaterial.mAmount));
 					mContent = OM.stack(tData.mMaterial.mMaterial, tData.mMaterial.mAmount * tSize + (mContent == null ? 0 : mContent.mAmount));
 					decrStackSize(0, tSize);
 					temp = T;
@@ -137,7 +137,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_pincers)) {
-			ST.drop(worldObj, getCoords(), OM.dust(mContent));
+			ST.drop(level, getCoords(), OM.dust(mContent));
 			mContent = null;
 			updateClientData();
 			return 10;
@@ -280,7 +280,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 	@Override
 	public boolean breakBlock() {
 		if (isServerSide()) {
-			ST.drop(worldObj, getCoords(), OM.dust(mContent));
+			ST.drop(level, getCoords(), OM.dust(mContent));
 			mContent = null;
 		}
 		return super.breakBlock();

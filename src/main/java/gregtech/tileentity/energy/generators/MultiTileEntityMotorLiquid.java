@@ -139,7 +139,7 @@ public class MultiTileEntityMotorLiquid extends TileEntityBase09FacingSingle imp
 			
 			if (mTanks[1].has()) {
 				FL.move(mTanks[1], getAdjacentTank(OPOS[mFacing]));
-				if (FL.gas(mTanks[1]) && !WD.hasCollide(worldObj, getOffset(OPOS[mFacing], 1))) {
+				if (FL.gas(mTanks[1]) && !WD.hasCollide(level, getOffset(OPOS[mFacing], 1))) {
 					mTanks[1].setEmpty();
 				}
 			}

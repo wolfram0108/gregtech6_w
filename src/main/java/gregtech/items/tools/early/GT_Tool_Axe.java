@@ -36,7 +36,7 @@ import gregapi.util.WD;
 import gregapi.wooddict.WoodDictionary;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HugeMushroomBlock;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -104,22 +104,22 @@ public class GT_Tool_Axe extends ToolStats {
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		int rAmount = 0;
-		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.worldObj.isRemote && !aPlayer.isSneaking() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.worldObj, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
+		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.level().isRemote && !aPlayer.isSneaking() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
 			LOCK = F;
 			try {
-				int tY = aY, tH = aPlayer.worldObj.getHeight(), tCount = 0, tIncrement = UT.Code.roundUp(aBlock.getBlockHardness(aPlayer.worldObj, aX, aY, aZ) * getToolDamagePerBlockBreak());
+				int tY = aY, tH = aPlayer.level().getHeight(), tCount = 0, tIncrement = UT.Code.roundUp(aBlock.getBlockHardness(aPlayer.level(), aX, aY, aZ) * getToolDamagePerBlockBreak());
 				// Checking...
 				while (++tY < tH) {
-					if (aPlayer.worldObj.getBlock(aX, tY, aZ) != aBlock) break;
+					if (aPlayer.level().getBlock(aX, tY, aZ) != aBlock) break;
 					if (rAmount >= aAvailableDurability) continue;
 					rAmount+= ++tIncrement;
 					tCount++;
 				}
 				// Harvesting...
-				while (--tY > aY && tCount-->0 && aPlayer.worldObj.func_147480_a(aX, tY, aZ, T)) {
-					if (FAST_LEAF_DECAY) WD.leafdecay(aPlayer.worldObj, aX, tY, aZ, null, T, T);
+				while (--tY > aY && tCount-->0 && aPlayer.level().func_147480_a(aX, tY, aZ, T)) {
+					if (FAST_LEAF_DECAY) WD.leafdecay(aPlayer.level(), aX, tY, aZ, null, T, T);
 				}
-				if (FAST_LEAF_DECAY) WD.leafdecay(aPlayer.worldObj, aX, aY, aZ, null, T, T);
+				if (FAST_LEAF_DECAY) WD.leafdecay(aPlayer.level(), aX, aY, aZ, null, T, T);
 			} catch(Throwable e) {e.printStackTrace(ERR);}
 			LOCK = T;
 		}
@@ -131,9 +131,9 @@ public class GT_Tool_Axe extends ToolStats {
 	public float getMiningSpeed(Block aBlock, byte aMeta, float aDefault, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof BlockBaseBeam) return 2.0F * aDefault;
 		if (aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees")) return aDefault;
-		if (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.worldObj, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T)) {
+		if (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T)) {
 			float rAmount = 1.0F, tIncrement = 1.0F;
-			if (!aPlayer.isSneaking() && !MD.TreeCap.mLoaded) for (int tY = aY+1, tH = aPlayer.worldObj.getHeight(); tY < tH; tY++) if (aPlayer.worldObj.getBlock(aX, tY, aZ) == aBlock) {tIncrement+=0.1F; rAmount+=tIncrement;} else break;
+			if (!aPlayer.isSneaking() && !MD.TreeCap.mLoaded) for (int tY = aY+1, tH = aPlayer.level().getHeight(); tY < tH; tY++) if (aPlayer.level().getBlock(aX, tY, aZ) == aBlock) {tIncrement+=0.1F; rAmount+=tIncrement;} else break;
 			if (rAmount > 2.0F && (aBlock instanceof HugeMushroomBlock || MD.NeLi.owns(aBlock))) return aDefault / (4.0F * rAmount);
 			return 2.0F * aDefault / rAmount;
 		}
@@ -143,7 +143,7 @@ public class GT_Tool_Axe extends ToolStats {
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		super.afterDealingDamage(aNormalDamage, aMagicDamage, aFireAspect, aCriticalHit, aEntity, aStack, aPlayer);
-		if (aEntity.worldObj.isRemote || aNormalDamage < 2) return;
+		if (aEntity.level().isRemote || aNormalDamage < 2) return;
 		if ("EntityEnt".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity))) ST.drop(aEntity, Blocks.log, UT.Code.bindStack((int)(aNormalDamage / 2)), 0);
 	}
 	

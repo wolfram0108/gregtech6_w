@@ -23,7 +23,7 @@ import gregapi.block.misc.BlockBaseBars;
 import gregapi.data.ANY;
 import gregapi.data.LH;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 
 public class BlockBarsSteel extends BlockBaseBars {
 	public BlockBarsSteel(String aNameInternal) {

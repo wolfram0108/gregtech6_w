@@ -69,7 +69,7 @@ import net.minecraftforge.common.ChestGenHooks;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.oredict.OreDictionary;
+import gregapi.oredict.OreDictionary;
 
 import java.util.ArrayList;
 import java.util.Collections;

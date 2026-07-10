@@ -22,7 +22,7 @@ package gregapi.block;
 import static gregapi.data.CS.*;
 
 import net.minecraft.world.level.material.MapColor;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 
 public class MaterialMachines extends Material {
 	public static MaterialMachines instance = new MaterialMachines();

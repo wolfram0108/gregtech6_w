@@ -30,7 +30,7 @@ import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.*;

@@ -33,7 +33,7 @@ import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockSilverfish;
 import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -65,10 +65,10 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 				// No Thaumcraft Blocks!
 				if (MD.TC.owns(tBlock)) continue;
 				
-				int tOldSize = tStack.stackSize;
+				int tOldSize = tStack.getCount();
 				if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
 					if (UT.Entities.hasInfiniteItems(aPlayer)) {
-						tStack.stackSize = tOldSize;
+						tStack.setCount(tOldSize);
 					} else {
 						ST.use(aPlayer, T, tStack, 0);
 					}

@@ -367,7 +367,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 					}
 					if (aMouse == 1) {
 						aPlayer.dropPlayerItemWithRandomChoice(aPlayerInventory.getItemStack().splitStack(1), T);
-						if (aPlayerInventory.getItemStack().stackSize == 0) {
+						if (aPlayerInventory.getItemStack().getCount() == 0) {
 							aPlayerInventory.setItemStack(null);
 						}
 					}
@@ -395,51 +395,51 @@ public class ContainerCommon extends AbstractContainerMenu {
 					}
 					if (tTempStack == null) {
 						if (tHeldStack != null && aSlot.isItemValid(tHeldStack)) {
-							tTempStackSize = (aMouse == 0 ? tHeldStack.stackSize : 1);
+							tTempStackSize = (aMouse == 0 ? tHeldStack.getCount() : 1);
 							if (tTempStackSize > aSlot.getSlotStackLimit()) {
 								tTempStackSize = aSlot.getSlotStackLimit();
 							}
 							aSlot.putStack(tHeldStack.splitStack(tTempStackSize));
 
-							if (tHeldStack.stackSize == 0) {
+							if (tHeldStack.getCount() == 0) {
 								aPlayerInventory.setItemStack(null);
 							}
 						}
 					} else if (aSlot.canTakeStack(aPlayer)) {
 						if (tHeldStack == null) {
-							tTempStackSize = (aMouse == 0 ? tTempStack.stackSize : (tTempStack.stackSize + 1) / 2);
+							tTempStackSize = (aMouse == 0 ? tTempStack.getCount() : (tTempStack.getCount() + 1) / 2);
 							aHoldStack = aSlot.decrStackSize(tTempStackSize);
 							aPlayerInventory.setItemStack(aHoldStack);
-							if (tTempStack.stackSize == 0) {
+							if (tTempStack.getCount() == 0) {
 								aSlot.putStack(null);
 							}
 							aSlot.onPickupFromSlot(aPlayer, aPlayerInventory.getItemStack());
 						} else if (aSlot.isItemValid(tHeldStack)) {
 							if (tTempStack.getItem() == tHeldStack.getItem() && tTempStack.getItemDamage() == tHeldStack.getItemDamage() && ItemStack.areItemStackTagsEqual(tTempStack, tHeldStack)) {
-								tTempStackSize = (aMouse == 0 ? tHeldStack.stackSize : 1);
-								if (tTempStackSize > aSlot.getSlotStackLimit() - tTempStack.stackSize) {
-									tTempStackSize = aSlot.getSlotStackLimit() - tTempStack.stackSize;
+								tTempStackSize = (aMouse == 0 ? tHeldStack.getCount() : 1);
+								if (tTempStackSize > aSlot.getSlotStackLimit() - tTempStack.getCount()) {
+									tTempStackSize = aSlot.getSlotStackLimit() - tTempStack.getCount();
 								}
-								if (tTempStackSize > tHeldStack.getMaxStackSize() - tTempStack.stackSize) {
-									tTempStackSize = tHeldStack.getMaxStackSize() - tTempStack.stackSize;
+								if (tTempStackSize > tHeldStack.getMaxStackSize() - tTempStack.getCount()) {
+									tTempStackSize = tHeldStack.getMaxStackSize() - tTempStack.getCount();
 								}
 								tHeldStack.splitStack(tTempStackSize);
-								if (tHeldStack.stackSize == 0) {
+								if (tHeldStack.getCount() == 0) {
 									aPlayerInventory.setItemStack(null);
 								}
-								tTempStack.stackSize += tTempStackSize;
-							} else if (tHeldStack.stackSize <= aSlot.getSlotStackLimit()) {
+								tTempStack.setCount(tTempStack.getCount()+(tTempStackSize));
+							} else if (tHeldStack.getCount() <= aSlot.getSlotStackLimit()) {
 								aSlot.putStack(tHeldStack);
 								aPlayerInventory.setItemStack(tTempStack);
 							}
 						} else if (tTempStack.getItem() == tHeldStack.getItem() && tHeldStack.getMaxStackSize() > 1 && (!tTempStack.getHasSubtypes() || tTempStack.getItemDamage() == tHeldStack.getItemDamage()) && ItemStack.areItemStackTagsEqual(tTempStack, tHeldStack)) {
-							tTempStackSize = tTempStack.stackSize;
+							tTempStackSize = tTempStack.getCount();
 
-							if (tTempStackSize > 0 && tTempStackSize + tHeldStack.stackSize <= tHeldStack.getMaxStackSize()) {
-								tHeldStack.stackSize += tTempStackSize;
+							if (tTempStackSize > 0 && tTempStackSize + tHeldStack.getCount() <= tHeldStack.getMaxStackSize()) {
+								tHeldStack.setCount(tHeldStack.getCount()+(tTempStackSize));
 								tTempStack = aSlot.decrStackSize(tTempStackSize);
 
-								if (tTempStack.stackSize == 0) {
+								if (tTempStack.getCount() == 0) {
 									aSlot.putStack(null);
 								}
 
@@ -468,12 +468,12 @@ public class ContainerCommon extends AbstractContainerMenu {
 					if ((aSlot.inventory != aPlayerInventory || !aSlot.isItemValid(tTempStack)) && tTempStack != null) {
 						if (tTempStackSize > -1) {
 							aPlayerInventory.addItemStackToInventory(tTempStack);
-							aSlot.decrStackSize(aHoldStack.stackSize);
+							aSlot.decrStackSize(aHoldStack.getCount());
 							aSlot.putStack(null);
 							aSlot.onPickupFromSlot(aPlayer, aHoldStack);
 						}
 					} else {
-						aSlot.decrStackSize(aHoldStack.stackSize);
+						aSlot.decrStackSize(aHoldStack.getCount());
 						aSlot.putStack(tTempStack);
 						aSlot.onPickupFromSlot(aPlayer, aHoldStack);
 					}
@@ -485,7 +485,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 		} else if (aShift == 3 && UT.Entities.hasInfiniteItems(aPlayer) && aPlayerInventory.getItemStack() == null && aIndex >= 0) {
 			if (aSlot != null && aSlot.getHasStack()) {
 				tTempStack = ST.copy(aSlot.getStack());
-				tTempStack.stackSize = tTempStack.getMaxStackSize();
+				tTempStack.setCount(tTempStack.getMaxStackSize());
 				aPlayerInventory.setItemStack(tTempStack);
 			}
 		}
@@ -516,7 +516,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 				return null;
 			}
 			
-			if (tStack.stackSize == 0) tSlot.putStack(null); else tSlot.onSlotChanged();
+			if (tStack.getCount() == 0) tSlot.putStack(null); else tSlot.onSlotChanged();
 		}
 		return rStack;
 	}
@@ -531,20 +531,20 @@ public class ContainerCommon extends AbstractContainerMenu {
 		mTileEntity.markDirtyGUI();
 		
 		if (aStack.isStackable()) {
-			while (aStack.stackSize > 0 && (aReverse ? tIndex >= aStartIndex : tIndex < aSlotCount)) {
+			while (aStack.getCount() > 0 && (aReverse ? tIndex >= aStartIndex : tIndex < aSlotCount)) {
 				Slot tSlot = (Slot)inventorySlots.get(tIndex);
 				int tLimit = Math.min(aStack.getMaxStackSize(), tSlot.getSlotStackLimit());
 				ItemStack tStack = tSlot.getStack();
 				if (!(tSlot instanceof Slot_Holo) && tSlot.isItemValid(aStack) && ST.meta(tStack) != W && ST.equal(aStack, tStack)) {
-					int tSize = tStack.stackSize + aStack.stackSize;
+					int tSize = tStack.getCount() + aStack.getCount();
 					if (tSize <= tLimit) {
-						aStack.stackSize = 0;
-						tStack.stackSize = tSize;
+						aStack.setCount(0);
+						tStack.setCount(tSize);
 						tSlot.onSlotChanged();
 						rSuccess = T;
-					} else if (tStack.stackSize < tLimit) {
-						aStack.stackSize -= tLimit - tStack.stackSize;
-						tStack.stackSize = tLimit;
+					} else if (tStack.getCount() < tLimit) {
+						aStack.setCount(aStack.getCount()-(tLimit - tStack.getCount()));
+						tStack.setCount(tLimit);
 						tSlot.onSlotChanged();
 						rSuccess = T;
 					}
@@ -552,18 +552,18 @@ public class ContainerCommon extends AbstractContainerMenu {
 				if (aReverse) tIndex--; else tIndex++;
 			}
 		}
-		if (aStack.stackSize > 0) {
+		if (aStack.getCount() > 0) {
 			if (aReverse) tIndex = aSlotCount - 1; else tIndex = aStartIndex;
 			while (aReverse ? tIndex >= aStartIndex : tIndex < aSlotCount) {
 				Slot tSlot = (Slot)inventorySlots.get(tIndex);
 				if (!(tSlot instanceof Slot_Holo) && tSlot.isItemValid(aStack)) {
 					if (tSlot.getStack() == null) {
-						ItemStack tStack = ST.amount(Math.min(aStack.stackSize, Math.min(aStack.getMaxStackSize(), tSlot.getSlotStackLimit())), aStack);
+						ItemStack tStack = ST.amount(Math.min(aStack.getCount(), Math.min(aStack.getMaxStackSize(), tSlot.getSlotStackLimit())), aStack);
 						tSlot.putStack(tStack);
 						tSlot.onSlotChanged();
-						aStack.stackSize -= tStack.stackSize;
+						aStack.setCount(aStack.getCount()-(tStack.getCount()));
 						rSuccess = T;
-						if (aStack.stackSize <= 0) break;
+						if (aStack.getCount() <= 0) break;
 					}
 				}
 				if (aReverse) tIndex--; else tIndex++;

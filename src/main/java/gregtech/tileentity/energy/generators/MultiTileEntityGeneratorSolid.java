@@ -104,13 +104,13 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 					ITileEntityEnergy.Util.emitEnergyToNetwork(mEnergyTypeEmitted, 1, Math.min(mRate, mEnergy), this);
 					mEnergy -= mRate;
 					if (mEfficiency < 1 || rng(mEfficiency) == 0) {
-						WD.fire(worldObj, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+						WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 					}
 				}
 				if (mEnergy < mRate * 2) {
-					WD.burn(worldObj, getOffset(mFacing, 1), T, T);
+					WD.burn(level, getOffset(mFacing, 1), T, T);
 					if (addStackToSlot(1, mOutput1)) mOutput1 = null;
-					if (mOutput1 == null && slotHas(0) && !WD.hasCollide(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
+					if (mOutput1 == null && slotHas(0) && !WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
 						if (IL.RC_Firestone_Refined.equal(slot(0), T, T)) {
 							ItemStack tStack = ST.container(slot(0), F);
 							if (ST.invalid(tStack)) {
@@ -145,7 +145,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 								// Continue using the Firestone.
 								slot(0, tStack);
 								// Cracked Firestones cause Fire to be released way more often.
-								WD.fire(worldObj, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+								WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 							}
 						} else {
 							Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, T, Long.MAX_VALUE, null, ZL_FS, slot(0));
@@ -163,7 +163,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 				if (mEnergy < mRate) mBurning = F;
 			} else {
 				// Something burning in front of it? Lets ignite!
-				if (rng(200) == 0 && WD.flaming(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
+				if (rng(200) == 0 && WD.flaming(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
 					mBurning = T;
 				}
 			}
@@ -200,14 +200,14 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 					return T;
 				}
 			} else if (ST.equal(aStack, slot(0))) {
-				int tDifference = Math.min(aStack.stackSize, slot(0).getMaxStackSize() - slot(0).stackSize);
-				aStack.stackSize-=tDifference;
-				slot(0).stackSize+=tDifference;
+				int tDifference = Math.min(aStack.getCount(), slot(0).getMaxStackSize() - slot(0).getCount());
+				aStack.setCount(aStack.getCount()-(tDifference));
+				slot(0).setCount(slot(0).getCount()+(tDifference));
 				return T;
 			} else if (ST.equal(aStack, slot(1))) {
-				int tDifference = Math.min(slot(1).stackSize, aStack.getMaxStackSize() - aStack.stackSize);
-				aStack.stackSize+=tDifference;
-				slot(1).stackSize-=tDifference;
+				int tDifference = Math.min(slot(1).getCount(), aStack.getMaxStackSize() - aStack.getCount());
+				aStack.setCount(aStack.getCount()+(tDifference));
+				slot(1).setCount(slot(1).getCount()-(tDifference));
 				removeAllDroppableNullStacks();
 				if (mBurning) UT.Entities.applyHeatDamage(aPlayer, Math.max(1.0F, Math.min(5.0F, mRate / 20.0F)));
 				return T;
@@ -226,8 +226,8 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 		if (aTool.equals(TOOL_igniter       ) && (aSide == mFacing || aPlayer == null)) {mBurning = T; return 10000;}
 		if (aTool.equals(TOOL_extinguisher  ) && (aSide == mFacing || aPlayer == null)) {mBurning = F; return 10000;}
 		if (aTool.equals(TOOL_shovel        ) &&  aSide == mFacing && slotHas(1)) {
-			long rDamage = 1000 * slot(1).stackSize;
-			ST.give(aPlayer, slot(1), worldObj, xCoord, yCoord, zCoord);
+			long rDamage = 1000 * slot(1).getCount();
+			ST.give(aPlayer, slot(1), level, xCoord, yCoord, zCoord);
 			slotKill(1);
 			return rDamage;
 		}
@@ -275,13 +275,13 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 	@Override public Collection<TagData> getEnergyTypes(byte aSide) {return mEnergyTypeEmitted.AS_LIST;}
 	
 	@Override public boolean getStateRunningPassively() {return mBurning;}
-	@Override public boolean getStateRunningPossible() {return mBurning || (mOutput1 == null && slotHas(0) && !WD.hasCollide(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
+	@Override public boolean getStateRunningPossible() {return mBurning || (mOutput1 == null && slotHas(0) && !WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
 	@Override public boolean getStateRunningActively() {return mBurning;}
 	
 	@Override public float getBlockHardness() {return mBurning ? super.getBlockHardness() * 16 : super.getBlockHardness();}
 	
 	protected void spawnBurningParticles(double aX, double aY, double aZ) {
-		worldObj.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
-		worldObj.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
+		level.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
+		level.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
 	}
 }

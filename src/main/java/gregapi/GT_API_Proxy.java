@@ -520,38 +520,38 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 	@SubscribeEvent(priority = EventPriority.LOWEST) 
 	public void onLivingUpdate(LivingUpdateEvent aEvent) {
 		int
-		tX = UT.Code.roundDown(aEvent.entityLiving.posX),
-		tY = UT.Code.roundDown(aEvent.entityLiving.posY + aEvent.entityLiving.getEyeHeight()),
-		tZ = UT.Code.roundDown(aEvent.entityLiving.posZ);
+		tX = UT.Code.roundDown(aEvent.entityLiving.getX()),
+		tY = UT.Code.roundDown(aEvent.entityLiving.getY() + aEvent.entityLiving.getEyeHeight()),
+		tZ = UT.Code.roundDown(aEvent.entityLiving.getZ());
 		
-		Block tBlock = aEvent.entityLiving.worldObj.getBlock(tX, tY, tZ);
-		if (tBlock instanceof IBlockOnHeadInside) ((IBlockOnHeadInside)tBlock).onHeadInside(aEvent.entityLiving, aEvent.entityLiving.worldObj, tX, tY, tZ);
+		Block tBlock = aEvent.entityLiving.level().getBlock(tX, tY, tZ);
+		if (tBlock instanceof IBlockOnHeadInside) ((IBlockOnHeadInside)tBlock).onHeadInside(aEvent.entityLiving, aEvent.entityLiving.level(), tX, tY, tZ);
 		
 		tY = UT.Code.roundDown(aEvent.entityLiving.boundingBox.minY-0.001F);
 		
 		if (aEvent.entityLiving instanceof Player) {
-			if (BlocksGT.Paths != null && !aEvent.entityLiving.worldObj.isRemote) {
+			if (BlocksGT.Paths != null && !aEvent.entityLiving.level().isRemote) {
 				Block tPath = IL.EtFu_Path.block();
 				if (ST.valid(tPath)) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
-					if (tPath == aEvent.entityLiving.worldObj.getBlock(tX+i, tY+k, tZ+j)) WD.replaceAll(aEvent.entityLiving.worldObj, tX+i, tY+k, tZ+j, tPath, W, BlocksGT.Paths, 0);
+					if (tPath == aEvent.entityLiving.level().getBlock(tX+i, tY+k, tZ+j)) WD.replaceAll(aEvent.entityLiving.level(), tX+i, tY+k, tZ+j, tPath, W, BlocksGT.Paths, 0);
 				}
 			}
 		}
 		
 		if (aEvent.entityLiving.onGround) {
-			tBlock = aEvent.entityLiving.worldObj.getBlock(tX, tY, tZ);
-			if (!WD.hasCollide(aEvent.entityLiving.worldObj, tX, tY, tZ, tBlock)) {
-				int tAddX = (aEvent.entityLiving.posX >= tX + 0.5 ? +1 : -1), tAddZ = (aEvent.entityLiving.posZ >= tZ + 0.5 ? +1 : -1);
-				tBlock = aEvent.entityLiving.worldObj.getBlock(tX+tAddX, tY, tZ);
-				if (WD.hasCollide(aEvent.entityLiving.worldObj, tX+tAddX, tY, tZ, tBlock)) {
+			tBlock = aEvent.entityLiving.level().getBlock(tX, tY, tZ);
+			if (!WD.hasCollide(aEvent.entityLiving.level(), tX, tY, tZ, tBlock)) {
+				int tAddX = (aEvent.entityLiving.getX() >= tX + 0.5 ? +1 : -1), tAddZ = (aEvent.entityLiving.getZ() >= tZ + 0.5 ? +1 : -1);
+				tBlock = aEvent.entityLiving.level().getBlock(tX+tAddX, tY, tZ);
+				if (WD.hasCollide(aEvent.entityLiving.level(), tX+tAddX, tY, tZ, tBlock)) {
 					tX += tAddX;
 				} else {
-					tBlock = aEvent.entityLiving.worldObj.getBlock(tX, tY, tZ+tAddZ);
-					if (WD.hasCollide(aEvent.entityLiving.worldObj, tX, tY, tZ+tAddZ, tBlock)) {
+					tBlock = aEvent.entityLiving.level().getBlock(tX, tY, tZ+tAddZ);
+					if (WD.hasCollide(aEvent.entityLiving.level(), tX, tY, tZ+tAddZ, tBlock)) {
 						tZ += tAddZ;
 					} else {
-						tBlock = aEvent.entityLiving.worldObj.getBlock(tX+tAddX, tY, tZ+tAddZ);
-						if (WD.hasCollide(aEvent.entityLiving.worldObj, tX+tAddX, tY, tZ+tAddZ, tBlock)) {
+						tBlock = aEvent.entityLiving.level().getBlock(tX+tAddX, tY, tZ+tAddZ);
+						if (WD.hasCollide(aEvent.entityLiving.level(), tX+tAddX, tY, tZ+tAddZ, tBlock)) {
 							tX += tAddX;
 							tZ += tAddZ;
 						} else {
@@ -562,19 +562,19 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 			}
 			
 			// walk over special Blocks.
-			if (tBlock instanceof IBlockOnWalkOver) ((IBlockOnWalkOver)tBlock).onWalkOver(aEvent.entityLiving, aEvent.entityLiving.worldObj, tX, tY, tZ);
+			if (tBlock instanceof IBlockOnWalkOver) ((IBlockOnWalkOver)tBlock).onWalkOver(aEvent.entityLiving, aEvent.entityLiving.level(), tX, tY, tZ);
 			// Only Serverside for this Stuff.
-			if (!aEvent.entityLiving.worldObj.isRemote) {
+			if (!aEvent.entityLiving.level().isRemote) {
 				// Zombies trample Farmland.
 				if (tBlock == Blocks.farmland && aEvent.entityLiving instanceof EntityZombie) {
-					aEvent.entityLiving.worldObj.setBlock(tX, tY, tZ, Blocks.dirt, 0, 3);
-					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aEvent.entityLiving.worldObj, tX, tY, tZ);
+					aEvent.entityLiving.level().setBlock(tX, tY, tZ, Blocks.dirt, 0, 3);
+					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aEvent.entityLiving.level(), tX, tY, tZ);
 				}
 				// Big Animals break regular tall Grass, but not super tall Grass.
 				if (aEvent.entityLiving instanceof EntityPig || aEvent.entityLiving instanceof EntitySheep || aEvent.entityLiving instanceof EntityCow || aEvent.entityLiving instanceof EntityHorse) {
-					if (aEvent.entityLiving.worldObj.getBlock(tX, tY+1, tZ) == Blocks.tallgrass) {
-						aEvent.entityLiving.worldObj.setBlock(tX, tY+1, tZ, NB, 0, 3);
-						UT.Sounds.send(SFX.MC_DIG_GRASS, 0.5F, 0.5F, aEvent.entityLiving.worldObj, tX, tY, tZ);
+					if (aEvent.entityLiving.level().getBlock(tX, tY+1, tZ) == Blocks.tallgrass) {
+						aEvent.entityLiving.level().setBlock(tX, tY+1, tZ, NB, 0, 3);
+						UT.Sounds.send(SFX.MC_DIG_GRASS, 0.5F, 0.5F, aEvent.entityLiving.level(), tX, tY, tZ);
 					}
 				}
 				// Area of Effect Block Destruction Ability of certain Mobs.
@@ -585,10 +585,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 						((PathfinderMob)aEvent.entityLiving).detachHome();
 						// Minoshroom surprise charge through the Fenced Gateways!
 						for (int iX = tX-15, eX = tX+15; iX <= eX; iX++) for (int iZ = tZ-15, eZ = tZ+15; iZ <= eZ; iZ++) for (int iY = tY+1, eY = tY+3; iY <= eY; iY++) {
-							if (aEvent.entityLiving.worldObj.getBlock(iX, iY, iZ) == Blocks.fence) {
-								aEvent.entityLiving.worldObj.setBlock(iX, iY, iZ, NB, 0, 3);
-								ST.drop(aEvent.entityLiving.worldObj, iX, iY, iZ, IL.Stick.get(1));
-								UT.Sounds.send(SFX.MC_DIG_WOOD, aEvent.entityLiving.worldObj, iX, iY, iZ);
+							if (aEvent.entityLiving.level().getBlock(iX, iY, iZ) == Blocks.fence) {
+								aEvent.entityLiving.level().setBlock(iX, iY, iZ, NB, 0, 3);
+								ST.drop(aEvent.entityLiving.level(), iX, iY, iZ, IL.Stick.get(1));
+								UT.Sounds.send(SFX.MC_DIG_WOOD, aEvent.entityLiving.level(), iX, iY, iZ);
 							}
 						}
 					}
@@ -625,22 +625,22 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 						if (aData != null) {
 							if (aData.validPrefix()) for (IOreDictListenerItem tListener : aData.mPrefix.mListenersItem) {
 								rStack = tListener.onTickWorld(aData.mPrefix, aData.mMaterial.mMaterial, rStack, (ItemEntity)aEntity);
-								if (!ST.equal(rStack, aStack) || rStack.stackSize != aStack.stackSize) {tBreak = T; break;}
+								if (!ST.equal(rStack, aStack) || rStack.getCount() != aStack.getCount()) {tBreak = T; break;}
 							}
 							if (!tBreak && aData.validMaterial()) for (OreDictMaterialStack tMaterial : aData.getAllMaterialStacks()) {
 								if (tBreak) break;
 								if (tMaterial.mMaterial.contains(TD.Properties.UNBURNABLE)) tFireProof = T;
 								for (IOreDictListenerItem tListener : tMaterial.mMaterial.mListenersItem) {
 									rStack = tListener.onTickWorld(aData.mPrefix, tMaterial.mMaterial, rStack, (ItemEntity)aEntity);
-									if (!ST.equal(rStack, aStack) || rStack.stackSize != aStack.stackSize) {tBreak = T; break;}
+									if (!ST.equal(rStack, aStack) || rStack.getCount() != aStack.getCount()) {tBreak = T; break;}
 								}
 							}
 						}
 						
-						if (rStack == null || rStack.stackSize <= 0) {
+						if (rStack == null || rStack.getCount() <= 0) {
 							((ItemEntity)aEntity).setEntityItemStack(NI);
 							((ItemEntity)aEntity).setDead();
-						} else if (!ST.equal(rStack, aStack) || rStack.stackSize != aStack.stackSize) {
+						} else if (!ST.equal(rStack, aStack) || rStack.getCount() != aStack.getCount()) {
 							((ItemEntity)aEntity).setEntityItemStack(rStack);
 							((ItemEntity)aEntity).delayBeforeCanPickup = 40;
 						}
@@ -653,7 +653,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 					}
 				} else if (aEntity instanceof LivingEntity) {
 					if (ENTITY_CRAMMING > 0 && SERVER_TIME % 50 == 0 && !(aEntity instanceof Player) && ((LivingEntity)aEntity).canBePushed() && ((LivingEntity)aEntity).getHealth() > 0) {
-						List<?> tList = aEntity.worldObj.getEntitiesWithinAABBExcludingEntity(aEntity, aEntity.boundingBox.expand(0.2, 0.0, 0.2));
+						List<?> tList = aEntity.level().getEntitiesWithinAABBExcludingEntity(aEntity, aEntity.boundingBox.expand(0.2, 0.0, 0.2));
 						Class<? extends Entity> tClass = aEntity.getClass();
 						int aEntityCount = 1;
 						if (tList != null) for (int j = 0; j < tList.size(); j++) if (tList.get(j) != null && tList.get(j).getClass() == tClass) aEntityCount++;
@@ -786,7 +786,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 				}
 				
 				
-				final boolean tHungerEffect = (HUNGER_BY_INVENTORY_WEIGHT && aEvent.player.ticksExisted % 2400 == 1200), tBetweenlands = WD.dimBTL(aEvent.player.worldObj.provider);//, tCrazyJ1984 = "CrazyJ1984".equalsIgnoreCase(aEvent.player.getCommandSenderName());
+				final boolean tHungerEffect = (HUNGER_BY_INVENTORY_WEIGHT && aEvent.player.ticksExisted % 2400 == 1200), tBetweenlands = WD.dimBTL(aEvent.player.level().provider);//, tCrazyJ1984 = "CrazyJ1984".equalsIgnoreCase(aEvent.player.getCommandSenderName());
 				if (aEvent.player.ticksExisted % 120 == 0) {
 					ItemStack tStack;
 					int tCount = 64, tEmptySlots = 36, tCraponite = 0;
@@ -803,8 +803,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 										((IFluidHandlerItem)tStack.getItem()).fill(tStack, FL.Potion_Tainted.make(tFluid.amount), T);
 									}
 								}
-								ItemStack tRotten = RottingUtil.rotting(tStack, aEvent.player.worldObj, UT.Code.roundDown(aEvent.player.posX), UT.Code.roundDown(aEvent.player.posY), UT.Code.roundDown(aEvent.player.posZ));
-								if (ST.invalid(tRotten)) {tStack.stackSize = 0; aEvent.player.inventory.setInventorySlotContents(i, null); continue;}
+								ItemStack tRotten = RottingUtil.rotting(tStack, aEvent.player.level(), UT.Code.roundDown(aEvent.player.getX()), UT.Code.roundDown(aEvent.player.getY()), UT.Code.roundDown(aEvent.player.getZ()));
+								if (ST.invalid(tRotten)) {tStack.setCount(0); aEvent.player.inventory.setInventorySlotContents(i, null); continue;}
 								if (tStack != tRotten) ST.set(tStack, tRotten);
 							}
 							// You can't detect properly when you pick things up out of a Chest, so part of the Inventory scan it is!
@@ -813,7 +813,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 							}
 							// Radiation and Heat Damage.
 							if (!UT.Entities.isInvincible(aEvent.player)) {
-								UT.Entities.applyRadioactivity(aEvent.player, UT.Entities.getRadioactivityLevel(tStack), tStack.stackSize);
+								UT.Entities.applyRadioactivity(aEvent.player, UT.Entities.getRadioactivityLevel(tStack), tStack.getCount());
 								float tHeat = UT.Entities.getHeatDamageFromItem(tStack);
 								if (tHeat != 0.0F) if (tHeat > 0) UT.Entities.applyHeatDamage(aEvent.player, tHeat); else UT.Entities.applyFrostDamage(aEvent.player, -tHeat);
 							}
@@ -827,11 +827,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 								if (tData.mMaterial.mMaterial == MT.Craponite) {
 									tCraponite++;
 								}
-								if (tData.mMaterial.mMaterial == MT.Firestone && tData.validPrefix() && !MD.RC.owns(tStack)) for (int j = (int)UT.Code.divup(tData.mMaterial.mAmount * tStack.stackSize, U); j > 0; j--) {
-									WD.fire(aEvent.player.worldObj, UT.Code.roundDown(aEvent.player.posX)-5+RNGSUS.nextInt(11), UT.Code.roundDown(aEvent.player.posY)-5+RNGSUS.nextInt(11), UT.Code.roundDown(aEvent.player.posZ)-5+RNGSUS.nextInt(11), RNGSUS.nextInt(8) != 0);
+								if (tData.mMaterial.mMaterial == MT.Firestone && tData.validPrefix() && !MD.RC.owns(tStack)) for (int j = (int)UT.Code.divup(tData.mMaterial.mAmount * tStack.getCount(), U); j > 0; j--) {
+									WD.fire(aEvent.player.level(), UT.Code.roundDown(aEvent.player.getX())-5+RNGSUS.nextInt(11), UT.Code.roundDown(aEvent.player.getY())-5+RNGSUS.nextInt(11), UT.Code.roundDown(aEvent.player.getZ())-5+RNGSUS.nextInt(11), RNGSUS.nextInt(8) != 0);
 								}
 							}
-							if (tHungerEffect) tCount+=(tStack.stackSize * 64) / Math.max(1, tStack.getMaxStackSize());
+							if (tHungerEffect) tCount+=(tStack.getCount() * 64) / Math.max(1, tStack.getMaxStackSize());
 							if (INVENTORY_UNIFICATION) OM.set_(tStack);
 							ST.update(tStack, aEvent.player);
 							if (tStack.hasTagCompound() && tStack.getTagCompound().hasNoTags()) tStack.setTagCompound(null);
@@ -847,11 +847,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 						if (--BEAR_INVENTORY_COOL_DOWN < 0 && tEmptySlots < 4) {
 							BEAR_INVENTORY_COOL_DOWN = 100;
 							UT.Sounds.send(SFX.MC_HMM, aEvent.player);
-							for (int i = 0; i < aEvent.player.worldObj.playerEntities.size(); i++) {
-								Player tPlayer = (Player)aEvent.player.worldObj.playerEntities.get(i);
+							for (int i = 0; i < aEvent.player.level().playerEntities.size(); i++) {
+								Player tPlayer = (Player)aEvent.player.level().playerEntities.get(i);
 								if (tPlayer == null) continue;
 								if ("Bear989Sr".equalsIgnoreCase(tPlayer.getCommandSenderName())) {
-									if (tPlayer.posY < 30) {
+									if (tPlayer.getY() < 30) {
 										UT.Entities.chat(tPlayer, new Component(CHAT_GREG + "Stop making Holes in the Ground, Bear!"));
 									} else {
 										// Bear does not like being called these names, so lets annoy him. XD
@@ -903,7 +903,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 						}
 						
 						if (!UT.Entities.isInvincible(aEvent.player)) {
-							UT.Entities.applyRadioactivity(aEvent.player, UT.Entities.getRadioactivityLevel(tStack), tStack.stackSize);
+							UT.Entities.applyRadioactivity(aEvent.player, UT.Entities.getRadioactivityLevel(tStack), tStack.getCount());
 							float tHeat = UT.Entities.getHeatDamageFromItem(tStack);
 							if (tHeat != 0.0F) if (tHeat > 0) UT.Entities.applyHeatDamage(aEvent.player, tHeat); else UT.Entities.applyFrostDamage(aEvent.player, -tHeat);
 						}
@@ -917,7 +917,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST) 
 	public void onChunkWatchEvent(ChunkWatchEvent.Watch aEvent) {
-		LevelChunk tChunk = aEvent.player.worldObj.getChunkFromChunkCoords(aEvent.chunk.chunkXPos, aEvent.chunk.chunkZPos);
+		LevelChunk tChunk = aEvent.player.level().getChunkFromChunkCoords(aEvent.chunk.chunkXPos, aEvent.chunk.chunkZPos);
 		if (tChunk != null && tChunk.isTerrainPopulated && tChunk.chunkTileEntityMap != null && tChunk.chunkTileEntityMap.size() > 0) {
 			byte tIterations = 8;
 			HashSetNoNulls<Object> tSet = new HashSetNoNulls<>();
@@ -962,7 +962,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 		// There cant be any Inventory Row above this one.
 		if (tSlot >= 27) return;
 		// Refill, but only if the Slot in the Hotbar is Empty.
-		if (tInv[tSlot] != null && tInv[tSlot].stackSize > 0) return;
+		if (tInv[tSlot] != null && tInv[tSlot].getCount() > 0) return;
 		// Do not refill Foods!
 		if (ST.food(aEvent.original) > 0) return;
 		// Do not refill Edibles!
@@ -1025,7 +1025,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onPlayerInteraction(PlayerInteractEvent aEvent) {
-		if (aEvent.entityPlayer == null || aEvent.entityPlayer.worldObj == null || aEvent.action == null || aEvent.world.provider == null) return;
+		if (aEvent.entityPlayer == null || aEvent.entityPlayer.level() == null || aEvent.action == null || aEvent.world.provider == null) return;
 		
 		PLAYER_LAST_CLICKED.put(aEvent.entityPlayer, new BlockPos(aEvent.x, aEvent.y, aEvent.z));
 		
@@ -1041,7 +1041,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 			// Fixing a Vanilla Dupe Bug with stacked Music Discs and the Jukebox.
 			if (aTileEntity instanceof JukeboxBlockEntity) {
 				ItemStack tStack = ((JukeboxBlockEntity)aTileEntity).func_145856_a();
-				if (tStack != null) tStack.stackSize = 1;
+				if (tStack != null) tStack.setCount(1);
 				return;
 			}
 			// You can easily recycle most things in GT6 anyways, so this should not be needed.
@@ -1056,7 +1056,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 				return;
 			}
 			// Some Clientside Only Stuff.
-			if (aEvent.entityPlayer.worldObj.isRemote && !aEvent.entityPlayer.isSneaking()) {
+			if (aEvent.entityPlayer.level().isRemote && !aEvent.entityPlayer.isSneaking()) {
 				if (aTileEntity instanceof PrefixBlockTileEntity) {
 					// Show uses for Bedrock Ore when clicking it.
 					if (aBlock == BlocksGT.oreBedrock || aBlock == BlocksGT.oreSmallBedrock) {
@@ -1098,7 +1098,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 					// Instant breaking for those Wrenches.
 					if (IL.BC_Wrench.equal(aStack, T, T) || IL.FR_Wrench.equal(aStack, T, T) || IL.SC2_Wrench.equal(aStack, T, T) || IL.AE_Wrench_Certus.equal(aStack, T, T) || IL.AE_Wrench_Quartz.equal(aStack, T, T) || IL.TE_Wrench.equal(aStack, T, T) || IL.TE_Wrench_Battle.equal(aStack, T, T)) {
 						List<String> tChatReturn = new ArrayListNoNulls<>();
-						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_wrench, Long.MAX_VALUE, 3, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.worldObj, (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
+						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_wrench, Long.MAX_VALUE, 3, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.level(), (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
 						UT.Entities.sendchat(aEvent.entityPlayer, tChatReturn, F);
 						if (tDamage > 0) {
 							ST.use(aEvent.entityPlayer, aStack);
@@ -1110,7 +1110,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 					// Instant breaking for those Soft Hammers.
 					if (IL.MFR_Hammer.equal(aStack, T, T)) {
 						List<String> tChatReturn = new ArrayListNoNulls<>();
-						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_softhammer, Long.MAX_VALUE, 3, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.worldObj, (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
+						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_softhammer, Long.MAX_VALUE, 3, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.level(), (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
 						UT.Entities.sendchat(aEvent.entityPlayer, tChatReturn, F);
 						if (tDamage > 0) {
 							ST.use(aEvent.entityPlayer, aStack);
@@ -1122,7 +1122,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 					// Instant breaking for those Hard Hammers.
 					if (IL.IE_Hammer.equal(aStack, F, T) || IL.A97_Hammer.equal(aStack, T, T) || IL.SC2_Hammer.equal(aStack, T, T) || IL.SC2_Hammer_Gilded.equal(aStack, T, T)) {
 						List<String> tChatReturn = new ArrayListNoNulls<>();
-						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_hammer, Long.MAX_VALUE, 3, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.worldObj, (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
+						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_hammer, Long.MAX_VALUE, 3, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.level(), (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
 						UT.Entities.sendchat(aEvent.entityPlayer, tChatReturn, F);
 						if (tDamage > 0) {
 							ST.use(aEvent.entityPlayer, aStack);
@@ -1134,7 +1134,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 					// Make Railcrafts Crowbars work on GT6 Stuff.
 					if (IL.RC_Crowbar_Iron.equal(aStack, T, T) || IL.RC_Crowbar_Steel.equal(aStack, T, T) || IL.RC_Crowbar_Thaumium.equal(aStack, T, T) || IL.RC_Crowbar_Voidmetal.equal(aStack, T, T)) {
 						List<String> tChatReturn = new ArrayListNoNulls<>();
-						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_crowbar, Long.MAX_VALUE, 2, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.worldObj, (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
+						long tDamage = IBlockToolable.Util.onToolClickWithoutCompat(TOOL_crowbar, Long.MAX_VALUE, 2, aEvent.entityPlayer, tChatReturn, aEvent.entityPlayer.inventory, aEvent.entityPlayer.isSneaking(), aStack, aEvent.entityPlayer.level(), (byte)aEvent.face, aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
 						UT.Entities.sendchat(aEvent.entityPlayer, tChatReturn, F);
 						if (tDamage > 0) {
 							aStack.damageItem((int)UT.Code.units(tDamage, 10000, 1, T), aEvent.entityPlayer);
@@ -1210,7 +1210,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 					return;
 				}
 				// Reload Guns with the potential Ammo in this Slot if applicable. Ugly Code, I know.
-				if (!aEvent.entityPlayer.worldObj.isRemote) {
+				if (!aEvent.entityPlayer.level().isRemote) {
 					for (int i = 0; i < aEvent.entityPlayer.inventory.mainInventory.length; i++) {
 						ItemStack tStack = aEvent.entityPlayer.inventory.mainInventory[i];
 						if (ST.item(tStack) instanceof MultiItem) {
@@ -1294,7 +1294,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 		if (aBlock == null) return;
 		
 		if (aBlock == Blocks.dirt && aEvent.blockMetadata == 1) for (int i = 0, j = aEvent.drops.size(); i < j; i++) if (ST.block(aEvent.drops.get(0)) == Blocks.dirt) {
-			aEvent.drops.set(i, ST.make(Blocks.dirt, aEvent.drops.get(i).stackSize, 1));
+			aEvent.drops.set(i, ST.make(Blocks.dirt, aEvent.drops.get(i).getCount(), 1));
 		}
 		
 		if (IL.TF_Mushgloom_Huge.equal(aBlock)) {
@@ -1322,18 +1322,18 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 				if (tFireAspect) for (ItemStack tDrop : aEvent.drops) {
 					ItemStack tTarget = RM.get_smelting(tDrop);
 					if (ST.valid(tTarget)) {
-						tDrop.stackSize *= tTarget.stackSize;
+						tDrop.setCount(tDrop.getCount()*(tTarget.getCount()));
 						OM.set(ST.set(tDrop, tTarget, F, T));
 						tTarget = (aEvent.isSilkTouching?BlocksGT.blockToSilk:BlocksGT.blockToDrop).get(tDrop);
 						if (ST.valid(tTarget)) OM.set(ST.set(tDrop, tTarget, F, F));
 					} else {
 						WoodEntry tWoodEntry = WoodDictionary.WOODS.get(tDrop);
 						if (tWoodEntry != null && tWoodEntry.mCharcoalCount > 0) {
-							ST.set(tDrop, OP.gem.mat(MT.Charcoal, tWoodEntry.mCharcoalCount * tDrop.stackSize), T, F);
+							ST.set(tDrop, OP.gem.mat(MT.Charcoal, tWoodEntry.mCharcoalCount * tDrop.getCount()), T, F);
 						} else {
 							BeamEntry tBeamEntry = WoodDictionary.BEAMS.get(tDrop);
 							if (tBeamEntry != null && tBeamEntry.mCharcoalCount > 0) {
-								ST.set(tDrop, OP.gem.mat(MT.Charcoal, tBeamEntry.mCharcoalCount * tDrop.stackSize), T, F);
+								ST.set(tDrop, OP.gem.mat(MT.Charcoal, tBeamEntry.mCharcoalCount * tDrop.getCount()), T, F);
 							}
 						}
 					}
@@ -1353,7 +1353,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 								ST.set(aDrop, tEvent.item.getEntityItem(), T, T);
 								// I have to ignore this event being cancellable because that causes Item Dupes.
 								NeoForge.EVENT_BUS.post(tEvent);
-								if (tEvent.getResult() == Result.ALLOW || tEntity.isDead || aDrop.stackSize <= 0 || ST.invalid(aDrop)) {
+								if (tEvent.getResult() == Result.ALLOW || tEntity.isDead || aDrop.getCount() <= 0 || ST.invalid(aDrop)) {
 									aDrops.remove();
 								} else if (ST.add(aEvent.harvester, aDrop)) {
 									aDrops.remove();
@@ -1374,14 +1374,14 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onEntitySpawningEvent(EntityJoinLevelEvent aEvent) {
-		if (aEvent.entity instanceof ItemEntity && !aEvent.entity.worldObj.isRemote) {
+		if (aEvent.entity instanceof ItemEntity && !aEvent.entity.level().isRemote) {
 			ItemStack aStack = ST.update(OM.get(((ItemEntity)aEvent.entity).getEntityItem()), aEvent.entity);
-			if (ST.valid(aStack) && aStack.stackSize > 0) {
+			if (ST.valid(aStack) && aStack.getCount() > 0) {
 				Item aItem = ST.item_(aStack);
 				if (ST.meta_(aStack) == W || aItem == Items.gold_nugget) ST.meta(aStack, 0);
 				if (ST.meta_(aStack) == 0 && aItem == IL.TF_Mushgloom.item()) ST.meta(aStack, 9);
 				// Check if this is likely a badly implemented Mob Drop from a Mo'Creatures Mob.
-				try {if (null != aEvent.entity.worldObj.findNearestEntityWithinAABB(Class.forName("drzhark.mocreatures.entity.IMoCEntity"), aEvent.entity.boundingBox.expand(0.5,1.0,0.5), aEvent.entity)) {
+				try {if (null != aEvent.entity.level().findNearestEntityWithinAABB(Class.forName("drzhark.mocreatures.entity.IMoCEntity"), aEvent.entity.boundingBox.expand(0.5,1.0,0.5), aEvent.entity)) {
 					// Replace stupid Wooden and Stone Tools that clutter up Mob Farms for no reason, but only if nonplayerkill.
 					if (aItem == Items.wooden_sword || aItem == Items.wooden_pickaxe || aItem == Items.wooden_shovel || aItem == Items.wooden_axe || aItem == Items.wooden_hoe) {
 						ST.set(aStack, IL.Stick.get(1));
@@ -1413,7 +1413,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onLivingDeath(LivingDeathEvent aEvent) {
-		if (aEvent.entityLiving instanceof ServerPlayer) NW_API.sendToPlayer(new PacketDeathPoint(UT.Code.roundDown(aEvent.entityLiving.posX), UT.Code.roundDown(aEvent.entityLiving.posY), UT.Code.roundDown(aEvent.entityLiving.posZ)), (ServerPlayer)aEvent.entityLiving);
+		if (aEvent.entityLiving instanceof ServerPlayer) NW_API.sendToPlayer(new PacketDeathPoint(UT.Code.roundDown(aEvent.entityLiving.getX()), UT.Code.roundDown(aEvent.entityLiving.getY()), UT.Code.roundDown(aEvent.entityLiving.getZ())), (ServerPlayer)aEvent.entityLiving);
 	}
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -1424,7 +1424,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 		if (DISABLE_ALL_IC2_OREWASHER_RECIPES ) ic2.api.recipe.Recipes.oreWashing.getRecipes().clear();
 		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES) ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
 		
-		if (aEvent.player.worldObj.isRemote) return;
+		if (aEvent.player.level().isRemote) return;
 		if (aEvent.player instanceof ServerPlayer) mNewPlayers.add((ServerPlayer)aEvent.player);
 	}
 	
@@ -1441,13 +1441,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onItemExpireEvent(ItemExpireEvent aEvent) {
-		if (aEvent.entity.worldObj.isRemote) return;
+		if (aEvent.entity.level().isRemote) return;
 		ItemStack aStack = aEvent.entityItem.getEntityItem();
-		int aX = UT.Code.roundDown(aEvent.entity.posX), aY = UT.Code.roundDown(aEvent.entity.posY), aZ = UT.Code.roundDown(aEvent.entity.posZ);
+		int aX = UT.Code.roundDown(aEvent.entity.getX()), aY = UT.Code.roundDown(aEvent.entity.getY()), aZ = UT.Code.roundDown(aEvent.entity.getZ());
 		if (ST.valid(aStack)) {
 			if (ST.item_(aStack) instanceof MultiTileEntityItemInternal) {
 				long tExtraLife = ((MultiTileEntityItemInternal)ST.item_(aStack)).onDespawn(aEvent.entityItem, aStack);
-				if (aStack.stackSize <= 0) {
+				if (aStack.getCount() <= 0) {
 					aEvent.extraLife = 0;
 					aEvent.entityItem.setDead();
 					aEvent.setCanceled(T);
@@ -1464,15 +1464,15 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 			if (tRegistry != null) {
 				OreDictItemData tData = OM.anydata(aStack);
 				if (tData != null) {
-					if (tData.mPrefix == OP.rockGt || tData.mPrefix == OP.oreRaw) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32074, ST.save(NBT_VALUE, aStack), T, F)) {aStack.stackSize = 0; aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
-					if (tData.mPrefix == OP.ingot                               ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32084, ST.save(NBT_VALUE, aStack), T, F)) {aStack.stackSize = 0; aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
-					if (tData.mPrefix == OP.plate                               ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32085, ST.save(NBT_VALUE, aStack), T, F)) {aStack.stackSize = 0; aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
-					if (tData.mPrefix == OP.plateGem                            ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32086, ST.save(NBT_VALUE, aStack), T, F)) {aStack.stackSize = 0; aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
-					if (tData.mPrefix == OP.scrapGt                             ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.worldObj, aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32103, ST.save(NBT_VALUE, aStack), T, F)) {aStack.stackSize = 0; aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
+					if (tData.mPrefix == OP.rockGt || tData.mPrefix == OP.oreRaw) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32074, ST.save(NBT_VALUE, aStack), T, F)) {aStack.setCount(0); aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
+					if (tData.mPrefix == OP.ingot                               ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32084, ST.save(NBT_VALUE, aStack), T, F)) {aStack.setCount(0); aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
+					if (tData.mPrefix == OP.plate                               ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32085, ST.save(NBT_VALUE, aStack), T, F)) {aStack.setCount(0); aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
+					if (tData.mPrefix == OP.plateGem                            ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32086, ST.save(NBT_VALUE, aStack), T, F)) {aStack.setCount(0); aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
+					if (tData.mPrefix == OP.scrapGt                             ) for (byte[] tOff : CUBE_3) if (WD.irrelevant(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2]) && tRegistry.mBlock.placeBlock(aEvent.entity.level(), aX+tOff[0], aY+tOff[1], aZ+tOff[2], SIDE_TOP, (short)32103, ST.save(NBT_VALUE, aStack), T, F)) {aStack.setCount(0); aEvent.extraLife = 0; aEvent.entityItem.setDead(); aEvent.setCanceled(T); return;}
 				}
 			}
 			GarbageGT.trash(aStack);
-			aStack.stackSize = 0;
+			aStack.setCount(0);
 			aEvent.extraLife = 0;
 			aEvent.entityItem.setEntityItemStack(aStack);
 			aEvent.entityItem.setDead();
@@ -1554,7 +1554,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 			if (tSpeed < 0.1) return;
 			if (tSpeed > 1.0) tSpeed = 1.0F;
 			
-			EntityProjectile tArrowEntity = ((IItemProjectile)aArrow.getItem()).getProjectile(TD.Projectiles.ARROW, aArrow, aEvent.entityPlayer.worldObj, aEvent.entityPlayer, tSpeed * 2.0F);
+			EntityProjectile tArrowEntity = ((IItemProjectile)aArrow.getItem()).getProjectile(TD.Projectiles.ARROW, aArrow, aEvent.entityPlayer.level(), aEvent.entityPlayer, tSpeed * 2.0F);
 			
 			if (tSpeed >= 1.0F) tArrowEntity.setIsCritical(T);
 			
@@ -1568,14 +1568,14 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 			
 			aEvent.bow.damageItem(1, aEvent.entityPlayer);
 			aEvent.bow.getItem();
-			aEvent.entityPlayer.worldObj.playSoundAtEntity(aEvent.entityPlayer, "random.bow", 1.0F, 1.0F / (RNGSUS.nextFloat() * 0.4F + 1.2F) + tSpeed * 0.5F);
+			aEvent.entityPlayer.level().playSoundAtEntity(aEvent.entityPlayer, "random.bow", 1.0F, 1.0F / (RNGSUS.nextFloat() * 0.4F + 1.2F) + tSpeed * 0.5F);
 			
 			tArrowEntity.canBePickedUp = 1;
 			
-			if (!UT.Entities.hasInfiniteItems(aEvent.entityPlayer)) aArrow.stackSize--;
-			if (aArrow.stackSize == 0) ST.denull(aEvent.entityPlayer);
+			if (!UT.Entities.hasInfiniteItems(aEvent.entityPlayer)) aArrow.setCount(aArrow.getCount()-1);
+			if (aArrow.getCount() == 0) ST.denull(aEvent.entityPlayer);
 			
-			if (!aEvent.entityPlayer.worldObj.isRemote) aEvent.entityPlayer.worldObj.spawnEntityInWorld(tArrowEntity);
+			if (!aEvent.entityPlayer.level().isRemote) aEvent.entityPlayer.level().spawnEntityInWorld(tArrowEntity);
 			
 			aEvent.setCanceled(T);
 		}

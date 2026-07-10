@@ -25,7 +25,7 @@ import gregapi.block.metatype.BlockMetaType;
 import gregapi.block.metatype.BlockStones;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.render.IIconContainer;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.item.BlockItem;

@@ -62,8 +62,8 @@ public class MultiTileEntityMiniPortalCW2Cavenia extends MultiTileEntityMiniPort
 	@Override
 	public void findTargetPortal() {
 		mTarget = null;
-		if (worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListCW2Side) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = xCoord-tTarget.xCoord, tZDifference = zCoord-tTarget.zCoord;
@@ -75,7 +75,7 @@ public class MultiTileEntityMiniPortalCW2Cavenia extends MultiTileEntityMiniPort
 						mTarget = tTarget;
 					}
 				}
-			} else if (WD.dimCW2Cavenia(worldObj)) {
+			} else if (WD.dimCW2Cavenia(level)) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.xCoord-xCoord, tZDifference = tTarget.zCoord-zCoord;
@@ -93,12 +93,12 @@ public class MultiTileEntityMiniPortalCW2Cavenia extends MultiTileEntityMiniPort
 	
 	@Override
 	public void addThisPortalToLists() {
-		if (worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListCW2Side) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (WD.dimCW2Cavenia(worldObj)) {
+			} else if (WD.dimCW2Cavenia(level)) {
 				if (!sListCW2Side.contains(this)) sListCW2Side.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();
@@ -123,7 +123,7 @@ public class MultiTileEntityMiniPortalCW2Cavenia extends MultiTileEntityMiniPort
 		return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.mossy_cobblestone.getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.mossy_cobblestone.getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return Blocks.mossy_cobblestone.getExplosionResistance(null);}
 	
 	public ITexture sCW2Portal = BlockTextureCopied.get(ST.block(MD.CW2, "cavenia_portal", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sCW2PortalFrame = BlockTextureCopied.get(Blocks.mossy_cobblestone, SIDE_ANY, 0);

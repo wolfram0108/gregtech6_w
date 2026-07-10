@@ -76,11 +76,11 @@ public class MultiTileEntityFluidFunnel extends TileEntityBase11AttachmentSmall 
 						int tAmount = ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).funnelFill(tDelegator.mSideOfTileEntity, tFluid, F);
 						if (tAmount >= tFluid.amount && ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).funnelFill(tDelegator.mSideOfTileEntity, tFluid, T) > 0) {
 							UT.Sounds.send(SFX.MC_LIQUID_WATER, this, F);
-							aStack.stackSize--;
+							aStack.setCount(aStack.getCount()-1);
 							ST.give(aPlayer, ST.container(ST.amount(1, aStack), T), T);
 							return T;
 						}
-						if (aStack.getItem() instanceof IFluidHandlerItem && aStack.stackSize == 1) {
+						if (aStack.getItem() instanceof IFluidHandlerItem && aStack.getCount() == 1) {
 							UT.Sounds.send(SFX.MC_LIQUID_WATER, this, F);
 							((IFluidHandlerItem)aStack.getItem()).drain(aStack, ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).funnelFill(tDelegator.mSideOfTileEntity, tFluid, T), T);
 							return T;

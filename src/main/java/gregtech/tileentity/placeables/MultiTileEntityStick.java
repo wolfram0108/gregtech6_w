@@ -77,7 +77,7 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
-		ST.give(aPlayer, getDefaultStick(1), T, worldObj, xCoord+0.5, yCoord+0.5, zCoord+0.5);
+		ST.give(aPlayer, getDefaultStick(1), T, level, xCoord+0.5, yCoord+0.5, zCoord+0.5);
 		playCollect();
 		return setToAir();
 	}
@@ -85,13 +85,13 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 	@Override
 	public void onNeighborBlockChange(Level aWorld, Block aBlock) {
 		if (isServerSide()) {
-			if (!worldObj.getBlock(xCoord, yCoord-1, zCoord).isSideSolid(worldObj, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_TOP])) {
-				ST.drop(worldObj, getCoords(), getDefaultStick(1));
+			if (!level.getBlock(xCoord, yCoord-1, zCoord).isSideSolid(level, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_TOP])) {
+				ST.drop(level, getCoords(), getDefaultStick(1));
 				setToAir();
 				return;
 			}
 			for (byte tSide : ALL_SIDES_HORIZONTAL_UP) if (WD.liquid(getBlockAtSide(tSide))) {
-				ST.drop(worldObj, getCoords(), getDefaultStick(1));
+				ST.drop(level, getCoords(), getDefaultStick(1));
 				setToAir();
 				return;
 			}
@@ -100,16 +100,16 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 	
 	public ItemStack getDefaultStick(int aAmount) {
 		// Tell WAILA and the NEI Overlay that this is a normal Stick.
-		if (worldObj == null || isClientSide()) return IL.Stick.get(aAmount);
+		if (level == null || isClientSide()) return IL.Stick.get(aAmount);
 		// Dimension specific Drops.
-		if (WD.dimAETHER(worldObj)) return OP.stick.mat(rng(3) > 0 ? MT.Skyroot       : MT.WOODS.Dead    , aAmount);
-		if (WD.dimERE   (worldObj)) return OP.stick.mat(rng(8) > 0 ? MT.WOODS.Dead    : MT.PetrifiedWood , aAmount);
-		if (WD.dimBTL   (worldObj)) return OP.stick.mat(rng(3) > 0 ? MT.Weedwood      : MT.WOODS.Rotten  , aAmount);
-		if (WD.dimATUM  (worldObj)) return OP.stick.mat(rng(4) > 0 ? MT.WOODS.Coconut : MT.WOODS.Dead    , aAmount);
-		if (WD.dimTROPIC(worldObj)) return OP.stick.mat(rng(2) > 0 ? MT.WOODS.Coconut : MT.WOODS.Mahogany, aAmount);
-		if (WD.dimALF   (worldObj)) return OP.stick.mat(rng(8) > 0 ? MT.Livingwood    : MT.Dreamwood     , aAmount);
-		if (WD.dimTF    (worldObj)) return rng(16) > 0 ? IL.Stick.get(aAmount) : IL.TF_LiveRoot.get(aAmount);
-		String tBiome = worldObj.getBiomeGenForCoords(xCoord, zCoord).biomeName.toLowerCase();
+		if (WD.dimAETHER(level)) return OP.stick.mat(rng(3) > 0 ? MT.Skyroot       : MT.WOODS.Dead    , aAmount);
+		if (WD.dimERE   (level)) return OP.stick.mat(rng(8) > 0 ? MT.WOODS.Dead    : MT.PetrifiedWood , aAmount);
+		if (WD.dimBTL   (level)) return OP.stick.mat(rng(3) > 0 ? MT.Weedwood      : MT.WOODS.Rotten  , aAmount);
+		if (WD.dimATUM  (level)) return OP.stick.mat(rng(4) > 0 ? MT.WOODS.Coconut : MT.WOODS.Dead    , aAmount);
+		if (WD.dimTROPIC(level)) return OP.stick.mat(rng(2) > 0 ? MT.WOODS.Coconut : MT.WOODS.Mahogany, aAmount);
+		if (WD.dimALF   (level)) return OP.stick.mat(rng(8) > 0 ? MT.Livingwood    : MT.Dreamwood     , aAmount);
+		if (WD.dimTF    (level)) return rng(16) > 0 ? IL.Stick.get(aAmount) : IL.TF_LiveRoot.get(aAmount);
+		String tBiome = level.getBiomeGenForCoords(xCoord, zCoord).biomeName.toLowerCase();
 		// The order of checks matters because things like Ice Deserts are a thing.
 		if (tBiome.contains("rainforest" )) return getStick(NI, aAmount);
 		if (tBiome.contains("firefly"    )) return getStick(NI, aAmount);
@@ -166,7 +166,7 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 	
 	@Override
 	public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {
-		if (worldObj != null && hasSnow()) {mTexture = SNOW_TEXTURE; return 2;}
+		if (level != null && hasSnow()) {mTexture = SNOW_TEXTURE; return 2;}
 		mTexture = sWoodTexture;
 		return 1;
 	}

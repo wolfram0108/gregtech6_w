@@ -62,7 +62,7 @@ public class Behavior_FeedGrass extends AbstractBehaviorDefault {
 				((EntityHorse)aEntity).increaseTemper(2);
 			}
 			if (tConsume) {
-				((EntityHorse)aEntity).worldObj.playSoundAtEntity(aEntity, "eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F);
+				((EntityHorse)aEntity).level().playSoundAtEntity(aEntity, "eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F);
 				UT.Entities.consumeCurrentItem(aPlayer);
 			}
 			return tConsume;

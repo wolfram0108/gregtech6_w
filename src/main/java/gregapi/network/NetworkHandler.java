@@ -119,7 +119,7 @@ public final class NetworkHandler extends MessageToMessageCodec<CustomPacketPayl
 		tChannel.writeAndFlush(aPacket);
 	}
 	
-	@Override public void sendToAllPlayersInRange(IPacket aPacket, Level aWorld, BlockPos aCoords) {sendToAllPlayersInRange(aPacket, aWorld, aCoords.posX, aCoords.posZ);}
+	@Override public void sendToAllPlayersInRange(IPacket aPacket, Level aWorld, BlockPos aCoords) {sendToAllPlayersInRange(aPacket, aWorld, aCoords.getX(), aCoords.getZ());}
 	@Override public void sendToAllPlayersInRange(IPacket aPacket, Level aWorld, int aX, int aZ) {
 		if (aPacket == null) return;
 		if (aWorld != null && !aWorld.isRemote) for (Object tObject : aWorld.playerEntities) {
@@ -131,7 +131,7 @@ public final class NetworkHandler extends MessageToMessageCodec<CustomPacketPayl
 		}
 	}
 	
-	@Override public void sendToPlayerIfInRange(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToPlayerIfInRange(aPacket, aPlayer, aWorld, aCoords.posX, aCoords.posZ);}
+	@Override public void sendToPlayerIfInRange(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToPlayerIfInRange(aPacket, aPlayer, aWorld, aCoords.getX(), aCoords.getZ());}
 	@Override public void sendToPlayerIfInRange(IPacket aPacket, UUID aPlayer, Level aWorld, int aX, int aZ) {
 		if (aPacket == null) return;
 		if (aWorld != null && !aWorld.isRemote) for (Object tObject : aWorld.playerEntities) {
@@ -148,7 +148,7 @@ public final class NetworkHandler extends MessageToMessageCodec<CustomPacketPayl
 		}
 	}
 	
-	@Override public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToAllPlayersInRangeExcept(aPacket, aPlayer, aWorld, aCoords.posX, aCoords.posZ);}
+	@Override public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, BlockPos aCoords) {sendToAllPlayersInRangeExcept(aPacket, aPlayer, aWorld, aCoords.getX(), aCoords.getZ());}
 	@Override public void sendToAllPlayersInRangeExcept(IPacket aPacket, UUID aPlayer, Level aWorld, int aX, int aZ) {
 		if (aPacket == null) return;
 		if (aWorld != null && !aWorld.isRemote) for (Object tObject : aWorld.playerEntities) {
@@ -179,7 +179,7 @@ public final class NetworkHandler extends MessageToMessageCodec<CustomPacketPayl
 		
 		@Override
 		protected void channelRead0(ChannelHandlerContext ctx, IPacket aPacket) throws Exception {
-			aPacket.process(Minecraft.getMinecraft().thePlayer == null ? null : Minecraft.getMinecraft().thePlayer.worldObj, mNetworkHandler);
+			aPacket.process(Minecraft.getMinecraft().thePlayer == null ? null : Minecraft.getMinecraft().thePlayer.level(), mNetworkHandler);
 //          DEB.println(aPacket.getClass().getName());
 //          if (aPacket instanceof PacketCoordinates) DEB.println(" X: " + ((PacketCoordinates)aPacket).mX + " - Y: " + ((PacketCoordinates)aPacket).mY + " - Z: " + ((PacketCoordinates)aPacket).mZ);
 		}

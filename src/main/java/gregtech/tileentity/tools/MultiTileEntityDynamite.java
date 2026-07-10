@@ -37,7 +37,7 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import gregapi.worldgen.StoneLayer;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.Blocks;
@@ -97,7 +97,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 		
 		if (isClientSide()) return 0;
 		
-		if (aTool.equals(TOOL_igniter       ) && mCountDown == 0 && WD.oxygen(worldObj, xCoord, yCoord, zCoord) ) {mCountDown = 100; updateClientData(); causeBlockUpdate(); UT.Sounds.send(SFX.MC_TNT_IGNITE , 1.0F, 0.5F, this, F); return 10000;}
+		if (aTool.equals(TOOL_igniter       ) && mCountDown == 0 && WD.oxygen(level, xCoord, yCoord, zCoord) ) {mCountDown = 100; updateClientData(); causeBlockUpdate(); UT.Sounds.send(SFX.MC_TNT_IGNITE , 1.0F, 0.5F, this, F); return 10000;}
 		if (aTool.equals(TOOL_extinguisher  ) && mCountDown != 0                                                ) {mCountDown =   0; updateClientData(); causeBlockUpdate(); UT.Sounds.send(SFX.MC_FIZZ       , 1.0F, 0.5F, this, F); return 10000;}
 		return 0;
 	}
@@ -106,12 +106,12 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		if (aIsServerSide) {
 			if (mBlockUpdated || aTimer == 2) {
-				if ((mCountDown == 0 && hasRedstoneIncoming()) || WD.burning(worldObj, xCoord, yCoord, zCoord)) remoteActivate();
+				if ((mCountDown == 0 && hasRedstoneIncoming()) || WD.burning(level, xCoord, yCoord, zCoord)) remoteActivate();
 				
 				while(mSunk) {
 					Block tBlock = getBlockAtSide(OPOS[mFacing]);
 					if (BlocksGT.drillableDynamite.contains(tBlock)) break;
-					if (tBlock.getBlockHardness(worldObj, xCoord+OFFX[OPOS[mFacing]], yCoord+OFFY[OPOS[mFacing]], zCoord+OFFZ[OPOS[mFacing]]) >= 0) {
+					if (tBlock.getBlockHardness(level, xCoord+OFFX[OPOS[mFacing]], yCoord+OFFY[OPOS[mFacing]], zCoord+OFFZ[OPOS[mFacing]]) >= 0) {
 						if (tBlock instanceof BlockStones) {
 							if (getMetaDataAtSide(OPOS[mFacing]) < 3) break;
 						} else {
@@ -142,8 +142,8 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	@Override
 	public void explode(boolean aInstant) {
 		mDontDrop = T;
-		worldObj.setBlockToAir(xCoord, yCoord, zCoord);
-		Explosion tExplosion = mSunk ? new DynamiteExplosion(worldObj, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune) : new DynamiteExplosion(worldObj, xCoord+0.5, yCoord+0.5, zCoord+0.5, mMaxExplosionResistance, mFortune);
+		level.setBlockToAir(xCoord, yCoord, zCoord);
+		Explosion tExplosion = mSunk ? new DynamiteExplosion(level, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune) : new DynamiteExplosion(level, xCoord+0.5, yCoord+0.5, zCoord+0.5, mMaxExplosionResistance, mFortune);
 		tExplosion.doExplosionA();
 		tExplosion.doExplosionB(T);
 	}

@@ -49,7 +49,7 @@ public class MultiTileEntityCrusher extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing, 2)-2, tY = yCoord, tZ = getOffsetZN(mFacing, 2)-2, tD = (SIDES_AXIS_Z[mFacing]?mRunning?1:0:mRunning?3:2);
-		if (worldObj.blockExists(tX, tY, tZ) && worldObj.blockExists(tX+4, tY, tZ) && worldObj.blockExists(tX, tY, tZ+4) && worldObj.blockExists(tX+4, tY, tZ+4)) {
+		if (level.blockExists(tX, tY, tZ) && level.blockExists(tX+4, tY, tZ) && level.blockExists(tX, tY, tZ+4) && level.blockExists(tX+4, tY, tZ+4)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18003, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_OUT, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -162,14 +162,14 @@ public class MultiTileEntityCrusher extends TileEntityBase10MultiBlockMachine {
 	public void updateAdjacentToggleableEnergySources() {
 		DelegatorTileEntity<BlockEntity> tDelegator;
 		if (SIDES_AXIS_X[mFacing]) {
-			tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 2), yCoord+1, zCoord - 3, SIDE_Z_POS, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), yCoord+1, zCoord - 3, SIDE_Z_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 2), yCoord+1, zCoord + 3, SIDE_Z_NEG, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), yCoord+1, zCoord + 3, SIDE_Z_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		} else {
-			tDelegator = WD.te(worldObj, xCoord - 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_POS, F);
+			tDelegator = WD.te(level, xCoord - 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(worldObj, xCoord + 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_NEG, F);
+			tDelegator = WD.te(level, xCoord + 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		}
 	}
@@ -177,7 +177,7 @@ public class MultiTileEntityCrusher extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public void onWalkOver2(LivingEntity aEntity) {
 		super.onWalkOver2(aEntity);
-		if (mRunning && aEntity.posX >= getOffsetXN(mFacing, 2) - 1 && aEntity.posZ >= getOffsetZN(mFacing, 2) - 1 && aEntity.posX <= getOffsetXN(mFacing, 2) + 2 && aEntity.posZ <= getOffsetZN(mFacing, 2) + 2) {
+		if (mRunning && aEntity.getX() >= getOffsetXN(mFacing, 2) - 1 && aEntity.getZ() >= getOffsetZN(mFacing, 2) - 1 && aEntity.getX() <= getOffsetXN(mFacing, 2) + 2 && aEntity.getZ() <= getOffsetZN(mFacing, 2) + 2) {
 			aEntity.attackEntityFrom(DamageSources.getCrusherDamage(), 5.0F);
 		}
 	}

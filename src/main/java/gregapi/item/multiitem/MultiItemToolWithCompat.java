@@ -20,7 +20,7 @@
 package gregapi.item.multiitem;
 
 import buildcraft.api.tools.IToolWrench;
-import cpw.mods.fml.common.Optional;
+import gregapi.api.Optional;
 import forestry.api.arboriculture.IToolGrafter;
 import gregapi.data.CS.ModIDs;
 import gregapi.data.TD;

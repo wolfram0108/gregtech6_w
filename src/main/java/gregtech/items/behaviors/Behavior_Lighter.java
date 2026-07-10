@@ -59,7 +59,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aPlayer.worldObj.isRemote || (aStack.stackSize != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
+		if (aPlayer.level().isRemote || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
 		
 		boolean rOutput = F;
 		
@@ -80,7 +80,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isRemote || (aStack.stackSize != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
+		if (aWorld.isRemote || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
 		
 		prepare(aStack);
 		if (ST.invalid(mUsedLighter)) {
@@ -129,7 +129,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	
 	private void useUp(ItemStack aStack) {
 		if (ST.invalid(mEmptyLighter)) {
-			aStack.stackSize--;
+			aStack.setCount(aStack.getCount()-1);
 		} else {
 			aStack.func_150996_a(mEmptyLighter.getItem());
 			ST.meta_(aStack, ST.meta_(mEmptyLighter));
@@ -154,7 +154,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 			aList.add(LH.get("gt.behaviour.singleuse"));
 		}
 		if (mChance < 10000) aList.add(LH.get("gt.behaviour.lighter.chance") + " " + (mChance / 100) + "." + (mChance % 100) + "%");
-		if (aStack.stackSize != 1 && (mFuelAmount != 1 || ST.valid(mEmptyLighter))) aList.add(LH.Chat.RED + LH.get(LH.REQUIREMENT_UNSTACKED));
+		if (aStack.getCount() != 1 && (mFuelAmount != 1 || ST.valid(mEmptyLighter))) aList.add(LH.Chat.RED + LH.get(LH.REQUIREMENT_UNSTACKED));
 		return aList;
 	}
 }

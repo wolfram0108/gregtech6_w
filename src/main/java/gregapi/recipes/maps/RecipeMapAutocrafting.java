@@ -114,7 +114,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 		for (ItemStack tPlan : tBlueprint) if (tPlan != null) {
 			boolean temp = T;
 			for (ItemStack tInput : tInputs) if (ST.equal(tInput, tPlan, F)) {
-				tInput.stackSize++;
+				tInput.setCount(tInput.getCount()+1);
 				tOutputs.add(ST.container(tPlan, F));
 				temp = F;
 			}
@@ -124,7 +124,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 			}
 		}
 		
-		for (ItemStack tInput : tInputs) if (OM.is_("gt:autocrafterinfinite", tInput)) tInput.stackSize = 0;
+		for (ItemStack tInput : tInputs) if (OM.is_("gt:autocrafterinfinite", tInput)) tInput.setCount(0);
 		
 		return new Recipe(T, F, T, tInputs.toArray(ZL_IS), tOutputs.toArray(ZL_IS), null, null, null, null, 1024, 16, 0);
 	}

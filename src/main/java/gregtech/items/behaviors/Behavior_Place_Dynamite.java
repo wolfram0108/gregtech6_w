@@ -63,10 +63,10 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 					tStack.setTagCompound(UT.NBT.make());
 				}
 				tStack.getTagCompound().setBoolean(NBT_MODE, T);
-				int tOldSize = tStack.stackSize;
+				int tOldSize = tStack.getCount();
 				if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
 					if (UT.Entities.hasInfiniteItems(aPlayer)) {
-						tStack.stackSize = tOldSize;
+						tStack.setCount(tOldSize);
 					} else {
 						((MultiItemTool)aItem).doDamage(aStack, 100, aPlayer, F);
 						ST.use(aPlayer, T, tStack, 0);

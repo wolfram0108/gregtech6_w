@@ -77,7 +77,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		if (aWorld.isRemote || aPlayer.isSneaking() || !aStack.hasTagCompound()) return aStack;
 		ArrayListNoNulls<BlockPos> tToBeKept = new ArrayListNoNulls<>();
 		for (BlockPos tCoords : getCoords(aStack.getTagCompound(), aWorld.provider.dimensionId)) {
-			if (Math.abs(tCoords.posX - aPlayer.posX) <= 128 && Math.abs(tCoords.posY - aPlayer.posY) <= 128 && Math.abs(tCoords.posZ - aPlayer.posZ) <= 128) {
+			if (Math.abs(tCoords.getX() - aPlayer.getX()) <= 128 && Math.abs(tCoords.getY() - aPlayer.getY()) <= 128 && Math.abs(tCoords.getZ() - aPlayer.getZ()) <= 128) {
 				BlockEntity tTileEntity = WD.te(aWorld, tCoords, F);
 				if (tTileEntity instanceof ITileEntityRemoteActivateable && ((ITileEntityRemoteActivateable)tTileEntity).remoteActivate()) tToBeKept.add(tCoords);
 			} else {
@@ -126,9 +126,9 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 			for (int i = 0, j = aList.size(); i < j; i++) {
 				BlockPos tCoords = aList.get(i);
 				UT.NBT.setBoolean(tNBT, "c"+i, T);
-				UT.NBT.setNumber (tNBT, "x"+i, tCoords.posX);
-				UT.NBT.setNumber (tNBT, "y"+i, tCoords.posY);
-				UT.NBT.setNumber (tNBT, "z"+i, tCoords.posZ);
+				UT.NBT.setNumber (tNBT, "x"+i, tCoords.getX());
+				UT.NBT.setNumber (tNBT, "y"+i, tCoords.getY());
+				UT.NBT.setNumber (tNBT, "z"+i, tCoords.getZ());
 			}
 			aNBT.setTag("gt.remote.dim."+aDimension, tNBT);
 		}

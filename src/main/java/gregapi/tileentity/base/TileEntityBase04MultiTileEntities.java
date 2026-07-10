@@ -137,7 +137,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 		super.sendClientData(aSendAll, aPlayer);
 		if (aSendAll && UT.Code.stringValid(mCustomName)) {
 			if (aPlayer == null) {
-				getNetworkHandler().sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mCustomName), worldObj, getCoords());
+				getNetworkHandler().sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mCustomName), level, getCoords());
 			} else {
 				getNetworkHandler().sendToPlayer(new PacketSyncDataName(getCoords(), mCustomName), aPlayer);
 			}
@@ -159,7 +159,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	}
 	
 	public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(worldObj, xCoord, yCoord, zCoord, aSide));
+		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(level, xCoord, yCoord, zCoord, aSide));
 	}
 	
 	@Override
@@ -172,12 +172,12 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	public void popOff() {
 		if (isDead()) return;
-		for (ItemStack tStack : getDrops(0, F)) ST.drop(worldObj, xCoord, yCoord, zCoord, tStack);
+		for (ItemStack tStack : getDrops(0, F)) ST.drop(level, xCoord, yCoord, zCoord, tStack);
 		setToAir();
 	}
 	public void popOff(Entity aEntity) {
 		if (isDead()) return;
-		for (ItemStack tStack : getDrops(0, F)) ST.drop(aEntity.worldObj, aEntity.posX, aEntity.posY, aEntity.posZ, tStack);
+		for (ItemStack tStack : getDrops(0, F)) ST.drop(aEntity.level(), aEntity.getX(), aEntity.getY(), aEntity.getZ(), tStack);
 		setToAir();
 	}
 	public void popOff(Level aWorld, double aX, double aY, double aZ) {
@@ -193,12 +193,12 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	public void burnOff() {
 		if (isDead()) return;
-		for (ItemStack tStack : getDrops(0, F)) ST.drop(worldObj, xCoord, yCoord, zCoord, tStack);
+		for (ItemStack tStack : getDrops(0, F)) ST.drop(level, xCoord, yCoord, zCoord, tStack);
 		setToFire();
 	}
 	public void burnOff(Entity aEntity) {
 		if (isDead()) return;
-		for (ItemStack tStack : getDrops(0, F)) ST.drop(aEntity.worldObj, aEntity.posX, aEntity.posY, aEntity.posZ, tStack);
+		for (ItemStack tStack : getDrops(0, F)) ST.drop(aEntity.level(), aEntity.getX(), aEntity.getY(), aEntity.getZ(), tStack);
 		setToFire();
 	}
 	public void burnOff(Level aWorld, double aX, double aY, double aZ) {

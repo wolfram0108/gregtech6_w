@@ -23,7 +23,7 @@ import gregapi.block.misc.BlockBaseBars;
 import gregapi.data.LH;
 import gregapi.data.MT;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;

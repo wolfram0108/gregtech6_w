@@ -186,7 +186,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onPlayerInteraction(PlayerInteractEvent aEvent) {
-		if (aEvent.entityPlayer == null || aEvent.entityPlayer.worldObj == null || aEvent.action == null || aEvent.world.provider == null) return;
+		if (aEvent.entityPlayer == null || aEvent.entityPlayer.level() == null || aEvent.action == null || aEvent.world.provider == null) return;
 		String aName = aEvent.entityPlayer.getCommandSenderName(), aNameLowercase = aName.toLowerCase();
 		if (!aEvent.world.isRemote && CHECKED_PLAYERS.add(aName)) {
 			if (mSupporterListSilver.contains(aEvent.entityPlayer.getUniqueID().toString()) || mSupporterListGold.contains(aEvent.entityPlayer.getUniqueID().toString()) || mSupporterListSilver.contains(aNameLowercase) || mSupporterListGold.contains(aNameLowercase)) {
@@ -200,7 +200,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		}
 		
 		ItemStack aStack = aEvent.entityPlayer.getCurrentEquippedItem();
-		if (aStack != null && aStack.stackSize > 0) {
+		if (aStack != null && aStack.getCount() > 0) {
 			if (aEvent.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR) {
 				if (aStack.getItem() == Items.glass_bottle) {
 					aEvent.setCanceled(T);
@@ -215,8 +215,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					
 					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
 						if (aEvent.world.getBlockMetadata(tTarget.blockX, tTarget.blockY, tTarget.blockZ) != 0) return;
-						for (int i = 0; i < 3 && aStack.stackSize > 0; i++) {
-							if (aStack.stackSize == 1) {
+						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
+							if (aStack.getCount() == 1) {
 								aEvent.entityPlayer.inventory.mainInventory[aEvent.entityPlayer.inventory.currentItem] = ST.make(Items.potionitem, 1, 0);
 							} else {
 								ST.use(aEvent.entityPlayer, aStack);
@@ -286,7 +286,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 						return;
 					}
 				} else if (IL.Food_Toast_Sliced.equal(aStack, F, T) || IL.Food_Toasted_Sliced.equal(aStack, F, T)) {
-					int tUsed = Math.min(16, aStack.stackSize);
+					int tUsed = Math.min(16, aStack.getCount());
 					if (!aEvent.world.isRemote && aEvent.entityPlayer.isSneaking() && MultiTileEntityRegistry.getRegistry("gt.multitileentity").getItem(32105, ST.save("sandwich.0", ST.amount(tUsed, aStack))).tryPlaceItemIntoWorld(aEvent.entityPlayer, aEvent.world, aEvent.x, aEvent.y, aEvent.z, (byte)aEvent.face, 0.5F, 0.5F, 0.5F)) {
 						ST.use(aEvent.entityPlayer, aStack, tUsed); aEvent.setCanceled(T);
 					}
@@ -309,22 +309,22 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 							}
 							if (tData.mPrefix == OP.ingot) if (!MD.BOTA.mLoaded || tData.mMaterial.mMaterial.mOriginalMod != MD.BOTA || Blocks.beacon != aEvent.world.getBlock(aEvent.x, aEvent.y, aEvent.z)) {
 								if (MultiTileEntityRegistry.getRegistry("gt.multitileentity").getItem(32084, ST.save(NBT_VALUE, aStack)).tryPlaceItemIntoWorld(aEvent.entityPlayer, aEvent.world, aEvent.x, aEvent.y, aEvent.z, (byte)aEvent.face, 0.5F, 0.5F, 0.5F)) {
-									ST.use(aEvent.entityPlayer, aStack, aStack.stackSize); aEvent.setCanceled(T);
+									ST.use(aEvent.entityPlayer, aStack, aStack.getCount()); aEvent.setCanceled(T);
 								}
 							}
 							if (tData.mPrefix == OP.plate) {
 								if (MultiTileEntityRegistry.getRegistry("gt.multitileentity").getItem(32085, ST.save(NBT_VALUE, aStack)).tryPlaceItemIntoWorld(aEvent.entityPlayer, aEvent.world, aEvent.x, aEvent.y, aEvent.z, (byte)aEvent.face, 0.5F, 0.5F, 0.5F)) {
-									ST.use(aEvent.entityPlayer, aStack, aStack.stackSize); aEvent.setCanceled(T);
+									ST.use(aEvent.entityPlayer, aStack, aStack.getCount()); aEvent.setCanceled(T);
 								}
 							}
 							if (tData.mPrefix == OP.plateGem) {
 								if (MultiTileEntityRegistry.getRegistry("gt.multitileentity").getItem(32086, ST.save(NBT_VALUE, aStack)).tryPlaceItemIntoWorld(aEvent.entityPlayer, aEvent.world, aEvent.x, aEvent.y, aEvent.z, (byte)aEvent.face, 0.5F, 0.5F, 0.5F)) {
-									ST.use(aEvent.entityPlayer, aStack, aStack.stackSize); aEvent.setCanceled(T);
+									ST.use(aEvent.entityPlayer, aStack, aStack.getCount()); aEvent.setCanceled(T);
 								}
 							}
 							if (tData.mPrefix == OP.scrapGt) {
 								if (MultiTileEntityRegistry.getRegistry("gt.multitileentity").getItem(32103, ST.save(NBT_VALUE, aStack)).tryPlaceItemIntoWorld(aEvent.entityPlayer, aEvent.world, aEvent.x, aEvent.y, aEvent.z, (byte)aEvent.face, 0.5F, 0.5F, 0.5F)) {
-									ST.use(aEvent.entityPlayer, aStack, aStack.stackSize); aEvent.setCanceled(T);
+									ST.use(aEvent.entityPlayer, aStack, aStack.getCount()); aEvent.setCanceled(T);
 								}
 							}
 						}
@@ -371,7 +371,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			}
 			
 			// Check if this Entity was already spawned, and not just unloaded and reloaded.
-			if (!aEvent.entity.worldObj.isRemote && !aEvent.entity.getEntityData().hasKey("gt.spawned")) {
+			if (!aEvent.entity.level().isRemote && !aEvent.entity.getEntityData().hasKey("gt.spawned")) {
 				if (aEvent.entity instanceof EntityZombie && !((EntityZombie)aEvent.entity).isChild() && ST.invalid(((EntityZombie)aEvent.entity).getEquipmentInSlot(0))) {
 					if (ZOMBIES_HOLD_TNT && RNGSUS.nextInt(250) == 0) {
 						((EntityZombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Blocks.tnt, 1+RNGSUS.nextInt(2), 0));
@@ -385,7 +385,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			return;
 		}
 		
-		if (aEvent.entity.worldObj.isRemote) return;
+		if (aEvent.entity.level().isRemote) return;
 		
 		if (mSkeletonsShootGTArrows > 0 && aEvent.entity.getClass() == Arrow.class && RNGSUS.nextInt(mSkeletonsShootGTArrows) == 0) {
 			if (((Arrow)aEvent.entity).shootingEntity instanceof EntitySkeleton) {
@@ -404,7 +404,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				}
 				ItemStack tArrow = OP.arrowGtWood.mat(tMaterial, 1);
 				if (ST.valid(tArrow)) {
-					aEvent.entity.worldObj.spawnEntityInWorld(new EntityArrow_Material((Arrow)aEvent.entity, tArrow));
+					aEvent.entity.level().spawnEntityInWorld(new EntityArrow_Material((Arrow)aEvent.entity, tArrow));
 					aEvent.entity.setDead();
 				}
 			}
@@ -413,13 +413,13 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onEntityLivingDropsEventEvent(LivingDropsEvent aEvent) {
-		if (aEvent.entity.worldObj.isRemote || aEvent.entityLiving == null) return;
+		if (aEvent.entity.level().isRemote || aEvent.entityLiving == null) return;
 		Override_Drops.handleDrops(aEvent.entityLiving, UT.Reflection.getLowercaseClass(aEvent.entityLiving), aEvent.drops, aEvent.source, aEvent.lootingLevel, aEvent.entityLiving.isBurning(), aEvent.recentlyHit);
 	}
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onEntityLivingFallEvent(LivingFallEvent aEvent) {
-		if (!aEvent.entity.worldObj.isRemote && aEvent.entity instanceof Player) {
+		if (!aEvent.entity.level().isRemote && aEvent.entity instanceof Player) {
 			if (ST.equal(((Player)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.SCISSORS) || ST.equal(((Player)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.POCKET_SCISSORS)) aEvent.distance *= 2;
 		}
 	}

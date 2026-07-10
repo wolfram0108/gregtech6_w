@@ -20,7 +20,7 @@
 package gregapi.block;
 
 import net.minecraft.world.level.material.MapColor;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 
 import static gregapi.data.CS.F;
 

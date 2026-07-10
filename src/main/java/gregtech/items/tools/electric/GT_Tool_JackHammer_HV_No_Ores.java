@@ -27,7 +27,7 @@ import gregapi.data.CS.BlocksGT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockSilverfish;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 
 public class GT_Tool_JackHammer_HV_No_Ores extends GT_Tool_JackHammer_HV {
 	public GT_Tool_JackHammer_HV_No_Ores(int aSwitchIndex) {

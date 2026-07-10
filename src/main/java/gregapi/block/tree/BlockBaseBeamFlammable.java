@@ -22,7 +22,7 @@ package gregapi.block.tree;
 import static gregapi.data.CS.*;
 
 import gregapi.render.IIconContainer;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.Direction;

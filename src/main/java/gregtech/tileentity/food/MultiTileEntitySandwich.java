@@ -122,7 +122,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 		if (tCount == 1) if (ST.valid(mStacks[0]) && ST.container(mStacks[0], T) == null) rList.add(mStacks[0]);
 		if (rList.isEmpty()) {
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID());
-			if (tRegistry != null) rList.add(tRegistry.getItem(getMultiTileEntityID(), mStacks[0].stackSize, writeItemNBT(UT.NBT.make())));
+			if (tRegistry != null) rList.add(tRegistry.getItem(getMultiTileEntityID(), mStacks[0].getCount(), writeItemNBT(UT.NBT.make())));
 		}
 		return rList;
 	}
@@ -153,7 +153,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 		// Bottles count as 4 times the value! :D
 		if (IL.Bottle_Empty.equal(ST.container(aStack, T), T, T)) rStackSize = (int)UT.Code.divup(rStackSize, 4);
 		// Check if the Stacksize is correct.
-		if (aStack.stackSize < rStackSize) return 0;
+		if (aStack.getCount() < rStackSize) return 0;
 		// Special Case for Redstone.
 		if (!mRedstone && OD.itemRedstone.is(aStack)) {
 			// Make the Sandwich output Redstone depending on Size.
@@ -171,7 +171,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 		if (mSize >= 16) return 0;
 		// This should never ever happen again...
 		if (ST.valid(mStacks[mSize]) || mSize == 0) {
-			ERR.println("ERROR: Attempted to add Sandwich Ingredient to already occupied Slot: " + mSize + " ; Clientside: " + worldObj.isRemote);
+			ERR.println("ERROR: Attempted to add Sandwich Ingredient to already occupied Slot: " + mSize + " ; Clientside: " + level.isRemote);
 			for (byte i = 0; i < mStacks.length; i++) if (ST.valid(mStacks[i])) {
 				ERR.println(i + ": " + ST.regName(mStacks[i]) + ":" + ST.meta(mStacks[i]) + " ; Display: " + mDisplay[i]);
 			} else {
@@ -215,11 +215,11 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 		return null;
 	}
 	public int getIngredientCount() {
-		return ST.valid(mStacks[0]) ? mStacks[0].stackSize : 1;
+		return ST.valid(mStacks[0]) ? mStacks[0].getCount() : 1;
 	}
 	
 	public void updateSandwich() {
-		if (worldObj == null || isServerSide()) {
+		if (level == null || isServerSide()) {
 			for (byte i = 0; i < mStacks.length; i++) {
 				Byte tID = Sandwiches.INGREDIENTS.get(mStacks[i]); if (tID == null) tID = Sandwiches.INGREDIENTS.get(mStacks[i], W);
 				mDisplay[i] = (tID == null ? (byte)255 : tID);
@@ -302,12 +302,12 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	
 	@Override
 	public ItemStack getRotten(ItemStack aStack) {
-		return IL.ENVM_Rotten_Food.get(aStack.stackSize);
+		return IL.ENVM_Rotten_Food.get(aStack.getCount());
 	}
 	
 	@Override
 	public ItemStack getRotten(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {
-		return IL.ENVM_Rotten_Food.get(aStack.stackSize);
+		return IL.ENVM_Rotten_Food.get(aStack.getCount());
 	}
 	
 	@Override

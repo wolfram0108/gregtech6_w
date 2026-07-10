@@ -67,7 +67,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote || aStack.stackSize != 1 || aPlayer.isSneaking() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isRemote || aStack.getCount() != 1 || aPlayer.isSneaking() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
 		boolean rOutput = F;
 		
@@ -93,7 +93,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 			tUses = 0;
 			tNBT.removeTag(NBT_MODE);
 			if (mEmpty == null) {
-				aStack.stackSize--;
+				aStack.setCount(aStack.getCount()-1);
 			} else {
 				aStack.func_150996_a(mEmpty.getItem());
 				ST.meta_(aStack, ST.meta_(mEmpty));

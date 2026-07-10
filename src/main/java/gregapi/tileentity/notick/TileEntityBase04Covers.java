@@ -145,16 +145,16 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 		}
 		if (attachCoversFirst(aSide)) {
 			ItemStack aStack = aPlayer.getCurrentEquippedItem();
-			if (aStack != null && aStack.stackSize > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+			if (aStack != null && aStack.getCount() > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 				return T;
 			}
 			return onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ);
 		}
 		if (onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ)) return T;
 		ItemStack aStack = aPlayer.getCurrentEquippedItem();
-		if (aStack != null && aStack.stackSize > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
-			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+		if (aStack != null && aStack.getCount() > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
+			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			return T;
 		}
 		return F;
@@ -168,14 +168,14 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	public final long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (!allowInteraction(aPlayer)) return 0;
 		if (checkObstruction(aPlayer instanceof Player ? (Player)aPlayer : null, aSide, aHitX, aHitY, aHitZ)) return 0;
-		worldObj.markTileEntityChunkModified(xCoord, yCoord, zCoord, this);
+		level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this);
 		if (SIDES_VALID[aSide] && hasCovers()) {
 			byte tSide = usePipePlacementMode(aSide) && mCovers.mIDs[aSide] == 0 ? UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ) : aSide;
 			if (aTool.equals(TOOL_crowbar) && isServerSide()) {
 				ItemStack tStack = getCoverItem(tSide);
 				ICover tCover = mCovers.mBehaviours[tSide];
 				if (tStack != null && setCoverItem(tSide, null, aPlayer, F, T)) {
-					if (!ST.add(aPlayer, tStack, F)) ST.place(worldObj, getOffsetX(aSide)+0.5, getOffsetY(aSide)+0.5, getOffsetZ(aSide)+0.5, tStack);
+					if (!ST.add(aPlayer, tStack, F)) ST.place(level, getOffsetX(aSide)+0.5, getOffsetY(aSide)+0.5, getOffsetZ(aSide)+0.5, tStack);
 					if (tCover != null) tCover.onAfterCrowbar(this);
 					checkCoverValidity();
 					if (mCovers != null && mCovers.requiresSync()) {
@@ -216,10 +216,10 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	@Override public IPacket getClientDataPacketByteArray(boolean aSendAll, byte... aByteArray) {return aSendAll ? hasCovers() ? new PacketSyncDataByteArrayAndIDsAndCovers (getCoords(), getMultiTileEntityRegistryID(), getMultiTileEntityID(), aByteArray    , mCovers) : new PacketSyncDataByteArrayAndIDs  (getCoords(), getMultiTileEntityRegistryID(), getMultiTileEntityID(), aByteArray    ) : hasCovers() && mCovers.requiresSync() ? new PacketSyncDataByteArrayAndCoverVisuals  (getCoords(), aByteArray    , mCovers) : new PacketSyncDataByteArray    (getCoords(), aByteArray    );}
 	
 	public void checkCoverValidity() {
-		if (worldObj != null && isServerSide() && hasCovers()) for (byte tSide : ALL_SIDES_VALID) if (!allowCovers(tSide)) {
+		if (level != null && isServerSide() && hasCovers()) for (byte tSide : ALL_SIDES_VALID) if (!allowCovers(tSide)) {
 			ItemStack tStack = getCoverItem(tSide);
 			if (tStack != null && setCoverItem(tSide, null, null, T, T)) {
-				ST.place(worldObj, getOffsetX(tSide)+0.5, getOffsetY(tSide)+0.5, getOffsetZ(tSide)+0.5, tStack);
+				ST.place(level, getOffsetX(tSide)+0.5, getOffsetY(tSide)+0.5, getOffsetZ(tSide)+0.5, tStack);
 				UT.Sounds.send(SFX.MC_BREAK, 1.0F, -1.0F, this, F);
 			}
 		}
@@ -412,7 +412,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 			byte rRedstone = 0;
 			for (byte tSide : ALL_SIDES_VALID) {
 				if (mCovers.mBehaviours[tSide] == null) {
-					rRedstone = (byte)Math.max(rRedstone, worldObj.getIndirectPowerLevelTo(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide), tSide));
+					rRedstone = (byte)Math.max(rRedstone, level.getIndirectPowerLevelTo(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide), tSide));
 				} else {
 					rRedstone = (byte)Math.max(rRedstone, mCovers.mBehaviours[tSide].getRedstoneIn(tSide, mCovers));
 				}
@@ -420,7 +420,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 			}
 			return rRedstone;
 		}
-		return mCovers.mBehaviours[aSide] == null ? UT.Code.bind4(worldObj.getIndirectPowerLevelTo(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), aSide)) : mCovers.mBehaviours[aSide].getRedstoneIn(aSide, mCovers);
+		return mCovers.mBehaviours[aSide] == null ? UT.Code.bind4(level.getIndirectPowerLevelTo(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), aSide)) : mCovers.mBehaviours[aSide].getRedstoneIn(aSide, mCovers);
 	}
 	
 	@Override

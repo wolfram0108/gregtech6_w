@@ -59,9 +59,9 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 					if (((MultiTileEntityRope)tTileEntity).mFacing != mFacing) return T;
 					continue;
 				}
-				if (WD.air(worldObj, xCoord, tY, zCoord)) {
-					tRegistry.mBlock.placeBlock(worldObj, xCoord, tY, zCoord, SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(aStack.hasTagCompound()?(CompoundTag)aStack.getTagCompound().copy():null, NBT_FACING, mFacing), T, F);
-					if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+				if (WD.air(level, xCoord, tY, zCoord)) {
+					tRegistry.mBlock.placeBlock(level, xCoord, tY, zCoord, SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(aStack.hasTagCompound()?(CompoundTag)aStack.getTagCompound().copy():null, NBT_FACING, mFacing), T, F);
+					if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 					UT.Sounds.send(SFX.MC_DIG_CLOTH, this, F);
 				}
 				return T;
@@ -88,7 +88,7 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
-		if (aIsServerSide && (mBlockUpdated || aTimer == 1) && !WD.opq(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing), F, T) && !WD.opq(worldObj, xCoord, yCoord+1, zCoord, F, T) && !(getTileEntityAtSideAndDistance(SIDE_UP, 1) instanceof MultiTileEntityRope)) popOff();
+		if (aIsServerSide && (mBlockUpdated || aTimer == 1) && !WD.opq(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing), F, T) && !WD.opq(level, xCoord, yCoord+1, zCoord, F, T) && !(getTileEntityAtSideAndDistance(SIDE_UP, 1) instanceof MultiTileEntityRope)) popOff();
 	}
 	
 	@Override public int getRenderPasses2(Block aBlock, boolean[] aShouldSideBeRendered) {return mFacing == SIDE_Y_NEG ? 2 : 1;}

@@ -120,13 +120,13 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 					ITileEntityEnergy.Util.emitEnergyToNetwork(mEnergyTypeEmitted, 1, Math.min(mRate, mEnergy), this);
 					mEnergy -= mRate;
 					if (mEfficiency < 1 || rng(mEfficiency) == 0) {
-						WD.fire(worldObj, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+						WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 					}
 				}
 				if (mEnergy < mRate * 2) {
-					WD.burn(worldObj, getOffset(mFacing, 1), T, T);
+					WD.burn(level, getOffset(mFacing, 1), T, T);
 					if (addStackToSlot(1, mOutput1)) mOutput1 = null;
-					if (mOutput1 == null && !WD.hasCollide(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
+					if (mOutput1 == null && !WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, T, Long.MAX_VALUE, NI, mTank.AS_ARRAY, slot(0));
 						if (tRecipe != null && tRecipe.isRecipeInputEqual(T, F, mTank.AS_ARRAY, slot(0))) {
 							mLastRecipe = tRecipe;
@@ -141,7 +141,7 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 				if (mEnergy < mRate) mBurning = F;
 			} else {
 				// Something burning in front of it? Lets ignite!
-				if (rng(200) == 0 && WD.flaming(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
+				if (rng(200) == 0 && WD.flaming(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
 					mBurning = T;
 				}
 			}
@@ -177,14 +177,14 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 					return T;
 				}
 			} else if (ST.equal(aStack, slot(0))) {
-				int tDifference = Math.min(aStack.stackSize, slot(0).getMaxStackSize() - slot(0).stackSize);
-				aStack.stackSize-=tDifference;
-				slot(0).stackSize+=tDifference;
+				int tDifference = Math.min(aStack.getCount(), slot(0).getMaxStackSize() - slot(0).getCount());
+				aStack.setCount(aStack.getCount()-(tDifference));
+				slot(0).setCount(slot(0).getCount()+(tDifference));
 				return T;
 			} else if (ST.equal(aStack, slot(1))) {
-				int tDifference = Math.min(slot(1).stackSize, aStack.getMaxStackSize() - aStack.stackSize);
-				aStack.stackSize+=tDifference;
-				slot(1).stackSize-=tDifference;
+				int tDifference = Math.min(slot(1).getCount(), aStack.getMaxStackSize() - aStack.getCount());
+				aStack.setCount(aStack.getCount()+(tDifference));
+				slot(1).setCount(slot(1).getCount()-(tDifference));
 				removeAllDroppableNullStacks();
 				return T;
 			}
@@ -269,12 +269,12 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 	@Override public Collection<TagData> getEnergyTypes(byte aSide) {return mEnergyTypeEmitted.AS_LIST;}
 	
 	@Override public boolean getStateRunningPassively() {return mBurning;}
-	@Override public boolean getStateRunningPossible() {return mBurning || (mOutput1 == null && slotHas(0) && mTank.has() && !WD.hasCollide(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
+	@Override public boolean getStateRunningPossible() {return mBurning || (mOutput1 == null && slotHas(0) && mTank.has() && !WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
 	@Override public boolean getStateRunningActively() {return mBurning;}
 	
 	protected void spawnBurningParticles(double aX, double aY, double aZ) {
-		worldObj.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
-		worldObj.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
+		level.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
+		level.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
 	}
 	
 	// Icons

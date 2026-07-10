@@ -153,7 +153,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 			
 			ItemStack tStack = null;
 			if (aStack != null) for (FluidTankGT tTank : mTanks) if ((tStack = FL.fill(tTank, ST.amount(1, aStack), T, T, T, T)) != null) {
-				aStack.stackSize--;
+				aStack.setCount(aStack.getCount()-1);
 				ST.give(aPlayer, tStack, T);
 				return T;
 			}

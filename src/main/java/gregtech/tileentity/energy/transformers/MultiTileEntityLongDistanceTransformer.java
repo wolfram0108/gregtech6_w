@@ -85,9 +85,9 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 		super.writeToNBT2(aNBT);
 		if (mTargetPos != null && mTarget != this) {
 		UT.NBT.setBoolean(aNBT, NBT_TARGET, T);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_X, mTargetPos.posX);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_Y, mTargetPos.posY);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_Z, mTargetPos.posZ);
+		UT.NBT.setNumber(aNBT, NBT_TARGET_X, mTargetPos.getX());
+		UT.NBT.setNumber(aNBT, NBT_TARGET_Y, mTargetPos.getY());
+		UT.NBT.setNumber(aNBT, NBT_TARGET_Z, mTargetPos.getZ());
 		UT.NBT.setNumber(aNBT, NBT_DISTANCE, mDistance);
 		UT.NBT.setNumber(aNBT, NBT_THROUGHPUT, mThroughput);
 		}
@@ -122,7 +122,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 					aChatReturn.add("Sender is at: X: " + mSender.xCoord + " Y: " + mSender.yCoord + " Z: " + mSender.zCoord);
 				} else {
 					aChatReturn.add(checkTarget() ? "Has Target" : "Has no loaded Target");
-					if (mTargetPos != null) aChatReturn.add("Target should be around: X: " + mTargetPos.posX + " Y: " + mTargetPos.posY + " Z: " + mTargetPos.posZ);
+					if (mTargetPos != null) aChatReturn.add("Target should be around: X: " + mTargetPos.getX() + " Y: " + mTargetPos.getY() + " Z: " + mTargetPos.getZ());
 				}
 			}
 			return 1;
@@ -135,7 +135,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 		byte tActiveState = mActiveState;
 		if (mStopped) {
 			mActiveState = 0;
-		} else if ((mTarget != null && (mTarget.mSender == null || mTarget.mSender.isDead() || mTarget.mSender.mTarget == null || mTarget.mSender.mTarget.isDead())) && (mTargetPos != null && (mTarget == null || mTarget.isDead() || !worldObj.blockExists(mTargetPos.posX, mTargetPos.posY, mTargetPos.posZ)))) {
+		} else if ((mTarget != null && (mTarget.mSender == null || mTarget.mSender.isDead() || mTarget.mSender.mTarget == null || mTarget.mSender.mTarget.isDead())) && (mTargetPos != null && (mTarget == null || mTarget.isDead() || !level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())))) {
 			mActiveState = 3;
 		} else {
 			mActiveData <<= 1;
@@ -158,8 +158,8 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 			scanWires(F);
 		} else if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
-			if (worldObj.blockExists(mTargetPos.posX, mTargetPos.posY, mTargetPos.posZ)) {
-				BlockEntity tTileEntity = WD.te(worldObj, mTargetPos, T);
+			if (level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
+				BlockEntity tTileEntity = WD.te(level, mTargetPos, T);
 				if (tTileEntity instanceof MultiTileEntityLongDistanceTransformer) {
 					mTarget = (MultiTileEntityLongDistanceTransformer)tTileEntity;
 				} else {
@@ -197,15 +197,15 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 					if (getBlock(aCoords) == aBlock && getMetaData(aCoords) == aMetaData) {
 						tWires.add(aCoords);
 						BlockPos tCoords;
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX + 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX - 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY + 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY - 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ + 1))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ - 1))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX() + 1, aCoords.getY(), aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX() - 1, aCoords.getY(), aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY() + 1, aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY() - 1, aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY(), aCoords.getZ() + 1))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY(), aCoords.getZ() - 1))) tNewChecks.add(tCoords);
 						if (aBurnWires) {
-							WD.burn(worldObj, aCoords, T, F);
-							worldObj.setBlock(aCoords.posX, aCoords.posY, aCoords.posZ, Blocks.fire, 0, 3);
+							WD.burn(level, aCoords, T, F);
+							level.setBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ(), Blocks.fire, 0, 3);
 						}
 					} else {
 						BlockEntity tTileEntity = getTileEntity(aCoords);

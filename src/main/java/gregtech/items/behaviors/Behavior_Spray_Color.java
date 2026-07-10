@@ -58,7 +58,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote || aStack.stackSize != 1) return F;
+		if (aWorld.isRemote || aStack.getCount() != 1) return F;
 		
 		boolean rOutput = F;
 		
@@ -84,7 +84,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 		
 		if (tUses <= 0) {
 			if (mEmpty == null) {
-				aStack.stackSize--;
+				aStack.setCount(aStack.getCount()-1);
 			} else {
 				aStack.func_150996_a(mEmpty.getItem());
 				ST.meta_(aStack, ST.meta_(mEmpty));
@@ -95,21 +95,21 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aStack.stackSize != 1) return F;
+		if (aStack.getCount() != 1) return F;
 		
 		boolean rUsed = F;
 		
 		if (aEntity instanceof EntitySheep && !((EntitySheep)aEntity).getSheared() ) {
 			if (((EntitySheep)aEntity).getFleeceColor() != (~mColor & 15)) {
 				((EntitySheep)aEntity).setFleeceColor(~mColor & 15);
-				if (aEntity.worldObj.isRemote) return T;
+				if (aEntity.level().isRemote) return T;
 				rUsed = T;
 			}
 		}
 		if (aEntity instanceof EntityWolf && ((EntityWolf)aEntity).isTamed()) {
 			if (((EntityWolf)aEntity).getCollarColor() != (~mColor & 15)) {
 				((EntityWolf)aEntity).setCollarColor(~mColor & 15);
-				if (aEntity.worldObj.isRemote) return T;
+				if (aEntity.level().isRemote) return T;
 				rUsed = T;
 			}
 		}
@@ -129,7 +129,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 			
 			if (tUses <= 0) {
 				if (mEmpty == null) {
-					aStack.stackSize--;
+					aStack.setCount(aStack.getCount()-1);
 				} else {
 					aStack.func_150996_a(mEmpty.getItem());
 					ST.meta_(aStack, ST.meta_(mEmpty));

@@ -30,7 +30,7 @@ import gregapi.old.Textures;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.render.BlockTextureCopied;
 import gregapi.render.IIconContainer;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.Level;
 

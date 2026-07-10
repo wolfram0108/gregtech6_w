@@ -232,7 +232,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (isServerSide() && !worldObj.isSideSolid(xCoord, yCoord + 1, zCoord, FORGE_DIR[SIDE_BOTTOM]) && isUseableByPlayerGUI(aPlayer)) {
+		if (isServerSide() && !level.isSideSolid(xCoord, yCoord + 1, zCoord, FORGE_DIR[SIDE_BOTTOM]) && isUseableByPlayerGUI(aPlayer)) {
 			generateDungeonLoot();
 			openGUI(aPlayer);
 		}
@@ -260,11 +260,11 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	protected void generateDungeonLoot() {
 		if (isServerSide() && UT.Code.stringValid(mDungeonLootName) && ST.generateLoot(RNGSUS, mDungeonLootName, this)) {
-			worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.4, yCoord+1.25, zCoord+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.4, yCoord+1.25, zCoord+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+1.35, zCoord+0.5, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.6, yCoord+1.25, zCoord+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.6, yCoord+1.25, zCoord+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.4, yCoord+1.25, zCoord+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.4, yCoord+1.25, zCoord+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.5, yCoord+1.35, zCoord+0.5, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.6, yCoord+1.25, zCoord+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.6, yCoord+1.25, zCoord+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
 			mDungeonLootName = "";
 		}
 	}
@@ -294,7 +294,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	}
 	
 	@Override public boolean unpaint() {if (mIsPainted) {mIsPainted=F; mRGBa=UT.Code.getRGBInt(mMaterial.fRGBaSolid); updateClientData(); return T;} return F;}
-	@Override public boolean isPainted() {return mIsPainted || (worldObj != null && isClientSide() && UT.Code.getRGBInt(mMaterial.fRGBaSolid) != mRGBa);}
+	@Override public boolean isPainted() {return mIsPainted || (level != null && isClientSide() && UT.Code.getRGBInt(mMaterial.fRGBaSolid) != mRGBa);}
 	@Override public boolean paint(int aRGB) {if (aRGB!=mRGBa) {mRGBa=aRGB; mIsPainted=T; return T;} return F;}
 	@Override public int getPaint() {return mRGBa;}
 	@Override public boolean canRecolorItem(ItemStack aStack) {return T;}

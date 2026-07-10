@@ -128,19 +128,19 @@ public class MultiTileEntitySolarPanelElectric extends TileEntityBase09FacingSin
 			mSky = getSkyAtSide(SIDE_TOP);
 		}
 		if (mSky) {
-			if (worldObj.isThundering()) {
+			if (level.isThundering()) {
 				mEnergy = 0;
 			} else {
-				if (WD.dimTF(worldObj)) {
+				if (WD.dimTF(level)) {
 					mEnergy = mOutput / 2;
-				} else if (worldObj.isDaytime()) {
-					if (worldObj.isRaining() && getBiome().rainfall > 0) {
+				} else if (level.isDaytime()) {
+					if (level.isRaining() && getBiome().rainfall > 0) {
 						mEnergy = mOutput / 8;
 					} else {
 						mEnergy = mOutput;
 					}
 				} else {
-					if (worldObj.isRaining() && getBiome().rainfall > 0) {
+					if (level.isRaining() && getBiome().rainfall > 0) {
 						mEnergy = 0;
 					} else {
 						mEnergy = mOutput / 8;

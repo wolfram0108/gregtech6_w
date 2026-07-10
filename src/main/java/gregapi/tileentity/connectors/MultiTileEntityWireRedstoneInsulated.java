@@ -141,14 +141,14 @@ public class MultiTileEntityWireRedstoneInsulated extends TileEntityBase10Connec
 	public byte isProvidingWeakPower2(byte aSide) {
 		if (!canEmitRedstoneToVanilla(aSide = OPOS[aSide]) || mRedstone <= 0) return 0;
 		Block tBlock = getBlockAtSide(aSide);
-		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(worldObj, xCoord+OFFX[aSide], yCoord+OFFY[aSide], zCoord+OFFZ[aSide]) ? 1 : 0));
+		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(level, xCoord+OFFX[aSide], yCoord+OFFY[aSide], zCoord+OFFZ[aSide]) ? 1 : 0));
 	}
 	
 	@Override
 	public byte isProvidingStrongPower2(byte aSide) {
 		if (!canEmitRedstoneToVanilla(aSide = OPOS[aSide]) || mRedstone <= 0) return 0;
 		Block tBlock = getBlockAtSide(aSide);
-		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(worldObj, xCoord+OFFX[aSide], yCoord+OFFY[aSide], zCoord+OFFZ[aSide]) ? 1 : 0));
+		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(level, xCoord+OFFX[aSide], yCoord+OFFY[aSide], zCoord+OFFZ[aSide]) ? 1 : 0));
 	}
 	
 	@Override

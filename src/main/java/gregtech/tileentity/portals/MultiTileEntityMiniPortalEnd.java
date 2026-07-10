@@ -62,8 +62,8 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 	@Override
 	public void findTargetPortal() {
 		mTarget = null;
-		if (worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListEndSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = xCoord-tTarget.xCoord*128, tZDifference = zCoord-tTarget.zCoord*128;
@@ -75,7 +75,7 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 						mTarget = tTarget;
 					}
 				}
-			} else if (worldObj.provider.dimensionId == DIM_END) {
+			} else if (level.provider.dimensionId == DIM_END) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.xCoord-xCoord*128, tZDifference = tTarget.zCoord-zCoord*128;
@@ -93,12 +93,12 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 	
 	@Override
 	public void addThisPortalToLists() {
-		if (worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListEndSide) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (worldObj.provider.dimensionId == DIM_END) {
+			} else if (level.provider.dimensionId == DIM_END) {
 				if (!sListEndSide.contains(this)) sListEndSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();
@@ -112,17 +112,17 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			ItemStack aStack = aPlayer.inventory.getCurrentItem();
-			if (ST.valid(aStack) && aStack.stackSize > 0 && OM.is_("gemEnderEye", aStack)) {
+			if (ST.valid(aStack) && aStack.getCount() > 0 && OM.is_("gemEnderEye", aStack)) {
 				setPortalActive();
 				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 				
 			}
 		}
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.end_stone.getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.end_stone.getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return Blocks.end_stone.getExplosionResistance(null);}
 	
 	public ITexture sEndPortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, DYE_Black, F, T, T), sEndPortalFrame = BlockTextureCopied.get(Blocks.end_portal_frame, SIDE_TOP, 0);

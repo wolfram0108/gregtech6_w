@@ -36,7 +36,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockPane;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -96,55 +96,55 @@ public class GT_Tool_Saw extends ToolStats {
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		if (aBlock.getMaterial() == Material.leaves && aBlock instanceof IShearable) {
-			aPlayer.worldObj.setBlock(aX, aY, aZ, aBlock, aMetaData, 0);
-			if (((IShearable)aBlock).isShearable(aStack, aPlayer.worldObj, aX, aY, aZ)) {
-				ArrayList<ItemStack> tDrops = ((IShearable)aBlock).onSheared(aStack, aPlayer.worldObj, aX, aY, aZ, aFortune);
+			aPlayer.level().setBlock(aX, aY, aZ, aBlock, aMetaData, 0);
+			if (((IShearable)aBlock).isShearable(aStack, aPlayer.level(), aX, aY, aZ)) {
+				ArrayList<ItemStack> tDrops = ((IShearable)aBlock).onSheared(aStack, aPlayer.level(), aX, aY, aZ, aFortune);
 				aDrops.clear();
 				aDrops.addAll(tDrops);
 				aEvent.dropChance = 1.0F;
 			}
-			aPlayer.worldObj.setBlock(aX, aY, aZ, NB, 0, 0);
+			aPlayer.level().setBlock(aX, aY, aZ, NB, 0, 0);
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Gold.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Gold.get(1));
-			aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
+			aPlayer.level().setBlockToAir(aX, aY, aZ);
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Green.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Green.get(1));
-			aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
+			aPlayer.level().setBlockToAir(aX, aY, aZ);
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Blue.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Blue.get(1));
-			aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
+			aPlayer.level().setBlockToAir(aX, aY, aZ);
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Dark.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Dark.get(1));
-			aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
+			aPlayer.level().setBlockToAir(aX, aY, aZ);
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Purple.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Purple.get(1));
-			aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
+			aPlayer.level().setBlockToAir(aX, aY, aZ);
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Apple.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Apple.get(1));
-			aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
+			aPlayer.level().setBlockToAir(aX, aY, aZ);
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}
@@ -170,7 +170,7 @@ public class GT_Tool_Saw extends ToolStats {
 	
 	@Override
 	public float getMiningSpeed(Block aBlock, byte aMetaData, float aDefault, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
-		if (aBlock.isWood(aPlayer.worldObj, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMetaData))) return aDefault / 2;
+		if (aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMetaData))) return aDefault / 2;
 		if (aBlock.getMaterial() == Material.wood || OP.plank.contains(ST.make(aBlock, 1, aMetaData))) return aDefault * 2;
 		return aBlock.getMaterial() == Material.vine || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.gourd ? aDefault / 4 : aDefault;
 	}
@@ -178,7 +178,7 @@ public class GT_Tool_Saw extends ToolStats {
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		super.afterDealingDamage(aNormalDamage, aMagicDamage, aFireAspect, aCriticalHit, aEntity, aStack, aPlayer);
-		if (aEntity.worldObj.isRemote || aNormalDamage < 3) return;
+		if (aEntity.level().isRemote || aNormalDamage < 3) return;
 		if ("EntityEnt".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity))) ST.drop(aEntity, Blocks.log, UT.Code.bindStack((int)(aNormalDamage / 3)), 0);
 	}
 	

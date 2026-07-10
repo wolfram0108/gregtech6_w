@@ -89,13 +89,13 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	
 	@Override
 	public void onOxygenRemoved() {
-		if (isServerSide() && !WD.oxygen(worldObj, xCoord, yCoord, zCoord)) setToAir();
+		if (isServerSide() && !WD.oxygen(level, xCoord, yCoord, zCoord)) setToAir();
 	}
 	
 	@Override
 	public void onTickFirst2(boolean aIsServerSide) {
 		super.onTickFirst2(aIsServerSide);
-		if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) worldObj.setBlockToAir(xCoord, yCoord+1, zCoord);
+		if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) level.setBlockToAir(xCoord, yCoord+1, zCoord);
 	}
 	
 	@Override
@@ -103,9 +103,9 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
 			if (mBlockUpdated || SERVER_TIME % 128 == 64) {
-				if (!WD.oxygen(worldObj, xCoord, yCoord, zCoord)) {setToAir(); return;}
+				if (!WD.oxygen(level, xCoord, yCoord, zCoord)) {setToAir(); return;}
 				
-				if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) worldObj.setBlockToAir(xCoord, yCoord+1, zCoord);
+				if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) level.setBlockToAir(xCoord, yCoord+1, zCoord);
 				
 				if (SIDES_VALID[mFacing]) {
 					BlockEntity tTileEntity = getTileEntityAtSideAndDistance(mFacing, 1);
@@ -124,7 +124,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 					}
 				} else {
 					Block tBlock = getBlockAtSide(SIDE_BOTTOM);
-					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(worldObj, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_UP], Blocks.yellow_flower) ? 1 : 0);
+					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(level, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_UP], Blocks.yellow_flower) ? 1 : 0);
 				}
 			}
 			
@@ -132,7 +132,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 				// Yes I know I should have chosen a better type of Timer than a byte overflow Timer.
 				if (getSkyOffset(0, 1, 0)) {
 					for (int i = 0; i < mSpeed; i++) if (++mGrowth == 0) mStage++;
-					if (worldObj.isRaining() && getRainOffset(OFFX[mFacing], SIDES_TOP[mFacing]?1:2, OFFZ[mFacing])) for (int i = 0; i < mSpeed; i++) if (++mGrowth == 0) mStage++;
+					if (level.isRaining() && getRainOffset(OFFX[mFacing], SIDES_TOP[mFacing]?1:2, OFFZ[mFacing])) for (int i = 0; i < mSpeed; i++) if (++mGrowth == 0) mStage++;
 				} else {
 					if (getLightLevelOffset(OFFX[mFacing], SIDES_TOP[mFacing]?1:2, OFFZ[mFacing]) > 9) for (int i = 0; i < mSpeed; i++) if (++mGrowth == 0) mStage++;
 				}
@@ -166,7 +166,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 		if (isClientSide()) return T;
 		if (ST.valid(mBerry)) {
 			if (mStage < 3) return F;
-			ST.give(aPlayer, ST.amount(1+rng(2), mBerry), T, worldObj, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide));
+			ST.give(aPlayer, ST.amount(1+rng(2), mBerry), T, level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide));
 			mStage = 0;
 			return T;
 		}

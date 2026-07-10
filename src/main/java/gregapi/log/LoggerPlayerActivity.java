@@ -43,7 +43,7 @@ public class LoggerPlayerActivity implements Runnable {
 	
 	@SubscribeEvent
 	public void onPlayerInteraction(PlayerInteractEvent aEvent) {
-		if (aEvent.entityPlayer != null && aEvent.entityPlayer.worldObj != null && aEvent.action != null && aEvent.world.provider != null && !aEvent.entityPlayer.worldObj.isRemote && aEvent.action != null && aEvent.action != PlayerInteractEvent.Action.RIGHT_CLICK_AIR && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";"+aEvent.action.name()+";"+aEvent.entityPlayer.getCommandSenderName()+";DIM:"+aEvent.world.provider.dimensionId+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
+		if (aEvent.entityPlayer != null && aEvent.entityPlayer.level() != null && aEvent.action != null && aEvent.world.provider != null && !aEvent.entityPlayer.level().isRemote && aEvent.action != null && aEvent.action != PlayerInteractEvent.Action.RIGHT_CLICK_AIR && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";"+aEvent.action.name()+";"+aEvent.entityPlayer.getCommandSenderName()+";DIM:"+aEvent.world.provider.dimensionId+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
 	}
 	
 	@SubscribeEvent

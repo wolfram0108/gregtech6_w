@@ -19,7 +19,7 @@
 
 package gregapi.tileentity.energy;
 
-import cpw.mods.fml.common.Optional;
+import gregapi.api.Optional;
 import gregapi.data.CS.ModIDs;
 import ic2.api.energy.tile.IEnergySource;
 

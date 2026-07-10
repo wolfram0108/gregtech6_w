@@ -45,8 +45,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.oredict.OreDictionary;
-import net.minecraftforge.oredict.ShapedOreRecipe;
+import gregapi.oredict.OreDictionary;
+import gregapi.recipes.ShapedOreRecipe;
 
 public class Compat_Recipes_GalactiCraft extends CompatMods {
 	public Compat_Recipes_GalactiCraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}

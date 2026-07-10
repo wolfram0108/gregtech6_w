@@ -95,21 +95,21 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// What's the Angle we are looking from and to?
 		Vec3
 		tDir = aPlayer.getLookVec(),
-		tPos = Vec3.createVectorHelper(aPlayer.posX, aPlayer.posY + aPlayer.getEyeHeight(), aPlayer.posZ),
+		tPos = Vec3.createVectorHelper(aPlayer.getX(), aPlayer.getY() + aPlayer.getEyeHeight(), aPlayer.getZ()),
 		tAim = tPos.addVector(tDir.xCoord * 200, tDir.yCoord * 200, tDir.zCoord * 200);
 		// List all the Blocks that are on the way.
 		List<BlockPos> aCoords = WD.line(tPos, tAim);
 		// Gather random Information about the first Block.
 		BlockPos oCoord = aCoords.get(0), aCoord = oCoord, nCoord = oCoord;
-		Block oBlock = NB, aBlock = oBlock = WD.block(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ);
-		byte  oMeta  =  0, aMeta  = oMeta  = WD.meta (aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ);
+		Block oBlock = NB, aBlock = oBlock = WD.block(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
+		byte  oMeta  =  0, aMeta  = oMeta  = WD.meta (aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
 		// Are we shooting from under Water?
-		boolean tWater = WD.liquid(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ);
+		boolean tWater = WD.liquid(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
 		// Bullet related Stats
 		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantment.flame, aGun) + UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, aBullet);
 		
 		// Make a List of all possible Targets.
-		List tEntities = aPlayer.worldObj.getEntitiesWithinAABBExcludingEntity(aPlayer, AABB.getBoundingBox(Math.min(tPos.xCoord, tAim.xCoord)-2, Math.min(tPos.yCoord, tAim.yCoord)-2, Math.min(tPos.zCoord, tAim.zCoord)-2, Math.max(tPos.xCoord, tAim.xCoord)+2, Math.max(tPos.yCoord, tAim.yCoord)+2, Math.max(tPos.zCoord, tAim.zCoord)+2));
+		List tEntities = aPlayer.level().getEntitiesWithinAABBExcludingEntity(aPlayer, AABB.getBoundingBox(Math.min(tPos.xCoord, tAim.xCoord)-2, Math.min(tPos.yCoord, tAim.yCoord)-2, Math.min(tPos.zCoord, tAim.zCoord)-2, Math.max(tPos.xCoord, tAim.xCoord)+2, Math.max(tPos.yCoord, tAim.yCoord)+2, Math.max(tPos.zCoord, tAim.zCoord)+2));
 		List<Entity> tTargets = new ArrayListNoNulls<>();
 		for (Object tEntity : tEntities) if (tEntity instanceof Entity) {
 			AABB tBox = ((Entity)tEntity).boundingBox;
@@ -125,7 +125,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			
 			if (tPower<=0) {
 				// TODO Maybe drop the Round as an Item at ***oCoord***.
-				if (tFireAspect > 2) WD.burn(aPlayer.worldObj, oCoord, T, T);
+				if (tFireAspect > 2) WD.burn(aPlayer.level(), oCoord, T, T);
 				return T;
 			}
 			
@@ -136,12 +136,12 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			oBlock = aBlock;
 			oMeta  = aMeta;
 			
-			aBlock = WD.block(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ);
-			aMeta  = WD.meta (aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ);
+			aBlock = WD.block(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
+			aMeta  = WD.meta (aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
 			
 			
 			for (int j = 0; j < tTargets.size(); j++) {
-				if (tTargets.get(j).getDistanceSq(aCoord.posX+0.5, aCoord.posY+0.5, aCoord.posZ+0.5) < tTargets.get(j).getDistanceSq(nCoord.posX+0.5, nCoord.posY+0.5, nCoord.posZ+0.5)) {
+				if (tTargets.get(j).getDistanceSq(aCoord.getX()+0.5, aCoord.getY()+0.5, aCoord.getZ()+0.5) < tTargets.get(j).getDistanceSq(nCoord.getX()+0.5, nCoord.getY()+0.5, nCoord.getZ()+0.5)) {
 					if (hit(aGun, aBullet, aPlayer, tTargets.remove(j--), tPower, tDir)) {
 						tPower-=10000;
 						// If the bullet hits an Entity it should not possibly drop itself.
@@ -150,10 +150,10 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				}
 			}
 			
-			if (WD.liquid(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ)) {
+			if (WD.liquid(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ())) {
 				if (!tWater) {
 					tWater = T;
-					UT.Sounds.send(SFX.MC_LIQUID_SPLASH, aPlayer.worldObj, aCoord);
+					UT.Sounds.send(SFX.MC_LIQUID_SPLASH, aPlayer.level(), aCoord);
 					// if high velocity break entirely, otherwise half the remaining power.
 					if (tPower>10000) tPower=0; else tPower/=2;
 				}
@@ -162,49 +162,49 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			
 			tWater = F;
 			
-			if (aBlock instanceof BlockPumpkin || WD.te(aPlayer.worldObj, aCoord, T) instanceof MultiTileEntityGregOLantern) {
+			if (aBlock instanceof BlockPumpkin || WD.te(aPlayer.level(), aCoord, T) instanceof MultiTileEntityGregOLantern) {
 				if (RNGSUS.nextInt(3) == 0) {
-					ST.drop(aPlayer.worldObj, aCoord.posX+0.2+RNGSUS.nextFloat()*0.6, aCoord.posY+0.1+RNGSUS.nextFloat()*0.5, aCoord.posZ+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.pumpkin, 1, 0));
+					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.pumpkin, 1, 0));
 				} else {
-					ST.drop(aPlayer.worldObj, aCoord.posX+0.2+RNGSUS.nextFloat()*0.6, aCoord.posY+0.1+RNGSUS.nextFloat()*0.5, aCoord.posZ+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.pumpkin_seeds, 1+RNGSUS.nextInt(3), 0));
+					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.pumpkin_seeds, 1+RNGSUS.nextInt(3), 0));
 				}
-				WD.set(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ, NB, 0, 3);
-				if (tFireAspect > 1) WD.fire(aPlayer.worldObj, aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
+				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
+				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=3000;
 				continue;
 			}
 			if (aBlock == Blocks.melon_block) {
-				ST.drop(aPlayer.worldObj, aCoord.posX+0.2+RNGSUS.nextFloat()*0.6, aCoord.posY+0.1+RNGSUS.nextFloat()*0.5, aCoord.posZ+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.melon      , 1+RNGSUS.nextInt(6), 0));
-				ST.drop(aPlayer.worldObj, aCoord.posX+0.2+RNGSUS.nextFloat()*0.6, aCoord.posY+0.1+RNGSUS.nextFloat()*0.5, aCoord.posZ+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.melon_seeds, 1+RNGSUS.nextInt(3), 0));
-				WD.set(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ, NB, 0, 3);
-				if (tFireAspect > 1) WD.fire(aPlayer.worldObj, aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.melon      , 1+RNGSUS.nextInt(6), 0));
+				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.melon_seeds, 1+RNGSUS.nextInt(3), 0));
+				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
+				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
+				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=3000;
 				continue;
 			}
 			if (aBlock == Blocks.cactus) {
-				ST.drop(aPlayer.worldObj, aCoord.posX+0.2+RNGSUS.nextFloat()*0.6, aCoord.posY+0.1+RNGSUS.nextFloat()*0.5, aCoord.posZ+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.cactus, 1, 0));
-				WD.set(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ, NB, 0, 3);
-				if (tFireAspect > 1) WD.fire(aPlayer.worldObj, aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.cactus, 1, 0));
+				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
+				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
+				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=3000;
 				continue;
 			}
 			if (aBlock == Blocks.cocoa) {
-				ST.drop(aPlayer.worldObj, aCoord.posX+0.2+RNGSUS.nextFloat()*0.6, aCoord.posY+0.1+RNGSUS.nextFloat()*0.5, aCoord.posZ+0.2+RNGSUS.nextFloat()*0.6, IL.Dye_Cocoa.get(1));
-				WD.set(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ, NB, 0, 3);
-				if (tFireAspect > 1) WD.fire(aPlayer.worldObj, aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, IL.Dye_Cocoa.get(1));
+				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
+				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
+				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=2000;
 				continue;
 			}
 			if (aBlock == Blocks.wool || aBlock.getMaterial() == Material.carpet) {
 				if (tFireAspect > 1) {
-					WD.set(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ, NB, 0, 3);
-					WD.fire(aPlayer.worldObj, aCoord, F);
+					WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
+					WD.fire(aPlayer.level(), aCoord, F);
 				}
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=4000;
 				continue;
 			}
@@ -213,11 +213,11 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				for (OreDictMaterialStack tMaterial : tData.getAllMaterialStacks()) {
 					long tAmount = tMaterial.mAmount / OP.scrapGt.mAmount;
 					while (tAmount-->0) {
-						ST.drop(aPlayer.worldObj, aCoord.posX+0.2+RNGSUS.nextFloat()*0.6, aCoord.posY+0.1+RNGSUS.nextFloat()*0.5, aCoord.posZ+0.2+RNGSUS.nextFloat()*0.6, OP.scrapGt.mat(tMaterial.mMaterial, 1));
+						ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, OP.scrapGt.mat(tMaterial.mMaterial, 1));
 					}
 				}
-				WD.set(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ, NB, 0, 3);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
+				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=2000;
 				continue;
 			}
@@ -226,15 +226,15 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=200;
 				continue;
 			}
-			if (aBlock instanceof BlockStairs || WD.opq(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ, T, F)) {
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+			if (aBlock instanceof BlockStairs || WD.opq(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), T, F)) {
+				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower=0;
 				continue;
 			}
 			if (aBlock.canCollideCheck(aMeta, F) || aBlock.canCollideCheck(aMeta, T)) {
-				AABB tBox = aBlock.getCollisionBoundingBoxFromPool(aPlayer.worldObj, aCoord.posX, aCoord.posY, aCoord.posZ);
+				AABB tBox = aBlock.getCollisionBoundingBoxFromPool(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
 				if (tBox != null && tBox.calculateIntercept(tPos, tAim) != null) {
-					UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.worldObj, aCoord);
+					UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 					tPower=0;
 					continue;
 				}
@@ -284,14 +284,14 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			// The Reason I didn't just up the Enchantment Level like I did with Looting is because that would increase the Side Effects too.
 			tMagicDamage *= mMagic;
 			
-			if (aPlayer.worldObj instanceof ServerLevel) {
+			if (aPlayer.level() instanceof ServerLevel) {
 				if (UT.NBT.getEnchantmentLevel(Enchantment.looting, aBullet) > 0) {
-					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.worldObj, new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
+					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
 					tPlayer.inventory.currentItem = 0;
 					tPlayer.inventory.setInventorySlotContents(0, aBullet);
-					tPlayer.setPositionAndRotation(aPlayer.posX, aPlayer.posY, aPlayer.posZ, aPlayer.rotationYaw, aPlayer.rotationPitch);
+					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.rotationPitch);
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
-					if (WD.dimTF(aPlayer.worldObj)) tPlayer.capabilities.isCreativeMode = T;
+					if (WD.dimTF(aPlayer.level())) tPlayer.capabilities.isCreativeMode = T;
 					tPlayer.setDead();
 				}
 			}
@@ -324,8 +324,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 	}
 	
 //  @Override public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, Entity aEntity) {onItemRightClick(aItem, aStack, aPlayer.worldObj, aPlayer); return T;}
-	@Override public boolean onItemUse         (MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {onItemRightClick(aItem, aStack, aPlayer.worldObj, aPlayer); return T;}
-	@Override public boolean onItemUseFirst    (MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {if (aWorld.isRemote) return F; onItemRightClick(aItem, aStack, aPlayer.worldObj, aPlayer); return T;}
+	@Override public boolean onItemUse         (MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {onItemRightClick(aItem, aStack, aPlayer.level(), aPlayer); return T;}
+	@Override public boolean onItemUseFirst    (MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {if (aWorld.isRemote) return F; onItemRightClick(aItem, aStack, aPlayer.level(), aPlayer); return T;}
 	
 	@Override
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aGun, Level aWorld, Player aPlayer) {
@@ -335,7 +335,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		CompoundTag aNBT = UT.NBT.getOrCreate(aGun);
 		ItemStack aBullet = ST.load(aNBT, NBT_AMMO);
 		if (aPlayer.isSneaking()) {
-			if (ST.invalid(aBullet) || aBullet.stackSize <= 0) {
+			if (ST.invalid(aBullet) || aBullet.getCount() <= 0) {
 				reloadGun(aGun, aPlayer, F);
 				return aGun;
 			}
@@ -344,7 +344,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			ST.save(aNBT, NBT_AMMO, NI);
 			return aGun;
 		}
-		if (ST.invalid(aBullet) || aBullet.stackSize <= 0) {
+		if (ST.invalid(aBullet) || aBullet.getCount() <= 0) {
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, NI);
 			return aGun;
@@ -353,8 +353,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		UT.Sounds.send(SFX.MC_FIREWORK_BLAST_FAR, 128, aPlayer);
 		if (!UT.Entities.hasInfiniteItems(aPlayer) && RNGSUS.nextInt(1+UT.NBT.getEnchantmentLevel(Enchantment.infinity, aGun)) == 0) {
 			OreDictItemData tData = OM.anydata(aBullet);
-			aBullet.stackSize--;
-			ST.save(aNBT, NBT_AMMO, aBullet.stackSize > 0 ? aBullet : NI);
+			aBullet.setCount(aBullet.getCount()-1);
+			ST.save(aNBT, NBT_AMMO, aBullet.getCount() > 0 ? aBullet : NI);
 			for (OreDictMaterialStack tMat : tData.mByProducts) if (tMat.mAmount >= OP.scrapGt.mAmount && !tMat.mMaterial.containsAny(TD.Properties.EXPLOSIVE, TD.Properties.FLAMMABLE)) ST.give(aPlayer, OP.scrapGt.mat(tMat.mMaterial, tMat.mAmount/OP.scrapGt.mAmount));
 		}
 		((MultiItemTool)aItem).doDamage(aGun, 100, aPlayer, F);
@@ -365,7 +365,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.Chat.CYAN + LH.get(LH.WEAPON_SNEAK_RIGHTCLICK_TO_RELOAD));
 		ItemStack aBullet = ST.load(UT.NBT.getNBT(aStack), NBT_AMMO);
-		if (ST.valid(aBullet)) aList.add(LH.Chat.YELLOW + aBullet.getDisplayName() + LH.Chat._WHITE + aBullet.stackSize);
+		if (ST.valid(aBullet)) aList.add(LH.Chat.YELLOW + aBullet.getDisplayName() + LH.Chat._WHITE + aBullet.getCount());
 		return aList;
 	}
 	
@@ -376,9 +376,9 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 	public boolean reloadGun(ItemStack aGun, Player aPlayer, boolean aOnlyCheckHeld) {
 		CompoundTag aNBT = UT.NBT.getOrCreate(aGun);
 		ItemStack aBullet = ST.load(aNBT, NBT_AMMO);
-		if (ST.valid(aBullet) && aBullet.stackSize > 0) return F;
+		if (ST.valid(aBullet) && aBullet.getCount() > 0) return F;
 		if (isProjectile(aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem])) {
-			int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem].stackSize);
+			int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem].getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem]));
 			aPlayer.inventory.decrStackSize(aPlayer.inventory.currentItem, tConsumed);
@@ -390,21 +390,21 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			if (i < 27 && isProjectile(aPlayer.inventory.mainInventory[i+27])) {
 			if (i < 18 && isProjectile(aPlayer.inventory.mainInventory[i+18])) {
 			if (i <  9 && isProjectile(aPlayer.inventory.mainInventory[i+ 9])) {
-				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+ 9].stackSize);
+				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+ 9].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+ 9]));
 				aPlayer.inventory.decrStackSize(i+ 9, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
-				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+18].stackSize);
+				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+18].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+18]));
 				aPlayer.inventory.decrStackSize(i+18, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
-				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+27].stackSize);
+				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+27].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+27]));
 				aPlayer.inventory.decrStackSize(i+27, tConsumed);
@@ -414,7 +414,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			break;
 		}
 		for (int i = aPlayer.inventory.mainInventory.length-1; i >= 0; i--) if (isProjectile(aPlayer.inventory.mainInventory[i])) {
-			int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i].stackSize);
+			int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i].getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i]));
 			aPlayer.inventory.decrStackSize(i, tConsumed);

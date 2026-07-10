@@ -64,8 +64,8 @@ public class MultiTileEntityMiniPortalBetweenlands extends MultiTileEntityMiniPo
 	@Override
 	public void findTargetPortal() {
 		mTarget = null;
-		if (MD.BTL.mLoaded && worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (MD.BTL.mLoaded && level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListBetweenlandsSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = xCoord-tTarget.xCoord, tZDifference = zCoord-tTarget.zCoord;
@@ -77,7 +77,7 @@ public class MultiTileEntityMiniPortalBetweenlands extends MultiTileEntityMiniPo
 						mTarget = tTarget;
 					}
 				}
-			} else if (WD.dimBTL(worldObj)) {
+			} else if (WD.dimBTL(level)) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.xCoord-xCoord, tZDifference = tTarget.zCoord-zCoord;
@@ -95,12 +95,12 @@ public class MultiTileEntityMiniPortalBetweenlands extends MultiTileEntityMiniPo
 	
 	@Override
 	public void addThisPortalToLists() {
-		if (MD.BTL.mLoaded && worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (MD.BTL.mLoaded && level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListBetweenlandsSide) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (WD.dimBTL(worldObj)) {
+			} else if (WD.dimBTL(level)) {
 				if (!sListBetweenlandsSide.contains(this)) sListBetweenlandsSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();
@@ -114,17 +114,17 @@ public class MultiTileEntityMiniPortalBetweenlands extends MultiTileEntityMiniPo
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			ItemStack aStack = aPlayer.inventory.getCurrentItem();
-			if (ST.valid(aStack) && aStack.stackSize > 0 && IL.BTL_Swamp_Talisman.equal(aStack, F, T)) {
+			if (ST.valid(aStack) && aStack.getCount() > 0 && IL.BTL_Swamp_Talisman.equal(aStack, F, T)) {
 				setPortalActive();
 				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 				
 			}
 		}
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return Blocks.stone.getExplosionResistance(null);}
 	
 	public ITexture sBetweenlandsPortal = BlockTextureCopied.get(ST.block(MD.BTL, "treePortalBlock", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sBetweenlandsPortalFrame = BlockTextureCopied.get(ST.block(MD.BTL, "portalBark", Blocks.stone), SIDE_ANY, 0, UNCOLOURED, F, F, F), sBetweenlandsPortalInactive = BlockTextureCopied.get(Blocks.leaves, SIDE_ANY, 0, DYE_Green, F, F, F);

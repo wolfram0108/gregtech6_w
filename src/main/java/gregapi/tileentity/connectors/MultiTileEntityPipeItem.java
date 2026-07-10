@@ -94,7 +94,7 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 		if (aNBT.hasKey(NBT_PIPESIZE)) mStepSize = aNBT.getLong(NBT_PIPESIZE);
 		if (aNBT.hasKey(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
 		
-		if (worldObj != null && isServerSide() && mHasToAddTimer) {
+		if (level != null && isServerSide() && mHasToAddTimer) {
 			GT_API_Proxy.SERVER_TICK_PRE.add(this);
 			GT_API_Proxy.SERVER_TICK_PR2.add(this);
 			mHasToAddTimer = F;

@@ -112,11 +112,11 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 				if (ST.valid(tBlock)) {
 					if (tBlock instanceof BlockFluidFinite) {
 						if (tAbove == tBlock) {
-							worldObj.setBlock(xCoord, yCoord+1, zCoord, tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);
-							tBlock.updateTick(worldObj, xCoord, yCoord+1, zCoord, RNGSUS);
-						} else if (WD.liquid(tAbove) || tAbove.isAir(worldObj, xCoord, yCoord+1, zCoord)) {
-							worldObj.setBlock(xCoord, yCoord+1, zCoord, tBlock, 7, 3);
-							tBlock.updateTick(worldObj, xCoord, yCoord+1, zCoord, RNGSUS);
+							level.setBlock(xCoord, yCoord+1, zCoord, tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);
+							tBlock.updateTick(level, xCoord, yCoord+1, zCoord, RNGSUS);
+						} else if (WD.liquid(tAbove) || tAbove.isAir(level, xCoord, yCoord+1, zCoord)) {
+							level.setBlock(xCoord, yCoord+1, zCoord, tBlock, 7, 3);
+							tBlock.updateTick(level, xCoord, yCoord+1, zCoord, RNGSUS);
 						}
 					} else {
 						if (tAbove == tBlock) {
@@ -125,19 +125,19 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 									tAbove = getBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide]);
 									if (tAbove == tBlock) {
 										if (0 != getMetaData(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide])) {
-											worldObj.setBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide], tBlock, 0, 3);
+											level.setBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide], tBlock, 0, 3);
 											break;
 										}
-									} else if (tAbove.isAir(worldObj, xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide])) {
-										worldObj.setBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide], tBlock, 0, 3);
+									} else if (tAbove.isAir(level, xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide])) {
+										level.setBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide], tBlock, 0, 3);
 										break;
 									}
 								}
 							} else {
-								worldObj.setBlock(xCoord, yCoord+1, zCoord, tBlock, 0, 3);
+								level.setBlock(xCoord, yCoord+1, zCoord, tBlock, 0, 3);
 							}
-						} else if (WD.liquid(tAbove) || tAbove.isAir(worldObj, xCoord, yCoord+1, zCoord)) {
-							worldObj.setBlock(xCoord, yCoord+1, zCoord, tBlock, 0, 3);
+						} else if (WD.liquid(tAbove) || tAbove.isAir(level, xCoord, yCoord+1, zCoord)) {
+							level.setBlock(xCoord, yCoord+1, zCoord, tBlock, 0, 3);
 						}
 					}
 				}

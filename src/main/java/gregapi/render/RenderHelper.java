@@ -101,7 +101,7 @@ public class RenderHelper {
 //      GL11.glDepthFunc(GL11.GL_ALWAYS);
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glPushMatrix();
-		GL11.glTranslated(-(aPlayer.lastTickPosX + (aPlayer.posX - aPlayer.lastTickPosX) * aPartialTicks), -(aPlayer.lastTickPosY + (aPlayer.posY - aPlayer.lastTickPosY) * aPartialTicks), -(aPlayer.lastTickPosZ + (aPlayer.posZ - aPlayer.lastTickPosZ) * aPartialTicks));
+		GL11.glTranslated(-(aPlayer.lastTickPosX + (aPlayer.getX() - aPlayer.lastTickPosX) * aPartialTicks), -(aPlayer.lastTickPosY + (aPlayer.getY() - aPlayer.lastTickPosY) * aPartialTicks), -(aPlayer.lastTickPosZ + (aPlayer.getZ() - aPlayer.lastTickPosZ) * aPartialTicks));
 		GL11.glTranslated(aX + 0.5, aY + 0.5, aZ + 0.5);
 		codechicken.lib.vec.Rotation.sideRotations[aSide].glApply();
 		GL11.glTranslated(0, -0.5025, 0);

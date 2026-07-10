@@ -65,8 +65,8 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 	@Override
 	public void findTargetPortal() {
 		mTarget = null;
-		if (MD.TF.mLoaded && worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (MD.TF.mLoaded && level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListTwilightSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = xCoord-tTarget.xCoord, tZDifference = zCoord-tTarget.zCoord;
@@ -78,7 +78,7 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 						mTarget = tTarget;
 					}
 				}
-			} else if (WD.dimTF(worldObj)) {
+			} else if (WD.dimTF(level)) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.xCoord-xCoord, tZDifference = tTarget.zCoord-zCoord;
@@ -96,12 +96,12 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 	
 	@Override
 	public void addThisPortalToLists() {
-		if (MD.TF.mLoaded && worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (MD.TF.mLoaded && level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListTwilightSide) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (WD.dimTF(worldObj)) {
+			} else if (WD.dimTF(level)) {
 				if (!sListTwilightSide.contains(this)) sListTwilightSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();
@@ -115,17 +115,17 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			ItemStack aStack = aPlayer.inventory.getCurrentItem();
-			if (ST.valid(aStack) && aStack.stackSize > 0 && OM.is_("gemAnyDiamond", aStack)) {
+			if (ST.valid(aStack) && aStack.getCount() > 0 && OM.is_("gemAnyDiamond", aStack)) {
 				setPortalActive();
 				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
-				worldObj.addWeatherEffect(new EntityLightningBolt(worldObj, xCoord, yCoord, zCoord));
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
+				level.addWeatherEffect(new EntityLightningBolt(level, xCoord, yCoord, zCoord));
 			}
 		}
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.grass.getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.grass.getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return Blocks.grass.getExplosionResistance(null);}
 	
 	public ITexture sTwilightPortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, UNCOLOURED, F, T, T), sTwilightPortalFrame = BlockTextureCopied.get(Blocks.grass, SIDE_TOP, 0, DYE_Green, F, F, F), sTwilightPortalInactive = BlockTextureCopied.get(Blocks.water, SIDE_TOP, 0, UNCOLOURED, F, F, F);

@@ -96,7 +96,7 @@ public class Slot_Base extends Slot {
 	@Override public ItemStack decrStackSize(int aAmount) {return mInventory.decrStackSizeGUI(mIndex, aAmount);}
 	@Override public void onSlotChanged() {mInventory.markDirtyGUI();}
 	@Override public boolean func_111238_b() {return T;}
-	@Override public void onSlotChange(ItemStack aStack, ItemStack aStack2) {if (ST.equal(aStack, aStack2, T)) {int tDifference = aStack2.stackSize - aStack.stackSize; if (tDifference > 0) onCrafting(aStack, tDifference);}}
+	@Override public void onSlotChange(ItemStack aStack, ItemStack aStack2) {if (ST.equal(aStack, aStack2, T)) {int tDifference = aStack2.getCount() - aStack.getCount(); if (tDifference > 0) onCrafting(aStack, tDifference);}}
 	@Override protected void onCrafting(ItemStack aStack, int aDifference) {/**/}
 	@Override protected void onCrafting(ItemStack aStack) {/**/}
 	@Override public void onPickupFromSlot(Player aPlayer, ItemStack aStack) {onSlotChanged();}

@@ -31,7 +31,7 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseRailBlock;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.stats.AchievementList;
@@ -101,7 +101,7 @@ public class GT_Tool_UniversalSpade extends ToolStats {
 			for (int i = 0; i < aDrops.size(); i++) {
 				Recipe tRecipe = RM.Unboxinator.findRecipe(null, null, T, Integer.MAX_VALUE, NI, ZL_FS, ST.amount(1, aDrops.get(i)));
 				if (tRecipe != null) {
-					int tStackSize = aDrops.get(i).stackSize;
+					int tStackSize = aDrops.get(i).getCount();
 					aDrops.remove(i--);
 					if (tRecipe.mOutputs.length > 0) for (int j = 0; j < tStackSize; j++) {
 						ItemStack[] tOutput = tRecipe.getOutputs();

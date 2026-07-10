@@ -84,7 +84,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 		oCPU_Conversion = aNBT.getInteger("gt.cpu.conversion.used");
 		for (int i = 0; i < mTanks.length; i++) mTanks[i] = new FluidTankGT(16000).readFromNBT(aNBT, NBT_TANK+"."+i);
 		
-		if (worldObj != null && isServerSide() && mHasToAddTimer) {
+		if (level != null && isServerSide() && mHasToAddTimer) {
 			GT_API_Proxy.SERVER_TICK_PRE.add(this);
 			mHasToAddTimer = F;
 		}
@@ -108,7 +108,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
-		if (worldObj.blockExists(tX-2, tY, tZ-2) && worldObj.blockExists(tX+2, tY, tZ-2) && worldObj.blockExists(tX-2, tY, tZ+2) && worldObj.blockExists(tX+2, tY, tZ+2)) {
+		if (level.blockExists(tX-2, tY, tZ-2) && level.blockExists(tX+2, tY, tZ-2) && level.blockExists(tX-2, tY, tZ+2) && level.blockExists(tX+2, tY, tZ+2)) {
 			boolean tSuccess = T;
 			mCPU_Logic = 0;
 			mCPU_Control = 0;
@@ -268,7 +268,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 				Set<BlockEntity> tScanned = new HashSetNoNulls<>();
 				
 				for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
-					BlockEntity tTileEntity = WD.te(worldObj, tX + i, tY + j, tZ + k, T);
+					BlockEntity tTileEntity = WD.te(level, tX + i, tY + j, tZ + k, T);
 					if (tScanned.add(tTileEntity) && tTileEntity instanceof ITileEntityLogistics) tScanning.add((ITileEntityLogistics)tTileEntity);
 				}
 				
@@ -434,7 +434,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 							}
 						}
 						
-						if (tLogistics.getWorld() == worldObj) for (byte tSide : ALL_SIDES_VALID) if (tLogistics.canLogistics(tSide)) {
+						if (tLogistics.getWorld() == level) for (byte tSide : ALL_SIDES_VALID) if (tLogistics.canLogistics(tSide)) {
 							int tMaxDistance = Math.max(Math.abs(tLogistics.getOffsetX(tSide) - tX), Math.max(Math.abs(tLogistics.getOffsetY(tSide) - tY), Math.abs(tLogistics.getOffsetZ(tSide) - tZ)));
 							if (tMaxDistance <= mCPU_Control + 2) {
 								oCPU_Control = Math.max(oCPU_Control, tMaxDistance-2);

@@ -86,7 +86,7 @@ public class MultiTileEntityLargeHeatExchanger extends TileEntityBase10MultiBloc
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = xCoord-1, tY = yCoord, tZ = zCoord-1;
-		if (worldObj.blockExists(tX-1, tY, tZ-1) && worldObj.blockExists(tX+1, tY, tZ-1) && worldObj.blockExists(tX-1, tY, tZ+1) && worldObj.blockExists(tX+1, tY, tZ+1)) {
+		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18024, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -149,14 +149,14 @@ public class MultiTileEntityLargeHeatExchanger extends TileEntityBase10MultiBloc
 			if (mEnergy >= 8) {
 				long tTransferred = Math.min(mRate / 8, mEnergy / 8);
 				mEnergy -= tTransferred * 8;
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord  , yCoord+2, zCoord-1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord-1, yCoord+2, zCoord  , SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord  , yCoord+2, zCoord+1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord+1, yCoord+2, zCoord  , SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord+1, yCoord+2, zCoord-1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord-1, yCoord+2, zCoord-1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord-1, yCoord+2, zCoord+1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(worldObj, xCoord+1, yCoord+2, zCoord+1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord  , yCoord+2, zCoord-1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord-1, yCoord+2, zCoord  , SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord  , yCoord+2, zCoord+1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord+1, yCoord+2, zCoord  , SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord+1, yCoord+2, zCoord-1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord-1, yCoord+2, zCoord-1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord-1, yCoord+2, zCoord+1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord+1, yCoord+2, zCoord+1, SIDE_BOTTOM, T));
 			}
 			// Check if it needs to use more Fuel, or if the buffered Energy is enough.
 			if (mEnergy < mRate * 2) {

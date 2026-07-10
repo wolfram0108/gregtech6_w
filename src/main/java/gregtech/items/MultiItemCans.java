@@ -128,7 +128,7 @@ public class MultiItemCans extends MultiItemRandomWithCompat implements IItemRot
 	@Override
 	public ItemStack getRotten(ItemStack aStack) {
 		short tMeta = ST.meta_(aStack);
-		return tMeta < 20 || tMeta >= 32000 ? aStack : ST.make(this, aStack.stackSize, 10+(tMeta%10), aStack.getTagCompound());
+		return tMeta < 20 || tMeta >= 32000 ? aStack : ST.make(this, aStack.getCount(), 10+(tMeta%10), aStack.getTagCompound());
 	}
 	
 	@Override public ItemStack getRotten(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {return getRotten(aStack);}

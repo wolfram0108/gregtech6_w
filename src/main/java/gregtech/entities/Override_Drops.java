@@ -157,7 +157,7 @@ public class Override_Drops {
 			
 			if (aPlayerKill) {
 			@SuppressWarnings("rawtypes")
-			List tList = aDead.worldObj.getEntitiesWithinAABBExcludingEntity(aDead, aDead.boundingBox.expand(32, 32, 32));
+			List tList = aDead.level().getEntitiesWithinAABBExcludingEntity(aDead, aDead.boundingBox.expand(32, 32, 32));
 			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof EntityPigZombie) ((EntityPigZombie)tList.get(j)).attackEntityFrom(DamageSource.causePlayerDamage((Player)tList.get(i)), 0); break;}
 			
 			if (RNGSUS.nextInt( 2) == 0) aDrops.add(ST.entity(aDead, RNGSUS.nextBoolean()?OP.rockGt.mat(MT.Netherrack, 1):ST.make(Items.flint, 1, 0)));
@@ -710,13 +710,13 @@ public class Override_Drops {
 					if (ST.item_(tStack) == Items.porkchop) {
 						switch(tRandomNumber%3) {
 						case 0: ST.set(tStack, (aBurn?IL.Food_Ham_Cooked:IL.Food_Ham_Raw).get(1), F, F); break;
-						case 1: ST.set(tStack, (aBurn?IL.Food_Bacon_Cooked:IL.Food_Bacon_Raw).get(UT.Code.bindStack(tStack.stackSize * (3+RNGSUS.nextInt(3)))), T, F); break;
+						case 1: ST.set(tStack, (aBurn?IL.Food_Bacon_Cooked:IL.Food_Bacon_Raw).get(UT.Code.bindStack(tStack.getCount() * (3+RNGSUS.nextInt(3)))), T, F); break;
 						}
 					} else
 					if (ST.item_(tStack) == Items.cooked_porkchop) {
 						switch(tRandomNumber%3) {
 						case 0: ST.set(tStack, IL.Food_Ham_Cooked.get(1), F, F); break;
-						case 1: ST.set(tStack, IL.Food_Bacon_Cooked.get(UT.Code.bindStack(tStack.stackSize * (3L+RNGSUS.nextInt(3)))), T, F); break;
+						case 1: ST.set(tStack, IL.Food_Bacon_Cooked.get(UT.Code.bindStack(tStack.getCount() * (3L+RNGSUS.nextInt(3)))), T, F); break;
 						}
 					} else
 					if (OM.is("listAllbeefraw", tStack)) {

@@ -63,7 +63,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	
 	@Override
 	public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
-		if (aStack.stackSize > 1) return super.onDispense(aItem, aSource, aStack);
+		if (aStack.getCount() > 1) return super.onDispense(aItem, aSource, aStack);
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		ItemStack tBucket = ST.make(Items.bucket, 1, 0);
 		
@@ -167,7 +167,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (FL.getFluid(aStack, T) == null && aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isChild()) {
-			if (aPlayer.worldObj.isRemote) return T;
+			if (aPlayer.level().isRemote) return T;
 			if (aEntity.getClass() == EntityCow.class || aEntity.getClass() == EntityMooshroom.class) {
 				if (MD.HO.mLoaded && IguanaConfig.milkedTimeout > 0 && !UT.Entities.hasInfiniteItems(aPlayer)) {
 					CompoundTag tNBT = aEntity.getEntityData();
@@ -183,7 +183,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aPlayer.worldObj.isRemote) return F;
+		if (aPlayer.level().isRemote) return F;
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		if (mFluid == null) return F;
 		if (FL.water(mFluid) && mFluid.amount >= 1000) {
@@ -205,14 +205,14 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		if (aWasFull) {
 			if (aBucket.getItem() == Items.bucket) {
 				aBucket = ST.container(aStack, F);
-				if (aBucket == null) aStack.stackSize = 0; else aStack = aBucket;
+				if (aBucket == null) aStack.setCount(0); else aStack = aBucket;
 				return aStack;
 			}
 		} else {
 			FluidStack tFluid = FL.getFluid(aBucket, T);
 			if (tFluid != null) {
 				aBucket = FL.fill(tFluid, aStack, F, T, F, T);
-				if (aBucket == null) aStack.stackSize = 0; else aStack = aBucket;
+				if (aBucket == null) aStack.setCount(0); else aStack = aBucket;
 				return aStack;
 			}
 		}

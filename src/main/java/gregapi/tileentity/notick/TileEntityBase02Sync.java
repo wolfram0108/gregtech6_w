@@ -58,10 +58,10 @@ public abstract class TileEntityBase02Sync extends TileEntityBase01Root implemen
 		IPacket tPacket = getClientDataPacket(aSendAll);
 		if (aPlayer == null) {
 			if (mOwner == null) {
-				getNetworkHandler().sendToAllPlayersInRange(tPacket, worldObj, getCoords());
+				getNetworkHandler().sendToAllPlayersInRange(tPacket, level, getCoords());
 			} else {
-				getNetworkHandler().sendToPlayerIfInRange(tPacket, mOwner, worldObj, getCoords());
-				getNetworkHandlerNonOwned().sendToAllPlayersInRangeExcept(tPacket, mOwner, worldObj, getCoords());
+				getNetworkHandler().sendToPlayerIfInRange(tPacket, mOwner, level, getCoords());
+				getNetworkHandlerNonOwned().sendToAllPlayersInRangeExcept(tPacket, mOwner, level, getCoords());
 			}
 		} else {
 			if (mOwner == null) {

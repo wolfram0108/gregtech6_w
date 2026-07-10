@@ -60,11 +60,11 @@ public abstract class MultiTileEntityTank5x5x5 extends MultiTileEntityTank {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
-		if (worldObj.blockExists(tX-2, tY, tZ-2) && worldObj.blockExists(tX+2, tY, tZ-2) && worldObj.blockExists(tX-2, tY, tZ+2) && worldObj.blockExists(tX+2, tY, tZ+2)) {
+		if (level.blockExists(tX-2, tY, tZ-2) && level.blockExists(tX+2, tY, tZ-2) && level.blockExists(tX-2, tY, tZ+2) && level.blockExists(tX+2, tY, tZ+2)) {
 			boolean tSuccess = T;
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
 				if (i*i <= 1 && j*j <= 1 && k*k <= 1) {
-					if (getAir(tX+i, tY+j, tZ+k)) worldObj.setBlockToAir(tX+i, tY+j, tZ+k); else tSuccess = F;
+					if (getAir(tX+i, tY+j, tZ+k)) level.setBlockToAir(tX+i, tY+j, tZ+k); else tSuccess = F;
 				} else {
 					if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+i, tY+j, tZ+k, mTankWalls, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_FLUID, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				}
@@ -93,9 +93,9 @@ public abstract class MultiTileEntityTank5x5x5 extends MultiTileEntityTank {
 					GarbageGT.trash(mTank);
 					int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
 					for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
-						if (rng(3) == 0) WD.set(worldObj, tX+i, tY+j, tZ+k, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
+						if (rng(3) == 0) WD.set(level, tX+i, tY+j, tZ+k, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
 					}
-					WD.set(worldObj, xCoord, yCoord, zCoord, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
+					WD.set(level, xCoord, yCoord, zCoord, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
 					return;
 				}
 				if (!mAcidProof && FL.acid(mTank)) {
@@ -103,7 +103,7 @@ public abstract class MultiTileEntityTank5x5x5 extends MultiTileEntityTank {
 					GarbageGT.trash(mTank);
 					int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
 					for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
-						if (rng(3) == 0) worldObj.setBlockToAir(tX+i, tY+j, tZ+k);
+						if (rng(3) == 0) level.setBlockToAir(tX+i, tY+j, tZ+k);
 					}
 					setToAir();
 					return;
@@ -130,8 +130,8 @@ public abstract class MultiTileEntityTank5x5x5 extends MultiTileEntityTank {
 	public boolean meltdown() {
 		int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
 		for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
-			WD.burn(worldObj, tX+i, tY+j, tZ+k, F, F);
-			if (rng(4) == 0) worldObj.setBlock(tX+i, tY+j, tZ+k, Blocks.fire, 0, 3);
+			WD.burn(level, tX+i, tY+j, tZ+k, F, F);
+			if (rng(4) == 0) level.setBlock(tX+i, tY+j, tZ+k, Blocks.fire, 0, 3);
 		}
 		GarbageGT.trash(mTank);
 		setToFire();

@@ -57,7 +57,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 		super.addInformation(aStack, aPlayer, aList, aF3_H);
 		byte aMeta = UT.Code.bind4(ST.meta_(aStack));
 		mPlaceable.addInformation(aStack, aMeta, aPlayer, aList, aF3_H);
-		if (field_150939_a.getCollisionBoundingBoxFromPool(aPlayer.worldObj, 0, 0, 0) != null) {
+		if (field_150939_a.getCollisionBoundingBoxFromPool(aPlayer.level(), 0, 0, 0) != null) {
 			if (mPlaceable.doesWalkSpeed(aMeta)) aList.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_WALKSPEED));
 			if (mPlaceable.canCreatureSpawn(aMeta)) {
 				if (ITexture.Util.OPTIFINE_LOADED && aMeta != 0 && !mPlaceable.canCreatureSpawn((byte)0)) {

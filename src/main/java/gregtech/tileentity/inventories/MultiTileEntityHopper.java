@@ -171,7 +171,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 				if (!SIDES_TOP[mFacing] && !invempty()) {
 					DelegatorTileEntity tDelegator = getAdjacentTileEntity(mFacing);
 					if (tDelegator.getBlock() instanceof BaseRailBlock) {
-						List tList = worldObj.getEntitiesWithinAABBExcludingEntity(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
+						List tList = level.getEntitiesWithinAABBExcludingEntity(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
 						if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 					}
 					while (tMovedItems + (mMode<=0?1:mMode) <= 64) {
@@ -185,7 +185,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 				}
 				DelegatorTileEntity tDelegator = getAdjacentTileEntity(SIDE_TOP);
 				if (tDelegator.getBlock() instanceof BaseRailBlock) {
-					List tList = worldObj.getEntitiesWithinAABBExcludingEntity(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
+					List tList = level.getEntitiesWithinAABBExcludingEntity(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
 					if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 				}
 				if (tDelegator.mTileEntity != null && !(tDelegator.mTileEntity instanceof MultiTileEntityAnvil)) {
@@ -196,7 +196,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 						while (i-->0) if (!slotHas(i)) {
 							slot(i, WD.suck(tDelegator));
 							if (slotHas(i)) {
-								tMovedItems += slot(i).stackSize;
+								tMovedItems += slot(i).getCount();
 								updateInventory();
 							}
 							break;
@@ -212,13 +212,13 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 					for (int i = 0, k = invsize(), l = getInventoryStackLimit(); i < k; i++) for (int j = i+1; j < k; j++) if (slotHas(j)) {
 						int tMaxSize = Math.min(l, slot(j).getMaxStackSize());
 						if (slotHas(i)) {
-							if (slot(i).stackSize < tMaxSize && ST.equal(slot(i), slot(j))) {
+							if (slot(i).getCount() < tMaxSize && ST.equal(slot(i), slot(j))) {
 								tMovedItems += ST.move(this, j, i);
-								if (slot(i).stackSize >= tMaxSize) break;
+								if (slot(i).getCount() >= tMaxSize) break;
 							}
 						} else {
 							tMovedItems += ST.move(this, j, i);
-							if (slotHas(i) && slot(i).stackSize >= tMaxSize) break;
+							if (slotHas(i) && slot(i).getCount() >= tMaxSize) break;
 						}
 					}
 				}

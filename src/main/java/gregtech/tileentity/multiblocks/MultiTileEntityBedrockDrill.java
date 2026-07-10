@@ -87,10 +87,10 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 		for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 			Block tBlock = getBlockOffset(i, -5, j);
 			if (tBlock == BlocksGT.oreBedrock) {
-				OreDictMaterialStack tMaterial = BlocksGT.oreBedrock.getMaterialAtSide(worldObj, xCoord+i, yCoord-5, zCoord+j, SIDE_TOP);
+				OreDictMaterialStack tMaterial = BlocksGT.oreBedrock.getMaterialAtSide(level, xCoord+i, yCoord-5, zCoord+j, SIDE_TOP);
 				mList.add(tMaterial.mMaterial); mList.add(tMaterial.mMaterial);
 			} else if (tBlock == BlocksGT.oreSmallBedrock) {
-				OreDictMaterialStack tMaterial = BlocksGT.oreSmallBedrock.getMaterialAtSide(worldObj, xCoord+i, yCoord-5, zCoord+j, SIDE_TOP);
+				OreDictMaterialStack tMaterial = BlocksGT.oreSmallBedrock.getMaterialAtSide(level, xCoord+i, yCoord-5, zCoord+j, SIDE_TOP);
 				mList.add(tMaterial.mMaterial);
 			} else if (IL.HBM_Bedrock_Coltan.equal(tBlock)) {
 				// These generate as single Blocks as far as I saw.
@@ -171,20 +171,20 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 						}
 					}
 					// Create an Ore Block fitting to the Stone Types of this Dimension.
-					if (worldObj.provider.dimensionId == DIM_NETHER) {
+					if (level.provider.dimensionId == DIM_NETHER) {
 						// Netherrack Ore.
 						slot(0, ST.make((Block)BlocksGT.oreBrokenNetherrack, 1, tMaterial.mID));
-					} else if (WD.dimTF(worldObj)) {
+					} else if (WD.dimTF(level)) {
 						// Default to Vanilla Ores only.
-					} else if (WD.dimERE(worldObj)) {
+					} else if (WD.dimERE(level)) {
 						// Erebus Umberstone Ore.
 						Object tBlock = BlocksGT.stoneToBrokenOres.get(new ItemStackContainer(IL.ERE_Umberstone.get(1)));
 						slot(0, ST.make((Block)(tBlock instanceof Block ? tBlock : BlocksGT.oreBroken), 1, tMaterial.mID));
-					} else if (WD.dimATUM(worldObj)) {
+					} else if (WD.dimATUM(level)) {
 						// Atum Limestone Ore.
 						Object tBlock = BlocksGT.stoneToBrokenOres.get(new ItemStackContainer(IL.ATUM_Limestone.get(1)));
 						slot(0, ST.make((Block)(tBlock instanceof Block ? tBlock : BlocksGT.oreBroken), 1, tMaterial.mID));
-					} else if (WD.dimBTL(worldObj)) {
+					} else if (WD.dimBTL(level)) {
 						// Betweenlands Stone Ores.
 						Object tBlock = BlocksGT.stoneToBrokenOres.get(new ItemStackContainer((mType%2==0?IL.BTL_Pitstone:IL.BTL_Betweenstone).get(1)));
 						slot(0, ST.make((Block)(tBlock instanceof Block ? tBlock : BlocksGT.oreBroken), 1, tMaterial.mID));
@@ -205,10 +205,10 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 					if (rng(1000) == 0) {
 						// 0.1% Chance to get Bedrock Dust. Only really useful for the Byproducts it has, and Rotarycraft.
 						slot(0, OP.dust.mat(MT.Bedrock, 1));
-					} else if (worldObj.provider.dimensionId == DIM_NETHER) {
+					} else if (level.provider.dimensionId == DIM_NETHER) {
 						// Netherrack.
 						slot(0, ST.make(Blocks.netherrack, 1, 0));
-					} else if (WD.dimTF(worldObj)) {
+					} else if (WD.dimTF(level)) {
 						// Twilight Stones sometimes, otherwise default to vanilla.
 						switch (mType) {
 						case  0: slot(0, ST.make(Blocks.obsidian, 1, 0)); break;
@@ -217,13 +217,13 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 						case  3: slot(0, OP.blockDust.mat(MT.STONES.Castlerock, 1)); break;
 						case  4: slot(0, IL.TF_Deadrock.get(1)); break;
 						}
-					} else if (WD.dimERE(worldObj)) {
+					} else if (WD.dimERE(level)) {
 						// Erebus Umberstone.
 						slot(0, IL.ERE_Umbercobble.get(1));
-					} else if (WD.dimATUM(worldObj)) {
+					} else if (WD.dimATUM(level)) {
 						// Atum Limestone.
 						slot(0, IL.ATUM_Limecobble.get(1));
-					} else if (WD.dimBTL(worldObj)) {
+					} else if (WD.dimBTL(level)) {
 						// Betweenlands Stones.
 						if (mType == 0) {
 						slot(0, OP.blockDust.mat(MT.STONES.Templerock, 1));

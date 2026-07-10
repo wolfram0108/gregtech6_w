@@ -81,7 +81,7 @@ public abstract class TileEntityBase07Paintable extends TileEntityBase06Covers i
 	}
 	
 	@Override public boolean unpaint() {if (mIsPainted) {mIsPainted=F; mRGBa=UT.Code.getRGBInt(mMaterial.fRGBaSolid); updateClientData(); return T;} return F;}
-	@Override public boolean isPainted() {return mIsPainted || (worldObj != null && isClientSide() && UT.Code.getRGBInt(mMaterial.fRGBaSolid) != mRGBa);}
+	@Override public boolean isPainted() {return mIsPainted || (level != null && isClientSide() && UT.Code.getRGBInt(mMaterial.fRGBaSolid) != mRGBa);}
 	@Override public boolean paint(int aRGB) {if (aRGB!=mRGBa) {mRGBa=aRGB; mIsPainted=T; return T;} return F;}
 	@Override public int getPaint() {return mRGBa;}
 	@Override public boolean canRecolorItem(ItemStack aStack) {return T;}

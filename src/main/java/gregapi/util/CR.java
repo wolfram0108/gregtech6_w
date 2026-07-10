@@ -420,7 +420,7 @@ public class CR {
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
-		if (aResult == null || aResult.stackSize <= 0) return F;
+		if (aResult == null || aResult.getCount() <= 0) return F;
 		
 		if (aRemoveAllOthersWithSameOutput || aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT || aRemoveAllOtherShapedsWithSameOutput || aRemoveAllOtherNativeRecipes)
 			tThereWasARecipe = remout(aResult, !aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT, aRemoveAllOtherShapedsWithSameOutput, aRemoveAllOtherNativeRecipes, aDeleteOnlyIfNoDyeInvolved) || tThereWasARecipe;
@@ -496,7 +496,7 @@ public class CR {
 			remove(tRecipe);
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
-		if (aResult == null || aResult.stackSize <= 0) return F;
+		if (aResult == null || aResult.getCount() <= 0) return F;
 		
 		if (aRemoveAllOthersWithSameOutput || aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT || aRemoveAllOtherShapedsWithSameOutput || aRemoveAllOtherNativeRecipes) {
 			remout(aResult, !aRemoveAllOthersWithSameOutputIfTheyHaveSameNBT, aRemoveAllOtherShapedsWithSameOutput, aRemoveAllOtherNativeRecipes, T);

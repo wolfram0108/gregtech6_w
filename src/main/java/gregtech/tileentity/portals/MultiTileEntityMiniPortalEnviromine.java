@@ -64,8 +64,8 @@ public class MultiTileEntityMiniPortalEnviromine extends MultiTileEntityMiniPort
 	@Override
 	public void findTargetPortal() {
 		mTarget = null;
-		if (MD.ENVM.mLoaded && worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (MD.ENVM.mLoaded && level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListEnviromineSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = xCoord-tTarget.xCoord, tZDifference = zCoord-tTarget.zCoord;
@@ -77,7 +77,7 @@ public class MultiTileEntityMiniPortalEnviromine extends MultiTileEntityMiniPort
 						mTarget = tTarget;
 					}
 				}
-			} else if (WD.dimENVM(worldObj)) {
+			} else if (WD.dimENVM(level)) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.xCoord-xCoord, tZDifference = tTarget.zCoord-zCoord;
@@ -95,12 +95,12 @@ public class MultiTileEntityMiniPortalEnviromine extends MultiTileEntityMiniPort
 	
 	@Override
 	public void addThisPortalToLists() {
-		if (MD.ENVM.mLoaded && worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (MD.ENVM.mLoaded && level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListEnviromineSide) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (WD.dimENVM(worldObj)) {
+			} else if (WD.dimENVM(level)) {
 				if (!sListEnviromineSide.contains(this)) sListEnviromineSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();
@@ -114,16 +114,16 @@ public class MultiTileEntityMiniPortalEnviromine extends MultiTileEntityMiniPort
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			ItemStack aStack = aPlayer.inventory.getCurrentItem();
-			if (ST.valid(aStack) && aStack.stackSize > 0 && OM.is_("gemExquisiteAnyDiamond", aStack)) {
+			if (ST.valid(aStack) && aStack.getCount() > 0 && OM.is_("gemExquisiteAnyDiamond", aStack)) {
 				setPortalActive();
 				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			}
 		}
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return Blocks.stone.getExplosionResistance(null);}
 	
 	public ITexture sEnvirominePortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, 0x00ff0000, F, T, T), sEnvirominePortalFrame = BlockTextureCopied.get(Blocks.bedrock, SIDE_ANY, 0, UNCOLOURED, F, F, F);

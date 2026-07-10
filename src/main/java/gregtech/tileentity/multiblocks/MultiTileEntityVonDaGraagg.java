@@ -65,7 +65,7 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = xCoord, tY = yCoord, tZ = zCoord;
-		if (worldObj.blockExists(tX-2, tY, tZ-2) && worldObj.blockExists(tX+2, tY, tZ-2) && worldObj.blockExists(tX-2, tY, tZ+2) && worldObj.blockExists(tX+2, tY, tZ+2)) {
+		if (level.blockExists(tX-2, tY, tZ-2) && level.blockExists(tX+2, tY, tZ-2) && level.blockExists(tX-2, tY, tZ+2) && level.blockExists(tX+2, tY, tZ+2)) {
 			boolean tSuccess = T;
 			
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (Math.abs(i * j) < 4) {
@@ -128,7 +128,7 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	
 	@Override
 	public boolean inhibitMobSpawn(MobSpawnEvent.CheckSpawn aEvent, Level aWorld, int aX, int aY, int aZ) {
-		if (mCurrentRange <= 0 || aWorld != worldObj || Math.abs(aX - xCoord) > mCurrentRange || Math.abs(aZ - zCoord) > mCurrentRange) return F;
+		if (mCurrentRange <= 0 || aWorld != level || Math.abs(aX - xCoord) > mCurrentRange || Math.abs(aZ - zCoord) > mCurrentRange) return F;
 		// Allow wild Mobs to spawn on Mossy Cobblestone.
 		for (int i = -5; i <= 5; i++) {
 			Block tBlock = aWorld.getBlock(aX, aY+i, aZ);

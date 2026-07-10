@@ -32,7 +32,7 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregtech.items.tools.early.GT_Tool_Axe;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
@@ -86,19 +86,19 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		if (aBlock.getMaterial() == Material.leaves && aBlock instanceof IShearable) {
-			aPlayer.worldObj.setBlock(aX, aY, aZ, aBlock, aMetaData, 0);
-			if (((IShearable)aBlock).isShearable(aStack, aPlayer.worldObj, aX, aY, aZ)) {
-				ArrayList<ItemStack> tDrops = ((IShearable)aBlock).onSheared(aStack, aPlayer.worldObj, aX, aY, aZ, aFortune);
+			aPlayer.level().setBlock(aX, aY, aZ, aBlock, aMetaData, 0);
+			if (((IShearable)aBlock).isShearable(aStack, aPlayer.level(), aX, aY, aZ)) {
+				ArrayList<ItemStack> tDrops = ((IShearable)aBlock).onSheared(aStack, aPlayer.level(), aX, aY, aZ, aFortune);
 				aDrops.clear();
 				aDrops.addAll(tDrops);
 				aEvent.dropChance = 1.0F;
 			}
-			aPlayer.worldObj.setBlock(aX, aY, aZ, NB, 0, 0);
+			aPlayer.level().setBlock(aX, aY, aZ, NB, 0, 0);
 			return 0;
 		}
 		if ((aBlock.getMaterial() == Material.ice || aBlock.getMaterial() == Material.packedIce) && aDrops.isEmpty()) {
 			aDrops.add(ST.make(aBlock, 1, aMetaData));
-			aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
+			aPlayer.level().setBlockToAir(aX, aY, aZ);
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}

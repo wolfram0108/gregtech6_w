@@ -167,7 +167,7 @@ public final class OreDictManager {
 	}
 	
 	public void fixStacksizes() {
-		for (ItemStack tStack : mAllRegisteredOres) tStack.stackSize = 1;
+		for (ItemStack tStack : mAllRegisteredOres) tStack.setCount(1);
 	}
 	
 	/**
@@ -360,7 +360,7 @@ public final class OreDictManager {
 		
 		//ORD.println(aModID + " → " + aRegName + " → " + aEvent.Name);
 		
-		aEvent.Ore.stackSize = 1;
+		aEvent.Ore.setCount(1);
 		
 		mAllRegisteredOres.add(aEvent.Ore);
 		
@@ -385,7 +385,7 @@ public final class OreDictManager {
 			if (tReRegistrations != null) for (String tName : tReRegistrations) registerOreSafe(tName, aEvent.Ore);
 		}
 		
-		aEvent.Ore.stackSize = 1;
+		aEvent.Ore.setCount(1);
 	}
 	
 	public void onOreRegistration2(String aModID, ModData aMod, String aRegName, OreRegisterEvent aEvent) {
@@ -610,7 +610,7 @@ public final class OreDictManager {
 		ItemStack rStack = null;
 		if (tAssociation == null || (aUseBlackList && tAssociation.mBlocked)) return ST.copy(aStack);
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
-		if (ST.invalid(rStack = ST.amount(aStack.stackSize, tAssociation.mUnificationTarget))) return ST.copy(aStack);
+		if (ST.invalid(rStack = ST.amount(aStack.getCount(), tAssociation.mUnificationTarget))) return ST.copy(aStack);
 		rStack.setTagCompound(aStack.getTagCompound());
 		return rStack;
 	}
@@ -650,9 +650,9 @@ public final class OreDictManager {
 	public boolean setItemData_(ItemStack aStack, OreDictItemData aData) {
 		OreDictItemData tData = getAssociation_(aStack, F);
 		if (tData != null && tData.mMaterial.mMaterial != MT.Wood && tData.mMaterial.mMaterial != ANY.Wood) return F;
-		if (aStack.stackSize > 1) {
-			if (aData.mMaterial != null) aData.mMaterial.mAmount /= aStack.stackSize;
-			for (OreDictMaterialStack tMaterial : aData.mByProducts) tMaterial.mAmount /= aStack.stackSize;
+		if (aStack.getCount() > 1) {
+			if (aData.mMaterial != null) aData.mMaterial.mAmount /= aStack.getCount();
+			for (OreDictMaterialStack tMaterial : aData.mByProducts) tMaterial.mAmount /= aStack.getCount();
 			aStack = ST.amount(1, aStack);
 		}
 		if (!aData.mBlackListed) aData.mBlackListed = isBlacklisted(aStack);

@@ -196,12 +196,12 @@ public class EntityFoodTracker implements AttachmentType {
 	}
 	
 	public static void add(LivingEntity aEntity) {
-		if (aEntity == null || aEntity.worldObj.isRemote) return;
+		if (aEntity == null || aEntity.level().isRemote) return;
 		aEntity.registerExtendedProperties("gt.props.food", new EntityFoodTracker(aEntity));
 	}
 	
 	public static EntityFoodTracker get(Entity aEntity) {
-		if (aEntity == null || aEntity.worldObj.isRemote) return null;
+		if (aEntity == null || aEntity.level().isRemote) return null;
 		Object rTracker = aEntity.getExtendedProperties("gt.props.food");
 		return rTracker instanceof EntityFoodTracker ? (EntityFoodTracker)rTracker : null;
 	}

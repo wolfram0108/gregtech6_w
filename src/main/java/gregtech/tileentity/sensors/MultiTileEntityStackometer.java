@@ -49,14 +49,14 @@ public class MultiTileEntityStackometer extends MultiTileEntitySensorTE {
 				if (tSlots != null && tSlots.length >  0) {
 					for (int i : tSlots) {
 						ItemStack tStack = ((Container)aDelegator.mTileEntity).getStackInSlot(i);
-						if (tStack != null && tStack.stackSize > 0 && !IL.Display_Fluid.equal(tStack, T, T)) rAmount++;
+						if (tStack != null && tStack.getCount() > 0 && !IL.Display_Fluid.equal(tStack, T, T)) rAmount++;
 					}
 					return rAmount;
 				}
 			}
 			for (int i = 0, j = ((Container)aDelegator.mTileEntity).getSizeInventory(); i < j; i++) {
 				ItemStack tStack = ((Container)aDelegator.mTileEntity).getStackInSlot(i);
-				if (tStack != null && tStack.stackSize > 0 && !IL.Display_Fluid.equal(tStack, T, T)) rAmount++;
+				if (tStack != null && tStack.getCount() > 0 && !IL.Display_Fluid.equal(tStack, T, T)) rAmount++;
 			}
 			return rAmount;
 		}

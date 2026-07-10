@@ -147,10 +147,10 @@ public class BlockOcean extends BlockWaterlike {
 		}
 		
 		for (BlockPos tCoords : tList) {
-			if (aWorld.setBlock(tCoords.posX, tCoords.posY, tCoords.posZ, this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
-				if (aWorld.blockExists(tCoords.posX+i, tCoords.posY, tCoords.posZ+j)) {
-					tBlock = aWorld.getBlock(tCoords.posX+i, tCoords.posY, tCoords.posZ+j);
-					if (tBlock == this) aWorld.scheduleBlockUpdate(tCoords.posX+i, tCoords.posY, tCoords.posZ+j, this, tickRate);
+			if (aWorld.setBlock(tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
+				if (aWorld.blockExists(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
+					tBlock = aWorld.getBlock(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
+					if (tBlock == this) aWorld.scheduleBlockUpdate(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j, this, tickRate);
 				}
 			}
 		}

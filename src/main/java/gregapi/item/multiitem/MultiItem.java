@@ -141,7 +141,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	@Override
 	public boolean itemInteractionForEntity(ItemStack aStack, Player aPlayer, LivingEntity aEntity) {
-		if (!aPlayer.worldObj.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
+		if (!aPlayer.level().isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
 		if (destroyCheck(aStack, aPlayer)) return F;
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
@@ -161,7 +161,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	@Override
 	public boolean onLeftClickEntity(ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (!aPlayer.worldObj.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
+		if (!aPlayer.level().isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
 		if (destroyCheck(aStack, aPlayer)) return F;
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
@@ -222,7 +222,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	}
 	
 	public boolean destroyCheck(ItemStack aStack, Player aPlayer) {
-		if (aStack.stackSize <= 0) {
+		if (aStack.getCount() <= 0) {
 			if (aPlayer != null) aPlayer.destroyCurrentEquippedItem();
 			return T;
 		}
@@ -292,7 +292,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	}
 	
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean doFill) {
-		if (aStack == null || aStack.stackSize != 1) return 0;
+		if (aStack == null || aStack.getCount() != 1) return 0;
 		
 		ItemStack tStack = FL.fill(aFluid, aStack, F, F, F, F);
 		if (tStack != null) {
@@ -341,14 +341,14 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	public boolean isAllowedToFill(ItemStack aStack, FluidStack aFluid) {return T;}
 	
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
-		if (aStack == null || aStack.stackSize != 1) return null;
+		if (aStack == null || aStack.getCount() != 1) return null;
 		
 		FluidStack tFluid = FL.getFluid(aStack, F);
 		if (tFluid != null && aMaxDrain >= tFluid.amount) {
 			if (aDoDrain) {
 				ItemStack tStack = ST.container(aStack, F);
 				if (tStack == null) {
-					aStack.stackSize = 0;
+					aStack.setCount(0);
 					return tFluid;
 				}
 				aStack.setItemDamage(ST.meta_(tStack));

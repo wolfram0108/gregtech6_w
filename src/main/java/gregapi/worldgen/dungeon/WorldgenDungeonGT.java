@@ -294,10 +294,10 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			aWorld.getChunkFromChunkCoords((aMinX >> 4) + i, (aMinZ >> 4) + j).setChunkModified();
 		}
 		for (BlockPos tCoords : tLightUpdateCoords) {
-			aWorld.setLightValue(LightLayer.Block, tCoords.posX, tCoords.posY, tCoords.posZ, 15);
+			aWorld.setLightValue(LightLayer.Block, tCoords.getX(), tCoords.getY(), tCoords.getZ(), 15);
 			for (byte tSide : ALL_SIDES_MIDDLE) {
-				aWorld.func_147451_t(tCoords.posX+OFFX[tSide], tCoords.posY+OFFY[tSide], tCoords.posZ+OFFZ[tSide]);
-				WD.update(   aWorld, tCoords.posX+OFFX[tSide], tCoords.posY+OFFY[tSide], tCoords.posZ+OFFZ[tSide]);
+				aWorld.func_147451_t(tCoords.getX()+OFFX[tSide], tCoords.getY()+OFFY[tSide], tCoords.getZ()+OFFZ[tSide]);
+				WD.update(   aWorld, tCoords.getX()+OFFX[tSide], tCoords.getY()+OFFY[tSide], tCoords.getZ()+OFFZ[tSide]);
 			}
 		}
 		return T;

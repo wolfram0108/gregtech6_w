@@ -31,7 +31,7 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.world.entity.player.Player;

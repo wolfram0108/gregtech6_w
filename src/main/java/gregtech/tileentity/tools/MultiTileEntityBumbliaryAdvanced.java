@@ -95,7 +95,7 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 	public void onTickFirst2(boolean aIsServerSide) {
 		if (aIsServerSide) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) if (getRainAtSide(tSide)) {mSky = T; break;}
-			mTemperature = WD.envTemp(worldObj, xCoord, yCoord, zCoord);
+			mTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
 			mHumidity = getBiome().rainfall;
 		}
 	}
@@ -107,7 +107,7 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 			mEndedQueen = F;
 			if (SERVER_TIME % 1200 == 0) {
 				for (byte tSide : ALL_SIDES_BUT_BOTTOM) if (getRainAtSide(tSide)) {mSky = T; break;}
-				mTemperature = WD.envTemp(worldObj, xCoord, yCoord, zCoord);
+				mTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
 				mHumidity = getBiome().rainfall;
 			}
 			if (slotHas(SLOT_ROYAL) && slot(SLOT_ROYAL).getItem() instanceof IItemBumbleBee) {
@@ -163,13 +163,13 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 							}
 						} else {
 							if (mLife %  300 == 150 && rng(10000) < Util.getAggressiveness(tRoyalTag)) {
-								try {for (LivingEntity tEntity : (ArrayList<LivingEntity>)worldObj.getEntitiesWithinAABB(LivingEntity.class, box(-2, -2, -2, +3, +3, +3))) attackEntity(tEntity);} catch(Throwable e) {e.printStackTrace(ERR);}
+								try {for (LivingEntity tEntity : (ArrayList<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-2, -2, -2, +3, +3, +3))) attackEntity(tEntity);} catch(Throwable e) {e.printStackTrace(ERR);}
 							}
 							if (mLife % 1200 == 600 && rng(10000) < Util.getWorkForce(tRoyalTag) && checkWork(tRoyalTag)) {
-								if (null != tRoyalItem.bumbleCanProduce(worldObj, xCoord, yCoord, zCoord, tRoyalStack, tRoyalMeta, 1)) {
+								if (null != tRoyalItem.bumbleCanProduce(level, xCoord, yCoord, zCoord, tRoyalStack, tRoyalMeta, 1)) {
 									for (int i = 0, j = tRoyalItem.bumbleProductCount(tRoyalStack, tRoyalMeta); i < j; i++) {
 										if (rng(20000) < tRoyalItem.bumbleProductChance(tRoyalStack, tRoyalMeta, i)) {
-											if (null != tRoyalItem.bumbleCanProduct(worldObj, xCoord, yCoord, zCoord, tRoyalStack, tRoyalMeta, i)) {
+											if (null != tRoyalItem.bumbleCanProduct(level, xCoord, yCoord, zCoord, tRoyalStack, tRoyalMeta, i)) {
 												ItemStack tProduct = tRoyalItem.bumbleProductStack(tRoyalStack, tRoyalMeta, 1, i);
 												if (ST.valid(tProduct)) for (int tSlot : SLOTS_COMBS) if (ST.equal(tProduct, slot(tSlot)) && addStackToSlot(tSlot, tProduct)) {
 													tProduct = NI;
@@ -253,7 +253,7 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 								
 								mLife = Util.getLifeSpan(tRoyalTag);
 								
-								int tLoss = (tBreedSlot == SLOT_DRONE && tBreedStack.stackSize > 1 ? 2 : 1);
+								int tLoss = (tBreedSlot == SLOT_DRONE && tBreedStack.getCount() > 1 ? 2 : 1);
 								ItemStack tDead = tBreedItem.bumbleKill(ST.amount(tLoss, tBreedStack));
 								for (int tDeadSlot : SLOTS_DEAD) if (addStackToSlot(tDeadSlot, tDead)) break;
 								decrStackSize(tBreedSlot, tLoss);
@@ -379,10 +379,10 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 	
 	private boolean checkWork(CompoundTag aBumbleTag) {
 		if (mSky) {
-			if (worldObj.isThundering() && !Util.getStormproof(aBumbleTag)) return F;
-			if (worldObj.isRaining() && mHumidity > 0 && !Util.getRainproof(aBumbleTag)) return F;
+			if (level.isThundering() && !Util.getStormproof(aBumbleTag)) return F;
+			if (level.isRaining() && mHumidity > 0 && !Util.getRainproof(aBumbleTag)) return F;
 		}
-		return worldObj.isDaytime() ? Util.getDayActive(aBumbleTag) : Util.getNightActive(aBumbleTag);
+		return level.isDaytime() ? Util.getDayActive(aBumbleTag) : Util.getNightActive(aBumbleTag);
 	}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.bumbliary.advanced";}

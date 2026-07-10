@@ -160,9 +160,9 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		if (mMode   != 0) aNBT.setInteger(NBT_MODE, mMode);
 		if (mTargetPos != null) {
 		UT.NBT.setBoolean(aNBT, NBT_TARGET, T);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_X, mTargetPos.posX);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_Y, mTargetPos.posY);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_Z, mTargetPos.posZ);
+		UT.NBT.setNumber(aNBT, NBT_TARGET_X, mTargetPos.getX());
+		UT.NBT.setNumber(aNBT, NBT_TARGET_Y, mTargetPos.getY());
+		UT.NBT.setNumber(aNBT, NBT_TARGET_Z, mTargetPos.getZ());
 		}
 	}
 	
@@ -200,8 +200,8 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		if (mTargetPos == null) return null;
 		if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
-			if (worldObj.blockExists(mTargetPos.posX, mTargetPos.posY, mTargetPos.posZ)) {
-				BlockEntity tTarget = WD.te(worldObj, mTargetPos, T);
+			if (level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
+				BlockEntity tTarget = WD.te(level, mTargetPos, T);
 				if (tTarget instanceof ITileEntityMultiBlockController && ((ITileEntityMultiBlockController)tTarget).isInsideStructure(xCoord, yCoord, zCoord)) {
 					mTarget = (ITileEntityMultiBlockController)tTarget;
 				} else {

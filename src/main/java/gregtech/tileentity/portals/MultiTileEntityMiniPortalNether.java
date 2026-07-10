@@ -60,14 +60,14 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 	
 	@Override
 	public void randomDisplayTick(Random aRandom) {
-		if (mActive) for (int i = 0; i < 4; ++i) worldObj.spawnParticle("portal", xCoord + aRandom.nextFloat(), yCoord + aRandom.nextFloat(), zCoord + aRandom.nextFloat(), (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D);
+		if (mActive) for (int i = 0; i < 4; ++i) level.spawnParticle("portal", xCoord + aRandom.nextFloat(), yCoord + aRandom.nextFloat(), zCoord + aRandom.nextFloat(), (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D);
 	}
 	
 	@Override
 	public void findTargetPortal() {
 		mTarget = null;
-		if (worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListNetherSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = xCoord-tTarget.xCoord*8, tZDifference = zCoord-tTarget.zCoord*8;
@@ -79,7 +79,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 						mTarget = tTarget;
 					}
 				}
-			} else if (worldObj.provider.dimensionId == DIM_NETHER) {
+			} else if (level.provider.dimensionId == DIM_NETHER) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.xCoord-xCoord*8, tZDifference = tTarget.zCoord-zCoord*8;
@@ -97,12 +97,12 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 	
 	@Override
 	public void addThisPortalToLists() {
-		if (worldObj != null && isServerSide()) {
-			if (worldObj.provider.dimensionId == DIM_OVERWORLD) {
+		if (level != null && isServerSide()) {
+			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListNetherSide) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (worldObj.provider.dimensionId == DIM_NETHER) {
+			} else if (level.provider.dimensionId == DIM_NETHER) {
 				if (!sListNetherSide.contains(this)) sListNetherSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();
@@ -127,7 +127,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 		return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.obsidian.getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.obsidian.getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return Blocks.obsidian.getExplosionResistance(null);}
 	
 	public ITexture sNetherPortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, UNCOLOURED, F, T, T), sNetherPortalFrame = BlockTextureCopied.get(Blocks.obsidian, SIDE_ANY, 0);

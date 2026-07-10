@@ -217,7 +217,7 @@ public class Loader_Recipes_Extruder implements Runnable {
 				if (ST.valid(tStack)) {
 					RM.Extruder.addRecipe2(T, F, F, F, T, tEUt, tCostsPerUnit   ,            tStack , IL.Shape_Extruder_Bottle.get(0), IL.Pill_Empty.get(1));
 					RM.Extruder.addRecipe2(T, F, F, F, T, tEUt, tCostsPerUnit   ,            tStack , IL.Shape_SimpleEx_Bottle.get(0), IL.Pill_Empty.get(1));
-					if (tStack.stackSize * 3 <= tStack.getMaxStackSize()) {
+					if (tStack.getCount() * 3 <= tStack.getMaxStackSize()) {
 					RM.Extruder.addRecipe2(T, F, F, F, F, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_Extruder_Cell  .get(0), IL.FR_WaxCapsule.get(4));
 					RM.Extruder.addRecipe2(T, F, F, F, F, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_SimpleEx_Cell  .get(0), IL.FR_WaxCapsule.get(4));
 					}
@@ -227,7 +227,7 @@ public class Loader_Recipes_Extruder implements Runnable {
 				long tEUt = 16, tCostsPerUnit = 64;
 				ItemStack tStack = tPrefix.mat(tMaterial, U / tPrefix.mAmount);
 				if (ST.valid(tStack)) {
-					if (tStack.stackSize * 3 <= tStack.getMaxStackSize()) {
+					if (tStack.getCount() * 3 <= tStack.getMaxStackSize()) {
 					RM.Extruder.addRecipe2(T, F, F, F, F, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_Extruder_Cell  .get(0), IL.FR_RefractoryCapsule.get(4));
 					RM.Extruder.addRecipe2(T, F, F, F, F, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_SimpleEx_Cell  .get(0), IL.FR_RefractoryCapsule.get(4));
 					}
@@ -237,7 +237,7 @@ public class Loader_Recipes_Extruder implements Runnable {
 				long tEUt = 16, tCostsPerUnit = 64;
 				ItemStack tStack = tPrefix.mat(tMaterial, U / tPrefix.mAmount);
 				if (ST.valid(tStack)) {
-					if (tStack.stackSize * 3 <= tStack.getMaxStackSize()) {
+					if (tStack.getCount() * 3 <= tStack.getMaxStackSize()) {
 					RM.Extruder.addRecipe2(T, F, F, F, F, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_Extruder_Cell  .get(0), IL.FR_MagicCapsule.get(4));
 					RM.Extruder.addRecipe2(T, F, F, F, F, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_SimpleEx_Cell  .get(0), IL.FR_MagicCapsule.get(4));
 					}
@@ -261,7 +261,7 @@ public class Loader_Recipes_Extruder implements Runnable {
 				long tEUt = 16, tCostsPerUnit = 64;
 				ItemStack tStack = tPrefix.mat(tMaterial, U / tPrefix.mAmount);
 				if (ST.valid(tStack)) {
-					if (tStack.stackSize * 3 <= tStack.getMaxStackSize()) {
+					if (tStack.getCount() * 3 <= tStack.getMaxStackSize()) {
 					RM.Extruder.addRecipe2(T, F, F, F, T, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_Extruder_Cell  .get(0), IL.PlasticCan.get(1));
 					RM.Extruder.addRecipe2(T, F, F, F, T, tEUt, tCostsPerUnit* 3, ST.mul_( 3,tStack), IL.Shape_SimpleEx_Cell  .get(0), IL.PlasticCan.get(1));
 					}

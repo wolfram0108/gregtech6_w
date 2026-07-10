@@ -45,7 +45,7 @@ public class MultiTileEntityFermenter extends TileEntityBase10MultiBlockMachine 
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing, 2)-2, tY = yCoord, tZ = getOffsetZN(mFacing, 2)-2;
-		if (worldObj.blockExists(tX-2, tY, tZ-2) && worldObj.blockExists(tX+2, tY, tZ-2) && worldObj.blockExists(tX-2, tY, tZ+2) && worldObj.blockExists(tX+2, tY, tZ+2)) {
+		if (level.blockExists(tX-2, tY, tZ-2) && level.blockExists(tX+2, tY, tZ-2) && level.blockExists(tX-2, tY, tZ+2) && level.blockExists(tX+2, tY, tZ+2)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY-1, tZ  , 18101, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -157,13 +157,13 @@ public class MultiTileEntityFermenter extends TileEntityBase10MultiBlockMachine 
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public DelegatorTileEntity<IFluidHandler> getFluidOutputTarget(byte aSide, Fluid aOutput) {
-		DelegatorTileEntity tDelegator = WD.te(worldObj, getOffsetX(OPOS[mFacing], 5), yCoord, getOffsetZ(OPOS[mFacing], 5), OPOS[mFacing], F);
+		DelegatorTileEntity tDelegator = WD.te(level, getOffsetX(OPOS[mFacing], 5), yCoord, getOffsetZ(OPOS[mFacing], 5), OPOS[mFacing], F);
 		return tDelegator.mTileEntity instanceof IFluidHandler ? tDelegator : null;
 	}
 	
 	@Override
 	public DelegatorTileEntity<BlockEntity> getItemOutputTarget(byte aSide) {
-		return WD.te(worldObj, getOffsetX(OPOS[mFacing], 5), yCoord+1, getOffsetZ(OPOS[mFacing], 5), OPOS[mFacing], F);
+		return WD.te(level, getOffsetX(OPOS[mFacing], 5), yCoord+1, getOffsetZ(OPOS[mFacing], 5), OPOS[mFacing], F);
 	}
 	
 	@Override public DelegatorTileEntity<Container> getItemInputTarget(byte aSide) {return null;}

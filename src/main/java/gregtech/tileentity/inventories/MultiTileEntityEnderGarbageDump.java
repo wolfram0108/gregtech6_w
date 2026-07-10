@@ -106,10 +106,10 @@ public class MultiTileEntityEnderGarbageDump extends TileEntityBase07Paintable i
 	public ItemStack decrStackSize(int aSlot, int aDecrement) {
 		ItemStack tStack = GarbageGT.GARBAGE_ITEMS.get(aSlot);
 		if (tStack == null) return null;
-		aDecrement = Math.min(tStack.stackSize, aDecrement);
+		aDecrement = Math.min(tStack.getCount(), aDecrement);
 		if (aDecrement <= 0) return null;
 		ItemStack rStack = ST.amount(aDecrement, tStack);
-		tStack.stackSize -= aDecrement;
+		tStack.setCount(tStack.getCount()-(aDecrement));
 		updateInventory();
 		return rStack;
 	}
@@ -126,12 +126,12 @@ public class MultiTileEntityEnderGarbageDump extends TileEntityBase07Paintable i
 	
 	@Override
 	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
-		GarbageGT.GARBAGE_ITEMS.get(aSlot).stackSize = (aStack == null ? 0 : aStack.stackSize);
+		GarbageGT.GARBAGE_ITEMS.get(aSlot).setCount((aStack == null ? 0 : aStack.getCount()));
 		updateInventory();
 	}
 	
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}
-	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return GarbageGT.GARBAGE_ITEMS.get(aSlot).stackSize > 0;}
+	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return GarbageGT.GARBAGE_ITEMS.get(aSlot).getCount() > 0;}
 	
 	@Override
 	public FluidStack tapDrain(byte aSide, int aMaxDrain, boolean aDoDrain) {

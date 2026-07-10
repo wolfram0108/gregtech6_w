@@ -41,3 +41,7 @@ repo/
 
 ### Local scratch build logs ###
 *.log
+scratchpad-*
+build_*.txt
+wave*.txt
+*-log.txt

@@ -2700,7 +2700,7 @@ public class UT {
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, Entity aEntity) {
 			if (!CODE_CLIENT || aEntity == null || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
-			return play(aSound, aTimeUntilNextSound, aVolume, UT.Code.roundDown(aEntity.posX), UT.Code.roundDown(aEntity.posY), UT.Code.roundDown(aEntity.posZ));
+			return play(aSound, aTimeUntilNextSound, aVolume, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ()));
 		}
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, int aX, int aY, int aZ) {
@@ -2710,7 +2710,7 @@ public class UT {
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, BlockPos aCoords) {
 			if (aCoords == null) return play(aSound, aTimeUntilNextSound, aVolume);
 			if (!CODE_CLIENT || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
-			return play(aSound, aTimeUntilNextSound, aVolume, 0.9F + RNGSUS.nextFloat() * 0.2F, aCoords.posX, aCoords.posY, aCoords.posZ);
+			return play(aSound, aTimeUntilNextSound, aVolume, 0.9F + RNGSUS.nextFloat() * 0.2F, aCoords.getX(), aCoords.getY(), aCoords.getZ());
 		}
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, float aPitch, int aX, int aY, int aZ) {
@@ -2720,8 +2720,8 @@ public class UT {
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, float aPitch, BlockPos aCoords) {
 			if (!CODE_CLIENT || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
 			Player aPlayer = GT_API.api_proxy.getThePlayer();
-			if (aPlayer == null || !aPlayer.worldObj.isRemote || Code.stringInvalid(aSound)) return F;
-			sSoundsToPlay.add(new SoundWithLocation(aPlayer.worldObj, UT.Code.roundDown(aCoords.posX), UT.Code.roundDown(aCoords.posY), UT.Code.roundDown(aCoords.posZ), aTimeUntilNextSound, aSound, aVolume, Float.isNaN(aPitch) || aPitch == SFX.RANDOM_PITCH ? SFX._7_GRAND_DAD_[SFX.PITCH_INDEX=((SFX.PITCH_INDEX+1)%SFX._7_GRAND_DAD_.length)] : aPitch));
+			if (aPlayer == null || !aPlayer.level().isRemote || Code.stringInvalid(aSound)) return F;
+			sSoundsToPlay.add(new SoundWithLocation(aPlayer.level(), UT.Code.roundDown(aCoords.getX()), UT.Code.roundDown(aCoords.getY()), UT.Code.roundDown(aCoords.getZ()), aTimeUntilNextSound, aSound, aVolume, Float.isNaN(aPitch) || aPitch == SFX.RANDOM_PITCH ? SFX._7_GRAND_DAD_[SFX.PITCH_INDEX=((SFX.PITCH_INDEX+1)%SFX._7_GRAND_DAD_.length)] : aPitch));
 			return T;
 		}
 		
@@ -2735,7 +2735,7 @@ public class UT {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord));
 		}
 		public static boolean send(String aSound, Entity aEntity) {
-			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aEntity.worldObj, new BlockPos(UT.Code.roundDown(aEntity.posX), UT.Code.roundDown(aEntity.posY), UT.Code.roundDown(aEntity.posZ)));
+			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
 		}
 		public static boolean send(String aSound, Level aWorld, int aX, int aY, int aZ) {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aWorld, new BlockPos(aX, aY, aZ));
@@ -2753,7 +2753,7 @@ public class UT {
 			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord));
 		}
 		public static boolean send(String aSound, float aVolume, Entity aEntity) {
-			return send(aSound, aVolume, SFX.RANDOM_PITCH, aEntity.worldObj, new BlockPos(UT.Code.roundDown(aEntity.posX), UT.Code.roundDown(aEntity.posY), UT.Code.roundDown(aEntity.posZ)));
+			return send(aSound, aVolume, SFX.RANDOM_PITCH, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
 		}
 		public static boolean send(String aSound, float aVolume, Level aWorld, int aX, int aY, int aZ) {
 			return send(aSound, aVolume, SFX.RANDOM_PITCH, aWorld, new BlockPos(aX, aY, aZ));
@@ -2771,7 +2771,7 @@ public class UT {
 			return send(aSound, aVolume, aPitch, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Entity aEntity) {
-			return send(aSound, aVolume, aPitch, aEntity.worldObj, new BlockPos(UT.Code.roundDown(aEntity.posX), UT.Code.roundDown(aEntity.posY), UT.Code.roundDown(aEntity.posZ)));
+			return send(aSound, aVolume, aPitch, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Level aWorld, int aX, int aY, int aZ) {
 			return send(aSound, aVolume, aPitch, aWorld, new BlockPos(aX, aY, aZ));
@@ -3147,8 +3147,8 @@ public class UT {
 		public static Collection<Player> getPlayersWithLastTarget(long aRange, Level aWorld, BlockPos aCoords) {
 			ArrayListNoNulls<Player> rList = new ArrayListNoNulls<>();
 			for (Entry<Player, BlockPos> tEntry : PLAYER_LAST_CLICKED.entrySet()) {
-				if (!tEntry.getKey().isDead && aWorld == tEntry.getKey().worldObj && aCoords.equals(tEntry.getValue())) {
-					if (isCreative(tEntry.getKey()) || tEntry.getKey().getDistanceSq(aCoords.posX+0.5, aCoords.posY+0.5, aCoords.posZ+0.5) <= aRange * aRange) {
+				if (!tEntry.getKey().isDead && aWorld == tEntry.getKey().level() && aCoords.equals(tEntry.getValue())) {
+					if (isCreative(tEntry.getKey()) || tEntry.getKey().getDistanceSq(aCoords.getX()+0.5, aCoords.getY()+0.5, aCoords.getZ()+0.5) <= aRange * aRange) {
 						rList.add(tEntry.getKey());
 					}
 				}
@@ -3193,7 +3193,7 @@ public class UT {
 			if (hasInfiniteItems(aPlayer)) return T;
 			ItemStack aStack = aPlayer.inventory.getStackInSlot(aPlayer.inventory.currentItem);
 			if (ST.invalid(aStack)) return F;
-			if (aStack.stackSize != NEI_INFINITE && --aStack.stackSize <= 0) aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, NI);
+			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, NI);}
 			ST.give(aPlayer, ST.container(aStack, T), F);
 			return T;
 		}
@@ -3380,13 +3380,13 @@ public class UT {
 			OreDictItemData tOreName = OM.association_(aInput);
 			if (aRecipeManager instanceof IMachineRecipeManagerExt) {
 				if (tOreName != null && !tOreName.mBlackListed && !OreDictManager.INSTANCE.isBlacklisted(aInput)) {
-					((IMachineRecipeManagerExt)aRecipeManager).addRecipe((IRecipeInput)COMPAT_IC2.makeInput(tOreName.toString(), aInput.stackSize), aNBT, T, OreDictManager.INSTANCE.getStackArray(T, aOutput));
+					((IMachineRecipeManagerExt)aRecipeManager).addRecipe((IRecipeInput)COMPAT_IC2.makeInput(tOreName.toString(), aInput.getCount()), aNBT, T, OreDictManager.INSTANCE.getStackArray(T, aOutput));
 				} else {
 					((IMachineRecipeManagerExt)aRecipeManager).addRecipe((IRecipeInput)COMPAT_IC2.makeInput(aInput), aNBT, T, OreDictManager.INSTANCE.getStackArray(T, aOutput));
 				}
 			} else {
 				if (tOreName != null && !tOreName.mBlackListed && !OreDictManager.INSTANCE.isBlacklisted(aInput)) {
-					aRecipeManager.addRecipe((IRecipeInput)COMPAT_IC2.makeInput(tOreName.toString(), aInput.stackSize), aNBT, OreDictManager.INSTANCE.getStackArray(T, aOutput));
+					aRecipeManager.addRecipe((IRecipeInput)COMPAT_IC2.makeInput(tOreName.toString(), aInput.getCount()), aNBT, OreDictManager.INSTANCE.getStackArray(T, aOutput));
 				} else {
 					aRecipeManager.addRecipe((IRecipeInput)COMPAT_IC2.makeInput(aInput), aNBT, OreDictManager.INSTANCE.getStackArray(T, aOutput));
 				}
@@ -3400,7 +3400,7 @@ public class UT {
 		if (!MD.IC2.mLoaded || ST.invalid(aInput) || aOutput.length == 0 || aRecipeList == null) return F;
 		OreDictItemData tOreName = OM.association_(aInput);
 		if (tOreName != null) {
-			aRecipeList.put(COMPAT_IC2.makeInput(tOreName.toString(), aInput.stackSize), COMPAT_IC2.makeOutput(aNBT, OreDictManager.INSTANCE.getStackArray(T, aOutput)));
+			aRecipeList.put(COMPAT_IC2.makeInput(tOreName.toString(), aInput.getCount()), COMPAT_IC2.makeOutput(aNBT, OreDictManager.INSTANCE.getStackArray(T, aOutput)));
 		} else {
 			aRecipeList.put(COMPAT_IC2.makeInput(aInput), COMPAT_IC2.makeOutput(aNBT, OreDictManager.INSTANCE.getStackArray(T, aOutput)));
 		}

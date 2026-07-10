@@ -57,38 +57,38 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	
 	@Override
 	public void onUpdate() {
-		prevPosX = posX;
-		prevPosY = posY;
-		prevPosZ = posZ;
+		prevPosX = getX();
+		prevPosY = getY();
+		prevPosZ = getZ();
 		++field_145812_b;
 		motionY -= 0.03999999910593033D;
 		moveEntity(motionX, motionY, motionZ);
 		motionX *= 0.9800000190734863D;
 		motionY *= 0.9800000190734863D;
 		motionZ *= 0.9800000190734863D;
-		if (!worldObj.isRemote) {
-			int aX = UT.Code.roundDown(posX);
-			int aY = UT.Code.roundDown(posY);
-			int aZ = UT.Code.roundDown(posZ);
+		if (!level().isRemote) {
+			int aX = UT.Code.roundDown(getX());
+			int aY = UT.Code.roundDown(getY());
+			int aZ = UT.Code.roundDown(getZ());
 			if (field_145812_b == 1) {
-				if (worldObj.getBlock(aX, aY, aZ) != super.func_145805_f()) {
+				if (level().getBlock(aX, aY, aZ) != super.func_145805_f()) {
 					setDead();
 					return;
 				}
-				worldObj.setBlockToAir(aX, aY, aZ);
+				level().setBlockToAir(aX, aY, aZ);
 			}
 			if (onGround) {
 				motionX *= 0.699999988079071D;
 				motionZ *= 0.699999988079071D;
 				motionY *= -0.5D;
-				if (worldObj.getBlock(aX, aY, aZ) != Blocks.piston_extension) {
+				if (level().getBlock(aX, aY, aZ) != Blocks.piston_extension) {
 					setDead();
-					if (!worldObj.canPlaceEntityOnSide(super.func_145805_f(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.func_149831_e(worldObj, aX, aY - 1, aZ) || !mBlock.placeBlock(worldObj, aX, aY, aZ, (byte)1, ST.meta_(mStack), mStack.getTagCompound(), T, T)) {
-						if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, worldObj, aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
+					if (!level().canPlaceEntityOnSide(super.func_145805_f(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.func_149831_e(level(), aX, aY - 1, aZ) || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), mStack.getTagCompound(), T, T)) {
+						if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
 					}
 				}
-			} else if (field_145812_b > 100 && !worldObj.isRemote && (aY < 1 || aY > 256) || field_145812_b > 600) {
-				if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, worldObj, aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
+			} else if (field_145812_b > 100 && !level().isRemote && (aY < 1 || aY > 256) || field_145812_b > 600) {
+				if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
 				setDead();
 			}
 		}
@@ -98,7 +98,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	@SuppressWarnings("unchecked")
 	protected void fall(float p_70069_1_) {
 		int i = Mth.ceiling_float_int(p_70069_1_ - 1.0F);
-		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(worldObj.getEntitiesWithinAABBExcludingEntity(this, boundingBox))) {
+		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntitiesWithinAABBExcludingEntity(this, boundingBox))) {
 			if (tEntity instanceof LivingEntity) tEntity.attackEntityFrom(DamageSource.fallingBlock, TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor_float((float)i * 2), 40));
 		}
 	}

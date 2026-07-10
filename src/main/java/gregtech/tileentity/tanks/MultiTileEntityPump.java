@@ -152,17 +152,17 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		mCheckList.clear();
 		
 		for (BlockPos tPos : tNeedsToBeChecked) {
-			if (mDir != 0 && mPumpedFluids.contains(getBlock(tPos.posX, tPos.posY + mDir, tPos.posZ))) {
+			if (mDir != 0 && mPumpedFluids.contains(getBlock(tPos.getX(), tPos.getY() + mDir, tPos.getZ()))) {
 				mPumpList = new LinkedList<>();
 				mCheckList.clear();
 				mChecked.clear();
-				addToList(tPos.posX, tPos.posY + mDir, tPos.posZ);
+				addToList(tPos.getX(), tPos.getY() + mDir, tPos.getZ());
 				return;
 			}
-			if (tPos.posX < aX + 64) addToList(tPos.posX + 1, tPos.posY, tPos.posZ);
-			if (tPos.posX > aX - 64) addToList(tPos.posX - 1, tPos.posY, tPos.posZ);
-			if (tPos.posZ < aZ + 64) addToList(tPos.posX, tPos.posY, tPos.posZ + 1);
-			if (tPos.posZ > aZ - 64) addToList(tPos.posX, tPos.posY, tPos.posZ - 1);
+			if (tPos.getX() < aX + 64) addToList(tPos.getX() + 1, tPos.getY(), tPos.getZ());
+			if (tPos.getX() > aX - 64) addToList(tPos.getX() - 1, tPos.getY(), tPos.getZ());
+			if (tPos.getZ() < aZ + 64) addToList(tPos.getX(), tPos.getY(), tPos.getZ() + 1);
+			if (tPos.getZ() > aZ - 64) addToList(tPos.getX(), tPos.getY(), tPos.getZ() - 1);
 		}
 	}
 	
@@ -219,20 +219,20 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		} else if (WD.lava(aBlock)) {
 			if (getMetaData(aCoords) == 0) mTank.setFluid(FL.Lava.make(1000));
 		} else if (aBlock instanceof IFluidBlock) {
-			mTank.setFluid(((IFluidBlock)aBlock).drain(worldObj, aCoords.posX, aCoords.posY, aCoords.posZ, F));
+			mTank.setFluid(((IFluidBlock)aBlock).drain(level, aCoords.getX(), aCoords.getY(), aCoords.getZ(), F));
 		}
 		// Consume Energy based on Fluid Amount absorbed.
 		mEnergy -= Math.max(16, UT.Code.units(mTank.amount(), 1000, 2048, T));
 		// something prevented the setBlock Function! Scan again!
-		if (!worldObj.setBlock(aCoords.posX, aCoords.posY, aCoords.posZ, NB, 0, 2)) return F;
+		if (!level.setBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ(), NB, 0, 2)) return F;
 		// If there is a Fluid Block above this one, clearly the Y-Level is off due to a recent Blockchange! Scan again!
-		if (mPumpedFluids.contains(getBlock(aCoords.posX, aCoords.posY+mDir, aCoords.posZ))) return F;
+		if (mPumpedFluids.contains(getBlock(aCoords.getX(), aCoords.getY()+mDir, aCoords.getZ()))) return F;
 		// Somehow this Block is completely surrounded by pumpable Fluid, this should not be possible unless it is the literal Cornercase! Scan again!
 		return !(
-		mPumpedFluids.contains(getBlock(aCoords.posX+1, aCoords.posY, aCoords.posZ  )) &&
-		mPumpedFluids.contains(getBlock(aCoords.posX-1, aCoords.posY, aCoords.posZ  )) &&
-		mPumpedFluids.contains(getBlock(aCoords.posX  , aCoords.posY, aCoords.posZ+1)) &&
-		mPumpedFluids.contains(getBlock(aCoords.posX  , aCoords.posY, aCoords.posZ-1)));
+		mPumpedFluids.contains(getBlock(aCoords.getX()+1, aCoords.getY(), aCoords.getZ()  )) &&
+		mPumpedFluids.contains(getBlock(aCoords.getX()-1, aCoords.getY(), aCoords.getZ()  )) &&
+		mPumpedFluids.contains(getBlock(aCoords.getX()  , aCoords.getY(), aCoords.getZ()+1)) &&
+		mPumpedFluids.contains(getBlock(aCoords.getX()  , aCoords.getY(), aCoords.getZ()-1)));
 	}
 	
 	@Override

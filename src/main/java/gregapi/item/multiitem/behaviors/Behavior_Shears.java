@@ -45,15 +45,15 @@ public class Behavior_Shears extends AbstractBehaviorDefault {
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof IShearable) {
-			if (aPlayer.worldObj.isRemote) return T;
-			if (((IShearable)aEntity).isShearable(aStack, aPlayer.worldObj, (int)aEntity.posX, (int)aEntity.posY, (int)aEntity.posZ) && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
+			if (aPlayer.level().isRemote) return T;
+			if (((IShearable)aEntity).isShearable(aStack, aPlayer.level(), (int)aEntity.getX(), (int)aEntity.getY(), (int)aEntity.getZ()) && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				int tFortune = UT.NBT.getEnchantmentLevelLootingFortune(aStack);
 				String tClass = UT.Reflection.getLowercaseClass(aEntity);
 				boolean tDropIncrease = ((tFortune > 0) && ("EntitySheep".equalsIgnoreCase(tClass) || "EntityTFBighorn".equalsIgnoreCase(tClass) || "EntityTaintSheep".equalsIgnoreCase(tClass) || "EntitySheepuff".equalsIgnoreCase(tClass)));
-				for (ItemStack tStack : ((IShearable)aEntity).onSheared(aStack, aPlayer.worldObj, (int)aEntity.posX, (int)aEntity.posY, (int)aEntity.posZ, tFortune)) {
+				for (ItemStack tStack : ((IShearable)aEntity).onSheared(aStack, aPlayer.level(), (int)aEntity.getX(), (int)aEntity.getY(), (int)aEntity.getZ(), tFortune)) {
 					if (tDropIncrease && ST.block(tStack) == Blocks.wool) {
-						tStack.stackSize += RNGSUS.nextInt(1+tFortune);
-						if (tStack.stackSize > 64) tStack.stackSize = 64;
+						tStack.setCount(tStack.getCount()+(RNGSUS.nextInt(1+tFortune)));
+						if (tStack.getCount() > 64) tStack.setCount(64);
 					}
 					ST.give(aPlayer, tStack, F);
 				}

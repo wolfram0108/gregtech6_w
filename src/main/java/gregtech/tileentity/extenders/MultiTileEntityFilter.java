@@ -92,7 +92,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUICommonFilter(aPlayer.inventory, this, aGUIID);}
 	@Override public int getSizeInventoryGUI() {return mFilter==null?0:mFilter.length;}
 	@Override public ItemStack getStackInSlotGUI(int aSlot) {return mFilter[aSlot];}
-	@Override public ItemStack decrStackSizeGUI(int aSlot, int aDecrement) {mInventoryChanged = T; if (mFilter[aSlot] != null) {if (mFilter[aSlot].stackSize <= aDecrement) {ItemStack tStack = mFilter[aSlot]; mFilter[aSlot] = null; return tStack;} ItemStack rStack = mFilter[aSlot].splitStack(aDecrement); if (mFilter[aSlot].stackSize <= 0) mFilter[aSlot] = null; return rStack;} return null;}
+	@Override public ItemStack decrStackSizeGUI(int aSlot, int aDecrement) {mInventoryChanged = T; if (mFilter[aSlot] != null) {if (mFilter[aSlot].getCount() <= aDecrement) {ItemStack tStack = mFilter[aSlot]; mFilter[aSlot] = null; return tStack;} ItemStack rStack = mFilter[aSlot].splitStack(aDecrement); if (mFilter[aSlot].getCount() <= 0) mFilter[aSlot] = null; return rStack;} return null;}
 	@Override public ItemStack getStackInSlotOnClosingGUI(int aSlot) {ItemStack rStack = mFilter[aSlot]; mFilter[aSlot] = null; return rStack;}
 	@Override public void setInventorySlotContentsGUI(int aSlot, ItemStack aStack) {mInventoryChanged = T; mFilter[aSlot] = OM.get(aStack);}
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return 1;}

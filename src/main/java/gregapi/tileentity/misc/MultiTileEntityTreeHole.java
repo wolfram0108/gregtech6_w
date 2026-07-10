@@ -83,7 +83,7 @@ public abstract class MultiTileEntityTreeHole extends TileEntityBase09FacingSing
 				}
 				assert aStack != null;
 				if (tStack != null) {
-					aStack.stackSize--;
+					aStack.setCount(aStack.getCount()-1);
 					ST.give(aPlayer, tStack, T);
 				}
 			}

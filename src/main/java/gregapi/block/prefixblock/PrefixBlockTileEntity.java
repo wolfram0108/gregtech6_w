@@ -53,33 +53,33 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	
 	@Override
 	public net.minecraft.network.Packet getDescriptionPacket() {
-		if (!(mBlocked = WD.visOcc(worldObj, xCoord, yCoord, zCoord, F, T))) {
-			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), worldObj, getCoords());
-			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), worldObj, getCoords());
+		if (!(mBlocked = WD.visOcc(level, xCoord, yCoord, zCoord, F, T))) {
+			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
+			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
 		}
 		return null;
 	}
 	
 	@Override
 	public void onScheduledUpdate() {
-		if (!(mBlocked = WD.visOcc(worldObj, xCoord, yCoord, zCoord, F, T))) {
-			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), worldObj, getCoords());
-			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), worldObj, getCoords());
+		if (!(mBlocked = WD.visOcc(level, xCoord, yCoord, zCoord, F, T))) {
+			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
+			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
 		}
 	}
 	
 	@Override
 	public void onAdjacentBlockChange(int aX, int aY, int aZ) {
-		if (!worldObj.isRemote && mBlocked) {
+		if (!level.isRemote && mBlocked) {
 			mBlocked = F;
-			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), worldObj, getCoords());
-			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), worldObj, getCoords());
+			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
+			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
 		}
 	}
 	
 	@Override
 	public void sendUpdateToPlayer(ServerPlayer aPlayer) {
-		if (!(mBlocked = WD.visOcc(worldObj, xCoord, yCoord, zCoord, T, T))) {
+		if (!(mBlocked = WD.visOcc(level, xCoord, yCoord, zCoord, T, T))) {
 			NW_API.sendToPlayer(new PacketSyncDataShort(getCoords(), mMetaData), aPlayer);
 			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToPlayer(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), aPlayer);
 		}
@@ -90,7 +90,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	@Override
 	public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
 		if (!aShouldSideBeRendered[aSide]) return null;
-		if (mTexture == null) mTexture = (aBlock instanceof PrefixBlock ? ((PrefixBlock)aBlock).getTexture(mMetaData, worldObj != null) : null);
+		if (mTexture == null) mTexture = (aBlock instanceof PrefixBlock ? ((PrefixBlock)aBlock).getTexture(mMetaData, level != null) : null);
 		return mTexture;
 	}
 	

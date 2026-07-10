@@ -53,7 +53,7 @@ public class MultiTileEntitySluice extends TileEntityBase10MultiBlockMachine {
 		tMaxZ = zCoord+(SIDE_Z_POS==mFacing?0:SIDE_Z_NEG==mFacing?6:1),
 		tD = (mActive?mFacing+2:mFacing-2);
 		
-		if (worldObj.blockExists(tMinX, yCoord, tMinZ) && worldObj.blockExists(tMaxX, yCoord+2, tMaxZ)) {
+		if (level.blockExists(tMinX, yCoord, tMinZ) && level.blockExists(tMaxX, yCoord+2, tMaxZ)) {
 			boolean tSuccess = T;
 			for (int tX = tMinX; tX <= tMaxX; tX++) for (int tZ = tMinZ; tZ <= tMaxZ; tZ++) {
 				if (SIDES_AXIS_X[mFacing] ? tX == xCoord : tZ == zCoord) {
@@ -113,14 +113,14 @@ public class MultiTileEntitySluice extends TileEntityBase10MultiBlockMachine {
 	public void updateAdjacentToggleableEnergySources() {
 		DelegatorTileEntity<BlockEntity> tDelegator;
 		if (SIDES_AXIS_X[mFacing]) {
-			tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 5), yCoord+1, zCoord - 2, SIDE_Z_POS, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 5), yCoord+1, zCoord - 2, SIDE_Z_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 5), yCoord+1, zCoord + 2, SIDE_Z_NEG, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 5), yCoord+1, zCoord + 2, SIDE_Z_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		} else {
-			tDelegator = WD.te(worldObj, xCoord - 2, yCoord+1, getOffsetZN(mFacing, 5), SIDE_X_POS, F);
+			tDelegator = WD.te(level, xCoord - 2, yCoord+1, getOffsetZN(mFacing, 5), SIDE_X_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(worldObj, xCoord + 2, yCoord+1, getOffsetZN(mFacing, 5), SIDE_X_NEG, F);
+			tDelegator = WD.te(level, xCoord + 2, yCoord+1, getOffsetZN(mFacing, 5), SIDE_X_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		}
 	}

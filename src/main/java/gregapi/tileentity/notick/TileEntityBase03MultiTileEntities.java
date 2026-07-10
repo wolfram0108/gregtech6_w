@@ -50,7 +50,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 		super.sendClientData(aSendAll, aPlayer);
 		if (aSendAll && UT.Code.stringValid(mCustomName)) {
 			if (aPlayer == null) {
-				getNetworkHandler().sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mCustomName), worldObj, getCoords());
+				getNetworkHandler().sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mCustomName), level, getCoords());
 			} else {
 				getNetworkHandler().sendToPlayer(new PacketSyncDataName(getCoords(), mCustomName), aPlayer);
 			}
@@ -141,7 +141,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	
 	@Override
 	public final boolean onBlockActivated(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		worldObj.markTileEntityChunkModified(xCoord, yCoord, zCoord, this);
+		level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this);
 		return allowRightclick(aPlayer) && (checkObstruction(aPlayer, aSide, aHitX, aHitY, aHitZ) || onBlockActivated2(aPlayer, aSide, aHitX, aHitY, aHitZ));
 	}
 	
@@ -150,7 +150,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	}
 	
 	public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(worldObj, xCoord, yCoord, zCoord, aSide));
+		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(level, xCoord, yCoord, zCoord, aSide));
 	}
 	
 	@Override
@@ -165,16 +165,16 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	public boolean recolourBlock(byte aSide, byte aColor) {
 		if (UT.Code.exists(aColor, DYES_INVERTED)) {
 			int aRGB = (isPainted() ? UT.Code.mixRGBInt(DYES_INT_INVERTED[aColor], getPaint()) : DYES_INT_INVERTED[aColor]) & ALL_NON_ALPHA_COLOR;
-			if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); worldObj.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
+			if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
 			return F;
 		}
-		if (unpaint()) {updateClientData(); causeBlockUpdate(); worldObj.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
+		if (unpaint()) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
 		return F;
 	}
 	
 	@Override
 	public boolean onPainting(byte aSide, int aRGB) {
-		if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); worldObj.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
+		if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
 		return F;
 	}
 	

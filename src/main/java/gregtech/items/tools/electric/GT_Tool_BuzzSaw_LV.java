@@ -31,7 +31,7 @@ import gregapi.util.ST;
 import gregtech.items.tools.early.GT_Tool_Saw;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockPane;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.ItemStack;
 
 public class GT_Tool_BuzzSaw_LV extends GT_Tool_Saw {

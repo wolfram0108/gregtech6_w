@@ -647,8 +647,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		// Mossy Cobblestone is slightly slippery, unless you sneak on it.
 		if (!aEntity.isInWater() && !aEntity.isSneaking() && WD.meta(aWorld, aX, aY, aZ) == MCOBL) {
-			int tAddX = (aEntity.posX >= aX + 0.5 ? +1 : -1);
-			int tAddZ = (aEntity.posZ >= aZ + 0.5 ? +1 : -1);
+			int tAddX = (aEntity.getX() >= aX + 0.5 ? +1 : -1);
+			int tAddZ = (aEntity.getZ() >= aZ + 0.5 ? +1 : -1);
 			double tSpeed = 0.15;
 			if (Math.abs(aEntity.motionX) < tSpeed) {
 				if (       !WD.opq(aWorld, aX+tAddX  , aY, aZ, F, F) && !WD.hasCollide(aWorld, aX+tAddX  , aY+1, aZ)) {

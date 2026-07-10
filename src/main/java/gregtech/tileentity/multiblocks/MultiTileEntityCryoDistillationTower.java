@@ -51,7 +51,7 @@ public class MultiTileEntityCryoDistillationTower extends TileEntityBase10MultiB
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
-		if (worldObj.blockExists(tX-1, tY, tZ-1) && worldObj.blockExists(tX+1, tY, tZ-1) && worldObj.blockExists(tX-1, tY, tZ+1) && worldObj.blockExists(tX+1, tY, tZ+1)) {
+		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX-1, tY-1, tZ-1, 18101, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -131,7 +131,7 @@ public class MultiTileEntityCryoDistillationTower extends TileEntityBase10MultiB
 	public void updateAdjacentToggleableEnergySources() {
 		int tX = getOffsetXN(mFacing) - 1, tZ = getOffsetZN(mFacing) - 1;
 		for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
-			DelegatorTileEntity<BlockEntity> tDelegator = WD.te(worldObj, tX+i, yCoord-2, tZ+j, SIDE_TOP, F);
+			DelegatorTileEntity<BlockEntity> tDelegator = WD.te(level, tX+i, yCoord-2, tZ+j, SIDE_TOP, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) {
 				((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 			}
@@ -140,7 +140,7 @@ public class MultiTileEntityCryoDistillationTower extends TileEntityBase10MultiB
 	
 	@Override
 	public void doOutputItems() {
-		ST.moveAll(delegator(FACING_TO_SIDE[mFacing][mItemAutoOutput]), WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord, getOffsetZN(mFacing, 3), mFacing, F));
+		ST.moveAll(delegator(FACING_TO_SIDE[mFacing][mItemAutoOutput]), WD.te(level, getOffsetXN(mFacing, 3), yCoord, getOffsetZN(mFacing, 3), mFacing, F));
 	}
 	
 	@Override
@@ -150,19 +150,19 @@ public class MultiTileEntityCryoDistillationTower extends TileEntityBase10MultiB
 			if (tFluid != null && tTank.has()) {
 				DelegatorTileEntity<BlockEntity> tDelegator = null;
 				if (FL.is(tFluid, "helium")) {
-					tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord+7, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+7, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "neon")) {
-					tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord+6, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+6, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "nitrogen")) {
-					tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord+5, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+5, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "oxygen")) {
-					tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord+4, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+4, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "argon")) {
-					tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord+3, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+3, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "carbondioxide", "sulfurdioxide")) {
-					tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord+2, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+2, getOffsetZN(mFacing, 3), mFacing, F);
 				} else {
-					tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 3), yCoord+1, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+1, getOffsetZN(mFacing, 3), mFacing, F);
 				}
 				
 				if (FL.move(tTank, tDelegator) > 0) updateInventory();

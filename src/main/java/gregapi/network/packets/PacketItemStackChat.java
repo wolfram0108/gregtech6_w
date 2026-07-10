@@ -60,7 +60,7 @@ public class PacketItemStackChat implements IPacket {
 	public ByteArrayDataOutput encode() {
 		ByteArrayDataOutput aData = ByteStreams.newDataOutput();
 		aData.writeShort(ST.id(mStack));
-		aData.writeByte(mStack.stackSize);
+		aData.writeByte(mStack.getCount());
 		aData.writeShort(ST.meta_(mStack));
 		CompoundTag tNBT = mStack.getTagCompound();
 		if (tNBT == null) aData.writeShort(-1); else {

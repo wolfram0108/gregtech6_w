@@ -86,24 +86,24 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 	 */
 	@Override
 	public BlockEntity getTileEntityAtSideAndDistance(byte aSide, int aDistance) {
-		if (worldObj == null) return null;
+		if (level == null) return null;
 		if (aDistance != 1) return super.getTileEntityAtSideAndDistance(aSide, aDistance);
 		if (SIDES_INVALID[aSide] || mBufferedTileEntities[aSide] == this) return null;
 		BlockPos tCoords = getOffset(aSide, 1);
 		boolean tChunksCrossed = crossedChunkBorder(tCoords);
 		if (tChunksCrossed && (!(mBufferedTileEntities[aSide] instanceof ITileEntityUnloadable) || ((ITileEntityUnloadable)mBufferedTileEntities[aSide]).isDead())) {
 			mBufferedTileEntities[aSide] = null;
-			if (mIgnoreUnloadedChunks && !worldObj.blockExists(tCoords.posX, tCoords.posY, tCoords.posZ)) return null;
+			if (mIgnoreUnloadedChunks && !level.blockExists(tCoords.getX(), tCoords.getY(), tCoords.getZ())) return null;
 		}
 		if (mBufferedTileEntities[aSide] == null) {
-			BlockEntity tTileEntity = WD.te(worldObj, tCoords.posX, tCoords.posY, tCoords.posZ, T);
+			BlockEntity tTileEntity = WD.te(level, tCoords.getX(), tCoords.getY(), tCoords.getZ(), T);
 			if (tTileEntity == null) {mBufferedTileEntities[aSide] = this; return null;}
 			if (tChunksCrossed) WD.mark(tTileEntity);
-			if (tTileEntity.xCoord == tCoords.posX && tTileEntity.yCoord == tCoords.posY && tTileEntity.zCoord == tCoords.posZ) return mBufferedTileEntities[aSide] = tTileEntity;
+			if (tTileEntity.xCoord == tCoords.getX() && tTileEntity.yCoord == tCoords.getY() && tTileEntity.zCoord == tCoords.getZ()) return mBufferedTileEntities[aSide] = tTileEntity;
 			mBufferedTileEntities[aSide] = null;
 			return tTileEntity;
 		}
-		if (mBufferedTileEntities[aSide].xCoord != tCoords.posX || mBufferedTileEntities[aSide].yCoord != tCoords.posY || mBufferedTileEntities[aSide].zCoord != tCoords.posZ) {
+		if (mBufferedTileEntities[aSide].xCoord != tCoords.getX() || mBufferedTileEntities[aSide].yCoord != tCoords.getY() || mBufferedTileEntities[aSide].zCoord != tCoords.getZ()) {
 			mBufferedTileEntities[aSide] = null;
 			return getTileEntityAtSideAndDistance(aSide, aDistance);
 		}
@@ -152,7 +152,7 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 				}
 				if (oX != xCoord || oY != yCoord || oZ != zCoord) {
 					clearEverythingFromTileEntityBuffer();
-					onCoordinateChange(worldObj, oX, oY, oZ);
+					onCoordinateChange(level, oX, oY, oZ);
 					oX = xCoord; oY = yCoord; oZ = zCoord;
 				}
 			}
@@ -167,7 +167,7 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 	@Override
 	public void doneMoving() {
 		clearEverythingFromTileEntityBuffer();
-		onCoordinateChange(worldObj, oX, oY, oZ);
+		onCoordinateChange(level, oX, oY, oZ);
 		oX = xCoord; oY = yCoord; oZ = zCoord;
 	}
 }

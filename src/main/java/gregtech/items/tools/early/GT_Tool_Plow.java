@@ -26,7 +26,7 @@ import gregapi.item.multiitem.behaviors.Behavior_Tool;
 import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.render.IIconContainer;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.monster.EntitySnowman;
 import net.minecraft.world.entity.player.Player;
@@ -68,7 +68,7 @@ public class GT_Tool_Plow extends ToolStats {
 		int rConversions = 0;
 		if (sIsHarvestingRightNow.get() == null && aPlayer instanceof ServerPlayer) {
 			sIsHarvestingRightNow.set(this);
-			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) if (i != 0 || j != 0 || k != 0) if (aStack.getItem().getDigSpeed(aStack, aPlayer.worldObj.getBlock(aX+i, aY+j, aZ+k), aPlayer.worldObj.getBlockMetadata(aX+i, aY+j, aZ+k)) > 0) if (((ServerPlayer)aPlayer).theItemInWorldManager.tryHarvestBlock(aX+i, aY+j, aZ+k)) rConversions++;
+			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) if (i != 0 || j != 0 || k != 0) if (aStack.getItem().getDigSpeed(aStack, aPlayer.level().getBlock(aX+i, aY+j, aZ+k), aPlayer.level().getBlockMetadata(aX+i, aY+j, aZ+k)) > 0) if (((ServerPlayer)aPlayer).theItemInWorldManager.tryHarvestBlock(aX+i, aY+j, aZ+k)) rConversions++;
 			sIsHarvestingRightNow.set(null);
 		}
 		return rConversions;

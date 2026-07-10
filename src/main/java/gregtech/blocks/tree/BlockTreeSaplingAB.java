@@ -31,7 +31,7 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.tileentity.plants.MultiTileEntityResinHoleRubber;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.IPlantable;

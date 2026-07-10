@@ -628,8 +628,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
 			return;
 		}
-		aBlock = aEvent.player.worldObj.getBlock(aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ);
-		BlockEntity aTileEntity = WD.te(aEvent.player.worldObj, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, T);
+		aBlock = aEvent.player.level().getBlock(aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ);
+		BlockEntity aTileEntity = WD.te(aEvent.player.level(), aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
 			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(aEvent.currentItem) && ToolsGT.contains(TOOL_wrench, aEvent.currentItem)) {
 				RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);

@@ -33,7 +33,7 @@ import gregapi.render.BlockTextureCopied;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Block.SoundType;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 
 import static gregapi.data.CS.*;

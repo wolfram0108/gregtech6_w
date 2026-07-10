@@ -100,7 +100,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		aList.add(Chat.CYAN + mTank.contentcap());
 		if (mTank.has(250) && isDrinkable()) {
 			FoodStatFluid.INSTANCE.addAdditionalToolTips(aStack.getItem(), aList, aStack, aF3_H);
-			if (aStack.stackSize != 1) aList.add(LH.Chat.RED + LH.get(LH.REQUIREMENT_UNSTACKED));
+			if (aStack.getCount() != 1) aList.add(LH.Chat.RED + LH.get(LH.REQUIREMENT_UNSTACKED));
 		}
 		aList.add(Chat.ORANGE + LH.get(LH.TOOLTIP_HEATPROOF) + LH.Chat.WHITE + mTemperatureMax + LH.Chat.RED + " K");
 		if (mLiquidProof    ) aList.add(Chat.ORANGE + LH.get(LH.TOOLTIP_LIQUIDPROOF));
@@ -113,12 +113,12 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		super.onTick2(aTimer, aIsServerSide);
-		if (aIsServerSide && canFillWithRain() && SERVER_TIME % 600 == 10 && worldObj.isRaining() && getRainOffset(0, 1, 0)) {
+		if (aIsServerSide && canFillWithRain() && SERVER_TIME % 600 == 10 && level.isRaining() && getRainOffset(0, 1, 0)) {
 			Biome tBiome = getBiome();
 			if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
 				Block tInFront = getBlockAtSide(SIDE_TOP);
-				if (!WD.liquid(tInFront) && !tInFront.isSideSolid(worldObj, xCoord, yCoord+1, zCoord, FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(worldObj, xCoord, yCoord+1, zCoord, FORGE_DIR[SIDE_TOP])) {
-					mTank.fill(FL.Water.make((long)Math.max(1, tBiome.rainfall*100) * (worldObj.isThundering()?2:1)), T);
+				if (!WD.liquid(tInFront) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR[SIDE_TOP])) {
+					mTank.fill(FL.Water.make((long)Math.max(1, tBiome.rainfall*100) * (level.isThundering()?2:1)), T);
 				}
 			}
 		}
@@ -145,12 +145,12 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		ItemStack aStack = aPlayer.getCurrentEquippedItem(), tStack = ST.container(ST.amount(1, aStack), T);
 		FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 		if (aStack != null && isFluidAllowed(tFluid) && mTank.fillAll(tFluid)) {
-			aStack.stackSize--;
+			aStack.setCount(aStack.getCount()-1);
 			ST.give(aPlayer, tStack, T);
 			return T;
 		}
 		if (aStack != null) if ((tStack = FL.fill(mTank, ST.amount(1, aStack), T, T, T, T)) != null) {
-			aStack.stackSize--;
+			aStack.setCount(aStack.getCount()-1);
 			ST.give(aPlayer, tStack, T);
 			return T;
 		}
@@ -164,7 +164,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				default : UT.Sounds.send(SFX.MC_DRINK, this, F); break;
 				}
 				mTank.remove(250);
-				aStack.getItem().onEaten(aStack, worldObj, aPlayer);
+				aStack.getItem().onEaten(aStack, level, aPlayer);
 			}
 		}
 		return T;
@@ -185,7 +185,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
-		if (!isFluidAllowed(aFluid) || aStack.stackSize != 1) return 0;
+		if (!isFluidAllowed(aFluid) || aStack.getCount() != 1) return 0;
 		int tFilled = mTank.fill(aFluid, aDoFill);
 		if (tFilled > 0 && aDoFill) UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
 		return tFilled;
@@ -193,7 +193,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
-		if (aStack.stackSize != 1) return NF;
+		if (aStack.getCount() != 1) return NF;
 		FluidStack tDrained = mTank.drain(aMaxDrain, aDoDrain);
 		if (tDrained != NF && aDoDrain) UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
 		return tDrained;
@@ -201,7 +201,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public boolean onItemUseFirst(MultiTileEntityItemInternal aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack) || aStack.stackSize != 1) return F;
+		if (aWorld.isRemote || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack) || aStack.getCount() != 1) return F;
 		if (canWaterCrops()) {
 			FluidStack mFluid = aItem.getFluid(aStack);
 			if (FL.water(mFluid)) {
@@ -220,7 +220,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 						aItem.drain(aStack, 334, T);
 						WD.set(aWorld, aX, aY, aZ, aBlock, aMeta+1, 3);
 					}
-					UT.Sounds.send(SFX.MC_LIQUID_WATER, worldObj, getCoords());
+					UT.Sounds.send(SFX.MC_LIQUID_WATER, level, getCoords());
 					return T;
 				}
 				
@@ -272,7 +272,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public ItemStack onItemRightClick(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (canPickUpFluids() && aStack.stackSize == 1) {
+		if (canPickUpFluids() && aStack.getCount() == 1) {
 			HitResult tTarget = WD.getMOP(aWorld, aPlayer, T);
 			if (tTarget != null && tTarget.typeOfHit == HitResult.MovingObjectType.BLOCK && aWorld.canMineBlock(aPlayer, tTarget.blockX, tTarget.blockY, tTarget.blockZ)) {
 				Block tBlock = aWorld.getBlock(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
@@ -334,7 +334,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				}
 			}
 		}
-		if (isDrinkable() && aStack.stackSize == 1 && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodStats().needFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer))) {
+		if (isDrinkable() && aStack.getCount() == 1 && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodStats().needFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer))) {
 			aPlayer.setItemInUse(aStack, Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32));
 			return aStack;
 		}
@@ -342,15 +342,15 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	}
 	
 	public int getMaxItemUseDuration(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return isDrinkable() && aStack.stackSize == 1 ? Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32) : 0;
+		return isDrinkable() && aStack.getCount() == 1 ? Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32) : 0;
 	}
 	
 	public ItemUseAnimation getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return isDrinkable() && aStack.stackSize == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : ItemUseAnimation.none;
+		return isDrinkable() && aStack.getCount() == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : ItemUseAnimation.none;
 	}
 	
 	public ItemStack onEaten(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (!isDrinkable() || aStack.stackSize != 1) return aStack;
+		if (!isDrinkable() || aStack.getCount() != 1) return aStack;
 		
 		int tFoodLevel = FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, aPlayer);
 		

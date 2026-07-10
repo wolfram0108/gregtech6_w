@@ -50,7 +50,7 @@ public class MultiTileEntityResinHoleRubber extends MultiTileEntityTreeHole {
 		while (tIterator.hasNext()) {
 			MultiTileEntityResinHoleRubber tHole = tIterator.next();
 			if (tHole == null || tHole.isDead()) {tIterator.remove(); continue;}
-			if (tHole.worldObj != aWorld) continue;
+			if (tHole.level != aWorld) continue;
 			if (Math.abs(tHole.xCoord - aX) < 256 && Math.abs(tHole.zCoord - aZ) < 256) return T;
 		}
 		return F;

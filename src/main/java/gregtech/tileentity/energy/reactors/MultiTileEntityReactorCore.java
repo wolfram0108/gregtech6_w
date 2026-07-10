@@ -75,7 +75,7 @@ public abstract class MultiTileEntityReactorCore extends TileEntityBase10FacingD
 			oNeutronCounts[i] = aNBT.getInteger(NBT_VALUE+".o."+i);
 		}
 		
-		if (worldObj != null && isServerSide() && mHasToAddTimer) {
+		if (level != null && isServerSide() && mHasToAddTimer) {
 			GT_API_Proxy.SERVER_TICK_POST.add(this);
 			GT_API_Proxy.SERVER_TICK_PO2T.add(this);
 			mHasToAddTimer = F;

@@ -41,7 +41,7 @@ import gregtech.blocks.stone.BlockVanillaOresA;
 import gregtech.blocks.tool.*;
 import gregtech.experiments.BlockRiverAdvanced;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.world.effect.MobEffect;

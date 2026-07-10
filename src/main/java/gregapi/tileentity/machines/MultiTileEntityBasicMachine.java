@@ -20,7 +20,7 @@
 package gregapi.tileentity.machines;
 
 import buildcraft.api.tiles.IHasWork;
-import cpw.mods.fml.common.Optional;
+import gregapi.api.Optional;
 import gregapi.GT_API;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.code.TagData;
@@ -638,13 +638,13 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 					mOutputBlocked++;
 					return 0;
 				}
-				rMaxTimes = Math.min(rMaxTimes, (slot(j).getMaxStackSize() - slot(j).stackSize) / aRecipe.mOutputs[i].stackSize);
+				rMaxTimes = Math.min(rMaxTimes, (slot(j).getMaxStackSize() - slot(j).getCount()) / aRecipe.mOutputs[i].getCount());
 				if (rMaxTimes <= 0) {
 					mOutputBlocked++;
 					return 0;
 				}
 			} else {
-				rMaxTimes = Math.min(rMaxTimes, Math.max(1, 64 / aRecipe.mOutputs[i].stackSize));
+				rMaxTimes = Math.min(rMaxTimes, Math.max(1, 64 / aRecipe.mOutputs[i].getCount()));
 			}
 		}
 		if (aRecipe.mFluidOutputs.length > 0) {
@@ -1011,7 +1011,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	@Override public void setVisualData(byte aData) {mRunning=((aData&2)!=0); mActive=((aData&1)!=0);}
 	@Override public byte getDefaultSide() {return SIDE_FRONT;}
 	@Override public boolean[] getValidSides() {return mActive ? SIDES_THIS[mFacing] : SIDES_HORIZONTAL;}
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(mTexturesMaterial[FACING_ROTATIONS[mFacing][aSide]], mRGBa), BlockTextureDefault.get((mActive||worldObj==null?mTexturesActive:mRunning?mTexturesRunning:mTexturesInactive)[FACING_ROTATIONS[mFacing][aSide]])) : null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(mTexturesMaterial[FACING_ROTATIONS[mFacing][aSide]], mRGBa), BlockTextureDefault.get((mActive||level==null?mTexturesActive:mRunning?mTexturesRunning:mTexturesInactive)[FACING_ROTATIONS[mFacing][aSide]])) : null;}
 	
 	@Override public boolean canSave(int aSlot) {return !IL.Display_Fluid.equal(slot(aSlot), T, T);}
 	@Override public boolean hasWork() {return mMaxProgress > 0 || mChargeRequirement > 0;}

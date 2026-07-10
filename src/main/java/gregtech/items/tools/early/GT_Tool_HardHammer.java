@@ -32,7 +32,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockSilverfish;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.world.entity.player.Player;
@@ -99,7 +99,7 @@ public class GT_Tool_HardHammer extends ToolStats {
 			for (int i = 0; i < aDrops.size(); i++) {
 				tRecipe = RM.Hammer.findRecipe(null, null, T, Integer.MAX_VALUE, null, ZL_FS, ST.amount(1, aDrops.get(i)));
 				if (tRecipe != null) {
-					byte tStackSize = (byte)aDrops.get(i).stackSize;
+					byte tStackSize = (byte)aDrops.get(i).getCount();
 					rConversions += tStackSize;
 					aDrops.remove(i--);
 					if (tRecipe.mOutputs.length > 0) for (byte j = 0; j < tStackSize; j++) {

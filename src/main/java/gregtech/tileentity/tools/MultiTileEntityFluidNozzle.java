@@ -89,7 +89,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 									int tDrain = LiquidXpUtils.xpToLiquidRatio(tXP);
 									if (tDrain > 0 && tXP > 0) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tDrain, T);
-										worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
+										level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
 									}
 								} catch(Throwable e) {e.printStackTrace(ERR);}
 								return T;
@@ -98,7 +98,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 							int tXP = Math.min(50, aFluid.amount/20);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tXP*20, T);
-								worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
+								level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
 							}
 							return T;
 						}
@@ -107,7 +107,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 							int tXP = Math.min(50, (aFluid.amount*3)/200);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, (tXP*200)/3, T);
-								worldObj.spawnEntityInWorld(new ExperienceOrb(worldObj, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
+								level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.5, yCoord+0.2, zCoord+0.5, tXP));
 							}
 							return T;
 						}
@@ -118,7 +118,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 					ItemStack tStack = FL.fill(tNewFluid, ST.amount(1, aStack), T, T, T, T);
 					if (aFluid.amount > tNewFluid.amount && ((ITileEntityTapAccessible)tDelegator.mTileEntity).nozzleDrain(tDelegator.mSideOfTileEntity, aFluid.amount - tNewFluid.amount, T) != null) {
 						UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
-						aStack.stackSize--;
+						aStack.setCount(aStack.getCount()-1);
 						ST.give(aPlayer, tStack, T);
 						return T;
 					}

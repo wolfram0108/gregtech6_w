@@ -68,7 +68,7 @@ public class RecipeMapHandlerCrushing extends RecipeMapHandler {
 		if (aData.mPrefix == orePoor) {
 			ItemStack tOutput = OP.crushedTiny          .mat(aCrushedMat, UT.Code.bindStack(UT.Code.units(aCrushedAmount, U, 3 * aMultiplier, F)));
 			if (tOutput == null) tOutput = OP.dustTiny  .mat(aCrushedMat, UT.Code.bindStack(UT.Code.units(aCrushedAmount, U, 3 * aMultiplier, F)));
-			return ST.valid(tOutput) && null != aMap.addRecipe(new Recipe(F, F, T, ST.array(ST.amount(1, aInput)), ST.array(tOutput), null, null, ZL_FS, ZL_FS, Math.max(1, 16*tOutput.stackSize*Math.max(1, aData.mMaterial.mMaterial.mToolQuality+1)), 16, 0));
+			return ST.valid(tOutput) && null != aMap.addRecipe(new Recipe(F, F, T, ST.array(ST.amount(1, aInput)), ST.array(tOutput), null, null, ZL_FS, ZL_FS, Math.max(1, 16*tOutput.getCount()*Math.max(1, aData.mMaterial.mMaterial.mToolQuality+1)), 16, 0));
 		}
 		if (aData.mPrefix == oreSmall || aData.mPrefix == oreRich || aData.mPrefix == oreNormal) {
 			// TODO
@@ -80,7 +80,7 @@ public class RecipeMapHandlerCrushing extends RecipeMapHandler {
 		if (tOutputs[0] == null) tOutputs[0] = OP.gem    .mat(aCrushedMat, UT.Code.bindStack(UT.Code.units(aCrushedAmount, U, aMultiplier, F)));
 		if (tOutputs[0] == null) return F;
 		long[] tChances = new long[tOutputs.length];
-		int i = 1, tDuration = 128*tOutputs[0].stackSize*Math.max(1, aData.mMaterial.mMaterial.mToolQuality+1);
+		int i = 1, tDuration = 128*tOutputs[0].getCount()*Math.max(1, aData.mMaterial.mMaterial.mToolQuality+1);
 		tChances[i  ] = 10000;
 		tOutputs[i++] = tOutputs[0];
 		if (aData.mPrefix == blockRaw) {

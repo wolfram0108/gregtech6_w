@@ -27,7 +27,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -131,12 +131,12 @@ public class BlockBaleGrass extends BlockBaseBale {
 		if ((aMeta & 3) == 0) {
 			aList.add(LH.Chat.CYAN + LH.get("gt.tooltip.bale"));
 			if (aPlayer != null) {
-				if (aPlayer.worldObj.provider.isHellWorld) {
+				if (aPlayer.level().provider.isHellWorld) {
 					aList.add(LH.Chat.YELLOW + LH.get("gt.tooltip.bale.dry"));
 				} else {
-					int aX = UT.Code.roundDown(aPlayer.posX), aY = UT.Code.roundDown(aPlayer.posY), aZ = UT.Code.roundDown(aPlayer.posZ);
-					Biome tBiome = aPlayer.worldObj.getBiomeGenForCoords(aX, aZ);
-					if (tBiome.rainfall > 0.8F || (aPlayer.worldObj.isRaining() && tBiome.rainfall > 0 && aPlayer.worldObj.getPrecipitationHeight(aX, aZ) <= aY+2)) {
+					int aX = UT.Code.roundDown(aPlayer.getX()), aY = UT.Code.roundDown(aPlayer.getY()), aZ = UT.Code.roundDown(aPlayer.getZ());
+					Biome tBiome = aPlayer.level().getBiomeGenForCoords(aX, aZ);
+					if (tBiome.rainfall > 0.8F || (aPlayer.level().isRaining() && tBiome.rainfall > 0 && aPlayer.level().getPrecipitationHeight(aX, aZ) <= aY+2)) {
 						aList.add(LH.Chat.ORANGE + LH.get("gt.tooltip.bale.rot"));
 					} else {
 						aList.add(LH.Chat.YELLOW + LH.get("gt.tooltip.bale.dry"));

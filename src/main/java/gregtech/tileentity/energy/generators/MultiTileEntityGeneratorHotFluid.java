@@ -117,7 +117,7 @@ public class MultiTileEntityGeneratorHotFluid extends TileEntityBase09FacingSing
 				mEnergy -= Math.min(mRate, mEnergy);
 				// Burn surrounding Area.
 				if (mEfficiency < 1 || rng(mEfficiency) == 0) {
-					WD.fire(worldObj, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+					WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 				}
 			}
 			// Check if it needs to use more Fuel, or if the buffered Energy is enough.

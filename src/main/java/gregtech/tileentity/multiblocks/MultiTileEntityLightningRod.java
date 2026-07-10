@@ -124,24 +124,24 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
 			// Required to use force sometimes, because of variable Rod Size, and newly placed Rod Blocks don't cause Multiblock Updates due to Lag.
-			if (checkStructure(mSize < 100 && aTimer % 1200 == 300 && (worldObj.isRaining() || worldObj.isThundering()))) {
+			if (checkStructure(mSize < 100 && aTimer % 1200 == 300 && (level.isRaining() || level.isThundering()))) {
 				if (mEnergy >= VREC[6]) {
 					mEnergy -= Math.max(1, ITileEntityEnergy.Util.emitEnergyToSide(mEnergyTypeEmitted, SIDE_BOTTOM, VREC[6], 16, this)) * VREC[6];
 				} else {
 					mEnergy = 0;
-					if (mSize > 0 && yCoord + mSize >= 100 && rng(1000000) < Math.min(100, mSize) && (worldObj.isThundering() || (worldObj.isRaining() && rng(10) == 0))) {
+					if (mSize > 0 && yCoord + mSize >= 100 && rng(1000000) < Math.min(100, mSize) && (level.isThundering() || (level.isRaining() && rng(10) == 0))) {
 						int tCount = 1;
-						for (MultiTileEntityLightningRod tLightningRod : ALL_LIGHTNING_RODS) if (tLightningRod != this && tLightningRod.mSize > 0 && tLightningRod.getWorld() == worldObj && Math.abs(tLightningRod.xCoord - xCoord) < 256 && Math.abs(tLightningRod.zCoord - zCoord) < 256) tCount++;
+						for (MultiTileEntityLightningRod tLightningRod : ALL_LIGHTNING_RODS) if (tLightningRod != this && tLightningRod.mSize > 0 && tLightningRod.getWorld() == level && Math.abs(tLightningRod.xCoord - xCoord) < 256 && Math.abs(tLightningRod.zCoord - zCoord) < 256) tCount++;
 						if (rng(tCount) == 0) {
 							boolean temp = T;
-							for (int i = yCoord + mSize + 5, j = worldObj.getHeight(); i < j; i++) {
-								if (!WD.air(worldObj, xCoord, i, zCoord)) {
+							for (int i = yCoord + mSize + 5, j = level.getHeight(); i < j; i++) {
+								if (!WD.air(level, xCoord, i, zCoord)) {
 									temp = F;
 									break;
 								}
 							}
 							if (temp) {
-								worldObj.addWeatherEffect(new EntityLightningBolt(worldObj, xCoord, yCoord+mSize+4, zCoord));
+								level.addWeatherEffect(new EntityLightningBolt(level, xCoord, yCoord+mSize+4, zCoord));
 								mEnergy = mCapacity;
 							}
 						}

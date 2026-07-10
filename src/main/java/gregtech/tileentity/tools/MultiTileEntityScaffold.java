@@ -97,7 +97,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	}
 	
 	public boolean isConnectedVertically() {
-		return worldObj == null || WD.opq(worldObj, xCoord, yCoord-1, zCoord, T, T) || getAdjacentTileEntity(SIDE_DOWN).mTileEntity instanceof MultiTileEntityScaffold;
+		return level == null || WD.opq(level, xCoord, yCoord-1, zCoord, T, T) || getAdjacentTileEntity(SIDE_DOWN).mTileEntity instanceof MultiTileEntityScaffold;
 	}
 	public boolean isConnectedToGround() {
 		if (isConnectedVertically()) return T;
@@ -169,7 +169,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 		default: box(aAABB, aList); return;
 		case  0: box(aAABB, aList, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return;
 		case  1:
-			if (aEntity == null || (!aEntity.isSneaking() && aEntity.posY >= yCoord+1))
+			if (aEntity == null || (!aEntity.isSneaking() && aEntity.getY() >= yCoord+1))
 			box(aAABB, aList, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]);
 		case  2:
 			box(aAABB, aList, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[15], PX_N[ 0], PX_N[15]);

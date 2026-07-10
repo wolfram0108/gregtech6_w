@@ -120,7 +120,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 					mEnergy -= mRate;
 					// Burn surrounding Area.
 					if (mEfficiency < 1 || rng(mEfficiency) == 0) {
-						WD.fire(worldObj, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+						WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 					}
 				}
 				// Check if it needs to burn more Fuel, or if the buffered Energy is enough.
@@ -128,9 +128,9 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 					// Will be set back to true if the Recipe finds enough Fuel.
 					mBurning = F;
 					// Burn whatever Block is in front of the Burning Box, if it is flammable.
-					WD.burn(worldObj, getOffset(mFacing, 1), T, T);
+					WD.burn(level, getOffset(mFacing, 1), T, T);
 					// Check for Air, because Fire needs Oxygen.
-					if (!WD.hasCollide(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
+					if (!WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
 						// Find and apply fitting Recipe.
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, T, Long.MAX_VALUE, NI, mTank.AS_ARRAY, ZL_IS);
 						if (tRecipe != null && tRecipe.isRecipeInputEqual(T, F, mTank.AS_ARRAY, ZL_IS)) {
@@ -156,7 +156,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 				if (mEnergy < mRate) mBurning = F;
 			} else {
 				// Something burning in front of it? Lets ignite!
-				if (rng(200) == 0 && WD.flaming(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
+				if (rng(200) == 0 && WD.flaming(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
 					mBurning = T;
 				}
 			}
@@ -247,14 +247,14 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 	@Override public Collection<TagData> getEnergyTypes(byte aSide) {return mEnergyTypeEmitted.AS_LIST;}
 	
 	@Override public boolean getStateRunningPassively() {return mBurning;}
-	@Override public boolean getStateRunningPossible() {return mBurning || (mTank.has() && !WD.hasCollide(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(worldObj, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
+	@Override public boolean getStateRunningPossible() {return mBurning || (mTank.has() && !WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
 	@Override public boolean getStateRunningActively() {return mBurning;}
 	
 	@Override public float getBlockHardness() {return mBurning ? super.getBlockHardness() * 16 : super.getBlockHardness();}
 	
 	protected void spawnBurningParticles(double aX, double aY, double aZ) {
-		worldObj.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
-		worldObj.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
+		level.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
+		level.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
 	}
 	
 	// Icons

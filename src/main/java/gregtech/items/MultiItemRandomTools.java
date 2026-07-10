@@ -613,17 +613,17 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		switch(ST.meta_(aStack)) {
 		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(-aPlayer.posZ, -aPlayer.posX)*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11002: aTarget = aPlayer.worldObj.getSpawnPoint(); break;
+		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11002: aTarget = aPlayer.level().getSpawnPoint(); break;
 		case 11004: aTarget = LAST_DEATH_OF_THE_PLAYER; break;
 		default: return getIconIndex(aStack);
 		}
 		// Spin to Win!
 		if (aTarget   == null) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
-		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.posX), aTarget.posY, UT.Code.roundDown(aPlayer.posZ));
+		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
 		if (tDistance <     1) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
 		// Point to Target, but with a little jiggle for getting closer!
-		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(aTarget.posZ+0.5-aPlayer.posZ, aTarget.posX+0.5-aPlayer.posX)*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
+		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
 		if (tDistance <     4) return Textures.ItemIcons.COMPASS[(tIndex + (                            new Random(CLIENT_TIME   ).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <    16) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  2 != 0 ? 0 : new Random(CLIENT_TIME/ 2).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <   256) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  3 != 0 ? 0 : new Random(CLIENT_TIME/ 3).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
@@ -644,17 +644,17 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		switch(aMetaData) {
 		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(-aPlayer.posZ, -aPlayer.posX)*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11002: aTarget = aPlayer.worldObj.getSpawnPoint(); break;
+		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11002: aTarget = aPlayer.level().getSpawnPoint(); break;
 		case 11004: aTarget = LAST_DEATH_OF_THE_PLAYER; break;
 		default: return getIconFromDamage(aMetaData);
 		}
 		// Spin to Win!
 		if (aTarget   == null) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
-		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.posX), aTarget.posY, UT.Code.roundDown(aPlayer.posZ));
+		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
 		if (tDistance <     1) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
 		// Point to Target, but with a little jiggle for getting closer!
-		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(aTarget.posZ+0.5-aPlayer.posZ, aTarget.posX+0.5-aPlayer.posX)*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
+		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
 		if (tDistance <     4) return Textures.ItemIcons.COMPASS[(tIndex + (                            new Random(CLIENT_TIME   ).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <    16) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  2 != 0 ? 0 : new Random(CLIENT_TIME/ 2).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <   256) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  3 != 0 ? 0 : new Random(CLIENT_TIME/ 3).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
@@ -705,16 +705,16 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 	@Override
 	public ItemStack getRotten(ItemStack aStack) {
 		switch(ST.meta_(aStack)) {
-		case 2002: return ST.make(this, aStack.stackSize, 2011, aStack.getTagCompound());
-		case 2102: return ST.make(this, aStack.stackSize, 2111, aStack.getTagCompound());
-		case 2202: return ST.make(this, aStack.stackSize, 2211, aStack.getTagCompound());
-		case 2302: return ST.make(this, aStack.stackSize, 2311, aStack.getTagCompound());
-		case 2402: return ST.make(this, aStack.stackSize, 2411, aStack.getTagCompound());
-		case 2502: return ST.make(this, aStack.stackSize, 2511, aStack.getTagCompound());
-		case 2602: return ST.make(this, aStack.stackSize, 2611, aStack.getTagCompound());
-		case 2702: return ST.make(this, aStack.stackSize, 2711, aStack.getTagCompound());
-		case 2802: return ST.make(this, aStack.stackSize, 2811, aStack.getTagCompound());
-		case 2902: return ST.make(this, aStack.stackSize, 2911, aStack.getTagCompound());
+		case 2002: return ST.make(this, aStack.getCount(), 2011, aStack.getTagCompound());
+		case 2102: return ST.make(this, aStack.getCount(), 2111, aStack.getTagCompound());
+		case 2202: return ST.make(this, aStack.getCount(), 2211, aStack.getTagCompound());
+		case 2302: return ST.make(this, aStack.getCount(), 2311, aStack.getTagCompound());
+		case 2402: return ST.make(this, aStack.getCount(), 2411, aStack.getTagCompound());
+		case 2502: return ST.make(this, aStack.getCount(), 2511, aStack.getTagCompound());
+		case 2602: return ST.make(this, aStack.getCount(), 2611, aStack.getTagCompound());
+		case 2702: return ST.make(this, aStack.getCount(), 2711, aStack.getTagCompound());
+		case 2802: return ST.make(this, aStack.getCount(), 2811, aStack.getTagCompound());
+		case 2902: return ST.make(this, aStack.getCount(), 2911, aStack.getTagCompound());
 		}
 		return aStack;
 	}

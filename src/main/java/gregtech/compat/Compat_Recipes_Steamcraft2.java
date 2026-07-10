@@ -28,7 +28,7 @@ import gregapi.data.*;
 import gregapi.util.CR;
 import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.oredict.ShapelessOreRecipe;
+import gregapi.recipes.ShapelessOreRecipe;
 
 import static gregapi.data.CS.*;
 

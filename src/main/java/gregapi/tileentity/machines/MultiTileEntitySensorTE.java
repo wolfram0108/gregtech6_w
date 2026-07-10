@@ -71,7 +71,7 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 		mValues = aNBT.getIntArray("gt.sensor.array");
 		if (mValues.length < 1) mValues = new int[1];
 		
-		if (worldObj != null && isServerSide() && mHasToAddTimer) {
+		if (level != null && isServerSide() && mHasToAddTimer) {
 			GT_API_Proxy.SERVER_TICK_PO2T.add(this);
 			mHasToAddTimer = F;
 		}

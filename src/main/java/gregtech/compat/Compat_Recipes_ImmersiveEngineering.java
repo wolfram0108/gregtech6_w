@@ -38,7 +38,7 @@ import gregapi.oredict.event.OreDictListenerEvent_TwoNames;
 import gregapi.util.CR;
 import gregapi.util.ST;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.oredict.ShapelessOreRecipe;
+import gregapi.recipes.ShapelessOreRecipe;
 
 public class Compat_Recipes_ImmersiveEngineering extends CompatMods {
 	public Compat_Recipes_ImmersiveEngineering(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}

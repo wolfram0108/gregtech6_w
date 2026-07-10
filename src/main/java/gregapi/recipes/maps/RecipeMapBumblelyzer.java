@@ -57,7 +57,7 @@ public class RecipeMapBumblelyzer extends RecipeMap {
 					aInput = ST.amount(1, aInput);
 					if (aInput.getItem() instanceof IItemBumbleBee) {
 						if (((IItemBumbleBee)aInput.getItem()).bumbleType(aInput) < 5)
-						return new Recipe(F, F, F, ST.array(aInput, OP.plateTiny.mat(MT.Paper, aInput.stackSize)), ST.array(((IItemBumbleBee)aInput.getItem()).bumbleScan(aInput)), null, null, FL.array(FL.amount(aFluids[0], 10)), null, 64, 16, 0);
+						return new Recipe(F, F, F, ST.array(aInput, OP.plateTiny.mat(MT.Paper, aInput.getCount())), ST.array(((IItemBumbleBee)aInput.getItem()).bumbleScan(aInput)), null, null, FL.array(FL.amount(aFluids[0], 10)), null, 64, 16, 0);
 						return new Recipe(F, F, F, ST.array(aInput), ST.array(aInput), null, null, null, null, 1, 16, 0);
 					}
 					if (IL.FR_Bee_Drone.equal(aInput, T, T) || IL.FR_Bee_Princess.equal(aInput, T, T) || IL.FR_Bee_Queen.equal(aInput, T, T)) try {

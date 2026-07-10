@@ -969,25 +969,25 @@ public class MultiItemFood extends MultiItemRandomWithCompat implements IItemRot
 	@Override
 	public ItemStack getRotten(ItemStack aStack) {
 		short aMeta = ST.meta_(aStack);
-		if (UT.Code.inside(    0,   999, aMeta)) return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.stackSize);
-		if (UT.Code.inside( 1100,  1999, aMeta)) return ST.make(Items.rotten_flesh, aStack.stackSize, 0);
+		if (UT.Code.inside(    0,   999, aMeta)) return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.getCount());
+		if (UT.Code.inside( 1100,  1999, aMeta)) return ST.make(Items.rotten_flesh, aStack.getCount(), 0);
 		if (UT.Code.inside(13000, 13999, aMeta)) return null;
 		if (UT.Code.inside(31000, 31999, aMeta)) return aStack;
 		
 		switch(aMeta) {
-		case 12000: return ST.make(this, aStack.stackSize, 12002, aStack.getTagCompound());
-		case 12001: return ST.make(this, aStack.stackSize, 12002, aStack.getTagCompound());
-		case 12002: return ST.make(this, aStack.stackSize, 12003, aStack.getTagCompound());
-		case 12004: return ST.make(this, aStack.stackSize, 12002, aStack.getTagCompound());
-		case 12005: return ST.make(this, aStack.stackSize, 12002, aStack.getTagCompound());
-		case 12006: return ST.make(this, aStack.stackSize, 12002, aStack.getTagCompound());
-		case 12007: return ST.make(this, aStack.stackSize, 12002, aStack.getTagCompound());
-		case 32700: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.stackSize);
-		case 32701: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.stackSize);
-		case 32105: case 32107: return OP.ingot.mat(MT.MeatRotten, aStack.stackSize);
-		case 32113: case 32115: return OP.ingot.mat(MT.FishRotten, aStack.stackSize);
+		case 12000: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
+		case 12001: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
+		case 12002: return ST.make(this, aStack.getCount(), 12003, aStack.getTagCompound());
+		case 12004: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
+		case 12005: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
+		case 12006: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
+		case 12007: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
+		case 32700: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.getCount());
+		case 32701: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.getCount());
+		case 32105: case 32107: return OP.ingot.mat(MT.MeatRotten, aStack.getCount());
+		case 32113: case 32115: return OP.ingot.mat(MT.FishRotten, aStack.getCount());
 		
-		default: return ST.food(aStack) > 0 ? IL.ENVM_Rotten_Food.exists() ? IL.ENVM_Rotten_Food.get(aStack.stackSize) : null : aStack;
+		default: return ST.food(aStack) > 0 ? IL.ENVM_Rotten_Food.exists() ? IL.ENVM_Rotten_Food.get(aStack.getCount()) : null : aStack;
 		}
 	}
 	

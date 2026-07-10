@@ -25,7 +25,7 @@ import gregapi.data.LH;
 import gregapi.old.Textures;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 
 public class BlockBaleCrop extends BlockBaseBale {
 	public BlockBaleCrop(String aUnlocalised) {

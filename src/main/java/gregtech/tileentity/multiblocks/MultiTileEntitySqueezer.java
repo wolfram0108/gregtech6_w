@@ -47,7 +47,7 @@ public class MultiTileEntitySqueezer extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing, 2)-2, tY = yCoord, tZ = getOffsetZN(mFacing, 2)-2;
-		if (worldObj.blockExists(tX, tY, tZ) && worldObj.blockExists(tX+4, tY, tZ) && worldObj.blockExists(tX, tY, tZ+4) && worldObj.blockExists(tX+4, tY, tZ+4)) {
+		if (level.blockExists(tX, tY, tZ) && level.blockExists(tX+4, tY, tZ) && level.blockExists(tX, tY, tZ+4) && level.blockExists(tX+4, tY, tZ+4)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_OUT, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -82,19 +82,19 @@ public class MultiTileEntitySqueezer extends TileEntityBase10MultiBlockMachine {
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+3, tY+1, tZ  , 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+4, tY+1, tZ  , 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY+1, tZ+1, 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
-			if (getAir(tX+1, tY+1, tZ+1)) worldObj.setBlockToAir(tX+1, tY+1, tZ+1); else tSuccess = F;
-			if (getAir(tX+2, tY+1, tZ+1)) worldObj.setBlockToAir(tX+2, tY+1, tZ+1); else tSuccess = F;
-			if (getAir(tX+3, tY+1, tZ+1)) worldObj.setBlockToAir(tX+3, tY+1, tZ+1); else tSuccess = F;
+			if (getAir(tX+1, tY+1, tZ+1)) level.setBlockToAir(tX+1, tY+1, tZ+1); else tSuccess = F;
+			if (getAir(tX+2, tY+1, tZ+1)) level.setBlockToAir(tX+2, tY+1, tZ+1); else tSuccess = F;
+			if (getAir(tX+3, tY+1, tZ+1)) level.setBlockToAir(tX+3, tY+1, tZ+1); else tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+4, tY+1, tZ+1, 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY+1, tZ+2, 18009, getMultiTileEntityRegistryID(), SIDES_AXIS_X[mFacing]?0:3, SIDES_AXIS_X[mFacing]?MultiTileEntityMultiBlockPart.NOTHING:MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
-			if (getAir(tX+1, tY+1, tZ+2)) worldObj.setBlockToAir(tX+1, tY+1, tZ+2); else tSuccess = F;
-			if (getAir(tX+2, tY+1, tZ+2)) worldObj.setBlockToAir(tX+2, tY+1, tZ+2); else tSuccess = F;
-			if (getAir(tX+3, tY+1, tZ+2)) worldObj.setBlockToAir(tX+3, tY+1, tZ+2); else tSuccess = F;
+			if (getAir(tX+1, tY+1, tZ+2)) level.setBlockToAir(tX+1, tY+1, tZ+2); else tSuccess = F;
+			if (getAir(tX+2, tY+1, tZ+2)) level.setBlockToAir(tX+2, tY+1, tZ+2); else tSuccess = F;
+			if (getAir(tX+3, tY+1, tZ+2)) level.setBlockToAir(tX+3, tY+1, tZ+2); else tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+4, tY+1, tZ+2, 18009, getMultiTileEntityRegistryID(), SIDES_AXIS_X[mFacing]?0:3, SIDES_AXIS_X[mFacing]?MultiTileEntityMultiBlockPart.NOTHING:MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY+1, tZ+3, 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
-			if (getAir(tX+1, tY+1, tZ+3)) worldObj.setBlockToAir(tX+1, tY+1, tZ+3); else tSuccess = F;
-			if (getAir(tX+2, tY+1, tZ+3)) worldObj.setBlockToAir(tX+2, tY+1, tZ+3); else tSuccess = F;
-			if (getAir(tX+3, tY+1, tZ+3)) worldObj.setBlockToAir(tX+3, tY+1, tZ+3); else tSuccess = F;
+			if (getAir(tX+1, tY+1, tZ+3)) level.setBlockToAir(tX+1, tY+1, tZ+3); else tSuccess = F;
+			if (getAir(tX+2, tY+1, tZ+3)) level.setBlockToAir(tX+2, tY+1, tZ+3); else tSuccess = F;
+			if (getAir(tX+3, tY+1, tZ+3)) level.setBlockToAir(tX+3, tY+1, tZ+3); else tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+4, tY+1, tZ+3, 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY+1, tZ+4, 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+1, tY+1, tZ+4, 18009, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -158,14 +158,14 @@ public class MultiTileEntitySqueezer extends TileEntityBase10MultiBlockMachine {
 	public void updateAdjacentToggleableEnergySources() {
 		DelegatorTileEntity<BlockEntity> tDelegator;
 		if (SIDES_AXIS_X[mFacing]) {
-			tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 2), yCoord+1, zCoord - 3, SIDE_Z_POS, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), yCoord+1, zCoord - 3, SIDE_Z_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(worldObj, getOffsetXN(mFacing, 2), yCoord+1, zCoord + 3, SIDE_Z_NEG, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), yCoord+1, zCoord + 3, SIDE_Z_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		} else {
-			tDelegator = WD.te(worldObj, xCoord - 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_POS, F);
+			tDelegator = WD.te(level, xCoord - 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(worldObj, xCoord + 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_NEG, F);
+			tDelegator = WD.te(level, xCoord + 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		}
 	}

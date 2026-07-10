@@ -55,9 +55,9 @@ public abstract class PacketCoordinates implements IPacket {
 	
 	/** The Super-Constructor for the Packet to be sent. */
 	public PacketCoordinates(BlockPos aCoords) {
-		mX = aCoords.posX;
-		mY = aCoords.posY;
-		mZ = aCoords.posZ;
+		mX = aCoords.getX();
+		mY = aCoords.getY();
+		mZ = aCoords.getZ();
 		mDecoderType = (byte)((mX>=Short.MIN_VALUE&&mX<=Short.MAX_VALUE?1:0)|(mY>=0&&mY<=255?2:0)|(mZ>=Short.MIN_VALUE&&mZ<=Short.MAX_VALUE?4:0));
 	}
 	

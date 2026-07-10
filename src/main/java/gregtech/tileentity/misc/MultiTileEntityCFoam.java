@@ -125,7 +125,7 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	@Override
 	public boolean removeFoam(byte aSide, Entity aPlayer) {
 		if (isClientSide() || !allowInteraction(aPlayer)) return F;
-		worldObj.setBlock(xCoord, yCoord, zCoord, NB, 0, 3);
+		level.setBlock(xCoord, yCoord, zCoord, NB, 0, 3);
 		return T;
 	}
 	
@@ -133,7 +133,7 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	
 	@Override public int getLightOpacity() {return mFoamDried ? LIGHT_OPACITY_MAX : LIGHT_OPACITY_WATER;}
 	
-	@Override public float getBlockHardness()        {return (mFoamDried?BlocksGT.CFoam:BlocksGT.CFoamFresh).getBlockHardness(worldObj, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness()        {return (mFoamDried?BlocksGT.CFoam:BlocksGT.CFoamFresh).getBlockHardness(level, xCoord, yCoord, zCoord);}
 	@Override public float getExplosionResistance2() {return (mFoamDried?BlocksGT.CFoam:BlocksGT.CFoamFresh).getExplosionResistance(null);}
 	
 	@Override public byte getVisualData() {return (byte)((mFoamDried ? 1 : 0)|(mOwnable ? 2 : 0));}

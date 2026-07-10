@@ -47,10 +47,10 @@ public class Behavior_Scoop extends AbstractBehaviorDefault {
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof IEntityButterfly) {
-			if (aPlayer.worldObj.isRemote) return T;
+			if (aPlayer.level().isRemote) return T;
 			if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				Object tButterfly = ((IEntityButterfly)aEntity).getButterfly(), tRoot = ((IButterfly)tButterfly).getGenome().getPrimary().getRoot();
-				((IButterflyRoot)tRoot).getBreedingTracker(aEntity.worldObj, aPlayer.getGameProfile()).registerCatch(((IButterfly)tButterfly));
+				((IButterflyRoot)tRoot).getBreedingTracker(aEntity.level(), aPlayer.getGameProfile()).registerCatch(((IButterfly)tButterfly));
 				ST.give(aPlayer, ((IButterflyRoot)tRoot).getMemberStack(((IButterfly)tButterfly).copy(), EnumFlutterType.BUTTERFLY.ordinal()), F);
 				aEntity.setDead();
 			}

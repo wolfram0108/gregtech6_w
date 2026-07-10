@@ -149,9 +149,9 @@ public class WD {
 	
 	public static HitResult getMOP(Level aWorld, Player aPlayer, boolean aFlag) {
 		Vec3 vec3 = Vec3.createVectorHelper(
-		  aPlayer.prevPosX + (aPlayer.posX - aPlayer.prevPosX)
-		, aPlayer.prevPosY + (aPlayer.posY - aPlayer.prevPosY) + (aWorld.isRemote ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
-		, aPlayer.prevPosZ + (aPlayer.posZ - aPlayer.prevPosZ)
+		  aPlayer.prevPosX + (aPlayer.getX() - aPlayer.prevPosX)
+		, aPlayer.prevPosY + (aPlayer.getY() - aPlayer.prevPosY) + (aWorld.isRemote ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
+		, aPlayer.prevPosZ + (aPlayer.getZ() - aPlayer.prevPosZ)
 		);
 		float  tPitch = aPlayer.prevRotationPitch + (aPlayer.rotationPitch - aPlayer.prevRotationPitch);
 		float  tYaw   = aPlayer.prevRotationYaw   + (aPlayer.rotationYaw   - aPlayer.prevRotationYaw  );
@@ -252,7 +252,7 @@ public class WD {
 	public static boolean dimAETHER(WorldProvider aProvider, String aProviderClassName) {return MD.AETHEL.mLoaded ? "AetherWorldProvider".equalsIgnoreCase(aProviderClassName) : MD.AETHER.mLoaded && "WorldProviderAether".equalsIgnoreCase(aProviderClassName);}
 	
 	public static boolean move(Entity aEntity, int aDimension, double aX, double aY, double aZ) {
-		ServerLevel tTargetWorld = DimensionManager.getWorld(aDimension), tOriginalWorld = DimensionManager.getWorld(aEntity.worldObj.provider.dimensionId);
+		ServerLevel tTargetWorld = DimensionManager.getWorld(aDimension), tOriginalWorld = DimensionManager.getWorld(aEntity.level().provider.dimensionId);
 		if (tTargetWorld != null && tOriginalWorld != null && tTargetWorld != tOriginalWorld) {
 			if (aEntity.ridingEntity != null) aEntity.mountEntity(null);
 			if (aEntity.riddenByEntity != null) aEntity.riddenByEntity.mountEntity(null);
@@ -260,7 +260,7 @@ public class WD {
 			if (aEntity instanceof ServerPlayer) {
 				ServerPlayer aPlayer = (ServerPlayer)aEntity;
 				aPlayer.dimension = aDimension;
-				aPlayer.playerNetServerHandler.sendPacket(new ClientboundRespawnPacket(aPlayer.dimension, aPlayer.worldObj.difficultySetting, aPlayer.worldObj.getWorldInfo().getTerrainType(), aPlayer.theItemInWorldManager.getGameType()));
+				aPlayer.playerNetServerHandler.sendPacket(new ClientboundRespawnPacket(aPlayer.dimension, aPlayer.level().difficultySetting, aPlayer.level().getWorldInfo().getTerrainType(), aPlayer.theItemInWorldManager.getGameType()));
 				tOriginalWorld.removePlayerEntityDangerously(aPlayer);
 				aPlayer.isDead = F;
 				aPlayer.setWorld(tTargetWorld);
@@ -279,7 +279,7 @@ public class WD {
 				FMLCommonHandler.instance().firePlayerChangedDimensionEvent(aPlayer, tOriginalWorld.provider.dimensionId, aDimension);
 			} else {
 				aEntity.setPosition(aX+0.5, aY+0.5, aZ+0.5);
-				aEntity.worldObj.removeEntity(aEntity);
+				aEntity.level().removeEntity(aEntity);
 				aEntity.dimension = aDimension;
 				aEntity.isDead = F;
 				Entity tNewEntity = EntityType.createEntityByName(EntityType.getEntityString(aEntity), tTargetWorld);
@@ -333,7 +333,7 @@ public class WD {
 	
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static DelegatorTileEntity<BlockEntity> te(Level aWorld, BlockPos aCoords, byte aSide, boolean aLoadUnloadedChunks) {
-		return te(aWorld, aCoords.posX, aCoords.posY, aCoords.posZ, aSide, aLoadUnloadedChunks);
+		return te(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aSide, aLoadUnloadedChunks);
 	}
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static DelegatorTileEntity<BlockEntity> te(Level aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {
@@ -342,7 +342,7 @@ public class WD {
 	}
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static BlockEntity te(Level aWorld, BlockPos aCoords, boolean aLoadUnloadedChunks) {
-		return te(aWorld, aCoords.posX, aCoords.posY, aCoords.posZ, aLoadUnloadedChunks);
+		return te(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aLoadUnloadedChunks);
 	}
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static BlockEntity te(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
@@ -443,7 +443,7 @@ public class WD {
 		long rTemperature = envTemp(aWorld, aX, aY, aZ);
 		if (burning(aWorld, aX, aY, aZ)) rTemperature = Math.max(rTemperature, C + 200);
 		for (BlockPos tCoords : new BlockPos[] {new BlockPos(aX, aY, aZ), new BlockPos(aX+1, aY, aZ), new BlockPos(aX-1, aY, aZ), new BlockPos(aX, aY+1, aZ), new BlockPos(aX, aY-1, aZ), new BlockPos(aX, aY, aZ+1), new BlockPos(aX, aY, aZ-1)}) {
-			Block tBlock = block(aWorld, tCoords.posX, tCoords.posY, tCoords.posZ, F);
+			Block tBlock = block(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), F);
 			if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) rTemperature = Math.max(rTemperature, C + 500);
 			else if (tBlock instanceof FireBlock) rTemperature = Math.max(rTemperature, C + 200);
 		}
@@ -459,7 +459,7 @@ public class WD {
 		((Level)aWorld).markBlockForUpdate(aX, aY, aZ);
 		if (CLIENT_BLOCKUPDATE_SOUNDS && CODE_CLIENT && CLIENT_TIME > 100) {
 			Player tPlayer = GT_API.api_proxy.getThePlayer();
-			if (tPlayer != null && Math.abs(tPlayer.posX - aX) < 16 && Math.abs(tPlayer.posY - aY) < 16 && Math.abs(tPlayer.posZ - aZ) < 16) {
+			if (tPlayer != null && Math.abs(tPlayer.getX() - aX) < 16 && Math.abs(tPlayer.getY() - aY) < 16 && Math.abs(tPlayer.getZ() - aZ) < 16) {
 				UT.Sounds.play(SFX.MC_FIREWORK_LAUNCH, 1, 1.0F, 1.0F, aX, aY, aZ);
 			}
 		}
@@ -508,7 +508,7 @@ public class WD {
 		return aWorld.setBlock(aX, aY, aZ, aTargetBlock, Code.bind4(aTargetMeta), 2);
 	}
 	public static boolean replace(Level aWorld, BlockPos aCoords, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
-		return replace(aWorld, aCoords.posX, aCoords.posY, aCoords.posZ, aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta);
+		return replace(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta);
 	}
 	public static boolean replaceAll(Level aWorld, int aX, int aY, int aZ, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		return replaceAll(aWorld, new BlockPos(aX, aY, aZ), aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta);
@@ -523,8 +523,8 @@ public class WD {
 		while (!tCheck.isEmpty() && tDone.size() < 32768) {
 			tNext.clear();
 			for (BlockPos tChecking : tCheck) {
-				if (Math.abs(tChecking.posX - aCoords.posX) < 128 && Math.abs(tChecking.posZ - aCoords.posZ) < 128) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
-					BlockPos tCoords = new BlockPos(tChecking.posX+i, tChecking.posY+j, tChecking.posZ+k);
+				if (Math.abs(tChecking.getX() - aCoords.getX()) < 128 && Math.abs(tChecking.getZ() - aCoords.getZ()) < 128) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
+					BlockPos tCoords = new BlockPos(tChecking.getX()+i, tChecking.getY()+j, tChecking.getZ()+k);
 					if (tDone.add(tCoords) && replace(aWorld, tCoords, aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta)) tNext.add(tCoords);
 				}
 			}
@@ -576,11 +576,11 @@ public class WD {
 	public static boolean border(int aFromX, int aFromZ, int aToX, int aToZ) {return aFromX >> 4 != aToX >> 4 || aFromZ >> 4 != aToZ >> 4;}
 	
 	public static boolean even(BlockEntity aTileEntity) {return even(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord);}
-	public static boolean even(BlockPos aCoords) {return even(aCoords.posX, aCoords.posY, aCoords.posZ);}
+	public static boolean even(BlockPos aCoords) {return even(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static boolean even(int... aCoords) {int i = 0; for (int tCoord : aCoords) if (tCoord % 2 == 0) i++; return i % 2 == 0;}
 	
 	public static int evenness(BlockEntity aTileEntity) {return evenness(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord);}
-	public static int evenness(BlockPos aCoords) {return evenness(aCoords.posX, aCoords.posY, aCoords.posZ);}
+	public static int evenness(BlockPos aCoords) {return evenness(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static int evenness(int... aCoords) {int i = 0; for (int tCoord : aCoords) {i <<= 1; if (tCoord % 2 != 0) i++;} return i;}
 	
 	public static boolean setIfDiff(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {return (aWorld.getBlock(aX, aY, aZ) != aBlock || aWorld.getBlockMetadata(aX, aY, aZ) != aMeta) && aWorld.setBlock(aX, aY, aZ, aBlock, aMeta, aFlags);}
@@ -693,16 +693,16 @@ public class WD {
 	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
 	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock.isOpaqueCube() || aBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) != null;}
 	
-	public static boolean hasCollide(Level aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, aWorld.getBlock(aCoords.posX, aCoords.posY, aCoords.posZ));}
-	public static boolean hasCollide(Level aWorld, BlockPos aCoords, Block aBlock) {return aBlock.isOpaqueCube() || aBlock.getCollisionBoundingBoxFromPool(aWorld, aCoords.posX, aCoords.posY, aCoords.posZ) != null;}
+	public static boolean hasCollide(Level aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, aWorld.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
+	public static boolean hasCollide(Level aWorld, BlockPos aCoords, Block aBlock) {return aBlock.isOpaqueCube() || aBlock.getCollisionBoundingBoxFromPool(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()) != null;}
 	
 	public static boolean flaming(Level aWorld, int aX, int aY, int aZ) {return block(aWorld, aX, aY, aZ, F) instanceof FireBlock;}
 	public static boolean burning(Level aWorld, int aX, int aY, int aZ) {return flaming(aWorld, aX, aY, aZ) || flaming(aWorld, aX+1, aY, aZ) || flaming(aWorld, aX-1, aY, aZ) || flaming(aWorld, aX, aY+1, aZ) || flaming(aWorld, aX, aY-1, aZ) || flaming(aWorld, aX, aY, aZ+1) || flaming(aWorld, aX, aY, aZ-1);}
 	
-	public static void burn(Level aWorld, BlockPos aCoords, boolean aReplaceCenter, boolean aCheckFlammability) {for (byte tSide : aReplaceCenter?ALL_SIDES_MIDDLE_UP:ALL_SIDES_VALID) fire(aWorld, aCoords.posX+OFFX[tSide], aCoords.posY+OFFY[tSide], aCoords.posZ+OFFZ[tSide], aCheckFlammability);}
+	public static void burn(Level aWorld, BlockPos aCoords, boolean aReplaceCenter, boolean aCheckFlammability) {for (byte tSide : aReplaceCenter?ALL_SIDES_MIDDLE_UP:ALL_SIDES_VALID) fire(aWorld, aCoords.getX()+OFFX[tSide], aCoords.getY()+OFFY[tSide], aCoords.getZ()+OFFZ[tSide], aCheckFlammability);}
 	public static void burn(Level aWorld, int aX, int aY, int aZ  , boolean aReplaceCenter, boolean aCheckFlammability) {for (byte tSide : aReplaceCenter?ALL_SIDES_MIDDLE_UP:ALL_SIDES_VALID) fire(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], aCheckFlammability);}
 	
-	public static boolean fire(Level aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.posX, aCoords.posY, aCoords.posZ, aCheckFlammability);}
+	public static boolean fire(Level aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aCheckFlammability);}
 	public static boolean fire(Level aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
 		Block tBlock = aWorld.getBlock(aX, aY, aZ);
 		if (tBlock.getMaterial() == Material.lava || tBlock.getMaterial() == Material.fire) return F;
@@ -926,7 +926,7 @@ public class WD {
 				rList.add("Block Class: " + aBlock.getClass());
 				if (aTileEntity != null) rList.add("TileEntity Class: " + aTileEntity.getClass());
 			}
-			float tResistance = aBlock.getExplosionResistance(aPlayer, aWorld, aX, aY, aZ, aPlayer.posX, aPlayer.posY, aPlayer.posZ);
+			float tResistance = aBlock.getExplosionResistance(aPlayer, aWorld, aX, aY, aZ, aPlayer.getX(), aPlayer.getY(), aPlayer.getZ());
 			rList.add("Hardness: " + aBlock.getBlockHardness(aWorld, aX, aY, aZ) + " - " + LH.getToolTipBlastResistance(aBlock, tResistance));
 			int tHarvestLevel = aBlock.getHarvestLevel(aMeta);
 			String tHarvestTool = aBlock.getHarvestTool(aMeta);

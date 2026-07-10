@@ -79,7 +79,7 @@ public class MultiTileEntityLargeTurbineSteam extends MultiTileEntityLargeTurbin
 		tOutY = getOffsetYN(mFacing, 3),
 		tOutZ = getOffsetZN(mFacing, 3);
 		
-		if (worldObj.blockExists(tMinX, tMinY, tMinZ) && worldObj.blockExists(tMaxX, tMaxY, tMaxZ)) {
+		if (level.blockExists(tMinX, tMinY, tMinZ) && level.blockExists(tMaxX, tMaxY, tMaxZ)) {
 			mEmitter = null;
 			boolean tSuccess = T;
 			for (int tX = tMinX; tX <= tMaxX; tX++) for (int tY = tMinY; tY <= tMaxY; tY++) for (int tZ = tMinZ; tZ <= tMaxZ; tZ++) {

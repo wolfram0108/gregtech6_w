@@ -207,8 +207,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			return;
 		}
 		long tDamage = tStats.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, (getToolMaxDamage(aStack) - getToolDamage(aStack)) / tStats.getToolDamagePerDropConversion(), aX, aY, aZ, aMeta, aFortune, aSilkTouch, aEvent);
-		if (aBlock == Blocks.ice && !aDrops.isEmpty()) aPlayer.worldObj.setBlockToAir(aX, aY, aZ);
-		if (WD.dimBTL(aPlayer.worldObj) && !getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
+		if (aBlock == Blocks.ice && !aDrops.isEmpty()) aPlayer.level().setBlockToAir(aX, aY, aZ);
+		if (WD.dimBTL(aPlayer.level()) && !getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
 		doDamage(aStack, tDamage * tStats.getToolDamagePerDropConversion(), aPlayer, T);
 	}
 	
@@ -230,7 +230,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (OD.obsidian.is(ST.make(aBlock, 1, aMeta))) aDefault *= Math.max(1, getPrimaryMaterial(aStack).mToolQuality - 2);
 		// and now the basic Tool Stats.
 		IToolStats tStats = getToolStats(aStack);
-		return tStats == null ? aDefault : tStats.getMiningSpeed(aBlock, aMeta, aDefault, aPlayer, aPlayer.worldObj, aX, aY, aZ);
+		return tStats == null ? aDefault : tStats.getMiningSpeed(aBlock, aMeta, aDefault, aPlayer, aPlayer.level(), aX, aY, aZ);
 	}
 	
 	@Override
@@ -253,7 +253,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 				if (tImplosion > 0 && UT.Entities.isExplosiveCreature(aEntity) && !Creeper.class.isInstance(aEntity)) tMagicDamage += 1.5F * tImplosion;
 				
 				if (tDamage + tMagicDamage > 0) {
-					boolean tRealHit = (!aEntity.worldObj.isRemote || aEntity.hurtResistantTime <= 0);
+					boolean tRealHit = (!aEntity.level().isRemote || aEntity.hurtResistantTime <= 0);
 					boolean tCriticalHit = aPlayer.fallDistance > 0 && !aPlayer.onGround && !aPlayer.isOnLadder() && !aPlayer.isInWater() && !aPlayer.isPotionActive(MobEffect.blindness) && aPlayer.ridingEntity == null && aEntity instanceof LivingEntity;
 					if (tCriticalHit && tDamage > 0) tDamage *= 1.5;
 					float tFullDamage = (tDamage+tMagicDamage) * TFC_DAMAGE_MULTIPLIER;
@@ -451,14 +451,14 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 					}
 					LAST_TOOL_COORDS_BEFORE_DAMAGE = null;
 					ItemStack tBroken = tStats.getBrokenItem(aStack);
-					if (ST.invalid(tBroken) || tBroken.stackSize <= 0) {
+					if (ST.invalid(tBroken) || tBroken.getCount() <= 0) {
 						ST.use(aPlayer, T, aStack);
 					} else if (aPlayer instanceof Player) {
-						if (tBroken.stackSize > 64) tBroken.stackSize = 64;
-						if (!aPlayer.worldObj.isRemote) ST.give(aPlayer, tBroken, F);
+						if (tBroken.getCount() > 64) tBroken.setCount(64);
+						if (!aPlayer.level().isRemote) ST.give(aPlayer, tBroken, F);
 						ST.use(aPlayer, T, aStack);
 					} else {
-						if (tBroken.stackSize > 64) tBroken.stackSize = 64;
+						if (tBroken.getCount() > 64) tBroken.setCount(64);
 						ST.set(aStack, tBroken);
 					}
 				}
@@ -536,7 +536,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (TOOL_SOUNDS) UT.Sounds.play(tStats.getCraftingSound(), 200, 1, LAST_TOOL_COORDS_BEFORE_DAMAGE);
 		aStack = ST.amount(1, aStack);
 		doDamage(aStack, tStats.getToolDamagePerContainerCraft(), null, T);
-		return aStack.stackSize > 0 ? aStack : null;
+		return aStack.getCount() > 0 ? aStack : null;
 	}
 	
 	@Override
@@ -546,7 +546,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (tStats == null) return F;
 		aStack = ST.amount(1, aStack);
 		doDamage(aStack, tStats.getToolDamagePerContainerCraft(), null, T);
-		return aStack.stackSize > 0;
+		return aStack.getCount() > 0;
 	}
 	
 	@Override
@@ -564,7 +564,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	
 	@Override
 	public boolean isItemStackUsable(ItemStack aStack) {
-		if (aStack.stackSize <= 0) return F;
+		if (aStack.getCount() <= 0) return F;
 		
 		CompoundTag aNBT = aStack.getTagCompound();
 		// The Tool has no Data? Treat it like a single use Creative Tool.

@@ -47,8 +47,8 @@ public class MultiTileEntityLootCrate extends TileEntityBase03MultiTileEntities 
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (!aTool.equals(TOOL_crowbar) || !isServerSide()) return 0;
 		if (setToAir()) {
-			ST.drop(worldObj, getCoords(), ST.generateOneVanillaLoot());
-			ST.drop(worldObj, getCoords(), IL.Crate.get(1));
+			ST.drop(level, getCoords(), ST.generateOneVanillaLoot());
+			ST.drop(level, getCoords(), IL.Crate.get(1));
 		}
 		return 500;
 	}

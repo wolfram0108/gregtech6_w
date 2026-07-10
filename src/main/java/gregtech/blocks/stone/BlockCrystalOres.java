@@ -29,7 +29,7 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import mods.railcraft.common.carts.EntityTunnelBore;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;

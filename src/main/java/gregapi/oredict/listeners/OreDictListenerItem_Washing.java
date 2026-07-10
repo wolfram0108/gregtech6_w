@@ -56,23 +56,23 @@ public class OreDictListenerItem_Washing extends OreDictListenerItem {
 	@Override
 	public ItemStack onTickWorld(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, ItemEntity aItem) {
 		if (aMaterial != null) {
-			int tX = UT.Code.roundDown(aItem.posX), tY = UT.Code.roundDown(aItem.posY-0.25), tZ = UT.Code.roundDown(aItem.posZ);
-			Block tBlock = aItem.worldObj.getBlock(tX, tY, tZ);
-			byte tMetaData = (byte)aItem.worldObj.getBlockMetadata(tX, tY, tZ);
+			int tX = UT.Code.roundDown(aItem.getX()), tY = UT.Code.roundDown(aItem.getY()-0.25), tZ = UT.Code.roundDown(aItem.getZ());
+			Block tBlock = aItem.level().getBlock(tX, tY, tZ);
+			byte tMetaData = (byte)aItem.level().getBlockMetadata(tX, tY, tZ);
 			
 			if (tBlock instanceof CauldronBlock && tMetaData > 0) {
 				ItemStack tStack = mItemToGet.mat(aMaterial, 1);
 				if (tStack != null) {
-					((CauldronBlock)tBlock).func_150024_a(aItem.worldObj, tX, tY, tZ, tMetaData-1);
+					((CauldronBlock)tBlock).func_150024_a(aItem.level(), tX, tY, tZ, tMetaData-1);
 					if (mByProductPrefixes.length > 0 && RNGSUS.nextInt(mChance) > 0) {
 						ArrayListNoNulls<ItemStack> tStacks = ST.arraylist();
 						for (OreDictPrefix tPrefix : mByProductPrefixes) tStacks.add(tPrefix.mat(UT.Code.select(aMaterial, aMaterial.mByProducts), 1));
-						if (tStacks.size() > 0) ST.drop(aItem.worldObj, aItem.posX, aItem.posY, aItem.posZ, tStacks.get(RNGSUS.nextInt(tStacks.size())));
+						if (tStacks.size() > 0) ST.drop(aItem.level(), aItem.getX(), aItem.getY(), aItem.getZ(), tStacks.get(RNGSUS.nextInt(tStacks.size())));
 					}
-					ST.drop(aItem.worldObj, aItem.posX, aItem.posY, aItem.posZ, tStack);
+					ST.drop(aItem.level(), aItem.getX(), aItem.getY(), aItem.getZ(), tStack);
 					aItem.motionX = aItem.motionY = aItem.motionZ = 0;
 					aItem.setPosition(tX+0.5, tY+0.9, tZ+0.5);
-					return aStack.stackSize > 1 ? ST.amount(aStack.stackSize - 1, aStack) : null;
+					return aStack.getCount() > 1 ? ST.amount(aStack.getCount() - 1, aStack) : null;
 				}
 			}
 		}

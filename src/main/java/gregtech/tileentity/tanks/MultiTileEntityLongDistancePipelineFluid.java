@@ -74,9 +74,9 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 		super.writeToNBT2(aNBT);
 		if (mTargetPos != null && mTarget != this) {
 		UT.NBT.setBoolean(aNBT, NBT_TARGET, T);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_X, mTargetPos.posX);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_Y, mTargetPos.posY);
-		UT.NBT.setNumber(aNBT, NBT_TARGET_Z, mTargetPos.posZ);
+		UT.NBT.setNumber(aNBT, NBT_TARGET_X, mTargetPos.getX());
+		UT.NBT.setNumber(aNBT, NBT_TARGET_Y, mTargetPos.getY());
+		UT.NBT.setNumber(aNBT, NBT_TARGET_Z, mTargetPos.getZ());
 		UT.NBT.setNumber(aNBT, NBT_THROUGHPUT, mTemperature);
 		}
 		UT.NBT.setBoolean(aNBT, NBT_STOPPED, mStopped);
@@ -107,7 +107,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 					aChatReturn.add("Sender is at: X: " + mSender.xCoord + " Y: " + mSender.yCoord + " Z: " + mSender.zCoord);
 				} else {
 					aChatReturn.add(checkTarget() ? "Has Target" : "Has no loaded Target");
-					if (mTargetPos != null) aChatReturn.add("Target should be around: X: " + mTargetPos.posX + " Y: " + mTargetPos.posY + " Z: " + mTargetPos.posZ);
+					if (mTargetPos != null) aChatReturn.add("Target should be around: X: " + mTargetPos.getX() + " Y: " + mTargetPos.getY() + " Z: " + mTargetPos.getZ());
 				}
 			}
 			return 1;
@@ -121,8 +121,8 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 			scanPipes();
 		} else if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
-			if (worldObj.blockExists(mTargetPos.posX, mTargetPos.posY, mTargetPos.posZ)) {
-				BlockEntity tTileEntity = WD.te(worldObj, mTargetPos, T);
+			if (level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
+				BlockEntity tTileEntity = WD.te(level, mTargetPos, T);
 				if (tTileEntity instanceof MultiTileEntityLongDistancePipelineFluid) {
 					mTarget = (MultiTileEntityLongDistancePipelineFluid)tTileEntity;
 				} else {
@@ -158,12 +158,12 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 					if (getBlock(aCoords) == aBlock && getMetaData(aCoords) == aMetaData) {
 						tWires.add(aCoords);
 						BlockPos tCoords;
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX + 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX - 1, aCoords.posY, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY + 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY - 1, aCoords.posZ))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ + 1))) tNewChecks.add(tCoords);
-						if (tOldChecks.add(tCoords = new BlockPos(aCoords.posX, aCoords.posY, aCoords.posZ - 1))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX() + 1, aCoords.getY(), aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX() - 1, aCoords.getY(), aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY() + 1, aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY() - 1, aCoords.getZ()))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY(), aCoords.getZ() + 1))) tNewChecks.add(tCoords);
+						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY(), aCoords.getZ() - 1))) tNewChecks.add(tCoords);
 					} else {
 						BlockEntity tTileEntity = getTileEntity(aCoords);
 						if (tTileEntity != this && tTileEntity instanceof MultiTileEntityLongDistancePipelineFluid) {

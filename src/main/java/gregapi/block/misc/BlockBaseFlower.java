@@ -19,7 +19,7 @@
 
 package gregapi.block.misc;
 
-import cpw.mods.fml.common.Optional;
+import gregapi.api.Optional;
 import gregapi.block.IBlockBase;
 import gregapi.block.ItemBlockBase;
 import gregapi.compat.galacticraft.IBlockSealable;
@@ -144,7 +144,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 	
 	@Override
 	public boolean onItemUse(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aStack.stackSize == 0) return F;
+		if (aStack.getCount() == 0) return F;
 		
 		Block tBlock = aWorld.getBlock(aX, aY, aZ);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
@@ -154,7 +154,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 				((TileEntityFlowerPot)tTileEntity).func_145964_a(aItem, ST.meta(aStack));
 				tTileEntity.markDirty();
 				if (!aWorld.setBlockMetadataWithNotify(aX, aY, aZ, ST.meta(aStack), 2)) aWorld.markBlockForUpdate(aX, aY, aZ);
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			}
 			return T;
 		}
@@ -169,7 +169,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 		
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aItem.getMetadata(aStack.getItemDamage())))) {
 			aWorld.playSoundEffect(aX+0.5F, aY+0.5F, aZ+0.5F, stepSound.func_150496_b(), (stepSound.getVolume() + 1.0F) / 2.0F, stepSound.getPitch() * 0.8F);
-			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 		}
 		return T;
 	}

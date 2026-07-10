@@ -56,7 +56,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 		
 		FluidStack tCookingOil = (aFluids != null && aFluids.length > 0 && aFluids[0] != null && FluidsGT.COOKING_OIL.contains(aFluids[0].getFluid().getName()) ? aFluids[0] : NF), rXP = NF;
 		if (FL.valid(tCookingOil) && tCookingOil.amount >= 50 && !OD.listAllmeatsubstitute.is(aInputs[0]) && !OD.listAllmeatsubstitute.is(tOutput) && (OD.listAllmeatraw.is(aInputs[0]) || OD.listAllmeatcooked.is(tOutput))) {
-			tOutput.stackSize++;
+			tOutput.setCount(tOutput.getCount()+1);
 			tCookingOil = FL.amount(tCookingOil, 50);
 		} else tCookingOil = NF;
 		
@@ -66,19 +66,19 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 			if (!OM.prefixcontainsany(tData, TD.Prefix.DUST_BASED, TD.Prefix.INGOT_BASED, TD.Prefix.GEM_BASED)) {
 				if (tOutput.getItem() == Items.brick || tOutput.getItem() == Items.netherbrick || tOutput.getItem() == Items.clay_ball || tOutput.getItem() == Items.dye) {
 					// Bricks and Dyes are 0.05 XP
-					rXP = FL.XP.make(tOutput.stackSize);
+					rXP = FL.XP.make(tOutput.getCount());
 				} else if (tOutput.getItem() == Items.coal) {
 					// Coal/Charcoal is giving 0.10 XP
-					rXP = FL.XP.make(tOutput.stackSize * 2L);
+					rXP = FL.XP.make(tOutput.getCount() * 2L);
 				} else if (IL.EtFu_Chorus_Popped.equal(tOutput)) {
 					// Chorus Fruit is 0.20 XP
-					rXP = FL.XP.make(tOutput.stackSize * 4L);
+					rXP = FL.XP.make(tOutput.getCount() * 4L);
 				} else if (IL.ERE_Pot_Cooked.equal(tOutput)) {
 					// The Titan Stew a whole Orb of XP
-					rXP = FL.XP.make(tOutput.stackSize * 20L);
+					rXP = FL.XP.make(tOutput.getCount() * 20L);
 				} else if (OD.blockGlass.is(tOutput) || OD.paneGlass.is(tOutput)) {
 					// Glass is 0.05 XP, yes I know it can be made from Stone, but this is enough effort to warrant at least some XP.
-					rXP = FL.XP.make(tOutput.stackSize);
+					rXP = FL.XP.make(tOutput.getCount());
 				} else {
 					Block tBlock = ST.block(tOutput);
 					if (tBlock == Blocks.cobblestone || tBlock == Blocks.stone || tBlock == Blocks.stonebrick || tBlock instanceof BlockStones) {
@@ -86,13 +86,13 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 						// GT6 Stone is also not allowed due to easily recycleable Recipes.
 					} else if (tBlock == Blocks.hardened_clay || tBlock == Blocks.stained_hardened_clay) {
 						// Hardened Clay is 0.10 XP
-						rXP = FL.XP.make(tOutput.stackSize * 2L);
+						rXP = FL.XP.make(tOutput.getCount() * 2L);
 					} else if (tBlock == Blocks.brick_block || tBlock == Blocks.nether_brick) {
 						// Brick Blocks are 0.15 XP, yes only three instead of four Bricks worth of XP
-						rXP = FL.XP.make(tOutput.stackSize * 3L);
+						rXP = FL.XP.make(tOutput.getCount() * 3L);
 					} else if (ST.food(tOutput) > 0) {
 						// Food always gives 0.05 XP, not more, not less.
-						rXP = FL.XP.make(tOutput.stackSize);
+						rXP = FL.XP.make(tOutput.getCount());
 					} else {
 						// Now for OreDictItemData of the Input Item
 						if (tData != null && tData.validData()) {
@@ -100,7 +100,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 								tData = OM.anydata_(tOutput);
 								if (tData != null && tData.validData()) {
 									// Give XP based on Tool Quality of the Output.
-									long tXP = tOutput.stackSize * (3L+tData.mMaterial.mMaterial.mToolQuality);
+									long tXP = tOutput.getCount() * (3L+tData.mMaterial.mMaterial.mToolQuality);
 									// Valuable Tag is for Gold and certain Gems and happens to double the XP you can get from this.
 									if (tData.mMaterial.mMaterial.contains(TD.Properties.VALUABLE)) tXP *= 2;
 									// Magical Tag also doubles the XP you can get from this.
@@ -114,7 +114,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 									}
 								} else {
 									// I don't know what this is, guess I will default to 5.
-									rXP = FL.XP.make(tOutput.stackSize * 5L);
+									rXP = FL.XP.make(tOutput.getCount() * 5L);
 								}
 							} else {
 								// No XP from this case! This is likely either a Recycling Recipe or a Dust to Ingot Recipe!
@@ -125,7 +125,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 								tData = OM.anydata_(tOutput);
 								if (tData != null && tData.validData()) {
 									// Give XP based on Tool Quality of the Output.
-									long tXP = tOutput.stackSize * (3L+tData.mMaterial.mMaterial.mToolQuality);
+									long tXP = tOutput.getCount() * (3L+tData.mMaterial.mMaterial.mToolQuality);
 									// Valuable Tag is for Gold and certain Gems and happens to double the XP you can get from this.
 									if (tData.mMaterial.mMaterial.contains(TD.Properties.VALUABLE)) tXP *= 2;
 									// Magical Tag also doubles the XP you can get from this.
@@ -139,11 +139,11 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 									}
 								} else {
 									// I don't know what this is, guess I will default to 5.
-									rXP = FL.XP.make(tOutput.stackSize * 5L);
+									rXP = FL.XP.make(tOutput.getCount() * 5L);
 								}
 							} else {
 								// Guess we need to default to the normal Furnace way of determining XP
-								rXP = FL.XP.make(UT.Code.bind(1, tOutput.stackSize * 20L, UT.Code.roundUp(tOutput.stackSize * 20 * RecipeManager.smelting().func_151398_b(tOutput))));
+								rXP = FL.XP.make(UT.Code.bind(1, tOutput.getCount() * 20L, UT.Code.roundUp(tOutput.getCount() * 20 * RecipeManager.smelting().func_151398_b(tOutput))));
 							}
 						}
 					}

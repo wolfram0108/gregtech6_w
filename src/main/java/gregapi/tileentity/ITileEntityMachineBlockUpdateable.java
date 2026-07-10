@@ -128,15 +128,15 @@ public interface ITileEntityMachineBlockUpdateable {
 				TICK_LOCK.lock();
 				BlockEntity tTileEntity = WD.te(aWorld, aCoords, T);
 				if (tTileEntity instanceof ITileEntityMachineBlockUpdateable) ((ITileEntityMachineBlockUpdateable)tTileEntity).onMachineBlockUpdate(mCoords, mBlock, mMeta, mRemoved);
-				if (aSet.size() < 5 || tTileEntity instanceof ITileEntityMachineBlockUpdateable || isMachineBlock(aWorld.getBlock(aCoords.posX, aCoords.posY, aCoords.posZ), aWorld.getBlockMetadata(aCoords.posX, aCoords.posY, aCoords.posZ))) {
+				if (aSet.size() < 5 || tTileEntity instanceof ITileEntityMachineBlockUpdateable || isMachineBlock(aWorld.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()), aWorld.getBlockMetadata(aCoords.getX(), aCoords.getY(), aCoords.getZ()))) {
 					TICK_LOCK.unlock();
 					BlockPos tCoords;
-					if (aSet.add(tCoords = new BlockPos(aCoords.posX+1, aCoords.posY  , aCoords.posZ  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
-					if (aSet.add(tCoords = new BlockPos(aCoords.posX-1, aCoords.posY  , aCoords.posZ  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
-					if (aSet.add(tCoords = new BlockPos(aCoords.posX  , aCoords.posY+1, aCoords.posZ  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
-					if (aSet.add(tCoords = new BlockPos(aCoords.posX  , aCoords.posY-1, aCoords.posZ  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
-					if (aSet.add(tCoords = new BlockPos(aCoords.posX  , aCoords.posY  , aCoords.posZ+1))) stepToUpdateMachine(aWorld, tCoords, aSet);
-					if (aSet.add(tCoords = new BlockPos(aCoords.posX  , aCoords.posY  , aCoords.posZ-1))) stepToUpdateMachine(aWorld, tCoords, aSet);
+					if (aSet.add(tCoords = new BlockPos(aCoords.getX()+1, aCoords.getY()  , aCoords.getZ()  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
+					if (aSet.add(tCoords = new BlockPos(aCoords.getX()-1, aCoords.getY()  , aCoords.getZ()  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
+					if (aSet.add(tCoords = new BlockPos(aCoords.getX()  , aCoords.getY()+1, aCoords.getZ()  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
+					if (aSet.add(tCoords = new BlockPos(aCoords.getX()  , aCoords.getY()-1, aCoords.getZ()  ))) stepToUpdateMachine(aWorld, tCoords, aSet);
+					if (aSet.add(tCoords = new BlockPos(aCoords.getX()  , aCoords.getY()  , aCoords.getZ()+1))) stepToUpdateMachine(aWorld, tCoords, aSet);
+					if (aSet.add(tCoords = new BlockPos(aCoords.getX()  , aCoords.getY()  , aCoords.getZ()-1))) stepToUpdateMachine(aWorld, tCoords, aSet);
 				} else {
 					TICK_LOCK.unlock();
 				}

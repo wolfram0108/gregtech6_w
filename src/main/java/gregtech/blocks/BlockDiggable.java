@@ -29,7 +29,7 @@ import gregapi.util.ST;
 import gregapi.util.WD;
 import mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.block.BlockBush;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;

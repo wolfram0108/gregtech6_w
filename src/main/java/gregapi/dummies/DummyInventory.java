@@ -32,7 +32,7 @@ public class DummyInventory implements Container {
 	
 	@Override public int getSizeInventory() {return mInventory.length;}
 	@Override public ItemStack getStackInSlot(int aSlot) {return mInventory[aSlot];}
-	@Override public ItemStack decrStackSize(int aSlot, int aDecrement) {if (mInventory[aSlot] == null) return null; if (mInventory[aSlot].stackSize <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].splitStack(aDecrement); if (mInventory[aSlot].stackSize <= 0) mInventory[aSlot] = NI; return rStack;}
+	@Override public ItemStack decrStackSize(int aSlot, int aDecrement) {if (mInventory[aSlot] == null) return null; if (mInventory[aSlot].getCount() <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].splitStack(aDecrement); if (mInventory[aSlot].getCount() <= 0) mInventory[aSlot] = NI; return rStack;}
 	@Override public ItemStack getStackInSlotOnClosing(int aSlot) {ItemStack rStack = mInventory[aSlot]; mInventory[aSlot] = null; return rStack;}
 	@Override public void setInventorySlotContents(int aSlot, ItemStack aStack) {mInventory[aSlot] = aStack;}
 	@Override public String getInventoryName() {return "DUMMY INVENTORY";}

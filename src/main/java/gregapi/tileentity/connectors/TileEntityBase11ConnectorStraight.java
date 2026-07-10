@@ -34,7 +34,7 @@ import net.minecraft.world.phys.AABB;
 public abstract class TileEntityBase11ConnectorStraight extends TileEntityBase10ConnectorRendered {
 	@Override
 	public int getRenderPasses2(Block aBlock, boolean[] aShouldSideBeRendered) {
-		if (worldObj == null && !hasCovers()) mConnections = (byte)(SBIT_S|SBIT_N);
+		if (level == null && !hasCovers()) mConnections = (byte)(SBIT_S|SBIT_N);
 		return mFoam && !mFoamDried ? 2 : 1;
 	}
 	

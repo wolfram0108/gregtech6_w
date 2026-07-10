@@ -42,9 +42,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
-import net.minecraftforge.oredict.OreDictionary;
-import net.minecraftforge.oredict.ShapedOreRecipe;
-import net.minecraftforge.oredict.ShapelessOreRecipe;
+import gregapi.oredict.OreDictionary;
+import gregapi.recipes.ShapedOreRecipe;
+import gregapi.recipes.ShapelessOreRecipe;
 
 import java.util.List;
 import java.util.Set;
@@ -129,7 +129,7 @@ public class Loader_Recipes_Replace implements Runnable {
 			if (tUseProgressBar) UT.LoadingBar.step("");
 			ItemStack aOutput = tRecipe.getRecipeOutput();
 			if (ST.invalid(aOutput)) continue;
-			if (aOutput.stackSize != 1) continue;
+			if (aOutput.getCount() != 1) continue;
 			if (aOutput.getMaxDamage() <= 0) continue;
 			if (aOutput.getMaxStackSize() != 1) continue;
 			if (tRecipe instanceof ShapelessRecipe) continue;
@@ -228,14 +228,14 @@ public class Loader_Recipes_Replace implements Runnable {
 			ItemStack tMat = aRecipe.mPrefix.mat(aRecipe.mMat, 1);
 			if (tMat == null) continue;
 			INGT.func_150996_a(tMat.getItem());
-			INGT.stackSize = 1;
+			INGT.setCount(1);
 			ST.meta_(INGT, ST.meta_(tMat));
 			RecipeReplacer[] tReplacer = sRecipesMat;
 			if (aRecipe.mRod != null) {
 				ItemStack tRod = (aRecipe.mRod == ANY.Wood ? IL.Stick.get(1) : OP.stick.mat(aRecipe.mRod, 1));
 				if (tRod == null) continue;
 				STCK.func_150996_a(tRod.getItem());
-				STCK.stackSize = 1;
+				STCK.setCount(1);
 				ST.meta_(STCK, ST.meta_(tRod));
 				tReplacer = sRecipesRod;
 			}
@@ -270,7 +270,7 @@ public class Loader_Recipes_Replace implements Runnable {
 			for (int j = 0; j < 9 && j < aStacks.length; j++) aCrafting.setInventorySlotContents(j, aStacks[j]);
 			if (!aRecipe.matches(aCrafting, DW)) return null;
 			ItemStack rOutput = aRecipe.getCraftingResult(aCrafting);
-			if (rOutput == null || rOutput.stackSize <= 0) return null;
+			if (rOutput == null || rOutput.getCount() <= 0) return null;
 			return rOutput;
 		}
 		return null;

@@ -31,7 +31,7 @@ import gregapi.data.MD;
 import gregapi.render.BlockTextureDefault;
 import gregapi.render.IconContainerCopied;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.level.block.Blocks;
 
 public class Loader_Others implements Runnable {

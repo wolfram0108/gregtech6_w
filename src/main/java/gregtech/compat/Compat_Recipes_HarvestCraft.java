@@ -38,8 +38,8 @@ import net.minecraft.item.ItemFood;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.oredict.OreDictionary;
-import net.minecraftforge.oredict.ShapelessOreRecipe;
+import gregapi.oredict.OreDictionary;
+import gregapi.recipes.ShapelessOreRecipe;
 
 import java.util.ArrayList;
 

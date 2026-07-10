@@ -157,7 +157,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
 			tProjectile.canBePickedUp = 1;
 			aWorld.spawnEntityInWorld(tProjectile);
-			if (aStack.stackSize < 100) aStack.stackSize--;
+			if (aStack.getCount() < 100) aStack.setCount(aStack.getCount()-1);
 			return aStack;
 		}
 		

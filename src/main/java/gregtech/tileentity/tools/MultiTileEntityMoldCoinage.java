@@ -114,7 +114,7 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 			if (tOutputStack == null) {
 				OreDictItemData tData = OM.anyassociation(aStack);
 				if (tData != null && tData.mPrefix == OP.plateTiny) {
-					if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.stackSize--;
+					if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 					slot(0, ST.amount(1, aStack));
 					UT.Sounds.send(SFX.MC_CLICK, this, F);
 					return T;
@@ -133,7 +133,7 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 			if (aRemainingDurability >= 2000) {
 				OreDictItemData tData = OM.anyassociation(slot(0));
 				if (tData != null && tData.mPrefix == OP.plateTiny) {
-					slot(0, MultiTileEntityCoin.getCoin(slot(0).stackSize, tData.mMaterial.mMaterial, mIsUnique, mShape));
+					slot(0, MultiTileEntityCoin.getCoin(slot(0).getCount(), tData.mMaterial.mMaterial, mIsUnique, mShape));
 					return 2000;
 				}
 				return 0;

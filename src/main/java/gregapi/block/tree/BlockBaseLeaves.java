@@ -19,7 +19,7 @@
 
 package gregapi.block.tree;
 
-import cpw.mods.fml.common.Optional;
+import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ArrayListNoNulls;
@@ -31,7 +31,7 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Item;

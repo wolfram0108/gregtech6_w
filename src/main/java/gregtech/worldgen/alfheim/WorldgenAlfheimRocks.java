@@ -32,7 +32,7 @@ import gregapi.util.WD;
 import gregapi.worldgen.WorldgenObject;
 import gregapi.worldgen.WorldgenOnSurface;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;

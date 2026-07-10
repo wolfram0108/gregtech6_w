@@ -35,7 +35,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -69,11 +69,11 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 	}
 	
 	public boolean checkColumn(Player aPlayer, int aX, int aY, int aZ, ArrayListNoNulls<MultiTileEntityMassStorage> aList, boolean aOnlyHand) {
-		if (!WD.floor(worldObj, aX, aY, aZ)) return T;
+		if (!WD.floor(level, aX, aY, aZ)) return T;
 		boolean temp = T;
 		for (int i = 1; i < 8; i++) {
-			Block tBlock = WD.block(worldObj, aX, aY+i, aZ);
-			if (tBlock.getMaterial() != Material.carpet && WD.hasCollide(worldObj, aX, aY+i, aZ, tBlock)) break;
+			Block tBlock = WD.block(level, aX, aY+i, aZ);
+			if (tBlock.getMaterial() != Material.carpet && WD.hasCollide(level, aX, aY+i, aZ, tBlock)) break;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) {
 				BlockEntity tTileEntity = getTileEntity(aX+OFFX[tSide], aY+i, aZ+OFFZ[tSide]);
 				if (tTileEntity instanceof MultiTileEntityStorageInserter) {

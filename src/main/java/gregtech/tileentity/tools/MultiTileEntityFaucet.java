@@ -112,7 +112,7 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 		if (aSide != mFacing || aMaterial == null || aMaterial.mMaterial == null || (!mAcidProof && aMaterial.mMaterial.contains(TD.Properties.ACID))) return 0;
 		if (aTemperature > getMoldMaxTemperature()) {
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
-			worldObj.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
+			level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
 		}
 		DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(SIDE_BOTTOM);
 		while (tDelegator.mY > 0 && (tDelegator.mTileEntity instanceof MultiTileEntityFaucet || (!(tDelegator.mTileEntity instanceof MultiTileEntityBathingPot || tDelegator.mTileEntity instanceof MultiTileEntityMixingBowl || tDelegator.mTileEntity instanceof ITileEntityMold) && !WD.hasCollide(tDelegator.mWorld, tDelegator.mX, tDelegator.mY, tDelegator.mZ)))) {

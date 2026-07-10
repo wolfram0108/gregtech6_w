@@ -32,7 +32,7 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.render.BlockTextureDefault;
 import gregapi.util.OM;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
+import gregapi.block.Material;
 
 public class Loader_PrefixBlocks implements Runnable {
 	@Override
