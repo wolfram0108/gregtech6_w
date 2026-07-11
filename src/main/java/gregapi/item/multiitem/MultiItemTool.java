@@ -40,7 +40,6 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -49,19 +48,19 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,7 +85,11 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 */
 	public MultiItemTool(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		setMaxStackSize(1);
+		// PORT-TODO(item-base, stacksTo immutable-post-construction): Item.setMaxStackSize(int) (1.7.10
+		// runtime-мутатор) не существует в 26.1.2 — стек-размер задаётся неизменяемо через
+		// Item.Properties.stacksTo(...) в момент регистрации (тот же класс, что F12 item-maxdamage-subtypes-
+		// runtime-mutator в GT_API_Post.java); владелец Properties — MultiItem/ItemBase (вне зоны этого захода).
+		// setMaxStackSize(1);
 		/*
 		if (MD.BG2.mLoaded) try {
 			UT.Reflection.callPublicMethod(Class.forName("mods.battlegear2.api.weapons.WeaponRegistry"), "addTwoHanded", make(0));
@@ -179,18 +182,18 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (tToolStats != null) {
 			CompoundTag tMainNBT = UT.NBT.make(), tToolNBT = UT.NBT.make();
 			if (aPrimaryMaterial != null) {
-				if (aPrimaryMaterial.mID > 0) tToolNBT.setShort("a", aPrimaryMaterial.mID); else tToolNBT.setString("b", aPrimaryMaterial.toString());
+				if (aPrimaryMaterial.mID > 0) tToolNBT.putShort("a", aPrimaryMaterial.mID); else tToolNBT.putString("b", aPrimaryMaterial.toString());
 				UT.NBT.setNumber(tToolNBT, "j", (long)((aPrimaryMaterial.mToolDurability * 100L) * tToolStats.getMaxDurabilityMultiplier()));
 			}
 			if (aSecondaryMaterial != null) {
-				if (aSecondaryMaterial.mID > 0) tToolNBT.setShort("c", aSecondaryMaterial.mID); else tToolNBT.setString("d", aSecondaryMaterial.toString());
+				if (aSecondaryMaterial.mID > 0) tToolNBT.putShort("c", aSecondaryMaterial.mID); else tToolNBT.putString("d", aSecondaryMaterial.toString());
 			}
 			if (aMaxCharge > 0) {
-				tToolNBT.setBoolean("e", T);
+				tToolNBT.putBoolean("e", T);
 				UT.NBT.setNumber(tToolNBT, "f", aMaxCharge);
 				UT.NBT.setNumber(tToolNBT, "g", aVoltage);
 			}
-			tMainNBT.setTag("GT.ToolStats", tToolNBT);
+			tMainNBT.put("GT.ToolStats", tToolNBT);
 			UT.NBT.set(rStack, tMainNBT);
 			if (aCharge > 0 && aMaxCharge > 0) for (TagData tEnergyType : getEnergyTypes(rStack)) setEnergyStored(tEnergyType, rStack, Math.min(aCharge, aMaxCharge));
 		}
@@ -201,14 +204,14 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	/**
 	 * Called by the Block Harvesting Event within the GT_Proxy
 	 */
-	public void onHarvestBlockEvent(ArrayList<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public void onHarvestBlockEvent(ArrayList<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null || ST.instaharvest(aBlock, aMeta) || !isItemStackUsable(aStack) || getDigSpeed(aStack, aBlock, aMeta) <= 0) {
 			doDamage(aStack, 0, aPlayer, T);
 			return;
 		}
 		long tDamage = tStats.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, (getToolMaxDamage(aStack) - getToolDamage(aStack)) / tStats.getToolDamagePerDropConversion(), aX, aY, aZ, aMeta, aFortune, aSilkTouch, aEvent);
-		if (aBlock == Blocks.ice && !aDrops.isEmpty()) aPlayer.level().setBlockToAir(aX, aY, aZ);
+		if (aBlock == Blocks.ICE && !aDrops.isEmpty()) aPlayer.level().removeBlock(new BlockPos(aX, aY, aZ), F);
 		if (WD.dimBTL(aPlayer.level()) && !getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
 		doDamage(aStack, tDamage * tStats.getToolDamagePerDropConversion(), aPlayer, T);
 	}
@@ -238,39 +241,51 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public boolean onLeftClickEntity(ItemStack aStack, Player aPlayer, Entity aEntity) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null || !isItemStackUsable(aStack)) return T;
-		if (TOOL_SOUNDS) UT.Sounds.play(tStats.getEntityHitSound(), 20, 1, aEntity);
+		// PORT-TODO(item-base, UT.Sounds.play overload ambiguity): play(String,int,float,Entity) vs
+		// play(String,int,float,BlockPos) неоднозначны компилятору на этом call-site (не мой центр, вне зоны,
+		// gregapi/util/UT.java) — обхожу через координатный overload, тот же эффект (Entity-overload сам вызывает
+		// координатный внутри).
+		if (TOOL_SOUNDS) UT.Sounds.play(tStats.getEntityHitSound(), 20, 1, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ()));
 		if (super.onLeftClickEntity(aStack, aPlayer, aEntity)) return T;
-		if (aEntity.canAttackWithItem()) {
-			int
-			tImplosion  = UT.NBT.getEnchantmentLevelImplosion(aStack),
-			tFireAspect = EnchantmentHelper.getFireAspectModifier(aPlayer);
-			boolean tIgnitesFire = !aEntity.isBurning() && tFireAspect > 0 && aEntity instanceof LivingEntity;
-			if (tIgnitesFire) aEntity.setFire(1);
-			if (aEntity.hitByEntity(aPlayer)) {
-				if (tIgnitesFire) aEntity.extinguish();
+		// PORT-TODO(item-base, canAttackWithItem): Entity.canAttackWithItem() (1.7.10, false while e.g. riding
+		// certain vehicles) удалён без замены в 3 корнях референса — деградация до T (консервативно: "может").
+		if (T) {
+			int tImplosion = UT.NBT.getEnchantmentLevelImplosion(aStack);
+			// PORT-TODO(F8, enchant-registry): EnchantmentHelper.getFireAspectModifier(Player)/
+			// getEnchantmentModifierLiving(Player,LivingEntity) (1.7.10 static lookups) удалены — зачарования
+			// data-driven, Holder<Enchantment> недоступен в этом статическом контексте — деградация до 0.
+			int tFireAspect = 0;
+			boolean tIgnitesFire = !aEntity.isOnFire() && tFireAspect > 0 && aEntity instanceof LivingEntity;
+			if (tIgnitesFire) aEntity.igniteForSeconds(1);
+			if (aEntity.skipAttackInteraction(aPlayer)) {
+				if (tIgnitesFire) aEntity.clearFire();
 			} else {
-				float tMagicDamage = tStats.getMagicDamageAgainstEntity(aEntity instanceof LivingEntity?EnchantmentHelper.getEnchantmentModifierLiving(aPlayer, (LivingEntity)aEntity):0, aEntity, aStack, aPlayer), tDamage = tStats.getNormalDamageAgainstEntity((float)aPlayer.getEntityAttribute(Attributes.attackDamage).getAttributeValue() + getToolCombatDamage(aStack), aEntity, aStack, aPlayer);
+				float tMagicDamage = tStats.getMagicDamageAgainstEntity(0, aEntity, aStack, aPlayer), tDamage = tStats.getNormalDamageAgainstEntity((float)aPlayer.getAttributeValue(Attributes.ATTACK_DAMAGE) + getToolCombatDamage(aStack), aEntity, aStack, aPlayer);
 				// Also work on Ghasts and such. But no double dipping on Anti Creeper Damage!
 				if (tImplosion > 0 && UT.Entities.isExplosiveCreature(aEntity) && !Creeper.class.isInstance(aEntity)) tMagicDamage += 1.5F * tImplosion;
-				
+
 				if (tDamage + tMagicDamage > 0) {
-					boolean tRealHit = (!aEntity.level().isRemote || aEntity.hurtResistantTime <= 0);
-					boolean tCriticalHit = aPlayer.fallDistance > 0 && !aPlayer.onGround && !aPlayer.isOnLadder() && !aPlayer.isInWater() && !aPlayer.isPotionActive(MobEffect.blindness) && aPlayer.ridingEntity == null && aEntity instanceof LivingEntity;
+					// PORT-TODO(item-base, hurtResistantTime): Entity.hurtResistantTime (1.7.10 hit-invulnerability
+					// поле, использовалось для client-side hit-prediction) отсутствует в 26.1.2 — деградация до
+					// "реальный удар только на сервере" (безопаснее дублирующего клиентского предсказания).
+					boolean tRealHit = !aEntity.level().isClientSide();
+					boolean tCriticalHit = aPlayer.fallDistance > 0 && !aPlayer.onGround() && !aPlayer.onClimbable() && !aPlayer.isInWater() && !aPlayer.hasEffect(MobEffects.BLINDNESS) && aPlayer.getVehicle() == null && aEntity instanceof LivingEntity;
 					if (tCriticalHit && tDamage > 0) tDamage *= 1.5;
 					float tFullDamage = (tDamage+tMagicDamage) * TFC_DAMAGE_MULTIPLIER;
 					DamageSource tSource = tStats.getDamageSource(aPlayer, aEntity);
-					if (tStats.canPenetrate()) tSource.setDamageBypassesArmor();
+					if (tStats.canPenetrate() && tSource instanceof gregapi.damage.DamageSources.GregTechDamageSource) ((gregapi.damage.DamageSources.GregTechDamageSource)tSource).setDamageBypassesArmor();
 					// Avoiding the Betweenlands Damage Cap of 40 in a fair way.
 					// Only Betweenlands Materials will avoid it. And maybe some super Lategame Materials.
-					if (MD.BTL.mLoaded && aEntity.getClass().getName().startsWith("thebetweenlands") && getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) {
+					// (tRealHit гейтит вход в hurtServer — тот требует ServerLevel, на клиенте вызывать нельзя.)
+					if (tRealHit && MD.BTL.mLoaded && aEntity.getClass().getName().startsWith("thebetweenlands") && getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) {
+						net.minecraft.server.level.ServerLevel tServerLevel = (net.minecraft.server.level.ServerLevel)aEntity.level();
 						float tDamageToDeal = tFullDamage;
-						while (tDamageToDeal > 0 && aEntity.attackEntityFrom(tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
+						while (tDamageToDeal > 0 && aEntity.hurtServer(tServerLevel, tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
 							tDamageToDeal -= 12;
-							if (tDamageToDeal > 0) aEntity.hurtResistantTime = 0;
 						}
 						tRealHit &= (tDamageToDeal < tFullDamage);
-					} else {
-						tRealHit &= aEntity.attackEntityFrom(tSource, tFullDamage);
+					} else if (tRealHit) {
+						tRealHit &= aEntity.hurtServer((net.minecraft.server.level.ServerLevel)aEntity.level(), tSource, tFullDamage);
 					}
 					// Only damage the Tool and perform its Specials, when you actually do hit the thing.
 					// So Serverside always, and Clientside only if the Mob isn't in its invulnerability Frames.
@@ -287,25 +302,31 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	@Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
 		IToolStats tStats = getToolStats(aStack);
-		if (tStats != null && tStats.canBlock()) aPlayer.setItemInUse(aStack, 72000);
+		// PORT-TODO(item-base, setItemInUse): Player.setItemInUse(ItemStack,int) (1.7.10 explicit-duration
+		// use-start) удалён — 26.1.2 стартует использование через LivingEntity.startUsingItem(InteractionHand),
+		// длительность берётся из Item.getUseDuration(ItemStack,LivingEntity) (см. ниже) автоматически; этот
+		// вызов не достижим текущей цепочкой super.onItemRightClick (MultiItem, вне зоны), см. класс-javadoc.
+		// if (tStats != null && tStats.canBlock()) aPlayer.setItemInUse(aStack, 72000);
 		return super.onItemRightClick(aStack, aWorld, aPlayer);
 	}
-	
+
 	@Override
-	public ItemUseAnimation getItemUseAction(ItemStack aStack) {
+	public ItemUseAnimation getUseAnimation(ItemStack aStack) {
 		IToolStats tStats = getToolStats(aStack);
-		if (tStats != null && tStats.canBlock()) return ItemUseAnimation.block;
-		return ItemUseAnimation.none;
+		if (tStats != null && tStats.canBlock()) return ItemUseAnimation.BLOCK;
+		return ItemUseAnimation.NONE;
 	}
 	@Override
-	public int getMaxItemUseDuration(ItemStack aStack) {
+	public int getUseDuration(ItemStack aStack, LivingEntity aUser) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && tStats.canBlock()) return 72000;
 		return 0;
 	}
 	
-	@Override
-	@OnlyIn(Dist.CLIENT)
+	// PORT-TODO(F13, creative-tab): Item.getSubItems(Item,CreativeModeTab,List) (1.7.10 creative-tab population
+	// hook) удалён — 26.1.2 наполняет вкладки через BuildCreativeModeTabContentsEvent/CreativeModeTab.Builder.
+	// displayItems, нет per-Item override; тот же класс проблемы, что setCreativeTab (ItemArmorBase.java,
+	// MultiItemFood.java), центра ещё нет нигде в дереве. Список-строящая логика сохранена 1:1 доменным методом.
 	@SuppressWarnings("unchecked")
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
 		for (int i = 0; i < 32766; i+=2) if (getToolStats(ST.make(this, 1, i)) != null) {
@@ -353,61 +374,61 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public static final OreDictMaterial getPrimaryMaterial(ItemStack aStack, OreDictMaterial aDefault) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundTag("GT.ToolStats");
-			if (aNBT != null) {
-				if (aNBT.hasKey("a")) return OreDictMaterial.get(aNBT.getShort ("a"), aDefault);
-				if (aNBT.hasKey("b")) return OreDictMaterial.get(aNBT.getString("b"), aDefault);
+			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			if (!aNBT.isEmpty()) {
+				if (aNBT.contains("a")) return OreDictMaterial.get(aNBT.getShortOr ("a", (short)0), aDefault);
+				if (aNBT.contains("b")) return OreDictMaterial.get(aNBT.getStringOr("b", ""), aDefault);
 			}
 		}
 		return aDefault;
 	}
-	
+
 	public static final OreDictMaterial getSecondaryMaterial(ItemStack aStack) {return getSecondaryMaterial(aStack, MT.NULL);}
 	public static final OreDictMaterial getSecondaryMaterial(ItemStack aStack, OreDictMaterial aDefault) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundTag("GT.ToolStats");
-			if (aNBT != null) {
-				if (aNBT.hasKey("c")) return OreDictMaterial.get(aNBT.getShort ("c"), aDefault);
-				if (aNBT.hasKey("d")) return OreDictMaterial.get(aNBT.getString("d"), aDefault);
+			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			if (!aNBT.isEmpty()) {
+				if (aNBT.contains("c")) return OreDictMaterial.get(aNBT.getShortOr ("c", (short)0), aDefault);
+				if (aNBT.contains("d")) return OreDictMaterial.get(aNBT.getStringOr("d", ""), aDefault);
 			}
 		}
 		return aDefault;
 	}
-	
+
 	@Override
 	public IItemEnergy getEnergyStats(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundTag("GT.ToolStats");
-			if (aNBT != null) {
-				if (aNBT.getBoolean("e")) return EnergyStat.makeTool(TD.Energy.EU, aNBT.getLong("f"), aNBT.getLong("g"), 64, ST.make(this, 1, getUnusableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)));
+			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			if (!aNBT.isEmpty()) {
+				if (aNBT.getBooleanOr("e", F)) return EnergyStat.makeTool(TD.Energy.EU, aNBT.getLongOr("f", 0L), aNBT.getLongOr("g", 0L), 64, ST.make(this, 1, getUnusableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)), ST.make(this, 1, getUsableMeta(aStack)));
 			}
 		}
 		return null;
 	}
-	
+
 	public float getToolCombatDamage(ItemStack aStack) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return 0;
 		return tStats.getBaseDamage() + getPrimaryMaterial(aStack).mToolQuality;
 	}
-	
+
 	public static final long getToolMaxDamage(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundTag("GT.ToolStats");
-			if (aNBT.hasKey("j")) return Math.max(1, aNBT.getLong("j"));
-			return Math.max(1, aNBT.getLong("MaxDamage"));
+			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			if (aNBT.contains("j")) return Math.max(1, aNBT.getLongOr("j", 0L));
+			return Math.max(1, aNBT.getLongOr("MaxDamage", 0L));
 		}
 		return 1;
 	}
 	public static final long getToolDamage(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			aNBT = aNBT.getCompoundTag("GT.ToolStats");
-			if (aNBT.hasKey("k")) return aNBT.getLong("k");
-			return aNBT.getLong("Damage");
+			aNBT = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			if (aNBT.contains("k")) return aNBT.getLongOr("k", 0L);
+			return aNBT.getLongOr("Damage", 0L);
 		}
 		return 0;
 	}
@@ -418,7 +439,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public static final boolean setToolDamage(ItemStack aStack, long aDamage) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			UT.NBT.setNumber(aNBT.getCompoundTag("GT.ToolStats"), "k", aDamage);
+			UT.NBT.setNumber(aNBT.getCompoundOrEmpty("GT.ToolStats"), "k", aDamage);
 			return T;
 		}
 		return F;
@@ -460,7 +481,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 						ST.use(aPlayer, T, aStack);
 					} else if (aPlayer instanceof Player) {
 						if (tBroken.getCount() > 64) tBroken.setCount(64);
-						if (!aPlayer.level().isRemote) ST.give(aPlayer, tBroken, F);
+						if (!aPlayer.level().isClientSide()) ST.give(aPlayer, tBroken, F);
 						ST.use(aPlayer, T, aStack);
 					} else {
 						if (tBroken.getCount() > 64) tBroken.setCount(64);
@@ -473,35 +494,40 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return useEnergy(TD.Energy.EU, aStack, aAmount, aPlayer, null, null, 0, 0, 0, T);
 	}
 	
-	@Override
+	// PORT-TODO(F9, block-material Block-meta mining hooks): getDigSpeed(ItemStack,Block,int)/
+	// canHarvestBlock(Block,ItemStack)/getHarvestLevel(ItemStack,String)/onBlockDestroyed(...) (1.7.10
+	// meta-based Item mining hooks) не существуют в 26.1.2 Item целиком — реальные аналоги
+	// (getDestroySpeed(ItemStack,BlockState)/isCorrectToolForDrops(ItemStack,BlockState), BlockTags-driven
+	// harvest-tier) требуют BlockState-конверсию (F9, не готова в этой зоне) — методы НЕ @Override, тела 1:1
+	// сохранены как внутренние доменные вычисления (используются другими методами этого же класса напрямую).
+	// Block.getHarvestLevel(int)/getBlockHardness(World,x,y,z) (meta-based) удалены — консервативные заглушки
+	// (0 / 1.0) ниже, помечены отдельно.
 	public float getDigSpeed(ItemStack aStack, Block aBlock, int aMeta) {
 		if (aBlock == NB || WD.bedrock(aBlock)) return 0;
 		if (ST.instaharvest(aBlock, aMeta)) return 10;
 		if (!isItemStackUsable(aStack)) return 0;
 		// Required because a combination of Twilight Forest and Block Metadata Extenders can fuck this up and give me values like 49 for vanilla Blocks.
-		if (aMeta > 15 && (aBlock == Blocks.dirt || aBlock == Blocks.grass || aBlock == Blocks.stone)) aMeta = 0;
+		if (aMeta > 15 && (aBlock == Blocks.DIRT || aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.STONE)) aMeta = 0;
 		float tMultiplier = 1.0F;
 		OreDictMaterial tMaterial = getPrimaryMaterial(aStack);
 		if ((IL.TF_Mazestone.equal(aBlock) || IL.TF_Mazehedge.equal(aBlock) || IL.TF_Towerwood.equal(aBlock)) && tMaterial.contains(TD.Properties.MAZEBREAKER)) tMultiplier *= 40;
 		IToolStats tStats = getToolStats(aStack);
-		if (tStats == null || tStats.getBaseQuality() + tMaterial.mToolQuality < UT.Code.bind4(aBlock.getHarvestLevel(aMeta))) return 0;
+		// PORT-TODO(F9, block-material): Block.getHarvestLevel(int aMeta) удалён (meta-based) — degraded до 0 (не найдено ни в одном из 3 корней референса).
+		if (tStats == null || tStats.getBaseQuality() + tMaterial.mToolQuality < UT.Code.bind4(0)) return 0;
 		return tStats.getMiningSpeed(aBlock, (byte)aMeta) * Math.max(Float.MIN_NORMAL, tStats.getSpeedMultiplier() * tMultiplier * tMaterial.mToolSpeed);
 	}
-	
-	@Override
+
 	public final boolean canHarvestBlock(Block aBlock, ItemStack aStack) {
 		return IL.TC_Block_Air.equal(aBlock) || MD.CARP.owns(aBlock) || getDigSpeed(aStack, aBlock, (byte)0) > 0;
 	}
-	
-	@Override
+
 	public final int getHarvestLevel(ItemStack aStack, String aToolClass) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return -1;
 		int rValue = tStats.getBaseQuality() + getPrimaryMaterial(aStack).mToolQuality;
-		return rValue < 15 ? rValue : Integer.MAX_VALUE; 
+		return rValue < 15 ? rValue : Integer.MAX_VALUE;
 	}
-	
-	@Override
+
 	public boolean onBlockDestroyed(ItemStack aStack, Level aWorld, Block aBlock, int aX, int aY, int aZ, LivingEntity aPlayer) {
 		if (ST.instaharvest(aBlock) || UT.Entities.hasInfiniteItems(aPlayer)) return T;
 		if (!isItemStackUsable(aStack)) return F;
@@ -511,7 +537,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		String aRegName = ST.regName(aBlock);
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		boolean rReturn = (getDigSpeed(aStack, aBlock, aMeta) > 0);
-		double tDamage = tStats.getToolDamagePerBlockBreak() * aBlock.getBlockHardness(aWorld, aX, aY, aZ);
+		// PORT-TODO(F9, block-material): Block.getBlockHardness(World,x,y,z) (meta-based) удалён — degraded до 1.0 (не найдено ни в одном из 3 корней референса; реальный аналог BlockState.getDestroySpeed(Level,BlockPos)).
+		double tDamage = tStats.getToolDamagePerBlockBreak() * 1.0;
 		OreDictMaterial aMat1 = getPrimaryMaterial(aStack);
 		if (WD.dimBTL(aWorld) && !aMat1.contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
 		if (MD.TFC.owns(aRegName) || MD.TFCP.owns(aRegName)) {
@@ -520,7 +547,10 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			if (IL.TF_Mazestone.equal(aBlock)) if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
 			if (IL.TF_Mazehedge.equal(aBlock)) {
 				if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
-				if (!aWorld.isRemote && UT.NBT.getEnchantmentLevel(Enchantment.silkTouch, aStack) <= 0) {
+				// PORT-TODO(F8, enchant-registry): Enchantment.silkTouch (1.7.10 static instance) удалён —
+				// зачарования data-driven, нет живого Holder<Enchantment> в статическом контексте; деградация
+				// до "нет шёлковой нити" (ветка отдаёт особый дроп безусловно).
+				if (!aWorld.isClientSide()) {
 					if (aPlayer instanceof Player && canCollectDropsDirectly(aStack, aBlock, aMeta)) {
 						ST.give(aPlayer, IL.TF_Mazehedge.get(1), aWorld, aX, aY, aZ);
 					} else {
@@ -580,35 +610,35 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		
 		// Invalid Tool Index?
 		if (!isUsableMeta(aStack)) {
-			aNBT.removeTag("ench");
+			aNBT.remove("ench");
 			return F;
 		}
 		
 		IToolStats tStats = getToolStatsInternal(aStack);
 		// No Tool Data?
 		if (tStats == null) {
-			aNBT.removeTag("ench");
+			aNBT.remove("ench");
 			return F;
 		}
 		
 		OreDictMaterial aMaterial = getPrimaryMaterial(aStack);
 		// "Empty" Toolheads should not be able to do things.
 		if (aMaterial == MT.Empty) {
-			aNBT.removeTag("ench");
+			aNBT.remove("ench");
 			return F;
 		}
 		
 		// Some Behavior declaring this unusable?
 		if (!super.isItemStackUsable(aStack)) {
-			aNBT.removeTag("ench");
+			aNBT.remove("ench");
 			return F;
 		}
 		
 		// If no Enchantments, checks ends successfully early.
-		if (aNBT.hasKey("ench")) return T;
+		if (aNBT.contains("ench")) return T;
 		
 		// Abuse a potentially empty List as a boolean to see if a Tool already has enchants or not.
-		aNBT.setTag("ench", new ListTag());
+		aNBT.put("ench", new ListTag());
 		
 		List<ObjectStack<Enchantment>> tEnchantments = new ArrayListNoNulls<>();
 		// Get Material Specific Enchantments for applicable Tool Classes.
@@ -652,29 +682,32 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return getUnusableMeta(ST.meta(aStack));
 	}
 	
-	@Override
+	// PORT-TODO(F3, baked-рендер клиента): getRenderPasses(int)/getColorFromItemStack(ItemStack,int)/
+	// getIconIndex/getIconFromDamage/getIconFromDamageForRenderPass/getIcon(...) (1.7.10 multi-pass IIcon
+	// Item-рендер) не существуют в 26.1.2 Item целиком — держатель текстуры теперь Identifier (см.
+	// gregapi.render.IIconContainer, тот же центр); методы НЕ @Override, тела 1:1 сохранены (внутренние
+	// доменные вычисления, дергают друг друга напрямую внутри этого же класса).
 	public int getRenderPasses(int aMetaData) {
 		IToolStats tStats = getToolStatsInternal(aMetaData);
 		if (tStats != null) return tStats.getRenderPasses()+2;
 		return 2;
 	}
-	
-	@Override
+
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		IToolStats tStats = getToolStatsInternal(aStack);
 		if (tStats != null) return UT.Code.getRGBaInt(tStats.getRGBa(aStack, aRenderPass));
 		return 16777215;
 	}
-	
-	@Override public IIcon getIconIndex(ItemStack aStack) {return getIcon(aStack, 0);}
-	@Override public IIcon getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {return getIconFromDamage(aMetaData);}
-	@Override public IIcon getIconFromDamage(int aMetaData) {return getIconIndex(ST.make(this, 1, aMetaData));}
-	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass) {return getIcon(aStack, aRenderPass, null, null, 0);}
-	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
+
+	public Identifier getIconIndex(ItemStack aStack) {return getIcon(aStack, 0);}
+	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {return getIconFromDamage(aMetaData);}
+	public Identifier getIconFromDamage(int aMetaData) {return getIconIndex(ST.make(this, 1, aMetaData));}
+	public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIcon(aStack, aRenderPass, null, null, 0);}
+	public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
 		IToolStats tStats = getToolStatsInternal(aStack);
 		if (tStats == null) return Textures.ItemIcons.VOID.getIcon(0);
 		if (aRenderPass < tStats.getRenderPasses()) {
-			IIcon rIcon = tStats.getIcon(aStack, aRenderPass);
+			Identifier rIcon = tStats.getIcon(aStack, aRenderPass);
 			return rIcon == null ? Textures.ItemIcons.VOID.getIcon(0) : rIcon;
 		}
 		if (aPlayer == null) {
@@ -704,14 +737,23 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public IToolStats getToolStatsInternal(int aDamage) {return mToolStats.get((short)aDamage);}
 	@Override public final boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	@Override public final int getItemStackLimit(ItemStack aStack) {return 1;}
-	@Override public boolean isFull3D() {return T;}
-	@Override public int getSpriteNumber() {return 1;}
-	@Override public boolean requiresMultipleRenderPasses() {return T;}
-	@Override @OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {/**/}
-	@Override @SuppressWarnings("deprecation") public boolean hasEffect(ItemStack aStack) {return F;}
-	@Override public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}
-	@Override public int getItemEnchantability() {return 0;}
-	@Override public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
-	@Override public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
+	// PORT-TODO(F3, baked-рендер клиента): isFull3D/getSpriteNumber/requiresMultipleRenderPasses (1.7.10
+	// multi-pass Item-рендер) не существуют в 26.1.2 — методы НЕ @Override, тела 1:1 сохранены.
+	public boolean isFull3D() {return T;}
+	public int getSpriteNumber() {return 1;}
+	public boolean requiresMultipleRenderPasses() {return T;}
+	// PORT-TODO(F3, baked-рендер клиента): было registerIcons(IIconRegister) (тип атлас-стежки 1.7.10 удалён) —
+	// параметр Object, тот же нейтральный держатель что gregapi.render.IIconContainer#registerIcons(Object).
+	@OnlyIn(Dist.CLIENT) public void registerIcons(Object aIconRegister) {/**/}
+	@Override @SuppressWarnings("deprecation") public boolean isFoil(ItemStack aStack) {return F;}
+	// PORT-TODO(F3, baked-рендер клиента): было hasEffect(ItemStack,int aRenderPass) (multi-pass glint, тип удалён).
+	public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}
+	// PORT-TODO(item-base, enchantable/repairable компоненты): getItemEnchantability()/isBookEnchantable(...)/
+	// getIsRepairable(...) (1.7.10 virtual Item-хуки) удалены — 26.1.2 задаёт то же самое декларативно через
+	// Item.Properties.enchantable(...)/repairable(...) на регистрации (владелец Properties — MultiItem/ItemBase,
+	// вне зоны); методы НЕ @Override, тела 1:1 сохранены.
+	public int getItemEnchantability() {return 0;}
+	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
+	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	@Override public Long[] getFluidContainerStats(ItemStack aStack) {return null;}
 }

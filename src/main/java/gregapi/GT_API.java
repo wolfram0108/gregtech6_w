@@ -343,6 +343,9 @@ public class GT_API extends Abstract_Mod {
 		// F6: центральный ворлдген-переходник (Feature/PlacedFeature/BiomeModifier) — тот же мод-бас,
 		// единая точка подписки (decisions/F6-worldgen.md, gregapi/worldgen/GT6WorldgenFeature.java).
 		gregapi.worldgen.GT6WorldgenFeature.register(aModBus);
+		// ENCHANT: центральный переходник кастомных чар-эффектов — тот же мод-бас, единая точка подписки
+		// (gregapi/enchants/EnchantsGT6.java; закрывает стык F6↔ENCHANT wiring, метка `ENCHANT, регистрация`).
+		gregapi.enchants.EnchantsGT6.register(aModBus);
 		// F5: центральные DeferredRegister жидкостей (FluidType+Fluid) — тот же мод-бас, единая точка
 		// подписки (decisions/F5-fluids.md §3, gregapi/fluid/FluidGT.java; закрывает прежний долг F12↔F5 wiring).
 		gregapi.fluid.FluidGT.FLUID_TYPES.register(aModBus);

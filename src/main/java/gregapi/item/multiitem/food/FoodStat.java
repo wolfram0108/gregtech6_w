@@ -26,11 +26,14 @@ import gregapi.player.EntityFoodTracker;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -73,7 +76,7 @@ public class FoodStat implements IFoodStat {
 		mSugar = aSugar;
 		mFat = aFat;
 		mRadiation = aRadiation;
-		mAction = aAction==null?ItemUseAnimation.eat:aAction;
+		mAction = aAction==null?ItemUseAnimation.EAT:aAction;
 		mPotionEffects = aPotionEffects;
 		mEmptyContainer = ST.copy(aEmptyContainer);
 		mInvisibleParticles = aInvisibleParticles;
@@ -149,17 +152,22 @@ public class FoodStat implements IFoodStat {
 			if (tStack == null && mAutoDetectEmpty) tStack = ST.container(aStack, F);
 			ST.give(aPlayer, tStack, F);
 		}
-		if (aMakeSound) aPlayer.level().playSoundAtEntity(aPlayer, "random.burp", 0.5F, RNGSUS.nextFloat() * 0.1F + 0.9F);
-		if (!aPlayer.level().isRemote) {
-			if (mExtinguish) aPlayer.extinguish();
-			if (mRebreathe > 0) aPlayer.setAir(aPlayer.getAir()+mRebreathe);
-			if (mMilk) aPlayer.curePotionEffects(ST.make(Items.milk_bucket, 1, 0));
+		// PORT-TODO(item-base, playSoundAtEntity→playSound): было Level.playSoundAtEntity(Entity,String,float,float)
+		// (1.7.10 строковый sound-id) — реальный 1:1 neo-путь: Level.playSound(Entity except, Entity source,
+		// SoundEvent, SoundSource, volume, pitch), "random.burp"→SoundEvents.PLAYER_BURP (сверено).
+		if (aMakeSound) aPlayer.level().playSound(null, aPlayer, SoundEvents.PLAYER_BURP, SoundSource.PLAYERS, 0.5F, RNGSUS.nextFloat() * 0.1F + 0.9F);
+		if (!aPlayer.level().isClientSide()) {
+			if (mExtinguish) aPlayer.extinguishFire();
+			if (mRebreathe > 0) aPlayer.setAirSupply(aPlayer.getAirSupply()+mRebreathe);
+			// было curePotionEffects(ItemStack) (кюр по конкретному ItemStack, 1.7.10) — Entity.curePotionEffects
+			// удалён целиком, ближайший реальный 1:1 по эффекту (снятие всех эффектов при питье молока) — removeAllEffects().
+			if (mMilk) aPlayer.removeAllEffects();
 			for (int i = 3; i < mPotionEffects.length; i+=4) if (RNGSUS.nextInt(100) < mPotionEffects[i]) {
 				UT.Entities.applyPotion(aPlayer, mPotionEffects[i-3], mPotionEffects[i-2], mPotionEffects[i-1], mInvisibleParticles);
 			}
 			if (mExplosive) {
-				aPlayer.level().newExplosion(aPlayer, aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), 4, T, T);
-				aPlayer.attackEntityFrom(DamageSources.getExplodingDamage(), Float.MAX_VALUE);
+				gregapi.random.ExplosionGT.explode(aPlayer.level(), aPlayer, aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), 4, T, T);
+				aPlayer.hurtServer((ServerLevel)aPlayer.level(), DamageSources.getExplodingDamage(), Float.MAX_VALUE);
 			}
 			EntityFoodTracker tTracker = EntityFoodTracker.get(aPlayer);
 			if (tTracker != null) {

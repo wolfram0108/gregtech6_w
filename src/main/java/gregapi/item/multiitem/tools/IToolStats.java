@@ -28,9 +28,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.List;
 
@@ -185,7 +185,7 @@ public interface IToolStats {
 	 * This lets you modify the Drop List, when this type of Tool has been used.
 	 * @return the Amount of modified Items.
 	 */
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableConversions, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent);
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableConversions, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent);
 	
 	/**
 	 * @return Returns a broken Version of the Item.
@@ -213,6 +213,7 @@ public interface IToolStats {
 	public void afterBreaking(ItemStack aStack, Player aPlayer);
 	
 	public int getRenderPasses();
-	public IIcon getIcon(ItemStack aStack, int aRenderPass);
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code IIcon getIcon(...)} (тип удалён в 26.1.2) — держатель ссылки на текстуру, тот же F3-канал что {@code gregapi.render.IIconContainer#getIcon(int)}. */
+	public Identifier getIcon(ItemStack aStack, int aRenderPass);
 	public short[] getRGBa(ItemStack aStack, int aRenderPass);
 }

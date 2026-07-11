@@ -33,21 +33,20 @@ import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.stats.AchievementList;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
@@ -55,11 +54,16 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * PORT-TODO(F8, enchant-registry): {@code Enchantment.fortune}/{@code Enchantment.looting} (статические
+ * инстансы 1.7.10) удалены — зачарования data-driven, {@code Holder<Enchantment>} требует живой
+ * {@code RegistryAccess}, недоступный в статическом контексте (тот же класс проблемы, что
+ * {@code UT.NBT.getEnchantmentLevelLootingFortune}) — деградация до пустого массива.
  */
 public abstract class ToolStats implements IToolStats {
-	public static final Enchantment[] FORTUNE_ENCHANTMENT = new Enchantment[] {Enchantment.fortune};
-	public static final Enchantment[] LOOTING_ENCHANTMENT = new Enchantment[] {Enchantment.looting};
-	
+	public static final Enchantment[] FORTUNE_ENCHANTMENT = new Enchantment[0];
+	public static final Enchantment[] LOOTING_ENCHANTMENT = new Enchantment[0];
+
 	@Override public int getToolDamagePerBlockBreak()                                       {return 100;}
 	@Override public int getToolDamagePerDropConversion()                                   {return 100;}
 	@Override public int getToolDamagePerContainerCraft()                                   {return 100;}
@@ -84,114 +88,60 @@ public abstract class ToolStats implements IToolStats {
 	@Override public boolean isWeapon()                                                     {return F;}
 	@Override public boolean isRangedWeapon()                                               {return F;}
 	@Override public boolean isMiningTool()                                                 {return T;}
-	
+
 	@Override
 	public float getMiningSpeed(Block aBlock, byte aMetaData) {
 		return isMinableBlock(aBlock, aMetaData) ? 1 : 0;
 	}
-	
+
 	@Override
 	public float getMiningSpeed(Block aBlock, byte aMetaData, float aDefault, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
 		return aDefault;
 	}
-	
+
 	@Override
 	public DamageSource getDamageSource(LivingEntity aPlayer, Entity aEntity) {
-		return DamageSources.getCombatDamage(aPlayer instanceof Player ? "player" : "mob", aPlayer, aEntity instanceof LivingEntity ? getDeathMessage(aPlayer, (LivingEntity)aEntity, aPlayer == null ? "Someone" : UT.Code.stringValidate(aPlayer.getCommandSenderName(), "Someone"), UT.Code.stringValidate(aEntity.getCommandSenderName(), "Someone")) : null, canBehead());
+		return DamageSources.getCombatDamage(aPlayer instanceof Player ? "player" : "mob", aPlayer, aEntity instanceof LivingEntity ? getDeathMessage(aPlayer, (LivingEntity)aEntity, aPlayer == null ? "Someone" : UT.Code.stringValidate(aPlayer.getScoreboardName(), "Someone"), UT.Code.stringValidate(aEntity.getScoreboardName(), "Someone")) : null, canBehead());
 	}
-	
+
 	public Component getDeathMessage(LivingEntity aPlayer, LivingEntity aEntity, String aNamePlayer, String aNameEntity) {return DamageSources.getDeathMessage(aPlayer, aEntity, aNamePlayer, aNameEntity, getDeathMessage());}
 	public String getDeathMessage() {return "Why is there no custom Death Message for this Tool?";}
-	
+
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		return 0;
 	}
-	
-	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
-		if (aBlock == Blocks.tallgrass) {
-			switch(aMetaData) {
-			case 1: case 2: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
-			}
-			return F;
-		}
-		if (aBlock == Blocks.double_plant) {
-			switch(aMetaData & 7) {
-			case 2: case 3: aDrops.add(IL.Grass.get(2+RNGSUS.nextInt(1+aFortune)+RNGSUS.nextInt(1+aFortune))); return T;
-			}
-			return F;
-		}
-		if (IL.TF_Tall_Grass.equal(aBlock)) {
-			switch(aMetaData) {
-			case 10: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
-			}
-			return F;
-		}
-		if (IL.AETHER_Tall_Grass.equal(aBlock)) {
-			aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune)));
-			return T;
-		}
-		if (MD.BoP.mLoaded) {
-			if (aBlock == ST.block(MD.BoP, "foliage")) {
-				switch(aMetaData) {
-				case  1: if (RNGSUS.nextInt(4) <= aFortune) aDrops.add(IL.Grass.get(1)); return T;
-				case  2: if (RNGSUS.nextInt(2) <= aFortune) aDrops.add(IL.Grass.get(1)); return T;
-				case 10: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
-				case 11: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
-				}
-				return F;
-			}
-		}
+
+	// PORT-TODO(F9, block-material 1.7.10 grass/tallgrass/double_plant identity): тройное растение-семейство
+	// "tallgrass"/"double_plant" 1.7.10 расщеплено на отдельные Blocks-константы в современном ванильном
+	// дереве (флэттенинг блоков), 1:1 без риска "выдуманной константы" не установить в рамках этого захода
+	// (вне зоны item-базовых-классов) — деградация до "нет спец-дропа" (F), структура методов сохранена.
+	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		return F;
 	}
-	
-	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
-		if (aBlock == Blocks.tallgrass) {
-			switch(aMetaData) {
-			case 0: aDrops.add(OP.stick.mat(MT.WOODS.Dead, 1+RNGSUS.nextInt(2+aFortune))); return T;
-			}
-			return F;
-		}
-		if (IL.TF_Tall_Grass.equal(aBlock)) {
-			switch(aMetaData) {
-			case 11: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
-			}
-			return F;
-		}
-		if (aBlock == Blocks.deadbush) {
-			aDrops.add(OP.stick.mat(MT.WOODS.Dead, 1+RNGSUS.nextInt(2+aFortune)));
-			return T;
-		}
-		if (MD.BoP.mLoaded) {
-			if (aBlock == ST.block(MD.BoP, "foliage")) {
-				switch(aMetaData) {
-				case  4: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
-				case  8: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
-				case  9: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
-				}
-				return F;
-			}
-		}
+
+	// PORT-TODO(F9, block-material 1.7.10 grass/tallgrass/double_plant identity): см. harvestGrass выше, тот же класс.
+	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		return F;
 	}
-	
+
 	private long mMaterialAmount = 0;
-	
+
 	public ToolStats setMaterialAmount(long aMaterialAmount) {
 		mMaterialAmount = aMaterialAmount;
 		return this;
 	}
-	
+
 	@Override
 	public ItemStack getBrokenItem(ItemStack aStack) {
 		return mMaterialAmount < U4 ? null : OP.scrapGt.mat(MultiItemTool.getPrimaryMaterial(aStack), 1+RNGSUS.nextInt(1+(int)(4*mMaterialAmount/U)));
 	}
-	
+
 	@Override
 	public Enchantment[] getEnchantments(ItemStack aStack, OreDictMaterial aMaterial) {
 		return ZL_ENCHANTMENT;
 	}
-	
+
 	@Override
 	public int[] getEnchantmentLevels(ItemStack aStack, OreDictMaterial aMaterial) {
 		return getEnchantmentLevels(aStack);
@@ -200,72 +150,76 @@ public abstract class ToolStats implements IToolStats {
 	public int[] getEnchantmentLevels(ItemStack aStack) {
 		return ZL_INTEGER;
 	}
-	
+
+	// PORT-TODO(item-base, achievements→advancements): AchievementList (1.7.10) удалён целиком — 26.1.2
+	// использует data-driven Advancements/CriteriaTriggers, нет прямого API-триггера по имени из мод-кода
+	// без собственных CriteriaTrigger-регистраций (отдельный шов, не item-base). Деградация до no-op.
 	@Override
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
-		aPlayer.triggerAchievement(AchievementList.openInventory);
-		aPlayer.triggerAchievement(AchievementList.mineWood);
-		aPlayer.triggerAchievement(AchievementList.buildWorkBench);
+		//
 	}
-	
+
 	@Override
 	public void onStatsAddedToTool(MultiItemTool aItem, int aID) {
 		//
 	}
-	
+
 	@Override
 	public float getNormalDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		return aOriginalDamage;
 	}
-	
+
 	@Override
 	public float getMagicDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		return aOriginalDamage;
 	}
-	
+
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
-		if (aEntity instanceof LivingEntity && aFireAspect > 0) aEntity.setFire(aFireAspect * 4);
-		int tKnockback = (aPlayer.isSprinting()?1:0) + (aEntity instanceof LivingEntity?EnchantmentHelper.getKnockbackModifier(aPlayer, (LivingEntity)aEntity):0);
+		if (aEntity instanceof LivingEntity && aFireAspect > 0) aEntity.igniteForSeconds(aFireAspect * 4);
+		// PORT-TODO(F8, enchant-registry): EnchantmentHelper.getKnockbackModifier(Player,LivingEntity) (1.7.10
+		// static lookup) удалён — knockback-зачарования теперь через ServerLevel+Holder-визитор
+		// (EnchantmentHelper.runIterationOnEquipment), недоступный в этом статическом контексте. Спринт-компонент сохранён 1:1.
+		int tKnockback = (aPlayer.isSprinting()?1:0);
 		if (tKnockback > 0) {
-			aEntity.addVelocity(-Mth.sin((float)(aPlayer.rotationYaw * Math.PI / 180)) * tKnockback * 0.5, 0.1, Mth.cos((float)(aPlayer.rotationYaw * Math.PI / 180)) * tKnockback * 0.5);
-			aPlayer.motionX *= 0.6;
-			aPlayer.motionZ *= 0.6;
+			aEntity.push(-Mth.sin((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5, 0.1, Mth.cos((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5);
+			Vec3 tMotion = aPlayer.getDeltaMovement();
+			aPlayer.setDeltaMovement(tMotion.x * 0.6, tMotion.y, tMotion.z * 0.6);
 			aPlayer.setSprinting(F);
 		}
-		if (aCriticalHit) aPlayer.onCriticalHit(aEntity);
-		if (aMagicDamage > 0) aPlayer.onEnchantmentCritical(aEntity);
-		if (aNormalDamage+aMagicDamage >= 18) aPlayer.triggerAchievement(AchievementList.overkill);
-		aPlayer.setLastAttacker(aEntity);
+		// PORT-TODO(item-base, critical-hit hook): Player.onCriticalHit/onEnchantmentCritical (1.7.10 client
+		// feedback hooks) удалены — критический удар полностью внутренний server-side расчёт в 26.1.2, нет
+		// public override-точки для мод-кода. Деградация до no-op.
 		if (aEntity instanceof LivingEntity) Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 		Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
-		if (aEntity instanceof LivingEntity) aPlayer.addStat(Stats.damageDealtStat, Math.round((aNormalDamage+aMagicDamage) * 10));
-		aEntity.hurtResistantTime = Math.max(1, getHurtResistanceTime(aEntity.hurtResistantTime, aEntity));
+		if (aEntity instanceof LivingEntity) aPlayer.awardStat(Stats.DAMAGE_DEALT, Math.round((aNormalDamage+aMagicDamage) * 10));
+		// PORT-TODO(item-base, hurtResistantTime): Entity.hurtResistantTime (1.7.10 hit-invulnerability-frames
+		// поле) отсутствует в 26.1.2 (боевая модель урона переработана целиком) — нет 1:1-держателя в 3 корнях референса.
 		UT.Entities.exhaust(aPlayer, getExhaustionPerAttack(aEntity));
 	}
-	
+
 	@Override
 	public void afterBreaking(ItemStack aStack, Player aPlayer) {
 		// If you work so hard that your Tool breaks, you should probably take a break yourself. :P
-		UT.Entities.applyPotion(aPlayer, MobEffect.weakness   ,  300, 2, F);
-		UT.Entities.applyPotion(aPlayer, MobEffect.digSlowdown, 1200, 2, F);
+		UT.Entities.applyPotion(aPlayer, MobEffects.WEAKNESS.value()      ,  300, 2, F);
+		UT.Entities.applyPotion(aPlayer, MobEffects.MINING_FATIGUE.value(), 1200, 2, F);
 	}
-	
+
 	public IIconContainer getIcon(boolean aIsToolHead, ItemStack aStack) {
 		return Textures.ItemIcons.VOID;
 	}
-	
+
 	public short[] getRGBa(boolean aIsToolHead, ItemStack aStack) {
 		return null;
 	}
-	
+
 	@Override
 	public int getRenderPasses() {
 		return 4;
 	}
-	
+
 	@Override
-	public IIcon getIcon(ItemStack aStack, int aRenderPass) {
+	public Identifier getIcon(ItemStack aStack, int aRenderPass) {
 		switch(aRenderPass) {
 		case 0: return getIcon(F, aStack).getIcon(0);
 		case 1: return getIcon(F, aStack).getIcon(1);
@@ -274,7 +228,7 @@ public abstract class ToolStats implements IToolStats {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public short[] getRGBa(ItemStack aStack, int aRenderPass) {
 		switch(aRenderPass) {

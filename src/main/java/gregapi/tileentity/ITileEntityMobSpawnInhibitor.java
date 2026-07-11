@@ -27,6 +27,6 @@ import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
  * @author Gregorius Techneticies
  */
 public interface ITileEntityMobSpawnInhibitor extends ITileEntityUnloadable, ITileEntityErrorable {
-	public boolean inhibitMobSpawn(MobSpawnEvent.CheckSpawn aEvent, Level aWorld, int aX, int aY, int aZ);
+	public boolean inhibitMobSpawn(MobSpawnEvent.PositionCheck aEvent, Level aWorld, int aX, int aY, int aZ);
 	public void onUnregisterInhibitor();
 }

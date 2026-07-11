@@ -963,10 +963,20 @@ public class ST {
 	/** @return the Value of this Stack, when burning inside a Furnace (200 = 1 Burn Process = 5000 HU, max = 32767 (that is 819175 HU)), limited to Short because the vanilla Furnace otherwise can't handle it properly, stupid Mojang... */
 	public static long fuel(ItemStack aStack) {
 		if (invalid(aStack)) return 0;
-		// PORT-TODO(fuel-registry): long rFuelValue = DeferredRegister.getFuelValue(aStack); — 1.7.10
-		// GameRegistry custom-fuel API, нет 1:1 в neo (данные топлива теперь через рецепт/FuelValues реестр);
-		// центральный мост ещё не создан.
-		long rFuelValue = 0;
+		// F#/fuel-registry: 1.7.10 GameRegistry.getFuelValue(ItemStack) — статический реестр без контекста
+		// мира. В neo топливная ценность приходит из FuelValues, который живёт на MinecraftServer/Level, не
+		// в статическом реестре (neo-decompiled/net/minecraft/server/MinecraftServer.java:2302 fuelValues(),
+		// net/minecraft/server/level/ServerLevel.java:1853). Сигнатура fuel(ItemStack) без Level не меняется —
+		// текущий сервер берём централизованно через ServerLifecycleHooks.getCurrentServer() (neoforge-decompiled/
+		// net/neoforged/neoforge/server/ServerLifecycleHooks.java:130); оба вызывателя (RecipeMapFurnaceFuel:53,
+		// RecipeMapMicrowave:96) уже гейтят вызов через GAPI_POST.mFinishedServerStarted>0, так что к этому
+		// моменту сервер всегда поднят и fuelValues() заполнен (MinecraftServer.java:357).
+		// aStack.getBurnTime(RecipeType,FuelValues) — реальный neo-путь (neoforge-decompiled/net/neoforged/
+		// neoforge/common/extensions/IItemStackExtension.java:62, ItemStack implements его — ItemStack.java:103),
+		// проходит через FurnaceFuelBurnTimeEvent — та же роль "кастомный fuel регистрируется модами", что и
+		// 1.7.10 GameRegistry.getFuelValue.
+		net.minecraft.server.MinecraftServer tFuelServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		long rFuelValue = tFuelServer == null ? 0 : aStack.getBurnTime(null, tFuelServer.fuelValues());
 		if (rFuelValue > 0) return rFuelValue;
 		Item tItem = item_(aStack);
 		// PORT-TODO(этап-tools, F?): ItemTool/ItemSword/ItemHoe классы удалены в neo (инструменты — обычный
@@ -1201,14 +1211,14 @@ public class ST {
 	
 	public static boolean achieve(Entity aPlayer, Advancement aAchievement) {
 		if (aAchievement == null|| !(aPlayer instanceof Player) || aPlayer.level() == null || aPlayer.level().isClientSide()) return F;
-		// PORT-TODO(stats-loot, achievements): achieve(aPlayer, aAchievement.parentAchievement); ((Player)aPlayer).triggerAchievement(aAchievement);
+		// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, aAchievement.parentAchievement); ((Player)aPlayer).triggerAchievement(aAchievement);
 		// — record Advancement (neo) не несёт parentAchievement (только parent()=Optional<Identifier> в реестр), и
 		// Player.triggerAchievement больше не существует — триггер теперь через data-driven PlayerAdvancements/criteria,
 		// нет 1:1. TFAchievementPage-поля в compat-mirror всегда null, так что этот путь сейчас недостижим.
 		return T;
 	}
 	
-	// PORT-TODO(stats-loot, achievements): net.minecraft.stats.AchievementList (1.7.10 Forge) has no 1:1 in modern
+	// PORT-TODO(STATS, vanilla-achievements-removed): net.minecraft.stats.AchievementList (1.7.10 Forge) has no 1:1 in modern
 	// MC — the static achievement-constant API was replaced by the data-driven Advancement/PlayerAdvancements
 	// criteria system. All `achieve(aPlayer, AchievementList.X)` calls below are stubbed out (no-op) below until
 	// the advancement subsystem itself is ported; original constant referenced in each comment for traceability.
@@ -1217,7 +1227,7 @@ public class ST {
 
 		if (F /* PORT-TODO(этап-dimension, F?): aPlayer.level().provider.dimensionId == DIM_NETHER — WorldProvider/dimensionId
 		     удалены в neo (Level.dimension() -> ResourceKey<Level>), нет прямого 1:1 сравнения по числовому id */) {
-			// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.portal);
+			// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.portal);
 		}
 
 		if (invalid(aStack)) return F;
@@ -1228,46 +1238,49 @@ public class ST {
 		String aRegName = regName(aItem);
 
 		if (WoodDictionary.WOODS.containsKey(aStack, T) || WoodDictionary.BEAMS.containsKey(aStack, T) || WoodDictionary.PLANKS_ANY.containsKey(aStack, T) || OD.logWood.is_(aStack) || OD.logRubber.is_(aStack)) {
-			// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.mineWood);
+			// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.mineWood);
 		}
 
-		if (aItem instanceof ItemHoe) {
-			// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.buildHoe);
-		} else
-		if (aItem instanceof ItemSword) {
-			// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.buildSword);
-		} else
-		if (aItem instanceof ItemPickaxe) {
-			// PORT-TODO(stats-loot, achievements): achieve(aPlayer, aItem != Items.wooden_pickaxe ? AchievementList.buildBetterPickaxe : AchievementList.buildPickaxe);
-		}
+		// PORT-TODO(этап-tools, F?): ItemHoe/ItemSword/ItemPickaxe классы удалены в neo (тот же класс проблемы,
+		// что fuel() выше, ST.java:982) — нет 1:1 instanceof-проверки типа инструмента, весь блок дословно ушёл
+		// в комментарий вместе с уже no-op'нутыми (STATS, vanilla-achievements-removed) вызовами achieve. Оригинал:
+		// if (aItem instanceof ItemHoe) {
+		//     achieve(aPlayer, AchievementList.buildHoe);
+		// } else
+		// if (aItem instanceof ItemSword) {
+		//     achieve(aPlayer, AchievementList.buildSword);
+		// } else
+		// if (aItem instanceof ItemPickaxe) {
+		//     achieve(aPlayer, aItem != Items.wooden_pickaxe ? AchievementList.buildBetterPickaxe : AchievementList.buildPickaxe);
+		// }
 
 		if (MD.MC.owns(aRegName)) {
 			if (aItem == Items.COOKED_COD) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.cookFish);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.cookFish);
 			} else
 			if (aItem == Items.BREAD) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.makeBread);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.makeBread);
 			} else
 			if (aItem == Items.LEATHER || aItem == Items.BEEF || aItem == Items.COOKED_BEEF || aItem == Items.SADDLE) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.killCow);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.killCow);
 			} else
 			if (aBlock == Blocks.CAKE || aItem == Items.CAKE) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.bakeCake);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.bakeCake);
 			} else
 			if (aBlock == Blocks.FURNACE || aBlock == Blocks.FURNACE) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.buildFurnace);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.buildFurnace);
 			} else
 			if (aItem == Items.GHAST_TEAR) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.portal);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.portal);
 			} else
 			if (aItem == Items.BREWING_STAND || aBlock == Blocks.BREWING_STAND || aItem == Items.BLAZE_ROD || aItem == Items.BLAZE_POWDER || aItem == Items.ENDER_EYE) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.blazeRod);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.blazeRod);
 			} else
 			if (aBlock == Blocks.ENCHANTING_TABLE) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.enchantments);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.enchantments);
 			} else
 			if (aBlock == Blocks.BOOKSHELF) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.bookcase);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.bookcase);
 			}
 		}
 
@@ -1291,10 +1304,10 @@ public class ST {
 		
 		if (tData != null && !tData.mPrefix.containsAny(TD.Prefix.ORE_PROCESSING_BASED, TD.Prefix.ORE)) {
 			if (ANY.Diamond.mToThis.contains(tData.mMaterial.mMaterial) && tData.mPrefix.contains(TD.Prefix.GEM_BASED)) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.diamonds);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.diamonds);
 			}
 			if (ANY.Iron.mToThis.contains(tData.mMaterial.mMaterial)) {
-				// PORT-TODO(stats-loot, achievements): achieve(aPlayer, AchievementList.acquireIron);
+				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.acquireIron);
 			}
 			if (MD.TF.mLoaded && tData.mMaterial.mMaterial.mOriginalMod == MD.TF && tData.mMaterial.mMaterial.contains(TD.Properties.MAZEBREAKER)) {
 				achieve(aPlayer, TFAchievementPage.twilightProgressHydra);

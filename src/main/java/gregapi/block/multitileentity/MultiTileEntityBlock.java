@@ -24,6 +24,7 @@ import gregapi.block.IBlockSyncData.IBlockSyncDataAndCoversAndIDs;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.IL;
+import gregapi.data.LH;
 import gregapi.data.MD;
 import gregapi.item.IItemGT;
 import gregapi.network.INetworkHandler;
@@ -271,7 +272,13 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public final boolean canProvidePower() {return !mNormalCube;}
 	@Override public final Block getBlock() {return this;}
 	@Override public final String getUnlocalizedName() {return mNameInternal;}
-	@Override public final String getLocalizedName() {return StatCollector.translateToLocal(mNameInternal);}
+	// PORT-TODO(LOCALIZATION, vanilla-block-name-api-removed): 1.7.10 vanilla Block.getLocalizedName()
+	// (@Override) удалён из neo Block целиком — ни один из реализуемых здесь интерфейсов (IBlock и др.)
+	// эту сигнатуру не объявляет, поэтому @Override больше не действителен (снят). StatCollector —
+	// мёртвый 1.7.10-класс; замена идёт через ЦЕНТР локализации LH.get(key) (тот же приём, что
+	// FluidGT.getLocalizedName()/BlockBaseFluid.getLocalizedName() уже используют), а не напрямую
+	// движковым вызовом — вся адаптация к движку остаётся в одном месте (gregapi.lang.LanguageHandler).
+	public final String getLocalizedName() {return LH.get(mNameInternal);}
 	@Override public final String getHarvestTool(int aMeta) {return mTool;}
 	@Override public final boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
 	@Override public final int getHarvestLevel(int aMeta) {return (int)UT.Code.bind_(mHarvestLevelMinimum, mHarvestLevelMaximum, mHarvestLevelOffset + aMeta);}

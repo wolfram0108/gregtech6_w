@@ -19,7 +19,6 @@
 
 package gregapi.lang;
 
-import net.neoforged.neoforge.common.data.LanguageProvider;
 import gregapi.code.ItemNBT;
 import gregapi.data.ANY;
 import gregapi.data.MT;
@@ -31,12 +30,10 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.ModConfigSpec;
-import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
 
 import java.util.HashMap;
-import java.util.Map.Entry;
 
 import static gregapi.data.CS.*;
 
@@ -47,7 +44,7 @@ public class LanguageHandler {
 	public static ModConfigSpec sLangFile;
 	public static boolean sUseFile = F;
 	
-	private static final HashMap<String, String> TEMPMAP = new HashMap<>(), BUFFERMAP = new HashMap<>(), BACKUPMAP = new HashMap<>();
+	private static final HashMap<String, String> BUFFERMAP = new HashMap<>(), BACKUPMAP = new HashMap<>();
 	private static boolean mWritingEnabled = F;
 	
 	public static void save() {
@@ -59,40 +56,37 @@ public class LanguageHandler {
 	
 	public static synchronized void set(String aKey, String aEnglish) {
 		BACKUPMAP.put(aKey, aEnglish);
-		TEMPMAP.put(aKey        , aEnglish);
-		TEMPMAP.put(aKey+".name", aEnglish);
-		LanguageProvider.instance().injectLanguage("en_US", TEMPMAP);
-		TEMPMAP.clear();
+		// PORT-TODO(LOCALIZATION, runtime-inject-to-vanilla-lang): 1.7.10 LanguageRegistry.instance()
+		// .injectLanguage(locale, Map) регистрировал строку в ЖИВОЙ ванильной таблице переводов (видна
+		// стандартному tooltip/getName()) — в neo эквивалента нет ни в одном из 3 корней референса:
+		// LanguageProvider (net.neoforged.neoforge.common.data) — abstract datagen-only класс без
+		// .instance()/.injectLanguage (собирает lang/en_us.json ДО запуска игры, не рантайм-API);
+		// I18nManager.injectTranslations (net.neoforged.fml.i18n) — внутренний loader-механизм FML
+		// для сообщений ModLoadingException, не general-purpose реестр перевода мода;
+		// Language.inject(Language) заменяет ЦЕЛИКОМ статический синглтон, не аддитивно по одному
+		// ключу. BACKUPMAP выше остаётся источником истины для translate() на обеих сторонах; чтобы
+		// ЭТА строка была видна и в штатных ванильных путях (Item.getName()/tooltip), нужен отдельный
+		// датаген-провайдер (GatherDataEvent → LanguageProvider.addTranslations(), пишет
+		// lang/en_us.json) — вне зоны этого чекпоинта (см. DEFERRED-LEDGER).
 	}
-	
+
 	public static synchronized void add(String aKey, String aEnglish) {
 		if (aKey == null) return;
 		aKey = aKey.trim();
 		if (aKey.length() <= 0) return;
-		boolean tSave = F;
 		BACKUPMAP.put(aKey, aEnglish);
 		if (sLangFile == null) {
 			BUFFERMAP.put(aKey, aEnglish);
 		} else {
-			if (!BUFFERMAP.isEmpty()) {
-				tSave = T;
-				for (Entry<String, String> tEntry : BUFFERMAP.entrySet()) {
-					ConfigValue tProperty = sLangFile.get("LanguageFile", tEntry.getKey(), tEntry.getValue());
-					TEMPMAP.put(tEntry.getKey()        , sUseFile?tProperty.getString():tEntry.getValue());
-					TEMPMAP.put(tEntry.getKey()+".name", sUseFile?tProperty.getString():tEntry.getValue());
-					LanguageProvider.instance().injectLanguage("en_US", TEMPMAP);
-					TEMPMAP.clear();
-				}
-				BUFFERMAP.clear();
-			}
-			ConfigValue tProperty = sLangFile.get("LanguageFile", aKey, aEnglish);
-			tSave |= tProperty.wasRead();
-			TEMPMAP.put(aKey        , sUseFile?tProperty.getString():aEnglish);
-			TEMPMAP.put(aKey+".name", sUseFile?tProperty.getString():aEnglish);
-			LanguageProvider.instance().injectLanguage("en_US", TEMPMAP);
-			TEMPMAP.clear();
+			// PORT-TODO(F12, config-subsystem): тот же класс проблемы, что у GT_API.java (см.
+			// PORT-TODO "F12, config-subsystem" там) — ModConfigSpec строится через Builder на
+			// регистрации мода (статическая схема), нет File-конструктора и нет per-call
+			// get(category,name,default), как было у 1.7.10 Configuration/Property. Владельцы
+			// (gregapi.config.Config, эта sLangFile-ветка) сами не портированы на реальный
+			// ModConfigSpec — отдельный шов вне локализации. В текущем состоянии порта GT_API.java
+			// держит LanguageHandler.sLangFile===null (см. GT_API.java, "sUseFile — тот же дефолт F"),
+			// поэтому эта ветка фактически не выполняется; BACKUPMAP выше остаётся источником истины.
 		}
-		if (tSave && mWritingEnabled) sLangFile.save();
 	}
 	
 	public static String get(String aKey, String aDefault) {
@@ -102,36 +96,40 @@ public class LanguageHandler {
 	
 	public static String langfile(String aKey, String aEnglish) {
 		if (sLangFile == null) return aEnglish;
-		ConfigValue tProperty = sLangFile.get("LanguageFile", aKey, aEnglish);
-		if (tProperty.wasRead() && mWritingEnabled) sLangFile.save();
-		return sUseFile?tProperty.getString():aEnglish;
+		// PORT-TODO(F12, config-subsystem): см. add() выше — тот же класс проблемы (ModConfigSpec
+		// без per-call get(category,name,default)); sLangFile-оверрайд не портирован, дефолт-строка
+		// возвращается как есть (тот же исход, что и sLangFile==null).
+		return aEnglish;
 	}
-	
+
 	public static String translate(String aKey) {
 		return translate(aKey, aKey);
 	}
-	
+
 	public static String translate(String aKey, String aDefault) {
 		if (aKey == null || aKey.length() < 2) return "";
 		aKey = aKey.trim();
 		if (aKey.length() < 2) return "";
 		String
-		rTranslation = LanguageProvider.instance().getStringLocalization(aKey);
+		// 1.7.10 здесь стояли ДВА раздельных запроса к движку: FML LanguageRegistry.getStringLocalization
+		// (свой оверлей) и vanilla StatCollector.translateToLocal (файловый lang-реестр) — в 1.7.10 это
+		// были два разных подсистемы сканирования .lang-файлов. В neo/vanilla они слиты в ОДНУ систему
+		// (Language/Component), поэтому оба тира схлопнуты в один реальный вызов ниже (не дублируем
+		// одинаковый запрос дважды подряд — R1). Component.translatable(...).getString() безопасен на
+		// обеих сторонах (TranslatableContents.visit читает Language.getInstance() напрямую, класс не
+		// @OnlyIn) и деградирует до возврата самого ключа, если перевод не найден (см. Language.java:132-136).
+		rTranslation = Component.translatable(aKey).getString();
 		if (UT.Code.stringValid(rTranslation) && !aKey.equals(rTranslation)) return rTranslation;
-		rTranslation = I18n.translateToLocal(aKey);
-		if (UT.Code.stringValid(rTranslation) && aKey != rTranslation) return rTranslation;
 		rTranslation = BACKUPMAP.get(aKey);
 		if (UT.Code.stringValid(rTranslation)) return rTranslation;
-		
+
 		aKey = (aKey.endsWith(".name") ? aKey.substring(0, aKey.length() - 5) : aKey + ".name");
-		
-		rTranslation = LanguageProvider.instance().getStringLocalization(aKey);
+
+		rTranslation = Component.translatable(aKey).getString();
 		if (UT.Code.stringValid(rTranslation) && !aKey.equals(rTranslation)) return rTranslation;
-		rTranslation = I18n.translateToLocal(aKey);
-		if (UT.Code.stringValid(rTranslation) && aKey != rTranslation) return rTranslation;
 		rTranslation = BACKUPMAP.get(aKey);
 		if (UT.Code.stringValid(rTranslation)) return rTranslation;
-		
+
 		return aDefault;
 	}
 	
@@ -147,13 +145,18 @@ public class LanguageHandler {
 	public static String getTranslateableItemStackName(ItemStack aStack) {
 		if (ST.invalid(aStack)) return "null";
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		if (tNBT != null && tNBT.hasKey("display")) {
-			String tName = tNBT.getCompoundTag("display").getString("Name");
+		if (tNBT != null && tNBT.contains("display")) {
+			String tName = tNBT.getCompoundOrEmpty("display").getStringOr("Name", "");
 			if (UT.Code.stringValid(tName)) {
 				return tName;
 			}
 		}
-		return aStack.getUnlocalizedName() + ".name";
+		// PORT-TODO(F1, item-unlocalized-name-per-stack): 1.7.10 ItemStack.getUnlocalizedName()
+		// делегировал в переопределяемый Item.getUnlocalizedName(ItemStack) — per-metadata вариация
+		// подтипов (та же развилка модели предмета, что и decisions/F1-item-metadata-model.md).
+		// В neo Item.getDescriptionId() финальный и без параметра ItemStack; per-stack вариация не
+		// воспроизведена здесь до решения F1 по компоненту MATERIAL/VARIANT.
+		return aStack.getItem().getDescriptionId() + ".name";
 	}
 	
 	public static String getLocalName(OreDictPrefix aPrefix, OreDictMaterial aMaterial) {

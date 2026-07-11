@@ -120,6 +120,9 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		.add(Registries.PLACED_FEATURE, ctx -> ctx.register(GT6_WORLDGEN_PF,
 			new PlacedFeature(ctx.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(GT6_WORLDGEN_CF),
 				List.of(BiomeFilter.biome()))))
+		// ENCHANT: та же датапак-точка (DatapackBuiltinEntriesProvider ниже) регистрирует 4 GT6-чара —
+		// центр gregapi/enchants/EnchantsGT6.java (стык, подключён интегратором).
+		.add(Registries.ENCHANTMENT, gregapi.enchants.EnchantsGT6::bootstrap)
 		.add(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ctx -> {
 			HolderSet<PlacedFeature> tPlaced = HolderSet.direct(ctx.lookup(Registries.PLACED_FEATURE).getOrThrow(GT6_WORLDGEN_PF));
 			ctx.register(ADD_GT6_WORLDGEN_OVERWORLD, new AddFeaturesBiomeModifier(

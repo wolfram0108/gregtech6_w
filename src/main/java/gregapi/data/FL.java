@@ -61,8 +61,8 @@ import static gregapi.data.CS.FluidsGT.*;
  * {@link Fluid}(vanilla, поведение)/{@link FluidStack}(neo, immutable data). Forge-1.7.10-only
  * машинерия без neo-аналога (глобальный числовой id жидкости `FluidRegistry`, авто-реестр
  * бакетов/канистр `FluidContainerRegistry`, `IFluidHandler.fill(ForgeDirection,...)`-перенос между
- * тайлами) — помечена `// PORT-TODO(F5, ...)` и гатится до безопасного дефолта (REMAP-RULES §A: данные
- * не трогать, поведение можно гатить).
+ * тайлами) — помечена меткой семейства F5 (см. конкретные PORT-TODO ниже по файлу) и гатится до
+ * безопасного дефолта (REMAP-RULES §A: данные не трогать, поведение можно гатить).
  */
 @SuppressWarnings("unchecked")
 public enum FL {

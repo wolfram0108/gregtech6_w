@@ -19,74 +19,33 @@
 
 package gregapi.enchants;
 
-import gregapi.config.Config;
-import gregapi.config.ConfigCategories;
-import gregapi.data.LH;
-import gregapi.data.MT;
-import gregapi.util.UT;
-import net.minecraft.enchantment.EnchantmentDamage;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
+import gregapi.data.MD;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.enchantment.Enchantment;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * <p>Форс движка, см. {@link Enchantment_WerewolfDamage}. Игровая логика (делегат в
+ * {@code UT.Entities.applyRadioactivity}) перенесена 1:1 в {@link EnchantmentEffect_Radioactivity};
+ * bootstrap — {@link EnchantsGT6#bootstrap}.
+ *
+ * <p>Оригинал (`gregtech6/.../Enchantment_Radioactivity.java:58-81`) переопределял
+ * {@code getMinEnchantability=Integer.MAX_VALUE}/{@code getMaxEnchantability=0} (никогда не
+ * достижим через стол зачарования) и {@code canApply=false}/{@code isAllowedOnBooks=false} —
+ * в data-driven модели это переносится как {@code EnchantmentDefinition} с
+ * {@code Enchantment.constantCost(Integer.MAX_VALUE)}/{@code constantCost(0)} (те же литералы,
+ * `EnchantsGT6.bootstrap`) и ОТСУТСТВИЕМ членства в теге {@code EnchantmentTags.IN_ENCHANTING_TABLE}
+ * (не добавляется нигде в этой зоне) — функционально тот же результат «никогда не выпадает».
+ *
+ * PORT-TODO(F8, enchant-registry): материал-регистрация (`gregtech6/.../Enchantment_Radioactivity.java:41-54`,
+ * {@code MT.Cyanite.addEnchantmentForTools(this,1).addEnchantmentForDamage(this,1)...} и далее по
+ * tools/damage/ranged/armors) не перенесена — тот же регистровый тайминг-класс проблемы, что у
+ * {@link Enchantment_WerewolfDamage}, решение вне зоны `gregapi/enchants`.
  */
-public class Enchantment_Radioactivity extends EnchantmentDamage {
-	public static Enchantment_Radioactivity INSTANCE;
-	
-	public Enchantment_Radioactivity() {
-		super(Config.addIDConfig(ConfigCategories.IDs.enchantments, "Radioactivity", 14), 0, -1);
-		LH.add(getName(), "Radioactivity");
-		MT.Cyanite          .addEnchantmentForTools(this, 1).addEnchantmentForDamage(this, 1).addEnchantmentForRanged(this, 1).addEnchantmentForArmors(this, 1);
-		MT.Yellorium        .addEnchantmentForTools(this, 1).addEnchantmentForDamage(this, 1).addEnchantmentForRanged(this, 1).addEnchantmentForArmors(this, 1);
-		MT.Blutonium        .addEnchantmentForTools(this, 2).addEnchantmentForDamage(this, 2).addEnchantmentForRanged(this, 2).addEnchantmentForArmors(this, 2);
-		MT.Ludicrite        .addEnchantmentForTools(this, 4).addEnchantmentForDamage(this, 4).addEnchantmentForRanged(this, 4).addEnchantmentForArmors(this, 4);
-		MT.Pu               .addEnchantmentForTools(this, 1).addEnchantmentForDamage(this, 1).addEnchantmentForRanged(this, 1).addEnchantmentForArmors(this, 1);
-		MT.U_235            .addEnchantmentForTools(this, 2).addEnchantmentForDamage(this, 2).addEnchantmentForRanged(this, 2).addEnchantmentForArmors(this, 2);
-		MT.Co_60            .addEnchantmentForTools(this, 2).addEnchantmentForDamage(this, 2).addEnchantmentForRanged(this, 2).addEnchantmentForArmors(this, 2);
-		MT.Pu_241           .addEnchantmentForTools(this, 3).addEnchantmentForDamage(this, 3).addEnchantmentForRanged(this, 3).addEnchantmentForArmors(this, 3);
-		MT.Pu_243           .addEnchantmentForTools(this, 3).addEnchantmentForDamage(this, 3).addEnchantmentForRanged(this, 3).addEnchantmentForArmors(this, 3);
-		MT.At               .addEnchantmentForTools(this, 4).addEnchantmentForDamage(this, 4).addEnchantmentForRanged(this, 4).addEnchantmentForArmors(this, 4);
-		MT.Am_241           .addEnchantmentForTools(this, 4).addEnchantmentForDamage(this, 4).addEnchantmentForRanged(this, 4).addEnchantmentForArmors(this, 4);
-		MT.Nq_528           .addEnchantmentForTools(this, 4).addEnchantmentForDamage(this, 4).addEnchantmentForRanged(this, 4).addEnchantmentForArmors(this, 4);
-		MT.Nq_522           .addEnchantmentForTools(this, 5).addEnchantmentForDamage(this, 5).addEnchantmentForRanged(this, 5).addEnchantmentForArmors(this, 5);
-		MT.CosmicNeutronium .addEnchantmentForTools(this,10).addEnchantmentForDamage(this,10).addEnchantmentForRanged(this,10).addEnchantmentForArmors(this,10);
-		INSTANCE = this;
-	}
-	
-	@Override
-	public int getMinEnchantability(int aLevel) {
-		return Integer.MAX_VALUE;
-	}
-	
-	@Override
-	public int getMaxEnchantability(int aLevel) {
-		return 0;
-	}
-	
-	@Override
-	public int getMaxLevel() {
-		return 5;
-	}
-	
-	@Override
-	public boolean canApply(ItemStack par1ItemStack) {
-		return false;
-	}
-	
-	@Override
-	public boolean isAllowedOnBooks() {
-		return false;
-	}
-	
-	@Override
-	public void func_151367_b(LivingEntity aHurtEntity, Entity aDamagingEntity, int aLevel) {
-		UT.Entities.applyRadioactivity(aHurtEntity, aLevel, 1);
-	}
-	
-	@Override
-	public String getName() {
-		return "enchantment.damage.radioactivity";
-	}
+public class Enchantment_Radioactivity {
+	public static final ResourceKey<Enchantment> KEY =
+		ResourceKey.create(Registries.ENCHANTMENT, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "radioactivity"));
 }

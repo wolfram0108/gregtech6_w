@@ -31,7 +31,7 @@ import ic2.api.item.IElectricItemManager;
 import ic2.api.item.ISpecialElectricItem;
 import micdoodle8.mods.galacticraft.api.item.IItemElectric;
 import mods.railcraft.api.core.items.IToolCrowbar;
-import net.minecraft.entity.item.EntityMinecart;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -42,9 +42,14 @@ import static gregapi.data.CS.T;
 
 /**
  * @author Gregorius Techneticies
- * 
+ *
  * This is an example on how you can create a Tool ItemStack, in this case a Bismuth Wrench:
  * gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(CS.ToolIDs.WRENCH, 1, MT.Bismuth, MT.Bismuth, null);
+ *
+ * PORT-TODO(item-base, F10 compat-mirror пустые интерфейсы): IWarpingGear/IToolGrafter/IToolCrowbar/
+ * IToolWrench/IBoxable/ISpecialElectricItem/IElectricItemManager/IItemElectric сейчас ПУСТЫЕ маркер-
+ * интерфейсы (compat-mirror/README.md, "члены добираются компилятором") — методы ниже временно НЕ
+ * @Override (нечего переопределять), тела 1:1 сохранены для реальной мод-интеграции позже.
  */
 @Optional.InterfaceList(value = {
   @Optional.Interface(iface = "thaumcraft.api.IWarpingGear", modid = ModIDs.TC)
@@ -62,77 +67,66 @@ public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGe
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
 	public MultiItemToolWithCompat(String aModID, String aUnlocalized) {super(aModID, aUnlocalized);}
-	
-	@Override
+
 	public int getWarp(ItemStack aStack, Player aPlayer) {
 		return getPrimaryMaterial(aStack).contains(TD.Properties.WARPING) || getSecondaryMaterial(aStack).contains(TD.Properties.WARPING) ? 1 : 0;
 	}
-	
-	@Override
+
 	public float getSaplingModifier(ItemStack aStack, Level aWorld, Player aPlayer, int aX, int aY, int aZ) {
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isGrafter() ? Math.min(100.0F, (1+UT.Code.bind4(getHarvestLevel(aStack, ""))) * 20.0F) : 0.0F;
 	}
-	
-	@Override
+
 	public boolean canWrench(Player aPlayer, int aX, int aY, int aZ) {
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isWrench();
 	}
-	
-	@Override
+
 	public void wrenchUsed(Player aPlayer, int aX, int aY, int aZ) {
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
-	
-	@Override
+
 	public boolean canWhack(Player aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
-	
-	@Override
+
 	public void onWhack(Player aPlayer, ItemStack aStack, int aX, int aY, int aZ) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, 100, aPlayer, T);
 	}
-	
-	@Override
-	public boolean canLink(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
+
+	public boolean canLink(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
-	
-	@Override
-	public void onLink(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
+
+	public void onLink(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, tStats.getToolDamagePerEntityAttack(), aPlayer, T);
 	}
-	
-	@Override
-	public boolean canBoost(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
+
+	public boolean canBoost(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		return tStats != null && tStats.isCrowbar();
 	}
-	
-	@Override
-	public void onBoost(Player aPlayer, ItemStack aStack, EntityMinecart cart) {
+
+	public void onBoost(Player aPlayer, ItemStack aStack, AbstractMinecart cart) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats != null && !UT.Entities.hasInfiniteItems(aPlayer)) doDamage(aStack, tStats.getToolDamagePerEntityAttack(), aPlayer, T);
 	}
-	
-	@Override
+
 	public boolean canBeStoredInToolbox(ItemStack aStack) {
 		return T;
 	}
-	
-	@Override @Optional.Method(modid = ModIDs.IC2)
+
+	@Optional.Method(modid = ModIDs.IC2)
 	public IElectricItemManager getManager(ItemStack aStack) {return this;}
 }

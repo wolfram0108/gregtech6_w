@@ -19,77 +19,23 @@
 
 package gregapi.enchants;
 
-import gregapi.config.Config;
-import gregapi.config.ConfigCategories;
-import gregapi.data.LH;
-import gregapi.data.MT;
-import gregapi.util.UT;
-import net.minecraft.enchantment.EnchantmentDamage;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
+import gregapi.data.MD;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.enchantment.Enchantment;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * <p>Форс движка, см. {@link Enchantment_WerewolfDamage}. Игровая логика перенесена 1:1 в
+ * {@link EnchantmentEffect_Ender}; bootstrap — {@link EnchantsGT6#bootstrap}.
+ *
+ * PORT-TODO(F8, enchant-registry): материал-регистрация (`gregtech6/.../Enchantment_EnderDamage.java:42-62`,
+ * {@code MT.Hg.addEnchantmentForDamage(this, 3)} и далее) не перенесена — тот же регистровый
+ * тайминг-класс проблемы, что у {@link Enchantment_WerewolfDamage}, решение вне зоны `gregapi/enchants`.
  */
-public class Enchantment_EnderDamage extends EnchantmentDamage {
-	public static Enchantment_EnderDamage INSTANCE;
-	
-	public Enchantment_EnderDamage() {
-		super(Config.addIDConfig(ConfigCategories.IDs.enchantments, "Disjunction", 15), 2, -1);
-		LH.add(getName(), "Disjunction");
-		MT.Hg                  .addEnchantmentForDamage(this, 3);
-		MT.Ag                  .addEnchantmentForDamage(this, 4);
-		MT.RedMeteor           .addEnchantmentForDamage(this, 3);
-		MT.Electrum            .addEnchantmentForDamage(this, 3);
-		MT.BlackBronze         .addEnchantmentForDamage(this, 2);
-		MT.BlackSteel          .addEnchantmentForDamage(this, 2);
-		MT.MeteoricBlackSteel  .addEnchantmentForDamage(this, 2);
-		MT.MeteoflameBlackSteel.addEnchantmentForDamage(this, 2);
-		MT.RedSteel            .addEnchantmentForDamage(this, 1);
-		MT.MeteoricRedSteel    .addEnchantmentForDamage(this, 1);
-		MT.MeteoflameRedSteel  .addEnchantmentForDamage(this, 1);
-		MT.BlueSteel           .addEnchantmentForDamage(this, 3);
-		MT.MeteoricBlueSteel   .addEnchantmentForDamage(this, 3);
-		MT.MeteoflameBlueSteel .addEnchantmentForDamage(this, 3);
-		MT.ElectrumFlux        .addEnchantmentForDamage(this, 3);
-		MT.Meutoite            .addEnchantmentForDamage(this, 3);
-		MT.SterlingSilver      .addEnchantmentForDamage(this, 4);
-		MT.AstralSilver        .addEnchantmentForDamage(this, 5);
-		MT.Desichalkos         .addEnchantmentForDamage(this, 6);
-		MT.VibraniumSilver     .addEnchantmentForDamage(this,10);
-		MT.Infinity            .addEnchantmentForDamage(this,10);
-		INSTANCE = this;
-	}
-	
-	@Override
-	public int getMinEnchantability(int aLevel) {
-		return 5 + (aLevel - 1) * 8;
-	}
-	
-	@Override
-	public int getMaxEnchantability(int aLevel) {
-		return this.getMinEnchantability(aLevel) + 20;
-	}
-	
-	@Override
-	public int getMaxLevel() {
-		return 5;
-	}
-	
-	@Override
-	public void func_151367_b(LivingEntity aHurtEntity, Entity aDamagingEntity, int aLevel) {
-		if (UT.Entities.isEnderCreature(aHurtEntity)) {
-			// Weakness causes Endermen to not be able to teleport with GT being installed.
-			aHurtEntity.addPotionEffect(new MobEffectInstance(MobEffect.weakness.id , aLevel * 200, (int)UT.Code.bind(1, 5, (5*aLevel) / 7)));
-			// They also get Poisoned. If you have this Enchant on an Arrow, you can kill the Ender Dragon easier.
-			aHurtEntity.addPotionEffect(new MobEffectInstance(MobEffect.poison.id   , aLevel * 200, (int)UT.Code.bind(1, 5, (5*aLevel) / 7)));
-		}
-	}
-	
-	@Override
-	public String getName() {
-		return "enchantment.damage.endermen";
-	}
+public class Enchantment_EnderDamage {
+	public static final ResourceKey<Enchantment> KEY =
+		ResourceKey.create(Registries.ENCHANTMENT, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "disjunction"));
 }
