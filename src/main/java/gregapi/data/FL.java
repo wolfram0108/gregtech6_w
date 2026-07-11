@@ -675,19 +675,31 @@ public enum FL {
 	 *  гарантирована в том же порядке между запусками при разном наборе модов; безопасный минимум. */
 	public static Fluid fluid (int aID) {return aID < 0 ? null : BuiltInRegistries.FLUID.get(aID).<Fluid>map(Holder::value).orElse(null);}
 	public static Fluid fluid (String aFluidName) {return Code.stringInvalid(aFluidName) ? null : fluid_(aFluidName);}
-	/** Заменяет 1.7.10 {@code FluidRegistry.getFluid(String)} (глобальный поиск по "голому" имени без
-	 *  namespace среди ВСЕХ модов). Приоритет: (1) свои жидкости — точное GT6-имя через
-	 *  {@link FluidGT#BY_NAME}; (2) namespaced-идентификатор (если имя содержит ':') — реальный neo
-	 *  реестр; (3) PORT-TODO(F5, межмодовый интероп по имени, decisions/F5-fluids.md §9): поиск ЧУЖОЙ
-	 *  жидкости по голому пути (без namespace) не воспроизведён — neo этого не позволяет без перебора
-	 *  всего реестра, что не 1:1 с прежним поведением и может быть неоднозначным. */
+	/** Заменяет 1.7.10 {@code FluidRegistry.getFluid(String)}, которое было {@code fluids.get(fluidName)}
+	 *  по карте, ключёванной {@code fluid.getName()} — т.е. поиском по "голому" имени БЕЗ namespace
+	 *  (recompSrc {@code net.minecraftforge.fluids.FluidRegistry:187-190,144}; там же под голыми именами
+	 *  "water"/"lava" лежали и ванильные жидкости). Save-путь {@link #save_} пишет в NBT-ключ
+	 *  {@code FluidName} именно голое имя ({@link FluidGT#nameOf} → для своих жидкостей {@code mName},
+	 *  для ванильных {@code Identifier.getPath()}) — значит load ОБЯЗАН находить голое имя, иначе
+	 *  жидкость теряется при save/load round-trip. Приоритет: (1) свои жидкости — точное GT6-имя через
+	 *  {@link FluidGT#BY_NAME}; (2) реестр neo — голое имя дефолтится в {@code minecraft:<name>}
+	 *  ({@code Identifier.tryParse} → {@code withDefaultNamespace}, `Identifier.java:49,72`; для ванильных
+	 *  water/lava это восстанавливает round-trip), namespaced-имя (с ':') парсится как есть.
+	 *  {@code Identifier.tryParse} даёт {@code null} на невалидном имени (не бросает), а
+	 *  {@code getOptional} — {@code null}-семантику отсутствия (в отличие от {@code getValue}, который у
+	 *  {@code DefaultedMappedRegistry} на промахе вернул бы {@code Fluids.EMPTY},
+	 *  `DefaultedMappedRegistry.java:47-56`), 1:1 с прежним null-на-отсутствие.
+	 *  PORT-TODO(F5, межмодовый интероп по имени, decisions/F5-fluids.md §9): голое имя ЧУЖОГО мода с
+	 *  namespace != minecraft по голому пути не находится (neo не даёт этого без перебора всего реестра,
+	 *  что неоднозначно) — как и раньше, редкий межмодовый случай. */
 	public static Fluid fluid_(String aFluidName) {
 		if (Code.stringInvalid(aFluidName)) return null;
 		FluidGT tGT = FluidGT.BY_NAME.get(aFluidName.toLowerCase());
 		if (tGT != null) return tGT.getFluid();
-		if (aFluidName.indexOf(':') >= 0) {
-			Fluid tFluid = BuiltInRegistries.FLUID.getValue(Identifier.parse(aFluidName));
-			if (tFluid != null) return tFluid;
+		Identifier tId = Identifier.tryParse(aFluidName);
+		if (tId != null) {
+			Fluid tFluid = BuiltInRegistries.FLUID.getOptional(tId).orElse(null);
+			if (tFluid != null && tFluid != Fluids.EMPTY) return tFluid;
 		}
 		return null;
 	}
@@ -811,7 +823,13 @@ public enum FL {
 	 *  решает только принадлежность множеству {@code FluidsGT.GAS}. */
 	public static boolean gas(IFluidTank aFluid, boolean aDefault) {return gas(aFluid.getFluid(), aDefault);}
 	public static boolean gas(IFluidTank aFluid) {return gas(aFluid.getFluid(), F);}
-	public static boolean gas(FluidStack aFluid, boolean aDefault) {return aFluid == null || aFluid.getFluid() == null ? aDefault : gas(aFluid.getFluid(), aDefault);}
+	public static boolean gas(FluidStack aFluid, boolean aDefault) {
+		if (aFluid == null || aFluid.getFluid() == null) return aDefault;
+		String tName = FluidGT.nameOf(aFluid.getFluid());
+		if (FluidsGT.LIQUID.contains(tName)) return F;
+		FluidGT tGT = FluidGT.of(aFluid.getFluid());
+		return (tGT != null && tGT.isGaseous()) || FluidsGT.GAS.contains(tName);
+	}
 	public static boolean gas(FluidStack aFluid) {return gas(aFluid, F);}
 	public static boolean gas(Fluid aFluid, boolean aDefault) {
 		if (aFluid == null) return aDefault;
@@ -920,9 +938,13 @@ public enum FL {
 
 	public static String name(Fluid aFluid, boolean aLocalized) {
 		if (aFluid == null) return "";
+		/** Замена {@code Fluid.getUnlocalizedName()} (Forge-1.7.10, метод на самом Fluid) — в neo
+		 *  unlocalized-имя живёт на {@link net.neoforged.neoforge.fluids.FluidType} и достаётся через
+		 *  реальный {@code FluidType.getDescriptionId()} (`FluidType.java:146-149`), а НЕ реконструируется
+		 *  из имени вручную. */
+		if (!aLocalized) return aFluid.getFluidType().getDescriptionId();
 		FluidGT tGT = FluidGT.of(aFluid);
-		if (tGT != null) return aLocalized ? LH.get(tGT.getUnlocalizedName()) : tGT.getUnlocalizedName();
-		if (!aLocalized) return "fluid." + FluidGT.nameOf(aFluid);
+		if (tGT != null) return LH.get(tGT.getUnlocalizedName());
 		String rName = aFluid.getFluidType().getDescription(make(aFluid, 0)).getString();
 		if (rName.startsWith("fluid.") || rName.startsWith("tile.") || rName.startsWith("rc ")) {
 			rName = Code.capitaliseWords(rName.replaceFirst("fluid.", "").replaceFirst("tile.", "").replaceFirst("rc ", ""));
@@ -1066,22 +1088,22 @@ public enum FL {
 	}
 	
 	
-	@SafeVarargs public static FluidGT createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createLiquid(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
-	@SafeVarargs public static FluidGT createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, 1000, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList);}
+	@SafeVarargs public static Fluid createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createLiquid(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
+	@SafeVarargs public static Fluid createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, 1000, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList);}
 
-	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createMolten(aMaterial, L, aFluidList);}
-	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return createMolten(aMaterial, L, aTexture, aFluidList);}
-	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return createMolten(aMaterial, aAmount, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
-	@SafeVarargs public static FluidGT createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return create("molten."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Molten " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, aAmount, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList).setLuminosity(10);}
+	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createMolten(aMaterial, L, aFluidList);}
+	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return createMolten(aMaterial, L, aTexture, aFluidList);}
+	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return createMolten(aMaterial, aAmount, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
+	@SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return create("molten."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Molten " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, aAmount, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList).setLuminosity(10);}
 	
-	@SafeVarargs public static FluidGT createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createGas(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
-	@SafeVarargs public static FluidGT createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 1000, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
+	@SafeVarargs public static Fluid createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createGas(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
+	@SafeVarargs public static Fluid createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 1000, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
 	
-	@SafeVarargs public static FluidGT createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createVapour(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
-	@SafeVarargs public static FluidGT createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("vapor."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Vaporized " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 8*L, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
+	@SafeVarargs public static Fluid createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createVapour(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
+	@SafeVarargs public static Fluid createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("vapor."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Vaporized " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 8*L, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
 	
-	@SafeVarargs public static FluidGT createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createPlasma(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_PLASMA), aFluidList);}
-	@SafeVarargs public static FluidGT createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("plasma."+aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal + " Plasma", aMaterial, aMaterial.mRGBaPlasma, STATE_PLASMA, L*L, aMaterial.mPlasmaPoint <= 0 ? 10000 : Math.max(300, aMaterial.mPlasmaPoint), null, null, 0, aFluidList);}
+	@SafeVarargs public static Fluid createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createPlasma(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_PLASMA), aFluidList);}
+	@SafeVarargs public static Fluid createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("plasma."+aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal + " Plasma", aMaterial, aMaterial.mRGBaPlasma, STATE_PLASMA, L*L, aMaterial.mPlasmaPoint <= 0 ? 10000 : Math.max(300, aMaterial.mPlasmaPoint), null, null, 0, aFluidList);}
 	
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, 1000, 300, null, null, 0, aFluidList);}
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, null, null, 0, aFluidList);}

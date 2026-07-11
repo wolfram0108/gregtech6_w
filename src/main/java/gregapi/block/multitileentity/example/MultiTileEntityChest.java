@@ -26,6 +26,7 @@ import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
 import gregapi.block.multitileentity.MultiTileEntityContainer;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.data.MD;
 import gregapi.data.MT;
@@ -299,8 +300,8 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override public int getPaint() {return mRGBa;}
 	@Override public boolean canRecolorItem(ItemStack aStack) {return T;}
 	@Override public boolean canDecolorItem(ItemStack aStack) {return mIsPainted;}
-	@Override public boolean recolorItem(ItemStack aStack, int aRGB) {if (paint((isPainted() ? UT.Code.mixRGBInt(aRGB, getPaint()) : aRGB) & ALL_NON_ALPHA_COLOR)) {UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make())); return T;} return F;}
-	@Override public boolean decolorItem(ItemStack aStack) {if (unpaint()) {UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make())); return T;} return F;}
+	@Override public boolean recolorItem(ItemStack aStack, int aRGB) {if (paint((isPainted() ? UT.Code.mixRGBInt(aRGB, getPaint()) : aRGB) & ALL_NON_ALPHA_COLOR)) {UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make())); return T;} return F;}
+	@Override public boolean decolorItem(ItemStack aStack) {if (unpaint()) {UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make())); return T;} return F;}
 	
 	@Override public int isProvidingWeakPower  (byte aOppositeSide) {return mIsTrapped && mUsingPlayers > 0 ? 15 : 0;}
 	@Override public int isProvidingStrongPower(byte aOppositeSide) {return mIsTrapped && mUsingPlayers > 0 ? 15 : 0;}

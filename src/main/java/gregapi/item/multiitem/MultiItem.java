@@ -21,6 +21,7 @@ package gregapi.item.multiitem;
 
 import gregapi.api.Optional;
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.TagData;
 import gregapi.data.FL;
 import gregapi.data.LH;
@@ -377,11 +378,11 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	public FluidStack getFluidContent(ItemStack aStack) {
 		Long[] tStats = getFluidContainerStats(aStack);
 		if (tStats == null || tStats[0] <= 0) return FL.getFluid(aStack, F);
-		return FL.load(aStack.getTagCompound(), "gt.fluidcontent");
+		return FL.load(ItemNBT.get(aStack), "gt.fluidcontent");
 	}
 	
 	public void setFluidContent(ItemStack aStack, FluidStack aFluid) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make(); else tNBT.removeTag("gt.fluidcontent");
 		if (aFluid != null && aFluid.amount > 0) FL.save(tNBT, "gt.fluidcontent", aFluid);
 		UT.NBT.set(aStack, tNBT);
@@ -390,7 +391,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	@Override
 	public int getItemStackLimit(ItemStack aStack) {
-		if (aStack.hasTagCompound() && aStack.getTagCompound().hasKey(NBT_ENERGY)) return 1;
+		if (ItemNBT.has(aStack) && ItemNBT.get(aStack).hasKey(NBT_ENERGY)) return 1;
 		Long[] tStats = getFluidContainerStats(aStack);
 		if (tStats != null) return (int)(long)tStats[1];
 		return UT.Code.bindStack(getDefaultStackLimit(aStack));

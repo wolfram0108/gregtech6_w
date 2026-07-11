@@ -23,6 +23,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.util.ST;
 import gregapi.util.UT;
@@ -88,7 +89,7 @@ public class MultiTileEntityReactorRodBreeder extends MultiTileEntityReactorRodB
 			mDurability = 0;
 			aReactor.updateClientData();
 		}
-		UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return T;
 	}
 	

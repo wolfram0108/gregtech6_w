@@ -86,8 +86,10 @@ public class AdvancedCraftingTool extends ShapelessOreRecipe implements ICraftin
 	public boolean matches(CraftingInput aGrid, Level aWorld) {
 		ItemStack tStack = null;
 		OreDictMaterial rHead = null, rRod = null;
-		for (int i = 0; i < aGrid.getSizeInventory(); i++) {
-			tStack = aGrid.getStackInSlot(i);
+		// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
+		// CraftingInput.size()/getItem(i) (neo-decompiled/.../item/crafting/CraftingInput.java:85-96).
+		for (int i = 0; i < aGrid.size(); i++) {
+			tStack = aGrid.getItem(i);
 			if (ST.valid(tStack)) {
 				OreDictItemData tData = OM.anydata_(tStack);
 				if (tData == null) return F;
@@ -109,8 +111,8 @@ public class AdvancedCraftingTool extends ShapelessOreRecipe implements ICraftin
 	public ItemStack getCraftingResult(CraftingInput aGrid) {
 		ItemStack tStack = null;
 		OreDictMaterial rHead = null, rRod = null;
-		for (int i = 0; i < aGrid.getSizeInventory(); i++) {
-			tStack = aGrid.getStackInSlot(i);
+		for (int i = 0; i < aGrid.size(); i++) {
+			tStack = aGrid.getItem(i);
 			if (ST.valid(tStack)) {
 				OreDictItemData tData = OM.anydata_(tStack);
 				if (tData == null) continue;

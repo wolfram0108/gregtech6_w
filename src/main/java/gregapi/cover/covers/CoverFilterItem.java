@@ -19,6 +19,7 @@
 
 package gregapi.cover.covers;
 
+import gregapi.code.ItemNBT;
 import gregapi.cover.CoverData;
 import gregapi.data.LH;
 import gregapi.render.BlockTextureDefault;
@@ -44,7 +45,7 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		ItemStack tStack = ST.load(aStack.getTagCompound(), "gt.filter.item");
+		ItemStack tStack = ST.load(ItemNBT.get(aStack), "gt.filter.item");
 		if (ST.valid(tStack)) try {aList.add(LH.Chat.CYAN + tStack.getDisplayName());} catch(Throwable e) {aList.add(LH.Chat.BLINKING_RED + "ERROR, CANNOT DISPLAY ITEM NAME");}
 		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
 		super.addToolTips(aList, aStack, aF3_H);

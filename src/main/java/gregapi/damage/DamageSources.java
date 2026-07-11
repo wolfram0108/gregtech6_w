@@ -138,12 +138,11 @@ public class DamageSources {
 	}
 
 	static DamageDefinition combatDefinition(String aType) {
-		String tType = aType;
-		return new DamageDefinition(tType, ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(MODID, "combat_" + sanitizePath(tType))), new DamageType(tType, DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, DEFAULT_EXHAUSTION, DamageEffects.HURT), Set.of(), null);
+		return new DamageDefinition(aType, ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(MODID, "combat_" + sanitizePath(aType))), new DamageType(aType, DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, DEFAULT_EXHAUSTION, DamageEffects.HURT), Set.of(), null);
 	}
 
 	public static Component getDeathMessage(LivingEntity aPlayer, Entity aEntity, String aMessage) {
-		return getDeathMessage(aPlayer, aEntity, entityName(aPlayer), entityName(aEntity), aMessage);
+		return getDeathMessage(aPlayer, aEntity, UT.Code.stringValidate(entityName(aPlayer), "Someone"), UT.Code.stringValidate(entityName(aEntity), "Someone"), aMessage);
 	}
 
 	public static Component getDeathMessage(LivingEntity aPlayer, Entity aEntity, String aNamePlayer, String aNameEntity, String aMessage) {
@@ -172,7 +171,7 @@ public class DamageSources {
 	}
 
 	private static String entityName(Entity aEntity) {
-		return UT.Code.stringValidate(aEntity == null ? null : aEntity.getName().getString(), "Someone");
+		return aEntity.getName().getString();
 	}
 
 	private static Set<TagKey<DamageType>> tags(boolean aBypassesArmor, boolean aAbsolute, boolean aCreative) {
@@ -187,6 +186,7 @@ public class DamageSources {
 	}
 
 	private static String sanitizePath(String aPath) {
+		if (aPath == null || aPath.isEmpty()) return "generic";
 		StringBuilder rPath = new StringBuilder();
 		for (int i = 0; i < aPath.length(); i++) {
 			char tChar = Character.toLowerCase(aPath.charAt(i));

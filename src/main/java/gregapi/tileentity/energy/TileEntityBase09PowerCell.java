@@ -20,6 +20,7 @@
 package gregapi.tileentity.energy;
 
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
+import gregapi.code.ItemNBT;
 import gregapi.code.TagData;
 import gregapi.util.ST;
 import gregapi.util.UT;
@@ -47,7 +48,7 @@ public abstract class TileEntityBase09PowerCell extends TileEntityBase08Battery 
 			mEnergy = 0;
 			ST.set(aStack, getEmptyPowerCell(), F, F);
 		}
-		UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return ST.update_(aStack);
 	}
 	

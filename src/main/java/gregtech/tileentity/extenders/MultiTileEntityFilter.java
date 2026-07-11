@@ -21,6 +21,7 @@ package gregtech.tileentity.extenders;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackSet;
 import gregapi.data.FL;
@@ -100,7 +101,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 	@Override public String getTileEntityName() {return "gt.multitileentity.filter";}
 	
 	public boolean allowInput(ItemStack aStack) {
-		for (ItemStack tStack : mFilter) if (ST.valid(tStack) && ST.equal_(tStack, aStack, !tStack.hasTagCompound() || ST.meta_(tStack) == W)) return !mInverted;
+		for (ItemStack tStack : mFilter) if (ST.valid(tStack) && ST.equal_(tStack, aStack, !ItemNBT.has(tStack) || ST.meta_(tStack) == W)) return !mInverted;
 		return mInverted;
 	}
 	public boolean allowInput(FluidStack aFluid) {
@@ -301,8 +302,8 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 						if (FL.valid(tFluid)) {
 							tSlot.putStack(FL.display(tFluid.getFluid()));
 						} else {
-							if (tStack.hasTagCompound()) {
-								tStack.setTagCompound(null);
+							if (ItemNBT.has(tStack)) {
+								ItemNBT.set(tStack, null);
 							} else {
 								ST.meta(tStack, W);
 							}

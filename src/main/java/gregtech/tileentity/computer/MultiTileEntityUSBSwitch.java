@@ -23,6 +23,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.data.LH.Chat;
 import gregapi.gui.ContainerClientDefault;
@@ -57,25 +58,27 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 	@Override
 	public CompoundTag getUSBData(byte aSide, int aUSBTier) {
 		ItemStack tUSB = slot(mMode);
-		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB) && tUSB.hasTagCompound() && tUSB.getTagCompound().getByte(NBT_USB_TIER) <= aUSBTier) {
-			return tUSB.getTagCompound().getCompoundTag(NBT_USB_DATA);
+		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB) && ItemNBT.has(tUSB) && ItemNBT.get(tUSB).getByte(NBT_USB_TIER) <= aUSBTier) {
+			return ItemNBT.get(tUSB).getCompoundTag(NBT_USB_DATA);
 		}
 		return null;
 	}
-	
+
+	// F8: тег захвачен ОДИН раз в tNBT (создан, если отсутствовал), все мутации идут в него,
+	// коммит единый ItemNBT.set в конце — иначе все правки тихо терялись бы (см. ItemNBT.java).
 	@Override
 	public boolean setUSBData(byte aSide, int aUSBTier, CompoundTag aData) {
 		ItemStack tUSB = slot(mMode);
 		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB)) {
-			if (!tUSB.hasTagCompound()) tUSB.setTagCompound(UT.NBT.make());
-			if (aData == null || aData.hasNoTags()) {
-				tUSB.getTagCompound().removeTag(NBT_USB_DATA);
-				tUSB.getTagCompound().removeTag(NBT_USB_TIER);
+			CompoundTag tNBT = ItemNBT.has(tUSB) ? ItemNBT.get(tUSB) : UT.NBT.make();
+			if (aData == null || aData.isEmpty()) {
+				tNBT.removeTag(NBT_USB_DATA);
+				tNBT.removeTag(NBT_USB_TIER);
 			} else {
-				tUSB.getTagCompound().setTag(NBT_USB_DATA, aData);
-				tUSB.getTagCompound().setByte(NBT_USB_TIER, (byte)aUSBTier);
+				tNBT.setTag(NBT_USB_DATA, aData);
+				tNBT.setByte(NBT_USB_TIER, (byte)aUSBTier);
 			}
-			if (tUSB.getTagCompound().hasNoTags()) tUSB.setTagCompound(null);
+			ItemNBT.set(tUSB, tNBT.isEmpty() ? null : tNBT);
 			return T;
 		}
 		return F;

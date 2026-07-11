@@ -140,6 +140,9 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 			CompoundTag tNBT = UT.NBT.getOrCreate(aStack);
 			if (!tNBT.getBoolean("gt.u")) {
 				tNBT.setBoolean("gt.u", T);
+				// F8: getOrCreate → detached-копия; коммитим флаг "gt.u" ДО addEnchantment, иначе он не
+				// долетит до стека и энчанты будут добавляться повторно (см. ItemNBT.java, паттерн Behavior_Arrow).
+				UT.NBT.set(aStack, tNBT);
 				for (ObjectStack<Enchantment> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
 					UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.mObject == Enchantment.looting ? tEnchantment.mAmount * mLootingMultiplier : tEnchantment.mAmount);
 				}

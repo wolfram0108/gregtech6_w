@@ -80,6 +80,13 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * PORT-TODO(F12, mod-GT): перевод этого мода на neo-{@code @Mod} + конструктор-подписки (как сделано
+ * в {@code gregapi.GT_API}) ОТЛОЖЕН в порт контента по decisions/F12-registration-lifecycle.md §4.1
+ * (GT6_Main — контент-824, компилируется только вместе с контентом; половинчатая конвертация ломает
+ * shim-контракт Abstract_Mod — доказано мех-ремапом в Example_Mod/GT_Client/GT_Proxy). Пока остаётся
+ * FML-{@code @Mod}/{@code @SidedProxy}/{@code @Mod.EventHandler} (не компилируется — ожидаемо, deferred).
+ * Прямые DeferredRegister из этого класса (R3) уже убраны в этом заходе (см. ниже по коду).
  */
 @Mod(modid=ModIDs.GT, name="GregTech", version="GT6-MC1710", dependencies="required-after:"+ModIDs.GAPI_POST)
 public class GT6_Main extends Abstract_Mod {
@@ -129,8 +136,13 @@ public class GT6_Main extends Abstract_Mod {
 			COMPAT_IC2.scrapbox(200.0F, IL.IC2_Scrap.get(1));
 		}
 		
-		DeferredRegister.registerModEntity(EntityArrow_Material.class, "GT_Entity_Arrow"       , 1, GT, 160, 1, T);
-		DeferredRegister.registerModEntity(EntityArrow_Potion.class  , "GT_Entity_Arrow_Potion", 2, GT, 160, 1, T);
+		// PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md, R3): прежний вызов
+		// (`DeferredRegister.registerModEntity(Class, String, int, Object, int, int, boolean)`) —
+		// выдуманный API, 1.7.10 GameRegistry.registerModEntity механически переименован в
+		// DeferredRegister, которого там никогда не было. Настоящая замена — DeferredRegister.Entities
+		// (см. центр gregapi.GT_API.ITEMS/BLOCKS — тот же приём) с EntityType.EntityFactory,
+		// совместимым с конструктором EntityArrow_Material/EntityArrow_Potion; ENTITY-TYPE адаптер
+		// отдельным ADR ещё не разработан — не выдумываю фабрику без сверки конструктора сущности.
 		
 		for (OreDictMaterial tWood : ANY.Wood.mToThis) OP.plate.disableItemGeneration(tWood);
 		OP.blockDust             .disableItemGeneration(MT.OREMATS.Magnetite, MT.OREMATS.GraniticMineralSand, MT.OREMATS.BasalticMineralSand);

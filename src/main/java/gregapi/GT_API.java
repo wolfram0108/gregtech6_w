@@ -19,14 +19,30 @@
 
 package gregapi;
 
-import cpw.mods.fml.common.*;
-import cpw.mods.fml.common.event.*;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.InterModComms;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
+import gregapi.api.FMLInitializationEvent;
+import gregapi.api.FMLModIdMappingEvent;
+import gregapi.api.FMLPostInitializationEvent;
+import gregapi.api.FMLPreInitializationEvent;
 import gregapi.block.ToolCompat;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_CanConnectRedstone;
 import gregapi.block.prefixblock.PrefixBlockFallingEntity;
@@ -83,12 +99,13 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.worldgen.GT6WorldGenerator;
 import net.minecraft.world.level.block.Block;
+import gregapi.block.ItemBlockBase;
 import gregapi.block.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.AxeItem;
-import net.minecraft.item.ItemPickaxe;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import gregapi.recipes.RecipeSorter;
 import team.chisel.carving.Carving;
@@ -102,26 +119,118 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
- * 
+ *
  * This loads before compatible Mods, except Micdoodlecore. GT_API_Post loads after all compatible Mods.
+ *
+ * F12 (жизненный цикл, decisions/F12-registration-lifecycle.md): три родных FML-мода Грегориуса
+ * (GAPI/GAPI_POST/GT) переносятся как три отдельных neo-{@code @Mod} на своих местах — этот класс
+ * остаётся точкой входа мода GAPI. Оригинальная FML-строка {@code dependencies=} несла как
+ * структурный порядок (GAPI грузится перед GAPI_POST — обязателен для 3-модовой связки GT6), так и
+ * ~150 мягких order-хинтов для внешних совместимых модов (compat-mirror, зона F10). Внешние
+ * order-хинты в {@code depends()} не перенесены — они не влияют на компиляцию/жизненный цикл самого
+ * GT6 и относятся к F10 (compat-mirror), когда те моды реально появятся в дереве как neo-цели.
+ * PORT-TODO(F12-depends, при подключении compat-mirror-модов возможно потребуется добавить их сюда
+ * как мягкие order-хинты).
+ *
+ * УЛИКА R7 (исправлено): {@code depends()} ждёт СЫРОЙ {@code String[]} modId, без парсера префиксов
+ * старого FML (fml-decompiled {@code net/neoforged/fml/common/Mod.java:16},
+ * {@code FMLJavaModLanguageProvider.java:33,67-70} — строка вида {@code "required-before:"+modId} не
+ * находится в загруженном списке модов и приводит к тому, что весь entrypoint-класс отфильтровывается
+ * из загрузки). Передан чистый {@code ModIDs.GAPI_POST}.
+ *
+ * УЛИКА R8 (доработка): {@code depends()} здесь фильтрует entrypoint только по НАЛИЧИЮ modId
+ * (fml-decompiled {@code FMLJavaModLanguageProvider.java:33}) — он НЕ задаёт порядок загрузки
+ * (структурный факт "GAPI перед GAPI_POST" в {@code depends()} НЕ выражается). Реальный порядок
+ * задан {@code ModSorter} (fml-decompiled {@code net/neoforged/fml/loading/ModSorter.java:194-208})
+ * из графа {@code [[dependencies.gregapi]]}/{@code [[dependencies.gregapi_post]]} с полем
+ * {@code ordering="BEFORE"/"AFTER"} в {@code src/main/templates/META-INF/neoforge.mods.toml} —
+ * см. комментарий там же. {@code depends()} здесь остаётся как НЕЗАВИСИМЫЙ REQUIRED-гейт
+ * (не грузить entrypoint, если GAPI_POST отсутствует в списке модов), а не как источник порядка.
  */
-@Mod(modid=ModIDs.GAPI, name="Greg-API", version="GT6-MC1710", dependencies="required-before:"+ModIDs.GAPI_POST+"; after:"+ModIDs.MD8+"; before:"+ModIDs.IC2+"; before:"+ModIDs.IC2C+"; before:"+ModIDs.NC+"; before:"+ModIDs.IHL+"; before:"+ModIDs.FUNK+"; before:"+ModIDs.BAUBLES+"; before:"+ModIDs.HEE+"; before:"+ModIDs.GaSu+"; before:"+ModIDs.GaNe+"; before:"+ModIDs.GaEn+"; before:"+ModIDs.WdSt+"; before:"+ModIDs.CrGu+"; before:"+ModIDs.COFH_API+"; before:"+ModIDs.COFH_API_ENERGY+"; before:"+ModIDs.COFH_CORE+"; before:"+ModIDs.CC+"; before:"+ModIDs.OC+"; before:"+ModIDs.HEX+"; before:"+ModIDs.DE+"; before:"+ModIDs.AV+"; before:"+ModIDs.FR+"; before:"+ModIDs.FRMB+"; before:"+ModIDs.BINNIE+"; before:"+ModIDs.BINNIE_BEE+"; before:"+ModIDs.BINNIE_TREE+"; before:"+ModIDs.BINNIE_GENETICS+"; before:"+ModIDs.BINNIE_BOTANY+"; before:"+ModIDs.IE+"; before:"+ModIDs.UB+"; before:"+ModIDs.COG+"; before:"+ModIDs.PFAA+"; before:"+ModIDs.MIN+"; before:"+ModIDs.RH+"; before:"+ModIDs.CANDY+"; before:"+ModIDs.ABYSSAL+"; before:"+ModIDs.SOULFOREST+"; before:"+ModIDs.ARS+"; before:"+ModIDs.TC+"; before:"+ModIDs.TCTE+"; before:"+ModIDs.TCFM+"; before:"+ModIDs.BOTA+"; before:"+ModIDs.ALF+"; before:"+ModIDs.WTCH+"; before:"+ModIDs.HOWL+"; before:"+ModIDs.MoCr+"; before:"+ModIDs.WiMo+"; before:"+ModIDs.Birb+"; before:"+ModIDs.ChocoCraft+"; before:"+ModIDs.GoG+"; before:"+ModIDs.DRPG+"; before:"+ModIDs.LycM+"; before:"+ModIDs.LycM_Arctic+"; before:"+ModIDs.LycM_Demon+"; before:"+ModIDs.LycM_Desert+"; before:"+ModIDs.LycM_Forest+"; before:"+ModIDs.LycM_Fresh+"; before:"+ModIDs.LycM_Inferno+"; before:"+ModIDs.LycM_Jungle+"; before:"+ModIDs.LycM_Mountain+"; before:"+ModIDs.LycM_Plains+"; before:"+ModIDs.LycM_Salt+"; before:"+ModIDs.LycM_Shadow+"; before:"+ModIDs.LycM_Swamp+"; before:"+ModIDs.RC+"; before:"+ModIDs.BP+"; before:"+ModIDs.PR+"; before:"+ModIDs.PR_EXPANSION+"; before:"+ModIDs.PR_INTEGRATION+"; before:"+ModIDs.PR_TRANSMISSION+"; before:"+ModIDs.PR_TRANSPORT+"; before:"+ModIDs.PR_EXPLORATION+"; before:"+ModIDs.PR_COMPATIBILITY+"; before:"+ModIDs.PR_FABRICATION+"; before:"+ModIDs.PR_ILLUMINATION+"; before:"+ModIDs.PE+"; before:"+ModIDs.AE+"; before:"+ModIDs.MO+"; before:"+ModIDs.TE_FOUNDATION+"; before:"+ModIDs.TE_DYNAMICS+"; before:"+ModIDs.TE_DRILLS+"; before:"+ModIDs.TE+"; before:"+ModIDs.ZTONES+"; before:"+ModIDs.CHSL+"; before:"+ModIDs.NePl+"; before:"+ModIDs.NeLi+"; before:"+ModIDs.EnLi+"; before:"+ModIDs.EtFu+"; before:"+ModIDs.BB+"; before:"+ModIDs.DYNAMIC_TREES+"; before:"+ModIDs.BbLC+"; before:"+ModIDs.CARP+"; before:"+ModIDs.BETTER_RECORDS+"; before:"+ModIDs.TF+"; before:"+ModIDs.ERE+"; before:"+ModIDs.MFR+"; before:"+ModIDs.FSP+"; before:"+ModIDs.SC2+"; before:"+ModIDs.PnC+"; before:"+ModIDs.ExU+"; before:"+ModIDs.ExS+"; before:"+ModIDs.EIO+"; before:"+ModIDs.RT+"; before:"+ModIDs.AA+"; before:"+ModIDs.TreeCap+"; before:"+ModIDs.HaC+"; before:"+ModIDs.CookBook+"; before:"+ModIDs.APC+"; before:"+ModIDs.ENVM+"; before:"+ModIDs.MaCr+"; before:"+ModIDs.BC_TRANSPORT+"; before:"+ModIDs.BC_SILICON+"; before:"+ModIDs.BC_FACTORY+"; before:"+ModIDs.BC_ENERGY+"; before:"+ModIDs.BC_ROBOTICS+"; before:"+ModIDs.BC+"; before:"+ModIDs.BC_BUILDERS+"; before:"+ModIDs.MgC+"; before:"+ModIDs.BR+"; before:"+ModIDs.HBM+"; before:"+ModIDs.ELN+"; before:"+ModIDs.DRGN+"; before:"+ModIDs.ElC+"; before:"+ModIDs.CrC+"; before:"+ModIDs.ReC+"; before:"+ModIDs.RoC+"; before:"+ModIDs.Mek+"; before:"+ModIDs.Mek_Tools+"; before:"+ModIDs.Mek_Generators+"; before:"+ModIDs.GC+"; before:"+ModIDs.GC_PLANETS+"; before:"+ModIDs.GC_GALAXYSPACE+"; before:"+ModIDs.VULPES+"; before:"+ModIDs.GC_ADV_ROCKETRY+"; before:"+ModIDs.GC_EXTRAPLANETS+"; before:"+ModIDs.BTL+"; before:"+ModIDs.AETHER+"; before:"+ModIDs.AETHEL+"; before:"+ModIDs.TROPIC+"; before:"+ModIDs.ATUM+"; before:"+ModIDs.EB+"; before:"+ModIDs.EBXL+"; before:"+ModIDs.BoP+"; before:"+ModIDs.HiL+"; before:"+ModIDs.ATG+"; before:"+ModIDs.RTG+"; before:"+ModIDs.RWG+"; before:"+ModIDs.CW2+"; before:"+ModIDs.A97_MINING+"; before:"+ModIDs.MYST+"; before:"+ModIDs.WARPBOOK+"; before:"+ModIDs.LOSTBOOKS+"; before:"+ModIDs.LOOTBAGS+"; before:"+ModIDs.EUREKA+"; before:"+ModIDs.ENCHIRIDION+"; before:"+ModIDs.ENCHIRIDION2+"; before:"+ModIDs.SmAc+"; before:"+ModIDs.HQM+"; before:"+ModIDs.SD+"; before:"+ModIDs.BTRS+"; before:"+ModIDs.JABBA+"; before:"+ModIDs.MaCu+"; before:"+ModIDs.PdC+"; before:"+ModIDs.Bamboo+"; before:"+ModIDs.PMP+"; before:"+ModIDs.Fossil+"; before:"+ModIDs.GrC+"; before:"+ModIDs.GrC_Apples+"; before:"+ModIDs.GrC_Bamboo+"; before:"+ModIDs.GrC_Bees+"; before:"+ModIDs.GrC_Cellar+"; before:"+ModIDs.GrC_Fish+"; before:"+ModIDs.GrC_Grapes+"; before:"+ModIDs.GrC_Hops+"; before:"+ModIDs.GrC_Milk+"; before:"+ModIDs.GrC_Rice+"; before:"+ModIDs.BG2+"; before:"+ModIDs.BWM+"; before:"+ModIDs.OMT+"; before:"+ModIDs.TG+"; before:"+ModIDs.FM+"; before:"+ModIDs.FZ+"; before:"+ModIDs.MNTL+"; before:"+ModIDs.OB+"; before:"+ModIDs.PA+"; before:"+ModIDs.TiC+"; before:"+ModIDs.MF2+"; before:"+ModIDs.TRANSLOCATOR+"; before:"+ModIDs.WR_CBE_C+"; before:"+ModIDs.WR_CBE_A+"; before:"+ModIDs.WR_CBE_L+"; before:"+ModIDs.VOLTZ+"; before:"+ModIDs.MFFS+"; before:"+ModIDs.ICBM+"; before:"+ModIDs.ATSCI+"; before:inventorytweaks; before:ironbackpacks; before:journeymap; before:LogisticsPipes; before:LunatriusCore; before:NEIAddons; before:NEIAddons|Developer; before:NEIAddons|AppEng; before:NEIAddons|Botany; before:NEIAddons|Forestry; before:NEIAddons|CraftingTables; before:NEIAddons|ExNihilo; before:neiintegration; before:openglasses; before:simplyjetpacks; before:Stackie; before:StevesCarts; before:TiCTooltips; before:worldedit; before:McMultipart; before:OpenPeripheralCore; before:OpenPeripheralIntegration; before:OpenPeripheral; ")
+@Mod(value = ModIDs.GAPI, depends = {ModIDs.GAPI_POST})
 public class GT_API extends Abstract_Mod {
-	@SidedProxy(modId = ModIDs.GAPI, clientSide = "gregapi.GT_API_Proxy_Client", serverSide = "gregapi.GT_API_Proxy_Server")
-	public static GT_API_Proxy api_proxy;
-	
+	/**
+	 * Замена {@code @SidedProxy}: neo не имеет annotation-диспетчера сторон, поэтому сторона выбирается
+	 * напрямую по {@link FMLEnvironment#getDist()} (сверено: {@code DistExecutor} в этой версии neo не
+	 * существует — decisions/F12-registration-lifecycle.md §7).
+	 */
+	public static GT_API_Proxy api_proxy = FMLEnvironment.getDist().isClient() ? new GT_API_Proxy_Client() : new GT_API_Proxy_Server();
+
 	public static final Collection<Map<ItemStackContainer, ?>> STACKMAPS = new ArrayListNoNulls<>();
-	
+
 	/** Used to register Icons. It is not necessary to make those into Lists */
 	public static Set<Runnable> sBlockIconload = new HashSetNoNulls<>(), sItemIconload = new HashSetNoNulls<>();
 	/** The Icon Registers from Blocks and Items. They will get set right before the corresponding Icon Load Phase as executed in the Runnable List above. */
+	// PORT-TODO(F3, baked-рендер клиента): 1.7.10 net.minecraft.client.renderer.texture.IIconRegister
+	// удалён из движка целиком (атлас-стежка теперь baked-модели, не immediate-mode Icon-регистрация).
+	// Тот же класс проблемы, что gregapi/render/TextureSet.java registerIcons(Object) (уже переведено) —
+	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) — отдельный F3-хвост.
 	@OnlyIn(Dist.CLIENT)
-	public static IIconRegister sBlockIcons, sItemIcons;
-	
+	public static Object sBlockIcons, sItemIcons;
+
+	/**
+	 * Централизованный мост регистрации F12: ЕДИНСТВЕННАЯ точка, через которую весь мод регистрирует
+	 * Item/Block в NeoForge DeferredRegister (замена разрозненных прямых DeferredRegister-вызовов,
+	 * найденных ревизией R3 в GT6_Main/GT_API_Proxy/ST — decisions/F12-registration-lifecycle.md).
+	 * GT6 создаёт Item/Block ЗАРАНЕЕ ({@code new SomeItem()}), затем в оригинале регистрировал уже
+	 * готовый экземпляр ({@code GameRegistry.registerItem(item, name)}). DeferredRegister ожидает
+	 * Supplier; оборачиваем уже созданный экземпляр в Supplier, возвращающий его же — при однократной
+	 * загрузке мода (без hot-reload реестров) это эквивалентно оригинальному поведению.
+	 */
+	public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems (ModIDs.GAPI);
+	public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ModIDs.GAPI);
+
+	/**
+	 * F12: мод-шина, сохранённая из конструктора, чтобы лениво созданные под-неймспейсы могли
+	 * подписаться на {@code RegisterEvent} (см. {@link #itemsFor(String)}).
+	 */
+	private static IEventBus sModBus = null;
+	/**
+	 * F12: по одному {@code DeferredRegister.Items} на неймспейс-владелец. GT6 позволяет создавать
+	 * Item под чужим modId (аддоны через {@code PrefixItem}), а {@code DeferredRegister} привязан к
+	 * одному неймспейсу — поэтому центр держит карту неймспейс→реестр. Это по-прежнему ОДИН центр
+	 * (весь мод сюда обращается), просто с учётом неймспейса, как было в {@code GameRegistry.registerItem(item,name,modId)}.
+	 */
+	private static final Map<String, DeferredRegister.Items> ITEMS_BY_NS = new HashMap<>();
+	static {ITEMS_BY_NS.put(ModIDs.GAPI, ITEMS);}
+
+	private static DeferredRegister.Items itemsFor(String aNamespace) {
+		DeferredRegister.Items rReg = ITEMS_BY_NS.get(aNamespace);
+		if (rReg == null) {
+			rReg = DeferredRegister.createItems(aNamespace);
+			if (sModBus != null) rReg.register(sModBus);
+			ITEMS_BY_NS.put(aNamespace, rReg);
+		}
+		return rReg;
+	}
+
+	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Item, String)}: регистрация под
+	 *  неймспейсом GAPI (был прямой выдуманный {@code DeferredRegister.registerItem(...)}). */
+	public static DeferredItem<Item> registerItem(Item aItem, String aRegistryName) {
+		return registerItem(aItem, aRegistryName, ModIDs.GAPI);
+	}
+
+	/** F12/R3-мост: регистрация Item под неймспейсом владельца {@code aModIDOwner} (замена выдуманного
+	 *  3-арг {@code DeferredRegister.registerItem(item, name, modId)} из {@code PrefixItem}/{@code ItemFluidDisplay};
+	 *  соответствует оригиналу {@code GameRegistry.registerItem(item, name, modId)}). Централизовано —
+	 *  весь мод регистрирует Item только через этот метод. */
+	public static DeferredItem<Item> registerItem(Item aItem, String aRegistryName, String aModIDOwner) {
+		return itemsFor(aModIDOwner).register(aRegistryName, () -> aItem);
+	}
+
+	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Block, String, Class)} (был прямой
+	 *  выдуманный {@code DeferredRegister.registerBlock(...)}). Пара Block+BlockItem регистрируется под
+	 *  одним и тем же именем — как было в оригинальном {@code GameRegistry.registerBlock(Block, Class, String)}. */
+	public static DeferredBlock<Block> registerBlock(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
+		DeferredBlock<Block> rBlock = BLOCKS.register(aRegistryName, () -> aBlock);
+		ITEMS.register(aRegistryName, () -> (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock));
+		return rBlock;
+	}
+
 	private LoggerPlayerActivity mPlayerLogger;
-	
+
 	@SuppressWarnings("unchecked")
-	public GT_API() {
+	public GT_API(IEventBus aModBus) {
 		GAPI = this;
 		
 		if (!MD.ENCHIRIDION.mLoaded) MD.MaCu.mLoaded = F;
@@ -173,40 +282,45 @@ public class GT_API extends Abstract_Mod {
 		OP.foil             .addTextureSet(MD.GT, F);
 		
 		// It is VERY important that those are registered first. Otherwise GregTech would output its own Storage Blocks.
-		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Stone     , ST.make(Blocks.gravel           , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.SoulSand  , ST.make(Blocks.soul_sand        , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Sand      , ST.make(Blocks.sand             , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.RedSand   , ST.make(Blocks.sand             , 1, 1), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Sand      , ST.make(Blocks.sandstone        , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Glass     , ST.make(Blocks.glass            , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Stone     , ST.make(Blocks.double_stone_slab, 1, 8), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Netherrack, ST.make(Blocks.netherrack       , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Endstone  , ST.make(Blocks.end_stone        , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Obsidian  , ST.make(Blocks.obsidian         , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockIngot, MT.Fe        , ST.make(Blocks.iron_block       , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockIngot, MT.Au        , ST.make(Blocks.gold_block       , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Diamond   , ST.make(Blocks.diamond_block    , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Emerald   , ST.make(Blocks.emerald_block    , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Lapis     , ST.make(Blocks.lapis_block      , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Coal      , ST.make(Blocks.coal_block       , 1, 0), T, F, T);
-		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Redstone  , ST.make(Blocks.redstone_block   , 1, 0), T, F, T);
+		// F12: REMAP-RULES.md §C/§C-bis блок-флэттен (данные, не поведение) — Blocks.<snake_case> удалены,
+		// заменены реальными UPPER_SNAKE-константами neo (проверено neo-decompiled Blocks.java); RedSand и
+		// "smooth double stone slab" (meta 8) стали отдельными блоками (RED_SAND/SMOOTH_STONE), meta=0.
+		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Stone     , ST.make(Blocks.GRAVEL           , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.SoulSand  , ST.make(Blocks.SOUL_SAND        , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Sand      , ST.make(Blocks.SAND             , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.RedSand   , ST.make(Blocks.RED_SAND         , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Sand      , ST.make(Blocks.SANDSTONE        , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Glass     , ST.make(Blocks.GLASS            , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Stone     , ST.make(Blocks.SMOOTH_STONE     , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Netherrack, ST.make(Blocks.NETHERRACK       , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Endstone  , ST.make(Blocks.END_STONE        , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockSolid, MT.Obsidian  , ST.make(Blocks.OBSIDIAN         , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockIngot, MT.Fe        , ST.make(Blocks.IRON_BLOCK       , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockIngot, MT.Au        , ST.make(Blocks.GOLD_BLOCK       , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Diamond   , ST.make(Blocks.DIAMOND_BLOCK    , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Emerald   , ST.make(Blocks.EMERALD_BLOCK    , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Lapis     , ST.make(Blocks.LAPIS_BLOCK      , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Coal      , ST.make(Blocks.COAL_BLOCK       , 1, 0), T, F, T);
+		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Redstone  , ST.make(Blocks.REDSTONE_BLOCK   , 1, 0), T, F, T);
 		
 		// Fixing missing Container Items.
-		Items.mushroom_stew.setContainerItem(Items.bowl);
-		Items.potionitem.setContainerItem(Items.glass_bottle);
-		Items.experience_bottle.setContainerItem(Items.glass_bottle);
+		// PORT-TODO(F12, item-container-runtime-mutator): Item.setContainerItem(Item) (1.7.10 runtime
+		// crafting-remainder mutator) удалён — neo's Item.craftingRemainingItem является private final,
+		// задаётся ТОЛЬКО через Item.Properties.craftRemainder(...) на регистрации ванильного Item
+		// (BuiltInRegistries), ретроактивная мутация уже зарегистрированных Items.MUSHROOM_STEW/POTION/
+		// EXPERIENCE_BOTTLE недостижима из мод-кода. Не найдено ни в одном из 3 корней референса —
+		// деградация до no-op. Оригинал: mushroom_stew->bowl, potionitem->glass_bottle, experience_bottle->glass_bottle.
 		
 		// Fixing Max Stacksizes that don't make sense.
 		ST.forceProperMaxStacksizes();
 		
 		// Fixing some Adventure Mode things.
-		Blocks.bed.setHarvestLevel("axe", 0);
-		Blocks.sponge.setHarvestLevel("axe", 0);
-		Blocks.hay_block.setHarvestLevel("axe", 0);
-		Blocks.tnt.setHarvestLevel("pickaxe", 0);
-		Blocks.monster_egg.setHarvestLevel("pickaxe", 0);
-		Blocks.obsidian.setHarvestLevel("pickaxe", 3);
-		
+		// PORT-TODO(F12, adventure-mode-harvest): Block.setHarvestLevel(String,int) (1.7.10 runtime
+		// harvest-tier mutator) удалён из движка целиком, не переименован — harvest-tier в neo задаётся
+		// НЕИЗМЕНЯЕМО при регистрации блока (BlockBehaviour.Properties) и мешает через data-driven теги
+		// (BlockTags.MINEABLE_WITH_AXE/MINEABLE_WITH_PICKAXE, датапак, не Java-runtime API). Не найдено
+		// ни в одном из 3 корней референса — деградация до no-op (см. также reflection-хак ниже).
+
 		try {
 			// The Access Transformer should make this work
 			Material.tnt.setAdventureModeExempt();
@@ -214,37 +328,77 @@ public class GT_API extends Abstract_Mod {
 			UT.Reflection.callMethod(Material.tnt, new String[] {"func_85158_p", "setAdventureModeExempt"}, T, F, F);
 			e.printStackTrace(ERR);
 		}
-		
-		Set<Block>
-		tSet = (Set<Block>)UT.Reflection.getFieldContent(AxeItem.class, "field_150917_c", T, T); assert tSet != null;
-		tSet.add(Blocks.bed);
-		tSet.add(Blocks.hay_block);
-		tSet.add(Blocks.sponge);
-		
-		tSet = (Set<Block>)UT.Reflection.getFieldContent(ItemPickaxe.class, "field_150915_c", T, T); assert tSet != null;
-		tSet.add(Blocks.monster_egg);
-		tSet.add(Blocks.tnt);
+
+		// PORT-TODO(F12, adventure-mode-harvest): reflection-хак "AxeItem/ItemPickaxe.field_150917_c/
+		// field_150915_c" (приватный статический Set<Block> "эффективных" блоков 1.7.10) не имеет 1:1
+		// аналога — инструмент-эффективность в neo тоже data-driven (те же BlockTags.MINEABLE_WITH_*),
+		// подобных изменяемых static-полей на Item-классах в декомпиле нет. Не найдено ни в одном из
+		// 3 корней референса — деградация до no-op.
+
+		// F12: центральные DeferredRegister этого мода — на мод-шину; шину запоминаем, чтобы лениво
+		// созданные под-неймспейсы (itemsFor) тоже успели подписаться на RegisterEvent.
+		sModBus = aModBus;
+		ITEMS .register(aModBus);
+		BLOCKS.register(aModBus);
+		// F6: центральный ворлдген-переходник (Feature/PlacedFeature/BiomeModifier) — тот же мод-бас,
+		// единая точка подписки (decisions/F6-worldgen.md, gregapi/worldgen/GT6WorldgenFeature.java).
+		gregapi.worldgen.GT6WorldgenFeature.register(aModBus);
+		// F5: центральные DeferredRegister жидкостей (FluidType+Fluid) — тот же мод-бас, единая точка
+		// подписки (decisions/F5-fluids.md §3, gregapi/fluid/FluidGT.java; закрывает прежний долг F12↔F5 wiring).
+		gregapi.fluid.FluidGT.FLUID_TYPES.register(aModBus);
+		gregapi.fluid.FluidGT.FLUIDS.register(aModBus);
+		// F11: центральный крафт-верстак-диспетчер (CustomRecipe SERIALIZERS) — тот же мод-бас, единая точка
+		// подписки (decisions/F11-crafting-recipe.md §7, gregapi/recipes/GT6CraftingDispatcher.java; закрывает
+		// прежний долг F12↔F11 wiring).
+		GT6CraftingDispatcher.register(aModBus);
+
+		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую.
+		// GT6-трёхфазный контракт (Pre/Init/Post) сохранён 1:1 поверх родных событий жизненного цикла neo:
+		// PreInit -> FMLConstructModEvent; Init -> FMLCommonSetupEvent; PostInit -> FMLLoadCompleteEvent
+		// (decisions/F12-registration-lifecycle.md §4).
+		aModBus.addListener(this::onPreLoad);
+		aModBus.addListener(this::onLoad);
+		aModBus.addListener(this::onPostLoad);
+
+		// Серверные фазы GT6 (Abstract_Mod уже на родных событиях neo) — на игровой шине, не на мод-шине.
+		NeoForge.EVENT_BUS.addListener(this::onServerStarting);
+		NeoForge.EVENT_BUS.addListener(this::onServerStarted);
+		NeoForge.EVENT_BUS.addListener(this::onServerStopping);
+		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
 	}
-	
-	@Mod.EventHandler
-	public void onPreLoad(FMLPreInitializationEvent aEvent) {
+
+	/**
+	 * PreInit. Замена {@code @Mod.EventHandler onPreLoad(FMLPreInitializationEvent)}: подписан в
+	 * конструкторе на {@link FMLConstructModEvent} (мод-шина). Строит GT6-шим {@code FMLPreInitializationEvent}
+	 * (носитель фазы, gregapi.api) и передаёт его в {@code Abstract_Mod.onModPreInit(...)} — тело фазы
+	 * (onModPreInit2 и далее) остаётся байт-в-байт как в оригинале.
+	 * PORT-TODO(F12-timing, decisions/F12-registration-lifecycle.md §7): не проверено, что регистрация
+	 * контента внутри тела PreInit (до RegisterEvent) гарантированно не опаздывает относительно
+	 * FMLConstructModEvent на всех сборках; сверить при первой реальной регистрации через ITEMS/BLOCKS.
+	 */
+	public void onPreLoad(FMLConstructModEvent aModEvent) {
+		FMLPreInitializationEvent aEvent = new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile());
+
 		DirectoriesGT.CONFIG = aEvent.getModConfigurationDirectory();
-		
+
 		DirectoriesGT.CONFIG_GT = new File(DirectoriesGT.CONFIG, "GregTech");
 		if (!DirectoriesGT.CONFIG_GT.exists()) DirectoriesGT.CONFIG_GT = new File(DirectoriesGT.CONFIG, "gregtech");
-		
+
 		DirectoriesGT.CONFIG_RECIPES = new File(DirectoriesGT.CONFIG, "Recipes");
 		if (!DirectoriesGT.CONFIG_RECIPES.exists()) DirectoriesGT.CONFIG_RECIPES = new File(DirectoriesGT.CONFIG, "recipes");
-		
+
 		DirectoriesGT.MINECRAFT = DirectoriesGT.CONFIG.getParentFile();
-		
+
 		DirectoriesGT.LOGS = new File(DirectoriesGT.MINECRAFT, "logs");
-		
+
 		onModPreInit(aEvent);
 	}
-	
-	@Mod.EventHandler
-	public void onLoad(FMLInitializationEvent aEvent) {
+
+	/**
+	 * Init. Замена {@code @Mod.EventHandler onLoad(FMLInitializationEvent)}: подписан в конструкторе на
+	 * {@link FMLCommonSetupEvent} (мод-шина).
+	 */
+	public void onLoad(FMLCommonSetupEvent aModEvent) {
 		for (OreDictMaterial tMaterial : OreDictMaterial.MATERIAL_ARRAY) if (tMaterial != null && !tMaterial.contains(TD.Properties.INVALID_MATERIAL)) {
 			tMaterial.mOreProcessingMultiplier = UT.Code.bindStack(ConfigsGT.OREPROCESSING.get(ConfigCategories.Materials.oreprocessingoutputmultiplier, tMaterial.mNameInternal, 1));
 			tMaterial.mOreMultiplier = (byte)ConfigsGT.MATERIAL.get(tMaterial.mNameInternal, "MultiplierOre", tMaterial.mOreMultiplier);
@@ -255,35 +409,41 @@ public class GT_API extends Abstract_Mod {
 				tMaterial.mHandleMaterial = OreDictMaterial.get(ConfigsGT.MATERIAL.get(tMaterial.mNameInternal, "ToolHandle", tMaterial.mHandleMaterial.mNameInternal));
 			}
 		}
-		onModInit(aEvent);
+		onModInit(new FMLInitializationEvent());
 	}
 	
-//  @SubscribeEvent
-//  @Mod.EventHandler
-//  public void loadComplete(FMLLoadCompleteEvent aEvent) {
-//      Why the fuck doesn't this work!?! Who can actually receive this Event? Both annotations won't work...
-//  }
-	
+	// PostInit: подписан в конструкторе на FMLLoadCompleteEvent (мод-шина) — родное neo-событие
+	// заменяет старую FML 1.7.10 сложность вокруг loadComplete (комментарий оракула выше снят вместе
+	// с @Mod.EventHandler-диспетчером, который и был источником проблемы).
+	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {onModPostInit(new FMLPostInitializationEvent());}
+
 	@Override public String getModID() {return MD.GAPI.mID;}
 	@Override public String getModName() {return MD.GAPI.mName;}
 	@Override public String getModNameForLog() {return "GT_API";}
 	@Override public Abstract_Proxy getProxy() {return api_proxy;}
-	
-	@Mod.EventHandler public void onPostLoad        (FMLPostInitializationEvent aEvent) {onModPostInit(aEvent);}
-	@Mod.EventHandler public void onServerStarting  (ServerStartingEvent     aEvent) {onModServerStarting(aEvent);}
-	@Mod.EventHandler public void onServerStarted   (ServerStartedEvent      aEvent) {onModServerStarted(aEvent);}
-	@Mod.EventHandler public void onServerStopping  (ServerStoppingEvent     aEvent) {onModServerStopping(aEvent);}
-	@Mod.EventHandler public void onServerStopped   (ServerStoppedEvent      aEvent) {onModServerStopped(aEvent);}
-	
+
+	// Серверные фазы — подписаны в конструкторе на NeoForge.EVENT_BUS (игровая шина), не на мод-шину.
+	public void onServerStarting  (ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
+	public void onServerStarted   (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
+	public void onServerStopping  (ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
+	public void onServerStopped   (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
+
 	@Override
 	@SuppressWarnings({ "resource", "deprecation" })
 	public void onModPreInit2(FMLPreInitializationEvent aEvent) {
-		InterModComms.sendRuntimeMessage(MD.GT.mID, "carbonconfig", "remapGui", MD.GAPI.mID);
-		
+		// neo-сигнатура сверена с fml-decompiled/net/neoforged/fml/InterModComms.java:27
+		// (decisions/F12-registration-lifecycle.md §7 — вопрос закрыт).
+		InterModComms.sendTo(MD.GT.mID, "carbonconfig", "remapGui", () -> MD.GAPI.mID);
+
 		File
 		tFile = new File(DirectoriesGT.CONFIG_GT, "IDs.cfg");
 		if (!tFile.exists()) tFile = new File(DirectoriesGT.CONFIG_GT, "ids.cfg");
-		Config.sConfigFileIDs = new ModConfigSpec(tFile); Config.sConfigFileIDs.save();
+		// PORT-TODO(F12, config-subsystem): 1.7.10 Forge Configuration(File)+Property.get(category,key,
+		// default) не имеет аналога — neo ModConfigSpec (реальный, но АРХИТЕКТУРНО другой: строится через
+		// ModConfigSpec.Builder на регистрации мода, читается через ConfigValue.get(), нет File-конструктора
+		// и нет per-call get(category,name,default)). gregapi.config.Config/gregapi.lang.LanguageHandler
+		// (владельцы sConfigFileIDs/sLangFile) сами ещё не портированы на этот API (отдельный шов вне
+		// зоны F12, свои 48/40 ошибок компиляции) — деградация до no-op здесь, дефолты берутся из кода.
 		
 		ConfigsGT.GREGTECH      = new Config("GregTech.cfg").setUseDefaultInNames(F);
 		ConfigsGT.RECIPES       = new Config("Recipes.cfg");
@@ -297,7 +457,9 @@ public class GT_API extends Abstract_Mod {
 		
 		tFile = new File(DirectoriesGT.CONFIG_GT, "Stacksizes.cfg");
 		if (!tFile.exists()) tFile = new File(DirectoriesGT.CONFIG_GT, "stacksizes.cfg");
-		ModConfigSpec tStackConfig = new ModConfigSpec(tFile);
+		// PORT-TODO(F12, config-subsystem): см. PORT-TODO выше (sConfigFileIDs) — тот же класс проблемы,
+		// raw ModConfigSpec не даёт File-конструктор/per-call get(category,name,default). tStackConfig
+		// оставлен null; ниже используется дефолт tPrefix.mDefaultStackSize напрямую (без override из файла).
 		
 		tFile = new File(DirectoriesGT.LOGS, "gregtech.log");
 		if (!tFile.exists()) try {tFile.createNewFile();} catch(Throwable e) {/**/}
@@ -484,9 +646,11 @@ public class GT_API extends Abstract_Mod {
 		
 		
 		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) if (!tPrefix.contains(TD.Prefix.PREFIX_UNUSED)) {
-			tPrefix.setConfigStacksize(tStackConfig.get("stacksizes", tPrefix.mNameInternal+"_"+tPrefix.mDefaultStackSize, tPrefix.mDefaultStackSize).getInt());
+			// PORT-TODO(F12, config-subsystem): было tStackConfig.get("stacksizes", tPrefix.mNameInternal+
+			// "_"+tPrefix.mDefaultStackSize, tPrefix.mDefaultStackSize).getInt() — config-файл не читается
+			// (см. PORT-TODO у объявления tStackConfig выше), используется скомпилированный дефолт напрямую.
+			tPrefix.setConfigStacksize(tPrefix.mDefaultStackSize);
 		}
-		tStackConfig.save();
 		
 		SURVIVAL_INTO_ADVENTURE_MODE            = ConfigsGT.GREGTECH.get("general", "forceAdventureMode"               , F);
 		ADVENTURE_MODE_KIT                      = ConfigsGT.GREGTECH.get("general", "AdventureModeStartingKit"         , !MD.GT.mLoaded);
@@ -571,8 +735,13 @@ public class GT_API extends Abstract_Mod {
 		
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDOUT"             , F)) System.out.close();
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDERR"             , F)) System.err.close();
-		if (ConfigsGT.GREGTECH.get("general", "hardermobspawners"          , T)) Blocks.mob_spawner.setHardness(500.0F);
-		if (ConfigsGT.GREGTECH.get("general", "blastresistantmobspawners"  , T)) Blocks.mob_spawner.setResistance(6000000.0F); else Blocks.mob_spawner.setResistance(60);
+		// PORT-TODO(F12, block-property-runtime-mutator): Block.setHardness(float)/setResistance(float)
+		// (1.7.10 runtime мутаторы) удалены — neo BlockBehaviour.Properties.strength(destroyTime,
+		// explosionResistance) неизменяема, задаётся ТОЛЬКО при регистрации блока; Blocks.SPAWNER уже
+		// зарегистрирован ванилью, ретроактивная мутация недостижима. Не найдено ни в одном из 3 корней
+		// референса — деградация до no-op.
+		if (ConfigsGT.GREGTECH.get("general", "hardermobspawners"          , T)) {/**/}
+		if (ConfigsGT.GREGTECH.get("general", "blastresistantmobspawners"  , T)) {/**/} else {/**/}
 		
 		FIRE_EXPLOSIONS                     = ConfigsGT.GREGTECH.get("machines", "explode_by_fire"    , T);
 		RAIN_EXPLOSIONS                     = ConfigsGT.GREGTECH.get("machines", "explode_by_rain"    , T);
@@ -700,13 +869,20 @@ public class GT_API extends Abstract_Mod {
 		, new PacketSyncDataByteArrayAndCoverVisuals    ( 0), new PacketSyncDataByteArrayAndCoverVisuals    ( 1), new PacketSyncDataByteArrayAndCoverVisuals    ( 2), new PacketSyncDataByteArrayAndCoverVisuals    ( 3), new PacketSyncDataByteArrayAndCoverVisuals    ( 4), new PacketSyncDataByteArrayAndCoverVisuals    ( 5), new PacketSyncDataByteArrayAndCoverVisuals    ( 6), new PacketSyncDataByteArrayAndCoverVisuals    ( 7)
 		);
 		// Registering the TileEntity used for Meta-Generated Blocks to store the 32000 variations.
-		DeferredRegister.registerTileEntity(PrefixBlockTileEntity.class, "gt.MetaBlockTileEntity");
+		// PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md): нет ADR на TILEENTITY-TYPE
+		// адаптер (BlockEntityType.Builder требует реальный BlockEntitySupplier + набор valid-блоков,
+		// которых PrefixBlockTileEntity в текущем виде не предоставляет). Прежний вызов
+		// (`DeferredRegister.registerTileEntity(Class, String)`) — выдуманный API, такого метода в
+		// NeoForge DeferredRegister нет (сверено с neoforge-decompiled). Не выдумываю замену без ADR.
 		// Creating and loading the Lang File.
 		if (CODE_CLIENT) {
 			tFile = new File(DirectoriesGT.MINECRAFT, "GregTech.lang");
 			if (!tFile.exists()) tFile = new File(DirectoriesGT.MINECRAFT, "gregtech.lang");
-			LanguageHandler.sLangFile = new ModConfigSpec(tFile);
-			LanguageHandler.sUseFile = LanguageHandler.sLangFile.get("EnableLangFile", "UseThisFileAsLanguageFile", F).getBoolean(F);
+			// PORT-TODO(F12, config-subsystem): см. PORT-TODO у sConfigFileIDs выше — тот же класс проблемы
+			// (raw ModConfigSpec без File-конструктора/per-call get). LanguageHandler.sLangFile остаётся
+			// null (LanguageHandler уже null-safe на этот случай, читает английские дефолты), sUseFile —
+			// тот же дефолт F, что был третьим аргументом оригинального .get(..., F).
+			LanguageHandler.sUseFile = F;
 		} else {
 			sBlockIconload.clear();
 			sBlockIconload = null;
@@ -718,7 +894,12 @@ public class GT_API extends Abstract_Mod {
 		// Initialising the Re-Registrations.
 		new LoaderOreDictReRegistrations().run();
 		// Register the Falling MetaBlock Entity.
-		DeferredRegister.registerModEntity(PrefixBlockFallingEntity.class, "gt.MetaBlockFallingEntity", 0, this, 160, 1, T);
+		// PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md): та же граница, что и
+		// registerTileEntity выше — ENTITY-TYPE адаптер (DeferredRegister.Entities.registerEntityType
+		// требует EntityType.EntityFactory, совместимый с реальным конструктором PrefixBlockFallingEntity)
+		// не разработан отдельным ADR. Прежний вызов (`DeferredRegister.registerModEntity(...)`) —
+		// выдуманный API (1.7.10 GameRegistry.registerModEntity механически переименован в
+		// DeferredRegister, которого там никогда не было).
 		// Initialise Enchantments.
 		new Enchantment_WerewolfDamage();
 		new Enchantment_EnderDamage();
@@ -733,26 +914,20 @@ public class GT_API extends Abstract_Mod {
 		// Register the GUI Handler.
 		// PORT-TODO(F7-gui, заменить старый Forge GUI-handler на реальный NeoForge menu/screen путь после сверки с референсом)
 		// Fixing vanilla Oak Plank Slab Recipe.
-		CR.remove(ST.make(Blocks.planks, 1, 0), ST.make(Blocks.planks, 1, 1), ST.make(Blocks.planks, 1, 2));
-		CR.shaped(ST.make(Blocks.wooden_slab, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.planks, 1, 0));
+		// F12: REMAP-RULES.md §C/§C-bis блок-флэттен (данные) — Blocks.planks/wooden_slab (1.7.10 meta
+		// 0/1/2=oak/spruce/birch) удалены, заменены реальными UPPER_SNAKE-константами neo per-species.
+		CR.remove(ST.make(Blocks.OAK_PLANKS, 1, 0), ST.make(Blocks.SPRUCE_PLANKS, 1, 0), ST.make(Blocks.BIRCH_PLANKS, 1, 0));
+		CR.shaped(ST.make(Blocks.OAK_SLAB, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.OAK_PLANKS, 1, 0));
 		// Preventing a Water Dupe by registering this Recipe early so it won't be overridden
-		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.glass_bottle, 1, 0), FL.Water.make(250), NF, ST.make(Items.potionitem, 1, 0));
-		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.potionitem, 1, 0), ST.make(Items.glass_bottle, 1, 0));
+		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.GLASS_BOTTLE, 1, 0), FL.Water.make(250), NF, ST.make(Items.POTION, 1, 0));
+		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.POTION, 1, 0), ST.make(Items.GLASS_BOTTLE, 1, 0));
 		
-		try {
-			LoadController tLoadController = ((LoadController)UT.Reflection.getFieldContent(ModList.instance(), "modController", T, T));
-			List<ModContainer> tModList = tLoadController.getActiveModList(), tNewModsList = new ArrayList<>(tModList.size());
-			ModContainer tGregTech = null;
-			for (short i = 0; i < tModList.size(); i++) {
-				ModContainer tMod = tModList.get(i);
-				if (tMod.getModId().equalsIgnoreCase(MD.GAPI.mID)) tGregTech = tMod; else tNewModsList.add(tMod);
-			}
-			if (tGregTech != null) tNewModsList.add(0, tGregTech);
-			UT.Reflection.setFieldContent(tLoadController, "activeModList", tNewModsList);
-		} catch(Throwable e) {
-			e.printStackTrace(ERR);
-		}
-		
+		// F12: снят FML-хак принудительной перестановки GAPI в начало activeModList через reflection
+		// (LoadController/ModList/ModContainer — внутренние классы FML 1.7.10, аналога в neo нет).
+		// Его функцию ("GAPI грузится первым") теперь честно и декларативно даёт депенденси-граф
+		// движка — @Mod(..., depends = {ModIDs.GAPI_POST}) выше в этом файле
+		// (decisions/F12-registration-lifecycle.md §3-4).
+
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onPreLoad(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
@@ -796,9 +971,13 @@ public class GT_API extends Abstract_Mod {
 		OreDictManager.INSTANCE.onPostLoad();
 		
 		ICover tCover = new CoverRedstoneTorch();
-		CoverRegistry.put(ST.make(Blocks.redstone_torch, 1, 0), tCover);
-		CoverRegistry.put(ST.make(Blocks.unlit_redstone_torch, 1, 0), tCover);
-		CoverRegistry.put(ST.make(Items.repeater, 1, 0), new CoverRedstoneRepeater());
+		// F12: block-флэттен (данные) — Blocks.redstone_torch/unlit_redstone_torch (1.7.10, два раздельных
+		// блока lit/unlit) слиты в neo в ОДИН Blocks.REDSTONE_TORCH с BlockState-свойством "lit" (нет
+		// отдельной unlit-константы); вторая регистрация становится тем же ключом — безвредный дубль,
+		// не потеря данных (тот же tCover на тот же результирующий блок).
+		CoverRegistry.put(ST.make(Blocks.REDSTONE_TORCH, 1, 0), tCover);
+		CoverRegistry.put(ST.make(Blocks.REDSTONE_TORCH, 1, 0), tCover);
+		CoverRegistry.put(ST.make(Items.REPEATER, 1, 0), new CoverRedstoneRepeater());
 		
 		OreDictPrefix.applyAllStackSizes();
 		
@@ -863,35 +1042,19 @@ public class GT_API extends Abstract_Mod {
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStopped(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
-	@Mod.EventHandler
+	// В neo нет числовых ID блоков/предметов, поэтому нет и neo-аналога FMLModIdMappingEvent — метод
+	// не подписан ни на одну шину (не вызывается автоматически, но остаётся 1:1 доступным вручную для
+	// ICompat.onIDChanging(...), если понадобится на этапе рантайм-parity — см. javadoc
+	// gregapi.api.FMLModIdMappingEvent).
 	public void onIDChangingEvent(FMLModIdMappingEvent aEvent) {
 		// Fixing missing Blocks caused by DragonAPI. The Issue is more complicated but it should fix some part of it.
-		if (Block.blockRegistry.getObjectById( 26) == null) Block.blockRegistry.addObject( 26, "bed", Blocks.bed);
-		if (Block.blockRegistry.getObjectById( 34) == null) Block.blockRegistry.addObject( 34, "piston_head", Blocks.piston_head);
-		if (Block.blockRegistry.getObjectById( 55) == null) Block.blockRegistry.addObject( 55, "redstone_wire", Blocks.redstone_wire);
-		if (Block.blockRegistry.getObjectById( 59) == null) Block.blockRegistry.addObject( 59, "wheat", Blocks.wheat);
-		if (Block.blockRegistry.getObjectById( 63) == null) Block.blockRegistry.addObject( 63, "standing_sign", Blocks.standing_sign);
-		if (Block.blockRegistry.getObjectById( 64) == null) Block.blockRegistry.addObject( 64, "wooden_door", Blocks.wooden_door);
-		if (Block.blockRegistry.getObjectById( 68) == null) Block.blockRegistry.addObject( 68, "wall_sign", Blocks.wall_sign);
-		if (Block.blockRegistry.getObjectById( 71) == null) Block.blockRegistry.addObject( 71, "iron_door", Blocks.iron_door);
-		if (Block.blockRegistry.getObjectById( 74) == null) Block.blockRegistry.addObject( 74, "lit_redstone_ore", Blocks.lit_redstone_ore);
-		if (Block.blockRegistry.getObjectById( 75) == null) Block.blockRegistry.addObject( 75, "unlit_redstone_torch", Blocks.unlit_redstone_torch);
-		if (Block.blockRegistry.getObjectById( 83) == null) Block.blockRegistry.addObject( 83, "reeds", Blocks.reeds);
-		if (Block.blockRegistry.getObjectById( 92) == null) Block.blockRegistry.addObject( 92, "cake", Blocks.cake);
-		if (Block.blockRegistry.getObjectById( 93) == null) Block.blockRegistry.addObject( 93, "unpowered_repeater", Blocks.unpowered_repeater);
-		if (Block.blockRegistry.getObjectById( 94) == null) Block.blockRegistry.addObject( 94, "powered_repeater", Blocks.powered_repeater);
-		if (Block.blockRegistry.getObjectById(104) == null) Block.blockRegistry.addObject(104, "pumpkin_stem", Blocks.pumpkin_stem);
-		if (Block.blockRegistry.getObjectById(105) == null) Block.blockRegistry.addObject(105, "melon_stem", Blocks.melon_stem);
-		if (Block.blockRegistry.getObjectById(115) == null) Block.blockRegistry.addObject(115, "nether_wart", Blocks.nether_wart);
-		if (Block.blockRegistry.getObjectById(117) == null) Block.blockRegistry.addObject(117, "brewing_stand", Blocks.brewing_stand);
-		if (Block.blockRegistry.getObjectById(118) == null) Block.blockRegistry.addObject(118, "cauldron", Blocks.cauldron);
-		if (Block.blockRegistry.getObjectById(124) == null) Block.blockRegistry.addObject(124, "lit_redstone_lamp", Blocks.lit_redstone_lamp);
-		if (Block.blockRegistry.getObjectById(132) == null) Block.blockRegistry.addObject(132, "tripwire", Blocks.tripwire);
-		if (Block.blockRegistry.getObjectById(140) == null) Block.blockRegistry.addObject(140, "flower_pot", Blocks.flower_pot);
-		if (Block.blockRegistry.getObjectById(144) == null) Block.blockRegistry.addObject(144, "skull", Blocks.skull);
-		if (Block.blockRegistry.getObjectById(149) == null) Block.blockRegistry.addObject(149, "unpowered_comparator", Blocks.unpowered_comparator);
-		if (Block.blockRegistry.getObjectById(150) == null) Block.blockRegistry.addObject(150, "powered_comparator", Blocks.powered_comparator);
-		
+		// PORT-TODO(F12, numeric-block-id-registry): DragonAPI-фикс завязан на числовой Block.blockRegistry
+		// (getObjectById/addObject(int,...)) из Forge 1.7.10 — в NeoForge числовых ID блоков нет вовсе
+		// (grep 3 корней референса: net.minecraft/net.neoforged — ни blockRegistry, ни int-based
+		// addObject/getObjectById не существует), поэтому у этого куска нет и не может быть neo-1:1.
+		// Метод сам по себе не подписан ни на одну шину (см. комментарий выше), это единственная живая
+		// причина — остаток ниже (STACKMAPS-ремап + рассылка ICompat.onIDChanging) сохранён 1:1.
+
 		OUT.println(getModNameForLog() + ": Remapping ItemStackMaps due to ID Map change. Those damn Items should have a consistent Hashcode, but noooo, ofcourse they break Basic Code Conventions! Thanks Forge and Mojang!");
 		
 		for (Map<ItemStackContainer, ?> tMap : STACKMAPS) UT.Code.reMap(tMap);

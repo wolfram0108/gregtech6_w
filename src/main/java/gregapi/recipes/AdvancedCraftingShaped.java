@@ -56,12 +56,16 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 	public boolean matches(CraftingInput aGrid, Level aWorld) {
 		if (mKeepingNBT) {
 			ItemStack tStack = null;
-			for (int i = 0; i < aGrid.getSizeInventory(); i++) {
-				if (aGrid.getStackInSlot(i) != null && aGrid.getStackInSlot(i).hasTagCompound()) {
+			// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
+			// CraftingInput.size()/getItem(i). getItem(i) никогда не null (пустой слот = ItemStack.EMPTY), поэтому
+			// занятость слота проверяется ST.valid(...), а не сравнением с null (CraftingInput.java:85-96).
+			for (int i = 0; i < aGrid.size(); i++) {
+				ItemStack tSlot = aGrid.getItem(i);
+				if (ST.valid(tSlot) && tSlot.hasTagCompound()) {
 					if (tStack != null) {
-						if ((tStack.hasTagCompound() != aGrid.getStackInSlot(i).hasTagCompound()) || (tStack.hasTagCompound() && !tStack.getTagCompound().equals(aGrid.getStackInSlot(i).getTagCompound()))) return F;
+						if ((tStack.hasTagCompound() != tSlot.hasTagCompound()) || (tStack.hasTagCompound() && !tStack.getTagCompound().equals(tSlot.getTagCompound()))) return F;
 					}
-					tStack = aGrid.getStackInSlot(i);
+					tStack = tSlot;
 				}
 			}
 		}
@@ -76,31 +80,40 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			ST.update(rStack);
 			
 			// Keeping NBT
-			if (mKeepingNBT) for (int i = 0; i < aGrid.getSizeInventory(); i++) {
-				if (aGrid.getStackInSlot(i) != null && aGrid.getStackInSlot(i).hasTagCompound()) {
-					UT.NBT.set(rStack, (CompoundTag)aGrid.getStackInSlot(i).getTagCompound().copy());
+			// F11: CraftingInput.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
+			// заменяет "!= null" (getItem(i) всегда non-null, пустой слот = ItemStack.EMPTY).
+			if (mKeepingNBT) for (int i = 0; i < aGrid.size(); i++) {
+				ItemStack tSlot = aGrid.getItem(i);
+				if (ST.valid(tSlot) && tSlot.hasTagCompound()) {
+					UT.NBT.set(rStack, (CompoundTag)tSlot.getTagCompound().copy());
 					break;
 				}
 			}
-			
+
 			// GT Charge Values
 			if (rStack.getItem() instanceof IItemEnergy) {
 				for (TagData tEnergyType : ((IItemEnergy)rStack.getItem()).getEnergyTypes(rStack)) {
 					long tCharge = 0;
-					for (int i = 0; i < aGrid.getSizeInventory(); i++) if (aGrid.getStackInSlot(i) != null && aGrid.getStackInSlot(i).getItem() instanceof IItemEnergy && !(aGrid.getStackInSlot(i).getItem() instanceof IItemGTContainerTool)) {
-						tCharge += ((IItemEnergy)aGrid.getStackInSlot(i).getItem()).getEnergyStored(tEnergyType, aGrid.getStackInSlot(i));
+					for (int i = 0; i < aGrid.size(); i++) {
+						ItemStack tSlot = aGrid.getItem(i);
+						if (ST.valid(tSlot) && tSlot.getItem() instanceof IItemEnergy && !(tSlot.getItem() instanceof IItemGTContainerTool)) {
+							tCharge += ((IItemEnergy)tSlot.getItem()).getEnergyStored(tEnergyType, tSlot);
+						}
 					}
 					((IItemEnergy)rStack.getItem()).setEnergyStored(tEnergyType, rStack, tCharge);
 				}
 			}
-			
+
 			// Saving Ingredients inside the Item.
 			if (mDismantleable) {
 				CompoundTag rNBT = rStack.getTagCompound(), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				for (int i = 0; i < 9; i++) {
-					ItemStack tStack = aGrid.getStackInSlot(i);
-					if (tStack != null && ST.container(tStack, T) == null && !(tStack.getItem() instanceof MultiItemTool)) {
+				// PORT-TODO(F11, trimmed-сетка): 1.7.10 InventoryCrafting был фикс-9 (3x3); neo CraftingInput
+				// подрезается до фактического габарита (F11-crafting-recipe.md §7) — граница Math.min(9,size())
+				// сохраняет 1:1 для полной 3x3 сетки и просто не переполняется на меньшей.
+				for (int i = 0, j = Math.min(9, aGrid.size()); i < j; i++) {
+					ItemStack tStack = aGrid.getItem(i);
+					if (ST.valid(tStack) && ST.container(tStack, T) == null && !(tStack.getItem() instanceof MultiItemTool)) {
 						tStack = ST.amount(1, tStack);
 						tNBT.setTag(""+i, ST.save(tStack));
 					}

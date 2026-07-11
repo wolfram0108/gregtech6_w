@@ -22,53 +22,56 @@ package gregapi.render;
 import static gregapi.data.CS.*;
 
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.util.IIcon;
 import net.minecraft.resources.Identifier;
 
-/** 
+/**
  * @author Gregorius Techneticies
+ *
+ * Copies the Icon of another Block's Side+Meta (e.g. Dirt below Grass). PORT-TODO(F3, baked-рендер
+ * клиента): {@code Block.getIcon(side,meta)} удалён в 26.1.2 (мёртвый immediate-mode метод, см.
+ * REMAP-RULES §C2) — до baked-фазы {@link #getIcon(int)} отдаёт {@code null}-держатель.
  */
 public class IconContainerCopied implements IIconContainer {
 	private final Block mBlock;
 	private final byte mSide, mMeta;
 	public short[] mRGBa;
-	
+
 	public IconContainerCopied(Block aBlock, long aMeta, long aSide, short[] aRGBa) {
 		mBlock = aBlock; mMeta = (byte)aMeta; mSide = (byte)aSide; mRGBa = aRGBa;
 	}
 	public IconContainerCopied(Block aBlock, long aMeta, long aSide) {
 		mBlock = aBlock; mMeta = (byte)aMeta; mSide = (byte)aSide; mRGBa = UNCOLOURED;
 	}
-	
+
 	@Override
-	public IIcon getIcon(int aRenderPass) {
-		return mBlock.getIcon(mSide, mMeta);
+	public Identifier getIcon(int aRenderPass) {
+		// PORT-TODO(F3, baked-рендер клиента): было mBlock.getIcon(mSide, mMeta) (Block.getIcon удалён).
+		return null;
 	}
-	
+
 	@Override
 	public boolean isUsingColorModulation(int aRenderPass) {
 		return mRGBa == UNCOLOURED;
 	}
-	
+
 	@Override
 	public short[] getIconColor(int aRenderPass) {
 		return mRGBa;
 	}
-	
+
 	@Override
 	public int getIconPasses() {
 		return 1;
 	}
-	
+
 	@Override
 	public Identifier getTextureFile() {
-		return TextureAtlas.locationBlocksTexture;
+		return TextureAtlas.LOCATION_BLOCKS;
 	}
-	
+
 	@Override
-	public void registerIcons(IIconRegister aIconRegister) {
+	public void registerIcons(Object aIconRegister) {
 		//
 	}
 }

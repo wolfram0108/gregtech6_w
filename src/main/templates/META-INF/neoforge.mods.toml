@@ -43,6 +43,50 @@ description='''
 Port of GregTech 6 to Minecraft 26.1.2 / NeoForge. Skeleton — work in progress.
 '''
 
+# F12 (decisions/F12-registration-lifecycle.md): GT6 = три родных FML-мода Грегориуса в одном jar
+# (GAPI/GAPI_POST/GT), каждый со своим @Mod(value=...) в своём классе (gregapi.GT_API / gregapi.GT_API_Post /
+# gregtech6.GregTech6). FMLJavaModLanguageProvider (fml-decompiled :53-61) помечает @Mod(value=X) БЕЗ
+# соответствующей [[mods]]-записи для modId X как dangling entrypoint — поэтому у GAPI и GAPI_POST здесь
+# собственные metadata-записи, симметрично записи ${mod_id} (GT) выше.
+[[mods]] #mandatory
+modId="gregapi" #mandatory
+version="${mod_version}" #mandatory
+displayName="Greg-API" #mandatory
+description='''
+GT6 GAPI-мод (gregapi.GT_API) — грузится первым, перед GAPI_POST и совместимыми модами.
+'''
+
+[[mods]] #mandatory
+modId="gregapi_post" #mandatory
+version="${mod_version}" #mandatory
+displayName="Greg-API-Post" #mandatory
+description='''
+GT6 GAPI_POST-мод (gregapi.GT_API_Post) — грузится после GAPI и совместимых модов.
+'''
+
+# УЛИКА R7 (доработка): {@code @Mod.depends()} на Java-стороне (gregapi.GT_API/GT_API_Post) НЕ задаёт
+# порядок загрузки — он только фильтрует entrypoint-класс по наличию modId в списке загруженных модов
+# (fml-decompiled net/neoforged/fml/javafmlmod/FMLJavaModLanguageProvider.java:33). Реальный порядок
+# строит {@code ModSorter} (fml-decompiled net/neoforged/fml/loading/ModSorter.java:194-208,
+# {@code addDependency}) из ГРАФА, построенного ИМЕННО из этих {@code [[dependencies.<owner>]]}-секций:
+# {@code ordering="BEFORE"} → ребро owner→target (owner раньше target), {@code ordering="AFTER"} →
+# ребро target→owner (owner позже target). Здесь воспроизведена структурная связь оригинала 1:1
+# (gregtech6/.../GT_API.java:109 {@code "required-before:"+GAPI_POST}, GT_API_Post.java:59
+# {@code "required-after:"+GAPI}) — с обеих сторон связки, как в оригинале.
+[[dependencies.gregapi]]
+    modId="gregapi_post"
+    type="required"
+    versionRange="[${mod_version},)"
+    ordering="BEFORE"
+    side="BOTH"
+
+[[dependencies.gregapi_post]]
+    modId="gregapi"
+    type="required"
+    versionRange="[${mod_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
 #[[mixins]]
 #config="${mod_id}.mixins.json"

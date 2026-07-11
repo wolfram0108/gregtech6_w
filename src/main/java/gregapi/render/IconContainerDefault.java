@@ -21,67 +21,70 @@ package gregapi.render;
 
 import static gregapi.data.CS.*;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.util.IIcon;
 import net.minecraft.resources.Identifier;
 
+/**
+ * PORT-TODO(F3, baked-рендер клиента): конструкторы принимали {@code IIcon} (тип удалён в 26.1.2) —
+ * теперь принимают {@link Identifier} как нейтральный держатель ссылки на текстуру, форвард-совместимый
+ * с будущим {@code Material(Identifier)} (decisions/F3-render.md §2.3).
+ */
 public class IconContainerDefault implements IIconContainer {
 	public final Identifier mTextureFile;
-	public final IIcon mIcon;
+	public final Identifier mIcon;
 	public final short[] mRGBa;
-	
-	public IconContainerDefault(IIcon aIcon, short[] aRGBa, Identifier aTextureFile) {
+
+	public IconContainerDefault(Identifier aIcon, short[] aRGBa, Identifier aTextureFile) {
 		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = aTextureFile;
 	}
-	
-	public IconContainerDefault(IIcon aIcon, short[] aRGBa, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? TextureAtlas.locationBlocksTexture : TextureAtlas.locationItemsTexture);
+
+	public IconContainerDefault(Identifier aIcon, short[] aRGBa, boolean aIsBlockTexture) {
+		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : TextureAtlas.LOCATION_ITEMS);
 	}
-	
-	public IconContainerDefault(IIcon aIcon, short[] aRGBa) {
-		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = TextureAtlas.locationBlocksTexture;
+
+	public IconContainerDefault(Identifier aIcon, short[] aRGBa) {
+		mIcon = aIcon; mRGBa = aRGBa; mTextureFile = TextureAtlas.LOCATION_BLOCKS;
 	}
-	
-	public IconContainerDefault(IIcon aIcon, Identifier aTextureFile) {
+
+	public IconContainerDefault(Identifier aIcon, Identifier aTextureFile) {
 		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = aTextureFile;
 	}
-	
-	public IconContainerDefault(IIcon aIcon, boolean aIsBlockTexture) {
-		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? TextureAtlas.locationBlocksTexture : TextureAtlas.locationItemsTexture);
+
+	public IconContainerDefault(Identifier aIcon, boolean aIsBlockTexture) {
+		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = (aIsBlockTexture ? TextureAtlas.LOCATION_BLOCKS : TextureAtlas.LOCATION_ITEMS);
 	}
-	
-	public IconContainerDefault(IIcon aIcon) {
-		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = TextureAtlas.locationBlocksTexture;
+
+	public IconContainerDefault(Identifier aIcon) {
+		mIcon = aIcon; mRGBa = UNCOLOURED; mTextureFile = TextureAtlas.LOCATION_BLOCKS;
 	}
-	
+
 	@Override
-	public IIcon getIcon(int aRenderPass) {
+	public Identifier getIcon(int aRenderPass) {
 		return mIcon;
 	}
-	
+
 	@Override
 	public boolean isUsingColorModulation(int aRenderPass) {
 		return mRGBa == UNCOLOURED;
 	}
-	
+
 	@Override
 	public short[] getIconColor(int aRenderPass) {
 		return mRGBa;
 	}
-	
+
 	@Override
 	public int getIconPasses() {
 		return 1;
 	}
-	
+
 	@Override
 	public Identifier getTextureFile() {
 		return mTextureFile;
 	}
-	
+
 	@Override
-	public void registerIcons(IIconRegister aIconRegister) {
+	public void registerIcons(Object aIconRegister) {
 		//
 	}
 }

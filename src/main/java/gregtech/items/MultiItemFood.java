@@ -19,6 +19,7 @@
 
 package gregtech.items;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.*;
 import gregapi.item.CreativeTab;
 import gregapi.item.IItemRottable;
@@ -975,13 +976,13 @@ public class MultiItemFood extends MultiItemRandomWithCompat implements IItemRot
 		if (UT.Code.inside(31000, 31999, aMeta)) return aStack;
 		
 		switch(aMeta) {
-		case 12000: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
-		case 12001: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
-		case 12002: return ST.make(this, aStack.getCount(), 12003, aStack.getTagCompound());
-		case 12004: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
-		case 12005: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
-		case 12006: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
-		case 12007: return ST.make(this, aStack.getCount(), 12002, aStack.getTagCompound());
+		case 12000: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12001: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12002: return ST.make(this, aStack.getCount(), 12003, ItemNBT.get(aStack));
+		case 12004: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12005: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12006: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
+		case 12007: return ST.make(this, aStack.getCount(), 12002, ItemNBT.get(aStack));
 		case 32700: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.getCount());
 		case 32701: return (IL.ENVM_Rotten_Food.exists()?IL.ENVM_Rotten_Food:IL.Remains_Plant).get(aStack.getCount());
 		case 32105: case 32107: return OP.ingot.mat(MT.MeatRotten, aStack.getCount());

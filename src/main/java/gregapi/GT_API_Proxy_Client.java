@@ -36,6 +36,7 @@ import gregapi.block.metatype.BlockMetaType;
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
 import gregapi.block.prefixblock.PrefixBlockFallingEntity;
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.ObjectStack;
 import gregapi.cover.CoverRegistry;
 import gregapi.cover.ICover;
@@ -237,7 +238,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			Item aItem = ST.item(aEvent.itemStack);
 			OreDictItemData tData = OM.anydata_(aEvent.itemStack);
 			
-			if (aEvent.itemStack.getTagCompound() == null) {
+			if (ItemNBT.get(aEvent.itemStack) == null) {
 				if (aBlock == Blocks.dirt && aBlockMeta == 1) {
 					aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Dirt", "Coarse Dirt"));
 				}

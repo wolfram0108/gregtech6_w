@@ -53,7 +53,7 @@ public class EntityFoodTracker implements AttachmentType {
 		if (mDehydration != 0) tNBT.setByte("d", mDehydration);
 		if (mFat         != 0) tNBT.setByte("f", mFat        );
 		if (mRadiation   != 0) tNBT.setByte("r", mRadiation  );
-		if (tNBT.hasNoTags()) aNBT.removeTag("gt.props.food"); else aNBT.setTag("gt.props.food", tNBT);
+		if (tNBT.isEmpty()) aNBT.removeTag("gt.props.food"); else aNBT.setTag("gt.props.food", tNBT);
 	}
 	
 	@Override

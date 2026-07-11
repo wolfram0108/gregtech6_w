@@ -23,6 +23,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
@@ -35,11 +36,11 @@ public class Behavior_DataStorage extends AbstractBehaviorDefault {
 	
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
-		if (aStack != null && aStack.hasTagCompound()) {
-			CompoundTag tUSB = aStack.getTagCompound().getCompoundTag(NBT_USB_DATA);
+		if (aStack != null && ItemNBT.has(aStack)) {
+			CompoundTag tUSB = ItemNBT.get(aStack).getCompoundTag(NBT_USB_DATA);
 			if (tUSB != null) {
 				UT.NBT.getDataToolTip(tUSB, aList, T);
-				aList.add(LH.Chat.DGRAY + "Data: USB " + aStack.getTagCompound().getByte(NBT_USB_TIER) + ".0");
+				aList.add(LH.Chat.DGRAY + "Data: USB " + ItemNBT.get(aStack).getByte(NBT_USB_TIER) + ".0");
 			} else {
 				aList.add(LH.Chat.CYAN + "This Stick is Empty");
 			}

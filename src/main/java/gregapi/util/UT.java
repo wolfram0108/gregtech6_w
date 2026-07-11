@@ -19,7 +19,6 @@
 
 package gregapi.util;
 
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
@@ -52,6 +51,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.tags.EnchantmentTags;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.tags.EntityTypeTags;
@@ -80,6 +83,7 @@ import net.neoforged.neoforge.common.util.FakePlayer;
 import net.minecraft.core.Direction;
 import net.minecraftforge.fluids.*;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -474,8 +478,8 @@ public class UT {
 			if (tData != null) return ST.amount(1, tData.emptyContainer);
 			if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0) {
 				((IFluidHandlerItem)aStack.getItem()).drain(aStack = ST.amount(1, aStack), Integer.MAX_VALUE, T);
-				if (aStack.getTagCompound() == null) return aStack;
-				if (aStack.getTagCompound().hasNoTags()) aStack.setTagCompound(null);
+				if (ItemNBT.get(aStack) == null) return aStack;
+				if (ItemNBT.get(aStack).isEmpty()) ItemNBT.set(aStack, null);
 				return aStack;
 			}
 			return NI;
@@ -489,74 +493,35 @@ public class UT {
 		@Deprecated public static CompoundTag save (FluidStack aFluid) {return FL.save (aFluid);}
 		@Deprecated public static CompoundTag save_(FluidStack aFluid) {return FL.save_(aFluid);}
 		
-		@Deprecated @SafeVarargs public static Fluid createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createLiquid(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, 1000, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList);}
-		
-		@Deprecated @SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createMolten(aMaterial, L, aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return createMolten(aMaterial, L, aTexture, aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return createMolten(aMaterial, aAmount, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_MOLTEN), aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return create("molten."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Molten " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaLiquid, STATE_LIQUID, aAmount, aMaterial.mMeltingPoint <= 0 ? 1000 : aMaterial.mMeltingPoint < 300 ? Math.min(300, aMaterial.mBoilingPoint - 1) : aMaterial.mMeltingPoint, null, null, 0, aFluidList).setLuminosity(10);}
-		
-		@Deprecated @SafeVarargs public static Fluid createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createGas(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create(aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 1000, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
-		
-		@Deprecated @SafeVarargs public static Fluid createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createVapour(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_GAS), aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("vapor."+aMaterial.mNameInternal.toLowerCase(), aTexture, "Vaporized " + aMaterial.mNameLocal, aMaterial, aMaterial.mRGBaGas, STATE_GASEOUS, 8*L, aMaterial.mBoilingPoint <= 0 ? 3000 : aMaterial.mBoilingPoint < 300 ? Math.min(300, aMaterial.mPlasmaPoint - 1) : aMaterial.mBoilingPoint, null, null, 0, aFluidList);}
-		
-		@Deprecated @SafeVarargs public static Fluid createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return createPlasma(aMaterial, aMaterial.mTextureSetsBlock.get(IconsGT.INDEX_BLOCK_PLASMA), aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return create("plasma."+aMaterial.mNameInternal.toLowerCase(), aTexture, aMaterial.mNameLocal + " Plasma", aMaterial, aMaterial.mRGBaPlasma, STATE_PLASMA, L*L, aMaterial.mPlasmaPoint <= 0 ? 10000 : Math.max(300, aMaterial.mPlasmaPoint), null, null, 0, aFluidList);}
-		
-		@Deprecated @SafeVarargs public static Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, null, null, 0, aFluidList);}
-		@Deprecated @SafeVarargs public static Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase()), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
-		
+		// F5 стык: этот блок был мёртвым (0 вызывающих во всём дереве, grep подтверждён) буквальным
+		// копированием тела gregapi.data.FL.create*(тот же F5-центр) поверх несуществующего в neo
+		// net.minecraftforge.fluids.Fluid/FluidRegistry/FluidContainerRegistry (красно ещё до порта F5).
+		// Оригинал 1.7.10 (gregtech6/src/main/java/gregapi/util/UT.java:492-513) держал ДВЕ раздельные
+		// копии одной и той же логики (UT.Fluids и FL) — как уже сделано для load/save чуть выше в этом
+		// же классе, дублирование заменено на делегирование единственному центру FL (decisions/F5-fluids.md).
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aTexture, aFluidList);}
+
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aTexture, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aAmount, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aAmount, aTexture, aFluidList);}
+
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createGas(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createGas(aMaterial, aTexture, aFluidList);}
+
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createVapour(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createVapour(aMaterial, aTexture, aFluidList);}
+
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createPlasma(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createPlasma(aMaterial, aTexture, aFluidList);}
+
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return FL.create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, aFluidList);}
+		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return FL.create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
+
 		@Deprecated @SafeVarargs
-		public static Fluid create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
-			aName = aName.toLowerCase();
-			Fluid rFluid = new FluidGT(aName, aTexture, aRGBa == null ? UNCOLOURED : aRGBa, aTemperatureK, aState == 2 || aState == 3);
-			LH.add(rFluid.getUnlocalizedName(), aLocalized==null?aName:aLocalized);
-			
-			for (Set<String> tSet : aFluidList) tSet.add(aName);
-			
-			switch (aState) {
-			case STATE_SOLID:   rFluid.setViscosity(10000); break;
-			case STATE_LIQUID:  rFluid.setViscosity( 1000); FluidsGT.LIQUID.add(aName); break;
-			case STATE_GASEOUS: rFluid.setViscosity(  200); rFluid.setDensity(   -100); FluidsGT.GAS.add(aName); break;
-			case STATE_PLASMA:  rFluid.setViscosity(   10); rFluid.setDensity(-100000); rFluid.setLuminosity(15); FluidsGT.PLASMA.add(aName); break;
-			case 4:             rFluid.setViscosity( 1000); break;
-			}
-			
-			if (!FluidRegistry.registerFluid(rFluid)) {
-				rFluid = FluidRegistry.getFluid(aName);
-				LH.add(rFluid.getUnlocalizedName(), aLocalized==null?aName:aLocalized);
-				if (rFluid.getTemperature() == new Fluid("test").getTemperature() || rFluid.getTemperature() <= 0) rFluid.setTemperature(UT.Code.bindInt(aTemperatureK));
-				rFluid.setGaseous(aState == 2 || aState == 3);
-			}
-			
-			if (aMaterial != null) {
-				if (aMaterial.contains(TD.Properties.ACID    )) FluidsGT.ACID.add(aName);
-				if (aMaterial.contains(TD.Properties.GLOWING )) rFluid.setLuminosity(Math.max(rFluid.getLuminosity(), 5));
-				if (aMaterial.contains(TD.Properties.LIGHTING)) rFluid.setLuminosity(Math.max(rFluid.getLuminosity(), 15));
-				switch (aState) {
-				case STATE_LIQUID:  aMaterial.liquid(UT.Fluids.make(rFluid, UT.Code.bindInt(aAmountPerUnit))); break;
-				case STATE_GASEOUS: aMaterial.gas   (UT.Fluids.make(rFluid, UT.Code.bindInt(aAmountPerUnit))); break;
-				case STATE_PLASMA:  aMaterial.plasma(UT.Fluids.make(rFluid, UT.Code.bindInt(aAmountPerUnit))); break;
-				}
-				// Translating Real Life Density to that weird Integer based Density System.
-				if (aMaterial.mGramPerCubicCentimeter > 0 && (aState == STATE_LIQUID || aState == STATE_GASEOUS)) {
-					if (aMaterial.mGramPerCubicCentimeter > WEIGHT_AIR_G_PER_CUBIC_CENTIMETER) {
-						rFluid.setDensity(UT.Code.bindInt((long)(1000 * aMaterial.mGramPerCubicCentimeter)));
-					} else if (aMaterial.mGramPerCubicCentimeter < WEIGHT_AIR_G_PER_CUBIC_CENTIMETER) {
-						rFluid.setDensity(UT.Code.bindInt((long)(-0.1 / aMaterial.mGramPerCubicCentimeter)));
-					} else {
-						rFluid.setDensity(0);
-					}
-				}
-			}
-			
-			if (aFullContainer != null && aEmptyContainer != null && !FluidContainerRegistry.registerFluidContainer(UT.Fluids.make(rFluid, aFluidAmount), aFullContainer, aEmptyContainer)) {
-				RM.Canner.addRecipe1(T, 16, Math.max(aFluidAmount / 64, 16), aFullContainer, NF, UT.Fluids.make(rFluid, aFluidAmount), ST.container(aFullContainer, F));
-			}
-			return rFluid;
+		public static net.minecraft.world.level.material.Fluid create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
+			return FL.create(aName, aTexture, aLocalized, aMaterial, aRGBa, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);
 		}
 	}
 	
@@ -574,7 +539,7 @@ public class UT {
 		}
 		public static void display(Player aPlayer, boolean aWritable, ItemStack aStack) {
 			if (ST.invalid(aStack)) return;
-			display(aPlayer, aWritable, aStack.getTagCompound());
+			display(aPlayer, aWritable, ItemNBT.get(aStack));
 		}
 		public static void display(Player aPlayer, boolean aWritable, CompoundTag aNBT) {
 			if (aNBT == null || UT.Code.stringInvalid(UT.NBT.getBookTitle(aNBT))) return;
@@ -593,7 +558,7 @@ public class UT {
 			ItemStack tStack = BOOK_MAP.get(aMapping);
 			if (tStack == null) return aStackToPutNBT==null?ST.make(Items.written_book, 1, 0):aStackToPutNBT;
 			if (aStackToPutNBT == null) aStackToPutNBT = ST.copy(tStack);
-			return NBT.set(aStackToPutNBT, (CompoundTag)tStack.getTagCompound().copy());
+			return NBT.set(aStackToPutNBT, (CompoundTag)ItemNBT.get(tStack).copy());
 		}
 		
 		public static ItemStack getBookWithTitle(String aMapping) {
@@ -1808,117 +1773,117 @@ public class UT {
 			CompoundTag rNBT = make();
 			
 			if (aFirstValue == null) {/* Nothing */}
-			else if (aFirstValue instanceof Boolean)           rNBT.setBoolean(aFirstKey, (Boolean)                aFirstValue);
-			else if (aFirstValue instanceof Byte)              rNBT.setByte(   aFirstKey, (Byte)                   aFirstValue);
-			else if (aFirstValue instanceof Short)             rNBT.setShort(  aFirstKey, (Short)                  aFirstValue);
-			else if (aFirstValue instanceof Integer)           rNBT.setInteger(aFirstKey, (Integer)                aFirstValue);
-			else if (aFirstValue instanceof Long)              rNBT.setLong(   aFirstKey, (Long)                   aFirstValue);
-			else if (aFirstValue instanceof Float)             rNBT.setFloat(  aFirstKey, (Float)                  aFirstValue);
-			else if (aFirstValue instanceof Double)            rNBT.setDouble( aFirstKey, (Double)                 aFirstValue);
-			else if (aFirstValue instanceof String)            rNBT.setString( aFirstKey, (String)                 aFirstValue);
-			else if (aFirstValue instanceof Tag)           rNBT.setTag(    aFirstKey, (Tag)                aFirstValue);
-			else if (aFirstValue instanceof FluidStack)        rNBT.setTag(    aFirstKey, FL.save((FluidStack)     aFirstValue));
-			else if (aFirstValue instanceof OreDictMaterial)   rNBT.setString( aFirstKey, ((OreDictMaterial)       aFirstValue).mNameInternal);
-			else if (aFirstValue instanceof RecipeMap)         rNBT.setString( aFirstKey, ((RecipeMap)             aFirstValue).mNameInternal);
-			else                                               rNBT.setString( aFirstKey, aFirstValue.toString());
-			
+			else if (aFirstValue instanceof Boolean)           rNBT.putBoolean(aFirstKey, (Boolean)                aFirstValue);
+			else if (aFirstValue instanceof Byte)              rNBT.putByte(   aFirstKey, (Byte)                   aFirstValue);
+			else if (aFirstValue instanceof Short)             rNBT.putShort(  aFirstKey, (Short)                  aFirstValue);
+			else if (aFirstValue instanceof Integer)           rNBT.putInt(    aFirstKey, (Integer)                aFirstValue);
+			else if (aFirstValue instanceof Long)              rNBT.putLong(   aFirstKey, (Long)                   aFirstValue);
+			else if (aFirstValue instanceof Float)             rNBT.putFloat(  aFirstKey, (Float)                  aFirstValue);
+			else if (aFirstValue instanceof Double)            rNBT.putDouble( aFirstKey, (Double)                 aFirstValue);
+			else if (aFirstValue instanceof String)            rNBT.putString( aFirstKey, (String)                 aFirstValue);
+			else if (aFirstValue instanceof Tag)           rNBT.put(       aFirstKey, (Tag)                aFirstValue);
+			else if (aFirstValue instanceof FluidStack)        rNBT.put(       aFirstKey, FL.save((FluidStack)     aFirstValue));
+			else if (aFirstValue instanceof OreDictMaterial)   rNBT.putString( aFirstKey, ((OreDictMaterial)       aFirstValue).mNameInternal);
+			else if (aFirstValue instanceof RecipeMap)         rNBT.putString( aFirstKey, ((RecipeMap)             aFirstValue).mNameInternal);
+			else                                               rNBT.putString( aFirstKey, aFirstValue.toString());
+
 			for (int i = 1; i < aTags.length; i+=2) {
 				if (aTags[i] == null) {/* Nothing */}
-				else if (aTags[i] instanceof Boolean)          rNBT.setBoolean(aTags[i-1].toString(), (Boolean)                aTags[i]);
-				else if (aTags[i] instanceof Byte)             rNBT.setByte(   aTags[i-1].toString(), (Byte)                   aTags[i]);
-				else if (aTags[i] instanceof Short)            rNBT.setShort(  aTags[i-1].toString(), (Short)                  aTags[i]);
-				else if (aTags[i] instanceof Integer)          rNBT.setInteger(aTags[i-1].toString(), (Integer)                aTags[i]);
-				else if (aTags[i] instanceof Long)             rNBT.setLong(   aTags[i-1].toString(), (Long)                   aTags[i]);
-				else if (aTags[i] instanceof Float)            rNBT.setFloat(  aTags[i-1].toString(), (Float)                  aTags[i]);
-				else if (aTags[i] instanceof Double)           rNBT.setDouble( aTags[i-1].toString(), (Double)                 aTags[i]);
-				else if (aTags[i] instanceof String)           rNBT.setString( aTags[i-1].toString(), (String)                 aTags[i]);
-				else if (aTags[i] instanceof Tag)          rNBT.setTag(    aTags[i-1].toString(), (Tag)                aTags[i]);
-				else if (aTags[i] instanceof FluidStack)       rNBT.setTag(    aTags[i-1].toString(), FL.save((FluidStack)     aTags[i]));
-				else if (aTags[i] instanceof OreDictMaterial)  rNBT.setString( aTags[i-1].toString(), ((OreDictMaterial)       aTags[i]).mNameInternal);
-				else if (aTags[i] instanceof RecipeMap)        rNBT.setString( aTags[i-1].toString(), ((RecipeMap)             aTags[i]).mNameInternal);
-				else                                           rNBT.setString( aTags[i-1].toString(), aTags[i].toString());
+				else if (aTags[i] instanceof Boolean)          rNBT.putBoolean(aTags[i-1].toString(), (Boolean)                aTags[i]);
+				else if (aTags[i] instanceof Byte)             rNBT.putByte(   aTags[i-1].toString(), (Byte)                   aTags[i]);
+				else if (aTags[i] instanceof Short)            rNBT.putShort(  aTags[i-1].toString(), (Short)                  aTags[i]);
+				else if (aTags[i] instanceof Integer)          rNBT.putInt(    aTags[i-1].toString(), (Integer)                aTags[i]);
+				else if (aTags[i] instanceof Long)             rNBT.putLong(   aTags[i-1].toString(), (Long)                   aTags[i]);
+				else if (aTags[i] instanceof Float)            rNBT.putFloat(  aTags[i-1].toString(), (Float)                  aTags[i]);
+				else if (aTags[i] instanceof Double)           rNBT.putDouble( aTags[i-1].toString(), (Double)                 aTags[i]);
+				else if (aTags[i] instanceof String)           rNBT.putString( aTags[i-1].toString(), (String)                 aTags[i]);
+				else if (aTags[i] instanceof Tag)          rNBT.put(       aTags[i-1].toString(), (Tag)                aTags[i]);
+				else if (aTags[i] instanceof FluidStack)       rNBT.put(       aTags[i-1].toString(), FL.save((FluidStack)     aTags[i]));
+				else if (aTags[i] instanceof OreDictMaterial)  rNBT.putString( aTags[i-1].toString(), ((OreDictMaterial)       aTags[i]).mNameInternal);
+				else if (aTags[i] instanceof RecipeMap)        rNBT.putString( aTags[i-1].toString(), ((RecipeMap)             aTags[i]).mNameInternal);
+				else                                           rNBT.putString( aTags[i-1].toString(), aTags[i].toString());
 			}
 			return rNBT;
 		}
-		
+
 		/** Turns each Object -> Object Pair into a Part of the passed NBT as Object-toString()-Key -> Value Pair */
 		public static CompoundTag make(CompoundTag aNBT, Object... aTags) {
 			if (aNBT == null) aNBT = make();
 			for (int i = 1; i < aTags.length; i+=2) {
 				if (aTags[i] == null) {/* Nothing */}
-				else if (aTags[i] instanceof Boolean)          aNBT.setBoolean(    aTags[i-1].toString(), (Boolean)                aTags[i]);
-				else if (aTags[i] instanceof Byte)             aNBT.setByte(       aTags[i-1].toString(), (Byte)                   aTags[i]);
-				else if (aTags[i] instanceof Short)            aNBT.setShort(      aTags[i-1].toString(), (Short)                  aTags[i]);
-				else if (aTags[i] instanceof Integer)          aNBT.setInteger(    aTags[i-1].toString(), (Integer)                aTags[i]);
-				else if (aTags[i] instanceof Long)             aNBT.setLong(       aTags[i-1].toString(), (Long)                   aTags[i]);
-				else if (aTags[i] instanceof Float)            aNBT.setFloat(      aTags[i-1].toString(), (Float)                  aTags[i]);
-				else if (aTags[i] instanceof Double)           aNBT.setDouble(     aTags[i-1].toString(), (Double)                 aTags[i]);
-				else if (aTags[i] instanceof String)           aNBT.setString(     aTags[i-1].toString(), (String)                 aTags[i]);
-				else if (aTags[i] instanceof Tag)          aNBT.setTag(        aTags[i-1].toString(), (Tag)                aTags[i]);
-				else if (aTags[i] instanceof FluidStack)       aNBT.setTag(        aTags[i-1].toString(), FL.save((FluidStack)     aTags[i]));
-				else if (aTags[i] instanceof OreDictMaterial)  aNBT.setString(     aTags[i-1].toString(), ((OreDictMaterial)       aTags[i]).mNameInternal);
-				else if (aTags[i] instanceof RecipeMap)        aNBT.setString(     aTags[i-1].toString(), ((RecipeMap)             aTags[i]).mNameInternal);
-				else                                           aNBT.setString(     aTags[i-1].toString(), aTags[i].toString());
+				else if (aTags[i] instanceof Boolean)          aNBT.putBoolean(    aTags[i-1].toString(), (Boolean)                aTags[i]);
+				else if (aTags[i] instanceof Byte)             aNBT.putByte(       aTags[i-1].toString(), (Byte)                   aTags[i]);
+				else if (aTags[i] instanceof Short)            aNBT.putShort(      aTags[i-1].toString(), (Short)                  aTags[i]);
+				else if (aTags[i] instanceof Integer)          aNBT.putInt(        aTags[i-1].toString(), (Integer)                aTags[i]);
+				else if (aTags[i] instanceof Long)             aNBT.putLong(       aTags[i-1].toString(), (Long)                   aTags[i]);
+				else if (aTags[i] instanceof Float)            aNBT.putFloat(      aTags[i-1].toString(), (Float)                  aTags[i]);
+				else if (aTags[i] instanceof Double)           aNBT.putDouble(     aTags[i-1].toString(), (Double)                 aTags[i]);
+				else if (aTags[i] instanceof String)           aNBT.putString(     aTags[i-1].toString(), (String)                 aTags[i]);
+				else if (aTags[i] instanceof Tag)          aNBT.put(           aTags[i-1].toString(), (Tag)                aTags[i]);
+				else if (aTags[i] instanceof FluidStack)       aNBT.put(           aTags[i-1].toString(), FL.save((FluidStack)     aTags[i]));
+				else if (aTags[i] instanceof OreDictMaterial)  aNBT.putString(     aTags[i-1].toString(), ((OreDictMaterial)       aTags[i]).mNameInternal);
+				else if (aTags[i] instanceof RecipeMap)        aNBT.putString(     aTags[i-1].toString(), ((RecipeMap)             aTags[i]).mNameInternal);
+				else                                           aNBT.putString(     aTags[i-1].toString(), aTags[i].toString());
 			}
 			return aNBT;
 		}
-		
+
 		/** Fuses two NBT Compounds together with the Priority lying on the content of the first NBT */
 		public static CompoundTag fuse(CompoundTag aNBT1, CompoundTag aNBT2) {
 			if (aNBT1 == null) return aNBT2==null?make():(CompoundTag)aNBT2.copy();
 			CompoundTag rNBT = (CompoundTag)aNBT1.copy();
 			if (aNBT2 == null) return rNBT;
-			for (Object tKey : aNBT2.func_150296_c()) if (!rNBT.hasKey(tKey.toString())) rNBT.setTag(tKey.toString(), aNBT2.getTag(tKey.toString()));
+			for (Object tKey : aNBT2.keySet()) if (!rNBT.contains(tKey.toString())) rNBT.put(tKey.toString(), aNBT2.get(tKey.toString()));
 			return rNBT;
 		}
-		
+
 		public static ListTag makeInv(ItemStack... aStacks) {
 			ListTag rInventory = new ListTag();
-			for (int i = 0; i < aStacks.length; i++) if (ST.valid(aStacks[i])) rInventory.appendTag(makeShort(ST.save(aStacks[i]), "s", (short)i));
+			for (int i = 0; i < aStacks.length; i++) if (ST.valid(aStacks[i])) rInventory.add(makeShort(ST.save(aStacks[i]), "s", (short)i));
 			return rInventory;
 		}
-		
+
 		public static CompoundTag makeBool(Object aTag, boolean aValue) {
 			CompoundTag aNBT = make();
-			aNBT.setBoolean(aTag.toString(), aValue);
+			aNBT.putBoolean(aTag.toString(), aValue);
 			return aNBT;
 		}
 		public static CompoundTag makeBool(CompoundTag aNBT, Object aTag, boolean aValue) {
 			if (aNBT == null) aNBT = make();
-			aNBT.setBoolean(aTag.toString(), aValue);
+			aNBT.putBoolean(aTag.toString(), aValue);
 			return aNBT;
 		}
-		
+
 		public static CompoundTag makeByte(Object aTag, byte aValue) {
 			CompoundTag aNBT = make();
-			aNBT.setByte(aTag.toString(), aValue);
+			aNBT.putByte(aTag.toString(), aValue);
 			return aNBT;
 		}
 		public static CompoundTag makeByte(CompoundTag aNBT, Object aTag, byte aValue) {
 			if (aNBT == null) aNBT = make();
-			aNBT.setByte(aTag.toString(), aValue);
+			aNBT.putByte(aTag.toString(), aValue);
 			return aNBT;
 		}
-		
+
 		public static CompoundTag makeShort(Object aTag, short aValue) {
 			CompoundTag aNBT = make();
-			aNBT.setShort(aTag.toString(), aValue);
+			aNBT.putShort(aTag.toString(), aValue);
 			return aNBT;
 		}
 		public static CompoundTag makeShort(CompoundTag aNBT, Object aTag, short aValue) {
 			if (aNBT == null) aNBT = make();
-			aNBT.setShort(aTag.toString(), aValue);
+			aNBT.putShort(aTag.toString(), aValue);
 			return aNBT;
 		}
-		
+
 		public static CompoundTag makeInt(Object aTag, int aValue) {
 			CompoundTag aNBT = make();
-			aNBT.setInteger(aTag.toString(), aValue);
+			aNBT.putInt(aTag.toString(), aValue);
 			return aNBT;
 		}
 		public static CompoundTag makeInt(CompoundTag aNBT, Object aTag, int aValue) {
 			if (aNBT == null) aNBT = make();
-			aNBT.setInteger(aTag.toString(), aValue);
+			aNBT.putInt(aTag.toString(), aValue);
 			return aNBT;
 		}
 		
@@ -1935,36 +1900,36 @@ public class UT {
 		
 		public static CompoundTag makeFloat(Object aTag, float aValue) {
 			CompoundTag aNBT = make();
-			aNBT.setFloat(aTag.toString(), aValue);
+			aNBT.putFloat(aTag.toString(), aValue);
 			return aNBT;
 		}
 		public static CompoundTag makeFloat(CompoundTag aNBT, Object aTag, float aValue) {
 			if (aNBT == null) aNBT = make();
-			aNBT.setFloat(aTag.toString(), aValue);
+			aNBT.putFloat(aTag.toString(), aValue);
 			return aNBT;
 		}
-		
+
 		public static CompoundTag makeDouble(Object aTag, double aValue) {
 			CompoundTag aNBT = make();
-			aNBT.setDouble(aTag.toString(), aValue);
+			aNBT.putDouble(aTag.toString(), aValue);
 			return aNBT;
 		}
 		public static CompoundTag makeDouble(CompoundTag aNBT, Object aTag, double aValue) {
 			if (aNBT == null) aNBT = make();
-			aNBT.setDouble(aTag.toString(), aValue);
+			aNBT.putDouble(aTag.toString(), aValue);
 			return aNBT;
 		}
-		
+
 		public static CompoundTag makeString(Object aTag, Object aValue) {
 			CompoundTag aNBT = make();
 			if (aValue == null) return aNBT;
-			aNBT.setString(aTag.toString(), aValue.toString());
+			aNBT.putString(aTag.toString(), aValue.toString());
 			return aNBT;
 		}
 		public static CompoundTag makeString(CompoundTag aNBT, Object aTag, Object aValue) {
 			if (aNBT == null) aNBT = make();
 			if (aValue == null) return aNBT;
-			aNBT.setString(aTag.toString(), aValue.toString());
+			aNBT.putString(aTag.toString(), aValue.toString());
 			return aNBT;
 		}
 		
@@ -1981,76 +1946,84 @@ public class UT {
 		/** Saves on Data Size by simply not adding "false" Booleans. */
 		public static CompoundTag setBoolean(CompoundTag aNBT, Object aTag, boolean aValue) {
 			if (aValue) {
-				aNBT.setBoolean(aTag.toString(), aValue);
+				aNBT.putBoolean(aTag.toString(), aValue);
 			} else {
-				aNBT.removeTag(aTag.toString());
+				aNBT.remove(aTag.toString());
 			}
 			return aNBT;
 		}
-		
+
 		/** Saves on Data Size by choosing the smallest possible Data Type, and by also not adding zeros. The regular getLong() Function can also get the other Number Types. */
 		public static CompoundTag setNumber(CompoundTag aNBT, Object aTag, long aValue) {
-			if (aValue == 0) {aNBT.removeTag(aTag.toString()); return aNBT;}
-			if (aValue > Integer.MAX_VALUE || aValue < Integer.MIN_VALUE) {aNBT.setLong(aTag.toString(), aValue); return aNBT;}
-			if (aValue > Short.MAX_VALUE || aValue < Short.MIN_VALUE) {aNBT.setInteger(aTag.toString(), (int)aValue); return aNBT;}
-			if (aValue > Byte.MAX_VALUE || aValue < Byte.MIN_VALUE) {aNBT.setShort(aTag.toString(), (short)aValue); return aNBT;}
-			aNBT.setByte(aTag.toString(), (byte)aValue);
+			if (aValue == 0) {aNBT.remove(aTag.toString()); return aNBT;}
+			if (aValue > Integer.MAX_VALUE || aValue < Integer.MIN_VALUE) {aNBT.putLong(aTag.toString(), aValue); return aNBT;}
+			if (aValue > Short.MAX_VALUE || aValue < Short.MIN_VALUE) {aNBT.putInt(aTag.toString(), (int)aValue); return aNBT;}
+			if (aValue > Byte.MAX_VALUE || aValue < Byte.MIN_VALUE) {aNBT.putShort(aTag.toString(), (short)aValue); return aNBT;}
+			aNBT.putByte(aTag.toString(), (byte)aValue);
 			return aNBT;
 		}
-		
+
 		/** Saves on Data Size by choosing the smallest possible Data Type, and by also not adding zeros or negative Numbers. The regular getLong() Function can also get the other Number Types. */
 		public static CompoundTag setPosNum(CompoundTag aNBT, Object aTag, long aValue) {
-			if (aValue <= 0) {aNBT.removeTag(aTag.toString()); return aNBT;}
-			if (aValue > Integer.MAX_VALUE) {aNBT.setLong(aTag.toString(), aValue); return aNBT;}
-			if (aValue > Short.MAX_VALUE) {aNBT.setInteger(aTag.toString(), (int)aValue); return aNBT;}
-			if (aValue > Byte.MAX_VALUE) {aNBT.setShort(aTag.toString(), (short)aValue); return aNBT;}
-			aNBT.setByte(aTag.toString(), (byte)aValue);
+			if (aValue <= 0) {aNBT.remove(aTag.toString()); return aNBT;}
+			if (aValue > Integer.MAX_VALUE) {aNBT.putLong(aTag.toString(), aValue); return aNBT;}
+			if (aValue > Short.MAX_VALUE) {aNBT.putInt(aTag.toString(), (int)aValue); return aNBT;}
+			if (aValue > Byte.MAX_VALUE) {aNBT.putShort(aTag.toString(), (short)aValue); return aNBT;}
+			aNBT.putByte(aTag.toString(), (byte)aValue);
 			return aNBT;
 		}
 		
 		public static ItemStack check(ItemStack aStack) {
-			return set(aStack, aStack.getTagCompound());
+			return set(aStack, ItemNBT.get(aStack));
 		}
-		
+
 		public static ItemStack set(ItemStack aStack, CompoundTag aNBT) {
-			if (aNBT == null || aNBT.hasNoTags()) {aStack.setTagCompound(null); return aStack;}
+			if (aNBT == null || aNBT.isEmpty()) {ItemNBT.set(aStack, null); return aStack;}
 			ArrayList<String> tTagsToRemove = new ArrayListNoNulls<>();
-			for (Object tKey : aNBT.func_150296_c()) {
-				Tag tValue = aNBT.getTag((String)tKey);
-				if (tValue == null || (tValue instanceof CompoundTag && ((CompoundTag)tValue).hasNoTags()) || (tValue instanceof NumericTag && ((NumericTag)tValue).func_150291_c() == 0) || (tValue instanceof StringTag && Code.stringInvalid(((StringTag)tValue).func_150285_a_()))) tTagsToRemove.add((String)tKey);
+			for (Object tKey : aNBT.keySet()) {
+				Tag tValue = aNBT.get((String)tKey);
+				if (tValue == null || (tValue instanceof CompoundTag && ((CompoundTag)tValue).isEmpty()) || (tValue instanceof NumericTag && ((NumericTag)tValue).intValue() == 0) || (tValue instanceof StringTag && Code.stringInvalid(((StringTag)tValue).value()))) tTagsToRemove.add((String)tKey);
 			}
-			for (Object tKey : tTagsToRemove) aNBT.removeTag((String)tKey);
-			aStack.setTagCompound(aNBT.hasNoTags()?null:aNBT);
+			for (Object tKey : tTagsToRemove) aNBT.remove((String)tKey);
+			ItemNBT.set(aStack, aNBT.isEmpty()?null:aNBT);
 			return aStack;
 		}
-		
+
 		public static CompoundTag getNBT(ItemStack aStack) {
-			CompoundTag rNBT = aStack.getTagCompound();
+			CompoundTag rNBT = ItemNBT.get(aStack);
 			return rNBT==null?make():rNBT;
 		}
-		
+
+		// F8 КОНТРАКТ (важно): под иммутабельным CustomData «живой» тег на стеке невозможен — этот метод
+		// возвращает МУТАБЕЛЬНУЮ DETACHED-копию (ItemNBT.get() копирует). КАЖДЫЙ вызывающий, который мутирует
+		// результат, ОБЯЗАН закоммитить его через UT.NBT.set(aStack, rNBT)/ItemNBT.set — без commit правки
+		// теряются. Тело — дословный 1:1-порт старого getOrCreate (мост setTagCompound→ItemNBT.set);
+		// при пустом теге ItemNBT.set удаляет компонент (no-op), т.е. пустой тег НЕ сохраняется на стеке,
+		// в отличие от старого setTagCompound(new NBTTagCompound()). Это безопасно: UT.NBT.set в GT6 и так
+		// стрипает пустые теги, поэтому GT6-код никогда не полагался на персистентный пустой тег.
+		// (См. ItemNBT.java javadoc, decisions/F8-nbt-data-components.md §7.)
 		public static CompoundTag getOrCreate(ItemStack aStack) {
-			CompoundTag rNBT = aStack.getTagCompound();
-			if (rNBT == null) aStack.setTagCompound(rNBT = make());
+			CompoundTag rNBT = ItemNBT.get(aStack);
+			if (rNBT == null) ItemNBT.set(aStack, rNBT = make());
 			return rNBT;
 		}
 		
 		public static CompoundTag setPunchCardData(ItemStack aStack, String aPunchCardData) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setString("gt.punchcard", aPunchCardData);
+			tNBT.putString("gt.punchcard", aPunchCardData);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static String getPunchCardData(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getString("gt.punchcard");
+			return tNBT.getStringOr("gt.punchcard", "");
 		}
 		public static CompoundTag setPunchCardData(CompoundTag aNBT, String aPunchCardData) {
-			aNBT.setString("gt.punchcard", aPunchCardData);
+			aNBT.putString("gt.punchcard", aPunchCardData);
 			return aNBT;
 		}
 		public static String getPunchCardData(CompoundTag aNBT) {
-			return aNBT.getString("gt.punchcard");
+			return aNBT.getStringOr("gt.punchcard", "");
 		}
 		
 		public static CompoundTag setBlueprintCrafting(ItemStack aStack, ItemStack... aBlueprint) {
@@ -2069,11 +2042,11 @@ public class UT {
 				ST.save(tList, ""+i, ST.amount(1, aBlueprint[i]));
 				temp = T;
 			}
-			if (temp) aNBT.setTag("gt.blueprint.craft", tList);
+			if (temp) aNBT.put("gt.blueprint.craft", tList);
 			return aNBT;
 		}
 		public static ItemStack[] getBlueprintCrafting(CompoundTag aNBT) {
-			CompoundTag tList = aNBT.hasKey("gt.blueprint.craft")?aNBT.getCompoundTag("gt.blueprint.craft"):null;
+			CompoundTag tList = aNBT.contains("gt.blueprint.craft")?aNBT.getCompoundOrEmpty("gt.blueprint.craft"):null;
 			if (tList != null) {
 				ItemStack[] rRecipe = new ItemStack[9];
 				for (int i = 0; i < rRecipe.length; i++) rRecipe[i] = ST.amount(1, ST.load(tList, ""+i));
@@ -2090,161 +2063,161 @@ public class UT {
 		}
 		public static long getLighterFuel(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getLong("gt.lighter");
+			return tNBT.getLongOr("gt.lighter", 0L);
 		}
 		public static CompoundTag setLighterFuel(CompoundTag aNBT, long aFuel) {
 			setNumber(aNBT, "gt.lighter", aFuel);
 			return aNBT;
 		}
 		public static long getLighterFuel(CompoundTag aNBT) {
-			return aNBT.getLong("gt.lighter");
+			return aNBT.getLongOr("gt.lighter", 0L);
 		}
-		
+
 		public static CompoundTag setMapID(ItemStack aStack, short aMapID) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setShort("map_id", aMapID);
+			tNBT.putShort("map_id", aMapID);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static short getMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			if (!tNBT.hasKey("map_id")) return -1;
-			return tNBT.getShort("map_id");
+			if (!tNBT.contains("map_id")) return -1;
+			return tNBT.getShortOr("map_id", (short)0);
 		}
 		public static CompoundTag setMapID(CompoundTag aNBT, short aMapID) {
-			aNBT.setShort("map_id", aMapID);
+			aNBT.putShort("map_id", aMapID);
 			return aNBT;
 		}
 		public static short getMapID(CompoundTag aNBT) {
-			if (!aNBT.hasKey("map_id")) return -1;
-			return aNBT.getShort("map_id");
+			if (!aNBT.contains("map_id")) return -1;
+			return aNBT.getShortOr("map_id", (short)0);
 		}
-		
+
 		public static CompoundTag setMagicMapID(ItemStack aStack, short aMapID) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setShort("magic_map_id", aMapID);
+			tNBT.putShort("magic_map_id", aMapID);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static short getMagicMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			if (!tNBT.hasKey("magic_map_id")) return -1;
-			return tNBT.getShort("magic_map_id");
+			if (!tNBT.contains("magic_map_id")) return -1;
+			return tNBT.getShortOr("magic_map_id", (short)0);
 		}
 		public static CompoundTag setMagicMapID(CompoundTag aNBT, short aMapID) {
-			aNBT.setShort("magic_map_id", aMapID);
+			aNBT.putShort("magic_map_id", aMapID);
 			return aNBT;
 		}
 		public static short getMagicMapID(CompoundTag aNBT) {
-			if (!aNBT.hasKey("magic_map_id")) return -1;
-			return aNBT.getShort("magic_map_id");
+			if (!aNBT.contains("magic_map_id")) return -1;
+			return aNBT.getShortOr("magic_map_id", (short)0);
 		}
-		
+
 		public static CompoundTag setMazeMapID(ItemStack aStack, short aMapID) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setShort("maze_map_id", aMapID);
+			tNBT.putShort("maze_map_id", aMapID);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static short getMazeMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			if (!tNBT.hasKey("maze_map_id")) return -1;
-			return tNBT.getShort("maze_map_id");
+			if (!tNBT.contains("maze_map_id")) return -1;
+			return tNBT.getShortOr("maze_map_id", (short)0);
 		}
 		public static CompoundTag setMazeMapID(CompoundTag aNBT, short aMapID) {
-			aNBT.setShort("maze_map_id", aMapID);
+			aNBT.putShort("maze_map_id", aMapID);
 			return aNBT;
 		}
 		public static short getMazeMapID(CompoundTag aNBT) {
-			if (!aNBT.hasKey("maze_map_id")) return -1;
-			return aNBT.getShort("maze_map_id");
+			if (!aNBT.contains("maze_map_id")) return -1;
+			return aNBT.getShortOr("maze_map_id", (short)0);
 		}
-		
+
 		public static CompoundTag setOreMapID(ItemStack aStack, short aMapID) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setShort("ore_map_id", aMapID);
+			tNBT.putShort("ore_map_id", aMapID);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static short getOreMapID(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			if (!tNBT.hasKey("ore_map_id")) return -1;
-			return tNBT.getShort("ore_map_id");
+			if (!tNBT.contains("ore_map_id")) return -1;
+			return tNBT.getShortOr("ore_map_id", (short)0);
 		}
 		public static CompoundTag setOreMapID(CompoundTag aNBT, short aMapID) {
-			aNBT.setShort("ore_map_id", aMapID);
+			aNBT.putShort("ore_map_id", aMapID);
 			return aNBT;
 		}
 		public static short getOreMapID(CompoundTag aNBT) {
-			if (!aNBT.hasKey("ore_map_id")) return -1;
-			return aNBT.getShort("ore_map_id");
+			if (!aNBT.contains("ore_map_id")) return -1;
+			return aNBT.getShortOr("ore_map_id", (short)0);
 		}
-		
+
 		public static CompoundTag setBookMapping(ItemStack aStack, String aTitle) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setString("book", aTitle);
+			tNBT.putString("book", aTitle);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static String getBookMapping(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getString("book");
+			return tNBT.getStringOr("book", "");
 		}
 		public static CompoundTag setBookMapping(CompoundTag aNBT, String aTitle) {
-			aNBT.setString("book", aTitle);
+			aNBT.putString("book", aTitle);
 			return aNBT;
 		}
 		public static String getBookMapping(CompoundTag aNBT) {
-			return aNBT.getString("book");
+			return aNBT.getStringOr("book", "");
 		}
-		
+
 		public static CompoundTag setBookTitle(ItemStack aStack, String aTitle) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setString("title", aTitle);
+			tNBT.putString("title", aTitle);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static String getBookTitle(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getString("title");
+			return tNBT.getStringOr("title", "");
 		}
 		public static CompoundTag setBookTitle(CompoundTag aNBT, String aTitle) {
-			aNBT.setString("title", aTitle);
+			aNBT.putString("title", aTitle);
 			return aNBT;
 		}
 		public static String getBookTitle(CompoundTag aNBT) {
-			return aNBT.getString("title");
+			return aNBT.getStringOr("title", "");
 		}
-		
+
 		public static CompoundTag setBookAuthor(ItemStack aStack, String aAuthor) {
 			CompoundTag tNBT = getNBT(aStack);
-			tNBT.setString("author", aAuthor);
+			tNBT.putString("author", aAuthor);
 			set(aStack, tNBT);
 			return tNBT;
 		}
 		public static String getBookAuthor(ItemStack aStack) {
 			CompoundTag tNBT = getNBT(aStack);
-			return tNBT.getString("author");
+			return tNBT.getStringOr("author", "");
 		}
 		public static CompoundTag setBookAuthor(CompoundTag aNBT, String aAuthor) {
-			aNBT.setString("author", aAuthor);
+			aNBT.putString("author", aAuthor);
 			return aNBT;
 		}
 		public static String getBookAuthor(CompoundTag aNBT) {
-			return aNBT.getString("author");
+			return aNBT.getStringOr("author", "");
 		}
 		
 		public static List<String> getDataToolTip(CompoundTag aData, List<String> aList, boolean aAllDetails) {
-			if (aData.hasKey(NBT_REACTOR_SETUP)) {
-				aList.add(LH.Chat.CYAN + "Reactor Setup: " + aData.getString(NBT_REACTOR_SETUP_NAME));
+			if (aData.contains(NBT_REACTOR_SETUP)) {
+				aList.add(LH.Chat.CYAN + "Reactor Setup: " + aData.getStringOr(NBT_REACTOR_SETUP_NAME, ""));
 				return aList;
 			}
-			if (aData.hasKey(NBT_CANVAS_BLOCK)) {
-				aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(Block.getBlockById(aData.getInteger(NBT_CANVAS_BLOCK)), 1, aData.getInteger(NBT_CANVAS_META))));
+			if (aData.contains(NBT_CANVAS_BLOCK)) {
+				aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(ST.block_(aData.getIntOr(NBT_CANVAS_BLOCK, 0)), 1, aData.getIntOr(NBT_CANVAS_META, 0))));
 				return aList;
 			}
-			if (aData.hasKey(NBT_REPLICATOR_DATA)) {
-				short tIndex = aData.getShort(NBT_REPLICATOR_DATA);
+			if (aData.contains(NBT_REPLICATOR_DATA)) {
+				short tIndex = aData.getShortOr(NBT_REPLICATOR_DATA, (short)0);
 				if (Code.exists(tIndex, OreDictMaterial.MATERIAL_ARRAY)) {
 					OreDictMaterial tMaterial = OreDictMaterial.MATERIAL_ARRAY[tIndex];
 					if (tMaterial.contains(TD.Processing.UUM)) {
@@ -2268,20 +2241,20 @@ public class UT {
 				}
 				return aList;
 			}
-			if (IL.GC_Schematic_1.exists() && aData.hasKey("gc_schematics_1")) {
-				aList.add(LH.Chat.CYAN + IL.GC_Schematic_1.getWithMeta(1, aData.getShort("gc_schematics_1")).getDisplayName());
+			if (IL.GC_Schematic_1.exists() && aData.contains("gc_schematics_1")) {
+				aList.add(LH.Chat.CYAN + IL.GC_Schematic_1.getWithMeta(1, aData.getShortOr("gc_schematics_1", (short)0)).getDisplayName());
 				return aList;
 			}
-			if (IL.GC_Schematic_2.exists() && aData.hasKey("gc_schematics_2")) {
-				aList.add(LH.Chat.CYAN + IL.GC_Schematic_2.getWithMeta(1, aData.getShort("gc_schematics_2")).getDisplayName());
+			if (IL.GC_Schematic_2.exists() && aData.contains("gc_schematics_2")) {
+				aList.add(LH.Chat.CYAN + IL.GC_Schematic_2.getWithMeta(1, aData.getShortOr("gc_schematics_2", (short)0)).getDisplayName());
 				return aList;
 			}
-			if (IL.GC_Schematic_3.exists() && aData.hasKey("gc_schematics_3")) {
-				aList.add(LH.Chat.CYAN + IL.GC_Schematic_3.getWithMeta(1, aData.getShort("gc_schematics_3")).getDisplayName());
+			if (IL.GC_Schematic_3.exists() && aData.contains("gc_schematics_3")) {
+				aList.add(LH.Chat.CYAN + IL.GC_Schematic_3.getWithMeta(1, aData.getShortOr("gc_schematics_3", (short)0)).getDisplayName());
 				return aList;
 			}
-			if (IL.IE_Blueprint_Projectiles_Common.exists() && aData.hasKey("ie_blueprint")) {
-				short tMeta = aData.getShort("ie_blueprint");
+			if (IL.IE_Blueprint_Projectiles_Common.exists() && aData.contains("ie_blueprint")) {
+				short tMeta = aData.getShortOr("ie_blueprint", (short)0);
 				aList.add(LH.Chat.CYAN + IL.IE_Blueprint_Projectiles_Common.getWithMeta(1, tMeta).getDisplayName());
 				switch(tMeta) {
 				case 0: aList.add(LH.Chat.GREEN + "Common Projectiles"); break;
@@ -2344,63 +2317,87 @@ public class UT {
 		}
 		
 		
+		// F10 стык: RailcraftEnchantments.destruction/wrecking/implosion — compat-mirror интерфейс
+		// (mods/railcraft/.../RailcraftEnchantments.java) сейчас пустая заглушка без членов (чужая зона,
+		// не F8) — символ появится, когда владелец F10-зеркала добавит поля. Вызов оставлен 1:1.
 		public static int getEnchantmentLevelDestruction   (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.destruction, aStack) : 0;}
 		public static int getEnchantmentLevelWrecking      (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.wrecking   , aStack) : 0;}
 		public static int getEnchantmentLevelImplosion     (ItemStack aStack) {return MD.RC.mLoaded ? getEnchantmentLevel(RailcraftEnchantments.implosion  , aStack) : 0;}
-		public static int getEnchantmentLevelLootingFortune(ItemStack aStack) {return Math.max(getEnchantmentLevel(Enchantment.fortune, aStack), getEnchantmentLevel(Enchantment.looting, aStack));}
-		
+		// PORT-TODO(F8, enchant-registry): "fortune"/"looting" в neo — ResourceKey<Enchantment>
+		// (Enchantments.FORTUNE/LOOTING), не готовые экземпляры Enchantment: реестр зачарований
+		// data-driven (динамический), разрешение ResourceKey->Holder<Enchantment> требует живого
+		// RegistryAccess/HolderLookup.Provider, недоступного в этом статическом контексте (тот же класс
+		// проблемы, что и FL.java:1047-1050 F5). Деградация до 0 — до шва ENCHANT (STATE.md "Не начато").
+		public static int getEnchantmentLevelLootingFortune(ItemStack aStack) {return 0;}
+
+		// F8: aEnchantment передан ЗНАЧЕНИЕМ (не Holder) — 1.7.10 адресовал зачарования числовым
+		// effectId в статическом массиве Enchantment.enchantmentsList; в neo Enchantment — record без
+		// effectId, зачарования на стеке идентифицируются Holder<Enchantment>. Holder.direct(aEnchantment)
+		// оборачивает переданное значение 1:1 (равенство по значению record), затем читаем ЧЕРЕЗ
+		// ItemStack.getEnchantmentLevel(Holder) — geймплейный аналог старого
+		// EnchantmentHelper.getEnchantmentLevel(effectId, stack). Проверка "effectId < 0" убрана —
+		// поля effectId в новой модели не существует, null-guard сохранён.
 		public static int getEnchantmentLevel(Enchantment aEnchantment, ItemStack aStack) {
-			if (aEnchantment == null || aEnchantment.effectId < 0) return 0;
-			return EnchantmentHelper.getEnchantmentLevel(aEnchantment.effectId, aStack);
+			if (aEnchantment == null) return 0;
+			return aStack.getEnchantmentLevel(Holder.direct(aEnchantment));
 		}
 		public static int getEnchantmentXP(ItemStack aStack) {
-			if (ST.invalid(aStack) || !aStack.hasTagCompound() || ST.isGT_(aStack) || (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aStack))) return 0;
-			return getEnchantmentXP(getNBT(aStack));
-		}
-		public static int getEnchantmentXP(CompoundTag aNBT) {
-			if (!aNBT.hasKey("ench", 9)) return 0;
+			// УЛИКА R8 (доработка): оригинальный гейт был `!aStack.hasTagCompound()` (1.7.10 — "ench"
+			// жил ВНУТРИ общего NBT-тега стека, поэтому "нет тега вообще" ⇒ "нет чар"). F8 переносит
+			// чары на ОТДЕЛЬНЫЙ канал DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS, независимый от
+			// CUSTOM_DATA (см. gregapi.code.ItemNBT javadoc) — `!ItemNBT.has(aStack)` (CUSTOM_DATA-гейт)
+			// был НЕВЕРНЫМ 1:1-переводом: стек без CUSTOM_DATA, но с реальными чарами в ENCHANTMENTS,
+			// молча получал 0 XP. Гейт переведён на настоящий канал зачарований —
+			// EnchantmentHelper.hasAnyEnchantments (neo-decompiled …/EnchantmentHelper.java:97-100,
+			// проверяет ОБА канала ENCHANTMENTS/STORED_ENCHANTMENTS, тот же движковый метод, что и
+			// ItemStack.isEnchanted() использует для ENCHANTMENTS).
+			if (ST.invalid(aStack) || !EnchantmentHelper.hasAnyEnchantments(aStack) || ST.isGT_(aStack) || (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aStack))) return 0;
+			// F8: "ench" читается движком ТОЛЬКО из типизированного DataComponents.ENCHANTMENTS/
+			// STORED_ENCHANTMENTS (не сырого CUSTOM_DATA-тега) — читаем реальные зачарования стека
+			// напрямую, а не делегируем в getEnchantmentXP(CompoundTag) (тот работал по легаси
+			// числовым id, которых в этом канале никогда не было и нет).
+			ItemEnchantments tEnchantments = aStack.getOrDefault(EnchantmentHelper.getComponentType(aStack), ItemEnchantments.EMPTY);
+			if (tEnchantments.isEmpty()) return 0;
 			int rXP = 0;
-			ListTag aList = aNBT.getTagList("ench", 10);
-			for (int i = 0; i < aList.tagCount(); i++) {
-				CompoundTag tEnchantmentTag = aList.getCompoundTagAt(i);
-				Enchantment tEnchantment = Enchantment.enchantmentsList[tEnchantmentTag.getShort("id")];
-				if (UT.Reflection.getLowercaseClass(tEnchantment).contains("curse")) return 0;
-				rXP += tEnchantment.getMinEnchantability(tEnchantmentTag.getShort("lvl"));
+			for (Holder<Enchantment> tEnchantment : tEnchantments.keySet()) {
+				if (tEnchantment.is(EnchantmentTags.CURSE)) return 0;
+				rXP += tEnchantment.value().getMinCost(tEnchantments.getLevel(tEnchantment));
 			}
 			return UT.Code.bindInt(UT.Code.divup(rXP, 2));
 		}
+		// PORT-TODO(F8, enchant-registry): легаси-формат ListTag{id:short,lvl:short} по числовому ID
+		// зачарования невосстановим — в neo зачарования регистро-driven (Holder<Enchantment>), числовых
+		// ID нет (Enchantment.enchantmentsList удалён из движка целиком, не только переименован). Эта
+		// перегрузка больше не вызывается изнутри дерева (getEnchantmentXP(ItemStack) выше читает
+		// типизированный компонент напрямую) — сохранена как публичный API 1:1, деградирует до 0 до шва
+		// ENCHANT (STATE.md "Не начато").
+		public static int getEnchantmentXP(CompoundTag aNBT) {
+			return 0;
+		}
 		public static ItemStack removeEnchantments(ItemStack aStack) {
-			removeEnchantments(getOrCreate(aStack));
-			return check(aStack);
+			// F8: чары читаются движком из типизированного DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS —
+			// канал отдельный от CUSTOM_DATA. Снимаем реальный компонент (это и есть рабочая замена
+			// старого aNBT.removeTag("ench")), и следом — легаси-ключ "ench" под CUSTOM_DATA (defensive,
+			// getOrCreate возвращает detached-копию; commit через set — эквивалент старого check).
+			aStack.remove(EnchantmentHelper.getComponentType(aStack));
+			CompoundTag tNBT = getOrCreate(aStack);
+			removeEnchantments(tNBT);
+			return set(aStack, tNBT);
 		}
 		public static void removeEnchantments(CompoundTag aNBT) {
-			aNBT.removeTag("ench");
+			aNBT.remove("ench");
 		}
+		// F8: маршрут на типизированный DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS (см. javadoc
+		// getEnchantmentLevel выше про Holder.direct). ItemEnchantments.Mutable.set(holder, level)
+		// заменяет существующую запись ИЛИ добавляет новую — 1:1 замена ручного скана списка "найти id,
+		// обновить lvl, иначе добавить". Каст (byte)aLevel сохраняет ОРИГИНАЛЬНУЮ 1.7.10-усечку уровня
+		// (исходный код тоже писал lvl как (byte)aLevel, несмотря на short-поле) — не улучшение, воспроизведение.
 		public static ItemStack addEnchantment(ItemStack aStack, Enchantment aEnchantment, long aLevel) {
-			CompoundTag tNBT = getNBT(aStack), tEnchantmentTag;
-			if (!tNBT.hasKey("ench", 9)) tNBT.setTag("ench", new ListTag());
-			ListTag tList = tNBT.getTagList("ench", 10);
-			
-			boolean temp = T;
-			
-			for (int i = 0; i < tList.tagCount(); i++) {
-				tEnchantmentTag = tList.getCompoundTagAt(i);
-				if (tEnchantmentTag.getShort("id") == aEnchantment.effectId) {
-					tEnchantmentTag.setShort("id", (short)aEnchantment.effectId);
-					tEnchantmentTag.setShort("lvl", (byte)aLevel);
-					temp = F;
-					break;
-				}
-			}
-			
-			if (temp) {
-				tEnchantmentTag = make();
-				tEnchantmentTag.setShort("id", (short)aEnchantment.effectId);
-				tEnchantmentTag.setShort("lvl", (byte)aLevel);
-				tList.appendTag(tEnchantmentTag);
-			}
-			
-			return set(aStack, tNBT);
+			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
+			ItemEnchantments.Mutable tMutable = new ItemEnchantments.Mutable(aStack.getOrDefault(tType, ItemEnchantments.EMPTY));
+			tMutable.set(Holder.direct(aEnchantment), (byte)aLevel);
+			aStack.set(tType, tMutable.toImmutable());
+			return aStack;
 		}
 	}
 	
@@ -2411,60 +2408,64 @@ public class UT {
 		private static final BullshitIteratorA mBullshitIteratorA = new BullshitIteratorA();
 		private static final BullshitIteratorB mBullshitIteratorB = new BullshitIteratorB();
 		
+		// PORT-TODO(F8, enchant-registry): тот же класс проблемы, что NBT.getEnchantmentXP(CompoundTag)
+		// выше — легаси "ench" NBTTagList{id:short,lvl:short} по числовому effectId (ItemStack.
+		// getEnchantmentTagList()/ListTag.tagCount()/getCompoundTagAt(int)) и статический реестр
+		// Enchantment.enchantmentsList[id] удалены из движка целиком (не переименованы; зачарования
+		// теперь registry-driven Holder<Enchantment>, читаются через DataComponents.ENCHANTMENTS — см.
+		// NBT.getEnchantmentXP(ItemStack) выше). Не найдено ни в одном из 3 корней референса.
+		// Деградация до no-op — до шва ENCHANT (STATE.md "Не начато").
 		private static void applyBullshit(IBullshit aBullshitModifier, ItemStack aStack) {
-			if (aStack != null) {
-				ListTag nbttaglist = aStack.getEnchantmentTagList();
-				if (nbttaglist != null) {
-					for (int i = 0; i < nbttaglist.tagCount(); ++i) {
-						try {
-							short short1 = nbttaglist.getCompoundTagAt(i).getShort("id");
-							short short2 = nbttaglist.getCompoundTagAt(i).getShort("lvl");
-							if (Enchantment.enchantmentsList[short1] != null) aBullshitModifier.calculateModifier(Enchantment.enchantmentsList[short1], short2);
-						} catch(Throwable e) {
-							//
-						}
-					}
-				}
-			}
+			//
 		}
-		
+
 		private static void applyArrayOfBullshit(IBullshit aBullshitModifier, ItemStack[] aStacks) {
 			for (int i = 0; i < aStacks.length; i++) applyBullshit(aBullshitModifier, aStacks[i]);
 		}
-		
+
 		public static void applyBullshitA(LivingEntity aPlayer, Entity aEntity, ItemStack aStack) {
 			mBullshitIteratorA.mPlayer = aPlayer;
 			mBullshitIteratorA.mEntity = aEntity;
-			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorA, aPlayer.getLastActiveItems());
+			// PORT-TODO(F8, enchant-registry): LivingEntity.getLastActiveItems() (1.7.10 EntityLivingBase)
+			// удалён из neo LivingEntity целиком, не переименован (снимок предметов "в руках+броне" за тик).
+			// Не найдено ни в одном из 3 корней референса — деградация до пустого массива (applyBullshit
+			// и так уже no-op, см. выше).
+			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorA, new ItemStack[0]);
 			if (aStack != null) applyBullshit(mBullshitIteratorA, aStack);
 		}
-		
+
 		public static void applyBullshitB(LivingEntity aPlayer, Entity aEntity, ItemStack aStack) {
 			mBullshitIteratorB.mPlayer = aPlayer;
 			mBullshitIteratorB.mEntity = aEntity;
-			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorB, aPlayer.getLastActiveItems());
+			// PORT-TODO(F8, enchant-registry): см. applyBullshitA выше — тот же LivingEntity.getLastActiveItems().
+			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorB, new ItemStack[0]);
 			if (aStack != null) applyBullshit(mBullshitIteratorB, aStack);
 		}
-		
+
 		static final class BullshitIteratorA implements IBullshit {
 			public LivingEntity mPlayer;
 			public Entity mEntity;
 			BullshitIteratorA() {}
-			
+
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
-				aEnchantment.func_151367_b(mPlayer, mEntity, aLevel);
+				// PORT-TODO(F8, enchant-registry): Enchantment.func_151367_b(EntityLivingBase,Entity,int)
+				// (SRG-имя 1.7.10 onEntityDamaged) — виртуальный колбэк-метод удалён из Enchantment целиком;
+				// в neo Enchantment — record без переопределяемых поведенческих методов (эффекты
+				// data-driven через EnchantmentEffectComponents). Не найдено ни в одном из 3 корней
+				// референса. Деградация до no-op — до шва ENCHANT (STATE.md "Не начато").
 			}
 		}
-		
+
 		static final class BullshitIteratorB implements IBullshit {
 			public LivingEntity mPlayer;
 			public Entity mEntity;
 			BullshitIteratorB() {}
-			
+
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
-				aEnchantment.func_151368_a(mPlayer, mEntity, aLevel);
+				// PORT-TODO(F8, enchant-registry): Enchantment.func_151368_a(EntityLivingBase,Entity,int)
+				// (SRG-имя 1.7.10 onUserHurt) — то же самое, виртуальный колбэк удалён (data-driven).
 			}
 		}
 		
@@ -3277,11 +3278,11 @@ public class UT {
 		@Deprecated public static Block block(String aModID, String aBlock) {return block(make(aModID, aBlock, 1, null));}
 		@Deprecated public static Block block(String aModID, String aBlock, Block aReplacement) {Block rBlock = block(aModID, aBlock); return rBlock == NB ? aReplacement : rBlock;}
 		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount) {return make(aModID, aItem, aAmount, null);}
-		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, ItemStack aReplacement) {if (!aModID.mLoaded || Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, DeferredRegister.findItemStack(aModID.mID, aItem, (int)aAmount), DeferredRegister.findItemStack(aModID.mID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, DeferredRegister.findItemStack(aModID.mID, aItem, (int)aAmount), aReplacement);}
+		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, ItemStack aReplacement) {if (!aModID.mLoaded || Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, ST.findItemStack(aModID.mID, aItem, (int)aAmount), ST.findItemStack(aModID.mID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, ST.findItemStack(aModID.mID, aItem, (int)aAmount), aReplacement);}
 		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, int aMeta) {ItemStack rStack = make(aModID, aItem, aAmount); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(ModData aModID, String aItem, long aAmount, int aMeta, ItemStack aReplacement) {ItemStack rStack = make(aModID, aItem, aAmount, aReplacement); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount) {return make(aModID, aItem, aAmount, null);}
-		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, ItemStack aReplacement) {if (Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, DeferredRegister.findItemStack(aModID, aItem, (int)aAmount), DeferredRegister.findItemStack(aModID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, DeferredRegister.findItemStack(aModID, aItem, (int)aAmount), aReplacement);}
+		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, ItemStack aReplacement) {if (Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, ST.findItemStack(aModID, aItem, (int)aAmount), ST.findItemStack(aModID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, ST.findItemStack(aModID, aItem, (int)aAmount), aReplacement);}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta) {ItemStack rStack = make(aModID, aItem, aAmount); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta, ItemStack aReplacement) {ItemStack rStack = make(aModID, aItem, aAmount, aReplacement); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData) {return aItemID==0?null:make(Item.getItemById((int)aItemID), aStacksize, aMetaData);}

@@ -19,6 +19,7 @@
 
 package gregtech.items.behaviors;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.IL;
 import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
@@ -174,7 +175,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.paintspray."+mColor+".tooltip"));
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
 		aList.add(LH.get("gt.behaviour.paintspray.uses") + " " + (tRemaining / 10) + "." + (tRemaining % 10));
 		aList.add(LH.get("gt.behaviour.unstackable"));

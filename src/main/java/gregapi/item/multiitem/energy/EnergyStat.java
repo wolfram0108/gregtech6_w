@@ -24,6 +24,7 @@ import static gregapi.data.CS.*;
 import java.util.Collection;
 
 import gregapi.code.HashSetNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.TagData;
 import gregapi.data.TD;
 import gregapi.item.IItemEnergy;
@@ -128,7 +129,7 @@ public class EnergyStat implements IItemEnergy {
 	public ItemStack setEnergyStored(TagData aEnergyType, ItemStack aStack, long aAmount) {
 		if ((aEnergyType != mType && aEnergyType != null) || ST.size(aStack) <= 0) return aStack;
 		
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make(); else tNBT.removeTag(NBT_ENERGY);
 		
 		if (aAmount > 0) {
@@ -148,11 +149,11 @@ public class EnergyStat implements IItemEnergy {
 		UT.NBT.set(aStack, tNBT);
 		return ST.update_(aStack);
 	}
-	
+
 	@Override
 	public long getEnergyStored(TagData aEnergyType, ItemStack aStack) {
 		if (aEnergyType != mType && aEnergyType != null) return 0;
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		return tNBT==null?0:tNBT.getLong(NBT_ENERGY);
 	}
 	

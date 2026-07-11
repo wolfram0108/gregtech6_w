@@ -19,7 +19,7 @@
 
 package gregapi.oredict;
 
-import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.bus.api.SubscribeEvent;
 import gregapi.api.Abstract_Mod;
@@ -41,6 +41,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.NeoForge;
+// PORT-TODO(F5, oredict-fluid-container-registry): net.minecraftforge.fluids.FluidContainerRegistry/
+// FluidContainerData/FluidContainerRegisterEvent — пакет удалён движком (не существует в neo), сюда пока
+// не портирован (владелец — gregapi.fluid/FL, F5-oracle-territory, decisions/F5-fluids.md). Часть
+// зафиксированного "Хвост F5: ~106 consumer-файлов" в DEFERRED-LEDGER.md §A — эта строка один из consumer'ов,
+// не отдельная новая находка. Координация: F5-агент репойнтит на владельца, F4/F11-зона (этот файл) не решает
+// (см. F4-oredictionary.md §1 — эта регистрация исторически роль-B Forge-класса (FluidContainerRegistry
+// сам по себе не OreDictionary), к OreDict-хранилищу F4
+// не относится; тронуто здесь ТОЛЬКО чтением конструктором/onFluidContainerRegistration, не редактируется).
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
@@ -294,7 +302,8 @@ public final class OreDictManager {
 	/** Fluid Containers are not unificatable at all. Also I set Water Bottles to contain 0L of Water. */
 	@SubscribeEvent
 	public void onFluidContainerRegistration(FluidContainerRegisterEvent aFluidEvent) {
-		if (aFluidEvent.data.filledContainer.getItem() == Items.potionitem && ST.meta_(aFluidEvent.data.filledContainer) == 0) aFluidEvent.data.fluid.amount = 0;
+		// F4/Flattening: Forge 1.7.10 Items.potionitem → neo Items.POTION (neo-decompiled/.../world/item/Items.java:1526).
+		if (aFluidEvent.data.filledContainer.getItem() == Items.POTION && ST.meta_(aFluidEvent.data.filledContainer) == 0) aFluidEvent.data.fluid.amount = 0;
 		addToBlacklist(aFluidEvent.data.emptyContainer);
 		FL.set(aFluidEvent.data, F, F);
 	}
@@ -304,7 +313,12 @@ public final class OreDictManager {
 		if (aEvent.getClass() != OreRegisterEvent.class) return;
 		String aModID = MD.UNKNOWN.mID;
 		ModData aMod = MD.UNKNOWN;
-		ModContainer tContainer = ModList.instance().activeModContainer();
+		// F4: Forge Loader.instance()/ModList.instance().activeModContainer() удалены; неo-эквивалент "текущий
+		// активный мод-контейнер" — ModLoadingContext.getActiveContainer() (fml-decompiled/.../ModLoadingContext.java:17-21).
+		// Никогда не null (по умолчанию контейнер "minecraft"), но это ветвление всё равно фактически вырождено:
+		// живой межмод-OreRegisterEvent-поток из F4 §4.2/§4.4 отложен на тег-мост (фаза 12) — сюда попадает
+		// только собственный replay GT6 (mIsRunningInIterationMode=T, эта ветка пропускается).
+		ModContainer tContainer = ModLoadingContext.get().getActiveContainer();
 		if (!mIsRunningInIterationMode && tContainer != null) {
 			aModID = tContainer.getModId();
 			aMod = ModData.MODS.get(aModID);
@@ -523,7 +537,7 @@ public final class OreDictManager {
 	}
 	public boolean setTarget_(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, boolean aOverwrite, boolean aAlreadyRegistered, boolean aIgnoreBlacklist) {
 		isAddingOre++;
-		(aStack=ST.amount(1, aStack)).setTagCompound(null);
+		ItemNBT.set(aStack = ST.amount(1, aStack), null); // F8 стык: было setTagCompound(null) — ItemNBT-мост (gregapi.code.ItemNBT)
 		if (!aAlreadyRegistered) registerOre_(aPrefix.mNameInternal + aMaterial.mNameInternal, aStack);
 		addAssociation_(aPrefix, aMaterial, aStack);
 		if ((aIgnoreBlacklist || !isBlacklisted(aStack)) && (aOverwrite || ST.invalid(sName2StackMap.get(aPrefix.mNameInternal + aMaterial.mNameInternal)))) sName2StackMap.put(aPrefix.mNameInternal + aMaterial.mNameInternal, aStack);
@@ -611,7 +625,7 @@ public final class OreDictManager {
 		if (tAssociation == null || (aUseBlackList && tAssociation.mBlocked)) return ST.copy(aStack);
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
 		if (ST.invalid(rStack = ST.amount(aStack.getCount(), tAssociation.mUnificationTarget))) return ST.copy(aStack);
-		rStack.setTagCompound(aStack.getTagCompound());
+		ItemNBT.set(rStack, ItemNBT.get(aStack)); // F8 стык: было rStack.setTagCompound(aStack.getTagCompound()) — ItemNBT-мост
 		return rStack;
 	}
 	
@@ -656,7 +670,12 @@ public final class OreDictManager {
 			aStack = ST.amount(1, aStack);
 		}
 		if (!aData.mBlackListed) aData.mBlackListed = isBlacklisted(aStack);
-		if (!aData.mBlocked) aData.mBlocked = (aData.mBlackListed || ST.block(aStack) != NB || FL.getFluid(aStack, T) != null || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0));
+		// F4→F5: оригинал брал ёмкость Forge-методом IFluidContainerItem.getCapacity(ItemStack) (gregtech6/.../OreDictManager.java:659);
+		// в neo IFluidHandlerItem этого метода НЕТ (neoforge-decompiled/.../fluids/capability/IFluidHandlerItem.java — только getContainer()),
+		// ёмкость даёт унаследованный IFluidHandler.getTankCapacity(int) (IFluidHandler.java:60,92). "getCapacity()>0" 1:1 = "есть бак с положительной ёмкостью".
+		// PORT-TODO(F5, fluid-container-capacity): в neo контейнер-жидкость — это capability (Capabilities.Fluid.ITEM), а не Item instanceof
+		// IFluidHandlerItem (эта ветка в neo практически мертва, как и весь fluid-consumer слой ~106 файлов, STATE.md) — истинный путь на F5-transfer-API.
+		if (!aData.mBlocked) aData.mBlocked = (aData.mBlackListed || ST.block(aStack) != NB || FL.getFluid(aStack, T) != null || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getTanks() > 0 && ((IFluidHandlerItem)aStack.getItem()).getTankCapacity(0) > 0));
 		sItemStack2DataMap.put(new ItemStackContainer(aStack), aData);
 		if (aData.validMaterial()) {
 			long tValidMaterialAmount = aData.mMaterial.mMaterial.contains(TD.Processing.UNRECYCLABLE)?0:aData.mMaterial.mAmount>=0?aData.mMaterial.mAmount:U;
@@ -686,8 +705,8 @@ public final class OreDictManager {
 		OreDictItemData rData = null;
 		if (aAllowOverride) {
 			OreDictItemData tData = null;
-			CompoundTag tNBT = aStack.getTagCompound();
-			if (tNBT != null && tNBT.hasKey(NBT_RECYCLING_MATS)) {
+			CompoundTag tNBT = ItemNBT.get(aStack); // F8 стык: было aStack.getTagCompound() — ItemNBT-мост
+			if (tNBT != null && tNBT.contains(NBT_RECYCLING_MATS)) {
 				List<OreDictMaterialStack> tList = OreDictMaterialStack.loadList(NBT_RECYCLING_MATS, tNBT);
 				if (!tList.isEmpty()) rData = new OreDictItemData(tList.remove(0), tList.toArray(ZL_MS));
 			}

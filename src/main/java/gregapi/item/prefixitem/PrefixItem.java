@@ -19,9 +19,9 @@
 
 package gregapi.item.prefixitem;
 
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import gregapi.GT_API;
 import gregapi.code.ModData;
 import gregapi.data.*;
 import gregapi.item.*;
@@ -79,7 +79,9 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		
 		setMaxDamage(0);
 		setHasSubtypes(T);
-		DeferredRegister.registerItem(this, mNameInternal, aModIDOwner);
+		// F12/R3: регистрация через ЕДИНЫЙ центр (был выдуманный DeferredRegister.registerItem);
+		// неймспейс — modId владельца (аддон может быть не GAPI), как в оригинале GameRegistry.registerItem(item,name,modId).
+		GT_API.registerItem(this, mNameInternal, aModIDOwner);
 		
 		mPrefix.addTextureSet(aModIDTextures, T);
 		LH.add("oredict." + mPrefix.dat(MT.Empty).toString(), getLocalName(mPrefix, MT.Empty));

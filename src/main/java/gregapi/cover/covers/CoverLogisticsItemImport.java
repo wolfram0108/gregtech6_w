@@ -19,6 +19,7 @@
 
 package gregapi.cover.covers;
 
+import gregapi.code.ItemNBT;
 import gregapi.cover.CoverData;
 import gregapi.data.CS.*;
 import gregapi.data.LH;
@@ -45,7 +46,7 @@ public class CoverLogisticsItemImport extends AbstractCoverAttachmentLogistics {
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		ItemStack tStack = ST.load(aStack.getTagCompound(), "gt.filter.item");
+		ItemStack tStack = ST.load(ItemNBT.get(aStack), "gt.filter.item");
 		if (ST.valid(tStack)) aList.add(LH.Chat.CYAN + tStack.getDisplayName());
 		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
 		super.addToolTips(aList, aStack, aF3_H);

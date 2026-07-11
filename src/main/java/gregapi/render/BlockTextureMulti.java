@@ -22,14 +22,16 @@ package gregapi.render;
 import static gregapi.data.CS.*;
 
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.RenderBlocks;
 
 /**
  * @author Gregorius Techneticies
- * 
+ *
  * Lets Multiple ITextures Render overlay over each other.
- * 
+ *
  * I should have done this much earlier...
+ *
+ * PORT-TODO(F3, baked-рендер клиента): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
+ * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
  */
 public class BlockTextureMulti implements ITexture {
 	private final ITexture[] mTextures;
@@ -43,32 +45,32 @@ public class BlockTextureMulti implements ITexture {
 	}
 	
 	@Override
-	public void renderXPos(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderXPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		for (ITexture tTexture : mTextures) if (tTexture != null && tTexture.isValidTexture()) tTexture.renderXPos(aRenderer, aBlock, aX, aY, aZ, aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderXNeg(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderXNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		for (ITexture tTexture : mTextures) if (tTexture != null && tTexture.isValidTexture()) tTexture.renderXNeg(aRenderer, aBlock, aX, aY, aZ, aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderYPos(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderYPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		for (ITexture tTexture : mTextures) if (tTexture != null && tTexture.isValidTexture()) tTexture.renderYPos(aRenderer, aBlock, aX, aY, aZ, aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderYNeg(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderYNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		for (ITexture tTexture : mTextures) if (tTexture != null && tTexture.isValidTexture()) tTexture.renderYNeg(aRenderer, aBlock, aX, aY, aZ, aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderZPos(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderZPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		for (ITexture tTexture : mTextures) if (tTexture != null && tTexture.isValidTexture()) tTexture.renderZPos(aRenderer, aBlock, aX, aY, aZ, aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderZNeg(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderZNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		for (ITexture tTexture : mTextures) if (tTexture != null && tTexture.isValidTexture()) tTexture.renderZNeg(aRenderer, aBlock, aX, aY, aZ, aBrightness, aChangedBlockBounds);
 	}
 	

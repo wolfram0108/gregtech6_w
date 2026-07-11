@@ -23,6 +23,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
@@ -74,7 +75,7 @@ public class MultiTileEntityReactorRodModerator extends MultiTileEntityReactorRo
 		if (SERVER_TIME % 20 == 19) {
 			oModeration = mModeration;
 			mModeration = 0;
-			UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+			UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		}
 		return F;
 	}
@@ -83,7 +84,7 @@ public class MultiTileEntityReactorRodModerator extends MultiTileEntityReactorRo
 	public int getReactorRodNeutronReflection(MultiTileEntityReactorCore aReactor, int aSlot, ItemStack aStack, int aNeutrons, boolean aModerated) {
 		if (aNeutrons > 0) {
 			mModeration++;
-			UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+			UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		}
 		return oModeration * aNeutrons;
 	}

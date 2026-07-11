@@ -19,7 +19,6 @@
 
 package gregapi.tileentity.base;
 
-import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityClassContainer;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -58,7 +57,13 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	@Override
 	public void onRegistrationFirst(MultiTileEntityRegistry aRegistry, short aID) {
-		DeferredRegister.registerTileEntity(getClass(), getTileEntityName());
+		// PORT-TODO(F12-entity): прежний вызов DeferredRegister.registerTileEntity(Class, String) —
+		// выдуманный API (1.7.10 GameRegistry.registerTileEntity механически переименован в
+		// DeferredRegister, которого там нет). Реальный путь — DeferredRegister<BlockEntityType<?>> +
+		// BlockEntityType.Builder(BlockEntitySupplier, valid-blocks) через центр gregapi.GT_API. Но
+		// MultiTileEntity — динамическая система (32000 вариантов на один тип), к статичной модели
+		// BlockEntityType neo не сводится 1:1; TILEENTITY-TYPE адаптер отдельным ADR не разработан —
+		// не выдумываю. Тот же PORT-TODO, что в GT_API.java (регистрация PrefixBlockTileEntity).
 	}
 	
 	@Override

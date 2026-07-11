@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.energy.reactors;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.FL;
 import gregapi.data.LH;
 import gregapi.data.MT;
@@ -215,7 +216,7 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 		long tDurabilityLoss = aReactor.oNeutronCounts[aSlot] <= tNeutronMax ? 100 : UT.Code.divup(400 * aReactor.oNeutronCounts[aSlot], tNeutronMax);
 		if (oModerated) tDurabilityLoss *= 4;
 		mDurability = tDurabilityLoss > mDurability ? -1 : mDurability - tDurabilityLoss;
-		UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 
 		if (mDurability <= 0) {
 			ST.meta(aStack, mDepleted);
@@ -230,7 +231,7 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 	public int getReactorRodNeutronReflection(MultiTileEntityReactorCore aReactor, int aSlot, ItemStack aStack, int aNeutrons, boolean aModerated) {
 		if (aModerated) {
 			mModerated = T;
-			UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+			UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		}
 		aReactor.mNeutronCounts[aSlot] += aNeutrons;
 		return 0;
@@ -260,7 +261,7 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 	public void updateModeration(MultiTileEntityReactorCore aReactor, int aSlot, ItemStack aStack) {
 		oModerated = mModerated;
 		mModerated = F;
-		UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 	}
 
 	@Override public ITexture getReactorRodTextureSides(MultiTileEntityReactorCore aReactor, int aSlot, ItemStack aStack, boolean aActive) {return BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[1], mRGBa, T), BlockTextureDefault.get(sOverlays[1], aActive ? UNCOLOURED : MT.Pb.fRGBaSolid));}

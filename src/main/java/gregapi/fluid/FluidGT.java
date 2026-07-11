@@ -23,10 +23,24 @@ import gregapi.data.LH;
 import gregapi.data.MD;
 import gregapi.render.IIconContainer;
 import gregapi.util.UT;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -42,59 +56,54 @@ import java.util.Map;
  *
  * <p>В Forge 1.7.10 {@code net.minecraftforge.fluids.Fluid} был ОДНИМ изменяемым data-holder'ом со
  * chainable-сеттерами ({@code setDensity/setViscosity/setLuminosity/setTemperature/setGaseous}), а
- * {@code FluidRegistry} — глобальным реестром по строковому имени, куда можно было регистрировать
- * (и дозаписывать свойства уже зарегистрированной жидкости) практически в любой момент постинициализации.
- * В neo 26.1.2 это расщеплено на {@link FluidType} (свойства) + {@link Fluid} (поведение), оба
- * ОБЯЗАНЫ регистрироваться через {@link DeferredRegister} на событии загрузки мода и, что важнее,
- * НЕИЗМЕНЯЕМЫ на уровне движка после конструирования (`decisions/F5-fluids.md` §1,3).
+ * {@code FluidRegistry} — глобальным реестром по строковому имени. В neo 26.1.2 это расщеплено на
+ * {@link FluidType} (свойства) + {@link Fluid} (поведение), оба регистрируются через
+ * {@link DeferredRegister} (`decisions/F5-fluids.md` §1,3).
  *
- * <p>Этот класс воспроизводит GT6-шный "изменяемый Fluid" 1:1 по ПОВЕДЕНИЮ (а не по факту неизменности
- * движка): {@link #setDensity}/{@link #setViscosity}/{@link #setLuminosity}/{@link #setTemperature}/
- * {@link #setGaseous} мутируют ЖИВЫЕ поля ЭТОГО объекта, а не сам neo {@link FluidType} — вместо этого
- * внутренний {@link GTFluidType} ЧИТАЕТ эти поля на каждый вызов геттера, так что мутация "задним числом"
- * (GT6 `FluidGT.run()`: "Ensure that no Mod fucked up the Values") продолжает работать и после
- * регистрации, ровно как в оригинале.
+ * <p>Критичный публичный контракт 1:1: методы {@code FL.create*} исторически возвращали движковый
+ * {@code Fluid}, и потребители могли делать как присваивание в {@link Fluid}, так и chain-вызовы
+ * старых forge-сеттеров. Поэтому {@code FluidGT} — НЕ внешний wrapper, а настоящий neo
+ * {@link FlowingFluid}/{@link Fluid}-подтип (source-fluid), регистрируемый в {@link #FLUIDS}; chain-сеттеры
+ * остаются на самом объекте. Flowing-пара создаётся централизованно через реальный
+ * {@link BaseFlowingFluid.Flowing}.
  *
- * <p>Референс сигнатур (НЕ выдумано, всё сверено с декомпилом):
+ * <p>Свойства при этом остаются изменяемыми 1:1: {@link #setDensity}/{@link #setViscosity}/
+ * {@link #setLuminosity}/{@link #setTemperature}/{@link #setGaseous} мутируют поля, а внутренний
+ * {@link GTFluidType} читает эти поля на каждый вызов геттера. Это сохраняет оригинальную возможность
+ * GT6 донастраивать жидкость после создания.
+ *
+ * <p>Референс сигнатур (НЕ выдумано):
  * <ul>
- * <li>{@code DeferredRegister<FluidType>}/{@code <Fluid>}, регистрация Source/Flowing —
- *     {@code D:\Temp\MC_NEW\NeoForge\tests\src\main\java\net\neoforged\neoforge\oldtest\fluid\NewFluidTest.java:65-68,70-81}
- *     и {@code .../FluidTypeTest.java:83-101} (эталон-моды NeoForge 26.1.2).</li>
- * <li>{@link FluidType}/{@link FluidType.Properties} —
- *     {@code D:\Temp\MC_NEW\neoforge-decompiled\net\neoforged\neoforge\fluids\FluidType.java}.</li>
- * <li>{@link BaseFlowingFluid}/{@code .Source}/{@code .Flowing}/{@code .Properties} —
- *     {@code D:\Temp\MC_NEW\neoforge-decompiled\net\neoforged\neoforge\fluids\BaseFlowingFluid.java}.</li>
+ * <li>{@code Fluid} abstract surface — {@code D:/Temp/MC_NEW/neo-decompiled/net/minecraft/world/level/material/Fluid.java:27-153}.</li>
+ * <li>{@code FlowingFluid} abstract surface/source-flowing contract — {@code .../FlowingFluid.java:35,248,254,269,283,345,429,474}.</li>
+ * <li>{@code DeferredRegister<FluidType>}/{@code <Fluid>} и source/flowing-пара —
+ *     {@code D:/Temp/MC_NEW/NeoForge/tests/src/main/java/net/neoforged/neoforge/oldtest/fluid/NewFluidTest.java:65-81}
+ *     и {@code FluidTypeTest.java:83-101}.</li>
+ * <li>{@link BaseFlowingFluid.Properties}/{@code .Flowing} —
+ *     {@code D:/Temp/MC_NEW/neoforge-decompiled/net/neoforged/neoforge/fluids/BaseFlowingFluid.java:175-221}.</li>
  * </ul>
  *
- * <p>Клиентский рендер (текстуры/tint через {@code RegisterFluidModelsEvent}) и мировые блоки
- * (Water/Ocean/River/Swamp, {@code LiquidBlock}) — вне области этого переходника (F3/render и
- * "поверхность B" F5 соответственно; `decisions/F5-fluids.md` §3,5). Здесь регистрируются ТОЛЬКО
- * {@link FluidType}+{@link Fluid} (source+flowing) — минимум, достаточный, чтобы {@code FluidStack}
- * жидкости существовал и жил в танках/рецептах (как и было в 1.7.10 — GT6 из ~196 жидкостей мировой
- * блок имеют только 4, `fluids.md` §1).
+ * <p>Клиентский рендер и мировые water-блоки (Ocean/River/Swamp) — вне области этого переходника
+ * (F3/render и surface-B F5). Здесь регистрируются только {@link FluidType}+source/flowing {@link Fluid},
+ * достаточные для танков/рецептов.
  */
-public class FluidGT {
+public class FluidGT extends FlowingFluid {
 
 	/** Центральные DeferredRegister'ы мода — ЕДИНСТВЕННОЕ место, где GT6 регистрирует жидкости в neo.
-	 *  PORT-TODO(F12, регистрация/wiring): {@code .register(modEventBus)} для обоих должен вызвать
-	 *  центральный @Mod-конструктор (F12, отдельный шов "REGISTRATION" — сейчас не централизован,
-	 *  см. STATE.md); до этого вызова записи в DeferredRegister валидны (это фаза "сбора", а не
-	 *  регистрации — см. DeferredRegister.java:214 register(name,Supplier) не требует уже быть на bus). */
+	 *  {@code .register(modEventBus)} для обоих вызывается из центрального @Mod-конструктора
+	 *  ({@code gregapi.GT_API#GT_API(IEventBus)}, тем же мод-басом, что {@code ITEMS}/{@code BLOCKS}/
+	 *  {@code GT6WorldgenFeature} — F12↔F5 стык закрыт). */
 	public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, MD.GAPI.mID);
 	public static final DeferredRegister<Fluid>      FLUIDS      = DeferredRegister.create(BuiltInRegistries.FLUID, MD.GAPI.mID);
 
-	/** GT6-имя (часто БЕЗ namespace, иногда с пробелами — напр. "rc jet fuel"; это опорная строка
-	 *  межмодового интеропа 1.7.10, НЕ обязательно валидный {@link Identifier}) -> инстанс.
-	 *  Заменяет {@code FluidRegistry.getFluid(String)}. */
+	/** GT6-имя (часто БЕЗ namespace, иногда с пробелами — напр. "rc jet fuel") -> source FluidGT. */
 	public static final Map<String, FluidGT> BY_NAME = new LinkedHashMap<>();
 
-	/** Обратный индекс {@link Fluid}-объект -> {@link FluidGT}; строится лениво при первом обращении
-	 *  (до регистрации DeferredHolder'ы не {@link DeferredHolder#isBound()}, поэтому раньше строить нет смысла). */
+	/** Обратный индекс {@link Fluid}-объект -> {@link FluidGT}; строится лениво. */
 	private static Map<Fluid, FluidGT> BY_FLUID_CACHE;
 
 	public final String mName;
-	/** Путь текстуры/иконка жидкости. Данные не тронуты, но САМ рендер (RegisterFluidModelsEvent/tint)
-	 *  не подключается тут — PORT-TODO(F3, рендер жидкостей): вне области F5, см. decisions/F5-fluids.md §3. */
+	/** PORT-TODO(F3, рендер жидкостей): RegisterFluidModelsEvent/tint подключаются отдельно. */
 	public final IIconContainer mTexture;
 
 	private short[] mRGBa;
@@ -104,9 +113,10 @@ public class FluidGT {
 	private int  mViscosity  = 1000;
 	private int  mLuminosity = 0;
 
-	public final DeferredHolder<FluidType, FluidType>     mTypeHolder;
-	public final DeferredHolder<Fluid, FlowingFluid>       mSourceHolder;
-	public final DeferredHolder<Fluid, FlowingFluid>       mFlowingHolder;
+	private final FluidType mType;
+	public final DeferredHolder<FluidType, FluidType> mTypeHolder;
+	public final DeferredHolder<Fluid, FluidGT>       mSourceHolder;
+	public final DeferredHolder<Fluid, FlowingFluid>  mFlowingHolder;
 
 	public FluidGT(String aName, IIconContainer aTexture, short[] aRGBa, long aTemperatureK, boolean aGaseous) {
 		mName = aName.toLowerCase();
@@ -114,27 +124,33 @@ public class FluidGT {
 		mRGBa = aRGBa;
 		mTemperature = UT.Code.bindInt(aTemperatureK);
 		mGaseous = aGaseous;
+		mType = new GTFluidType(FluidType.Properties.create().descriptionId(getUnlocalizedName()));
 
 		String tRegName = safeRegName(mName);
-		mTypeHolder    = FLUID_TYPES.register(tRegName, () -> new GTFluidType(FluidType.Properties.create().descriptionId(getUnlocalizedName())));
-		mSourceHolder  = FLUIDS.register(tRegName,             () -> new BaseFlowingFluid.Source (fluidProperties()));
+		mTypeHolder    = FLUID_TYPES.register(tRegName, () -> mType);
+		mSourceHolder  = FLUIDS.register(tRegName, () -> this);
 		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> new BaseFlowingFluid.Flowing(fluidProperties()));
 
 		BY_NAME.put(mName, this);
-		BY_FLUID_CACHE = null; // индекс устарел, перестроится лениво
+		BY_FLUID_CACHE = null;
 	}
+
+	// PORT-TODO(F5, post-init защита значений): оригинал (gregtech6/src/main/java/gregapi/fluid/FluidGT.java:49-52)
+	// реализовывал Runnable и регистрировал себя в GT.mAfterPostInit/mAfterServerStarted +
+	// GAPI_POST.mAfterPostInit/mAfterServerStarted — защита "Ensure that no Mod fucked up the Values"
+	// (после PostInit/старта сервера принудительно переустанавливает mGas/mTemperature на случай, если
+	// сторонний мод их подменил через FluidRegistry). Эти списки колбэков (GT/GAPI_POST) в порте пока
+	// не существуют — они часть отдельного, ещё не портированного механизма пост-инициализации, не F5.
+	// До его появления защитный ре-апплай значений не воспроизведён; риск минимален, т.к. в 26.1.2 нет
+	// глобального мутируемого FluidRegistry, который сторонний мод мог бы изменить под ногами.
 
 	private BaseFlowingFluid.Properties fluidProperties() {
-		// PORT-TODO(F5, поверхность B, decisions/F5-fluids.md §3,5): .block()/.bucket() намеренно не заданы —
-		// 192 из 196 GT6-жидкостей ("контент-жидкости") мирового блока не имели и в 1.7.10 (были чистым
-		// data-holder'ом для танков/рецептов). Мировые (Water/Ocean/River/Swamp) — своя, форсированная
-		// замена субстрата (кастомный Block с финитной текучестью), отдельная задача, не в этом переходнике.
-		return new BaseFlowingFluid.Properties(mTypeHolder::value, mSourceHolder::value, mFlowingHolder::value);
+		// PORT-TODO(F5, поверхность B): .block()/.bucket() (decisions/F5-fluids.md §3,5)
+		// намеренно не заданы для content-fluid'ов; мировые water-блоки — отдельная форсированная замена.
+		return new BaseFlowingFluid.Properties(this::getFluidType, () -> this, mFlowingHolder::value);
 	}
 
-	/** neo {@link Identifier}-путь не допускает пробелы/произвольные символы (GT6-имена вида "rc jet fuel"
-	 *  такому требованию не удовлетворяют) — санитизация ТОЛЬКО для ключа регистрации. {@link #mName}
-	 *  (оригинальное GT6-имя, ключ {@link #BY_NAME}) остаётся как в оригинале, без изменений. */
+	/** neo {@link Identifier}-путь не допускает пробелы/произвольные символы — санитизация ТОЛЬКО для ключа регистрации. */
 	private static String safeRegName(String aName) {
 		String rName = aName.toLowerCase().replaceAll("[^a-z0-9_.\\-]", "_");
 		return rName.isEmpty() ? "unnamed" : rName;
@@ -143,9 +159,10 @@ public class FluidGT {
 	public String getUnlocalizedName() {return "fluid." + mName;}
 	public String getLocalizedName()   {return LH.get(getUnlocalizedName());}
 
-	public Fluid getFluid()        {return mSourceHolder.get();}
-	public Fluid getFlowingFluid() {return mFlowingHolder.get();}
-	public FluidType getFluidType() {return mTypeHolder.get();}
+	/** Source-fluid — это сам FluidGT (реальный neo Fluid), не wrapper вокруг чужого объекта. */
+	public Fluid getFluid()        {return this;}
+	public Fluid getFlowingFluid() {return mFlowingHolder.isBound() ? mFlowingHolder.value() : this;}
+	@Override public FluidType getFluidType() {return mType;}
 
 	public boolean isGaseous() {return mGaseous;}
 	public int     getDensity() {return mDensity;}
@@ -154,24 +171,43 @@ public class FluidGT {
 	public int     getTemperature() {return mTemperature;}
 	public short[] getRGBa() {return mRGBa;}
 
-	/** Chainable-сеттеры 1:1 воспроизводят старый Forge-1.7.10 {@code Fluid}-API (см. javadoc класса):
-	 *  меняют ЖИВЫЕ поля, видимые немедленно через {@link GTFluidType}, в т.ч. уже после регистрации. */
+	/** Chainable-сеттеры 1:1 воспроизводят старый Forge-1.7.10 Fluid-API (recompSrc
+	 *  {@code net.minecraftforge.fluids.Fluid:131-158} — плоское присваивание полей, БЕЗ клампинга). */
 	public FluidGT setTemperature(long aTemperatureK) {mTemperature = UT.Code.bindInt(aTemperatureK); return this;}
 	public FluidGT setGaseous(boolean aGaseous)        {mGaseous = aGaseous; return this;}
 	public FluidGT setDensity(int aDensity)            {mDensity = aDensity; return this;}
-	public FluidGT setViscosity(int aViscosity)        {mViscosity = Math.max(0, aViscosity); return this;}
-	public FluidGT setLuminosity(int aLuminosity)      {mLuminosity = Math.max(0, Math.min(15, aLuminosity)); return this;}
+	public FluidGT setViscosity(int aViscosity)        {mViscosity = aViscosity; return this;}
+	public FluidGT setLuminosity(int aLuminosity)      {mLuminosity = aLuminosity; return this;}
 	public FluidGT setRGBa(short[] aRGBa)              {mRGBa = aRGBa; return this;}
 
-	/** Находит GT6-переходник по уже зарегистрированному neo {@link Fluid} (source ИЛИ flowing).
-	 *  Заменяет обратный поиск, которого 1.7.10 {@code FluidRegistry} не требовал явно (там жидкость
-	 *  была тем же объектом, что и запись реестра). */
+	// ===== Реальный FlowingFluid/Fluid source-contract, сигнатуры из neo-decompiled =====
+
+	@Override public Fluid getFlowing() {return getFlowingFluid();}
+	@Override public Fluid getSource() {return this;}
+	@Override protected boolean canConvertToSource(ServerLevel aLevel) {return false;}
+	@Override protected void beforeDestroyingBlock(LevelAccessor aLevel, BlockPos aPos, BlockState aState) {
+		BlockEntity tBlockEntity = aState.hasBlockEntity() ? aLevel.getBlockEntity(aPos) : null;
+		Block.dropResources(aState, aLevel, aPos, tBlockEntity);
+	}
+	@Override protected int getSlopeFindDistance(LevelReader aLevel) {return 4;}
+	@Override protected int getDropOff(LevelReader aLevel) {return 1;}
+	@Override public int getAmount(FluidState aState) {return 8;}
+	@Override public boolean isSource(FluidState aState) {return true;}
+	@Override public Item getBucket() {return Items.AIR;}
+	@Override protected boolean canBeReplacedWith(FluidState aState, BlockGetter aLevel, BlockPos aPos, Fluid aOther, Direction aDirection) {return aDirection == Direction.DOWN && !isSame(aOther);}
+	@Override public int getTickDelay(LevelReader aLevel) {return 5;}
+	@Override protected float getExplosionResistance() {return 1.0F;}
+	@Override protected BlockState createLegacyBlock(FluidState aState) {return Blocks.AIR.defaultBlockState();}
+	@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isBound() && aFluid == mFlowingHolder.value());}
+
+	/** Находит GT6-переходник по neo {@link Fluid} (source ИЛИ flowing). */
 	public static FluidGT of(Fluid aFluid) {
 		if (aFluid == null) return null;
+		if (aFluid instanceof FluidGT tGT) return tGT;
 		if (BY_FLUID_CACHE == null || BY_FLUID_CACHE.size() < BY_NAME.size()) {
 			Map<Fluid, FluidGT> tMap = new IdentityHashMap<>();
 			for (FluidGT tGT : BY_NAME.values()) {
-				if (tGT.mSourceHolder.isBound())  tMap.put(tGT.mSourceHolder.value(), tGT);
+				tMap.put(tGT, tGT);
 				if (tGT.mFlowingHolder.isBound()) tMap.put(tGT.mFlowingHolder.value(), tGT);
 			}
 			BY_FLUID_CACHE = tMap;
@@ -179,12 +215,7 @@ public class FluidGT {
 		return BY_FLUID_CACHE.get(aFluid);
 	}
 
-	/** GT6-имя для {@link Fluid}-объекта. Свои жидкости — точное {@link #mName} (1:1, включая
-	 *  "неправильные" 1.7.10-имена вида "rc jet fuel"). Чужие (другой мод) — путь их {@link Identifier}.
-	 *  PORT-TODO(F5, межмодовый интероп по имени, decisions/F5-fluids.md §9): 1.7.10
-	 *  {@code FluidRegistry.getFluid(String)} искал по "голому" имени БЕЗ namespace среди жидкостей ВСЕХ
-	 *  модов; neo {@code BuiltInRegistries.FLUID} требует namespace, поэтому здесь используется только
-	 *  path — при совпадении путей у разных модов возможна неоднозначность, которой в 1.7.10 не было. */
+	/** GT6-имя для {@link Fluid}-объекта. Свои жидкости — точное {@link #mName}. */
 	public static String nameOf(Fluid aFluid) {
 		if (aFluid == null) return null;
 		FluidGT tGT = of(aFluid);
@@ -193,7 +224,7 @@ public class FluidGT {
 		return tId == null ? null : tId.getPath();
 	}
 
-	/** neo {@link FluidType}, читающий свойства ЖИВЬЁМ из объемлющего {@link FluidGT} — см. javadoc класса. */
+	/** neo {@link FluidType}, читающий свойства ЖИВЬЁМ из объемлющего {@link FluidGT}. */
 	private final class GTFluidType extends FluidType {
 		GTFluidType(Properties aProperties) {super(aProperties);}
 		@Override public int getTemperature() {return mTemperature;}

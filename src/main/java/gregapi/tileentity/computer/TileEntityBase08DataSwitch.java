@@ -20,6 +20,7 @@
 package gregapi.tileentity.computer;
 
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.data.LH.Chat;
 import gregapi.tileentity.base.TileEntityBase07Paintable;
@@ -75,8 +76,8 @@ public abstract class TileEntityBase08DataSwitch extends TileEntityBase07Paintab
 		if (isServerSide() && isUseableByPlayerGUI(aPlayer)) {
 			ItemStack aHeldItem = aPlayer.inventory.getCurrentItem();
 			if (OM.is(OD_USB_STICKS[0], aHeldItem)) {
-				if (aHeldItem.hasTagCompound() && aHeldItem.getTagCompound().hasKey(NBT_USB_TIER)) {
-					setUSBData(aSide, aHeldItem.getTagCompound().getByte(NBT_USB_TIER), aHeldItem.getTagCompound().getCompoundTag(NBT_USB_DATA));
+				if (ItemNBT.has(aHeldItem) && ItemNBT.get(aHeldItem).hasKey(NBT_USB_TIER)) {
+					setUSBData(aSide, ItemNBT.get(aHeldItem).getByte(NBT_USB_TIER), ItemNBT.get(aHeldItem).getCompoundTag(NBT_USB_DATA));
 					playClick();
 				} else {
 					setUSBData(aSide, 0, null);
@@ -102,7 +103,7 @@ public abstract class TileEntityBase08DataSwitch extends TileEntityBase07Paintab
 				DelegatorTileEntity<Container> tDelegator = getAdjacentInventory(tSide);
 				if (tDelegator.mTileEntity != null) for (int i = 0, j = tDelegator.mTileEntity.getSizeInventory(); i < j; i++) {
 					ItemStack tUSB = tDelegator.mTileEntity.getStackInSlot(i);
-					if (OM.is(OD_USB_CABLES[0], tUSB) && (!tUSB.hasTagCompound() || !tUSB.getTagCompound().hasKey(NBT_USB_DIRECTION) || SIDES_EQUAL[tUSB.getTagCompound().getByte(NBT_USB_DIRECTION)][tDelegator.mSideOfTileEntity])) {
+					if (OM.is(OD_USB_CABLES[0], tUSB) && (!ItemNBT.has(tUSB) || !ItemNBT.get(tUSB).hasKey(NBT_USB_DIRECTION) || SIDES_EQUAL[ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION)][tDelegator.mSideOfTileEntity])) {
 						tDelegator.mTileEntity.markDirty();
 						break;
 					}

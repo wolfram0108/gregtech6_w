@@ -37,11 +37,8 @@ import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -59,40 +56,44 @@ public class RecipeMapAutocrafting extends RecipeMap {
 		super(aRecipeList, aUnlocalizedName, aNameLocal, aNameNEI, aProgressBarDirection, aProgressBarAmount, aNEIGUIPath, aInputItemsCount, aOutputItemsCount, aMinimalInputItems, aInputFluidCount, aOutputFluidCount, aMinimalInputFluids, aMinimalInputs, aPower, aNEISpecialValuePre, aNEISpecialValueMultiplier, aNEISpecialValuePost, F, aShowVoltageAmperageInNEI, aNEIAllowed, aConfigAllowed, aNeedsOutputs, aCombinePower, aUseBucketSizeIn, aUseBucketSizeOut);
 	}
 	
-	public static final List<Recipe> ALLOWED_RECIPES = new ArrayListNoNulls<>();
-	public static final List<Recipe> RECENT_RECIPES = new ArrayListNoNulls<>();
-	
+	// F11: тип элементов — свой крафт-контракт ICraftingRecipeGT (замена Forge IRecipe), НЕ gregapi.recipes.Recipe
+	// (машинный рецепт RecipeMap — другая система, F11 её не трогает) и НЕ neo net.minecraft...crafting.Recipe
+	// (импорт последнего конфликтовал по имени с gregapi.recipes.Recipe — убран, здесь не нужен).
+	public static final List<ICraftingRecipeGT> ALLOWED_RECIPES = new ArrayListNoNulls<>();
+	public static final List<ICraftingRecipeGT> RECENT_RECIPES = new ArrayListNoNulls<>();
+
 	@Override
 	public Recipe findRecipe(IHasWorldAndCoords aTileEntity, Recipe aRecipe, boolean aNotUnificated, long aSize, ItemStack aSpecialSlot, FluidStack[] aFluids, ItemStack... aInputs) {
 		Recipe rRecipe = super.findRecipe(aTileEntity, aRecipe, aNotUnificated, aSize, aSpecialSlot, aFluids, aInputs);
 		if (rRecipe != null || aSpecialSlot == null || aInputs == null || aInputs.length < 1 || GAPI_POST.mFinishedServerStarted <= 0) return rRecipe;
-		
+
 		ItemStack[] tBlueprint = getBlueprint(aTileEntity, aSpecialSlot);
-		
+
 		if (tBlueprint.length <= 0) return null;
-		
+
 		for (ItemStack tPlan : tBlueprint) if (tPlan != null && tPlan.getItem() instanceof IItemGTHandTool) return null;
-		
+
 		if (ALLOWED_RECIPES.isEmpty()) {
-			for (Object tCraftingRecipe : CR.list()) if (tCraftingRecipe instanceof Recipe) {
+			for (Object tCraftingRecipe : CR.list()) if (tCraftingRecipe instanceof ICraftingRecipeGT) {
 				if (!(tCraftingRecipe instanceof ICraftingRecipeGT) || ((ICraftingRecipeGT)tCraftingRecipe).isAutocraftableByGT()) {
-					ALLOWED_RECIPES.add((Recipe)tCraftingRecipe);
+					ALLOWED_RECIPES.add((ICraftingRecipeGT)tCraftingRecipe);
 				}
 			}
 		}
-		
-		CraftingInput tCraftInv = new CraftingInput(new AbstractContainerMenu() {@Override public boolean canInteractWith(Player var1) {return F;}}, 3, 3);
-		for (int i = 0; i < 9; i++) tCraftInv.setInventorySlotContents(i, tBlueprint[i]);
-		
-		Recipe tIRecipe = null;
-		
+
+		// F11: Forge InventoryCrafting(Container,w,h)+setInventorySlotContents(...) удалены; neo-эквивалент —
+		// иммутабельный CraftingInput.of(...), уже централизован в CR.crafting(ItemStack...) (CR.java:573-578).
+		CraftingInput tCraftInv = CR.crafting(tBlueprint);
+
+		ICraftingRecipeGT tIRecipe = null;
+
 		for (int i = 0, j = RECENT_RECIPES.size(); i < j; i++) {
 			if (RECENT_RECIPES.get(i).matches(tCraftInv, aTileEntity == null ? DW : aTileEntity.getWorld())) {
 				tIRecipe = RECENT_RECIPES.get(i);
 				break;
 			}
 		}
-		
+
 		if (tIRecipe == null) for (int i = 0, j = ALLOWED_RECIPES.size(); i < j; i++) {
 			if (ALLOWED_RECIPES.get(i).matches(tCraftInv, aTileEntity == null ? DW : aTileEntity.getWorld())) {
 				tIRecipe = ALLOWED_RECIPES.get(i);
@@ -101,7 +102,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 				break;
 			}
 		}
-		
+
 		if (tIRecipe == null) return null;
 		
 		ItemStack tOutput = tIRecipe.getCraftingResult(tCraftInv);

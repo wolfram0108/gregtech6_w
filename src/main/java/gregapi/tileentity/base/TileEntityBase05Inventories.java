@@ -22,6 +22,7 @@ package gregapi.tileentity.base;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_BreakBlock;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnBlockExploded;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
+import gregapi.code.ItemNBT;
 import gregapi.tileentity.ITileEntityInventoryGUI;
 import gregapi.util.OM;
 import gregapi.util.ST;
@@ -97,7 +98,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	@Override public final boolean slotHas(int aIndex) {return mInventory[aIndex] != null;}
 	@Override public final boolean invempty() {for (int i = 0; i < mInventory.length; i++) if (mInventory[i] != null) return F; return T;}
 	@Override public final int invsize() {return mInventory.length;}
-	@Override public final CompoundTag slotNBT(int aIndex) {return mInventory[aIndex] != null ? mInventory[aIndex].getTagCompound() : null;}
+	@Override public final CompoundTag slotNBT(int aIndex) {return mInventory[aIndex] != null ? ItemNBT.get(mInventory[aIndex]) : null;}
 	
 	@Override public void updateTanks() {mInventoryChanged = T;}
 	@Override public void updateInventory() {mInventoryChanged = T;}

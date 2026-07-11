@@ -23,6 +23,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.data.LH.Chat;
 import gregapi.gui.ContainerClientDefault;
@@ -57,32 +58,35 @@ public class MultiTileEntityHDDSwitch extends TileEntityBase08DataSwitch {
 	@Override
 	public CompoundTag getUSBData(byte aSide, int aUSBTier) {
 		ItemStack tDrive = slot(0);
-		if (OM.is(OD_USB_DRIVES[aUSBTier], tDrive) && tDrive.hasTagCompound()) {
-			CompoundTag tDriveData = tDrive.getTagCompound().getCompoundTag(NBT_USB_DRIVE);
+		if (OM.is(OD_USB_DRIVES[aUSBTier], tDrive) && ItemNBT.has(tDrive)) {
+			CompoundTag tDriveData = ItemNBT.get(tDrive).getCompoundTag(NBT_USB_DRIVE);
 			if (tDriveData.getByte(NBT_USB_TIER+mMode) <= aUSBTier) return tDriveData.hasKey(NBT_USB_DATA+mMode) ? tDriveData.getCompoundTag(NBT_USB_DATA+mMode) : null;
 		}
 		return null;
 	}
-	
+
+	// F8: внешний тег захвачен ОДИН раз в tNBT (создан, если отсутствовал), вложенная tDriveData
+	// мутируется на месте (вложенная мутация внутри одного и того же дерева тегов работает как раньше),
+	// коммит единый ItemNBT.set в конце — иначе все правки тихо терялись бы (см. ItemNBT.java).
 	@Override
 	public boolean setUSBData(byte aSide, int aUSBTier, CompoundTag aData) {
 		ItemStack tDrive = slot(0);
 		if (OM.is(OD_USB_DRIVES[aUSBTier], tDrive)) {
-			if (!tDrive.hasTagCompound()) tDrive.setTagCompound(UT.NBT.make());
-			CompoundTag tDriveData = tDrive.getTagCompound().getCompoundTag(NBT_USB_DRIVE);
-			if (aData == null || aData.hasNoTags()) {
+			CompoundTag tNBT = ItemNBT.has(tDrive) ? ItemNBT.get(tDrive) : UT.NBT.make();
+			CompoundTag tDriveData = tNBT.getCompoundTag(NBT_USB_DRIVE);
+			if (aData == null || aData.isEmpty()) {
 				tDriveData.removeTag(NBT_USB_DATA+mMode);
 				tDriveData.removeTag(NBT_USB_TIER+mMode);
 			} else {
 				tDriveData.setTag(NBT_USB_DATA+mMode, aData);
 				tDriveData.setByte(NBT_USB_TIER+mMode, (byte)aUSBTier);
 			}
-			if (tDriveData.hasNoTags()) {
-				tDrive.getTagCompound().removeTag(NBT_USB_DRIVE);
+			if (tDriveData.isEmpty()) {
+				tNBT.removeTag(NBT_USB_DRIVE);
 			} else {
-				tDrive.getTagCompound().setTag(NBT_USB_DRIVE, tDriveData);
+				tNBT.setTag(NBT_USB_DRIVE, tDriveData);
 			}
-			if (tDrive.getTagCompound().hasNoTags()) tDrive.setTagCompound(null);
+			ItemNBT.set(tDrive, tNBT.isEmpty() ? null : tNBT);
 			return T;
 		}
 		return F;

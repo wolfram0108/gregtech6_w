@@ -20,10 +20,8 @@
 package gregapi;
 
 import cofh.lib.util.ComparableItem;
-import cpw.mods.fml.common.FMLCommonHandler;
 import net.neoforged.fml.Logging;
 import net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent;
-import net.minecraft.world.level.levelgen.feature.Feature;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import cpw.mods.fml.common.eventhandler.Event.Result;
@@ -34,7 +32,6 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.network.IContainerFactory;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import ganymedes01.etfuturum.entities.EntityHusk;
 import ganymedes01.etfuturum.entities.EntityStray;
 import ganymedes01.etfuturum.entities.EntityZombieVillager;
@@ -53,6 +50,7 @@ import gregapi.block.tree.BlockBaseLog;
 import gregapi.block.tree.BlockBaseSapling;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.HashSetNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
 import gregapi.data.*;
 import gregapi.enchants.Enchantment_WerewolfDamage;
@@ -117,7 +115,6 @@ import net.minecraft.util.WeightedRandomChestContent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.common.ChestGenHooks;
 import net.minecraftforge.common.DimensionManager;
 import net.neoforged.neoforge.common.NeoForge;
@@ -146,13 +143,41 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F12 (decisions/F12-registration-lifecycle.md, ревизия R3): конструктор раньше нёс два выдуманных
+ * API — {@code DeferredRegister.registerFuelHandler(this)} и {@code DeferredRegister.registerWorldGenerator(this, weight)}
+ * — таких методов у NeoForge DeferredRegister нет (сверено, neoforge-decompiled). Класс также
+ * незаконно "implements" два конкретных класса, {@code FurnaceFuelBurnTimeEvent} и {@code Feature}
+ * (1.7.10 {@code IFuelHandler}/{@code IWorldGenerator} механически переименованы словарём типов в
+ * события/классы движка — компилироваться так не может). Оба механизма 1.7.10 — не "регистрация в
+ * реестр", а подписка на диспетчер интерфейсов; их neo-эквивалент — обычные {@code @SubscribeEvent}
+ * на этом же классе, который УЖЕ регистрируется на {@code NeoForge.EVENT_BUS} ниже (единый центр
+ * подписки, не рассыпаны по местам). Тело {@link #getBurnTime(net.minecraft.world.item.ItemStack)}
+ * не тронуто (1:1) — только подключено через {@link #onFurnaceFuelBurnTime(FurnaceFuelBurnTimeEvent)}.
+ * WorldGen-часть: F6 разработан ({@code decisions/F6-worldgen.md}) — старый метод-заглушка {@code generate}
+ * (был телом {@code IWorldGenerator.generate}, вызывавшимся через выдуманный
+ * {@code DeferredRegister.registerWorldGenerator}) удалён вместе с закомментированным ниже наброском моста
+ * на {@code PopulateChunkEvent} (тоже не существующий в neo как таковой) — реальная точка входа теперь
+ * {@link gregapi.worldgen.GT6WorldgenFeature#place}, регистрируемая централизованно через
+ * {@link gregapi.worldgen.GT6WorldgenFeature#register} (вызывается из {@code GT_API}-конструктора).
+ * Сам диспетчер {@link gregapi.worldgen.GT6WorldGenerator#generate(net.minecraft.world.level.Level,int,int,boolean)}
+ * не переписан — только точка вызова.
  */
-public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerFactory, FurnaceFuelBurnTimeEvent, Feature {
+public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerFactory {
 	public GT_API_Proxy() {
-		DeferredRegister.registerFuelHandler(this);
-		DeferredRegister.registerWorldGenerator(this, Integer.MAX_VALUE);
 		NeoForge.EVENT_BUS.register(this);
-		FMLCommonHandler.instance().bus().register(this);
+	}
+
+	/**
+	 * F12/R3-мост: заменяет выдуманный {@code DeferredRegister.registerFuelHandler(this)}. Событие
+	 * {@link FurnaceFuelBurnTimeEvent} летит на {@code NeoForge.EVENT_BUS} (сверено, javadoc класса
+	 * события) — этот же bus уже слушает {@code this} (см. конструктор), поэтому достаточно
+	 * {@code @SubscribeEvent}, без отдельной регистрации.
+	 */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onFurnaceFuelBurnTime(FurnaceFuelBurnTimeEvent aEvent) {
+		int tBurnTime = getBurnTime(aEvent.getItemStack());
+		if (tBurnTime > 0) aEvent.setBurnTime(tBurnTime);
 	}
 	
 	public int addArmor(String aPrefix) {
@@ -374,7 +399,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 								Logging.severe("Also it is a Ban Reason on the IC2-Forums to seriously post this Text. We all know about its existence.");
 								
 								tOutput.setStackDisplayName("ERROR!");
-								UT.NBT.setBoolean(UT.NBT.getNBT(tOutput), "gt.err.oredict.output", T);
+								UT.NBT.set(tOutput, UT.NBT.setBoolean(UT.NBT.getNBT(tOutput), "gt.err.oredict.output", T));
 							}
 						} else {
 							OM.set(tOutput);
@@ -834,7 +859,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 							if (tHungerEffect) tCount+=(tStack.getCount() * 64) / Math.max(1, tStack.getMaxStackSize());
 							if (INVENTORY_UNIFICATION) OM.set_(tStack);
 							ST.update(tStack, aEvent.player);
-							if (tStack.hasTagCompound() && tStack.getTagCompound().hasNoTags()) tStack.setTagCompound(null);
+							if (ItemNBT.has(tStack) && ItemNBT.get(tStack).isEmpty()) ItemNBT.set(tStack, null);
 						}
 					}
 					
@@ -1008,7 +1033,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 			}
 		}
 		
-		CompoundTag tNBT = aEvent.item.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aEvent.item);
 		if (tNBT != null && tNBT.hasKey(NBT_EFFECTS)) {
 			tNBT = tNBT.getCompoundTag(NBT_EFFECTS);
 			if (RNGSUS.nextInt(100) < tNBT.getInteger("chance")) UT.Entities.applyPotion(aEvent.entityPlayer, tNBT.getInteger("id"), tNBT.getInteger("time"), tNBT.getInteger("lvl"), F);
@@ -1428,17 +1453,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 		if (aEvent.player instanceof ServerPlayer) mNewPlayers.add((ServerPlayer)aEvent.player);
 	}
 	
-	@Override
-	public void generate(Random aRandom, int aChunkX, int aChunkZ, Level aWorld, IChunkProvider aChunkGenerator, IChunkProvider aChunkProvider) {
-		GT6WorldGenerator.generate(aWorld, aChunkX << 4, aChunkZ << 4, F);
-	}
-	/*
-	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void populate(PopulateChunkEvent.Post aEvent) {
-		WorldGeneratorGT6.generate(aEvent.world, aEvent.chunkX << 4, aEvent.chunkZ << 4, F);
-	}
-	*/
-	
+	// F6: старый IWorldGenerator.generate(Random,int,int,Level,IChunkProvider,IChunkProvider) и
+	// закомментированный набросок моста на PopulateChunkEvent удалены — оба не имеют смысла в neo
+	// (IWorldGenerator и PopulateChunkEvent не существуют; IChunkProvider — 1.7.10-only тип). Реальная
+	// точка входа: gregapi.worldgen.GT6WorldgenFeature.place(FeaturePlaceContext) — кастомная Feature,
+	// зарегистрированная через PlacedFeature+BiomeModifier (см. javadoc класса выше и
+	// decisions/F6-worldgen.md). Диспетчер GT6WorldGenerator.generate(Level,int,int,boolean) не тронут.
+
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onItemExpireEvent(ItemExpireEvent aEvent) {
 		if (aEvent.entity.level().isRemote) return;
@@ -1581,7 +1602,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 		}
 	}
 	
-	@Override
+	// Тело 1:1, не тронуто — раньше "@Override" от выдуманного IFuelHandler-как-события, теперь просто
+	// вызывается из onFurnaceFuelBurnTime(...) выше (F12/R3-мост).
 	public int getBurnTime(ItemStack aFuel) {
 		if (ST.invalid(aFuel) || FL.getFluid(aFuel, T) != null) return 0;
 		Block aBlock = ST.block(aFuel);

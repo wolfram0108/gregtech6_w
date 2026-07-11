@@ -20,6 +20,7 @@
 package gregapi.lang;
 
 import net.neoforged.neoforge.common.data.LanguageProvider;
+import gregapi.code.ItemNBT;
 import gregapi.data.ANY;
 import gregapi.data.MT;
 import gregapi.data.OP;
@@ -145,7 +146,7 @@ public class LanguageHandler {
 	
 	public static String getTranslateableItemStackName(ItemStack aStack) {
 		if (ST.invalid(aStack)) return "null";
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT != null && tNBT.hasKey("display")) {
 			String tName = tNBT.getCompoundTag("display").getString("Name");
 			if (UT.Code.stringValid(tName)) {

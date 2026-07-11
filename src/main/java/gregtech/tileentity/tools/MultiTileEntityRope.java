@@ -21,6 +21,7 @@ package gregtech.tileentity.tools;
 
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
+import gregapi.code.ItemNBT;
 import gregapi.data.CS.*;
 import gregapi.old.Textures;
 import gregapi.render.BlockTextureDefault;
@@ -60,7 +61,7 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 					continue;
 				}
 				if (WD.air(level, xCoord, tY, zCoord)) {
-					tRegistry.mBlock.placeBlock(level, xCoord, tY, zCoord, SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(aStack.hasTagCompound()?(CompoundTag)aStack.getTagCompound().copy():null, NBT_FACING, mFacing), T, F);
+					tRegistry.mBlock.placeBlock(level, xCoord, tY, zCoord, SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(ItemNBT.has(aStack)?(CompoundTag)ItemNBT.get(aStack).copy():null, NBT_FACING, mFacing), T, F);
 					if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 					UT.Sounds.send(SFX.MC_DIG_CLOTH, this, F);
 				}

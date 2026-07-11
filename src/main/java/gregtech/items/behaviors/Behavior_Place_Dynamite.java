@@ -24,6 +24,7 @@ import static gregapi.data.CS.*;
 import java.util.List;
 
 import gregapi.block.metatype.BlockStones;
+import gregapi.code.ItemNBT;
 import gregapi.data.CS.BlocksGT;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -56,13 +57,13 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 		for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) {
 			ItemStack tStack = aPlayer.inventory.mainInventory[aPlayer.inventory.mainInventory.length-i-1];
 			if (IL.Boomstick.equal(tStack, F, T) || IL.Dynamite.equal(tStack, F, T) || IL.Dynamite_Strong.equal(tStack, F, T)) {
-				CompoundTag tOldTag = tStack.getTagCompound();
-				if (tStack.hasTagCompound()) {
-					tStack.setTagCompound((CompoundTag)tStack.getTagCompound().copy());
-				} else {
-					tStack.setTagCompound(UT.NBT.make());
-				}
-				tStack.getTagCompound().setBoolean(NBT_MODE, T);
+				// F8: тег захвачен ОДИН раз в tOldTag (для восстановления) и ОДИН раз мутирован в tTempTag
+				// (NBT_MODE=T), затем закоммичен единым ItemNBT.set — иначе setBoolean на свежем get()
+				// потерялся бы до чтения tryPlaceItemIntoWorld (см. ItemNBT.java).
+				CompoundTag tOldTag = ItemNBT.get(tStack);
+				CompoundTag tTempTag = tOldTag != null ? (CompoundTag)tOldTag.copy() : UT.NBT.make();
+				tTempTag.setBoolean(NBT_MODE, T);
+				ItemNBT.set(tStack, tTempTag);
 				int tOldSize = tStack.getCount();
 				if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
 					if (UT.Entities.hasInfiniteItems(aPlayer)) {
@@ -71,7 +72,7 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 						((MultiItemTool)aItem).doDamage(aStack, 100, aPlayer, F);
 						ST.use(aPlayer, T, tStack, 0);
 					}
-					tStack.setTagCompound(tOldTag);
+					ItemNBT.set(tStack, tOldTag);
 					// Add Dynamite Coords to Remote Activator if in Hotbar.
 					for (int j = 0; j < Inventory.getHotbarSize(); j++) if (IL.Tool_Remote_Activator.equal(aPlayer.inventory.mainInventory[j], F, T)) {
 						if (Behavior_Remote.addCoords(aPlayer.inventory.mainInventory[j], aPlayer, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
@@ -80,7 +81,7 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 					}
 					return T;
 				}
-				tStack.setTagCompound(tOldTag);
+				ItemNBT.set(tStack, tOldTag);
 			}
 		}
 		return F;

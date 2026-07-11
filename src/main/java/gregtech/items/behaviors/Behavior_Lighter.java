@@ -21,6 +21,7 @@ package gregtech.items.behaviors;
 
 import gregapi.block.IBlockToolable;
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
@@ -146,7 +147,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.lighter.tooltip"));
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (mFuelAmount > 1) {
 			long tFuelAmount = (ST.invalid(mFullLighter)?1:tNBT==null?ST.equal(aStack, mFullLighter, T)?mFuelAmount:0:UT.NBT.getLighterFuel(aStack));
 			aList.add(LH.get("gt.behaviour.lighter.uses") + " " + tFuelAmount);

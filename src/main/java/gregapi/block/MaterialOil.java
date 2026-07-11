@@ -21,7 +21,7 @@ package gregapi.block;
 
 import static gregapi.data.CS.*;
 
-import net.minecraft.world.level.material.MapColor;
+import gregapi.block.MapColor;
 import gregapi.block.MaterialLiquid;
 
 public class MaterialOil extends MaterialLiquid {

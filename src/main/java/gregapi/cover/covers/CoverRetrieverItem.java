@@ -20,6 +20,7 @@
 package gregapi.cover.covers;
 
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackSet;
 import gregapi.cover.CoverData;
@@ -80,7 +81,7 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		ItemStack tStack = ST.load(aStack.getTagCompound(), "gt.filter.item");
+		ItemStack tStack = ST.load(ItemNBT.get(aStack), "gt.filter.item");
 		if (ST.valid(tStack)) aList.add(LH.Chat.CYAN + tStack.getDisplayName());
 		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
 		super.addToolTips(aList, aStack, aF3_H);

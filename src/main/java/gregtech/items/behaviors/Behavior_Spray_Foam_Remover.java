@@ -21,6 +21,7 @@ package gregtech.items.behaviors;
 
 import gregapi.block.IBlockFoamable;
 import gregapi.block.metatype.BlockMetaType;
+import gregapi.code.ItemNBT;
 import gregapi.data.CS.*;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -60,7 +61,7 @@ public class Behavior_Spray_Foam_Remover extends AbstractBehaviorDefault {
 		
 		boolean rOutput = F;
 		
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		long tUses = tNBT.getLong("gt.remaining");
 		
@@ -123,7 +124,7 @@ public class Behavior_Spray_Foam_Remover extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.foamremoverspray.tooltip"));
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
 		aList.add(LH.get("gt.behaviour.removerspray.uses") + " " + (tRemaining / 10) + "." + (tRemaining % 10));
 		aList.add(LH.get("gt.behaviour.unstackable"));

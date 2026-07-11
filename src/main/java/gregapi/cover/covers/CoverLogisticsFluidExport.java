@@ -19,6 +19,7 @@
 
 package gregapi.cover.covers;
 
+import gregapi.code.ItemNBT;
 import gregapi.cover.CoverData;
 import gregapi.data.FL;
 import gregapi.data.LH;
@@ -49,7 +50,7 @@ public class CoverLogisticsFluidExport extends AbstractCoverAttachmentLogistics 
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		FluidStack tFluid = FL.load(aStack.getTagCompound(), "gt.filter.fluid");
+		FluidStack tFluid = FL.load(ItemNBT.get(aStack), "gt.filter.fluid");
 		if (tFluid != null && tFluid.getFluid() != null) aList.add(LH.Chat.CYAN + FL.name(tFluid, T));
 		aList.add(LH.Chat.ORANGE + "Not NBT sensitive!");
 		super.addToolTips(aList, aStack, aF3_H);

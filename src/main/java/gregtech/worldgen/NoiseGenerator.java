@@ -19,20 +19,49 @@
 
 package gregtech.worldgen;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
 public class NoiseGenerator {
 	public int mSeed = 42, mOffsetY = 0;
 	private float mFrequencyX = 0.009F, mFrequencyY = 0.075F, mFrequencyZ = 0.009F;
-	
+
 	public NoiseGenerator(long aSeed) {
 		mSeed = (int)aSeed;
 	}
+	/**
+	 * F6: orig `mOffsetY = 512 * aWorld.provider.dimensionId; mSeed = (int)aWorld.getSeed();` —
+	 * {@code WorldProvider}/{@code dimensionId} удалены, dimension identity в neo — {@code ResourceKey<Level>}
+	 * ({@code Level.dimension()}, neo-decompiled Level.java:1030). Нет собственно "числового id" измерения
+	 * вообще (даже для ванильных — Overworld/Nether/End с 1.6+ различаются только ключом реестра), поэтому
+	 * 1:1 воспроизвести формулу можно только для трёх ВАНИЛЬНЫХ измерений, для которых исторический
+	 * 1.7.10-id общеизвестен и стабилен (Overworld=0, Nether=-1, End=1) — сверено по реальным константам
+	 * {@link Level#OVERWORLD}/{@link Level#NETHER}/{@link Level#END} (Level.java:95-97). GT6 использовал это
+	 * значение только как offset для отделения шумовых полей разных измерений друг от друга — инвариант
+	 * "одно измерение -> один и тот же offset" сохранён для vanilla; для модовых измерений 1.7.10 id тоже
+	 * не был стабильной величиной (назначался DimensionManager по порядку регистрации), поэтому 1:1 портировать
+	 * нечего — гатим.
+	 */
 	public NoiseGenerator(Level aWorld) {
-		// PORT-TODO(F6): orig `mOffsetY = 512 * aWorld.provider.dimensionId;` — WorldProvider удалён; у Level нет int dimensionId (dimension()=ResourceKey<Level>)
-		mOffsetY = 512 * 0;
-		// PORT-TODO(F6): orig `mSeed = (int)aWorld.getSeed();` — getSeed() нет у Level (есть у ServerLevel/WorldGenLevel)
-		mSeed = 0;
+		int tDimOffset;
+		if (aWorld.dimension() == Level.OVERWORLD) tDimOffset = 0;
+		else if (aWorld.dimension() == Level.NETHER) tDimOffset = -1;
+		else if (aWorld.dimension() == Level.END) tDimOffset = 1;
+		else {
+			// PORT-TODO(F6, NoiseGenerator dimensionId): модовое/неизвестное измерение — нет числового id в neo
+			// (и в 1.7.10 он не был портируемой величиной для модовых измерений), offset оставлен 0.
+			tDimOffset = 0;
+		}
+		mOffsetY = 512 * tDimOffset;
+		// getSeed() есть у WorldGenLevel (WorldGenLevel.java:8) и ServerLevel (ServerLevel.java:1697), но не у
+		// базового Level; на практике aWorld в местах вызова (WorldgenObject.generate(Level aWorld,...) и
+		// далее) в рантайме — ServerLevel (единственный класс, одновременно являющийся Level и WorldGenLevel).
+		if (aWorld instanceof ServerLevel aServerLevel) {
+			mSeed = (int) aServerLevel.getSeed();
+		} else {
+			// PORT-TODO(F6, NoiseGenerator seed): aWorld не ServerLevel в этой точке вызова — источника seed нет,
+			// mSeed остаётся дефолтным полем (42), как в оригинале до присвоения из мира.
+		}
 	}
 	public NoiseGenerator setFrequency(float aFrequency) {
 		mFrequencyX = aFrequency;

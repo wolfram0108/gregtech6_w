@@ -21,6 +21,7 @@ package gregtech.items;
 
 import gregapi.GT_API;
 import gregapi.code.IItemContainer;
+import gregapi.code.ItemNBT;
 import gregapi.cover.covers.CoverTextureCanvas;
 import gregapi.data.*;
 import gregapi.item.CreativeTab;
@@ -705,16 +706,16 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 	@Override
 	public ItemStack getRotten(ItemStack aStack) {
 		switch(ST.meta_(aStack)) {
-		case 2002: return ST.make(this, aStack.getCount(), 2011, aStack.getTagCompound());
-		case 2102: return ST.make(this, aStack.getCount(), 2111, aStack.getTagCompound());
-		case 2202: return ST.make(this, aStack.getCount(), 2211, aStack.getTagCompound());
-		case 2302: return ST.make(this, aStack.getCount(), 2311, aStack.getTagCompound());
-		case 2402: return ST.make(this, aStack.getCount(), 2411, aStack.getTagCompound());
-		case 2502: return ST.make(this, aStack.getCount(), 2511, aStack.getTagCompound());
-		case 2602: return ST.make(this, aStack.getCount(), 2611, aStack.getTagCompound());
-		case 2702: return ST.make(this, aStack.getCount(), 2711, aStack.getTagCompound());
-		case 2802: return ST.make(this, aStack.getCount(), 2811, aStack.getTagCompound());
-		case 2902: return ST.make(this, aStack.getCount(), 2911, aStack.getTagCompound());
+		case 2002: return ST.make(this, aStack.getCount(), 2011, ItemNBT.get(aStack));
+		case 2102: return ST.make(this, aStack.getCount(), 2111, ItemNBT.get(aStack));
+		case 2202: return ST.make(this, aStack.getCount(), 2211, ItemNBT.get(aStack));
+		case 2302: return ST.make(this, aStack.getCount(), 2311, ItemNBT.get(aStack));
+		case 2402: return ST.make(this, aStack.getCount(), 2411, ItemNBT.get(aStack));
+		case 2502: return ST.make(this, aStack.getCount(), 2511, ItemNBT.get(aStack));
+		case 2602: return ST.make(this, aStack.getCount(), 2611, ItemNBT.get(aStack));
+		case 2702: return ST.make(this, aStack.getCount(), 2711, ItemNBT.get(aStack));
+		case 2802: return ST.make(this, aStack.getCount(), 2811, ItemNBT.get(aStack));
+		case 2902: return ST.make(this, aStack.getCount(), 2911, ItemNBT.get(aStack));
 		}
 		return aStack;
 	}

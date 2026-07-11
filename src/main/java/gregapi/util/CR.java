@@ -539,7 +539,9 @@ public class CR {
 		
 		if (tIndex == 2) {
 			assert tStack1 != null && tStack2 != null;
-			if (tStack1.getItem() == tStack2.getItem() && tStack1.getItem().isRepairable()) {
+			// F11: Item.isRepairable() (1.7.10, no-arg) удалён; neo-эквивалент — isCombineRepairable(ItemStack)
+			// (neo-decompiled/.../item/Item.java:375-377).
+			if (tStack1.getItem() == tStack2.getItem() && tStack1.getItem().isCombineRepairable(tStack1)) {
 				int tNewDamage = ST.meta_(tStack1)+ST.meta_(tStack2)+(tStack1.getMaxDamage()/-20)-tStack1.getMaxDamage();
 				return ST.make(tStack1.getItem(), 1, tNewDamage<0?0:tNewDamage);
 			}

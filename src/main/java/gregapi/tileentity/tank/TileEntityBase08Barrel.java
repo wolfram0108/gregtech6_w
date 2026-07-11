@@ -21,6 +21,7 @@ package gregapi.tileentity.tank;
 
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetMaxStackSize;
+import gregapi.code.ItemNBT;
 import gregapi.data.*;
 import gregapi.data.LH.Chat;
 import gregapi.fluid.FluidTankGT;
@@ -253,7 +254,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		if (!mMagicProof && FL.magic(aFluid)) return 0;
 		if (!mPlasmaProof && FL.plasma(aFluid)) return 0;
 		int tFilled = mTank.fill(aFluid, aDoFill);
-		if (tFilled > 0 && aDoFill) UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		if (tFilled > 0 && aDoFill) UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return tFilled;
 	}
 	
@@ -261,7 +262,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
 		if ((mMode & B[1]) != 0) return null;
 		FluidStack tDrained = mTank.drain(aMaxDrain, aDoDrain);
-		if (tDrained != NF && aDoDrain) UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		if (tDrained != NF && aDoDrain) UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return tDrained;
 	}
 	

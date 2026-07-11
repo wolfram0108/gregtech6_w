@@ -22,10 +22,12 @@ package gregapi.render;
 import static gregapi.data.CS.*;
 
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.RenderBlocks;
 
-/** 
+/**
  * @author Gregorius Techneticies
+ *
+ * PORT-TODO(F3, baked-рендер клиента): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
+ * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
  */
 public class BlockTextureSided implements ITexture {
 	private final IIconContainer[] mIconContainers;
@@ -61,42 +63,42 @@ public class BlockTextureSided implements ITexture {
 	}
 	
 	@Override
-	public void renderXPos(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderXPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		final byte aSide = 5;
 		for (int i = 0, j = mIconContainers[aSide].getIconPasses(); i < j; i++)
 		ITexture.Util.renderZPos(mIconContainers[aSide].getIcon(0), mIconContainers[aSide].isUsingColorModulation(i)?mRGBa:mIconContainers[aSide].getIconColor(i), mAllowAlpha, mUseMaxBrightness, true, aRenderer, aBlock, aX, aY, aZ, mUseMaxBrightness?240:aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderXNeg(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderXNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		final byte aSide = 4;
 		for (int i = 0, j = mIconContainers[aSide].getIconPasses(); i < j; i++)
 		ITexture.Util.renderZPos(mIconContainers[aSide].getIcon(0), mIconContainers[aSide].isUsingColorModulation(i)?mRGBa:mIconContainers[aSide].getIconColor(i), mAllowAlpha, mUseMaxBrightness, true, aRenderer, aBlock, aX, aY, aZ, mUseMaxBrightness?240:aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderYPos(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderYPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		final byte aSide = 1;
 		for (int i = 0, j = mIconContainers[aSide].getIconPasses(); i < j; i++)
 		ITexture.Util.renderZPos(mIconContainers[aSide].getIcon(0), mIconContainers[aSide].isUsingColorModulation(i)?mRGBa:mIconContainers[aSide].getIconColor(i), mAllowAlpha, mUseMaxBrightness, true, aRenderer, aBlock, aX, aY, aZ, mUseMaxBrightness?240:aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderYNeg(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderYNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		final byte aSide = 0;
 		for (int i = 0, j = mIconContainers[aSide].getIconPasses(); i < j; i++)
 		ITexture.Util.renderZPos(mIconContainers[aSide].getIcon(0), mIconContainers[aSide].isUsingColorModulation(i)?mRGBa:mIconContainers[aSide].getIconColor(i), mAllowAlpha, mUseMaxBrightness, true, aRenderer, aBlock, aX, aY, aZ, mUseMaxBrightness?240:aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderZPos(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderZPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		final byte aSide = 3;
 		for (int i = 0, j = mIconContainers[aSide].getIconPasses(); i < j; i++)
 		ITexture.Util.renderZPos(mIconContainers[aSide].getIcon(0), mIconContainers[aSide].isUsingColorModulation(i)?mRGBa:mIconContainers[aSide].getIconColor(i), mAllowAlpha, mUseMaxBrightness, true, aRenderer, aBlock, aX, aY, aZ, mUseMaxBrightness?240:aBrightness, aChangedBlockBounds);
 	}
 	
 	@Override
-	public void renderZNeg(RenderBlocks aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+	public void renderZNeg(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		final byte aSide = 2;
 		for (int i = 0, j = mIconContainers[aSide].getIconPasses(); i < j; i++)
 		ITexture.Util.renderZPos(mIconContainers[aSide].getIcon(0), mIconContainers[aSide].isUsingColorModulation(i)?mRGBa:mIconContainers[aSide].getIconColor(i), mAllowAlpha, mUseMaxBrightness, true, aRenderer, aBlock, aX, aY, aZ, mUseMaxBrightness?240:aBrightness, aChangedBlockBounds);

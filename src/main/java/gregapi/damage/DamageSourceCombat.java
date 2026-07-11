@@ -19,8 +19,12 @@
 
 package gregapi.damage;
 
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 
 import static gregapi.data.CS.F;
 
@@ -40,6 +44,11 @@ public class DamageSourceCombat extends DamageSources.GregTechDamageSource {
 
 	@Override
 	public Component getLocalizedDeathMessage(LivingEntity aTarget) {
-		return mDeathMessage == null ? super.getLocalizedDeathMessage(aTarget) : mDeathMessage;
+		if (mDeathMessage != null) return mDeathMessage;
+		Entity tEntity = getEntity();
+		ItemStack tStack = tEntity instanceof LivingEntity ? ((LivingEntity)tEntity).getMainHandItem() : ItemStack.EMPTY;
+		String tKey = "death.attack." + getMsgId();
+		String tItemKey = tKey + ".item";
+		return !tStack.isEmpty() && tStack.has(DataComponents.CUSTOM_NAME) && Language.getInstance().has(tItemKey) ? Component.translatable(tItemKey, aTarget.getDisplayName(), tEntity.getDisplayName(), tStack.getDisplayName()) : Component.translatable(tKey, aTarget.getDisplayName(), tEntity.getDisplayName());
 	}
 }

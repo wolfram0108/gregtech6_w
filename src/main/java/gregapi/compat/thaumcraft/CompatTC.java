@@ -19,7 +19,7 @@
 
 package gregapi.compat.thaumcraft;
 
-import cpw.mods.fml.common.event.FMLModIdMappingEvent;
+import gregapi.api.FMLModIdMappingEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;

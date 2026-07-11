@@ -99,7 +99,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return F;}
 	@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 1;}
 	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m"); if (aNBT.hasKey("gt.nbt.drop")) mItemNBT = aNBT.getCompoundTag("gt.nbt.drop");}
-	@Override public void writeToNBT(CompoundTag aNBT) {super.writeToNBT(aNBT); aNBT.setShort("m", mMetaData); if (mItemNBT != null && !mItemNBT.hasNoTags()) aNBT.setTag("gt.nbt.drop", mItemNBT);}
+	@Override public void writeToNBT(CompoundTag aNBT) {super.writeToNBT(aNBT); aNBT.setShort("m", mMetaData); if (mItemNBT != null && !mItemNBT.isEmpty()) aNBT.setTag("gt.nbt.drop", mItemNBT);}
 	@Override public void processPacket(INetworkHandler aNetworkHandler) {/**/}
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return null;}
 	@Override public Object getGUIServer(int aGUIID, Player aPlayer) {return null;}

@@ -25,6 +25,7 @@ import java.util.List;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.util.UT;
 import net.minecraft.client.renderer.texture.IIconRegister;
@@ -103,10 +104,10 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 	}
 	
 	private static void setCharge(ItemStack aStack) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		tNBT.setInteger("charge", 1000000000);
-		aStack.setTagCompound(tNBT);
+		ItemNBT.set(aStack, tNBT);
 	}
 	
 	@Override

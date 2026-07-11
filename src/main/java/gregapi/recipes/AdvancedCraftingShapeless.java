@@ -56,21 +56,24 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 	public boolean matches(CraftingInput aGrid, Level aWorld) {
 		if (mKeepingNBT) {
 			ItemStack tStack = null, tMainInput = ((getInput().get(0) instanceof ItemStack) ? (ItemStack)getInput().get(0) : null);
-			for (int i = 0; i < aGrid.getSizeInventory(); i++) {
-				if (aGrid.getStackInSlot(i) != null) {
+			// F11: Forge InventoryCrafting.getSizeInventory()/getStackInSlot(i) удалены; neo-эквивалент —
+			// CraftingInput.size()/getItem(i). Занятость слота — ST.valid(...) (getItem(i) всегда non-null).
+			for (int i = 0; i < aGrid.size(); i++) {
+				ItemStack tSlot = aGrid.getItem(i);
+				if (ST.valid(tSlot)) {
 					if (tMainInput == null) {
 						if (getInput().get(0) instanceof Iterable) for (Object tObject : (Iterable)getInput().get(0)) if (tObject instanceof ItemStack) {
-							if (ST.equal(aGrid.getStackInSlot(i), (ItemStack)tObject, T)) {
-								tMainInput = ST.amount(1, aGrid.getStackInSlot(i));
+							if (ST.equal(tSlot, (ItemStack)tObject, T)) {
+								tMainInput = ST.amount(1, tSlot);
 							}
 						}
 					} else {
-						if (ST.equal_(aGrid.getStackInSlot(i), tMainInput, T)) {
-							if (tStack != null && !ST.equal_(tStack, aGrid.getStackInSlot(i), F)) return F;
-							tStack = aGrid.getStackInSlot(i);
+						if (ST.equal_(tSlot, tMainInput, T)) {
+							if (tStack != null && !ST.equal_(tStack, tSlot, F)) return F;
+							tStack = tSlot;
 						}
 					}
-					
+
 				}
 			}
 		}
@@ -85,34 +88,42 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 			ST.update(rStack);
 			
 			// Keeping NBT
+			// F11: CraftingInput.size()/getItem(i) (getStackInSlot/getSizeInventory удалены); ST.valid(...)
+			// заменяет "!= null" (getItem(i) всегда non-null, пустой слот = ItemStack.EMPTY).
 			if (mKeepingNBT) {
 				ItemStack tMainInput = ((getInput().get(0) instanceof ItemStack) ? (ItemStack)getInput().get(0) : null);
-				for (int i = 0; i < aGrid.getSizeInventory(); i++) {
-					if (aGrid.getStackInSlot(i) != null && aGrid.getStackInSlot(i).hasTagCompound() && (tMainInput == null || ST.equal_(aGrid.getStackInSlot(i), tMainInput, T))) {
-						UT.NBT.set(rStack, (CompoundTag)aGrid.getStackInSlot(i).getTagCompound().copy());
+				for (int i = 0; i < aGrid.size(); i++) {
+					ItemStack tSlot = aGrid.getItem(i);
+					if (ST.valid(tSlot) && tSlot.hasTagCompound() && (tMainInput == null || ST.equal_(tSlot, tMainInput, T))) {
+						UT.NBT.set(rStack, (CompoundTag)tSlot.getTagCompound().copy());
 						break;
 					}
 				}
 			}
-			
+
 			// GT Charge Values
 			if (rStack.getItem() instanceof IItemEnergy) {
 				for (TagData tEnergyType : ((IItemEnergy)rStack.getItem()).getEnergyTypes(rStack)) {
 					long tCharge = 0;
-					for (int i = 0; i < aGrid.getSizeInventory(); i++) if (aGrid.getStackInSlot(i) != null && aGrid.getStackInSlot(i).getItem() instanceof IItemEnergy && !(aGrid.getStackInSlot(i).getItem() instanceof IItemGTContainerTool)) {
-						tCharge += ((IItemEnergy)aGrid.getStackInSlot(i).getItem()).getEnergyStored(tEnergyType, aGrid.getStackInSlot(i));
+					for (int i = 0; i < aGrid.size(); i++) {
+						ItemStack tSlot = aGrid.getItem(i);
+						if (ST.valid(tSlot) && tSlot.getItem() instanceof IItemEnergy && !(tSlot.getItem() instanceof IItemGTContainerTool)) {
+							tCharge += ((IItemEnergy)tSlot.getItem()).getEnergyStored(tEnergyType, tSlot);
+						}
 					}
 					((IItemEnergy)rStack.getItem()).setEnergyStored(tEnergyType, rStack, tCharge);
 				}
 			}
-			
+
 			// Saving Ingredients inside the Item.
 			if (mDismantleable) {
 				CompoundTag rNBT = rStack.getTagCompound(), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				for (int i = 0; i < 9; i++) {
-					ItemStack tStack = aGrid.getStackInSlot(i);
-					if (tStack != null && ST.container(tStack, true) == null && !(tStack.getItem() instanceof MultiItemTool)) {
+				// PORT-TODO(F11, trimmed-сетка): см. AdvancedCraftingShaped — Math.min(9,size()) охраняет
+				// подрезанную neo-сетку (F11-crafting-recipe.md §7), 1:1 для полного 3x3.
+				for (int i = 0, j = Math.min(9, aGrid.size()); i < j; i++) {
+					ItemStack tStack = aGrid.getItem(i);
+					if (ST.valid(tStack) && ST.container(tStack, true) == null && !(tStack.getItem() instanceof MultiItemTool)) {
 						tStack = ST.amount(1, tStack);
 						tNBT.setTag(""+i, ST.save(tStack));
 					}

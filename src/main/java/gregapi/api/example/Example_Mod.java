@@ -19,6 +19,16 @@
 
 package gregapi.api.example;
 
+// PORT-TODO(F12, example-tutorial-mod): та же жила, что gregapi.GT_API/GT_API_Post
+// (decisions/F12-registration-lifecycle.md) — @cpw.mods.fml.common.Mod.EventHandler/@SidedProxy (пакет
+// cpw.mods.fml не существует на neo-classpath) + onModPreInit2/onModInit2/onModPostInit2 сейчас принимают
+// НЕПРАВИЛЬНЫЕ raw neo-типы (FMLCommonSetupEvent/FMLLoadCompleteEvent) вместо контрактных
+// gregapi.api.FMLPreInitializationEvent/FMLInitializationEvent/FMLPostInitializationEvent
+// (Abstract_Mod:110-114) — сигнатуры не совпадают с abstract-контрактом. Это документационный
+// tutorial-класс для сторонних разработчиков (не влияет на функциональность/паритет самого GT6);
+// конверсия — конструктор+aModBus.addListener (как в GT_API/GT_API_Post) + снятие @SidedProxy на
+// FMLEnvironment.getDist()-ветвление (см. gregapi.GT_API:144) — вне зоны данного чекпоинта.
+
 /**
  * @author Your Name Here, also might be worth replacing that automatically generated Copyright notice with your LPGL compatible License/Name instead of mine.
  * 

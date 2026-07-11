@@ -342,11 +342,13 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			ST.give(aPlayer, aBullet);
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, NI);
+			UT.NBT.set(aGun, aNBT); // F8: detached-копия из getOrCreate — коммитим мутацию (см. ItemNBT.java)
 			return aGun;
 		}
 		if (ST.invalid(aBullet) || aBullet.getCount() <= 0) {
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, NI);
+			UT.NBT.set(aGun, aNBT); // F8: detached-копия из getOrCreate — коммитим мутацию (см. ItemNBT.java)
 			return aGun;
 		}
 		shoot(aGun, ST.amount(1, aBullet), aPlayer);
@@ -355,6 +357,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			OreDictItemData tData = OM.anydata(aBullet);
 			aBullet.setCount(aBullet.getCount()-1);
 			ST.save(aNBT, NBT_AMMO, aBullet.getCount() > 0 ? aBullet : NI);
+			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии ДО doDamage, иначе расход патрона потеряется (см. ItemNBT.java)
 			for (OreDictMaterialStack tMat : tData.mByProducts) if (tMat.mAmount >= OP.scrapGt.mAmount && !tMat.mMaterial.containsAny(TD.Properties.EXPLOSIVE, TD.Properties.FLAMMABLE)) ST.give(aPlayer, OP.scrapGt.mat(tMat.mMaterial, tMat.mAmount/OP.scrapGt.mAmount));
 		}
 		((MultiItemTool)aItem).doDamage(aGun, 100, aPlayer, F);
@@ -381,6 +384,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem].getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem]));
+			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
 			aPlayer.inventory.decrStackSize(aPlayer.inventory.currentItem, tConsumed);
 			ST.update(aPlayer);
 			return T;
@@ -393,6 +397,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+ 9].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+ 9]));
+				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
 				aPlayer.inventory.decrStackSize(i+ 9, tConsumed);
 				ST.update(aPlayer);
 				return T;
@@ -400,6 +405,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+18].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+18]));
+				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
 				aPlayer.inventory.decrStackSize(i+18, tConsumed);
 				ST.update(aPlayer);
 				return T;
@@ -407,6 +413,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+27].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+27]));
+				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
 				aPlayer.inventory.decrStackSize(i+27, tConsumed);
 				ST.update(aPlayer);
 				return T;

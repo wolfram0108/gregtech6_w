@@ -660,7 +660,7 @@ public enum IL implements IItemContainer {
 	public ItemStack getWithName(long aAmount, String aDisplayName, Object... aReplacements) {
 		ItemStack rStack = get(1, aReplacements);
 		if (ST.invalid(rStack)) return null;
-		rStack.setStackDisplayName(aDisplayName);
+		ST.name_(rStack, aDisplayName); // F1 стык: было rStack.setStackDisplayName(aDisplayName) — репойнт на центр ST.name_
 		return ST.amount(aAmount, rStack);
 	}
 	
@@ -669,7 +669,7 @@ public enum IL implements IItemContainer {
 		ItemStack rStack = get(1, aReplacements);
 		if (ST.invalid(rStack)) return null;
 		UT.NBT.set(rStack, aNBT);
-		if (aDisplayName != null) rStack.setStackDisplayName(aDisplayName);
+		if (aDisplayName != null) ST.name_(rStack, aDisplayName); // F1 стык: было rStack.setStackDisplayName(aDisplayName) — репойнт на центр ST.name_
 		return ST.amount(aAmount, rStack);
 	}
 	

@@ -71,6 +71,7 @@ import net.minecraft.core.Direction;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import gregapi.fluid.FluidTankInfo;
 import gregapi.oredict.OreDictionary;
 
@@ -1481,7 +1482,7 @@ public class CS {
 				CompoundTag aNBT = UT.NBT.make();
 				try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 				for (int i = 0; i < Integer.MAX_VALUE; i++) {
-					if (!aNBT.hasKey(""+i)) break;
+					if (!aNBT.contains(""+i)) break;
 					ItemStack aStack = ST.load(aNBT, ""+i);
 					if (aStack == null || aStack.getCount() <= 0 || BLACKLIST.contains(aStack, T)) continue;
 					GARBAGE_ITEMS.add(aStack);
@@ -1494,7 +1495,7 @@ public class CS {
 				CompoundTag aNBT = UT.NBT.make();
 				try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 				for (int i = 0; i < Integer.MAX_VALUE; i++) {
-					if (!aNBT.hasKey(""+i)) break;
+					if (!aNBT.contains(""+i)) break;
 					FluidTankGT tTank = new FluidTankGT().setPreventDraining().setVoidExcess();
 					tTank.readFromNBT(aNBT, ""+i);
 					if (!tTank.has()) continue;
@@ -1640,7 +1641,10 @@ public class CS {
 		oreSmall , oreSmallSandstone , oreSmallNetherrack , oreSmallEndstone , oreSmallAtumLimestone , oreSmallAtumSand, oreSmallGravel, oreSmallMud, oreSmallSand, oreSmallRedSand, oreSmallBedrock;
 		
 		public static BlockBaseFluid OilLight, OilMedium, OilHeavy, OilExtraHeavy, GasNatural, WaterGeothermal;
-		public static BlockFluidClassic Ocean, Swamp, River, RiverAdvanced;
+		// PORT-TODO(F5, surface-B water-блоки): оригинал был BlockFluidClassic Ocean/Swamp/River/RiverAdvanced;
+		// BlockFluidClassic удалён в neo, замена — кастомный Block/LiquidBlock с финитной текучестью 1:1
+		// (decisions/F5-fluids.md §5). До реализации surface-B держим только общий Block-тип.
+		public static Block Ocean, Swamp, River, RiverAdvanced;
 		
 		public static BlockBase Sands, Diggables, Grass, Paths, RockOres, CrystalOres, VanillaOresA;
 		

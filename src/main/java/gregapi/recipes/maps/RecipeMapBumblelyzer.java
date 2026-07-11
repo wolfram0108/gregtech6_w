@@ -33,6 +33,7 @@ import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.Collection;
@@ -64,7 +65,9 @@ public class RecipeMapBumblelyzer extends RecipeMap {
 						Object tIndividual = AlleleManager.alleleRegistry.getIndividual(aInput);
 						if (tIndividual == null || !((IIndividual)tIndividual).analyze()) return new Recipe(F, F, F, ST.array(aInput), ST.array(aInput), null, null, null, null, 1, 16, 0);
 						ItemStack rOutput = ST.copy(aInput);
-						((IIndividual)tIndividual).writeToNBT(UT.NBT.getOrCreate(rOutput));
+						CompoundTag tNBT = UT.NBT.getOrCreate(rOutput);
+						((IIndividual)tIndividual).writeToNBT(tNBT);
+						UT.NBT.set(rOutput, tNBT); // F8: getOrCreate — detached-копия, коммитим назад (см. ItemNBT.java)
 						return new Recipe(F, F, F, ST.array(aInput), ST.array(rOutput), null, null, FL.array(FL.amount(aFluids[0], 50)), null, 64, 16, 0);
 					} catch(Throwable e) {e.printStackTrace(ERR);}
 				}

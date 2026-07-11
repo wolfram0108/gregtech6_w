@@ -19,6 +19,7 @@
 
 package gregtech.items.behaviors;
 
+import gregapi.code.ItemNBT;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
@@ -78,26 +79,30 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	}
 	
 	public static int getCurrentIndex(ItemStack aStack) {
-		CompoundTag tNBTTagCompound = aStack.getTagCompound();
+		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
 		return tNBTTagCompound.getInteger("mCurrentIndex");
 	}
 
 	public static int getTickTimer(ItemStack aStack) {
-		CompoundTag tNBTTagCompound = aStack.getTagCompound();
+		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
 		return tNBTTagCompound.getInteger("mTickTimer");
 	}
 
+	// PORT-TODO(F8, остаточный риск): оригинал НИГДЕ не вызывает setTagCompound для этого мутированного
+	// тега (в 1.7.10 это был живой объект стека, мутация сохранялась сама), вызывающий код тоже не
+	// коммитит возврат. Под мостом ItemNBT это становится no-op. См. ItemNBT.java, decisions/F8-nbt-data-components.md §7.
 	public static CompoundTag setCurrentIndex(ItemStack aStack, int aIndex) {
-		CompoundTag tNBTTagCompound = aStack.getTagCompound();
+		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
 		tNBTTagCompound.setInteger("mCurrentIndex", aIndex);
 		return tNBTTagCompound;
 	}
 
+	// PORT-TODO(F8, остаточный риск): см. setCurrentIndex выше — тот же паттерн без commit.
 	public static CompoundTag setTickTimer(ItemStack aStack, int aTime) {
-		CompoundTag tNBTTagCompound = aStack.getTagCompound();
+		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
 		tNBTTagCompound.setInteger("mTickTimer", aTime);
 		return tNBTTagCompound;
@@ -105,7 +110,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	
 	public static ItemStack[] getNBTInventory(ItemStack aStack) {
 		ItemStack[] tInventory = new ItemStack[64];
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return tInventory;
 		
 		ListTag tNBT_ItemList = tNBT.getTagList("Inventory", 10);
@@ -120,7 +125,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	}
 	
 	public static CompoundTag setNBTInventory(ItemStack aStack, ItemStack[] aInventory) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		
 		ListTag tNBT_ItemList = new ListTag();

@@ -42,6 +42,13 @@ import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.WorldInfo;
 
+// PORT-TODO(F6, DummyWorld Level-redesign): весь класс держит 1.7.10-контракт `World`/`WorldProvider`
+// (ctor `(ISaveHandler,String,WorldProvider,WorldSettings,Profiler)`, abstract `setBlock(int,int,int,Block,
+// int,int)`/`getBlockMetadata`/`func_152379_p` и т.п.) — в neo `net.minecraft.world.WorldProvider` удалён
+// целиком (нет ни в одном из 3 корней референса), а `Level` — совсем другой класс/контракт (см. разбор
+// `analysis/adapter-research/F6-world-raw.md` п.31 «главный редизайн»). Это НЕ точечная ambiguous-правка
+// (как в WD.java/util-центре) — целый класс нуждается в отдельном заходе, сведённом к минимальному
+// Level-подклассу по эталону (AE2). Здесь только флаг-разметка, код не тронут.
 public class DummyWorld extends Level {
 	public class GT_IteratorRandom extends Random {
 		private static final long serialVersionUID = 1L;

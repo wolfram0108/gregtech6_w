@@ -23,6 +23,7 @@ import static gregapi.data.CS.*;
 
 import gregapi.block.IBlockPlacable;
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
@@ -52,7 +53,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		super(aWorld, aX, aY, aZ, (Block)aBlock, 0);
 		mBlock = aBlock;
 		mStack = aStack;
-		field_145810_d = aStack.getTagCompound();
+		field_145810_d = ItemNBT.get(aStack);
 	}
 	
 	@Override
@@ -83,7 +84,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 				motionY *= -0.5D;
 				if (level().getBlock(aX, aY, aZ) != Blocks.piston_extension) {
 					setDead();
-					if (!level().canPlaceEntityOnSide(super.func_145805_f(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.func_149831_e(level(), aX, aY - 1, aZ) || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), mStack.getTagCompound(), T, T)) {
+					if (!level().canPlaceEntityOnSide(super.func_145805_f(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.func_149831_e(level(), aX, aY - 1, aZ) || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), ItemNBT.get(mStack), T, T)) {
 						if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
 					}
 				}
@@ -114,7 +115,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		super.readEntityFromNBT(aNBT);
 		mBlock = (IBlockPlacable)super.func_145805_f();
 		mStack = ST.make(super.func_145805_f(), 1, aNBT.getShort("MetaData"));
-		mStack.setTagCompound(field_145810_d);
+		ItemNBT.set(mStack, field_145810_d);
 	}
 	
 	@Override

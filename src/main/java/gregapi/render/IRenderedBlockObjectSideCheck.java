@@ -22,13 +22,15 @@ package gregapi.render;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.RenderBlocks;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * PORT-TODO(F3, baked-рендер клиента): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
+ * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
  */
 public interface IRenderedBlockObjectSideCheck {
 	/** returning false stops all the other Rendering from happening on that Side. */
 	@OnlyIn(Dist.CLIENT)
-	public boolean renderFullBlockSide(Block aBlock, RenderBlocks aRenderer, byte aSide);
+	public boolean renderFullBlockSide(Block aBlock, Object aRenderer, byte aSide);
 }

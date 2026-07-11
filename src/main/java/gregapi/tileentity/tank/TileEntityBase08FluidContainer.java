@@ -23,6 +23,7 @@ import enviromine.handlers.EM_StatusManager;
 import enviromine.trackers.EnviroDataTracker;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityItemInternal;
+import gregapi.code.ItemNBT;
 import gregapi.data.FL;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -187,7 +188,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		if (!isFluidAllowed(aFluid) || aStack.getCount() != 1) return 0;
 		int tFilled = mTank.fill(aFluid, aDoFill);
-		if (tFilled > 0 && aDoFill) UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		if (tFilled > 0 && aDoFill) UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return tFilled;
 	}
 	
@@ -195,7 +196,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
 		if (aStack.getCount() != 1) return NF;
 		FluidStack tDrained = mTank.drain(aMaxDrain, aDoDrain);
-		if (tDrained != NF && aDoDrain) UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		if (tDrained != NF && aDoDrain) UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return tDrained;
 	}
 	
@@ -378,7 +379,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		FoodStatFluid.INSTANCE.onEaten(aStack.getItem(), aStack, aPlayer, F, T);
 		
 		mTank.remove(250);
-		UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return aStack;
 	}
 	

@@ -53,15 +53,18 @@ public class RecipeMapPlantalyzer extends RecipeMap {
 				if (IL.IC2_Crop_Seeds.equal(aInput, T, T)) {
 					ItemStack rOutput = ST.copy(aInput);
 					CompoundTag tNBT = UT.NBT.getOrCreate(rOutput);
-					if (tNBT.getByte("scan") >= 4) return new Recipe(F, F, F, ST.array(aInput), ST.array(aInput), null, null, null, null, 1, 16, 0);
-					tNBT.setByte("scan", (byte)4);
+					if (tNBT.getByteOr("scan", (byte)0) >= 4) return new Recipe(F, F, F, ST.array(aInput), ST.array(aInput), null, null, null, null, 1, 16, 0);
+					tNBT.putByte("scan", (byte)4);
+					UT.NBT.set(rOutput, tNBT); // F8: getOrCreate — detached-копия, коммитим назад (см. ItemNBT.java)
 					return new Recipe(F, F, F, ST.array(aInput), ST.array(rOutput), null, null, null, null, 64, 16, 0);
 				}
 				if (IL.FR_Tree_Sapling.equal(aInput, T, T)) try {
 					Object tIndividual = AlleleManager.alleleRegistry.getIndividual(aInput);
 					if (tIndividual == null || !((IIndividual)tIndividual).analyze()) return new Recipe(F, F, F, ST.array(aInput), ST.array(aInput), null, null, null, null, 1, 16, 0);
 					ItemStack rOutput = ST.copy(aInput);
-					((IIndividual)tIndividual).writeToNBT(UT.NBT.getOrCreate(rOutput));
+					CompoundTag tNBT = UT.NBT.getOrCreate(rOutput);
+					((IIndividual)tIndividual).writeToNBT(tNBT);
+					UT.NBT.set(rOutput, tNBT); // F8: getOrCreate — detached-копия, коммитим назад (см. ItemNBT.java)
 					return new Recipe(F, F, F, ST.array(aInput), ST.array(rOutput), null, null, null, null, 64, 16, 0);
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 			}

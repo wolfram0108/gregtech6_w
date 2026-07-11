@@ -70,7 +70,7 @@ public class PacketBlockEvent extends PacketCoordinates {
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
 		if (aWorld instanceof Level) {
 			BlockPos tPos = new BlockPos(mX, mY, mZ);
-			((Level)aWorld).blockEvent(tPos, getBlock(aWorld, mX, mY, mZ), mID & 255, mData & 255);
+			((Level)aWorld).blockEvent(tPos, getBlock(aWorld, mX, mY, mZ), mID, mData);
 		}
 	}
 }

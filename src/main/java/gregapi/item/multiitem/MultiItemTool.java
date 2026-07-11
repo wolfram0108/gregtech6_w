@@ -22,6 +22,7 @@ package gregapi.item.multiitem;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackSet;
 import gregapi.code.ObjectStack;
 import gregapi.code.TagData;
@@ -350,7 +351,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	
 	public static final OreDictMaterial getPrimaryMaterial(ItemStack aStack) {return getPrimaryMaterial(aStack, MT.NULL);}
 	public static final OreDictMaterial getPrimaryMaterial(ItemStack aStack, OreDictMaterial aDefault) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
 			aNBT = aNBT.getCompoundTag("GT.ToolStats");
 			if (aNBT != null) {
@@ -363,7 +364,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	
 	public static final OreDictMaterial getSecondaryMaterial(ItemStack aStack) {return getSecondaryMaterial(aStack, MT.NULL);}
 	public static final OreDictMaterial getSecondaryMaterial(ItemStack aStack, OreDictMaterial aDefault) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
 			aNBT = aNBT.getCompoundTag("GT.ToolStats");
 			if (aNBT != null) {
@@ -376,7 +377,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	
 	@Override
 	public IItemEnergy getEnergyStats(ItemStack aStack) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
 			aNBT = aNBT.getCompoundTag("GT.ToolStats");
 			if (aNBT != null) {
@@ -393,7 +394,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	}
 	
 	public static final long getToolMaxDamage(ItemStack aStack) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
 			aNBT = aNBT.getCompoundTag("GT.ToolStats");
 			if (aNBT.hasKey("j")) return Math.max(1, aNBT.getLong("j"));
@@ -402,7 +403,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return 1;
 	}
 	public static final long getToolDamage(ItemStack aStack) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
 			aNBT = aNBT.getCompoundTag("GT.ToolStats");
 			if (aNBT.hasKey("k")) return aNBT.getLong("k");
@@ -410,8 +411,12 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		}
 		return 0;
 	}
+	// PORT-TODO(F8, остаточный риск): оригинал мутирует aNBT.getCompoundTag("GT.ToolStats") и НЕ вызывает
+	// setTagCompound повторно — в 1.7.10 это был живой объект тега стека, мутация сохранялась сама.
+	// Под мостом ItemNBT (CustomData копирует тег на каждый get()) эта мутация НЕ долетает до стека:
+	// метод становится no-op. См. ItemNBT.java javadoc и decisions/F8-nbt-data-components.md §7.
 	public static final boolean setToolDamage(ItemStack aStack, long aDamage) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
 			UT.NBT.setNumber(aNBT.getCompoundTag("GT.ToolStats"), "k", aDamage);
 			return T;
@@ -565,8 +570,11 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	@Override
 	public boolean isItemStackUsable(ItemStack aStack) {
 		if (aStack.getCount() <= 0) return F;
-		
-		CompoundTag aNBT = aStack.getTagCompound();
+
+		// PORT-TODO(F8, остаточный риск): ниже aNBT.removeTag("ench")/setTag("ench", ...) мутируют локальный
+		// снимок без повторного commit через ItemNBT.set — в 1.7.10 это был живой тег стека. Под мостом
+		// ItemNBT эти правки в тег стека НЕ попадают (см. ItemNBT.java javadoc, decisions/F8-nbt-data-components.md §7).
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		// The Tool has no Data? Treat it like a single use Creative Tool.
 		if (aNBT == null) return T;
 		

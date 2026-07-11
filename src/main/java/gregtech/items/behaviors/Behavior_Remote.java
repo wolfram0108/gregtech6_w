@@ -20,6 +20,7 @@
 package gregtech.items.behaviors;
 
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.data.CS.SFX;
 import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
@@ -72,11 +73,14 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		return T;
 	}
 	
+	// F8: тег захвачен ОДИН раз в aNBT, getCoords его читает, setCoords его мутирует, коммит единый
+	// ItemNBT.set в конце — иначе правка списка координат из setCoords тихо терялась бы (см. ItemNBT.java).
 	@Override
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (aWorld.isRemote || aPlayer.isSneaking() || !aStack.hasTagCompound()) return aStack;
+		if (aWorld.isRemote || aPlayer.isSneaking() || !ItemNBT.has(aStack)) return aStack;
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		ArrayListNoNulls<BlockPos> tToBeKept = new ArrayListNoNulls<>();
-		for (BlockPos tCoords : getCoords(aStack.getTagCompound(), aWorld.provider.dimensionId)) {
+		for (BlockPos tCoords : getCoords(aNBT, aWorld.provider.dimensionId)) {
 			if (Math.abs(tCoords.getX() - aPlayer.getX()) <= 128 && Math.abs(tCoords.getY() - aPlayer.getY()) <= 128 && Math.abs(tCoords.getZ() - aPlayer.getZ()) <= 128) {
 				BlockEntity tTileEntity = WD.te(aWorld, tCoords, F);
 				if (tTileEntity instanceof ITileEntityRemoteActivateable && ((ITileEntityRemoteActivateable)tTileEntity).remoteActivate()) tToBeKept.add(tCoords);
@@ -84,7 +88,8 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 				tToBeKept.add(tCoords);
 			}
 		}
-		setCoords(aStack.getTagCompound(), aWorld.provider.dimensionId, tToBeKept);
+		setCoords(aNBT, aWorld.provider.dimensionId, tToBeKept);
+		ItemNBT.set(aStack, aNBT);
 		UT.Sounds.send(SFX.MC_CLICK, aPlayer);
 		return aStack;
 	}
@@ -111,7 +116,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		ArrayListNoNulls<BlockPos> rList = new ArrayListNoNulls<>();
 		if (aNBT == null) return rList;
 		CompoundTag tNBT = aNBT.getCompoundTag("gt.remote.dim."+aDimension);
-		if (tNBT.hasNoTags()) return rList;
+		if (tNBT.isEmpty()) return rList;
 		int i = -1; while (tNBT.hasKey("c"+(++i))) {
 			rList.add(new BlockPos(tNBT.getInteger("x"+i), tNBT.getInteger("y"+i), tNBT.getInteger("z"+i)));
 		}

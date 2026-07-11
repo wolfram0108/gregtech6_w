@@ -71,13 +71,13 @@ public class RecipeMapReplicator extends RecipeMap {
 						DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 							tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 3);
-							if (tData != null) if (tData.hasNoTags()) tData = null; else break;
+							if (tData != null) if (tData.isEmpty()) tData = null; else break;
 						}
 					}
 				}
 			}
 		}
-		if (tData == null || tData.hasNoTags()) return rRecipe;
+		if (tData == null || tData.isEmpty()) return rRecipe;
 		if (tUSB != null && tData.hasKey(NBT_REPLICATOR_DATA)) {
 			short tID = tData.getShort(NBT_REPLICATOR_DATA);
 			if (tID > 0 && UT.Code.exists(tID, OreDictMaterial.MATERIAL_ARRAY)) return getReplicatorRecipe(OreDictMaterial.MATERIAL_ARRAY[tID], tUSB);

@@ -35,9 +35,9 @@ import gregapi.oredict.OreDictMaterial;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.world.level.block.Block;
-import gregapi.block.Material;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
@@ -91,18 +91,38 @@ public class WorldgenOresLarge extends WorldgenObject {
 		
 		int tMinY = mMinY + WD.random(aWorld, aOriginChunkX, aOriginChunkZ).nextInt(mMaxY - mMinY - 5);
 		
-		if (mIndicatorRocks && (!(GENERATE_STREETS && aWorld.provider.dimensionId == 0) || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) {
+		// F6: было `aWorld.provider.dimensionId == 0` (буквально ванильный Overworld) — сверено на реальную
+		// константу Level.OVERWORLD (Level.java:95), как и в WorldgenObject.checkForMajorWorldgen.
+		if (mIndicatorRocks && (!(GENERATE_STREETS && aWorld.dimension() == Level.OVERWORLD) || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) {
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 			if (tRegistry != null) {
 				for (int i = 0, j = 1+aRandom.nextInt(3); i < j; i++) {
 					int tX = aMinX + aRandom.nextInt(16), tZ = aMinZ + aRandom.nextInt(16);
 					for (int tY = Math.min(aWorld.getHeight(), tMinY+25); tY >= tMinY-10 && tY > 0; tY--) {
-						Block tContact = aChunk.getBlock(tX&15, tY, tZ&15);
-						if (tContact.getMaterial().isLiquid()) break;
+						// F6: было `Block tContact = aChunk.getBlock(tX&15, tY, tZ&15)` — LevelChunk.getBlock(int,int,int)
+						// удалён; реальный neo — LevelChunk.getBlockState(BlockPos):BlockState (LevelChunk.java:210).
+						BlockState tContact = aChunk.getBlockState(new BlockPos(tX, tY, tZ));
+						// F6: было `tContact.getMaterial().isLiquid()` — Block.getMaterial() удалён (§C5); 1:1-замена
+						// «материал блока — жидкость» это реальный BlockState.liquid() (BlockBehaviour.java:586, поле
+						// `liquid` напрямую наследует старое Material.isLiquid).
+						if (tContact.liquid()) break;
+						// PORT-TODO(F6, block-behavior: isOpaqueCube): было `if (!tContact.isOpaqueCube()) continue;`
+						// (пропуск не-цельных блоков при спуске к поверхности). isOpaqueCube() удалён (§C2 — dead-list);
+						// documented 1:1 нет (isSolidRender/canOcclude/isSolid близки, но не тождественны) — не выдумываю.
+						// PORT-TODO(F6, block-behavior: getMaterial()==grass/ground/sand/rock): было
+						// `if (tContact.getMaterial() != Material.grass && ... != Material.rock) break;` — индикатор
+						// ставится только на травяной/земляной/песчаный/каменный грунт. Block.getMaterial() удалён,
+						// а Material.grass/ground/sand/rock — F9 block-material shim (ещё не сделан; WD.floor/opq/
+						// getMaterial в WD.java тоже не портированы). До готовности F9/F3 индикаторные камни
+						// (косметика над жилой) не ставятся — гейтим `break` (ничего не размещаем), чтобы не
+						// поставить индикатор в неверном месте. Сама генерация ЖИЛЫ (цикл ниже, WD.setOre) не затронута.
+						break;
+						/* PORT-TODO(F6): восстановить при готовности F9(block-material)+F3(block-behavior):
 						if (!tContact.isOpaqueCube()) continue;
 						if (tContact.getMaterial() != Material.grass && tContact.getMaterial() != Material.ground && tContact.getMaterial() != Material.sand && tContact.getMaterial() != Material.rock) break;
 						if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)!=0?ST.save(NBT_VALUE, OP.rockGt.mat(UT.Code.select(mTop, mTop, mBottom, mBetween, mSpread), 1)):UT.NBT.make(), F, T);
 						break;
+						*/
 					}
 				}
 			}

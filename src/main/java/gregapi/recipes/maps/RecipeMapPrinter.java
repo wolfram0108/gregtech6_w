@@ -72,7 +72,7 @@ public class RecipeMapPrinter extends RecipeMap {
 						DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 							tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 1);
-							if (tData != null) if (tData.hasNoTags()) tData = null; else break;
+							if (tData != null) if (tData.isEmpty()) tData = null; else break;
 						}
 					}
 				} else {
@@ -82,7 +82,7 @@ public class RecipeMapPrinter extends RecipeMap {
 				tPaper = aInput;
 			}
 		}
-		if (tData == null || tData.hasNoTags()) return rRecipe;
+		if (tData == null || tData.isEmpty()) return rRecipe;
 		if (tPaper != null && tUSB != null) {
 			if (OM.is_("gt:canvas", tPaper)) {
 				if (tData.hasKey(NBT_CANVAS_BLOCK) && (!tPaper.hasTagCompound() || !tPaper.getTagCompound().hasKey(NBT_CANVAS_BLOCK))) {

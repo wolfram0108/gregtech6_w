@@ -22,6 +22,7 @@ package gregapi.tileentity.energy;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
+import gregapi.code.ItemNBT;
 import gregapi.code.HashSetNoNulls;
 import gregapi.code.TagData;
 import gregapi.data.LH;
@@ -211,7 +212,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	public ItemStack setEnergyStored(TagData aEnergyType, ItemStack aStack, long aAmount) {
 		if ((aEnergyType != mType && aEnergyType != null) || ST.size(aStack) <= 0) return aStack;
 		mEnergy = aAmount;
-		UT.NBT.set(aStack, writeItemNBT(aStack.hasTagCompound() ? aStack.getTagCompound() : UT.NBT.make()));
+		UT.NBT.set(aStack, writeItemNBT(ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make()));
 		return ST.update_(aStack);
 	}
 	

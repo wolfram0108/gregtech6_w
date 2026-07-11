@@ -24,6 +24,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
 import gregapi.block.multitileentity.MultiTileEntityContainer;
+import gregapi.code.ItemNBT;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.config.ConfigCategories;
@@ -190,7 +191,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 	
 	@Override
 	public int onDespawn(ItemEntity aEntity, ItemStack aStack) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null && !aEntity.level().isRemote && aEntity.onGround) {
 			if (aStack.getCount() > 0) for (byte tSide : ALL_SIDES_MIDDLE_DOWN) if (aStack.getCount() > 0) {
 				BlockEntity tTileEntity = WD.te(aEntity.level(), UT.Code.roundDown(aEntity.getX())+OFFX[tSide], UT.Code.roundDown(aEntity.getY())+OFFY[tSide], UT.Code.roundDown(aEntity.getZ())+OFFZ[tSide], T);

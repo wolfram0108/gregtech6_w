@@ -20,6 +20,7 @@
 package gregapi.block.prefixblock;
 
 import gregapi.api.Optional;
+import gregapi.code.ItemNBT;
 import gregapi.data.CS.*;
 import gregapi.data.LH;
 import gregapi.data.MD;
@@ -85,7 +86,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	
 	@Override
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ, int aMeta) {
-		if (mBlock.placeBlock(aWorld, aX, aY, aZ, (byte)aSide, ST.meta_(aStack), aStack.getTagCompound(), T, F)) {
+		if (mBlock.placeBlock(aWorld, aX, aY, aZ, (byte)aSide, ST.meta_(aStack), ItemNBT.get(aStack), T, F)) {
 			if (aWorld.getBlock(aX, aY, aZ) == field_150939_a) {
 				field_150939_a.onBlockPlacedBy(aWorld, aX, aY, aZ, aPlayer, aStack);
 				field_150939_a.onPostBlockPlaced(aWorld, aX, aY, aZ, ST.meta_(aStack));

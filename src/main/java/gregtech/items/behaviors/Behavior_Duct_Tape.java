@@ -21,6 +21,7 @@ package gregtech.items.behaviors;
 
 import gregapi.block.IBlockToolable;
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.data.CS.*;
 import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
@@ -56,7 +57,7 @@ public class Behavior_Duct_Tape extends AbstractBehaviorDefault {
 		
 		boolean rOutput = F;
 		
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		long tUses = tNBT.getLong("gt.remaining");
 		
@@ -107,7 +108,7 @@ public class Behavior_Duct_Tape extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.ducttape.tooltip"));
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
 		aList.add(LH.get("gt.behaviour.ducttape.uses") + " " + UT.Code.makeString(tRemaining));
 		aList.add(LH.get("gt.behaviour.unstackable"));

@@ -29,6 +29,7 @@ import codechicken.nei.guihook.IContainerTooltipHandler;
 import codechicken.nei.recipe.*;
 import net.neoforged.fml.InterModComms;
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
 import gregapi.data.*;
 import gregapi.gui.ContainerClient;
@@ -126,7 +127,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 						for(ItemStack stack : permutations) tDisplayStacks.add(ST.amount(tStack.getCount(), stack));
 					} else {
 						ItemStack base = ST.make(tStack.getItem(), tStack.getCount(), 0);
-						base.stackTagCompound = tStack.stackTagCompound;
+						ItemNBT.set(base, ItemNBT.get(tStack));
 						tDisplayStacks.add(base);
 					}
 				} else {

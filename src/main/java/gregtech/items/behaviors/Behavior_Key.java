@@ -23,6 +23,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior;
@@ -68,7 +69,7 @@ public class Behavior_Key extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.key"));
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT != null && tNBT.hasKey(NBT_KEY)) aList.add("Key ID: " + UT.Code.makeString(tNBT.getLong(NBT_KEY))); else aList.add("*BLANK*");
 		return aList;
 	}

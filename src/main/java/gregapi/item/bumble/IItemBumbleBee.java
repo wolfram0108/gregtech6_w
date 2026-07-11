@@ -95,21 +95,27 @@ public interface IItemBumbleBee {
 	
 	public static class Util {
 		public static CompoundTag getBumbleTag(ItemStack aBumbleBee) {
+			// F8: getOrCreate возвращает detached-копию (иммутабельный CustomData); мутацию setTag
+			// нужно закоммитить явным UT.NBT.set, иначе "gt.bumble" не долетит до стека (см. ItemNBT.java).
 			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee), rBumbleTag = aNBT.getCompoundTag("gt.bumble");
-			if (rBumbleTag == null || rBumbleTag.hasNoTags()) rBumbleTag = getBumbleGenes(RNGSUS);
+			if (rBumbleTag == null || rBumbleTag.isEmpty()) rBumbleTag = getBumbleGenes(RNGSUS);
 			aNBT.setTag("gt.bumble", rBumbleTag);
+			UT.NBT.set(aBumbleBee, aNBT);
 			return rBumbleTag;
 		}
-		
+
 		public static ItemStack setBumbleTag(ItemStack aBumbleBee, CompoundTag aBumbleTag) {
-			UT.NBT.getOrCreate(aBumbleBee).setTag("gt.bumble", aBumbleTag);
+			// F8: захват detached-тега, мутация, явный commit — иначе setTag потеряется (см. ItemNBT.java).
+			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee);
+			aNBT.setTag("gt.bumble", aBumbleTag);
+			UT.NBT.set(aBumbleBee, aNBT);
 			return aBumbleBee;
 		}
 		
 		public static CompoundTag getBumbleGenes(ItemStack aBumblePrincess, ItemStack aBumbleDrone, Random aRandom) {
 			CompoundTag rBumbleTag = UT.NBT.make(), tBumbleTagA = getBumbleTag(aBumblePrincess), tBumbleTagB = getBumbleTag(aBumbleDrone);
-			if (tBumbleTagA == null || tBumbleTagA.hasNoTags()) tBumbleTagA = getBumbleGenes(aRandom);
-			if (tBumbleTagB == null || tBumbleTagB.hasNoTags()) tBumbleTagB = getBumbleGenes(aRandom);
+			if (tBumbleTagA == null || tBumbleTagA.isEmpty()) tBumbleTagA = getBumbleGenes(aRandom);
+			if (tBumbleTagB == null || tBumbleTagB.isEmpty()) tBumbleTagB = getBumbleGenes(aRandom);
 			setHumidityMin      (rBumbleTag, getHumidityMin     (aRandom.nextBoolean()?tBumbleTagA:tBumbleTagB));
 			setHumidityMax      (rBumbleTag, getHumidityMax     (aRandom.nextBoolean()?tBumbleTagA:tBumbleTagB));
 			setOffspring        (rBumbleTag, getOffspring       (aRandom.nextBoolean()?tBumbleTagA:tBumbleTagB));

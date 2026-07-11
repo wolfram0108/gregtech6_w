@@ -31,20 +31,18 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
 import gregapi.GT_API;
+import gregapi.code.ItemNBT;
 import gregapi.network.INetworkHandler;
 import gregapi.network.IPacket;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.BlockGetter;
 
 /**
@@ -67,10 +65,10 @@ public class PacketItemStackChat implements IPacket {
 	@Override
 	public ByteArrayDataOutput encode() {
 		ByteArrayDataOutput aData = ByteStreams.newDataOutput();
-		aData.writeShort(ST.id_(mStack.getItem()));
+		aData.writeShort(ST.id(mStack));
 		aData.writeByte(mStack.getCount());
 		aData.writeShort(ST.meta_(mStack));
-		CompoundTag tNBT = getCustomData(mStack);
+		CompoundTag tNBT = ItemNBT.get(mStack); // F8 стык: было локальное aStack.get(CUSTOM_DATA)+copyTag — репойнт на центр ItemNBT.get
 		if (tNBT == null) aData.writeShort(-1); else {
 			try {
 				ByteArrayOutputStream tBuffer = new ByteArrayOutputStream();
@@ -85,7 +83,7 @@ public class PacketItemStackChat implements IPacket {
 
 	@Override
 	public IPacket decode(ByteArrayDataInput aData) {
-		return new PacketItemStackChat(setCustomData(ST.make(aData.readShort(), aData.readByte(), aData.readShort()), readNBTTagCompoundFromBuffer(aData)));
+		return new PacketItemStackChat(ST.make(aData.readShort(), aData.readByte(), aData.readShort(), readNBTTagCompoundFromBuffer(aData)));
 	}
 
 	public CompoundTag readNBTTagCompoundFromBuffer(ByteArrayDataInput aData) {
@@ -97,28 +95,16 @@ public class PacketItemStackChat implements IPacket {
 		return null;
 	}
 
-	private static CompoundTag getCustomData(ItemStack aStack) {
-		CustomData tData = aStack.get(DataComponents.CUSTOM_DATA);
-		return tData == null || tData.isEmpty() ? null : tData.copyTag();
-	}
-
-	private static ItemStack setCustomData(ItemStack aStack, CompoundTag aNBT) {
-		if (aStack != null && aNBT != null) aStack.set(DataComponents.CUSTOM_DATA, CustomData.of(aNBT));
-		return aStack;
-	}
-
 	@Override
 	@SuppressWarnings("unchecked")
 	public void process(BlockGetter aWorld, INetworkHandler aNetworkHandler) {
-		if (mStack == null) return;
-		Player tPlayer = GT_API.api_proxy.getThePlayer();
 		DISPLAY_TEMP_TOOLTIP = F;
-		List<Component> tList = mStack.getTooltipLines(Item.TooltipContext.of(tPlayer == null ? null : tPlayer.level(), tPlayer), tPlayer, TooltipFlag.NORMAL);
+		List<Component> tList = mStack.getTooltipLines(Item.TooltipContext.of(null, GT_API.api_proxy.getThePlayer()), GT_API.api_proxy.getThePlayer(), TooltipFlag.NORMAL);
 		DISPLAY_TEMP_TOOLTIP = T;
 		if (tList != null && !tList.isEmpty()) {
-			UT.Entities.chat(tPlayer, tList, F);
+			UT.Entities.chat(GT_API.api_proxy.getThePlayer(), tList, F);
 		} else {
-			UT.Entities.chat(tPlayer, mStack.getHoverName());
+			UT.Entities.chat(GT_API.api_proxy.getThePlayer(), mStack.getHoverName());
 		}
 	}
 }

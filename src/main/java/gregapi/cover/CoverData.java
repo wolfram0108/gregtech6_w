@@ -19,6 +19,7 @@
 
 package gregapi.cover;
 
+import gregapi.code.ItemNBT;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.ST;
 import gregapi.util.UT;
@@ -47,7 +48,7 @@ public class CoverData {
 	
 	public CoverData(short[] aIDs, short[] aMetas, short[] aVisuals, short[] aValues, CompoundTag[] aNBTs, boolean aStopped, ITileEntityCoverable aTileEntity) {
 		mVisuals = aVisuals; mValues = aValues; mNBTs = aNBTs;
-		for (int i = 0; i < mNBTs.length;i++) if (mNBTs[i] != null && mNBTs[i].hasNoTags()) mNBTs[i] = null;
+		for (int i = 0; i < mNBTs.length;i++) if (mNBTs[i] != null && mNBTs[i].isEmpty()) mNBTs[i] = null;
 		setIDs(aIDs, aMetas);
 		mStopped = aStopped;
 		mTileEntity = aTileEntity;
@@ -71,42 +72,42 @@ public class CoverData {
 			aNBT.setShort("a", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.setShort("g", mMetas[i]);
 			if (mValues[i] != 0) aNBT.setShort("0", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].hasNoTags()) aNBT.setTag("s", mNBTs[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("s", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("m", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
 			aNBT.setShort("b", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.setShort("h", mMetas[i]);
 			if (mValues[i] != 0) aNBT.setShort("1", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].hasNoTags()) aNBT.setTag("t", mNBTs[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("t", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("n", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
 			aNBT.setShort("c", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.setShort("i", mMetas[i]);
 			if (mValues[i] != 0) aNBT.setShort("2", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].hasNoTags()) aNBT.setTag("u", mNBTs[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("u", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("o", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
 			aNBT.setShort("d", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.setShort("j", mMetas[i]);
 			if (mValues[i] != 0) aNBT.setShort("3", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].hasNoTags()) aNBT.setTag("v", mNBTs[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("v", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("p", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
 			aNBT.setShort("e", mIDs[i]);
 			if (mMetas[i] != 0) aNBT.setShort("k", mMetas[i]);
 			if (mValues[i] != 0) aNBT.setShort("4", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].hasNoTags()) aNBT.setTag("w", mNBTs[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("w", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("q", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
 			aNBT.setShort("f", mIDs[i]); 
 			if (mMetas[i] != 0) aNBT.setShort("l", mMetas[i]);
 			if (mValues[i] != 0) aNBT.setShort("5", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].hasNoTags()) aNBT.setTag("x", mNBTs[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("x", mNBTs[i]);
 			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("r", mVisuals[i]);
 		}
 		if (mStopped) aNBT.setBoolean("y", mStopped);
@@ -120,13 +121,13 @@ public class CoverData {
 	}
 	
 	public CoverData set(byte aSide, ItemStack aStack) {
-		return aStack == null ? set(aSide, (short)0, (short)0, null) : set(aSide, ST.id(aStack), ST.meta_(aStack), aStack.getTagCompound());
+		return aStack == null ? set(aSide, (short)0, (short)0, null) : set(aSide, ST.id(aStack), ST.meta_(aStack), ItemNBT.get(aStack));
 	}
 	
 	public CoverData set(byte aSide, short aID, short aMeta, CompoundTag aNBT) {
 		mIDs[aSide] = aID; mMetas[aSide] = aMeta;
 		if (aID == 0) mBehaviours[aSide] = null; else mBehaviours[aSide] = CoverRegistry.get(aID, aMeta);
-		mNBTs[aSide] = (CompoundTag)(aNBT==null||aNBT.hasNoTags()?null:aNBT.copy());
+		mNBTs[aSide] = (CompoundTag)(aNBT==null||aNBT.isEmpty()?null:aNBT.copy());
 		return this;
 	}
 	
@@ -167,7 +168,7 @@ public class CoverData {
 	}
 	
 	public ItemStack getCoverItem(byte aSide) {
-		return mIDs[aSide] == 0 ? null : mBehaviours[aSide] == null ? ST.make(mIDs[aSide], 1, mMetas[aSide], mNBTs[aSide]==null||mNBTs[aSide].hasNoTags()?null:mNBTs[aSide]) : mBehaviours[aSide].getCoverItem(aSide, this);
+		return mIDs[aSide] == 0 ? null : mBehaviours[aSide] == null ? ST.make(mIDs[aSide], 1, mMetas[aSide], mNBTs[aSide]==null||mNBTs[aSide].isEmpty()?null:mNBTs[aSide]) : mBehaviours[aSide].getCoverItem(aSide, this);
 	}
 	
 	public DelegatorTileEntity<ITileEntityCoverable> delegator(byte aSide) {

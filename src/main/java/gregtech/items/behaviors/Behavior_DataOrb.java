@@ -21,6 +21,7 @@ package gregtech.items.behaviors;
 
 import java.util.List;
 
+import gregapi.code.ItemNBT;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
@@ -49,19 +50,19 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	}
 	
 	public static String getDataName(ItemStack aStack) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return "";
 		return tNBT.getString("mDataName");
 	}
 	
 	public static String getDataTitle(ItemStack aStack) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return "";
 		return tNBT.getString("mDataTitle");
 	}
 	
 	public static CompoundTag setDataName(ItemStack aStack, String aDataName) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		tNBT.setString("mDataName", aDataName);
 		UT.NBT.set(aStack, tNBT);
@@ -69,7 +70,7 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	}
 	
 	public static CompoundTag setDataTitle(ItemStack aStack, String aDataTitle) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		tNBT.setString("mDataTitle", aDataTitle);
 		UT.NBT.set(aStack, tNBT);
@@ -78,7 +79,7 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	
 	public static ItemStack[] getNBTInventory(ItemStack aStack) {
 		ItemStack[] tInventory = new ItemStack[256];
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) return tInventory;
 		
 		ListTag tNBT_ItemList = tNBT.getTagList("Inventory", 10);
@@ -93,7 +94,7 @@ public class Behavior_DataOrb extends AbstractBehaviorDefault {
 	}
 	
 	public static CompoundTag setNBTInventory(ItemStack aStack, ItemStack[] aInventory) {
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		
 		ListTag tNBT_ItemList = new ListTag();

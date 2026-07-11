@@ -22,17 +22,20 @@ package gregapi.render;
 import gregapi.GT_API;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.MD;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.util.IIcon;
 import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
 import static gregapi.data.CS.*;
 
-/** 
+/**
  * @author Gregorius Techneticies
+ *
+ * PORT-TODO(F3, baked-рендер клиента): {@code IIconRegister} (атлас-стежка 1.7.10) удалён в 26.1.2.
+ * {@link #registerIcons(Object)} больше не стежёт атлас — строит {@link Identifier} прямо из
+ * {@code mMod:materialicons/mName} (тот же путь, что раньше шёл в registerIcon(String)), форвард-
+ * совместимо с будущим {@code Material(Identifier)} (decisions/F3-render.md §2.3).
  */
 public class TextureSet {
 	public static final List<TextureSet> INSTANCES_ITEM = new ArrayListNoNulls<>();
@@ -40,15 +43,15 @@ public class TextureSet {
 	public static final List<String> FILENAMES_ITEM = new ArrayListNoNulls<>();
 	public static final List<String> FILENAMES_BLOCK = new ArrayListNoNulls<>();
 	public final List<IIconContainer> mList = new ArrayListNoNulls<>();
-	
+
 	private final boolean mIsItem;
 	private final String mNameSet;
-	
+
 	private TextureSet(boolean aIsItem, String aNameSet) {
 		mIsItem = aIsItem;
 		mNameSet = aNameSet;
 	}
-	
+
 	/**
 	 * Adds a new Texture Set, unless another Set with the same Name already exists.
 	 * @param aModID the Mod responsible for adding the Icons (which are located in either assets\aModID.toLowerCase()\textures\items\materialicons\ or assets\aModID.toLowerCase()\textures\blocks\materialicons\).
@@ -63,7 +66,7 @@ public class TextureSet {
 		for (int i = 0, j = tFileNameList.size(); i < j; i++) rSet.mList.add(aIsItem?new TextureSetIconItem(aModID, aNameSet+"/"+tFileNameList.get(i)):new TextureSetIconBlock(aModID, aNameSet+"/"+tFileNameList.get(i)));
 		return rSet;
 	}
-	
+
 	/**
 	 * Adds a new Icon Name to all Texture Sets, or just returns the Index of an already existing Set with the same File Name.
 	 * @param aModID the Mod responsible for adding the Icons (which are located in either assets\aModID.toLowerCase()\textures\items\materialicons\ or assets\aModID.toLowerCase()\textures\blocks\materialicons\).
@@ -78,111 +81,113 @@ public class TextureSet {
 		for (TextureSet tSet : (aIsItem?INSTANCES_ITEM:INSTANCES_BLOCK)) tSet.mList.add(tSet.mIsItem?new TextureSetIconItem(aModID, tSet.mNameSet+"/"+aNameFile):new TextureSetIconBlock(aModID, tSet.mNameSet+"/"+aNameFile));
 		return tFileNameList.size() - 1;
 	}
-	
+
 	public static class TextureSetIconItem implements IIconContainer, Runnable {
 		private final String mMod, mName;
-		private IIcon mIconColored, mIconOverlay;
-		
+		private Identifier mIconColored, mIconOverlay;
+
 		public TextureSetIconItem(String aMod, String aName) {
 			mName = aName;
 			mMod = aMod.toLowerCase();
 			if (GT_API.sItemIconload != null) GT_API.sItemIconload.add(this);
 		}
-		
+
 		@Override
-		public IIcon getIcon(int aRenderPass) {
+		public Identifier getIcon(int aRenderPass) {
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
-		
+
 		@Override
 		public short[] getIconColor(int aRenderPass) {
 			return UNCOLOURED;
 		}
-		
+
 		@Override
 		public int getIconPasses() {
 			return 2;
 		}
-		
+
 		@Override
 		public Identifier getTextureFile() {
-			return TextureAtlas.locationItemsTexture;
+			return TextureAtlas.LOCATION_ITEMS;
 		}
-		
+
 		@Override
-		public void registerIcons(IIconRegister aIconRegister) {
-			mIconColored = aIconRegister.registerIcon(mMod+":materialicons/"+mName);
-			mIconOverlay = aIconRegister.registerIcon(mMod+":materialicons/"+mName+"_OVERLAY");
+		public void registerIcons(Object aIconRegister) {
+			// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+			mIconColored = Identifier.parse(mMod+":materialicons/"+mName);
+			mIconOverlay = Identifier.parse(mMod+":materialicons/"+mName+"_OVERLAY");
 		}
-		
+
 		@Override
 		public String toString() {
 			return mMod+":materialicons/"+mName;
 		}
-		
+
 		@Override
 		public boolean isUsingColorModulation(int aRenderPass) {
 			return aRenderPass == 0;
 		}
-		
+
 		@Override
 		public void run() {
 			registerIcons(GT_API.sItemIcons);
 		}
 	}
-	
+
 	public static class TextureSetIconBlock implements IIconContainer, Runnable {
 		private final String mMod, mName;
-		private IIcon mIconColored, mIconOverlay;
-		
+		private Identifier mIconColored, mIconOverlay;
+
 		public TextureSetIconBlock(String aMod, String aName) {
 			mName = aName;
 			mMod = aMod;
 			if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);
 		}
-		
+
 		@Override
-		public IIcon getIcon(int aRenderPass) {
+		public Identifier getIcon(int aRenderPass) {
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
-		
+
 		@Override
 		public short[] getIconColor(int aRenderPass) {
 			return UNCOLOURED;
 		}
-		
+
 		@Override
 		public int getIconPasses() {
 			return 2;
 		}
-		
+
 		@Override
 		public Identifier getTextureFile() {
-			return TextureAtlas.locationBlocksTexture;
+			return TextureAtlas.LOCATION_BLOCKS;
 		}
-		
+
 		@Override
-		public void registerIcons(IIconRegister aIconRegister) {
-			mIconColored = aIconRegister.registerIcon(mMod+":materialicons/"+mName);
-			mIconOverlay = aIconRegister.registerIcon(mMod+":materialicons/"+mName+"_OVERLAY");
+		public void registerIcons(Object aIconRegister) {
+			// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+			mIconColored = Identifier.parse(mMod+":materialicons/"+mName);
+			mIconOverlay = Identifier.parse(mMod+":materialicons/"+mName+"_OVERLAY");
 		}
-		
+
 		@Override
 		public String toString() {
 			return mMod+":materialicons/"+mName;
 		}
-		
+
 		@Override
 		public boolean isUsingColorModulation(int aRenderPass) {
 			return aRenderPass == 0;
 		}
-		
+
 		@Override
 		public void run() {
 			registerIcons(GT_API.sBlockIcons);
 		}
 	}
-	
+
 	/** Arrays with all Sets, which belong to each other. Shortens the Parameter amount inside MT.java */
 	public static final TextureSet[]
 	  SET_NONE                      = new TextureSet[] {addTextureSet(MD.GT.mID, F, "NONE")          , addTextureSet(MD.GT.mID, T, "NONE")          }

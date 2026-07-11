@@ -20,13 +20,22 @@
 package gregapi;
 
 import appeng.api.AEApi;
-import cpw.mods.fml.common.LoadController;
-import net.neoforged.fml.ModList;
-import cpw.mods.fml.common.Mod;
-import net.neoforged.fml.ModContainer;
-import cpw.mods.fml.common.event.*;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
+import gregapi.api.FMLInitializationEvent;
+import gregapi.api.FMLPostInitializationEvent;
+import gregapi.api.FMLPreInitializationEvent;
 import gregapi.data.*;
 import gregapi.load.*;
 import gregapi.old.Textures;
@@ -42,12 +51,8 @@ import gregapi.util.UT;
 import gregapi.wooddict.*;
 import gregapi.worldgen.StoneLayer;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.Item;
 import twilightforest.TFTreasure;
 import twilightforest.TFTreasureTable;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static gregapi.data.CS.*;
 
@@ -55,47 +60,88 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  *
  * This loads after compatible Mods. The regular API loads before all compatible Mods.
+ *
+ * F12 (жизненный цикл, decisions/F12-registration-lifecycle.md): второй из трёх родных FML-модов
+ * Грегориуса (GAPI_POST) переносится как отдельный neo-{@code @Mod}, на своём месте, симметрично
+ * {@code gregapi.GT_API}. Оригинальная FML-строка {@code dependencies="required-after:"+GAPI+"; after:"+…}
+ * несла структурный порядок (GAPI_POST грузится после GAPI — обязателен для 3-модовой связки GT6) и
+ * ~200 мягких order-хинтов для внешних совместимых модов (compat-mirror, зона F10). Внешние
+ * order-хинты не перенесены — F10, когда те моды появятся в дереве как neo-цели (тот же приём, что в
+ * {@code gregapi.GT_API}).
+ * PORT-TODO(F12-depends, при подключении compat-mirror-модов возможно потребуется добавить их сюда как
+ * мягкие order-хинты).
+ *
+ * УЛИКА R7 (исправлено): {@code depends()} ждёт СЫРОЙ {@code String[]} modId, без парсера префиксов
+ * старого FML (fml-decompiled {@code net/neoforged/fml/common/Mod.java:16},
+ * {@code FMLJavaModLanguageProvider.java:33,67-70} — строка вида {@code "required-after:"+modId} не
+ * находится в загруженном списке модов и приводит к тому, что весь entrypoint-класс отфильтровывается
+ * из загрузки). Передан чистый {@code ModIDs.GAPI}.
+ *
+ * УЛИКА R8 (доработка): {@code depends()} — только REQUIRED-гейт наличия modId (fml-decompiled
+ * {@code FMLJavaModLanguageProvider.java:33}), порядок он НЕ задаёт. Реальный порядок (GAPI_POST
+ * строго после GAPI) задаёт {@code ModSorter} (fml-decompiled
+ * {@code net/neoforged/fml/loading/ModSorter.java:194-208}) из графа
+ * {@code [[dependencies.gregapi_post]]} с {@code ordering="AFTER"} в
+ * {@code src/main/templates/META-INF/neoforge.mods.toml} (симметрично {@code [[dependencies.gregapi]]}
+ * с {@code ordering="BEFORE"} там же) — не из Java-аннотации.
+ *
+ * Снят FML-1.7.10-хак перестановки {@code activeModList} через reflection ({@code LoadController}/
+ * {@code ModContainer}, был в {@code onModPreInit2} ниже) — его функцию (гарантия, что GAPI_POST
+ * инициализируется последним среди совместимых модов) теперь даёт {@code ordering}-граф в
+ * {@code neoforge.mods.toml}, читаемый {@code ModSorter}.
  */
-@Mod(modid=ModIDs.GAPI_POST, name="Greg-API-Post", version="GT6-MC1710", dependencies="required-after:"+ModIDs.GAPI+"; after:"+ModIDs.MD8+"; after:"+ModIDs.IC2+"; after:"+ModIDs.IC2C+"; after:"+ModIDs.NC+"; after:"+ModIDs.IHL+"; after:"+ModIDs.FUNK+"; after:"+ModIDs.BAUBLES+"; after:"+ModIDs.HEE+"; after:"+ModIDs.GaSu+"; after:"+ModIDs.GaNe+"; after:"+ModIDs.GaEn+"; after:"+ModIDs.WdSt+"; after:"+ModIDs.CrGu+"; after:"+ModIDs.COFH_API+"; after:"+ModIDs.COFH_API_ENERGY+"; after:"+ModIDs.COFH_CORE+"; after:"+ModIDs.CC+"; after:"+ModIDs.OC+"; after:"+ModIDs.HEX+"; after:"+ModIDs.DE+"; after:"+ModIDs.AV+"; after:"+ModIDs.FR+"; after:"+ModIDs.FRMB+"; after:"+ModIDs.BINNIE+"; after:"+ModIDs.BINNIE_BEE+"; after:"+ModIDs.BINNIE_TREE+"; after:"+ModIDs.BINNIE_GENETICS+"; after:"+ModIDs.BINNIE_BOTANY+"; after:"+ModIDs.IE+"; after:"+ModIDs.UB+"; after:"+ModIDs.COG+"; after:"+ModIDs.PFAA+"; after:"+ModIDs.MIN+"; after:"+ModIDs.RH+"; after:"+ModIDs.CANDY+"; after:"+ModIDs.ABYSSAL+"; after:"+ModIDs.SOULFOREST+"; after:"+ModIDs.ARS+"; after:"+ModIDs.TC+"; after:"+ModIDs.TCTE+"; after:"+ModIDs.TCFM+"; after:"+ModIDs.BOTA+"; after:"+ModIDs.ALF+"; after:"+ModIDs.WTCH+"; after:"+ModIDs.HOWL+"; after:"+ModIDs.MoCr+"; after:"+ModIDs.WiMo+"; after:"+ModIDs.Birb+"; after:"+ModIDs.ChocoCraft+"; after:"+ModIDs.GoG+"; after:"+ModIDs.DRPG+"; after:"+ModIDs.LycM+"; after:"+ModIDs.LycM_Arctic+"; after:"+ModIDs.LycM_Demon+"; after:"+ModIDs.LycM_Desert+"; after:"+ModIDs.LycM_Forest+"; after:"+ModIDs.LycM_Fresh+"; after:"+ModIDs.LycM_Inferno+"; after:"+ModIDs.LycM_Jungle+"; after:"+ModIDs.LycM_Mountain+"; after:"+ModIDs.LycM_Plains+"; after:"+ModIDs.LycM_Salt+"; after:"+ModIDs.LycM_Shadow+"; after:"+ModIDs.LycM_Swamp+"; after:"+ModIDs.RC+"; after:"+ModIDs.BP+"; after:"+ModIDs.PR+"; after:"+ModIDs.PR_EXPANSION+"; after:"+ModIDs.PR_INTEGRATION+"; after:"+ModIDs.PR_TRANSMISSION+"; after:"+ModIDs.PR_TRANSPORT+"; after:"+ModIDs.PR_EXPLORATION+"; after:"+ModIDs.PR_COMPATIBILITY+"; after:"+ModIDs.PR_FABRICATION+"; after:"+ModIDs.PR_ILLUMINATION+"; after:"+ModIDs.PE+"; after:"+ModIDs.AE+"; after:"+ModIDs.MO+"; after:"+ModIDs.TE_FOUNDATION+"; after:"+ModIDs.TE_DYNAMICS+"; after:"+ModIDs.TE_DRILLS+"; after:"+ModIDs.TE+"; after:"+ModIDs.ZTONES+"; after:"+ModIDs.CHSL+"; after:"+ModIDs.NePl+"; after:"+ModIDs.NeLi+"; after:"+ModIDs.EnLi+"; after:"+ModIDs.EtFu+"; after:"+ModIDs.BB+"; after:"+ModIDs.DYNAMIC_TREES+"; after:"+ModIDs.BbLC+"; after:"+ModIDs.CARP+"; after:"+ModIDs.BETTER_RECORDS+"; after:"+ModIDs.TF+"; after:"+ModIDs.ERE+"; after:"+ModIDs.MFR+"; after:"+ModIDs.FSP+"; after:"+ModIDs.SC2+"; after:"+ModIDs.PnC+"; after:"+ModIDs.ExU+"; after:"+ModIDs.ExS+"; after:"+ModIDs.EIO+"; after:"+ModIDs.RT+"; after:"+ModIDs.AA+"; after:"+ModIDs.TreeCap+"; after:"+ModIDs.HaC+"; after:"+ModIDs.CookBook+"; after:"+ModIDs.APC+"; after:"+ModIDs.ENVM+"; after:"+ModIDs.MaCr+"; after:"+ModIDs.BC_TRANSPORT+"; after:"+ModIDs.BC_SILICON+"; after:"+ModIDs.BC_FACTORY+"; after:"+ModIDs.BC_ENERGY+"; after:"+ModIDs.BC_ROBOTICS+"; after:"+ModIDs.BC+"; after:"+ModIDs.BC_BUILDERS+"; after:"+ModIDs.MgC+"; after:"+ModIDs.BR+"; after:"+ModIDs.HBM+"; after:"+ModIDs.ELN+"; after:"+ModIDs.DRGN+"; after:"+ModIDs.ElC+"; after:"+ModIDs.CrC+"; after:"+ModIDs.ReC+"; after:"+ModIDs.RoC+"; after:"+ModIDs.Mek+"; after:"+ModIDs.Mek_Tools+"; after:"+ModIDs.Mek_Generators+"; after:"+ModIDs.GC+"; after:"+ModIDs.GC_PLANETS+"; after:"+ModIDs.GC_GALAXYSPACE+"; after:"+ModIDs.VULPES+"; after:"+ModIDs.GC_ADV_ROCKETRY+"; after:"+ModIDs.GC_EXTRAPLANETS+"; after:"+ModIDs.BTL+"; after:"+ModIDs.AETHER+"; after:"+ModIDs.AETHEL+"; after:"+ModIDs.TROPIC+"; after:"+ModIDs.ATUM+"; after:"+ModIDs.EB+"; after:"+ModIDs.EBXL+"; after:"+ModIDs.BoP+"; after:"+ModIDs.HiL+"; after:"+ModIDs.ATG+"; after:"+ModIDs.RTG+"; after:"+ModIDs.RWG+"; after:"+ModIDs.CW2+"; after:"+ModIDs.A97+"; after:"+ModIDs.A97_MINING+"; after:"+ModIDs.MYST+"; after:"+ModIDs.WARPBOOK+"; after:"+ModIDs.LOSTBOOKS+"; after:"+ModIDs.LOOTBAGS+"; after:"+ModIDs.EUREKA+"; after:"+ModIDs.ENCHIRIDION+"; after:"+ModIDs.ENCHIRIDION2+"; after:"+ModIDs.SmAc+"; after:"+ModIDs.HQM+"; after:"+ModIDs.SD+"; after:"+ModIDs.BTRS+"; after:"+ModIDs.JABBA+"; after:"+ModIDs.MaCu+"; after:"+ModIDs.PdC+"; after:"+ModIDs.Bamboo+"; after:"+ModIDs.PMP+"; after:"+ModIDs.Fossil+"; after:"+ModIDs.GrC+"; after:"+ModIDs.GrC_Apples+"; after:"+ModIDs.GrC_Bamboo+"; after:"+ModIDs.GrC_Bees+"; after:"+ModIDs.GrC_Cellar+"; after:"+ModIDs.GrC_Fish+"; after:"+ModIDs.GrC_Grapes+"; after:"+ModIDs.GrC_Hops+"; after:"+ModIDs.GrC_Milk+"; after:"+ModIDs.GrC_Rice+"; after:"+ModIDs.BG2+"; after:"+ModIDs.BWM+"; after:"+ModIDs.OMT+"; after:"+ModIDs.TG+"; after:"+ModIDs.FM+"; after:"+ModIDs.FZ+"; after:"+ModIDs.MNTL+"; after:"+ModIDs.OB+"; after:"+ModIDs.PA+"; after:"+ModIDs.TiC+"; after:"+ModIDs.MF2+"; after:"+ModIDs.TRANSLOCATOR+"; after:"+ModIDs.WR_CBE_C+"; after:"+ModIDs.WR_CBE_A+"; after:"+ModIDs.WR_CBE_L+"; after:"+ModIDs.VOLTZ+"; after:"+ModIDs.MFFS+"; after:"+ModIDs.ICBM+"; after:"+ModIDs.ATSCI+"; after:inventorytweaks; after:ironbackpacks; after:journeymap; after:LogisticsPipes; after:LunatriusCore; after:NEIAddons; after:NEIAddons|Developer; after:NEIAddons|AppEng; after:NEIAddons|Botany; after:NEIAddons|Forestry; after:NEIAddons|CraftingTables; after:NEIAddons|ExNihilo; after:neiintegration; after:openglasses; after:simplyjetpacks; after:Stackie; after:StevesCarts; after:TiCTooltips; after:worldedit; after:McMultipart")
+@Mod(value = ModIDs.GAPI_POST, depends = {ModIDs.GAPI})
 public class GT_API_Post extends Abstract_Mod {
-	public GT_API_Post() {GAPI_POST = this;}
-	
+	@SuppressWarnings("unused")
+	public GT_API_Post(IEventBus aModBus) {
+		GAPI_POST = this;
+
+		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую, тем же
+		// приёмом, что в gregapi.GT_API (decisions/F12-registration-lifecycle.md §4).
+		aModBus.addListener(this::onPreLoad);
+		aModBus.addListener(this::onLoad);
+		aModBus.addListener(this::onPostLoad);
+
+		// Серверные фазы — на игровой шине, не на мод-шине (как в gregapi.GT_API).
+		NeoForge.EVENT_BUS.addListener(this::onServerStarting);
+		NeoForge.EVENT_BUS.addListener(this::onServerStarted);
+		NeoForge.EVENT_BUS.addListener(this::onServerStopping);
+		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
+	}
+
 	@Override public String getModID() {return MD.GAPI_POST.mID;}
 	@Override public String getModName() {return MD.GAPI_POST.mName;}
 	@Override public String getModNameForLog() {return "GT_API_POST";}
 	@Override public Abstract_Proxy getProxy() {return null;}
-	
-	@Mod.EventHandler public final void onPreLoad           (FMLPreInitializationEvent  aEvent) {onModPreInit(aEvent);}
-	@Mod.EventHandler public final void onLoad              (FMLInitializationEvent     aEvent) {onModInit(aEvent);}
-	@Mod.EventHandler public final void onPostLoad          (FMLPostInitializationEvent aEvent) {onModPostInit(aEvent);}
-	@Mod.EventHandler public final void onServerStarting    (FMLServerStartingEvent     aEvent) {onModServerStarting(aEvent);}
-	@Mod.EventHandler public final void onServerStarted     (FMLServerStartedEvent      aEvent) {onModServerStarted(aEvent);}
-	@Mod.EventHandler public final void onServerStopping    (FMLServerStoppingEvent     aEvent) {onModServerStopping(aEvent);}
-	@Mod.EventHandler public final void onServerStopped     (FMLServerStoppedEvent      aEvent) {onModServerStopped(aEvent);}
-	
+
+	// PreInit. Замена {@code @Mod.EventHandler onPreLoad(FMLPreInitializationEvent)}: подписан в
+	// конструкторе на FMLConstructModEvent (мод-шина). Тот же приём, что gregapi.GT_API#onPreLoad.
+	public void onPreLoad(FMLConstructModEvent aModEvent) {onModPreInit(new FMLPreInitializationEvent(FMLPaths.CONFIGDIR.get().toFile()));}
+	// Init. Замена {@code @Mod.EventHandler onLoad(FMLInitializationEvent)}: подписан на FMLCommonSetupEvent.
+	public void onLoad(FMLCommonSetupEvent aModEvent) {onModInit(new FMLInitializationEvent());}
+	// PostInit. Замена {@code @Mod.EventHandler onPostLoad(FMLPostInitializationEvent)}: подписан на
+	// FMLLoadCompleteEvent. Здесь же (через Abstract_Mod.onModPostInit, когда финализированы все GT-API-моды)
+	// срабатывает CR.stopBuffering() — стык с F11 (gregapi/api/Abstract_Mod.java:288), точка вызова не тронута.
+	public void onPostLoad(FMLLoadCompleteEvent aModEvent) {onModPostInit(new FMLPostInitializationEvent());}
+
+	// Серверные фазы — подписаны в конструкторе на NeoForge.EVENT_BUS (игровая шина), не на мод-шину.
+	public void onServerStarting  (ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
+	public void onServerStarted   (ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
+	public void onServerStopping  (ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
+	public void onServerStopped   (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
+
 	@Override
 	public void onModPreInit2(FMLPreInitializationEvent aEvent) {
-		try {
-			LoadController tLoadController = ((LoadController)UT.Reflection.getFieldContent(ModList.instance(), "modController", T, T));
-			List<ModContainer> tModList = tLoadController.getActiveModList(), tNewModsList = new ArrayList<>(tModList.size());
-			ModContainer tGregTech = null;
-			for (short i = 0; i < tModList.size(); i++) {
-				ModContainer tMod = tModList.get(i);
-				if (tMod.getModId().equalsIgnoreCase(MD.GAPI_POST.mID)) tGregTech = tMod; else tNewModsList.add(tMod);
-			}
-			if (tGregTech != null) tNewModsList.add(tGregTech);
-			UT.Reflection.setFieldContent(tLoadController, "activeModList", tNewModsList);
-		} catch(Throwable e) {
-			e.printStackTrace(ERR);
-		}
-		
 		// Fixing Items of certain Mods.
-		for (Item tItem : new Item[] {
-		  ST.item(MD.GrC_Grapes, "grc.grapes")
-		, ST.item(MD.FR, "letters")
-		, ST.item(MD.FZ, "acid")
-		}) if (tItem != null) tItem.setMaxDamage(0).setHasSubtypes(T);
-		
+		// PORT-TODO(F12, item-maxdamage-subtypes-runtime-mutator): Item.setMaxDamage(int)/
+		// setHasSubtypes(boolean) (1.7.10 runtime-мутаторы на уже созданном чужом Item) удалены из
+		// движка — neo не имеет пост-хок сеттеров maxDamage/hasSubtypes на Item; они задаются
+		// НЕИЗМЕНЯЕМО через Item.Properties (durability(...)) ТОЛЬКО в момент регистрации самого Item
+		// (тот же класс проблемы, что gregapi/GT_API.java:298 item-container-runtime-mutator). Целевые
+		// Item'ы (MD.GrC_Grapes "grc.grapes", MD.FR "letters", MD.FZ "acid") принадлежат чужим
+		// compat-модам (F10) — их регистрация вне зоны GT6, ретроактивная мутация недостижима из
+		// мод-кода. Не найдено ни в одном из 3 корней референса — деградация до no-op.
+
 		OM.blacklist(ST.make(MD.GrC_Bees, "grcbees.BeesWax", 1, 1));
 		OM.blacklist(ST.make(MD.GrC_Bees, "grcbees.BeesWax", 1, 2));
 		OM.blacklist(ST.make(MD.TC, "ItemResource", 1, 6));

@@ -19,11 +19,11 @@
 
 package gregapi.item;
 
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
+import gregapi.code.ItemNBT;
 import gregapi.config.ConfigCategories;
 import gregapi.data.FL;
 import gregapi.data.LH;
@@ -66,7 +66,8 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		super();
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
-		DeferredRegister.registerItem(this, mName, MD.GAPI.mID);
+		// F12/R3: регистрация через ЕДИНЫЙ центр (был выдуманный DeferredRegister.registerItem).
+		GT_API.registerItem(this, mName, MD.GAPI.mID);
 		if (ConfigsGT.CLIENT.get(ConfigCategories.visibility, "HiddenGTFluidDisplay", F)) ST.hide(this);
 		ItemsGT.DEBUG_ITEMS.add(this);
 		ItemsGT.ILLEGAL_DROPS.add(this);
@@ -82,7 +83,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	@Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		Fluid aFluid = FL.fluid(ST.meta_(aStack));
 		if (aFluid == null) {
 			aList.add(LH.Chat.BLINKING_RED + "CLIENTSIDE FLUID IS NULL!!!");
@@ -306,7 +307,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	
 	@Override
 	public void updateItemStack(ItemStack aStack) {
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null && aNBT.hasKey("f")) {
 			String aName = aNBT.getString("f");
 			if (UT.Code.stringInvalid(aName)) return;
@@ -317,7 +318,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 			return;
 		}
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
-		if (tFluid == null) ST.meta_(aStack, W); else {aStack.setTagCompound(UT.NBT.makeString("f", tFluid.getName()));}
+		if (tFluid == null) ST.meta_(aStack, W); else {ItemNBT.set(aStack, UT.NBT.makeString("f", tFluid.getName()));}
 	}
 	@Override
 	public void updateItemStack(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {
@@ -329,7 +330,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
 		if (tFluid == null) return null;
 		FluidStack rFluid = null;
-		CompoundTag aNBT = aStack.getTagCompound();
+		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
 			long tAmount = aNBT.getLong("a");
 			if (tAmount > 0) rFluid = FL.make(tFluid, tAmount);

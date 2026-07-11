@@ -22,6 +22,7 @@ package gregapi.block.multitileentity;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.HashSetNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackMap;
 import gregapi.data.LH;
@@ -227,7 +228,7 @@ public class MultiTileEntityRegistry {
 	public ItemStack getItem(int aID, long aAmount, CompoundTag aNBT) {
 		ItemStack rStack = ST.make(mBlock, (int)aAmount, aID);
 		if (aNBT == null) aNBT = UT.NBT.make();
-		if (aNBT.hasNoTags()) {
+		if (aNBT.isEmpty()) {
 			MultiTileEntityContainer tTileEntityContainer = getNewTileEntityContainer(aID, aNBT);
 			if (tTileEntityContainer != null) ((IMultiTileEntity)tTileEntityContainer.mTileEntity).writeItemNBT(aNBT);
 		}
@@ -243,11 +244,11 @@ public class MultiTileEntityRegistry {
 	public BlockEntity getNewTileEntity(int aID)                                                 {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(null  ,  0,  0,  0, aID, null); return tContainer == null ? null : tContainer.mTileEntity;}
 	public BlockEntity getNewTileEntity(Level aWorld, int aX, int aY, int aZ, int aID)           {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(aWorld, aX, aY, aZ, aID, null); return tContainer == null ? null : tContainer.mTileEntity;}
 	
-	public BlockEntity getNewTileEntity(ItemStack aStack)                                        {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(null  ,  0,  0,  0, ST.meta_(aStack), aStack.getTagCompound()); return tContainer == null ? null : tContainer.mTileEntity;}
-	public BlockEntity getNewTileEntity(Level aWorld, int aX, int aY, int aZ, ItemStack aStack)  {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(aWorld, aX, aY, aZ, ST.meta_(aStack), aStack.getTagCompound()); return tContainer == null ? null : tContainer.mTileEntity;}
+	public BlockEntity getNewTileEntity(ItemStack aStack)                                        {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(null  ,  0,  0,  0, ST.meta_(aStack), ItemNBT.get(aStack)); return tContainer == null ? null : tContainer.mTileEntity;}
+	public BlockEntity getNewTileEntity(Level aWorld, int aX, int aY, int aZ, ItemStack aStack)  {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(aWorld, aX, aY, aZ, ST.meta_(aStack), ItemNBT.get(aStack)); return tContainer == null ? null : tContainer.mTileEntity;}
 	
-	public MultiTileEntityContainer getNewTileEntityContainer(ItemStack aStack)                                                 {return getNewTileEntityContainer(null  ,  0,  0,  0, ST.meta_(aStack), aStack.getTagCompound());}
-	public MultiTileEntityContainer getNewTileEntityContainer(Level aWorld, int aX, int aY, int aZ, ItemStack aStack)           {return getNewTileEntityContainer(aWorld, aX, aY, aZ, ST.meta_(aStack), aStack.getTagCompound());}
+	public MultiTileEntityContainer getNewTileEntityContainer(ItemStack aStack)                                                 {return getNewTileEntityContainer(null  ,  0,  0,  0, ST.meta_(aStack), ItemNBT.get(aStack));}
+	public MultiTileEntityContainer getNewTileEntityContainer(Level aWorld, int aX, int aY, int aZ, ItemStack aStack)           {return getNewTileEntityContainer(aWorld, aX, aY, aZ, ST.meta_(aStack), ItemNBT.get(aStack));}
 	
 	public MultiTileEntityContainer getNewTileEntityContainer(int aID, CompoundTag aNBT) {return getNewTileEntityContainer(null, 0, 0, 0, aID, aNBT);}
 	public MultiTileEntityContainer getNewTileEntityContainer(Level aWorld, int aX, int aY, int aZ, int aID, CompoundTag aNBT) {
@@ -259,7 +260,7 @@ public class MultiTileEntityRegistry {
 		rContainer.mTileEntity.xCoord = aX;
 		rContainer.mTileEntity.yCoord = aY;
 		rContainer.mTileEntity.zCoord = aZ;
-		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.hasNoTags() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)Block.getIdFromBlock(mBlock));
+		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)Block.getIdFromBlock(mBlock));
 		return rContainer;
 	}
 	

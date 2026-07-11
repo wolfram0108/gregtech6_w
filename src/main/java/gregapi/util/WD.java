@@ -52,7 +52,10 @@ import gregtech.blocks.fluids.BlockWaterlike;
 import micdoodle8.mods.galacticraft.api.block.IPartialSealableBlock;
 import micdoodle8.mods.galacticraft.api.world.IGalacticraftWorldProvider;
 import micdoodle8.mods.galacticraft.core.util.OxygenUtil;
-import net.minecraft.block.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -72,7 +75,6 @@ import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.util.*;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.WorldProvider;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -80,7 +82,6 @@ import net.minecraftforge.common.DimensionManager;
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraftforge.fluids.*;
 import thaumcraft.api.nodes.INode;
-import twilightforest.TwilightForestMod;
 
 import java.util.*;
 
@@ -163,94 +164,61 @@ public class WD {
 		return aWorld.func_147447_a(vec3, vec3.addVector(tX * tW * tReach, tY * tReach, tZ * tW * tReach), aFlag, !aFlag, F);
 	}
 	
-	public static boolean dimOverworldLike(Level aWorld) {return aWorld != null && dimOverworldLike(aWorld.provider);}
-	public static boolean dimOverworldLike(WorldProvider aProvider) {return aProvider.dimensionId == 0 || dimOverworldLike(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimOverworldLike(WorldProvider aProvider, String aProviderClassName) {return aProvider.dimensionId == 0 || dimENVM(aProvider, aProviderClassName) || dimA97(aProvider, aProviderClassName) || dimWTCH(aProvider, aProviderClassName) || dimMYST(aProvider, aProviderClassName) || dimCW2(aProvider, aProviderClassName);}
-	
-	public static boolean dimPlanet(Level aWorld) {return aWorld != null && dimPlanet(aWorld.provider);}
-	public static boolean dimPlanet(WorldProvider aProvider) {return Math.abs(aProvider.dimensionId) > 1 && dimPlanet(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimPlanet(WorldProvider aProvider, String aProviderClassName) {return !(Math.abs(aProvider.dimensionId) <= 1 || dimMYST(aProvider, aProviderClassName) || dimATUM(aProvider, aProviderClassName) || dimWTCH(aProvider, aProviderClassName) || dimA97(aProvider, aProviderClassName) || dimCW2(aProvider, aProviderClassName) || dimTF(aProvider, aProviderClassName) || dimERE(aProvider, aProviderClassName) || dimBTL(aProvider, aProviderClassName) || dimENVM(aProvider, aProviderClassName) || dimDD(aProvider, aProviderClassName) || dimLM(aProvider, aProviderClassName) || dimAETHER(aProvider, aProviderClassName) || dimALF(aProvider, aProviderClassName) || dimTROPIC(aProvider, aProviderClassName) || dimCANDY(aProvider, aProviderClassName));}
-	
-	public static boolean dimMYST(Level aWorld) {return aWorld != null && dimMYST(aWorld.provider);}
-	public static boolean dimMYST(WorldProvider aProvider) {return MD.MYST.mLoaded && aProvider.getClass().getName().toLowerCase().contains("com.xcompwiz.mystcraft");}
-	public static boolean dimMYST(WorldProvider aProvider, String aProviderClassName) {return MD.MYST.mLoaded && aProvider.getClass().getName().toLowerCase().contains("com.xcompwiz.mystcraft");}
-	
-	public static boolean dimCANDY(Level aWorld) {return aWorld != null && dimCANDY(aWorld.provider);}
-	public static boolean dimCANDY(WorldProvider aProvider) {return MD.CANDY.mLoaded && dimCANDY(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimCANDY(WorldProvider aProvider, String aProviderClassName) {return MD.CANDY.mLoaded && "WorldProviderCandy".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aProvider));}
-	
-	public static boolean dimTROPIC(Level aWorld) {return aWorld != null && dimTROPIC(aWorld.provider);}
-	public static boolean dimTROPIC(WorldProvider aProvider) {return MD.TROPIC.mLoaded && dimTROPIC(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimTROPIC(WorldProvider aProvider, String aProviderClassName) {return MD.TROPIC.mLoaded && "WorldProviderTropicraft".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimATUM(Level aWorld) {return aWorld != null && dimATUM(aWorld.provider);}
-	public static boolean dimATUM(WorldProvider aProvider) {return MD.ATUM.mLoaded && dimATUM(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimATUM(WorldProvider aProvider, String aProviderClassName) {return MD.ATUM.mLoaded && "AtumWorldProvider".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimTF(Level aWorld) {return aWorld != null && dimTF(aWorld.provider);}
-	public static boolean dimTF(WorldProvider aProvider) {return MD.TF.mLoaded && aProvider.dimensionId == TwilightForestMod.dimensionID;}
-	public static boolean dimTF(WorldProvider aProvider, String aProviderClassName) {return MD.TF.mLoaded && aProvider.dimensionId == TwilightForestMod.dimensionID;}
-	
-	public static boolean dimBTL(Level aWorld) {return aWorld != null && dimBTL(aWorld.provider);}
-	public static boolean dimBTL(WorldProvider aProvider) {return MD.BTL.mLoaded && dimBTL(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimBTL(WorldProvider aProvider, String aProviderClassName) {return MD.BTL.mLoaded && "WorldProviderBetweenlands".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimERE(Level aWorld) {return aWorld != null && dimERE(aWorld.provider);}
-	public static boolean dimERE(WorldProvider aProvider) {return MD.ERE.mLoaded && dimERE(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimERE(WorldProvider aProvider, String aProviderClassName) {return MD.ERE.mLoaded && "WorldProviderErebus".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimALF(Level aWorld) {return aWorld != null && dimALF(aWorld.provider);}
-	public static boolean dimALF(WorldProvider aProvider) {return MD.ALF.mLoaded && dimALF(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimALF(WorldProvider aProvider, String aProviderClassName) {return MD.ALF.mLoaded && "WorldProviderAlfheim".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimDD(Level aWorld) {return aWorld != null && dimDD(aWorld.provider);}
-	public static boolean dimDD(WorldProvider aProvider) {return (MD.ExU.mLoaded || MD.ExS.mLoaded) && dimDD(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimDD(WorldProvider aProvider, String aProviderClassName) {return (MD.ExU.mLoaded || MD.ExS.mLoaded) && "WorldProviderUnderdark".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimLM(Level aWorld) {return aWorld != null && dimLM(aWorld.provider);}
-	public static boolean dimLM(WorldProvider aProvider) {return (MD.ExU.mLoaded || MD.ExS.mLoaded) && dimLM(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimLM(WorldProvider aProvider, String aProviderClassName) {return (MD.ExU.mLoaded || MD.ExS.mLoaded) && "WorldProviderEndOfTime".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimENVM(Level aWorld) {return aWorld != null && dimENVM(aWorld.provider);}
-	public static boolean dimENVM(WorldProvider aProvider) {return MD.ENVM.mLoaded && dimENVM(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimENVM(WorldProvider aProvider, String aProviderClassName) {return MD.ENVM.mLoaded && "WorldProviderCaves".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimA97(Level aWorld) {return aWorld != null && dimA97(aWorld.provider);}
-	public static boolean dimA97(WorldProvider aProvider) {return MD.A97_MINING.mLoaded && dimA97(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimA97(WorldProvider aProvider, String aProviderClassName) {return MD.A97_MINING.mLoaded && "WorldProviderMiner".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimCW2(Level aWorld) {return aWorld != null && dimCW2(aWorld.provider);}
-	public static boolean dimCW2(WorldProvider aProvider) {return MD.CW2.mLoaded && dimCW2(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimCW2(WorldProvider aProvider, String aProviderClassName) {return dimCW2AquaCavern(aProvider, aProviderClassName) || dimCW2Caveland(aProvider, aProviderClassName) || dimCW2Cavenia(aProvider, aProviderClassName) || dimCW2Cavern(aProvider, aProviderClassName) || dimCW2Caveworld(aProvider, aProviderClassName);}
-	
-	public static boolean dimCW2AquaCavern(Level aWorld) {return aWorld != null && dimCW2AquaCavern(aWorld.provider);}
-	public static boolean dimCW2AquaCavern(WorldProvider aProvider) {return MD.CW2.mLoaded && dimCW2AquaCavern(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimCW2AquaCavern(WorldProvider aProvider, String aProviderClassName) {return MD.CW2.mLoaded && "WorldProviderAquaCavern".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimCW2Caveland(Level aWorld) {return aWorld != null && dimCW2Caveland(aWorld.provider);}
-	public static boolean dimCW2Caveland(WorldProvider aProvider) {return MD.CW2.mLoaded && dimCW2Caveland(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimCW2Caveland(WorldProvider aProvider, String aProviderClassName) {return MD.CW2.mLoaded && "WorldProviderCaveland".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimCW2Cavenia(Level aWorld) {return aWorld != null && dimCW2Cavenia(aWorld.provider);}
-	public static boolean dimCW2Cavenia(WorldProvider aProvider) {return MD.CW2.mLoaded && dimCW2Cavenia(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimCW2Cavenia(WorldProvider aProvider, String aProviderClassName) {return MD.CW2.mLoaded && "WorldProviderCavenia".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimCW2Cavern(Level aWorld) {return aWorld != null && dimCW2Cavern(aWorld.provider);}
-	public static boolean dimCW2Cavern(WorldProvider aProvider) {return MD.CW2.mLoaded && dimCW2Cavern(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimCW2Cavern(WorldProvider aProvider, String aProviderClassName) {return MD.CW2.mLoaded && "WorldProviderCavern".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimCW2Caveworld(Level aWorld) {return aWorld != null && dimCW2Caveworld(aWorld.provider);}
-	public static boolean dimCW2Caveworld(WorldProvider aProvider) {return MD.CW2.mLoaded && dimCW2Caveworld(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimCW2Caveworld(WorldProvider aProvider, String aProviderClassName) {return MD.CW2.mLoaded && "WorldProviderCaveworld".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimWTCH(Level aWorld) {return aWorld != null && dimWTCH(aWorld.provider);}
-	public static boolean dimWTCH(WorldProvider aProvider) {return MD.WTCH.mLoaded && dimWTCH(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimWTCH(WorldProvider aProvider, String aProviderClassName) {return MD.WTCH.mLoaded && "WorldProviderDreamWorld".equalsIgnoreCase(aProviderClassName);}
-	
-	public static boolean dimAETHER(Level aWorld) {return aWorld != null && dimAETHER(aWorld.provider);}
-	public static boolean dimAETHER(WorldProvider aProvider) {return (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && dimAETHER(aProvider, UT.Reflection.getLowercaseClass(aProvider));}
-	public static boolean dimAETHER(WorldProvider aProvider, String aProviderClassName) {return MD.AETHEL.mLoaded ? "AetherWorldProvider".equalsIgnoreCase(aProviderClassName) : MD.AETHER.mLoaded && "WorldProviderAether".equalsIgnoreCase(aProviderClassName);}
-	
+	// F6: было `WorldProvider aProvider`-перегрузки (числовой `dimensionId`, `UT.Reflection.getLowercaseClass`
+	// по имени java-класса провайдера стороннего мода) ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками, вызывавшими их
+	// через `aWorld.provider` — `net.minecraft.world.WorldProvider` в neo удалён целиком (нет ни в одном из 3
+	// корней референса), из-за чего компилятор не мог выбрать между двумя `dimXXX(...)`-перегрузками с одним
+	// именем (ambiguous). `WorldProvider`-перегрузки убраны, остался один вход — `dimXXX(Level)`.
+	// Собственная (не мод-зависимая) идентификация ванильных измерений переведена дословно на neo-эквиваленты
+	// (`Level.dimension()`==`Level.OVERWORLD/NETHER/END`, см. `decisions/README.md` «Dimension-identity»).
+	// Идентификация измерений СТОРОННИХ модов шла через reflection по имени java-класса `WorldProvider`-подкласса
+	// этого мода (`"WorldProviderCaves".equalsIgnoreCase(...)` и т.п.) либо (dimTF) через числовой
+	// `TwilightForestMod.dimensionID` — ни один из 3 корней референса не содержит neo-эквивалента для этих
+	// древних 1.7.10-модов (не портированы), поэтому это честно `PORT-TODO`, а не выдумка: пока стоит `F`.
+	public static boolean dimOverworldLike(Level aWorld) {return aWorld != null && (aWorld.dimension() == Level.OVERWORLD || dimENVM(aWorld) || dimA97(aWorld) || dimWTCH(aWorld) || dimMYST(aWorld) || dimCW2(aWorld));}
+
+	public static boolean dimPlanet(Level aWorld) {return aWorld != null && aWorld.dimension() != Level.OVERWORLD && aWorld.dimension() != Level.NETHER && aWorld.dimension() != Level.END && !(dimMYST(aWorld) || dimATUM(aWorld) || dimWTCH(aWorld) || dimA97(aWorld) || dimCW2(aWorld) || dimTF(aWorld) || dimERE(aWorld) || dimBTL(aWorld) || dimENVM(aWorld) || dimDD(aWorld) || dimLM(aWorld) || dimAETHER(aWorld) || dimALF(aWorld) || dimTROPIC(aWorld) || dimCANDY(aWorld));}
+
+	public static boolean dimMYST(Level aWorld) {return aWorld != null && MD.MYST.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimMYST — Mystcraft-провайдер определялся по имени java-класса ("com.xcompwiz.mystcraft"), WorldProvider удалён, аналога нет ни в одном из 3 корней референса */}
+
+	public static boolean dimCANDY(Level aWorld) {return aWorld != null && MD.CANDY.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCANDY — CandyCraft-провайдер по имени класса "WorldProviderCandy" */}
+
+	public static boolean dimTROPIC(Level aWorld) {return aWorld != null && MD.TROPIC.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimTROPIC — Tropicraft-провайдер по имени класса "WorldProviderTropicraft" */}
+
+	public static boolean dimATUM(Level aWorld) {return aWorld != null && MD.ATUM.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimATUM — Atum-провайдер по имени класса "AtumWorldProvider" */}
+
+	public static boolean dimTF(Level aWorld) {return aWorld != null && MD.TF.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimTF — сравнение с числовым TwilightForestMod.dimensionID, WorldProvider.dimensionId удалён вместе с числовой identity измерений */}
+
+	public static boolean dimBTL(Level aWorld) {return aWorld != null && MD.BTL.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimBTL — Betweenlands-провайдер по имени класса "WorldProviderBetweenlands" */}
+
+	public static boolean dimERE(Level aWorld) {return aWorld != null && MD.ERE.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimERE — Erebus-провайдер по имени класса "WorldProviderErebus" */}
+
+	public static boolean dimALF(Level aWorld) {return aWorld != null && MD.ALF.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimALF — Alfheim-провайдер по имени класса "WorldProviderAlfheim" */}
+
+	public static boolean dimDD(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimDD — Underdark-провайдер по имени класса "WorldProviderUnderdark" */}
+
+	public static boolean dimLM(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimLM — EndOfTime-провайдер по имени класса "WorldProviderEndOfTime" */}
+
+	public static boolean dimENVM(Level aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimENVM — Enviromine Caves-провайдер по имени класса "WorldProviderCaves" */}
+
+	public static boolean dimA97(Level aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimA97 — Aroma1997 Mining-провайдер по имени класса "WorldProviderMiner" */}
+
+	public static boolean dimCW2(Level aWorld) {return aWorld != null && (dimCW2AquaCavern(aWorld) || dimCW2Caveland(aWorld) || dimCW2Cavenia(aWorld) || dimCW2Cavern(aWorld) || dimCW2Caveworld(aWorld));}
+
+	public static boolean dimCW2AquaCavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2AquaCavern — по имени класса "WorldProviderAquaCavern" */}
+
+	public static boolean dimCW2Caveland(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Caveland — по имени класса "WorldProviderCaveland" */}
+
+	public static boolean dimCW2Cavenia(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Cavenia — по имени класса "WorldProviderCavenia" */}
+
+	public static boolean dimCW2Cavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Cavern — по имени класса "WorldProviderCavern" */}
+
+	public static boolean dimCW2Caveworld(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Caveworld — по имени класса "WorldProviderCaveworld" */}
+
+	public static boolean dimWTCH(Level aWorld) {return aWorld != null && MD.WTCH.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimWTCH — Witchery Dream World-провайдер по имени класса "WorldProviderDreamWorld" */}
+
+	public static boolean dimAETHER(Level aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
+
 	public static boolean move(Entity aEntity, int aDimension, double aX, double aY, double aZ) {
 		ServerLevel tTargetWorld = DimensionManager.getWorld(aDimension), tOriginalWorld = DimensionManager.getWorld(aEntity.level().provider.dimensionId);
 		if (tTargetWorld != null && tOriginalWorld != null && tTargetWorld != tOriginalWorld) {
@@ -413,21 +381,18 @@ public class WD {
 		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.temperature * 20));
 	}
 	
+	// F6: было `WorldProvider aProvider`-перегрузки ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками (вызов через
+	// `aWorld.provider`) — та же болезнь, что у семейства `dimXXX` выше: `WorldProvider` в neo удалён, компилятор
+	// не мог выбрать между `waterLevel(Level)`/`waterLevel(WorldProvider)` (ambiguous). Слиты в один вход
+	// `waterLevel(Level, int)`; `dimensionId == DIM_OVERWORLD` -> `Level.dimension() == Level.OVERWORLD`,
+	// `hasNoSky` -> `!dimensionType().hasSkyLight()` (см. `decisions/README.md` «Dimension-identity»).
 	/** @return the Height of the Water Level that should probably be in this World. */
 	public static int waterLevel(Level aWorld) {
-		return waterLevel(aWorld.provider, 62);
-	}
-	/** @return the Height of the Water Level that should probably be in this World. */
-	public static int waterLevel(WorldProvider aProvider) {
-		return waterLevel(aProvider, 62);
+		return waterLevel(aWorld, 62);
 	}
 	/** @return the Height of the Water Level that should probably be in this World. */
 	public static int waterLevel(Level aWorld, int aDefaultOverworld) {
-		return waterLevel(aWorld.provider, aDefaultOverworld);
-	}
-	/** @return the Height of the Water Level that should probably be in this World. */
-	public static int waterLevel(WorldProvider aProvider, int aDefaultOverworld) {
-		return aProvider.dimensionId == DIM_OVERWORLD ? waterLevel(aDefaultOverworld) : aProvider.hasNoSky || dimTF(aProvider) ? 31 : 62;
+		return aWorld.dimension() == Level.OVERWORLD ? waterLevel(aDefaultOverworld) : !aWorld.dimensionType().hasSkyLight() || dimTF(aWorld) ? 31 : 62;
 	}
 	/** @return the Height of the Water Level that should probably be in the Overworld. */
 	public static int waterLevel(int aDefaultOverworld) {

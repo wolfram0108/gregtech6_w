@@ -20,6 +20,7 @@
 package gregtech.items.behaviors;
 
 import gregapi.block.IBlockDecolorable;
+import gregapi.code.ItemNBT;
 import gregapi.data.CS.BlocksGT;
 import gregapi.data.CS.SFX;
 import gregapi.data.LH;
@@ -62,7 +63,7 @@ public class Behavior_Spray_Color_Remover extends AbstractBehaviorDefault {
 		
 		if (!aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
 		long tUses = tNBT.getLong("gt.remaining");
 		
@@ -114,7 +115,7 @@ public class Behavior_Spray_Color_Remover extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.paintremoverspray.tooltip"));
-		CompoundTag tNBT = aStack.getTagCompound();
+		CompoundTag tNBT = ItemNBT.get(aStack);
 		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
 		aList.add(LH.get("gt.behaviour.paintremoverspray.uses") + " " + (tRemaining / 10) + "." + (tRemaining % 10));
 		aList.add(LH.get("gt.behaviour.unstackable"));
