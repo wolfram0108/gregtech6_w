@@ -56,7 +56,17 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.WallSignBlock;
 import gregapi.block.Material;
+// F#(WD-block): доступ к блокам мира переучен на BlockPos/BlockState (world.getBlockState(pos).getBlock() —
+// BlockGetter.java:32 + BlockBehaviour.java:521 getBlock()); координатные типы/шейпы/рейтрейс — ниже.
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -133,10 +143,16 @@ public class WD {
 			if (tTileEntity instanceof ITileEntityQuickObstructionCheck) return ((ITileEntityQuickObstructionCheck)tTileEntity).isObstructingBlockAt(OPOS[aSide]);
 			if (MD.TC.mLoaded && tTileEntity instanceof INode) return F;
 		}
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		BlockPos tObstrPos = new BlockPos(aX, aY, aZ);
+		BlockState tObstrState = aWorld.getBlockState(tObstrPos); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
+		Block tBlock = tObstrState.getBlock();
 		if (tBlock instanceof BlockTrapDoor || tBlock instanceof BlockDoor || tBlock instanceof BlockLadder) return F;
-		AABB tBoundingBox = tBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);
-		if (tBoundingBox == null) return F;
+		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z) — BlockBehaviour.getCollisionShape(level,pos)
+		// (BlockBehaviour.java:674) даёт локальный VoxelShape; .move(pos).bounds() переносит в мировые координаты
+		// (VoxelShape.java:39,81); пустой шейп = старое null-возврату (нет коллизии).
+		VoxelShape tObstrShape = tObstrState.getCollisionShape(aWorld, tObstrPos);
+		if (tObstrShape.isEmpty()) return F;
+		AABB tBoundingBox = tObstrShape.move(tObstrPos).bounds();
 		switch(aSide) {
 		case 0: return tBoundingBox.maxY-aY > PX_N[4] && tBoundingBox.maxX-aX > PX_P[2] && tBoundingBox.minX-aX < PX_N[2] && tBoundingBox.maxZ-aZ > PX_P[2] && tBoundingBox.minZ-aZ < PX_N[2];
 		case 1: return tBoundingBox.minY-aY < PX_P[4] && tBoundingBox.maxX-aX > PX_P[2] && tBoundingBox.minX-aX < PX_N[2] && tBoundingBox.maxZ-aZ > PX_P[2] && tBoundingBox.minZ-aZ < PX_N[2];
@@ -161,7 +177,12 @@ public class WD {
 		float  tW     = -Mth.cos(-tPitch * 0.017453292F);
 		float  tY     =  Mth.sin(-tPitch * 0.017453292F);
 		double tReach = (aPlayer instanceof ServerPlayer ? ((ServerPlayer)aPlayer).theItemInWorldManager.getBlockReachDistance() : 5);
-		return aWorld.func_147447_a(vec3, vec3.addVector(tX * tW * tReach, tY * tReach, tZ * tW * tReach), aFlag, !aFlag, F);
+		// было aWorld.func_147447_a(from,to,stopOnLiquid,ignoreBlockWithoutBoundingBox,returnLastUncollidableBlock=F) —
+		// neo: BlockGetter.clip(ClipContext) (BlockGetter.java:65). stopOnLiquid=aFlag -> ClipContext.Fluid.ANY/NONE
+		// (ClipContext.java:96-110, ANY подбирает любую непустую FluidState, NONE — никогда); Block.OUTLINE — тот же
+		// режим формы, которым реально пользуется ванильный player-look-raytrace (Item.getPlayerPOVHitResult,
+		// Item.java:362-365); returnLastUncollidableBlock здесь всегда F (аналога нет, не задействован).
+		return aWorld.clip(new ClipContext(vec3, vec3.addVector(tX * tW * tReach, tY * tReach, tZ * tW * tReach), ClipContext.Block.OUTLINE, aFlag ? ClipContext.Fluid.ANY : ClipContext.Fluid.NONE, aPlayer));
 	}
 	
 	// F6: было `WorldProvider aProvider`-перегрузки (числовой `dimensionId`, `UT.Reflection.getLowercaseClass`
@@ -281,21 +302,24 @@ public class WD {
 	/** Marks a Chunk dirty so it is saved */
 	public static boolean mark(Level aWorld, int aX, int aZ) {
 		if (aWorld == null || aWorld.isRemote) return F;
-		LevelChunk aChunk = aWorld.getChunkFromBlockCoords(aX, aZ);
+		// было aWorld.getChunkFromBlockCoords(x,z) — neo: Level.getChunk(int,int) (Level.java:202), блок-координаты
+		// >>4 переведены в чанк-координаты вручную (как делал старый метод внутри себя).
+		LevelChunk aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 		if (aChunk == null) {
-			aWorld.getBlockMetadata(aX, 0, aZ);
-			aChunk = aWorld.getChunkFromBlockCoords(aX, aZ);
+			aWorld.getBlockState(new BlockPos(aX, 0, aZ)); // было aWorld.getBlockMetadata(x,0,z) — тот же "трогающий" вызов для форс-загрузки чанка, результат отбрасывался и раньше
+			aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 			if (aChunk == null) {
 				ERR.println("Some important Chunk does not exist for some reason at Coordinates X: " + aX + " and Z: " + aZ);
 				return F;
 			}
 		}
-		aChunk.setChunkModified();
+		aChunk.markUnsaved(); // было aChunk.setChunkModified() — neo: LevelChunk.markUnsaved() (см. Level.java:868 aWorld.getChunkAt(pos).markUnsaved())
 		return T;
 	}
 	/** Marks a Chunk dirty so it is saved */
 	public static boolean mark(Object aTileEntity) {
-		return aTileEntity instanceof BlockEntity && mark(((BlockEntity)aTileEntity).getWorldObj(), ((BlockEntity)aTileEntity).xCoord, ((BlockEntity)aTileEntity).zCoord);
+		// было .getWorldObj()/.xCoord/.zCoord — neo: BlockEntity.getLevel() (BlockEntity.java:89) + .getBlockPos() (BlockEntity.java:232)
+		return aTileEntity instanceof BlockEntity && mark(((BlockEntity)aTileEntity).getLevel(), ((BlockEntity)aTileEntity).getBlockPos().getX(), ((BlockEntity)aTileEntity).getBlockPos().getZ());
 	}
 	
 	
@@ -314,13 +338,15 @@ public class WD {
 	}
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static BlockEntity te(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
-		if (aLoadUnloadedChunks || aWorld.blockExists(aX, aY, aZ)) {
-			BlockEntity rTileEntity = aWorld.getTileEntity(aX, aY, aZ);
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		if (aLoadUnloadedChunks || aWorld.isLoaded(tPos)) { // было aWorld.blockExists(x,y,z) — Level.isLoaded(BlockPos) (Level.java:695)
+			BlockEntity rTileEntity = aWorld.getBlockEntity(tPos); // было aWorld.getTileEntity(x,y,z) — BlockGetter.java:25 / Level.java:671
 			if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
 			if (rTileEntity != null) return rTileEntity;
 			rTileEntity = LAST_BROKEN_TILEENTITY.get();
-			if (rTileEntity != null && rTileEntity.xCoord == aX && rTileEntity.yCoord == aY && rTileEntity.zCoord == aZ) return rTileEntity;
-			Block tBlock = aWorld.getBlock(aX, aY, aZ);
+			// было .xCoord/.yCoord/.zCoord — neo: BlockEntity.getBlockPos() (BlockEntity.java:232)
+			if (rTileEntity != null && rTileEntity.getBlockPos().getX() == aX && rTileEntity.getBlockPos().getY() == aY && rTileEntity.getBlockPos().getZ() == aZ) return rTileEntity;
+			Block tBlock = aWorld.getBlockState(tPos).getBlock(); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
 			return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
 		}
 		return null;
@@ -341,20 +367,26 @@ public class WD {
 		}
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD == 9) UT.Entities.chat(null, "Please provide the gregtech.log File to Greg, there was a LOT of weird Errors");
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD < 99) WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD++;
-		aTileEntity.invalidate();
-		aTileEntity.yCoord = 0;
+		aTileEntity.setRemoved(); // было .invalidate() — neo: BlockEntity.setRemoved() (BlockEntity.java:252)
+		// PORT-TODO(WD, blockentity-position-immutable): было aTileEntity.yCoord = 0 — neo BlockEntity.worldPosition
+		// (BlockEntity.java:48) protected final, задаётся один раз конструктором (.java:57-59), сеттера нет ни в
+		// одном из 3 корней референса — постфактум обнулить Y у уже созданной TileEntity недостижимо.
 		return aTileEntity;
 	}
 	
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
 	public static BlockEntity te(Level aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
 		if (aY < 0) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity);
-		if (aCauseTileEntityUpdates) aWorld.setTileEntity(aX, aY, aZ, aTileEntity); else {
-			LevelChunk tChunk = aWorld.getChunkFromChunkCoords(aX >> 4, aZ >> 4);
+		if (aCauseTileEntityUpdates) aWorld.setBlockEntity(aTileEntity); // было aWorld.setTileEntity(x,y,z,te) — neo: Level.setBlockEntity(BlockEntity) (Level.java:681, позиция берётся из te.getBlockPos())
+		else {
+			LevelChunk tChunk = aWorld.getChunk(aX >> 4, aZ >> 4); // было aWorld.getChunkFromChunkCoords(cx,cz) — Level.getChunk(int,int) (Level.java:202)
 			if (tChunk != null) {
-				aWorld.addTileEntity(aTileEntity);
-				tChunk.func_150812_a(aX & 15, aY, aZ & 15, aTileEntity);
-				tChunk.setChunkModified();
+				// было aWorld.addTileEntity(te) отдельно — neo: addAndRegisterBlockEntity(te) (LevelChunk.java:400) УЖЕ
+				// сам зовёт level.addFreshBlockEntities(List.of(be)) внутри (LevelChunk.java:408); отдельный вызов
+				// addFreshBlockEntities здесь дублировал бы регистрацию — оригинал (gregtech6 WD.java:347-348)
+				// добавлял в world-list один раз.
+				tChunk.addAndRegisterBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te) — LevelChunk.addAndRegisterBlockEntity(BlockEntity) (LevelChunk.java:400), позиция берётся из te.getBlockPos()
+				tChunk.markUnsaved(); // было tChunk.setChunkModified()
 			}
 		}
 		return aTileEntity;
@@ -370,7 +402,9 @@ public class WD {
 	
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Level aWorld, int aX, int aY, int aZ) {
-		return envTemp(aWorld.getBiomeGenForCoords(aX, aZ), aX, aY, aZ);
+		// было aWorld.getBiomeGenForCoords(x,z) (2D) — neo: LevelReader.getBiome(BlockPos) (LevelReader.java:42),
+		// возвращает Holder<Biome>; .value() (Holder.java:17) разворачивает до Biome (сигнатура envTemp(Biome,...) не меняется).
+		return envTemp(aWorld.getBiome(new BlockPos(aX, aY, aZ)).value(), aX, aY, aZ);
 	}
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Biome aBiome, int aX, int aY, int aZ) {
@@ -416,12 +450,19 @@ public class WD {
 	}
 	
 	public static ItemStack stack(Level aWorld, int aX, int aY, int aZ) {
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
-		return ST.make(tBlock, 1, tBlock instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX, aY, aZ) : aWorld.getBlockMetadata(aX, aY, aZ));
+		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		// было aWorld.getBlockMetadata(x,y,z) в ветке else — числовой меты в neo больше нет (МОДЕЛЬ МЕТЫ п.4):
+		// для ванильных блоков (не IBlockExtendedMetaData) возвращаем 0, не выдумывая числовую таблицу.
+		return ST.make(tBlock, 1, tBlock instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);
 	}
-	
+
 	public static void update(BlockGetter aWorld, int aX, int aY, int aZ) {
-		((Level)aWorld).markBlockForUpdate(aX, aY, aZ);
+		// было ((Level)aWorld).markBlockForUpdate(x,y,z) — neo: Level.sendBlockUpdated(pos,old,new,flags)
+		// (Level.java:333); старое/новое состояние не отслеживались раздельно, тот же приём уже применён в
+		// GT_API_Proxy.java:1316 (getBlockState дважды, flags=3=UPDATE_ALL).
+		BlockPos tUpdPos = new BlockPos(aX, aY, aZ);
+		BlockState tUpdState = ((Level)aWorld).getBlockState(tUpdPos);
+		((Level)aWorld).sendBlockUpdated(tUpdPos, tUpdState, tUpdState, 3);
 		if (CLIENT_BLOCKUPDATE_SOUNDS && CODE_CLIENT && CLIENT_TIME > 100) {
 			Player tPlayer = GT_API.api_proxy.getThePlayer();
 			if (tPlayer != null && Math.abs(tPlayer.getX() - aX) < 16 && Math.abs(tPlayer.getY() - aY) < 16 && Math.abs(tPlayer.getZ() - aZ) < 16) {
@@ -430,16 +471,20 @@ public class WD {
 		}
 	}
 	
-	public static Block block(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlock(aX, aY, aZ);}
-	public static Block block(Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.blockExists(aX, aY, aZ) ? aWorld.getBlock(aX, aY, aZ) : NB;}
+	// было aWorld.getBlock(x,y,z) — neo: BlockGetter.getBlockState(BlockPos).getBlock() (BlockGetter.java:32); было
+	// aWorld.blockExists(x,y,z) — Level.isLoaded(BlockPos) (Level.java:695).
+	public static Block block(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock();}
+	public static Block block(Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.isLoaded(tP) ? aWorld.getBlockState(tP).getBlock() : NB;}
 	public static Block block(Level        aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static Block block(Level        aWorld, int aX, int aY, int aZ, byte aSide) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
-	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {return UT.Code.bind4(aWorld.getBlockMetadata(aX, aY, aZ));}
-	public static byte  meta (Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.blockExists(aX, aY, aZ) ? UT.Code.bind4(aWorld.getBlockMetadata(aX, aY, aZ)) : 0;}
+	// МОДЕЛЬ МЕТЫ п.4: числовой меты в neo больше нет — для IBlockExtendedMetaData (свои блоки, п.1) реальное
+	// значение, иначе 0 (не выдумываем числовую таблицу для ванильных блоков).
+	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {Block tB = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); return UT.Code.bind4(tB instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);}
+	public static byte  meta (Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.isLoaded(new BlockPos(aX, aY, aZ)) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
 	public static byte  meta (Level        aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static byte  meta (Level        aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
-	public static byte  meta (long aBitAnd, BlockGetter aWorld, int aX, int aY, int aZ) {return UT.Code.bind4(aWorld.getBlockMetadata(aX, aY, aZ) & aBitAnd);}
-	public static byte  meta (long aBitAnd, Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.blockExists(aX, aY, aZ) ? UT.Code.bind4(aWorld.getBlockMetadata(aX, aY, aZ) & aBitAnd) : 0;}
+	public static byte  meta (long aBitAnd, BlockGetter aWorld, int aX, int aY, int aZ) {return UT.Code.bind4(meta(aWorld, aX, aY, aZ) & aBitAnd);}
+	public static byte  meta (long aBitAnd, Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.isLoaded(new BlockPos(aX, aY, aZ)) ? UT.Code.bind4(meta((BlockGetter)aWorld, aX, aY, aZ) & aBitAnd) : 0;}
 	public static byte  meta (long aBitAnd, Level        aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static byte  meta (long aBitAnd, Level        aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	
@@ -449,28 +494,55 @@ public class WD {
 	
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
-			Block tBlock = aWorld.getBlock(aX, aY-1, aZ);
-			if (tBlock == Blocks.grass || tBlock == Blocks.mycelium) aWorld.setBlock(aX, aY-1, aZ, Blocks.dirt, 0, (byte)aFlags);
+			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
+			if (tBlock == Blocks.grass || tBlock == Blocks.mycelium) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.dirt,0,flags)
 		}
-		return aWorld.setBlock(aX, aY, aZ, aBlock, aBlock==NB?0:Code.bind4(aMeta), (byte)aFlags);
+		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
+		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4): для своих блоков (IBlockExtendedMetaData) — канал
+		// setExtendedMetaData сохранён "как есть" после установки блока; для ванильных aMeta теряется (форс движка).
+		BlockPos tSetPos = new BlockPos(aX, aY, aZ);
+		boolean rSet = aWorld.setBlock(tSetPos, aBlock.defaultBlockState(), (int)aFlags);
+		if (aBlock instanceof IBlockExtendedMetaData) {
+			byte tNewMeta = Code.bind4(aMeta);
+			// мета — отдельный канал; но setter даёт side-effects (WD.te/WD.update), потому — только при РЕАЛЬНОМ отличии
+			// (оригинал Chunk.java:623-625 при совпадении block И meta возвращал false без мутации):
+			if (((IBlockExtendedMetaData)aBlock).getExtendedMetaData(aWorld, aX, aY, aZ) != tNewMeta) {
+				((IBlockExtendedMetaData)aBlock).setExtendedMetaData(aWorld, aX, aY, aZ, tNewMeta);
+				rSet = true;
+			}
+		}
+		return rSet;
 	}
-	
+
 	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {
-		return aChunk.func_150807_a(aX, aY, aZ, aBlock, aBlock==NB?0:Code.bind4(aMeta));
+		// было aChunk.func_150807_a(localX,y,localZ,block,meta) — neo: LevelChunk.setBlockState(BlockPos,BlockState,flags)
+		// (LevelChunk.java:270) хочет МИРОВОЙ BlockPos (маскирует &15 внутри себя, используя абсолютные координаты
+		// для heightmap/light engine) — ChunkPos.getBlockAt(localX,y,localZ) (ChunkPos.java:151) переводит локальные
+		// координаты чанка в мировые, сохраняя тот же вызывающий контракт (локальные x/z 0-15).
+		BlockPos tChunkSetPos = aChunk.getPos().getBlockAt(aX, aY, aZ);
+		boolean rSet = aChunk.setBlockState(tChunkSetPos, aBlock.defaultBlockState(), Block.UPDATE_ALL) != null;
+		if (aBlock instanceof IBlockExtendedMetaData) {
+			byte tNewMeta = Code.bind4(aMeta);
+			if (((IBlockExtendedMetaData)aBlock).getExtendedMetaData(aChunk.getLevel(), tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ()) != tNewMeta) {
+				((IBlockExtendedMetaData)aBlock).setExtendedMetaData(aChunk.getLevel(), tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ(), tNewMeta);
+				rSet = true;
+			}
+		}
+		return rSet;
 	}
 	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
-			Block tBlock = aChunk.getBlock(aX, aY-1, aZ);
-			if (tBlock == Blocks.grass || tBlock == Blocks.mycelium) aChunk.func_150807_a(aX, aY-1, aZ, Blocks.dirt, 0);
+			Block tBlock = aChunk.getBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ)).getBlock(); // было aChunk.getBlock(x,y-1,z)
+			if (tBlock == Blocks.grass || tBlock == Blocks.mycelium) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), Block.UPDATE_ALL); // было aChunk.func_150807_a(x,y-1,z,Blocks.dirt,0)
 		}
-		return aChunk.func_150807_a(aX, aY, aZ, aBlock, aBlock==NB?0:Code.bind4(aMeta));
+		return set(aChunk, aX, aY, aZ, aBlock, aMeta);
 	}
-	
+
 	public static boolean replace(Level aWorld, int aX, int aY, int aZ, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		if (aTargetBlock == null || aReplaceBlock == null) return F;
 		if (aReplaceBlock != block(aWorld, aX, aY, aZ)) return F;
 		if (aReplaceMeta != W && aReplaceMeta != meta(aWorld, aX, aY, aZ)) return F;
-		return aWorld.setBlock(aX, aY, aZ, aTargetBlock, Code.bind4(aTargetMeta), 2);
+		return set(aWorld, aX, aY, aZ, aTargetBlock, aTargetMeta, Block.UPDATE_CLIENTS, F); // было aWorld.setBlock(x,y,z,block,meta,2) — флаг 2=UPDATE_CLIENTS (Block.java:91-104); маршрут через центр set(...) — мета своих блоков (IBlockExtendedMetaData) не теряется
 	}
 	public static boolean replace(Level aWorld, BlockPos aCoords, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		return replace(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta);
@@ -499,7 +571,10 @@ public class WD {
 	}
 	
 	public static boolean sign(Level aWorld, int aX, int aY, int aZ, byte aSide, long aFlags, String aLine1, String aLine2, String aLine3, String aLine4) {
-		aWorld.setBlock(aX, aY, aZ, Blocks.wall_sign, aSide, (byte)aFlags);
+		// было aWorld.setBlock(x,y,z,Blocks.wall_sign,aSide,flags) — aSide был прямой мета-ориентацией wall_sign
+		// (2-5); neo: WallSignBlock.FACING (EnumProperty<Direction>, WallSignBlock.java:30) через уже
+		// централизованный FORGE_DIR[side]->Direction (тот же массив, что используется по всему файлу).
+		aWorld.setBlock(new BlockPos(aX, aY, aZ), Blocks.wall_sign.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
 		BlockEntity tSign = te(aWorld, aX, aY, aZ, T);
 		if (!(tSign instanceof SignBlockEntity)) return F;
 		((SignBlockEntity)tSign).signText[0] = aLine1;
@@ -534,43 +609,44 @@ public class WD {
 		return rRandom.nextInt(aBound);
 	}
 	
-	public static Random random(BlockEntity aTileEntity) {return new Random(aTileEntity.xCoord ^ aTileEntity.yCoord ^ aTileEntity.zCoord);}
+	public static Random random(BlockEntity aTileEntity) {return new Random(aTileEntity.getBlockPos().getX() ^ aTileEntity.getBlockPos().getY() ^ aTileEntity.getBlockPos().getZ());} // было .xCoord/.yCoord/.zCoord — BlockEntity.getBlockPos() (BlockEntity.java:232)
 	public static int random(BlockEntity aTileEntity, int aBound) {return random(aTileEntity).nextInt(aBound);}
 	public static boolean random(BlockEntity aTileEntity, int aBound, long aTime) {return random(aTileEntity, aBound) == aTime % aBound;}
 	
 	public static boolean border(int aFromX, int aFromZ, int aToX, int aToZ) {return aFromX >> 4 != aToX >> 4 || aFromZ >> 4 != aToZ >> 4;}
 	
-	public static boolean even(BlockEntity aTileEntity) {return even(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord);}
+	public static boolean even(BlockEntity aTileEntity) {return even(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .xCoord/.yCoord/.zCoord
 	public static boolean even(BlockPos aCoords) {return even(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static boolean even(int... aCoords) {int i = 0; for (int tCoord : aCoords) if (tCoord % 2 == 0) i++; return i % 2 == 0;}
 	
-	public static int evenness(BlockEntity aTileEntity) {return evenness(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord);}
+	public static int evenness(BlockEntity aTileEntity) {return evenness(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .xCoord/.yCoord/.zCoord
 	public static int evenness(BlockPos aCoords) {return evenness(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static int evenness(int... aCoords) {int i = 0; for (int tCoord : aCoords) {i <<= 1; if (tCoord % 2 != 0) i++;} return i;}
 	
-	public static boolean setIfDiff(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {return (aWorld.getBlock(aX, aY, aZ) != aBlock || aWorld.getBlockMetadata(aX, aY, aZ) != aMeta) && aWorld.setBlock(aX, aY, aZ, aBlock, aMeta, aFlags);}
-	
+	// было aWorld.getBlock(x,y,z)/getBlockMetadata(x,y,z)/setBlock(x,y,z,block,meta,flags) — meta через централизованный meta(...)
+	public static boolean setIfDiff(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {return (block(aWorld, aX, aY, aZ) != aBlock || meta(aWorld, aX, aY, aZ) != aMeta) && set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, F);} // было aWorld.setBlock(x,y,z,block,meta,flags) — маршрут через центр set(...)
+
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, ItemStack aStack) {
 		Block tBlock = ST.block(aStack);
 		if (tBlock == NB) return F;
 		if (tBlock instanceof IBlockPlacable) return ((IBlockPlacable)tBlock).placeBlock(aWorld, aX, aY, aZ, (byte)6, ST.meta_(aStack), aStack.getTagCompound(), T, F);
-		if (ST.meta_(aStack) < 16) return aWorld.setBlock(aX, aY, aZ, tBlock, ST.meta_(aStack), 3);
+		if (ST.meta_(aStack) < 16) return set(aWorld, aX, aY, aZ, tBlock, ST.meta_(aStack), Block.UPDATE_ALL, F); // было aWorld.setBlock(x,y,z,block,meta,3) — флаг 3=UPDATE_ALL; маршрут через центр set(...)
 		return F;
 	}
-	
+
 	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return leafdecay(aWorld, aX, aY, aZ, aBlock, F, F);}
 	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea) {return leafdecay(aWorld, aX, aY, aZ, aBlock, aOnlyTopArea, F);}
 	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea, boolean aTreeCapitator) {
 		if (aBlock == null || aBlock.canSustainLeaves(aWorld, aX, aY, aZ)) {
 			for (int j = (aOnlyTopArea ? 0 : -7); j <= 7; ++j) for (int i = -7; i <= 7; ++i) for (int k = -7; k <= 7; ++k) {
-				Block tBlock = aWorld.getBlock(aX+i, aY+j, aZ+k);
+				Block tBlock = aWorld.getBlockState(new BlockPos(aX+i, aY+j, aZ+k)).getBlock(); // было aWorld.getBlock(x+i,y+j,z+k)
 				if (tBlock != NB) {
 					if (tBlock == Blocks.brown_mushroom_block || tBlock == Blocks.red_mushroom_block) {
-						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4 && j <= 0 && j >= -2) aWorld.func_147480_a(aX+i, aY+j, aZ+k, T);
+						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4 && j <= 0 && j >= -2) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // было aWorld.func_147480_a(x,y,z,drop) — LevelWriter.destroyBlock(BlockPos,boolean) (LevelWriter.java:18)
 					} else if (IL.NeLi_Wart_Block_Crimson.equal(tBlock) || IL.NeLi_ShroomLight.equal(tBlock)) {
-						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4) aWorld.func_147480_a(aX+i, aY+j, aZ+k, T);
+						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // было aWorld.func_147480_a(x,y,z,drop)
 					} else {
-						if (tBlock.isLeaves(aWorld, aX+i, aY+j, aZ+k)) aWorld.scheduleBlockUpdate(aX+i, aY+j, aZ+k, tBlock, 1+RNGSUS.nextInt(100));
+						if (tBlock.isLeaves(aWorld, aX+i, aY+j, aZ+k)) aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), tBlock, 1+RNGSUS.nextInt(100)); // было aWorld.scheduleBlockUpdate(x,y,z,block,delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int) (ScheduledTickAccess.java:21)
 					}
 				}
 			}
@@ -579,16 +655,16 @@ public class WD {
 		return F;
 	}
 	
-	public static boolean liquid(Level aWorld, int aX, int aY, int aZ) {return liquid(aWorld.getBlock(aX, aY, aZ));}
+	public static boolean liquid(Level aWorld, int aX, int aY, int aZ) {return liquid(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid(Block aBlock) {return aBlock instanceof BlockLiquid || aBlock instanceof IFluidBlock;}
-	
-	public static boolean liquid_classic(Level aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlock(aX, aY, aZ));}
+
+	public static boolean liquid_classic(Level aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof BlockLiquid || aBlock instanceof BlockFluidClassic;}
-	
-	public static boolean liquid_finite(Level aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlock(aX, aY, aZ));}
+
+	public static boolean liquid_finite(Level aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_finite(Block aBlock) {return aBlock instanceof BlockFluidFinite;}
-	
-	public static boolean liquid_borken(Level aWorld, int aX, int aY, int aZ) {return liquid_borken(aWorld.getBlock(aX, aY, aZ));}
+
+	public static boolean liquid_borken(Level aWorld, int aX, int aY, int aZ) {return liquid_borken(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_borken(Block aBlock) {return !(aBlock instanceof IItemGT) && liquid_classic(aBlock);}
 	
 	public static boolean stone(Block aBlock, short aMeta) {
@@ -598,7 +674,7 @@ public class WD {
 		return BlocksGT.stoneToNormalOres.containsKey(tStack) || BlocksGT.stoneToBrokenOres.containsKey(tStack) || BlocksGT.stoneToSmallOres.containsKey(tStack);
 	}
 	
-	public static boolean floor(Level aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
+	public static boolean floor(Level aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean floor(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock.isSideSolid(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_UP]) || floor(aBlock);}
 	public static boolean floor(Block aBlock) {return aBlock.isOpaqueCube() || aBlock instanceof BlockSlab || aBlock instanceof BlockStairs || aBlock instanceof BlockMetaType;}
 	
@@ -607,32 +683,32 @@ public class WD {
 	public static boolean ore_stone(Block aBlock, short aMeta) {return ore(aBlock, aMeta) || stone(aBlock, aMeta);}
 	
 	public static boolean visOcc(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return visOpq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && visOpq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && visOpq(aWorld, aX, aY+1, aZ, T, aDefault) && visOpq(aWorld, aX, aY-1, aZ, T, aDefault) && visOpq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && visOpq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean visOpq(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return aLoadUnloadedChunks || aWorld.blockExists(aX, aY, aZ) ? visOpq(aWorld.getBlock(aX, aY, aZ)) : aDefault;}
+	public static boolean visOpq(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.isLoaded(tP) ? visOpq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
 	public static boolean visOpq(Block aBlock) {return aBlock.isOpaqueCube() || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);}
 	
 	public static boolean occ(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return opq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && opq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && opq(aWorld, aX, aY+1, aZ, T, aDefault) && opq(aWorld, aX, aY-1, aZ, T, aDefault) && opq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && opq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean opq(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return aLoadUnloadedChunks || aWorld.blockExists(aX, aY, aZ) ? opq(aWorld.getBlock(aX, aY, aZ)) : aDefault;}
+	public static boolean opq(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.isLoaded(tP) ? opq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
 	public static boolean opq(Block aBlock) {return aBlock.isOpaqueCube() && !(aBlock instanceof BlockLeaves);}
 	
-	public static boolean air(Level aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
-	public static boolean air(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (aBlock.isAir(aWorld, aX, aY, aZ) && !(MD.TC.mLoaded && !aBlock.isOpaqueCube() && te(aWorld, aX, aY, aZ, T) instanceof INode));}
+	public static boolean air(Level aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean air(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !aBlock.isOpaqueCube() && te(aWorld, aX, aY, aZ, T) instanceof INode));} // было aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
 	public static boolean air(Block aBlock) {return aBlock == NB;}
 	
-	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
+	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.lava || aBlock == Blocks.flowing_lava;}
 	public static boolean lava(Block aBlock) {return aBlock == Blocks.lava || aBlock == Blocks.flowing_lava;}
 	
-	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ) {return water(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
+	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ) {return water(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.water || aBlock == Blocks.flowing_water;}
 	public static boolean water(Block aBlock) {return aBlock == Blocks.water || aBlock == Blocks.flowing_water;}
 	
 	public static boolean waterstream(Block aBlock) {return MD.Streams.mLoaded && UT.Code.stringValidate(ST.regName(aBlock)).startsWith("streams:river/tile.water");}
 	
-	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ) {return anywater(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
+	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ) {return anywater(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock instanceof BlockWaterlike || water(aWorld, aX, aY, aZ, aBlock) || waterstream(aBlock);}
 	public static boolean anywater(Block aBlock) {return aBlock instanceof BlockWaterlike || water(aBlock) || waterstream(aBlock);}
 	
-	public static boolean bedrock(Level aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
+	public static boolean bedrock(Level aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean bedrock(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return bedrock(aBlock);}
 	public static boolean bedrock(Block aBlock) {return aBlock == Blocks.bedrock || IL.BTL_Bedrock.equal(aBlock);}
 	
@@ -646,20 +722,25 @@ public class WD {
 		return IL.AETHER_Tall_Grass.equal(aBlock);
 	}
 	
-	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
+	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.vine || aBlock == Blocks.snow_layer || aBlock == Blocks.fire || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
-	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
+	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BlockBush || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || aBlock.isLeaves(aWorld, aX, aY, aZ) || aBlock.canBeReplacedByLeaves(aWorld, aX, aY, aZ);}
 	
-	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName);}
-	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.water || aBlock == Blocks.flowing_water) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName));}
+	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
+	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой
+	// .value().biomeName (мёртвое 1.7.10-поле) больше не нужен — gregapi/code/BiomeNameSet.java.
+	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
+	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.water || aBlock == Blocks.flowing_water) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
 	
-	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, aWorld.getBlock(aX, aY, aZ));}
-	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock.isOpaqueCube() || aBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) != null;}
-	
-	public static boolean hasCollide(Level aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, aWorld.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
-	public static boolean hasCollide(Level aWorld, BlockPos aCoords, Block aBlock) {return aBlock.isOpaqueCube() || aBlock.getCollisionBoundingBoxFromPool(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()) != null;}
+	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	// было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null — BlockState.getCollisionShape(level,pos).isEmpty()
+	// перевёрнуто (BlockBehaviour.java:674; VoxelShape.isEmpty(), VoxelShape.java:73); isOpaqueCube() не тронут.
+	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock.isOpaqueCube() || !aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getCollisionShape(aWorld, new BlockPos(aX, aY, aZ)).isEmpty();}
+
+	public static boolean hasCollide(Level aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, aWorld.getBlockState(aCoords).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean hasCollide(Level aWorld, BlockPos aCoords, Block aBlock) {return aBlock.isOpaqueCube() || !aWorld.getBlockState(aCoords).getCollisionShape(aWorld, aCoords).isEmpty();} // было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null
 	
 	public static boolean flaming(Level aWorld, int aX, int aY, int aZ) {return block(aWorld, aX, aY, aZ, F) instanceof FireBlock;}
 	public static boolean burning(Level aWorld, int aX, int aY, int aZ) {return flaming(aWorld, aX, aY, aZ) || flaming(aWorld, aX+1, aY, aZ) || flaming(aWorld, aX-1, aY, aZ) || flaming(aWorld, aX, aY+1, aZ) || flaming(aWorld, aX, aY-1, aZ) || flaming(aWorld, aX, aY, aZ+1) || flaming(aWorld, aX, aY, aZ-1);}
@@ -669,29 +750,31 @@ public class WD {
 	
 	public static boolean fire(Level aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aCheckFlammability);}
 	public static boolean fire(Level aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		BlockPos tFirePos = new BlockPos(aX, aY, aZ);
+		Block tBlock = aWorld.getBlockState(tFirePos).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (tBlock.getMaterial() == Material.lava || tBlock.getMaterial() == Material.fire) return F;
-		if (tBlock.getMaterial() == Material.carpet || tBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) == null) {
+		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z)==null — BlockState.getCollisionShape(level,pos).isEmpty() (BlockBehaviour.java:674)
+		if (tBlock.getMaterial() == Material.carpet || aWorld.getBlockState(tFirePos).getCollisionShape(aWorld, tFirePos).isEmpty()) {
 			if (MD.TC.mLoaded && te(aWorld, aX, aY, aZ, T) instanceof INode) return F;
-			if (tBlock.getFlammability(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(aX, aY, aZ, Blocks.fire, 0, 3);
+			if (tBlock.getFlammability(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.fire.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.fire,0,3)
 			if (tBlock instanceof IItemGT) return F;
 			if (aCheckFlammability) {
 				for (byte tSide : ALL_SIDES_VALID) {
 					Block tAdjacent = block(aWorld, aX, aY, aZ, tSide);
-					if (tAdjacent == Blocks.chest || tAdjacent == Blocks.trapped_chest) return aWorld.setBlock(aX, aY, aZ, Blocks.fire);
-					if (tAdjacent.getFlammability(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(aX, aY, aZ, Blocks.fire);
+					if (tAdjacent == Blocks.chest || tAdjacent == Blocks.trapped_chest) return aWorld.setBlock(tFirePos, Blocks.fire.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.fire) (3-арг default meta=0,flags=3)
+					if (tAdjacent.getFlammability(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(tFirePos, Blocks.fire.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.fire)
 				}
 			} else {
-				return aWorld.setBlock(aX, aY, aZ, Blocks.fire, 0, 3);
+				return aWorld.setBlock(tFirePos, Blocks.fire.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.fire,0,3)
 			}
 		}
 		return F;
 	}
 	
 	public static boolean oreGenReplaceable(Level aWorld, int aX, int aY, int aZ, boolean aAllowAir) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return aAllowAir;
-		byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(aBlock, 1, aMeta))) return T;
 		if (Blocks.stone      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone     )) return T;
@@ -708,9 +791,9 @@ public class WD {
 	
 	public static boolean setOre(Level aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return F;
-		byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToNormalOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
@@ -729,9 +812,9 @@ public class WD {
 	
 	public static boolean setSmallOre(Level aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB || WD.bedrock(aBlock)) return F;
-		byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToSmallOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
@@ -746,19 +829,22 @@ public class WD {
 	
 	/** Removes Bedrock from that Position and replaces it with regular Stone of the region. */
 	public static boolean removeBedrock(Level aWorld, int aX, int aY, int aZ) {
-		Block tBlock = aWorld.getBlock(aX, aY, aZ), tStone = (aWorld.provider.dimensionId == DIM_NETHER ? Blocks.netherrack : Blocks.stone);
-		
+		// было aWorld.getBlock(x,y,z) + aWorld.provider.dimensionId==DIM_NETHER — Level.dimension()==Level.NETHER,
+		// тот же приём F6, что уже применён у dimOverworldLike/dimPlanet выше в этом файле.
+		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(), tStone = (aWorld.dimension() == Level.NETHER ? Blocks.netherrack : Blocks.stone);
+
 		if (tBlock == NB || bedrock(tBlock)) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) for (int i = 1; i < 7; i++) {
-				tBlock = aWorld.getBlock(aX+OFFX[tSide]*i, aY+OFFY[tSide]*i, aZ+OFFZ[tSide]*i);
+				BlockPos tRBPos = new BlockPos(aX+OFFX[tSide]*i, aY+OFFY[tSide]*i, aZ+OFFZ[tSide]*i);
+				tBlock = aWorld.getBlockState(tRBPos).getBlock(); // было aWorld.getBlock(x,y,z)
 				if (tBlock != NB && tBlock != tStone && !bedrock(tBlock)) {
-					int tMetaData = aWorld.getBlockMetadata(aX+OFFX[tSide]*i, aY+OFFY[tSide]*i, aZ+OFFZ[tSide]*i);
+					int tMetaData = meta(aWorld, tRBPos.getX(), tRBPos.getY(), tRBPos.getZ()); // было aWorld.getBlockMetadata(x,y,z)
 					if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(tBlock, 1, tMetaData))) {
-						return aWorld.setBlock(aX, aY, aZ, tBlock, tMetaData, 0);
+						return set(aWorld, aX, aY, aZ, tBlock, tMetaData, 0, F); // было aWorld.setBlock(x,y,z,block,meta,0) — маршрут через центр set(...)
 					}
 				}
 			}
-			return aWorld.setBlock(aX, aY, aZ, tStone, 0, 0);
+			return set(aWorld, aX, aY, aZ, tStone, 0, 0, F); // было aWorld.setBlock(x,y,z,tStone,0,0) — маршрут через центр set(...)
 		}
 		return F;
 	}
@@ -879,8 +965,8 @@ public class WD {
 		ArrayList<String> rList = new ArrayListNoNulls<>();
 		long rEUAmount = 0;
 		
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
-		byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
+		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z)
 		BlockEntity aTileEntity = te(aWorld, aX, aY, aZ, T);
 		
 		rList.add("--- X: " + aX + " Y: " + aY + " Z: " + aZ + " ---");
