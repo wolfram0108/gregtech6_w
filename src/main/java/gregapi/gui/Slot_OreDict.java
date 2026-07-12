@@ -25,17 +25,19 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F-GUI: {@code isItemValid}→{@code mayPlace} (движок, см. {@link Slot_Base}).
  */
 public class Slot_OreDict extends Slot_Base {
 	private final String mWhiteList;
-	
+
 	public Slot_OreDict(ITileEntityInventoryGUI aInventory, int aIndex, int aX, int aY, String aValidOreDict) {
 		super(aInventory, aIndex, aX, aY);
 		mWhiteList = aValidOreDict;
 	}
-	
+
 	@Override
-	public boolean isItemValid(ItemStack aStack) {
-		return super.isItemValid(aStack) && OM.is(mWhiteList, aStack);
+	public boolean mayPlace(ItemStack aStack) {
+		return super.mayPlace(aStack) && OM.is(mWhiteList, aStack);
 	}
 }

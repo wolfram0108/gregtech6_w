@@ -34,7 +34,6 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
-import net.neoforged.neoforge.network.IContainerFactory;
 import ganymedes01.etfuturum.entities.EntityHusk;
 import ganymedes01.etfuturum.entities.EntityStray;
 import ganymedes01.etfuturum.entities.EntityZombieVillager;
@@ -189,8 +188,21 @@ import static gregapi.data.CS.*;
  * {@link gregapi.worldgen.GT6WorldgenFeature#register} (вызывается из {@code GT_API}-конструктора).
  * Сам диспетчер {@link gregapi.worldgen.GT6WorldGenerator#generate(net.minecraft.world.level.Level,int,int,boolean)}
  * не переписан — только точка вызова.
+ *
+ * F-GUI (шов «GUI/меню», ревизия): конструктор незаконно "implements" {@code IContainerFactory}
+ * ({@code net.neoforged.neoforge.network.IContainerFactory<T extends AbstractContainerMenu>} —
+ * generic-фабрика ОДНОГО типа контейнера, {@code create(int,Inventory,RegistryFriendlyByteBuf):T}, сигнатура
+ * НЕ СОВПАДАЕТ с {@code getServerGuiElement(int,Player,Level,int,int,int):Object}; было заглушкой прежнего
+ * флаунда, реально не реализовывало интерфейс) — снят. Прежний 1.7.10 {@code implements IGuiHandler}
+ * (Forge network registry, автодиспетчер {@code player.openGui(mod,id,...)}) не существует в neo вообще —
+ * маршрут {@code id → getGUIServer} перенесён в ЕДИНЫЙ центр {@link gregapi.gui.GT6MenuProvider} (серверное
+ * открытие) + {@link gregapi.gui.ContainerCommon#createFromNetwork} (клиентская реконструкция контейнера);
+ * {@code getServerGuiElement} здесь удалён (не дублируем — было ровно этой же строкой {@code WD.te+getGUIServer},
+ * теперь она в одном месте). {@link #getClientGuiElement} оставлен как есть (не {@code @Override} — цели
+ * нет) — якорь для отдельного клиент-рендер прохода (PORT-TODO(F14, gui-client-screen)), сама GUI-логика
+ * не трогается.
  */
-public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerFactory {
+public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public GT_API_Proxy() {
 		NeoForge.EVENT_BUS.register(this);
 	}
@@ -219,13 +231,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy implements IContainerF
 		return F;
 	}
 	
-	@Override
-	public Object getServerGuiElement(int aGUIID, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
-		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		return tTileEntity instanceof ITileEntityGUI ? ((ITileEntityGUI)tTileEntity).getGUIServer(aGUIID, aPlayer) : null;
-	}
-	
-	@Override
+	/** F-GUI: клиент-рендер якорь (PORT-TODO(F14, gui-client-screen)) — не {@code @Override}, цели нет
+	 *  (см. javadoc класса); серверный близнец {@code getServerGuiElement} удалён — центр в
+	 *  {@link gregapi.gui.GT6MenuProvider}/{@link gregapi.gui.ContainerCommon#createFromNetwork}. */
 	public Object getClientGuiElement(int aGUIID, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		return tTileEntity instanceof ITileEntityGUI ? ((ITileEntityGUI)tTileEntity).getGUIClient(aGUIID, aPlayer) : null;

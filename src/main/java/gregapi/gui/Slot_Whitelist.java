@@ -29,17 +29,19 @@ import static gregapi.data.CS.T;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F-GUI: {@code isItemValid}→{@code mayPlace} (движок, см. {@link Slot_Base}).
  */
 public class Slot_Whitelist extends Slot_Base {
 	private ItemStackSet<ItemStackContainer> mWhiteList = ST.hashset();
-	
+
 	public Slot_Whitelist(ITileEntityInventoryGUI aInventory, int aIndex, int aX, int aY, ItemStack... aValidStacks) {
 		super(aInventory, aIndex, aX, aY);
 		for (ItemStack aStack : aValidStacks) mWhiteList.add(aStack);
 	}
-	
+
 	@Override
-	public boolean isItemValid(ItemStack aStack) {
-		return super.isItemValid(aStack) && mWhiteList.contains(aStack, T);
+	public boolean mayPlace(ItemStack aStack) {
+		return super.mayPlace(aStack) && mWhiteList.contains(aStack, T);
 	}
 }

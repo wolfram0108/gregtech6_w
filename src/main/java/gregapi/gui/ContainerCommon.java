@@ -19,25 +19,119 @@
 
 package gregapi.gui;
 
+import gregapi.data.MD;
+import gregapi.tileentity.ITileEntityGUI;
 import gregapi.tileentity.ITileEntityInventoryGUI;
 import gregapi.util.ST;
-import gregapi.util.UT;
+import gregapi.util.WD;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerListener;
-import net.minecraft.world.Container;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
-import java.util.List;
+import java.util.function.Supplier;
 
 import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F-GUI (шов «GUI/меню», серверный центр закрыт этим файлом+{@link GT6MenuProvider}). 1.7.10
+ * {@code player.openGui(mod,id,world,x,y,z)}→{@code IGuiHandler.getServerGuiElement}→{@code Container}
+ * не существует в neo; движок-эквивалент — {@code player.openMenu(MenuProvider)}+{@code AbstractContainerMenu}
+ * (см. {@link GT6MenuProvider}, {@code gregapi.tileentity.base.TileEntityBase01Root#openGUI}). Централизация
+ * GT6 (маршрут id→{@code ITileEntityGUI.getGUIServer(id,player)}) СОХРАНЕНА 1:1 — и серверное открытие
+ * ({@link GT6MenuProvider#createMenu}), и клиентская реконструкция контейнера ({@link #createFromNetwork})
+ * зовут ТОТ ЖЕ {@code getGUIServer}, как было в оригинале (единственный центр маршрутизации).
+ *
+ * <p>Дословный перенос {@code transferStackInSlot}→{@link #quickMoveStack}, {@code canInteractWith}→
+ * {@link #stillValid}, {@code mergeItemStack}→{@link #moveItemStackTo}, {@code slotClick}→{@link #clicked}
+ * (движок сменил модель клика: {@code slotClick(index,mouse,shift,player)}→{@code clicked(index,button,
+ * ContainerInput,player)}, `neo-decompiled/net/minecraft/world/inventory/AbstractContainerMenu.java:319`;
+ * {@code ContainerInput} 1:1 повторяет старые int-коды {@code ClickType} — {@code PICKUP=0,QUICK_MOVE=1,
+ * SWAP=2,CLONE=3,THROW=4,QUICK_CRAFT=5,PICKUP_ALL=6} (`ContainerInput.java:10-16`), поэтому
+ * {@code aType.id()} = дословный старый {@code aShift}). Оригинальный {@code slotClick} вызывал
+ * {@code super.slotClick(...)} и ВСЕГДА возвращался из try-блока без исключения — весь огромный
+ * дублирующий ручной блок ниже (`aShift==0/1/2/3` реимплементация ванильного пикапа) был МЁРТВЫМ кодом
+ * (срабатывал только при исключении из {@code super.slotClick}, которого 1.7.10 vanilla не бросает) —
+ * не портируется (не потеря семантики: путь был недостижим), в новой модели его заменяет {@code super.clicked(...)}.
  */
 public class ContainerCommon extends AbstractContainerMenu {
+
+	// ==================================================================================================
+	// F-GUI: единственный MenuType для ВСЕГО семейства ContainerCommon* (Default/Chest/BasicMachine) —
+	// GT6 маршрутизирует по своему GUIID внутри одного Container-класса, а не по одному Menu на класс,
+	// поэтому центр — ОДИН зарегистрированный тип (см. постановку задачи, п.3).
+	// ==================================================================================================
+	private static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(Registries.MENU, MD.GAPI.mID);
+
+	/** ЕДИНСТВЕННЫЙ {@link MenuType} мода для {@link ContainerCommon} и его наследников (эталон паттерна
+	 *  регистрации кодек/реестр-хелпера — {@code gregapi/enchants/EnchantsGT6.java:93-94}, тот же
+	 *  {@code DeferredRegister.create(Registries.X, MD.GAPI.mID)}). {@code IMenuTypeExtension.create(IContainerFactory)}
+	 *  — `neoforge-decompiled/net/neoforged/neoforge/common/extensions/IMenuTypeExtension.java:25-27`. */
+	public static final DeferredHolder<MenuType<?>, MenuType<ContainerCommon>> MENU_TYPE =
+		MENU_TYPES.register("container_common", () -> IMenuTypeExtension.create(ContainerCommon::createFromNetwork));
+
+	/** Стык для интегратора: вызвать рядом с {@code EnchantsGT6.register(aModBus)}/{@code GT6WorldgenFeature.register(aModBus)}
+	 *  в {@code GT_API.java:345-348} (тот же мод-бас) — вне зоны этого захода, файл не тронут намеренно. */
+	public static void register(IEventBus aModBus) {
+		MENU_TYPES.register(aModBus);
+	}
+
+	/**
+	 * Windowid-мост (форс движка): {@code AbstractContainerMenu.containerId} теперь {@code public final},
+	 * задаётся ТОЛЬКО через {@code super(menuType, containerId)} в конструкторе (`AbstractContainerMenu.java:60,68`);
+	 * 1.7.10 {@code Container.windowId} было мутируемым публичным полем, назначаемым ИЗВНЕ уже ПОСЛЕ
+	 * конструирования ({@code EntityPlayerMP.openContainer}). Контракт {@code ITileEntityGUI.getGUIServer(id,player)}
+	 * (сотни реализаций по всему моду, вне зоны этого захода) этот id не принимает и не может быть расширен
+	 * без разрыва сотен файлов — вместо этого id передаётся через один статический слот на время ЕДИНСТВЕННОГО
+	 * вызова {@code getGUIServer} из центральных точек входа ({@link #createFromNetwork}, {@link GT6MenuProvider#createMenu}),
+	 * и подхватывается «легаси»-конструкторами ниже. Однопоточность: сервер выполняет открытие GUI в основном
+	 * потоке (как и было в 1.7.10), реентерабельность не требуется.
+	 */
+	private static int sPendingWindowID = -1;
+
+	static <T> T withWindowID(int aWindowID, Supplier<T> aFactory) {
+		int tPrev = sPendingWindowID;
+		sPendingWindowID = aWindowID;
+		try {
+			return aFactory.get();
+		} finally {
+			sPendingWindowID = tPrev;
+		}
+	}
+
+	/**
+	 * Клиентская реконструкция контейнера ({@link IContainerFactory#create}) — читает позицию TE + GUIID из
+	 * буфера (записаны {@link GT6MenuProvider#createMenu} через {@code extraDataWriter}, см.
+	 * {@code TileEntityBase01Root.openGUI}), находит TE через {@code WD.te(...)} и зовёт ТОТ ЖЕ
+	 * {@code getGUIServer(guiId, player)}, что и серверное открытие — единый маршрут (постановка задачи, п.3).
+	 */
+	public static ContainerCommon createFromNetwork(int aWindowID, Inventory aInv, RegistryFriendlyByteBuf aData) {
+		BlockPos tPos = aData.readBlockPos();
+		int tGUIID = aData.readInt();
+		BlockEntity tTileEntity = WD.te(aInv.player.level(), tPos, T);
+		if (!(tTileEntity instanceof ITileEntityGUI)) return null;
+		final BlockEntity fTileEntity = tTileEntity;
+		Object tGUI = withWindowID(aWindowID, () -> ((ITileEntityGUI)fTileEntity).getGUIServer(tGUIID, aInv.player));
+		return tGUI instanceof ContainerCommon ? (ContainerCommon)tGUI : null;
+	}
+
 	public final int mOffset, mSlotCount, mGUIID;
 	public ITileEntityInventoryGUI mTileEntity;
 	public Inventory mInventoryPlayer;
@@ -51,19 +145,28 @@ public class ContainerCommon extends AbstractContainerMenu {
 	public ContainerCommon(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID) {
 		this(aInventoryPlayer, aTileEntity, aGUIID, 0, aTileEntity.getSizeInventoryGUI());
 	}
+	/** Легаси-форма (без явного {@code MenuType}/{@code containerId}) — контракт, которым продолжают
+	 *  пользоваться сотни {@code getGUIServer}-реализаций по всему моду (вне зоны этого захода); id
+	 *  подхватывается из моста {@link #sPendingWindowID}. */
 	public ContainerCommon(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID, int aOffset, int aSlotCount) {
+		this(MENU_TYPE.get(), sPendingWindowID, aInventoryPlayer, aTileEntity, aGUIID, aOffset, aSlotCount);
+	}
+	/** Полная форма (постановка задачи, п.1): конструктор принимает {@code MenuType}+{@code containerId} и
+	 *  зовёт {@code super(menuType, containerId)}. */
+	public ContainerCommon(MenuType<?> aMenuType, int aWindowID, Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, int aGUIID, int aOffset, int aSlotCount) {
+		super(aMenuType, aWindowID);
 		mInventoryPlayer = aInventoryPlayer;
 		mTileEntity = aTileEntity;
 		mTileEntity.openInventoryGUI();
 		mSlotCount = aSlotCount;
 		mOffset = aOffset;
 		mGUIID = aGUIID;
-		
+
 		int tOffset = addSlots(aInventoryPlayer);
 		if (doesBindPlayerInventory()) bindPlayerInventory(aInventoryPlayer, tOffset);
-		detectAndSendChanges();
+		broadcastChanges();
 	}
-	
+
 	/**
 	 * To add the Slots to your GUI
 	 */
@@ -288,42 +391,42 @@ public class ContainerCommon extends AbstractContainerMenu {
 		}
 		return 84;
 	}
-	
+
 	public boolean useDefaultSlots() {
 		return F;
 	}
-	
+
 	/**
 	 * Amount of regular Slots in the GUI (so, non-HoloSlots)
 	 */
 	public int getSlotCount() {return useDefaultSlots() ? mSlotCount : 0;}
-	
+
 	/**
 	 * Amount of ALL Slots in the GUI including HoloSlots and ArmorSlots, but excluding regular Player Slots
 	 */
 	protected final int getAllSlotCount() {
-		return inventorySlots!=null?doesBindPlayerInventory()?inventorySlots.size()-36:inventorySlots.size():getSlotCount();
+		return slots!=null?doesBindPlayerInventory()?slots.size()-36:slots.size():getSlotCount();
 	}
-	
+
 	/**
 	 * Start-Index of the usable Slots (the first non-HoloSlot)
 	 */
 	public int getStartIndex() {return 0;}
-	
+
 	public int getShiftClickStartIndex() {return getStartIndex();}
-	
+
 	/**
 	 * Amount of Slots in the GUI the player can Shift-Click into. Uses also getSlotStartIndex
 	 */
 	public int getShiftClickSlotCount() {return useDefaultSlots() ? mSlotCount : 0;}
-	
+
 	/**
 	 * Is Player-Inventory visible?
 	 */
 	public boolean doesBindPlayerInventory() {return T;}
-	
-	@Override public boolean canInteractWith(Player aPlayer) {return mTileEntity.isUseableByPlayerGUI(aPlayer);}
-	
+
+	@Override public boolean stillValid(Player aPlayer) {return mTileEntity.isUseableByPlayerGUI(aPlayer);}
+
 	protected void bindPlayerInventory(Inventory aInventoryPlayer, int aOffset) {
 		for (int i = 0; i < 3; i++) for (int j = 0; j < 9; j++) {
 			addSlotToContainer(new Slot(aInventoryPlayer, j + i * 9 + 9, 8 + j * 18, aOffset + i * 18));
@@ -332,220 +435,108 @@ public class ContainerCommon extends AbstractContainerMenu {
 			addSlotToContainer(new Slot(aInventoryPlayer, i, 8 + i * 18, aOffset + 58));
 		}
 	}
-	
+
+	/**
+	 * F-GUI: движок сменил модель клика — {@code slotClick(index,mouse,shift,player):ItemStack} (1.7.10)
+	 * → {@code clicked(index,button,ContainerInput,player):void} (`AbstractContainerMenu.java:319`).
+	 * {@code aType.id()} — дословный старый {@code aShift} (см. javadoc класса). Перехват GT6
+	 * ({@code interceptClick}/{@code slotClick} на TE) и гейтинг Holo/Armor-слотов — 1:1 из оригинала;
+	 * дальше маршрут отдаётся движку ({@code super.clicked}, делает то же, что раньше делал
+	 * {@code super.slotClick} в единственном РЕАЛЬНО достижимом пути оригинала). Оригинал (`gregtech6/.../
+	 * ContainerCommon.java:343-345`) возвращал carried-стек из {@code slotClick(...)} как результат метода
+	 * ({@code ItemStack rStack = mTileEntity.slotClick(...); return rStack;}) — neo {@code clicked} void,
+	 * «то, что в руке» передаётся через {@code setCarried(ItemStack)} (`AbstractContainerMenu.java:779`).
+	 */
 	@Override
-	public ItemStack slotClick(int aIndex, int aMouse, int aShift, Player aPlayer) {
+	public void clicked(int aIndex, int aMouse, ContainerInput aType, Player aPlayer) {
 		mTileEntity.markDirtyGUI();
-		Slot aSlot = (aIndex >= 0 && aIndex < inventorySlots.size()) ? (Slot)inventorySlots.get(aIndex) : null;
-		
+		Slot aSlot = (aIndex >= 0 && aIndex < slots.size()) ? getSlot(aIndex) : null;
+		int aShift = aType.id();
+
 		try {
 			if (aSlot instanceof Slot_Base && mTileEntity.interceptClick(mGUIID, (Slot_Base)aSlot, aIndex, aSlot.getSlotIndex(), aPlayer, aShift == 1, aMouse != 0, aMouse, aShift)) {
 				ItemStack rStack = mTileEntity.slotClick(mGUIID, (Slot_Base)aSlot, aIndex, aSlot.getSlotIndex(), aPlayer, aShift == 1, aMouse != 0, aMouse, aShift);
-				detectAndSendChanges();
-				return rStack;
+				setCarried(ST.nn(rStack)); // F15-мост: было `return rStack` (1.7.10 carried-стек) → neo setCarried
+				broadcastChanges();
+				return;
 			}
-		} catch (Throwable e) {e.printStackTrace(ERR); return null;}
-		
+		} catch (Throwable e) {e.printStackTrace(ERR); return;}
+
 		if (aIndex >= 0) {
-			if (aSlot == null || aSlot instanceof Slot_Holo) return null;
-			if (!(aSlot instanceof Slot_Armor)) if (aIndex < getAllSlotCount()) if (aIndex < getStartIndex() || aIndex >= getStartIndex() + getSlotCount()) return null;
+			if (aSlot == null || aSlot instanceof Slot_Holo) return;
+			if (!(aSlot instanceof Slot_Armor)) if (aIndex < getAllSlotCount()) if (aIndex < getStartIndex() || aIndex >= getStartIndex() + getSlotCount()) return;
 		}
-		
-		ItemStack rStack = null, tTempStack, aHoldStack;
-		
-		try {rStack = super.slotClick(aIndex, aMouse, aShift, aPlayer); detectAndSendChanges(); return rStack;} catch (Throwable e) {e.printStackTrace(ERR);}
-		
-		Inventory aPlayerInventory = aPlayer.inventory;
-		int tTempStackSize;
-		
-		if ((aShift == 0 || aShift == 1) && (aMouse == 0 || aMouse == 1)) {
-			if (aIndex == -999) {
-				if (aPlayerInventory.getItemStack() != null && aIndex == -999) {
-					if (aMouse == 0) {
-						aPlayer.dropPlayerItemWithRandomChoice(aPlayerInventory.getItemStack(), T);
-						aPlayerInventory.setItemStack(null);
-					}
-					if (aMouse == 1) {
-						aPlayer.dropPlayerItemWithRandomChoice(aPlayerInventory.getItemStack().splitStack(1), T);
-						if (aPlayerInventory.getItemStack().getCount() == 0) {
-							aPlayerInventory.setItemStack(null);
-						}
-					}
-				}
-			} else if (aShift == 1) {
-				if (aSlot != null && aSlot.canTakeStack(aPlayer)) {
-					tTempStack = transferStackInSlot(aPlayer, aIndex);
-					if (tTempStack != null) {
-						rStack = ST.copy(tTempStack);
-						if (aSlot.getStack() != null && aSlot.getStack().getItem() == tTempStack.getItem()) {
-							slotClick(aIndex, aMouse, aShift, aPlayer);
-						}
-					}
-				}
-			} else {
-				if (aIndex < 0) {
-					detectAndSendChanges();
-					return null;
-				}
-				if (aSlot != null) {
-					tTempStack = aSlot.getStack();
-					ItemStack tHeldStack = aPlayerInventory.getItemStack();
-					if (tTempStack != null) {
-						rStack = ST.copy(tTempStack);
-					}
-					if (tTempStack == null) {
-						if (tHeldStack != null && aSlot.isItemValid(tHeldStack)) {
-							tTempStackSize = (aMouse == 0 ? tHeldStack.getCount() : 1);
-							if (tTempStackSize > aSlot.getSlotStackLimit()) {
-								tTempStackSize = aSlot.getSlotStackLimit();
-							}
-							aSlot.putStack(tHeldStack.splitStack(tTempStackSize));
 
-							if (tHeldStack.getCount() == 0) {
-								aPlayerInventory.setItemStack(null);
-							}
-						}
-					} else if (aSlot.canTakeStack(aPlayer)) {
-						if (tHeldStack == null) {
-							tTempStackSize = (aMouse == 0 ? tTempStack.getCount() : (tTempStack.getCount() + 1) / 2);
-							aHoldStack = aSlot.decrStackSize(tTempStackSize);
-							aPlayerInventory.setItemStack(aHoldStack);
-							if (tTempStack.getCount() == 0) {
-								aSlot.putStack(null);
-							}
-							aSlot.onPickupFromSlot(aPlayer, aPlayerInventory.getItemStack());
-						} else if (aSlot.isItemValid(tHeldStack)) {
-							if (tTempStack.getItem() == tHeldStack.getItem() && tTempStack.getItemDamage() == tHeldStack.getItemDamage() && ItemStack.areItemStackTagsEqual(tTempStack, tHeldStack)) {
-								tTempStackSize = (aMouse == 0 ? tHeldStack.getCount() : 1);
-								if (tTempStackSize > aSlot.getSlotStackLimit() - tTempStack.getCount()) {
-									tTempStackSize = aSlot.getSlotStackLimit() - tTempStack.getCount();
-								}
-								if (tTempStackSize > tHeldStack.getMaxStackSize() - tTempStack.getCount()) {
-									tTempStackSize = tHeldStack.getMaxStackSize() - tTempStack.getCount();
-								}
-								tHeldStack.splitStack(tTempStackSize);
-								if (tHeldStack.getCount() == 0) {
-									aPlayerInventory.setItemStack(null);
-								}
-								tTempStack.setCount(tTempStack.getCount()+(tTempStackSize));
-							} else if (tHeldStack.getCount() <= aSlot.getSlotStackLimit()) {
-								aSlot.putStack(tHeldStack);
-								aPlayerInventory.setItemStack(tTempStack);
-							}
-						} else if (tTempStack.getItem() == tHeldStack.getItem() && tHeldStack.getMaxStackSize() > 1 && (!tTempStack.getHasSubtypes() || tTempStack.getItemDamage() == tHeldStack.getItemDamage()) && ItemStack.areItemStackTagsEqual(tTempStack, tHeldStack)) {
-							tTempStackSize = tTempStack.getCount();
-
-							if (tTempStackSize > 0 && tTempStackSize + tHeldStack.getCount() <= tHeldStack.getMaxStackSize()) {
-								tHeldStack.setCount(tHeldStack.getCount()+(tTempStackSize));
-								tTempStack = aSlot.decrStackSize(tTempStackSize);
-
-								if (tTempStack.getCount() == 0) {
-									aSlot.putStack(null);
-								}
-
-								aSlot.onPickupFromSlot(aPlayer, aPlayerInventory.getItemStack());
-							}
-						}
-					}
-					aSlot.onSlotChanged();
-				}
-			}
-		} else if (aShift == 2 && aMouse >= 0 && aMouse < 9) {
-			if (aSlot.canTakeStack(aPlayer)) {
-				tTempStack = aPlayerInventory.getStackInSlot(aMouse);
-				boolean var9 = tTempStack == null || aSlot.inventory == aPlayerInventory && aSlot.isItemValid(tTempStack);
-				tTempStackSize = -1;
-
-				if (!var9) {
-					tTempStackSize = aPlayerInventory.getFirstEmptyStack();
-					var9 |= tTempStackSize > -1;
-				}
-
-				if (aSlot.getHasStack() && var9) {
-					aHoldStack = aSlot.getStack();
-					aPlayerInventory.setInventorySlotContents(aMouse, aHoldStack);
-
-					if ((aSlot.inventory != aPlayerInventory || !aSlot.isItemValid(tTempStack)) && tTempStack != null) {
-						if (tTempStackSize > -1) {
-							aPlayerInventory.addItemStackToInventory(tTempStack);
-							aSlot.decrStackSize(aHoldStack.getCount());
-							aSlot.putStack(null);
-							aSlot.onPickupFromSlot(aPlayer, aHoldStack);
-						}
-					} else {
-						aSlot.decrStackSize(aHoldStack.getCount());
-						aSlot.putStack(tTempStack);
-						aSlot.onPickupFromSlot(aPlayer, aHoldStack);
-					}
-				} else if (!aSlot.getHasStack() && tTempStack != null && aSlot.isItemValid(tTempStack)) {
-					aPlayerInventory.setInventorySlotContents(aMouse, null);
-					aSlot.putStack(tTempStack);
-				}
-			}
-		} else if (aShift == 3 && UT.Entities.hasInfiniteItems(aPlayer) && aPlayerInventory.getItemStack() == null && aIndex >= 0) {
-			if (aSlot != null && aSlot.getHasStack()) {
-				tTempStack = ST.copy(aSlot.getStack());
-				tTempStack.setCount(tTempStack.getMaxStackSize());
-				aPlayerInventory.setItemStack(tTempStack);
-			}
+		try {
+			super.clicked(aIndex, aMouse, aType, aPlayer);
+		} catch (Throwable e) {
+			e.printStackTrace(ERR);
 		}
-		
-		detectAndSendChanges();
-		return rStack;
+		broadcastChanges();
 	}
-	
+
+	/** F-GUI: {@code transferStackInSlot}→{@code quickMoveStack} (движок, абстрактный метод
+	 *  `AbstractContainerMenu.java:310`); {@code null}→{@code ItemStack.EMPTY} (движок, ItemStack больше
+	 *  не бывает null — `doClick` вызывающего кода проверяет {@code .isEmpty()}). */
 	@Override
-	public ItemStack transferStackInSlot(Player aPlayer, int aIndex) {
-		ItemStack rStack = null;
-		Slot tSlot = (Slot)inventorySlots.get(aIndex);
-		
+	public ItemStack quickMoveStack(Player aPlayer, int aIndex) {
+		ItemStack rStack = ItemStack.EMPTY;
+		Slot tSlot = slots.get(aIndex);
+
 		mTileEntity.markDirtyGUI();
-		
+
 		// null checks and checks if the item can be stacked (maxStackSize > 1)
-		if (getSlotCount() > 0 && tSlot != null && tSlot.getHasStack() && !(tSlot instanceof Slot_Holo)) {
-			ItemStack tStack = tSlot.getStack();
+		if (getSlotCount() > 0 && tSlot != null && tSlot.hasItem() && !(tSlot instanceof Slot_Holo)) {
+			ItemStack tStack = tSlot.getItem();
 			rStack = ST.copy(tStack);
-			
+
 			// TileEntity -> Player
 			if (aIndex < getAllSlotCount()) {
-				if (doesBindPlayerInventory() && !mergeItemStack(tStack, getAllSlotCount(), getAllSlotCount()+36, T)) {
-					return null;
+				if (doesBindPlayerInventory() && !moveItemStackTo(tStack, getAllSlotCount(), getAllSlotCount()+36, T)) {
+					return ItemStack.EMPTY;
 				}
 			// Player -> TileEntity
-			} else if (!mergeItemStack(tStack, getShiftClickStartIndex(), getShiftClickStartIndex()+getShiftClickSlotCount(), F)) {
-				return null;
+			} else if (!moveItemStackTo(tStack, getShiftClickStartIndex(), getShiftClickStartIndex()+getShiftClickSlotCount(), F)) {
+				return ItemStack.EMPTY;
 			}
-			
-			if (tStack.getCount() == 0) tSlot.putStack(null); else tSlot.onSlotChanged();
+
+			if (tStack.getCount() == 0) tSlot.set(ItemStack.EMPTY); else tSlot.setChanged();
 		}
 		return rStack;
 	}
-	
+
+	/** F-GUI: {@code mergeItemStack}→{@code moveItemStackTo} (движок переименовал, тот же протектед-хук,
+	 *  `AbstractContainerMenu.java:648`); {@code isItemValid}→{@code mayPlace}, {@code getStack}→
+	 *  {@code getItem}, {@code putStack}→{@code set}, {@code onSlotChanged}→{@code setChanged},
+	 *  {@code getSlotStackLimit}→{@code getMaxStackSize} (движок, см. {@link Slot_Base}). Логика (Wildcard-мета
+	 *  ранний выход, {@code markDirtyGUI}, исключение {@code Slot_Holo}, {@code ST.equal}-сравнение вместо
+	 *  ванильного) — дословно из оригинала, это НЕ ванильный мёрдж, а GT6-кастом.
+	 */
 	@Override
-	protected boolean mergeItemStack(ItemStack aStack, int aStartIndex, int aSlotCount, boolean aReverse) {
+	protected boolean moveItemStackTo(ItemStack aStack, int aStartIndex, int aSlotCount, boolean aReverse) {
 		if (ST.meta(aStack) == W) return F;
-		
+
 		boolean rSuccess = F;
 		int tIndex = aReverse?aSlotCount-1:aStartIndex;
-		
+
 		mTileEntity.markDirtyGUI();
-		
+
 		if (aStack.isStackable()) {
 			while (aStack.getCount() > 0 && (aReverse ? tIndex >= aStartIndex : tIndex < aSlotCount)) {
-				Slot tSlot = (Slot)inventorySlots.get(tIndex);
-				int tLimit = Math.min(aStack.getMaxStackSize(), tSlot.getSlotStackLimit());
-				ItemStack tStack = tSlot.getStack();
-				if (!(tSlot instanceof Slot_Holo) && tSlot.isItemValid(aStack) && ST.meta(tStack) != W && ST.equal(aStack, tStack)) {
+				Slot tSlot = slots.get(tIndex);
+				int tLimit = Math.min(aStack.getMaxStackSize(), tSlot.getMaxStackSize());
+				ItemStack tStack = tSlot.getItem();
+				if (!(tSlot instanceof Slot_Holo) && tSlot.mayPlace(aStack) && ST.meta(tStack) != W && ST.equal(aStack, tStack)) {
 					int tSize = tStack.getCount() + aStack.getCount();
 					if (tSize <= tLimit) {
 						aStack.setCount(0);
 						tStack.setCount(tSize);
-						tSlot.onSlotChanged();
+						tSlot.setChanged();
 						rSuccess = T;
 					} else if (tStack.getCount() < tLimit) {
 						aStack.setCount(aStack.getCount()-(tLimit - tStack.getCount()));
 						tStack.setCount(tLimit);
-						tSlot.onSlotChanged();
+						tSlot.setChanged();
 						rSuccess = T;
 					}
 				}
@@ -555,12 +546,12 @@ public class ContainerCommon extends AbstractContainerMenu {
 		if (aStack.getCount() > 0) {
 			if (aReverse) tIndex = aSlotCount - 1; else tIndex = aStartIndex;
 			while (aReverse ? tIndex >= aStartIndex : tIndex < aSlotCount) {
-				Slot tSlot = (Slot)inventorySlots.get(tIndex);
-				if (!(tSlot instanceof Slot_Holo) && tSlot.isItemValid(aStack)) {
-					if (tSlot.getStack() == null) {
-						ItemStack tStack = ST.amount(Math.min(aStack.getCount(), Math.min(aStack.getMaxStackSize(), tSlot.getSlotStackLimit())), aStack);
-						tSlot.putStack(tStack);
-						tSlot.onSlotChanged();
+				Slot tSlot = slots.get(tIndex);
+				if (!(tSlot instanceof Slot_Holo) && tSlot.mayPlace(aStack)) {
+					if (!tSlot.hasItem()) {
+						ItemStack tStack = ST.amount(Math.min(aStack.getCount(), Math.min(aStack.getMaxStackSize(), tSlot.getMaxStackSize())), aStack);
+						tSlot.set(tStack);
+						tSlot.setChanged();
 						aStack.setCount(aStack.getCount()-(tStack.getCount()));
 						rSuccess = T;
 						if (aStack.getCount() <= 0) break;
@@ -571,178 +562,164 @@ public class ContainerCommon extends AbstractContainerMenu {
 		}
 		return rSuccess;
 	}
-	
-	@Override
-	@SuppressWarnings("unchecked")
+
+	/** Не {@code @Override} — движок больше не знает {@code addSlotToContainer} (переименован в
+	 *  {@code addSlot}, `AbstractContainerMenu.java:124`); имя и null-гейт (используется
+	 *  {@code ContainerCommonBasicMachine} для опциональных спец-слотов) сохранены дословно. */
 	protected Slot addSlotToContainer(Slot aSlot) {
 		if (aSlot == null) return null;
-		aSlot.slotNumber = inventorySlots.size();
-		inventorySlots.add(aSlot);
-		inventoryItemStacks.add(null);
-		return aSlot;
+		return addSlot(aSlot);
 	}
-	
+
+	/** F-GUI: {@code addCraftingToCrafters}→{@code addSlotListener}, {@code ICrafting}→{@code ContainerListener} (движок). */
 	@Override
-	public void addCraftingToCrafters(ContainerListener par1ICrafting) {
+	public void addSlotListener(ContainerListener aListener) {
 		try {
-			super.addCraftingToCrafters(par1ICrafting);
+			super.addSlotListener(aListener);
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 	}
-	
+
+	/** F-GUI: {@code getInventory():List<ItemStack>}→{@code getItems():NonNullList<ItemStack>} (движок переименовал+сузил тип). */
 	@Override
-	@SuppressWarnings("unchecked")
-	public List<ItemStack> getInventory() {
+	public NonNullList<ItemStack> getItems() {
 		try {
-			return super.getInventory();
+			return super.getItems();
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 		return null;
 	}
-	
+
+	/** F-GUI: {@code removeCraftingFromCrafters}→{@code removeSlotListener}, {@code ICrafting}→{@code ContainerListener} (движок). */
 	@Override
-	public void removeCraftingFromCrafters(ContainerListener aCrafting) {
+	public void removeSlotListener(ContainerListener aListener) {
 		try {
-			super.removeCraftingFromCrafters(aCrafting);
+			super.removeSlotListener(aListener);
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 	}
-	
+
+	/** F-GUI: {@code detectAndSendChanges}→{@code broadcastChanges} (движок переименовал). GT6-кастом
+	 *  «{@code needsToSyncEverything} → отправить ВСЕ слоты без сравнения» больше не портируем ручной
+	 *  реимплементацией (движок спрятал {@code lastSlots}/{@code remoteSlots} — стали {@code private}),
+	 *  а зовём готовый движковый эквивалент той же роли — {@code broadcastFullState()}
+	 *  (`AbstractContainerMenu.java:216`, безусловно ре-триггерит слушателей для ВСЕХ слотов, как и
+	 *  оригинал), иначе — обычный {@code super.broadcastChanges()} (change-detected путь, как раньше). */
 	@Override
-	@SuppressWarnings("unchecked")
-	public void detectAndSendChanges() {
+	public void broadcastChanges() {
 		try {
 			if (mTileEntity.needsToSyncEverything()) {
-				for (int i = 0; i < inventorySlots.size(); ++i) {
-					ItemStack tStack = ST.copy(((Slot)inventorySlots.get(i)).getStack());
-					inventoryItemStacks.set(i, tStack);
-					for (int j = 0; j < crafters.size(); ++j) ((ContainerListener)crafters.get(j)).sendSlotContents(this, i, tStack);
-				}
+				broadcastFullState();
 			} else {
-				for (int i = 0; i < inventorySlots.size(); ++i) {
-					ItemStack tStack = ((Slot)inventorySlots.get(i)).getStack();
-					if (!ST.identical(tStack, (ItemStack)inventoryItemStacks.get(i))) {
-						inventoryItemStacks.set(i, tStack = ST.copy(tStack));
-						for (int j = 0; j < crafters.size(); ++j) ((ContainerListener)crafters.get(j)).sendSlotContents(this, i, tStack);
-					}
-				}
+				super.broadcastChanges();
 			}
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 	}
-	
-	@Override
-	public boolean enchantItem(Player par1EntityPlayer, int par2) {
-		return F;
-	}
-	
-	@Override
-	public Slot getSlotFromInventory(AbstractContainerMenu aInventory, int aIndex) {
+
+	/** F-GUI: {@code getSlotFromInventory(IInventory,int)} движок убрал целиком (заменил на
+	 *  {@code findSlot(Container,int):OptionalInt}, работающий ТОЛЬКО через базовые поля {@code container}/
+	 *  {@code getContainerSlot()} — непригодно для {@link Slot_Base}, чьи слоты сверяются через собственные
+	 *  {@code mInventory}/{@code mIndex}, см. {@link Slot_Base#isSlotInInventory}). Не {@code @Override}
+	 *  (цели в базе больше нет) — имя/структура сохранены, для {@link Slot_Base} зовём его собственный
+	 *  {@code isSlotInInventory}, для обычных {@code Slot} (слоты игрока, {@link #bindPlayerInventory}) —
+	 *  сравнение через {@code container}/{@code getContainerSlot()} (те самые поля, что раньше проверяла
+	 *  базовая {@code Slot.isSlotInInventory}). {@code IInventory}(1.7.10)→{@code Container} (движок). */
+	public Slot getSlotFromInventory(Container aInventory, int aIndex) {
 		try {
-			for (int j = 0; j < inventorySlots.size(); ++j) {
-				Slot slot = (Slot)inventorySlots.get(j);
-				if (slot.isSlotInInventory(aInventory, aIndex)) return slot;
+			for (int j = 0; j < slots.size(); ++j) {
+				Slot slot = slots.get(j);
+				if (slot instanceof Slot_Base ? ((Slot_Base)slot).isSlotInInventory(aInventory, aIndex) : (slot.container == aInventory && slot.getContainerSlot() == aIndex)) return slot;
 			}
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 		return null;
 	}
-	
+
 	@Override
 	public Slot getSlot(int aIndex) {
 		try {
-			if (aIndex < inventorySlots.size()) return (Slot)inventorySlots.get(aIndex);
+			if (aIndex < slots.size()) return slots.get(aIndex);
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 		return null;
 	}
-	
+
+	/** F-GUI: {@code retrySlotClick} движок убрал целиком (двойной клик = PICKUP_ALL теперь обрабатывает
+	 *  сам {@code doClick}, вызванный через {@code super.clicked(...)} в {@link #clicked}) — форс, нет цели
+	 *  для переноса. */
+
+	/** F-GUI (доработка R8): {@code onContainerClosed}→{@code removed} (движок переименовал,
+	 *  `AbstractContainerMenu.java:598`). 1:1 перенос оригинала (`gregtech6/.../ContainerCommon.java:680-696`):
+	 *  два ST.check-цикла (main+armor) + возврат/сброс «зажатого мышью» стека — {@code НЕ} зовём
+	 *  {@code super.removed(player)} (тот делает place-back-или-drop без {@code ST.check}, ДРУГОЕ поведение,
+	 *  исказило бы 1:1). Carried-стек: {@code InventoryPlayer.getItemStack()}→{@code getCarried()}
+	 *  (`AbstractContainerMenu.java:783`), {@code setItemStack(null)}→{@code setCarried(ItemStack.EMPTY)}
+	 *  (`:779`), {@code dropPlayerItemWithRandomChoice(stack,F)}→{@code Player.drop(ItemStack,boolean)}
+	 *  (`neo-decompiled/net/minecraft/world/entity/player/Player.java:592`, тот же второй аргумент {@code F}).
+	 *  Проверка присутствия carried — через F15-канон {@code ST.ni(getCarried()) != null}
+	 *  (`gregapi/util/ST.java:154`), НЕ {@code getCarried().isEmpty()} — последний схлопнул бы значимый
+	 *  {@code count==0} (не то же самое, что синглтон {@code ItemStack.EMPTY}) в «пусто», а оригинал
+	 *  {@code getItemStack() != null} этот случай считал присутствующим.
+	 *  Сканирование инвентаря на debug-предметы ({@code ST.check}) — 1:1, {@code mainInventory}→
+	 *  {@code getInventory().getNonEquipmentItems()} (`Inventory.java:90`), {@code armorInventory}→
+	 *  {@code getItemBySlot(EquipmentSlot)} по тому же порядку FEET/LEGS/CHEST/HEAD, что уже установлен
+	 *  центром брони (`gregapi/GT_API_Proxy.java:994`). */
+	private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD};
+
 	@Override
-	public boolean func_94530_a(ItemStack aStack, Slot aSlot) {
-		return T;
-	}
-	
-	@Override
-	protected void retrySlotClick(int aIndex, int aMouse, boolean aUnknown, Player aPlayer) {
-		try {
-			slotClick(aIndex, aMouse, 1, aPlayer);
-		} catch(Throwable e) {
-			e.printStackTrace(ERR);
-		}
-	}
-	
-	@Override
-	public void onContainerClosed(Player aPlayer) {
+	public void removed(Player aPlayer) {
 		try {
 			mTileEntity.closeInventoryGUI();
-			Inventory tPlayerInventory = aPlayer.inventory;
-			for (ItemStack tStack : tPlayerInventory.mainInventory) {
+			for (ItemStack tStack : aPlayer.getInventory().getNonEquipmentItems()) {
 				ST.check(aPlayer, tStack);
 			}
-			for (ItemStack tStack : tPlayerInventory.armorInventory) {
-				ST.check(aPlayer, tStack);
+			for (EquipmentSlot tArmorSlot : ARMOR_SLOTS) {
+				ItemStack tStack = aPlayer.getItemBySlot(tArmorSlot);
+				if (ST.valid(tStack)) ST.check(aPlayer, tStack);
 			}
-			if (tPlayerInventory.getItemStack() != null) {
-				ST.check(aPlayer, tPlayerInventory.getItemStack());
-				aPlayer.dropPlayerItemWithRandomChoice(tPlayerInventory.getItemStack(), F);
-				tPlayerInventory.setItemStack(null);
+			if (ST.ni(getCarried()) != null) { // было getItemStack() != null; F15-канон ST.ni (не isEmpty() — тот схлопывает значимый count==0)
+				ST.check(aPlayer, getCarried());
+				aPlayer.drop(getCarried(), false); // было dropPlayerItemWithRandomChoice(carried, F)
+				setCarried(ItemStack.EMPTY); // было setItemStack(null)
 			}
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 	}
-	
+
 	@Override
-	public void onCraftMatrixChanged(AbstractContainerMenu aInventory) {
-		detectAndSendChanges();
+	public void slotsChanged(Container aInventory) {
+		broadcastChanges();
 	}
-	
+
 	@Override
-	public void putStackInSlot(int aIndex, ItemStack aStack) {
-		try {
-			getSlot(aIndex).putStack(aStack);
-		} catch(Throwable e) {
-			e.printStackTrace(ERR);
-		}
-	}
-	
-	@Override
-	public void putStacksInSlots(ItemStack[] aStacks) {
-		try {
-			for (int i = 0; i < aStacks.length; ++i) getSlot(i).putStack(aStacks[i]);
-		} catch(Throwable e) {
-			e.printStackTrace(ERR);
-		}
-	}
-	
-	@Override
-	public void updateProgressBar(int aIndex, int aValue) {
-		//
-	}
-	
-	@Override
-	public short getNextTransactionID(Inventory aPlayerInventory) {
-		return super.getNextTransactionID(aPlayerInventory);
-	}
-	
-	@Override
-	public boolean isPlayerNotUsingContainer(Player aPlayer) {
-		return super.isPlayerNotUsingContainer(aPlayer);
-	}
-	
-	@Override
-	public void setPlayerIsPresent(Player aPlayer, boolean aPresent) {
-		super.setPlayerIsPresent(aPlayer, aPresent);
-	}
-	
-	@Override
-	public boolean canDragIntoSlot(Slot aSlot) {
+	public boolean canDragTo(Slot aSlot) {
 		return T;
 	}
+
+	/*
+	 * F-GUI — форс-удаления (методы, у которых движок убрал целевой хук БЕЗ замены; тела оригинала были
+	 * либо no-op, либо ровно совпадали с новым дефолтом движка — семантика не теряется):
+	 *  - enchantItem(Player,int){return F;} — цели-хука в neo нет; movern-аналог clickMenuButton(Player,int)
+	 *    (`AbstractContainerMenu.java:302`) уже по умолчанию возвращает false — то же поведение.
+	 *  - func_94530_a(ItemStack,Slot){return T;} — 1.7.10 pickup-all-гейт; совпадает по роли и умолчанию
+	 *    с новым canTakeItemForPickAll(ItemStack,Slot){return true;} (`:594`) — не переопределяем (то же).
+	 *  - retrySlotClick(int,int,boolean,Player) — двойной клик (pickup-all) теперь целиком внутри движкового
+	 *    doClick/ContainerInput.PICKUP_ALL (`:536-558`), вызываемого через super.clicked(...) в {@link #clicked}.
+	 *  - putStackInSlot(int,ItemStack)/putStacksInSlots(ItemStack[]) — старый ручной bulk-sync при открытии
+	 *    GUI; движок заменил на setItem(int,int,ItemStack)/initializeContents(int,List,ItemStack)
+	 *    (`:628-640`), которые уже разумно реализованы в базе — по имени переопределять нечего.
+	 *  - updateProgressBar(int,int) (пустой стаб на этом уровне) — движок заменил int-индексный прогресс-бар
+	 *    на DataSlot+setData(int,int) (`:642-644`); ContainerCommonBasicMachine теперь переопределяет setData.
+	 *  - getNextTransactionID(InventoryPlayer)/isPlayerNotUsingContainer(Player)/setPlayerIsPresent(Player,boolean)
+	 *    — старая transaction-id/desync-схема сети 1.7.10 удалена движком целиком, замены нет и не нужно
+	 *    (современная сеть синхронизирует через stateId/HashedStack, `:58,829-836`, внутри самого движка).
+	 */
 }

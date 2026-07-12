@@ -354,6 +354,8 @@ public class GT_API extends Abstract_Mod {
 		// подписки (decisions/F11-crafting-recipe.md §7, gregapi/recipes/GT6CraftingDispatcher.java; закрывает
 		// прежний долг F12↔F11 wiring).
 		GT6CraftingDispatcher.register(aModBus);
+		// F14: центральный MenuType GUI (ContainerCommon) — тот же мод-бас, единая точка подписки (decisions/F14-gui-menu.md)
+		gregapi.gui.ContainerCommon.register(aModBus);
 
 		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую.
 		// GT6-трёхфазный контракт (Pre/Init/Post) сохранён 1:1 поверх родных событий жизненного цикла neo:

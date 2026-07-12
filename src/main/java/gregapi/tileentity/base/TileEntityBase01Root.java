@@ -31,6 +31,7 @@ import gregapi.code.TagData;
 import gregapi.data.FL;
 import gregapi.data.TD;
 import gregapi.gui.ContainerCommon;
+import gregapi.gui.GT6MenuProvider;
 import gregapi.gui.Slot_Base;
 import gregapi.network.packets.PacketBlockError;
 import gregapi.network.packets.PacketBlockEvent;
@@ -177,7 +178,20 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override public boolean isServerSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer() : !level.isRemote;}
 	@Override public boolean isClientSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isClient() :  level.isRemote;}
 	@Override public boolean openGUI(Player aPlayer) {return openGUI(aPlayer, 0);}
-	@Override public boolean openGUI(Player aPlayer, int aID) {if (aPlayer == null) return F; aPlayer.openGui(GAPI, aID, level, xCoord, yCoord, zCoord); return T;}
+	/**
+	 * F-GUI (шов «GUI/меню», серверный центр): 1.7.10 {@code aPlayer.openGui(mod,id,world,x,y,z)} диспетчерил
+	 * через Forge-{@code IGuiHandler} автоматически — движок его не имеет. Единственная неоцентральная замена —
+	 * {@code Player.openMenu(MenuProvider, Consumer<RegistryFriendlyByteBuf>)}
+	 * (`neo-decompiled/net/minecraft/world/entity/player/Player.java:844`,
+	 * `neoforged/neoforge/common/extensions/IPlayerExtension.java:75-77`), маршрут id→{@code getGUIServer}
+	 * централизован в {@link GT6MenuProvider} (единственная реализация {@code MenuProvider} мода — не плодим).
+	 * Буфер несёт позицию TE + GUIID для клиентской реконструкции контейнера ({@link ContainerCommon#createFromNetwork}).
+	 */
+	@Override public boolean openGUI(Player aPlayer, int aID) {
+		if (aPlayer == null) return F;
+		aPlayer.openMenu(new GT6MenuProvider(level, getBlockPos(), aID), aBuf -> {aBuf.writeBlockPos(getBlockPos()); aBuf.writeInt(aID);});
+		return T;
+	}
 	@Override public int getRandomNumber(int aRange) {return RNGSUS.nextInt(aRange);}
 	@Override public int rng(int aRange) {return RNGSUS.nextInt(aRange);}
 	public boolean rng() {return RNGSUS.nextBoolean();}

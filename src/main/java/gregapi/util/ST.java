@@ -137,7 +137,22 @@ public class ST {
 	
 	public static ItemStack validate(ItemStack aStack) {return valid(aStack)                         ? aStack : null;}
 	public static ItemStack valisize(ItemStack aStack) {return valid(aStack) && aStack.getCount() > 0 ? aStack : null;}
-	
+
+	/**
+	 * F15 (мост GT6↔движок, «модель предмета null↔EMPTY»): GT6 хранит пустой слот как {@code null}
+	 * (см. {@code CS.NI}, весь {@link ST} построен на null), а движок никогда не терпит null — обязательный
+	 * синглтон {@code ItemStack.EMPTY}. Плюс GT6 держит стек с {@code count==0} как ЗНАЧИМОЕ состояние,
+	 * отличное от null ({@code TileEntityBase05Inventories.decrStackSizeGUI}: {@code allowZeroStacks} →
+	 * {@code setCount(0)} без обнуления в null) — движковый {@code isEmpty()} (true при {@code count<=0})
+	 * такое состояние не различает, поэтому граница мостится СТРОГО по ссылочному равенству с синглтоном
+	 * {@code ItemStack.EMPTY}, не по {@code isEmpty()}. Это ЕДИНСТВЕННАЯ точка перевода между моделями —
+	 * весь мод обязан пересекать границу только через {@link #nn} / {@link #ni}, не ad-hoc тернарниками.
+	 */
+	public static ItemStack nn(ItemStack aStack) {return aStack == null ? ItemStack.EMPTY : aStack;}
+	/** F15: движок→GT6. Движковый синглтон {@code ItemStack.EMPTY} (и null) → null (GT6-пусто); ЗНАЧИМЫЙ
+	 *  {@code count==0} (стек — не тот же объект, что {@code ItemStack.EMPTY}) переживает границу как есть. */
+	public static ItemStack ni(ItemStack aStack) {return (aStack == null || aStack == ItemStack.EMPTY) ? null : aStack;}
+
 	public static short id (Item      aItem ) {return aItem  == null ? 0 : id_(aItem);}
 	public static short id_(Item      aItem ) {return (short)Item.getId(aItem);}
 	public static short id (Block     aBlock) {return aBlock == null ? 0 : id_(aBlock);}

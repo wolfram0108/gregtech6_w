@@ -21,24 +21,34 @@ package gregapi.gui;
 
 import static gregapi.data.CS.*;
 
-import java.util.List;
-
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.LH;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.tileentity.ITileEntityInventoryGUI;
 import gregapi.tileentity.machines.MultiTileEntityBasicMachine;
 import gregapi.util.UT;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ContainerListener;
+import net.minecraft.world.inventory.DataSlot;
 
+/**
+ * F-GUI: {@code detectAndSendChanges}→{@code broadcastChanges}, старый int-индексный прогресс-бар
+ * ({@code ContainerListener.sendProgressBarUpdate}, движок убрал целиком) → {@code DataSlot}
+ * (`neo-decompiled/net/minecraft/world/inventory/AbstractContainerMenu.java:132-142,205-213` — добавляется
+ * через {@code addDataSlot}, синхронизируется САМИМ движком внутри {@code super.broadcastChanges()}, ручная
+ * рассылка по {@code crafters} не нужна). Клиентский приём значения — {@code updateProgressBar(int,int)}→
+ * {@code setData(int,int)} (движок переименовал; `ClientPacketListener.java:1505` — реальный клиентский
+ * вызыватель, `BeaconMenu.java:78`/`LecternMenu.java:47-86` — эталон того же паттерна оверрайда без
+ * {@code @OnlyIn(CLIENT)}, метод общий для обеих сторон).
+ */
 public class ContainerCommonBasicMachine extends ContainerCommon {
 	private RecipeMap mRecipes;
-	
+
+	/** F-GUI: движковый DataSlot заменяет ручную рассылку прогресс-бара, см. javadoc класса. */
+	private final DataSlot mProgressBarSlot;
+
 	public ContainerCommonBasicMachine(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity, RecipeMap aRecipes, int aGUIID) {
 		super(aInventoryPlayer, aTileEntity, aGUIID);
 		mRecipes = aRecipes;
+		mProgressBarSlot = addDataSlot(DataSlot.standalone());
 	}
 	
 	@Override
@@ -271,31 +281,34 @@ public class ContainerCommonBasicMachine extends ContainerCommon {
 	}
 	
 	public short mProgressBar = 0;
-	
+
 	@Override
-	@SuppressWarnings("unchecked")
-	public void detectAndSendChanges() {
-		super.detectAndSendChanges();
-		for (ContainerListener tUpdate : (List<ContainerListener>)crafters) {
-			if (((MultiTileEntityBasicMachine)mTileEntity).mSuccessful) {
-				tUpdate.sendProgressBarUpdate(this, 0, Short.MAX_VALUE);
-			} else if (((MultiTileEntityBasicMachine)mTileEntity).mMaxProgress > 0) {
-				tUpdate.sendProgressBarUpdate(this, 0, (short)UT.Code.units(Math.min(((MultiTileEntityBasicMachine)mTileEntity).mMaxProgress, ((MultiTileEntityBasicMachine)mTileEntity).mProgress), ((MultiTileEntityBasicMachine)mTileEntity).mMaxProgress, Short.MAX_VALUE, T));
+	public void broadcastChanges() {
+		// F-GUI R8-фикс: ContainerCommon-конструктор зовёт broadcastChanges() (виртуальный диспетч попадает
+		// сюда) ДО того, как addDataSlot(...) успел выполниться (он в теле ЭТОГО подкласса, после super(...))
+		// — mProgressBarSlot ещё null на первом вызове; null-гейт (1.7.10 тут был примитив short, конструктора
+		// не боялся); первый реальный синк прогресса произойдёт на следующем тике, поведение не теряется.
+		if (mProgressBarSlot != null) {
+			MultiTileEntityBasicMachine tTE = (MultiTileEntityBasicMachine)mTileEntity;
+			if (tTE.mSuccessful) {
+				mProgressBarSlot.set(Short.MAX_VALUE);
+			} else if (tTE.mMaxProgress > 0) {
+				mProgressBarSlot.set((short)UT.Code.units(Math.min(tTE.mMaxProgress, tTE.mProgress), tTE.mMaxProgress, Short.MAX_VALUE, T));
 			} else {
-				tUpdate.sendProgressBarUpdate(this, 0, -1);
+				mProgressBarSlot.set(-1);
 			}
 		}
+		super.broadcastChanges();
 	}
-	
+
 	@Override
-	@OnlyIn(Dist.CLIENT)
-	public void updateProgressBar(int aIndex, int aValue) {
-		super.updateProgressBar(aIndex, aValue);
+	public void setData(int aIndex, int aValue) {
+		super.setData(aIndex, aValue);
 		switch (aIndex) {
 		case 0: mProgressBar = (short)aValue; break;
 		}
 	}
-	
+
 	@Override public int getStartIndex() {return 0;}
 	@Override public int getSlotCount() {return mRecipes.mInputItemsCount + mRecipes.mOutputItemsCount + (mRecipes.getSpecialSlot(mTileEntity, 0, 80, 43)!=null?1:0);}
 	@Override public int getShiftClickStartIndex() {return 0;}

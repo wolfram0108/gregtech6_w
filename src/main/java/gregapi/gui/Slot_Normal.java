@@ -20,16 +20,17 @@
 package gregapi.gui;
 
 import gregapi.tileentity.ITileEntityInventoryGUI;
-import gregapi.util.ST;
-import net.minecraft.world.item.ItemStack;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F-GUI (доработка R1/R8): оригинальный {@code putStack} (`gregtech6/.../Slot_Normal.java`) был БАЙТ-В-БАЙТ
+ * идентичен {@code Slot_Base.putStack} — избыточный override уже в оригинале. Убран (не переопределяем) —
+ * наследуется {@link Slot_Base#set}, который несёт мост {@code EMPTY→null} на запись в GT6-инвентарь;
+ * поведение то же самое, дублирования (R1) больше нет.
  */
 public class Slot_Normal extends Slot_Base {
 	public Slot_Normal(ITileEntityInventoryGUI aInventory, int aIndex, int aX, int aY) {
 		super(aInventory, aIndex, aX, aY);
 	}
-	
-	@Override public void putStack(ItemStack aStack) {if (ST.size(aStack) > 64) ST.size_(64, aStack); mInventory.setInventorySlotContentsGUI(mIndex, aStack); onSlotChanged();}
 }
