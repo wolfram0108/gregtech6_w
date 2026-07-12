@@ -132,8 +132,8 @@ public class ST {
 	
 	public static boolean   valid(Block aBlock) {return aBlock != null && aBlock != NB;}
 	public static boolean invalid(Block aBlock) {return aBlock == null || aBlock == NB;}
-	public static boolean   valid(ItemStack aStack) {return aStack != null && aStack.getCount() >= 0 && item_(aStack) != null;}
-	public static boolean invalid(ItemStack aStack) {return aStack == null || aStack.getCount() <  0 || item_(aStack) == null;}
+	public static boolean   valid(ItemStack aStack) {return aStack != null && aStack != ItemStack.EMPTY && aStack.getCount() >= 0 && item_(aStack) != null;}
+	public static boolean invalid(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() <  0 || item_(aStack) == null;}
 	
 	public static ItemStack validate(ItemStack aStack) {return valid(aStack)                         ? aStack : null;}
 	public static ItemStack valisize(ItemStack aStack) {return valid(aStack) && aStack.getCount() > 0 ? aStack : null;}
@@ -182,13 +182,13 @@ public class ST {
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
 	public static ItemStack meta_(ItemStack aStack, long aMeta) {aStack.setDamageValue((int)aMeta); return aStack;}
 	
-	public static byte      size (ItemStack aStack) {return aStack == null || item_(aStack) == null || aStack.getCount() < 0 ? 0 : UT.Code.bindByte(aStack.getCount());}
-	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || item_(aStack) == null ? null : size_(aSize, aStack);}
+	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : UT.Code.bindByte(aStack.getCount());}
+	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : size_(aSize, aStack);}
 	public static ItemStack size_(long aSize, ItemStack aStack) {aStack.setCount((int)aSize); return aStack;}
 	
-	public static byte maxsize(ItemStack aStack) {return (byte)(aStack == null || item_(aStack) == null ? 64 : item_(aStack).getMaxStackSize(aStack));}
+	public static byte maxsize(ItemStack aStack) {return (byte)(aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? 64 : item_(aStack).getMaxStackSize(aStack));}
 	
-	public static ItemStack copy (ItemStack aStack) {return aStack == null || item_(aStack) == null ? null : copy_(aStack);}
+	public static ItemStack copy (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : copy_(aStack);}
 	public static ItemStack copy_(ItemStack aStack) {return aStack.copy();}
 	
 	public static ItemStack name (ItemStack aStack, String aName) {return aStack == null || aName == null ? aStack : name_(aStack, aName);}
@@ -199,18 +199,18 @@ public class ST {
 	public static ItemStack      nbt (ItemStack aStack, CompoundTag aNBT) {return aStack == null ? null : nbt_(aStack, aNBT);}
 	public static ItemStack      nbt_(ItemStack aStack, CompoundTag aNBT) {return UT.NBT.set(aStack, aNBT);}
 	
-	public static ItemStack amount (long aSize, ItemStack aStack) {return aStack == null || item_(aStack) == null ? null : amount_(aSize, aStack);}
+	public static ItemStack amount (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : amount_(aSize, aStack);}
 	public static ItemStack amount_(long aSize, ItemStack aStack) {return size_(aSize, copy_(aStack));}
 	
-	public static ItemStack mul (long aMultiplier, ItemStack aStack) {return aStack == null || item_(aStack) == null ? null : mul_(aMultiplier, aStack);}
+	public static ItemStack mul (long aMultiplier, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : mul_(aMultiplier, aStack);}
 	public static ItemStack mul_(long aMultiplier, ItemStack aStack) {return amount_(aStack.getCount() * aMultiplier, aStack);}
 	
-	public static ItemStack div (long aDivider, ItemStack aStack) {return aStack == null || item_(aStack) == null ? null : div_(aDivider, aStack);}
+	public static ItemStack div (long aDivider, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : div_(aDivider, aStack);}
 	public static ItemStack div_(long aDivider, ItemStack aStack) {return amount_(aStack.getCount() / aDivider, aStack);}
 	
-	public static ItemStack validMeta (long aSize, ItemStack aStack) {return aStack == null || item_(aStack) == null ? null : validMeta_(aSize, aStack);}
+	public static ItemStack validMeta (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : validMeta_(aSize, aStack);}
 	public static ItemStack validMeta_(long aSize, ItemStack aStack) {return size_(aSize, validMeta_(aStack));}
-	public static ItemStack validMeta (ItemStack aStack) {return aStack == null || item_(aStack) == null ? null : validMeta_(aStack);}
+	public static ItemStack validMeta (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : validMeta_(aStack);}
 	public static ItemStack validMeta_(ItemStack aStack) {return meta_(aStack) == W ? meta_(copy_(aStack), 0) : copy_(aStack);}
 	
 	public static Block nullair(Block aBlock) {return aBlock != NB ? aBlock : null;}
@@ -371,10 +371,10 @@ public class ST {
 	}
 	
 	public static ItemStack copyMeta(long aMeta, ItemStack aStack) {
-		return aStack == null || item_(aStack) == null ? null : meta_(copy_(aStack), aMeta);
+		return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : meta_(copy_(aStack), aMeta);
 	}
 	public static ItemStack copyAmountAndMeta(long aSize, long aMeta, ItemStack aStack) {
-		return aStack == null || item_(aStack) == null ? null : meta_(amount_(aSize, aStack), aMeta);
+		return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : meta_(amount_(aSize, aStack), aMeta);
 	}
 	public static ItemStack get(Object... aStacks) {
 		for (Object aStack : aStacks) {
@@ -1478,7 +1478,7 @@ public class ST {
 	}
 	/** Saves an ItemStack properly. */
 	public static CompoundTag save(ItemStack aStack) {
-		if (aStack == null || item_(aStack) == null || aStack.getCount() < 0) return null;
+		if (aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0) return null;
 		CompoundTag rNBT = UT.NBT.make();
 		aStack = OM.get_(aStack);
 		rNBT.putShort("id", id(aStack));

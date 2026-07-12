@@ -713,8 +713,13 @@ public enum FL {
 		return aIgnoreNBT ? FluidStack.isSameFluid(aFluid1, aFluid2) : FluidStack.isSameFluidSameComponents(aFluid1, aFluid2);
 	}
 
-	public static boolean   valid(Fluid      aFluid) {return aFluid != null && !FL.Error.is(FluidGT.nameOf(aFluid));}
-	public static boolean invalid(Fluid      aFluid) {return aFluid == null ||  FL.Error.is(FluidGT.nameOf(aFluid));}
+	/** aFluid != Fluids.EMPTY — neo-сентинел «нет жидкости» (1:1 замена прежнего 1.7.10 null-на-отсутствие,
+	 *  {@code FluidStack.getFluid()} в neo НИКОГДА не возвращает null, при пустоте отдаёт {@code Fluids.EMPTY},
+	 *  `neoforge-decompiled/.../fluids/FluidStack.java:228-234`). Правится централизованно здесь ОДИН раз —
+	 *  сюда стекаются {@link #valid(FluidStack)}/{@link #invalid(FluidStack)}/{@link #nonzero(FluidStack)}/
+	 *  {@link #zero(FluidStack)} ниже. */
+	public static boolean   valid(Fluid      aFluid) {return aFluid != null && aFluid != Fluids.EMPTY && !FL.Error.is(FluidGT.nameOf(aFluid));}
+	public static boolean invalid(Fluid      aFluid) {return aFluid == null || aFluid == Fluids.EMPTY ||  FL.Error.is(FluidGT.nameOf(aFluid));}
 	public static boolean   valid(FluidStack aFluid) {return aFluid != null &&   valid(aFluid.getFluid());}
 	public static boolean invalid(FluidStack aFluid) {return aFluid == null || invalid(aFluid.getFluid());}
 	public static boolean nonzero(FluidStack aFluid) {return aFluid != null && aFluid.getAmount() > 0 &&   valid(aFluid.getFluid());}
@@ -824,7 +829,7 @@ public enum FL {
 	public static boolean gas(IFluidTank aFluid, boolean aDefault) {return gas(aFluid.getFluid(), aDefault);}
 	public static boolean gas(IFluidTank aFluid) {return gas(aFluid.getFluid(), F);}
 	public static boolean gas(FluidStack aFluid, boolean aDefault) {
-		if (aFluid == null || aFluid.getFluid() == null) return aDefault;
+		if (FL.invalid(aFluid)) return aDefault;
 		String tName = FluidGT.nameOf(aFluid.getFluid());
 		if (FluidsGT.LIQUID.contains(tName)) return F;
 		FluidGT tGT = FluidGT.of(aFluid.getFluid());
@@ -864,7 +869,7 @@ public enum FL {
 
 	public static long temperature(FluidStack aFluid) {return temperature(aFluid, DEF_ENV_TEMP);}
 	public static long temperature(FluidStack aFluid, long aDefault) {
-		if (aFluid == null || aFluid.getFluid() == null) return aDefault;
+		if (FL.invalid(aFluid)) return aDefault;
 		if ("steam".equals(FluidGT.nameOf(aFluid.getFluid()))) return C+100;
 		return aFluid.getFluid().getFluidType().getTemperature(aFluid);
 	}
@@ -927,7 +932,7 @@ public enum FL {
 
 
 	public static String configName(FluidStack aFluid) {
-		return aFluid == null || aFluid.getFluid() == null ? "" : FluidGT.nameOf(aFluid.getFluid());
+		return FL.invalid(aFluid) ? "" : FluidGT.nameOf(aFluid.getFluid());
 	}
 
 	public static String configNames(FluidStack... aFluids) {
@@ -1077,7 +1082,7 @@ public enum FL {
 		return aNBT;
 	}
 	/** Saves a FluidStack properly. */
-	public static CompoundTag save (FluidStack aFluid) {return aFluid == null || aFluid.getFluid() == null ? null : save_(aFluid);}
+	public static CompoundTag save (FluidStack aFluid) {return FL.invalid(aFluid) ? null : save_(aFluid);}
 	/** Saves a FluidStack properly. PORT-TODO(F5, компоненты FluidStack) — см. {@link #load_}: пишет
 	 *  только имя+объём (1:1 для типового случая), дополнительные data-компоненты не сериализуются. */
 	public static CompoundTag save_(FluidStack aFluid) {
