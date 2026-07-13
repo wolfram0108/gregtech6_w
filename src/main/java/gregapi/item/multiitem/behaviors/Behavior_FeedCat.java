@@ -48,10 +48,10 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 							((Ocelot)aEntity).setTamed(T);
 							((Ocelot)aEntity).setTameSkin(1 + RNGSUS.nextInt(3));
 							((Ocelot)aEntity).func_152115_b(aPlayer.getUUID().toString());
-							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("heart", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.height), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
+							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("heart", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.getBbHeight()), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
 							((Ocelot)aEntity).level().setEntityState(aEntity, (byte)7);
 						} else {
-							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("smoke", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.height), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
+							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("smoke", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.getBbHeight()), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
 							((Ocelot)aEntity).level().setEntityState(aEntity, (byte)6);
 						}
 					}

@@ -213,7 +213,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 				}
 				if (aEntity instanceof Animal && FL.Sewage.exists()) {
 					if (!(aEntity instanceof EntityAgeable) || !((EntityAgeable)aEntity).isChild()) {
-						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Sewage.make(Math.max(1, (long)(20 * aEntity.width * aEntity.width * aEntity.height))), T);
+						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Sewage.make(Math.max(1, (long)(20 * aEntity.getBbWidth() * aEntity.getBbWidth() * aEntity.getBbHeight()))), T);
 						return T;
 					}
 				}
