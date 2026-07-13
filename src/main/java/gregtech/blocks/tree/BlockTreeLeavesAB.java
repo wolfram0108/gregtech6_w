@@ -43,7 +43,7 @@ import static gregapi.data.CS.*;
 
 public class BlockTreeLeavesAB extends BlockBaseLeaves implements Runnable {
 	public BlockTreeLeavesAB(String aUnlocalised, Block aSaplings) {
-		super(null, aUnlocalised, Material.leaves, soundTypeGrass, 8, Textures.BlockIcons.LEAVES_AB, aSaplings, new Block[] {BlocksGT.LogA, BlocksGT.LogA, BlocksGT.LogA, BlocksGT.LogA, BlocksGT.LogB, BlocksGT.LogB, BlocksGT.LogB, BlocksGT.LogB}, new byte[] {0, 1, 2, 3, 0, 1, 2, 3});
+		super(null, aUnlocalised, Material.leaves, SoundType.GRASS, 8, Textures.BlockIcons.LEAVES_AB, aSaplings, new Block[] {BlocksGT.LogA, BlocksGT.LogA, BlocksGT.LogA, BlocksGT.LogA, BlocksGT.LogB, BlocksGT.LogB, BlocksGT.LogB, BlocksGT.LogB}, new byte[] {0, 1, 2, 3, 0, 1, 2, 3});
 		LH.add(getUnlocalizedName()+ ".0", "Rubber Leaves");
 		LH.add(getUnlocalizedName()+ ".1", "Maple Leaves");
 		LH.add(getUnlocalizedName()+ ".2", "Willow Leaves");

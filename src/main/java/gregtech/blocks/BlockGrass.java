@@ -45,7 +45,7 @@ import static gregapi.data.CS.*;
 
 public class BlockGrass extends BlockBaseMeta {
 	public BlockGrass(String aUnlocalised) {
-		super(null, aUnlocalised, Material.grass, soundTypeGrass, 6, Textures.BlockIcons.GRASSES_TOP);
+		super(null, aUnlocalised, Material.grass, SoundType.GRASS, 6, Textures.BlockIcons.GRASSES_TOP);
 		LH.add(getUnlocalizedName()+ ".0", "Grass");
 		LH.add(getUnlocalizedName()+ ".1", "Grass");
 		LH.add(getUnlocalizedName()+ ".2", "Grass");

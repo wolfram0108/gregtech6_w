@@ -49,7 +49,7 @@ public class BlockRockOres extends BlockBaseMeta {
 	public static OreDictMaterial[] ORE_MATERIALS = {MT.Coal, MT.Lignite, MT.NaCl, MT.KCl, MT.OREMATS.Bauxite, MT.Oilshale, MT.Gypsum, MT.MilkyQuartz, MT.NetherQuartz, MT.NULL, MT.NULL, MT.NULL, MT.NULL, MT.NULL, MT.NULL, MT.NULL};
 	
 	public BlockRockOres(String aUnlocalised) {
-		super(null, aUnlocalised, Material.rock, soundTypeStone, 9, Textures.BlockIcons.ROCK_ORES);
+		super(null, aUnlocalised, Material.rock, SoundType.STONE, 9, Textures.BlockIcons.ROCK_ORES);
 		LH.add(getUnlocalizedName()+ ".0", "Anthracite Coal");
 		LH.add(getUnlocalizedName()+ ".1", "Lignite Coal");
 		LH.add(getUnlocalizedName()+ ".2", "Salt");

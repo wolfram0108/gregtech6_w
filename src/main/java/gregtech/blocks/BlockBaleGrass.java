@@ -40,7 +40,7 @@ import static gregapi.data.CS.*;
 
 public class BlockBaleGrass extends BlockBaseBale {
 	public BlockBaleGrass(String aUnlocalised) {
-		super(null, aUnlocalised, Material.grass, soundTypeGrass, 4, Textures.BlockIcons.BALES_GRASS);
+		super(null, aUnlocalised, Material.grass, SoundType.GRASS, 4, Textures.BlockIcons.BALES_GRASS);
 		
 		LH.add(getUnlocalizedName()+ ".0", "Grass Bale");
 		LH.add(getUnlocalizedName()+ ".4", "Grass Bale");

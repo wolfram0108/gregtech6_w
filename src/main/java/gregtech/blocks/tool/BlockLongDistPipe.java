@@ -33,7 +33,7 @@ public class BlockLongDistPipe extends BlockBaseMachineUpdate {
 	public final long[] mTemperatures;
 	
 	public BlockLongDistPipe(String aUnlocalised, IIconContainer[] aIcons, long[] aTemperatures) {
-		super(null, aUnlocalised, MaterialMachines.instance, soundTypeMetal, 5, aIcons, ~0);
+		super(null, aUnlocalised, MaterialMachines.instance, SoundType.METAL, 5, aIcons, ~0);
 		mTemperatures = aTemperatures;
 		LH.add(aUnlocalised+".0" , "Long Distance Item Pipeline");
 		for (int i = 1; i < maxMeta(); i++) LH.add(aUnlocalised+"."+i, "Long Distance Fluid Pipeline ("+mTemperatures[i]+" K)");

@@ -29,7 +29,7 @@ import gregapi.block.Material;
 
 public class BlockBaleCrop extends BlockBaseBale {
 	public BlockBaleCrop(String aUnlocalised) {
-		super(null, aUnlocalised, Material.grass, soundTypeGrass, 4, Textures.BlockIcons.BALES_CROP);
+		super(null, aUnlocalised, Material.grass, SoundType.GRASS, 4, Textures.BlockIcons.BALES_CROP);
 		
 		LH.add(getUnlocalizedName()+ ".0", "Rye Bale");
 		LH.add(getUnlocalizedName()+ ".4", "Rye Bale");

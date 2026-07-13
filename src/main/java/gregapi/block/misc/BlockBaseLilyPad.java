@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.misc;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block.SoundType;
 
 import static gregapi.data.CS.*;
@@ -59,7 +60,7 @@ import net.minecraftforge.common.IPlantable;
 
 public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRenderedBlock {
 	public BlockBaseLilyPad(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
-		super(ItemBlockBase.class, aNameInternal, Material.plants, soundTypeGrass, aMaxMeta, aIcons);
+		super(ItemBlockBase.class, aNameInternal, Material.plants, SoundType.GRASS, aMaxMeta, aIcons);
 		setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.015625F, 1.0F);
 		setCreativeTab(CreativeModeTab.tabDecorations);
 		RM.chisel(aNameInternal, ST.make(this, 1, W));

@@ -31,7 +31,7 @@ import net.minecraft.world.level.BlockGetter;
 
 public class BlockBarsTungstenSteel extends BlockBaseBars {
 	public BlockBarsTungstenSteel(String aNameInternal) {
-		super(aNameInternal, MT.TungstenSteel, Material.iron, Block.soundTypeMetal);
+		super(aNameInternal, MT.TungstenSteel, Material.iron, SoundType.METAL);
 		LH.add(getUnlocalizedName()+ ".0", "Tungstensteel Bars");
 		LH.add(getUnlocalizedName()+ ".1", "Tungstensteel Bars");
 		LH.add(getUnlocalizedName()+ ".2", "Tungstensteel Bars");

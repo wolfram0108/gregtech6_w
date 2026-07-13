@@ -36,7 +36,7 @@ import net.minecraft.world.level.Level;
 
 public class BlockCFoam extends BlockColored implements IBlockFoamable {
 	public BlockCFoam(String aUnlocalised) {
-		super(ItemBlockMetaType.class, Material.rock, soundTypeStone, aUnlocalised, "C-Foam", MT.ConstructionFoam, 4.0F, 1.5F, 1, Textures.BlockIcons.CFOAMS);
+		super(ItemBlockMetaType.class, Material.rock, SoundType.STONE, aUnlocalised, "C-Foam", MT.ConstructionFoam, 4.0F, 1.5F, 1, Textures.BlockIcons.CFOAMS);
 		MT.ConstructionFoam.mTextureSolid = BlockTextureCopied.get(this, SIDE_TOP, DYE_INDEX_LightGray);
 	}
 	

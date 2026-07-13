@@ -112,7 +112,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		
 		// If you want to make your Prefix a Block
 		// Creates the generic Block for the new Prefix. Assets go into "/assets/insert_your_modid_here/textures/blocks/materialicons". And yes, every TextureSet for every Material Type has its own Folder.
-		new gregapi.block.prefixblock.PrefixBlock_(MOD_ID, MOD_ID, "example.meta.block.exampleprefix", tExamplePrefix, null, null, null, null, gregapi.block.Material.rock, net.minecraft.world.level.block.Block.soundTypeStone, gregapi.data.CS.TOOL_pickaxe, 1.5F, 4.5F,   0,   0, 999, 0, 0, 0, 1, 1, 1, false, false, false, false, true, true, true, true, true, true, false, true, true, true, gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY); 
+		new gregapi.block.prefixblock.PrefixBlock_(MOD_ID, MOD_ID, "example.meta.block.exampleprefix", tExamplePrefix, null, null, null, null, gregapi.block.Material.rock, net.minecraft.world.level.block.SoundType.STONE, gregapi.data.CS.TOOL_pickaxe, 1.5F, 4.5F,   0,   0, 999, 0, 0, 0, 1, 1, 1, false, false, false, false, true, true, true, true, true, true, false, true, true, true, gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY); 
 		
 		// You may think that you don't want to add all the PrefixItems for all the Materials, since you only need certain ones yourself and don't want a clutter like the one GregTech itself causes.
 		// No Problem, you can add single Items too, if you just need those.
@@ -147,9 +147,9 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		new gregapi.block.multitileentity.MultiTileEntityRegistry("example.multitileentity");
 		
 		// Every Machine can have another Block, vanilla-material, vanilla-step-sound or Harvest Tool
-		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron"       , gregapi.block.Material.iron    , net.minecraft.world.level.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_pickaxe  , 0, 0, 15, false, false);
-		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.world.level.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_cutter   , 0, 0, 15, false, false);
-		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.world.level.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_wrench   , 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron"       , gregapi.block.Material.iron    , net.minecraft.world.level.block.SoundType.METAL  , gregapi.data.CS.TOOL_pickaxe  , 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.world.level.block.SoundType.METAL  , gregapi.data.CS.TOOL_cutter   , 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.world.level.block.SoundType.METAL  , gregapi.data.CS.TOOL_wrench   , 0, 0, 15, false, false);
 	}
 	
 	// @Override
@@ -163,13 +163,13 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		// YES this Registry Stuff can and should be in @Init. That way, all the OreDict Items needed for Crafting Recipes are available and registered.
 		
 		// Take the Metal Block from the Set, that you initialised above in @PreInit.
-		gregapi.block.multitileentity.MultiTileEntityBlock tMetalBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron", gregapi.block.Material.iron, net.minecraft.world.level.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_pickaxe, 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock tMetalBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "iron", gregapi.block.Material.iron, net.minecraft.world.level.block.SoundType.METAL, gregapi.data.CS.TOOL_pickaxe, 0, 0, 15, false, false);
 		// Makes an Examplium Chest out of your Example Material.
 		// Note: the Crafting Recipe only works in conjunction with GT since you don't have the Stick, Ring and Plate PrefixItems.
 		tExampleRegistry.add(tExamplium.getLocal() + " Chest", "Chests", 0, 0, gregapi.block.multitileentity.example.MultiTileEntityChest.class, 0, 16, tMetalBlock, gregapi.util.UT.NBT.make(gregapi.data.CS.NBT_MATERIAL, tExamplium, gregapi.data.CS.NBT_INV_SIZE, 54, gregapi.data.CS.NBT_TEXTURE, "metalchest", gregapi.data.CS.NBT_HARDNESS, 6.0F, gregapi.data.CS.NBT_RESISTANCE, 6.0F, gregapi.data.CS.NBT_COLOR, gregapi.util.UT.Code.getRGBInt(tExamplium.fRGBaSolid)), "sPw", "RSR", "PPP", 'P', gregapi.data.OP.plate.dat(tExamplium), 'R', gregapi.data.OP.ring.dat(tExamplium), 'S', gregapi.data.OP.stick.dat(tExamplium));
 		
 		// Take the Machine Block from the Set, that you initialised above in @PreInit.
-		gregapi.block.multitileentity.MultiTileEntityBlock tMachineBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.world.level.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_wrench, 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock tMachineBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.world.level.block.SoundType.METAL, gregapi.data.CS.TOOL_wrench, 0, 0, 15, false, false);
 		// Makes a vanilla Furnace out of your Example Material.
 		// Note: the Crafting Recipe only works in conjunction with GT since you don't have all the PrefixItems.
 		// GUI has to be at: "/assets/insert_your_modid_here/textures/gui/machines/Oven.png"
@@ -207,7 +207,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		gregapi.tileentity.connectors.MultiTileEntityPipeItem.addItemPipes(100, 0, 32768, 1, true, true, tExampleRegistry, tMetalBlock, gregapi.tileentity.connectors.MultiTileEntityPipeItem.class, gregapi.data.MT.Fe);
 		
 		// Take the Wire Block from the Set, that you initialised above in @PreInit.
-		gregapi.block.multitileentity.MultiTileEntityBlock tWireBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.world.level.block.Block.soundTypeMetal, gregapi.data.CS.TOOL_cutter, 0, 0, 15, false, false);
+		gregapi.block.multitileentity.MultiTileEntityBlock tWireBlock = gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine", gregapi.block.MaterialMachines.instance, net.minecraft.world.level.block.SoundType.METAL, gregapi.data.CS.TOOL_cutter, 0, 0, 15, false, false);
 		
 		// Makes Examplium Wires, which can carry twice the Voltage of Steel and have a lower loss.
 		gregapi.tileentity.connectors.MultiTileEntityWireElectric.addElectricWires(50, 0, gregapi.data.CS.VMAX[4], 1, 2, 1, true, false, true, tExampleRegistry, tWireBlock, gregapi.tileentity.connectors.MultiTileEntityWireElectric.class, tExamplium);

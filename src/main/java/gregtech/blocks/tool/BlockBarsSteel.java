@@ -27,7 +27,7 @@ import gregapi.block.Material;
 
 public class BlockBarsSteel extends BlockBaseBars {
 	public BlockBarsSteel(String aNameInternal) {
-		super(aNameInternal, ANY.Steel, Material.iron, Block.soundTypeMetal);
+		super(aNameInternal, ANY.Steel, Material.iron, SoundType.METAL);
 		LH.add(getUnlocalizedName()+ ".0", "Steel Bars");
 		LH.add(getUnlocalizedName()+ ".1", "Steel Bars");
 		LH.add(getUnlocalizedName()+ ".2", "Steel Bars");

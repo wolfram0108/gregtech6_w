@@ -27,7 +27,7 @@ import gregapi.block.Material;
 
 public class BlockBarsTitanium extends BlockBaseBars {
 	public BlockBarsTitanium(String aNameInternal) {
-		super(aNameInternal, MT.Ti, Material.iron, Block.soundTypeMetal);
+		super(aNameInternal, MT.Ti, Material.iron, SoundType.METAL);
 		LH.add(getUnlocalizedName()+ ".0" , "Titanium Bars");
 		LH.add(getUnlocalizedName()+ ".1" , "Titanium Bars");
 		LH.add(getUnlocalizedName()+ ".2" , "Titanium Bars");

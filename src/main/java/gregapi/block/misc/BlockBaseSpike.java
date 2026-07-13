@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.misc;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.block.BlockBaseSealable;
@@ -59,7 +60,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	public final OreDictMaterial mMat1, mMat2;
 	
 	public BlockBaseSpike(String aNameInternal, OreDictMaterial aMat1, OreDictMaterial aMat2) {
-		super(null, aNameInternal, Material.iron, Block.soundTypeMetal);
+		super(null, aNameInternal, Material.iron, SoundType.METAL);
 		setCreativeTab(CreativeModeTab.tabRedstone);
 		mMat1 = aMat1; mMat2 = aMat2;
 		

@@ -72,7 +72,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 		super(0);
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
-		setStepSound(soundTypeGrass);
+		setStepSound(SoundType.GRASS);
 		setBlockName(mNameInternal = aNameInternal);
 		setCreativeTab(CreativeModeTab.tabDecorations);
 		ST.register(this, mNameInternal, aItemClass);

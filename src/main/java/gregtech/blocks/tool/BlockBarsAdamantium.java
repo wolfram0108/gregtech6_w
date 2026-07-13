@@ -31,7 +31,7 @@ import net.minecraft.world.level.BlockGetter;
 
 public class BlockBarsAdamantium extends BlockBaseBars {
 	public BlockBarsAdamantium(String aNameInternal) {
-		super(aNameInternal, MT.Ad, Material.iron, Block.soundTypeMetal);
+		super(aNameInternal, MT.Ad, Material.iron, SoundType.METAL);
 		LH.add(getUnlocalizedName()+ ".0" , "Adamantium Bars");
 		LH.add(getUnlocalizedName()+ ".1" , "Adamantium Bars");
 		LH.add(getUnlocalizedName()+ ".2" , "Adamantium Bars");

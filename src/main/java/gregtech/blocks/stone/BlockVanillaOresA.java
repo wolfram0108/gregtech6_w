@@ -48,7 +48,7 @@ public class BlockVanillaOresA extends BlockBaseMeta {
 	public static OreDictMaterial[] ORE_MATERIALS = {MT.S, MT.Apatite, MT.Ruby, MT.Amber, MT.Amethyst, MT.OREMATS.Galena, MT.OREMATS.Tetrahedrite, MT.OREMATS.Cassiterite, MT.OREMATS.Cooperite, MT.OREMATS.Pentlandite, MT.OREMATS.Scheelite, MT.TiO2, MT.OREMATS.Bastnasite, MT.Graphite, MT.OREMATS.Pitchblende, MT.OREMATS.Borax};
 	
 	public BlockVanillaOresA(String aUnlocalised) {
-		super(null, aUnlocalised, Material.rock, soundTypeStone, ORE_MATERIALS.length, Textures.BlockIcons.VANILLA_ORES_A);
+		super(null, aUnlocalised, Material.rock, SoundType.STONE, ORE_MATERIALS.length, Textures.BlockIcons.VANILLA_ORES_A);
 		LH.add(getUnlocalizedName()+ ".0", "Sulfur Ore"      );
 		LH.add(getUnlocalizedName()+ ".1", "Apatite Ore"     );
 		LH.add(getUnlocalizedName()+ ".2", "Ruby Ore"        );

@@ -46,7 +46,7 @@ import static gregapi.data.CS.*;
 
 public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRenderedBlock {
 	public BlockPath(String aUnlocalised) {
-		super(null, aUnlocalised, Material.grass, soundTypeGrass, 12, Textures.BlockIcons.DIRTS);
+		super(null, aUnlocalised, Material.grass, SoundType.GRASS, 12, Textures.BlockIcons.DIRTS);
 		setCreativeTab(CreativeModeTab.tabTransport);
 		LH.add(getUnlocalizedName()+ ".0", "Path");
 		LH.add(getUnlocalizedName()+ ".1", "Aether Path");

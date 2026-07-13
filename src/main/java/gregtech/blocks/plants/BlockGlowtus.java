@@ -32,7 +32,7 @@ import static gregapi.data.CS.*;
 
 public class BlockGlowtus extends BlockBaseLilyPad implements Runnable {
 	public BlockGlowtus(String aUnlocalised) {
-		super(null, aUnlocalised, Material.plants, soundTypeGrass, 16, Textures.BlockIcons.GLOWTUS);
+		super(null, aUnlocalised, Material.plants, SoundType.GRASS, 16, Textures.BlockIcons.GLOWTUS);
 		
 		GT.mBeforePostInit.add(this);
 		
