@@ -103,7 +103,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUseFirst(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUse(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	public IIcon getIconFromDamage(int aMeta) {return getBlock().getIcon(SIDE_TOP, aMeta);}
-	@Override public Block getBlock() {return getBlock();}
+	@Override public Block getBlock() {return super.getBlock();}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public String getUnlocalizedName(ItemStack aStack) {return mPlaceable.name(UT.Code.bind4(getDamage(aStack)));}
 	public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
