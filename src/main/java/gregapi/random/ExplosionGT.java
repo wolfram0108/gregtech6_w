@@ -133,9 +133,9 @@ public class ExplosionGT extends Explosion {
 					double tKnockback = (1 - tEntityDist) * mWorld.getBlockDensity(tVec3, tEntity.boundingBox);
 					tEntity.attackEntityFrom(DamageSource.setExplosionSource(this), ((int)((tKnockback * tKnockback + tKnockback) * 4 * tSize + 1)) * TFC_DAMAGE_MULTIPLIER);
 					double tBlastProtection = EnchantmentProtection.func_92092_a(tEntity, tKnockback);
-					tEntity.motionX += tKnockX * tBlastProtection;
-					tEntity.motionY += tKnockY * tBlastProtection;
-					tEntity.motionZ += tKnockZ * tBlastProtection;
+					tEntity.getDeltaMovement().x += tKnockX * tBlastProtection;
+					tEntity.getDeltaMovement().y += tKnockY * tBlastProtection;
+					tEntity.getDeltaMovement().z += tKnockZ * tBlastProtection;
 					
 					if (tEntity instanceof Player) field_77288_k.put(tEntity, Vec3.createVectorHelper(tKnockX * tKnockback, tKnockY * tKnockback, tKnockZ * tKnockback));
 				}

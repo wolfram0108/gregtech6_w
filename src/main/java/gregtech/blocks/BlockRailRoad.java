@@ -98,10 +98,10 @@ public class BlockRailRoad extends BlockBaseRail {
 	
 	@Override
 	public void onMinecartPass(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
-		double tMotion = Math.sqrt(aCart.motionX*aCart.motionX + aCart.motionZ*aCart.motionZ);
+		double tMotion = Math.sqrt(aCart.getDeltaMovement().x*aCart.getDeltaMovement().x + aCart.getDeltaMovement().z*aCart.getDeltaMovement().z);
 		if (tMotion > 0.01) {
-			aCart.motionX *= 2;
-			aCart.motionZ *= 2;
+			aCart.getDeltaMovement().x *= 2;
+			aCart.getDeltaMovement().z *= 2;
 		} else {
 			byte tRailMeta = WD.meta(7, aWorld, aX, aY, aZ);
 			if (tRailMeta == 1) {

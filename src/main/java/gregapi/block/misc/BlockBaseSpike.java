@@ -103,7 +103,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
 	}
 	
-	@Override public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {if ((WD.meta(aWorld, aX, aY, aZ) & 7) != SIDE_UP) {aEntity.motionX *= 0.1; aEntity.motionZ *= 0.1;}}
+	@Override public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {if ((WD.meta(aWorld, aX, aY, aZ) & 7) != SIDE_UP) {aEntity.getDeltaMovement().x *= 0.1; aEntity.getDeltaMovement().z *= 0.1;}}
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return (aMeta & 7) < 6 ? (aMeta & 8) | OPOS[aSide] : aMeta;}
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) UT.Sounds.send(SFX.MC_ANVIL_LAND, 1, 2, aWorld, aX, aY, aZ);}
 	

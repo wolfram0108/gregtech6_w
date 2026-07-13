@@ -152,14 +152,14 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 				GT_ModHandler.useElectricItem(aStack, 1000, aPlayer);
 			}
 
-			if (aPlayer.motionY >= 0.0D && var6 > 0.0F && !aPlayer.isInWater()) {
+			if (aPlayer.getDeltaMovement().y >= 0.0D && var6 > 0.0F && !aPlayer.isInWater()) {
 				if (GT_ModHandler.getJumpKeyDown(aPlayer) && GT_ModHandler.getBoostKeyDown(aPlayer)) {
 					if (var6 == 1.0F) {
-						aPlayer.motionX *= 3.5D;
-						aPlayer.motionZ *= 3.5D;
+						aPlayer.getDeltaMovement().x *= 3.5D;
+						aPlayer.getDeltaMovement().z *= 3.5D;
 					}
 
-					aPlayer.motionY += (var6 * 0.3F);
+					aPlayer.getDeltaMovement().y += (var6 * 0.3F);
 					var6 = (float)(var6 * 0.75D);
 				} else if (var6 < 1.0F) {
 					var6 = 0.0F;
@@ -170,7 +170,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		}
 
 		if ((mSpecials & 256) != 0) {
-			if (GT_ModHandler.canUseElectricItem(aStack, 100) && aPlayer.isSprinting() && (aPlayer.onGround && Math.abs(aPlayer.motionX) + Math.abs(aPlayer.motionZ) > 0.10000000149011612D || aPlayer.isInWater())) {
+			if (GT_ModHandler.canUseElectricItem(aStack, 100) && aPlayer.isSprinting() && (aPlayer.onGround && Math.abs(aPlayer.getDeltaMovement().x) + Math.abs(aPlayer.getDeltaMovement().z) > 0.10000000149011612D || aPlayer.isInWater())) {
 				GT_ModHandler.useElectricItem(aStack, 100, aPlayer);
 				float var7 = 0.22F;
 				
@@ -179,8 +179,8 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 					var7 = 0.1F;
 					
 					
-					if (aPlayer.motionY > 0) {
-						aPlayer.motionY += 0.10000000149011612D;
+					if (aPlayer.getDeltaMovement().y > 0) {
+						aPlayer.getDeltaMovement().y += 0.10000000149011612D;
 					}
 				}
 				

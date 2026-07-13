@@ -653,7 +653,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 			int tAddX = (aEntity.getX() >= aX + 0.5 ? +1 : -1);
 			int tAddZ = (aEntity.getZ() >= aZ + 0.5 ? +1 : -1);
 			double tSpeed = 0.15;
-			if (Math.abs(aEntity.motionX) < tSpeed) {
+			if (Math.abs(aEntity.getDeltaMovement().x) < tSpeed) {
 				if (       !WD.opq(aWorld, aX+tAddX  , aY, aZ, F, F) && !WD.hasCollide(aWorld, aX+tAddX  , aY+1, aZ)) {
 					aEntity.motionX = +tAddX*tSpeed;
 				} else if (!WD.opq(aWorld, aX-tAddX  , aY, aZ, F, F) && !WD.hasCollide(aWorld, aX-tAddX  , aY+1, aZ)) {
@@ -664,7 +664,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 					aEntity.motionX = -tAddX*tSpeed;
 				}
 			}
-			if (Math.abs(aEntity.motionZ) < tSpeed) {
+			if (Math.abs(aEntity.getDeltaMovement().z) < tSpeed) {
 				if (       !WD.opq(aWorld, aX, aY, aZ+tAddZ  , F, F) && !WD.hasCollide(aWorld, aX, aY+1, aZ+tAddZ  )) {
 					aEntity.motionZ = +tAddZ*tSpeed;
 				} else if (!WD.opq(aWorld, aX, aY, aZ-tAddZ  , F, F) && !WD.hasCollide(aWorld, aX, aY+1, aZ-tAddZ  )) {
@@ -675,7 +675,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 					aEntity.motionZ = -tAddZ*tSpeed;
 				}
 			}
-			if (Math.abs(aEntity.motionX) < tSpeed && Math.abs(aEntity.motionZ) < tSpeed) {
+			if (Math.abs(aEntity.getDeltaMovement().x) < tSpeed && Math.abs(aEntity.getDeltaMovement().z) < tSpeed) {
 				if (       !WD.opq(aWorld, aX+tAddX  , aY, aZ+tAddZ  , F, F) && !WD.hasCollide(aWorld, aX+tAddX  , aY+1, aZ+tAddZ  )) {
 					aEntity.motionX = +tAddX*tSpeed;
 					aEntity.motionZ = +tAddZ*tSpeed;
@@ -690,7 +690,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 					aEntity.motionZ = -tAddZ*tSpeed;
 				}
 			}
-			if (Math.abs(aEntity.motionX) < tSpeed && Math.abs(aEntity.motionZ) < tSpeed) {
+			if (Math.abs(aEntity.getDeltaMovement().x) < tSpeed && Math.abs(aEntity.getDeltaMovement().z) < tSpeed) {
 				if (       !WD.opq(aWorld, aX-tAddX  , aY, aZ+tAddZ  , F, F) && !WD.hasCollide(aWorld, aX-tAddX  , aY+1, aZ+tAddZ  )) {
 					aEntity.motionX = -tAddX*tSpeed;
 					aEntity.motionZ = +tAddZ*tSpeed;

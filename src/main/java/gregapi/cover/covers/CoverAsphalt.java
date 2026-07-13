@@ -36,7 +36,7 @@ public class CoverAsphalt extends CoverTextureSimple {
 	
 	@Override
 	public boolean onWalkOver(byte aCoverSide, CoverData aData, Entity aEntity) {
-		if ((aEntity.motionX != 0 || aEntity.motionZ != 0) && !aEntity.isInWater() && !aEntity.isSneaking()) {aEntity.motionX *= 1.3; aEntity.motionZ *= 1.3;}
+		if ((aEntity.getDeltaMovement().x != 0 || aEntity.getDeltaMovement().z != 0) && !aEntity.isInWater() && !aEntity.isSneaking()) {aEntity.getDeltaMovement().x *= 1.3; aEntity.getDeltaMovement().z *= 1.3;}
 		return T;
 	}
 }

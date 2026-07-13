@@ -126,7 +126,7 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	
 	@Override
 	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
-		if (doesWalkSpeed(WD.meta(aWorld, aX, aY, aZ))) {aEntity.motionX *= 0.5; aEntity.motionZ *= 0.5;}
+		if (doesWalkSpeed(WD.meta(aWorld, aX, aY, aZ))) {aEntity.getDeltaMovement().x *= 0.5; aEntity.getDeltaMovement().z *= 0.5;}
 	}
 	
 	@Override public boolean useGravity      (byte aMeta) {return !IS_CLAY[aMeta];}

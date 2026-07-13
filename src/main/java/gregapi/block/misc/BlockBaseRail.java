@@ -292,11 +292,11 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public void onMinecartPass(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
 		if (mPowerRail) {
 			byte tRailMeta = WD.meta(aWorld, aX, aY, aZ);
-			double tMotion = Math.sqrt(aCart.motionX*aCart.motionX + aCart.motionZ*aCart.motionZ);
+			double tMotion = Math.sqrt(aCart.getDeltaMovement().x*aCart.getDeltaMovement().x + aCart.getDeltaMovement().z*aCart.getDeltaMovement().z);
 			if ((tRailMeta & 8) != 0) {
 				if (tMotion > 0.01) {
-					aCart.motionX *= 2;
-					aCart.motionZ *= 2;
+					aCart.getDeltaMovement().x *= 2;
+					aCart.getDeltaMovement().z *= 2;
 				} else {
 					tRailMeta &= 7;
 					if (tRailMeta == 1) {
@@ -313,9 +313,9 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 					aCart.motionY  = 0;
 					aCart.motionZ  = 0;
 				} else {
-					aCart.motionX /= 2;
+					aCart.getDeltaMovement().x /= 2;
 					aCart.motionY  = 0;
-					aCart.motionZ /= 2;
+					aCart.getDeltaMovement().z /= 2;
 				}
 			}
 		}
