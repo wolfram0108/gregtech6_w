@@ -297,7 +297,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.getXRot());
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
 					if (WD.dimTF(aPlayer.level())) tPlayer.getAbilities().instabuild = T;
-					tPlayer.setDead();
+					tPlayer.discard();
 				}
 			}
 		}
@@ -321,7 +321,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			return T;
 		}
 		// Print Errors to the Log and send a Chat Message informing about its existence.
-		} catch(Throwable e) {e.printStackTrace(ERR); UT.Entities.sendchat(aPlayer, "See gregtech.log for details: " + e.toString()); aTarget.setDead(); return T;}
+		} catch(Throwable e) {e.printStackTrace(ERR); UT.Entities.sendchat(aPlayer, "See gregtech.log for details: " + e.toString()); aTarget.discard(); return T;}
 		// Just pretend we miss the Target if it was in its Invulnerability Frames, this will end up hitting whatever is behind the Target instead.
 		if (aTarget.invulnerableTime > 0) return F;
 		// It hits, but it doesn't seem to do anything.

@@ -208,7 +208,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Arrow would do ZERO Damage.
 								if (WD.dimTF(level())) tPlayer.getAbilities().instabuild = T;
 								tShootingEntity = tPlayer;
-								tPlayer.setDead();
+								tPlayer.discard();
 							}
 						}
 						

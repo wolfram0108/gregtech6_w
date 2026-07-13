@@ -131,7 +131,7 @@ public class WD {
 				aWorld.removeEntity(tItem);
 				ItemStack rStack = tItem.getEntityItem();
 				tItem.setEntityItemStack(ST.amount(0, rStack));
-				tItem.setDead();
+				tItem.discard();
 				return rStack;
 			}
 		}
@@ -149,7 +149,7 @@ public class WD {
 				aWorld.removeEntity(tItem);
 				ItemStack rStack = tItem.getEntityItem();
 				tItem.setEntityItemStack(ST.amount(0, rStack));
-				tItem.setDead();
+				tItem.discard();
 				rOutput.add(rStack);
 			}
 		}
@@ -295,7 +295,7 @@ public class WD {
 				Entity tNewEntity = EntityType.createEntityByName(EntityType.getEntityString(aEntity), tTargetWorld);
 				if (tNewEntity != null) {
 					tNewEntity.copyDataFrom(aEntity, T);
-					aEntity.setDead();
+					aEntity.discard();
 					tNewEntity.revive();
 					boolean temp = tNewEntity.forceSpawn;
 					tNewEntity.forceSpawn = T;

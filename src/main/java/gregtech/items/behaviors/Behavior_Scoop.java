@@ -52,7 +52,7 @@ public class Behavior_Scoop extends AbstractBehaviorDefault {
 				Object tButterfly = ((IEntityButterfly)aEntity).getButterfly(), tRoot = ((IButterfly)tButterfly).getGenome().getPrimary().getRoot();
 				((IButterflyRoot)tRoot).getBreedingTracker(aEntity.level(), aPlayer.getGameProfile()).registerCatch(((IButterfly)tButterfly));
 				ST.give(aPlayer, ((IButterflyRoot)tRoot).getMemberStack(((IButterfly)tButterfly).copy(), EnumFlutterType.BUTTERFLY.ordinal()), F);
-				aEntity.setDead();
+				aEntity.discard();
 			}
 			return T;
 		}

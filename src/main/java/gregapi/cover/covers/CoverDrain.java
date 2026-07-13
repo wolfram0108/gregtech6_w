@@ -91,7 +91,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 								if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.XP.make(LiquidXpUtils.xpToLiquidRatio(((ExperienceOrb)tEntity).getXpValue())), T)) {
 									UT.Sounds.send(SFX.MC_XP, 0.1F, (RNGSUS.nextFloat()-RNGSUS.nextFloat()) * 0.35F + 0.9F, (BlockEntity)aData.mTileEntity);
 									aData.mTileEntity.getWorld().removeEntity(tEntity);
-									tEntity.setDead();
+									tEntity.discard();
 									continue;
 								}
 							} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -99,7 +99,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 						if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.XP.make(((ExperienceOrb)tEntity).getXpValue() * 20, FL.Mob, UT.Code.units(((ExperienceOrb)tEntity).getXpValue(), 3, 200, F)), T)) {
 							UT.Sounds.send(SFX.MC_XP, 0.1F, (RNGSUS.nextFloat()-RNGSUS.nextFloat()) * 0.35F + 0.9F, (BlockEntity)aData.mTileEntity);
 							aData.mTileEntity.getWorld().removeEntity(tEntity);
-							tEntity.setDead();
+							tEntity.discard();
 							continue;
 						}
 						continue;
