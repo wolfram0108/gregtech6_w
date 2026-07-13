@@ -18,6 +18,7 @@
  */
 
 package gregtech.experiments;
+import net.minecraft.core.BlockPos;
 
 import gregapi.data.FL;
 import gregapi.util.WD;
@@ -45,7 +46,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 	
 	@Override
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
-		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate);
+		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate);
 	}
 	
 	@Override

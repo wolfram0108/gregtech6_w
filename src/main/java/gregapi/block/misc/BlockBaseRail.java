@@ -202,9 +202,9 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 				flag1 = T;
 			}
 			if (flag1) {
-				aWorld.notifyBlocksOfNeighborChange(aX, aY - 1, aZ, this);
+				aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this, null);
 				if (aData == 2 || aData == 3 || aData == 4 || aData == 5) {
-					aWorld.notifyBlocksOfNeighborChange(aX, aY + 1, aZ, this);
+					aWorld.updateNeighborsAt(new BlockPos(aX, aY + 1, aZ), this, null);
 				}
 			}
 		}
@@ -241,17 +241,17 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		if (!list.isEmpty()) flag1 = T;
 		if (flag1 && !flag) {
 			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMetaData | 8, 3, F);
-			aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
-			aWorld.notifyBlocksOfNeighborChange(aX, aY - 1, aZ, this);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this, null);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this, null);
 			aWorld.markBlockRangeForRenderUpdate(aX, aY, aZ, aX, aY, aZ);
 		}
 		if (!flag1 && flag) {
 			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMetaData & 7, 3, F);
-			aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
-			aWorld.notifyBlocksOfNeighborChange(aX, aY - 1, aZ, this);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this, null);
+			aWorld.updateNeighborsAt(new BlockPos(aX, aY - 1, aZ), this, null);
 			aWorld.markBlockRangeForRenderUpdate(aX, aY, aZ, aX, aY, aZ);
 		}
-		if (flag1) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate(aWorld));
+		if (flag1) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate(aWorld));
 		aWorld.func_147453_f(aX, aY, aZ, this);
 	}
 	

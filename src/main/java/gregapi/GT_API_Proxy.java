@@ -518,7 +518,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				DELAYED_BLOCK_UPDATES = tList;
 				for (IHasWorldAndCoords tTileEntity : DELAYED_BLOCK_UPDATES_2) {
 					try {
-						tTileEntity.getWorld().notifyBlocksOfNeighborChange(tTileEntity.getX(), tTileEntity.getY(), tTileEntity.getZ(), tTileEntity.getBlock(tTileEntity.getCoords()));
+						tTileEntity.getWorld().updateNeighborsAt(new BlockPos(tTileEntity.getX(), tTileEntity.getY(), tTileEntity.getZ()), tTileEntity.getBlock(tTileEntity.getCoords()), null);
 					} catch(Throwable e) {
 						if (tTileEntity instanceof ITileEntityErrorable) ((ITileEntityErrorable)tTileEntity).setError("Delayed Block Update - " + e);
 						e.printStackTrace(ERR);

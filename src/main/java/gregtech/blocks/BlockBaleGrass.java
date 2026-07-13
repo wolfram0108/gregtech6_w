@@ -18,6 +18,7 @@
  */
 
 package gregtech.blocks;
+import net.minecraft.core.BlockPos;
 
 import gregapi.block.misc.BlockBaseBale;
 import gregapi.data.IL;
@@ -86,14 +87,14 @@ public class BlockBaleGrass extends BlockBaseBale {
 	@Override
 	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {
 		if ((WD.meta(aWorld, aX, aY, aZ) & 1) == 1) return;
-		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 2400 + RNGSUS.nextInt(2400));
+		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2400 + RNGSUS.nextInt(2400));
 	}
 	
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if ((aMeta & 1) == 1) return;
-		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 1100 + RNGSUS.nextInt(200));
+		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 1100 + RNGSUS.nextInt(200));
 		if (aRandom.nextInt(3) > 0) return;
 		if (aWorld.provider.isHellWorld && (aMeta & 2) == 0) {
 			WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 1, 3);

@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.prefixblock;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.SoundType;
@@ -375,18 +376,18 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	public boolean scheduleUpdateIfNeeded(Level aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity) {
 		if (mGravity && aY > 0 && FallingBlock.func_149831_e(aWorld, aX, aY - 1, aZ)) {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 2);
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
 		if (aTileEntity == null) return F;
 		if (!mCanBurn && !mCanExplode) return F;
 		if (mPrefix.contains(TD.Prefix.DUST_BASED)) {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 2);
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
 		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
 		if (aMaterial.containsAny(TD.Properties.FLAMMABLE, TD.Properties.EXPLOSIVE, TD.Atomic.ALKALI_METAL)) {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 2);
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
 		}
 		return F;
