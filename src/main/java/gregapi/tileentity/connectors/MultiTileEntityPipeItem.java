@@ -51,8 +51,8 @@ import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.tileentity.TileEntityDispenser;
-import net.minecraft.tileentity.TileEntityHopper;
+import net.minecraft.world.level.block.entity.DispenserBlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -225,7 +225,7 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 		if (!FACE_CONNECTED[aSide][mDisabledOutputs] && canEmitItemsTo(aSide, aSender)) {
 			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide);
 			if (ST.canConnect(tDelegator) && !(tDelegator.mTileEntity instanceof TileEntityBase09Connector)) {
-				if (!(tDelegator.mTileEntity instanceof TileEntityHopper || tDelegator.mTileEntity instanceof TileEntityDispenser) || getMetaDataAtSide(aSide) != tDelegator.mSideOfTileEntity) {
+				if (!(tDelegator.mTileEntity instanceof HopperBlockEntity || tDelegator.mTileEntity instanceof DispenserBlockEntity) || getMetaDataAtSide(aSide) != tDelegator.mSideOfTileEntity) {
 					// special cases for the win...
 					CoverData tCovers = getCoverData();
 					if (tCovers != null && tCovers.mBehaviours[aSide] instanceof CoverFilterItem && tCovers.mNBTs[aSide] != null) {

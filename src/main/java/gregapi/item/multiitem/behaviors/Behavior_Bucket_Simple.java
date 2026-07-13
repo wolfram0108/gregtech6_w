@@ -42,7 +42,7 @@ import net.minecraft.world.entity.animal.cow.MushroomCow;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
-import net.minecraft.item.ItemBucket;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
@@ -113,7 +113,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 			} else {
 				if (ST.invalid(tBucket = FL.fill(mFluid, tBucket, F, T, F, T))) return super.onDispense(aItem, aSource, aStack);
 			}
-			if (ST.item_(tBucket) instanceof ItemBucket && ((ItemBucket)ST.item_(tBucket)).tryPlaceContainedLiquid(aWorld, aX, aY, aZ)) {
+			if (ST.item_(tBucket) instanceof BucketItem && ((BucketItem)ST.item_(tBucket)).tryPlaceContainedLiquid(aWorld, aX, aY, aZ)) {
 				return processBucket(ST.make(Items.BUCKET, 1, 0), aStack, T);
 			}
 		}
