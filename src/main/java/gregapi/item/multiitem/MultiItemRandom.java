@@ -106,7 +106,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		isItemStackUsable(aStack);
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
-		if (tStat != null && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodStats().needFood() || tStat.alwaysEdible(this, aStack, aPlayer))) aPlayer.setItemInUse(aStack, getMaxItemUseDuration(aStack));
+		if (tStat != null && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || tStat.alwaysEdible(this, aStack, aPlayer))) aPlayer.setItemInUse(aStack, getMaxItemUseDuration(aStack));
 		return super.onItemRightClick(aStack, aWorld, aPlayer);
 	}
 	
@@ -301,9 +301,9 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 			
 			if (tFoodLevel * tSaturationLevel > 0) {
 				if (tStat.useAppleCoreFunctionality(this, aStack, aPlayer) && MD.APC.mLoaded) {
-					aPlayer.getFoodStats().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, this), aStack);
+					aPlayer.getFoodData().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, this), aStack);
 				} else {
-					aPlayer.getFoodStats().addStats(tFoodLevel, tSaturationLevel);
+					aPlayer.getFoodData().eat(tFoodLevel, tSaturationLevel);
 				}
 			}
 			

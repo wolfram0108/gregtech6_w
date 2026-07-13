@@ -123,8 +123,8 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		}
 		
 		if (!aPlayer.worldObj.isClientSide() && (mSpecials & 4) != 0) {
-			if (GT_ModHandler.canUseElectricItem(aStack, 50000) && aPlayer.getFoodStats().needFood()) {
-				aPlayer.getFoodStats().addStats(1, 0.0F);
+			if (GT_ModHandler.canUseElectricItem(aStack, 50000) && aPlayer.getFoodData().needsFood()) {
+				aPlayer.getFoodData().eat(1, 0.0F);
 				GT_ModHandler.useElectricItem(aStack, 50000, aPlayer);
 			}
 		}

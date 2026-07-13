@@ -245,7 +245,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	
 	@Override
 	public ItemStack onItemRightClick(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodStats().needFood()) {
+		if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood()) {
 			aPlayer.setItemInUse(aStack, Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32));
 			return aStack;
 		}
@@ -265,9 +265,9 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	@Override
 	public ItemStack onEaten(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (MD.APC.mLoaded) {
-			aPlayer.getFoodStats().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem()), aStack);
+			aPlayer.getFoodData().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem()), aStack);
 		} else {
-			aPlayer.getFoodStats().addStats(getTotalFood(), getTotalSaturation());
+			aPlayer.getFoodData().eat(getTotalFood(), getTotalSaturation());
 		}
 		
 		if (!aWorld.isClientSide() && MD.ENVM.mLoaded) {

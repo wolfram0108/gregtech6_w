@@ -162,7 +162,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		if (isDrinkable() && canDrinkFromSide(aSide)) {
 			aStack = toStack();
 			if (aStack == null) return T;
-			if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodStats().needFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer)) {
+			if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer)) {
 				switch(FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack)) {
 				case eat: UT.Sounds.send(SFX.MC_EAT  , this, F); break;
 				default : UT.Sounds.send(SFX.MC_DRINK, this, F); break;
@@ -338,7 +338,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				}
 			}
 		}
-		if (isDrinkable() && aStack.getCount() == 1 && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodStats().needFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer))) {
+		if (isDrinkable() && aStack.getCount() == 1 && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer))) {
 			aPlayer.setItemInUse(aStack, Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32));
 			return aStack;
 		}
@@ -360,9 +360,9 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		
 		if (tFoodLevel > 0) {
 			if (FoodStatFluid.INSTANCE.useAppleCoreFunctionality(aStack.getItem(), aStack, aPlayer)) {
-				aPlayer.getFoodStats().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem()), aStack);
+				aPlayer.getFoodData().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem()), aStack);
 			} else {
-				aPlayer.getFoodStats().addStats(tFoodLevel, FoodStatFluid.INSTANCE.getSaturation(aStack.getItem(), aStack, aPlayer));
+				aPlayer.getFoodData().eat(tFoodLevel, FoodStatFluid.INSTANCE.getSaturation(aStack.getItem(), aStack, aPlayer));
 			}
 		}
 		
