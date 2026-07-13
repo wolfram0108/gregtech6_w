@@ -112,11 +112,11 @@ public class Compat_Recipes_Aether extends CompatMods {
 		
 		RM.biomass(IL.AETHER_Flower_Purple.wild(16));
 		RM.biomass(IL.AETHER_Flower_White .wild(16));
-		RM.Squeezer.addRecipe1(T, 16, 16, IL.AETHER_Flower_Purple.wild(1), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], 2), ST.make(Items.dye, 1, DYE_INDEX_Purple));
+		RM.Squeezer.addRecipe1(T, 16, 16, IL.AETHER_Flower_Purple.wild(1), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], 2), ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
 		RM.Squeezer.addRecipe1(T, 16, 16, IL.AETHER_Flower_White .wild(1), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_White ], 2), OM.dust(MT.White));
-		RM.Juicer  .addRecipe1(T, 16, 16, IL.AETHER_Flower_Purple.wild(1), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], 2), ST.make(Items.dye, 1, DYE_INDEX_Purple));
+		RM.Juicer  .addRecipe1(T, 16, 16, IL.AETHER_Flower_Purple.wild(1), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], 2), ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
 		RM.Juicer  .addRecipe1(T, 16, 16, IL.AETHER_Flower_White .wild(1), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_White ], 2), OM.dust(MT.White));
-		RM.ic2_extractor(IL.AETHER_Flower_Purple.wild(1), ST.make(Items.dye, 3, DYE_INDEX_Purple));
+		RM.ic2_extractor(IL.AETHER_Flower_Purple.wild(1), ST.make(Items.INK_SAC, 3, DYE_INDEX_Purple));
 		RM.ic2_extractor(IL.AETHER_Flower_White .wild(1), OM.dust(MT.White, U*3));
 	}
 }

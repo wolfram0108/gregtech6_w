@@ -72,59 +72,59 @@ public class Compat_Recipes_Mariculture extends CompatMods {
 		
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 0), IL.MaCu_Dye_Green.get(1));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 1), IL.MaCu_Dye_Green.get(1));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 2), ST.make(Items.dye, 2, DYE_INDEX_Pink));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 2), ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 3), IL.MaCu_Dye_Red.get(2));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 4), ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 5), ST.make(Items.dye, 2, DYE_INDEX_Magenta));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 4), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 5), ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 6), IL.MaCu_Dye_Brown.get(2));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 7), IL.MaCu_Dye_Yellow.get(2));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 8), ST.make(Items.dye, 2, DYE_INDEX_Orange));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 9), ST.make(Items.dye, 2, DYE_INDEX_Purple));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1,10), ST.make(Items.dye, 2, DYE_INDEX_Gray));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1,11), ST.make(Items.dye, 2, DYE_INDEX_LightGray));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 8), ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1, 9), ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1,10), ST.make(Items.INK_SAC, 2, DYE_INDEX_Gray));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1,11), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightGray));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_static", 1,12), IL.MaCu_Dye_White.get(2));
 		
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 0), IL.MaCu_Dye_Green.get(1));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 1), IL.MaCu_Dye_Green.get(1));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 2), ST.make(Items.dye, 2, DYE_INDEX_Pink));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 2), ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 3), IL.MaCu_Dye_Red.get(2));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 4), ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 5), ST.make(Items.dye, 2, DYE_INDEX_Magenta));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 4), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 5), ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 6), IL.MaCu_Dye_Brown.get(2));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 7), IL.MaCu_Dye_Yellow.get(2));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 8), ST.make(Items.dye, 2, DYE_INDEX_Orange));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 9), ST.make(Items.dye, 2, DYE_INDEX_Purple));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1,10), ST.make(Items.dye, 2, DYE_INDEX_Gray));
-		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1,11), ST.make(Items.dye, 2, DYE_INDEX_LightGray));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 8), ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1, 9), ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1,10), ST.make(Items.INK_SAC, 2, DYE_INDEX_Gray));
+		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1,11), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightGray));
 		RM.Squeezer         .addRecipe1(T, 16,   16, ST.make(MD.MaCu, "plant_growable", 1,12), IL.MaCu_Dye_White.get(2));
 		
 		if (ENABLE_ADDING_IC2_EXTRACTOR_RECIPES) {
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 0), IL.MaCu_Dye_Green.get(1));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 1), IL.MaCu_Dye_Green.get(1));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 2), ST.make(Items.dye, 2, DYE_INDEX_Pink));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 2), ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 3), IL.MaCu_Dye_Red.get(2));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 4), ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 5), ST.make(Items.dye, 2, DYE_INDEX_Magenta));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 4), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 5), ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 6), IL.MaCu_Dye_Brown.get(2));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 7), IL.MaCu_Dye_Yellow.get(2));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 8), ST.make(Items.dye, 2, DYE_INDEX_Orange));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 9), ST.make(Items.dye, 2, DYE_INDEX_Purple));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1,10), ST.make(Items.dye, 2, DYE_INDEX_Gray));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1,11), ST.make(Items.dye, 2, DYE_INDEX_LightGray));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 8), ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1, 9), ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1,10), ST.make(Items.INK_SAC, 2, DYE_INDEX_Gray));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1,11), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightGray));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_static", 1,12), IL.MaCu_Dye_White.get(2));
 		
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 0), IL.MaCu_Dye_Green.get(1));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 1), IL.MaCu_Dye_Green.get(1));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 2), ST.make(Items.dye, 2, DYE_INDEX_Pink));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 2), ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 3), IL.MaCu_Dye_Red.get(2));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 4), ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 5), ST.make(Items.dye, 2, DYE_INDEX_Magenta));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 4), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 5), ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 6), IL.MaCu_Dye_Brown.get(2));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 7), IL.MaCu_Dye_Yellow.get(2));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 8), ST.make(Items.dye, 2, DYE_INDEX_Orange));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 9), ST.make(Items.dye, 2, DYE_INDEX_Purple));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1,10), ST.make(Items.dye, 2, DYE_INDEX_Gray));
-		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1,11), ST.make(Items.dye, 2, DYE_INDEX_LightGray));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 8), ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1, 9), ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1,10), ST.make(Items.INK_SAC, 2, DYE_INDEX_Gray));
+		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1,11), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightGray));
 		RM.ic2_extractor(ST.make(MD.MaCu, "plant_growable", 1,12), IL.MaCu_Dye_White.get(2));
 		}
 	}

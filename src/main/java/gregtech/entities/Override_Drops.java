@@ -704,7 +704,7 @@ public class Override_Drops {
 				// Give Meat more variety! :D
 				if (MOBS_DROP_MEAT && !OD.listAllmeatsubstitute.is(tStack)) {
 					if (RNGSUS.nextInt(3) == 0 && (OM.is("listAllmeatraw", tStack) || OM.is("listAllmeatcooked", tStack))) tIntestinesAmount++;
-					if (ST.item_(tStack) == Items.fish) {
+					if (ST.item_(tStack) == Items.COD) {
 						if (aBurn) ST.set(tStack, RM.get_smelting(tStack), F, F); break;
 					}
 					if (ST.item_(tStack) == Items.PORKCHOP) {
@@ -754,22 +754,22 @@ public class Override_Drops {
 		if (aDamage instanceof DamageSourceCombat && ((DamageSourceCombat)aDamage).mBeheadingDamage) {
 			if (aDead instanceof EntityCreeper) {
 				aDrops.clear();
-				aDrops.add(ST.entity(aDead, ST.make(Items.skull, 1, 4)));
+				aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 4)));
 			} else if (aDead instanceof Player) {
 				// No Drop deletion for Players though.
 				aDrops.add(ST.entity(aDead, ST.skull(aDead)));
 			} else if (aDead.getClass() == EntityZombie.class) {
 				if (!((EntityZombie)aDead).isVillager()) {
 					aDrops.clear();
-					aDrops.add(ST.entity(aDead, ST.make(Items.skull, 1, 2)));
+					aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 2)));
 				}
 			} else if (aDead.getClass() == EntitySkeleton.class) {
 				if (((EntitySkeleton)aDead).getSkeletonType() == 1) {
 					aDrops.clear();
-					aDrops.add(ST.entity(aDead, ST.make(Items.skull, 1, 1)));
+					aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 1)));
 				} else {
 					aDrops.clear();
-					aDrops.add(ST.entity(aDead, ST.make(Items.skull, 1, 0)));
+					aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 0)));
 				}
 			}
 		}

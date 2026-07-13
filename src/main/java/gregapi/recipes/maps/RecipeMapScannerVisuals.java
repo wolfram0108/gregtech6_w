@@ -58,7 +58,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 		mMappings.put(Items.MELON_SEEDS     , W, ST.make(Blocks.MELON_STEM, 1, 0));
 		mMappings.put(Items.melon           , W, ST.make(Blocks.MELON_STEM, 1, 7));
 		mMappings.put(Items.PUMPKIN_SEEDS   , W, ST.make(Blocks.PUMPKIN_STEM, 1, 7));
-		mMappings.put(Items.dye             , 3, ST.make(Blocks.COCOA, 1, 8));
+		mMappings.put(Items.INK_SAC             , 3, ST.make(Blocks.COCOA, 1, 8));
 		mMappings.put(Items.STRING          , W, ST.make(Blocks.web, 1, 0));
 		mMappings.put(Items.NETHER_WART     , W, ST.make(Blocks.NETHER_WART, 1, 3));
 		mMappings.put(Items.COMPARATOR      , W, ST.make(Blocks.powered_comparator, 1, 0));

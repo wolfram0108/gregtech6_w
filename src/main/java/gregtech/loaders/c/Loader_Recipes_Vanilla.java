@@ -486,31 +486,31 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		CR.shaped(ST.make(Blocks.WHITE_STAINED_GLASS, 8, 0), DEF, "GGG", "GDG", "GGG", 'G', Blocks.GLASS, 'D', DYE_OREDICTS[15]);
 		CR.shaped(ST.make(Items.speckled_melon, 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, "GGG", "GMG", "GGG", 'M', "cropMelon", 'G', nugget.dat(MT.Au));
 		
-		CR.remove(ST.make(Items.dye, 1, 1), ST.make(Items.LAPIS_LAZULI, 1, 0));
-		CR.remove(ST.make(Items.dye, 1, 2), ST.make(Items.LAPIS_LAZULI, 1, 0));
+		CR.remove(ST.make(Items.INK_SAC, 1, 1), ST.make(Items.LAPIS_LAZULI, 1, 0));
+		CR.remove(ST.make(Items.INK_SAC, 1, 2), ST.make(Items.LAPIS_LAZULI, 1, 0));
 		CR.remove(ST.make(Items.PURPLE_DYE, 1, 0), ST.make(Items.PINK_DYE, 1, 0));
-		CR.remove(ST.make(Items.dye, 1, 1), ST.make(Items.dye, 1,11));
-		CR.remove(ST.make(Items.dye, 1, 1), ST.make(Items.BONE_MEAL, 1, 0));
-		CR.remove(ST.make(Items.dye, 1, 2), ST.make(Items.BONE_MEAL, 1, 0));
+		CR.remove(ST.make(Items.INK_SAC, 1, 1), ST.make(Items.INK_SAC, 1,11));
+		CR.remove(ST.make(Items.INK_SAC, 1, 1), ST.make(Items.BONE_MEAL, 1, 0));
+		CR.remove(ST.make(Items.INK_SAC, 1, 2), ST.make(Items.BONE_MEAL, 1, 0));
 		CR.remove(ST.make(Items.LAPIS_LAZULI, 1, 0), ST.make(Items.BONE_MEAL, 1, 0));
 		CR.remove(ST.make(Items.GRAY_DYE, 1, 0), ST.make(Items.BONE_MEAL, 1, 0));
 		CR.remove(ST.make(Items.INK_SAC, 1, 0), ST.make(Items.BONE_MEAL, 1, 0));
 		CR.remove(ST.make(Items.INK_SAC, 1, 0), ST.make(Items.INK_SAC, 1, 0), ST.make(Items.BONE_MEAL, 1, 0));
-		CR.remove(ST.make(Items.dye, 1, 1), ST.make(Items.LAPIS_LAZULI, 1, 0), ST.make(Items.PINK_DYE, 1, 0));
-		CR.remove(ST.make(Items.dye, 1, 1), ST.make(Items.dye, 1, 1), ST.make(Items.LAPIS_LAZULI, 1, 0), ST.make(Items.BONE_MEAL, 1, 0));
+		CR.remove(ST.make(Items.INK_SAC, 1, 1), ST.make(Items.LAPIS_LAZULI, 1, 0), ST.make(Items.PINK_DYE, 1, 0));
+		CR.remove(ST.make(Items.INK_SAC, 1, 1), ST.make(Items.INK_SAC, 1, 1), ST.make(Items.LAPIS_LAZULI, 1, 0), ST.make(Items.BONE_MEAL, 1, 0));
 		
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_Purple     ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Red    ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue  ]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_Cyan       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Green  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue  ]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_Pink       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Red    ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_Lime       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Green  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_LightBlue  ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_Magenta    ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Purple ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Pink  ]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_Orange     ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Red    ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Yellow]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_Gray       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Black  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
-		CR.shapeless(ST.make(Items.dye, 2, DYE_INDEX_LightGray  ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Gray   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
-		CR.shapeless(ST.make(Items.dye, 3, DYE_INDEX_LightGray  ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Black  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White]});
-		CR.shapeless(ST.make(Items.dye, 3, DYE_INDEX_Magenta    ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Red   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Pink]});
-		CR.shapeless(ST.make(Items.dye, 4, DYE_INDEX_Magenta    ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Red   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Red], DYE_OREDICTS_MIXABLE[DYE_INDEX_White]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple     ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Red    ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue  ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_Cyan       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Green  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue  ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Red    ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_Lime       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Green  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue  ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta    ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Purple ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Pink  ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange     ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Red    ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Yellow]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_Gray       ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Black  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 2, DYE_INDEX_LightGray  ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Gray   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ]});
+		CR.shapeless(ST.make(Items.INK_SAC, 3, DYE_INDEX_LightGray  ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Black  ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White ], DYE_OREDICTS_MIXABLE[DYE_INDEX_White]});
+		CR.shapeless(ST.make(Items.INK_SAC, 3, DYE_INDEX_Magenta    ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Red   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Pink]});
+		CR.shapeless(ST.make(Items.INK_SAC, 4, DYE_INDEX_Magenta    ), DEF, new Object[] {DYE_OREDICTS_MIXABLE[DYE_INDEX_Blue   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Red   ], DYE_OREDICTS_MIXABLE[DYE_INDEX_Red], DYE_OREDICTS_MIXABLE[DYE_INDEX_White]});
 		
 		CR.shaped(toolHeadArrow.mat(MT.Steeleaf, 8), DEF, "X ", " x", 'X', ingot.dat(MT.Steeleaf));
 		CR.shaped(toolHeadArrow.mat(MT.Fireleaf, 8), DEF, "X ", " x", 'X', ingot.dat(MT.Fireleaf));
@@ -609,7 +609,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.sawing(16,  48, F, 100, ST.make(Blocks.trapdoor                  , 1, W), IL.Plank.get(3));
 		RM.sawing(16,  48, F, 100, ST.make(Items.bed                        , 1, W), IL.Plank.get(3), ST.make(Blocks.WHITE_WOOL, 3, 0));
 		RM.sawing(16,  64, F, 100, ST.make(Blocks.CRAFTING_TABLE            , 1, W), IL.Plank.get(4));
-		RM.sawing(16,  80, F, 100, ST.make(Items.boat                       , 1, W), IL.Plank.get(5));
+		RM.sawing(16,  80, F, 100, ST.make(Items.OAK_BOAT                       , 1, W), IL.Plank.get(5));
 		RM.sawing(16,  96, F, 100, ST.make(Blocks.BOOKSHELF                 , 1, W), IL.Plank.get(6), ST.make(Items.BOOK, 3, 0));
 		RM.sawing(16, 128, F, 100, ST.make(Blocks.CHEST                     , 1, W), IL.Plank.get(8));
 		RM.sawing(16, 128, F, 100, ST.make(Blocks.TRAPPED_CHEST             , 1, W), IL.Plank.get(8), ST.make(Blocks.TRIPWIRE_HOOK, 1, 0));
@@ -628,7 +628,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		CR.shapeless(IL.Plank.get(3), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.trapdoor             });
 		CR.shapeless(IL.Plank.get(3), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.bed                   });
 		CR.shapeless(IL.Plank.get(4), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.CRAFTING_TABLE       });
-		CR.shapeless(IL.Plank.get(5), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.boat                  });
+		CR.shapeless(IL.Plank.get(5), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.OAK_BOAT                  });
 		CR.shapeless(IL.Plank.get(6), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.BOOKSHELF            });
 		CR.shapeless(IL.Plank.get(8), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.CHEST                });
 		CR.shapeless(IL.Plank.get(8), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.TRAPPED_CHEST        });
@@ -813,7 +813,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Squeezer     .addRecipe1(T, 16,   16,  4000, ST.make(Blocks.LILAC, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta      ], 3), IL.Remains_Plant.get(1));
 		RM.Squeezer     .addRecipe1(T, 16,   16,  4000, ST.make(Blocks.ROSE_BUSH, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Red          ], 3), IL.Remains_Plant.get(1));
 		RM.Squeezer     .addRecipe1(T, 16,   16,  4000, ST.make(Blocks.PEONY, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Pink         ], 3), IL.Remains_Plant.get(1));
-		RM.Squeezer     .addRecipe1(T, 16,   16, 10000, ST.make(Blocks.SUNFLOWER, 1, 0), NF, FL.Oil_Sunflower.make(100), ST.make(Items.dye, 2, DYE_INDEX_Yellow));
+		RM.Squeezer     .addRecipe1(T, 16,   16, 10000, ST.make(Blocks.SUNFLOWER, 1, 0), NF, FL.Oil_Sunflower.make(100), ST.make(Items.INK_SAC, 2, DYE_INDEX_Yellow));
 		RM.Squeezer     .addRecipe1(T, 16,   16,  7000, ST.make(Blocks.CACTUS           , 1, W), NF, FL.Juice_Cactus.make(100), IL.Dye_Cactus.get(2));
 		RM.Squeezer     .addRecipe1(T, 16,   16,  4000, ST.make(Items.reeds             , 1, W), NF, FL.Juice_Reed.make(100), IL.Remains_Plant.get(1));
 		RM.Squeezer     .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice, U9)                    , NF, FL.Ice.make( 111), NI);
@@ -851,7 +851,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Juicer       .addRecipe1(T, 16,   16,  6000, ST.make(Blocks.LILAC, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta      ], 2), IL.Remains_Plant.get(1));
 		RM.Juicer       .addRecipe1(T, 16,   16,  6000, ST.make(Blocks.ROSE_BUSH, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Red          ], 2), IL.Remains_Plant.get(1));
 		RM.Juicer       .addRecipe1(T, 16,   16,  6000, ST.make(Blocks.PEONY, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Pink         ], 2), IL.Remains_Plant.get(1));
-		RM.Juicer       .addRecipe1(T, 16,   16, 10000, ST.make(Blocks.SUNFLOWER, 1, 0), NF, FL.Oil_Sunflower.make(75), ST.make(Items.dye, 2, 11));
+		RM.Juicer       .addRecipe1(T, 16,   16, 10000, ST.make(Blocks.SUNFLOWER, 1, 0), NF, FL.Oil_Sunflower.make(75), ST.make(Items.INK_SAC, 2, 11));
 		RM.Juicer       .addRecipe1(T, 16,   16,  9000, ST.make(Blocks.CACTUS           , 1, W), NF, FL.Juice_Cactus.make(75), IL.Dye_Cactus.get(2));
 		RM.Juicer       .addRecipe1(T, 16,   16,  5000, ST.make(Items.reeds             , 1, W), NF, FL.Juice_Reed.make(75), IL.Remains_Plant.get(1));
 		RM.Juicer       .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice, U9)                    , NF, FL.Ice.make( 111), NI);
@@ -910,19 +910,19 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		
 		
 		if (ENABLE_ADDING_IC2_EXTRACTOR_RECIPES) {
-		RM.ic2_extractor(ST.make(Blocks.POPPY, 1, 0), ST.make(Items.dye, 2,  1));
+		RM.ic2_extractor(ST.make(Blocks.POPPY, 1, 0), ST.make(Items.INK_SAC, 2,  1));
 		RM.ic2_extractor(ST.make(Blocks.BLUE_ORCHID, 1, 0), ST.make(Items.LIGHT_BLUE_DYE, 2, 0));
 		RM.ic2_extractor(ST.make(Blocks.ALLIUM, 1, 0), ST.make(Items.MAGENTA_DYE, 2, 0));
 		RM.ic2_extractor(ST.make(Blocks.AZURE_BLUET, 1, 0), ST.make(Items.LIGHT_GRAY_DYE, 2, 0));
-		RM.ic2_extractor(ST.make(Blocks.RED_TULIP, 1, 0), ST.make(Items.dye, 2,  1));
+		RM.ic2_extractor(ST.make(Blocks.RED_TULIP, 1, 0), ST.make(Items.INK_SAC, 2,  1));
 		RM.ic2_extractor(ST.make(Blocks.ORANGE_TULIP, 1, 0), ST.make(Items.ORANGE_DYE, 2, 0));
 		RM.ic2_extractor(ST.make(Blocks.WHITE_TULIP, 1, 0), ST.make(Items.LIGHT_GRAY_DYE, 2, 0));
 		RM.ic2_extractor(ST.make(Blocks.PINK_TULIP, 1, 0), ST.make(Items.PINK_DYE, 2, 0));
 		RM.ic2_extractor(ST.make(Blocks.OXEYE_DAISY, 1, 0), ST.make(Items.LIGHT_GRAY_DYE, 2, 0));
-		RM.ic2_extractor(ST.make(Blocks.DANDELION, 1, 0), ST.make(Items.dye, 2, 11));
-		RM.ic2_extractor(ST.make(Blocks.SUNFLOWER, 1, 0), ST.make(Items.dye, 3, 11));
+		RM.ic2_extractor(ST.make(Blocks.DANDELION, 1, 0), ST.make(Items.INK_SAC, 2, 11));
+		RM.ic2_extractor(ST.make(Blocks.SUNFLOWER, 1, 0), ST.make(Items.INK_SAC, 3, 11));
 		RM.ic2_extractor(ST.make(Blocks.LILAC, 1, 0), ST.make(Items.MAGENTA_DYE, 3, 0));
-		RM.ic2_extractor(ST.make(Blocks.ROSE_BUSH, 1, 0), ST.make(Items.dye, 3,  1));
+		RM.ic2_extractor(ST.make(Blocks.ROSE_BUSH, 1, 0), ST.make(Items.INK_SAC, 3,  1));
 		RM.ic2_extractor(ST.make(Blocks.PEONY, 1, 0), ST.make(Items.PINK_DYE, 3, 0));
 		RM.ic2_extractor(ST.make(Blocks.CACTUS, 1, W), IL.Dye_Cactus.get(2));
 		}

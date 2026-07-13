@@ -64,10 +64,10 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 			OreDictItemData tData = OM.anydata_(aInputs[0]);
 			// Don't allow any Dusts to give XP
 			if (!OM.prefixcontainsany(tData, TD.Prefix.DUST_BASED, TD.Prefix.INGOT_BASED, TD.Prefix.GEM_BASED)) {
-				if (tOutput.getItem() == Items.BRICK || tOutput.getItem() == Items.netherbrick || tOutput.getItem() == Items.CLAY_BALL || tOutput.getItem() == Items.dye) {
+				if (tOutput.getItem() == Items.BRICK || tOutput.getItem() == Items.netherbrick || tOutput.getItem() == Items.CLAY_BALL || tOutput.getItem() == Items.INK_SAC) {
 					// Bricks and Dyes are 0.05 XP
 					rXP = FL.XP.make(tOutput.getCount());
-				} else if (tOutput.getItem() == Items.coal) {
+				} else if (tOutput.getItem() == Items.COAL) {
 					// Coal/Charcoal is giving 0.10 XP
 					rXP = FL.XP.make(tOutput.getCount() * 2L);
 				} else if (IL.EtFu_Chorus_Popped.equal(tOutput)) {

@@ -103,7 +103,7 @@ public class Compat_Recipes_BiomesOPlenty extends CompatMods {
 		
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"   , 1, 0), IL.BoP_ShroomPowder.get(2));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"   , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Blue], IL.BoP_Dye_Blue.get(1));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"   , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Lime], ST.make(Items.dye, 1, DYE_INDEX_Lime));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"   , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Lime], ST.make(Items.INK_SAC, 1, DYE_INDEX_Lime));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"   , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Brown], IL.BoP_Dye_Brown.get(1));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"   , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Black], IL.BoP_Dye_Black.get(1));
 		
@@ -112,28 +112,28 @@ public class Compat_Recipes_BiomesOPlenty extends CompatMods {
 		
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "moss"        , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green], IL.BoP_Dye_Green.get(1));
 		
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Cyan], ST.make(Items.dye, 1, DYE_INDEX_Cyan));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Cyan], ST.make(Items.INK_SAC, 1, DYE_INDEX_Cyan));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Black], IL.BoP_Dye_Black.get(1));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 1, DYE_INDEX_LightBlue));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.dye, 1, DYE_INDEX_Orange));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.dye, 1, DYE_INDEX_Pink));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.dye, 1, DYE_INDEX_Magenta));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 1, DYE_INDEX_Purple));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightBlue));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.INK_SAC, 1, DYE_INDEX_Orange));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.INK_SAC, 1, DYE_INDEX_Pink));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.INK_SAC, 1, DYE_INDEX_Magenta));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1, 9), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], IL.BoP_Dye_White.get(1));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightGray], ST.make(Items.dye, 1, DYE_INDEX_LightGray));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"     , 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightGray], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightGray));
 		
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.dye, 1, DYE_INDEX_Pink));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.INK_SAC, 1, DYE_INDEX_Pink));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], IL.BoP_Dye_White.get(1));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.dye, 1, DYE_INDEX_Orange));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 1, DYE_INDEX_Purple));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow], ST.make(Items.dye, 1, DYE_INDEX_Yellow));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.INK_SAC, 1, DYE_INDEX_Orange));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow], ST.make(Items.INK_SAC, 1, DYE_INDEX_Yellow));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Blue], IL.BoP_Dye_Blue.get(1));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 1, DYE_INDEX_LightBlue));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.dye, 1, DYE_INDEX_Red));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightBlue));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"    , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.INK_SAC, 1, DYE_INDEX_Red));
 		
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"     , 1, 0), IL.BoP_ShroomPowder.get(2));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"     , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Blue], IL.BoP_Dye_Blue.get(1));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"     , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Lime], ST.make(Items.dye, 1, DYE_INDEX_Lime));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"     , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Lime], ST.make(Items.INK_SAC, 1, DYE_INDEX_Lime));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"     , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Brown], IL.BoP_Dye_Brown.get(1));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "mushrooms"     , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Black], IL.BoP_Dye_Black.get(1));
 		
@@ -142,24 +142,24 @@ public class Compat_Recipes_BiomesOPlenty extends CompatMods {
 		
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "moss"          , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green], IL.BoP_Dye_Green.get(1));
 		
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Cyan], ST.make(Items.dye, 1, DYE_INDEX_Cyan));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Cyan], ST.make(Items.INK_SAC, 1, DYE_INDEX_Cyan));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Black], IL.BoP_Dye_Black.get(1));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 1, DYE_INDEX_LightBlue));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.dye, 1, DYE_INDEX_Orange));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.dye, 1, DYE_INDEX_Pink));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.dye, 1, DYE_INDEX_Magenta));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 1, DYE_INDEX_Purple));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightBlue));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.INK_SAC, 1, DYE_INDEX_Orange));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.INK_SAC, 1, DYE_INDEX_Pink));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.INK_SAC, 1, DYE_INDEX_Magenta));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1, 9), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], IL.BoP_Dye_White.get(1));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightGray], ST.make(Items.dye, 1, DYE_INDEX_LightGray));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers"       , 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightGray], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightGray));
 		
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.dye, 1, DYE_INDEX_Pink));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.INK_SAC, 1, DYE_INDEX_Pink));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], IL.BoP_Dye_White.get(1));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.dye, 1, DYE_INDEX_Orange));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 1, DYE_INDEX_Purple));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow], ST.make(Items.dye, 1, DYE_INDEX_Yellow));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 2), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.INK_SAC, 1, DYE_INDEX_Orange));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 4), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow], ST.make(Items.INK_SAC, 1, DYE_INDEX_Yellow));
 		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Blue], IL.BoP_Dye_Blue.get(1));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 1, DYE_INDEX_LightBlue));
-		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.dye, 1, DYE_INDEX_Red));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 7), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightBlue));
+		RM.Juicer.addRecipe1(T, 16, 16, ST.make(MD.BoP, "flowers2"      , 1, 8), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.INK_SAC, 1, DYE_INDEX_Red));
 		
 		
 		RM.stonetypes(MT.STONES.Limestone, F, OP.rockGt.mat(MT.STONES.Limestone, 4), OP.blockDust.mat(MT.STONES.Limestone, 1)
@@ -199,7 +199,7 @@ public class Compat_Recipes_BiomesOPlenty extends CompatMods {
 		if (ENABLE_ADDING_IC2_EXTRACTOR_RECIPES) {
 		RM.ic2_extractor(ST.make(MD.BoP, "mushrooms"        , 1, 0), IL.BoP_ShroomPowder.get(2));
 		RM.ic2_extractor(ST.make(MD.BoP, "mushrooms"        , 1, 2), IL.BoP_Dye_Blue.get(2));
-		RM.ic2_extractor(ST.make(MD.BoP, "mushrooms"        , 1, 3), ST.make(Items.dye, 2, DYE_INDEX_Lime));
+		RM.ic2_extractor(ST.make(MD.BoP, "mushrooms"        , 1, 3), ST.make(Items.INK_SAC, 2, DYE_INDEX_Lime));
 		RM.ic2_extractor(ST.make(MD.BoP, "mushrooms"        , 1, 4), IL.BoP_Dye_Brown.get(2));
 		RM.ic2_extractor(ST.make(MD.BoP, "mushrooms"        , 1, 5), IL.BoP_Dye_Black.get(1));
 		
@@ -208,24 +208,24 @@ public class Compat_Recipes_BiomesOPlenty extends CompatMods {
 		
 		RM.ic2_extractor(ST.make(MD.BoP, "moss"         , 1, 0), IL.BoP_Dye_Green.get(2));
 		
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 1), ST.make(Items.dye, 2, DYE_INDEX_Cyan));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 1), ST.make(Items.INK_SAC, 2, DYE_INDEX_Cyan));
 		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 2), IL.BoP_Dye_Black.get(2));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 4), ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 5), ST.make(Items.dye, 2, DYE_INDEX_Orange));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 6), ST.make(Items.dye, 2, DYE_INDEX_Pink));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 7), ST.make(Items.dye, 2, DYE_INDEX_Magenta));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 8), ST.make(Items.dye, 2, DYE_INDEX_Purple));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 4), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 5), ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 6), ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 7), ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 8), ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
 		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1, 9), IL.BoP_Dye_White.get(2));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1,15), ST.make(Items.dye, 2, DYE_INDEX_LightGray));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers"      , 1,15), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightGray));
 		
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 0), ST.make(Items.dye, 2, DYE_INDEX_Pink));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 0), ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
 		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 1), IL.BoP_Dye_White.get(2));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 2), ST.make(Items.dye, 2, DYE_INDEX_Orange));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 3), ST.make(Items.dye, 2, DYE_INDEX_Purple));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 4), ST.make(Items.dye, 2, DYE_INDEX_Yellow));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 2), ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 3), ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 4), ST.make(Items.INK_SAC, 2, DYE_INDEX_Yellow));
 		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 5), IL.BoP_Dye_Blue.get(2));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 7), ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 8), ST.make(Items.dye, 2, DYE_INDEX_Red));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 7), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.ic2_extractor(ST.make(MD.BoP, "flowers2"     , 1, 8), ST.make(Items.INK_SAC, 2, DYE_INDEX_Red));
 		}
 	}
 }

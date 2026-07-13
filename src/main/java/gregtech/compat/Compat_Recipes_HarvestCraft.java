@@ -275,7 +275,7 @@ public class Compat_Recipes_HarvestCraft extends CompatMods {
 			RM.Injector .addRecipe2(T, 16,   64, aStack1, ST.amount(4, aStack2), ST.make(MD.HaC, "jellydonutItem", 4));
 		}});
 		addListener("foodDonut", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.Bath     .addRecipeX(T,  0,   16, ST.array(aEvent.mStack, IL.Dye_Cactus.get(1), ST.make(Items.dye, 1, 1), ST.make(Items.dye, 1, 11)), MT.Sugar.liquid(U4, T), NF, ST.make(MD.HaC, "frosteddonutItem", 1));
+			RM.Bath     .addRecipeX(T,  0,   16, ST.array(aEvent.mStack, IL.Dye_Cactus.get(1), ST.make(Items.INK_SAC, 1, 1), ST.make(Items.INK_SAC, 1, 11)), MT.Sugar.liquid(U4, T), NF, ST.make(MD.HaC, "frosteddonutItem", 1));
 			RM.Bath     .addRecipe1(T,  0,   16, aEvent.mStack, MT.Chocolate.liquid(U4, T), NF, ST.make(MD.HaC, "chocolatedonutItem", 1));
 			RM.Mixer    .addRecipe2(T, 16,   16, aEvent.mStack, OM.dust(MT.Sugar, U4), ST.make(MD.HaC, "powdereddonutItem", 1));
 			RM.Mixer    .addRecipe2(T, 16,   16, aEvent.mStack, OM.dust(MT.Sugar, U3), ST.make(MD.HaC, "powdereddonutItem", 1));

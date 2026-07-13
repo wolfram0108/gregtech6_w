@@ -122,9 +122,9 @@ public class Compat_Recipes_Erebus extends CompatMods {
 		RM.Juicer       .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "weepingBlue"   , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Blue], ST.make(MD.ERE, "materials", 2,26));
 		RM.ic2_extractor(                       ST.make(MD.ERE, "weepingBlue"   , 1, 0), ST.make(MD.ERE, "materials", 2,26));
 		
-		RM.Squeezer     .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "waterFlower"   , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.dye, 2, DYE_INDEX_Pink));
-		RM.Juicer       .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "waterFlower"   , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.dye, 2, DYE_INDEX_Pink));
-		RM.ic2_extractor(                       ST.make(MD.ERE, "waterFlower"   , 1, 0), ST.make(Items.dye, 3, DYE_INDEX_Pink));
+		RM.Squeezer     .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "waterFlower"   , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
+		RM.Juicer       .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "waterFlower"   , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Pink], ST.make(Items.INK_SAC, 2, DYE_INDEX_Pink));
+		RM.ic2_extractor(                       ST.make(MD.ERE, "waterFlower"   , 1, 0), ST.make(Items.INK_SAC, 3, DYE_INDEX_Pink));
 		
 		RM.Squeezer     .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "pricklyPair"   , 1, W), NF, FL.Juice_Cactus.make(100), IL.Dye_Cactus.get(2));
 		RM.Juicer       .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "pricklyPair"   , 1, W), NF, FL.Juice_Cactus.make(100), IL.Dye_Cactus.get(2));

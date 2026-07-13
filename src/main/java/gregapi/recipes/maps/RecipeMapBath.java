@@ -119,7 +119,7 @@ public class RecipeMapBath extends RecipeMap {
 				}
 			}
 			if (aInput.getItem() instanceof ItemArmor) for (byte tColor = 0; tColor < 16; tColor++) for (FluidStack aDye : DYE_FLUIDS[tColor]) if (FL.equal(aDye, aFluids[0])) {
-				ItemStack tOutput = CR.getany(aTileEntity==null?DW:aTileEntity.getWorld(), ST.array(aInput, NI, NI, NI, NI, NI, NI, NI, ST.make(Items.dye, 1, tColor)));
+				ItemStack tOutput = CR.getany(aTileEntity==null?DW:aTileEntity.getWorld(), ST.array(aInput, NI, NI, NI, NI, NI, NI, NI, ST.make(Items.INK_SAC, 1, tColor)));
 				if (ST.invalid(tOutput)) return null;
 				return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(tOutput), null, null, FL.array(aDye), ZL_FS, 512, 0, 0);
 			}

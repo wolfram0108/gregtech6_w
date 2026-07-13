@@ -180,9 +180,9 @@ public class Loader_Recipes_Temporary implements Runnable {
 		if (MD.HOWL.mLoaded) {
 			RM.biomass(ST.make(MD.HOWL, "wolfsbane", 8, W));
 			
-			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HOWL, "wolfsbane", 1, W), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 2, DYE_INDEX_Purple));
-			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HOWL, "wolfsbane", 1, W), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 2, DYE_INDEX_Purple));
-			RM.ic2_extractor(ST.make(MD.HOWL, "wolfsbane", 1, W), ST.make(Items.dye, 3, DYE_INDEX_Purple));
+			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HOWL, "wolfsbane", 1, W), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HOWL, "wolfsbane", 1, W), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+			RM.ic2_extractor(ST.make(MD.HOWL, "wolfsbane", 1, W), ST.make(Items.INK_SAC, 3, DYE_INDEX_Purple));
 		}
 		
 		
@@ -190,21 +190,21 @@ public class Loader_Recipes_Temporary implements Runnable {
 			RM.biomass(ST.make(MD.HEE, "crossed_decoration", 8, W));
 			RM.biomass(ST.make(MD.HEE, "death_flower"      , 8, W));
 			
-			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.dye, 2, DYE_INDEX_Magenta));
-			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.dye, 2, DYE_INDEX_Magenta));
-			RM.ic2_extractor(ST.make(MD.HEE, "death_flower", 1, 0), ST.make(Items.dye, 3, DYE_INDEX_Magenta));
+			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta));
+			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Magenta], ST.make(Items.INK_SAC, 2, DYE_INDEX_Magenta));
+			RM.ic2_extractor(ST.make(MD.HEE, "death_flower", 1, 0), ST.make(Items.INK_SAC, 3, DYE_INDEX_Magenta));
 			
-			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Gray], ST.make(Items.dye, 2, DYE_INDEX_Gray));
-			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Gray], ST.make(Items.dye, 2, DYE_INDEX_Gray));
-			RM.ic2_extractor(ST.make(MD.HEE, "death_flower", 1,15), ST.make(Items.dye, 3, DYE_INDEX_Gray));
+			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Gray], ST.make(Items.INK_SAC, 2, DYE_INDEX_Gray));
+			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "death_flower", 1,15), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Gray], ST.make(Items.INK_SAC, 2, DYE_INDEX_Gray));
+			RM.ic2_extractor(ST.make(MD.HEE, "death_flower", 1,15), ST.make(Items.INK_SAC, 3, DYE_INDEX_Gray));
 			
-			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.dye, 2, DYE_INDEX_Orange));
-			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.dye, 2, DYE_INDEX_Orange));
-			RM.ic2_extractor(ST.make(MD.HEE, "crossed_decoration", 1, 6), ST.make(Items.dye, 3, DYE_INDEX_Orange));
+			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange], ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange));
+			RM.ic2_extractor(ST.make(MD.HEE, "crossed_decoration", 1, 6), ST.make(Items.INK_SAC, 3, DYE_INDEX_Orange));
 			
-			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1,13), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 2, DYE_INDEX_Purple));
-			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1,13), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 2, DYE_INDEX_Purple));
-			RM.ic2_extractor(ST.make(MD.HEE, "crossed_decoration", 1,13), ST.make(Items.dye, 3, DYE_INDEX_Purple));
+			RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1,13), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+			RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.HEE, "crossed_decoration", 1,13), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
+			RM.ic2_extractor(ST.make(MD.HEE, "crossed_decoration", 1,13), ST.make(Items.INK_SAC, 3, DYE_INDEX_Purple));
 		}
 		
 		if (MD.TE_DRILLS.mLoaded) {
@@ -357,9 +357,9 @@ public class Loader_Recipes_Temporary implements Runnable {
 			RM.Distillery.addRecipe1(T, 16, 48, IL.NeLi_Soul_Rose     .get(1), FL.Potion_Awkward.make(250), FL.Potion_Invisibility_1  .make(250), ZL_IS);
 			RM.Distillery.addRecipe1(T, 16, 48, IL.NeLi_Foxfire_Powder.get(1), FL.Potion_Mundane.make(750), FL.Potion_Strength_2      .make(750), ZL_IS);
 			
-			RM.Squeezer.addRecipe1(T, 16, 16, IL.NeLi_Foxfire_Lily.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 1, DYE_INDEX_Purple));
-			RM.Juicer  .addRecipe1(T, 16, 16, IL.NeLi_Foxfire_Lily.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.dye, 1, DYE_INDEX_Purple));
-			RM.ic2_extractor(IL.NeLi_Foxfire_Lily.get(1), ST.make(Items.dye, 2, DYE_INDEX_Purple));
+			RM.Squeezer.addRecipe1(T, 16, 16, IL.NeLi_Foxfire_Lily.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
+			RM.Juicer  .addRecipe1(T, 16, 16, IL.NeLi_Foxfire_Lily.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Purple], ST.make(Items.INK_SAC, 1, DYE_INDEX_Purple));
+			RM.ic2_extractor(IL.NeLi_Foxfire_Lily.get(1), ST.make(Items.INK_SAC, 2, DYE_INDEX_Purple));
 			
 			RM.Squeezer.addRecipe1(T, 16, 16, IL.NeLi_Wither_Rose.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Black], ST.make(MD.NeLi, "dye", 1, 0));
 			RM.Juicer  .addRecipe1(T, 16, 16, IL.NeLi_Wither_Rose.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Black], ST.make(MD.NeLi, "dye", 1, 0));
@@ -373,9 +373,9 @@ public class Loader_Recipes_Temporary implements Runnable {
 			RM.Juicer  .addRecipe1(T, 16, 16, IL.NeLi_Bone_Rose.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], ST.make(MD.NeLi, "dye", 1, 2));
 			RM.ic2_extractor(IL.NeLi_Bone_Rose.get(1), ST.make(MD.NeLi, "dye", 2, 2));
 			
-			RM.Squeezer.addRecipe1(T, 16, 16, IL.NeLi_Soul_Rose.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 1, DYE_INDEX_LightBlue));
-			RM.Juicer  .addRecipe1(T, 16, 16, IL.NeLi_Soul_Rose.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 1, DYE_INDEX_LightBlue));
-			RM.ic2_extractor(IL.NeLi_Soul_Rose.get(1), ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
+			RM.Squeezer.addRecipe1(T, 16, 16, IL.NeLi_Soul_Rose.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightBlue));
+			RM.Juicer  .addRecipe1(T, 16, 16, IL.NeLi_Soul_Rose.get(1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightBlue));
+			RM.ic2_extractor(IL.NeLi_Soul_Rose.get(1), ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
 			
 			RM.glowstone(IL.NeLi_Gloomstone.get(1), MT.Gloomstone);
 			

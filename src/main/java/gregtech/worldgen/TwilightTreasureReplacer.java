@@ -287,7 +287,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			useless  .add(IL.Ancient_Debris.get(1, OP.crushed.mat(MT.AncientDebris, 2)));
 			common   .add(IL.Ancient_Debris.get(2, OP.crushed.mat(MT.AncientDebris, 4)));
 			uncommon .add(IL.Ancient_Debris.get(4, OP.crushed.mat(MT.AncientDebris, 8)));
-			uncommon .add(ST.make(Items.skull, 2, 1));
+			uncommon .add(ST.make(Items.SKELETON_SKULL, 2, 1));
 		}
 		
 		TWILIGHT_TREASURE.put(mCategory, this);

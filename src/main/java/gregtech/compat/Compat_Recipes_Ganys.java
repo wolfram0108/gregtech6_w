@@ -73,9 +73,9 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			CR.shapeless(                           IL.Plank.get(7), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, IL.EtFu_Barrel});
 			RM.sawing(16, 112, F, 100,              IL.EtFu_Barrel.get(1), IL.Plank.get(7));
 			
-			RM.Squeezer.addRecipe1(T, 16, 16,       ST.make(MD.EtFu, "rose"              , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.dye, 1, DYE_INDEX_Red));
-			RM.Juicer  .addRecipe1(T, 16, 16,       ST.make(MD.EtFu, "rose"              , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.dye, 1, DYE_INDEX_Red));
-			RM.ic2_extractor(                       ST.make(MD.EtFu, "rose"              , 1, 0), ST.make(Items.dye, 2, DYE_INDEX_Red));
+			RM.Squeezer.addRecipe1(T, 16, 16,       ST.make(MD.EtFu, "rose"              , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.INK_SAC, 1, DYE_INDEX_Red));
+			RM.Juicer  .addRecipe1(T, 16, 16,       ST.make(MD.EtFu, "rose"              , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.INK_SAC, 1, DYE_INDEX_Red));
+			RM.ic2_extractor(                       ST.make(MD.EtFu, "rose"              , 1, 0), ST.make(Items.INK_SAC, 2, DYE_INDEX_Red));
 			RM.Squeezer.addRecipe1(T, 16, 16,       ST.make(MD.EtFu, "lily_of_the_valley", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], ST.make(MD.EtFu, "dye", 1, 0));
 			RM.Juicer  .addRecipe1(T, 16, 16,       ST.make(MD.EtFu, "lily_of_the_valley", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_White], ST.make(MD.EtFu, "dye", 1, 0));
 			RM.ic2_extractor(                       ST.make(MD.EtFu, "lily_of_the_valley", 1, 0), ST.make(MD.EtFu, "dye", 2, 0));

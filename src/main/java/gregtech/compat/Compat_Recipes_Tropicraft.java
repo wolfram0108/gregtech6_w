@@ -60,24 +60,24 @@ public class Compat_Recipes_Tropicraft extends CompatMods {
 		RM.unpack(ST.make(MD.TROPIC, "shell", 1, 0), ST.make(MD.TROPIC, "pearl", 1, 0));
 		RM.unpack(ST.make(MD.TROPIC, "shell", 1, 1), ST.make(MD.TROPIC, "pearl", 1, 1));
 		
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow   ], ST.make(Items.dye, 2, DYE_INDEX_Yellow   ));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange   ], ST.make(Items.dye, 2, DYE_INDEX_Orange   ));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red      ], ST.make(Items.dye, 2, DYE_INDEX_Red      ));
-		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1,12), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green    ], ST.make(Items.dye, 2, DYE_INDEX_Green    ));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow   ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Yellow   ));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange   ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange   ));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red      ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Red      ));
+		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1,12), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green    ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Green    ));
 		
-		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.dye, 2, DYE_INDEX_LightBlue));
-		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow   ], ST.make(Items.dye, 2, DYE_INDEX_Yellow   ));
-		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange   ], ST.make(Items.dye, 2, DYE_INDEX_Orange   ));
-		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red      ], ST.make(Items.dye, 2, DYE_INDEX_Red      ));
-		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1,12), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green    ], ST.make(Items.dye, 2, DYE_INDEX_Green    ));
+		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 2, DYE_INDEX_LightBlue));
+		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 3), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Yellow   ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Yellow   ));
+		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 5), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Orange   ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Orange   ));
+		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1, 6), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red      ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Red      ));
+		RM.Juicer  .addRecipe1(T, 16, 16, ST.make(MD.TROPIC, "tile.flower", 1,12), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green    ], ST.make(Items.INK_SAC, 2, DYE_INDEX_Green    ));
 		
 		if (ENABLE_ADDING_IC2_EXTRACTOR_RECIPES) {
-		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 0), ST.make(Items.dye, 3, DYE_INDEX_LightBlue));
-		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 3), ST.make(Items.dye, 3, DYE_INDEX_Yellow   ));
-		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 5), ST.make(Items.dye, 3, DYE_INDEX_Orange   ));
-		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 6), ST.make(Items.dye, 3, DYE_INDEX_Red      ));
-		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1,12), ST.make(Items.dye, 3, DYE_INDEX_Green    ));
+		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 0), ST.make(Items.INK_SAC, 3, DYE_INDEX_LightBlue));
+		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 3), ST.make(Items.INK_SAC, 3, DYE_INDEX_Yellow   ));
+		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 5), ST.make(Items.INK_SAC, 3, DYE_INDEX_Orange   ));
+		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1, 6), ST.make(Items.INK_SAC, 3, DYE_INDEX_Red      ));
+		RM.ic2_extractor(ST.make(MD.TROPIC, "tile.flower", 1,12), ST.make(Items.INK_SAC, 3, DYE_INDEX_Green    ));
 		}
 		
 		CR.shaped(ST.make(tTorch, 2, 0), DEF, "  X", " S ", "S  ", 'X', OP.oreRaw.dat(MT.Charcoal)                   , 'S', OP.stick.dat(MT.Bamboo));

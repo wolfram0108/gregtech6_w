@@ -62,7 +62,7 @@ public class Loader_Recipes_Hints implements Runnable {
 		, NI
 		, NI
 		, NI
-		), ST.array(ST.make(Items.skull, 1, 0), ST.make(Items.skull, 1, 1), ST.make(Items.skull, 1, 2), ST.make(Items.skull, 1, 3), ST.make(Items.skull, 1, 4)), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
+		), ST.array(ST.make(Items.SKELETON_SKULL, 1, 0), ST.make(Items.SKELETON_SKULL, 1, 1), ST.make(Items.SKELETON_SKULL, 1, 2), ST.make(Items.SKELETON_SKULL, 1, 3), ST.make(Items.SKELETON_SKULL, 1, 4)), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
 		  IL.Ceramic_Mold.getWithName(1, "Don't forget to shape the Mold to pour it")

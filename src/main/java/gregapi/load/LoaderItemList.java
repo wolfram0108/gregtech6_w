@@ -754,7 +754,7 @@ public class LoaderItemList implements Runnable {
 		
 		IL.Dye_Bonemeal                         .set(ST.make(Items.BONE_MEAL, 1, 0));
 		IL.Dye_SquidInk                         .set(ST.make(Items.INK_SAC, 1, 0));
-		IL.Dye_Cactus                           .set(ST.make(Items.dye, 1, 2));
+		IL.Dye_Cactus                           .set(ST.make(Items.INK_SAC, 1, 2));
 		IL.Dye_Cocoa                            .set(ST.make(Items.COCOA_BEANS, 1, 0), null, "cropCocoa");
 		
 		IL.Bale_Wheat                           .set(ST.make(Blocks.HAY_BLOCK, 1, 0), null, "baleWheat");
