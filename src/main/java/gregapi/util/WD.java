@@ -595,6 +595,9 @@ public class WD {
 	public static void dropBlockAsItem(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {if (aWorld == null) return; BlockPos tPos = new BlockPos(aX, aY, aZ); Block.dropResources(aWorld.getBlockState(tPos), aWorld, tPos);}
 	/** было Block.dropBlockAsItem(world,x,y,z,ItemStack) (конкретный стек) -> Block.popResource(level,pos,stack) (Block.java:407). */
 	public static void dropBlockAsItem(Level aWorld, int aX, int aY, int aZ, ItemStack aStack) {if (aWorld != null && ST.valid(aStack)) Block.popResource(aWorld, new BlockPos(aX, aY, aZ), aStack);}
+	/** было Block.getCollisionBoundingBoxFromPool(w,x,y,z) (world-space AABB или null) -> getCollisionShape(w,pos).bounds().move(x,y,z)
+	 *  (VoxelShape.bounds:39/isEmpty:73, AABB.move:220); пустая форма -> null (1:1 с 1.7.10 «нет коллизии»). */
+	public static AABB collisionBox(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (aWorld == null) return null; BlockPos tPos = new BlockPos(aX, aY, aZ); net.minecraft.world.phys.shapes.VoxelShape tShape = aWorld.getBlockState(tPos).getCollisionShape(aWorld, tPos); return tShape.isEmpty() ? null : tShape.bounds().move(aX, aY, aZ);}
 	
 	// F6: было `WorldProvider aProvider`-перегрузки ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками (вызов через
 	// `aWorld.provider`) — та же болезнь, что у семейства `dimXXX` выше: `WorldProvider` в neo удалён, компилятор

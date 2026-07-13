@@ -93,7 +93,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.opaque(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
 	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
-	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : super.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);}
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : WD.collisionBox(aWorld, aX, aY, aZ, this);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
 	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isClientSide()) {aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 201+RNGSUS.nextInt(100)); return;}}
 	

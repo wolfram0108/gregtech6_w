@@ -3246,7 +3246,7 @@ public class UT {
 		@Deprecated public static boolean isOpaque(Level aWorld, int aX, int aY, int aZ, boolean aIgnoreUnloadedChunks, boolean aDefault) {return WD.opq(aWorld, aX, aY, aZ, aIgnoreUnloadedChunks, aDefault);}
 		@Deprecated public static boolean isAir(Level aWorld, int aX, int aY, int aZ) {return WD.air(aWorld, aX, aY, aZ);}
 		@Deprecated public static boolean isEasilyReplaceable(Level aWorld, int aX, int aY, int aZ) {return WD.easyRep(aWorld, aX, aY, aZ);}
-		@Deprecated public static boolean hasCollisionBox(Level aWorld, int aX, int aY, int aZ) {return WD.block(aWorld, aX, aY, aZ).getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) != null;}
+		@Deprecated public static boolean hasCollisionBox(Level aWorld, int aX, int aY, int aZ) {return WD.hasCollide(aWorld, aX, aY, aZ);}
 		@Deprecated public static void setOnFire(Level aWorld, int aX, int aY, int aZ, boolean aReplaceCenter, boolean aCheckFlammability) {WD.burn(aWorld, aX, aY, aZ, aReplaceCenter, aCheckFlammability);}
 		@Deprecated public static void setOnFire(Level aWorld, BlockPos aCoords, boolean aReplaceCenter, boolean aCheckFlammability) {WD.burn(aWorld, aCoords, aReplaceCenter, aCheckFlammability);}
 		@Deprecated public static boolean setToFire(Level aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {return WD.fire(aWorld, aX, aY, aZ, aCheckFlammability);}

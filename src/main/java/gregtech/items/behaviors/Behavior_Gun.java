@@ -237,7 +237,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				continue;
 			}
 			if (aBlock.canCollideCheck(aMeta, F) || aBlock.canCollideCheck(aMeta, T)) {
-				AABB tBox = aBlock.getCollisionBoundingBoxFromPool(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
+				AABB tBox = WD.collisionBox(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), aBlock);
 				if (tBox != null && tBox.calculateIntercept(tPos, tAim) != null) {
 					UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 					tPower=0;
