@@ -366,8 +366,8 @@ public class TwilightTreasureReplacer extends TFTreasure {
 	
 	public int findEmptySlot(AbstractContainerMenu aInventory) {
 		int j = aInventory.getSizeInventory();
-		for (int i = 0; i < 100; i++) {int k = RNGSUS.nextInt(j); if (aInventory.getStackInSlot(k) == null) return k;}
-		for (int i = 0; i <   j; i++) if (aInventory.getStackInSlot(i) == null) return i;
+		for (int i = 0; i < 100; i++) {int k = RNGSUS.nextInt(j); if (aInventory.getSlot(k).getItem() == null) return k;}
+		for (int i = 0; i <   j; i++) if (aInventory.getSlot(i).getItem() == null) return i;
 		return -1;
 	}
 }

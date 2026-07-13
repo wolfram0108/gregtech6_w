@@ -57,7 +57,7 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 							UT.Sounds.send(SFX.MC_XP, aController.getWorld(), aX, aY, aZ);
 						}
 					} else for (int i = aInventory.getSizeInventory()-1; i >= 0; i--) {
-						ItemStack tStack = aInventory.getStackInSlot(i);
+						ItemStack tStack = aInventory.getSlot(i).getItem();
 						if (ST.equal(aStack, tStack, T) && ST.use(aPlayer, T, T, tStack, 1)) {
 							if (WD.set(aController.getWorld(), aX, aY, aZ, tStack) && aPlayer != null) {
 								UT.Sounds.send(SFX.MC_XP, aController.getWorld(), aX, aY, aZ);
