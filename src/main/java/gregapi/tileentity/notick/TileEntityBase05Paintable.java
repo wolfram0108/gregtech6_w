@@ -98,8 +98,8 @@ public abstract class TileEntityBase05Paintable extends TileEntityBase04Covers i
 				// F8: тег захвачен ОДИН раз (ItemNBT.get копирует), обе мутации идут в один и тот же
 				// объект, коммит явный ниже — иначе removeTag-правки потерялись бы (см. ItemNBT.java).
 				CompoundTag tNBT = ItemNBT.get(aStack);
-				tNBT.removeTag(NBT_PAINTED);
-				tNBT.removeTag(NBT_COLOR);
+				tNBT.remove(NBT_PAINTED);
+				tNBT.remove(NBT_COLOR);
 				UT.NBT.set(aStack, writeItemNBT(tNBT));
 			} else {
 				UT.NBT.set(aStack, writeItemNBT(UT.NBT.make()));

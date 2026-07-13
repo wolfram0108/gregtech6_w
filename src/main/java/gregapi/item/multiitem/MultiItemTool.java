@@ -602,7 +602,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public boolean isItemStackUsable(ItemStack aStack) {
 		if (aStack.getCount() <= 0) return F;
 
-		// PORT-TODO(F8, остаточный риск): ниже aNBT.removeTag("ench")/setTag("ench", ...) мутируют локальный
+		// PORT-TODO(F8, остаточный риск): ниже aNBT.remove("ench")/setTag("ench", ...) мутируют локальный
 		// снимок без повторного commit через ItemNBT.set — в 1.7.10 это был живой тег стека. Под мостом
 		// ItemNBT эти правки в тег стека НЕ попадают (см. ItemNBT.java javadoc, decisions/F8-nbt-data-components.md §7).
 		CompoundTag aNBT = ItemNBT.get(aStack);

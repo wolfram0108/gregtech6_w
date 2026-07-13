@@ -2280,7 +2280,7 @@ public class UT {
 		public static ItemStack removeEnchantments(ItemStack aStack) {
 			// F8: чары читаются движком из типизированного DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS —
 			// канал отдельный от CUSTOM_DATA. Снимаем реальный компонент (это и есть рабочая замена
-			// старого aNBT.removeTag("ench")), и следом — легаси-ключ "ench" под CUSTOM_DATA (defensive,
+			// старого aNBT.remove("ench")), и следом — легаси-ключ "ench" под CUSTOM_DATA (defensive,
 			// getOrCreate возвращает detached-копию; commit через set — эквивалент старого check).
 			aStack.remove(EnchantmentHelper.getComponentType(aStack));
 			CompoundTag tNBT = getOrCreate(aStack);

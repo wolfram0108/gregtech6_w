@@ -62,7 +62,7 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 			return 1000;
 		}
 		if (aTool.equals(TOOL_softhammer)) {
-			if (aData.mNBTs[aCoverSide] != null) aData.mNBTs[aCoverSide].removeTag("gt.filter.item");
+			if (aData.mNBTs[aCoverSide] != null) aData.mNBTs[aCoverSide].remove("gt.filter.item");
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {

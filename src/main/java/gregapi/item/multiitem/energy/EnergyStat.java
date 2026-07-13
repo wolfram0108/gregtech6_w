@@ -131,7 +131,7 @@ public class EnergyStat implements IItemEnergy {
 		if ((aEnergyType != mType && aEnergyType != null) || ST.size(aStack) <= 0) return aStack;
 		
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		if (tNBT == null) tNBT = UT.NBT.make(); else tNBT.removeTag(NBT_ENERGY);
+		if (tNBT == null) tNBT = UT.NBT.make(); else tNBT.remove(NBT_ENERGY);
 		
 		if (aAmount > 0) {
 			if (aAmount >= mCapacity) {

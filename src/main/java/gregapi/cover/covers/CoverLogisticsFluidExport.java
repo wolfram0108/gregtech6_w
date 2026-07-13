@@ -60,7 +60,7 @@ public class CoverLogisticsFluidExport extends AbstractCoverAttachmentLogistics 
 	@Override
 	public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_softhammer)) {
-			if (aData.mNBTs[aCoverSide] != null) aData.mNBTs[aCoverSide].removeTag("gt.filter.fluid");
+			if (aData.mNBTs[aCoverSide] != null) aData.mNBTs[aCoverSide].remove("gt.filter.fluid");
 			return 10000;
 		}
 		if (aTool.equals(TOOL_magnifyingglass)) {

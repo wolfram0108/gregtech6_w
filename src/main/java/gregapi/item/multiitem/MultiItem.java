@@ -384,7 +384,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	public void setFluidContent(ItemStack aStack, FluidStack aFluid) {
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		if (tNBT == null) tNBT = UT.NBT.make(); else tNBT.removeTag("gt.fluidcontent");
+		if (tNBT == null) tNBT = UT.NBT.make(); else tNBT.remove("gt.fluidcontent");
 		if (aFluid != null && aFluid.getAmount() > 0) FL.save(tNBT, "gt.fluidcontent", aFluid);
 		UT.NBT.set(aStack, tNBT);
 		isItemStackUsable(aStack);
