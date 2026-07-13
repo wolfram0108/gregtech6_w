@@ -18,6 +18,7 @@
  */
 
 package gregtech.items.behaviors;
+import net.minecraft.world.level.block.PumpkinBlock;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.StairBlock;
@@ -166,7 +167,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			
 			tWater = F;
 			
-			if (aBlock instanceof BlockPumpkin || WD.te(aPlayer.level(), aCoord, T) instanceof MultiTileEntityGregOLantern) {
+			if (aBlock instanceof PumpkinBlock || WD.te(aPlayer.level(), aCoord, T) instanceof MultiTileEntityGregOLantern) {
 				if (RNGSUS.nextInt(3) == 0) {
 					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.PUMPKIN, 1, 0));
 				} else {

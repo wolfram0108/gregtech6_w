@@ -18,6 +18,12 @@
  */
 
 package gregapi.block;
+import net.minecraft.world.level.block.PumpkinBlock;
+import net.minecraft.world.level.block.HopperBlock;
+import net.minecraft.world.level.block.FurnaceBlock;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.EnderChestBlock;
+import net.minecraft.world.level.block.ChestBlock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -241,13 +247,13 @@ public class ToolCompat {
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
-			if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
+			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
-			if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
+			if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
-			if (aBlock instanceof BlockHopper) {
+			if (aBlock instanceof HopperBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1)%6==1?(aMeta+1)%6:2, 3, F)) return 2500;
 			}
 			if (aBlock.rotateBlock(aWorld, aX, aX, aX, Direction.getOrientation(aSide))) return 10000;
@@ -294,13 +300,13 @@ public class ToolCompat {
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
-			if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
+			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
-			if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
+			if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
-			if (aBlock instanceof BlockHopper) {
+			if (aBlock instanceof HopperBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1)%6==1?(aMeta+1)%6:2, 3, F)) return 2500;
 			}
 		}
@@ -348,24 +354,24 @@ public class ToolCompat {
 			}
 			
 			if (aMeta == aTargetSide) {
-				if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockHopper || aBlock instanceof BlockEnderChest) {
+				if (aBlock instanceof PumpkinBlock || aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof HopperBlock || aBlock instanceof EnderChestBlock) {
 					if (WD.set(aWorld, aX, aY, aZ, NB, 0, 3)) {
 						ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, ST.make(aBlock, 1, 0));
 						return 10000;
 					}
 				}
 			} else {
-				if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
+				if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
 					if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
-				if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
+				if (aBlock instanceof PumpkinBlock || aBlock instanceof FurnaceBlock || aBlock instanceof ChestBlock || aBlock instanceof EnderChestBlock) {
 					if (SIDES_HORIZONTAL[aTargetSide] && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
-				if (aBlock instanceof BlockHopper) {
+				if (aBlock instanceof HopperBlock) {
 					if (SIDES_BOTTOM_HORIZONTAL[aTargetSide] && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
 			}
-			if (aBlock instanceof BaseRailBlock || aBlock instanceof BlockRedstoneDiode || aBlock instanceof BlockPistonExtension || aBlock instanceof BlockPistonBase) {
+			if (aBlock instanceof BaseRailBlock || aBlock instanceof BlockRedstoneDiode || aBlock instanceof BlockPistonExtension || aBlock instanceof PistonBaseBlock) {
 				// wrench doesn't work on those.
 			} else {
 				if (Arrays.asList(aBlock.getValidRotations(aWorld, aX, aY, aZ)).contains(Direction.getOrientation(aTargetSide))) {
