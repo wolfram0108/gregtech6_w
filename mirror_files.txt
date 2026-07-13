@@ -134,3 +134,5 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\RenderBlocks.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\ChestGenHooks.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\fluids\IFluidBlock.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\EnumPlantType.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\IPlantable.java
