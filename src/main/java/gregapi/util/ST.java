@@ -271,6 +271,19 @@ public class ST {
 		if (aItem != null) VANILLA_STACKSIZE_OVERRIDES.put(aItem, aSize);
 		return aItem;
 	}
+
+	/** F8 read-modify-write: 1.7.10 `stack.getTagCompound().putX(k,v)` мутировал ЖИВОЙ тег стека. neo CustomData
+	 *  иммутабельна — `ItemNBT.get` отдаёт КОПИЮ, мутация без обратной записи ТЕРЯЕТСЯ (см. ItemNBT javadoc,
+	 *  `gt6-contract-seams-blindspot`). Эти центр-хелперы делают атомарный get(копия)→put→set-обратно —
+	 *  единственный 1:1-корректный путь для точечной записи в предметный NBT. */
+	public static void nbtPut(ItemStack aStack, String aKey, net.minecraft.nbt.Tag aValue) {
+		CompoundTag tNBT = ItemNBT.get(aStack); if (tNBT == null) tNBT = new CompoundTag();
+		tNBT.put(aKey, aValue); ItemNBT.set(aStack, tNBT);
+	}
+	public static void nbtPutByte(ItemStack aStack, String aKey, byte aValue) {
+		CompoundTag tNBT = ItemNBT.get(aStack); if (tNBT == null) tNBT = new CompoundTag();
+		tNBT.putByte(aKey, aValue); ItemNBT.set(aStack, tNBT);
+	}
 	public static void register(Block aBlock, String aRegistryName) {register(aBlock, aRegistryName, null);}
 	public static void register(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
 		GT_API.registerBlock(aBlock, aRegistryName, aItemClass == null ? ItemBlockBase.class : aItemClass);
