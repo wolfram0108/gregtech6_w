@@ -118,7 +118,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	@Override public String toString() {return mName;}
 	public final String getUnlocalizedName() {return mName;}
 	public String getUnlocalizedName(ItemStack aStack) {return getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
-	public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
+	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
 	public final boolean getShareTag() {return T;} // just to be sure.
 	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {mIcon = aIconRegister.registerIcon(mModID + ":" + mName);}
 	public IIcon getIconFromDamage(int aMeta) {return mIcon;}

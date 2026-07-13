@@ -95,7 +95,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	
 	public final String getUnlocalizedName() {return mNameInternal;}
 	@Override public String name(byte aMeta) {return mNameInternal;}
-	public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
+	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.RAIL, aWorld, aX, aY, aZ);}
 	public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return mExplosionResistance;}
 	public float getExplosionResistance(Entity aEntity) {return mExplosionResistance;}

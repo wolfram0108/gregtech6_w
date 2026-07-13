@@ -590,7 +590,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public final BlockEntity createTileEntity(Level aWorld, int aMeta) {return null;}
 	@Override public String toString() {return mNameInternal;}
 	public String getUnlocalizedName() {return mNameInternal;}
-	public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
+	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
 	public String getHarvestTool(int aMaterialToolQuality) {return mTool;}
 	public boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX + mMinX, aY + mMinY, aZ + mMinZ, aX + mMaxX, aY + mMaxY, aZ + mMaxZ);}

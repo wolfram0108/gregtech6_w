@@ -155,7 +155,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	@Optional.Method(modid = ModIDs.BOTA) public void onBlockPlacedByFlower(ItemStack aStack, SubTileEntity aFlower, int aX, int aY, int aZ) {/**/}
 	
 	public final String getUnlocalizedName() {return mBlock.getUnlocalizedName();}
-	public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
+	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
 	public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}

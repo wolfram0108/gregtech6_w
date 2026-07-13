@@ -102,7 +102,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public String getItemStackDisplayName(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IMTE_GetItemName) return ((IMTE_GetItemName)tTileEntityContainer.mTileEntity).getItemName(aStack, super.getItemStackDisplayName(aStack));
-		return I18n.translateToLocal(getUnlocalizedName(aStack));
+		return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));
 	}
 	
 	// @Override

@@ -343,7 +343,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		@Override
 		protected void drawGuiContainerForegroundLayer(int p_146979_1_, int p_146979_2_) {
 			fontRendererObj.drawString(mContainer.mTileEntity.getInventoryNameGUI(), 8, 6, 4210752);
-			fontRendererObj.drawString(I18n.translateToLocal("container.inventory"), 8, ySize - 94, 4210752);
+			fontRendererObj.drawString(gregapi.lang.LanguageHandler.get("container.inventory"), 8, ySize - 94, 4210752);
 		}
 		
 		@Override

@@ -82,7 +82,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?super.getRenderType():RendererBlockTextured.INSTANCE.mRenderID;}
 	@Override public final Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return mMultiTileEntityRegistry.mNameInternal;}
-	public final String getLocalizedName() {return I18n.translateToLocal(mMultiTileEntityRegistry.mNameInternal);}
+	public final String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mMultiTileEntityRegistry.mNameInternal);}
 	
 	@Override
 	public boolean placeBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {

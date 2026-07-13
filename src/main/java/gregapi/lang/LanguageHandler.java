@@ -93,6 +93,11 @@ public class LanguageHandler {
 		add(aKey, aDefault);
 		return translate(aKey, aDefault);
 	}
+
+	/** было {@code I18n.translateToLocal(aKey)} (1.7.10 StatCollector — ТОЛЬКО чтение lang-таблицы, перевод-или-ключ, без регистрации). */
+	public static String get(String aKey) {
+		return translate(aKey, aKey);
+	}
 	
 	public static String langfile(String aKey, String aEnglish) {
 		if (sLangFile == null) return aEnglish;

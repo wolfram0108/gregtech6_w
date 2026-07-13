@@ -81,7 +81,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	}
 	
 	public final String getUnlocalizedName() {return mNameInternal;}
-	public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
+	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
 	public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
 	public int getHarvestLevel(int aMeta) {return 0;}
 	public boolean canSilkHarvest() {return canSilkHarvest((byte)0);}
