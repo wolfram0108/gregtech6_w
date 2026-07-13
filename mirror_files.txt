@@ -136,3 +136,4 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\Ches
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\fluids\IFluidBlock.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\EnumPlantType.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\IPlantable.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\IShearable.java
