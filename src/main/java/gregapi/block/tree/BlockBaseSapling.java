@@ -144,7 +144,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	
 	public boolean checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (canBlockStay(aWorld, aX, aY, aZ)) return F;
-		dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
+		WD.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
 		WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 		return T;
 	}

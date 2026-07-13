@@ -64,7 +64,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (!aWorld.isClientSide()) {
 			if (!Level.doesBlockHaveSolidTopSurface(aWorld, aX, aY-1, aZ)) {
-				dropBlockAsItem(aWorld, aX, aY, aZ, 0, 0);
+				WD.dropBlockAsItem(aWorld, aX, aY, aZ, 0, 0);
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 			}
 		}

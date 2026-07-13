@@ -94,7 +94,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (!canBlockStay(aWorld, aX, aY, aZ)) {
-			dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
+			WD.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
 			WD.set(aWorld, aX, aY, aZ, getBlockById(0), 0, 2);
 		}
 	}

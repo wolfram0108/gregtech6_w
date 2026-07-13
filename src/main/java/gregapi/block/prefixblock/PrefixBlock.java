@@ -566,7 +566,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public void dropBlockAsItemWithChance(Level aWorld, int aX, int aY, int aZ, int aMeta, float aChance, int aFortune) {
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, F);
 		aChance = EventHooks.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, 0, aFortune, aChance, F, harvesters.get());
-		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
+		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
 	}
 	
 	// @Override
@@ -577,7 +577,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		int aFortune = EnchantmentHelper.getFortuneModifier(aPlayer);
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, aSilkTouch);
 		float aChance = EventHooks.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, 0, aFortune, 1.0F, aSilkTouch, aPlayer);
-		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
+		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
 	}
 	
 	public final ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aUnusableMetaData, int aFortune) {return mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, F);}

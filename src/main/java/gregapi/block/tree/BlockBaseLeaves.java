@@ -129,7 +129,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 			if (mLogMetas[aMeta & 7] != (WD.meta(aWorld, aX + i, aY + j, aZ + k) & 3)) continue;
 			return;
 		}
-		if (!(MD.TFC.mLoaded || MD.TFCP.mLoaded) || aRandom.nextInt(4) == 0) dropBlockAsItem(aWorld, aX, aY, aZ, aMeta, 0);
+		if (!(MD.TFC.mLoaded || MD.TFCP.mLoaded) || aRandom.nextInt(4) == 0) WD.dropBlockAsItem(aWorld, aX, aY, aZ, aMeta, 0);
 		WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 	}
 	
