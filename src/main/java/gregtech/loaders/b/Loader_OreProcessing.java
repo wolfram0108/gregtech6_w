@@ -74,12 +74,12 @@ public class Loader_OreProcessing implements Runnable {
 		  BlockTextureCopied.get(Blocks.STONE, 0)
 		, BlockTextureCopied.get(Blocks.COBBLESTONE, 0)
 		, BlockTextureCopied.get(Blocks.MOSSY_COBBLESTONE, 0)
-		, BlockTextureCopied.get(Blocks.stonebrick, 0)
-		, BlockTextureCopied.get(Blocks.stonebrick, 1)
-		, BlockTextureCopied.get(Blocks.stonebrick, 2)
-		, BlockTextureCopied.get(Blocks.stonebrick, 3)
-		, BlockTextureCopied.get(Blocks.double_stone_slab, SIDE_TOP, 0)
-		, BlockTextureCopied.get(Blocks.double_stone_slab, SIDE_FRONT, 0)
+		, BlockTextureCopied.get(Blocks.STONE_BRICKS, 0)
+		, BlockTextureCopied.get(Blocks.STONE_BRICKS, 1)
+		, BlockTextureCopied.get(Blocks.STONE_BRICKS, 2)
+		, BlockTextureCopied.get(Blocks.STONE_BRICKS, 3)
+		, BlockTextureCopied.get(Blocks.STONE_SLAB, SIDE_TOP, 0)
+		, BlockTextureCopied.get(Blocks.STONE_SLAB, SIDE_FRONT, 0)
 		};
 		addListener(OP.plate.dat(MT.Stone).toString(), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			CoverRegistry.put(aEvent.mStack, new CoverTextureMulti(T, F, SFX.MC_DIG_ROCK, tStoneTextures));

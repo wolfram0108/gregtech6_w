@@ -83,7 +83,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 				motionX *= 0.699999988079071D;
 				motionZ *= 0.699999988079071D;
 				motionY *= -0.5D;
-				if (WD.block(level(), aX, aY, aZ) != Blocks.piston_extension) {
+				if (WD.block(level(), aX, aY, aZ) != Blocks.MOVING_PISTON) {
 					setDead();
 					if (!level().canPlaceEntityOnSide(super.func_145805_f(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.func_149831_e(level(), aX, aY - 1, aZ) || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), ItemNBT.get(mStack), T, T)) {
 						if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);

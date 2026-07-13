@@ -135,7 +135,7 @@ public class DungeonChunkRoomFarmCrop extends DungeonChunkRoomEmpty {
 					if (WD.even(tX, 2, tZ)) {
 						aData.set(tX, 2, tZ, Blocks.MELON_STEM, aData.next(8), Blocks.PUMPKIN_STEM, aData.next(8), 2);
 					} else {
-						aData.set(tX, 2, tZ, Blocks.melon_block, 0, Blocks.PUMPKIN, 0, 2);
+						aData.set(tX, 2, tZ, Blocks.MELON, 0, Blocks.PUMPKIN, 0, 2);
 					}
 				} else {
 					aData.set(tX, 2, tZ, tCrops.get(aData.next(tCrops.size())), aData.next(8), 2);
@@ -143,10 +143,10 @@ public class DungeonChunkRoomFarmCrop extends DungeonChunkRoomEmpty {
 			}
 		}
 		
-		aData.set( 5,  1,  5, 32065); aData.set( 5,  2,  5, Blocks.reeds ); aData.set( 5,  3,  5, Blocks.reeds ); aData.set( 5,  4,  5, Blocks.reeds );
+		aData.set( 5,  1,  5, 32065); aData.set( 5,  2,  5, Blocks.SUGAR_CANE ); aData.set( 5,  3,  5, Blocks.SUGAR_CANE ); aData.set( 5,  4,  5, Blocks.SUGAR_CANE );
 		aData.set( 5,  1, 10, 32065); aData.set( 5,  2, 10, Blocks.CACTUS); aData.set( 5,  3, 10, Blocks.CACTUS); aData.set( 5,  4, 10, Blocks.CACTUS);
 		aData.set(10,  1,  5, 32065); aData.set(10,  2,  5, Blocks.CACTUS); aData.set(10,  3,  5, Blocks.CACTUS); aData.set(10,  4,  5, Blocks.CACTUS);
-		aData.set(10,  1, 10, 32065); aData.set(10,  2, 10, Blocks.reeds ); aData.set(10,  3, 10, Blocks.reeds ); aData.set(10,  4, 10, Blocks.reeds );
+		aData.set(10,  1, 10, 32065); aData.set(10,  2, 10, Blocks.SUGAR_CANE ); aData.set(10,  3, 10, Blocks.SUGAR_CANE ); aData.set(10,  4, 10, Blocks.SUGAR_CANE );
 		
 		
 		if (aData.mRoomLayout[aData.mRoomX+1][aData.mRoomZ] == 0) {
@@ -163,7 +163,7 @@ public class DungeonChunkRoomFarmCrop extends DungeonChunkRoomEmpty {
 			aData.set   (14,  1,  9, 32065); aData.set(14,  2,  9, BlocksGT.Saplings_AB, aData.next(BlocksGT.Saplings_AB.maxMeta()), BlocksGT.Saplings_CD, aData.next(BlocksGT.Saplings_CD.maxMeta()), Blocks.OAK_SAPLING, aData.next(6));
 			
 			aData.set   (14,  4,  6, 32065); aData.flower(14,  5,  6);
-			aData.set   (14,  4,  7, 32065); aData.set   (14,  5,  7, Blocks.double_plant, 1); aData.set(14,  6,  7, Blocks.double_plant, 9);
+			aData.set   (14,  4,  7, 32065); aData.set   (14,  5,  7, Blocks.SUNFLOWER, 1); aData.set(14,  6,  7, Blocks.SUNFLOWER, 9);
 			aData.set   (14,  4,  8, 32065); aData.flower(14,  5,  8);
 			aData.set   (14,  4,  9, 32065); aData.flower(14,  5,  9);
 		}
@@ -183,7 +183,7 @@ public class DungeonChunkRoomFarmCrop extends DungeonChunkRoomEmpty {
 			
 			aData.set   ( 1,  4,  6, 32065); aData.flower( 1,  5,  6);
 			aData.set   ( 1,  4,  7, 32065); aData.flower( 1,  5,  7);
-			aData.set   ( 1,  4,  8, 32065); aData.set   ( 1,  5,  8, Blocks.double_plant, 0); aData.set( 1,  6,  8, Blocks.double_plant, 9);
+			aData.set   ( 1,  4,  8, 32065); aData.set   ( 1,  5,  8, Blocks.SUNFLOWER, 0); aData.set( 1,  6,  8, Blocks.SUNFLOWER, 9);
 			aData.set   ( 1,  4,  9, 32065); aData.flower( 1,  5,  9);
 		}
 		
@@ -201,7 +201,7 @@ public class DungeonChunkRoomFarmCrop extends DungeonChunkRoomEmpty {
 			aData.set   ( 9,  1, 14, 32065); aData.set( 9,  2, 14, BlocksGT.Saplings_AB, aData.next(BlocksGT.Saplings_AB.maxMeta()), BlocksGT.Saplings_CD, aData.next(BlocksGT.Saplings_CD.maxMeta()), Blocks.OAK_SAPLING, aData.next(6));
 			
 			aData.set   ( 6,  4, 14, 32065); aData.flower( 6,  5, 14);
-			aData.set   ( 7,  4, 14, 32065); aData.set   ( 7,  5, 14, Blocks.double_plant, 4); aData.set( 7,  6, 14, Blocks.double_plant, 9);
+			aData.set   ( 7,  4, 14, 32065); aData.set   ( 7,  5, 14, Blocks.SUNFLOWER, 4); aData.set( 7,  6, 14, Blocks.SUNFLOWER, 9);
 			aData.set   ( 8,  4, 14, 32065); aData.flower( 8,  5, 14);
 			aData.set   ( 9,  4, 14, 32065); aData.flower( 9,  5, 14);
 		}
@@ -221,7 +221,7 @@ public class DungeonChunkRoomFarmCrop extends DungeonChunkRoomEmpty {
 			
 			aData.set   ( 6,  4,  1, 32065); aData.flower( 6,  5,  1);
 			aData.set   ( 7,  4,  1, 32065); aData.flower( 7,  5,  1);
-			aData.set   ( 8,  4,  1, 32065); aData.set   ( 8,  5,  1, Blocks.double_plant, 5); aData.set( 8,  6,  1, Blocks.double_plant, 9);
+			aData.set   ( 8,  4,  1, 32065); aData.set   ( 8,  5,  1, Blocks.SUNFLOWER, 5); aData.set( 8,  6,  1, Blocks.SUNFLOWER, 9);
 			aData.set   ( 9,  4,  1, 32065); aData.flower( 9,  5,  1);
 		}
 		

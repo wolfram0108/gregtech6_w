@@ -265,13 +265,13 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 				if (aWorld.provider.dimensionId == 1 || BIOMES_END.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName)) return new BlockPos(aX, aY, aZ);
 				for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 					Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-					if (tBlock == Blocks.END_PORTAL || tBlock == Blocks.dragon_egg) return new BlockPos(aX+i, aY+j, aZ+k);
+					if (tBlock == Blocks.END_PORTAL || tBlock == Blocks.DRAGON_EGG) return new BlockPos(aX+i, aY+j, aZ+k);
 				}
 				return null;
 			}
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == tChorusFlower || tBlock == Blocks.dragon_egg) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == tChorusFlower || tBlock == Blocks.DRAGON_EGG) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   5: case 203:
@@ -279,7 +279,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
 				if (tBlock == Blocks.MOSSY_COBBLESTONE || tBlock == Blocks.COBBLESTONE || tBlock == Blocks.STONE) return new BlockPos(aX+i, aY+j, aZ+k);
 				byte tMeta = WD.meta(aWorld, aX+i, aY+j, aZ+k);
-				if (tBlock == Blocks.stonebrick && tMeta == 1) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.STONE_BRICKS && tMeta == 1) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock instanceof BlockStones && (BlockStones.SPAWNABLE[tMeta] || BlockStones.MOSSY[tMeta])) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (WD.stone(tBlock, tMeta)) return new BlockPos(aX+i, aY+j, aZ+k);;
 			}
@@ -626,7 +626,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 			}
 			return F;
 		}
-		if (aBlock == Blocks.double_plant) {
+		if (aBlock == Blocks.SUNFLOWER) {
 			byte tMeta = WD.meta(aWorld, aX, aY, aZ);
 			return tMeta != 2 && tMeta != 3;
 		}

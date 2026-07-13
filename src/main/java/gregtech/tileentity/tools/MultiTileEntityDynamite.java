@@ -223,7 +223,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 		public void doExplosionA() {
 			for (int tX = UT.Code.roundDown(explosionX) - 1; tX <= UT.Code.roundDown(explosionX) + 1; tX++) for (int tY = UT.Code.roundDown(explosionY) - 1; tY <= UT.Code.roundDown(explosionY) + 1; tY++) for (int tZ = UT.Code.roundDown(explosionZ) - 1; tZ <= UT.Code.roundDown(explosionZ) + 1; tZ++) {
 				Block tBlock = WD.block(mWorld, tX, tY, tZ);
-				if (tBlock == Blocks.mob_spawner || WD.bedrock(tBlock)) continue;
+				if (tBlock == Blocks.SPAWNER || WD.bedrock(tBlock)) continue;
 				if (tBlock.getExplosionResistance(exploder, mWorld, tX, tY, tZ, explosionX, explosionY, explosionZ) <= mMaxExplosionResistance) affectedBlockPositions.add(new BlockPos(tX, tY, tZ));
 			}
 			List tList = mWorld.getEntitiesWithinAABBExcludingEntity(exploder, AABB.getBoundingBox(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));

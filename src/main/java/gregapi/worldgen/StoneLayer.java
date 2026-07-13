@@ -131,7 +131,7 @@ public class StoneLayer {
 	public StoneLayer setNoDeep() {mNoDeep = T; return this;}
 	
 	/** List of Stone and Ore Blocks, that can simply be replaced by the Stone Layers. */
-	public static final Set<Block> REPLACEABLE_BLOCKS = new HashSetNoNulls<>(F, Blocks.STONE, Blocks.COAL_ORE, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.LAPIS_ORE, Blocks.REDSTONE_ORE, Blocks.lit_redstone_ore);
+	public static final Set<Block> REPLACEABLE_BLOCKS = new HashSetNoNulls<>(F, Blocks.STONE, Blocks.COAL_ORE, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.LAPIS_ORE, Blocks.REDSTONE_ORE, Blocks.REDSTONE_ORE);
 	/** List of generateable Stone Layers, via ItemStack of the Stone Block, so that MetaData is usable. */
 	public static final List<StoneLayer> LAYERS = new ArrayListNoNulls<>();
 	/** Deepslate Special Case. */

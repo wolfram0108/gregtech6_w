@@ -115,7 +115,7 @@ public class Compat_Recipes_BuildCraft extends CompatMods {
 			
 			for (int i = 0; i < 16; i++) {
 			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.GRAVEL      , 1, W), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, i+1), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipestructurecobblestone", 1, i+1));
-			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.COBBLESTONE , 2, W), ST.make(Blocks.stained_glass, 1, i), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, i+1));
+			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.COBBLESTONE , 2, W), ST.make(Blocks.WHITE_STAINED_GLASS, 1, i), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, i+1));
 			}
 		}
 	}

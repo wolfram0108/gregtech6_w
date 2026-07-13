@@ -44,7 +44,7 @@ public class DungeonChunkRoomLibrary extends DungeonChunkRoomEmpty {
 		String[] tLoots = new String[] {ChestGenHooks.STRONGHOLD_LIBRARY, ChestGenHooks.STRONGHOLD_CORRIDOR, ChestGenHooks.STRONGHOLD_CROSSING, ChestGenHooks.PYRAMID_DESERT_CHEST, ChestGenHooks.PYRAMID_JUNGLE_CHEST, ChestGenHooks.VILLAGE_BLACKSMITH, ChestGenHooks.MINESHAFT_CORRIDOR, ChestGenHooks.DUNGEON_CHEST, ChestGenHooks.BONUS_CHEST};
 		
 		for (int tX = 2; tX <= 13; tX++) for (int tZ = 2; tZ <= 13; tZ++) {
-			aData.set(tX, 1, tZ, Blocks.carpet, aData.mColorInversed);
+			aData.set(tX, 1, tZ, Blocks.WHITE_CARPET, aData.mColorInversed);
 		}
 		
 		for (int tX = 1; tX <= 14; tX++) for (int tZ = 1; tZ <= 14; tZ++) {

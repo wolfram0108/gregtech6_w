@@ -282,16 +282,16 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GOLD_ORE                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.IRON_ORE                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.LAPIS_ORE                    , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.lit_redstone_ore             , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.REDSTONE_ORE             , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.REDSTONE_ORE                 , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.quartz_ore                   , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.NETHER_QUARTZ_ORE                   , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.DIRT, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GRASS_BLOCK                        , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.MYCELIUM                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GRAVEL                       , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.SAND, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.NETHERRACK                   , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.nether_brick                 , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.NETHER_BRICKS                 , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.END_STONE                    , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.SNOW                         , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.ICE                          , 1, W));
@@ -321,7 +321,7 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.BRICKS                  , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.OBSIDIAN                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.BEDROCK                      , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.mob_spawner                  , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.SPAWNER                  , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(MD.EtFu, "tuff"                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(MD.EtFu, "deepslate"                , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(MD.EtFu, "cobbled_deepslate"        , 1, W));
@@ -733,7 +733,7 @@ public class LoaderItemList implements Runnable {
 		
 		MT.Stone.mTextureDust         = BlockTextureCopied.get(Blocks.GRAVEL);
 		MT.Stone.mTextureSolid        = BlockTextureCopied.get(Blocks.STONE);
-		MT.Stone.mTextureSmooth       = BlockTextureCopied.get(Blocks.double_stone_slab, SIDE_TOP, 0);
+		MT.Stone.mTextureSmooth       = BlockTextureCopied.get(Blocks.STONE_SLAB, SIDE_TOP, 0);
 		MT.Glass.mTextureSolid        = BlockTextureCopied.get(Blocks.GLASS);
 		MT.Ceramic.mTextureSolid      = BlockTextureCopied.get(Blocks.TERRACOTTA);
 		MT.Au.mTextureSolid           = BlockTextureCopied.get(Blocks.GOLD_BLOCK);
@@ -741,7 +741,7 @@ public class LoaderItemList implements Runnable {
 		MT.Redstone.mTextureSolid     = BlockTextureCopied.get(Blocks.REDSTONE_BLOCK);
 		MT.Endstone.mTextureSolid     = BlockTextureCopied.get(Blocks.END_STONE);
 		MT.Netherrack.mTextureSolid   = BlockTextureCopied.get(Blocks.NETHERRACK);
-		MT.NetherBrick.mTextureSolid  = BlockTextureCopied.get(Blocks.nether_brick);
+		MT.NetherBrick.mTextureSolid  = BlockTextureCopied.get(Blocks.NETHER_BRICKS);
 		MT.NetherQuartz.mTextureSolid = BlockTextureCopied.get(Blocks.QUARTZ_BLOCK);
 		MT.Bedrock.mTextureSolid      = BlockTextureCopied.get(Blocks.BEDROCK);
 		MT.Clay.mTextureSolid         = BlockTextureCopied.get(Blocks.CLAY);

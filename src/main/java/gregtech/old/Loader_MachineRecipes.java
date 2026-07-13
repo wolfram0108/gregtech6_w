@@ -91,7 +91,7 @@ public class Loader_MachineRecipes implements Runnable {
 		
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "torchesFromCoal", F))
 		RA.addAssemblerRecipe(IL.Stick.get(1), ST.make(Items.COAL, 1, 0), IL.Torch.get(4), 400, 1);
-		RA.addAssemblerRecipe(IL.Stick.get(3), ST.tag(3), ST.make(Blocks.fence, 1, 0), 300, 4);
+		RA.addAssemblerRecipe(IL.Stick.get(3), ST.tag(3), ST.make(Blocks.OAK_FENCE, 1, 0), 300, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.Fe, 2), ST.make(Blocks.TRIPWIRE_HOOK, 1, 0), 400, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.WroughtIron, 2), ST.make(Blocks.TRIPWIRE_HOOK, 1, 0), 400, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(3), ST.make(Items.STRING, 3, W), ST.make(Items.bow, 1, 0), 400, 4);

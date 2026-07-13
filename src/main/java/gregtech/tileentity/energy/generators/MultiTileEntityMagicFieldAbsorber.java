@@ -82,9 +82,9 @@ public class MultiTileEntityMagicFieldAbsorber extends TileEntityBase09FacingSin
 				mActive = F;
 				mOutput = 64;
 				Block tBlock = getBlockAtSide(SIDE_TOP);
-				if (tBlock == Blocks.dragon_egg) {
+				if (tBlock == Blocks.DRAGON_EGG) {
 					mActive = T; mOutput = 64; mEnergyTypeEmitted = TD.Energy.QU;
-				} else if (tBlock == Blocks.skull) {
+				} else if (tBlock == Blocks.SKELETON_SKULL) {
 					mActive = T; mOutput = 1; mEnergyTypeEmitted = TD.Energy.TU; // I can't forsee this getting OP as heck. XD
 				} else if (IL.TF_Trophy.equal(tBlock)) {
 					switch(tBlock.getDamageValue(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) {

@@ -222,7 +222,7 @@ public class Loader_Loot implements Runnable {
 		addLoot("gt.seeds", 144, 4,12, IL.Dye_Cocoa.get(1));
 		for (int i = 0; i < 16; i++)
 		addLoot("gt.seeds",   9, 8,24, ST.make(BlocksGT.Glowtus, 1, i));
-		addLoot("gt.seeds", 144, 8,24, ST.make(Blocks.waterlily, 1, 0));
+		addLoot("gt.seeds", 144, 8,24, ST.make(Blocks.LILY_PAD, 1, 0));
 		// Actual Seeds.
 		addLoot("gt.seeds", 144,16,48, ST.make(Items.WHEAT_SEEDS, 1, 0));
 		addLoot("gt.seeds", 144,16,48, ST.make(Items.PUMPKIN_SEEDS, 1, 0));

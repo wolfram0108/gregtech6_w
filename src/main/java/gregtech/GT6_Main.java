@@ -165,7 +165,7 @@ public class GT6_Main extends Abstract_Mod {
 		RM.pulverizing(ST.make(Blocks.STONE, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0), null, 0, F);
 		RM.pulverizing(ST.make(Blocks.GRAVEL     , 1, W), ST.make(Items.FLINT, 2, 0), OP.dust.mat(MT.Flint, 1), 10, F);
 		RM.pulverizing(ST.make(Blocks.FURNACE    , 1, W), ST.make(Blocks.SAND, 6, 0), null, 0, F);
-		RM.pulverizing(ST.make(Blocks.lit_furnace, 1, W), ST.make(Blocks.SAND, 6, 0), null, 0, F);
+		RM.pulverizing(ST.make(Blocks.FURNACE, 1, W), ST.make(Blocks.SAND, 6, 0), null, 0, F);
 		RM.pulverizing(ST.make(Items.BONE        , 1, W), IL.Dye_Bonemeal.get(2), IL.Dye_Bonemeal.get(1), 50, T);
 		RM.pulverizing(ST.make(Items.BLAZE_ROD   , 1, W), ST.make(Items.BLAZE_POWDER, 3, 0), ST.make(Items.BLAZE_POWDER, 1, 0), 50, T);
 		RM.pulverizing(ST.make(Blocks.PUMPKIN    , 1, W), ST.make(Items.PUMPKIN_SEEDS, 4, 0), null, 0, F);

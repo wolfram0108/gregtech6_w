@@ -433,7 +433,7 @@ public class Loader_Recipes_Other implements Runnable {
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.STONE, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.LAPIS_ORE           , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.LAPIS_BLOCK, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.REDSTONE_ORE        , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.REDSTONE_BLOCK, 1, 0));
-//      RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.lit_redstone_ore    , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.REDSTONE_BLOCK, 1, 0));
+//      RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.REDSTONE_ORE    , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.REDSTONE_BLOCK, 1, 0));
 		}
 		
 		RM.Bath             .addRecipe2(T,  0,   16, ST.make(Items.PAPER, 2, W), ST.tag(2), FL.Glue.make( 125), NF, plateDouble.mat(MT.Paper, 1));

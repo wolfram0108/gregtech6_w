@@ -277,7 +277,7 @@ public class ToolCompat {
 				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
-			if (aBlock == Blocks.golden_rail) {
+			if (aBlock == Blocks.POWERED_RAIL) {
 				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
 				aWorld.isClientSide() = F;

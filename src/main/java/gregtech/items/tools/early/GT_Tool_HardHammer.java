@@ -82,12 +82,12 @@ public class GT_Tool_HardHammer extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		String tTool = aBlock.getHarvestTool(aMetaData);
-		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_hammer) || tTool.equalsIgnoreCase(TOOL_pickaxe))) || aBlock instanceof BlockSilverfish || aBlock == Blocks.mob_spawner || aBlock.getMaterial() == Material.rock || aBlock.getMaterial() == Material.glass || aBlock.getMaterial() == Material.ice || aBlock.getMaterial() == Material.packedIce || RM.Hammer.containsInput(ST.make(aBlock, 1, aMetaData), null, NI);
+		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_hammer) || tTool.equalsIgnoreCase(TOOL_pickaxe))) || aBlock instanceof BlockSilverfish || aBlock == Blocks.SPAWNER || aBlock.getMaterial() == Material.rock || aBlock.getMaterial() == Material.glass || aBlock.getMaterial() == Material.ice || aBlock.getMaterial() == Material.packedIce || RM.Hammer.containsInput(ST.make(aBlock, 1, aMetaData), null, NI);
 	}
 	
 	@Override
 	public float getMiningSpeed(Block aBlock, byte aMetaData, float aDefault, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
-		return aBlock == Blocks.mob_spawner ? aDefault * 128 : aDefault;
+		return aBlock == Blocks.SPAWNER ? aDefault * 128 : aDefault;
 	}
 	
 	@Override

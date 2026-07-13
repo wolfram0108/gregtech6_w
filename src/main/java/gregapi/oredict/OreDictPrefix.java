@@ -238,9 +238,9 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		ST.setMaxStackSize(Item.byBlock(Blocks.GRAVEL                 ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.SAND                   ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.WHITE_WOOL                   ), OP.block.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.melon_block            ), OP.block.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.MELON            ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.PUMPKIN                ), OP.block.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.lit_pumpkin            ), OP.block.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.JACK_O_LANTERN            ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.DISPENSER              ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.PISTON                 ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.STICKY_PISTON          ), OP.block.mDefaultStackSize);
@@ -249,20 +249,20 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		ST.setMaxStackSize(Item.byBlock(Blocks.ANVIL                  ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.CHEST                  ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.TRAPPED_CHEST          ), OP.block.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.noteblock              ), OP.block.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.mob_spawner            ), OP.block.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.NOTE_BLOCK              ), OP.block.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.SPAWNER            ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.BOOKSHELF              ), OP.block.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.FURNACE                ), OP.block.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.lit_furnace            ), OP.block.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.FURNACE            ), OP.block.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.SANDSTONE              ), OP.stone.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.OBSIDIAN               ), OP.stone.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.STONE                  ), OP.stone.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.STONE_SLAB             ), OP.slab.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.double_stone_slab      ), OP.slab.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.STONE_SLAB      ), OP.slab.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.OAK_SLAB            ), OP.slab.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.double_wooden_slab     ), OP.slab.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.OAK_SLAB     ), OP.slab.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.STONE_BRICK_STAIRS     ), OP.stair.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.BRICK_STAIRS           ), OP.stair.mDefaultStackSize);
@@ -277,26 +277,26 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		ST.setMaxStackSize(Item.byBlock(Blocks.DARK_OAK_STAIRS        ), OP.stair.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.GLASS                  ), OP.glass.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.stained_glass          ), OP.glass.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.WHITE_STAINED_GLASS          ), OP.glass.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.GLASS_PANE             ), OP.paneGlass.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.stained_glass_pane     ), OP.paneGlass.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.WHITE_STAINED_GLASS_PANE     ), OP.paneGlass.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.TERRACOTTA          ), OP.stainedClay.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.stained_hardened_clay  ), OP.stainedClay.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.WHITE_TERRACOTTA  ), OP.stainedClay.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.COBBLESTONE            ), OP.stoneCobble.mDefaultStackSize);
 		
-		ST.setMaxStackSize(Item.byBlock(Blocks.fence                  ), OP.fence.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.fence_gate             ), OP.fence.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.cobblestone_wall       ), OP.fence.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.OAK_FENCE                  ), OP.fence.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.OAK_FENCE_GATE             ), OP.fence.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.COBBLESTONE_WALL       ), OP.fence.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.NETHER_BRICK_FENCE     ), OP.fence.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.MOSSY_COBBLESTONE      ), OP.stoneMossy.mDefaultStackSize);
 		
-		ST.setMaxStackSize(Item.byBlock(Blocks.stonebrick             ), OP.stoneBricks.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.STONE_BRICKS             ), OP.stoneBricks.mDefaultStackSize);
 		ST.setMaxStackSize(Item.byBlock(Blocks.BRICKS            ), OP.stoneBricks.mDefaultStackSize);
-		ST.setMaxStackSize(Item.byBlock(Blocks.nether_brick           ), OP.stoneBricks.mDefaultStackSize);
+		ST.setMaxStackSize(Item.byBlock(Blocks.NETHER_BRICKS           ), OP.stoneBricks.mDefaultStackSize);
 		
 		ST.setMaxStackSize(Item.byBlock(Blocks.OAK_SAPLING                ), OP.treeSapling.mDefaultStackSize);
 		

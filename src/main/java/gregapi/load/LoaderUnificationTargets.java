@@ -1284,7 +1284,7 @@ public class LoaderUnificationTargets implements Runnable {
 		OreDictManager.INSTANCE.setTarget(OP.oreVanillastone, MT.Au                     , ST.make(Blocks.GOLD_ORE, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.oreVanillastone, MT.Diamond                , ST.make(Blocks.DIAMOND_ORE, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.oreVanillastone, MT.Emerald                , ST.make(Blocks.EMERALD_ORE, 1, 0));
-		OreDictManager.INSTANCE.setTarget(OP.oreNetherrack  , MT.NetherQuartz           , ST.make(Blocks.quartz_ore, 1, 0));
+		OreDictManager.INSTANCE.setTarget(OP.oreNetherrack  , MT.NetherQuartz           , ST.make(Blocks.NETHER_QUARTZ_ORE, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.gem            , MT.Lapis                  , ST.make(Items.LAPIS_LAZULI, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.gem            , MT.EnderEye               , ST.make(Items.ENDER_EYE, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.gem            , MT.EnderPearl             , ST.make(Items.ENDER_PEARL, 1, 0));
@@ -1316,7 +1316,7 @@ public class LoaderUnificationTargets implements Runnable {
 		OreDictManager.INSTANCE.setTarget(OP.blockDust      , MT.RedSand                , ST.make(Blocks.RED_SAND, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Sand                   , ST.make(Blocks.SANDSTONE, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Glass                  , ST.make(Blocks.GLASS, 1, 0));
-		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Stone                  , ST.make(Blocks.double_stone_slab, 1, 8));
+		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Stone                  , ST.make(Blocks.STONE_SLAB, 1, 8));
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Netherrack             , ST.make(Blocks.NETHERRACK, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Endstone               , ST.make(Blocks.END_STONE, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid     , MT.Obsidian               , ST.make(Blocks.OBSIDIAN, 1, 0));

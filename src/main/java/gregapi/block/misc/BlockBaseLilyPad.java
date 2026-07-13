@@ -86,8 +86,8 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return Water;}
 	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
 	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.waterlily.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.waterlily.getExplosionResistance(null);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.LILY_PAD.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.LILY_PAD.getExplosionResistance(null);}
 	@Override public int getItemStackLimit(ItemStack aStack) {return 64;}
 	
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {

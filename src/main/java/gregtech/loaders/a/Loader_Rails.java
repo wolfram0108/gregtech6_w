@@ -139,8 +139,8 @@ public class Loader_Rails implements Runnable {
 			CR.shaped(ST.make((Block)BlocksGT.RailAdamantiumDetector        ,  4, 0), CR.DEF_REV_NCC, "RSR", "RPR", "RDR", 'R', OP.railGt.dat(MT.Ad             ), 'S', OP.stick.dat(ANY.WoodTreated), 'D', OD.itemRedstone, 'P', OD.pressurePlateStone);
 			
 			CR.shaped(ST.make(Blocks.RAIL          ,  4, 0), DEF_REV_NCC | DEL_OTHER_SHAPED_RECIPES, "RSR", "RSR", "RSR", 'R', OP.railGt.dat(ANY.Fe), 'S', OP.stick.dat(ANY.WoodTreated));
-			CR.shaped(ST.make(Blocks.golden_rail   ,  4, 0), DEF_REV_NCC | DEL_OTHER_SHAPED_RECIPES, "RSR", "GDG", "RSR", 'R', OP.railGt.dat(ANY.Fe), 'S', OP.stick.dat(ANY.WoodTreated), 'D', OD.itemRedstone, 'G', OP.railGt.dat(MT.Au));
-			CR.shaped(ST.make(Blocks.detector_rail ,  4, 0), DEF_REV_NCC | DEL_OTHER_SHAPED_RECIPES, "RSR", "RPR", "RDR", 'R', OP.railGt.dat(ANY.Fe), 'S', OP.stick.dat(ANY.WoodTreated), 'D', OD.itemRedstone, 'P', OD.pressurePlateStone);
+			CR.shaped(ST.make(Blocks.POWERED_RAIL   ,  4, 0), DEF_REV_NCC | DEL_OTHER_SHAPED_RECIPES, "RSR", "GDG", "RSR", 'R', OP.railGt.dat(ANY.Fe), 'S', OP.stick.dat(ANY.WoodTreated), 'D', OD.itemRedstone, 'G', OP.railGt.dat(MT.Au));
+			CR.shaped(ST.make(Blocks.DETECTOR_RAIL ,  4, 0), DEF_REV_NCC | DEL_OTHER_SHAPED_RECIPES, "RSR", "RPR", "RDR", 'R', OP.railGt.dat(ANY.Fe), 'S', OP.stick.dat(ANY.WoodTreated), 'D', OD.itemRedstone, 'P', OD.pressurePlateStone);
 			
 			CR.shaped(ST.make(Blocks.ACTIVATOR_RAIL,  1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, "RSR", "RTR", "RSR", 'R', OP.railGt.dat(MT.Al             ), 'S', OP.stick.dat(ANY.WoodTreated), 'T', OD.craftingRedstoneTorch);
 			CR.shaped(ST.make(Blocks.ACTIVATOR_RAIL,  1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, "RSR", "RTR", "RSR", 'R', OP.railGt.dat(MT.Magnalium      ), 'S', OP.stick.dat(ANY.WoodTreated), 'T', OD.craftingRedstoneTorch);

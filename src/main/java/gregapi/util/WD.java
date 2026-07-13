@@ -603,10 +603,10 @@ public class WD {
 	}
 	
 	public static boolean sign(Level aWorld, int aX, int aY, int aZ, byte aSide, long aFlags, String aLine1, String aLine2, String aLine3, String aLine4) {
-		// было aWorld.setBlock(x,y,z,Blocks.wall_sign,aSide,flags) — aSide был прямой мета-ориентацией wall_sign
+		// было aWorld.setBlock(x,y,z,Blocks.OAK_WALL_SIGN,aSide,flags) — aSide был прямой мета-ориентацией wall_sign
 		// (2-5); neo: WallSignBlock.FACING (EnumProperty<Direction>, WallSignBlock.java:30) через уже
 		// централизованный FORGE_DIR[side]->Direction (тот же массив, что используется по всему файлу).
-		aWorld.setBlock(new BlockPos(aX, aY, aZ), Blocks.wall_sign.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
+		aWorld.setBlock(new BlockPos(aX, aY, aZ), Blocks.OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
 		BlockEntity tSign = te(aWorld, aX, aY, aZ, T);
 		if (!(tSign instanceof SignBlockEntity)) return F;
 		((SignBlockEntity)tSign).signText[0] = aLine1;
@@ -749,7 +749,7 @@ public class WD {
 	public static boolean grass(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta) {return grass(aBlock, aMeta);}
 	public static boolean grass(Block aBlock, long aMeta) {
 		if (aBlock == Blocks.DEAD_BUSH) return T;
-		if (aBlock == Blocks.double_plant)  return aMeta ==  2 || aMeta ==  3;
+		if (aBlock == Blocks.SUNFLOWER)  return aMeta ==  2 || aMeta ==  3;
 		if (IL.TF_Tall_Grass.equal(aBlock)) return aMeta ==  8 || aMeta == 10;
 		return IL.AETHER_Tall_Grass.equal(aBlock);
 	}

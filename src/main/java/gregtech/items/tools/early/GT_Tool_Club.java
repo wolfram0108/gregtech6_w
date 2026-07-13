@@ -61,12 +61,12 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		Block aDrop = aDrops.size() == 1 ? ST.block(aDrops.get(0)) : NB;
 		if (aDrop == NB) aDrop = aBlock;
-		if (aDrop == Blocks.STONE || aDrop == Blocks.COBBLESTONE || aDrop == Blocks.MOSSY_COBBLESTONE || aDrop == Blocks.stonebrick || aDrop == Blocks.STONE_BRICK_STAIRS || aDrop == Blocks.cobblestone_wall || aDrop == Blocks.STONE_BUTTON || aDrop == Blocks.STONE_PRESSURE_PLATE) {
+		if (aDrop == Blocks.STONE || aDrop == Blocks.COBBLESTONE || aDrop == Blocks.MOSSY_COBBLESTONE || aDrop == Blocks.STONE_BRICKS || aDrop == Blocks.STONE_BRICK_STAIRS || aDrop == Blocks.COBBLESTONE_WALL || aDrop == Blocks.STONE_BUTTON || aDrop == Blocks.STONE_PRESSURE_PLATE) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.Stone, 1+RNGSUS.nextInt(4)));
 			return 0;
 		}
-		if (aDrop == Blocks.nether_brick || aDrop == Blocks.NETHER_BRICK_STAIRS || aDrop == Blocks.NETHER_BRICK_FENCE) {
+		if (aDrop == Blocks.NETHER_BRICKS || aDrop == Blocks.NETHER_BRICK_STAIRS || aDrop == Blocks.NETHER_BRICK_FENCE) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.NetherBrick, 1+RNGSUS.nextInt(4)));
 			return 0;
@@ -101,7 +101,7 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 			aDrops.add(OP.rockGt.mat(((BlockStones)aBlock).mMaterial, 1+RNGSUS.nextInt(((BlockStones)aBlock).mOctantcount/2)));
 			return 0;
 		}
-		if (aBlock == Blocks.REDSTONE_ORE || aBlock == Blocks.lit_redstone_ore || aBlock == BlocksGT.EtFu_Deepslate_Redstone_Ore  || aBlock == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore || OM.is("oreRedstone", ST.make(aBlock, 1, aMetaData))) {
+		if (aBlock == Blocks.REDSTONE_ORE || aBlock == Blocks.REDSTONE_ORE || aBlock == BlocksGT.EtFu_Deepslate_Redstone_Ore  || aBlock == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore || OM.is("oreRedstone", ST.make(aBlock, 1, aMetaData))) {
 			aDrops.clear();
 			aDrops.add(OP.gemChipped.mat(MT.OREMATS.Cinnabar, 1+RNGSUS.nextInt(4)));
 			return 0;

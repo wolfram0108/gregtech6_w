@@ -123,10 +123,10 @@ public class MultiTileEntityMiniPortalAroma extends MultiTileEntityMiniPortal {
 		return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.stonebrick.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.stonebrick.getExplosionResistance(null);}
+	@Override public float getBlockHardness() {return Blocks.STONE_BRICKS.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getExplosionResistance2() {return Blocks.STONE_BRICKS.getExplosionResistance(null);}
 	
-	public ITexture sAromaPortal = BlockTextureCopied.get(ST.block(MD.A97_MINING, "aromicPortal", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sAromaPortalFrame = BlockTextureCopied.get(ST.block(MD.A97_MINING, "portalFrame", Blocks.stonebrick), SIDE_ANY, 0);
+	public ITexture sAromaPortal = BlockTextureCopied.get(ST.block(MD.A97_MINING, "aromicPortal", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sAromaPortalFrame = BlockTextureCopied.get(ST.block(MD.A97_MINING, "portalFrame", Blocks.STONE_BRICKS), SIDE_ANY, 0);
 	@Override public ITexture getPortalTexture() {return sAromaPortal;}
 	@Override public ITexture getFrameTexture() {return sAromaPortalFrame;}
 	

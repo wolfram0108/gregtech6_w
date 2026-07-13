@@ -41,7 +41,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		if (!super.generate(aData)) return F;
 		
 		for (int tX = 1; tX <= 14; tX++) for (int tZ = 1; tZ <= 14; tZ++) if ((tX <= 4 || tX >= 11) && (tZ <= 4 || tZ >= 11)) {
-			aData.set(tX, 1, tZ, Blocks.carpet, aData.mColorInversed, 2);
+			aData.set(tX, 1, tZ, Blocks.WHITE_CARPET, aData.mColorInversed, 2);
 		}
 		for (int tY = 1; tY <=  6; tY++) {
 			for (int tCoord = 1; tCoord <= 14; tCoord++) if (tCoord <= 3 || tCoord >= 12) {

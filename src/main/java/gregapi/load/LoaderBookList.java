@@ -46,7 +46,7 @@ public class LoaderBookList implements Runnable {
 		BooksGT.BOOK_REGISTER  .put(Items.ENCHANTED_BOOK , W, (byte)  2);
 		BooksGT.BOOK_REGISTER  .put(Items.ITEM_FRAME     , W, (byte) 34);
 		BooksGT.BOOK_REGISTER  .put(Items.PAINTING       , W, (byte) 34);
-		BooksGT.BOOK_REGISTER  .put(Blocks.wooden_button , W, (byte)  1);
+		BooksGT.BOOK_REGISTER  .put(Blocks.OAK_BUTTON , W, (byte)  1);
 		BooksGT.BOOK_REGISTER  .put(Blocks.STONE_BUTTON  , W, (byte)  2);
 		BooksGT.BOOK_REGISTER  .put(Blocks.LEVER         , W, (byte)  1);
 		BooksGT.BOOK_REGISTER  .put(Blocks.REDSTONE_TORCH, W, (byte)  2);

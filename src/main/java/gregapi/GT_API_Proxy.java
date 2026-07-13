@@ -666,7 +666,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						((PathfinderMob)aEntityLiving).setHomeTo(BlockPos.ZERO, -1);
 						// Minoshroom surprise charge through the Fenced Gateways!
 						for (int iX = tX-15, eX = tX+15; iX <= eX; iX++) for (int iZ = tZ-15, eZ = tZ+15; iZ <= eZ; iZ++) for (int iY = tY+1, eY = tY+3; iY <= eY; iY++) {
-							if (WD.block(aEntityLiving.level(), iX, iY, iZ) == Blocks.fence) {
+							if (WD.block(aEntityLiving.level(), iX, iY, iZ) == Blocks.OAK_FENCE) {
 								WD.set(aEntityLiving.level(), iX, iY, iZ, NB, 0, 3);
 								ST.drop(aEntityLiving.level(), iX, iY, iZ, IL.Stick.get(1));
 								UT.Sounds.send(SFX.MC_DIG_WOOD, aEntityLiving.level(), iX, iY, iZ);
@@ -1451,7 +1451,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
 
 		Iterator<ItemStack> aDrops = aDropStacks.iterator();
-		Block aBlock = (aEvent.getState().getBlock() == Blocks.lit_redstone_ore ? Blocks.REDSTONE_ORE : aEvent.getState().getBlock() == Blocks.REDSTONE_LAMP ? Blocks.REDSTONE_LAMP : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
+		Block aBlock = (aEvent.getState().getBlock() == Blocks.REDSTONE_ORE ? Blocks.REDSTONE_ORE : aEvent.getState().getBlock() == Blocks.REDSTONE_LAMP ? Blocks.REDSTONE_LAMP : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
 
 		while (aDrops.hasNext()) {
 			ItemStack aDrop = aDrops.next();

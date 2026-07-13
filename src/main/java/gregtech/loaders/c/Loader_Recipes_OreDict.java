@@ -234,14 +234,14 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 		addListener(OD.plankSkyroot, OD.plankWeedwood, OD.plankWood, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.generify(aEvent.mStack, IL.Plank.get(1));
 			
-			RM.Assembler.addRecipe2(T, 16,  32, ST.amount(8, aEvent.mStack), dust.mat(MT.Redstone, 1), ST.make(Blocks.noteblock, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  32, ST.amount(8, aEvent.mStack), dust.mat(MT.Redstone, 1), ST.make(Blocks.NOTE_BLOCK, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(8, aEvent.mStack), gem .mat(MT.Diamond , 1), ST.make(Blocks.JUKEBOX, 1, 0));
 //          RM.Assembler.addRecipe2(T, 16,  32, aEvent.mStack, screw.mat(MT.Fe, 1), IL.Crate_Empty.get(1));
 //          RM.Assembler.addRecipe2(T, 16,  32, aEvent.mStack, screw.mat(MT.WroughtIron, 1), IL.Crate_Empty.get(1));
 //          RM.Assembler.addRecipe2(T, 16,  32, aEvent.mStack, screw.mat(MT.Steel, 1), IL.Crate_Empty.get(1));
-			RM.Assembler.addRecipe2(T, 16,  16, aEvent.mStack, ST.tag(1), ST.make(Blocks.wooden_button, 1, 0));
-			RM.Assembler.addRecipe2(T, 16,  32, ST.amount(2, aEvent.mStack), ST.tag(2), ST.make(Blocks.wooden_pressure_plate, 1, 0));
-			RM.Assembler.addRecipe2(T, 16,  48, ST.amount(3, aEvent.mStack), ST.tag(3), ST.make(Blocks.trapdoor, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  16, aEvent.mStack, ST.tag(1), ST.make(Blocks.OAK_BUTTON, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  32, ST.amount(2, aEvent.mStack), ST.tag(2), ST.make(Blocks.OAK_PRESSURE_PLATE, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  48, ST.amount(3, aEvent.mStack), ST.tag(3), ST.make(Blocks.OAK_TRAPDOOR, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(4, aEvent.mStack), ST.tag(4), ST.make(Blocks.CRAFTING_TABLE, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  96, ST.amount(2, aEvent.mStack), ST.tag(6), ST.make(Items.wooden_door, 1, 0));
 			RM.Assembler.addRecipe2(T, 16, 128, ST.amount(8, aEvent.mStack), ST.tag(8), ST.make(Blocks.CHEST, 1, 0));

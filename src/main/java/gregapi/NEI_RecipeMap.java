@@ -80,7 +80,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			tNBT.putString("modId"            , MD.GT.mID);
 			tNBT.putString("modName"          , MD.GT.mName);
 			tNBT.putString("handler"          , mRecipeMap.mNameNEI);
-			tNBT.putString("itemName"         , ST.regMeta(mRecipeMap.mRecipeMachineList.isEmpty() ? ST.make(Blocks.lit_furnace, 1, 0) : mRecipeMap.mRecipeMachineList.get(0)));
+			tNBT.putString("itemName"         , ST.regMeta(mRecipeMap.mRecipeMachineList.isEmpty() ? ST.make(Blocks.FURNACE, 1, 0) : mRecipeMap.mRecipeMachineList.get(0)));
 			tNBT.putInt("handlerHeight"    , 135);
 			tNBT.putInt("handlerWidth"     , 166);
 			tNBT.putInt("maxRecipesPerPage",   2);

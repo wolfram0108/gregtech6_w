@@ -200,7 +200,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (tBlock instanceof BlockStones || tBlock == Blocks.SNOW || tBlock == Blocks.STONE || tBlock == Blocks.END_STONE || tBlock == Blocks.OBSIDIAN) {
 			mTexture = BlockTextureCopied.get(tBlock, SIDE_ANY, 0); return 1;
 		}
-		if (tBlock == Blocks.NETHERRACK || tBlock == Blocks.nether_brick || tBlock == Blocks.SOUL_SAND) {
+		if (tBlock == Blocks.NETHERRACK || tBlock == Blocks.NETHER_BRICKS || tBlock == Blocks.SOUL_SAND) {
 			mTexture = BlockTextureCopied.get(Blocks.NETHERRACK, SIDE_ANY, 0); return 1;
 		}
 		if (tBlock == Blocks.SANDSTONE || tBlock == Blocks.SAND || IL.AETHER_Sand.equal(tBlock)) {

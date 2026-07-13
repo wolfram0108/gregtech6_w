@@ -48,7 +48,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 	public RecipeMapScannerVisuals(Collection<Recipe> aRecipeList, String aUnlocalizedName, String aNameLocal, String aNameNEI, long aProgressBarDirection, long aProgressBarAmount, String aNEIGUIPath, long aInputItemsCount, long aOutputItemsCount, long aMinimalInputItems, long aInputFluidCount, long aOutputFluidCount, long aMinimalInputFluids, long aMinimalInputs, long aPower, String aNEISpecialValuePre, long aNEISpecialValueMultiplier, String aNEISpecialValuePost, boolean aShowVoltageAmperageInNEI, boolean aNEIAllowed, boolean aConfigAllowed, boolean aNeedsOutputs, boolean aCombinePower, boolean aUseBucketSizeIn, boolean aUseBucketSizeOut) {
 		super(aRecipeList, aUnlocalizedName, aNameLocal, aNameNEI, aProgressBarDirection, aProgressBarAmount, aNEIGUIPath, aInputItemsCount, aOutputItemsCount, aMinimalInputItems, aInputFluidCount, aOutputFluidCount, aMinimalInputFluids, aMinimalInputs, aPower, aNEISpecialValuePre, aNEISpecialValueMultiplier, aNEISpecialValuePost, F, aShowVoltageAmperageInNEI, aNEIAllowed, aConfigAllowed, aNeedsOutputs, aCombinePower, aUseBucketSizeIn, aUseBucketSizeOut);
 		mMappings.put(Items.FLINT_AND_STEEL , W, ST.make(Blocks.FIRE, 1, 0));
-		mMappings.put(Items.reeds           , W, ST.make(Blocks.reeds, 1, 0));
+		mMappings.put(Items.reeds           , W, ST.make(Blocks.SUGAR_CANE, 1, 0));
 		mMappings.put(Items.SNOWBALL        , W, ST.make(Blocks.SNOW, 1, 0));
 		mMappings.put(Items.WHEAT_SEEDS     , W, ST.make(Blocks.WHEAT, 1, 0));
 		mMappings.put(Items.WHEAT           , W, ST.make(Blocks.WHEAT, 1, 7));
@@ -59,14 +59,14 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 		mMappings.put(Items.melon           , W, ST.make(Blocks.MELON_STEM, 1, 7));
 		mMappings.put(Items.PUMPKIN_SEEDS   , W, ST.make(Blocks.PUMPKIN_STEM, 1, 7));
 		mMappings.put(Items.INK_SAC             , 3, ST.make(Blocks.COCOA, 1, 8));
-		mMappings.put(Items.STRING          , W, ST.make(Blocks.web, 1, 0));
+		mMappings.put(Items.STRING          , W, ST.make(Blocks.COBWEB, 1, 0));
 		mMappings.put(Items.NETHER_WART     , W, ST.make(Blocks.NETHER_WART, 1, 3));
-		mMappings.put(Items.COMPARATOR      , W, ST.make(Blocks.powered_comparator, 1, 0));
-		mMappings.put(Items.REPEATER        , W, ST.make(Blocks.powered_repeater, 1, 0));
+		mMappings.put(Items.COMPARATOR      , W, ST.make(Blocks.COMPARATOR, 1, 0));
+		mMappings.put(Items.REPEATER        , W, ST.make(Blocks.REPEATER, 1, 0));
 		mMappings.put(Items.bed             , W, ST.make(Blocks.WHITE_BED, 1, 0));
 		mMappings.put(Items.IRON_DOOR       , W, ST.make(Blocks.IRON_DOOR, 1, 0));
-		mMappings.put(Items.wooden_door     , W, ST.make(Blocks.wooden_door, 1, 0));
-		mMappings.put(Items.ENDER_PEARL     , W, ST.make(Blocks.portal, 1, 0));
+		mMappings.put(Items.wooden_door     , W, ST.make(Blocks.OAK_DOOR, 1, 0));
+		mMappings.put(Items.ENDER_PEARL     , W, ST.make(Blocks.NETHER_PORTAL, 1, 0));
 		mMappings.put(Items.ENDER_EYE       , W, ST.make(Blocks.END_PORTAL_FRAME, 1, 0));
 		mMappings.put(Items.WATER_BUCKET    , W, ST.make(Blocks.WATER, 1, 0));
 		mMappings.put(Items.LAVA_BUCKET     , W, ST.make(Blocks.LAVA, 1, 0));

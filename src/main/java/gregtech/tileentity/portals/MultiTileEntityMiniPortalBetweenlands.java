@@ -127,7 +127,7 @@ public class MultiTileEntityMiniPortalBetweenlands extends MultiTileEntityMiniPo
 	@Override public float getBlockHardness() {return Blocks.STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
 	
-	public ITexture sBetweenlandsPortal = BlockTextureCopied.get(ST.block(MD.BTL, "treePortalBlock", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sBetweenlandsPortalFrame = BlockTextureCopied.get(ST.block(MD.BTL, "portalBark", Blocks.STONE), SIDE_ANY, 0, UNCOLOURED, F, F, F), sBetweenlandsPortalInactive = BlockTextureCopied.get(Blocks.OAK_LEAVES, SIDE_ANY, 0, DYE_Green, F, F, F);
+	public ITexture sBetweenlandsPortal = BlockTextureCopied.get(ST.block(MD.BTL, "treePortalBlock", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sBetweenlandsPortalFrame = BlockTextureCopied.get(ST.block(MD.BTL, "portalBark", Blocks.STONE), SIDE_ANY, 0, UNCOLOURED, F, F, F), sBetweenlandsPortalInactive = BlockTextureCopied.get(Blocks.OAK_LEAVES, SIDE_ANY, 0, DYE_Green, F, F, F);
 	@Override public ITexture getPortalTexture() {return sBetweenlandsPortal;}
 	@Override public ITexture getFrameTexture() {return sBetweenlandsPortalFrame;}
 	@Override public ITexture getInactiveTexture() {return sBetweenlandsPortalInactive;}

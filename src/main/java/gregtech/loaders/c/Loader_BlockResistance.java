@@ -34,10 +34,10 @@ public class Loader_BlockResistance implements Runnable {
 	public void run() {
 		Blocks.STONE.setResistance(10);
 		Blocks.COBBLESTONE.setResistance(10);
-		Blocks.stonebrick.setResistance(10);
+		Blocks.STONE_BRICKS.setResistance(10);
 		Blocks.BRICKS.setResistance(20);
 		Blocks.TERRACOTTA.setResistance(15);
-		Blocks.stained_hardened_clay.setResistance(15);
+		Blocks.WHITE_TERRACOTTA.setResistance(15);
 		Blocks.IRON_BLOCK.setResistance(30);
 		Blocks.DIAMOND_BLOCK.setResistance(60);
 		Blocks.OBSIDIAN.setResistance(60);

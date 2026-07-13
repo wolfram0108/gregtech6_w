@@ -126,7 +126,7 @@ public class MultiTileEntityMiniPortalCandyCraft extends MultiTileEntityMiniPort
 	@Override public float getBlockHardness() {return Blocks.STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
 	
-	public ITexture sCandyPortal = BlockTextureCopied.get(ST.block(MD.CANDY, "B40", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sCandyPortalFrame = BlockTextureCopied.get(ST.block(MD.CANDY, "BarleyBlock", Blocks.QUARTZ_BLOCK), SIDE_FRONT, 0, UNCOLOURED, F, F, F);
+	public ITexture sCandyPortal = BlockTextureCopied.get(ST.block(MD.CANDY, "B40", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sCandyPortalFrame = BlockTextureCopied.get(ST.block(MD.CANDY, "BarleyBlock", Blocks.QUARTZ_BLOCK), SIDE_FRONT, 0, UNCOLOURED, F, F, F);
 	@Override public ITexture getPortalTexture() {return sCandyPortal;}
 	@Override public ITexture getFrameTexture() {return sCandyPortalFrame;}
 	

@@ -172,7 +172,7 @@ public class RM {
 		RecipeMap.sAssemblerRecipes=Assembler;RecipeMap.sCNCRecipes=CNC;RecipeMap.sFuelsBurn=FM.Burn;RecipeMap.sFuelsGas=FM.Gas;RecipeMap.sFuelsHot=FM.Hot;RecipeMap.sFuelsPlasma=FM.Plasma;RecipeMap.sFuelsEngine=FM.Engine;RecipeMap.sFuelsTurbine=FM.Turbine;RecipeMap.sFuelsMagic=FM.Magic;
 		
 		Furnace.mRecipeMachineList.add(ST.make(Blocks.FURNACE, 1, W));
-		Furnace.mRecipeMachineList.add(ST.make(Blocks.lit_furnace, 1, W));
+		Furnace.mRecipeMachineList.add(ST.make(Blocks.FURNACE, 1, W));
 		ToolHeads.mRecipeMachineList.add(ST.make(Blocks.CRAFTING_TABLE, 1, W));
 		
 		RecipeMap.RECIPE_MAPS.put("gt.recipe.debarker", PressureWasher);
@@ -566,7 +566,7 @@ public class RM {
 		
 		if (ST.valid(aSmooth)) {
 			CR.remout(aSmooth);
-			RM.generify(aSmooth, ST.make(Blocks.double_stone_slab, 1, 8));
+			RM.generify(aSmooth, ST.make(Blocks.STONE_SLAB, 1, 8));
 			
 			if (ST.valid(aStone)) {
 				RM.add_smelting(aSmooth, aStone, T, F, F);

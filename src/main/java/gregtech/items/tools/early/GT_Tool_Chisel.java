@@ -60,7 +60,7 @@ public class GT_Tool_Chisel extends ToolStats {
 			aDrops.add(ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 			return 0;
 		}
-		if (aBlock == Blocks.stonebrick) {
+		if (aBlock == Blocks.STONE_BRICKS) {
 			aDrops.clear();
 			switch(aMetaData) {
 			case  0: aDrops.add(ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0)); break;
@@ -80,7 +80,7 @@ public class GT_Tool_Chisel extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_chisel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockSilverfish || aBlock == Blocks.STONE || aBlock == Blocks.stonebrick || aBlock instanceof BlockStones;
+		return TOOL_chisel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockSilverfish || aBlock == Blocks.STONE || aBlock == Blocks.STONE_BRICKS || aBlock instanceof BlockStones;
 	}
 	
 	@Override

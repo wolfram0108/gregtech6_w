@@ -329,7 +329,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		RM.add_smelting(tStack.toStack(), ST.make(this, 1, STONE), F, F, F);
 		CR.shaped(ST.make(mSlabs[0]          , 4, COBBL), CR.DEF    , "  " , "XX" , 'X', tStack.toStack());
 		CR.shaped(ST.make(Blocks.STONE_STAIRS    , 4, 0), CR.DEF_MIR, " X" , "XX" , 'X', tStack.toStack()); // TODO Stairs
-		CR.shaped(ST.make(Blocks.cobblestone_wall, 6, 0), CR.DEF_MIR, "XXX", "XXX", 'X', tStack.toStack()); // TODO Walls
+		CR.shaped(ST.make(Blocks.COBBLESTONE_WALL, 6, 0), CR.DEF_MIR, "XXX", "XXX", 'X', tStack.toStack()); // TODO Walls
 		if (IL.TF_Pick_Giant.exists()) RM.Boxinator.addRecipe2(T,128,128, ST.amount(64, tStack.toStack()), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Cobble.get(1));
 		RM.Extruder.addRecipe2(F, F, F, F, F, 16,  32, ST.amount(1, tStack.toStack()), IL.Shape_Extruder_Plate       .get(0), OP.plate.mat(mMaterial, 9));
 		RM.Extruder.addRecipe2(F, F, F, F, F, 16,  32, ST.amount(1, tStack.toStack()), IL.Shape_Extruder_Plate_Curved.get(0), OP.plateCurved.mat(mMaterial, 9));
@@ -417,7 +417,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		RM.Hammer       .addRecipe1(T, 16, 16                  , tStack.toStack(), ST.make(this, 1, COBBL));
 		RM.Crusher      .addRecipe1(T, 16, 16+mHarvestLevel* 16, tStack.toStack(), ST.make(this, 1, COBBL));
 		RM.Shredder     .addRecipe1(T, 16, 16+mHarvestLevel* 16, tStack.toStack(), OP.blockDust.mat(mMaterial, 1));
-		RM.generify(tStack.toStack(), ST.make(Blocks.double_stone_slab, 1, 8));
+		RM.generify(tStack.toStack(), ST.make(Blocks.STONE_SLAB, 1, 8));
 		RM.add_smelting(tStack.toStack(), ST.make(this, 1, STONE), F, F, F);
 		CR.shaped(ST.make(this, 1, CHISL), CR.DEF, "y" , "X" , 'X', tStack.toStack());
 		CR.shaped(ST.make(this, 4, BRICK), CR.DEF, "XX", "XX", 'X', tStack.toStack());
@@ -641,7 +641,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 			Block tBlock = WD.block(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2]);
 			if (tBlock == Blocks.COBBLESTONE && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], Blocks.MOSSY_COBBLESTONE, 0, 3)) return;
 			byte tMeta = WD.meta(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2]);
-			if (tBlock == Blocks.stonebrick && (tMeta == 0 || tMeta == 2) && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], Blocks.stonebrick, 1, 3)) return;
+			if (tBlock == Blocks.STONE_BRICKS && (tMeta == 0 || tMeta == 2) && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], Blocks.STONE_BRICKS, 1, 3)) return;
 			if (tBlock instanceof BlockStones && MOSSABLE[tMeta] && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], tBlock, MOSS_MAPPINGS[tMeta], 3)) return;
 		}
 	}

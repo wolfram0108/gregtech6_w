@@ -178,7 +178,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=3000;
 				continue;
 			}
-			if (aBlock == Blocks.melon_block) {
+			if (aBlock == Blocks.MELON) {
 				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.melon      , 1+RNGSUS.nextInt(6), 0));
 				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.MELON_SEEDS, 1+RNGSUS.nextInt(3), 0));
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
@@ -225,7 +225,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=2000;
 				continue;
 			}
-			if (aBlock instanceof BlockFence || aBlock instanceof BlockFenceGate || aBlock == Blocks.web || aBlock == Blocks.mob_spawner || aBlock instanceof BlockPane || aBlock instanceof BlockRail || aBlock instanceof BlockTorch || aBlock instanceof BlockBaseBars || aBlock instanceof BlockBaseSpike || aBlock.getMaterial() == Material.cactus || aBlock.getMaterial() == Material.fire || aBlock.getMaterial() == Material.air || aBlock.getMaterial() == Material.cloth || aBlock.getMaterial() == Material.leaves || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.vine) {
+			if (aBlock instanceof BlockFence || aBlock instanceof BlockFenceGate || aBlock == Blocks.COBWEB || aBlock == Blocks.SPAWNER || aBlock instanceof BlockPane || aBlock instanceof BlockRail || aBlock instanceof BlockTorch || aBlock instanceof BlockBaseBars || aBlock instanceof BlockBaseSpike || aBlock.getMaterial() == Material.cactus || aBlock.getMaterial() == Material.fire || aBlock.getMaterial() == Material.air || aBlock.getMaterial() == Material.cloth || aBlock.getMaterial() == Material.leaves || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.vine) {
 				// Just ignore or assume the Player shot through them.
 				tPower-=200;
 				continue;

@@ -35,14 +35,14 @@ import net.minecraft.world.level.block.Blocks;
  * @author Gregorius Techneticies
  */
 public class MultiTileEntityGregOLantern extends TileEntityBase09FacingSingle implements IMTE_GetLightValue {
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? aSide == mFacing ? BlockTextureDefault.get(Textures.BlockIcons.GREG_O_LANTERN, mRGBa, F, T, T, F) : BlockTextureCopied.get(Blocks.lit_pumpkin, aSide, 4, mRGBa, F, T, T) : null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? aSide == mFacing ? BlockTextureDefault.get(Textures.BlockIcons.GREG_O_LANTERN, mRGBa, F, T, T, F) : BlockTextureCopied.get(Blocks.JACK_O_LANTERN, aSide, 4, mRGBa, F, T, T) : null;}
 	
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	@Override public int getLightValue() {return 15;}
 	
-	@Override public float getExplosionResistance2(Entity aExploder, double aExplosionX, double aExplosionY, double aExplosionZ) {return Blocks.lit_pumpkin.getExplosionResistance(aExploder);}
-	@Override public float getExplosionResistance2() {return Blocks.lit_pumpkin.getExplosionResistance(null);}
-	@Override public float getBlockHardness() {return Blocks.lit_pumpkin.getBlockHardness(null, 0, 0, 0);}
+	@Override public float getExplosionResistance2(Entity aExploder, double aExplosionX, double aExplosionY, double aExplosionZ) {return Blocks.JACK_O_LANTERN.getExplosionResistance(aExploder);}
+	@Override public float getExplosionResistance2() {return Blocks.JACK_O_LANTERN.getExplosionResistance(null);}
+	@Override public float getBlockHardness() {return Blocks.JACK_O_LANTERN.getBlockHardness(null, 0, 0, 0);}
 	
 	@Override public boolean isSurfaceSolid         (byte aSide) {return T;}
 	@Override public boolean isSurfaceOpaque2       (byte aSide) {return T;}
