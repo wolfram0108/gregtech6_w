@@ -302,7 +302,7 @@ public final class OreDictManager {
 	/** Fluid Containers are not unificatable at all. Also I set Water Bottles to contain 0L of Water. */
 	@SubscribeEvent
 	public void onFluidContainerRegistration(FluidContainerRegisterEvent aFluidEvent) {
-		// F4/Flattening: Forge 1.7.10 Items.potionitem → neo Items.POTION (neo-decompiled/.../world/item/Items.java:1526).
+		// F4/Flattening: Forge 1.7.10 Items.POTION → neo Items.POTION (neo-decompiled/.../world/item/Items.java:1526).
 		if (aFluidEvent.data.filledContainer.getItem() == Items.POTION && ST.meta_(aFluidEvent.data.filledContainer) == 0) aFluidEvent.data.fluid.amount = 0;
 		addToBlacklist(aFluidEvent.data.emptyContainer);
 		FL.set(aFluidEvent.data, F, F);

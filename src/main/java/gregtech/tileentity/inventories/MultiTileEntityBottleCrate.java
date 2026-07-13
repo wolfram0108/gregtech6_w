@@ -234,7 +234,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {
 		Item aItem = ST.item(aStack);
 		if (aItem == null) return F;
-		if (aItem == Items.potionitem || aItem == Items.GLASS_BOTTLE || aItem == Items.experience_bottle || IL.BoP_Jar_Empty.equal(aStack, T, T) || IL.HBM_Bottle_Empty_1.equal(aStack, T, T) || IL.HBM_Bottle_Empty_2.equal(aStack, T, T)) return T;
+		if (aItem == Items.POTION || aItem == Items.GLASS_BOTTLE || aItem == Items.experience_bottle || IL.BoP_Jar_Empty.equal(aStack, T, T) || IL.HBM_Bottle_Empty_1.equal(aStack, T, T) || IL.HBM_Bottle_Empty_2.equal(aStack, T, T)) return T;
 		ItemStack aContainer = ST.container(aStack, T);
 		return ST.item(aContainer) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_1.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_2.equal(aContainer, T, T);
 	}

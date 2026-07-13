@@ -884,7 +884,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						if (ST.valid(tStack = aPlayer.getInventory().getItem(i))) {
 							tEmptySlots--;
 							if (tBetweenlands) {
-								if (tStack.getItem() == Items.potionitem) {
+								if (tStack.getItem() == Items.POTION) {
 									ST.set(tStack, IL.BTL_Tainted_Potion.get(1), F, F);
 								}
 								// PORT-TODO(EVENTS, IFluidHandlerItem-capability): capability-система fluid-in-item полностью переработана в neo

@@ -55,8 +55,8 @@ public class Compat_Recipes_ArsMagica extends CompatMods {
 		}};
 		
 		RM.Injector.addRecipe2(T, 16, 16, IL.Bottle_Empty.get(1)                                , ST.make(Items.WHEAT_SEEDS, 1, W), FL.make("potion.mundane", 250), NF, ST.make(MD.ARS, "lesserManaPotion", 1, 0));
-		RM.Injector.addRecipe2(T, 16, 16, ST.make(Items.potionitem                  , 1,   64)  , ST.make(Items.WHEAT_SEEDS, 1, W), ST.make(MD.ARS, "lesserManaPotion", 1, 0));
-		RM.Injector.addRecipe2(T, 16, 16, ST.make(Items.potionitem                  , 1,16384)  , ST.make(Items.WHEAT_SEEDS, 1, W), ST.make(MD.ARS, "standardManaPotion", 1, 0));
+		RM.Injector.addRecipe2(T, 16, 16, ST.make(Items.POTION                  , 1,   64)  , ST.make(Items.WHEAT_SEEDS, 1, W), ST.make(MD.ARS, "lesserManaPotion", 1, 0));
+		RM.Injector.addRecipe2(T, 16, 16, ST.make(Items.POTION                  , 1,16384)  , ST.make(Items.WHEAT_SEEDS, 1, W), ST.make(MD.ARS, "standardManaPotion", 1, 0));
 		RM.Injector.addRecipe2(T, 16, 16, ST.make(MD.ARS, "lesserManaPotion"        , 1,    0)  , OM.dust(MT.Gunpowder), ST.make(MD.ARS, "standardManaPotion", 1, 0));
 		RM.Injector.addRecipe2(T, 16, 16, ST.make(MD.ARS, "standardManaPotion"      , 1,    0)  , OM.dust(MT.Vinteum), ST.make(MD.ARS, "greaterManaPotion", 1, 0));
 		RM.Injector.addRecipe2(T, 16, 16, ST.make(MD.ARS, "greaterManaPotion"       , 1,    0)  , OM.dust(MT.ArcaneAsh), ST.make(MD.ARS, "epicManaPotion", 1, 0));

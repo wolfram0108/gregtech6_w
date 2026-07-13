@@ -1069,7 +1069,7 @@ public class ST {
 	// PORT-TODO(этап-item-props, F?): Item#setMaxStackSize — рантайм-мутатор удалён в neo (REMAP-RULES §C-bis);
 	// стек-лимит теперь Item.Properties#stacksTo/DataComponents.MAX_STACK_SIZE на регистрации, рантайм-смену
 	// гатим. Оригинал:
-	// Items.potionitem        .setMaxStackSize( 1);
+	// Items.POTION        .setMaxStackSize( 1);
 	// Items.GLASS_BOTTLE      .setMaxStackSize(64);
 	// Items.bed               .setMaxStackSize(64);
 	// Items.CAKE              .setMaxStackSize(64);

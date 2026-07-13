@@ -211,18 +211,18 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		if (this != OP.block && this != OP.stone && this != OP.scrapGt) addListener(new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {if (!aEvent.mStack.getItem().isDamageable() && aEvent.mStack.getMaxStackSize() > 1 && !ST.isGT_(aEvent.mStack)) aEvent.mStack.getItem().setMaxStackSize(aEvent.mPrefix.mDefaultStackSize);}});
 		
 		Items.ENDER_PEARL       .setMaxStackSize(OP.gem.mDefaultStackSize);
-		Items.record_11         .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_13         .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_blocks     .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_cat        .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_chirp      .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_far        .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_mall       .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_mellohi    .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_stal       .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_strad      .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_wait       .setMaxStackSize(OP.record.mDefaultStackSize);
-		Items.record_ward       .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_11         .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_13         .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_BLOCKS     .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_CAT        .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_CHIRP      .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_FAR        .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_MALL       .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_MELLOHI    .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_STAL       .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_STRAD      .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_WAIT       .setMaxStackSize(OP.record.mDefaultStackSize);
+		Items.MUSIC_DISC_WARD       .setMaxStackSize(OP.record.mDefaultStackSize);
 		
 		Item.getItemFromBlock(Blocks.PACKED_ICE             ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.ICE                    ).setMaxStackSize(OP.block.mDefaultStackSize);

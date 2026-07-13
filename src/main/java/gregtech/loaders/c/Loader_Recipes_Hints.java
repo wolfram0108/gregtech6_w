@@ -107,7 +107,7 @@ public class Loader_Recipes_Hints implements Runnable {
 		, ST.make(Items.CAULDRON         , 1, 0, "With enough Water, the Tap can fill vanilla Cauldrons below")
 		, ST.make(aRegistry     .getItem(32740), "Or have another top open Fluid Container below the Tap")
 		, ST.make(aRegistry     .getItem(32706), "Mixing Bowls and Bathing Pots are top open too!")
-		), ST.array(ST.make(Items.potionitem, 1, 0, "Ahh, bottled Tap Water!")), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
+		), ST.array(ST.make(Items.POTION, 1, 0, "Ahh, bottled Tap Water!")), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
 		  ST.make(OP.dust           .mat(MT.Endstone     , 1), "Endstone can be centrifuged for Helium")

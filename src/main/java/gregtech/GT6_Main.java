@@ -189,7 +189,7 @@ public class GT6_Main extends Abstract_Mod {
 		
 		new CompatMods(MD.MC, this) {@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {
 			// We ain't got Water in that Water Bottle. That would be an infinite Water Exploit.
-			for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.potionitem && ST.meta_(tData.filledContainer) == 0) {tData.fluid.amount = 0; break;}
+			for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.POTION && ST.meta_(tData.filledContainer) == 0) {tData.fluid.amount = 0; break;}
 			
 			ArrayListNoNulls<Runnable> tList = new ArrayListNoNulls<>(F,
 				new Loader_BlockResistance(),
@@ -289,7 +289,7 @@ public class GT6_Main extends Abstract_Mod {
 	
 	@Override
 	public void onModInit2(FMLInitializationEvent aEvent) {
-		for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.potionitem && ST.meta_(tData.filledContainer) == 0) {tData.fluid.amount = 0; break;}
+		for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.POTION && ST.meta_(tData.filledContainer) == 0) {tData.fluid.amount = 0; break;}
 		
 		new Loader_Late_Items_And_Blocks().run();
 		
@@ -398,7 +398,7 @@ public class GT6_Main extends Abstract_Mod {
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Crate_Loot       .get(1)), ST.array(IL.Crate_Loot       .getWithName(1, "1 Vanilla Loot Table Stack"        ), IL.Crate.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Book_Loot_Guide  .get(1)), ST.array(IL.Book_Loot_Guide  .getWithName(1, "1 Guide Book or Manual"            ), ST.make(ItemsGT.BOOKS, 1, 32000), ST.make(ItemsGT.BOOKS, 1, 32001), ST.make(ItemsGT.BOOKS, 1, 32004), ST.make(ItemsGT.BOOKS, 1, 32005)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Book_Loot_MatDict.get(1)), ST.array(IL.Book_Loot_MatDict.getWithName(1, "1 Material Dictionary"             ), ST.make(ItemsGT.BOOKS, 1, 32002), ST.make(ItemsGT.BOOKS, 1, 32003)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
-											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bottle_Loot      .get(1)), ST.array(IL.Bottle_Loot      .getWithName(1, "Random Bottle of something"        ), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.potionitem, 1, 0), IL.Bottle_Holy_Water.get(1), IL.Bottle_Slime_Green.get(1), IL.Bottle_Ink.get(1), IL.Bottle_Indigo.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Empty.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
+											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bottle_Loot      .get(1)), ST.array(IL.Bottle_Loot      .getWithName(1, "Random Bottle of something"        ), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.POTION, 1, 0), IL.Bottle_Holy_Water.get(1), IL.Bottle_Slime_Green.get(1), IL.Bottle_Ink.get(1), IL.Bottle_Indigo.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Empty.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Sapling .get(1)), ST.array(IL.Bag_Loot_Sapling .getWithName(1, "Enough Saplings to plant one Tree" ), ST.make(Blocks.OAK_SAPLING, 1, 0), ST.make(Blocks.SPRUCE_SAPLING, 1, 0), ST.make(Blocks.BIRCH_SAPLING, 1, 0), ST.make(Blocks.JUNGLE_SAPLING, 4, 0), ST.make(Blocks.ACACIA_SAPLING, 1, 0), ST.make(Blocks.DARK_OAK_SAPLING, 4, 0), IL.TC_Silverwood_Sapling.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Seeds   .get(1)), ST.array(IL.Bag_Loot_Seeds   .getWithName(1, "A lot of one type of Seeds"        ), ST.make(Items.WHEAT_SEEDS, 1, 0), ST.make(Items.PUMPKIN_SEEDS, 1, 0), ST.make(Items.MELON_SEEDS, 1, 0), IL.EtFu_Beet_Seeds.get(1), ST.make(MD.RoC, "rotarycraft_item_canola", 1, 0)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Gems    .get(1)), ST.array(IL.Bag_Loot_Gems    .getWithName(1, "1 Flawless Gem and some other Gems"), OP.gemFlawless.mat(MT.Diamond, 1), OP.gem.mat(MT.Emerald, 1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
@@ -505,7 +505,7 @@ public class GT6_Main extends Abstract_Mod {
 
 	@Override
 	public void onModServerStarting2(FMLServerStartingEvent aEvent) {
-		for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.potionitem && ST.meta_(tData.filledContainer) == 0) {tData.fluid.amount = 0; break;}
+		for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.POTION && ST.meta_(tData.filledContainer) == 0) {tData.fluid.amount = 0; break;}
 		
 		
 		ORD.println("============================");
