@@ -59,7 +59,7 @@ public class DungeonChunkRoomEmpty extends DungeonChunkPillar {
 			}
 		}
 		
-		if (WD.liquid(aData.mWorld, aData.mX+8, aData.mY+9, aData.mZ+8) || aData.mWorld.canBlockSeeTheSky(aData.mX+8, aData.mY+9, aData.mZ+8)) {
+		if (WD.liquid(aData.mWorld, aData.mX+8, aData.mY+9, aData.mZ+8) || WD.canSeeSky(aData.mWorld, aData.mX+8, aData.mY+9, aData.mZ+8)) {
 			for (int tX = 5; tX <= 10; tX++) for (int tZ = 5; tZ <= 10; tZ++) {
 				if ((tX == 5 || tX == 10) && (tZ == 5 || tZ == 10)) {
 					aData.chiseled (tX, 7, tZ);

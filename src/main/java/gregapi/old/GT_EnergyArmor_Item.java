@@ -215,7 +215,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 					tTargetDechargeItem = null;
 				}
 				
-				if (aPlayer.worldObj.isDaytime() && aPlayer.worldObj.canBlockSeeTheSky(MathHelper.floor_double(aPlayer.posX), MathHelper.floor_double(aPlayer.posY+1), MathHelper.floor_double(aPlayer.posZ))) {
+				if (aPlayer.worldObj.isDaytime() && WD.canSeeSky(aPlayer.worldObj, MathHelper.floor_double(aPlayer.posX), MathHelper.floor_double(aPlayer.posY+1), MathHelper.floor_double(aPlayer.posZ))) {
 					if ((mSpecials & 32) != 0 && tTargetChargeItem != null) {
 						GT_ModHandler.chargeElectricItem(tTargetChargeItem, 20, Integer.MAX_VALUE, true, false);
 					}

@@ -388,6 +388,10 @@ public class WD {
 	public static boolean exists(Level aWorld, int aX, int aY, int aZ) {
 		return aWorld != null && aWorld.isLoaded(new BlockPos(aX, aY, aZ));
 	}
+	/** F-world: 1.7.10 WD.canSeeSky(World, x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
+	public static boolean canSeeSky(Level aWorld, int aX, int aY, int aZ) {
+		return aWorld != null && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
+	}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	

@@ -40,7 +40,7 @@ public class DungeonChunkCorridor extends DungeonChunkPillar {
 				aData.bricks(tX, tY, tZ);
 			} else {
 				if (tY == 4) {
-					if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || aData.mWorld.canBlockSeeTheSky(aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
+					if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || WD.canSeeSky(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
 						aData.glassglow(tX, tY, tZ);
 					} else {
 						aData.bricks(tX, tY, tZ);
@@ -80,8 +80,8 @@ public class DungeonChunkCorridor extends DungeonChunkPillar {
 		
 		if (WD.liquid(aData.mWorld, aData.mX+ 7, aData.mY+4, aData.mZ+ 7) || WD.liquid(aData.mWorld, aData.mX+ 7, aData.mY+4, aData.mZ+ 8)
 		 || WD.liquid(aData.mWorld, aData.mX+ 8, aData.mY+4, aData.mZ+ 7) || WD.liquid(aData.mWorld, aData.mX+ 8, aData.mY+4, aData.mZ+ 8)
-		 || aData.mWorld.canBlockSeeTheSky(aData.mX+ 7, aData.mY+4, aData.mZ+ 7) || aData.mWorld.canBlockSeeTheSky(aData.mX+ 7, aData.mY+4, aData.mZ+ 8)
-		 || aData.mWorld.canBlockSeeTheSky(aData.mX+ 8, aData.mY+4, aData.mZ+ 7) || aData.mWorld.canBlockSeeTheSky(aData.mX+ 8, aData.mY+4, aData.mZ+ 8)) {
+		 || WD.canSeeSky(aData.mWorld, aData.mX+ 7, aData.mY+4, aData.mZ+ 7) || WD.canSeeSky(aData.mWorld, aData.mX+ 7, aData.mY+4, aData.mZ+ 8)
+		 || WD.canSeeSky(aData.mWorld, aData.mX+ 8, aData.mY+4, aData.mZ+ 7) || WD.canSeeSky(aData.mWorld, aData.mX+ 8, aData.mY+4, aData.mZ+ 8)) {
 			aData.glassglow(7, 4, 7);
 			aData.glassglow(7, 4, 8);
 			aData.glassglow(8, 4, 7);
@@ -101,7 +101,7 @@ public class DungeonChunkCorridor extends DungeonChunkPillar {
 					aData.bricks(tX, tY, tZ);
 				} else {
 					if (tY == 4) {
-						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || aData.mWorld.canBlockSeeTheSky(aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
+						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || WD.canSeeSky(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
 							aData.glassglow(tX, tY, tZ);
 						} else {
 							aData.bricks(tX, tY, tZ);
@@ -124,7 +124,7 @@ public class DungeonChunkCorridor extends DungeonChunkPillar {
 					aData.bricks(tX, tY, tZ);
 				} else {
 					if (tY == 4) {
-						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || aData.mWorld.canBlockSeeTheSky(aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
+						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || WD.canSeeSky(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
 							aData.glassglow(tX, tY, tZ);
 						} else {
 							aData.bricks(tX, tY, tZ);
@@ -147,7 +147,7 @@ public class DungeonChunkCorridor extends DungeonChunkPillar {
 					aData.bricks(tX, tY, tZ);
 				} else {
 					if (tY == 4) {
-						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || aData.mWorld.canBlockSeeTheSky(aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
+						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || WD.canSeeSky(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
 							aData.glassglow(tX, tY, tZ);
 						} else {
 							aData.bricks(tX, tY, tZ);
@@ -170,7 +170,7 @@ public class DungeonChunkCorridor extends DungeonChunkPillar {
 					aData.bricks(tX, tY, tZ);
 				} else {
 					if (tY == 4) {
-						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || aData.mWorld.canBlockSeeTheSky(aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
+						if (WD.liquid(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ) || WD.canSeeSky(aData.mWorld, aData.mX+tX, aData.mY+tY+1, aData.mZ+tZ)) {
 							aData.glassglow(tX, tY, tZ);
 						} else {
 							aData.bricks(tX, tY, tZ);

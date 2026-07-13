@@ -123,7 +123,7 @@ public final class DelegatorTileEntity<T> extends WorldAndCoords {
 	@Override public byte getMetaData           (int aX, int aY, int aZ) {return mWorld==null?0:UT.Code.bind4(WD.meta(mWorld, aX, aY, aZ));}
 	@Override public byte getLightLevel         (int aX, int aY, int aZ) {return mWorld==null?0:UT.Code.bind4((long)mWorld.getLightBrightness(aX, aY, aZ)*15);}
 	@Override public boolean getOpacity         (int aX, int aY, int aZ) {return mWorld!=null&&WD.block(mWorld, aX, aY, aZ).isOpaqueCube();}
-	@Override public boolean getSky             (int aX, int aY, int aZ) {return mWorld==null||mWorld.canBlockSeeTheSky(aX, aY, aZ);}
+	@Override public boolean getSky             (int aX, int aY, int aZ) {return mWorld==null||WD.canSeeSky(mWorld, aX, aY, aZ);}
 	@Override public boolean getRain            (int aX, int aY, int aZ) {return mWorld==null||mWorld.getPrecipitationHeight(aX, aZ) <= aY;}
 	@Override public boolean getAir             (int aX, int aY, int aZ) {return mWorld==null||WD.block(mWorld, aX, aY, aZ).isAir(mWorld, aX, aY, aZ);}
 	@Override public Biome getBiome      (int aX, int aZ) {return mWorld==null?null:mWorld.getBiomeGenForCoords(aX, aZ);}
@@ -132,7 +132,7 @@ public final class DelegatorTileEntity<T> extends WorldAndCoords {
 	@Override public byte getMetaData           (BlockPos aCoords) {return mWorld==null?0:UT.Code.bind4(WD.meta(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
 	@Override public byte getLightLevel         (BlockPos aCoords) {return mWorld==null?0:UT.Code.bind4((long)mWorld.getLightBrightness(aCoords.getX(), aCoords.getY(), aCoords.getZ())*15);}
 	@Override public boolean getOpacity         (BlockPos aCoords) {return mWorld!=null&&WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isOpaqueCube();}
-	@Override public boolean getSky             (BlockPos aCoords) {return mWorld==null||mWorld.canBlockSeeTheSky(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
+	@Override public boolean getSky             (BlockPos aCoords) {return mWorld==null||WD.canSeeSky(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public boolean getRain            (BlockPos aCoords) {return mWorld==null||mWorld.getPrecipitationHeight(aCoords.getX(), aCoords.getZ()) <= aCoords.getY();}
 	@Override public boolean getAir             (BlockPos aCoords) {return mWorld==null||WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public Biome getBiome      (BlockPos aCoords) {return mWorld==null?null:mWorld.getBiomeGenForCoords(aCoords.getX(), aCoords.getZ());}
