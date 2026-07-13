@@ -28,8 +28,8 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.passive.EntityAnimal;
-import net.minecraft.entity.passive.EntityPig;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -38,10 +38,10 @@ public class Behavior_FeedPig extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof EntityPig) {
-			if (((EntityAnimal)aEntity).getGrowingAge() == 0 && !((EntityAnimal)aEntity).isInLove()) {
+		if (aEntity instanceof Pig) {
+			if (((Animal)aEntity).getGrowingAge() == 0 && !((Animal)aEntity).isInLove()) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				((EntityAnimal)aEntity).func_146082_f(aPlayer);
+				((Animal)aEntity).func_146082_f(aPlayer);
 				return T;
 			}
 		}

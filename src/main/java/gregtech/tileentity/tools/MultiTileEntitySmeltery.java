@@ -626,17 +626,17 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.SoylentGreen)), C+37);
 				} else if (aEntity instanceof EntitySnowman) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Snow)), C-10);
-				} else if (aEntity instanceof EntityIronGolem) {
+				} else if (aEntity instanceof IronGolem) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Fe)), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
-				} else if (aEntity instanceof EntitySkeleton) {
-					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, ((EntitySkeleton)aEntity).getSkeletonType() == 1 ? MT.BoneWither : MT.Bone), ((EntitySkeleton)aEntity).getSkeletonType() == 1 ? OM.stack(1*U, MT.Coal) : null), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
-				} else if (aEntity instanceof EntityZombie) {
+				} else if (aEntity instanceof Skeleton) {
+					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, ((Skeleton)aEntity).getSkeletonType() == 1 ? MT.BoneWither : MT.Bone), ((Skeleton)aEntity).getSkeletonType() == 1 ? OM.stack(1*U, MT.Coal) : null), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
+				} else if (aEntity instanceof Zombie) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRotten)), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
-				} else if (aEntity instanceof EntityMooshroom || aEntity instanceof EntityCow || aEntity instanceof EntityHorse) {
+				} else if (aEntity instanceof MushroomCow || aEntity instanceof Cow || aEntity instanceof Horse) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(3*U, MT.MeatRaw)), C+37);
-				} else if (aEntity instanceof EntityPig || aEntity instanceof EntitySheep || aEntity instanceof EntityWolf || aEntity instanceof EntitySquid) {
+				} else if (aEntity instanceof Pig || aEntity instanceof Sheep || aEntity instanceof Wolf || aEntity instanceof Squid) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.MeatRaw)), C+37);
-				} else if (aEntity instanceof EntityChicken || aEntity instanceof EntityOcelot || aEntity instanceof EntitySpider || aEntity instanceof EntitySilverfish) {
+				} else if (aEntity instanceof EntityChicken || aEntity instanceof Ocelot || aEntity instanceof EntitySpider || aEntity instanceof EntitySilverfish) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRaw)), C+37);
 				} else if (aEntity instanceof EntityCreeper) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.Gunpowder)), C+20);

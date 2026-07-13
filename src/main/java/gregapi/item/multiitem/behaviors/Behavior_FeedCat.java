@@ -30,7 +30,7 @@ import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.ai.EntityAITasks.EntityAITaskEntry;
 import net.minecraft.entity.ai.EntityAITempt;
-import net.minecraft.entity.passive.EntityOcelot;
+import net.minecraft.world.entity.animal.feline.Ocelot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -39,28 +39,28 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof EntityOcelot) {
-			for (Object tTask : ((EntityOcelot)aEntity).tasks.taskEntries) if (((EntityAITaskEntry)tTask).action instanceof EntityAITempt && ((EntityAITempt)((EntityAITaskEntry)tTask).action).isRunning()) {
+		if (aEntity instanceof Ocelot) {
+			for (Object tTask : ((Ocelot)aEntity).tasks.taskEntries) if (((EntityAITaskEntry)tTask).action instanceof EntityAITempt && ((EntityAITempt)((EntityAITaskEntry)tTask).action).isRunning()) {
 				if (aPlayer.getDistanceSqToEntity(aEntity) < 9.0D) {
 					UT.Entities.consumeCurrentItem(aPlayer);
 					if (!aPlayer.level().isClientSide()) {
 						if (RNGSUS.nextInt(3) == 0) {
-							((EntityOcelot)aEntity).setTamed(T);
-							((EntityOcelot)aEntity).setTameSkin(1 + RNGSUS.nextInt(3));
-							((EntityOcelot)aEntity).func_152115_b(aPlayer.getUUID().toString());
+							((Ocelot)aEntity).setTamed(T);
+							((Ocelot)aEntity).setTameSkin(1 + RNGSUS.nextInt(3));
+							((Ocelot)aEntity).func_152115_b(aPlayer.getUUID().toString());
 							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("heart", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.height), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
-							((EntityOcelot)aEntity).level().setEntityState(aEntity, (byte)7);
+							((Ocelot)aEntity).level().setEntityState(aEntity, (byte)7);
 						} else {
 							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("smoke", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.height), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
-							((EntityOcelot)aEntity).level().setEntityState(aEntity, (byte)6);
+							((Ocelot)aEntity).level().setEntityState(aEntity, (byte)6);
 						}
 					}
 				}
 				return T;
 			}
-			if (((EntityOcelot)aEntity).isTamed() && ((EntityOcelot)aEntity).getGrowingAge() == 0 && !((EntityOcelot)aEntity).isInLove()) {
+			if (((Ocelot)aEntity).isTamed() && ((Ocelot)aEntity).getGrowingAge() == 0 && !((Ocelot)aEntity).isInLove()) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				((EntityOcelot)aEntity).func_146082_f(aPlayer);
+				((Ocelot)aEntity).func_146082_f(aPlayer);
 				return T;
 			}
 		}

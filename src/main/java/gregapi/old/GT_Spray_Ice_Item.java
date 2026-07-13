@@ -23,7 +23,7 @@ package gregapi.old;
 public class GT_Spray_Ice_Item extends GT_Tool_Item {
 	public GT_Spray_Ice_Item(String aUnlocalized, String aEnglish, int aMaxDamage, int aEntityDamage) {
 		super(aUnlocalized, aEnglish, "Very effective against Slimes", aMaxDamage, aEntityDamage, true);/*
-		addToEffectiveList(EntitySlime.class.getName());
+		addToEffectiveList(Slime.class.getName());
 		addToEffectiveList("BlueSlime");
 		addToEffectiveList("SlimeClone");
 		addToEffectiveList("MetalSlime");

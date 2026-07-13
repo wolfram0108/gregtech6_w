@@ -40,10 +40,10 @@ import gregtech.tileentity.plants.MultiTileEntityResinHoleRubber;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.monster.EntityIronGolem;
-import net.minecraft.entity.monster.EntitySkeleton;
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.entity.monster.EntitySnowman;
-import net.minecraft.entity.passive.EntityHorse;
+import net.minecraft.world.entity.animal.equine.Horse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
@@ -441,9 +441,9 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public boolean bumbleAttack(ItemStack aBumbleBee, short aMetaData, LivingEntity aAttacked) {
 		if (UT.Entities.isWearingFullInsectHazmat(aAttacked)) return F;
 		boolean
-		  tSkeleton = (aAttacked instanceof EntitySkeleton || (aAttacked instanceof EntityHorse && ((EntityHorse)aAttacked).getHorseType() == 4))
+		  tSkeleton = (aAttacked instanceof Skeleton || (aAttacked instanceof Horse && ((Horse)aAttacked).getHorseType() == 4))
 		, tSnowGolem = (aAttacked.getClass() == EntitySnowman.class)
-		, tIronGolem = (aAttacked instanceof EntityIronGolem)
+		, tIronGolem = (aAttacked instanceof IronGolem)
 		, tPlayer = (aAttacked instanceof Player)
 		;
 		switch(aMetaData / 100) {

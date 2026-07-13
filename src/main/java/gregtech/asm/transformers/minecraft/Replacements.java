@@ -27,7 +27,7 @@ import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -48,7 +48,7 @@ public class Replacements {
 			EntityVillager aVillager = (EntityVillager)aVictim;
 			Level aWorld = aVillager.level();
 			// Yep, new Zombie Object.
-			EntityZombie tZombieVillager = new EntityZombie(aWorld);
+			Zombie tZombieVillager = new Zombie(aWorld);
 			// Location and Head need to point to the right places.
 			tZombieVillager.copyLocationAndAnglesFrom(aVillager);
 			// Do normal spawning Stuff.

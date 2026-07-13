@@ -25,7 +25,7 @@ import gregapi.data.IL;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.monster.EntitySlime;
+import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.IIcon;
@@ -191,7 +191,7 @@ public class BlockSwamp extends BlockWaterlike {
 	
 	@Override
 	public void onHeadInside(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
-		if (aEntity instanceof EntitySlime) return;
+		if (aEntity instanceof Slime) return;
 		super.onHeadInside(aEntity, aWorld, aX, aY, aZ);
 	}
 	

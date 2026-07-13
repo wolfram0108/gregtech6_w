@@ -2316,7 +2316,7 @@ public class CS {
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("TwilightForest.Tower Golem"       , "VillagerGolem");
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("TwilightForest.Firefly"           , "Squid"        );
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("TwilightForest.Redscale Broodling", "MushroomCow"  );
-		TRANSFORMATION_POWDER_SPAWNER_MAP.put("TwilightForest.Pinch Beetle"      , "EntityHorse"  );
+		TRANSFORMATION_POWDER_SPAWNER_MAP.put("TwilightForest.Pinch Beetle"      , "Horse"  );
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("TwilightForest.Forest Squirrel"   , "Ozelot"       );
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("TwilightForest.Forest Bunny"      , "SnowMan"      );
 		
@@ -2342,7 +2342,7 @@ public class CS {
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("VillagerGolem", "TwilightForest.Tower Golem"       );
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("Squid"        , "TwilightForest.Firefly"           );
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("MushroomCow"  , "TwilightForest.Redscale Broodling");
-		TRANSFORMATION_POWDER_SPAWNER_MAP.put("EntityHorse"  , "TwilightForest.Pinch Beetle"      );
+		TRANSFORMATION_POWDER_SPAWNER_MAP.put("Horse"  , "TwilightForest.Pinch Beetle"      );
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("Ozelot"       , "TwilightForest.Forest Squirrel"   );
 		TRANSFORMATION_POWDER_SPAWNER_MAP.put("SnowMan"      , "TwilightForest.Forest Bunny"      );
 	}

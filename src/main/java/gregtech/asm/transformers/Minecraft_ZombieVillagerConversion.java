@@ -37,14 +37,14 @@ import net.minecraft.launchwrapper.IClassTransformer;
 public class Minecraft_ZombieVillagerConversion implements IClassTransformer  {
 	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
-		if (!transformedName.equals("net.minecraft.entity.monster.EntityZombie")) return basicClass;
+		if (!transformedName.equals("net.minecraft.entity.monster.Zombie")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);
 
 		//GT_ASM.writePrettyPrintedOpCodesToFile(classNode, "zombie.ops");
 		
 		for (MethodNode m: classNode.methods) {
 			if (m.name.equals("onKillEntity") || (m.name.equals("a") && m.desc.equals("(Lsv;)V"))) {
-				GT_ASM.logger.info("Transforming net.minecraft.entity.monster.EntityZombie.onKillEntity");
+				GT_ASM.logger.info("Transforming net.minecraft.entity.monster.Zombie.onKillEntity");
 
 				AbstractInsnNode cur = m.instructions.getFirst();
 

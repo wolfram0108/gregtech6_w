@@ -37,8 +37,8 @@ import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.passive.EntityCow;
-import net.minecraft.entity.passive.EntityMooshroom;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.cow.MushroomCow;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
@@ -169,7 +169,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (FL.getFluid(aStack, T) == null && aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isChild()) {
 			if (aPlayer.level().isClientSide()) return T;
-			if (aEntity.getClass() == EntityCow.class || aEntity.getClass() == EntityMooshroom.class) {
+			if (aEntity.getClass() == Cow.class || aEntity.getClass() == MushroomCow.class) {
 				if (MD.HO.mLoaded && IguanaConfig.milkedTimeout > 0 && !UT.Entities.hasInfiniteItems(aPlayer)) {
 					CompoundTag tNBT = aEntity.getEntityData();
 					if (tNBT.contains("Milked")) return T;

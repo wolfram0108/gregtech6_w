@@ -49,7 +49,7 @@ public class Override_Drops {
 		
 		if (aDead instanceof Player) {
 			// Do Nothing
-		} else if (aDead instanceof EntityAnimal && aDead.isChild()) {
+		} else if (aDead instanceof Animal && aDead.isChild()) {
 			tReplaceIron = T;
 		} else if ("ZombieFarmer".equalsIgnoreCase(aClass)) {
 			tReplaceIron = T;
@@ -370,7 +370,7 @@ public class Override_Drops {
 				if (RNGSUS.nextInt(20) == 0) aDrops.add(ST.entity(aDead, IL.Tool_Matches.get(1)));
 				}
 			}
-		} else if (aDead instanceof EntityZombie) {
+		} else if (aDead instanceof Zombie) {
 			tReplaceIron = T;
 			
 			if (aPlayerKill) {
@@ -393,7 +393,7 @@ public class Override_Drops {
 					).get(1)));
 					}
 				}
-				if (MOBS_DROP_BOOK && ((EntityZombie)aDead).isVillager()) {
+				if (MOBS_DROP_BOOK && ((Zombie)aDead).isVillager()) {
 					aDrops.add(ST.entity(aDead, IL.Book_Loot_Guide  .get(1+RNGSUS.nextInt(3))));
 					aDrops.add(ST.entity(aDead, IL.Book_Loot_MatDict.get(1+RNGSUS.nextInt(3))));
 				}
@@ -416,7 +416,7 @@ public class Override_Drops {
 			}
 			
 			}
-		} else if (aDead instanceof EntitySkeleton) {
+		} else if (aDead instanceof Skeleton) {
 			tReplaceIron = T;
 			
 			if (aPlayerKill && MOBS_DROP_JUNK) {
@@ -621,32 +621,32 @@ public class Override_Drops {
 			int tAmount = 1+RNGSUS.nextInt(4);
 			if (aLooting > 0) tAmount += RNGSUS.nextInt(aLooting + 1);
 			while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_DogMeat_Cooked.get(1):IL.Food_DogMeat_Raw.get(1)));
-		} else if (aDead instanceof EntityWolf) {
+		} else if (aDead instanceof Wolf) {
 			tReplaceIron = T;
 			int tAmount = RNGSUS.nextInt(3);
 			if (aLooting > 0) tAmount += RNGSUS.nextInt(aLooting + 1);
 			while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_DogMeat_Cooked.get(1):IL.Food_DogMeat_Raw.get(1)));
-		} else if (aDead instanceof EntityHorse) {
+		} else if (aDead instanceof Horse) {
 			tReplaceIron = T;
 			int tAmount = 1+RNGSUS.nextInt(3);
 			if (aLooting > 0) tAmount += RNGSUS.nextInt(aLooting + 1);
-			if (RNGSUS.nextInt(Math.max(1, 10-(int)(((EntityHorse)aDead).getHorseJumpStrength()*10.0))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
-			if (RNGSUS.nextInt(Math.max(1, 30-(int)(((EntityHorse)aDead).getMaxHealth()))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
-			switch(((EntityHorse)aDead).getHorseType()) {
+			if (RNGSUS.nextInt(Math.max(1, 10-(int)(((Horse)aDead).getHorseJumpStrength()*10.0))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
+			if (RNGSUS.nextInt(Math.max(1, 30-(int)(((Horse)aDead).getMaxHealth()))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
+			switch(((Horse)aDead).getHorseType()) {
 			default: while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_Horse_Cooked .get(1):IL.Food_Horse_Raw .get(1))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Horse .get(1))); break;
 			case  1: while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_Donkey_Cooked.get(1):IL.Food_Donkey_Raw.get(1))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Donkey.get(1))); break;
 			case  2: while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_Mule_Cooked  .get(1):IL.Food_Mule_Raw  .get(1))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Mule  .get(1))); break;
 			case  3: while (tAmount-->0) aDrops.add(ST.entity(aDead, ST.make(Items.ROTTEN_FLESH                           , 1, 0))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(200) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Horse .get(1))); break;
 			case  4: while (tAmount-->0) aDrops.add(ST.entity(aDead, ST.make(Items.BONE                                   , 1, 0))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(200) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Horse .get(1))); break;
 			}
-		} else if (aDead instanceof EntitySheep) {
+		} else if (aDead instanceof Sheep) {
 			tReplaceIron = T;
 			if (!MD.EtFu.mLoaded && !MD.GaSu.mLoaded) {
 			int tAmount = RNGSUS.nextInt(3);
 			if (aLooting > 0) tAmount += RNGSUS.nextInt(aLooting + 1);
 			while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_Mutton_Cooked.get(1):IL.Food_Mutton_Raw.get(1)));
 			}
-		} else if (aDead instanceof EntityMooshroom) {
+		} else if (aDead instanceof MushroomCow) {
 			tReplaceIron = T;
 			for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) {
 				aDrops.add(ST.entity(aDead, IL.Hoof_Cow.get(1)));
@@ -654,7 +654,7 @@ public class Override_Drops {
 			for (int i = 0; i < 2; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) {
 				aDrops.add(ST.entity(aDead, IL.Horn_Cow.get(1)));
 			}
-		} else if (aDead instanceof EntityCow) {
+		} else if (aDead instanceof Cow) {
 			tReplaceIron = T;
 			for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) {
 				aDrops.add(ST.entity(aDead, IL.Hoof_Cow.get(1)));
@@ -662,7 +662,7 @@ public class Override_Drops {
 			for (int i = 0; i < 2; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) {
 				aDrops.add(ST.entity(aDead, IL.Horn_Cow.get(1)));
 			}
-		} else if (aDead instanceof EntityPig) {
+		} else if (aDead instanceof Pig) {
 			tReplaceIron = T;
 		} else if (aDead instanceof EntityChicken) {
 			tReplaceIron = T;
@@ -758,13 +758,13 @@ public class Override_Drops {
 			} else if (aDead instanceof Player) {
 				// No Drop deletion for Players though.
 				aDrops.add(ST.entity(aDead, ST.skull(aDead)));
-			} else if (aDead.getClass() == EntityZombie.class) {
-				if (!((EntityZombie)aDead).isVillager()) {
+			} else if (aDead.getClass() == Zombie.class) {
+				if (!((Zombie)aDead).isVillager()) {
 					aDrops.clear();
 					aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 2)));
 				}
-			} else if (aDead.getClass() == EntitySkeleton.class) {
-				if (((EntitySkeleton)aDead).getSkeletonType() == 1) {
+			} else if (aDead.getClass() == Skeleton.class) {
+				if (((Skeleton)aDead).getSkeletonType() == 1) {
 					aDrops.clear();
 					aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 1)));
 				} else {

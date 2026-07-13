@@ -24,7 +24,7 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -47,8 +47,8 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof EntityZombie && ((EntityZombie)aEntity).isVillager()) {
-			if (!mNeedsWeakness || ((EntityZombie)aEntity).hasEffect(MobEffects.WEAKNESS)) {
+		if (aEntity instanceof Zombie && ((Zombie)aEntity).isVillager()) {
+			if (!mNeedsWeakness || ((Zombie)aEntity).hasEffect(MobEffects.WEAKNESS)) {
 				UT.Entities.consumeCurrentItem(aPlayer);
 				if (!(aEntity).level().isClientSide()) {
 					int tCureTime = RNGSUS.nextInt(mAverageCureTime * 2) + 500;
@@ -57,8 +57,8 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 					tNBT.putInt("ConversionTime", tCureTime);
 					aEntity.readFromNBT(tNBT);
 					aEntity.getDataWatcher().updateObject(14, Byte.valueOf((byte)1));
-					((EntityZombie)aEntity).removeEffect(MobEffects.WEAKNESS);
-					((EntityZombie)aEntity).addEffect(new MobEffectInstance(MobEffects.STRENGTH, tCureTime, Math.min(((EntityZombie)aEntity).level().difficultySetting.getDifficultyId() - 1, 0)));
+					((Zombie)aEntity).removeEffect(MobEffects.WEAKNESS);
+					((Zombie)aEntity).addEffect(new MobEffectInstance(MobEffects.STRENGTH, tCureTime, Math.min(((Zombie)aEntity).level().difficultySetting.getDifficultyId() - 1, 0)));
 					aEntity.level().setEntityState(aEntity, (byte)16);
 				}
 				return T;

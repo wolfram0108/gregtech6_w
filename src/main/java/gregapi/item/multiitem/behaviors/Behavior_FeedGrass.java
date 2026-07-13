@@ -28,10 +28,10 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.passive.EntityAnimal;
-import net.minecraft.entity.passive.EntityCow;
-import net.minecraft.entity.passive.EntityHorse;
-import net.minecraft.entity.passive.EntitySheep;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.equine.Horse;
+import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -40,29 +40,29 @@ public class Behavior_FeedGrass extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof EntityCow || aEntity instanceof EntitySheep) {
-			if (((EntityAnimal)aEntity).getGrowingAge() == 0 && !((EntityAnimal)aEntity).isInLove()) {
+		if (aEntity instanceof Cow || aEntity instanceof Sheep) {
+			if (((Animal)aEntity).getGrowingAge() == 0 && !((Animal)aEntity).isInLove()) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				((EntityAnimal)aEntity).func_146082_f(aPlayer);
+				((Animal)aEntity).func_146082_f(aPlayer);
 				return T;
 			}
 		}
-		if (aEntity instanceof EntityHorse) {
+		if (aEntity instanceof Horse) {
 			boolean tConsume = F;
-			if (((EntityHorse)aEntity).getHealth() < ((EntityHorse)aEntity).getMaxHealth()) {
-				((EntityHorse)aEntity).heal(1);
+			if (((Horse)aEntity).getHealth() < ((Horse)aEntity).getMaxHealth()) {
+				((Horse)aEntity).heal(1);
 				tConsume = T;
 			}
-			if (!((EntityHorse)aEntity).isAdultHorse()) {
-				((EntityHorse)aEntity).addGrowth(30);
+			if (!((Horse)aEntity).isAdultHorse()) {
+				((Horse)aEntity).addGrowth(30);
 				tConsume = T;
 			}
-			if (tConsume || !((EntityHorse)aEntity).isTame()) {
+			if (tConsume || !((Horse)aEntity).isTame()) {
 				tConsume = T;
-				((EntityHorse)aEntity).increaseTemper(2);
+				((Horse)aEntity).increaseTemper(2);
 			}
 			if (tConsume) {
-				((EntityHorse)aEntity).level().playSoundAtEntity(aEntity, "eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F);
+				((Horse)aEntity).level().playSoundAtEntity(aEntity, "eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F);
 				UT.Entities.consumeCurrentItem(aPlayer);
 			}
 			return tConsume;

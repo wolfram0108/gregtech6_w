@@ -53,9 +53,9 @@ import net.minecraft.entity.ai.EntityAIAttackOnCollide;
 import net.minecraft.entity.ai.EntityAITasks;
 import net.minecraft.entity.ai.EntityAITempt;
 import net.minecraft.world.entity.monster.EnderMan;
-import net.minecraft.entity.monster.EntitySkeleton;
-import net.minecraft.entity.monster.EntityZombie;
-import net.minecraft.entity.passive.EntityOcelot;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.animal.feline.Ocelot;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
@@ -357,10 +357,10 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				if (aEvent.entity instanceof EntityVillager) {
 					tTasks.addTask(3, new EntityAITempt((PathfinderMob)aEvent.entity, 0.6D, Items.EMERALD, F));
 				}
-				if (aEvent.entity instanceof EntityOcelot) {
+				if (aEvent.entity instanceof Ocelot) {
 					if (ItemsGT.CANS != null) tTasks.addTask(3, new EntityAITempt((PathfinderMob)aEvent.entity, 0.6D, ItemsGT.CANS, T));
 				}
-				if (aEvent.entity instanceof EntityZombie) {
+				if (aEvent.entity instanceof Zombie) {
 					for (int i = 0; i < tTasks.taskEntries.size(); i++) {
 						EntityAITasks.EntityAITaskEntry tEntry = (EntityAITasks.EntityAITaskEntry)tTasks.taskEntries.get(i);
 						if (tEntry.action.getClass() == EntityAIAttackOnCollide.class) {
@@ -372,11 +372,11 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			
 			// Check if this Entity was already spawned, and not just unloaded and reloaded.
 			if (!aEvent.entity.level().isClientSide() && !aEvent.entity.getEntityData().contains("gt.spawned")) {
-				if (aEvent.entity instanceof EntityZombie && !((EntityZombie)aEvent.entity).isChild() && ST.invalid(((EntityZombie)aEvent.entity).getEquipmentInSlot(0))) {
+				if (aEvent.entity instanceof Zombie && !((Zombie)aEvent.entity).isChild() && ST.invalid(((Zombie)aEvent.entity).getEquipmentInSlot(0))) {
 					if (ZOMBIES_HOLD_TNT && RNGSUS.nextInt(250) == 0) {
-						((EntityZombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Blocks.TNT, 1+RNGSUS.nextInt(2), 0));
+						((Zombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Blocks.TNT, 1+RNGSUS.nextInt(2), 0));
 					} else if (ZOMBIES_HOLD_PICKAXES && RNGSUS.nextInt(100) == 0) {
-						((EntityZombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Items.IRON_PICKAXE, 1, Items.IRON_PICKAXE.getMaxDamage() < 5 ? 0 : 1+RNGSUS.nextInt(Items.IRON_PICKAXE.getMaxDamage()-2)));
+						((Zombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Items.IRON_PICKAXE, 1, Items.IRON_PICKAXE.getMaxDamage() < 5 ? 0 : 1+RNGSUS.nextInt(Items.IRON_PICKAXE.getMaxDamage()-2)));
 					}
 				}
 				// Mark Entity as has been spawned
@@ -388,7 +388,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		if (aEvent.entity.level().isClientSide()) return;
 		
 		if (mSkeletonsShootGTArrows > 0 && aEvent.entity.getClass() == Arrow.class && RNGSUS.nextInt(mSkeletonsShootGTArrows) == 0) {
-			if (((Arrow)aEvent.entity).shootingEntity instanceof EntitySkeleton) {
+			if (((Arrow)aEvent.entity).shootingEntity instanceof Skeleton) {
 				OreDictMaterial tMaterial = MT.Craponite; // Just default to Anti-Bear989Sr Arrows
 				switch(RNGSUS.nextInt(10)) {
 				case 0: tMaterial = MT.Steel; break; // Sharpness 2

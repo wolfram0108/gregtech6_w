@@ -30,7 +30,7 @@ import gregapi.data.LH;
 import gregapi.util.WD;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.monster.EntityIronGolem;
+import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -69,7 +69,7 @@ public class BlockSpikeSteel extends BlockBaseSpike {
 	@Override
 	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
-		if (aEntity instanceof LivingEntity && !(aEntity instanceof EntityIronGolem)) {
+		if (aEntity instanceof LivingEntity && !(aEntity instanceof IronGolem)) {
 			aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  8.0F :  4.0F));
 		}
 	}

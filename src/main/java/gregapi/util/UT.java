@@ -25,12 +25,12 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.core.BlockPos;
-import net.minecraft.entity.monster.EntityBlaze;
-import net.minecraft.entity.monster.EntityIronGolem;
-import net.minecraft.entity.monster.EntityMagmaCube;
-import net.minecraft.entity.monster.EntitySkeleton;
-import net.minecraft.entity.monster.EntitySlime;
-import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.world.entity.monster.Blaze;
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.monster.MagmaCube;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.Slime;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.entity.monster.Creeper;
@@ -2783,13 +2783,13 @@ public class UT {
 		}
 		
 		public static boolean isWearingFullHeatHazmat(LivingEntity aEntity) {
-			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == EntityBlaze.class || aEntity.getClass() == EntityPigZombie.class || aEntity.getClass() == EntityMagmaCube.class || aEntity.getClass() == EntityGhast.class) return T;
+			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == Blaze.class || aEntity.getClass() == EntityPigZombie.class || aEntity.getClass() == MagmaCube.class || aEntity.getClass() == EntityGhast.class) return T;
 			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_HEAT.contains(aEntity.getEquipmentInSlot(i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullBioHazmat(LivingEntity aEntity) {
-			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == EntityIronGolem.class) return T;
+			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
 			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_BIO.contains(aEntity.getEquipmentInSlot(i), T)) return F;
 			return T;
 		}
@@ -2801,13 +2801,13 @@ public class UT {
 		}
 		
 		public static boolean isWearingFullInsectHazmat(LivingEntity aEntity) {
-			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == EntityIronGolem.class) return T;
+			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
 			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_INSECTS.contains(aEntity.getEquipmentInSlot(i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullRadioHazmat(LivingEntity aEntity) {
-			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == EntityIronGolem.class) return T;
+			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
 			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_RADIOACTIVE.contains(aEntity.getEquipmentInSlot(i), T)) return F;
 			return T;
 		}
@@ -2819,7 +2819,7 @@ public class UT {
 		}
 		
 		public static boolean isWearingFullGasHazmat(LivingEntity aEntity) {
-			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == EntityIronGolem.class) return T;
+			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
 			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_GAS.contains(aEntity.getEquipmentInSlot(i), T)) return F;
 			return T;
 		}
@@ -2827,13 +2827,13 @@ public class UT {
 		
 		
 		public static boolean isSlimeCreature(Entity aEntity) {
-			return aEntity instanceof EntitySlime || UT.Reflection.getLowercaseClass(aEntity).contains("slime");
+			return aEntity instanceof Slime || UT.Reflection.getLowercaseClass(aEntity).contains("slime");
 		}
 		public static boolean isEnderCreature(Entity aEntity) {
 			return aEntity instanceof EnderMan || UT.Reflection.getLowercaseClass(aEntity).contains("ender");
 		}
 		public static boolean isZombieCreature(Entity aEntity) {
-			return aEntity instanceof EntityZombie || UT.Reflection.getLowercaseClass(aEntity).contains("zombie");
+			return aEntity instanceof Zombie || UT.Reflection.getLowercaseClass(aEntity).contains("zombie");
 		}
 		public static boolean isCreeperCreature(Entity aEntity) {
 			return aEntity instanceof Creeper || UT.Reflection.getLowercaseClass(aEntity).contains("creeper");
@@ -2906,7 +2906,7 @@ public class UT {
 		}
 		
 		public static boolean applyChemDamage(Entity aEntity, float aDamage) {
-			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != EntitySkeleton.class && !isWearingFullChemHazmat(((LivingEntity)aEntity))) {
+			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != Skeleton.class && !isWearingFullChemHazmat(((LivingEntity)aEntity))) {
 				aEntity.attackEntityFrom(DamageSources.getChemDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				MobEffectInstance tEffect;
 				((LivingEntity)aEntity).addEffect(new MobEffectInstance(MobEffects.POISON, Math.max(20, (int)(aDamage * 100 + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.POISON))==null?0:tEffect.getDuration())))), 1));
@@ -2916,7 +2916,7 @@ public class UT {
 		}
 		
 		public static boolean applyHeatDamage(Entity aEntity, float aDamage) {
-			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != EntityBlaze.class && ((LivingEntity)aEntity).getEffect(MobEffects.FIRE_RESISTANCE) == null && !isWearingFullHeatHazmat(((LivingEntity)aEntity))) {
+			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != Blaze.class && ((LivingEntity)aEntity).getEffect(MobEffects.FIRE_RESISTANCE) == null && !isWearingFullHeatHazmat(((LivingEntity)aEntity))) {
 				aEntity.attackEntityFrom(DamageSources.getHeatDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}

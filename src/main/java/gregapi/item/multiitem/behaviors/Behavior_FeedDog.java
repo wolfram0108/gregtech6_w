@@ -29,7 +29,7 @@ import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.passive.EntityWolf;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -38,17 +38,17 @@ public class Behavior_FeedDog extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof EntityWolf) {
-			if (((EntityWolf)aEntity).isTamed()) {
-				if (((EntityWolf)aEntity).getDataWatcher().getWatchableObjectFloat(18) < 20.0F) {
+		if (aEntity instanceof Wolf) {
+			if (((Wolf)aEntity).isTamed()) {
+				if (((Wolf)aEntity).getDataWatcher().getWatchableObjectFloat(18) < 20.0F) {
 					UT.Entities.consumeCurrentItem(aPlayer);
-					((EntityWolf)aEntity).heal(ST.food(aStack));
+					((Wolf)aEntity).heal(ST.food(aStack));
 					return T;
 				}
 				
-				if (((EntityWolf)aEntity).getGrowingAge() == 0 && !((EntityWolf)aEntity).isInLove()) {
+				if (((Wolf)aEntity).getGrowingAge() == 0 && !((Wolf)aEntity).isInLove()) {
 					UT.Entities.consumeCurrentItem(aPlayer);
-					((EntityWolf)aEntity).func_146082_f(aPlayer);
+					((Wolf)aEntity).func_146082_f(aPlayer);
 					return T;
 				}
 			}

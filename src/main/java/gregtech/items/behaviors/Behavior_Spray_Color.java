@@ -29,8 +29,8 @@ import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockColored;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.passive.EntitySheep;
-import net.minecraft.entity.passive.EntityWolf;
+import net.minecraft.world.entity.animal.sheep.Sheep;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
@@ -100,16 +100,16 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 		
 		boolean rUsed = F;
 		
-		if (aEntity instanceof EntitySheep && !((EntitySheep)aEntity).getSheared() ) {
-			if (((EntitySheep)aEntity).getFleeceColor() != (~mColor & 15)) {
-				((EntitySheep)aEntity).setFleeceColor(~mColor & 15);
+		if (aEntity instanceof Sheep && !((Sheep)aEntity).getSheared() ) {
+			if (((Sheep)aEntity).getFleeceColor() != (~mColor & 15)) {
+				((Sheep)aEntity).setFleeceColor(~mColor & 15);
 				if (aEntity.level().isClientSide()) return T;
 				rUsed = T;
 			}
 		}
-		if (aEntity instanceof EntityWolf && ((EntityWolf)aEntity).isTamed()) {
-			if (((EntityWolf)aEntity).getCollarColor() != (~mColor & 15)) {
-				((EntityWolf)aEntity).setCollarColor(~mColor & 15);
+		if (aEntity instanceof Wolf && ((Wolf)aEntity).isTamed()) {
+			if (((Wolf)aEntity).getCollarColor() != (~mColor & 15)) {
+				((Wolf)aEntity).setCollarColor(~mColor & 15);
 				if (aEntity.level().isClientSide()) return T;
 				rUsed = T;
 			}

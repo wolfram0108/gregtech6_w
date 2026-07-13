@@ -30,7 +30,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.monster.EntityBlaze;
+import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
@@ -116,8 +116,8 @@ public class Behavior_Spray_Extinguisher extends AbstractBehaviorDefault {
 		
 		for (Object tEntity : aWorld.getEntitiesWithinAABB(Entity.class, AABB.getBoundingBox(aX-2, aY-2, aZ-2, aX+3, aY+3, aZ+3))) {
 			if (rUses + 10 > aUses) return rUses;
-			if (tEntity.getClass() == EntityBlaze.class) {
-				((EntityBlaze)tEntity).attackEntityFrom(DamageSources.getCombatDamage("player", aPlayer, null, F), 10);
+			if (tEntity.getClass() == Blaze.class) {
+				((Blaze)tEntity).attackEntityFrom(DamageSources.getCombatDamage("player", aPlayer, null, F), 10);
 				rUses += 10;
 			} else {
 				if (((Entity)tEntity).isBurning()) {

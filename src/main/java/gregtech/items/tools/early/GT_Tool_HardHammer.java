@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockSilverfish;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.monster.EntityIronGolem;
+import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
@@ -62,7 +62,7 @@ public class GT_Tool_HardHammer extends ToolStats {
 	@Override
 	public float getNormalDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		String tName = UT.Reflection.getLowercaseClass(aEntity);
-		return aEntity instanceof EntityIronGolem || mEffectiveList.contains(tName) || tName.contains("golem") ? aOriginalDamage*2 : aOriginalDamage;
+		return aEntity instanceof IronGolem || mEffectiveList.contains(tName) || tName.contains("golem") ? aOriginalDamage*2 : aOriginalDamage;
 	}
 	
 	@Override public int getToolDamagePerBlockBreak()                                       {return  25;}
