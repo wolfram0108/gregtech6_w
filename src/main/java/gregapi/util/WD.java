@@ -368,7 +368,22 @@ public class WD {
 		}
 		return null;
 	}
-	
+	/** F-world: read-only доступ (BlockGetter = бывш. IBlockAccess). Оригинал GT6 звал aWorld.getTileEntity(x,y,z)
+	 *  напрямую на IBlockAccess (MultiTileEntityBlock.receiveDataX, BlockBaseFluid) — централизуем через WD.te,
+	 *  как и Level-версия. Если это Level — делегируем в полную версию (chunk-load, 1:1 поведение); иначе плоское
+	 *  чтение (BlockGetter не грузит чанки — это уже read-view, aLoadUnloadedChunks нечему грузить). */
+	public static BlockEntity te(BlockGetter aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
+		if (aWorld instanceof Level) return te((Level)aWorld, aX, aY, aZ, aLoadUnloadedChunks);
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockEntity rTileEntity = aWorld.getBlockEntity(tPos);
+		if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
+		if (rTileEntity != null) return rTileEntity;
+		rTileEntity = LAST_BROKEN_TILEENTITY.get();
+		if (rTileEntity != null && rTileEntity.getBlockPos().getX() == aX && rTileEntity.getBlockPos().getY() == aY && rTileEntity.getBlockPos().getZ() == aZ) return rTileEntity;
+		Block tBlock = aWorld.getBlockState(tPos).getBlock();
+		return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
+	}
+
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	
 	public static BlockEntity invalidateTileEntityWithNegativeYCoord(int aX, int aY, int aZ, BlockEntity aTileEntity) {
