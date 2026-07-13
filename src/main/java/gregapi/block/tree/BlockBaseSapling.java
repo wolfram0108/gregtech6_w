@@ -65,7 +65,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	public BlockBaseSapling(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons);
 		setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 0.8F, 0.9F);
-		setCreativeTab(CreativeModeTab.tabDecorations);
+		/* PORT-TODO(F16) setCreativeTab */;
 		setTickRandomly(T);
 		setHardness(0);
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}

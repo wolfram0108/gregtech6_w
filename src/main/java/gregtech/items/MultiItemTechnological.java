@@ -40,7 +40,7 @@ import static gregapi.data.CS.*;
 public class MultiItemTechnological extends MultiItemRandomWithCompat {
 	public MultiItemTechnological(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		setCreativeTab(new CreativeTab(getUnlocalizedName(), "GregTech: Technology", this, (short)30501));
+		/* PORT-TODO(F16) setCreativeTab */;
 	}
 	
 	@Override

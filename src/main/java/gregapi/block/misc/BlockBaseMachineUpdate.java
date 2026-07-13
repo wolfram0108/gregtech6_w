@@ -41,7 +41,7 @@ public abstract class BlockBaseMachineUpdate extends BlockBaseMeta {
 	public BlockBaseMachineUpdate(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons, int aBitMask) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, aMaxMeta, aIcons);
 		ITileEntityMachineBlockUpdateable.Util.registerMachineBlock(this, aBitMask);
-		setCreativeTab(CreativeModeTab.tabRedstone);
+		/* PORT-TODO(F16) setCreativeTab */;
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
 	}
 	

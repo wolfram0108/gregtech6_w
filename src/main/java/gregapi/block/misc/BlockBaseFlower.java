@@ -72,9 +72,9 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 		super(0);
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
-		setStepSound(SoundType.GRASS);
-		setBlockName(mNameInternal = aNameInternal);
-		setCreativeTab(CreativeModeTab.tabDecorations);
+		/* PORT-TODO(F16) setStepSound */;
+		mNameInternal = aNameInternal;
+		/* PORT-TODO(F16) setCreativeTab */;
 		ST.register(this, mNameInternal, aItemClass);
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));

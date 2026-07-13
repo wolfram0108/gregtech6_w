@@ -84,7 +84,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		mQuanta = FL.make(mFluid, mAmountPerQuanta);
 		mDensityDir = densityDir;
 		mFlammability = aFlammability;
-		setBlockName(mNameInternal = aNameInternal);
+		mNameInternal = aNameInternal;
 		setResistance(FL.gas(mFluid) ? 1 : 30);
 		ST.register(this, mNameInternal, BlockItem.class);
 		FL.BLOCKS.put(mFluid.getName(), this);

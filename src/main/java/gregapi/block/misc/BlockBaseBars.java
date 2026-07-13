@@ -60,7 +60,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	
 	public BlockBaseBars(String aNameInternal, OreDictMaterial aMat, Material aVanillaMaterial, SoundType aSoundType) {
 		super(null, aNameInternal, aVanillaMaterial, aSoundType);
-		setCreativeTab(CreativeModeTab.tabRedstone);
+		/* PORT-TODO(F16) setCreativeTab */;
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
 		mMat = aMat;
 		

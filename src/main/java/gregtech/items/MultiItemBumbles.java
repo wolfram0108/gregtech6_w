@@ -62,7 +62,7 @@ import static gregapi.data.CS.*;
 public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItemBumbleBee {
 	public MultiItemBumbles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		setCreativeTab(new CreativeTab(getUnlocalizedName(), "GregTech: Bumblebees", this, (short)2));
+		/* PORT-TODO(F16) setCreativeTab */;
 		if (!SHOW_BUMBLEBEES) ST.hide(this);
 	}
 	

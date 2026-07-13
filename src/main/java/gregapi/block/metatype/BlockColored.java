@@ -47,7 +47,7 @@ public class BlockColored extends BlockMetaType {
 		super(aItemClass, aVanillaMaterial, aVanillaSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, 16, aIcons);
 		if (aDefaultLocalised != null) for (int i = 0; i < 16; i++) LH.add(getUnlocalizedName()+"."+i, DYE_NAMES[i] + " " + aDefaultLocalised);
 		if (aMaterial != null) for (int i = 0; i < 16; i++) OM.data(ST.make(this, 1, i), new OreDictItemData(aMaterial, U));
-		setCreativeTab(CreativeModeTab.tabDecorations);
+		/* PORT-TODO(F16) setCreativeTab */;
 	}
 	
 	@Override
@@ -59,7 +59,7 @@ public class BlockColored extends BlockMetaType {
 		super(aItemClass, aVanillaMaterial, aVanillaSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons, aSlabType, aBlock);
 		if (aDefaultLocalised != null) for (int i = 0; i < 16; i++) LH.add(getUnlocalizedName()+"."+i, DYE_NAMES[i] + " " + aDefaultLocalised + " Slab");
 		if (aMaterial != null) for (int i = 0; i < 16; i++) OM.data(ST.make(this, 1, i), new OreDictItemData(aMaterial, U2));
-		setCreativeTab(CreativeModeTab.tabDecorations);
+		/* PORT-TODO(F16) setCreativeTab */;
 	}
 	
 	// @Override

@@ -63,11 +63,16 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
 
+	/** F9: gregapi Material (портированная 1.7.10-модель) хранится блоком — neo `Block.getMaterial()` удалён. */
+	protected final Material mMaterial;
+	public Material getMaterial() {return mMaterial;}
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
-		super(aMaterial);
-		setStepSound(aSoundType);
-		setBlockName(mNameInternal = aNameInternal);
-		setCreativeTab(CreativeModeTab.tabBlock);
+		// F16/F9 форс движка: neo `Block` immutable (данные в Properties ДО super). setStepSound встроен в Properties.sound;
+		// setBlockName удалён (имя через реестр — ST.register ниже); setCreativeTab удалён (creative-tab через
+		// BuildCreativeModeTabContentsEvent-датаген) → PORT-TODO(F16). Твёрдость/light/mapColor из Material — мост F9, дефолт пока.
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType));
+		mMaterial = aMaterial;
+		mNameInternal = aNameInternal;
 		ST.register(this, mNameInternal, aItemClass);
 		LH.add(mNameInternal+"."+W, "Any Sub-Block of this one");
 	}

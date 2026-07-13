@@ -67,10 +67,10 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		if ((SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || "gt.meta.ore.normal.default".equalsIgnoreCase(mBlock.mNameInternal) || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) {
 			if (mBlock.mPrefix.mCreativeTab == null) mBlock.mPrefix.mCreativeTab = new CreativeTab(mBlock.mPrefix.mNameInternal, mBlock.mPrefix.mNameCategory, this, W);
 			mBlock.setCreativeTab(mBlock.mPrefix.mCreativeTab);
-			setCreativeTab(mBlock.mPrefix.mCreativeTab);
+			/* PORT-TODO(F16) setCreativeTab */;
 		} else {
 			mBlock.setCreativeTab(CreativeModeTab.tabBlock);
-			setCreativeTab(CreativeModeTab.tabBlock);
+			/* PORT-TODO(F16) setCreativeTab */;
 		}
 	}
 	

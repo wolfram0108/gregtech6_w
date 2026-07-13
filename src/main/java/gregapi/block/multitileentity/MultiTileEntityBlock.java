@@ -132,7 +132,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		
 		MULTITILEENTITYBLOCKMAP.put(aModID + ":" + mNameInternal, this);
 		
-		setStepSound(aSoundType);
+		/* PORT-TODO(F16) setStepSound */;
 		mOpaque = aOpaque;
 		mNormalCube = aNormalCube;
 		

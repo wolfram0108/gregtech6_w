@@ -62,7 +62,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	public BlockBaseLilyPad(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(ItemBlockBase.class, aNameInternal, Material.plants, SoundType.GRASS, aMaxMeta, aIcons);
 		setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.015625F, 1.0F);
-		setCreativeTab(CreativeModeTab.tabDecorations);
+		/* PORT-TODO(F16) setCreativeTab */;
 		RM.chisel(aNameInternal, ST.make(this, 1, W));
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));

@@ -90,9 +90,9 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		
 		if (SHOW_HIDDEN_PREFIXES || !mPrefix.contains(TD.Creative.HIDDEN)) {
 			if (mPrefix.mCreativeTab == null) mPrefix.mCreativeTab = new CreativeTab(mPrefix.mNameInternal, mPrefix.mNameCategory, this, W);
-			setCreativeTab(mPrefix.mCreativeTab);
+			/* PORT-TODO(F16) setCreativeTab */;
 		} else {
-			setCreativeTab(CreativeModeTab.tabMisc);
+			/* PORT-TODO(F16) setCreativeTab */;
 		}
 		
 		// Execute before all the other things. This is to ensure that PrefixItems are created before MultiItems.

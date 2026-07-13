@@ -61,7 +61,7 @@ public class BlockMetaType extends BlockBaseMeta {
 		onBlockCreation(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons);
 		setHardness(aHardnessMultiplier * 1.5F);
 		setResistance(aResistanceMultiplier * 10.0F);
-		setCreativeTab(CreativeModeTab.tabBlock);
+		/* PORT-TODO(F16) setCreativeTab */;
 		mIsWall = F;
 		mIsSlab = F;
 		mIsStair = F;

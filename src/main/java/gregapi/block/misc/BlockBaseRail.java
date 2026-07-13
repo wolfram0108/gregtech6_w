@@ -70,8 +70,8 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	/** @param aSpeed is usually 0.4F */
 	public BlockBaseRail(Class<? extends ItemBlockBase> aItemClass, String aNameInternal, String aLocalName, boolean aPowerRail, boolean aDetectorRail, float aSpeed, float aExplosionResistance, int aHarvestLevel, IIconContainer aIconPrimary, IIconContainer aIconSecondary) {
 		super(aPowerRail || aDetectorRail);
-		setBlockName(mNameInternal = aNameInternal);
-		setCreativeTab(CreativeModeTab.tabTransport);
+		mNameInternal = aNameInternal;
+		/* PORT-TODO(F16) setCreativeTab */;
 		ST.register(this, mNameInternal, aItemClass);
 		LH.add(mNameInternal, aLocalName);
 		mExplosionResistance = aExplosionResistance;

@@ -43,7 +43,7 @@ public class MultiItemBooks extends MultiItemRandomWithCompat {
 		super(aModID, aUnlocalized);
 		OM.reg(OD.craftingBook, ST.make(this, 1, W));
 		BooksGT.BOOK_REGISTER.put(this, W, (byte)3);
-		setCreativeTab(new CreativeTab(getUnlocalizedName(), "GregTech: Books", this, (short)32000));
+		/* PORT-TODO(F16) setCreativeTab */;
 	}
 	
 	@Override

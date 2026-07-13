@@ -39,7 +39,7 @@ import static gregapi.data.CS.*;
 public class MultiItemCans extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemCans(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		setCreativeTab(new CreativeTab(getUnlocalizedName(), "GregTech: Cans", this, (short)74));
+		/* PORT-TODO(F16) setCreativeTab */;
 	}
 	
 	@Override
