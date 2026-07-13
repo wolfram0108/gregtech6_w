@@ -198,21 +198,21 @@ public class CoverData {
 	
 	public boolean box(AABB aAABB, List<AABB> aList, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {
 		AABB tBox = box(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
-		return tBox.intersectsWith(aAABB) && aList.add(tBox);
+		return tBox.intersects(aAABB) && aList.add(tBox);
 	}
 	public boolean box(AABB aAABB, List<AABB> aList, double[] aBox) {
 		AABB tBox = box(aBox[0], aBox[1], aBox[2], aBox[3], aBox[4], aBox[5]);
-		return tBox.intersectsWith(aAABB) && aList.add(tBox);
+		return tBox.intersects(aAABB) && aList.add(tBox);
 	}
 	public boolean box(AABB aAABB, List<AABB> aList, float[] aBox) {
 		AABB tBox = box(aBox[0], aBox[1], aBox[2], aBox[3], aBox[4], aBox[5]);
-		return tBox.intersectsWith(aAABB) && aList.add(tBox);
+		return tBox.intersects(aAABB) && aList.add(tBox);
 	}
 	public boolean box(AABB aAABB, List<AABB> aList) {
 		AABB tBox = box(0, 0, 0, 1, 1, 1);
-		return tBox.intersectsWith(aAABB) && aList.add(tBox);
+		return tBox.intersects(aAABB) && aList.add(tBox);
 	}
 	public boolean box(AABB aBox, AABB aAABB, List<AABB> aList) {
-		return aBox != null && aBox.intersectsWith(aAABB) && aList.add(aBox);
+		return aBox != null && aBox.intersects(aAABB) && aList.add(aBox);
 	}
 }

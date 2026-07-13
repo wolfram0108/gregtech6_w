@@ -196,10 +196,10 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		byte tMeta = WD.meta(aWorld, aX, aY, aZ);
 		AABB tBox;
 		// Z- = 1, Z+ = 2, X- = 4, X+ = 8
-		if ((tMeta & 1) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ         , aX+1       , aY+1, aZ+PX_P[ 2]); if (aAABB.intersectsWith(tBox)) aList.add(tBox);}
-		if ((tMeta & 2) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ+PX_P[14], aX+1       , aY+1, aZ+1       ); if (aAABB.intersectsWith(tBox)) aList.add(tBox);}
-		if ((tMeta & 4) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ         , aX+PX_P[ 2], aY+1, aZ+1       ); if (aAABB.intersectsWith(tBox)) aList.add(tBox);}
-		if ((tMeta & 8) != 0) {tBox = AABB.getBoundingBox(aX+PX_P[14], aY, aZ         , aX+1       , aY+1, aZ+1       ); if (aAABB.intersectsWith(tBox)) aList.add(tBox);}
+		if ((tMeta & 1) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ         , aX+1       , aY+1, aZ+PX_P[ 2]); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		if ((tMeta & 2) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ+PX_P[14], aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		if ((tMeta & 4) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ         , aX+PX_P[ 2], aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		if ((tMeta & 8) != 0) {tBox = AABB.getBoundingBox(aX+PX_P[14], aY, aZ         , aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
 	}
 	
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
