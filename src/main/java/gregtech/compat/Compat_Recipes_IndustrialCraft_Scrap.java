@@ -43,7 +43,7 @@ public class Compat_Recipes_IndustrialCraft_Scrap extends CompatMods {
 			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.WOODEN_SWORD, 1, 0));
 			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.WOODEN_SHOVEL, 1, 0));
 			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.WOODEN_PICKAXE, 1, 0));
-			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.sign, 1, 0));
+			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.OAK_SIGN, 1, 0));
 			COMPAT_IC2.scrapbox(9.50F, IL.Stick.get(1));
 			COMPAT_IC2.scrapbox(5.00F, ST.make(Blocks.DIRT, 1, 0));
 			COMPAT_IC2.scrapbox(3.00F, ST.make(Blocks.GRASS_BLOCK, 1, 0));
@@ -58,7 +58,7 @@ public class Compat_Recipes_IndustrialCraft_Scrap extends CompatMods {
 			COMPAT_IC2.scrapbox(0.40F, ST.make(Items.COOKED_CHICKEN, 1, 0));
 			COMPAT_IC2.scrapbox(0.50F, IL.Food_Apple_Red.get(1));
 			COMPAT_IC2.scrapbox(0.50F, IL.Food_Bread.get(1));
-			COMPAT_IC2.scrapbox(0.10F, ST.make(Items.cake, 1, 0));
+			COMPAT_IC2.scrapbox(0.10F, ST.make(Items.CAKE, 1, 0));
 			COMPAT_IC2.scrapbox(1.00F, IL.IC2_Food_Can_Filled.get(1));
 			COMPAT_IC2.scrapbox(2.00F, IL.IC2_Food_Can_Spoiled.get(1));
 			COMPAT_IC2.scrapbox(1.00F, IL.Cell_Water.get(1));

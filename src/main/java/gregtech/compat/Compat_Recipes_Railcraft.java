@@ -132,7 +132,7 @@ public class Compat_Recipes_Railcraft extends CompatMods {
 		
 		CR.shaped(ST.make(MD.RC, "cart.loco.steam.solid"  , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "TTF"          , "TTF"              , "BCC"              , 'C', Items.MINECART                           , 'T', ST.make(MD.RC, "machine.beta", 1, 4), 'F', ST.make(MD.RC, "machine.beta", 1, 5), 'B', Blocks.IRON_BARS);
 		CR.shaped(ST.make(MD.RC, "cart.loco.electric"     , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "LP"+tWrench   , "PEP"              , "GCG"              , 'C', Items.MINECART                           , 'E', ST.make(MD.RC, "machine.epsilon", 1, 0), 'G', ST.make(MD.RC, "part.gear", 1, 2), 'L', Blocks.REDSTONE_LAMP, 'P', OP.plate.dat(ANY.Steel));
-		CR.shaped(ST.make(MD.RC, "cart.bore"              , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "BCB"          , "FCF"              , tHammer+"A"+tWrench, 'C', Items.MINECART                           , 'A', Items.chest_minecart, 'F', OD.craftingFurnace, 'B', OP.blockSolid.dat(ANY.Steel));
+		CR.shaped(ST.make(MD.RC, "cart.bore"              , 1,  0), tBits | DEL_IF_NO_DYES | DEL_OTHER_RECIPES_IF_SAME_NBT, "BCB"          , "FCF"              , tHammer+"A"+tWrench, 'C', Items.MINECART                           , 'A', Items.CHEST_MINECART, 'F', OD.craftingFurnace, 'B', OP.blockSolid.dat(ANY.Steel));
 		
 		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.harderrecipes, "railcraft_admin_anchor_recipe", F)) {
 			CR.shaped(ST.make(MD.RC, "machine.alpha", 1, 4), tBits, "IOI", "GEG", "IOI", 'I', tIngot.dat(MT.Au), 'G', OP.gem.dat(MT.NetherStar), 'E', OP.gem.dat(MT.EnderPearl), 'O', OP.blockSolid.dat(MT.Obsidian));

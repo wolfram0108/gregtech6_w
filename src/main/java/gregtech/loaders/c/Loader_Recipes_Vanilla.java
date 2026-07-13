@@ -40,8 +40,8 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.rem_smelting(ST.make(Items.BONE, 1, W), ST.make(Items.SLIME_BALL, 1, W));
 		RM.rem_smelting(ST.make(Items.INK_SAC, 1, 0), ST.make(Items.SLIME_BALL, 1, W));
 		
-		CR.remove(ST.make(Items.reeds, 1, 0));
-		CR.remove(ST.make(Items.reeds, 1, 0), ST.make(Items.reeds, 1, 0), ST.make(Items.reeds, 1, 0));
+		CR.remove(ST.make(Items.SUGAR_CANE, 1, 0));
+		CR.remove(ST.make(Items.SUGAR_CANE, 1, 0), ST.make(Items.SUGAR_CANE, 1, 0), ST.make(Items.SUGAR_CANE, 1, 0));
 		CR.remove(ST.make(Blocks.COBBLESTONE, 1, 0), ST.make(Items.QUARTZ, 1, 0), NI, ST.make(Items.QUARTZ, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0));
 		CR.remove(ST.make(Blocks.GLASS, 1, 0), NI, ST.make(Blocks.GLASS, 1, 0), NI, ST.make(Blocks.GLASS, 1, 0));
 		CR.remove(ST.make(Items.BLAZE_ROD, 1, 0));
@@ -49,7 +49,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		CR.remove(IL.WiMo_Thick_Bone.get(1));
 		
 		CR.shapeless(dust.mat(MT.White, 1), DEF, new Object[] {Items.BONE});
-		CR.shaped(ST.make(Items.PAPER, 1, 0), DEF, "XXX", 'X', Items.reeds);
+		CR.shaped(ST.make(Items.PAPER, 1, 0), DEF, "XXX", 'X', Items.SUGAR_CANE);
 		CR.shapeless(ST.make(Items.BOOK, 1, 0), DEF, new Object[] {OD.craftingLeather, OD.paperEmpty, OD.paperEmpty, OD.paperEmpty});
 		
 		CR.shaped(ST.make(Blocks.FURNACE, 1, 0), DEF_NCC, "XXX", "XFX", "XXX", 'X', cobblestone                , 'F', OD.craftingFirestarter);
@@ -62,7 +62,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		CR.delate(ST.make(Blocks.ENDER_CHEST, 1, 0));
 		CR.delate(ST.make(Blocks.FURNACE, 1, 0));
 		CR.delate(ST.make(Items.SADDLE, 1, 0));
-		CR.delate(ST.make(Items.magma_cream, 1, 0));
+		CR.delate(ST.make(Items.MAGMA_CREAM, 1, 0));
 		
 		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "enchantmenttable", F)) {
 			OUT.println("GT_Mod: Removing the Recipe of the Enchantment Table, to have Fun enchanting with the Anvil and Books from Dungeons.");
@@ -396,11 +396,11 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		CR.shaped(ST.make(Blocks.DAYLIGHT_DETECTOR      , 1, 0), DEF                            , "GGG", "QQQ", "PPP", 'P', OD.slabWood             , 'Q', OD.craftingQuartz, 'G', plate.dat(MT.Glass ));
 		CR.shaped(ST.make(Blocks.PISTON                 , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES , "WWW", "CBC", "CRC", 'W', OD.plankAnyWood, 'C', stoneCobble, 'B', OD.craftingPistonIngot, 'R', OD.itemRedstone);
 		CR.shaped(ST.make(Blocks.STICKY_PISTON          , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES ,  "G" ,  "P"        , 'G', OD.craftingPistonGlue, 'P', Blocks.PISTON);
-		CR.shaped(ST.make(Items.bow                     , 1, 0), DEF_MIR                        , " WS", "WkS", " WS", 'S', OD.itemString, 'W', OD.stickAnyWood);
+		CR.shaped(ST.make(Items.BOW                     , 1, 0), DEF_MIR                        , " WS", "WkS", " WS", 'S', OD.itemString, 'W', OD.stickAnyWood);
 		CR.shaped(ST.make(Blocks.DROPPER                , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES , "CCC", "C C", "CRC", 'C', stoneCobble, 'R', OD.itemRedstone);
-		CR.shaped(ST.make(Blocks.DISPENSER              , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES , "CCC", "CBC", "CRC", 'C', stoneCobble, 'R', OD.itemRedstone, 'B', ST.make(Items.bow, 1, 0));
+		CR.shaped(ST.make(Blocks.DISPENSER              , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES , "CCC", "CBC", "CRC", 'C', stoneCobble, 'R', OD.itemRedstone, 'B', ST.make(Items.BOW, 1, 0));
 		CR.shaped(ST.make(Blocks.DISPENSER              , 1, 0), DEF_MIR                        , " WS", "WDS", " WS", 'S', OD.itemString, 'W', OD.stickAnyWood, 'D', Blocks.DROPPER);
-		CR.shaped(ST.make(Blocks.DISPENSER              , 1, 0), DEF                            ,  "B" ,  "D"        , 'B', ST.make(Items.bow, 1, 0), 'D', Blocks.DROPPER);
+		CR.shaped(ST.make(Blocks.DISPENSER              , 1, 0), DEF                            ,  "B" ,  "D"        , 'B', ST.make(Items.BOW, 1, 0), 'D', Blocks.DROPPER);
 		CR.shaped(ST.make(Blocks.NOTE_BLOCK              , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES , "WWW", "WRW", "WWW", 'W', OD.plankAnyWood, 'R', OD.itemRedstone);
 		CR.shaped(ST.make(Blocks.REDSTONE_LAMP          , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES , " R ", "RGR", " R ", 'G', Blocks.GLOWSTONE, 'R', OD.itemRedstone);
 		CR.shaped(ST.make(Items.NAME_TAG                , 1, 0), DEF_MIR                        , " S" ,  "Pq"       , 'S', OD.itemString, 'P', OD.paperEmpty);
@@ -410,15 +410,15 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		
 		CR.shaped(ST.make(Items.MINECART                , 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES , " h ", "PwP", "WPW", 'P', plate.dat(ANY.Iron), 'W', minecartWheels.dat(ANY.Iron));
 		
-		CR.shaped(ST.make(Items.chest_minecart          , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', Blocks.CHEST);
-		CR.shaped(ST.make(Items.furnace_minecart        , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', OD.craftingFurnace);
-		CR.shaped(ST.make(Items.hopper_minecart         , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', Blocks.HOPPER);
-		CR.shaped(ST.make(Items.tnt_minecart            , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', Blocks.TNT);
+		CR.shaped(ST.make(Items.CHEST_MINECART          , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', Blocks.CHEST);
+		CR.shaped(ST.make(Items.FURNACE_MINECART        , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', OD.craftingFurnace);
+		CR.shaped(ST.make(Items.HOPPER_MINECART         , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', Blocks.HOPPER);
+		CR.shaped(ST.make(Items.TNT_MINECART            , 1, 0), DEF_REV | DEL_OTHER_SHAPED_RECIPES, "X", "C", 'C', Items.MINECART, 'X', Blocks.TNT);
 		
-		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.chest_minecart  , 1, 0), ST.make(Blocks.CHEST  , 1, 0));
-		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.furnace_minecart, 1, 0), ST.make(Blocks.FURNACE, 1, 0));
-		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.hopper_minecart , 1, 0), ST.make(Blocks.HOPPER , 1, 0));
-		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.tnt_minecart    , 1, 0), ST.make(Blocks.TNT    , 1, 0));
+		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.CHEST_MINECART  , 1, 0), ST.make(Blocks.CHEST  , 1, 0));
+		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.FURNACE_MINECART, 1, 0), ST.make(Blocks.FURNACE, 1, 0));
+		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.HOPPER_MINECART , 1, 0), ST.make(Blocks.HOPPER , 1, 0));
+		RM.boxunbox(ST.make(Items.MINECART, 1, 0), ST.make(Items.TNT_MINECART    , 1, 0), ST.make(Blocks.TNT    , 1, 0));
 		
 		
 		RM.boxunbox(stick.mat(MT.Wood, 1), ST.make(Items.WOODEN_SWORD     , 1, 0), toolHeadSword  .mat(MT.Wood   , 1));
@@ -484,7 +484,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		CR.shaped(arrowGtPlastic .mat(MT.Empty, 1), CR.DEF_NCC_MIR, "PS", "sP", 'S', stick.dat(ANY.Plastic), 'P', plateTiny.dat(ANY.Plastic));
 		
 		CR.shaped(ST.make(Blocks.WHITE_STAINED_GLASS, 8, 0), DEF, "GGG", "GDG", "GGG", 'G', Blocks.GLASS, 'D', DYE_OREDICTS[15]);
-		CR.shaped(ST.make(Items.speckled_melon, 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, "GGG", "GMG", "GGG", 'M', "cropMelon", 'G', nugget.dat(MT.Au));
+		CR.shaped(ST.make(Items.GLISTERING_MELON_SLICE, 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, "GGG", "GMG", "GGG", 'M', "cropMelon", 'G', nugget.dat(MT.Au));
 		
 		CR.remove(ST.make(Items.INK_SAC, 1, 1), ST.make(Items.LAPIS_LAZULI, 1, 0));
 		CR.remove(ST.make(Items.INK_SAC, 1, 2), ST.make(Items.LAPIS_LAZULI, 1, 0));
@@ -562,16 +562,16 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000      }, ST.make(Blocks.BRICK_STAIRS       , 1, W), ST.make(Items.BRICK, 1, 0), ST.make(Items.BRICK, 1, 0), ST.make(Items.BRICK, 1, 0));
 		RM.Crusher.addRecipe1(T, 16,  32, new long[] {10000, 8000            }, ST.make(Blocks.BRICK_SLAB, 1, 0), ST.make(Items.BRICK, 1, 0), ST.make(Items.BRICK, 1, 0));
 		
-		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICKS       , 1, W), ST.make(Items.netherbrick, 3, 0));
-		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.STONE_SLAB  , 1, 6), ST.make(Items.netherbrick, 3, 0));
-		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICK_STAIRS, 1, W), ST.make(Items.netherbrick, 2, 0));
-		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICK_FENCE , 1, W), ST.make(Items.netherbrick, 2, 0));
-		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0), ST.make(Items.netherbrick, 1, 0));
-		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000, 7000}, ST.make(Blocks.NETHER_BRICKS       , 1, W), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0));
-		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000, 7000}, ST.make(Blocks.STONE_SLAB  , 1, 6), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0));
-		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000      }, ST.make(Blocks.NETHER_BRICK_STAIRS, 1, W), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0));
-		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000      }, ST.make(Blocks.NETHER_BRICK_FENCE , 1, W), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0));
-		RM.Crusher.addRecipe1(T, 16,  32, new long[] {10000, 8000            }, ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0));
+		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICKS       , 1, W), ST.make(Items.NETHER_BRICK, 3, 0));
+		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.STONE_SLAB  , 1, 6), ST.make(Items.NETHER_BRICK, 3, 0));
+		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICK_STAIRS, 1, W), ST.make(Items.NETHER_BRICK, 2, 0));
+		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICK_FENCE , 1, W), ST.make(Items.NETHER_BRICK, 2, 0));
+		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0));
+		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000, 7000}, ST.make(Blocks.NETHER_BRICKS       , 1, W), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0));
+		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000, 7000}, ST.make(Blocks.STONE_SLAB  , 1, 6), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0));
+		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000      }, ST.make(Blocks.NETHER_BRICK_STAIRS, 1, W), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0));
+		RM.Crusher.addRecipe1(T, 16,  64, new long[] {10000, 9000, 8000      }, ST.make(Blocks.NETHER_BRICK_FENCE , 1, W), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0));
+		RM.Crusher.addRecipe1(T, 16,  32, new long[] {10000, 8000            }, ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0));
 		
 		RM.glowstone(ST.make(Blocks.GLOWSTONE, 1, 0), MT.Glowstone);
 		
@@ -603,11 +603,11 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.sawing(16,  16, F, 100, ST.make(Blocks.QUARTZ_BLOCK, 1, 0), ST.make(Blocks.QUARTZ_SLAB, 2, 0));
 		RM.sawing(16,  16, F, 100, ST.make(Blocks.OAK_BUTTON             , 1, W), IL.Plank.get(1));
 		RM.sawing(16,  32, F, 100, ST.make(Blocks.OAK_PRESSURE_PLATE     , 1, W), IL.Plank.get(2));
-		RM.sawing(16,  32, F, 100, ST.make(Items.sign                       , 1, W), IL.Plank.get(2), OM.dust(MT.Wood, stick.mAmount / 3));
-		RM.sawing(16,  32, F, 100, ST.make(Items.wooden_door                , 1, W), IL.Plank.get(2));
+		RM.sawing(16,  32, F, 100, ST.make(Items.OAK_SIGN                       , 1, W), IL.Plank.get(2), OM.dust(MT.Wood, stick.mAmount / 3));
+		RM.sawing(16,  32, F, 100, ST.make(Items.OAK_DOOR                , 1, W), IL.Plank.get(2));
 		RM.sawing(16,  32, F, 100, ST.make(Blocks.OAK_FENCE_GATE                , 1, W), IL.Plank.get(2), OM.dust(MT.Wood, stick.mAmount * 4));
 		RM.sawing(16,  48, F, 100, ST.make(Blocks.OAK_TRAPDOOR                  , 1, W), IL.Plank.get(3));
-		RM.sawing(16,  48, F, 100, ST.make(Items.bed                        , 1, W), IL.Plank.get(3), ST.make(Blocks.WHITE_WOOL, 3, 0));
+		RM.sawing(16,  48, F, 100, ST.make(Items.WHITE_BED                        , 1, W), IL.Plank.get(3), ST.make(Blocks.WHITE_WOOL, 3, 0));
 		RM.sawing(16,  64, F, 100, ST.make(Blocks.CRAFTING_TABLE            , 1, W), IL.Plank.get(4));
 		RM.sawing(16,  80, F, 100, ST.make(Items.OAK_BOAT                       , 1, W), IL.Plank.get(5));
 		RM.sawing(16,  96, F, 100, ST.make(Blocks.BOOKSHELF                 , 1, W), IL.Plank.get(6), ST.make(Items.BOOK, 3, 0));
@@ -618,15 +618,15 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.sawing(16,  64, F, 100, ST.make(Items.PAINTING                   , 1, W), IL.Stick.get(8));
 		RM.sawing(16,  64, F, 100, ST.make(Items.ITEM_FRAME                 , 1, W), IL.Stick.get(8));
 		RM.sawing(16,  40, F, 100, ST.make(Blocks.LADDER                    , 1, W), IL.Stick.get(2), OM.dust(MT.Wood, stick.mAmount / 3));
-		RM.sawing(16,  16, T,  50, ST.make(Blocks.MELON               , 1, W), ST.make(Items.melon, 8, 0), ST.make(Items.MELON_SEEDS, 1, 0));
+		RM.sawing(16,  16, T,  50, ST.make(Blocks.MELON               , 1, W), ST.make(Items.MELON_SLICE, 8, 0), ST.make(Items.MELON_SEEDS, 1, 0));
 		
 		CR.shapeless(IL.Plank.get(1), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.OAK_BUTTON        });
 		CR.shapeless(IL.Plank.get(2), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.OAK_PRESSURE_PLATE});
-		CR.shapeless(IL.Plank.get(2), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.sign                  });
-		CR.shapeless(IL.Plank.get(2), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.wooden_door           });
+		CR.shapeless(IL.Plank.get(2), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.OAK_SIGN                  });
+		CR.shapeless(IL.Plank.get(2), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.OAK_DOOR           });
 		CR.shapeless(IL.Plank.get(2), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.OAK_FENCE_GATE           });
 		CR.shapeless(IL.Plank.get(3), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.OAK_TRAPDOOR             });
-		CR.shapeless(IL.Plank.get(3), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.bed                   });
+		CR.shapeless(IL.Plank.get(3), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.WHITE_BED                   });
 		CR.shapeless(IL.Plank.get(4), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.CRAFTING_TABLE       });
 		CR.shapeless(IL.Plank.get(5), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Items.OAK_BOAT                  });
 		CR.shapeless(IL.Plank.get(6), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, Blocks.BOOKSHELF            });
@@ -639,7 +639,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Slicer       .addRecipe2(T, 16,   16, ST.make(Items.LEATHER_CHESTPLATE, 1, W), IL.Shape_Slicer_Split .get(0), ST.make(Items.LEATHER, 2, 0));
 		RM.Slicer       .addRecipe2(T, 16,   16, ST.make(Items.LEATHER_LEGGINGS  , 1, W), IL.Shape_Slicer_Split .get(0), ST.make(Items.LEATHER, 2, 0));
 		RM.Slicer       .addRecipe2(T, 16,   16, ST.make(Items.LEATHER_BOOTS     , 1, W), IL.Shape_Slicer_Split .get(0), ST.make(Items.LEATHER, 1, 0));
-		RM.Slicer       .addRecipe2(T, 16,   16, ST.make(Blocks.MELON      , 1, W), IL.Shape_Slicer_Eigths.get(0), ST.make(Items.melon, 8, 0), ST.make(Items.MELON_SEEDS, 1, 0));
+		RM.Slicer       .addRecipe2(T, 16,   16, ST.make(Blocks.MELON      , 1, W), IL.Shape_Slicer_Eigths.get(0), ST.make(Items.MELON_SLICE, 8, 0), ST.make(Items.MELON_SEEDS, 1, 0));
 		
 		RM.Compressor   .addRecipe1(T, 64,   32, ST.make(Blocks.ICE, 2, W), ST.make(Blocks.PACKED_ICE, 1, 0));
 		RM.Compressor   .addRecipe1(T, 16,   32, OM.dust(MT.Ice), ST.make(Blocks.ICE, 1, 0));
@@ -688,7 +688,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Items.FLINT, 1, W), dust.mat(MT.Flint, 1));
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.GRAVEL, 1, W), ST.make(Blocks.SAND, 1, 0));
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.COBWEB, 1, W), ST.make(Items.STRING, 1, 0));
-		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Items.reeds, 1, W), IL.Remains_Plant.get(1));
+		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Items.SUGAR_CANE, 1, W), IL.Remains_Plant.get(1));
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.COBBLESTONE, 1, W), OM.dust(MT.Stone, U*9));
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.STONE, 1, 0), OM.dust(MT.Stone, U*9));
 		RM.Shredder     .addRecipe1(T, 16, 16, IL.Module_Stone_Generator.get(0), OM.dust(MT.Stone));
@@ -743,9 +743,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), plantGtFiber.mat(MT.Cu, 4), ST.make(Blocks.WHITE_WOOL, 1, 1, "ORANGE WOOOOOOL!!!"));
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), ST.make(Items.STRING, 4, W), ST.make(Blocks.WHITE_WOOL, 1, 0));
 		RM.Loom         .addRecipe2(T, 16,   64, ST.tag(1), ST.make(Items.STRING, 4, W), ST.make(Blocks.COBWEB, 1, 0));
-		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), ST.make(Items.reeds, 1, W), ST.make(Items.PAPER, 1, 0));
+		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), ST.make(Items.SUGAR_CANE, 1, W), ST.make(Items.PAPER, 1, 0));
 		for (FluidStack tWater : FL.waters(125, 100))
-		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Items.reeds, 1, W), tWater, NF, ST.make(Items.PAPER, 1, 0));
+		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Items.SUGAR_CANE, 1, W), tWater, NF, ST.make(Items.PAPER, 1, 0));
 		
 		for (OreDictMaterial tMat2 : ANY.Iron.mToThis)
 		RM.Loom         .addRecipe2(T, 64,  128, ST.make(Items.LEATHER, 6, W), (tMat2==MT.Enori?plateGem:plate).mat(tMat2     , 8), ST.make(Items.IRON_HORSE_ARMOR, 1, 0));
@@ -815,7 +815,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Squeezer     .addRecipe1(T, 16,   16,  4000, ST.make(Blocks.PEONY, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Pink         ], 3), IL.Remains_Plant.get(1));
 		RM.Squeezer     .addRecipe1(T, 16,   16, 10000, ST.make(Blocks.SUNFLOWER, 1, 0), NF, FL.Oil_Sunflower.make(100), ST.make(Items.INK_SAC, 2, DYE_INDEX_Yellow));
 		RM.Squeezer     .addRecipe1(T, 16,   16,  7000, ST.make(Blocks.CACTUS           , 1, W), NF, FL.Juice_Cactus.make(100), IL.Dye_Cactus.get(2));
-		RM.Squeezer     .addRecipe1(T, 16,   16,  4000, ST.make(Items.reeds             , 1, W), NF, FL.Juice_Reed.make(100), IL.Remains_Plant.get(1));
+		RM.Squeezer     .addRecipe1(T, 16,   16,  4000, ST.make(Items.SUGAR_CANE             , 1, W), NF, FL.Juice_Reed.make(100), IL.Remains_Plant.get(1));
 		RM.Squeezer     .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice, U9)                    , NF, FL.Ice.make( 111), NI);
 		RM.Squeezer     .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice, U4)                    , NF, FL.Ice.make( 250), NI);
 		RM.Squeezer     .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice)                        , NF, FL.Ice.make(1000), NI);
@@ -853,7 +853,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Juicer       .addRecipe1(T, 16,   16,  6000, ST.make(Blocks.PEONY, 1, 0), NF, FL.mul(DYE_FLUIDS_FLOWER[DYE_INDEX_Pink         ], 2), IL.Remains_Plant.get(1));
 		RM.Juicer       .addRecipe1(T, 16,   16, 10000, ST.make(Blocks.SUNFLOWER, 1, 0), NF, FL.Oil_Sunflower.make(75), ST.make(Items.INK_SAC, 2, 11));
 		RM.Juicer       .addRecipe1(T, 16,   16,  9000, ST.make(Blocks.CACTUS           , 1, W), NF, FL.Juice_Cactus.make(75), IL.Dye_Cactus.get(2));
-		RM.Juicer       .addRecipe1(T, 16,   16,  5000, ST.make(Items.reeds             , 1, W), NF, FL.Juice_Reed.make(75), IL.Remains_Plant.get(1));
+		RM.Juicer       .addRecipe1(T, 16,   16,  5000, ST.make(Items.SUGAR_CANE             , 1, W), NF, FL.Juice_Reed.make(75), IL.Remains_Plant.get(1));
 		RM.Juicer       .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice, U9)                    , NF, FL.Ice.make( 111), NI);
 		RM.Juicer       .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice, U4)                    , NF, FL.Ice.make( 250), NI);
 		RM.Juicer       .addRecipe1(T, 16,   64, 10000, OM.dust(MT.Ice)                        , NF, FL.Ice.make(1000), NI);
@@ -875,9 +875,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		
 		
 		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.GOLDEN_APPLE, 1, 0), MT.Au.liquid(U*64, T), NF, ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0));
-		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Items.carrot       , 1, W), MT.Au.liquid(8*U9, T), NF, ST.make(Items.GOLDEN_CARROT, 1, 0));
-		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Items.melon        , 1, W), MT.Au.liquid(8*U9, T), NF, ST.make(Items.speckled_melon, 1, 0));
-		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Items.melon        , 1, W), nugget.mat(MT.Au, 8), ST.make(Items.speckled_melon, 1, 0));
+		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Items.CARROT       , 1, W), MT.Au.liquid(8*U9, T), NF, ST.make(Items.GOLDEN_CARROT, 1, 0));
+		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Items.MELON_SLICE        , 1, W), MT.Au.liquid(8*U9, T), NF, ST.make(Items.GLISTERING_MELON_SLICE, 1, 0));
+		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Items.MELON_SLICE        , 1, W), nugget.mat(MT.Au, 8), ST.make(Items.GLISTERING_MELON_SLICE, 1, 0));
 		for (FluidStack tWater : FL.waters(50)) {
 		RM.Mixer        .addRecipe0(T, 16,   16, FL.array(tWater, FL.Lava.make(1000)), NF, ST.make(Blocks.OBSIDIAN, 1, 0));
 		if (FL.Lava_Volcanic.exists())
@@ -888,8 +888,8 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Mixer        .addRecipe1(T, 16,   16, OM.dust(MT.STONES.Redrock), tWater, NF, IL.Clay_Ball_Red.get(4));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.EnderPearl     ), OM.dust(MT.Blaze, U9), OM.dust(MT.EnderEye     ));
 		RM.Mixer        .addRecipe2(T, 16,  144, OM.dust(MT.EnderPearl, U*9), OM.dust(MT.Blaze    ), OM.dust(MT.EnderEye, U*9));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Sugar              ), ST.make(Items.SPIDER_EYE, 1, W), ST.make(Blocks.BROWN_MUSHROOM, 1, W)), ST.make(Items.fermented_spider_eye, 1, 0));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(gemChipped.mat(MT.Sugar    , 4), ST.make(Items.SPIDER_EYE, 1, W), ST.make(Blocks.BROWN_MUSHROOM, 1, W)), ST.make(Items.fermented_spider_eye, 1, 0));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Sugar              ), ST.make(Items.SPIDER_EYE, 1, W), ST.make(Blocks.BROWN_MUSHROOM, 1, W)), ST.make(Items.FERMENTED_SPIDER_EYE, 1, 0));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(gemChipped.mat(MT.Sugar    , 4), ST.make(Items.SPIDER_EYE, 1, W), ST.make(Blocks.BROWN_MUSHROOM, 1, W)), ST.make(Items.FERMENTED_SPIDER_EYE, 1, 0));
 		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Coal               ), OM.dust(MT.Blaze, U9), OM.dust(MT.Gunpowder)), ST.make(Items.FIRE_CHARGE, 3, 0));
 		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Charcoal           ), OM.dust(MT.Blaze, U9), OM.dust(MT.Gunpowder)), ST.make(Items.FIRE_CHARGE, 3, 0));
 		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.CoalCoke           ), OM.dust(MT.Blaze, U9), OM.dust(MT.Gunpowder)), ST.make(Items.FIRE_CHARGE, 3, 0));
@@ -900,12 +900,12 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Electrolyzer .addRecipe2(T, 64,   64, ST.tag(0), OM.dust(MT.Sand), OM.dust(MT.SiO2));
 		
 		RM.Centrifuge   .addRecipe1(T, 16,   16, OM.dust(MT.SlimyBone), NF, FL.Slime_Green.make(250), OM.dust(MT.Bone));
-		RM.Centrifuge   .addRecipe1(T, 16,   16, ST.make(Items.magma_cream, 1, W), NF, FL.Slime_Green.make(125), ST.make(Items.BLAZE_POWDER, 1, 0));
+		RM.Centrifuge   .addRecipe1(T, 16,   16, ST.make(Items.MAGMA_CREAM, 1, W), NF, FL.Slime_Green.make(125), ST.make(Items.BLAZE_POWDER, 1, 0));
 		for (String tFluid : FluidsGT.SLIME) if (FL.exists(tFluid)) {
 		RM.Injector     .addRecipe0(T, 16,   16, FL.array(FL.make(tFluid, 250), MT.CO2.gas(U4, T)), FL.BAWLS.make(250), ZL_IS);
 		RM.Centrifuge   .addRecipe0(T, 16,   64, FL.make(tFluid, 250), FL.Latex.make(L/2), FL.Glue.make(250));
-		RM.Mixer        .addRecipe1(T, 16,   16, OM.dust(MT.Blaze, U9), FL.make(tFluid, 250), NF, ST.make(Items.magma_cream, 1, 0));
-		RM.Mixer        .addRecipe1(T, 16,  144, OM.dust(MT.Blaze    ), FL.make(tFluid,2250), NF, ST.make(Items.magma_cream, 9, 0));
+		RM.Mixer        .addRecipe1(T, 16,   16, OM.dust(MT.Blaze, U9), FL.make(tFluid, 250), NF, ST.make(Items.MAGMA_CREAM, 1, 0));
+		RM.Mixer        .addRecipe1(T, 16,  144, OM.dust(MT.Blaze    ), FL.make(tFluid,2250), NF, ST.make(Items.MAGMA_CREAM, 9, 0));
 		}
 		
 		
@@ -931,7 +931,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.ic2_compressor(ST.make(Blocks.DANDELION, 8, 0), IL.IC2_Plantball.get(1));
 		RM.ic2_compressor(ST.make(Blocks.SUNFLOWER, 8, 0), IL.IC2_Plantball.get(1));
 		
-		RM.pulverizing(ST.make(Items.reeds, 1, W), IL.Remains_Plant.get(1), T);
+		RM.pulverizing(ST.make(Items.SUGAR_CANE, 1, W), IL.Remains_Plant.get(1), T);
 		
 		RM.biomass(ST.make(Blocks.BROWN_MUSHROOM_BLOCK, 8, W));
 		RM.biomass(ST.make(Blocks.RED_MUSHROOM_BLOCK, 8, W));
@@ -945,11 +945,11 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.biomass(ST.make(Blocks.CACTUS, 8, W));
 		RM.biomass(ST.make(Blocks.VINE, 8, W));
 		RM.biomass(ST.make(Items.EGG, 16, W));
-		RM.biomass(ST.make(Items.reeds, 8, W));
-		RM.biomass(ST.make(Items.melon, 9, W));
+		RM.biomass(ST.make(Items.SUGAR_CANE, 8, W));
+		RM.biomass(ST.make(Items.MELON_SLICE, 9, W));
 		RM.biomass(ST.make(Items.WHEAT, 9, W));
-		RM.biomass(ST.make(Items.carrot, 9, W));
-		RM.biomass(ST.make(Items.potato, 9, W));
+		RM.biomass(ST.make(Items.CARROT, 9, W));
+		RM.biomass(ST.make(Items.POTATO, 9, W));
 		RM.biomass(ST.make(Items.POISONOUS_POTATO, 9, W));
 		RM.biomass(IL.Dye_Cactus.get(16));
 		RM.biomass(IL.Dye_Cocoa.get(16));
@@ -968,9 +968,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.pack(ST.make(Items.BRICK      , 3, W), ST.make(Blocks.BRICK_STAIRS       , 1, 0));
 		RM.pack(ST.make(Items.BRICK      , 4, W), ST.make(Blocks.BRICKS        , 1, 0));
 		
-		RM.pack(ST.make(Items.netherbrick, 2, W), ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0));
-		RM.pack(ST.make(Items.netherbrick, 3, W), ST.make(Blocks.NETHER_BRICK_STAIRS, 1, 0));
-		RM.pack(ST.make(Items.netherbrick, 4, W), ST.make(Blocks.NETHER_BRICKS       , 1, 0));
+		RM.pack(ST.make(Items.NETHER_BRICK, 2, W), ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0));
+		RM.pack(ST.make(Items.NETHER_BRICK, 3, W), ST.make(Blocks.NETHER_BRICK_STAIRS, 1, 0));
+		RM.pack(ST.make(Items.NETHER_BRICK, 4, W), ST.make(Blocks.NETHER_BRICKS       , 1, 0));
 		
 		RM.generify(plantGtFiber.mat(MT.Black    , 1), ST.make(Items.STRING, 1, 0));
 		RM.generify(plantGtFiber.mat(MT.Red      , 1), ST.make(Items.STRING, 1, 0));

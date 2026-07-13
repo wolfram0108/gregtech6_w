@@ -84,8 +84,8 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 			if (IL.TF_Pick_Giant.exists()) RM.Boxinator.addRecipe2(T,128,128, ST.amount(64, aEvent.mStack), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Obsidian.get(1));
 		}});
 		addListener("stoneNetherBrick", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.Hammer       .addRecipe1(T, 16,   16, aEvent.mStack, ST.make(Items.netherbrick, 3, 0));
-			RM.Crusher      .addRecipe1(T, 16,   16, new long[] {10000, 9000, 8000, 7000}, aEvent.mStack, ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0), ST.make(Items.netherbrick, 1, 0));
+			RM.Hammer       .addRecipe1(T, 16,   16, aEvent.mStack, ST.make(Items.NETHER_BRICK, 3, 0));
+			RM.Crusher      .addRecipe1(T, 16,   16, new long[] {10000, 9000, 8000, 7000}, aEvent.mStack, ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0), ST.make(Items.NETHER_BRICK, 1, 0));
 		}});
 		addListener("stoneNetherrack", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Hammer       .addRecipe1(T, 16,   16, aEvent.mStack, OP.rockGt.mat(MT.Netherrack, 4));
@@ -110,8 +110,8 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 		addListener(OD.slimeball, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			if (OD.itemTar.is_(aEvent.mStack) || !ST.ingredable(aEvent.mStack)) return;
 			
-			RM.Mixer        .addRecipe2(T, 16,   16,              aEvent.mStack , OM.dust(MT.Blaze, U9), ST.make(Items.magma_cream, 1, 0));
-			RM.Mixer        .addRecipe2(T, 16,   16, ST.amount(9, aEvent.mStack), OM.dust(MT.Blaze    ), ST.make(Items.magma_cream, 9, 0));
+			RM.Mixer        .addRecipe2(T, 16,   16,              aEvent.mStack , OM.dust(MT.Blaze, U9), ST.make(Items.MAGMA_CREAM, 1, 0));
+			RM.Mixer        .addRecipe2(T, 16,   16, ST.amount(9, aEvent.mStack), OM.dust(MT.Blaze    ), ST.make(Items.MAGMA_CREAM, 9, 0));
 			
 			RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.tag(3), aEvent.mStack, ST.make((Item)OP.plantGtFiber.mRegisteredPrefixItems.get(0), 4, W)), ST.make(Items.LEAD, 2, 0));
 			RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.tag(3), aEvent.mStack, ST.make(Items.STRING, 4, W)), ST.make(Items.LEAD, 2, 0));
@@ -243,7 +243,7 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 			RM.Assembler.addRecipe2(T, 16,  32, ST.amount(2, aEvent.mStack), ST.tag(2), ST.make(Blocks.OAK_PRESSURE_PLATE, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  48, ST.amount(3, aEvent.mStack), ST.tag(3), ST.make(Blocks.OAK_TRAPDOOR, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(4, aEvent.mStack), ST.tag(4), ST.make(Blocks.CRAFTING_TABLE, 1, 0));
-			RM.Assembler.addRecipe2(T, 16,  96, ST.amount(2, aEvent.mStack), ST.tag(6), ST.make(Items.wooden_door, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  96, ST.amount(2, aEvent.mStack), ST.tag(6), ST.make(Items.OAK_DOOR, 1, 0));
 			RM.Assembler.addRecipe2(T, 16, 128, ST.amount(8, aEvent.mStack), ST.tag(8), ST.make(Blocks.CHEST, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(6, aEvent.mStack), ST.make(Items.BOOK, 3, 0), ST.make(Blocks.BOOKSHELF, 1, 0));
 			

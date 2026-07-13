@@ -144,7 +144,7 @@ public class LoaderItemData implements Runnable {
 		OM.reg("foodCookie"                         , ST.make(MD.BOTA, "manaCookie", 1, 0));
 		OM.reg("foodCookie"                         , ST.make(MD.TF, "item.mazeWafer", 1, 0));
 		OM.reg("cropAppleRed"                       , ST.make(Items.APPLE, 1, 0));
-		OM.reg("cropMelon"                          , ST.make(Items.melon, 1, 0));
+		OM.reg("cropMelon"                          , ST.make(Items.MELON_SLICE, 1, 0));
 		OM.reg("cropPumpkin"                        , ST.make(Blocks.PUMPKIN, 1, 0));
 		OM.reg("cropHops"                           , ST.mkic("hops", 1));
 		OM.reg("cropCoffee"                         , ST.mkic("coffeeBeans", 1));
@@ -499,8 +499,8 @@ public class LoaderItemData implements Runnable {
 		OM.reg("listAllchickencooked"               , ST.make(Items.COOKED_CHICKEN, 1, 0));
 		for (int i = 0, j = (MD.MaCu.mLoaded?64:3); i <= j; i++)
 		OM.reg("listAllfishraw"                     , ST.make(Items.COD, 1, i));
-		OM.reg("listAllfishcooked"                  , ST.make(Items.cooked_fished, 1, 0));
-		OM.reg("listAllfishcooked"                  , ST.make(Items.cooked_fished, 1, 1));
+		OM.reg("listAllfishcooked"                  , ST.make(Items.COOKED_COD, 1, 0));
+		OM.reg("listAllfishcooked"                  , ST.make(Items.COOKED_COD, 1, 1));
 		OM.reg("listAllmushroom"                    , ST.make(Blocks.BROWN_MUSHROOM, 1, W));
 		OM.reg("listAllmushroom"                    , ST.make(Blocks.RED_MUSHROOM, 1, W));
 		OM.reg(OD.pressurePlateWood                 , ST.make(Blocks.OAK_PRESSURE_PLATE, 1, W));
@@ -2491,8 +2491,8 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 7), MT.NetherQuartz       ,  U * 4);
 		OM.data(ST.make(Blocks.QUARTZ_STAIRS                 , 1, W), MT.NetherQuartz       ,  U * 6);
 		OM.data(ST.make(Blocks.QUARTZ_SLAB, 1, 0), MT.NetherQuartz       ,  U * 2);
-		OM.data(ST.make(Items.firework_charge                , 1, W), MT.Gunpowder          ,  U * 1);
-		OM.data(ST.make(Items.fireworks                      , 1, W), MT.Gunpowder          ,  U * 1);
+		OM.data(ST.make(Items.FIREWORK_STAR                , 1, W), MT.Gunpowder          ,  U * 1);
+		OM.data(ST.make(Items.FIREWORK_ROCKET                      , 1, W), MT.Gunpowder          ,  U * 1);
 		OM.data(ST.make(Items.BOOK                           , 1, W), MT.Paper              ,  U * 3);
 		OM.data(ST.make(Items.WRITTEN_BOOK                   , 1, W), MT.Paper              ,  U * 3);
 		OM.data(ST.make(Items.WRITABLE_BOOK                  , 1, W), MT.Paper              ,  U * 3);
@@ -2502,7 +2502,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0), MT.Au                 ,  OP.blockIngot.mAmount * 8);
 		OM.data(ST.make(Items.GOLDEN_APPLE, 1, 0), MT.Au                 ,  OP.ingot.mAmount * 8);
 		OM.data(ST.make(Items.GOLDEN_CARROT                  , 1, 0), MT.Au                 ,  OP.nugget.mAmount * 8);
-		OM.data(ST.make(Items.speckled_melon                 , 1, 0), MT.Au                 ,  OP.nugget.mAmount * 8);
+		OM.data(ST.make(Items.GLISTERING_MELON_SLICE                 , 1, 0), MT.Au                 ,  OP.nugget.mAmount * 8);
 		OM.data(ST.make(Items.BUCKET                         , 1, W), ANY.Fe                ,  U * 3);
 		OM.data(ST.make(Items.MINECART                       , 1, 0), ANY.Fe                ,  U * 5);
 		OM.data(ST.make(Items.IRON_DOOR                      , 1, W), ANY.Fe                ,  U * (MD.EtFu.mLoaded?2:6));
@@ -2570,11 +2570,11 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.OAK_FENCE_GATE                    , 1, W), ANY.Wood              ,  U * 4);
 		OM.data(ST.make(Blocks.OAK_TRAPDOOR                      , 1, W), ANY.Wood              ,  U * 3);
 		OM.data(ST.make(Items.BOWL                           , 1, W), ANY.Wood              ,  U * 1);
-		OM.data(ST.make(Items.sign                           , 1, W), ANY.Wood              ,  U * 2);
+		OM.data(ST.make(Items.OAK_SIGN                           , 1, W), ANY.Wood              ,  U * 2);
 		OM.data(ST.make(Items.PAINTING                       , 1, W), ANY.Wood              ,  U * 4);
 		OM.data(ST.make(Items.ITEM_FRAME                     , 1, W), ANY.Wood              ,  U * 4);
 		OM.data(ST.make(Items.OAK_BOAT                           , 1, W), ANY.Wood              ,  U * 5);
-		OM.data(ST.make(Items.wooden_door                    , 1, W), ANY.Wood              ,  U * 2);
+		OM.data(ST.make(Items.OAK_DOOR                    , 1, W), ANY.Wood              ,  U * 2);
 		OM.data(ST.make(Blocks.CHEST                         , 1, W), ANY.Wood              ,  U * 8);                              OM.reg(OD.craftingChest, ST.make(Blocks.CHEST, 1, W));
 		OM.data(ST.make(Blocks.TRAPPED_CHEST                 , 1, W), ANY.Wood              ,  U * 9, ANY.Fe, OP.ring.mAmount * 2); OM.reg(OD.craftingChest, ST.make(Blocks.TRAPPED_CHEST, 1, W));
 		OM.data(ST.make(Blocks.REDSTONE_TORCH          , 1, W), ANY.Wood              ,  U2, MT.Redstone, U);
@@ -2590,7 +2590,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Items.BEEF                           , 1, W), MT.MeatRaw            ,  U * 2, MT.Bone, U9);
 		OM.data(ST.make(Items.CHICKEN                        , 1, W), MT.MeatRaw            ,  U * 2, MT.Bone, U9);
 		OM.data(ST.make(Items.ROTTEN_FLESH                   , 1, W), MT.MeatRotten         ,  U * 2, MT.Bone, U9);
-		OM.data(ST.make(Items.cooked_fished                  , 1, W), MT.FishCooked         ,  U * 2, MT.Bone, U9);
+		OM.data(ST.make(Items.COOKED_COD                  , 1, W), MT.FishCooked         ,  U * 2, MT.Bone, U9);
 		OM.data(ST.make(Items.COOKED_PORKCHOP                , 1, W), MT.MeatCooked         ,  U * 2, MT.Bone, U9);
 		OM.data(ST.make(Items.COOKED_BEEF                    , 1, W), MT.MeatCooked         ,  U * 2, MT.Bone, U9);
 		OM.data(ST.make(Items.COOKED_CHICKEN                 , 1, W), MT.MeatCooked         ,  U * 2, MT.Bone, U9);

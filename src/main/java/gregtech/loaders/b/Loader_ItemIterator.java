@@ -45,8 +45,8 @@ public class Loader_ItemIterator implements Runnable {
 		RM.Canner.addRecipe2(T, 16, 64, ST.make(Items.ROTTEN_FLESH , 1, W), IL.IC2_Food_Can_Empty.get( 4), IL.IC2_Food_Can_Spoiled  .get( 4, IL.IC2_Food_Can_Filled.get(4)));
 		RM.Canner.addRecipe2(T, 16, 32, ST.make(Items.SPIDER_EYE   , 1, W), IL.IC2_Food_Can_Empty.get( 2), IL.IC2_Food_Can_Poisonous.get( 2, IL.IC2_Food_Can_Filled.get(2)));
 		RM.Canner.addRecipe2(T, 16, 32, IL.Food_Potato_Poisonous   .get(1), IL.IC2_Food_Can_Empty.get( 2), IL.IC2_Food_Can_Poisonous.get( 2, IL.IC2_Food_Can_Filled.get(2)));
-		RM.Canner.addRecipe2(T, 16, 96, ST.make(Items.cake         , 1, W), IL.IC2_Food_Can_Empty.get(12), IL.IC2_Food_Can_Filled   .get(12));
-		RM.Canner.addRecipe2(T, 16, 48, ST.make(Items.mushroom_stew, 1, W), IL.IC2_Food_Can_Empty.get( 6), IL.IC2_Food_Can_Filled   .get( 6), ST.make(Items.BOWL, 1, 0));
+		RM.Canner.addRecipe2(T, 16, 96, ST.make(Items.CAKE         , 1, W), IL.IC2_Food_Can_Empty.get(12), IL.IC2_Food_Can_Filled   .get(12));
+		RM.Canner.addRecipe2(T, 16, 48, ST.make(Items.MUSHROOM_STEW, 1, W), IL.IC2_Food_Can_Empty.get( 6), IL.IC2_Food_Can_Filled   .get( 6), ST.make(Items.BOWL, 1, 0));
 		}
 		
 		Item tItem;

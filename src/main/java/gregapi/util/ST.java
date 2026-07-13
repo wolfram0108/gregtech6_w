@@ -1084,9 +1084,9 @@ public class ST {
 	// гатим. Оригинал:
 	// Items.POTION        .setMaxStackSize( 1);
 	// Items.GLASS_BOTTLE      .setMaxStackSize(64);
-	// Items.bed               .setMaxStackSize(64);
+	// Items.WHITE_BED               .setMaxStackSize(64);
 	// Items.CAKE              .setMaxStackSize(64);
-	// Items.wooden_door       .setMaxStackSize( 8);
+	// Items.OAK_DOOR       .setMaxStackSize( 8);
 	// Items.IRON_DOOR         .setMaxStackSize( 8);
 	// Items.STICK             .setMaxStackSize(64);
 	// Items.WRITTEN_BOOK      .setMaxStackSize(64);

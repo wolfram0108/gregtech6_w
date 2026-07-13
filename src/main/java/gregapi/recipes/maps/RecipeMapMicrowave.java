@@ -61,8 +61,8 @@ public class RecipeMapMicrowave extends RecipeMapNonGTRecipes {
 			if (ST.equal(tStack, Blocks.NETHERRACK)
 			 || ST.equal(tStack, Blocks.TNT)
 			 || ST.equal(tStack, Items.EGG)
-			 || ST.equal(tStack, Items.firework_charge)
-			 || ST.equal(tStack, Items.fireworks)
+			 || ST.equal(tStack, Items.FIREWORK_STAR)
+			 || ST.equal(tStack, Items.FIREWORK_ROCKET)
 			 || ST.equal(tStack, Items.FIRE_CHARGE)
 			) {
 				if (aTileEntity instanceof TileEntityBase01Root) ((TileEntityBase01Root)aTileEntity).overcharge(aSize * 4, TD.Energy.EU);

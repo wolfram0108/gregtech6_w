@@ -96,7 +96,7 @@ public class Loader_Recipes_Hints implements Runnable {
 		, ST.make(Blocks.ENCHANTING_TABLE, 1, 0, "Place the Shelves around the Enchanting Table")
 		, ST.make(Items.BOOK             , 1, 0, "Fill the Shelves with ANYTHING that looks like a Book or Scroll")
 		, ST.make(aRegistry     .getItem( 7123), "Any of the GT6 Bookshelves")
-		, ST.make(Items.experience_bottle, 1, 0, "Use your XP like normal")
+		, ST.make(Items.EXPERIENCE_BOTTLE, 1, 0, "Use your XP like normal")
 		, ST.make(Items.ENCHANTED_BOOK   , 1, 0, "Even counts DOUBLE if it is a magical thing!")
 		), ST.array(ST.make(Items.ENCHANTED_BOOK, 1, 0, "Get a more compact Enchantment Power Bonus!")), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		

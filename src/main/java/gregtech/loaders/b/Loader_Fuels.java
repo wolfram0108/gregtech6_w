@@ -226,7 +226,7 @@ public class Loader_Fuels implements Runnable {
 //      RecipeMap.sFluidNaquadahReactorFuels.addRecipe(T, ST.array(OM.get(OP.cell , MT.Nq_528, 1)}, ST.array(OM.get(OP.cell , MT.Empty  , 1)}, null, null, null, null, 0, 0, 200000);
 		
 //      RA.addFuel(GT_ModHandler.getModItem(ModIDs.TC, "ItemResource", 1, 4)                , null,      4, 5);
-//      RA.addFuel(new ItemStack(Items.experience_bottle, 1)                                , null,     10, 5);
+//      RA.addFuel(new ItemStack(Items.EXPERIENCE_BOTTLE, 1)                                , null,     10, 5);
 //      RA.addFuel(new ItemStack(Items.GHAST_TEAR, 1)                                       , null,    500, 5);
 //      RA.addFuel(new ItemStack(Blocks.BEACON, 1)                                          , null, MT.NetherStar.mFuelPower * 2, MT.NetherStar.mFuelType);
 	}

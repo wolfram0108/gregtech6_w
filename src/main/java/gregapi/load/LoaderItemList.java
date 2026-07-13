@@ -760,8 +760,8 @@ public class LoaderItemList implements Runnable {
 		IL.Bale_Wheat                           .set(ST.make(Blocks.HAY_BLOCK, 1, 0), null, "baleWheat");
 		IL.Crop_Wheat                           .set(ST.make(Items.WHEAT, 1, 0), null, "cropWheat");
 		IL.Food_Bread                           .set(ST.make(Items.BREAD, 1, 0), null, "foodBread", CR.DELATE);
-		IL.Food_Carrot                          .set(ST.make(Items.carrot, 1, 0), null, "cropCarrot");
-		IL.Food_Potato                          .set(ST.make(Items.potato, 1, 0), null, "cropPotato");
+		IL.Food_Carrot                          .set(ST.make(Items.CARROT, 1, 0), null, "cropCarrot");
+		IL.Food_Potato                          .set(ST.make(Items.POTATO, 1, 0), null, "cropPotato");
 		IL.Food_Potato_Baked                    .set(ST.make(Items.BAKED_POTATO, 1, 0));
 		IL.Food_Potato_Poisonous                .set(ST.make(Items.POISONOUS_POTATO, 1, 0));
 		

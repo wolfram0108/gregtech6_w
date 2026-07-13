@@ -69,7 +69,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 			if (ST.item(slot(i)) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
 			FluidStack tFluid = FL.getFluid(slot(i), T);
 			if (tFluid != null) {mDisplay[i] = (short)-FL.id(tFluid); continue;}
-			if (ST.item(slot(i)) == Items.experience_bottle) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
+			if (ST.item(slot(i)) == Items.EXPERIENCE_BOTTLE) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
 			if (MD.HBM.owns(slot(i))) {mDisplay[i] = (short)-FL.Potion_Harm_1.id(); continue;}
 			if (MD.BoP.owns(slot(i))) {mDisplay[i] = Short.MIN_VALUE; continue;}
 			mDisplay[i] = (short)-FL.Water.id();
@@ -85,7 +85,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 				if (ST.item(slot(i)) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
 				FluidStack tFluid = FL.getFluid(slot(i), T);
 				if (tFluid != null) {mDisplay[i] = (short)-FL.id(tFluid); continue;}
-				if (ST.item(slot(i)) == Items.experience_bottle) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
+				if (ST.item(slot(i)) == Items.EXPERIENCE_BOTTLE) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
 				if (MD.HBM.owns(slot(i))) {mDisplay[i] = (short)-FL.Potion_Harm_1.id(); continue;}
 				if (MD.BoP.owns(slot(i))) {mDisplay[i] = Short.MIN_VALUE; continue;}
 				mDisplay[i] = (short)-FL.Water.id();
@@ -234,7 +234,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {
 		Item aItem = ST.item(aStack);
 		if (aItem == null) return F;
-		if (aItem == Items.POTION || aItem == Items.GLASS_BOTTLE || aItem == Items.experience_bottle || IL.BoP_Jar_Empty.equal(aStack, T, T) || IL.HBM_Bottle_Empty_1.equal(aStack, T, T) || IL.HBM_Bottle_Empty_2.equal(aStack, T, T)) return T;
+		if (aItem == Items.POTION || aItem == Items.GLASS_BOTTLE || aItem == Items.EXPERIENCE_BOTTLE || IL.BoP_Jar_Empty.equal(aStack, T, T) || IL.HBM_Bottle_Empty_1.equal(aStack, T, T) || IL.HBM_Bottle_Empty_2.equal(aStack, T, T)) return T;
 		ItemStack aContainer = ST.container(aStack, T);
 		return ST.item(aContainer) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_1.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_2.equal(aContainer, T, T);
 	}

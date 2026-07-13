@@ -171,12 +171,12 @@ public class Compat_Recipes_ThermalExpansion extends CompatMods {
 			}});
 			addListener(OP.dust.dat(ANY.Wood), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 				if (IL.FZ_Sludge.exists())
-				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.FZ_Sludge   .get(1), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "florb", 4, 1));
+				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.FZ_Sludge   .get(1), ST.make(Items.MAGMA_CREAM, 1, W)), ST.make(MD.TE, "florb", 4, 1));
 				if (IL.IE_Slag.exists())
-				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.IE_Slag     .get(1), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "florb", 4, 1));
-				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.TE_Slag     .get(1), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "florb", 4, 1));
-				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.TE_Slag_Rich.get(1), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "florb", 4, 1));
-				RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.amount(4, aEvent.mStack), ST.make(Items.STRING, 4, W), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "Sponge", 1, 2));
+				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.IE_Slag     .get(1), ST.make(Items.MAGMA_CREAM, 1, W)), ST.make(MD.TE, "florb", 4, 1));
+				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.TE_Slag     .get(1), ST.make(Items.MAGMA_CREAM, 1, W)), ST.make(MD.TE, "florb", 4, 1));
+				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.TE_Slag_Rich.get(1), ST.make(Items.MAGMA_CREAM, 1, W)), ST.make(MD.TE, "florb", 4, 1));
+				RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.amount(4, aEvent.mStack), ST.make(Items.STRING, 4, W), ST.make(Items.MAGMA_CREAM, 1, W)), ST.make(MD.TE, "Sponge", 1, 2));
 			}});
 			}};
 		}

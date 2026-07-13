@@ -198,7 +198,7 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCookies"          , 1), ST.make(Items.COOKIE, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedWheat"            , 1), IL.Crop_Wheat.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSeeds"            , 1), ST.make(Items.WHEAT_SEEDS, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedReeds"            , 1), ST.make(Items.reeds, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedReeds"            , 1), ST.make(Items.SUGAR_CANE, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedApples"           , 1), IL.Food_Apple_Red.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedClay"             , 1), ST.make(Items.CLAY_BALL, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCrystallinePollen", 1), IL.FR_Pollen_Cluster_Crystalline.get(9));
@@ -403,12 +403,12 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.DarkAsh, 3*U)           , ST.make(Blocks.DIRT, 1, 0), IL.FR_Compost.get(1));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.VolcanicAsh, 2*U)       , ST.make(Blocks.DIRT, 1, 0), IL.FR_Compost.get(1));
 		
-		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.Honey   .make(600), FL.Honeydew.make(200), FL.Potion_Awkward.make(750)), FL.array(FL.Potion_Heal_1.make(750)), ZL_IS);
-		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.Honey   .make(600), FL.Honeydew.make(200), FL.Potion_Thick  .make(750)), FL.array(FL.Potion_Heal_2.make(750)), ZL_IS);
-		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.HoneyGrC.make(600), FL.Honeydew.make(200), FL.Potion_Awkward.make(750)), FL.array(FL.Potion_Heal_1.make(750)), ZL_IS);
-		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.HoneyGrC.make(600), FL.Honeydew.make(200), FL.Potion_Thick  .make(750)), FL.array(FL.Potion_Heal_2.make(750)), ZL_IS);
-		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.HoneyBoP.make(600), FL.Honeydew.make(200), FL.Potion_Awkward.make(750)), FL.array(FL.Potion_Heal_1.make(750)), ZL_IS);
-		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.HoneyBoP.make(600), FL.Honeydew.make(200), FL.Potion_Thick  .make(750)), FL.array(FL.Potion_Heal_2.make(750)), ZL_IS);
+		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.MELON_SLICE, 1, W), FL.array(FL.Honey   .make(600), FL.Honeydew.make(200), FL.Potion_Awkward.make(750)), FL.array(FL.Potion_Heal_1.make(750)), ZL_IS);
+		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.MELON_SLICE, 1, W), FL.array(FL.Honey   .make(600), FL.Honeydew.make(200), FL.Potion_Thick  .make(750)), FL.array(FL.Potion_Heal_2.make(750)), ZL_IS);
+		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.MELON_SLICE, 1, W), FL.array(FL.HoneyGrC.make(600), FL.Honeydew.make(200), FL.Potion_Awkward.make(750)), FL.array(FL.Potion_Heal_1.make(750)), ZL_IS);
+		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.MELON_SLICE, 1, W), FL.array(FL.HoneyGrC.make(600), FL.Honeydew.make(200), FL.Potion_Thick  .make(750)), FL.array(FL.Potion_Heal_2.make(750)), ZL_IS);
+		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.MELON_SLICE, 1, W), FL.array(FL.HoneyBoP.make(600), FL.Honeydew.make(200), FL.Potion_Awkward.make(750)), FL.array(FL.Potion_Heal_1.make(750)), ZL_IS);
+		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.MELON_SLICE, 1, W), FL.array(FL.HoneyBoP.make(600), FL.Honeydew.make(200), FL.Potion_Thick  .make(750)), FL.array(FL.Potion_Heal_2.make(750)), ZL_IS);
 		
 		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Pollen_Cluster.get(3)        , IL.FR_Propolis            .get(6), ZL_FS, FL.Slime_Green.make(250), ZL_IS);
 		

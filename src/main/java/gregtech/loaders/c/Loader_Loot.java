@@ -193,7 +193,7 @@ public class Loader_Loot implements Runnable {
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.BROWN_MUSHROOM, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.RED_MUSHROOM, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.CACTUS, 1, 0));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Items.reeds, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Items.SUGAR_CANE, 1, 0));
 		// Iterate the Entire List of Saplings and pick the ones from Mods that are Overworld focussed.
 		for (SaplingEntry tEntry : WoodDictionary.LIST_SAPLINGS) {
 		if (MD.MC  .owns(tEntry.mSapling)) {if (addLoot("gt.saplings", 144, tEntry.mCount, tEntry.mCount, ST.validMeta(tEntry.mSapling))) tEntry.mBaggedSaplingLoot = T; continue;}
@@ -217,8 +217,8 @@ public class Loader_Loot implements Runnable {
 		ChestGenHooks.getInfo("gt.seeds").setMin( 8);
 		ChestGenHooks.getInfo("gt.seeds").setMax(24);
 		// These don't have Seeds, but what can I do when they are kinda needed in this List...
-		addLoot("gt.seeds", 144, 4,12, ST.make(Items.potato, 1, 0));
-		addLoot("gt.seeds", 144, 4,12, ST.make(Items.carrot, 1, 0));
+		addLoot("gt.seeds", 144, 4,12, ST.make(Items.POTATO, 1, 0));
+		addLoot("gt.seeds", 144, 4,12, ST.make(Items.CARROT, 1, 0));
 		addLoot("gt.seeds", 144, 4,12, IL.Dye_Cocoa.get(1));
 		for (int i = 0; i < 16; i++)
 		addLoot("gt.seeds",   9, 8,24, ST.make(BlocksGT.Glowtus, 1, i));
@@ -367,13 +367,13 @@ public class Loader_Loot implements Runnable {
 		ST.LOOT_TABLES.add("gt.bottles");
 		ChestGenHooks.getInfo("gt.bottles").setMin( 8);
 		ChestGenHooks.getInfo("gt.bottles").setMax(24);
-		addLoot("gt.bottles", 288, 1, 1, ST.make(Items.experience_bottle, 1, 0));
+		addLoot("gt.bottles", 288, 1, 1, ST.make(Items.EXPERIENCE_BOTTLE, 1, 0));
 		addLoot("gt.bottles", 144, 1, 1, IL.Bottle_Empty                .get(1));
 		addLoot("gt.bottles", 144, 1, 1, IL.Bottle_Milk                 .get(1));
 		addLoot("gt.bottles", 144, 1, 1, IL.Bottle_Milk_Spoiled         .get(1));
 		addLoot("gt.bottles", 144, 1, 1, IL.Bottle_Milk_Soy             .get(1));
 		addLoot("gt.bottles", 144, 1, 1, IL.EtFu_Bottle_Honey           .get(1, IL.Bottle_Honey.get(1)));
-		addLoot("gt.bottles", 144, 1, 1, FL.Blood     .exists() ? IL.Bottle_Blood     .get(1) : ST.make(Items.experience_bottle, 1, 0));
+		addLoot("gt.bottles", 144, 1, 1, FL.Blood     .exists() ? IL.Bottle_Blood     .get(1) : ST.make(Items.EXPERIENCE_BOTTLE, 1, 0));
 		addLoot("gt.bottles",  72, 1, 1, IL.Bottle_Slime_Green          .get(1));
 		addLoot("gt.bottles",  36, 1, 1, FL.Slime_Pink.exists() ? IL.Bottle_Slime_Pink.get(1) : IL.Bottle_Slime_Green.get(1));
 		addLoot("gt.bottles",  36, 1, 1, FL.Slime_Blue.exists() ? IL.Bottle_Slime_Blue.get(1) : IL.Bottle_Slime_Green.get(1));

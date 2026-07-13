@@ -58,8 +58,8 @@ public class Loader_Recipes_Replace implements Runnable {
 	@SuppressWarnings("rawtypes")
 	@Override public void run() {OUT.println("GT_Mod: Replacing Vanilla alike Recipes.");
 		NON_REPLACEABLE.add(ST.make(ToolsGT.sMetaTool                           , 1, W));
-		NON_REPLACEABLE.add(ST.make(Items.bow                                   , 1, W));
-		NON_REPLACEABLE.add(ST.make(Items.fishing_rod                           , 1, W));
+		NON_REPLACEABLE.add(ST.make(Items.BOW                                   , 1, W));
+		NON_REPLACEABLE.add(ST.make(Items.FISHING_ROD                           , 1, W));
 		NON_REPLACEABLE.add(IL.IC2_ForgeHammer.getWithMeta(                       1, W));
 		NON_REPLACEABLE.add(IL.IC2_WireCutter.getWithMeta(                        1, W));
 		NON_REPLACEABLE.add(ST.mkic("painter"                                   , 1, W));

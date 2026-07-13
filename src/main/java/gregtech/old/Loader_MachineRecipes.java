@@ -63,7 +63,7 @@ public class Loader_MachineRecipes implements Runnable {
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Rubber, 3)       , ST.makeIC2("carbonMesh", 3)         , MT.Glue.getFluid(300)     , IL.Duct_Tape.get(1)              , 100, 64);
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Paper, 3)        , ST.make(Items.LEATHER, 1, W)        , MT.Glue.getFluid( 20)     , ST.make(Items.BOOK, 1, 0)        ,  32,  8);
 //      RA.addAssemblerRecipe(IL.Paper_Printed_Pages.get(1)        , ST.make(Items.LEATHER, 1, W)        , MT.Glue.getFluid( 20)     , ST.make(Items.WRITTEN_BOOK, 1, 0),  32,  8);
-//      RA.addAssemblerRecipe(IL.Food_Baked_Cake.get(1)            , ST.make(Items.EGG, 1, 0)            , MT.Milk.getFluid(3000)    , ST.make(Items.cake, 1, 0)        , 100,  8);
+//      RA.addAssemblerRecipe(IL.Food_Baked_Cake.get(1)            , ST.make(Items.EGG, 1, 0)            , MT.Milk.getFluid(3000)    , ST.make(Items.CAKE, 1, 0)        , 100,  8);
 		RA.addAssemblerRecipe(IL.Food_Bun_Sliced.get(2)            , OM.get(OP.ingot, MT.MeatCooked, 1)  , NF                        , IL.Food_Burger_Meat.get(1)       , 100,  4);
 		RA.addAssemblerRecipe(IL.Food_Buns_Sliced.get(1)           , OM.get(OP.ingot, MT.MeatCooked, 1)  , NF                        , IL.Food_Burger_Meat.get(1)       , 100,  4);
 		RA.addAssemblerRecipe(IL.Food_Bun_Sliced.get(2)            , OM.get(OP.ingot, MT.Tofu, 1)        , NF                        , IL.Food_Burger_Tofu.get(1)       , 100,  4);
@@ -79,7 +79,7 @@ public class Loader_MachineRecipes implements Runnable {
 		
 		
 //      RM.pulverizing(ST.make(Items.ITEM_FRAME, 1, W), ST.make(Items.LEATHER, 1), OM.dust(MT.Wood, OP.stick.mMaterialAmount * 4), 95, F);
-//      RM.pulverizing(ST.make(Items.bow, 1, 0), ST.make(Items.STRING, 3), OM.dust(MT.Wood, OP.stick.mMaterialAmount * 3), 95, F);
+//      RM.pulverizing(ST.make(Items.BOW, 1, 0), ST.make(Items.STRING, 3), OM.dust(MT.Wood, OP.stick.mMaterialAmount * 3), 95, F);
 		
 //      RA.addCannerRecipe(OM.get(OP.cell, Materials.Nitrogen, 16), ItemList.Spray_Empty.get(1), ItemList.Spray_Ice.get(1), ItemList.Cell_Empty.get(16), 1600, 2);
 		
@@ -94,7 +94,7 @@ public class Loader_MachineRecipes implements Runnable {
 		RA.addAssemblerRecipe(IL.Stick.get(3), ST.tag(3), ST.make(Blocks.OAK_FENCE, 1, 0), 300, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.Fe, 2), ST.make(Blocks.TRIPWIRE_HOOK, 1, 0), 400, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.WroughtIron, 2), ST.make(Blocks.TRIPWIRE_HOOK, 1, 0), 400, 4);
-		RA.addAssemblerRecipe(IL.Stick.get(3), ST.make(Items.STRING, 3, W), ST.make(Items.bow, 1, 0), 400, 4);
+		RA.addAssemblerRecipe(IL.Stick.get(3), ST.make(Items.STRING, 3, W), ST.make(Items.BOW, 1, 0), 400, 4);
 		RA.addAssemblerRecipe(OM.get(OP.plate, MT.Au         , 2), ST.tag(2), ST.make(Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE, 1, 0), 200, 4);
 		RA.addAssemblerRecipe(OM.get(OP.plate, MT.Fe         , 2), ST.tag(2), ST.make(Blocks.HEAVY_WEIGHTED_PRESSURE_PLATE, 1, 0), 200, 4);
 		RA.addAssemblerRecipe(OM.get(OP.plate, MT.Fe         , 6), ST.tag(6), ST.make(Items.IRON_DOOR, 1, 0), 600, 4);

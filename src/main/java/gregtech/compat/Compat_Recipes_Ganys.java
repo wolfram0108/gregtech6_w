@@ -310,9 +310,9 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.GaSu, "storage", 1, 0), ST.make(Items.FLINT, 9, 0));
 			RM.ic2_extractor(                       ST.make(MD.GaSu, "storage", 1, 0), ST.make(Items.FLINT, 9, 0));
 			
-			RM.Boxinator.addRecipe2(T, 16, 16,      ST.make(Items.carrot, 9, W), ST.tag(9), ST.make(MD.GaSu, "storage", 1, 1));
-			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.GaSu, "storage", 1, 1), ST.make(Items.carrot, 9, 0));
-			RM.ic2_extractor(                       ST.make(MD.GaSu, "storage", 1, 1), ST.make(Items.carrot, 9, 0));
+			RM.Boxinator.addRecipe2(T, 16, 16,      ST.make(Items.CARROT, 9, W), ST.tag(9), ST.make(MD.GaSu, "storage", 1, 1));
+			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.GaSu, "storage", 1, 1), ST.make(Items.CARROT, 9, 0));
+			RM.ic2_extractor(                       ST.make(MD.GaSu, "storage", 1, 1), ST.make(Items.CARROT, 9, 0));
 		}
 		if (MD.GaNe.mLoaded) {OUT.println("GT_Mod: Doing Recipes for Ganys Nether.");
 			RM.mortarize(ST.make(MD.GaNe, "spectreWheatItem", 1, 0), ST.make(MD.GaNe, "spookyFlour", 1, 0));

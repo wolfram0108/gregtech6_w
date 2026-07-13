@@ -1298,7 +1298,7 @@ public class LoaderUnificationTargets implements Runnable {
 		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.Au                     , ST.make(Items.GOLD_INGOT, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.Fe                     , ST.make(Items.IRON_INGOT, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.Brick                  , ST.make(Items.BRICK, 1, 0));
-		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.NetherBrick            , ST.make(Items.netherbrick, 1, 0));
+		OreDictManager.INSTANCE.setTarget(OP.ingot          , MT.NetherBrick            , ST.make(Items.NETHER_BRICK, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.plate          , MT.Paper                  , ST.make(Items.PAPER, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.plate          , MT.Glass                  , ST.make(Blocks.GLASS_PANE, 1, 0));
 		OreDictManager.INSTANCE.setTarget(OP.plateGem       , MT.Glass                  , ST.make(Blocks.GLASS_PANE, 1, 0));

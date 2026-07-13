@@ -34,8 +34,8 @@ public class Loader_Recipes_Potions implements Runnable {
 	@Override public void run() {
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.NETHER_WART   , 1, W), FL.DistW         .make(750), FL.Potion_Awkward         .make(750), ZL_IS);
 		
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.magma_cream   , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.speckled_melon, 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.MAGMA_CREAM   , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GLISTERING_MELON_SLICE, 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GHAST_TEAR    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.SPIDER_EYE    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
@@ -47,12 +47,12 @@ public class Loader_Recipes_Potions implements Runnable {
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.PUFFERFISH, 1, 0), FL.Potion_Awkward.make(750), FL.Potion_WaterBreathing_1.make(750), ZL_IS);
 		
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.magma_cream   , 1, W), FL.Potion_Awkward.make(750), FL.Potion_FireResistance_1.make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.MAGMA_CREAM   , 1, W), FL.Potion_Awkward.make(750), FL.Potion_FireResistance_1.make(750), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GOLDEN_CARROT , 1, W), FL.Potion_Awkward.make(750), FL.Potion_NightVision_1   .make(750), ZL_IS);
 		
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.speckled_melon, 1, W), FL.Potion_Awkward.make(750), FL.Potion_Heal_1          .make(750), ZL_IS);
-		RM.Distillery.addRecipe1(T, 16, 16, ST.make(Items.speckled_melon, 1, W), FL.Potion_Thick  .make(250), FL.Potion_Heal_2          .make(250), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GLISTERING_MELON_SLICE, 1, W), FL.Potion_Awkward.make(750), FL.Potion_Heal_1          .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 16, ST.make(Items.GLISTERING_MELON_SLICE, 1, W), FL.Potion_Thick  .make(250), FL.Potion_Heal_2          .make(250), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GHAST_TEAR    , 1, W), FL.Potion_Awkward.make(750), FL.Potion_Regen_1         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 16, ST.make(Items.GHAST_TEAR    , 1, W), FL.Potion_Thick  .make(250), FL.Potion_Regen_2         .make(250), ZL_IS);
@@ -106,7 +106,7 @@ public class Loader_Recipes_Potions implements Runnable {
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.Potion_Awkward.make(750), FL.Potion_Jump_1           .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 16, tStack, FL.Potion_Thick  .make(250), FL.Potion_Jump_2           .make(250), ZL_IS);
 		}
-		for (ItemStack tStack : ST.array(ST.make(Items.fermented_spider_eye, 1, W))) if (tStack != null) {
+		for (ItemStack tStack : ST.array(ST.make(Items.FERMENTED_SPIDER_EYE, 1, W))) if (tStack != null) {
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.DistW                    .make(750), FL.Potion_Mundane           .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.Potion_Thick             .make(750), FL.Potion_Weakness_1        .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.Potion_Awkward           .make(750), FL.Potion_Weakness_1        .make(750), ZL_IS);
