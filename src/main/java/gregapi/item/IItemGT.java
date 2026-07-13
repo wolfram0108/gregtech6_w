@@ -31,5 +31,11 @@ package gregapi.item;
  * Blocks can have this marker Interface too, since it is just an empty marker.
  */
 public interface IItemGT {
-	/**/
+	/** F12/F1: 1.7.10 Item.setMaxDamage/setHasSubtypes — runtime-мутаторы, удалены движком (neo: прочность через
+	 *  Properties.durability при регистрации; подтипы через DataComponents = F1). Дефолт-no-op для GT-итемов, где
+	 *  value 0 (=neo-дефолт прочности) и подтипы обсолетны; {@code ItemBase} ПЕРЕОПРЕДЕЛЯЕТ setMaxDamage со хранением
+	 *  поля + override getMaxDamage(ItemStack) (реальная прочность инструментов сохранена). Возврат Object → ItemBase
+	 *  covariant-возврат ItemBase. Маркер реализуется и блоками — для них методы безвредны (не вызываются). */
+	default Object setMaxDamage(int aMaxDamage) {return this;}
+	default Object setHasSubtypes(boolean aHasSubtypes) {return this;}
 }

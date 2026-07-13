@@ -59,6 +59,15 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	protected int mMaxStackSize = 64;
 	public ItemBase setMaxStackSize(int aMaxStackSize) {mMaxStackSize = aMaxStackSize; return this;}
 	@Override public int getMaxStackSize(ItemStack aStack) {return mMaxStackSize;}
+	/** F12: 1.7.10 Item.setMaxDamage мутировал поле итема в рантайме. neo Item неизменяем (maxDamage — DataComponent,
+	 *  задаётся Properties.durability при регистрации), но GT6-итем — свой класс, потому храним поле и переопределяем
+	 *  getMaxDamage (штатная точка override, IItemExtension.getMaxDamage(ItemStack):311). Дефолт 0 = ванильный (нет прочности). */
+	protected int mMaxDamage = 0;
+	public ItemBase setMaxDamage(int aMaxDamage) {mMaxDamage = aMaxDamage; return this;}
+	@Override public int getMaxDamage(ItemStack aStack) {return mMaxDamage;}
+	/** F1: 1.7.10 Item.setHasSubtypes(true) включал числовые подтипы (metadata). neo-модель подтипов = DataComponents
+	 *  (F1, PrefixItem/MultiItem через компонент материала/варианта) — hasSubtypes концептуально устарел -> no-op 1:1. */
+	public ItemBase setHasSubtypes(boolean aHasSubtypes) {return this;}
 	
 	/**
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
