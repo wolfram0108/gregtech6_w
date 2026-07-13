@@ -98,7 +98,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		aBullet = ST.update(aBullet, aPlayer);
 		// What's the Angle we are looking from and to?
 		Vec3
-		tDir = aPlayer.getLookVec(),
+		tDir = aPlayer.getLookAngle(),
 		tPos = Vec3.createVectorHelper(aPlayer.getX(), aPlayer.getY() + aPlayer.getEyeHeight(), aPlayer.getZ()),
 		tAim = tPos.addVector(tDir.x * 200, tDir.y * 200, tDir.z * 200);
 		// List all the Blocks that are on the way.
@@ -338,7 +338,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		
 		CompoundTag aNBT = UT.NBT.getOrCreate(aGun);
 		ItemStack aBullet = ST.load(aNBT, NBT_AMMO);
-		if (aPlayer.isSneaking()) {
+		if (aPlayer.isShiftKeyDown()) {
 			if (ST.invalid(aBullet) || aBullet.getCount() <= 0) {
 				reloadGun(aGun, aPlayer, F);
 				return aGun;

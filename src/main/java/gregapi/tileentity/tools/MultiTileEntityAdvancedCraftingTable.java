@@ -462,7 +462,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		}
 		
 		// Consume the Item.
-		if (tContainer == null || (tContainer.isItemStackDamageable() && tContainer.getItemDamage() >= tContainer.getMaxDamage())) {
+		if (tContainer == null || (tContainer.isDamageableItem() && tContainer.getDamageValue() >= tContainer.getMaxDamage())) {
 			decrStackSize(aSlot, 1);
 			return T;
 		}

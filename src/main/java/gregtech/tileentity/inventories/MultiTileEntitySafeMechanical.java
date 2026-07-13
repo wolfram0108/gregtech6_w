@@ -68,7 +68,7 @@ public class MultiTileEntitySafeMechanical extends MultiTileEntitySafe {
 	
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aPlayer != null && aPlayer.isSneaking()) allowInteraction(aPlayer);
+		if (aPlayer != null && aPlayer.isShiftKeyDown()) allowInteraction(aPlayer);
 		return super.onPlaced(aStack, aPlayer, aMTEContainer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);
 	}
 	

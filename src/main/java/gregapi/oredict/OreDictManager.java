@@ -722,8 +722,8 @@ public final class OreDictManager {
 			rData = sItemStack2DataMap.get(new ItemStackContainer(aStack, 0));
 			if (rData != null && rData.mUseVanillaDamage) {
 				OreDictMaterialStack[] tByProducts = new OreDictMaterialStack[rData.mByProducts.length];
-				for (int i = 0; i < tByProducts.length; i++) tByProducts[i] = OM.stack(rData.mByProducts[i].mMaterial, UT.Code.units(aStack.getMaxDamage()-aStack.getItemDamage(), aStack.getMaxDamage(), rData.mByProducts[i].mAmount, F));
-				rData = new OreDictItemData(OM.stack(rData.mMaterial.mMaterial, UT.Code.units(aStack.getMaxDamage()-aStack.getItemDamage(), aStack.getMaxDamage(), rData.mMaterial.mAmount, F)), tByProducts);
+				for (int i = 0; i < tByProducts.length; i++) tByProducts[i] = OM.stack(rData.mByProducts[i].mMaterial, UT.Code.units(aStack.getMaxDamage()-aStack.getDamageValue(), aStack.getMaxDamage(), rData.mByProducts[i].mAmount, F));
+				rData = new OreDictItemData(OM.stack(rData.mMaterial.mMaterial, UT.Code.units(aStack.getMaxDamage()-aStack.getDamageValue(), aStack.getMaxDamage(), rData.mMaterial.mAmount, F)), tByProducts);
 			}
 		}
 		return rData;

@@ -77,29 +77,29 @@ public class MultiTileEntityBarometerGasCylinder extends TileEntityBase09FluidCo
 			if (aHitY > PX_P[8]) {
 				if (aHitY > PX_P[12]) {
 					if (aHitY > PX_P[14]) {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isSneaking() ? 50 : 500)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isShiftKeyDown() ? 50 : 500)));
 					} else {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isSneaking() ? 10 : 100)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isShiftKeyDown() ? 10 : 100)));
 					}
 				} else {
 					if (aHitY > PX_P[10]) {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isSneaking() ?  5 :  50)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isShiftKeyDown() ?  5 :  50)));
 					} else {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isSneaking() ?  1 :  10)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isShiftKeyDown() ?  1 :  10)));
 					}
 				}
 			} else {
 				if (aHitY > PX_P[4]) {
 					if (aHitY > PX_P[6]) {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isSneaking() ?  1 :  10)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isShiftKeyDown() ?  1 :  10)));
 					} else {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isSneaking() ?  5 :  50)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isShiftKeyDown() ?  5 :  50)));
 					}
 				} else {
 					if (aHitY > PX_P[2]) {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isSneaking() ? 10 : 100)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isShiftKeyDown() ? 10 : 100)));
 					} else {
-						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isSneaking() ? 50 : 500)));
+						mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isShiftKeyDown() ? 50 : 500)));
 					}
 				}
 			}

@@ -586,7 +586,7 @@ public class Recipe {
 						}
 					} else {
 						for (ItemStack tOutput : tRecipe.mOutputs) if (tOutput != null && tOutput.getItem() == aOutput.getItem()) {
-							if (ST.meta_(tOutput) == W || ST.meta_(tOutput) == ST.meta_(aOutput) || tOutput.isItemStackDamageable()) {
+							if (ST.meta_(tOutput) == W || ST.meta_(tOutput) == ST.meta_(aOutput) || tOutput.isDamageableItem()) {
 								rList.add(tRecipe);
 								break;
 							}
@@ -619,7 +619,7 @@ public class Recipe {
 						}
 					} else {
 						for (ItemStack tInput : tRecipe.mInputs) if (tInput != null && tInput.getItem() == aInput.getItem()) {
-							if (ST.meta_(tInput) == W || ST.meta_(tInput) == ST.meta_(aInput) || tInput.isItemStackDamageable()) {
+							if (ST.meta_(tInput) == W || ST.meta_(tInput) == ST.meta_(aInput) || tInput.isDamageableItem()) {
 								rList.add(tRecipe);
 								break;
 							}

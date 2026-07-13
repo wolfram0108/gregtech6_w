@@ -145,7 +145,7 @@ public class Thaumcraft_AspectLagFix implements IClassTransformer {
 		synchronized (cacheAspectTags) {
 			IntHashMap metaMap = cacheAspectTags.get(is.getItem());
 			if (metaMap != null) {
-				AspectList aspects = (AspectList)metaMap.lookup(is.getItemDamage());
+				AspectList aspects = (AspectList)metaMap.lookup(is.getDamageValue());
 				if (aspects != null) return aspects.copy(); // Ugh copy, why can't it just be immutable...
 			}
 		}
@@ -157,7 +157,7 @@ public class Thaumcraft_AspectLagFix implements IClassTransformer {
 			if (aspects == null || is == null || is.getItem() == null) return null;
 			IntHashMap metaMap = cacheAspectTags.get(is.getItem());
 			if (metaMap == null) cacheAspectTags.put(is.getItem(), metaMap = new IntHashMap());
-			metaMap.addKey(is.getItemDamage(), aspects.copy());
+			metaMap.addKey(is.getDamageValue(), aspects.copy());
 			return aspects;
 		}
 	}

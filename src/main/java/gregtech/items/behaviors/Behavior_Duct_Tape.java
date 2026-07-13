@@ -92,7 +92,7 @@ public class Behavior_Duct_Tape extends AbstractBehaviorDefault {
 	public long tape(Level aWorld, int aX, int aY, int aZ, byte aSide, long aUses, Player aPlayer, ItemStack aStack, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer == null || SIDES_INVALID[aSide] || aPlayer instanceof FakePlayer || !WD.obstructed(aWorld, aX, aY, aZ, aSide)) {
 			List<String> tChatReturn = new ArrayListNoNulls<>();
-			long tDamage = IBlockToolable.Util.onToolClick(TOOL_ducttape, aUses, mQuality, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer!=null&&aPlayer.isSneaking(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
+			long tDamage = IBlockToolable.Util.onToolClick(TOOL_ducttape, aUses, mQuality, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer!=null&&aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 			UT.Entities.sendchat(aPlayer, tChatReturn, F);
 			return tDamage;
 		}

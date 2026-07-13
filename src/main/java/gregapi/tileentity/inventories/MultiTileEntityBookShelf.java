@@ -221,7 +221,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	
 	private boolean switchBooks(Player aPlayer, int aSlot) {
 		if (slotHas(aSlot)) {
-			if (!aPlayer.isSneaking()) {
+			if (!aPlayer.isShiftKeyDown()) {
 				if (OD.button.is(slot(aSlot))) {
 					mRedstoneDelay = 120;
 					causeBlockUpdate();

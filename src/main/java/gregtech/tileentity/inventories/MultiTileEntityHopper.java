@@ -126,7 +126,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_screwdriver)) {
-			if (aPlayer != null && aPlayer.isSneaking()) {
+			if (aPlayer != null && aPlayer.isShiftKeyDown()) {
 				if (--mMode <  0) mMode = 64;
 			} else {
 				if (++mMode > 64) mMode =  0;

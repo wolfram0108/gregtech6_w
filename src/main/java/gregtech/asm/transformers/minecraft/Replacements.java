@@ -138,14 +138,14 @@ public class Replacements {
 		LivingEntity target = swellingCreeper.getAttackTarget();
 		if(swellingCreeper.getCreeperState() > 0) return true;
 		if(target == null) return false;
-		double distSq = swellingCreeper.getDistanceSqToEntity(target);
+		double distSq = swellingCreeper.distanceToSqr(target);
 		if(distSq >= 9.0) return false;
 		// Do this last since it's the most 'work'
 		double facing = Vec3
 				.createVectorHelper(target.getX(), target.getY(), target.getZ())
 				.subtract(Vec3.createVectorHelper(swellingCreeper.getX(), swellingCreeper.getY(), swellingCreeper.getZ()))
 				.normalize()
-				.dotProduct(target.getLookVec());
+				.dotProduct(target.getLookAngle());
 		return facing >= -0.F;
 	}
 }

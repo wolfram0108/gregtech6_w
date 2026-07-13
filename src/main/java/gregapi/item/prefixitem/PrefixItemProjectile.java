@@ -169,7 +169,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		// Default Item Dropping.
 		Direction enumfacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
 		Position iposition = DispenserBlock.func_149939_a(aSource);
-		ItemStack itemstack1 = aStack.splitStack(1);
+		ItemStack itemstack1 = aStack.split(1);
 		DefaultDispenseItemBehavior.doDispense(aSource.getWorld(), itemstack1, 6, enumfacing, iposition);
 		return aStack;
 	}

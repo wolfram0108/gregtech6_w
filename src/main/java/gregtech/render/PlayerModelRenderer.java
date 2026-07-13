@@ -95,7 +95,7 @@ public class PlayerModelRenderer extends RenderPlayer {
 				if (f8 <  0.0F) f8 =  0.0F;
 				float f10 = aPlayer.prevCameraYaw + (aPlayer.cameraYaw - aPlayer.prevCameraYaw) * aPartialTicks;
 				f7 += Mth.sin((aPlayer.prevDistanceWalkedModified + (aPlayer.distanceWalkedModified - aPlayer.prevDistanceWalkedModified) * aPartialTicks) * 6.0F) * 32.0F * f10;
-				if (aPlayer.isSneaking()) {
+				if (aPlayer.isShiftKeyDown()) {
 					f7 += 25.0F;
 				}
 				GL11.glRotatef(6.0F + f8 / 2.0F + f7, 1.0F, 0.0F, 0.0F);

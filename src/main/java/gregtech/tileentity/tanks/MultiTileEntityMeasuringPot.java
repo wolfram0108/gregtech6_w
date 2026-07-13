@@ -75,15 +75,15 @@ public class MultiTileEntityMeasuringPot extends TileEntityBase10FluidContainerS
 			if (isClientSide()) return T;
 			if (aHitY > PX_P[4]) {
 				if (aHitY > PX_P[6]) {
-					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isSneaking() ? 5 : 50)));
+					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isShiftKeyDown() ? 5 : 50)));
 				} else {
-					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isSneaking() ? 1 : 10)));
+					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() + (aPlayer.isShiftKeyDown() ? 1 : 10)));
 				}
 			} else {
 				if (aHitY > PX_P[2]) {
-					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isSneaking() ? 1 : 10)));
+					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isShiftKeyDown() ? 1 : 10)));
 				} else {
-					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isSneaking() ? 5 : 50)));
+					mTank.setCapacity(UT.Code.bind(1, mCapacity, mTank.capacity() - (aPlayer.isShiftKeyDown() ? 5 : 50)));
 				}
 			}
 			UT.Entities.sendchat(aPlayer, "Limit: " + mTank.capacity() + "L");

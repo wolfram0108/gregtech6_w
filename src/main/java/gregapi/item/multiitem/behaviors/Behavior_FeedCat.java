@@ -41,7 +41,7 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof Ocelot) {
 			for (Object tTask : ((Ocelot)aEntity).tasks.taskEntries) if (((EntityAITaskEntry)tTask).action instanceof EntityAITempt && ((EntityAITempt)((EntityAITaskEntry)tTask).action).isRunning()) {
-				if (aPlayer.getDistanceSqToEntity(aEntity) < 9.0D) {
+				if (aPlayer.distanceToSqr(aEntity) < 9.0D) {
 					UT.Entities.consumeCurrentItem(aPlayer);
 					if (!aPlayer.level().isClientSide()) {
 						if (RNGSUS.nextInt(3) == 0) {

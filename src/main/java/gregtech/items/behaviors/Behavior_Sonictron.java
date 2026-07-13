@@ -42,7 +42,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 			GT_TileEntity_Sonictron tSonictron = (GT_TileEntity_Sonictron)WD.te(aWorld, aX, aY, aZ, T);
 			if (tSonictron != null) {
 				ItemStack[] tInventory = getNBTInventory(aStack);
-				if (aPlayer.isSneaking()) {
+				if (aPlayer.isShiftKeyDown()) {
 					copyInventory(tSonictron.mInventory, tInventory, 64);
 				} else {
 					copyInventory(tInventory, tSonictron.mInventory, 64);

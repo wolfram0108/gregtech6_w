@@ -169,7 +169,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 		default: box(aAABB, aList); return;
 		case  0: box(aAABB, aList, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return;
 		case  1:
-			if (aEntity == null || (!aEntity.isSneaking() && aEntity.getY() >= getBlockPos().getY()+1))
+			if (aEntity == null || (!aEntity.isShiftKeyDown() && aEntity.getY() >= getBlockPos().getY()+1))
 			box(aAABB, aList, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]);
 		case  2:
 			box(aAABB, aList, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[15], PX_N[ 0], PX_N[15]);
@@ -207,8 +207,8 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	@Override public boolean isLadder(LivingEntity aEntity) {return mDesign != 3;}
 	@Override public boolean ignorePlayerCollisionWhenPlacing() {return T;}
 	@Override public boolean useSidePlacementRotation        () {return F;}
-	@Override public boolean ignorePlayerCollisionWhenPlacing(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer == null || !aPlayer.isSneaking();}
-	@Override public boolean useSidePlacementRotation        (ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer != null &&  aPlayer.isSneaking();}
+	@Override public boolean ignorePlayerCollisionWhenPlacing(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer == null || !aPlayer.isShiftKeyDown();}
+	@Override public boolean useSidePlacementRotation        (ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {return aPlayer != null &&  aPlayer.isShiftKeyDown();}
 	@Override public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	@Override public byte getDefaultSide() {return SIDE_FRONT;}

@@ -62,13 +62,13 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	
 	@Override
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (aPlayer.isSneaking()) switchMode(aStack, aPlayer);
+		if (aPlayer.isShiftKeyDown()) switchMode(aStack, aPlayer);
 		return super.onItemRightClick(aItem, aStack, aWorld, aPlayer);
 	}
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isClientSide() || aStack.getCount() != 1 || aPlayer.isSneaking() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aStack.getCount() != 1 || aPlayer.isShiftKeyDown() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
 		boolean rOutput = F;
 		

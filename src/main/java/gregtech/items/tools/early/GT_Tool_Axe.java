@@ -104,7 +104,7 @@ public class GT_Tool_Axe extends ToolStats {
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		int rAmount = 0;
-		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.level().isClientSide() && !aPlayer.isSneaking() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
+		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.level().isClientSide() && !aPlayer.isShiftKeyDown() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
 			LOCK = F;
 			try {
 				int tY = aY, tH = aPlayer.level().getHeight(), tCount = 0, tIncrement = UT.Code.roundUp(aBlock.getBlockHardness(aPlayer.level(), aX, aY, aZ) * getToolDamagePerBlockBreak());
@@ -133,7 +133,7 @@ public class GT_Tool_Axe extends ToolStats {
 		if (aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees")) return aDefault;
 		if (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T)) {
 			float rAmount = 1.0F, tIncrement = 1.0F;
-			if (!aPlayer.isSneaking() && !MD.TreeCap.mLoaded) for (int tY = aY+1, tH = aPlayer.level().getHeight(); tY < tH; tY++) if (WD.block(aPlayer.level(), aX, tY, aZ) == aBlock) {tIncrement+=0.1F; rAmount+=tIncrement;} else break;
+			if (!aPlayer.isShiftKeyDown() && !MD.TreeCap.mLoaded) for (int tY = aY+1, tH = aPlayer.level().getHeight(); tY < tH; tY++) if (WD.block(aPlayer.level(), aX, tY, aZ) == aBlock) {tIncrement+=0.1F; rAmount+=tIncrement;} else break;
 			if (rAmount > 2.0F && (aBlock instanceof HugeMushroomBlock || MD.NeLi.owns(aBlock))) return aDefault / (4.0F * rAmount);
 			return 2.0F * aDefault / rAmount;
 		}

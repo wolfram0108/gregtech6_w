@@ -47,11 +47,11 @@ public class Behavior_FlintAndTinder extends AbstractBehaviorDefault {
 		List<String> tChatReturn = new ArrayListNoNulls<>();
 		long tDamage = 5000;
 		if (MultiItemTool.getPrimaryMaterial(aStack).mToolDurability <= 1) {
-			tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer != null && aPlayer.isSneaking(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
+			tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer != null && aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 		} else if (MultiItemTool.getPrimaryMaterial(aStack).containsAny(TD.Properties.FLAMMABLE, TD.Properties.BURNING) && RNGSUS.nextInt(100) < UT.Code.bind(1, 100, GT6_Main.gt_proxy.mFlintChance+(100-GT6_Main.gt_proxy.mFlintChance)/2)) {
-			tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer != null && aPlayer.isSneaking(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
+			tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer != null && aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 		} else if (RNGSUS.nextInt(100) < UT.Code.bind(1, 100, GT6_Main.gt_proxy.mFlintChance)) {
-			tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer != null && aPlayer.isSneaking(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
+			tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer != null && aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 		}
 		UT.Entities.sendchat(aPlayer, tChatReturn, F);
 		if (aWorld.isClientSide()) return F;

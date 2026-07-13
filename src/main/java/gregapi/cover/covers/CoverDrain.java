@@ -162,7 +162,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 	public boolean onWalkOver(byte aCoverSide, CoverData aData, Entity aEntity) {
 		if (SIDES_TOP[aCoverSide] && !aData.mStopped && aData.mTileEntity instanceof IFluidHandler && aData.mTileEntity.isServerSide()) {
 			if (aEntity instanceof Player) {
-				if (MD.OB.mLoaded && SERVER_TIME % 5 == 0 && ((Player)aEntity).isSneaking() && FL.XP.exists()) try {
+				if (MD.OB.mLoaded && SERVER_TIME % 5 == 0 && ((Player)aEntity).isShiftKeyDown() && FL.XP.exists()) try {
 					FluidStack tFluid = FL.XP.make(Math.min(1000, LiquidXpUtils.xpToLiquidRatio(EnchantmentUtils.getPlayerXP(((Player)aEntity)))));
 					if (tFluid.getAmount() > 0) {
 						int tDrainedXP = LiquidXpUtils.liquidToXpRatio((int)FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], tFluid, F));
