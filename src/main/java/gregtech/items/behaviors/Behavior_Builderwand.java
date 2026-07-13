@@ -55,8 +55,8 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 				if (!aPlayer.canPlayerEdit(aX+tX            , aY+tY            , aZ+tZ            , aSide, aStack)) continue;
 				if (!aPlayer.canPlayerEdit(aX+tX+OFFX[aSide], aY+tY+OFFY[aSide], aZ+tZ+OFFZ[aSide], aSide, aStack)) continue;
 				// Scan Inventory for equal Blocks.
-				for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) {
-					ItemStack tStack = aPlayer.inventory.mainInventory[aPlayer.inventory.mainInventory.length - i - 1];
+				for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+					ItemStack tStack = aPlayer.inventory.getItem(Inventory.INVENTORY_SIZE - i - 1);
 					if (ST.block(tStack) != (tY == 2 ? Blocks.wooden_slab : Blocks.glass)) continue;
 					
 					// Doublechecking Block Permissions at that location.
@@ -94,8 +94,8 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 			if (!aPlayer.canPlayerEdit(aX+tX            , aY+tY            , aZ+tZ            , aSide, aStack)) continue;
 			if (!aPlayer.canPlayerEdit(aX+tX+OFFX[aSide], aY+tY+OFFY[aSide], aZ+tZ+OFFZ[aSide], aSide, aStack)) continue;
 			// Scan Inventory for equal Blocks.
-			for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) {
-				ItemStack tStack = aPlayer.inventory.mainInventory[aPlayer.inventory.mainInventory.length-i-1];
+			for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+				ItemStack tStack = aPlayer.inventory.getItem(Inventory.INVENTORY_SIZE-i-1);
 				if (ST.invalid(tStack)) continue;
 				Block tBlock = ST.block(tStack);
 				if (ST.invalid(tBlock)) {

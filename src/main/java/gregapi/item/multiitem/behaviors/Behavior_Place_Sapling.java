@@ -39,8 +39,8 @@ public class Behavior_Place_Sapling extends AbstractBehaviorDefault {
 		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack) || SIDES_BOTTOM_HORIZONTAL[aSide]) return F;
 		int aOldSize = ST.size(aStack);
 		// Scan Inventory for suitable Saplings.
-		for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) {
-			ItemStack tStack = aPlayer.getInventory().mainInventory[aPlayer.getInventory().mainInventory.length-i-1];
+		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+			ItemStack tStack = aPlayer.getInventory().getItem(Inventory.INVENTORY_SIZE-i-1);
 			// Any OreDict Saplings.
 			if (!OP.treeSapling.contains(tStack)) continue;
 			if (IL.Bag_Loot_Sapling.equal(tStack)) continue;

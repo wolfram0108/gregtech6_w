@@ -45,8 +45,8 @@ public class Behavior_Place_Workbench extends AbstractBehaviorDefault {
 		if (aBlock.getMaterial() == Material.wood || aBlock.getMaterial() == Material.leaves || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.vine || aBlock.getMaterial() == Material.gourd || aBlock.getMaterial() == Material.cactus) return F;
 		if (aBlock.isWood(aWorld, aX, aY, aZ) || aBlock.isLeaves(aWorld, aX, aY, aZ)) return F;
 		// Scan Inventory for suitable Workbenches.
-		for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) {
-			ItemStack tStack = aPlayer.getInventory().mainInventory[aPlayer.getInventory().mainInventory.length-i-1];
+		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+			ItemStack tStack = aPlayer.getInventory().getItem(Inventory.INVENTORY_SIZE-i-1);
 			if (!OD.craftingWorkBench.is(tStack)) continue;
 			
 			int tOldSize = tStack.getCount();

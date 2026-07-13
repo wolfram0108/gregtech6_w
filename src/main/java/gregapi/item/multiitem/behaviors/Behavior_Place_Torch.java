@@ -39,8 +39,8 @@ public class Behavior_Place_Torch extends AbstractBehaviorDefault {
 		// Don't place Torches in Liquids!
 		if (WD.liquid(WD.block(aWorld, aX, aY, aZ, aSide))) return F;
 		// Scan Inventory for suitable Torches.
-		for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) {
-			ItemStack tStack = aPlayer.getInventory().mainInventory[aPlayer.getInventory().mainInventory.length-i-1];
+		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+			ItemStack tStack = aPlayer.getInventory().getItem(Inventory.INVENTORY_SIZE-i-1);
 			if (ST.invalid(tStack) || !ST.torch(tStack)) continue;
 			if (WD.grass(aWorld, aX, aY, aZ)) {aSide = SIDE_TOP; WD.set(aWorld, aX, aY--, aZ, NB, 0, 3);}
 			

@@ -70,9 +70,9 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		ItemStack tStack = aPlayer.getInventory().armorInventory[3-armorType];
 		if (tStack != null) {
 			for (int i = 0; i < 9; i++) {
-				if (aPlayer.getInventory().mainInventory[i] == aStack) {
-					aPlayer.getInventory().armorInventory[3-armorType] = aPlayer.getInventory().mainInventory[i];
-					aPlayer.getInventory().mainInventory[i] = tStack;
+				if (aPlayer.getInventory().getItem(i) == aStack) {
+					aPlayer.getInventory().armorInventory[3-armorType] = aPlayer.getInventory().getItem(i);
+					aPlayer.getInventory().setItem(i, tStack);
 					return tStack;
 				}
 			}

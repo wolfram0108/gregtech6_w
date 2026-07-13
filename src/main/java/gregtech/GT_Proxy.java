@@ -217,7 +217,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 						if (WD.meta(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ) != 0) return;
 						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
 							if (aStack.getCount() == 1) {
-								aEvent.entityPlayer.inventory.mainInventory[aEvent.entityPlayer.inventory.currentItem] = ST.make(Items.potionitem, 1, 0);
+								aEvent.entityPlayer.inventory.setItem(aEvent.entityPlayer.inventory.currentItem, ST.make(Items.potionitem, 1, 0));
 							} else {
 								ST.use(aEvent.entityPlayer, aStack);
 								ST.give(aEvent.entityPlayer, ST.make(Items.potionitem, 1, 0), F);

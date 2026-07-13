@@ -604,27 +604,27 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 				if (aShiftclick) {
 					if (aRightclick) {
 						// SHIFT RIGHTCLICK
-						for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) {
-							if (aPlayer.getInventory().mainInventory[i] == null || (ST.equal(tCraftedStack, aPlayer.getInventory().mainInventory[i]) && tCraftedStack.getCount() + aPlayer.getInventory().mainInventory[i].getCount() <= aPlayer.getInventory().mainInventory[i].getMaxStackSize())) {
+						for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+							if (aPlayer.getInventory().getItem(i) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) {
 								for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 									if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 										return aPlayer.getInventory().getItemStack();
 									}
-									aPlayer.getInventory().mainInventory[i] = (consumeMaterials(aPlayer, aPlayer.getInventory().mainInventory[i], i != 0 || j != 0));
+									aPlayer.getInventory().setItem(i, (consumeMaterials(aPlayer, aPlayer.getInventory().getItem(i), i != 0 || j != 0)));
 								}
 							}
 						}
 						return aPlayer.getInventory().getItemStack();
 					}
 					// SHIFT LEFTCLICK
-					for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) {
-						if (aPlayer.getInventory().mainInventory[i] == null || (ST.equal(tCraftedStack, aPlayer.getInventory().mainInventory[i]) && tCraftedStack.getCount() + aPlayer.getInventory().mainInventory[i].getCount() <= aPlayer.getInventory().mainInventory[i].getMaxStackSize())) {
+					for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+						if (aPlayer.getInventory().getItem(i) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) {
 							boolean temp = F;
 							for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 								if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 									return aPlayer.getInventory().getItemStack();
 								}
-								aPlayer.getInventory().mainInventory[i] = (consumeMaterials(aPlayer, aPlayer.getInventory().mainInventory[i], i != 0 || j != 0));
+								aPlayer.getInventory().setItem(i, (consumeMaterials(aPlayer, aPlayer.getInventory().getItem(i), i != 0 || j != 0)));
 								temp = T;
 							}
 							if (temp) return aPlayer.getInventory().getItemStack();
