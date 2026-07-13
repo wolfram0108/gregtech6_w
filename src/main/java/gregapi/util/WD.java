@@ -1121,7 +1121,7 @@ public class WD {
 		
 		rList.add("--- X: " + aX + " Y: " + aY + " Z: " + aZ + " ---");
 		try {
-			rList.add("Name: " + (aTileEntity instanceof AbstractContainerMenu && Code.stringValid(((AbstractContainerMenu)aTileEntity).getInventoryName()) ? ((AbstractContainerMenu)aTileEntity).getInventoryName() : aBlock.getUnlocalizedName()) + "  MetaData: " + aMeta);
+			rList.add("Name: " + (aTileEntity instanceof AbstractContainerMenu && Code.stringValid(((AbstractContainerMenu)aTileEntity).getInventoryName()) ? ((AbstractContainerMenu)aTileEntity).getInventoryName() : aBlock.getDescriptionId()) + "  MetaData: " + aMeta);
 			rList.add("Registry: " + ST.regName(aBlock));
 			if (aScanLevel >= 10) {
 				rList.add("Block Class: " + aBlock.getClass());

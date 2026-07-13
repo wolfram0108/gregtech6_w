@@ -382,7 +382,7 @@ public class ToolCompat {
 		}
 		
 		} catch(Throwable e) {
-			Logging.severe("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getUnlocalizedName(), aTileEntity.getClass(), aTool, e.toString());
+			Logging.severe("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getDescriptionId(), aTileEntity.getClass(), aTool, e.toString());
 			e.printStackTrace(ERR);
 		}
 		return 0;
