@@ -2754,6 +2754,11 @@ public class UT {
 	}
 	
 	public static class Entities {
+		/** было {@code aEntity.getEquipmentInSlot(aIndex)} (1.7.10 EntityLivingBase, удалён) — neo getItemBySlot(EquipmentSlot).
+		 *  Индексы 1.7.10: 0=held→MAINHAND, 1→FEET, 2→LEGS, 3→CHEST, 4→HEAD (сверено neo EquipmentSlot.java:13-18 filterFlag 1-4). */
+		public static ItemStack getEquipmentInSlot(LivingEntity aEntity, int aIndex) {
+			return aEntity.getItemBySlot(aIndex <= 0 ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : aIndex == 1 ? net.minecraft.world.entity.EquipmentSlot.FEET : aIndex == 2 ? net.minecraft.world.entity.EquipmentSlot.LEGS : aIndex == 3 ? net.minecraft.world.entity.EquipmentSlot.CHEST : net.minecraft.world.entity.EquipmentSlot.HEAD);
+		}
 		/** Sends Messages to a Player */
 		public static void sendchat(Object aPlayer, String... aChatMessages) {
 			if (aPlayer instanceof ServerPlayer) for (String aMessage : aChatMessages) ((ServerPlayer)aPlayer).sendSystemMessage(Component.literal(aMessage));
@@ -2788,49 +2793,49 @@ public class UT {
 		
 		public static boolean isWearingFullFrostHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity)) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_FROST.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_FROST.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullHeatHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == Blaze.class || aEntity.getClass() == EntityPigZombie.class || aEntity.getClass() == MagmaCube.class || aEntity.getClass() == EntityGhast.class) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_HEAT.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_HEAT.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullBioHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_BIO.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_BIO.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullChemHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity)) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_CHEM.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_CHEM.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullInsectHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_INSECTS.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_INSECTS.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullRadioHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_RADIOACTIVE.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_RADIOACTIVE.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullElectroHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity)) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_LIGHTNING.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_LIGHTNING.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		
 		public static boolean isWearingFullGasHazmat(LivingEntity aEntity) {
 			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == IronGolem.class) return T;
-			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_GAS.contains(aEntity.getEquipmentInSlot(i), T)) return F;
+			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_GAS.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
 		

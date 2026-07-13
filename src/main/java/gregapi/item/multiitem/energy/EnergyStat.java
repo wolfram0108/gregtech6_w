@@ -97,7 +97,7 @@ public class EnergyStat implements IItemEnergy {
 		try {for (int i = 1; i < 5; i++) {
 			long tContent = getEnergyStored(aEnergyType, aStack);
 			if (tContent >= tCapacity) return aStack;
-			ItemStack tArmor = aPlayer.getEquipmentInSlot(i);
+			ItemStack tArmor = UT.Entities.getEquipmentInSlot(aPlayer, i);
 			if (tArmor == aStack || ST.invalid(tArmor) || !COMPAT_EU_ITEM.is(tArmor) || VMAX[COMPAT_EU_ITEM.tier(tArmor)] < tMinInput || !COMPAT_EU_ITEM.provider(tArmor)) continue;
 			setEnergyStored(aEnergyType, aStack, tContent+COMPAT_EU_ITEM.decharge(tArmor, tCapacity-tContent, T));
 			temp = T;

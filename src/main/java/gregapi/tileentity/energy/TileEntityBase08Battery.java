@@ -180,7 +180,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 		boolean temp = F;
 		try {for (int i = 1; i < 5; i++) {
 			if (mEnergy >= mCapacity) return aStack;
-			ItemStack tArmor = aPlayer.getEquipmentInSlot(i);
+			ItemStack tArmor = UT.Entities.getEquipmentInSlot(aPlayer, i);
 			if (tArmor == aStack || ST.invalid(tArmor) || !COMPAT_EU_ITEM.is(tArmor) || VMAX[COMPAT_EU_ITEM.tier(tArmor)] < tMinInput || !COMPAT_EU_ITEM.provider(tArmor)) continue;
 			setEnergyStored(aEnergyType, aStack, mEnergy+COMPAT_EU_ITEM.decharge(tArmor, mCapacity-mEnergy, T));
 			temp = T;
