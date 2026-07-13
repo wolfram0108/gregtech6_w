@@ -607,13 +607,13 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 							if (aPlayer.getInventory().getItem(i) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) {
 								for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 									if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
-										return aPlayer.getInventory().getItemStack();
+										return aPlayer.containerMenu.getCarried();
 									}
 									aPlayer.getInventory().setItem(i, (consumeMaterials(aPlayer, aPlayer.getInventory().getItem(i), i != 0 || j != 0)));
 								}
 							}
 						}
-						return aPlayer.getInventory().getItemStack();
+						return aPlayer.containerMenu.getCarried();
 					}
 					// SHIFT LEFTCLICK
 					for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
@@ -621,29 +621,29 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 							boolean temp = F;
 							for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 								if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
-									return aPlayer.getInventory().getItemStack();
+									return aPlayer.containerMenu.getCarried();
 								}
 								aPlayer.getInventory().setItem(i, (consumeMaterials(aPlayer, aPlayer.getInventory().getItem(i), i != 0 || j != 0)));
 								temp = T;
 							}
-							if (temp) return aPlayer.getInventory().getItemStack();
+							if (temp) return aPlayer.containerMenu.getCarried();
 						}
 					}
-					return aPlayer.getInventory().getItemStack();
+					return aPlayer.containerMenu.getCarried();
 				}
 				if (aRightclick) {
 					// RIGHTCLICK
 					for (int i = 0; i < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); i++) {
 						if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
-							return aPlayer.getInventory().getItemStack();
+							return aPlayer.containerMenu.getCarried();
 						}
-						aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.getInventory().getItemStack(), i != 0));
+						aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), i != 0));
 					}
-					return aPlayer.getInventory().getItemStack();
+					return aPlayer.containerMenu.getCarried();
 				}
 				// LEFTCLICK
-				if (canDoCraftingOutput()) aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.getInventory().getItemStack(), F));
-				return aPlayer.getInventory().getItemStack();
+				if (canDoCraftingOutput()) aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), F));
+				return aPlayer.containerMenu.getCarried();
 			}
 			return null;
 		}
