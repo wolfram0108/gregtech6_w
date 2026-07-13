@@ -19,7 +19,7 @@
 
 package gregapi.block.metatype;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.Block.SoundType;
+import net.minecraft.world.level.block.SoundType;
 
 import gregapi.oredict.OreDictMaterial;
 import gregapi.render.IIconContainer;

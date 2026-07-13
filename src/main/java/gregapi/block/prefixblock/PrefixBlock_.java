@@ -19,7 +19,7 @@
 
 package gregapi.block.prefixblock;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.Block.SoundType;
+import net.minecraft.world.level.block.SoundType;
 
 import gregapi.block.behaviors.Drops;
 import gregapi.code.ModData;

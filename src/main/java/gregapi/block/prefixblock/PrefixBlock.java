@@ -20,7 +20,7 @@
 package gregapi.block.prefixblock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.level.block.Block.SoundType;
+import net.minecraft.world.level.block.SoundType;
 
 import gregapi.GT_API_Proxy;
 import gregapi.block.IBlockSyncData;

@@ -19,7 +19,7 @@
 
 package gregapi.block.tree;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.Block.SoundType;
+import net.minecraft.world.level.block.SoundType;
 
 import static gregapi.data.CS.*;
 
