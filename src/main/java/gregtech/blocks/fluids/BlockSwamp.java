@@ -28,6 +28,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -40,41 +41,43 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F5 форс движка (decisions/F5-fluids.md §5): движковые хуки — см. javadoc {@link BlockOcean}.
  */
 public class BlockSwamp extends BlockWaterlike {
 	public static boolean PLACEMENT_ALLOWED = F, FLOWS_OUT = T;
-	
+
 	public BlockSwamp(String aName, Fluid aFluid) {
 		super(aName, aFluid, FLOWS_OUT, T);
 		tickRate = 10;
 	}
-	
-	@Override
+
+	// @Override
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // было scheduleBlockUpdate(x,y,z,block,delay)
 		} else {
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		}
 	}
-	
-	@Override
+
+	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = T;
-		
-		if (aWorld.doChunksNearChunkExist(aX, aY, aZ, 33)) {
-			aWorld.func_147451_t(aX, aY, aZ);
+
+		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — см. BlockOcean
+			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ)); // было func_147451_t(x,y,z) — см. BlockOcean
 			WD.update(aWorld, aX, aY, aZ);
 			if (aY > 0) {
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
-					aWorld.scheduleBlockUpdate(aX, aY-1, aZ, this, tickRate);
+					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
 				} else {
-					aWorld.func_147451_t(aX, aY-1, aZ);
+					aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY-1, aZ));
 					WD.update(aWorld, aX, aY-1, aZ);
 				}
 			}
 		} else {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, Math.max(600, tickRate));
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, Math.max(600, tickRate));
 			PLACEMENT_ALLOWED = F;
 			return;
 		}
@@ -86,9 +89,9 @@ public class BlockSwamp extends BlockWaterlike {
 		}
 		
 		Block tBlock;
-		
-		Biome tBiome = aWorld.getBiomeGenForCoords(aX, aZ);
-		
+
+		Holder<Biome> tBiome = aWorld.getBiome(new BlockPos(aX, aY, aZ)); // было getBiomeGenForCoords(x,z) (2D) — см. BlockOcean
+
 		boolean tDirt = F;
 		
 		byte tSwampCounter = 0;
@@ -161,7 +164,7 @@ public class BlockSwamp extends BlockWaterlike {
 			}
 		}
 		
-		if (BIOMES_INFINITE_WATER.contains(tBiome.biomeName)) {
+		if (BIOMES_INFINITE_WATER.contains(tBiome)) {
 			tSwampCounter = 0;
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) if (i != 0 && j != 0) {
 				if (WD.block(aWorld, aX+i, aY, aZ+j) instanceof BlockSwamp && WD.meta(aWorld, aX+i, aY, aZ+j) == 0) {
@@ -179,7 +182,7 @@ public class BlockSwamp extends BlockWaterlike {
 			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
 					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
-					if (tBlock instanceof BlockSwamp) aWorld.scheduleBlockUpdate(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j, this, tickRate);
+					if (tBlock instanceof BlockSwamp) aWorld.scheduleTick(new BlockPos(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j), this, tickRate);
 				}
 			}
 		}
@@ -195,8 +198,9 @@ public class BlockSwamp extends BlockWaterlike {
 		super.onHeadInside(aEntity, aWorld, aX, aY, aZ);
 	}
 	
-	@Override public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (WD.block(aWorld, aX, aY+1, aZ) != this || WD.meta(aWorld, aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.WATER.getIcon(aSide, aMeta);}
+	// @Override
+	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (WD.block(aWorld, aX, aY+1, aZ) != this || WD.meta(aWorld, aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
+	@Override public IIcon getIcon(int aSide, int aMeta) {return null;} // PORT-TODO(F3, fluid icon rendering): было Blocks.water.getIcon(side,meta) — см. BlockWaterlike.getIcon
 	@Override public int getRenderColor(int aMeta) {return 0x0000ff00;}
 	
 	@Override

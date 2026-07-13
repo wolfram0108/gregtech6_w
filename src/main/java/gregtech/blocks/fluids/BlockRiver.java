@@ -24,8 +24,11 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 
@@ -35,47 +38,49 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F5 форс движка (decisions/F5-fluids.md §5): движковые хуки — см. javadoc {@link BlockOcean}.
  */
 public class BlockRiver extends BlockWaterlike {
 	public static boolean PLACEMENT_ALLOWED = F, FLOWS_OUT = T;
-	
+
 	public BlockRiver(String aName, Fluid aFluid) {
 		super(aName, aFluid, FLOWS_OUT, T);
 		tickRate = 20;
 	}
-	
-	@Override
+
+	// @Override
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // было scheduleBlockUpdate(x,y,z,block,delay)
 		} else {
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		}
 	}
-	
-	@Override
+
+	// @Override
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (WD.block(aWorld, aX, aY-1, aZ) == Blocks.GRASS_BLOCK) WD.set(aWorld, aX, aY-1, aZ, Blocks.DIRT, 1, 2);
 		super.onNeighborBlockChange(aWorld, aX, aY, aZ, aBlock);
 	}
-	
-	@Override
+
+	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = T;
-		
-		if (aWorld.doChunksNearChunkExist(aX, aY, aZ, 33)) {
-			aWorld.func_147451_t(aX, aY, aZ);
+
+		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — см. BlockOcean
+			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ)); // было func_147451_t(x,y,z) — см. BlockOcean
 			WD.update(aWorld, aX, aY, aZ);
 			if (aY > 0) {
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
-					aWorld.scheduleBlockUpdate(aX, aY-1, aZ, this, tickRate);
+					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
 				} else {
-					aWorld.func_147451_t(aX, aY-1, aZ);
+					aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY-1, aZ));
 					WD.update(aWorld, aX, aY-1, aZ);
 				}
 			}
 		} else {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, Math.max(600, tickRate));
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, Math.max(600, tickRate));
 			PLACEMENT_ALLOWED = F;
 			return;
 		}
@@ -103,9 +108,14 @@ public class BlockRiver extends BlockWaterlike {
 	
 	@Override
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
+		// было aWorld.getBiomeGenForCoords(x,z) (2D, IBlockAccess) — BlockGetter самого getBiome не несёт
+		// (LevelReader.getBiome(BlockPos), F6-центр); рендер вызывает colorMultiplier всегда с реальным Level
+		// (тот же приём — WD.te(BlockGetter,...) instanceof Level, WD.java:379-380), F3-safe дефолт иначе.
+		if (!(aWorld instanceof Level)) return 0x00ffffff;
+		Level aLevel = (Level)aWorld;
 		int rR = 0, rG = 0, rB = 0;
 		for (int tX = -1; tX <= 1; tX++) for (int tZ = -1; tZ <= 1; tZ++) {
-			int tRGB = aWorld.getBiomeGenForCoords(aX+tX, aZ+tZ).getWaterColorMultiplier();
+			int tRGB = aLevel.getBiome(new BlockPos(aX+tX, aY, aZ+tZ)).value().getWaterColor(); // было .getWaterColorMultiplier() — Biome.getWaterColor() (Biome.java:259)
 			rR += UT.Code.getR(tRGB);
 			rG += UT.Code.getG(tRGB);
 			rB += UT.Code.getB(tRGB);

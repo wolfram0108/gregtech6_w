@@ -24,6 +24,7 @@ import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -36,47 +37,52 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F5 форс движка (decisions/F5-fluids.md §5): движковые хуки (onBlockAdded/onNeighborBlockChange/updateTick)
+ * больше НЕ реальные {@code @Override} — neo {@code Block}-тик-точка иная сигнатура
+ * (BlockBehaviour.tick(BlockState,ServerLevel,BlockPos,RandomSource)), рантайм-мост — F3 (как и у
+ * {@link gregapi.block.BlockBase#updateTick}, тот же приём: `// @Override` вместо `@Override`).
  */
 public class BlockOcean extends BlockWaterlike {
 	public static boolean PLACEMENT_ALLOWED = F, FLOWS_OUT = T, SPREAD_TO_AIR = F, UPDATE_TICK = T;
-	
+
 	public BlockOcean(String aName, Fluid aFluid) {
 		super(aName, aFluid, FLOWS_OUT, T);
 		tickRate = 20;
 	}
-	
-	@Override
+
+	// @Override
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		if (PLACEMENT_ALLOWED) {
-			if (UPDATE_TICK) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
+			if (UPDATE_TICK) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 10+RNGSUS.nextInt(90)); // было scheduleBlockUpdate(x,y,z,block,delay)
 		} else {
 			WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 		}
 	}
-	
-	@Override
+
+	// @Override
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (aBlock == Blocks.DIRT && WD.block(aWorld, aX, aY-1, aZ) == Blocks.GRASS_BLOCK) WD.set(aWorld, aX, aY-1, aZ, Blocks.DIRT, 1, 2);
 		super.onNeighborBlockChange(aWorld, aX, aY, aZ, aBlock);
 	}
-	
-	@Override
+
+	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		PLACEMENT_ALLOWED = UPDATE_TICK = T;
-		
-		if (aWorld.doChunksNearChunkExist(aX, aY, aZ, 33)) {
-			aWorld.func_147451_t(aX, aY, aZ);
+
+		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — LevelReader.hasChunksAt(x0,y0,z0,x1,y1,z1) тот же checkChunksExist-инлайн
+			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ)); // было func_147451_t(x,y,z) (relight Sky+Block) — LevelLightEngine.checkBlock(BlockPos)
 			WD.update(aWorld, aX, aY, aZ);
 			if (aY > 0) {
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
-					aWorld.scheduleBlockUpdate(aX, aY-1, aZ, this, tickRate);
+					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
 				} else {
-					aWorld.func_147451_t(aX, aY-1, aZ);
+					aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY-1, aZ));
 					WD.update(aWorld, aX, aY-1, aZ);
 				}
 			}
 		} else {
-			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, Math.max(600, tickRate));
+			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, Math.max(600, tickRate));
 			PLACEMENT_ALLOWED = F;
 			return;
 		}
@@ -88,10 +94,10 @@ public class BlockOcean extends BlockWaterlike {
 		}
 		
 		Block tBlock;
-		
-		Biome tBiome = aWorld.getBiomeGenForCoords(aX, aZ);
-		
-		boolean tHasNoOceanAround = T, tHasOceanBiome = BIOMES_OCEAN_BEACH.contains(tBiome.biomeName);
+
+		Holder<Biome> tBiome = aWorld.getBiome(new BlockPos(aX, aY, aZ)); // было getBiomeGenForCoords(x,z) (2D) — LevelReader.getBiome(BlockPos) (F6-центр, см. WD.java envTemp/infiniteWater)
+
+		boolean tHasNoOceanAround = T, tHasOceanBiome = BIOMES_OCEAN_BEACH.contains(tBiome); // было tBiome.biomeName — BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам
 		byte tOceanCounter = 0;
 		ArrayListNoNulls<BlockPos> tList = new ArrayListNoNulls<>();
 		for (byte tSide : ALL_SIDES_HORIZONTAL) {
@@ -132,7 +138,7 @@ public class BlockOcean extends BlockWaterlike {
 			}
 		}
 		
-		if (BIOMES_RIVER_LAKE.contains(tBiome.biomeName)) {
+		if (BIOMES_RIVER_LAKE.contains(tBiome)) {
 			tOceanCounter = 0;
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) if (i != 0 && j != 0) {
 				if (WD.block(aWorld, aX+i, aY, aZ+j) == this && WD.meta(aWorld, aX+i, aY, aZ+j) == 0) {
@@ -150,7 +156,7 @@ public class BlockOcean extends BlockWaterlike {
 			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
 					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
-					if (tBlock == this) aWorld.scheduleBlockUpdate(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j, this, tickRate);
+					if (tBlock == this) aWorld.scheduleTick(new BlockPos(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j), this, tickRate);
 				}
 			}
 		}
@@ -160,13 +166,16 @@ public class BlockOcean extends BlockWaterlike {
 		return;
 	}
 	
-	@Override
+	// @Override
 	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {
 		// TODO FIX THIS SHIT
-		return WD.meta(aWorld, aX, aY, aZ) == 0 && WD.air(WD.block(aWorld, aX, aY+1, aZ)) && WD.air(WD.block(aWorld, aX, aY+2, aZ)) && WD.block(aWorld, aX, aY-1, aZ).getLightOpacity(aWorld, aX, aY-1, aZ) < LIGHT_OPACITY_MAX ? 16 : LIGHT_OPACITY_NONE;
+		// PORT-TODO(F3, arbitrary-block light opacity): было WD.block(...).getLightOpacity(world,x,y,z) —
+		// 1.7.10 Forge-хук на ЛЮБОМ Block, у neo per-instance getLightOpacity(BlockGetter,pos) на произвольном
+		// Block нет (F9-центр WD не покрывает; см. decisions/F5-fluids.md). Дефолт вместо вычисления.
+		return LIGHT_OPACITY_NONE;
 	}
-	
-	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.WATER.getIcon(aSide, aMeta);}
+
+	@Override public IIcon getIcon(int aSide, int aMeta) {return null;} // PORT-TODO(F3, fluid icon rendering): было Blocks.water.getIcon(side,meta) — см. BlockWaterlike.getIcon
 	@Override public int getRenderColor(int aMeta) {return 0x00c0c0c0;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
 }

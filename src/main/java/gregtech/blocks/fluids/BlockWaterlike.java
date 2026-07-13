@@ -21,6 +21,7 @@ package gregtech.blocks.fluids;
 
 import gregapi.block.IBlock;
 import gregapi.block.IBlockOnHeadInside;
+import gregapi.block.fluid.BlockFluidBaseGT;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.FL;
 import gregapi.data.LH;
@@ -38,13 +39,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.Direction;
-import net.minecraftforge.fluids.BlockFluidClassic;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 
@@ -55,31 +57,36 @@ import static gregapi.data.CS.*;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F5 форс движка (decisions/F5-fluids.md §5): было {@code extends BlockFluidClassic} (Forge, удалён в neo) —
+ * общий предок с {@link gregapi.block.fluid.BlockBaseFluid} воспроизведён ОДИН раз в
+ * {@link BlockFluidBaseGT} (см. его javadoc). Тела GT6-собственных методов (updateFlow/getFlowVector/
+ * getQuantaValue/shouldSideBeRendered/onHeadInside/...) — 1:1, только API-свод.
  */
-public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock, IItemGT, IBlockOnHeadInside {
+public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside {
 	public static int WATER_UPDATE_FLAGS = 0;
-	
+
 	public final Fluid mFluid;
-	
+
 	public BlockWaterlike(String aName, Fluid aFluid, boolean aFlowsOut, boolean aHide) {
-		super(aFluid, Material.water);
+		// было super(aFluid, Material.water) + setResistance(30) — neo Block immutable (Properties ДО super,
+		// F16/F9 форс движка, см. BlockFluidBaseGT). setBlockName удалён (имя — ST.register ниже, как
+		// BlockBase.java); setLightOpacity(...) удалено (own getLightOpacity() ниже уже хардкодит значение);
+		// setFluidStack(...) удалено (Forge-only stack-поле, GT6 drain() его не читает — мёртвый код).
+		super(BlockBehaviour.Properties.of().explosionResistance(30F), Material.water);
 		mFluid = aFluid;
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;
-		setResistance(30);
-		setBlockName(aName);
-		setLightOpacity(LIGHT_OPACITY_WATER);
 		ST.register(this, aName, BlockItem.class);
 		LH.add(getUnlocalizedName(), getLocalizedName());
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
-		setFluidStack(FL.make(aFluid, 1000));
 		if (aHide) ST.hide(this);
 	}
-	
+
 	// @Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		if (aDoDrain) WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
-		return FL.make(getFluid(), 1000);
+		return FL.make(mFluid, 1000); // было getFluid() (IFluidBlock/Forge) — mFluid собственное поле (F5)
 	}
 	
 	// @Override
@@ -87,6 +94,21 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		return WD.meta(aWorld, aX, aY, aZ) == 0;
 	}
 	
+	/** было Forge {@code BlockFluidClassic.getLargerQuanta(IBlockAccess,x,y,z,compare)} — тело 1:1 (нужно
+	 *  ТОЛЬКО {@link #updateFlow}, у {@link gregapi.block.fluid.BlockBaseFluid} свой quanta-поток). */
+	protected int getLargerQuanta(BlockGetter aWorld, int aX, int aY, int aZ, int aCompare) {
+		int tQuantaRemaining = getQuantaValue(aWorld, aX, aY, aZ);
+		if (tQuantaRemaining <= 0) return aCompare;
+		return tQuantaRemaining >= aCompare ? tQuantaRemaining : aCompare;
+	}
+
+	/** было 1.7.10 {@code Block.isBlockSolid(IBlockAccess,x,y,z,side)} (Forge-хелпер на ВСЕХ Block,
+	 *  {@code side}-параметр в оригинале не используется телом) — {@code aSide} сохранён в сигнатуре 1:1
+	 *  (вызывающий {@link #getFlowVector} передаёт его), тело — {@code WD.getMaterial(...).isSolid()}. */
+	protected boolean isBlockSolid(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {
+		return WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isSolid();
+	}
+
 	public void updateFlow(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		int quantaRemaining = quantaPerBlock - WD.meta(aWorld, aX, aY, aZ);
 		int expQuanta = -101;
@@ -112,8 +134,8 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 					WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				} else {
 					WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), quantaPerBlock - expQuanta, 3, F);
-					aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate);
-					aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
+					aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate); // было aWorld.scheduleBlockUpdate(x,y,z,block,delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int)
+					aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), this); // было aWorld.notifyBlocksOfNeighborChange(x,y,z,block) — LevelAccessor.updateNeighborsAt(BlockPos,Block)
 				}
 			}
 		}
@@ -136,7 +158,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 	
 	// @Override
 	public Vec3 getFlowVector(BlockGetter aWorld, int aX, int aY, int aZ) {
-		Vec3 rVector = Vec3.createVectorHelper(0, 0, 0);
+		Vec3 rVector = new Vec3(0, 0, 0); // было Vec3.createVectorHelper(0,0,0) — Forge/1.7.10-only фабрика, neo конструктор Vec3(double,double,double)
 		int tDecay = quantaPerBlock - getQuantaValue(aWorld, aX, aY, aZ);
 		for (byte tSide : ALL_SIDES_HORIZONTAL) {
 			int tX = aX+OFFX[tSide], tZ = aZ+OFFZ[tSide];
@@ -146,12 +168,12 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 					tOtherDecay = quantaPerBlock - getQuantaValue(aWorld, tX, aY-1, tZ);
 					if (tOtherDecay >= 0) {
 						int tPower = tOtherDecay - (tDecay - quantaPerBlock);
-						rVector = rVector.addVector((tX - aX) * tPower, 0, (tZ - aZ) * tPower);
+						rVector = rVector.add((tX - aX) * tPower, 0, (tZ - aZ) * tPower); // было .addVector(...) — Vec3.add(double,double,double)
 					}
 				}
 			} else if (tOtherDecay >= 0) {
 				int power = tOtherDecay - tDecay;
-				rVector = rVector.addVector((tX - aX) * power, 0, (tZ - aZ) * power);
+				rVector = rVector.add((tX - aX) * power, 0, (tZ - aZ) * power);
 			}
 		}
 		if (WD.block(aWorld, aX, aY+1, aZ) instanceof BlockWaterlike && (
@@ -163,11 +185,11 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 			isBlockSolid(aWorld, aX  , aY+1, aZ+1, SIDE_Z_POS) ||
 			isBlockSolid(aWorld, aX-1, aY+1, aZ  , SIDE_X_NEG) ||
 			isBlockSolid(aWorld, aX+1, aY+1, aZ  , SIDE_X_POS))) {
-			rVector = rVector.normalize().addVector(0, -6, 0);
+			rVector = rVector.normalize().add(0, -6, 0);
 		}
 		return rVector.normalize();
 	}
-	
+
 	// @Override
 	public int getQuantaValue(BlockGetter aWorld, int aX, int aY, int aZ) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
@@ -177,13 +199,13 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		if (aBlock == Blocks.WATER || aBlock == Blocks.WATER) return 8-WD.meta(aWorld, aX, aY, aZ);
 		return -1;
 	}
-	
+
 	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return T;
 		if (WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return F;
-		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
+		if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir()) return T; // было aBlock.isAir(world,x,y,z) — BlockState.isAir()
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
 		return T;
@@ -197,7 +219,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
-	public IIcon getIcon(int aSide, int aMeta) {return Blocks.WATER.getIcon(aSide, aMeta);}
+	public IIcon getIcon(int aSide, int aMeta) {return null;} // PORT-TODO(F3, fluid icon rendering): было Blocks.water.getIcon(side,meta) — 1.7.10 IIcon-атлас удалён, реальный рендер — RegisterFluidModelsEvent (F5-доклад §3)
 	public int getRenderColor(int aMeta) {return 0x00ffffff;}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
 	
@@ -226,7 +248,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 	public void onHeadInside(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if (!aWorld.isClientSide() && !mEffects.isEmpty() && (FL.gas(mFluid) ? !UT.Entities.isImmuneToBreathingGases(aEntity) : !UT.Entities.isWearingFullChemHazmat(aEntity))) {
 			for (int[] tEffects : mEffects) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
-			if (getMaterial() != Material.water && SERVER_TIME % 20 == 0) aEntity.attackEntityFrom(DamageSource.drown, 2.0F);
+			if (getMaterial() != Material.water && SERVER_TIME % 20 == 0) aEntity.hurt(aWorld.damageSources().drown(), 2.0F); // было attackEntityFrom(DamageSource.drown,...) — 1.7.10 static DamageSource-поля удалены; DamageSources.drown() (GT_API_Proxy.java:744 precedent)
 		}
 	}
 }
