@@ -22,19 +22,20 @@ import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import gregapi.data.CS.SFX;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
-import net.minecraft.enchantment.EnchantmentProtection;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -42,20 +43,36 @@ import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.particles.ExplosionParticleInfo;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundExplodePacket;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * F-explosion: 1.7.10 {@code extends Explosion} (класс-контейнер полей explosionX/Y/Z, exploder,
+ * affectedBlockPositions) -> neo {@code Explosion} стал ЧИСТЫМ интерфейсом (level/center/radius/...), а
+ * конкретная реализация {@code ServerExplosion} (единственный класс движка, implements Explosion) требуется
+ * ДОСЛОВНО типом в контрактах {@code EventHooks.onExplosionStart/onExplosionDetonate} (принимают ИМЕННО
+ * ServerExplosion, не интерфейс) — поэтому ExplosionGT extends ServerExplosion (не implements Explosion
+ * напрямую), а все 1.7.10-поля (explosionX/Y/Z, exploder, isFlaming, isSmoking, affectedBlockPositions,
+ * explosionSize) воспроизведены как СВОИ private-поля (родитель их не хранит доступно — private final).
  */
-public class ExplosionGT extends Explosion {
+public class ExplosionGT extends ServerExplosion {
 	public static ExplosionGT explode(Level aWorld, Entity aEntity, double aX, double aY, double aZ, float aPower, boolean aFlaming, boolean aSmoking) {
 		ExplosionGT tExplosion = new ExplosionGT(aWorld, aEntity, aX, aY, aZ, aPower);
 		tExplosion.isFlaming = aFlaming;
@@ -65,12 +82,23 @@ public class ExplosionGT extends Explosion {
 		if (aWorld instanceof ServerLevel) {
 			tExplosion.doExplosionB(F);
 			if (!aSmoking) tExplosion.affectedBlockPositions.clear();
+			// PORT-TODO(F-explosion, explosion packet redesign): 1.7.10 S27PacketExplosion(x,y,z,power,blockList,
+			// knockback) -> neo ClientboundExplodePacket(center,radius,blockCount,Optional<Vec3>,ParticleOptions,
+			// Holder<SoundEvent>,WeightedList<ExplosionParticleInfo>) — блок-лист заменён на голый count, звук/
+			// частицы типизированы; точная 1.7.10-формула выбора эффекта (hugeexplosion/largeexplode, SFX.MC_EXPLODE
+			// volume) НЕ перенесена в payload — компиляционно-безопасные реальные константы (ParticleTypes.EXPLOSION*,
+			// SoundEvents.GENERIC_EXPLODE, пустой WeightedList), рантайм-паритет — END-гейт.
+			int tBlockCount = tExplosion.affectedBlockPositions.size();
+			ParticleOptions tParticle = tExplosion.explosionSize >= 2 && tExplosion.isSmoking ? ParticleTypes.EXPLOSION_EMITTER : ParticleTypes.EXPLOSION;
+			Holder<SoundEvent> tSound = SoundEvents.GENERIC_EXPLODE;
+			WeightedList<ExplosionParticleInfo> tBlockParticles = WeightedList.of();
+			Vec3 tCenter = new Vec3(aX, aY, aZ);
 			@SuppressWarnings("rawtypes")
 			Iterator tIterator = aWorld.players().iterator();
 			while (tIterator.hasNext()) {
 				Player tPlayer = (Player)tIterator.next();
 				if (tPlayer.distanceToSqr(aX, aY, aZ) < 4096) {
-					((ServerPlayer)tPlayer).playerNetServerHandler.sendPacket(new ClientboundExplodePacket(aX, aY, aZ, aPower, tExplosion.affectedBlockPositions, (Vec3)tExplosion.func_77277_b().get(tPlayer)));
+					((ServerPlayer)tPlayer).connection.send(new ClientboundExplodePacket(tCenter, aPower, tBlockCount, Optional.ofNullable((Vec3)tExplosion.func_77277_b().get(tPlayer)), tParticle, tSound, tBlockParticles));
 				}
 			}
 		} else {
@@ -78,17 +106,27 @@ public class ExplosionGT extends Explosion {
 		}
 		return tExplosion;
 	}
-	
+
 	public ExplosionGT(Level aWorld, Entity aEntity, double aX, double aY, double aZ, float aPower) {
-		super(aWorld, aEntity, aX, aY, aZ, aPower);
+		// PORT-TODO(F-explosion, client-side construction): neo ServerExplosion(конструктор) требует ServerLevel
+		// дословно (см. класс-javadoc); 1.7.10 Explosion конструировался безусловно на обеих сторонах. Каст ниже
+		// бросит ClassCastException, если aWorld — клиентский Level; разбор вызывателей (клиент/сервер) — END-гейт.
+		super((ServerLevel)aWorld, aEntity, null, null, new Vec3(aX, aY, aZ), aPower, F, Explosion.BlockInteraction.DESTROY);
 		mWorld = aWorld;
+		explosionX = aX; explosionY = aY; explosionZ = aZ;
+		explosionSize = aPower;
+		exploder = aEntity;
 	}
-	
+
 	private Level mWorld;
+	private final double explosionX, explosionY, explosionZ;
+	private final float explosionSize;
+	private final Entity exploder;
+	private boolean isFlaming, isSmoking;
+	private final List<BlockPos> affectedBlockPositions = new ArrayList<>();
 	@SuppressWarnings("rawtypes")
 	private Map field_77288_k = new HashMap<>();
-	
-	// @Override
+
 	@SuppressWarnings("unchecked")
 	public void doExplosionA() {
 		float tSize = explosionSize;
@@ -102,13 +140,16 @@ public class ExplosionGT extends Explosion {
 				double tX = explosionX, tY = explosionY, tZ = explosionZ;
 				for (float tMul = 0.3F; tPow > 0; tPow -= tMul * 0.75F) {
 					int tFloorX = UT.Code.roundDown(tX), tFloorY = UT.Code.roundDown(tY), tFloorZ = UT.Code.roundDown(tZ);
+					BlockPos tPos = new BlockPos(tFloorX, tFloorY, tFloorZ);
 					Block tBlock = WD.block(mWorld, tFloorX, tFloorY, tFloorZ);
+					BlockState tState = mWorld.getBlockState(tPos);
 					if (WD.getMaterial(tBlock) != Material.air) {
-						float f3 = exploder != null ? exploder.func_145772_a(this, mWorld, tFloorX, tFloorY, tFloorZ, tBlock) : tBlock.getExplosionResistance(exploder, mWorld, tFloorX, tFloorY, tFloorZ, explosionX, explosionY, explosionZ);
+						float tBaseResistance = tBlock.getExplosionResistance(tState, mWorld, tPos, this);
+						float f3 = exploder != null ? exploder.getBlockExplosionResistance(this, mWorld, tPos, tState, mWorld.getFluidState(tPos), tBaseResistance) : tBaseResistance;
 						tPow -= (f3 + 0.3F) * tMul;
 					}
-					if (tPow > 0 && (exploder == null || exploder.func_145774_a(this, mWorld, tFloorX, tFloorY, tFloorZ, tBlock, tPow))) {
-						tPositions.add(new BlockPos(tFloorX, tFloorY, tFloorZ));
+					if (tPow > 0 && (exploder == null || exploder.shouldBlockExplode(this, mWorld, tPos, tState, tPow))) {
+						tPositions.add(tPos);
 					}
 					tX += tIncX * tMul; tY += tIncY * tMul; tZ += tIncZ * tMul;
 				}
@@ -118,49 +159,51 @@ public class ExplosionGT extends Explosion {
 		tSize *= 2;
 		@SuppressWarnings("rawtypes")
 		List tEntities = mWorld.getEntities(exploder, new AABB(UT.Code.roundDown(explosionX - tSize - 1), UT.Code.roundDown(explosionY - tSize - 1), UT.Code.roundDown(explosionZ - tSize - 1), UT.Code.roundDown(explosionX + tSize + 1), UT.Code.roundDown(explosionY + tSize + 1), UT.Code.roundDown(explosionZ + tSize + 1)));
-		net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tEntities, tSize);
-		Vec3 tVec3 = Vec3.createVectorHelper(explosionX, explosionY, explosionZ);
+		net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tEntities, affectedBlockPositions);
+		Vec3 tVec3 = new Vec3(explosionX, explosionY, explosionZ);
 		for (int i1 = 0; i1 < tEntities.size(); ++i1) {
 			Entity tEntity = (Entity)tEntities.get(i1);
-			double tEntityDist = tEntity.getDistance(explosionX, explosionY, explosionZ) / tSize;
+			double tEntityDist = Math.sqrt(tEntity.distanceToSqr(explosionX, explosionY, explosionZ)) / tSize;
 			if (tEntityDist <= 1 && !(tEntity instanceof WitherBoss || tEntity instanceof EnderDragon || tEntity instanceof EnderDragonPart || tEntity.getClass().getName().toLowerCase().contains("boss"))) {
 				double tKnockX = tEntity.getX() - explosionX, tKnockY = tEntity.getY() + tEntity.getEyeHeight() - explosionY, tKnockZ = tEntity.getZ() - explosionZ;
-				double tDist = Mth.sqrt_double(tKnockX * tKnockX + tKnockY * tKnockY + tKnockZ * tKnockZ);
+				double tDist = Mth.sqrt((float)(tKnockX * tKnockX + tKnockY * tKnockY + tKnockZ * tKnockZ));
 				if (tDist > 0) {
 					tKnockX /= tDist;
 					tKnockY /= tDist;
 					tKnockZ /= tDist;
-					double tKnockback = (1 - tEntityDist) * mWorld.getBlockDensity(tVec3, tEntity.getBoundingBox());
-					tEntity.attackEntityFrom(DamageSource.setExplosionSource(this), ((int)((tKnockback * tKnockback + tKnockback) * 4 * tSize + 1)) * TFC_DAMAGE_MULTIPLIER);
-					double tBlastProtection = EnchantmentProtection.func_92092_a(tEntity, tKnockback);
-					tEntity.getDeltaMovement().x += tKnockX * tBlastProtection;
-					tEntity.getDeltaMovement().y += tKnockY * tBlastProtection;
-					tEntity.getDeltaMovement().z += tKnockZ * tBlastProtection;
-					
-					if (tEntity instanceof Player) field_77288_k.put(tEntity, Vec3.createVectorHelper(tKnockX * tKnockback, tKnockY * tKnockback, tKnockZ * tKnockback));
+					double tKnockback = (1 - tEntityDist) * getSeenPercent(tVec3, tEntity);
+					tEntity.hurt(mWorld.damageSources().explosion(this), ((int)((tKnockback * tKnockback + tKnockback) * 4 * tSize + 1)) * TFC_DAMAGE_MULTIPLIER);
+					double tKnockbackResistance = tEntity instanceof LivingEntity ? ((LivingEntity)tEntity).getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE) : 0.0;
+					double tBlastProtection = tKnockback * (1.0 - tKnockbackResistance);
+					Vec3 tOldMotion = tEntity.getDeltaMovement();
+					tEntity.setDeltaMovement(tOldMotion.x + tKnockX * tBlastProtection, tOldMotion.y + tKnockY * tBlastProtection, tOldMotion.z + tKnockZ * tBlastProtection);
+
+					if (tEntity instanceof Player) field_77288_k.put(tEntity, new Vec3(tKnockX * tKnockback, tKnockY * tKnockback, tKnockZ * tKnockback));
 				}
 			}
 		}
 	}
-	
-	// @Override
+
 	public void doExplosionB(boolean aEffects) {
-		mWorld.playSoundEffect(explosionX, explosionY, explosionZ, SFX.MC_EXPLODE, 4, (1 + (mWorld.getRandom().nextFloat() - mWorld.getRandom().nextFloat()) * 0.2F) * 0.7F);
-		mWorld.spawnParticle(explosionSize >= 2 && isSmoking ? "hugeexplosion" : "largeexplode", explosionX, explosionY, explosionZ, 1, 0, 0);
+		// PORT-TODO(F-explosion, particle-sound effects): 1.7.10 World.playSoundEffect(String)/spawnParticle(String,...)
+		// (строковый id) удалены целиком движком (ParticleOptions/Holder<SoundEvent>-система); звук/частицы взрыва
+		// (SFX.MC_EXPLODE, "hugeexplosion"/"largeexplode"/"explode"/"smoke") — компиляционная заглушка (не звучит/не
+		// рисуется тут), приблизительный payload уже отправлен клиенту через ClientboundExplodePacket выше — рантайм-
+		// паритет визуала/звука — END-гейт.
 		if (isSmoking) {
 			@SuppressWarnings("rawtypes")
 			Iterator tIterator = affectedBlockPositions.iterator();
 			while (tIterator.hasNext()) {
 				final BlockPos tPos = (BlockPos)tIterator.next();
-				final Block tBlock = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ);
+				final Block tBlock = WD.block(mWorld, tPos.getX(), tPos.getY(), tPos.getZ());
 				if (aEffects) {
-					double d0 = (tPos.chunkPosX + mWorld.getRandom().nextFloat());
-					double d1 = (tPos.chunkPosY + mWorld.getRandom().nextFloat());
-					double d2 = (tPos.chunkPosZ + mWorld.getRandom().nextFloat());
+					double d0 = (tPos.getX() + mWorld.getRandom().nextFloat());
+					double d1 = (tPos.getY() + mWorld.getRandom().nextFloat());
+					double d2 = (tPos.getZ() + mWorld.getRandom().nextFloat());
 					double d3 = d0 - explosionX;
 					double d4 = d1 - explosionY;
 					double d5 = d2 - explosionZ;
-					double d6 = Mth.sqrt_double(d3 * d3 + d4 * d4 + d5 * d5);
+					double d6 = Mth.sqrt((float)(d3 * d3 + d4 * d4 + d5 * d5));
 					d3 /= d6;
 					d4 /= d6;
 					d5 /= d6;
@@ -169,12 +212,16 @@ public class ExplosionGT extends Explosion {
 					d3 *= d7;
 					d4 *= d7;
 					d5 *= d7;
-					mWorld.spawnParticle("explode", (d0 + explosionX) / 2, (d1 + explosionY) / 2, (d2 + explosionZ) / 2, d3, d4, d5);
-					mWorld.spawnParticle("smoke", d0, d1, d2, d3, d4, d5);
+					// PORT-TODO(F-explosion, particle-sound effects): было mWorld.spawnParticle("explode"/"smoke", ...) — см. заметку метода выше.
 				}
 				if (WD.getMaterial(tBlock) != Material.air) {
-					if (tBlock.canDropFromExplosion(this)) tBlock.dropBlockAsItemWithChance(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, WD.meta(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), 1 / explosionSize, 0);
-					tBlock.onBlockExploded(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, this);
+					BlockState tState = mWorld.getBlockState(tPos);
+					// PORT-TODO(F-explosion, drop-chance loot-table): 1.7.10 Block.dropBlockAsItemWithChance(world,x,y,z,
+					// meta,chance,fortune) удалён — дроп теперь через loot-table (Block.dropResources); 1-роль-на-весь-стек
+					// вместо 1.7.10 роли-на-каждый-предмет — тот же порог chance=1/explosionSize, но не идентичное
+					// распределение при >1 дропе с одного блока.
+					if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this) && mWorld.getRandom().nextFloat() < 1 / explosionSize) Block.dropResources(tState, mWorld, tPos);
+					if (mWorld instanceof ServerLevel tServerLevel) tBlock.onBlockExploded(tState, tServerLevel, tPos, this);
 				}
 			}
 		}
@@ -183,15 +230,16 @@ public class ExplosionGT extends Explosion {
 			Iterator tIterator = affectedBlockPositions.iterator();
 			while (tIterator.hasNext()) {
 				final BlockPos tPos = (BlockPos)tIterator.next();
-				final Block tBlock = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), tAbove = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY - 1, tPos.chunkPosZ);
-				if (WD.getMaterial(tBlock) == Material.air && tAbove.func_149730_j() && RNGSUS.nextInt(3) == 0) {
-					mWorld.setBlock(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, Blocks.FIRE);
+				final Block tBlock = WD.block(mWorld, tPos.getX(), tPos.getY(), tPos.getZ());
+				final BlockState tAboveState = mWorld.getBlockState(new BlockPos(tPos.getX(), tPos.getY() - 1, tPos.getZ()));
+				if (WD.getMaterial(tBlock) == Material.air && tAboveState.isSolidRender() && RNGSUS.nextInt(3) == 0) {
+					WD.set(mWorld, tPos.getX(), tPos.getY(), tPos.getZ(), Blocks.FIRE, 0, 3);
 				}
 			}
 		}
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	public Map func_77277_b() {return field_77288_k;}
-	public LivingEntity getExplosivePlacedBy() {return exploder == null ? null : (exploder instanceof PrimedTnt ? ((PrimedTnt)exploder).getTntPlacedBy() : (exploder instanceof LivingEntity ? (LivingEntity)exploder : null));}
+	public LivingEntity getExplosivePlacedBy() {return exploder == null ? null : (exploder instanceof PrimedTnt ? ((PrimedTnt)exploder).getOwner() : (exploder instanceof LivingEntity ? (LivingEntity)exploder : null));}
 }
