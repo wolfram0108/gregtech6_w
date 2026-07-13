@@ -295,7 +295,7 @@ public class WD {
 					tNewEntity.isDead = F;
 					boolean temp = tNewEntity.forceSpawn;
 					tNewEntity.forceSpawn = T;
-					tTargetWorld.spawnEntityInWorld(tNewEntity);
+					tTargetWorld.addFreshEntity(tNewEntity);
 					tNewEntity.forceSpawn = temp;
 					tNewEntity.isDead = F;
 					aEntity = tNewEntity;
@@ -335,7 +335,7 @@ public class WD {
 	}
 	/** Marks a Chunk dirty so it is saved */
 	public static boolean mark(Object aTileEntity) {
-		// было .getWorldObj()/.xCoord/.zCoord — neo: BlockEntity.getLevel() (BlockEntity.java:89) + .getBlockPos() (BlockEntity.java:232)
+		// было .getWorldObj()/.x/.z — neo: BlockEntity.getLevel() (BlockEntity.java:89) + .getBlockPos() (BlockEntity.java:232)
 		return aTileEntity instanceof BlockEntity && mark(((BlockEntity)aTileEntity).getLevel(), ((BlockEntity)aTileEntity).getBlockPos().getX(), ((BlockEntity)aTileEntity).getBlockPos().getZ());
 	}
 	
@@ -361,7 +361,7 @@ public class WD {
 			if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
 			if (rTileEntity != null) return rTileEntity;
 			rTileEntity = LAST_BROKEN_TILEENTITY.get();
-			// было .xCoord/.yCoord/.zCoord — neo: BlockEntity.getBlockPos() (BlockEntity.java:232)
+			// было .x/.y/.z — neo: BlockEntity.getBlockPos() (BlockEntity.java:232)
 			if (rTileEntity != null && rTileEntity.getBlockPos().getX() == aX && rTileEntity.getBlockPos().getY() == aY && rTileEntity.getBlockPos().getZ() == aZ) return rTileEntity;
 			Block tBlock = aWorld.getBlockState(tPos).getBlock(); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
 			return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
@@ -385,7 +385,7 @@ public class WD {
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD == 9) UT.Entities.chat(null, "Please provide the gregtech.log File to Greg, there was a LOT of weird Errors");
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD < 99) WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD++;
 		aTileEntity.setRemoved(); // было .invalidate() — neo: BlockEntity.setRemoved() (BlockEntity.java:252)
-		// PORT-TODO(WD, blockentity-position-immutable): было aTileEntity.yCoord = 0 — neo BlockEntity.worldPosition
+		// PORT-TODO(WD, blockentity-position-immutable): было aTileEntity.y = 0 — neo BlockEntity.worldPosition
 		// (BlockEntity.java:48) protected final, задаётся один раз конструктором (.java:57-59), сеттера нет ни в
 		// одном из 3 корней референса — постфактум обнулить Y у уже созданной TileEntity недостижимо.
 		return aTileEntity;
@@ -626,17 +626,17 @@ public class WD {
 		return rRandom.nextInt(aBound);
 	}
 	
-	public static Random random(BlockEntity aTileEntity) {return new Random(aTileEntity.getBlockPos().getX() ^ aTileEntity.getBlockPos().getY() ^ aTileEntity.getBlockPos().getZ());} // было .xCoord/.yCoord/.zCoord — BlockEntity.getBlockPos() (BlockEntity.java:232)
+	public static Random random(BlockEntity aTileEntity) {return new Random(aTileEntity.getBlockPos().getX() ^ aTileEntity.getBlockPos().getY() ^ aTileEntity.getBlockPos().getZ());} // было .x/.y/.z — BlockEntity.getBlockPos() (BlockEntity.java:232)
 	public static int random(BlockEntity aTileEntity, int aBound) {return random(aTileEntity).nextInt(aBound);}
 	public static boolean random(BlockEntity aTileEntity, int aBound, long aTime) {return random(aTileEntity, aBound) == aTime % aBound;}
 	
 	public static boolean border(int aFromX, int aFromZ, int aToX, int aToZ) {return aFromX >> 4 != aToX >> 4 || aFromZ >> 4 != aToZ >> 4;}
 	
-	public static boolean even(BlockEntity aTileEntity) {return even(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .xCoord/.yCoord/.zCoord
+	public static boolean even(BlockEntity aTileEntity) {return even(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .x/.y/.z
 	public static boolean even(BlockPos aCoords) {return even(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static boolean even(int... aCoords) {int i = 0; for (int tCoord : aCoords) if (tCoord % 2 == 0) i++; return i % 2 == 0;}
 	
-	public static int evenness(BlockEntity aTileEntity) {return evenness(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .xCoord/.yCoord/.zCoord
+	public static int evenness(BlockEntity aTileEntity) {return evenness(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ());} // было .x/.y/.z
 	public static int evenness(BlockPos aCoords) {return evenness(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	public static int evenness(int... aCoords) {int i = 0; for (int tCoord : aCoords) {i <<= 1; if (tCoord % 2 != 0) i++;} return i;}
 	
@@ -868,22 +868,22 @@ public class WD {
 	
 	public static List<BlockPos> line(final Vec3 aStart, final Vec3 aEnd) {
 		List<BlockPos> rList = new ArrayListNoNulls<>();
-		if (Double.isNaN(aStart.xCoord) || Double.isNaN(aStart.yCoord) || Double.isNaN(aStart.zCoord) || Double.isNaN(aEnd.xCoord) || Double.isNaN(aEnd.yCoord) || Double.isNaN(aEnd.zCoord)) return rList;
-		Vec3 tPoint = Vec3.createVectorHelper(aStart.xCoord, aStart.yCoord, aStart.zCoord);
+		if (Double.isNaN(aStart.x) || Double.isNaN(aStart.y) || Double.isNaN(aStart.z) || Double.isNaN(aEnd.x) || Double.isNaN(aEnd.y) || Double.isNaN(aEnd.z)) return rList;
+		Vec3 tPoint = Vec3.createVectorHelper(aStart.x, aStart.y, aStart.z);
 		
-		int sx = UT.Code.roundDown(tPoint.xCoord);
-		int sy = UT.Code.roundDown(tPoint.yCoord);
-		int sz = UT.Code.roundDown(tPoint.zCoord);
-		int ex = UT.Code.roundDown(aEnd.xCoord);
-		int ey = UT.Code.roundDown(aEnd.yCoord);
-		int ez = UT.Code.roundDown(aEnd.zCoord);
+		int sx = UT.Code.roundDown(tPoint.x);
+		int sy = UT.Code.roundDown(tPoint.y);
+		int sz = UT.Code.roundDown(tPoint.z);
+		int ex = UT.Code.roundDown(aEnd.x);
+		int ey = UT.Code.roundDown(aEnd.y);
+		int ez = UT.Code.roundDown(aEnd.z);
 		
 		rList.add(new BlockPos(sx, sy, sz));
 		
 		int maxAttempts = 2000; // Just to prevent accidental infinite loops
 		
 		while (maxAttempts-- >= 0) {
-			if (Double.isNaN(tPoint.xCoord) || Double.isNaN(tPoint.yCoord) || Double.isNaN(tPoint.zCoord)) return rList;
+			if (Double.isNaN(tPoint.x) || Double.isNaN(tPoint.y) || Double.isNaN(tPoint.z)) return rList;
 			if (sx == ex && sy == ey && sz == ez) return rList;
 			
 			boolean performx = true;
@@ -898,9 +898,9 @@ public class WD {
 			double ndy = 999.0D;
 			double ndz = 999.0D;
 			
-			double distx = aEnd.xCoord - tPoint.xCoord;
-			double disty = aEnd.yCoord - tPoint.yCoord;
-			double distz = aEnd.zCoord - tPoint.zCoord;
+			double distx = aEnd.x - tPoint.x;
+			double disty = aEnd.y - tPoint.y;
+			double distz = aEnd.z - tPoint.z;
 			
 			if (ex > sx) {
 				nx = (double) sx + 1.0D;
@@ -927,15 +927,15 @@ public class WD {
 			}
 			
 			if (performx) {
-				ndx = (nx - tPoint.xCoord) / distx;
+				ndx = (nx - tPoint.x) / distx;
 			}
 			
 			if (performy) {
-				ndy = (ny - tPoint.yCoord) / disty;
+				ndy = (ny - tPoint.y) / disty;
 			}
 			
 			if (performz) {
-				ndz = (nz - tPoint.zCoord) / distz;
+				ndz = (nz - tPoint.z) / distz;
 			}
 			
 			byte whereTo;
@@ -944,28 +944,28 @@ public class WD {
 				if (ex > sx) whereTo = 4;
 				else whereTo = 5;
 				
-				tPoint.xCoord = nx;
-				tPoint.yCoord += disty * ndx;
-				tPoint.zCoord += distz * ndx;
+				tPoint.x = nx;
+				tPoint.y += disty * ndx;
+				tPoint.z += distz * ndx;
 			} else if (ndy < ndz) {
 				if (ey > sy) whereTo = 0;
 				else whereTo = 1;
 				
-				tPoint.xCoord += distx * ndy;
-				tPoint.yCoord = ny;
-				tPoint.zCoord += distz * ndy;
+				tPoint.x += distx * ndy;
+				tPoint.y = ny;
+				tPoint.z += distz * ndy;
 			} else {
 				if (ez > sz) whereTo = 2;
 				else whereTo = 3;
 				
-				tPoint.xCoord += distx * ndz;
-				tPoint.yCoord += disty * ndz;
-				tPoint.zCoord = nz;
+				tPoint.x += distx * ndz;
+				tPoint.y += disty * ndz;
+				tPoint.z = nz;
 			}
 			
-			sx = UT.Code.roundDown(tPoint.xCoord);
-			sy = UT.Code.roundDown(tPoint.yCoord);
-			sz = UT.Code.roundDown(tPoint.zCoord);
+			sx = UT.Code.roundDown(tPoint.x);
+			sy = UT.Code.roundDown(tPoint.y);
+			sz = UT.Code.roundDown(tPoint.z);
 			
 			if (whereTo == 5) --sx;
 			if (whereTo == 1) --sy;

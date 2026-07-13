@@ -98,7 +98,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 			mPathCoolDown = mFailedPathFindingPenalty + 4 + mCreature.getRNG().nextInt(7);
 			if (mCreature.getNavigator().getPath() != null) {
 				PathPoint tPathPoint = mCreature.getNavigator().getPath().getFinalPathPoint();
-				if (tPathPoint != null && tTarget.distanceToSqr(tPathPoint.xCoord, tPathPoint.yCoord, tPathPoint.zCoord) < 1) {
+				if (tPathPoint != null && tTarget.distanceToSqr(tPathPoint.x, tPathPoint.y, tPathPoint.z) < 1) {
 					mFailedPathFindingPenalty = 0;
 				} else {
 					mFailedPathFindingPenalty += 10;
@@ -136,7 +136,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 					
 					if (!mWorld.isClientSide()) {
 						PrimedTnt entitytntprimed = new PrimedTnt(mWorld, mCreature.getX(), mCreature.getY(), mCreature.getZ(), mCreature);
-						mWorld.spawnEntityInWorld(entitytntprimed);
+						mWorld.addFreshEntity(entitytntprimed);
 						mWorld.playSoundAtEntity(entitytntprimed, "game.tnt.primed", 1, 1);
 					}
 				} else

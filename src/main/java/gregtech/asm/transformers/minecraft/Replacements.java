@@ -66,7 +66,7 @@ public class Replacements {
 			// Prevent duping Name Tags
 			aVillager.setCustomNameTag("");
 			// And put the new Zombie into the World!
-			aWorld.spawnEntityInWorld(tZombieVillager);
+			aWorld.addFreshEntity(tZombieVillager);
 			// With Sound ofcourse!
 			aWorld.playAuxSFXAtEntity(null, 1016, (int)tZombieVillager.getX(), (int)tZombieVillager.getY(), (int)tZombieVillager.getZ(), 0);
 			// Villager? What Villager?

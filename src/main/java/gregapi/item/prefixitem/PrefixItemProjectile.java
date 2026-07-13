@@ -161,7 +161,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 			tProjectile.setThrowableHeading(tFacing.getFrontOffsetX(), (tFacing.getFrontOffsetY() + 0.1F), tFacing.getFrontOffsetZ(), mSpeedMultiplier * 1.10F, mPrecision);
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
 			tProjectile.canBePickedUp = 1;
-			aWorld.spawnEntityInWorld(tProjectile);
+			aWorld.addFreshEntity(tProjectile);
 			if (aStack.getCount() < 100) aStack.setCount(aStack.getCount()-1);
 			return aStack;
 		}

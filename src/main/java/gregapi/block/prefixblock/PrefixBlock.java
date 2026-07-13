@@ -654,7 +654,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	protected boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
 		if (mGravity && aY > 0 && WD.te(aWorld, aX, aY, aZ, T) != null && FallingBlock.func_149831_e(aWorld, aX, aY - 1, aZ)) {
 			if (!FallingBlock.fallInstantly && aWorld.checkChunksExist(aX-32, aY-32, aZ-32, aX+32, aY+32, aZ+32)) {
-				if (!aWorld.isClientSide()) aWorld.spawnEntityInWorld(new PrefixBlockFallingEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UP)));
+				if (!aWorld.isClientSide()) aWorld.addFreshEntity(new PrefixBlockFallingEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UP)));
 			} else {
 				short tMetaData = getMetaDataValue(aWorld, aX, aY, aZ);
 				if (tMetaData > 0) {

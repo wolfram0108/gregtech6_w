@@ -404,7 +404,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				}
 				ItemStack tArrow = OP.arrowGtWood.mat(tMaterial, 1);
 				if (ST.valid(tArrow)) {
-					aEvent.entity.level().spawnEntityInWorld(new EntityArrow_Material((Arrow)aEvent.entity, tArrow));
+					aEvent.entity.level().addFreshEntity(new EntityArrow_Material((Arrow)aEvent.entity, tArrow));
 					aEvent.entity.setDead();
 				}
 			}

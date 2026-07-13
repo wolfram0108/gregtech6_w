@@ -135,7 +135,7 @@ public class EntityArrow_Material extends EntityProjectile {
 			vec31 = Vec3.createVectorHelper(getX(), getY(), getZ());
 			vec3 = Vec3.createVectorHelper(getX() + motionX, getY() + motionY, getZ() + motionZ);
 			
-			if (tVector != null) vec3 = Vec3.createVectorHelper(tVector.hitVec.xCoord, tVector.hitVec.yCoord, tVector.hitVec.zCoord);
+			if (tVector != null) vec3 = Vec3.createVectorHelper(tVector.hitVec.x, tVector.hitVec.y, tVector.hitVec.z);
 			
 			Entity tHitEntity = null;
 			@SuppressWarnings("rawtypes")
@@ -260,9 +260,9 @@ public class EntityArrow_Material extends EntityProjectile {
 					mHitBlockZ = tVector.getBlockPos().getZ();
 					mHitBlock = WD.block(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 					mHitBlockMeta = WD.meta(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
-					motionX = ((float)(tVector.hitVec.xCoord - getX()));
-					motionY = ((float)(tVector.hitVec.yCoord - getY()));
-					motionZ = ((float)(tVector.hitVec.zCoord - getZ()));
+					motionX = ((float)(tVector.hitVec.x - getX()));
+					motionY = ((float)(tVector.hitVec.y - getY()));
+					motionZ = ((float)(tVector.hitVec.z - getZ()));
 					float f2 = MathHelper.sqrt_double(motionX * motionX + motionY * motionY + motionZ * motionZ);
 					posX -= motionX / f2 * 0.05000000074505806D;
 					posY -= motionY / f2 * 0.05000000074505806D;

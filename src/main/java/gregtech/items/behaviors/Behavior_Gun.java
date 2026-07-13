@@ -100,7 +100,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		Vec3
 		tDir = aPlayer.getLookVec(),
 		tPos = Vec3.createVectorHelper(aPlayer.getX(), aPlayer.getY() + aPlayer.getEyeHeight(), aPlayer.getZ()),
-		tAim = tPos.addVector(tDir.xCoord * 200, tDir.yCoord * 200, tDir.zCoord * 200);
+		tAim = tPos.addVector(tDir.x * 200, tDir.y * 200, tDir.z * 200);
 		// List all the Blocks that are on the way.
 		List<BlockPos> aCoords = WD.line(tPos, tAim);
 		// Gather random Information about the first Block.
@@ -113,7 +113,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet);
 		
 		// Make a List of all possible Targets.
-		List tEntities = aPlayer.level().getEntitiesWithinAABBExcludingEntity(aPlayer, AABB.getBoundingBox(Math.min(tPos.xCoord, tAim.xCoord)-2, Math.min(tPos.yCoord, tAim.yCoord)-2, Math.min(tPos.zCoord, tAim.zCoord)-2, Math.max(tPos.xCoord, tAim.xCoord)+2, Math.max(tPos.yCoord, tAim.yCoord)+2, Math.max(tPos.zCoord, tAim.zCoord)+2));
+		List tEntities = aPlayer.level().getEntitiesWithinAABBExcludingEntity(aPlayer, AABB.getBoundingBox(Math.min(tPos.x, tAim.x)-2, Math.min(tPos.y, tAim.y)-2, Math.min(tPos.z, tAim.z)-2, Math.max(tPos.x, tAim.x)+2, Math.max(tPos.y, tAim.y)+2, Math.max(tPos.z, tAim.z)+2));
 		List<Entity> tTargets = new ArrayListNoNulls<>();
 		for (Object tEntity : tEntities) if (tEntity instanceof Entity) {
 			AABB tBox = ((Entity)tEntity).boundingBox;
@@ -311,7 +311,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		if (aTarget.attackEntityFrom(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 			aTarget.hurtResistantTime = (aTarget instanceof LivingEntity ? ((LivingEntity)aTarget).maxHurtResistantTime : 20);
 			if (aTarget instanceof Creeper && tFireDamage > 0 && tImplosion <= 0) ((Creeper)aTarget).func_146079_cb();
-			if (tKnockback > 0) aTarget.addVelocity(aDir.xCoord * tKnockback * aPower / 50000.0, 0.05, aDir.zCoord * tKnockback * aPower / 50000.0);
+			if (tKnockback > 0) aTarget.addVelocity(aDir.x * tKnockback * aPower / 50000.0, 0.05, aDir.z * tKnockback * aPower / 50000.0);
 			if (aTarget instanceof LivingEntity)
 			UT.Enchantments.applyBullshitA((LivingEntity)aTarget, aPlayer, aBullet);
 			UT.Enchantments.applyBullshitB(                  aPlayer, aTarget, aBullet);

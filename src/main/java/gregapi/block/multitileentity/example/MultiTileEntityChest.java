@@ -261,11 +261,11 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	protected void generateDungeonLoot() {
 		if (isServerSide() && UT.Code.stringValid(mDungeonLootName) && ST.generateLoot(RNGSUS, mDungeonLootName, this)) {
-			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.4, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.4, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+1.35, getBlockPos().getZ()+0.5, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.6, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.6, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.4, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.4, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+1.35, getBlockPos().getZ()+0.5, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.6, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.6, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
 			mDungeonLootName = "";
 		}
 	}

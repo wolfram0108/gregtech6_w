@@ -89,7 +89,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 									int tDrain = LiquidXpUtils.xpToLiquidRatio(tXP);
 									if (tDrain > 0 && tXP > 0) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tDrain, T);
-										level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
+										level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
 									}
 								} catch(Throwable e) {e.printStackTrace(ERR);}
 								return T;
@@ -98,7 +98,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 							int tXP = Math.min(50, aFluid.amount/20);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tXP*20, T);
-								level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
+								level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
 							}
 							return T;
 						}
@@ -107,7 +107,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 							int tXP = Math.min(50, (aFluid.amount*3)/200);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, (tXP*200)/3, T);
-								level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
+								level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
 							}
 							return T;
 						}

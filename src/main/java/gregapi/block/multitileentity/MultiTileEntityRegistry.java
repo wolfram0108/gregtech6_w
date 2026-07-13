@@ -257,7 +257,7 @@ public class MultiTileEntityRegistry {
 		MultiTileEntityContainer rContainer = new MultiTileEntityContainer((BlockEntity)UT.Reflection.callConstructor(tClass.mClass, -1, null, T), tClass.mBlock, tClass.mBlockMetaData);
 		if (rContainer.mTileEntity == null) return null;
 		rContainer.mTileEntity.setWorldObj(aWorld);
-		// PORT-TODO(WD, blockentity-position-immutable): было rContainer.mTileEntity.xCoord/yCoord/zCoord = aX/aY/aZ
+		// PORT-TODO(WD, blockentity-position-immutable): было rContainer.mTileEntity.x/yCoord/zCoord = aX/aY/aZ
 		// -- neo BlockEntity.worldPosition (BlockEntity.java:48) protected final, сеттера нет ни в одном из
 		// 3 корней референса -- позицию рефлективно построенной TileEntity постфактум не переустановить.
 		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)Block.getIdFromBlock(mBlock));
