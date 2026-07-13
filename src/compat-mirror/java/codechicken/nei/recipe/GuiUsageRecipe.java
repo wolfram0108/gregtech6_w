@@ -1,6 +1,13 @@
 package codechicken.nei.recipe;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Минимум для RecipeMap.guiUsesNEI. */
+import java.util.ArrayList;
+import java.util.List;
+
+/** F10 ЗЕРКАЛО (compile-only) чужого API — NEI. Минимум для RecipeMap.guiUsesNEI,
+ *  NEI_RecipeMap.init/NEI_GT_API_Config, GT_RectHandler.transferRect (возврат — boolean,
+ *  используется как условие). См. compat-mirror/README.md. */
 public class GuiUsageRecipe {
-    public static void openRecipeGui(String aRecipeName, Object... aInputs) {}
+    public static List<TemplateRecipeHandler> usagehandlers = new ArrayList<>();
+
+    public static boolean openRecipeGui(String aRecipeName, Object... aInputs) {return false;}
 }

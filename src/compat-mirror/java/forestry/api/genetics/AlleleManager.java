@@ -1,5 +1,14 @@
 package forestry.api.genetics;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
-public interface AlleleManager {}
+import net.minecraft.world.item.ItemStack;
+
+/** F10 ЗЕРКАЛО (compile-only) чужого API — Forestry. Только статика, используемая
+ *  GregTech6 (RecipeMapPlantalyzer/RecipeMapBumblelyzer: AlleleManager.alleleRegistry.getIndividual(aStack)).
+ *  См. compat-mirror/README.md. */
+public class AlleleManager {
+	public static IAlleleRegistry alleleRegistry = new IAlleleRegistry();
+
+	public static class IAlleleRegistry {
+		public Object getIndividual(ItemStack aStack) {return null;}
+	}
+}

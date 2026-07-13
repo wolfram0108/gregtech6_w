@@ -1,5 +1,7 @@
 package thaumcraft.api.aspects;
 
+import net.minecraft.resources.Identifier;
+
 /** F10 ЗЕРКАЛО (compile-only) чужого API Thaumcraft. Только объявления, используемые GregTech6
  *  (константы аспектов + минимум методов) — держит ядро компилируемым, пока интеграция с TC отложена.
  *  Значения намеренно нейтральны (интеграция не исполняется без реального TC). См. compat-mirror/README.md. */
@@ -8,6 +10,9 @@ public class Aspect {
 	public final Aspect mAspect;
 
 	public Aspect() {this.mAspect = null;}
+
+	/** CompatTC.java:138-142: new Aspect(String, int, Aspect[], Identifier, int). */
+	public Aspect(String aTag, int aColor, Aspect[] aComponents, Identifier aImage, int aRarity) {this.mAspect = null;}
 
 	public int getMetadata() {return 0;}
 

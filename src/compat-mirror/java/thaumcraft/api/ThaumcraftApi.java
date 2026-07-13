@@ -12,8 +12,9 @@ import thaumcraft.api.aspects.AspectList;
  *  (grep ThaumcraftApi.* по gregapi/*). Реальная зависимость — при возврате к интеграции TC.
  *  Тела намеренно пусты (интеграция не исполняется без реального Thaumcraft). См. compat-mirror/README.md. */
 public class ThaumcraftApi {
-	/** GT_API.java / CompatTC: objectTags.isEmpty()/containsKey/put — заглушка-карта до интеграции. */
-	public static Map<String, Object> objectTags = new HashMap<>();
+	/** GT_API.java / CompatTC: objectTags.isEmpty()/containsKey/put — заглушка-карта до интеграции.
+	 *  Ключ — CompatTC.java:379/391 кладёт List(Item,Integer), потому Object, не String. */
+	public static Map<Object, Object> objectTags = new HashMap<>();
 
 	/** CompatTC.java: portableHoleBlackList.add(...). */
 	public static List<Object> portableHoleBlackList = new ArrayList<>();
@@ -22,5 +23,6 @@ public class ThaumcraftApi {
 
 	public static void registerComplexObjectTag(ItemStack aStack, AspectList aAspects) {}
 
-	public static void addCrucibleRecipe(String aResearch, Object aInput, ItemStack aOutput, AspectList aAspects) {}
+	/** CompatTC.java:354/359/375/387: addCrucibleRecipe(String, ItemStack, Object, AspectList). */
+	public static Object addCrucibleRecipe(String aResearch, ItemStack aOutput, Object aInput, AspectList aAspects) {return null;}
 }
