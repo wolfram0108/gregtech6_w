@@ -217,3 +217,8 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\common\lib\research
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\common\lib\utils\Utils.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\common\tiles\TileArcaneWorkbench.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\common\tiles\TileCrucible.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\ic2\api\recipe\IListRecipeManager.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\ic2\api\recipe\IScrapboxManager.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\appeng\api\registries\IRegistries.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\appeng\api\recipes\IGrinderRecipeHandler.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\ic2\api\energy\IEnergyNet.java

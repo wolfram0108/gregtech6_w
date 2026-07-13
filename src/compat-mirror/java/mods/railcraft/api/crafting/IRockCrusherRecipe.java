@@ -1,5 +1,9 @@
 package mods.railcraft.api.crafting;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
-public interface IRockCrusherRecipe {}
+import net.minecraft.world.item.ItemStack;
+
+/** F10 ЗЕРКАЛО (compile-only) чужого API — Railcraft. Реально используется — RM.java:1003,1004:
+ *  addOutput(ItemStack,float):void (createNewRecipe(...) возвращает этот тип, RM.java:1002). */
+public interface IRockCrusherRecipe {
+	void addOutput(ItemStack aStack, float aChance);
+}
