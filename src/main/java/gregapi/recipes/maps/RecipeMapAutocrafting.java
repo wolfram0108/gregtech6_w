@@ -137,12 +137,12 @@ public class RecipeMapAutocrafting extends RecipeMap {
 			rBlueprint = UT.NBT.getBlueprintCrafting(aSpecialSlot);
 		} else if (OM.is_(OD_USB_STICKS[1], aSpecialSlot)) {
 			if (!aSpecialSlot.hasTagCompound()) return rBlueprint;
-			CompoundTag tData = aSpecialSlot.getTagCompound().getCompoundTag(NBT_USB_DATA);
+			CompoundTag tData = ItemNBT.get(aSpecialSlot).getCompoundTag(NBT_USB_DATA);
 			if (tData == null) return rBlueprint;
 			rBlueprint = UT.NBT.getBlueprintCrafting(tData);
 		} else if (OM.is_(OD_USB_CABLES[1], aSpecialSlot)) {
 			if (aTileEntity == null) return rBlueprint;
-			for (byte tSide : ALL_SIDES_VALID_ONLY[aSpecialSlot.hasTagCompound() && aSpecialSlot.getTagCompound().contains(NBT_USB_DIRECTION) ? aSpecialSlot.getTagCompound().getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
+			for (byte tSide : ALL_SIDES_VALID_ONLY[aSpecialSlot.hasTagCompound() && ItemNBT.get(aSpecialSlot).contains(NBT_USB_DIRECTION) ? ItemNBT.get(aSpecialSlot).getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
 				DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 				if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 					CompoundTag tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 1);

@@ -98,12 +98,12 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 						return rRecipe;
 					}
 					if (OM.is_("gt:canvas", tScanned)) {
-						if (tScanned.hasTagCompound() && tScanned.getTagCompound().contains(NBT_CANVAS_BLOCK)) {
+						if (tScanned.hasTagCompound() && ItemNBT.get(tScanned).contains(NBT_CANVAS_BLOCK)) {
 							rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 							if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
 							CompoundTag tNBT = UT.NBT.make();
-							tNBT.putInt(NBT_CANVAS_BLOCK, tScanned.getTagCompound().getInteger(NBT_CANVAS_BLOCK));
-							tNBT.putInt(NBT_CANVAS_META, tScanned.getTagCompound().getInteger(NBT_CANVAS_META));
+							tNBT.putInt(NBT_CANVAS_BLOCK, ItemNBT.get(tScanned).getInteger(NBT_CANVAS_BLOCK));
+							tNBT.putInt(NBT_CANVAS_META, ItemNBT.get(tScanned).getInteger(NBT_CANVAS_META));
 							rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, tNBT);
 							rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 							return rRecipe;
@@ -113,7 +113,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 					if ((tScanned.getItem() == ItemsGT.BOOKS || OD.bookWritten.is_(tScanned) || IL.Paper_Printed_Pages.equal(tScanned, F, T) || IL.Paper_Printed_Pages_Many.equal(tScanned, F, T)) && UT.Code.stringValid(UT.NBT.getBookTitle(tScanned))) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 512, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, tScanned.getTagCompound().copy());
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, ItemNBT.get(tScanned).copy());
 						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}

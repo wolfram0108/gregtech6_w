@@ -42,7 +42,7 @@ public class Behavior_SensorKit extends AbstractBehaviorDefault {
 			if (tTileEntity instanceof Container && !((Container)tTileEntity).isUseableByPlayer(aPlayer)) return F;/*
 			if (tTileEntity instanceof IGregTechDeviceInformation && ((IGregTechDeviceInformation)tTileEntity).isGivingInformation()) {
 				UT.Stacks.set(aStack, IL.NC_SensorCard.get(aStack.stackSize));
-				NBTTagCompound tNBT = aStack.getTagCompound();
+				NBTTagCompound tNBT = ItemNBT.get(aStack);
 				if (tNBT == null) tNBT = new NBTTagCompound();
 				tNBT.putInt("x", aX);
 				tNBT.putInt("y", aY);

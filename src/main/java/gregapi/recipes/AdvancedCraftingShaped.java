@@ -63,7 +63,7 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot) && tSlot.hasTagCompound()) {
 					if (tStack != null) {
-						if ((tStack.hasTagCompound() != tSlot.hasTagCompound()) || (tStack.hasTagCompound() && !tStack.getTagCompound().equals(tSlot.getTagCompound()))) return F;
+						if ((tStack.hasTagCompound() != tSlot.hasTagCompound()) || (tStack.hasTagCompound() && !ItemNBT.get(tStack).equals(ItemNBT.get(tSlot)))) return F;
 					}
 					tStack = tSlot;
 				}
@@ -85,7 +85,7 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			if (mKeepingNBT) for (int i = 0; i < aGrid.size(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
 				if (ST.valid(tSlot) && tSlot.hasTagCompound()) {
-					UT.NBT.set(rStack, (CompoundTag)tSlot.getTagCompound().copy());
+					UT.NBT.set(rStack, (CompoundTag)ItemNBT.get(tSlot).copy());
 					break;
 				}
 			}
@@ -106,7 +106,7 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 
 			// Saving Ingredients inside the Item.
 			if (mDismantleable) {
-				CompoundTag rNBT = rStack.getTagCompound(), tNBT = UT.NBT.make();
+				CompoundTag rNBT = ItemNBT.get(rStack), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
 				// PORT-TODO(F11, trimmed-сетка): 1.7.10 InventoryCrafting был фикс-9 (3x3); neo CraftingInput
 				// подрезается до фактического габарита (F11-crafting-recipe.md §7) — граница Math.min(9,size())

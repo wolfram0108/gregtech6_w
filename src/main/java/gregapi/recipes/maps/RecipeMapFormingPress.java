@@ -60,7 +60,7 @@ public class RecipeMapFormingPress extends RecipeMap {
 		}
 		for (ItemStack aMold : aInputs) {
 			if (IL.Shape_Mold_Credit.equal(aMold, F, T)) {
-				CompoundTag tNBT = aMold.getTagCompound();
+				CompoundTag tNBT = ItemNBT.get(aMold);
 				if (tNBT == null) tNBT = UT.NBT.make();
 				if (!tNBT.contains("credit_security_id")) UT.NBT.setNumber(tNBT, "credit_security_id", System.nanoTime());
 				UT.NBT.set(aMold, tNBT);

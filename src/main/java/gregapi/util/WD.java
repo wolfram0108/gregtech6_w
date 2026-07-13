@@ -18,6 +18,7 @@
  */
 
 package gregapi.util;
+import gregapi.code.ItemNBT;
 import net.minecraft.block.BlockBush;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.BlockSlab;
@@ -639,7 +640,7 @@ public class WD {
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, ItemStack aStack) {
 		Block tBlock = ST.block(aStack);
 		if (tBlock == NB) return F;
-		if (tBlock instanceof IBlockPlacable) return ((IBlockPlacable)tBlock).placeBlock(aWorld, aX, aY, aZ, (byte)6, ST.meta_(aStack), aStack.getTagCompound(), T, F);
+		if (tBlock instanceof IBlockPlacable) return ((IBlockPlacable)tBlock).placeBlock(aWorld, aX, aY, aZ, (byte)6, ST.meta_(aStack), ItemNBT.get(aStack), T, F);
 		if (ST.meta_(aStack) < 16) return set(aWorld, aX, aY, aZ, tBlock, ST.meta_(aStack), Block.UPDATE_ALL, F); // было aWorld.setBlock(x,y,z,block,meta,3) — флаг 3=UPDATE_ALL; маршрут через центр set(...)
 		return F;
 	}

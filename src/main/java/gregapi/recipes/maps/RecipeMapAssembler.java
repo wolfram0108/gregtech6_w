@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes.maps;
+import gregapi.code.ItemNBT;
 
 import gregapi.data.IL;
 import gregapi.random.IHasWorldAndCoords;
@@ -47,7 +48,7 @@ public class RecipeMapAssembler extends RecipeMap {
 			if (IL.Paper_Printed_Pages.equal(aInput, F, T) || IL.Paper_Printed_Pages_Many.equal(aInput, F, T)) {
 				rRecipe = rRecipe.copy();
 				rRecipe.mCanBeBuffered = F;
-				UT.NBT.set(rRecipe.mOutputs[0], aInput.getTagCompound());
+				UT.NBT.set(rRecipe.mOutputs[0], ItemNBT.get(aInput));
 			}
 		}
 		return rRecipe;

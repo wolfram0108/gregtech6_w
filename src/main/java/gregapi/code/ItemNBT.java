@@ -33,7 +33,7 @@ import net.minecraft.world.item.component.CustomData;
  * <p>
  * Этот класс воспроизводит старую 1.7.10-семантику 1:1 поверх нового канала:
  * <ul>
- *   <li>{@link #get(ItemStack)} == старое `stack.getTagCompound()` (null, если тега нет).</li>
+ *   <li>{@link #get(ItemStack)} == старое `ItemNBT.get(stack)` (null, если тега нет).</li>
  *   <li>{@link #set(ItemStack, CompoundTag)} == старое `stack.setTagCompound(nbt)`.</li>
  *   <li>{@link #has(ItemStack)} == старое `stack.hasTagCompound()`.</li>
  * </ul>

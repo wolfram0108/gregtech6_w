@@ -63,11 +63,11 @@ public class RecipeMapReplicator extends RecipeMap {
 				if (OM.is_(OD_USB_STICKS[3], aInput)) {
 					if (!aInput.hasTagCompound()) return rRecipe;
 					tUSB = aInput;
-					tData = tUSB.getTagCompound().getCompoundTag(NBT_USB_DATA);
+					tData = ItemNBT.get(tUSB).getCompoundTag(NBT_USB_DATA);
 				} else if (OM.is_(OD_USB_CABLES[3], aInput)) {
 					if (aTileEntity == null) return rRecipe;
 					tUSB = aInput;
-					for (byte tSide : ALL_SIDES_VALID_ONLY[tUSB.hasTagCompound() && tUSB.getTagCompound().contains(NBT_USB_DIRECTION) ? tUSB.getTagCompound().getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
+					for (byte tSide : ALL_SIDES_VALID_ONLY[tUSB.hasTagCompound() && ItemNBT.get(tUSB).contains(NBT_USB_DIRECTION) ? ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
 						DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 							tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 3);

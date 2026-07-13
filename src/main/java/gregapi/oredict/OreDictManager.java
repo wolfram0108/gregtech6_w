@@ -625,7 +625,7 @@ public final class OreDictManager {
 		if (tAssociation == null || (aUseBlackList && tAssociation.mBlocked)) return ST.copy(aStack);
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
 		if (ST.invalid(rStack = ST.amount(aStack.getCount(), tAssociation.mUnificationTarget))) return ST.copy(aStack);
-		ItemNBT.set(rStack, ItemNBT.get(aStack)); // F8 стык: было rStack.setTagCompound(aStack.getTagCompound()) — ItemNBT-мост
+		ItemNBT.set(rStack, ItemNBT.get(aStack)); // F8 стык: было rStack.setTagCompound(ItemNBT.get(aStack)) — ItemNBT-мост
 		return rStack;
 	}
 	
@@ -705,7 +705,7 @@ public final class OreDictManager {
 		OreDictItemData rData = null;
 		if (aAllowOverride) {
 			OreDictItemData tData = null;
-			CompoundTag tNBT = ItemNBT.get(aStack); // F8 стык: было aStack.getTagCompound() — ItemNBT-мост
+			CompoundTag tNBT = ItemNBT.get(aStack); // F8 стык: было ItemNBT.get(aStack) — ItemNBT-мост
 			if (tNBT != null && tNBT.contains(NBT_RECYCLING_MATS)) {
 				List<OreDictMaterialStack> tList = OreDictMaterialStack.loadList(NBT_RECYCLING_MATS, tNBT);
 				if (!tList.isEmpty()) rData = new OreDictItemData(tList.remove(0), tList.toArray(ZL_MS));

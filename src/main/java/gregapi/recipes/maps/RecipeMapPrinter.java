@@ -64,11 +64,11 @@ public class RecipeMapPrinter extends RecipeMap {
 				if (OM.is_(OD_USB_STICKS[1], aInput)) {
 					if (!aInput.hasTagCompound()) return rRecipe;
 					tUSB = aInput;
-					tData = tUSB.getTagCompound().getCompoundTag(NBT_USB_DATA);
+					tData = ItemNBT.get(tUSB).getCompoundTag(NBT_USB_DATA);
 				} else if (OM.is_(OD_USB_CABLES[1], aInput)) {
 					if (aTileEntity == null) return rRecipe;
 					tUSB = aInput;
-					for (byte tSide : ALL_SIDES_VALID_ONLY[tUSB.hasTagCompound() && tUSB.getTagCompound().contains(NBT_USB_DIRECTION) ? tUSB.getTagCompound().getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
+					for (byte tSide : ALL_SIDES_VALID_ONLY[tUSB.hasTagCompound() && ItemNBT.get(tUSB).contains(NBT_USB_DIRECTION) ? ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
 						DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 							tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 1);
@@ -85,7 +85,7 @@ public class RecipeMapPrinter extends RecipeMap {
 		if (tData == null || tData.isEmpty()) return rRecipe;
 		if (tPaper != null && tUSB != null) {
 			if (OM.is_("gt:canvas", tPaper)) {
-				if (tData.contains(NBT_CANVAS_BLOCK) && (!tPaper.hasTagCompound() || !tPaper.getTagCompound().contains(NBT_CANVAS_BLOCK))) {
+				if (tData.contains(NBT_CANVAS_BLOCK) && (!tPaper.hasTagCompound() || !ItemNBT.get(tPaper).contains(NBT_CANVAS_BLOCK))) {
 					rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tPaper), ST.amount(0, tUSB)), ST.array(ST.amount(1, tPaper)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T)), null, 64, 16, 0);
 					CompoundTag tNBT = rRecipe.mOutputs[0].getTagCompound();
 					if (tNBT == null) tNBT = UT.NBT.make();
@@ -128,7 +128,7 @@ public class RecipeMapPrinter extends RecipeMap {
 						String aMapping = UT.NBT.getBookMapping(tData);
 						if (UT.Code.stringValid(aMapping)) {
 							ItemStack tBook = UT.Books.getWrittenBook(aMapping, T);
-							if (tBook != null && tBook.hasTagCompound()) tPages = tBook.getTagCompound().getTagList("pages", 8);
+							if (tBook != null && tBook.hasTagCompound()) tPages = ItemNBT.get(tBook).getTagList("pages", 8);
 						}
 					}
 					boolean tUseManyPages = (tPages != null && tPages.tagCount() > 50);
@@ -142,7 +142,7 @@ public class RecipeMapPrinter extends RecipeMap {
 					if (ST.valid(tMaterial.mDictionaryBook)) {
 						boolean tUseManyPages = (ST.meta_(tMaterial.mDictionaryBook) == 32003);
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(tUseManyPages?6:3, tPaper), ST.amount(0, tUSB)), ST.array(tUseManyPages?IL.Paper_Printed_Pages_Many.get(1):IL.Paper_Printed_Pages.get(1)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, tUseManyPages?1:2, T)), null, tUseManyPages?1024:512, 16, 0);
-						UT.NBT.set(rRecipe.mOutputs[0], tMaterial.mDictionaryBook.getTagCompound());
+						UT.NBT.set(rRecipe.mOutputs[0], ItemNBT.get(tMaterial.mDictionaryBook));
 						return rRecipe;
 					}
 					return rRecipe;
