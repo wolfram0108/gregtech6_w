@@ -370,7 +370,7 @@ public class Loader_Recipes_Food implements Runnable {
 			if (OD.listAllmeatsubstitute.is_(aEvent.mStack) || !ST.ingredable(aEvent.mStack)) return;
 			OreDictItemData tData = OM.anydata_(aEvent.mStack);
 			
-			RM.generify(aEvent.mStack, ST.make(Items.fish, 1, 0));
+			RM.generify(aEvent.mStack, ST.make(Items.COD, 1, 0));
 			
 			if (tData == null) {
 				RM.Mortar.addRecipe1(T, 16, 16, aEvent.mStack, OM.dust(MT.FishRaw));

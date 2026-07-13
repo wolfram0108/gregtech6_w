@@ -53,7 +53,7 @@ public class PlankEntry {
 		this(aPlank, -1);
 	}
 	public PlankEntry(ItemStack aPlank, int aPlankIndex) {
-		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.wooden_slab, 1, 0)), aPlankIndex);
+		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.OAK_SLAB, 1, 0)), aPlankIndex);
 	}
 	public PlankEntry(ItemStack aPlank, ItemStack aSlab) {
 		this(aPlank, aSlab, -1);
@@ -71,13 +71,13 @@ public class PlankEntry {
 		this(aPlank, aMaterialPlank, -1);
 	}
 	public PlankEntry(ItemStack aPlank, OreDictMaterial aMaterialPlank, int aPlankIndex) {
-		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.wooden_slab, 1, 0)), aMaterialPlank, aPlankIndex, aMaterialPlank == MT.Wood ? IL.Stick.get(1) : OP.stick.mat(aMaterialPlank, 1));
+		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.OAK_SLAB, 1, 0)), aMaterialPlank, aPlankIndex, aMaterialPlank == MT.Wood ? IL.Stick.get(1) : OP.stick.mat(aMaterialPlank, 1));
 	}
 	public PlankEntry(ItemStack aPlank, OreDictMaterial aMaterialPlank, int aPlankIndex, ItemStack aStick) {
-		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.wooden_slab, 1, 0)), aMaterialPlank, aPlankIndex, aStick);
+		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.OAK_SLAB, 1, 0)), aMaterialPlank, aPlankIndex, aStick);
 	}
 	public PlankEntry(ItemStack aPlank, OreDictMaterial aMaterialPlank, int aPlankIndex, ItemStack aStick, int aStickCountHand, int aStickCountSaw, int aStickCountLathe) {
-		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.wooden_slab, 1, 0)), aMaterialPlank, aPlankIndex, aStick, aStickCountHand, aStickCountSaw, aStickCountLathe);
+		this(aPlank, IL.Plank_Slab.get(1, ST.make(Blocks.OAK_SLAB, 1, 0)), aMaterialPlank, aPlankIndex, aStick, aStickCountHand, aStickCountSaw, aStickCountLathe);
 	}
 	public PlankEntry(ItemStack aPlank, ItemStack aSlab, OreDictMaterial aMaterialPlank) {
 		this(aPlank, aSlab, aMaterialPlank, -1);

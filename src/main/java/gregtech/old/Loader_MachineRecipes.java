@@ -59,7 +59,7 @@ public class Loader_MachineRecipes implements Runnable {
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Paper, 8)        , ST.make(Items.compass, 1, W)        , NF                        , ST.make(Items.map, 1, 0)         , 100,  8);
 //      RA.addAssemblerRecipe(ST.make(MD.FR, "sturdyMachine", 1, 0), OM.get(OP.gem, MT.Diamond, 4)       , MT.Water.getFluid(5000)   , IL.FR_Casing_Hardened.get(1)     ,  64, 32);
 //      RA.addAssemblerRecipe(OM.get(OP.ingot, MT.Bronze, 8)       , ST.tag(8)                           , NF                        , IL.FR_Casing_Sturdy.get(1)       ,  32, 16);
-//      RA.addAssemblerRecipe(OM.get(OP.stick, MT.Wood, 1)         , ST.make(Blocks.wool, 1, W)          , MT.Creosote.getFluid(1000), ST.make(Blocks.torch, 6, 0)      , 400,  1);
+//      RA.addAssemblerRecipe(OM.get(OP.stick, MT.Wood, 1)         , ST.make(Blocks.WHITE_WOOL, 1, 0)          , MT.Creosote.getFluid(1000), ST.make(Blocks.torch, 6, 0)      , 400,  1);
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Rubber, 3)       , ST.makeIC2("carbonMesh", 3)         , MT.Glue.getFluid(300)     , IL.Duct_Tape.get(1)              , 100, 64);
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Paper, 3)        , ST.make(Items.leather, 1, W)        , MT.Glue.getFluid( 20)     , ST.make(Items.book, 1, 0)        ,  32,  8);
 //      RA.addAssemblerRecipe(IL.Paper_Printed_Pages.get(1)        , ST.make(Items.leather, 1, W)        , MT.Glue.getFluid( 20)     , ST.make(Items.written_book, 1, 0),  32,  8);
@@ -90,7 +90,7 @@ public class Loader_MachineRecipes implements Runnable {
 		RA.addVacuumFreezerRecipe(ST.mkic("reactorCoolantSix"   , 1, W), ST.mkic("reactorCoolantSix"   , 1), 600);
 		
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "torchesFromCoal", F))
-		RA.addAssemblerRecipe(IL.Stick.get(1), ST.make(Items.coal, 1, W), IL.Torch.get(4), 400, 1);
+		RA.addAssemblerRecipe(IL.Stick.get(1), ST.make(Items.COAL, 1, 0), IL.Torch.get(4), 400, 1);
 		RA.addAssemblerRecipe(IL.Stick.get(3), ST.tag(3), ST.make(Blocks.fence, 1, 0), 300, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.Fe, 2), ST.make(Blocks.tripwire_hook, 1, 0), 400, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.WroughtIron, 2), ST.make(Blocks.tripwire_hook, 1, 0), 400, 4);
@@ -110,13 +110,13 @@ public class Loader_MachineRecipes implements Runnable {
 		RA.addAssemblerRecipe(OM.get(OP.plate, MT.WroughtIron, 3), OM.get(OP.minecartWheels, MT.WroughtIron, 2), ST.make(Items.minecart, 1, 0), 400, 2);
 		RA.addAssemblerRecipe(OM.get(OP.plate, MT.Steel      , 3), OM.get(OP.minecartWheels, MT.Steel      , 2), ST.make(Items.minecart, 1, 0), 300, 2);
 		RA.addAssemblerRecipe(ST.make(Blocks.tripwire_hook, 1, 0), ST.make(Blocks.chest, 1, W), ST.make(Blocks.trapped_chest, 1, 0), 200, 4);
-		RA.addAssemblerRecipe(ST.make(Blocks.stone    , 1, 0), ST.tag(4), ST.make(Blocks.stonebrick, 1, 0),  50, 4);
-		RA.addAssemblerRecipe(ST.make(Blocks.sandstone, 1, 0), ST.tag(1), ST.make(Blocks.sandstone , 1, 2),  50, 4);
-		RA.addAssemblerRecipe(ST.make(Blocks.sandstone, 1, 1), ST.tag(1), ST.make(Blocks.sandstone , 1, 0),  50, 4);
-		RA.addAssemblerRecipe(ST.make(Blocks.sandstone, 1, 2), ST.tag(1), ST.make(Blocks.sandstone , 1, 0),  50, 4);
+		RA.addAssemblerRecipe(ST.make(Blocks.STONE, 1, 0), ST.tag(4), ST.make(Blocks.STONE_BRICKS, 1, 0),  50, 4);
+		RA.addAssemblerRecipe(ST.make(Blocks.SANDSTONE, 1, 0), ST.tag(1), ST.make(Blocks.CUT_SANDSTONE, 1, 0),  50, 4);
+		RA.addAssemblerRecipe(ST.make(Blocks.CHISELED_SANDSTONE, 1, 0), ST.tag(1), ST.make(Blocks.SANDSTONE, 1, 0),  50, 4);
+		RA.addAssemblerRecipe(ST.make(Blocks.CUT_SANDSTONE, 1, 0), ST.tag(1), ST.make(Blocks.SANDSTONE, 1, 0),  50, 4);
 		RA.addAssemblerRecipe(ST.mkic("batPack", 1, W), ST.tag(1), IL.IC2_ReBattery.get(6), 800, 4);
-		RA.addAssemblerRecipe(ST.make(Blocks.stone_slab, 3, 0), IL.RC_Rebar.get(1), IL.RC_Tie_Stone.get(1), 128, 8);
-		RA.addAssemblerRecipe(ST.make(Blocks.stone_slab, 3, 7), IL.RC_Rebar.get(1), IL.RC_Tie_Stone.get(1), 128, 8);
+		RA.addAssemblerRecipe(ST.make(Blocks.STONE_SLAB, 3, 0), IL.RC_Rebar.get(1), IL.RC_Tie_Stone.get(1), 128, 8);
+		RA.addAssemblerRecipe(ST.make(Blocks.QUARTZ_SLAB, 3, 0), IL.RC_Rebar.get(1), IL.RC_Tie_Stone.get(1), 128, 8);
 		RA.addAssemblerRecipe(OM.get(OP.wireGt01, MT.Cu            , 9), OM.get(OP.plate, MT.Pb, 2), NF, IL.RC_ShuntingWire.get(4), 1600, 4);
 		RA.addAssemblerRecipe(OM.get(OP.wireGt01, MT.AnnealedCopper, 9), OM.get(OP.plate, MT.Pb, 2), NF, IL.RC_ShuntingWire.get(4), 1600, 4);
 		

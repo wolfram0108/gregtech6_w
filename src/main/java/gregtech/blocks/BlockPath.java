@@ -83,7 +83,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		case  9: return ST.arraylist(IL.EB_Dirt_Inceptisol.get(1));
 		case 10: return ST.arraylist(IL.EB_Dirt_Mollisol.get(1));
 		case 11: return ST.arraylist(IL.EB_Dirt_Oxisol.get(1));
-		default: return ST.arraylist(ST.make(Blocks.dirt, 1, 0));
+		default: return ST.arraylist(ST.make(Blocks.DIRT, 1, 0));
 		}
 	}
 	

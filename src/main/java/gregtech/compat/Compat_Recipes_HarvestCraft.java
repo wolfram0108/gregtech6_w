@@ -100,7 +100,7 @@ public class Compat_Recipes_HarvestCraft extends CompatMods {
 		RM.Loom     .addRecipe2(T, 16,  128, ST.tag(6), ST.make(MD.HaC, "hardenedleatherItem", 7), ST.make(MD.HaC, "hardenedleatherleggingsItem", 1));
 		RM.Loom     .addRecipe2(T, 16,  128, ST.tag(7), ST.make(MD.HaC, "hardenedleatherItem", 4), ST.make(MD.HaC, "hardenedleatherbootsItem", 1));
 		
-		RM.Shredder .addRecipe1(T, 16,   16, ST.make(Blocks.double_plant    , 1, 0), ST.make(MD.HaC, "sunflowerseedsItem", 1));
+		RM.Shredder .addRecipe1(T, 16,   16, ST.make(Blocks.SUNFLOWER, 1, 0), ST.make(MD.HaC, "sunflowerseedsItem", 1));
 		
 		CR.shaped(IL.Food_Toast_Sliced.get(4), CR.DEF_NCC, "kX", 'X', ST.make(MD.HaC, "toastItem", 1));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.HaC, "toastItem", 1), IL.Shape_Slicer_Flat.get(0), IL.Food_Toast_Sliced.get(4));

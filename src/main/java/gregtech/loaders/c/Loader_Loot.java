@@ -182,14 +182,14 @@ public class Loader_Loot implements Runnable {
 		ChestGenHooks.getInfo("gt.saplings").setMax(24);
 		// Well, sometimes the Tree does not survive. XD
 		addLoot("gt.saplings", 288, 1, 4, ST.make(Blocks.deadbush, 1, 0));
-		addLoot("gt.saplings", 288, 1, 4, ST.make(Blocks.tallgrass, 1, 0));
+		addLoot("gt.saplings", 288, 1, 4, ST.make(Blocks.DEAD_BUSH, 1, 0));
 		// Yes I count those as Saplings too, they are kinda Tree alike. Better than putting these in the Seed Bags.
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.double_plant, 1, 0));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.double_plant, 1, 1));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.double_plant, 1, 2));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.double_plant, 1, 3));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.double_plant, 1, 4));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.double_plant, 1, 5));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.SUNFLOWER, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.LILAC, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.TALL_GRASS, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.LARGE_FERN, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.ROSE_BUSH, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.PEONY, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.brown_mushroom, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.red_mushroom, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.cactus, 1, 0));

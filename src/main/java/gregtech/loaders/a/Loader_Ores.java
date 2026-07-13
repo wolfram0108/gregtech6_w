@@ -139,14 +139,14 @@ public class Loader_Ores implements Runnable {
 		//====================================================================================================//
 		
 		if (MD.UB.mLoaded) {
-		RM.generify(ST.make(MD.UB, "igneousStone"                     , 1, W), ST.make(Blocks.stone, 1, 0));
-		RM.generify(ST.make(MD.UB, "metamorphicStone"                 , 1, W), ST.make(Blocks.stone, 1, 0));
-		RM.generify(ST.make(MD.UB, "sedimentaryStone"                 , 1, W), ST.make(Blocks.stone, 1, 0));
+		RM.generify(ST.make(MD.UB, "igneousStone"                     , 1, W), ST.make(Blocks.STONE, 1, 0));
+		RM.generify(ST.make(MD.UB, "metamorphicStone"                 , 1, W), ST.make(Blocks.STONE, 1, 0));
+		RM.generify(ST.make(MD.UB, "sedimentaryStone"                 , 1, W), ST.make(Blocks.STONE, 1, 0));
 		RM.generify(ST.make(MD.UB, "igneousCobblestone"               , 1, W), ST.make(Blocks.cobblestone, 1, 0));
 		RM.generify(ST.make(MD.UB, "metamorphicCobblestone"           , 1, W), ST.make(Blocks.cobblestone, 1, 0));
 		}
 		if (MD.EB.mLoaded) {
-		RM.generify(ST.make(MD.EB, "enhancedbiomes.tile.stoneEB"      , 1, W), ST.make(Blocks.stone, 1, 0));
+		RM.generify(ST.make(MD.EB, "enhancedbiomes.tile.stoneEB"      , 1, W), ST.make(Blocks.STONE, 1, 0));
 		RM.generify(ST.make(MD.EB, "enhancedbiomes.tile.stoneCobbleEB", 1, W), ST.make(Blocks.cobblestone, 1, 0));
 		}
 		
@@ -172,10 +172,10 @@ public class Loader_Ores implements Runnable {
 		for (int i = 0; i < 8; i++) rockset(MD.UB, "sedimentaryStone", i, i+8, "sedimentaryStone", i, "ub.sedimentary."+i, tPrefix[i], tDrops[i]);
 		
 		if (MD.PFAA.mLoaded) {
-		RM.generify(ST.make(MD.PFAA, "weakStone"       , 1, W), ST.make(Blocks.stone, 1, 0));
-		RM.generify(ST.make(MD.PFAA, "mediumStone"     , 1, W), ST.make(Blocks.stone, 1, 0));
-		RM.generify(ST.make(MD.PFAA, "strongStone"     , 1, W), ST.make(Blocks.stone, 1, 0));
-		RM.generify(ST.make(MD.PFAA, "veryStrongStone" , 1, W), ST.make(Blocks.stone, 1, 0));
+		RM.generify(ST.make(MD.PFAA, "weakStone"       , 1, W), ST.make(Blocks.STONE, 1, 0));
+		RM.generify(ST.make(MD.PFAA, "mediumStone"     , 1, W), ST.make(Blocks.STONE, 1, 0));
+		RM.generify(ST.make(MD.PFAA, "strongStone"     , 1, W), ST.make(Blocks.STONE, 1, 0));
+		RM.generify(ST.make(MD.PFAA, "veryStrongStone" , 1, W), ST.make(Blocks.STONE, 1, 0));
 		RM.generify(ST.make(MD.PFAA, "weakRubble"      , 1, W), ST.make(Blocks.gravel, 1, 0));
 		RM.generify(ST.make(MD.PFAA, "mediumCobble"    , 1, W), ST.make(Blocks.cobblestone, 1, 0));
 		RM.generify(ST.make(MD.PFAA, "strongCobble"    , 1, W), ST.make(Blocks.cobblestone, 1, 0));

@@ -1789,7 +1789,7 @@ public class CS {
 		public static PlankEntry     PLANK_ENTRIES[] = new PlankEntry    [300];
 		
 		static {
-			PLANKS[0] = ST.make(Blocks.planks, 1, 0);
+			PLANKS[0] = ST.make(Blocks.OAK_PLANKS, 1, 0);
 			Arrays.fill(PLANK_ICONS, new IconContainerCopied(Blocks.planks, 0, 0));
 		}
 	}

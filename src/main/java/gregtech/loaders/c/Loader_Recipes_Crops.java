@@ -308,12 +308,12 @@ public class Loader_Recipes_Crops implements Runnable {
 		
 		addListener("cropHemp", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Loom         .addRecipe2(T, 16, 16, ST.tag(10), ST.amount(4, aEvent.mStack), IL.Rope.get(1));
-			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 0), ST.amount(9, aEvent.mStack), ST.make(Blocks.wool, 1, 0));
+			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 0), ST.amount(9, aEvent.mStack), ST.make(Blocks.WHITE_WOOL, 1, 0));
 			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 1), ST.amount(3, aEvent.mStack), ST.make(Items.string, 1, 0));
 			RM.crop(aEvent.mStack, FL.Oil_Hemp, 100, IL.Remains_Plant.get(1), 3000, null, null, 0, 0, 0, 0, 0);
 		}});
 		addListener("cropFlax", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 0), ST.amount(4, aEvent.mStack), ST.make(Blocks.wool, 1, 0));
+			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 0), ST.amount(4, aEvent.mStack), ST.make(Blocks.WHITE_WOOL, 1, 0));
 			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 1), ST.amount(2, aEvent.mStack), ST.make(Items.string, 1, 0));
 			RM.Squeezer     .addRecipe1(T, 16, 16, 3000, aEvent.mStack, NF, FL.lube(30), IL.Remains_Plant.get(1));
 			RM.Juicer       .addRecipe1(T, 16, 16, 4000, aEvent.mStack, NF, FL.lube(20), IL.Remains_Plant.get(1));
@@ -490,7 +490,7 @@ public class Loader_Recipes_Crops implements Runnable {
 		}});
 		addListener("cropApple", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			if (OM.is("cropAppleWhite", aEvent.mStack) || OM.is("cropCrabapple", aEvent.mStack)) return;
-			RM.Bath.addRecipe1(T, 0, 128, aEvent.mStack, MT.Au.liquid(U*8, T), NF, ST.make(Items.golden_apple, 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, aEvent.mStack, MT.Au.liquid(U*8, T), NF, ST.make(Items.GOLDEN_APPLE, 1, 0));
 			if (OM.is("cropAppleDarkRed", aEvent.mStack) || OM.is("cropAppleRed", aEvent.mStack) || OM.is("cropAppleYellow", aEvent.mStack) || OM.is("cropAppleGreen", aEvent.mStack)) return;
 			RM.crop_fruit(aEvent.mStack, FL.Juice_Apple, 100, 7000, "Canned Apples", 0, 0, 0, 8, 0);
 		}});

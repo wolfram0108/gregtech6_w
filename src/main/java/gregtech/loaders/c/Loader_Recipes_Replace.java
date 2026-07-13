@@ -292,7 +292,7 @@ public class Loader_Recipes_Replace implements Runnable {
 		public RecipeReplacer(ItemStack[] aRecipe) {mRecipe = aRecipe; mName = "null"; mShape = ZL_STRING;}
 	}
 	
-	private static final ItemStack INGT = ST.make(Blocks.dirt, 1, 0), STCK = ST.make(Blocks.dirt, 1, 0);
+	private static final ItemStack INGT = ST.make(Blocks.DIRT, 1, 0), STCK = ST.make(Blocks.DIRT, 1, 0);
 	private static final String HAM = "h", FIL = "f", NGT = "I", PLT = "P", CRV = "C", ROD = "R", ___ = " ";
 	
 	public static final RecipeReplacer[] sRecipesMat = {

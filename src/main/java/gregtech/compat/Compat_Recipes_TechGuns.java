@@ -104,7 +104,7 @@ public class Compat_Recipes_TechGuns extends CompatMods {
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(MD.TG, "TechgunsAmmo", 1, 29), FL.Air_Nether    .make(16000), NF, ST.make(MD.TG, "TechgunsAmmo", 1, 28));
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(MD.TG, "TechgunsAmmo", 1, 29), FL.Air_End       .make(16000), NF, ST.make(MD.TG, "TechgunsAmmo", 1, 28));
 		
-		RM.Loom.addRecipe2(T, 16, 16, ST.make(Blocks.wool, 4, W), ST.make(Items.leather, 1, W), ST.make(MD.TG, "TechgunsAmmo", 3, 39));
+		RM.Loom.addRecipe2(T, 16, 16, ST.make(Blocks.WHITE_WOOL, 4, 0), ST.make(Items.leather, 1, W), ST.make(MD.TG, "TechgunsAmmo", 3, 39));
 		
 		RM.Bath.addRecipe1(T, 0, 128, ST.make(MD.TG, "revolver", 1, W), MT.Au.liquid(U*8, T), NF, ST.make(MD.TG, "goldenrevolver", 1, 0));
 		

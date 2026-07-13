@@ -57,13 +57,13 @@ public class GT_Tool_Chisel extends ToolStats {
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		if (aBlock == Blocks.stone) {
 			aDrops.clear();
-			aDrops.add(ST.make(Blocks.stonebrick, 1, 3));
+			aDrops.add(ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 			return 0;
 		}
 		if (aBlock == Blocks.stonebrick) {
 			aDrops.clear();
 			switch(aMetaData) {
-			case  0: aDrops.add(ST.make(Blocks.stonebrick, 1, 2)); break;
+			case  0: aDrops.add(ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0)); break;
 			case  1: aDrops.add(ST.make(Blocks.mossy_cobblestone, 1, 0)); break;
 			case  2: aDrops.add(ST.make(Blocks.cobblestone, 1, 0)); break;
 			default: aDrops.add(ST.make(aBlock, 1, aMetaData)); break;

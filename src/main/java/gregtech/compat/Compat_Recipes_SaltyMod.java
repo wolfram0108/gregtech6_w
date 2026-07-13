@@ -47,8 +47,8 @@ public class Compat_Recipes_SaltyMod extends CompatMods {
 		
 		RM.mortarize(16, ST.make(MD.Salt, "saltCrystal", 1, 0), OP.dust.mat(MT.NaCl, 16));
 		
-		RM.Mixer.addRecipe2(T, 16,  64, ST.make(Blocks.dirt, 1, 0), OP.dustSmall.mat(MT.NaCl, 2), IL.Salt_Dirt_1.get(1));
-		RM.Mixer.addRecipe2(T, 16,  64, ST.make(Blocks.dirt, 2, 0), OP.dust     .mat(MT.NaCl, 1), IL.Salt_Dirt_1.get(2));
+		RM.Mixer.addRecipe2(T, 16,  64, ST.make(Blocks.DIRT, 1, 0), OP.dustSmall.mat(MT.NaCl, 2), IL.Salt_Dirt_1.get(1));
+		RM.Mixer.addRecipe2(T, 16,  64, ST.make(Blocks.DIRT, 2, 0), OP.dust     .mat(MT.NaCl, 1), IL.Salt_Dirt_1.get(2));
 		RM.Mixer.addRecipe2(T, 16,  64, IL.Salt_Dirt_1     .get(1), OP.dustSmall.mat(MT.NaCl, 2), IL.Salt_Dirt_2.get(1));
 		RM.Mixer.addRecipe2(T, 16,  64, IL.Salt_Dirt_1     .get(2), OP.dust     .mat(MT.NaCl, 1), IL.Salt_Dirt_2.get(2));
 		RM.Mixer.addRecipe2(T, 16,  64, IL.Salt_Dirt_2     .get(1), OP.dust     .mat(MT.NaCl, 1), IL.Salt_Dirt_3.get(1));

@@ -194,7 +194,7 @@ public class Loader_Recipes_Chem implements Runnable {
 		RM.Bath         .addRecipe1(T, 0,   512, OM.dust(MT.OREMATS.Ferberite     , U *6), MT.HCl   .fluid(U* 4, T), NF, OM.dust(MT.FeCl2, U*3), OM.dust(MT.H2WO4 , U*4), OM.dust(MT.H2WO4 , U*3));
 		RM.Bath         .addRecipe1(T, 0,   512, OM.dust(MT.OREMATS.Huebnerite    , U *6), MT.HCl   .fluid(U* 4, T), NF, OM.dust(MT.MnCl2, U*3), OM.dust(MT.H2WO4 , U*4), OM.dust(MT.H2WO4 , U*3));
 		RM.Bath         .addRecipe1(T, 0,   512, OM.dust(MT.OREMATS.Tungstate     , U *7), MT.HCl   .fluid(U* 4, T), NF, OM.dust(MT.LiCl , U*4), OM.dust(MT.H2WO4 , U*7));
-		RM.Bath         .addRecipe1(T, 0,   512, ST.make(Blocks.sand              , 1, 1), MT.HCl   .fluid(U*12, T), MT.H2O.liquid(U*9, F), OM.dust(MT.FeCl3, U*2), OM.dust(MT.FeCl3, U*2), OM.dust(MT.FeCl3, U*2), OM.dust(MT.FeCl3, U*2));
+		RM.Bath         .addRecipe1(T, 0,   512, ST.make(Blocks.RED_SAND, 1, 0), MT.HCl   .fluid(U*12, T), MT.H2O.liquid(U*9, F), OM.dust(MT.FeCl3, U*2), OM.dust(MT.FeCl3, U*2), OM.dust(MT.FeCl3, U*2), OM.dust(MT.FeCl3, U*2));
 		RM.Bath         .addRecipe1(T, 0,   512, OM.dust(MT.RedSand               , U *9), MT.HCl   .fluid(U*12, T), MT.H2O.liquid(U*9, F), OM.dust(MT.FeCl3, U*8));
 		RM.Bath         .addRecipe1(T, 0,   512, OM.dust(MT.Fe2O3                 , U *5), MT.HCl   .fluid(U*12, T), MT.H2O.liquid(U*9, F), OM.dust(MT.FeCl3, U*4), OM.dust(MT.FeCl3, U*4));
 		RM.Bath         .addRecipe1(T, 0,   512, OM.dust(MT.OREMATS.YellowLimonite, U *4), MT.HCl   .fluid(U* 6, T), MT.H2O.liquid(U*6, F), OM.dust(MT.FeCl3, U*4));
@@ -550,7 +550,7 @@ public class Loader_Recipes_Chem implements Runnable {
 		RM.Drying       .addRecipe0(T, 16, 1600, FL.Brine.make(1000)            , FL.DistW.make( 750), OM.dust(MT.NaCl, U4));
 		RM.Drying       .addRecipe0(T, 16, 1600, MT.SaltWater.liquid(U, T)      , FL.DistW.make( 750), OM.dust(MT.NaCl, U4));
 		RM.Drying       .addRecipe0(T, 16, 1600, MT.SaltedWater.liquid(U, T)    , FL.DistW.make( 750), OM.dust(MT.KCl , U4));
-		RM.Drying       .addRecipe0(T, 16,16000, FL.Dirty_Water.make(8000)      , FL.DistW.make(7000), ST.make(Blocks.dirt, 1, 0));
+		RM.Drying       .addRecipe0(T, 16,16000, FL.Dirty_Water.make(8000)      , FL.DistW.make(7000), ST.make(Blocks.DIRT, 1, 0));
 		if (FL.Swampwater.exists())
 		RM.Drying       .addRecipe0(T, 16,   16, FL.Swampwater.make(10)         , FL.DistW.make(5), ZL_IS);
 		if (FL.Stagnant_Water.exists())

@@ -51,10 +51,10 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 			RM.add_smelting(aEvent.mStack, OP.plate.mat(MT.Stone, 1), T, F, F);
 		}});
 		addListener(OP.blockDust.dat(MT.Stone), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.add_smelting(aEvent.mStack, ST.make(Blocks.stone, 1, 0), T, F, F);
+			RM.add_smelting(aEvent.mStack, ST.make(Blocks.STONE, 1, 0), T, F, F);
 		}});
 		addListener(OP.blockDust.dat(MT.Concrete), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.add_smelting(aEvent.mStack, ST.make(MD.CHSL, "concrete", 1, 0, ST.make(Blocks.stone, 1, 0)), F, F, F);
+			RM.add_smelting(aEvent.mStack, ST.make(MD.CHSL, "concrete", 1, 0, ST.make(Blocks.STONE, 1, 0)), F, F, F);
 		}});
 		addListener(OP.dustDiv72.dat(MT.ArcaneCompound), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.add_smelting(aEvent.mStack, OP.dustDiv72.mat(MT.ArcaneAsh, 2), F, F, F);
@@ -72,8 +72,8 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 			RM.add_smelting(aEvent.mStack, OP.blockDust.mat(MT.ArcaneAsh, 2), F, F, F);
 		}});
 		addListener(DYE_OREDICTS_LENS[DYE_INDEX_White], new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.LaserEngraver    .addRecipe2(T, 16,  64, ST.make(Blocks.stone, 1, W), ST.amount(0, aEvent.mStack), ST.make(Blocks.stonebrick, 1, 3));
-			RM.LaserEngraver    .addRecipe2(T, 16, 128, IL.Module_Stone_Generator     .get(0), ST.amount(0, aEvent.mStack), ST.make(Blocks.stonebrick, 1, 3));
+			RM.LaserEngraver    .addRecipe2(T, 16,  64, ST.make(Blocks.STONE, 1, 0), ST.amount(0, aEvent.mStack), ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
+			RM.LaserEngraver    .addRecipe2(T, 16, 128, IL.Module_Stone_Generator     .get(0), ST.amount(0, aEvent.mStack), ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 			RM.LaserEngraver    .addRecipe2(T, 16, 128, IL.Module_Basalt_Generator    .get(0), ST.amount(0, aEvent.mStack), IL.NeLi_Basalt_Polished.get(1, IL.NePl_Basalt_Polished.get(1, ST.make(BlocksGT.Basalt, 1, BlockStones.BRICK))));
 			RM.LaserEngraver    .addRecipe2(T, 16, 128, IL.Module_Blackstone_Generator.get(0), ST.amount(0, aEvent.mStack), IL.NeLi_Blackstone_Bricks.get(1, IL.NePl_Blackstone_Bricks.get(1, ST.make(BlocksGT.Basalt, 1, BlockStones.BRICK))));
 		}});
@@ -177,7 +177,7 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 			RM.Squeezer.addRecipe1(T, 16, 64, 5000, aEvent.mStack, NF, FL.Resin_Rubber.make(200), IL.IC2_Resin.get(1, IL.Resin.get(1)));
 		}});
 		addListener(OD.logWood, OD.logRubber, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "wood2charcoalsmelting", T)) RM.rem_smelting(aEvent.mStack, ST.make(Items.coal, 1, 1));
+			if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "wood2charcoalsmelting", T)) RM.rem_smelting(aEvent.mStack, ST.make(Items.CHARCOAL, 1, 0));
 			
 			if (ST.block(aEvent.mStack) == BlocksGT.Log1) return;
 			

@@ -80,18 +80,18 @@ public class Compat_Recipes_TwilightForest extends CompatMods {
 		CR.remove(IL.TF_Giant_Obsidian.get(1));
 		CR.remove(IL.TF_Giant_Leaves  .get(1));
 		
-		RM.sawing(64, 64, F, 50, IL.TF_Giant_Log     .get(1), ST.make(Blocks.log        , 64, 0));
+		RM.sawing(64, 64, F, 50, IL.TF_Giant_Log     .get(1), ST.make(Blocks.OAK_LOG, 64, 0));
 		RM.sawing(64,256, F, 50, IL.TF_Giant_Cobble  .get(1), ST.make(Blocks.cobblestone, 64, 0));
 		RM.sawing(64,512, F, 50, IL.TF_Giant_Obsidian.get(1), ST.make(Blocks.obsidian   , 64, 0));
-		RM.sawing(64, 16, F, 50, IL.TF_Giant_Leaves  .get(1), ST.make(Blocks.leaves     , 64, 0));
+		RM.sawing(64, 16, F, 50, IL.TF_Giant_Leaves  .get(1), ST.make(Blocks.OAK_LEAVES, 64, 0));
 		
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.obsidian         , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Obsidian.get(1));
 		
-		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.stone            , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Cobble  .get(1));
+		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.STONE, 64, 0), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Cobble  .get(1));
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.cobblestone      , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Cobble  .get(1));
 		
-		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.log              , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
-		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.log2             , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
+		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.OAK_LOG, 64, 0), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
+		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.ACACIA_LOG, 64, 0), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.Log1           , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.LogA           , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.LogB           , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
@@ -103,8 +103,8 @@ public class Compat_Recipes_TwilightForest extends CompatMods {
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.LogCFireProof  , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
 	////RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.LogDFireProof  , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Log     .get(1));
 		
-		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.leaves           , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
-		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.leaves2          , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
+		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.OAK_LEAVES, 64, 0), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
+		RM.Boxinator.addRecipe2(T,128,128, ST.make(Blocks.ACACIA_LEAVES, 64, 0), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.Leaves_AB      , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.Leaves_CD      , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
 		
@@ -136,8 +136,8 @@ public class Compat_Recipes_TwilightForest extends CompatMods {
 		RM.Replicator.addRecipe1(F, 16, 288000, IL.TF_Trophy_Snowqueen.get(0), FL.DistW     .make(32000), NF                   , ST.make(MD.TF, "item.iceBomb", 1, 0), IL.TF_Maze_Map_Focus.get(1));
 		
 		RM.LaserEngraver.addRecipe2(T, 16, 128, IL.Module_Stone_Generator        .get(0), IL.TF_Trophy_Naga.get(0), ST.make(MD.TF, "tile.TFNagastone", 1, 13));
-		RM.LaserEngraver.addRecipe2(T, 16,  64, ST.make(Blocks.stone             , 1, W), IL.TF_Trophy_Naga.get(0), ST.make(MD.TF, "tile.TFNagastone", 1, 13));
-		RM.LaserEngraver.addRecipe2(T, 16,  64, ST.make(Blocks.stonebrick        , 1, W), IL.TF_Trophy_Naga.get(0), ST.make(MD.TF, "tile.TFNagastone", 1,  1));
+		RM.LaserEngraver.addRecipe2(T, 16,  64, ST.make(Blocks.STONE, 1, 0), IL.TF_Trophy_Naga.get(0), ST.make(MD.TF, "tile.TFNagastone", 1, 13));
+		RM.LaserEngraver.addRecipe2(T, 16,  64, ST.make(Blocks.STONE_BRICKS, 1, 0), IL.TF_Trophy_Naga.get(0), ST.make(MD.TF, "tile.TFNagastone", 1,  1));
 		RM.LaserEngraver.addRecipe2(T, 16,  64, ST.make(MD.TF, "tile.TFNagastone", 1, W), IL.TF_Trophy_Naga.get(0), ST.make(MD.TF, "tile.TFNagastone", 1,  1));
 		
 		RM.Freezer.addRecipe1(T, 16, 144, IL.TF_Trophy_Snowqueen.get(0), FL.Ice.make(9000), NF, ST.make(MD.TF, "tile.TFAuroraBrick", 1, 0));

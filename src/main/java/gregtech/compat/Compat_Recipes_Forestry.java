@@ -206,12 +206,12 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedPropolis"         , 1), IL.FR_Propolis.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedRoyalJelly"       , 1), IL.FR_Royal_Jelly.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedHoneydew"         , 1), ST.make(MD.FR, "honeydew", 9));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSaplings"         , 1), ST.make(Blocks.sapling, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSpruceSapling"    , 1), ST.make(Blocks.sapling, 9, 1));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBirchSapling"     , 1), ST.make(Blocks.sapling, 9, 2));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedJungleSapling"    , 1), ST.make(Blocks.sapling, 9, 3));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedAcaciaSapling"    , 1), ST.make(Blocks.sapling, 9, 4));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedDarkOakSapling"   , 1), ST.make(Blocks.sapling, 9, 5));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSaplings"         , 1), ST.make(Blocks.OAK_SAPLING, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSpruceSapling"    , 1), ST.make(Blocks.SPRUCE_SAPLING, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBirchSapling"     , 1), ST.make(Blocks.BIRCH_SAPLING, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedJungleSapling"    , 1), ST.make(Blocks.JUNGLE_SAPLING, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedAcaciaSapling"    , 1), ST.make(Blocks.ACACIA_SAPLING, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedDarkOakSapling"   , 1), ST.make(Blocks.DARK_OAK_SAPLING, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCacti"            , 1), ST.make(Blocks.cactus, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedScrap"            , 1), IL.IC2_Scrap.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedResin"            , 1), IL.IC2_Resin.get(9, IL.Resin.get(9)));
@@ -230,26 +230,26 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSilkyCombs"       , 1), IL.FR_Comb_Silky.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedParchedCombs"     , 1), IL.FR_Comb_Parched.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedMysteriousCombs"  , 1), IL.FR_Comb_Mysterious.get(9));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedDirt"             , 1), ST.make(Blocks.dirt, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedPodzol"           , 1), ST.make(Blocks.dirt, 9, 2));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedDirt"             , 1), ST.make(Blocks.DIRT, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedPodzol"           , 1), ST.make(Blocks.PODZOL, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedMycelium"         , 1), ST.make(Blocks.mycelium, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedStone"            , 1), ST.make(Blocks.stone, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedStone"            , 1), ST.make(Blocks.STONE, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCobblestone"      , 1), ST.make(Blocks.cobblestone, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedGravel"           , 1), ST.make(Blocks.gravel, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSoulsand"         , 1), ST.make(Blocks.soul_sand, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedNetherrack"       , 1), ST.make(Blocks.netherrack, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedNetherbrick"      , 1), ST.make(Blocks.nether_brick, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedObsidian"         , 1), ST.make(Blocks.obsidian, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSand"             , 1), ST.make(Blocks.sand, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedRedSand"          , 1), ST.make(Blocks.sand, 9, 1));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSandstone"        , 1), ST.make(Blocks.sandstone, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSand"             , 1), ST.make(Blocks.SAND, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedRedSand"          , 1), ST.make(Blocks.RED_SAND, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSandstone"        , 1), ST.make(Blocks.SANDSTONE, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBrick"            , 1), ST.make(Blocks.brick_block, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedWood"             , 1), ST.make(Blocks.log, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSpruceWood"       , 1), ST.make(Blocks.log, 9, 1));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBirchWood"        , 1), ST.make(Blocks.log, 9, 2));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedJungleWood"       , 1), ST.make(Blocks.log, 9, 3));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedAcaciaWood"       , 1), ST.make(Blocks.log2, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedDarkOakWood"      , 1), ST.make(Blocks.log2, 9, 1));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedWood"             , 1), ST.make(Blocks.OAK_LOG, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSpruceWood"       , 1), ST.make(Blocks.SPRUCE_LOG, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBirchWood"        , 1), ST.make(Blocks.BIRCH_LOG, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedJungleWood"       , 1), ST.make(Blocks.JUNGLE_LOG, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedAcaciaWood"       , 1), ST.make(Blocks.ACACIA_LOG, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedDarkOakWood"      , 1), ST.make(Blocks.DARK_OAK_LOG, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedHumus"            , 1), ST.make(MD.FR, "soil", 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBogearth"         , 1), ST.make(MD.FR, "soil", 9, 1));
 		
@@ -270,7 +270,7 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.Centrifuge   .addRecipe1(T, 16,   64, new long[] {10000, 10000,  2000}   , IL.FR_Comb_Frozen         .get(1), NF, FL.Honey   .make( 70), OM.dust(MT.WaxBee, 3*U4), OM.dust(MT.Snow, U9), IL.FR_Pollen_Cluster_Crystalline.get(1));
 		RM.Centrifuge   .addRecipe1(T, 16,   64                                     , IL.FR_Comb_Dripping       .get(1), NF, FL.Honeydew.make(100), IL.FR_Propolis_Sticky.get(1));
 		RM.Centrifuge   .addRecipe1(T, 16,   64,  8000                              , IL.FR_Comb_Silky          .get(1), NF, FL.Honey   .make(100), IL.FR_Propolis_Silky.get(1));
-		RM.Centrifuge   .addRecipe1(T, 16,   64                                     , IL.FR_Comb_Parched        .get(1), NF, FL.Honey   .make( 60), OM.dust(MT.WaxBee, U2), ST.make(Blocks.sand, 1, 0));
+		RM.Centrifuge   .addRecipe1(T, 16,   64                                     , IL.FR_Comb_Parched        .get(1), NF, FL.Honey   .make( 60), OM.dust(MT.WaxBee, U2), ST.make(Blocks.SAND, 1, 0));
 		RM.Centrifuge   .addRecipe1(T, 16,   64                                     , IL.FR_Comb_Mysterious     .get(1), NF, FL.Honey   .make( 40), OM.dust(MT.WaxMagic, U9), IL.FR_Propolis_Pulsating.get(1));
 		RM.Centrifuge   .addRecipe1(T, 16,   64, new long[] {10000,     9}          , IL.FR_Comb_Irradiated     .get(1), NF, FL.Honey   .make( 60), OM.dust(MT.WaxBee, U2), OM.dust(MT.Ir, U9));
 		RM.Centrifuge   .addRecipe1(T, 16,   64                                     , IL.FR_Comb_Powdery        .get(1), NF, FL.Honey   .make( 20), OM.dust(MT.WaxBee, U4), OM.dust(MT.Gunpowder, U));
@@ -306,7 +306,7 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.Canner       .addRecipe2(T, 16,   16, ST.amount(4, aEvent.mStack), IL.FR_WaxCapsule.get(1), IL.FR_HoneyPot.get(1));
 		}});
 		addListener("listAllwheats", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-		RM.Mixer        .addRecipe2(T, 16,   16, ST.amount(4, aEvent.mStack), ST.make(Blocks.dirt, 1, W), IL.FR_Compost.get(4));
+		RM.Mixer        .addRecipe2(T, 16,   16, ST.amount(4, aEvent.mStack), ST.make(Blocks.DIRT, 1, 0), IL.FR_Compost.get(4));
 		}});
 		addListener(OD.logWood, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 		RM.Bath         .addRecipe1(T,  0,  128, aEvent.mStack, FL.Oil_Seed         .make(100), NF, IL.FR_Stick.get(1));
@@ -320,12 +320,12 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		}});
 		
 		addListener(OD.itemMulch, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-		RM.Mixer        .addRecipeX(T, 16,   64, ST.array(ST.make(Blocks.sand, 4, W), ST.make(Blocks.dirt, 4, W), aEvent.mStack), ST.make(MD.FR, "soil", 8, 1));
+		RM.Mixer        .addRecipeX(T, 16,   64, ST.array(ST.make(Blocks.SAND, 4, 0), ST.make(Blocks.DIRT, 4, 0), aEvent.mStack), ST.make(MD.FR, "soil", 8, 1));
 		
 		for (FL tWater : new FL[] {FL.Water, FL.MnWtr, FL.DistW, FL.SpDew, FL.Ocean, FL.OceanGrC, FL.Tropics_Water}) if (tWater.exists())
-		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.dirt, 8, W), tWater.make(1000), NF, ST.make(MD.FR, "soil", 9, 0));
+		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.DIRT, 8, 0), tWater.make(1000), NF, ST.make(MD.FR, "soil", 9, 0));
 		for (FL tWater : new FL[] {FL.Dirty_Water, FL.Swampwater, FL.Stagnant_Water}) if (tWater.exists())
-		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.dirt, 8, W), tWater.make(2000), NF, ST.make(MD.FR, "soil",10, 0));
+		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.DIRT, 8, 0), tWater.make(2000), NF, ST.make(MD.FR, "soil",10, 0));
 		}});
 		addListener(new OreDictListenerEvent_TwoNames(OD.itemMulch, OD.itemMud) {@Override public void onOreRegistration(ItemStack aStack1, ItemStack aStack2) {
 		RM.Mixer        .addRecipe2(T, 16,   64, aStack1, ST.amount(32, aStack2), ST.make(MD.FR, "soil", 9, 0));
@@ -336,9 +336,9 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		
 		addListener(OD.itemCompost, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 		for (FL tWater : new FL[] {FL.Water, FL.MnWtr, FL.DistW, FL.SpDew, FL.Ocean, FL.OceanGrC, FL.Tropics_Water}) if (tWater.exists())
-		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.dirt, 8, W), tWater.make(1000), NF, ST.make(MD.FR, "soil", 8, 0));
+		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.DIRT, 8, 0), tWater.make(1000), NF, ST.make(MD.FR, "soil", 8, 0));
 		for (FL tWater : new FL[] {FL.Dirty_Water, FL.Swampwater, FL.Stagnant_Water}) if (tWater.exists())
-		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.dirt, 8, W), tWater.make(2000), NF, ST.make(MD.FR, "soil", 9, 0));
+		RM.Mixer        .addRecipe2(T, 16,   64, aEvent.mStack, ST.make(Blocks.DIRT, 8, 0), tWater.make(2000), NF, ST.make(MD.FR, "soil", 9, 0));
 		}});
 		addListener(new OreDictListenerEvent_TwoNames(OD.itemCompost, OD.itemMud) {@Override public void onOreRegistration(ItemStack aStack1, ItemStack aStack2) {
 		RM.Mixer        .addRecipe2(T, 16,   64, aStack1, ST.amount(32, aStack2), ST.make(MD.FR, "soil", 8, 0));
@@ -351,13 +351,13 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		if (IL.IC2_Fertilizer.exists())
 		RM.Mixer        .addRecipe2(T, 16,   64, IL.IC2_Fertilizer.get(1)   , ST.amount(32, aEvent.mStack), ST.make(MD.FR, "soil", 8, 0));
 		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Fertilizer.get(1)    , ST.amount(32, aEvent.mStack), ST.make(MD.FR, "soil", 8, 0));
-		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.sand, 1, W) , ST.amount( 4, aEvent.mStack), ST.make(MD.FR, "soil", 2, 1));
+		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.SAND, 1, 0) , ST.amount( 4, aEvent.mStack), ST.make(MD.FR, "soil", 2, 1));
 		}});
 		addListener(OD.blockMud, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 		if (IL.IC2_Fertilizer.exists())
 		RM.Mixer        .addRecipe2(T, 16,   64, IL.IC2_Fertilizer.get(1)   , ST.amount( 8, aEvent.mStack), ST.make(MD.FR, "soil", 8, 0));
 		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Fertilizer.get(1)    , ST.amount( 8, aEvent.mStack), ST.make(MD.FR, "soil", 8, 0));
-		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.sand, 1, W) , ST.amount( 1, aEvent.mStack), ST.make(MD.FR, "soil", 2, 1));
+		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.SAND, 1, 0) , ST.amount( 1, aEvent.mStack), ST.make(MD.FR, "soil", 2, 1));
 		}});
 		
 		addListener(OD.itemPlantRemains, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
@@ -399,9 +399,9 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		for (FluidStack tWater : FL.waters(1000,  800))
 		RM.Mixer        .addRecipe1(T, 16,   16, IL.FR_Propolis_Sticky.get(1)       , tWater, FL.Glue.make(1000), ZL_IS);
 		
-		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Ash, 4*U)               , ST.make(Blocks.dirt, 1, W), IL.FR_Compost.get(1));
-		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.DarkAsh, 3*U)           , ST.make(Blocks.dirt, 1, W), IL.FR_Compost.get(1));
-		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.VolcanicAsh, 2*U)       , ST.make(Blocks.dirt, 1, W), IL.FR_Compost.get(1));
+		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Ash, 4*U)               , ST.make(Blocks.DIRT, 1, 0), IL.FR_Compost.get(1));
+		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.DarkAsh, 3*U)           , ST.make(Blocks.DIRT, 1, 0), IL.FR_Compost.get(1));
+		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.VolcanicAsh, 2*U)       , ST.make(Blocks.DIRT, 1, 0), IL.FR_Compost.get(1));
 		
 		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.Honey   .make(600), FL.Honeydew.make(200), FL.Potion_Awkward.make(750)), FL.array(FL.Potion_Heal_1.make(750)), ZL_IS);
 		RM.Mixer        .addRecipe1(T, 16,   64, ST.make(Items.melon, 1, W), FL.array(FL.Honey   .make(600), FL.Honeydew.make(200), FL.Potion_Thick  .make(750)), FL.array(FL.Potion_Heal_2.make(750)), ZL_IS);
@@ -412,49 +412,49 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		
 		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Pollen_Cluster.get(3)        , IL.FR_Propolis            .get(6), ZL_FS, FL.Slime_Green.make(250), ZL_IS);
 		
-		RM.Mixer        .addRecipe2(T, 16,   16, OP.gem.mat(MT.Apatite, 1), ST.make(Blocks.sand, 2, W), IL.FR_Fertilizer.get(8));
+		RM.Mixer        .addRecipe2(T, 16,   16, OP.gem.mat(MT.Apatite, 1), ST.make(Blocks.SAND, 2, 0), IL.FR_Fertilizer.get(8));
 		RM.Mixer        .addRecipe2(T, 16,   16, OP.gem.mat(MT.Apatite, 1), OM.dust(MT.Ash, U*8), IL.FR_Fertilizer.get(16));
 		RM.Mixer        .addRecipe2(T, 16,   16, OP.gem.mat(MT.Apatite, 1), OM.dust(MT.DarkAsh, U*4), IL.FR_Fertilizer.get(16));
 		RM.Mixer        .addRecipe2(T, 16,   16, OP.gem.mat(MT.Apatite, 1), OM.dust(MT.VolcanicAsh, U*2), IL.FR_Fertilizer.get(16));
 		
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.SoylentGreen  ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.SoylentGreen  ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.SoylentGreen  ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.MeatRaw       ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.MeatRaw       ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.MeatRaw       ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.FishRaw       ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.FishRaw       ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.FishRaw       ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.MeatCooked    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.MeatCooked    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.MeatCooked    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.FishCooked    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.FishCooked    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.FishCooked    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.MeatRotten    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.MeatRotten    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.MeatRotten    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.FishRotten    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.FishRotten    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.FishRotten    ), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), ST.make(Blocks.dirt, 2, W), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), ST.make(Blocks.dirt, 2, W), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), ST.make(Blocks.dirt, 2, W), ST.make(Blocks.sand, 2, W)), IL.FR_Fertilizer.get(2));
-		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Apatite), ST.make(Blocks.sand, 2, W), IL.FR_Fertilizer.get(8));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.SoylentGreen  ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.SoylentGreen  ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.SoylentGreen  ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.MeatRaw       ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.MeatRaw       ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.MeatRaw       ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.FishRaw       ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.FishRaw       ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.FishRaw       ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.MeatCooked    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.MeatCooked    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.MeatCooked    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.FishCooked    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.FishCooked    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.FishCooked    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.MeatRotten    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.MeatRotten    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.MeatRotten    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), OM.dust(MT.FishRotten    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), OM.dust(MT.FishRotten    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), OM.dust(MT.FishRotten    ), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.NaNO3), ST.make(Blocks.DIRT, 2, 0), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.KNO3 ), ST.make(Blocks.DIRT, 2, 0), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Niter), ST.make(Blocks.DIRT, 2, 0), ST.make(Blocks.SAND, 2, 0)), IL.FR_Fertilizer.get(2));
+		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Apatite), ST.make(Blocks.SAND, 2, 0), IL.FR_Fertilizer.get(8));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Apatite), OM.dust(MT.Ash, U*8), IL.FR_Fertilizer.get(16));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Apatite), OM.dust(MT.DarkAsh, U*4), IL.FR_Fertilizer.get(16));
 		RM.Mixer        .addRecipe2(T, 16,   16, OM.dust(MT.Apatite), OM.dust(MT.VolcanicAsh, U*2), IL.FR_Fertilizer.get(16));
 		
 		for (FL tWater : new FL[] {FL.Water, FL.MnWtr, FL.DistW, FL.SpDew, FL.Ocean, FL.OceanGrC, FL.Tropics_Water}) if (tWater.exists()) {
 		if (IL.IC2_Fertilizer.exists())
-		RM.Mixer        .addRecipe2(T, 16,   64, IL.IC2_Fertilizer.get(1)   , ST.make(Blocks.dirt, 8, W), tWater.make(1000), NF, ST.make(MD.FR, "soil", 8, 0));
-		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Fertilizer.get(1)    , ST.make(Blocks.dirt, 8, W), tWater.make(1000), NF, ST.make(MD.FR, "soil", 8, 0));
-		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.sand, 1, W) , ST.make(Blocks.dirt, 1, W), tWater.make( 250), NF, ST.make(MD.FR, "soil", 2, 1));
+		RM.Mixer        .addRecipe2(T, 16,   64, IL.IC2_Fertilizer.get(1)   , ST.make(Blocks.DIRT, 8, 0), tWater.make(1000), NF, ST.make(MD.FR, "soil", 8, 0));
+		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Fertilizer.get(1)    , ST.make(Blocks.DIRT, 8, 0), tWater.make(1000), NF, ST.make(MD.FR, "soil", 8, 0));
+		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.SAND, 1, 0) , ST.make(Blocks.DIRT, 1, 0), tWater.make( 250), NF, ST.make(MD.FR, "soil", 2, 1));
 		}
 		if (IL.IC2_Fertilizer.exists())
-		RM.Mixer        .addRecipe2(T, 16,   64, IL.IC2_Fertilizer.get(1)   , ST.make(Blocks.dirt, 8, W), FL.Dirty_Water.make(2000), NF, ST.make(MD.FR, "soil", 9, 0));
-		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Fertilizer.get(1)    , ST.make(Blocks.dirt, 8, W), FL.Dirty_Water.make(2000), NF, ST.make(MD.FR, "soil", 9, 0));
-		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.sand, 4, W) , ST.make(Blocks.dirt, 4, W), FL.Dirty_Water.make(2000), NF, ST.make(MD.FR, "soil", 9, 1));
+		RM.Mixer        .addRecipe2(T, 16,   64, IL.IC2_Fertilizer.get(1)   , ST.make(Blocks.DIRT, 8, 0), FL.Dirty_Water.make(2000), NF, ST.make(MD.FR, "soil", 9, 0));
+		RM.Mixer        .addRecipe2(T, 16,   64, IL.FR_Fertilizer.get(1)    , ST.make(Blocks.DIRT, 8, 0), FL.Dirty_Water.make(2000), NF, ST.make(MD.FR, "soil", 9, 0));
+		RM.Mixer        .addRecipe2(T, 16,   16, ST.make(Blocks.SAND, 4, 0) , ST.make(Blocks.DIRT, 4, 0), FL.Dirty_Water.make(2000), NF, ST.make(MD.FR, "soil", 9, 1));
 	}
 }

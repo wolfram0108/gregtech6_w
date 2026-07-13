@@ -41,11 +41,11 @@ public class Loader_Recipes_Potions implements Runnable {
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.spider_eye    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, IL.Food_Potato_Poisonous    .get(1), FL.DistW         .make(750), FL.Potion_Poison_1        .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Blocks.red_mushroom , 1, W), FL.DistW         .make(750), FL.Potion_Poison_1        .make(750), ZL_IS);
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.fish          , 1, 3), FL.DistW         .make(750), FL.Potion_Poison_2        .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.PUFFERFISH, 1, 0), FL.DistW         .make(750), FL.Potion_Poison_2        .make(750), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 16, OM.dust(MT.WaxRefractory)          , FL.Potion_Awkward.make(250), FL.Potion_FireResistance_1.make(250), ZL_IS);
 		
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.fish          , 1, 3), FL.Potion_Awkward.make(750), FL.Potion_WaterBreathing_1.make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.PUFFERFISH, 1, 0), FL.Potion_Awkward.make(750), FL.Potion_WaterBreathing_1.make(750), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.magma_cream   , 1, W), FL.Potion_Awkward.make(750), FL.Potion_FireResistance_1.make(750), ZL_IS);
 		

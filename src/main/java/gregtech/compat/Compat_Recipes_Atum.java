@@ -63,7 +63,7 @@ public class Compat_Recipes_Atum extends CompatMods {
 		RM.pulverizing(ST.make(MD.ATUM, "item.papyrusPlant", 1, 0), IL.Remains_Plant.get(1), T);
 		RM.biomass(ST.make(MD.ATUM, "item.papyrusPlant", 8, 0));
 		
-		RM.generify(ST.make(MD.ATUM, "tile.sand", 1, W), ST.make(Blocks.sand, 1, 0));
+		RM.generify(ST.make(MD.ATUM, "tile.sand", 1, W), ST.make(Blocks.SAND, 1, 0));
 		
 		RM.Mortar.addRecipe1(T, 16, 64, ST.make(MD.ATUM, "item.stoneChunk", 1, W), OM.dust(MT.STONES.Limestone, U));
 		

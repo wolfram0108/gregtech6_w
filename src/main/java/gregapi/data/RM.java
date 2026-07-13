@@ -449,7 +449,7 @@ public class RM {
 		}
 		
 		if (ST.valid(aStone)) {
-			RM.generify(aStone, ST.make(Blocks.stone, 1, 0));
+			RM.generify(aStone, ST.make(Blocks.STONE, 1, 0));
 			
 			if (aIsMatTarget && ST.valid(aDustBlock)) {
 				RM.add_smelting(aDustBlock, aStone, F, F, F);
@@ -497,7 +497,7 @@ public class RM {
 		
 		if (ST.valid(aBricks)) {
 			CR.remout(aBricks);
-			RM.generify(aBricks, ST.make(Blocks.stonebrick, 1, 0));
+			RM.generify(aBricks, ST.make(Blocks.STONE_BRICKS, 1, 0));
 			
 			if (ST.valid(aStone)) {
 				RM.add_smelting(aBricks, aStone, T, F, F);
@@ -529,7 +529,7 @@ public class RM {
 		
 		if (ST.valid(aCracked)) {
 			CR.remout(aCracked);
-			RM.generify(aCracked, ST.make(Blocks.stonebrick, 1, 2));
+			RM.generify(aCracked, ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0));
 			
 			if (ST.valid(aFourRocks)) {
 				RM.Hammer       .addRecipe1(T, 16, 16,  7000, aCracked, aFourRocks);
@@ -548,7 +548,7 @@ public class RM {
 		
 		if (ST.valid(aChiseled)) {
 			CR.remout(aChiseled);
-			RM.generify(aChiseled, ST.make(Blocks.stonebrick, 1, 3));
+			RM.generify(aChiseled, ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 			
 			if (ST.valid(aStone)) {
 				RM.add_smelting(aChiseled, aStone, T, F, F);
@@ -596,7 +596,7 @@ public class RM {
 		
 		if (ST.valid(aTiles)) {
 			CR.remout(aTiles);
-			RM.generify(aTiles, ST.make(Blocks.stonebrick, 1, 0));
+			RM.generify(aTiles, ST.make(Blocks.STONE_BRICKS, 1, 0));
 			
 			if (ST.valid(aStone)) {
 				RM.add_smelting(aTiles, aStone, T, F, F);
@@ -617,7 +617,7 @@ public class RM {
 		
 		if (ST.valid(aBricks2)) {
 			CR.remout(aBricks2);
-			RM.generify(aBricks2, ST.make(Blocks.stonebrick, 1, 0));
+			RM.generify(aBricks2, ST.make(Blocks.STONE_BRICKS, 1, 0));
 			
 			if (ST.valid(aStone)) {
 				RM.add_smelting(aBricks2, aStone, T, F, F);

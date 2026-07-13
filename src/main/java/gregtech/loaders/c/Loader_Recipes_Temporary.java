@@ -604,7 +604,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 			if (MD.TROPIC.mLoaded) {
 				RM.Sifting      .addRecipe1(T, 16, 200, new long[] {9900, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 200, 100, 50}, IL.RH_Sand_Coral.get(1), IL.TROPIC_Sand_Pure.get(1), ST.make(MD.TROPIC, "shell", 1, 0), ST.make(MD.TROPIC, "shell", 1, 1), ST.make(MD.TROPIC, "shell", 1, 2), ST.make(MD.TROPIC, "shell", 1, 3), ST.make(MD.TROPIC, "shell", 1, 4), ST.make(MD.TROPIC, "shell", 1, 5), ST.make(MD.TROPIC, "pearl", 1, 0), ST.make(MD.TROPIC, "pearl", 1, 1), OP.gem.mat(MT.Azurite, 1), OP.gem.mat(MT.Eudialyte, 1), OP.gem.mat(MT.Zr, 1));
 			} else {
-				RM.Sifting      .addRecipe1(T, 16, 200, new long[] {9900, 200, 100, 50}, IL.RH_Sand_Coral.get(1), ST.make(Blocks.sand, 1, 0), OP.gem.mat(MT.Azurite, 1), OP.gem.mat(MT.Eudialyte, 1), OP.gem.mat(MT.Zr, 1));
+				RM.Sifting      .addRecipe1(T, 16, 200, new long[] {9900, 200, 100, 50}, IL.RH_Sand_Coral.get(1), ST.make(Blocks.SAND, 1, 0), OP.gem.mat(MT.Azurite, 1), OP.gem.mat(MT.Eudialyte, 1), OP.gem.mat(MT.Zr, 1));
 			}
 		}
 		

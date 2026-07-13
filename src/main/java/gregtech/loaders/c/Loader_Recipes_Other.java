@@ -214,7 +214,7 @@ public class Loader_Recipes_Other implements Runnable {
 			RM.Bath             .addRecipe1(T,  0,   16,              aEvent.mStack , tWater, NF, ST.make(Items.paper, 1, 0));
 		}});
 		addListener(stick.dat(ANY.WoodNormal), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.Loom         .addRecipe2(T, 16,   16, ST.make(Blocks.wool  , 1, W), ST.amount(8, aEvent.mStack), ST.make(Items.painting, 1, 0));
+			RM.Loom         .addRecipe2(T, 16,   16, ST.make(Blocks.WHITE_WOOL, 1, 0), ST.amount(8, aEvent.mStack), ST.make(Items.painting, 1, 0));
 			RM.Loom         .addRecipe2(T, 16,   16, ST.make(Items.leather, 1, W), ST.amount(8, aEvent.mStack), ST.make(Items.item_frame, 1, 0));
 		}});
 		}};
@@ -351,17 +351,17 @@ public class Loader_Recipes_Other implements Runnable {
 		RM.Mixer            .addRecipe1(T, 16,   16, OM.dust(tRock), MT.Asphalt.liquid(U, T), NF, ST.make(BlocksGT.Asphalt, 1, DYE_INDEX_Brown));
 		
 		ItemStack x, y;
-		CR.remove(x = dust.mat(MT.S, 1), x, x, x, ST.make(Items.coal, 1, 0), x, x, x, x);
-		CR.remove(x, x, x, x, ST.make(Items.coal, 1, 1), x, x, x, x);
+		CR.remove(x = dust.mat(MT.S, 1), x, x, x, ST.make(Items.COAL, 1, 0), x, x, x, x);
+		CR.remove(x, x, x, x, ST.make(Items.CHARCOAL, 1, 0), x, x, x, x);
 		CR.remove(y = dust.mat(MT.KNO3, 1), y, x, dust.mat(MT.Charcoal, 1));
-		CR.remove(x, y, ST.make(Items.coal, 1, 0));
-		CR.remove(x, y, ST.make(Items.coal, 1, 1));
-		CR.remove(y, x, y, y, ST.make(Items.coal, 1, 1), y, y, y, y);
-		CR.remove(y, y, y, y, ST.make(Items.coal, 1, 1), y, y, y, y);
+		CR.remove(x, y, ST.make(Items.COAL, 1, 0));
+		CR.remove(x, y, ST.make(Items.CHARCOAL, 1, 0));
+		CR.remove(y, x, y, y, ST.make(Items.CHARCOAL, 1, 0), y, y, y, y);
+		CR.remove(y, y, y, y, ST.make(Items.CHARCOAL, 1, 0), y, y, y, y);
 		CR.remove(y, y, x, dust.mat(MT.Coal, 1));
-		CR.remove(ST.make(Items.quartz, 1, 0), ST.make(Items.coal, 1, 0));
-		CR.remove(ST.make(Items.quartz, 1, 0), ST.make(Items.coal, 1, 1));
-		CR.remove(NI, x = ST.make(Items.coal, 1, 0), NI, x, y = ST.make(Items.iron_ingot, 1, 0), x, NI, x, NI);
+		CR.remove(ST.make(Items.quartz, 1, 0), ST.make(Items.COAL, 1, 0));
+		CR.remove(ST.make(Items.quartz, 1, 0), ST.make(Items.CHARCOAL, 1, 0));
+		CR.remove(NI, x = ST.make(Items.COAL, 1, 0), NI, x, y = ST.make(Items.iron_ingot, 1, 0), x, NI, x, NI);
 		CR.remove(NI, NI, NI, NI, y, NI, NI, y, NI);
 		CR.remove(NI, NI, NI, NI, y = ingot.mat(MT.Al, 1), NI, NI, y, NI);
 		CR.remove(NI, NI, NI, NI, y = ingot.mat(MT.Steel, 1), NI, NI, y, NI);
@@ -397,7 +397,7 @@ public class Loader_Recipes_Other implements Runnable {
 		
 		CR.shaped(stick         .mat(MT.PetrifiedWood   ,  9), CR.DEF, "X" , "X" , 'X', rockGt.dat(MT.PetrifiedWood));
 		CR.shaped(plate         .mat(MT.PetrifiedWood   ,  9), CR.DEF, "XX", "XX", 'X', rockGt.dat(MT.PetrifiedWood));
-		CR.shaped(ST.make(Blocks.stone_slab          , 9,  2), CR.DEF, "XX"      , 'X', rockGt.dat(MT.PetrifiedWood));
+		CR.shaped(ST.make(Blocks.PETRIFIED_OAK_SLAB, 9, 0), CR.DEF, "XX"      , 'X', rockGt.dat(MT.PetrifiedWood));
 		CR.shaped(plateTiny     .mat(MT.Paper           ,  9), CR.DEF, "b ", " X", 'X', plate.dat(MT.Paper));
 		CR.shaped(plateTiny     .mat(MT.Paper           ,  9), CR.DEF, "q ", " X", 'X', plate.dat(MT.Paper));
 		for (OreDictMaterial tWax : ANY.Wax.mToThis) {
@@ -421,16 +421,16 @@ public class Loader_Recipes_Other implements Runnable {
 		
 		
 		if (FL.Mana_TE.exists()) {
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.dirt                , 1, 1), FL.Mana_TE.make(1), NF, ST.make(Blocks.dirt, 1, 2));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.COARSE_DIRT, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.PODZOL, 1, 0));
 		if (IL.EtFu_Dirt.exists())
-		RM.Bath             .addRecipe1(T,  0,   16, IL.EtFu_Dirt                       .get(1), FL.Mana_TE.make(1), NF, ST.make(Blocks.dirt, 1, 2));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.dirt                , 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.grass, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.dirt                , 1, 2), FL.Mana_TE.make(1), NF, ST.make(Blocks.mycelium, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.glass               , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.sand, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.stained_glass       , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.sand, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, IL.EtFu_Dirt                       .get(1), FL.Mana_TE.make(1), NF, ST.make(Blocks.PODZOL, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.DIRT, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.grass, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.PODZOL, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.mycelium, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.glass               , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.cobblestone         , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.mossy_cobblestone, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.stonebrick          , 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.stonebrick, 1, 1));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.stone               , 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.stonebrick, 1, 3));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.STONE_BRICKS, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.MOSSY_STONE_BRICKS, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.STONE, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.lapis_ore           , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.lapis_block, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.redstone_ore        , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.redstone_block, 1, 0));
 //      RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.lit_redstone_ore    , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.redstone_block, 1, 0));

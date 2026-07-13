@@ -81,7 +81,7 @@ public class Compat_Recipes_BiomesOPlenty extends CompatMods {
 		RM.Squeezer     .addRecipe1(T, 16, 128, IL.BoP_Hard_Ice.get(1), NF, FL.Ice.make(2000), NI);
 		RM.Juicer       .addRecipe1(T, 16, 128, IL.BoP_Hard_Ice.get(1), NF, FL.Ice.make(2000), NI);
 		
-		RM.Loom         .addRecipe2(T, 16, 16, ST.tag(0), ST.make(MD.BoP, "plants", 9, 7), ST.make(Blocks.wool, 1, 0));
+		RM.Loom         .addRecipe2(T, 16, 16, ST.tag(0), ST.make(MD.BoP, "plants", 9, 7), ST.make(Blocks.WHITE_WOOL, 1, 0));
 		
 		RM.Centrifuge   .addRecipe1(T, 16, 256, ST.make(MD.BoP, "hive", 1, 0), OM.dust(MT.WaxBee, U*4));
 		RM.Centrifuge   .addRecipe1(T, 16, 256, ST.make(MD.BoP, "hive", 1, 2), OM.dust(MT.WaxBee, U*4));
