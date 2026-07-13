@@ -106,7 +106,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 						// «материал блока — жидкость» это реальный BlockState.liquid() (BlockBehaviour.java:586, поле
 						// `liquid` напрямую наследует старое Material.isLiquid).
 						if (tContact.liquid()) break;
-						// PORT-TODO(F6, block-behavior: isOpaqueCube): было `if (!tContact.isOpaqueCube()) continue;`
+						// PORT-TODO(F6, block-behavior: isOpaqueCube): было `if (!WD.opaque(tContact)) continue;`
 						// (пропуск не-цельных блоков при спуске к поверхности). isOpaqueCube() удалён (§C2 — dead-list);
 						// documented 1:1 нет (isSolidRender/canOcclude/isSolid близки, но не тождественны) — не выдумываю.
 						// PORT-TODO(F6, block-behavior: getMaterial()==grass/ground/sand/rock): было
@@ -118,7 +118,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 						// поставить индикатор в неверном месте. Сама генерация ЖИЛЫ (цикл ниже, WD.setOre) не затронута.
 						break;
 						/* PORT-TODO(F6): восстановить при готовности F9(block-material)+F3(block-behavior):
-						if (!tContact.isOpaqueCube()) continue;
+						if (!WD.opaque(tContact)) continue;
 						if (tContact.getMaterial() != Material.grass && tContact.getMaterial() != Material.ground && tContact.getMaterial() != Material.sand && tContact.getMaterial() != Material.rock) break;
 						if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)!=0?ST.save(NBT_VALUE, OP.rockGt.mat(UT.Code.select(mTop, mTop, mBottom, mBetween, mSpread), 1)):UT.NBT.make(), F, T);
 						break;

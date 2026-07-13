@@ -295,7 +295,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean getOpacity(int aX, int aY, int aZ) {
 		if (level == null) return F;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return F;
-		return WD.block(level, aX, aY, aZ).isOpaqueCube();
+		return WD.opaque(WD.block(level, aX, aY, aZ));
 	}
 	
 	@Override
@@ -351,7 +351,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean getOpacity(BlockPos aCoords) {
 		if (level == null) return F;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return F;
-		return WD.block(level, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isOpaqueCube();
+		return WD.opaque(WD.block(level, aCoords.getX(), aCoords.getY(), aCoords.getZ()));
 	}
 	
 	@Override

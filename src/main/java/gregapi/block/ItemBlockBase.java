@@ -78,7 +78,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 				for (byte tSide : ALL_SIDES_VALID) if (mPlaceable.isSealable(aMeta, tSide)) tCount++;
 				if (tCount >= 6) {
 					aList.add(LH.Chat.GREEN  + LH.get(LH.TOOLTIP_SEALABLE_ANY));
-				} else if (field_150939_a.isOpaqueCube()) {
+				} else if (WD.opaque(field_150939_a)) {
 					aList.add(LH.Chat.ORANGE + LH.get(LH.TOOLTIP_SEALABLE_BUGGED));
 				} else if (tCount > 0) {
 					aList.add(LH.Chat.YELLOW + LH.get(LH.TOOLTIP_SEALABLE_SOME));

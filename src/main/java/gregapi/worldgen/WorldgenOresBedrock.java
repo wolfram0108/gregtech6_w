@@ -157,7 +157,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {
 					Block tContact = WD.block(aWorld, tX, tY, tZ);
 					if (tContact.getMaterial().isLiquid() || tContact == Blocks.FARMLAND) break;
-					if (!tContact.isOpaqueCube() || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
+					if (!WD.opaque(tContact) || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 					if (!WD.easyRep(aWorld, tX, tY+1, tZ)) break;
 					if (tFlowers && tContact != Blocks.DIRT && (!tRocks || aRandom.nextInt(4) > 0)) {
 						WD.set(aWorld, tX, tY+1, tZ, mFlower, mFlowerMeta, 0);

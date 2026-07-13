@@ -53,7 +53,7 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 				if (ST.invalid(tStack)) continue;
 				Block tBlock = ST.block(tStack);
 				// The Block has to be Opaque to ensure the Leak is plugged.
-				if (tBlock == NB || !tBlock.isOpaqueCube()) continue;
+				if (tBlock == NB || !WD.opaque(tBlock)) continue;
 				// No Bedrock, Obsidian or Black Granite!
 				if (WD.bedrock(tBlock) || tBlock.getHarvestLevel(ST.meta(tStack) & 15) >= 3) continue;
 				// Don't use any PrefixBlocks, TileEntities or Silverfish Blocks.

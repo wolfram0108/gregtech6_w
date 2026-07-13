@@ -124,7 +124,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		if (MD.GC.mLoaded) {
 			if (mBlock.mPrefix == OP.blockSolid) {
 				aList.add(LH.Chat.GREEN  + LH.get(LH.TOOLTIP_SEALABLE_ANY));
-			} else if (mBlock.isOpaqueCube()) {
+			} else if (WD.opaque(mBlock)) {
 				aList.add(LH.Chat.ORANGE + LH.get(LH.TOOLTIP_SEALABLE_BUGGED));
 			}
 		}

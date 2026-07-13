@@ -47,7 +47,7 @@ public class DungeonChunkPillar implements IDungeonChunk {
 			temp = F;
 			for (int tX = 6; tX <= 9 && !temp; tX++) for (int tZ = 6; tZ <= 9 && !temp; tZ++) {
 				Block tBlock = WD.block(aData.mWorld, aData.mX+tX, aData.mY+tY, aData.mZ+tZ);
-				if (tBlock instanceof FallingBlock || !tBlock.isOpaqueCube() || tBlock == BlocksGT.Sands || tBlock == BlocksGT.Diggables) temp = T;
+				if (tBlock instanceof FallingBlock || !WD.opaque(tBlock) || tBlock == BlocksGT.Sands || tBlock == BlocksGT.Diggables) temp = T;
 			}
 			if (temp) {
 				for (int tX =  6; tX <=  9; tX++) for (int tZ =  6; tZ <=  9; tZ++) {
