@@ -181,18 +181,18 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 			tNeutronOther *= 4;
 			tNeutronSelf *= 4;
 			tNeutronDiv *= 2;
-		} else if (MT.CO2.mGas.isFluidEqual(aReactor.mTanks[0].getFluid())) {
+		} else if (FL.equal(MT.CO2.mGas, aReactor.mTanks[0].getFluid())) {
 			tNeutronSelf *= 3;
-		} else if (MT.He.mGas.isFluidEqual(aReactor.mTanks[0].getFluid())) {
+		} else if (FL.equal(MT.He.mGas, aReactor.mTanks[0].getFluid())) {
 			tNeutronOther -= UT.Code.divup(mNeutronOther, 2);
-		} else if (MT.LiCl.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid())) {
+		} else if (FL.equal(MT.LiCl.mLiquid, aReactor.mTanks[0].getFluid())) {
 			tNeutronOther -= UT.Code.divup(mNeutronOther, 2);
 			tNeutronSelf *= 5;
 		} else if (FL.Thorium_Salt.is(aReactor.mTanks[0])) {
 			tNeutronOther -= UT.Code.divup(mNeutronOther, 2);
 			tNeutronSelf = 0;
 			tNeutronDiv -= 1;
-		} else if (MT.Sn.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid()) || MT.Na.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid())) {
+		} else if (FL.equal(MT.Sn.mLiquid, aReactor.mTanks[0].getFluid()) || FL.equal(MT.Na.mLiquid, aReactor.mTanks[0].getFluid())) {
 			tNeutronDiv -= 1;
 		}
 		aReactor.mNeutronCounts[aSlot] += tNeutronSelf;
@@ -207,9 +207,9 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 		int tNeutronMax = getReactorRodNeutronMaximum(aReactor, aSlot, aStack);
 
 		if (FL.distw(aReactor.mTanks[0]) ||
-			MT.HDO.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid()) ||
-			MT.D2O.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid()) ||
-			MT.T2O.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid()))
+			FL.equal(MT.HDO.mLiquid, aReactor.mTanks[0].getFluid()) ||
+			FL.equal(MT.D2O.mLiquid, aReactor.mTanks[0].getFluid()) ||
+			FL.equal(MT.T2O.mLiquid, aReactor.mTanks[0].getFluid()))
 		{
 			mModerated = oModerated = T;
 		}
@@ -239,13 +239,13 @@ public class MultiTileEntityReactorRodNuclear extends MultiTileEntityReactorRodB
 
 	@Override
 	public int getReactorRodNeutronMaximum(MultiTileEntityReactorCore aReactor, int aSlot, ItemStack aStack) {
-		if (MT.LiCl.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid())) {
+		if (FL.equal(MT.LiCl.mLiquid, aReactor.mTanks[0].getFluid())) {
 			return mNeutronMax + (int) UT.Code.divup(mNeutronMax, 4);
 		} else if (FL.Thorium_Salt.is(aReactor.mTanks[0])) {
 			return mNeutronMax * 4;
-		} else if (MT.D2O.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid())) {
+		} else if (FL.equal(MT.D2O.mLiquid, aReactor.mTanks[0].getFluid())) {
 			return (int) UT.Code.divup(mNeutronMax, 8);
-		} else if (MT.T2O.mLiquid.isFluidEqual(aReactor.mTanks[0].getFluid())) {
+		} else if (FL.equal(MT.T2O.mLiquid, aReactor.mTanks[0].getFluid())) {
 			return (int) UT.Code.divup(mNeutronMax, 16);
 		} else {
 			return mNeutronMax;

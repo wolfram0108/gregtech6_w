@@ -127,8 +127,8 @@ public class MultiTileEntityReactorCore2x2 extends MultiTileEntityReactorCore im
 			if (getReactorRodNeutronReaction(3)) mRunning = T;
 			
 			int tDivider = 1;
-			if (MT.Na.mLiquid.isFluidEqual(mTanks[0].getFluid())) tDivider = 6;
-			else if (MT.Sn.mLiquid.isFluidEqual(mTanks[0].getFluid())) tDivider = 3;
+			if (FL.equal(MT.Na.mLiquid, mTanks[0].getFluid())) tDivider = 6;
+			else if (FL.equal(MT.Sn.mLiquid, mTanks[0].getFluid())) tDivider = 3;
 			mEnergy = UT.Code.divup(mEnergy - tEnergy, tDivider) + tEnergy;
 			
 			oEnergy = mEnergy - tEnergy;
@@ -145,42 +145,42 @@ public class MultiTileEntityReactorCore2x2 extends MultiTileEntityReactorCore im
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Steam.make(tEnergy * STEAM_PER_WATER))) {
 						mEnergy -= mTanks[0].remove(tEnergy) * EU_PER_WATER;
 					} else tIsExploding = T;
-				} else if (MT.Sn.mLiquid.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.Sn.mLiquid, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_TIN;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Molten_Tin.make(tEnergy))) {
 						mEnergy -= EU_PER_TIN * mTanks[0].remove(tEnergy);
 					} else tIsExploding = T;
-				} else if (MT.Na.mLiquid.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.Na.mLiquid, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_SODIUM;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Molten_Sodium.make(tEnergy))) {
 						mEnergy -= EU_PER_SODIUM * mTanks[0].remove(tEnergy);
 					} else tIsExploding = T;
-				} else if (MT.HDO.mLiquid.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.HDO.mLiquid, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_SEMI_HEAVY_WATER;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Semi_Heavy_Water.make(tEnergy))) {
 						mEnergy -= EU_PER_SEMI_HEAVY_WATER * mTanks[0].remove(tEnergy);
 					} else tIsExploding = T;
-				} else if (MT.D2O.mLiquid.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.D2O.mLiquid, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_HEAVY_WATER;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Heavy_Water.make(tEnergy))) {
 						mEnergy -= EU_PER_HEAVY_WATER * mTanks[0].remove(tEnergy);
 					} else tIsExploding = T;
-				} else if (MT.T2O.mLiquid.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.T2O.mLiquid, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_TRITIATED_WATER;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Tritiated_Water.make(tEnergy))) {
 						mEnergy -= EU_PER_TRITIATED_WATER * mTanks[0].remove(tEnergy);
 					} else tIsExploding = T;
-				} else if (MT.LiCl.mLiquid.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.LiCl.mLiquid, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_LICL;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Molten_LiCl.make(tEnergy))) {
 						mEnergy -= EU_PER_LICL * mTanks[0].remove(tEnergy);
 					} else tIsExploding = T;
-				} else if (MT.CO2.mGas.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.CO2.mGas, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_CO2;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Carbon_Dioxide.make(tEnergy))) {
 						mEnergy -= EU_PER_CO2 * mTanks[0].remove(tEnergy);
 					} else tIsExploding = T;
-				} else if (MT.He.mGas.isFluidEqual(mTanks[0].getFluid())) {
+				} else if (FL.equal(MT.He.mGas, mTanks[0].getFluid())) {
 					tEnergy = mEnergy / EU_PER_HELIUM;
 					if (mTanks[0].has(tEnergy) && mTanks[1].fillAll(FL.Hot_Helium.make(tEnergy))) {
 						mEnergy -= EU_PER_HELIUM * mTanks[0].remove(tEnergy);
