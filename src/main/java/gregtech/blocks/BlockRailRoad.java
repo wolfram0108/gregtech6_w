@@ -29,7 +29,7 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.item.EntityMinecart;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.Container;
@@ -99,7 +99,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	}
 	
 	@Override
-	public void onMinecartPass(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
+	public void onMinecartPass(Level aWorld, AbstractMinecart aCart, int aX, int aY, int aZ) {
 		double tMotion = Math.sqrt(aCart.getDeltaMovement().x*aCart.getDeltaMovement().x + aCart.getDeltaMovement().z*aCart.getDeltaMovement().z);
 		if (tMotion > 0.01) {
 			aCart.getDeltaMovement().x *= 2;

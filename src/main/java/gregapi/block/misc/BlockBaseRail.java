@@ -38,9 +38,9 @@ import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.command.IEntitySelector;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.EntityMinecartCommandBlock;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.entity.item.EntityMinecart;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -236,7 +236,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		boolean flag = (aMetaData & 8) != 0;
 		boolean flag1 = F;
 		@SuppressWarnings("unchecked")
-		List<EntityMinecart> list = aWorld.getEntitiesOfClass(EntityMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
+		List<AbstractMinecart> list = aWorld.getEntitiesOfClass(AbstractMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
 		
 		if (!list.isEmpty()) flag1 = T;
 		if (flag1 && !flag) {
@@ -267,17 +267,17 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public int getComparatorInputOverride(Level aWorld, int aX, int aY, int aZ, int aSide) {
 		if (mDetectorRail && (WD.meta(aWorld, aX, aY, aZ) & 8) > 0) {
 			@SuppressWarnings("unchecked")
-			List<EntityMinecartCommandBlock> list = aWorld.getEntitiesOfClass(EntityMinecartCommandBlock.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
+			List<MinecartCommandBlock> list = aWorld.getEntitiesOfClass(MinecartCommandBlock.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
 			if (list.size() > 0) return list.get(0).func_145822_e().func_145760_g();
 			@SuppressWarnings("unchecked")
-			List<EntityMinecart> list1 = aWorld.selectEntitiesWithinAABB(EntityMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875), IEntitySelector.selectInventories);
+			List<AbstractMinecart> list1 = aWorld.selectEntitiesWithinAABB(AbstractMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875), IEntitySelector.selectInventories);
 			if (list1.size() > 0) return AbstractContainerMenu.calcRedstoneFromInventory((Container)list1.get(0));
 		}
 		return 0;
 	}
 	
 	// @Override
-	public float getRailMaxSpeed(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
+	public float getRailMaxSpeed(Level aWorld, AbstractMinecart aCart, int aX, int aY, int aZ) {
 		switch(WD.meta(aWorld, aX, aY, aZ) & 7) {
 		case  0:
 			if (WD.block(aWorld, aX  , aY, aZ+1) instanceof BlockBaseRail && (WD.meta(aWorld, aX  , aY, aZ+1) & 7) == 0
@@ -291,7 +291,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	}
 	
 	// @Override
-	public void onMinecartPass(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
+	public void onMinecartPass(Level aWorld, AbstractMinecart aCart, int aX, int aY, int aZ) {
 		if (mPowerRail) {
 			byte tRailMeta = WD.meta(aWorld, aX, aY, aZ);
 			double tMotion = Math.sqrt(aCart.getDeltaMovement().x*aCart.getDeltaMovement().x + aCart.getDeltaMovement().z*aCart.getDeltaMovement().z);
