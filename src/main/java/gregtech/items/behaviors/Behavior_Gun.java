@@ -18,6 +18,7 @@
  */
 
 package gregtech.items.behaviors;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.block.BlockPane;
 import net.minecraft.block.BlockStairs;
 import net.minecraft.world.level.block.Block;
@@ -109,7 +110,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// Are we shooting from under Water?
 		boolean tWater = WD.liquid(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
 		// Bullet related Stats
-		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantment.flame, aGun) + UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, aBullet);
+		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet);
 		
 		// Make a List of all possible Targets.
 		List tEntities = aPlayer.level().getEntitiesWithinAABBExcludingEntity(aPlayer, AABB.getBoundingBox(Math.min(tPos.xCoord, tAim.xCoord)-2, Math.min(tPos.yCoord, tAim.yCoord)-2, Math.min(tPos.zCoord, tAim.zCoord)-2, Math.max(tPos.xCoord, tAim.xCoord)+2, Math.max(tPos.yCoord, tAim.yCoord)+2, Math.max(tPos.zCoord, tAim.zCoord)+2));
@@ -123,7 +124,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		}
 		
 		// Actually do the shooting now!
-		long tPower = mPower + 2000L*UT.NBT.getEnchantmentLevel(Enchantment.power, aGun);
+		long tPower = mPower + 2000L*UT.NBT.getEnchantmentLevel(Enchantments.POWER, aGun);
 		for (int i = 1, ii = aCoords.size()-1; i < ii; i++) {
 			
 			if (tPower<=0) {
@@ -271,8 +272,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		tDamage = tSpeedFactor * Math.max(0, tGunMat.mToolQuality*0.5F + tMassFactor);
 		int
 		tImplosion  =      UT.NBT.getEnchantmentLevelImplosion(aBullet),
-		tFireDamage = 4 * (UT.NBT.getEnchantmentLevel(Enchantment.flame, aGun) + UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, aBullet)),
-		tKnockback  =     (UT.NBT.getEnchantmentLevel(Enchantment.punch, aGun) + UT.NBT.getEnchantmentLevel(Enchantment.knockback , aBullet));
+		tFireDamage = 4 * (UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet)),
+		tKnockback  =     (UT.NBT.getEnchantmentLevel(Enchantments.PUNCH, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK , aBullet));
 		
 		if (tImplosion  > 0 && UT.Entities.isExplosiveCreature(aTarget)) tMagicDamage += 1.5F*tImplosion;
 		if (tFireDamage > 0) aTarget.setFire(tFireDamage);
@@ -288,7 +289,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			tMagicDamage *= mMagic;
 			
 			if (aPlayer.level() instanceof ServerLevel) {
-				if (UT.NBT.getEnchantmentLevel(Enchantment.looting, aBullet) > 0) {
+				if (UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, aBullet) > 0) {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
 					tPlayer.getInventory().currentItem = 0;
 					tPlayer.getInventory().setInventorySlotContents(0, aBullet);
@@ -305,7 +306,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// Extremely Fast Bullets will penetrate Armor. You need a Rifle with the Power Enchantment for this. A Power 5 Carbine at point-blank could do too though.
 		if (aPower > 25000) tDamageSource.setDamageBypassesArmor();
 		// Smite Bullets will break one Lich Shield each, in order to make this somewhat beatable in Multiplayer.
-		if (MD.TF.mLoaded && aTarget instanceof EntityTFLich && UT.NBT.getEnchantmentLevel(Enchantment.smite, aBullet) > 0) tDamageSource.setDamageBypassesArmor();
+		if (MD.TF.mLoaded && aTarget instanceof EntityTFLich && UT.NBT.getEnchantmentLevel(Enchantments.SMITE, aBullet) > 0) tDamageSource.setDamageBypassesArmor();
 		
 		if (aTarget.attackEntityFrom(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 			aTarget.hurtResistantTime = (aTarget instanceof LivingEntity ? ((LivingEntity)aTarget).maxHurtResistantTime : 20);
@@ -356,7 +357,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		}
 		shoot(aGun, ST.amount(1, aBullet), aPlayer);
 		UT.Sounds.send(SFX.MC_FIREWORK_BLAST_FAR, 128, aPlayer);
-		if (!UT.Entities.hasInfiniteItems(aPlayer) && RNGSUS.nextInt(1+UT.NBT.getEnchantmentLevel(Enchantment.infinity, aGun)) == 0) {
+		if (!UT.Entities.hasInfiniteItems(aPlayer) && RNGSUS.nextInt(1+UT.NBT.getEnchantmentLevel(Enchantments.INFINITY, aGun)) == 0) {
 			OreDictItemData tData = OM.anydata(aBullet);
 			aBullet.setCount(aBullet.getCount()-1);
 			ST.save(aNBT, NBT_AMMO, aBullet.getCount() > 0 ? aBullet : NI);

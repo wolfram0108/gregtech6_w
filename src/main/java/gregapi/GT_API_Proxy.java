@@ -1479,7 +1479,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			ItemStack aTool = aHarvester.getMainHandItem();
 			if (aTool != null) {
 				boolean
-				tFireAspect = (UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, aTool) >= 3),
+				tFireAspect = (UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aTool) >= 3),
 				tCanCollect = (ST.item_(aTool) instanceof MultiItemTool && ((MultiItemTool)ST.item_(aTool)).canCollectDropsDirectly(aTool, aBlock, aBlockMeta));
 
 				if (ST.item_(aTool) instanceof MultiItemTool) {
@@ -1759,16 +1759,16 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			if (tSpeed >= 1.0F) tArrowEntity.setCritArrow(T); // было setIsCritical(boolean) (1.7.10) — neo AbstractArrow: setCritArrow(boolean) (сверено, AbstractArrow.java:540)
 
-			// PORT-TODO(EVENTS, AbstractArrow-enchant-bonus-api): Enchantment.power/.punch/.flame (1.7.10 static enum-like поля) удалены
+			// PORT-TODO(EVENTS, AbstractArrow-enchant-bonus-api): Enchantments.POWER/.punch/.flame (1.7.10 static enum-like поля) удалены
 			// (та же проблема класса, что и Blocks.*/Items.* по файлу) — плюс AbstractArrow больше не несёт getDamage()/setKnockbackStrength(int)/
 			// setFire(int) в старом виде (сверено, AbstractArrow.java — только setBaseDamage(double), нет getter; knockback/fire — другие пути:
 			// Entity.setRemainingFireTicks(int) вместо setFire(int), knockback вообще не найден как метод). Требует отдельного F#-решения.
 			// int
-			// tLevel = UT.NBT.getEnchantmentLevel(Enchantment.power, aEvent.getBow());
+			// tLevel = UT.NBT.getEnchantmentLevel(Enchantments.POWER, aEvent.getBow());
 			// if (tLevel > 0) tArrowEntity.setDamage(tArrowEntity.getDamage() + tLevel * 0.5D + 0.5D);
-			// tLevel = UT.NBT.getEnchantmentLevel(Enchantment.punch, aEvent.getBow());
+			// tLevel = UT.NBT.getEnchantmentLevel(Enchantments.PUNCH, aEvent.getBow());
 			// if (tLevel > 0) tArrowEntity.setKnockbackStrength(tLevel);
-			// tLevel = UT.NBT.getEnchantmentLevel(Enchantment.flame, aEvent.getBow());
+			// tLevel = UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aEvent.getBow());
 			// if (tLevel > 0) tArrowEntity.setFire(tLevel * 100);
 
 			aEvent.getBow().hurtAndBreak(1, aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)

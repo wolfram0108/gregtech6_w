@@ -18,6 +18,8 @@
  */
 
 package gregapi.oredict;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 import gregapi.code.*;
 import gregapi.data.*;
@@ -316,7 +318,7 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 	/** The Tags for this Material */
 	private final Set<TagData> mTags = new HashSetNoNulls<>();
 	/** Stores the Tool and Armor Enchants */
-	public final List<ObjectStack<Enchantment>> mEnchantmentTools = new ArrayListNoNulls<>(1), mEnchantmentWeapons = new ArrayListNoNulls<>(1), mEnchantmentAmmo = new ArrayListNoNulls<>(1), mEnchantmentRanged = new ArrayListNoNulls<>(1), mEnchantmentFishing = new ArrayListNoNulls<>(1), mEnchantmentArmors = new ArrayListNoNulls<>(1);
+	public final List<ObjectStack<ResourceKey<Enchantment>>> mEnchantmentTools = new ArrayListNoNulls<>(1), mEnchantmentWeapons = new ArrayListNoNulls<>(1), mEnchantmentAmmo = new ArrayListNoNulls<>(1), mEnchantmentRanged = new ArrayListNoNulls<>(1), mEnchantmentFishing = new ArrayListNoNulls<>(1), mEnchantmentArmors = new ArrayListNoNulls<>(1);
 	
 	private OreDictMaterial(short aID, String aNameInternal, String aNameLocal) {
 		mID = aID;
@@ -1200,38 +1202,38 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 		return this;
 	}
 	
-	public OreDictMaterial addEnchantmentForTools(Enchantment aEnchantment, int aEnchantmentLevel) {
+	public OreDictMaterial addEnchantmentForTools(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
 		mEnchantmentTools.add(new ObjectStack<>(aEnchantment, aEnchantmentLevel));
 		return this;
 	}
 	
-	public OreDictMaterial addEnchantmentForDamage(Enchantment aEnchantment, int aEnchantmentLevel) {
+	public OreDictMaterial addEnchantmentForDamage(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
 		addEnchantmentForWeapons(aEnchantment, aEnchantmentLevel);
 		addEnchantmentForAmmo(aEnchantment, aEnchantmentLevel);
 		return this;
 	}
 	
-	public OreDictMaterial addEnchantmentForWeapons(Enchantment aEnchantment, int aEnchantmentLevel) {
+	public OreDictMaterial addEnchantmentForWeapons(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
 		mEnchantmentWeapons.add(new ObjectStack<>(aEnchantment, aEnchantmentLevel));
 		return this;
 	}
 	
-	public OreDictMaterial addEnchantmentForAmmo(Enchantment aEnchantment, int aEnchantmentLevel) {
+	public OreDictMaterial addEnchantmentForAmmo(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
 		mEnchantmentAmmo.add(new ObjectStack<>(aEnchantment, aEnchantmentLevel));
 		return this;
 	}
 	
-	public OreDictMaterial addEnchantmentForRanged(Enchantment aEnchantment, int aEnchantmentLevel) {
+	public OreDictMaterial addEnchantmentForRanged(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
 		mEnchantmentRanged.add(new ObjectStack<>(aEnchantment, aEnchantmentLevel));
 		return this;
 	}
 	
-	public OreDictMaterial addEnchantmentForFishing(Enchantment aEnchantment, int aEnchantmentLevel) {
-		mEnchantmentFishing.add(new ObjectStack<>(aEnchantment, aEnchantment == Enchantment.field_151369_A ? Math.min(5, aEnchantmentLevel) : aEnchantmentLevel));
+	public OreDictMaterial addEnchantmentForFishing(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
+		mEnchantmentFishing.add(new ObjectStack<>(aEnchantment, aEnchantment == Enchantments.LURE ? Math.min(5, aEnchantmentLevel) : aEnchantmentLevel));
 		return this;
 	}
 	
-	public OreDictMaterial addEnchantmentForArmors(Enchantment aEnchantment, int aEnchantmentLevel) {
+	public OreDictMaterial addEnchantmentForArmors(ResourceKey<Enchantment> aEnchantment, int aEnchantmentLevel) {
 		mEnchantmentArmors.add(new ObjectStack<>(aEnchantment, aEnchantmentLevel));
 		return this;
 	}

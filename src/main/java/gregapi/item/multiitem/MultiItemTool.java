@@ -18,6 +18,7 @@
  */
 
 package gregapi.item.multiitem;
+import net.minecraft.resources.ResourceKey;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -547,7 +548,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			if (IL.TF_Mazestone.equal(aBlock)) if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
 			if (IL.TF_Mazehedge.equal(aBlock)) {
 				if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
-				// PORT-TODO(F8, enchant-registry): Enchantment.silkTouch (1.7.10 static instance) удалён —
+				// PORT-TODO(F8, enchant-registry): Enchantments.SILK_TOUCH (1.7.10 static instance) удалён —
 				// зачарования data-driven, нет живого Holder<Enchantment> в статическом контексте; деградация
 				// до "нет шёлковой нити" (ветка отдаёт особый дроп безусловно).
 				if (!aWorld.isClientSide()) {
@@ -640,11 +641,11 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		// Abuse a potentially empty List as a boolean to see if a Tool already has enchants or not.
 		aNBT.put("ench", new ListTag());
 		
-		List<ObjectStack<Enchantment>> tEnchantments = new ArrayListNoNulls<>();
+		List<ObjectStack<ResourceKey<Enchantment>>> tEnchantments = new ArrayListNoNulls<>();
 		// Get Material Specific Enchantments for applicable Tool Classes.
-		if (tStats.isMiningTool  ()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentTools  ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
-		if (tStats.isWeapon      ()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentWeapons) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
-		if (tStats.isRangedWeapon()) for (ObjectStack<Enchantment> tEnchantment : aMaterial.mEnchantmentRanged ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
+		if (tStats.isMiningTool  ()) for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMaterial.mEnchantmentTools  ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
+		if (tStats.isWeapon      ()) for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMaterial.mEnchantmentWeapons) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
+		if (tStats.isRangedWeapon()) for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMaterial.mEnchantmentRanged ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
 		
 		// Get Tool Specific Enchantments.
 		Enchantment[] tEnchants = tStats.getEnchantments(aStack, aMaterial);
@@ -652,14 +653,14 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		
 		for (int i = 0; i < tEnchants.length; i++) if (tLevels[i] > 0) {
 			boolean temp = T;
-			for (ObjectStack<Enchantment> tEnchantment : tEnchantments) if (tEnchantment.mObject == tEnchants[i]) {
+			for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tEnchantments) if (tEnchantment.mObject == tEnchants[i]) {
 				tEnchantment.mAmount = 1+Math.max(tEnchantment.mAmount, tLevels[i]);
 				temp = F;
 				break;
 			}
 			if (temp) tEnchantments.add(new ObjectStack<>(tEnchants[i], tLevels[i]));
 		}
-		for (ObjectStack<Enchantment> tEnchantment : tEnchantments) UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.amountShort());
+		for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tEnchantments) UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.amountShort());
 		return T;
 	}
 	

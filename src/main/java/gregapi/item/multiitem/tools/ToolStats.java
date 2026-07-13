@@ -55,7 +55,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F8, enchant-registry): {@code Enchantment.fortune}/{@code Enchantment.looting} (статические
+ * PORT-TODO(F8, enchant-registry): {@code Enchantments.FORTUNE}/{@code Enchantments.LOOTING} (статические
  * инстансы 1.7.10) удалены — зачарования data-driven, {@code Holder<Enchantment>} требует живой
  * {@code RegistryAccess}, недоступный в статическом контексте (тот же класс проблемы, что
  * {@code UT.NBT.getEnchantmentLevelLootingFortune}) — деградация до пустого массива.

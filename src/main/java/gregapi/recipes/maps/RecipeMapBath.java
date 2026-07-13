@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes.maps;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 import gregapi.data.*;
 import gregapi.item.IItemColorableRGB;
@@ -134,9 +135,9 @@ public class RecipeMapBath extends RecipeMap {
 				}
 			}
 			if (aInput.getItem() instanceof IItemProjectile && ((IItemProjectile)aInput.getItem()).hasProjectile(null, aInput)) {
-				if (FL.Holywater .is(aFluids[0]) && UT.NBT.getEnchantmentLevel(Enchantment.smite     , aInput) < 10) return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(UT.NBT.addEnchantment(ST.update(ST.amount(1, aInput)), Enchantment.smite     , 10)), null, null, FL.array(FL.Holywater .make(25)), ZL_FS, 16, 0, 0);
-				if (FL.FieryBlood.is(aFluids[0]) && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, aInput) <  3) return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(UT.NBT.addEnchantment(ST.update(ST.amount(1, aInput)), Enchantment.fireAspect,  3)), null, null, FL.array(FL.FieryBlood.make(25)), ZL_FS, 16, 0, 0);
-				if (FL.FieryTears.is(aFluids[0]) && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, aInput) <  3) return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(UT.NBT.addEnchantment(ST.update(ST.amount(1, aInput)), Enchantment.fireAspect,  3)), null, null, FL.array(FL.FieryTears.make(25)), ZL_FS, 16, 0, 0);
+				if (FL.Holywater .is(aFluids[0]) && UT.NBT.getEnchantmentLevel(Enchantments.SMITE     , aInput) < 10) return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(UT.NBT.addEnchantment(ST.update(ST.amount(1, aInput)), Enchantments.SMITE     , 10)), null, null, FL.array(FL.Holywater .make(25)), ZL_FS, 16, 0, 0);
+				if (FL.FieryBlood.is(aFluids[0]) && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aInput) <  3) return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(UT.NBT.addEnchantment(ST.update(ST.amount(1, aInput)), Enchantments.FIRE_ASPECT,  3)), null, null, FL.array(FL.FieryBlood.make(25)), ZL_FS, 16, 0, 0);
+				if (FL.FieryTears.is(aFluids[0]) && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aInput) <  3) return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(UT.NBT.addEnchantment(ST.update(ST.amount(1, aInput)), Enchantments.FIRE_ASPECT,  3)), null, null, FL.array(FL.FieryTears.make(25)), ZL_FS, 16, 0, 0);
 			}
 			if (ST.edible(aInput) && FL.getFluid(aInput, T) == null) {
 				ItemStack tOutput = ST.amount(1, aInput);

@@ -18,6 +18,8 @@
  */
 
 package gregapi.item.prefixitem;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 import net.neoforged.fml.Logging;
 import gregapi.code.ModData;
@@ -143,8 +145,8 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 				// F8: getOrCreate → detached-копия; коммитим флаг "gt.u" ДО addEnchantment, иначе он не
 				// долетит до стека и энчанты будут добавляться повторно (см. ItemNBT.java, паттерн Behavior_Arrow).
 				UT.NBT.set(aStack, tNBT);
-				for (ObjectStack<Enchantment> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
-					UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.mObject == Enchantment.looting ? tEnchantment.mAmount * mLootingMultiplier : tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : mMaterialList[aMetaData].mEnchantmentAmmo) {
+					UT.NBT.addEnchantment(aStack, tEnchantment.mObject, tEnchantment.mObject == Enchantments.LOOTING ? tEnchantment.mAmount * mLootingMultiplier : tEnchantment.mAmount);
 				}
 			}
 		}

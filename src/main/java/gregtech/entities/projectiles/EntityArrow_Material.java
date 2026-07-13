@@ -181,8 +181,8 @@ public class EntityArrow_Material extends EntityProjectile {
 					
 					int
 					tImplosion  = UT.NBT.getEnchantmentLevelImplosion(mArrow),
-					tFireDamage = (isBurning()?5:0) + 4 * UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow),
-					tKnockback  = mKnockback + UT.NBT.getEnchantmentLevel(Enchantment.knockback, mArrow),
+					tFireDamage = (isBurning()?5:0) + 4 * UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow),
+					tKnockback  = mKnockback + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK, mArrow),
 					tHitTimer   = -1;
 					
 					// Also work on Ghasts and such. But no double dipping on Anti Creeper Damage!
@@ -199,7 +199,7 @@ public class EntityArrow_Material extends EntityProjectile {
 						
 						if (tFireDamage > 0 && !(tHitEntity instanceof EnderMan)) tHitEntity.setFire(tFireDamage);
 						
-						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(Enchantment.looting, mArrow) > 0) {
+						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, mArrow) > 0) {
 							Player tPlayer = null;
 							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getCommandSenderName():"Arrow"));
 							if (tPlayer != null) {
@@ -219,7 +219,7 @@ public class EntityArrow_Material extends EntityProjectile {
 							if (tHitEntity instanceof LivingEntity) {
 								if (tHitTimer >= 0) tHitEntity.hurtResistantTime = tHitTimer;
 								
-								if (tHitEntity instanceof Creeper && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 0 && tImplosion <= 0) ((Creeper)tHitEntity).func_146079_cb();
+								if (tHitEntity instanceof Creeper && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow) > 0 && tImplosion <= 0) ((Creeper)tHitEntity).func_146079_cb();
 								
 								LivingEntity tHitLivingEntity = (LivingEntity)tHitEntity;
 								
@@ -274,7 +274,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					
 					if (mHitBlock.getMaterial() != Material.air) mHitBlock.onEntityCollidedWithBlock(level(), mHitBlockX, mHitBlockY, mHitBlockZ, this);
 					
-					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
+					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
 					
 					if (breaksOnImpact()) setDead();
 				}

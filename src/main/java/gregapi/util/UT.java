@@ -18,6 +18,11 @@
  */
 
 package gregapi.util;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.core.BlockPos;
 import net.minecraft.entity.monster.EntityBlaze;
 import net.minecraft.entity.monster.EntityIronGolem;
@@ -655,32 +660,32 @@ public class UT {
 			}
 			if (!aMat.mEnchantmentTools  .isEmpty()) {
 				tPage = "Tool Enchantments\n===================\n";
-				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentTools  ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentTools  ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentWeapons.isEmpty()) {
 				tPage = "Weapon Enchantments\n===================\n";
-				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentWeapons) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentWeapons) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentAmmo   .isEmpty()) {
 				tPage = "Ammo Enchantments\n===================\n";
-				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentAmmo   ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentAmmo   ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentRanged .isEmpty()) {
 				tPage = "Ranged Enchantments\n===================\n";
-				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentRanged ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentRanged ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentFishing.isEmpty()) {
 				tPage = "Fishing Enchantments\n===================\n";
-				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentFishing) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentFishing) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentArmors .isEmpty()) {
 				tPage = "Armor Enchantments\n===================\n";
-				for (ObjectStack<Enchantment> tEnchantment : aMat.mEnchantmentArmors ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentArmors ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			
@@ -2289,10 +2294,15 @@ public class UT {
 		// заменяет существующую запись ИЛИ добавляет новую — 1:1 замена ручного скана списка "найти id,
 		// обновить lvl, иначе добавить". Каст (byte)aLevel сохраняет ОРИГИНАЛЬНУЮ 1.7.10-усечку уровня
 		// (исходный код тоже писал lvl как (byte)aLevel, несмотря на short-поле) — не улучшение, воспроизведение.
-		public static ItemStack addEnchantment(ItemStack aStack, Enchantment aEnchantment, long aLevel) {
+		public static ItemStack addEnchantment(ItemStack aStack, ResourceKey<Enchantment> aEnchantment, long aLevel) {
+			// F8 (enchant-registry, форс движка): энчанты стали registry-driven Holder — резолвим ключ через
+			// server-реестр (в 1.7.10 был статический объект Enchantment.X). Нет сервера => энчантовать нечем.
+			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
+			if (tServer == null) return aStack;
+			Holder<Enchantment> tHolder = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(aEnchantment);
 			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
 			ItemEnchantments.Mutable tMutable = new ItemEnchantments.Mutable(aStack.getOrDefault(tType, ItemEnchantments.EMPTY));
-			tMutable.set(Holder.direct(aEnchantment), (byte)aLevel);
+			tMutable.set(tHolder, (byte)aLevel);
 			aStack.set(tType, tMutable.toImmutable());
 			return aStack;
 		}
@@ -2857,12 +2867,12 @@ public class UT {
 		public static int getRadioactivityLevel(ItemStack aStack, OreDictItemData aData) {
 			long rLevel = 0;
 			if (aData != null && aData.validMaterial()) {
-				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentTools  ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentWeapons) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentAmmo   ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentRanged ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<Enchantment> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentTools  ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentWeapons) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentAmmo   ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentRanged ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
 			}
 			// PORT-TODO(F8, enchant-registry): легаси EnchantmentHelper.getEnchantmentLevel(int effectId,
 			// ItemStack) удалён из движка целиком (не переименован). Вдобавок Enchantment_Radioactivity

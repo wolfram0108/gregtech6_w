@@ -18,6 +18,8 @@
  */
 
 package gregapi;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.client.registry.RenderingRegistry;
@@ -383,32 +385,32 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						if (tData.mPrefix.contains(TD.Prefix.TOOLTIP_ENCHANTS)) {
 							StringBuilder
 							tToolTip = null;
-							for (ObjectStack<Enchantment> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentTools) {
+							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentTools) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_TOOL_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
-								if (tEnchantment.mObject == Enchantment.fireAspect && tEnchantment.mAmount >= 3) tToolTip.append(" (Autosmelt)");
+								if (tEnchantment.mObject == Enchantments.FIRE_ASPECT && tEnchantment.mAmount >= 3) tToolTip.append(" (Autosmelt)");
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
-							for (ObjectStack<Enchantment> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentWeapons) {
+							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentWeapons) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_WEAPON_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
-							for (ObjectStack<Enchantment> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentAmmo) {
+							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentAmmo) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_AMMO_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
-							for (ObjectStack<Enchantment> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentRanged) {
+							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentRanged) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_RANGED_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
-							for (ObjectStack<Enchantment> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentFishing) {
+							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentFishing) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_FISHING_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
 							}
@@ -416,7 +418,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 							
 							if (!tData.mPrefix.containsAny(TD.Prefix.TOOL_HEAD, TD.Prefix.WEAPON_ALIKE, TD.Prefix.AMMO_ALIKE, TD.Prefix.TOOL_ALIKE)) {
 								tToolTip = null;
-								for (ObjectStack<Enchantment> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentArmors) {
+								for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentArmors) {
 									if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_ARMOR_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 									tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
 								}
