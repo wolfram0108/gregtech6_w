@@ -630,9 +630,15 @@ public class WD {
 	}
 
 	public static boolean setMeta(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFlags) {
-		// было WD.setMeta(aWorld, x,y,z,meta,flags) — мета-only запись при ТЕКУЩЕМ блоке (тип не меняется).
+		// было world.setBlockMetadataWithNotify(x,y,z,meta,flags) — мета-only запись при ТЕКУЩЕМ блоке (тип не меняется).
 		// F13 §3.4: запись меты централизована через set(...,F) (aRemoveGrassBelow=F — блок не переставляется, трава не трогается).
 		return set(aWorld, aX, aY, aZ, block(aWorld, aX, aY, aZ), aMeta, aFlags, F);
+	}
+
+	public static boolean mayEdit(Player aPlayer, int aX, int aY, int aZ, int aSide, ItemStack aStack) {
+		// было aPlayer.canPlayerEdit(x,y,z,side,stack) — neo: Player.mayUseItemAt(BlockPos, Direction, ItemStack) (Player.java:1661).
+		// координатный адаптер (роль WD): (int,int,int)->BlockPos, byte-сторона->neo Direction через FORGE_DIR.
+		return aPlayer.mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack);
 	}
 
 	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {

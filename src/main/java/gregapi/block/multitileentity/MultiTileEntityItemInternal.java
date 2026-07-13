@@ -168,7 +168,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
 			
 			if (!tReplacedBlock.isReplaceable(aWorld, aX, aY, aZ) || !mBlock.canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
-			if (aStack.getCount() == 0 || (aPlayer != null && !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack))) return F;
+			if (aStack.getCount() == 0 || (aPlayer != null && !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack))) return F;
 			
 			MultiTileEntityContainer aMTEContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aWorld, aX, aY, aZ, aStack);
 			

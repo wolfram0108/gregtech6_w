@@ -57,7 +57,7 @@ public class Behavior_Spray_Foam_Hardener extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isClientSide() || aStack.getCount() != 1 || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aStack.getCount() != 1 || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
 		
 		boolean rOutput = F;
 		

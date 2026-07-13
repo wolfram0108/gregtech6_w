@@ -94,7 +94,7 @@ public class ToolCompat {
 		
 		try {
 		
-		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || aEntityPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack))) {
+		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || WD.mayEdit(aEntityPlayer, aX, aY, aZ, aSide, aStack))) {
 			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
 				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					WD.playStepSound(aWorld, aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND);
@@ -220,7 +220,7 @@ public class ToolCompat {
 			}
 			// This thing has a special Functionality, which should override spawning Fire Blocks.
 			if (!IL.TF_Lamp_of_Cinders.equal(aStack, T, T)) {
-				if (aEntityPlayer == null || aEntityPlayer.canPlayerEdit(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aSide, aStack)) {
+				if (aEntityPlayer == null || WD.mayEdit(aEntityPlayer, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aSide, aStack)) {
 					if (aWorld.isAirBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
 						if (WD.oxygen(aWorld, aX, aY, aZ)) aWorld.setBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.FIRE);
 						return 10000;

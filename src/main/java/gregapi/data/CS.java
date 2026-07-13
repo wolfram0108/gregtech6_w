@@ -657,9 +657,9 @@ public class CS {
 											CUBE_3[] = {{ 0, 0, 0}, { 0,-1, 0}, { 0,+1, 0}, { 0, 0,-1}, { 0, 0,+1}, {-1, 0, 0}, {+1, 0, 0}, { 0,-1,-1}, { 0,-1,+1}, {-1,-1, 0}, {+1,-1, 0}, { 0,+1,-1}, { 0,+1,+1}, {-1,+1, 0}, {+1,+1, 0}, {-1, 0,-1}, {+1, 0,+1}, {+1, 0,-1}, {-1, 0,+1}, {-1,-1,-1}, {+1,-1,+1}, {+1,-1,-1}, {-1,-1,+1}, {-1,+1,-1}, {+1,+1,+1}, {+1,+1,-1}, {-1,+1,+1}};
 	
 	/** Side->ForgeDirection Mappings. */
-	public static final Direction[]    FORGE_DIR = {Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.UNKNOWN};
+	public static final Direction[]    FORGE_DIR = {Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, null}; // было Direction.UNKNOWN — neo Direction без UNKNOWN; slot-6 (SIDE_UNKNOWN) = null (neo-идиома «нет направления»)
 	/** Side->Opposite Mappings with ForgeDirection. */
-	public static final Direction[]    FORGE_DIR_OPPOSITES = {Direction.UP, Direction.DOWN, Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST, Direction.UNKNOWN};
+	public static final Direction[]    FORGE_DIR_OPPOSITES = {Direction.UP, Direction.DOWN, Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST, null}; // было Direction.UNKNOWN — см. FORGE_DIR
 	
 	/** Compass alike Array for the proper ordering of North, East, South and West. */
 	public static final byte[]              COMPASS_DIRECTIONS      = {SIDE_NORTH, SIDE_EAST, SIDE_SOUTH, SIDE_WEST};

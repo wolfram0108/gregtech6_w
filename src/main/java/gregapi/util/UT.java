@@ -3157,13 +3157,13 @@ public class UT {
 		}
 		
 		public static boolean canEdit(Object aPlayer, int aX, int aY, int aZ) {
-			return !(aPlayer instanceof Player) || ((Player)aPlayer).canPlayerEdit(aX, aY, aZ, SIDE_TOP, NI);
+			return !(aPlayer instanceof Player) || WD.mayEdit((Player)aPlayer,aX, aY, aZ, SIDE_TOP, NI);
 		}
 		public static boolean canEdit(Object aPlayer, int aX, int aY, int aZ, ItemStack aStack) {
-			return !(aPlayer instanceof Player) || ((Player)aPlayer).canPlayerEdit(aX, aY, aZ, SIDE_TOP, aStack);
+			return !(aPlayer instanceof Player) || WD.mayEdit((Player)aPlayer,aX, aY, aZ, SIDE_TOP, aStack);
 		}
 		public static boolean canEdit(Object aPlayer, int aX, int aY, int aZ, int aSide, ItemStack aStack) {
-			return !(aPlayer instanceof Player) || ((Player)aPlayer).canPlayerEdit(aX, aY, aZ, aSide, aStack);
+			return !(aPlayer instanceof Player) || WD.mayEdit((Player)aPlayer,aX, aY, aZ, aSide, aStack);
 		}
 		
 		/** checks if a Player is actually a Player and not a FakePlayer or something. */

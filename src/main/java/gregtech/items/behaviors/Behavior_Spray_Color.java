@@ -64,7 +64,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 		
 		boolean rOutput = F;
 		
-		if (!aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
 		
 		CompoundTag tNBT = UT.NBT.getNBT(aStack);
 		long tUses = tNBT.getLong("gt.remaining");

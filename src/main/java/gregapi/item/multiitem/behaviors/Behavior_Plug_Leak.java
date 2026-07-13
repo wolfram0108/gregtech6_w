@@ -43,7 +43,7 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
 		for (byte tSide : ALL_SIDES) {
 			// Only place right next to Liquids or inside of Liquids.
 			if (!WD.liquid(WD.block(aWorld, aX+OFFX[aSide]+OFFX[tSide], aY+OFFY[aSide]+OFFY[tSide], aZ+OFFZ[aSide]+OFFZ[tSide]))) continue;

@@ -53,7 +53,7 @@ public class Behavior_Duct_Tape extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || aStack.getCount() != 1 || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aStack.getCount() != 1 || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
 		
 		boolean rOutput = F;
 		

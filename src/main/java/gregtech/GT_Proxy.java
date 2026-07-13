@@ -210,7 +210,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					}
 					
 					HitResult tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
-					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) || !aEvent.entityPlayer.canPlayerEdit(tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ(), tTarget.sideHit, aStack)) return;
+					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) || !aEvent.WD.mayEdit(entityPlayer, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ(), tTarget.sideHit, aStack)) return;
 					Block tBlock = WD.block(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ());
 					
 					if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {

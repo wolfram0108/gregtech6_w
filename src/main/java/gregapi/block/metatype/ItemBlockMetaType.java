@@ -78,7 +78,7 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 			byte aMetaData = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
 			
 			if (aBlock instanceof GT_Block_Stones)
-			if (aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack))
+			if (WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack))
 			if (mBlock.mBlock == ((GT_Block_Stones)aBlock).mBlock)
 			if (SIDES_VALID[((GT_Block_Stones)aBlock).mSide])
 			if (ST.equal(aStack, new ItemStack(mBlock.mBlock.mSlabs[0], 1, aMetaData), true))

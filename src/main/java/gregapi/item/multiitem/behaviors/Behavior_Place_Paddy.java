@@ -46,7 +46,7 @@ public class Behavior_Place_Paddy extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || !IL.GrC_Paddy.exists() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || !IL.GrC_Paddy.exists() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
 		if (WD.block(aWorld, aX, aY, aZ) == Blocks.FARMLAND && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 			UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
 			WD.set(aWorld, aX, aY, aZ, IL.GrC_Paddy.block(), WD.meta(aWorld, aX, aY, aZ), 3);

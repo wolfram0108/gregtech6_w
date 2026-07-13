@@ -93,7 +93,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		if (!aPlayer.isShiftKeyDown()) {
 			for (int i = 0; i < 2; i++) {
 				if (i == 1) {aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];}
-				if (!aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+				if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
 				Block aBlock = WD.block(aWorld, aX, aY, aZ);
 				byte  aMeta  = WD.meta (aWorld, aX, aY, aZ);
 				if (aBlock == this) {

@@ -25,6 +25,7 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
+import gregapi.util.WD;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -36,7 +37,7 @@ public class Behavior_Place_Sapling extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack) || SIDES_BOTTOM_HORIZONTAL[aSide]) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || SIDES_BOTTOM_HORIZONTAL[aSide]) return F;
 		int aOldSize = ST.size(aStack);
 		// Scan Inventory for suitable Saplings.
 		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {

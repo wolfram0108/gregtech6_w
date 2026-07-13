@@ -203,7 +203,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public boolean onItemUseFirst(MultiTileEntityItemInternal aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack) || aStack.getCount() != 1) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || aStack.getCount() != 1) return F;
 		if (canWaterCrops()) {
 			FluidStack mFluid = aItem.getFluid(aStack);
 			if (FL.water(mFluid)) {

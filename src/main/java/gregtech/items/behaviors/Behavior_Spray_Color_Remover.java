@@ -61,7 +61,7 @@ public class Behavior_Spray_Color_Remover extends AbstractBehaviorDefault {
 		
 		boolean rOutput = F;
 		
-		if (!aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
 		
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
