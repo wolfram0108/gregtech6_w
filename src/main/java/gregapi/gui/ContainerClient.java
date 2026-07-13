@@ -21,93 +21,93 @@ package gregapi.gui;
 
 import static gregapi.data.CS.*;
 
-import org.lwjgl.opengl.GL11;
-
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import gregapi.util.ST;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.resources.Identifier;
 
 /**
  * @author Gregorius Techneticies
+ *
+ * PORT-TODO(F3, baked-рендер клиента): 1.7.10 {@code GuiContainer} (immediate-mode: {@code drawGuiContainerBackgroundLayer}
+ * рисовал фон через {@code mc.renderEngine.bindTexture}+GL11, {@code drawTexturedModalRect} слал квады в
+ * {@code Tessellator}, {@code drawScreen} каждый кадр перерисовывал tooltip) заменён {@code AbstractContainerScreen<T>}
+ * — новый extract-render-state API 26.1.2 (`neo-decompiled/net/minecraft/client/gui/screens/inventory/AbstractContainerScreen.java:103-128`:
+ * {@code extractRenderState(GuiGraphicsExtractor,...)}→{@code extractContents}→{@code extractLabels}/{@code extractSlots},
+ * БЕЗ старого {@code drawGuiContainerXxxLayer(...)}/{@code drawScreen(...)}). Legacy-имена полей/методов
+ * ({@code mc}, {@code fontRendererObj}, {@code xSize}/{@code ySize}, {@code drawTexturedModalRect}, {@code allowUserInput})
+ * сохранены здесь КАК ОДИН нейтральный compile-only мост (централизация #3, единая точка для всей иерархии
+ * {@code ContainerClientDefault/Chest/BasicMachine}) — их построчную адаптацию под подклассы делать не пришлось.
+ * Реальная перерисовка — decisions/F3-render.md §2.7 (BER/{@code GuiGraphicsExtractor}-путь); тело каждого
+ * рисующего метода ниже — no-op заглушка, сигнатуры сохранены 1:1.
  */
 @OnlyIn(Dist.CLIENT)
-public class ContainerClient extends GuiContainer {
-	
+public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
+
 	public boolean mCrashed = F;
-	
+
 	public Identifier mBackground;
-	
+
 	public String mNEI = "";
-	
+
 	public ContainerCommon mContainer;
-	
-	public int getLeft() {return guiLeft;}
-	public int getTop() {return guiTop;}
-	
+
+	/** PORT-TODO(F3, baked-рендер клиента): было поле {@code GuiScreen.mc} (переименовано в {@code Screen.minecraft}, см. class javadoc). */
+	protected final Minecraft mc;
+	/** PORT-TODO(F3, baked-рендер клиента): было поле {@code GuiScreen.fontRendererObj} (переименовано в {@code Screen.font}, см. class javadoc). */
+	protected final Font fontRendererObj;
+	/** PORT-TODO(F3, baked-рендер клиента): были мутируемые поля {@code GuiContainer.xSize/ySize}; в 26.1.2
+	 *  {@code AbstractContainerScreen.imageWidth/imageHeight} — {@code final} (подклассы GT6 мутируют
+	 *  {@code ySize} ПОСЛЕ {@code super(...)}, см. {@link ContainerClientChest}) — отдельный держатель, см. class javadoc. */
+	protected int xSize, ySize;
+	/** PORT-TODO(F3, baked-рендер клиента): было поле {@code GuiContainer.allowUserInput} (см. class javadoc). */
+	protected boolean allowUserInput;
+
+	public int getLeft() {return leftPos;}
+	public int getTop() {return topPos;}
+
 	public ContainerClient(ContainerCommon aContainer, String aBackgroundPath) {
-		super(aContainer);
+		super(aContainer, aContainer.mInventoryPlayer, Component.empty());
 		mContainer = aContainer;
-		mBackground = new Identifier(aBackgroundPath);
+		mBackground = Identifier.parse(aBackgroundPath);
+		mc = minecraft;
+		fontRendererObj = font;
+		xSize = imageWidth;
+		ySize = imageHeight;
 	}
-	
-	// @Override
+
+	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode рисование заголовка (см. class javadoc). */
 	protected void drawGuiContainerForegroundLayer(int par1, int par2) {
 		//
 	}
-	
-	// @Override
+
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code mc.renderEngine.bindTexture}+GL11 (см. class javadoc). */
 	protected void drawGuiContainerBackgroundLayer(float par1, int par2, int par3) {
-		mc.renderEngine.bindTexture(mBackground);
-		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		drawGuiContainerBackgroundLayer2(par1, par2, par3);
 	}
-	
+
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code drawTexturedModalRect} через Tessellator (см. class javadoc). */
 	protected void drawGuiContainerBackgroundLayer2(float par1, int par2, int par3) {
 		int x = (width - xSize) / 2;
 		int y = (height - ySize) / 2;
 		drawTexturedModalRect(x, y, 0, 0, xSize, ySize);
 	}
-	
-	// @Override
-	public void drawScreen(int aX, int aY, float par3) {
-		try {
-			super.drawScreen(aX, aY, par3);
-			for (int i = 0; i < inventorySlots.inventorySlots.size(); ++i) {
-				Slot tSlot = (Slot)inventorySlots.inventorySlots.get(i);
-				if (ST.invalid(tSlot.getStack()) && isMouseOverSlot(tSlot, aX, aY) && tSlot instanceof Slot_Base) {
-					drawHoveringText(((Slot_Base)tSlot).getTooltip(mc.thePlayer, mc.gameSettings.advancedItemTooltips), aX, aY, fontRendererObj);
-				}
-			}
-		} catch (Throwable e) {
-			e.printStackTrace(ERR);
-			try {
-				Tesselator.instance.draw();
-			} catch (Throwable f) {
-				f.printStackTrace(ERR);
-			}
-		}
+
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code GuiScreen.drawTexturedModalRect} (immediate-mode
+	 *  квад в {@code Tessellator}, тип удалён, см. class javadoc). */
+	protected void drawTexturedModalRect(int aX, int aY, int aU, int aV, int aW, int aH) {
+		//
 	}
-	
-	protected boolean isMouseOverSlot(Slot aSlot, int aX, int aY) {return func_146978_c(aSlot.xDisplayPosition, aSlot.yDisplayPosition, 16, 16, aX, aY);}
-	
-	/*
-	@Override
-	protected void drawSlotInventory(Slot par1Slot) {
-		try {
-			super.drawSlotInventory(par1Slot);
-		} catch(Throwable e) {
-			try {
-				Tessellator.instance.draw();
-			} catch(Throwable f) {}
-			if (!mCrashed) {
-				GT_Log.out.println("Clientside Slot drawing Crash prevented. Seems one Itemstack causes Problems with negative Damage Values or the Wildcard Damage Value. This is absolutely NOT a Bug of GregTech, so don't even think about reporting it to me, it's a Bug of the Mod, which belongs to the almost-crash-causing Item, so bug that Mods Author and not me! Did you hear it? NOT ME!!!");
-				e.printStackTrace();
-				mCrashed = true;
-			}
-		}
-	}*/
+
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code GuiScreen.drawScreen(int,int,float)} — весь immediate-mode
+	 *  цикл кадра, включая per-slot tooltip через {@code drawHoveringText} (метод/API удалены, см. class javadoc). */
+	public void drawScreen(int aX, int aY, float par3) {
+		//
+	}
+
+	protected boolean isMouseOverSlot(Slot aSlot, int aX, int aY) {return isHovering(aSlot.x, aSlot.y, 16, 16, aX, aY);}
 }

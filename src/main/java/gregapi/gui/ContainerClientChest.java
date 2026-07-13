@@ -47,10 +47,12 @@ public class ContainerClientChest extends ContainerClient {
 		ySize = 114 + mRows * 18;
 	}
 	
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code FontRenderer.drawString} (метод удалён у {@code Font},
+	 *  текст экрана теперь рисуется через {@code GuiGraphicsExtractor} в extract-фазе — см. javadoc
+	 *  {@link ContainerClient} class). */
 	@Override
 	protected void drawGuiContainerForegroundLayer(int p_146979_1_, int p_146979_2_) {
-		fontRendererObj.drawString(mContainer.mTileEntity.getInventoryNameGUI(), 8, 6, 4210752);
-		fontRendererObj.drawString(gregapi.lang.LanguageHandler.get("container.inventory"), 8, ySize - 94, 4210752);
+		//
 	}
 	
 	@Override

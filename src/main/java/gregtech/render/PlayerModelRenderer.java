@@ -19,31 +19,33 @@
 
 package gregtech.render;
 
-import net.minecraft.client.entity.AbstractClientPlayer;
-import net.minecraft.client.model.ModelBiped;
-import net.minecraft.client.renderer.entity.RenderManager;
-import net.minecraft.client.renderer.entity.RenderPlayer;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.util.Mth;
 import net.minecraft.resources.Identifier;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import org.lwjgl.opengl.GL11;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 
 import java.util.Collection;
 
-import static gregapi.data.CS.ERR;
 import static gregapi.data.CS.RES_PATH_MODEL;
 
-public class PlayerModelRenderer extends RenderPlayer {
-	private final Identifier[] mResources = new Identifier[] {new Identifier(RES_PATH_MODEL + "BrainTech.png"), new Identifier(RES_PATH_MODEL + "Silver.png"), new Identifier(RES_PATH_MODEL + "MrBrain.png"), new Identifier(RES_PATH_MODEL + "Dev.png"), new Identifier(RES_PATH_MODEL + "Gold.png"), new Identifier(RES_PATH_MODEL + "Crazy.png"), new Identifier(RES_PATH_MODEL + "Sus.png")};
+/**
+ * PORT-TODO(F3, baked-рендер клиента): 1.7.10 {@code RenderPlayer} (immediate-mode: GL11 push/pop-матрицы,
+ * ручная интерполяция позиции игрока по SRG-полям {@code field_71091_bM}.., {@code ModelBiped.renderCloak})
+ * — весь этот стек удалён в 26.1.2 (decisions/F3-render.md §1). Класс больше не наследует движковый
+ * рендерер игрока (тип удалён без замены с той же формой) — держит только чистую бизнес-логику выбора
+ * плаща по нику/UUID ({@link #getResource(String)}, БЕЗ ИЗМЕНЕНИЙ) + PORT-TODO-заглушку хука. Хук
+ * ретипирован на реальный neo-эквивалент {@code net.neoforged.neoforge.client.event.RenderPlayerEvent.Pre}
+ * (`neoforge-decompiled/net/neoforged/neoforge/client/event/RenderPlayerEvent.java:50-55` — «до рендера
+ * игрока, для доп. эффектов», 1:1 замена старого {@code RenderPlayerEvent.Specials.Pre}); тело — no-op,
+ * реальная перерисовка плаща — {@code SubmitNodeCollector}/BER-путь (§2.5).
+ */
+public class PlayerModelRenderer {
+	private final Identifier[] mResources = new Identifier[] {Identifier.parse(RES_PATH_MODEL + "BrainTech.png"), Identifier.parse(RES_PATH_MODEL + "Silver.png"), Identifier.parse(RES_PATH_MODEL + "MrBrain.png"), Identifier.parse(RES_PATH_MODEL + "Dev.png"), Identifier.parse(RES_PATH_MODEL + "Gold.png"), Identifier.parse(RES_PATH_MODEL + "Crazy.png"), Identifier.parse(RES_PATH_MODEL + "Sus.png")};
 	private final Collection<String> mSupporterListSilver, mSupporterListGold;
-	
+
 	public PlayerModelRenderer(Collection<String> aSupporterListSilver, Collection<String> aSupporterListGold) {
 		mSupporterListSilver = aSupporterListSilver;
 		mSupporterListGold   = aSupporterListGold;
-		setRenderManager(RenderManager.instance);
 	}
-	
+
 	private Identifier getResource(String aPlayer) {
 		aPlayer = aPlayer.toLowerCase();
 		// I sure as fuck won't make a Microsoft Account!
@@ -65,48 +67,10 @@ public class PlayerModelRenderer extends RenderPlayer {
 		if (mSupporterListSilver.contains(aPlayer))   return mResources[1];
 		return null;
 	}
-	
-	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Specials.Pre aEvent) {
-		AbstractClientPlayer aPlayer = (AbstractClientPlayer)aEvent.entityPlayer;
-//      if (UT.Entities.getFullInvisibility(aPlayer)) {aEvent.setCanceled(true); return;}
-		float aPartialTicks = aEvent.partialRenderTick;
-		
-		if (aPlayer.isInvisible() || aPlayer.getActivePotionEffect(MobEffect.invisibility) != null) return;
-		
-		try {
-			Identifier tResource = getResource(aPlayer.getCommandSenderName());
-			if (tResource == null) tResource = getResource(aPlayer.getUUID().toString());
-			
-			if (tResource != null && !aPlayer.getHideCape()) {
-				bindTexture(tResource);
-				GL11.glPushMatrix();
-				GL11.glTranslatef(0.0F, 0.0F, 0.125F);
-				double d0 = aPlayer.field_71091_bM + (aPlayer.field_71094_bP - aPlayer.field_71091_bM) * aPartialTicks - (aPlayer.prevPosX + (aPlayer.getX() - aPlayer.prevPosX) * aPartialTicks);
-				double d1 = aPlayer.field_71096_bN + (aPlayer.field_71095_bQ - aPlayer.field_71096_bN) * aPartialTicks - (aPlayer.prevPosY + (aPlayer.getY() - aPlayer.prevPosY) * aPartialTicks);
-				double d2 = aPlayer.field_71097_bO + (aPlayer.field_71085_bR - aPlayer.field_71097_bO) * aPartialTicks - (aPlayer.prevPosZ + (aPlayer.getZ() - aPlayer.prevPosZ) * aPartialTicks);
-				float f6 = aPlayer.prevRenderYawOffset + (aPlayer.renderYawOffset - aPlayer.prevRenderYawOffset) * aPartialTicks;
-				double d3 = Mth.sin(f6 * (float)Math.PI / 180.0F);
-				double d4 = (-Mth.cos(f6 * (float)Math.PI / 180.0F));
-				float f7 = (float)d1 * 10.0F;
-				float f8 = (float)(d0 * d3 + d2 * d4) * 100.0F;
-				float f9 = (float)(d0 * d4 - d2 * d3) * 100.0F;
-				if (f7 < -6.0F) f7 = -6.0F;
-				if (f7 > 32.0F) f7 = 32.0F;
-				if (f8 <  0.0F) f8 =  0.0F;
-				float f10 = aPlayer.prevCameraYaw + (aPlayer.cameraYaw - aPlayer.prevCameraYaw) * aPartialTicks;
-				f7 += Mth.sin((aPlayer.prevDistanceWalkedModified + (aPlayer.distanceWalkedModified - aPlayer.prevDistanceWalkedModified) * aPartialTicks) * 6.0F) * 32.0F * f10;
-				if (aPlayer.isShiftKeyDown()) {
-					f7 += 25.0F;
-				}
-				GL11.glRotatef(6.0F + f8 / 2.0F + f7, 1.0F, 0.0F, 0.0F);
-				GL11.glRotatef(f9 / 2.0F, 0.0F, 0.0F, 1.0F);
-				GL11.glRotatef(-f9 / 2.0F, 0.0F, 1.0F, 0.0F);
-				GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
-				((ModelBiped)mainModel).renderCloak(0.0625F);
-				GL11.glPopMatrix();
-			}
-		} catch (Throwable e) {
-			e.printStackTrace(ERR);
-		}
+
+	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode рисование плаща через {@code ModelBiped.renderCloak}
+	 *  (см. class javadoc) — тело заглушка, {@link #getResource(String)} (реальный выбор текстуры) сохранён живым. */
+	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre<?> aEvent) {
+		//
 	}
 }

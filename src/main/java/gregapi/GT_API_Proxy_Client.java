@@ -28,8 +28,7 @@ import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.api.Abstract_Mod;
 import gregapi.block.IBlockBase;
@@ -60,7 +59,7 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.entity.RenderFallingBlock;
+import net.minecraft.client.renderer.entity.FallingBlockRenderer;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.player.Player;
@@ -70,16 +69,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.event.DrawBlockHighlightEvent;
-import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
+import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
+import net.neoforged.neoforge.client.event.TextureAtlasStitchedEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import net.minecraft.network.chat.Component;
 
 import static gregapi.data.CS.*;
 
@@ -114,22 +113,39 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	
 	@Override
 	public Player getThePlayer() {
-		return Minecraft.getMinecraft().thePlayer;
+		return Minecraft.getInstance().player;
 	}
-	
+
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code PlayerControllerMP.sendUseItem(player,world,stack)}
+	 *  с явным {@code ItemStack} (тип метода удалён). Neo {@code MultiPlayerGameMode.useItem(Player,InteractionHand)}
+	 *  берёт предмет из руки игрока, а не явный {@code aStack} — семантика "использовать ИМЕННО этот стек"
+	 *  недостижима без него (движко-шов), поэтому используется основная рука как ближайший эквивалент. */
 	@Override
 	public boolean sendUseItemPacket(Player aPlayer, Level aWorld, ItemStack aStack) {
-		Minecraft.getMinecraft().playerController.sendUseItem(aPlayer, aWorld, aStack);
+		Minecraft.getInstance().gameMode.useItem(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND);
 		return T;
 	}
-	
+
 	// @Override
 	@SuppressWarnings("deprecation")
 	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
-		RenderingRegistry.registerEntityRenderingHandler(PrefixBlockFallingEntity.class, new RenderFallingBlock());
-		RenderingRegistry.registerBlockHandler(new RendererBlockFluid(RenderingRegistry.getNextAvailableRenderId()));
-		RenderingRegistry.registerBlockHandler(new RendererBlockTextured(RenderingRegistry.getNextAvailableRenderId()));
-		FluidRegistry.renderIdFluid = RendererBlockFluid.RENDER_ID;
+		/** PORT-TODO(F3, baked-рендер клиента): было {@code RenderingRegistry.registerEntityRenderingHandler}
+		 *  (`cpw.mods.fml.client.registry`, F10-зеркало compile-only) с {@code new RenderFallingBlock()} —
+		 *  в 26.1.2 {@code FallingBlockRenderer} требует {@code EntityRendererProvider.Context} и
+		 *  регистрируется через {@code EntityRenderersEvent.RegisterRenderers} (decisions/F3-render.md §2.5/§6),
+		 *  НЕ через этот пре-инит хук FML common setup. Заглушка сохраняет вызов центра (F10-зеркало)
+		 *  с нейтральным held-объектом. */
+		RenderingRegistry.registerEntityRenderingHandler(PrefixBlockFallingEntity.class, null);
+		/** PORT-TODO(F3, baked-рендер клиента): {@code RenderingRegistry.registerBlockHandler}/{@code getNextAvailableRenderId}
+		 *  (F10-зеркало) — старый render-id диспетчер blockstate-рендера удалён целиком (decisions/F3-render.md §1,3);
+		 *  замена — {@code DynamicBlockStateModel}/{@code RegisterBlockStateModels} (там же §2.1). {@link RendererBlockFluid}/
+		 *  {@link RendererBlockTextured} держат серверную поверхность (см. их class javadoc) — id тут заведомо no-op (0). */
+		RenderingRegistry.registerBlockHandler(new RendererBlockFluid(0));
+		RenderingRegistry.registerBlockHandler(new RendererBlockTextured(0));
+		/** PORT-TODO(F3/F5 граница, baked-рендер клиента): {@code net.minecraftforge.fluids.FluidRegistry}
+		 *  (старый Forge-кастом-жидкостный API) удалён целиком — F5 ({@code gregapi.fluid}/{@code FL}) уже
+		 *  закрыт другим заходом и не использует эту точку (см. {@link RendererBlockFluid} class javadoc,
+		 *  "F5 закрыт, сюда не лезем"); эта строка — осиротевший межшовный мост, не переносится. */
 		// Check if OptiFine is loaded in order to disable some GT Render Hooks to fix Glitches.
 		ITexture.Util.OPTIFINE_LOADED = FMLClientHandler.instance().hasOptifine();
 		
@@ -194,176 +210,199 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	
 	public static final List<short[]> sRainbow = new ArrayListNoNulls<>(), sRainbowFast = new ArrayListNoNulls<>(), sPosR = new ArrayListNoNulls<>(), sPosG = new ArrayListNoNulls<>(), sPosB = new ArrayListNoNulls<>(), sPosA = new ArrayListNoNulls<>(), sNegR = new ArrayListNoNulls<>(), sNegG = new ArrayListNoNulls<>(), sNegB = new ArrayListNoNulls<>(), sNegA = new ArrayListNoNulls<>();
 	
-	@SubscribeEvent(priority = EventPriority.LOWEST) 
-	public void onTextureStitchedPre(TextureStitchEvent.Pre aEvent) {
-		// You should thank me for fixing this Fluid Bug. Seriously, some people just don't set the Icons of their registered Fluids...
-		for (Fluid aFluid : FluidRegistry.getRegisteredFluids().values()) {
-			// Check if it is whitelisted first, because those are not actually broken, they just behave like that early on.
-			if (!FluidsGT.BORKEN.contains(FL.regName(aFluid))) {
-				// Fluids without an Icon or with a broken Icon need to be fixed.
-				if (aFluid.getIcon() == null || FluidsGT.BROKEN.contains(FL.regName(aFluid))) try {
-					Block tBlock = aFluid.getBlock();
-					// set it to its Block's Icon, or Water if no Block exists.
-					aFluid.setIcons((ST.valid(tBlock) ? tBlock : Blocks.WATER).getIcon(0, 0));
-				} catch(Throwable e) {
-					// complete failure, set it to Water!
-					e.printStackTrace(ERR);
-					try {aFluid.setIcons(Blocks.WATER.getIcon(0, 0));} catch(Throwable f) {f.printStackTrace(ERR);}
-				}
-			}
-		}
+	/**
+	 * PORT-TODO(F3/F5 граница, baked-рендер клиента): 1.7.10 {@code TextureStitchEvent.Pre} (до стежки,
+	 * позволял чинить иконки жидкостей ДО постройки атласа) заменён на {@code TextureAtlasStitchedEvent}
+	 * (только ПОСЛЕ стежки, `neoforge-decompiled/.../TextureAtlasStitchedEvent.java:24-38`, нет Pre-варианта)
+	 * — сама точка вмешательства форсированно иная (движко-шов). Тело зовёт удалённый Forge-кастом-жидкостный
+	 * {@code net.minecraftforge.fluids.FluidRegistry}/{@code IIcon Fluid.getIcon()} — F5 ({@code gregapi.fluid}/
+	 * {@code FL}) уже закрыт другим заходом и эту точку не использует (см. {@link RendererBlockFluid} class
+	 * javadoc, "F5 закрыт, сюда не лезем") — фикс "жидкость без иконки" переносится в baked-фазу F3 (материал
+	 * атласа резолвится через {@code ModelBaker.materials()}, decisions/F3-render.md §2.3), не сюда.
+	 */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onTextureStitchedPre(TextureAtlasStitchedEvent aEvent) {
+		//
 	}
 	
-	@SubscribeEvent(priority = EventPriority.HIGHEST) 
+	/**
+	 * PORT-TODO(F3, baked-рендер клиента, частично): 1.7.10 {@code net.minecraftforge.event.entity.player.ItemTooltipEvent}
+	 * держал tooltip как {@code List<String>} напрямую в поле {@code toolTip}; neo-эквивалент
+	 * {@code net.neoforged.neoforge.event.entity.player.ItemTooltipEvent} (`neoforge-decompiled/.../ItemTooltipEvent.java:16-70`)
+	 * — геттеры, а список типизирован {@code List<Component>} (движко-шов, т.к. рендер текста теперь
+	 * дерево {@code Component}, не сырая строка). Вся GT6-логика ниже (300+ строк) оперирует СТРОКАМИ
+	 * (конкатенация {@code LH.Chat.*} §-кодов, {@code replaceAll}, и т.д.) и передаётся в
+	 * {@code ICover.addToolTips(List<String>,...)} (сотни реализаций по всему моду, {@code List<String>}
+	 * НЕ тронут — вне зоны этого захода) — чтобы не терять ни строки бизнес-логики (R8), тело работает
+	 * на ЛОКАЛЬНОЙ {@code List<String>}-копии (снятой из {@code Component.getString()} до, собранной
+	 * обратно через {@code Component.literal(...)} после — §-коды внутри literal-строки по-прежнему
+	 * рендерятся движком, см. {@code FormattedCharSequence}); синхронизация — в {@code finally}, чтобы
+	 * сработать на ЛЮБОМ выходе (return/exception), как оригинал мутировал список напрямую. Единственная
+	 * генуинно потерянная строка — harvest-tooltip ({@code Block.getHarvestTool/getHarvestLevel}, API
+	 * удалено целиком, замены нет, помечено ниже отдельно).
+	 */
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onItemTooltip(ItemTooltipEvent aEvent) {
-		if (Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI || ST.invalid(aEvent.itemStack)) return;
+		if (Abstract_Mod.sFinalized < Abstract_Mod.sModCountUsingGTAPI || ST.invalid(aEvent.getItemStack())) return;
 		if (!DISPLAY_TEMP_TOOLTIP) {DISPLAY_TEMP_TOOLTIP = T; return;}
-		
+
+		List<Component> tTT = aEvent.getToolTip();
+		List<String> aToolTip = new ArrayList<>(tTT.size());
+		for (Component tC : tTT) aToolTip.add(tC == null ? null : tC.getString());
 		try {
-			if (UT.NBT.getNBT(aEvent.itemStack).getBoolean("gt.err.oredict.output")) {
-				aEvent.toolTip.clear();
-				aEvent.toolTip.add(0, LH.Chat.BLINKING_RED+"A Recipe used an OreDict Item as Output directly, without copying it before!");
-				aEvent.toolTip.add(1, LH.Chat.BLINKING_RED+"This is a typical CallByReference/CallByValue Error of the Modder doing it.");
-				aEvent.toolTip.add(2, LH.Chat.BLINKING_RED+"Please check all Recipes outputting this Item, and report the Recipes to their Owner.");
-				aEvent.toolTip.add(3, LH.Chat.BLINKING_RED+"The Owner of the RECIPE, NOT the Owner of the Item!");
+			if (UT.NBT.getNBT(aEvent.getItemStack()).getBooleanOr("gt.err.oredict.output", F)) {
+				aToolTip.clear();
+				aToolTip.add(0, LH.Chat.BLINKING_RED+"A Recipe used an OreDict Item as Output directly, without copying it before!");
+				aToolTip.add(1, LH.Chat.BLINKING_RED+"This is a typical CallByReference/CallByValue Error of the Modder doing it.");
+				aToolTip.add(2, LH.Chat.BLINKING_RED+"Please check all Recipes outputting this Item, and report the Recipes to their Owner.");
+				aToolTip.add(3, LH.Chat.BLINKING_RED+"The Owner of the RECIPE, NOT the Owner of the Item!");
 				return;
 			}
-			
-			String aRegName = ST.regName(aEvent.itemStack);
+
+			String aRegName = ST.regName(aEvent.getItemStack());
 			if (aRegName == null) {
-				aEvent.toolTip.set(0, LH.Chat.BLINKING_RED+"ERROR: THIS ITEM HAS NOT BEEN REGISTERED!!!");
+				aToolTip.set(0, LH.Chat.BLINKING_RED+"ERROR: THIS ITEM HAS NOT BEEN REGISTERED!!!");
 				aRegName = "ERROR: THIS ITEM HAS NOT BEEN REGISTERED!!!";
 			}
-			short aMeta = ST.meta_(aEvent.itemStack);
+			short aMeta = ST.meta_(aEvent.getItemStack());
 			byte aBlockMeta = UT.Code.bind4(aMeta);
-			Block aBlock = ST.block(aEvent.itemStack);
-			Item aItem = ST.item(aEvent.itemStack);
-			OreDictItemData tData = OM.anydata_(aEvent.itemStack);
-			
-			if (ItemNBT.get(aEvent.itemStack) == null) {
+			Block aBlock = ST.block(aEvent.getItemStack());
+			Item aItem = ST.item(aEvent.getItemStack());
+			OreDictItemData tData = OM.anydata_(aEvent.getItemStack());
+
+			if (ItemNBT.get(aEvent.getItemStack()) == null) {
 				if (aBlock == Blocks.DIRT && aBlockMeta == 1) {
-					aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Dirt", "Coarse Dirt"));
+					aToolTip.set(0, aToolTip.get(0).replaceAll("Dirt", "Coarse Dirt"));
 				}
 				if (MD.RC.mLoaded && "Railcraft:part.plate".equalsIgnoreCase(aRegName)) {
 					switch(aMeta) {
-					case 0: aEvent.toolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateIron")); break;
-					case 1: aEvent.toolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateSteel")); break;
-					case 2: aEvent.toolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateTinAlloy")); break;
-					case 3: aEvent.toolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateCopper")); break;
-					case 4: aEvent.toolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateLead")); break;
+					case 0: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateIron")); break;
+					case 1: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateSteel")); break;
+					case 2: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateTinAlloy")); break;
+					case 3: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateCopper")); break;
+					case 4: aToolTip.set(0, LH.Chat.WHITE+LH.get("oredict.plateLead")); break;
 					}
 				}
 			} else {
 				// Anything from TiC with an NBT on it has a potential to Crash if its Tooltip is touched, due to them establishing a frikkin Iterator before sending the Tooltip Event, so lets avoid that...
 				if (MD.TiC.owns(aRegName)) return;
 			}
-			
-			if (MD.Mek.owns(aRegName)) aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Osmium", MT.Ge.mNameLocal));
-			if (MD.BP .owns(aRegName)) aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Infused Teslatite", MT.PurpleAlloy.mNameLocal).replaceAll("Teslatite", MT.Nikolite.mNameLocal));
-			if (MD.BP.mLoaded) aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Teslatite", MT.Nikolite.mNameLocal));
-			
+
+			if (MD.Mek.owns(aRegName)) aToolTip.set(0, aToolTip.get(0).replaceAll("Osmium", MT.Ge.mNameLocal));
+			if (MD.BP .owns(aRegName)) aToolTip.set(0, aToolTip.get(0).replaceAll("Infused Teslatite", MT.PurpleAlloy.mNameLocal).replaceAll("Teslatite", MT.Nikolite.mNameLocal));
+			if (MD.BP.mLoaded) aToolTip.set(0, aToolTip.get(0).replaceAll("Teslatite", MT.Nikolite.mNameLocal));
+
 			if (!(aItem instanceof ItemFluidDisplay) && SHOW_INTERNAL_NAMES) {
 				if (tData != null && tData.validData()) {
 					if (tData.mBlackListed) {
 						if (ST.isGT(aItem))
-						aEvent.toolTip.add(1, LH.Chat.ORANGE + tData.toString());
+						aToolTip.add(1, LH.Chat.ORANGE + tData.toString());
 						else
-						aEvent.toolTip.add(1, LH.Chat.DCYAN + aRegName + LH.Chat.WHITE + " - " + LH.Chat.CYAN + aMeta + LH.Chat.WHITE + " - " + LH.Chat.ORANGE + tData.toString());
+						aToolTip.add(1, LH.Chat.DCYAN + aRegName + LH.Chat.WHITE + " - " + LH.Chat.CYAN + aMeta + LH.Chat.WHITE + " - " + LH.Chat.ORANGE + tData.toString());
 					} else {
 						if (ST.isGT(aItem))
-						aEvent.toolTip.add(1, LH.Chat.GREEN + tData.toString());
+						aToolTip.add(1, LH.Chat.GREEN + tData.toString());
 						else
-						aEvent.toolTip.add(1, LH.Chat.DCYAN + aRegName + LH.Chat.WHITE + " - " + LH.Chat.CYAN + aMeta + LH.Chat.WHITE + " - " + LH.Chat.GREEN + tData.toString());
+						aToolTip.add(1, LH.Chat.DCYAN + aRegName + LH.Chat.WHITE + " - " + LH.Chat.CYAN + aMeta + LH.Chat.WHITE + " - " + LH.Chat.GREEN + tData.toString());
 					}
 				} else {
 					if (!ST.isGT(aItem))
-					aEvent.toolTip.add(1, LH.Chat.DCYAN + aRegName + LH.Chat.WHITE + " - " + LH.Chat.CYAN + aMeta);
+					aToolTip.add(1, LH.Chat.DCYAN + aRegName + LH.Chat.WHITE + " - " + LH.Chat.CYAN + aMeta);
 				}
 			}
-			
-			if (ItemsGT.RECIPE_REMOVED_USE_TRASH_BIN_INSTEAD.contains(aEvent.itemStack, T)) {
-				aEvent.toolTip.add(LH.Chat.BLINKING_RED + "Recipe has been removed in favour of the GregTech Ender Garbage Bin");
+
+			if (ItemsGT.RECIPE_REMOVED_USE_TRASH_BIN_INSTEAD.contains(aEvent.getItemStack(), T)) {
+				aToolTip.add(LH.Chat.BLINKING_RED + "Recipe has been removed in favour of the GregTech Ender Garbage Bin");
 			}
-			
-			ICover tCover = CoverRegistry.get(aEvent.itemStack);
-			if (tCover != null) tCover.addToolTips(aEvent.toolTip, aEvent.itemStack, aEvent.showAdvancedItemTooltips);
-			
+
+			ICover tCover = CoverRegistry.get(aEvent.getItemStack());
+			if (tCover != null) tCover.addToolTips(aToolTip, aEvent.getItemStack(), aEvent.getFlags().isAdvanced());
+
 			if (aBlock != NB) {
-				if (IL.TC_Warded_Glass.equal(aEvent.itemStack, F, T)) {
-					aEvent.toolTip.add(LH.getToolTipBlastResistance(aBlock, 999));
-				} else if (ItemsGT.SHOW_RESISTANCE.contains(aEvent.itemStack, T)) {
+				if (IL.TC_Warded_Glass.equal(aEvent.getItemStack(), F, T)) {
+					aToolTip.add(LH.getToolTipBlastResistance(aBlock, 999));
+				} else if (ItemsGT.SHOW_RESISTANCE.contains(aEvent.getItemStack(), T)) {
 					if (IL.ICBM_Concrete.block() == aBlock) {
 						switch(aMeta) {
-						default: aEvent.toolTip.add(LH.getToolTipBlastResistance(aBlock, 30)); break;
-						case  1: aEvent.toolTip.add(LH.getToolTipBlastResistance(aBlock, 38)); break;
-						case  2: aEvent.toolTip.add(LH.getToolTipBlastResistance(aBlock, 48)); break;
+						default: aToolTip.add(LH.getToolTipBlastResistance(aBlock, 30)); break;
+						case  1: aToolTip.add(LH.getToolTipBlastResistance(aBlock, 38)); break;
+						case  2: aToolTip.add(LH.getToolTipBlastResistance(aBlock, 48)); break;
 						}
 					} else {
-						aEvent.toolTip.add(LH.getToolTipBlastResistance(aBlock, aBlock.getExplosionResistance(null)));
+						aToolTip.add(LH.getToolTipBlastResistance(aBlock, aBlock.getExplosionResistance()));
 					}
-					aEvent.toolTip.add(LH.getToolTipHarvest(WD.getMaterial(aBlock), aBlock.getHarvestTool(aBlockMeta), aBlock.getHarvestLevel(aBlockMeta)));
+					// PORT-TODO(F3, baked-рендер клиента): было {@code Block.getHarvestTool(meta)/getHarvestLevel(meta)}
+					// (API удалено целиком в 26.1.2 — заменено тег-системой {@code BlockTags.MINEABLE_WITH_*} без
+					// прямого "имя инструмента + уровень" аксессора; равноценной замены нет) — строка не добавляется.
 				}
 				if (BlocksGT.openableCrowbar.contains(aBlock)) {
-					aEvent.toolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_OPEN_CROWBAR));
+					aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_OPEN_CROWBAR));
 				}
 			}
-			
-			if (BooksGT.BOOK_REGISTER.containsKey(aEvent.itemStack, T)) {
-				aEvent.toolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_SHELFABLE));
+
+			if (BooksGT.BOOK_REGISTER.containsKey(aEvent.getItemStack(), T)) {
+				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_SHELFABLE));
 			}
-			
-			if (Sandwiches.INGREDIENTS.containsKey(aEvent.itemStack, T)) {
-				aEvent.toolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_SANDWICHABLE));
+
+			if (Sandwiches.INGREDIENTS.containsKey(aEvent.getItemStack(), T)) {
+				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_SANDWICHABLE));
 			}
-			
-			if (aItem.isBeaconPayment(aEvent.itemStack)) {
-				aEvent.toolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_BEACON_PAYMENT));
+
+			/* PORT-TODO(F3, baked-рендер клиента): было {@code Item.isBeaconPayment(ItemStack)} (Forge 1.7.10,
+			 * метод удалён) — neo эквивалент тег {@code ItemTags.BEACON_PAYMENT_ITEMS}. */
+			if (aEvent.getItemStack().is(net.minecraft.tags.ItemTags.BEACON_PAYMENT_ITEMS)) {
+				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_BEACON_PAYMENT));
 			}
-			
-			long tBurnValue = DeferredRegister.getFuelValue(ST.amount(1, aEvent.itemStack));
-			if (tBurnValue > 0) aEvent.toolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FURNACE_FUEL) + LH.Chat.WHITE + tBurnValue + " ("+(tBurnValue*EU_PER_FURNACE_TICK)+LH.Chat._RED+"HU"+LH.Chat.WHITE+")");
-			
+
+			/* PORT-TODO(F3, baked-рендер клиента): было {@code cpw.mods.fml.common.registry.GameRegistry.getFuelValue(ItemStack)}
+			 * (Forge 1.7.10 static API, удалён) — neo {@code Level.fuelValues().burnDuration(ItemStack)}
+			 * (`neo-decompiled/net/minecraft/world/level/block/entity/FuelValues.java:38`), инстанс с клиентского
+			 * {@code Minecraft.getInstance().level} (ближайший клиентский эквивалент world-контекста). */
+			Level tClientLevel = Minecraft.getInstance().level;
+			long tBurnValue = tClientLevel == null ? 0 : tClientLevel.fuelValues().burnDuration(ST.amount(1, aEvent.getItemStack()));
+			if (tBurnValue > 0) aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FURNACE_FUEL) + LH.Chat.WHITE + tBurnValue + " ("+(tBurnValue*EU_PER_FURNACE_TICK)+LH.Chat._RED+"HU"+LH.Chat.WHITE+")");
+
 			if (tData != null) {
 				if (tData.validPrefix()) {
 					for (IOreDictListenerItem tListener : tData.mPrefix.mListenersItem) {
-						String tToolTip = tListener.getListenerToolTip(tData.mPrefix, tData.mMaterial.mMaterial, aEvent.itemStack);
-						if (tToolTip != null) aEvent.toolTip.add(tToolTip);
+						String tToolTip = tListener.getListenerToolTip(tData.mPrefix, tData.mMaterial.mMaterial, aEvent.getItemStack());
+						if (tToolTip != null) aToolTip.add(tToolTip);
 					}
 				} else {
-					if (IL.RC_Firestone_Refined.equal(aEvent.itemStack, T, T)) aEvent.toolTip.add(LH.Chat.CYAN + "GT6 Burning Boxes: "+LH.Chat.WHITE+(800*EU_PER_LAVA)+LH.Chat._RED+"HU"+LH.Chat._CYAN+"per Lava Block"); else
-					if (IL.RC_Firestone_Cracked.equal(aEvent.itemStack, T, T)) aEvent.toolTip.add(LH.Chat.CYAN + "GT6 Burning Boxes: "+LH.Chat.WHITE+(600*EU_PER_LAVA)+LH.Chat._RED+"HU"+LH.Chat._CYAN+"per Lava Block"); else
-					if (IL.TF_Pick_Giant       .equal(aEvent.itemStack, T, T)) aEvent.toolTip.add(LH.Chat.CYAN + "Repairable with Knightmetal Ingots on the Vanilla Anvil"); else
-					if (IL.TF_Sword_Giant      .equal(aEvent.itemStack, T, T)) aEvent.toolTip.add(LH.Chat.CYAN + "Repairable with Ironwood Ingots on the Vanilla Anvil"); else
-					if (IL.TF_Lamp_of_Cinders  .equal(aEvent.itemStack, T, T)) aEvent.toolTip.add(LH.Chat.CYAN + "Can be used as a Lighter for GT6 things and TNT");
+					if (IL.RC_Firestone_Refined.equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "GT6 Burning Boxes: "+LH.Chat.WHITE+(800*EU_PER_LAVA)+LH.Chat._RED+"HU"+LH.Chat._CYAN+"per Lava Block"); else
+					if (IL.RC_Firestone_Cracked.equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "GT6 Burning Boxes: "+LH.Chat.WHITE+(600*EU_PER_LAVA)+LH.Chat._RED+"HU"+LH.Chat._CYAN+"per Lava Block"); else
+					if (IL.TF_Pick_Giant       .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "Repairable with Knightmetal Ingots on the Vanilla Anvil"); else
+					if (IL.TF_Sword_Giant      .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "Repairable with Ironwood Ingots on the Vanilla Anvil"); else
+					if (IL.TF_Lamp_of_Cinders  .equal(aEvent.getItemStack(), T, T)) aToolTip.add(LH.Chat.CYAN + "Can be used as a Lighter for GT6 things and TNT");
 				}
 				if (tData.validMaterial()) {
 					boolean tUnburnable = F;
 					for (OreDictMaterialStack tMaterial : tData.getAllMaterialWeights()) {
 						if (tMaterial.mMaterial.contains(TD.Properties.UNBURNABLE)) tUnburnable = T;
 						for (IOreDictListenerItem tListener : tMaterial.mMaterial.mListenersItem) {
-							String tToolTip = tListener.getListenerToolTip(tData.mPrefix, tData.mMaterial.mMaterial, aEvent.itemStack);
-							if (tToolTip != null) aEvent.toolTip.add(tToolTip);
+							String tToolTip = tListener.getListenerToolTip(tData.mPrefix, tData.mMaterial.mMaterial, aEvent.getItemStack());
+							if (tToolTip != null) aToolTip.add(tToolTip);
 						}
 					}
-					if (tData.mMaterial.mMaterial.mToolTypes > 0 && (tData.mPrefix != null || (aEvent.itemStack.getMaxStackSize() > 1 && tData.mByProducts.length == 0 && tData.mMaterial.mAmount <= U))) {
-						aEvent.toolTip.add(LH.Chat.BLUE + "Q: " + tData.mMaterial.mMaterial.mToolQuality + " - S: " + tData.mMaterial.mMaterial.mToolSpeed + " - D: " + tData.mMaterial.mMaterial.mToolDurability);
+					if (tData.mMaterial.mMaterial.mToolTypes > 0 && (tData.mPrefix != null || (aEvent.getItemStack().getMaxStackSize() > 1 && tData.mByProducts.length == 0 && tData.mMaterial.mAmount <= U))) {
+						aToolTip.add(LH.Chat.BLUE + "Q: " + tData.mMaterial.mMaterial.mToolQuality + " - S: " + tData.mMaterial.mMaterial.mToolSpeed + " - D: " + tData.mMaterial.mMaterial.mToolDurability);
 					}
 					if (SHOW_CHEM_FORMULAS && UT.Code.stringValid(tData.mMaterial.mMaterial.mTooltipChemical) && (tData.mPrefix == null ? tData.mByProducts.length == 0 : tData.mPrefix.contains(TD.Prefix.TOOLTIP_MATERIAL))) {
-						aEvent.toolTip.add(LH.Chat.YELLOW + tData.mMaterial.mMaterial.mTooltipChemical);
+						aToolTip.add(LH.Chat.YELLOW + tData.mMaterial.mMaterial.mTooltipChemical);
 					}
 					if (tData.mMaterial.mMaterial == MT.Nikolite) {
-						aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("(Teslatite|Electrotine)", MT.Nikolite.mNameLocal));
+						aToolTip.set(0, aToolTip.get(0).replaceAll("(Teslatite|Electrotine)", MT.Nikolite.mNameLocal));
 					}
 					if (tData.mMaterial.mMaterial == MT.Ge) {
-						aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Osmium", MT.Ge.mNameLocal));
+						aToolTip.set(0, aToolTip.get(0).replaceAll("Osmium", MT.Ge.mNameLocal));
 					}
 					if (tData.validPrefix()) {
 						if (!ST.isGT(aItem) && tData.mPrefix == OP.dustTiny && ANY.Blaze.mToThis.contains(tData.mMaterial.mMaterial)) {
-							aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll(tData.mMaterial.mMaterial.mNameLocal, OP.dustTiny.mMaterialPre + tData.mMaterial.mMaterial.mNameLocal));
+							aToolTip.set(0, aToolTip.get(0).replaceAll(tData.mMaterial.mMaterial.mNameLocal, OP.dustTiny.mMaterialPre + tData.mMaterial.mMaterial.mNameLocal));
 						}
-						if (tData.mPrefix.contains(TD.Prefix.NEEDS_SHARPENING)) aEvent.toolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_NEEDS_SHARPENING));
-						if (tData.mPrefix.contains(TD.Prefix.NEEDS_HANDLE    )) aEvent.toolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_NEEDS_HANDLE) + LH.Chat.WHITE + tData.mMaterial.mMaterial.mHandleMaterial.getLocal());
-						
+						if (tData.mPrefix.contains(TD.Prefix.NEEDS_SHARPENING)) aToolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_NEEDS_SHARPENING));
+						if (tData.mPrefix.contains(TD.Prefix.NEEDS_HANDLE    )) aToolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_NEEDS_HANDLE) + LH.Chat.WHITE + tData.mMaterial.mMaterial.mHandleMaterial.getLocal());
+
 						if (!tData.mMaterial.mMaterial.mSourceOf.isEmpty() && tData.mPrefix.containsAny(TD.Prefix.ORE,TD.Prefix.ORE_PROCESSING_DIRTY)) {
 							StringBuilder
 							tToolTip = null;
@@ -371,16 +410,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.CYAN).append("Source of: ").append(LH.Chat.WHITE); else tToolTip.append(", ");
 								tToolTip.append(tMaterial.getLocal());
 							}
-							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
+							if (tToolTip != null) aToolTip.add(tToolTip.toString());
 						}
-						
-						
+
+
 						ArrayListNoNulls<Integer> tShapelessAmounts = new ArrayListNoNulls<>();
 						for (AdvancedCrafting1ToY tHandler : tData.mPrefix.mShapelessManagersSingle) if (tHandler.hasOutputFor(tData.mMaterial.mMaterial)) tShapelessAmounts.add(1);
 						for (AdvancedCraftingXToY tHandler : tData.mPrefix.mShapelessManagers      ) if (tHandler.hasOutputFor(tData.mMaterial.mMaterial)) tShapelessAmounts.add(tHandler.mInputCount);
 						if (!tShapelessAmounts.isEmpty()) {
 							Collections.sort(tShapelessAmounts);
-							aEvent.toolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_SHAPELESS_CRAFT) + LH.Chat.WHITE + tShapelessAmounts);
+							aToolTip.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_SHAPELESS_CRAFT) + LH.Chat.WHITE + tShapelessAmounts);
 						}
 						if (tData.mPrefix.contains(TD.Prefix.TOOLTIP_ENCHANTS)) {
 							StringBuilder
@@ -390,73 +429,67 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 								if (tEnchantment.mObject == Enchantments.FIRE_ASPECT && tEnchantment.mAmount >= 3) tToolTip.append(" (Autosmelt)");
 							}
-							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
+							if (tToolTip != null) aToolTip.add(tToolTip.toString());
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentWeapons) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_WEAPON_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 							}
-							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
+							if (tToolTip != null) aToolTip.add(tToolTip.toString());
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentAmmo) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_AMMO_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 							}
-							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
-							tToolTip = null;
-							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentRanged) {
-								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_RANGED_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
-								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
-							}
-							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
+							if (tToolTip != null) aToolTip.add(tToolTip.toString());
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentFishing) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_FISHING_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 							}
-							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
-							
+							if (tToolTip != null) aToolTip.add(tToolTip.toString());
+
 							if (!tData.mPrefix.containsAny(TD.Prefix.TOOL_HEAD, TD.Prefix.WEAPON_ALIKE, TD.Prefix.AMMO_ALIKE, TD.Prefix.TOOL_ALIKE)) {
 								tToolTip = null;
 								for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentArmors) {
 									if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_ARMOR_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
 									tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 								}
-								if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
-								
+								if (tToolTip != null) aToolTip.add(tToolTip.toString());
+
 								if (MD.TF.mLoaded && tData.mMaterial.mMaterial.contains(TD.Properties.MAZEBREAKER)) {
-									aEvent.toolTip.add(LH.Chat.PINK + LH.get(LH.TOOLTIP_TWILIGHT_MAZE_BREAKING));
+									aToolTip.add(LH.Chat.PINK + LH.get(LH.TOOLTIP_TWILIGHT_MAZE_BREAKING));
 								}
 							}
-							
+
 							if (MD.BTL.mLoaded && tData.mMaterial.mMaterial.contains(TD.Properties.BETWEENLANDS)) {
-								aEvent.toolTip.add(LH.Chat.GREEN + LH.get(LH.TOOLTIP_BETWEENLANDS_RESISTANCE));
+								aToolTip.add(LH.Chat.GREEN + LH.get(LH.TOOLTIP_BETWEENLANDS_RESISTANCE));
 							}
-							
+
 							if (MD.TC.mLoaded && tData.mMaterial.mMaterial.contains(TD.Properties.WARPING)) {
-								aEvent.toolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_THAUMCRAFT_WARP));
+								aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_THAUMCRAFT_WARP));
 							}
 						}
 						if (aBlock == NB || !(aBlock instanceof MultiTileEntityBlockInternal || aBlock instanceof IBlockBase)) {
 							if (tData.mMaterial.mMaterial.contains(TD.Properties.FLAMMABLE)) {
 								if (tData.mMaterial.mMaterial.contains(TD.Properties.EXPLOSIVE)) {
-									aEvent.toolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE_AND_EXPLOSIVE));
+									aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE_AND_EXPLOSIVE));
 								} else {
-									aEvent.toolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE));
+									aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE));
 								}
 							} else if (tData.mMaterial.mMaterial.contains(TD.Properties.EXPLOSIVE)) {
-								aEvent.toolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_EXPLOSIVE));
+								aToolTip.add(LH.Chat.RED + LH.get(LH.TOOLTIP_EXPLOSIVE));
 							}
 						}
 					}
-					if (tUnburnable && !MD.MC.owns(aRegName)) aEvent.toolTip.add(LH.Chat.GREEN + LH.get(LH.TOOLTIP_UNBURNABLE));
+					if (tUnburnable && !MD.MC.owns(aRegName)) aToolTip.add(LH.Chat.GREEN + LH.get(LH.TOOLTIP_UNBURNABLE));
 				}
-				
-				if (aEvent.showAdvancedItemTooltips) {
+
+				if (aEvent.getFlags().isAdvanced()) {
 					boolean temp = T;
 					for (OreDictMaterialStack tMaterial : tData.getAllMaterialWeights()) if (tMaterial.mAmount != 0 && !tMaterial.mMaterial.contains(TD.Properties.DONT_SHOW_THIS_COMPONENT)) {
 						if (temp) {
-							aEvent.toolTip.add(LH.Chat.DCYAN + LH.get(LH.TOOLTIP_CONTAINED_MATERIALS));
+							aToolTip.add(LH.Chat.DCYAN + LH.get(LH.TOOLTIP_CONTAINED_MATERIALS));
 							temp = F;
 						}
 						StringBuilder tString = new StringBuilder(128);
@@ -475,68 +508,77 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						tString.append(LH.Chat.WHITE ).append((long)aWeight).append(".").append(tWeight<1?"000":tWeight<10?"00"+tWeight:tWeight<100?"0"+tWeight:tWeight);
 						tString.append(LH.Chat.YELLOW).append("kg");
 						tString.append(LH.Chat.WHITE ).append(")");
-						aEvent.toolTip.add(tString.toString());
+						aToolTip.add(tString.toString());
 					}
 				} else {
-					aEvent.toolTip.add(LH.Chat.DGRAY + "Enable F3+H Mode for Info about contained Materials.");
+					aToolTip.add(LH.Chat.DGRAY + "Enable F3+H Mode for Info about contained Materials.");
 				}
-				
+
 				if (tData.validData()) {
 					if (ST.isGT(aItem)) {
 						if (tData.mMaterial.mMaterial.mOriginalMod == null) {
-							aEvent.toolTip.add(LH.Chat.BLUE + "Material from an Unknown Mod");
+							aToolTip.add(LH.Chat.BLUE + "Material from an Unknown Mod");
 						} else if (tData.mMaterial.mMaterial.mOriginalMod == MD.MC) {
-							aEvent.toolTip.add(LH.Chat.BLUE + "Vanilla Material");
+							aToolTip.add(LH.Chat.BLUE + "Vanilla Material");
 						} else if (tData.mMaterial.mMaterial.mOriginalMod == MD.GAPI) {
 							if (tData.mMaterial.mMaterial.mID > 0 && tData.mMaterial.mMaterial.mID < 8000) {
-								aEvent.toolTip.add(LH.Chat.BLUE + "Material from the Periodic Table of Elements");
+								aToolTip.add(LH.Chat.BLUE + "Material from the Periodic Table of Elements");
 							} else {
-								aEvent.toolTip.add(LH.Chat.BLUE + "Random Material handled by Greg API");
+								aToolTip.add(LH.Chat.BLUE + "Random Material handled by Greg API");
 							}
 						} else {
-							aEvent.toolTip.add(LH.Chat.BLUE + "Material from " + tData.mMaterial.mMaterial.mOriginalMod.mName);
+							aToolTip.add(LH.Chat.BLUE + "Material from " + tData.mMaterial.mMaterial.mOriginalMod.mName);
 						}
 					} else {
-						if ((tData.mMaterial.mMaterial == MT.Fe || tData.mMaterial.mMaterial == MT.Fe2O3) && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aEvent.toolTip.get(0).contains("Native")) {
-							aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Banded Iron", MT.Fe2O3.mNameLocal).replaceAll("Iron", MT.Fe2O3.mNameLocal));
+						if ((tData.mMaterial.mMaterial == MT.Fe || tData.mMaterial.mMaterial == MT.Fe2O3) && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aToolTip.get(0).contains("Native")) {
+							aToolTip.set(0, aToolTip.get(0).replaceAll("Banded Iron", MT.Fe2O3.mNameLocal).replaceAll("Iron", MT.Fe2O3.mNameLocal));
 						}
-						if (tData.mMaterial.mMaterial == MT.Au && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aEvent.toolTip.get(0).contains("Native")) {
-							aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Gold", "Native Gold"));
+						if (tData.mMaterial.mMaterial == MT.Au && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aToolTip.get(0).contains("Native")) {
+							aToolTip.set(0, aToolTip.get(0).replaceAll("Gold", "Native Gold"));
 						}
-						if (tData.mMaterial.mMaterial == MT.Cu && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aEvent.toolTip.get(0).contains("Native")) {
-							aEvent.toolTip.set(0, aEvent.toolTip.get(0).replaceAll("Copper", "Native Copper"));
+						if (tData.mMaterial.mMaterial == MT.Cu && tData.mPrefix.containsAny(TD.Prefix.ORE, TD.Prefix.ORE_PROCESSING_BASED) && !aToolTip.get(0).contains("Native")) {
+							aToolTip.set(0, aToolTip.get(0).replaceAll("Copper", "Native Copper"));
 						}
 					}
 				}
 			}
-			
+
 			// Remove all Nulls and fix eventual Formatting mistakes.
-			for (int i = 1, j = aEvent.toolTip.size(); i < j; i++) {
-				String tTooltip = aEvent.toolTip.get(i);
-				if (tTooltip == null || LH.Chat.BASICALLY_EMPTY_STRINGS.contains(tTooltip)) {aEvent.toolTip.remove(i--); j--;} else aEvent.toolTip.set(i, tTooltip + LH.Chat.RESET_TOOLTIP);
+			for (int i = 1, j = aToolTip.size(); i < j; i++) {
+				String tTooltip = aToolTip.get(i);
+				if (tTooltip == null || LH.Chat.BASICALLY_EMPTY_STRINGS.contains(tTooltip)) {aToolTip.remove(i--); j--;} else aToolTip.set(i, tTooltip + LH.Chat.RESET_TOOLTIP);
 			}
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
+		} finally {
+			// PORT-TODO(F3, baked-рендер клиента): синхронизация локальной List<String> обратно в
+			// List<Component> события (см. class javadoc метода) — движко-форсированный шов.
+			tTT.clear();
+			for (String s : aToolTip) tTT.add(s == null ? null : Component.literal(s));
 		}
 	}
 	
-	@SubscribeEvent(priority = EventPriority.HIGHEST) 
-	public void onClientTickEvent(ClientTickEvent aEvent) {
-		if (aEvent.phase == ServerTickEvent.END) {
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent}
+	 *  с полем {@code phase}/сравнением {@code == ServerTickEvent.END} (тип+поле удалены, F10-зеркало
+	 *  `compat-mirror/java/cpw/mods/fml/common/gameevent/TickEvent.java` явным PORT-TODO уступает это
+	 *  движко-шов сюда) — neo раздельно шлёт {@code ClientTickEvent.Pre}/{@code .Post}
+	 *  (`neoforge-decompiled/net/neoforged/neoforge/client/event/ClientTickEvent.java:24-38`);
+	 *  {@code .Post} = "после тика" 1:1 равно старому {@code END}-фазе — сигнатура ретипирована,
+	 *  условие-обёртка снята (уже подразумевается типом события), тело БЕЗ ИЗМЕНЕНИЙ. */
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void onClientTickEvent(ClientTickEvent.Post aEvent) {
+		{
 			if (CLIENT_TIME == 10) {
-				// Initializing the Fake Furnace Recipe Map
-				if (FL.XP.exists()) for (Object tObject : RecipeManager.smelting().getSmeltingList().keySet()) if (tObject instanceof ItemStack) {
-					RM.Furnace.addFakeRecipe(F, RM.Furnace.findRecipe(null, null, F, Long.MAX_VALUE, NI, ZL_FS, ST.array((ItemStack)tObject)));
-				}
-				// Now for hiding stuff from NEI that should have never been there in the first place.
-				if (!SHOW_MICROBLOCKS && NEI) for (Item aItem : new Item[] {ST.item(MD.FMB, "microblock"), ST.item(MD.ExU, "microblocks"), ST.item(MD.ExS, "microblocks"), ST.item(MD.AE, "item.ItemFacade")}) if (aItem != null) {
-					ST.hide(aItem);
-					List<ItemStack> tList = new ArrayListNoNulls<>();
-					aItem.getSubItems(aItem, CreativeModeTab.tabAllSearch, tList);
-					for (ItemStack tStack : tList) ST.hide(tStack);
-				}
+				// PORT-TODO(F3, baked-рендер клиента): было "Initializing the Fake Furnace Recipe Map" через
+				// {@code RecipeManager.smelting().getSmeltingList()} — 1.7.10-статика {@code RecipeManager.smelting()}
+				// удалена целиком (neo {@code RecipeManager} инстанс-ориентирован, читается из {@code Level});
+				// фейковая furnace-recipe-карта не заполняется до отдельного захода (не render).
+				// PORT-TODO(NEI/JEI-интеграция, вне рендер-объёма): было "hiding stuff from NEI" через
+				// {@code Item.getSubItems(Item,CreativeModeTab,List)} (метод удалён) + {@code CreativeModeTab.tabAllSearch}
+				// (константа удалена, замена {@code CreativeModeTabs.SEARCH} — {@code ResourceKey}, другой контракт) —
+				// see память миссии "JEI (аналог NEI) — рано, для приёмки визуала", отдельный заход, не F3.
 			}
-			
+
 			// Countdown the Timeout of Sounds that play in rapid succession.
 			for (int i = 0; i < UT.Sounds.sPlayedSounds.size(); i++) if (UT.Sounds.sPlayedSounds.get(i).mTimer-- < 0) UT.Sounds.sPlayedSounds.remove(i--);
 			// Mute Sounds for the first second so people wont get blasted with nonsense.
@@ -623,19 +665,28 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 	
-	@SubscribeEvent(priority = EventPriority.LOWEST) 
-	public void onDrawBlockHighlight(DrawBlockHighlightEvent aEvent) {
+	/** PORT-TODO(F3, baked-рендер клиента): см. javadoc {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}
+	 *  — {@link ExtractBlockOutlineRenderStateEvent} не несёт {@code player}/{@code currentItem}/{@code partialTicks}
+	 *  старого события. Игрок восстановлен через {@code Minecraft.getInstance().player} (тот же центральный
+	 *  паттерн, что {@link #getThePlayer()}); {@code sideHit} — из {@code getHitResult().getDirection()};
+	 *  {@code partialTicks} недостижим (0 — нейтрально, единственный потребитель {@link RenderHelper#drawWrenchOverlay}
+	 *  уже no-op, см. его javadoc). Ветвление/делегирование в {@link ITileEntityOnDrawBlockHighlight} — БЕЗ ИЗМЕНЕНИЙ. */
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onDrawBlockHighlight(ExtractBlockOutlineRenderStateEvent aEvent) {
+		Player tPlayer = Minecraft.getInstance().player;
+		if (tPlayer == null) return;
+		byte tSide = (byte)aEvent.getHitResult().getDirection().ordinal();
 		Block
-		aBlock = ST.block(aEvent.player.getMainHandItem());
+		aBlock = ST.block(tPlayer.getMainHandItem());
 		if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mIsSlab) {
-			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
+			RenderHelper.drawWrenchOverlay(tPlayer, aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), (byte)0, tSide, 0F);
 			return;
 		}
-		aBlock = WD.block(aEvent.player.level(), aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ());
-		BlockEntity aTileEntity = WD.te(aEvent.player.level(), aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), T);
+		aBlock = WD.block(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ());
+		BlockEntity aTileEntity = WD.te(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
-			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(aEvent.currentItem) && ToolsGT.contains(TOOL_wrench, aEvent.currentItem)) {
-				RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
+			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
+				RenderHelper.drawWrenchOverlay(tPlayer, aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), (byte)0, tSide, 0F);
 				return;
 			}
 		}

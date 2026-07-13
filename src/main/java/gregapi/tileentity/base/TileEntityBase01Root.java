@@ -66,7 +66,6 @@ import ic2.api.energy.tile.IEnergyTile;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.BaseRailBlock;
-import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -86,7 +85,7 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraftforge.client.event.DrawBlockHighlightEvent;
+import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.core.Direction;
 import net.minecraftforge.fluids.*;
@@ -587,10 +586,14 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return tTileEntity instanceof ITileEntitySurface ? !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]) : !WD.visOpq(level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), SIDES_VERTICAL[aSide] || WD.border(getBlockPos().getX(), getBlockPos().getZ(), getOffsetX(aSide), getOffsetZ(aSide)), F);
 	}
 	
-	@OnlyIn(Dist.CLIENT) public boolean renderItem(Block aBlock, RenderBlocks aRenderer) {return F;}
-	@OnlyIn(Dist.CLIENT) public boolean renderBlock(Block aBlock, RenderBlocks aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+	/* PORT-TODO(F3, baked-рендер клиента): было {@code RenderBlocks} (immediate-mode тип, удалён) —
+	 * параметр ретипирован в {@code Object}, как в центральных {@code gregapi.render.IRenderedBlockObject}/
+	 * {@code IRenderedBlockObjectSideCheck} (иначе эти default-реализации не удовлетворяют абстрактные
+	 * методы интерфейсов, и КАЖДЫЙ конкретный MultiTileEntity-класс должен дублировать их сам). */
+	@OnlyIn(Dist.CLIENT) public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
+	@OnlyIn(Dist.CLIENT) public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	@OnlyIn(Dist.CLIENT) public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
-	@OnlyIn(Dist.CLIENT) public boolean renderFullBlockSide(Block aBlock, RenderBlocks aRenderer, byte aSide) {return shouldSideBeRendered(aSide);}
+	@OnlyIn(Dist.CLIENT) public boolean renderFullBlockSide(Block aBlock, Object aRenderer, byte aSide) {return shouldSideBeRendered(aSide);}
 	@OnlyIn(Dist.CLIENT) public final IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return ERROR_MESSAGE == null ? passRenderingToObject2(aStack) : ErrorRenderer.INSTANCE;}
 	@OnlyIn(Dist.CLIENT) public final IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {return ERROR_MESSAGE == null ? passRenderingToObject2(aWorld, aX, aY, aZ) : ErrorRenderer.INSTANCE;}
 	@OnlyIn(Dist.CLIENT) public IRenderedBlockObject passRenderingToObject2(ItemStack aStack) {return (IRenderedBlockObject)this;}
@@ -1047,17 +1050,19 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return F;
 	}
 	
-	public boolean onDrawBlockHighlight2(DrawBlockHighlightEvent aEvent) {return F;}
-	
-	public final boolean onDrawBlockHighlight(DrawBlockHighlightEvent aEvent) {
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code DrawBlockHighlightEvent} (тип удалён, см.
+	 *  {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight} javadoc). */
+	public boolean onDrawBlockHighlight2(ExtractBlockOutlineRenderStateEvent aEvent) {return F;}
+
+	/** PORT-TODO(F3, baked-рендер клиента): новое {@link ExtractBlockOutlineRenderStateEvent} не несёт
+	 *  {@code player}/{@code currentItem}/{@code partialTicks} 1.7.10-события (см. javadoc интерфейса
+	 *  {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}) — wrench-overlay решение по
+	 *  предмету в руке недостижимо из этого события до BER-пути (decisions/F3-render.md §2.5/§2.7);
+	 *  тело — компилируемая заглушка, сигнатура/структура (делегат в {@code onDrawBlockHighlight2})
+	 *  сохранены. */
+	public final boolean onDrawBlockHighlight(ExtractBlockOutlineRenderStateEvent aEvent) {
 		FORCE_FULL_SELECTION_BOXES = F;
-		if (!SIDES_VALID[aEvent.target.sideHit] || onDrawBlockHighlight2(aEvent)) return T;
-		if (ST.valid(aEvent.currentItem) && isUsingWrenchingOverlay(aEvent.currentItem, (byte)aEvent.target.sideHit)) {
-			FORCE_FULL_SELECTION_BOXES = T;
-			byte tConnections = 0; for (byte i = 0; i < 6; i++) if (isConnectedWrenchingOverlay(aEvent.currentItem, i)) tConnections |= (1 << i);
-			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), tConnections, (byte)aEvent.target.sideHit, aEvent.partialTicks);
-			return T;
-		}
+		if (onDrawBlockHighlight2(aEvent)) return T;
 		return T;
 	}
 	

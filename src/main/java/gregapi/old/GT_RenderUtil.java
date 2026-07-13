@@ -19,29 +19,25 @@
 
 package gregapi.old;
 
-import com.mojang.blaze3d.vertex.Tesselator;
-import net.minecraft.util.IIcon;
+import gregapi.render.IIconContainer;
 
+/**
+ * PORT-TODO(F3, baked-рендер клиента): 1.7.10 рисовал квад иконки прямо в мир ({@code Tessellator}
+ * immediate-mode: {@code startDrawingQuads/setNormal/addVertexWithUV/draw}) — весь стек удалён в
+ * 26.1.2 (decisions/F3-render.md §1, класс {@code com.mojang.blaze3d.vertex.Tesselator} больше не
+ * даёт прямого доступа к {@code instance}/immediate-режиму). Параметр {@code IIcon} (тип удалён)
+ * заменён центральной поверхностью {@link IIconContainer} (см. её PORT-TODO(F3) на {@code getIcon}).
+ * Реальная замена рисования — {@code CubeBuilder}/{@code QuadBakingVertexConsumer} (F3-render.md §2.2);
+ * не вызывается ни из одного места мода (нет ссылающихся файлов) — тело temporарно no-op до той фазы.
+ */
 public class GT_RenderUtil {
-	public static void renderItemIcon(IIcon icon, double size, double z, float nx, float ny, float nz) {
+	public static void renderItemIcon(IIconContainer icon, double size, double z, float nx, float ny, float nz) {
 		renderItemIcon(icon, 0, 0, size, size, z, nx, ny, nz);
 	}
-	
-	public static void renderItemIcon(IIcon icon, double xStart, double yStart, double xEnd, double yEnd, double z, float nx, float ny, float nz) {
+
+	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode рисование квада (см. class javadoc). */
+	public static void renderItemIcon(IIconContainer icon, double xStart, double yStart, double xEnd, double yEnd, double z, float nx, float ny, float nz) {
 		if (icon == null) return;
-		Tesselator.instance.startDrawingQuads();
-		Tesselator.instance.setNormal(nx, ny, nz);
-		if (nz > 0) {
-			Tesselator.instance.addVertexWithUV(xStart, yStart, z, icon.getMinU(), icon.getMinV());
-			Tesselator.instance.addVertexWithUV(xEnd, yStart, z, icon.getMaxU(), icon.getMinV());
-			Tesselator.instance.addVertexWithUV(xEnd, yEnd, z, icon.getMaxU(), icon.getMaxV());
-			Tesselator.instance.addVertexWithUV(xStart, yEnd, z, icon.getMinU(), icon.getMaxV());
-		} else {
-			Tesselator.instance.addVertexWithUV(xStart, yEnd, z, icon.getMinU(), icon.getMaxV());
-			Tesselator.instance.addVertexWithUV(xEnd, yEnd, z, icon.getMaxU(), icon.getMaxV());
-			Tesselator.instance.addVertexWithUV(xEnd, yStart, z, icon.getMaxU(), icon.getMinV());
-			Tesselator.instance.addVertexWithUV(xStart, yStart, z, icon.getMinU(), icon.getMinV());
-		}
-		Tesselator.instance.draw();
+		//
 	}
 }

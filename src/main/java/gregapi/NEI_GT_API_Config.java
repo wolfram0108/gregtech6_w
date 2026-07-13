@@ -36,14 +36,22 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 	// @Override
 	public void loadConfig() {
 		NEI = T;
-		NEI_NH = ModList.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH");
+		/* PORT-TODO(F3, baked-рендер клиента): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
+		 * (Forge 1.7.10 API, {@code instance()}/{@code getIndexedModList()} удалены) — neo эквивалент
+		 * {@code ModList.get().getModContainerById(id)} (`fml-decompiled/net/neoforged/fml/ModList.java:76,128`)
+		 * → {@code ModContainer.getModInfo().getVersion()} (`ModContainer.java:41`, {@code ArtifactVersion}, не String). */
+		NEI_NH = ModList.get().getModContainerById("NotEnoughItems").map(c -> c.getModInfo().getVersion().toString()).orElse("").contains("GTNH");
 		if (GAPI_POST.mFinishedPostInit) run(); else GAPI_POST.mAfterPostInit.add(this);
 	}
 	
 	@Override
 	public void run() {
 		NEI = T;
-		NEI_NH = ModList.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH");
+		/* PORT-TODO(F3, baked-рендер клиента): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
+		 * (Forge 1.7.10 API, {@code instance()}/{@code getIndexedModList()} удалены) — neo эквивалент
+		 * {@code ModList.get().getModContainerById(id)} (`fml-decompiled/net/neoforged/fml/ModList.java:76,128`)
+		 * → {@code ModContainer.getModInfo().getVersion()} (`ModContainer.java:41`, {@code ArtifactVersion}, не String). */
+		NEI_NH = ModList.get().getModContainerById("NotEnoughItems").map(c -> c.getModInfo().getVersion().toString()).orElse("").contains("GTNH");
 		
 		// Dont mess with NEI-NH, only mess with Vanilla NEI.
 		if (!NEI_NH) {

@@ -36,7 +36,6 @@ import gregapi.network.IPacket;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictManager;
 import gregapi.oredict.OreDictPrefix;
-import gregapi.render.RenderHelper;
 import gregapi.tileentity.ITileEntityAdjacentInventoryUpdatable;
 import gregapi.tileentity.ITileEntityConnectedInventory;
 import gregapi.tileentity.base.TileEntityBase09FacingSingle;
@@ -47,8 +46,11 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.Container;
@@ -56,13 +58,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Explosion;
-import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraft.world.level.material.Fluid;
 
 import java.util.List;
 
 import static gregapi.data.CS.*;
-import static org.lwjgl.opengl.GL11.*;
 
 /**
  * @author Gregorius Techneticies
@@ -703,57 +703,26 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		ClientRegistry.bindTileEntitySpecialRenderer(getClass(), MultiTileEntityRendererMassStorage.INSTANCE);
 	}
 	
+	/**
+	 * PORT-TODO(F3, baked-рендер клиента): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
+	 * push/pop-матрицы+{@code OpenGlHelper}+{@code ForgeHooksClient.renderInventoryItem}, рисующий
+	 * хранимый предмет на грани блока) — весь стек удалён в 26.1.2 (decisions/F3-render.md §1). Замена —
+	 * {@code BlockEntityRenderer<T,S>} нового API (эталон {@code InscriberRenderer.java:55-276},
+	 * F3-render.md §2.5, паттерн "рендер предмета внутри" — секция {@code ChargerRenderer}/
+	 * {@code BlockEntityRenderHelper.submitRenderItem2d}); тело {@code submit} ниже — no-op заглушка.
+	 */
 	@OnlyIn(Dist.CLIENT)
-	public static class MultiTileEntityRendererMassStorage extends TileEntitySpecialRenderer {
+	public static class MultiTileEntityRendererMassStorage implements BlockEntityRenderer<MultiTileEntityMassStorage, BlockEntityRenderState> {
 		public static MultiTileEntityRendererMassStorage INSTANCE = new MultiTileEntityRendererMassStorage();
-		
-		// @Override
-		public void renderTileEntityAt(BlockEntity aTileEntity, double aX, double aY, double aZ, float aPartialTick) {
-			if (aTileEntity instanceof MultiTileEntityMassStorage && ((MultiTileEntityMassStorage)aTileEntity).slotHas(1) && ((MultiTileEntityMassStorage)aTileEntity).isFaceVisible()) {
-				MultiTileEntityMassStorage tTileEntity = ((MultiTileEntityMassStorage)aTileEntity);
-				
-//              boolean tBlend = glGetBoolean(GL_BLEND);
-//              boolean tLight = glGetBoolean(GL_LIGHTING);
-				int tTexIndex = glGetInteger(GL_TEXTURE_BINDING_2D);
-				
-				glDisable(GL_BLEND);
-				glDisable(GL_LIGHTING);
-				
-				glPushMatrix();
-				
-				glTranslated(aX+0.5+OFFX[tTileEntity.mFacing]*0.502-OFFZ[tTileEntity.mFacing]*0.25, aY+0.625, aZ+0.5+OFFZ[tTileEntity.mFacing]*0.502+OFFX[tTileEntity.mFacing]*0.25);
-				glRotatef(180, 0, 0, 1);
-				glRotatef(COMPASS_FROM_SIDE[tTileEntity.mFacing] * 90, 0, 1, 0);
-				
-				glScalef(1/256F, 1/256F, -0.0001F);
-				glScalef(8.0F, 8.0F, 1.0F);
-				
-				OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
-				
-				try {
-					if (!ForgeHooksClient.renderInventoryItem(RenderHelper.mRenderBlocks, Minecraft.getMinecraft().renderEngine, tTileEntity.slot(1), T, 0, 0, 0)) {
-						RenderHelper.renderItemIntoGUI(Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().renderEngine, tTileEntity.slot(1), 0, 0, F);
-					}
-				} catch(Throwable e) {
-					e.printStackTrace(ERR);
-				}
-				
-				glPopMatrix();
-				
-				glColor4f(1, 1, 1, 1);
-				glAlphaFunc(GL_GREATER, 0.1F);
-				
-				OpenGlHelper.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-				
-//              if (tBlend) glEnable(GL_BLEND       ); else glDisable(GL_BLEND      );
-//              if (tLight) glEnable(GL_LIGHTING    ); else glDisable(GL_LIGHTING   );
-				
-				glDisable(GL_BLEND);
-				glEnable(GL_LIGHTING);
-				glEnable(GL_ALPHA_TEST);
-				
-				glBindTexture(GL_TEXTURE_2D, tTexIndex);
-			}
+
+		@Override
+		public BlockEntityRenderState createRenderState() {
+			return new BlockEntityRenderState();
+		}
+
+		@Override
+		public void submit(BlockEntityRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
+			//
 		}
 	}
 }

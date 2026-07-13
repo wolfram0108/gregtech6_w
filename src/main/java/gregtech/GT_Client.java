@@ -20,9 +20,8 @@
 package gregtech;
 
 import cpw.mods.fml.client.registry.RenderingRegistry;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import gregapi.api.FMLPreInitializationEvent;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
@@ -34,15 +33,15 @@ import gregtech.entities.projectiles.EntityArrow_Potion;
 import gregtech.render.GT_Renderer_Entity_Arrow;
 import gregtech.render.PlayerModelRenderer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.OpenGlHelper;
-import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.event.ClickEvent;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
-import net.minecraftforge.client.event.RenderBlockOverlayEvent;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import org.lwjgl.opengl.GL11;
+import net.neoforged.neoforge.client.event.RenderBlockScreenEffectEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+
+import java.net.URI;
 
 import static gregapi.data.CS.*;
 
@@ -53,8 +52,11 @@ public class GT_Client extends GT_Proxy {
 	
 	public GT_Client() {super();}
 	
+	/* PORT-TODO(F3, baked-рендер клиента): было {@code FMLPreInitializationEvent} из старого FML —
+	 * тип совпадает с центральным F12-переходником {@code gregapi.api.FMLPreInitializationEvent}
+	 * (см. {@code Abstract_Proxy#onProxyAfterPreInit}), сигнатура ретипирована для реального {@code @Override}. */
 	@Override
-	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
+	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLPreInitializationEvent aEvent) {
 		super.onProxyAfterPreInit(aMod, aEvent);
 		new GT_Renderer_Entity_Arrow(EntityArrow_Material.class, "arrow");
 		new GT_Renderer_Entity_Arrow(EntityArrow_Potion.class, "arrow_potions");
@@ -62,101 +64,113 @@ public class GT_Client extends GT_Proxy {
 	
 	private boolean FIRST_CLIENT_PLAYER_TICK = T;
 	
+	/**
+	 * PORT-TODO(F3, baked-рендер клиента, частично): было {@code cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent}
+	 * с публичными полями {@code player}/{@code phase}/{@code side} — neo {@code PlayerTickEvent.Post}
+	 * (`neoforge-decompiled/net/neoforged/neoforge/event/tick/PlayerTickEvent.java:38-46`, "после тика" = старый
+	 * {@code END}) с геттером {@code getEntity()}; фильтр стороны — {@code getEntity().level().isClientSide()}
+	 * (событие шлётся на обеих сторонах, см. javadoc класса). {@code Component} — теперь дерево, не {@code new
+	 * Component(String)} (интерфейс, абстрактный) — {@code Component.literal(...)}, аналогично F3-правке
+	 * {@code GT_API_Proxy_Client#onItemTooltip}. {@code addChatComponentMessage}→{@code sendSystemMessage}
+	 * (`neo-decompiled/net/minecraft/world/entity/player/Player.java:1399`). {@code ClickEvent} — теперь
+	 * sealed-интерфейс с записями по действию ({@code ClickEvent.OpenFile(String)}/{@code .OpenUrl(URI)},
+	 * `neo-decompiled/net/minecraft/network/chat/ClickEvent.java:103-135`), стиль — {@code MutableComponent.withStyle}.
+	 * PORT-TODO(конфиг-подсистема, вне объёма F3): {@code ConfigsGT.CLIENT.mConfig.getConfigFile()} недостижим —
+	 * {@code gregapi.config.Config} использует {@code net.neoforged.neoforge.common.ModConfigSpec} неправильно
+	 * ({@code new ModConfigSpec(File)}/{@code .load()}/{@code .save()} не существуют у реального типа — САМ
+	 * класс уже содержит 24 независимые ошибки, не render, не трогается); кликабельная ссылка "открыть файл"
+	 * заменена на обычный текст без клика (сообщение показывается, клик недостижим до починки конфиг-подсистемы).
+	 */
 	@SubscribeEvent
-	public void onPlayerTickEventClient(PlayerTickEvent aEvent) {
-		if (!aEvent.player.isDead && aEvent.phase == ServerTickEvent.END && aEvent.side.isClient() && CLIENT_TIME > 20) {
-			if (aEvent.player == GT_API.api_proxy.getThePlayer()) {
+	public void onPlayerTickEventClient(PlayerTickEvent.Post aEvent) {
+		Player tPlayer = aEvent.getEntity();
+		if (!tPlayer.isDeadOrDying() && tPlayer.level().isClientSide() && CLIENT_TIME > 20) {
+			if (tPlayer == GT_API.api_proxy.getThePlayer()) {
 				if (FIRST_CLIENT_PLAYER_TICK) {
 					FIRST_CLIENT_PLAYER_TICK = F;
-					Component tLink;
+					MutableComponent tLink;
 					if (!mMessage.isEmpty() && ConfigsGT.CLIENT.get(ConfigCategories.news, mMessage, T)) {
-						aEvent.player.addChatComponentMessage(new Component(mMessage));
-						aEvent.player.addChatComponentMessage(new Component(LH.Chat.DGRAY + ""));
-						tLink = new Component(LH.Chat.DGRAY + "disable message in the clientside gregtech.cfg");
-						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath()));
-						aEvent.player.addChatComponentMessage(tLink);
+						tPlayer.sendSystemMessage(Component.literal(mMessage));
+						tPlayer.sendSystemMessage(Component.literal(LH.Chat.DGRAY + ""));
+						tLink = Component.literal(LH.Chat.DGRAY + "disable message in the clientside gregtech.cfg");
+						tPlayer.sendSystemMessage(tLink);
 					}
 					if (mVersionOutdated) {
-						aEvent.player.addChatComponentMessage(new Component("Major GT6 Update released, for details visit"));
-						tLink = new Component(LH.Chat.BLUE + "https://gregtech.mechaenetia.com/1.7.10");
-						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://gregtech.mechaenetia.com/1.7.10"));
-						aEvent.player.addChatComponentMessage(tLink);
-						tLink = new Component(LH.Chat.DGRAY + "disable checker in the clientside gregtech.cfg");
-						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath()));
-						aEvent.player.addChatComponentMessage(tLink);
+						tPlayer.sendSystemMessage(Component.literal("Major GT6 Update released, for details visit"));
+						tLink = Component.literal(LH.Chat.BLUE + "https://gregtech.mechaenetia.com/1.7.10");
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenUrl(URI.create("https://gregtech.mechaenetia.com/1.7.10"))));
+						tPlayer.sendSystemMessage(tLink);
+						tLink = Component.literal(LH.Chat.DGRAY + "disable checker in the clientside gregtech.cfg");
+						tPlayer.sendSystemMessage(tLink);
 					}
 					if (MD.IC2.mLoaded && !MD.IC2C.mLoaded) {
 						try {
 							int tVersion = Integer.parseInt(((String)Class.forName("ic2.core.IC2").getField("VERSION").get(null)).substring(4, 7));
 							if (tVersion < 827) {
-								aEvent.player.addChatComponentMessage(new Component(LH.Chat.RED + "Please update IndustrialCraft!"));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Please update IndustrialCraft!"));
 								// IC2 Site doesn't support https.
-								tLink = new Component(LH.Chat.BLUE + "http://ic2api.player.to:8080/job/IC2_experimental/827/");
-								tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "http://ic2api.player.to:8080/job/IC2_experimental/827/"));
-								aEvent.player.addChatComponentMessage(tLink);
+								tLink = Component.literal(LH.Chat.BLUE + "http://ic2api.player.to:8080/job/IC2_experimental/827/");
+								tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenUrl(URI.create("http://ic2api.player.to:8080/job/IC2_experimental/827/"))));
+								tPlayer.sendSystemMessage(tLink);
 							}
 						} catch(Throwable e) {/**/}
 					}
 					if (MD.TC.mLoaded) {
 						try {
 							if (Class.forName("com.chocohead.patcher.ThaumicFixer") != null) {
-								aEvent.player.addChatComponentMessage(new Component(LH.Chat.RED + "Warning! Chocoheads ThaumicFixer needs to be uninstalled!"));
-								aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "Not uninstalling it can lead to crashes when viewing Aspects."));
-								aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "Lag is already fixed with a better Version of the ASM Code,"));
-								aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "that doesn't obliterate the Thaumcraft API for no reason."));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Warning! Chocoheads ThaumicFixer needs to be uninstalled!"));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "Not uninstalling it can lead to crashes when viewing Aspects."));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "Lag is already fixed with a better Version of the ASM Code,"));
+								tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "that doesn't obliterate the Thaumcraft API for no reason."));
 							}
 						} catch(Throwable e) {/**/}
 					}
 					if (MD.COG.mLoaded && !MD.PFAA.mLoaded && ConfigsGT.CLIENT.get(ConfigCategories.general, "warnings_customoregen", T)) {
-						aEvent.player.addChatComponentMessage(new Component(LH.Chat.RED + "Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!"));
-						aEvent.player.addChatComponentMessage(new Component(LH.Chat.ORANGE + "If you don't even use CustomOreGen, I would highly recommend you to remove it."));
-						tLink = new Component(LH.Chat.DGRAY + "disable warning in the clientside gregtech.cfg");
-						tLink.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath()));
-						aEvent.player.addChatComponentMessage(tLink);
+						tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!"));
+						tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "If you don't even use CustomOreGen, I would highly recommend you to remove it."));
+						tLink = Component.literal(LH.Chat.DGRAY + "disable warning in the clientside gregtech.cfg");
+						tPlayer.sendSystemMessage(tLink);
 					}
 					if (WOODMANS_BDAY) {
-						aEvent.player.addChatComponentMessage(new Component(LH.Chat.WHITE+"<"+LH.Chat.GREEN+">:]"+LH.Chat.WHITE+"> Have a nice day!"));
+						tPlayer.sendSystemMessage(Component.literal(LH.Chat.WHITE+"<"+LH.Chat.GREEN+">:]"+LH.Chat.WHITE+"> Have a nice day!"));
 					}
 					if (APRIL_FOOLS) {
-						aEvent.player.addChatComponentMessage(new Component(CHAT_GREG + "Watch your Calendar!"));
+						tPlayer.sendSystemMessage(Component.literal(CHAT_GREG + "Watch your Calendar!"));
 					}
 				}
 			}
 		}
 	}
 	
-	private Identifier WATER_OVERLAY = new Identifier("textures/misc/underwater.png");
-	
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code new ResourceLocation(String)} (одноаргументный
+	 *  конструктор) — {@code Identifier} конструктор {@code private} в 26.1.2, публичная фабрика для
+	 *  ванильного namespace — {@code Identifier.withDefaultNamespace(path)}
+	 *  (`neo-decompiled/net/minecraft/resources/Identifier.java:49`). */
+	private Identifier WATER_OVERLAY = Identifier.withDefaultNamespace("textures/misc/underwater.png");
+
+	/**
+	 * PORT-TODO(F3, baked-рендер клиента): было {@code net.minecraftforge.client.event.RenderBlockOverlayEvent}
+	 * (immediate-mode: {@code Tessellator}/GL11 квад болотной пелены) — заменён на
+	 * {@code RenderBlockScreenEffectEvent} (`neoforge-decompiled/net/neoforged/neoforge/client/event/
+	 * RenderBlockScreenEffectEvent.java:29-116`, {@code getBlockState()} вместо старого {@code blockForOverlay}).
+	 * Реальная перерисовка — {@code MultiBufferSource}/{@code PoseStack} из события (decisions/F3-render.md §1);
+	 * тело квада — no-op заглушка, {@code setCanceled(T)} (структурно значимый эффект — подавляет ванильный
+	 * оверлей воды в этом случае) сохранён.
+	 */
 	@SubscribeEvent
-	public void receiveRenderEvent(RenderBlockOverlayEvent aEvent) {
-		if (aEvent.blockForOverlay == BlocksGT.Swamp) {
-			Player aPlayer = GT_API.api_proxy.getThePlayer();
-			Minecraft.getMinecraft().getTextureManager().bindTexture(WATER_OVERLAY);
-			Tesselator tessellator = Tesselator.instance;
-			GL11.glColor4f(0, aPlayer.getBrightness(aEvent.renderPartialTicks)/2, 0, 0.75F);
-			GL11.glEnable(GL11.GL_BLEND);
-			OpenGlHelper.glBlendFunc(770, 771, 1, 0);
-			GL11.glPushMatrix();
-			tessellator.startDrawingQuads();
-			tessellator.addVertexWithUV(-1, -1, -0.5F, 4-aPlayer.rotationYaw/64, 4+aPlayer.rotationPitch/64);
-			tessellator.addVertexWithUV( 1, -1, -0.5F,  -aPlayer.rotationYaw/64, 4+aPlayer.rotationPitch/64);
-			tessellator.addVertexWithUV( 1,  1, -0.5F,  -aPlayer.rotationYaw/64,   aPlayer.rotationPitch/64);
-			tessellator.addVertexWithUV(-1,  1, -0.5F, 4-aPlayer.rotationYaw/64,   aPlayer.rotationPitch/64);
-			tessellator.draw();
-			GL11.glPopMatrix();
-			GL11.glColor4f(1, 1, 1, 1);
-			GL11.glDisable(GL11.GL_BLEND);
+	public void receiveRenderEvent(RenderBlockScreenEffectEvent aEvent) {
+		if (aEvent.getBlockState().getBlock() == BlocksGT.Swamp) {
 			aEvent.setCanceled(T);
 		}
 	}
-	
+
 	@SubscribeEvent
-	public void receiveRenderEvent(RenderPlayerEvent.Pre aEvent) {
+	public void receiveRenderEvent(RenderPlayerEvent.Pre<?> aEvent) {
 //      if (UT.Entities.getFullInvisibility(aEvent.entityPlayer)) {aEvent.setCanceled(true); return;}
 	}
-	
+
 	@SubscribeEvent
-	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Specials.Pre aEvent) {
+	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre<?> aEvent) {
 		mPlayerRenderer.receiveRenderSpecialsEvent(aEvent);
 	}
 	/*

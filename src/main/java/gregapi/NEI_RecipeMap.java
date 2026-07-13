@@ -44,7 +44,6 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -92,7 +91,10 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			GuiUsageRecipe.usagehandlers.add(this);
 		}
 		
-		InterModComms.sendRuntimeMessage(GAPI, "NEIPlugins", "register-crafting-handler", MD.GAPI.mID+"@"+getRecipeName()+"@"+getOverlayIdentifier());
+		/* PORT-TODO(F3, baked-рендер клиента): было {@code FMLInterModComms.sendRuntimeMessage(sender,modId,method,String)}
+		 * (Forge 1.7.10, тип+метод удалены) — neo {@code InterModComms.sendTo(senderModId,modId,method,Supplier<?>)}
+		 * (`fml-decompiled/net/neoforged/fml/InterModComms.java:27`), тот же паттерн уже применён строкой выше (:88). */
+		InterModComms.sendTo(GAPI.getModID(), "NEIPlugins", "register-crafting-handler", () -> MD.GAPI.mID+"@"+getRecipeName()+"@"+getOverlayIdentifier());
 		return this;
 	}
 	
@@ -399,7 +401,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 
 	public static class GT_RectHandler implements IContainerInputHandler, IContainerTooltipHandler {
 		// @Override
-		public boolean mouseClicked(GuiContainer gui, int mousex, int mousey, int button) {
+		public boolean mouseClicked(ContainerClient gui, int mousex, int mousey, int button) {
 			if (canHandle(gui)) {
 				if (button == 0) return transferRect(gui, F);
 				if (button == 1) return transferRect(gui, T);
@@ -408,66 +410,66 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		}
 
 		// @Override
-		public boolean lastKeyTyped(GuiContainer gui, char keyChar, int keyCode) {
+		public boolean lastKeyTyped(ContainerClient gui, char keyChar, int keyCode) {
 			return F;
 		}
 
-		public boolean canHandle(GuiContainer gui) {
+		public boolean canHandle(ContainerClient gui) {
 			return gui instanceof ContainerClient && UT.Code.stringValid(((ContainerClient)gui).mNEI);
 		}
 
 		// @Override
-		public List<String> handleTooltip(GuiContainer gui, int mousex, int mousey, List<String> currenttip) {
+		public List<String> handleTooltip(ContainerClient gui, int mousex, int mousey, List<String> currenttip) {
 			if (canHandle(gui) && currenttip.isEmpty() && new Rectangle(65, 13, 36, 18).contains(new Point(GuiDraw.getMousePosition().x - ((ContainerClient)gui).getLeft() - RecipeInfo.getGuiOffset(gui)[0], GuiDraw.getMousePosition().y - ((ContainerClient)gui).getTop() - RecipeInfo.getGuiOffset(gui)[1]))) currenttip.add("Recipes");
 			return currenttip;
 		}
 
-		private boolean transferRect(GuiContainer gui, boolean usage) {
+		private boolean transferRect(ContainerClient gui, boolean usage) {
 			return canHandle(gui) && new Rectangle(65, 13, 36, 18).contains(new Point(GuiDraw.getMousePosition().x - ((ContainerClient)gui).getLeft() - RecipeInfo.getGuiOffset(gui)[0], GuiDraw.getMousePosition().y - ((ContainerClient)gui).getTop() - RecipeInfo.getGuiOffset(gui)[1])) && (usage ? GuiUsageRecipe.openRecipeGui(((ContainerClient)gui).mNEI) : GuiCraftingRecipe.openRecipeGui(((ContainerClient)gui).mNEI));
 		}
 
 		// @Override
-		public List<String> handleItemDisplayName(GuiContainer gui, ItemStack itemstack, List<String> currenttip) {
+		public List<String> handleItemDisplayName(ContainerClient gui, ItemStack itemstack, List<String> currenttip) {
 			return currenttip;
 		}
 
 		// @Override
-		public List<String> handleItemTooltip(GuiContainer gui, ItemStack itemstack, int mousex, int mousey, List<String> currenttip) {
+		public List<String> handleItemTooltip(ContainerClient gui, ItemStack itemstack, int mousex, int mousey, List<String> currenttip) {
 			return currenttip;
 		}
 
 		// @Override
-		public boolean keyTyped(GuiContainer gui, char keyChar, int keyCode) {
+		public boolean keyTyped(ContainerClient gui, char keyChar, int keyCode) {
 			return F;
 		}
 
 		// @Override
-		public void onKeyTyped(GuiContainer gui, char keyChar, int keyID) {
+		public void onKeyTyped(ContainerClient gui, char keyChar, int keyID) {
 			//
 		}
 
 		// @Override
-		public void onMouseClicked(GuiContainer gui, int mousex, int mousey, int button) {
+		public void onMouseClicked(ContainerClient gui, int mousex, int mousey, int button) {
 			//
 		}
 
 		// @Override
-		public void onMouseUp(GuiContainer gui, int mousex, int mousey, int button) {
+		public void onMouseUp(ContainerClient gui, int mousex, int mousey, int button) {
 			//
 		}
 
 		// @Override
-		public boolean mouseScrolled(GuiContainer gui, int mousex, int mousey, int scrolled) {
+		public boolean mouseScrolled(ContainerClient gui, int mousex, int mousey, int scrolled) {
 			return F;
 		}
 
 		// @Override
-		public void onMouseScrolled(GuiContainer gui, int mousex, int mousey, int scrolled) {
+		public void onMouseScrolled(ContainerClient gui, int mousex, int mousey, int scrolled) {
 			//
 		}
 
 		// @Override
-		public void onMouseDragged(GuiContainer gui, int mousex, int mousey, int button, long heldTime) {
+		public void onMouseDragged(ContainerClient gui, int mousex, int mousey, int button, long heldTime) {
 			//
 		}
 	}
@@ -635,8 +637,12 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		GuiDraw.drawTexturedModalRect(-5, -8, 0, 3, 176,  79);
 	}
 
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code Minecraft.getMinecraft().fontRenderer.drawString(...)}
+	 *  (`getMinecraft()`→{@code getInstance()}, поле `fontRenderer`→{@code font}, метод {@code drawString}
+	 *  удалён у {@code Font} — текст экрана рисуется через {@code GuiGraphicsExtractor}, см. javadoc
+	 *  {@link gregapi.gui.ContainerClient} class); тот же паттерн, что {@code GuiDraw} F10-зеркало выше (no-op). */
 	public static void drawText(int aX, int aY, String aString, int aColor) {
-		Minecraft.getMinecraft().fontRenderer.drawString(aString, aX, aY, aColor);
+		//
 	}
 	
 	// @Override

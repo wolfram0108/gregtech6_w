@@ -46,12 +46,11 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.model.ModelBase;
-import net.minecraft.client.model.ModelRenderer;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderBlocks;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -72,8 +71,6 @@ import java.util.List;
 import java.util.Map;
 
 import static gregapi.data.CS.*;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.GL_RESCALE_NORMAL;
 
 /**
  * @author Gregorius Techneticies
@@ -258,7 +255,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override public int getComparatorInputOverride(byte aSide) {return AbstractContainerMenu.calcRedstoneFromInventory(this);}
 	@Override public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return null;}
 	@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 0;}
-	@Override public boolean renderBlock(Block aBlock, RenderBlocks aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
+	@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	
 	protected void generateDungeonLoot() {
 		if (isServerSide() && UT.Code.stringValid(mDungeonLootName) && ST.generateLoot(RNGSUS, mDungeonLootName, this)) {
@@ -321,9 +318,12 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return new ContainerClientChest(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer(int aGUIID, Player aPlayer) {return new ContainerCommonChest(aPlayer.getInventory(), this, aGUIID);}
 	
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code TileEntityRendererDispatcher.instance.renderTileEntityAt(...)}
+	 *  (пакет {@code net.minecraft.client.renderer.tileentity} удалён целиком, замены нет — item-рендер
+	 *  теперь {@code ItemStackRenderState}/{@code ItemModelResolver}, decisions/F3-render.md §2.5/§3
+	 *  "IItemRenderer"); параметр ретипирован {@code Object} (см. {@link gregapi.render.IRenderedBlockObject}). */
 	@Override
-	public boolean renderItem(Block aBlock, RenderBlocks aRenderer) {
-		TileEntityRendererDispatcher.instance.renderTileEntityAt(this, 0, 0, 0, 0);
+	public boolean renderItem(Block aBlock, Object aRenderer) {
 		return T;
 	}
 	
@@ -339,82 +339,49 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public void onRegistrationClient(MultiTileEntityRegistry aRegistry, short aID) {
-		RENDERER.mResources.put(mTextureName, new Identifier[] {new Identifier(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".colored.png"), new Identifier(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".plain.png")});
+		/* PORT-TODO(F3, baked-рендер клиента): было {@code new Identifier(namespace,path)} — конструктор
+		 * стал {@code private} в 26.1.2, фабрика {@code Identifier.fromNamespaceAndPath(namespace,path)}
+		 * (`neo-decompiled/net/minecraft/resources/Identifier.java:41`). */
+		RENDERER.mResources.put(mTextureName, new Identifier[] {Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".colored.png"), Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".plain.png")});
 	}
-	
+
+	/**
+	 * PORT-TODO(F3, baked-рендер клиента): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
+	 * push/pop-матрицы, {@code OpenGlHelper.glBlendFunc}, ручной {@code bindTexture}+{@code ModelBase}/
+	 * {@code ModelRenderer} с крутящейся крышкой сундука) — весь стек удалён в 26.1.2 (decisions/F3-render.md
+	 * §1). Замена — {@code BlockEntityRenderer<T,S>} нового API (`neo-decompiled/net/minecraft/client/
+	 * renderer/blockentity/BlockEntityRenderer.java:15-24`: {@code createRenderState()}+{@code submit(state,
+	 * PoseStack,SubmitNodeCollector,CameraRenderState)}, БЕЗ старого {@code render(...)}), эталон —
+	 * {@code InscriberRenderer.java:55-276} (F3-render.md §2.5). Реальная перерисовка крышки —
+	 * {@code CubeBuilder}/{@code submitCustomGeometry} по образцу эталона; тело {@code submit} ниже — no-op заглушка.
+	 */
 	@OnlyIn(Dist.CLIENT)
-	public static class MultiTileEntityRendererChest extends TileEntitySpecialRenderer {
+	public static class MultiTileEntityRendererChest implements BlockEntityRenderer<MultiTileEntityChest, BlockEntityRenderState> {
 		private static final MultiTileEntityModelChest sModel = new MultiTileEntityModelChest();
 		public final Map<String, Identifier[]> mResources = new HashMap<>();
-		
-		// @Override
-		public void renderTileEntityAt(BlockEntity aTileEntity, double aX, double aY, double aZ, float aPartialTick) {
-			if (aTileEntity instanceof MultiTileEntityChest) {
-				double tLidAngle = 1 - (((MultiTileEntityChest)aTileEntity).oLidAngle + (((MultiTileEntityChest)aTileEntity).mLidAngle - ((MultiTileEntityChest)aTileEntity).oLidAngle) * aPartialTick); tLidAngle = -(((1 - tLidAngle*tLidAngle*tLidAngle) * Math.PI) / 2);
-				Identifier[] tLocation = mResources.get(((MultiTileEntityChest)aTileEntity).mTextureName);
-				bindTexture(tLocation[0]);
-				glPushMatrix();
-				glEnable(GL_BLEND);
-				glEnable(GL_LIGHTING);
-				glEnable(GL_ALPHA_TEST);
-				glEnable(GL_RESCALE_NORMAL);
-				glAlphaFunc(GL_GREATER, 0.1F);
-				OpenGlHelper.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-				short[] tRGBa = UT.Code.getRGBaArray(((MultiTileEntityChest)aTileEntity).mRGBa);
-				glColor4f(tRGBa[0] / 255.0F, tRGBa[1] / 255.0F, tRGBa[2] / 255.0F, 1);
-				glTranslated(aX, aY + 1, aZ + 1);
-				glScalef(1, -1, -1);
-				glTranslated(0.5, 0.5, 0.5);
-				glRotatef(COMPASS_FROM_SIDE[((MultiTileEntityChest)aTileEntity).mFacing] * 90 - 180, 0, 1, 0);
-				glTranslated(-0.5, -0.5, -0.5);
-				sModel.render(tLidAngle);
-				glDisable(GL_RESCALE_NORMAL);
-				glPopMatrix();
-				glEnable(GL_RESCALE_NORMAL);
-				glColor4f(1, 1, 1, 1);
-				
-				bindTexture(tLocation[1]);
-				glPushMatrix();
-				glTranslated(aX, aY + 1, aZ + 1);
-				glScalef(1, -1, -1);
-				glTranslated(0.5, 0.5, 0.5);
-				glRotatef(COMPASS_FROM_SIDE[((MultiTileEntityChest)aTileEntity).mFacing] * 90 - 180, 0, 1, 0);
-				glTranslated(-0.5, -0.5, -0.5);
-				sModel.render(tLidAngle);
-				glDisable(GL_RESCALE_NORMAL);
-				glPopMatrix();
-				glEnable(GL_RESCALE_NORMAL);
-			}
+
+		@Override
+		public BlockEntityRenderState createRenderState() {
+			return new BlockEntityRenderState();
+		}
+
+		@Override
+		public void submit(BlockEntityRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
+			//
 		}
 	}
-	
+
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code ModelBase}/{@code ModelRenderer} (immediate-mode
+	 *  3D-модель крышки сундука через box+rotationPoint, тип удалён целиком) — держатель-заглушка
+	 *  (см. javadoc {@link MultiTileEntityRendererChest}), реальная геометрия — {@code CubeBuilder}. */
 	@OnlyIn(Dist.CLIENT)
-	public static class MultiTileEntityModelChest extends ModelBase {
-		private final ModelRenderer mLid, mBottom, mKnob;
-		
+	public static class MultiTileEntityModelChest {
 		public MultiTileEntityModelChest() {
-			mLid = (new ModelRenderer(this, 0, 0)).setTextureSize(64, 64);
-			mLid.addBox(0, -5, -14, 14, 5, 14, 0);
-			mLid.rotationPointX =  1;
-			mLid.rotationPointY =  7;
-			mLid.rotationPointZ = 15;
-			mKnob = (new ModelRenderer(this, 0, 0)).setTextureSize(64, 64);
-			mKnob.addBox(-1, -2, -15, 2, 4, 1, 0);
-			mKnob.rotationPointX =  8;
-			mKnob.rotationPointY =  7;
-			mKnob.rotationPointZ = 15;
-			mBottom = (new ModelRenderer(this, 0, 19)).setTextureSize(64, 64);
-			mBottom.addBox(0, 0, 0, 14, 10, 14, 0);
-			mBottom.rotationPointX = 1;
-			mBottom.rotationPointY = 6;
-			mBottom.rotationPointZ = 1;
+			//
 		}
-		
+
 		public void render(double aLidAngle) {
-			mKnob.rotateAngleX = mLid.rotateAngleX = (float)aLidAngle;
-			mLid.render(0.0625F);
-			mKnob.render(0.0625F);
-			mBottom.render(0.0625F);
+			//
 		}
 	}
 }
