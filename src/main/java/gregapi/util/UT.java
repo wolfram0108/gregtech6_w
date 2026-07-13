@@ -1133,7 +1133,7 @@ public class UT {
 		}
 		
 		public static ItemStack toStack(int aStack) {
-			Item tItem = Item.getItemById(aStack&(~0>>>16));
+			Item tItem = Item.byId(aStack&(~0>>>16));
 			if (tItem != null) return ST.make(tItem, 1, aStack>>>16);
 			return null;
 		}
@@ -3299,18 +3299,18 @@ public class UT {
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, ItemStack aReplacement) {if (Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null; if (aItem.length()>5&&aItem.charAt(0)=='t'&&aItem.charAt(1)=='i'&&aItem.charAt(2)=='l'&&aItem.charAt(3)=='e'&&aItem.charAt(4)=='.') return amount(aAmount, ST.findItemStack(aModID, aItem, (int)aAmount), ST.findItemStack(aModID, aItem.substring(5), (int)aAmount), aReplacement); return amount(aAmount, ST.findItemStack(aModID, aItem, (int)aAmount), aReplacement);}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta) {ItemStack rStack = make(aModID, aItem, aAmount); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta, ItemStack aReplacement) {ItemStack rStack = make(aModID, aItem, aAmount, aReplacement); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
-		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData) {return aItemID==0?null:make(Item.getItemById((int)aItemID), aStacksize, aMetaData);}
+		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData);}
 		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), null);}
 		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), null);}
-		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, CompoundTag aNBT) {return aItemID==0?null:make(Item.getItemById((int)aItemID), aStacksize, aMetaData, aNBT);}
+		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, CompoundTag aNBT) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData, aNBT);}
 		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, CompoundTag aNBT) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), aNBT);}
 		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, CompoundTag aNBT) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), aNBT);}
 		@Deprecated public static ItemStack make(ItemStack aStack, CompoundTag aNBT) {return make(aStack, null, aNBT);}
 		@Deprecated public static ItemStack make(ItemStackContainer aStack, CompoundTag aNBT) {return make(aStack, null, aNBT);}
-		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, String aName) {return aItemID==0?null:make(Item.getItemById((int)aItemID), aStacksize, aMetaData, aName);}
+		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, String aName) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData, aName);}
 		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, String aName) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), aName, null);}
 		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, String aName) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), aName, null);}
-		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aItemID==0?null:make(Item.getItemById((int)aItemID), aStacksize, aMetaData, aName, aNBT);}
+		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData, aName, aNBT);}
 		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), aName, aNBT);}
 		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), aName, aNBT);}
 		@Deprecated public static ItemStack make(ItemStack aStack, String aName, CompoundTag aNBT) {if (aStack == null) return null; aStack = aStack.copy(); NBT.set(aStack, aNBT); if (aName != null) aStack.setStackDisplayName(aName); return aStack;}

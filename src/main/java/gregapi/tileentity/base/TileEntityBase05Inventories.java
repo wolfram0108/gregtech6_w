@@ -51,7 +51,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 		mInventory = getDefaultInventory(aNBT);
 		if (mInventory != null && mInventory.length > 0) {
 			ListTag tList = aNBT.getTagList(NBT_INV_LIST, 10);
-			for (int i = 0; i < tList.tagCount(); i++) {
+			for (int i = 0; i < tList.size(); i++) {
 				CompoundTag tNBT = tList.getCompoundTagAt(i);
 				int tSlot = tNBT.getShort("s").orElse((short)0);
 				if (tSlot >= 0 && tSlot < mInventory.length) mInventory[tSlot] = ST.load(tNBT, getDefaultStack(tSlot));
@@ -64,7 +64,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 		if (mInventory != null && mInventory.length > 0) {
 			ListTag tList = new ListTag();
 			for (short tSlot = 0; tSlot < mInventory.length; tSlot++) if (ST.valid(mInventory[tSlot]) && canSave (tSlot)) tList.add(UT.NBT.makeShort(ST.save(mInventory[tSlot]), "s", tSlot));
-			if (tList.tagCount() > 0) aNBT.put(NBT_INV_LIST, tList);
+			if (tList.size() > 0) aNBT.put(NBT_INV_LIST, tList);
 		}
 	}
 	
@@ -74,7 +74,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 		if (mInventory != null && mInventory.length > 0) {
 			ListTag tList = new ListTag();
 			for (short tSlot = 0; tSlot < mInventory.length; tSlot++) if (ST.valid(mInventory[tSlot]) && keepSlot(tSlot)) tList.add(UT.NBT.makeShort(ST.save(mInventory[tSlot]), "s", tSlot));
-			if (tList.tagCount() > 0) aNBT.put(NBT_INV_LIST, tList);
+			if (tList.size() > 0) aNBT.put(NBT_INV_LIST, tList);
 		}
 		return aNBT;
 	}

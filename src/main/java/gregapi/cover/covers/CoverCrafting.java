@@ -47,9 +47,9 @@ public class CoverCrafting extends CoverTextureMulti {
 		if (aPlayer instanceof ServerPlayer) {
 			((ServerPlayer)aPlayer).getNextWindowId();
 			((ServerPlayer)aPlayer).playerNetServerHandler.sendPacket(new S2DPacketOpenWindow(((ServerPlayer)aPlayer).currentWindowId, 1, "Crafting", 9, T));
-			((ServerPlayer)aPlayer).openContainer = new ContainerWorkbench(((ServerPlayer)aPlayer).getInventory(), ((ServerPlayer)aPlayer).level(), aData.mTileEntity.getX(), aData.mTileEntity.getY(), aData.mTileEntity.getZ()) {public boolean canInteractWith(Player par1EntityPlayer) {return T;}};
-			((ServerPlayer)aPlayer).openContainer.windowId = ((ServerPlayer)aPlayer).currentWindowId;
-			((ServerPlayer)aPlayer).openContainer.addCraftingToCrafters(((ServerPlayer)aPlayer));
+			((ServerPlayer)aPlayer).containerMenu = new ContainerWorkbench(((ServerPlayer)aPlayer).getInventory(), ((ServerPlayer)aPlayer).level(), aData.mTileEntity.getX(), aData.mTileEntity.getY(), aData.mTileEntity.getZ()) {public boolean canInteractWith(Player par1EntityPlayer) {return T;}};
+			((ServerPlayer)aPlayer).containerMenu.windowId = ((ServerPlayer)aPlayer).currentWindowId;
+			((ServerPlayer)aPlayer).containerMenu.addCraftingToCrafters(((ServerPlayer)aPlayer));
 		}
 		return T;
 	}

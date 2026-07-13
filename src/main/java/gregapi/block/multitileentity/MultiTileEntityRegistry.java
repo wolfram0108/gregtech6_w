@@ -118,7 +118,7 @@ public class MultiTileEntityRegistry {
 	
 	/** Whatever you do, DO NOT GET THE UTTERLY RETARDED IDEA OF ADDING YOUR MULTITILEENTITIES TO MY OWN REGISTRY!!! Create your own instance! */
 	public static MultiTileEntityRegistry getRegistry(int aRegistryID) {
-		return REGISTRIES.get(new ItemStackContainer(Item.getItemById(aRegistryID), 1, W));
+		return REGISTRIES.get(new ItemStackContainer(Item.byId(aRegistryID), 1, W));
 	}
 	
 	/** Whatever you do, DO NOT GET THE UTTERLY RETARDED IDEA OF ADDING YOUR MULTITILEENTITIES TO MY OWN REGISTRY!!! Create your own instance! */

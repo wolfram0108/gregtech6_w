@@ -576,9 +576,9 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	public boolean interceptClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, Player aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {return F;}
 	public ItemStack slotClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, Player aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {return null;}
-	public void killGUIs() {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).openContainer instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).openContainer).mTileEntity == this) ((Player)tPlayer).closeScreen();}
-	public void rebootGUIs(int aGUIID) {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).openContainer instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).openContainer).mTileEntity == this) {((Player)tPlayer).closeScreen(); openGUI((Player)tPlayer, aGUIID);}}
-	public long getOpenGUIs() {long rGUIs = 0; for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).openContainer instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).openContainer).mTileEntity == this) rGUIs++; return rGUIs;}
+	public void killGUIs() {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) ((Player)tPlayer).closeScreen();}
+	public void rebootGUIs(int aGUIID) {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) {((Player)tPlayer).closeScreen(); openGUI((Player)tPlayer, aGUIID);}}
+	public long getOpenGUIs() {long rGUIs = 0; for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) rGUIs++; return rGUIs;}
 	public boolean needsToSyncEverything() {return F;}
 	
 	public boolean shouldSideBeRendered(byte aSide) {

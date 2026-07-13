@@ -125,14 +125,14 @@ public class RecipeMapPrinter extends RecipeMap {
 				}
 				if (UT.Code.stringValid(UT.NBT.getBookTitle(tData)) && UT.Code.stringValid(UT.NBT.getBookAuthor(tData))) {
 					ListTag tPages = tData.getTagList("pages", 8);
-					if (tPages == null || tPages.tagCount() < 1) {
+					if (tPages == null || tPages.size() < 1) {
 						String aMapping = UT.NBT.getBookMapping(tData);
 						if (UT.Code.stringValid(aMapping)) {
 							ItemStack tBook = UT.Books.getWrittenBook(aMapping, T);
 							if (tBook != null && (ItemNBT.get(tBook) != null)) tPages = ItemNBT.get(tBook).getTagList("pages", 8);
 						}
 					}
-					boolean tUseManyPages = (tPages != null && tPages.tagCount() > 50);
+					boolean tUseManyPages = (tPages != null && tPages.size() > 50);
 					rRecipe = new Recipe(F, F, F, ST.array(ST.amount(tUseManyPages?6:3, tPaper), ST.amount(0, tUSB)), ST.array(tUseManyPages?IL.Paper_Printed_Pages_Many.get(1):IL.Paper_Printed_Pages.get(1)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, tUseManyPages?1:2, T)), null, tUseManyPages?1024:512, 16, 0);
 					UT.NBT.set(rRecipe.mOutputs[0], (CompoundTag)tData.copy());
 					return rRecipe;
