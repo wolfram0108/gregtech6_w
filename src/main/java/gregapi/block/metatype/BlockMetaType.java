@@ -138,13 +138,13 @@ public class BlockMetaType extends BlockBaseMeta {
 		//
 	}
 	
-	@Override
+	// @Override
 	public boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (mBlock == this || aSide != OPOS[mSide] || (mBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) != null && !aWorld.checkNoEntityCollision(mBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ)))) return F;
 		ItemStack aStack = aPlayer.getCurrentEquippedItem();
 		byte aMetaData = WD.meta(aWorld, aX, aY, aZ);
 		if (ST.equal(aStack, mBlock.mSlabs[0], aMetaData)) {
-			aWorld.setBlock(aX, aY, aZ, mBlock, aMetaData, 3);
+			WD.set(aWorld, aX, aY, aZ, mBlock, aMetaData, 3);
 			aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, mBlock.stepSound.func_150496_b(), (mBlock.stepSound.getVolume() + 1.0F) / 2.0F, mBlock.stepSound.getPitch() * 0.8F);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			return T;
@@ -157,7 +157,7 @@ public class BlockMetaType extends BlockBaseMeta {
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		if (aSide == OPOS[mSide]) return T;
 		if (aSide != mSide && SIDES_VALID[mSide]) {
-			Block aBlock = aWorld.getBlock(aX, aY, aZ);
+			Block aBlock = WD.block(aWorld, aX, aY, aZ);
 			if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mSide == mSide) return aBlock.getRenderBlockPass() != 0;
 		}
 		return super.shouldSideBeRendered(aWorld, aX, aY, aZ, aSide);
@@ -169,7 +169,7 @@ public class BlockMetaType extends BlockBaseMeta {
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.stone.getExplosionResistance(null) * mResistanceMultiplier;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return mBlock == this || mSide == aSide;}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return mBlock == this;}
-	@Override public boolean isNormalCube() {return mBlock == this;}
+	public boolean isNormalCube() {return mBlock == this;}
 	@Override public boolean isOpaqueCube() {return mBlock == this;}
 	@Override public boolean renderAsNormalBlock() {return mBlock == this;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}

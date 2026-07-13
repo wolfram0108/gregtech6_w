@@ -85,14 +85,14 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE);
-		if (aNBT.hasKey("gt.olast")) oLastReceivedFrom = aNBT.getByte("gt.olast");
-		if (aNBT.hasKey("gt.mlast")) mLastReceivedFrom = aNBT.getByte("gt.mlast");
-		if (aNBT.hasKey(NBT_INPUT)) mDisabledInputs = aNBT.getByte(NBT_INPUT);
-		if (aNBT.hasKey(NBT_OUTPUT)) mDisabledOutputs = aNBT.getByte(NBT_OUTPUT);
-		if (aNBT.hasKey("gt.mtransfer")) mTransferredItems = aNBT.getLong("gt.mtransfer");
-		if (aNBT.hasKey(NBT_PIPESIZE)) mStepSize = aNBT.getLong(NBT_PIPESIZE);
-		if (aNBT.hasKey(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
+		if (aNBT.contains(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE);
+		if (aNBT.contains("gt.olast")) oLastReceivedFrom = aNBT.getByte("gt.olast");
+		if (aNBT.contains("gt.mlast")) mLastReceivedFrom = aNBT.getByte("gt.mlast");
+		if (aNBT.contains(NBT_INPUT)) mDisabledInputs = aNBT.getByte(NBT_INPUT);
+		if (aNBT.contains(NBT_OUTPUT)) mDisabledOutputs = aNBT.getByte(NBT_OUTPUT);
+		if (aNBT.contains("gt.mtransfer")) mTransferredItems = aNBT.getLong("gt.mtransfer");
+		if (aNBT.contains(NBT_PIPESIZE)) mStepSize = aNBT.getLong(NBT_PIPESIZE);
+		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {
 			GT_API_Proxy.SERVER_TICK_PRE.add(this);
@@ -104,10 +104,10 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte("gt.olast", oLastReceivedFrom);
-		aNBT.setByte("gt.mlast", mLastReceivedFrom);
-		aNBT.setByte(NBT_INPUT, mDisabledInputs);
-		aNBT.setByte(NBT_OUTPUT, mDisabledOutputs);
+		aNBT.putByte("gt.olast", oLastReceivedFrom);
+		aNBT.putByte("gt.mlast", mLastReceivedFrom);
+		aNBT.putByte(NBT_INPUT, mDisabledInputs);
+		aNBT.putByte(NBT_OUTPUT, mDisabledOutputs);
 		UT.NBT.setNumber(aNBT, "gt.mtransfer", mTransferredItems);
 	}
 	

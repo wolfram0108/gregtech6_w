@@ -18,6 +18,7 @@
  */
 
 package gregapi.item.multiitem.behaviors;
+import gregapi.util.WD;
 
 import gregapi.data.CS.SFX;
 import gregapi.data.IL;
@@ -46,9 +47,9 @@ public class Behavior_Place_Paddy extends AbstractBehaviorDefault {
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aWorld.isRemote || !IL.GrC_Paddy.exists() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
-		if (aWorld.getBlock(aX, aY, aZ) == Blocks.farmland && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
+		if (WD.block(aWorld, aX, aY, aZ) == Blocks.farmland && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 			UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-			aWorld.setBlock(aX, aY, aZ, IL.GrC_Paddy.block(), aWorld.getBlockMetadata(aX, aY, aZ), 3);
+			WD.set(aWorld, aX, aY, aZ, IL.GrC_Paddy.block(), WD.meta(aWorld, aX, aY, aZ), 3);
 			return T;
 		}
 		return F;

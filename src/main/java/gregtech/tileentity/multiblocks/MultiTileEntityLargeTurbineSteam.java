@@ -50,8 +50,8 @@ public class MultiTileEntityLargeTurbineSteam extends MultiTileEntityLargeTurbin
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_ENERGY_SU)) mSteamCounter = aNBT.getLong(NBT_ENERGY_SU);
-		if (aNBT.hasKey(NBT_OUTPUT_SU)) mEnergyProducedNextTick = aNBT.getLong(NBT_OUTPUT_SU);
+		if (aNBT.contains(NBT_ENERGY_SU)) mSteamCounter = aNBT.getLong(NBT_ENERGY_SU);
+		if (aNBT.contains(NBT_OUTPUT_SU)) mEnergyProducedNextTick = aNBT.getLong(NBT_OUTPUT_SU);
 
 		for (int i = 0; i < mTanks.length; i++) mTanks[i].readFromNBT(aNBT, NBT_TANK+"."+i);
 		mTanks[0].setCapacity(mEnergyIN.mMax*4);
@@ -69,17 +69,17 @@ public class MultiTileEntityLargeTurbineSteam extends MultiTileEntityLargeTurbin
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int
-		tMinX = xCoord-(SIDE_X_NEG==mFacing?0:SIDE_X_POS==mFacing?3:1),
-		tMinY = yCoord-(SIDE_Y_NEG==mFacing?0:SIDE_Y_POS==mFacing?3:1),
-		tMinZ = zCoord-(SIDE_Z_NEG==mFacing?0:SIDE_Z_POS==mFacing?3:1),
-		tMaxX = xCoord+(SIDE_X_POS==mFacing?0:SIDE_X_NEG==mFacing?3:1),
-		tMaxY = yCoord+(SIDE_Y_POS==mFacing?0:SIDE_Y_NEG==mFacing?3:1),
-		tMaxZ = zCoord+(SIDE_Z_POS==mFacing?0:SIDE_Z_NEG==mFacing?3:1),
+		tMinX = getBlockPos().getX()-(SIDE_X_NEG==mFacing?0:SIDE_X_POS==mFacing?3:1),
+		tMinY = getBlockPos().getY()-(SIDE_Y_NEG==mFacing?0:SIDE_Y_POS==mFacing?3:1),
+		tMinZ = getBlockPos().getZ()-(SIDE_Z_NEG==mFacing?0:SIDE_Z_POS==mFacing?3:1),
+		tMaxX = getBlockPos().getX()+(SIDE_X_POS==mFacing?0:SIDE_X_NEG==mFacing?3:1),
+		tMaxY = getBlockPos().getY()+(SIDE_Y_POS==mFacing?0:SIDE_Y_NEG==mFacing?3:1),
+		tMaxZ = getBlockPos().getZ()+(SIDE_Z_POS==mFacing?0:SIDE_Z_NEG==mFacing?3:1),
 		tOutX = getOffsetXN(mFacing, 3),
 		tOutY = getOffsetYN(mFacing, 3),
 		tOutZ = getOffsetZN(mFacing, 3);
 		
-		if (level.blockExists(tMinX, tMinY, tMinZ) && level.blockExists(tMaxX, tMaxY, tMaxZ)) {
+		if (WD.exists(level, tMinX, tMinY, tMinZ) && WD.exists(level, tMaxX, tMaxY, tMaxZ)) {
 			mEmitter = null;
 			boolean tSuccess = T;
 			for (int tX = tMinX; tX <= tMaxX; tX++) for (int tY = tMinY; tY <= tMaxY; tY++) for (int tZ = tMinZ; tZ <= tMaxZ; tZ++) {
@@ -87,7 +87,7 @@ public class MultiTileEntityLargeTurbineSteam extends MultiTileEntityLargeTurbin
 				if (tX == tOutX && tY == tOutY && tZ == tOutZ) {
 					tBits = MultiTileEntityMultiBlockPart.ONLY_ENERGY_OUT;
 				} else {
-					if (SIDES_AXIS_X[mFacing] && tX == xCoord || SIDES_AXIS_Y[mFacing] && tY == yCoord || SIDES_AXIS_Z[mFacing] && tZ == zCoord) {
+					if (SIDES_AXIS_X[mFacing] && tX == getBlockPos().getX() || SIDES_AXIS_Y[mFacing] && tY == getBlockPos().getY() || SIDES_AXIS_Z[mFacing] && tZ == getBlockPos().getZ()) {
 						tBits = (tY == tMinY ? MultiTileEntityMultiBlockPart.ONLY_FLUID : MultiTileEntityMultiBlockPart.ONLY_FLUID_IN);
 					} else {
 						tBits = (tY == tMinY ? MultiTileEntityMultiBlockPart.ONLY_FLUID_OUT : MultiTileEntityMultiBlockPart.NOTHING);

@@ -60,18 +60,18 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_INPUT)) mSizeRec = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_INPUT)) mSizeRec = aNBT.getLong(NBT_INPUT);
 		mSizeMin = mSizeRec / 2; mSizeMax = mSizeRec * 2;
 		if (mSizeMin <= 8 && mSizeRec > 0) mSizeMin = 1;
-		if (aNBT.hasKey(NBT_INPUT_MIN)) mSizeMin = aNBT.getLong(NBT_INPUT_MIN);
-		if (aNBT.hasKey(NBT_INPUT_MAX)) mSizeMax = aNBT.getLong(NBT_INPUT_MAX);
-		if (aNBT.hasKey(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mType = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_INPUT_MIN)) mSizeMin = aNBT.getLong(NBT_INPUT_MIN);
+		if (aNBT.contains(NBT_INPUT_MAX)) mSizeMax = aNBT.getLong(NBT_INPUT_MAX);
+		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mType = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		
 		if (aNBT.getBoolean(NBT_ACTIVE_ENERGY)) {
 			mEnergy = mCapacity;
 		} else {
-			if (aNBT.hasKey(NBT_ENERGY)) mEnergy = aNBT.getLong(NBT_ENERGY);
+			if (aNBT.contains(NBT_ENERGY)) mEnergy = aNBT.getLong(NBT_ENERGY);
 		}
 		
 		if (mEnergy > mCapacity) mEnergy = mCapacity;

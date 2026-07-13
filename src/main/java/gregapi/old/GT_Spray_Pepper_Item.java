@@ -18,6 +18,7 @@
  */
 
 package gregapi.old;
+import gregapi.util.WD;
 
 import java.util.List;
 
@@ -54,16 +55,16 @@ public class GT_Spray_Pepper_Item extends GT_Tool_Item {
 	}
 	*/
 	
-	@Override
+	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
 		super.onItemUseFirst(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, hitX, hitY, hitZ);
 		if (aWorld.isRemote) {
 			return false;
 		}
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == null) return false;
 //      byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
-//      TileEntity aTileEntity = aWorld.getTileEntity(aX, aY, aZ);
+//      TileEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
 		return false;
 	}

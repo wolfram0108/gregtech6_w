@@ -105,7 +105,7 @@ public class ItemIntegratedCircuit extends ItemBase {
 		return mName;
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	@SuppressWarnings("unchecked")
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {

@@ -31,7 +31,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * @author Gregorius Techneticies
  */
 public class Railcraft_RemoveBoreSpam implements IClassTransformer  {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!transformedName.equals("mods.railcraft.common.modules.orehandlers.BoreOreHandler")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

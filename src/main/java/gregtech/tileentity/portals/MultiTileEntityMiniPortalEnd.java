@@ -66,24 +66,24 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListEndSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = xCoord-tTarget.xCoord*128, tZDifference = zCoord-tTarget.zCoord*128;
+					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX()*128, tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ()*128;
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
 			} else if (level.provider.dimensionId == DIM_END) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = tTarget.xCoord-xCoord*128, tZDifference = tTarget.zCoord-zCoord*128;
+					long tXDifference = tTarget.getBlockPos().getX()-getBlockPos().getX()*128, tZDifference = tTarget.getBlockPos().getZ()-getBlockPos().getZ()*128;
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
@@ -114,7 +114,7 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 			ItemStack aStack = aPlayer.inventory.getCurrentItem();
 			if (ST.valid(aStack) && aStack.getCount() > 0 && OM.is_("gemEnderEye", aStack)) {
 				setPortalActive();
-				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
+				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 				
 			}
@@ -122,7 +122,7 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.end_stone.getBlockHardness(level, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.end_stone.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.end_stone.getExplosionResistance(null);}
 	
 	public ITexture sEndPortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, DYE_Black, F, T, T), sEndPortalFrame = BlockTextureCopied.get(Blocks.end_portal_frame, SIDE_TOP, 0);

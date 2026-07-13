@@ -72,7 +72,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		int aX = aSource.getXInt() + aFacing.getFrontOffsetX(), aY = aSource.getYInt() + aFacing.getFrontOffsetY(), aZ = aSource.getZInt() + aFacing.getFrontOffsetZ();
 		
 		if (mFluid == null) {
-			Block tFluidBlock = aWorld.getBlock(aX, aY, aZ);
+			Block tFluidBlock = WD.block(aWorld, aX, aY, aZ);
 			if (tFluidBlock == BlocksGT.River) {
 				tBucket = FL.fill(FL.Water.make(1000), aStack, F, T, F, T);
 				return tBucket == null ? aStack : tBucket;
@@ -86,14 +86,14 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				return tBucket == null ? aStack : tBucket;
 			}
 			if (tFluidBlock == Blocks.lava || tFluidBlock == Blocks.flowing_lava) {
-				if (aWorld.getBlockMetadata(aX, aY, aZ) != 0) return super.onDispense(aItem, aSource, aStack);
+				if (WD.meta(aWorld, aX, aY, aZ) != 0) return super.onDispense(aItem, aSource, aStack);
 				tBucket = FL.fill(FL.Lava.make(1000), aStack, F, T, F, T);
-				return tBucket == null ? aStack : aWorld.setBlockToAir(aX, aY, aZ) ? tBucket : aStack;
+				return tBucket == null ? aStack : WD.set(aWorld, aX, aY, aZ, NB, 0, 3) ? tBucket : aStack;
 			}
 			if (tFluidBlock == Blocks.water || tFluidBlock == Blocks.flowing_water) {
-				if (aWorld.getBlockMetadata(aX, aY, aZ) != 0) return super.onDispense(aItem, aSource, aStack);
+				if (WD.meta(aWorld, aX, aY, aZ) != 0) return super.onDispense(aItem, aSource, aStack);
 				tBucket = FL.fill(FL.Water.make(1000), aStack, F, T, F, T);
-				return tBucket == null ? aStack : aWorld.setBlockToAir(aX, aY, aZ) ? tBucket : aStack;
+				return tBucket == null ? aStack : WD.set(aWorld, aX, aY, aZ, NB, 0, 3) ? tBucket : aStack;
 			}
 			if (tFluidBlock instanceof IFluidBlock) {
 				FluidStack tFluid = ((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, F);
@@ -128,7 +128,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		ItemStack tBucket = ST.make(Items.bucket, 1, 0);
 		
 		if (mFluid == null) {
-			Block tFluidBlock = aWorld.getBlock(aX, aY, aZ);
+			Block tFluidBlock = WD.block(aWorld, aX, aY, aZ);
 			if (tFluidBlock == BlocksGT.River) {
 				tBucket = FL.fill(FL.Water.make(1000), aStack, F, T, F, T);
 				return tBucket == null ? aStack : tBucket;
@@ -142,7 +142,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				return tBucket == null ? aStack : tBucket;
 			}
 			if (tFluidBlock == Blocks.lava || tFluidBlock == Blocks.flowing_lava || tFluidBlock == Blocks.water || tFluidBlock == Blocks.flowing_water) {
-				if (aWorld.getBlockMetadata(aX, aY, aZ) == 0) tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
+				if (WD.meta(aWorld, aX, aY, aZ) == 0) tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
 			} else
 			if (tFluidBlock instanceof IFluidBlock) {
 				FluidStack tFluid = ((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, F);
@@ -171,8 +171,8 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 			if (aEntity.getClass() == EntityCow.class || aEntity.getClass() == EntityMooshroom.class) {
 				if (MD.HO.mLoaded && IguanaConfig.milkedTimeout > 0 && !UT.Entities.hasInfiniteItems(aPlayer)) {
 					CompoundTag tNBT = aEntity.getEntityData();
-					if (tNBT.hasKey("Milked")) return T;
-					tNBT.setInteger("Milked", IguanaConfig.milkedTimeout * 60);
+					if (tNBT.contains("Milked")) return T;
+					tNBT.putInt("Milked", IguanaConfig.milkedTimeout * 60);
 				}
 				ST.set(aStack, FL.fill(FL.Milk.make(Integer.MAX_VALUE), aStack, F, T, T, T));
 			}
@@ -187,9 +187,9 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		if (mFluid == null) return F;
 		if (FL.water(mFluid) && mFluid.amount >= 1000) {
-			Block aBlock = aWorld.getBlock(aX, aY, aZ);
+			Block aBlock = WD.block(aWorld, aX, aY, aZ);
 			if (aBlock instanceof CauldronBlock) {
-				if (aWorld.getBlockMetadata(aX, aY, aZ) < 3) {
+				if (WD.meta(aWorld, aX, aY, aZ) < 3) {
 					((CauldronBlock)aBlock).func_150024_a(aWorld, aX, aY, aZ, 3);
 					ST.set(aStack, ST.container(aStack, T));
 					return T;

@@ -45,7 +45,7 @@ public class ContainerArcaneWorkbenchFixed extends ContainerArcaneWorkbench {
 		onCraftMatrixChanged(mTileEntity);
 	}
 	
-	@Override
+	// @Override
 	public void onCraftMatrixChanged(Container aInventory) {
 		if (mInventoryPlayer == null || mTileEntity == null) return;
 		mTileEntity.setInventorySlotContentsSoftly(9, CR.getany(mTileEntity.getWorldObj(), mTileEntity.stackList));

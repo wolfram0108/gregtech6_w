@@ -52,16 +52,16 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 		ItemStack aStack = aPlayer.getCurrentEquippedItem();
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID());
 		if (tRegistry != null && ST.equal(aStack, toStack(), F)) {
-			if (isServerSide()) for (int tY = yCoord-1; tY >= 0; tY--) {
-				BlockEntity tTileEntity = getTileEntity(xCoord, tY, zCoord);
+			if (isServerSide()) for (int tY = getBlockPos().getY()-1; tY >= 0; tY--) {
+				BlockEntity tTileEntity = getTileEntity(getBlockPos().getX(), tY, getBlockPos().getZ());
 				if (tTileEntity instanceof MultiTileEntityRope) {
 					if (((MultiTileEntityRope)tTileEntity).getMultiTileEntityRegistryID() != getMultiTileEntityRegistryID()) return T;
 					if (((MultiTileEntityRope)tTileEntity).getMultiTileEntityID() != getMultiTileEntityID()) return T;
 					if (((MultiTileEntityRope)tTileEntity).mFacing != mFacing) return T;
 					continue;
 				}
-				if (WD.air(level, xCoord, tY, zCoord)) {
-					tRegistry.mBlock.placeBlock(level, xCoord, tY, zCoord, SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(ItemNBT.has(aStack)?(CompoundTag)ItemNBT.get(aStack).copy():null, NBT_FACING, mFacing), T, F);
+				if (WD.air(level, getBlockPos().getX(), tY, getBlockPos().getZ())) {
+					tRegistry.mBlock.placeBlock(level, getBlockPos().getX(), tY, getBlockPos().getZ(), SIDE_ANY, getMultiTileEntityID(), UT.NBT.make(ItemNBT.has(aStack)?(CompoundTag)ItemNBT.get(aStack).copy():null, NBT_FACING, mFacing), T, F);
 					if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 					UT.Sounds.send(SFX.MC_DIG_CLOTH, this, F);
 				}
@@ -76,8 +76,8 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	public void onBlockHarvested(int aMetaData, Player aPlayer) {
 		if (isServerSide() && aPlayer != null) {
 			BlockEntity tTileEntity = getTileEntityAtSideAndDistance(SIDE_UP, 1);
-			if (!(tTileEntity instanceof MultiTileEntityRope)) for (int tY = yCoord-1; tY >= 0; tY--) {
-				tTileEntity = getTileEntity(xCoord, tY, zCoord);
+			if (!(tTileEntity instanceof MultiTileEntityRope)) for (int tY = getBlockPos().getY()-1; tY >= 0; tY--) {
+				tTileEntity = getTileEntity(getBlockPos().getX(), tY, getBlockPos().getZ());
 				if (tTileEntity instanceof MultiTileEntityRope && ((MultiTileEntityRope)tTileEntity).mFacing == mFacing && ((MultiTileEntityRope)tTileEntity).getMultiTileEntityRegistryID() == getMultiTileEntityRegistryID() && ((MultiTileEntityRope)tTileEntity).getMultiTileEntityID() == getMultiTileEntityID()) {
 					((MultiTileEntityRope)tTileEntity).popOff(aPlayer);
 					continue;
@@ -89,7 +89,7 @@ public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements
 	
 	@Override
 	public void onTick2(long aTimer, boolean aIsServerSide) {
-		if (aIsServerSide && (mBlockUpdated || aTimer == 1) && !WD.opq(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing), F, T) && !WD.opq(level, xCoord, yCoord+1, zCoord, F, T) && !(getTileEntityAtSideAndDistance(SIDE_UP, 1) instanceof MultiTileEntityRope)) popOff();
+		if (aIsServerSide && (mBlockUpdated || aTimer == 1) && !WD.opq(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing), F, T) && !WD.opq(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), F, T) && !(getTileEntityAtSideAndDistance(SIDE_UP, 1) instanceof MultiTileEntityRope)) popOff();
 	}
 	
 	@Override public int getRenderPasses2(Block aBlock, boolean[] aShouldSideBeRendered) {return mFacing == SIDE_Y_NEG ? 2 : 1;}

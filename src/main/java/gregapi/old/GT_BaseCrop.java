@@ -79,63 +79,63 @@ public class GT_BaseCrop extends CropCard {
 		}
 	}
 	
-	@Override
+	// @Override
 	public String displayName() {
 		return LH.get("gt.crop."+mName);
 	}
 	
-	@Override
+	// @Override
 	public byte getSizeAfterHarvest(ICropTile crop) {
 		return (byte)mAfterHarvestSize;
 	}
 	
-	@Override
+	// @Override
 	public String[] attributes() {
 		return mAttributes;
 	}
 	
-	@Override
+	// @Override
 	public String discoveredBy() {
 		return mDiscoveredBy;
 	}
 	
-	@Override
+	// @Override
 	public final boolean canGrow(ICropTile aCrop) {
 		return aCrop.getSize()  < maxSize();
 	}
 	
-	@Override
+	// @Override
 	public final boolean canBeHarvested(ICropTile aCrop) {
 		return aCrop.getSize() >= mHarvestSize;
 	}
 	
-	@Override
+	// @Override
 	public boolean canCross(ICropTile aCrop) {
 		return aCrop.getSize() + 2 > maxSize();
 	}
 	
-	@Override
+	// @Override
 	public int stat(int n) {
 		if (n < 0 || n >= mStats.length) return 0;
 		return mStats[n];
 	}
 	
-	@Override
+	// @Override
 	public String name() {
 		return mName;
 	}
 	
-	@Override
+	// @Override
 	public int tier() {
 		return mTier;
 	}
 	
-	@Override
+	// @Override
 	public int maxSize() {
 		return mMaxSize;
 	}
 	
-	@Override
+	// @Override
 	public ItemStack getGain(ICropTile aCrop) {
 		int tDrop = 0;
 		if (mSpecialDrops != null && (tDrop = RNGSUS.nextInt(mSpecialDrops.length+4)) < mSpecialDrops.length && mSpecialDrops[tDrop] != null) {
@@ -144,18 +144,18 @@ public class GT_BaseCrop extends CropCard {
 		return ST.copy(mDrop);
 	}
 	
-	@Override
+	// @Override
 	public boolean rightclick(ICropTile aCrop, Player aPlayer) {
 		if (!canBeHarvested(aCrop)) return false;
 		return aCrop.harvest(aPlayer==null?false:aPlayer instanceof ServerPlayer);
 	}
 	
-	@Override
+	// @Override
 	public int getOptimalHavestSize(ICropTile crop) {
 		return maxSize();
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public void registerSprites(IIconRegister iconRegister) {
 		textures = new IIcon[maxSize()];

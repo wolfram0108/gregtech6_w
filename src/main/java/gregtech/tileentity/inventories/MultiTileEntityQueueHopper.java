@@ -73,12 +73,12 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (mMode != 64) aNBT.setByte(NBT_MODE, mMode);
+		if (mMode != 64) aNBT.putByte(NBT_MODE, mMode);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		if (mMode != 64) aNBT.setByte(NBT_MODE, mMode);
+		if (mMode != 64) aNBT.putByte(NBT_MODE, mMode);
 		return super.writeItemNBT2(aNBT);
 	}
 	

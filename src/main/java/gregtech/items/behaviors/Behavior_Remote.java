@@ -117,7 +117,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		if (aNBT == null) return rList;
 		CompoundTag tNBT = aNBT.getCompoundTag("gt.remote.dim."+aDimension);
 		if (tNBT.isEmpty()) return rList;
-		int i = -1; while (tNBT.hasKey("c"+(++i))) {
+		int i = -1; while (tNBT.contains("c"+(++i))) {
 			rList.add(new BlockPos(tNBT.getInteger("x"+i), tNBT.getInteger("y"+i), tNBT.getInteger("z"+i)));
 		}
 		return rList;
@@ -135,7 +135,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 				UT.NBT.setNumber (tNBT, "y"+i, tCoords.getY());
 				UT.NBT.setNumber (tNBT, "z"+i, tCoords.getZ());
 			}
-			aNBT.setTag("gt.remote.dim."+aDimension, tNBT);
+			aNBT.put("gt.remote.dim."+aDimension, tNBT);
 		}
 	}
 	

@@ -88,7 +88,7 @@ public class CoverLogisticsItemExport extends AbstractCoverAttachmentLogistics {
 	@Override
 	public boolean onCoverClickedRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer instanceof Player && aData.mTileEntity.isServerSide()) {
-			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].hasKey("gt.filter.item")) {
+			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].contains("gt.filter.item")) {
 				ItemStack tStack = ST.make(((Player)aPlayer).getCurrentEquippedItem(), null, null);
 				if (ST.valid(tStack)) {
 					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", tStack);

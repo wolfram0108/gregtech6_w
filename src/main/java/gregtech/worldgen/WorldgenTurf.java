@@ -53,10 +53,10 @@ public class WorldgenTurf extends WorldgenObject {
 		
 		int tX = aMinX - 16, tZ = aMinZ -16, tUpperBound = WD.waterLevel(aWorld)+1, tLowerBound = WD.waterLevel(aWorld)-12;
 		for (int i = 0; i < 48; i++) for (int j = 0; j < 48; j++) if (WorldgenPit.SHAPE[i][j]) {
-			Block tBlock = NB, tLastBlock = aWorld.getBlock(tX+i, 64, tZ+j);
+			Block tBlock = NB, tLastBlock = WD.block(aWorld, tX+i, 64, tZ+j);
 			for (int tY = tUpperBound, tGenerated = 0; tY > tLowerBound && tGenerated < 2; tY--, tLastBlock = tBlock) {
-				tBlock = aWorld.getBlock(tX+i, tY, tZ+j);
-				if (tBlock == BlocksGT.Diggables && 2 == aWorld.getBlockMetadata(tX+i, tY, tZ+j)) {tGenerated++; continue;}
+				tBlock = WD.block(aWorld, tX+i, tY, tZ+j);
+				if (tBlock == BlocksGT.Diggables && 2 == WD.meta(aWorld, tX+i, tY, tZ+j)) {tGenerated++; continue;}
 				if (!tBlock.isOpaqueCube()) {if (tGenerated > 0) break; continue;}
 				if (tBlock == Blocks.dirt) {
 					if (tGenerated <= 0 && (tLastBlock.getMaterial() == Material.wood || tLastBlock.getMaterial() == Material.gourd)) continue;
@@ -67,7 +67,7 @@ public class WorldgenTurf extends WorldgenObject {
 						continue;
 					}
 				}
-				aWorld.setBlock(tX+i, tY, tZ+j, BlocksGT.Diggables, 2, 3);
+				WD.set(aWorld, tX+i, tY, tZ+j, BlocksGT.Diggables, 2, 3);
 				tGenerated++;
 			}
 		}

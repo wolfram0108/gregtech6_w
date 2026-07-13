@@ -91,33 +91,33 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		aList.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_RAILSPEED) + LH.Chat.GREEN + Math.min(MD.RC.mLoaded ? 3 : 10, mSpeed/0.4F) + "x");
 	}
 	
-	@Override public final String getUnlocalizedName() {return mNameInternal;}
+	public final String getUnlocalizedName() {return mNameInternal;}
 	@Override public String name(byte aMeta) {return mNameInternal;}
-	@Override public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.rail.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return mExplosionResistance;}
-	@Override public float getExplosionResistance(Entity aEntity) {return mExplosionResistance;}
-	@Override public String getHarvestTool(int aMeta) {return TOOL_crowbar;}
-	@Override public int getHarvestLevel(int aMeta) {return mHarvestLevel;}
-	@Override public boolean canSilkHarvest() {return canSilkHarvest((byte)0);}
-	@Override public boolean canSilkHarvest(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {return canSilkHarvest(UT.Code.bind4(aMeta));}
-	@Override public boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
-	@Override public boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
-	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
-	@Override public boolean renderAsNormalBlock() {return F;}
-	@Override public boolean isOpaqueCube() {return F;}
-	@Override public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
-	@Override public int damageDropped(int aMeta) {return 0;}
-	@Override public int quantityDropped(Random par1Random) {return 1;}
-	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return 0;}
-	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
-	@Override public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.getItemFromBlock(this);}
-	@Override public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.getItemFromBlock(this);}
-	@Override public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
-	@Override public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {return canCreatureSpawn(WD.meta(aWorld, aX, aY, aZ));}
-	@SuppressWarnings("unchecked") @Override public void getSubBlocks(Item aItem, CreativeModeTab par2CreativeTabs, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return ((mPowerRail||mDetectorRail?(aMeta&8)!=0:aMeta>=6)?mIconSecondary:mIconPrimary).getIcon(0);}
-	@Override public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
+	public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
+	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.rail.getBlockHardness(aWorld, aX, aY, aZ);}
+	public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return mExplosionResistance;}
+	public float getExplosionResistance(Entity aEntity) {return mExplosionResistance;}
+	public String getHarvestTool(int aMeta) {return TOOL_crowbar;}
+	public int getHarvestLevel(int aMeta) {return mHarvestLevel;}
+	public boolean canSilkHarvest() {return canSilkHarvest((byte)0);}
+	public boolean canSilkHarvest(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {return canSilkHarvest(UT.Code.bind4(aMeta));}
+	public boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
+	public boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+	public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
+	public boolean renderAsNormalBlock() {return F;}
+	public boolean isOpaqueCube() {return F;}
+	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
+	public int damageDropped(int aMeta) {return 0;}
+	public int quantityDropped(Random par1Random) {return 1;}
+	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return 0;}
+	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
+	public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.getItemFromBlock(this);}
+	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.getItemFromBlock(this);}
+	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {return canCreatureSpawn(WD.meta(aWorld, aX, aY, aZ));}
+	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab par2CreativeTabs, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}
+	public IIcon getIcon(int aSide, int aMeta) {return ((mPowerRail||mDetectorRail?(aMeta&8)!=0:aMeta>=6)?mIconSecondary:mIconPrimary).getIcon(0);}
+	public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return 1;}
 	
@@ -140,14 +140,14 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		if (!aWorld.isRemote) {
 			if (aTool.equals(TOOL_softhammer) && mPowerRail) {
 				aWorld.isRemote = T;
-				boolean tResult = aWorld.setBlock(aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0);
+				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0);
 				aWorld.isRemote = F;
 				return tResult?10000:0;
 			}
 			if (aTool.equals(TOOL_crowbar)) {
 				byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 				aWorld.isRemote = T;
-				boolean tResult = aWorld.setBlock(aX, aY, aZ, this, isPowered() ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
+				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, isPowered() ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
 				aWorld.isRemote = F;
 				return tResult?2000:0;
 			}
@@ -171,7 +171,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	}
 	
 	protected boolean func_150057_a(Level aWorld, int aX, int aY, int aZ, boolean p_150057_5_, int p_150057_6_, int p_150057_7_) {
-		if (aWorld.getBlock(aX, aY, aZ) == this) {
+		if (WD.block(aWorld, aX, aY, aZ) == this) {
 			int j1 = WD.meta(aWorld, aX, aY, aZ);
 			int k1 = j1 & 7;
 			
@@ -186,7 +186,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		return F;
 	}
 	
-	@Override
+	// @Override
 	protected void func_150048_a(Level aWorld, int aX, int aY, int aZ, int aMeta, int aData, Block aBlock) {
 		if (mPowerRail) {
 			boolean flag = aWorld.isBlockIndirectlyGettingPowered(aX, aY, aZ);
@@ -208,10 +208,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		}
 	}
 	
-	@Override public int tickRate(Level aWorld) {return 20;}
-	@Override public boolean canProvidePower() {return mDetectorRail;}
+	public int tickRate(Level aWorld) {return 20;}
+	public boolean canProvidePower() {return mDetectorRail;}
 	
-	@Override
+	// @Override
 	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		if (mDetectorRail && !aWorld.isRemote) {
 			int l = WD.meta(aWorld, aX, aY, aZ);
@@ -219,7 +219,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		}
 	}
 	
-	@Override
+	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (mDetectorRail && !aWorld.isRemote) {
 			int l = WD.meta(aWorld, aX, aY, aZ);
@@ -227,8 +227,8 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		}
 	}
 	
-	@Override public int isProvidingWeakPower  (BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mDetectorRail ? (WD.meta(aWorld, aX, aY, aZ) & 8) != 0 ? 15 : 0 : 0;}
-	@Override public int isProvidingStrongPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mDetectorRail ? (WD.meta(aWorld, aX, aY, aZ) & 8) == 0 ? 0 : (aSide == 1 ? 15 : 0) : 0;}
+	public int isProvidingWeakPower  (BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mDetectorRail ? (WD.meta(aWorld, aX, aY, aZ) & 8) != 0 ? 15 : 0 : 0;}
+	public int isProvidingStrongPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mDetectorRail ? (WD.meta(aWorld, aX, aY, aZ) & 8) == 0 ? 0 : (aSide == 1 ? 15 : 0) : 0;}
 	
 	private void func_150054_a(Level aWorld, int aX, int aY, int aZ, int aMetaData) {
 		boolean flag = (aMetaData & 8) != 0;
@@ -253,15 +253,15 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		aWorld.func_147453_f(aX, aY, aZ, this);
 	}
 	
-	@Override
+	// @Override
 	public void onBlockAdded(Level p_149726_1_, int p_149726_2_, int p_149726_3_, int p_149726_4_) {
 		super.onBlockAdded(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_);
-		if (mDetectorRail) func_150054_a(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_, p_149726_1_.getBlockMetadata(p_149726_2_, p_149726_3_, p_149726_4_));
+		if (mDetectorRail) func_150054_a(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_, WD.meta(p_149726_1_, p_149726_2_, p_149726_3_, p_149726_4_));
 	}
 	
-	@Override public boolean hasComparatorInputOverride() {return mDetectorRail;}
+	public boolean hasComparatorInputOverride() {return mDetectorRail;}
 	
-	@Override
+	// @Override
 	public int getComparatorInputOverride(Level aWorld, int aX, int aY, int aZ, int aSide) {
 		if (mDetectorRail && (WD.meta(aWorld, aX, aY, aZ) & 8) > 0) {
 			@SuppressWarnings("unchecked")
@@ -274,7 +274,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		return 0;
 	}
 	
-	@Override
+	// @Override
 	public float getRailMaxSpeed(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
 		switch(WD.meta(aWorld, aX, aY, aZ) & 7) {
 		case  0:
@@ -288,7 +288,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		}
 	}
 	
-	@Override
+	// @Override
 	public void onMinecartPass(Level aWorld, EntityMinecart aCart, int aX, int aY, int aZ) {
 		if (mPowerRail) {
 			byte tRailMeta = WD.meta(aWorld, aX, aY, aZ);
@@ -300,11 +300,11 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 				} else {
 					tRailMeta &= 7;
 					if (tRailMeta == 1) {
-							 if (aWorld.getBlock(aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) aCart.motionX = +0.02;
-						else if (aWorld.getBlock(aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) aCart.motionX = -0.02;
+							 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) aCart.motionX = +0.02;
+						else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) aCart.motionX = -0.02;
 					} else if (tRailMeta == 0) {
-							 if (aWorld.getBlock(aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) aCart.motionZ = +0.02;
-						else if (aWorld.getBlock(aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) aCart.motionZ = -0.02;
+							 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) aCart.motionZ = +0.02;
+						else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) aCart.motionZ = -0.02;
 					}
 				}
 			} else {
@@ -327,7 +327,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public boolean onItemUse(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aStack.getCount() == 0) return F;
 		
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tBlock == Blocks.snow_layer && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
 		} else if (tBlock != Blocks.vine && tBlock != Blocks.tallgrass && tBlock != Blocks.deadbush && !tBlock.isReplaceable(aWorld, aX, aY, aZ)) {

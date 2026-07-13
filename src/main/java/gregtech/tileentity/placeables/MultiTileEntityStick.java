@@ -77,7 +77,7 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
-		ST.give(aPlayer, getDefaultStick(1), T, level, xCoord+0.5, yCoord+0.5, zCoord+0.5);
+		ST.give(aPlayer, getDefaultStick(1), T, level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5);
 		playCollect();
 		return setToAir();
 	}
@@ -85,7 +85,7 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 	@Override
 	public void onNeighborBlockChange(Level aWorld, Block aBlock) {
 		if (isServerSide()) {
-			if (!level.getBlock(xCoord, yCoord-1, zCoord).isSideSolid(level, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_TOP])) {
+			if (!WD.block(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()).isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
 				ST.drop(level, getCoords(), getDefaultStick(1));
 				setToAir();
 				return;
@@ -109,7 +109,7 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 		if (WD.dimTROPIC(level)) return OP.stick.mat(rng(2) > 0 ? MT.WOODS.Coconut : MT.WOODS.Mahogany, aAmount);
 		if (WD.dimALF   (level)) return OP.stick.mat(rng(8) > 0 ? MT.Livingwood    : MT.Dreamwood     , aAmount);
 		if (WD.dimTF    (level)) return rng(16) > 0 ? IL.Stick.get(aAmount) : IL.TF_LiveRoot.get(aAmount);
-		String tBiome = level.getBiomeGenForCoords(xCoord, zCoord).biomeName.toLowerCase();
+		String tBiome = level.getBiomeGenForCoords(getBlockPos().getX(), getBlockPos().getZ()).biomeName.toLowerCase();
 		// The order of checks matters because things like Ice Deserts are a thing.
 		if (tBiome.contains("rainforest" )) return getStick(NI, aAmount);
 		if (tBiome.contains("firefly"    )) return getStick(NI, aAmount);

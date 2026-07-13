@@ -49,7 +49,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	
 	@Override
 	protected boolean func_150057_a(Level aWorld, int aX, int aY, int aZ, boolean p_150057_5_, int p_150057_6_, int p_150057_7_) {
-		if (aWorld.getBlock(aX, aY, aZ) == this) {
+		if (WD.block(aWorld, aX, aY, aZ) == this) {
 			int tRailMeta = WD.meta(7, aWorld, aX, aY, aZ);
 			
 			if (p_150057_7_ == 1 && (tRailMeta == 0 || tRailMeta == 4 || tRailMeta == 5)) return F;
@@ -63,7 +63,7 @@ public class BlockRailRoad extends BlockBaseRail {
 		if (!aWorld.isRemote) {
 			if (!Level.doesBlockHaveSolidTopSurface(aWorld, aX, aY-1, aZ)) {
 				dropBlockAsItem(aWorld, aX, aY, aZ, 0, 0);
-				aWorld.setBlockToAir(aX, aY, aZ);
+				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 			}
 		}
 	}
@@ -91,7 +91,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (!aWorld.isRemote) if (aTool.equals(TOOL_crowbar) || aTool.equals(TOOL_chisel) || aTool.equals(TOOL_shears) || aTool.equals(TOOL_scissors) || aTool.equals(TOOL_knife)) {
-			return aWorld.setBlock(aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0)?1000:0;
+			return WD.set(aWorld, aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0)?1000:0;
 		}
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 	}
@@ -105,11 +105,11 @@ public class BlockRailRoad extends BlockBaseRail {
 		} else {
 			byte tRailMeta = WD.meta(7, aWorld, aX, aY, aZ);
 			if (tRailMeta == 1) {
-					 if (aWorld.getBlock(aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) aCart.motionX = +0.02;
-				else if (aWorld.getBlock(aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) aCart.motionX = -0.02;
+					 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) aCart.motionX = +0.02;
+				else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) aCart.motionX = -0.02;
 			} else if (tRailMeta == 0) {
-					 if (aWorld.getBlock(aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) aCart.motionZ = +0.02;
-				else if (aWorld.getBlock(aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) aCart.motionZ = -0.02;
+					 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) aCart.motionZ = +0.02;
+				else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) aCart.motionZ = -0.02;
 			}
 		}
 	}
@@ -118,7 +118,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	public boolean onItemUse(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aStack.getCount() == 0) return F;
 		
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tBlock == Blocks.snow_layer && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
 		} else if (tBlock != Blocks.vine && tBlock != Blocks.tallgrass && tBlock != Blocks.deadbush && !tBlock.isReplaceable(aWorld, aX, aY, aZ)) {

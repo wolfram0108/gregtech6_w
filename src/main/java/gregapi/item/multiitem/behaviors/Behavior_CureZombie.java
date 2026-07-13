@@ -53,7 +53,7 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 					int tCureTime = RNGSUS.nextInt(mAverageCureTime * 2) + 500;
 					CompoundTag tNBT = UT.NBT.make();
 					aEntity.writeToNBT(tNBT);
-					tNBT.setInteger("ConversionTime", tCureTime);
+					tNBT.putInt("ConversionTime", tCureTime);
 					aEntity.readFromNBT(tNBT);
 					aEntity.getDataWatcher().updateObject(14, Byte.valueOf((byte)1));
 					((EntityZombie)aEntity).removePotionEffect(MobEffect.weakness.id);

@@ -59,13 +59,13 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 	}
 	
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = xCoord, tY = yCoord, tZ = zCoord;
-		if (level.blockExists(tX-2, tY, tZ-2) && level.blockExists(tX+2, tY, tZ-2) && level.blockExists(tX-2, tY, tZ+2) && level.blockExists(tX+2, tY, tZ+2)) {
+		int tX = getBlockPos().getX(), tY = getBlockPos().getY(), tZ = getBlockPos().getZ();
+		if (WD.exists(level, tX-2, tY, tZ-2) && WD.exists(level, tX+2, tY, tZ-2) && WD.exists(level, tX-2, tY, tZ+2) && WD.exists(level, tX+2, tY, tZ+2)) {
 			boolean tSuccess = T;
 			
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (Math.abs(i * j) < 4) {
@@ -112,7 +112,7 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = xCoord, tY = yCoord, tZ = zCoord;
+		int tX = getBlockPos().getX(), tY = getBlockPos().getY(), tZ = getBlockPos().getZ();
 		return aX >= tX - 2 && aY >= tY && aZ >= tZ - 2 && aX <= tX + 2 && aY <= tY + 8 && aZ <= tZ + 2;
 	}
 	
@@ -128,12 +128,12 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	
 	@Override
 	public boolean inhibitMobSpawn(MobSpawnEvent.CheckSpawn aEvent, Level aWorld, int aX, int aY, int aZ) {
-		if (mCurrentRange <= 0 || aWorld != level || Math.abs(aX - xCoord) > mCurrentRange || Math.abs(aZ - zCoord) > mCurrentRange) return F;
+		if (mCurrentRange <= 0 || aWorld != level || Math.abs(aX - getBlockPos().getX()) > mCurrentRange || Math.abs(aZ - getBlockPos().getZ()) > mCurrentRange) return F;
 		// Allow wild Mobs to spawn on Mossy Cobblestone.
 		for (int i = -5; i <= 5; i++) {
-			Block tBlock = aWorld.getBlock(aX, aY+i, aZ);
+			Block tBlock = WD.block(aWorld, aX, aY+i, aZ);
 			if (tBlock == Blocks.mossy_cobblestone) return F;
-			if (tBlock instanceof BlockStones && aWorld.getBlockMetadata(aX, aY+i, aZ) == BlockStones.MCOBL) return F;
+			if (tBlock instanceof BlockStones && WD.meta(aWorld, aX, aY+i, aZ) == BlockStones.MCOBL) return F;
 		}
 		return T;
 	}

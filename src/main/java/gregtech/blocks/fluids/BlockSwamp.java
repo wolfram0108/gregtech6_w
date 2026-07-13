@@ -54,7 +54,7 @@ public class BlockSwamp extends BlockWaterlike {
 		if (PLACEMENT_ALLOWED) {
 			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
 		} else {
-			aWorld.setBlockToAir(aX, aY, aZ);
+			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		}
 	}
 	
@@ -66,7 +66,7 @@ public class BlockSwamp extends BlockWaterlike {
 			aWorld.func_147451_t(aX, aY, aZ);
 			WD.update(aWorld, aX, aY, aZ);
 			if (aY > 0) {
-				if (aWorld.getBlock(aX, aY-1, aZ) == this) {
+				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleBlockUpdate(aX, aY-1, aZ, this, tickRate);
 				} else {
 					aWorld.func_147451_t(aX, aY-1, aZ);
@@ -109,32 +109,32 @@ public class BlockSwamp extends BlockWaterlike {
 				} else if (IL.TF_Mazestone.equal(tBlock)) {
 					// prevent flooding the Twilight Mazes.
 					// grow a Mushroom Stem
-					if (WD.air     (aWorld, aX  , aY+1, aZ  )) aWorld.setBlock(aX  , aY+1, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+1, aZ  )) aWorld.setBlock(aX  , aY+1, aZ  , Blocks.brown_mushroom_block, 10, 3);
-					if (WD.air     (aWorld, aX  , aY+2, aZ  )) aWorld.setBlock(aX  , aY+2, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+2, aZ  )) aWorld.setBlock(aX  , aY+2, aZ  , Blocks.brown_mushroom_block, 10, 3);
-					if (WD.air     (aWorld, aX  , aY+3, aZ  )) aWorld.setBlock(aX  , aY+3, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+3, aZ  )) aWorld.setBlock(aX  , aY+3, aZ  , Blocks.brown_mushroom_block, 10, 3);
-					if (WD.air     (aWorld, aX  , aY+4, aZ  )) aWorld.setBlock(aX  , aY+4, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+4, aZ  )) aWorld.setBlock(aX  , aY+4, aZ  , Blocks.brown_mushroom_block, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+1, aZ  )) WD.set(aWorld, aX  , aY+1, aZ  , Blocks.brown_mushroom_block, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+1, aZ  )) WD.set(aWorld, aX  , aY+1, aZ  , Blocks.brown_mushroom_block, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+2, aZ  )) WD.set(aWorld, aX  , aY+2, aZ  , Blocks.brown_mushroom_block, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+2, aZ  )) WD.set(aWorld, aX  , aY+2, aZ  , Blocks.brown_mushroom_block, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+3, aZ  )) WD.set(aWorld, aX  , aY+3, aZ  , Blocks.brown_mushroom_block, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+3, aZ  )) WD.set(aWorld, aX  , aY+3, aZ  , Blocks.brown_mushroom_block, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+4, aZ  )) WD.set(aWorld, aX  , aY+4, aZ  , Blocks.brown_mushroom_block, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+4, aZ  )) WD.set(aWorld, aX  , aY+4, aZ  , Blocks.brown_mushroom_block, 10, 3);
 					for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) {
 						// Plug the holes.
 						if (Math.abs(i * j) < 4) {
-						if (WD.air     (aWorld, aX+i, aY  , aZ+j)) aWorld.setBlock(aX+i, aY  , aZ+j, Blocks.brown_mushroom_block, 5, 3); else
-						if (WD.anywater(aWorld, aX+i, aY  , aZ+j)) aWorld.setBlock(aX+i, aY  , aZ+j, Blocks.brown_mushroom_block, 5, 3);
-						if (WD.air     (aWorld, aX+i, aY+5, aZ+j)) aWorld.setBlock(aX+i, aY+5, aZ+j, Blocks.brown_mushroom_block, 5, 3); else
-						if (WD.anywater(aWorld, aX+i, aY+5, aZ+j)) aWorld.setBlock(aX+i, aY+5, aZ+j, Blocks.brown_mushroom_block, 5, 3);
+						if (WD.air     (aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, Blocks.brown_mushroom_block, 5, 3); else
+						if (WD.anywater(aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, Blocks.brown_mushroom_block, 5, 3);
+						if (WD.air     (aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, Blocks.brown_mushroom_block, 5, 3); else
+						if (WD.anywater(aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, Blocks.brown_mushroom_block, 5, 3);
 						} else {
-						if (WD.anywater(aWorld, aX+i, aY  , aZ+j)) aWorld.setBlock(aX+i, aY  , aZ+j, NB, 0, 3);
-						if (WD.anywater(aWorld, aX+i, aY+5, aZ+j)) aWorld.setBlock(aX+i, aY+5, aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, NB, 0, 3);
 						}
 						// Soak it all up.
-						if (WD.anywater(aWorld, aX+i, aY+4, aZ+j)) aWorld.setBlock(aX+i, aY+4, aZ+j, NB, 0, 3);
-						if (WD.anywater(aWorld, aX+i, aY+3, aZ+j)) aWorld.setBlock(aX+i, aY+3, aZ+j, NB, 0, 3);
-						if (WD.anywater(aWorld, aX+i, aY+2, aZ+j)) aWorld.setBlock(aX+i, aY+2, aZ+j, NB, 0, 3);
-						if (WD.anywater(aWorld, aX+i, aY+1, aZ+j)) aWorld.setBlock(aX+i, aY+1, aZ+j, NB, 0, 3);
-						if (WD.anywater(aWorld, aX+i, aY-1, aZ+j)) aWorld.setBlock(aX+i, aY-1, aZ+j, NB, 0, 3);
-						if (WD.anywater(aWorld, aX+i, aY-2, aZ+j)) aWorld.setBlock(aX+i, aY-1, aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY+4, aZ+j)) WD.set(aWorld, aX+i, aY+4, aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY+3, aZ+j)) WD.set(aWorld, aX+i, aY+3, aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY+2, aZ+j)) WD.set(aWorld, aX+i, aY+2, aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY+1, aZ+j)) WD.set(aWorld, aX+i, aY+1, aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY-1, aZ+j)) WD.set(aWorld, aX+i, aY-1, aZ+j, NB, 0, 3);
+						if (WD.anywater(aWorld, aX+i, aY-2, aZ+j)) WD.set(aWorld, aX+i, aY-1, aZ+j, NB, 0, 3);
 					}
 					PLACEMENT_ALLOWED = F;
 					return;
@@ -143,28 +143,28 @@ public class BlockSwamp extends BlockWaterlike {
 		}
 		
 		if (tDirt) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
-			tBlock = aWorld.getBlock(aX+i, aY+j, aZ+k);
-			if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.mycelium || IL.EtFu_Dirt.equal(tBlock)) {aWorld.setBlock(aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
+			tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k);
+			if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.mycelium || IL.EtFu_Dirt.equal(tBlock)) {WD.set(aWorld, aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
 			if (tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand) {BlocksGT.oreMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 			if (tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand) {BlocksGT.oreSmallMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 		}
 		
-		if (aWorld.getBlockMetadata(aX, aY, aZ) == 0) {
-			if (tSwampCounter <= 0 && !(aWorld.getBlock(aX, aY+1, aZ) instanceof BlockSwamp)) {
-				aWorld.setBlockToAir(aX, aY, aZ);
+		if (WD.meta(aWorld, aX, aY, aZ) == 0) {
+			if (tSwampCounter <= 0 && !(WD.block(aWorld, aX, aY+1, aZ) instanceof BlockSwamp)) {
+				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				PLACEMENT_ALLOWED = F;
 				return;
 			}
 		} else {
 			if (tSwampCounter >= 2) {
-				aWorld.setBlock(aX, aY, aZ, this, 0, WATER_UPDATE_FLAGS);
+				WD.set(aWorld, aX, aY, aZ, this, 0, WATER_UPDATE_FLAGS);
 			}
 		}
 		
 		if (BIOMES_INFINITE_WATER.contains(tBiome.biomeName)) {
 			tSwampCounter = 0;
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) if (i != 0 && j != 0) {
-				if (aWorld.getBlock(aX+i, aY, aZ+j) instanceof BlockSwamp && aWorld.getBlockMetadata(aX+i, aY, aZ+j) == 0) {
+				if (WD.block(aWorld, aX+i, aY, aZ+j) instanceof BlockSwamp && WD.meta(aWorld, aX+i, aY, aZ+j) == 0) {
 					tSwampCounter++;
 				}
 			}
@@ -176,9 +176,9 @@ public class BlockSwamp extends BlockWaterlike {
 		}
 		
 		for (BlockPos tCoords : tList) {
-			if (aWorld.setBlock(tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
-				if (aWorld.blockExists(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
-					tBlock = aWorld.getBlock(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
+			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
+				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
+					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
 					if (tBlock instanceof BlockSwamp) aWorld.scheduleBlockUpdate(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j, this, tickRate);
 				}
 			}
@@ -195,17 +195,17 @@ public class BlockSwamp extends BlockWaterlike {
 		super.onHeadInside(aEntity, aWorld, aX, aY, aZ);
 	}
 	
-	@Override public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (aWorld.getBlock(aX, aY+1, aZ) != this || aWorld.getBlockMetadata(aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
+	@Override public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (WD.block(aWorld, aX, aY+1, aZ) != this || WD.meta(aWorld, aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
 	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}
 	@Override public int getRenderColor(int aMeta) {return 0x0000ff00;}
 	
 	@Override
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
-		if (aWorld.getBlock(aX, aY+1, aZ) ==this) return 0x0000ff00;
-		if (water(aWorld.getBlock(aX+1, aY, aZ))) return 0x0060ff60;
-		if (water(aWorld.getBlock(aX-1, aY, aZ))) return 0x0060ff60;
-		if (water(aWorld.getBlock(aX, aY, aZ+1))) return 0x0060ff60;
-		if (water(aWorld.getBlock(aX, aY, aZ-1))) return 0x0060ff60;
+		if (WD.block(aWorld, aX, aY+1, aZ) ==this) return 0x0000ff00;
+		if (water(WD.block(aWorld, aX+1, aY, aZ))) return 0x0060ff60;
+		if (water(WD.block(aWorld, aX-1, aY, aZ))) return 0x0060ff60;
+		if (water(WD.block(aWorld, aX, aY, aZ+1))) return 0x0060ff60;
+		if (water(WD.block(aWorld, aX, aY, aZ-1))) return 0x0060ff60;
 		return 0x0000ff00;
 	}
 	

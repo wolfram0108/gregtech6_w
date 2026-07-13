@@ -68,7 +68,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 		DispenserBlock.dispenseBehaviorRegistry.putObject(this, new GT_Item_Dispense());
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		try {
@@ -94,12 +94,12 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	}
 	
 	public static class GT_Item_Dispense extends ProjectileDispenseBehavior {
-		@Override
+		// @Override
 		public ItemStack dispenseStack(BlockSource aSource, ItemStack aStack) {
 			return ((ItemBase)aStack.getItem()).onDispense(aSource, aStack);
 		}
 		
-		@Override
+		// @Override
 		protected Projectile getProjectileEntity(Level aWorld, Position aPosition) {
 			return null;
 		}
@@ -108,21 +108,21 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	@Override public boolean hasProjectile(TagData aProjectileType, ItemStack aStack) {return F;}
 	@Override public EntityProjectile getProjectile(TagData aProjectileType, ItemStack aStack, Level aWorld, double aX, double aY, double aZ) {return null;}
 	@Override public EntityProjectile getProjectile(TagData aProjectileType, ItemStack aStack, Level aWorld, LivingEntity aEntity, float aSpeed) {return null;}
-	@Override public final Item setUnlocalizedName(String aName) {return this;}
+	public final Item setUnlocalizedName(String aName) {return this;}
 	@Override public String toString() {return mName;}
-	@Override public final String getUnlocalizedName() {return mName;}
-	@Override public String getUnlocalizedName(ItemStack aStack) {return getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
-	@Override public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
-	@Override public final boolean getShareTag() {return T;} // just to be sure.
-	@Override @OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {mIcon = aIconRegister.registerIcon(mModID + ":" + mName);}
-	@Override public IIcon getIconFromDamage(int aMeta) {return mIcon;}
-	@Override public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
-	@Override public ItemStack getContainerItem(ItemStack aStack) {return null;}
-	@Override public boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
-	@Override public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
+	public final String getUnlocalizedName() {return mName;}
+	public String getUnlocalizedName(ItemStack aStack) {return getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
+	public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
+	public final boolean getShareTag() {return T;} // just to be sure.
+	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {mIcon = aIconRegister.registerIcon(mModID + ":" + mName);}
+	public IIcon getIconFromDamage(int aMeta) {return mIcon;}
+	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
+	public ItemStack getContainerItem(ItemStack aStack) {return null;}
+	public boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
+	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	@Override public void updateItemStack(ItemStack aStack) {isItemStackUsable(aStack);}
 	@Override public void updateItemStack(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {updateItemStack(aStack);}
-	@Override public boolean doesSneakBypassUse(Level aWorld, int aX, int aY, int aZ, Player aPlayer) {return T;}
+	public boolean doesSneakBypassUse(Level aWorld, int aX, int aY, int aZ, Player aPlayer) {return T;}
 	public boolean isItemStackUsable(ItemStack aStack) {return T;}
 	public ItemStack make(long aMetaData) {return ST.make(this, 1, aMetaData);}
 	public ItemStack make(long aAmount, long aMetaData) {return ST.make(this, aAmount, aMetaData);}

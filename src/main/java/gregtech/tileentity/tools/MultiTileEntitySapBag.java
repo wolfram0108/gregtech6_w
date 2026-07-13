@@ -59,7 +59,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_ACTIVE)) mFull = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE)) mFull = aNBT.getBoolean(NBT_ACTIVE);
 		mTank.setCapacity(aNBT.getLong(NBT_TANK_CAPACITY));
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}

@@ -51,7 +51,7 @@ public class GT_ASM implements IFMLLoadingPlugin {
 	
 	public GT_ASM() {}
 	
-	@Override @SuppressWarnings("resource")
+	@SuppressWarnings("resource")
 	public void injectData(Map<String, Object> data) {
 		location = (File)data.get("coremodLocation"); // Location of the gt6 jar
 		ASMConfig config = new ASMConfig((File)data.get("mcLocation"));
@@ -67,18 +67,18 @@ public class GT_ASM implements IFMLLoadingPlugin {
 		}
 	}
 	
-	@Override public String[] getASMTransformerClass() {return null;}
-	@Override public String getModContainerClass() {return GT_ASM_Dummy.class.getName();}
-	@Override public String getSetupClass() {return GT_ASM.Setup.class.getName();}
-	@Override public String getAccessTransformerClass() {return null;}
+	public String[] getASMTransformerClass() {return null;}
+	public String getModContainerClass() {return GT_ASM_Dummy.class.getName();}
+	public String getSetupClass() {return GT_ASM.Setup.class.getName();}
+	public String getAccessTransformerClass() {return null;}
 
 	public static class Setup implements IFMLCallHook {
-		@Override
+		// @Override
 		public void injectData(Map<String, Object> data) {
 			GT_ASM.classLoader = (ClassLoader)data.get("classLoader");
 		}
 
-		@Override
+		// @Override
 		public Void call() throws Exception {
 			return null;
 		}

@@ -125,10 +125,10 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, true) == null && !(tStack.getItem() instanceof MultiItemTool)) {
 						tStack = ST.amount(1, tStack);
-						tNBT.setTag(""+i, ST.save(tStack));
+						tNBT.put(""+i, ST.save(tStack));
 					}
 				}
-				rNBT.setTag(NBT_RECYCLING_COMPS, tNBT);
+				rNBT.put(NBT_RECYCLING_COMPS, tNBT);
 				UT.NBT.set(rStack, rNBT);
 			}
 			

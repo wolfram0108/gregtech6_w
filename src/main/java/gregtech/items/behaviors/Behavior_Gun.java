@@ -141,7 +141,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			
 			
 			for (int j = 0; j < tTargets.size(); j++) {
-				if (tTargets.get(j).getDistanceSq(aCoord.getX()+0.5, aCoord.getY()+0.5, aCoord.getZ()+0.5) < tTargets.get(j).getDistanceSq(nCoord.getX()+0.5, nCoord.getY()+0.5, nCoord.getZ()+0.5)) {
+				if (tTargets.get(j).distanceToSqr(aCoord.getX()+0.5, aCoord.getY()+0.5, aCoord.getZ()+0.5) < tTargets.get(j).distanceToSqr(nCoord.getX()+0.5, nCoord.getY()+0.5, nCoord.getZ()+0.5)) {
 					if (hit(aGun, aBullet, aPlayer, tTargets.remove(j--), tPower, tDir)) {
 						tPower-=10000;
 						// If the bullet hits an Entity it should not possibly drop itself.

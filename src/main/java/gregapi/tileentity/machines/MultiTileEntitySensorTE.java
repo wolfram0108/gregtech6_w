@@ -83,14 +83,14 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 		UT.NBT.setNumber(aNBT, "gt.sensor.max", mCurrentMax);
 		UT.NBT.setNumber(aNBT, "gt.sensor.value", mCurrentValue);
 		UT.NBT.setNumber(aNBT, "gt.sensor.index", mIndex);
-		aNBT.setIntArray("gt.sensor.array", mValues);
+		aNBT.putIntArray("gt.sensor.array", mValues);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		aNBT = super.writeItemNBT2(aNBT);
-		if (mIndex != 0) aNBT.setInteger("gt.sensor.index", mIndex);
-		if (mValues.length > 1) aNBT.setIntArray("gt.sensor.array", new int[mValues.length]);
+		if (mIndex != 0) aNBT.putInt("gt.sensor.index", mIndex);
+		if (mValues.length > 1) aNBT.putIntArray("gt.sensor.array", new int[mValues.length]);
 		return aNBT;
 	}
 	

@@ -139,7 +139,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		if (UT.Code.exists(aMetaData, mMaterialList) && !mMaterialList[aMetaData].mEnchantmentAmmo.isEmpty()) {
 			CompoundTag tNBT = UT.NBT.getOrCreate(aStack);
 			if (!tNBT.getBoolean("gt.u")) {
-				tNBT.setBoolean("gt.u", T);
+				tNBT.putBoolean("gt.u", T);
 				// F8: getOrCreate → detached-копия; коммитим флаг "gt.u" ДО addEnchantment, иначе он не
 				// долетит до стека и энчанты будут добавляться повторно (см. ItemNBT.java, паттерн Behavior_Arrow).
 				UT.NBT.set(aStack, tNBT);
@@ -173,7 +173,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 	}
 	
 	public static class MetaItemDispense extends ProjectileDispenseBehavior {
-		@Override public ItemStack dispenseStack(BlockSource aSource, ItemStack aStack) {return ((PrefixItemProjectile)aStack.getItem()).onDispense(aSource, aStack);}
-		@Override protected Projectile getProjectileEntity(Level aWorld, Position aPosition) {return null;}
+		public ItemStack dispenseStack(BlockSource aSource, ItemStack aStack) {return ((PrefixItemProjectile)aStack.getItem()).onDispense(aSource, aStack);}
+		protected Projectile getProjectileEntity(Level aWorld, Position aPosition) {return null;}
 	}
 }

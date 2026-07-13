@@ -65,7 +65,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		NeoForge.EVENT_BUS.register(this);
 	}
 	
-	@Override
+	// @Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
 		ItemStack tStack = aPlayer.inventory.armorInventory[3-armorType];
 		if (tStack != null) {
@@ -80,13 +80,13 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		return super.onItemRightClick(aStack, aWorld, aPlayer);
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public void registerIcons(IIconRegister aIconRegister) {
 		this.itemIcon = aIconRegister.registerIcon(RES_PATH_ITEM + getUnlocalizedName());
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		aList.add("Tier: " + mTier);
@@ -106,11 +106,11 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 	private static void setCharge(ItemStack aStack) {
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
-		tNBT.setInteger("charge", 1000000000);
+		tNBT.putInt("charge", 1000000000);
 		ItemNBT.set(aStack, tNBT);
 	}
 	
-	@Override
+	// @Override
 	public void onArmorTick(Level aWorld, Player aPlayer, ItemStack aStack) {/*
 		if (mSpecials == 0) return;
 		
@@ -230,12 +230,12 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		}
 	*/}
 	
-	@Override
+	// @Override
 	public boolean getShareTag() {
 		return true;
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 //  @SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab var2, @SuppressWarnings("rawtypes") List var3) {
@@ -275,17 +275,17 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		return mTransfer;
 	}
 	
-	@Override
+	// @Override
 	public int getItemEnchantability() {
 		return 0;
 	}
 	
-	@Override
+	// @Override
 	public boolean isBookEnchantable(ItemStack itemstack1, ItemStack itemstack2) {
 		return false;
 	}
 	
-	@Override
+	// @Override
 	public boolean getIsRepairable(ItemStack par1ItemStack, ItemStack par2ItemStack) {
 		return false;
 	}

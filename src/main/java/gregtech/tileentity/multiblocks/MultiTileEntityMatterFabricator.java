@@ -43,8 +43,8 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityMatterFabricator extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing, 2)-2, tY = yCoord, tZ = getOffsetZN(mFacing, 2)-2;
-		if (level.blockExists(tX, tY, tZ) && level.blockExists(tX+4, tY, tZ) && level.blockExists(tX, tY, tZ+4) && level.blockExists(tX+4, tY, tZ+4)) {
+		int tX = getOffsetXN(mFacing, 2)-2, tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing, 2)-2;
+		if (WD.exists(level, tX, tY, tZ) && WD.exists(level, tX+4, tY, tZ) && WD.exists(level, tX, tY, tZ+4) && WD.exists(level, tX+4, tY, tZ+4)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18031, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -111,7 +111,7 @@ public class MultiTileEntityMatterFabricator extends TileEntityBase10MultiBlockM
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+4, tY+2, tZ+1, 18031, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY+2, tZ+2, 18031, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+1, tY+2, tZ+2, 18044, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
-			if (getAir(tX+2, tY+2, tZ+2)) level.setBlockToAir(tX+2, tY+2, tZ+2); else tSuccess = F;
+			if (getAir(tX+2, tY+2, tZ+2)) WD.set(level, tX+2, tY+2, tZ+2, NB, 0, 3); else tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+3, tY+2, tZ+2, 18044, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+4, tY+2, tZ+2, 18031, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY+2, tZ+3, 18031, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -250,7 +250,7 @@ public class MultiTileEntityMatterFabricator extends TileEntityBase10MultiBlockM
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing, 2), tY = yCoord, tZ = getOffsetZN(mFacing, 2);
+		int tX = getOffsetXN(mFacing, 2), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing, 2);
 		return aX >= tX - 2 && aY >= tY && aZ >= tZ - 2 && aX <= tX + 2 && aY <= tY + 6 && aZ <= tZ + 2;
 	}
 	

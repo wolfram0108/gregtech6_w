@@ -140,7 +140,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return super.isItemStackUsable(aStack);
 	}
 	
-	@Override
+	// @Override
 	public boolean itemInteractionForEntity(ItemStack aStack, Player aPlayer, LivingEntity aEntity) {
 		if (!aPlayer.level().isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
@@ -180,7 +180,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return F;
 	}
 	
-	@Override
+	// @Override
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
 		if (MD.BbLC.owns(aWorld, aX, aY, aZ)) return F;
 		if (!aWorld.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
@@ -201,7 +201,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return F;
 	}
 	
-	@Override
+	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
 		if (MD.BbLC.owns(aWorld, aX, aY, aZ)) return F;
 		if (!aWorld.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
@@ -230,7 +230,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		return F;
 	}
 	
-	@Override
+	// @Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (!aWorld.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return aStack;
@@ -279,7 +279,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		while (aList.remove(null));
 	}
 	
-	@Override
+	// @Override
 	public void onUpdate(ItemStack aStack, Level aWorld, Entity aPlayer, int aTimer, boolean aIsInHand) {
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
 		if (tList != null) for (IBehavior<MultiItem> tBehavior : tList) tBehavior.onUpdate(this, aStack, aWorld, aPlayer, aTimer, aIsInHand);
@@ -389,9 +389,9 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		isItemStackUsable(aStack);
 	}
 	
-	@Override
+	// @Override
 	public int getItemStackLimit(ItemStack aStack) {
-		if (ItemNBT.has(aStack) && ItemNBT.get(aStack).hasKey(NBT_ENERGY)) return 1;
+		if (ItemNBT.has(aStack) && ItemNBT.get(aStack).contains(NBT_ENERGY)) return 1;
 		Long[] tStats = getFluidContainerStats(aStack);
 		if (tStats != null) return (int)(long)tStats[1];
 		return UT.Code.bindStack(getDefaultStackLimit(aStack));
@@ -531,9 +531,9 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	public Item getChargedItem(ItemStack itemStack) {return this;}
 	public Item getEmptyItem(ItemStack itemStack) {return this;}
 	public int getTier(ItemStack aStack) {return UT.Code.tierMax(getEnergySizeInputMax(TD.Energy.EU, aStack));}
-	@Override public int getItemEnchantability() {return 0;}
-	@Override public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
-	@Override public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
+	public int getItemEnchantability() {return 0;}
+	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
+	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public boolean canProvideEnergy(ItemStack aStack) {return T;}
 	public double getMaxCharge(ItemStack aStack) {return getEnergyCapacity(TD.Energy.EU, aStack);}
 	public double getTransferLimit(ItemStack aStack) {return getEnergySizeInputRecommended(TD.Energy.EU, aStack);}

@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.multiblocks;
+import gregapi.fluid.FluidTankInfo;
 
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;

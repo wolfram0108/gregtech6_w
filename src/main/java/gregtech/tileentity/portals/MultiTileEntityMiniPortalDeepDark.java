@@ -68,24 +68,24 @@ public class MultiTileEntityMiniPortalDeepDark extends MultiTileEntityMiniPortal
 			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListDeepDarkSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = xCoord-tTarget.xCoord, tZDifference = zCoord-tTarget.zCoord;
+					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX(), tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ();
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
 			} else if (WD.dimDD(level)) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = tTarget.xCoord-xCoord, tZDifference = tTarget.zCoord-zCoord;
+					long tXDifference = tTarget.getBlockPos().getX()-getBlockPos().getX(), tZDifference = tTarget.getBlockPos().getZ()-getBlockPos().getZ();
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
@@ -116,7 +116,7 @@ public class MultiTileEntityMiniPortalDeepDark extends MultiTileEntityMiniPortal
 			ItemStack aStack = aPlayer.inventory.getCurrentItem();
 			if (ST.valid(aStack) && aStack.getCount() > 0 && OM.is_("ingotBedrockium", aStack)) {
 				setPortalActive();
-				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
+				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 				
 			}
@@ -124,7 +124,7 @@ public class MultiTileEntityMiniPortalDeepDark extends MultiTileEntityMiniPortal
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(level, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.stone.getExplosionResistance(null);}
 	
 	public ITexture sDeepDarkPortal = BlockTextureCopied.get(ST.block(MD.ExU, "dark_portal", ST.block(MD.ExS, "deepPortal", Blocks.portal)), SIDE_ANY, 0, UNCOLOURED, F, T, T), sDeepDarkPortalFrame = BlockTextureCopied.get(ST.block(MD.ExU, "block_bedrockium", Blocks.bedrock), SIDE_ANY, 0, UNCOLOURED, F, F, F);

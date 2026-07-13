@@ -31,7 +31,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * @author Gregorius Techneticies
  */
 public class ExtraUtils_FixThaumcraftAspects implements IClassTransformer  {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!transformedName.equals("com.rwtema.extrautils.helper.ThaumcraftHelper")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

@@ -79,7 +79,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 		if (mEnchantment != null && mLevel > 0) {
 			CompoundTag tNBT = UT.NBT.getNBT(aStack);
 			if (!tNBT.getBoolean("gt.u")) {
-				tNBT.setBoolean("gt.u", T);
+				tNBT.putBoolean("gt.u", T);
 				UT.NBT.set(aStack, tNBT);
 				UT.NBT.addEnchantment(aStack, mEnchantment, mLevel);
 			}

@@ -107,7 +107,7 @@ public class EntityArrow_Material extends EntityProjectile {
 		
 		if (mTicksAlive++ == 3000) setDead();
 		
-		Block tBlock = level().getBlock(mHitBlockX, mHitBlockY, mHitBlockZ);
+		Block tBlock = WD.block(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 		
 		if (tBlock.getMaterial() != Material.air) {
 			tBlock.setBlockBoundsBasedOnState(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
@@ -118,7 +118,7 @@ public class EntityArrow_Material extends EntityProjectile {
 		if (arrowShake > 0) arrowShake--;
 		
 		if (inGround) {
-			int j = level().getBlockMetadata(mHitBlockX, mHitBlockY, mHitBlockZ);
+			int j = WD.meta(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 			if (tBlock != mHitBlock || j != mHitBlockMeta) {
 				inGround = F;
 				motionX *= (rand.nextFloat() * 0.2F);
@@ -258,8 +258,8 @@ public class EntityArrow_Material extends EntityProjectile {
 					mHitBlockX = tVector.blockX;
 					mHitBlockY = tVector.blockY;
 					mHitBlockZ = tVector.blockZ;
-					mHitBlock = level().getBlock(mHitBlockX, mHitBlockY, mHitBlockZ);
-					mHitBlockMeta = level().getBlockMetadata(mHitBlockX, mHitBlockY, mHitBlockZ);
+					mHitBlock = WD.block(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
+					mHitBlockMeta = WD.meta(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 					motionX = ((float)(tVector.hitVec.xCoord - getX()));
 					motionY = ((float)(tVector.hitVec.yCoord - getY()));
 					motionZ = ((float)(tVector.hitVec.zCoord - getZ()));
@@ -315,17 +315,17 @@ public class EntityArrow_Material extends EntityProjectile {
 	@Override
 	public void writeEntityToNBT(CompoundTag aNBT) {
 		super.writeEntityToNBT(aNBT);
-		aNBT.setShort("xTile", (short)mHitBlockX);
-		aNBT.setShort("yTile", (short)mHitBlockY);
-		aNBT.setShort("zTile", (short)mHitBlockZ);
-		aNBT.setShort("life", (short)mTicksAlive);
-		aNBT.setByte("inTile", (byte)Block.getIdFromBlock(mHitBlock));
-		aNBT.setByte("inData", (byte)mHitBlockMeta);
-		aNBT.setByte("shake", (byte)arrowShake);
-		aNBT.setByte("inGround", (byte)(inGround ? 1 : 0));
-		aNBT.setByte("pickup", (byte)canBePickedUp);
-		aNBT.setDouble("damage", getDamage());
-		aNBT.setTag("mArrow", ST.save(mArrow));
+		aNBT.putShort("xTile", (short)mHitBlockX);
+		aNBT.putShort("yTile", (short)mHitBlockY);
+		aNBT.putShort("zTile", (short)mHitBlockZ);
+		aNBT.putShort("life", (short)mTicksAlive);
+		aNBT.putByte("inTile", (byte)Block.getIdFromBlock(mHitBlock));
+		aNBT.putByte("inData", (byte)mHitBlockMeta);
+		aNBT.putByte("shake", (byte)arrowShake);
+		aNBT.putByte("inGround", (byte)(inGround ? 1 : 0));
+		aNBT.putByte("pickup", (byte)canBePickedUp);
+		aNBT.putDouble("damage", getDamage());
+		aNBT.put("mArrow", ST.save(mArrow));
 	}
 	
 	@Override

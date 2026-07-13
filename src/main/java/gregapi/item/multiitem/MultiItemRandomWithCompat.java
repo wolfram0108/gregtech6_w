@@ -58,6 +58,6 @@ public abstract class MultiItemRandomWithCompat extends MultiItemRandom implemen
 		return tFoodLevel > 0 ? new squeek.applecore.api.food.FoodValues(tFoodLevel, tStat.getSaturation(this, aStack, null)) : null;
 	}
 	
-	@Override @Optional.Method(modid = ModIDs.IC2)
+	@Optional.Method(modid = ModIDs.IC2)
 	public IElectricItemManager getManager(ItemStack aStack) {return this;}
 }

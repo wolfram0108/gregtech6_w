@@ -29,7 +29,7 @@ import org.objectweb.asm.tree.*;
  * @author OvermindDL1
  */
 public class Minecraft_MinecraftServerIntegratedLaunchMainMenuPartialFix implements IClassTransformer {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		
 		// TODO This Transformer is currently commented out in GT_ASM!

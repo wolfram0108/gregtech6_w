@@ -189,7 +189,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 		if (aEvent.entityPlayer == null || aEvent.entityPlayer.level() == null || aEvent.action == null || aEvent.world.provider == null) return;
 		String aName = aEvent.entityPlayer.getCommandSenderName(), aNameLowercase = aName.toLowerCase();
 		if (!aEvent.world.isRemote && CHECKED_PLAYERS.add(aName)) {
-			if (mSupporterListSilver.contains(aEvent.entityPlayer.getUniqueID().toString()) || mSupporterListGold.contains(aEvent.entityPlayer.getUniqueID().toString()) || mSupporterListSilver.contains(aNameLowercase) || mSupporterListGold.contains(aNameLowercase)) {
+			if (mSupporterListSilver.contains(aEvent.entityPlayer.getUUID().toString()) || mSupporterListGold.contains(aEvent.entityPlayer.getUUID().toString()) || mSupporterListSilver.contains(aNameLowercase) || mSupporterListGold.contains(aNameLowercase)) {
 				if (!MultiTileEntityCertificate.ALREADY_RECEIVED.contains(aNameLowercase)) {
 					if (ST.give(aEvent.entityPlayer, MultiTileEntityCertificate.getCertificate(1, aName), F)) {
 						MultiTileEntityCertificate.ALREADY_RECEIVED.add(aNameLowercase);
@@ -211,10 +211,10 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					
 					HitResult tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
 					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.blockX, tTarget.blockY, tTarget.blockZ) || !aEvent.entityPlayer.canPlayerEdit(tTarget.blockX, tTarget.blockY, tTarget.blockZ, tTarget.sideHit, aStack)) return;
-					Block tBlock = aEvent.world.getBlock(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+					Block tBlock = WD.block(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ);
 					
 					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
-						if (aEvent.world.getBlockMetadata(tTarget.blockX, tTarget.blockY, tTarget.blockZ) != 0) return;
+						if (WD.meta(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ) != 0) return;
 						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
 							if (aStack.getCount() == 1) {
 								aEvent.entityPlayer.inventory.mainInventory[aEvent.entityPlayer.inventory.currentItem] = ST.make(Items.potionitem, 1, 0);
@@ -223,7 +223,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 								ST.give(aEvent.entityPlayer, ST.make(Items.potionitem, 1, 0), F);
 							}
 						}
-						if (!WD.infiniteWater(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ)) aEvent.world.setBlockToAir(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+						if (!WD.infiniteWater(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ)) WD.set(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ, NB, 0, 3);
 						ST.update(aEvent.entityPlayer);
 						return;
 					}
@@ -253,7 +253,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				if (aStack.getItem() == Items.bucket) {
 					HitResult tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
 					if (tTarget != null && tTarget.typeOfHit == HitResult.MovingObjectType.BLOCK) {
-						Block tBlock = aEvent.world.getBlock(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+						Block tBlock = WD.block(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ);
 						if (tBlock instanceof BlockWaterlike && tBlock != BlocksGT.River) aEvent.setCanceled(T);
 					}
 					return;
@@ -307,7 +307,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 									ST.use(aEvent.entityPlayer, aStack); aEvent.setCanceled(T);
 								}
 							}
-							if (tData.mPrefix == OP.ingot) if (!MD.BOTA.mLoaded || tData.mMaterial.mMaterial.mOriginalMod != MD.BOTA || Blocks.beacon != aEvent.world.getBlock(aEvent.x, aEvent.y, aEvent.z)) {
+							if (tData.mPrefix == OP.ingot) if (!MD.BOTA.mLoaded || tData.mMaterial.mMaterial.mOriginalMod != MD.BOTA || Blocks.beacon != WD.block(aEvent.world, aEvent.x, aEvent.y, aEvent.z)) {
 								if (MultiTileEntityRegistry.getRegistry("gt.multitileentity").getItem(32084, ST.save(NBT_VALUE, aStack)).tryPlaceItemIntoWorld(aEvent.entityPlayer, aEvent.world, aEvent.x, aEvent.y, aEvent.z, (byte)aEvent.face, 0.5F, 0.5F, 0.5F)) {
 									ST.use(aEvent.entityPlayer, aStack, aStack.getCount()); aEvent.setCanceled(T);
 								}
@@ -371,7 +371,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			}
 			
 			// Check if this Entity was already spawned, and not just unloaded and reloaded.
-			if (!aEvent.entity.level().isRemote && !aEvent.entity.getEntityData().hasKey("gt.spawned")) {
+			if (!aEvent.entity.level().isRemote && !aEvent.entity.getEntityData().contains("gt.spawned")) {
 				if (aEvent.entity instanceof EntityZombie && !((EntityZombie)aEvent.entity).isChild() && ST.invalid(((EntityZombie)aEvent.entity).getEquipmentInSlot(0))) {
 					if (ZOMBIES_HOLD_TNT && RNGSUS.nextInt(250) == 0) {
 						((EntityZombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Blocks.tnt, 1+RNGSUS.nextInt(2), 0));
@@ -380,7 +380,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					}
 				}
 				// Mark Entity as has been spawned
-				aEvent.entity.getEntityData().setBoolean("gt.spawned", T);
+				aEvent.entity.getEntityData().putBoolean("gt.spawned", T);
 			}
 			return;
 		}

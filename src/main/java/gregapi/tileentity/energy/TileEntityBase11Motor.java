@@ -41,7 +41,7 @@ public abstract class TileEntityBase11Motor extends TileEntityBase10EnergyConver
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_VISUAL)) mConverter.mFast = aNBT.getBoolean(NBT_VISUAL);
+		if (aNBT.contains(NBT_VISUAL)) mConverter.mFast = aNBT.getBoolean(NBT_VISUAL);
 	}
 	
 	@Override
@@ -53,8 +53,8 @@ public abstract class TileEntityBase11Motor extends TileEntityBase10EnergyConver
 	
 	@Override
 	public void readEnergyConverter(CompoundTag aNBT) {
-		if (aNBT.hasKey(NBT_REVERSED)) mCounterClockwise = aNBT.getBoolean(NBT_REVERSED);
-		long tMultiplier = (aNBT.hasKey(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1);
+		if (aNBT.contains(NBT_REVERSED)) mCounterClockwise = aNBT.getBoolean(NBT_REVERSED);
+		long tMultiplier = (aNBT.contains(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1);
 		if (mCounterClockwise) {
 			mConRevert  = new TE_Behavior_Energy_Converter(this, aNBT, mStorage, mEnergyIN, mEnergyOUT, tMultiplier, aNBT.getBoolean(NBT_WASTE_ENERGY), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION));
 			mConverter  = new TE_Behavior_Energy_Converter(this, aNBT, mStorage, mEnergyIN, mEnergyOUT, tMultiplier, aNBT.getBoolean(NBT_WASTE_ENERGY), T, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION));

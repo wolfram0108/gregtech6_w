@@ -53,16 +53,16 @@ public interface ITileEntitySoundSource extends ITileEntityUnloadable {
 			mSoundModulation = aSoundModulation;
 		}
 		
-		@Override public Identifier getPositionedSoundLocation() {return mResource;}
-		@Override public boolean canRepeat() {return mRunning;}
-		@Override public boolean isDonePlaying() {return !mRunning;}
-		@Override public int getRepeatDelay() {return 1;}
-		@Override public float getVolume() {return mSoundStrength;}
-		@Override public float getPitch() {return mSoundModulation;}
-		@Override public float getXPosF() {return mTileEntity == null ? 0 : mTileEntity.getX()+0.5F;}
-		@Override public float getYPosF() {return mTileEntity == null ? 0 : mTileEntity.getY()+0.5F;}
-		@Override public float getZPosF() {return mTileEntity == null ? 0 : mTileEntity.getZ()+0.5F;}
-		@Override public AttenuationType getAttenuationType() {return ISound.AttenuationType.LINEAR;}
-		@Override public void update() {/**/}
+		public Identifier getPositionedSoundLocation() {return mResource;}
+		public boolean canRepeat() {return mRunning;}
+		public boolean isDonePlaying() {return !mRunning;}
+		public int getRepeatDelay() {return 1;}
+		public float getVolume() {return mSoundStrength;}
+		public float getPitch() {return mSoundModulation;}
+		public float getXPosF() {return mTileEntity == null ? 0 : mTileEntity.getX()+0.5F;}
+		public float getYPosF() {return mTileEntity == null ? 0 : mTileEntity.getY()+0.5F;}
+		public float getZPosF() {return mTileEntity == null ? 0 : mTileEntity.getZ()+0.5F;}
+		public AttenuationType getAttenuationType() {return ISound.AttenuationType.LINEAR;}
+		public void update() {/**/}
 	}
 }

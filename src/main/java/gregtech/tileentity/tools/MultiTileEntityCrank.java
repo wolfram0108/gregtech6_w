@@ -54,7 +54,7 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override
@@ -81,8 +81,8 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 			// Don't check for Villagers while Players operate the Crank.
 			if (!mActive) {
 				List<EntityVillager> tList = new ArrayListNoNulls<>();
-				level.getChunkFromBlockCoords(xCoord, zCoord).getEntitiesOfTypeWithinAAAB(EntityVillager.class, box(), tList, null);
-				for (EntityVillager tVillager : tList) if (UT.Code.roundDown(tVillager.getY()+tVillager.getEyeHeight()) == yCoord && UT.Code.roundDown(tVillager.getX()) == xCoord && UT.Code.roundDown(tVillager.getZ()) == zCoord) {
+				level.getChunkFromBlockCoords(getBlockPos().getX(), getBlockPos().getZ()).getEntitiesOfTypeWithinAAAB(EntityVillager.class, box(), tList, null);
+				for (EntityVillager tVillager : tList) if (UT.Code.roundDown(tVillager.getY()+tVillager.getEyeHeight()) == getBlockPos().getY() && UT.Code.roundDown(tVillager.getX()) == getBlockPos().getX() && UT.Code.roundDown(tVillager.getZ()) == getBlockPos().getZ()) {
 					mActive = T;
 					ITileEntityEnergy.Util.emitEnergyToSide(TD.Energy.RU, mFacing, -UT.Code.divup(8L*UT.Entities.pot2Strength(tVillager), UT.Entities.pot1Weakness(tVillager)), UT.Entities.pot1Haste(tVillager), this);
 					// Multiple Players can use one Crank but multiple Villagers cannot (Collision Lag prevention)

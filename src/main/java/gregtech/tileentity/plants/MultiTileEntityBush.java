@@ -71,8 +71,8 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_STATE, mStage);
-		aNBT.setByte(NBT_PROGRESS, mGrowth);
+		aNBT.putByte(NBT_STATE, mStage);
+		aNBT.putByte(NBT_PROGRESS, mGrowth);
 		ST.save(aNBT, NBT_VALUE, mBerry);
 	}
 	
@@ -89,13 +89,13 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	
 	@Override
 	public void onOxygenRemoved() {
-		if (isServerSide() && !WD.oxygen(level, xCoord, yCoord, zCoord)) setToAir();
+		if (isServerSide() && !WD.oxygen(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) setToAir();
 	}
 	
 	@Override
 	public void onTickFirst2(boolean aIsServerSide) {
 		super.onTickFirst2(aIsServerSide);
-		if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) level.setBlockToAir(xCoord, yCoord+1, zCoord);
+		if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), NB, 0, 3);
 	}
 	
 	@Override
@@ -103,9 +103,9 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
 			if (mBlockUpdated || SERVER_TIME % 128 == 64) {
-				if (!WD.oxygen(level, xCoord, yCoord, zCoord)) {setToAir(); return;}
+				if (!WD.oxygen(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) {setToAir(); return;}
 				
-				if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) level.setBlockToAir(xCoord, yCoord+1, zCoord);
+				if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), NB, 0, 3);
 				
 				if (SIDES_VALID[mFacing]) {
 					BlockEntity tTileEntity = getTileEntityAtSideAndDistance(mFacing, 1);
@@ -124,7 +124,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 					}
 				} else {
 					Block tBlock = getBlockAtSide(SIDE_BOTTOM);
-					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(level, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_UP], Blocks.yellow_flower) ? 1 : 0);
+					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_UP], Blocks.yellow_flower) ? 1 : 0);
 				}
 			}
 			
@@ -181,14 +181,14 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	
 	@Override
 	public boolean canPlace(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		BlockEntity tTileEntity = aWorld.getTileEntity(aX-OFFX[aSide], aY-OFFY[aSide], aZ-OFFZ[aSide]);
+		BlockEntity tTileEntity = WD.te(aWorld, aX-OFFX[aSide], aY-OFFY[aSide], aZ-OFFZ[aSide], T);
 		if (tTileEntity instanceof MultiTileEntityBush && SIDES_INVALID[((MultiTileEntityBush)tTileEntity).mFacing] && (ST.invalid(mBerry) || ST.equal(((MultiTileEntityBush)tTileEntity).mBerry, mBerry, F))) {
 			mFacing = OPOS[aSide];
 			mBerry = ((MultiTileEntityBush)tTileEntity).mBerry;
 			updateClientData();
 			return T;
 		}
-		Block tBlock = aWorld.getBlock(aX, aY-1, aZ);
+		Block tBlock = WD.block(aWorld, aX, aY-1, aZ);
 		if (BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(aWorld, aX, aY-1, aZ, FORGE_DIR[SIDE_UP], Blocks.yellow_flower)) {
 			mFacing = SIDE_UNDEFINED;
 			mSpeed = 1;

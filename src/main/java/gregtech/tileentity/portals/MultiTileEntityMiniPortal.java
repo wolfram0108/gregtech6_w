@@ -70,7 +70,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override
@@ -232,7 +232,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 				if (mTarget == null) {
 					aChatReturn.add("No Target");
 				} else {
-					aChatReturn.add("X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
+					aChatReturn.add("X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());
 				}
 			}
 			return 1;
@@ -266,7 +266,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	
 	@Override public int getFireSpreadSpeed(byte aSide, boolean aDefault) {return 0;}
 	@Override public int getFlammability(byte aSide, boolean aDefault) {return 0;}
-	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(level, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.stone.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.stone.getExplosionResistance(null);}
 	
 	@Override
@@ -514,7 +514,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return ZL_FLUIDTANKINFO;
 	}
 	
-	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.getDistanceSq(xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D) <= 64D;}
+	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
 	@Override public void openInventory() {/**/}
 	@Override public void closeInventory() {/**/}
 }

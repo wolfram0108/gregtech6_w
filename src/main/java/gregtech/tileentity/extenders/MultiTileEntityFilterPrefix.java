@@ -66,7 +66,7 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 	
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
-		if (aNBT.hasKey(NBT_INVERTED)) mInverted = aNBT.getBoolean(NBT_INVERTED);
+		if (aNBT.contains(NBT_INVERTED)) mInverted = aNBT.getBoolean(NBT_INVERTED);
 		mFilter = OreDictPrefix.sPrefixes.get(aNBT.getString(NBT_INV_FILTER));
 		super.readFromNBT2(aNBT);
 	}
@@ -74,14 +74,14 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		UT.NBT.setBoolean(aNBT, NBT_INVERTED, mInverted);
-		if (mFilter != null) aNBT.setString(NBT_INV_FILTER, mFilter.mNameInternal);
+		if (mFilter != null) aNBT.putString(NBT_INV_FILTER, mFilter.mNameInternal);
 		super.writeToNBT2(aNBT);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		UT.NBT.setBoolean(aNBT, NBT_INVERTED, mInverted);
-		if (mFilter != null) aNBT.setString(NBT_INV_FILTER, mFilter.mNameInternal);
+		if (mFilter != null) aNBT.putString(NBT_INV_FILTER, mFilter.mNameInternal);
 		return super.writeItemNBT2(aNBT);
 	}
 	

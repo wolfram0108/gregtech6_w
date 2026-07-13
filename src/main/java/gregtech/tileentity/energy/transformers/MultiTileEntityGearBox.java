@@ -64,9 +64,9 @@ public class MultiTileEntityGearBox extends TileEntityBase07Paintable implements
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_STOPPED)) mJammed = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_CONNECTION)) mAxleGear = UT.Code.unsignB(aNBT.getByte(NBT_CONNECTION));
-		if (aNBT.hasKey(NBT_INPUT)) mMaxThroughPut = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_STOPPED)) mJammed = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_CONNECTION)) mAxleGear = UT.Code.unsignB(aNBT.getByte(NBT_CONNECTION));
+		if (aNBT.contains(NBT_INPUT)) mMaxThroughPut = aNBT.getLong(NBT_INPUT);
 		mGearsWork = checkGears();
 	}
 	
@@ -74,12 +74,12 @@ public class MultiTileEntityGearBox extends TileEntityBase07Paintable implements
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_STOPPED, mJammed);
-		aNBT.setByte(NBT_CONNECTION, (byte)mAxleGear);
+		aNBT.putByte(NBT_CONNECTION, (byte)mAxleGear);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		aNBT.setByte(NBT_CONNECTION, (byte)mAxleGear);
+		aNBT.putByte(NBT_CONNECTION, (byte)mAxleGear);
 		return super.writeItemNBT2(aNBT);
 	}
 	

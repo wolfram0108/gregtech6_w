@@ -138,9 +138,9 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 	}
 	
 	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == this) return F;
-		if (WD.water(aBlock)) return aWorld.getBlockMetadata(aX, aY, aZ) > 0;
+		if (WD.water(aBlock)) return WD.meta(aWorld, aX, aY, aZ) > 0;
 		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
 		if (displacements.containsKey(aBlock)) return displacements.get(aBlock);
 		Material aMaterial = aBlock.getMaterial();
@@ -149,20 +149,20 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 	}
 	
 	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == this) return F;
-		if (WD.water(aBlock)) return aWorld.getBlockMetadata(aX, aY, aZ) > 0;
+		if (WD.water(aBlock)) return WD.meta(aWorld, aX, aY, aZ) > 0;
 		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
 		if (displacements.containsKey(aBlock)) {
 			if (displacements.get(aBlock)) {
-				aBlock.dropBlockAsItem(aWorld, aX, aY, aZ, aWorld.getBlockMetadata(aX, aY, aZ), 0);
+				aBlock.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
 				return T;
 			}
 			return F;
 		}
 		Material aMaterial = aBlock.getMaterial();
 		if (aMaterial.blocksMovement() || aMaterial.isLiquid() || aMaterial == Material.portal) return F;
-		aBlock.dropBlockAsItem(aWorld, aX, aY, aZ, aWorld.getBlockMetadata(aX, aY, aZ), 0);
+		aBlock.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
 		return T;
 	}
 	

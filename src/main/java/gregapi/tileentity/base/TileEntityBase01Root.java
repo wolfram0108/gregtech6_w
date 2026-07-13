@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.base;
+import gregapi.fluid.FluidTankInfo;
 
 import appeng.api.movable.IMovableTile;
 import gregapi.api.Optional;
@@ -131,48 +132,48 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		//
 	}
 	
-	@Override
+	// @Override
 	public void readFromNBT(CompoundTag aNBT) {
 		// load ID and Coords
-		if (aNBT.hasKey("x")) xCoord = aNBT.getInteger("x");
-		if (aNBT.hasKey("y")) yCoord = aNBT.getInteger("y");
-		if (aNBT.hasKey("z")) zCoord = aNBT.getInteger("z");
+		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getInteger("x");
+		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getInteger("y");
+		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getInteger("z");
 		// make sure Y is not negative because this causes crashes.
-		if (yCoord < 0) WD.invalidateTileEntityWithNegativeYCoord(xCoord, yCoord, zCoord, this);
+		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 	}
 	
-	@Override
+	// @Override
 	public void writeToNBT(CompoundTag aNBT) {
 		// make sure Y is not negative because this causes crashes.
-		if (yCoord < 0) WD.invalidateTileEntityWithNegativeYCoord(xCoord, yCoord, zCoord, this);
+		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		// save ID and Coords
-		aNBT.setString("id", getTileEntityName());
-		aNBT.setInteger("x", xCoord);
-		aNBT.setInteger("y", yCoord);
-		aNBT.setInteger("z", zCoord);
+		aNBT.putString("id", getTileEntityName());
+		aNBT.putInt("x", getBlockPos().getX());
+		aNBT.putInt("y", getBlockPos().getY());
+		aNBT.putInt("z", getBlockPos().getZ());
 	}
 	
 	/** return the internal Name of this TileEntity to be registered. DO NOT START YOUR NAME WITH "gt."!!! */
 	public abstract String getTileEntityName();
 	
-	@Override public void markDirty() {/* Oh no, I won't let this do anything anymore! It's only useful for Comparators and that didn't work properly anyways! */}
+	public void markDirty() {/* Oh no, I won't let this do anything anymore! It's only useful for Comparators and that didn't work properly anyways! */}
 	@Override public Level getWorld() {return level;}
-	@Override public int getX() {return xCoord;}
-	@Override public int getY() {return yCoord;}
-	@Override public int getZ() {return zCoord;}
-	@Override public int getOffsetX (byte aSide) {return xCoord + OFFX[aSide];}
-	@Override public int getOffsetY (byte aSide) {return yCoord + OFFY[aSide];}
-	@Override public int getOffsetZ (byte aSide) {return zCoord + OFFZ[aSide];}
-	@Override public int getOffsetX (byte aSide, int aMultiplier) {return xCoord + OFFX[aSide] * aMultiplier;}
-	@Override public int getOffsetY (byte aSide, int aMultiplier) {return yCoord + OFFY[aSide] * aMultiplier;}
-	@Override public int getOffsetZ (byte aSide, int aMultiplier) {return zCoord + OFFZ[aSide] * aMultiplier;}
-	@Override public int getOffsetXN(byte aSide) {return xCoord - OFFX[aSide];}
-	@Override public int getOffsetYN(byte aSide) {return yCoord - OFFY[aSide];}
-	@Override public int getOffsetZN(byte aSide) {return zCoord - OFFZ[aSide];}
-	@Override public int getOffsetXN(byte aSide, int aMultiplier) {return xCoord - OFFX[aSide] * aMultiplier;}
-	@Override public int getOffsetYN(byte aSide, int aMultiplier) {return yCoord - OFFY[aSide] * aMultiplier;}
-	@Override public int getOffsetZN(byte aSide, int aMultiplier) {return zCoord - OFFZ[aSide] * aMultiplier;}
-	@Override public BlockPos getCoords() {mReturnedCoordinates.posX = xCoord; mReturnedCoordinates.posY = yCoord; mReturnedCoordinates.posZ = zCoord; return mReturnedCoordinates;}
+	@Override public int getX() {return getBlockPos().getX();}
+	@Override public int getY() {return getBlockPos().getY();}
+	@Override public int getZ() {return getBlockPos().getZ();}
+	@Override public int getOffsetX (byte aSide) {return getBlockPos().getX() + OFFX[aSide];}
+	@Override public int getOffsetY (byte aSide) {return getBlockPos().getY() + OFFY[aSide];}
+	@Override public int getOffsetZ (byte aSide) {return getBlockPos().getZ() + OFFZ[aSide];}
+	@Override public int getOffsetX (byte aSide, int aMultiplier) {return getBlockPos().getX() + OFFX[aSide] * aMultiplier;}
+	@Override public int getOffsetY (byte aSide, int aMultiplier) {return getBlockPos().getY() + OFFY[aSide] * aMultiplier;}
+	@Override public int getOffsetZ (byte aSide, int aMultiplier) {return getBlockPos().getZ() + OFFZ[aSide] * aMultiplier;}
+	@Override public int getOffsetXN(byte aSide) {return getBlockPos().getX() - OFFX[aSide];}
+	@Override public int getOffsetYN(byte aSide) {return getBlockPos().getY() - OFFY[aSide];}
+	@Override public int getOffsetZN(byte aSide) {return getBlockPos().getZ() - OFFZ[aSide];}
+	@Override public int getOffsetXN(byte aSide, int aMultiplier) {return getBlockPos().getX() - OFFX[aSide] * aMultiplier;}
+	@Override public int getOffsetYN(byte aSide, int aMultiplier) {return getBlockPos().getY() - OFFY[aSide] * aMultiplier;}
+	@Override public int getOffsetZN(byte aSide, int aMultiplier) {return getBlockPos().getZ() - OFFZ[aSide] * aMultiplier;}
+	@Override public BlockPos getCoords() {mReturnedCoordinates.posX = getBlockPos().getX(); mReturnedCoordinates.posY = getBlockPos().getY(); mReturnedCoordinates.posZ = getBlockPos().getZ(); return mReturnedCoordinates;}
 	@Override public BlockPos getOffset (byte aSide, int aMultiplier) {return new BlockPos(getOffsetX (aSide, aMultiplier), getOffsetY (aSide, aMultiplier), getOffsetZ (aSide, aMultiplier));}
 	@Override public BlockPos getOffsetN(byte aSide, int aMultiplier) {return new BlockPos(getOffsetXN(aSide, aMultiplier), getOffsetYN(aSide, aMultiplier), getOffsetZN(aSide, aMultiplier));}
 	@Override public boolean isServerSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer() : !level.isRemote;}
@@ -197,29 +198,29 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean rng() {return RNGSUS.nextBoolean();}
 	@Override public Biome getBiome(BlockPos aCoords) {return level==null?Biome.plains:level.getBiomeGenForCoords(aCoords.getX(), aCoords.getZ());}
 	@Override public Biome getBiome(int aX, int aZ) {return level==null?Biome.plains:level.getBiomeGenForCoords(aX, aZ);}
-	@Override public Biome getBiome() {return getBiome(xCoord, zCoord);}
-	@Override public Block getBlockOffset(int aX, int aY, int aZ) {return getBlock(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public Biome getBiome() {return getBiome(getBlockPos().getX(), getBlockPos().getZ());}
+	@Override public Block getBlockOffset(int aX, int aY, int aZ) {return getBlock(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public Block getBlockAtSide(byte aSide) {return getBlockAtSideAndDistance(aSide, 1);}
 	@Override public Block getBlockAtSideAndDistance(byte aSide, int aDistance) {return getBlock(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
-	@Override public byte getMetaDataOffset(int aX, int aY, int aZ) {return getMetaData(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public byte getMetaDataOffset(int aX, int aY, int aZ) {return getMetaData(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public byte getMetaDataAtSide(byte aSide) {return getMetaDataAtSideAndDistance(aSide, 1);}
 	@Override public byte getMetaDataAtSideAndDistance(byte aSide, int aDistance) {return getMetaData(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
-	@Override public byte getLightLevelOffset(int aX, int aY, int aZ) {return getLightLevel(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public byte getLightLevelOffset(int aX, int aY, int aZ) {return getLightLevel(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public byte getLightLevelAtSide(byte aSide) {return getLightLevelAtSideAndDistance(aSide, 1);}
 	@Override public byte getLightLevelAtSideAndDistance(byte aSide, int aDistance) {return getLightLevel(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
-	@Override public boolean getOpacityOffset(int aX, int aY, int aZ) {return getOpacity(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public boolean getOpacityOffset(int aX, int aY, int aZ) {return getOpacity(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public boolean getOpacityAtSide(byte aSide) {return getOpacityAtSideAndDistance(aSide, 1);}
 	@Override public boolean getOpacityAtSideAndDistance(byte aSide, int aDistance) {return getOpacity(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
-	@Override public boolean getRainOffset(int aX, int aY, int aZ) {return getRain(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public boolean getRainOffset(int aX, int aY, int aZ) {return getRain(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public boolean getRainAtSide(byte aSide) {return getRainAtSideAndDistance(aSide, 1);}
 	@Override public boolean getRainAtSideAndDistance(byte aSide, int aDistance) {return getRain(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
-	@Override public boolean getSkyOffset(int aX, int aY, int aZ) {return getSky(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public boolean getSkyOffset(int aX, int aY, int aZ) {return getSky(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public boolean getSkyAtSide(byte aSide) {return getSkyAtSideAndDistance(aSide, 1);}
 	@Override public boolean getSkyAtSideAndDistance(byte aSide, int aDistance) {return getSky(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
-	@Override public boolean getAirOffset(int aX, int aY, int aZ) {return getAir(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public boolean getAirOffset(int aX, int aY, int aZ) {return getAir(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public boolean getAirAtSide(byte aSide) {return getAirAtSideAndDistance(aSide, 1);}
 	@Override public boolean getAirAtSideAndDistance(byte aSide, int aDistance) {return getAir(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
-	@Override public BlockEntity getTileEntityOffset(int aX, int aY, int aZ) {return getTileEntity(xCoord+aX, yCoord+aY, zCoord+aZ);}
+	@Override public BlockEntity getTileEntityOffset(int aX, int aY, int aZ) {return getTileEntity(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public BlockEntity getTileEntityAtSideAndDistance(byte aSide, int aDistance) {return getTileEntity(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
 	@Override public DelegatorTileEntity<BlockEntity         > getAdjacentTileEntity     (byte aSide) {return getAdjacentTileEntity(aSide, T, F);}
 	@Override public DelegatorTileEntity<AbstractContainerMenu         > getAdjacentInventory      (byte aSide) {return getAdjacentInventory(aSide, T, F);}
@@ -235,7 +236,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (tTileEntity == null) return new DelegatorTileEntity<>(null, level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide]);
 		if (aNotConnectToDelegators && tTileEntity instanceof ITileEntityCanDelegate && ((ITileEntityCanDelegate)tTileEntity).isExtender(aSide)) return new DelegatorTileEntity<>(null, level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide]);
 		if (aAllowDelegates && tTileEntity instanceof ITileEntityDelegating) return ((ITileEntityDelegating)tTileEntity).getDelegateTileEntity(OPOS[aSide]);
-		return new DelegatorTileEntity<>(tTileEntity, tTileEntity.getWorldObj(), tTileEntity.xCoord, tTileEntity.yCoord, tTileEntity.zCoord, OPOS[aSide]);
+		return new DelegatorTileEntity<>(tTileEntity, tTileEntity.getWorldObj(), tTileEntity.getBlockPos().getX(), tTileEntity.getBlockPos().getY(), tTileEntity.getBlockPos().getZ(), OPOS[aSide]);
 	}
 	
 	public List<DelegatorTileEntity<BlockEntity>> allAdjacentTileEntities(boolean aAllowDelegates, boolean aNotConnectToDelegators) {
@@ -250,21 +251,21 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override
 	public Block getBlock(int aX, int aY, int aZ) {
 		if (level == null) return NB;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return NB;
-		return level.getBlock(aX, aY, aZ);
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return NB;
+		return WD.block(level, aX, aY, aZ);
 	}
 	
 	@Override
 	public byte getMetaData(int aX, int aY, int aZ) {
 		if (level == null) return 0;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return 0;
-		return UT.Code.bind4(level.getBlockMetadata(aX, aY, aZ));
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return 0;
+		return UT.Code.bind4(WD.meta(level, aX, aY, aZ));
 	}
 	
 	@Override
 	public byte getLightLevel(int aX, int aY, int aZ) {
 		if (level == null) return 14;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return 0;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return 0;
 		return UT.Code.bind4((long)level.getLightBrightness(aX, aY, aZ)*15);
 	}
 	
@@ -272,7 +273,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean getSky(int aX, int aY, int aZ) {
 		if (level == null) return T;
 		if (level.provider.hasNoSky) return F;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return T;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return T;
 		return level.canBlockSeeTheSky(aX, aY, aZ);
 	}
 	
@@ -280,84 +281,84 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean getRain(int aX, int aY, int aZ) {
 		if (level == null) return T;
 		if (level.provider.hasNoSky) return F;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return T;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return T;
 		return level.getPrecipitationHeight(aX, aZ) <= aY;
 	}
 	
 	@Override
 	public boolean getOpacity(int aX, int aY, int aZ) {
 		if (level == null) return F;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return F;
-		return level.getBlock(aX, aY, aZ).isOpaqueCube();
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return F;
+		return WD.block(level, aX, aY, aZ).isOpaqueCube();
 	}
 	
 	@Override
 	public boolean getAir(int aX, int aY, int aZ) {
 		if (level == null) return T;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return T;
-		return level.getBlock(aX, aY, aZ).isAir(level, aX, aY, aZ);
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return T;
+		return WD.block(level, aX, aY, aZ).isAir(level, aX, aY, aZ);
 	}
 	
 	@Override
 	public BlockEntity getTileEntity(int aX, int aY, int aZ) {
 		if (level == null) return null;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !level.blockExists(aX, aY, aZ)) return null;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return null;
 		return WD.te(level, aX, aY, aZ, T);
 	}
 	
 	@Override
 	public Block getBlock(BlockPos aCoords) {
 		if (level == null) return NB;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return NB;
-		return level.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ());
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return NB;
+		return WD.block(level, aCoords.getX(), aCoords.getY(), aCoords.getZ());
 	}
 	
 	@Override
 	public byte getMetaData(BlockPos aCoords) {
 		if (level == null) return 0;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return 0;
-		return (byte)level.getBlockMetadata(aCoords.getX(), aCoords.getY(), aCoords.getZ());
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return 0;
+		return (byte)WD.meta(level, aCoords.getX(), aCoords.getY(), aCoords.getZ());
 	}
 	
 	@Override
 	public byte getLightLevel(BlockPos aCoords) {
 		if (level == null) return 14;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return 0;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return 0;
 		return UT.Code.bind4((long)level.getLightBrightness(aCoords.getX(), aCoords.getY(), aCoords.getZ())*15);
 	}
 	
 	@Override
 	public boolean getSky(BlockPos aCoords) {
 		if (level == null) return T;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
 		return level.canBlockSeeTheSky(aCoords.getX(), aCoords.getY(), aCoords.getZ());
 	}
 	
 	@Override
 	public boolean getRain(BlockPos aCoords) {
 		if (level == null) return T;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
 		return level.getPrecipitationHeight(aCoords.getX(), aCoords.getZ()) <= aCoords.getY();
 	}
 	
 	@Override
 	public boolean getOpacity(BlockPos aCoords) {
 		if (level == null) return F;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return F;
-		return level.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()).isOpaqueCube();
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return F;
+		return WD.block(level, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isOpaqueCube();
 	}
 	
 	@Override
 	public boolean getAir(BlockPos aCoords) {
 		if (level == null) return T;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
-		return level.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(level, aCoords.getX(), aCoords.getY(), aCoords.getZ());
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
+		return WD.block(level, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(level, aCoords.getX(), aCoords.getY(), aCoords.getZ());
 	}
 	
 	@Override
 	public BlockEntity getTileEntity(BlockPos aCoords) {
 		if (level == null) return null;
-		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !level.blockExists(aCoords.getX(), aCoords.getY(), aCoords.getZ())) return null;
+		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return null;
 		return WD.te(level, aCoords, T);
 	}
 	
@@ -375,19 +376,19 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return mIsDead;
 	}
 	
-	@Override
+	// @Override
 	public void invalidate() {
 		super.invalidate();
 		setDead();
 	}
 	
-	@Override
+	// @Override
 	public void validate() {
 		super.validate();
 		setAlive();
 	}
 	
-	@Override
+	// @Override
 	public void onChunkUnload() {
 		super.onChunkUnload();
 		setDead();
@@ -424,7 +425,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		mIsDead = F;
 	}
 	
-	@Override
+	// @Override
 	public void updateEntity() {
 		// Well, if the TileEntity gets ticked, it is alive.
 		if (isDead()) setAlive();
@@ -436,7 +437,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 			if (mExplosionStrength < 1) {
 				UT.Sounds.send(SFX.MC_EXPLODE, this, F);
 			} else {
-				ExplosionGT.explode(level, null, xCoord, yCoord, zCoord, mExplosionStrength, F, T);
+				ExplosionGT.explode(level, null, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), mExplosionStrength, F, T);
 			}
 			setDead();
 			return;
@@ -450,12 +451,12 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return 0;
 	}
 	
-	@Override
+	// @Override
 	public boolean canUpdate() {
 		return mIsTicking && mShouldRefresh;
 	}
 	
-	@Override
+	// @Override
 	public boolean shouldRefresh(Block aOldBlock, Block aNewBlock, int aOldMeta, int aNewMeta, Level aWorld, int aX, int aY, int aZ) {
 		return mShouldRefresh || aOldBlock != aNewBlock;
 	}
@@ -467,21 +468,21 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	public void doBlockUpdate() {
 		Block tBlock = getBlock(getCoords());
-		level.notifyBlocksOfNeighborChange(xCoord, yCoord, zCoord, tBlock);
+		level.notifyBlocksOfNeighborChange(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), tBlock);
 		if (this instanceof IMTE_IsProvidingStrongPower) for (byte tSide : ALL_SIDES_VALID) {
-			if (getBlockAtSide(tSide).isNormalCube(level, xCoord+OFFX[tSide], yCoord+OFFY[tSide], zCoord+OFFZ[tSide])) {
-				level.notifyBlocksOfNeighborChange(xCoord+OFFX[tSide], yCoord+OFFY[tSide], zCoord+OFFZ[tSide], tBlock, OPOS[tSide]);
+			if (getBlockAtSide(tSide).isNormalCube(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide])) {
+				level.notifyBlocksOfNeighborChange(getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide], tBlock, OPOS[tSide]);
 			}
 		}
 		mDoesBlockUpdate = F;
 	}
 	
 	public final boolean crossedChunkBorder(int aX, int aZ) {
-		return aX >> 4 != xCoord >> 4 || aZ >> 4 != zCoord >> 4;
+		return aX >> 4 != getBlockPos().getX() >> 4 || aZ >> 4 != getBlockPos().getZ() >> 4;
 	}
 	
 	public final boolean crossedChunkBorder(BlockPos aCoords) {
-		return aCoords.getX() >> 4 != xCoord >> 4 || aCoords.getZ() >> 4 != zCoord >> 4;
+		return aCoords.getX() >> 4 != getBlockPos().getX() >> 4 || aCoords.getZ() >> 4 != getBlockPos().getZ() >> 4;
 	}
 	
 	public float mExplosionStrength = 0;
@@ -500,7 +501,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 			if (mExplosionStrength < 1) {
 				UT.Sounds.send(SFX.MC_EXPLODE, this, F);
 			} else {
-				ExplosionGT.explode(level, null, xCoord, yCoord, zCoord, mExplosionStrength, F, T);
+				ExplosionGT.explode(level, null, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), mExplosionStrength, F, T);
 			}
 		}
 	}
@@ -541,7 +542,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	public boolean shouldSideBeRendered(byte aSide) {
 		BlockEntity tTileEntity = getTileEntityAtSideAndDistance(aSide, 1);
-		return tTileEntity instanceof ITileEntitySurface ? !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]) : !WD.visOpq(level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), SIDES_VERTICAL[aSide] || WD.border(xCoord, zCoord, getOffsetX(aSide), getOffsetZ(aSide)), F);
+		return tTileEntity instanceof ITileEntitySurface ? !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]) : !WD.visOpq(level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), SIDES_VERTICAL[aSide] || WD.border(getBlockPos().getX(), getBlockPos().getZ(), getOffsetX(aSide), getOffsetZ(aSide)), F);
 	}
 	
 	@OnlyIn(Dist.CLIENT) public boolean renderItem(Block aBlock, RenderBlocks aRenderer) {return F;}
@@ -562,8 +563,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	public void updateLightValue() {
 		if (this instanceof IMTE_GetLightValue) {
-			level.setLightValue(LightLayer.Block, xCoord, yCoord, zCoord, ((IMTE_GetLightValue)this).getLightValue());
-			for (byte tSide : ALL_SIDES_MIDDLE) level.updateLightByType(LightLayer.Block, xCoord+OFFX[tSide], yCoord+OFFY[tSide], zCoord+OFFZ[tSide]);
+			level.setLightValue(LightLayer.Block, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), ((IMTE_GetLightValue)this).getLightValue());
+			for (byte tSide : ALL_SIDES_MIDDLE) level.updateLightByType(LightLayer.Block, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide]);
 		}
 	}
 	
@@ -864,15 +865,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public int getFireSpreadSpeed(byte aSide, boolean aDefault) {return aDefault ? 150 : 0;}
 	public int getFlammability   (byte aSide, boolean aDefault) {return aDefault ? 150 : 0;}
 	public void setOnFire() {WD.burn(level, getCoords(), F, F);}
-	public boolean setToFire() {return level.setBlock(xCoord, yCoord, zCoord, Blocks.fire, 0, 3);}
+	public boolean setToFire() {return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.fire, 0, 3);}
 	
 	// Removal and Snow Layer Stuff
 	
 	public static final ITexture SNOW_TEXTURE = BlockTextureCopied.get(Blocks.snow_layer); // very commonly used Texture.
 	public boolean removedByPlayer(Level aWorld, Player aPlayer, boolean aWillHarvest) {return setToAir();}
 	public boolean hasSnow() {for (int i : SCAN_NEG_1) for (int j : SCAN_NEG_1) if (getBlockOffset(i, 0, j) == Blocks.snow_layer) return T; return F;}
-	public boolean setToSnow() {return getOpacity(xCoord, yCoord-1, zCoord) && hasSnow() && level.setBlock(xCoord, yCoord, zCoord, Blocks.snow_layer, 0, 3);}
-	public boolean setToAir() {if (level.setBlock(xCoord, yCoord, zCoord, Blocks.air, 0, 3)) {if (this instanceof IMultiTileEntity.IMTE_CanPlaceSnowLayerOnRemoval) setToSnow(); return T;} return F;}
+	public boolean setToSnow() {return getOpacity(getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()) && hasSnow() && WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.snow_layer, 0, 3);}
+	public boolean setToAir() {if (WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.air, 0, 3)) {if (this instanceof IMultiTileEntity.IMTE_CanPlaceSnowLayerOnRemoval) setToSnow(); return T;} return F;}
 	
 	// Inventory Stuff
 	
@@ -962,10 +963,10 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	// Makes a Bounding Box without having to constantly specify the Offset Coordinates.
 	
-	public AABB box(double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {return AABB.getBoundingBox(xCoord+aMinX, yCoord+aMinY, zCoord+aMinZ, xCoord+aMaxX, yCoord+aMaxY, zCoord+aMaxZ);}
-	public AABB box(double[] aBox) {return AABB.getBoundingBox(xCoord+aBox[0], yCoord+aBox[1], zCoord+aBox[2], xCoord+aBox[3], yCoord+aBox[4], zCoord+aBox[5]);}
-	public AABB box(float[] aBox) {return AABB.getBoundingBox(xCoord+aBox[0], yCoord+aBox[1], zCoord+aBox[2], xCoord+aBox[3], yCoord+aBox[4], zCoord+aBox[5]);}
-	public AABB box() {return AABB.getBoundingBox(xCoord, yCoord, zCoord, xCoord+1, yCoord+1, zCoord+1);}
+	public AABB box(double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {return AABB.getBoundingBox(getBlockPos().getX()+aMinX, getBlockPos().getY()+aMinY, getBlockPos().getZ()+aMinZ, getBlockPos().getX()+aMaxX, getBlockPos().getY()+aMaxY, getBlockPos().getZ()+aMaxZ);}
+	public AABB box(double[] aBox) {return AABB.getBoundingBox(getBlockPos().getX()+aBox[0], getBlockPos().getY()+aBox[1], getBlockPos().getZ()+aBox[2], getBlockPos().getX()+aBox[3], getBlockPos().getY()+aBox[4], getBlockPos().getZ()+aBox[5]);}
+	public AABB box(float[] aBox) {return AABB.getBoundingBox(getBlockPos().getX()+aBox[0], getBlockPos().getY()+aBox[1], getBlockPos().getZ()+aBox[2], getBlockPos().getX()+aBox[3], getBlockPos().getY()+aBox[4], getBlockPos().getZ()+aBox[5]);}
+	public AABB box() {return AABB.getBoundingBox(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), getBlockPos().getX()+1, getBlockPos().getY()+1, getBlockPos().getZ()+1);}
 	
 	public boolean box(AABB aAABB, List<AABB> aList, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {
 		AABB tBox = box(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);

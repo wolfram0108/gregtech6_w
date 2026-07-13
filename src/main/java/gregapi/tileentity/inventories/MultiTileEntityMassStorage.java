@@ -76,9 +76,9 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mMode = aNBT.getByte(NBT_MODE);
-		if (aNBT.hasKey(NBT_CAPACITY)) mMaxStorage = aNBT.getInteger(NBT_CAPACITY);
-		if (aNBT.hasKey(NBT_INPUT)) mPartialUnits = aNBT.getLong(NBT_INPUT);
-		if (aNBT.hasKey(NBT_STATE)) slot(1, ST.load(aNBT, NBT_STATE)); 
+		if (aNBT.contains(NBT_CAPACITY)) mMaxStorage = aNBT.getInteger(NBT_CAPACITY);
+		if (aNBT.contains(NBT_INPUT)) mPartialUnits = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_STATE)) slot(1, ST.load(aNBT, NBT_STATE)); 
 	}
 	
 	@Override
@@ -90,7 +90,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		if (isClientSide() && slotHas(1)) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", slot(1).getDisplayName()));
+		if (isClientSide() && slotHas(1)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", slot(1).getDisplayName()));
 		UT.NBT.setNumber(aNBT, NBT_MODE, mMode);
 		return super.writeItemNBT2(aNBT);
 	}
@@ -128,7 +128,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			if ((mMode & B[3]) != 0) return 0;
 			long rCount = 0;
 			if (mPartialUnits > 0) {
-				ST.give(aPlayer, getPartialStack(), level, xCoord + OFFX[mFacing], yCoord, zCoord + OFFZ[mFacing]);
+				ST.give(aPlayer, getPartialStack(), level, getBlockPos().getX() + OFFX[mFacing], getBlockPos().getY(), getBlockPos().getZ() + OFFZ[mFacing]);
 				mPartialUnits = 0;
 				rCount += 10;
 			}
@@ -153,14 +153,14 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		if (aTool.equals(TOOL_softhammer)) {
 			if ((mMode & B[3]) != 0) return 0;
 			if (slotHas(0)) {
-				ST.place(level, xCoord+OFFX[mFacing]+0.5, yCoord+OFFY[mFacing]+0.5, zCoord+OFFZ[mFacing]+0.5, ST.copy(slot(0)));
+				ST.place(level, getBlockPos().getX()+OFFX[mFacing]+0.5, getBlockPos().getY()+OFFY[mFacing]+0.5, getBlockPos().getZ()+OFFZ[mFacing]+0.5, ST.copy(slot(0)));
 				slotKill(0);
 				updateInventory();
 				return 10000;
 			}
 			if (slotHas(1)) {
 				for (int i = 0; i < 128 && slot(1).getCount() > Math.max(1, slot(1).getMaxStackSize()); i++) {
-					ST.place(level, xCoord+OFFX[mFacing]+0.5, yCoord+OFFY[mFacing]+0.5, zCoord+OFFZ[mFacing]+0.5, ST.amount(Math.max(1, slot(1).getMaxStackSize()), slot(1)));
+					ST.place(level, getBlockPos().getX()+OFFX[mFacing]+0.5, getBlockPos().getY()+OFFY[mFacing]+0.5, getBlockPos().getZ()+OFFZ[mFacing]+0.5, ST.amount(Math.max(1, slot(1).getMaxStackSize()), slot(1)));
 					slot(1).setCount(slot(1).getCount()-(Math.max(1, slot(1).getMaxStackSize())));
 				}
 				if (mPartialUnits > 0) {
@@ -169,7 +169,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 				}
 				if (slot(1).getCount() > 0) {
 					if (slot(1).getCount() <= Math.max(1, slot(1).getMaxStackSize())) {
-						ST.place(level, xCoord+OFFX[mFacing]+0.5, yCoord+OFFY[mFacing]+0.5, zCoord+OFFZ[mFacing]+0.5, ST.copy(slot(1)));
+						ST.place(level, getBlockPos().getX()+OFFX[mFacing]+0.5, getBlockPos().getY()+OFFY[mFacing]+0.5, getBlockPos().getZ()+OFFZ[mFacing]+0.5, ST.copy(slot(1)));
 						slotKill(1);
 						updateClientData();
 					}
@@ -707,7 +707,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	public static class MultiTileEntityRendererMassStorage extends TileEntitySpecialRenderer {
 		public static MultiTileEntityRendererMassStorage INSTANCE = new MultiTileEntityRendererMassStorage();
 		
-		@Override
+		// @Override
 		public void renderTileEntityAt(BlockEntity aTileEntity, double aX, double aY, double aZ, float aPartialTick) {
 			if (aTileEntity instanceof MultiTileEntityMassStorage && ((MultiTileEntityMassStorage)aTileEntity).slotHas(1) && ((MultiTileEntityMassStorage)aTileEntity).isFaceVisible()) {
 				MultiTileEntityMassStorage tTileEntity = ((MultiTileEntityMassStorage)aTileEntity);

@@ -111,7 +111,7 @@ public class Behavior_Spray_Foam_Remover extends AbstractBehaviorDefault {
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
-		if (IL.IC2_Foam.block() == aBlock || IL.IC2_Wall.block() == aBlock) return aUses >= 10 && aWorld.setBlock(aX, aY, aZ, NB, 0, 3) ? 10 : 0;
+		if (IL.IC2_Foam.block() == aBlock || IL.IC2_Wall.block() == aBlock) return aUses >= 10 && WD.set(aWorld, aX, aY, aZ, NB, 0, 3) ? 10 : 0;
 		return 0;
 	}
 	

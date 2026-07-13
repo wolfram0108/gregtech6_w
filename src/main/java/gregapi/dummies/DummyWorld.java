@@ -74,76 +74,76 @@ public class DummyWorld extends Level {
 	public DummyWorld() {
 		this(
 		new ISaveHandler() {
-			@Override public void saveWorldInfoWithPlayer(WorldInfo var1, CompoundTag var2) {/*Do nothing*/}
-			@Override public void saveWorldInfo(WorldInfo var1) {/*Do nothing*/}
-			@Override public WorldInfo loadWorldInfo() {return null;}
-			@Override public PlayerDataStorage getSaveHandler() {return null;}
-			@Override public File getMapFileFromName(String var1) {return null;}
-			@Override public IChunkLoader getChunkLoader(WorldProvider var1) {return null;}
-			@Override public void flush() {/*Do nothing*/}
-			@Override public void checkSessionLock() {/*Do nothing*/}
-			@Override public String getWorldDirectoryName() {return null;}
-			@Override public File getWorldDirectory() {return null;}
+			public void saveWorldInfoWithPlayer(WorldInfo var1, CompoundTag var2) {/*Do nothing*/}
+			public void saveWorldInfo(WorldInfo var1) {/*Do nothing*/}
+			public WorldInfo loadWorldInfo() {return null;}
+			public PlayerDataStorage getSaveHandler() {return null;}
+			public File getMapFileFromName(String var1) {return null;}
+			public IChunkLoader getChunkLoader(WorldProvider var1) {return null;}
+			public void flush() {/*Do nothing*/}
+			public void checkSessionLock() {/*Do nothing*/}
+			public String getWorldDirectoryName() {return null;}
+			public File getWorldDirectory() {return null;}
 		},
 		"DUMMY_DIMENSION",
 		new WorldProvider() {
-			@Override public String getDimensionName() {return "DUMMY_DIMENSION";}
+			public String getDimensionName() {return "DUMMY_DIMENSION";}
 		},
 		new WorldSettings(new WorldInfo(UT.NBT.make())),
 		new Profiler()
 		);
 	}
 	
-	@Override
+	// @Override
 	protected IChunkProvider createChunkProvider() {
 		return null;
 	}
 	
-	@Override
+	// @Override
 	public Entity getEntityByID(int aEntityID) {
 		return null;
 	}
 	
-	@Override
+	// @Override
 	public boolean setBlock(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {
 		mLastSetBlock = ST.make(aBlock, 1, aMeta);
 		return T;
 	}
 	
-	@Override
+	// @Override
 	public float getSunBrightnessFactor(float p_72967_1_) {
 		return 1.0F;
 	}
 	
-	@Override
+	// @Override
 	public Biome getBiomeGenForCoords(int aX, int aZ) {
 		if (aX >= 16 && aZ >= 16 && aX < 32 && aZ < 32) return Biome.plains;
 		return Biome.ocean;
 	}
 	
-	@Override
+	// @Override
 	public int getFullBlockLightValue(int aX, int aY, int aZ) {
 		return 10;
 	}
 	
-	@Override
+	// @Override
 	public Block getBlock(int aX, int aY, int aZ) {
 		if (aX >= 16 && aZ >= 16 && aX < 32 && aZ < 32) return aY == 64?Blocks.grass:NB;
 		return NB;
 	}
 	
-	@Override
+	// @Override
 	public int getBlockMetadata(int aX, int aY, int aZ) {
 		return 0;
 	}
 	
-	@Override
+	// @Override
 	public boolean canBlockSeeTheSky(int aX, int aY, int aZ) {
 		if (aX >= 16 && aZ >= 16 && aX < 32 && aZ < 32) return aY > 64;
 		return T;
 	}
 	
-	@Override
+	// @Override
 	protected int func_152379_p() {
 		return 0;
 	}

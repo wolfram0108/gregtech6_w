@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.multitileentity;
+import gregapi.util.WD;
 
 import gregapi.api.Optional;
 import gregapi.code.ItemNBT;
@@ -51,9 +52,9 @@ public class MultiTileEntityBlockWithCompat extends MultiTileEntityBlock impleme
 		super(aModID, aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube);
 	}
 	
-	@Override public final boolean recolourBlockRGB(Level aWorld, int aX, int aY, int aZ, Direction aDirection, int aRGB) {BlockEntity aTileEntity = aWorld.getTileEntity(aX, aY, aZ); return aTileEntity instanceof IMultiTileEntity.IMTE_OnPainting && ((IMultiTileEntity.IMTE_OnPainting)aTileEntity).onPainting(UT.Code.side(aDirection), aRGB);}
-	@Override public final boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {BlockEntity aTileEntity = aWorld.getTileEntity(aX, aY, aZ); return aTileEntity instanceof IMultiTileEntity.IMTE_IsSealable && ((IMultiTileEntity.IMTE_IsSealable)aTileEntity).isSealable((byte)(UT.Code.side(aDirection) ^ 1));}
-	@Override public final void onOxygenAdded  (Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = aWorld.getTileEntity(aX, aY, aZ); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnOxygenAdded) ((IMultiTileEntity.IMTE_OnOxygenAdded)aTileEntity).onOxygenAdded  ();}
-	@Override public final void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = aWorld.getTileEntity(aX, aY, aZ); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnOxygenRemoved) ((IMultiTileEntity.IMTE_OnOxygenRemoved)aTileEntity).onOxygenRemoved();}
-	@Override @Optional.Method(modid = ModIDs.BOTA) public final void onBurstCollision(vazkii.botania.api.internal.IManaBurst aMana, Level aWorld, int aX, int aY, int aZ) {if (aWorld.isRemote) return; if (aMana.isFake() || !IL.BOTA_Paintslinger.equal(aMana.getSourceLens(), F, T) || !ItemNBT.has(aMana.getSourceLens()) || !ItemNBT.get(aMana.getSourceLens()).hasKey("color") || ItemNBT.get(aMana.getSourceLens()).getInteger("color") == -1) return; BlockEntity aTileEntity = aWorld.getTileEntity(aX, aY, aZ); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnPainting) ((IMultiTileEntity.IMTE_OnPainting)aTileEntity).onPainting(SIDE_UNKNOWN, (aMana.getColor() & 0x00ffffff));}
+	public final boolean recolourBlockRGB(Level aWorld, int aX, int aY, int aZ, Direction aDirection, int aRGB) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMultiTileEntity.IMTE_OnPainting && ((IMultiTileEntity.IMTE_OnPainting)aTileEntity).onPainting(UT.Code.side(aDirection), aRGB);}
+	public final boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMultiTileEntity.IMTE_IsSealable && ((IMultiTileEntity.IMTE_IsSealable)aTileEntity).isSealable((byte)(UT.Code.side(aDirection) ^ 1));}
+	public final void onOxygenAdded  (Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnOxygenAdded) ((IMultiTileEntity.IMTE_OnOxygenAdded)aTileEntity).onOxygenAdded  ();}
+	public final void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnOxygenRemoved) ((IMultiTileEntity.IMTE_OnOxygenRemoved)aTileEntity).onOxygenRemoved();}
+	@Optional.Method(modid = ModIDs.BOTA) public final void onBurstCollision(vazkii.botania.api.internal.IManaBurst aMana, Level aWorld, int aX, int aY, int aZ) {if (aWorld.isRemote) return; if (aMana.isFake() || !IL.BOTA_Paintslinger.equal(aMana.getSourceLens(), F, T) || !ItemNBT.has(aMana.getSourceLens()) || !ItemNBT.get(aMana.getSourceLens()).contains("color") || ItemNBT.get(aMana.getSourceLens()).getInteger("color") == -1) return; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMultiTileEntity.IMTE_OnPainting) ((IMultiTileEntity.IMTE_OnPainting)aTileEntity).onPainting(SIDE_UNKNOWN, (aMana.getColor() & 0x00ffffff));}
 }

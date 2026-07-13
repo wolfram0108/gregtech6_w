@@ -57,7 +57,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 	public boolean shouldExecute() {
 		LivingEntity entitylivingbase = mCreature.getAttackTarget();
 		if (entitylivingbase == null) return F;
-		if (!entitylivingbase.isEntityAlive()) return F;
+		if (!entitylivingbase.isAlive()) return F;
 		if (mTargetClass != null && !mTargetClass.isAssignableFrom(entitylivingbase.getClass())) return F;
 		
 		if (--mPathCoolDown <= 0) {
@@ -71,7 +71,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 	@Override
 	public boolean continueExecuting() {
 		LivingEntity tTarget = mCreature.getAttackTarget();
-		return tTarget != null && tTarget.isEntityAlive() && (!mLastingMemory ? !mCreature.getNavigator().noPath() : mCreature.isWithinHomeDistance(Mth.floor_double(tTarget.getX()), Mth.floor_double(tTarget.getY()), Mth.floor_double(tTarget.getZ())));
+		return tTarget != null && tTarget.isAlive() && (!mLastingMemory ? !mCreature.getNavigator().noPath() : mCreature.isWithinHomeDistance(Mth.floor_double(tTarget.getX()), Mth.floor_double(tTarget.getY()), Mth.floor_double(tTarget.getZ())));
 	}
 	
 	@Override
@@ -89,16 +89,16 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 	public void updateTask() {
 		LivingEntity tTarget = mCreature.getAttackTarget();
 		mCreature.getLookHelper().setLookPositionWithEntity(tTarget, 30, 30);
-		double tTargetDistance = mCreature.getDistanceSq(tTarget.getX(), tTarget.boundingBox.minY, tTarget.getZ());
+		double tTargetDistance = mCreature.distanceToSqr(tTarget.getX(), tTarget.boundingBox.minY, tTarget.getZ());
 		double tLookRadius = mCreature.width * mCreature.width * 4 + tTarget.width;
 		mPathCoolDown--;
-		if ((mLastingMemory || mCreature.getEntitySenses().canSee(tTarget)) && mPathCoolDown <= 0 && ((mX == 0 && mY == 0 && mZ == 0) || tTarget.getDistanceSq(mX, mY, mZ) >= 1 || mCreature.getRNG().nextFloat() < 0.05F)) {
+		if ((mLastingMemory || mCreature.getEntitySenses().canSee(tTarget)) && mPathCoolDown <= 0 && ((mX == 0 && mY == 0 && mZ == 0) || tTarget.distanceToSqr(mX, mY, mZ) >= 1 || mCreature.getRNG().nextFloat() < 0.05F)) {
 			mX = tTarget.getX(); mY = tTarget.boundingBox.minY; mZ = tTarget.getZ();
 			
 			mPathCoolDown = mFailedPathFindingPenalty + 4 + mCreature.getRNG().nextInt(7);
 			if (mCreature.getNavigator().getPath() != null) {
 				PathPoint tPathPoint = mCreature.getNavigator().getPath().getFinalPathPoint();
-				if (tPathPoint != null && tTarget.getDistanceSq(tPathPoint.xCoord, tPathPoint.yCoord, tPathPoint.zCoord) < 1) {
+				if (tPathPoint != null && tTarget.distanceToSqr(tPathPoint.xCoord, tPathPoint.yCoord, tPathPoint.zCoord) < 1) {
 					mFailedPathFindingPenalty = 0;
 				} else {
 					mFailedPathFindingPenalty += 10;

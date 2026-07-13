@@ -59,8 +59,8 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_MODE)) mAutoPull = aNBT.getBoolean(NBT_MODE);
-		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_MODE)) mAutoPull = aNBT.getBoolean(NBT_MODE);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
 	}
 	
 	@Override
@@ -112,7 +112,7 @@ public class MultiTileEntityFaucet extends TileEntityBase11AttachmentSmall imple
 		if (aSide != mFacing || aMaterial == null || aMaterial.mMaterial == null || (!mAcidProof && aMaterial.mMaterial.contains(TD.Properties.ACID))) return 0;
 		if (aTemperature > getMoldMaxTemperature()) {
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
-			level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
+			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 1, 3);
 		}
 		DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(SIDE_BOTTOM);
 		while (tDelegator.mY > 0 && (tDelegator.mTileEntity instanceof MultiTileEntityFaucet || (!(tDelegator.mTileEntity instanceof MultiTileEntityBathingPot || tDelegator.mTileEntity instanceof MultiTileEntityMixingBowl || tDelegator.mTileEntity instanceof ITileEntityMold) && !WD.hasCollide(tDelegator.mWorld, tDelegator.mX, tDelegator.mY, tDelegator.mZ)))) {

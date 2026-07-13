@@ -51,8 +51,8 @@ public class MultiTileEntityMagicFieldAbsorber extends TileEntityBase09FacingSin
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override
@@ -87,7 +87,7 @@ public class MultiTileEntityMagicFieldAbsorber extends TileEntityBase09FacingSin
 				} else if (tBlock == Blocks.skull) {
 					mActive = T; mOutput = 1; mEnergyTypeEmitted = TD.Energy.TU; // I can't forsee this getting OP as heck. XD
 				} else if (IL.TF_Trophy.equal(tBlock)) {
-					switch(tBlock.getDamageValue(level, xCoord, yCoord+1, zCoord)) {
+					switch(tBlock.getDamageValue(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) {
 					case  1: mActive = T; mOutput = 64; mEnergyTypeEmitted = TD.Energy.KU; break; // Naga
 					case  2: mActive = T; mOutput = 64; mEnergyTypeEmitted = TD.Energy.QU; break; // Lich
 					default: mActive = T; mOutput = 64; mEnergyTypeEmitted = TD.Energy.HU; break; // Hydra

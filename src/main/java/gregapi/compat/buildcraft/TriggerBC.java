@@ -53,17 +53,17 @@ public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	}
 	
 	
-	@Override public String getUniqueTag() {return mModID + ":" + mName;}
-	@Override public IIcon getIcon() {return mIcon;}
-	@Override public void registerIcons(IIconRegister aIconRegister) {mIcon = aIconRegister.registerIcon(mModID + ":triggers/" + mName);}
-	@Override public int maxParameters() {return 0;}
-	@Override public int minParameters() {return 0;}
-	@Override public String getDescription() {return LanguageHandler.translate("bc.trigger."+mModID+"."+mName);}
-	@Override public IStatementParameter createParameter(int aIndex) {return null;}
-	@Override public IStatement rotateLeft() {return null;}
-	@Override public boolean isTriggerActive(BlockEntity aTarget, Direction aSide, IStatementContainer aSource, IStatementParameter[] aParameters) {return isApplicable(aTarget, UT.Code.side(aSide)) ? isActive(aTarget, UT.Code.side(aSide), aSource, aParameters) : false;}
-	@Override public Collection<ITriggerInternal> getInternalTriggers(IStatementContainer container) {return null;}
-	@Override public Collection<ITriggerExternal> getExternalTriggers(Direction aSide, BlockEntity aTarget) {return isApplicable(aTarget, UT.Code.side(aSide)) ? new ArrayListNoNulls<ITriggerExternal>(F, this) : null;}
+	public String getUniqueTag() {return mModID + ":" + mName;}
+	public IIcon getIcon() {return mIcon;}
+	public void registerIcons(IIconRegister aIconRegister) {mIcon = aIconRegister.registerIcon(mModID + ":triggers/" + mName);}
+	public int maxParameters() {return 0;}
+	public int minParameters() {return 0;}
+	public String getDescription() {return LanguageHandler.translate("bc.trigger."+mModID+"."+mName);}
+	public IStatementParameter createParameter(int aIndex) {return null;}
+	public IStatement rotateLeft() {return null;}
+	public boolean isTriggerActive(BlockEntity aTarget, Direction aSide, IStatementContainer aSource, IStatementParameter[] aParameters) {return isApplicable(aTarget, UT.Code.side(aSide)) ? isActive(aTarget, UT.Code.side(aSide), aSource, aParameters) : false;}
+	public Collection<ITriggerInternal> getInternalTriggers(IStatementContainer container) {return null;}
+	public Collection<ITriggerExternal> getExternalTriggers(Direction aSide, BlockEntity aTarget) {return isApplicable(aTarget, UT.Code.side(aSide)) ? new ArrayListNoNulls<ITriggerExternal>(F, this) : null;}
 	
 	public abstract boolean isActive(BlockEntity aTarget, byte aSideOfTileEntity, IStatementContainer aSource, IStatementParameter[] aParameters);
 	public abstract boolean isApplicable(BlockEntity aTarget, byte aSideOfTileEntity);

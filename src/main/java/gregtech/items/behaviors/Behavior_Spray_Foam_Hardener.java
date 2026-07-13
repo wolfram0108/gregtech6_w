@@ -111,8 +111,8 @@ public class Behavior_Spray_Foam_Hardener extends AbstractBehaviorDefault {
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
-		if (IL.IC2_Foam           .block() == aBlock) return aUses >= 10 && aWorld.setBlock(aX, aY, aZ, IL.IC2_Wall           .block(), 7, 3) ? 10 : 0;
-		if (IL.IC2_Foam_Reinforced.block() == aBlock) return aUses >= 10 && aWorld.setBlock(aX, aY, aZ, IL.IC2_Wall_Reinforced.block(), 0, 3) ? 10 : 0;
+		if (IL.IC2_Foam           .block() == aBlock) return aUses >= 10 && WD.set(aWorld, aX, aY, aZ, IL.IC2_Wall           .block(), 7, 3) ? 10 : 0;
+		if (IL.IC2_Foam_Reinforced.block() == aBlock) return aUses >= 10 && WD.set(aWorld, aX, aY, aZ, IL.IC2_Wall_Reinforced.block(), 0, 3) ? 10 : 0;
 		return 0;
 	}
 	

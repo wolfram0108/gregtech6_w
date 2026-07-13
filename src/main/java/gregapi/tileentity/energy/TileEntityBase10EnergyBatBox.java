@@ -58,20 +58,20 @@ public abstract class TileEntityBase10EnergyBatBox extends TileEntityBase09Facin
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
-		if (aNBT.hasKey(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
-		if (aNBT.hasKey(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyType = mEnergyTypeOut = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyType = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyType = mEnergyTypeOut = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyType = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (mMode != 0) aNBT.setByte(NBT_MODE, mMode);
+		if (mMode != 0) aNBT.putByte(NBT_MODE, mMode);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mActive);
 		UT.NBT.setBoolean(aNBT, NBT_STOPPED, mStopped);
@@ -108,17 +108,17 @@ public abstract class TileEntityBase10EnergyBatBox extends TileEntityBase09Facin
 			if (SERVER_TIME % 20 == 1) {
 				if (COMPAT_EU_ITEM == null || mEnergyType != TD.Energy.EU) {
 					switch(UT.Code.bind3(mEnergy / (mInput * 40 * invsize()))) {
-					case 0: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 40, this, level, xCoord, yCoord, zCoord, T); break;
-					case 1: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 20, this, level, xCoord, yCoord, zCoord, T); break;
-					case 6: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 20, this, level, xCoord, yCoord, zCoord, T); break;
-					case 7: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 40, this, level, xCoord, yCoord, zCoord, T); break;
+					case 0: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 40, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); break;
+					case 1: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 20, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); break;
+					case 6: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 20, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); break;
+					case 7: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)    && tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 40, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); break;
 					}
 				} else {
 					switch(UT.Code.bind3(mEnergy / (mInput * 40 * invsize()))) {
-					case 0: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 40, this, level, xCoord, yCoord, zCoord, T); else if (COMPAT_EU_ITEM.is(tStack) && COMPAT_EU_ITEM.provider(tStack) && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mOutput / 2, mOutput * 2)) mEnergy += COMPAT_EU_ITEM.decharge(tStack, mOutput * 40, T);} break;
-					case 1: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 20, this, level, xCoord, yCoord, zCoord, T); else if (COMPAT_EU_ITEM.is(tStack) && COMPAT_EU_ITEM.provider(tStack) && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mOutput / 2, mOutput * 2)) mEnergy += COMPAT_EU_ITEM.decharge(tStack, mOutput * 20, T);} break;
-					case 6: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 20, this, level, xCoord, yCoord, zCoord, T); else if (COMPAT_EU_ITEM.is(tStack)                                    && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mInput  / 2, mInput  * 2)) mEnergy -= COMPAT_EU_ITEM.charge  (tStack, mInput  * 20, T);} break;
-					case 7: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 40, this, level, xCoord, yCoord, zCoord, T); else if (COMPAT_EU_ITEM.is(tStack)                                    && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mInput  / 2, mInput  * 2)) mEnergy -= COMPAT_EU_ITEM.charge  (tStack, mInput  * 40, T);} break;
+					case 0: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 40, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); else if (COMPAT_EU_ITEM.is(tStack) && COMPAT_EU_ITEM.provider(tStack) && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mOutput / 2, mOutput * 2)) mEnergy += COMPAT_EU_ITEM.decharge(tStack, mOutput * 40, T);} break;
+					case 1: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy += mOutput * ((IItemEnergy)tStack.getItem()).doEnergyExtraction(mEnergyType, tStack, mOutput, 20, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); else if (COMPAT_EU_ITEM.is(tStack) && COMPAT_EU_ITEM.provider(tStack) && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mOutput / 2, mOutput * 2)) mEnergy += COMPAT_EU_ITEM.decharge(tStack, mOutput * 20, T);} break;
+					case 6: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 20, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); else if (COMPAT_EU_ITEM.is(tStack)                                    && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mInput  / 2, mInput  * 2)) mEnergy -= COMPAT_EU_ITEM.charge  (tStack, mInput  * 20, T);} break;
+					case 7: for (ItemStack tStack : getInventory()) if (ST.valid(tStack)) {if (tStack.getItem() instanceof IItemEnergy) mEnergy -= mInput  * ((IItemEnergy)tStack.getItem()).doEnergyInjection (mEnergyType, tStack, mInput , 40, this, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T); else if (COMPAT_EU_ITEM.is(tStack)                                    && !IL.IC2_EnergyCrystal.equal(tStack, T, T) && !IL.IC2_LapotronCrystal.equal(tStack, T, T) && COMPAT_EU_ITEM.insidevolt(tStack, mInput  / 2, mInput  * 2)) mEnergy -= COMPAT_EU_ITEM.charge  (tStack, mInput  * 40, T);} break;
 					}
 				}
 			}

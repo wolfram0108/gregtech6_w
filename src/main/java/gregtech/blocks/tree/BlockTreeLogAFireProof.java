@@ -90,7 +90,7 @@ public class BlockTreeLogAFireProof extends BlockBaseLog implements IBlockToolab
 		if (aTool.equals(TOOL_axe) || aTool.equals(TOOL_saw) || aTool.equals(TOOL_knife)) {
 			if (aWorld.isRemote) return 0;
 			byte aMeta = WD.meta(aWorld, aX, aY, aZ);
-			aWorld.setBlock(aX, aY, aZ, BlocksGT.BeamA, aMeta, 3);
+			WD.set(aWorld, aX, aY, aZ, BlocksGT.BeamA, aMeta, 3);
 			ST.give(aPlayer, OM.dust(MT.Bark), aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);
 			return aTool.equals(TOOL_axe) ? 500 : 1000;
 		}

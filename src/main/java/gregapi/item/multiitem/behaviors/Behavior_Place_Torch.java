@@ -42,7 +42,7 @@ public class Behavior_Place_Torch extends AbstractBehaviorDefault {
 		for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) {
 			ItemStack tStack = aPlayer.inventory.mainInventory[aPlayer.inventory.mainInventory.length-i-1];
 			if (ST.invalid(tStack) || !ST.torch(tStack)) continue;
-			if (WD.grass(aWorld, aX, aY, aZ)) {aSide = SIDE_TOP; aWorld.setBlockToAir(aX, aY--, aZ);}
+			if (WD.grass(aWorld, aX, aY, aZ)) {aSide = SIDE_TOP; WD.set(aWorld, aX, aY--, aZ, NB, 0, 3);}
 			
 			int tOldSize = tStack.getCount();
 			if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {

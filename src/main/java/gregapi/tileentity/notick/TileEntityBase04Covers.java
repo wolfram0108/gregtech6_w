@@ -65,13 +65,13 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_COVERS)) mCovers = CoverRegistry.coverdata(this, aNBT.getCompoundTag(NBT_COVERS));
+		if (aNBT.contains(NBT_COVERS)) mCovers = CoverRegistry.coverdata(this, aNBT.getCompoundTag(NBT_COVERS));
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (hasCovers()) aNBT.setTag(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), T));
+		if (hasCovers()) aNBT.put(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), T));
 	}
 	
 	/** Writes eventual Item Data to the NBT. */
@@ -80,7 +80,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	@Override
 	public final CompoundTag writeItemNBT(CompoundTag aNBT) {
 		aNBT = super.writeItemNBT(writeItemNBT2(aNBT));
-		if (hasCovers()) aNBT.setTag(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), F));
+		if (hasCovers()) aNBT.put(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), F));
 		return aNBT;
 	}
 	
@@ -168,7 +168,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	public final long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (!allowInteraction(aPlayer)) return 0;
 		if (checkObstruction(aPlayer instanceof Player ? (Player)aPlayer : null, aSide, aHitX, aHitY, aHitZ)) return 0;
-		level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this);
+		level.markTileEntityChunkModified(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		if (SIDES_VALID[aSide] && hasCovers()) {
 			byte tSide = usePipePlacementMode(aSide) && mCovers.mIDs[aSide] == 0 ? UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ) : aSide;
 			if (aTool.equals(TOOL_crowbar) && isServerSide()) {
@@ -326,27 +326,27 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 		return T;
 	}
 	
-	@Override public boolean isUseableByPlayer(Player aPlayer) {return !isDead() && allowInteraction(aPlayer) && aPlayer.getDistanceSq(xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D) <= 64D;}
-	@Override public void openInventory() {/**/}
-	@Override public void closeInventory() {/**/}
-	@Override public int getInventoryStackLimit() {return 64;}
+	public boolean isUseableByPlayer(Player aPlayer) {return !isDead() && allowInteraction(aPlayer) && aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
+	public void openInventory() {/**/}
+	public void closeInventory() {/**/}
+	public int getInventoryStackLimit() {return 64;}
 	@Override public void markDirty() {super.markDirty();}
-	@Override public ItemStack decrStackSize(int aSlot, int aDecrement) {return NI;}
-	@Override public ItemStack getStackInSlotOnClosing(int aSlot) {return NI;}
-	@Override public ItemStack getStackInSlot(int aSlot) {return NI;}
-	@Override public String getInventoryName() {String rName = getCustomName(); if (UT.Code.stringValid(rName)) return rName; MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()); return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());}
-	@Override public int getSizeInventory() {return 0;}
-	@Override public void setInventorySlotContents(int aSlot, ItemStack aStack) {/**/}
-	@Override public boolean hasCustomInventoryName() {return getCustomName() != null;}
-	@Override public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {return T;}
+	public ItemStack decrStackSize(int aSlot, int aDecrement) {return NI;}
+	public ItemStack getStackInSlotOnClosing(int aSlot) {return NI;}
+	public ItemStack getStackInSlot(int aSlot) {return NI;}
+	public String getInventoryName() {String rName = getCustomName(); if (UT.Code.stringValid(rName)) return rName; MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()); return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());}
+	public int getSizeInventory() {return 0;}
+	public void setInventorySlotContents(int aSlot, ItemStack aStack) {/**/}
+	public boolean hasCustomInventoryName() {return getCustomName() != null;}
+	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {return T;}
 	
-	@Override
+	// @Override
 	public final int[] getAccessibleSlotsFromSide(int aSide) {
 		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].getAccessibleSlotsFromSideOverride(UT.Code.side(aSide), mCovers, UT.Code.side(aSide))) return mCovers.mBehaviours[aSide].getAccessibleSlotsFromSide(UT.Code.side(aSide), mCovers, UT.Code.side(aSide), getAccessibleSlotsFromSide2(UT.Code.side(aSide)));
 		return getAccessibleSlotsFromSide2(UT.Code.side(aSide));
 	}
 	
-	@Override
+	// @Override
 	public final boolean canInsertItem(int aSlot, ItemStack aStack, int aSide) {
 		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null) {
 			if (mCovers.mBehaviours[aSide].interceptItemInsert(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
@@ -355,7 +355,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 		return canInsertItem2(aSlot, aStack, UT.Code.side(aSide));
 	}
 	
-	@Override
+	// @Override
 	public final boolean canExtractItem(int aSlot, ItemStack aStack, int aSide) {
 		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null) {
 			if (mCovers.mBehaviours[aSide].interceptItemExtract(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;

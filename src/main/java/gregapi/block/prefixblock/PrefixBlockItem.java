@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.prefixblock;
+import gregapi.util.WD;
 
 import gregapi.api.Optional;
 import gregapi.code.ItemNBT;
@@ -73,7 +74,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		}
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
 		if (!mBlock.mHidden && (SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || mBlock == BlocksGT.ore || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) for (int i = 0; i < mBlock.mMaterialList.length; i++) if (mBlock.mPrefix.isGeneratingItem(mBlock.mMaterialList[i])) if (SHOW_HIDDEN_MATERIALS || !mBlock.mMaterialList[i].mHidden) {
@@ -84,10 +85,10 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		if (aList.isEmpty()) ST.hide(this);
 	}
 	
-	@Override
+	// @Override
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ, int aMeta) {
 		if (mBlock.placeBlock(aWorld, aX, aY, aZ, (byte)aSide, ST.meta_(aStack), ItemNBT.get(aStack), T, F)) {
-			if (aWorld.getBlock(aX, aY, aZ) == field_150939_a) {
+			if (WD.block(aWorld, aX, aY, aZ) == field_150939_a) {
 				field_150939_a.onBlockPlacedBy(aWorld, aX, aY, aZ, aPlayer, aStack);
 				field_150939_a.onPostBlockPlaced(aWorld, aX, aY, aZ, ST.meta_(aStack));
 			}
@@ -97,7 +98,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		return F;
 	}
 	
-	@Override
+	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) {
 			short aMetaData = ST.meta_(aStack);
@@ -106,7 +107,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		return UNCOLORED;
 	}
 	
-	@Override
+	// @Override
 	public final String getUnlocalizedName(ItemStack aStack) {
 		short aMetaData = ST.meta_(aStack);
 		if (aMetaData == W) return mBlock.mNameInternal+"."+W;
@@ -114,7 +115,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		return mBlock.getUnlocalizedName();
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		super.addInformation(aStack, aPlayer, aList, aF3_H);
@@ -150,19 +151,19 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		}
 	}
 	
-	@Optional.Method(modid = ModIDs.BOTA) @Override public Block getBlockToPlaceByFlower(ItemStack aStack, SubTileEntity aFlower, int aX, int aY, int aZ) {return null;}
-	@Optional.Method(modid = ModIDs.BOTA) @Override public void onBlockPlacedByFlower(ItemStack aStack, SubTileEntity aFlower, int aX, int aY, int aZ) {/**/}
+	@Optional.Method(modid = ModIDs.BOTA) public Block getBlockToPlaceByFlower(ItemStack aStack, SubTileEntity aFlower, int aX, int aY, int aZ) {return null;}
+	@Optional.Method(modid = ModIDs.BOTA) public void onBlockPlacedByFlower(ItemStack aStack, SubTileEntity aFlower, int aX, int aY, int aZ) {/**/}
 	
-	@Override public final String getUnlocalizedName() {return mBlock.getUnlocalizedName();}
-	@Override public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
-	@Override public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
-	@Override public ItemStack getContainerItem(ItemStack aStack) {return null;}
-	@Override public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
-	@Override public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {updateItemStack(aStack);}
-	@Override public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
-	@Override public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
-	@Override public int getItemEnchantability() {return 0;}
-	@Override public int getItemStackLimit(ItemStack aStack) {return mBlock.mPrefix.mDefaultStackSize;}
+	public final String getUnlocalizedName() {return mBlock.getUnlocalizedName();}
+	public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
+	public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
+	public ItemStack getContainerItem(ItemStack aStack) {return null;}
+	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
+	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {updateItemStack(aStack);}
+	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
+	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
+	public int getItemEnchantability() {return 0;}
+	public int getItemStackLimit(ItemStack aStack) {return mBlock.mPrefix.mDefaultStackSize;}
 	@Override public OreDictMaterial getMaterial(int aMetaData) {return UT.Code.exists(aMetaData, mBlock.mMaterialList) ? mBlock.mMaterialList[aMetaData] : null;}
 	@Override public OreDictPrefix getPrefix(int aMetaData) {return mBlock.mPrefix;}
 	/*

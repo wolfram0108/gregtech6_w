@@ -66,24 +66,24 @@ public class MultiTileEntityMiniPortalAroma extends MultiTileEntityMiniPortal {
 			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListAromaSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = xCoord-tTarget.xCoord, tZDifference = zCoord-tTarget.zCoord;
+					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX(), tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ();
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
 			} else if (WD.dimA97(level)) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = tTarget.xCoord-xCoord, tZDifference = tTarget.zCoord-zCoord;
+					long tXDifference = tTarget.getBlockPos().getX()-getBlockPos().getX(), tZDifference = tTarget.getBlockPos().getZ()-getBlockPos().getZ();
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
@@ -113,7 +113,7 @@ public class MultiTileEntityMiniPortalAroma extends MultiTileEntityMiniPortal {
 		if (isClientSide()) return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_igniter)) {
 			if (mActive) setPortalInactive(); else setPortalActive();
-			if (mTarget != null && aChatReturn != null) aChatReturn.add("X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
+			if (mTarget != null && aChatReturn != null) aChatReturn.add("X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());
 			return 10000;
 		}
 		if (aTool.equals(TOOL_extinguisher)) {
@@ -123,7 +123,7 @@ public class MultiTileEntityMiniPortalAroma extends MultiTileEntityMiniPortal {
 		return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.stonebrick.getBlockHardness(level, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.stonebrick.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.stonebrick.getExplosionResistance(null);}
 	
 	public ITexture sAromaPortal = BlockTextureCopied.get(ST.block(MD.A97_MINING, "aromicPortal", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sAromaPortalFrame = BlockTextureCopied.get(ST.block(MD.A97_MINING, "portalFrame", Blocks.stonebrick), SIDE_ANY, 0);

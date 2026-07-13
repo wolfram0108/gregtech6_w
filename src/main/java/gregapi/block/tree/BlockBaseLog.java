@@ -67,14 +67,14 @@ public abstract class BlockBaseLog extends BlockBaseTree {
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.log.getBlockHardness(aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.log.getExplosionResistance(null);}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.log.mDefaultStackSize);}
-	@Override public int getRenderType() {return PILLAR_RENDER;}
+	public int getRenderType() {return PILLAR_RENDER;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	@Override public int getFlammability(byte aMeta) {return 0;}
 	@Override public int getFireSpreadSpeed(byte aMeta) {return 0;}
-	@Override public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return PILLAR_DATA_SIDE[aMeta][aSide];}
+	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return PILLAR_DATA_SIDE[aMeta][aSide];}
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[2*(aMeta&PILLAR_DATA)+(PILLAR_TO_AXIS[aMeta][aSide]?0:1)].getIcon(0);}
-	@Override public boolean isWood(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
+	public boolean isWood(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	@SuppressWarnings("unchecked") @Override public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {for (int i = 0; i < maxMeta(); i++) {aList.add(ST.make(aItem, 1, i)); aList.add(ST.make(aItem, 1, i|12));}}
 }

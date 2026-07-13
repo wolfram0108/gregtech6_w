@@ -42,17 +42,17 @@ import static gregapi.data.CS.SIDES_VALID;
 public class CompatOC extends CompatBase implements ICompatOC, SidedBlock {
 	public CompatOC() {/**/}
 	
-	@Override
+	// @Override
 	public void onLoad(FMLCommonSetupEvent event) {
 		Driver.add(this);
 	}
 	
-	@Override
+	// @Override
 	public boolean worksWith(Level aWorld, int aX, int aY, int aZ, Direction aSide) {
 		return findPeripheral(aWorld, aX, aY, aZ, aSide) != null;
 	}
 	
-	@Override
+	// @Override
 	public ManagedEnvironment createEnvironment(Level aWorld, int aX, int aY, int aZ, Direction aSide) {
 		return new EnvironmentOC(findPeripheral(aWorld, aX, aY, aZ, aSide), WD.te(aWorld, aX, aY, aZ, UT.Code.side(aSide), F));
 	}

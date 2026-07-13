@@ -59,7 +59,7 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		mCapacity = aNBT.getLong(NBT_CAPACITY);
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 	}
 	
 	@Override
@@ -116,7 +116,7 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		return aY >= yCoord && aX >= xCoord - 1 && aZ >= zCoord - 1 && aX <= xCoord + 1 && aZ <= zCoord + 1 && (aY < yCoord + 5 || (aX == xCoord && aZ == zCoord && aY <= yCoord + mSize + 4));
+		return aY >= getBlockPos().getY() && aX >= getBlockPos().getX() - 1 && aZ >= getBlockPos().getZ() - 1 && aX <= getBlockPos().getX() + 1 && aZ <= getBlockPos().getZ() + 1 && (aY < getBlockPos().getY() + 5 || (aX == getBlockPos().getX() && aZ == getBlockPos().getZ() && aY <= getBlockPos().getY() + mSize + 4));
 	}
 	
 	@Override
@@ -129,19 +129,19 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 					mEnergy -= Math.max(1, ITileEntityEnergy.Util.emitEnergyToSide(mEnergyTypeEmitted, SIDE_BOTTOM, VREC[6], 16, this)) * VREC[6];
 				} else {
 					mEnergy = 0;
-					if (mSize > 0 && yCoord + mSize >= 100 && rng(1000000) < Math.min(100, mSize) && (level.isThundering() || (level.isRaining() && rng(10) == 0))) {
+					if (mSize > 0 && getBlockPos().getY() + mSize >= 100 && rng(1000000) < Math.min(100, mSize) && (level.isThundering() || (level.isRaining() && rng(10) == 0))) {
 						int tCount = 1;
-						for (MultiTileEntityLightningRod tLightningRod : ALL_LIGHTNING_RODS) if (tLightningRod != this && tLightningRod.mSize > 0 && tLightningRod.getWorld() == level && Math.abs(tLightningRod.xCoord - xCoord) < 256 && Math.abs(tLightningRod.zCoord - zCoord) < 256) tCount++;
+						for (MultiTileEntityLightningRod tLightningRod : ALL_LIGHTNING_RODS) if (tLightningRod != this && tLightningRod.mSize > 0 && tLightningRod.getWorld() == level && Math.abs(tLightningRod.getBlockPos().getX() - getBlockPos().getX()) < 256 && Math.abs(tLightningRod.getBlockPos().getZ() - getBlockPos().getZ()) < 256) tCount++;
 						if (rng(tCount) == 0) {
 							boolean temp = T;
-							for (int i = yCoord + mSize + 5, j = level.getHeight(); i < j; i++) {
-								if (!WD.air(level, xCoord, i, zCoord)) {
+							for (int i = getBlockPos().getY() + mSize + 5, j = level.getHeight(); i < j; i++) {
+								if (!WD.air(level, getBlockPos().getX(), i, getBlockPos().getZ())) {
 									temp = F;
 									break;
 								}
 							}
 							if (temp) {
-								level.addWeatherEffect(new EntityLightningBolt(level, xCoord, yCoord+mSize+4, zCoord));
+								level.addWeatherEffect(new EntityLightningBolt(level, getBlockPos().getX(), getBlockPos().getY()+mSize+4, getBlockPos().getZ()));
 								mEnergy = mCapacity;
 							}
 						}

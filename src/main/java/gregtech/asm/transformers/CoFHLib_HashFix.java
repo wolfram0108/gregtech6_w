@@ -28,7 +28,7 @@ import org.objectweb.asm.tree.*;
  * @author Gregorius Techneticies
  */
 public class CoFHLib_HashFix implements IClassTransformer {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (name.equals("cofh.lib.util.ComparableItem")) {
 			ClassNode classNode = GT_ASM.makeNodes(basicClass);

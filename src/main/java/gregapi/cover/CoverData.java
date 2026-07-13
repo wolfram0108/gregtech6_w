@@ -69,48 +69,48 @@ public class CoverData {
 	public CompoundTag writeToNBT(CompoundTag aNBT, boolean aIncludeVisuals) {
 		byte i = 0;
 		if (mIDs[  i] != 0) {
-			aNBT.setShort("a", mIDs[i]);
-			if (mMetas[i] != 0) aNBT.setShort("g", mMetas[i]);
-			if (mValues[i] != 0) aNBT.setShort("0", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("s", mNBTs[i]);
-			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("m", mVisuals[i]);
+			aNBT.putShort("a", mIDs[i]);
+			if (mMetas[i] != 0) aNBT.putShort("g", mMetas[i]);
+			if (mValues[i] != 0) aNBT.putShort("0", mValues[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("s", mNBTs[i]);
+			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("m", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.setShort("b", mIDs[i]);
-			if (mMetas[i] != 0) aNBT.setShort("h", mMetas[i]);
-			if (mValues[i] != 0) aNBT.setShort("1", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("t", mNBTs[i]);
-			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("n", mVisuals[i]);
+			aNBT.putShort("b", mIDs[i]);
+			if (mMetas[i] != 0) aNBT.putShort("h", mMetas[i]);
+			if (mValues[i] != 0) aNBT.putShort("1", mValues[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("t", mNBTs[i]);
+			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("n", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.setShort("c", mIDs[i]);
-			if (mMetas[i] != 0) aNBT.setShort("i", mMetas[i]);
-			if (mValues[i] != 0) aNBT.setShort("2", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("u", mNBTs[i]);
-			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("o", mVisuals[i]);
+			aNBT.putShort("c", mIDs[i]);
+			if (mMetas[i] != 0) aNBT.putShort("i", mMetas[i]);
+			if (mValues[i] != 0) aNBT.putShort("2", mValues[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("u", mNBTs[i]);
+			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("o", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.setShort("d", mIDs[i]);
-			if (mMetas[i] != 0) aNBT.setShort("j", mMetas[i]);
-			if (mValues[i] != 0) aNBT.setShort("3", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("v", mNBTs[i]);
-			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("p", mVisuals[i]);
+			aNBT.putShort("d", mIDs[i]);
+			if (mMetas[i] != 0) aNBT.putShort("j", mMetas[i]);
+			if (mValues[i] != 0) aNBT.putShort("3", mValues[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("v", mNBTs[i]);
+			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("p", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.setShort("e", mIDs[i]);
-			if (mMetas[i] != 0) aNBT.setShort("k", mMetas[i]);
-			if (mValues[i] != 0) aNBT.setShort("4", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("w", mNBTs[i]);
-			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("q", mVisuals[i]);
+			aNBT.putShort("e", mIDs[i]);
+			if (mMetas[i] != 0) aNBT.putShort("k", mMetas[i]);
+			if (mValues[i] != 0) aNBT.putShort("4", mValues[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("w", mNBTs[i]);
+			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("q", mVisuals[i]);
 		}
 		if (mIDs[++i] != 0) {
-			aNBT.setShort("f", mIDs[i]); 
-			if (mMetas[i] != 0) aNBT.setShort("l", mMetas[i]);
-			if (mValues[i] != 0) aNBT.setShort("5", mValues[i]);
-			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.setTag("x", mNBTs[i]);
-			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.setShort("r", mVisuals[i]);
+			aNBT.putShort("f", mIDs[i]); 
+			if (mMetas[i] != 0) aNBT.putShort("l", mMetas[i]);
+			if (mValues[i] != 0) aNBT.putShort("5", mValues[i]);
+			if (mNBTs[i] != null && !mNBTs[i].isEmpty()) aNBT.put("x", mNBTs[i]);
+			if (mVisuals[i] != 0 && (aIncludeVisuals || (mBehaviours[i] != null && mBehaviours[i].needsVisualsSaved(i, this)))) aNBT.putShort("r", mVisuals[i]);
 		}
-		if (mStopped) aNBT.setBoolean("y", mStopped);
+		if (mStopped) aNBT.putBoolean("y", mStopped);
 		return aNBT;
 	}
 	

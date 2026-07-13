@@ -77,11 +77,11 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		mBurning = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_COOLDOWN)) mCooldown = aNBT.getByte(NBT_COOLDOWN);
-		if (aNBT.hasKey(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.hasKey(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
-		if (aNBT.hasKey(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_COOLDOWN)) mCooldown = aNBT.getByte(NBT_COOLDOWN);
+		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 		mTank.setCapacity(mRate * 10);
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}
@@ -120,7 +120,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 					mEnergy -= mRate;
 					// Burn surrounding Area.
 					if (mEfficiency < 1 || rng(mEfficiency) == 0) {
-						WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+						WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 					}
 				}
 				// Check if it needs to burn more Fuel, or if the buffered Energy is enough.
@@ -166,7 +166,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 			if (mCooldown > 0) mCooldown--;
 		} else {
 			// Client Burning Particles.
-			if (mBurning && rng(5) == 0) spawnBurningParticles(xCoord+0.5+OFFX[mFacing]*0.55+(SIDES_AXIS_X[mFacing]?0:RNGSUS.nextFloat()*0.6-0.3), yCoord+RNGSUS.nextFloat()*0.375, zCoord+0.5+OFFZ[mFacing]*0.55+(SIDES_AXIS_Z[mFacing]?0:RNGSUS.nextFloat()*0.6-0.3));
+			if (mBurning && rng(5) == 0) spawnBurningParticles(getBlockPos().getX()+0.5+OFFX[mFacing]*0.55+(SIDES_AXIS_X[mFacing]?0:RNGSUS.nextFloat()*0.6-0.3), getBlockPos().getY()+RNGSUS.nextFloat()*0.375, getBlockPos().getZ()+0.5+OFFZ[mFacing]*0.55+(SIDES_AXIS_Z[mFacing]?0:RNGSUS.nextFloat()*0.6-0.3));
 		}
 	}
 	

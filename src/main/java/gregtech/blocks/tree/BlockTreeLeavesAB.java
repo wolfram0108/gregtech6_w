@@ -135,6 +135,6 @@ public class BlockTreeLeavesAB extends BlockBaseLeaves implements Runnable {
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
-		return (aWorld.getBlockMetadata(aX, aY, aZ) & 7) == 7 ? RAINBOW_ARRAY[(Math.abs(aX) + Math.abs(aY) + Math.abs(aZ)) % RAINBOW_ARRAY.length] : UNCOLORED;
+		return (WD.meta(aWorld, aX, aY, aZ) & 7) == 7 ? RAINBOW_ARRAY[(Math.abs(aX) + Math.abs(aY) + Math.abs(aZ)) % RAINBOW_ARRAY.length] : UNCOLORED;
 	}
 }

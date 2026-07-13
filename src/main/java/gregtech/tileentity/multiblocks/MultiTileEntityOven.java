@@ -43,11 +43,11 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityOven extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing)-1, tY = yCoord, tZ = getOffsetZN(mFacing)-1;
-		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
+		int tX = getOffsetXN(mFacing)-1, tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing)-1;
+		if (WD.exists(level, tX-1, tY, tZ-1) && WD.exists(level, tX+1, tY, tZ-1) && WD.exists(level, tX-1, tY, tZ+1) && WD.exists(level, tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			
-			if (getAir(tX+1, tY+1, tZ+1)) level.setBlockToAir(tX+1, tY+1, tZ+1); else tSuccess = F;
+			if (getAir(tX+1, tY+1, tZ+1)) WD.set(level, tX+1, tY+1, tZ+1, NB, 0, 3); else tSuccess = F;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18007, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+1, tY  , tZ  , 18007, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -108,7 +108,7 @@ public class MultiTileEntityOven extends TileEntityBase10MultiBlockMachine {
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing);
 		return aX >= tX - 1 && aY >= tY && aZ >= tZ - 1 && aX <= tX + 1 && aY <= tY + 2 && aZ <= tZ + 1;
 	}
 	

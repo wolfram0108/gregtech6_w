@@ -66,7 +66,7 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 			if (mOwner == null) {
 				getNetworkHandler().sendToPlayer(tPacket, aPlayer);
 			} else {
-				if (mOwner.equals(aPlayer.getUniqueID())) {
+				if (mOwner.equals(aPlayer.getUUID())) {
 					getNetworkHandler().sendToPlayer(tPacket, aPlayer);
 				} else {
 					getNetworkHandlerNonOwned().sendToPlayer(tPacket, aPlayer);
@@ -89,7 +89,7 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 	
 	@Override public void onCoordinateChange() {super.onCoordinateChange(); updateClientData();}
 	
-	@Override public final net.minecraft.network.Packet getDescriptionPacket() {return null;}
+	public final net.minecraft.network.Packet getDescriptionPacket() {return null;}
 	
 	@Override
 	public void validate() {
@@ -104,7 +104,7 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 	
 	@Override
 	public boolean allowInteraction(Entity aEntity) {
-		return mOwner == null || (aEntity != null && mOwner.equals(aEntity.getUniqueID()));
+		return mOwner == null || (aEntity != null && mOwner.equals(aEntity.getUUID()));
 	}
 	
 	@Override

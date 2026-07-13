@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen.dungeon;
+import gregapi.util.WD;
 
 import gregapi.block.IBlockPlacable;
 import gregapi.block.metatype.BlockStones;
@@ -167,8 +168,8 @@ public class DungeonData extends WorldAndCoords {
 	}
 	
 	public boolean coins(int aX, int aY, int aZ) {
-		for (int i = 0; i < 16; i++) mCoin.setByte("gt.coin.stacksize."+i, (byte)(next1in3() ? next(8) : 0));
-		mCoin.setByte("gt.coin.stacksize."+next(16), (byte)(1+next(8)));
+		for (int i = 0; i < 16; i++) mCoin.putByte("gt.coin.stacksize."+i, (byte)(next1in3() ? next(8) : 0));
+		mCoin.putByte("gt.coin.stacksize."+next(16), (byte)(1+next(8)));
 		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)32700, mCoin, T, T);
 	}
 	
@@ -328,7 +329,7 @@ public class DungeonData extends WorldAndCoords {
 	public boolean pot(int aX, int aY, int aZ) {
 		int tIndex = next(BlocksGT.POT_FLOWER_TILES.length);
 		set(aX, aY, aZ, Blocks.flower_pot, 0, 2);
-		BlockEntity tTileEntity = mWorld.getTileEntity(mX+aX, mY+aY, mZ+aZ);
+		BlockEntity tTileEntity = WD.te(mWorld, mX+aX, mY+aY, mZ+aZ, T);
 		if (tTileEntity instanceof TileEntityFlowerPot) {
 			if (next1in2()) {
 				((TileEntityFlowerPot)tTileEntity).func_145964_a(ST.item(BlocksGT.POT_FLOWER_TILES[tIndex]), BlocksGT.POT_FLOWER_METAS[tIndex]);
@@ -348,13 +349,13 @@ public class DungeonData extends WorldAndCoords {
 	}
 	
 	public boolean set(int aX, int aY, int aZ, Block aBlock) {
-		return mWorld.setBlock(mX+aX, mY+aY, mZ+aZ, aBlock, 0, 2);
+		return WD.set(mWorld, mX+aX, mY+aY, mZ+aZ, aBlock, 0, 2);
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock, int aMeta) {
-		return mWorld.setBlock(mX+aX, mY+aY, mZ+aZ, aBlock, aMeta, 2);
+		return WD.set(mWorld, mX+aX, mY+aY, mZ+aZ, aBlock, aMeta, 2);
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {
-		return mWorld.setBlock(mX+aX, mY+aY, mZ+aZ, aBlock, aMeta, aFlags);
+		return WD.set(mWorld, mX+aX, mY+aY, mZ+aZ, aBlock, aMeta, aFlags);
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags, int aRotationCount) {
 		if (!set(aX, aY, aZ, aBlock, aMeta, aFlags)) return F;

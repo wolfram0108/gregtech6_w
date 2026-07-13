@@ -115,10 +115,10 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, T) == null && !(tStack.getItem() instanceof MultiItemTool)) {
 						tStack = ST.amount(1, tStack);
-						tNBT.setTag(""+i, ST.save(tStack));
+						tNBT.put(""+i, ST.save(tStack));
 					}
 				}
-				rNBT.setTag(NBT_RECYCLING_COMPS, tNBT);
+				rNBT.put(NBT_RECYCLING_COMPS, tNBT);
 				UT.NBT.set(rStack, rNBT);
 			}
 			

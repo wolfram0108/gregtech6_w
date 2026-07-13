@@ -44,19 +44,19 @@ public class EntityFoodTracker implements AttachmentType {
 		mEntity = aEntity;
 	}
 	
-	@Override
+	// @Override
 	public void saveNBTData(CompoundTag aNBT) {
 		CompoundTag tNBT = UT.NBT.make();
-		if (mAlcohol     != 0) tNBT.setByte("a", mAlcohol    );
-		if (mCaffeine    != 0) tNBT.setByte("c", mCaffeine   );
-		if (mSugar       != 0) tNBT.setByte("s", mSugar      );
-		if (mDehydration != 0) tNBT.setByte("d", mDehydration);
-		if (mFat         != 0) tNBT.setByte("f", mFat        );
-		if (mRadiation   != 0) tNBT.setByte("r", mRadiation  );
-		if (tNBT.isEmpty()) aNBT.removeTag("gt.props.food"); else aNBT.setTag("gt.props.food", tNBT);
+		if (mAlcohol     != 0) tNBT.putByte("a", mAlcohol    );
+		if (mCaffeine    != 0) tNBT.putByte("c", mCaffeine   );
+		if (mSugar       != 0) tNBT.putByte("s", mSugar      );
+		if (mDehydration != 0) tNBT.putByte("d", mDehydration);
+		if (mFat         != 0) tNBT.putByte("f", mFat        );
+		if (mRadiation   != 0) tNBT.putByte("r", mRadiation  );
+		if (tNBT.isEmpty()) aNBT.removeTag("gt.props.food"); else aNBT.put("gt.props.food", tNBT);
 	}
 	
-	@Override
+	// @Override
 	public void loadNBTData(CompoundTag aNBT) {
 		CompoundTag tNBT = aNBT.getCompoundTag("gt.props.food");
 		if (tNBT == null) return;
@@ -68,7 +68,7 @@ public class EntityFoodTracker implements AttachmentType {
 		mRadiation   = tNBT.getByte("r");
 	}
 	
-	@Override public void init(Entity aEntity, Level aWorld) {TICK_LIST.add(this);}
+	public void init(Entity aEntity, Level aWorld) {TICK_LIST.add(this);}
 	public void changeAlcohol    (long aAmount) {mAlcohol     = UT.Code.bind7(mAlcohol     + aAmount);}
 	public void changeCaffeine   (long aAmount) {mCaffeine    = UT.Code.bind7(mCaffeine    + aAmount);}
 	public void changeDehydration(long aAmount) {mDehydration = UT.Code.bind7(mDehydration + aAmount);}

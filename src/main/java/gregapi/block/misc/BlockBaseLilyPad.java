@@ -68,9 +68,9 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	@Override public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof EntityBoat)) super.addCollisionBoxesToList(aWorld, aX, aY, aZ, aAABB, aList, aEntity);}
-	@Override public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= 0 && aY < 256 && aWorld.getBlock(aX, aY - 1, aZ).getMaterial() == Material.water && aWorld.getBlockMetadata(aX, aY - 1, aZ) == 0;}
-	@Override public boolean canPlaceBlockAt(Level aWorld, int aX, int aY, int aZ) {return super.canPlaceBlockAt(aWorld, aX, aY, aZ) && canBlockStay(aWorld, aX, aY, aZ);}
+	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof EntityBoat)) super.addCollisionBoxesToList(aWorld, aX, aY, aZ, aAABB, aList, aEntity);}
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= 0 && aY < 256 && WD.block(aWorld, aX, aY - 1, aZ).getMaterial() == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;}
+	public boolean canPlaceBlockAt(Level aWorld, int aX, int aY, int aZ) {return super.canPlaceBlockAt(aWorld, aX, aY, aZ) && canBlockStay(aWorld, aX, aY, aZ);}
 	@Override public boolean checkNoEntityCollision(Level aWorld, int aX, int aY, int aZ, byte aMeta, Entity aExceptThisOne) {return T;}
 	@Override public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {checkAndDropBlock(aWorld, aX, aY, aZ);}
 	@Override public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {checkAndDropBlock(aWorld, aX, aY, aZ);}
@@ -80,9 +80,9 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
-	@Override public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return Water;}
-	@Override public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
-	@Override public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
+	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return Water;}
+	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
+	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.waterlily.getBlockHardness(aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.waterlily.getExplosionResistance(null);}
 	@Override public int getItemStackLimit(ItemStack aStack) {return 64;}
@@ -90,7 +90,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (!canBlockStay(aWorld, aX, aY, aZ)) {
 			dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
-			aWorld.setBlock(aX, aY, aZ, getBlockById(0), 0, 2);
+			WD.set(aWorld, aX, aY, aZ, getBlockById(0), 0, 2);
 		}
 	}
 	
@@ -100,19 +100,19 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		if (tPos == null || tPos.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
 		int aX = tPos.blockX, aY = tPos.blockY, aZ = tPos.blockZ;
 		if (!aWorld.canMineBlock(aPlayer, aX, aY, aZ) || !aPlayer.canPlayerEdit(aX, aY, aZ, tPos.sideHit, aStack)) return aStack;
-		if (aWorld.getBlock(aX, aY, aZ).getMaterial() == Material.water && WD.meta(aWorld, aX, aY, aZ) == 0 && aWorld.isAirBlock(aX, aY+1, aZ)) {
-			aWorld.setBlock(aX, aY+1, aZ, this, ST.meta_(aStack), 3);
+		if (WD.block(aWorld, aX, aY, aZ).getMaterial() == Material.water && WD.meta(aWorld, aX, aY, aZ) == 0 && aWorld.isAirBlock(aX, aY+1, aZ)) {
+			WD.set(aWorld, aX, aY+1, aZ, this, ST.meta_(aStack), 3);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) {aStack.setCount(aStack.getCount()-1);}
 		}
 		return aStack;
 	}
 	
-	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
-	@Override public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
-	@Override public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(0, 0, 0, 1, 0.015625F, 1);}
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
+	public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
+	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(0, 0, 0, 1, 0.015625F, 1);}
 	
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
-	@Override public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
+	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return SIDES_VERTICAL[aSide] ? BlockTextureDefault.get(mIcons[ST.meta_(aStack) % mIcons.length]) : null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return SIDES_VERTICAL[aSide] ? BlockTextureDefault.get(mIcons[WD.meta(aWorld, aX, aY, aZ) % mIcons.length]) : null;}
 	@Override public boolean setBlockBounds(int aRenderPass, ItemStack aStack) {setBlockBounds(0, 0, 0, 1, 0.015625F, 1); return T;}

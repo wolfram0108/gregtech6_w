@@ -50,8 +50,8 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityDistillationTower extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
-		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing);
+		if (WD.exists(level, tX-1, tY, tZ-1) && WD.exists(level, tX+1, tY, tZ-1) && WD.exists(level, tX-1, tY, tZ+1) && WD.exists(level, tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX-1, tY-1, tZ-1, 18101, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -123,7 +123,7 @@ public class MultiTileEntityDistillationTower extends TileEntityBase10MultiBlock
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing);
 		return aX >= tX - 1 && aY >= tY - 1 && aZ >= tZ - 1 && aX <= tX + 1 && aY <= tY + 7 && aZ <= tZ + 1;
 	}
 	
@@ -131,7 +131,7 @@ public class MultiTileEntityDistillationTower extends TileEntityBase10MultiBlock
 	public void updateAdjacentToggleableEnergySources() {
 		int tX = getOffsetXN(mFacing) - 1, tZ = getOffsetZN(mFacing) - 1;
 		for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) {
-			DelegatorTileEntity<BlockEntity> tDelegator = WD.te(level, tX+i, yCoord-2, tZ+j, SIDE_TOP, F);
+			DelegatorTileEntity<BlockEntity> tDelegator = WD.te(level, tX+i, getBlockPos().getY()-2, tZ+j, SIDE_TOP, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) {
 				((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 			}
@@ -140,7 +140,7 @@ public class MultiTileEntityDistillationTower extends TileEntityBase10MultiBlock
 	
 	@Override
 	public void doOutputItems() {
-		ST.moveAll(delegator(FACING_TO_SIDE[mFacing][mItemAutoOutput]), WD.te(level, getOffsetXN(mFacing, 3), yCoord, getOffsetZN(mFacing, 3), mFacing, F));
+		ST.moveAll(delegator(FACING_TO_SIDE[mFacing][mItemAutoOutput]), WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY(), getOffsetZN(mFacing, 3), mFacing, F));
 	}
 	
 	@Override
@@ -150,19 +150,19 @@ public class MultiTileEntityDistillationTower extends TileEntityBase10MultiBlock
 			if (tFluid != null && tTank.has()) {
 				DelegatorTileEntity<BlockEntity> tDelegator = null;
 				if (FL.is(tFluid, "propane", "methane")) {
-					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+7, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY()+7, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "butane")) {
-					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+6, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY()+6, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "petrol", "gasoline", "bioethanol")) {
-					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+5, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY()+5, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "kerosene", "kerosine", "glycerol")) {
-					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+4, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY()+4, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "diesel", "biodiesel")) {
-					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+3, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY()+3, getOffsetZN(mFacing, 3), mFacing, F);
 				} else if (FL.is(tFluid, "fuel", "fueloil", "biofuel")) {
-					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+2, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY()+2, getOffsetZN(mFacing, 3), mFacing, F);
 				} else {
-					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), yCoord+1, getOffsetZN(mFacing, 3), mFacing, F);
+					tDelegator = WD.te(level, getOffsetXN(mFacing, 3), getBlockPos().getY()+1, getOffsetZN(mFacing, 3), mFacing, F);
 				}
 				
 				if (FL.move(tTank, tDelegator) > 0) updateInventory();

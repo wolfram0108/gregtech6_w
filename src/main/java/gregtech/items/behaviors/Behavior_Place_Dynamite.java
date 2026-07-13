@@ -48,9 +48,9 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aWorld.isRemote || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tBlock.getBlockHardness(aWorld, aX, aY, aZ) < 0 && !BlocksGT.drillableDynamite.contains(tBlock)) return F;
-		byte tMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
+		byte tMeta = (byte)WD.meta(aWorld, aX, aY, aZ);
 		if (tBlock instanceof BlockStones) {if (tMeta >= 3) return F;} else
 		if (!BlocksGT.drillableDynamite.contains(tBlock) && !StoneLayer.REPLACEABLE_BLOCKS.contains(tBlock) && !WD.ore_stone(tBlock, tMeta)) return F;
 		
@@ -62,7 +62,7 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 				// потерялся бы до чтения tryPlaceItemIntoWorld (см. ItemNBT.java).
 				CompoundTag tOldTag = ItemNBT.get(tStack);
 				CompoundTag tTempTag = tOldTag != null ? (CompoundTag)tOldTag.copy() : UT.NBT.make();
-				tTempTag.setBoolean(NBT_MODE, T);
+				tTempTag.putBoolean(NBT_MODE, T);
 				ItemNBT.set(tStack, tTempTag);
 				int tOldSize = tStack.getCount();
 				if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {

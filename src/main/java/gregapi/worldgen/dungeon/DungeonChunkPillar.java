@@ -46,7 +46,7 @@ public class DungeonChunkPillar implements IDungeonChunk {
 		for (int tY = -3; aData.mY+tY >= 2 && temp; tY--) {
 			temp = F;
 			for (int tX = 6; tX <= 9 && !temp; tX++) for (int tZ = 6; tZ <= 9 && !temp; tZ++) {
-				Block tBlock = aData.mWorld.getBlock(aData.mX+tX, aData.mY+tY, aData.mZ+tZ);
+				Block tBlock = WD.block(aData.mWorld, aData.mX+tX, aData.mY+tY, aData.mZ+tZ);
 				if (tBlock instanceof FallingBlock || !tBlock.isOpaqueCube() || tBlock == BlocksGT.Sands || tBlock == BlocksGT.Diggables) temp = T;
 			}
 			if (temp) {
@@ -58,7 +58,7 @@ public class DungeonChunkPillar implements IDungeonChunk {
 					aData.smooth(tX, tY+1, tZ);
 					aData.bricks(tX, tY  , tZ);
 					aData.bricks(tX, tY-1, tZ);
-					if (tY > 2 || aData.mWorld.getBlock(aData.mX+tX, 0, aData.mZ+tZ).getBlockHardness(aData.mWorld, aData.mX+tX, 0, aData.mZ+tZ) >= 0)
+					if (tY > 2 || WD.block(aData.mWorld, aData.mX+tX, 0, aData.mZ+tZ).getBlockHardness(aData.mWorld, aData.mX+tX, 0, aData.mZ+tZ) >= 0)
 					aData.smooth(tX, tY-2, tZ);
 				}
 			}

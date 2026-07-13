@@ -148,16 +148,16 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return T;}
-	@SuppressWarnings("unchecked") @Override public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}
+	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}
 	
-	@Override public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {return ST.make(this, 1, 0);}
+	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {return ST.make(this, 1, 0);}
 	
-	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}
 	
-	@Override
+	// @Override
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
 		for (Object tEntity : aWorld.loadedEntityList) if (tEntity instanceof Player) {
-			if (ST.equal(((Player)tEntity).getCurrentEquippedItem(), this) && ((Player)tEntity).getDistanceSq(aX, aY, aZ) <= 25) {
+			if (ST.equal(((Player)tEntity).getCurrentEquippedItem(), this) && ((Player)tEntity).distanceToSqr(aX, aY, aZ) <= 25) {
 				return  AABB.getBoundingBox(aX         , aY, aZ         , aX+1       , aY+1, aZ+1       );
 			}
 		}
@@ -170,10 +170,10 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		}
 	}
 	
-	@Override
+	// @Override
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (aWorld instanceof Level) for (Object tEntity : ((Level)aWorld).loadedEntityList) if (tEntity instanceof Player) {
-			if (ST.equal(((Player)tEntity).getCurrentEquippedItem(), this) && ((Player)tEntity).getDistanceSq(aX, aY, aZ) <= 25) {
+			if (ST.equal(((Player)tEntity).getCurrentEquippedItem(), this) && ((Player)tEntity).distanceToSqr(aX, aY, aZ) <= 25) {
 				setBlockBounds(0, 0, 0, 1, 1, 1);
 				return;
 			}
@@ -187,7 +187,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		}
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {
 		if (aEntity instanceof ItemEntity || aEntity instanceof ExperienceOrb || aEntity instanceof Projectile) return;
@@ -200,8 +200,8 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		if ((tMeta & 8) != 0) {tBox = AABB.getBoundingBox(aX+PX_P[14], aY, aZ         , aX+1       , aY+1, aZ+1       ); if (aAABB.intersectsWith(tBox)) aList.add(tBox);}
 	}
 	
-	@Override public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.iron_bars.getIcon(2, 0);}
+	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
+	public IIcon getIcon(int aSide, int aMeta) {return Blocks.iron_bars.getIcon(2, 0);}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}

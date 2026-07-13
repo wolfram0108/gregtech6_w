@@ -73,30 +73,30 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		return tTileEntity instanceof IRenderedBlockObject ? (IRenderedBlockObject)tTileEntity : null;
 	}
 	
-	@Override
+	// @Override
 	public void registerBlockIcons(IIconRegister aIconRegister) {
 		for (MultiTileEntityClassContainer tClassContainer : mMultiTileEntityRegistry.mRegistry.values()) if (tClassContainer.mCanonicalTileEntity instanceof IMTE_RegisterIcons) ((IMTE_RegisterIcons)tClassContainer.mCanonicalTileEntity).registerIcons(aIconRegister);
 	}
 	
-	@Override public final int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
-	@Override public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?super.getRenderType():RendererBlockTextured.INSTANCE.mRenderID;}
+	public final int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
+	public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?super.getRenderType():RendererBlockTextured.INSTANCE.mRenderID;}
 	@Override public final Block getBlock() {return this;}
-	@Override public final String getUnlocalizedName() {return mMultiTileEntityRegistry.mNameInternal;}
-	@Override public final String getLocalizedName() {return I18n.translateToLocal(mMultiTileEntityRegistry.mNameInternal);}
+	public final String getUnlocalizedName() {return mMultiTileEntityRegistry.mNameInternal;}
+	public final String getLocalizedName() {return I18n.translateToLocal(mMultiTileEntityRegistry.mNameInternal);}
 	
 	@Override
 	public boolean placeBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		MultiTileEntityContainer aMTEContainer = mMultiTileEntityRegistry.getNewTileEntityContainer(aWorld, aX, aY, aZ, aMetaData, aNBT);
 		if (aMTEContainer == null) return F;
 		
-		Block tReplacedBlock = aWorld.getBlock(aX, aY, aZ);
+		Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
 		
 		
 		// That is some complicated Bullshit I have to do to make my MTEs work right.
 		// Set Block with reverse MetaData first.
-		aWorld.setBlock(aX, aY, aZ, aMTEContainer.mBlock, 15-aMTEContainer.mBlockMetaData, 2);
+		WD.set(aWorld, aX, aY, aZ, aMTEContainer.mBlock, 15-aMTEContainer.mBlockMetaData, 2);
 		// Make sure the Block has been set, yes I know setBlock has a true/false return value, but guess what, it is not reliable in 0.0001% of cases!
-		if (aWorld.getBlock(aX, aY, aZ) != aMTEContainer.mBlock) {aWorld.setBlock(aX, aY, aZ, NB, 0, 0); return F;}
+		if (WD.block(aWorld, aX, aY, aZ) != aMTEContainer.mBlock) {WD.set(aWorld, aX, aY, aZ, NB, 0, 0); return F;}
 		// TileEntity should not refresh yet!
 		((IMultiTileEntity)aMTEContainer.mTileEntity).setShouldRefresh(F);
 		// Fake-Set the TileEntity first, bypassing a lot of checks.
@@ -106,7 +106,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		// When the TileEntity is set now it SHOULD refresh!
 		((IMultiTileEntity)aMTEContainer.mTileEntity).setShouldRefresh(T);
 		// But make sure again that the Block we have set was actually set properly, because 0.0001%!
-		if (aWorld.getBlock(aX, aY, aZ) != aMTEContainer.mBlock) {aWorld.setBlock(aX, aY, aZ, NB, 0, 0); return F;}
+		if (WD.block(aWorld, aX, aY, aZ) != aMTEContainer.mBlock) {WD.set(aWorld, aX, aY, aZ, NB, 0, 0); return F;}
 		// And finally properly set the TileEntity for real!
 		WD.te (aWorld, aX, aY, aZ, aMTEContainer.mTileEntity, aCauseBlockUpdates);
 		// Yep, all this just to set one Block and its TileEntity properly...

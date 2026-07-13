@@ -64,9 +64,9 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_TEMPERATURE)) {mTemperature = aNBT.getLong(NBT_TEMPERATURE);}
-		if (aNBT.hasKey(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_TEMPERATURE)) {mTemperature = aNBT.getLong(NBT_TEMPERATURE);}
+		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
 	}
 	
 	@Override
@@ -104,7 +104,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 			if (aChatReturn != null) {
 				if (mSender != null && !mSender.isDead() && mSender.mTarget == this) {
 					aChatReturn.add("Is the Target");
-					aChatReturn.add("Sender is at: X: " + mSender.xCoord + " Y: " + mSender.yCoord + " Z: " + mSender.zCoord);
+					aChatReturn.add("Sender is at: X: " + mSender.getBlockPos().getX() + " Y: " + mSender.getBlockPos().getY() + " Z: " + mSender.getBlockPos().getZ());
 				} else {
 					aChatReturn.add(checkTarget() ? "Has Target" : "Has no loaded Target");
 					if (mTargetPos != null) aChatReturn.add("Target should be around: X: " + mTargetPos.getX() + " Y: " + mTargetPos.getY() + " Z: " + mTargetPos.getZ());
@@ -121,7 +121,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 			scanPipes();
 		} else if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
-			if (level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
+			if (WD.exists(level, mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
 				BlockEntity tTileEntity = WD.te(level, mTargetPos, T);
 				if (tTileEntity instanceof MultiTileEntityLongDistancePipelineFluid) {
 					mTarget = (MultiTileEntityLongDistancePipelineFluid)tTileEntity;

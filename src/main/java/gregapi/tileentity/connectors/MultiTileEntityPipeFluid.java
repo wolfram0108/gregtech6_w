@@ -104,16 +104,16 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey("gt.mtransfer")) mTransferredAmount = aNBT.getLong("gt.mtransfer");
-		if (aNBT.hasKey(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
-		if (aNBT.hasKey(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE);
-		if (aNBT.hasKey(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
-		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.hasKey(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
-		if (aNBT.hasKey(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
-		if (aNBT.hasKey(NBT_TANK_CAPACITY)) mCapacity = aNBT.getLong(NBT_TANK_CAPACITY);
-		if (aNBT.hasKey(NBT_TEMPERATURE)) mMaxTemperature = aNBT.getLong(NBT_TEMPERATURE);
-		if (aNBT.hasKey(NBT_TANK_COUNT)) {
+		if (aNBT.contains("gt.mtransfer")) mTransferredAmount = aNBT.getLong("gt.mtransfer");
+		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
+		if (aNBT.contains(NBT_OPAQUE)) mBlocking = aNBT.getBoolean(NBT_OPAQUE);
+		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
+		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
+		if (aNBT.contains(NBT_TANK_CAPACITY)) mCapacity = aNBT.getLong(NBT_TANK_CAPACITY);
+		if (aNBT.contains(NBT_TEMPERATURE)) mMaxTemperature = aNBT.getLong(NBT_TEMPERATURE);
+		if (aNBT.contains(NBT_TANK_COUNT)) {
 			mTanks = new FluidTankGT[Math.max(1, aNBT.getInteger(NBT_TANK_COUNT))];
 			mLastReceivedFrom = new byte[mTanks.length];
 			for (int i = 0; i < mTanks.length; i++) {
@@ -140,7 +140,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 		super.writeToNBT2(aNBT);
 		for (int i = 0; i < mTanks.length; i++) {
 			mTanks[i].writeToNBT(aNBT, NBT_TANK+"."+i);
-			aNBT.setByte("gt.mlast."+i, mLastReceivedFrom[i]);
+			aNBT.putByte("gt.mlast."+i, mLastReceivedFrom[i]);
 		}
 		UT.NBT.setNumber(aNBT, "gt.mtransfer", mTransferredAmount);
 	}
@@ -288,7 +288,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 					try {for (Entity tEntity : (List<Entity>)level.getEntitiesWithinAABB(Entity.class, box(-3, -3, -3, +4, +4, +4))) UT.Entities.applyPotion(tEntity, MobEffect.poison, 1200, 1, F);} catch(Throwable e) {e.printStackTrace(ERR);}
 					if (rng(100) == 0) {
 						GarbageGT.trash(mTanks);
-						WD.set(level, xCoord, yCoord, zCoord, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
+						WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
 						return;
 					}
 				}
@@ -332,7 +332,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 		}
 		
 		if (tCheckTemperature) {
-			long tEnvTemp = WD.envTemp(level, xCoord, yCoord, zCoord);
+			long tEnvTemp = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 			if (mTemperature < tEnvTemp) mTemperature++; else if (mTemperature > tEnvTemp) mTemperature--;
 		}
 	}

@@ -53,5 +53,5 @@ public class PrefixBlock_ extends PrefixBlock implements IBlockSealable {
 		super(aModIDOwner, aModIDTextures, aNameInternal, aPrefix, aHullMaterial, aItemClass, aDrops, aTexture, aVanillaMaterial, aSoundType, aTool, aBaseHardness, aBaseResistance, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ, aGravity, aBeaconBase, aEnderDragonProof, aWitherProof, aOpaque, aNormalCube, aPlacementChecksTemperature, aPlacementChecksAntimatter, aCanBurn, aCanExplode, aRenderOverlayInWorld, aCanGlow, aCanLight, aSpawnProof, aMaterialList);
 	}
 	
-	@Override public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return mPrefix == OP.blockSolid;}
+	public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return mPrefix == OP.blockSolid;}
 }

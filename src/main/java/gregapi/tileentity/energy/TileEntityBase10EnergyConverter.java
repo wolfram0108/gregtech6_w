@@ -54,8 +54,8 @@ public abstract class TileEntityBase10EnergyConverter extends TileEntityBase09Fa
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
 		mActivity = new TE_Behavior_Active_Trinary(this, aNBT);
 		readEnergyBehavior(aNBT);
 		readEnergyConverter(aNBT);
@@ -65,7 +65,7 @@ public abstract class TileEntityBase10EnergyConverter extends TileEntityBase09Fa
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_STOPPED, mStopped);
-		aNBT.setByte(NBT_MODE, mMode);
+		aNBT.putByte(NBT_MODE, mMode);
 		mActivity.save(aNBT);
 		writeEnergyBehavior(aNBT);
 	}
@@ -73,12 +73,12 @@ public abstract class TileEntityBase10EnergyConverter extends TileEntityBase09Fa
 	public void readEnergyBehavior(CompoundTag aNBT) {
 		long tInput = aNBT.getLong(NBT_INPUT), tOutput = aNBT.getLong(NBT_OUTPUT);
 		mStorage    = new TE_Behavior_Energy_Capacitor  (this, aNBT, tInput * 2);
-		mEnergyIN   = new TE_Behavior_Energy_Stats      (this, aNBT, aNBT.hasKey(NBT_ENERGY_ACCEPTED) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED)) : TD.Energy.QU   , mStorage, takesAnyLowerSize() || tInput <= 16 ? 1 : tInput / 2, tInput, tInput * 2);
-		mEnergyOUT  = new TE_Behavior_Energy_Stats      (this, aNBT, aNBT.hasKey(NBT_ENERGY_EMITTED ) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED )) : mEnergyIN.mType, mStorage, emitsAnyLowerSize() ? 1 : tOutput / 2, tOutput, tOutput * 2);
+		mEnergyIN   = new TE_Behavior_Energy_Stats      (this, aNBT, aNBT.contains(NBT_ENERGY_ACCEPTED) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED)) : TD.Energy.QU   , mStorage, takesAnyLowerSize() || tInput <= 16 ? 1 : tInput / 2, tInput, tInput * 2);
+		mEnergyOUT  = new TE_Behavior_Energy_Stats      (this, aNBT, aNBT.contains(NBT_ENERGY_EMITTED ) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED )) : mEnergyIN.mType, mStorage, emitsAnyLowerSize() ? 1 : tOutput / 2, tOutput, tOutput * 2);
 	}
 	
 	public void readEnergyConverter(CompoundTag aNBT) {
-		mConverter  = new TE_Behavior_Energy_Converter  (this, aNBT, mStorage, mEnergyIN, mEnergyOUT, aNBT.hasKey(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1, aNBT.getBoolean(NBT_WASTE_ENERGY), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION));
+		mConverter  = new TE_Behavior_Energy_Converter  (this, aNBT, mStorage, mEnergyIN, mEnergyOUT, aNBT.contains(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1, aNBT.getBoolean(NBT_WASTE_ENERGY), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION));
 	}
 	
 	public void writeEnergyBehavior(CompoundTag aNBT) {

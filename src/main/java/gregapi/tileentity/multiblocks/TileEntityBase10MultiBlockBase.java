@@ -58,10 +58,10 @@ public abstract class TileEntityBase10MultiBlockBase extends TileEntityBase09Fac
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_STATE+".str")) mStructureOkay = aNBT.getBoolean(NBT_STATE+".str");
+		if (aNBT.contains(NBT_STATE+".str")) mStructureOkay = aNBT.getBoolean(NBT_STATE+".str");
 		
 		if (CODE_CLIENT) {
-			if (GT_API.sBlockIcons == null && aNBT.hasKey(NBT_TEXTURE)) {
+			if (GT_API.sBlockIcons == null && aNBT.contains(NBT_TEXTURE)) {
 				String tTextureName = aNBT.getString(NBT_TEXTURE);
 				mTextures = new IIconContainer[] {
 				new Textures.BlockIcons.CustomIcon("machines/multiblockmains/"+tTextureName+"/colored/bottom"),

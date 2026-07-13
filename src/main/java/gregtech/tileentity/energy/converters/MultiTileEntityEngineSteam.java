@@ -68,15 +68,15 @@ public class MultiTileEntityEngineSteam extends TileEntityBase09FacingSingle imp
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_VISUAL)) mState = aNBT.getByte(NBT_VISUAL);
-		if (aNBT.hasKey(NBT_PISTON)) mPiston = aNBT.getByte(NBT_PISTON);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
-		if (aNBT.hasKey(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
-		if (aNBT.hasKey(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.hasKey(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_VISUAL)) mState = aNBT.getByte(NBT_VISUAL);
+		if (aNBT.contains(NBT_PISTON)) mPiston = aNBT.getByte(NBT_PISTON);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
+		if (aNBT.contains(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
+		if (aNBT.contains(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 		mTank.readFromNBT(aNBT, NBT_TANK+"."+0).setCapacity(STEAM_PER_WATER * mOutput * 2);
 	}
 	
@@ -84,12 +84,12 @@ public class MultiTileEntityEngineSteam extends TileEntityBase09FacingSingle imp
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
-		aNBT.setByte(NBT_VISUAL, mState);
-		aNBT.setByte(NBT_PISTON, mPiston);
+		aNBT.putByte(NBT_VISUAL, mState);
+		aNBT.putByte(NBT_PISTON, mPiston);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mActive);
 		UT.NBT.setBoolean(aNBT, NBT_STOPPED, mStopped);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE_ENERGY, mEmitsEnergy);
-		aNBT.setShort(NBT_EFFICIENCY, mEfficiency);
+		aNBT.putShort(NBT_EFFICIENCY, mEfficiency);
 		mTank.writeToNBT(aNBT, NBT_TANK+"."+0);
 	}
 	

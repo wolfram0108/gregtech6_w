@@ -67,60 +67,60 @@ public class WorldgenStreets extends WorldgenObject {
 		if (aMinX == -16 || aMinX == 0) {
 			if (aMinZ == -16 || aMinZ == 0) {
 				for (int i = -32; i < 32; i++) for (int j = -32; j < 32; j++) {
-					for (int k = 2; k < 64; k++) aWorld.setBlock(i, mHeight+k, j, NB, 0, 0);
-					for (int k = 1; k < mHeight; k++) aWorld.setBlock(i, k, j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+					for (int k = 2; k < 64; k++) WD.set(aWorld, i, mHeight+k, j, NB, 0, 0);
+					for (int k = 1; k < mHeight; k++) WD.set(aWorld, i, k, j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 					
-					aWorld.setBlock(i, mHeight-1, j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+					WD.set(aWorld, i, mHeight-1, j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 					if (i <= -29 || j <= -29 || i >= 28 || j >= 28) {
 						if (UT.Code.inside(-12, 11, i) || UT.Code.inside(-12, 11, j)) {
-							aWorld.setBlock(i, mHeight  , j, BlocksGT.Asphalt, i == -31 || j == -31 || i == 30 || j == 30 ? DYE_INDEX_White : DYE_INDEX_Gray, 0);
-							aWorld.setBlock(i, mHeight+1, j, NB, 0, 0);
+							WD.set(aWorld, i, mHeight  , j, BlocksGT.Asphalt, i == -31 || j == -31 || i == 30 || j == 30 ? DYE_INDEX_White : DYE_INDEX_Gray, 0);
+							WD.set(aWorld, i, mHeight+1, j, NB, 0, 0);
 						} else {
-							aWorld.setBlock(i, mHeight  , j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+							WD.set(aWorld, i, mHeight  , j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 							if (!GENERATE_BIOMES && (i == -32 || j == -32 || i == 31 || j == 31) && (!GENERATE_NEXUS || i < 0 || i == 31 || j != -32) && (!GENERATE_TESTING || j > 0 || i != 31 || j == -32)) {
-								aWorld.setBlock(i, mHeight+1, j, WD.even(i, 1, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-								aWorld.setBlock(i, mHeight+2, j, WD.even(i, 2, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-								aWorld.setBlock(i, mHeight+3, j, WD.even(i, 3, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-								aWorld.setBlock(i, mHeight+4, j, WD.even(i, 4, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-								aWorld.setBlock(i, mHeight+5, j, WD.even(i, 5, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+								WD.set(aWorld, i, mHeight+1, j, WD.even(i, 1, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+								WD.set(aWorld, i, mHeight+2, j, WD.even(i, 2, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+								WD.set(aWorld, i, mHeight+3, j, WD.even(i, 3, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+								WD.set(aWorld, i, mHeight+4, j, WD.even(i, 4, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+								WD.set(aWorld, i, mHeight+5, j, WD.even(i, 5, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 							} else {
-								aWorld.setBlock(i, mHeight+1, j, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+								WD.set(aWorld, i, mHeight+1, j, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
 							}
 						}
 					} else {
 						if (UT.Code.inside(-12, 11, i) && UT.Code.inside(-12, 11, j)) {
-							aWorld.setBlock(i, mHeight  , j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-							aWorld.setBlock(i, mHeight+1, j, UT.Code.inside(-11, 10, i) && UT.Code.inside(-11, 10, j) ? BlocksGT.Concrete : BlocksGT.CFoam, DYE_INDEX_LightGray, 0);
+							WD.set(aWorld, i, mHeight  , j, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+							WD.set(aWorld, i, mHeight+1, j, UT.Code.inside(-11, 10, i) && UT.Code.inside(-11, 10, j) ? BlocksGT.Concrete : BlocksGT.CFoam, DYE_INDEX_LightGray, 0);
 						} else {
-							aWorld.setBlock(i, mHeight  , j, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-							aWorld.setBlock(i, mHeight+1, j, NB, 0, 0);
+							WD.set(aWorld, i, mHeight  , j, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+							WD.set(aWorld, i, mHeight+1, j, NB, 0, 0);
 						}
 					}
 				}
 				
 				
-				aWorld.setBlock(-32, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-31, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-32, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-31, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-32, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-31, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-32, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-31, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-32, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-31, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-32, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-31, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
-				aWorld.setBlock(-32, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(-31, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(-32, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(-31, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(-32, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
-				aWorld.setBlock(-31, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
-				aWorld.setBlock(-30, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
-				aWorld.setBlock(-30, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
-				aWorld.setBlock(-31, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
-				aWorld.setBlock(-32, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
+				WD.set(aWorld, -32, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -31, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -32, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -31, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -32, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -31, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -32, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -31, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -32, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -31, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -32, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -31, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Blue, 0);
+				WD.set(aWorld, -32, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, -31, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, -32, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, -31, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, -32, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
+				WD.set(aWorld, -31, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
+				WD.set(aWorld, -30, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
+				WD.set(aWorld, -30, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
+				WD.set(aWorld, -31, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
+				WD.set(aWorld, -32, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
 				try {
 				WD.sign(aWorld, -30, mHeight+3, 0, SIDE_X_POS, 0
 				, UT.Code.stringValidate(aWorld.provider.worldChunkMgr.getBiomeGenAt(-4096, +95))
@@ -150,28 +150,28 @@ public class WorldgenStreets extends WorldgenObject {
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				
 				
-				aWorld.setBlock( 31, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 30, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 31, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 30, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 31, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 30, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 31, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 30, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 31, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 30, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 31, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 30, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
-				aWorld.setBlock( 31, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock( 30, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock( 31, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock( 30, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock( 31, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
-				aWorld.setBlock( 30, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
-				aWorld.setBlock( 29, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
-				aWorld.setBlock( 29, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
-				aWorld.setBlock( 30, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
-				aWorld.setBlock( 31, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
+				WD.set(aWorld,  31, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  30, mHeight+1, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  31, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  30, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  31, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  30, mHeight+2, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  31, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  30, mHeight+2,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  31, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  30, mHeight+3, - 1, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  31, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  30, mHeight+3,   0, BlocksGT.Concrete, DYE_INDEX_Red, 0);
+				WD.set(aWorld,  31, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,  30, mHeight+4, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,  31, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,  30, mHeight+4,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,  31, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
+				WD.set(aWorld,  30, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
+				WD.set(aWorld,  29, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
+				WD.set(aWorld,  29, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
+				WD.set(aWorld,  30, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
+				WD.set(aWorld,  31, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
 				try {
 				WD.sign(aWorld,  29, mHeight+3,   0, SIDE_X_NEG, 0
 				, UT.Code.stringValidate(aWorld.provider.worldChunkMgr.getBiomeGenAt(+4095, +95))
@@ -201,28 +201,28 @@ public class WorldgenStreets extends WorldgenObject {
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				
 				
-				aWorld.setBlock(- 1, mHeight+1, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(- 1, mHeight+1, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(  0, mHeight+1, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(  0, mHeight+1, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(- 1, mHeight+2, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(- 1, mHeight+2, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(  0, mHeight+2, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(  0, mHeight+2, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(- 1, mHeight+3, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(- 1, mHeight+3, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(  0, mHeight+3, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(  0, mHeight+3, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
-				aWorld.setBlock(- 1, mHeight+4, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(- 1, mHeight+4, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(  0, mHeight+4, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(  0, mHeight+4, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(- 2, mHeight+1, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
-				aWorld.setBlock(- 2, mHeight+1, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
-				aWorld.setBlock(- 1, mHeight+1, -30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
-				aWorld.setBlock(  0, mHeight+1, -30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
-				aWorld.setBlock(  1, mHeight+1, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
-				aWorld.setBlock(  1, mHeight+1, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
+				WD.set(aWorld, - 1, mHeight+1, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld, - 1, mHeight+1, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld,   0, mHeight+1, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld,   0, mHeight+1, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld, - 1, mHeight+2, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld, - 1, mHeight+2, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld,   0, mHeight+2, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld,   0, mHeight+2, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld, - 1, mHeight+3, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld, - 1, mHeight+3, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld,   0, mHeight+3, -32, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld,   0, mHeight+3, -31, BlocksGT.Concrete, DYE_INDEX_Yellow, 0);
+				WD.set(aWorld, - 1, mHeight+4, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, - 1, mHeight+4, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,   0, mHeight+4, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,   0, mHeight+4, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, - 2, mHeight+1, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
+				WD.set(aWorld, - 2, mHeight+1, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
+				WD.set(aWorld, - 1, mHeight+1, -30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
+				WD.set(aWorld,   0, mHeight+1, -30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
+				WD.set(aWorld,   1, mHeight+1, -31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
+				WD.set(aWorld,   1, mHeight+1, -32, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
 				try {
 				WD.sign(aWorld,   0, mHeight+3, -30, SIDE_Z_POS, 0
 				, UT.Code.stringValidate(aWorld.provider.worldChunkMgr.getBiomeGenAt(+95, -4096))
@@ -252,28 +252,28 @@ public class WorldgenStreets extends WorldgenObject {
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				
 				
-				aWorld.setBlock(- 1, mHeight+1,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(- 1, mHeight+1,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(  0, mHeight+1,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(  0, mHeight+1,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(- 1, mHeight+2,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(- 1, mHeight+2,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(  0, mHeight+2,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(  0, mHeight+2,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(- 1, mHeight+3,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(- 1, mHeight+3,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(  0, mHeight+3,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(  0, mHeight+3,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
-				aWorld.setBlock(- 1, mHeight+4,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(- 1, mHeight+4,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(  0, mHeight+4,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(  0, mHeight+4,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
-				aWorld.setBlock(- 2, mHeight+1,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
-				aWorld.setBlock(- 2, mHeight+1,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
-				aWorld.setBlock(- 1, mHeight+1,  29, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
-				aWorld.setBlock(  0, mHeight+1,  29, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
-				aWorld.setBlock(  1, mHeight+1,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
-				aWorld.setBlock(  1, mHeight+1,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
+				WD.set(aWorld, - 1, mHeight+1,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld, - 1, mHeight+1,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld,   0, mHeight+1,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld,   0, mHeight+1,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld, - 1, mHeight+2,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld, - 1, mHeight+2,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld,   0, mHeight+2,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld,   0, mHeight+2,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld, - 1, mHeight+3,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld, - 1, mHeight+3,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld,   0, mHeight+3,  31, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld,   0, mHeight+3,  30, BlocksGT.Concrete, DYE_INDEX_Green, 0);
+				WD.set(aWorld, - 1, mHeight+4,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, - 1, mHeight+4,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,   0, mHeight+4,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld,   0, mHeight+4,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Y_NEG], DYE_INDEX_LightGray, 0);
+				WD.set(aWorld, - 2, mHeight+1,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
+				WD.set(aWorld, - 2, mHeight+1,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
+				WD.set(aWorld, - 1, mHeight+1,  29, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
+				WD.set(aWorld,   0, mHeight+1,  29, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
+				WD.set(aWorld,   1, mHeight+1,  30, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
+				WD.set(aWorld,   1, mHeight+1,  31, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
 				try {
 				WD.sign(aWorld,   0, mHeight+3,  29, SIDE_Z_NEG, 0
 				, UT.Code.stringValidate(aWorld.provider.worldChunkMgr.getBiomeGenAt(+95, +4095))
@@ -315,9 +315,9 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", MobEffect.moveSpeed.id);
-						tNBT.setInteger("Secondary", MobEffect.moveSpeed.id);
-						tNBT.setInteger("Levels", 4);
+						tNBT.putInt("Primary", MobEffect.moveSpeed.id);
+						tNBT.putInt("Secondary", MobEffect.moveSpeed.id);
+						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
 					
@@ -326,9 +326,9 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", MobEffect.digSpeed.id);
-						tNBT.setInteger("Secondary", MobEffect.digSpeed.id);
-						tNBT.setInteger("Levels", 4);
+						tNBT.putInt("Primary", MobEffect.digSpeed.id);
+						tNBT.putInt("Secondary", MobEffect.digSpeed.id);
+						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
 					
@@ -337,9 +337,9 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", MobEffect.damageBoost.id);
-						tNBT.setInteger("Secondary", MobEffect.damageBoost.id);
-						tNBT.setInteger("Levels", 4);
+						tNBT.putInt("Primary", MobEffect.damageBoost.id);
+						tNBT.putInt("Secondary", MobEffect.damageBoost.id);
+						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
 					
@@ -348,9 +348,9 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.setInteger("Primary", MobEffect.resistance.id);
-						tNBT.setInteger("Secondary", MobEffect.regeneration.id);
-						tNBT.setInteger("Levels", 4);
+						tNBT.putInt("Primary", MobEffect.resistance.id);
+						tNBT.putInt("Secondary", MobEffect.regeneration.id);
+						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
 				}
@@ -359,13 +359,13 @@ public class WorldgenStreets extends WorldgenObject {
 				return T;
 			}
 			if (aMinZ < -96 || aMinZ > 80) {
-				aWorld.setBlock(aMinX-32, 255, aMinZ-32, NB, 0, 0);
-				aWorld.setBlock(aMinX-32, 255, aMinZ+32, NB, 0, 0);
-				aWorld.setBlock(aMinX+32, 255, aMinZ-32, NB, 0, 0);
-				aWorld.setBlock(aMinX+32, 255, aMinZ+32, NB, 0, 0);
+				WD.set(aWorld, aMinX-32, 255, aMinZ-32, NB, 0, 0);
+				WD.set(aWorld, aMinX-32, 255, aMinZ+32, NB, 0, 0);
+				WD.set(aWorld, aMinX+32, 255, aMinZ-32, NB, 0, 0);
+				WD.set(aWorld, aMinX+32, 255, aMinZ+32, NB, 0, 0);
 				
 				for (int tOpaqueCount = 0, i = -16; i < 16; i++) for (int j = 0; j < 16; j++) {
-					Block tBlock = aWorld.getBlock(i, mHeight+9, aMinZ+j);
+					Block tBlock = WD.block(aWorld, i, mHeight+9, aMinZ+j);
 					if (tBlock.getMaterial().isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && tBlock.getMaterial() != Material.wood && !tBlock.isWood(aWorld, i, mHeight+9, aMinZ+j) && !tBlock.isLeaves(aWorld, i, mHeight+9, aMinZ+j))) {
 						if (tOpaqueCount++ > 128) {
 							return generateRoadX(aWorld, aMinZ, F, F, T, F, F);
@@ -386,13 +386,13 @@ public class WorldgenStreets extends WorldgenObject {
 		}
 		if (aMinZ == -16 || aMinZ == 0) {
 			if (aMinX < -96 || aMinX > 80) {
-				aWorld.setBlock(aMinX-32, 255, aMinZ-32, NB, 0, 0);
-				aWorld.setBlock(aMinX-32, 255, aMinZ+32, NB, 0, 0);
-				aWorld.setBlock(aMinX+32, 255, aMinZ-32, NB, 0, 0);
-				aWorld.setBlock(aMinX+32, 255, aMinZ+32, NB, 0, 0);
+				WD.set(aWorld, aMinX-32, 255, aMinZ-32, NB, 0, 0);
+				WD.set(aWorld, aMinX-32, 255, aMinZ+32, NB, 0, 0);
+				WD.set(aWorld, aMinX+32, 255, aMinZ-32, NB, 0, 0);
+				WD.set(aWorld, aMinX+32, 255, aMinZ+32, NB, 0, 0);
 				
 				for (int tOpaqueCount = 0, i = -16; i < 16; i++) for (int j = 0; j < 16; j++) {
-					Block tBlock = aWorld.getBlock(aMinX+j, mHeight+9, i);
+					Block tBlock = WD.block(aWorld, aMinX+j, mHeight+9, i);
 					if (tBlock.getMaterial().isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && tBlock.getMaterial() != Material.wood && !tBlock.isWood(aWorld, aMinX+j, mHeight+9, i) && !tBlock.isLeaves(aWorld, aMinX+j, mHeight+9, i))) {
 						if (tOpaqueCount++ > 128) {
 							return generateRoadZ(aWorld, aMinX, F, F, T, F, F);
@@ -429,55 +429,55 @@ public class WorldgenStreets extends WorldgenObject {
 			}
 			if (aTunnel) {
 				for (int j = -12; j < 12; j++)
-				aWorld.setBlock(  j, mHeight+7, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_White, 0);
+				WD.set(aWorld,   j, mHeight+7, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_White, 0);
 				for (int j = 0; j < 7; j++) {
-				aWorld.setBlock(-13, mHeight+j, aMinZ+i, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-				aWorld.setBlock( 12, mHeight+j, aMinZ+i, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+				WD.set(aWorld, -13, mHeight+j, aMinZ+i, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+				WD.set(aWorld,  12, mHeight+j, aMinZ+i, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
 				}
 			}
 			if (aBridge) {
 				WD.set(aWorld, -13, mHeight  , aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
 				WD.set(aWorld,  12, mHeight  , aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
-				aWorld.setBlock(-13, mHeight+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock( 12, mHeight+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, -13, mHeight+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,  12, mHeight+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 			}
 			if (aKillSky) {
-				for (int j = -13; j < 13; j++) for (int k = 2; k < 64; k++) aWorld.setBlock(j, mHeight+k, aMinZ+i, NB, 0, 0);
+				for (int j = -13; j < 13; j++) for (int k = 2; k < 64; k++) WD.set(aWorld, j, mHeight+k, aMinZ+i, NB, 0, 0);
 			} else {
-				for (int j = -12; j < 12; j++) for (int k = 2; k <  7; k++) aWorld.setBlock(j, mHeight+k, aMinZ+i, NB, 0, 0);
+				for (int j = -12; j < 12; j++) for (int k = 2; k <  7; k++) WD.set(aWorld, j, mHeight+k, aMinZ+i, NB, 0, 0);
 			}
 			for (int j = -12; j < 2; j++) {
-				aWorld.setBlock(j, mHeight+1, aMinZ+i, NB, 0, 0);
+				WD.set(aWorld, j, mHeight+1, aMinZ+i, NB, 0, 0);
 				if (aLand) {
 				WD.set(aWorld, j, mHeight-2, aMinZ+i, Blocks.cobblestone, 0, 0, T);
-				aWorld.setBlock(j, mHeight-1, aMinZ+i, Blocks.gravel, 1, 0);
+				WD.set(aWorld, j, mHeight-1, aMinZ+i, Blocks.gravel, 1, 0);
 				for (int k = mHeight-3; k > 0; k--) if (!WD.opq(aWorld, j, k, aMinZ+i, T, T)) WD.set(aWorld, j, k, aMinZ+i, Blocks.cobblestone, 0, 0, T); else break;
 				} else {
 				WD.set(aWorld, j, mHeight-1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
 				}
 			}
 			for (int j = 1; j < 12; j++) {
-				aWorld.setBlock(j, mHeight+1, aMinZ+i, NB, 0, 0);
+				WD.set(aWorld, j, mHeight+1, aMinZ+i, NB, 0, 0);
 				if (aLand) {
 				WD.set(aWorld, j, mHeight-2, aMinZ+i, Blocks.cobblestone, 0, 0, T);
-				aWorld.setBlock(j, mHeight-1, aMinZ+i, Blocks.gravel, 1, 0);
+				WD.set(aWorld, j, mHeight-1, aMinZ+i, Blocks.gravel, 1, 0);
 				for (int k = mHeight-3; k > 0; k--) if (!WD.opq(aWorld, j, k, aMinZ+i, T, T)) WD.set(aWorld, j, k, aMinZ+i, Blocks.cobblestone, 0, 0, T); else break;
 				} else {
 				WD.set(aWorld, j, mHeight-1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
 				}
 			}
 			
-			aWorld.setBlock(-12, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(-12, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_LightGray, 0);
-			aWorld.setBlock(-11, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(-11, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
-			aWorld.setBlock(-10, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(- 9, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(- 8, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(- 7, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(- 7, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 8 : 0, 0);
-			aWorld.setBlock(- 6, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(- 5, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(- 4, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(- 3, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(- 3, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
-			aWorld.setBlock(- 2, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(- 2, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld, -12, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, -12, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld, -11, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, -11, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
+			WD.set(aWorld, -10, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, - 9, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, - 8, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, - 7, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, - 7, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 8 : 0, 0);
+			WD.set(aWorld, - 6, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, - 5, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, - 4, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, - 3, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, - 3, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
+			WD.set(aWorld, - 2, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, - 2, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_LightGray, 0);
 			
 			if (aLand) {
 			WD.set(aWorld, - 1, mHeight-1, aMinZ+i, Blocks.cobblestone, 0, 0, T);
@@ -497,28 +497,28 @@ public class WorldgenStreets extends WorldgenObject {
 			WD.set(aWorld,   0, mHeight+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_Gray, 0, F);
 			}
 			
-			aWorld.setBlock(  1, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(  1, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_LightGray, 0);
-			aWorld.setBlock(  2, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(  2, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
-			aWorld.setBlock(  3, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(  4, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(  5, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(  6, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(  6, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 8 : 0, 0);
-			aWorld.setBlock(  7, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(  8, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(  9, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock( 10, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock( 10, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
-			aWorld.setBlock( 11, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock( 11, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld,   1, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld,   1, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld,   2, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld,   2, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
+			WD.set(aWorld,   3, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld,   4, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld,   5, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld,   6, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld,   6, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 8 : 0, 0);
+			WD.set(aWorld,   7, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld,   8, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld,   9, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld,  10, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld,  10, mHeight+1, aMinZ+i, (Block)BlocksGT.RailRoad, 0, 0);
+			WD.set(aWorld,  11, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld,  11, mHeight+1, aMinZ+i, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_LightGray, 0);
 		}
 		
 		if (aTunnel) {
-			aWorld.setBlock(-13, mHeight+3, aMinZ+ 1, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+3, aMinZ+ 1, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(-13, mHeight+3, aMinZ+ 6, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+3, aMinZ+ 6, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(-13, mHeight+3, aMinZ+ 9, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+3, aMinZ+ 9, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(-13, mHeight+3, aMinZ+14, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+3, aMinZ+14, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+3, aMinZ+ 1, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+3, aMinZ+ 1, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+3, aMinZ+ 6, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+3, aMinZ+ 6, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+3, aMinZ+ 9, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+3, aMinZ+ 9, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+3, aMinZ+14, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+3, aMinZ+14, Blocks.glowstone, 0, 0);
 		}
 		if (aSideWalls) {
 			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld,  13, mHeight+4, aMinZ+i, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld,  12, mHeight+k, aMinZ+j, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
@@ -537,64 +537,64 @@ public class WorldgenStreets extends WorldgenObject {
 			WD.sign(aWorld,  11, mHeight+3, aMinZ+7, SIDE_X_NEG, 0, "", "X: 0" , "Z: " + ((aMinZ-16) >> 9), "");
 			WD.sign(aWorld,  11, mHeight+3, aMinZ+8, SIDE_X_NEG, 0, "", "X: 0" , "Z: " + ( aMinZ     >> 9), "");
 			
-			aWorld.setBlock(-13, mHeight+1, aMinZ+ 5, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(-13, mHeight+1, aMinZ+10, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(-13, mHeight+5, aMinZ+ 5, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(-13, mHeight+5, aMinZ+10, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+1, aMinZ+ 5, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+1, aMinZ+10, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+5, aMinZ+ 5, Blocks.glowstone, 0, 0);
-			aWorld.setBlock( 12, mHeight+5, aMinZ+10, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+1, aMinZ+ 5, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+1, aMinZ+10, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+5, aMinZ+ 5, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, -13, mHeight+5, aMinZ+10, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+1, aMinZ+ 5, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+1, aMinZ+10, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+5, aMinZ+ 5, Blocks.glowstone, 0, 0);
+			WD.set(aWorld,  12, mHeight+5, aMinZ+10, Blocks.glowstone, 0, 0);
 		}
 		if (aMinZ >> 9 != (aMinZ+16) >> 9) {
-			aWorld.setBlock(- 2, mHeight+1, aMinZ+0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
-			aWorld.setBlock(- 2, mHeight+1, aMinZ+1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
-			aWorld.setBlock(- 2, mHeight+1, aMinZ+2, NB, 0, 0);
-			aWorld.setBlock(- 1, mHeight+1, aMinZ+2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
-			aWorld.setBlock(  0, mHeight+1, aMinZ+2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
-			aWorld.setBlock(  1, mHeight+1, aMinZ+2, NB, 0, 0);
-			aWorld.setBlock(  1, mHeight+1, aMinZ+1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
-			aWorld.setBlock(  1, mHeight+1, aMinZ+0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
+			WD.set(aWorld, - 2, mHeight+1, aMinZ+0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
+			WD.set(aWorld, - 2, mHeight+1, aMinZ+1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
+			WD.set(aWorld, - 2, mHeight+1, aMinZ+2, NB, 0, 0);
+			WD.set(aWorld, - 1, mHeight+1, aMinZ+2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
+			WD.set(aWorld,   0, mHeight+1, aMinZ+2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
+			WD.set(aWorld,   1, mHeight+1, aMinZ+2, NB, 0, 0);
+			WD.set(aWorld,   1, mHeight+1, aMinZ+1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
+			WD.set(aWorld,   1, mHeight+1, aMinZ+0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
 			
 			for (int i = 2; i < 14; i++) {
-			aWorld.setBlock(- 1, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(  0, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, - 1, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld,   0, mHeight  , aMinZ+i, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
 			}
 			for (int i = 3; i < 13; i++) {
-			aWorld.setBlock(- 2, mHeight+1, aMinZ+i, NB, 0, 0);
-			aWorld.setBlock(- 1, mHeight+1, aMinZ+i, NB, 0, 0);
-			aWorld.setBlock(  0, mHeight+1, aMinZ+i, NB, 0, 0);
-			aWorld.setBlock(  1, mHeight+1, aMinZ+i, NB, 0, 0);
+			WD.set(aWorld, - 2, mHeight+1, aMinZ+i, NB, 0, 0);
+			WD.set(aWorld, - 1, mHeight+1, aMinZ+i, NB, 0, 0);
+			WD.set(aWorld,   0, mHeight+1, aMinZ+i, NB, 0, 0);
+			WD.set(aWorld,   1, mHeight+1, aMinZ+i, NB, 0, 0);
 			}
 			
-			aWorld.setBlock(- 2, mHeight+1, aMinZ+15, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
-			aWorld.setBlock(- 2, mHeight+1, aMinZ+14, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
-			aWorld.setBlock(- 2, mHeight+1, aMinZ+13, NB, 0, 0);
-			aWorld.setBlock(- 1, mHeight+1, aMinZ+13, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
-			aWorld.setBlock(  0, mHeight+1, aMinZ+13, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
-			aWorld.setBlock(  1, mHeight+1, aMinZ+13, NB, 0, 0);
-			aWorld.setBlock(  1, mHeight+1, aMinZ+14, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
-			aWorld.setBlock(  1, mHeight+1, aMinZ+15, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
+			WD.set(aWorld, - 2, mHeight+1, aMinZ+15, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
+			WD.set(aWorld, - 2, mHeight+1, aMinZ+14, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
+			WD.set(aWorld, - 2, mHeight+1, aMinZ+13, NB, 0, 0);
+			WD.set(aWorld, - 1, mHeight+1, aMinZ+13, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
+			WD.set(aWorld,   0, mHeight+1, aMinZ+13, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
+			WD.set(aWorld,   1, mHeight+1, aMinZ+13, NB, 0, 0);
+			WD.set(aWorld,   1, mHeight+1, aMinZ+14, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
+			WD.set(aWorld,   1, mHeight+1, aMinZ+15, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
 			
 			if (aTunnel) {
 				for (int i = 0; i < 7; i++) {
-					aWorld.setBlock(-1, mHeight+i, aMinZ+ 0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(-1, mHeight+i, aMinZ+ 1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock( 0, mHeight+i, aMinZ+ 0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock( 0, mHeight+i, aMinZ+ 1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(-1, mHeight+i, aMinZ+14, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(-1, mHeight+i, aMinZ+15, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock( 0, mHeight+i, aMinZ+14, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock( 0, mHeight+i, aMinZ+15, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, -1, mHeight+i, aMinZ+ 0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, -1, mHeight+i, aMinZ+ 1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld,  0, mHeight+i, aMinZ+ 0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld,  0, mHeight+i, aMinZ+ 1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, -1, mHeight+i, aMinZ+14, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, -1, mHeight+i, aMinZ+15, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld,  0, mHeight+i, aMinZ+14, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld,  0, mHeight+i, aMinZ+15, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
 				}
 			}
 		} else {
 			if (aTunnel) {
 				for (int i = 0; i < 7; i++) {
-					aWorld.setBlock(-1, mHeight+i, aMinZ+ 7, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(-1, mHeight+i, aMinZ+ 8, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock( 0, mHeight+i, aMinZ+ 7, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock( 0, mHeight+i, aMinZ+ 8, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, -1, mHeight+i, aMinZ+ 7, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, -1, mHeight+i, aMinZ+ 8, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld,  0, mHeight+i, aMinZ+ 7, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld,  0, mHeight+i, aMinZ+ 8, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
 				}
 			}
 		}
@@ -602,45 +602,45 @@ public class WorldgenStreets extends WorldgenObject {
 		if (aBridge) {
 			for (int i = 6; i <= 9; i++) {
 				for (int j = -9; j <= -6; j++) {
-					aWorld.setBlock(j, mHeight-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					aWorld.setBlock(j, mHeight-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, j, mHeight-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, j, mHeight-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 				for (int j = 5; j <= 8; j++) {
-					aWorld.setBlock(j, mHeight-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					aWorld.setBlock(j, mHeight-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, j, mHeight-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, j, mHeight-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 			}
 			for (int k = mHeight-4; k > 0; k--) if (!(WD.opq(aWorld, -10, k, aMinZ+10, T, T) && WD.opq(aWorld, -5, k, aMinZ+10, T, T) && WD.opq(aWorld, -10, k, aMinZ+5, T, T) && WD.opq(aWorld, -5, k, aMinZ+5, T, T))) {
-				aWorld.setBlock( -7, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock( -8, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock( -7, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock( -8, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,  -7, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,  -8, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,  -7, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,  -8, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 			} else {
 				for (int i = 6; i <= 9; i++) for (int j = -9; j <= -6; j++) {
-					if (k>-3) aWorld.setBlock(j, k+3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-2) aWorld.setBlock(j, k+2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-1) aWorld.setBlock(j, k+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k> 0) aWorld.setBlock(j, k  , aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+1) aWorld.setBlock(j, k-1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+2) aWorld.setBlock(j, k-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+3) aWorld.setBlock(j, k-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-3) WD.set(aWorld, j, k+3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-2) WD.set(aWorld, j, k+2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-1) WD.set(aWorld, j, k+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k> 0) WD.set(aWorld, j, k  , aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+1) WD.set(aWorld, j, k-1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+2) WD.set(aWorld, j, k-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+3) WD.set(aWorld, j, k-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 				break;
 			}
 			for (int k = mHeight-4; k > 0; k--) if (!(WD.opq(aWorld, 9, k, aMinZ+10, T, T) && WD.opq(aWorld, 4, k, aMinZ+10, T, T) && WD.opq(aWorld, 9, k, aMinZ+5, T, T) && WD.opq(aWorld, 4, k, aMinZ+5, T, T))) {
-				aWorld.setBlock(  6, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(  7, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(  6, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(  7, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,   6, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,   7, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,   6, k, aMinZ+8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld,   7, k, aMinZ+7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 			} else {
 				for (int i = 6; i <= 9; i++) for (int j = 5; j <= 8; j++) {
-					if (k>-3) aWorld.setBlock(j, k+3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-2) aWorld.setBlock(j, k+2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-1) aWorld.setBlock(j, k+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k> 0) aWorld.setBlock(j, k  , aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+1) aWorld.setBlock(j, k-1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+2) aWorld.setBlock(j, k-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+3) aWorld.setBlock(j, k-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-3) WD.set(aWorld, j, k+3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-2) WD.set(aWorld, j, k+2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-1) WD.set(aWorld, j, k+1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k> 0) WD.set(aWorld, j, k  , aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+1) WD.set(aWorld, j, k-1, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+2) WD.set(aWorld, j, k-2, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+3) WD.set(aWorld, j, k-3, aMinZ+i, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 				break;
 			}
@@ -666,55 +666,55 @@ public class WorldgenStreets extends WorldgenObject {
 			}
 			if (aTunnel) {
 				for (int j = -12; j < 12; j++)
-				aWorld.setBlock(aMinX+i, mHeight+7,   j, BlocksGT.Concrete, DYE_INDEX_White, 0);
+				WD.set(aWorld, aMinX+i, mHeight+7,   j, BlocksGT.Concrete, DYE_INDEX_White, 0);
 				for (int j = 0; j < 7; j++) {
-				aWorld.setBlock(aMinX+i, mHeight+j, -13, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-				aWorld.setBlock(aMinX+i, mHeight+j,  12, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+				WD.set(aWorld, aMinX+i, mHeight+j, -13, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+				WD.set(aWorld, aMinX+i, mHeight+j,  12, BlocksGT.Concrete, j == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
 				}
 			}
 			if (aBridge) {
 				WD.set(aWorld, aMinX+i, mHeight  , -13, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
 				WD.set(aWorld, aMinX+i, mHeight  ,  12, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
-				aWorld.setBlock(aMinX+i, mHeight+1, -13, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(aMinX+i, mHeight+1,  12, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+i, mHeight+1, -13, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+i, mHeight+1,  12, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 			}
 			if (aKillSky) {
-				for (int j = -13; j < 13; j++) for (int k = 2; k < 32; k++) aWorld.setBlock(aMinX+i, mHeight+k, j, NB, 0, 0);
+				for (int j = -13; j < 13; j++) for (int k = 2; k < 32; k++) WD.set(aWorld, aMinX+i, mHeight+k, j, NB, 0, 0);
 			} else {
-				for (int j = -12; j < 12; j++) for (int k = 2; k <  7; k++) aWorld.setBlock(aMinX+i, mHeight+k, j, NB, 0, 0);
+				for (int j = -12; j < 12; j++) for (int k = 2; k <  7; k++) WD.set(aWorld, aMinX+i, mHeight+k, j, NB, 0, 0);
 			}
 			for (int j = -12; j < 2; j++) {
-				aWorld.setBlock(aMinX+i, mHeight+1, j, NB, 0, 0);
+				WD.set(aWorld, aMinX+i, mHeight+1, j, NB, 0, 0);
 				if (aLand) {
 				WD.set(aWorld, aMinX+i, mHeight-2, j, Blocks.cobblestone, 0, 0, T);
-				aWorld.setBlock(aMinX+i, mHeight-1, j, Blocks.gravel, 1, 0);
+				WD.set(aWorld, aMinX+i, mHeight-1, j, Blocks.gravel, 1, 0);
 				for (int k = mHeight-3; k > 0; k--) if (!WD.opq(aWorld, aMinX+i, k, j, T, T)) WD.set(aWorld, aMinX+i, k, j, Blocks.cobblestone, 0, 0, T); else break;
 				} else {
 				WD.set(aWorld, aMinX+i, mHeight-1, j, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
 				}
 			}
 			for (int j = 1; j < 12; j++) {
-				aWorld.setBlock(aMinX+i, mHeight+1, j, NB, 0, 0);
+				WD.set(aWorld, aMinX+i, mHeight+1, j, NB, 0, 0);
 				if (aLand) {
 				WD.set(aWorld, aMinX+i, mHeight-2, j, Blocks.cobblestone, 0, 0, T);
-				aWorld.setBlock(aMinX+i, mHeight-1, j, Blocks.gravel, 1, 0);
+				WD.set(aWorld, aMinX+i, mHeight-1, j, Blocks.gravel, 1, 0);
 				for (int k = mHeight-3; k > 0; k--) if (!WD.opq(aWorld, aMinX+i, k, j, T, T)) WD.set(aWorld, aMinX+i, k, j, Blocks.cobblestone, 0, 0, T); else break;
 				} else {
 				WD.set(aWorld, aMinX+i, mHeight-1, j, BlocksGT.Concrete, DYE_INDEX_Gray, 0, T);
 				}
 			}
 			
-			aWorld.setBlock(aMinX+i, mHeight  , -12, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1, -12, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_LightGray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , -11, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1, -11, (Block)BlocksGT.RailRoad, 1, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , -10, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 9, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 8, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 7, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1, - 7, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 9 : 1, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 6, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 5, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 4, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 3, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1, - 3, (Block)BlocksGT.RailRoad, 1, 0);
-			aWorld.setBlock(aMinX+i, mHeight  , - 2, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , -12, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1, -12, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , -11, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1, -11, (Block)BlocksGT.RailRoad, 1, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , -10, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 9, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 8, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 7, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1, - 7, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 9 : 1, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 6, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 5, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 4, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 3, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1, - 3, (Block)BlocksGT.RailRoad, 1, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 2, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_LightGray, 0);
 			
 			if (aLand) {
 			WD.set(aWorld, aMinX+i, mHeight-1, - 1, Blocks.cobblestone, 0, 0, T);
@@ -734,28 +734,28 @@ public class WorldgenStreets extends WorldgenObject {
 			WD.set(aWorld, aMinX+i, mHeight+1,   0, BlocksGT.Concrete, DYE_INDEX_Gray, 0, F);
 			}
 			
-			aWorld.setBlock(aMinX+i, mHeight  ,   1, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_LightGray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   2, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1,   2, (Block)BlocksGT.RailRoad, 1, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   3, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   4, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   5, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   6, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1,   6, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 9 : 1, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   7, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   8, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   9, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,  10, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1,  10, (Block)BlocksGT.RailRoad, 1, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,  11, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); aWorld.setBlock(aMinX+i, mHeight+1,  11, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   1, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_LightGray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   2, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1,   2, (Block)BlocksGT.RailRoad, 1, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   3, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   4, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   5, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   6, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1,   6, (Block)BlocksGT.RailRoad, ((i+2) / 4) % 2 == 0 ? 9 : 1, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   7, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   8, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   9, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,  10, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1,  10, (Block)BlocksGT.RailRoad, 1, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,  11, BlocksGT.Asphalt, DYE_INDEX_Gray, 0); WD.set(aWorld, aMinX+i, mHeight+1,  11, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_LightGray, 0);
 		}
 		
 		if (aTunnel) {
-			aWorld.setBlock(aMinX+ 1, mHeight+3, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 1, mHeight+3,  12, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 6, mHeight+3, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 6, mHeight+3,  12, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 9, mHeight+3, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 9, mHeight+3,  12, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+14, mHeight+3, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+14, mHeight+3,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 1, mHeight+3, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 1, mHeight+3,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 6, mHeight+3, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 6, mHeight+3,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 9, mHeight+3, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 9, mHeight+3,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+14, mHeight+3, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+14, mHeight+3,  12, Blocks.glowstone, 0, 0);
 		}
 		if (aSideWalls) {
 			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4,  13, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k,  12, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
@@ -774,64 +774,64 @@ public class WorldgenStreets extends WorldgenObject {
 			WD.sign(aWorld, aMinX+7, mHeight+3,  11, SIDE_Z_NEG, 0, "", "X: " + ((aMinX-16) >> 9), "Z: 0" , "");
 			WD.sign(aWorld, aMinX+8, mHeight+3,  11, SIDE_Z_NEG, 0, "", "X: " + ( aMinX     >> 9), "Z: 0" , "");
 			
-			aWorld.setBlock(aMinX+ 5, mHeight+1, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+10, mHeight+1, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 5, mHeight+5, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+10, mHeight+5, -13, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 5, mHeight+1,  12, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+10, mHeight+1,  12, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+ 5, mHeight+5,  12, Blocks.glowstone, 0, 0);
-			aWorld.setBlock(aMinX+10, mHeight+5,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 5, mHeight+1, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+10, mHeight+1, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 5, mHeight+5, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+10, mHeight+5, -13, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 5, mHeight+1,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+10, mHeight+1,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+ 5, mHeight+5,  12, Blocks.glowstone, 0, 0);
+			WD.set(aWorld, aMinX+10, mHeight+5,  12, Blocks.glowstone, 0, 0);
 		}
 		if (aMinX >> 9 != (aMinX+16) >> 9) {
-			aWorld.setBlock(aMinX+0, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
-			aWorld.setBlock(aMinX+1, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
-			aWorld.setBlock(aMinX+2, mHeight+1, - 2, NB, 0, 0);
-			aWorld.setBlock(aMinX+2, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
-			aWorld.setBlock(aMinX+2, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
-			aWorld.setBlock(aMinX+2, mHeight+1,   1, NB, 0, 0);
-			aWorld.setBlock(aMinX+1, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
-			aWorld.setBlock(aMinX+0, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
+			WD.set(aWorld, aMinX+0, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
+			WD.set(aWorld, aMinX+1, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
+			WD.set(aWorld, aMinX+2, mHeight+1, - 2, NB, 0, 0);
+			WD.set(aWorld, aMinX+2, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_White, 0);
+			WD.set(aWorld, aMinX+2, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_NEG], DYE_INDEX_Red, 0);
+			WD.set(aWorld, aMinX+2, mHeight+1,   1, NB, 0, 0);
+			WD.set(aWorld, aMinX+1, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
+			WD.set(aWorld, aMinX+0, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
 			
 			for (int i = 2; i < 14; i++) {
-			aWorld.setBlock(aMinX+i, mHeight  , - 1, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
-			aWorld.setBlock(aMinX+i, mHeight  ,   0, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  , - 1, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
+			WD.set(aWorld, aMinX+i, mHeight  ,   0, BlocksGT.Asphalt, DYE_INDEX_Gray, 0);
 			}
 			for (int i = 3; i < 13; i++) {
-			aWorld.setBlock(aMinX+i, mHeight+1, - 2, NB, 0, 0);
-			aWorld.setBlock(aMinX+i, mHeight+1, - 1, NB, 0, 0);
-			aWorld.setBlock(aMinX+i, mHeight+1,   0, NB, 0, 0);
-			aWorld.setBlock(aMinX+i, mHeight+1,   1, NB, 0, 0);
+			WD.set(aWorld, aMinX+i, mHeight+1, - 2, NB, 0, 0);
+			WD.set(aWorld, aMinX+i, mHeight+1, - 1, NB, 0, 0);
+			WD.set(aWorld, aMinX+i, mHeight+1,   0, NB, 0, 0);
+			WD.set(aWorld, aMinX+i, mHeight+1,   1, NB, 0, 0);
 			}
 			
-			aWorld.setBlock(aMinX+15, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
-			aWorld.setBlock(aMinX+14, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
-			aWorld.setBlock(aMinX+13, mHeight+1, - 2, NB, 0, 0);
-			aWorld.setBlock(aMinX+13, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
-			aWorld.setBlock(aMinX+13, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
-			aWorld.setBlock(aMinX+13, mHeight+1,   1, NB, 0, 0);
-			aWorld.setBlock(aMinX+14, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
-			aWorld.setBlock(aMinX+15, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
+			WD.set(aWorld, aMinX+15, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_Red, 0);
+			WD.set(aWorld, aMinX+14, mHeight+1, - 2, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_POS], DYE_INDEX_White, 0);
+			WD.set(aWorld, aMinX+13, mHeight+1, - 2, NB, 0, 0);
+			WD.set(aWorld, aMinX+13, mHeight+1, - 1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_Red, 0);
+			WD.set(aWorld, aMinX+13, mHeight+1,   0, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_X_POS], DYE_INDEX_White, 0);
+			WD.set(aWorld, aMinX+13, mHeight+1,   1, NB, 0, 0);
+			WD.set(aWorld, aMinX+14, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_Red, 0);
+			WD.set(aWorld, aMinX+15, mHeight+1,   1, ((BlockMetaType)BlocksGT.CFoam).mSlabs[SIDE_Z_NEG], DYE_INDEX_White, 0);
 			
 			if (aTunnel) {
 				for (int i = 0; i < 7; i++) {
-					aWorld.setBlock(aMinX+ 0, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+ 0, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+ 1, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+ 1, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+14, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+14, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+15, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+15, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 0, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 0, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 1, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 1, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+14, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+14, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+15, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+15, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
 				}
 			}
 		} else {
 			if (aTunnel) {
 				for (int i = 0; i < 7; i++) {
-					aWorld.setBlock(aMinX+ 7, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+ 7, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+ 8, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
-					aWorld.setBlock(aMinX+ 8, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 7, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 7, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 8, mHeight+i, -1, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
+					WD.set(aWorld, aMinX+ 8, mHeight+i,  0, BlocksGT.Concrete, i == 3 ? DYE_INDEX_LightGray : DYE_INDEX_White, 0);
 				}
 			}
 		}
@@ -839,45 +839,45 @@ public class WorldgenStreets extends WorldgenObject {
 		if (aBridge) {
 			for (int i = 6; i <= 9; i++) {
 				for (int j = -9; j <= -6; j++) {
-					aWorld.setBlock(aMinX+i, mHeight-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					aWorld.setBlock(aMinX+i, mHeight-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, aMinX+i, mHeight-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, aMinX+i, mHeight-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 				for (int j = 5; j <= 8; j++) {
-					aWorld.setBlock(aMinX+i, mHeight-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					aWorld.setBlock(aMinX+i, mHeight-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, aMinX+i, mHeight-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					WD.set(aWorld, aMinX+i, mHeight-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 			}
 			for (int k = mHeight-4; k > 0; k--) if (!(WD.opq(aWorld, aMinX+10, k, -10, T, T) && WD.opq(aWorld, aMinX+10, k, -5, T, T) && WD.opq(aWorld, aMinX+5, k, -10, T, T) && WD.opq(aWorld, aMinX+5, k, -5, T, T))) {
-				aWorld.setBlock(aMinX+7, k,  -7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(aMinX+8, k,  -8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(aMinX+7, k,  -8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(aMinX+8, k,  -7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+7, k,  -7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+8, k,  -8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+7, k,  -8, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+8, k,  -7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 			} else {
 				for (int i = 6; i <= 9; i++) for (int j = -9; j <= -6; j++) {
-					if (k>-3) aWorld.setBlock(aMinX+i, k+3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-2) aWorld.setBlock(aMinX+i, k+2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-1) aWorld.setBlock(aMinX+i, k+1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k> 0) aWorld.setBlock(aMinX+i, k  , j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+1) aWorld.setBlock(aMinX+i, k-1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+2) aWorld.setBlock(aMinX+i, k-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+3) aWorld.setBlock(aMinX+i, k-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-3) WD.set(aWorld, aMinX+i, k+3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-2) WD.set(aWorld, aMinX+i, k+2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-1) WD.set(aWorld, aMinX+i, k+1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k> 0) WD.set(aWorld, aMinX+i, k  , j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+1) WD.set(aWorld, aMinX+i, k-1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+2) WD.set(aWorld, aMinX+i, k-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+3) WD.set(aWorld, aMinX+i, k-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 				break;
 			}
 			for (int k = mHeight-4; k > 0; k--) if (!(WD.opq(aWorld, aMinX+10, k, 9, T, T) && WD.opq(aWorld, aMinX+10, k, 4, T, T) && WD.opq(aWorld, aMinX+5, k, 9, T, T) && WD.opq(aWorld, aMinX+5, k, 4, T, T))) {
-				aWorld.setBlock(aMinX+7, k,   6, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(aMinX+8, k,   7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(aMinX+7, k,   7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
-				aWorld.setBlock(aMinX+8, k,   6, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+7, k,   6, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+8, k,   7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+7, k,   7, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
+				WD.set(aWorld, aMinX+8, k,   6, BlocksGT.Concrete, DYE_INDEX_Gray, 0);
 			} else {
 				for (int i = 6; i <= 9; i++) for (int j = 5; j <= 8; j++) {
-					if (k>-3) aWorld.setBlock(aMinX+i, k+3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-2) aWorld.setBlock(aMinX+i, k+2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>-1) aWorld.setBlock(aMinX+i, k+1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k> 0) aWorld.setBlock(aMinX+i, k  , j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+1) aWorld.setBlock(aMinX+i, k-1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+2) aWorld.setBlock(aMinX+i, k-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
-					if (k>+3) aWorld.setBlock(aMinX+i, k-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-3) WD.set(aWorld, aMinX+i, k+3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-2) WD.set(aWorld, aMinX+i, k+2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>-1) WD.set(aWorld, aMinX+i, k+1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k> 0) WD.set(aWorld, aMinX+i, k  , j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+1) WD.set(aWorld, aMinX+i, k-1, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+2) WD.set(aWorld, aMinX+i, k-2, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
+					if (k>+3) WD.set(aWorld, aMinX+i, k-3, j, BlocksGT.Concrete, DYE_INDEX_LightGray, 0);
 				}
 				break;
 			}

@@ -50,13 +50,13 @@ public class BlockOcean extends BlockWaterlike {
 		if (PLACEMENT_ALLOWED) {
 			if (UPDATE_TICK) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
 		} else {
-			aWorld.setBlock(aX, aY, aZ, NB, 0, 2);
+			WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 		}
 	}
 	
 	@Override
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
-		if (aBlock == Blocks.dirt && aWorld.getBlock(aX, aY-1, aZ) == Blocks.grass) aWorld.setBlock(aX, aY-1, aZ, Blocks.dirt, 1, 2);
+		if (aBlock == Blocks.dirt && WD.block(aWorld, aX, aY-1, aZ) == Blocks.grass) WD.set(aWorld, aX, aY-1, aZ, Blocks.dirt, 1, 2);
 		super.onNeighborBlockChange(aWorld, aX, aY, aZ, aBlock);
 	}
 	
@@ -68,7 +68,7 @@ public class BlockOcean extends BlockWaterlike {
 			aWorld.func_147451_t(aX, aY, aZ);
 			WD.update(aWorld, aX, aY, aZ);
 			if (aY > 0) {
-				if (aWorld.getBlock(aX, aY-1, aZ) == this) {
+				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleBlockUpdate(aX, aY-1, aZ, this, tickRate);
 				} else {
 					aWorld.func_147451_t(aX, aY-1, aZ);
@@ -117,25 +117,25 @@ public class BlockOcean extends BlockWaterlike {
 			if (WD.meta(aWorld, aX, aY-1, aZ) == 0) tOceanCounter++;
 		} else if (WD.anywater(tBlock)) {
 			tHasNoOceanAround = F;
-			if (aWorld.setBlock(aX, aY-1, aZ, this, 0, WATER_UPDATE_FLAGS)) tOceanCounter++;
+			if (WD.set(aWorld, aX, aY-1, aZ, this, 0, WATER_UPDATE_FLAGS)) tOceanCounter++;
 		}
 		
 		if (tHasNoOceanAround && WD.block(aWorld, aX, aY+1, aZ) != this) {
-			aWorld.setBlock(aX, aY, aZ, NB, 0, WATER_UPDATE_FLAGS);
+			WD.set(aWorld, aX, aY, aZ, NB, 0, WATER_UPDATE_FLAGS);
 			PLACEMENT_ALLOWED = F;
 			return;
 		}
 		
 		if (WD.meta(aWorld, aX, aY, aZ) != 0) {
-			if (tOceanCounter >= 2 || (SPREAD_TO_AIR && tHasOceanBiome) || (aWorld.getBlock(aX, aY+1, aZ) == this && WD.meta(aWorld, aX, aY+1, aZ) == 0)) {
-				aWorld.setBlock(aX, aY, aZ, this, 0, WATER_UPDATE_FLAGS);
+			if (tOceanCounter >= 2 || (SPREAD_TO_AIR && tHasOceanBiome) || (WD.block(aWorld, aX, aY+1, aZ) == this && WD.meta(aWorld, aX, aY+1, aZ) == 0)) {
+				WD.set(aWorld, aX, aY, aZ, this, 0, WATER_UPDATE_FLAGS);
 			}
 		}
 		
 		if (BIOMES_RIVER_LAKE.contains(tBiome.biomeName)) {
 			tOceanCounter = 0;
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) if (i != 0 && j != 0) {
-				if (aWorld.getBlock(aX+i, aY, aZ+j) == this && WD.meta(aWorld, aX+i, aY, aZ+j) == 0) {
+				if (WD.block(aWorld, aX+i, aY, aZ+j) == this && WD.meta(aWorld, aX+i, aY, aZ+j) == 0) {
 					tOceanCounter++;
 				}
 			}
@@ -147,9 +147,9 @@ public class BlockOcean extends BlockWaterlike {
 		}
 		
 		for (BlockPos tCoords : tList) {
-			if (aWorld.setBlock(tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
-				if (aWorld.blockExists(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
-					tBlock = aWorld.getBlock(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
+			if (WD.set(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), this, 0, WATER_UPDATE_FLAGS)) for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
+				if (WD.exists(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j)) {
+					tBlock = WD.block(aWorld, tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j);
 					if (tBlock == this) aWorld.scheduleBlockUpdate(tCoords.getX()+i, tCoords.getY(), tCoords.getZ()+j, this, tickRate);
 				}
 			}
@@ -163,7 +163,7 @@ public class BlockOcean extends BlockWaterlike {
 	@Override
 	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {
 		// TODO FIX THIS SHIT
-		return aWorld.getBlockMetadata(aX, aY, aZ) == 0 && WD.air(aWorld.getBlock(aX, aY+1, aZ)) && WD.air(aWorld.getBlock(aX, aY+2, aZ)) && aWorld.getBlock(aX, aY-1, aZ).getLightOpacity(aWorld, aX, aY-1, aZ) < LIGHT_OPACITY_MAX ? 16 : LIGHT_OPACITY_NONE;
+		return WD.meta(aWorld, aX, aY, aZ) == 0 && WD.air(WD.block(aWorld, aX, aY+1, aZ)) && WD.air(WD.block(aWorld, aX, aY+2, aZ)) && WD.block(aWorld, aX, aY-1, aZ).getLightOpacity(aWorld, aX, aY-1, aZ) < LIGHT_OPACITY_MAX ? 16 : LIGHT_OPACITY_NONE;
 	}
 	
 	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}

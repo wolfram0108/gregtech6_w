@@ -69,11 +69,11 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLong(NBT_ACTIVE_DATA);}
-		if (aNBT.hasKey(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT);}
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyType = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLong(NBT_ACTIVE_DATA);}
+		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT);}
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyType = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}
 	
@@ -224,7 +224,7 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		// Consume Energy based on Fluid Amount absorbed.
 		mEnergy -= Math.max(16, UT.Code.units(mTank.amount(), 1000, 2048, T));
 		// something prevented the setBlock Function! Scan again!
-		if (!level.setBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ(), NB, 0, 2)) return F;
+		if (!WD.set(level, aCoords.getX(), aCoords.getY(), aCoords.getZ(), NB, 0, 2)) return F;
 		// If there is a Fluid Block above this one, clearly the Y-Level is off due to a recent Blockchange! Scan again!
 		if (mPumpedFluids.contains(getBlock(aCoords.getX(), aCoords.getY()+mDir, aCoords.getZ()))) return F;
 		// Somehow this Block is completely surrounded by pumpable Fluid, this should not be possible unless it is the literal Cornercase! Scan again!

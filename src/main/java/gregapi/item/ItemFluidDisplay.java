@@ -74,13 +74,13 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		GarbageGT.BLACKLIST.add(this);
 	}
 	
-	@Override
+	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
 		if (!aWorld.isRemote && UT.Entities.hasInfiniteItems(aPlayer)) for (byte tSide : ALL_SIDES_VALID) if (FL.fill(WD.te(aWorld, aX, aY, aZ, tSide, T), FL.make(FL.fluid(ST.meta_(aStack)), Integer.MAX_VALUE), T) > 0) return T;
 		return !aWorld.isRemote;
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
@@ -206,7 +206,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		while (aList.remove(null));
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public void registerIcons(IIconRegister aIconRegister) {
 		// Useful hack to register Block Icons. That is why the Fluid Display Item has to always exist.
@@ -230,7 +230,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		}
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public IIcon getIconFromDamage(int aMeta) {
 		Fluid aFluid = FluidRegistry.getFluid(aMeta);
@@ -239,7 +239,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		return tBlock != null && tBlock != NB ? tBlock.getIcon(0, 0) : aFluid.getStillIcon();
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		Fluid aFluid = FL.fluid(ST.meta_(aStack));
@@ -248,32 +248,32 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		return tBlock != null && tBlock != NB ? tBlock.getRenderColor(0) : aFluid.getColor();
 	}
 	
-	@Override
+	// @Override
 	public int getSpriteNumber() {
 		return 0;
 	}
 	
-	@Override
+	// @Override
 	public String getUnlocalizedName(ItemStack aStack) {
 		if (aStack != null) return FL.name(FL.fluid(ST.meta_(aStack)), F);
 		return "";
 	}
 	
-	@Override
+	// @Override
 	public String getItemStackDisplayName(ItemStack aStack) {
 		if (aStack == null) return "";
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
 		return tFluid == null ? "INVALID FLUID ID!!!" : FL.name(tFluid, T);
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {
 		Fluid aFluid = FL.fluid(ST.meta_(aStack));
 		return aFluid != null && FluidsGT.ENCHANTED_EFFECT.contains(aFluid.getName());
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
@@ -287,20 +287,20 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		for (String tName : UT.Books.BOOK_LIST) aList.add(ST.book(tName));
 	}
 	
-	@Override public final Item setUnlocalizedName(String aName) {return this;}
-	@Override public final String getUnlocalizedName() {return mName;}
+	public final Item setUnlocalizedName(String aName) {return this;}
+	public final String getUnlocalizedName() {return mName;}
 	
-	@Override
+	// @Override
 	public boolean doesSneakBypassUse(Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		return T;
 	}
 	
-	@Override
+	// @Override
 	public ItemStack getContainerItem(ItemStack aStack) {
 		return null;
 	}
 	
-	@Override
+	// @Override
 	public final boolean hasContainerItem(ItemStack aStack) {
 		return F;
 	}
@@ -308,7 +308,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	@Override
 	public void updateItemStack(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
-		if (aNBT != null && aNBT.hasKey("f")) {
+		if (aNBT != null && aNBT.contains("f")) {
 			String aName = aNBT.getString("f");
 			if (UT.Code.stringInvalid(aName)) return;
 			String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
@@ -325,7 +325,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		updateItemStack(aStack);
 	}
 	
-	@Override
+	// @Override
 	public FluidStack getFluid(ItemStack aStack) {
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
 		if (tFluid == null) return null;
@@ -338,17 +338,17 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		return rFluid == null ? FL.make(tFluid, 0) : rFluid;
 	}
 	
-	@Override
+	// @Override
 	public int getCapacity(ItemStack aStack) {
 		return Integer.MAX_VALUE;
 	}
 	
-	@Override
+	// @Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		return 0;
 	}
 	
-	@Override
+	// @Override
 	public FluidStack drain(ItemStack aStack, int aDrain, boolean aDoDrain) {
 		return getFluid(aStack);
 	}

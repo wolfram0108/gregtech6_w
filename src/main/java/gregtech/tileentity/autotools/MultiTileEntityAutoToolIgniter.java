@@ -56,10 +56,10 @@ public class MultiTileEntityAutoToolIgniter extends TileEntityBase09FacingSingle
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
-		if (aNBT.hasKey(NBT_QUALITY)) mQuality = aNBT.getByte(NBT_QUALITY);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_QUALITY)) mQuality = aNBT.getByte(NBT_QUALITY);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 	}
 	
 	@Override
@@ -91,7 +91,7 @@ public class MultiTileEntityAutoToolIgniter extends TileEntityBase09FacingSingle
 			}
 		} else {
 			if (mSendSound != 0) {
-				UT.Sounds.play(SFX.MC_IGNITE, 20, 1.0F, xCoord, yCoord, zCoord);
+				UT.Sounds.play(SFX.MC_IGNITE, 20, 1.0F, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 				mSendSound = 0;
 			}
 		}

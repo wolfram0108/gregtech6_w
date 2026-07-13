@@ -49,13 +49,13 @@ public class BlockRiver extends BlockWaterlike {
 		if (PLACEMENT_ALLOWED) {
 			aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(90));
 		} else {
-			aWorld.setBlockToAir(aX, aY, aZ);
+			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		}
 	}
 	
 	@Override
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
-		if (aWorld.getBlock(aX, aY-1, aZ) == Blocks.grass) aWorld.setBlock(aX, aY-1, aZ, Blocks.dirt, 1, 2);
+		if (WD.block(aWorld, aX, aY-1, aZ) == Blocks.grass) WD.set(aWorld, aX, aY-1, aZ, Blocks.dirt, 1, 2);
 		super.onNeighborBlockChange(aWorld, aX, aY, aZ, aBlock);
 	}
 	
@@ -67,7 +67,7 @@ public class BlockRiver extends BlockWaterlike {
 			aWorld.func_147451_t(aX, aY, aZ);
 			WD.update(aWorld, aX, aY, aZ);
 			if (aY > 0) {
-				if (aWorld.getBlock(aX, aY-1, aZ) == this) {
+				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleBlockUpdate(aX, aY-1, aZ, this, tickRate);
 				} else {
 					aWorld.func_147451_t(aX, aY-1, aZ);
@@ -87,7 +87,7 @@ public class BlockRiver extends BlockWaterlike {
 		if (WD.meta(aWorld, aX, aY, aZ) != 0) {
 			byte tRiverCounter = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (WD.block(aWorld, aX, aY, aZ, tSide) == this && WD.meta(aWorld, aX, aY, aZ, tSide) == 0) tRiverCounter++;
-			if (tRiverCounter >= 2) aWorld.setBlock(aX, aY, aZ, this, 0, WATER_UPDATE_FLAGS);
+			if (tRiverCounter >= 2) WD.set(aWorld, aX, aY, aZ, this, 0, WATER_UPDATE_FLAGS);
 		}
 		updateFlow(aWorld, aX, aY, aZ, aRandom);
 		PLACEMENT_ALLOWED = F;
@@ -97,7 +97,7 @@ public class BlockRiver extends BlockWaterlike {
 	@Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		if (!isSourceBlock(aWorld, aX, aY, aZ)) return null;
-		if (aDoDrain) aWorld.setBlockToAir(aX, aY, aZ);
+		if (aDoDrain) WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 		return FL.Water.make(1000);
 	}
 	

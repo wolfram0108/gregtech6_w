@@ -75,7 +75,7 @@ public class PlayerModelRenderer extends RenderPlayer {
 		
 		try {
 			Identifier tResource = getResource(aPlayer.getCommandSenderName());
-			if (tResource == null) tResource = getResource(aPlayer.getUniqueID().toString());
+			if (tResource == null) tResource = getResource(aPlayer.getUUID().toString());
 			
 			if (tResource != null && !aPlayer.getHideCape()) {
 				bindTexture(tResource);

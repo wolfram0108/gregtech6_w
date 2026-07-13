@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.multiblocks;
+import gregapi.fluid.FluidTankInfo;
 
 import gregapi.GT_API;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
@@ -128,12 +129,12 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
-		if (aNBT.hasKey(NBT_DESIGN)) mDesign = UT.Code.unsignB(aNBT.getByte(NBT_DESIGN));
-		if (aNBT.hasKey(NBT_MODE)) mMode = aNBT.getInteger(NBT_MODE);
+		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
+		if (aNBT.contains(NBT_DESIGN)) mDesign = UT.Code.unsignB(aNBT.getByte(NBT_DESIGN));
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getInteger(NBT_MODE);
 		
 		if (CODE_CLIENT) {
-			if (GT_API.sBlockIcons == null && aNBT.hasKey(NBT_TEXTURE)) {
+			if (GT_API.sBlockIcons == null && aNBT.contains(NBT_TEXTURE)) {
 				String tTextureName = aNBT.getString(NBT_TEXTURE);
 				mTextures = new IIconContainer[UT.Code.bind8(aNBT.getShort(NBT_DESIGNS))+1][6];
 				for (short i = 0; i < mTextures.length; i++) {mTextures[i] = new IIconContainer[] {
@@ -156,8 +157,8 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (mDesign != 0) aNBT.setByte(NBT_DESIGN, (byte)mDesign);
-		if (mMode   != 0) aNBT.setInteger(NBT_MODE, mMode);
+		if (mDesign != 0) aNBT.putByte(NBT_DESIGN, (byte)mDesign);
+		if (mMode   != 0) aNBT.putInt(NBT_MODE, mMode);
 		if (mTargetPos != null) {
 		UT.NBT.setBoolean(aNBT, NBT_TARGET, T);
 		UT.NBT.setNumber(aNBT, NBT_TARGET_X, mTargetPos.getX());
@@ -200,9 +201,9 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		if (mTargetPos == null) return null;
 		if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
-			if (level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
+			if (WD.exists(level, mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
 				BlockEntity tTarget = WD.te(level, mTargetPos, T);
-				if (tTarget instanceof ITileEntityMultiBlockController && ((ITileEntityMultiBlockController)tTarget).isInsideStructure(xCoord, yCoord, zCoord)) {
+				if (tTarget instanceof ITileEntityMultiBlockController && ((ITileEntityMultiBlockController)tTarget).isInsideStructure(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) {
 					mTarget = (ITileEntityMultiBlockController)tTarget;
 				} else {
 					mTargetPos = null;
@@ -258,7 +259,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 				return 1;
 			}
 		} else {
-			if (tTileEntity.isInsideStructure(xCoord, yCoord, zCoord)) return tTileEntity.onToolClickMultiBlock(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ, getCoords());
+			if (tTileEntity.isInsideStructure(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) return tTileEntity.onToolClickMultiBlock(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ, getCoords());
 			mTargetPos = null;
 			mTarget = null;
 		}
@@ -692,7 +693,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	}
 	
 	// Useless Garbage :P
-	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.getDistanceSq(xCoord + 0.5D, yCoord + 0.5D, zCoord + 0.5D) <= 64D;}
+	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
 	@Override public void openInventory() {/**/}
 	@Override public void closeInventory() {/**/}
 }

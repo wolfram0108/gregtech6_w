@@ -66,20 +66,20 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
-		if (aNBT.hasKey(NBT_MATERIALS)) mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_MATERIALS)) mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_MODE, mMode);
+		aNBT.putByte(NBT_MODE, mMode);
 		if (mContent != null) mContent.save(NBT_MATERIALS, aNBT);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		aNBT.setByte(NBT_MODE, mMode);
+		aNBT.putByte(NBT_MODE, mMode);
 		return aNBT;
 	}
 	

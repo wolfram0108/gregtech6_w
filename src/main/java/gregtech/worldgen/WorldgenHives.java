@@ -140,13 +140,13 @@ public class WorldgenHives extends WorldgenObject {
 			}
 			
 			for (tY = aWorld.provider.hasNoSky ? 80 : aWorld.getHeight()-50; tY > 2; tY--) {
-				Block tContact = aWorld.getBlock(tX, tY, tZ);
+				Block tContact = WD.block(aWorld, tX, tY, tZ);
 				if (tContact.getMaterial().isLiquid()) return rResult;
 				if (tContact instanceof BlockStones && WD.meta(aWorld, tX, tY, tZ) != 0) return rResult;
 				if (!tContact.isOpaqueCube() || tContact.isLeaves(aWorld, tX, tY, tZ) || tContact.isWood(aWorld, tX, tY, tZ) || tContact.getMaterial() == Material.ice || tContact.getMaterial() == Material.wood || tContact.getMaterial() == Material.leaves) continue;
 				
 				for (byte tSide : ALL_SIDES_HORIZONTAL_DOWN) {
-					Block tBlock = aWorld.getBlock(tX+OFFX[tSide], tY-1+OFFY[tSide], tZ+OFFZ[tSide]);
+					Block tBlock = WD.block(aWorld, tX+OFFX[tSide], tY-1+OFFY[tSide], tZ+OFFZ[tSide]);
 					if (WD.hasCollide(aWorld, tX+OFFX[tSide], tY-1+OFFY[tSide], tZ+OFFZ[tSide], tBlock)) continue;
 					
 					
@@ -172,7 +172,7 @@ public class WorldgenHives extends WorldgenObject {
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_White     ,   700, aRandom) || rResult;
 					if (tContact == Blocks.mycelium)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Pink      ,   800, aRandom) || rResult;
-					if (tContact == Blocks.sand && aWorld.getBlockMetadata(tX, tY, tZ) == 1)
+					if (tContact == Blocks.sand && WD.meta(aWorld, tX, tY, tZ) == 1)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Red       ,   900, aRandom) || rResult;
 					if (tContact == Blocks.sandstone || tContact.getMaterial() == Material.sand)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Yellow    ,   900, aRandom) || rResult;

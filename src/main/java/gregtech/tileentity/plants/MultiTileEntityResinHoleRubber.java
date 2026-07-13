@@ -51,7 +51,7 @@ public class MultiTileEntityResinHoleRubber extends MultiTileEntityTreeHole {
 			MultiTileEntityResinHoleRubber tHole = tIterator.next();
 			if (tHole == null || tHole.isDead()) {tIterator.remove(); continue;}
 			if (tHole.level != aWorld) continue;
-			if (Math.abs(tHole.xCoord - aX) < 256 && Math.abs(tHole.zCoord - aZ) < 256) return T;
+			if (Math.abs(tHole.getBlockPos().getX() - aX) < 256 && Math.abs(tHole.getBlockPos().getZ() - aZ) < 256) return T;
 		}
 		return F;
 	}
@@ -66,21 +66,21 @@ public class MultiTileEntityResinHoleRubber extends MultiTileEntityTreeHole {
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
 			if (!mHasResin && aTimer % 600 == 0) {
-				int tTreeHeight = yCoord+1, tLeavesCount = 0;
+				int tTreeHeight = getBlockPos().getY()+1, tLeavesCount = 0;
 				for (int i = 1; i < 10; i++) {
 					if (getBlockAtSideAndDistance(SIDE_TOP, i) != BlocksGT.LogA && getMetaDataAtSideAndDistance(SIDE_TOP, i) != 0) break;
 					tTreeHeight++;
 				}
-				if (checkLeaves(xCoord, tTreeHeight  , zCoord)) tLeavesCount++;
-				if (checkLeaves(xCoord, tTreeHeight+1, zCoord)) tLeavesCount++;
+				if (checkLeaves(getBlockPos().getX(), tTreeHeight  , getBlockPos().getZ())) tLeavesCount++;
+				if (checkLeaves(getBlockPos().getX(), tTreeHeight+1, getBlockPos().getZ())) tLeavesCount++;
 				for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) if (i != 0 || j != 0) {
-					if (checkLeaves(xCoord+i, tTreeHeight-1, zCoord+j)) tLeavesCount++;
+					if (checkLeaves(getBlockPos().getX()+i, tTreeHeight-1, getBlockPos().getZ()+j)) tLeavesCount++;
 				}
 				for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (i != 0 || j != 0) {
-					if (Math.abs(i*j) < 2) if (checkLeaves(xCoord+i, tTreeHeight-2, zCoord+j)) tLeavesCount++;
-					if (Math.abs(i*j) < 4) if (checkLeaves(xCoord+i, tTreeHeight-3, zCoord+j)) tLeavesCount++;
-					if (Math.abs(i*j) < 4) if (checkLeaves(xCoord+i, tTreeHeight-4, zCoord+j)) tLeavesCount++;
-					if (checkLeaves(xCoord+i, tTreeHeight-5, zCoord+j)) tLeavesCount++;
+					if (Math.abs(i*j) < 2) if (checkLeaves(getBlockPos().getX()+i, tTreeHeight-2, getBlockPos().getZ()+j)) tLeavesCount++;
+					if (Math.abs(i*j) < 4) if (checkLeaves(getBlockPos().getX()+i, tTreeHeight-3, getBlockPos().getZ()+j)) tLeavesCount++;
+					if (Math.abs(i*j) < 4) if (checkLeaves(getBlockPos().getX()+i, tTreeHeight-4, getBlockPos().getZ()+j)) tLeavesCount++;
+					if (checkLeaves(getBlockPos().getX()+i, tTreeHeight-5, getBlockPos().getZ()+j)) tLeavesCount++;
 				}
 				// 86 Leaves if Ideal. So a Chance of 10% every 30 seconds for a healthy Tree.
 				if (tLeavesCount > 60 && rng(260) < tLeavesCount - 60) {

@@ -101,7 +101,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	}
 	
 	@Override public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {if ((WD.meta(aWorld, aX, aY, aZ) & 7) != SIDE_UP) {aEntity.motionX *= 0.1; aEntity.motionZ *= 0.1;}}
-	@Override public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return (aMeta & 7) < 6 ? (aMeta & 8) | OPOS[aSide] : aMeta;}
+	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return (aMeta & 7) < 6 ? (aMeta & 8) | OPOS[aSide] : aMeta;}
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) UT.Sounds.send(SFX.MC_ANVIL_LAND, 1, 2, aWorld, aX, aY, aZ);}
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
@@ -120,21 +120,21 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return T;}
-	@SuppressWarnings("unchecked") @Override public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0)); aList.add(ST.make(aItem, 1, 6)); aList.add(ST.make(aItem, 1, 7)); aList.add(ST.make(aItem, 1, 8)); aList.add(ST.make(aItem, 1, 14)); aList.add(ST.make(aItem, 1, 15));}
+	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0)); aList.add(ST.make(aItem, 1, 6)); aList.add(ST.make(aItem, 1, 7)); aList.add(ST.make(aItem, 1, 8)); aList.add(ST.make(aItem, 1, 14)); aList.add(ST.make(aItem, 1, 15));}
 	
-	@Override
+	// @Override
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
 		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);
 	}
 	
-	@Override
+	// @Override
 	public boolean rotateBlock(Level aWorld, int aX, int aY, int aZ, Direction aAxis) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
-		return (aMeta & 7) < 6 && aWorld.setBlock(aX, aY, aZ, this, (aMeta & 8) | (((aMeta & 7) + 1) % 6), 3);
+		return (aMeta & 7) < 6 && WD.set(aWorld, aX, aY, aZ, this, (aMeta & 8) | (((aMeta & 7) + 1) % 6), 3);
 	}
 	
-	@Override
+	// @Override
 	public Direction[] getValidRotations(Level aWorld, int aX, int aY, int aZ) {
 		return (WD.meta(aWorld, aX, aY, aZ) & 7) < 6 ? Direction.VALID_DIRECTIONS : null;
 	}
@@ -146,12 +146,12 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 			int aMeta = WD.meta(aWorld, aX, aY, aZ);
 			if ((aMeta & 7) >= 6) return 0;
 			byte tSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ);
-			return (aMeta & 7) != tSide && aWorld.setBlock(aX, aY, aZ, this, (aMeta & 8) | tSide, 3) ? 2000 : 0;
+			return (aMeta & 7) != tSide && WD.set(aWorld, aX, aY, aZ, this, (aMeta & 8) | tSide, 3) ? 2000 : 0;
 		}
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override
+	// @Override
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
 		switch(WD.meta(aWorld, aX, aY, aZ) & 7) {
 		case SIDE_X_POS: return AABB.getBoundingBox(aX+0.4, aY    , aZ    , aX+1  , aY+1  , aZ+1  );
@@ -164,15 +164,15 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		}
 	}
 	
-	@Override
+	// @Override
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {
 		if (aEntity instanceof ItemEntity || aEntity instanceof ExperienceOrb || aEntity instanceof Projectile) return;
 		super.addCollisionBoxesToList(aWorld, aX, aY, aZ, aAABB, aList, aEntity);
 	}
 	
-	@Override public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+1, aZ+1);}
-	@Override public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.iron_bars.getIcon(2, 0);}
+	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+1, aZ+1);}
+	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
+	public IIcon getIcon(int aSide, int aMeta) {return Blocks.iron_bars.getIcon(2, 0);}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}

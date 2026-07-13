@@ -48,8 +48,8 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityShredder extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing, 2)-2, tY = yCoord, tZ = getOffsetZN(mFacing, 2)-2, tD = (SIDES_AXIS_Z[mFacing]?mRunning?1:0:mRunning?3:2);
-		if (level.blockExists(tX, tY, tZ) && level.blockExists(tX+4, tY, tZ) && level.blockExists(tX, tY, tZ+4) && level.blockExists(tX+4, tY, tZ+4)) {
+		int tX = getOffsetXN(mFacing, 2)-2, tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing, 2)-2, tD = (SIDES_AXIS_Z[mFacing]?mRunning?1:0:mRunning?3:2);
+		if (WD.exists(level, tX, tY, tZ) && WD.exists(level, tX+4, tY, tZ) && WD.exists(level, tX, tY, tZ+4) && WD.exists(level, tX+4, tY, tZ+4)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18003, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_OUT, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -154,7 +154,7 @@ public class MultiTileEntityShredder extends TileEntityBase10MultiBlockMachine {
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing, 2), tY = yCoord, tZ = getOffsetZN(mFacing, 2);
+		int tX = getOffsetXN(mFacing, 2), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing, 2);
 		return aX >= tX - 2 && aY >= tY && aZ >= tZ - 2 && aX <= tX + 2 && aY <= tY + 2 && aZ <= tZ + 2;
 	}
 	
@@ -162,14 +162,14 @@ public class MultiTileEntityShredder extends TileEntityBase10MultiBlockMachine {
 	public void updateAdjacentToggleableEnergySources() {
 		DelegatorTileEntity<BlockEntity> tDelegator;
 		if (SIDES_AXIS_X[mFacing]) {
-			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), yCoord+1, zCoord - 3, SIDE_Z_POS, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), getBlockPos().getY()+1, getBlockPos().getZ() - 3, SIDE_Z_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), yCoord+1, zCoord + 3, SIDE_Z_NEG, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 2), getBlockPos().getY()+1, getBlockPos().getZ() + 3, SIDE_Z_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		} else {
-			tDelegator = WD.te(level, xCoord - 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_POS, F);
+			tDelegator = WD.te(level, getBlockPos().getX() - 3, getBlockPos().getY()+1, getOffsetZN(mFacing, 2), SIDE_X_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(level, xCoord + 3, yCoord+1, getOffsetZN(mFacing, 2), SIDE_X_NEG, F);
+			tDelegator = WD.te(level, getBlockPos().getX() + 3, getBlockPos().getY()+1, getOffsetZN(mFacing, 2), SIDE_X_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		}
 	}

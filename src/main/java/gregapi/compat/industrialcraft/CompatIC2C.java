@@ -35,7 +35,7 @@ public class CompatIC2C extends CompatBase implements IWrenchHandler {
 		if (MD.IC2C.mLoaded) IC2Classic.registerWrenchHandler(this);
 	}
 	
-	@Override public boolean supportsItem(ItemStack aWrench) {return ST.valid(aWrench) && ST.isGT_(aWrench);}
-	@Override public boolean canWrench(ItemStack aWrench, int aX, int aY, int aZ, Player aPlayer) {return F;}
-	@Override public void useWrench(ItemStack aWrench, int aX, int aY, int aZ, Player aPlayer) {/**/}
+	public boolean supportsItem(ItemStack aWrench) {return ST.valid(aWrench) && ST.isGT_(aWrench);}
+	public boolean canWrench(ItemStack aWrench, int aX, int aY, int aZ, Player aPlayer) {return F;}
+	public void useWrench(ItemStack aWrench, int aX, int aY, int aZ, Player aPlayer) {/**/}
 }

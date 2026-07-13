@@ -70,9 +70,9 @@ public class WorldgenFluidSpring extends WorldgenObject {
 		if (ST.invalid(tBlock)) tBlock = Blocks.stone;
 		
 		for (int i = 0; i <= 6; i++) for (int tX = aMinX+i; tX <= aMaxX-i; tX++) for (int tZ = aMinZ+i; tZ <= aMaxZ-i; tZ++) {
-			if (!WD.opq(aWorld, tX, i+1, tZ, F, T)) aWorld.setBlock(tX, i+1, tZ, tBlock, 0, 0);
+			if (!WD.opq(aWorld, tX, i+1, tZ, F, T)) WD.set(aWorld, tX, i+1, tZ, tBlock, 0, 0);
 			
-			if (i > 0) aWorld.setBlock(tX, i, tZ, mBlock, mMeta, 0);
+			if (i > 0) WD.set(aWorld, tX, i, tZ, mBlock, mMeta, 0);
 			
 			if (mSpringFluid != null && i > 2 && aRandom.nextInt(16) == 0 && WD.bedrock(aWorld, tX, 0, tZ)) {
 				MultiTileEntityFluidSpring.setBlock(aWorld, tX, 0, tZ, mSpringFluid);
@@ -87,11 +87,11 @@ public class WorldgenFluidSpring extends WorldgenObject {
 			for (int i = 0; i < 6; i++) {
 				int tX = aMinX+4+aRandom.nextInt(8), tZ = aMinZ+4+aRandom.nextInt(8);
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {
-					Block tContact = aWorld.getBlock(tX, tY, tZ);
+					Block tContact = WD.block(aWorld, tX, tY, tZ);
 					if (tContact.getMaterial().isLiquid() || tContact == Blocks.farmland) break;
 					if (!tContact.isOpaqueCube() || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 					if (!BlocksGT.plantableGrass.contains(tContact)) break;
-					for (int a = -1; a <= 1; a++) for (int b = -1; b <= 1; b++) if (aRandom.nextBoolean()) if (BlocksGT.plantableGrass.contains(aWorld.getBlock(tX+a, tY, tZ+b))) {
+					for (int a = -1; a <= 1; a++) for (int b = -1; b <= 1; b++) if (aRandom.nextBoolean()) if (BlocksGT.plantableGrass.contains(WD.block(aWorld, tX+a, tY, tZ+b))) {
 						WD.set(aWorld, tX+a, tY, tZ+b, BlocksGT.Grass, mIndicatorType == 3 ? 0 : 3+mIndicatorType, 0);
 					}
 					break;

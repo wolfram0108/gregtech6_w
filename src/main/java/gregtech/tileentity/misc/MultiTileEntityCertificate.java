@@ -60,7 +60,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 		File aTargetFile = new File(new File(aSaveLocation, "gregtech"), "certificates.support.dat");
 		if (!aTargetFile.exists()) {try {aTargetFile.createNewFile();} catch (Throwable e) {e.printStackTrace(ERR);}}
 		CompoundTag aNBT = UT.NBT.make();
-		for (int i = 0; i < ALREADY_RECEIVED.size(); i++) aNBT.setString(""+i, ALREADY_RECEIVED.get(i));
+		for (int i = 0; i < ALREADY_RECEIVED.size(); i++) aNBT.putString(""+i, ALREADY_RECEIVED.get(i));
 		try {NbtIo.write(aNBT, aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 		ALREADY_RECEIVED_SIZE = ALREADY_RECEIVED.size();
 	}
@@ -74,7 +74,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 			CompoundTag aNBT = null;
 			try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 			if (aNBT != null) for (int i = 0; i < Integer.MAX_VALUE; i++) {
-				if (!aNBT.hasKey(""+i)) break;
+				if (!aNBT.contains(""+i)) break;
 				String tString = aNBT.getString(""+i);
 				if (!ALREADY_RECEIVED.contains(tString)) ALREADY_RECEIVED.add(tString);
 			}
@@ -92,7 +92,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 	
 	public static ItemStack getCertificate(int aAmount, String aName) {
 		CompoundTag tNBT = UT.NBT.make();
-		if (UT.Code.stringValid(aName)) tNBT.setTag("display", UT.NBT.makeString(tNBT.getCompoundTag("display"), "Name", aName));
+		if (UT.Code.stringValid(aName)) tNBT.put("display", UT.NBT.makeString(tNBT.getCompoundTag("display"), "Name", aName));
 		return MTE_REGISTRY.getItem(INSTANCE.getMultiTileEntityID(), aAmount, tNBT);
 	}
 	

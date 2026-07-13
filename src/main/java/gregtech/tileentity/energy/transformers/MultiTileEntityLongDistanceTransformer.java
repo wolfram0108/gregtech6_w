@@ -67,17 +67,17 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_WASTE_ENERGY)) mWasteEnergy = aNBT.getBoolean(NBT_WASTE_ENERGY);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLong(NBT_ACTIVE_DATA);}
-		if (aNBT.hasKey(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT);}
-		if (aNBT.hasKey(NBT_OUTPUT)) {mOutput = aNBT.getLong(NBT_OUTPUT);}
-		if (aNBT.hasKey(NBT_DISTANCE)) {mDistance = aNBT.getLong(NBT_DISTANCE);}
-		if (aNBT.hasKey(NBT_THROUGHPUT)) {mThroughput = aNBT.getLong(NBT_THROUGHPUT);}
-		if (aNBT.hasKey(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_WASTE_ENERGY)) mWasteEnergy = aNBT.getBoolean(NBT_WASTE_ENERGY);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLong(NBT_ACTIVE_DATA);}
+		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT);}
+		if (aNBT.contains(NBT_OUTPUT)) {mOutput = aNBT.getLong(NBT_OUTPUT);}
+		if (aNBT.contains(NBT_DISTANCE)) {mDistance = aNBT.getLong(NBT_DISTANCE);}
+		if (aNBT.contains(NBT_THROUGHPUT)) {mThroughput = aNBT.getLong(NBT_THROUGHPUT);}
+		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 	}
 	
 	@Override
@@ -119,7 +119,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 			if (aChatReturn != null) {
 				if (mSender != null && !mSender.isDead() && mSender.mTarget == this) {
 					aChatReturn.add("Is the Target");
-					aChatReturn.add("Sender is at: X: " + mSender.xCoord + " Y: " + mSender.yCoord + " Z: " + mSender.zCoord);
+					aChatReturn.add("Sender is at: X: " + mSender.getBlockPos().getX() + " Y: " + mSender.getBlockPos().getY() + " Z: " + mSender.getBlockPos().getZ());
 				} else {
 					aChatReturn.add(checkTarget() ? "Has Target" : "Has no loaded Target");
 					if (mTargetPos != null) aChatReturn.add("Target should be around: X: " + mTargetPos.getX() + " Y: " + mTargetPos.getY() + " Z: " + mTargetPos.getZ());
@@ -135,7 +135,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 		byte tActiveState = mActiveState;
 		if (mStopped) {
 			mActiveState = 0;
-		} else if ((mTarget != null && (mTarget.mSender == null || mTarget.mSender.isDead() || mTarget.mSender.mTarget == null || mTarget.mSender.mTarget.isDead())) && (mTargetPos != null && (mTarget == null || mTarget.isDead() || !level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())))) {
+		} else if ((mTarget != null && (mTarget.mSender == null || mTarget.mSender.isDead() || mTarget.mSender.mTarget == null || mTarget.mSender.mTarget.isDead())) && (mTargetPos != null && (mTarget == null || mTarget.isDead() || !WD.exists(level, mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())))) {
 			mActiveState = 3;
 		} else {
 			mActiveData <<= 1;
@@ -158,7 +158,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 			scanWires(F);
 		} else if (mTarget == null || mTarget.isDead()) {
 			mTarget = null;
-			if (level.blockExists(mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
+			if (WD.exists(level, mTargetPos.getX(), mTargetPos.getY(), mTargetPos.getZ())) {
 				BlockEntity tTileEntity = WD.te(level, mTargetPos, T);
 				if (tTileEntity instanceof MultiTileEntityLongDistanceTransformer) {
 					mTarget = (MultiTileEntityLongDistanceTransformer)tTileEntity;
@@ -205,7 +205,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY(), aCoords.getZ() - 1))) tNewChecks.add(tCoords);
 						if (aBurnWires) {
 							WD.burn(level, aCoords, T, F);
-							level.setBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ(), Blocks.fire, 0, 3);
+							WD.set(level, aCoords.getX(), aCoords.getY(), aCoords.getZ(), Blocks.fire, 0, 3);
 						}
 					} else {
 						BlockEntity tTileEntity = getTileEntity(aCoords);

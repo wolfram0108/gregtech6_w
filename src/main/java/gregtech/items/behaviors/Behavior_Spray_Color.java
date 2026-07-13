@@ -145,24 +145,24 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	private final Collection<Block> mAllowedVanillaBlocks = Arrays.asList(Blocks.grass, Blocks.glass, Blocks.glass_pane, Blocks.stained_glass, Blocks.stained_glass_pane, Blocks.carpet, Blocks.hardened_clay, Blocks.stained_hardened_clay);
 	
 	private boolean colorize(Level aWorld, int aX, int aY, int aZ, byte aSide) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock != NB && (mAllowedVanillaBlocks.contains(aBlock) || aBlock instanceof BlockColored || IL.TE_Rockwool.block() == aBlock || aBlock == BlocksGT.Grass)) {
-			if (aBlock == Blocks.hardened_clay  ) return aWorld.setBlock(aX, aY, aZ, Blocks.stained_hardened_clay, ~mColor & 15, 3);
-			if (aBlock == Blocks.glass_pane     ) return aWorld.setBlock(aX, aY, aZ, Blocks.stained_glass_pane   , ~mColor & 15, 3);
-			if (aBlock == Blocks.glass          ) return aWorld.setBlock(aX, aY, aZ, Blocks.stained_glass        , ~mColor & 15, 3);
+			if (aBlock == Blocks.hardened_clay  ) return WD.set(aWorld, aX, aY, aZ, Blocks.stained_hardened_clay, ~mColor & 15, 3);
+			if (aBlock == Blocks.glass_pane     ) return WD.set(aWorld, aX, aY, aZ, Blocks.stained_glass_pane   , ~mColor & 15, 3);
+			if (aBlock == Blocks.glass          ) return WD.set(aWorld, aX, aY, aZ, Blocks.stained_glass        , ~mColor & 15, 3);
 			
 			if (aBlock == Blocks.grass || aBlock == BlocksGT.Grass) {
 				switch(mColor) {
-				case DYE_INDEX_Green    : return aWorld.setBlock(aX, aY, aZ, BlocksGT.Grass, 0, 3);
-				case DYE_INDEX_Lime     : return aWorld.setBlock(aX, aY, aZ, BlocksGT.Grass, 1, 3);
-				case DYE_INDEX_Black    : return aWorld.setBlock(aX, aY, aZ, BlocksGT.Grass, 2, 3);
-				case DYE_INDEX_LightGray: return aWorld.setBlock(aX, aY, aZ, BlocksGT.Grass, 3, 3);
-				case DYE_INDEX_Yellow   : return aWorld.setBlock(aX, aY, aZ, BlocksGT.Grass, 4, 3);
-				case DYE_INDEX_Brown    : return aWorld.setBlock(aX, aY, aZ, BlocksGT.Grass, 5, 3);
+				case DYE_INDEX_Green    : return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 0, 3);
+				case DYE_INDEX_Lime     : return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 1, 3);
+				case DYE_INDEX_Black    : return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 2, 3);
+				case DYE_INDEX_LightGray: return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 3, 3);
+				case DYE_INDEX_Yellow   : return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 4, 3);
+				case DYE_INDEX_Brown    : return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 5, 3);
 				default: return F;
 				}
 			}
-			return aWorld.getBlockMetadata(aX, aY, aZ) != (~mColor & 15) && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, ~mColor & 15, 3);
+			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, ~mColor & 15, 3);
 		}
 		return aBlock.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
 	}

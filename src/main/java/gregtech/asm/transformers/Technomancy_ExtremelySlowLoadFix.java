@@ -42,7 +42,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * @author OvermindDL1
  */
 public class Technomancy_ExtremelySlowLoadFix implements IClassTransformer {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!name.equals("theflogat.technomancy.util.Ore")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

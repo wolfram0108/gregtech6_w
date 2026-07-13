@@ -93,7 +93,7 @@ public class CoverFilterFluid extends AbstractCoverAttachment {
 	@Override
 	public boolean onCoverClickedRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer instanceof Player && aData.mTileEntity.isServerSide()) {
-			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].hasKey("gt.filter.fluid")) {
+			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].contains("gt.filter.fluid")) {
 				ItemStack tStack = ((Player)aPlayer).getCurrentEquippedItem();
 				if (ST.valid(tStack)) {
 					FluidStack tFluid = FL.getFluid(tStack, T);
@@ -118,14 +118,14 @@ public class CoverFilterFluid extends AbstractCoverAttachment {
 	public boolean interceptFluidFill(byte aCoverSide, CoverData aData, byte aSide, FluidStack aFluidToFill) {
 		if (aCoverSide != aSide) return F;
 		if (aData.mStopped || aFluidToFill == null) return T;
-		if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].hasKey("gt.filter.fluid")) return aData.mVisuals[aCoverSide] == 0;
+		if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].contains("gt.filter.fluid")) return aData.mVisuals[aCoverSide] == 0;
 		return (aData.mVisuals[aCoverSide] == 0) != FL.equal(FL.load(aData.mNBTs[aCoverSide], "gt.filter.fluid"), aFluidToFill, T);
 	}
 	@Override
 	public boolean interceptFluidDrain(byte aCoverSide, CoverData aData, byte aSide, FluidStack aFluidToDrain) {
 		if (aCoverSide != aSide) return F;
 		if (aData.mStopped || aFluidToDrain == null) return T;
-		if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].hasKey("gt.filter.fluid")) return aData.mVisuals[aCoverSide] == 0;
+		if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].contains("gt.filter.fluid")) return aData.mVisuals[aCoverSide] == 0;
 		return (aData.mVisuals[aCoverSide] == 0) != FL.equal(FL.load(aData.mNBTs[aCoverSide], "gt.filter.fluid"), aFluidToDrain, T);
 	}
 	

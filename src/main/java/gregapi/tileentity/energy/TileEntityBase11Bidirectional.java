@@ -50,8 +50,8 @@ public abstract class TileEntityBase11Bidirectional extends TileEntityBase10Ener
 	
 	@Override
 	public void readEnergyConverter(CompoundTag aNBT) {
-		if (aNBT.hasKey(NBT_REVERSED)) mReversed = aNBT.getBoolean(NBT_REVERSED);
-		long tMultiplier = (aNBT.hasKey(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1);
+		if (aNBT.contains(NBT_REVERSED)) mReversed = aNBT.getBoolean(NBT_REVERSED);
+		long tMultiplier = (aNBT.contains(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1);
 		TE_Behavior_Energy_Stats
 		tEnergyIN  = new TE_Behavior_Energy_Stats(this, aNBT, mEnergyOUT.mType, mStorage, mEnergyOUT.mMin <= 8 ? 1 : mEnergyOUT.mMin, mEnergyIN.mRec, Math.max(mEnergyIN.mRec, mEnergyOUT.mMax*tMultiplier)),
 		tEnergyOUT = new TE_Behavior_Energy_Stats(this, aNBT, mEnergyIN .mType, mStorage, (mEnergyIN.mRec*3)/4, mEnergyIN.mRec, mEnergyIN.mMax);

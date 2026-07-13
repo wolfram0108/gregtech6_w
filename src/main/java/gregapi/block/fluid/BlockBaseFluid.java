@@ -94,7 +94,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		UT.Reflection.setField(Fluid.class, aFluid, "block", this);
 	}
 	
-	@Override
+	// @Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
 		// Forge royally fucked up again. You check for MetaData FIRST and do the set Block to Air SECOND, like I demonstrate here!!!
 		FluidStack rFluid = FL.mul(mQuanta, WD.meta(aWorld, aX, aY, aZ)+1);
@@ -105,7 +105,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		return rFluid;
 	}
 	
-	@Override
+	// @Override
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aUselessBlock) {
 		// Do the update in a few ticks.
 		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate);
@@ -125,13 +125,13 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 	
 	public void updateFluidBlocks(Level aWorld, int aX, int aY, int aZ, boolean aAll) {
 		for (int j = mDensityDir > 0 ? -1 : 0; j < (mDensityDir > 0 ? 1 : 2); j++) if (UT.Code.inside(0, aWorld.getHeight(), aY+j)) for (int i = -4; i <= 4; i++) for (int k = -4; k <= 4; k++) if (i != 0 || j != 0 || k != 0) {
-			if (aWorld.getBlock(aX+i, aY+j, aZ+k) == this && (aAll || aWorld.getBlockMetadata(aX+i, aY+j, aZ+k) > (j == 0 ? Math.abs(i) : 0))) {
+			if (WD.block(aWorld, aX+i, aY+j, aZ+k) == this && (aAll || WD.meta(aWorld, aX+i, aY+j, aZ+k) > (j == 0 ? Math.abs(i) : 0))) {
 				aWorld.scheduleBlockUpdate(aX+i, aY+j, aZ+k, this, tickRate);
 			}
 		}
 	}
 	
-	@Override
+	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		// Flammability checks.
 		if (mFlammability > 0) for (byte tSide : ALL_SIDES_VALID) {
@@ -185,10 +185,10 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 			return;
 		}
 		
-		if (aWorld.blockExists(aX  , aY, aZ-1) && displaceIfPossible(aWorld, aX  , aY, aZ-1)) WD.setIfDiff(aWorld, aX  , aY, aZ-1, NB, 0, FLUID_UPDATE_FLAGS | 1);
-		if (aWorld.blockExists(aX  , aY, aZ+1) && displaceIfPossible(aWorld, aX  , aY, aZ+1)) WD.setIfDiff(aWorld, aX  , aY, aZ+1, NB, 0, FLUID_UPDATE_FLAGS | 1);
-		if (aWorld.blockExists(aX-1, aY, aZ  ) && displaceIfPossible(aWorld, aX-1, aY, aZ  )) WD.setIfDiff(aWorld, aX-1, aY, aZ  , NB, 0, FLUID_UPDATE_FLAGS | 1);
-		if (aWorld.blockExists(aX+1, aY, aZ  ) && displaceIfPossible(aWorld, aX+1, aY, aZ  )) WD.setIfDiff(aWorld, aX+1, aY, aZ  , NB, 0, FLUID_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX, aY, aZ-1) && displaceIfPossible(aWorld, aX  , aY, aZ-1)) WD.setIfDiff(aWorld, aX  , aY, aZ-1, NB, 0, FLUID_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX, aY, aZ+1) && displaceIfPossible(aWorld, aX  , aY, aZ+1)) WD.setIfDiff(aWorld, aX  , aY, aZ+1, NB, 0, FLUID_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX-1, aY, aZ) && displaceIfPossible(aWorld, aX-1, aY, aZ  )) WD.setIfDiff(aWorld, aX-1, aY, aZ  , NB, 0, FLUID_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX+1, aY, aZ) && displaceIfPossible(aWorld, aX+1, aY, aZ  )) WD.setIfDiff(aWorld, aX+1, aY, aZ  , NB, 0, FLUID_UPDATE_FLAGS | 1);
 		
 		int tTotal = tRemainingQuanta, tCount = 1;
 		
@@ -234,16 +234,16 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		set(aWorld, aX, aY, aZ, tRemainder > 0 ? tSpread : tSpread - 1, F);
 	}
 	
-	@Override
+	// @Override
 	public int tryToFlowVerticallyInto(Level aWorld, int aX, int aY, int aZ, int aAmount) {
 		// First do the Water specific check.
 		if (mLighterThanWater) {
 			int tY = aY;
 			while (++tY < aWorld.getHeight() && WD.anywater(aWorld, aX, tY, aZ));
 			if (tY-1 > aY) {
-				Block tBlock = aWorld.getBlock(aX, tY, aZ);
+				Block tBlock = WD.block(aWorld, aX, tY, aZ);
 				if (tBlock == this) {
-					int tAmount = 1 + aWorld.getBlockMetadata(aX, tY, aZ) + aAmount;
+					int tAmount = 1 + WD.meta(aWorld, aX, tY, aZ) + aAmount;
 					if (tAmount > 16) {
 						set(aWorld, aX, tY, aZ, 16 - 1, T);
 						aWorld.scheduleBlockUpdate(aX, tY, aZ, this, tickRate);
@@ -269,11 +269,11 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		// Compressed Fluid Blocks behave a little bit "jumpier" than normal ones. ;)
 		if (aAmount > 8) {
 			int tY = aY - mDensityDir;
-			Block tBlock = aWorld.getBlock(aX, tY, aZ);
+			Block tBlock = WD.block(aWorld, aX, tY, aZ);
 			
 			// Swap with any finite Fluid Blocks "above" this one unless they are also compressed.
 			if (tBlock instanceof BlockFluidFinite) {
-				int tMeta = aWorld.getBlockMetadata(aX, tY, aZ);
+				int tMeta = WD.meta(aWorld, aX, tY, aZ);
 				if (tMeta > 7) return aAmount;
 				WD.set(aWorld, aX, aY, aZ, tBlock, tMeta, FLUID_UPDATE_FLAGS | 1);
 				set(aWorld, aX, tY, aZ, aAmount - 1, T);
@@ -282,7 +282,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 			}
 			// Swap with GT6 Water Blocks.
 			if (!mLighterThanWater && WD.anywater(tBlock)) {
-				WD.set(aWorld, aX, aY, aZ, tBlock, aWorld.getBlockMetadata(aX, tY, aZ), FLUID_UPDATE_FLAGS | 1);
+				WD.set(aWorld, aX, aY, aZ, tBlock, WD.meta(aWorld, aX, tY, aZ), FLUID_UPDATE_FLAGS | 1);
 				set(aWorld, aX, tY, aZ, aAmount - 1, T);
 				aWorld.scheduleBlockUpdate(aX, tY, aZ, this, tickRate);
 				return 0;
@@ -303,10 +303,10 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		}
 		
 		int tY = aY + mDensityDir;
-		Block tBlock = aWorld.getBlock(aX, tY, aZ);
+		Block tBlock = WD.block(aWorld, aX, tY, aZ);
 		
 		if (tBlock == this) {
-			int tAmount = 1 + aWorld.getBlockMetadata(aX, tY, aZ) + aAmount;
+			int tAmount = 1 + WD.meta(aWorld, aX, tY, aZ) + aAmount;
 			if (tAmount > 8) {
 				set(aWorld, aX, tY, aZ, 8 - 1, T);
 				aWorld.scheduleBlockUpdate(aX, tY, aZ, this, tickRate);
@@ -323,7 +323,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		}
 		if (tBlock instanceof BlockFluidBase) {
 			if (mDensityDir > 0 ? getDensity(aWorld, aX, tY, aZ) > density : getDensity(aWorld, aX, tY, aZ) < density) {
-				WD.set(aWorld, aX, aY, aZ, tBlock, aWorld.getBlockMetadata(aX, tY, aZ), FLUID_UPDATE_FLAGS | 1);
+				WD.set(aWorld, aX, aY, aZ, tBlock, WD.meta(aWorld, aX, tY, aZ), FLUID_UPDATE_FLAGS | 1);
 				set(aWorld, aX, tY, aZ, aAmount - 1, T);
 				// And don't just cast the result of world.getBlock directly like Forge does.
 				// Why the fuck do they call world.getBlock more than once for the Block below/above a Fluid...
@@ -344,41 +344,41 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		return aAmount;
 	}
 	
-	@Override
+	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return T;
 		if (aBlock == this || aBlock.getMaterial() == Material.water || WD.visOpq(aBlock)) return F;
 		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
-		BlockEntity tTileEntity = aWorld.getTileEntity(aX, aY, aZ);
+		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
 		return T;
 	}
 	
 	@Override public Block getBlock() {return this;}
-	@Override public final String getUnlocalizedName() {return mFluid.getUnlocalizedName();}
-	@Override public String getLocalizedName() {return LH.get(mFluid.getUnlocalizedName());}
-	@Override public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return SIDES_VERTICAL[aSide]?mFluid.getStillIcon():mFluid.getFlowingIcon();}
-	@Override public int getRenderColor(int aMeta) {return mFluid.getColor();}
-	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return mFluid.getColor();}
-	@Override public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
-	@Override public int getRenderBlockPass() {return 1;}
-	@Override public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
+	public final String getUnlocalizedName() {return mFluid.getUnlocalizedName();}
+	public String getLocalizedName() {return LH.get(mFluid.getUnlocalizedName());}
+	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public IIcon getIcon(int aSide, int aMeta) {return SIDES_VERTICAL[aSide]?mFluid.getStillIcon():mFluid.getFlowingIcon();}
+	public int getRenderColor(int aMeta) {return mFluid.getColor();}
+	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return mFluid.getColor();}
+	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
+	public int getRenderBlockPass() {return 1;}
+	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 	
-	@Override public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
-	@Override public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
-	@Override public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !aWorld.getBlock(aX, aY, aZ).getMaterial().isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
-	@Override public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !aWorld.getBlock(aX, aY, aZ).getMaterial().isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
-	@Override public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta >= 7;}
-	@Override public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return mActLikeWeb || !mEffectsBathing.isEmpty() || !mEffectsBreathing.isEmpty();}
-	@Override public boolean isNormalCube() {return F;}
-	@Override public boolean isOpaqueCube() {return F;}
-	@Override public boolean func_149730_j() {return F;}
-	@Override public boolean getTickRandomly() {return F;}
-	@Override public boolean renderAsNormalBlock() {return F;}
-	@Override public boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
-	@Override public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
+	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
+	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
+	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
+	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
+	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta >= 7;}
+	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return mActLikeWeb || !mEffectsBathing.isEmpty() || !mEffectsBreathing.isEmpty();}
+	public boolean isNormalCube() {return F;}
+	public boolean isOpaqueCube() {return F;}
+	public boolean func_149730_j() {return F;}
+	public boolean getTickRandomly() {return F;}
+	public boolean renderAsNormalBlock() {return F;}
+	public boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	
 	
 	public boolean mLighterThanWater = F;
@@ -394,13 +394,13 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 	}
 	
 	public boolean set(Level aWorld, int aX, int aY, int aZ, int aMeta, boolean aBlockUpdate) {
-		if (aWorld.getBlock(aX, aY, aZ) != this) return WD.set(aWorld, aX, aY, aZ, this, aMeta, aBlockUpdate ? 3 : 2);
+		if (WD.block(aWorld, aX, aY, aZ) != this) return WD.set(aWorld, aX, aY, aZ, this, aMeta, aBlockUpdate ? 3 : 2);
 		byte tMeta = WD.meta(aWorld, aX, aY, aZ);
 		return aMeta == tMeta || WD.set(aWorld, aX, aY, aZ, this, aMeta, aMeta >= 7 && tMeta >= 7 ? aBlockUpdate ? 5 : 4 : aBlockUpdate ? 3 : 2);
 	}
 	
 	/** This Function has been named wrong. It should be onEntityOverlapWithBlock */
-	@Override
+	// @Override
 	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		if (mActLikeWeb) aEntity.setInWeb();
 		if (!aWorld.isRemote && !mEffectsBathing.isEmpty() && aEntity instanceof LivingEntity && !UT.Entities.isWearingFullChemHazmat((LivingEntity)aEntity)) {

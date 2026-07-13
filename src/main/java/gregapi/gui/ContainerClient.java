@@ -54,12 +54,12 @@ public class ContainerClient extends GuiContainer {
 		mBackground = new Identifier(aBackgroundPath);
 	}
 	
-	@Override
+	// @Override
 	protected void drawGuiContainerForegroundLayer(int par1, int par2) {
 		//
 	}
 	
-	@Override
+	// @Override
 	protected void drawGuiContainerBackgroundLayer(float par1, int par2, int par3) {
 		mc.renderEngine.bindTexture(mBackground);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
@@ -72,7 +72,7 @@ public class ContainerClient extends GuiContainer {
 		drawTexturedModalRect(x, y, 0, 0, xSize, ySize);
 	}
 	
-	@Override
+	// @Override
 	public void drawScreen(int aX, int aY, float par3) {
 		try {
 			super.drawScreen(aX, aY, par3);

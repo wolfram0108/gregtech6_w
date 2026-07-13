@@ -57,12 +57,12 @@ public abstract class TileEntityBase05Paintable extends TileEntityBase04Covers i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_COLOR)) mRGBa = aNBT.getInteger(NBT_COLOR);
-		if (aNBT.hasKey(NBT_PAINTED)) mIsPainted = aNBT.getBoolean(NBT_PAINTED);
-		if (aNBT.hasKey(NBT_HARDNESS)) mHardness = aNBT.getFloat(NBT_HARDNESS);
-		if (aNBT.hasKey(NBT_RESISTANCE)) mResistance = aNBT.getFloat(NBT_RESISTANCE);
-		if (aNBT.hasKey(NBT_FLAMMABILITY)) mFlammability = aNBT.getInteger(NBT_FLAMMABILITY);
-		if (aNBT.hasKey(NBT_MATERIAL)) mMaterial = OreDictMaterial.get(aNBT.getString(NBT_MATERIAL));
+		if (aNBT.contains(NBT_COLOR)) mRGBa = aNBT.getInteger(NBT_COLOR);
+		if (aNBT.contains(NBT_PAINTED)) mIsPainted = aNBT.getBoolean(NBT_PAINTED);
+		if (aNBT.contains(NBT_HARDNESS)) mHardness = aNBT.getFloat(NBT_HARDNESS);
+		if (aNBT.contains(NBT_RESISTANCE)) mResistance = aNBT.getFloat(NBT_RESISTANCE);
+		if (aNBT.contains(NBT_FLAMMABILITY)) mFlammability = aNBT.getInteger(NBT_FLAMMABILITY);
+		if (aNBT.contains(NBT_MATERIAL)) mMaterial = OreDictMaterial.get(aNBT.getString(NBT_MATERIAL));
 	}
 	
 	@Override

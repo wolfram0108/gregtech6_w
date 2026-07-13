@@ -68,7 +68,7 @@ public class RecipeMapPrinter extends RecipeMap {
 				} else if (OM.is_(OD_USB_CABLES[1], aInput)) {
 					if (aTileEntity == null) return rRecipe;
 					tUSB = aInput;
-					for (byte tSide : ALL_SIDES_VALID_ONLY[tUSB.hasTagCompound() && tUSB.getTagCompound().hasKey(NBT_USB_DIRECTION) ? tUSB.getTagCompound().getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
+					for (byte tSide : ALL_SIDES_VALID_ONLY[tUSB.hasTagCompound() && tUSB.getTagCompound().contains(NBT_USB_DIRECTION) ? tUSB.getTagCompound().getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
 						DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 							tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 1);
@@ -85,12 +85,12 @@ public class RecipeMapPrinter extends RecipeMap {
 		if (tData == null || tData.isEmpty()) return rRecipe;
 		if (tPaper != null && tUSB != null) {
 			if (OM.is_("gt:canvas", tPaper)) {
-				if (tData.hasKey(NBT_CANVAS_BLOCK) && (!tPaper.hasTagCompound() || !tPaper.getTagCompound().hasKey(NBT_CANVAS_BLOCK))) {
+				if (tData.contains(NBT_CANVAS_BLOCK) && (!tPaper.hasTagCompound() || !tPaper.getTagCompound().contains(NBT_CANVAS_BLOCK))) {
 					rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tPaper), ST.amount(0, tUSB)), ST.array(ST.amount(1, tPaper)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T)), null, 64, 16, 0);
 					CompoundTag tNBT = rRecipe.mOutputs[0].getTagCompound();
 					if (tNBT == null) tNBT = UT.NBT.make();
-					tNBT.setInteger(NBT_CANVAS_BLOCK, tData.getInteger(NBT_CANVAS_BLOCK));
-					tNBT.setInteger(NBT_CANVAS_META, tData.getInteger(NBT_CANVAS_META));
+					tNBT.putInt(NBT_CANVAS_BLOCK, tData.getInteger(NBT_CANVAS_BLOCK));
+					tNBT.putInt(NBT_CANVAS_META, tData.getInteger(NBT_CANVAS_META));
 					UT.NBT.set(rRecipe.mOutputs[0], tNBT);
 					return rRecipe;
 				}
@@ -113,10 +113,10 @@ public class RecipeMapPrinter extends RecipeMap {
 				return rRecipe;
 			}
 			if (OD.paperEmpty.is_(tPaper)) {
-				if (IL.GC_Schematic_1.exists() && tData.hasKey("gc_schematics_1")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_1.getWithMeta(1, tData.getShort("gc_schematics_1"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
-				if (IL.GC_Schematic_2.exists() && tData.hasKey("gc_schematics_2")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_2.getWithMeta(1, tData.getShort("gc_schematics_2"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
-				if (IL.GC_Schematic_3.exists() && tData.hasKey("gc_schematics_3")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_3.getWithMeta(1, tData.getShort("gc_schematics_3"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
-				if (IL.IE_Blueprint_Projectiles_Common.exists() && tData.hasKey("ie_blueprint")) return new Recipe(F, F, F, ST.array(ST.amount(3, tPaper), ST.amount(0, tUSB)), ST.array(IL.IE_Blueprint_Projectiles_Common.getWithMeta(1, tData.getShort("ie_blueprint"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue], 3, 1, T)), null, 2048, 16, 0);
+				if (IL.GC_Schematic_1.exists() && tData.contains("gc_schematics_1")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_1.getWithMeta(1, tData.getShort("gc_schematics_1"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
+				if (IL.GC_Schematic_2.exists() && tData.contains("gc_schematics_2")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_2.getWithMeta(1, tData.getShort("gc_schematics_2"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
+				if (IL.GC_Schematic_3.exists() && tData.contains("gc_schematics_3")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_3.getWithMeta(1, tData.getShort("gc_schematics_3"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
+				if (IL.IE_Blueprint_Projectiles_Common.exists() && tData.contains("ie_blueprint")) return new Recipe(F, F, F, ST.array(ST.amount(3, tPaper), ST.amount(0, tUSB)), ST.array(IL.IE_Blueprint_Projectiles_Common.getWithMeta(1, tData.getShort("ie_blueprint"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue], 3, 1, T)), null, 2048, 16, 0);
 				ItemStack[] tBlueprint = UT.NBT.getBlueprintCrafting(tData);
 				if (tBlueprint != ZL_IS) {
 					ItemStack tCrafted = CR.getany(null, tBlueprint);

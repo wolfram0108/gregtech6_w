@@ -96,7 +96,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 1100 + RNGSUS.nextInt(200));
 		if (aRandom.nextInt(3) > 0) return;
 		if (aWorld.provider.isHellWorld && (aMeta & 2) == 0) {
-			aWorld.setBlock(aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 1, 3);
+			WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 1, 3);
 			return;
 		}
 		if (aRandom.nextInt(3) > 0 && WD.envTemp(aWorld, aX, aY, aZ) < C + 10) return;
@@ -106,14 +106,14 @@ public class BlockBaleGrass extends BlockBaseBale {
 		if (!tWet) for (byte tSide : ALL_SIDES_VALID) if (WD.anywater(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide])) {tWet = T; break;}
 		if ((aMeta & PILLAR_DATA) == 0) {
 			if (tWet || (aWorld.isRaining() && tBiome.rainfall > 0 && aWorld.getPrecipitationHeight(aX, aZ) <= aY+2)) {
-				aWorld.setBlock(aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 2, 3);
+				WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 2, 3);
 				return;
 			}
-			aWorld.setBlock(aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 1, 3);
+			WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 1, 3);
 			return;
 		}
 		if (tWet || aRandom.nextInt(42) == 0 || (aWorld.isRaining() && tBiome.rainfall > 0 && aWorld.getPrecipitationHeight(aX, aZ) <= aY+2)) {
-			aWorld.setBlock(aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 3, 3);
+			WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 3, 3);
 			return;
 		}
 		return;

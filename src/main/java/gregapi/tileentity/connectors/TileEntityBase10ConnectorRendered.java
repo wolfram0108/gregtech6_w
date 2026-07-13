@@ -59,13 +59,13 @@ public abstract class TileEntityBase10ConnectorRendered extends TileEntityBase09
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_DIAMETER)) mDiameter = Math.max(PX_P[2], Math.min(PX_N[0], (float)aNBT.getDouble(NBT_DIAMETER)));
-		if (aNBT.hasKey(NBT_TRANSPARENT)) mTransparent = aNBT.getBoolean(NBT_TRANSPARENT);
-		if (aNBT.hasKey(NBT_CONTACTDAMAGE)) mContactDamage = aNBT.getBoolean(NBT_CONTACTDAMAGE);
-		if (aNBT.hasKey(NBT_FOAMDRIED)) mFoamDried = aNBT.getBoolean(NBT_FOAMDRIED);
-		if (aNBT.hasKey(NBT_FOAMED)) mFoam = aNBT.getBoolean(NBT_FOAMED);
-		if (aNBT.hasKey(NBT_OWNABLE)) mOwnable = aNBT.getBoolean(NBT_OWNABLE);
-		if (aNBT.hasKey(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
+		if (aNBT.contains(NBT_DIAMETER)) mDiameter = Math.max(PX_P[2], Math.min(PX_N[0], (float)aNBT.getDouble(NBT_DIAMETER)));
+		if (aNBT.contains(NBT_TRANSPARENT)) mTransparent = aNBT.getBoolean(NBT_TRANSPARENT);
+		if (aNBT.contains(NBT_CONTACTDAMAGE)) mContactDamage = aNBT.getBoolean(NBT_CONTACTDAMAGE);
+		if (aNBT.contains(NBT_FOAMDRIED)) mFoamDried = aNBT.getBoolean(NBT_FOAMDRIED);
+		if (aNBT.contains(NBT_FOAMED)) mFoam = aNBT.getBoolean(NBT_FOAMED);
+		if (aNBT.contains(NBT_OWNABLE)) mOwnable = aNBT.getBoolean(NBT_OWNABLE);
+		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
 		mIsGlowing = mMaterial.contains(TD.Properties.GLOWING);
 	}
 	
@@ -75,7 +75,7 @@ public abstract class TileEntityBase10ConnectorRendered extends TileEntityBase09
 		UT.NBT.setBoolean(aNBT, NBT_FOAMED, mFoam);
 		UT.NBT.setBoolean(aNBT, NBT_FOAMDRIED, mFoamDried);
 		UT.NBT.setBoolean(aNBT, NBT_OWNABLE, mOwnable);
-		if (mOwner != null) aNBT.setString(NBT_OWNER, mOwner.toString());
+		if (mOwner != null) aNBT.putString(NBT_OWNER, mOwner.toString());
 	}
 	
 	@Override
@@ -146,7 +146,7 @@ public abstract class TileEntityBase10ConnectorRendered extends TileEntityBase09
 	
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (mOwnable && aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUniqueID();
+		if (mOwnable && aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUUID();
 		return super.onPlaced(aStack, aPlayer, aMTEContainer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);
 	}
 	
@@ -159,7 +159,7 @@ public abstract class TileEntityBase10ConnectorRendered extends TileEntityBase09
 	public boolean applyFoam(byte aSide, Entity aPlayer, short[] aCFoamRGB, byte aVanillaColor, boolean aOwned) {
 		if (mDiameter >= 1.0F || mFoam || mFoamDried || isClientSide() || !allowInteraction(aPlayer)) return F;
 		mFoam = T; mFoamDried = F; mIsPainted = T; mOwnable = aOwned;
-		if (mOwnable && aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUniqueID();
+		if (mOwnable && aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUUID();
 		mRGBa = UT.Code.getRGBInt(aCFoamRGB);
 		updateClientData();
 		return T;

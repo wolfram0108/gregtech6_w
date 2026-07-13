@@ -92,18 +92,18 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey("gt.mold")) mShape = aNBT.getInteger("gt.mold");
-		if (aNBT.hasKey(NBT_MODE)) mUseRedstone = aNBT.getBoolean(NBT_MODE);
-		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.hasKey(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByte(NBT_CONNECTION);
-		if (aNBT.hasKey(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
+		if (aNBT.contains("gt.mold")) mShape = aNBT.getInteger("gt.mold");
+		if (aNBT.contains(NBT_MODE)) mUseRedstone = aNBT.getBoolean(NBT_MODE);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByte(NBT_CONNECTION);
+		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
 		mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_CONNECTION, mAutoPullDirections);
+		aNBT.putByte(NBT_CONNECTION, mAutoPullDirections);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mUseRedstone);
 		UT.NBT.setNumber(aNBT, NBT_TEMPERATURE, mTemperature);
 		UT.NBT.setNumber(aNBT, "gt.mold", mShape);
@@ -112,8 +112,8 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		aNBT.setInteger("gt.mold", mShape);
-		aNBT.setByte(NBT_CONNECTION, mAutoPullDirections);
+		aNBT.putInt("gt.mold", mShape);
+		aNBT.putByte(NBT_CONNECTION, mAutoPullDirections);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mUseRedstone);
 		return aNBT;
 	}
@@ -154,7 +154,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	
 	@Override
 	public void onServerTickPost(boolean aFirst) {
-		long tTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
+		long tTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 		short tDisplay = mDisplay;
 		
 		if (mTemperature > tTemperature) mTemperature -= Math.min(5, mTemperature-tTemperature); else if (mTemperature < tTemperature) mTemperature += Math.min(5, tTemperature-mTemperature);
@@ -181,7 +181,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 				mContent = null;
 				mDisplay = 0;
 				slotTrash(0);
-				level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
+				WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 1, 3);
 				return;
 			}
 			mDisplay = mContent.mMaterial.mID;
@@ -408,7 +408,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		mTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
+		mTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 		return T;
 	}
 	
@@ -586,7 +586,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ACCESSIBLE_SLOTS;}
 	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {return F;}
-	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return mTemperature - 50 < WD.envTemp(level, xCoord, yCoord, zCoord);}
+	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return mTemperature - 50 < WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	
 	@Override
 	public boolean canFill(Direction aDirection, Fluid aFluid) {

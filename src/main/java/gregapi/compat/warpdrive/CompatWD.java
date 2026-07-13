@@ -42,18 +42,18 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 		WarpDriveConfig.registerBlockTransformer(MD.GAPI.mID, this);
 	}
 	
-	@Override
+	// @Override
 	public boolean isApplicable(Block aBlock, int aMeta, BlockEntity aTileEntity) {
 		// Anything with Covers, including all directional Blocks, and the Chest which happens to be special.
 		return aTileEntity instanceof ITileEntityCoverable || aTileEntity instanceof MultiTileEntityChest;
 	}
 	
-	@Override
+	// @Override
 	public int rotate(Block aBlock, int aMeta, CompoundTag aNBT, ITransformation aTransformation) {
 		if (aTransformation.getRotationSteps() % 4 == 0) return aMeta;
 		
 		byte tConnections = aNBT.getByte(NBT_CONNECTION);
-		CoverData tCovers = aNBT.hasKey(NBT_COVERS) ? CoverRegistry.coverdata(null, aNBT.getCompoundTag(NBT_COVERS)) : null;
+		CoverData tCovers = aNBT.contains(NBT_COVERS) ? CoverRegistry.coverdata(null, aNBT.getCompoundTag(NBT_COVERS)) : null;
 		
 		switch(aTransformation.getRotationSteps() % 4) {
 		case  1:
@@ -87,7 +87,7 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 			UT.Code.swap(SIDE_SOUTH, SIDE_NORTH, tCovers.mValues    );
 			UT.Code.swap(SIDE_SOUTH, SIDE_NORTH, tCovers.mNBTs      );
 			UT.Code.swap(SIDE_SOUTH, SIDE_NORTH, tCovers.mBehaviours);
-			aNBT.setTag(NBT_COVERS, tCovers.writeToNBT());
+			aNBT.put(NBT_COVERS, tCovers.writeToNBT());
 			}
 			return aMeta;
 		case  2:
@@ -115,7 +115,7 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 			UT.Code.swap(SIDE_WEST , SIDE_EAST , tCovers.mValues    );
 			UT.Code.swap(SIDE_WEST , SIDE_EAST , tCovers.mNBTs      );
 			UT.Code.swap(SIDE_WEST , SIDE_EAST , tCovers.mBehaviours);
-			aNBT.setTag(NBT_COVERS, tCovers.writeToNBT());
+			aNBT.put(NBT_COVERS, tCovers.writeToNBT());
 			}
 			return aMeta;
 		case  3:
@@ -149,7 +149,7 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 			UT.Code.swap(SIDE_EAST , SIDE_WEST , tCovers.mValues    );
 			UT.Code.swap(SIDE_EAST , SIDE_WEST , tCovers.mNBTs      );
 			UT.Code.swap(SIDE_EAST , SIDE_WEST , tCovers.mBehaviours);
-			aNBT.setTag(NBT_COVERS, tCovers.writeToNBT());
+			aNBT.put(NBT_COVERS, tCovers.writeToNBT());
 			}
 			return aMeta;
 		default:
@@ -158,8 +158,8 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 		}
 	}
 	
-	@Override public boolean isJumpReady(Block aBlock, int aMeta, BlockEntity aTileEntity, StringBuilder aStringBuilder) {return T;}
-	@Override public Tag saveExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity) {return null;}
-	@Override public void removeExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity) {/**/}
-	@Override public void restoreExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity, ITransformation aTransformation, Tag aNBT) {/**/}
+	public boolean isJumpReady(Block aBlock, int aMeta, BlockEntity aTileEntity, StringBuilder aStringBuilder) {return T;}
+	public Tag saveExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity) {return null;}
+	public void removeExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity) {/**/}
+	public void restoreExternals(Level world, int aX, int aY, int aZ, Block aBlock, int aMeta, BlockEntity aTileEntity, ITransformation aTransformation, Tag aNBT) {/**/}
 }

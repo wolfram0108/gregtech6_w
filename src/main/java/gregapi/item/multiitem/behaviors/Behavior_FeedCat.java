@@ -47,7 +47,7 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 						if (RNGSUS.nextInt(3) == 0) {
 							((EntityOcelot)aEntity).setTamed(T);
 							((EntityOcelot)aEntity).setTameSkin(1 + RNGSUS.nextInt(3));
-							((EntityOcelot)aEntity).func_152115_b(aPlayer.getUniqueID().toString());
+							((EntityOcelot)aEntity).func_152115_b(aPlayer.getUUID().toString());
 							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("heart", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.height), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.width * 2.0F) - aEntity.width, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
 							((EntityOcelot)aEntity).level().setEntityState(aEntity, (byte)7);
 						} else {

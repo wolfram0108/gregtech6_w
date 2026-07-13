@@ -60,7 +60,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 	
 	@Override
 	public void randomDisplayTick(Random aRandom) {
-		if (mActive) for (int i = 0; i < 4; ++i) level.spawnParticle("portal", xCoord + aRandom.nextFloat(), yCoord + aRandom.nextFloat(), zCoord + aRandom.nextFloat(), (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D);
+		if (mActive) for (int i = 0; i < 4; ++i) level.spawnParticle("portal", getBlockPos().getX() + aRandom.nextFloat(), getBlockPos().getY() + aRandom.nextFloat(), getBlockPos().getZ() + aRandom.nextFloat(), (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D);
 	}
 	
 	@Override
@@ -70,24 +70,24 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 			if (level.provider.dimensionId == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListNetherSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = xCoord-tTarget.xCoord*8, tZDifference = zCoord-tTarget.zCoord*8;
+					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX()*8, tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ()*8;
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
 			} else if (level.provider.dimensionId == DIM_NETHER) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
-					long tXDifference = tTarget.xCoord-xCoord*8, tZDifference = tTarget.zCoord-zCoord*8;
+					long tXDifference = tTarget.getBlockPos().getX()-getBlockPos().getX()*8, tZDifference = tTarget.getBlockPos().getZ()-getBlockPos().getZ()*8;
 					long tTempDist = tXDifference * tXDifference + tZDifference * tZDifference;
 					if (tTempDist < tShortestDistance) {
 						tShortestDistance = tTempDist;
 						mTarget = tTarget;
-					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.yCoord-yCoord) < Math.abs(mTarget.yCoord-yCoord))) {
+					} else if (tTempDist == tShortestDistance && (mTarget == null || Math.abs(tTarget.getBlockPos().getY()-getBlockPos().getY()) < Math.abs(mTarget.getBlockPos().getY()-getBlockPos().getY()))) {
 						mTarget = tTarget;
 					}
 				}
@@ -117,7 +117,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 		if (isClientSide()) return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_igniter)) {
 			if (mActive) setPortalInactive(); else setPortalActive();
-			if (mTarget != null && aChatReturn != null) aChatReturn.add("X: " + mTarget.xCoord + "   Y: " + mTarget.yCoord + "   Z: " + mTarget.zCoord);
+			if (mTarget != null && aChatReturn != null) aChatReturn.add("X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());
 			return 10000;
 		}
 		if (aTool.equals(TOOL_extinguisher)) {
@@ -127,7 +127,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 		return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.obsidian.getBlockHardness(level, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness() {return Blocks.obsidian.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.obsidian.getExplosionResistance(null);}
 	
 	public ITexture sNetherPortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, UNCOLOURED, F, T, T), sNetherPortalFrame = BlockTextureCopied.get(Blocks.obsidian, SIDE_ANY, 0);

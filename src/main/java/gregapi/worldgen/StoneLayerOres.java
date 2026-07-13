@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen;
+import gregapi.util.WD;
 
 import gregapi.code.BiomeNameSet;
 import gregapi.data.MT;
@@ -96,23 +97,23 @@ public class StoneLayerOres {
 	}
 	
 	public boolean set(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome, Random aRandom) {
-		if (mBlock != null) return aWorld.setBlock(aX, aY, aZ, mBlock, mMeta, 0);
+		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aY == mMinY || aY == mMaxY || aRandom.nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
 	}
 	public boolean set(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
-		if (mBlock != null) return aWorld.setBlock(aX, aY, aZ, mBlock, mMeta, 0);
+		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aY == mMinY || aY == mMaxY || RNGSUS .nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
 	}
 	public boolean normal(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
-		if (mBlock != null) return aWorld.setBlock(aX, aY, aZ, mBlock, mMeta, 0);
+		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aLayer.mOre       != null && aLayer.mOre      .placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mMaterial.mID, null, F, T);
 	}
 	public boolean small(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
-		if (mBlock != null) return aWorld.setBlock(aX, aY, aZ, mBlock, mMeta, 0);
+		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aLayer.mOreSmall  != null && aLayer.mOreSmall .placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mMaterial.mID, null, F, T);
 	}
 	public boolean broken(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
-		if (mBlock != null) return aWorld.setBlock(aX, aY, aZ, mBlock, mMeta, 0);
+		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aLayer.mOreBroken != null && aLayer.mOreBroken.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mMaterial.mID, null, F, T);
 	}
 }

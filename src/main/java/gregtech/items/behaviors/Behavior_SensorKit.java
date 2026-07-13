@@ -44,9 +44,9 @@ public class Behavior_SensorKit extends AbstractBehaviorDefault {
 				UT.Stacks.set(aStack, IL.NC_SensorCard.get(aStack.stackSize));
 				NBTTagCompound tNBT = aStack.getTagCompound();
 				if (tNBT == null) tNBT = new NBTTagCompound();
-				tNBT.setInteger("x", aX);
-				tNBT.setInteger("y", aY);
-				tNBT.setInteger("z", aZ);
+				tNBT.putInt("x", aX);
+				tNBT.putInt("y", aY);
+				tNBT.putInt("z", aZ);
 				aStack.setTagCompound(tNBT);
 			}*/
 			return T;

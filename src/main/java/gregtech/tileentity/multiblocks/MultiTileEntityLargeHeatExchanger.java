@@ -65,10 +65,10 @@ public class MultiTileEntityLargeHeatExchanger extends TileEntityBase10MultiBloc
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		mActivity = new TE_Behavior_Active_Trinary(this, aNBT);
-		if (aNBT.hasKey(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.hasKey(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
-		if (aNBT.hasKey(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 		mTanks[0].setCapacity(mRate * 10);
 		mTanks[0].readFromNBT(aNBT, NBT_TANK+".0");
 		mTanks[1].readFromNBT(aNBT, NBT_TANK+".1");
@@ -85,8 +85,8 @@ public class MultiTileEntityLargeHeatExchanger extends TileEntityBase10MultiBloc
 	
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = xCoord-1, tY = yCoord, tZ = zCoord-1;
-		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
+		int tX = getBlockPos().getX()-1, tY = getBlockPos().getY(), tZ = getBlockPos().getZ()-1;
+		if (WD.exists(level, tX-1, tY, tZ-1) && WD.exists(level, tX+1, tY, tZ-1) && WD.exists(level, tX-1, tY, tZ+1) && WD.exists(level, tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18024, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -116,7 +116,7 @@ public class MultiTileEntityLargeHeatExchanger extends TileEntityBase10MultiBloc
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = xCoord, tY = yCoord, tZ = zCoord;
+		int tX = getBlockPos().getX(), tY = getBlockPos().getY(), tZ = getBlockPos().getZ();
 		return aX >= tX - 1 && aY >= tY && aZ >= tZ - 1 && aX <= tX + 1 && aY <= tY + 1 && aZ <= tZ + 1;
 	}
 	
@@ -149,14 +149,14 @@ public class MultiTileEntityLargeHeatExchanger extends TileEntityBase10MultiBloc
 			if (mEnergy >= 8) {
 				long tTransferred = Math.min(mRate / 8, mEnergy / 8);
 				mEnergy -= tTransferred * 8;
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord  , yCoord+2, zCoord-1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord-1, yCoord+2, zCoord  , SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord  , yCoord+2, zCoord+1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord+1, yCoord+2, zCoord  , SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord+1, yCoord+2, zCoord-1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord-1, yCoord+2, zCoord-1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord-1, yCoord+2, zCoord+1, SIDE_BOTTOM, T));
-				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, xCoord+1, yCoord+2, zCoord+1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()  , getBlockPos().getY()+2, getBlockPos().getZ()-1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()-1, getBlockPos().getY()+2, getBlockPos().getZ()  , SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()  , getBlockPos().getY()+2, getBlockPos().getZ()+1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()+1, getBlockPos().getY()+2, getBlockPos().getZ()  , SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()+1, getBlockPos().getY()+2, getBlockPos().getZ()-1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()-1, getBlockPos().getY()+2, getBlockPos().getZ()-1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()-1, getBlockPos().getY()+2, getBlockPos().getZ()+1, SIDE_BOTTOM, T));
+				ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, 1, tTransferred, this, WD.te(level, getBlockPos().getX()+1, getBlockPos().getY()+2, getBlockPos().getZ()+1, SIDE_BOTTOM, T));
 			}
 			// Check if it needs to use more Fuel, or if the buffered Energy is enough.
 			if (mEnergy < mRate * 2) {

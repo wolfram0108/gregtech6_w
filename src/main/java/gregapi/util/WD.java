@@ -18,6 +18,7 @@
  */
 
 package gregapi.util;
+import gregapi.fluid.FluidTankInfo;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import gregapi.GT_API;
@@ -339,8 +340,8 @@ public class WD {
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
 	public static BlockEntity te(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		if (aLoadUnloadedChunks || aWorld.isLoaded(tPos)) { // было aWorld.blockExists(x,y,z) — Level.isLoaded(BlockPos) (Level.java:695)
-			BlockEntity rTileEntity = aWorld.getBlockEntity(tPos); // было aWorld.getTileEntity(x,y,z) — BlockGetter.java:25 / Level.java:671
+		if (aLoadUnloadedChunks || aWorld.isLoaded(tPos)) { // было WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695)
+			BlockEntity rTileEntity = aWorld.getBlockEntity(tPos); // было WD.te(aWorld, x, y, z, T) — BlockGetter.java:25 / Level.java:671
 			if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
 			if (rTileEntity != null) return rTileEntity;
 			rTileEntity = LAST_BROKEN_TILEENTITY.get();
@@ -472,7 +473,7 @@ public class WD {
 	}
 	
 	// было aWorld.getBlock(x,y,z) — neo: BlockGetter.getBlockState(BlockPos).getBlock() (BlockGetter.java:32); было
-	// aWorld.blockExists(x,y,z) — Level.isLoaded(BlockPos) (Level.java:695).
+	// WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695).
 	public static Block block(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock();}
 	public static Block block(Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.isLoaded(tP) ? aWorld.getBlockState(tP).getBlock() : NB;}
 	public static Block block(Level        aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}

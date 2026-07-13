@@ -128,7 +128,7 @@ public interface ITileEntityMachineBlockUpdateable {
 				TICK_LOCK.lock();
 				BlockEntity tTileEntity = WD.te(aWorld, aCoords, T);
 				if (tTileEntity instanceof ITileEntityMachineBlockUpdateable) ((ITileEntityMachineBlockUpdateable)tTileEntity).onMachineBlockUpdate(mCoords, mBlock, mMeta, mRemoved);
-				if (aSet.size() < 5 || tTileEntity instanceof ITileEntityMachineBlockUpdateable || isMachineBlock(aWorld.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()), aWorld.getBlockMetadata(aCoords.getX(), aCoords.getY(), aCoords.getZ()))) {
+				if (aSet.size() < 5 || tTileEntity instanceof ITileEntityMachineBlockUpdateable || isMachineBlock(WD.block(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()), WD.meta(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()))) {
 					TICK_LOCK.unlock();
 					BlockPos tCoords;
 					if (aSet.add(tCoords = new BlockPos(aCoords.getX()+1, aCoords.getY()  , aCoords.getZ()  ))) stepToUpdateMachine(aWorld, tCoords, aSet);

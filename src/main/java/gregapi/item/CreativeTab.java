@@ -37,12 +37,12 @@ public class CreativeTab extends CreativeModeTab {
 		mMetaData = aMetaData;
 	}
 	
-	@Override
+	// @Override
 	public Item getTabIconItem() {
 		return mItem;
 	}
 	
-	@Override
+	// @Override
 	public int func_151243_f() {
 		return mMetaData;
 	}

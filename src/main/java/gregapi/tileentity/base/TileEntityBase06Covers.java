@@ -65,13 +65,13 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_COVERS)) mCovers = CoverRegistry.coverdata(this, aNBT.getCompoundTag(NBT_COVERS));
+		if (aNBT.contains(NBT_COVERS)) mCovers = CoverRegistry.coverdata(this, aNBT.getCompoundTag(NBT_COVERS));
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (hasCovers()) aNBT.setTag(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), T));
+		if (hasCovers()) aNBT.put(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), T));
 	}
 	
 	/** Writes eventual Item Data to the NBT. */
@@ -80,7 +80,7 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 	@Override
 	public final CompoundTag writeItemNBT(CompoundTag aNBT) {
 		aNBT = super.writeItemNBT(writeItemNBT2(aNBT));
-		if (hasCovers()) aNBT.setTag(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), F));
+		if (hasCovers()) aNBT.put(NBT_COVERS, mCovers.writeToNBT(UT.NBT.make(), F));
 		return aNBT;
 	}
 	
@@ -316,13 +316,13 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 		return T;
 	}
 	
-	@Override
+	// @Override
 	public final int[] getAccessibleSlotsFromSide(int aSide) {
 		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].getAccessibleSlotsFromSideOverride(UT.Code.side(aSide), mCovers, UT.Code.side(aSide))) return mCovers.mBehaviours[aSide].getAccessibleSlotsFromSide(UT.Code.side(aSide), mCovers, UT.Code.side(aSide), getAccessibleSlotsFromSide2(UT.Code.side(aSide)));
 		return getAccessibleSlotsFromSide2(UT.Code.side(aSide));
 	}
 	
-	@Override
+	// @Override
 	public final boolean canInsertItem(int aSlot, ItemStack aStack, int aSide) {
 		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null) {
 			if (mCovers.mBehaviours[aSide].interceptItemInsert(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
@@ -331,7 +331,7 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 		return canInsertItem2(aSlot, aStack, UT.Code.side(aSide));
 	}
 	
-	@Override
+	// @Override
 	public final boolean canExtractItem(int aSlot, ItemStack aStack, int aSide) {
 		if (ST.invalid(aStack)) aStack = slot(aSlot);
 		if (ST.debug(aStack)) return F;

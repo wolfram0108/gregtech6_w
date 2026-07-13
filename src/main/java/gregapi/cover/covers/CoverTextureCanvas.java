@@ -58,7 +58,7 @@ public class CoverTextureCanvas extends AbstractCoverDefault {
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		if (aStack != null && ItemNBT.has(aStack) && ItemNBT.get(aStack).hasKey(NBT_CANVAS_BLOCK)) {
+		if (aStack != null && ItemNBT.has(aStack) && ItemNBT.get(aStack).contains(NBT_CANVAS_BLOCK)) {
 			aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(Block.getBlockById(ItemNBT.get(aStack).getInteger(NBT_CANVAS_BLOCK)), 1, ItemNBT.get(aStack).getInteger(NBT_CANVAS_META) & 15)));
 		}
 		super.addToolTips(aList, aStack, aF3_H);

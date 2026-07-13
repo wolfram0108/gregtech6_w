@@ -74,14 +74,14 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_DESIGN)) mBoilerWalls = aNBT.getShort(NBT_DESIGN);
-		if (aNBT.hasKey(NBT_VISUAL)) mBarometer = aNBT.getByte(NBT_VISUAL);
-		if (aNBT.hasKey(NBT_OUTPUT_SU)) mOutput = aNBT.getLong(NBT_OUTPUT_SU);
+		if (aNBT.contains(NBT_DESIGN)) mBoilerWalls = aNBT.getShort(NBT_DESIGN);
+		if (aNBT.contains(NBT_VISUAL)) mBarometer = aNBT.getByte(NBT_VISUAL);
+		if (aNBT.contains(NBT_OUTPUT_SU)) mOutput = aNBT.getLong(NBT_OUTPUT_SU);
 		mTanks[1].setCapacity(mCapacity = mOutput * 10000);
-		if (aNBT.hasKey(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
-		if (aNBT.hasKey(NBT_CAPACITY_SU)) mTanks[1].setCapacity(aNBT.getLong(NBT_CAPACITY_SU));
-		if (aNBT.hasKey(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
+		if (aNBT.contains(NBT_CAPACITY_SU)) mTanks[1].setCapacity(aNBT.getLong(NBT_CAPACITY_SU));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		for (int i = 0; i < mTanks.length; i++) mTanks[i].readFromNBT(aNBT, NBT_TANK+"."+i);
 	}
 	
@@ -89,17 +89,17 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
-		if (mEfficiency != 10000) aNBT.setShort(NBT_EFFICIENCY, mEfficiency);
+		if (mEfficiency != 10000) aNBT.putShort(NBT_EFFICIENCY, mEfficiency);
 		for (int i = 0; i < mTanks.length; i++) mTanks[i].writeToNBT(aNBT, NBT_TANK+"."+i);
 	}
 	
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
-		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing);
+		if (WD.exists(level, tX-1, tY, tZ-1) && WD.exists(level, tX+1, tY, tZ-1) && WD.exists(level, tX-1, tY, tZ+1) && WD.exists(level, tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			
-			if (getAir(tX, tY+1, tZ)) level.setBlockToAir(tX, tY+1, tZ); else tSuccess = F;
+			if (getAir(tX, tY+1, tZ)) WD.set(level, tX, tY+1, tZ, NB, 0, 3); else tSuccess = F;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX-1, tY-1, tZ-1, 18101, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY-1, tZ-1, 18101, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -168,7 +168,7 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing);
 		return aX >= tX - 1 && aY >= tY - 1 && aZ >= tZ - 1 && aX <= tX + 1 && aY <= tY + 2 && aZ <= tZ + 1;
 	}
 	
@@ -211,11 +211,11 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 					
 					@SuppressWarnings("unchecked")
 					DelegatorTileEntity<BlockEntity>[] tDelegators = new DelegatorTileEntity[] {
-					  WD.te(level, getOffsetXN(mFacing, 1)  , yCoord+3, getOffsetZN(mFacing, 1)  , SIDE_Y_NEG, F)
-					, WD.te(level, getOffsetXN(mFacing, 1)-2, yCoord+1, getOffsetZN(mFacing, 1)  , SIDE_X_POS, F)
-					, WD.te(level, getOffsetXN(mFacing, 1)+2, yCoord+1, getOffsetZN(mFacing, 1)  , SIDE_X_NEG, F)
-					, WD.te(level, getOffsetXN(mFacing, 1)  , yCoord+1, getOffsetZN(mFacing, 1)-2, SIDE_Z_POS, F)
-					, WD.te(level, getOffsetXN(mFacing, 1)  , yCoord+1, getOffsetZN(mFacing, 1)+2, SIDE_Z_NEG, F)
+					  WD.te(level, getOffsetXN(mFacing, 1)  , getBlockPos().getY()+3, getOffsetZN(mFacing, 1)  , SIDE_Y_NEG, F)
+					, WD.te(level, getOffsetXN(mFacing, 1)-2, getBlockPos().getY()+1, getOffsetZN(mFacing, 1)  , SIDE_X_POS, F)
+					, WD.te(level, getOffsetXN(mFacing, 1)+2, getBlockPos().getY()+1, getOffsetZN(mFacing, 1)  , SIDE_X_NEG, F)
+					, WD.te(level, getOffsetXN(mFacing, 1)  , getBlockPos().getY()+1, getOffsetZN(mFacing, 1)-2, SIDE_Z_POS, F)
+					, WD.te(level, getOffsetXN(mFacing, 1)  , getBlockPos().getY()+1, getOffsetZN(mFacing, 1)+2, SIDE_Z_NEG, F)
 					};
 					
 					long[] tTargetAmounts = new long[tDelegators.length];
@@ -312,7 +312,7 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 	@Override
 	public boolean removedByPlayer(Level aWorld, Player aPlayer, boolean aWillHarvest) {
 		if (isServerSide() && !UT.Entities.isCreative(aPlayer) && mBarometer > 4) explode(T);
-		return level.setBlockToAir(xCoord, yCoord, zCoord);
+		return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
 	}
 	
 	@Override

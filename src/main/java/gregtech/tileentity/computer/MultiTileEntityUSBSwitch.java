@@ -75,8 +75,8 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 				tNBT.removeTag(NBT_USB_DATA);
 				tNBT.removeTag(NBT_USB_TIER);
 			} else {
-				tNBT.setTag(NBT_USB_DATA, aData);
-				tNBT.setByte(NBT_USB_TIER, (byte)aUSBTier);
+				tNBT.put(NBT_USB_DATA, aData);
+				tNBT.putByte(NBT_USB_TIER, (byte)aUSBTier);
 			}
 			ItemNBT.set(tUSB, tNBT.isEmpty() ? null : tNBT);
 			return T;

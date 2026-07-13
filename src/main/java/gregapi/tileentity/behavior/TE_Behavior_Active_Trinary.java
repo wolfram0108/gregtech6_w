@@ -35,14 +35,14 @@ public class TE_Behavior_Active_Trinary extends TE_Behavior {
 	
 	@Override
 	public void load(CompoundTag aNBT) {
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_ACTIVE_DATA)) {mData = aNBT.getLong(NBT_ACTIVE_DATA);}
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE_DATA)) {mData = aNBT.getLong(NBT_ACTIVE_DATA);}
 	}
 	
 	@Override
 	public void save(CompoundTag aNBT) {
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_ACTIVE_DATA)) {mData = aNBT.getLong(NBT_ACTIVE_DATA);}
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE_DATA)) {mData = aNBT.getLong(NBT_ACTIVE_DATA);}
 	}
 	
 	public boolean check(boolean aStopped) {

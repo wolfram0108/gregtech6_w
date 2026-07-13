@@ -86,9 +86,9 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 			// TODO Raycasting through Lead, Water and similar Blocks.
 			if (tCalc > 0 && SERVER_TIME % 20 == 10) {
 				for (Object tEntity : level.loadedEntityList) if (tEntity instanceof LivingEntity) {
-					if (Math.abs(xCoord - ((LivingEntity)tEntity).getX()) > 200) continue;
-					if (Math.abs(zCoord - ((LivingEntity)tEntity).getZ()) > 200) continue;
-					int tStrength = UT.Code.bindInt((long)(tCalc - ((LivingEntity)tEntity).getDistance(xCoord, yCoord, zCoord)));
+					if (Math.abs(getBlockPos().getX() - ((LivingEntity)tEntity).getX()) > 200) continue;
+					if (Math.abs(getBlockPos().getZ() - ((LivingEntity)tEntity).getZ()) > 200) continue;
+					int tStrength = UT.Code.bindInt((long)(tCalc - ((LivingEntity)tEntity).getDistance(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())));
 					if (tStrength > 0) UT.Entities.applyRadioactivity((LivingEntity)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
 				}
 			}
@@ -174,9 +174,9 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 					UT.Sounds.send(SFX.MC_EXPLODE, this, F);
 					tCalc *= 2;
 					for (Object tEntity : level.loadedEntityList) if (tEntity instanceof LivingEntity) {
-						if (Math.abs(xCoord - ((LivingEntity)tEntity).getX()) > 500) continue;
-						if (Math.abs(zCoord - ((LivingEntity)tEntity).getZ()) > 500) continue;
-						int tStrength = UT.Code.bindInt((long)(tCalc - ((LivingEntity)tEntity).getDistance(xCoord, yCoord, zCoord)));
+						if (Math.abs(getBlockPos().getX() - ((LivingEntity)tEntity).getX()) > 500) continue;
+						if (Math.abs(getBlockPos().getZ() - ((LivingEntity)tEntity).getZ()) > 500) continue;
+						int tStrength = UT.Code.bindInt((long)(tCalc - ((LivingEntity)tEntity).getDistance(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())));
 						if (tStrength > 0) UT.Entities.applyRadioactivity((LivingEntity)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
 					}
 					updateClientData();
@@ -231,7 +231,7 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 		if (isClientSide()) return 0;
 
 		if (aTool.equals(TOOL_pincers) && SIDES_TOP[aSide]) {
-			if (slotHas(0) && ST.give(aPlayer, slot(0), T, level, xCoord+0.5, yCoord+1.5, zCoord+0.5)) {
+			if (slotHas(0) && ST.give(aPlayer, slot(0), T, level, getBlockPos().getX()+0.5, getBlockPos().getY()+1.5, getBlockPos().getZ()+0.5)) {
 				slotKill(0);
 				updateClientData();
 				return 10000;

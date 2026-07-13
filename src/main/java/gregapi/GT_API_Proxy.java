@@ -604,7 +604,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		tY = UT.Code.roundDown(aEntityLiving.getY() + aEntityLiving.getEyeHeight()),
 		tZ = UT.Code.roundDown(aEntityLiving.getZ());
 
-		Block tBlock = aEntityLiving.level().getBlock(tX, tY, tZ);
+		Block tBlock = WD.block(aEntityLiving.level(), tX, tY, tZ);
 		if (tBlock instanceof IBlockOnHeadInside) ((IBlockOnHeadInside)tBlock).onHeadInside(aEntityLiving, aEntityLiving.level(), tX, tY, tZ);
 
 		tY = UT.Code.roundDown(aEntityLiving.getBoundingBox().minY-0.001F);
@@ -613,24 +613,24 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (BlocksGT.Paths != null && !aEntityLiving.level().isClientSide()) {
 				Block tPath = IL.EtFu_Path.block();
 				if (ST.valid(tPath)) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
-					if (tPath == aEntityLiving.level().getBlock(tX+i, tY+k, tZ+j)) WD.replaceAll(aEntityLiving.level(), tX+i, tY+k, tZ+j, tPath, W, BlocksGT.Paths, 0);
+					if (tPath == WD.block(aEntityLiving.level(), tX+i, tY+k, tZ+j)) WD.replaceAll(aEntityLiving.level(), tX+i, tY+k, tZ+j, tPath, W, BlocksGT.Paths, 0);
 				}
 			}
 		}
 
 		if (aEntityLiving.onGround()) {
-			tBlock = aEntityLiving.level().getBlock(tX, tY, tZ);
+			tBlock = WD.block(aEntityLiving.level(), tX, tY, tZ);
 			if (!WD.hasCollide(aEntityLiving.level(), tX, tY, tZ, tBlock)) {
 				int tAddX = (aEntityLiving.getX() >= tX + 0.5 ? +1 : -1), tAddZ = (aEntityLiving.getZ() >= tZ + 0.5 ? +1 : -1);
-				tBlock = aEntityLiving.level().getBlock(tX+tAddX, tY, tZ);
+				tBlock = WD.block(aEntityLiving.level(), tX+tAddX, tY, tZ);
 				if (WD.hasCollide(aEntityLiving.level(), tX+tAddX, tY, tZ, tBlock)) {
 					tX += tAddX;
 				} else {
-					tBlock = aEntityLiving.level().getBlock(tX, tY, tZ+tAddZ);
+					tBlock = WD.block(aEntityLiving.level(), tX, tY, tZ+tAddZ);
 					if (WD.hasCollide(aEntityLiving.level(), tX, tY, tZ+tAddZ, tBlock)) {
 						tZ += tAddZ;
 					} else {
-						tBlock = aEntityLiving.level().getBlock(tX+tAddX, tY, tZ+tAddZ);
+						tBlock = WD.block(aEntityLiving.level(), tX+tAddX, tY, tZ+tAddZ);
 						if (WD.hasCollide(aEntityLiving.level(), tX+tAddX, tY, tZ+tAddZ, tBlock)) {
 							tX += tAddX;
 							tZ += tAddZ;
@@ -647,13 +647,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (!aEntityLiving.level().isClientSide()) {
 				// Zombies trample Farmland.
 				if (tBlock == Blocks.farmland && aEntityLiving instanceof Zombie) {
-					aEntityLiving.level().setBlock(tX, tY, tZ, Blocks.dirt, 0, 3);
+					WD.set(aEntityLiving.level(), tX, tY, tZ, Blocks.dirt, 0, 3);
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aEntityLiving.level(), tX, tY, tZ);
 				}
 				// Big Animals break regular tall Grass, but not super tall Grass.
 				if (aEntityLiving instanceof Pig || aEntityLiving instanceof Sheep || aEntityLiving instanceof Cow || aEntityLiving instanceof Horse) {
-					if (aEntityLiving.level().getBlock(tX, tY+1, tZ) == Blocks.tallgrass) {
-						aEntityLiving.level().setBlock(tX, tY+1, tZ, NB, 0, 3);
+					if (WD.block(aEntityLiving.level(), tX, tY+1, tZ) == Blocks.tallgrass) {
+						WD.set(aEntityLiving.level(), tX, tY+1, tZ, NB, 0, 3);
 						UT.Sounds.send(SFX.MC_DIG_GRASS, 0.5F, 0.5F, aEntityLiving.level(), tX, tY, tZ);
 					}
 				}
@@ -666,8 +666,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						((PathfinderMob)aEntityLiving).setHomeTo(BlockPos.ZERO, -1);
 						// Minoshroom surprise charge through the Fenced Gateways!
 						for (int iX = tX-15, eX = tX+15; iX <= eX; iX++) for (int iZ = tZ-15, eZ = tZ+15; iZ <= eZ; iZ++) for (int iY = tY+1, eY = tY+3; iY <= eY; iY++) {
-							if (aEntityLiving.level().getBlock(iX, iY, iZ) == Blocks.fence) {
-								aEntityLiving.level().setBlock(iX, iY, iZ, NB, 0, 3);
+							if (WD.block(aEntityLiving.level(), iX, iY, iZ) == Blocks.fence) {
+								WD.set(aEntityLiving.level(), iX, iY, iZ, NB, 0, 3);
 								ST.drop(aEntityLiving.level(), iX, iY, iZ, IL.Stick.get(1));
 								UT.Sounds.send(SFX.MC_DIG_WOOD, aEntityLiving.level(), iX, iY, iZ);
 							}
@@ -1669,7 +1669,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		Level aWorld = aEvent.getEntity().level();
 		int aX = UT.Code.roundDown(aEvent.getX()), aY = (int)UT.Code.bind(0, aWorld.getHeight(), UT.Code.roundDown(aEvent.getY())), aZ = UT.Code.roundDown(aEvent.getZ());
 
-		if (SPAWN_NO_BATS && aMobClass == Bat.class && aWorld.getBlock(aX, aY-2, aZ) != Blocks.stone && aWorld.getBlock(aX, aY+2, aZ) != Blocks.stone) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+		if (SPAWN_NO_BATS && aMobClass == Bat.class && WD.block(aWorld, aX, aY-2, aZ) != Blocks.stone && WD.block(aWorld, aX, aY+2, aZ) != Blocks.stone) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
 
 		if (SPAWN_HOSTILES_ONLY_IN_DARKNESS && WD.dimOverworldLike(aWorld)) try {
 			LevelChunk tChunk = aWorld.getChunkFromBlockCoords(aX, aZ);

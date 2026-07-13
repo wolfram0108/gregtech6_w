@@ -49,20 +49,20 @@ public class FM {
 	
 	public static void te_fuel_magmatic(String fluidName, int energy) {
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setString("fluidName", fluidName);
-		toSend.setInteger("energy", energy);
+		toSend.putString("fluidName", fluidName);
+		toSend.putInt("energy", energy);
 		InterModComms.sendMessage("ThermalExpansion", "MagmaticFuel", toSend);
 	}
 	public static void te_fuel_compression(String fluidName, int energy) {
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setString("fluidName", fluidName);
-		toSend.setInteger("energy", energy);
+		toSend.putString("fluidName", fluidName);
+		toSend.putInt("energy", energy);
 		InterModComms.sendMessage("ThermalExpansion", "CompressionFuel", toSend);
 	}
 	public static void te_coolant(String fluidName, int energy) {
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setString("fluidName", fluidName);
-		toSend.setInteger("energy", energy);
+		toSend.putString("fluidName", fluidName);
+		toSend.putInt("energy", energy);
 		InterModComms.sendMessage("ThermalExpansion", "Coolant", toSend);
 	}
 }

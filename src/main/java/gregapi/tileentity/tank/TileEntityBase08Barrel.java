@@ -60,11 +60,11 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
-		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.hasKey(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
-		if (aNBT.hasKey(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
-		if (aNBT.hasKey(NBT_CAPACITY_HU)) mMeltingPoint = aNBT.getLong(NBT_CAPACITY_HU); else mMeltingPoint = (long)(mMaterial.mMeltingPoint * 1.25);
+		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
+		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
+		if (aNBT.contains(NBT_CAPACITY_HU)) mMeltingPoint = aNBT.getLong(NBT_CAPACITY_HU); else mMeltingPoint = (long)(mMaterial.mMeltingPoint * 1.25);
 		mMode = aNBT.getByte(NBT_MODE);
 		mSealedTime = aNBT.getLong(NBT_PROGRESS);
 		mTank.setPreventDraining(keepsFilter()).setCapacity(aNBT.getLong(NBT_TANK_CAPACITY)).readFromNBT(aNBT, NBT_TANK);
@@ -73,14 +73,14 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (mMode != 0) aNBT.setByte(NBT_MODE, mMode);
+		if (mMode != 0) aNBT.putByte(NBT_MODE, mMode);
 		UT.NBT.setNumber(aNBT, NBT_PROGRESS, mSealedTime);
 		mTank.writeToNBT(aNBT, NBT_TANK);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		if (mMode != 0) aNBT.setByte(NBT_MODE, mMode);
+		if (mMode != 0) aNBT.putByte(NBT_MODE, mMode);
 		UT.NBT.setNumber(aNBT, NBT_PROGRESS, mSealedTime);
 		mTank.writeToNBT(aNBT, NBT_TANK);
 		return super.writeItemNBT2(aNBT);
@@ -165,7 +165,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 				if (!mMagicProof && FL.magic(tFluid)) {
 					UT.Sounds.send(SFX.MC_FIZZ, this, F);
 					GarbageGT.trash(mTank);
-					WD.set(level, xCoord, yCoord, zCoord, FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
+					WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
 					return;
 				}
 				if (!mAcidProof && FL.acid(tFluid)) {
@@ -222,7 +222,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		if (FL.lava(mTank) && mTank.has(1000)) {
 			mTank.remove(1000);
 			GarbageGT.trash(mTank);
-			level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 0, 3);
+			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 0, 3);
 		} else {
 			GarbageGT.trash(mTank);
 			setToFire();
@@ -235,17 +235,17 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		return !FL.powerconducting(aFluid) && FL.temperature(aFluid) < mMeltingPoint && (!onlySimple() || FL.simple(aFluid));
 	}
 	
-	@Override
+	// @Override
 	public FluidStack getFluid(ItemStack aStack) {
 		return mTank.getFluid();
 	}
 	
-	@Override
+	// @Override
 	public int getCapacity(ItemStack aStack) {
 		return mTank.getCapacity();
 	}
 	
-	@Override
+	// @Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		if ((mMode & B[1]) != 0) return 0;
 		if (!allowFluid(aFluid)) return 0;
@@ -258,7 +258,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		return tFilled;
 	}
 	
-	@Override
+	// @Override
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
 		if ((mMode & B[1]) != 0) return null;
 		FluidStack tDrained = mTank.drain(aMaxDrain, aDoDrain);

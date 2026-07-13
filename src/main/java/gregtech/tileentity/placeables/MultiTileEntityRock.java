@@ -85,7 +85,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && aTool.equals(TOOL_magnifyingglass)) {
 			if (aPlayer instanceof Player && aSneaking) {
-				ST.give(aPlayer, getRock(1), T, level, xCoord+0.5, yCoord+0.5, zCoord+0.5);
+				ST.give(aPlayer, getRock(1), T, level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5);
 				playCollect();
 				setToAir();
 				return 0;
@@ -142,7 +142,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
-		ST.give(aPlayer, getRock(1), T, level, xCoord+0.5, yCoord+0.5, zCoord+0.5);
+		ST.give(aPlayer, getRock(1), T, level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5);
 		playCollect();
 		return setToAir();
 	}
@@ -150,7 +150,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 	@Override
 	public void onNeighborBlockChange(Level aWorld, Block aBlock) {
 		if (isServerSide()) {
-			if (!level.getBlock(xCoord, yCoord-1, zCoord).isSideSolid(level, xCoord, yCoord-1, zCoord, FORGE_DIR[SIDE_TOP])) {
+			if (!WD.block(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()).isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
 				ST.drop(level, getCoords(), getRock(1));
 				setToAir();
 				return;

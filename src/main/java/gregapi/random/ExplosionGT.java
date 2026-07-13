@@ -18,6 +18,7 @@
  */
 
 package gregapi.random;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
@@ -68,7 +69,7 @@ public class ExplosionGT extends Explosion {
 			Iterator tIterator = aWorld.playerEntities.iterator();
 			while (tIterator.hasNext()) {
 				Player tPlayer = (Player)tIterator.next();
-				if (tPlayer.getDistanceSq(aX, aY, aZ) < 4096) {
+				if (tPlayer.distanceToSqr(aX, aY, aZ) < 4096) {
 					((ServerPlayer)tPlayer).playerNetServerHandler.sendPacket(new ClientboundExplodePacket(aX, aY, aZ, aPower, tExplosion.affectedBlockPositions, (Vec3)tExplosion.func_77277_b().get(tPlayer)));
 				}
 			}
@@ -87,7 +88,7 @@ public class ExplosionGT extends Explosion {
 	@SuppressWarnings("rawtypes")
 	private Map field_77288_k = new HashMap<>();
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void doExplosionA() {
 		float tSize = explosionSize;
@@ -101,7 +102,7 @@ public class ExplosionGT extends Explosion {
 				double tX = explosionX, tY = explosionY, tZ = explosionZ;
 				for (float tMul = 0.3F; tPow > 0; tPow -= tMul * 0.75F) {
 					int tFloorX = UT.Code.roundDown(tX), tFloorY = UT.Code.roundDown(tY), tFloorZ = UT.Code.roundDown(tZ);
-					Block tBlock = mWorld.getBlock(tFloorX, tFloorY, tFloorZ);
+					Block tBlock = WD.block(mWorld, tFloorX, tFloorY, tFloorZ);
 					if (tBlock.getMaterial() != Material.air) {
 						float f3 = exploder != null ? exploder.func_145772_a(this, mWorld, tFloorX, tFloorY, tFloorZ, tBlock) : tBlock.getExplosionResistance(exploder, mWorld, tFloorX, tFloorY, tFloorZ, explosionX, explosionY, explosionZ);
 						tPow -= (f3 + 0.3F) * tMul;
@@ -142,7 +143,7 @@ public class ExplosionGT extends Explosion {
 		}
 	}
 	
-	@Override
+	// @Override
 	public void doExplosionB(boolean aEffects) {
 		mWorld.playSoundEffect(explosionX, explosionY, explosionZ, SFX.MC_EXPLODE, 4, (1 + (mWorld.rand.nextFloat() - mWorld.rand.nextFloat()) * 0.2F) * 0.7F);
 		mWorld.spawnParticle(explosionSize >= 2 && isSmoking ? "hugeexplosion" : "largeexplode", explosionX, explosionY, explosionZ, 1, 0, 0);
@@ -151,7 +152,7 @@ public class ExplosionGT extends Explosion {
 			Iterator tIterator = affectedBlockPositions.iterator();
 			while (tIterator.hasNext()) {
 				final BlockPos tPos = (BlockPos)tIterator.next();
-				final Block tBlock = mWorld.getBlock(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ);
+				final Block tBlock = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ);
 				if (aEffects) {
 					double d0 = (tPos.chunkPosX + mWorld.rand.nextFloat());
 					double d1 = (tPos.chunkPosY + mWorld.rand.nextFloat());
@@ -172,7 +173,7 @@ public class ExplosionGT extends Explosion {
 					mWorld.spawnParticle("smoke", d0, d1, d2, d3, d4, d5);
 				}
 				if (tBlock.getMaterial() != Material.air) {
-					if (tBlock.canDropFromExplosion(this)) tBlock.dropBlockAsItemWithChance(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, mWorld.getBlockMetadata(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), 1 / explosionSize, 0);
+					if (tBlock.canDropFromExplosion(this)) tBlock.dropBlockAsItemWithChance(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, WD.meta(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), 1 / explosionSize, 0);
 					tBlock.onBlockExploded(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, this);
 				}
 			}
@@ -182,7 +183,7 @@ public class ExplosionGT extends Explosion {
 			Iterator tIterator = affectedBlockPositions.iterator();
 			while (tIterator.hasNext()) {
 				final BlockPos tPos = (BlockPos)tIterator.next();
-				final Block tBlock = mWorld.getBlock(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), tAbove = mWorld.getBlock(tPos.chunkPosX, tPos.chunkPosY - 1, tPos.chunkPosZ);
+				final Block tBlock = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), tAbove = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY - 1, tPos.chunkPosZ);
 				if (tBlock.getMaterial() == Material.air && tAbove.func_149730_j() && RNGSUS.nextInt(3) == 0) {
 					mWorld.setBlock(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, Blocks.fire);
 				}
@@ -191,6 +192,6 @@ public class ExplosionGT extends Explosion {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	@Override public Map func_77277_b() {return field_77288_k;}
-	@Override public LivingEntity getExplosivePlacedBy() {return exploder == null ? null : (exploder instanceof PrimedTnt ? ((PrimedTnt)exploder).getTntPlacedBy() : (exploder instanceof LivingEntity ? (LivingEntity)exploder : null));}
+	public Map func_77277_b() {return field_77288_k;}
+	public LivingEntity getExplosivePlacedBy() {return exploder == null ? null : (exploder instanceof PrimedTnt ? ((PrimedTnt)exploder).getTntPlacedBy() : (exploder instanceof LivingEntity ? (LivingEntity)exploder : null));}
 }

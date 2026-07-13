@@ -37,7 +37,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * This does not work with Railcraft installed by the way.
  */
 public class Minecraft_RemoveCartSpeedCap implements IClassTransformer  {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!transformedName.equals("net.minecraft.entity.item.EntityMinecart")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

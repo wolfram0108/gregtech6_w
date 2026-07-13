@@ -99,7 +99,7 @@ public interface IItemBumbleBee {
 			// нужно закоммитить явным UT.NBT.set, иначе "gt.bumble" не долетит до стека (см. ItemNBT.java).
 			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee), rBumbleTag = aNBT.getCompoundTag("gt.bumble");
 			if (rBumbleTag == null || rBumbleTag.isEmpty()) rBumbleTag = getBumbleGenes(RNGSUS);
-			aNBT.setTag("gt.bumble", rBumbleTag);
+			aNBT.put("gt.bumble", rBumbleTag);
 			UT.NBT.set(aBumbleBee, aNBT);
 			return rBumbleTag;
 		}
@@ -107,7 +107,7 @@ public interface IItemBumbleBee {
 		public static ItemStack setBumbleTag(ItemStack aBumbleBee, CompoundTag aBumbleTag) {
 			// F8: захват detached-тега, мутация, явный commit — иначе setTag потеряется (см. ItemNBT.java).
 			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee);
-			aNBT.setTag("gt.bumble", aBumbleTag);
+			aNBT.put("gt.bumble", aBumbleTag);
 			UT.NBT.set(aBumbleBee, aNBT);
 			return aBumbleBee;
 		}
@@ -158,8 +158,8 @@ public interface IItemBumbleBee {
 			return rBumbleTag;
 		}
 		
-		public static void setHumidityMin       (CompoundTag aBumbleTag, float aHumidity)        {aBumbleTag.setFloat("minhum", aHumidity < 0.01F ? 0     : aHumidity);}
-		public static void setHumidityMax       (CompoundTag aBumbleTag, float aHumidity)        {aBumbleTag.setFloat("maxhum", aHumidity < 0.01F ? 0.01F : aHumidity);}
+		public static void setHumidityMin       (CompoundTag aBumbleTag, float aHumidity)        {aBumbleTag.putFloat("minhum", aHumidity < 0.01F ? 0     : aHumidity);}
+		public static void setHumidityMax       (CompoundTag aBumbleTag, float aHumidity)        {aBumbleTag.putFloat("maxhum", aHumidity < 0.01F ? 0.01F : aHumidity);}
 		public static void setTemperatureMin    (CompoundTag aBumbleTag, long aTemperature)      {UT.NBT.setNumber( aBumbleTag, "mintemp"    , aTemperature);}
 		public static void setTemperatureMax    (CompoundTag aBumbleTag, long aTemperature)      {UT.NBT.setNumber( aBumbleTag, "maxtemp"    , aTemperature);}
 		public static void setOffspring         (CompoundTag aBumbleTag, long aOffspring)        {UT.NBT.setNumber( aBumbleTag, "offspring"  , UT.Code.bindStack(aOffspring));}

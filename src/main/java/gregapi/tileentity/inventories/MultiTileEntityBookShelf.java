@@ -64,10 +64,10 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey("gt.dungeonloot.front")) mDungeonLootNameFront = aNBT.getString("gt.dungeonloot.front");
-		if (aNBT.hasKey("gt.dungeonloot.back")) mDungeonLootNameBack = aNBT.getString("gt.dungeonloot.back");
-		if (aNBT.hasKey(NBT_REDSTONE)) mRedstoneDelay = aNBT.getByte(NBT_REDSTONE);
-		if (aNBT.hasKey(NBT_TEXTURE)) {
+		if (aNBT.contains("gt.dungeonloot.front")) mDungeonLootNameFront = aNBT.getString("gt.dungeonloot.front");
+		if (aNBT.contains("gt.dungeonloot.back")) mDungeonLootNameBack = aNBT.getString("gt.dungeonloot.back");
+		if (aNBT.contains(NBT_REDSTONE)) mRedstoneDelay = aNBT.getByte(NBT_REDSTONE);
+		if (aNBT.contains(NBT_TEXTURE)) {
 			short tShelfID = aNBT.getShort(NBT_TEXTURE);
 			if (UT.Code.exists(tShelfID, PlankData.PLANK_ICONS)) mShelfIcon = PlankData.PLANK_ICONS[tShelfID];
 		}
@@ -82,9 +82,9 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (UT.Code.stringValid(mDungeonLootNameFront)) aNBT.setString("gt.dungeonloot.front", mDungeonLootNameFront);
-		if (UT.Code.stringValid(mDungeonLootNameBack)) aNBT.setString("gt.dungeonloot.back", mDungeonLootNameBack);
-		if (mRedstoneDelay != 0) aNBT.setByte(NBT_REDSTONE, mRedstoneDelay);
+		if (UT.Code.stringValid(mDungeonLootNameFront)) aNBT.putString("gt.dungeonloot.front", mDungeonLootNameFront);
+		if (UT.Code.stringValid(mDungeonLootNameBack)) aNBT.putString("gt.dungeonloot.back", mDungeonLootNameBack);
+		if (mRedstoneDelay != 0) aNBT.putByte(NBT_REDSTONE, mRedstoneDelay);
 	}
 	
 	@Override

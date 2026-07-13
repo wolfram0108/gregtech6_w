@@ -33,7 +33,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * @author OvermindDL1
  */
 public class Minecraft_IceHarvestMissingHookFix implements IClassTransformer  {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!transformedName.equals("net.minecraft.block.BlockIce")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

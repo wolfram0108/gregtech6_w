@@ -41,7 +41,7 @@ public class BlockStonesWitherProof extends BlockStones {
 		super(aItemClass, aVanillaMaterial, aVanillaSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons, aSlabType, aBlock);
 	}
 	
-	@Override
+	// @Override
 	public boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		return !(aEntity instanceof WitherBoss);
 	}

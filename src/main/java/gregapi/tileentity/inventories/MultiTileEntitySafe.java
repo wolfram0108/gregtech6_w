@@ -50,13 +50,13 @@ public abstract class MultiTileEntitySafe extends TileEntityBase09FacingSingle i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey("gt.dungeonloot")) mDungeonLootName = aNBT.getString("gt.dungeonloot");
+		if (aNBT.contains("gt.dungeonloot")) mDungeonLootName = aNBT.getString("gt.dungeonloot");
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (UT.Code.stringValid(mDungeonLootName)) aNBT.setString("gt.dungeonloot", mDungeonLootName);
+		if (UT.Code.stringValid(mDungeonLootName)) aNBT.putString("gt.dungeonloot", mDungeonLootName);
 	}
 	
 	@Override

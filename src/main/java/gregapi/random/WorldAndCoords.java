@@ -18,6 +18,7 @@
  */
 
 package gregapi.random;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
@@ -45,7 +46,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	
 	public WorldAndCoords(Level aWorld, int aX, int aY, int aZ) {mWorld = aWorld; mX = aX; mY = aY; mZ = aZ;}
 	public WorldAndCoords(Level aWorld, BlockPos aCoords) {mWorld = aWorld; mX = aCoords.getX(); mY = aCoords.getY(); mZ = aCoords.getZ();}
-	public WorldAndCoords(BlockEntity aTileEntity) {mWorld = aTileEntity.getWorldObj(); mX = aTileEntity.xCoord; mY = aTileEntity.yCoord; mZ = aTileEntity.zCoord;}
+	public WorldAndCoords(BlockEntity aTileEntity) {mWorld = aTileEntity.getWorldObj(); mX = aTileEntity.getBlockPos().getX(); mY = aTileEntity.getBlockPos().getY(); mZ = aTileEntity.getBlockPos().getZ();}
 	
 	@Override public Level getWorld() {return mWorld;}
 	@Override public int getX() {return mX;}
@@ -70,25 +71,25 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public boolean isClientSide() {return mWorld == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isClient() :  mWorld.isRemote;}
 	@Override public int rng(int aRange) {return RNGSUS.nextInt(aRange);}
 	@Override public int getRandomNumber(int aRange) {return RNGSUS.nextInt(aRange);}
-	@Override public BlockEntity getTileEntity   (int aX, int aY, int aZ) {return mWorld==null?null:mWorld.getTileEntity(aX, aY, aZ);}
-	@Override public Block getBlock             (int aX, int aY, int aZ) {return mWorld==null?NB:mWorld.getBlock(aX, aY, aZ);}
-	@Override public byte getMetaData           (int aX, int aY, int aZ) {return mWorld==null?0:UT.Code.bind4(mWorld.getBlockMetadata(aX, aY, aZ));}
+	@Override public BlockEntity getTileEntity   (int aX, int aY, int aZ) {return mWorld==null?null:WD.te(mWorld, aX, aY, aZ, T);}
+	@Override public Block getBlock             (int aX, int aY, int aZ) {return mWorld==null?NB:WD.block(mWorld, aX, aY, aZ);}
+	@Override public byte getMetaData           (int aX, int aY, int aZ) {return mWorld==null?0:UT.Code.bind4(WD.meta(mWorld, aX, aY, aZ));}
 	@Override public byte getLightLevel         (int aX, int aY, int aZ) {return mWorld==null?0:UT.Code.bind4((long)mWorld.getLightBrightness(aX, aY, aZ)*15);}
-	@Override public boolean getOpacity         (int aX, int aY, int aZ) {return mWorld!=null&&mWorld.getBlock(aX, aY, aZ).isOpaqueCube();}
+	@Override public boolean getOpacity         (int aX, int aY, int aZ) {return mWorld!=null&&WD.block(mWorld, aX, aY, aZ).isOpaqueCube();}
 	@Override public boolean getSky             (int aX, int aY, int aZ) {return mWorld==null||mWorld.canBlockSeeTheSky(aX, aY, aZ);}
 	@Override public boolean getRain            (int aX, int aY, int aZ) {return mWorld==null||mWorld.getPrecipitationHeight(aX, aZ) <= aY;}
-	@Override public boolean getAir             (int aX, int aY, int aZ) {return mWorld==null||mWorld.getBlock(aX, aY, aZ).isAir(mWorld, aX, aY, aZ);}
+	@Override public boolean getAir             (int aX, int aY, int aZ) {return mWorld==null||WD.block(mWorld, aX, aY, aZ).isAir(mWorld, aX, aY, aZ);}
 	@Override public Biome getBiome() {return getBiome(mX, mZ);}
 	@Override public Biome getBiome      (int aX, int aZ) {return mWorld==null?null:mWorld.getBiomeGenForCoords(aX, aZ);}
 	@Override public Biome getBiome      (BlockPos aCoords) {return mWorld==null?null:mWorld.getBiomeGenForCoords(aCoords.getX(), aCoords.getZ());}
-	@Override public BlockEntity getTileEntity   (BlockPos aCoords) {return mWorld==null?null:mWorld.getTileEntity(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
-	@Override public Block getBlock             (BlockPos aCoords) {return mWorld==null?NB:mWorld.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
-	@Override public byte getMetaData           (BlockPos aCoords) {return mWorld==null?0:UT.Code.bind4(mWorld.getBlockMetadata(aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
+	@Override public BlockEntity getTileEntity   (BlockPos aCoords) {return mWorld==null?null:WD.te(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), T);}
+	@Override public Block getBlock             (BlockPos aCoords) {return mWorld==null?NB:WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
+	@Override public byte getMetaData           (BlockPos aCoords) {return mWorld==null?0:UT.Code.bind4(WD.meta(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
 	@Override public byte getLightLevel         (BlockPos aCoords) {return mWorld==null?0:UT.Code.bind4((long)mWorld.getLightBrightness(aCoords.getX(), aCoords.getY(), aCoords.getZ())*15);}
-	@Override public boolean getOpacity         (BlockPos aCoords) {return mWorld!=null&&mWorld.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()).isOpaqueCube();}
+	@Override public boolean getOpacity         (BlockPos aCoords) {return mWorld!=null&&WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isOpaqueCube();}
 	@Override public boolean getSky             (BlockPos aCoords) {return mWorld==null||mWorld.canBlockSeeTheSky(aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public boolean getRain            (BlockPos aCoords) {return mWorld==null||mWorld.getPrecipitationHeight(aCoords.getX(), aCoords.getZ()) <= aCoords.getY();}
-	@Override public boolean getAir             (BlockPos aCoords) {return mWorld==null||mWorld.getBlock(aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
+	@Override public boolean getAir             (BlockPos aCoords) {return mWorld==null||WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public Block getBlockOffset(int aX, int aY, int aZ) {return getBlock(mX+aX, mY+aY, mZ+aZ);}
 	@Override public Block getBlockAtSide(byte aSide) {return getBlockAtSideAndDistance(aSide, 1);}
 	@Override public Block getBlockAtSideAndDistance(byte aSide, int aDistance) {return getBlock(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
@@ -126,7 +127,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 		if (tTileEntity == null) return new DelegatorTileEntity<>(null, mWorld, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide]);
 		if (aNotConnectToDelegators && tTileEntity instanceof ITileEntityCanDelegate && ((ITileEntityCanDelegate)tTileEntity).isExtender(aSide)) return new DelegatorTileEntity<>(null, mWorld, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide]);
 		if (aAllowDelegates && tTileEntity instanceof ITileEntityDelegating) return ((ITileEntityDelegating)tTileEntity).getDelegateTileEntity(OPOS[aSide]);
-		return new DelegatorTileEntity<>(tTileEntity, tTileEntity.getWorldObj(), tTileEntity.xCoord, tTileEntity.yCoord, tTileEntity.zCoord, OPOS[aSide]);
+		return new DelegatorTileEntity<>(tTileEntity, tTileEntity.getWorldObj(), tTileEntity.getBlockPos().getX(), tTileEntity.getBlockPos().getY(), tTileEntity.getBlockPos().getZ(), OPOS[aSide]);
 	}
 	
 	@Override

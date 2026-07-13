@@ -87,9 +87,9 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.hasKey(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
-		if (aNBT.hasKey(NBT_TEMPERATURE+".old")) oTemperature = aNBT.getLong(NBT_TEMPERATURE+".old");
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
+		if (aNBT.contains(NBT_TEMPERATURE+".old")) oTemperature = aNBT.getLong(NBT_TEMPERATURE+".old");
 		mContent = OreDictMaterialStack.loadList(NBT_MATERIALS, aNBT);
 		mMeltDown = (mTemperature+100 > getTemperatureMax(SIDE_INSIDE));
 	}
@@ -142,7 +142,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 	@Override
 	@SuppressWarnings("unchecked")
 	public void onServerTickPost(boolean aFirst) {
-		long tTemperature = WD.envTemp(level, xCoord, yCoord, zCoord), tHash = mContent.hashCode();
+		long tTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()), tHash = mContent.hashCode();
 		
 		if (SERVER_TIME % 600 == 10 && level.isRaining() && getRainOffset(0, 1, 0)) {
 			Biome tBiome = getBiome();
@@ -151,7 +151,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 			}
 		}
 		
-		if (!slotHas(0)) slot(0, WD.suck(level, xCoord+PX_P[2], yCoord+PX_P[2], zCoord+PX_P[2], PX_N[4], 1, PX_N[4]));
+		if (!slotHas(0)) slot(0, WD.suck(level, getBlockPos().getX()+PX_P[2], getBlockPos().getY()+PX_P[2], getBlockPos().getZ()+PX_P[2], PX_N[4], 1, PX_N[4]));
 		
 		ItemStack tStack = slot(0);
 		
@@ -255,7 +255,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 				GarbageGT.trash(mContent.remove(i--));
 				UT.Sounds.send(SFX.MC_FIZZ, this, F);
 				if (tMaterial.mMaterial.mBoilingPoint >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, tMaterial.mMaterial.mBoilingPoint, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
-				if (tMaterial.mMaterial.mBoilingPoint >= 2000) for (int j = 0, k = Math.max(1, UT.Code.bindInt((9 * tMaterial.mAmount) / U)); j < k; j++) WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
+				if (tMaterial.mMaterial.mBoilingPoint >= 2000) for (int j = 0, k = Math.max(1, UT.Code.bindInt((9 * tMaterial.mAmount) / U)); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
 				if (tMaterial.mMaterial.contains(TD.Properties.EXPLOSIVE)) {
 					GarbageGT.trash(mContent);
 					GarbageGT.trash(tToBeAdded);
@@ -316,8 +316,8 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
 			GarbageGT.trash(mContent);
 			if (mTemperature >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
-			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
-			level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
+			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
+			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 1, 3);
 			return;
 		}
 		
@@ -394,10 +394,10 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
 			GarbageGT.trash(mContent);
 			try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature);} catch(Throwable e) {e.printStackTrace(ERR);}
-			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
-			return level.setBlock(xCoord, yCoord, zCoord, Blocks.flowing_lava, 1, 3);
+			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
+			return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 1, 3);
 		}
-		return level.setBlockToAir(xCoord, yCoord, zCoord);
+		return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
 	}
 	
 	@Override
@@ -538,7 +538,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 	
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		mTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
+		mTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 		return T;
 	}
 	
@@ -621,17 +621,17 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 	@Override
 	public void onEntityCollidedWithBlock(Entity aEntity) {
 		if (UT.Entities.applyTemperatureDamage(aEntity, mTemperature, 1, 10.0F) && mTemperature > 320) {
-			if (aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isEntityAlive()) {
+			if (aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isAlive()) {
 				if (aEntity instanceof EntityVillager || aEntity instanceof EntityWitch) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.SoylentGreen)), C+37);
 				} else if (aEntity instanceof EntitySnowman) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Snow)), C-10);
 				} else if (aEntity instanceof EntityIronGolem) {
-					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Fe)), WD.envTemp(level, xCoord, yCoord, zCoord));
+					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Fe)), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
 				} else if (aEntity instanceof EntitySkeleton) {
-					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, ((EntitySkeleton)aEntity).getSkeletonType() == 1 ? MT.BoneWither : MT.Bone), ((EntitySkeleton)aEntity).getSkeletonType() == 1 ? OM.stack(1*U, MT.Coal) : null), WD.envTemp(level, xCoord, yCoord, zCoord));
+					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, ((EntitySkeleton)aEntity).getSkeletonType() == 1 ? MT.BoneWither : MT.Bone), ((EntitySkeleton)aEntity).getSkeletonType() == 1 ? OM.stack(1*U, MT.Coal) : null), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
 				} else if (aEntity instanceof EntityZombie) {
-					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRotten)), WD.envTemp(level, xCoord, yCoord, zCoord));
+					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRotten)), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
 				} else if (aEntity instanceof EntityMooshroom || aEntity instanceof EntityCow || aEntity instanceof EntityHorse) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(3*U, MT.MeatRaw)), C+37);
 				} else if (aEntity instanceof EntityPig || aEntity instanceof EntitySheep || aEntity instanceof EntityWolf || aEntity instanceof EntitySquid) {
@@ -690,7 +690,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 	@Override public boolean isEnergyType(TagData aEnergyType, byte aSide, boolean aEmitting) {return !aEmitting && ENERGYTYPES.contains(aEnergyType);}
 	@Override public boolean isEnergyCapacitorType(TagData aEnergyType, byte aSide) {return ENERGYTYPES.contains(aEnergyType);}
 	@Override public boolean isEnergyAcceptingFrom(TagData aEnergyType, byte aSide, boolean aTheoretical) {return ENERGYTYPES.contains(aEnergyType);}
-	@Override public long doInject(TagData aEnergyType, byte aSide, long aSize, long aAmount, boolean aDoInject) {if (aDoInject) {if (aEnergyType == TD.Energy.KU) {if (aSize*aAmount > 0 && WD.oxygen(level, xCoord, yCoord+1, zCoord)) addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(Math.min(MAX_AMOUNT-OM.total(mContent), aSize*aAmount*U1000), MT.Air)), mTemperature);} else if (aEnergyType == TD.Energy.CU) mEnergy -= Math.abs(aAmount * aSize); else mEnergy += Math.abs(aAmount * aSize);} return aAmount;}
+	@Override public long doInject(TagData aEnergyType, byte aSide, long aSize, long aAmount, boolean aDoInject) {if (aDoInject) {if (aEnergyType == TD.Energy.KU) {if (aSize*aAmount > 0 && WD.oxygen(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(Math.min(MAX_AMOUNT-OM.total(mContent), aSize*aAmount*U1000), MT.Air)), mTemperature);} else if (aEnergyType == TD.Energy.CU) mEnergy -= Math.abs(aAmount * aSize); else mEnergy += Math.abs(aAmount * aSize);} return aAmount;}
 	@Override public long getEnergyDemanded(TagData aEnergyType, byte aSide, long aSize) {return Long.MAX_VALUE - mEnergy;}
 	@Override public long getEnergySizeInputMin(TagData aEnergyType, byte aSide) {return 1;}
 	@Override public long getEnergySizeInputRecommended(TagData aEnergyType, byte aSide) {return 2048;}

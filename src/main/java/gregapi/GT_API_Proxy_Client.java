@@ -121,7 +121,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		return T;
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("deprecation")
 	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		RenderingRegistry.registerEntityRenderingHandler(PrefixBlockFallingEntity.class, new RenderFallingBlock());
@@ -168,12 +168,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 	
-	@Override
+	// @Override
 	public void onProxyBeforeInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		for (OreDictMaterial tMaterial : OreDictMaterial.MATERIAL_MAP.values()) LH.add("gt.material." + tMaterial.mNameInternal, tMaterial.mNameLocal);
 	}
 	
-	@Override
+	// @Override
 	public void onProxyAfterInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
 		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) {
 			LH.add("oredict.prefix." + tPrefix.mNameInternal, tPrefix.mNameLocal);
@@ -181,7 +181,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 	
-	@Override
+	// @Override
 	public void onProxyAfterPostInit(Abstract_Mod aMod, FMLLoadCompleteEvent aEvent) {
 		// Initialising the List of Decorative Plank Icons
 		for (int i = 0; i < PlankData.PLANKS.length; i++) {
@@ -629,7 +629,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
 			return;
 		}
-		aBlock = aEvent.player.level().getBlock(aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ);
+		aBlock = WD.block(aEvent.player.level(), aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ);
 		BlockEntity aTileEntity = WD.te(aEvent.player.level(), aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
 			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(aEvent.currentItem) && ToolsGT.contains(TOOL_wrench, aEvent.currentItem)) {

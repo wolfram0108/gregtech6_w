@@ -40,5 +40,5 @@ public class PrefixItemRing extends PrefixItemBauble {
 	}
 	
 	@Optional.Method(modid = ModIDs.BAUBLES)
-	@Override public BaubleType getBaubleType(ItemStack aStack) {return BaubleType.RING;}
+	public BaubleType getBaubleType(ItemStack aStack) {return BaubleType.RING;}
 }

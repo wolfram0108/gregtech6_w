@@ -80,7 +80,7 @@ public class WorldgenBushes extends WorldgenOnSurface {
 	}
 	
 	public boolean placeBushCore(Level aWorld, int aX, int aY, int aZ, MultiTileEntityRegistry aRegistry, ItemStack aBerry, int aStage) {
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (!BlocksGT.plantableGreens.contains(tBlock) || !WD.easyRep(aWorld, aX, aY+1, aZ)) return F;
 		if (tBlock == Blocks.grass) WD.set(aWorld, aX, aY, aZ, Blocks.dirt, 0, 3);
 		return aRegistry.mBlock.placeBlock(aWorld, aX  , aY+1, aZ  , SIDE_UNKNOWN, (short)32759, ST.save(UT.NBT.make(NBT_FACING, SIDE_UNDEFINED, NBT_STATE, aStage), NBT_VALUE, aBerry), T, T);

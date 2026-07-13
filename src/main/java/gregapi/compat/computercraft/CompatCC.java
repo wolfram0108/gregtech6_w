@@ -43,7 +43,7 @@ public class CompatCC extends CompatBase implements ICompatCC, IPeripheralProvid
 		ComputerCraftAPI.registerPeripheralProvider(this);
 	}
 	
-	@Override
+	// @Override
 	public IPeripheral getPeripheral(Level aWorld, int aX, int aY, int aZ, int aSide) {
 		DelegatorTileEntity<BlockEntity> aDelegator = WD.te(aWorld, aX, aY, aZ, (byte)aSide, F);
 		if (SIDES_VALID[aDelegator.mSideOfTileEntity] && aDelegator.mTileEntity instanceof ITileEntityCoverable) {
@@ -64,11 +64,11 @@ public class CompatCC extends CompatBase implements ICompatCC, IPeripheralProvid
 			mType = aComputerizable.getComputerizableName(mDelegator);
 		}
 		
-		@Override public String getType() {return mType;}
-		@Override public String[] getMethodNames() {return mComputerizable.allComputerizableMethods(mDelegator);}
-		@Override public Object[] callMethod(IComputerAccess aComputer, ILuaContext aContext, int aFunctionIndex, Object[] aArguments) throws LuaException, InterruptedException {return mComputerizable.callComputerizableMethod(mDelegator, aFunctionIndex, aArguments);}
-		@Override public void attach(IComputerAccess aComputer) {/**/}
-		@Override public void detach(IComputerAccess aComputer) {/**/}
+		public String getType() {return mType;}
+		public String[] getMethodNames() {return mComputerizable.allComputerizableMethods(mDelegator);}
+		public Object[] callMethod(IComputerAccess aComputer, ILuaContext aContext, int aFunctionIndex, Object[] aArguments) throws LuaException, InterruptedException {return mComputerizable.callComputerizableMethod(mDelegator, aFunctionIndex, aArguments);}
+		public void attach(IComputerAccess aComputer) {/**/}
+		public void detach(IComputerAccess aComputer) {/**/}
 		@Override public boolean equals(IPeripheral aOther) {return aOther == this || (aOther instanceof ComputerizablePeripheral && ((ComputerizablePeripheral)aOther).mComputerizable == mComputerizable && mDelegator.equalSideTileEntityAndCoords(((ComputerizablePeripheral)aOther).mDelegator));}
 	}
 }

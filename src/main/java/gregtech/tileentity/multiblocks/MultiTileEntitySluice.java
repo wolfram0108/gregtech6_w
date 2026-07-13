@@ -47,31 +47,31 @@ public class MultiTileEntitySluice extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int
-		tMinX = xCoord-(SIDE_X_NEG==mFacing?0:SIDE_X_POS==mFacing?6:1),
-		tMinZ = zCoord-(SIDE_Z_NEG==mFacing?0:SIDE_Z_POS==mFacing?6:1),
-		tMaxX = xCoord+(SIDE_X_POS==mFacing?0:SIDE_X_NEG==mFacing?6:1),
-		tMaxZ = zCoord+(SIDE_Z_POS==mFacing?0:SIDE_Z_NEG==mFacing?6:1),
+		tMinX = getBlockPos().getX()-(SIDE_X_NEG==mFacing?0:SIDE_X_POS==mFacing?6:1),
+		tMinZ = getBlockPos().getZ()-(SIDE_Z_NEG==mFacing?0:SIDE_Z_POS==mFacing?6:1),
+		tMaxX = getBlockPos().getX()+(SIDE_X_POS==mFacing?0:SIDE_X_NEG==mFacing?6:1),
+		tMaxZ = getBlockPos().getZ()+(SIDE_Z_POS==mFacing?0:SIDE_Z_NEG==mFacing?6:1),
 		tD = (mActive?mFacing+2:mFacing-2);
 		
-		if (level.blockExists(tMinX, yCoord, tMinZ) && level.blockExists(tMaxX, yCoord+2, tMaxZ)) {
+		if (WD.exists(level, tMinX, getBlockPos().getY(), tMinZ) && WD.exists(level, tMaxX, getBlockPos().getY()+2, tMaxZ)) {
 			boolean tSuccess = T;
 			for (int tX = tMinX; tX <= tMaxX; tX++) for (int tZ = tMinZ; tZ <= tMaxZ; tZ++) {
-				if (SIDES_AXIS_X[mFacing] ? tX == xCoord : tZ == zCoord) {
-				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, yCoord  , tZ, 18006, getMultiTileEntityRegistryID(), 1, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_OUT, aCoordinates, aPlayer, aInventory)) tSuccess = F;
+				if (SIDES_AXIS_X[mFacing] ? tX == getBlockPos().getX() : tZ == getBlockPos().getZ()) {
+				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, getBlockPos().getY()  , tZ, 18006, getMultiTileEntityRegistryID(), 1, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_OUT, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				} else {
-				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, yCoord  , tZ, 18006, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
+				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, getBlockPos().getY()  , tZ, 18006, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				}
 				
-				if (SIDES_AXIS_X[mFacing] ? Math.abs(tX-xCoord)==5 && tZ != zCoord : Math.abs(tZ-zCoord)==5 && tX != xCoord) {
-				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, yCoord+1, tZ, 18006, getMultiTileEntityRegistryID(), 3, MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
+				if (SIDES_AXIS_X[mFacing] ? Math.abs(tX-getBlockPos().getX())==5 && tZ != getBlockPos().getZ() : Math.abs(tZ-getBlockPos().getZ())==5 && tX != getBlockPos().getX()) {
+				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, getBlockPos().getY()+1, tZ, 18006, getMultiTileEntityRegistryID(), 3, MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				} else {
-				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, yCoord+1, tZ, 18006, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
+				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, getBlockPos().getY()+1, tZ, 18006, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				}
 				
-				if (SIDES_AXIS_X[mFacing] ? Math.abs(tX-xCoord)==6 : Math.abs(tZ-zCoord)==6) {
-				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, yCoord+2, tZ, 18106, getMultiTileEntityRegistryID(),tD, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
+				if (SIDES_AXIS_X[mFacing] ? Math.abs(tX-getBlockPos().getX())==6 : Math.abs(tZ-getBlockPos().getZ())==6) {
+				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, getBlockPos().getY()+2, tZ, 18106, getMultiTileEntityRegistryID(),tD, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				} else {
-				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, yCoord+2, tZ, 18106, getMultiTileEntityRegistryID(),tD, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
+				if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX, getBlockPos().getY()+2, tZ, 18106, getMultiTileEntityRegistryID(),tD, MultiTileEntityMultiBlockPart.NOTHING, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				}
 			}
 			return tSuccess;
@@ -101,26 +101,26 @@ public class MultiTileEntitySluice extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
 		return
-		aX >= xCoord-(SIDE_X_NEG==mFacing?0:SIDE_X_POS==mFacing?6:1) &&
-		aY >= yCoord   &&
-		aZ >= zCoord-(SIDE_Z_NEG==mFacing?0:SIDE_Z_POS==mFacing?6:1) &&
-		aX <= xCoord+(SIDE_X_POS==mFacing?0:SIDE_X_NEG==mFacing?6:1) &&
-		aY <= yCoord+2 &&
-		aZ <= zCoord+(SIDE_Z_POS==mFacing?0:SIDE_Z_NEG==mFacing?6:1);
+		aX >= getBlockPos().getX()-(SIDE_X_NEG==mFacing?0:SIDE_X_POS==mFacing?6:1) &&
+		aY >= getBlockPos().getY()   &&
+		aZ >= getBlockPos().getZ()-(SIDE_Z_NEG==mFacing?0:SIDE_Z_POS==mFacing?6:1) &&
+		aX <= getBlockPos().getX()+(SIDE_X_POS==mFacing?0:SIDE_X_NEG==mFacing?6:1) &&
+		aY <= getBlockPos().getY()+2 &&
+		aZ <= getBlockPos().getZ()+(SIDE_Z_POS==mFacing?0:SIDE_Z_NEG==mFacing?6:1);
 	}
 	
 	@Override
 	public void updateAdjacentToggleableEnergySources() {
 		DelegatorTileEntity<BlockEntity> tDelegator;
 		if (SIDES_AXIS_X[mFacing]) {
-			tDelegator = WD.te(level, getOffsetXN(mFacing, 5), yCoord+1, zCoord - 2, SIDE_Z_POS, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 5), getBlockPos().getY()+1, getBlockPos().getZ() - 2, SIDE_Z_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(level, getOffsetXN(mFacing, 5), yCoord+1, zCoord + 2, SIDE_Z_NEG, F);
+			tDelegator = WD.te(level, getOffsetXN(mFacing, 5), getBlockPos().getY()+1, getBlockPos().getZ() + 2, SIDE_Z_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		} else {
-			tDelegator = WD.te(level, xCoord - 2, yCoord+1, getOffsetZN(mFacing, 5), SIDE_X_POS, F);
+			tDelegator = WD.te(level, getBlockPos().getX() - 2, getBlockPos().getY()+1, getOffsetZN(mFacing, 5), SIDE_X_POS, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
-			tDelegator = WD.te(level, xCoord + 2, yCoord+1, getOffsetZN(mFacing, 5), SIDE_X_NEG, F);
+			tDelegator = WD.te(level, getBlockPos().getX() + 2, getBlockPos().getY()+1, getOffsetZN(mFacing, 5), SIDE_X_NEG, F);
 			if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) ((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		}
 	}

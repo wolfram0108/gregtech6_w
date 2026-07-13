@@ -67,10 +67,10 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		mBurning = aNBT.getBoolean(NBT_ACTIVE);
 		mOutput1 = ST.load(aNBT, NBT_INV_OUT + ".1");
-		if (aNBT.hasKey(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.hasKey(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
-		if (aNBT.hasKey(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 	}
 	
 	@Override
@@ -104,7 +104,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 					ITileEntityEnergy.Util.emitEnergyToNetwork(mEnergyTypeEmitted, 1, Math.min(mRate, mEnergy), this);
 					mEnergy -= mRate;
 					if (mEfficiency < 1 || rng(mEfficiency) == 0) {
-						WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+						WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 					}
 				}
 				if (mEnergy < mRate * 2) {
@@ -145,7 +145,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 								// Continue using the Firestone.
 								slot(0, tStack);
 								// Cracked Firestones cause Fire to be released way more often.
-								WD.fire(level, xCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), yCoord-1+rng(2+FLAME_RANGE), zCoord-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
+								WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), T);
 							}
 						} else {
 							Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, T, Long.MAX_VALUE, null, ZL_FS, slot(0));
@@ -170,7 +170,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 			// Out of Fuel I guess.
 			if (mEnergy < 0) mEnergy = 0;
 		} else {
-			if (mBurning && rng(4) == 0) spawnBurningParticles(xCoord+0.5+OFFX[mFacing]*0.55+(SIDES_AXIS_X[mFacing]?0:RNGSUS.nextFloat()*0.6F-0.3F), yCoord+RNGSUS.nextFloat()*0.375F, zCoord+0.5+OFFZ[mFacing]*0.55+(SIDES_AXIS_Z[mFacing]?0:RNGSUS.nextFloat()*0.6F-0.3F));
+			if (mBurning && rng(4) == 0) spawnBurningParticles(getBlockPos().getX()+0.5+OFFX[mFacing]*0.55+(SIDES_AXIS_X[mFacing]?0:RNGSUS.nextFloat()*0.6F-0.3F), getBlockPos().getY()+RNGSUS.nextFloat()*0.375F, getBlockPos().getZ()+0.5+OFFZ[mFacing]*0.55+(SIDES_AXIS_Z[mFacing]?0:RNGSUS.nextFloat()*0.6F-0.3F));
 		}
 	}
 	
@@ -227,7 +227,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 		if (aTool.equals(TOOL_extinguisher  ) && (aSide == mFacing || aPlayer == null)) {mBurning = F; return 10000;}
 		if (aTool.equals(TOOL_shovel        ) &&  aSide == mFacing && slotHas(1)) {
 			long rDamage = 1000 * slot(1).getCount();
-			ST.give(aPlayer, slot(1), level, xCoord, yCoord, zCoord);
+			ST.give(aPlayer, slot(1), level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 			slotKill(1);
 			return rDamage;
 		}

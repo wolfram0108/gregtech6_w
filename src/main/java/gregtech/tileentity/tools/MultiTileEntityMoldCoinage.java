@@ -71,15 +71,15 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, "gt.coin.unique", mIsUnique);
-		for (int i = 0; i < mShape[0].length; i++) aNBT.setShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
-		for (int i = 0; i < mShape[1].length; i++) aNBT.setShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
+		for (int i = 0; i < mShape[0].length; i++) aNBT.putShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
+		for (int i = 0; i < mShape[1].length; i++) aNBT.putShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		UT.NBT.setBoolean(aNBT, "gt.coin.unique", mIsUnique);
-		for (int i = 0; i < mShape[0].length; i++) aNBT.setShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
-		for (int i = 0; i < mShape[1].length; i++) aNBT.setShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
+		for (int i = 0; i < mShape[0].length; i++) aNBT.putShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
+		for (int i = 0; i < mShape[1].length; i++) aNBT.putShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
 		return aNBT;
 	}
 	

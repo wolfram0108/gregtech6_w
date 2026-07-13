@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen;
+import gregapi.util.WD;
 
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
@@ -68,7 +69,7 @@ public abstract class WorldgenBlob extends WorldgenObject {
 		if (aRandom.nextInt(mProbability) == 0) {
 			for (int i = 0; i < mAmount; i++) {
 				int tX = aMinX + aRandom.nextInt(16), tY = mMinY + aRandom.nextInt(mMaxY - mMinY), tZ = aMinZ + aRandom.nextInt(16);
-				if (mAllowToGenerateinVoid || !aWorld.getBlock(tX, tY, tZ).isAir(aWorld, tX, tY, tZ)) {
+				if (mAllowToGenerateinVoid || !WD.block(aWorld, tX, tY, tZ).isAir(aWorld, tX, tY, tZ)) {
 					float var6 = aRandom.nextFloat() * (float)Math.PI;
 					double aX1 = ((tX + 8) + Mth.sin(var6) * mSize / 8);
 					double aX2 = ((tX + 8) - Mth.sin(var6) * mSize / 8);

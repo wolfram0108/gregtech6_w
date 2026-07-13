@@ -101,13 +101,13 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 			}
 		}
 		// read the Coords if it has them.
-		if (aNBT.hasKey("x")) xCoord = aNBT.getInteger("x");
-		if (aNBT.hasKey("y")) yCoord = aNBT.getInteger("y");
-		if (aNBT.hasKey("z")) zCoord = aNBT.getInteger("z");
+		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getInteger("x");
+		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getInteger("y");
+		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getInteger("z");
 		// make sure Y is not negative because this causes crashes.
-		if (yCoord < 0) WD.invalidateTileEntityWithNegativeYCoord(xCoord, yCoord, zCoord, this);
+		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		// read the custom Name.
-		if (aNBT.hasKey("display")) mCustomName = aNBT.getCompoundTag("display").getString("Name");
+		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundTag("display").getString("Name");
 		// And now your custom readFromNBT.
 		try {readFromNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -118,11 +118,11 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	public final void writeToNBT(CompoundTag aNBT) {
 		super.writeToNBT(aNBT);
 		// write the IDs
-		aNBT.setShort(NBT_MTE_ID, mMTEID);
-		aNBT.setShort(NBT_MTE_REG, mMTERegistry);
+		aNBT.putShort(NBT_MTE_ID, mMTEID);
+		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
 		// write the Custom Name
-		if (UT.Code.stringValid(mCustomName)) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
-		if (isPainted()) {aNBT.setInteger(NBT_COLOR, getPaint()); aNBT.setBoolean(NBT_PAINTED, T);}
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
+		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		// write the rest
 		try {writeToNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -131,9 +131,9 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	@Override
 	public CompoundTag writeItemNBT(CompoundTag aNBT) {
-		if (UT.Code.stringValid(mCustomName)) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
-		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", ERROR_MESSAGE));
-		if (isPainted()) {aNBT.setInteger(NBT_COLOR, getPaint()); aNBT.setBoolean(NBT_PAINTED, T);}
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
+		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", ERROR_MESSAGE));
+		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		return aNBT;
 	}
 	
@@ -164,7 +164,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	}
 	
 	public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(level, xCoord, yCoord, zCoord, aSide));
+		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), aSide));
 	}
 	
 	@Override
@@ -177,7 +177,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	public void popOff() {
 		if (isDead()) return;
-		for (ItemStack tStack : getDrops(0, F)) ST.drop(level, xCoord, yCoord, zCoord, tStack);
+		for (ItemStack tStack : getDrops(0, F)) ST.drop(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), tStack);
 		setToAir();
 	}
 	public void popOff(Entity aEntity) {
@@ -198,7 +198,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	public void burnOff() {
 		if (isDead()) return;
-		for (ItemStack tStack : getDrops(0, F)) ST.drop(level, xCoord, yCoord, zCoord, tStack);
+		for (ItemStack tStack : getDrops(0, F)) ST.drop(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), tStack);
 		setToFire();
 	}
 	public void burnOff(Entity aEntity) {

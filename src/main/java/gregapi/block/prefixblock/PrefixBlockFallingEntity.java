@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.prefixblock;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
@@ -56,7 +57,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		field_145810_d = ItemNBT.get(aStack);
 	}
 	
-	@Override
+	// @Override
 	public void onUpdate() {
 		prevPosX = getX();
 		prevPosY = getY();
@@ -72,7 +73,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 			int aY = UT.Code.roundDown(getY());
 			int aZ = UT.Code.roundDown(getZ());
 			if (field_145812_b == 1) {
-				if (level().getBlock(aX, aY, aZ) != super.func_145805_f()) {
+				if (WD.block(level(), aX, aY, aZ) != super.func_145805_f()) {
 					setDead();
 					return;
 				}
@@ -82,7 +83,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 				motionX *= 0.699999988079071D;
 				motionZ *= 0.699999988079071D;
 				motionY *= -0.5D;
-				if (level().getBlock(aX, aY, aZ) != Blocks.piston_extension) {
+				if (WD.block(level(), aX, aY, aZ) != Blocks.piston_extension) {
 					setDead();
 					if (!level().canPlaceEntityOnSide(super.func_145805_f(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.func_149831_e(level(), aX, aY - 1, aZ) || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), ItemNBT.get(mStack), T, T)) {
 						if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
@@ -95,7 +96,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		}
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	protected void fall(float p_70069_1_) {
 		int i = Mth.ceiling_float_int(p_70069_1_ - 1.0F);
@@ -104,13 +105,13 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		}
 	}
 	
-	@Override
+	// @Override
 	protected void writeEntityToNBT(CompoundTag aNBT) {
 		super.writeEntityToNBT(aNBT);
-		aNBT.setShort("MetaData", ST.meta_(mStack));
+		aNBT.putShort("MetaData", ST.meta_(mStack));
 	}
 	
-	@Override
+	// @Override
 	protected void readEntityFromNBT(CompoundTag aNBT) {
 		super.readEntityFromNBT(aNBT);
 		mBlock = (IBlockPlacable)super.func_145805_f();
@@ -118,7 +119,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		ItemNBT.set(mStack, field_145810_d);
 	}
 	
-	@Override
+	// @Override
 	public Block func_145805_f() {
 		return Blocks.gravel;
 	}

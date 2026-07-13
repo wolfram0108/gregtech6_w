@@ -46,8 +46,8 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityElectrolyzer extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing)-1, tY = yCoord, tZ = getOffsetZN(mFacing)-1;
-		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
+		int tX = getOffsetXN(mFacing)-1, tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing)-1;
+		if (WD.exists(level, tX-1, tY, tZ-1) && WD.exists(level, tX+1, tY, tZ-1) && WD.exists(level, tX-1, tY, tZ+1) && WD.exists(level, tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			
 			if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX  , tY  , tZ  , 18105, getMultiTileEntityRegistryID(), 1, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY_IN, aCoordinates, aPlayer, aInventory)) tSuccess = F;
@@ -92,13 +92,13 @@ public class MultiTileEntityElectrolyzer extends TileEntityBase10MultiBlockMachi
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing);
 		return aX >= tX - 1 && aY >= tY && aZ >= tZ - 1 && aX <= tX + 1 && aY <= tY + 1 && aZ <= tZ + 1;
 	}
 	
 	@Override
 	public void updateAdjacentToggleableEnergySources() {
-		DelegatorTileEntity<BlockEntity> tDelegator = WD.te(level, getOffsetXN(mFacing), yCoord-1, getOffsetZN(mFacing), SIDE_TOP, F);
+		DelegatorTileEntity<BlockEntity> tDelegator = WD.te(level, getOffsetXN(mFacing), getBlockPos().getY()-1, getOffsetZN(mFacing), SIDE_TOP, F);
 		if (tDelegator.mTileEntity instanceof ITileEntityAdjacentOnOff && tDelegator.mTileEntity instanceof ITileEntityEnergy && ((ITileEntityEnergy)tDelegator.mTileEntity).isEnergyEmittingTo(mEnergyTypeAccepted, tDelegator.mSideOfTileEntity, T)) {
 			((ITileEntityAdjacentOnOff)tDelegator.mTileEntity).setAdjacentOnOff(getStateOnOff());
 		}

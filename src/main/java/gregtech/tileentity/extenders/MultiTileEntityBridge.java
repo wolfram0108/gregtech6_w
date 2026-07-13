@@ -67,10 +67,10 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_MODE)) mModes = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_MODE)) mModes = aNBT.getByte(NBT_MODE);
 		
 		if (CODE_CLIENT) {
-			if (GT_API.sBlockIcons == null && aNBT.hasKey(NBT_TEXTURE)) {
+			if (GT_API.sBlockIcons == null && aNBT.contains(NBT_TEXTURE)) {
 				String tTextureName = aNBT.getString(NBT_TEXTURE);
 				mTextures = new IIconContainer[] {
 				new Textures.BlockIcons.CustomIcon("machines/extenders/"+tTextureName+"/colored/side"),
@@ -398,7 +398,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	
 	public byte getExtenderTargetSide(byte aSide) {return OPOS[aSide];}
 	
-	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.getDistanceSq(xCoord+0.5, yCoord+0.5, zCoord+0.5) <= 64;}
+	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5) <= 64;}
 	@Override public void openInventory() {/**/}
 	@Override public void closeInventory() {/**/}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}

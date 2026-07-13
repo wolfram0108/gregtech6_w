@@ -74,7 +74,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopping    (net.neoforged.neoforge.event.server.ServerStoppingEvent       aEvent) {onModServerStopping(aEvent);}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopped     (net.neoforged.neoforge.event.server.ServerStoppedEvent        aEvent) {onModServerStopped(aEvent);}
 	
-	@Override
+	// @Override
 	public void onModPreInit2(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent aEvent) {
 		// If you want to make yourself a new OreDict Prefix for your Component Items or similar.
 		final gregapi.oredict.OreDictPrefix tExamplePrefix = gregapi.oredict.OreDictPrefix.createPrefix("exampleprefix"); // This newly created OreDict Prefix is named "exampleprefix", so an Aluminium Item with this Prefix would be named "exampleprefixAluminium" in the OreDict.
@@ -152,7 +152,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		gregapi.block.multitileentity.MultiTileEntityBlock.getOrCreate(MOD_ID, "machine"    , gregapi.block.MaterialMachines.instance       , net.minecraft.world.level.block.Block.soundTypeMetal  , gregapi.data.CS.TOOL_wrench   , 0, 0, 15, false, false);
 	}
 	
-	@Override
+	// @Override
 	public void onModInit2(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent aEvent) {
 		// Gets your initialised Registry.
 		gregapi.block.multitileentity.MultiTileEntityRegistry tExampleRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("example.multitileentity");
@@ -213,7 +213,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 		gregapi.tileentity.connectors.MultiTileEntityWireElectric.addElectricWires(50, 0, gregapi.data.CS.VMAX[4], 1, 2, 1, true, false, true, tExampleRegistry, tWireBlock, gregapi.tileentity.connectors.MultiTileEntityWireElectric.class, tExamplium);
 	}
 	
-	@Override
+	// @Override
 	public void onModPostInit2(net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent aEvent) {
 		// Insert your PostInit Code here and not above
 	}

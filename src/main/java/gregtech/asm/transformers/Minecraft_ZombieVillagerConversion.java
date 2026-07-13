@@ -35,7 +35,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * @author Gregorius Techneticies, OvermindDL1
  */
 public class Minecraft_ZombieVillagerConversion implements IClassTransformer  {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!transformedName.equals("net.minecraft.entity.monster.EntityZombie")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

@@ -40,5 +40,5 @@ public class PrefixItemChain extends PrefixItemBauble {
 	}
 	
 	@Optional.Method(modid = ModIDs.BAUBLES)
-	@Override public BaubleType getBaubleType(ItemStack aStack) {return BaubleType.AMULET;}
+	public BaubleType getBaubleType(ItemStack aStack) {return BaubleType.AMULET;}
 }

@@ -68,8 +68,8 @@ public class WorldgenRiver extends WorldgenObject {
 					tPlacedNone = F;
 					
 					BlockRiver.PLACEMENT_ALLOWED = T;
-					if (!aWorld.setBlock(aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
-						aWorld.setBlock(aMinX+tX, tY, aMinZ+tZ, Blocks.water, 0, 0);
+					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
+						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.water, 0, 0);
 						aChunk.lastSaveTime = Long.MAX_VALUE;
 						return F;
 					}

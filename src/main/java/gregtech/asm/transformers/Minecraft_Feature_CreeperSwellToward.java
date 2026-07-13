@@ -28,7 +28,7 @@ import org.objectweb.asm.tree.*;
  * @author OvermindDL1
  */
 public class Minecraft_Feature_CreeperSwellToward implements IClassTransformer  {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!transformedName.equals("net.minecraft.entity.ai.EntityAICreeperSwell")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

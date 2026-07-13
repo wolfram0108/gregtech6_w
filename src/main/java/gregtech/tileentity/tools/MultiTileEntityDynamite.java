@@ -66,16 +66,16 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_STATE)) mCountDown = aNBT.getByte(NBT_STATE);
-		if (aNBT.hasKey(NBT_MODE)) mSunk = aNBT.getBoolean(NBT_MODE);
-		if (aNBT.hasKey(NBT_QUALITY)) mMaxExplosionResistance = aNBT.getLong(NBT_QUALITY);
-		if (aNBT.hasKey(NBT_FORTUNE)) mFortune = aNBT.getByte(NBT_FORTUNE);
+		if (aNBT.contains(NBT_STATE)) mCountDown = aNBT.getByte(NBT_STATE);
+		if (aNBT.contains(NBT_MODE)) mSunk = aNBT.getBoolean(NBT_MODE);
+		if (aNBT.contains(NBT_QUALITY)) mMaxExplosionResistance = aNBT.getLong(NBT_QUALITY);
+		if (aNBT.contains(NBT_FORTUNE)) mFortune = aNBT.getByte(NBT_FORTUNE);
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_STATE, mCountDown);
+		aNBT.putByte(NBT_STATE, mCountDown);
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mSunk);
 	}
 	
@@ -97,7 +97,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 		
 		if (isClientSide()) return 0;
 		
-		if (aTool.equals(TOOL_igniter       ) && mCountDown == 0 && WD.oxygen(level, xCoord, yCoord, zCoord) ) {mCountDown = 100; updateClientData(); causeBlockUpdate(); UT.Sounds.send(SFX.MC_TNT_IGNITE , 1.0F, 0.5F, this, F); return 10000;}
+		if (aTool.equals(TOOL_igniter       ) && mCountDown == 0 && WD.oxygen(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()) ) {mCountDown = 100; updateClientData(); causeBlockUpdate(); UT.Sounds.send(SFX.MC_TNT_IGNITE , 1.0F, 0.5F, this, F); return 10000;}
 		if (aTool.equals(TOOL_extinguisher  ) && mCountDown != 0                                                ) {mCountDown =   0; updateClientData(); causeBlockUpdate(); UT.Sounds.send(SFX.MC_FIZZ       , 1.0F, 0.5F, this, F); return 10000;}
 		return 0;
 	}
@@ -106,12 +106,12 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		if (aIsServerSide) {
 			if (mBlockUpdated || aTimer == 2) {
-				if ((mCountDown == 0 && hasRedstoneIncoming()) || WD.burning(level, xCoord, yCoord, zCoord)) remoteActivate();
+				if ((mCountDown == 0 && hasRedstoneIncoming()) || WD.burning(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) remoteActivate();
 				
 				while(mSunk) {
 					Block tBlock = getBlockAtSide(OPOS[mFacing]);
 					if (BlocksGT.drillableDynamite.contains(tBlock)) break;
-					if (tBlock.getBlockHardness(level, xCoord+OFFX[OPOS[mFacing]], yCoord+OFFY[OPOS[mFacing]], zCoord+OFFZ[OPOS[mFacing]]) >= 0) {
+					if (tBlock.getBlockHardness(level, getBlockPos().getX()+OFFX[OPOS[mFacing]], getBlockPos().getY()+OFFY[OPOS[mFacing]], getBlockPos().getZ()+OFFZ[OPOS[mFacing]]) >= 0) {
 						if (tBlock instanceof BlockStones) {
 							if (getMetaDataAtSide(OPOS[mFacing]) < 3) break;
 						} else {
@@ -142,8 +142,8 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	@Override
 	public void explode(boolean aInstant) {
 		mDontDrop = T;
-		level.setBlockToAir(xCoord, yCoord, zCoord);
-		Explosion tExplosion = mSunk ? new DynamiteExplosion(level, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune) : new DynamiteExplosion(level, xCoord+0.5, yCoord+0.5, zCoord+0.5, mMaxExplosionResistance, mFortune);
+		WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
+		Explosion tExplosion = mSunk ? new DynamiteExplosion(level, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune) : new DynamiteExplosion(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5, mMaxExplosionResistance, mFortune);
 		tExplosion.doExplosionA();
 		tExplosion.doExplosionB(T);
 	}
@@ -222,7 +222,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 		@SuppressWarnings({"unchecked", "rawtypes"})
 		public void doExplosionA() {
 			for (int tX = UT.Code.roundDown(explosionX) - 1; tX <= UT.Code.roundDown(explosionX) + 1; tX++) for (int tY = UT.Code.roundDown(explosionY) - 1; tY <= UT.Code.roundDown(explosionY) + 1; tY++) for (int tZ = UT.Code.roundDown(explosionZ) - 1; tZ <= UT.Code.roundDown(explosionZ) + 1; tZ++) {
-				Block tBlock = mWorld.getBlock(tX, tY, tZ);
+				Block tBlock = WD.block(mWorld, tX, tY, tZ);
 				if (tBlock == Blocks.mob_spawner || WD.bedrock(tBlock)) continue;
 				if (tBlock.getExplosionResistance(exploder, mWorld, tX, tY, tZ, explosionX, explosionY, explosionZ) <= mMaxExplosionResistance) affectedBlockPositions.add(new BlockPos(tX, tY, tZ));
 			}
@@ -254,7 +254,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 					i = tCoords.chunkPosX;
 					j = tCoords.chunkPosY;
 					k = tCoords.chunkPosZ;
-					tBlock = mWorld.getBlock(i, j, k);
+					tBlock = WD.block(mWorld, i, j, k);
 					
 					if (aEffects) {
 						double d0 = (i + RNGSUS.nextFloat()), d1 = (j + RNGSUS.nextFloat()), d2 = (k + RNGSUS.nextFloat()), d3 = d0 - explosionX, d4 = d1 - explosionY, d5 = d2 - explosionZ, d6 = Math.sqrt(d3*d3 + d4*d4 + d5*d5);

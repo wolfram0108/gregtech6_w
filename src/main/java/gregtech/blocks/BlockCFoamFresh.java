@@ -108,12 +108,12 @@ public class BlockCFoamFresh extends BlockColored implements IBlockFoamable {
 	
 	@Override
 	public boolean dryFoam(Level aWorld, int aX, int aY, int aZ, byte aSide) {
-		return aWorld.setBlock(aX, aY, aZ, SIDES_VALID[mSide]?((BlockMetaType)BlocksGT.CFoam).mSlabs[mSide]:BlocksGT.CFoam, WD.meta(aWorld, aX, aY, aZ), 3);
+		return WD.set(aWorld, aX, aY, aZ, SIDES_VALID[mSide]?((BlockMetaType)BlocksGT.CFoam).mSlabs[mSide]:BlocksGT.CFoam, WD.meta(aWorld, aX, aY, aZ), 3);
 	}
 	
 	@Override
 	public boolean removeFoam(Level aWorld, int aX, int aY, int aZ, byte aSide) {
-		return aWorld.setBlock(aX, aY, aZ, NB, 0, 3);
+		return WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 	}
 	
 	@Override

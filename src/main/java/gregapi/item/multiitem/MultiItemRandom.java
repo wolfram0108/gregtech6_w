@@ -279,19 +279,19 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		return this;
 	}
 	
-	@Override
+	// @Override
 	public int getMaxItemUseDuration(ItemStack aStack) {
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
 		return tStat == null ? 0 : Math.max(tStat.getFoodLevel(this, aStack, null) * 8, 16);
 	}
 	
-	@Override
+	// @Override
 	public ItemUseAnimation getItemUseAction(ItemStack aStack) {
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
 		return tStat == null ? ItemUseAnimation.none : tStat.getFoodAction(this, aStack);
 	}
 	
-	@Override
+	// @Override
 	public ItemStack onEaten(ItemStack aStack, Level aWorld, Player aPlayer) {
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
 		if (tStat != null) {
@@ -334,7 +334,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		return mFluidContainerStats.get(ST.meta_(aStack));
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
@@ -369,7 +369,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		}
 	}
 	
-	@Override
+	// @Override
 	public IIcon getIconIndex(ItemStack aStack) {
 		short aMetaData = ST.meta_(aStack);
 		if (!UT.Code.exists(aMetaData, mIconList)) return Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
@@ -384,12 +384,12 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		return mIconList[aMetaData][0];
 	}
 	
-	@Override
+	// @Override
 	public IIcon getIcon(ItemStack aStack, int aRenderPass) {
 		return getIconIndex(aStack);
 	}
 	
-	@Override
+	// @Override
 	public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
 		return getIcon(aStack, aRenderPass);
 	}
@@ -399,7 +399,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
 	
-	@Override
+	// @Override
 	public IIcon getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
@@ -423,8 +423,8 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 			// F8: тег захвачен ОДИН раз (ItemNBT.get копирует), обе мутации идут в один и тот же
 			// объект, коммит явный ниже — иначе setTag/setByte-правки потерялись бы (см. ItemNBT.java).
 			CompoundTag tNBT = ItemNBT.has(aStack) ? ItemNBT.get(aStack) : UT.NBT.make();
-			tNBT.setTag(NBT_USB_DATA, UT.NBT.makeString(UT.NBT.makeString(NBT_REACTOR_SETUP_NAME, ""+aSetup.hashCode()), NBT_REACTOR_SETUP, aSetup));
-			tNBT.setByte(NBT_USB_TIER, (byte)2);
+			tNBT.put(NBT_USB_DATA, UT.NBT.makeString(UT.NBT.makeString(NBT_REACTOR_SETUP_NAME, ""+aSetup.hashCode()), NBT_REACTOR_SETUP, aSetup));
+			tNBT.putByte(NBT_USB_TIER, (byte)2);
 			ItemNBT.set(aStack, tNBT);
 			return T;
 		}
@@ -434,12 +434,12 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	public void setPlanName(ItemStack aStack, String aName) {
 		// F8: тег захвачен ОДИН раз, вложенная мутация коммитится явным ItemNBT.set (см. ItemNBT.java).
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		tNBT.getCompoundTag(NBT_USB_DATA).setString(NBT_REACTOR_SETUP_NAME, aName);
+		tNBT.getCompoundTag(NBT_USB_DATA).putString(NBT_REACTOR_SETUP_NAME, aName);
 		ItemNBT.set(aStack, tNBT);
 	}
 
 	public boolean hasSetup(ItemStack aStack) {
-		return OM.is(OD_USB_STICKS[2], aStack) && ItemNBT.has(aStack) && ItemNBT.get(aStack).getCompoundTag(NBT_USB_DATA).hasKey(NBT_REACTOR_SETUP);
+		return OM.is(OD_USB_STICKS[2], aStack) && ItemNBT.has(aStack) && ItemNBT.get(aStack).getCompoundTag(NBT_USB_DATA).contains(NBT_REACTOR_SETUP);
 	}
 
 	public String getSetup(ItemStack aStack) {

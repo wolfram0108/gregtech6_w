@@ -52,7 +52,7 @@ public abstract class TileEntityBase09Connector extends TileEntityBase08Directio
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_CONNECTION)) mConnections = (byte)(aNBT.getByte(NBT_CONNECTION) & 63);
+		if (aNBT.contains(NBT_CONNECTION)) mConnections = (byte)(aNBT.getByte(NBT_CONNECTION) & 63);
 	}
 	
 	@Override
@@ -97,9 +97,9 @@ public abstract class TileEntityBase09Connector extends TileEntityBase08Directio
 	
 	@Override public byte getDirectionData() {return (byte)(mConnections & (byte)63);}
 	@Override public void setDirectionData(byte aData) {mConnections = (byte)(aData & 63);}
-	@Override public short getFacing() {return 0;}
-	@Override public void setFacing(short aSide) {/**/}
-	@Override public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return F;}
+	public short getFacing() {return 0;}
+	public void setFacing(short aSide) {/**/}
+	public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return F;}
 	@Override public boolean isConnectedWrenchingOverlay(ItemStack aStack, byte aSide) {return connected(aSide);}
 	
 	@Override

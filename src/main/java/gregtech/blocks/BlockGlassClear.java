@@ -75,7 +75,7 @@ public class BlockGlassClear extends BlockColored {
 	@OnlyIn(Dist.CLIENT)
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		if (aSide == OPOS[mSide]) return T;
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
-		return aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mBlock == mBlock ? WD.meta(aWorld, aX, aY, aZ) != aWorld.getBlockMetadata(aX - OFFX[aSide], aY - OFFY[aSide], aZ - OFFZ[aSide]) || ((((BlockMetaType)aBlock).mSide != mSide || aSide == mSide) && ((BlockMetaType)aBlock).mSide != OPOS[aSide] && ((BlockMetaType)aBlock).mSide != SIDE_ANY) : super.shouldSideBeRendered(aWorld, aX, aY, aZ, aSide);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
+		return aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mBlock == mBlock ? WD.meta(aWorld, aX, aY, aZ) != WD.meta(aWorld, aX - OFFX[aSide], aY - OFFY[aSide], aZ - OFFZ[aSide]) || ((((BlockMetaType)aBlock).mSide != mSide || aSide == mSide) && ((BlockMetaType)aBlock).mSide != OPOS[aSide] && ((BlockMetaType)aBlock).mSide != SIDE_ANY) : super.shouldSideBeRendered(aWorld, aX, aY, aZ, aSide);
 	}
 }

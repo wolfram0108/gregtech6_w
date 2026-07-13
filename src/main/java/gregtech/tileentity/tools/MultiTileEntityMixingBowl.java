@@ -68,10 +68,10 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
+		if (aNBT.contains(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
 
 		int tCapacity = 1000;
-		if (aNBT.hasKey(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLong(NBT_TANK_CAPACITY));
+		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLong(NBT_TANK_CAPACITY));
 		mTanksInput = new FluidTankGT[mRecipes.mInputFluidCount];
 		for (int i = 0; i < mTanksInput.length; i++) mTanksInput[i] = new FluidTankGT(tCapacity).readFromNBT(aNBT, NBT_TANK+".in."+i);
 		mTanksOutput = new FluidTankGT[mRecipes.mOutputFluidCount];
@@ -146,7 +146,7 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 				Biome tBiome = getBiome();
 				if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
 					Block tInFront = getBlockAtSide(SIDE_TOP);
-					if (!(tInFront instanceof BlockLiquid) && !(tInFront instanceof IFluidBlock) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR[SIDE_TOP])) {
+					if (!(tInFront instanceof BlockLiquid) && !(tInFront instanceof IFluidBlock) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
 						FluidStack tWater = FL.Water.make((long)Math.max(1, tBiome.rainfall*200) * (level.isThundering()?2:1));
 						if (tWater != null) {
 							IFluidTank tTank = getFluidTankFillable2(SIDE_TOP, tWater);

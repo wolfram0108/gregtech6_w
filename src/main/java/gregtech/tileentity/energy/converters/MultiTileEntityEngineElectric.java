@@ -61,23 +61,23 @@ public class MultiTileEntityEngineElectric extends TileEntityBase09FacingSingle 
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
-		if (aNBT.hasKey(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_MODE)) mState = aNBT.getByte(NBT_MODE);
-		if (aNBT.hasKey(NBT_PISTON)) mPiston = aNBT.getByte(NBT_PISTON);
-		if (aNBT.hasKey(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
-		if (aNBT.hasKey(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
-		if (aNBT.hasKey(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_MODE)) mState = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_PISTON)) mPiston = aNBT.getByte(NBT_PISTON);
+		if (aNBT.contains(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
-		if (mState != 15) aNBT.setByte(NBT_MODE, mState);
-		aNBT.setByte(NBT_PISTON, mPiston);
+		if (mState != 15) aNBT.putByte(NBT_MODE, mState);
+		aNBT.putByte(NBT_PISTON, mPiston);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mActive);
 		UT.NBT.setBoolean(aNBT, NBT_STOPPED, mStopped);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE_ENERGY, mEmitsEnergy);
@@ -85,7 +85,7 @@ public class MultiTileEntityEngineElectric extends TileEntityBase09FacingSingle 
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		if (mState != 15) aNBT.setByte(NBT_MODE, mState);
+		if (mState != 15) aNBT.putByte(NBT_MODE, mState);
 		return aNBT;
 	}
 	

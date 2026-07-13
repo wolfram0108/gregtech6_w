@@ -95,7 +95,7 @@ public abstract class MultiTileEntityPlaceable extends TileEntityBase03MultiTile
 			playCollect();
 			return T;
 		}
-		if (ST.give(aPlayer, ST.amount(1, mStack), T, level, xCoord+0.5, yCoord+0.5, zCoord+0.5)) {
+		if (ST.give(aPlayer, ST.amount(1, mStack), T, level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5)) {
 			MultiTileEntityPlaceable tSelected = this;
 			for (int i = 1; i < 255; i++) {
 				BlockEntity tTileEntity = getTileEntityAtSideAndDistance(SIDE_UP, i);

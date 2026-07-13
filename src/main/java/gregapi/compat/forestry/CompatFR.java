@@ -18,6 +18,7 @@
  */
 
 package gregapi.compat.forestry;
+import gregapi.util.WD;
 
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import forestry.api.farming.Farmables;
@@ -43,7 +44,7 @@ import static gregapi.data.CS.*;
 public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	public ItemStackSet<ItemStackContainer> mWindfalls = ST.hashset();
 	
-	@Override
+	// @Override
 	public void onPostLoad(FMLLoadCompleteEvent aEvent) {
 		Farmables.farmables.get("farmArboreal").add(this);
 	}
@@ -57,18 +58,18 @@ public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 		}
 	}
 	
-	@Override
+	// @Override
 	public boolean isSaplingAt(Level aWorld, int aX, int aY, int aZ) {
-		return aWorld.getBlock(aX, aY, aZ) instanceof BlockBaseSapling;
+		return WD.block(aWorld, aX, aY, aZ) instanceof BlockBaseSapling;
 	}
 	
-	@Override
+	// @Override
 	public ICrop getCropAt(Level aWorld, int aX, int aY, int aZ) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
-		return aBlock.isWood(aWorld, aX, aY, aZ) ? new CropBlock(aWorld, aBlock, aWorld.getBlockMetadata(aX, aY, aZ), new Vect(aX, aY, aZ)) : null;
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
+		return aBlock.isWood(aWorld, aX, aY, aZ) ? new CropBlock(aWorld, aBlock, WD.meta(aWorld, aX, aY, aZ), new Vect(aX, aY, aZ)) : null;
 	}
 	
-	@Override
+	// @Override
 	public boolean isGermling(ItemStack aStack) {
 		return aStack.getItem() instanceof ItemBlockBase && ((ItemBlockBase)aStack.getItem()).mPlaceable instanceof BlockBaseSapling;
 	}
@@ -76,12 +77,12 @@ public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	@Override
 	public void addWindfall(ItemStack aStack) {mWindfalls.add(aStack);}
 	
-	@Override
+	// @Override
 	public boolean isWindfall(ItemStack aStack) {
 		return mWindfalls.contains(aStack, T);
 	}
 	
-	@Override
+	// @Override
 	public boolean plantSaplingAt(Player aPlayer, ItemStack aSeed, Level aWorld, int aX, int aY, int aZ) {
 		return aSeed.copy().tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY - 1, aZ, SIDE_UP, 0, 0, 0);
 	}

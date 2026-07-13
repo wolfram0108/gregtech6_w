@@ -65,9 +65,9 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_PROGRESS)) mLife = aNBT.getLong(NBT_PROGRESS);
-		if (aNBT.hasKey(NBT_COOLDOWN)) mBreedingCountDown = aNBT.getLong(NBT_COOLDOWN);
-		if (aNBT.hasKey(NBT_INV_OUT)) {
+		if (aNBT.contains(NBT_PROGRESS)) mLife = aNBT.getLong(NBT_PROGRESS);
+		if (aNBT.contains(NBT_COOLDOWN)) mBreedingCountDown = aNBT.getLong(NBT_COOLDOWN);
+		if (aNBT.contains(NBT_INV_OUT)) {
 			mOffSpring = new ItemStack[aNBT.getInteger(NBT_INV_OUT)];
 			for (int i = 0; i < mOffSpring.length; i++) mOffSpring[i] = ST.load(aNBT, NBT_INV_OUT+"."+i);
 		}
@@ -95,7 +95,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	public void onTickFirst2(boolean aIsServerSide) {
 		if (aIsServerSide) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) if (getRainAtSide(tSide)) {mSky = T; break;}
-			mTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
+			mTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 			mHumidity = getBiome().rainfall;
 		}
 	}
@@ -107,7 +107,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 			mEndedQueen = F;
 			if (SERVER_TIME % 1200 == 0) {
 				for (byte tSide : ALL_SIDES_BUT_BOTTOM) if (getRainAtSide(tSide)) {mSky = T; break;}
-				mTemperature = WD.envTemp(level, xCoord, yCoord, zCoord);
+				mTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 				mHumidity = getBiome().rainfall;
 			}
 			if (slotHas(SLOT_ROYAL) && slot(SLOT_ROYAL).getItem() instanceof IItemBumbleBee) {
@@ -166,10 +166,10 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 								try {for (LivingEntity tEntity : (ArrayList<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-4, -4, -4, +5, +5, +5))) attackEntity(tEntity);} catch(Throwable e) {e.printStackTrace(ERR);}
 							}
 							if (mLife % 1200 == 600 && rng(10000) < Util.getWorkForce(tRoyalTag) && checkWork(tRoyalTag)) {
-								if (null != tRoyalItem.bumbleCanProduce(level, xCoord, yCoord, zCoord, tRoyalStack, tRoyalMeta, 3)) {
+								if (null != tRoyalItem.bumbleCanProduce(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), tRoyalStack, tRoyalMeta, 3)) {
 									for (int i = 0, j = tRoyalItem.bumbleProductCount(tRoyalStack, tRoyalMeta); i < j; i++) {
 										if (rng(10000) < tRoyalItem.bumbleProductChance(tRoyalStack, tRoyalMeta, i)) {
-											if (null != tRoyalItem.bumbleCanProduct(level, xCoord, yCoord, zCoord, tRoyalStack, tRoyalMeta, i)) {
+											if (null != tRoyalItem.bumbleCanProduct(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), tRoyalStack, tRoyalMeta, i)) {
 												ItemStack tProduct = tRoyalItem.bumbleProductStack(tRoyalStack, tRoyalMeta, 1, i);
 												if (ST.valid(tProduct)) for (int tSlot : SLOTS_COMBS) if (ST.equal(tProduct, slot(tSlot)) && addStackToSlot(tSlot, tProduct)) {
 													tProduct = NI;

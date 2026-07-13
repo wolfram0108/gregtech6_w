@@ -46,7 +46,7 @@ public class CompatBC extends CompatBase implements ICompatBC {
 		BuildCraftAPI.class.getCanonicalName();
 	}
 	
-	@Override
+	// @Override
 	public void onPostLoad(FMLLoadCompleteEvent aEvent) {
 		for (TagData tEnergyType : TD.Energy.ALL) {
 			new TriggerBC_Energy_Capacity_Empty(tEnergyType);
@@ -62,7 +62,7 @@ public class CompatBC extends CompatBase implements ICompatBC {
 	}
 	
 	public static class WorldPropertyIsLog extends WorldPropertyIsWood {
-		@Override
+		// @Override
 		public boolean get(BlockGetter aWorld, Block aBlock, int aMeta, int aX, int aY, int aZ) {
 			return aBlock instanceof HugeMushroomBlock || aBlock.isWood(aWorld, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T);
 		}

@@ -56,7 +56,7 @@ public abstract class TileEntityBase08Directional extends TileEntityBase07Painta
 	public String getFacingTool() {return "";}
 	
 	@Override public boolean isUsingWrenchingOverlay(ItemStack aStack, byte aSide) {return super.isUsingWrenchingOverlay(aStack, aSide) || (getFacingTool() != null && ToolsGT.contains(getFacingTool(), aStack));}
-	@Override public boolean wrenchCanRemove(Player aPlayer) {return F;}
-	@Override public float getWrenchDropRate() {return 1.0F;}
-	@Override public ItemStack getWrenchDrop(Player aPlayer) {return null;}
+	public boolean wrenchCanRemove(Player aPlayer) {return F;}
+	public float getWrenchDropRate() {return 1.0F;}
+	public ItemStack getWrenchDrop(Player aPlayer) {return null;}
 }

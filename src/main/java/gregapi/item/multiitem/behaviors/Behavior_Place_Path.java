@@ -58,7 +58,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 0, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 0, 3);
 					return T;
 				}
 				return F;
@@ -76,7 +76,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 1, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 1, 3);
 					return T;
 				}
 				return F;
@@ -89,7 +89,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 2, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 2, 3);
 					return T;
 				}
 				return F;
@@ -99,7 +99,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 3, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 3, 3);
 					return T;
 				}
 				return F;
@@ -109,7 +109,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 4, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 4, 3);
 					return T;
 				}
 				return F;
@@ -119,7 +119,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 5, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 5, 3);
 					return T;
 				}
 				return F;
@@ -129,7 +129,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 6, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 6, 3);
 					return T;
 				}
 				return F;
@@ -139,7 +139,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 7, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 7, 3);
 					return T;
 				}
 				return F;
@@ -149,7 +149,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 8, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 8, 3);
 					return T;
 				}
 				return F;
@@ -159,7 +159,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths, 9, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths, 9, 3);
 					return T;
 				}
 				return F;
@@ -169,7 +169,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths,10, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths,10, 3);
 					return T;
 				}
 				return F;
@@ -179,7 +179,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (BlocksGT.Paths != null) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, BlocksGT.Paths,11, 3);
+					WD.set(aWorld, aX, aY, aZ, BlocksGT.Paths,11, 3);
 					return T;
 				}
 				return F;

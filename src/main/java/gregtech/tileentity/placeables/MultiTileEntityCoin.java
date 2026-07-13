@@ -88,10 +88,10 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, "gt.coin.unique", mIsUnique);
-		aNBT.setString(NBT_MATERIAL, mMaterial.toString());
-		for (int i = 0; i < mShape[0].length; i++) aNBT.setShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
-		for (int i = 0; i < mShape[1].length; i++) aNBT.setShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
-		for (int i = 0; i < mCoinStackSizes.length; i++) aNBT.setByte("gt.coin.stacksize."+i, mCoinStackSizes[i]);
+		aNBT.putString(NBT_MATERIAL, mMaterial.toString());
+		for (int i = 0; i < mShape[0].length; i++) aNBT.putShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
+		for (int i = 0; i < mShape[1].length; i++) aNBT.putShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
+		for (int i = 0; i < mCoinStackSizes.length; i++) aNBT.putByte("gt.coin.stacksize."+i, mCoinStackSizes[i]);
 	}
 	
 	@Override
@@ -99,9 +99,9 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 		aNBT = super.writeItemNBT(aNBT);
 		OreDictMaterialStack.saveList(NBT_RECYCLING_MATS, aNBT, Arrays.asList(OM.stack(mMaterial, U9)));
 		UT.NBT.setBoolean(aNBT, "gt.coin.unique", mIsUnique);
-		aNBT.setString(NBT_MATERIAL, mMaterial.toString());
-		for (int i = 0; i < mShape[0].length; i++) aNBT.setShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
-		for (int i = 0; i < mShape[1].length; i++) aNBT.setShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
+		aNBT.putString(NBT_MATERIAL, mMaterial.toString());
+		for (int i = 0; i < mShape[0].length; i++) aNBT.putShort("gt.coin.shape.0."+i, (short)UT.Code.getBits(mShape[0][i]));
+		for (int i = 0; i < mShape[1].length; i++) aNBT.putShort("gt.coin.shape.1."+i, (short)UT.Code.getBits(mShape[1][i]));
 		return aNBT;
 	}
 	
@@ -174,7 +174,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 			}
 			boolean temp = T;
 			for (int i = 0; i < mCoinStackSizes.length; i++) if (mCoinStackSizes[i] > 0) {temp = F; break;}
-			if (temp) level.setBlockToAir(xCoord, yCoord, zCoord);
+			if (temp) WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
 		}
 		return T;
 	}
@@ -218,7 +218,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 						int tDifference = Math.min(aStack.getCount() - tUsedAmount, COIN_STACKSIZE);
 						if (tDifference > 0) {
 							tUsedAmount += tDifference;
-							tNBT.setByte("gt.coin.stacksize."+i, (byte)tDifference);
+							tNBT.putByte("gt.coin.stacksize."+i, (byte)tDifference);
 						}
 					}
 					if (tUsedAmount > 0 && MTE_REGISTRY.mBlock.placeBlock(aEntity.level(), UT.Code.roundDown(aEntity.getX())+OFFX[tSide], UT.Code.roundDown(aEntity.getY())+OFFY[tSide], UT.Code.roundDown(aEntity.getZ())+OFFZ[tSide], SIDE_UNKNOWN, INSTANCE.getMultiTileEntityID(), tNBT, T, F)) {

@@ -55,16 +55,16 @@ public class WorldgenNetherCrystals extends WorldgenObject {
 		if (tBlock == Blocks.nether_brick || tBlock.getMaterial() != Material.rock) return F;
 		if (--aY -10 < WD.waterLevel(aWorld)) return F;
 		
-		aWorld.setBlock(aX, aY, aZ, BlocksGT.CrystalOres, aMeta, 2);
+		WD.set(aWorld, aX, aY, aZ, BlocksGT.CrystalOres, aMeta, 2);
 		for (int i = 0; i < 1500; ++i) {
 			int tX = aX+aRandom.nextInt(8)-aRandom.nextInt(8), tY = aY-aRandom.nextInt(12), tZ = aZ+aRandom.nextInt(8)-aRandom.nextInt(8);
 			if (WD.air(aWorld, tX, tY, tZ)) {
 				int tCount = 0;
 				for (int tSide : ALL_SIDES_VALID) {
-					Block block = aWorld.getBlock(tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide]);
+					Block block = WD.block(aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide]);
 					if (block == BlocksGT.CrystalOres) tCount++;
 				}
-				if (tCount == 1) aWorld.setBlock(tX, tY, tZ, BlocksGT.CrystalOres, aMeta, 2);
+				if (tCount == 1) WD.set(aWorld, tX, tY, tZ, BlocksGT.CrystalOres, aMeta, 2);
 			}
 		}
 		return T;

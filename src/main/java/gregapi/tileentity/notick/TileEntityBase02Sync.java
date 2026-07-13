@@ -67,7 +67,7 @@ public abstract class TileEntityBase02Sync extends TileEntityBase01Root implemen
 			if (mOwner == null) {
 				getNetworkHandler().sendToPlayer(tPacket, aPlayer);
 			} else {
-				if (mOwner.equals(aPlayer.getUniqueID())) {
+				if (mOwner.equals(aPlayer.getUUID())) {
 					getNetworkHandler().sendToPlayer(tPacket, aPlayer);
 				} else {
 					getNetworkHandlerNonOwned().sendToPlayer(tPacket, aPlayer);
@@ -93,7 +93,7 @@ public abstract class TileEntityBase02Sync extends TileEntityBase01Root implemen
 	
 	@Override public void onCoordinateChange() {super.onCoordinateChange(); updateClientData();}
 	
-	@Override public final net.minecraft.network.Packet getDescriptionPacket() {updateClientData(); return null;}
+	public final net.minecraft.network.Packet getDescriptionPacket() {updateClientData(); return null;}
 	
 	@Override
 	public final void sendUpdateToPlayer(ServerPlayer aPlayer) {
@@ -102,7 +102,7 @@ public abstract class TileEntityBase02Sync extends TileEntityBase01Root implemen
 	
 	@Override
 	public boolean allowInteraction(Entity aEntity) {
-		return mOwner == null || (aEntity != null && mOwner.equals(aEntity.getUniqueID()));
+		return mOwner == null || (aEntity != null && mOwner.equals(aEntity.getUUID()));
 	}
 	
 	@Override

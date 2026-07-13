@@ -31,7 +31,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * @author OvermindDL1
  */
 public class CoFHCore_CrashFix implements IClassTransformer {
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!name.equals("cofh.CoFHCore") && !name.equals("cofh.core.util.FMLEventHandler")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

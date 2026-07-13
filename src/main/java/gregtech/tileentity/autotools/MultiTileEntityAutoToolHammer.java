@@ -57,10 +57,10 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_STATE)) mPullingBack = aNBT.getBoolean(NBT_STATE);
-		if (aNBT.hasKey(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
-		if (aNBT.hasKey(NBT_QUALITY)) mQuality = aNBT.getByte(NBT_QUALITY);
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_STATE)) mPullingBack = aNBT.getBoolean(NBT_STATE);
+		if (aNBT.contains(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_QUALITY)) mQuality = aNBT.getByte(NBT_QUALITY);
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 	}
 	
 	@Override
@@ -87,8 +87,8 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 					mSendSound = 1;
 				} else {
 					if (!(tD.mTileEntity instanceof ITileEntityAnvil) || !((ITileEntityAnvil)tD.mTileEntity).isAnvil(tD.mSideOfTileEntity)) {
-						Block tBlock = tD.mWorld.getBlock(tD.mX, tD.mY, tD.mZ);
-						byte tMetaData = (byte)tD.mWorld.getBlockMetadata(tD.mX, tD.mY, tD.mZ);
+						Block tBlock = WD.block(tD.mWorld, tD.mX, tD.mY, tD.mZ);
+						byte tMetaData = (byte)WD.meta(tD.mWorld, tD.mX, tD.mY, tD.mZ);
 						
 						if (GT_Tool_HardHammer.INSTANCE.isMinableBlock(tBlock, tMetaData)) {
 							mSendSound = 2;
@@ -109,7 +109,7 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 			}
 		} else {
 			if (mSendSound != 0) {
-				UT.Sounds.play(mSendSound == 1 ? SFX.MC_ANVIL_USE : SFX.MC_ANVIL_BREAK, 20, 1.0F, xCoord, yCoord, zCoord);
+				UT.Sounds.play(mSendSound == 1 ? SFX.MC_ANVIL_USE : SFX.MC_ANVIL_BREAK, 20, 1.0F, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 				mSendSound = 0;
 			}
 		}

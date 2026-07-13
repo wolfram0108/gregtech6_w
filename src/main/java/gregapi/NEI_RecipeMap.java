@@ -77,15 +77,15 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			API.registerUsageHandler(this);
 			
 			CompoundTag tNBT = UT.NBT.make();
-			tNBT.setString ("modId"            , MD.GT.mID);
-			tNBT.setString ("modName"          , MD.GT.mName);
-			tNBT.setString ("handler"          , mRecipeMap.mNameNEI);
-			tNBT.setString ("itemName"         , ST.regMeta(mRecipeMap.mRecipeMachineList.isEmpty() ? ST.make(Blocks.lit_furnace, 1, 0) : mRecipeMap.mRecipeMachineList.get(0)));
-			tNBT.setInteger("handlerHeight"    , 135);
-			tNBT.setInteger("handlerWidth"     , 166);
-			tNBT.setInteger("maxRecipesPerPage",   2);
-			tNBT.setInteger("yShift"           ,   6);
-			tNBT.setBoolean("modRequired"      ,   T);
+			tNBT.putString("modId"            , MD.GT.mID);
+			tNBT.putString("modName"          , MD.GT.mName);
+			tNBT.putString("handler"          , mRecipeMap.mNameNEI);
+			tNBT.putString("itemName"         , ST.regMeta(mRecipeMap.mRecipeMachineList.isEmpty() ? ST.make(Blocks.lit_furnace, 1, 0) : mRecipeMap.mRecipeMachineList.get(0)));
+			tNBT.putInt("handlerHeight"    , 135);
+			tNBT.putInt("handlerWidth"     , 166);
+			tNBT.putInt("maxRecipesPerPage",   2);
+			tNBT.putInt("yShift"           ,   6);
+			tNBT.putBoolean("modRequired"      ,   T);
 			InterModComms.sendMessage("NotEnoughItems", "registerHandlerInfo", tNBT);
 		} else {
 			GuiCraftingRecipe.craftinghandlers.add(this);
@@ -96,7 +96,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		return this;
 	}
 	
-	@Override
+	// @Override
 	public TemplateRecipeHandler newInstance() {
 		return new NEI_RecipeMap(mRecipeMap);
 	}
@@ -115,7 +115,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			mChance = aChance;
 		}
 
-		@Override
+		// @Override
 		public void generatePermutations() {
 			if (permutated) return;
 			
@@ -148,17 +148,17 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		public final List<PositionedStack> mOutputs = new ArrayListNoNulls<>();
 		public final List<PositionedStack> mInputs  = new ArrayListNoNulls<>();
 		
-		@Override
+		// @Override
 		public List<PositionedStack> getIngredients() {
 			return getCycledIngredients(cycleticks / 10, mInputs);
 		}
 		
-		@Override
+		// @Override
 		public PositionedStack getResult() {
 			return null;
 		}
 		
-		@Override
+		// @Override
 		public List<PositionedStack> getOtherStacks() {
 			return mOutputs;
 		}
@@ -398,7 +398,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 	}
 
 	public static class GT_RectHandler implements IContainerInputHandler, IContainerTooltipHandler {
-		@Override
+		// @Override
 		public boolean mouseClicked(GuiContainer gui, int mousex, int mousey, int button) {
 			if (canHandle(gui)) {
 				if (button == 0) return transferRect(gui, F);
@@ -407,7 +407,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			return F;
 		}
 
-		@Override
+		// @Override
 		public boolean lastKeyTyped(GuiContainer gui, char keyChar, int keyCode) {
 			return F;
 		}
@@ -416,7 +416,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			return gui instanceof ContainerClient && UT.Code.stringValid(((ContainerClient)gui).mNEI);
 		}
 
-		@Override
+		// @Override
 		public List<String> handleTooltip(GuiContainer gui, int mousex, int mousey, List<String> currenttip) {
 			if (canHandle(gui) && currenttip.isEmpty() && new Rectangle(65, 13, 36, 18).contains(new Point(GuiDraw.getMousePosition().x - ((ContainerClient)gui).getLeft() - RecipeInfo.getGuiOffset(gui)[0], GuiDraw.getMousePosition().y - ((ContainerClient)gui).getTop() - RecipeInfo.getGuiOffset(gui)[1]))) currenttip.add("Recipes");
 			return currenttip;
@@ -426,47 +426,47 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			return canHandle(gui) && new Rectangle(65, 13, 36, 18).contains(new Point(GuiDraw.getMousePosition().x - ((ContainerClient)gui).getLeft() - RecipeInfo.getGuiOffset(gui)[0], GuiDraw.getMousePosition().y - ((ContainerClient)gui).getTop() - RecipeInfo.getGuiOffset(gui)[1])) && (usage ? GuiUsageRecipe.openRecipeGui(((ContainerClient)gui).mNEI) : GuiCraftingRecipe.openRecipeGui(((ContainerClient)gui).mNEI));
 		}
 
-		@Override
+		// @Override
 		public List<String> handleItemDisplayName(GuiContainer gui, ItemStack itemstack, List<String> currenttip) {
 			return currenttip;
 		}
 
-		@Override
+		// @Override
 		public List<String> handleItemTooltip(GuiContainer gui, ItemStack itemstack, int mousex, int mousey, List<String> currenttip) {
 			return currenttip;
 		}
 
-		@Override
+		// @Override
 		public boolean keyTyped(GuiContainer gui, char keyChar, int keyCode) {
 			return F;
 		}
 
-		@Override
+		// @Override
 		public void onKeyTyped(GuiContainer gui, char keyChar, int keyID) {
 			//
 		}
 
-		@Override
+		// @Override
 		public void onMouseClicked(GuiContainer gui, int mousex, int mousey, int button) {
 			//
 		}
 
-		@Override
+		// @Override
 		public void onMouseUp(GuiContainer gui, int mousex, int mousey, int button) {
 			//
 		}
 
-		@Override
+		// @Override
 		public boolean mouseScrolled(GuiContainer gui, int mousex, int mousey, int scrolled) {
 			return F;
 		}
 
-		@Override
+		// @Override
 		public void onMouseScrolled(GuiContainer gui, int mousex, int mousey, int scrolled) {
 			//
 		}
 
-		@Override
+		// @Override
 		public void onMouseDragged(GuiContainer gui, int mousex, int mousey, int button, long heldTime) {
 			//
 		}
@@ -514,7 +514,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		}});
 	}
 	
-	@Override
+	// @Override
 	public void loadCraftingRecipes(String aID, Object... aResults) {
 		if (!CODE_CLIENT) return;
 		if (aID.equals(getOverlayIdentifier())) {
@@ -525,7 +525,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		}
 	}
 	
-	@Override
+	// @Override
 	public void loadCraftingRecipes(ItemStack aResult) {
 		if (!CODE_CLIENT) return;
 		if (ST.invalid(aResult)) return;
@@ -577,7 +577,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		}
 	}
 	
-	@Override
+	// @Override
 	public void loadUsageRecipes(ItemStack aInput) {
 		if (!CODE_CLIENT) return;
 		if (ST.invalid(aInput)) return;
@@ -617,7 +617,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		}
 	}
 	
-	@Override
+	// @Override
 	public String getOverlayIdentifier() {
 		return mRecipeMap.mNameNEI;
 	}
@@ -626,7 +626,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		return mRecipeMap.mNameNEI;
 	}
 	
-	@Override
+	// @Override
 	public void drawBackground(int recipe) {
 		GL11.glColor4f(1, 1, 1, 1);
 		GuiDraw.changeTexture(RES_PATH_GUI+"machines/NEI.png");
@@ -639,22 +639,22 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		Minecraft.getMinecraft().fontRenderer.drawString(aString, aX, aY, aColor);
 	}
 	
-	@Override
+	// @Override
 	public int recipiesPerPage() {
 		return 1;
 	}
 	
-	@Override
+	// @Override
 	public String getRecipeName() {
 		return LanguageHandler.translate(mRecipeMap.mNameInternal, mRecipeMap.mNameInternal);
 	}
 	
-	@Override
+	// @Override
 	public String getGuiTexture() {
 		return UT.Code.stringValid(mRecipeMap.mGUIPath) ? mRecipeMap.mGUIPath : RES_PATH_GUI + mRecipeMap.mNameInternal + ".png";
 	}
 	
-	@Override
+	// @Override
 	public List<String> handleItemTooltip(GuiRecipe gui, ItemStack aStack, List<String> currenttip, int aRecipeIndex) {
 		if (!CODE_CLIENT) return currenttip;
 		CachedRecipe tObject = arecipes.get(aRecipeIndex);
@@ -677,7 +677,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		return currenttip;
 	}
 
-	@Override
+	// @Override
 	public void drawExtras(int aRecipeIndex) {
 		long tGUt       = ((CachedDefaultRecipe)arecipes.get(aRecipeIndex)).mRecipe.mEUt;
 		long tDuration  = ((CachedDefaultRecipe)arecipes.get(aRecipeIndex)).mRecipe.mDuration;

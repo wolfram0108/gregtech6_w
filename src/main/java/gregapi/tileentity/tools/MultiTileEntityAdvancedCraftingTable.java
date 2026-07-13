@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.tools;
+import gregapi.fluid.FluidTankInfo;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import net.neoforged.api.distmarker.Dist;
@@ -76,12 +77,12 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_MODE+".16.blocked")) mBlocked16 = aNBT.getBoolean(NBT_MODE+".16.blocked");
-		if (aNBT.hasKey(NBT_MODE+".36.blocked")) mBlocked36 = aNBT.getBoolean(NBT_MODE+".36.blocked");
-		if (aNBT.hasKey(NBT_MODE+".16.filter")) mFilter16 = aNBT.getBoolean(NBT_MODE+".16.filter");
-		if (aNBT.hasKey(NBT_MODE+".36.filter")) mFilter36 = aNBT.getBoolean(NBT_MODE+".36.filter");
-		if (aNBT.hasKey(NBT_FLUSH)) mFlushMode = aNBT.getBoolean(NBT_FLUSH);
-		if (CODE_CLIENT && aNBT.hasKey(NBT_GUI)) {
+		if (aNBT.contains(NBT_MODE+".16.blocked")) mBlocked16 = aNBT.getBoolean(NBT_MODE+".16.blocked");
+		if (aNBT.contains(NBT_MODE+".36.blocked")) mBlocked36 = aNBT.getBoolean(NBT_MODE+".36.blocked");
+		if (aNBT.contains(NBT_MODE+".16.filter")) mFilter16 = aNBT.getBoolean(NBT_MODE+".16.filter");
+		if (aNBT.contains(NBT_MODE+".36.filter")) mFilter36 = aNBT.getBoolean(NBT_MODE+".36.filter");
+		if (aNBT.contains(NBT_FLUSH)) mFlushMode = aNBT.getBoolean(NBT_FLUSH);
+		if (CODE_CLIENT && aNBT.contains(NBT_GUI)) {
 			mGUITexture = aNBT.getString(NBT_GUI);
 			if (!mGUITexture.endsWith(".png")) mGUITexture += ".png";
 		}

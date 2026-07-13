@@ -66,7 +66,7 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		mType = aNBT.getInteger(NBT_VALUE);
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		mTank.readFromNBT(aNBT, NBT_TANK+"."+0);
 	}
 	
@@ -80,17 +80,17 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 	
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		if (yCoord < 5) return F;
+		if (getBlockPos().getY() < 5) return F;
 		mList.clear();
 		boolean tSuccess = T, tBedrock = T, tOverride = F;
 		
 		for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 			Block tBlock = getBlockOffset(i, -5, j);
 			if (tBlock == BlocksGT.oreBedrock) {
-				OreDictMaterialStack tMaterial = BlocksGT.oreBedrock.getMaterialAtSide(level, xCoord+i, yCoord-5, zCoord+j, SIDE_TOP);
+				OreDictMaterialStack tMaterial = BlocksGT.oreBedrock.getMaterialAtSide(level, getBlockPos().getX()+i, getBlockPos().getY()-5, getBlockPos().getZ()+j, SIDE_TOP);
 				mList.add(tMaterial.mMaterial); mList.add(tMaterial.mMaterial);
 			} else if (tBlock == BlocksGT.oreSmallBedrock) {
-				OreDictMaterialStack tMaterial = BlocksGT.oreSmallBedrock.getMaterialAtSide(level, xCoord+i, yCoord-5, zCoord+j, SIDE_TOP);
+				OreDictMaterialStack tMaterial = BlocksGT.oreSmallBedrock.getMaterialAtSide(level, getBlockPos().getX()+i, getBlockPos().getY()-5, getBlockPos().getZ()+j, SIDE_TOP);
 				mList.add(tMaterial.mMaterial);
 			} else if (IL.HBM_Bedrock_Coltan.equal(tBlock)) {
 				// These generate as single Blocks as far as I saw.
@@ -142,7 +142,7 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		return aX >= xCoord - 1 && aY >= yCoord - 5 && aZ >= zCoord - 1 && aX <= xCoord + 1 && aY <= yCoord && aZ <= zCoord + 1;
+		return aX >= getBlockPos().getX() - 1 && aY >= getBlockPos().getY() - 5 && aZ >= getBlockPos().getZ() - 1 && aX <= getBlockPos().getX() + 1 && aY <= getBlockPos().getY() && aZ <= getBlockPos().getZ() + 1;
 	}
 	
 	@Override

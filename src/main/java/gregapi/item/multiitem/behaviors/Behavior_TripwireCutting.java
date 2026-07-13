@@ -18,6 +18,7 @@
  */
 
 package gregapi.item.multiitem.behaviors;
+import gregapi.util.WD;
 
 import gregapi.data.CS.SFX;
 import gregapi.data.LH;
@@ -45,9 +46,9 @@ public class Behavior_TripwireCutting extends AbstractBehaviorDefault {
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aPlayer.level().isRemote) return F;
-		if (aWorld.getBlock(aX, aY, aZ) == Blocks.tripwire) {
+		if (WD.block(aWorld, aX, aY, aZ) == Blocks.tripwire) {
 			if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
-				int aMeta = aWorld.getBlockMetadata(aX, aY, aZ) | 8;
+				int aMeta = WD.meta(aWorld, aX, aY, aZ) | 8;
 				aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMeta, 4);
 				if (Blocks.tripwire.removedByPlayer(aWorld, aPlayer, aX, aY, aZ, T)) {
 					Blocks.tripwire.onBlockDestroyedByPlayer(aWorld, aX, aY, aZ, aMeta);

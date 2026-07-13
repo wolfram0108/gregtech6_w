@@ -33,7 +33,7 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Runnable {
-	@Override
+	// @Override
 	public void loadConfig() {
 		NEI = T;
 		NEI_NH = ModList.instance().getIndexedModList().get("NotEnoughItems").getVersion().contains("GTNH");
@@ -67,6 +67,6 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 		}
 	}
 	
-	@Override public String getName() {return MD.GAPI.mName + " NEI Plugin";}
-	@Override public String getVersion() {return "6.16.02";}
+	public String getName() {return MD.GAPI.mName + " NEI Plugin";}
+	public String getVersion() {return "6.16.02";}
 }

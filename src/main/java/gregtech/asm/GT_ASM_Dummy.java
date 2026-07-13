@@ -44,7 +44,7 @@ public class GT_ASM_Dummy extends DummyModContainer {
 		meta.logoFile = "";
 	}
 	
-	@Override
+	// @Override
 	public boolean registerBus(EventBus bus, LoadController controller) {
 		bus.register(this);
 		return true;

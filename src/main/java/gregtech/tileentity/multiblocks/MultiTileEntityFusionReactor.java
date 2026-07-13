@@ -45,8 +45,8 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityFusionReactor extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing, 2), tY = yCoord, tZ = getOffsetZN(mFacing, 2);
-		if (level.blockExists(tX-9, tY, tZ-9) && level.blockExists(tX+9, tY, tZ-9) && level.blockExists(tX-9, tY, tZ+9) && level.blockExists(tX+9, tY, tZ+9)) {
+		int tX = getOffsetXN(mFacing, 2), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing, 2);
+		if (WD.exists(level, tX-9, tY, tZ-9) && WD.exists(level, tX+9, tY, tZ-9) && WD.exists(level, tX-9, tY, tZ+9) && WD.exists(level, tX+9, tY, tZ+9)) {
 			boolean tSuccess = T;
 			
 			int tVersatile = 3, tLogic = 12, tControl = 12;
@@ -215,7 +215,7 @@ public class MultiTileEntityFusionReactor extends TileEntityBase10MultiBlockMach
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing, 2), tY = yCoord-2, tZ = getOffsetZN(mFacing, 2);
+		int tX = getOffsetXN(mFacing, 2), tY = getBlockPos().getY()-2, tZ = getOffsetZN(mFacing, 2);
 		return aX >= tX - 9 && aY >= tY && aZ >= tZ - 9 && aX <= tX + 9 && aY <= tY + 5 && aZ <= tZ + 9;
 	}
 	
@@ -231,7 +231,7 @@ public class MultiTileEntityFusionReactor extends TileEntityBase10MultiBlockMach
 	
 	@Override
 	public void doOutputEnergy() {
-		int tX = getOffsetXN(mFacing, 2), tY = yCoord, tZ = getOffsetZN(mFacing, 2);
+		int tX = getOffsetXN(mFacing, 2), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing, 2);
 		for (byte tSide : ALL_SIDES_HORIZONTAL) if (ITileEntityEnergy.Util.insertEnergyInto(mEnergyTypeEmitted, mOutputEnergy, 1, this, WD.te(level, tX+OFFX[tSide]*10, tY, tZ+OFFZ[tSide]*10, OPOS[tSide], F)) > 0) return;
 	}
 	

@@ -68,13 +68,13 @@ public class BlockTreeLog1FireProof extends BlockBaseBeam implements IBlockToola
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_axe) || aTool.equals(TOOL_saw) || aTool.equals(TOOL_knife)) {
 			if (aWorld.isRemote) return 0;
-			switch (aWorld.getBlockMetadata(aX, aY, aZ) & PILLAR_DATA) {
+			switch (WD.meta(aWorld, aX, aY, aZ) & PILLAR_DATA) {
 			case 0: ST.give(aPlayer, IL.Bark_Dry.get(1), aWorld, aX + OFFX[aSide], aY + OFFY[aSide], aZ + OFFZ[aSide]); break;
 			case 1: ST.give(aPlayer, IL.FR_Mulch.get(1, OM.dust(MT.WOODS.Rotten)), aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]); break;
 			case 2: ST.give(aPlayer, IL.FR_Mulch.get(1, OM.dust(MT.WOODS.Mossy )), aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]); break;
 			case 3: ST.give(aPlayer, OM.dust(MT.Ice), aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]); break;
 			}
-			aWorld.setBlockToAir(aX, aY, aZ);
+			WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 			return 1000;
 		}
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);

@@ -45,7 +45,7 @@ public abstract class MultiTileEntityTreeHole extends TileEntityBase09FacingSing
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_ACTIVE)) mHasResin = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains(NBT_ACTIVE)) mHasResin = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override

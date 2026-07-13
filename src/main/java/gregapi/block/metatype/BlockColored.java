@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.metatype;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
@@ -60,21 +61,21 @@ public class BlockColored extends BlockMetaType {
 		setCreativeTab(CreativeModeTab.tabDecorations);
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int aMeta) {
 		return DYES_INT[UT.Code.bind4(aMeta)];
 	}
 	
-	@Override
+	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
-		return DYES_INT[UT.Code.bind4(aWorld.getBlockMetadata(aX, aY, aZ))];
+		return DYES_INT[UT.Code.bind4(WD.meta(aWorld, aX, aY, aZ))];
 	}
 	
-	@Override
+	// @Override
 	public boolean recolourBlock(Level aWorld, int aX, int aY, int aZ, Direction aDirection, int aColor) {
 		aColor = ~aColor & 15;
-		return aWorld.getBlockMetadata(aX, aY, aZ) != aColor && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, UT.Code.bind4(aColor), 3);
+		return WD.meta(aWorld, aX, aY, aZ) != aColor && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, UT.Code.bind4(aColor), 3);
 	}
 }

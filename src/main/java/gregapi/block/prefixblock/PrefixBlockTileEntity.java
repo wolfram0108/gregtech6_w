@@ -51,20 +51,20 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	
 	@Override public String getTileEntityName() {return "gt.MetaBlockTileEntity";}
 	
-	@Override
+	// @Override
 	public net.minecraft.network.Packet getDescriptionPacket() {
-		if (!(mBlocked = WD.visOcc(level, xCoord, yCoord, zCoord, F, T))) {
+		if (!(mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), F, T))) {
 			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
-			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
+			if (mItemNBT != null && mItemNBT.contains("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
 		}
 		return null;
 	}
 	
 	@Override
 	public void onScheduledUpdate() {
-		if (!(mBlocked = WD.visOcc(level, xCoord, yCoord, zCoord, F, T))) {
+		if (!(mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), F, T))) {
 			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
-			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
+			if (mItemNBT != null && mItemNBT.contains("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
 		}
 	}
 	
@@ -73,15 +73,15 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 		if (!level.isRemote && mBlocked) {
 			mBlocked = F;
 			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
-			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
+			if (mItemNBT != null && mItemNBT.contains("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());
 		}
 	}
 	
 	@Override
 	public void sendUpdateToPlayer(ServerPlayer aPlayer) {
-		if (!(mBlocked = WD.visOcc(level, xCoord, yCoord, zCoord, T, T))) {
+		if (!(mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), T, T))) {
 			NW_API.sendToPlayer(new PacketSyncDataShort(getCoords(), mMetaData), aPlayer);
-			if (mItemNBT != null && mItemNBT.hasKey("display")) NW_API.sendToPlayer(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), aPlayer);
+			if (mItemNBT != null && mItemNBT.contains("display")) NW_API.sendToPlayer(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), aPlayer);
 		}
 	}
 	
@@ -98,8 +98,8 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	@Override public boolean renderBlock(Block aBlock, RenderBlocks aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return F;}
 	@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 1;}
-	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m"); if (aNBT.hasKey("gt.nbt.drop")) mItemNBT = aNBT.getCompoundTag("gt.nbt.drop");}
-	@Override public void writeToNBT(CompoundTag aNBT) {super.writeToNBT(aNBT); aNBT.setShort("m", mMetaData); if (mItemNBT != null && !mItemNBT.isEmpty()) aNBT.setTag("gt.nbt.drop", mItemNBT);}
+	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m"); if (aNBT.contains("gt.nbt.drop")) mItemNBT = aNBT.getCompoundTag("gt.nbt.drop");}
+	@Override public void writeToNBT(CompoundTag aNBT) {super.writeToNBT(aNBT); aNBT.putShort("m", mMetaData); if (mItemNBT != null && !mItemNBT.isEmpty()) aNBT.put("gt.nbt.drop", mItemNBT);}
 	@Override public void processPacket(INetworkHandler aNetworkHandler) {/**/}
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return null;}
 	@Override public Object getGUIServer(int aGUIID, Player aPlayer) {return null;}

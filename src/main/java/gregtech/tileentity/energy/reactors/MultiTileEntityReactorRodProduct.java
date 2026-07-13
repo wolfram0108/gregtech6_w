@@ -38,7 +38,7 @@ public class MultiTileEntityReactorRodProduct extends MultiTileEntityReactorRodB
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_VALUE           ))  mBreeding        = aNBT.getShort(NBT_VALUE);
+		if (aNBT.contains(NBT_VALUE           ))  mBreeding        = aNBT.getShort(NBT_VALUE);
 	}
 
 	@Override

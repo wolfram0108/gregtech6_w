@@ -69,7 +69,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
+		if (aNBT.contains(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
 		
 		mTanks = new FluidTankGT[mRecipes.mOutputFluidCount];
 		for (int i = 0; i < mTanks.length; i++) mTanks[i] = new FluidTankGT(1000000).readFromNBT(aNBT, NBT_TANK+"."+i);

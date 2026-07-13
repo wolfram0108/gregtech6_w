@@ -1067,9 +1067,9 @@ public class RM {
 	
 	public static void te_furnace(int energy, ItemStack input, ItemStack output) {
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setInteger("energy", energy);
-		toSend.setTag("input", UT.NBT.make());
-		toSend.setTag("output", UT.NBT.make());
+		toSend.putInt("energy", energy);
+		toSend.put("input", UT.NBT.make());
+		toSend.put("output", UT.NBT.make());
 		input.writeToNBT(toSend.getCompoundTag("input"));
 		output.writeToNBT(toSend.getCompoundTag("output"));
 		InterModComms.sendMessage("ThermalExpansion", "FurnaceRecipe", toSend);
@@ -1083,14 +1083,14 @@ public class RM {
 	public static void te_pulverizer(int energy, ItemStack input, ItemStack primaryOutput, ItemStack secondaryOutput, int secondaryChance) {
 		if (input == null || primaryOutput == null) return;
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setInteger("energy", energy);
-		toSend.setTag("input", UT.NBT.make());
-		toSend.setTag("primaryOutput", UT.NBT.make());
-		toSend.setTag("secondaryOutput", UT.NBT.make());
+		toSend.putInt("energy", energy);
+		toSend.put("input", UT.NBT.make());
+		toSend.put("primaryOutput", UT.NBT.make());
+		toSend.put("secondaryOutput", UT.NBT.make());
 		input.writeToNBT(toSend.getCompoundTag("input"));
 		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
 		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
-		toSend.setInteger("secondaryChance", secondaryChance);
+		toSend.putInt("secondaryChance", secondaryChance);
 		InterModComms.sendMessage("ThermalExpansion", "PulverizerRecipe", toSend);
 	}
 	public static void te_sawmill(int energy, ItemStack input, ItemStack primaryOutput) {
@@ -1102,14 +1102,14 @@ public class RM {
 	public static void te_sawmill(int energy, ItemStack input, ItemStack primaryOutput, ItemStack secondaryOutput, int secondaryChance) {
 		if (input == null || primaryOutput == null) return;
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setInteger("energy", energy);
-		toSend.setTag("input", UT.NBT.make());
-		toSend.setTag("primaryOutput", UT.NBT.make());
-		toSend.setTag("secondaryOutput", UT.NBT.make());
+		toSend.putInt("energy", energy);
+		toSend.put("input", UT.NBT.make());
+		toSend.put("primaryOutput", UT.NBT.make());
+		toSend.put("secondaryOutput", UT.NBT.make());
 		input.writeToNBT(toSend.getCompoundTag("input"));
 		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
 		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
-		toSend.setInteger("secondaryChance", secondaryChance);
+		toSend.putInt("secondaryChance", secondaryChance);
 		InterModComms.sendMessage("ThermalExpansion", "SawmillRecipe", toSend);
 	}
 	public static void te_smelter(int energy, ItemStack primaryInput, ItemStack secondaryInput, ItemStack primaryOutput) {
@@ -1121,29 +1121,29 @@ public class RM {
 	public static void te_smelter(int energy, ItemStack primaryInput, ItemStack secondaryInput, ItemStack primaryOutput, ItemStack secondaryOutput, int secondaryChance) {
 		if (primaryInput == null || secondaryInput == null || primaryOutput == null) return;
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setInteger("energy", energy);
-		toSend.setTag("primaryInput", UT.NBT.make());
-		toSend.setTag("secondaryInput", UT.NBT.make());
-		toSend.setTag("primaryOutput", UT.NBT.make());
-		toSend.setTag("secondaryOutput", UT.NBT.make());
+		toSend.putInt("energy", energy);
+		toSend.put("primaryInput", UT.NBT.make());
+		toSend.put("secondaryInput", UT.NBT.make());
+		toSend.put("primaryOutput", UT.NBT.make());
+		toSend.put("secondaryOutput", UT.NBT.make());
 		primaryInput.writeToNBT(toSend.getCompoundTag("primaryInput"));
 		secondaryInput.writeToNBT(toSend.getCompoundTag("secondaryInput"));
 		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
 		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
-		toSend.setInteger("secondaryChance", secondaryChance);
+		toSend.putInt("secondaryChance", secondaryChance);
 		InterModComms.sendMessage("ThermalExpansion", "SmelterRecipe", toSend);
 	}
 	public static void te_smelter_ore(OreDictMaterial aMaterial) {
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setString("oreType", aMaterial.toString());
+		toSend.putString("oreType", aMaterial.toString());
 		InterModComms.sendMessage("ThermalExpansion", "SmelterBlastOreType", toSend);
 	}
 	public static void te_crucible(int energy, ItemStack input, FluidStack output) {
 		if (input == null || output == null) return;
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setInteger("energy", energy);
-		toSend.setTag("input", UT.NBT.make());
-		toSend.setTag("output", UT.NBT.make());
+		toSend.putInt("energy", energy);
+		toSend.put("input", UT.NBT.make());
+		toSend.put("output", UT.NBT.make());
 		input.writeToNBT(toSend.getCompoundTag("input"));
 		output.writeToNBT(toSend.getCompoundTag("output"));
 		InterModComms.sendMessage("ThermalExpansion", "CrucibleRecipe", toSend);
@@ -1151,10 +1151,10 @@ public class RM {
 	public static void te_fill(int energy, ItemStack input, ItemStack output, FluidStack fluid, boolean reversible) {
 		if (input == null || output == null || fluid == null) return;
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setInteger("energy", energy);
-		toSend.setTag("input", UT.NBT.make());
-		toSend.setTag("output", UT.NBT.make());
-		toSend.setTag("fluid", UT.NBT.make());
+		toSend.putInt("energy", energy);
+		toSend.put("input", UT.NBT.make());
+		toSend.put("output", UT.NBT.make());
+		toSend.put("fluid", UT.NBT.make());
 		input.writeToNBT(toSend.getCompoundTag("input"));
 		output.writeToNBT(toSend.getCompoundTag("output"));
 		UT.NBT.setBoolean(toSend, "reversible", reversible);
@@ -1164,14 +1164,14 @@ public class RM {
 	public static void te_extract(int energy, ItemStack input, ItemStack output, FluidStack fluid, int chance, boolean reversible) {
 		if (input == null || output == null || fluid == null) return;
 		CompoundTag toSend = UT.NBT.make();
-		toSend.setInteger("energy", energy);
-		toSend.setTag("input", UT.NBT.make());
-		toSend.setTag("output", UT.NBT.make());
-		toSend.setTag("fluid", UT.NBT.make());
+		toSend.putInt("energy", energy);
+		toSend.put("input", UT.NBT.make());
+		toSend.put("output", UT.NBT.make());
+		toSend.put("fluid", UT.NBT.make());
 		input.writeToNBT(toSend.getCompoundTag("input"));
 		output.writeToNBT(toSend.getCompoundTag("output"));
 		UT.NBT.setBoolean(toSend, "reversible", reversible);
-		toSend.setInteger("chance", chance);
+		toSend.putInt("chance", chance);
 		fluid.writeToNBT(toSend.getCompoundTag("fluid"));
 		InterModComms.sendMessage("ThermalExpansion", "TransposerExtractRecipe", toSend);
 	}

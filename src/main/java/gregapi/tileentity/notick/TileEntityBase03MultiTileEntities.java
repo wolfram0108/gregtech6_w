@@ -108,13 +108,13 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 			}
 		}
 		// read the Coords if it has them.
-		if (aNBT.hasKey("x")) xCoord = aNBT.getInteger("x");
-		if (aNBT.hasKey("y")) yCoord = aNBT.getInteger("y");
-		if (aNBT.hasKey("z")) zCoord = aNBT.getInteger("z");
+		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getInteger("x");
+		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getInteger("y");
+		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getInteger("z");
 		// make sure Y is not negative because this causes crashes.
-		if (yCoord < 0) WD.invalidateTileEntityWithNegativeYCoord(xCoord, yCoord, zCoord, this);
+		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		// read the custom Name.
-		if (aNBT.hasKey("display")) mCustomName = aNBT.getCompoundTag("display").getString("Name");
+		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundTag("display").getString("Name");
 		// And now your custom readFromNBT.
 		try {readFromNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -125,11 +125,11 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	public final void writeToNBT(CompoundTag aNBT) {
 		super.writeToNBT(aNBT);
 		// write the IDs
-		aNBT.setShort(NBT_MTE_ID, mMTEID);
-		aNBT.setShort(NBT_MTE_REG, mMTERegistry);
+		aNBT.putShort(NBT_MTE_ID, mMTEID);
+		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
 		// write the Custom Name
-		if (UT.Code.stringValid(mCustomName)) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
-		if (isPainted()) {aNBT.setInteger(NBT_COLOR, getPaint()); aNBT.setBoolean(NBT_PAINTED, T);}
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
+		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		// write the rest
 		try {writeToNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -138,15 +138,15 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	
 	@Override
 	public CompoundTag writeItemNBT(CompoundTag aNBT) {
-		if (UT.Code.stringValid(mCustomName)) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
-		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", ERROR_MESSAGE));
-		if (isPainted()) {aNBT.setInteger(NBT_COLOR, getPaint()); aNBT.setBoolean(NBT_PAINTED, T);}
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
+		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", ERROR_MESSAGE));
+		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		return aNBT;
 	}
 	
 	@Override
 	public final boolean onBlockActivated(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this);
+		level.markTileEntityChunkModified(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		return allowRightclick(aPlayer) && (checkObstruction(aPlayer, aSide, aHitX, aHitY, aHitZ) || onBlockActivated2(aPlayer, aSide, aHitX, aHitY, aHitZ));
 	}
 	
@@ -155,7 +155,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	}
 	
 	public boolean checkObstruction(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(level, xCoord, yCoord, zCoord, aSide));
+		return !(aPlayer == null || aPlayer instanceof FakePlayer || SIDES_INVALID[aSide] || !WD.obstructed(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), aSide));
 	}
 	
 	@Override
@@ -170,16 +170,16 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 	public boolean recolourBlock(byte aSide, byte aColor) {
 		if (UT.Code.exists(aColor, DYES_INVERTED)) {
 			int aRGB = (isPainted() ? UT.Code.mixRGBInt(DYES_INT_INVERTED[aColor], getPaint()) : DYES_INT_INVERTED[aColor]) & ALL_NON_ALPHA_COLOR;
-			if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
+			if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); return T;}
 			return F;
 		}
-		if (unpaint()) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
+		if (unpaint()) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); return T;}
 		return F;
 	}
 	
 	@Override
 	public boolean onPainting(byte aSide, int aRGB) {
-		if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(xCoord, yCoord, zCoord, this); return T;}
+		if (paint(aRGB)) {updateClientData(); causeBlockUpdate(); level.markTileEntityChunkModified(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); return T;}
 		return F;
 	}
 	

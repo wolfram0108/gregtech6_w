@@ -59,18 +59,18 @@ public class MultiTileEntityWireRedstoneInsulated extends TileEntityBase10Connec
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey("gt.mreceived")) mReceived = aNBT.getByte("gt.mreceived");
-		if (aNBT.hasKey("gt.mredstone")) mRedstone = aNBT.getByte("gt.mredstone");
-		if (aNBT.hasKey(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
-		if (aNBT.hasKey(NBT_PIPELOSS)) mLoss = Math.max(1, aNBT.getLong(NBT_PIPELOSS));
-		if (aNBT.hasKey(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
+		if (aNBT.contains("gt.mreceived")) mReceived = aNBT.getByte("gt.mreceived");
+		if (aNBT.contains("gt.mredstone")) mRedstone = aNBT.getByte("gt.mredstone");
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_PIPELOSS)) mLoss = Math.max(1, aNBT.getLong(NBT_PIPELOSS));
+		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (mMode != 0) aNBT.setByte(NBT_MODE, mMode);
-		aNBT.setByte("gt.mreceived", mReceived);
+		if (mMode != 0) aNBT.putByte(NBT_MODE, mMode);
+		aNBT.putByte("gt.mreceived", mReceived);
 		UT.NBT.setNumber(aNBT, "gt.mredstone", mRedstone);
 	}
 	
@@ -141,14 +141,14 @@ public class MultiTileEntityWireRedstoneInsulated extends TileEntityBase10Connec
 	public byte isProvidingWeakPower2(byte aSide) {
 		if (!canEmitRedstoneToVanilla(aSide = OPOS[aSide]) || mRedstone <= 0) return 0;
 		Block tBlock = getBlockAtSide(aSide);
-		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(level, xCoord+OFFX[aSide], yCoord+OFFY[aSide], zCoord+OFFZ[aSide]) ? 1 : 0));
+		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(level, getBlockPos().getX()+OFFX[aSide], getBlockPos().getY()+OFFY[aSide], getBlockPos().getZ()+OFFZ[aSide]) ? 1 : 0));
 	}
 	
 	@Override
 	public byte isProvidingStrongPower2(byte aSide) {
 		if (!canEmitRedstoneToVanilla(aSide = OPOS[aSide]) || mRedstone <= 0) return 0;
 		Block tBlock = getBlockAtSide(aSide);
-		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(level, xCoord+OFFX[aSide], yCoord+OFFY[aSide], zCoord+OFFZ[aSide]) ? 1 : 0));
+		return UT.Code.bind4(UT.Code.divup(mRedstone, MAX_RANGE) - (tBlock instanceof RedStoneWireBlock || tBlock.isNormalCube(level, getBlockPos().getX()+OFFX[aSide], getBlockPos().getY()+OFFY[aSide], getBlockPos().getZ()+OFFZ[aSide]) ? 1 : 0));
 	}
 	
 	@Override

@@ -63,11 +63,11 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 		mLampMode     = aNBT.getBoolean(NBT_MODE+".lamp");
 		mGlowInverted = aNBT.getBoolean(NBT_VISUAL);
 		mActive       = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.hasKey(NBT_PROGRESS)) mLength = aNBT.getLong(NBT_PROGRESS);
-		if (aNBT.hasKey(NBT_MAXPROGRESS)) mMaxLength = aNBT.getLong(NBT_MAXPROGRESS);
-		if (aNBT.hasKey(NBT_REDSTONE)) mStrength = aNBT.getByte(NBT_REDSTONE);
-		if (aNBT.hasKey(NBT_TEXTURE+".0")) mType = aNBT.getByte(NBT_TEXTURE+".0");
-		if (aNBT.hasKey(NBT_TEXTURE+".1")) mIndex = aNBT.getByte(NBT_TEXTURE+".1");
+		if (aNBT.contains(NBT_PROGRESS)) mLength = aNBT.getLong(NBT_PROGRESS);
+		if (aNBT.contains(NBT_MAXPROGRESS)) mMaxLength = aNBT.getLong(NBT_MAXPROGRESS);
+		if (aNBT.contains(NBT_REDSTONE)) mStrength = aNBT.getByte(NBT_REDSTONE);
+		if (aNBT.contains(NBT_TEXTURE+".0")) mType = aNBT.getByte(NBT_TEXTURE+".0");
+		if (aNBT.contains(NBT_TEXTURE+".1")) mIndex = aNBT.getByte(NBT_TEXTURE+".1");
 	}
 	
 	@Override
@@ -78,10 +78,10 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 		UT.NBT.setBoolean(aNBT, NBT_VISUAL, mGlowInverted);
 		UT.NBT.setBoolean(aNBT, NBT_ACTIVE, mActive);
 		UT.NBT.setNumber (aNBT, NBT_PROGRESS, mLength);
-		if (mMaxLength != 20) aNBT.setLong(NBT_MAXPROGRESS, mMaxLength);
-		if (mStrength  != 15) aNBT.setByte(NBT_REDSTONE, mStrength);
-		if (mType      !=  0) aNBT.setByte(NBT_TEXTURE+".0", mType);
-		if (mIndex     !=  0) aNBT.setByte(NBT_TEXTURE+".1", mIndex);
+		if (mMaxLength != 20) aNBT.putLong(NBT_MAXPROGRESS, mMaxLength);
+		if (mStrength  != 15) aNBT.putByte(NBT_REDSTONE, mStrength);
+		if (mType      !=  0) aNBT.putByte(NBT_TEXTURE+".0", mType);
+		if (mIndex     !=  0) aNBT.putByte(NBT_TEXTURE+".1", mIndex);
 	}
 	
 	@Override
@@ -89,10 +89,10 @@ public class MultiTileEntityButtonAdvanced extends TileEntityBase09FacingSingle 
 		UT.NBT.setBoolean(aNBT, NBT_MODE, mInverted);
 		UT.NBT.setBoolean(aNBT, NBT_MODE+".lamp", mLampMode);
 		UT.NBT.setBoolean(aNBT, NBT_VISUAL, mGlowInverted);
-		if (mMaxLength != 20) aNBT.setLong(NBT_MAXPROGRESS, mMaxLength);
-		if (mStrength  != 15) aNBT.setByte(NBT_REDSTONE, mStrength);
-		if (mType      !=  0) aNBT.setByte(NBT_TEXTURE+".0", mType);
-		if (mIndex     !=  0) aNBT.setByte(NBT_TEXTURE+".1", mIndex);
+		if (mMaxLength != 20) aNBT.putLong(NBT_MAXPROGRESS, mMaxLength);
+		if (mStrength  != 15) aNBT.putByte(NBT_REDSTONE, mStrength);
+		if (mType      !=  0) aNBT.putByte(NBT_TEXTURE+".0", mType);
+		if (mIndex     !=  0) aNBT.putByte(NBT_TEXTURE+".1", mIndex);
 		return aNBT;
 	}
 	

@@ -44,17 +44,17 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 		if (tPosition == null || tPosition.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
 		if (!aWorld.canMineBlock(aPlayer, tPosition.blockX, tPosition.blockY, tPosition.blockZ)) return aStack;
 		
-		Block tBlock = aWorld.getBlock(tPosition.blockX, tPosition.blockY, tPosition.blockZ);
+		Block tBlock = WD.block(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ);
 		if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
-			if (aWorld.getBlockMetadata(tPosition.blockX, tPosition.blockY, tPosition.blockZ) == 0 && aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
-				aWorld.setBlockToAir(tPosition.blockX, tPosition.blockY, tPosition.blockZ);
+			if (WD.meta(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ) == 0 && aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
+				WD.set(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, NB, 0, 3);
 				aItem.fill(aStack, FL.Water.make(1000), T);
 			}
 			return aStack;
 		}
 		if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) {
-			if (aWorld.getBlockMetadata(tPosition.blockX, tPosition.blockY, tPosition.blockZ) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
-				aWorld.setBlockToAir(tPosition.blockX, tPosition.blockY, tPosition.blockZ);
+			if (WD.meta(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
+				WD.set(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, NB, 0, 3);
 				aItem.fill(aStack, FL.Lava.make(1000), T);
 			}
 			return aStack;
@@ -84,7 +84,7 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 		tPosition.blockX+=OFFX[tPosition.sideHit];
 		tPosition.blockY+=OFFY[tPosition.sideHit];
 		tPosition.blockZ+=OFFZ[tPosition.sideHit];
-		tBlock = aWorld.getBlock(tPosition.blockX, tPosition.blockY, tPosition.blockZ);
+		tBlock = WD.block(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ);
 		
 		if (tBlock instanceof IFluidBlock) {
 			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, F);

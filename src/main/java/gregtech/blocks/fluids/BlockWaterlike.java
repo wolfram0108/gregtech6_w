@@ -76,13 +76,13 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		if (aHide) ST.hide(this);
 	}
 	
-	@Override
+	// @Override
 	public FluidStack drain(Level aWorld, int aX, int aY, int aZ, boolean aDoDrain) {
-		if (aDoDrain) aWorld.setBlock(aX, aY, aZ, NB, 0, 2);
+		if (aDoDrain) WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 		return FL.make(getFluid(), 1000);
 	}
 	
-	@Override
+	// @Override
 	public boolean canDrain(Level aWorld, int aX, int aY, int aZ) {
 		return WD.meta(aWorld, aX, aY, aZ) == 0;
 	}
@@ -92,11 +92,11 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		int expQuanta = -101;
 		// check adjacent block levels if non-source
 		if (quantaRemaining < quantaPerBlock) {
-			if (aWorld.getBlock(aX  , aY-densityDir, aZ  ) instanceof BlockWaterlike ||
-				aWorld.getBlock(aX-1, aY-densityDir, aZ  ) instanceof BlockWaterlike ||
-				aWorld.getBlock(aX+1, aY-densityDir, aZ  ) instanceof BlockWaterlike ||
-				aWorld.getBlock(aX  , aY-densityDir, aZ-1) instanceof BlockWaterlike ||
-				aWorld.getBlock(aX  , aY-densityDir, aZ+1) instanceof BlockWaterlike) {
+			if (WD.block(aWorld, aX  , aY-densityDir, aZ  ) instanceof BlockWaterlike ||
+				WD.block(aWorld, aX-1, aY-densityDir, aZ  ) instanceof BlockWaterlike ||
+				WD.block(aWorld, aX+1, aY-densityDir, aZ  ) instanceof BlockWaterlike ||
+				WD.block(aWorld, aX  , aY-densityDir, aZ-1) instanceof BlockWaterlike ||
+				WD.block(aWorld, aX  , aY-densityDir, aZ+1) instanceof BlockWaterlike) {
 				expQuanta = quantaPerBlock - 1;
 			} else {
 				int maxQuanta = -100;
@@ -109,7 +109,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 			if (expQuanta != quantaRemaining) {
 				quantaRemaining = expQuanta;
 				if (expQuanta <= 0) {
-					aWorld.setBlockToAir(aX, aY, aZ);
+					WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				} else {
 					aWorld.setBlockMetadataWithNotify(aX, aY, aZ, quantaPerBlock - expQuanta, 3);
 					aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate);
@@ -121,20 +121,20 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		
 		
 		if (canDisplace(aWorld, aX, aY+densityDir, aZ)) {
-			if (displaceIfPossible(aWorld, aX, aY+densityDir, aZ)) aWorld.setBlock(aX, aY+densityDir, aZ, this, 1, WATER_UPDATE_FLAGS | 1);
+			if (displaceIfPossible(aWorld, aX, aY+densityDir, aZ)) WD.set(aWorld, aX, aY+densityDir, aZ, this, 1, WATER_UPDATE_FLAGS | 1);
 			return;
 		}
 		
-		int tFlowMeta  = (aWorld.getBlock(aX, aY-densityDir, aZ) instanceof BlockWaterlike ? 1 : quantaPerBlock - quantaRemaining + 1);
+		int tFlowMeta  = (WD.block(aWorld, aX, aY-densityDir, aZ) instanceof BlockWaterlike ? 1 : quantaPerBlock - quantaRemaining + 1);
 		if (tFlowMeta >= quantaPerBlock) return;
 		
-		if (aWorld.blockExists(aX  , aY, aZ-1) && displaceIfPossible(aWorld, aX  , aY, aZ-1)) aWorld.setBlock(aX  , aY, aZ-1, this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
-		if (aWorld.blockExists(aX  , aY, aZ+1) && displaceIfPossible(aWorld, aX  , aY, aZ+1)) aWorld.setBlock(aX  , aY, aZ+1, this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
-		if (aWorld.blockExists(aX-1, aY, aZ  ) && displaceIfPossible(aWorld, aX-1, aY, aZ  )) aWorld.setBlock(aX-1, aY, aZ  , this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
-		if (aWorld.blockExists(aX+1, aY, aZ  ) && displaceIfPossible(aWorld, aX+1, aY, aZ  )) aWorld.setBlock(aX+1, aY, aZ  , this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX, aY, aZ-1) && displaceIfPossible(aWorld, aX  , aY, aZ-1)) WD.set(aWorld, aX  , aY, aZ-1, this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX, aY, aZ+1) && displaceIfPossible(aWorld, aX  , aY, aZ+1)) WD.set(aWorld, aX  , aY, aZ+1, this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX-1, aY, aZ) && displaceIfPossible(aWorld, aX-1, aY, aZ  )) WD.set(aWorld, aX-1, aY, aZ  , this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX+1, aY, aZ) && displaceIfPossible(aWorld, aX+1, aY, aZ  )) WD.set(aWorld, aX+1, aY, aZ  , this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
 	}
 	
-	@Override
+	// @Override
 	public Vec3 getFlowVector(BlockGetter aWorld, int aX, int aY, int aZ) {
 		Vec3 rVector = Vec3.createVectorHelper(0, 0, 0);
 		int tDecay = quantaPerBlock - getQuantaValue(aWorld, aX, aY, aZ);
@@ -142,7 +142,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 			int tX = aX+OFFX[tSide], tZ = aZ+OFFZ[tSide];
 			int tOtherDecay = quantaPerBlock - getQuantaValue(aWorld, tX, aY, tZ);
 			if (tOtherDecay >= quantaPerBlock) {
-				if (!aWorld.getBlock(tX, aY, tZ).getMaterial().blocksMovement()) {
+				if (!WD.block(aWorld, tX, aY, tZ).getMaterial().blocksMovement()) {
 					tOtherDecay = quantaPerBlock - getQuantaValue(aWorld, tX, aY-1, tZ);
 					if (tOtherDecay >= 0) {
 						int tPower = tOtherDecay - (tDecay - quantaPerBlock);
@@ -154,7 +154,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 				rVector = rVector.addVector((tX - aX) * power, 0, (tZ - aZ) * power);
 			}
 		}
-		if (aWorld.getBlock(aX, aY+1, aZ) instanceof BlockWaterlike && (
+		if (WD.block(aWorld, aX, aY+1, aZ) instanceof BlockWaterlike && (
 			isBlockSolid(aWorld, aX  , aY  , aZ-1, SIDE_Z_NEG) ||
 			isBlockSolid(aWorld, aX  , aY  , aZ+1, SIDE_Z_POS) ||
 			isBlockSolid(aWorld, aX-1, aY  , aZ  , SIDE_X_NEG) ||
@@ -168,52 +168,52 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		return rVector.normalize();
 	}
 	
-	@Override
+	// @Override
 	public int getQuantaValue(BlockGetter aWorld, int aX, int aY, int aZ) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return 0;
-		if (aBlock == this) return quantaPerBlock - aWorld.getBlockMetadata(aX, aY, aZ);
-		if (aBlock instanceof BlockWaterlike) return 8-aWorld.getBlockMetadata(aX, aY, aZ);
-		if (aBlock == Blocks.water || aBlock == Blocks.flowing_water) return 8-aWorld.getBlockMetadata(aX, aY, aZ);
+		if (aBlock == this) return quantaPerBlock - WD.meta(aWorld, aX, aY, aZ);
+		if (aBlock instanceof BlockWaterlike) return 8-WD.meta(aWorld, aX, aY, aZ);
+		if (aBlock == Blocks.water || aBlock == Blocks.flowing_water) return 8-WD.meta(aWorld, aX, aY, aZ);
 		return -1;
 	}
 	
-	@Override
+	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return T;
 		if (aBlock.getMaterial() == Material.water || WD.visOpq(aBlock)) return F;
 		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
-		BlockEntity tTileEntity = aWorld.getTileEntity(aX, aY, aZ);
+		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
 		return T;
 	}
 	
-	@Override public boolean isSourceBlock(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlock(aX, aY, aZ) instanceof BlockWaterlike && aWorld.getBlockMetadata(aX, aY, aZ) == 0;}
+	public boolean isSourceBlock(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.block(aWorld, aX, aY, aZ) instanceof BlockWaterlike && WD.meta(aWorld, aX, aY, aZ) == 0;}
 	@Override public Block getBlock() {return this;}
-	@Override public final String getUnlocalizedName() {return FL.name(mFluid, F);}
-	@Override public String getLocalizedName() {return FL.name(mFluid, T);}
-	@Override public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
-	@Override public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
-	@Override public int getRenderBlockPass() {return 1;}
-	@Override public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}
-	@Override public int getRenderColor(int aMeta) {return 0x00ffffff;}
-	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
+	public final String getUnlocalizedName() {return FL.name(mFluid, F);}
+	public String getLocalizedName() {return FL.name(mFluid, T);}
+	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
+	public int getRenderBlockPass() {return 1;}
+	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
+	public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}
+	public int getRenderColor(int aMeta) {return 0x00ffffff;}
+	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
 	
-	@Override public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
-	@Override public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
-	@Override public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !aWorld.getBlock(aX, aY, aZ).getMaterial().isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
-	@Override public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !aWorld.getBlock(aX, aY, aZ).getMaterial().isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
-	@Override public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta == 0;}
-	@Override public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return !mEffects.isEmpty();}
-	@Override public boolean isNormalCube() {return F;}
-	@Override public boolean isOpaqueCube() {return F;}
-	@Override public boolean func_149730_j() {return F;}
-	@Override public boolean getTickRandomly() {return F;}
-	@Override public boolean renderAsNormalBlock() {return F;}
-	@Override public boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
-	@Override public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
+	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
+	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
+	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
+	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
+	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta == 0;}
+	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return !mEffects.isEmpty();}
+	public boolean isNormalCube() {return F;}
+	public boolean isOpaqueCube() {return F;}
+	public boolean func_149730_j() {return F;}
+	public boolean getTickRandomly() {return F;}
+	public boolean renderAsNormalBlock() {return F;}
+	public boolean isAir(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	
 	public BlockWaterlike addEffect(int aEffectID, int aEffectDuration, int aEffectLevel) {
 		mEffects.add(new int[] {aEffectID, aEffectDuration, aEffectLevel});

@@ -110,7 +110,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		}
 	}
 	
-	@Override
+	// @Override
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
 		if ((SHOW_HIDDEN_PREFIXES || !mPrefix.contains(TD.Creative.HIDDEN))) for (int i = 0; i < mMaterialList.length; i++) if (mPrefix.isGeneratingItem(mMaterialList[i])) if (SHOW_HIDDEN_MATERIALS || !mMaterialList[i].mHidden) {
@@ -123,16 +123,16 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		if (aList.isEmpty()) ST.hide(this);
 	}
 	
-	@Override public int getSpriteNumber() {return 1;}
-	@Override public int getRenderPasses(int metadata) {return 2;}
-	@Override @OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {/**/}
-	@Override public boolean requiresMultipleRenderPasses() {return mPrefix.mIconIndexItem >= 0;}
-	@Override public IIcon getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
-	@Override public IIcon getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}
-	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
-	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+	public int getSpriteNumber() {return 1;}
+	public int getRenderPasses(int metadata) {return 2;}
+	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {/**/}
+	public boolean requiresMultipleRenderPasses() {return mPrefix.mIconIndexItem >= 0;}
+	public IIcon getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
+	public IIcon getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}
+	public IIcon getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+	public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
 	
-	@Override
+	// @Override
 	public IIcon getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		if (mPrefix.mIconIndexItem >= 0) {
 			if (UT.Code.exists(aMetaData, mMaterialList) && mMaterialList[aMetaData].mTextureSetsItems != null)
@@ -142,7 +142,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		return null;
 	}
 	
-	@Override
+	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		if (aRenderPass == 0) {
 			short aMetaData = ST.meta_(aStack);
@@ -151,7 +151,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		return 16777215;
 	}
 	
-	@Override
+	// @Override
 	public final String getUnlocalizedName(ItemStack aStack) {
 		short aMetaData = ST.meta_(aStack);
 		if (aMetaData == W) return mNameInternal+"."+W;
@@ -159,14 +159,14 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		return mNameInternal;
 	}
 	
-	@Override
+	// @Override
 	public ItemStack getContainerItem(ItemStack aStack) {
 		if (ST.equal(aStack, mContainerItem, T)) return null;
 		if (mCraftingSound != null) UT.Sounds.play(mCraftingSound, 20, 1.0F);
 		return mContainerItem != null ? ST.amount(1, mContainerItem) : mPrefix.mContainerItem != null ? ST.amount(1, mContainerItem = mPrefix.mContainerItem) : null;
 	}
 	
-	@Override
+	// @Override
 	public boolean isBeaconPayment(ItemStack aStack) {
 		if (mPrefix.mAmount >= U && (mPrefix.contains(TD.Prefix.GEM_BASED) || mPrefix.contains(TD.Prefix.INGOT_BASED))) {
 			short aMetaData = ST.meta_(aStack);
@@ -186,28 +186,28 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		}
 	}
 	
-	@Override
+	// @Override
 	public float getSmeltingExperience(ItemStack aStack) {
 		return mPrefix == OP.gem ? 1.0F : 0.0F;
 	}
 	
 	@Override public String toString() {return mNameInternal;}
-	@Override public final String getUnlocalizedName() {return mNameInternal;}
-	@Override public final Item setUnlocalizedName(String aName) {return this;}
-	@Override public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
-	@Override public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
-	@Override public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
-	@Override public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {updateItemStack(aStack);}
-	@Override public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
-	@Override public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
-	@Override public int getItemEnchantability() {return 0;}
-	@Override public int getItemStackLimit(ItemStack aStack) {return mPrefix.mDefaultStackSize;}
+	public final String getUnlocalizedName() {return mNameInternal;}
+	public final Item setUnlocalizedName(String aName) {return this;}
+	public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
+	public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
+	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
+	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {updateItemStack(aStack);}
+	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
+	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
+	public int getItemEnchantability() {return 0;}
+	public int getItemStackLimit(ItemStack aStack) {return mPrefix.mDefaultStackSize;}
 	@Override public OreDictItemData getOreDictItemData(ItemStack aStack) {return UT.Code.exists(ST.meta_(aStack), mMaterialList) ? new OreDictItemData(mPrefix, mMaterialList[ST.meta_(aStack)]) : null;}
 	@Override public OreDictMaterial getMaterial(int aMetaData) {return UT.Code.exists(aMetaData, mMaterialList) ? mMaterialList[aMetaData] : null;}
 	@Override public OreDictPrefix getPrefix(int aMetaData) {return mPrefix;}
-	@Override @SuppressWarnings("deprecation") public boolean hasEffect(ItemStack aStack) {return F;}
-	@Override public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}
-	@Override public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {while (aList.remove(null));}
+	@SuppressWarnings("deprecation") public boolean hasEffect(ItemStack aStack) {return F;}
+	public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}
+	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {while (aList.remove(null));}
 	
 	/*
 	@Override @Optional.Method(modid = ModIDs.TC) public void setAspects(ItemStack aStack, AspectList aAspectList) {}

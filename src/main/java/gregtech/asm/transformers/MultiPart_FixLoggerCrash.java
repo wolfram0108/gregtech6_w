@@ -35,7 +35,7 @@ import org.objectweb.asm.tree.MethodNode;
 public class MultiPart_FixLoggerCrash implements IClassTransformer  {
 	public static Logger FAKE_LOGGER = new LoggerFML("FMP");
 	
-	@Override
+	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
 		if (!transformedName.equals("codechicken.multipart.handler.MultipartProxy_serverImpl")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);

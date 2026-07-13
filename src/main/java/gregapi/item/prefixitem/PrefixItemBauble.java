@@ -51,21 +51,21 @@ public abstract class PrefixItemBauble extends PrefixItem implements IBauble, IW
 		super(aModIDOwner, aModIDTextures, aNameInternal, aPrefix, aMaterialList);
 	}
 	
-	@Override
+	// @Override
 	public int getWarp(ItemStack aStack, Player aPlayer) {
 		OreDictMaterial tMat = getMaterial(ST.meta(aStack));
 		return tMat != null && tMat.contains(TD.Properties.WARPING) ? 1 : 0;
 	}
 	
-	@Override
+	// @Override
 	public void onWornTick(ItemStack aStack, LivingEntity aPlayer) {
 		if (aPlayer.ticksExisted % 120 == 0 && !UT.Entities.isInvincible(aPlayer)) {
 			UT.Entities.applyRadioactivity(aPlayer, UT.Entities.getRadioactivityLevel(aStack), aStack.getCount());
 		}
 	}
 	
-	@Override public void onEquipped(ItemStack aStack, LivingEntity aPlayer) {/**/}
-	@Override public void onUnequipped(ItemStack aStack, LivingEntity aPlayer) {/**/}
-	@Override public boolean canEquip(ItemStack aStack, LivingEntity aPlayer) {return T;/*aStack != null && aStack.stackSize == 1;*/}
-	@Override public boolean canUnequip(ItemStack aStack, LivingEntity aPlayer) {return T;}
+	public void onEquipped(ItemStack aStack, LivingEntity aPlayer) {/**/}
+	public void onUnequipped(ItemStack aStack, LivingEntity aPlayer) {/**/}
+	public boolean canEquip(ItemStack aStack, LivingEntity aPlayer) {return T;/*aStack != null && aStack.stackSize == 1;*/}
+	public boolean canUnequip(ItemStack aStack, LivingEntity aPlayer) {return T;}
 }

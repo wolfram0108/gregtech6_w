@@ -73,13 +73,13 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
-		if (aNBT.hasKey(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.hasKey(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
-		if (aNBT.hasKey(NBT_LIQUIDPROOF)) mLiquidProof = aNBT.getBoolean(NBT_LIQUIDPROOF);
-		if (aNBT.hasKey(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
-		if (aNBT.hasKey(NBT_TEMPERATURE)) mTemperatureMax = aNBT.getLong(NBT_TEMPERATURE); else mTemperatureMax = mMaterial.mMeltingPoint - 50;
-		if (aNBT.hasKey(NBT_TANK_CAPACITY)) mTank.setCapacity(aNBT.getLong(NBT_TANK_CAPACITY));
+		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
+		if (aNBT.contains(NBT_LIQUIDPROOF)) mLiquidProof = aNBT.getBoolean(NBT_LIQUIDPROOF);
+		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
+		if (aNBT.contains(NBT_TEMPERATURE)) mTemperatureMax = aNBT.getLong(NBT_TEMPERATURE); else mTemperatureMax = mMaterial.mMeltingPoint - 50;
+		if (aNBT.contains(NBT_TANK_CAPACITY)) mTank.setCapacity(aNBT.getLong(NBT_TANK_CAPACITY));
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}
 	
@@ -92,7 +92,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		mTank.writeToNBT(aNBT, NBT_TANK);
-		if (isClientSide() && !mTank.isEmpty()) aNBT.setTag("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", FL.name(mTank, T)));
+		if (isClientSide() && !mTank.isEmpty()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", FL.name(mTank, T)));
 		return super.writeItemNBT2(aNBT);
 	}
 	
@@ -118,7 +118,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			Biome tBiome = getBiome();
 			if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
 				Block tInFront = getBlockAtSide(SIDE_TOP);
-				if (!WD.liquid(tInFront) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, xCoord, yCoord+1, zCoord, FORGE_DIR[SIDE_TOP])) {
+				if (!WD.liquid(tInFront) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
 					mTank.fill(FL.Water.make((long)Math.max(1, tBiome.rainfall*100) * (level.isThundering()?2:1)), T);
 				}
 			}
@@ -174,17 +174,17 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	@Override public boolean onlyPlaceableWhenSneaking() {return T;}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 	
-	@Override
+	// @Override
 	public FluidStack getFluid(ItemStack aStack) {
 		return mTank.getFluid();
 	}
 	
-	@Override
+	// @Override
 	public int getCapacity(ItemStack aStack) {
 		return mTank.getCapacity();
 	}
 	
-	@Override
+	// @Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		if (!isFluidAllowed(aFluid) || aStack.getCount() != 1) return 0;
 		int tFilled = mTank.fill(aFluid, aDoFill);
@@ -192,7 +192,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		return tFilled;
 	}
 	
-	@Override
+	// @Override
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
 		if (aStack.getCount() != 1) return NF;
 		FluidStack tDrained = mTank.drain(aMaxDrain, aDoDrain);
@@ -206,8 +206,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		if (canWaterCrops()) {
 			FluidStack mFluid = aItem.getFluid(aStack);
 			if (FL.water(mFluid)) {
-				Block aBlock = aWorld.getBlock(aX, aY, aZ);
-				int aMeta = aWorld.getBlockMetadata(aX, aY, aZ);
+				Block aBlock = WD.block(aWorld, aX, aY, aZ);
+				int aMeta = WD.meta(aWorld, aX, aY, aZ);
 				
 				if (aBlock instanceof CauldronBlock) {
 					if (aMeta >= 3 || mFluid.amount < 334) return F;
@@ -235,8 +235,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 						}
 						return T;
 					}
-					if (IL.GrC_Paddy.block() == aWorld.getBlock(aX, aY-1, aZ)) {
-						int tMeta = aWorld.getBlockMetadata(aX, aY-1, aZ);
+					if (IL.GrC_Paddy.block() == WD.block(aWorld, aX, aY-1, aZ)) {
+						int tMeta = WD.meta(aWorld, aX, aY-1, aZ);
 						int tIncrement = Math.min(7-tMeta, mFluid.amount/10);
 						if (tIncrement > 0) {
 							aItem.drain(aStack, tIncrement*10, T);
@@ -276,14 +276,14 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		if (canPickUpFluids() && aStack.getCount() == 1) {
 			HitResult tTarget = WD.getMOP(aWorld, aPlayer, T);
 			if (tTarget != null && tTarget.typeOfHit == HitResult.MovingObjectType.BLOCK && aWorld.canMineBlock(aPlayer, tTarget.blockX, tTarget.blockY, tTarget.blockZ)) {
-				Block tBlock = aWorld.getBlock(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+				Block tBlock = WD.block(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ);
 				if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
-					if (aWorld.getBlockMetadata(tTarget.blockX, tTarget.blockY, tTarget.blockZ) == 0) {
+					if (WD.meta(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ) == 0) {
 						if (WD.infiniteWater(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ)) {
 							aItem.fill(aStack, FL.Water.make(1000), T);
 						} else {
 							if (aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
-								aWorld.setBlockToAir(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+								WD.set(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ, NB, 0, 3);
 								aItem.fill(aStack, FL.Water.make(1000), T);
 							}
 						}
@@ -291,8 +291,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					return aStack;
 				}
 				if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) {
-					if (aWorld.getBlockMetadata(tTarget.blockX, tTarget.blockY, tTarget.blockZ) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
-						aWorld.setBlockToAir(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+					if (WD.meta(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
+						WD.set(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ, NB, 0, 3);
 						aItem.fill(aStack, FL.Lava.make(1000), T);
 					}
 					return aStack;
@@ -322,7 +322,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				tTarget.blockX+=OFFX[tTarget.sideHit];
 				tTarget.blockY+=OFFY[tTarget.sideHit];
 				tTarget.blockZ+=OFFZ[tTarget.sideHit];
-				tBlock = aWorld.getBlock(tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+				tBlock = WD.block(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ);
 				
 				if (tBlock instanceof IFluidBlock) {
 					FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ, F);

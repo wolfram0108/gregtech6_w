@@ -18,6 +18,7 @@
  */
 
 package gregapi.code;
+import gregapi.util.WD;
 
 import net.neoforged.fml.ModList;
 import gregapi.util.ST;
@@ -54,13 +55,13 @@ public final class ModData implements ICondition<ITagDataContainer<?>> {
 		return this;
 	}
 	
-	public boolean owns (BlockGetter aWorld, int aX, int aY, int aZ) {return mLoaded && owns_(ST.regName(aWorld.getBlock(aX, aY, aZ)));}
+	public boolean owns (BlockGetter aWorld, int aX, int aY, int aZ) {return mLoaded && owns_(ST.regName(WD.block(aWorld, aX, aY, aZ)));}
 	public boolean owns (Block        aBlock                        ) {return mLoaded && owns_(ST.regName(aBlock));}
 	public boolean owns (Item         aItem                         ) {return mLoaded && owns_(ST.regName(aItem));}
 	public boolean owns (ItemStack    aStack                        ) {return mLoaded && owns_(ST.regName(aStack));}
 	public boolean owns (String       aRegName                      ) {return mLoaded && owns_(aRegName);}
 	public boolean owns_(String       aRegName                      ) {return aRegName != null && aRegName.startsWith(mPrefix);}
-	public boolean owns (BlockGetter aWorld, int aX, int aY, int aZ, String aContains) {return mLoaded && owns_(ST.regName(aWorld.getBlock(aX, aY, aZ)), aContains);}
+	public boolean owns (BlockGetter aWorld, int aX, int aY, int aZ, String aContains) {return mLoaded && owns_(ST.regName(WD.block(aWorld, aX, aY, aZ)), aContains);}
 	public boolean owns (Block        aBlock                        , String aContains) {return mLoaded && owns_(ST.regName(aBlock), aContains);}
 	public boolean owns (Item         aItem                         , String aContains) {return mLoaded && owns_(ST.regName(aItem), aContains);}
 	public boolean owns (ItemStack    aStack                        , String aContains) {return mLoaded && owns_(ST.regName(aStack), aContains);}

@@ -457,8 +457,8 @@ public class UT {
 			if (rStack == null) rStack = aDefaultBook==null?ST.make(Items.written_book, 1, 0):ST.amount(1, aDefaultBook);
 			if (Code.stringInvalid(aTitle) || Code.stringInvalid(aAuthor) || aPages.length <= 0) return null;
 			CompoundTag rNBT = NBT.make();
-			rNBT.setString("title", aTitle);
-			rNBT.setString("author", aAuthor);
+			rNBT.putString("title", aTitle);
+			rNBT.putString("author", aAuthor);
 			ListTag tNBTList = new ListTag();
 			for (short i = 0; i < aPages.length; i++) {
 				if (aPages[i].length() < 256) {
@@ -467,7 +467,7 @@ public class UT {
 					ERR.println("WARNING: String for Page of written Book too long! ->\n" + aPages[i]);
 				}
 			}
-			rNBT.setTag("pages", tNBTList);
+			rNBT.put("pages", tNBTList);
 			NBT.set(rStack, rNBT);
 			BOOK_MAP.put(aMapping, ST.copy(rStack));
 			if (!BOOK_LIST.contains(aMapping)) BOOK_LIST.add(aMapping);
@@ -2619,7 +2619,7 @@ public class UT {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getWorld(), aTileEntity.getCoords());
 		}
 		public static boolean send(String aSound, BlockEntity aTileEntity) {
-			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord));
+			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
 		}
 		public static boolean send(String aSound, Entity aEntity) {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
@@ -2637,7 +2637,7 @@ public class UT {
 			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getWorld(), aTileEntity.getCoords());
 		}
 		public static boolean send(String aSound, float aVolume, BlockEntity aTileEntity) {
-			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord));
+			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
 		}
 		public static boolean send(String aSound, float aVolume, Entity aEntity) {
 			return send(aSound, aVolume, SFX.RANDOM_PITCH, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
@@ -2655,7 +2655,7 @@ public class UT {
 			return send(aSound, aVolume, aPitch, aTileEntity.getWorld(), aTileEntity.getCoords());
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, BlockEntity aTileEntity) {
-			return send(aSound, aVolume, aPitch, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.xCoord, aTileEntity.yCoord, aTileEntity.zCoord));
+			return send(aSound, aVolume, aPitch, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Entity aEntity) {
 			return send(aSound, aVolume, aPitch, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
@@ -2882,7 +2882,7 @@ public class UT {
 		}
 		
 		public static boolean applyChemDamage(Entity aEntity, float aDamage) {
-			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isEntityAlive() && aEntity.getClass() != EntitySkeleton.class && !isWearingFullChemHazmat(((LivingEntity)aEntity))) {
+			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != EntitySkeleton.class && !isWearingFullChemHazmat(((LivingEntity)aEntity))) {
 				aEntity.attackEntityFrom(DamageSources.getChemDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				MobEffectInstance tEffect;
 				((LivingEntity)aEntity).addPotionEffect(new MobEffectInstance(MobEffect.poison.id, Math.max(20, (int)(aDamage * 100 + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getActivePotionEffect(MobEffect.poison))==null?0:tEffect.getDuration())))), 1));
@@ -2892,7 +2892,7 @@ public class UT {
 		}
 		
 		public static boolean applyHeatDamage(Entity aEntity, float aDamage) {
-			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isEntityAlive() && aEntity.getClass() != EntityBlaze.class && ((LivingEntity)aEntity).getActivePotionEffect(MobEffect.fireResistance) == null && !isWearingFullHeatHazmat(((LivingEntity)aEntity))) {
+			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != EntityBlaze.class && ((LivingEntity)aEntity).getActivePotionEffect(MobEffect.fireResistance) == null && !isWearingFullHeatHazmat(((LivingEntity)aEntity))) {
 				aEntity.attackEntityFrom(DamageSources.getHeatDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
@@ -2900,7 +2900,7 @@ public class UT {
 		}
 		
 		public static boolean applyFrostDamage(Entity aEntity, float aDamage) {
-			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isEntityAlive() && !isWearingFullFrostHazmat(((LivingEntity)aEntity))) {
+			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !isWearingFullFrostHazmat(((LivingEntity)aEntity))) {
 				aEntity.attackEntityFrom(DamageSources.getFrostDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
@@ -2909,7 +2909,7 @@ public class UT {
 		
 		public static boolean applyElectricityDamage(Entity aEntity, long aVoltage, long aAmperage) {
 			long aDamage = Code.tierMax(aVoltage) * aAmperage * 4;
-			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isEntityAlive() && !isWearingFullElectroHazmat(((LivingEntity)aEntity))) {
+			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !isWearingFullElectroHazmat(((LivingEntity)aEntity))) {
 				aEntity.attackEntityFrom(DamageSources.getElectricDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
@@ -2918,7 +2918,7 @@ public class UT {
 		
 		public static boolean applyElectricityDamage(Entity aEntity, long aWattage) {
 			long aDamage = Code.tierMax(aWattage) * 4;
-			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isEntityAlive() && !isWearingFullElectroHazmat(((LivingEntity)aEntity))) {
+			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !isWearingFullElectroHazmat(((LivingEntity)aEntity))) {
 				aEntity.attackEntityFrom(DamageSources.getElectricDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
@@ -2926,7 +2926,7 @@ public class UT {
 		}
 		
 		public static boolean applyRadioactivity(Entity aEntity, int aLevel, int aAmountOfItems) {
-			if (aLevel > 0 && aEntity instanceof LivingEntity && aEntity.isEntityAlive() && ((LivingEntity)aEntity).getCreatureAttribute() != EntityTypeTags.UNDEAD && ((LivingEntity)aEntity).getCreatureAttribute() != EntityTypeTags.ARTHROPOD && !isWearingFullRadioHazmat(((LivingEntity)aEntity))) {
+			if (aLevel > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && ((LivingEntity)aEntity).getCreatureAttribute() != EntityTypeTags.UNDEAD && ((LivingEntity)aEntity).getCreatureAttribute() != EntityTypeTags.ARTHROPOD && !isWearingFullRadioHazmat(((LivingEntity)aEntity))) {
 				
 				EntityFoodTracker tTracker = EntityFoodTracker.get(aEntity);
 				if (tTracker != null) {tTracker.changeRadiation(aLevel * aAmountOfItems); return T;}
@@ -3104,7 +3104,7 @@ public class UT {
 			ArrayListNoNulls<Player> rList = new ArrayListNoNulls<>();
 			for (Entry<Player, BlockPos> tEntry : PLAYER_LAST_CLICKED.entrySet()) {
 				if (!tEntry.getKey().isDead && aWorld == tEntry.getKey().level() && aCoords.equals(tEntry.getValue())) {
-					if (isCreative(tEntry.getKey()) || tEntry.getKey().getDistanceSq(aCoords.getX()+0.5, aCoords.getY()+0.5, aCoords.getZ()+0.5) <= aRange * aRange) {
+					if (isCreative(tEntry.getKey()) || tEntry.getKey().distanceToSqr(aCoords.getX()+0.5, aCoords.getY()+0.5, aCoords.getZ()+0.5) <= aRange * aRange) {
 						rList.add(tEntry.getKey());
 					}
 				}
@@ -3187,7 +3187,7 @@ public class UT {
 		@Deprecated public static boolean isOpaque(Level aWorld, int aX, int aY, int aZ, boolean aIgnoreUnloadedChunks, boolean aDefault) {return WD.opq(aWorld, aX, aY, aZ, aIgnoreUnloadedChunks, aDefault);}
 		@Deprecated public static boolean isAir(Level aWorld, int aX, int aY, int aZ) {return WD.air(aWorld, aX, aY, aZ);}
 		@Deprecated public static boolean isEasilyReplaceable(Level aWorld, int aX, int aY, int aZ) {return WD.easyRep(aWorld, aX, aY, aZ);}
-		@Deprecated public static boolean hasCollisionBox(Level aWorld, int aX, int aY, int aZ) {return aWorld.getBlock(aX, aY, aZ).getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) != null;}
+		@Deprecated public static boolean hasCollisionBox(Level aWorld, int aX, int aY, int aZ) {return WD.block(aWorld, aX, aY, aZ).getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) != null;}
 		@Deprecated public static void setOnFire(Level aWorld, int aX, int aY, int aZ, boolean aReplaceCenter, boolean aCheckFlammability) {WD.burn(aWorld, aX, aY, aZ, aReplaceCenter, aCheckFlammability);}
 		@Deprecated public static void setOnFire(Level aWorld, BlockPos aCoords, boolean aReplaceCenter, boolean aCheckFlammability) {WD.burn(aWorld, aCoords, aReplaceCenter, aCheckFlammability);}
 		@Deprecated public static boolean setToFire(Level aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {return WD.fire(aWorld, aX, aY, aZ, aCheckFlammability);}

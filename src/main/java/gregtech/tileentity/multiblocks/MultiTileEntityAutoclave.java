@@ -43,12 +43,12 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityAutoclave extends TileEntityBase10MultiBlockMachine {
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
-		int tX = getOffsetXN(mFacing), tY = yCoord+1, tZ = getOffsetZN(mFacing);
-		if (level.blockExists(tX-1, tY, tZ-1) && level.blockExists(tX+1, tY, tZ-1) && level.blockExists(tX-1, tY, tZ+1) && level.blockExists(tX+1, tY, tZ+1)) {
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY()+1, tZ = getOffsetZN(mFacing);
+		if (WD.exists(level, tX-1, tY, tZ-1) && WD.exists(level, tX+1, tY, tZ-1) && WD.exists(level, tX-1, tY, tZ+1) && WD.exists(level, tX+1, tY, tZ+1)) {
 			boolean tSuccess = T;
 			for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
 				if (i == 0 && j == 0 && k == 0) {
-					if (getAir(tX+i, tY+j, tZ+k)) level.setBlockToAir(tX+i, tY+j, tZ+k); else tSuccess = F;
+					if (getAir(tX+i, tY+j, tZ+k)) WD.set(level, tX+i, tY+j, tZ+k, NB, 0, 3); else tSuccess = F;
 				} else {
 					if (!ITileEntityMultiBlockController.Util.checkAndSetTarget(this, tX+i, tY+j, tZ+k, 18022, getMultiTileEntityRegistryID(), 0, MultiTileEntityMultiBlockPart.ONLY_ITEM_FLUID_ENERGY, aCoordinates, aPlayer, aInventory)) tSuccess = F;
 				}
@@ -75,7 +75,7 @@ public class MultiTileEntityAutoclave extends TileEntityBase10MultiBlockMachine 
 	
 	@Override
 	public boolean isInsideStructure(int aX, int aY, int aZ) {
-		int tX = getOffsetXN(mFacing), tY = yCoord, tZ = getOffsetZN(mFacing);
+		int tX = getOffsetXN(mFacing), tY = getBlockPos().getY(), tZ = getOffsetZN(mFacing);
 		return aX >= tX - 1 && aY >= tY && aZ >= tZ - 1 && aX <= tX + 1 && aY <= tY + 2 && aZ <= tZ + 1;
 	}
 	

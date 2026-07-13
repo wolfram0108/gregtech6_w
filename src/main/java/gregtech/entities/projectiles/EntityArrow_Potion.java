@@ -45,7 +45,7 @@ public class EntityArrow_Potion extends EntityArrow_Material {
 	@Override
 	public void writeEntityToNBT(CompoundTag aNBT) {
 		super.writeEntityToNBT(aNBT);
-		aNBT.setIntArray("mPotions", mPotions);
+		aNBT.putIntArray("mPotions", mPotions);
 	}
 	
 	@Override

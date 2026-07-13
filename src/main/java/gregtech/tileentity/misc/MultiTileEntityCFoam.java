@@ -55,9 +55,9 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_FOAMDRIED)) mFoamDried = aNBT.getBoolean(NBT_FOAMDRIED);
-		if (aNBT.hasKey(NBT_OWNABLE)) mOwnable = aNBT.getBoolean(NBT_OWNABLE);
-		if (aNBT.hasKey(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
+		if (aNBT.contains(NBT_FOAMDRIED)) mFoamDried = aNBT.getBoolean(NBT_FOAMDRIED);
+		if (aNBT.contains(NBT_OWNABLE)) mOwnable = aNBT.getBoolean(NBT_OWNABLE);
+		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
 	}
 	
 	@Override
@@ -65,7 +65,7 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 		super.writeToNBT2(aNBT);
 		UT.NBT.setBoolean(aNBT, NBT_FOAMDRIED, mFoamDried);
 		UT.NBT.setBoolean(aNBT, NBT_OWNABLE, mOwnable);
-		if (mOwner != null) aNBT.setString(NBT_OWNER, mOwner.toString());
+		if (mOwner != null) aNBT.putString(NBT_OWNER, mOwner.toString());
 	}
 	
 	@Override
@@ -79,7 +79,7 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	public static MultiTileEntityCFoam INSTANCE;
 	
 	public static boolean setBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, Player aPlayer, ItemStack aStack, short[] aRGB, boolean aOwned) {
-		return MTE_REGISTRY.mBlock.placeBlock(aWorld, aX, aY, aZ, aSide, INSTANCE.getMultiTileEntityID(), UT.NBT.make(NBT_COLOR, UT.Code.getRGBInt(aRGB), NBT_PAINTED, T, NBT_OWNABLE, aOwned, NBT_OWNER, aOwned && aPlayer != null ? aPlayer.getUniqueID().toString() : null), T, F);
+		return MTE_REGISTRY.mBlock.placeBlock(aWorld, aX, aY, aZ, aSide, INSTANCE.getMultiTileEntityID(), UT.NBT.make(NBT_COLOR, UT.Code.getRGBInt(aRGB), NBT_PAINTED, T, NBT_OWNABLE, aOwned, NBT_OWNER, aOwned && aPlayer != null ? aPlayer.getUUID().toString() : null), T, F);
 	}
 	
 	@Override
@@ -105,7 +105,7 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (mOwnable && aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUniqueID();
+		if (mOwnable && aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUUID();
 		return T;
 	}
 	
@@ -125,7 +125,7 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	@Override
 	public boolean removeFoam(byte aSide, Entity aPlayer) {
 		if (isClientSide() || !allowInteraction(aPlayer)) return F;
-		level.setBlock(xCoord, yCoord, zCoord, NB, 0, 3);
+		WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
 		return T;
 	}
 	
@@ -133,7 +133,7 @@ public class MultiTileEntityCFoam extends TileEntityBase07Paintable implements I
 	
 	@Override public int getLightOpacity() {return mFoamDried ? LIGHT_OPACITY_MAX : LIGHT_OPACITY_WATER;}
 	
-	@Override public float getBlockHardness()        {return (mFoamDried?BlocksGT.CFoam:BlocksGT.CFoamFresh).getBlockHardness(level, xCoord, yCoord, zCoord);}
+	@Override public float getBlockHardness()        {return (mFoamDried?BlocksGT.CFoam:BlocksGT.CFoamFresh).getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return (mFoamDried?BlocksGT.CFoam:BlocksGT.CFoamFresh).getExplosionResistance(null);}
 	
 	@Override public byte getVisualData() {return (byte)((mFoamDried ? 1 : 0)|(mOwnable ? 2 : 0));}

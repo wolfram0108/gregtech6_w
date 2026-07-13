@@ -35,5 +35,5 @@ public abstract class BlockBaseSealable extends BlockBase implements IBlockSeala
 		super(aItemClass, aNameInternal, aMaterial, aSoundType);
 	}
 	
-	@Override public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return isSealable(WD.meta(aWorld, aX, aY, aZ), (byte)(UT.Code.side(aDirection) ^ 1));}
+	public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return isSealable(WD.meta(aWorld, aX, aY, aZ), (byte)(UT.Code.side(aDirection) ^ 1));}
 }

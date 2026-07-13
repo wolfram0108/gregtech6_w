@@ -155,7 +155,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			for (int tD = 4; tD <= 16; tD *= 2) try {for (int i = 0; i < tD; i++) {
 				int tX = aMinX+aRandom.nextInt(tD*2)+8-tD, tZ = aMinZ+aRandom.nextInt(tD*2)+8-tD;
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {
-					Block tContact = aWorld.getBlock(tX, tY, tZ);
+					Block tContact = WD.block(aWorld, tX, tY, tZ);
 					if (tContact.getMaterial().isLiquid() || tContact == Blocks.farmland) break;
 					if (!tContact.isOpaqueCube() || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 					if (!WD.easyRep(aWorld, tX, tY+1, tZ)) break;
@@ -200,7 +200,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			// Portion a Muffin shaped Ore Blob around the Bedrock Spot.
 			for (int tY = 1; tY < tD1.length; tY++) for (int tX = tD1[tY]; tX < tD2[tY]; tX++) for (int tZ = tD1[tY]; tZ < tD2[tY]; tZ++) {
 				if (GENERATED_NO_BEDROCK_ORE) if (tStone != NB) {
-					aWorld.setBlock(aMinX+tX, tY, aMinZ+tZ, tStone, 0, 0);
+					WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, tStone, 0, 0);
 				} else {
 					WD.removeBedrock(aWorld, aMinX+tX, tY, aMinZ+tZ);
 				}

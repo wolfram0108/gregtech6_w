@@ -61,7 +61,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 			int tX = aMinX+i, tZ = aMinZ+j;
 			for (int tY = tMaxHeight; tY >= tMinHeight; tY--) {
 				// Efficiently grab the Block at that Position.
-				Block tContact = aChunk.getBlock(tX&15, tY, tZ&15);
+				Block tContact = WD.block(aChunk, tX&15, tY, tZ&15);
 				// Don't put shit on Farmland, that usually looks ugly as heck.
 				if (tContact == Blocks.farmland) break;
 				// Lets ignore all non-full Blocks and Trees on the way down, except Fluids.

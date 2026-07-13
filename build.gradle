@@ -220,3 +220,14 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// ОСНАСТКА ИЗОЛЯЦИИ ЯДРА (порт, паритет-первый заход): печать compileClasspath main,
+// чтобы компилировать ровно подмножество ядра-403 отдельным javac (см. core_unit_files.txt).
+tasks.register('printCompileCp') {
+    def cp = sourceSets.main.compileClasspath
+    doLast {
+        println "COMPILE_CP_START"
+        println cp.asPath
+        println "COMPILE_CP_END"
+    }
+}

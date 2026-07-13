@@ -58,26 +58,26 @@ public abstract class MultiTileEntitySensor extends TileEntityBase10FacingDouble
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
-		if (aNBT.hasKey(NBT_VISUAL)) mDisplayedNumber = UT.Code.unsignS(aNBT.getShort(NBT_VISUAL));
-		if (aNBT.hasKey(NBT_VALUE)) mSetNumber = UT.Code.unsignS(aNBT.getShort(NBT_VALUE)); else mSetNumber = mDisplayedNumber;
-		if (aNBT.hasKey(NBT_CONNECTION)) mSecondFacing = aNBT.getByte(NBT_CONNECTION);
-		if (aNBT.hasKey(NBT_REDSTONE)) mRedstone = aNBT.getByte(NBT_REDSTONE);
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_VISUAL)) mDisplayedNumber = UT.Code.unsignS(aNBT.getShort(NBT_VISUAL));
+		if (aNBT.contains(NBT_VALUE)) mSetNumber = UT.Code.unsignS(aNBT.getShort(NBT_VALUE)); else mSetNumber = mDisplayedNumber;
+		if (aNBT.contains(NBT_CONNECTION)) mSecondFacing = aNBT.getByte(NBT_CONNECTION);
+		if (aNBT.contains(NBT_REDSTONE)) mRedstone = aNBT.getByte(NBT_REDSTONE);
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setShort(NBT_VISUAL, (short)mDisplayedNumber);
-		aNBT.setShort(NBT_VALUE, (short)mSetNumber);
-		aNBT.setByte(NBT_MODE, mMode);
-		aNBT.setByte(NBT_REDSTONE, mRedstone);
+		aNBT.putShort(NBT_VISUAL, (short)mDisplayedNumber);
+		aNBT.putShort(NBT_VALUE, (short)mSetNumber);
+		aNBT.putByte(NBT_MODE, mMode);
+		aNBT.putByte(NBT_REDSTONE, mRedstone);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		aNBT.setShort(NBT_VALUE, (short)mSetNumber);
-		aNBT.setByte(NBT_MODE, mMode);
+		aNBT.putShort(NBT_VALUE, (short)mSetNumber);
+		aNBT.putByte(NBT_MODE, mMode);
 		return aNBT;
 	}
 	

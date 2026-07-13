@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.misc;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
@@ -43,7 +44,7 @@ public abstract class BlockBaseMachineUpdate extends BlockBaseMeta {
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
 	}
 	
-	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ)                           {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, aWorld.getBlockMetadata(aX, aY, aZ))) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(aWorld.getBlockMetadata(aX, aY, aZ)), F);}
-	@Override public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, aMetaData                          )) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMetaData), T);}
-	@Override public int getMobilityFlag() {return 2;}
+	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ)                           {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, WD.meta(aWorld, aX, aY, aZ))) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(WD.meta(aWorld, aX, aY, aZ)), F);}
+	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMetaData) {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, aMetaData                          )) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMetaData), T);}
+	public int getMobilityFlag() {return 2;}
 }

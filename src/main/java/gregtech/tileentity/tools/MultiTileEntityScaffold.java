@@ -58,13 +58,13 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_DESIGN)) mDesign = aNBT.getByte(NBT_DESIGN);
+		if (aNBT.contains(NBT_DESIGN)) mDesign = aNBT.getByte(NBT_DESIGN);
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_DESIGN, mDesign);
+		aNBT.putByte(NBT_DESIGN, mDesign);
 	}
 	
 	@Override
@@ -97,7 +97,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 	}
 	
 	public boolean isConnectedVertically() {
-		return level == null || WD.opq(level, xCoord, yCoord-1, zCoord, T, T) || getAdjacentTileEntity(SIDE_DOWN).mTileEntity instanceof MultiTileEntityScaffold;
+		return level == null || WD.opq(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), T, T) || getAdjacentTileEntity(SIDE_DOWN).mTileEntity instanceof MultiTileEntityScaffold;
 	}
 	public boolean isConnectedToGround() {
 		if (isConnectedVertically()) return T;
@@ -169,7 +169,7 @@ public class MultiTileEntityScaffold extends TileEntityBase09FacingSingle implem
 		default: box(aAABB, aList); return;
 		case  0: box(aAABB, aList, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return;
 		case  1:
-			if (aEntity == null || (!aEntity.isSneaking() && aEntity.getY() >= yCoord+1))
+			if (aEntity == null || (!aEntity.isSneaking() && aEntity.getY() >= getBlockPos().getY()+1))
 			box(aAABB, aList, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]);
 		case  2:
 			box(aAABB, aList, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[15], PX_N[ 0], PX_N[15]);

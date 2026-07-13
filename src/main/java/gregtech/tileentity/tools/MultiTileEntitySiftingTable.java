@@ -60,16 +60,16 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_STATE)) mState = aNBT.getByte(NBT_STATE);
-		if (aNBT.hasKey(NBT_PROGRESS)) mClickCount = aNBT.getByte(NBT_PROGRESS);
-		if (aNBT.hasKey(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
+		if (aNBT.contains(NBT_STATE)) mState = aNBT.getByte(NBT_STATE);
+		if (aNBT.contains(NBT_PROGRESS)) mClickCount = aNBT.getByte(NBT_PROGRESS);
+		if (aNBT.contains(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_STATE, mState);
-		aNBT.setByte(NBT_PROGRESS, mClickCount);
+		aNBT.putByte(NBT_STATE, mState);
+		aNBT.putByte(NBT_PROGRESS, mClickCount);
 	}
 	
 	@Override
@@ -284,7 +284,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 					if (canInsertItem2(0, aPlayer.inventory.getCurrentItem(), aSide)) ST.move(aPlayer.inventory, this, aPlayer.inventory.currentItem, 0);
 				}
 			} else {
-				for (int i = 1; i < 13; i++) ST.give(aPlayer, slotTake(i), F, level, xCoord+0.5, yCoord+1, zCoord+0.5);
+				for (int i = 1; i < 13; i++) ST.give(aPlayer, slotTake(i), F, level, getBlockPos().getX()+0.5, getBlockPos().getY()+1, getBlockPos().getZ()+0.5);
 			}
 		} else {
 			if (SIDES_TOP[aSide]) {

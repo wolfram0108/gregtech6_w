@@ -39,7 +39,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		/*if (!aWorld.isRemote && aWorld.getBlock(aX, aY, aZ) == GregTech_API.sBlockMachines && aWorld.getBlockMetadata(aX, aY, aZ) == 6) {
 			
-			GT_TileEntity_Sonictron tSonictron = (GT_TileEntity_Sonictron)aWorld.getTileEntity(aX, aY, aZ);
+			GT_TileEntity_Sonictron tSonictron = (GT_TileEntity_Sonictron)WD.te(aWorld, aX, aY, aZ, T);
 			if (tSonictron != null) {
 				ItemStack[] tInventory = getNBTInventory(aStack);
 				if (aPlayer.isSneaking()) {
@@ -96,7 +96,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	public static CompoundTag setCurrentIndex(ItemStack aStack, int aIndex) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
-		tNBTTagCompound.setInteger("mCurrentIndex", aIndex);
+		tNBTTagCompound.putInt("mCurrentIndex", aIndex);
 		return tNBTTagCompound;
 	}
 
@@ -104,7 +104,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	public static CompoundTag setTickTimer(ItemStack aStack, int aTime) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
-		tNBTTagCompound.setInteger("mTickTimer", aTime);
+		tNBTTagCompound.putInt("mTickTimer", aTime);
 		return tNBTTagCompound;
 	}
 	
@@ -133,11 +133,11 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 			ItemStack stack = aInventory[i];
 			if (stack != null) {
 				CompoundTag tag = UT.NBT.make();
-				tag.setByte("Slot", (byte) i);
+				tag.putByte("Slot", (byte) i);
 				tNBT_ItemList.appendTag(ST.save(stack));
 			}
 		}
-		tNBT.setTag("Inventory", tNBT_ItemList);
+		tNBT.put("Inventory", tNBT_ItemList);
 		UT.NBT.set(aStack, tNBT);
 		return tNBT;
 	}

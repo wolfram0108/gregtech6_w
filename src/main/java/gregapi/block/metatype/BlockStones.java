@@ -619,8 +619,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (!aWorld.isRemote && WD.burning(aWorld, aX, aY, aZ)) switch(WD.meta(aWorld, aX, aY, aZ)) {
-		case MCOBL: aWorld.setBlock(aX, aY, aZ, this, COBBL, 3); break;
-		case MBRIK: aWorld.setBlock(aX, aY, aZ, this, BRICK, 3); break;
+		case MCOBL: WD.set(aWorld, aX, aY, aZ, this, COBBL, 3); break;
+		case MBRIK: WD.set(aWorld, aX, aY, aZ, this, BRICK, 3); break;
 		}
 	}
 	
@@ -629,10 +629,10 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		return PLANTABLE[WD.meta(aWorld, aX, aY, aZ)] && aPlant.getPlantType(aWorld, aX+aSide.offsetX, aY+aSide.offsetY, aZ+aSide.offsetZ) == EnumPlantType.Cave;
 	}
 	
-	@Override public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return MOSSY[WD.meta(aWorld, aX, aY, aZ)];}
-	@Override public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return MOSSY[WD.meta(aWorld, aX, aY, aZ)];}
+	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return MOSSY[WD.meta(aWorld, aX, aY, aZ)];}
+	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return MOSSY[WD.meta(aWorld, aX, aY, aZ)];}
 	
-	@Override
+	// @Override
 	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {
 		for (byte[] tOffs : CUBE_3) {
 			Block tBlock = WD.block(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2]);
@@ -728,17 +728,17 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		}
 	}
 	
-	@Override public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(ST.make(this, 1, mBlock == this && aMeta == STONE ? COBBL : aMeta));}
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(ST.make(this, 1, mBlock == this && aMeta == STONE ? COBBL : aMeta));}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return SEALABLE[aMeta] && super.isSealable(aMeta, aSide);}
-	@Override public int isProvidingWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return WD.meta(aWorld, aX, aY, aZ) == RSTBR ? 15 : 0;}
-	@Override public boolean shouldCheckWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mBlock == this && WD.meta(aWorld, aX, aY, aZ) != RSTBR;}
+	public int isProvidingWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return WD.meta(aWorld, aX, aY, aZ) == RSTBR ? 15 : 0;}
+	public boolean shouldCheckWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mBlock == this && WD.meta(aWorld, aX, aY, aZ) != RSTBR;}
 	@Override public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (MOSSY[WD.meta(aWorld, aX, aY, aZ)] && WD.burning(aWorld, aX, aY, aZ)) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate(aWorld));}
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {if (MOSSY[WD.meta(aWorld, aX, aY, aZ)] && WD.burning(aWorld, aX, aY, aZ)) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate(aWorld));}
-	@Override public int tickRate(Level aWorld) {return 100;}
+	public int tickRate(Level aWorld) {return 100;}
 	@Override public boolean canCreatureSpawn(byte aMeta) {return mBlock == this && SPAWNABLE[aMeta];}
 	@Override public boolean isFireSource(byte aMeta) {return MOSSY[aMeta];}
 	@Override public boolean isFlammable(byte aMeta) {return MOSSY[aMeta];}
 	@Override public int getFlammability(byte aMeta) {return 0;}
 	@Override public int getFireSpreadSpeed(byte aMeta) {return MOSSY[aMeta]?3000:0;}
-	@Override public boolean isReplaceableOreGen(Level aWorld, int aX, int aY, int aZ, Block aTarget) {return aTarget == this && WD.meta(aWorld, aX, aY, aZ) == STONE;}// No longer pretend to be Vanilla Stone at Y<=6, as all the special cases (Draconium) have been resolved.
+	public boolean isReplaceableOreGen(Level aWorld, int aX, int aY, int aZ, Block aTarget) {return aTarget == this && WD.meta(aWorld, aX, aY, aZ) == STONE;}// No longer pretend to be Vanilla Stone at Y<=6, as all the special cases (Draconium) have been resolved.
 }

@@ -84,15 +84,15 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override public boolean isOpaqueCube() {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
-	@Override public boolean isLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
-	@Override public boolean isShearable(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
+	public boolean isLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
+	public boolean isShearable(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(Blocks.leaves.isOpaqueCube()?8:0)].getIcon(0);}
-	@Override public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
-	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : super.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);}
-	@Override public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
-	@Override public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}}
+	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : super.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);}
+	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
+	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}}
 	
 	@Override
 	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {
@@ -102,11 +102,11 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
-		Block aBlock = aWorld.getBlock(aX, aY, aZ);
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		return !(aBlock.isOpaqueCube() || (Blocks.leaves.isOpaqueCube() && aBlock instanceof BlockBaseLeaves));
 	}
 	
-	@Override
+	// @Override
 	public void beginLeavesDecay(Level aWorld, int aX, int aY, int aZ) {
 		if (aWorld.isRemote) return;
 		if (!WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}
@@ -117,7 +117,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isRemote) return;
-		if (!WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.setBlockToAir(aX, aY, aZ); return;}
+		if (!WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aMeta < 8) return;
 		int tRangeSide = getLeavesRangeSide(aMeta), tRangeYNeg = getLeavesRangeYNeg(aMeta), tRangeYPos = getLeavesRangeYPos(aMeta);
@@ -127,10 +127,10 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 			return;
 		}
 		if (!(MD.TFC.mLoaded || MD.TFCP.mLoaded) || aRandom.nextInt(4) == 0) dropBlockAsItem(aWorld, aX, aY, aZ, aMeta, 0);
-		aWorld.setBlockToAir(aX, aY, aZ);
+		WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 	}
 	
-	@Override
+	// @Override
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		ArrayListNoNulls<ItemStack> rDrops = ST.arraylist();
 		int tChance = 50;
@@ -142,11 +142,11 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 		return rDrops;
 	}
 	
-	@Override @OnlyIn(Dist.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public int getBlockColor() {return ColorizerFoliage.getFoliageColor(0.5, 1.0);}
-	@Override @OnlyIn(Dist.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int p_149741_1_) {return ColorizerFoliage.getFoliageColorBasic();}
-	@Override @OnlyIn(Dist.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		int l = 0, i1 = 0, j1 = 0;
 		for (int k1 = -1; k1 <= 1; ++k1) for (int l1 = -1; l1 <= 1; ++l1) {

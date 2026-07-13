@@ -69,7 +69,7 @@ public class MultiTileEntityBumbleHive extends TileEntityBase07Paintable impleme
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_thermometer)) {
-			if (aChatReturn != null) aChatReturn.add("Temperature: " + WD.envTemp(level, xCoord, yCoord, zCoord) + "K - Humidity: " + getBiome().rainfall);
+			if (aChatReturn != null) aChatReturn.add("Temperature: " + WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()) + "K - Humidity: " + getBiome().rainfall);
 			return 1000;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);

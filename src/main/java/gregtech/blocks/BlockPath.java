@@ -90,7 +90,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	@Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		if (SIDES_TOP[aSide]) return T;
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		return tBlock != Blocks.farmland && !WD.visOpq(tBlock);
 	}
 	
@@ -111,19 +111,19 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	}
 	
 	public boolean isHalfBlock(BlockGetter aWorld, int aX, int aY, int aZ) {
-		return aWorld.getBlock(aX+1, aY-1, aZ) == this || aWorld.getBlock(aX, aY-1, aZ+1) == this || aWorld.getBlock(aX-1, aY-1, aZ) == this || aWorld.getBlock(aX, aY-1, aZ-1) == this;
+		return WD.block(aWorld, aX+1, aY-1, aZ) == this || WD.block(aWorld, aX, aY-1, aZ+1) == this || WD.block(aWorld, aX-1, aY-1, aZ) == this || WD.block(aWorld, aX, aY-1, aZ-1) == this;
 	}
 	
 	@Override
 	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if ((aEntity.motionX != 0 || aEntity.motionZ != 0) && !aEntity.isInWater() && !aEntity.isSneaking()) {
-			double tSpeed = (aWorld.getBlock(aX, aY-1, aZ).slipperiness >= 0.8 && isHalfBlock(aWorld, aX, aY, aZ) ? 1.05 : 1.1);
+			double tSpeed = (WD.block(aWorld, aX, aY-1, aZ).slipperiness >= 0.8 && isHalfBlock(aWorld, aX, aY, aZ) ? 1.05 : 1.1);
 			aEntity.motionX *= tSpeed; aEntity.motionZ *= tSpeed;
 		}
 		// Convert Et Futurum Grass Paths to this when adjacent.
 		if (IL.EtFu_Path.exists()) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
-			if (IL.EtFu_Path.equal(aWorld.getBlock(aX+i, aY+j, aZ+k))) {
-				aWorld.setBlock(aX+i, aY+j, aZ+k, this, 0, 2);
+			if (IL.EtFu_Path.equal(WD.block(aWorld, aX+i, aY+j, aZ+k))) {
+				WD.set(aWorld, aX+i, aY+j, aZ+k, this, 0, 2);
 			}
 		}
 	}

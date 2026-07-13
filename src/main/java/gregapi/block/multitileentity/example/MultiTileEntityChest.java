@@ -94,29 +94,29 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_COLOR)) mRGBa = aNBT.getInteger(NBT_COLOR);
-		if (aNBT.hasKey(NBT_FACING)) mFacing = aNBT.getByte(NBT_FACING);
-		if (aNBT.hasKey(NBT_PAINTED)) mIsPainted = aNBT.getBoolean(NBT_PAINTED);
-		if (aNBT.hasKey(NBT_TRAPPED)) mIsTrapped = aNBT.getBoolean(NBT_TRAPPED);
-		if (aNBT.hasKey(NBT_TEXTURE)) mTextureName = aNBT.getString(NBT_TEXTURE);
-		if (aNBT.hasKey("gt.dungeonloot")) mDungeonLootName = aNBT.getString("gt.dungeonloot");
-		if (aNBT.hasKey(NBT_HARDNESS)) mHardness = aNBT.getFloat(NBT_HARDNESS);
-		if (aNBT.hasKey(NBT_RESISTANCE)) mResistance = aNBT.getFloat(NBT_RESISTANCE);
-		if (aNBT.hasKey(NBT_MATERIAL)) mMaterial = OreDictMaterial.get(aNBT.getString(NBT_MATERIAL));
+		if (aNBT.contains(NBT_COLOR)) mRGBa = aNBT.getInteger(NBT_COLOR);
+		if (aNBT.contains(NBT_FACING)) mFacing = aNBT.getByte(NBT_FACING);
+		if (aNBT.contains(NBT_PAINTED)) mIsPainted = aNBT.getBoolean(NBT_PAINTED);
+		if (aNBT.contains(NBT_TRAPPED)) mIsTrapped = aNBT.getBoolean(NBT_TRAPPED);
+		if (aNBT.contains(NBT_TEXTURE)) mTextureName = aNBT.getString(NBT_TEXTURE);
+		if (aNBT.contains("gt.dungeonloot")) mDungeonLootName = aNBT.getString("gt.dungeonloot");
+		if (aNBT.contains(NBT_HARDNESS)) mHardness = aNBT.getFloat(NBT_HARDNESS);
+		if (aNBT.contains(NBT_RESISTANCE)) mResistance = aNBT.getFloat(NBT_RESISTANCE);
+		if (aNBT.contains(NBT_MATERIAL)) mMaterial = OreDictMaterial.get(aNBT.getString(NBT_MATERIAL));
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_FACING, mFacing);
+		aNBT.putByte(NBT_FACING, mFacing);
 		UT.NBT.setBoolean(aNBT, NBT_TRAPPED, mIsTrapped);
-		if (UT.Code.stringValid(mDungeonLootName)) aNBT.setString("gt.dungeonloot", mDungeonLootName);
+		if (UT.Code.stringValid(mDungeonLootName)) aNBT.putString("gt.dungeonloot", mDungeonLootName);
 	}
 	
 	@Override
 	public CompoundTag writeItemNBT(CompoundTag aNBT) {
 		aNBT = super.writeItemNBT(aNBT);
-		if (UT.Code.stringValid(mDungeonLootName)) aNBT.setString("gt.dungeonloot", mDungeonLootName);
+		if (UT.Code.stringValid(mDungeonLootName)) aNBT.putString("gt.dungeonloot", mDungeonLootName);
 		return aNBT;
 	}
 	
@@ -233,7 +233,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (isServerSide() && !level.isSideSolid(xCoord, yCoord + 1, zCoord, FORGE_DIR[SIDE_BOTTOM]) && isUseableByPlayerGUI(aPlayer)) {
+		if (isServerSide() && !level.isSideSolid(getBlockPos().getX(), getBlockPos().getY() + 1, getBlockPos().getZ(), FORGE_DIR[SIDE_BOTTOM]) && isUseableByPlayerGUI(aPlayer)) {
 			generateDungeonLoot();
 			openGUI(aPlayer);
 		}
@@ -261,11 +261,11 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	protected void generateDungeonLoot() {
 		if (isServerSide() && UT.Code.stringValid(mDungeonLootName) && ST.generateLoot(RNGSUS, mDungeonLootName, this)) {
-			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.4, yCoord+1.25, zCoord+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.4, yCoord+1.25, zCoord+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.5, yCoord+1.35, zCoord+0.5, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.6, yCoord+1.25, zCoord+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
-			level.spawnEntityInWorld(new ExperienceOrb(level, xCoord+0.6, yCoord+1.25, zCoord+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.4, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.4, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+1.35, getBlockPos().getZ()+0.5, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.6, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.4, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
+			level.spawnEntityInWorld(new ExperienceOrb(level, getBlockPos().getX()+0.6, getBlockPos().getY()+1.25, getBlockPos().getZ()+0.6, 5+RNGSUS.nextInt(5)+RNGSUS.nextInt(5)));
 			mDungeonLootName = "";
 		}
 	}
@@ -346,7 +346,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 		private static final MultiTileEntityModelChest sModel = new MultiTileEntityModelChest();
 		public final Map<String, Identifier[]> mResources = new HashMap<>();
 		
-		@Override
+		// @Override
 		public void renderTileEntityAt(BlockEntity aTileEntity, double aX, double aY, double aZ, float aPartialTick) {
 			if (aTileEntity instanceof MultiTileEntityChest) {
 				double tLidAngle = 1 - (((MultiTileEntityChest)aTileEntity).oLidAngle + (((MultiTileEntityChest)aTileEntity).mLidAngle - ((MultiTileEntityChest)aTileEntity).oLidAngle) * aPartialTick); tLidAngle = -(((1 - tLidAngle*tLidAngle*tLidAngle) * Math.PI) / 2);

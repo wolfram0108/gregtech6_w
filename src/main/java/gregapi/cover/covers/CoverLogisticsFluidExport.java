@@ -86,7 +86,7 @@ public class CoverLogisticsFluidExport extends AbstractCoverAttachmentLogistics 
 	@Override
 	public boolean onCoverClickedRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer instanceof Player && aData.mTileEntity.isServerSide()) {
-			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].hasKey("gt.filter.fluid")) {
+			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].contains("gt.filter.fluid")) {
 				ItemStack tStack = ((Player)aPlayer).getCurrentEquippedItem();
 				if (ST.valid(tStack)) {
 					FluidStack tFluid = FL.getFluid(tStack, T);

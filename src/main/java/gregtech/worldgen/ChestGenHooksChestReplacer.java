@@ -107,17 +107,17 @@ public class ChestGenHooksChestReplacer extends ChestGenHooks {
 			Level aWorld = ((ChestBlockEntity)aInventory).getWorldObj();
 			if (aWorld == null) return generateChestContent2(aRandom, aInventory);
 			// XYZ and check if the Block we replace is a regular Chest.
-			int aX = ((ChestBlockEntity)aInventory).xCoord, aY = ((ChestBlockEntity)aInventory).yCoord, aZ = ((ChestBlockEntity)aInventory).zCoord;
-			if (Blocks.chest != aWorld.getBlock(aX, aY, aZ)) return generateChestContent2(aRandom, aInventory);
+			int aX = ((ChestBlockEntity)aInventory).getBlockPos().getX(), aY = ((ChestBlockEntity)aInventory).getBlockPos().getY(), aZ = ((ChestBlockEntity)aInventory).getBlockPos().getZ();
+			if (Blocks.chest != WD.block(aWorld, aX, aY, aZ)) return generateChestContent2(aRandom, aInventory);
 			// Does Greg's Registry exist?
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 			if (tRegistry == null) return generateChestContent2(aRandom, aInventory);
 			// Grab the Chests Facing.
-			int tFacing = VALIDATE_HORIZONTAL[aWorld.getBlockMetadata(aX, aY, aZ)];
+			int tFacing = VALIDATE_HORIZONTAL[WD.meta(aWorld, aX, aY, aZ)];
 			// Erase the Chest with a Block Update.
-			aWorld.setBlock(aX, aY, aZ, NB, 0, 1);
+			WD.set(aWorld, aX, aY, aZ, NB, 0, 1);
 			// Erase it again just to fucking make sure!
-			aWorld.setBlock(aX, aY, aZ, NB, 0, 1);
+			WD.set(aWorld, aX, aY, aZ, NB, 0, 1);
 			// Place the better Loot Chest.
 			tRegistry.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mChestID, UT.NBT.make(NBT_FACING, tFacing, NBT_TRAPPED, T, "gt.dungeonloot", mCategory), F, T);
 			// Loot wont need to be generated anymore in that case.

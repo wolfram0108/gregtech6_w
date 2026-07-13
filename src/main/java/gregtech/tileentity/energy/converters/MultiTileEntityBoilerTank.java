@@ -73,13 +73,13 @@ public class MultiTileEntityBoilerTank extends TileEntityBase09FacingSingle impl
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.hasKey(NBT_VISUAL)) mBarometer = aNBT.getByte(NBT_VISUAL);
-		if (aNBT.hasKey(NBT_OUTPUT_SU)) mOutput = aNBT.getLong(NBT_OUTPUT_SU);
+		if (aNBT.contains(NBT_VISUAL)) mBarometer = aNBT.getByte(NBT_VISUAL);
+		if (aNBT.contains(NBT_OUTPUT_SU)) mOutput = aNBT.getLong(NBT_OUTPUT_SU);
 		mTanks[1].setCapacity(mCapacity = mOutput * 10000);
-		if (aNBT.hasKey(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
-		if (aNBT.hasKey(NBT_CAPACITY_SU)) mTanks[1].setCapacity(aNBT.getLong(NBT_CAPACITY_SU));
-		if (aNBT.hasKey(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_CAPACITY)) mCapacity = aNBT.getLong(NBT_CAPACITY);
+		if (aNBT.contains(NBT_CAPACITY_SU)) mTanks[1].setCapacity(aNBT.getLong(NBT_CAPACITY_SU));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		for (int i = 0; i < mTanks.length; i++) mTanks[i].readFromNBT(aNBT, NBT_TANK+"."+i);
 	}
 	
@@ -87,7 +87,7 @@ public class MultiTileEntityBoilerTank extends TileEntityBase09FacingSingle impl
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
 		UT.NBT.setNumber(aNBT, NBT_ENERGY, mEnergy);
-		if (mEfficiency != 10000) aNBT.setShort(NBT_EFFICIENCY, mEfficiency);
+		if (mEfficiency != 10000) aNBT.putShort(NBT_EFFICIENCY, mEfficiency);
 		for (int i = 0; i < mTanks.length; i++) mTanks[i].writeToNBT(aNBT, NBT_TANK+"."+i);
 	}
 	
@@ -201,7 +201,7 @@ public class MultiTileEntityBoilerTank extends TileEntityBase09FacingSingle impl
 	@Override
 	public boolean removedByPlayer(Level aWorld, Player aPlayer, boolean aWillHarvest) {
 		if (mBarometer > 4 && isServerSide() && !UT.Entities.isCreative(aPlayer)) explode(T);
-		return level.setBlockToAir(xCoord, yCoord, zCoord);
+		return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
 	}
 	
 	@Override

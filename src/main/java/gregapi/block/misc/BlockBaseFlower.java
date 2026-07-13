@@ -80,35 +80,35 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));
 	}
 	
-	@Override public final String getUnlocalizedName() {return mNameInternal;}
+	public final String getUnlocalizedName() {return mNameInternal;}
 	@Override public String name(byte aMeta) {return mNameInternal + "." + aMeta;}
-	@Override public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 0;}
-	@Override public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return 0;}
-	@Override public float getExplosionResistance(Entity aEntity) {return 0;}
-	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
-	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	@Override public boolean canSilkHarvest() {return canSilkHarvest((byte)0);}
-	@Override public boolean canSilkHarvest(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {return canSilkHarvest(UT.Code.bind4(aMeta));}
-	@Override public boolean isToolEffective(String aType, int aMeta) {return T;}
-	@Override public boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
-	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
-	@Override public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
-	@Override public int damageDropped(int aMeta) {return aMeta;}
-	@Override public int quantityDropped(Random par1Random) {return 1;}
-	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
-	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
-	@Override public Item getItemDropped(int par1, Random aRandom, int par3) {return Item.getItemFromBlock(this);}
-	@Override public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.getItemFromBlock(this);}
-	@Override public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
-	@Override public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
-	@SuppressWarnings("unchecked") @Override public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {for (int i = 0; i < maxMeta(); i++) aList.add(ST.make(aItem, 1, i));}
-	@Override public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
+	public String getLocalizedName() {return I18n.translateToLocal(mNameInternal);}
+	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 0;}
+	public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return 0;}
+	public float getExplosionResistance(Entity aEntity) {return 0;}
+	public String getHarvestTool(int aMeta) {return TOOL_sword;}
+	public int getHarvestLevel(int aMeta) {return 0;}
+	public boolean canSilkHarvest() {return canSilkHarvest((byte)0);}
+	public boolean canSilkHarvest(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {return canSilkHarvest(UT.Code.bind4(aMeta));}
+	public boolean isToolEffective(String aType, int aMeta) {return T;}
+	public boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
+	public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
+	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
+	public int damageDropped(int aMeta) {return aMeta;}
+	public int quantityDropped(Random par1Random) {return 1;}
+	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
+	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
+	public Item getItemDropped(int par1, Random aRandom, int par3) {return Item.getItemFromBlock(this);}
+	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.getItemFromBlock(this);}
+	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {for (int i = 0; i < maxMeta(); i++) aList.add(ST.make(aItem, 1, i));}
+	public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return mMaxMeta;}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
-	@Override public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
-	@Override public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote && !WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.setBlock(aX, aY, aZ, NB, 0, 3); return;}}
+	public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
+	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
+	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}}
 	
 	@Override public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {/**/}
 	@Override public float getExplosionResistance(byte aMeta) {return 0;}
@@ -125,19 +125,19 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 	@Override public int getItemStackLimit(ItemStack aStack) {return 64;}
 	@Override public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return aStack;}
 	
-	@Override public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return EnumPlantType.Plains;}
-	@Override public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
-	@Override public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
-	@Override public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.oxygen(aWorld, aX, aY, aZ) && aWorld.getBlock(aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.yellow_flower);}
-	@Override public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}
-	@Override public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return T;}
-	@Override public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, 1, WD.meta(aWorld, aX, aY, aZ));}
+	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return EnumPlantType.Plains;}
+	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
+	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.oxygen(aWorld, aX, aY, aZ) && WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.yellow_flower);}
+	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}
+	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return T;}
+	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, 1, WD.meta(aWorld, aX, aY, aZ));}
 	
-	@Override
+	// @Override
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (canBlockStay(aWorld, aX, aY, aZ)) return;
 		dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
-		aWorld.setBlock(aX, aY, aZ, NB, 0, 2);
+		WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 	}
 	
 	@Override public boolean onItemUseFirst(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return F;}
@@ -146,7 +146,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 	public boolean onItemUse(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aStack.getCount() == 0) return F;
 		
-		Block tBlock = aWorld.getBlock(aX, aY, aZ);
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
 		if (tTileEntity instanceof TileEntityFlowerPot) {

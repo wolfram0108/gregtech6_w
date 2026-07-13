@@ -53,8 +53,8 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey("gt.spring")) mFluid = FL.load(aNBT, "gt.spring");
-		if (aNBT.hasKey(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
+		if (aNBT.contains("gt.spring")) mFluid = FL.load(aNBT, "gt.spring");
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
 	}
 	
 	@Override
@@ -112,32 +112,32 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 				if (ST.valid(tBlock)) {
 					if (tBlock instanceof BlockFluidFinite) {
 						if (tAbove == tBlock) {
-							level.setBlock(xCoord, yCoord+1, zCoord, tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);
-							tBlock.updateTick(level, xCoord, yCoord+1, zCoord, RNGSUS);
-						} else if (WD.liquid(tAbove) || tAbove.isAir(level, xCoord, yCoord+1, zCoord)) {
-							level.setBlock(xCoord, yCoord+1, zCoord, tBlock, 7, 3);
-							tBlock.updateTick(level, xCoord, yCoord+1, zCoord, RNGSUS);
+							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);
+							tBlock.updateTick(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), RNGSUS);
+						} else if (WD.liquid(tAbove) || tAbove.isAir(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) {
+							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 7, 3);
+							tBlock.updateTick(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), RNGSUS);
 						}
 					} else {
 						if (tAbove == tBlock) {
 							if (getMetaDataAtSide(SIDE_UP) == 0) {
 								for (byte tSide : ALL_SIDES_HORIZONTAL) {
-									tAbove = getBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide]);
+									tAbove = getBlock(getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide]);
 									if (tAbove == tBlock) {
-										if (0 != getMetaData(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide])) {
-											level.setBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide], tBlock, 0, 3);
+										if (0 != getMetaData(getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide])) {
+											WD.set(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide], tBlock, 0, 3);
 											break;
 										}
-									} else if (tAbove.isAir(level, xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide])) {
-										level.setBlock(xCoord+OFFX[tSide], yCoord+1, zCoord+OFFZ[tSide], tBlock, 0, 3);
+									} else if (tAbove.isAir(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide])) {
+										WD.set(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide], tBlock, 0, 3);
 										break;
 									}
 								}
 							} else {
-								level.setBlock(xCoord, yCoord+1, zCoord, tBlock, 0, 3);
+								WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 0, 3);
 							}
-						} else if (WD.liquid(tAbove) || tAbove.isAir(level, xCoord, yCoord+1, zCoord)) {
-							level.setBlock(xCoord, yCoord+1, zCoord, tBlock, 0, 3);
+						} else if (WD.liquid(tAbove) || tAbove.isAir(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) {
+							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 0, 3);
 						}
 					}
 				}

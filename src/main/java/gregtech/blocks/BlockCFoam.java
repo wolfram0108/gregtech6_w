@@ -61,7 +61,7 @@ public class BlockCFoam extends BlockColored implements IBlockFoamable {
 	
 	@Override
 	public boolean removeFoam(Level aWorld, int aX, int aY, int aZ, byte aSide) {
-		return aWorld.setBlock(aX, aY, aZ, NB, 0, 3);
+		return WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 	}
 	
 	@Override

@@ -48,7 +48,7 @@ public class MultiTileEntityClassContainer {
 		mCreativeTabID = (short)aCreativeTabID;
 		mBlock = aBlock;
 		mClass = aClass;
-		if (mParameters.hasKey(NBT_MATERIAL) && !mParameters.hasKey(NBT_COLOR)) mParameters.setInteger(NBT_COLOR, UT.Code.getRGBInt(OreDictMaterial.get(mParameters.getString(NBT_MATERIAL)).fRGBaSolid));
+		if (mParameters.contains(NBT_MATERIAL) && !mParameters.contains(NBT_COLOR)) mParameters.putInt(NBT_COLOR, UT.Code.getRGBInt(OreDictMaterial.get(mParameters.getString(NBT_MATERIAL)).fRGBaSolid));
 		try {mCanonicalTileEntity = aClass.newInstance();} catch (Throwable e) {throw new IllegalArgumentException(e);}
 		if (mCanonicalTileEntity instanceof IMultiTileEntity) ((IMultiTileEntity)mCanonicalTileEntity).initFromNBT(mParameters, mID, (short)-1);
 	}

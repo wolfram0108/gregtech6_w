@@ -72,7 +72,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		mEnergy = aNBT.getLong(NBT_ENERGY);
 		mCPU_Logic = aNBT.getInteger("gt.cpu.logic");
 		mCPU_Control = aNBT.getInteger("gt.cpu.control");
@@ -108,7 +108,7 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	@Override
 	public boolean checkStructure2(BlockPos aCoordinates, Entity aPlayer, Container aInventory) {
 		int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
-		if (level.blockExists(tX-2, tY, tZ-2) && level.blockExists(tX+2, tY, tZ-2) && level.blockExists(tX-2, tY, tZ+2) && level.blockExists(tX+2, tY, tZ+2)) {
+		if (WD.exists(level, tX-2, tY, tZ-2) && WD.exists(level, tX+2, tY, tZ-2) && WD.exists(level, tX-2, tY, tZ+2) && WD.exists(level, tX+2, tY, tZ+2)) {
 			boolean tSuccess = T;
 			mCPU_Logic = 0;
 			mCPU_Control = 0;

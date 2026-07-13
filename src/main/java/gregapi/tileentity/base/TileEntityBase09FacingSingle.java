@@ -47,13 +47,13 @@ public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Direc
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_FACING)) mFacing = aNBT.getByte(NBT_FACING);
+		if (aNBT.contains(NBT_FACING)) mFacing = aNBT.getByte(NBT_FACING);
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		aNBT.setByte(NBT_FACING, mFacing);
+		aNBT.putByte(NBT_FACING, mFacing);
 	}
 	
 	@Override
@@ -80,9 +80,9 @@ public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Direc
 	@Override public byte getDirectionData() {return (byte)(mFacing & 7);}
 	@Override public void setDirectionData(byte aData) {mFacing = (byte)(aData & 7);}
 	@Override public String getFacingTool() {return TOOL_wrench;}
-	@Override public short getFacing() {return mFacing;}
-	@Override public void setFacing(short aFacing) {setPrimaryFacing(UT.Code.side(aFacing));}
-	@Override public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return TOOL_wrench.equals(getFacingTool()) && getValidSides()[aSide] && (aPlayer == null || aPlayer.getHeldItem() == null || !ItemsGT.SPECIAL_CASE_TOOLS.contains(aPlayer.getHeldItem(), T));}
+	public short getFacing() {return mFacing;}
+	public void setFacing(short aFacing) {setPrimaryFacing(UT.Code.side(aFacing));}
+	public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return TOOL_wrench.equals(getFacingTool()) && getValidSides()[aSide] && (aPlayer == null || aPlayer.getHeldItem() == null || !ItemsGT.SPECIAL_CASE_TOOLS.contains(aPlayer.getHeldItem(), T));}
 	@Override public boolean isConnectedWrenchingOverlay(ItemStack aStack, byte aSide) {return aSide == mFacing;}
 	
 	public void setPrimaryFacing(byte aFacing) {if (isClientSide() || aFacing == mFacing) return; byte oFacing = mFacing; mFacing = aFacing; updateClientData(); causeBlockUpdate(); onFacingChange(oFacing); checkCoverValidity(); doEnetUpdate(); if (hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(this, F);}

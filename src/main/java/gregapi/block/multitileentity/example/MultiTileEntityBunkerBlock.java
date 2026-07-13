@@ -51,13 +51,13 @@ public class MultiTileEntityBunkerBlock extends TileEntityBase05Paintable implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.hasKey(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
+		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
 	}
 	
 	@Override
 	public void writeToNBT2(CompoundTag aNBT) {
 		super.writeToNBT2(aNBT);
-		if (mOwner != null) aNBT.setString(NBT_OWNER, mOwner.toString());
+		if (mOwner != null) aNBT.putString(NBT_OWNER, mOwner.toString());
 	}
 	
 	@Override
@@ -68,7 +68,7 @@ public class MultiTileEntityBunkerBlock extends TileEntityBase05Paintable implem
 	
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUniqueID();
+		if (aPlayer != null && !OWNERSHIP_RESET) mOwner = aPlayer.getUUID();
 		return T;
 	}
 	

@@ -71,9 +71,9 @@ public class WorldgenBeacon extends WorldgenObject {
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();
 				tTileEntity.writeToNBT(tNBT);
-				tNBT.setInteger("Primary", MobEffect.moveSpeed.id);
-				tNBT.setInteger("Secondary", MobEffect.moveSpeed.id);
-				tNBT.setInteger("Levels", 4);
+				tNBT.putInt("Primary", MobEffect.moveSpeed.id);
+				tNBT.putInt("Secondary", MobEffect.moveSpeed.id);
+				tNBT.putInt("Levels", 4);
 				tTileEntity.readFromNBT(tNBT);
 			}
 			
@@ -82,9 +82,9 @@ public class WorldgenBeacon extends WorldgenObject {
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();
 				tTileEntity.writeToNBT(tNBT);
-				tNBT.setInteger("Primary", MobEffect.digSpeed.id);
-				tNBT.setInteger("Secondary", MobEffect.digSpeed.id);
-				tNBT.setInteger("Levels", 4);
+				tNBT.putInt("Primary", MobEffect.digSpeed.id);
+				tNBT.putInt("Secondary", MobEffect.digSpeed.id);
+				tNBT.putInt("Levels", 4);
 				tTileEntity.readFromNBT(tNBT);
 			}
 			
@@ -93,9 +93,9 @@ public class WorldgenBeacon extends WorldgenObject {
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();
 				tTileEntity.writeToNBT(tNBT);
-				tNBT.setInteger("Primary", MobEffect.damageBoost.id);
-				tNBT.setInteger("Secondary", MobEffect.damageBoost.id);
-				tNBT.setInteger("Levels", 4);
+				tNBT.putInt("Primary", MobEffect.damageBoost.id);
+				tNBT.putInt("Secondary", MobEffect.damageBoost.id);
+				tNBT.putInt("Levels", 4);
 				tTileEntity.readFromNBT(tNBT);
 			}
 			
@@ -104,9 +104,9 @@ public class WorldgenBeacon extends WorldgenObject {
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();
 				tTileEntity.writeToNBT(tNBT);
-				tNBT.setInteger("Primary", MobEffect.resistance.id);
-				tNBT.setInteger("Secondary", MobEffect.regeneration.id);
-				tNBT.setInteger("Levels", 4);
+				tNBT.putInt("Primary", MobEffect.resistance.id);
+				tNBT.putInt("Secondary", MobEffect.regeneration.id);
+				tNBT.putInt("Levels", 4);
 				tTileEntity.readFromNBT(tNBT);
 			}
 		}

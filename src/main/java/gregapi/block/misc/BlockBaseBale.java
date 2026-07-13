@@ -50,12 +50,12 @@ public abstract class BlockBaseBale extends BlockBaseMeta {
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.hay_block.getBlockHardness(aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.hay_block.getExplosionResistance(null);}
 	@Override public int getItemStackLimit(ItemStack aStack) {return ST.make(Blocks.hay_block, 1, 0).getMaxStackSize();}
-	@Override public int getRenderType() {return PILLAR_RENDER;}
+	public int getRenderType() {return PILLAR_RENDER;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
 	@Override public int getFlammability(byte aMeta) {return 150;}
 	@Override public int getFireSpreadSpeed(byte aMeta) {return 150;}
-	@Override public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return PILLAR_DATA_SIDE[aMeta][aSide];}
+	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return PILLAR_DATA_SIDE[aMeta][aSide];}
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[2*(aMeta&PILLAR_DATA)+(PILLAR_TO_AXIS[aMeta][aSide]?0:1)].getIcon(0);}
 }

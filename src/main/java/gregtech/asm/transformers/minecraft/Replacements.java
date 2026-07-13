@@ -85,7 +85,7 @@ public class Replacements {
 				x += rand.nextInt(3) - 1;
 				++y;
 				z += rand.nextInt(3) - 1;
-				Block block = world.getBlock(x, y, z);
+				Block block = WD.block(world, x, y, z);
 
 				if (block.getMaterial() == Material.air)
 				{
@@ -127,11 +127,11 @@ public class Replacements {
 	}
 
 	public static boolean BlockStaticLiquid_isFlammable(Level world, int x, int y, int z, Direction dir) {
-		return world.getBlock(x, y, z).isFlammable(world, x, y, z, dir);
+		return WD.block(world, x, y, z).isFlammable(world, x, y, z, dir);
 	}
 
 	public static boolean BlockStaticLiquid_isFlammable(Level world, int x, int y, int z) {
-		return world.getBlock(x, y, z).isFlammable(world, x, y, z, Direction.UNKNOWN);
+		return WD.block(world, x, y, z).isFlammable(world, x, y, z, Direction.UNKNOWN);
 	}
 
 	public static boolean EntityAICreeperSwell_shouldExecute(Creeper swellingCreeper) {

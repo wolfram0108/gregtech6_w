@@ -50,7 +50,7 @@ public class WorldgenNetherClay extends WorldgenObject {
 		
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 			if (tNoise.get(aMinX+i, 42, aMinZ+j, 8) == 0) for (int tY = tUpperBound; tY >= tLowerBound; tY--) {
-				if (aChunk.getBlock(i, tY, j) == Blocks.netherrack) WD.set(aChunk, i, tY, j, BlocksGT.Diggables, 3);
+				if (WD.block(aChunk, i, tY, j) == Blocks.netherrack) WD.set(aChunk, i, tY, j, BlocksGT.Diggables, 3);
 			}
 		}
 		return T;

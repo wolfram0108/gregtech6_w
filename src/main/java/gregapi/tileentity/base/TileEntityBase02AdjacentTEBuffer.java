@@ -61,12 +61,12 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 	 * YOU MUST HAVE THIS INSIDE YOUR BLOCK CODE!!!
 	 * 
 	 *  public void onNeighborChange(IBlockAccess aWorld, int aX, int aY, int aZ, int aTileX, int aTileY, int aTileZ) {
-	 *      TileEntity tTileEntity = aWorld.getTileEntity(aX, aY, aZ);
+	 *      TileEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 	 *      if (tTileEntity instanceof ITileEntity) ((ITileEntity)tTileEntity).onAdjacentBlockChange(aTileX, aTileY, aTileZ);
 	 *  }
 	 *  
 	 *  public void onNeighborBlockChange(World aWorld, int aX, int aY, int aZ, Block aBlock) {
-	 *      TileEntity tTileEntity = aWorld.getTileEntity(aX, aY, aZ);
+	 *      TileEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 	 *      if (tTileEntity instanceof ITileEntity) ((ITileEntity)tTileEntity).onAdjacentBlockChange(aX, aY, aZ);
 	 *  }
 	 */
@@ -93,17 +93,17 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 		boolean tChunksCrossed = crossedChunkBorder(tCoords);
 		if (tChunksCrossed && (!(mBufferedTileEntities[aSide] instanceof ITileEntityUnloadable) || ((ITileEntityUnloadable)mBufferedTileEntities[aSide]).isDead())) {
 			mBufferedTileEntities[aSide] = null;
-			if (mIgnoreUnloadedChunks && !level.blockExists(tCoords.getX(), tCoords.getY(), tCoords.getZ())) return null;
+			if (mIgnoreUnloadedChunks && !WD.exists(level, tCoords.getX(), tCoords.getY(), tCoords.getZ())) return null;
 		}
 		if (mBufferedTileEntities[aSide] == null) {
 			BlockEntity tTileEntity = WD.te(level, tCoords.getX(), tCoords.getY(), tCoords.getZ(), T);
 			if (tTileEntity == null) {mBufferedTileEntities[aSide] = this; return null;}
 			if (tChunksCrossed) WD.mark(tTileEntity);
-			if (tTileEntity.xCoord == tCoords.getX() && tTileEntity.yCoord == tCoords.getY() && tTileEntity.zCoord == tCoords.getZ()) return mBufferedTileEntities[aSide] = tTileEntity;
+			if (tTileEntity.getBlockPos().getX() == tCoords.getX() && tTileEntity.getBlockPos().getY() == tCoords.getY() && tTileEntity.getBlockPos().getZ() == tCoords.getZ()) return mBufferedTileEntities[aSide] = tTileEntity;
 			mBufferedTileEntities[aSide] = null;
 			return tTileEntity;
 		}
-		if (mBufferedTileEntities[aSide].xCoord != tCoords.getX() || mBufferedTileEntities[aSide].yCoord != tCoords.getY() || mBufferedTileEntities[aSide].zCoord != tCoords.getZ()) {
+		if (mBufferedTileEntities[aSide].getBlockPos().getX() != tCoords.getX() || mBufferedTileEntities[aSide].getBlockPos().getY() != tCoords.getY() || mBufferedTileEntities[aSide].getBlockPos().getZ() != tCoords.getZ()) {
 			mBufferedTileEntities[aSide] = null;
 			return getTileEntityAtSideAndDistance(aSide, aDistance);
 		}
@@ -147,13 +147,13 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 			
 			if (isServerSide()) {
 				if (mTimer == 1) {
-					oX = xCoord; oY = yCoord; oZ = zCoord; mDoesBlockUpdate = T;
+					oX = getBlockPos().getX(); oY = getBlockPos().getY(); oZ = getBlockPos().getZ(); mDoesBlockUpdate = T;
 					clearEverythingFromTileEntityBuffer();
 				}
-				if (oX != xCoord || oY != yCoord || oZ != zCoord) {
+				if (oX != getBlockPos().getX() || oY != getBlockPos().getY() || oZ != getBlockPos().getZ()) {
 					clearEverythingFromTileEntityBuffer();
 					onCoordinateChange(level, oX, oY, oZ);
-					oX = xCoord; oY = yCoord; oZ = zCoord;
+					oX = getBlockPos().getX(); oY = getBlockPos().getY(); oZ = getBlockPos().getZ();
 				}
 			}
 		}
@@ -168,6 +168,6 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 	public void doneMoving() {
 		clearEverythingFromTileEntityBuffer();
 		onCoordinateChange(level, oX, oY, oZ);
-		oX = xCoord; oY = yCoord; oZ = zCoord;
+		oX = getBlockPos().getX(); oY = getBlockPos().getY(); oZ = getBlockPos().getZ();
 	}
 }

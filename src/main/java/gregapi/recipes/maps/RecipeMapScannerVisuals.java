@@ -91,21 +91,21 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 						if (tCraftingRecipe != ZL_IS) {
 							rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 							if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-							rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.setBlueprintCrafting(UT.NBT.make(), tCraftingRecipe));
-							rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+							rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.setBlueprintCrafting(UT.NBT.make(), tCraftingRecipe));
+							rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 							return rRecipe;
 						}
 						return rRecipe;
 					}
 					if (OM.is_("gt:canvas", tScanned)) {
-						if (tScanned.hasTagCompound() && tScanned.getTagCompound().hasKey(NBT_CANVAS_BLOCK)) {
+						if (tScanned.hasTagCompound() && tScanned.getTagCompound().contains(NBT_CANVAS_BLOCK)) {
 							rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 							if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
 							CompoundTag tNBT = UT.NBT.make();
-							tNBT.setInteger(NBT_CANVAS_BLOCK, tScanned.getTagCompound().getInteger(NBT_CANVAS_BLOCK));
-							tNBT.setInteger(NBT_CANVAS_META, tScanned.getTagCompound().getInteger(NBT_CANVAS_META));
-							rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, tNBT);
-							rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+							tNBT.putInt(NBT_CANVAS_BLOCK, tScanned.getTagCompound().getInteger(NBT_CANVAS_BLOCK));
+							tNBT.putInt(NBT_CANVAS_META, tScanned.getTagCompound().getInteger(NBT_CANVAS_META));
+							rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, tNBT);
+							rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 							return rRecipe;
 						}
 						return rRecipe;
@@ -113,64 +113,64 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 					if ((tScanned.getItem() == ItemsGT.BOOKS || OD.bookWritten.is_(tScanned) || IL.Paper_Printed_Pages.equal(tScanned, F, T) || IL.Paper_Printed_Pages_Many.equal(tScanned, F, T)) && UT.Code.stringValid(UT.NBT.getBookTitle(tScanned))) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 512, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, tScanned.getTagCompound().copy());
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, tScanned.getTagCompound().copy());
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (tScanned.getItem() == Items.filled_map) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.setMapID(UT.NBT.make(), ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.setMapID(UT.NBT.make(), ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (IL.TF_Magic_Map.equal(tScanned, T, T)) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.setMagicMapID(UT.NBT.make(), ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.setMagicMapID(UT.NBT.make(), ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (IL.TF_Maze_Map.equal(tScanned, T, T)) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.setMazeMapID(UT.NBT.make(), ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.setMazeMapID(UT.NBT.make(), ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (IL.TF_Ore_Map.equal(tScanned, T, T)) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.setOreMapID(UT.NBT.make(), ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.setOreMapID(UT.NBT.make(), ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (IL.GC_Schematic_1.equal(tScanned, T, T)) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 1024, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.makeShort("gc_schematics_1", ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.makeShort("gc_schematics_1", ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (IL.GC_Schematic_2.equal(tScanned, T, T)) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 1024, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.makeShort("gc_schematics_2", ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.makeShort("gc_schematics_2", ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (IL.GC_Schematic_3.equal(tScanned, T, T)) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 1024, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.makeShort("gc_schematics_3", ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.makeShort("gc_schematics_3", ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					if (IL.IE_Blueprint_Projectiles_Common.equal(tScanned, T, T)) {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 1024, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, UT.NBT.makeShort("ie_blueprint", ST.meta_(tScanned)));
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, UT.NBT.makeShort("ie_blueprint", ST.meta_(tScanned)));
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					
@@ -181,10 +181,10 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 						rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 512, 16, 0);
 						if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
 						CompoundTag tNBT = UT.NBT.make();
-						tNBT.setInteger(NBT_CANVAS_BLOCK, Block.getIdFromBlock(tBlock));
-						tNBT.setInteger(NBT_CANVAS_META, ST.meta_(tScanned));
-						rRecipe.mOutputs[0].getTagCompound().setTag(NBT_USB_DATA, tNBT);
-						rRecipe.mOutputs[0].getTagCompound().setByte(NBT_USB_TIER, (byte)1);
+						tNBT.putInt(NBT_CANVAS_BLOCK, Block.getIdFromBlock(tBlock));
+						tNBT.putInt(NBT_CANVAS_META, ST.meta_(tScanned));
+						rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, tNBT);
+						rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 						return rRecipe;
 					}
 					return rRecipe;

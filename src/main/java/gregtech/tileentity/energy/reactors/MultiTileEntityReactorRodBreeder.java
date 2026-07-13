@@ -42,9 +42,9 @@ public class MultiTileEntityReactorRodBreeder extends MultiTileEntityReactorRodB
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mDurability = aNBT.getLong(aNBT.hasKey(NBT_DURABILITY) ? NBT_DURABILITY : NBT_MAXDURABILITY);
-		if (aNBT.hasKey(NBT_NUCLEAR_LOSS)) mNeutronLoss = aNBT.getInteger(NBT_NUCLEAR_LOSS);
-		if (aNBT.hasKey(NBT_VALUE)) mProduct = aNBT.getShort(NBT_VALUE);
+		mDurability = aNBT.getLong(aNBT.contains(NBT_DURABILITY) ? NBT_DURABILITY : NBT_MAXDURABILITY);
+		if (aNBT.contains(NBT_NUCLEAR_LOSS)) mNeutronLoss = aNBT.getInteger(NBT_NUCLEAR_LOSS);
+		if (aNBT.contains(NBT_VALUE)) mProduct = aNBT.getShort(NBT_VALUE);
 	}
 
 	@Override
