@@ -469,7 +469,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 					} else {
 						if (!FL.gas(tFluid, T) && !FL.acid(tFluid)) {
 							ItemStack tStack = ST.container(ST.amount(1, aStack), T);
-							OreDictMaterialStack tFluidData = OreDictMaterial.FLUID_MAP.get(tFluid.getFluid().getName());
+							OreDictMaterialStack tFluidData = OreDictMaterial.FLUID_MAP.get(FL.regName(tFluid.getFluid()));
 							if (tFluidData != null) {
 								if (FL.equal(tFluidData.mMaterial.mLiquid, tFluid)) {
 									if (addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(tFluidData.mMaterial, UT.Code.units(tFluid.amount, tFluidData.mMaterial.mLiquid.amount, tFluidData.mMaterial.mLiquidUnit, F))), UT.Code.bind(FL.temperature(tFluid), tFluidData.mMaterial.mMeltingPoint+25, tFluidData.mMaterial.mBoilingPoint-1))) {

@@ -39,7 +39,7 @@ public class FoodStatFluid implements IFoodStat {
 	public int getFoodLevel(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return 0;
 		return rStats.getFoodLevel(aItem, aStack, aPlayer);
 	}
@@ -48,7 +48,7 @@ public class FoodStatFluid implements IFoodStat {
 	public float getSaturation(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return 0;
 		return rStats.getSaturation(aItem, aStack, aPlayer);
 	}
@@ -57,7 +57,7 @@ public class FoodStatFluid implements IFoodStat {
 	public float getHydration(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return 0;
 		return rStats.getHydration(aItem, aStack, aPlayer);
 	}
@@ -66,7 +66,7 @@ public class FoodStatFluid implements IFoodStat {
 	public float getTemperature(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return DEF_ENV_TEMP;
 		return rStats.getTemperature(aItem, aStack, aPlayer);
 	}
@@ -75,7 +75,7 @@ public class FoodStatFluid implements IFoodStat {
 	public float getTemperatureEffect(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return 0;
 		return rStats.getTemperatureEffect(aItem, aStack, aPlayer);
 	}
@@ -84,7 +84,7 @@ public class FoodStatFluid implements IFoodStat {
 	public boolean alwaysEdible(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return DRINKS_ALWAYS_DRINKABLE || MD.ENVM.mLoaded;
 		return rStats.alwaysEdible(aItem, aStack, aPlayer);
 	}
@@ -93,7 +93,7 @@ public class FoodStatFluid implements IFoodStat {
 	public boolean isRotten(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return F;
 		return rStats.isRotten(aItem, aStack, aPlayer);
 	}
@@ -102,7 +102,7 @@ public class FoodStatFluid implements IFoodStat {
 	public ItemUseAnimation getFoodAction(Item aItem, ItemStack aStack) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return ItemUseAnimation.drink;
 		return rStats.getFoodAction(aItem, aStack);
 	}
@@ -111,7 +111,7 @@ public class FoodStatFluid implements IFoodStat {
 	public boolean useAppleCoreFunctionality(Item aItem, ItemStack aStack, Player aPlayer) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return F;
 		return rStats.useAppleCoreFunctionality(aItem, aStack, aPlayer);
 	}
@@ -121,7 +121,7 @@ public class FoodStatFluid implements IFoodStat {
 	public void onEaten(Item aItem, ItemStack aStack, Player aPlayer, boolean aConsumeItem) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return;
 		rStats.onEaten(aItem, aStack, aPlayer, aConsumeItem, T);
 	}
@@ -130,7 +130,7 @@ public class FoodStatFluid implements IFoodStat {
 	public void onEaten(Item aItem, ItemStack aStack, Player aPlayer, boolean aConsumeItem, boolean aMakeSound) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return;
 		rStats.onEaten(aItem, aStack, aPlayer, aConsumeItem, aMakeSound);
 	}
@@ -139,7 +139,7 @@ public class FoodStatFluid implements IFoodStat {
 	public void addAdditionalToolTips(Item aItem, List<String> aList, ItemStack aStack, boolean aF3_H) {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
-		if (tFluid != null) rStats = DrinksGT.REGISTER.get(tFluid.getFluid().getName());
+		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
 		if (rStats == null) return;
 		rStats.addAdditionalToolTips(aItem, aList, aStack, aF3_H);
 	}

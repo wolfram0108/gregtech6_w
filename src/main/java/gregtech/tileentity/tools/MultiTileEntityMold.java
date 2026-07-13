@@ -596,7 +596,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	@Override
 	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.amount <= 0 || FL.gas(aFluid) || mContent != null || slotHas(0)) return 0;
-		OreDictMaterialStack aFluidRatio = OreDictMaterial.FLUID_MAP.get(aFluid.getFluid().getName()), aMaterial = null;
+		OreDictMaterialStack aFluidRatio = OreDictMaterial.FLUID_MAP.get(FL.regName(aFluid.getFluid())), aMaterial = null;
 		if (aFluidRatio == null || aFluidRatio.mAmount <= 0) return 0;
 		aMaterial = OM.stack(aFluidRatio.mMaterial, UT.Code.units(aFluid.amount, aFluidRatio.mAmount, U, F));
 		if (aMaterial == null || aMaterial.mAmount <= 0) return 0;

@@ -74,7 +74,7 @@ public class CoverLogisticsFluidExport extends AbstractCoverAttachmentLogistics 
 						aChatReturn.add("No Filter Set! (Priority: " + aData.mValues[aCoverSide] + ")");
 						aData.mNBTs[aCoverSide] = null;
 					} else {
-						aChatReturn.add("Exports: " + LH.Chat.CYAN + tFluid.getFluid().getName() + " (Priority: " + aData.mValues[aCoverSide] + ")");
+						aChatReturn.add("Exports: " + LH.Chat.CYAN + FL.regName(tFluid.getFluid()) + " (Priority: " + aData.mValues[aCoverSide] + ")");
 					}
 				}
 			}
@@ -99,7 +99,7 @@ public class CoverLogisticsFluidExport extends AbstractCoverAttachmentLogistics 
 					if (FL.valid(tFluid)) {
 						aData.mNBTs[aCoverSide] = FL.save(null, "gt.filter.fluid", tFluid);
 						UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-						UT.Entities.sendchat(aPlayer, "Exports: " + LH.Chat.CYAN + tFluid.getFluid().getName());
+						UT.Entities.sendchat(aPlayer, "Exports: " + LH.Chat.CYAN + FL.regName(tFluid.getFluid()));
 					}
 				}
 			}

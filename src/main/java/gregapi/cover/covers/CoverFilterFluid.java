@@ -81,7 +81,7 @@ public class CoverFilterFluid extends AbstractCoverAttachment {
 						aChatReturn.add("Filter is empty!");
 						aData.mNBTs[aCoverSide] = null;
 					} else {
-						aChatReturn.add("Filters for: " + LH.Chat.CYAN + tFluid.getFluid().getName());
+						aChatReturn.add("Filters for: " + LH.Chat.CYAN + FL.regName(tFluid.getFluid()));
 					}
 				}
 			}
@@ -106,7 +106,7 @@ public class CoverFilterFluid extends AbstractCoverAttachment {
 					if (FL.valid(tFluid)) {
 						aData.mNBTs[aCoverSide] = FL.save(null, "gt.filter.fluid", tFluid);
 						UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);
-						UT.Entities.sendchat(aPlayer, "Filters for: " + LH.Chat.CYAN + tFluid.getFluid().getName());
+						UT.Entities.sendchat(aPlayer, "Filters for: " + LH.Chat.CYAN + FL.regName(tFluid.getFluid()));
 					}
 				}
 			}

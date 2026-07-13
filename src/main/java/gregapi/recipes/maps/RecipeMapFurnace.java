@@ -155,6 +155,6 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 	}
 	
 	@Override public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return ST.valid(RM.get_smelting(aStack));}
-	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return FluidsGT.COOKING_OIL.contains(aFluid.getFluid().getName());}
+	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return FluidsGT.COOKING_OIL.contains(FL.regName(aFluid.getFluid()));}
 	@Override public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return FluidsGT.COOKING_OIL.contains(aFluid.getName());}
 }

@@ -369,7 +369,7 @@ public class Recipe {
 			mRecipeListSize++;
 			
 			for (FluidStack aFluid : aRecipe.mFluidInputs) if (aFluid != null) {
-				String aFluidName = aFluid.getFluid().getName();
+				String aFluidName = FL.regName(aFluid.getFluid());
 				mMaxFluidInputSize = Math.max(mMaxFluidInputSize, aFluid.getAmount());
 				Collection<Recipe> tList = mRecipeFluidMap.get(aFluidName);
 				if (tList == null) mRecipeFluidMap.put(aFluidName, tList = new HashSet<>(1));
@@ -518,7 +518,7 @@ public class Recipe {
 				// If the minimal Amount of Items for the Recipe is 0, then it could be a Fluid-Only Recipe, so check that Map too.
 				if (mInputFluidCount > 0 && mMinimalInputItems == 0) for (FluidStack aFluid : aFluids) if (aFluid != null) {
 					Collection<Recipe>
-					tRecipes = mRecipeFluidMap.get(aFluid.getFluid().getName());
+					tRecipes = mRecipeFluidMap.get(FL.regName(aFluid.getFluid()));
 					if (tRecipes != null) for (Recipe tRecipe : tRecipes) if (!tRecipe.mFakeRecipe && tRecipe.isRecipeInputEqual(F, T, aFluids, aInputs)) return tRecipe.mEnabled&&UT.Code.abs_greater_equal(aSize*mPower, tRecipe.mEUt)?oRecipe=tRecipe:null;
 				}
 				

@@ -58,13 +58,13 @@ public interface IItemRottable {
 			if (tFluid != null) {
 				if (FL.Milk_Spoiled.is(tFluid) || FL.Rotten_Drink.is(tFluid) || FL.Dirty_Water.is(tFluid) || FL.Swampwater.is(tFluid) || FL.Stagnant_Water.is(tFluid)) {
 					//
-				} else if (FluidsGT.WATER.contains(tFluid.getFluid().getName())) {
+				} else if (FluidsGT.WATER.contains(FL.regName(tFluid.getFluid()))) {
 					aItem.drain(aStack, Integer.MAX_VALUE, T);
 					aItem.fill(aStack, FL.Dirty_Water.make(tFluid.getAmount()), T);
-				} else if (FluidsGT.MILK.contains(tFluid.getFluid().getName())) {
+				} else if (FluidsGT.MILK.contains(FL.regName(tFluid.getFluid()))) {
 					aItem.drain(aStack, Integer.MAX_VALUE, T);
 					aItem.fill(aStack, FL.Milk_Spoiled.make(tFluid.getAmount()), T);
-				} else if (FluidsGT.FOOD.contains(tFluid.getFluid().getName())) {
+				} else if (FluidsGT.FOOD.contains(FL.regName(tFluid.getFluid()))) {
 					aItem.drain(aStack, Integer.MAX_VALUE, T);
 					aItem.fill(aStack, FL.Rotten_Drink.make(tFluid.getAmount()), T);
 				}

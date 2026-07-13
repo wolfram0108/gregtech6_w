@@ -893,7 +893,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 								// net.neoforged.neoforge.fluids.capability.IFluidHandler.java) — требует отдельного F#-решения, блок отключён.
 								// else if (tStack.getItem() instanceof IFluidHandlerItem) {
 								// 	FluidStack tFluid = ((IFluidHandlerItem)tStack.getItem()).getFluid(tStack);
-								// 	if (tFluid != null && !FL.Potion_Tainted.is(tFluid) && FluidsGT.POTION.contains(tFluid.getFluid().getName())) {
+								// 	if (tFluid != null && !FL.Potion_Tainted.is(tFluid) && FluidsGT.POTION.contains(FL.regName(tFluid.getFluid()))) {
 								// 		((IFluidHandlerItem)tStack.getItem()).drain(tStack, Integer.MAX_VALUE, T);
 								// 		((IFluidHandlerItem)tStack.getItem()).fill(tStack, FL.Potion_Tainted.make(tFluid.getAmount()), T);
 								// 	}

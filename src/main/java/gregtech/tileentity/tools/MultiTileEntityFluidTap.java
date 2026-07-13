@@ -108,7 +108,7 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 								return T;
 							}
 						} else if (tDelegator2.mTileEntity instanceof ITileEntityTapFillable) {
-							OreDictMaterialStack tMaterial = OreDictMaterial.FLUID_MAP.get(aFluid.getFluid().getName());
+							OreDictMaterialStack tMaterial = OreDictMaterial.FLUID_MAP.get(FL.regName(aFluid.getFluid()));
 							aFluid = aFluid.copy();
 							aFluid.amount = Math.min(aFluid.amount, FL.lava(aFluid) ? 1000 : !FL.water(aFluid) && tMaterial != null && tMaterial.mAmount > 0 ? UT.Code.bindInt(tMaterial.mAmount) : 250);
 							if (FL.nonzero(((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, UT.Code.bindInt(((ITileEntityTapFillable)tDelegator2.mTileEntity).tapFill(tDelegator2.mSideOfTileEntity, aFluid, T)), T))) {

@@ -107,7 +107,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 				tProduce = mActive = T;
 			}
 			if (tProduce) {
-				Block tBlock = FL.BLOCKS.get(mFluid.getFluid().getName()), tAbove = getBlockAtSide(SIDE_UP);
+				Block tBlock = FL.BLOCKS.get(FL.regName(mFluid.getFluid())), tAbove = getBlockAtSide(SIDE_UP);
 				if (ST.invalid(tBlock)) tBlock = mFluid.getFluid().getBlock();
 				if (ST.valid(tBlock)) {
 					if (tBlock instanceof BlockFluidFinite) {

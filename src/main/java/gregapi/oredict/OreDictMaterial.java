@@ -18,6 +18,7 @@
  */
 
 package gregapi.oredict;
+import gregapi.data.FL;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantments;
 
@@ -1252,7 +1253,7 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 		if (aFluidStack != null) {
 			mLiquid = aFluidStack.copy();
 			mLiquidUnit = aUnit;
-			FLUID_MAP.put(aFluidStack.getFluid().getName(), OM.stack(this, UT.Code.units(aFluidStack.getAmount(), aUnit, U, T)));
+			FLUID_MAP.put(FL.regName(aFluidStack.getFluid()), OM.stack(this, UT.Code.units(aFluidStack.getAmount(), aUnit, U, T)));
 		}
 		return this;
 	}
@@ -1262,7 +1263,7 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 		if (aFluidStack != null) {
 			mGas = aFluidStack.copy();
 			mGasUnit = aUnit;
-			FLUID_MAP.put(aFluidStack.getFluid().getName(), OM.stack(this, UT.Code.units(aFluidStack.getAmount(), aUnit, U, T)));
+			FLUID_MAP.put(FL.regName(aFluidStack.getFluid()), OM.stack(this, UT.Code.units(aFluidStack.getAmount(), aUnit, U, T)));
 		}
 		return this;
 	}
@@ -1272,7 +1273,7 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 		if (aFluidStack != null) {
 			mPlasma = aFluidStack.copy();
 			mPlasmaUnit = aUnit;
-			FLUID_MAP.put(aFluidStack.getFluid().getName(), OM.stack(this, UT.Code.units(aFluidStack.getAmount(), aUnit, U, T)));
+			FLUID_MAP.put(FL.regName(aFluidStack.getFluid()), OM.stack(this, UT.Code.units(aFluidStack.getAmount(), aUnit, U, T)));
 		}
 		return this;
 	}

@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes.maps;
+import gregapi.data.FL;
 import net.minecraft.world.item.enchantment.Enchantments;
 
 import gregapi.data.*;
@@ -188,6 +189,6 @@ public class RecipeMapBath extends RecipeMap {
 		PlankEntry aEntry = WoodDictionary.PLANKS_ANY.get(aStack);
 		return (aEntry != null && ANY.WoodUntreated.mToThis.contains(aEntry.mMaterialPlank)) || (aStack != null && (aStack.getItem() instanceof ItemArmor || (aStack.getItem() instanceof IItemColorableRGB && (((IItemColorableRGB)aStack.getItem()).canRecolorItem(aStack) || ((IItemColorableRGB)aStack.getItem()).canDecolorItem(aStack))))) || (ST.food(aStack) > 0 && FL.getFluid(aStack, T) == null) || super.containsInput(aStack, aTileEntity, aSpecialSlot);
 	}
-	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aFluid != null && aFluid.getFluid() != null && (super.containsInput(aFluid, aTileEntity, aSpecialSlot) || FluidsGT.BATH.contains(aFluid.getFluid().getName()));}
+	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aFluid != null && aFluid.getFluid() != null && (super.containsInput(aFluid, aTileEntity, aSpecialSlot) || FluidsGT.BATH.contains(FL.regName(aFluid.getFluid())));}
 	@Override public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aFluid != null && (super.containsInput(aFluid, aTileEntity, aSpecialSlot) || FluidsGT.BATH.contains(aFluid.getName()));}
 }
