@@ -18,6 +18,7 @@
  */
 
 package gregapi.log;
+import gregapi.util.WD;
 
 import java.io.PrintStream;
 import java.util.ArrayList;

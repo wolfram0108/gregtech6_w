@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity;
+import gregapi.util.WD;
 
 import gregapi.random.IHasWorldAndCoords;
 import net.minecraft.world.entity.Entity;

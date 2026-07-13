@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.metatype;
+import gregapi.util.WD;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
 

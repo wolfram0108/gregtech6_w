@@ -18,6 +18,7 @@
  */
 
 package gregapi.dummies;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 

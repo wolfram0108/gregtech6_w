@@ -18,6 +18,7 @@
  */
 
 package gregapi.compat.buildcraft;
+import gregapi.util.WD;
 
 import buildcraft.api.core.BuildCraftAPI;
 import buildcraft.core.properties.WorldPropertyIsWood;

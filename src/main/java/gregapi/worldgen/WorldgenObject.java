@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 

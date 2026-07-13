@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.connectors;
+import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
