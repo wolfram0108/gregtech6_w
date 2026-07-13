@@ -1520,6 +1520,13 @@ public class ST {
 		return aNBT;
 	}
 	/** Saves an ItemStack properly. */
+	/** было {@code aStack.writeToNBT(aNBT)} (1.7.10 ItemStack — пишет поля стека В переданный tag, возвращает его) —
+	 *  neo: компонентная модель, воспроизводим через save(aStack)+merge (ключи id/Count/Damage 1:1). */
+	public static CompoundTag writeToNBT(ItemStack aStack, CompoundTag aNBT) {
+		CompoundTag tNBT = save(aStack);
+		return tNBT == null ? aNBT : aNBT.merge(tNBT);
+	}
+
 	public static CompoundTag save(ItemStack aStack) {
 		if (aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0) return null;
 		CompoundTag rNBT = UT.NBT.make();

@@ -86,7 +86,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			tNBT.putInt("maxRecipesPerPage",   2);
 			tNBT.putInt("yShift"           ,   6);
 			tNBT.putBoolean("modRequired"      ,   T);
-			InterModComms.sendMessage("NotEnoughItems", "registerHandlerInfo", tNBT);
+			InterModComms.sendTo("NotEnoughItems", "registerHandlerInfo", () -> tNBT);
 		} else {
 			GuiCraftingRecipe.craftinghandlers.add(this);
 			GuiUsageRecipe.usagehandlers.add(this);

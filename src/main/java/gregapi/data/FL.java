@@ -1081,6 +1081,12 @@ public enum FL {
 		if (tNBT != null) aNBT.put(aTagName, tNBT);
 		return aNBT;
 	}
+	/** было {@code aFluid.writeToNBT(aNBT)} (1.7.10 FluidStack — пишет В переданный tag) — neo: воспроизводим save+merge. */
+	public static CompoundTag writeToNBT(FluidStack aFluid, CompoundTag aNBT) {
+		CompoundTag tNBT = save(aFluid);
+		return tNBT == null ? aNBT : aNBT.merge(tNBT);
+	}
+
 	/** Saves a FluidStack properly. */
 	public static CompoundTag save (FluidStack aFluid) {return FL.invalid(aFluid) ? null : save_(aFluid);}
 	/** Saves a FluidStack properly. PORT-TODO(F5, компоненты FluidStack) — см. {@link #load_}: пишет
