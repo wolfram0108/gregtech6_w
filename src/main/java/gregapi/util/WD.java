@@ -20,7 +20,7 @@
 package gregapi.util;
 import gregapi.code.ItemNBT;
 import net.minecraft.block.BlockBush;
-import net.minecraft.block.BlockLiquid;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.block.BlockSlab;
 import net.minecraft.block.BlockStairs;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -771,10 +771,10 @@ public class WD {
 	}
 	
 	public static boolean liquid(Level aWorld, int aX, int aY, int aZ) {return liquid(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid(Block aBlock) {return aBlock instanceof BlockLiquid || aBlock instanceof IFluidBlock;}
+	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof IFluidBlock;}
 
 	public static boolean liquid_classic(Level aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof BlockLiquid || aBlock instanceof BlockFluidClassic;}
+	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof BlockFluidClassic;}
 
 	public static boolean liquid_finite(Level aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_finite(Block aBlock) {return aBlock instanceof BlockFluidFinite;}

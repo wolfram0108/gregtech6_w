@@ -18,7 +18,7 @@
  */
 
 package gregapi.block;
-import net.minecraft.block.BlockLiquid;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.block.BlockSilverfish;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.BaseRailBlock;
@@ -410,7 +410,7 @@ public class ToolCompat {
 				if (aChatReturn != null) aChatReturn.add("There is Lava behind this Rock");
 				break;
 			}
-			if (tBlock instanceof BlockLiquid || tBlock instanceof IFluidBlock) {
+			if (tBlock instanceof LiquidBlock || tBlock instanceof IFluidBlock) {
 				if (aChatReturn != null) aChatReturn.add("There is a Fluid behind this Rock");
 				break;
 			}
