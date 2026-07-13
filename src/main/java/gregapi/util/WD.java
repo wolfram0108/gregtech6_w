@@ -383,6 +383,11 @@ public class WD {
 		Block tBlock = aWorld.getBlockState(tPos).getBlock();
 		return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
 	}
+	/** F-world: 1.7.10 World.blockExists(x,y,z) = «чанк с этим блоком загружен». Порт централизовал вызовы как
+	 *  WD.exists, но метод не был определён. neo-эквивалент — Level.isLoaded(BlockPos) (Level.java:695). */
+	public static boolean exists(Level aWorld, int aX, int aY, int aZ) {
+		return aWorld != null && aWorld.isLoaded(new BlockPos(aX, aY, aZ));
+	}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	
