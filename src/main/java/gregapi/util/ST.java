@@ -287,6 +287,16 @@ public class ST {
 	/** F8: 1.7.10 ST.hasNBT(stack)/setTagCompound(nbt) -> центр ItemNBT.has/set (CUSTOM_DATA). 1:1 по javadoc ItemNBT. */
 	public static boolean hasNBT(ItemStack aStack) {return ItemNBT.has(aStack);}
 	public static void setNBT(ItemStack aStack, CompoundTag aNBT) {ItemNBT.set(aStack, aNBT);}
+
+	/** F16: 1.7.10 Item.setContainerItem(Item) задавал крафт-остаток (ведро->пустое ведро) в рантайме. neo: остаток
+	 *  неизменяем post-construction (Item.Properties.craftRemainder на конструкции). Копим намерение; init-проход
+	 *  применит (единый с VANILLA_STACKSIZE_OVERRIDES/custom-potion). PORT-TODO(F16-craftremainder): вызыватели —
+	 *  форейн-итемы (RC/TC/TF вёдра); применение — per-recipe remainder ИЛИ компонент, если остаток компонентен. */
+	public static final java.util.Map<Item, Item> VANILLA_CRAFTREMAINDER_OVERRIDES = new java.util.IdentityHashMap<>();
+	public static Item setContainerItem(Item aItem, Item aContainer) {
+		if (aItem != null && aContainer != null) VANILLA_CRAFTREMAINDER_OVERRIDES.put(aItem, aContainer);
+		return aItem;
+	}
 	public static void register(Block aBlock, String aRegistryName) {register(aBlock, aRegistryName, null);}
 	public static void register(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
 		GT_API.registerBlock(aBlock, aRegistryName, aItemClass == null ? ItemBlockBase.class : aItemClass);

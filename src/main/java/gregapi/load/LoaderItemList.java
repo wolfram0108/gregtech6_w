@@ -832,9 +832,9 @@ public class LoaderItemList implements Runnable {
 		IL.RC_Creosote_Capsule                  .set(ST.make(MD.RC, "fluid.creosote.wax"                    , 1, 0), null, OD.container1000creosote);
 		IL.RC_Creosote_RefractoryCapsule        .set(ST.make(MD.RC, "fluid.creosote.refactory"              , 1, 0), null, OD.container1000creosote);
 		
-		if (IL.RC_Creosote_Bottle.exists()) IL.RC_Creosote_Bottle.item().setContainerItem(Items.GLASS_BOTTLE);
-		if (IL.RC_Creosote_Bucket.exists()) IL.RC_Creosote_Bucket.item().setContainerItem(Items.BUCKET);
-		if (IL.RC_Creosote_Cell.exists() && IL.Cell_Empty.exists()) IL.RC_Creosote_Cell.item().setContainerItem(IL.Cell_Empty.getItem());
+		if (IL.RC_Creosote_Bottle.exists()) ST.setContainerItem(IL.RC_Creosote_Bottle.item(), Items.GLASS_BOTTLE);
+		if (IL.RC_Creosote_Bucket.exists()) ST.setContainerItem(IL.RC_Creosote_Bucket.item(), Items.BUCKET);
+		if (IL.RC_Creosote_Cell.exists() && IL.Cell_Empty.exists()) ST.setContainerItem(IL.RC_Creosote_Cell.item(), IL.Cell_Empty.getItem());
 		
 		
 		IL.IE_Creosote_Bottle                   .set(ST.make(MD.IE, "fluidContainers"                       , 1, 0), null, "bottleCreosote", OD.container1000creosote);
@@ -945,8 +945,8 @@ public class LoaderItemList implements Runnable {
 		IL.TC_Bucket_Death                      .set(ST.make(MD.TC, "ItemBucketDeath"                       , 1, 0), new OreDictItemData(ANY.Fe, U*3), OD.itemPoison);
 		IL.TC_Bucket_Pure                       .set(ST.make(MD.TC, "ItemBucketPure"                        , 1, 0), new OreDictItemData(ANY.Fe, U*3));
 		
-		if (IL.TC_Bucket_Death.exists()) IL.TC_Bucket_Death.item().setContainerItem(Items.BUCKET);
-		if (IL.TC_Bucket_Pure .exists()) IL.TC_Bucket_Pure .item().setContainerItem(Items.BUCKET);
+		if (IL.TC_Bucket_Death.exists()) ST.setContainerItem(IL.TC_Bucket_Death.item(), Items.BUCKET);
+		if (IL.TC_Bucket_Pure .exists()) ST.setContainerItem(IL.TC_Bucket_Pure .item(), Items.BUCKET);
 		if (IL.TC_Gold_Ring   .exists()) ST.setMaxStackSize(IL.TC_Gold_Ring   .item(), 64);
 		
 		
@@ -1026,16 +1026,16 @@ public class LoaderItemList implements Runnable {
 		if (IL.TF_Maze_Map .exists()) ST.setMaxStackSize(IL.TF_Maze_Map .item(), 64);
 		if (IL.TF_Ore_Map  .exists()) ST.setMaxStackSize(IL.TF_Ore_Map  .item(), 64);
 		// These Bottles should actually have an empty Variant.
-		if (IL.TF_Firefly_Jar    .exists()) IL.TF_Firefly_Jar    .item().setContainerItem(Items.GLASS_BOTTLE);
-		if (IL.TF_Vial_FieryBlood.exists()) IL.TF_Vial_FieryBlood.item().setContainerItem(Items.GLASS_BOTTLE);
-		if (IL.TF_Vial_FieryTears.exists()) IL.TF_Vial_FieryTears.item().setContainerItem(Items.GLASS_BOTTLE);
+		if (IL.TF_Firefly_Jar    .exists()) ST.setContainerItem(IL.TF_Firefly_Jar    .item(), Items.GLASS_BOTTLE);
+		if (IL.TF_Vial_FieryBlood.exists()) ST.setContainerItem(IL.TF_Vial_FieryBlood.item(), Items.GLASS_BOTTLE);
+		if (IL.TF_Vial_FieryTears.exists()) ST.setContainerItem(IL.TF_Vial_FieryTears.item(), Items.GLASS_BOTTLE);
 		// Make this work as infinite Lighter in Crafting Recipes. It is absolutely useless otherwise since the Final Castle isn't finished.
-		if (IL.TF_Lamp_of_Cinders.exists()) IL.TF_Lamp_of_Cinders.item().setContainerItem(IL.TF_Lamp_of_Cinders.getItem());
+		if (IL.TF_Lamp_of_Cinders.exists()) ST.setContainerItem(IL.TF_Lamp_of_Cinders.item(), IL.TF_Lamp_of_Cinders.getItem());
 		
 		
 		IL.DRPG_Bucket_Tar                      .set(ST.make(MD.DRPG, "bucketOfTar"                         , 1, 0), null, "bucketTar");
 		
-		if (IL.DRPG_Bucket_Tar.exists()) IL.DRPG_Bucket_Tar.item().setContainerItem(Items.BUCKET);
+		if (IL.DRPG_Bucket_Tar.exists()) ST.setContainerItem(IL.DRPG_Bucket_Tar.item(), Items.BUCKET);
 		
 		
 		IL.PFAA_Sands                           .set(ST.make(MD.PFAA, "weakOreSand"                         , 1, 0));
@@ -1167,11 +1167,11 @@ public class LoaderItemList implements Runnable {
 		IL.BTL_Bucket_Latex                     .set(ST.make(MD.BTL, "bucketOfRubber"                       , 1, 0), new OreDictItemData(MT.Weedwood, 3*U), OD.container1000latex);
 		IL.BTL_Bucket_Infusion                  .set(ST.make(MD.BTL, "weedwoodBucketInfusion"               , 1, 0), new OreDictItemData(MT.Weedwood, 3*U));
 		
-		if (IL.BTL_Bucket_Tar     .exists()) IL.BTL_Bucket_Tar     .item().setContainerItem(IL.BTL_Bucket_Empty.getItem());
-		if (IL.BTL_Bucket_Swamp   .exists()) IL.BTL_Bucket_Swamp   .item().setContainerItem(IL.BTL_Bucket_Empty.getItem());
-		if (IL.BTL_Bucket_Stagnant.exists()) IL.BTL_Bucket_Stagnant.item().setContainerItem(IL.BTL_Bucket_Empty.getItem());
-		if (IL.BTL_Bucket_Latex   .exists()) IL.BTL_Bucket_Latex   .item().setContainerItem(IL.BTL_Bucket_Empty.getItem());
-		if (IL.BTL_Bucket_Infusion.exists()) IL.BTL_Bucket_Infusion.item().setContainerItem(IL.BTL_Bucket_Empty.getItem());
+		if (IL.BTL_Bucket_Tar     .exists()) ST.setContainerItem(IL.BTL_Bucket_Tar     .item(), IL.BTL_Bucket_Empty.getItem());
+		if (IL.BTL_Bucket_Swamp   .exists()) ST.setContainerItem(IL.BTL_Bucket_Swamp   .item(), IL.BTL_Bucket_Empty.getItem());
+		if (IL.BTL_Bucket_Stagnant.exists()) ST.setContainerItem(IL.BTL_Bucket_Stagnant.item(), IL.BTL_Bucket_Empty.getItem());
+		if (IL.BTL_Bucket_Latex   .exists()) ST.setContainerItem(IL.BTL_Bucket_Latex   .item(), IL.BTL_Bucket_Empty.getItem());
+		if (IL.BTL_Bucket_Infusion.exists()) ST.setContainerItem(IL.BTL_Bucket_Infusion.item(), IL.BTL_Bucket_Empty.getItem());
 		
 		
 		
@@ -1211,16 +1211,16 @@ public class LoaderItemList implements Runnable {
 		IL.AETHER_Skyroot_Leaves_Purple         .set(ST.make(MD.AETHER, "purpleCrystalLeaves"               , 1, 1), null, OP.treeLeaves);
 		IL.AETHER_Skyroot_Leaves_Apple          .set(ST.make(MD.AETHER, "purpleFruitLeaves"                 , 1, 1), null, OP.treeLeaves);
 		
-		if (IL.AETHER_Bucket_Water .exists()) IL.AETHER_Bucket_Water .item().setContainerItem(IL.AETHER_Bucket_Empty.getItem());
-		if (IL.AETHER_Bucket_Poison.exists()) IL.AETHER_Bucket_Poison.item().setContainerItem(IL.AETHER_Bucket_Empty.getItem());
-		if (IL.AETHER_Bucket_Milk  .exists()) IL.AETHER_Bucket_Milk  .item().setContainerItem(IL.AETHER_Bucket_Empty.getItem());
+		if (IL.AETHER_Bucket_Water .exists()) ST.setContainerItem(IL.AETHER_Bucket_Water .item(), IL.AETHER_Bucket_Empty.getItem());
+		if (IL.AETHER_Bucket_Poison.exists()) ST.setContainerItem(IL.AETHER_Bucket_Poison.item(), IL.AETHER_Bucket_Empty.getItem());
+		if (IL.AETHER_Bucket_Milk  .exists()) ST.setContainerItem(IL.AETHER_Bucket_Milk  .item(), IL.AETHER_Bucket_Empty.getItem());
 		
 		if (IL.AETHER_Dirt         .exists()) Textures.BlockIcons.DIRTS[1] = new IconContainerCopied(IL.AETHER_Dirt.block(), 0, SIDE_BOTTOM);
 		}
 		
 		
 		IL.GrC_Honey_Jar                        .set(ST.make(MD.GrC_Bees, "grc.honeyJar"                    , 1, 0), null, OD.container1000honey, CR.DELATE);
-		if (IL.GrC_Honey_Jar.exists()) IL.GrC_Honey_Jar.item().setContainerItem(Items.FLOWER_POT);
+		if (IL.GrC_Honey_Jar.exists()) ST.setContainerItem(IL.GrC_Honey_Jar.item(), Items.FLOWER_POT);
 		
 		IL.GrC_Honey_Bucket                     .set(ST.make(MD.GrC_Bees, "grc.BucketFluidHoney"            , 1, 0), new OreDictItemData(ANY.Fe, U*3), OD.container1000honey, CR.DELATE);
 		IL.GrC_Honey_Bottle                     .set(ST.make(MD.GrC_Bees, "grc.BottleFluidHoney"            , 1, 0), null, OD.container250honey, CR.DELATE);
@@ -1427,13 +1427,13 @@ public class LoaderItemList implements Runnable {
 		if (IL.NeLi_Gloomstone              .exists()) MT.Gloomstone.mTextureSolid  = MT.Gloomstone.mTextureGem = MT.Gloomstone.mTextureMolten = BlockTextureCopied.get(IL.NeLi_Gloomstone.block(), 0);
 		if (IL.NeLi_Blackstone              .exists()) MT.STONES.Blackstone.mTextureSolid  = BlockTextureCopied.get(IL.NeLi_Blackstone.block(), 0);
 		if (IL.NeLi_Blackstone_Polished     .exists()) MT.STONES.Blackstone.mTextureSmooth = BlockTextureCopied.get(IL.NeLi_Blackstone_Polished.block(), 1);
-		if (IL.NeLi_Bowl_DevilishMaize      .exists()) IL.NeLi_Bowl_DevilishMaize      .item().setContainerItem(Items.BOWL);
-		if (IL.NeLi_Bowl_DevilishPopcorn    .exists()) IL.NeLi_Bowl_DevilishPopcorn    .item().setContainerItem(Items.BOWL);
-		if (IL.NeLi_Bowl_CrimsonStew        .exists()) IL.NeLi_Bowl_CrimsonStew        .item().setContainerItem(Items.BOWL);
-		if (IL.NeLi_Bowl_WarpedStew         .exists()) IL.NeLi_Bowl_WarpedStew         .item().setContainerItem(Items.BOWL);
-		if (IL.NeLi_Bowl_FoxfireStew        .exists()) IL.NeLi_Bowl_FoxfireStew        .item().setContainerItem(Items.BOWL);
-//      if (IL.NeLi_Bucket_Spectral_Dew     .exists()) IL.NeLi_Bucket_Spectral_Dew     .item().setContainerItem(Items.BUCKET); Should be fixed on the Netherlicious Side now. ^^
-		if (IL.NeLi_Bottle_Hellderberryjuice.exists()) IL.NeLi_Bottle_Hellderberryjuice.item().setContainerItem(Items.GLASS_BOTTLE);
+		if (IL.NeLi_Bowl_DevilishMaize      .exists()) ST.setContainerItem(IL.NeLi_Bowl_DevilishMaize      .item(), Items.BOWL);
+		if (IL.NeLi_Bowl_DevilishPopcorn    .exists()) ST.setContainerItem(IL.NeLi_Bowl_DevilishPopcorn    .item(), Items.BOWL);
+		if (IL.NeLi_Bowl_CrimsonStew        .exists()) ST.setContainerItem(IL.NeLi_Bowl_CrimsonStew        .item(), Items.BOWL);
+		if (IL.NeLi_Bowl_WarpedStew         .exists()) ST.setContainerItem(IL.NeLi_Bowl_WarpedStew         .item(), Items.BOWL);
+		if (IL.NeLi_Bowl_FoxfireStew        .exists()) ST.setContainerItem(IL.NeLi_Bowl_FoxfireStew        .item(), Items.BOWL);
+//      if (IL.NeLi_Bucket_Spectral_Dew     .exists()) ST.setContainerItem(IL.NeLi_Bucket_Spectral_Dew     .item(), Items.BUCKET); Should be fixed on the Netherlicious Side now. ^^
+		if (IL.NeLi_Bottle_Hellderberryjuice.exists()) ST.setContainerItem(IL.NeLi_Bottle_Hellderberryjuice.item(), Items.GLASS_BOTTLE);
 		
 		
 		IL.EtFu_Chorus_Flower                   .set(ST.make(MD.EtFu, "chorus_flower"                       , 1, 0));
@@ -1524,9 +1524,9 @@ public class LoaderItemList implements Runnable {
 		
 		if (IL.EtFu_Block_Copper    .exists()) MT.Cu            .mTextureSolid = BlockTextureCopied.get(IL.EtFu_Block_Copper    .block(), 0);
 		if (IL.EtFu_Block_Copper_Cut.exists()) MT.AnnealedCopper.mTextureSolid = BlockTextureCopied.get(IL.EtFu_Block_Copper_Cut.block(), 4);
-		if (IL.EtFu_Lingering_Potion.exists()) IL.EtFu_Lingering_Potion.item().setContainerItem(Items.GLASS_BOTTLE);
-		if (IL.EtFu_Bottle_Honey    .exists()) IL.EtFu_Bottle_Honey    .item().setContainerItem(Items.GLASS_BOTTLE);
-		if (IL.EtFu_Sus_Stew        .exists()) IL.EtFu_Sus_Stew        .item().setContainerItem(Items.BOWL);
+		if (IL.EtFu_Lingering_Potion.exists()) ST.setContainerItem(IL.EtFu_Lingering_Potion.item(), Items.GLASS_BOTTLE);
+		if (IL.EtFu_Bottle_Honey    .exists()) ST.setContainerItem(IL.EtFu_Bottle_Honey    .item(), Items.GLASS_BOTTLE);
+		if (IL.EtFu_Sus_Stew        .exists()) ST.setContainerItem(IL.EtFu_Sus_Stew        .item(), Items.BOWL);
 		
 		
 		IL.GaSu_Granite                         .set(ST.make(MD.GaSu, "18Stones"                            , 1, 1), new OreDictItemData(MT.STONES.Granite   , U*9), OP.stone.dat(MT.STONES.Granite   ), CR.DELATE);
@@ -1675,7 +1675,7 @@ public class LoaderItemList implements Runnable {
 		IL.BoP_Jar_Poison                       .set(ST.make(MD.BoP, "jarFilled"                            , 1, 1), new OreDictItemData(MT.Glass, 21*U), OD.container500poison);
 		IL.BoP_Jar_Pixie                        .set(ST.make(MD.BoP, "jarFilled"                            , 1, 2), new OreDictItemData(MT.Glass, 21*U));
 		
-		if (IL.BoP_Jar_Honey.item() != null && IL.BoP_Jar_Empty.item() != null) IL.BoP_Jar_Honey.item().setContainerItem(IL.BoP_Jar_Empty.item());
+		if (IL.BoP_Jar_Honey.item() != null && IL.BoP_Jar_Empty.item() != null) ST.setContainerItem(IL.BoP_Jar_Honey.item(), IL.BoP_Jar_Empty.item());
 		
 		
 		IL.HiL_Ironwood                         .set(ST.make(MD.HiL, "tile.hl_ironwoodWood"                 , 1, 0), new OreDictItemData(ANY.Wood, U*8, MT.LiveRoot, U4), OD.logWood);
@@ -2088,8 +2088,8 @@ public class LoaderItemList implements Runnable {
 		IL.Ancient_Debris.set((IL.EtFu_Ancient_Debris.exists() ? IL.EtFu_Ancient_Debris : IL.NePl_Ancient_Debris).get(1));
 		
 		if (MD.BINNIE.mLoaded) {Item
-		tItem = ST.item(MD.BINNIE, "containerGlass"     ); if (tItem != null) tItem.setContainerItem(Items.GLASS_BOTTLE);
-		tItem = ST.item(MD.BINNIE, "containerBucket"    ); if (tItem != null) tItem.setContainerItem(Items.BUCKET);
+		tItem = ST.item(MD.BINNIE, "containerGlass"     ); if (tItem != null) ST.setContainerItem(tItem, Items.GLASS_BOTTLE);
+		tItem = ST.item(MD.BINNIE, "containerBucket"    ); if (tItem != null) ST.setContainerItem(tItem, Items.BUCKET);
 		}
 		
 		if (MD.IC2C.mLoaded) {
