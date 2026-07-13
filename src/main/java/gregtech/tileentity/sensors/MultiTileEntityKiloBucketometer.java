@@ -28,7 +28,7 @@ import gregapi.tileentity.machines.MultiTileEntitySensorTE;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTankInfo;
+import gregapi.fluid.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 

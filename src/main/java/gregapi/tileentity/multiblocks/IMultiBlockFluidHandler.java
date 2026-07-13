@@ -22,7 +22,6 @@ import gregapi.fluid.FluidTankInfo;
 
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTankInfo;
 
 /**
  * @author Gregorius Techneticies
