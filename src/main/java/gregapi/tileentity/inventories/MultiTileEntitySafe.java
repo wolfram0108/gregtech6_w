@@ -100,7 +100,7 @@ public abstract class MultiTileEntitySafe extends TileEntityBase09FacingSingle i
 	@Override
 	public boolean onPlaced(ItemStack aStack, Player aPlayer, MultiTileEntityContainer aMTEContainer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		super.onPlaced(aStack, aPlayer, aMTEContainer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);
-		aWorld.playSoundEffect(aX+0.5, aY+0.5, aZ+0.5, Blocks.ANVIL.stepSound.func_150496_b(), (Blocks.ANVIL.stepSound.getVolume()+1)/2, Blocks.ANVIL.stepSound.getPitch()*0.8F);
+		WD.playStepSound(aWorld, aX+0.5, aY+0.5, aZ+0.5, Blocks.ANVIL);
 		return F;
 	}
 	

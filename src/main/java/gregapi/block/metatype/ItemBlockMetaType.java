@@ -84,7 +84,7 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 			if (ST.equal(aStack, new ItemStack(mBlock.mBlock.mSlabs[0], 1, aMetaData), true))
 			if (aWorld.checkNoEntityCollision(mBlock.mBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ))) {
 				aWorld.setBlock(aX, aY, aZ, mBlock.mBlock, aMetaData, 3);
-				aWorld.playSoundEffect(aX+0.5F, aY+0.5F, aZ+0.5F, mBlock.mBlock.stepSound.func_150496_b(), (mBlock.mBlock.stepSound.getVolume() + 1.0F) / 2.0F, mBlock.mBlock.stepSound.getPitch() * 0.8F);
+				WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, mBlock.mBlock);
 				if (!aPlayer.capabilities.isCreativeMode) aStack.stackSize--;
 				mInterrupt = true;
 				return false;

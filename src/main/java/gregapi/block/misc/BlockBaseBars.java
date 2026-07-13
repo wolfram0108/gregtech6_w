@@ -102,7 +102,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 					if ((aMeta & tMeta) != 0 && SIDES_HORIZONTAL[aSide]) tMeta = (byte)(SBIT[aSide] >> 2);
 					if ((aMeta & tMeta) == 0 && tMeta != 0) {
 						if (WD.set(aWorld, aX, aY, aZ, this, aMeta | tMeta, 3)) {
-							aWorld.playSoundEffect(aX+0.5, aY+0.5, aZ+0.5, stepSound.func_150496_b(), (stepSound.getVolume() + 1.0F) / 2.0F, stepSound.getPitch() * 0.8F);
+							WD.playStepSound(aWorld, aX+0.5, aY+0.5, aZ+0.5, this);
 							if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 						}
 						return T;
@@ -127,7 +127,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		// if used in conjunction with << 2 , these Meta Values return the Side Bits perfectly.
 		// Z- = 1, Z+ = 2, X- = 4, X+ = 8
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, (SIDES_HORIZONTAL[aSide] ? SIDES_AXIS_X[aSide] ? aHitZ < 0.5 ? 1 : 2 : aHitX < 0.5 ? 4 : 8 : aHitX < aHitZ ? aHitX + aHitZ < 1 ? 4 : 2 : aHitX + aHitZ < 1 ? 1 : 8))) {
-			aWorld.playSoundEffect(aX+0.5, aY+0.5, aZ+0.5, stepSound.func_150496_b(), (stepSound.getVolume() + 1.0F) / 2.0F, stepSound.getPitch() * 0.8F);
+			WD.playStepSound(aWorld, aX+0.5, aY+0.5, aZ+0.5, this);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			return T;
 		}

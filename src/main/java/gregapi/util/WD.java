@@ -432,8 +432,16 @@ public class WD {
 	 *  портированные 1:1 gregapi.block.Material (список сверен с референсом). PORT-TODO(F9, material-table): непокрытые
 	 *  блоки -> Material.rock (документированная деградация §10; критичные сравнения GT6 — water/lava/air/fire/wood/
 	 *  leaves/sand/grass/ground/gourd/cactus/vine/clay/carpet — покрыты, редкие блоки классиф. как rock). */
+	/** F-sound: 1.7.10 WD.playStepSound(aWorld, x, y, z, block) —
+	 *  строковый sound-path + отдельный вызов. neo: SoundType через state.getSoundType() -> getStepSound() (SoundEvent),
+	 *  Level.playSound(null,x,y,z,SoundEvent,SoundSource.BLOCKS,vol,pitch) (Level.java:444). Формула шага 1:1 (едина
+	 *  у всех вызывателей: (vol+1)/2, pitch*0.8; `*0.5`≡`/2`). Центр берёт блок — SoundType из его defaultBlockState. */
+	public static void playStepSound(Level aWorld, double aX, double aY, double aZ, Block aBlock) {
+		net.minecraft.world.level.block.SoundType tSound = aBlock.defaultBlockState().getSoundType();
+		aWorld.playSound(null, aX, aY, aZ, tSound.getStepSound(), net.minecraft.sounds.SoundSource.BLOCKS, (tSound.getVolume() + 1.0F) / 2.0F, tSound.getPitch() * 0.8F);
+	}
 	public static gregapi.block.Material getMaterial(Block aBlock) {
-		if (aBlock instanceof BlockBase) return WD.getMaterial(((BlockBase)aBlock));
+		if (aBlock instanceof BlockBase) return ((BlockBase)aBlock).getMaterial();
 		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
 		if (tState.isAir())                                                                                      return gregapi.block.Material.air;
 		if (aBlock == Blocks.WATER || aBlock == Blocks.BUBBLE_COLUMN)                                            return gregapi.block.Material.water;

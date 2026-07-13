@@ -187,7 +187,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 				
 				try {
 					if (!(aMTEContainer.mTileEntity instanceof IMTE_OnPlaced) || ((IMTE_OnPlaced)aMTEContainer.mTileEntity).onPlaced(aStack, aPlayer, aMTEContainer, aWorld, aX, aY, aZ, (byte)aSide, aHitX, aHitY, aHitZ)) {
-						aWorld.playSoundEffect(aX+0.5, aY+0.5, aZ+0.5, aMTEContainer.mBlock.stepSound.func_150496_b(), (aMTEContainer.mBlock.stepSound.getVolume()+1) / 2, aMTEContainer.mBlock.stepSound.getPitch()*0.8F);
+						WD.playStepSound(aWorld, aX+0.5, aY+0.5, aZ+0.5, aMTEContainer.mBlock);
 					}
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				try {

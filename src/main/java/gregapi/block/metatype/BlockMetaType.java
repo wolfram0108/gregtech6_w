@@ -147,7 +147,7 @@ public class BlockMetaType extends BlockBaseMeta {
 		byte aMetaData = WD.meta(aWorld, aX, aY, aZ);
 		if (ST.equal(aStack, mBlock.mSlabs[0], aMetaData)) {
 			WD.set(aWorld, aX, aY, aZ, mBlock, aMetaData, 3);
-			aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, mBlock.stepSound.func_150496_b(), (mBlock.stepSound.getVolume() + 1.0F) / 2.0F, mBlock.stepSound.getPitch() * 0.8F);
+			WD.playStepSound(aWorld, aX + 0.5F, aY + 0.5F, aZ + 0.5F, mBlock);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			return T;
 		}

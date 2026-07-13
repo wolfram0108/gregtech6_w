@@ -97,7 +97,7 @@ public class ToolCompat {
 		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || aEntityPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack))) {
 			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
 				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
-					aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND.stepSound.getStepResourcePath(), (Blocks.FARMLAND.stepSound.getVolume() + 1.0F) * 0.5F, Blocks.FARMLAND.stepSound.getPitch() * 0.8F);
+					WD.playStepSound(aWorld, aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND);
 					if (!aWorld.isClientSide()) aWorld.setBlock(aX, aY, aZ, Blocks.FARMLAND);
 					return 10000;
 				}
