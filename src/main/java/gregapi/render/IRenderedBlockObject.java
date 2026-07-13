@@ -71,7 +71,7 @@ public interface IRenderedBlockObject {
 		public ITexture mErrorTexture = BlockTextureDefault.get("system/error", T);
 		@Override public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return mErrorTexture;}
 		@Override public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
-		// PORT-TODO(F3, baked-рендер клиента): было aBlock.setBlockBounds(-0.25F,...) — метод удалён (REMAP-RULES §C2), границы отрисовки задаст VoxelShape/модель.
+		// PORT-TODO(F3, baked-рендер клиента): было WD.setBlockBounds(aBlock, -0.25F,...) — метод удалён (REMAP-RULES §C2), границы отрисовки задаст VoxelShape/модель.
 		@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
 		@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 1;}
 		@Override public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
@@ -81,7 +81,7 @@ public interface IRenderedBlockObject {
 
 		@Override
 		public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {
-			// PORT-TODO(F3, baked-рендер клиента): было aBlock.setBlockBounds(-0.25F,...) перед прогоном 6 сторон — метод удалён (REMAP-RULES §C2).
+			// PORT-TODO(F3, baked-рендер клиента): было WD.setBlockBounds(aBlock, -0.25F,...) перед прогоном 6 сторон — метод удалён (REMAP-RULES §C2).
 			RendererBlockTextured.renderNegativeYFacing(aWorld, aRenderer, aBlock, aX, aY, aZ, mErrorTexture, F, T, this);
 			RendererBlockTextured.renderPositiveYFacing(aWorld, aRenderer, aBlock, aX, aY, aZ, mErrorTexture, F, T, this);
 			RendererBlockTextured.renderNegativeZFacing(aWorld, aRenderer, aBlock, aX, aY, aZ, mErrorTexture, F, T, this);

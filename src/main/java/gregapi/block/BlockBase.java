@@ -56,7 +56,13 @@ import static gregapi.data.CS.*;
  */
 public abstract class BlockBase extends Block implements IBlockBase {
 	public final String mNameInternal;
-	
+	/** F-bounds: последние заданные bounds (1.7.10 мутировал Block.mBoundingBox); рендер-использование
+	 *  отложено на F3-клиент-проход. Хранит форму {minX,minY,minZ,maxX,maxY,maxZ}. */
+	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
+		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+	}
+
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
 		super(aMaterial);
 		setStepSound(aSoundType);

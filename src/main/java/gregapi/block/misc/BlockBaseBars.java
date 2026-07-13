@@ -235,12 +235,12 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			switch(aRenderPass) {
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 7], PX_P[ 1], PX_P[16], PX_P[ 8]); return T;
-			case  1: aBlock.setBlockBounds(PX_P[15], PX_P[ 0], PX_P[ 7], PX_P[16], PX_P[16], PX_P[ 8]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 0], PX_P[ 7], PX_P[15], PX_P[ 1], PX_P[ 8]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 1], PX_P[15], PX_P[ 7], PX_P[15], PX_P[16], PX_P[ 8]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 1], PX_P[ 7], PX_P[ 6], PX_P[15], PX_P[ 8]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[10], PX_P[ 1], PX_P[ 7], PX_P[11], PX_P[15], PX_P[ 8]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 7], PX_P[ 1], PX_P[16], PX_P[ 8]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[15], PX_P[ 0], PX_P[ 7], PX_P[16], PX_P[16], PX_P[ 8]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 0], PX_P[ 7], PX_P[15], PX_P[ 1], PX_P[ 8]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[15], PX_P[ 7], PX_P[15], PX_P[16], PX_P[ 8]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 1], PX_P[ 7], PX_P[ 6], PX_P[15], PX_P[ 8]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 1], PX_P[ 7], PX_P[11], PX_P[15], PX_P[ 8]); return T;
 			}
 		}
 	}
@@ -267,29 +267,29 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 			// Z- = 1, Z+ = 2, X- = 4, X+ = 8
 			switch(aRenderPass) {
 			// Vertical Corner Bars
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_P[ 1], PX_P[16], PX_P[ 1]); return T;
-			case  1: aBlock.setBlockBounds(PX_P[15], PX_P[ 0], PX_P[ 0], PX_P[16], PX_P[16], PX_P[ 1]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[15], PX_P[ 1], PX_P[16], PX_P[16]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[15], PX_P[ 0], PX_P[15], PX_P[16], PX_P[16], PX_P[16]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_P[ 1], PX_P[16], PX_P[ 1]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[15], PX_P[ 0], PX_P[ 0], PX_P[16], PX_P[16], PX_P[ 1]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[15], PX_P[ 1], PX_P[16], PX_P[16]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[15], PX_P[ 0], PX_P[15], PX_P[16], PX_P[16], PX_P[16]); return T;
 			// Horizontal Bottom Bars
-			case  4: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 0], PX_P[ 0], PX_P[15], PX_P[ 1], PX_P[ 1]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 1], PX_P[ 1], PX_P[ 1], PX_P[15]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 0], PX_P[15], PX_P[15], PX_P[ 1], PX_P[16]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[15], PX_P[ 0], PX_P[ 1], PX_P[16], PX_P[ 1], PX_P[15]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 0], PX_P[ 0], PX_P[15], PX_P[ 1], PX_P[ 1]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 1], PX_P[ 1], PX_P[ 1], PX_P[15]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 0], PX_P[15], PX_P[15], PX_P[ 1], PX_P[16]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[15], PX_P[ 0], PX_P[ 1], PX_P[16], PX_P[ 1], PX_P[15]); return T;
 			// Horizontal Top Bars
-			case  8: aBlock.setBlockBounds(PX_P[ 1], PX_P[15], PX_P[ 0], PX_P[15], PX_P[16], PX_P[ 1]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 0], PX_P[15], PX_P[ 1], PX_P[ 1], PX_P[16], PX_P[15]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 1], PX_P[15], PX_P[15], PX_P[15], PX_P[16], PX_P[16]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[15], PX_P[15], PX_P[ 1], PX_P[16], PX_P[16], PX_P[15]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[15], PX_P[ 0], PX_P[15], PX_P[16], PX_P[ 1]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[15], PX_P[ 1], PX_P[ 1], PX_P[16], PX_P[15]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[15], PX_P[15], PX_P[15], PX_P[16], PX_P[16]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[15], PX_P[15], PX_P[ 1], PX_P[16], PX_P[16], PX_P[15]); return T;
 			// Vertical Middle Bars
-			case 12: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 1], PX_P[ 0], PX_P[ 6], PX_P[15], PX_P[ 1]); return T;
-			case 13: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 1], PX_P[ 5], PX_P[ 1], PX_P[15], PX_P[ 6]); return T;
-			case 14: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 1], PX_P[15], PX_P[ 6], PX_P[15], PX_P[16]); return T;
-			case 15: aBlock.setBlockBounds(PX_P[15], PX_P[ 1], PX_P[ 5], PX_P[16], PX_P[15], PX_P[ 6]); return T;
-			case 16: aBlock.setBlockBounds(PX_P[10], PX_P[ 1], PX_P[ 0], PX_P[11], PX_P[15], PX_P[ 1]); return T;
-			case 17: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 1], PX_P[10], PX_P[ 1], PX_P[15], PX_P[11]); return T;
-			case 18: aBlock.setBlockBounds(PX_P[10], PX_P[ 1], PX_P[15], PX_P[11], PX_P[15], PX_P[16]); return T;
-			case 19: aBlock.setBlockBounds(PX_P[15], PX_P[ 1], PX_P[10], PX_P[16], PX_P[15], PX_P[11]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 1], PX_P[ 0], PX_P[ 6], PX_P[15], PX_P[ 1]); return T;
+			case 13: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 1], PX_P[ 5], PX_P[ 1], PX_P[15], PX_P[ 6]); return T;
+			case 14: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 1], PX_P[15], PX_P[ 6], PX_P[15], PX_P[16]); return T;
+			case 15: WD.setBlockBounds(aBlock, PX_P[15], PX_P[ 1], PX_P[ 5], PX_P[16], PX_P[15], PX_P[ 6]); return T;
+			case 16: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 1], PX_P[ 0], PX_P[11], PX_P[15], PX_P[ 1]); return T;
+			case 17: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 1], PX_P[10], PX_P[ 1], PX_P[15], PX_P[11]); return T;
+			case 18: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 1], PX_P[15], PX_P[11], PX_P[15], PX_P[16]); return T;
+			case 19: WD.setBlockBounds(aBlock, PX_P[15], PX_P[ 1], PX_P[10], PX_P[16], PX_P[15], PX_P[11]); return T;
 			}
 		}
 	}

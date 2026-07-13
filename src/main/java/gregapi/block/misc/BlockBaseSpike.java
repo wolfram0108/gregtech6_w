@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.misc;
+import gregapi.util.WD;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
@@ -207,26 +208,26 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			if (APRIL_FOOLS) switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 2], PX_P[ 2], PX_N[ 1], PX_P[ 7], PX_P[ 7]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 2], PX_P[ 9], PX_N[ 1], PX_P[ 7], PX_P[14]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 9], PX_P[ 2], PX_N[ 1], PX_P[14], PX_P[ 7]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 9], PX_P[ 9], PX_N[ 1], PX_P[14], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 8], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 2], PX_P[ 2], PX_N[ 1], PX_P[ 7], PX_P[ 7]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 2], PX_P[ 9], PX_N[ 1], PX_P[ 7], PX_P[14]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 9], PX_P[ 2], PX_N[ 1], PX_P[14], PX_P[ 7]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 9], PX_P[ 9], PX_N[ 1], PX_P[14], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 8], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
 			}
 			switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 4], PX_P[ 4], PX_N[ 1], PX_P[ 5], PX_P[ 5]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 4], PX_P[11], PX_N[ 1], PX_P[ 5], PX_P[12]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 1], PX_P[11], PX_P[ 4], PX_N[ 1], PX_P[12], PX_P[ 5]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 1], PX_P[11], PX_P[11], PX_N[ 1], PX_P[12], PX_P[12]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 3], PX_P[ 3], PX_N[ 1], PX_P[ 6], PX_P[ 6]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 3], PX_P[10], PX_N[ 1], PX_P[ 6], PX_P[13]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[ 5], PX_P[10], PX_P[ 3], PX_N[ 1], PX_P[13], PX_P[ 6]); return T;
-			case  8: aBlock.setBlockBounds(PX_P[ 5], PX_P[10], PX_P[10], PX_N[ 1], PX_P[13], PX_P[13]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 2], PX_P[ 2], PX_N[ 1], PX_P[ 7], PX_P[ 7]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 2], PX_P[ 9], PX_N[ 1], PX_P[ 7], PX_P[14]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 2], PX_N[ 1], PX_P[14], PX_P[ 7]); return T;
-			case 12: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 9], PX_N[ 1], PX_P[14], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[14], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 4], PX_P[ 4], PX_N[ 1], PX_P[ 5], PX_P[ 5]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 4], PX_P[11], PX_N[ 1], PX_P[ 5], PX_P[12]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[11], PX_P[ 4], PX_N[ 1], PX_P[12], PX_P[ 5]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[11], PX_P[11], PX_N[ 1], PX_P[12], PX_P[12]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 3], PX_P[ 3], PX_N[ 1], PX_P[ 6], PX_P[ 6]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 3], PX_P[10], PX_N[ 1], PX_P[ 6], PX_P[13]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[10], PX_P[ 3], PX_N[ 1], PX_P[13], PX_P[ 6]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[10], PX_P[10], PX_N[ 1], PX_P[13], PX_P[13]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 2], PX_P[ 2], PX_N[ 1], PX_P[ 7], PX_P[ 7]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 2], PX_P[ 9], PX_N[ 1], PX_P[ 7], PX_P[14]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 2], PX_N[ 1], PX_P[14], PX_P[ 7]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 9], PX_N[ 1], PX_P[14], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[14], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
 			}
 		}
 	}
@@ -236,26 +237,26 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			if (APRIL_FOOLS) switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 2], PX_P[ 2], PX_N[ 5], PX_P[ 7], PX_P[ 7]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 2], PX_P[ 9], PX_N[ 5], PX_P[ 7], PX_P[14]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 9], PX_P[ 2], PX_N[ 5], PX_P[14], PX_P[ 7]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 9], PX_P[ 9], PX_N[ 5], PX_P[14], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 8], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 2], PX_P[ 2], PX_N[ 5], PX_P[ 7], PX_P[ 7]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 2], PX_P[ 9], PX_N[ 5], PX_P[ 7], PX_P[14]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 9], PX_P[ 2], PX_N[ 5], PX_P[14], PX_P[ 7]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 9], PX_P[ 9], PX_N[ 5], PX_P[14], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 8], PX_N[ 0], PX_N[ 0]); return T;
 			}
 			switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 4], PX_P[ 4], PX_N[ 1], PX_P[ 5], PX_P[ 5]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 4], PX_P[11], PX_N[ 1], PX_P[ 5], PX_P[12]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 1], PX_P[11], PX_P[ 4], PX_N[ 1], PX_P[12], PX_P[ 5]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 1], PX_P[11], PX_P[11], PX_N[ 1], PX_P[12], PX_P[12]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 3], PX_P[ 3], PX_N[ 5], PX_P[ 6], PX_P[ 6]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 3], PX_P[10], PX_N[ 5], PX_P[ 6], PX_P[13]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[ 1], PX_P[10], PX_P[ 3], PX_N[ 5], PX_P[13], PX_P[ 6]); return T;
-			case  8: aBlock.setBlockBounds(PX_P[ 1], PX_P[10], PX_P[10], PX_N[ 5], PX_P[13], PX_P[13]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 2], PX_P[ 2], PX_N[ 9], PX_P[ 7], PX_P[ 7]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 2], PX_P[ 9], PX_N[ 9], PX_P[ 7], PX_P[14]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 9], PX_P[ 2], PX_N[ 9], PX_P[14], PX_P[ 7]); return T;
-			case 12: aBlock.setBlockBounds(PX_P[ 1], PX_P[ 9], PX_P[ 9], PX_N[ 9], PX_P[14], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[14], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 4], PX_P[ 4], PX_N[ 1], PX_P[ 5], PX_P[ 5]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 4], PX_P[11], PX_N[ 1], PX_P[ 5], PX_P[12]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[11], PX_P[ 4], PX_N[ 1], PX_P[12], PX_P[ 5]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[11], PX_P[11], PX_N[ 1], PX_P[12], PX_P[12]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 3], PX_P[ 3], PX_N[ 5], PX_P[ 6], PX_P[ 6]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 3], PX_P[10], PX_N[ 5], PX_P[ 6], PX_P[13]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[10], PX_P[ 3], PX_N[ 5], PX_P[13], PX_P[ 6]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[10], PX_P[10], PX_N[ 5], PX_P[13], PX_P[13]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 2], PX_P[ 2], PX_N[ 9], PX_P[ 7], PX_P[ 7]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 2], PX_P[ 9], PX_N[ 9], PX_P[ 7], PX_P[14]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 9], PX_P[ 2], PX_N[ 9], PX_P[14], PX_P[ 7]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[ 1], PX_P[ 9], PX_P[ 9], PX_N[ 9], PX_P[14], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[14], PX_N[ 0], PX_N[ 0]); return T;
 			}
 		}
 	}
@@ -265,26 +266,26 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			if (APRIL_FOOLS) switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 5], PX_P[ 2], PX_P[ 7], PX_N[ 1], PX_P[ 7]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 5], PX_P[ 9], PX_P[ 7], PX_N[ 1], PX_P[14]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 5], PX_P[ 2], PX_P[14], PX_N[ 1], PX_P[ 7]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 5], PX_P[ 9], PX_P[14], PX_N[ 1], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 8], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 5], PX_P[ 2], PX_P[ 7], PX_N[ 1], PX_P[ 7]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 5], PX_P[ 9], PX_P[ 7], PX_N[ 1], PX_P[14]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 5], PX_P[ 2], PX_P[14], PX_N[ 1], PX_P[ 7]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 5], PX_P[ 9], PX_P[14], PX_N[ 1], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 8], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
 			}
 			switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 4], PX_P[ 1], PX_P[ 4], PX_P[ 5], PX_N[ 1], PX_P[ 5]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 4], PX_P[ 1], PX_P[11], PX_P[ 5], PX_N[ 1], PX_P[12]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[11], PX_P[ 1], PX_P[ 4], PX_P[12], PX_N[ 1], PX_P[ 5]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[11], PX_P[ 1], PX_P[11], PX_P[12], PX_N[ 1], PX_P[12]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 3], PX_P[ 5], PX_P[ 3], PX_P[ 6], PX_N[ 1], PX_P[ 6]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 3], PX_P[ 5], PX_P[10], PX_P[ 6], PX_N[ 1], PX_P[13]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[10], PX_P[ 5], PX_P[ 3], PX_P[13], PX_N[ 1], PX_P[ 6]); return T;
-			case  8: aBlock.setBlockBounds(PX_P[10], PX_P[ 5], PX_P[10], PX_P[13], PX_N[ 1], PX_P[13]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 9], PX_P[ 2], PX_P[ 7], PX_N[ 1], PX_P[ 7]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 9], PX_P[ 9], PX_P[ 7], PX_N[ 1], PX_P[14]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 2], PX_P[14], PX_N[ 1], PX_P[ 7]); return T;
-			case 12: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 9], PX_P[14], PX_N[ 1], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[ 1], PX_P[ 4], PX_P[ 5], PX_N[ 1], PX_P[ 5]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[ 1], PX_P[11], PX_P[ 5], PX_N[ 1], PX_P[12]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[11], PX_P[ 1], PX_P[ 4], PX_P[12], PX_N[ 1], PX_P[ 5]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[11], PX_P[ 1], PX_P[11], PX_P[12], PX_N[ 1], PX_P[12]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[ 5], PX_P[ 3], PX_P[ 6], PX_N[ 1], PX_P[ 6]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[ 5], PX_P[10], PX_P[ 6], PX_N[ 1], PX_P[13]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 5], PX_P[ 3], PX_P[13], PX_N[ 1], PX_P[ 6]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 5], PX_P[10], PX_P[13], PX_N[ 1], PX_P[13]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 9], PX_P[ 2], PX_P[ 7], PX_N[ 1], PX_P[ 7]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 9], PX_P[ 9], PX_P[ 7], PX_N[ 1], PX_P[14]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 2], PX_P[14], PX_N[ 1], PX_P[ 7]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 9], PX_P[14], PX_N[ 1], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[14], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
 			}
 		}
 	}
@@ -294,26 +295,26 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			if (APRIL_FOOLS) switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 1], PX_P[ 2], PX_P[ 7], PX_N[ 5], PX_P[ 7]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 1], PX_P[ 9], PX_P[ 7], PX_N[ 5], PX_P[14]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 1], PX_P[ 2], PX_P[14], PX_N[ 5], PX_P[ 7]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 1], PX_P[ 9], PX_P[14], PX_N[ 5], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 8], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 1], PX_P[ 2], PX_P[ 7], PX_N[ 5], PX_P[ 7]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 1], PX_P[ 9], PX_P[ 7], PX_N[ 5], PX_P[14]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 1], PX_P[ 2], PX_P[14], PX_N[ 5], PX_P[ 7]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 1], PX_P[ 9], PX_P[14], PX_N[ 5], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 8], PX_N[ 0]); return T;
 			}
 			switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 4], PX_P[ 1], PX_P[ 4], PX_P[ 5], PX_N[ 1], PX_P[ 5]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 4], PX_P[ 1], PX_P[11], PX_P[ 5], PX_N[ 1], PX_P[12]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[11], PX_P[ 1], PX_P[ 4], PX_P[12], PX_N[ 1], PX_P[ 5]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[11], PX_P[ 1], PX_P[11], PX_P[12], PX_N[ 1], PX_P[12]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 3], PX_P[ 1], PX_P[ 3], PX_P[ 6], PX_N[ 5], PX_P[ 6]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 3], PX_P[ 1], PX_P[10], PX_P[ 6], PX_N[ 5], PX_P[13]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[10], PX_P[ 1], PX_P[ 3], PX_P[13], PX_N[ 5], PX_P[ 6]); return T;
-			case  8: aBlock.setBlockBounds(PX_P[10], PX_P[ 1], PX_P[10], PX_P[13], PX_N[ 5], PX_P[13]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 1], PX_P[ 2], PX_P[ 7], PX_N[ 9], PX_P[ 7]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 1], PX_P[ 9], PX_P[ 7], PX_N[ 9], PX_P[14]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 1], PX_P[ 2], PX_P[14], PX_N[ 9], PX_P[ 7]); return T;
-			case 12: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 1], PX_P[ 9], PX_P[14], PX_N[ 9], PX_P[14]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[14], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[ 1], PX_P[ 4], PX_P[ 5], PX_N[ 1], PX_P[ 5]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[ 1], PX_P[11], PX_P[ 5], PX_N[ 1], PX_P[12]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[11], PX_P[ 1], PX_P[ 4], PX_P[12], PX_N[ 1], PX_P[ 5]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[11], PX_P[ 1], PX_P[11], PX_P[12], PX_N[ 1], PX_P[12]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[ 1], PX_P[ 3], PX_P[ 6], PX_N[ 5], PX_P[ 6]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[ 1], PX_P[10], PX_P[ 6], PX_N[ 5], PX_P[13]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 1], PX_P[ 3], PX_P[13], PX_N[ 5], PX_P[ 6]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 1], PX_P[10], PX_P[13], PX_N[ 5], PX_P[13]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 1], PX_P[ 2], PX_P[ 7], PX_N[ 9], PX_P[ 7]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 1], PX_P[ 9], PX_P[ 7], PX_N[ 9], PX_P[14]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 1], PX_P[ 2], PX_P[14], PX_N[ 9], PX_P[ 7]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 1], PX_P[ 9], PX_P[14], PX_N[ 9], PX_P[14]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[14], PX_N[ 0]); return T;
 			}
 		}
 	}
@@ -323,26 +324,26 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			if (APRIL_FOOLS) switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 2], PX_P[ 5], PX_P[ 7], PX_P[ 7], PX_N[ 1]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 9], PX_P[ 5], PX_P[ 7], PX_P[14], PX_N[ 1]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 2], PX_P[ 5], PX_P[14], PX_P[ 7], PX_N[ 1]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 5], PX_P[14], PX_P[14], PX_N[ 1]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 8], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 2], PX_P[ 5], PX_P[ 7], PX_P[ 7], PX_N[ 1]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 9], PX_P[ 5], PX_P[ 7], PX_P[14], PX_N[ 1]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 2], PX_P[ 5], PX_P[14], PX_P[ 7], PX_N[ 1]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 5], PX_P[14], PX_P[14], PX_N[ 1]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 8], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
 			}
 			switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 4], PX_P[ 4], PX_P[ 1], PX_P[ 5], PX_P[ 5], PX_N[ 1]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 4], PX_P[11], PX_P[ 1], PX_P[ 5], PX_P[12], PX_N[ 1]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[11], PX_P[ 4], PX_P[ 1], PX_P[12], PX_P[ 5], PX_N[ 1]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[11], PX_P[11], PX_P[ 1], PX_P[12], PX_P[12], PX_N[ 1]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 3], PX_P[ 3], PX_P[ 5], PX_P[ 6], PX_P[ 6], PX_N[ 1]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 3], PX_P[10], PX_P[ 5], PX_P[ 6], PX_P[13], PX_N[ 1]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[10], PX_P[ 3], PX_P[ 5], PX_P[13], PX_P[ 6], PX_N[ 1]); return T;
-			case  8: aBlock.setBlockBounds(PX_P[10], PX_P[10], PX_P[ 5], PX_P[13], PX_P[13], PX_N[ 1]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 2], PX_P[ 9], PX_P[ 7], PX_P[ 7], PX_N[ 1]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 9], PX_P[ 9], PX_P[ 7], PX_P[14], PX_N[ 1]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 2], PX_P[ 9], PX_P[14], PX_P[ 7], PX_N[ 1]); return T;
-			case 12: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 9], PX_P[14], PX_P[14], PX_N[ 1]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[14], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[ 4], PX_P[ 1], PX_P[ 5], PX_P[ 5], PX_N[ 1]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[11], PX_P[ 1], PX_P[ 5], PX_P[12], PX_N[ 1]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[11], PX_P[ 4], PX_P[ 1], PX_P[12], PX_P[ 5], PX_N[ 1]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[11], PX_P[11], PX_P[ 1], PX_P[12], PX_P[12], PX_N[ 1]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[ 3], PX_P[ 5], PX_P[ 6], PX_P[ 6], PX_N[ 1]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[10], PX_P[ 5], PX_P[ 6], PX_P[13], PX_N[ 1]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 3], PX_P[ 5], PX_P[13], PX_P[ 6], PX_N[ 1]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[10], PX_P[10], PX_P[ 5], PX_P[13], PX_P[13], PX_N[ 1]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 2], PX_P[ 9], PX_P[ 7], PX_P[ 7], PX_N[ 1]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 9], PX_P[ 9], PX_P[ 7], PX_P[14], PX_N[ 1]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 2], PX_P[ 9], PX_P[14], PX_P[ 7], PX_N[ 1]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 9], PX_P[14], PX_P[14], PX_N[ 1]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[14], PX_N[ 0], PX_N[ 0], PX_N[ 0]); return T;
 			}
 		}
 	}
@@ -352,26 +353,26 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			if (APRIL_FOOLS) switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 2], PX_P[ 1], PX_P[ 7], PX_P[ 7], PX_N[ 5]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 9], PX_P[ 1], PX_P[ 7], PX_P[14], PX_N[ 5]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 2], PX_P[ 1], PX_P[14], PX_P[ 7], PX_N[ 5]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 1], PX_P[14], PX_P[14], PX_N[ 5]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 8]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 2], PX_P[ 1], PX_P[ 7], PX_P[ 7], PX_N[ 5]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 9], PX_P[ 1], PX_P[ 7], PX_P[14], PX_N[ 5]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 2], PX_P[ 1], PX_P[14], PX_P[ 7], PX_N[ 5]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 1], PX_P[14], PX_P[14], PX_N[ 5]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[ 8]); return T;
 			}
 			switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 4], PX_P[ 4], PX_P[ 1], PX_P[ 5], PX_P[ 5], PX_N[ 1]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 4], PX_P[11], PX_P[ 1], PX_P[ 5], PX_P[12], PX_N[ 1]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[11], PX_P[ 4], PX_P[ 1], PX_P[12], PX_P[ 5], PX_N[ 1]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[11], PX_P[11], PX_P[ 1], PX_P[12], PX_P[12], PX_N[ 1]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 3], PX_P[ 3], PX_P[ 1], PX_P[ 6], PX_P[ 6], PX_N[ 5]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 3], PX_P[10], PX_P[ 1], PX_P[ 6], PX_P[13], PX_N[ 5]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[10], PX_P[ 3], PX_P[ 1], PX_P[13], PX_P[ 6], PX_N[ 5]); return T;
-			case  8: aBlock.setBlockBounds(PX_P[10], PX_P[10], PX_P[ 1], PX_P[13], PX_P[13], PX_N[ 5]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 2], PX_P[ 1], PX_P[ 7], PX_P[ 7], PX_N[ 9]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 2], PX_P[ 9], PX_P[ 1], PX_P[ 7], PX_P[14], PX_N[ 9]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 2], PX_P[ 1], PX_P[14], PX_P[ 7], PX_N[ 9]); return T;
-			case 12: aBlock.setBlockBounds(PX_P[ 9], PX_P[ 9], PX_P[ 1], PX_P[14], PX_P[14], PX_N[ 9]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[14]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[ 4], PX_P[ 1], PX_P[ 5], PX_P[ 5], PX_N[ 1]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[11], PX_P[ 1], PX_P[ 5], PX_P[12], PX_N[ 1]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[11], PX_P[ 4], PX_P[ 1], PX_P[12], PX_P[ 5], PX_N[ 1]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[11], PX_P[11], PX_P[ 1], PX_P[12], PX_P[12], PX_N[ 1]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[ 3], PX_P[ 1], PX_P[ 6], PX_P[ 6], PX_N[ 5]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 3], PX_P[10], PX_P[ 1], PX_P[ 6], PX_P[13], PX_N[ 5]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 3], PX_P[ 1], PX_P[13], PX_P[ 6], PX_N[ 5]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[10], PX_P[10], PX_P[ 1], PX_P[13], PX_P[13], PX_N[ 5]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 2], PX_P[ 1], PX_P[ 7], PX_P[ 7], PX_N[ 9]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 2], PX_P[ 9], PX_P[ 1], PX_P[ 7], PX_P[14], PX_N[ 9]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 2], PX_P[ 1], PX_P[14], PX_P[ 7], PX_N[ 9]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[ 9], PX_P[ 9], PX_P[ 1], PX_P[14], PX_P[14], PX_N[ 9]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 0], PX_P[ 0], PX_N[ 0], PX_N[ 0], PX_N[14]); return T;
 			}
 		}
 	}
@@ -381,19 +382,19 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override
 		public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {
 			switch(aRenderPass) {
-			case  1: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 5], PX_P[ 5], PX_N[ 0], PX_P[ 6], PX_P[ 6]); return T;
-			case  2: aBlock.setBlockBounds(PX_P[ 0], PX_P[ 5], PX_P[10], PX_N[ 0], PX_P[ 6], PX_P[11]); return T;
-			case  3: aBlock.setBlockBounds(PX_P[ 0], PX_P[10], PX_P[ 5], PX_N[ 0], PX_P[11], PX_P[ 6]); return T;
-			case  4: aBlock.setBlockBounds(PX_P[ 0], PX_P[10], PX_P[10], PX_N[ 0], PX_P[11], PX_P[11]); return T;
-			case  5: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 0], PX_P[ 5], PX_P[ 6], PX_N[ 0], PX_P[ 6]); return T;
-			case  6: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 0], PX_P[10], PX_P[ 6], PX_N[ 0], PX_P[11]); return T;
-			case  7: aBlock.setBlockBounds(PX_P[10], PX_P[ 0], PX_P[ 5], PX_P[11], PX_N[ 0], PX_P[ 6]); return T;
-			case  8: aBlock.setBlockBounds(PX_P[10], PX_P[ 0], PX_P[10], PX_P[11], PX_N[ 0], PX_P[11]); return T;
-			case  9: aBlock.setBlockBounds(PX_P[ 5], PX_P[ 5], PX_P[ 0], PX_P[ 6], PX_P[ 6], PX_N[ 0]); return T;
-			case 10: aBlock.setBlockBounds(PX_P[ 5], PX_P[10], PX_P[ 0], PX_P[ 6], PX_P[11], PX_N[ 0]); return T;
-			case 11: aBlock.setBlockBounds(PX_P[10], PX_P[ 5], PX_P[ 0], PX_P[11], PX_P[ 6], PX_N[ 0]); return T;
-			case 12: aBlock.setBlockBounds(PX_P[10], PX_P[10], PX_P[ 0], PX_P[11], PX_P[11], PX_N[ 0]); return T;
-			default: aBlock.setBlockBounds(PX_P[ 4], PX_P[ 4], PX_P[ 4], PX_N[ 4], PX_N[ 4], PX_N[ 4]); return T;
+			case  1: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 5], PX_P[ 5], PX_N[ 0], PX_P[ 6], PX_P[ 6]); return T;
+			case  2: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[ 5], PX_P[10], PX_N[ 0], PX_P[ 6], PX_P[11]); return T;
+			case  3: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[10], PX_P[ 5], PX_N[ 0], PX_P[11], PX_P[ 6]); return T;
+			case  4: WD.setBlockBounds(aBlock, PX_P[ 0], PX_P[10], PX_P[10], PX_N[ 0], PX_P[11], PX_P[11]); return T;
+			case  5: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 0], PX_P[ 5], PX_P[ 6], PX_N[ 0], PX_P[ 6]); return T;
+			case  6: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 0], PX_P[10], PX_P[ 6], PX_N[ 0], PX_P[11]); return T;
+			case  7: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 0], PX_P[ 5], PX_P[11], PX_N[ 0], PX_P[ 6]); return T;
+			case  8: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 0], PX_P[10], PX_P[11], PX_N[ 0], PX_P[11]); return T;
+			case  9: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[ 5], PX_P[ 0], PX_P[ 6], PX_P[ 6], PX_N[ 0]); return T;
+			case 10: WD.setBlockBounds(aBlock, PX_P[ 5], PX_P[10], PX_P[ 0], PX_P[ 6], PX_P[11], PX_N[ 0]); return T;
+			case 11: WD.setBlockBounds(aBlock, PX_P[10], PX_P[ 5], PX_P[ 0], PX_P[11], PX_P[ 6], PX_N[ 0]); return T;
+			case 12: WD.setBlockBounds(aBlock, PX_P[10], PX_P[10], PX_P[ 0], PX_P[11], PX_P[11], PX_N[ 0]); return T;
+			default: WD.setBlockBounds(aBlock, PX_P[ 4], PX_P[ 4], PX_P[ 4], PX_N[ 4], PX_N[ 4], PX_N[ 4]); return T;
 			}
 		}
 	}

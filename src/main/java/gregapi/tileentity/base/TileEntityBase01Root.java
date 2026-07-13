@@ -993,10 +993,10 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return aBox != null && aBox.intersectsWith(aAABB) && aList.add(aBox);
 	}
 	
-	public boolean box(Block aBlock) {aBlock.setBlockBounds(0,0,0,1,1,1); return T;}
-	public boolean box(Block aBlock, double[] aBox) {aBlock.setBlockBounds((float)aBox[0], (float)aBox[1], (float)aBox[2], (float)aBox[3], (float)aBox[4], (float)aBox[5]); return T;}
-	public boolean box(Block aBlock, float[] aBox) {aBlock.setBlockBounds(aBox[0], aBox[1], aBox[2], aBox[3], aBox[4], aBox[5]); return T;}
-	public boolean box(Block aBlock, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {aBlock.setBlockBounds((float)aMinX, (float)aMinY, (float)aMinZ, (float)aMaxX, (float)aMaxY, (float)aMaxZ); return T;}
+	public boolean box(Block aBlock) {WD.setBlockBounds(aBlock, 0,0,0,1,1,1); return T;}
+	public boolean box(Block aBlock, double[] aBox) {WD.setBlockBounds(aBlock, (float)aBox[0], (float)aBox[1], (float)aBox[2], (float)aBox[3], (float)aBox[4], (float)aBox[5]); return T;}
+	public boolean box(Block aBlock, float[] aBox) {WD.setBlockBounds(aBlock, aBox[0], aBox[1], aBox[2], aBox[3], aBox[4], aBox[5]); return T;}
+	public boolean box(Block aBlock, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {WD.setBlockBounds(aBlock, (float)aMinX, (float)aMinY, (float)aMinZ, (float)aMaxX, (float)aMaxY, (float)aMaxZ); return T;}
 	
 	public float[] shrunkBox() {return PX_BOX;}
 	

@@ -112,6 +112,12 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class WD {
+	/** F-bounds центр (instanceof-безопасно): 1.7.10 {@code WD.setBlockBounds(aBlock, ...)} мутировал bounds блока
+	 *  (рендер per-pass / коллизия); neo bounds immutable → делегируем GT6-блоку (хранит сам, {@link gregapi.block.IBlock}),
+	 *  не-GT6 блок игнорируется (рендер-использование отложено на F3-клиент-проход). */
+	public static void setBlockBounds(net.minecraft.world.level.block.Block aBlock, float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
+		if (aBlock instanceof gregapi.block.IBlock) ((gregapi.block.IBlock)aBlock).setBlockBounds(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
+	}
 	public static ItemStack suck(IHasWorldAndCoords aCoordinates) {return suck(aCoordinates.getWorld(), aCoordinates.getX(), aCoordinates.getY(), aCoordinates.getZ());}
 	public static ItemStack suck(Level aWorld, double aX, double aY, double aZ) {return suck(aWorld, aX, aY, aZ, 1, 1, 1);}
 	@SuppressWarnings("unchecked")
