@@ -58,7 +58,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 		super.addInformation(aStack, aPlayer, aList, aF3_H);
 		byte aMeta = UT.Code.bind4(ST.meta_(aStack));
 		mPlaceable.addInformation(aStack, aMeta, aPlayer, aList, aF3_H);
-		if (field_150939_a.getCollisionBoundingBoxFromPool(aPlayer.level(), 0, 0, 0) != null) {
+		if (getBlock().getCollisionBoundingBoxFromPool(aPlayer.level(), 0, 0, 0) != null) {
 			if (mPlaceable.doesWalkSpeed(aMeta)) aList.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_WALKSPEED));
 			if (mPlaceable.canCreatureSpawn(aMeta)) {
 				if (ITexture.Util.OPTIFINE_LOADED && aMeta != 0 && !mPlaceable.canCreatureSpawn((byte)0)) {
@@ -78,7 +78,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 				for (byte tSide : ALL_SIDES_VALID) if (mPlaceable.isSealable(aMeta, tSide)) tCount++;
 				if (tCount >= 6) {
 					aList.add(LH.Chat.GREEN  + LH.get(LH.TOOLTIP_SEALABLE_ANY));
-				} else if (WD.opaque(field_150939_a)) {
+				} else if (WD.opaque(getBlock())) {
 					aList.add(LH.Chat.ORANGE + LH.get(LH.TOOLTIP_SEALABLE_BUGGED));
 				} else if (tCount > 0) {
 					aList.add(LH.Chat.YELLOW + LH.get(LH.TOOLTIP_SEALABLE_SOME));
@@ -92,22 +92,22 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 		if (mPlaceable.isFlammable(aMeta) || mPlaceable.isFireSource(aMeta) || mPlaceable.getFlammability(aMeta) > 0)
 			aList.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE));
 		float tResistance = mPlaceable.getExplosionResistance(aMeta);
-		if (tResistance >= 4) aList.add(LH.getToolTipBlastResistance(field_150939_a, tResistance));
+		if (tResistance >= 4) aList.add(LH.getToolTipBlastResistance(getBlock(), tResistance));
 		
-		aList.add(LH.getToolTipHarvest(field_150939_a.getMaterial(), field_150939_a.getHarvestTool(aMeta), field_150939_a.getHarvestLevel(aMeta)));
+		aList.add(LH.getToolTipHarvest(getBlock().getMaterial(), getBlock().getHarvestTool(aMeta), getBlock().getHarvestLevel(aMeta)));
 		while (aList.remove(null));
 	}
 	
-	@OnlyIn(Dist.CLIENT) public CreativeModeTab getCreativeTab() {return field_150939_a.getCreativeTabToDisplayOn();}
+	@OnlyIn(Dist.CLIENT) public CreativeModeTab getCreativeTab() {return getBlock().getCreativeTabToDisplayOn();}
 	public boolean func_150936_a(Level aWorld, int aX, int aY, int aZ, int aSide, Player aPlayer, ItemStack aStack) {return T;}
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUseFirst(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUse(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
-	public IIcon getIconFromDamage(int aMeta) {return field_150939_a.getIcon(SIDE_TOP, aMeta);}
-	@Override public Block getBlock() {return field_150939_a;}
+	public IIcon getIconFromDamage(int aMeta) {return getBlock().getIcon(SIDE_TOP, aMeta);}
+	@Override public Block getBlock() {return getBlock();}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public String getUnlocalizedName(ItemStack aStack) {return mPlaceable.name(UT.Code.bind4(getDamage(aStack)));}
 	public String getItemStackDisplayName(ItemStack aStack) {return I18n.translateToLocal(getUnlocalizedName(aStack));}
-	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMetaData) {return WD.set(aWorld, aX, aY, aZ, field_150939_a, aMetaData, 3);}
+	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMetaData) {return WD.set(aWorld, aX, aY, aZ, getBlock(), aMetaData, 3);}
 	public int getItemStackLimit(ItemStack aStack) {return mPlaceable.getItemStackLimit(aStack);}
 	public int getMetadata(int aMeta) {return aMeta;}
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return mPlaceable.onItemRightClick(aStack, aWorld, aPlayer);}

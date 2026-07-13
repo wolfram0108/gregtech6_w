@@ -41,7 +41,7 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 	
 	@Override
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMetaData) {
-		if (((BlockMetaType)mPlaceable).mBlock == mPlaceable) return WD.set(aWorld, aX, aY, aZ, field_150939_a, aMetaData, 3);
+		if (((BlockMetaType)mPlaceable).mBlock == mPlaceable) return WD.set(aWorld, aX, aY, aZ, getBlock(), aMetaData, 3);
 		byte tSide = UT.Code.getSideWrenching((byte)aSide, aHitX, aHitY, aHitZ);
 		if (tSide == aSide || tSide == OPOS[aSide]) tSide = OPOS[tSide];
 		return WD.set(aWorld, aX, aY, aZ, ((BlockMetaType)mPlaceable).mBlock.mSlabs[tSide], aMetaData, 3);
