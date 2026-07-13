@@ -75,6 +75,11 @@ import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.extensions.ValueInputExtension;
+import net.neoforged.neoforge.common.extensions.ValueOutputExtension;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.LightLayer;
@@ -141,13 +146,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// @Override
 	public void readFromNBT(CompoundTag aNBT) {
 		// load ID and Coords
-		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getIntOr("x", 0);
-		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getIntOr("y", 0);
-		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getIntOr("z", 0);
+		// F8: BlockPos на BlockEntity в 26.1.2 неизменяем (worldPosition final, neo-decompiled
+		// BlockEntity.java:48) и уже выставлен движком через BlockEntityType.create(pos, state)
+		// до вызова loadAdditional (BlockEntity.java:190-207: loadStatic->type.create->
+		// loadWithComponents->loadAdditional) - назначить x/y/z из NBT (как в 1.7.10
+		// xCoord=aNBT.getInteger("x")) невозможно и не нужно, координата уже верна.
 		// make sure Y is not negative because this causes crashes.
 		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 	}
-	
+
 	// @Override
 	public void writeToNBT(CompoundTag aNBT) {
 		// make sure Y is not negative because this causes crashes.
@@ -158,7 +165,36 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		aNBT.putInt("y", getBlockPos().getY());
 		aNBT.putInt("z", getBlockPos().getZ());
 	}
-	
+
+	/**
+	 * F8 (шов «NBT-персистенс TileEntity», центр моста CompoundTag<->ValueIO — см.
+	 * decisions/F8-nbt-data-components.md §4.1): neo зовёт {@code saveAdditional(ValueOutput)}/
+	 * {@code loadAdditional(ValueInput)} (`neo-decompiled/net/minecraft/world/level/block/entity/
+	 * BlockEntity.java:101,115`), а не GT6-модель {@code writeToNBT}/{@code readFromNBT}(CompoundTag).
+	 * Единственный мост на весь мод - здесь, на корне TE-иерархии: собираем/разбираем CompoundTag
+	 * через {@link ValueOutputExtension#store(CompoundTag)} / {@link ValueInputExtension#keySet()}
+	 * (тот же приём: `input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC))`, дословно как в
+	 * `neoforge-decompiled/net/neoforged/neoforge/common/extensions/ValueInputExtension.java:27`),
+	 * и прогоняем существующую GT6-цепочку writeToNBT/readFromNBT -> writeToNBT2/readFromNBT2 без
+	 * изменений. super.saveAdditional/super.loadAdditional вызываются первыми, чтобы сохранить
+	 * neo-собственные данные (NeoForgeData/attachments), как это делает эталон AE2
+	 * (`AEBaseBlockEntity.java:143,184`).
+	 */
+	@Override
+	protected void saveAdditional(ValueOutput output) {
+		super.saveAdditional(output);
+		CompoundTag tNBT = UT.NBT.make();
+		writeToNBT(tNBT);
+		output.store(tNBT);
+	}
+
+	@Override
+	protected void loadAdditional(ValueInput input) {
+		super.loadAdditional(input);
+		CompoundTag tNBT = input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC)).orElseGet(UT.NBT::make);
+		readFromNBT(tNBT);
+	}
+
 	/** return the internal Name of this TileEntity to be registered. DO NOT START YOUR NAME WITH "gt."!!! */
 	public abstract String getTileEntityName();
 	

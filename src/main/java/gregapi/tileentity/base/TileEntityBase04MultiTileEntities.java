@@ -101,9 +101,9 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 			}
 		}
 		// read the Coords if it has them.
-		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getIntOr("x", 0);
-		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getIntOr("y", 0);
-		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getIntOr("z", 0);
+		// F8: BlockPos на BlockEntity в 26.1.2 неизменяем и уже верно выставлен движком до
+		// вызова loadAdditional (см. комментарий в TileEntityBase01Root.readFromNBT) -
+		// назначить x/y/z из NBT здесь невозможно и не нужно.
 		// make sure Y is not negative because this causes crashes.
 		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		// read the custom Name.
