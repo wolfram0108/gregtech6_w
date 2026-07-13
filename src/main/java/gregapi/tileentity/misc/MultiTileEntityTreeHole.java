@@ -73,7 +73,7 @@ public abstract class MultiTileEntityTreeHole extends TileEntityBase09FacingSing
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aSide != mFacing) return F;
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		if (aStack != null && aStack.getItem() instanceof BlockItem) return F;
 		if (isServerSide() && hasResin(aSide)) {
 			ItemStack tResin = getResinItem(aSide), tStack = FL.fill(getResinFluid(aSide), ST.amount(1, aStack), T, T, T, T);

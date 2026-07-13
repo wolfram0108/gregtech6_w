@@ -559,7 +559,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	@Override
 	public boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer == null) return F;
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		if (ST.invalid(aStack)) return F;
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (MOSSABLE[aMeta] && OD.itemMoss.is_(aStack) && ST.use(aPlayer, T, aStack)) {

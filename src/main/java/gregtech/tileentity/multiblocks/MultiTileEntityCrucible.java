@@ -461,7 +461,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 		if (!checkStructure(F)) return F;
 		if (SIDES_TOP[aSide]) {
 			if (isServerSide() && aPlayer != null) {
-				ItemStack aStack = aPlayer.getCurrentEquippedItem();
+				ItemStack aStack = aPlayer.getMainHandItem();
 				OreDictMaterialStack tLightest = null;
 				for (OreDictMaterialStack tMaterial : mContent) if (tLightest == null || tMaterial.mMaterial.mGramPerCubicCentimeter < tLightest.mMaterial.mGramPerCubicCentimeter) tLightest = tMaterial;
 				

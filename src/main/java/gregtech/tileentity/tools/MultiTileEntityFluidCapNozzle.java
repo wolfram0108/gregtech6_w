@@ -67,7 +67,7 @@ public class MultiTileEntityFluidCapNozzle extends TileEntityBase11AttachmentSma
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (aStack != null) {
 				FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 				if (FL.gas(tFluid, F) && tFluid.amount > 0 && (mAcidProof || !FL.acid(tFluid))) {

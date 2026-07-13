@@ -102,7 +102,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 				slotKill(0);
 				return T;
 			}
-			ItemStack aStack = aPlayer.getCurrentEquippedItem(), tStack;
+			ItemStack aStack = aPlayer.getMainHandItem(), tStack;
 			if (aStack != null) if ((tStack = FL.fill(mTank, ST.amount(1, aStack), T, T, T, T)) != null) {
 				aStack.setCount(aStack.getCount()-1);
 				ST.give(aPlayer, tStack, T);

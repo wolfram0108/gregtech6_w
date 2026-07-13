@@ -71,7 +71,7 @@ public class MultiTileEntityMeasuringPot extends TileEntityBase10FluidContainerS
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aPlayer.getCurrentEquippedItem() == null && SIDES_HORIZONTAL[aSide]) {
+		if (aPlayer.getMainHandItem() == null && SIDES_HORIZONTAL[aSide]) {
 			if (isClientSide()) return T;
 			if (aHitY > PX_P[4]) {
 				if (aHitY > PX_P[6]) {

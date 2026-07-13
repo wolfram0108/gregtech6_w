@@ -245,7 +245,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		if (tCoords[0] < PX_P[1] || tCoords[0] > PX_N[1] || tCoords[1] < PX_P[1] || tCoords[1] > PX_N[1]) return F;
 		if (isServerSide() && aPlayer != null) {
 			updatePartialContent();
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (slotHas(1)) {
 				int tAmount = 0;
 				if (tCoords[1] >= PX_P[ 6] && tCoords[1] <= PX_P[ 8]) {

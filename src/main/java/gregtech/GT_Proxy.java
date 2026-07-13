@@ -199,7 +199,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			}
 		}
 		
-		ItemStack aStack = aEvent.entityPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aEvent.entityPlayer.getMainHandItem();
 		if (aStack != null && aStack.getCount() > 0) {
 			if (aEvent.action == PlayerInteractEvent.Action.RIGHT_CLICK_AIR) {
 				if (aStack.getItem() == Items.GLASS_BOTTLE) {
@@ -420,7 +420,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onEntityLivingFallEvent(LivingFallEvent aEvent) {
 		if (!aEvent.entity.level().isClientSide() && aEvent.entity instanceof Player) {
-			if (ST.equal(((Player)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.SCISSORS) || ST.equal(((Player)aEvent.entity).getCurrentEquippedItem(), ToolsGT.sMetaTool, ToolsGT.POCKET_SCISSORS)) aEvent.distance *= 2;
+			if (ST.equal(((Player)aEvent.entity).getMainHandItem(), ToolsGT.sMetaTool, ToolsGT.SCISSORS) || ST.equal(((Player)aEvent.entity).getMainHandItem(), ToolsGT.sMetaTool, ToolsGT.POCKET_SCISSORS)) aEvent.distance *= 2;
 		}
 	}
 	

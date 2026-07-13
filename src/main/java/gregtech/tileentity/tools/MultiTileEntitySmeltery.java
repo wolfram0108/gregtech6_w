@@ -412,7 +412,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (SIDES_TOP[aSide]) {
 			if (isServerSide() && aPlayer != null) {
-				ItemStack aStack = aPlayer.getCurrentEquippedItem();
+				ItemStack aStack = aPlayer.getMainHandItem();
 				OreDictMaterialStack tLightest = null;
 				for (OreDictMaterialStack tMaterial : mContent) if (tLightest == null || tMaterial.mMaterial.mGramPerCubicCentimeter < tLightest.mMaterial.mGramPerCubicCentimeter) tLightest = tMaterial;
 				

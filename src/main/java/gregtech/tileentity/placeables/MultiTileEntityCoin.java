@@ -155,7 +155,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && SIDES_TOP[aSide]) {
-			ItemStack aStack = aPlayer.getCurrentEquippedItem(), tStack = getCoin(1, MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()), getMultiTileEntityID());
+			ItemStack aStack = aPlayer.getMainHandItem(), tStack = getCoin(1, MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()), getMultiTileEntityID());
 			int tIndex = (int)(Math.min(0.99F, Math.max(0, aHitX))*4)*4+(int)(Math.min(0.99F, Math.max(0, aHitZ))*4);
 			if (tStack != null) {
 				if (aStack == null) {

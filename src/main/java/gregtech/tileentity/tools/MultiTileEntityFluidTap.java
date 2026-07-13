@@ -78,7 +78,7 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 		if (isServerSide()) {
 			DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(mFacing);
 			if (tDelegator.mTileEntity instanceof ITileEntityTapAccessible) {
-				ItemStack aStack = aPlayer.getCurrentEquippedItem();
+				ItemStack aStack = aPlayer.getMainHandItem();
 				if (ItemsGT.VOIDING_ITEMS.contains(aStack, F)) {
 					UT.Sounds.send(SFX.IC_SPRAY, 1.0F, 2.0F, this, F);
 					GarbageGT.trash(((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, Integer.MAX_VALUE, T));

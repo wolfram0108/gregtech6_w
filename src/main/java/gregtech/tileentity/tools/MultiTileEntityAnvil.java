@@ -218,7 +218,7 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			if (aHitY < PX_P[4]) return T;
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			byte tSlot = (byte)((SIDES_AXIS_Z[mFacing]?aHitX:aHitZ) < 0.5 ? 0 : 1);
 			boolean tHasHammer = (ToolsGT.contains(TOOL_hammer, slot(0)) || ToolsGT.contains(TOOL_hammer, slot(1)));
 			

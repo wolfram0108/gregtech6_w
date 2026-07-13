@@ -251,7 +251,7 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && SIDES_TOP[aSide]) {
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (ST.item(aStack) instanceof IItemReactorRod && ((IItemReactorRod)ST.item_(aStack)).isReactorRod(aStack)) {
 				if (!slotHas(0) && ST.use(aPlayer, aStack)) {
 					slot(0, ST.amount(1, aStack));

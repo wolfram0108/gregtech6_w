@@ -76,7 +76,7 @@ public abstract class MultiTileEntityPlaceable extends TileEntityBase03MultiTile
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		if (ST.invalid(mStack) || mStack.getCount() <= 0) return setToAir();
 		if (ST.equal(aStack, mStack)) {
 			if (mStack.getCount() >= 64) return T;

@@ -72,7 +72,7 @@ public class MultiTileEntityBarometerGasCylinder extends TileEntityBase09FluidCo
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aPlayer.getCurrentEquippedItem() == null && SIDES_HORIZONTAL[aSide]) {
+		if (aPlayer.getMainHandItem() == null && SIDES_HORIZONTAL[aSide]) {
 			if (isClientSide()) return T;
 			if (aHitY > PX_P[8]) {
 				if (aHitY > PX_P[12]) {

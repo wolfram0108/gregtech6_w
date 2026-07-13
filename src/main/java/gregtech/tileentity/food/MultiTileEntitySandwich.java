@@ -130,7 +130,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		int tStackSize = addIngredient(aStack);
 		if (tStackSize > 0) {
 			ItemStack tContainer = ST.mul(tStackSize, ST.container(aStack, T));

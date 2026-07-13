@@ -210,7 +210,7 @@ public abstract class MultiTileEntityReactorCore extends TileEntityBase10FacingD
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && SIDES_TOP[aSide]) {
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (ST.item(aStack) instanceof IItemReactorRod && ((IItemReactorRod)ST.item_(aStack)).isReactorRod(aStack)) {
 				int tSlot = aHitX < 0.5 ? aHitZ < 0.5 ? 0 : 1 : aHitZ < 0.5 ? 2 : 3;
 				if (!slotHas(tSlot) && ST.use(aPlayer, aStack)) {

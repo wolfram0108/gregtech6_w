@@ -49,7 +49,7 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityRope extends TileEntityBase09FacingSingle implements ITileEntityQuickObstructionCheck, IMTE_IgnorePlayerCollisionWhenPlacing, IMTE_IsLadder, IMTE_OnBlockHarvested, IMTE_SetBlockBoundsBasedOnState, IMTE_GetCollisionBoundingBoxFromPool, IMTE_GetSelectedBoundingBoxFromPool {
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID());
 		if (tRegistry != null && ST.equal(aStack, toStack(), F)) {
 			if (isServerSide()) for (int tY = getBlockPos().getY()-1; tY >= 0; tY--) {

@@ -125,7 +125,7 @@ public class CoverRetrieverItem extends AbstractCoverAttachment {
 	public boolean onCoverClickedRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer instanceof Player && aData.mTileEntity.isServerSide()) {
 			if (aData.mNBTs[aCoverSide] == null || !aData.mNBTs[aCoverSide].contains("gt.filter.item")) {
-				ItemStack tStack = ST.make(((Player)aPlayer).getCurrentEquippedItem(), null, null);
+				ItemStack tStack = ST.make(((Player)aPlayer).getMainHandItem(), null, null);
 				if (ST.valid(tStack)) {
 					aData.mNBTs[aCoverSide] = ST.save("gt.filter.item", tStack);
 					UT.Sounds.send(SFX.MC_CLICK, aData.mTileEntity);

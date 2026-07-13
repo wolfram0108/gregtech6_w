@@ -89,7 +89,7 @@ public class CoverFilterItem extends AbstractCoverAttachment {
 	@Override
 	public boolean onCoverClickedRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer instanceof Player && aData.mTileEntity.isServerSide()) {
-			ItemStack tStack = ST.make(((Player)aPlayer).getCurrentEquippedItem(), null, null);
+			ItemStack tStack = ST.make(((Player)aPlayer).getMainHandItem(), null, null);
 			if (ST.valid(tStack)) {
 				ItemStack tFilter = ST.load(aData.mNBTs[aCoverSide], "gt.filter.item");
 				if (ST.invalid(tFilter)) {

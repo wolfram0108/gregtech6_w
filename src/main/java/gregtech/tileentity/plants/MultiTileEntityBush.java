@@ -170,7 +170,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 			mStage = 0;
 			return T;
 		}
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		if (OP.plantGtBerry.contains(aStack) || BushesGT.get(aStack) != null) {
 			mBerry = ST.amount(1, aStack);
 			updateClientData();

@@ -110,7 +110,7 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && SIDES_TOP_HORIZONTAL[aSide]) {
 			ItemStack tOutputStack = slot(0);
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (tOutputStack == null) {
 				OreDictItemData tData = OM.anyassociation(aStack);
 				if (tData != null && tData.mPrefix == OP.plateTiny) {

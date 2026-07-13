@@ -93,7 +93,7 @@ public class MultiTileEntityGrindStone extends TileEntityBase09FacingSingle impl
 				if (tCoords[0] <= PX_P[SIDES_AXIS_Z[mFacing]?8:4] && tCoords[1] <= PX_P[SIDES_AXIS_X[mFacing]?8:4]) return T;
 			}
 			if (SIDES_VERTICAL[aSide] || ALONG_AXIS[mFacing][aSide]) {
-				ItemStack aStack = aPlayer.getCurrentEquippedItem();
+				ItemStack aStack = aPlayer.getMainHandItem();
 				if (ST.invalid(aStack) || mRecipes == null || !UT.Entities.isPlayer(aPlayer)) {
 					mClickCount = 0;
 				} else if (mStone <= 0) {

@@ -75,7 +75,7 @@ public class MultiTileEntityMortar extends TileEntityBase07Paintable implements 
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (SIDES_TOP[aSide]) {
 				float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
 				if (tCoords[0] <= PX_P[4] && tCoords[1] <= PX_P[4]) return T;

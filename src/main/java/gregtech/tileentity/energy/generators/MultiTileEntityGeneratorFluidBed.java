@@ -158,7 +158,7 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aSide != mFacing) return F;
 		if (isServerSide() && !mBurning) {
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (aStack == null) {
 				if (slotHas(1)) {
 					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, slot(1));

@@ -145,7 +145,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 			}
 		}
 		if (attachCoversFirst(aSide)) {
-			ItemStack aStack = aPlayer.getCurrentEquippedItem();
+			ItemStack aStack = aPlayer.getMainHandItem();
 			if (aStack != null && aStack.getCount() > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 				return T;
@@ -153,7 +153,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 			return onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ);
 		}
 		if (onBlockActivated3(aPlayer, aSide, aHitX, aHitY, aHitZ)) return T;
-		ItemStack aStack = aPlayer.getCurrentEquippedItem();
+		ItemStack aStack = aPlayer.getMainHandItem();
 		if (aStack != null && aStack.getCount() > 0 && setCoverItem(tSide, aStack, aPlayer, F, T)) {
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			return T;

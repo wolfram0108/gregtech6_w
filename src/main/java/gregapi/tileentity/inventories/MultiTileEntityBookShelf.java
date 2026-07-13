@@ -243,7 +243,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 			}
 			return F;
 		}
-		ItemStack tStack = aPlayer.getCurrentEquippedItem();
+		ItemStack tStack = aPlayer.getMainHandItem();
 		if (ST.valid(tStack) && BooksGT.BOOK_REGISTER.containsKey(tStack, T)) {
 			slot(aSlot, ST.amount(1, tStack));
 			tStack.setCount(tStack.getCount()-1);

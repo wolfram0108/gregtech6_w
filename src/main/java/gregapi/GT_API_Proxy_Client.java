@@ -626,7 +626,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@SubscribeEvent(priority = EventPriority.LOWEST) 
 	public void onDrawBlockHighlight(DrawBlockHighlightEvent aEvent) {
 		Block
-		aBlock = ST.block(aEvent.player.getCurrentEquippedItem());
+		aBlock = ST.block(aEvent.player.getMainHandItem());
 		if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mIsSlab) {
 			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
 			return;

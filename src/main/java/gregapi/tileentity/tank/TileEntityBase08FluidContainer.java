@@ -143,7 +143,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return T;
 		
-		ItemStack aStack = aPlayer.getCurrentEquippedItem(), tStack = ST.container(ST.amount(1, aStack), T);
+		ItemStack aStack = aPlayer.getMainHandItem(), tStack = ST.container(ST.amount(1, aStack), T);
 		FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 		if (aStack != null && isFluidAllowed(tFluid) && mTank.fillAll(tFluid)) {
 			aStack.setCount(aStack.getCount()-1);
