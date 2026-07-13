@@ -539,8 +539,8 @@ public class MultiItemTechnological extends MultiItemRandomWithCompat {
 		RM.Press.addRecipeX(T, 16, 64, ST.array(OP.dustSmall.mat(MT.Endstone,10)                             , OP.gem      .mat(MT.EnderEye, 1)), IL.Electrode_FR_Ender       .get(2));
 		RM.Press.addRecipeX(T, 16, 64, ST.array(OP.dust.mat(MT.Endstone , 5)                                 , OP.dust     .mat(MT.EnderEye, 2)), IL.Electrode_FR_Ender       .get(4));
 		RM.Press.addRecipeX(T, 16, 64, ST.array(OP.dust.mat(MT.Endstone , 5)                                 , OP.gem      .mat(MT.EnderEye, 2)), IL.Electrode_FR_Ender       .get(4));
-		RM.Press.addRecipeX(T, 16, 64, ST.array(ST.make(Blocks.end_stone, 5, W)                              , OP.dust     .mat(MT.EnderEye, 2)), IL.Electrode_FR_Ender       .get(4));
-		RM.Press.addRecipeX(T, 16, 64, ST.array(ST.make(Blocks.end_stone, 5, W)                              , OP.gem      .mat(MT.EnderEye, 2)), IL.Electrode_FR_Ender       .get(4));
+		RM.Press.addRecipeX(T, 16, 64, ST.array(ST.make(Blocks.END_STONE, 5, W)                              , OP.dust     .mat(MT.EnderEye, 2)), IL.Electrode_FR_Ender       .get(4));
+		RM.Press.addRecipeX(T, 16, 64, ST.array(ST.make(Blocks.END_STONE, 5, W)                              , OP.gem      .mat(MT.EnderEye, 2)), IL.Electrode_FR_Ender       .get(4));
 		
 		
 		IL.Circuit_Plate_Empty             .set(addItem(30000, "Circuit Plate"                    , "Needs Circuit Wiring"                            , new OreDictItemData(ANY.SiO2, U, ANY.Plastic, U), TC.stack(TC.FABRICO, 1)));

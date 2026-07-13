@@ -65,22 +65,22 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 			aData.smooth(11, tY, 10);
 		}
 		
-		aData.set( 3, 1,  5, Blocks.iron_door, 1, 2);
-		aData.set( 3, 2,  5, Blocks.iron_door, 8, 2);
-		aData.set(12, 1,  5, Blocks.iron_door, 1, 2);
-		aData.set(12, 2,  5, Blocks.iron_door, 9, 2);
-		aData.set( 3, 1, 10, Blocks.iron_door, 3, 2);
-		aData.set( 3, 2, 10, Blocks.iron_door, 9, 2);
-		aData.set(12, 1, 10, Blocks.iron_door, 3, 2);
-		aData.set(12, 2, 10, Blocks.iron_door, 8, 2);
-		aData.set( 4, 2,  6, Blocks.stone_button, 3, 2);
-		aData.set(11, 2,  6, Blocks.stone_button, 3, 2);
-		aData.set( 4, 2,  9, Blocks.stone_button, 4, 2);
-		aData.set(11, 2,  9, Blocks.stone_button, 4, 2);
-		aData.set( 3, 1,  4, Blocks.stone_pressure_plate, 0, 2);
-		aData.set(12, 1,  4, Blocks.stone_pressure_plate, 0, 2);
-		aData.set( 3, 1, 11, Blocks.stone_pressure_plate, 0, 2);
-		aData.set(12, 1, 11, Blocks.stone_pressure_plate, 0, 2);
+		aData.set( 3, 1,  5, Blocks.IRON_DOOR, 1, 2);
+		aData.set( 3, 2,  5, Blocks.IRON_DOOR, 8, 2);
+		aData.set(12, 1,  5, Blocks.IRON_DOOR, 1, 2);
+		aData.set(12, 2,  5, Blocks.IRON_DOOR, 9, 2);
+		aData.set( 3, 1, 10, Blocks.IRON_DOOR, 3, 2);
+		aData.set( 3, 2, 10, Blocks.IRON_DOOR, 9, 2);
+		aData.set(12, 1, 10, Blocks.IRON_DOOR, 3, 2);
+		aData.set(12, 2, 10, Blocks.IRON_DOOR, 8, 2);
+		aData.set( 4, 2,  6, Blocks.STONE_BUTTON, 3, 2);
+		aData.set(11, 2,  6, Blocks.STONE_BUTTON, 3, 2);
+		aData.set( 4, 2,  9, Blocks.STONE_BUTTON, 4, 2);
+		aData.set(11, 2,  9, Blocks.STONE_BUTTON, 4, 2);
+		aData.set( 3, 1,  4, Blocks.STONE_PRESSURE_PLATE, 0, 2);
+		aData.set(12, 1,  4, Blocks.STONE_PRESSURE_PLATE, 0, 2);
+		aData.set( 3, 1, 11, Blocks.STONE_PRESSURE_PLATE, 0, 2);
+		aData.set(12, 1, 11, Blocks.STONE_PRESSURE_PLATE, 0, 2);
 		aData.set( 1, 1,  1, Blocks.bed,10, 2);
 		aData.set( 1, 1,  2, Blocks.bed, 2, 2);
 		aData.set( 1, 1, 13, Blocks.bed, 0, 2);
@@ -89,10 +89,10 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		aData.set(14, 1,  2, Blocks.bed, 2, 2);
 		aData.set(14, 1, 13, Blocks.bed, 0, 2);
 		aData.set(14, 1, 14, Blocks.bed, 8, 2);
-		aData.set( 1, 1,  4, Blocks.crafting_table, 0, 2);
-		aData.set( 1, 1, 11, Blocks.crafting_table, 0, 2);
-		aData.set(14, 1,  4, Blocks.crafting_table, 0, 2);
-		aData.set(14, 1, 11, Blocks.crafting_table, 0, 2);
+		aData.set( 1, 1,  4, Blocks.CRAFTING_TABLE, 0, 2);
+		aData.set( 1, 1, 11, Blocks.CRAFTING_TABLE, 0, 2);
+		aData.set(14, 1,  4, Blocks.CRAFTING_TABLE, 0, 2);
+		aData.set(14, 1, 11, Blocks.CRAFTING_TABLE, 0, 2);
 		
 		FL[] tDrinks = new FL[] {null, null, null, null, null, FL.Purple_Drink, FL.Grenade_Juice, FL.Vodka, FL.Leninade, FL.Mead, FL.BAWLS, FL.Whiskey_GlenMcKenner, FL.Wine_Grape_Purple};
 		

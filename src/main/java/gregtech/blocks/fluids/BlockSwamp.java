@@ -101,29 +101,29 @@ public class BlockSwamp extends BlockWaterlike {
 					if (tMeta == 0) tSwampCounter++;
 				} else if (tBlock instanceof BlockWaterlike) {
 					if (tMeta == 0 || tBlock instanceof BlockOcean) tSwampCounter++;
-				} else if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
+				} else if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
 					tList.add(new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
 					if (tMeta == 0) tSwampCounter++;
-				} else if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.mycelium || tBlock == BlocksGT.Grass || tBlock == BlocksGT.Diggables || tBlock == BlocksGT.Sands || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand || tBlock == BlocksGT.oreMud || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreSmallMud || IL.EtFu_Dirt.equal(tBlock)) {
+				} else if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.MYCELIUM || tBlock == BlocksGT.Grass || tBlock == BlocksGT.Diggables || tBlock == BlocksGT.Sands || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand || tBlock == BlocksGT.oreMud || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreSmallMud || IL.EtFu_Dirt.equal(tBlock)) {
 					tDirt = T;
 				} else if (IL.TF_Mazestone.equal(tBlock)) {
 					// prevent flooding the Twilight Mazes.
 					// grow a Mushroom Stem
-					if (WD.air     (aWorld, aX  , aY+1, aZ  )) WD.set(aWorld, aX  , aY+1, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+1, aZ  )) WD.set(aWorld, aX  , aY+1, aZ  , Blocks.brown_mushroom_block, 10, 3);
-					if (WD.air     (aWorld, aX  , aY+2, aZ  )) WD.set(aWorld, aX  , aY+2, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+2, aZ  )) WD.set(aWorld, aX  , aY+2, aZ  , Blocks.brown_mushroom_block, 10, 3);
-					if (WD.air     (aWorld, aX  , aY+3, aZ  )) WD.set(aWorld, aX  , aY+3, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+3, aZ  )) WD.set(aWorld, aX  , aY+3, aZ  , Blocks.brown_mushroom_block, 10, 3);
-					if (WD.air     (aWorld, aX  , aY+4, aZ  )) WD.set(aWorld, aX  , aY+4, aZ  , Blocks.brown_mushroom_block, 10, 3); else
-					if (WD.anywater(aWorld, aX  , aY+4, aZ  )) WD.set(aWorld, aX  , aY+4, aZ  , Blocks.brown_mushroom_block, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+1, aZ  )) WD.set(aWorld, aX  , aY+1, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+1, aZ  )) WD.set(aWorld, aX  , aY+1, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+2, aZ  )) WD.set(aWorld, aX  , aY+2, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+2, aZ  )) WD.set(aWorld, aX  , aY+2, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+3, aZ  )) WD.set(aWorld, aX  , aY+3, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+3, aZ  )) WD.set(aWorld, aX  , aY+3, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3);
+					if (WD.air     (aWorld, aX  , aY+4, aZ  )) WD.set(aWorld, aX  , aY+4, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3); else
+					if (WD.anywater(aWorld, aX  , aY+4, aZ  )) WD.set(aWorld, aX  , aY+4, aZ  , Blocks.BROWN_MUSHROOM_BLOCK, 10, 3);
 					for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) {
 						// Plug the holes.
 						if (Math.abs(i * j) < 4) {
-						if (WD.air     (aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, Blocks.brown_mushroom_block, 5, 3); else
-						if (WD.anywater(aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, Blocks.brown_mushroom_block, 5, 3);
-						if (WD.air     (aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, Blocks.brown_mushroom_block, 5, 3); else
-						if (WD.anywater(aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, Blocks.brown_mushroom_block, 5, 3);
+						if (WD.air     (aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, Blocks.BROWN_MUSHROOM_BLOCK, 5, 3); else
+						if (WD.anywater(aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, Blocks.BROWN_MUSHROOM_BLOCK, 5, 3);
+						if (WD.air     (aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, Blocks.BROWN_MUSHROOM_BLOCK, 5, 3); else
+						if (WD.anywater(aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, Blocks.BROWN_MUSHROOM_BLOCK, 5, 3);
 						} else {
 						if (WD.anywater(aWorld, aX+i, aY  , aZ+j)) WD.set(aWorld, aX+i, aY  , aZ+j, NB, 0, 3);
 						if (WD.anywater(aWorld, aX+i, aY+5, aZ+j)) WD.set(aWorld, aX+i, aY+5, aZ+j, NB, 0, 3);
@@ -144,7 +144,7 @@ public class BlockSwamp extends BlockWaterlike {
 		
 		if (tDirt) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
 			tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k);
-			if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.mycelium || IL.EtFu_Dirt.equal(tBlock)) {WD.set(aWorld, aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
+			if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.MYCELIUM || IL.EtFu_Dirt.equal(tBlock)) {WD.set(aWorld, aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
 			if (tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand) {BlocksGT.oreMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 			if (tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand) {BlocksGT.oreSmallMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 		}
@@ -196,7 +196,7 @@ public class BlockSwamp extends BlockWaterlike {
 	}
 	
 	@Override public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (WD.block(aWorld, aX, aY+1, aZ) != this || WD.meta(aWorld, aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}
+	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.WATER.getIcon(aSide, aMeta);}
 	@Override public int getRenderColor(int aMeta) {return 0x0000ff00;}
 	
 	@Override
@@ -209,5 +209,5 @@ public class BlockSwamp extends BlockWaterlike {
 		return 0x0000ff00;
 	}
 	
-	public static boolean water(Block aBlock) {return aBlock == Blocks.water || aBlock == Blocks.flowing_water || aBlock == BlocksGT.Ocean || aBlock == BlocksGT.River;}
+	public static boolean water(Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.flowing_water || aBlock == BlocksGT.Ocean || aBlock == BlocksGT.River;}
 }

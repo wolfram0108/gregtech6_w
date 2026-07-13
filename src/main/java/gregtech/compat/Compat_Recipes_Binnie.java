@@ -63,10 +63,10 @@ public class Compat_Recipes_Binnie extends CompatMods {
 			
 			new OreDictListenerEvent_Names() {@Override public void addAllListeners() {
 			addListener("itemClay", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-				RM.Mixer.addRecipe2(T, 16,   96, ST.amount(4, aEvent.mStack), ST.make(Blocks.gravel, 1, W)  , ST.make(MD.BINNIE_BOTANY, "misc", 6, 6));
+				RM.Mixer.addRecipe2(T, 16,   96, ST.amount(4, aEvent.mStack), ST.make(Blocks.GRAVEL, 1, W)  , ST.make(MD.BINNIE_BOTANY, "misc", 6, 6));
 			}});
 			addListener("blockClay", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-				RM.Mixer.addRecipe2(T, 16,   96, aEvent.mStack              , ST.make(Blocks.gravel, 1, W)  , ST.make(MD.BINNIE_BOTANY, "misc", 6, 6));
+				RM.Mixer.addRecipe2(T, 16,   96, aEvent.mStack              , ST.make(Blocks.GRAVEL, 1, W)  , ST.make(MD.BINNIE_BOTANY, "misc", 6, 6));
 			}});
 			}};
 			
@@ -98,7 +98,7 @@ public class Compat_Recipes_Binnie extends CompatMods {
 			RM.Centrifuge   .addRecipe1(T, 16,   64                                             , IL.BINNIE_Comb_Venom      .get(1), NF, FL.make("poison", 200), OM.dust(MT.WaxBee, 8*U9));
 			RM.Centrifuge   .addRecipe1(T, 16,   64                                             , IL.BINNIE_Comb_Glacial    .get(1), NF, FL.make("liquidnitrogen", 200), OM.dust(MT.WaxBee));
 			
-			RM.Centrifuge   .addRecipe1(T, 16,   64, new long[] { 9000,  9000}                  , IL.BINNIE_Comb_Fungal     .get(1), NF, FL.make("mushroomsoup", 1000), ST.make(Blocks.red_mushroom_block, 1, 0), ST.make(Blocks.brown_mushroom_block, 1, 0));
+			RM.Centrifuge   .addRecipe1(T, 16,   64, new long[] { 9000,  9000}                  , IL.BINNIE_Comb_Fungal     .get(1), NF, FL.make("mushroomsoup", 1000), ST.make(Blocks.RED_MUSHROOM_BLOCK, 1, 0), ST.make(Blocks.BROWN_MUSHROOM_BLOCK, 1, 0));
 			RM.Centrifuge   .addRecipe1(T, 16,   64                                             , IL.BINNIE_Comb_Peat       .get(1), NF, FL.Honey.make(50), IL.BINNIE_Propolis_Peat.get(1));
 			RM.Centrifuge   .addRecipe1(T, 16,   64                                             , IL.BINNIE_Comb_Mulch      .get(1), NF, FL.Honey.make(50), OM.dust(MT.WaxBee), IL.FR_Mulch.get(1));
 			RM.Centrifuge   .addRecipe1(T, 16,   64                                             , IL.BINNIE_Comb_Decomposed .get(1), NF, FL.Honey.make(50), OM.dust(MT.WaxBee), IL.FR_Compost.get(1));

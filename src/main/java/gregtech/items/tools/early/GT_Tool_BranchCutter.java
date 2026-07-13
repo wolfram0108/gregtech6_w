@@ -87,9 +87,9 @@ public class GT_Tool_BranchCutter extends ToolStats {
 		} else if (aBlock == Blocks.leaves2) {
 			aDrops.clear();
 			aDrops.add(ST.make(Blocks.sapling, 1, (aMetaData & 3) + 4));
-		} else if (aBlock == Blocks.vine) {
+		} else if (aBlock == Blocks.VINE) {
 			aDrops.clear();
-			aDrops.add(ST.make(Blocks.vine, 1, 0));
+			aDrops.add(ST.make(Blocks.VINE, 1, 0));
 		} else if (aBlock instanceof BlockBaseLeaves) {
 			aDrops.clear();
 			aDrops.add(ST.make(aBlock.getItemDropped(aMetaData, RNGSUS, aFortune), 1, aBlock.damageDropped(aMetaData)));
@@ -119,7 +119,7 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return "grafter".equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock == Blocks.vine || aBlock.getMaterial() == Material.leaves || IL.TF_Mazehedge.equal(aBlock);
+		return "grafter".equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock == Blocks.VINE || aBlock.getMaterial() == Material.leaves || IL.TF_Mazehedge.equal(aBlock);
 	}
 	
 	@Override

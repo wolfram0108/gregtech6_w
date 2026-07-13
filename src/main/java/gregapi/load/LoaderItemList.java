@@ -276,36 +276,36 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.AMMO_ITEMS.add(ST.make(MD.TG, "TechgunsAmmo"                    , 1,107));
 		
 		
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.coal_ore                     , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.diamond_ore                  , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.emerald_ore                  , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.gold_ore                     , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.iron_ore                     , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.lapis_ore                    , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.COAL_ORE                     , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.DIAMOND_ORE                  , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.EMERALD_ORE                  , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GOLD_ORE                     , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.IRON_ORE                     , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.LAPIS_ORE                    , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.lit_redstone_ore             , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.redstone_ore                 , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.REDSTONE_ORE                 , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.quartz_ore                   , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.DIRT, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.grass                        , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.mycelium                     , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.gravel                       , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.MYCELIUM                     , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GRAVEL                       , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.SAND, 1, 0));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.netherrack                   , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.NETHERRACK                   , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.nether_brick                 , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.end_stone                    , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.snow                         , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.ice                          , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.packed_ice                   , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.glowstone                    , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.redstone_lamp                , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.END_STONE                    , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.SNOW                         , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.ICE                          , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.PACKED_ICE                   , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GLOWSTONE                    , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.REDSTONE_LAMP                , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.lit_redstone_lamp            , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.QUARTZ_BLOCK, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_WOOL, 1, 0));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.glass                        , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.glass_pane                   , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GLASS                        , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GLASS_PANE                   , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, 0));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.clay                         , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.CLAY                         , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.hardened_clay                , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_TERRACOTTA, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.OAK_LEAVES, 1, 0));
@@ -315,12 +315,12 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.ACACIA_LOG, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.SANDSTONE, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.STONE, 1, 0));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.cobblestone                  , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.mossy_cobblestone            , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.COBBLESTONE                  , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.MOSSY_COBBLESTONE            , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.STONE_BRICKS, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.brick_block                  , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.obsidian                     , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.bedrock                      , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.OBSIDIAN                     , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.BEDROCK                      , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.mob_spawner                  , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(MD.EtFu, "tuff"                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(MD.EtFu, "deepslate"                , 1, W));
@@ -715,36 +715,36 @@ public class LoaderItemList implements Runnable {
 		StoneLayer.REPLACEABLE_BLOCKS.add(ST.block(MD.DRPG, "arcaniumOre"                    , null));
 		
 		
-		MT.H2O.mTextureDust   = MT.Steam.mTextureDust   = MT.FreshWater.mTextureDust   = MT.DistWater.mTextureDust   = MT.Ice.mTextureDust   = MT.Snow.mTextureDust   = MT.Snow.mTextureSolid = BlockTextureCopied.get(Blocks.snow);
-		MT.H2O.mTextureMolten = MT.Steam.mTextureMolten = MT.FreshWater.mTextureMolten = MT.DistWater.mTextureMolten = MT.Ice.mTextureMolten = MT.Snow.mTextureMolten = BlockTextureCopied.get(Blocks.water);
-		MT.H2O.mTextureSolid  = MT.Steam.mTextureSolid  = MT.FreshWater.mTextureSolid  = MT.DistWater.mTextureSolid  = MT.Ice.mTextureSolid  = BlockTextureCopied.get(Blocks.packed_ice);
-		MT.Glowstone.mTextureSolid  = MT.Glowstone.mTextureGem = MT.Glowstone.mTextureMolten = BlockTextureCopied.get(Blocks.glowstone);
+		MT.H2O.mTextureDust   = MT.Steam.mTextureDust   = MT.FreshWater.mTextureDust   = MT.DistWater.mTextureDust   = MT.Ice.mTextureDust   = MT.Snow.mTextureDust   = MT.Snow.mTextureSolid = BlockTextureCopied.get(Blocks.SNOW);
+		MT.H2O.mTextureMolten = MT.Steam.mTextureMolten = MT.FreshWater.mTextureMolten = MT.DistWater.mTextureMolten = MT.Ice.mTextureMolten = MT.Snow.mTextureMolten = BlockTextureCopied.get(Blocks.WATER);
+		MT.H2O.mTextureSolid  = MT.Steam.mTextureSolid  = MT.FreshWater.mTextureSolid  = MT.DistWater.mTextureSolid  = MT.Ice.mTextureSolid  = BlockTextureCopied.get(Blocks.PACKED_ICE);
+		MT.Glowstone.mTextureSolid  = MT.Glowstone.mTextureGem = MT.Glowstone.mTextureMolten = BlockTextureCopied.get(Blocks.GLOWSTONE);
 		
-		MT.Lava.mTextureMolten        = MT.Obsidian.mTextureMolten  = BlockTextureCopied.get(Blocks.lava);
-		MT.Lava.mTextureSolid         = MT.Obsidian.mTextureSolid   = BlockTextureCopied.get(Blocks.obsidian);
-		MT.Coal.mTextureSolid         = MT.Coal.mTextureGem         = BlockTextureCopied.get(Blocks.coal_block);
-		MT.Charcoal.mTextureSolid     = MT.Charcoal.mTextureGem     = BlockTextureCopied.get(Blocks.coal_block);
-		MT.Lapis.mTextureSolid        = MT.Lapis.mTextureGem        = BlockTextureCopied.get(Blocks.lapis_block);
-		MT.Diamond.mTextureSolid      = MT.Diamond.mTextureGem      = BlockTextureCopied.get(Blocks.diamond_block);
-		MT.Emerald.mTextureSolid      = MT.Emerald.mTextureGem      = BlockTextureCopied.get(Blocks.emerald_block);
+		MT.Lava.mTextureMolten        = MT.Obsidian.mTextureMolten  = BlockTextureCopied.get(Blocks.LAVA);
+		MT.Lava.mTextureSolid         = MT.Obsidian.mTextureSolid   = BlockTextureCopied.get(Blocks.OBSIDIAN);
+		MT.Coal.mTextureSolid         = MT.Coal.mTextureGem         = BlockTextureCopied.get(Blocks.COAL_BLOCK);
+		MT.Charcoal.mTextureSolid     = MT.Charcoal.mTextureGem     = BlockTextureCopied.get(Blocks.COAL_BLOCK);
+		MT.Lapis.mTextureSolid        = MT.Lapis.mTextureGem        = BlockTextureCopied.get(Blocks.LAPIS_BLOCK);
+		MT.Diamond.mTextureSolid      = MT.Diamond.mTextureGem      = BlockTextureCopied.get(Blocks.DIAMOND_BLOCK);
+		MT.Emerald.mTextureSolid      = MT.Emerald.mTextureGem      = BlockTextureCopied.get(Blocks.EMERALD_BLOCK);
 		MT.Sand.mTextureSolid         = MT.Sand.mTextureDust        = BlockTextureCopied.get(Blocks.sand);
 		MT.RedSand.mTextureSolid      = MT.RedSand.mTextureDust     = BlockTextureCopied.get(Blocks.sand, 1);
-		MT.SoulSand.mTextureSolid     = MT.SoulSand.mTextureDust    = BlockTextureCopied.get(Blocks.soul_sand);
+		MT.SoulSand.mTextureSolid     = MT.SoulSand.mTextureDust    = BlockTextureCopied.get(Blocks.SOUL_SAND);
 		
-		MT.Stone.mTextureDust         = BlockTextureCopied.get(Blocks.gravel);
+		MT.Stone.mTextureDust         = BlockTextureCopied.get(Blocks.GRAVEL);
 		MT.Stone.mTextureSolid        = BlockTextureCopied.get(Blocks.stone);
 		MT.Stone.mTextureSmooth       = BlockTextureCopied.get(Blocks.double_stone_slab, SIDE_TOP, 0);
-		MT.Glass.mTextureSolid        = BlockTextureCopied.get(Blocks.glass);
+		MT.Glass.mTextureSolid        = BlockTextureCopied.get(Blocks.GLASS);
 		MT.Ceramic.mTextureSolid      = BlockTextureCopied.get(Blocks.hardened_clay);
-		MT.Au.mTextureSolid           = BlockTextureCopied.get(Blocks.gold_block);
-		MT.Fe.mTextureSolid           = BlockTextureCopied.get(Blocks.iron_block);
-		MT.Redstone.mTextureSolid     = BlockTextureCopied.get(Blocks.redstone_block);
-		MT.Endstone.mTextureSolid     = BlockTextureCopied.get(Blocks.end_stone);
-		MT.Netherrack.mTextureSolid   = BlockTextureCopied.get(Blocks.netherrack);
+		MT.Au.mTextureSolid           = BlockTextureCopied.get(Blocks.GOLD_BLOCK);
+		MT.Fe.mTextureSolid           = BlockTextureCopied.get(Blocks.IRON_BLOCK);
+		MT.Redstone.mTextureSolid     = BlockTextureCopied.get(Blocks.REDSTONE_BLOCK);
+		MT.Endstone.mTextureSolid     = BlockTextureCopied.get(Blocks.END_STONE);
+		MT.Netherrack.mTextureSolid   = BlockTextureCopied.get(Blocks.NETHERRACK);
 		MT.NetherBrick.mTextureSolid  = BlockTextureCopied.get(Blocks.nether_brick);
 		MT.NetherQuartz.mTextureSolid = BlockTextureCopied.get(Blocks.quartz_block);
-		MT.Bedrock.mTextureSolid      = BlockTextureCopied.get(Blocks.bedrock);
-		MT.Clay.mTextureSolid         = BlockTextureCopied.get(Blocks.clay);
+		MT.Bedrock.mTextureSolid      = BlockTextureCopied.get(Blocks.BEDROCK);
+		MT.Clay.mTextureSolid         = BlockTextureCopied.get(Blocks.CLAY);
 		MT.Brick.mTextureSolid        = BlockTextureCopied.get(Blocks.brick_block);
 		
 		
@@ -757,7 +757,7 @@ public class LoaderItemList implements Runnable {
 		IL.Dye_Cactus                           .set(ST.make(Items.dye, 1, 2));
 		IL.Dye_Cocoa                            .set(ST.make(Items.COCOA_BEANS, 1, 0), null, "cropCocoa");
 		
-		IL.Bale_Wheat                           .set(ST.make(Blocks.hay_block, 1, 0), null, "baleWheat");
+		IL.Bale_Wheat                           .set(ST.make(Blocks.HAY_BLOCK, 1, 0), null, "baleWheat");
 		IL.Crop_Wheat                           .set(ST.make(Items.wheat, 1, 0), null, "cropWheat");
 		IL.Food_Bread                           .set(ST.make(Items.bread, 1, 0), null, "foodBread", CR.DELATE);
 		IL.Food_Carrot                          .set(ST.make(Items.carrot, 1, 0), null, "cropCarrot");
@@ -770,7 +770,7 @@ public class LoaderItemList implements Runnable {
 		IL.TFC_Torch                            .set(ST.make(MD.TFCP.mLoaded?MD.TFCP:MD.TFC, "Torch"        , 1, 0), null, OD.blockTorch);
 		IL.TFC_Stick                            .set(ST.make(MD.TFCP.mLoaded?MD.TFCP:MD.TFC, "item.stick"   , 1, 0));
 		
-		IL.Torch                                .set(IL.TFC_Torch.get(1, ST.make(Blocks.torch, 1, 0)));
+		IL.Torch                                .set(IL.TFC_Torch.get(1, ST.make(Blocks.TORCH, 1, 0)));
 		IL.Stick                                .set(IL.TFC_Stick.get(1, ST.make(Items.stick, 1, 0)));
 		
 		IL.Cell_Empty                           .set(ST.mkic("cell"                                         , 1   ), OP.cell.dat(MT.Empty), CR.DELATE);

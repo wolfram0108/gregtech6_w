@@ -54,7 +54,7 @@ public class DungeonChunkRoomWorkshop extends DungeonChunkRoomEmpty {
 		
 		aData.set             ( 2, 1,  1, SIDE_UNKNOWN,    11, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T, NBT_FACING, SIDE_Z_POS, "gt.dungeonloot", ChestGenHooks.STRONGHOLD_CROSSING     ), T, T);
 		
-		aData.set             ( 1, 1,  1, Blocks.crafting_table, 0, 2);
+		aData.set             ( 1, 1,  1, Blocks.CRAFTING_TABLE, 0, 2);
 		aData.set             ( 1, 2,  1, SIDE_UNKNOWN, 32735, T, T);
 		
 		aData.set             ( 1, 1,  2, SIDE_UNKNOWN,    11, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T, NBT_FACING, SIDE_X_POS, "gt.dungeonloot", ChestGenHooks.DUNGEON_CHEST           ), T, T);
@@ -160,7 +160,7 @@ public class DungeonChunkRoomWorkshop extends DungeonChunkRoomEmpty {
 		
 		aData.set             (13, 1, 14, SIDE_UNKNOWN, 32705, null, T, T);
 		aData.smooth          (14, 1, 14);
-		aData.set             (14, 1, 13, Blocks.cauldron, aData.next(4), 0);
+		aData.set             (14, 1, 13, Blocks.CAULDRON, aData.next(4), 0);
 		aData.set             (14, 1, 11, SIDE_UNKNOWN, 32707, null, T, T);
 		
 		aData.set             (13, 2, 14, SIDE_UNKNOWN, 32730, UT.NBT.make(NBT_FACING, SIDE_X_POS), T, T);

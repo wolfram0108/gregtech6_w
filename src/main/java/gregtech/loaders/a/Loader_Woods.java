@@ -69,7 +69,7 @@ public class Loader_Woods implements Runnable {
 		BlocksGT.Leaves_AB   = new BlockTreeLeavesAB ("gt.block.leaves", BlocksGT.Saplings_AB); BlocksGT.Leaves  = BlocksGT.Leaves_AB;
 		BlocksGT.Leaves_CD   = new BlockTreeLeavesCD ("gt.block.leaves.cd", BlocksGT.Saplings_CD);
 		
-		IL.Plank_Stairs       .set(ST.make(Blocks.oak_stairs, 1, 0));
+		IL.Plank_Stairs       .set(ST.make(Blocks.OAK_STAIRS, 1, 0));
 		IL.Plank_Slab         .set(ST.make(((BlockMetaType)BlocksGT.Planks).mSlabs[0], 1, 9));
 		IL.Plank              .set(ST.make(BlocksGT.Planks, 1,  9));
 		IL.Treated_Planks_Slab.set(ST.make(((BlockMetaType)BlocksGT.Planks).mSlabs[0], 1, 10));

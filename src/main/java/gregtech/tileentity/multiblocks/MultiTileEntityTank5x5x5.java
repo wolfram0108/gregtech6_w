@@ -131,7 +131,7 @@ public abstract class MultiTileEntityTank5x5x5 extends MultiTileEntityTank {
 		int tX = getOffsetXN(mFacing, 2), tY = getOffsetYN(mFacing, 2), tZ = getOffsetZN(mFacing, 2);
 		for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
 			WD.burn(level, tX+i, tY+j, tZ+k, F, F);
-			if (rng(4) == 0) WD.set(level, tX+i, tY+j, tZ+k, Blocks.fire, 0, 3);
+			if (rng(4) == 0) WD.set(level, tX+i, tY+j, tZ+k, Blocks.FIRE, 0, 3);
 		}
 		GarbageGT.trash(mTank);
 		setToFire();

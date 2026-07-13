@@ -62,14 +62,14 @@ public class WorldgenOcean extends WorldgenObject {
 				if (tStorage == null) continue;
 				final Block tBlock = tStorage.getBlockByExtId(tX, tY & 15, tZ);
 				if (tBlock.isOpaqueCube()) break;
-				if (tBlock != Blocks.water && tBlock != Blocks.flowing_water) continue;
+				if (tBlock != Blocks.WATER && tBlock != Blocks.flowing_water) continue;
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;
 					BlockOcean.UPDATE_TICK = (aBiomeNames.size() > 1);
 					BlockOcean.PLACEMENT_ALLOWED = T;
 					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Ocean, 0, 0)) {
-						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.water, 0, 0);
+						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
 						aChunk.lastSaveTime = Long.MAX_VALUE;
 						return F;
 					}

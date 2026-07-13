@@ -49,8 +49,8 @@ public class DungeonChunkRoomFarmFish extends DungeonChunkRoomEmpty {
 			} else {
 				aData.bricks (tX, -3, tZ);
 				aData.colored(tX, -2, tZ);
-				aData.set    (tX,  0, tZ, Blocks.water, 0, 2);
-				aData.set    (tX, -1, tZ, Blocks.water, 0, 2);
+				aData.set    (tX,  0, tZ, Blocks.WATER, 0, 2);
+				aData.set    (tX, -1, tZ, Blocks.WATER, 0, 2);
 				if (aData.next1in2()) aData.set(tX, 1, tZ, BlocksGT.Glowtus, aData.nextMetaA(), 0);
 			}
 		}

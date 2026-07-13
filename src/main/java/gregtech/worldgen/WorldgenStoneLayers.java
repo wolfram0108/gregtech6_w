@@ -85,7 +85,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 				final Block aBlock = (aStorage == null ? NB : aStorage.getBlockByExtId(i, tY & 15, j));
 				assert aStorage != null;
 				// Just mark as Opaque Ground.
-				if (aBlock == Blocks.bedrock) {
+				if (aBlock == Blocks.BEDROCK) {
 					tCanPlaceRocks = T;
 				// Place Rock if on Opaque Surface.
 				} else if (aBlock == NB) {
@@ -122,7 +122,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 						}
 					}
 				// Cobblestone Generation.
-				} else if (aBlock == Blocks.cobblestone) {
+				} else if (aBlock == Blocks.COBBLESTONE) {
 					tCanPlaceRocks = T;
 					if (tScan[3].mCobble != null) {
 						tLastRock = tScan[3].mMaterialSurface;
@@ -132,7 +132,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 						}
 					}
 				// Mossy Cobblestone Generation.
-				} else if (aBlock == Blocks.mossy_cobblestone) {
+				} else if (aBlock == Blocks.MOSSY_COBBLESTONE) {
 					tCanPlaceRocks = T;
 					if (tScan[3].mMossy != null) {
 						tLastRock = tScan[3].mMaterialSurface;

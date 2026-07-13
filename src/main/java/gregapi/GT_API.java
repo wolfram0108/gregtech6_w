@@ -976,7 +976,7 @@ public class GT_API extends Abstract_Mod {
 		OreDictManager.INSTANCE.onPostLoad();
 		
 		ICover tCover = new CoverRedstoneTorch();
-		// F12: block-флэттен (данные) — Blocks.redstone_torch/unlit_redstone_torch (1.7.10, два раздельных
+		// F12: block-флэттен (данные) — Blocks.REDSTONE_TORCH/unlit_redstone_torch (1.7.10, два раздельных
 		// блока lit/unlit) слиты в neo в ОДИН Blocks.REDSTONE_TORCH с BlockState-свойством "lit" (нет
 		// отдельной unlit-константы); вторая регистрация становится тем же ключом — безвредный дубль,
 		// не потеря данных (тот же tCover на тот же результирующий блок).

@@ -102,7 +102,7 @@ public interface ITileEntityMachineBlockUpdateable {
 		 * if this Block is a Machine Update Conducting Block
 		 */
 		public static boolean isMachineBlock(Block aBlock, int aMeta) {
-			if (aBlock == Blocks.air) return F;
+			if (aBlock == Blocks.AIR) return F;
 			Integer tNumber = MACHINE_BLOCKS.get(aBlock);
 			return tNumber != null && (tNumber & B[aMeta]) != 0;
 		}

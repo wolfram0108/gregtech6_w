@@ -207,11 +207,11 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 						slot(0, OP.dust.mat(MT.Bedrock, 1));
 					} else if (level.provider.dimensionId == DIM_NETHER) {
 						// Netherrack.
-						slot(0, ST.make(Blocks.netherrack, 1, 0));
+						slot(0, ST.make(Blocks.NETHERRACK, 1, 0));
 					} else if (WD.dimTF(level)) {
 						// Twilight Stones sometimes, otherwise default to vanilla.
 						switch (mType) {
-						case  0: slot(0, ST.make(Blocks.obsidian, 1, 0)); break;
+						case  0: slot(0, ST.make(Blocks.OBSIDIAN, 1, 0)); break;
 						case  1: slot(0, OP.blockDust.mat(MT.STONES.Mazestone, 1)); break;
 						case  2: slot(0, IL.TF_Trollsteinn.get(1)); break;
 						case  3: slot(0, OP.blockDust.mat(MT.STONES.Castlerock, 1)); break;
@@ -243,7 +243,7 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 					}
 					if (ST.invalid(slot(0))) {
 						// Make Cobble, if nothing else applies.
-						slot(0, ST.make(Blocks.cobblestone, 1, 0));
+						slot(0, ST.make(Blocks.COBBLESTONE, 1, 0));
 					}
 				}
 			}

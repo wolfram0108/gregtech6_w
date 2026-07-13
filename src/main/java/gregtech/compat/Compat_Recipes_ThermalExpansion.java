@@ -55,7 +55,7 @@ public class Compat_Recipes_ThermalExpansion extends CompatMods {
 			RM.Injector     .addRecipe1(T, 16, 16, ST.make(Items.snowball, 1, W), FL.mul(tRedstone, 2), NF, OP.dustTiny.mat(MT.Blizz, 1));
 			RM.Injector     .addRecipe1(T, 16, 16, OP.dustSmall.mat(MT.Snow, 1) , FL.mul(tRedstone, 2), NF, OP.dustTiny.mat(MT.Blizz, 1));
 			RM.Injector     .addRecipe1(T, 16, 16, OP.dustSmall.mat(MT.Ice, 1)  , FL.mul(tRedstone, 2), NF, OP.dustTiny.mat(MT.Blizz, 1));
-			RM.Injector     .addRecipe1(T, 16, 64, ST.make(Blocks.snow, 1, W)   , FL.mul(tRedstone, 8), NF, OP.dustTiny.mat(MT.Blizz, 4));
+			RM.Injector     .addRecipe1(T, 16, 64, ST.make(Blocks.SNOW, 1, W)   , FL.mul(tRedstone, 8), NF, OP.dustTiny.mat(MT.Blizz, 4));
 			RM.Injector     .addRecipe1(T, 16, 64, OP.dust.mat(MT.Snow, 1)      , FL.mul(tRedstone, 8), NF, OP.dustTiny.mat(MT.Blizz, 4));
 			RM.Injector     .addRecipe1(T, 16, 64, OP.dust.mat(MT.Ice, 1)       , FL.mul(tRedstone, 8), NF, OP.dustTiny.mat(MT.Blizz, 4));
 			for (OreDictMaterial tMat : ANY.SiO2.mToThis)

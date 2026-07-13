@@ -97,7 +97,7 @@ public class Replacements {
 						BlockStaticLiquid_isFlammable(world, x, y - 1, z, Direction.UP) ||
 						BlockStaticLiquid_isFlammable(world, x, y + 1, z, Direction.DOWN))
 					{
-						world.setBlock(x, y, z, Blocks.fire);
+						world.setBlock(x, y, z, Blocks.FIRE);
 						return;
 					}
 				}
@@ -119,7 +119,7 @@ public class Replacements {
 
 					if (world.isAirBlock(x, y + 1, z) && BlockStaticLiquid_isFlammable(world, x, y, z, Direction.UP))
 					{
-						world.setBlock(x, y + 1, z, Blocks.fire);
+						world.setBlock(x, y + 1, z, Blocks.FIRE);
 					}
 				}
 			}

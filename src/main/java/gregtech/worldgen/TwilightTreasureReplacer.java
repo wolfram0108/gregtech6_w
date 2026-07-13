@@ -144,8 +144,8 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			// Dimension Stuff that is nowhere else to be found.
 			useless  .add(Items.nether_wart, 12);
 			useless  .add(Items.quartz, 48);
-			useless  .add(Blocks.soul_sand, 24);
-			useless  .add(Blocks.netherrack, 36);
+			useless  .add(Blocks.SOUL_SAND, 24);
+			useless  .add(Blocks.NETHERRACK, 36);
 			if (IL.EtFu_Magmatic_Netherrack.exists())
 			useless  .add(IL.EtFu_Magmatic_Netherrack.get(24));
 		}
@@ -193,7 +193,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			useless  .clear();
 			// Dimension Stuff that is nowhere else to be found.
 			useless  .add(Items.quartz, 48);
-			useless  .add(Blocks.end_stone, 36);
+			useless  .add(Blocks.END_STONE, 36);
 			if (IL.EtFu_Magmatic_Netherrack.exists())
 			useless  .add(IL.EtFu_Magmatic_Netherrack.get(24));
 		}
@@ -267,7 +267,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			// Enderpearls are a bitch to get in Twilight Forest.
 			useless  .add(Items.ender_pearl, 16);
 			// Dimension Stuff that is nowhere else to be found.
-			useless  .add(Blocks.end_stone, 64);
+			useless  .add(Blocks.END_STONE, 64);
 			if (IL.EtFu_Chorus_Fruit.exists())
 			useless  .add(IL.EtFu_Chorus_Fruit.get(24));
 			if (IL.EtFu_Chorus_Flower.exists())
@@ -294,7 +294,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 		ST.LOOT_TABLES.add(mCategory);
 	}
 	
-	@Override public boolean generate(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return generate(aWorld, aRandom, aX, aY, aZ, Blocks.chest);}
+	@Override public boolean generate(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return generate(aWorld, aRandom, aX, aY, aZ, Blocks.CHEST);}
 	@Override public boolean generate(Level aWorld, Random aRandom, int aX, int aY, int aZ, Block aChest) {
 		// Give chance for the other Loot Table in Large Hollow Hills.
 		if (mTreasureID == 3 && RNGSUS.nextInt(3) == 0) return HILLS_2.generate(aWorld, aRandom, aX, aY, aZ, aChest);
@@ -305,7 +305,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 		// Narrow down facing direction of the Chest if it is a double chest.
 		for (byte tSide : ALL_SIDES_HORIZONTAL_ORDER[RNGSUS.nextInt(ALL_SIDES_HORIZONTAL_ORDER.length)]) {
 			Block tBlock = WD.block(aWorld, aX, aY, aZ, tSide);
-			if (tBlock == Blocks.chest || tBlock == Blocks.trapped_chest) {
+			if (tBlock == Blocks.CHEST || tBlock == Blocks.TRAPPED_CHEST) {
 				// replace adjacent vanilla Chests with Firefly Jars. Should help with the Maze Vault randomly exploding from Mob spawns.
 				WD.set(aWorld, aX+OFFX[tSide], aY, aZ+OFFZ[tSide], IL.TF_Firefly_Jar.block(), 0, 3);
 				// face away from close Wall.

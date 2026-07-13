@@ -88,8 +88,8 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			
 			RM.Distillery.addRecipe1(T, 16, 48, IL.EtFu_Wither_Rose.get(1), FL.Potion_Thick.make(750), FL.Potion_Harm_2.make(750), ZL_IS);
 			
-			RM.smash(ST.make(MD.EtFu, "brown_mushroom", 1, W), ST.make(Blocks.brown_mushroom, 1, 0));
-			RM.smash(ST.make(MD.EtFu, "red_mushroom"  , 1, W), ST.make(Blocks.red_mushroom, 1, 0));
+			RM.smash(ST.make(MD.EtFu, "brown_mushroom", 1, W), ST.make(Blocks.BROWN_MUSHROOM, 1, 0));
+			RM.smash(ST.make(MD.EtFu, "red_mushroom"  , 1, W), ST.make(Blocks.RED_MUSHROOM, 1, 0));
 			RM.biomass(ST.make(MD.EtFu, "brown_mushroom"    , 8, W));
 			RM.biomass(ST.make(MD.EtFu, "red_mushroom"      , 8, W));
 			RM.biomass(ST.make(MD.EtFu, "rose"              , 8, W));
@@ -319,7 +319,7 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			
 			CR.remove(OP.nugget.mat(MT.Blaze, 1), NI, NI, OP.nugget.mat(MT.Blaze, 1), NI, NI, OP.nugget.mat(MT.Blaze, 1));
 			
-			RM.Mixer.addRecipe2(T, 16, 32, ST.make(MD.GaNe, "spookyFlour", 2, 0), ST.make(Blocks.SAND, 1, 0), ST.make(Blocks.soul_sand, 2, 0));
+			RM.Mixer.addRecipe2(T, 16, 32, ST.make(MD.GaNe, "spookyFlour", 2, 0), ST.make(Blocks.SAND, 1, 0), ST.make(Blocks.SOUL_SAND, 2, 0));
 		}
 		if (MD.GaEn.mLoaded) {OUT.println("GT_Mod: Doing Recipes for Ganys End.");
 			//

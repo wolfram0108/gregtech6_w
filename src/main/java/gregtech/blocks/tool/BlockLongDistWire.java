@@ -56,7 +56,7 @@ public class BlockLongDistWire extends BlockBaseMachineUpdate {
 	@Override public String getHarvestTool(int aMeta) {return TOOL_cutter;}
 	@Override public int getHarvestLevel(int aMeta) {return 3;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return T;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.iron_block.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.IRON_BLOCK.getBlockHardness(aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return 15;}
 	@Override public float getExplosionResistance(Entity aEntity) {return 15;}
 	@Override public float getExplosionResistance(byte aMeta) {return 15;}

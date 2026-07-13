@@ -97,8 +97,8 @@ public class ToolCompat {
 		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || aEntityPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack))) {
 			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
 				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.grass || aBlock == Blocks.dirt || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
-					aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.farmland.stepSound.getStepResourcePath(), (Blocks.farmland.stepSound.getVolume() + 1.0F) * 0.5F, Blocks.farmland.stepSound.getPitch() * 0.8F);
-					if (!aWorld.isClientSide()) aWorld.setBlock(aX, aY, aZ, Blocks.farmland);
+					aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND.stepSound.getStepResourcePath(), (Blocks.FARMLAND.stepSound.getVolume() + 1.0F) * 0.5F, Blocks.FARMLAND.stepSound.getPitch() * 0.8F);
+					if (!aWorld.isClientSide()) aWorld.setBlock(aX, aY, aZ, Blocks.FARMLAND);
 					return 10000;
 				}
 			}
@@ -222,7 +222,7 @@ public class ToolCompat {
 			if (!IL.TF_Lamp_of_Cinders.equal(aStack, T, T)) {
 				if (aEntityPlayer == null || aEntityPlayer.canPlayerEdit(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aSide, aStack)) {
 					if (aWorld.isAirBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
-						if (WD.oxygen(aWorld, aX, aY, aZ)) aWorld.setBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.fire);
+						if (WD.oxygen(aWorld, aX, aY, aZ)) aWorld.setBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.FIRE);
 						return 10000;
 					}
 				}
@@ -267,11 +267,11 @@ public class ToolCompat {
 		if (aTool.equals(TOOL_softhammer)) {
 			if (aBlock == Blocks.lit_redstone_lamp) {
 				aWorld.isClientSide() = T;
-				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.redstone_lamp, 0, 0);
+				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
 				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
-			if (aBlock == Blocks.redstone_lamp) {
+			if (aBlock == Blocks.REDSTONE_LAMP) {
 				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.lit_redstone_lamp, 0, 0);
 				aWorld.isClientSide() = F;
@@ -283,7 +283,7 @@ public class ToolCompat {
 				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
-			if (aBlock == Blocks.activator_rail) {
+			if (aBlock == Blocks.ACTIVATOR_RAIL) {
 				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
 				aWorld.isClientSide() = F;
@@ -373,7 +373,7 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_prospector)) {
 			if (prospectOre(aBlock, aMeta, aChatReturn, aWorld, aX, aY, aZ)) return 100;
-			if (aBlock != Blocks.obsidian && (aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.netherrack) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.end_stone) || WD.stone(aBlock, aMeta))) {
+			if (aBlock != Blocks.OBSIDIAN && (aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE) || WD.stone(aBlock, aMeta))) {
 				if (prospectStone(aBlock, aMeta, aQuality, aChatReturn, aWorld, aSide, aX, aY, aZ)) return 10000;
 			}
 			return 0;
@@ -406,7 +406,7 @@ public class ToolCompat {
 			
 			// The Strings in this do not want to be localized, and not even Backup Lang wants to work.
 			tBlock = WD.block(aWorld, tX, tY, tZ);
-			if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) {
+			if (tBlock == Blocks.LAVA || tBlock == Blocks.flowing_lava) {
 				if (aChatReturn != null) aChatReturn.add("There is Lava behind this Rock");
 				break;
 			}
@@ -431,7 +431,7 @@ public class ToolCompat {
 			tZ = aZ-tQuality+tRandom.nextInt(j);
 			tBlock = WD.block(aWorld, tX, tY, tZ);
 			
-			if (tBlock != NB && tBlock != Blocks.obsidian && tBlock != BlocksGT.RockOres) {
+			if (tBlock != NB && tBlock != Blocks.OBSIDIAN && tBlock != BlocksGT.RockOres) {
 				OreDictItemData tAssotiation = OM.anyassociation((tBlock instanceof IBlockRetrievable ? ((IBlockRetrievable)tBlock).getItemStackFromBlock(aWorld, tX, tY, tZ, SIDE_INVALID) : ST.make(tBlock, 1, WD.meta(aWorld, tX, tY, tZ))));
 				if (tAssotiation != null && tAssotiation.mPrefix.containsAny(TD.Prefix.STANDARD_ORE, TD.Prefix.DENSE_ORE)) {
 					if (aChatReturn != null) aChatReturn.add("Found traces of " + tAssotiation.mMaterial.mMaterial.getLocal());

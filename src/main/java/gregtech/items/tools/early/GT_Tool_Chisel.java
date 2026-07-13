@@ -64,8 +64,8 @@ public class GT_Tool_Chisel extends ToolStats {
 			aDrops.clear();
 			switch(aMetaData) {
 			case  0: aDrops.add(ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0)); break;
-			case  1: aDrops.add(ST.make(Blocks.mossy_cobblestone, 1, 0)); break;
-			case  2: aDrops.add(ST.make(Blocks.cobblestone, 1, 0)); break;
+			case  1: aDrops.add(ST.make(Blocks.MOSSY_COBBLESTONE, 1, 0)); break;
+			case  2: aDrops.add(ST.make(Blocks.COBBLESTONE, 1, 0)); break;
 			default: aDrops.add(ST.make(aBlock, 1, aMetaData)); break;
 			}
 			return 0;

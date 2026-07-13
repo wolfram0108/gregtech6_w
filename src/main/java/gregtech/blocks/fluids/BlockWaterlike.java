@@ -174,7 +174,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		if (aBlock == NB) return 0;
 		if (aBlock == this) return quantaPerBlock - WD.meta(aWorld, aX, aY, aZ);
 		if (aBlock instanceof BlockWaterlike) return 8-WD.meta(aWorld, aX, aY, aZ);
-		if (aBlock == Blocks.water || aBlock == Blocks.flowing_water) return 8-WD.meta(aWorld, aX, aY, aZ);
+		if (aBlock == Blocks.WATER || aBlock == Blocks.flowing_water) return 8-WD.meta(aWorld, aX, aY, aZ);
 		return -1;
 	}
 	
@@ -197,7 +197,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
-	public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}
+	public IIcon getIcon(int aSide, int aMeta) {return Blocks.WATER.getIcon(aSide, aMeta);}
 	public int getRenderColor(int aMeta) {return 0x00ffffff;}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
 	

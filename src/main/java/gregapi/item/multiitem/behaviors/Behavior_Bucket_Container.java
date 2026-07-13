@@ -45,14 +45,14 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 		if (!aWorld.canMineBlock(aPlayer, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ())) return aStack;
 		
 		Block tBlock = WD.block(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ());
-		if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
+		if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
 			if (WD.meta(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
 				WD.set(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), NB, 0, 3);
 				aItem.fill(aStack, FL.Water.make(1000), T);
 			}
 			return aStack;
 		}
-		if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) {
+		if (tBlock == Blocks.LAVA || tBlock == Blocks.flowing_lava) {
 			if (WD.meta(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
 				WD.set(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), NB, 0, 3);
 				aItem.fill(aStack, FL.Lava.make(1000), T);

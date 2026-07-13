@@ -157,11 +157,11 @@ public class Compat_Recipes_HarvestCraft extends CompatMods {
 		
 		RM.Mixer    .addRecipe1(T, 16,   16, ST.make(Items.snowball, 1, W)  , FL.make("chocolatemilk"            ,  250) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 1));
 		RM.Mixer    .addRecipe1(T, 16,   16, OM.dust(MT.Snow, U4)           , FL.make("chocolatemilk"            ,  250) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 1));
-		RM.Mixer    .addRecipe1(T, 16,   64, ST.make(Blocks.snow, 1, W)     , FL.make("chocolatemilk"            , 1000) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 4));
+		RM.Mixer    .addRecipe1(T, 16,   64, ST.make(Blocks.SNOW, 1, W)     , FL.make("chocolatemilk"            , 1000) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 4));
 		RM.Mixer    .addRecipe1(T, 16,   64, OM.dust(MT.Snow)               , FL.make("chocolatemilk"            , 1000) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 4));
 		RM.Mixer    .addRecipe1(T, 16,   16, ST.make(Items.snowball, 1, W)  , FL.make("potion.darkchocolatemilk" ,  250) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 1));
 		RM.Mixer    .addRecipe1(T, 16,   16, OM.dust(MT.Snow, U4)           , FL.make("potion.darkchocolatemilk" ,  250) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 1));
-		RM.Mixer    .addRecipe1(T, 16,   64, ST.make(Blocks.snow, 1, W)     , FL.make("potion.darkchocolatemilk" , 1000) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 4));
+		RM.Mixer    .addRecipe1(T, 16,   64, ST.make(Blocks.SNOW, 1, W)     , FL.make("potion.darkchocolatemilk" , 1000) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 4));
 		RM.Mixer    .addRecipe1(T, 16,   64, OM.dust(MT.Snow)               , FL.make("potion.darkchocolatemilk" , 1000) , NF, ST.make(MD.HaC, "chocolatemilkshakeItem", 4));
 		RM.Mixer    .addRecipe0(T, 16,   16, FL.array(FL.Milk   .make( 250), FL.Smoothie_Strawberry.make(200)), ZL_FS, ST.make(MD.HaC, "strawberrymilkshakeItem", 1));
 		RM.Mixer    .addRecipe0(T, 16,   16, FL.array(FL.MilkGrC.make( 250), FL.Smoothie_Strawberry.make(200)), ZL_FS, ST.make(MD.HaC, "strawberrymilkshakeItem", 1));

@@ -49,9 +49,9 @@ public class WorldgenNetherQuartz extends WorldgenObject {
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 			int
 			tY = 40+tNoise.get(aMinX+i,  0, aMinZ+j, 200);
-			if (WD.block(aChunk, i, tY, j) == Blocks.netherrack) WD.set(aChunk, i, tY, j, BlocksGT.RockOres, 8);
+			if (WD.block(aChunk, i, tY, j) == Blocks.NETHERRACK) WD.set(aChunk, i, tY, j, BlocksGT.RockOres, 8);
 			tY = 40+tNoise.get(aMinX+i, 64, aMinZ+j, 200);
-			if (WD.block(aChunk, i, tY, j) == Blocks.netherrack) WD.set(aChunk, i, tY, j, BlocksGT.RockOres, 8);
+			if (WD.block(aChunk, i, tY, j) == Blocks.NETHERRACK) WD.set(aChunk, i, tY, j, BlocksGT.RockOres, 8);
 		}
 		return T;
 	}

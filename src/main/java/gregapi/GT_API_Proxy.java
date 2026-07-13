@@ -646,7 +646,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			// Only Serverside for this Stuff.
 			if (!aEntityLiving.level().isClientSide()) {
 				// Zombies trample Farmland.
-				if (tBlock == Blocks.farmland && aEntityLiving instanceof Zombie) {
+				if (tBlock == Blocks.FARMLAND && aEntityLiving instanceof Zombie) {
 					WD.set(aEntityLiving.level(), tX, tY, tZ, Blocks.dirt, 0, 3);
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aEntityLiving.level(), tX, tY, tZ);
 				}
@@ -1451,13 +1451,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
 
 		Iterator<ItemStack> aDrops = aDropStacks.iterator();
-		Block aBlock = (aEvent.getState().getBlock() == Blocks.lit_redstone_ore ? Blocks.redstone_ore : aEvent.getState().getBlock() == Blocks.lit_redstone_lamp ? Blocks.redstone_lamp : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
+		Block aBlock = (aEvent.getState().getBlock() == Blocks.lit_redstone_ore ? Blocks.REDSTONE_ORE : aEvent.getState().getBlock() == Blocks.lit_redstone_lamp ? Blocks.REDSTONE_LAMP : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
 
 		while (aDrops.hasNext()) {
 			ItemStack aDrop = aDrops.next();
 			if (ST.invalid(aDrop) || ItemsGT.ILLEGAL_DROPS.contains(aDrop, T)) {aDrops.remove(); continue;}
 			if (ST.item_(aDrop) == Items.gold_nugget) ST.meta_(aDrop, 0);
-			if (FORCE_GRAVEL_NO_FLINT && aBlock == Blocks.gravel && ST.item_(aDrop) == Items.flint) ST.set(aDrop, ST.make(Blocks.gravel, 1, 0), T, F);
+			if (FORCE_GRAVEL_NO_FLINT && aBlock == Blocks.GRAVEL && ST.item_(aDrop) == Items.flint) ST.set(aDrop, ST.make(Blocks.GRAVEL, 1, 0), T, F);
 		}
 
 		if (aBlock == null) {aEvent.getDrops().clear(); for (ItemStack tStack : aDropStacks) if (ST.valid(tStack)) aEvent.getDrops().add(new ItemEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, tStack)); return;}

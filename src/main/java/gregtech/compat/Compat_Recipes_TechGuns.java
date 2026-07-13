@@ -118,10 +118,10 @@ public class Compat_Recipes_TechGuns extends CompatMods {
 		
 		for (OreDictMaterial tMat : ANY.Iron.mToThis) {ItemStack tStack = OP.casingSmall.mat(tMat, 2); if (ST.valid(tStack)) {
 		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Items.flint, 1, W), ST.make(MD.TG, "TechgunsAmmo", 1, 30));
-		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Blocks.tnt, 1, W), ST.make(MD.TG, "TechgunsAmmo", 16, 93));
+		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Blocks.TNT, 1, W), ST.make(MD.TG, "TechgunsAmmo", 16, 93));
 		}}
 		RM.Press.addRecipe2(T, 16, 128, OP.casingSmall.mat(MT.HSLA, 2), ST.make(Items.flint, 1, W), ST.make(MD.TG, "TechgunsAmmo", 1, 30));
-		RM.Press.addRecipe2(T, 16, 128, OP.casingSmall.mat(MT.HSLA, 2), ST.make(Blocks.tnt, 1, W), ST.make(MD.TG, "TechgunsAmmo", 16, 93));
+		RM.Press.addRecipe2(T, 16, 128, OP.casingSmall.mat(MT.HSLA, 2), ST.make(Blocks.TNT, 1, W), ST.make(MD.TG, "TechgunsAmmo", 16, 93));
 		
 		
 		for (OreDictMaterial tMat : ANY.SiO2.mToThis) {ItemStack tStack = OP.gem.mat(tMat, 1); if (ST.valid(tStack)) {

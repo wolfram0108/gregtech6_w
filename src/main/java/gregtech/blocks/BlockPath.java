@@ -91,7 +91,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		if (SIDES_TOP[aSide]) return T;
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
-		return tBlock != Blocks.farmland && !WD.visOpq(tBlock);
+		return tBlock != Blocks.FARMLAND && !WD.visOpq(tBlock);
 	}
 	
 	@Override public int getRenderType() {return RendererBlockTextured.INSTANCE==null?0:RendererBlockTextured.INSTANCE.mRenderID;}

@@ -48,9 +48,9 @@ public abstract class BlockBaseBale extends BlockBaseMeta {
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int damageDropped(int aMeta) {return aMeta & PILLAR_DATA;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & PILLAR_DATA;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.hay_block.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.hay_block.getExplosionResistance(null);}
-	@Override public int getItemStackLimit(ItemStack aStack) {return ST.make(Blocks.hay_block, 1, 0).getMaxStackSize();}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.HAY_BLOCK.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.HAY_BLOCK.getExplosionResistance(null);}
+	@Override public int getItemStackLimit(ItemStack aStack) {return ST.make(Blocks.HAY_BLOCK, 1, 0).getMaxStackSize();}
 	public int getRenderType() {return PILLAR_RENDER;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}

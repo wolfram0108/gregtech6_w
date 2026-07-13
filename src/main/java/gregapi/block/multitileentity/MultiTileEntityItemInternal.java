@@ -162,7 +162,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			Block tClickedBlock = WD.block(aWorld, aX, aY, aZ);
 			if (tClickedBlock instanceof SnowLayerBlock && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 				aSide = SIDE_TOP;
-			} else if (tClickedBlock != Blocks.vine && tClickedBlock != Blocks.tallgrass && tClickedBlock != Blocks.deadbush && !tClickedBlock.isReplaceable(aWorld, aX, aY, aZ)) {
+			} else if (tClickedBlock != Blocks.VINE && tClickedBlock != Blocks.tallgrass && tClickedBlock != Blocks.deadbush && !tClickedBlock.isReplaceable(aWorld, aX, aY, aZ)) {
 				aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 			}
 			Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
@@ -495,13 +495,13 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ITexture getReactorRodTextureSides(MultiTileEntityReactorCore aReactor, int aSlot, ItemStack aStack, boolean aActive) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemReactorRod) return ((IItemReactorRod)tTileEntityContainer.mTileEntity).getReactorRodTextureSides(aReactor, aSlot, aStack, aActive);
-		return BlockTextureCopied.get(Blocks.cobblestone);
+		return BlockTextureCopied.get(Blocks.COBBLESTONE);
 	}
 	@Override
 	public ITexture getReactorRodTextureTop(MultiTileEntityReactorCore aReactor, int aSlot, ItemStack aStack, boolean aActive) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemReactorRod) return ((IItemReactorRod)tTileEntityContainer.mTileEntity).getReactorRodTextureTop(aReactor, aSlot, aStack, aActive);
-		return BlockTextureCopied.get(Blocks.cobblestone);
+		return BlockTextureCopied.get(Blocks.COBBLESTONE);
 	}
 	
 	

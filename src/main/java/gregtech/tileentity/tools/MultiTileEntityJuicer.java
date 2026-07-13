@@ -264,7 +264,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 		case  5:
 			if (mDisplay <= 0 || SIDE_TOP != aSide) return null;
 			Fluid tFluid = FL.fluid(mDisplay-1);
-			return tFluid == null ? BlockTextureCopied.get(Blocks.water, SIDE_ANY, 0, UNCOLOURED, F, F, F) : BlockTextureFluid.get(FL.make(tFluid, 1000));
+			return tFluid == null ? BlockTextureCopied.get(Blocks.WATER, SIDE_ANY, 0, UNCOLOURED, F, F, F) : BlockTextureFluid.get(FL.make(tFluid, 1000));
 		case  6: return SIDE_TOP    == aSide?BlockTextureMulti.get(BlockTextureDefault.get(sTextureMiddleTop, mRGBa), BlockTextureDefault.get(sOverlayMiddleTop)):SIDE_BOTTOM == aSide ? null : BlockTextureMulti.get(BlockTextureDefault.get(sTextureMiddleSide, mRGBa), BlockTextureDefault.get(sOverlayMiddleSide));
 		case  7: return SIDE_TOP    == aSide?BI.nei():null;
 		}

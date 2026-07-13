@@ -228,7 +228,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 					playClick();
 					return T;
 				}
-				if (OD.lever.is(slot(aSlot)) || ST.equal(slot(aSlot), Blocks.redstone_torch)) {
+				if (OD.lever.is(slot(aSlot)) || ST.equal(slot(aSlot), Blocks.REDSTONE_TORCH)) {
 					if (mRedstoneDelay == 0) mRedstoneDelay = -1; else mRedstoneDelay = 0;
 					causeBlockUpdate();
 					playClick();
@@ -365,8 +365,8 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	@Override public ItemStack getDefaultStack(int aSlot) {return ST.make(Items.book, 1, 0);}
 	
-	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return slotHas(aSlot)                                                 && !ST.equal(slot(aSlot), Blocks.cobblestone) && !ST.equal(slot(aSlot), Blocks.redstone_torch) && !OD.lever.is(slot(aSlot)) && !OD.button.is(slot(aSlot));}
-	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return !slotHas(aSlot) && BooksGT.BOOK_REGISTER.containsKey(aStack, T) && !ST.equal(slot(aSlot), Blocks.cobblestone) && !ST.equal(slot(aSlot), Blocks.redstone_torch) && !OD.lever.is(slot(aSlot)) && !OD.button.is(slot(aSlot));}
+	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return slotHas(aSlot)                                                 && !ST.equal(slot(aSlot), Blocks.COBBLESTONE) && !ST.equal(slot(aSlot), Blocks.REDSTONE_TORCH) && !OD.lever.is(slot(aSlot)) && !OD.button.is(slot(aSlot));}
+	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return !slotHas(aSlot) && BooksGT.BOOK_REGISTER.containsKey(aStack, T) && !ST.equal(slot(aSlot), Blocks.COBBLESTONE) && !ST.equal(slot(aSlot), Blocks.REDSTONE_TORCH) && !OD.lever.is(slot(aSlot)) && !OD.button.is(slot(aSlot));}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.shelf.books";}
 }

@@ -36,7 +36,7 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 		setUsageAmounts(4, 16, 1);*/
 		/*
 		for (Object tName : Arrays.asList(UT.Stacks.make(Items.water_bucket, 1, W), OP.cell.dat(MT.Water), OP.capsule.dat(MT.Water))) {
-			GT_ModHandler.addShapelessCraftingRecipe(UT.Stacks.make(Blocks.ice, 1, 0), new Object[] {UT.Stacks.make(this, 1, W), tName});
+			GT_ModHandler.addShapelessCraftingRecipe(UT.Stacks.make(Blocks.ICE, 1, 0), new Object[] {UT.Stacks.make(this, 1, W), tName});
 		}*/
 	}
 	/*
@@ -62,19 +62,19 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 		byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
 //      TileEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
-		if (aBlock == Blocks.water || aBlock == Blocks.flowing_water) {
+		if (aBlock == Blocks.WATER || aBlock == Blocks.flowing_water) {
 			if (aMeta == 0 && GT_ModHandler.damageOrDechargeItem(aStack, 1, 1000, aPlayer)) {
 				UT.Sounds.send(aWorld, SFX.IC_SPRAY, 1.0F, -1, aX, aY, aZ);
-				aWorld.setBlock(aX, aY, aZ, Blocks.ice, 0, 3);
+				aWorld.setBlock(aX, aY, aZ, Blocks.ICE, 0, 3);
 				return true;
 			}
 			return false;
 		}
 		
-		if (aBlock == Blocks.lava || aBlock == Blocks.flowing_lava) {
+		if (aBlock == Blocks.LAVA || aBlock == Blocks.flowing_lava) {
 			if (aMeta == 0 && GT_ModHandler.damageOrDechargeItem(aStack, 1, 1000, aPlayer)) {
 				UT.Sounds.send(aWorld, SFX.IC_SPRAY, 1.0F, -1, aX, aY, aZ);
-				aWorld.setBlock(aX, aY, aZ, Blocks.obsidian, 0, 3);
+				aWorld.setBlock(aX, aY, aZ, Blocks.OBSIDIAN, 0, 3);
 				return true;
 			}
 			return false;

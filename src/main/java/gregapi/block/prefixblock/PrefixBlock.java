@@ -546,7 +546,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 				boolean tExplode = F;
 				for (byte tSide : ALL_SIDES_VALID) {
 					Block tBlock = WD.block(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]);
-					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
+					if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
 						WD.set(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], NB, 0, 3);
 						tExplode = T;
 					}

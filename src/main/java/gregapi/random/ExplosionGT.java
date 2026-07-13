@@ -185,7 +185,7 @@ public class ExplosionGT extends Explosion {
 				final BlockPos tPos = (BlockPos)tIterator.next();
 				final Block tBlock = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), tAbove = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY - 1, tPos.chunkPosZ);
 				if (tBlock.getMaterial() == Material.air && tAbove.func_149730_j() && RNGSUS.nextInt(3) == 0) {
-					mWorld.setBlock(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, Blocks.fire);
+					mWorld.setBlock(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, Blocks.FIRE);
 				}
 			}
 		}

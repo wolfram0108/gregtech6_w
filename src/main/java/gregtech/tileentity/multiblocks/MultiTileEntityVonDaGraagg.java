@@ -132,7 +132,7 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 		// Allow wild Mobs to spawn on Mossy Cobblestone.
 		for (int i = -5; i <= 5; i++) {
 			Block tBlock = WD.block(aWorld, aX, aY+i, aZ);
-			if (tBlock == Blocks.mossy_cobblestone) return F;
+			if (tBlock == Blocks.MOSSY_COBBLESTONE) return F;
 			if (tBlock instanceof BlockStones && WD.meta(aWorld, aX, aY+i, aZ) == BlockStones.MCOBL) return F;
 		}
 		return T;

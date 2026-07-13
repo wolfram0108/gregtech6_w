@@ -166,7 +166,7 @@ public class BlockOcean extends BlockWaterlike {
 		return WD.meta(aWorld, aX, aY, aZ) == 0 && WD.air(WD.block(aWorld, aX, aY+1, aZ)) && WD.air(WD.block(aWorld, aX, aY+2, aZ)) && WD.block(aWorld, aX, aY-1, aZ).getLightOpacity(aWorld, aX, aY-1, aZ) < LIGHT_OPACITY_MAX ? 16 : LIGHT_OPACITY_NONE;
 	}
 	
-	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.water.getIcon(aSide, aMeta);}
+	@Override public IIcon getIcon(int aSide, int aMeta) {return Blocks.WATER.getIcon(aSide, aMeta);}
 	@Override public int getRenderColor(int aMeta) {return 0x00c0c0c0;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
 }

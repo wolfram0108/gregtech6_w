@@ -163,31 +163,31 @@ public class DungeonChunkRoomLibrary extends DungeonChunkRoomEmpty {
 		
 		switch(aData.next(4)) {
 		case 0:
-			aData.set( 3, 1,  3, Blocks.enchanting_table);
-			aData.set( 3, 1, 12, Blocks.crafting_table);
-			aData.set(12, 1,  3, Blocks.jukebox);
-			aData.set(12, 1, 12, Blocks.ender_chest);
+			aData.set( 3, 1,  3, Blocks.ENCHANTING_TABLE);
+			aData.set( 3, 1, 12, Blocks.CRAFTING_TABLE);
+			aData.set(12, 1,  3, Blocks.JUKEBOX);
+			aData.set(12, 1, 12, Blocks.ENDER_CHEST);
 			aData.cup( 3, 2, 12, FL.Potion_NightVision_1L, aData.next1in2() ? tHexoriumColor : tHexoriumRandom, aData.next1in2() ? 1 : 9);
 			break;
 		case 1:
-			aData.set( 3, 1,  3, Blocks.ender_chest);
-			aData.set( 3, 1, 12, Blocks.enchanting_table);
-			aData.set(12, 1,  3, Blocks.crafting_table);
-			aData.set(12, 1, 12, Blocks.jukebox);
+			aData.set( 3, 1,  3, Blocks.ENDER_CHEST);
+			aData.set( 3, 1, 12, Blocks.ENCHANTING_TABLE);
+			aData.set(12, 1,  3, Blocks.CRAFTING_TABLE);
+			aData.set(12, 1, 12, Blocks.JUKEBOX);
 			aData.cup(12, 2,  3, FL.Potion_NightVision_1L, aData.next1in2() ? tHexoriumColor : tHexoriumRandom, aData.next1in2() ? 1 : 9);
 			break;
 		case 2:
-			aData.set( 3, 1,  3, Blocks.jukebox);
-			aData.set( 3, 1, 12, Blocks.ender_chest);
-			aData.set(12, 1,  3, Blocks.enchanting_table);
-			aData.set(12, 1, 12, Blocks.crafting_table);
+			aData.set( 3, 1,  3, Blocks.JUKEBOX);
+			aData.set( 3, 1, 12, Blocks.ENDER_CHEST);
+			aData.set(12, 1,  3, Blocks.ENCHANTING_TABLE);
+			aData.set(12, 1, 12, Blocks.CRAFTING_TABLE);
 			aData.cup(12, 2, 12, FL.Potion_NightVision_1L, aData.next1in2() ? tHexoriumColor : tHexoriumRandom, aData.next1in2() ? 1 : 9);
 			break;
 		case 3:
-			aData.set( 3, 1,  3, Blocks.crafting_table);
-			aData.set( 3, 1, 12, Blocks.jukebox);
-			aData.set(12, 1,  3, Blocks.ender_chest);
-			aData.set(12, 1, 12, Blocks.enchanting_table);
+			aData.set( 3, 1,  3, Blocks.CRAFTING_TABLE);
+			aData.set( 3, 1, 12, Blocks.JUKEBOX);
+			aData.set(12, 1,  3, Blocks.ENDER_CHEST);
+			aData.set(12, 1, 12, Blocks.ENCHANTING_TABLE);
 			aData.cup( 3, 2,  3, FL.Potion_NightVision_1L, aData.next1in2() ? tHexoriumColor : tHexoriumRandom, aData.next1in2() ? 1 : 9);
 			break;
 		}

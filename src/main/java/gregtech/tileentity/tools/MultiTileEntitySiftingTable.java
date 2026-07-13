@@ -93,7 +93,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 				if (ST.equal(tStack, Blocks.dirt        , 2)) {mDisplayedInput = -4;} else
 				if (ST.equal(tStack, Blocks.grass       , W)) {mDisplayedInput = -7;} else
 				if (ST.equal(tStack, BlocksGT.Grass     , W)) {mDisplayedInput = -7;} else
-				if (ST.equal(tStack, Blocks.mycelium    , W)) {mDisplayedInput = -8;} else
+				if (ST.equal(tStack, Blocks.MYCELIUM    , W)) {mDisplayedInput = -8;} else
 				if (ST.equal(tStack, BlocksGT.Diggables , 0)) {mDisplayedInput =-10;} else
 				if (IL.AETHER_Grass_Enchanted_Vanilla.equal(tStack, T, T)) {mDisplayedInput = -7;} else
 				if (IL.AETHER_Grass_Enchanted        .equal(tStack, T, T)) {mDisplayedInput = -7;} else
@@ -166,7 +166,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 				if (ST.equal(tStack, Blocks.dirt        , 2)) {mDisplayedOutput = -4;} else
 				if (ST.equal(tStack, Blocks.grass       , W)) {mDisplayedOutput = -7;} else
 				if (ST.equal(tStack, BlocksGT.Grass     , W)) {mDisplayedOutput = -7;} else
-				if (ST.equal(tStack, Blocks.mycelium    , W)) {mDisplayedOutput = -8;} else
+				if (ST.equal(tStack, Blocks.MYCELIUM    , W)) {mDisplayedOutput = -8;} else
 				if (ST.equal(tStack, BlocksGT.Diggables , 0)) {mDisplayedOutput =-10;} else
 				if (IL.AETHER_Grass_Enchanted_Vanilla.equal(tStack, T, T)) {mDisplayedOutput = -7;} else
 				if (IL.AETHER_Grass_Enchanted        .equal(tStack, T, T)) {mDisplayedOutput = -7;} else
@@ -350,15 +350,15 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 				mTextureInput = OreDictMaterial.MATERIAL_ARRAY[mDisplayedInput].getTextureDust();
 			} else if (mDisplayedInput < 0) {
 				switch(mDisplayedInput) {
-				case  -1: mTextureInput  = BlockTextureCopied.get(Blocks.gravel         , SIDE_ANY, 0); break;
+				case  -1: mTextureInput  = BlockTextureCopied.get(Blocks.GRAVEL         , SIDE_ANY, 0); break;
 				case  -2: mTextureInput  = BlockTextureCopied.get(Blocks.dirt           , SIDE_ANY, 0); break;
 				case  -3: mTextureInput  = BlockTextureCopied.get(Blocks.dirt           , SIDE_ANY, 1); break;
 				case  -4: mTextureInput  = BlockTextureCopied.get(Blocks.dirt           , SIDE_ANY, 2); break;
 				case  -5: mTextureInput  = BlockTextureCopied.get(Blocks.sand           , SIDE_ANY, 0); break;
 				case  -6: mTextureInput  = BlockTextureCopied.get(Blocks.sand           , SIDE_ANY, 1); break;
 				case  -7: mTextureInput  = BlockTextureCopied.get(Blocks.grass          , SIDE_ANY, 0, new short[] {106, 170,  64, 255}, F, F, F); break;
-				case  -8: mTextureInput  = BlockTextureCopied.get(Blocks.mycelium       , SIDE_ANY, 0); break;
-				case  -9: mTextureInput  = BlockTextureCopied.get(Blocks.soul_sand      , SIDE_ANY, 0); break;
+				case  -8: mTextureInput  = BlockTextureCopied.get(Blocks.MYCELIUM       , SIDE_ANY, 0); break;
+				case  -9: mTextureInput  = BlockTextureCopied.get(Blocks.SOUL_SAND      , SIDE_ANY, 0); break;
 				case -10: mTextureInput  = BlockTextureCopied.get(BlocksGT.Diggables    , SIDE_ANY, 0); break;
 				case -11: mTextureInput  = BlockTextureCopied.get(BlocksGT.Sands        , SIDE_ANY, 0); break;
 				}
@@ -369,15 +369,15 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 				mTextureOutput = OreDictMaterial.MATERIAL_ARRAY[mDisplayedOutput].getTextureDust();
 			} else if (mDisplayedOutput < 0) {
 				switch(mDisplayedOutput) {
-				case  -1: mTextureOutput = BlockTextureCopied.get(Blocks.gravel         , SIDE_ANY, 0); break;
+				case  -1: mTextureOutput = BlockTextureCopied.get(Blocks.GRAVEL         , SIDE_ANY, 0); break;
 				case  -2: mTextureOutput = BlockTextureCopied.get(Blocks.dirt           , SIDE_ANY, 0); break;
 				case  -3: mTextureOutput = BlockTextureCopied.get(Blocks.dirt           , SIDE_ANY, 1); break;
 				case  -4: mTextureOutput = BlockTextureCopied.get(Blocks.dirt           , SIDE_ANY, 2); break;
 				case  -5: mTextureOutput = BlockTextureCopied.get(Blocks.sand           , SIDE_ANY, 0); break;
 				case  -6: mTextureOutput = BlockTextureCopied.get(Blocks.sand           , SIDE_ANY, 1); break;
 				case  -7: mTextureOutput = BlockTextureCopied.get(Blocks.grass          , SIDE_ANY, 0, new short[] {106, 170,  64, 255}, F, F, F); break;
-				case  -8: mTextureOutput = BlockTextureCopied.get(Blocks.mycelium       , SIDE_ANY, 0); break;
-				case  -9: mTextureOutput = BlockTextureCopied.get(Blocks.soul_sand      , SIDE_ANY, 0); break;
+				case  -8: mTextureOutput = BlockTextureCopied.get(Blocks.MYCELIUM       , SIDE_ANY, 0); break;
+				case  -9: mTextureOutput = BlockTextureCopied.get(Blocks.SOUL_SAND      , SIDE_ANY, 0); break;
 				case -10: mTextureOutput = BlockTextureCopied.get(BlocksGT.Diggables    , SIDE_ANY, 0); break;
 				case -11: mTextureOutput = BlockTextureCopied.get(BlocksGT.Sands        , SIDE_ANY, 0); break;
 				}

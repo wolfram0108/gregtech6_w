@@ -187,7 +187,7 @@ public class Loader_Recipes_Other implements Runnable {
 			RM.Centrifuge       .addRecipe1(T, 16,   64, aEvent.mStack, NF, FL.Latex.make(L  ), FL.Glue.make(250));
 			for (FluidStack tWater : FL.waters(250))
 			RM.Mixer            .addRecipe1(T, 16,   16, aEvent.mStack, tWater, FL.Glue.make(250), ZL_IS);
-			RM.Laminator        .addRecipe2(T, 16,   16, aEvent.mStack, ST.make(Blocks.piston, 1, W), ST.make(Blocks.sticky_piston, 1, 0));
+			RM.Laminator        .addRecipe2(T, 16,   16, aEvent.mStack, ST.make(Blocks.PISTON, 1, W), ST.make(Blocks.STICKY_PISTON, 1, 0));
 		}});
 		addListener(OD.itemClay, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Mixer            .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, OM.dust(MT.Redstone), OM.dust(MT.Basalz, U9), OM.dust(MT.Obsidian)), OM.dust(MT.Petrotheum, 2*U));
@@ -425,15 +425,15 @@ public class Loader_Recipes_Other implements Runnable {
 		if (IL.EtFu_Dirt.exists())
 		RM.Bath             .addRecipe1(T,  0,   16, IL.EtFu_Dirt                       .get(1), FL.Mana_TE.make(1), NF, ST.make(Blocks.PODZOL, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.DIRT, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.grass, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.PODZOL, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.mycelium, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.glass               , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.PODZOL, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.MYCELIUM, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.GLASS               , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.cobblestone         , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.mossy_cobblestone, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.COBBLESTONE         , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.MOSSY_COBBLESTONE, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.STONE_BRICKS, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.MOSSY_STONE_BRICKS, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.STONE, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.lapis_ore           , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.lapis_block, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.redstone_ore        , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.redstone_block, 1, 0));
-//      RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.lit_redstone_ore    , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.redstone_block, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.LAPIS_ORE           , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.LAPIS_BLOCK, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.REDSTONE_ORE        , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.REDSTONE_BLOCK, 1, 0));
+//      RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.lit_redstone_ore    , 1, W), FL.Mana_TE.make(5), NF, ST.make(Blocks.REDSTONE_BLOCK, 1, 0));
 		}
 		
 		RM.Bath             .addRecipe2(T,  0,   16, ST.make(Items.paper, 2, W), ST.tag(2), FL.Glue.make( 125), NF, plateDouble.mat(MT.Paper, 1));
@@ -558,7 +558,7 @@ public class Loader_Recipes_Other implements Runnable {
 		}
 		RM.Mixer            .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Redstone     ), OM.dust(tNiter     ), OM.dust(MT.Blizz ,   U9), ST.make(Items.snowball, 1, W)), OM.dust(MT.Cryotheum, 2*U));
 		RM.Mixer            .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Redstone     ), OM.dust(tNiter     ), OM.dust(MT.Blizz ,   U9), OM.dust(MT.Snow       ,   U4)), OM.dust(MT.Cryotheum, 2*U));
-		RM.Mixer            .addRecipeX(T, 16,   64, ST.array(OM.dust(MT.Redstone,4*U ), OM.dust(tNiter,4*U ), OM.dust(MT.Blizz , 4*U9), ST.make(Blocks.snow   , 1, W)), OM.dust(MT.Cryotheum, 8*U));
+		RM.Mixer            .addRecipeX(T, 16,   64, ST.array(OM.dust(MT.Redstone,4*U ), OM.dust(tNiter,4*U ), OM.dust(MT.Blizz , 4*U9), ST.make(Blocks.SNOW   , 1, W)), OM.dust(MT.Cryotheum, 8*U));
 		RM.Mixer            .addRecipeX(T, 16,   64, ST.array(OM.dust(MT.Redstone,4*U ), OM.dust(tNiter,4*U ), OM.dust(MT.Blizz , 4*U9), OM.dust(MT.Snow             )), OM.dust(MT.Cryotheum, 8*U));
 		}
 		RM.Mixer            .addRecipeX(T, 16,   16, ST.array(OM.dust(MT.Redstone), OM.dust(MT.Coal), OM.dust(MT.S)), FL.Blaze.make(L), NF, OM.dust(MT.Pyrotheum, 2*U));
@@ -706,7 +706,7 @@ public class Loader_Recipes_Other implements Runnable {
 			RM.CrystallisationCrucible.addRecipe1(T,256,  52000, OM.dust(MT.Cr             ,2*U ), FL.array(FL.mul(tFluid, 3), MT.Al2O3         .liquid(10*U , T)), NF, bouleGt.mat(MT.Ruby            , 3));
 		}
 		
-		for (ItemStack tTNT : ST.array(ST.make(Blocks.tnt, 8, W), IL.IC2_ITNT.get(4), IL.Boomstick.get(12), IL.Dynamite.get(2), IL.Dynamite_Strong.get(1))) if (ST.valid(tTNT)) {
+		for (ItemStack tTNT : ST.array(ST.make(Blocks.TNT, 8, W), IL.IC2_ITNT.get(4), IL.Boomstick.get(12), IL.Dynamite.get(2), IL.Dynamite_Strong.get(1))) if (ST.valid(tTNT)) {
 			for (OreDictMaterial tMat : ANY.Diamond.mToThis) {OreDictMaterial tOutput = MT.DiamondIndustrial;
 				RM.ImplosionCompressor.addRecipeX(T,  0,  256, ST.array(dust.mat(tMat, 1),           tTNT , ST.tag(0)), plateGem    .mat(tOutput, 1));
 				RM.ImplosionCompressor.addRecipeX(T,  0,  256, ST.array(dust.mat(tMat, 1),           tTNT , ST.tag(1)), gem         .mat(tOutput, 1));
@@ -768,7 +768,7 @@ public class Loader_Recipes_Other implements Runnable {
 		RM.Loom    .addRecipe2(T, 16,   16, ST.tag(10), plantGtFiber.mat(MT.Cu, 4), IL.Rope.get(1));
 		RM.Loom    .addRecipe2(T, 16,   16, ST.tag(10), ST.make(Items.string, 4, W), IL.Rope_Silk.get(1));
 		RM.Loom    .addRecipe2(T, 16,   16, ST.tag(10), wireFine.mat(MT.Plastic, 4), IL.Rope_Plastic.get(1));
-		RM.Loom    .addRecipe2(T, 16,   16, ST.tag(10), ST.make(Blocks.vine, 4, W), IL.Rope_Vine.get(1));
+		RM.Loom    .addRecipe2(T, 16,   16, ST.tag(10), ST.make(Blocks.VINE, 4, W), IL.Rope_Vine.get(1));
 		for (OreDictMaterial tMat : ANY.Steel.mToThis)
 		RM.Loom    .addRecipe2(T, 16,   64, ST.tag(10), wireFine.mat(tMat, 4), IL.Rope_Steel.get(1));
 		

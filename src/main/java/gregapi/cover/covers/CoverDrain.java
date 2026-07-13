@@ -121,7 +121,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 						}
 					}
 				} else {
-					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
+					if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
 						if (aData.mTileEntity.getMetaDataAtSide(aCoverSide) == 0) {
 							if (WD.infiniteWater(aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide))) {
 								FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Water.make(16000), T);
@@ -130,7 +130,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 							}
 						}
 					} else
-					if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) {
+					if (tBlock == Blocks.LAVA || tBlock == Blocks.flowing_lava) {
 						if (aData.mTileEntity.getMetaDataAtSide(aCoverSide) == 0) tFluid = FL.Lava.make(1000);
 					} else
 					if (tBlock == BlocksGT.River || WD.waterstream(tBlock)) {

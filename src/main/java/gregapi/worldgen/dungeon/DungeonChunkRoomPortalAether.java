@@ -43,7 +43,7 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 		ListTag tInventory = new ListTag();
 		tInventory.add(UT.NBT.makeShort(ST.save(IL.Bottle_Holy_Water          .get(16)), "s", (short) 4));
 		tInventory.add(UT.NBT.makeShort(ST.save(IL.AETHER_Skyroot_Log         .get(64)), "s", (short)11));
-		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Blocks.glowstone      , 16, 0)), "s", (short)15));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Blocks.GLOWSTONE      , 16, 0)), "s", (short)15));
 		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(MD.AETHEL, "lore_book",  1, 0)), "s", (short)22));
 		tInventory.add(UT.NBT.makeShort(ST.save(OP.gem  .mat(MT.Ambrosium     , 16   )), "s", (short)29));
 		tInventory.add(UT.NBT.makeShort(ST.save(OP.stick.mat(MT.Breeze        ,  4   )), "s", (short)33));
@@ -51,7 +51,7 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 		
 		for (int tX = 1; tX < 15; tX++) for (int tZ = 1; tZ < 15; tZ++) {
 			if ((tX == 3 || tX == 6 || tX == 9 || tX == 12) && (tZ == 3 || tZ == 6 || tZ == 9 || tZ == 12)) {
-				aData.set(tX, 0, tZ, Blocks.glowstone, 0);
+				aData.set(tX, 0, tZ, Blocks.GLOWSTONE, 0);
 			} else {
 				aData.set(tX, 0, tZ, IL.AETHER_Skyroot_Planks.block(), 0);
 			}
@@ -71,20 +71,20 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 				aData.smooth( i, 1, 13, aData.mPrimary.mSlabs[SIDE_Z_POS], aData.mSecondary.mSlabs[SIDE_Z_POS]);
 			}
 			
-			aData.set( 2, 1,  6, Blocks.glowstone, 0, 2);
-			aData.set( 2, 1,  7, Blocks.glowstone, 0, 2);
-			aData.set( 2, 1,  8, Blocks.glowstone, 0, 2);
-			aData.set( 2, 1,  9, Blocks.glowstone, 0, 2);
-			aData.set( 2, 2,  6, Blocks.glowstone, 0, 2);
-			aData.set( 2, 2,  9, Blocks.glowstone, 0, 2);
-			aData.set( 2, 3,  6, Blocks.glowstone, 0, 2);
-			aData.set( 2, 3,  9, Blocks.glowstone, 0, 2);
-			aData.set( 2, 4,  6, Blocks.glowstone, 0, 2);
-			aData.set( 2, 4,  9, Blocks.glowstone, 0, 2);
-			aData.set( 2, 5,  6, Blocks.glowstone, 0, 2);
-			aData.set( 2, 5,  7, Blocks.glowstone, 0, 2);
-			aData.set( 2, 5,  8, Blocks.glowstone, 0, 2);
-			aData.set( 2, 5,  9, Blocks.glowstone, 0, 2);
+			aData.set( 2, 1,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 1,  7, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 1,  8, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 1,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 2,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 2,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 3,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 3,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 4,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 4,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 5,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 5,  7, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 5,  8, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 2, 5,  9, Blocks.GLOWSTONE, 0, 2);
 		}
 		if (aData.mRoomLayout[aData.mRoomX-1][aData.mRoomZ] != 0) {
 			aData.set(14, 2, 10, SIDE_UNKNOWN, (short)502, UT.NBT.make(NBT_FACING, SIDE_X_NEG, NBT_INV_LIST, tInventory), T, T);
@@ -100,20 +100,20 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 				aData.smooth( i, 1, 13, aData.mPrimary.mSlabs[SIDE_Z_POS], aData.mSecondary.mSlabs[SIDE_Z_POS]);
 			}
 			
-			aData.set(13, 1,  6, Blocks.glowstone, 0, 2);
-			aData.set(13, 1,  7, Blocks.glowstone, 0, 2);
-			aData.set(13, 1,  8, Blocks.glowstone, 0, 2);
-			aData.set(13, 1,  9, Blocks.glowstone, 0, 2);
-			aData.set(13, 2,  6, Blocks.glowstone, 0, 2);
-			aData.set(13, 2,  9, Blocks.glowstone, 0, 2);
-			aData.set(13, 3,  6, Blocks.glowstone, 0, 2);
-			aData.set(13, 3,  9, Blocks.glowstone, 0, 2);
-			aData.set(13, 4,  6, Blocks.glowstone, 0, 2);
-			aData.set(13, 4,  9, Blocks.glowstone, 0, 2);
-			aData.set(13, 5,  6, Blocks.glowstone, 0, 2);
-			aData.set(13, 5,  7, Blocks.glowstone, 0, 2);
-			aData.set(13, 5,  8, Blocks.glowstone, 0, 2);
-			aData.set(13, 5,  9, Blocks.glowstone, 0, 2);
+			aData.set(13, 1,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 1,  7, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 1,  8, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 1,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 2,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 2,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 3,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 3,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 4,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 4,  9, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 5,  6, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 5,  7, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 5,  8, Blocks.GLOWSTONE, 0, 2);
+			aData.set(13, 5,  9, Blocks.GLOWSTONE, 0, 2);
 		}
 		if (aData.mRoomLayout[aData.mRoomX][aData.mRoomZ+1] != 0) {
 			aData.set( 5, 2,  1, SIDE_UNKNOWN, (short)502, UT.NBT.make(NBT_FACING, SIDE_Z_POS, NBT_INV_LIST, tInventory), T, T);
@@ -129,20 +129,20 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 				aData.smooth(13, 1,  i, aData.mPrimary.mSlabs[SIDE_X_POS], aData.mSecondary.mSlabs[SIDE_X_POS]);
 			}
 			
-			aData.set( 6, 1,  2, Blocks.glowstone, 0, 2);
-			aData.set( 7, 1,  2, Blocks.glowstone, 0, 2);
-			aData.set( 8, 1,  2, Blocks.glowstone, 0, 2);
-			aData.set( 9, 1,  2, Blocks.glowstone, 0, 2);
-			aData.set( 6, 2,  2, Blocks.glowstone, 0, 2);
-			aData.set( 9, 2,  2, Blocks.glowstone, 0, 2);
-			aData.set( 6, 3,  2, Blocks.glowstone, 0, 2);
-			aData.set( 9, 3,  2, Blocks.glowstone, 0, 2);
-			aData.set( 6, 4,  2, Blocks.glowstone, 0, 2);
-			aData.set( 9, 4,  2, Blocks.glowstone, 0, 2);
-			aData.set( 6, 5,  2, Blocks.glowstone, 0, 2);
-			aData.set( 7, 5,  2, Blocks.glowstone, 0, 2);
-			aData.set( 8, 5,  2, Blocks.glowstone, 0, 2);
-			aData.set( 9, 5,  2, Blocks.glowstone, 0, 2);
+			aData.set( 6, 1,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 7, 1,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 8, 1,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 1,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 2,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 2,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 3,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 3,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 4,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 4,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 5,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 7, 5,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 8, 5,  2, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 5,  2, Blocks.GLOWSTONE, 0, 2);
 		}
 		if (aData.mRoomLayout[aData.mRoomX][aData.mRoomZ-1] != 0) {
 			aData.set(10, 2, 14, SIDE_UNKNOWN, (short)502, UT.NBT.make(NBT_FACING, SIDE_Z_NEG, NBT_INV_LIST, tInventory), T, T);
@@ -158,20 +158,20 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 				aData.smooth(13, 1,  i, aData.mPrimary.mSlabs[SIDE_X_POS], aData.mSecondary.mSlabs[SIDE_X_POS]);
 			}
 			
-			aData.set( 6, 1, 13, Blocks.glowstone, 0, 2);
-			aData.set( 7, 1, 13, Blocks.glowstone, 0, 2);
-			aData.set( 8, 1, 13, Blocks.glowstone, 0, 2);
-			aData.set( 9, 1, 13, Blocks.glowstone, 0, 2);
-			aData.set( 6, 2, 13, Blocks.glowstone, 0, 2);
-			aData.set( 9, 2, 13, Blocks.glowstone, 0, 2);
-			aData.set( 6, 3, 13, Blocks.glowstone, 0, 2);
-			aData.set( 9, 3, 13, Blocks.glowstone, 0, 2);
-			aData.set( 6, 4, 13, Blocks.glowstone, 0, 2);
-			aData.set( 9, 4, 13, Blocks.glowstone, 0, 2);
-			aData.set( 6, 5, 13, Blocks.glowstone, 0, 2);
-			aData.set( 7, 5, 13, Blocks.glowstone, 0, 2);
-			aData.set( 8, 5, 13, Blocks.glowstone, 0, 2);
-			aData.set( 9, 5, 13, Blocks.glowstone, 0, 2);
+			aData.set( 6, 1, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 7, 1, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 8, 1, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 1, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 2, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 2, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 3, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 3, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 4, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 4, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 6, 5, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 7, 5, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 8, 5, 13, Blocks.GLOWSTONE, 0, 2);
+			aData.set( 9, 5, 13, Blocks.GLOWSTONE, 0, 2);
 		}
 		return T;
 	}

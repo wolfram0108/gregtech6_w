@@ -127,7 +127,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 			
 			if (tHeld != null) {
 				mCreature.swingItem();
-				if (ZOMBIES_IGNITE_HELD_TNT && ST.equal_(tHeld, Blocks.tnt)) {
+				if (ZOMBIES_IGNITE_HELD_TNT && ST.equal_(tHeld, Blocks.TNT)) {
 					mAttackCoolDown = 20;
 					tAttacking = F;
 					

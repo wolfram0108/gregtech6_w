@@ -40,7 +40,7 @@ public class Loader_Recipes_Potions implements Runnable {
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.spider_eye    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, IL.Food_Potato_Poisonous    .get(1), FL.DistW         .make(750), FL.Potion_Poison_1        .make(750), ZL_IS);
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Blocks.red_mushroom , 1, W), FL.DistW         .make(750), FL.Potion_Poison_1        .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Blocks.RED_MUSHROOM , 1, W), FL.DistW         .make(750), FL.Potion_Poison_1        .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.PUFFERFISH, 1, 0), FL.DistW         .make(750), FL.Potion_Poison_2        .make(750), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 16, OM.dust(MT.WaxRefractory)          , FL.Potion_Awkward.make(250), FL.Potion_FireResistance_1.make(250), ZL_IS);
@@ -96,7 +96,7 @@ public class Loader_Recipes_Potions implements Runnable {
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.Potion_Awkward.make(750), FL.Potion_Jump_1           .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 16, tStack, FL.Potion_Mundane.make(250), FL.Potion_Jump_2           .make(250), ZL_IS);
 		}
-		for (ItemStack tStack : ST.array(ST.make(Items.spider_eye, 1, W), IL.Food_Potato_Poisonous.get(1), ST.make(Blocks.red_mushroom, 1, W))) if (tStack != null) {
+		for (ItemStack tStack : ST.array(ST.make(Items.spider_eye, 1, W), IL.Food_Potato_Poisonous.get(1), ST.make(Blocks.RED_MUSHROOM, 1, W))) if (tStack != null) {
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.DistW         .make(750), FL.Potion_Mundane          .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.Potion_Awkward.make(750), FL.Potion_Poison_1         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 16, tStack, FL.Potion_Thick  .make(250), FL.Potion_Poison_2         .make(250), ZL_IS);

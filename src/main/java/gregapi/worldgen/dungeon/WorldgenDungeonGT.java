@@ -334,14 +334,14 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	public static boolean setLampBlock(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom, int aGenerateRedstoneBrick) {
 		aData.mLightUpdateCoords.add(new BlockPos(aX, aY, aZ));
 		if (aGenerateRedstoneBrick != 0) setRedstoneBrick(aWorld, aX, aY+aGenerateRedstoneBrick, aZ, aData, aRandom);
-		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.redstone_lamp : Blocks.lit_redstone_lamp, 0, 2);
+		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
 		return T;
 	}
 	
 	public static boolean setLampBlock(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom, int aGenerateRedstoneBrick) {
 		aData.mLightUpdateCoords.add(new BlockPos(aX, aY, aZ));
 		if (aGenerateRedstoneBrick != 0) setRedstoneBrick(aWorld, aX, aY+aGenerateRedstoneBrick, aZ, aData, aRandom);
-		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.redstone_lamp : Blocks.lit_redstone_lamp, 0, 2);
+		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
 		return T;
 	}
 	
@@ -360,7 +360,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	public static boolean setFlowerPot(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
 		int tIndex = aRandom.nextInt(BlocksGT.POT_FLOWER_TILES.length);
-		WD.set(aWorld, aX, aY, aZ, Blocks.flower_pot, 0, 2);
+		WD.set(aWorld, aX, aY, aZ, Blocks.FLOWER_POT, 0, 2);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity instanceof TileEntityFlowerPot) ((TileEntityFlowerPot)tTileEntity).func_145964_a(Item.getItemFromBlock(BlocksGT.POT_FLOWER_TILES[tIndex]), BlocksGT.POT_FLOWER_METAS[tIndex]);
 		return T;

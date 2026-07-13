@@ -74,7 +74,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		CR.remove(ST.make(Items.lava_bucket , 1, 0), IL.Cell_Empty.get(1));
 		CR.remove(ST.make(Items.water_bucket, 1, 0), IL.Cell_Empty.get(1));
 		
-		if (COMPAT_IC2 != null) COMPAT_IC2.addToExplosionWhitelist(Blocks.bedrock);
+		if (COMPAT_IC2 != null) COMPAT_IC2.addToExplosionWhitelist(Blocks.BEDROCK);
 		
 		for (OreDictMaterial tMat : ANY.Iron.mToThis) {
 			ItemStack tStack = OP.casingMachine.mat(tMat, 1);
@@ -92,16 +92,16 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		try {
 			UT.removeSimpleIC2MachineRecipe(NI, ic2.api.recipe.Recipes.compressor.getRecipes(), IL.Cell_Air.get(1));
 			UT.removeSimpleIC2MachineRecipe(ST.make(Items.snowball   , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.snow      , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.ice       , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.packed_ice, 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.SNOW      , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.ICE       , 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.PACKED_ICE, 1, W), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		}
 		
-		RM.ic2_compressor(ST.make(Items.snowball, 4, 0), ST.make(Blocks.snow, 1, 0));
-		RM.ic2_compressor(ST.make(Blocks.snow, 1, 0), ST.make(Blocks.ice, 1, 0));
-		RM.ic2_compressor(ST.make(Blocks.ice, 2, 0), ST.make(Blocks.packed_ice, 1, 0));
+		RM.ic2_compressor(ST.make(Items.snowball, 4, 0), ST.make(Blocks.SNOW, 1, 0));
+		RM.ic2_compressor(ST.make(Blocks.SNOW, 1, 0), ST.make(Blocks.ICE, 1, 0));
+		RM.ic2_compressor(ST.make(Blocks.ICE, 2, 0), ST.make(Blocks.PACKED_ICE, 1, 0));
 		
 		//====================================================================================================
 		if (MD.IC2C.mLoaded) { // IC2 Classic
@@ -143,7 +143,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		
 		RM.Shredder     .addRecipe1(T, 16,   16, IL.IC2_Plantball.get(1)        , ST.make(Blocks.DIRT, 1, 0));
 		RM.Shredder     .addRecipe1(T, 16,   16, 300, ST.mkic("weed", 1)        , IL.IC2_Plantball.get(1));
-		RM.Shredder     .addRecipe1(T, 16,   16, 600, ST.make(Blocks.vine, 1, W), IL.IC2_Plantball.get(1));
+		RM.Shredder     .addRecipe1(T, 16,   16, 600, ST.make(Blocks.VINE, 1, W), IL.IC2_Plantball.get(1));
 		
 		RM.biomass(IL.IC2_Plantball.get(1), 32);
 		
@@ -340,7 +340,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		RM.Shredder     .addRecipe1(T, 16,   16, IL.IC2_Biochaff.get(1)                             , ST.make(Blocks.DIRT, 1, 0));
 		RM.Shredder     .addRecipe1(T, 16,   16, IL.IC2_Plantball.get(1)                            , IL.IC2_Biochaff.get(1));
 		RM.Shredder     .addRecipe1(T, 16,   16, 300, ST.mkic("weed", 1)                            , IL.IC2_Biochaff.get(1));
-		RM.Shredder     .addRecipe1(T, 16,   16, 600, ST.make(Blocks.vine, 1, W)                    , IL.IC2_Biochaff.get(1));
+		RM.Shredder     .addRecipe1(T, 16,   16, 600, ST.make(Blocks.VINE, 1, W)                    , IL.IC2_Biochaff.get(1));
 		if (IL.HBM_Biomass.exists())
 		RM.Shredder     .addRecipe1(T, 16,   16, IL.HBM_Biomass.get(1)                              , IL.IC2_Biochaff.get(1));
 		if (IL.HBM_Biomass_Compressed.exists())
@@ -391,7 +391,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		//====================================================================================================
 		
 		RM.pulverizing(ST.make(Items.clay_ball, 1, W), OM.dust(MT.Clay, U));
-		RM.pulverizing(ST.make(Blocks.clay, 1, W), OM.dust(MT.Clay, U*4));
+		RM.pulverizing(ST.make(Blocks.CLAY, 1, W), OM.dust(MT.Clay, U*4));
 		RM.pulverizing(IL.Clay_Ball_Brown .get(1), OM.dust(MT.ClayBrown, U));
 		RM.pulverizing(IL.Clay_Ball_Red   .get(1), OM.dust(MT.ClayRed, U));
 		RM.pulverizing(IL.Clay_Ball_Yellow.get(1), OM.dust(MT.Bentonite, U));
@@ -495,7 +495,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 		for (FluidStack tWater : FL.waters(1000))
 		RM.Injector         .addRecipe1(T, 16,   16, IL.Cell_Empty.get(1), tWater                       , NF, ST.mkic("hydratingCell", 1));
 		
-		RM.Mixer            .addRecipe2(T, 16,   32, ST.make(Blocks.tnt, 1, W)                          , OM.dust(MT.Na2SO3, U*1), IL.IC2_ITNT.get(1));
+		RM.Mixer            .addRecipe2(T, 16,   32, ST.make(Blocks.TNT, 1, W)                          , OM.dust(MT.Na2SO3, U*1), IL.IC2_ITNT.get(1));
 		RM.Mixer            .addRecipe2(T, 16,   32, ST.make(Items.flint, 1, W)                         , OM.dust(MT.Coal, U*8), IL.IC2_Coal_Ball.get(1));
 		
 		for (FluidStack tWater : FL.waters(250))

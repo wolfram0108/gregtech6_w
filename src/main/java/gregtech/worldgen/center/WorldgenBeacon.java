@@ -59,14 +59,14 @@ public class WorldgenBeacon extends WorldgenObject {
 	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if ((aMinX != -16 && aMinX != 0) || (aMinZ == -16 && aMinZ == 0)) return F;
 		if (!GENERATE_STREETS) {
-			for (int i = -5; i < 5; i++) for (int j = -5; j < 5; j++) WD.set(aWorld, i, mHeight+1, j, Blocks.iron_block, 0, 0);
-			for (int i = -4; i < 4; i++) for (int j = -4; j < 4; j++) WD.set(aWorld, i, mHeight+2, j, Blocks.iron_block, 0, 0);
-			for (int i = -3; i < 3; i++) for (int j = -3; j < 3; j++) WD.set(aWorld, i, mHeight+3, j, Blocks.iron_block, 0, 0);
-			for (int i = -2; i < 2; i++) for (int j = -2; j < 2; j++) WD.set(aWorld, i, mHeight+4, j, Blocks.iron_block, 0, 0);
+			for (int i = -5; i < 5; i++) for (int j = -5; j < 5; j++) WD.set(aWorld, i, mHeight+1, j, Blocks.IRON_BLOCK, 0, 0);
+			for (int i = -4; i < 4; i++) for (int j = -4; j < 4; j++) WD.set(aWorld, i, mHeight+2, j, Blocks.IRON_BLOCK, 0, 0);
+			for (int i = -3; i < 3; i++) for (int j = -3; j < 3; j++) WD.set(aWorld, i, mHeight+3, j, Blocks.IRON_BLOCK, 0, 0);
+			for (int i = -2; i < 2; i++) for (int j = -2; j < 2; j++) WD.set(aWorld, i, mHeight+4, j, Blocks.IRON_BLOCK, 0, 0);
 			
 			BlockEntity tTileEntity;
 			
-			WD.set(aWorld, -1, mHeight+5, -1, Blocks.beacon, 0, 3);
+			WD.set(aWorld, -1, mHeight+5, -1, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, -1, mHeight+5, -1, T);
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();
@@ -77,7 +77,7 @@ public class WorldgenBeacon extends WorldgenObject {
 				tTileEntity.readFromNBT(tNBT);
 			}
 			
-			WD.set(aWorld, -1, mHeight+5, 0, Blocks.beacon, 0, 3);
+			WD.set(aWorld, -1, mHeight+5, 0, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, -1, mHeight+5, 0, T);
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();
@@ -88,7 +88,7 @@ public class WorldgenBeacon extends WorldgenObject {
 				tTileEntity.readFromNBT(tNBT);
 			}
 			
-			WD.set(aWorld, 0, mHeight+5, -1, Blocks.beacon, 0, 3);
+			WD.set(aWorld, 0, mHeight+5, -1, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, 0, mHeight+5, -1, T);
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();
@@ -99,7 +99,7 @@ public class WorldgenBeacon extends WorldgenObject {
 				tTileEntity.readFromNBT(tNBT);
 			}
 			
-			WD.set(aWorld, 0, mHeight+5, 0, Blocks.beacon, 0, 3);
+			WD.set(aWorld, 0, mHeight+5, 0, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, 0, mHeight+5, 0, T);
 			if (tTileEntity instanceof TileEntityBeacon) {
 				CompoundTag tNBT = UT.NBT.make();

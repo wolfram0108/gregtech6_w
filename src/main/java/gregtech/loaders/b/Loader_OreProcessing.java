@@ -72,8 +72,8 @@ public class Loader_OreProcessing implements Runnable {
 		
 		final ITexture[] tStoneTextures = new ITexture[] {
 		  BlockTextureCopied.get(Blocks.stone, 0)
-		, BlockTextureCopied.get(Blocks.cobblestone, 0)
-		, BlockTextureCopied.get(Blocks.mossy_cobblestone, 0)
+		, BlockTextureCopied.get(Blocks.COBBLESTONE, 0)
+		, BlockTextureCopied.get(Blocks.MOSSY_COBBLESTONE, 0)
 		, BlockTextureCopied.get(Blocks.stonebrick, 0)
 		, BlockTextureCopied.get(Blocks.stonebrick, 1)
 		, BlockTextureCopied.get(Blocks.stonebrick, 2)

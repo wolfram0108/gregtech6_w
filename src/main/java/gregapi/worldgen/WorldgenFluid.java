@@ -51,7 +51,7 @@ public class WorldgenFluid extends WorldgenBlob {
 		if (tTargetedBlock == NB || tTargetedBlock.isAir(aWorld, aX, aY, aZ)) {
 			return mAllowToGenerateinVoid && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		}
-		if (tTargetedBlock == Blocks.dirt || tTargetedBlock == Blocks.soul_sand || WD.ore_stone(tTargetedBlock, (byte)WD.meta(aWorld, aX, aY, aZ))) {
+		if (tTargetedBlock == Blocks.dirt || tTargetedBlock == Blocks.SOUL_SAND || WD.ore_stone(tTargetedBlock, (byte)WD.meta(aWorld, aX, aY, aZ))) {
 			return WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		}
 		return F;

@@ -111,7 +111,7 @@ public class Behavior_Spray_Extinguisher extends AbstractBehaviorDefault {
 		
 		for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) {
 			if (rUses + 10 > aUses) return rUses;
-			if (WD.block(aWorld, aX+i, aY+j, aZ+k) == Blocks.fire && WD.set(aWorld, aX+i, aY+j, aZ+k, NB, 0, 3)) rUses += 10;
+			if (WD.block(aWorld, aX+i, aY+j, aZ+k) == Blocks.FIRE && WD.set(aWorld, aX+i, aY+j, aZ+k, NB, 0, 3)) rUses += 10;
 		}
 		
 		for (Object tEntity : aWorld.getEntitiesWithinAABB(Entity.class, AABB.getBoundingBox(aX-2, aY-2, aZ-2, aX+3, aY+3, aZ+3))) {

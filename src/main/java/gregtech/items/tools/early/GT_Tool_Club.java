@@ -61,27 +61,27 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		Block aDrop = aDrops.size() == 1 ? ST.block(aDrops.get(0)) : NB;
 		if (aDrop == NB) aDrop = aBlock;
-		if (aDrop == Blocks.stone || aDrop == Blocks.cobblestone || aDrop == Blocks.mossy_cobblestone || aDrop == Blocks.stonebrick || aDrop == Blocks.stone_brick_stairs || aDrop == Blocks.cobblestone_wall || aDrop == Blocks.stone_button || aDrop == Blocks.stone_pressure_plate) {
+		if (aDrop == Blocks.stone || aDrop == Blocks.COBBLESTONE || aDrop == Blocks.MOSSY_COBBLESTONE || aDrop == Blocks.stonebrick || aDrop == Blocks.STONE_BRICK_STAIRS || aDrop == Blocks.cobblestone_wall || aDrop == Blocks.STONE_BUTTON || aDrop == Blocks.STONE_PRESSURE_PLATE) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.Stone, 1+RNGSUS.nextInt(4)));
 			return 0;
 		}
-		if (aDrop == Blocks.nether_brick || aDrop == Blocks.nether_brick_stairs || aDrop == Blocks.nether_brick_fence) {
+		if (aDrop == Blocks.nether_brick || aDrop == Blocks.NETHER_BRICK_STAIRS || aDrop == Blocks.NETHER_BRICK_FENCE) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.NetherBrick, 1+RNGSUS.nextInt(4)));
 			return 0;
 		}
-		if (aDrop == Blocks.netherrack) {
+		if (aDrop == Blocks.NETHERRACK) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.Netherrack, 1+RNGSUS.nextInt(4)));
 			return 0;
 		}
-		if (aDrop == Blocks.end_stone) {
+		if (aDrop == Blocks.END_STONE) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.Endstone, 1+RNGSUS.nextInt(4)));
 			return 0;
 		}
-		if (aDrop == Blocks.obsidian || IL.NeLi_Obsidian.equal(aDrop) || IL.NePl_Obsidian.equal(aDrop) || IL.EtFu_Obsidian.equal(aDrop)) {
+		if (aDrop == Blocks.OBSIDIAN || IL.NeLi_Obsidian.equal(aDrop) || IL.NePl_Obsidian.equal(aDrop) || IL.EtFu_Obsidian.equal(aDrop)) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.Obsidian, 1+RNGSUS.nextInt(4)));
 			return 0;
@@ -101,7 +101,7 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 			aDrops.add(OP.rockGt.mat(((BlockStones)aBlock).mMaterial, 1+RNGSUS.nextInt(((BlockStones)aBlock).mOctantcount/2)));
 			return 0;
 		}
-		if (aBlock == Blocks.redstone_ore || aBlock == Blocks.lit_redstone_ore || aBlock == BlocksGT.EtFu_Deepslate_Redstone_Ore  || aBlock == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore || OM.is("oreRedstone", ST.make(aBlock, 1, aMetaData))) {
+		if (aBlock == Blocks.REDSTONE_ORE || aBlock == Blocks.lit_redstone_ore || aBlock == BlocksGT.EtFu_Deepslate_Redstone_Ore  || aBlock == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore || OM.is("oreRedstone", ST.make(aBlock, 1, aMetaData))) {
 			aDrops.clear();
 			aDrops.add(OP.gemChipped.mat(MT.OREMATS.Cinnabar, 1+RNGSUS.nextInt(4)));
 			return 0;

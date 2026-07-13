@@ -110,12 +110,12 @@ public class Compat_Recipes_BuildCraft extends CompatMods {
 			for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Green   ]) RM.Bath.addRecipe1(T, 0, 16, OP.wireFine.mat(MT.RedAlloy, 1), FL.mul(tDye, 1, 8, T), NF, ST.make(MD.BC_TRANSPORT, "pipeWire", 1, 2));
 			for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Yellow  ]) RM.Bath.addRecipe1(T, 0, 16, OP.wireFine.mat(MT.RedAlloy, 1), FL.mul(tDye, 1, 8, T), NF, ST.make(MD.BC_TRANSPORT, "pipeWire", 1, 3));
 			
-			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.gravel      , 1, W), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, 0), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipestructurecobblestone", 1, 0));
-			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.cobblestone , 2, W), ST.make(Blocks.glass, 1, W), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, 0));
+			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.GRAVEL      , 1, W), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, 0), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipestructurecobblestone", 1, 0));
+			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.COBBLESTONE , 2, W), ST.make(Blocks.GLASS, 1, W), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, 0));
 			
 			for (int i = 0; i < 16; i++) {
-			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.gravel      , 1, W), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, i+1), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipestructurecobblestone", 1, i+1));
-			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.cobblestone , 2, W), ST.make(Blocks.stained_glass, 1, i), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, i+1));
+			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.GRAVEL      , 1, W), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, i+1), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipestructurecobblestone", 1, i+1));
+			RM.Assembler        .addRecipe2(T, 16,   16, ST.make(Blocks.COBBLESTONE , 2, W), ST.make(Blocks.stained_glass, 1, i), ST.make(MD.BC_TRANSPORT, "item.buildcraftPipe.pipeitemscobblestone", 1, i+1));
 			}
 		}
 	}

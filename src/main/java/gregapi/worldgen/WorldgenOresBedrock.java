@@ -92,7 +92,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			tOres[3] = ST.make((Block)BlocksGT.oreBroken, 1, MT.HexoriumGreen.mID);
 			tOres[4] = ST.make((Block)BlocksGT.oreBroken, 1, MT.HexoriumBlue .mID);
 			tOres[5] = OP.dust.mat(MT.Bedrock, 1);
-			tOres[6] = ST.make(Blocks.cobblestone, 1, 0, "Various Cobblestone Types");
+			tOres[6] = ST.make(Blocks.COBBLESTONE, 1, 0, "Various Cobblestone Types");
 			
 			long[] tChances = new long[tOres.length];
 			tChances[0] =  5000;
@@ -115,7 +115,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			ItemStack[] tOres = new ItemStack[mMaterial.mByProducts.size() + 3];
 			tOres[0] = ST.make((Block)BlocksGT.oreBroken, 1, mMaterial.mID);
 			tOres[tOres.length-2] = OP.dust.mat(MT.Bedrock, 1);
-			tOres[tOres.length-1] = ST.make(Blocks.cobblestone, 1, 0, "Various Cobblestone Types");
+			tOres[tOres.length-1] = ST.make(Blocks.COBBLESTONE, 1, 0, "Various Cobblestone Types");
 			
 			long[] tChances = new long[tOres.length];
 			tChances[0] = (tChances.length > 2 ? 9687 : 10000);
@@ -156,7 +156,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 				int tX = aMinX+aRandom.nextInt(tD*2)+8-tD, tZ = aMinZ+aRandom.nextInt(tD*2)+8-tD;
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {
 					Block tContact = WD.block(aWorld, tX, tY, tZ);
-					if (tContact.getMaterial().isLiquid() || tContact == Blocks.farmland) break;
+					if (tContact.getMaterial().isLiquid() || tContact == Blocks.FARMLAND) break;
 					if (!tContact.isOpaqueCube() || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 					if (!WD.easyRep(aWorld, tX, tY+1, tZ)) break;
 					if (tFlowers && tContact != Blocks.dirt && (!tRocks || aRandom.nextInt(4) > 0)) {
@@ -193,7 +193,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			// At least one Ore Block must be there. So force place a large one somewhere in the Center.
 			BlocksGT.oreBedrock.placeBlock(aWorld, aMinX+6+aRandom.nextInt(4), 0, aMinZ+6+aRandom.nextInt(4), SIDE_UNKNOWN, (aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial).mID, null, F, T);
 			// Use Deepslate if available, except in the Nether.
-			tStone = (aDimType == DIM_NETHER ? Blocks.netherrack : StoneLayer.DEEPSLATE == null ? NB : StoneLayer.DEEPSLATE.mStone);
+			tStone = (aDimType == DIM_NETHER ? Blocks.NETHERRACK : StoneLayer.DEEPSLATE == null ? NB : StoneLayer.DEEPSLATE.mStone);
 			// Keep Distances within the Chunk for this important step.
 			int[] tD1 = new int[] { 5,  4,  2,  1,  0,  2,  5};
 			int[] tD2 = new int[] {11, 12, 14, 15, 16, 14, 11};

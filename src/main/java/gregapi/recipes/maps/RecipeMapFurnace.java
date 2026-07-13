@@ -81,7 +81,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 					rXP = FL.XP.make(tOutput.getCount());
 				} else {
 					Block tBlock = ST.block(tOutput);
-					if (tBlock == Blocks.cobblestone || tBlock == Blocks.stone || tBlock == Blocks.stonebrick || tBlock instanceof BlockStones) {
+					if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.stone || tBlock == Blocks.stonebrick || tBlock instanceof BlockStones) {
 						// Stone should not give XP, especially not because of the Cobble Generator Upgrades.
 						// GT6 Stone is also not allowed due to easily recycleable Recipes.
 					} else if (tBlock == Blocks.hardened_clay || tBlock == Blocks.stained_hardened_clay) {

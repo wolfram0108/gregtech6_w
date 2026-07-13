@@ -37,9 +37,9 @@ public class DungeonChunkRoomPortalEnd extends DungeonChunkRoomVault {
 		
 		for (int tX = 1; tX < 15; tX++) for (int tZ = 1; tZ < 15; tZ++) {
 			if ((tX == 3 || tX == 6 || tX == 9 || tX == 12) && (tZ == 3 || tZ == 6 || tZ == 9 || tZ == 12)) {
-				aData.set(tX, 0, tZ, Blocks.glowstone, 0);
+				aData.set(tX, 0, tZ, Blocks.GLOWSTONE, 0);
 			} else {
-				aData.set(tX, 0, tZ, Blocks.end_stone, 0);
+				aData.set(tX, 0, tZ, Blocks.END_STONE, 0);
 			}
 		}
 		
@@ -58,7 +58,7 @@ public class DungeonChunkRoomPortalEnd extends DungeonChunkRoomVault {
 					aData.set  (tX, 7, tZ, tPurpurPillar, 0);
 				} else if ((tX == 3 || tX == 6 || tX == 9 || tX == 12) && (tZ == 3 || tZ == 6 || tZ == 9 || tZ == 12)) {
 					aData.set  (tX, 0, tZ, tPurpurPillar, 0);
-					aData.set  (tX, 7, tZ, Blocks.glowstone);
+					aData.set  (tX, 7, tZ, Blocks.GLOWSTONE);
 					aData.tiles(tX, 8, tZ);
 				} else {
 					aData.set  (tX, 0, tZ, tPurpurBlock, 0);
@@ -77,22 +77,22 @@ public class DungeonChunkRoomPortalEnd extends DungeonChunkRoomVault {
 				if (ST.valid(tHexorium)) {
 					aData.set(tX, 2, tZ, tHexorium, 9, 3);
 				} else {
-					aData.set(tX, 2, tZ, Blocks.glowstone, 0, 3);
+					aData.set(tX, 2, tZ, Blocks.GLOWSTONE, 0, 3);
 				}
 			}
 		}
-		aData.set     ( 7,  0,  6, Blocks.end_portal_frame, 4);
-		aData.set     ( 8,  0,  6, Blocks.end_portal_frame, 4);
-		aData.set     ( 9,  0,  7, Blocks.end_portal_frame, 5);
-		aData.set     ( 9,  0,  8, Blocks.end_portal_frame, 5);
-		aData.set     ( 7,  0,  9, Blocks.end_portal_frame, 6);
-		aData.set     ( 8,  0,  9, Blocks.end_portal_frame, 6);
-		aData.set     ( 6,  0,  7, Blocks.end_portal_frame, 7);
-		aData.set     ( 6,  0,  8, Blocks.end_portal_frame, 7);
-		aData.set     ( 7,  0,  7, Blocks.end_portal, 0);
-		aData.set     ( 7,  0,  8, Blocks.end_portal, 0);
-		aData.set     ( 8,  0,  7, Blocks.end_portal, 0);
-		aData.set     ( 8,  0,  8, Blocks.end_portal, 0);
+		aData.set     ( 7,  0,  6, Blocks.END_PORTAL_FRAME, 4);
+		aData.set     ( 8,  0,  6, Blocks.END_PORTAL_FRAME, 4);
+		aData.set     ( 9,  0,  7, Blocks.END_PORTAL_FRAME, 5);
+		aData.set     ( 9,  0,  8, Blocks.END_PORTAL_FRAME, 5);
+		aData.set     ( 7,  0,  9, Blocks.END_PORTAL_FRAME, 6);
+		aData.set     ( 8,  0,  9, Blocks.END_PORTAL_FRAME, 6);
+		aData.set     ( 6,  0,  7, Blocks.END_PORTAL_FRAME, 7);
+		aData.set     ( 6,  0,  8, Blocks.END_PORTAL_FRAME, 7);
+		aData.set     ( 7,  0,  7, Blocks.END_PORTAL, 0);
+		aData.set     ( 7,  0,  8, Blocks.END_PORTAL, 0);
+		aData.set     ( 8,  0,  7, Blocks.END_PORTAL, 0);
+		aData.set     ( 8,  0,  8, Blocks.END_PORTAL, 0);
 		aData.obsidian( 7, -1,  7, T);
 		aData.obsidian( 7, -1,  8, T);
 		aData.obsidian( 8, -1,  7, T);

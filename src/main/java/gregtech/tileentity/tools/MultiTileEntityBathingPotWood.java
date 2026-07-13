@@ -75,7 +75,7 @@ public class MultiTileEntityBathingPotWood extends MultiTileEntityBathingPot {
 			if (mDisplay == 0 || SIDE_TOP != aSide) return null;
 			if (mDisplay < -1) {
 				Fluid tFluid = FluidRegistry.getFluid(-mDisplay-2);
-				if (tFluid == null) return BlockTextureCopied.get(Blocks.water, SIDE_ANY, 0, UNCOLOURED, F, F, F);
+				if (tFluid == null) return BlockTextureCopied.get(Blocks.WATER, SIDE_ANY, 0, UNCOLOURED, F, F, F);
 				return BlockTextureDefault.get(new IconContainerDefault(tFluid.getIcon()), tFluid.getColor());
 			}
 			if (UT.Code.exists(mDisplay, OreDictMaterial.MATERIAL_ARRAY)) return OreDictMaterial.MATERIAL_ARRAY[mDisplay].getTextureDust();

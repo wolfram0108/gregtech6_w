@@ -91,7 +91,7 @@ public class Compat_Recipes_Bluepower extends CompatMods {
 		
 		try {
 			// Remove Tungsten Block from Volcanos
-			((Object[])UT.Reflection.getFieldContent("com.bluepowermod.world.WorldGenVolcano", "ALTAR_BLOCKS"))[3] = Blocks.gold_block;
+			((Object[])UT.Reflection.getFieldContent("com.bluepowermod.world.WorldGenVolcano", "ALTAR_BLOCKS"))[3] = Blocks.GOLD_BLOCK;
 			// Make sure the Chest in those Volcanos cannot spawn any Tungsten Ingots.
 			UT.Reflection.setFieldContent("com.bluepowermod.init.BPItems", "tungsten_ingot", Items.gold_ingot);
 		} catch(Throwable e) {

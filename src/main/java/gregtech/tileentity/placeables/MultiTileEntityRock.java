@@ -197,25 +197,25 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (tBlock == BlocksGT.Diggables) {
 			mTexture = BlockTextureCopied.get(BlocksGT.Kimberlite, SIDE_ANY, 0); return 1;
 		}
-		if (tBlock instanceof BlockStones || tBlock == Blocks.snow || tBlock == Blocks.stone || tBlock == Blocks.end_stone || tBlock == Blocks.obsidian) {
+		if (tBlock instanceof BlockStones || tBlock == Blocks.SNOW || tBlock == Blocks.stone || tBlock == Blocks.END_STONE || tBlock == Blocks.OBSIDIAN) {
 			mTexture = BlockTextureCopied.get(tBlock, SIDE_ANY, 0); return 1;
 		}
-		if (tBlock == Blocks.netherrack || tBlock == Blocks.nether_brick || tBlock == Blocks.soul_sand) {
-			mTexture = BlockTextureCopied.get(Blocks.netherrack, SIDE_ANY, 0); return 1;
+		if (tBlock == Blocks.NETHERRACK || tBlock == Blocks.nether_brick || tBlock == Blocks.SOUL_SAND) {
+			mTexture = BlockTextureCopied.get(Blocks.NETHERRACK, SIDE_ANY, 0); return 1;
 		}
 		if (tBlock == Blocks.sandstone || tBlock == Blocks.sand || IL.AETHER_Sand.equal(tBlock)) {
 			mTexture = BlockTextureCopied.get(Blocks.sandstone, SIDE_FRONT, 0); return 1;
 		}
-		if (tBlock == Blocks.cobblestone || tBlock == Blocks.gravel) {
-			mTexture = BlockTextureCopied.get(Blocks.cobblestone, SIDE_ANY, 0); return 1;
+		if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.GRAVEL) {
+			mTexture = BlockTextureCopied.get(Blocks.COBBLESTONE, SIDE_ANY, 0); return 1;
 		}
 		if (IL.NeLi_Gravel.equal(tBlock)) {
 			mTexture = BlockTextureCopied.get(BlocksGT.GraniteBlack, SIDE_ANY, 0); return 1;
 		}
 		
-		if (level.provider.dimensionId == -1) {mTexture = BlockTextureCopied.get(Blocks.netherrack); return 1;}
+		if (level.provider.dimensionId == -1) {mTexture = BlockTextureCopied.get(Blocks.NETHERRACK); return 1;}
 		if (level.provider.dimensionId ==  0) {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
-		if (level.provider.dimensionId == +1) {mTexture = BlockTextureCopied.get(Blocks.end_stone); return 1;}
+		if (level.provider.dimensionId == +1) {mTexture = BlockTextureCopied.get(Blocks.END_STONE); return 1;}
 		if (WD.dimTF(level))                  {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
 		if (WD.dimERE(level))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x907050, F, F, F); return 1;}
 		if (WD.dimBTL(level))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x308030, F, F, F); return 1;}
@@ -226,7 +226,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		
 		if (BIOMES_SPACE.contains(getBiome().biomeName)) {
 			if (tBlock.getMaterial() == Material.rock) {mTexture = BlockTextureCopied.get(tBlock, getMetaDataAtSide(SIDE_BOTTOM)); return 1;}
-			mTexture = BlockTextureCopied.get(Blocks.obsidian); return 1;
+			mTexture = BlockTextureCopied.get(Blocks.OBSIDIAN); return 1;
 		}
 		mTexture = BlockTextureCopied.get(Blocks.stone);
 		return 1;

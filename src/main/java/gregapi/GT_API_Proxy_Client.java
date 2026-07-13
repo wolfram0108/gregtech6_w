@@ -204,11 +204,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				if (aFluid.getIcon() == null || FluidsGT.BROKEN.contains(aFluid.getName())) try {
 					Block tBlock = aFluid.getBlock();
 					// set it to its Block's Icon, or Water if no Block exists.
-					aFluid.setIcons((ST.valid(tBlock) ? tBlock : Blocks.water).getIcon(0, 0));
+					aFluid.setIcons((ST.valid(tBlock) ? tBlock : Blocks.WATER).getIcon(0, 0));
 				} catch(Throwable e) {
 					// complete failure, set it to Water!
 					e.printStackTrace(ERR);
-					try {aFluid.setIcons(Blocks.water.getIcon(0, 0));} catch(Throwable f) {f.printStackTrace(ERR);}
+					try {aFluid.setIcons(Blocks.WATER.getIcon(0, 0));} catch(Throwable f) {f.printStackTrace(ERR);}
 				}
 			}
 		}
@@ -641,5 +641,5 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 	
-	private static List<Block> ROTATABLE_VANILLA_BLOCKS = Arrays.asList(Blocks.piston, Blocks.sticky_piston, Blocks.furnace, Blocks.lit_furnace, Blocks.dropper, Blocks.dispenser, Blocks.chest, Blocks.trapped_chest, Blocks.ender_chest, Blocks.hopper, Blocks.pumpkin, Blocks.lit_pumpkin);
+	private static List<Block> ROTATABLE_VANILLA_BLOCKS = Arrays.asList(Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.FURNACE, Blocks.lit_furnace, Blocks.DROPPER, Blocks.DISPENSER, Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST, Blocks.HOPPER, Blocks.PUMPKIN, Blocks.lit_pumpkin);
 }

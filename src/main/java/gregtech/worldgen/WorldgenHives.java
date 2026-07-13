@@ -87,7 +87,7 @@ public class WorldgenHives extends WorldgenObject {
 			return (tCount == 5 && placeHive(tRegistry, aDimType, aWorld, tX, tY, tZ, DYE_INT_Yellow      ,   900, aRandom)) || rResult;
 		case DIM_ENVM: case DIM_CW2_Caveland:
 			tY = 16+aRandom.nextInt(96);
-			if (WD.block(aWorld, tX, tY, tZ) != Blocks.netherrack) return rResult;
+			if (WD.block(aWorld, tX, tY, tZ) != Blocks.NETHERRACK) return rResult;
 			for (byte tSide : ALL_SIDES_VALID) {
 				if (WD.liquid(aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide])) return rResult;
 				if (WD.opq   (aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide], F, T)) tCount++;
@@ -103,7 +103,7 @@ public class WorldgenHives extends WorldgenObject {
 			return (tCount == 5 && placeHive(tRegistry, aDimType, aWorld, tX, tY, tZ, DYE_INT_Cyan        ,     0, aRandom)) || rResult;
 		case DIM_NETHER:
 			tY = 16+aRandom.nextInt(WD.bedrock(aWorld, tX, 255, tZ) ? 224 : 96);
-			if (WD.block(aWorld, tX, tY, tZ) != Blocks.netherrack) return rResult;
+			if (WD.block(aWorld, tX, tY, tZ) != Blocks.NETHERRACK) return rResult;
 			for (byte tSide : ALL_SIDES_VALID) {
 				if (WD.liquid(aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide])) return rResult;
 				if (WD.opq   (aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide], F, T)) tCount++;
@@ -111,7 +111,7 @@ public class WorldgenHives extends WorldgenObject {
 			return (tCount == 5 && placeHive(tRegistry, aDimType, aWorld, tX, tY, tZ, 0xaa0000            ,   300, aRandom)) || rResult;
 		case DIM_END:
 			if (aRandom.nextInt(3) > 0) return F;
-			for (tY = 16; tY < 128; tY++) if (WD.block(aWorld, tX, tY, tZ) == Blocks.end_stone) {
+			for (tY = 16; tY < 128; tY++) if (WD.block(aWorld, tX, tY, tZ) == Blocks.END_STONE) {
 				for (byte tSide : ALL_SIDES_VALID) {
 					if (WD.liquid(aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide])) return rResult;
 					if (WD.opq   (aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide], F, T)) tCount++;
@@ -152,7 +152,7 @@ public class WorldgenHives extends WorldgenObject {
 					
 				//  for (String tName : aBiomeNames) if (BIOMES_SPACE.contains(tName))
 				//  return placeHive(tRegistry, aWorld, tX, tY-1, tZ, 0x44bbbb          ,   400, aRandom) || rResult;
-					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water || tBlock instanceof BlockWaterlike)
+					if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water || tBlock instanceof BlockWaterlike)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_LightBlue ,   100, aRandom) || rResult;
 					for (String tName : aBiomeNames) if (BIOMES_MAGICAL.contains(tName) && (aDimType != DIM_ALFHEIM || aRandom.nextBoolean()))
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Purple    ,   200, aRandom) || rResult;
@@ -170,13 +170,13 @@ public class WorldgenHives extends WorldgenObject {
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Green     ,   600, aRandom) || rResult;
 					for (String tName : aBiomeNames) if (BIOMES_FROZEN.contains(tName))
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_White     ,   700, aRandom) || rResult;
-					if (tContact == Blocks.mycelium)
+					if (tContact == Blocks.MYCELIUM)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Pink      ,   800, aRandom) || rResult;
 					if (tContact == Blocks.sand && WD.meta(aWorld, tX, tY, tZ) == 1)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Red       ,   900, aRandom) || rResult;
 					if (tContact == Blocks.sandstone || tContact.getMaterial() == Material.sand)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Yellow    ,   900, aRandom) || rResult;
-					if (tContact == Blocks.gravel || tContact.getMaterial() == Material.rock)
+					if (tContact == Blocks.GRAVEL || tContact.getMaterial() == Material.rock)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_LightGray ,   500, aRandom) || rResult;
 					if (tContact == Blocks.grass || tContact.getMaterial() == Material.grass)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, 0xffdd99          ,     0, aRandom) || rResult;

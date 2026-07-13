@@ -158,13 +158,13 @@ public class DungeonData extends WorldAndCoords {
 	public boolean lamp(int aX, int aY, int aZ, Block aPrimary, Block aSecondary, int aGenerateRedstoneBrick) {
 		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
-		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.redstone_lamp : Blocks.lit_redstone_lamp, 0, 2);
+		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
 	}
 	
 	public boolean lamp(int aX, int aY, int aZ, int aGenerateRedstoneBrick) {
 		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
-		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.redstone_lamp : Blocks.lit_redstone_lamp, 0, 2);
+		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
 	}
 	
 	public boolean coins(int aX, int aY, int aZ) {
@@ -236,7 +236,7 @@ public class DungeonData extends WorldAndCoords {
 	}
 	
 	public boolean obsidian(int aX, int aY, int aZ, boolean aGravity) {
-		return set(aX, aY, aZ, Blocks.obsidian, 0, IL.NeLi_Obsidian.exists() ? IL.NeLi_Obsidian.block() : IL.NePl_Obsidian.block(), 0, IL.EtFu_Obsidian.block(), 0, !aGravity ? Blocks.obsidian : IL.RC_Crushed_Obsidian.exists() ? IL.RC_Crushed_Obsidian.block() : IL.HBM_Crushed_Obsidian.exists() ? IL.HBM_Crushed_Obsidian.block() : Blocks.obsidian, aGravity && IL.RC_Crushed_Obsidian.exists() ? 4 : 0);
+		return set(aX, aY, aZ, Blocks.OBSIDIAN, 0, IL.NeLi_Obsidian.exists() ? IL.NeLi_Obsidian.block() : IL.NePl_Obsidian.block(), 0, IL.EtFu_Obsidian.block(), 0, !aGravity ? Blocks.OBSIDIAN : IL.RC_Crushed_Obsidian.exists() ? IL.RC_Crushed_Obsidian.block() : IL.HBM_Crushed_Obsidian.exists() ? IL.HBM_Crushed_Obsidian.block() : Blocks.OBSIDIAN, aGravity && IL.RC_Crushed_Obsidian.exists() ? 4 : 0);
 	}
 	
 	public boolean flower(int aX, int aY, int aZ) {
@@ -328,7 +328,7 @@ public class DungeonData extends WorldAndCoords {
 	
 	public boolean pot(int aX, int aY, int aZ) {
 		int tIndex = next(BlocksGT.POT_FLOWER_TILES.length);
-		set(aX, aY, aZ, Blocks.flower_pot, 0, 2);
+		set(aX, aY, aZ, Blocks.FLOWER_POT, 0, 2);
 		BlockEntity tTileEntity = WD.te(mWorld, mX+aX, mY+aY, mZ+aZ, T);
 		if (tTileEntity instanceof TileEntityFlowerPot) {
 			if (next1in2()) {

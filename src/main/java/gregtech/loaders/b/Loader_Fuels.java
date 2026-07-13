@@ -219,7 +219,7 @@ public class Loader_Fuels implements Runnable {
 //      FM.Magic        .addRecipe0(T, - 64, 64, FL.make("mercury", 1));
 		
 		
-//      new Recipe(new ItemStack(Items.lava_bucket), new ItemStack(Blocks.obsidian), OM.get(OP.ingot, MT.Copper, 1), OM.get(OP.ingot, MT.Tin, 1), OM.get(OP.ingot, MT.Electrum, 1), 30, 2);
+//      new Recipe(new ItemStack(Items.lava_bucket), new ItemStack(Blocks.OBSIDIAN), OM.get(OP.ingot, MT.Copper, 1), OM.get(OP.ingot, MT.Tin, 1), OM.get(OP.ingot, MT.Electrum, 1), 30, 2);
 		
 //      RecipeMap.sSmallNaquadahReactorFuels.addRecipe(T, ST.array(OM.get(OP.bolt , MT.Nq_528, 1)}, ST.array(OM.get(OP.bolt , MT.Nq     , 1)}, null, null, null, null, 0, 0,  25000);
 //      RecipeMap.sLargeNaquadahReactorFuels.addRecipe(T, ST.array(OM.get(OP.ingot, MT.Nq_528, 1)}, ST.array(OM.get(OP.ingot, MT.Nq     , 1)}, null, null, null, null, 0, 0, 200000);
@@ -228,6 +228,6 @@ public class Loader_Fuels implements Runnable {
 //      RA.addFuel(GT_ModHandler.getModItem(ModIDs.TC, "ItemResource", 1, 4)                , null,      4, 5);
 //      RA.addFuel(new ItemStack(Items.experience_bottle, 1)                                , null,     10, 5);
 //      RA.addFuel(new ItemStack(Items.ghast_tear, 1)                                       , null,    500, 5);
-//      RA.addFuel(new ItemStack(Blocks.beacon, 1)                                          , null, MT.NetherStar.mFuelPower * 2, MT.NetherStar.mFuelType);
+//      RA.addFuel(new ItemStack(Blocks.BEACON, 1)                                          , null, MT.NetherStar.mFuelPower * 2, MT.NetherStar.mFuelType);
 	}
 }

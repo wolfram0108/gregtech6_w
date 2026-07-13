@@ -871,7 +871,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public int getFireSpreadSpeed(byte aSide, boolean aDefault) {return aDefault ? 150 : 0;}
 	public int getFlammability   (byte aSide, boolean aDefault) {return aDefault ? 150 : 0;}
 	public void setOnFire() {WD.burn(level, getCoords(), F, F);}
-	public boolean setToFire() {return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.fire, 0, 3);}
+	public boolean setToFire() {return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.FIRE, 0, 3);}
 	
 	// Removal and Snow Layer Stuff
 	
@@ -879,7 +879,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean removedByPlayer(Level aWorld, Player aPlayer, boolean aWillHarvest) {return setToAir();}
 	public boolean hasSnow() {for (int i : SCAN_NEG_1) for (int j : SCAN_NEG_1) if (getBlockOffset(i, 0, j) == Blocks.snow_layer) return T; return F;}
 	public boolean setToSnow() {return getOpacity(getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()) && hasSnow() && WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.snow_layer, 0, 3);}
-	public boolean setToAir() {if (WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.air, 0, 3)) {if (this instanceof IMultiTileEntity.IMTE_CanPlaceSnowLayerOnRemoval) setToSnow(); return T;} return F;}
+	public boolean setToAir() {if (WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.AIR, 0, 3)) {if (this instanceof IMultiTileEntity.IMTE_CanPlaceSnowLayerOnRemoval) setToSnow(); return T;} return F;}
 	
 	// Inventory Stuff
 	

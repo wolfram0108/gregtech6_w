@@ -121,6 +121,6 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	
 	// @Override
 	public Block func_145805_f() {
-		return Blocks.gravel;
+		return Blocks.GRAVEL;
 	}
 }

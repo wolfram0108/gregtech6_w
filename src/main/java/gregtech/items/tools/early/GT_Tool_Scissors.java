@@ -85,9 +85,9 @@ public class GT_Tool_Scissors extends ToolStats {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
-		if (aBlock == Blocks.vine) {
+		if (aBlock == Blocks.VINE) {
 			aDrops.clear();
-			aDrops.add(ST.make(Blocks.vine, 1, 0));
+			aDrops.add(ST.make(Blocks.VINE, 1, 0));
 		}
 		if (IL.EBXL_Vines.equal(aBlock)) {
 			aDrops.clear();
@@ -103,7 +103,7 @@ public class GT_Tool_Scissors extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		String tTool = aBlock.getHarvestTool(aMetaData);
-		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_scissors) || tTool.equalsIgnoreCase(TOOL_shears))) || aBlock.getMaterial() == Material.cloth || aBlock.getMaterial() == Material.web || aBlock == Blocks.vine || IL.TF_Mazehedge.equal(aBlock) || IL.EBXL_Vines.equal(aBlock) || IL.BoP_Vines.equal(aBlock);
+		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_scissors) || tTool.equalsIgnoreCase(TOOL_shears))) || aBlock.getMaterial() == Material.cloth || aBlock.getMaterial() == Material.web || aBlock == Blocks.VINE || IL.TF_Mazehedge.equal(aBlock) || IL.EBXL_Vines.equal(aBlock) || IL.BoP_Vines.equal(aBlock);
 	}
 	
 	@Override

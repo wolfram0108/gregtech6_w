@@ -63,7 +63,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 				// Efficiently grab the Block at that Position.
 				Block tContact = WD.block(aChunk, tX&15, tY, tZ&15);
 				// Don't put shit on Farmland, that usually looks ugly as heck.
-				if (tContact == Blocks.farmland) break;
+				if (tContact == Blocks.FARMLAND) break;
 				// Lets ignore all non-full Blocks and Trees on the way down, except Fluids.
 				if (!tContact.getMaterial().isLiquid()) if (!tContact.isOpaqueCube() || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 				// Try to place the Stuff into the World.

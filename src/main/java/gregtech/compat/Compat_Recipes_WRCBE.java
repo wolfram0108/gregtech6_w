@@ -39,7 +39,7 @@ public class Compat_Recipes_WRCBE extends CompatMods {
 	public Compat_Recipes_WRCBE(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
 	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing WR-CBE Recipes.");
-		CR.remove(ST.make(Blocks.obsidian, 1, 0), NI, NI, ST.make(Blocks.obsidian, 1, 0));
+		CR.remove(ST.make(Blocks.OBSIDIAN, 1, 0), NI, NI, ST.make(Blocks.OBSIDIAN, 1, 0));
 		CR.delate(MD.WR_CBE_C, "retherPearl");
 		
 		for (OreDictMaterial tGlowstone : ANY.Glowstone.mToThis) {

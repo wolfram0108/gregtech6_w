@@ -85,12 +85,12 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				tBucket = FL.fill(FL.Dirty_Water.make(1000), aStack, F, T, F, T);
 				return tBucket == null ? aStack : tBucket;
 			}
-			if (tFluidBlock == Blocks.lava || tFluidBlock == Blocks.flowing_lava) {
+			if (tFluidBlock == Blocks.LAVA || tFluidBlock == Blocks.flowing_lava) {
 				if (WD.meta(aWorld, aX, aY, aZ) != 0) return super.onDispense(aItem, aSource, aStack);
 				tBucket = FL.fill(FL.Lava.make(1000), aStack, F, T, F, T);
 				return tBucket == null ? aStack : WD.set(aWorld, aX, aY, aZ, NB, 0, 3) ? tBucket : aStack;
 			}
-			if (tFluidBlock == Blocks.water || tFluidBlock == Blocks.flowing_water) {
+			if (tFluidBlock == Blocks.WATER || tFluidBlock == Blocks.flowing_water) {
 				if (WD.meta(aWorld, aX, aY, aZ) != 0) return super.onDispense(aItem, aSource, aStack);
 				tBucket = FL.fill(FL.Water.make(1000), aStack, F, T, F, T);
 				return tBucket == null ? aStack : WD.set(aWorld, aX, aY, aZ, NB, 0, 3) ? tBucket : aStack;
@@ -141,7 +141,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				tBucket = FL.fill(FL.Dirty_Water.make(1000), aStack, F, T, F, T);
 				return tBucket == null ? aStack : tBucket;
 			}
-			if (tFluidBlock == Blocks.lava || tFluidBlock == Blocks.flowing_lava || tFluidBlock == Blocks.water || tFluidBlock == Blocks.flowing_water) {
+			if (tFluidBlock == Blocks.LAVA || tFluidBlock == Blocks.flowing_lava || tFluidBlock == Blocks.WATER || tFluidBlock == Blocks.flowing_water) {
 				if (WD.meta(aWorld, aX, aY, aZ) == 0) tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
 			} else
 			if (tFluidBlock instanceof IFluidBlock) {

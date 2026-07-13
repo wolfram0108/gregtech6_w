@@ -59,7 +59,7 @@ public class Compat_Recipes_Thaumcraft extends CompatMods {
 		
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
 		  ST.make(ST.make(MD.TC, "WandCasting", 1, 0), "Click a Bookshelf with a Wand")
-		, ST.make(Blocks.bookshelf, 1, 0, "Click a Bookshelf with a Wand")
+		, ST.make(Blocks.BOOKSHELF, 1, 0, "Click a Bookshelf with a Wand")
 		, NI
 		, ST.make(ST.make(MD.TC, "WandCap", 2, 0), "Craft two Iron Wand Caps onto a Stick")
 		, ST.make(Items.stick, 1, 0, "Craft two Iron Wand Caps onto a Stick")

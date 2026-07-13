@@ -52,7 +52,7 @@ public class Loader_Recipes_Hints implements Runnable {
 		, IL.Bottle_Empty.getWithName(1, "Rightclick the Crucible with an Empty Bottle")
 		, IL.TC_Shimmerleaf.getWithName(1, "Or just throw a Shimmerleaf into it")
 		, ST.make(aRegistry.getItem(1199), "Heat up the Crucible using a Burning Box")
-		, ST.make(Blocks.redstone_ore, 1, 0, "Use a Club to mine Vanilla or Deepslate Redstone Ore for Cinnabar")
+		, ST.make(Blocks.REDSTONE_ORE, 1, 0, "Use a Club to mine Vanilla or Deepslate Redstone Ore for Cinnabar")
 		), ST.array(IL.Bottle_Mercury.get(1), ST.make(OP.ingot.mat(MT.Hg, 1), "Pouring this into Molds only works with additional Cooling!"), ST.make(OP.nugget.mat(MT.Hg, 1), "Pouring this into Molds only works with additional Cooling!")), null, ZL_LONG, FL.array(MT.Hg.liquid(1, T)), FL.array(MT.Hg.liquid(1, T)), 0, 0, 0);
 		
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
@@ -93,7 +93,7 @@ public class Loader_Recipes_Hints implements Runnable {
 		
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
 		  ST.make(aRegistry     .getItem( 7000), "Any of the GT6 Bookshelves")
-		, ST.make(Blocks.enchanting_table, 1, 0, "Place the Shelves around the Enchanting Table")
+		, ST.make(Blocks.ENCHANTING_TABLE, 1, 0, "Place the Shelves around the Enchanting Table")
 		, ST.make(Items.book             , 1, 0, "Fill the Shelves with ANYTHING that looks like a Book or Scroll")
 		, ST.make(aRegistry     .getItem( 7123), "Any of the GT6 Bookshelves")
 		, ST.make(Items.experience_bottle, 1, 0, "Use your XP like normal")
@@ -113,7 +113,7 @@ public class Loader_Recipes_Hints implements Runnable {
 		  ST.make(OP.dust           .mat(MT.Endstone     , 1), "Endstone can be centrifuged for Helium")
 		, ST.make(OP.dust           .mat(MT.Monazite     , 1), "Monazite can be smelted for Helium")
 		, ST.make(OP.crushedPurified.mat(MT.Biotite      , 1), "Biotite can be dried for Argon")
-		, ST.make(Blocks.end_stone                     , 1, 0, "Some Overworld Dungeons have Endstone too!")
+		, ST.make(Blocks.END_STONE                     , 1, 0, "Some Overworld Dungeons have Endstone too!")
 		, ST.make(aRegistry                   .getItem(17111), "Cryo Distillation Towers also produce Noble Gasses")
 		, ST.make(aRegistry                   .getItem(17198), "Worst case, just let the Fusion Reactor make it!")
 		), ST.array(

@@ -57,7 +57,7 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 				// Scan Inventory for equal Blocks.
 				for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
 					ItemStack tStack = aPlayer.inventory.getItem(Inventory.INVENTORY_SIZE - i - 1);
-					if (ST.block(tStack) != (tY == 2 ? Blocks.wooden_slab : Blocks.glass)) continue;
+					if (ST.block(tStack) != (tY == 2 ? Blocks.wooden_slab : Blocks.GLASS)) continue;
 					
 					// Doublechecking Block Permissions at that location.
 					if (!aPlayer.canPlayerEdit(aX + tX, aY + tY, aZ + tZ, aSide, tStack)) continue;

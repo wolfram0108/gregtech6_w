@@ -148,9 +148,9 @@ public class GT_Tool_Saw extends ToolStats {
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}
-		if (aBlock == Blocks.bookshelf) {
+		if (aBlock == Blocks.BOOKSHELF) {
 			aDrops.clear();
-			aDrops.add(ST.make(Blocks.bookshelf, 1, 0));
+			aDrops.add(ST.make(Blocks.BOOKSHELF, 1, 0));
 			aEvent.dropChance = 1.0F;
 			return 0;
 		}

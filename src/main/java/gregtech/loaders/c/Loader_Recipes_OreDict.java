@@ -42,10 +42,10 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 	@Override
 	public void addAllListeners() {
 		addListener(new Object[] {OP.dust.dat(MT.Glass), OP.dust.dat(MT.Sand), OP.dust.dat(MT.RedSand), OP.dust.dat(MT.EndSandWhite), OP.dust.dat(MT.EndSandBlack)}, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.add_smelting(aEvent.mStack, ST.make(Blocks.glass_pane, 1, 0), F, F, F);
+			RM.add_smelting(aEvent.mStack, ST.make(Blocks.GLASS_PANE, 1, 0), F, F, F);
 		}});
 		addListener(new Object[] {OP.blockDust.dat(MT.Glass), OP.blockDust.dat(MT.Sand), OP.blockDust.dat(MT.RedSand), OP.blockDust.dat(MT.EndSandWhite), OP.blockDust.dat(MT.EndSandBlack)}, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.add_smelting(aEvent.mStack, ST.make(Blocks.glass, 1, 0), F, F, F);
+			RM.add_smelting(aEvent.mStack, ST.make(Blocks.GLASS, 1, 0), F, F, F);
 		}});
 		addListener(OP.dust.dat(MT.Stone), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.add_smelting(aEvent.mStack, OP.plate.mat(MT.Stone, 1), T, F, F);
@@ -100,7 +100,7 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 		}});
 		addListener(OD.itemTar, new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			if (!ST.ingredable(aEvent.mStack)) return;
-			RM.Laminator    .addRecipe2(T, 16,   16,              aEvent.mStack , ST.make(Blocks.piston, 1, W), ST.make(Blocks.sticky_piston, 1, 0));
+			RM.Laminator    .addRecipe2(T, 16,   16,              aEvent.mStack , ST.make(Blocks.PISTON, 1, W), ST.make(Blocks.STICKY_PISTON, 1, 0));
 			for (FluidStack tWater : FL.waters(250, 200))
 			RM.Mixer        .addRecipe1(T, 16,   16,              aEvent.mStack , tWater, FL.Glue.make(250), ZL_IS);
 			
@@ -116,7 +116,7 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 			RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.tag(3), aEvent.mStack, ST.make((Item)OP.plantGtFiber.mRegisteredPrefixItems.get(0), 4, W)), ST.make(Items.lead, 2, 0));
 			RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.tag(3), aEvent.mStack, ST.make(Items.string, 4, W)), ST.make(Items.lead, 2, 0));
 			
-			RM.Laminator    .addRecipe2(T, 16,   16,              aEvent.mStack , ST.make(Blocks.piston, 1, W), ST.make(Blocks.sticky_piston, 1, 0));
+			RM.Laminator    .addRecipe2(T, 16,   16,              aEvent.mStack , ST.make(Blocks.PISTON, 1, W), ST.make(Blocks.STICKY_PISTON, 1, 0));
 			
 			if (MD.TiC.owns(aEvent.mStack) || OD.slimeballSwet.is_(aEvent.mStack) || OD.slimeballPink.is_(aEvent.mStack) || OD.slimeballRice.is_(aEvent.mStack) || OD.slimeballBorax.is_(aEvent.mStack) || OD.slimeballAnimal.is_(aEvent.mStack)) return;
 			
@@ -235,17 +235,17 @@ public class Loader_Recipes_OreDict extends OreDictListenerEvent_Names {
 			RM.generify(aEvent.mStack, IL.Plank.get(1));
 			
 			RM.Assembler.addRecipe2(T, 16,  32, ST.amount(8, aEvent.mStack), dust.mat(MT.Redstone, 1), ST.make(Blocks.noteblock, 1, 0));
-			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(8, aEvent.mStack), gem .mat(MT.Diamond , 1), ST.make(Blocks.jukebox, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(8, aEvent.mStack), gem .mat(MT.Diamond , 1), ST.make(Blocks.JUKEBOX, 1, 0));
 //          RM.Assembler.addRecipe2(T, 16,  32, aEvent.mStack, screw.mat(MT.Fe, 1), IL.Crate_Empty.get(1));
 //          RM.Assembler.addRecipe2(T, 16,  32, aEvent.mStack, screw.mat(MT.WroughtIron, 1), IL.Crate_Empty.get(1));
 //          RM.Assembler.addRecipe2(T, 16,  32, aEvent.mStack, screw.mat(MT.Steel, 1), IL.Crate_Empty.get(1));
 			RM.Assembler.addRecipe2(T, 16,  16, aEvent.mStack, ST.tag(1), ST.make(Blocks.wooden_button, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  32, ST.amount(2, aEvent.mStack), ST.tag(2), ST.make(Blocks.wooden_pressure_plate, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  48, ST.amount(3, aEvent.mStack), ST.tag(3), ST.make(Blocks.trapdoor, 1, 0));
-			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(4, aEvent.mStack), ST.tag(4), ST.make(Blocks.crafting_table, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(4, aEvent.mStack), ST.tag(4), ST.make(Blocks.CRAFTING_TABLE, 1, 0));
 			RM.Assembler.addRecipe2(T, 16,  96, ST.amount(2, aEvent.mStack), ST.tag(6), ST.make(Items.wooden_door, 1, 0));
-			RM.Assembler.addRecipe2(T, 16, 128, ST.amount(8, aEvent.mStack), ST.tag(8), ST.make(Blocks.chest, 1, 0));
-			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(6, aEvent.mStack), ST.make(Items.book, 3, 0), ST.make(Blocks.bookshelf, 1, 0));
+			RM.Assembler.addRecipe2(T, 16, 128, ST.amount(8, aEvent.mStack), ST.tag(8), ST.make(Blocks.CHEST, 1, 0));
+			RM.Assembler.addRecipe2(T, 16,  64, ST.amount(6, aEvent.mStack), ST.make(Items.book, 3, 0), ST.make(Blocks.BOOKSHELF, 1, 0));
 			
 			if (WoodDictionary.IGNORED_OREDICT_REGISTRATIONS.contains(ST.item_(aEvent.mStack))) return;
 			

@@ -100,8 +100,8 @@ public class Behavior_Spray_Color_Remover extends AbstractBehaviorDefault {
 		Block aBlock = aDelegator.getBlock();
 		if (aBlock instanceof IBlockDecolorable) return ((IBlockDecolorable)aBlock).removePaint(aWorld, aDelegator.mX, aDelegator.mY, aDelegator.mZ, aDelegator.mSideOfTileEntity);
 		if (aBlock == Blocks.stained_hardened_clay) return aDelegator.setBlock(Blocks.hardened_clay);
-		if (aBlock == Blocks.stained_glass_pane) return aDelegator.setBlock(Blocks.glass_pane);
-		if (aBlock == Blocks.stained_glass) return aDelegator.setBlock(Blocks.glass);
+		if (aBlock == Blocks.stained_glass_pane) return aDelegator.setBlock(Blocks.GLASS_PANE);
+		if (aBlock == Blocks.stained_glass) return aDelegator.setBlock(Blocks.GLASS);
 		if (aBlock == BlocksGT.Grass) return aDelegator.setBlock(Blocks.grass);
 		return F;
 	}

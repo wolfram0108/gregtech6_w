@@ -138,7 +138,7 @@ public class Compat_Recipes_GalactiCraft extends CompatMods {
 			RM.smash(ST.make(MD.GC_PLANETS, "tile.denseIce", 1, W), OM.dust(MT.Ice, 4*U));
 			RM.Squeezer     .addRecipe1(T,  16,  256, ST.make(MD.GC_PLANETS, "tile.denseIce", 1, W), NF, FL.Ice.make(4000), NI);
 			RM.Juicer       .addRecipe1(T,  16,  256, ST.make(MD.GC_PLANETS, "tile.denseIce", 1, W), NF, FL.Ice.make(4000), NI);
-			RM.Compressor   .addRecipe1(T, 256,   32, ST.make(Blocks.packed_ice, 2, W), ST.make(MD.GC_PLANETS, "tile.denseIce", 1, 0));
+			RM.Compressor   .addRecipe1(T, 256,   32, ST.make(Blocks.PACKED_ICE, 2, W), ST.make(MD.GC_PLANETS, "tile.denseIce", 1, 0));
 			
 			RM.Press.addRecipe2(T, 16, 512, ST.make(MD.GC, "item.heavyPlating", 1, 0), OP.compressed.mat(MT.MeteoricIron    , 1), ST.make(MD.GC_PLANETS, "item.null", 1, 3));
 			RM.Press.addRecipe2(T, 16, 512, ST.make(MD.GC, "item.heavyPlating", 1, 0), OP.plate     .mat(MT.MeteoricIron    , 1), ST.make(MD.GC_PLANETS, "item.null", 1, 3));

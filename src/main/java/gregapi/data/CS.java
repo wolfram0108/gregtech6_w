@@ -873,7 +873,7 @@ public class CS {
 	public static final FluidStack NF = null;
 
 	/** This way it is possible to have a Call Hierarchy of NullPointers in Block based Functions, and also because most of the time I don't know what kind of Data Type the "null" stands for, when there are shitloads of Parameters for a Function */
-	public static final Block NB = Blocks.air;
+	public static final Block NB = Blocks.AIR;
 	
 	/** The Logs: Debug, Output, Error, OreDict and Material List. */
 	public static PrintStream DEB = new LogBuffer(), OUT = new LogBuffer(), ERR = new LogBuffer(), ORD = new LogBuffer(), MAT_LOG = null;
@@ -1387,9 +1387,9 @@ public class CS {
 	;
 	
 	/** List of Visually Full Opaque Blocks. For minor Render optimisations. */
-	public static final HashSetNoNulls<Block> VISUALLY_OPAQUE_BLOCKS = new HashSetNoNulls<>(F, Blocks.bedrock, Blocks.command_block, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.gravel, Blocks.sand, Blocks.sandstone, Blocks.end_stone, Blocks.nether_brick, Blocks.netherrack, Blocks.obsidian, Blocks.planks, Blocks.log, Blocks.log2, Blocks.stone, Blocks.cobblestone, Blocks.mossy_cobblestone, Blocks.grass, Blocks.dirt, Blocks.clay, Blocks.stonebrick, Blocks.redstone_block, Blocks.glowstone, Blocks.redstone_lamp, Blocks.lit_redstone_lamp, Blocks.lit_redstone_ore, Blocks.pumpkin, Blocks.melon_block, Blocks.dispenser, Blocks.dropper);
+	public static final HashSetNoNulls<Block> VISUALLY_OPAQUE_BLOCKS = new HashSetNoNulls<>(F, Blocks.BEDROCK, Blocks.COMMAND_BLOCK, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.GRAVEL, Blocks.sand, Blocks.sandstone, Blocks.END_STONE, Blocks.nether_brick, Blocks.NETHERRACK, Blocks.OBSIDIAN, Blocks.planks, Blocks.log, Blocks.log2, Blocks.stone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.grass, Blocks.dirt, Blocks.CLAY, Blocks.stonebrick, Blocks.REDSTONE_BLOCK, Blocks.GLOWSTONE, Blocks.REDSTONE_LAMP, Blocks.lit_redstone_lamp, Blocks.lit_redstone_ore, Blocks.PUMPKIN, Blocks.melon_block, Blocks.DISPENSER, Blocks.DROPPER);
 	/** List of Visually Full Opaque Blocks. For minor Render optimisations. */
-	public static final HashSetNoNulls<Block> REDSTONE_SINKS = new HashSetNoNulls<>(F, Blocks.tnt, Blocks.golden_rail, Blocks.noteblock, Blocks.trapdoor, Blocks.wooden_door, Blocks.iron_door, Blocks.piston, Blocks.sticky_piston, Blocks.dispenser, Blocks.dropper, Blocks.redstone_lamp, Blocks.lit_redstone_lamp);
+	public static final HashSetNoNulls<Block> REDSTONE_SINKS = new HashSetNoNulls<>(F, Blocks.TNT, Blocks.golden_rail, Blocks.noteblock, Blocks.trapdoor, Blocks.wooden_door, Blocks.IRON_DOOR, Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.DISPENSER, Blocks.DROPPER, Blocks.REDSTONE_LAMP, Blocks.lit_redstone_lamp);
 	
 	public static class GarbageGT {
 		public static ItemStackSet<ItemStackContainer> BLACKLIST = ST.hashset();
@@ -1712,13 +1712,13 @@ public class CS {
 		;
 		
 		public static final Set<Object> stoneOverridable      = new HashSetNoNulls<>(F);
-		public static final Set<Object> instaharvest          = new HashSetNoNulls<>(F, Blocks.torch, Blocks.redstone_torch, Blocks.unlit_redstone_torch, Blocks.redstone_wire, Blocks.powered_comparator, Blocks.unpowered_comparator, Blocks.powered_repeater, Blocks.unpowered_repeater, Blocks.skull, Blocks.monster_egg);
-		public static final Set<Object> breakableGlass        = new HashSetNoNulls<>(F, Blocks.glass, Blocks.glass_pane, Blocks.stained_glass, Blocks.stained_glass_pane);
-		public static final Set<Object> openableCrowbar       = new HashSetNoNulls<>(F, Blocks.iron_block, Blocks.gold_block, Blocks.lapis_block, Blocks.diamond_block, Blocks.emerald_block, Blocks.redstone_block, Blocks.coal_block);
-		public static final Set<Object> drillableDynamite     = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.mycelium, Blocks.clay, Blocks.snow, Blocks.gravel, Blocks.sandstone, Blocks.cobblestone, Blocks.mossy_cobblestone, Blocks.netherrack, Blocks.end_stone, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.iron_ore, Blocks.gold_ore, Blocks.lapis_ore, Blocks.diamond_ore, Blocks.emerald_ore, Blocks.redstone_ore, Blocks.lit_redstone_ore, Blocks.coal_ore, Blocks.quartz_ore, Blocks.monster_egg);
-		public static final Set<Object> harvestableJackhammer = new HashSetNoNulls<>(F, Blocks.stone, Blocks.sandstone, Blocks.cobblestone, Blocks.mossy_cobblestone, Blocks.netherrack, Blocks.end_stone, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.monster_egg);
-		public static final Set<Object> harvestableSpade      = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.mycelium, Blocks.clay, Blocks.snow, Blocks.gravel);
-		public static final Set<Object> plantableGreens       = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.farmland);
+		public static final Set<Object> instaharvest          = new HashSetNoNulls<>(F, Blocks.TORCH, Blocks.REDSTONE_TORCH, Blocks.unlit_redstone_torch, Blocks.REDSTONE_WIRE, Blocks.powered_comparator, Blocks.unpowered_comparator, Blocks.powered_repeater, Blocks.unpowered_repeater, Blocks.skull, Blocks.monster_egg);
+		public static final Set<Object> breakableGlass        = new HashSetNoNulls<>(F, Blocks.GLASS, Blocks.GLASS_PANE, Blocks.stained_glass, Blocks.stained_glass_pane);
+		public static final Set<Object> openableCrowbar       = new HashSetNoNulls<>(F, Blocks.IRON_BLOCK, Blocks.GOLD_BLOCK, Blocks.LAPIS_BLOCK, Blocks.DIAMOND_BLOCK, Blocks.EMERALD_BLOCK, Blocks.REDSTONE_BLOCK, Blocks.COAL_BLOCK);
+		public static final Set<Object> drillableDynamite     = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.MYCELIUM, Blocks.CLAY, Blocks.SNOW, Blocks.GRAVEL, Blocks.sandstone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.NETHERRACK, Blocks.END_STONE, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.LAPIS_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.REDSTONE_ORE, Blocks.lit_redstone_ore, Blocks.COAL_ORE, Blocks.quartz_ore, Blocks.monster_egg);
+		public static final Set<Object> harvestableJackhammer = new HashSetNoNulls<>(F, Blocks.stone, Blocks.sandstone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.NETHERRACK, Blocks.END_STONE, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.monster_egg);
+		public static final Set<Object> harvestableSpade      = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.MYCELIUM, Blocks.CLAY, Blocks.SNOW, Blocks.GRAVEL);
+		public static final Set<Object> plantableGreens       = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.FARMLAND);
 		public static final Set<Object> plantableTrees        = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt);
 		public static final Set<Object> plantableGrass        = new HashSetNoNulls<>(F, Blocks.grass);
 		
@@ -1727,7 +1727,7 @@ public class CS {
 		
 		public static final Set<Object> FLOWERS = new HashSetNoNulls<Object>(F, Blocks.yellow_flower, Blocks.red_flower);
 		
-		public static final Block[] POT_FLOWER_TILES = {Blocks.cactus, Blocks.brown_mushroom, Blocks.red_mushroom, Blocks.yellow_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower};
+		public static final Block[] POT_FLOWER_TILES = {Blocks.CACTUS, Blocks.BROWN_MUSHROOM, Blocks.RED_MUSHROOM, Blocks.yellow_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower};
 		public static final byte [] POT_FLOWER_METAS = {0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 		
 		public static final Block[] FLOWER_TILES = {Blocks.yellow_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower, Blocks.red_flower};

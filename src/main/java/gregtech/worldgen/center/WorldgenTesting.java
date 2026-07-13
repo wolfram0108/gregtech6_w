@@ -150,7 +150,7 @@ public class WorldgenTesting extends WorldgenObject {
 			
 			tRegistry.mBlock.placeBlock(aWorld, 33, mHeight+2, -19, SIDE_UNKNOWN, (short)32057, null, T, T);
 			
-			WD.set                     (aWorld, 33, mHeight+2, -18, Blocks.crafting_table, 0, 3);
+			WD.set                     (aWorld, 33, mHeight+2, -18, Blocks.CRAFTING_TABLE, 0, 3);
 			tRegistry.mBlock.placeBlock(aWorld, 33, mHeight+3, -18, SIDE_UNKNOWN, (short)32737, null, T, T);
 			tRegistry.mBlock.placeBlock(aWorld, 33, mHeight+4, -18, SIDE_UNKNOWN, (short)32727, UT.NBT.make(NBT_FACING, SIDE_Z_POS), T, T);
 			
@@ -174,13 +174,13 @@ public class WorldgenTesting extends WorldgenObject {
 			tRegistry.mBlock.placeBlock(aWorld, 35, mHeight+3, -18, SIDE_UNKNOWN, (short)32732, UT.NBT.make(NBT_FACING, SIDE_X_POS), T, T);
 			tRegistry.mBlock.placeBlock(aWorld, 35, mHeight+4, -18, SIDE_UNKNOWN, (short)32750, UT.NBT.make(NBT_FACING, SIDE_Z_POS), T, T);
 			
-			WD.set                     (aWorld, 36, mHeight+2, -19, Blocks.cauldron, 0, 3);
+			WD.set                     (aWorld, 36, mHeight+2, -19, Blocks.CAULDRON, 0, 3);
 			tRegistry.mBlock.placeBlock(aWorld, 36, mHeight+3, -19, SIDE_UNKNOWN, (short)32732, UT.NBT.make(NBT_FACING, SIDE_Z_POS), T, T);
 			
 			tRegistry.mBlock.placeBlock(aWorld, 37, mHeight+2, -18, SIDE_UNKNOWN, (short)32707, UT.NBT.make(NBT_FACING, SIDE_X_NEG), T, T);
 			tRegistry.mBlock.placeBlock(aWorld, 37, mHeight+3, -18, SIDE_UNKNOWN, (short)32732, UT.NBT.make(NBT_FACING, SIDE_X_NEG), T, T);
 			
-			WD.set                     (aWorld, 38, mHeight+2, -18, Blocks.crafting_table, 0, 3);
+			WD.set                     (aWorld, 38, mHeight+2, -18, Blocks.CRAFTING_TABLE, 0, 3);
 			tRegistry.mBlock.placeBlock(aWorld, 38, mHeight+3, -18, SIDE_UNKNOWN, (short)32744, null, T, T);
 			
 			// Lots of Items I want to have ready whenever I generate a new Test World.
@@ -252,13 +252,13 @@ public class WorldgenTesting extends WorldgenObject {
 			, ST.make(Items.lava_bucket, 1, 0)
 			, ST.make(Items.milk_bucket, 1, 0)
 			
-			, ST.make(Blocks.stone_button, 1, 0)
-			, ST.make(Blocks.lever, 1, 0)
+			, ST.make(Blocks.STONE_BUTTON, 1, 0)
+			, ST.make(Blocks.LEVER, 1, 0)
 			, ST.make(Items.redstone, 1, 0)
-			, ST.make(Blocks.redstone_torch, 1, 0)
+			, ST.make(Blocks.REDSTONE_TORCH, 1, 0)
 			, ST.make(Items.repeater, 1, 0)
 			, ST.make(Items.comparator, 1, 0)
-			, ST.make(Blocks.redstone_lamp, 1, 0)
+			, ST.make(Blocks.REDSTONE_LAMP, 1, 0)
 			, OP.cableGt01.mat(MT.Signalum, 1)
 			, OP.wireGt01.mat(MT.Lumium, 1)
 			
@@ -363,10 +363,10 @@ public class WorldgenTesting extends WorldgenObject {
 			tRegistry.mBlock.placeBlock(aWorld, 44, mHeight+2, -19, SIDE_UNKNOWN, (short)32702, null, T, T);
 			tRegistry.mBlock.placeBlock(aWorld, 44, mHeight+2, -18, SIDE_UNKNOWN, (short) 8033, UT.NBT.make(NBT_FACING, SIDE_Z_NEG), T, T);
 			
-			WD.set                     (aWorld, 45, mHeight+2, -18, Blocks.ender_chest, 2, 3);
+			WD.set                     (aWorld, 45, mHeight+2, -18, Blocks.ENDER_CHEST, 2, 3);
 			
-			WD.set                     (aWorld, 46, mHeight+2, -18, Blocks.crafting_table, 0, 3);
-			WD.set                     (aWorld, 46, mHeight+3, -18, Blocks.brewing_stand, 0, 3);
+			WD.set                     (aWorld, 46, mHeight+2, -18, Blocks.CRAFTING_TABLE, 0, 3);
+			WD.set                     (aWorld, 46, mHeight+3, -18, Blocks.BREWING_STAND, 0, 3);
 			
 			WD.set                     (aWorld, 47, mHeight+2, -18, Blocks.anvil, 0, 3);
 		}

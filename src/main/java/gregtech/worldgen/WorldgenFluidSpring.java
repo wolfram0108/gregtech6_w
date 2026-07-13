@@ -51,7 +51,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 	@SafeVarargs public WorldgenFluidSpring(String aName, boolean aDefault, Block aBlock, int aMeta, int aProbability, int aIndicatorType, FluidStack aSpringFluid, List<WorldgenObject>... aLists) {
 		super(aName, aDefault, aLists);
 		mSpringFluid   = aSpringFluid;
-		mBlock         = ST.valid(aBlock)?aBlock:Blocks.water;
+		mBlock         = ST.valid(aBlock)?aBlock:Blocks.WATER;
 		mMeta          = UT.Code.bind4(aMeta);
 		mIndicatorType = aIndicatorType;
 		mProbability   = getConfigFile().get(mCategory, "Probability", aProbability);
@@ -66,7 +66,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 		Block tBlock = WD.block(aWorld, aMinX+8, 0, aMinZ+8);
 		if (tBlock != BlocksGT.oreBedrock && tBlock != BlocksGT.oreSmallBedrock && !WD.bedrock(tBlock)) return F;
 		
-		tBlock = (aDimType == DIM_NETHER ? Blocks.netherrack : IL.EtFu_Deepslate.block());
+		tBlock = (aDimType == DIM_NETHER ? Blocks.NETHERRACK : IL.EtFu_Deepslate.block());
 		if (ST.invalid(tBlock)) tBlock = Blocks.stone;
 		
 		for (int i = 0; i <= 6; i++) for (int tX = aMinX+i; tX <= aMaxX-i; tX++) for (int tZ = aMinZ+i; tZ <= aMaxZ-i; tZ++) {
@@ -88,7 +88,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 				int tX = aMinX+4+aRandom.nextInt(8), tZ = aMinZ+4+aRandom.nextInt(8);
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {
 					Block tContact = WD.block(aWorld, tX, tY, tZ);
-					if (tContact.getMaterial().isLiquid() || tContact == Blocks.farmland) break;
+					if (tContact.getMaterial().isLiquid() || tContact == Blocks.FARMLAND) break;
 					if (!tContact.isOpaqueCube() || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 					if (!BlocksGT.plantableGrass.contains(tContact)) break;
 					for (int a = -1; a <= 1; a++) for (int b = -1; b <= 1; b++) if (aRandom.nextBoolean()) if (BlocksGT.plantableGrass.contains(WD.block(aWorld, tX+a, tY, tZ+b))) {

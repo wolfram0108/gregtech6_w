@@ -46,13 +46,13 @@ public class Behavior_TripwireCutting extends AbstractBehaviorDefault {
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aPlayer.level().isClientSide()) return F;
-		if (WD.block(aWorld, aX, aY, aZ) == Blocks.tripwire) {
+		if (WD.block(aWorld, aX, aY, aZ) == Blocks.TRIPWIRE) {
 			if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				int aMeta = WD.meta(aWorld, aX, aY, aZ) | 8;
 				aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMeta, 4);
-				if (Blocks.tripwire.removedByPlayer(aWorld, aPlayer, aX, aY, aZ, T)) {
-					Blocks.tripwire.onBlockDestroyedByPlayer(aWorld, aX, aY, aZ, aMeta);
-					Blocks.tripwire.harvestBlock(aWorld, aPlayer, aX, aY, aZ, aMeta);
+				if (Blocks.TRIPWIRE.removedByPlayer(aWorld, aPlayer, aX, aY, aZ, T)) {
+					Blocks.TRIPWIRE.onBlockDestroyedByPlayer(aWorld, aX, aY, aZ, aMeta);
+					Blocks.TRIPWIRE.harvestBlock(aWorld, aPlayer, aX, aY, aZ, aMeta);
 					UT.Sounds.send(SFX.MC_SHEARS, aWorld, aX, aY, aZ);
 				}
 			}

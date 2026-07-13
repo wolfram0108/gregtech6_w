@@ -51,9 +51,9 @@ public class GT_Tool_PickaxeConstruction extends GT_Tool_Pickaxe {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
-		if (aBlock == Blocks.ender_chest) {
+		if (aBlock == Blocks.ENDER_CHEST) {
 			aDrops.clear();
-			aDrops.add(ST.make(Blocks.ender_chest, 1, 0));
+			aDrops.add(ST.make(Blocks.ENDER_CHEST, 1, 0));
 		}
 		return 0;
 	}

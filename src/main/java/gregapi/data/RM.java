@@ -171,9 +171,9 @@ public class RM {
 		RecipeMap.sDistillationTowerRecipes=DistillationTower;RecipeMap.sAutoclaveRecipes=Autoclave;RecipeMap.sBoxinatorRecipes=Boxinator;RecipeMap.sUnboxinatorRecipes=Unboxinator;RecipeMap.sFusionRecipes=Fusion;RecipeMap.sBlastRecipes=BlastFurnace;RecipeMap.sImplosionRecipes=ImplosionCompressor;RecipeMap.sVacuumRecipes=VacuumFreezer;
 		RecipeMap.sAssemblerRecipes=Assembler;RecipeMap.sCNCRecipes=CNC;RecipeMap.sFuelsBurn=FM.Burn;RecipeMap.sFuelsGas=FM.Gas;RecipeMap.sFuelsHot=FM.Hot;RecipeMap.sFuelsPlasma=FM.Plasma;RecipeMap.sFuelsEngine=FM.Engine;RecipeMap.sFuelsTurbine=FM.Turbine;RecipeMap.sFuelsMagic=FM.Magic;
 		
-		Furnace.mRecipeMachineList.add(ST.make(Blocks.furnace, 1, W));
+		Furnace.mRecipeMachineList.add(ST.make(Blocks.FURNACE, 1, W));
 		Furnace.mRecipeMachineList.add(ST.make(Blocks.lit_furnace, 1, W));
-		ToolHeads.mRecipeMachineList.add(ST.make(Blocks.crafting_table, 1, W));
+		ToolHeads.mRecipeMachineList.add(ST.make(Blocks.CRAFTING_TABLE, 1, W));
 		
 		RecipeMap.RECIPE_MAPS.put("gt.recipe.debarker", PressureWasher);
 	}
@@ -290,7 +290,7 @@ public class RM {
 		RM.compact     (OP.gem .mat(aMaterial, 4), aBlock);
 		RM.sawing      (16, 64, F, 25, aBlock, OP.plateGem.mat(aMaterial, 4));
 		RM.lathing     (16, 64, aBlock, OP.stickLong.mat(aMaterial, 2), OP.dust.mat(aMaterial, 2));
-		RM.generify    (aBlock, ST.make(Blocks.glowstone, 1, 0));
+		RM.generify    (aBlock, ST.make(Blocks.GLOWSTONE, 1, 0));
 		return T;
 	}
 	
@@ -305,7 +305,7 @@ public class RM {
 	public static boolean growmoss(ItemStack aClean, ItemStack aMossy) {
 		if (ST.invalid(aClean) || ST.invalid(aMossy)) return F;
 		CR.shapeless(aMossy, CR.DEF_NCC, new Object[] {aClean, OD.itemMoss});
-		CR.shapeless(aMossy, CR.DEF_NCC, new Object[] {aClean, Blocks.vine});
+		CR.shapeless(aMossy, CR.DEF_NCC, new Object[] {aClean, Blocks.VINE});
 		return T;
 	}
 	
@@ -479,7 +479,7 @@ public class RM {
 		}
 		
 		if (ST.valid(aCobble)) {
-			RM.generify(aCobble, ST.make(Blocks.cobblestone, 1, 0));
+			RM.generify(aCobble, ST.make(Blocks.COBBLESTONE, 1, 0));
 			if (ST.valid(aFourRocks)) {
 				RM.Hammer       .addRecipe1(T, 16, 16,  8000, aCobble, aFourRocks);
 				RM.Crusher      .addRecipe1(T, 16, 16       , aCobble, aFourRocks);
@@ -998,7 +998,7 @@ public class RM {
 			} else {
 				if (!OP.log.contains(aInput) && ConfigsGT.RECIPES.get(ConfigCategories.Machines.rockcrushing, aInput, ST.block(aInput) != NB)) {
 					try {
-						if (ST.block(aInput) != Blocks.obsidian && ST.block(aInput) != Blocks.gravel) {
+						if (ST.block(aInput) != Blocks.OBSIDIAN && ST.block(aInput) != Blocks.GRAVEL) {
 							mods.railcraft.api.crafting.IRockCrusherRecipe tRecipe = mods.railcraft.api.crafting.RailcraftCraftingManager.rockCrusher.createNewRecipe(ST.amount(1, aInput), ST.meta_(aInput) != W, F);
 							tRecipe.addOutput(ST.copy(aOutput1), 1.0F/aInput.getCount());
 							if (aOutput2 != null) tRecipe.addOutput(ST.copy(aOutput2), (0.01F*(aChance2<=0?10:aChance2))/aInput.getCount());

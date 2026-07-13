@@ -277,7 +277,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			HitResult tTarget = WD.getMOP(aWorld, aPlayer, T);
 			if (tTarget != null && tTarget.typeOfHit == HitResult.MovingObjectType.BLOCK && aWorld.canMineBlock(aPlayer, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ())) {
 				Block tBlock = WD.block(aWorld, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ());
-				if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
+				if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
 					if (WD.meta(aWorld, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) == 0) {
 						if (WD.infiniteWater(aWorld, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ())) {
 							aItem.fill(aStack, FL.Water.make(1000), T);
@@ -290,7 +290,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					}
 					return aStack;
 				}
-				if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) {
+				if (tBlock == Blocks.LAVA || tBlock == Blocks.flowing_lava) {
 					if (WD.meta(aWorld, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
 						WD.set(aWorld, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ(), NB, 0, 3);
 						aItem.fill(aStack, FL.Lava.make(1000), T);

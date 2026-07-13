@@ -205,7 +205,7 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 						if (tOldChecks.add(tCoords = new BlockPos(aCoords.getX(), aCoords.getY(), aCoords.getZ() - 1))) tNewChecks.add(tCoords);
 						if (aBurnWires) {
 							WD.burn(level, aCoords, T, F);
-							WD.set(level, aCoords.getX(), aCoords.getY(), aCoords.getZ(), Blocks.fire, 0, 3);
+							WD.set(level, aCoords.getX(), aCoords.getY(), aCoords.getZ(), Blocks.FIRE, 0, 3);
 						}
 					} else {
 						BlockEntity tTileEntity = getTileEntity(aCoords);

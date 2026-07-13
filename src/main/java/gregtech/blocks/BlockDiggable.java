@@ -64,13 +64,13 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 		MT.Palygorskite.mTextureSolid = BlockTextureCopied.get(this, SIDE_TOP, 5);
 		MT.Kaolinite   .mTextureSolid = BlockTextureCopied.get(this, SIDE_TOP, 6);
 		
-		RM.generify(ST.make(this, 1, 1), ST.make(Blocks.clay, 1, 0));
-		RM.generify(ST.make(this, 1, 3), ST.make(Blocks.clay, 1, 0));
-		RM.generify(ST.make(this, 1, 4), ST.make(Blocks.clay, 1, 0));
-		RM.generify(ST.make(this, 1, 5), ST.make(Blocks.clay, 1, 0));
-		RM.generify(ST.make(this, 1, 6), ST.make(Blocks.clay, 1, 0));
+		RM.generify(ST.make(this, 1, 1), ST.make(Blocks.CLAY, 1, 0));
+		RM.generify(ST.make(this, 1, 3), ST.make(Blocks.CLAY, 1, 0));
+		RM.generify(ST.make(this, 1, 4), ST.make(Blocks.CLAY, 1, 0));
+		RM.generify(ST.make(this, 1, 5), ST.make(Blocks.CLAY, 1, 0));
+		RM.generify(ST.make(this, 1, 6), ST.make(Blocks.CLAY, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 0), NF, NF, ST.make(Blocks.COARSE_DIRT, 1, 0));
-		RM.Drying.addRecipe1(T, 16, 64, ST.make(Blocks.clay, 1, 0), NF, NF, ST.make(Blocks.hardened_clay, 1, 0));
+		RM.Drying.addRecipe1(T, 16, 64, ST.make(Blocks.CLAY, 1, 0), NF, NF, ST.make(Blocks.hardened_clay, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 1), NF, NF, ST.make(Blocks.hardened_clay, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 3), NF, NF, ST.make(Blocks.hardened_clay, 1, 0));
 		RM.Drying.addRecipe1(T, 16, 64, ST.make(this       , 1, 4), NF, NF, ST.make(Blocks.hardened_clay, 1, 0));

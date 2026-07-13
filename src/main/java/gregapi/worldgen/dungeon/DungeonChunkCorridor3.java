@@ -44,7 +44,7 @@ public class DungeonChunkCorridor3 extends DungeonChunkCorridor {
 				for (int tY =  1; tY <= 3; tY++) for (int tZ =  6; tZ <=  9; tZ++) aData.air    (10, tY, tZ);
 				
 				aData.smooth   (10, 1,  6);
-				aData.set      (10, 1,  7, Blocks.crafting_table, 0, 2);
+				aData.set      (10, 1,  7, Blocks.CRAFTING_TABLE, 0, 2);
 				aData.set      (10, 1,  8, SIDE_UNKNOWN, (short)((aData.next1in2()?508:8)+aData.next(3)), UT.NBT.make("gt.dungeonloot", ChestGenHooks.STRONGHOLD_CORRIDOR, NBT_FACING, SIDE_X_NEG), T, T);
 				aData.smooth   (10, 1,  9);
 				
@@ -86,7 +86,7 @@ public class DungeonChunkCorridor3 extends DungeonChunkCorridor {
 				
 				aData.smooth   ( 5, 1,  6);
 				aData.set      ( 5, 1,  7, SIDE_UNKNOWN, (short)((aData.next1in2()?508:8)+aData.next(3)), UT.NBT.make("gt.dungeonloot", ChestGenHooks.STRONGHOLD_CORRIDOR, NBT_FACING, SIDE_X_POS), T, T);
-				aData.set      ( 5, 1,  8, Blocks.crafting_table, 0, 2);
+				aData.set      ( 5, 1,  8, Blocks.CRAFTING_TABLE, 0, 2);
 				aData.smooth   ( 5, 1,  9);
 				
 				aData.coins    ( 5, 2,  6);
@@ -126,7 +126,7 @@ public class DungeonChunkCorridor3 extends DungeonChunkCorridor {
 				for (int tY =  1; tY <= 3; tY++) for (int tX =  6; tX <=  9; tX++) aData.air    (tX, tY, 10);
 				
 				aData.smooth   ( 6, 1, 10);
-				aData.set      ( 7, 1, 10, Blocks.crafting_table, 0, 2);
+				aData.set      ( 7, 1, 10, Blocks.CRAFTING_TABLE, 0, 2);
 				aData.set      ( 8, 1, 10, SIDE_UNKNOWN, (short)((aData.next1in2()?508:8)+aData.next(3)), UT.NBT.make("gt.dungeonloot", ChestGenHooks.STRONGHOLD_CORRIDOR, NBT_FACING, SIDE_Z_NEG), T, T);
 				aData.smooth   ( 9, 1, 10);
 				
@@ -168,7 +168,7 @@ public class DungeonChunkCorridor3 extends DungeonChunkCorridor {
 				
 				aData.smooth   ( 6, 1,  5);
 				aData.set      ( 7, 1,  5, SIDE_UNKNOWN, (short)((aData.next1in2()?508:8)+aData.next(3)), UT.NBT.make("gt.dungeonloot", ChestGenHooks.STRONGHOLD_CORRIDOR, NBT_FACING, SIDE_Z_POS), T, T);
-				aData.set      ( 8, 1,  5, Blocks.crafting_table, 0, 2);
+				aData.set      ( 8, 1,  5, Blocks.CRAFTING_TABLE, 0, 2);
 				aData.smooth   ( 9, 1,  5);
 				
 				aData.coins    ( 6, 2,  5);

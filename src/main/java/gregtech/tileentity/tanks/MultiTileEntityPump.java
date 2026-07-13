@@ -174,12 +174,12 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 		mPumpedFluids.clear();
 		Block aBlock = getBlockAtSide(mFacing);
 		if (WD.lava(aBlock)) {
-			mPumpedFluids.add(Blocks.lava);
+			mPumpedFluids.add(Blocks.LAVA);
 			mPumpedFluids.add(Blocks.flowing_lava);
 			mDir = +1;
 		} else
 		if (WD.water(aBlock) || aBlock == BlocksGT.River || aBlock == BlocksGT.Ocean || aBlock == BlocksGT.Swamp) {
-			mPumpedFluids.add(Blocks.water);
+			mPumpedFluids.add(Blocks.WATER);
 			mPumpedFluids.add(Blocks.flowing_water);
 			mPumpedFluids.add(BlocksGT.River);
 			mPumpedFluids.add(BlocksGT.Ocean);

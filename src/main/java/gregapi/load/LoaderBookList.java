@@ -47,10 +47,10 @@ public class LoaderBookList implements Runnable {
 		BooksGT.BOOK_REGISTER  .put(Items.item_frame     , W, (byte) 34);
 		BooksGT.BOOK_REGISTER  .put(Items.painting       , W, (byte) 34);
 		BooksGT.BOOK_REGISTER  .put(Blocks.wooden_button , W, (byte)  1);
-		BooksGT.BOOK_REGISTER  .put(Blocks.stone_button  , W, (byte)  2);
-		BooksGT.BOOK_REGISTER  .put(Blocks.lever         , W, (byte)  1);
-		BooksGT.BOOK_REGISTER  .put(Blocks.redstone_torch, W, (byte)  2);
-		BooksGT.BOOK_REGISTER  .put(Blocks.cobblestone   , W, (byte)255);
+		BooksGT.BOOK_REGISTER  .put(Blocks.STONE_BUTTON  , W, (byte)  2);
+		BooksGT.BOOK_REGISTER  .put(Blocks.LEVER         , W, (byte)  1);
+		BooksGT.BOOK_REGISTER  .put(Blocks.REDSTONE_TORCH, W, (byte)  2);
+		BooksGT.BOOK_REGISTER  .put(Blocks.COBBLESTONE   , W, (byte)255);
 		
 		if (MD.FR.mLoaded) {
 			BooksGT.BOOKS_NORMAL   .add(MD.FR, "catalogue"                            ,   W);

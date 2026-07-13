@@ -309,13 +309,13 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 		case  6: mTextureA = OreDictMaterial.MATERIAL_ARRAY[mMaterialA].getTextureGem(); break;
 		case  7: mTextureA = BlockTextureDefault.get(OreDictMaterial.MATERIAL_ARRAY[mMaterialA], OP.blockRaw); break;
 		default: mTextureA = OreDictMaterial.MATERIAL_ARRAY[mMaterialA].getTextureSolid(); break;
-		} else mTextureA = BlockTextureCopied.get(Blocks.iron_block);
+		} else mTextureA = BlockTextureCopied.get(Blocks.IRON_BLOCK);
 		
 		if (mMaterialB <= 0) mTextureB = null; else if (UT.Code.exists(mMaterialB, OreDictMaterial.MATERIAL_ARRAY)) switch(mShapeB) {
 		case  6: mTextureB = OreDictMaterial.MATERIAL_ARRAY[mMaterialB].getTextureGem(); break;
 		case  7: mTextureB = BlockTextureDefault.get(OreDictMaterial.MATERIAL_ARRAY[mMaterialB], OP.blockRaw); break;
 		default: mTextureB = OreDictMaterial.MATERIAL_ARRAY[mMaterialB].getTextureSolid(); break;
-		} else mTextureB = BlockTextureCopied.get(Blocks.iron_block);
+		} else mTextureB = BlockTextureCopied.get(Blocks.IRON_BLOCK);
 		
 		return mTextureB == null ? mTextureA == null ? 6 : 7 : 8;
 	}

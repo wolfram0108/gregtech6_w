@@ -122,10 +122,10 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.end_stone.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.end_stone.getExplosionResistance(null);}
+	@Override public float getBlockHardness() {return Blocks.END_STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getExplosionResistance2() {return Blocks.END_STONE.getExplosionResistance(null);}
 	
-	public ITexture sEndPortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, DYE_Black, F, T, T), sEndPortalFrame = BlockTextureCopied.get(Blocks.end_portal_frame, SIDE_TOP, 0);
+	public ITexture sEndPortal = BlockTextureCopied.get(Blocks.portal, SIDE_ANY, 0, DYE_Black, F, T, T), sEndPortalFrame = BlockTextureCopied.get(Blocks.END_PORTAL_FRAME, SIDE_TOP, 0);
 	@Override public ITexture getPortalTexture() {return sEndPortal;}
 	@Override public ITexture getFrameTexture() {return sEndPortalFrame;}
 	

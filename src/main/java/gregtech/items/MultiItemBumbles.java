@@ -247,7 +247,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
 				if (tBlock == NB) continue;
-				if (tBlock == Blocks.nether_wart     ) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.NETHER_WART     ) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock == tWartCrimson           ) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock == tWartWarped            ) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock == tWartSoggy             ) return new BlockPos(aX+i, aY+j, aZ+k);
@@ -265,7 +265,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 				if (aWorld.provider.dimensionId == 1 || BIOMES_END.contains(aWorld.getBiomeGenForCoords(aX, aZ).biomeName)) return new BlockPos(aX, aY, aZ);
 				for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 					Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-					if (tBlock == Blocks.end_portal || tBlock == Blocks.dragon_egg) return new BlockPos(aX+i, aY+j, aZ+k);
+					if (tBlock == Blocks.END_PORTAL || tBlock == Blocks.dragon_egg) return new BlockPos(aX+i, aY+j, aZ+k);
 				}
 				return null;
 			}
@@ -277,7 +277,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case   5: case 203:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.mossy_cobblestone || tBlock == Blocks.cobblestone || tBlock == Blocks.stone) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.MOSSY_COBBLESTONE || tBlock == Blocks.COBBLESTONE || tBlock == Blocks.stone) return new BlockPos(aX+i, aY+j, aZ+k);
 				byte tMeta = WD.meta(aWorld, aX+i, aY+j, aZ+k);
 				if (tBlock == Blocks.stonebrick && tMeta == 1) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock instanceof BlockStones && (BlockStones.SPAWNABLE[tMeta] || BlockStones.MOSSY[tMeta])) return new BlockPos(aX+i, aY+j, aZ+k);
@@ -286,35 +286,35 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 			return null;
 		case   6:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
-				if (WD.block(aWorld, aX+i, aY+j, aZ+k, F) == Blocks.cocoa) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (WD.block(aWorld, aX+i, aY+j, aZ+k, F) == Blocks.COCOA) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   7: case 201:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.ice || tBlock == Blocks.snow_layer || tBlock == Blocks.snow || tBlock == Blocks.packed_ice) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.ICE || tBlock == Blocks.snow_layer || tBlock == Blocks.SNOW || tBlock == Blocks.PACKED_ICE) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   8:
 			Block tMushroom = ST.block(MD.BoP, "mushrooms", null);
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.mycelium || tBlock == Blocks.red_mushroom || tBlock == Blocks.brown_mushroom || tBlock == tMushroom || tBlock == Blocks.red_mushroom_block || tBlock == Blocks.brown_mushroom_block) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.MYCELIUM || tBlock == Blocks.RED_MUSHROOM || tBlock == Blocks.BROWN_MUSHROOM || tBlock == tMushroom || tBlock == Blocks.RED_MUSHROOM_BLOCK || tBlock == Blocks.BROWN_MUSHROOM_BLOCK) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   9: case 105:
 			Block tCactus1 = ST.block(MD.BoP, "plants", null), tCactus2 = ST.block(MD.ARS, "desertNova", null);
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.cactus || tBlock == tCactus2 || tBlock == BlocksGT.FlowersB) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.CACTUS || tBlock == tCactus2 || tBlock == BlocksGT.FlowersB) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock == tCactus1) {
 					if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 12) return new BlockPos(aX+i, aY+j, aZ+k);
 					continue;
 				}
-				if (tBlock == Blocks.flower_pot) {
+				if (tBlock == Blocks.FLOWER_POT) {
 					BlockEntity tTileEntity = WD.te(aWorld, aX+i, aY+j, aZ+k, F);
 					if (tTileEntity instanceof TileEntityFlowerPot) {
-						if (Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem()) == Blocks.cactus) return new BlockPos(aX+i, aY+j, aZ+k);
+						if (Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem()) == Blocks.CACTUS) return new BlockPos(aX+i, aY+j, aZ+k);
 					}
 					continue;
 				}
@@ -323,7 +323,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case 100:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.clay || (tBlock == BlocksGT.Diggables && BlockDiggable.IS_CLAY[WD.meta(aWorld, aX+i, aY+j, aZ+k)])) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.CLAY || (tBlock == BlocksGT.Diggables && BlockDiggable.IS_CLAY[WD.meta(aWorld, aX+i, aY+j, aZ+k)])) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case 101:
@@ -618,7 +618,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public static boolean checkFlowers(Level aWorld, int aX, int aY, int aZ) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ, F);
 		if (aBlock == NB) return F;
-		if (aBlock == Blocks.flower_pot) {
+		if (aBlock == Blocks.FLOWER_POT) {
 			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
 			if (tTileEntity instanceof TileEntityFlowerPot) {
 				aBlock = Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem());

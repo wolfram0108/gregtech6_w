@@ -136,7 +136,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 			}
 			
 			items = tDisplayStacks.toArray(ZL_IS);
-			if (items.length == 0) items = ST.array(ST.make(Blocks.fire, 1, 0));
+			if (items.length == 0) items = ST.array(ST.make(Blocks.FIRE, 1, 0));
 			permutated = T;
 			setPermutationToRender(0);
 		}

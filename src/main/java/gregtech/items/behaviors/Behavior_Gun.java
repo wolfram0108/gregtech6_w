@@ -168,7 +168,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			
 			if (aBlock instanceof BlockPumpkin || WD.te(aPlayer.level(), aCoord, T) instanceof MultiTileEntityGregOLantern) {
 				if (RNGSUS.nextInt(3) == 0) {
-					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.pumpkin, 1, 0));
+					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.PUMPKIN, 1, 0));
 				} else {
 					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.pumpkin_seeds, 1+RNGSUS.nextInt(3), 0));
 				}
@@ -187,15 +187,15 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=3000;
 				continue;
 			}
-			if (aBlock == Blocks.cactus) {
-				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.cactus, 1, 0));
+			if (aBlock == Blocks.CACTUS) {
+				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.CACTUS, 1, 0));
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
 				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=3000;
 				continue;
 			}
-			if (aBlock == Blocks.cocoa) {
+			if (aBlock == Blocks.COCOA) {
 				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, IL.Dye_Cocoa.get(1));
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
@@ -212,7 +212,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=4000;
 				continue;
 			}
-			if (aBlock.getMaterial() == Material.glass || aBlock == Blocks.ice || aBlock == Blocks.redstone_lamp || aBlock == Blocks.lit_redstone_lamp) {
+			if (aBlock.getMaterial() == Material.glass || aBlock == Blocks.ICE || aBlock == Blocks.REDSTONE_LAMP || aBlock == Blocks.lit_redstone_lamp) {
 				OreDictItemData tData = OM.anydata(ST.make(aBlock, 1, aMeta));
 				for (OreDictMaterialStack tMaterial : tData.getAllMaterialStacks()) {
 					long tAmount = tMaterial.mAmount / OP.scrapGt.mAmount;

@@ -94,8 +94,8 @@ public class WorldgenLogMossy extends WorldgenOnSurface {
 	public boolean setMushroom(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (!WD.air(aWorld, aX, aY, aZ)) return F;
 		switch(aRandom.nextInt(MD.HaC.mLoaded?3:2)) {
-		case 0: return WD.set(aWorld, aX, aY, aZ, Blocks.red_mushroom, 0, 2);
-		case 1: return WD.set(aWorld, aX, aY, aZ, Blocks.brown_mushroom, 0, 2);
+		case 0: return WD.set(aWorld, aX, aY, aZ, Blocks.RED_MUSHROOM, 0, 2);
+		case 1: return WD.set(aWorld, aX, aY, aZ, Blocks.BROWN_MUSHROOM, 0, 2);
 		case 2: return WD.set(aWorld, aX, aY, aZ, ST.block(MD.HaC, "mushroomgarden"), 0, 2);
 		}
 		return F;

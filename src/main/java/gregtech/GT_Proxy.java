@@ -165,14 +165,14 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	}
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onGetVillageBlockIDEvent(BiomeEvent.GetVillageBlockID aEvent) {
-		if (aEvent.original == Blocks.cobblestone) {
+		if (aEvent.original == Blocks.COBBLESTONE) {
 			aEvent.replacement = (aEvent.biome == null ? BlocksGT.Andesite : BlocksGT.stones[(aEvent.biome.biomeID+6) % BlocksGT.stones.length]);
 			aEvent.setResult(Result.DENY);
 		}
 	}
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onGetVillageBlockMetaEvent(BiomeEvent.GetVillageBlockMeta aEvent) {
-		if (aEvent.original == Blocks.cobblestone || aEvent.original instanceof BlockStones) {
+		if (aEvent.original == Blocks.COBBLESTONE || aEvent.original instanceof BlockStones) {
 			aEvent.replacement = BlockStones.SBRIK;
 			aEvent.setResult(Result.DENY);
 		}
@@ -213,7 +213,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) || !aEvent.entityPlayer.canPlayerEdit(tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ(), tTarget.sideHit, aStack)) return;
 					Block tBlock = WD.block(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ());
 					
-					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
+					if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
 						if (WD.meta(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) != 0) return;
 						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
 							if (aStack.getCount() == 1) {
@@ -307,7 +307,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 									ST.use(aEvent.entityPlayer, aStack); aEvent.setCanceled(T);
 								}
 							}
-							if (tData.mPrefix == OP.ingot) if (!MD.BOTA.mLoaded || tData.mMaterial.mMaterial.mOriginalMod != MD.BOTA || Blocks.beacon != WD.block(aEvent.world, aEvent.x, aEvent.y, aEvent.z)) {
+							if (tData.mPrefix == OP.ingot) if (!MD.BOTA.mLoaded || tData.mMaterial.mMaterial.mOriginalMod != MD.BOTA || Blocks.BEACON != WD.block(aEvent.world, aEvent.x, aEvent.y, aEvent.z)) {
 								if (MultiTileEntityRegistry.getRegistry("gt.multitileentity").getItem(32084, ST.save(NBT_VALUE, aStack)).tryPlaceItemIntoWorld(aEvent.entityPlayer, aEvent.world, aEvent.x, aEvent.y, aEvent.z, (byte)aEvent.face, 0.5F, 0.5F, 0.5F)) {
 									ST.use(aEvent.entityPlayer, aStack, aStack.getCount()); aEvent.setCanceled(T);
 								}
@@ -374,7 +374,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			if (!aEvent.entity.level().isClientSide() && !aEvent.entity.getEntityData().contains("gt.spawned")) {
 				if (aEvent.entity instanceof EntityZombie && !((EntityZombie)aEvent.entity).isChild() && ST.invalid(((EntityZombie)aEvent.entity).getEquipmentInSlot(0))) {
 					if (ZOMBIES_HOLD_TNT && RNGSUS.nextInt(250) == 0) {
-						((EntityZombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Blocks.tnt, 1+RNGSUS.nextInt(2), 0));
+						((EntityZombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Blocks.TNT, 1+RNGSUS.nextInt(2), 0));
 					} else if (ZOMBIES_HOLD_PICKAXES && RNGSUS.nextInt(100) == 0) {
 						((EntityZombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Items.iron_pickaxe, 1, Items.iron_pickaxe.getMaxDamage() < 5 ? 0 : 1+RNGSUS.nextInt(Items.iron_pickaxe.getMaxDamage()-2)));
 					}

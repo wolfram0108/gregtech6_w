@@ -54,8 +54,8 @@ import static gregapi.data.CS.*;
 public class CompatIC2 extends CompatBase implements ICompatIC2 {
 	public CompatIC2() {
 		// Checking if everything is available.
-		valuable(Blocks.glowstone, 0, 1);
-		valuable(Blocks.soul_sand, 0, 1);
+		valuable(Blocks.GLOWSTONE, 0, 1);
+		valuable(Blocks.SOUL_SAND, 0, 1);
 		if (ic2.api.recipe.Recipes.scrapboxDrops == null) {/**/}
 		if (ic2.api.recipe.Recipes.recyclerBlacklist == null) {/**/}
 		if (ic2.api.recipe.Recipes.recyclerWhitelist == null) {/**/}

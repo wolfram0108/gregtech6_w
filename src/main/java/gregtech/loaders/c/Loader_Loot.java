@@ -190,9 +190,9 @@ public class Loader_Loot implements Runnable {
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.LARGE_FERN, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.ROSE_BUSH, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.PEONY, 1, 0));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.brown_mushroom, 1, 0));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.red_mushroom, 1, 0));
-		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.cactus, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.BROWN_MUSHROOM, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.RED_MUSHROOM, 1, 0));
+		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.CACTUS, 1, 0));
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Items.reeds, 1, 0));
 		// Iterate the Entire List of Saplings and pick the ones from Mods that are Overworld focussed.
 		for (SaplingEntry tEntry : WoodDictionary.LIST_SAPLINGS) {
@@ -467,13 +467,13 @@ public class Loader_Loot implements Runnable {
 //      addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,  10, 1, 1, ItemList.Spray_Ice.get(1));
 		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,16, IL.Bottle_Slime_Green.get(1));
 		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,16, IL.Bottle_Lubricant.get(1));
-		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   4,16,64, ST.make(Blocks.coal_ore    , 1, 0));
-		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   4,16,64, ST.make(Blocks.iron_ore    , 1, 0));
-		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,32, ST.make(Blocks.gold_ore    , 1, 0));
-		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,32, ST.make(Blocks.lapis_ore   , 1, 0));
-		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,32, ST.make(Blocks.redstone_ore, 1, 0));
-		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   1, 4,16, ST.make(Blocks.diamond_ore , 1, 0));
-		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   1, 4,16, ST.make(Blocks.emerald_ore , 1, 0));
+		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   4,16,64, ST.make(Blocks.COAL_ORE    , 1, 0));
+		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   4,16,64, ST.make(Blocks.IRON_ORE    , 1, 0));
+		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,32, ST.make(Blocks.GOLD_ORE    , 1, 0));
+		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,32, ST.make(Blocks.LAPIS_ORE   , 1, 0));
+		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   2, 8,32, ST.make(Blocks.REDSTONE_ORE, 1, 0));
+		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   1, 4,16, ST.make(Blocks.DIAMOND_ORE , 1, 0));
+		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   1, 4,16, ST.make(Blocks.EMERALD_ORE , 1, 0));
 		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   5, 1, 4, OP.toolHeadShovel.mat(MT.ArsenicBronze, 1));
 		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   3, 1, 4, OP.toolHeadShovel.mat(MT.Steel, 1));
 		addLoot(ChestGenHooks.MINESHAFT_CORRIDOR      ,   1, 1, 4, OP.toolHeadShovel.mat(MT.DamascusSteel, 1));

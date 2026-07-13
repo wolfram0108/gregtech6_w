@@ -346,7 +346,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			
 			Block tBlock = aAdjacentOther[tSide].getBlock();
 			// Filling up Cauldrons from Vanilla. Yes I need to check for both to make this work. Some Mods override the Cauldron in a bad way.
-			if ((tBlock == Blocks.cauldron || tBlock instanceof CauldronBlock) && aTank.has(334) && FL.water(aTank.get())) {
+			if ((tBlock == Blocks.CAULDRON || tBlock instanceof CauldronBlock) && aTank.has(334) && FL.water(aTank.get())) {
 				switch(aAdjacentOther[tSide].getMetaData()) {
 				case 0:
 					if (aTank.drainAll(1000)) {aAdjacentOther[tSide].setMetaData(3); break;}
@@ -502,7 +502,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 		if (mCapacity >= 334) {
 			Block tBlock = aDelegator.getBlock();
 			// Yes I need to check for both to make this work. Some Mods override the Cauldron in a bad way.
-			if (tBlock == Blocks.cauldron || tBlock instanceof CauldronBlock) return T;
+			if (tBlock == Blocks.CAULDRON || tBlock instanceof CauldronBlock) return T;
 		}
 		return F;
 	}

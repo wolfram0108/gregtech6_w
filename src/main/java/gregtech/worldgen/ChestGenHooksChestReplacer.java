@@ -108,7 +108,7 @@ public class ChestGenHooksChestReplacer extends ChestGenHooks {
 			if (aWorld == null) return generateChestContent2(aRandom, aInventory);
 			// XYZ and check if the Block we replace is a regular Chest.
 			int aX = ((ChestBlockEntity)aInventory).getBlockPos().getX(), aY = ((ChestBlockEntity)aInventory).getBlockPos().getY(), aZ = ((ChestBlockEntity)aInventory).getBlockPos().getZ();
-			if (Blocks.chest != WD.block(aWorld, aX, aY, aZ)) return generateChestContent2(aRandom, aInventory);
+			if (Blocks.CHEST != WD.block(aWorld, aX, aY, aZ)) return generateChestContent2(aRandom, aInventory);
 			// Does Greg's Registry exist?
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 			if (tRegistry == null) return generateChestContent2(aRandom, aInventory);

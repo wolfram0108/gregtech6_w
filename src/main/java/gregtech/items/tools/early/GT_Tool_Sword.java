@@ -95,9 +95,9 @@ public class GT_Tool_Sword extends ToolStats {
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		if (!harvestGrass(aDrops, aStack, aPlayer, aBlock, aAvailableDurability, aX, aY, aZ, aMetaData, aFortune, aSilkTouch, aEvent)) {
 			if (!harvestStick(aDrops, aStack, aPlayer, aBlock, aAvailableDurability, aX, aY, aZ, aMetaData, aFortune, aSilkTouch, aEvent)) {
-				if (aBlock == Blocks.vine) {
+				if (aBlock == Blocks.VINE) {
 					aDrops.clear();
-					aDrops.add(ST.make(Blocks.vine, 1, 0));
+					aDrops.add(ST.make(Blocks.VINE, 1, 0));
 				}
 			}
 		}

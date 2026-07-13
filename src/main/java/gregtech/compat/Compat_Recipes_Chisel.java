@@ -33,7 +33,7 @@ public class Compat_Recipes_Chisel extends CompatMods {
 	public Compat_Recipes_Chisel(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
 	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Chisel Mod Recipes.");
-		//RM.rem_smelting(ST.make(Blocks.gravel, 1, 0));
+		//RM.rem_smelting(ST.make(Blocks.GRAVEL, 1, 0));
 		RM.add_smelting(ST.make(MD.EtFu, "concrete_powder", 1, W), ST.make(MD.CHSL, "concrete", 1, 0), F, F, F);
 	}
 }

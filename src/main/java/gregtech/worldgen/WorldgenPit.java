@@ -66,9 +66,9 @@ public class WorldgenPit extends WorldgenObject {
 				if (!tBlock.isOpaqueCube()) {if (tGenerated > 0) break; continue;}
 				if (tBlock == Blocks.dirt) {
 					if (tGenerated <= 0 && (tLastBlock.getMaterial() == Material.wood || tLastBlock.getMaterial() == Material.leaves || tLastBlock.getMaterial() == Material.gourd)) continue;
-				} else if (tBlock != Blocks.sand && tBlock != Blocks.clay && tBlock != BlocksGT.oreSand && tBlock != BlocksGT.oreSmallSand && tBlock != BlocksGT.oreRedSand && tBlock != BlocksGT.oreSmallRedSand) {
+				} else if (tBlock != Blocks.sand && tBlock != Blocks.CLAY && tBlock != BlocksGT.oreSand && tBlock != BlocksGT.oreSmallSand && tBlock != BlocksGT.oreRedSand && tBlock != BlocksGT.oreSmallRedSand) {
 					if (tGenerated > 0) {
-						if (tBlock.getMaterial() != Material.rock && tBlock != Blocks.gravel && tBlock != BlocksGT.oreGravel && tBlock != BlocksGT.oreSmallGravel) break;
+						if (tBlock.getMaterial() != Material.rock && tBlock != Blocks.GRAVEL && tBlock != BlocksGT.oreGravel && tBlock != BlocksGT.oreSmallGravel) break;
 					} else {
 						continue;
 					}

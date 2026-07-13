@@ -320,11 +320,11 @@ public class Loader_Recipes_Temporary implements Runnable {
 			CR.shaped(IL.NeLi_Lamp_Green           .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteGreen  ), 'G', OD.glowstone);
 			CR.shaped(IL.NeLi_Lamp_Yellow          .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteYellow ), 'G', OD.glowstone);
 			CR.shaped(IL.NeLi_Lamp_Magenta         .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteMagenta), 'G', OD.glowstone);
-			CR.shaped(IL.NeLi_Redstone_Lamp_White  .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteWhite  ), 'G', Blocks.redstone_lamp);
-			CR.shaped(IL.NeLi_Redstone_Lamp_Blue   .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteBlue   ), 'G', Blocks.redstone_lamp);
-			CR.shaped(IL.NeLi_Redstone_Lamp_Green  .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteGreen  ), 'G', Blocks.redstone_lamp);
-			CR.shaped(IL.NeLi_Redstone_Lamp_Yellow .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteYellow ), 'G', Blocks.redstone_lamp);
-			CR.shaped(IL.NeLi_Redstone_Lamp_Magenta.get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteMagenta), 'G', Blocks.redstone_lamp);
+			CR.shaped(IL.NeLi_Redstone_Lamp_White  .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteWhite  ), 'G', Blocks.REDSTONE_LAMP);
+			CR.shaped(IL.NeLi_Redstone_Lamp_Blue   .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteBlue   ), 'G', Blocks.REDSTONE_LAMP);
+			CR.shaped(IL.NeLi_Redstone_Lamp_Green  .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteGreen  ), 'G', Blocks.REDSTONE_LAMP);
+			CR.shaped(IL.NeLi_Redstone_Lamp_Yellow .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteYellow ), 'G', Blocks.REDSTONE_LAMP);
+			CR.shaped(IL.NeLi_Redstone_Lamp_Magenta.get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteMagenta), 'G', Blocks.REDSTONE_LAMP);
 			CR.shaped(IL.NeLi_Redstone_Lamp_White  .get(1), DEF_NCC, " R ", "RGR", " R ", 'R', OD.itemRedstone, 'G', IL.NeLi_Lamp_White  );
 			CR.shaped(IL.NeLi_Redstone_Lamp_Blue   .get(1), DEF_NCC, " R ", "RGR", " R ", 'R', OD.itemRedstone, 'G', IL.NeLi_Lamp_Blue   );
 			CR.shaped(IL.NeLi_Redstone_Lamp_Green  .get(1), DEF_NCC, " R ", "RGR", " R ", 'R', OD.itemRedstone, 'G', IL.NeLi_Lamp_Green  );
@@ -610,7 +610,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 		
 		RM.mortarize(IL.ERE_Herbicide                  .get(1), IL.HBM_Poison_Powder.get(1, IL.IC2_Grin_Powder.get(1)));
 		RM.mortarize(IL.Food_Potato_Poisonous          .get(1), IL.HBM_Poison_Powder.get(1, IL.IC2_Grin_Powder.get(1)));
-		RM.mortarize(ST.make(Blocks.red_mushroom       , 1, W), IL.HBM_Poison_Powder.get(1, IL.IC2_Grin_Powder.get(1)));
+		RM.mortarize(ST.make(Blocks.RED_MUSHROOM       , 1, W), IL.HBM_Poison_Powder.get(1, IL.IC2_Grin_Powder.get(1)));
 		RM.mortarize(ST.make(Items.spider_eye          , 1, W), IL.HBM_Poison_Powder.get(2, IL.IC2_Grin_Powder.get(2)));
 		RM.mortarize(ST.make(Items.fermented_spider_eye, 1, W), IL.HBM_Poison_Powder.get(3, IL.IC2_Grin_Powder.get(3)));
 		
