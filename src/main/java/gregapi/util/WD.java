@@ -572,12 +572,24 @@ public class WD {
 	}
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Biome aBiome, int aX, int aY, int aZ) {
-		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.getFloatTemperature(aX, aY, aZ) * 20));
+		// было aBiome.getFloatTemperature(x,y,z) (позиция-скорректированная, удалено) -> getBaseTemperature() (Biome.java:247).
+		// PORT-TODO(F6, biome-temp-elevation-modifier): elevation-охлаждение (climateSettings.temperatureModifier, приватно) не воспроизведено — база доминирует, парити-деталь.
+		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.getBaseTemperature() * 20));
 	}
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Biome aBiome) {
-		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.temperature * 20));
+		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.getBaseTemperature() * 20));
 	}
+	// F6-центр biome/climate/light/precipitation (было World.getBiomeGenForCoords/getLightBrightness/getPrecipitationHeight + Biome.rainfall/temperature поля — удалены):
+	/** было World.getBiomeGenForCoords(x,z) (2D, BiomeGenBase) -> Level.getBiome(BlockPos).value() (LevelReader:42, Holder.value()); 2D-форма берёт Y=getSeaLevel() (LevelReader:66) как поверхностный столбец. */
+	public static Biome biome(Level aWorld, int aX, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aWorld.getSeaLevel(), aZ)).value();}
+	public static Biome biome(Level aWorld, int aX, int aY, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aY, aZ)).value();}
+	/** было Biome.rainfall (поле, удалено) -> Biome.getModifiedClimateSettings().downfall() (Biome.java:367 record ClimateSettings.downfall, :458 getModifiedClimateSettings). */
+	public static float rainfall(Biome aBiome) {return aBiome == null ? 0 : aBiome.getModifiedClimateSettings().downfall();}
+	/** было World.getLightBrightness(x,y,z) (float 0..1) -> LevelLightEngine.getRawBrightness(pos,0)/15 (LevelLightEngine.java:146, Level.getLightEngine() :375). */
+	public static float lightBrightness(Level aWorld, int aX, int aY, int aZ) {return aWorld == null ? 0 : aWorld.getLightEngine().getRawBrightness(new BlockPos(aX, aY, aZ), 0) / 15.0F;}
+	/** было World.getPrecipitationHeight(x,z) -> Level.getHeight(Heightmap.MOTION_BLOCKING,x,z) (Level.java:359, Heightmap:147). */
+	public static int precipitationHeight(Level aWorld, int aX, int aZ) {return aWorld == null ? 0 : aWorld.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, aX, aZ);}
 	
 	// F6: было `WorldProvider aProvider`-перегрузки ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками (вызов через
 	// `aWorld.provider`) — та же болезнь, что у семейства `dimXXX` выше: `WorldProvider` в neo удалён, компилятор

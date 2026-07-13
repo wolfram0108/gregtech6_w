@@ -374,7 +374,7 @@ public class WorldgenStreets extends WorldgenObject {
 				}
 				aBiomeNames = new HashSetNoNulls<>(aBiomeNames);
 				for (int i = aMinZ; i <= aMaxZ; i++) for (int j = (aMinZ < 0 ? 0 : -16), k = (aMinZ < 0 ? 16 : 0); j < k; j++) {
-					Biome tBiome = aWorld.getBiomeGenForCoords(j, i);
+					Biome tBiome = WD.biome(aWorld, j, i);
 					if (tBiome != null) aBiomeNames.add(tBiome.biomeName);
 				}
 				for (String tName : aBiomeNames) if (BIOMES_INFINITE_WATER.contains(tName)) {
@@ -401,7 +401,7 @@ public class WorldgenStreets extends WorldgenObject {
 				}
 				aBiomeNames = new HashSetNoNulls<>(aBiomeNames);
 				for (int i = aMinX; i <= aMaxX; i++) for (int j = (aMinZ < 0 ? 0 : -16), k = (aMinZ < 0 ? 16 : 0); j < k; j++) {
-					Biome tBiome = aWorld.getBiomeGenForCoords(i, j);
+					Biome tBiome = WD.biome(aWorld, i, j);
 					if (tBiome != null) aBiomeNames.add(tBiome.biomeName);
 				}
 				for (String tName : aBiomeNames) if (BIOMES_INFINITE_WATER.contains(tName)) {

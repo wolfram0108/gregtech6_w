@@ -237,8 +237,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override public int getRandomNumber(int aRange) {return RNGSUS.nextInt(aRange);}
 	@Override public int rng(int aRange) {return RNGSUS.nextInt(aRange);}
 	public boolean rng() {return RNGSUS.nextBoolean();}
-	@Override public Biome getBiome(BlockPos aCoords) {return level==null?Biome.plains:level.getBiomeGenForCoords(aCoords.getX(), aCoords.getZ());}
-	@Override public Biome getBiome(int aX, int aZ) {return level==null?Biome.plains:level.getBiomeGenForCoords(aX, aZ);}
+	@Override public Biome getBiome(BlockPos aCoords) {return level==null?null:WD.biome(level, aCoords.getX(), aCoords.getZ());}
+	@Override public Biome getBiome(int aX, int aZ) {return level==null?null:WD.biome(level, aX, aZ);}
 	@Override public Biome getBiome() {return getBiome(getBlockPos().getX(), getBlockPos().getZ());}
 	@Override public Block getBlockOffset(int aX, int aY, int aZ) {return getBlock(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public Block getBlockAtSide(byte aSide) {return getBlockAtSideAndDistance(aSide, 1);}
@@ -307,7 +307,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public byte getLightLevel(int aX, int aY, int aZ) {
 		if (level == null) return 14;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return 0;
-		return UT.Code.bind4((long)level.getLightBrightness(aX, aY, aZ)*15);
+		return UT.Code.bind4((long)WD.lightBrightness(level, aX, aY, aZ)*15);
 	}
 	
 	@Override
@@ -323,7 +323,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (level == null) return T;
 		if (level.provider.hasNoSky) return F;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return T;
-		return level.getPrecipitationHeight(aX, aZ) <= aY;
+		return WD.precipitationHeight(level, aX, aZ) <= aY;
 	}
 	
 	@Override
@@ -365,7 +365,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public byte getLightLevel(BlockPos aCoords) {
 		if (level == null) return 14;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return 0;
-		return UT.Code.bind4((long)level.getLightBrightness(aCoords.getX(), aCoords.getY(), aCoords.getZ())*15);
+		return UT.Code.bind4((long)WD.lightBrightness(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())*15);
 	}
 	
 	@Override
@@ -379,7 +379,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean getRain(BlockPos aCoords) {
 		if (level == null) return T;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
-		return level.getPrecipitationHeight(aCoords.getX(), aCoords.getZ()) <= aCoords.getY();
+		return WD.precipitationHeight(level, aCoords.getX(), aCoords.getZ()) <= aCoords.getY();
 	}
 	
 	@Override

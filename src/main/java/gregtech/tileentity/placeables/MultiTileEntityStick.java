@@ -109,7 +109,7 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 		if (WD.dimTROPIC(level)) return OP.stick.mat(rng(2) > 0 ? MT.WOODS.Coconut : MT.WOODS.Mahogany, aAmount);
 		if (WD.dimALF   (level)) return OP.stick.mat(rng(8) > 0 ? MT.Livingwood    : MT.Dreamwood     , aAmount);
 		if (WD.dimTF    (level)) return rng(16) > 0 ? IL.Stick.get(aAmount) : IL.TF_LiveRoot.get(aAmount);
-		String tBiome = level.getBiomeGenForCoords(getBlockPos().getX(), getBlockPos().getZ()).biomeName.toLowerCase();
+		String tBiome = WD.biome(level, getBlockPos().getX(), getBlockPos().getZ()).biomeName.toLowerCase();
 		// The order of checks matters because things like Ice Deserts are a thing.
 		if (tBiome.contains("rainforest" )) return getStick(NI, aAmount);
 		if (tBiome.contains("firefly"    )) return getStick(NI, aAmount);

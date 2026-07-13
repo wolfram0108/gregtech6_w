@@ -153,7 +153,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		int l = 0, i1 = 0, j1 = 0;
 		for (int k1 = -1; k1 <= 1; ++k1) for (int l1 = -1; l1 <= 1; ++l1) {
-			int i2 = aWorld.getBiomeGenForCoords(aX + l1, aZ + k1).getBiomeFoliageColor(aX + l1, aY, aZ + k1);
+			int i2 = WD.biome(aWorld, aX + l1, aZ + k1).getBiomeFoliageColor(aX + l1, aY, aZ + k1);
 			l += (i2 & 16711680) >> 16;
 			i1 += (i2 & 65280) >> 8;
 			j1 += i2 & 255;
