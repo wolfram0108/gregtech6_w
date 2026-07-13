@@ -22,7 +22,7 @@ package gregtech.asm.transformers.minecraft;
 import java.util.Random;
 
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockStaticLiquid;
+import net.minecraft.world.level.block.LiquidBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.IEntityLivingData;
@@ -74,7 +74,7 @@ public class Replacements {
 		}
 	}
 	
-	public static void BlockStaticLiquid_updateTick(BlockStaticLiquid self, Level world, int x, int y, int z, Random rand) {
+	public static void BlockStaticLiquid_updateTick(LiquidBlock self, Level world, int x, int y, int z, Random rand) {
 		if (WD.getMaterial(self) == Material.lava)
 		{
 			int l = rand.nextInt(3);

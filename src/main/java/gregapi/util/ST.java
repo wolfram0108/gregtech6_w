@@ -894,7 +894,7 @@ public class ST {
 	}
 	public static boolean torch(Block aBlock, long aMeta) {
 		if (IL.TFC_Torch.equal(aBlock) || IL.NePl_Torch.equal(aBlock) || IL.GC_Torch_Glowstone.equal(aBlock) || IL.AETHER_Torch_Ambrosium.equal(aBlock) || IL.AE_Torch_Quartz.equal(aBlock) || IL.TF_Firefly_Jar.equal(aBlock) || IL.TF_Firefly.equal(aBlock) || (aMeta == 1 && IL.TC_Block_Air.equal(aBlock))) return T;
-		return aBlock instanceof BlockTorch && !(aBlock instanceof BlockRedstoneTorch);
+		return aBlock instanceof TorchBlock && !(aBlock instanceof BlockRedstoneTorch);
 	}
 	public static boolean torch(ItemStack aStack) {
 		return IL.TC_Nitor.equal(aStack, F, T) || torch(block(aStack), meta(aStack));

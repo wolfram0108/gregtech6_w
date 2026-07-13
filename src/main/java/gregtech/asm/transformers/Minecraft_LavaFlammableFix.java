@@ -35,12 +35,12 @@ import net.minecraft.launchwrapper.IClassTransformer;
 public class Minecraft_LavaFlammableFix implements IClassTransformer  {
 	// @Override
 	public byte[] transform(String name, String transformedName, byte[] basicClass) {
-		if (!transformedName.equals("net.minecraft.block.BlockStaticLiquid")) return basicClass;
+		if (!transformedName.equals("net.minecraft.block.LiquidBlock")) return basicClass;
 		ClassNode classNode = GT_ASM.makeNodes(basicClass);
 		
 		for (MethodNode m: classNode.methods) {
 			if (m.name.equals("isFlammable") || m.name.equals("o")) {
-				GT_ASM.logger.info("Transforming net.minecraft.block.BlockStaticLiquid.isFlammable");
+				GT_ASM.logger.info("Transforming net.minecraft.block.LiquidBlock.isFlammable");
 				m.instructions.clear();
 				m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 1)); // Load world
 				m.instructions.add(new VarInsnNode(Opcodes.ILOAD, 2)); // Load x
@@ -49,7 +49,7 @@ public class Minecraft_LavaFlammableFix implements IClassTransformer  {
 				m.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "gregtech/asm/transformers/minecraft/Replacements", "BlockStaticLiquid_isFlammable", "(Lnet/minecraft/world/World;III)Z", false));
 				m.instructions.add(new InsnNode(Opcodes.IRETURN));
 			} else if (m.name.equals("updateTick") || (m.name.equals("a") && m.desc.equals("(Lahb;IIILjava/util/Random;)V"))) {
-				GT_ASM.logger.info("Transforming net.minecraft.block.BlockStaticLiquid.updateTick");
+				GT_ASM.logger.info("Transforming net.minecraft.block.LiquidBlock.updateTick");
 				m.instructions.clear();
 				m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 0)); // Load this
 				m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 1)); // Load world
@@ -57,7 +57,7 @@ public class Minecraft_LavaFlammableFix implements IClassTransformer  {
 				m.instructions.add(new VarInsnNode(Opcodes.ILOAD, 3)); // Load y
 				m.instructions.add(new VarInsnNode(Opcodes.ILOAD, 4)); // Load z
 				m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 5)); // Load Random
-				m.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "gregtech/asm/transformers/minecraft/Replacements", "BlockStaticLiquid_updateTick", "(Lnet/minecraft/block/BlockStaticLiquid;Lnet/minecraft/world/World;IIILjava/util/Random;)V", false));
+				m.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "gregtech/asm/transformers/minecraft/Replacements", "BlockStaticLiquid_updateTick", "(Lnet/minecraft/block/LiquidBlock;Lnet/minecraft/world/World;IIILjava/util/Random;)V", false));
 				m.instructions.add(new InsnNode(Opcodes.RETURN));
 			}
 		}

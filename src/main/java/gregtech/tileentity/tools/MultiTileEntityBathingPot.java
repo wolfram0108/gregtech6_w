@@ -41,7 +41,7 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockLiquid;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -128,7 +128,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 				Biome tBiome = getBiome();
 				if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
 					Block tInFront = getBlockAtSide(SIDE_TOP);
-					if (!(tInFront instanceof BlockLiquid) && !(tInFront instanceof IFluidBlock) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
+					if (!(tInFront instanceof LiquidBlock) && !(tInFront instanceof IFluidBlock) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
 						FluidStack tWater = FL.Water.make((long)Math.max(1, tBiome.rainfall*200) * (level.isThundering()?2:1));
 						if (tWater != null) {
 							IFluidTank tTank = getFluidTankFillable2(SIDE_TOP, tWater);

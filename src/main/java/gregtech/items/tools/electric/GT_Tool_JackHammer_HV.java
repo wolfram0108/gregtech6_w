@@ -27,7 +27,7 @@ import gregapi.recipes.Recipe;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockSilverfish;
+import net.minecraft.world.level.block.InfestedBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -103,7 +103,7 @@ public class GT_Tool_JackHammer_HV extends GT_Tool_MiningDrill_LV {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_pickaxe.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockSilverfish || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce;
+		return TOOL_pickaxe.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof InfestedBlock || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce;
 	}
 	
 	@Override

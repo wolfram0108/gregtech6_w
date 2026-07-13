@@ -30,7 +30,7 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregtech.items.tools.early.GT_Tool_Saw;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockPane;
+import net.minecraft.world.level.block.IronBarsBlock;
 import gregapi.block.Material;
 import net.minecraft.world.item.ItemStack;
 
@@ -72,7 +72,7 @@ public class GT_Tool_BuzzSaw_LV extends GT_Tool_Saw {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return MD.CARP.owns(aBlock) || aBlock instanceof BlockBaseBars || (aBlock instanceof BlockPane && WD.getMaterial(aBlock) == Material.iron);
+		return MD.CARP.owns(aBlock) || aBlock instanceof BlockBaseBars || (aBlock instanceof IronBarsBlock && WD.getMaterial(aBlock) == Material.iron);
 	}
 	
 	@Override

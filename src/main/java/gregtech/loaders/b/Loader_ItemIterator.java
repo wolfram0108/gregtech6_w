@@ -26,7 +26,7 @@ import gregapi.data.RM;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockSlab;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
 import net.minecraft.item.ItemFood;
@@ -55,7 +55,7 @@ public class Loader_ItemIterator implements Runnable {
 			Block tBlock = ST.block(tItem);
 			
 			// Hide all those stupid Double Slabs from NEI...
-			if (tBlock instanceof BlockSlab && tBlock.isOpaqueCube()) ST.hide(tBlock);
+			if (tBlock instanceof SlabBlock && tBlock.isOpaqueCube()) ST.hide(tBlock);
 			
 			// IC2 Food Cans.
 			if (tCheckCans && tItem instanceof ItemFood && tItem != IL.IC2_Food_Can_Filled.item() && tItem != IL.IC2_Food_Can_Spoiled.item()) {

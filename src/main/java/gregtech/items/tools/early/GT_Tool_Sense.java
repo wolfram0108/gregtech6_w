@@ -30,7 +30,7 @@ import gregapi.item.multiitem.behaviors.Behavior_Tool;
 import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.render.IIconContainer;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockLilyPad;
+import net.minecraft.world.level.block.WaterlilyBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
@@ -65,7 +65,7 @@ public class GT_Tool_Sense extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		if (aBlock instanceof BlockBaseLilyPad || aBlock instanceof BlockLilyPad) return F;
+		if (aBlock instanceof BlockBaseLilyPad || aBlock instanceof WaterlilyBlock) return F;
 		if (MD.BoP.mLoaded &&  aBlock instanceof BlockBOPLilypad) return F;
 		if (MD.TF .mLoaded && (aBlock instanceof BlockTFHugeLilyPad || aBlock instanceof BlockTFHugeWaterLily)) return F;
 		String tTool = aBlock.getHarvestTool(aMetaData);

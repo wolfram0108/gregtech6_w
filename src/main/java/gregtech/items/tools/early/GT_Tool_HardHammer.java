@@ -31,7 +31,7 @@ import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockSilverfish;
+import net.minecraft.world.level.block.InfestedBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.golem.IronGolem;
@@ -82,7 +82,7 @@ public class GT_Tool_HardHammer extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		String tTool = aBlock.getHarvestTool(aMetaData);
-		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_hammer) || tTool.equalsIgnoreCase(TOOL_pickaxe))) || aBlock instanceof BlockSilverfish || aBlock == Blocks.SPAWNER || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce || RM.Hammer.containsInput(ST.make(aBlock, 1, aMetaData), null, NI);
+		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_hammer) || tTool.equalsIgnoreCase(TOOL_pickaxe))) || aBlock instanceof InfestedBlock || aBlock == Blocks.SPAWNER || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce || RM.Hammer.containsInput(ST.make(aBlock, 1, aMetaData), null, NI);
 	}
 	
 	@Override

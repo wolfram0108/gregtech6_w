@@ -30,7 +30,7 @@ import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockSilverfish;
+import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
@@ -80,7 +80,7 @@ public class GT_Tool_Chisel extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_chisel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockSilverfish || aBlock == Blocks.STONE || aBlock == Blocks.STONE_BRICKS || aBlock instanceof BlockStones;
+		return TOOL_chisel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof InfestedBlock || aBlock == Blocks.STONE || aBlock == Blocks.STONE_BRICKS || aBlock instanceof BlockStones;
 	}
 	
 	@Override

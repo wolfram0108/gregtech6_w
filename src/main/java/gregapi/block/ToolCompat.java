@@ -19,7 +19,7 @@
 
 package gregapi.block;
 import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.block.BlockSilverfish;
+import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.BaseRailBlock;
 import net.minecraft.world.level.block.Block;
@@ -414,7 +414,7 @@ public class ToolCompat {
 				if (aChatReturn != null) aChatReturn.add("There is a Fluid behind this Rock");
 				break;
 			}
-			if (tBlock instanceof BlockSilverfish || !WD.hasCollide(aWorld, tX, tY, tZ, tBlock)) {
+			if (tBlock instanceof InfestedBlock || !WD.hasCollide(aWorld, tX, tY, tZ, tBlock)) {
 				if (aChatReturn != null) aChatReturn.add("There is an Air Pocket behind this Rock");
 				break;
 			}

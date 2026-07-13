@@ -19,8 +19,8 @@
 
 package gregtech.items.behaviors;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.block.BlockPane;
-import net.minecraft.block.BlockStairs;
+import net.minecraft.world.level.block.IronBarsBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.Block;
 
 import com.mojang.authlib.GameProfile;
@@ -225,12 +225,12 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=2000;
 				continue;
 			}
-			if (aBlock instanceof BlockFence || aBlock instanceof BlockFenceGate || aBlock == Blocks.COBWEB || aBlock == Blocks.SPAWNER || aBlock instanceof BlockPane || aBlock instanceof BlockRail || aBlock instanceof BlockTorch || aBlock instanceof BlockBaseBars || aBlock instanceof BlockBaseSpike || WD.getMaterial(aBlock) == Material.cactus || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.air || WD.getMaterial(aBlock) == Material.cloth || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.vine) {
+			if (aBlock instanceof FenceBlock || aBlock instanceof FenceGateBlock || aBlock == Blocks.COBWEB || aBlock == Blocks.SPAWNER || aBlock instanceof IronBarsBlock || aBlock instanceof BaseRailBlock || aBlock instanceof TorchBlock || aBlock instanceof BlockBaseBars || aBlock instanceof BlockBaseSpike || WD.getMaterial(aBlock) == Material.cactus || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.air || WD.getMaterial(aBlock) == Material.cloth || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.vine) {
 				// Just ignore or assume the Player shot through them.
 				tPower-=200;
 				continue;
 			}
-			if (aBlock instanceof BlockStairs || WD.opq(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), T, F)) {
+			if (aBlock instanceof StairBlock || WD.opq(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), T, F)) {
 				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
 				tPower=0;
 				continue;

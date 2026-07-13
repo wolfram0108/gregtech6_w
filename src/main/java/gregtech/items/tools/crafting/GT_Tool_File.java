@@ -27,7 +27,7 @@ import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockPane;
+import net.minecraft.world.level.block.IronBarsBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -79,7 +79,7 @@ public class GT_Tool_File extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_file.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockBaseBars || (aBlock instanceof BlockPane && WD.getMaterial(aBlock) == Material.iron);
+		return TOOL_file.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockBaseBars || (aBlock instanceof IronBarsBlock && WD.getMaterial(aBlock) == Material.iron);
 	}
 	
 	@Override

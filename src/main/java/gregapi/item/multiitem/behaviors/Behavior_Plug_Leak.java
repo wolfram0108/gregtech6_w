@@ -31,7 +31,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockSilverfish;
+import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.level.block.EntityBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
@@ -57,7 +57,7 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 				// No Bedrock, Obsidian or Black Granite!
 				if (WD.bedrock(tBlock) || tBlock.getHarvestLevel(ST.meta(tStack) & 15) >= 3) continue;
 				// Don't use any PrefixBlocks, TileEntities or Silverfish Blocks.
-				if (tBlock instanceof IPrefixBlock || tBlock instanceof EntityBlock || tBlock instanceof BlockSilverfish) continue;
+				if (tBlock instanceof IPrefixBlock || tBlock instanceof EntityBlock || tBlock instanceof InfestedBlock) continue;
 				// Only use Blocks that are typically mined.
 				if (WD.getMaterial(tBlock) != Material.rock && WD.getMaterial(tBlock) != Material.ground && WD.getMaterial(tBlock) != Material.sand && WD.getMaterial(tBlock) != Material.clay) continue;
 				// Don't use frikkin Ore Blocks or Storage Blocks for this!
