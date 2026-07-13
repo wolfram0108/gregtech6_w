@@ -258,6 +258,19 @@ public class ST {
 	public static void register(Item aItem, String aRegistryName) {
 		GT_API.registerItem(aItem, aRegistryName);
 	}
+
+	/** F16: 1.7.10 Item.setMaxStackSize(n) мутировал итем в рантайме. neo: GT6-итем (ItemBase) хранит поле +
+	 *  override getMaxStackSize; ВАНИЛЬНЫЙ итем неизменяем (стек-размер = дефолт-DataComponent MAX_STACK_SIZE),
+	 *  штатно меняется через neo ModifyDefaultComponentsEvent (пример в его javadoc — ровно про MAX_STACK_SIZE).
+	 *  Здесь копим намерение в карту; init-проход подпишет событие и применит (единый механизм, не россыпь).
+	 *  PORT-TODO(F16, vanilla-stacksize-datagen): @SubscribeEvent ModifyDefaultComponentsEvent →
+	 *  builder.set(DataComponents.MAX_STACK_SIZE, size) по VANILLA_STACKSIZE_OVERRIDES. */
+	public static final java.util.Map<Item, Integer> VANILLA_STACKSIZE_OVERRIDES = new java.util.IdentityHashMap<>();
+	public static Item setMaxStackSize(Item aItem, int aSize) {
+		if (aItem instanceof gregapi.item.ItemBase) return ((gregapi.item.ItemBase)aItem).setMaxStackSize(aSize);
+		if (aItem != null) VANILLA_STACKSIZE_OVERRIDES.put(aItem, aSize);
+		return aItem;
+	}
 	public static void register(Block aBlock, String aRegistryName) {register(aBlock, aRegistryName, null);}
 	public static void register(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
 		GT_API.registerBlock(aBlock, aRegistryName, aItemClass == null ? ItemBlockBase.class : aItemClass);

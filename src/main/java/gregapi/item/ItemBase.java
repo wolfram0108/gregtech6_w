@@ -53,6 +53,12 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	protected IIcon mIcon;
 	protected final String mModID;
 	protected final String mName, mTooltip;
+	/** F16: 1.7.10 Item.setMaxStackSize мутировал поле итема. neo Item неизменяем (стек-размер — DataComponent),
+	 *  но GT6-итем — свой класс, потому храним поле и переопределяем getMaxStackSize (штатная neo-точка override,
+	 *  IItemExtension.getMaxStackSize(ItemStack)). Дефолт 64 = ванильный. См. центр ST.setMaxStackSize. */
+	protected int mMaxStackSize = 64;
+	public ItemBase setMaxStackSize(int aMaxStackSize) {mMaxStackSize = aMaxStackSize; return this;}
+	@Override public int getMaxStackSize(ItemStack aStack) {return mMaxStackSize;}
 	
 	/**
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!

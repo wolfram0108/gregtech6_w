@@ -947,7 +947,7 @@ public class LoaderItemList implements Runnable {
 		
 		if (IL.TC_Bucket_Death.exists()) IL.TC_Bucket_Death.item().setContainerItem(Items.BUCKET);
 		if (IL.TC_Bucket_Pure .exists()) IL.TC_Bucket_Pure .item().setContainerItem(Items.BUCKET);
-		if (IL.TC_Gold_Ring   .exists()) IL.TC_Gold_Ring   .item().setMaxStackSize(64);
+		if (IL.TC_Gold_Ring   .exists()) ST.setMaxStackSize(IL.TC_Gold_Ring   .item(), 64);
 		
 		
 		IL.TF_LiveRoot                          .set(ST.make(MD.TF, "item.liveRoot"                         , 1, 0), new OreDictItemData(MT.LiveRoot, U));
@@ -1022,9 +1022,9 @@ public class LoaderItemList implements Runnable {
 		BlocksGT.blockToDrop.put(IL.TF_Mushgloom.item(), 0, IL.TF_Mushgloom.get(3));
 		BlocksGT.blockToSilk.put(IL.TF_Mushgloom.item(), 0, IL.TF_Mushgloom_Huge.get(1));
 		// Vanilla Maps are stackable, TF forgot to fix that lol.
-		if (IL.TF_Magic_Map.exists()) IL.TF_Magic_Map.item().setMaxStackSize(64);
-		if (IL.TF_Maze_Map .exists()) IL.TF_Maze_Map .item().setMaxStackSize(64);
-		if (IL.TF_Ore_Map  .exists()) IL.TF_Ore_Map  .item().setMaxStackSize(64);
+		if (IL.TF_Magic_Map.exists()) ST.setMaxStackSize(IL.TF_Magic_Map.item(), 64);
+		if (IL.TF_Maze_Map .exists()) ST.setMaxStackSize(IL.TF_Maze_Map .item(), 64);
+		if (IL.TF_Ore_Map  .exists()) ST.setMaxStackSize(IL.TF_Ore_Map  .item(), 64);
 		// These Bottles should actually have an empty Variant.
 		if (IL.TF_Firefly_Jar    .exists()) IL.TF_Firefly_Jar    .item().setContainerItem(Items.GLASS_BOTTLE);
 		if (IL.TF_Vial_FieryBlood.exists()) IL.TF_Vial_FieryBlood.item().setContainerItem(Items.GLASS_BOTTLE);
