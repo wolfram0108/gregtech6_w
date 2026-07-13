@@ -51,7 +51,7 @@ public class MultiTileEntityBunkerBlock extends TileEntityBase05Paintable implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER));
+		if (aNBT.contains(NBT_OWNER) && !OWNERSHIP_RESET) mOwner = UUID.fromString(aNBT.getString(NBT_OWNER).orElse(""));
 	}
 	
 	@Override

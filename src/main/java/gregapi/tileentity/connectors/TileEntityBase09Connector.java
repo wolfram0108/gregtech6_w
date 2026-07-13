@@ -53,7 +53,7 @@ public abstract class TileEntityBase09Connector extends TileEntityBase08Directio
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_CONNECTION)) mConnections = (byte)(aNBT.getByte(NBT_CONNECTION) & 63);
+		if (aNBT.contains(NBT_CONNECTION)) mConnections = (byte)(aNBT.getByte(NBT_CONNECTION).orElse((byte)0) & 63);
 	}
 	
 	@Override

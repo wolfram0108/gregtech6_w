@@ -64,11 +64,11 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains("gt.dungeonloot.front")) mDungeonLootNameFront = aNBT.getString("gt.dungeonloot.front");
-		if (aNBT.contains("gt.dungeonloot.back")) mDungeonLootNameBack = aNBT.getString("gt.dungeonloot.back");
-		if (aNBT.contains(NBT_REDSTONE)) mRedstoneDelay = aNBT.getByte(NBT_REDSTONE);
+		if (aNBT.contains("gt.dungeonloot.front")) mDungeonLootNameFront = aNBT.getString("gt.dungeonloot.front").orElse("");
+		if (aNBT.contains("gt.dungeonloot.back")) mDungeonLootNameBack = aNBT.getString("gt.dungeonloot.back").orElse("");
+		if (aNBT.contains(NBT_REDSTONE)) mRedstoneDelay = aNBT.getByte(NBT_REDSTONE).orElse((byte)0);
 		if (aNBT.contains(NBT_TEXTURE)) {
-			short tShelfID = aNBT.getShort(NBT_TEXTURE);
+			short tShelfID = aNBT.getShort(NBT_TEXTURE).orElse((short)0);
 			if (UT.Code.exists(tShelfID, PlankData.PLANK_ICONS)) mShelfIcon = PlankData.PLANK_ICONS[tShelfID];
 		}
 		if (mShelfIcon == null || mShelfIcon == Textures.BlockIcons.RENDERING_ERROR) mShelfIcon = mMaterial.mTextureSetsBlock.get(OP.casingMachine.mIconIndexBlock);

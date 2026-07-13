@@ -56,12 +56,12 @@ public class CoverData {
 	}
 	
 	public CoverData(ITileEntityCoverable aTileEntity, CompoundTag aNBT) {
-		this( new short[] {aNBT.getShort("a"), aNBT.getShort("b"), aNBT.getShort("c"), aNBT.getShort("d"), aNBT.getShort("e"), aNBT.getShort("f")}
-			, new short[] {aNBT.getShort("g"), aNBT.getShort("h"), aNBT.getShort("i"), aNBT.getShort("j"), aNBT.getShort("k"), aNBT.getShort("l")}
-			, new short[] {aNBT.getShort("m"), aNBT.getShort("n"), aNBT.getShort("o"), aNBT.getShort("p"), aNBT.getShort("q"), aNBT.getShort("r")}
-			, new short[] {aNBT.getShort("0"), aNBT.getShort("1"), aNBT.getShort("2"), aNBT.getShort("3"), aNBT.getShort("4"), aNBT.getShort("5")}
+		this( new short[] {aNBT.getShort("a").orElse((short)0), aNBT.getShort("b").orElse((short)0), aNBT.getShort("c").orElse((short)0), aNBT.getShort("d").orElse((short)0), aNBT.getShort("e").orElse((short)0), aNBT.getShort("f").orElse((short)0)}
+			, new short[] {aNBT.getShort("g").orElse((short)0), aNBT.getShort("h").orElse((short)0), aNBT.getShort("i").orElse((short)0), aNBT.getShort("j").orElse((short)0), aNBT.getShort("k").orElse((short)0), aNBT.getShort("l").orElse((short)0)}
+			, new short[] {aNBT.getShort("m").orElse((short)0), aNBT.getShort("n").orElse((short)0), aNBT.getShort("o").orElse((short)0), aNBT.getShort("p").orElse((short)0), aNBT.getShort("q").orElse((short)0), aNBT.getShort("r").orElse((short)0)}
+			, new short[] {aNBT.getShort("0").orElse((short)0), aNBT.getShort("1").orElse((short)0), aNBT.getShort("2").orElse((short)0), aNBT.getShort("3").orElse((short)0), aNBT.getShort("4").orElse((short)0), aNBT.getShort("5").orElse((short)0)}
 			, new CompoundTag[] {aNBT.getCompoundOrEmpty("s"), aNBT.getCompoundOrEmpty("t"), aNBT.getCompoundOrEmpty("u"), aNBT.getCompoundOrEmpty("v"), aNBT.getCompoundOrEmpty("w"), aNBT.getCompoundOrEmpty("x")}
-			, aNBT.getBoolean("y")
+			, aNBT.getBoolean("y").orElse(false)
 			, aTileEntity);
 	}
 	

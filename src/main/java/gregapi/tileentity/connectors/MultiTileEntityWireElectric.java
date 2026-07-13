@@ -111,10 +111,10 @@ public class MultiTileEntityWireElectric extends TileEntityBase10ConnectorRender
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_PIPELOSS)) mLoss = Math.max(1, aNBT.getLong(NBT_PIPELOSS));
-		if (aNBT.contains(NBT_PIPESIZE)) mVoltage = Math.max(1, aNBT.getLong(NBT_PIPESIZE));
-		if (aNBT.contains(NBT_PIPEBANDWIDTH)) mAmperage = Math.max(1, aNBT.getLong(NBT_PIPEBANDWIDTH));
-		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
+		if (aNBT.contains(NBT_PIPELOSS)) mLoss = Math.max(1, aNBT.getLong(NBT_PIPELOSS).orElse(0L));
+		if (aNBT.contains(NBT_PIPESIZE)) mVoltage = Math.max(1, aNBT.getLong(NBT_PIPESIZE).orElse(0L));
+		if (aNBT.contains(NBT_PIPEBANDWIDTH)) mAmperage = Math.max(1, aNBT.getLong(NBT_PIPEBANDWIDTH).orElse(0L));
+		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER).orElse((byte)0);
 	}
 	
 	@Override

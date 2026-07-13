@@ -64,14 +64,14 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
-		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
-		if (aNBT.contains(NBT_CAPACITY_HU)) mMeltingPoint = aNBT.getLong(NBT_CAPACITY_HU); else mMeltingPoint = (long)(mMaterial.mMeltingPoint * 1.25);
-		mMode = aNBT.getByte(NBT_MODE);
-		mSealedTime = aNBT.getLong(NBT_PROGRESS);
-		mTank.setPreventDraining(keepsFilter()).setCapacity(aNBT.getLong(NBT_TANK_CAPACITY)).readFromNBT(aNBT, NBT_TANK);
+		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF).orElse(false);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF).orElse(false);
+		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF).orElse(false);
+		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF).orElse(false);
+		if (aNBT.contains(NBT_CAPACITY_HU)) mMeltingPoint = aNBT.getLong(NBT_CAPACITY_HU).orElse(0L); else mMeltingPoint = (long)(mMaterial.mMeltingPoint * 1.25);
+		mMode = aNBT.getByte(NBT_MODE).orElse((byte)0);
+		mSealedTime = aNBT.getLong(NBT_PROGRESS).orElse(0L);
+		mTank.setPreventDraining(keepsFilter()).setCapacity(aNBT.getLong(NBT_TANK_CAPACITY).orElse(0L)).readFromNBT(aNBT, NBT_TANK);
 	}
 	
 	@Override

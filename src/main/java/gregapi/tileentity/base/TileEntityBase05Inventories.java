@@ -53,7 +53,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 			ListTag tList = aNBT.getTagList(NBT_INV_LIST, 10);
 			for (int i = 0; i < tList.tagCount(); i++) {
 				CompoundTag tNBT = tList.getCompoundTagAt(i);
-				int tSlot = tNBT.getShort("s");
+				int tSlot = tNBT.getShort("s").orElse((short)0);
 				if (tSlot >= 0 && tSlot < mInventory.length) mInventory[tSlot] = ST.load(tNBT, getDefaultStack(tSlot));
 			}
 		}
@@ -80,7 +80,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	}
 	
 	public ItemStack[] getDefaultInventory(CompoundTag aNBT) {
-		int tSize = Math.max(getMinimumInventorySize(), aNBT.getShort(NBT_INV_SIZE));
+		int tSize = Math.max(getMinimumInventorySize(), aNBT.getShort(NBT_INV_SIZE).orElse((short)0));
 		return tSize > 0 ? new ItemStack[tSize] : ZL_IS;
 	}
 	

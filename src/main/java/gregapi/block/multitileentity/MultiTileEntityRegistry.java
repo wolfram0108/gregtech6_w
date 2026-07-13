@@ -210,9 +210,9 @@ public class MultiTileEntityRegistry {
 		}
 		// A simple special case to make it easier to add a Machine to Recipe Lists without having to worry about anything.
 		String
-		tRecipeMapName = aClassContainer.mParameters.getString(NBT_RECIPEMAP);
+		tRecipeMapName = aClassContainer.mParameters.getString(NBT_RECIPEMAP).orElse("");
 		if (UT.Code.stringValid(tRecipeMapName)) {RecipeMap tMap = RecipeMap.RECIPE_MAPS.get(tRecipeMapName); if (tMap != null) tMap.mRecipeMachineList.add(getItem(aClassContainer.mID));}
-		tRecipeMapName = aClassContainer.mParameters.getString(NBT_FUELMAP);
+		tRecipeMapName = aClassContainer.mParameters.getString(NBT_FUELMAP).orElse("");
 		if (UT.Code.stringValid(tRecipeMapName)) {RecipeMap tMap = RecipeMap.RECIPE_MAPS.get(tRecipeMapName); if (tMap != null) tMap.mRecipeMachineList.add(getItem(aClassContainer.mID));}
 		return getItem(aClassContainer.mID);
 	}

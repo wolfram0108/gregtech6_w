@@ -173,19 +173,19 @@ public interface IItemBumbleBee {
 		public static void setOutsideActive     (CompoundTag aBumbleTag, boolean aOutsideActive) {UT.NBT.setBoolean(aBumbleTag, "outside"    , aOutsideActive);}
 		public static void setInsideActive      (CompoundTag aBumbleTag, boolean aInsideActive)  {UT.NBT.setBoolean(aBumbleTag, "inside"     , aInsideActive);}
 		
-		public static float getHumidityMin      (CompoundTag aBumbleTag) {return Math.max(0    , aBumbleTag.getFloat("minhum"));}
-		public static float getHumidityMax      (CompoundTag aBumbleTag) {return Math.max(0.01F, aBumbleTag.getFloat("maxhum"));}
-		public static long getTemperatureMin    (CompoundTag aBumbleTag) {return aBumbleTag.getLong("mintemp");}
-		public static long getTemperatureMax    (CompoundTag aBumbleTag) {return aBumbleTag.getLong("maxtemp");}
-		public static long getOffspring         (CompoundTag aBumbleTag) {return UT.Code.bindStack(aBumbleTag.getLong("offspring"));}
-		public static long getAggressiveness    (CompoundTag aBumbleTag) {return UT.Code.bind(  100,  10000, aBumbleTag.getLong("aggro"));}
-		public static long getWorkForce         (CompoundTag aBumbleTag) {return UT.Code.bind(    1,  10000, aBumbleTag.getLong("work"));}
-		public static long getLifeSpan          (CompoundTag aBumbleTag) {return UT.Code.bind( 1200, 144000, aBumbleTag.getLong("life"));}
-		public static boolean getRainproof      (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("rain");}
-		public static boolean getStormproof     (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("storm");}
-		public static boolean getDayActive      (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("day");}
-		public static boolean getNightActive    (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("night");}
-		public static boolean getOutsideActive  (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("outside");}
-		public static boolean getInsideActive   (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("inside");}
+		public static float getHumidityMin      (CompoundTag aBumbleTag) {return Math.max(0    , aBumbleTag.getFloat("minhum").orElse(0F));}
+		public static float getHumidityMax      (CompoundTag aBumbleTag) {return Math.max(0.01F, aBumbleTag.getFloat("maxhum").orElse(0F));}
+		public static long getTemperatureMin    (CompoundTag aBumbleTag) {return aBumbleTag.getLong("mintemp").orElse(0L);}
+		public static long getTemperatureMax    (CompoundTag aBumbleTag) {return aBumbleTag.getLong("maxtemp").orElse(0L);}
+		public static long getOffspring         (CompoundTag aBumbleTag) {return UT.Code.bindStack(aBumbleTag.getLong("offspring").orElse(0L));}
+		public static long getAggressiveness    (CompoundTag aBumbleTag) {return UT.Code.bind(  100,  10000, aBumbleTag.getLong("aggro").orElse(0L));}
+		public static long getWorkForce         (CompoundTag aBumbleTag) {return UT.Code.bind(    1,  10000, aBumbleTag.getLong("work").orElse(0L));}
+		public static long getLifeSpan          (CompoundTag aBumbleTag) {return UT.Code.bind( 1200, 144000, aBumbleTag.getLong("life").orElse(0L));}
+		public static boolean getRainproof      (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("rain").orElse(false);}
+		public static boolean getStormproof     (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("storm").orElse(false);}
+		public static boolean getDayActive      (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("day").orElse(false);}
+		public static boolean getNightActive    (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("night").orElse(false);}
+		public static boolean getOutsideActive  (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("outside").orElse(false);}
+		public static boolean getInsideActive   (CompoundTag aBumbleTag) {return aBumbleTag.getBoolean("inside").orElse(false);}
 	}
 }

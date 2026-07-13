@@ -118,8 +118,8 @@ public final class OreDictMaterialStack implements Cloneable {
 	}
 	
 	public static OreDictMaterialStack load(CompoundTag aNBT) {
-		if (aNBT.contains("i")) return new OreDictMaterialStack(OreDictMaterial.MATERIAL_ARRAY[aNBT.getShort("i")], aNBT.getLong("a"));
-		return new OreDictMaterialStack(OreDictMaterial.get(aNBT.getString("m")), aNBT.getLong("a"));
+		if (aNBT.contains("i")) return new OreDictMaterialStack(OreDictMaterial.MATERIAL_ARRAY[aNBT.getShort("i").orElse((short)0)], aNBT.getLong("a").orElse(0L));
+		return new OreDictMaterialStack(OreDictMaterial.get(aNBT.getString("m").orElse("")), aNBT.getLong("a").orElse(0L));
 	}
 	
 	public static OreDictMaterialStack load(String aTagName, CompoundTag aNBT) {

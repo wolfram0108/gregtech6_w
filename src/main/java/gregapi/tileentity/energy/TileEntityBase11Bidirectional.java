@@ -50,13 +50,13 @@ public abstract class TileEntityBase11Bidirectional extends TileEntityBase10Ener
 	
 	@Override
 	public void readEnergyConverter(CompoundTag aNBT) {
-		if (aNBT.contains(NBT_REVERSED)) mReversed = aNBT.getBoolean(NBT_REVERSED);
-		long tMultiplier = (aNBT.contains(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER) : 1);
+		if (aNBT.contains(NBT_REVERSED)) mReversed = aNBT.getBoolean(NBT_REVERSED).orElse(false);
+		long tMultiplier = (aNBT.contains(NBT_MULTIPLIER) ? aNBT.getLong(NBT_MULTIPLIER).orElse(0L) : 1);
 		TE_Behavior_Energy_Stats
 		tEnergyIN  = new TE_Behavior_Energy_Stats(this, aNBT, mEnergyOUT.mType, mStorage, mEnergyOUT.mMin <= 8 ? 1 : mEnergyOUT.mMin, mEnergyIN.mRec, Math.max(mEnergyIN.mRec, mEnergyOUT.mMax*tMultiplier)),
 		tEnergyOUT = new TE_Behavior_Energy_Stats(this, aNBT, mEnergyIN .mType, mStorage, (mEnergyIN.mRec*3)/4, mEnergyIN.mRec, mEnergyIN.mMax);
-		mConverter = new TE_Behavior_Energy_Converter(this, aNBT, mStorage, mEnergyIN, mEnergyOUT, tMultiplier, aNBT.getBoolean(NBT_WASTE_ENERGY), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION));
-		mConRevert = new TE_Behavior_Energy_Converter(this, aNBT, mStorage, tEnergyIN, tEnergyOUT,           1, aNBT.getBoolean(NBT_WASTE_ENERGY), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION));
+		mConverter = new TE_Behavior_Energy_Converter(this, aNBT, mStorage, mEnergyIN, mEnergyOUT, tMultiplier, aNBT.getBoolean(NBT_WASTE_ENERGY).orElse(false), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION).orElse(false));
+		mConRevert = new TE_Behavior_Energy_Converter(this, aNBT, mStorage, tEnergyIN, tEnergyOUT,           1, aNBT.getBoolean(NBT_WASTE_ENERGY).orElse(false), F, aNBT.getBoolean(NBT_LIMIT_CONSUMPTION).orElse(false));
 		if (mReversed) {TE_Behavior_Energy_Converter tConverter = mConverter; mConverter = mConRevert; mConRevert = tConverter;}
 	}
 	

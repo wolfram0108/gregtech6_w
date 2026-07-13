@@ -52,15 +52,15 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 	public int rotate(Block aBlock, int aMeta, CompoundTag aNBT, ITransformation aTransformation) {
 		if (aTransformation.getRotationSteps() % 4 == 0) return aMeta;
 		
-		byte tConnections = aNBT.getByte(NBT_CONNECTION);
+		byte tConnections = aNBT.getByte(NBT_CONNECTION).orElse((byte)0);
 		CoverData tCovers = aNBT.contains(NBT_COVERS) ? CoverRegistry.coverdata(null, aNBT.getCompoundOrEmpty(NBT_COVERS)) : null;
 		
 		switch(aTransformation.getRotationSteps() % 4) {
 		case  1:
 			// 90° clockwise when viewed from top
-			UT.NBT.setNumber(aNBT, NBT_FACING, ROTATE_090[aNBT.getByte(NBT_FACING) & 7]);
-			UT.NBT.setNumber(aNBT, NBT_FAC2NG, ROTATE_090[aNBT.getByte(NBT_FAC2NG) & 7]);
-			UT.NBT.setNumber(aNBT, NBT_FAC3NG, ROTATE_090[aNBT.getByte(NBT_FAC3NG) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FACING, ROTATE_090[aNBT.getByte(NBT_FACING).orElse((byte)0) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FAC2NG, ROTATE_090[aNBT.getByte(NBT_FAC2NG).orElse((byte)0) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FAC3NG, ROTATE_090[aNBT.getByte(NBT_FAC3NG).orElse((byte)0) & 7]);
 			UT.NBT.setNumber(aNBT, NBT_CONNECTION,
 			(tConnections & ~60)
 			| (FACE_CONNECTED[SIDE_NORTH][tConnections] ? SBIT_E : 0)
@@ -92,9 +92,9 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 			return aMeta;
 		case  2:
 			// 180° clockwise when viewed from top
-			UT.NBT.setNumber(aNBT, NBT_FACING, ROTATE_180[aNBT.getByte(NBT_FACING) & 7]);
-			UT.NBT.setNumber(aNBT, NBT_FAC2NG, ROTATE_180[aNBT.getByte(NBT_FAC2NG) & 7]);
-			UT.NBT.setNumber(aNBT, NBT_FAC3NG, ROTATE_180[aNBT.getByte(NBT_FAC3NG) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FACING, ROTATE_180[aNBT.getByte(NBT_FACING).orElse((byte)0) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FAC2NG, ROTATE_180[aNBT.getByte(NBT_FAC2NG).orElse((byte)0) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FAC3NG, ROTATE_180[aNBT.getByte(NBT_FAC3NG).orElse((byte)0) & 7]);
 			UT.NBT.setNumber(aNBT, NBT_CONNECTION,
 			(tConnections & ~60)
 			| (FACE_CONNECTED[SIDE_NORTH][tConnections] ? SBIT_S : 0)
@@ -120,9 +120,9 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 			return aMeta;
 		case  3:
 			// 270° clockwise when viewed from top
-			UT.NBT.setNumber(aNBT, NBT_FACING, ROTATE_270[aNBT.getByte(NBT_FACING) & 7]);
-			UT.NBT.setNumber(aNBT, NBT_FAC2NG, ROTATE_270[aNBT.getByte(NBT_FAC2NG) & 7]);
-			UT.NBT.setNumber(aNBT, NBT_FAC3NG, ROTATE_270[aNBT.getByte(NBT_FAC3NG) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FACING, ROTATE_270[aNBT.getByte(NBT_FACING).orElse((byte)0) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FAC2NG, ROTATE_270[aNBT.getByte(NBT_FAC2NG).orElse((byte)0) & 7]);
+			UT.NBT.setNumber(aNBT, NBT_FAC3NG, ROTATE_270[aNBT.getByte(NBT_FAC3NG).orElse((byte)0) & 7]);
 			UT.NBT.setNumber(aNBT, NBT_CONNECTION,
 			(tConnections & ~60)
 			| (FACE_CONNECTED[SIDE_NORTH][tConnections] ? SBIT_W : 0)

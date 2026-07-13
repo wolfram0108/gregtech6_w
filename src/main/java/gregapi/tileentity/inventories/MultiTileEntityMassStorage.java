@@ -75,9 +75,9 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mMode = aNBT.getByte(NBT_MODE);
+		mMode = aNBT.getByte(NBT_MODE).orElse((byte)0);
 		if (aNBT.contains(NBT_CAPACITY)) mMaxStorage = aNBT.getIntOr(NBT_CAPACITY, 0);
-		if (aNBT.contains(NBT_INPUT)) mPartialUnits = aNBT.getLong(NBT_INPUT);
+		if (aNBT.contains(NBT_INPUT)) mPartialUnits = aNBT.getLong(NBT_INPUT).orElse(0L);
 		if (aNBT.contains(NBT_STATE)) slot(1, ST.load(aNBT, NBT_STATE)); 
 	}
 	

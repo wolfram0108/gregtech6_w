@@ -68,7 +68,7 @@ public abstract class MultiTileEntitySensorTE extends MultiTileEntitySensor impl
 		mCurrentMax = aNBT.getIntOr("gt.sensor.max", 0);
 		mCurrentValue = aNBT.getIntOr("gt.sensor.value", 0);
 		mIndex = aNBT.getIntOr("gt.sensor.index", 0);
-		mValues = aNBT.getIntArray("gt.sensor.array");
+		mValues = aNBT.getIntArray("gt.sensor.array").orElse(ZL_INTEGER);
 		if (mValues.length < 1) mValues = new int[1];
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {

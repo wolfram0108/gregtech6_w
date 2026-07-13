@@ -40,7 +40,7 @@ public abstract class TileEntityBase11Twotypes extends TileEntityBase10EnergyCon
 	@Override
 	public void readEnergyBehavior(CompoundTag aNBT) {
 		super.readEnergyBehavior(aNBT);
-		mEnergyOUT2 = new TE_Behavior_Energy_Stats(this, aNBT, aNBT.contains(NBT_ENERGY_EMITTED_2) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED_2)) : TD.Energy.QU, mStorage, aNBT.getLong(NBT_OUTPUT) / 2, aNBT.getLong(NBT_OUTPUT), aNBT.getLong(NBT_OUTPUT) * 2);
+		mEnergyOUT2 = new TE_Behavior_Energy_Stats(this, aNBT, aNBT.contains(NBT_ENERGY_EMITTED_2) ? TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED_2).orElse("")) : TD.Energy.QU, mStorage, aNBT.getLong(NBT_OUTPUT).orElse(0L) / 2, aNBT.getLong(NBT_OUTPUT).orElse(0L), aNBT.getLong(NBT_OUTPUT).orElse(0L) * 2);
 	}
 	
 	@Override

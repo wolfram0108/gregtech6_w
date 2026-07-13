@@ -105,10 +105,10 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 				tGas = FL.gas(tFluid);
 				tTemperature = FL.temperature(tFluid);
 			} else {
-				tAmount = aNBT.getLong("a");
+				tAmount = aNBT.getLong("a").orElse(0L);
 				tFluid = FL.make(aFluid, (int)tAmount);
-				tGas = aNBT.getBoolean("s");
-				tTemperature = aNBT.getLong("h");
+				tGas = aNBT.getBoolean("s").orElse(false);
+				tTemperature = aNBT.getLong("h").orElse(0L);
 			}
 			
 			if (tAmount > 0) {
@@ -309,7 +309,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	public void updateItemStack(ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null && aNBT.contains("f")) {
-			String aName = aNBT.getString("f");
+			String aName = aNBT.getString("f").orElse("");
 			if (UT.Code.stringInvalid(aName)) return;
 			String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
 			if (UT.Code.stringValid(tName)) aName = tName;
@@ -332,7 +332,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		FluidStack rFluid = null;
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			long tAmount = aNBT.getLong("a");
+			long tAmount = aNBT.getLong("a").orElse(0L);
 			if (tAmount > 0) rFluid = FL.make(tFluid, tAmount);
 		}
 		return rFluid == null ? FL.make(tFluid, 0) : rFluid;

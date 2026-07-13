@@ -74,13 +74,13 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF);
-		if (aNBT.contains(NBT_LIQUIDPROOF)) mLiquidProof = aNBT.getBoolean(NBT_LIQUIDPROOF);
-		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF);
-		if (aNBT.contains(NBT_TEMPERATURE)) mTemperatureMax = aNBT.getLong(NBT_TEMPERATURE); else mTemperatureMax = mMaterial.mMeltingPoint - 50;
-		if (aNBT.contains(NBT_TANK_CAPACITY)) mTank.setCapacity(aNBT.getLong(NBT_TANK_CAPACITY));
+		if (aNBT.contains(NBT_GASPROOF)) mGasProof = aNBT.getBoolean(NBT_GASPROOF).orElse(false);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF).orElse(false);
+		if (aNBT.contains(NBT_MAGICPROOF)) mMagicProof = aNBT.getBoolean(NBT_MAGICPROOF).orElse(false);
+		if (aNBT.contains(NBT_LIQUIDPROOF)) mLiquidProof = aNBT.getBoolean(NBT_LIQUIDPROOF).orElse(false);
+		if (aNBT.contains(NBT_PLASMAPROOF)) mPlasmaProof = aNBT.getBoolean(NBT_PLASMAPROOF).orElse(false);
+		if (aNBT.contains(NBT_TEMPERATURE)) mTemperatureMax = aNBT.getLong(NBT_TEMPERATURE).orElse(0L); else mTemperatureMax = mMaterial.mMeltingPoint - 50;
+		if (aNBT.contains(NBT_TANK_CAPACITY)) mTank.setCapacity(aNBT.getLong(NBT_TANK_CAPACITY).orElse(0L));
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}
 	

@@ -143,7 +143,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 			rBlueprint = UT.NBT.getBlueprintCrafting(tData);
 		} else if (OM.is_(OD_USB_CABLES[1], aSpecialSlot)) {
 			if (aTileEntity == null) return rBlueprint;
-			for (byte tSide : ALL_SIDES_VALID_ONLY[(ItemNBT.get(aSpecialSlot) != null) && ItemNBT.get(aSpecialSlot).contains(NBT_USB_DIRECTION) ? ItemNBT.get(aSpecialSlot).getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
+			for (byte tSide : ALL_SIDES_VALID_ONLY[(ItemNBT.get(aSpecialSlot) != null) && ItemNBT.get(aSpecialSlot).contains(NBT_USB_DIRECTION) ? ItemNBT.get(aSpecialSlot).getByte(NBT_USB_DIRECTION).orElse((byte)0) : SIDE_ANY]) {
 				DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 				if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 					CompoundTag tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 1);

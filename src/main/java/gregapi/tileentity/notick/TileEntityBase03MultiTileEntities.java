@@ -95,8 +95,8 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 		// Check if this is a World/Chunk Loading Process calling readFromNBT.
 		if (mMTEID == W || mMTERegistry == W) {
 			// Yes it is, so read the ID Tags first.
-			mMTEID = aNBT.getShort(NBT_MTE_ID);
-			mMTERegistry = aNBT.getShort(NBT_MTE_REG);
+			mMTEID = aNBT.getShort(NBT_MTE_ID).orElse((short)0);
+			mMTERegistry = aNBT.getShort(NBT_MTE_REG).orElse((short)0);
 			// And add additional Default Parameters, in case the Mod updated with new ones.
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(mMTERegistry);
 			if (tRegistry != null) {
@@ -114,7 +114,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 		// make sure Y is not negative because this causes crashes.
 		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		// read the custom Name.
-		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundOrEmpty("display").getString("Name");
+		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundOrEmpty("display").getString("Name").orElse("");
 		// And now your custom readFromNBT.
 		try {readFromNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}

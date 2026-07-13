@@ -443,6 +443,6 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	}
 
 	public String getSetup(ItemStack aStack) {
-		return ItemNBT.get(aStack).getCompoundOrEmpty(NBT_USB_DATA).getString(NBT_REACTOR_SETUP);
+		return ItemNBT.get(aStack).getCompoundOrEmpty(NBT_USB_DATA).getString(NBT_REACTOR_SETUP).orElse("");
 	}
 }

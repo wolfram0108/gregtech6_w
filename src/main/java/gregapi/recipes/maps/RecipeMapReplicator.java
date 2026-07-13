@@ -68,7 +68,7 @@ public class RecipeMapReplicator extends RecipeMap {
 				} else if (OM.is_(OD_USB_CABLES[3], aInput)) {
 					if (aTileEntity == null) return rRecipe;
 					tUSB = aInput;
-					for (byte tSide : ALL_SIDES_VALID_ONLY[(ItemNBT.get(tUSB) != null) && ItemNBT.get(tUSB).contains(NBT_USB_DIRECTION) ? ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
+					for (byte tSide : ALL_SIDES_VALID_ONLY[(ItemNBT.get(tUSB) != null) && ItemNBT.get(tUSB).contains(NBT_USB_DIRECTION) ? ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION).orElse((byte)0) : SIDE_ANY]) {
 						DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 							tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 3);
@@ -80,7 +80,7 @@ public class RecipeMapReplicator extends RecipeMap {
 		}
 		if (tData == null || tData.isEmpty()) return rRecipe;
 		if (tUSB != null && tData.contains(NBT_REPLICATOR_DATA)) {
-			short tID = tData.getShort(NBT_REPLICATOR_DATA);
+			short tID = tData.getShort(NBT_REPLICATOR_DATA).orElse((short)0);
 			if (tID > 0 && UT.Code.exists(tID, OreDictMaterial.MATERIAL_ARRAY)) return getReplicatorRecipe(OreDictMaterial.MATERIAL_ARRAY[tID], tUSB);
 		}
 		return rRecipe;

@@ -59,11 +59,11 @@ public class MultiTileEntityWireRedstoneInsulated extends TileEntityBase10Connec
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains("gt.mreceived")) mReceived = aNBT.getByte("gt.mreceived");
-		if (aNBT.contains("gt.mredstone")) mRedstone = aNBT.getByte("gt.mredstone");
-		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE);
-		if (aNBT.contains(NBT_PIPELOSS)) mLoss = Math.max(1, aNBT.getLong(NBT_PIPELOSS));
-		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER);
+		if (aNBT.contains("gt.mreceived")) mReceived = aNBT.getByte("gt.mreceived").orElse((byte)0);
+		if (aNBT.contains("gt.mredstone")) mRedstone = aNBT.getByte("gt.mredstone").orElse((byte)0);
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getByte(NBT_MODE).orElse((byte)0);
+		if (aNBT.contains(NBT_PIPELOSS)) mLoss = Math.max(1, aNBT.getLong(NBT_PIPELOSS).orElse(0L));
+		if (aNBT.contains(NBT_PIPERENDER)) mRenderType = aNBT.getByte(NBT_PIPERENDER).orElse((byte)0);
 	}
 	
 	@Override

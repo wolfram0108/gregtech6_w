@@ -69,7 +69,7 @@ public class RecipeMapPrinter extends RecipeMap {
 				} else if (OM.is_(OD_USB_CABLES[1], aInput)) {
 					if (aTileEntity == null) return rRecipe;
 					tUSB = aInput;
-					for (byte tSide : ALL_SIDES_VALID_ONLY[(ItemNBT.get(tUSB) != null) && ItemNBT.get(tUSB).contains(NBT_USB_DIRECTION) ? ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION) : SIDE_ANY]) {
+					for (byte tSide : ALL_SIDES_VALID_ONLY[(ItemNBT.get(tUSB) != null) && ItemNBT.get(tUSB).contains(NBT_USB_DIRECTION) ? ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION).orElse((byte)0) : SIDE_ANY]) {
 						DelegatorTileEntity<BlockEntity> tDelegator = aTileEntity.getAdjacentTileEntity(tSide);
 						if (tDelegator.mTileEntity instanceof ITileEntityUSBPort) {
 							tData = ((ITileEntityUSBPort)tDelegator.mTileEntity).getUSBData(tDelegator.mSideOfTileEntity, 1);
@@ -114,10 +114,10 @@ public class RecipeMapPrinter extends RecipeMap {
 				return rRecipe;
 			}
 			if (OD.paperEmpty.is_(tPaper)) {
-				if (IL.GC_Schematic_1.exists() && tData.contains("gc_schematics_1")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_1.getWithMeta(1, tData.getShort("gc_schematics_1"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
-				if (IL.GC_Schematic_2.exists() && tData.contains("gc_schematics_2")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_2.getWithMeta(1, tData.getShort("gc_schematics_2"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
-				if (IL.GC_Schematic_3.exists() && tData.contains("gc_schematics_3")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_3.getWithMeta(1, tData.getShort("gc_schematics_3"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
-				if (IL.IE_Blueprint_Projectiles_Common.exists() && tData.contains("ie_blueprint")) return new Recipe(F, F, F, ST.array(ST.amount(3, tPaper), ST.amount(0, tUSB)), ST.array(IL.IE_Blueprint_Projectiles_Common.getWithMeta(1, tData.getShort("ie_blueprint"))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue], 3, 1, T)), null, 2048, 16, 0);
+				if (IL.GC_Schematic_1.exists() && tData.contains("gc_schematics_1")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_1.getWithMeta(1, tData.getShort("gc_schematics_1").orElse((short)0))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
+				if (IL.GC_Schematic_2.exists() && tData.contains("gc_schematics_2")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_2.getWithMeta(1, tData.getShort("gc_schematics_2").orElse((short)0))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
+				if (IL.GC_Schematic_3.exists() && tData.contains("gc_schematics_3")) return new Recipe(F, F, F, ST.array(ST.amount(8, tPaper), ST.amount(0, tUSB)), ST.array(IL.GC_Schematic_3.getWithMeta(1, tData.getShort("gc_schematics_3").orElse((short)0))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), null, 2048, 16, 0);
+				if (IL.IE_Blueprint_Projectiles_Common.exists() && tData.contains("ie_blueprint")) return new Recipe(F, F, F, ST.array(ST.amount(3, tPaper), ST.amount(0, tUSB)), ST.array(IL.IE_Blueprint_Projectiles_Common.getWithMeta(1, tData.getShort("ie_blueprint").orElse((short)0))), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue], 3, 1, T)), null, 2048, 16, 0);
 				ItemStack[] tBlueprint = UT.NBT.getBlueprintCrafting(tData);
 				if (tBlueprint != ZL_IS) {
 					ItemStack tCrafted = CR.getany(null, tBlueprint);
@@ -137,7 +137,7 @@ public class RecipeMapPrinter extends RecipeMap {
 					UT.NBT.set(rRecipe.mOutputs[0], (CompoundTag)tData.copy());
 					return rRecipe;
 				}
-				short tID = tData.getShort(NBT_REPLICATOR_DATA);
+				short tID = tData.getShort(NBT_REPLICATOR_DATA).orElse((short)0);
 				if (tID > 0 && UT.Code.exists(tID, OreDictMaterial.MATERIAL_ARRAY)) {
 					OreDictMaterial tMaterial = OreDictMaterial.MATERIAL_ARRAY[tID];
 					if (ST.valid(tMaterial.mDictionaryBook)) {

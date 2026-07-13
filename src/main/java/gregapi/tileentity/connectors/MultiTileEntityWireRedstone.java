@@ -38,7 +38,7 @@ public class MultiTileEntityWireRedstone extends MultiTileEntityWireRedstoneInsu
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_STATE)) mState = aNBT.getByte(NBT_STATE);
+		if (aNBT.contains(NBT_STATE)) mState = aNBT.getByte(NBT_STATE).orElse((byte)0);
 	}
 	
 	@Override

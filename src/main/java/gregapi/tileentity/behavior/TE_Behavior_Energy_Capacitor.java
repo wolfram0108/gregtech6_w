@@ -35,7 +35,7 @@ public class TE_Behavior_Energy_Capacitor extends TE_Behavior {
 	
 	@Override
 	public void load(CompoundTag aNBT) {
-		mEnergy = aNBT.getLong(NBT_ENERGY);
+		mEnergy = aNBT.getLong(NBT_ENERGY).orElse(0L);
 	}
 	
 	@Override
