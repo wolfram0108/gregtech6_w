@@ -103,7 +103,7 @@ public class MultiTileEntityRegistry {
 	/** @param aNameInternal the internal Name of the Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!! */
 	public MultiTileEntityRegistry(String aNameInternal, MultiTileEntityBlockInternal aBlock, Class<? extends BlockItem> aItemClass, Object aItemRenderer) {
 		this(aNameInternal, regblock(aNameInternal, aBlock, aItemClass));
-		if (CODE_CLIENT) MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(mBlock), aItemRenderer == null ? RendererBlockTextured.INSTANCE : (IItemRenderer)aItemRenderer);
+		if (CODE_CLIENT) MinecraftForgeClient.registerItemRenderer(Item.byBlock(mBlock), aItemRenderer == null ? RendererBlockTextured.INSTANCE : (IItemRenderer)aItemRenderer);
 	}
 	/** @param aNameInternal the internal Name of the Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!! */
 	public MultiTileEntityRegistry(String aNameInternal, MultiTileEntityBlockInternal aBlock) {
@@ -189,7 +189,7 @@ public class MultiTileEntityRegistry {
 		mRegistry.put(aClassContainer.mID, aClassContainer);
 		mLastRegisteredID = aClassContainer.mID;
 		mRegistrations.add(aClassContainer);
-		if (!mCreativeTabs.containsKey(aClassContainer.mCreativeTabID)) mCreativeTabs.put(aClassContainer.mCreativeTabID, new CreativeTab(mNameInternal+"."+aClassContainer.mCreativeTabID, aCategoricalName, Item.getItemFromBlock(mBlock), aClassContainer.mCreativeTabID));
+		if (!mCreativeTabs.containsKey(aClassContainer.mCreativeTabID)) mCreativeTabs.put(aClassContainer.mCreativeTabID, new CreativeTab(mNameInternal+"."+aClassContainer.mCreativeTabID, aCategoricalName, Item.byBlock(mBlock), aClassContainer.mCreativeTabID));
 		if (sRegisteredTileEntityClassNames.add(aClassContainer.mCanonicalTileEntity.getClass().getName()) && sRegisteredTileEntities.add(aClassContainer.mCanonicalTileEntity.getClass())) {
 			if (aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirst) ((IMTE_OnRegistrationFirst)aClassContainer.mCanonicalTileEntity).onRegistrationFirst(this, aClassContainer.mID);
 			if (CODE_CLIENT && aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirstClient) ((IMTE_OnRegistrationFirstClient)aClassContainer.mCanonicalTileEntity).onRegistrationFirstClient(this, aClassContainer.mID);

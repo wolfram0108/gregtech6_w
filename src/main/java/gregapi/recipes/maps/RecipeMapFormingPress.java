@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes.maps;
+import gregapi.code.ItemNBT;
 
 import gregapi.data.IL;
 import gregapi.random.IHasWorldAndCoords;

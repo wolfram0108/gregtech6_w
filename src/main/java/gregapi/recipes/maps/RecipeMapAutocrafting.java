@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes.maps;
+import gregapi.code.ItemNBT;
 
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.IL;

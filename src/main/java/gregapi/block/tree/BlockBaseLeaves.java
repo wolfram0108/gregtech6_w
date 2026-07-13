@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.tree;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block.SoundType;
 
 import gregapi.api.Optional;
@@ -77,7 +78,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & 7;}
-	@Override public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.getItemFromBlock(mSaplings);}
+	@Override public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(mSaplings);}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.OAK_LEAVES.getBlockHardness(aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.OAK_LEAVES.getExplosionResistance(null);}
 	@Override public boolean renderAsNormalBlock() {return F;}

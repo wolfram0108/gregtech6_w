@@ -111,8 +111,8 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public int quantityDropped(Random par1Random) {return 1;}
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return 0;}
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
-	public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.getItemFromBlock(this);}
-	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.getItemFromBlock(this);}
+	public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.byBlock(this);}
+	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
 	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {return canCreatureSpawn(WD.meta(aWorld, aX, aY, aZ));}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab par2CreativeTabs, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}

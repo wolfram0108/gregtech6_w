@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes;
+import gregapi.code.ItemNBT;
 
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.HashSetNoNulls;

@@ -362,7 +362,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		int tIndex = aRandom.nextInt(BlocksGT.POT_FLOWER_TILES.length);
 		WD.set(aWorld, aX, aY, aZ, Blocks.FLOWER_POT, 0, 2);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (tTileEntity instanceof TileEntityFlowerPot) ((TileEntityFlowerPot)tTileEntity).func_145964_a(Item.getItemFromBlock(BlocksGT.POT_FLOWER_TILES[tIndex]), BlocksGT.POT_FLOWER_METAS[tIndex]);
+		if (tTileEntity instanceof TileEntityFlowerPot) ((TileEntityFlowerPot)tTileEntity).func_145964_a(Item.byBlock(BlocksGT.POT_FLOWER_TILES[tIndex]), BlocksGT.POT_FLOWER_METAS[tIndex]);
 		return T;
 	}
 	

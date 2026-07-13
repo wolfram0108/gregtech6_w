@@ -18,6 +18,7 @@
  */
 
 package gregapi.block;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block.SoundType;
 
 import gregapi.data.LH;
@@ -96,8 +97,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public ItemStack createStackedBlock(int aMeta) {return ST.make(this, 1, damageDropped(aMeta));}
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	public int getLightOpacity() {return LIGHT_OPACITY_MAX;}
-	public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.getItemFromBlock(this);}
-	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.getItemFromBlock(this);}
+	public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(this);}
+	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {return F;}
 	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {byte aMeta = WD.meta(aWorld, aX, aY, aZ); return canCreatureSpawn(aMeta) && isSideSolid(aMeta, SIDE_TOP);}

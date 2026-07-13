@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.prefixblock;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.Block.SoundType;
 
@@ -228,7 +229,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (mOpaque) VISUALLY_OPAQUE_BLOCKS.add(this);
 		mDrops = aDrops==null?new Drops(this, this, this, this, F, F, 0, 0):aDrops;
 		
-		if (CODE_CLIENT) MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(this), RendererBlockTextured.INSTANCE);
+		if (CODE_CLIENT) MinecraftForgeClient.registerItemRenderer(Item.byBlock(this), RendererBlockTextured.INSTANCE);
 		
 		// Execute before all the other things. This is to ensure that PrefixBlocks are created before MultiItems.
 		(GAPI.mBeforeInit==null?GAPI.mBeforePostInit:GAPI.mBeforeInit).add(0, this);

@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.multitileentity;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.inventory.AbstractContainerMenu;

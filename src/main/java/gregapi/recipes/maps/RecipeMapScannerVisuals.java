@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes.maps;
+import gregapi.code.ItemNBT;
 
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackMap;

@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.multitileentity;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block.SoundType;
 import gregapi.util.WD;
 

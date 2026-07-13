@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.metatype;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.Block.SoundType;
 
 import static gregapi.data.CS.*;
@@ -176,7 +177,7 @@ public class BlockMetaType extends BlockBaseMeta {
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public int getLightOpacity() {return mBlock == this ? LIGHT_OPACITY_MAX : LIGHT_OPACITY_WATER;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.stone.mDefaultStackSize * (mBlock.mBlock == mBlock ? 1 : 2));}
-	@Override public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.getItemFromBlock(mIsSlab ? mBlock.mSlabs[0] : mBlock);}
+	@Override public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.byBlock(mIsSlab ? mBlock.mSlabs[0] : mBlock);}
 	@Override public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {if (mIsPrimary) super.getSubBlocks(aItem, aTab, aList);}
-	@Override public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.getItemFromBlock(mIsSlab ? mBlock.mSlabs[0] : mBlock);}
+	@Override public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(mIsSlab ? mBlock.mSlabs[0] : mBlock);}
 }
