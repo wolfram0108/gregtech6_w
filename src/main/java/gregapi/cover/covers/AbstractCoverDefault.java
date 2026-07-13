@@ -76,7 +76,7 @@ public abstract class AbstractCoverDefault implements ICover {
 	@Override public void onBlockUpdate(byte aCoverSide, CoverData aData) {/**/}
 	@Override public void onStoppedUpdate(byte aCoverSide, CoverData aData, boolean aStopped) {/**/}
 	@Override public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {aList.add(LH.Chat.DGRAY + LH.get(LH.COVER_TOOLTIP));}
-	@Override public byte getRedstoneIn(byte aCoverSide, CoverData aData) {return UT.Code.bind4(aData.mTileEntity.getWorld().getIndirectPowerLevelTo(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide), aCoverSide));}
+	@Override public byte getRedstoneIn(byte aCoverSide, CoverData aData) {return UT.Code.bind4(aData.mTileEntity.getWorld().getSignal(new BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide)), FORGE_DIR[aCoverSide]));}
 	@Override public byte getRedstoneOutWeak(byte aCoverSide, CoverData aData, byte aDefaultRedstone) {return aDefaultRedstone;}
 	@Override public byte getRedstoneOutStrong(byte aCoverSide, CoverData aData, byte aDefaultRedstone) {return aDefaultRedstone;}
 	

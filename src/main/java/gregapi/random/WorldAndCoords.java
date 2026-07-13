@@ -142,12 +142,12 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 		if (SIDES_INVALID[aSide]) {
 			byte rRedstone = 0;
 			for (byte tSide : ALL_SIDES_VALID) {
-				rRedstone = (byte)Math.max(rRedstone, mWorld.getIndirectPowerLevelTo(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide), tSide));
+				rRedstone = (byte)Math.max(rRedstone, mWorld.getSignal(new BlockPos(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide)), FORGE_DIR[tSide]));
 				if (rRedstone >= 15) return 15;
 			}
 			return rRedstone;
 		}
-		return UT.Code.bind4(mWorld.getIndirectPowerLevelTo(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), aSide));
+		return UT.Code.bind4(mWorld.getSignal(new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide)), FORGE_DIR[aSide]));
 	}
 	
 	@Override

@@ -413,7 +413,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 			byte rRedstone = 0;
 			for (byte tSide : ALL_SIDES_VALID) {
 				if (mCovers.mBehaviours[tSide] == null) {
-					rRedstone = (byte)Math.max(rRedstone, level.getIndirectPowerLevelTo(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide), tSide));
+					rRedstone = (byte)Math.max(rRedstone, level.getSignal(new BlockPos(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide)), FORGE_DIR[tSide]));
 				} else {
 					rRedstone = (byte)Math.max(rRedstone, mCovers.mBehaviours[tSide].getRedstoneIn(tSide, mCovers));
 				}
@@ -421,7 +421,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 			}
 			return rRedstone;
 		}
-		return mCovers.mBehaviours[aSide] == null ? UT.Code.bind4(level.getIndirectPowerLevelTo(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), aSide)) : mCovers.mBehaviours[aSide].getRedstoneIn(aSide, mCovers);
+		return mCovers.mBehaviours[aSide] == null ? UT.Code.bind4(level.getSignal(new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide)), FORGE_DIR[aSide])) : mCovers.mBehaviours[aSide].getRedstoneIn(aSide, mCovers);
 	}
 	
 	@Override

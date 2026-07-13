@@ -636,12 +636,12 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (SIDES_INVALID[aSide]) {
 			byte rRedstone = 0;
 			for (byte tSide : ALL_SIDES_VALID) {
-				rRedstone = (byte)Math.max(rRedstone, level.getIndirectPowerLevelTo(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide), tSide));
+				rRedstone = (byte)Math.max(rRedstone, level.getSignal(new BlockPos(getOffsetX(tSide), getOffsetY(tSide), getOffsetZ(tSide)), FORGE_DIR[tSide]));
 				if (rRedstone >= 15) return 15;
 			}
 			return rRedstone;
 		}
-		return UT.Code.bind4(level.getIndirectPowerLevelTo(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), aSide));
+		return UT.Code.bind4(level.getSignal(new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide)), FORGE_DIR[aSide]));
 	}
 	
 	@Override
