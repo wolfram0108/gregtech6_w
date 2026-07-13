@@ -58,7 +58,7 @@ public class DungeonChunkPillar implements IDungeonChunk {
 					aData.smooth(tX, tY+1, tZ);
 					aData.bricks(tX, tY  , tZ);
 					aData.bricks(tX, tY-1, tZ);
-					if (tY > 2 || WD.block(aData.mWorld, aData.mX+tX, 0, aData.mZ+tZ).getBlockHardness(aData.mWorld, aData.mX+tX, 0, aData.mZ+tZ) >= 0)
+					if (tY > 2 || WD.hardness(WD.block(aData.mWorld, aData.mX+tX, 0, aData.mZ+tZ), aData.mWorld, aData.mX+tX, 0, aData.mZ+tZ) >= 0)
 					aData.smooth(tX, tY-2, tZ);
 				}
 			}

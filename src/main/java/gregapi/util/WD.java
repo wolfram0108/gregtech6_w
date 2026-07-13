@@ -388,9 +388,14 @@ public class WD {
 	public static boolean exists(Level aWorld, int aX, int aY, int aZ) {
 		return aWorld != null && aWorld.isLoaded(new BlockPos(aX, aY, aZ));
 	}
-	/** F-world: 1.7.10 WD.canSeeSky(World, x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
+	/** F-world: 1.7.10 World-небовидимость(x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
 	public static boolean canSeeSky(Level aWorld, int aX, int aY, int aZ) {
 		return aWorld != null && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
+	}
+	/** F-world: 1.7.10 WD.hardness(Block, world,x,y,z) -> neo BlockState.getDestroySpeed(BlockGetter,BlockPos)
+	 *  (BlockBehaviour.java:636). Твёрдость конкретного блока — через его defaultBlockState. */
+	public static float hardness(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
+		return aBlock.defaultBlockState().getDestroySpeed(aWorld, new BlockPos(aX, aY, aZ));
 	}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
@@ -1019,7 +1024,7 @@ public class WD {
 				if (aTileEntity != null) rList.add("TileEntity Class: " + aTileEntity.getClass());
 			}
 			float tResistance = aBlock.getExplosionResistance(aPlayer, aWorld, aX, aY, aZ, aPlayer.getX(), aPlayer.getY(), aPlayer.getZ());
-			rList.add("Hardness: " + aBlock.getBlockHardness(aWorld, aX, aY, aZ) + " - " + LH.getToolTipBlastResistance(aBlock, tResistance));
+			rList.add("Hardness: " + WD.hardness(aBlock, aWorld, aX, aY, aZ) + " - " + LH.getToolTipBlastResistance(aBlock, tResistance));
 			int tHarvestLevel = aBlock.getHarvestLevel(aMeta);
 			String tHarvestTool = aBlock.getHarvestTool(aMeta);
 			rList.add(tHarvestLevel == 0 && aBlock.getMaterial().isAdventureModeExempt() ? "Hand-Harvestable, but " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " is faster" : "Tool to Harvest: " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " (" + tHarvestLevel + ")");

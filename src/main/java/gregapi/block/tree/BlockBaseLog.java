@@ -66,7 +66,7 @@ public abstract class BlockBaseLog extends BlockBaseTree {
 	@Override public String getHarvestTool(int aMeta) {return TOOL_axe;}
 	@Override public int damageDropped(int aMeta) {return aMeta & PILLAR_DATA;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & PILLAR_DATA;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.OAK_LOG.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.OAK_LOG, aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.OAK_LOG.getExplosionResistance(null);}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.log.mDefaultStackSize);}
 	public int getRenderType() {return PILLAR_RENDER;}

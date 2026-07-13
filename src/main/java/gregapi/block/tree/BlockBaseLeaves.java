@@ -79,7 +79,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & 7;}
 	@Override public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(mSaplings);}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.OAK_LEAVES.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.OAK_LEAVES, aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.OAK_LEAVES.getExplosionResistance(null);}
 	@Override public boolean renderAsNormalBlock() {return F;}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
