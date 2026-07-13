@@ -71,7 +71,7 @@ public class BlockGlassGlow extends BlockColored {
 	@Override public boolean isOpaqueCube() {return F;}
 	@Override public boolean renderAsNormalBlock() {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return mBlock == this || mSide == aSide;}
-	@Override public boolean isBlockSolid(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return F;}
+	public boolean isBlockSolid(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return F;}
 	@Override public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(OP.scrapGt.mat(MT.Glass, mBlock == this ? 80 : 40));}
 	
 	@Override

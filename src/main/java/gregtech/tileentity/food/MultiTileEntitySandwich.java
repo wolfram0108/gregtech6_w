@@ -240,7 +240,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	
 	@Override
 	public boolean canPlace(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		return WD.block(aWorld, aX, aY-1, aZ).isSideSolid(aWorld, aX, aY-1, aZ, FORGE_DIR[SIDE_TOP]);
+		return WD.sideSolid(WD.block(aWorld, aX, aY-1, aZ), aWorld, aX, aY-1, aZ, FORGE_DIR[SIDE_TOP]);
 	}
 	
 	@Override

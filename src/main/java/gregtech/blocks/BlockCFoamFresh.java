@@ -96,7 +96,6 @@ public class BlockCFoamFresh extends BlockColored implements IBlockFoamable {
 		return null;
 	}
 	
-	@Override
 	public boolean isBlockSolid(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		return F;
 	}

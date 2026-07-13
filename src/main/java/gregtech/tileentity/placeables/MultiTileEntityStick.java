@@ -85,7 +85,7 @@ public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities impl
 	@Override
 	public void onNeighborBlockChange(Level aWorld, Block aBlock) {
 		if (isServerSide()) {
-			if (!WD.block(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()).isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
+			if (!WD.sideSolid(WD.block(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()), level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
 				ST.drop(level, getCoords(), getDefaultStick(1));
 				setToAir();
 				return;

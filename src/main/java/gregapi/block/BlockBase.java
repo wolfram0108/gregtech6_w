@@ -169,11 +169,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
-		} else if (tBlock != Blocks.VINE && tBlock != Blocks.DEAD_BUSH && tBlock != Blocks.DEAD_BUSH && !tBlock.isReplaceable(aWorld, aX, aY, aZ)) {
+		} else if (tBlock != Blocks.VINE && tBlock != Blocks.DEAD_BUSH && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
-		
-		if (!WD.block(aWorld, aX, aY, aZ).isReplaceable(aWorld, aX, aY, aZ)) return F;
+
+		if (!WD.replaceable(WD.block(aWorld, aX, aY, aZ), aWorld, aX, aY, aZ)) return F;
 		if (!canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
 		byte aMeta = UT.Code.bind4(aItem.getMetadata(ST.meta(aStack)));
 		if (!checkNoEntityCollision(aWorld, aX, aY, aZ, aMeta, null)) return F;

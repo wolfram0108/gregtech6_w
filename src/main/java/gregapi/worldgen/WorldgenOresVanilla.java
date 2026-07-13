@@ -50,6 +50,6 @@ public class WorldgenOresVanilla extends WorldgenBlob {
 	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		Block tTargetedBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tTargetedBlock == NB || tTargetedBlock.isAir(aWorld, aX, aY, aZ)) return mAllowToGenerateinVoid && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
-		return (mReplaceBlock == null ? !ST.isGT(tTargetedBlock) && tTargetedBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE) : tTargetedBlock == mReplaceBlock && WD.meta(aWorld, aX, aY, aZ) == mReplaceMeta) && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
+		return (mReplaceBlock == null ? !ST.isGT(tTargetedBlock) && WD.oreGen(tTargetedBlock, aWorld, aX, aY, aZ, Blocks.STONE) : tTargetedBlock == mReplaceBlock && WD.meta(aWorld, aX, aY, aZ) == mReplaceMeta) && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 	}
 }

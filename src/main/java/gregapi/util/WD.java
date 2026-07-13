@@ -69,6 +69,10 @@ import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.WallSignBlock;
 import gregapi.block.Material;
+import gregapi.block.BlockBase;
+import gregapi.block.multitileentity.MultiTileEntityBlock;
+import gregapi.block.metatype.BlockStones;
+import net.minecraft.core.Direction;
 // F#(WD-block): доступ к блокам мира переучен на BlockPos/BlockState (world.getBlockState(pos).getBlock() —
 // BlockGetter.java:32 + BlockBehaviour.java:521 getBlock()); координатные типы/шейпы/рейтрейс — ниже.
 import net.minecraft.core.BlockPos;
@@ -467,6 +471,37 @@ public class WD {
 		return gregapi.block.Material.rock;
 	}
 
+	/** F-block-behavior: 1.7.10 {@code Block.isReplaceable/isSideSolid/isReplaceableOreGen} удалены в neo
+	 *  (нет ни в {@code Block.java}, ни в {@code BlockBehaviour.java} ни в одном из 3 корней референса). GT6-блоки
+	 *  (BlockBase, MultiTileEntityBlock, BlockStones) определяют свои версии сами (компилируются как собственные
+	 *  методы) — централизуем здесь ВЫЗОВЫ на приёмниках статического типа ванильный {@code Block}: instanceof-
+	 *  диспетчер (виртуальный dispatch докручивает до реального override подкласса), иначе — 1.7.10 Forge-дефолт. */
+	/** было {@code tBlock.isReplaceable(aWorld, aX, aY, aZ)} — 1.7.10 {@code Block.isReplaceable} дефолт =
+	 *  {@code blockMaterial.isReplaceable()} (BlockBase его НЕ переопределяет, см. `gregtech6/.../BlockBase.java`,
+	 *  использует материал), MultiTileEntityBlock переопределяет (TileEntity-делегирование). */
+	public static boolean replaceable(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
+		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isReplaceable(aWorld, aX, aY, aZ);
+		return getMaterial(aBlock).isReplaceable();
+	}
+	/** было {@code aBlock.isSideSolid(aWorld, aX, aY, aZ, aSide)} — BlockBase.java:95 переопределяет (и все его
+	 *  подклассы через virtual dispatch), MultiTileEntityBlock.java:279 переопределяет (TileEntity-делегирование).
+	 *  Ванильный neo-эквивалент дефолта — {@code BlockState.isFaceSturdy(BlockGetter,BlockPos,Direction)}
+	 *  (BlockBehaviour.java:876). */
+	public static boolean sideSolid(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {
+		if (aBlock instanceof BlockBase) return ((BlockBase)aBlock).isSideSolid(aWorld, aX, aY, aZ, aSide);
+		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isSideSolid(aWorld, aX, aY, aZ, aSide);
+		return aBlock.defaultBlockState().isFaceSturdy(aWorld, new BlockPos(aX, aY, aZ), aSide);
+	}
+	/** было {@code aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget)} — BlockBase его НЕ переопределяет
+	 *  (сверено с `gregtech6/.../BlockBase.java`, дефолт), переопределяют только MultiTileEntityBlock.java:245
+	 *  (TileEntity-делегирование) и BlockStones.java:746 (каменные руды/генерация). Ванильный Forge 1.7.10
+	 *  {@code Block.isReplaceableOreGen} дефолт = identity ({@code this==target}). */
+	public static boolean oreGen(Block aBlock, Level aWorld, int aX, int aY, int aZ, Block aTarget) {
+		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget);
+		if (aBlock instanceof BlockStones) return ((BlockStones)aBlock).isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget);
+		return aBlock == aTarget;
+	}
+
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	
 	public static BlockEntity invalidateTileEntityWithNegativeYCoord(int aX, int aY, int aZ, BlockEntity aTileEntity) {
@@ -790,7 +825,7 @@ public class WD {
 	}
 	
 	public static boolean floor(Level aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean floor(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock.isSideSolid(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_UP]) || floor(aBlock);}
+	public static boolean floor(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.sideSolid(aBlock, aWorld, aX, aY, aZ, FORGE_DIR[SIDE_UP]) || floor(aBlock);}
 	public static boolean floor(Block aBlock) {return WD.opaque(aBlock) || aBlock instanceof SlabBlock || aBlock instanceof StairBlock || aBlock instanceof BlockMetaType;}
 	
 	@SuppressWarnings("unlikely-arg-type")
@@ -892,11 +927,11 @@ public class WD {
 		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(aBlock, 1, aMeta))) return T;
-		if (Blocks.STONE      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE     )) return T;
-		if (Blocks.GRAVEL     != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.GRAVEL    )) return T;
-		if (Blocks.SAND       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.SAND      )) return T;
-		if (Blocks.NETHERRACK != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK)) return T;
-		if (Blocks.END_STONE  != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE )) return T;
+		if (Blocks.STONE      != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.STONE     )) return T;
+		if (Blocks.GRAVEL     != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.GRAVEL    )) return T;
+		if (Blocks.SAND       != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.SAND      )) return T;
+		if (Blocks.NETHERRACK != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.NETHERRACK)) return T;
+		if (Blocks.END_STONE  != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.END_STONE )) return T;
 		return F;
 	}
 	
@@ -912,11 +947,11 @@ public class WD {
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToNormalOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
-		if (Blocks.STONE      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE     )) tBlock = BlocksGT.ore; else
-		if (Blocks.GRAVEL     != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.GRAVEL    )) tBlock = BlocksGT.oreGravel; else
-		if (Blocks.SAND       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.SAND      )) tBlock = BlocksGT.oreSand; else
-		if (Blocks.NETHERRACK != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK)) tBlock = BlocksGT.oreNetherrack; else
-		if (Blocks.END_STONE  != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE )) tBlock = BlocksGT.oreEndstone;
+		if (Blocks.STONE      != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.STONE     )) tBlock = BlocksGT.ore; else
+		if (Blocks.GRAVEL     != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.GRAVEL    )) tBlock = BlocksGT.oreGravel; else
+		if (Blocks.SAND       != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.SAND      )) tBlock = BlocksGT.oreSand; else
+		if (Blocks.NETHERRACK != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.NETHERRACK)) tBlock = BlocksGT.oreNetherrack; else
+		if (Blocks.END_STONE  != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.END_STONE )) tBlock = BlocksGT.oreEndstone;
 		}
 		return tBlock != null && tBlock.placeBlock(aWorld, aX, aY, aZ, (byte)6, aID, null, F, T);
 	}
@@ -933,11 +968,11 @@ public class WD {
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToSmallOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
-		if (Blocks.STONE      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE     )) tBlock = BlocksGT.oreSmall; else
-		if (Blocks.GRAVEL     != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.GRAVEL    )) tBlock = BlocksGT.oreSmallGravel; else
-		if (Blocks.SAND       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.SAND      )) tBlock = BlocksGT.oreSmallSand; else
-		if (Blocks.NETHERRACK != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK)) tBlock = BlocksGT.oreSmallNetherrack; else
-		if (Blocks.END_STONE  != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE )) tBlock = BlocksGT.oreSmallEndstone;
+		if (Blocks.STONE      != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.STONE     )) tBlock = BlocksGT.oreSmall; else
+		if (Blocks.GRAVEL     != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.GRAVEL    )) tBlock = BlocksGT.oreSmallGravel; else
+		if (Blocks.SAND       != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.SAND      )) tBlock = BlocksGT.oreSmallSand; else
+		if (Blocks.NETHERRACK != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.NETHERRACK)) tBlock = BlocksGT.oreSmallNetherrack; else
+		if (Blocks.END_STONE  != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.END_STONE )) tBlock = BlocksGT.oreSmallEndstone;
 		}
 		return tBlock != null && tBlock.placeBlock(aWorld, aX, aY, aZ, (byte)6, aID, null, F, T);
 	}

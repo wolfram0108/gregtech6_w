@@ -119,12 +119,12 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		
 		if (aBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
-		} else if (aBlock != Blocks.VINE && aBlock != Blocks.DEAD_BUSH && aBlock != Blocks.DEAD_BUSH && !aBlock.isReplaceable(aWorld, aX, aY, aZ)) {
+		} else if (aBlock != Blocks.VINE && aBlock != Blocks.DEAD_BUSH && aBlock != Blocks.DEAD_BUSH && !WD.replaceable(aBlock, aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 			aBlock = WD.block(aWorld, aX, aY, aZ);
 		}
-		
-		if (!aBlock.isReplaceable(aWorld, aX, aY, aZ)) return F;
+
+		if (!WD.replaceable(aBlock, aWorld, aX, aY, aZ)) return F;
 		
 		// if used in conjunction with << 2 , these Meta Values return the Side Bits perfectly.
 		// Z- = 1, Z+ = 2, X- = 4, X+ = 8

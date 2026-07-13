@@ -164,12 +164,12 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			Block tClickedBlock = WD.block(aWorld, aX, aY, aZ);
 			if (tClickedBlock instanceof SnowLayerBlock && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 				aSide = SIDE_TOP;
-			} else if (tClickedBlock != Blocks.VINE && tClickedBlock != Blocks.DEAD_BUSH && tClickedBlock != Blocks.DEAD_BUSH && !tClickedBlock.isReplaceable(aWorld, aX, aY, aZ)) {
+			} else if (tClickedBlock != Blocks.VINE && tClickedBlock != Blocks.DEAD_BUSH && tClickedBlock != Blocks.DEAD_BUSH && !WD.replaceable(tClickedBlock, aWorld, aX, aY, aZ)) {
 				aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 			}
 			Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
-			
-			if (!tReplacedBlock.isReplaceable(aWorld, aX, aY, aZ) || !mBlock.canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
+
+			if (!WD.replaceable(tReplacedBlock, aWorld, aX, aY, aZ) || !mBlock.canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
 			if (aStack.getCount() == 0 || (aPlayer != null && !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) return F;
 			
 			MultiTileEntityContainer aMTEContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aWorld, aX, aY, aZ, aStack);

@@ -121,7 +121,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			Biome tBiome = getBiome();
 			if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
 				Block tInFront = getBlockAtSide(SIDE_TOP);
-				if (!WD.liquid(tInFront) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR_OPPOSITES[SIDE_TOP]) && !tInFront.isSideSolid(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
+				if (!WD.liquid(tInFront) && !WD.sideSolid(tInFront, level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR_OPPOSITES[SIDE_TOP]) && !WD.sideSolid(tInFront, level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
 					mTank.fill(FL.Water.make((long)Math.max(1, tBiome.rainfall*100) * (level.isThundering()?2:1)), T);
 				}
 			}

@@ -48,7 +48,7 @@ public class WorldgenStone extends WorldgenBlob {
 		Block tTargetedBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tTargetedBlock == NB || tTargetedBlock.isAir(aWorld, aX, aY, aZ)) return mAllowToGenerateinVoid && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		if (tTargetedBlock instanceof IBlockExtendedMetaData) return overrideBlock((IBlockExtendedMetaData)tTargetedBlock, aWorld, aX, aY, aZ);
-		return (tTargetedBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE) || tTargetedBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE) || tTargetedBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK)) && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
+		return (WD.oreGen(tTargetedBlock, aWorld, aX, aY, aZ, Blocks.STONE) || WD.oreGen(tTargetedBlock, aWorld, aX, aY, aZ, Blocks.END_STONE) || WD.oreGen(tTargetedBlock, aWorld, aX, aY, aZ, Blocks.NETHERRACK)) && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 	}
 	
 	@SuppressWarnings("unlikely-arg-type")

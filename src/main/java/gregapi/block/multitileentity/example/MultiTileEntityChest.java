@@ -44,6 +44,7 @@ import gregapi.tileentity.data.ITileEntitySurface;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.util.ST;
 import gregapi.util.UT;
+import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelRenderer;
@@ -233,7 +234,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (isServerSide() && !level.isSideSolid(getBlockPos().getX(), getBlockPos().getY() + 1, getBlockPos().getZ(), FORGE_DIR[SIDE_BOTTOM]) && isUseableByPlayerGUI(aPlayer)) {
+		if (isServerSide() && !WD.sideSolid(WD.block(level, getBlockPos().getX(), getBlockPos().getY() + 1, getBlockPos().getZ()), level, getBlockPos().getX(), getBlockPos().getY() + 1, getBlockPos().getZ(), FORGE_DIR[SIDE_BOTTOM]) && isUseableByPlayerGUI(aPlayer)) {
 			generateDungeonLoot();
 			openGUI(aPlayer);
 		}

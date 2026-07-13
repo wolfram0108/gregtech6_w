@@ -375,7 +375,7 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_prospector)) {
 			if (prospectOre(aBlock, aMeta, aChatReturn, aWorld, aX, aY, aZ)) return 100;
-			if (aBlock != Blocks.OBSIDIAN && (aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE) || WD.stone(aBlock, aMeta))) {
+			if (aBlock != Blocks.OBSIDIAN && (WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.STONE) || WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.NETHERRACK) || WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.END_STONE) || WD.stone(aBlock, aMeta))) {
 				if (prospectStone(aBlock, aMeta, aQuality, aChatReturn, aWorld, aSide, aX, aY, aZ)) return 10000;
 			}
 			return 0;
