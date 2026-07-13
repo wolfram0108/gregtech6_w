@@ -113,6 +113,8 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\squeek\applecore\api\food\IEdi
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\team\chisel\carving\Carving.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\api\IWarpingGear.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\api\ThaumcraftApi.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\api\aspects\Aspect.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\api\aspects\AspectList.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\api\aspects\IEssentiaContainerItem.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\api\nodes\INode.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\thaumcraft\common\entities\monster\EntityBrainyZombie.java
