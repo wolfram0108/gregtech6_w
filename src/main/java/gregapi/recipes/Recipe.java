@@ -804,14 +804,14 @@ public class Recipe {
 		
 		for (FluidStack tFluid : mFluidInputs) if (tFluid != null) {
 			boolean temp = T;
-			for (FluidStack aFluid : aFluidInputs) if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aDontCheckStackSizes || aFluid.getAmount() >= tFluid.getAmount())) {temp = F; break;}
+			for (FluidStack aFluid : aFluidInputs) if (aFluid != null && FL.equal(aFluid, tFluid) && (aDontCheckStackSizes || aFluid.getAmount() >= tFluid.getAmount())) {temp = F; break;}
 			if (temp) return F;
 		}
 		
 		if (!checkStacksEqual(F, aDontCheckStackSizes, aInputs)) return F;
 		
 		if (aDecreaseStacksizeBySuccess) {
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {aFluid.getAmount() -= tFluid.getAmount(); break;}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {aFluid.getAmount() -= tFluid.getAmount(); break;}
 			checkStacksEqual(T, F, aInputs);
 		}
 		
@@ -824,14 +824,14 @@ public class Recipe {
 		
 		for (FluidStack tFluid : mFluidInputs) if (tFluid != null) {
 			boolean temp = T;
-			for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aDontCheckStackSizes || aFluid.getAmount() >= tFluid.getAmount())) {temp = F; break;}}
+			for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && (aDontCheckStackSizes || aFluid.getAmount() >= tFluid.getAmount())) {temp = F; break;}}
 			if (temp) return F;
 		}
 		
 		if (!checkStacksEqual(F, aDontCheckStackSizes, aInputs)) return F;
 		
 		if (aDecreaseStacksizeBySuccess) {
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {tTank.drain(tFluid.getAmount(), T); break;}}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {tTank.drain(tFluid.getAmount(), T); break;}}
 			checkStacksEqual(T, F, aInputs);
 		}
 		
@@ -847,13 +847,13 @@ public class Recipe {
 		while (rProcessCount < aMaxProcessCount) {
 			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) {
 				boolean temp = T;
-				for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {temp = F; break;}}
+				for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {temp = F; break;}}
 				if (temp) return rProcessCount;
 			}
 			
 			if (!checkStacksEqual(F, F, aInputs)) return rProcessCount;
 			
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aFluid.getAmount() >= tFluid.getAmount())) {tTank.drain(tFluid.getAmount(), T); break;}}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && (aFluid.getAmount() >= tFluid.getAmount())) {tTank.drain(tFluid.getAmount(), T); break;}}
 			checkStacksEqual(T, F, aInputs);
 			
 			rProcessCount++;
