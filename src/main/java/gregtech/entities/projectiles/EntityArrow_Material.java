@@ -139,7 +139,7 @@ public class EntityArrow_Material extends EntityProjectile {
 			
 			Entity tHitEntity = null;
 			@SuppressWarnings("rawtypes")
-			List tAllPotentiallyHitEntities = level().getEntitiesWithinAABBExcludingEntity(this, boundingBox.addCoord(motionX, motionY, motionZ).expand(1.0D, 1.0D, 1.0D));
+			List tAllPotentiallyHitEntities = level().getEntities(this, boundingBox.addCoord(motionX, motionY, motionZ).expand(1.0D, 1.0D, 1.0D));
 			double tSmallestDistance = Double.MAX_VALUE;
 			
 			for (int i = 0; i < tAllPotentiallyHitEntities.size(); ++i) {

@@ -286,7 +286,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 				if (!mMagicProof && FL.magic(tFluid)) {
 					mTransferredAmount += GarbageGT.trash(tTank, FL.gas(tFluid) ? 16 : 4);
 					UT.Sounds.send(SFX.MC_FIZZ, this, F);
-					try {for (Entity tEntity : (List<Entity>)level.getEntitiesWithinAABB(Entity.class, box(-3, -3, -3, +4, +4, +4))) UT.Entities.applyPotion(tEntity, MobEffects.POISON, 1200, 1, F);} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Entity tEntity : (List<Entity>)level.getEntitiesOfClass(Entity.class, box(-3, -3, -3, +4, +4, +4))) UT.Entities.applyPotion(tEntity, MobEffects.POISON, 1200, 1, F);} catch(Throwable e) {e.printStackTrace(ERR);}
 					if (rng(100) == 0) {
 						GarbageGT.trash(mTanks);
 						WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
@@ -297,19 +297,19 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 				if (!mGasProof && FL.gas(tFluid)) {
 					mTransferredAmount += GarbageGT.trash(tTank, 8);
 					UT.Sounds.send(SFX.MC_FIZZ, this, F);
-					try {for (Entity tEntity : (List<Entity>)level.getEntitiesWithinAABB(Entity.class, box(-2, -2, -2, +3, +3, +3))) UT.Entities.applyTemperatureDamage(tEntity, mTemperature, 2.0F, 10.0F);} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Entity tEntity : (List<Entity>)level.getEntitiesOfClass(Entity.class, box(-2, -2, -2, +3, +3, +3))) UT.Entities.applyTemperatureDamage(tEntity, mTemperature, 2.0F, 10.0F);} catch(Throwable e) {e.printStackTrace(ERR);}
 				}
 				
 				if (!mPlasmaProof && FL.plasma(tFluid)) {
 					mTransferredAmount += GarbageGT.trash(tTank, 64);
 					UT.Sounds.send(SFX.MC_FIZZ, this, F);
-					try {for (Entity tEntity : (List<Entity>)level.getEntitiesWithinAABB(Entity.class, box(-2, -2, -2, +3, +3, +3))) UT.Entities.applyTemperatureDamage(tEntity, mTemperature, 2.0F, 10.0F);} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Entity tEntity : (List<Entity>)level.getEntitiesOfClass(Entity.class, box(-2, -2, -2, +3, +3, +3))) UT.Entities.applyTemperatureDamage(tEntity, mTemperature, 2.0F, 10.0F);} catch(Throwable e) {e.printStackTrace(ERR);}
 				}
 				
 				if (!mAcidProof && FL.acid(tFluid)) {
 					mTransferredAmount += GarbageGT.trash(tTank, 16);
 					UT.Sounds.send(SFX.MC_FIZZ, this, F);
-					try {for (Entity tEntity : (List<Entity>)level.getEntitiesWithinAABB(Entity.class, box(-1, -1, -1, +2, +2, +2))) UT.Entities.applyChemDamage(tEntity, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Entity tEntity : (List<Entity>)level.getEntitiesOfClass(Entity.class, box(-1, -1, -1, +2, +2, +2))) UT.Entities.applyChemDamage(tEntity, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
 					if (rng(100) == 0) {
 						GarbageGT.trash(mTanks);
 						setToAir();

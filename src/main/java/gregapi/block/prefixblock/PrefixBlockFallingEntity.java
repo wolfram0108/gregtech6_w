@@ -100,7 +100,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	@SuppressWarnings("unchecked")
 	protected void fall(float p_70069_1_) {
 		int i = Mth.ceiling_float_int(p_70069_1_ - 1.0F);
-		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntitiesWithinAABBExcludingEntity(this, boundingBox))) {
+		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntities(this, boundingBox))) {
 			if (tEntity instanceof LivingEntity) tEntity.attackEntityFrom(DamageSource.fallingBlock, TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor_float((float)i * 2), 40));
 		}
 	}

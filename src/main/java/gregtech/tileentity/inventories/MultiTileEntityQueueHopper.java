@@ -158,7 +158,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 				if (!SIDES_TOP[mFacing] && !invempty()) {
 					DelegatorTileEntity tDelegator = getAdjacentTileEntity(mFacing);
 					if (tDelegator.getBlock() instanceof BaseRailBlock) {
-						List tList = level.getEntitiesWithinAABBExcludingEntity(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
+						List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
 						if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 					}
 					while (tMovedItems < mMode) {
@@ -172,7 +172,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 				}
 				DelegatorTileEntity tDelegator = getAdjacentTileEntity(SIDE_TOP);
 				if (tDelegator.getBlock() instanceof BaseRailBlock) {
-					List tList = level.getEntitiesWithinAABBExcludingEntity(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
+					List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
 					if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 				}
 				if (tDelegator.mTileEntity != null && !(tDelegator.mTileEntity instanceof MultiTileEntityAnvil)) {

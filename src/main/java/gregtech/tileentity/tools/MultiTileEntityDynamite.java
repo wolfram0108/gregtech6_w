@@ -226,7 +226,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 				if (tBlock == Blocks.SPAWNER || WD.bedrock(tBlock)) continue;
 				if (tBlock.getExplosionResistance(exploder, mWorld, tX, tY, tZ, explosionX, explosionY, explosionZ) <= mMaxExplosionResistance) affectedBlockPositions.add(new BlockPos(tX, tY, tZ));
 			}
-			List tList = mWorld.getEntitiesWithinAABBExcludingEntity(exploder, AABB.getBoundingBox(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));
+			List tList = mWorld.getEntities(exploder, AABB.getBoundingBox(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));
 			net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tList, explosionSize);
 			DamageSource tSource = DamageSource.setExplosionSource(this);
 			for (Object tEntity : tList) if (!(tEntity instanceof ItemEntity)) ((Entity)tEntity).attackEntityFrom(tSource, 2*mMaxExplosionResistance*TFC_DAMAGE_MULTIPLIER);

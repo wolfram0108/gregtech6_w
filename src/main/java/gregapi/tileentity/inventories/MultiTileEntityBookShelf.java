@@ -154,7 +154,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	public void onTick2(long aTimer, boolean aIsServerSide) {
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
-			if (aTimer % 300 == 0 && (UT.Code.stringValid(mDungeonLootNameFront) || UT.Code.stringValid(mDungeonLootNameBack)) && !level.getEntitiesWithinAABB(Player.class, box(-32, -32, -32, +33, +33, +33)).isEmpty()) generateDungeonLoot();
+			if (aTimer % 300 == 0 && (UT.Code.stringValid(mDungeonLootNameFront) || UT.Code.stringValid(mDungeonLootNameBack)) && !level.getEntitiesOfClass(Player.class, box(-32, -32, -32, +33, +33, +33)).isEmpty()) generateDungeonLoot();
 			
 			if (mRedstoneDelay > 0) if (--mRedstoneDelay == 0) causeBlockUpdate();
 			

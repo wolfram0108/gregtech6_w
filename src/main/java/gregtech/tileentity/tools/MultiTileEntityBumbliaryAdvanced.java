@@ -163,7 +163,7 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 							}
 						} else {
 							if (mLife %  300 == 150 && rng(10000) < Util.getAggressiveness(tRoyalTag)) {
-								try {for (LivingEntity tEntity : (ArrayList<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-2, -2, -2, +3, +3, +3))) attackEntity(tEntity);} catch(Throwable e) {e.printStackTrace(ERR);}
+								try {for (LivingEntity tEntity : (ArrayList<LivingEntity>)level.getEntitiesOfClass(LivingEntity.class, box(-2, -2, -2, +3, +3, +3))) attackEntity(tEntity);} catch(Throwable e) {e.printStackTrace(ERR);}
 							}
 							if (mLife % 1200 == 600 && rng(10000) < Util.getWorkForce(tRoyalTag) && checkWork(tRoyalTag)) {
 								if (null != tRoyalItem.bumbleCanProduce(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), tRoyalStack, tRoyalMeta, 1)) {

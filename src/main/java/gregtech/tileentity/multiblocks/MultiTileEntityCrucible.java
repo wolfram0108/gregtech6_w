@@ -304,7 +304,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 			} else if (mTemperature >= tMaterial.mMaterial.mBoilingPoint || (mTemperature > C + 40 && tMaterial.mMaterial.contains(TD.Properties.FLAMMABLE) && !tMaterial.mMaterial.containsAny(TD.Properties.UNBURNABLE, TD.Processing.MELTING))) {
 				GarbageGT.trash(mContent.remove(i--));
 				UT.Sounds.send(SFX.MC_FIZZ, this, F);
-				if (tMaterial.mMaterial.mBoilingPoint >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, tMaterial.mMaterial.mBoilingPoint, 4);} catch(Throwable e) {e.printStackTrace(ERR);}
+				if (tMaterial.mMaterial.mBoilingPoint >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesOfClass(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, tMaterial.mMaterial.mBoilingPoint, 4);} catch(Throwable e) {e.printStackTrace(ERR);}
 				if (tMaterial.mMaterial.mBoilingPoint >= 2000) for (int j = 0, k = Math.max(1, UT.Code.bindInt((9 * tMaterial.mAmount) / U)); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
 				if (tMaterial.mMaterial.contains(TD.Properties.EXPLOSIVE)) {
 					GarbageGT.trash(mContent);
@@ -367,7 +367,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 		if (mTemperature > getTemperatureMax(SIDE_INSIDE)) {
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
 			GarbageGT.trash(mContent);
-			if (mTemperature >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature, 4);} catch(Throwable e) {e.printStackTrace(ERR);}
+			if (mTemperature >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesOfClass(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature, 4);} catch(Throwable e) {e.printStackTrace(ERR);}
 			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
 				WD.set(level, getBlockPos().getX()+i, getBlockPos().getY()  , getBlockPos().getZ()+j, Blocks.LAVA, 1, 3);

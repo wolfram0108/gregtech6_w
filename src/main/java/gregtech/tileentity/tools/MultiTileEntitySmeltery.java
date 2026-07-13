@@ -254,7 +254,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 			} else if (mTemperature >= tMaterial.mMaterial.mBoilingPoint || (mTemperature > C + 40 && tMaterial.mMaterial.contains(TD.Properties.FLAMMABLE) && !tMaterial.mMaterial.containsAny(TD.Properties.UNBURNABLE, TD.Processing.MELTING))) {
 				GarbageGT.trash(mContent.remove(i--));
 				UT.Sounds.send(SFX.MC_FIZZ, this, F);
-				if (tMaterial.mMaterial.mBoilingPoint >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, tMaterial.mMaterial.mBoilingPoint, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
+				if (tMaterial.mMaterial.mBoilingPoint >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesOfClass(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, tMaterial.mMaterial.mBoilingPoint, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
 				if (tMaterial.mMaterial.mBoilingPoint >= 2000) for (int j = 0, k = Math.max(1, UT.Code.bindInt((9 * tMaterial.mAmount) / U)); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
 				if (tMaterial.mMaterial.contains(TD.Properties.EXPLOSIVE)) {
 					GarbageGT.trash(mContent);
@@ -315,7 +315,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 		if (mTemperature > getTemperatureMax(SIDE_INSIDE)) {
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
 			GarbageGT.trash(mContent);
-			if (mTemperature >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
+			if (mTemperature >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesOfClass(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
 			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
 			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.LAVA, 1, 3);
 			return;
@@ -393,7 +393,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 		if (mTemperature >= 1300 && isServerSide() && !UT.Entities.isCreative(aPlayer)) {
 			UT.Sounds.send(SFX.MC_FIZZ, this, F);
 			GarbageGT.trash(mContent);
-			try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature);} catch(Throwable e) {e.printStackTrace(ERR);}
+			try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesOfClass(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature);} catch(Throwable e) {e.printStackTrace(ERR);}
 			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
 			return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.LAVA, 1, 3);
 		}

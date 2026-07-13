@@ -113,7 +113,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet);
 		
 		// Make a List of all possible Targets.
-		List tEntities = aPlayer.level().getEntitiesWithinAABBExcludingEntity(aPlayer, AABB.getBoundingBox(Math.min(tPos.x, tAim.x)-2, Math.min(tPos.y, tAim.y)-2, Math.min(tPos.z, tAim.z)-2, Math.max(tPos.x, tAim.x)+2, Math.max(tPos.y, tAim.y)+2, Math.max(tPos.z, tAim.z)+2));
+		List tEntities = aPlayer.level().getEntities(aPlayer, AABB.getBoundingBox(Math.min(tPos.x, tAim.x)-2, Math.min(tPos.y, tAim.y)-2, Math.min(tPos.z, tAim.z)-2, Math.max(tPos.x, tAim.x)+2, Math.max(tPos.y, tAim.y)+2, Math.max(tPos.z, tAim.z)+2));
 		List<Entity> tTargets = new ArrayListNoNulls<>();
 		for (Object tEntity : tEntities) if (tEntity instanceof Entity) {
 			AABB tBox = ((Entity)tEntity).boundingBox;

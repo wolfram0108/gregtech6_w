@@ -66,7 +66,7 @@ public class ExplosionGT extends Explosion {
 			tExplosion.doExplosionB(F);
 			if (!aSmoking) tExplosion.affectedBlockPositions.clear();
 			@SuppressWarnings("rawtypes")
-			Iterator tIterator = aWorld.playerEntities.iterator();
+			Iterator tIterator = aWorld.players().iterator();
 			while (tIterator.hasNext()) {
 				Player tPlayer = (Player)tIterator.next();
 				if (tPlayer.distanceToSqr(aX, aY, aZ) < 4096) {
@@ -98,7 +98,7 @@ public class ExplosionGT extends Explosion {
 				double tIncX = i / 7.5F - 1, tIncY = j / 7.5F - 1, tIncZ = k / 7.5F - 1;
 				double tDist = Math.sqrt(tIncX * tIncX + tIncY * tIncY + tIncZ * tIncZ);
 				tIncX /= tDist; tIncY /= tDist; tIncZ /= tDist;
-				float tPow = tSize * (0.7F + mWorld.rand.nextFloat() * 0.6F);
+				float tPow = tSize * (0.7F + mWorld.getRandom().nextFloat() * 0.6F);
 				double tX = explosionX, tY = explosionY, tZ = explosionZ;
 				for (float tMul = 0.3F; tPow > 0; tPow -= tMul * 0.75F) {
 					int tFloorX = UT.Code.roundDown(tX), tFloorY = UT.Code.roundDown(tY), tFloorZ = UT.Code.roundDown(tZ);
@@ -117,7 +117,7 @@ public class ExplosionGT extends Explosion {
 		affectedBlockPositions.addAll(tPositions);
 		tSize *= 2;
 		@SuppressWarnings("rawtypes")
-		List tEntities = mWorld.getEntitiesWithinAABBExcludingEntity(exploder, new AABB(UT.Code.roundDown(explosionX - tSize - 1), UT.Code.roundDown(explosionY - tSize - 1), UT.Code.roundDown(explosionZ - tSize - 1), UT.Code.roundDown(explosionX + tSize + 1), UT.Code.roundDown(explosionY + tSize + 1), UT.Code.roundDown(explosionZ + tSize + 1)));
+		List tEntities = mWorld.getEntities(exploder, new AABB(UT.Code.roundDown(explosionX - tSize - 1), UT.Code.roundDown(explosionY - tSize - 1), UT.Code.roundDown(explosionZ - tSize - 1), UT.Code.roundDown(explosionX + tSize + 1), UT.Code.roundDown(explosionY + tSize + 1), UT.Code.roundDown(explosionZ + tSize + 1)));
 		net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tEntities, tSize);
 		Vec3 tVec3 = Vec3.createVectorHelper(explosionX, explosionY, explosionZ);
 		for (int i1 = 0; i1 < tEntities.size(); ++i1) {
@@ -145,7 +145,7 @@ public class ExplosionGT extends Explosion {
 	
 	// @Override
 	public void doExplosionB(boolean aEffects) {
-		mWorld.playSoundEffect(explosionX, explosionY, explosionZ, SFX.MC_EXPLODE, 4, (1 + (mWorld.rand.nextFloat() - mWorld.rand.nextFloat()) * 0.2F) * 0.7F);
+		mWorld.playSoundEffect(explosionX, explosionY, explosionZ, SFX.MC_EXPLODE, 4, (1 + (mWorld.getRandom().nextFloat() - mWorld.getRandom().nextFloat()) * 0.2F) * 0.7F);
 		mWorld.spawnParticle(explosionSize >= 2 && isSmoking ? "hugeexplosion" : "largeexplode", explosionX, explosionY, explosionZ, 1, 0, 0);
 		if (isSmoking) {
 			@SuppressWarnings("rawtypes")
@@ -154,9 +154,9 @@ public class ExplosionGT extends Explosion {
 				final BlockPos tPos = (BlockPos)tIterator.next();
 				final Block tBlock = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ);
 				if (aEffects) {
-					double d0 = (tPos.chunkPosX + mWorld.rand.nextFloat());
-					double d1 = (tPos.chunkPosY + mWorld.rand.nextFloat());
-					double d2 = (tPos.chunkPosZ + mWorld.rand.nextFloat());
+					double d0 = (tPos.chunkPosX + mWorld.getRandom().nextFloat());
+					double d1 = (tPos.chunkPosY + mWorld.getRandom().nextFloat());
+					double d2 = (tPos.chunkPosZ + mWorld.getRandom().nextFloat());
 					double d3 = d0 - explosionX;
 					double d4 = d1 - explosionY;
 					double d5 = d2 - explosionZ;
@@ -165,7 +165,7 @@ public class ExplosionGT extends Explosion {
 					d4 /= d6;
 					d5 /= d6;
 					double d7 = 0.5D / (d6 / explosionSize + 0.1D);
-					d7 *= (mWorld.rand.nextFloat() * mWorld.rand.nextFloat() + 0.3F);
+					d7 *= (mWorld.getRandom().nextFloat() * mWorld.getRandom().nextFloat() + 0.3F);
 					d3 *= d7;
 					d4 *= d7;
 					d5 *= d7;
