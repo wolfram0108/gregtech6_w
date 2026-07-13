@@ -196,8 +196,8 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 		
 		if (SERVER_TIME % 600 == 10 && level.isRaining() && getRainOffset(0, 1, 0)) {
 			Biome tBiome = getBiome();
-			if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
-				addMaterialStacks(Arrays.asList(OM.stack(MT.Water, U100 * (long)Math.max(1, tBiome.rainfall*100) * (level.isThundering()?2:1))), tTemperature);
+			if (WD.rainfall(tBiome) > 0 && tBiome.getBaseTemperature() >= 0.2) {
+				addMaterialStacks(Arrays.asList(OM.stack(MT.Water, U100 * (long)Math.max(1, WD.rainfall(tBiome)*100) * (level.isThundering()?2:1))), tTemperature);
 			}
 		}
 		

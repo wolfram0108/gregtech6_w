@@ -854,7 +854,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 					}
 					return F;
 				}
-				if (!isRainProof(tSide) && level.isRaining() && getBiome().rainfall > 0 && rng(100) == 0 && getRainAtSide(tSide)) {
+				if (!isRainProof(tSide) && level.isRaining() && WD.rainfall(getBiome()) > 0 && rng(100) == 0 && getRainAtSide(tSide)) {
 					if (RAIN_EXPLOSIONS) explode(TD.Energy.ALL_EXPLODING.contains(tEnergyType) ? 4.0 : 0.1); else if (RAIN_BREAKING) explode(0.1);
 					if (mExplodeSpamCooldown++ == 0) {
 						UT.Sounds.send(TD.Energy.ALL_ELECTRIC.contains(tEnergyType)?SFX.IC_MACHINE_OVERLOAD:TD.Energy.ALL_KINETIC.contains(tEnergyType)?SFX.IC_MACHINE_INTERRUPT:SFX.MC_EXPLODE, this, F);

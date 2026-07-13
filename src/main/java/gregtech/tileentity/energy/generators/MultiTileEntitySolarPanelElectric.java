@@ -134,13 +134,13 @@ public class MultiTileEntitySolarPanelElectric extends TileEntityBase09FacingSin
 				if (WD.dimTF(level)) {
 					mEnergy = mOutput / 2;
 				} else if (level.isDaytime()) {
-					if (level.isRaining() && getBiome().rainfall > 0) {
+					if (level.isRaining() && WD.rainfall(getBiome()) > 0) {
 						mEnergy = mOutput / 8;
 					} else {
 						mEnergy = mOutput;
 					}
 				} else {
-					if (level.isRaining() && getBiome().rainfall > 0) {
+					if (level.isRaining() && WD.rainfall(getBiome()) > 0) {
 						mEnergy = 0;
 					} else {
 						mEnergy = mOutput / 8;

@@ -144,10 +144,10 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 		if (aIsServerSide) {
 			if (SERVER_TIME % 600 == 10 && level.isRaining() && getRainOffset(0, 1, 0)) {
 				Biome tBiome = getBiome();
-				if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
+				if (WD.rainfall(tBiome) > 0 && tBiome.getBaseTemperature() >= 0.2) {
 					Block tInFront = getBlockAtSide(SIDE_TOP);
 					if (!(tInFront instanceof LiquidBlock) && !(tInFront instanceof IFluidBlock) && !WD.sideSolid(tInFront, level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR_OPPOSITES[SIDE_TOP]) && !WD.sideSolid(tInFront, level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), FORGE_DIR[SIDE_TOP])) {
-						FluidStack tWater = FL.Water.make((long)Math.max(1, tBiome.rainfall*200) * (level.isThundering()?2:1));
+						FluidStack tWater = FL.Water.make((long)Math.max(1, WD.rainfall(tBiome)*200) * (level.isThundering()?2:1));
 						if (tWater != null) {
 							IFluidTank tTank = getFluidTankFillable2(SIDE_TOP, tWater);
 							if (tTank != null) tTank.fill(tWater, T);

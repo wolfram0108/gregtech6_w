@@ -69,7 +69,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 		if (aIsServerSide && !aData.mStopped && aData.mTileEntity instanceof IFluidHandler) {
 			if (SERVER_TIME % 100 == 10 && SIDES_TOP_HORIZONTAL[aCoverSide] && aData.mTileEntity.getWorld().isRaining()) {
 				Biome tBiome = aData.mTileEntity.getBiome();
-				if (tBiome.rainfall > 0 && tBiome.temperature >= 0.2) {
+				if (WD.rainfall(tBiome) > 0 && tBiome.getBaseTemperature() >= 0.2) {
 					Block tInFront = aData.mTileEntity.getBlockAtSide(aCoverSide);
 					if (!(tInFront instanceof LiquidBlock) && !(tInFront instanceof IFluidBlock) && !WD.sideSolid(tInFront, aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide), FORGE_DIR_OPPOSITES[aCoverSide]) && !WD.sideSolid(tInFront, aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide), FORGE_DIR[SIDE_TOP])) {
 						boolean temp = F;
@@ -78,7 +78,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 						} else {
 							temp = aData.mTileEntity.getRainOffset(OFFX[aCoverSide], OFFY[aCoverSide]  , OFFZ[aCoverSide]) && (SIDES_TOP[aCoverSide] || WD.sideSolid(aData.mTileEntity.getBlockOffset(OFFX[aCoverSide], -1, OFFZ[aCoverSide]), aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getY()-1, aData.mTileEntity.getOffsetZ(aCoverSide), FORGE_DIR[SIDE_TOP]));
 						}
-						if (temp) FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Water.make((long)Math.max(1, tBiome.rainfall*10000) * (aData.mTileEntity.getWorld().isThundering()?2:1)), T);
+						if (temp) FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Water.make((long)Math.max(1, WD.rainfall(tBiome)*10000) * (aData.mTileEntity.getWorld().isThundering()?2:1)), T);
 					}
 				}
 			}

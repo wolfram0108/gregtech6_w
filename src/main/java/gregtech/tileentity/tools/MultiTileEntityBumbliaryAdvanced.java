@@ -96,7 +96,7 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 		if (aIsServerSide) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) if (getRainAtSide(tSide)) {mSky = T; break;}
 			mTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
-			mHumidity = getBiome().rainfall;
+			mHumidity = WD.rainfall(getBiome());
 		}
 	}
 	
@@ -108,7 +108,7 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 			if (SERVER_TIME % 1200 == 0) {
 				for (byte tSide : ALL_SIDES_BUT_BOTTOM) if (getRainAtSide(tSide)) {mSky = T; break;}
 				mTemperature = WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
-				mHumidity = getBiome().rainfall;
+				mHumidity = WD.rainfall(getBiome());
 			}
 			if (slotHas(SLOT_ROYAL) && slot(SLOT_ROYAL).getItem() instanceof IItemBumbleBee) {
 				ItemStack tRoyalStack = slot(SLOT_ROYAL);

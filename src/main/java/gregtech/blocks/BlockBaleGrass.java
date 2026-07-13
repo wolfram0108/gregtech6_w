@@ -103,17 +103,17 @@ public class BlockBaleGrass extends BlockBaseBale {
 		if (aRandom.nextInt(3) > 0 && WD.envTemp(aWorld, aX, aY, aZ) < C + 10) return;
 		if (aRandom.nextInt(3) > 0 && !(aWorld.isDaytime() && !aWorld.isRaining() && aWorld.canBlockSeeTheSky(aX, aY+2, aZ))) return;
 		Biome tBiome = WD.biome(aWorld, aX, aZ);
-		boolean tWet = (tBiome.rainfall > 0.8F || BIOMES_INFINITE_WATER.contains(tBiome.biomeName));
+		boolean tWet = (WD.rainfall(tBiome) > 0.8F || BIOMES_INFINITE_WATER.contains(tBiome.biomeName));
 		if (!tWet) for (byte tSide : ALL_SIDES_VALID) if (WD.anywater(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide])) {tWet = T; break;}
 		if ((aMeta & PILLAR_DATA) == 0) {
-			if (tWet || (aWorld.isRaining() && tBiome.rainfall > 0 && WD.precipitationHeight(aWorld, aX, aZ) <= aY+2)) {
+			if (tWet || (aWorld.isRaining() && WD.rainfall(tBiome) > 0 && WD.precipitationHeight(aWorld, aX, aZ) <= aY+2)) {
 				WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 2, 3);
 				return;
 			}
 			WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 1, 3);
 			return;
 		}
-		if (tWet || aRandom.nextInt(42) == 0 || (aWorld.isRaining() && tBiome.rainfall > 0 && WD.precipitationHeight(aWorld, aX, aZ) <= aY+2)) {
+		if (tWet || aRandom.nextInt(42) == 0 || (aWorld.isRaining() && WD.rainfall(tBiome) > 0 && WD.precipitationHeight(aWorld, aX, aZ) <= aY+2)) {
 			WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 3, 3);
 			return;
 		}
@@ -137,7 +137,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 				} else {
 					int aX = UT.Code.roundDown(aPlayer.getX()), aY = UT.Code.roundDown(aPlayer.getY()), aZ = UT.Code.roundDown(aPlayer.getZ());
 					Biome tBiome = WD.biome(aPlayer.level(), aX, aZ);
-					if (tBiome.rainfall > 0.8F || (aPlayer.level().isRaining() && tBiome.rainfall > 0 && WD.precipitationHeight(aPlayer.level(), aX, aZ) <= aY+2)) {
+					if (WD.rainfall(tBiome) > 0.8F || (aPlayer.level().isRaining() && WD.rainfall(tBiome) > 0 && WD.precipitationHeight(aPlayer.level(), aX, aZ) <= aY+2)) {
 						aList.add(LH.Chat.ORANGE + LH.get("gt.tooltip.bale.rot"));
 					} else {
 						aList.add(LH.Chat.YELLOW + LH.get("gt.tooltip.bale.dry"));

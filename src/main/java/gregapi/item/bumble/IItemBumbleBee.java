@@ -137,8 +137,8 @@ public interface IItemBumbleBee {
 		public static CompoundTag getBumbleGenes(long aTemperature, Biome aBiome, boolean aHasSky, Random aRandom) {return getBumbleGenes(aTemperature, aBiome, aHasSky, !(BIOMES_DESERT.contains(aBiome.biomeName) || BIOMES_MESA.contains(aBiome.biomeName)), BIOMES_DESERT.contains(aBiome.biomeName) || BIOMES_MESA.contains(aBiome.biomeName), aRandom);}
 		public static CompoundTag getBumbleGenes(long aTemperature, Biome aBiome, boolean aHasSky, boolean aDay, boolean aNight, Random aRandom) {
 			CompoundTag rBumbleTag = UT.NBT.make();
-			setHumidityMin(rBumbleTag, aBiome.rainfall - 0.10F - aRandom.nextInt(41)/100.0F);
-			setHumidityMax(rBumbleTag, aBiome.rainfall + 0.10F + aRandom.nextInt(41)/100.0F);
+			setHumidityMin(rBumbleTag, WD.rainfall(aBiome) - 0.10F - aRandom.nextInt(41)/100.0F);
+			setHumidityMax(rBumbleTag, WD.rainfall(aBiome) + 0.10F + aRandom.nextInt(41)/100.0F);
 			setTemperatureMin(rBumbleTag, aTemperature - 15 - aRandom.nextInt(31));
 			setTemperatureMax(rBumbleTag, aTemperature + 15 + aRandom.nextInt(31));
 			setOffspring     (rBumbleTag,    1+aRandom.nextInt(     4));
@@ -150,8 +150,8 @@ public interface IItemBumbleBee {
 			setNightActive   (rBumbleTag, aNight || !aDay  );
 			if (aHasSky) {
 				setOutsideActive(rBumbleTag, T);
-				if (aRandom.nextInt(10000) < aBiome.rainfall * 10000) setRainproof(rBumbleTag, T);
-				if (aRandom.nextInt(20000) < aBiome.rainfall * 10000) setStormproof(rBumbleTag, T);
+				if (aRandom.nextInt(10000) < WD.rainfall(aBiome) * 10000) setRainproof(rBumbleTag, T);
+				if (aRandom.nextInt(20000) < WD.rainfall(aBiome) * 10000) setStormproof(rBumbleTag, T);
 			} else {
 				setInsideActive(rBumbleTag, T);
 			}
