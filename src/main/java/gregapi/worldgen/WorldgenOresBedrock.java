@@ -144,7 +144,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 		
 		GENERATED_NO_BEDROCK_ORE = F;
 		
-		if ((mIndicatorRocks || mIndicatorFlowers) && (!GENERATE_STREETS || aWorld.provider.dimensionId != 0 || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) { 
+		if ((mIndicatorRocks || mIndicatorFlowers) && (!GENERATE_STREETS || WD.dimensionId(aWorld) != 0 || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) { 
 			MultiTileEntityRegistry tRegistry = (mIndicatorRocks ? MultiTileEntityRegistry.getRegistry("gt.multitileentity") : null);
 			ItemStack tRock = (tRegistry == null ? null : OP.oreRaw.mat(mMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : mMaterial, 1));
 			boolean tFlowers = (mIndicatorFlowers && !BIOMES_WASTELANDS.contains(aBiomes[8][8].biomeName)), tRocks = ST.valid(tRock);

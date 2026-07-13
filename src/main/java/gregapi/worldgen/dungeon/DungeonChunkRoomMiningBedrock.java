@@ -37,7 +37,7 @@ public class DungeonChunkRoomMiningBedrock extends DungeonChunkRoomEmpty {
 		if (aData.mTags.contains(WorldgenDungeonGT.TAG_MINING_BEDROCK) || !super.generate(aData)) return F;
 		aData.mTags.add(WorldgenDungeonGT.TAG_MINING_BEDROCK);
 		OreDictMaterial tMaterial = UT.Code.select(MT.Redstone, MT.Redstone, MT.S, MT.Fe2O3, MT.MnO2, MT.Apatite, OREMATS.Molybdenite, MT.OREMATS.Bauxite, MT.OREMATS.Sphalerite, MT.OREMATS.Tetrahedrite, MT.OREMATS.Cassiterite, MT.OREMATS.Garnierite, MT.OREMATS.Galena);
-		if (!WorldgenOresBedrock.generateVein(tMaterial, aData.mWorld, aData.mWorld.provider.dimensionId, aData.mX, aData.mZ, aData.mRandom)) return F;
+		if (!WorldgenOresBedrock.generateVein(tMaterial, aData.mWorld, WD.dimensionId(aData.mWorld), aData.mX, aData.mZ, aData.mRandom)) return F;
 		
 		boolean tBrass = aData.next1in2();
 		

@@ -159,7 +159,7 @@ public class GT6WorldGenerator {
 	public static boolean PFAA = F, TFC = F;
 	
 	public static void generate(Level aWorld, int aX, int aZ, boolean aGalactiCraft) {
-		// F6: было `switch(aWorld.provider.dimensionId) {case -2147483648: return; case DIM_OVERWORLD: ...}` —
+		// F6: было `switch(WD.dimensionId(aWorld)) {case -2147483648: return; case DIM_OVERWORLD: ...}` —
 		// `WorldProvider.dimensionId` удалён, у измерения в neo нет числового id вообще (см. javadoc
 		// NoiseGenerator.java). Ветка `case -2147483648` (Integer.MIN_VALUE) была сигнальным значением "мир
 		// недогружен/провайдер не готов" — в neo `aWorld.dimension()` для валидного `Level`-объекта всегда

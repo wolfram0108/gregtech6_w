@@ -81,7 +81,7 @@ public abstract class WorldgenObject {
 	public void reset(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {/**/}
 
 	public boolean checkForMajorWorldgen(Level aWorld, int aMinX, int aMinZ, int aMaxX, int aMaxZ) {
-		// F6: было `aWorld.provider.dimensionId == DIM_OVERWORLD` (DIM_OVERWORLD=0, CS.java:904, буквально
+		// F6: было `WD.dimensionId(aWorld) == DIM_OVERWORLD` (DIM_OVERWORLD=0, CS.java:904, буквально
 		// ванильный Overworld-id) — сверено на реальную константу Level.OVERWORLD (Level.java:95).
 		if (aWorld.dimension() == Level.OVERWORLD) {
 			if (GENERATE_STREETS && (Math.abs(aMinX) < 64 || Math.abs(aMaxX) < 64 || Math.abs(aMinZ) < 64 || Math.abs(aMaxZ) < 64)) return T;

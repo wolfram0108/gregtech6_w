@@ -1661,7 +1661,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// MobSpawnEvent.PositionCheck, с собственным вложенным Result{SUCCEED,DEFAULT,FAIL} (НЕ общий bus Result — сверено,
 	// net.neoforged.neoforge.event.entity.living.MobSpawnEvent.java); DENY→FAIL. .entityLiving/.world/.x/.y/.z — getEntity()(Mob)/
 	// getEntity().level()/getX()/getY()/getZ() (double, через сущность — getLevel() отдаёт лишь ServerLevelAccessor, без Level-API).
-	// World.provider.dimensionId==0 (1.7.10) → Level.dimension()==Level.OVERWORLD (сверено, Level.java).
+	// WD.dimensionId(World)==0 (1.7.10) → Level.dimension()==Level.OVERWORLD (сверено, Level.java).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onCheckSpawnEvent(MobSpawnEvent.PositionCheck aEvent) {
 		if (aEvent.getResult() == MobSpawnEvent.PositionCheck.Result.FAIL) return;

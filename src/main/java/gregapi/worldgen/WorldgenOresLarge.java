@@ -91,7 +91,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 		
 		int tMinY = mMinY + WD.random(aWorld, aOriginChunkX, aOriginChunkZ).nextInt(mMaxY - mMinY - 5);
 		
-		// F6: было `aWorld.provider.dimensionId == 0` (буквально ванильный Overworld) — сверено на реальную
+		// F6: было `WD.dimensionId(aWorld) == 0` (буквально ванильный Overworld) — сверено на реальную
 		// константу Level.OVERWORLD (Level.java:95), как и в WorldgenObject.checkForMajorWorldgen.
 		if (mIndicatorRocks && (!(GENERATE_STREETS && aWorld.dimension() == Level.OVERWORLD) || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) {
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");

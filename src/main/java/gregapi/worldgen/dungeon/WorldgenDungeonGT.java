@@ -140,7 +140,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (aRandom.nextInt(mProbability) != 0 || checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
 		if (Math.abs(aMinZ) < 256+mMaxSize*16 && Math.abs(aMinX) < 256+mMaxSize*16) return F;
-		if ((GENERATE_STREETS && aWorld.provider.dimensionId == DIM_OVERWORLD) && (Math.abs(aMinX) < 256+mMaxSize*16 || Math.abs(aMinZ) < 256+mMaxSize*16)) return F;
+		if ((GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD) && (Math.abs(aMinX) < 256+mMaxSize*16 || Math.abs(aMinZ) < 256+mMaxSize*16)) return F;
 		if (Math.abs(aMinX/16)%(mMaxSize+4) != (mMaxSize+4)/2 || Math.abs(aMinZ/16)%(mMaxSize+4) != (mMaxSize+4)/2 || !WD.bedrock(aWorld, aMinX+8, 0, aMinZ+8)) return F;
 		
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
@@ -160,10 +160,10 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		
 		boolean[] tGeneratedKeys = new boolean[5];
 		
-		if (!(mPortalNether                                               && (aWorld.provider.dimensionId == DIM_OVERWORLD || aWorld.provider.dimensionId == DIM_NETHER))) tTags.add(TAG_PORTAL_NETHER);
-		if (!(mPortalEnd                                                  && (aWorld.provider.dimensionId == DIM_OVERWORLD || aWorld.provider.dimensionId == DIM_END   ))) tTags.add(TAG_PORTAL_END);
-		if (!(mPortalTwilight && MD.TF.mLoaded                            && (aWorld.provider.dimensionId == DIM_OVERWORLD || WD.dimTF(aWorld)                         ))) tTags.add(TAG_PORTAL_TWILIGHT);
-		if (!(mPortalAether   && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && (aWorld.provider.dimensionId == DIM_OVERWORLD || WD.dimAETHER(aWorld)                     ))) tTags.add(TAG_PORTAL_AETHER);
+		if (!(mPortalNether                                               && (WD.dimensionId(aWorld) == DIM_OVERWORLD || WD.dimensionId(aWorld) == DIM_NETHER))) tTags.add(TAG_PORTAL_NETHER);
+		if (!(mPortalEnd                                                  && (WD.dimensionId(aWorld) == DIM_OVERWORLD || WD.dimensionId(aWorld) == DIM_END   ))) tTags.add(TAG_PORTAL_END);
+		if (!(mPortalTwilight && MD.TF.mLoaded                            && (WD.dimensionId(aWorld) == DIM_OVERWORLD || WD.dimTF(aWorld)                         ))) tTags.add(TAG_PORTAL_TWILIGHT);
+		if (!(mPortalAether   && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && (WD.dimensionId(aWorld) == DIM_OVERWORLD || WD.dimAETHER(aWorld)                     ))) tTags.add(TAG_PORTAL_AETHER);
 		if (!(mPortalMyst     && MD.MYST.mLoaded)) tTags.add(TAG_PORTAL_MYST);
 		
 		long[] tKeyIDs = new long[tGeneratedKeys.length];

@@ -1255,7 +1255,7 @@ public class ST {
 	public static boolean check(Entity aPlayer, ItemStack aStack) {
 		if (!(aPlayer instanceof Player) || aPlayer.level() == null || aPlayer.level().isClientSide()) return F;
 
-		if (F /* PORT-TODO(этап-dimension, F?): aPlayer.level().provider.dimensionId == DIM_NETHER — WorldProvider/dimensionId
+		if (F /* PORT-TODO(этап-dimension, F?): WD.dimensionId(aPlayer.level()) == DIM_NETHER — WorldProvider/dimensionId
 		     удалены в neo (Level.dimension() -> ResourceKey<Level>), нет прямого 1:1 сравнения по числовому id */) {
 			// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.portal);
 		}

@@ -258,7 +258,7 @@ public class WD {
 	public static boolean dimAETHER(Level aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
 
 	public static boolean move(Entity aEntity, int aDimension, double aX, double aY, double aZ) {
-		ServerLevel tTargetWorld = DimensionManager.getWorld(aDimension), tOriginalWorld = DimensionManager.getWorld(aEntity.level().provider.dimensionId);
+		ServerLevel tTargetWorld = DimensionManager.getWorld(aDimension), tOriginalWorld = DimensionManager.getWorld(WD.dimensionId(aEntity.level()));
 		if (tTargetWorld != null && tOriginalWorld != null && tTargetWorld != tOriginalWorld) {
 			if (aEntity.ridingEntity != null) aEntity.mountEntity(null);
 			if (aEntity.riddenByEntity != null) aEntity.riddenByEntity.mountEntity(null);
@@ -282,7 +282,7 @@ public class WD {
 					aPlayer.playerNetServerHandler.sendPacket(new ClientboundUpdateMobEffectPacket(aPlayer.getEntityId(), potioneffect));
 				}
 				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.rotationPitch);
-				FMLCommonHandler.instance().firePlayerChangedDimensionEvent(aPlayer, tOriginalWorld.provider.dimensionId, aDimension);
+				FMLCommonHandler.instance().firePlayerChangedDimensionEvent(aPlayer, WD.dimensionId(tOriginalWorld), aDimension);
 			} else {
 				aEntity.setPosition(aX+0.5, aY+0.5, aZ+0.5);
 				aEntity.level().removeEntity(aEntity);
@@ -413,6 +413,18 @@ public class WD {
 	 *  BlockPos) (BlockBehaviour.java:616) — канонический преемник (§8). */
 	public static boolean normalCube(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		return aBlock.defaultBlockState().isRedstoneConductor(aWorld, new BlockPos(aX, aY, aZ));
+	}
+	/** F-dimension: 1.7.10 World-провайдер числовой id -> neo числового id НЕТ (Level.dimension() =
+	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). PORT-TODO(F-dimension,
+	 *  modded-dim-id): модовым измерениям стабильного int в neo нет -> hash ключа (уникален в рамках сессии, но
+	 *  switch-кейсы GT6 всё равно только на ванильных 0/-1/1, модовые -> default; NBT-персист модового id деградирует). */
+	public static int dimensionId(Level aWorld) {
+		if (aWorld == null) return 0;
+		net.minecraft.resources.ResourceKey<Level> tKey = aWorld.dimension();
+		if (tKey == Level.OVERWORLD) return 0;
+		if (tKey == Level.NETHER) return -1;
+		if (tKey == Level.END) return 1;
+		return tKey.location().hashCode();
 	}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
@@ -647,7 +659,7 @@ public class WD {
 		return T;
 	}
 	
-	public static Random random(Level aWorld, long aChunkX, long aChunkZ) {return random(aWorld.getSeed() ^ aWorld.provider.dimensionId, aChunkX >> 4, aChunkZ >> 4);}
+	public static Random random(Level aWorld, long aChunkX, long aChunkZ) {return random(aWorld.getSeed() ^ WD.dimensionId(aWorld), aChunkX >> 4, aChunkZ >> 4);}
 	public static Random random(long aSeed, long aChunkX, long aChunkZ) {
 		// Seed is XOR-ed with the Dimension ID to prevent multiple Dimensions from being identical in Ore Generation.
 		// Yes that actually happened with Aromas Mining World, and resulted in a prospecting exploit.
@@ -663,7 +675,7 @@ public class WD {
 		return rRandom;
 	}
 	
-	public static int random(Level aWorld, int aX, int aY, int aZ, int aBound) {return random(aWorld.getSeed() ^ aWorld.provider.dimensionId, aX, aY, aZ, aBound);}
+	public static int random(Level aWorld, int aX, int aY, int aZ, int aBound) {return random(aWorld.getSeed() ^ WD.dimensionId(aWorld), aX, aY, aZ, aBound);}
 	public static int random(long aSeed, int aX, int aY, int aZ, int aBound) {
 		Random rRandom = new Random(aSeed ^ aY);
 		for (int i = 0; i < 10; i++) rRandom.nextInt(0x00ffffff);
@@ -892,7 +904,7 @@ public class WD {
 	
 	/** Removes Bedrock from that Position and replaces it with regular Stone of the region. */
 	public static boolean removeBedrock(Level aWorld, int aX, int aY, int aZ) {
-		// было aWorld.getBlock(x,y,z) + aWorld.provider.dimensionId==DIM_NETHER — Level.dimension()==Level.NETHER,
+		// было aWorld.getBlock(x,y,z) + WD.dimensionId(aWorld)==DIM_NETHER — Level.dimension()==Level.NETHER,
 		// тот же приём F6, что уже применён у dimOverworldLike/dimPlanet выше в этом файле.
 		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(), tStone = (aWorld.dimension() == Level.NETHER ? Blocks.NETHERRACK : Blocks.STONE);
 
