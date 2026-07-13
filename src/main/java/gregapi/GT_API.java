@@ -166,7 +166,7 @@ public class GT_API extends Abstract_Mod {
 	// Тот же класс проблемы, что gregapi/render/TextureSet.java registerIcons(Object) (уже переведено) —
 	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) — отдельный F3-хвост.
 	@OnlyIn(Dist.CLIENT)
-	public static Object sBlockIcons, sItemIcons;
+	public static net.minecraft.client.renderer.texture.IIconRegister sBlockIcons, sItemIcons;
 
 	/**
 	 * Централизованный мост регистрации F12: ЕДИНСТВЕННАЯ точка, через которую весь мод регистрирует

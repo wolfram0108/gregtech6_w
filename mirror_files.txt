@@ -129,3 +129,5 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\vazkii\botania\api\internal\IM
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\vazkii\botania\api\item\IFlowerPlaceable.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\vazkii\botania\api\mana\IManaTrigger.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\vazkii\botania\api\subtile\SubTileEntity.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\util\IIcon.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\texture\IIconRegister.java
