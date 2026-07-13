@@ -175,7 +175,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				}
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+				UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=3000;
 				continue;
 			}
@@ -184,7 +184,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.MELON_SEEDS, 1+RNGSUS.nextInt(3), 0));
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+				UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=3000;
 				continue;
 			}
@@ -192,7 +192,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.CACTUS, 1, 0));
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+				UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=3000;
 				continue;
 			}
@@ -200,7 +200,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, IL.Dye_Cocoa.get(1));
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+				UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=2000;
 				continue;
 			}
@@ -209,7 +209,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 					WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 					WD.fire(aPlayer.level(), aCoord, F);
 				}
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+				UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=4000;
 				continue;
 			}
@@ -222,7 +222,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 					}
 				}
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+				UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 				tPower-=2000;
 				continue;
 			}
@@ -232,14 +232,14 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				continue;
 			}
 			if (aBlock instanceof StairBlock || WD.opq(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), T, F)) {
-				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+				UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 				tPower=0;
 				continue;
 			}
 			if (aBlock.canCollideCheck(aMeta, F) || aBlock.canCollideCheck(aMeta, T)) {
 				AABB tBox = aBlock.getCollisionBoundingBoxFromPool(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ());
 				if (tBox != null && tBox.calculateIntercept(tPos, tAim) != null) {
-					UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);
+					UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 					tPower=0;
 					continue;
 				}
