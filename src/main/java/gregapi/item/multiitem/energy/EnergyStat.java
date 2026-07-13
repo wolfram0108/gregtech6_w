@@ -108,7 +108,7 @@ public class EnergyStat implements IItemEnergy {
 	
 	@Override
 	public boolean useEnergy(TagData aEnergyType, ItemStack aStack, long aEnergyAmount, LivingEntity aPlayer, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoUse) {
-		if (aPlayer instanceof Player && ((Player)aPlayer).capabilities.isCreativeMode) return T;
+		if (aPlayer instanceof Player && ((Player)aPlayer).getAbilities().instabuild) return T;
 		if (aEnergyType != mType && aEnergyType != null) return F;
 		rechargeFromPlayer(mType, aStack, aPlayer, aInventory, aWorld, aX, aY, aZ);
 		long tStored = getEnergyStored(mType, aStack);

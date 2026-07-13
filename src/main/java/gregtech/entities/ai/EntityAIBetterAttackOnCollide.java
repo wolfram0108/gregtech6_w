@@ -89,11 +89,11 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 	public void updateTask() {
 		LivingEntity tTarget = mCreature.getAttackTarget();
 		mCreature.getLookHelper().setLookPositionWithEntity(tTarget, 30, 30);
-		double tTargetDistance = mCreature.distanceToSqr(tTarget.getX(), tTarget.boundingBox.minY, tTarget.getZ());
+		double tTargetDistance = mCreature.distanceToSqr(tTarget.getX(), tTarget.getBoundingBox().minY, tTarget.getZ());
 		double tLookRadius = mCreature.width * mCreature.width * 4 + tTarget.width;
 		mPathCoolDown--;
 		if ((mLastingMemory || mCreature.getEntitySenses().canSee(tTarget)) && mPathCoolDown <= 0 && ((mX == 0 && mY == 0 && mZ == 0) || tTarget.distanceToSqr(mX, mY, mZ) >= 1 || mCreature.getRNG().nextFloat() < 0.05F)) {
-			mX = tTarget.getX(); mY = tTarget.boundingBox.minY; mZ = tTarget.getZ();
+			mX = tTarget.getX(); mY = tTarget.getBoundingBox().minY; mZ = tTarget.getZ();
 			
 			mPathCoolDown = mFailedPathFindingPenalty + 4 + mCreature.getRNG().nextInt(7);
 			if (mCreature.getNavigator().getPath() != null) {

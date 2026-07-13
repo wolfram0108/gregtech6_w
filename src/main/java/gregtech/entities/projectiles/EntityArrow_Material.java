@@ -146,7 +146,7 @@ public class EntityArrow_Material extends EntityProjectile {
 				Entity entity1 = (Entity)tAllPotentiallyHitEntities.get(i);
 				
 				if (entity1.canBeCollidedWith() && (entity1 != tShootingEntity || ticksInAir >= 5)) {
-					AxisAlignedBB axisalignedbb1 = entity1.boundingBox.expand(0.3, 0.3, 0.3);
+					AxisAlignedBB axisalignedbb1 = entity1.getBoundingBox().expand(0.3, 0.3, 0.3);
 					MovingObjectPosition movingobjectposition1 = axisalignedbb1.calculateIntercept(vec31, vec3);
 					
 					if (movingobjectposition1 != null) {
@@ -163,7 +163,7 @@ public class EntityArrow_Material extends EntityProjectile {
 			if (tHitEntity != null) tVector = new MovingObjectPosition(tHitEntity);
 			
 			if (tVector != null && tHitEntity != null && tHitEntity instanceof Player) {
-				if (((Player)tHitEntity).capabilities.disableDamage || (tShootingEntity instanceof Player && !((Player)tShootingEntity).canAttackPlayer((Player)tHitEntity))) tVector = null;
+				if (((Player)tHitEntity).getAbilities().invulnerable || (tShootingEntity instanceof Player && !((Player)tShootingEntity).canAttackPlayer((Player)tHitEntity))) tVector = null;
 			}
 			
 			if (tVector != null) {
@@ -206,7 +206,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								tPlayer.inventory.currentItem = 0;
 								tPlayer.inventory.setInventorySlotContents(0, getArrowItem());
 								// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Arrow would do ZERO Damage.
-								if (WD.dimTF(level())) tPlayer.capabilities.isCreativeMode = T;
+								if (WD.dimTF(level())) tPlayer.getAbilities().instabuild = T;
 								tShootingEntity = tPlayer;
 								tPlayer.setDead();
 							}
@@ -217,7 +217,7 @@ public class EntityArrow_Material extends EntityProjectile {
 						
 						if (tDamage + tMagicDamage > 0 && tHitEntity.attackEntityFrom(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 							if (tHitEntity instanceof LivingEntity) {
-								if (tHitTimer >= 0) tHitEntity.hurtResistantTime = tHitTimer;
+								if (tHitTimer >= 0) tHitEntity.invulnerableTime = tHitTimer;
 								
 								if (tHitEntity instanceof Creeper && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow) > 0 && tImplosion <= 0) ((Creeper)tHitEntity).func_146079_cb();
 								

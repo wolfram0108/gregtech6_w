@@ -47,7 +47,7 @@ public class Behavior_Plunger_Item extends AbstractBehaviorDefault {
 				for (IMetaTileEntityItemPipe tTileEntity : UT.Code.sortByValuesAcending(IMetaTileEntityItemPipe.Util.scanPipes((IMetaTileEntityItemPipe)tMetaTileEntity, new HashMap<IMetaTileEntityItemPipe, Long>(), 0, false, true)).keySet()) {
 					for (int i = 0, j = tTileEntity.getSizeInventory(); i < j; i++) if (tTileEntity.isValidSlot(i)) {
 						if (tTileEntity.getStackInSlot(i) != null) {
-							if (aPlayer.capabilities.isCreativeMode || ((ItemMetaTool)aItem).doDamage(aStack, mCosts)) {
+							if (aPlayer.getAbilities().instabuild || ((ItemMetaTool)aItem).doDamage(aStack, mCosts)) {
 								ItemStack tStack = tTileEntity.decrStackSize(i, 64);
 								if (tStack != null) {
 									EntityItem tEntity = new EntityItem(aWorld, ((IGregTechTileEntity)aTileEntity).getOffsetX((byte)aSide, 1) + 0.5, ((IGregTechTileEntity)aTileEntity).getOffsetY((byte)aSide, 1) + 0.5, ((IGregTechTileEntity)aTileEntity).getOffsetZ((byte)aSide, 1) + 0.5, tStack);

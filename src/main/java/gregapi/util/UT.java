@@ -3177,15 +3177,15 @@ public class UT {
 		}
 		
 		public static boolean isCreative(Object aPlayer) {
-			return aPlayer instanceof Player && ((Player)aPlayer).capabilities.isCreativeMode;
+			return aPlayer instanceof Player && ((Player)aPlayer).getAbilities().instabuild;
 		}
 		
 		public static boolean isInvincible(Object aPlayer) {
-			return aPlayer instanceof Player && ((Player)aPlayer).capabilities.isCreativeMode;
+			return aPlayer instanceof Player && ((Player)aPlayer).getAbilities().instabuild;
 		}
 		
 		public static boolean hasInfiniteItems(Object aPlayer) {
-			return aPlayer instanceof Player && ((Player)aPlayer).capabilities.isCreativeMode;
+			return aPlayer instanceof Player && ((Player)aPlayer).getAbilities().instabuild;
 		}
 		
 		public static boolean consumeCurrentItem(Player aPlayer) {

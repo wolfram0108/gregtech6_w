@@ -116,7 +116,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		List tEntities = aPlayer.level().getEntities(aPlayer, AABB.getBoundingBox(Math.min(tPos.x, tAim.x)-2, Math.min(tPos.y, tAim.y)-2, Math.min(tPos.z, tAim.z)-2, Math.max(tPos.x, tAim.x)+2, Math.max(tPos.y, tAim.y)+2, Math.max(tPos.z, tAim.z)+2));
 		List<Entity> tTargets = new ArrayListNoNulls<>();
 		for (Object tEntity : tEntities) if (tEntity instanceof Entity) {
-			AABB tBox = ((Entity)tEntity).boundingBox;
+			AABB tBox = ((Entity)tEntity).getBoundingBox();
 			if (tBox != null) {
 				if (tEntity instanceof EndCrystal) tBox = tBox.getOffsetBoundingBox(0, 1.3, 0);
 				if (tBox.calculateIntercept(tPos, tAim) != null) tTargets.add((Entity)tEntity);
@@ -254,7 +254,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// In case the Entity is Invulnerable.
 		if (aTarget.isEntityInvulnerable()) return F;
 		// Player specific immunities, and I guess friendly fire prevention too.
-		if (aTarget instanceof Player && (((Player)aTarget).capabilities.disableDamage || !aPlayer.canAttackPlayer((Player)aTarget))) return F;
+		if (aTarget instanceof Player && (((Player)aTarget).getAbilities().invulnerable || !aPlayer.canAttackPlayer((Player)aTarget))) return F;
 		// Endermen require Disjunction Enchantment on the Bullet, or having a Weakness Potion Effect on them.
 		if (aTarget instanceof EnderMan && ((EnderMan)aTarget).getActivePotionEffect(MobEffect.weakness) == null && UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.INSTANCE, aBullet) <= 0) for (int i = 0; i < 64; ++i) if (((EnderMan)aTarget).teleportRandomly()) return F;
 		// EntityLivingBase, Ender Dragon and End Crystals only.
@@ -295,7 +295,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 					tPlayer.getInventory().setInventorySlotContents(0, aBullet);
 					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.rotationPitch);
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
-					if (WD.dimTF(aPlayer.level())) tPlayer.capabilities.isCreativeMode = T;
+					if (WD.dimTF(aPlayer.level())) tPlayer.getAbilities().instabuild = T;
 					tPlayer.setDead();
 				}
 			}
@@ -309,7 +309,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		if (MD.TF.mLoaded && aTarget instanceof EntityTFLich && UT.NBT.getEnchantmentLevel(Enchantments.SMITE, aBullet) > 0) tDamageSource.setDamageBypassesArmor();
 		
 		if (aTarget.attackEntityFrom(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
-			aTarget.hurtResistantTime = (aTarget instanceof LivingEntity ? ((LivingEntity)aTarget).maxHurtResistantTime : 20);
+			aTarget.invulnerableTime = (aTarget instanceof LivingEntity ? ((LivingEntity)aTarget).maxHurtResistantTime : 20);
 			if (aTarget instanceof Creeper && tFireDamage > 0 && tImplosion <= 0) ((Creeper)aTarget).func_146079_cb();
 			if (tKnockback > 0) aTarget.addVelocity(aDir.x * tKnockback * aPower / 50000.0, 0.05, aDir.z * tKnockback * aPower / 50000.0);
 			if (aTarget instanceof LivingEntity)
@@ -322,7 +322,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// Print Errors to the Log and send a Chat Message informing about its existence.
 		} catch(Throwable e) {e.printStackTrace(ERR); UT.Entities.sendchat(aPlayer, "See gregtech.log for details: " + e.toString()); aTarget.setDead(); return T;}
 		// Just pretend we miss the Target if it was in its Invulnerability Frames, this will end up hitting whatever is behind the Target instead.
-		if (aTarget.hurtResistantTime > 0) return F;
+		if (aTarget.invulnerableTime > 0) return F;
 		// It hits, but it doesn't seem to do anything.
 		return T;
 	}

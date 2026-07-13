@@ -157,7 +157,7 @@ public class Override_Drops {
 			
 			if (aPlayerKill) {
 			@SuppressWarnings("rawtypes")
-			List tList = aDead.level().getEntities(aDead, aDead.boundingBox.expand(32, 32, 32));
+			List tList = aDead.level().getEntities(aDead, aDead.getBoundingBox().expand(32, 32, 32));
 			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof EntityPigZombie) ((EntityPigZombie)tList.get(j)).attackEntityFrom(DamageSource.causePlayerDamage((Player)tList.get(i)), 0); break;}
 			
 			if (RNGSUS.nextInt( 2) == 0) aDrops.add(ST.entity(aDead, RNGSUS.nextBoolean()?OP.rockGt.mat(MT.Netherrack, 1):ST.make(Items.FLINT, 1, 0)));
