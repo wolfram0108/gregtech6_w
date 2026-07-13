@@ -18,6 +18,8 @@
  */
 
 package gregapi.item.multiitem.behaviors;
+
+import net.minecraft.core.BlockPos;
 import gregapi.util.WD;
 
 import gregapi.data.CS.SFX;
@@ -36,6 +38,7 @@ import java.util.List;
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
+import static gregapi.data.CS.FORGE_DIR;
 
 public class Behavior_Place_Paddy extends AbstractBehaviorDefault {
 	private final int mCosts;
@@ -46,7 +49,7 @@ public class Behavior_Place_Paddy extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || !IL.GrC_Paddy.exists() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || !IL.GrC_Paddy.exists() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		if (WD.block(aWorld, aX, aY, aZ) == Blocks.FARMLAND && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 			UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
 			WD.set(aWorld, aX, aY, aZ, IL.GrC_Paddy.block(), WD.meta(aWorld, aX, aY, aZ), 3);

@@ -18,6 +18,8 @@
  */
 
 package gregapi.block;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
 
@@ -175,7 +177,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		if (!canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
 		byte aMeta = UT.Code.bind4(aItem.getMetadata(ST.meta(aStack)));
 		if (!checkNoEntityCollision(aWorld, aX, aY, aZ, aMeta, null)) return F;
-		if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 		
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aMeta))) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);

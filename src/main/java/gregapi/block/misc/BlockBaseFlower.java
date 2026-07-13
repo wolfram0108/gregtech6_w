@@ -19,6 +19,8 @@
 
 package gregapi.block.misc;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.api.Optional;
 import gregapi.block.IBlockBase;
 import gregapi.block.ItemBlockBase;
@@ -153,7 +155,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 			if (((TileEntityFlowerPot)tTileEntity).getFlowerPotItem() == null) {
 				((TileEntityFlowerPot)tTileEntity).func_145964_a(aItem, ST.meta(aStack));
 				tTileEntity.markDirty();
-				if (!WD.setMeta(aWorld, aX, aY, aZ, ST.meta(aStack), 2)) aWorld.markBlockForUpdate(aX, aY, aZ);
+				if (!WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ST.meta(aStack), 2, F)) aWorld.markBlockForUpdate(aX, aY, aZ);
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			}
 			return T;
@@ -165,7 +167,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
 		
-		if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 		
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aItem.getMetadata(aStack.getDamageValue())))) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);

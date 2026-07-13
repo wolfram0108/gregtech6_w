@@ -19,6 +19,8 @@
 
 package gregtech.items.behaviors;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.data.CS.SFX;
 import gregapi.data.FL;
 import gregapi.item.multiitem.MultiItem;
@@ -42,7 +44,7 @@ public class Behavior_Watering_Crops extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		FluidStack mFluid = ((IFluidHandlerItem)aItem).getFluid(aStack);
 		if (FL.water(mFluid)) {
 			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);

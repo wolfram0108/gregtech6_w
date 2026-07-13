@@ -19,6 +19,8 @@
 
 package gregapi.item.multiitem.behaviors;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.data.CS.BlocksGT;
 import gregapi.data.CS.SFX;
 import gregapi.data.IL;
@@ -38,6 +40,7 @@ import java.util.List;
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
+import static gregapi.data.CS.FORGE_DIR;
 
 public class Behavior_Place_Path extends AbstractBehaviorDefault {
 	private final int mCosts;
@@ -48,7 +51,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || WD.opaque(WD.block(aWorld, aX, aY+1, aZ))) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || WD.opaque(WD.block(aWorld, aX, aY+1, aZ))) return F;
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		
 		if (aBlock == BlocksGT.Paths || IL.EtFu_Path.equal(aBlock)) {

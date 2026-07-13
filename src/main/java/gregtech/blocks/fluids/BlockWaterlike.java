@@ -111,7 +111,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 				if (expQuanta <= 0) {
 					WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				} else {
-					WD.setMeta(aWorld, aX, aY, aZ, quantaPerBlock - expQuanta, 3);
+					WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), quantaPerBlock - expQuanta, 3, F);
 					aWorld.scheduleBlockUpdate(aX, aY, aZ, this, tickRate);
 					aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
 				}

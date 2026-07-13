@@ -19,6 +19,8 @@
 
 package gregapi.item.multiitem.behaviors;
 
+import net.minecraft.core.BlockPos;
+
 import static gregapi.data.CS.*;
 
 import gregapi.data.OD;
@@ -38,7 +40,7 @@ public class Behavior_Place_Workbench extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		// Don't place Workbenches on Wood or Plants, since this Class is supposed to be used by Axes and Saws.

@@ -18,6 +18,8 @@
  */
 
 package gregapi.block.misc;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
 
@@ -93,7 +95,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		if (!aPlayer.isShiftKeyDown()) {
 			for (int i = 0; i < 2; i++) {
 				if (i == 1) {aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];}
-				if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+				if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 				Block aBlock = WD.block(aWorld, aX, aY, aZ);
 				byte  aMeta  = WD.meta (aWorld, aX, aY, aZ);
 				if (aBlock == this) {

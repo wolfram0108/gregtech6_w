@@ -19,6 +19,8 @@
 
 package gregtech.items.behaviors;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.code.ItemNBT;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -64,7 +66,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 		
 		boolean rOutput = F;
 		
-		if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		
 		CompoundTag tNBT = UT.NBT.getNBT(aStack);
 		long tUses = tNBT.getLong("gt.remaining");
@@ -163,7 +165,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 				default: return F;
 				}
 			}
-			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && WD.setMeta(aWorld, aX, aY, aZ, ~mColor & 15, 3);
+			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ~mColor & 15, 3, F);
 		}
 		return aBlock.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
 	}

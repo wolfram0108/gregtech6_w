@@ -46,7 +46,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.isShiftKeyDown() || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.isShiftKeyDown() || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		CompoundTag aNBT = UT.NBT.getNBT(aStack);
 		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, aWorld.provider.dimensionId);
 		BlockPos tCoords = new BlockPos(aX, aY, aZ);

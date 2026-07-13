@@ -19,6 +19,8 @@
 
 package gregtech.items.behaviors;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.block.IBlockDecolorable;
 import gregapi.code.ItemNBT;
 import gregapi.data.CS.BlocksGT;
@@ -61,7 +63,7 @@ public class Behavior_Spray_Color_Remover extends AbstractBehaviorDefault {
 		
 		boolean rOutput = F;
 		
-		if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();

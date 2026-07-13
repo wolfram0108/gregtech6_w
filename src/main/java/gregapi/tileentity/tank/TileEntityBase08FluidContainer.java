@@ -18,6 +18,8 @@
  */
 
 package gregapi.tileentity.tank;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.BlockHitResult;
 
 import enviromine.handlers.EM_StatusManager;
@@ -203,7 +205,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public boolean onItemUseFirst(MultiTileEntityItemInternal aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || aStack.getCount() != 1) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || aStack.getCount() != 1) return F;
 		if (canWaterCrops()) {
 			FluidStack mFluid = aItem.getFluid(aStack);
 			if (FL.water(mFluid)) {
@@ -231,7 +233,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 						int tIncrement = Math.min(7-aMeta, mFluid.getAmount()/10);
 						if (tIncrement > 0) {
 							aItem.drain(aStack, tIncrement*10, T);
-							WD.setMeta(aWorld, aX, aY, aZ, aMeta+tIncrement, 3);
+							WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMeta+tIncrement, 3, F);
 							UT.Sounds.send(SFX.MC_LIQUID_WATER, aWorld, aX, aY, aZ);
 						}
 						return T;
@@ -241,7 +243,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 						int tIncrement = Math.min(7-tMeta, mFluid.getAmount()/10);
 						if (tIncrement > 0) {
 							aItem.drain(aStack, tIncrement*10, T);
-							WD.setMeta(aWorld, aX, aY-1, aZ, tMeta+tIncrement, 3);
+							WD.set(aWorld, aX, aY-1, aZ, WD.block(aWorld, aX, aY-1, aZ), tMeta+tIncrement, 3, F);
 							UT.Sounds.send(SFX.MC_LIQUID_WATER, aWorld, aX, aY-1, aZ);
 						}
 						return T;

@@ -18,6 +18,8 @@
  */
 
 package gregapi.block;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.InfestedBlock;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -94,7 +96,7 @@ public class ToolCompat {
 		
 		try {
 		
-		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || WD.mayEdit(aEntityPlayer, aX, aY, aZ, aSide, aStack))) {
+		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || (aEntityPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) {
 			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
 				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					WD.playStepSound(aWorld, aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND);
@@ -220,7 +222,7 @@ public class ToolCompat {
 			}
 			// This thing has a special Functionality, which should override spawning Fire Blocks.
 			if (!IL.TF_Lamp_of_Cinders.equal(aStack, T, T)) {
-				if (aEntityPlayer == null || WD.mayEdit(aEntityPlayer, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aSide, aStack)) {
+				if (aEntityPlayer == null || (aEntityPlayer).mayUseItemAt(new BlockPos(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]), FORGE_DIR[aSide], aStack)) {
 					if (aWorld.isAirBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
 						if (WD.oxygen(aWorld, aX, aY, aZ)) aWorld.setBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.FIRE);
 						return 10000;
@@ -237,22 +239,22 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_rotator)) {
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
-				if (aMeta < 6 && WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1) % 6, 3)) return 2000;
+				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
 			if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, ((aMeta-1)%4)+2, 3)) return 2500;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
 			if (aBlock instanceof BlockHopper) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1)%6==1?(aMeta+1)%6:2, 3)) return 2500;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1)%6==1?(aMeta+1)%6:2, 3, F)) return 2500;
 			}
 			if (aBlock.rotateBlock(aWorld, aX, aX, aX, Direction.getOrientation(aSide))) return 10000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			if (aBlock instanceof BlockRedstoneDiode) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta / 4) * 4  + (((aMeta%4) + 1) % 4), 3)) return 10000;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta / 4) * 4  + (((aMeta%4) + 1) % 4), 3, F)) return 10000;
 			}
 		}
 		if (aTool.equals(TOOL_crowbar)) {
@@ -290,16 +292,16 @@ public class ToolCompat {
 				return tResult?10000:0;
 			}
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
-				if (aMeta < 6 && WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1) % 6, 3)) return 2000;
+				if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1) % 6, 3, F)) return 2000;
 			}
 			if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, ((aMeta-1)%4)+2, 3)) return 2500;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ((aMeta-1)%4)+2, 3, F)) return 2500;
 			}
 			if (aBlock instanceof BlockHopper) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1)%6==1?(aMeta+1)%6:2, 3)) return 2500;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1)%6==1?(aMeta+1)%6:2, 3, F)) return 2500;
 			}
 		}
 		if (aTool.equals(TOOL_wrench) || aTool.equals(TOOL_monkeywrench)) {
@@ -335,7 +337,7 @@ public class ToolCompat {
 			}
 			
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
-				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
+				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			
 			if (aBlock instanceof BlockWorkbench || aBlock instanceof BlockBookshelf) {
@@ -354,13 +356,13 @@ public class ToolCompat {
 				}
 			} else {
 				if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
-					if (aMeta < 6 && WD.setMeta(aWorld, aX, aY, aZ, aTargetSide, 3)) return 10000;
+					if (aMeta < 6 && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
 				if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
-					if (SIDES_HORIZONTAL[aTargetSide] && WD.setMeta(aWorld, aX, aY, aZ, aTargetSide, 3)) return 10000;
+					if (SIDES_HORIZONTAL[aTargetSide] && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
 				if (aBlock instanceof BlockHopper) {
-					if (SIDES_BOTTOM_HORIZONTAL[aTargetSide] && WD.setMeta(aWorld, aX, aY, aZ, aTargetSide, 3)) return 10000;
+					if (SIDES_BOTTOM_HORIZONTAL[aTargetSide] && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
 			}
 			if (aBlock instanceof BaseRailBlock || aBlock instanceof BlockRedstoneDiode || aBlock instanceof BlockPistonExtension || aBlock instanceof BlockPistonBase) {

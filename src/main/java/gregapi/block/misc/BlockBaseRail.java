@@ -19,6 +19,8 @@
 
 package gregapi.block.misc;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.block.IBlockBase;
 import gregapi.block.IBlockToolable;
 import gregapi.block.ItemBlockBase;
@@ -193,10 +195,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 			flag = flag || func_150058_a(aWorld, aX, aY, aZ, aMeta, T, 0) || func_150058_a(aWorld, aX, aY, aZ, aMeta, F, 0);
 			boolean flag1 = F;
 			if (flag && (aMeta & 8) == 0) {
-				WD.setMeta(aWorld, aX, aY, aZ, aData | 8, 3);
+				WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aData | 8, 3, F);
 				flag1 = T;
 			} else if (!flag && (aMeta & 8) != 0) {
-				WD.setMeta(aWorld, aX, aY, aZ, aData, 3);
+				WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aData, 3, F);
 				flag1 = T;
 			}
 			if (flag1) {
@@ -238,13 +240,13 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		
 		if (!list.isEmpty()) flag1 = T;
 		if (flag1 && !flag) {
-			WD.setMeta(aWorld, aX, aY, aZ, aMetaData | 8, 3);
+			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMetaData | 8, 3, F);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY - 1, aZ, this);
 			aWorld.markBlockRangeForRenderUpdate(aX, aY, aZ, aX, aY, aZ);
 		}
 		if (!flag1 && flag) {
-			WD.setMeta(aWorld, aX, aY, aZ, aMetaData & 7, 3);
+			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMetaData & 7, 3, F);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY - 1, aZ, this);
 			aWorld.markBlockRangeForRenderUpdate(aX, aY, aZ, aX, aY, aZ);
@@ -334,7 +336,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
 		
-		if (!WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 		
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, SIDES_AXIS_X[UT.Code.getHorizontalForPlayerPlacing(aPlayer)] ? 1 : 0)) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);

@@ -19,6 +19,8 @@
 
 package gregtech.items.behaviors;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.block.IBlockFoamable;
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.code.ItemNBT;
@@ -57,7 +59,7 @@ public class Behavior_Spray_Foam_Hardener extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isClientSide() || aStack.getCount() != 1 || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aStack.getCount() != 1 || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		
 		boolean rOutput = F;
 		

@@ -19,6 +19,8 @@
 
 package gregapi.item.multiitem.behaviors;
 
+import net.minecraft.core.BlockPos;
+
 import gregapi.data.IL;
 import gregapi.data.OP;
 import gregapi.item.multiitem.MultiItem;
@@ -37,7 +39,7 @@ public class Behavior_Place_Sapling extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isClientSide() || aPlayer == null || !WD.mayEdit(aPlayer, aX, aY, aZ, aSide, aStack) || SIDES_BOTTOM_HORIZONTAL[aSide]) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || SIDES_BOTTOM_HORIZONTAL[aSide]) return F;
 		int aOldSize = ST.size(aStack);
 		// Scan Inventory for suitable Saplings.
 		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
