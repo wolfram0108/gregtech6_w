@@ -309,7 +309,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// Smite Bullets will break one Lich Shield each, in order to make this somewhat beatable in Multiplayer.
 		if (MD.TF.mLoaded && aTarget instanceof EntityTFLich && UT.NBT.getEnchantmentLevel(Enchantments.SMITE, aBullet) > 0) tDamageSource.setDamageBypassesArmor();
 		
-		if (aTarget.attackEntityFrom(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
+		if (aTarget.hurtOrSimulate(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 			aTarget.invulnerableTime = (aTarget instanceof LivingEntity ? ((LivingEntity)aTarget).maxHurtResistantTime : 20);
 			if (aTarget instanceof Creeper && tFireDamage > 0 && tImplosion <= 0) ((Creeper)aTarget).func_146079_cb();
 			if (tKnockback > 0) aTarget.addVelocity(aDir.x * tKnockback * aPower / 50000.0, 0.05, aDir.z * tKnockback * aPower / 50000.0);

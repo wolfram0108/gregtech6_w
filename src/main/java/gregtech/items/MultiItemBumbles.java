@@ -447,12 +447,12 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		, tPlayer = (aAttacked instanceof Player)
 		;
 		switch(aMetaData / 100) {
-		default: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.attackEntityFrom(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))  );
-		case   9: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.attackEntityFrom(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*2);
-		case   6: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.attackEntityFrom(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*4);
+		default: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))  );
+		case   9: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*2);
+		case   6: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*4);
 		case   8: return F;
-		case   3: if (!tSkeleton && !tIronGolem && aAttacked.attackEntityFrom(DamageSources.getBumbleDamage().setFireDamage(), (1+((aMetaData / 10) % 10))*2)) {aAttacked.setFire((1+((aMetaData / 10) % 10))*10); return T;} return F;
-		case 105: case 200: case 201: case 202: case 203: return !tPlayer && aAttacked.attackEntityFrom(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*10);
+		case   3: if (!tSkeleton && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage().setFireDamage(), (1+((aMetaData / 10) % 10))*2)) {aAttacked.setFire((1+((aMetaData / 10) % 10))*10); return T;} return F;
+		case 105: case 200: case 201: case 202: case 203: return !tPlayer && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*10);
 		}
 	}
 	

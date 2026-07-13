@@ -75,9 +75,9 @@ public class BlockSpikeSuper extends BlockBaseSpike {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aEntity instanceof LivingEntity) {
 			if (aMeta < 8) {
-				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 15.0F :  7.5F));
+				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 15.0F :  7.5F));
 			} else {
-				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 50.0F : 25.0F));
+				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 50.0F : 25.0F));
 			}
 		}
 	}

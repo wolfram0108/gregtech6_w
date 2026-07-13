@@ -215,7 +215,7 @@ public class EntityArrow_Material extends EntityProjectile {
 						// To make Looting work at all...
 						DamageSource tDamageSource = DamageSource.causeArrowDamage(this, tShootingEntity==null?this:tShootingEntity);
 						
-						if (tDamage + tMagicDamage > 0 && tHitEntity.attackEntityFrom(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
+						if (tDamage + tMagicDamage > 0 && tHitEntity.hurtOrSimulate(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 							if (tHitEntity instanceof LivingEntity) {
 								if (tHitTimer >= 0) tHitEntity.invulnerableTime = tHitTimer;
 								

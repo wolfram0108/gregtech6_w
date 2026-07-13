@@ -178,7 +178,7 @@ public class MultiTileEntityCrusher extends TileEntityBase10MultiBlockMachine {
 	public void onWalkOver2(LivingEntity aEntity) {
 		super.onWalkOver2(aEntity);
 		if (mRunning && aEntity.getX() >= getOffsetXN(mFacing, 2) - 1 && aEntity.getZ() >= getOffsetZN(mFacing, 2) - 1 && aEntity.getX() <= getOffsetXN(mFacing, 2) + 2 && aEntity.getZ() <= getOffsetZN(mFacing, 2) + 2) {
-			aEntity.attackEntityFrom(DamageSources.getCrusherDamage(), 5.0F);
+			aEntity.hurt(DamageSources.getCrusherDamage(), 5.0F);
 		}
 	}
 	

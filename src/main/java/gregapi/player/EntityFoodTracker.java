@@ -84,7 +84,7 @@ public class EntityFoodTracker implements AttachmentType {
 			
 			if (tTracker.mAlcohol >= 100) {
 				if (FOOD_OVERDOSE_DEATH || tTracker.mEntity.getHealth() >= 2)
-				tTracker.mEntity.attackEntityFrom(DamageSources.getAlcoholDamage(), FOOD_OVERDOSE_DEATH?2:1);
+				tTracker.mEntity.hurt(DamageSources.getAlcoholDamage(), FOOD_OVERDOSE_DEATH?2:1);
 				UT.Entities.applyPotion(tTracker.mEntity, MobEffects.NAUSEA, 1200, 2, F);
 				UT.Entities.applyPotion(tTracker.mEntity, MobEffects.STRENGTH, 300, 3, F);
 			} else if (tTracker.mAlcohol >= 75) {
@@ -99,7 +99,7 @@ public class EntityFoodTracker implements AttachmentType {
 			
 			if (tTracker.mCaffeine >= 100) {
 				if (FOOD_OVERDOSE_DEATH || tTracker.mEntity.getHealth() >= 2)
-				tTracker.mEntity.attackEntityFrom(DamageSources.getCaffeineDamage(), FOOD_OVERDOSE_DEATH?2:1);
+				tTracker.mEntity.hurt(DamageSources.getCaffeineDamage(), FOOD_OVERDOSE_DEATH?2:1);
 				UT.Entities.applyPotion(tTracker.mEntity, MobEffects.WEAKNESS, 1200, 2, F);
 				UT.Entities.applyPotion(tTracker.mEntity, MobEffects.HASTE, 300, 3, F);
 			} else if (tTracker.mCaffeine >= 75) {
@@ -140,7 +140,7 @@ public class EntityFoodTracker implements AttachmentType {
 			if (NUTRITION_SYSTEM) {
 				if (tTracker.mFat >= 100) {
 					if (FOOD_OVERDOSE_DEATH || tTracker.mEntity.getHealth() >= 2)
-					tTracker.mEntity.attackEntityFrom(DamageSources.getFatDamage(), FOOD_OVERDOSE_DEATH?2:1);
+					tTracker.mEntity.hurt(DamageSources.getFatDamage(), FOOD_OVERDOSE_DEATH?2:1);
 					UT.Entities.applyPotion(tTracker.mEntity, MobEffects.SLOWNESS, 1200, 2, F);
 					UT.Entities.applyPotion(tTracker.mEntity, MobEffects.RESISTANCE, 300, 3, F);
 				} else if (tTracker.mFat >= 75) {
@@ -155,7 +155,7 @@ public class EntityFoodTracker implements AttachmentType {
 				
 				if (tTracker.mSugar >= 100) {
 					if (FOOD_OVERDOSE_DEATH || tTracker.mEntity.getHealth() >= 2)
-					tTracker.mEntity.attackEntityFrom(DamageSources.getSugarDamage(), FOOD_OVERDOSE_DEATH?2:1);
+					tTracker.mEntity.hurt(DamageSources.getSugarDamage(), FOOD_OVERDOSE_DEATH?2:1);
 					UT.Entities.applyPotion(tTracker.mEntity, MobEffects.MINING_FATIGUE, 1200, 2, F);
 					UT.Entities.applyPotion(tTracker.mEntity, MobEffects.SPEED, 300, 3, F);
 					UT.Entities.applyPotion(tTracker.mEntity, MobEffects.JUMP_BOOST, 300, 3, F);
@@ -174,7 +174,7 @@ public class EntityFoodTracker implements AttachmentType {
 				
 				if (tTracker.mDehydration >= 100) {
 					if (FOOD_OVERDOSE_DEATH || tTracker.mEntity.getHealth() >= 2)
-					tTracker.mEntity.attackEntityFrom(DamageSources.getDehydrationDamage(), FOOD_OVERDOSE_DEATH?2:1);
+					tTracker.mEntity.hurt(DamageSources.getDehydrationDamage(), FOOD_OVERDOSE_DEATH?2:1);
 					UT.Entities.applyPotion(tTracker.mEntity, PotionsGT.ID_DEHYDRATION >= 0 ? PotionsGT.ID_DEHYDRATION : UT.Entities.POTID_HUNGER, 1200, 3, F);
 				} else if (tTracker.mDehydration >= 75) {
 					UT.Entities.applyPotion(tTracker.mEntity, PotionsGT.ID_DEHYDRATION >= 0 ? PotionsGT.ID_DEHYDRATION : UT.Entities.POTID_HUNGER, 1200, 2, F);

@@ -78,9 +78,9 @@ public class BlockSpikeSharp extends BlockBaseSpike {
 		if (aEntity instanceof LivingEntity) {
 			if (aMeta < 8) {
 				if (!(aEntity instanceof IronGolem || aEntity instanceof Skeleton || aEntity instanceof Slime))
-				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  5.0F :  2.5F));
+				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  5.0F :  2.5F));
 			} else {
-				aEntity.attackEntityFrom(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 10.0F :  5.0F));
+				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 10.0F :  5.0F));
 			}
 		}
 	}

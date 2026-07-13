@@ -101,7 +101,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	protected void fall(float p_70069_1_) {
 		int i = Mth.ceiling_float_int(p_70069_1_ - 1.0F);
 		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntities(this, boundingBox))) {
-			if (tEntity instanceof LivingEntity) tEntity.attackEntityFrom(DamageSource.fallingBlock, TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor_float((float)i * 2), 40));
+			if (tEntity instanceof LivingEntity) tEntity.hurt(damageSources().fallingBlock(this), TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor_float((float)i * 2), 40));// было DamageSource.fallingBlock (1.7.10 статик удалён) -> neo damageSources().fallingBlock(Entity=падающий блок=this)
 		}
 	}
 	

@@ -2922,7 +2922,7 @@ public class UT {
 		
 		public static boolean applyChemDamage(Entity aEntity, float aDamage) {
 			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != Skeleton.class && !isWearingFullChemHazmat(((LivingEntity)aEntity))) {
-				aEntity.attackEntityFrom(DamageSources.getChemDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
+				aEntity.hurt(DamageSources.getChemDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				MobEffectInstance tEffect;
 				((LivingEntity)aEntity).addEffect(new MobEffectInstance(MobEffects.POISON, Math.max(20, (int)(aDamage * 100 + Math.max(0, ((tEffect = ((LivingEntity)aEntity).getEffect(MobEffects.POISON))==null?0:tEffect.getDuration())))), 1));
 				return T;
@@ -2932,7 +2932,7 @@ public class UT {
 		
 		public static boolean applyHeatDamage(Entity aEntity, float aDamage) {
 			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && aEntity.getClass() != Blaze.class && ((LivingEntity)aEntity).getEffect(MobEffects.FIRE_RESISTANCE) == null && !isWearingFullHeatHazmat(((LivingEntity)aEntity))) {
-				aEntity.attackEntityFrom(DamageSources.getHeatDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
+				aEntity.hurt(DamageSources.getHeatDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
 			return F;
@@ -2940,7 +2940,7 @@ public class UT {
 		
 		public static boolean applyFrostDamage(Entity aEntity, float aDamage) {
 			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !isWearingFullFrostHazmat(((LivingEntity)aEntity))) {
-				aEntity.attackEntityFrom(DamageSources.getFrostDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
+				aEntity.hurt(DamageSources.getFrostDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
 			return F;
@@ -2949,7 +2949,7 @@ public class UT {
 		public static boolean applyElectricityDamage(Entity aEntity, long aVoltage, long aAmperage) {
 			long aDamage = Code.tierMax(aVoltage) * aAmperage * 4;
 			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !isWearingFullElectroHazmat(((LivingEntity)aEntity))) {
-				aEntity.attackEntityFrom(DamageSources.getElectricDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
+				aEntity.hurt(DamageSources.getElectricDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
 			return F;
@@ -2958,7 +2958,7 @@ public class UT {
 		public static boolean applyElectricityDamage(Entity aEntity, long aWattage) {
 			long aDamage = Code.tierMax(aWattage) * 4;
 			if (aDamage > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !isWearingFullElectroHazmat(((LivingEntity)aEntity))) {
-				aEntity.attackEntityFrom(DamageSources.getElectricDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
+				aEntity.hurt(DamageSources.getElectricDamage(), TFC_DAMAGE_MULTIPLIER * aDamage);
 				return T;
 			}
 			return F;
