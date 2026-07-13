@@ -661,32 +661,32 @@ public class UT {
 			}
 			if (!aMat.mEnchantmentTools  .isEmpty()) {
 				tPage = "Tool Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentTools  ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentTools  ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentWeapons.isEmpty()) {
 				tPage = "Weapon Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentWeapons) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentWeapons) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentAmmo   .isEmpty()) {
 				tPage = "Ammo Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentAmmo   ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentAmmo   ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentRanged .isEmpty()) {
 				tPage = "Ranged Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentRanged ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentRanged ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentFishing.isEmpty()) {
 				tPage = "Fishing Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentFishing) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentFishing) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			if (!aMat.mEnchantmentArmors .isEmpty()) {
 				tPage = "Armor Enchantments\n===================\n";
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentArmors ) tPage += tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount) + "\n";
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMat.mEnchantmentArmors ) tPage += UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount) + "\n";
 				tBook.add(tPage+"===================\n");
 			}
 			
@@ -2306,6 +2306,16 @@ public class UT {
 			tMutable.set(tHolder, (byte)aLevel);
 			aStack.set(tType, tMutable.toImmutable());
 			return aStack;
+		}
+
+		/** было {@code aEnchantment.getTranslatedName(aLevel)} (1.7.10 Enchantment) — neo: имя энчанта с уровнем через
+		 *  static {@code Enchantment.getFullname(Holder<Enchantment>, level)} (neo Enchantment.java:185); ключ резолвим
+		 *  через server-реестр (тот же путь, что addEnchantment выше). Нет сервера => путь ключа как fallback. */
+		public static String enchantName(ResourceKey<Enchantment> aEnchantment, int aLevel) {
+			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
+			if (tServer == null) return aEnchantment.identifier().toString();
+			Holder<Enchantment> tHolder = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(aEnchantment);
+			return Enchantment.getFullname(tHolder, aLevel).getString();
 		}
 	}
 	

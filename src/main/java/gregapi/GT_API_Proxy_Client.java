@@ -387,32 +387,32 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentTools) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_TOOL_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
-								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
+								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 								if (tEnchantment.mObject == Enchantments.FIRE_ASPECT && tEnchantment.mAmount >= 3) tToolTip.append(" (Autosmelt)");
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentWeapons) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_WEAPON_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
-								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
+								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentAmmo) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_AMMO_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
-								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
+								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentRanged) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_RANGED_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
-								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
+								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							tToolTip = null;
 							for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentFishing) {
 								if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_FISHING_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
-								tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
+								tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 							}
 							if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 							
@@ -420,7 +420,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 								tToolTip = null;
 								for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : tData.mMaterial.mMaterial.mEnchantmentArmors) {
 									if (tToolTip == null) tToolTip = new StringBuilder(LH.Chat.PURPLE).append(LH.get(LH.TOOLTIP_POSSIBLE_ARMOR_ENCHANTS)).append(LH.Chat.PINK); else tToolTip.append(", ");
-									tToolTip.append(tEnchantment.mObject.getTranslatedName((int)tEnchantment.mAmount));
+									tToolTip.append(UT.NBT.enchantName(tEnchantment.mObject, (int)tEnchantment.mAmount));
 								}
 								if (tToolTip != null) aEvent.toolTip.add(tToolTip.toString());
 								
