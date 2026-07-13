@@ -191,7 +191,7 @@ public class WD {
 		, aPlayer.prevPosY + (aPlayer.getY() - aPlayer.prevPosY) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
 		, aPlayer.prevPosZ + (aPlayer.getZ() - aPlayer.prevPosZ)
 		);
-		float  tPitch = aPlayer.prevRotationPitch + (aPlayer.rotationPitch - aPlayer.prevRotationPitch);
+		float  tPitch = aPlayer.prevRotationPitch + (aPlayer.getXRot() - aPlayer.prevRotationPitch);
 		float  tYaw   = aPlayer.prevRotationYaw   + (aPlayer.rotationYaw   - aPlayer.prevRotationYaw  );
 		float  tZ     =  Mth.cos(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tX     =  Mth.sin(-tYaw   * 0.017453292F - (float)Math.PI);
@@ -275,7 +275,7 @@ public class WD {
 				aPlayer.isDead = F;
 				aPlayer.setWorld(tTargetWorld);
 				MinecraftServer.getServer().getConfigurationManager().func_72375_a(aPlayer, tOriginalWorld);
-				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.rotationPitch);
+				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.getXRot());
 				aPlayer.theItemInWorldManager.setWorld(tTargetWorld);
 				MinecraftServer.getServer().getConfigurationManager().updateTimeAndWeatherForPlayer(aPlayer, tTargetWorld);
 				MinecraftServer.getServer().getConfigurationManager().syncPlayerInventory(aPlayer);
@@ -285,7 +285,7 @@ public class WD {
 					MobEffectInstance potioneffect = (MobEffectInstance)tIterator.next();
 					aPlayer.playerNetServerHandler.sendPacket(new ClientboundUpdateMobEffectPacket(aPlayer.getEntityId(), potioneffect));
 				}
-				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.rotationPitch);
+				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.getXRot());
 				FMLCommonHandler.instance().firePlayerChangedDimensionEvent(aPlayer, WD.dimensionId(tOriginalWorld), aDimension);
 			} else {
 				aEntity.setPosition(aX+0.5, aY+0.5, aZ+0.5);

@@ -294,7 +294,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
 					tPlayer.getInventory().currentItem = 0;
 					tPlayer.getInventory().setInventorySlotContents(0, aBullet);
-					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.rotationPitch);
+					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.getXRot());
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
 					if (WD.dimTF(aPlayer.level())) tPlayer.getAbilities().instabuild = T;
 					tPlayer.setDead();

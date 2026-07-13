@@ -1604,8 +1604,8 @@ public class UT {
 		}
 		
 		public static byte getSideForPlayerPlacing(Entity aPlayer) {
-			if (aPlayer.rotationPitch >=  65) return SIDE_UP;
-			if (aPlayer.rotationPitch <= -65) return SIDE_DOWN;
+			if (aPlayer.getXRot() >=  65) return SIDE_UP;
+			if (aPlayer.getXRot() <= -65) return SIDE_DOWN;
 			return getHorizontalForPlayerPlacing(aPlayer);
 		}
 		public static byte getHorizontalForPlayerPlacing(Entity aPlayer) {
@@ -1613,8 +1613,8 @@ public class UT {
 		}
 		
 		public static byte getSideForPlayerPlacing(Entity aPlayer, byte aDefaultFacing, boolean[] aAllowedFacings) {
-			if (aPlayer.rotationPitch >=  65 && aAllowedFacings[SIDE_UP]) return SIDE_UP;
-			if (aPlayer.rotationPitch <= -65 && aAllowedFacings[SIDE_DOWN]) return SIDE_DOWN;
+			if (aPlayer.getXRot() >=  65 && aAllowedFacings[SIDE_UP]) return SIDE_UP;
+			if (aPlayer.getXRot() <= -65 && aAllowedFacings[SIDE_DOWN]) return SIDE_DOWN;
 			byte rFacing = getHorizontalForPlayerPlacing(aPlayer);
 			if (aAllowedFacings[rFacing]) return rFacing;
 			for (byte tSide : ALL_SIDES_VALID) if (aAllowedFacings[tSide]) return tSide;
@@ -1622,8 +1622,8 @@ public class UT {
 		}
 		
 		public static byte getOppositeSideForPlayerPlacing(Entity aPlayer, byte aDefaultFacing, boolean[] aAllowedFacings) {
-			if (aPlayer.rotationPitch >=  65 && aAllowedFacings[SIDE_DOWN]) return SIDE_DOWN;
-			if (aPlayer.rotationPitch <= -65 && aAllowedFacings[SIDE_UP]) return SIDE_UP;
+			if (aPlayer.getXRot() >=  65 && aAllowedFacings[SIDE_DOWN]) return SIDE_DOWN;
+			if (aPlayer.getXRot() <= -65 && aAllowedFacings[SIDE_UP]) return SIDE_UP;
 			byte rFacing = OPOS[getHorizontalForPlayerPlacing(aPlayer)];
 			if (aAllowedFacings[rFacing]) return rFacing;
 			for (byte tSide : ALL_SIDES_VALID) if (aAllowedFacings[tSide]) return tSide;
