@@ -255,9 +255,9 @@ public class EntityArrow_Material extends EntityProjectile {
 						}
 					}
 				} else {
-					mHitBlockX = tVector.blockX;
-					mHitBlockY = tVector.blockY;
-					mHitBlockZ = tVector.blockZ;
+					mHitBlockX = tVector.getBlockPos().getX();
+					mHitBlockY = tVector.getBlockPos().getY();
+					mHitBlockZ = tVector.getBlockPos().getZ();
 					mHitBlock = WD.block(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 					mHitBlockMeta = WD.meta(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 					motionX = ((float)(tVector.hitVec.xCoord - getX()));

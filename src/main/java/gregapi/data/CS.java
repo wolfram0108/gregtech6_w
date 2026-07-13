@@ -1399,7 +1399,7 @@ public class CS {
 		
 		public static int trash(ItemStack aStack) {
 			if (ST.invalid(aStack) || aStack.getCount() <= 0 || ST.meta_(aStack) == W || BLACKLIST.contains(aStack, T)) return 0;
-			if (aStack.hasTagCompound()) {
+			if ((ItemNBT.get(aStack) != null)) {
 				for (ItemStack tGarbage : GARBAGE_ITEMS) if (ST.equal(aStack, tGarbage)) {
 					tGarbage.setCount(UT.Code.bind31((long)tGarbage.getCount() + (long)aStack.getCount()));
 					return aStack.getCount();

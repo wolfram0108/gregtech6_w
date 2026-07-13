@@ -18,6 +18,7 @@
  */
 
 package gregapi.recipes.maps;
+import gregapi.code.ItemNBT;
 
 import gregapi.data.IL;
 import gregapi.item.multiitem.MultiItem;
@@ -82,7 +83,7 @@ public class RecipeMapUnboxinator extends RecipeMap {
 			ItemStack tBag = ST.amount(1, aInputs[0]);
 			UT.Reflection.callPrivateMethod(tBag.getItem().getClass(), "generateInventory", tBag);
 			// Due to the randomness it is not good if there are Items in the Output Slot, because those Items could manipulate the outcome.
-			return new Recipe(F, F, F, ST.array(ST.amount(1, aInputs[0])), tBag.hasTagCompound() ? (ItemStack[])UT.Reflection.callPublicMethod(tBag.getItem().getClass(), "getInventory", tBag) : ZL_IS, null, null, null, null, 16, 16, 0).setNeedEmptyOut();
+			return new Recipe(F, F, F, ST.array(ST.amount(1, aInputs[0])), (ItemNBT.get(tBag) != null) ? (ItemStack[])UT.Reflection.callPublicMethod(tBag.getItem().getClass(), "getInventory", tBag) : ZL_IS, null, null, null, null, 16, 16, 0).setNeedEmptyOut();
 		}
 		return super.findRecipe(aTileEntity, aRecipe, aNotUnificated, aSize, aSpecialSlot, aFluids, aInputs);
 	}

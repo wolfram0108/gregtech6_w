@@ -98,7 +98,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 						return rRecipe;
 					}
 					if (OM.is_("gt:canvas", tScanned)) {
-						if (tScanned.hasTagCompound() && ItemNBT.get(tScanned).contains(NBT_CANVAS_BLOCK)) {
+						if ((ItemNBT.get(tScanned) != null) && ItemNBT.get(tScanned).contains(NBT_CANVAS_BLOCK)) {
 							rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 							if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
 							CompoundTag tNBT = UT.NBT.make();

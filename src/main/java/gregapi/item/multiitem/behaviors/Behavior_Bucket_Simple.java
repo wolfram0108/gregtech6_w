@@ -124,7 +124,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		HitResult aTarget = WD.getMOP(aWorld, aPlayer, mFluid == null);
 		if (aTarget == null || aTarget.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
-		int aX = aTarget.blockX, aY = aTarget.blockY, aZ = aTarget.blockZ;
+		int aX = aTarget.getBlockPos().getX(), aY = aTarget.getBlockPos().getY(), aZ = aTarget.getBlockPos().getZ();
 		ItemStack tBucket = ST.make(Items.bucket, 1, 0);
 		
 		if (mFluid == null) {

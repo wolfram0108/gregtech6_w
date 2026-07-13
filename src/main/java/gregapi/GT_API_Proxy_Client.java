@@ -628,14 +628,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		Block
 		aBlock = ST.block(aEvent.player.getCurrentEquippedItem());
 		if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mIsSlab) {
-			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
+			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
 			return;
 		}
-		aBlock = WD.block(aEvent.player.level(), aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ);
-		BlockEntity aTileEntity = WD.te(aEvent.player.level(), aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, T);
+		aBlock = WD.block(aEvent.player.level(), aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ());
+		BlockEntity aTileEntity = WD.te(aEvent.player.level(), aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
 			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(aEvent.currentItem) && ToolsGT.contains(TOOL_wrench, aEvent.currentItem)) {
-				RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
+				RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), (byte)0, (byte)aEvent.target.sideHit, aEvent.partialTicks);
 				return;
 			}
 		}

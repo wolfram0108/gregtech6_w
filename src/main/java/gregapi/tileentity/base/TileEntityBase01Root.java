@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.base;
+import gregapi.code.ItemNBT;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -1018,7 +1019,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (ST.valid(aEvent.currentItem) && isUsingWrenchingOverlay(aEvent.currentItem, (byte)aEvent.target.sideHit)) {
 			FORCE_FULL_SELECTION_BOXES = T;
 			byte tConnections = 0; for (byte i = 0; i < 6; i++) if (isConnectedWrenchingOverlay(aEvent.currentItem, i)) tConnections |= (1 << i);
-			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.blockX, aEvent.target.blockY, aEvent.target.blockZ, tConnections, (byte)aEvent.target.sideHit, aEvent.partialTicks);
+			RenderHelper.drawWrenchOverlay(aEvent.player, aEvent.target.getBlockPos().getX(), aEvent.target.getBlockPos().getY(), aEvent.target.getBlockPos().getZ(), tConnections, (byte)aEvent.target.sideHit, aEvent.partialTicks);
 			return T;
 		}
 		return T;

@@ -94,7 +94,7 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 				ItemStack tMainInput = ((getInput().get(0) instanceof ItemStack) ? (ItemStack)getInput().get(0) : null);
 				for (int i = 0; i < aGrid.size(); i++) {
 					ItemStack tSlot = aGrid.getItem(i);
-					if (ST.valid(tSlot) && tSlot.hasTagCompound() && (tMainInput == null || ST.equal_(tSlot, tMainInput, T))) {
+					if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null) && (tMainInput == null || ST.equal_(tSlot, tMainInput, T))) {
 						UT.NBT.set(rStack, (CompoundTag)ItemNBT.get(tSlot).copy());
 						break;
 					}

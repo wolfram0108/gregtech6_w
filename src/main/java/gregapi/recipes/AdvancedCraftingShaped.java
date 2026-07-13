@@ -61,9 +61,9 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			// занятость слота проверяется ST.valid(...), а не сравнением с null (CraftingInput.java:85-96).
 			for (int i = 0; i < aGrid.size(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
-				if (ST.valid(tSlot) && tSlot.hasTagCompound()) {
+				if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null)) {
 					if (tStack != null) {
-						if ((tStack.hasTagCompound() != tSlot.hasTagCompound()) || (tStack.hasTagCompound() && !ItemNBT.get(tStack).equals(ItemNBT.get(tSlot)))) return F;
+						if (((ItemNBT.get(tStack) != null) != (ItemNBT.get(tSlot) != null)) || ((ItemNBT.get(tStack) != null) && !ItemNBT.get(tStack).equals(ItemNBT.get(tSlot)))) return F;
 					}
 					tStack = tSlot;
 				}
@@ -84,7 +84,7 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			// заменяет "!= null" (getItem(i) всегда non-null, пустой слот = ItemStack.EMPTY).
 			if (mKeepingNBT) for (int i = 0; i < aGrid.size(); i++) {
 				ItemStack tSlot = aGrid.getItem(i);
-				if (ST.valid(tSlot) && tSlot.hasTagCompound()) {
+				if (ST.valid(tSlot) && (ItemNBT.get(tSlot) != null)) {
 					UT.NBT.set(rStack, (CompoundTag)ItemNBT.get(tSlot).copy());
 					break;
 				}

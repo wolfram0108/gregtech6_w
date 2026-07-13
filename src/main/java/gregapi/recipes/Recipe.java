@@ -777,7 +777,7 @@ public class Recipe {
 			for (int i = 0; i < aInputs.length; i++) if (!tChecked[i]) {
 				ItemStack aInput = aInputs[i];
 				if (ST.valid(aInput)) {
-					if ((aDontCheckStackSizes || aInput.getCount() >= tInput.getCount()) && OreDictManager.INSTANCE.equal_(F, aInput, tInput, mNoNBTChecks || !tInput.hasTagCompound())) {
+					if ((aDontCheckStackSizes || aInput.getCount() >= tInput.getCount()) && OreDictManager.INSTANCE.equal_(F, aInput, tInput, mNoNBTChecks || !(ItemNBT.get(tInput) != null))) {
 						if (aDecreaseStacksizeBySuccess) aInput.setCount(aInput.getCount()-(tInput.getCount()));
 						tChecked[i] = T;
 						temp = F;

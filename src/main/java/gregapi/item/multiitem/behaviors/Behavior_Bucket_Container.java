@@ -42,19 +42,19 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		HitResult tPosition = WD.getMOP(aWorld, aPlayer, T);
 		if (tPosition == null || tPosition.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
-		if (!aWorld.canMineBlock(aPlayer, tPosition.blockX, tPosition.blockY, tPosition.blockZ)) return aStack;
+		if (!aWorld.canMineBlock(aPlayer, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ())) return aStack;
 		
-		Block tBlock = WD.block(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ);
+		Block tBlock = WD.block(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ());
 		if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
-			if (WD.meta(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ) == 0 && aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
-				WD.set(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, NB, 0, 3);
+			if (WD.meta(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
+				WD.set(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), NB, 0, 3);
 				aItem.fill(aStack, FL.Water.make(1000), T);
 			}
 			return aStack;
 		}
 		if (tBlock == Blocks.lava || tBlock == Blocks.flowing_lava) {
-			if (WD.meta(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
-				WD.set(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, NB, 0, 3);
+			if (WD.meta(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
+				WD.set(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), NB, 0, 3);
 				aItem.fill(aStack, FL.Lava.make(1000), T);
 			}
 			return aStack;
@@ -72,26 +72,26 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 			return aStack;
 		}
 		if (tBlock instanceof IFluidBlock) {
-			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, F);
+			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), F);
 			if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 				// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 				aItem.fill(aStack, tDrained, T);
-				((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, T);
+				((IFluidBlock)tBlock).drain(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), T);
 			}
 			return aStack;
 		}
 		
-		tPosition.blockX+=OFFX[tPosition.sideHit];
-		tPosition.blockY+=OFFY[tPosition.sideHit];
-		tPosition.blockZ+=OFFZ[tPosition.sideHit];
-		tBlock = WD.block(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ);
+		tPosition.getBlockPos().getX()+=OFFX[tPosition.sideHit];
+		tPosition.getBlockPos().getY()+=OFFY[tPosition.sideHit];
+		tPosition.getBlockPos().getZ()+=OFFZ[tPosition.sideHit];
+		tBlock = WD.block(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ());
 		
 		if (tBlock instanceof IFluidBlock) {
-			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, F);
+			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), F);
 			if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 				// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 				aItem.fill(aStack, tDrained, T);
-				((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, T);
+				((IFluidBlock)tBlock).drain(aWorld, tPosition.getBlockPos().getX(), tPosition.getBlockPos().getY(), tPosition.getBlockPos().getZ(), T);
 			}
 			return aStack;
 		}

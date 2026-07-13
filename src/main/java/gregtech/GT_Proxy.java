@@ -210,11 +210,11 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					}
 					
 					HitResult tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
-					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.blockX, tTarget.blockY, tTarget.blockZ) || !aEvent.entityPlayer.canPlayerEdit(tTarget.blockX, tTarget.blockY, tTarget.blockZ, tTarget.sideHit, aStack)) return;
-					Block tBlock = WD.block(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) || !aEvent.entityPlayer.canPlayerEdit(tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ(), tTarget.sideHit, aStack)) return;
+					Block tBlock = WD.block(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ());
 					
 					if (tBlock == Blocks.water || tBlock == Blocks.flowing_water) {
-						if (WD.meta(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ) != 0) return;
+						if (WD.meta(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) != 0) return;
 						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
 							if (aStack.getCount() == 1) {
 								aEvent.entityPlayer.inventory.setItem(aEvent.entityPlayer.inventory.currentItem, ST.make(Items.potionitem, 1, 0));
@@ -223,7 +223,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 								ST.give(aEvent.entityPlayer, ST.make(Items.potionitem, 1, 0), F);
 							}
 						}
-						if (!WD.infiniteWater(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ)) WD.set(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ, NB, 0, 3);
+						if (!WD.infiniteWater(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ())) WD.set(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ(), NB, 0, 3);
 						ST.update(aEvent.entityPlayer);
 						return;
 					}
@@ -253,7 +253,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 				if (aStack.getItem() == Items.bucket) {
 					HitResult tTarget = WD.getMOP(aEvent.world, aEvent.entityPlayer, T);
 					if (tTarget != null && tTarget.typeOfHit == HitResult.MovingObjectType.BLOCK) {
-						Block tBlock = WD.block(aEvent.world, tTarget.blockX, tTarget.blockY, tTarget.blockZ);
+						Block tBlock = WD.block(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ());
 						if (tBlock instanceof BlockWaterlike && tBlock != BlocksGT.River) aEvent.setCanceled(T);
 					}
 					return;

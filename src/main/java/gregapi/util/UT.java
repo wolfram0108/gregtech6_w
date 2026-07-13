@@ -18,6 +18,7 @@
  */
 
 package gregapi.util;
+import gregapi.code.ItemNBT;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
@@ -2244,7 +2245,7 @@ public class UT {
 			return aStack.getEnchantmentLevel(Holder.direct(aEnchantment));
 		}
 		public static int getEnchantmentXP(ItemStack aStack) {
-			// УЛИКА R8 (доработка): оригинальный гейт был `!aStack.hasTagCompound()` (1.7.10 — "ench"
+			// УЛИКА R8 (доработка): оригинальный гейт был `!(ItemNBT.get(aStack) != null)` (1.7.10 — "ench"
 			// жил ВНУТРИ общего NBT-тега стека, поэтому "нет тега вообще" ⇒ "нет чар"). F8 переносит
 			// чары на ОТДЕЛЬНЫЙ канал DataComponents.ENCHANTMENTS/STORED_ENCHANTMENTS, независимый от
 			// CUSTOM_DATA (см. gregapi.code.ItemNBT javadoc) — `!ItemNBT.has(aStack)` (CUSTOM_DATA-гейт)

@@ -35,7 +35,7 @@ import net.minecraft.world.item.component.CustomData;
  * <ul>
  *   <li>{@link #get(ItemStack)} == старое `ItemNBT.get(stack)` (null, если тега нет).</li>
  *   <li>{@link #set(ItemStack, CompoundTag)} == старое `stack.setTagCompound(nbt)`.</li>
- *   <li>{@link #has(ItemStack)} == старое `stack.hasTagCompound()`.</li>
+ *   <li>{@link #has(ItemStack)} == старое `(ItemNBT.get(stack) != null)`.</li>
  * </ul>
  * <p>
  * ВАЖНО — КОНТРАКТ «мутировал → закоммить»: `CustomData` внутри иммутабельна (каждый `get`/
