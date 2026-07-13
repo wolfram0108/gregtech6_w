@@ -185,7 +185,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 				ST.check(aPlayer, slot(i));
 				// Merge Stacks first when applicable.
 				for (int j = 0; j < 36; j++) {
-					if (ST.equal(slot(i), aPlayerInventory.getStackInSlot(j))) {
+					if (ST.equal(slot(i), aPlayerInventory.getItem(j))) {
 						rCount += ST.move(this, aPlayerInventory, i, j);
 						if (!slotHas(i)) break;
 					}
