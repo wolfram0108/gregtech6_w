@@ -161,19 +161,19 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 			ItemStack aStack = aPlayer.getMainHandItem();
 			if (aStack == null) {
 				if (slotHas(1)) {
-					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, slot(1));
+					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), slot(1));
 					slotKill(1);
 					return T;
 				}
 				if (slotHas(0)) {
-					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, slot(0));
+					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), slot(0));
 					slotKill(0);
 					return T;
 				}
 			} else if (!slotHas(0)) {
 				if (canInsertItem(0, aStack, SIDE_INSIDE)) {
 					slot(0, aStack);
-					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, null);
+					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), null);
 					return T;
 				}
 			} else if (ST.equal(aStack, slot(0))) {

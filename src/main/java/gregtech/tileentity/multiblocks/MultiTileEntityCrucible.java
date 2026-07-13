@@ -467,7 +467,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 				
 				if (slotHas(0)) {
 					if (aStack == null) {
-						aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, slotTake(0));
+						aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), slotTake(0));
 						UT.Entities.applyTemperatureDamage(aPlayer, mTemperature, 1, 5.0F);
 						return T;
 					}
@@ -481,7 +481,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 							return T;
 						}
 						if (aStack == null) {
-							aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, tOutputStack);
+							aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), tOutputStack);
 							tLightest.mAmount-=OP.scrapGt.mAmount;
 							UT.Entities.exhaust(aPlayer);
 							UT.Entities.applyTemperatureDamage(aPlayer, mTemperature, 1, 5.0F);

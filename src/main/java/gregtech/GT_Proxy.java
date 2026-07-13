@@ -219,7 +219,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 						if (WD.meta(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) != 0) return;
 						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
 							if (aStack.getCount() == 1) {
-								aEvent.entityPlayer.inventory.setItem(aEvent.entityPlayer.inventory.currentItem, ST.make(Items.POTION, 1, 0));
+								aEvent.entityPlayer.inventory.setItem(aEvent.entityPlayer.inventory.getSelectedSlot(), ST.make(Items.POTION, 1, 0));
 							} else {
 								ST.use(aEvent.entityPlayer, aStack);
 								ST.give(aEvent.entityPlayer, ST.make(Items.POTION, 1, 0), F);

@@ -281,7 +281,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 					mState |= B[2];
 				} else {
 					mClickCount = 0;
-					if (canInsertItem2(0, aPlayer.inventory.getCurrentItem(), aSide)) ST.move(aPlayer.inventory, this, aPlayer.inventory.currentItem, 0);
+					if (canInsertItem2(0, aPlayer.inventory.getCurrentItem(), aSide)) ST.move(aPlayer.inventory, this, aPlayer.inventory.getSelectedSlot(), 0);
 				}
 			} else {
 				for (int i = 1; i < 13; i++) ST.give(aPlayer, slotTake(i), F, level, getBlockPos().getX()+0.5, getBlockPos().getY()+1, getBlockPos().getZ()+0.5);

@@ -292,7 +292,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			if (aPlayer.level() instanceof ServerLevel) {
 				if (UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, aBullet) > 0) {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
-					tPlayer.getInventory().currentItem = 0;
+					tPlayer.getInventory().setSelectedSlot(0);
 					tPlayer.getInventory().setInventorySlotContents(0, aBullet);
 					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.getXRot());
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
@@ -385,12 +385,12 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		CompoundTag aNBT = UT.NBT.getOrCreate(aGun);
 		ItemStack aBullet = ST.load(aNBT, NBT_AMMO);
 		if (ST.valid(aBullet) && aBullet.getCount() > 0) return F;
-		if (isProjectile(aPlayer.getInventory().getItem(aPlayer.getInventory().currentItem))) {
-			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(aPlayer.getInventory().currentItem).getCount());
+		if (isProjectile(aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()))) {
+			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()).getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
-			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(aPlayer.getInventory().currentItem)));
+			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot())));
 			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-			aPlayer.getInventory().decrStackSize(aPlayer.getInventory().currentItem, tConsumed);
+			aPlayer.getInventory().decrStackSize(aPlayer.getInventory().getSelectedSlot(), tConsumed);
 			ST.update(aPlayer);
 			return T;
 		}

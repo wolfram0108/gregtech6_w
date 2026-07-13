@@ -822,7 +822,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					tIterator = mMobsToFastDespawn.iterator();
 					while (tIterator.hasNext()) {
 						EntityLiving tEntity = tIterator.next();
-						if (tEntity.isDead) {
+						if (tEntity.isRemoved()) {
 							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.ticksExisted + "     DEAD");
 							tIterator.remove();
 						} else if (tEntity.isNoDespawnRequired()) {

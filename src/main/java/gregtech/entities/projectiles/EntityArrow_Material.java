@@ -203,7 +203,7 @@ public class EntityArrow_Material extends EntityProjectile {
 							Player tPlayer = null;
 							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getCommandSenderName():"Arrow"));
 							if (tPlayer != null) {
-								tPlayer.inventory.currentItem = 0;
+								tPlayer.inventory.setSelectedSlot(0);
 								tPlayer.inventory.setInventorySlotContents(0, getArrowItem());
 								// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Arrow would do ZERO Damage.
 								if (WD.dimTF(level())) tPlayer.getAbilities().instabuild = T;

@@ -127,7 +127,7 @@ public class WD {
 	@SuppressWarnings("unchecked")
 	public static ItemStack suck(Level aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
 		for (ItemEntity tItem : (Iterable<ItemEntity>)aWorld.getEntitiesOfClass(ItemEntity.class, new AABB(aX, aY, aZ, aX+aL, aY+aH, aZ+aW))) {
-			if (!tItem.isDead) {
+			if (!tItem.isRemoved()) {
 				aWorld.removeEntity(tItem);
 				ItemStack rStack = tItem.getEntityItem();
 				tItem.setEntityItemStack(ST.amount(0, rStack));
@@ -145,7 +145,7 @@ public class WD {
 		if (tList.isEmpty()) return Collections.emptyList();
 		List<ItemStack> rOutput = ST.arraylist();
 		for (ItemEntity tItem : tList) {
-			if (!tItem.isDead) {
+			if (!tItem.isRemoved()) {
 				aWorld.removeEntity(tItem);
 				ItemStack rStack = tItem.getEntityItem();
 				tItem.setEntityItemStack(ST.amount(0, rStack));
@@ -272,7 +272,7 @@ public class WD {
 				aPlayer.dimension = aDimension;
 				aPlayer.playerNetServerHandler.sendPacket(new ClientboundRespawnPacket(aPlayer.dimension, aPlayer.level().difficultySetting, aPlayer.level().getWorldInfo().getTerrainType(), aPlayer.theItemInWorldManager.getGameType()));
 				tOriginalWorld.removePlayerEntityDangerously(aPlayer);
-				aPlayer.isDead = F;
+				aPlayer.revive();
 				aPlayer.setWorld(tTargetWorld);
 				MinecraftServer.getServer().getConfigurationManager().func_72375_a(aPlayer, tOriginalWorld);
 				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.getXRot());
@@ -291,17 +291,17 @@ public class WD {
 				aEntity.setPosition(aX+0.5, aY+0.5, aZ+0.5);
 				aEntity.level().removeEntity(aEntity);
 				aEntity.dimension = aDimension;
-				aEntity.isDead = F;
+				aEntity.revive();
 				Entity tNewEntity = EntityType.createEntityByName(EntityType.getEntityString(aEntity), tTargetWorld);
 				if (tNewEntity != null) {
 					tNewEntity.copyDataFrom(aEntity, T);
 					aEntity.setDead();
-					tNewEntity.isDead = F;
+					tNewEntity.revive();
 					boolean temp = tNewEntity.forceSpawn;
 					tNewEntity.forceSpawn = T;
 					tTargetWorld.addFreshEntity(tNewEntity);
 					tNewEntity.forceSpawn = temp;
-					tNewEntity.isDead = F;
+					tNewEntity.revive();
 					aEntity = tNewEntity;
 				}
 			}

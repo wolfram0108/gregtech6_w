@@ -84,7 +84,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 			}
 			if (SERVER_TIME % 100 == 50 && (FL.XP.exists() || FL.Mob.exists())) {
 				// Yes, I know that the AABB Check is a bit weird looking, but I think I will do more than just XP Orbs with this later on.
-				for (Entity tEntity : (Iterable<Entity>)aData.mTileEntity.getWorld().getEntitiesOfClass(ExperienceOrb.class, new AABB(aData.mTileEntity.getOffsetX(aCoverSide, 2)-1, aData.mTileEntity.getOffsetY(aCoverSide, 2)-1, aData.mTileEntity.getOffsetZ(aCoverSide, 2)-1, aData.mTileEntity.getOffsetX(aCoverSide, 2)+2, aData.mTileEntity.getOffsetY(aCoverSide, 2)+2, aData.mTileEntity.getOffsetZ(aCoverSide, 2)+2))) if (!tEntity.isDead) {
+				for (Entity tEntity : (Iterable<Entity>)aData.mTileEntity.getWorld().getEntitiesOfClass(ExperienceOrb.class, new AABB(aData.mTileEntity.getOffsetX(aCoverSide, 2)-1, aData.mTileEntity.getOffsetY(aCoverSide, 2)-1, aData.mTileEntity.getOffsetZ(aCoverSide, 2)-1, aData.mTileEntity.getOffsetX(aCoverSide, 2)+2, aData.mTileEntity.getOffsetY(aCoverSide, 2)+2, aData.mTileEntity.getOffsetZ(aCoverSide, 2)+2))) if (!tEntity.isRemoved()) {
 					if (tEntity instanceof ExperienceOrb) {
 						if (MD.OB.mLoaded) {
 							try {

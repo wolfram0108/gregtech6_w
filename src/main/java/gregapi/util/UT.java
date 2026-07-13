@@ -3162,7 +3162,7 @@ public class UT {
 		public static Collection<Player> getPlayersWithLastTarget(long aRange, Level aWorld, BlockPos aCoords) {
 			ArrayListNoNulls<Player> rList = new ArrayListNoNulls<>();
 			for (Entry<Player, BlockPos> tEntry : PLAYER_LAST_CLICKED.entrySet()) {
-				if (!tEntry.getKey().isDead && aWorld == tEntry.getKey().level() && aCoords.equals(tEntry.getValue())) {
+				if (!tEntry.getKey().isRemoved() && aWorld == tEntry.getKey().level() && aCoords.equals(tEntry.getValue())) {
 					if (isCreative(tEntry.getKey()) || tEntry.getKey().distanceToSqr(aCoords.getX()+0.5, aCoords.getY()+0.5, aCoords.getZ()+0.5) <= aRange * aRange) {
 						rList.add(tEntry.getKey());
 					}
@@ -3206,9 +3206,9 @@ public class UT {
 		public static boolean consumeCurrentItem(Player aPlayer) {
 			if (aPlayer == null) return F;
 			if (hasInfiniteItems(aPlayer)) return T;
-			ItemStack aStack = aPlayer.getInventory().getStackInSlot(aPlayer.getInventory().currentItem);
+			ItemStack aStack = aPlayer.getInventory().getStackInSlot(aPlayer.getInventory().getSelectedSlot());
 			if (ST.invalid(aStack)) return F;
-			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setInventorySlotContents(aPlayer.getInventory().currentItem, NI);}
+			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setInventorySlotContents(aPlayer.getInventory().getSelectedSlot(), NI);}
 			ST.give(aPlayer, ST.container(aStack, T), F);
 			return T;
 		}

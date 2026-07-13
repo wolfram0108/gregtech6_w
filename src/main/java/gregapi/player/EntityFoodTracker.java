@@ -80,7 +80,7 @@ public class EntityFoodTracker implements AttachmentType {
 	public static void tick() {
 		if (SERVER_TIME % 50 == 0) for (int i = 0; i < TICK_LIST.size(); i++) {
 			EntityFoodTracker tTracker = TICK_LIST.get(i);
-			if (tTracker.mEntity.isDead) {TICK_LIST.remove(i--); continue;}
+			if (tTracker.mEntity.isRemoved()) {TICK_LIST.remove(i--); continue;}
 			
 			if (tTracker.mAlcohol >= 100) {
 				if (FOOD_OVERDOSE_DEATH || tTracker.mEntity.getHealth() >= 2)

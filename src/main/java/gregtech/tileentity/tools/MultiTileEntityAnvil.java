@@ -237,7 +237,7 @@ public class MultiTileEntityAnvil extends TileEntityBase09FacingSingle implement
 					return T;
 				}
 				if (ST.valid(aStack)) {
-					if (((ToolsGT.contains(TOOL_hammer, aStack) && !slotHas(0) && !slotHas(1)) || RM.Anvil.containsInput(aStack, this, NI) || RM.AnvilBendSmall.containsInput(aStack, this, NI) || RM.AnvilBendBig.containsInput(aStack, this, NI)) && ST.move(aPlayer.inventory, this, aPlayer.inventory.currentItem, tSlot) > 0) playClick();
+					if (((ToolsGT.contains(TOOL_hammer, aStack) && !slotHas(0) && !slotHas(1)) || RM.Anvil.containsInput(aStack, this, NI) || RM.AnvilBendSmall.containsInput(aStack, this, NI) || RM.AnvilBendBig.containsInput(aStack, this, NI)) && ST.move(aPlayer.inventory, this, aPlayer.inventory.getSelectedSlot(), tSlot) > 0) playClick();
 					return T;
 				}
 				if (slotHas(tSlot) && ST.give(aPlayer, slot(tSlot), T, level, getBlockPos().getX()+0.5, getBlockPos().getY()+1.2, getBlockPos().getZ()+0.5)) {
