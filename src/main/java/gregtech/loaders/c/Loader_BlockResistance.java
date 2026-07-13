@@ -35,17 +35,17 @@ public class Loader_BlockResistance implements Runnable {
 		Blocks.stone.setResistance(10);
 		Blocks.COBBLESTONE.setResistance(10);
 		Blocks.stonebrick.setResistance(10);
-		Blocks.brick_block.setResistance(20);
-		Blocks.hardened_clay.setResistance(15);
+		Blocks.BRICKS.setResistance(20);
+		Blocks.TERRACOTTA.setResistance(15);
 		Blocks.stained_hardened_clay.setResistance(15);
 		Blocks.IRON_BLOCK.setResistance(30);
 		Blocks.DIAMOND_BLOCK.setResistance(60);
 		Blocks.OBSIDIAN.setResistance(60);
 		Blocks.ENCHANTING_TABLE.setResistance(60);
 		Blocks.ENDER_CHEST.setResistance(60);
-		Blocks.anvil.setResistance(60);
+		Blocks.ANVIL.setResistance(60);
 		Blocks.WATER.setResistance(30);
-		Blocks.flowing_water.setResistance(30);
+		Blocks.WATER.setResistance(30);
 		Blocks.LAVA.setResistance(30);
 		
 		if (MD.SD.mLoaded) {

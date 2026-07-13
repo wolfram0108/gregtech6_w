@@ -212,7 +212,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=4000;
 				continue;
 			}
-			if (aBlock.getMaterial() == Material.glass || aBlock == Blocks.ICE || aBlock == Blocks.REDSTONE_LAMP || aBlock == Blocks.lit_redstone_lamp) {
+			if (aBlock.getMaterial() == Material.glass || aBlock == Blocks.ICE || aBlock == Blocks.REDSTONE_LAMP || aBlock == Blocks.REDSTONE_LAMP) {
 				OreDictItemData tData = OM.anydata(ST.make(aBlock, 1, aMeta));
 				for (OreDictMaterialStack tMaterial : tData.getAllMaterialStacks()) {
 					long tAmount = tMaterial.mAmount / OP.scrapGt.mAmount;

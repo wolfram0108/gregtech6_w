@@ -226,7 +226,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		if (FL.lava(mTank) && mTank.has(1000)) {
 			mTank.remove(1000);
 			GarbageGT.trash(mTank);
-			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 0, 3);
+			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.LAVA, 0, 3);
 		} else {
 			GarbageGT.trash(mTank);
 			setToFire();

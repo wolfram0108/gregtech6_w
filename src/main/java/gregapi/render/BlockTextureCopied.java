@@ -103,7 +103,7 @@ public class BlockTextureCopied implements ITexture {
 
 	public BlockTextureCopied(Block aBlock, int aSide, int aMeta) {
 		// glow — ДАННЫЕ (самосветящиеся ванильные блоки). Оригинал (BlockTextureCopied.java:100):
-		//   aBlock == Blocks.FIRE || Blocks.LAVA || Blocks.flowing_lava || Blocks.GLOWSTONE || Blocks.lit_redstone_lamp
+		//   aBlock == Blocks.FIRE || Blocks.LAVA || Blocks.LAVA || Blocks.GLOWSTONE || Blocks.REDSTONE_LAMP
 		// fire/lava/glowstone → neo 1:1 (REMAP-RULES §C блок-флэттен: lowercase→uppercase neo-константа).
 		// PORT-TODO(F3/block-flatten): flowing_lava (в neo — та же Blocks.LAVA с FluidState, отдельного блока нет)
 		// и lit_redstone_lamp (в neo — Blocks.REDSTONE_LAMP с blockstate-свойством LIT, отдельного блока нет)

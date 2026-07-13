@@ -142,16 +142,16 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 		return F;
 	}
 	
-	private final Collection<Block> mAllowedVanillaBlocks = Arrays.asList(Blocks.grass, Blocks.GLASS, Blocks.GLASS_PANE, Blocks.stained_glass, Blocks.stained_glass_pane, Blocks.carpet, Blocks.hardened_clay, Blocks.stained_hardened_clay);
+	private final Collection<Block> mAllowedVanillaBlocks = Arrays.asList(Blocks.GRASS_BLOCK, Blocks.GLASS, Blocks.GLASS_PANE, Blocks.stained_glass, Blocks.stained_glass_pane, Blocks.carpet, Blocks.TERRACOTTA, Blocks.stained_hardened_clay);
 	
 	private boolean colorize(Level aWorld, int aX, int aY, int aZ, byte aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock != NB && (mAllowedVanillaBlocks.contains(aBlock) || aBlock instanceof BlockColored || IL.TE_Rockwool.block() == aBlock || aBlock == BlocksGT.Grass)) {
-			if (aBlock == Blocks.hardened_clay  ) return WD.set(aWorld, aX, aY, aZ, Blocks.stained_hardened_clay, ~mColor & 15, 3);
+			if (aBlock == Blocks.TERRACOTTA  ) return WD.set(aWorld, aX, aY, aZ, Blocks.stained_hardened_clay, ~mColor & 15, 3);
 			if (aBlock == Blocks.GLASS_PANE     ) return WD.set(aWorld, aX, aY, aZ, Blocks.stained_glass_pane   , ~mColor & 15, 3);
 			if (aBlock == Blocks.GLASS          ) return WD.set(aWorld, aX, aY, aZ, Blocks.stained_glass        , ~mColor & 15, 3);
 			
-			if (aBlock == Blocks.grass || aBlock == BlocksGT.Grass) {
+			if (aBlock == Blocks.GRASS_BLOCK || aBlock == BlocksGT.Grass) {
 				switch(mColor) {
 				case DYE_INDEX_Green    : return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 0, 3);
 				case DYE_INDEX_Lime     : return WD.set(aWorld, aX, aY, aZ, BlocksGT.Grass, 1, 3);

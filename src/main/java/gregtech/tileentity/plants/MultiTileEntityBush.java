@@ -95,7 +95,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	@Override
 	public void onTickFirst2(boolean aIsServerSide) {
 		super.onTickFirst2(aIsServerSide);
-		if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), NB, 0, 3);
+		if (getBlockAtSide(SIDE_UP) == Blocks.SNOW) WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), NB, 0, 3);
 	}
 	
 	@Override
@@ -105,7 +105,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 			if (mBlockUpdated || SERVER_TIME % 128 == 64) {
 				if (!WD.oxygen(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ())) {setToAir(); return;}
 				
-				if (getBlockAtSide(SIDE_UP) == Blocks.snow_layer) WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), NB, 0, 3);
+				if (getBlockAtSide(SIDE_UP) == Blocks.SNOW) WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), NB, 0, 3);
 				
 				if (SIDES_VALID[mFacing]) {
 					BlockEntity tTileEntity = getTileEntityAtSideAndDistance(mFacing, 1);

@@ -96,7 +96,7 @@ public class ToolCompat {
 		
 		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || aEntityPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack))) {
 			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
-				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.grass || aBlock == Blocks.dirt || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
+				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.dirt || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND.stepSound.getStepResourcePath(), (Blocks.FARMLAND.stepSound.getVolume() + 1.0F) * 0.5F, Blocks.FARMLAND.stepSound.getPitch() * 0.8F);
 					if (!aWorld.isClientSide()) aWorld.setBlock(aX, aY, aZ, Blocks.FARMLAND);
 					return 10000;
@@ -265,7 +265,7 @@ public class ToolCompat {
 			}
 		}
 		if (aTool.equals(TOOL_softhammer)) {
-			if (aBlock == Blocks.lit_redstone_lamp) {
+			if (aBlock == Blocks.REDSTONE_LAMP) {
 				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
 				aWorld.isClientSide() = F;
@@ -273,7 +273,7 @@ public class ToolCompat {
 			}
 			if (aBlock == Blocks.REDSTONE_LAMP) {
 				aWorld.isClientSide() = T;
-				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.lit_redstone_lamp, 0, 0);
+				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
 				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
@@ -406,7 +406,7 @@ public class ToolCompat {
 			
 			// The Strings in this do not want to be localized, and not even Backup Lang wants to work.
 			tBlock = WD.block(aWorld, tX, tY, tZ);
-			if (tBlock == Blocks.LAVA || tBlock == Blocks.flowing_lava) {
+			if (tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
 				if (aChatReturn != null) aChatReturn.add("There is Lava behind this Rock");
 				break;
 			}

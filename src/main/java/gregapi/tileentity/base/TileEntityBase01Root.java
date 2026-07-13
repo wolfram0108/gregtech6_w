@@ -875,10 +875,10 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	// Removal and Snow Layer Stuff
 	
-	public static final ITexture SNOW_TEXTURE = BlockTextureCopied.get(Blocks.snow_layer); // very commonly used Texture.
+	public static final ITexture SNOW_TEXTURE = BlockTextureCopied.get(Blocks.SNOW); // very commonly used Texture.
 	public boolean removedByPlayer(Level aWorld, Player aPlayer, boolean aWillHarvest) {return setToAir();}
-	public boolean hasSnow() {for (int i : SCAN_NEG_1) for (int j : SCAN_NEG_1) if (getBlockOffset(i, 0, j) == Blocks.snow_layer) return T; return F;}
-	public boolean setToSnow() {return getOpacity(getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()) && hasSnow() && WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.snow_layer, 0, 3);}
+	public boolean hasSnow() {for (int i : SCAN_NEG_1) for (int j : SCAN_NEG_1) if (getBlockOffset(i, 0, j) == Blocks.SNOW) return T; return F;}
+	public boolean setToSnow() {return getOpacity(getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ()) && hasSnow() && WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.SNOW, 0, 3);}
 	public boolean setToAir() {if (WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.AIR, 0, 3)) {if (this instanceof IMultiTileEntity.IMTE_CanPlaceSnowLayerOnRemoval) setToSnow(); return T;} return F;}
 	
 	// Inventory Stuff

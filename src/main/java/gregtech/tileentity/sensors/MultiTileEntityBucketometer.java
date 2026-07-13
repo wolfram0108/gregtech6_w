@@ -53,7 +53,7 @@ public class MultiTileEntityBucketometer extends MultiTileEntitySensorTE {
 			}
 		}
 		Block tBlock = aDelegator.getBlock();
-		if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water || tBlock == Blocks.LAVA || tBlock == Blocks.flowing_lava) {
+		if (tBlock == Blocks.WATER || tBlock == Blocks.WATER || tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
 			return aDelegator.getMetaData() == 0 ? 1 : 0;
 		}
 		if (tBlock instanceof IFluidBlock) {

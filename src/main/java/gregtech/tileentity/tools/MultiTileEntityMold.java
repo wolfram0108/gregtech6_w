@@ -181,7 +181,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 				mContent = null;
 				mDisplay = 0;
 				slotTrash(0);
-				WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 1, 3);
+				WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.LAVA, 1, 3);
 				return;
 			}
 			mDisplay = mContent.mMaterial.mID;

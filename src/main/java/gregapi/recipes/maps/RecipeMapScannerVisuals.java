@@ -62,7 +62,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 		mMappings.put(Items.nether_wart     , W, ST.make(Blocks.NETHER_WART, 1, 3));
 		mMappings.put(Items.comparator      , W, ST.make(Blocks.powered_comparator, 1, 0));
 		mMappings.put(Items.repeater        , W, ST.make(Blocks.powered_repeater, 1, 0));
-		mMappings.put(Items.bed             , W, ST.make(Blocks.bed, 1, 0));
+		mMappings.put(Items.bed             , W, ST.make(Blocks.WHITE_BED, 1, 0));
 		mMappings.put(Items.iron_door       , W, ST.make(Blocks.IRON_DOOR, 1, 0));
 		mMappings.put(Items.wooden_door     , W, ST.make(Blocks.wooden_door, 1, 0));
 		mMappings.put(Items.ender_pearl     , W, ST.make(Blocks.portal, 1, 0));

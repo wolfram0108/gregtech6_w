@@ -62,7 +62,7 @@ public class WorldgenRiver extends WorldgenObject {
 				if (tStorage == null) continue;
 				final Block tBlock = tStorage.getBlockByExtId(tX, tY & 15, tZ);
 				if (tBlock.isOpaqueCube()) break;
-				if (tBlock != Blocks.WATER && tBlock != Blocks.flowing_water) continue;
+				if (tBlock != Blocks.WATER && tBlock != Blocks.WATER) continue;
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;

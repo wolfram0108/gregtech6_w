@@ -292,7 +292,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case   7: case 201:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.ICE || tBlock == Blocks.snow_layer || tBlock == Blocks.SNOW || tBlock == Blocks.PACKED_ICE) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.ICE || tBlock == Blocks.SNOW || tBlock == Blocks.SNOW || tBlock == Blocks.PACKED_ICE) return new BlockPos(aX+i, aY+j, aZ+k);
 			}
 			return null;
 		case   8:

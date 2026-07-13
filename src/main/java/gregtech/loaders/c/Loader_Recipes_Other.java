@@ -424,7 +424,7 @@ public class Loader_Recipes_Other implements Runnable {
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.COARSE_DIRT, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.PODZOL, 1, 0));
 		if (IL.EtFu_Dirt.exists())
 		RM.Bath             .addRecipe1(T,  0,   16, IL.EtFu_Dirt                       .get(1), FL.Mana_TE.make(1), NF, ST.make(Blocks.PODZOL, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.DIRT, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.grass, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.DIRT, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.GRASS_BLOCK, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.PODZOL, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.MYCELIUM, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.GLASS               , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
@@ -464,12 +464,12 @@ public class Loader_Recipes_Other implements Runnable {
 		}
 		}
 		
-		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Green    ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.grass, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 0));
-		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Lime     ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.grass, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 1));
-		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Black    ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.grass, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 2));
-		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_LightGray]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.grass, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 3));
-		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Yellow   ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.grass, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 4));
-		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Brown    ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.grass, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 5));
+		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Green    ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.GRASS_BLOCK, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 0));
+		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Lime     ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.GRASS_BLOCK, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 1));
+		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Black    ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.GRASS_BLOCK, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 2));
+		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_LightGray]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.GRASS_BLOCK, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 3));
+		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Yellow   ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.GRASS_BLOCK, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 4));
+		for (FluidStack tDye : DYE_FLUIDS[DYE_INDEX_Brown    ]) RM.Bath.addRecipe1(T, 0, 16, ST.make(Blocks.GRASS_BLOCK, 1, W), FL.mul(tDye, 1, 24, T), NF, ST.make(BlocksGT.Grass, 1, 5));
 		
 		
 		for (byte i = 0; i < 16; i++) {

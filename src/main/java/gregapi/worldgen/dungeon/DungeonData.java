@@ -158,13 +158,13 @@ public class DungeonData extends WorldAndCoords {
 	public boolean lamp(int aX, int aY, int aZ, Block aPrimary, Block aSecondary, int aGenerateRedstoneBrick) {
 		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
-		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
+		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 	}
 	
 	public boolean lamp(int aX, int aY, int aZ, int aGenerateRedstoneBrick) {
 		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
-		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
+		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 	}
 	
 	public boolean coins(int aX, int aY, int aZ) {

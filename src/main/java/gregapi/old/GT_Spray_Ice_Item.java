@@ -62,7 +62,7 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 		byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
 //      TileEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
-		if (aBlock == Blocks.WATER || aBlock == Blocks.flowing_water) {
+		if (aBlock == Blocks.WATER || aBlock == Blocks.WATER) {
 			if (aMeta == 0 && GT_ModHandler.damageOrDechargeItem(aStack, 1, 1000, aPlayer)) {
 				UT.Sounds.send(aWorld, SFX.IC_SPRAY, 1.0F, -1, aX, aY, aZ);
 				aWorld.setBlock(aX, aY, aZ, Blocks.ICE, 0, 3);
@@ -71,7 +71,7 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 			return false;
 		}
 		
-		if (aBlock == Blocks.LAVA || aBlock == Blocks.flowing_lava) {
+		if (aBlock == Blocks.LAVA || aBlock == Blocks.LAVA) {
 			if (aMeta == 0 && GT_ModHandler.damageOrDechargeItem(aStack, 1, 1000, aPlayer)) {
 				UT.Sounds.send(aWorld, SFX.IC_SPRAY, 1.0F, -1, aX, aY, aZ);
 				aWorld.setBlock(aX, aY, aZ, Blocks.OBSIDIAN, 0, 3);

@@ -243,7 +243,7 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSand"             , 1), ST.make(Blocks.SAND, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedRedSand"          , 1), ST.make(Blocks.RED_SAND, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSandstone"        , 1), ST.make(Blocks.SANDSTONE, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBrick"            , 1), ST.make(Blocks.brick_block, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBrick"            , 1), ST.make(Blocks.BRICKS, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedWood"             , 1), ST.make(Blocks.OAK_LOG, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSpruceWood"       , 1), ST.make(Blocks.SPRUCE_LOG, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedBirchWood"        , 1), ST.make(Blocks.BIRCH_LOG, 9, 0));

@@ -370,9 +370,9 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 			if (mTemperature >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature, 4);} catch(Throwable e) {e.printStackTrace(ERR);}
 			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) {
-				WD.set(level, getBlockPos().getX()+i, getBlockPos().getY()  , getBlockPos().getZ()+j, Blocks.flowing_lava, 1, 3);
-				WD.set(level, getBlockPos().getX()+i, getBlockPos().getY()+1, getBlockPos().getZ()+j, Blocks.flowing_lava, 1, 3);
-				WD.set(level, getBlockPos().getX()+i, getBlockPos().getY()+2, getBlockPos().getZ()+j, Blocks.flowing_lava, 1, 3);
+				WD.set(level, getBlockPos().getX()+i, getBlockPos().getY()  , getBlockPos().getZ()+j, Blocks.LAVA, 1, 3);
+				WD.set(level, getBlockPos().getX()+i, getBlockPos().getY()+1, getBlockPos().getZ()+j, Blocks.LAVA, 1, 3);
+				WD.set(level, getBlockPos().getX()+i, getBlockPos().getY()+2, getBlockPos().getZ()+j, Blocks.LAVA, 1, 3);
 			}
 			return;
 		}

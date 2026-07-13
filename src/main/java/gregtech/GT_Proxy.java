@@ -213,7 +213,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					if (tTarget == null || tTarget.typeOfHit != HitResult.MovingObjectType.BLOCK || !aEvent.world.canMineBlock(aEvent.entityPlayer, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) || !aEvent.entityPlayer.canPlayerEdit(tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ(), tTarget.sideHit, aStack)) return;
 					Block tBlock = WD.block(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ());
 					
-					if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
+					if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
 						if (WD.meta(aEvent.world, tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) != 0) return;
 						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
 							if (aStack.getCount() == 1) {

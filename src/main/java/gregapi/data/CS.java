@@ -1387,9 +1387,9 @@ public class CS {
 	;
 	
 	/** List of Visually Full Opaque Blocks. For minor Render optimisations. */
-	public static final HashSetNoNulls<Block> VISUALLY_OPAQUE_BLOCKS = new HashSetNoNulls<>(F, Blocks.BEDROCK, Blocks.COMMAND_BLOCK, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.GRAVEL, Blocks.sand, Blocks.sandstone, Blocks.END_STONE, Blocks.nether_brick, Blocks.NETHERRACK, Blocks.OBSIDIAN, Blocks.planks, Blocks.log, Blocks.log2, Blocks.stone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.grass, Blocks.dirt, Blocks.CLAY, Blocks.stonebrick, Blocks.REDSTONE_BLOCK, Blocks.GLOWSTONE, Blocks.REDSTONE_LAMP, Blocks.lit_redstone_lamp, Blocks.lit_redstone_ore, Blocks.PUMPKIN, Blocks.melon_block, Blocks.DISPENSER, Blocks.DROPPER);
+	public static final HashSetNoNulls<Block> VISUALLY_OPAQUE_BLOCKS = new HashSetNoNulls<>(F, Blocks.BEDROCK, Blocks.COMMAND_BLOCK, Blocks.TERRACOTTA, Blocks.stained_hardened_clay, Blocks.GRAVEL, Blocks.sand, Blocks.sandstone, Blocks.END_STONE, Blocks.nether_brick, Blocks.NETHERRACK, Blocks.OBSIDIAN, Blocks.planks, Blocks.log, Blocks.log2, Blocks.stone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.GRASS_BLOCK, Blocks.dirt, Blocks.CLAY, Blocks.stonebrick, Blocks.REDSTONE_BLOCK, Blocks.GLOWSTONE, Blocks.REDSTONE_LAMP, Blocks.REDSTONE_LAMP, Blocks.lit_redstone_ore, Blocks.PUMPKIN, Blocks.melon_block, Blocks.DISPENSER, Blocks.DROPPER);
 	/** List of Visually Full Opaque Blocks. For minor Render optimisations. */
-	public static final HashSetNoNulls<Block> REDSTONE_SINKS = new HashSetNoNulls<>(F, Blocks.TNT, Blocks.golden_rail, Blocks.noteblock, Blocks.trapdoor, Blocks.wooden_door, Blocks.IRON_DOOR, Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.DISPENSER, Blocks.DROPPER, Blocks.REDSTONE_LAMP, Blocks.lit_redstone_lamp);
+	public static final HashSetNoNulls<Block> REDSTONE_SINKS = new HashSetNoNulls<>(F, Blocks.TNT, Blocks.golden_rail, Blocks.noteblock, Blocks.trapdoor, Blocks.wooden_door, Blocks.IRON_DOOR, Blocks.PISTON, Blocks.STICKY_PISTON, Blocks.DISPENSER, Blocks.DROPPER, Blocks.REDSTONE_LAMP, Blocks.REDSTONE_LAMP);
 	
 	public static class GarbageGT {
 		public static ItemStackSet<ItemStackContainer> BLACKLIST = ST.hashset();
@@ -1715,12 +1715,12 @@ public class CS {
 		public static final Set<Object> instaharvest          = new HashSetNoNulls<>(F, Blocks.TORCH, Blocks.REDSTONE_TORCH, Blocks.unlit_redstone_torch, Blocks.REDSTONE_WIRE, Blocks.powered_comparator, Blocks.unpowered_comparator, Blocks.powered_repeater, Blocks.unpowered_repeater, Blocks.skull, Blocks.monster_egg);
 		public static final Set<Object> breakableGlass        = new HashSetNoNulls<>(F, Blocks.GLASS, Blocks.GLASS_PANE, Blocks.stained_glass, Blocks.stained_glass_pane);
 		public static final Set<Object> openableCrowbar       = new HashSetNoNulls<>(F, Blocks.IRON_BLOCK, Blocks.GOLD_BLOCK, Blocks.LAPIS_BLOCK, Blocks.DIAMOND_BLOCK, Blocks.EMERALD_BLOCK, Blocks.REDSTONE_BLOCK, Blocks.COAL_BLOCK);
-		public static final Set<Object> drillableDynamite     = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.MYCELIUM, Blocks.CLAY, Blocks.SNOW, Blocks.GRAVEL, Blocks.sandstone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.NETHERRACK, Blocks.END_STONE, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.LAPIS_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.REDSTONE_ORE, Blocks.lit_redstone_ore, Blocks.COAL_ORE, Blocks.quartz_ore, Blocks.monster_egg);
-		public static final Set<Object> harvestableJackhammer = new HashSetNoNulls<>(F, Blocks.stone, Blocks.sandstone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.NETHERRACK, Blocks.END_STONE, Blocks.hardened_clay, Blocks.stained_hardened_clay, Blocks.monster_egg);
-		public static final Set<Object> harvestableSpade      = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.MYCELIUM, Blocks.CLAY, Blocks.SNOW, Blocks.GRAVEL);
-		public static final Set<Object> plantableGreens       = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt, Blocks.FARMLAND);
-		public static final Set<Object> plantableTrees        = new HashSetNoNulls<>(F, Blocks.grass, Blocks.dirt);
-		public static final Set<Object> plantableGrass        = new HashSetNoNulls<>(F, Blocks.grass);
+		public static final Set<Object> drillableDynamite     = new HashSetNoNulls<>(F, Blocks.GRASS_BLOCK, Blocks.dirt, Blocks.MYCELIUM, Blocks.CLAY, Blocks.SNOW, Blocks.GRAVEL, Blocks.sandstone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.NETHERRACK, Blocks.END_STONE, Blocks.TERRACOTTA, Blocks.stained_hardened_clay, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.LAPIS_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.REDSTONE_ORE, Blocks.lit_redstone_ore, Blocks.COAL_ORE, Blocks.quartz_ore, Blocks.monster_egg);
+		public static final Set<Object> harvestableJackhammer = new HashSetNoNulls<>(F, Blocks.stone, Blocks.sandstone, Blocks.COBBLESTONE, Blocks.MOSSY_COBBLESTONE, Blocks.NETHERRACK, Blocks.END_STONE, Blocks.TERRACOTTA, Blocks.stained_hardened_clay, Blocks.monster_egg);
+		public static final Set<Object> harvestableSpade      = new HashSetNoNulls<>(F, Blocks.GRASS_BLOCK, Blocks.dirt, Blocks.MYCELIUM, Blocks.CLAY, Blocks.SNOW, Blocks.GRAVEL);
+		public static final Set<Object> plantableGreens       = new HashSetNoNulls<>(F, Blocks.GRASS_BLOCK, Blocks.dirt, Blocks.FARMLAND);
+		public static final Set<Object> plantableTrees        = new HashSetNoNulls<>(F, Blocks.GRASS_BLOCK, Blocks.dirt);
+		public static final Set<Object> plantableGrass        = new HashSetNoNulls<>(F, Blocks.GRASS_BLOCK);
 		
 		/** Blocks to not generate Ores in. */
 		public static ItemStackSet<ItemStackContainer> sDontGenerateOresIn = ST.hashset();

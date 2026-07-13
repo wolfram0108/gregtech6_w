@@ -101,10 +101,10 @@ public class BlockSwamp extends BlockWaterlike {
 					if (tMeta == 0) tSwampCounter++;
 				} else if (tBlock instanceof BlockWaterlike) {
 					if (tMeta == 0 || tBlock instanceof BlockOcean) tSwampCounter++;
-				} else if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water) {
+				} else if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
 					tList.add(new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
 					if (tMeta == 0) tSwampCounter++;
-				} else if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.MYCELIUM || tBlock == BlocksGT.Grass || tBlock == BlocksGT.Diggables || tBlock == BlocksGT.Sands || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand || tBlock == BlocksGT.oreMud || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreSmallMud || IL.EtFu_Dirt.equal(tBlock)) {
+				} else if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || tBlock == BlocksGT.Grass || tBlock == BlocksGT.Diggables || tBlock == BlocksGT.Sands || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand || tBlock == BlocksGT.oreMud || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreSmallMud || IL.EtFu_Dirt.equal(tBlock)) {
 					tDirt = T;
 				} else if (IL.TF_Mazestone.equal(tBlock)) {
 					// prevent flooding the Twilight Mazes.
@@ -144,7 +144,7 @@ public class BlockSwamp extends BlockWaterlike {
 		
 		if (tDirt) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
 			tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k);
-			if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.grass || tBlock == Blocks.MYCELIUM || IL.EtFu_Dirt.equal(tBlock)) {WD.set(aWorld, aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
+			if (tBlock == Blocks.sand || tBlock == Blocks.dirt || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || IL.EtFu_Dirt.equal(tBlock)) {WD.set(aWorld, aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
 			if (tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand) {BlocksGT.oreMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 			if (tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand) {BlocksGT.oreSmallMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 		}
@@ -209,5 +209,5 @@ public class BlockSwamp extends BlockWaterlike {
 		return 0x0000ff00;
 	}
 	
-	public static boolean water(Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.flowing_water || aBlock == BlocksGT.Ocean || aBlock == BlocksGT.River;}
+	public static boolean water(Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.WATER || aBlock == BlocksGT.Ocean || aBlock == BlocksGT.River;}
 }

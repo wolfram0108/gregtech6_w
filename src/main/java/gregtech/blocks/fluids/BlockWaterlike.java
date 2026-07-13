@@ -174,7 +174,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 		if (aBlock == NB) return 0;
 		if (aBlock == this) return quantaPerBlock - WD.meta(aWorld, aX, aY, aZ);
 		if (aBlock instanceof BlockWaterlike) return 8-WD.meta(aWorld, aX, aY, aZ);
-		if (aBlock == Blocks.WATER || aBlock == Blocks.flowing_water) return 8-WD.meta(aWorld, aX, aY, aZ);
+		if (aBlock == Blocks.WATER || aBlock == Blocks.WATER) return 8-WD.meta(aWorld, aX, aY, aZ);
 		return -1;
 	}
 	

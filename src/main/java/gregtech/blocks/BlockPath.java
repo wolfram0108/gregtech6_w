@@ -158,8 +158,8 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 	@Override public String getHarvestTool(int aMeta) {return TOOL_shovel;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.grass.getBlockHardness(aWorld, aX, aY, aZ) * 2;}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.grass.getExplosionResistance(null) * 1.5F;}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.GRASS_BLOCK.getBlockHardness(aWorld, aX, aY, aZ) * 2;}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GRASS_BLOCK.getExplosionResistance(null) * 1.5F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return SIDES_BOTTOM_HORIZONTAL[aSide];}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
 	@Override public boolean isNormalCube() {return F;}

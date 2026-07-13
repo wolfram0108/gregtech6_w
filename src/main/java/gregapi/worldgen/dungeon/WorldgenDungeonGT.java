@@ -334,14 +334,14 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	public static boolean setLampBlock(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom, int aGenerateRedstoneBrick) {
 		aData.mLightUpdateCoords.add(new BlockPos(aX, aY, aZ));
 		if (aGenerateRedstoneBrick != 0) setRedstoneBrick(aWorld, aX, aY+aGenerateRedstoneBrick, aZ, aData, aRandom);
-		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
+		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 		return T;
 	}
 	
 	public static boolean setLampBlock(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom, int aGenerateRedstoneBrick) {
 		aData.mLightUpdateCoords.add(new BlockPos(aX, aY, aZ));
 		if (aGenerateRedstoneBrick != 0) setRedstoneBrick(aWorld, aX, aY+aGenerateRedstoneBrick, aZ, aData, aRandom);
-		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.lit_redstone_lamp, 0, 2);
+		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 		return T;
 	}
 	

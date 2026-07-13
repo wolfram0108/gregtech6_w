@@ -460,7 +460,7 @@ public class WD {
 		if (burning(aWorld, aX, aY, aZ)) rTemperature = Math.max(rTemperature, C + 200);
 		for (BlockPos tCoords : new BlockPos[] {new BlockPos(aX, aY, aZ), new BlockPos(aX+1, aY, aZ), new BlockPos(aX-1, aY, aZ), new BlockPos(aX, aY+1, aZ), new BlockPos(aX, aY-1, aZ), new BlockPos(aX, aY, aZ+1), new BlockPos(aX, aY, aZ-1)}) {
 			Block tBlock = block(aWorld, tCoords.getX(), tCoords.getY(), tCoords.getZ(), F);
-			if (tBlock == Blocks.LAVA || tBlock == Blocks.flowing_lava) rTemperature = Math.max(rTemperature, C + 500);
+			if (tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) rTemperature = Math.max(rTemperature, C + 500);
 			else if (tBlock instanceof FireBlock) rTemperature = Math.max(rTemperature, C + 200);
 		}
 		return rTemperature;
@@ -512,7 +512,7 @@ public class WD {
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
-			if (tBlock == Blocks.grass || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.dirt,0,flags)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.dirt,0,flags)
 		}
 		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
 		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4): для своих блоков (IBlockExtendedMetaData) — канал
@@ -550,7 +550,7 @@ public class WD {
 	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aChunk.getBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ)).getBlock(); // было aChunk.getBlock(x,y-1,z)
-			if (tBlock == Blocks.grass || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), Block.UPDATE_ALL); // было aChunk.func_150807_a(x,y-1,z,Blocks.dirt,0)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), Block.UPDATE_ALL); // было aChunk.func_150807_a(x,y-1,z,Blocks.dirt,0)
 		}
 		return set(aChunk, aX, aY, aZ, aBlock, aMeta);
 	}
@@ -712,12 +712,12 @@ public class WD {
 	public static boolean air(Block aBlock) {return aBlock == NB;}
 	
 	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.flowing_lava;}
-	public static boolean lava(Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.flowing_lava;}
+	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.LAVA;}
+	public static boolean lava(Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.LAVA;}
 	
 	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ) {return water(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.flowing_water;}
-	public static boolean water(Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.flowing_water;}
+	public static boolean water(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.WATER;}
+	public static boolean water(Block aBlock) {return aBlock == Blocks.WATER || aBlock == Blocks.WATER;}
 	
 	public static boolean waterstream(Block aBlock) {return MD.Streams.mLoaded && UT.Code.stringValidate(ST.regName(aBlock)).startsWith("streams:river/tile.water");}
 	
@@ -740,7 +740,7 @@ public class WD {
 	}
 	
 	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.snow_layer || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
+	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
 	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BlockBush || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || aBlock.isLeaves(aWorld, aX, aY, aZ) || aBlock.canBeReplacedByLeaves(aWorld, aX, aY, aZ);}
@@ -749,7 +749,7 @@ public class WD {
 	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой
 	// .value().biomeName (мёртвое 1.7.10-поле) больше не нужен — gregapi/code/BiomeNameSet.java.
 	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
-	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.flowing_water) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
+	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
 	
 	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	// было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null — BlockState.getCollisionShape(level,pos).isEmpty()

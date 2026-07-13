@@ -368,7 +368,7 @@ public class WorldgenTesting extends WorldgenObject {
 			WD.set                     (aWorld, 46, mHeight+2, -18, Blocks.CRAFTING_TABLE, 0, 3);
 			WD.set                     (aWorld, 46, mHeight+3, -18, Blocks.BREWING_STAND, 0, 3);
 			
-			WD.set                     (aWorld, 47, mHeight+2, -18, Blocks.anvil, 0, 3);
+			WD.set                     (aWorld, 47, mHeight+2, -18, Blocks.ANVIL, 0, 3);
 		}
 		
 		aWorld.setSpawnLocation(0, mHeight+5, 0);

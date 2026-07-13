@@ -286,7 +286,7 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.REDSTONE_ORE                 , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.quartz_ore                   , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.DIRT, 1, 0));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.grass                        , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GRASS_BLOCK                        , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.MYCELIUM                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GRAVEL                       , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.SAND, 1, 0));
@@ -298,7 +298,7 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.PACKED_ICE                   , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GLOWSTONE                    , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.REDSTONE_LAMP                , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.lit_redstone_lamp            , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.REDSTONE_LAMP            , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.QUARTZ_BLOCK, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_WOOL, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.GLASS                        , 1, W));
@@ -306,7 +306,7 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.CLAY                         , 1, W));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.hardened_clay                , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.TERRACOTTA                , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.WHITE_TERRACOTTA, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.OAK_LEAVES, 1, 0));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.ACACIA_LEAVES, 1, 0));
@@ -318,7 +318,7 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.COBBLESTONE                  , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.MOSSY_COBBLESTONE            , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.STONE_BRICKS, 1, 0));
-		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.brick_block                  , 1, W));
+		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.BRICKS                  , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.OBSIDIAN                     , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.BEDROCK                      , 1, W));
 		ItemsGT.SHOW_RESISTANCE.add(ST.make(Blocks.mob_spawner                  , 1, W));
@@ -735,7 +735,7 @@ public class LoaderItemList implements Runnable {
 		MT.Stone.mTextureSolid        = BlockTextureCopied.get(Blocks.stone);
 		MT.Stone.mTextureSmooth       = BlockTextureCopied.get(Blocks.double_stone_slab, SIDE_TOP, 0);
 		MT.Glass.mTextureSolid        = BlockTextureCopied.get(Blocks.GLASS);
-		MT.Ceramic.mTextureSolid      = BlockTextureCopied.get(Blocks.hardened_clay);
+		MT.Ceramic.mTextureSolid      = BlockTextureCopied.get(Blocks.TERRACOTTA);
 		MT.Au.mTextureSolid           = BlockTextureCopied.get(Blocks.GOLD_BLOCK);
 		MT.Fe.mTextureSolid           = BlockTextureCopied.get(Blocks.IRON_BLOCK);
 		MT.Redstone.mTextureSolid     = BlockTextureCopied.get(Blocks.REDSTONE_BLOCK);
@@ -745,7 +745,7 @@ public class LoaderItemList implements Runnable {
 		MT.NetherQuartz.mTextureSolid = BlockTextureCopied.get(Blocks.quartz_block);
 		MT.Bedrock.mTextureSolid      = BlockTextureCopied.get(Blocks.BEDROCK);
 		MT.Clay.mTextureSolid         = BlockTextureCopied.get(Blocks.CLAY);
-		MT.Brick.mTextureSolid        = BlockTextureCopied.get(Blocks.brick_block);
+		MT.Brick.mTextureSolid        = BlockTextureCopied.get(Blocks.BRICKS);
 		
 		
 		

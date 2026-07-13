@@ -114,9 +114,9 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		
-		if (aBlock == Blocks.snow_layer && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
+		if (aBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
-		} else if (aBlock != Blocks.VINE && aBlock != Blocks.tallgrass && aBlock != Blocks.deadbush && !aBlock.isReplaceable(aWorld, aX, aY, aZ)) {
+		} else if (aBlock != Blocks.VINE && aBlock != Blocks.tallgrass && aBlock != Blocks.DEAD_BUSH && !aBlock.isReplaceable(aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 			aBlock = WD.block(aWorld, aX, aY, aZ);
 		}

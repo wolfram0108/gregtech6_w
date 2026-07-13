@@ -181,7 +181,7 @@ public class Loader_Loot implements Runnable {
 		ChestGenHooks.getInfo("gt.saplings").setMin( 8);
 		ChestGenHooks.getInfo("gt.saplings").setMax(24);
 		// Well, sometimes the Tree does not survive. XD
-		addLoot("gt.saplings", 288, 1, 4, ST.make(Blocks.deadbush, 1, 0));
+		addLoot("gt.saplings", 288, 1, 4, ST.make(Blocks.DEAD_BUSH, 1, 0));
 		addLoot("gt.saplings", 288, 1, 4, ST.make(Blocks.DEAD_BUSH, 1, 0));
 		// Yes I count those as Saplings too, they are kinda Tree alike. Better than putting these in the Seed Bags.
 		addLoot("gt.saplings", 144, 1, 1, ST.make(Blocks.SUNFLOWER, 1, 0));

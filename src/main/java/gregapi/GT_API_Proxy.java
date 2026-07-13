@@ -1451,7 +1451,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
 
 		Iterator<ItemStack> aDrops = aDropStacks.iterator();
-		Block aBlock = (aEvent.getState().getBlock() == Blocks.lit_redstone_ore ? Blocks.REDSTONE_ORE : aEvent.getState().getBlock() == Blocks.lit_redstone_lamp ? Blocks.REDSTONE_LAMP : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
+		Block aBlock = (aEvent.getState().getBlock() == Blocks.lit_redstone_ore ? Blocks.REDSTONE_ORE : aEvent.getState().getBlock() == Blocks.REDSTONE_LAMP ? Blocks.REDSTONE_LAMP : aEvent.getState().getBlock() == BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore ? BlocksGT.EtFu_Deepslate_Redstone_Ore : aEvent.getState().getBlock());
 
 		while (aDrops.hasNext()) {
 			ItemStack aDrop = aDrops.next();

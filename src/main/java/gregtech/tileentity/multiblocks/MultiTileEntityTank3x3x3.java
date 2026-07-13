@@ -133,7 +133,7 @@ public abstract class MultiTileEntityTank3x3x3 extends MultiTileEntityTank {
 			WD.burn(level, tX+i, tY+j, tZ+k, F, F);
 			if (rng(4) == 0) WD.set(level, tX+i, tY+j, tZ+k, Blocks.FIRE, 0, 3);
 		}
-		if (FL.lava(mTank) && mTank.drainAll(1000)) WD.set(level, tX, tY, tZ, Blocks.flowing_lava, 0, 3);
+		if (FL.lava(mTank) && mTank.drainAll(1000)) WD.set(level, tX, tY, tZ, Blocks.LAVA, 0, 3);
 		GarbageGT.trash(mTank);
 		setToFire();
 		return T;

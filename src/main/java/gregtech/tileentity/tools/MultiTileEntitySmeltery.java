@@ -317,7 +317,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 			GarbageGT.trash(mContent);
 			if (mTemperature >=  320) try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature, 2);} catch(Throwable e) {e.printStackTrace(ERR);}
 			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
-			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 1, 3);
+			WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.LAVA, 1, 3);
 			return;
 		}
 		
@@ -395,7 +395,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 			GarbageGT.trash(mContent);
 			try {for (LivingEntity tLiving : (List<LivingEntity>)level.getEntitiesWithinAABB(LivingEntity.class, box(-GAS_RANGE, -1, -GAS_RANGE, GAS_RANGE+1, GAS_RANGE+1, GAS_RANGE+1))) UT.Entities.applyTemperatureDamage(tLiving, mTemperature);} catch(Throwable e) {e.printStackTrace(ERR);}
 			for (int j = 0, k = UT.Code.bindInt(mTemperature / 25); j < k; j++) WD.fire(level, getBlockPos().getX()-FLAME_RANGE+rng(2*FLAME_RANGE+1), getBlockPos().getY()-1+rng(2+FLAME_RANGE), getBlockPos().getZ()-FLAME_RANGE+rng(2*FLAME_RANGE+1), rng(3) != 0);
-			return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.flowing_lava, 1, 3);
+			return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), Blocks.LAVA, 1, 3);
 		}
 		return WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
 	}

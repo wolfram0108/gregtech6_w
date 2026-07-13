@@ -54,7 +54,7 @@ public class WorldgenLogFrozen extends WorldgenOnSurface {
 	@Override
 	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
 		if (!BlocksGT.plantableGreens.contains(aContact) && aContact != Blocks.SNOW) return F;
-		if (WD.block(aWorld, aX, aY+1, aZ) != Blocks.snow_layer) return F;
+		if (WD.block(aWorld, aX, aY+1, aZ) != Blocks.SNOW) return F;
 		switch(aRandom.nextInt(3)) {
 		case 0:
 			if (aRandom.nextBoolean())  WD.set(aWorld, aX  , aY-1, aZ  , BlocksGT.Log1, PILLARS_Y[3], 2);

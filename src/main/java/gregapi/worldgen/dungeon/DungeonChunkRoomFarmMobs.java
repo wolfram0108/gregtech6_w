@@ -195,10 +195,10 @@ public class DungeonChunkRoomFarmMobs extends DungeonChunkRoomEmpty {
 		aData.mossycobble(aX+14,  9, aZ+13); aData.mossycobble(aX+13,  9, aZ+13); aData.mossycobble(aX+12,  9, aZ+13);
 		aData.mossycobble(aX+14,  9, aZ+12); aData.mossycobble(aX+13,  9, aZ+12);
 		aData.mossycobble(aX+14,  9, aZ+11);
-		aData.set(aX+ 1, 10, aZ+ 1, Blocks.flowing_water, 0, 3);
-		aData.set(aX+ 1, 10, aZ+14, Blocks.flowing_water, 0, 3);
-		aData.set(aX+14, 10, aZ+ 1, Blocks.flowing_water, 0, 3);
-		aData.set(aX+14, 10, aZ+14, Blocks.flowing_water, 0, 3);
+		aData.set(aX+ 1, 10, aZ+ 1, Blocks.WATER, 0, 3);
+		aData.set(aX+ 1, 10, aZ+14, Blocks.WATER, 0, 3);
+		aData.set(aX+14, 10, aZ+ 1, Blocks.WATER, 0, 3);
+		aData.set(aX+14, 10, aZ+14, Blocks.WATER, 0, 3);
 		
 		return T;
 	}

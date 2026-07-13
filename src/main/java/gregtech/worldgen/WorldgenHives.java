@@ -152,7 +152,7 @@ public class WorldgenHives extends WorldgenObject {
 					
 				//  for (String tName : aBiomeNames) if (BIOMES_SPACE.contains(tName))
 				//  return placeHive(tRegistry, aWorld, tX, tY-1, tZ, 0x44bbbb          ,   400, aRandom) || rResult;
-					if (tBlock == Blocks.WATER || tBlock == Blocks.flowing_water || tBlock instanceof BlockWaterlike)
+					if (tBlock == Blocks.WATER || tBlock == Blocks.WATER || tBlock instanceof BlockWaterlike)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_LightBlue ,   100, aRandom) || rResult;
 					for (String tName : aBiomeNames) if (BIOMES_MAGICAL.contains(tName) && (aDimType != DIM_ALFHEIM || aRandom.nextBoolean()))
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Purple    ,   200, aRandom) || rResult;
@@ -178,7 +178,7 @@ public class WorldgenHives extends WorldgenObject {
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Yellow    ,   900, aRandom) || rResult;
 					if (tContact == Blocks.GRAVEL || tContact.getMaterial() == Material.rock)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_LightGray ,   500, aRandom) || rResult;
-					if (tContact == Blocks.grass || tContact.getMaterial() == Material.grass)
+					if (tContact == Blocks.GRASS_BLOCK || tContact.getMaterial() == Material.grass)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, 0xffdd99          ,     0, aRandom) || rResult;
 					if (tContact == Blocks.dirt || tContact.getMaterial() == Material.ground)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Brown     ,     0, aRandom) || rResult;

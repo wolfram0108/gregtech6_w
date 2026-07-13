@@ -69,15 +69,15 @@ public class BlockGrass extends BlockBaseMeta {
 		BlocksGT.plantableTrees.add(this);
 		BlocksGT.plantableGrass.add(this);
 		
-		RM.generify(ST.make(this, 1, W), ST.make(Blocks.grass, 1, 0));
-		CR.shapeless(ST.make(Blocks.grass, 1, 0), new Object[] {this});
+		RM.generify(ST.make(this, 1, W), ST.make(Blocks.GRASS_BLOCK, 1, 0));
+		CR.shapeless(ST.make(Blocks.GRASS_BLOCK, 1, 0), new Object[] {this});
 		
-		CR.shapeless(ST.make(this, 8, 0), new Object[] {Blocks.grass, Blocks.grass, Blocks.grass, DYE_OREDICTS[DYE_INDEX_Green    ], Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass});
-		CR.shapeless(ST.make(this, 8, 1), new Object[] {Blocks.grass, Blocks.grass, Blocks.grass, DYE_OREDICTS[DYE_INDEX_Lime     ], Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass});
-		CR.shapeless(ST.make(this, 8, 2), new Object[] {Blocks.grass, Blocks.grass, Blocks.grass, DYE_OREDICTS[DYE_INDEX_Black    ], Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass});
-		CR.shapeless(ST.make(this, 8, 3), new Object[] {Blocks.grass, Blocks.grass, Blocks.grass, DYE_OREDICTS[DYE_INDEX_LightGray], Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass});
-		CR.shapeless(ST.make(this, 8, 4), new Object[] {Blocks.grass, Blocks.grass, Blocks.grass, DYE_OREDICTS[DYE_INDEX_Yellow   ], Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass});
-		CR.shapeless(ST.make(this, 8, 5), new Object[] {Blocks.grass, Blocks.grass, Blocks.grass, DYE_OREDICTS[DYE_INDEX_Brown    ], Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass, Blocks.grass});
+		CR.shapeless(ST.make(this, 8, 0), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Green    ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
+		CR.shapeless(ST.make(this, 8, 1), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Lime     ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
+		CR.shapeless(ST.make(this, 8, 2), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Black    ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
+		CR.shapeless(ST.make(this, 8, 3), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_LightGray], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
+		CR.shapeless(ST.make(this, 8, 4), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Yellow   ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
+		CR.shapeless(ST.make(this, 8, 5), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Brown    ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
 		
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
 	}
@@ -108,6 +108,6 @@ public class BlockGrass extends BlockBaseMeta {
 	@Override public boolean isSealable      (byte aMeta, byte aSide) {return F;}
 	@Override public String getHarvestTool   (int  aMeta) {return TOOL_shovel;}
 	@Override public int getHarvestLevel     (int  aMeta) {return 0;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.grass.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.grass.getExplosionResistance(null);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.GRASS_BLOCK.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GRASS_BLOCK.getExplosionResistance(null);}
 }

@@ -128,7 +128,7 @@ public class DummyWorld extends Level {
 	
 	// @Override
 	public Block getBlock(int aX, int aY, int aZ) {
-		if (aX >= 16 && aZ >= 16 && aX < 32 && aZ < 32) return aY == 64?Blocks.grass:NB;
+		if (aX >= 16 && aZ >= 16 && aX < 32 && aZ < 32) return aY == 64?Blocks.GRASS_BLOCK:NB;
 		return NB;
 	}
 	
