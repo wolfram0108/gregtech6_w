@@ -82,9 +82,8 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 			return aStack;
 		}
 		
-		((BlockHitResult)tPosition).getBlockPos().getX()+=OFFX[tPosition.sideHit];
-		((BlockHitResult)tPosition).getBlockPos().getY()+=OFFY[tPosition.sideHit];
-		((BlockHitResult)tPosition).getBlockPos().getZ()+=OFFZ[tPosition.sideHit];
+		// было tPosition.blockX/Y/Z += OFFX/Y/Z[sideHit] (сдвиг на соседний блок по стороне удара); neo BlockPos immutable -> переприсвоить BlockHitResult на relative(getDirection())
+		tPosition = new BlockHitResult(tPosition.getLocation(), ((BlockHitResult)tPosition).getDirection(), ((BlockHitResult)tPosition).getBlockPos().relative(((BlockHitResult)tPosition).getDirection()), ((BlockHitResult)tPosition).isInside());
 		tBlock = WD.block(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ());
 		
 		if (tBlock instanceof IFluidBlock) {

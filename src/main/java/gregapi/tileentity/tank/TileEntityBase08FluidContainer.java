@@ -322,9 +322,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					return aStack;
 				}
 				
-				((BlockHitResult)tTarget).getBlockPos().getX()+=OFFX[tTarget.sideHit];
-				((BlockHitResult)tTarget).getBlockPos().getY()+=OFFY[tTarget.sideHit];
-				((BlockHitResult)tTarget).getBlockPos().getZ()+=OFFZ[tTarget.sideHit];
+				// было tTarget.blockX/Y/Z += OFFX/Y/Z[sideHit] (сдвиг на соседний блок по стороне удара); neo BlockPos immutable -> переприсвоить BlockHitResult на relative(getDirection())
+				tTarget = new BlockHitResult(tTarget.getLocation(), ((BlockHitResult)tTarget).getDirection(), ((BlockHitResult)tTarget).getBlockPos().relative(((BlockHitResult)tTarget).getDirection()), ((BlockHitResult)tTarget).isInside());
 				tBlock = WD.block(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ());
 				
 				if (tBlock instanceof IFluidBlock) {
