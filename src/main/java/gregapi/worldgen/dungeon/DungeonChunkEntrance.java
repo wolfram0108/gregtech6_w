@@ -66,7 +66,7 @@ public class DungeonChunkEntrance extends DungeonChunkPillar {
 			tAirAmount = 0;
 			for (int tX = 3+aData.mX, eX = tX + 10; tX < eX; tX++) for (int tZ = 3+aData.mZ, eZ = tZ + 10; tZ < eZ; tZ++) {
 				Block tBlock = WD.block(aData.mWorld, tX, tHeight, tZ);
-				if (WD.easyRep(aData.mWorld, tX, tHeight, tZ, tBlock) || tBlock.isWood(aData.mWorld, tX, tHeight, tZ)) tAirAmount++;
+				if (WD.easyRep(aData.mWorld, tX, tHeight, tZ, tBlock) || WD.wood(tBlock, aData.mWorld, tX, tHeight, tZ)) tAirAmount++;
 			}
 		}
 		tHeight -= aData.mY;

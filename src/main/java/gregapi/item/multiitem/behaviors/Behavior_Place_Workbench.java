@@ -45,7 +45,7 @@ public class Behavior_Place_Workbench extends AbstractBehaviorDefault {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		// Don't place Workbenches on Wood or Plants, since this Class is supposed to be used by Axes and Saws.
 		if (WD.getMaterial(aBlock) == Material.wood || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.vine || WD.getMaterial(aBlock) == Material.gourd || WD.getMaterial(aBlock) == Material.cactus) return F;
-		if (aBlock.isWood(aWorld, aX, aY, aZ) || aBlock.isLeaves(aWorld, aX, aY, aZ)) return F;
+		if (WD.wood(aBlock, aWorld, aX, aY, aZ) || WD.leaves(aBlock, aWorld, aX, aY, aZ)) return F;
 		// Scan Inventory for suitable Workbenches.
 		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
 			ItemStack tStack = aPlayer.getInventory().getItem(Inventory.INVENTORY_SIZE-i-1);

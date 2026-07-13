@@ -501,6 +501,20 @@ public class WD {
 		if (aBlock instanceof BlockStones) return ((BlockStones)aBlock).isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget);
 		return aBlock == aTarget;
 	}
+	/** было {@code aBlock.isWood(aWorld,x,y,z)} (Forge block-behavior, удалён) — GT6-блоки (MTE/BlockBaseLog) переопределяют;
+	 *  ванильный дефолт Forge = false, кроме брёвен -> neo BlockTags.LOGS (1.7.10 vanilla BlockLog.isWood=true). */
+	public static boolean wood(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
+		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isWood(aWorld, aX, aY, aZ);
+		if (aBlock instanceof gregapi.block.tree.BlockBaseLog) return ((gregapi.block.tree.BlockBaseLog)aBlock).isWood(aWorld, aX, aY, aZ);
+		return aBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.LOGS);
+	}
+	/** было {@code aBlock.isLeaves(aWorld,x,y,z)} (Forge block-behavior, удалён) — GT6 (MTE/BlockBaseLeaves) переопределяют;
+	 *  ванильный дефолт false, кроме листьев -> neo BlockTags.LEAVES. */
+	public static boolean leaves(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
+		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isLeaves(aWorld, aX, aY, aZ);
+		if (aBlock instanceof gregapi.block.tree.BlockBaseLeaves) return ((gregapi.block.tree.BlockBaseLeaves)aBlock).isLeaves(aWorld, aX, aY, aZ);
+		return aBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.LEAVES);
+	}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	
@@ -796,7 +810,7 @@ public class WD {
 					} else if (IL.NeLi_Wart_Block_Crimson.equal(tBlock) || IL.NeLi_ShroomLight.equal(tBlock)) {
 						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // было aWorld.func_147480_a(x,y,z,drop)
 					} else {
-						if (tBlock.isLeaves(aWorld, aX+i, aY+j, aZ+k)) aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), tBlock, 1+RNGSUS.nextInt(100)); // было aWorld.scheduleTick(new BlockPos(x, y, z), block, delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int) (ScheduledTickAccess.java:21)
+						if (WD.leaves(tBlock, aWorld, aX+i, aY+j, aZ+k)) aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), tBlock, 1+RNGSUS.nextInt(100)); // было aWorld.scheduleTick(new BlockPos(x, y, z), block, delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int) (ScheduledTickAccess.java:21)
 					}
 				}
 			}
@@ -876,7 +890,7 @@ public class WD {
 	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
 	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || aBlock.isLeaves(aWorld, aX, aY, aZ) || aBlock.canBeReplacedByLeaves(aWorld, aX, aY, aZ);}
+	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || aBlock.canBeReplacedByLeaves(aWorld, aX, aY, aZ);}
 	
 	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
 	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой

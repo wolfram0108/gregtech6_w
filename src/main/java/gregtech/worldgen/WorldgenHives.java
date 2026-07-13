@@ -143,7 +143,7 @@ public class WorldgenHives extends WorldgenObject {
 				Block tContact = WD.block(aWorld, tX, tY, tZ);
 				if (WD.getMaterial(tContact).isLiquid()) return rResult;
 				if (tContact instanceof BlockStones && WD.meta(aWorld, tX, tY, tZ) != 0) return rResult;
-				if (!tContact.isOpaqueCube() || tContact.isLeaves(aWorld, tX, tY, tZ) || tContact.isWood(aWorld, tX, tY, tZ) || WD.getMaterial(tContact) == Material.ice || WD.getMaterial(tContact) == Material.wood || WD.getMaterial(tContact) == Material.leaves) continue;
+				if (!tContact.isOpaqueCube() || WD.leaves(tContact, aWorld, tX, tY, tZ) || WD.wood(tContact, aWorld, tX, tY, tZ) || WD.getMaterial(tContact) == Material.ice || WD.getMaterial(tContact) == Material.wood || WD.getMaterial(tContact) == Material.leaves) continue;
 				
 				for (byte tSide : ALL_SIDES_HORIZONTAL_DOWN) {
 					Block tBlock = WD.block(aWorld, tX+OFFX[tSide], tY-1+OFFY[tSide], tZ+OFFZ[tSide]);

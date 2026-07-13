@@ -170,7 +170,7 @@ public class GT_Tool_Saw extends ToolStats {
 	
 	@Override
 	public float getMiningSpeed(Block aBlock, byte aMetaData, float aDefault, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
-		if (aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMetaData))) return aDefault / 2;
+		if (WD.wood(aBlock, aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMetaData))) return aDefault / 2;
 		if (WD.getMaterial(aBlock) == Material.wood || OP.plank.contains(ST.make(aBlock, 1, aMetaData))) return aDefault * 2;
 		return WD.getMaterial(aBlock) == Material.vine || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.gourd ? aDefault / 4 : aDefault;
 	}

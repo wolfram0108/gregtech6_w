@@ -55,7 +55,7 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 			tRangeSide--; tRangeYNeg--; tRangeYPos--;
 			for (int i = -tRangeSide; i <= tRangeSide; ++i) for (int j = -tRangeYNeg; j <= tRangeYPos; ++j) for (int k = -tRangeSide; k <= tRangeSide; ++k) {
 				Block tBlock = WD.block(aWorld, aX + i, aY + j, aZ + k);
-				if (tBlock.isLeaves(aWorld, aX + i, aY + j, aZ + k)) tBlock.beginLeavesDecay(aWorld, aX + i, aY + j, aZ + k);
+				if (WD.leaves(tBlock, aWorld, aX + i, aY + j, aZ + k)) tBlock.beginLeavesDecay(aWorld, aX + i, aY + j, aZ + k);
 			}
 		}
 	}

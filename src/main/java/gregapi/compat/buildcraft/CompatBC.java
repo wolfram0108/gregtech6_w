@@ -64,7 +64,7 @@ public class CompatBC extends CompatBase implements ICompatBC {
 	public static class WorldPropertyIsLog extends WorldPropertyIsWood {
 		// @Override
 		public boolean get(BlockGetter aWorld, Block aBlock, int aMeta, int aX, int aY, int aZ) {
-			return aBlock instanceof HugeMushroomBlock || aBlock.isWood(aWorld, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T);
+			return aBlock instanceof HugeMushroomBlock || WD.wood(aBlock, aWorld, aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T);
 		}
 	}
 }

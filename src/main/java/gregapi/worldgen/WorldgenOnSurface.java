@@ -65,7 +65,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 				// Don't put shit on Farmland, that usually looks ugly as heck.
 				if (tContact == Blocks.FARMLAND) break;
 				// Lets ignore all non-full Blocks and Trees on the way down, except Fluids.
-				if (!WD.getMaterial(tContact).isLiquid()) if (!WD.opaque(tContact) || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
+				if (!WD.getMaterial(tContact).isLiquid()) if (!WD.opaque(tContact) || WD.wood(tContact, aWorld, tX, tY, tZ) || WD.leaves(tContact, aWorld, tX, tY, tZ)) continue;
 				// Try to place the Stuff into the World.
 				rResult |= tryPlaceStuff(aWorld, tX, tY, tZ, aRandom, tContact);
 				// And on to the next Sky Ray Cast.

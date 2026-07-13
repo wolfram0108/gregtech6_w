@@ -366,7 +366,7 @@ public class WorldgenStreets extends WorldgenObject {
 				
 				for (int tOpaqueCount = 0, i = -16; i < 16; i++) for (int j = 0; j < 16; j++) {
 					Block tBlock = WD.block(aWorld, i, mHeight+9, aMinZ+j);
-					if (WD.getMaterial(tBlock).isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && WD.getMaterial(tBlock) != Material.wood && !tBlock.isWood(aWorld, i, mHeight+9, aMinZ+j) && !tBlock.isLeaves(aWorld, i, mHeight+9, aMinZ+j))) {
+					if (WD.getMaterial(tBlock).isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && WD.getMaterial(tBlock) != Material.wood && !WD.wood(tBlock, aWorld, i, mHeight+9, aMinZ+j) && !WD.leaves(tBlock, aWorld, i, mHeight+9, aMinZ+j))) {
 						if (tOpaqueCount++ > 128) {
 							return generateRoadX(aWorld, aMinZ, F, F, T, F, F);
 						}
@@ -393,7 +393,7 @@ public class WorldgenStreets extends WorldgenObject {
 				
 				for (int tOpaqueCount = 0, i = -16; i < 16; i++) for (int j = 0; j < 16; j++) {
 					Block tBlock = WD.block(aWorld, aMinX+j, mHeight+9, i);
-					if (WD.getMaterial(tBlock).isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && WD.getMaterial(tBlock) != Material.wood && !tBlock.isWood(aWorld, aMinX+j, mHeight+9, i) && !tBlock.isLeaves(aWorld, aMinX+j, mHeight+9, i))) {
+					if (WD.getMaterial(tBlock).isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && WD.getMaterial(tBlock) != Material.wood && !WD.wood(tBlock, aWorld, aMinX+j, mHeight+9, i) && !WD.leaves(tBlock, aWorld, aMinX+j, mHeight+9, i))) {
 						if (tOpaqueCount++ > 128) {
 							return generateRoadZ(aWorld, aMinX, F, F, T, F, F);
 						}

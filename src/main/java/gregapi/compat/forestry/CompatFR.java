@@ -66,7 +66,7 @@ public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	// @Override
 	public ICrop getCropAt(Level aWorld, int aX, int aY, int aZ) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		return aBlock.isWood(aWorld, aX, aY, aZ) ? new CropBlock(aWorld, aBlock, WD.meta(aWorld, aX, aY, aZ), new Vect(aX, aY, aZ)) : null;
+		return WD.wood(aBlock, aWorld, aX, aY, aZ) ? new CropBlock(aWorld, aBlock, WD.meta(aWorld, aX, aY, aZ), new Vect(aX, aY, aZ)) : null;
 	}
 	
 	// @Override
