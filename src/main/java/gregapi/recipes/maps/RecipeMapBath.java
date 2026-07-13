@@ -143,7 +143,7 @@ public class RecipeMapBath extends RecipeMap {
 			if (ST.edible(aInput) && FL.getFluid(aInput, T) == null) {
 				ItemStack tOutput = ST.amount(1, aInput);
 				CompoundTag tNBT = UT.NBT.getNBT(tOutput);
-				tOutput.setTagCompound(tNBT);
+				ST.setNBT(tOutput, tNBT);
 				if (!tNBT.contains(NBT_EFFECTS)) {
 					if (FL.Med_Heal                .is(aFluids[0])) {tNBT.put(NBT_EFFECTS, UT.NBT.make("id", UT.Entities.POTID_REGENERATION, "time",  120, "lvl", 4, "chance", 90)); return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(tOutput), null, null, FL.array(FL.amount(aFluids[0], 250)), ZL_FS, 512, 0, 0);}
 					if (FL.Med_Laxative            .is(aFluids[0])) {tNBT.put(NBT_EFFECTS, UT.NBT.make("id", UT.Entities.POTID_HUNGER, "time",  300, "lvl",10, "chance", 90)); return new Recipe(F, F, F, ST.array(ST.amount(1, aInput)), ST.array(tOutput), null, null, FL.array(FL.amount(aFluids[0], 250)), ZL_FS, 512, 0, 0);}

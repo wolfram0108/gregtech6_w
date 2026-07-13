@@ -944,7 +944,7 @@ public class Recipe {
 		mNoNBTChecks = T;
 		for (int i = 0; i < aInputs .length; i++) if (aInputs [i] != NI) {
 			if (aInputs [i].getCount() > 64) aInputs [i].setCount(64);
-			if (aInputs [i].hasTagCompound()) mNoNBTChecks = F;
+			if (ST.hasNBT(aInputs [i])) mNoNBTChecks = F;
 		}
 		for (int i = 0; i < aOutputs.length; i++) if (aOutputs[i] != NI) {
 			aOutputs[i] = ST.update(aOutputs[i]);

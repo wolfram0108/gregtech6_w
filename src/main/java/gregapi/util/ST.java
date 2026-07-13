@@ -284,6 +284,9 @@ public class ST {
 		CompoundTag tNBT = ItemNBT.get(aStack); if (tNBT == null) tNBT = new CompoundTag();
 		tNBT.putByte(aKey, aValue); ItemNBT.set(aStack, tNBT);
 	}
+	/** F8: 1.7.10 ST.hasNBT(stack)/setTagCompound(nbt) -> центр ItemNBT.has/set (CUSTOM_DATA). 1:1 по javadoc ItemNBT. */
+	public static boolean hasNBT(ItemStack aStack) {return ItemNBT.has(aStack);}
+	public static void setNBT(ItemStack aStack, CompoundTag aNBT) {ItemNBT.set(aStack, aNBT);}
 	public static void register(Block aBlock, String aRegistryName) {register(aBlock, aRegistryName, null);}
 	public static void register(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
 		GT_API.registerBlock(aBlock, aRegistryName, aItemClass == null ? ItemBlockBase.class : aItemClass);

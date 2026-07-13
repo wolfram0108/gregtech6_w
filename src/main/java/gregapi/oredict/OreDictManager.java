@@ -625,7 +625,7 @@ public final class OreDictManager {
 		if (tAssociation == null || (aUseBlackList && tAssociation.mBlocked)) return ST.copy(aStack);
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
 		if (ST.invalid(rStack = ST.amount(aStack.getCount(), tAssociation.mUnificationTarget))) return ST.copy(aStack);
-		ItemNBT.set(rStack, ItemNBT.get(aStack)); // F8 стык: было rStack.setTagCompound(ItemNBT.get(aStack)) — ItemNBT-мост
+		ItemNBT.set(rStack, ItemNBT.get(aStack)); // F8 стык: было ST.setNBT(rStack, ItemNBT.get(aStack)) — ItemNBT-мост
 		return rStack;
 	}
 	

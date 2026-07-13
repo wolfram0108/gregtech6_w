@@ -55,7 +55,7 @@ public class RecipeMapScannerMolecular extends RecipeMap {
 				OreDictItemData aData = OM.anydata_(tScanned);
 				if (aData.mPrefix != null && aData.mMaterial != null && aData.mMaterial.mMaterial.mID > 0 && aData.mPrefix.contains(TD.Prefix.SCANNABLE)) {
 					rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB)), null, null, null, null, (aData.mMaterial.mMaterial.mProtons+aData.mMaterial.mMaterial.mNeutrons) * 512, 512, 0);
-					if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
+					if (!ST.hasNBT(rRecipe.mOutputs[0])) ST.setNBT(rRecipe.mOutputs[0], UT.NBT.make());
 					ST.nbtPut(rRecipe.mOutputs[0], NBT_USB_DATA, UT.NBT.makeShort(NBT_REPLICATOR_DATA, aData.mMaterial.mMaterial.mID));
 					ST.nbtPutByte(rRecipe.mOutputs[0], NBT_USB_TIER, (byte)3);
 					return rRecipe;
