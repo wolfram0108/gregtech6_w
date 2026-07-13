@@ -19,4 +19,11 @@ public class AspectList {
 	public int size() {return 0;}
 
 	public Aspect[] getAspects() {return new Aspect[0];}
+
+	/** gregtech.asm.transformers.Thaumcraft_AspectLagFix: {@code aspects.copy()} — реальная неглубокая копия аспект-карты (не {@code this}, чтобы кэш-мутация не текла в оригинал). */
+	public AspectList copy() {
+		AspectList rCopy = new AspectList();
+		rCopy.aspects.putAll(aspects);
+		return rCopy;
+	}
 }

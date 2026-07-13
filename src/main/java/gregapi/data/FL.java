@@ -41,6 +41,8 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraftforge.fluids.FluidContainerRegistry;
+import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
@@ -976,16 +978,52 @@ public enum FL {
 	 *  области этого переходника (decisions/F5-fluids.md §5). */
 	public static final Map<String, Block> BLOCKS = new HashMap<>();
 
-	// PORT-TODO(F5, авто-реестр бакетов/канистр, decisions/F5-fluids.md §3,8): Forge-1.7.10
-	// FluidContainerRegistry (авто fill/drain ЛЮБОГО зарегистрированного full<->empty контейнера,
-	// напр. вёдер) не имеет прямого neo-аналога — 26.1.2 использует BucketItem+capability на КАЖДЫЙ
-	// контейнер отдельно (нет глобального auto-реестра пар). Ниже — минимальные, безопасные заглушки,
-	// сохраняющие сигнатуры (не изобретая новый API); реальная замена — per-item capability-регистрация
-	// в момент регистрации КАЖДОГО контейнера (не здесь, это уже F1/F8/консьюмеры).
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty) {}
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {}
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty) {}
-	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {}
+	// F5, oredict-fluid-container-registry: bookkeeping-реестр (кто какой FluidContainerData зарегистрировал)
+	// восстановлен 1:1 — это GT6-own учёт (читают gregtech.loaders.c.Loader_Recipes_Foreign для
+	// генерации Canner/Squeezer-рецептов, gregapi.NEI_RecipeMap для отображения в NEI), а не Forge-специфичное
+	// поведение. net.minecraftforge.fluids.FluidContainerRegistry (владелец типа FluidContainerData) —
+	// compile-mirror shim (F2-приём, весь пакет net.minecraftforge отсутствует на classpath).
+	public static final Map<ItemStackContainer, FluidContainerData> FULL_TO_DATA = new ItemStackMap<>();
+	public static final Map<ItemStackContainer, Map<String, FluidContainerData>> EMPTY_TO_FLUID_TO_DATA = new ItemStackMap<>();
+
+	// PORT-TODO(F5, авто-реестр бакетов/канистр, decisions/F5-fluids.md §3,8): единственная ЧАСТЬ
+	// Forge-1.7.10 FluidContainerRegistry БЕЗ neo-аналога — авто fill/drain ЛЮБОГО зарегистрированного
+	// full<->empty контейнера через item-взаимодействие (напр. вёдер) — 26.1.2 использует
+	// BucketItem+capability на КАЖДЫЙ контейнер отдельно (нет глобального auto-interaction поверх реестра).
+	// Bookkeeping (кто зарегистрирован — выше) восстановлен честно; сам auto-fill/drain-хук — отдельный шов
+	// (уже гейтится в {@code UT.Fluids.fill}, "item-capability бакет/канистра"), не здесь.
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty) {
+		reg(aFluid, aFull, aEmpty, F);
+	}
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
+		reg(aFluid, aFull, aEmpty, F, aOverrideFillingEmpty, aOverrideDrainingFull);
+	}
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty) {
+		reg(aFluid, aFull, aEmpty, aNullEmpty, F, F);
+	}
+	public static void reg(FluidStack aFluid, ItemStack aFull, ItemStack aEmpty, boolean aNullEmpty, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
+		if (aFluid == null || ST.invalid(aFull)) return;
+		reg(new FluidContainerData(aFluid, aFull, aEmpty, aNullEmpty), aOverrideFillingEmpty, aOverrideDrainingFull);
+	}
+	public static void reg(FluidContainerData aData) {
+		reg(aData, F, F);
+	}
+	public static void reg(FluidContainerData aData, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
+		set(aData, aOverrideFillingEmpty, aOverrideDrainingFull);
+		FluidContainerRegistry.registerFluidContainer(aData);
+	}
+
+	public static void set(FluidContainerData aData) {
+		set(aData, F, F);
+	}
+	public static void set(FluidContainerData aData, boolean aOverrideFillingEmpty, boolean aOverrideDrainingFull) {
+		ItemStackContainer tFilled = new ItemStackContainer(aData.filledContainer), tEmpty = new ItemStackContainer(aData.emptyContainer);
+		if (aOverrideDrainingFull || !FULL_TO_DATA.containsKey(tFilled)) FULL_TO_DATA.put(tFilled, aData);
+		Map<String, FluidContainerData> tFluidToData = EMPTY_TO_FLUID_TO_DATA.get(tEmpty);
+		if (tFluidToData == null) EMPTY_TO_FLUID_TO_DATA.put(tEmpty, tFluidToData = new HashMap<>());
+		String tFluidName = FluidGT.nameOf(aData.fluid.getFluid());
+		if (aOverrideFillingEmpty || !tFluidToData.containsKey(tFluidName)) tFluidToData.put(tFluidName, aData);
+	}
 
 	public static ItemStack fill(FluidStack aFluid, ItemStack aStack, boolean aRemoveFluidDirectly, boolean aCheckIFluidContainerItems) {
 		return fill(aFluid, aStack, aRemoveFluidDirectly, aCheckIFluidContainerItems, F, T);

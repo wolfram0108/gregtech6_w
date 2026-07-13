@@ -19,6 +19,10 @@ public class ThaumcraftApi {
 	/** CompatTC.java: portableHoleBlackList.add(...). */
 	public static List<Object> portableHoleBlackList = new ArrayList<>();
 
+	/** gregtech.asm.transformers.Thaumcraft_AspectLagFix.getCachedItemHash: {@code .get(Arrays.asList(item, meta))}
+	 *  → {@code int[]} группа хешей (та же List(Item,Integer)-ключ конвенция, что {@link #objectTags}). */
+	public static Map<Object, int[]> groupedObjectTags = new HashMap<>();
+
 	public static void registerEntityTag(String aEntityName, AspectList aAspects) {}
 
 	public static void registerComplexObjectTag(ItemStack aStack, AspectList aAspects) {}

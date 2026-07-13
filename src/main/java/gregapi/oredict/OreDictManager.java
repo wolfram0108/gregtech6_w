@@ -42,13 +42,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.NeoForge;
 // PORT-TODO(F5, oredict-fluid-container-registry): net.minecraftforge.fluids.FluidContainerRegistry/
-// FluidContainerData/FluidContainerRegisterEvent — пакет удалён движком (не существует в neo), сюда пока
-// не портирован (владелец — gregapi.fluid/FL, F5-oracle-territory, decisions/F5-fluids.md). Часть
-// зафиксированного "Хвост F5: ~106 consumer-файлов" в DEFERRED-LEDGER.md §A — эта строка один из consumer'ов,
-// не отдельная новая находка. Координация: F5-агент репойнтит на владельца, F4/F11-зона (этот файл) не решает
-// (см. F4-oredictionary.md §1 — эта регистрация исторически роль-B Forge-класса (FluidContainerRegistry
-// сам по себе не OreDictionary), к OreDict-хранилищу F4
-// не относится; тронуто здесь ТОЛЬКО чтением конструктором/onFluidContainerRegistration, не редактируется).
+// FluidContainerData/FluidContainerRegisterEvent — оригинальный Forge-пакет удалён движком целиком (0 хитов
+// во всех 3 корнях референса neo/neoforge/fml); т.к. ВЕСЬ net.minecraftforge отсутствует на classpath (не
+// split-package), тип compile-mirror-зеркалирован в compat-mirror (F2-приём, см. gregtech.asm-shim) —
+// net.minecraftforge.fluids.FluidContainerRegistry (+ вложенные FluidContainerData/FluidContainerRegisterEvent).
+// Авто-РЕГИСТРАЦИЯ (владелец — gregapi.fluid/FL.reg/set) остаётся no-op (decisions/F5-fluids.md §3,8
+// «авто-реестр бакетов/канистр» — не изобретать новый API), поэтому этот конструктор-цикл и
+// onFluidContainerRegistration ниже компилируются и сохраняют управляющий поток 1:1, но реестр всегда пуст
+// в рантайме (никто в дереве не зовёт registerFluidContainer). Часть зафиксированного "Хвост F5: ~106
+// consumer-файлов" в DEFERRED-LEDGER.md §A — эта строка один из consumer'ов, не отдельная новая находка.
+// FluidStack.amount (1.7.10 public-поле) → neo private+getAmount/setAmount (F5-класс, тот же приём, что уже
+// применяется остальными потребителями FluidStack) — точечно переведено на setAmount(0) ниже.
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
@@ -303,11 +307,11 @@ public final class OreDictManager {
 	@SubscribeEvent
 	public void onFluidContainerRegistration(FluidContainerRegisterEvent aFluidEvent) {
 		// F4/Flattening: Forge 1.7.10 Items.POTION → neo Items.POTION (neo-decompiled/.../world/item/Items.java:1526).
-		if (aFluidEvent.data.filledContainer.getItem() == Items.POTION && ST.meta_(aFluidEvent.data.filledContainer) == 0) aFluidEvent.data.fluid.amount = 0;
+		if (aFluidEvent.data.filledContainer.getItem() == Items.POTION && ST.meta_(aFluidEvent.data.filledContainer) == 0) aFluidEvent.data.fluid.setAmount(0);
 		addToBlacklist(aFluidEvent.data.emptyContainer);
 		FL.set(aFluidEvent.data, F, F);
 	}
-	
+
 	@SubscribeEvent
 	public void onOreRegistration1(OreRegisterEvent aEvent) {
 		if (aEvent.getClass() != OreRegisterEvent.class) return;

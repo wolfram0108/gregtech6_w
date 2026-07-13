@@ -134,6 +134,10 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\RenderBlocks.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\ChestGenHooks.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\fluids\IFluidBlock.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\fluids\FluidContainerRegistry.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\tileentity\TileEntityFlowerPot.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\launchwrapper\IClassTransformer.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\launchwrapper\LaunchClassLoader.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\EnumPlantType.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\IPlantable.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\IShearable.java

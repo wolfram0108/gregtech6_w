@@ -36,7 +36,6 @@ import gregtech.asm.GT_ASM;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.launchwrapper.IClassTransformer;
-import net.minecraft.util.IntHashMap;
 import thaumcraft.api.ThaumcraftApi;
 import thaumcraft.api.aspects.AspectList;
 
@@ -108,20 +107,25 @@ public class Thaumcraft_AspectLagFix implements IClassTransformer {
 		return basicClass;
 	}
 
-	private static HashMap<Item, IntHashMap> cacheItemHash = new HashMap<>();
+	// F-util, IntHashMap-removed: net.minecraft.util.IntHashMap (1.7.10) удалён в neo, а net.minecraft.util
+	// НА classpath (992 классов, не пустой пакет) — split-package, compat-mirror-shim запрещён (конфликт).
+	// Рефактор на HashMap<Integer,Object> (та же семантика int-ключ->Object, lookup->get, addKey->put, 1:1);
+	// fastutil Int2ObjectOpenHashMap<Object> отвергнут — put(int,Object) неоднозначен с унаследованным
+	// Map<Integer,Object>.put(Integer,Object) при V=Object (оба boxing-applicable, JLS 15.12.2.5 tie).
+	private static HashMap<Item, HashMap<Integer, Object>> cacheItemHash = new HashMap<>();
 
 	public static int getCachedItemHash(Item item, int meta) {
 		if (item == null) return -1;
 		synchronized (cacheItemHash) {
-			IntHashMap metaMap = cacheItemHash.get(item);
+			HashMap<Integer, Object> metaMap = cacheItemHash.get(item);
 			if (metaMap != null) {
-				Integer hash = (Integer)metaMap.lookup(meta);
+				Integer hash = (Integer)metaMap.get(meta);
 				if (hash != null) return hash;
-				hash = (Integer)metaMap.lookup(-1);
+				hash = (Integer)metaMap.get(-1);
 				if (hash != null) return hash;
 				int[] grouped = ThaumcraftApi.groupedObjectTags.get(Arrays.asList(item, meta));
 				if (grouped != null) {
-					hash = (Integer) metaMap.lookup(grouped[0]);
+					hash = (Integer) metaMap.get(grouped[0]);
 					if (hash != null) return hash;
 				}
 			}
@@ -131,21 +135,21 @@ public class Thaumcraft_AspectLagFix implements IClassTransformer {
 
 	public static int setCachedItemHash(int hash, Item item, int meta) {
 		synchronized (cacheItemHash) {
-			IntHashMap metaMap = cacheItemHash.get(item);
-			if (metaMap == null) cacheItemHash.put(item, metaMap = new IntHashMap());
-			metaMap.addKey(meta, hash);
+			HashMap<Integer, Object> metaMap = cacheItemHash.get(item);
+			if (metaMap == null) cacheItemHash.put(item, metaMap = new HashMap<>());
+			metaMap.put(meta, hash);
 			return hash;
 		}
 	}
 
-	private static HashMap<Item, IntHashMap> cacheAspectTags = new HashMap<>();
+	private static HashMap<Item, HashMap<Integer, Object>> cacheAspectTags = new HashMap<>();
 
 	public static AspectList getCachedAspectTags(ItemStack is) {
 		if (is == null || is.getItem() == null) return null;
 		synchronized (cacheAspectTags) {
-			IntHashMap metaMap = cacheAspectTags.get(is.getItem());
+			HashMap<Integer, Object> metaMap = cacheAspectTags.get(is.getItem());
 			if (metaMap != null) {
-				AspectList aspects = (AspectList)metaMap.lookup(is.getDamageValue());
+				AspectList aspects = (AspectList)metaMap.get(is.getDamageValue());
 				if (aspects != null) return aspects.copy(); // Ugh copy, why can't it just be immutable...
 			}
 		}
@@ -155,9 +159,9 @@ public class Thaumcraft_AspectLagFix implements IClassTransformer {
 	public static AspectList setCachedAspectTags(AspectList aspects, ItemStack is) {
 		synchronized (cacheAspectTags) {
 			if (aspects == null || is == null || is.getItem() == null) return null;
-			IntHashMap metaMap = cacheAspectTags.get(is.getItem());
-			if (metaMap == null) cacheAspectTags.put(is.getItem(), metaMap = new IntHashMap());
-			metaMap.addKey(is.getDamageValue(), aspects.copy());
+			HashMap<Integer, Object> metaMap = cacheAspectTags.get(is.getItem());
+			if (metaMap == null) cacheAspectTags.put(is.getItem(), metaMap = new HashMap<>());
+			metaMap.put(is.getDamageValue(), aspects.copy());
 			return aspects;
 		}
 	}
