@@ -26,6 +26,7 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.ST;
 import gregapi.util.UT;
+import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.block.BlockColored;
 import net.minecraft.world.entity.Entity;
@@ -162,7 +163,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 				default: return F;
 				}
 			}
-			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, ~mColor & 15, 3);
+			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && WD.setMeta(aWorld, aX, aY, aZ, ~mColor & 15, 3);
 		}
 		return aBlock.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
 	}

@@ -153,7 +153,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 			if (((TileEntityFlowerPot)tTileEntity).getFlowerPotItem() == null) {
 				((TileEntityFlowerPot)tTileEntity).func_145964_a(aItem, ST.meta(aStack));
 				tTileEntity.markDirty();
-				if (!aWorld.setBlockMetadataWithNotify(aX, aY, aZ, ST.meta(aStack), 2)) aWorld.markBlockForUpdate(aX, aY, aZ);
+				if (!WD.setMeta(aWorld, aX, aY, aZ, ST.meta(aStack), 2)) aWorld.markBlockForUpdate(aX, aY, aZ);
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			}
 			return T;

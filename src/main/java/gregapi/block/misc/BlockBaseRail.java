@@ -193,10 +193,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 			flag = flag || func_150058_a(aWorld, aX, aY, aZ, aMeta, T, 0) || func_150058_a(aWorld, aX, aY, aZ, aMeta, F, 0);
 			boolean flag1 = F;
 			if (flag && (aMeta & 8) == 0) {
-				aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aData | 8, 3);
+				WD.setMeta(aWorld, aX, aY, aZ, aData | 8, 3);
 				flag1 = T;
 			} else if (!flag && (aMeta & 8) != 0) {
-				aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aData, 3);
+				WD.setMeta(aWorld, aX, aY, aZ, aData, 3);
 				flag1 = T;
 			}
 			if (flag1) {
@@ -238,13 +238,13 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		
 		if (!list.isEmpty()) flag1 = T;
 		if (flag1 && !flag) {
-			aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMetaData | 8, 3);
+			WD.setMeta(aWorld, aX, aY, aZ, aMetaData | 8, 3);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY - 1, aZ, this);
 			aWorld.markBlockRangeForRenderUpdate(aX, aY, aZ, aX, aY, aZ);
 		}
 		if (!flag1 && flag) {
-			aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMetaData & 7, 3);
+			WD.setMeta(aWorld, aX, aY, aZ, aMetaData & 7, 3);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY, aZ, this);
 			aWorld.notifyBlocksOfNeighborChange(aX, aY - 1, aZ, this);
 			aWorld.markBlockRangeForRenderUpdate(aX, aY, aZ, aX, aY, aZ);

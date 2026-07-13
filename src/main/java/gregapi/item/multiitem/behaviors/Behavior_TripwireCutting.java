@@ -49,7 +49,7 @@ public class Behavior_TripwireCutting extends AbstractBehaviorDefault {
 		if (WD.block(aWorld, aX, aY, aZ) == Blocks.TRIPWIRE) {
 			if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				int aMeta = WD.meta(aWorld, aX, aY, aZ) | 8;
-				aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMeta, 4);
+				WD.setMeta(aWorld, aX, aY, aZ, aMeta, 4);
 				if (Blocks.TRIPWIRE.removedByPlayer(aWorld, aPlayer, aX, aY, aZ, T)) {
 					Blocks.TRIPWIRE.onBlockDestroyedByPlayer(aWorld, aX, aY, aZ, aMeta);
 					Blocks.TRIPWIRE.harvestBlock(aWorld, aPlayer, aX, aY, aZ, aMeta);

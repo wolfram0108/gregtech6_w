@@ -629,6 +629,12 @@ public class WD {
 		return rSet;
 	}
 
+	public static boolean setMeta(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFlags) {
+		// было WD.setMeta(aWorld, x,y,z,meta,flags) — мета-only запись при ТЕКУЩЕМ блоке (тип не меняется).
+		// F13 §3.4: запись меты централизована через set(...,F) (aRemoveGrassBelow=F — блок не переставляется, трава не трогается).
+		return set(aWorld, aX, aY, aZ, block(aWorld, aX, aY, aZ), aMeta, aFlags, F);
+	}
+
 	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {
 		// было aChunk.func_150807_a(localX,y,localZ,block,meta) — neo: LevelChunk.setBlockState(BlockPos,BlockState,flags)
 		// (LevelChunk.java:270) хочет МИРОВОЙ BlockPos (маскирует &15 внутри себя, используя абсолютные координаты

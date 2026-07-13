@@ -231,7 +231,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 						int tIncrement = Math.min(7-aMeta, mFluid.getAmount()/10);
 						if (tIncrement > 0) {
 							aItem.drain(aStack, tIncrement*10, T);
-							aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMeta+tIncrement, 3);
+							WD.setMeta(aWorld, aX, aY, aZ, aMeta+tIncrement, 3);
 							UT.Sounds.send(SFX.MC_LIQUID_WATER, aWorld, aX, aY, aZ);
 						}
 						return T;
@@ -241,7 +241,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 						int tIncrement = Math.min(7-tMeta, mFluid.getAmount()/10);
 						if (tIncrement > 0) {
 							aItem.drain(aStack, tIncrement*10, T);
-							aWorld.setBlockMetadataWithNotify(aX, aY-1, aZ, tMeta+tIncrement, 3);
+							WD.setMeta(aWorld, aX, aY-1, aZ, tMeta+tIncrement, 3);
 							UT.Sounds.send(SFX.MC_LIQUID_WATER, aWorld, aX, aY-1, aZ);
 						}
 						return T;

@@ -83,8 +83,8 @@ public final class DelegatorTileEntity<T> extends WorldAndCoords {
 	public boolean setBlock(Block aBlock) {return WD.set(mWorld, mX, mY, mZ, aBlock, 0, 3);}
 	public boolean setBlock(Block aBlock, int aMetaData) {return WD.set(mWorld, mX, mY, mZ, aBlock, UT.Code.bind4(aMetaData), 3);}
 	public boolean setBlock(Block aBlock, int aMetaData, int aFlags) {return WD.set(mWorld, mX, mY, mZ, aBlock, UT.Code.bind4(aMetaData), aFlags);}
-	public boolean setMetaData(int aMetaData) {return mWorld.setBlockMetadataWithNotify(mX, mY, mZ, UT.Code.bind4(aMetaData), 3);}
-	public boolean setMetaData(int aMetaData, int aFlags) {return mWorld.setBlockMetadataWithNotify(mX, mY, mZ, UT.Code.bind4(aMetaData), aFlags);}
+	public boolean setMetaData(int aMetaData) {return WD.setMeta(mWorld, mX, mY, mZ, UT.Code.bind4(aMetaData), 3);}
+	public boolean setMetaData(int aMetaData, int aFlags) {return WD.setMeta(mWorld, mX, mY, mZ, UT.Code.bind4(aMetaData), aFlags);}
 	
 	public boolean hasCollisionBox() {return mWorld != null && WD.hasCollide(mWorld, mX, mY, mZ);}
 	

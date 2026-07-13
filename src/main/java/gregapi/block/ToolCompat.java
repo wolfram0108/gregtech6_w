@@ -237,22 +237,22 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_rotator)) {
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
+				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
 			}
 			if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
-				if (aMeta < 6 && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta+1) % 6, 3)) return 2000;
+				if (aMeta < 6 && WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1) % 6, 3)) return 2000;
 			}
 			if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, ((aMeta-1)%4)+2, 3)) return 2500;
+				if (WD.setMeta(aWorld, aX, aY, aZ, ((aMeta-1)%4)+2, 3)) return 2500;
 			}
 			if (aBlock instanceof BlockHopper) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta+1)%6==1?(aMeta+1)%6:2, 3)) return 2500;
+				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1)%6==1?(aMeta+1)%6:2, 3)) return 2500;
 			}
 			if (aBlock.rotateBlock(aWorld, aX, aX, aX, Direction.getOrientation(aSide))) return 10000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			if (aBlock instanceof BlockRedstoneDiode) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta / 4) * 4  + (((aMeta%4) + 1) % 4), 3)) return 10000;
+				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta / 4) * 4  + (((aMeta%4) + 1) % 4), 3)) return 10000;
 			}
 		}
 		if (aTool.equals(TOOL_crowbar)) {
@@ -290,16 +290,16 @@ public class ToolCompat {
 				return tResult?10000:0;
 			}
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
+				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
 			}
 			if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
-				if (aMeta < 6 && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta+1) % 6, 3)) return 2000;
+				if (aMeta < 6 && WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1) % 6, 3)) return 2000;
 			}
 			if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, ((aMeta-1)%4)+2, 3)) return 2500;
+				if (WD.setMeta(aWorld, aX, aY, aZ, ((aMeta-1)%4)+2, 3)) return 2500;
 			}
 			if (aBlock instanceof BlockHopper) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta+1)%6==1?(aMeta+1)%6:2, 3)) return 2500;
+				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta+1)%6==1?(aMeta+1)%6:2, 3)) return 2500;
 			}
 		}
 		if (aTool.equals(TOOL_wrench) || aTool.equals(TOOL_monkeywrench)) {
@@ -335,7 +335,7 @@ public class ToolCompat {
 			}
 			
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
-				if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
+				if (WD.setMeta(aWorld, aX, aY, aZ, (aMeta + 4) & 15, 3)) return 5000;
 			}
 			
 			if (aBlock instanceof BlockWorkbench || aBlock instanceof BlockBookshelf) {
@@ -354,13 +354,13 @@ public class ToolCompat {
 				}
 			} else {
 				if (aBlock instanceof BlockPistonBase || aBlock instanceof DispenserBlock) {
-					if (aMeta < 6 && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aTargetSide, 3)) return 10000;
+					if (aMeta < 6 && WD.setMeta(aWorld, aX, aY, aZ, aTargetSide, 3)) return 10000;
 				}
 				if (aBlock instanceof BlockPumpkin || aBlock instanceof BlockFurnace || aBlock instanceof BlockChest || aBlock instanceof BlockEnderChest) {
-					if (SIDES_HORIZONTAL[aTargetSide] && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aTargetSide, 3)) return 10000;
+					if (SIDES_HORIZONTAL[aTargetSide] && WD.setMeta(aWorld, aX, aY, aZ, aTargetSide, 3)) return 10000;
 				}
 				if (aBlock instanceof BlockHopper) {
-					if (SIDES_BOTTOM_HORIZONTAL[aTargetSide] && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aTargetSide, 3)) return 10000;
+					if (SIDES_BOTTOM_HORIZONTAL[aTargetSide] && WD.setMeta(aWorld, aX, aY, aZ, aTargetSide, 3)) return 10000;
 				}
 			}
 			if (aBlock instanceof BaseRailBlock || aBlock instanceof BlockRedstoneDiode || aBlock instanceof BlockPistonExtension || aBlock instanceof BlockPistonBase) {

@@ -78,6 +78,6 @@ public class BlockColored extends BlockMetaType {
 	// @Override
 	public boolean recolourBlock(Level aWorld, int aX, int aY, int aZ, Direction aDirection, int aColor) {
 		aColor = ~aColor & 15;
-		return WD.meta(aWorld, aX, aY, aZ) != aColor && aWorld.setBlockMetadataWithNotify(aX, aY, aZ, UT.Code.bind4(aColor), 3);
+		return WD.meta(aWorld, aX, aY, aZ) != aColor && WD.setMeta(aWorld, aX, aY, aZ, UT.Code.bind4(aColor), 3);
 	}
 }

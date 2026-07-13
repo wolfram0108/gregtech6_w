@@ -113,7 +113,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		if (TREE_GROWTH_TIME > 1 && RNGSUS.nextInt(TREE_GROWTH_TIME) > 0) return F;
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aMeta < 8) {
-			aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMeta | 8, 2);
+			WD.setMeta(aWorld, aX, aY, aZ, aMeta | 8, 2);
 			return F;
 		}
 		return TerrainGen.saplingGrowTree(aWorld, aRandom, aX, aY, aZ) && grow(aWorld, aX, aY, aZ, aMeta, aRandom);

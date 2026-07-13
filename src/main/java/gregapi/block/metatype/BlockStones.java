@@ -574,15 +574,15 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aTool.equals(TOOL_prospector)) return aMeta == STONE && ToolCompat.prospectStone(this, aMeta, aQuality, aChatReturn, aWorld, aSide, aX, aY, aZ) ? 10000 : 0;
 		if (aTool.equals(TOOL_chisel) && !aSneaking && CHISEL_MAPPINGS[aMeta & 15] != aMeta) {
-			aWorld.setBlockMetadataWithNotify(aX, aY, aZ, CHISEL_MAPPINGS[aMeta & 15], 3);
+			WD.setMeta(aWorld, aX, aY, aZ, CHISEL_MAPPINGS[aMeta & 15], 3);
 			return mOctantcount * 1250;
 		}
 		if (aTool.equals(TOOL_file) && !aSneaking && FILE_MAPPINGS[aMeta & 15] != aMeta) {
-			aWorld.setBlockMetadataWithNotify(aX, aY, aZ, FILE_MAPPINGS[aMeta & 15], 3);
+			WD.setMeta(aWorld, aX, aY, aZ, FILE_MAPPINGS[aMeta & 15], 3);
 			return mOctantcount * 1250;
 		}
 		if (aTool.equals(TOOL_hammer) && !aSneaking && HAMMER_MAPPINGS[aMeta & 15] != aMeta) {
-			aWorld.setBlockMetadataWithNotify(aX, aY, aZ, HAMMER_MAPPINGS[aMeta & 15], 3);
+			WD.setMeta(aWorld, aX, aY, aZ, HAMMER_MAPPINGS[aMeta & 15], 3);
 			return mOctantcount * 125;
 		}
 		if (aTool.equals(TOOL_drill) && !aSneaking) {
@@ -591,7 +591,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 					int tIndex = ((Player)aPlayer).Inventory.INVENTORY_SIZE-i-1;
 					ItemStack tStack = ((Player)aPlayer).getInventory().getItem(tIndex);
 					if (OM.is("stickAnyIronOrSteel", tStack)) {
-						if (aWorld.setBlockMetadataWithNotify(aX, aY, aZ, RNFBR, 3)) {
+						if (WD.setMeta(aWorld, aX, aY, aZ, RNFBR, 3)) {
 							ST.use(aPlayer, T, tStack);
 							return mOctantcount * 1250;
 						}
