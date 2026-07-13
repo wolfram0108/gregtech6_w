@@ -41,7 +41,7 @@ public class FoodStatLink implements IFoodStat {
 		mStats = DrinksGT.REGISTER.get(aFluid);
 	}
 	public FoodStatLink(Fluid aFluid) {
-		mStats = DrinksGT.REGISTER.get(aFluid.getName());
+		mStats = DrinksGT.REGISTER.get(FL.regName(aFluid));
 	}
 	public FoodStatLink(FluidStack aFluid) {
 		mStats = DrinksGT.REGISTER.get(FL.regName(aFluid.getFluid()));

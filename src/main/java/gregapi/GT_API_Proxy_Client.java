@@ -199,9 +199,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		// You should thank me for fixing this Fluid Bug. Seriously, some people just don't set the Icons of their registered Fluids...
 		for (Fluid aFluid : FluidRegistry.getRegisteredFluids().values()) {
 			// Check if it is whitelisted first, because those are not actually broken, they just behave like that early on.
-			if (!FluidsGT.BORKEN.contains(aFluid.getName())) {
+			if (!FluidsGT.BORKEN.contains(FL.regName(aFluid))) {
 				// Fluids without an Icon or with a broken Icon need to be fixed.
-				if (aFluid.getIcon() == null || FluidsGT.BROKEN.contains(aFluid.getName())) try {
+				if (aFluid.getIcon() == null || FluidsGT.BROKEN.contains(FL.regName(aFluid))) try {
 					Block tBlock = aFluid.getBlock();
 					// set it to its Block's Icon, or Water if no Block exists.
 					aFluid.setIcons((ST.valid(tBlock) ? tBlock : Blocks.WATER).getIcon(0, 0));

@@ -420,7 +420,7 @@ public class Recipe {
 		/** @return if this Fluid is a valid Input for any for the Recipes */
 		public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {
 			if (aFluid == null) return F;
-			if (mRecipeFluidMap.containsKey(aFluid.getName())) return T;
+			if (mRecipeFluidMap.containsKey(FL.regName(aFluid))) return T;
 			if (mRecipeMapHandlers.isEmpty()) return F;
 			for (IRecipeMapHandler tHandler : mRecipeMapHandlers) if (tHandler.containsInput(this, aFluid)) return T;
 			return F;
@@ -429,7 +429,7 @@ public class Recipe {
 		/** @return the Tank Size that is the Minimum for this Fluid Input.*/
 		public long minTankSize(Fluid aFluid) {
 			if (aFluid == null) return 1000;
-			Object tSize = mMinInputTankSizes.get(aFluid.getName());
+			Object tSize = mMinInputTankSizes.get(FL.regName(aFluid));
 			return tSize == null ? 1000 : Math.max(1000, (long)tSize);
 		}
 		

@@ -941,6 +941,12 @@ public enum FL {
 		return rString;
 	}
 
+	/** F-fluid identity: 1.7.10 Fluid.getName() = ВНУТРЕННЕЕ registry-имя (bare, ключ карт типа FL.BLOCKS) —
+	 *  НЕ unlocalized-имя (то {@link #name(Fluid,boolean)}). neo: BuiltInRegistries.FLUID.getKey(fluid).getPath()
+	 *  (bare path == 1.7.10 fluidName). См. `gt6-contract-seams-blindspot`: getName≠getUnlocalizedName. */
+	public static String regName(Fluid aFluid) {
+		return aFluid == null ? "" : BuiltInRegistries.FLUID.getKey(aFluid).getPath();
+	}
 	public static String name(Fluid aFluid, boolean aLocalized) {
 		if (aFluid == null) return "";
 		/** Замена {@code Fluid.getUnlocalizedName()} (Forge-1.7.10, метод на самом Fluid) — в neo

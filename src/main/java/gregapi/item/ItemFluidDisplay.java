@@ -90,7 +90,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		} else if (FL.Error.is(aFluid)) {
 			aList.add(LH.Chat.BLINKING_RED + "THIS IS AN ERROR AND SHOULD NEVER BE OBTAINABLE!!!");
 		} else {
-			String aName = aFluid.getName();
+			String aName = FL.regName(aFluid);
 			
 			if (SHOW_INTERNAL_NAMES || aF3_H) aList.add("Registry: " + aName);
 			if (FL.exists(FluidsGT.FLUID_RENAMINGS.get(aName)) || FluidsGT.NONSTANDARD.contains(aName)) aList.add(LH.Chat.BLINKING_RED + "NON-STANDARD FLUID!");
@@ -270,7 +270,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	@OnlyIn(Dist.CLIENT)
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {
 		Fluid aFluid = FL.fluid(ST.meta_(aStack));
-		return aFluid != null && FluidsGT.ENCHANTED_EFFECT.contains(aFluid.getName());
+		return aFluid != null && FluidsGT.ENCHANTED_EFFECT.contains(FL.regName(aFluid));
 	}
 	
 	// @Override
@@ -279,7 +279,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
 		for (int i = 0, j = FluidRegistry.getMaxID(); i <= j; i++) {
 			Fluid tFluid = FL.fluid(i);
-			if (tFluid != null && !FluidsGT.HIDDEN.contains(tFluid.getName())) {
+			if (tFluid != null && !FluidsGT.HIDDEN.contains(FL.regName(tFluid))) {
 				ItemStack tStack = FL.display(tFluid);
 				if (tStack != null) aList.add(tStack);
 			}
@@ -318,7 +318,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 			return;
 		}
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
-		if (tFluid == null) ST.meta_(aStack, W); else {ItemNBT.set(aStack, UT.NBT.makeString("f", tFluid.getName()));}
+		if (tFluid == null) ST.meta_(aStack, W); else {ItemNBT.set(aStack, UT.NBT.makeString("f", FL.regName(tFluid)));}
 	}
 	@Override
 	public void updateItemStack(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {

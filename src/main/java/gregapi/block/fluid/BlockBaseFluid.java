@@ -87,7 +87,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		mNameInternal = aNameInternal;
 		setResistance(FL.gas(mFluid) ? 1 : 30);
 		ST.register(this, mNameInternal, BlockItem.class);
-		FL.BLOCKS.put(mFluid.getName(), this);
+		FL.BLOCKS.put(FL.regName(mFluid), this);
 		displacements.put(this, F);
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
 		// Speaking of retarded, only allowing one type of Block per Fluid is retarded too! So I guess I gotta override all pre-existing Fluids with my Version to make sure shit works.
