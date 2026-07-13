@@ -62,6 +62,6 @@ public class BlockSands extends BlockBaseMeta {
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public String getHarvestTool(int aMeta) {return TOOL_shovel;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.sand.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.sand.getExplosionResistance(null);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.SAND.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.SAND.getExplosionResistance(null);}
 }

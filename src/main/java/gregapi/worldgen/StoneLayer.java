@@ -53,7 +53,7 @@ public class StoneLayer {
 	public boolean mNoDeep = F;
 	
 	public StoneLayer(BlockBase aStoneGT, StoneLayerOres... aOreChances) {
-		this(ST.invalid(aStoneGT) ? Blocks.stone             : aStoneGT
+		this(ST.invalid(aStoneGT) ? Blocks.STONE             : aStoneGT
 		,    ST.invalid(aStoneGT) ? 0                        : 0
 		,    ST.invalid(aStoneGT) ? Blocks.COBBLESTONE       : aStoneGT
 		,    ST.invalid(aStoneGT) ? 0                        : 1
@@ -63,7 +63,7 @@ public class StoneLayer {
 		, aOreChances);
 	}
 	public StoneLayer(BlockBase aStoneGT, OreDictMaterial aMaterial, Block aStone, StoneLayerOres... aOreChances) {
-		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.stone             : aStoneGT                          : aStone
+		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.STONE             : aStoneGT                          : aStone
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 0                                 : 0
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.COBBLESTONE       : aStoneGT                          : Blocks.COBBLESTONE
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 1                                 : 0
@@ -73,7 +73,7 @@ public class StoneLayer {
 		, aOreChances);
 	}
 	public StoneLayer(BlockBase aStoneGT, OreDictMaterial aMaterial, Block aStone, long aMetaStone, StoneLayerOres... aOreChances) {
-		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.stone             : aStoneGT                          : aStone
+		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.STONE             : aStoneGT                          : aStone
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 0                                 : aMetaStone
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.COBBLESTONE       : aStoneGT                          : Blocks.COBBLESTONE
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 1                                 : 0
@@ -83,7 +83,7 @@ public class StoneLayer {
 		, aOreChances);
 	}
 	public StoneLayer(BlockBase aStoneGT, OreDictMaterial aMaterial, Block aStone, long aMetaStone, Block aCobble, long aMetaCobble, StoneLayerOres... aOreChances) {
-		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.stone             : aStoneGT                          : aStone
+		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.STONE             : aStoneGT                          : aStone
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 0                                 : aMetaStone
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.COBBLESTONE       : aStoneGT                          : aCobble
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 1                                 : aMetaCobble
@@ -93,7 +93,7 @@ public class StoneLayer {
 		, aOreChances);
 	}
 	public StoneLayer(BlockBase aStoneGT, OreDictMaterial aMaterial, Block aStone, long aMetaStone, Block aCobble, long aMetaCobble, Block aMossy, long aMetaMossy, StoneLayerOres... aOreChances) {
-		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.stone             : aStoneGT                          : aStone
+		this(ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.STONE             : aStoneGT                          : aStone
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 0                                 : aMetaStone
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? Blocks.COBBLESTONE       : aStoneGT                          : aCobble
 		,    ST.invalid(aStone) ? ST.invalid(aStoneGT) ? 0                        : 1                                 : aMetaCobble
@@ -112,14 +112,14 @@ public class StoneLayer {
 		this(aStone, aMetaStone, aCobble, aMetaCobble, aCobble, aMetaCobble, aMaterial, aOreChances);
 	}
 	public StoneLayer(Block aStone, long aMetaStone, Block aCobble, long aMetaCobble, Block aMossy, long aMetaMossy, OreDictMaterial aMaterial, StoneLayerOres... aOreChances) {
-		mStone           = (ST.invalid(aStone ) ?                                 Blocks.stone                       : aStone );
-		mCobble          = (ST.invalid(aCobble) ? Blocks.stone       == mStone  ? Blocks.COBBLESTONE       : mStone  : aCobble);
+		mStone           = (ST.invalid(aStone ) ?                                 Blocks.STONE                       : aStone );
+		mCobble          = (ST.invalid(aCobble) ? Blocks.STONE       == mStone  ? Blocks.COBBLESTONE       : mStone  : aCobble);
 		mMossy           = (ST.invalid(aMossy ) ? Blocks.COBBLESTONE == mCobble ? Blocks.MOSSY_COBBLESTONE : mCobble : aMossy );
-		mMetaStone       = (Blocks.stone             == mStone  ? 0 : UT.Code.bind4(aMetaStone ));
+		mMetaStone       = (Blocks.STONE             == mStone  ? 0 : UT.Code.bind4(aMetaStone ));
 		mMetaCobble      = (Blocks.COBBLESTONE       == mCobble ? 0 : UT.Code.bind4(aMetaCobble));
 		mMetaMossy       = (Blocks.MOSSY_COBBLESTONE == mMossy  ? 0 : UT.Code.bind4(aMetaMossy ));
 		mMaterial        = (aMaterial == null ? MT.Stone : aMaterial);
-		mMaterialSurface = (aStone == Blocks.stone ? MT.Stone : aStone instanceof BlockStones ? ((BlockStones)aStone).mMaterial : mMaterial);
+		mMaterialSurface = (aStone == Blocks.STONE ? MT.Stone : aStone instanceof BlockStones ? ((BlockStones)aStone).mMaterial : mMaterial);
 		mStack           = new ItemStackContainer(mStone, 1, mMetaStone);
 		mOre             = BlocksGT.stoneToNormalOres.get(mStack);
 		mOreBroken       = BlocksGT.stoneToBrokenOres.get(mStack);
@@ -131,7 +131,7 @@ public class StoneLayer {
 	public StoneLayer setNoDeep() {mNoDeep = T; return this;}
 	
 	/** List of Stone and Ore Blocks, that can simply be replaced by the Stone Layers. */
-	public static final Set<Block> REPLACEABLE_BLOCKS = new HashSetNoNulls<>(F, Blocks.stone, Blocks.COAL_ORE, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.LAPIS_ORE, Blocks.REDSTONE_ORE, Blocks.lit_redstone_ore);
+	public static final Set<Block> REPLACEABLE_BLOCKS = new HashSetNoNulls<>(F, Blocks.STONE, Blocks.COAL_ORE, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.LAPIS_ORE, Blocks.REDSTONE_ORE, Blocks.lit_redstone_ore);
 	/** List of generateable Stone Layers, via ItemStack of the Stone Block, so that MetaData is usable. */
 	public static final List<StoneLayer> LAYERS = new ArrayListNoNulls<>();
 	/** Deepslate Special Case. */

@@ -55,7 +55,7 @@ public class WorldgenLogMossy extends WorldgenOnSurface {
 	
 	@Override
 	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
-		if (!BlocksGT.plantableTrees.contains(aContact) && aContact != Blocks.sand) return F;
+		if (!BlocksGT.plantableTrees.contains(aContact) && aContact != Blocks.SAND) return F;
 		if (!WD.air(aWorld, aX, aY+1, aZ)) return F;
 		switch(aRandom.nextInt(3)) {
 		case 0:

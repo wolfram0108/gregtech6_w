@@ -66,7 +66,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 		final byte tScanMinusOne = (byte)(tScan.length-1);
 		
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
-		Block tLastReplaced = Blocks.stone;
+		Block tLastReplaced = Blocks.STONE;
 		
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 			final int tX = aMinX+i, tZ = aMinZ+j;
@@ -93,7 +93,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					tLastOre = null;
 					tCanPlaceRocks = F;
 				// Stone and Ore Generation in vanilla Stone.
-				} else if (aBlock == Blocks.stone || (aBlock == Blocks.monster_egg && aStorage.getExtBlockMetadata(i, tY & 15, j) == 0)) {
+				} else if (aBlock == Blocks.STONE || (aBlock == Blocks.INFESTED_STONE && aStorage.getExtBlockMetadata(i, tY & 15, j) == 0)) {
 					tCanPlaceRocks = T;
 					boolean temp = T;
 					if (tScan[5] == tScan[1]) {

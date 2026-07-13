@@ -71,7 +71,7 @@ public class Loader_OreProcessing implements Runnable {
 		new OreDictListenerEvent_Names() {@Override public void addAllListeners() {
 		
 		final ITexture[] tStoneTextures = new ITexture[] {
-		  BlockTextureCopied.get(Blocks.stone, 0)
+		  BlockTextureCopied.get(Blocks.STONE, 0)
 		, BlockTextureCopied.get(Blocks.COBBLESTONE, 0)
 		, BlockTextureCopied.get(Blocks.MOSSY_COBBLESTONE, 0)
 		, BlockTextureCopied.get(Blocks.stonebrick, 0)

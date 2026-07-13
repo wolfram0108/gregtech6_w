@@ -144,7 +144,7 @@ public class Loader_Recipes_Foreign implements Runnable {
 				CrusherRecipe.addRecipe(OP.dustTiny .mat(tMat        , 4), OP.stick     .dat(tMat       ).toString(), 3200);
 				}
 				for (int i = 0; i < 16; i++) {
-				CrusherRecipe.addRecipe(ST.make(Items.string      , 4, 0), ST.make(Blocks.wool, 1, i)               , 3200);
+				CrusherRecipe.addRecipe(ST.make(Items.string      , 4, 0), ST.make(Blocks.WHITE_WOOL, 1, i)               , 3200);
 				}
 				for (OreDictMaterial tMat : new OreDictMaterial[] {MT.Fe, MT.Au, MT.Ag, MT.Cu, MT.Sn, MT.Zn, MT.Ni, MT.Co, MT.Ardite, MT.Pt, MT.Pb, MT.Ge, MT.Os, MT.Ir, MT.W, MT.Al, MT.Ti, MT.Cr, MT.Mn, MT.Steel, MT.Bronze, MT.Brass, MT.Electrum, MT.Constantan, MT.TinAlloy, MT.Invar, MT.MeteoricIron, MT.MeteoricSteel, MT.Desh, MT.BlueAlloy, MT.ElectrotineAlloy, MT.RedAlloy, MT.PurpleAlloy, MT.AncientDebris, MT.Netherite}) {
 				CrusherRecipe.addRecipe(OP.dust.mat(tMat             , 1), OP.ingot     .dat(tMat       ).toString(), 6400);

@@ -605,16 +605,16 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	@Override
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {
 		switch(WD.meta(aWorld, aX, aY, aZ)) {
-		case RNFBR: return Blocks.stone.getBlockHardness(aWorld, aX, aY, aZ) * mHardnessMultiplier * 2;
-		default   : return Blocks.stone.getBlockHardness(aWorld, aX, aY, aZ) * mHardnessMultiplier;
+		case RNFBR: return Blocks.STONE.getBlockHardness(aWorld, aX, aY, aZ) * mHardnessMultiplier * 2;
+		default   : return Blocks.STONE.getBlockHardness(aWorld, aX, aY, aZ) * mHardnessMultiplier;
 		}
 	}
 	
 	@Override
 	public float getExplosionResistance(byte aMeta) {
 		switch(aMeta) {
-		case RNFBR: return Blocks.stone.getExplosionResistance(null) * mResistanceMultiplier * 2;
-		default   : return Blocks.stone.getExplosionResistance(null) * mResistanceMultiplier;
+		case RNFBR: return Blocks.STONE.getExplosionResistance(null) * mResistanceMultiplier * 2;
+		default   : return Blocks.STONE.getExplosionResistance(null) * mResistanceMultiplier;
 		}
 	}
 	

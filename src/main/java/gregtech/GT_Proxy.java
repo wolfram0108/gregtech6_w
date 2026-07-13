@@ -176,7 +176,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			aEvent.replacement = BlockStones.SBRIK;
 			aEvent.setResult(Result.DENY);
 		}
-		if (aEvent.original == Blocks.sandstone) {
+		if (aEvent.original == Blocks.SANDSTONE) {
 			aEvent.replacement = 2; // That's smooth Sandstone.
 			aEvent.setResult(Result.DENY);
 		}

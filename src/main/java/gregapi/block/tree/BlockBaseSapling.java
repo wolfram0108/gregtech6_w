@@ -77,8 +77,8 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & 7;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.sapling.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.sapling.getExplosionResistance(null);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.OAK_SAPLING.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.OAK_SAPLING.getExplosionResistance(null);}
 	@Override public boolean checkNoEntityCollision(Level aWorld, int aX, int aY, int aZ, byte aMeta, Entity aExceptThisOne) {return T;}
 	@Override public boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	@Override public boolean renderAsNormalBlock() {return F;}
@@ -89,7 +89,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeSapling.mDefaultStackSize);}
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta & 15].getIcon(0);}
-	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, (IPlantable)Blocks.sapling);}
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, (IPlantable)Blocks.OAK_SAPLING);}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}
 	public int getRenderType() {return 1;}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}

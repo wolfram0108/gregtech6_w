@@ -232,12 +232,12 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		Item.getItemFromBlock(Blocks.SNOW                   ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.CLAY                   ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.REDSTONE_LAMP          ).setMaxStackSize(OP.block.mDefaultStackSize);
-		Item.getItemFromBlock(Blocks.dirt                   ).setMaxStackSize(OP.block.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.DIRT                   ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.GRASS_BLOCK                  ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.MYCELIUM               ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.GRAVEL                 ).setMaxStackSize(OP.block.mDefaultStackSize);
-		Item.getItemFromBlock(Blocks.sand                   ).setMaxStackSize(OP.block.mDefaultStackSize);
-		Item.getItemFromBlock(Blocks.wool                   ).setMaxStackSize(OP.block.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.SAND                   ).setMaxStackSize(OP.block.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.WHITE_WOOL                   ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.melon_block            ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.PUMPKIN                ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.lit_pumpkin            ).setMaxStackSize(OP.block.mDefaultStackSize);
@@ -255,13 +255,13 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		Item.getItemFromBlock(Blocks.FURNACE                ).setMaxStackSize(OP.block.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.lit_furnace            ).setMaxStackSize(OP.block.mDefaultStackSize);
 		
-		Item.getItemFromBlock(Blocks.sandstone              ).setMaxStackSize(OP.stone.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.SANDSTONE              ).setMaxStackSize(OP.stone.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.OBSIDIAN               ).setMaxStackSize(OP.stone.mDefaultStackSize);
-		Item.getItemFromBlock(Blocks.stone                  ).setMaxStackSize(OP.stone.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.STONE                  ).setMaxStackSize(OP.stone.mDefaultStackSize);
 		
-		Item.getItemFromBlock(Blocks.stone_slab             ).setMaxStackSize(OP.slab.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.STONE_SLAB             ).setMaxStackSize(OP.slab.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.double_stone_slab      ).setMaxStackSize(OP.slab.mDefaultStackSize);
-		Item.getItemFromBlock(Blocks.wooden_slab            ).setMaxStackSize(OP.slab.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.OAK_SLAB            ).setMaxStackSize(OP.slab.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.double_wooden_slab     ).setMaxStackSize(OP.slab.mDefaultStackSize);
 		
 		Item.getItemFromBlock(Blocks.STONE_BRICK_STAIRS     ).setMaxStackSize(OP.stair.mDefaultStackSize);
@@ -298,15 +298,15 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		Item.getItemFromBlock(Blocks.BRICKS            ).setMaxStackSize(OP.stoneBricks.mDefaultStackSize);
 		Item.getItemFromBlock(Blocks.nether_brick           ).setMaxStackSize(OP.stoneBricks.mDefaultStackSize);
 		
-		Item.getItemFromBlock(Blocks.sapling                ).setMaxStackSize(OP.treeSapling.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.OAK_SAPLING                ).setMaxStackSize(OP.treeSapling.mDefaultStackSize);
 		
-		Item.getItemFromBlock(Blocks.leaves                 ).setMaxStackSize(OP.treeLeaves.mDefaultStackSize);
-		Item.getItemFromBlock(Blocks.leaves2                ).setMaxStackSize(OP.treeLeaves.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.OAK_LEAVES                 ).setMaxStackSize(OP.treeLeaves.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.ACACIA_LEAVES                ).setMaxStackSize(OP.treeLeaves.mDefaultStackSize);
 		
-		Item.getItemFromBlock(Blocks.log                    ).setMaxStackSize(OP.log.mDefaultStackSize);
-		Item.getItemFromBlock(Blocks.log2                   ).setMaxStackSize(OP.log.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.OAK_LOG                    ).setMaxStackSize(OP.log.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.ACACIA_LOG                   ).setMaxStackSize(OP.log.mDefaultStackSize);
 		
-		Item.getItemFromBlock(Blocks.planks                 ).setMaxStackSize(OP.plank.mDefaultStackSize);
+		Item.getItemFromBlock(Blocks.OAK_PLANKS                 ).setMaxStackSize(OP.plank.mDefaultStackSize);
 		
 		ST.forceProperMaxStacksizes();
 		

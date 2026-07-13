@@ -78,8 +78,8 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & 7;}
 	@Override public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.getItemFromBlock(mSaplings);}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.leaves.getBlockHardness(aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.leaves.getExplosionResistance(null);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.OAK_LEAVES.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.OAK_LEAVES.getExplosionResistance(null);}
 	@Override public boolean renderAsNormalBlock() {return F;}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
 	@Override public boolean isOpaqueCube() {return F;}
@@ -89,7 +89,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	public boolean isShearable(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(Blocks.leaves.isOpaqueCube()?8:0)].getIcon(0);}
+	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(Blocks.OAK_LEAVES.isOpaqueCube()?8:0)].getIcon(0);}
 	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : super.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
@@ -104,7 +104,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	@OnlyIn(Dist.CLIENT)
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		return !(aBlock.isOpaqueCube() || (Blocks.leaves.isOpaqueCube() && aBlock instanceof BlockBaseLeaves));
+		return !(aBlock.isOpaqueCube() || (Blocks.OAK_LEAVES.isOpaqueCube() && aBlock instanceof BlockBaseLeaves));
 	}
 	
 	// @Override

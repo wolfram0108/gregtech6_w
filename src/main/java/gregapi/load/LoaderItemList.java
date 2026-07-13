@@ -727,12 +727,12 @@ public class LoaderItemList implements Runnable {
 		MT.Lapis.mTextureSolid        = MT.Lapis.mTextureGem        = BlockTextureCopied.get(Blocks.LAPIS_BLOCK);
 		MT.Diamond.mTextureSolid      = MT.Diamond.mTextureGem      = BlockTextureCopied.get(Blocks.DIAMOND_BLOCK);
 		MT.Emerald.mTextureSolid      = MT.Emerald.mTextureGem      = BlockTextureCopied.get(Blocks.EMERALD_BLOCK);
-		MT.Sand.mTextureSolid         = MT.Sand.mTextureDust        = BlockTextureCopied.get(Blocks.sand);
-		MT.RedSand.mTextureSolid      = MT.RedSand.mTextureDust     = BlockTextureCopied.get(Blocks.sand, 1);
+		MT.Sand.mTextureSolid         = MT.Sand.mTextureDust        = BlockTextureCopied.get(Blocks.SAND);
+		MT.RedSand.mTextureSolid      = MT.RedSand.mTextureDust     = BlockTextureCopied.get(Blocks.SAND, 1);
 		MT.SoulSand.mTextureSolid     = MT.SoulSand.mTextureDust    = BlockTextureCopied.get(Blocks.SOUL_SAND);
 		
 		MT.Stone.mTextureDust         = BlockTextureCopied.get(Blocks.GRAVEL);
-		MT.Stone.mTextureSolid        = BlockTextureCopied.get(Blocks.stone);
+		MT.Stone.mTextureSolid        = BlockTextureCopied.get(Blocks.STONE);
 		MT.Stone.mTextureSmooth       = BlockTextureCopied.get(Blocks.double_stone_slab, SIDE_TOP, 0);
 		MT.Glass.mTextureSolid        = BlockTextureCopied.get(Blocks.GLASS);
 		MT.Ceramic.mTextureSolid      = BlockTextureCopied.get(Blocks.TERRACOTTA);
@@ -742,7 +742,7 @@ public class LoaderItemList implements Runnable {
 		MT.Endstone.mTextureSolid     = BlockTextureCopied.get(Blocks.END_STONE);
 		MT.Netherrack.mTextureSolid   = BlockTextureCopied.get(Blocks.NETHERRACK);
 		MT.NetherBrick.mTextureSolid  = BlockTextureCopied.get(Blocks.nether_brick);
-		MT.NetherQuartz.mTextureSolid = BlockTextureCopied.get(Blocks.quartz_block);
+		MT.NetherQuartz.mTextureSolid = BlockTextureCopied.get(Blocks.QUARTZ_BLOCK);
 		MT.Bedrock.mTextureSolid      = BlockTextureCopied.get(Blocks.BEDROCK);
 		MT.Clay.mTextureSolid         = BlockTextureCopied.get(Blocks.CLAY);
 		MT.Brick.mTextureSolid        = BlockTextureCopied.get(Blocks.BRICKS);

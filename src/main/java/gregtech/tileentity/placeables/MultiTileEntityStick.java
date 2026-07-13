@@ -48,7 +48,7 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class MultiTileEntityStick extends TileEntityBase03MultiTileEntities implements IMTE_CanPlaceSnowLayerOnRemoval, ITileEntityQuickObstructionCheck, IMTE_CanEntityDestroy, IMTE_IgnorePlayerCollisionWhenPlacing, IMTE_OnNeighborBlockChange, IMTE_GetBlockHardness, IMTE_IsSideSolid, IMTE_GetLightOpacity, IMTE_GetExplosionResistance, IMTE_GetCollisionBoundingBoxFromPool, IMTE_GetSelectedBoundingBoxFromPool, IMTE_SetBlockBoundsBasedOnState, IMTE_GetFlammability, IMTE_GetFireSpreadSpeed {
-	public static final ITexture sWoodTexture = BlockTextureCopied.get(Blocks.log, SIDE_FRONT, 0);
+	public static final ITexture sWoodTexture = BlockTextureCopied.get(Blocks.OAK_LOG, SIDE_FRONT, 0);
 	public ITexture mTexture = sWoodTexture;
 	public float mMinX = PX_P[2], mMinZ = PX_P[7], mMaxX = PX_N[2], mMaxZ = PX_N[7];
 	

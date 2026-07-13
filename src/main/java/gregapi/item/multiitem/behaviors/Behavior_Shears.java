@@ -51,7 +51,7 @@ public class Behavior_Shears extends AbstractBehaviorDefault {
 				String tClass = UT.Reflection.getLowercaseClass(aEntity);
 				boolean tDropIncrease = ((tFortune > 0) && ("EntitySheep".equalsIgnoreCase(tClass) || "EntityTFBighorn".equalsIgnoreCase(tClass) || "EntityTaintSheep".equalsIgnoreCase(tClass) || "EntitySheepuff".equalsIgnoreCase(tClass)));
 				for (ItemStack tStack : ((IShearable)aEntity).onSheared(aStack, aPlayer.level(), (int)aEntity.getX(), (int)aEntity.getY(), (int)aEntity.getZ(), tFortune)) {
-					if (tDropIncrease && ST.block(tStack) == Blocks.wool) {
+					if (tDropIncrease && ST.block(tStack) == Blocks.WHITE_WOOL) {
 						tStack.setCount(tStack.getCount()+(RNGSUS.nextInt(1+tFortune)));
 						if (tStack.getCount() > 64) tStack.setCount(64);
 					}

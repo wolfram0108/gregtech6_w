@@ -124,7 +124,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 					}
 				} else {
 					Block tBlock = getBlockAtSide(SIDE_BOTTOM);
-					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_UP], Blocks.yellow_flower) ? 1 : 0);
+					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_UP], Blocks.DANDELION) ? 1 : 0);
 				}
 			}
 			
@@ -189,7 +189,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 			return T;
 		}
 		Block tBlock = WD.block(aWorld, aX, aY-1, aZ);
-		if (BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(aWorld, aX, aY-1, aZ, FORGE_DIR[SIDE_UP], Blocks.yellow_flower)) {
+		if (BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(aWorld, aX, aY-1, aZ, FORGE_DIR[SIDE_UP], Blocks.DANDELION)) {
 			mFacing = SIDE_UNDEFINED;
 			mSpeed = 1;
 			return T;

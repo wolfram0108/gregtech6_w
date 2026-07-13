@@ -647,12 +647,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (!aEntityLiving.level().isClientSide()) {
 				// Zombies trample Farmland.
 				if (tBlock == Blocks.FARMLAND && aEntityLiving instanceof Zombie) {
-					WD.set(aEntityLiving.level(), tX, tY, tZ, Blocks.dirt, 0, 3);
+					WD.set(aEntityLiving.level(), tX, tY, tZ, Blocks.DIRT, 0, 3);
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aEntityLiving.level(), tX, tY, tZ);
 				}
 				// Big Animals break regular tall Grass, but not super tall Grass.
 				if (aEntityLiving instanceof Pig || aEntityLiving instanceof Sheep || aEntityLiving instanceof Cow || aEntityLiving instanceof Horse) {
-					if (WD.block(aEntityLiving.level(), tX, tY+1, tZ) == Blocks.tallgrass) {
+					if (WD.block(aEntityLiving.level(), tX, tY+1, tZ) == Blocks.DEAD_BUSH) {
 						WD.set(aEntityLiving.level(), tX, tY+1, tZ, NB, 0, 3);
 						UT.Sounds.send(SFX.MC_DIG_GRASS, 0.5F, 0.5F, aEntityLiving.level(), tX, tY, tZ);
 					}
@@ -860,8 +860,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							ST.drop(aPlayer, IL.Grass_Dry.get(9));
 							ST.drop(aPlayer, IL.Stick.get(16));
 							ST.drop(aPlayer, Items.flint, 12, 0);
-							ST.drop(aPlayer, Blocks.dirt, 16, 0);
-							ST.drop(aPlayer, Blocks.sapling, 4, 0);
+							ST.drop(aPlayer, Blocks.DIRT, 16, 0);
+							ST.drop(aPlayer, Blocks.OAK_SAPLING, 4, 0);
 							switch (RNGSUS.nextInt(4)) {
 							case 0: ST.drop(aPlayer, IL.Food_Large_Sandwich_Veggie.get(1)); break;
 							case 1: ST.drop(aPlayer, IL.Food_Large_Sandwich_Cheese.get(1)); break;
@@ -1365,11 +1365,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// UseHoeEvent (1.7.10, world/x/y/z/entityPlayer поля) не существует в neo — заменён общим BlockToolModificationEvent (ЛЮБАЯ
 	// ItemAbility, не только мотыга — сверено, net.neoforged.neoforge.event.level.BlockEvent.java), поэтому добавлена явная проверка
 	// getItemAbility()==ItemAbilities.HOE_TILL. blockMetadata (1.7.10 dirt-вариант: 1=coarse dirt, 2=podzol) удалён — в neo это отдельные
-	// Block-типы (Blocks.COARSE_DIRT/Blocks.PODZOL), не метадата Blocks.dirt (сверено, аналогично общей проблеме Blocks.* по файлу).
+	// Block-типы (Blocks.COARSE_DIRT/Blocks.PODZOL), не метадата Blocks.DIRT (сверено, аналогично общей проблеме Blocks.* по файлу).
 	// PORT-TODO(EVENTS, dirt-metadata-variant): нет 1:1 переноса проверки "dirt с ненулевой metadata" без переизобретения списка блоков.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onUseHoeEvent(net.neoforged.neoforge.event.level.BlockEvent.BlockToolModificationEvent aEvent) {
-		// if (aEvent.getItemAbility() == net.neoforged.neoforge.common.ItemAbilities.HOE_TILL && aEvent.getState().getBlock() == Blocks.dirt /* metadata!=0 PORT-TODO выше */) aEvent.setCanceled(T);
+		// if (aEvent.getItemAbility() == net.neoforged.neoforge.common.ItemAbilities.HOE_TILL && aEvent.getState().getBlock() == Blocks.DIRT /* metadata!=0 PORT-TODO выше */) aEvent.setCanceled(T);
 	}
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST) 
@@ -1462,7 +1462,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 		if (aBlock == null) {aEvent.getDrops().clear(); for (ItemStack tStack : aDropStacks) if (ST.valid(tStack)) aEvent.getDrops().add(new ItemEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, tStack)); return;}
 
-		if (aBlock == Blocks.dirt && aBlockMeta == 1) for (int i = 0, j = aDropStacks.size(); i < j; i++) if (ST.block(aDropStacks.get(0)) == Blocks.dirt) {
+		if (aBlock == Blocks.DIRT && aBlockMeta == 1) for (int i = 0, j = aDropStacks.size(); i < j; i++) if (ST.block(aDropStacks.get(0)) == Blocks.DIRT) {
 			aDropStacks.set(i, ST.make(Blocks.COARSE_DIRT, aDropStacks.get(i).getCount(), 0));
 		}
 
@@ -1669,7 +1669,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		Level aWorld = aEvent.getEntity().level();
 		int aX = UT.Code.roundDown(aEvent.getX()), aY = (int)UT.Code.bind(0, aWorld.getHeight(), UT.Code.roundDown(aEvent.getY())), aZ = UT.Code.roundDown(aEvent.getZ());
 
-		if (SPAWN_NO_BATS && aMobClass == Bat.class && WD.block(aWorld, aX, aY-2, aZ) != Blocks.stone && WD.block(aWorld, aX, aY+2, aZ) != Blocks.stone) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
+		if (SPAWN_NO_BATS && aMobClass == Bat.class && WD.block(aWorld, aX, aY-2, aZ) != Blocks.STONE && WD.block(aWorld, aX, aY+2, aZ) != Blocks.STONE) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
 
 		if (SPAWN_HOSTILES_ONLY_IN_DARKNESS && WD.dimOverworldLike(aWorld)) try {
 			LevelChunk tChunk = aWorld.getChunkFromBlockCoords(aX, aZ);

@@ -128,7 +128,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 	public EnumPlantType getPlantType(BlockGetter aWorld, int aX, int aY, int aZ) {return EnumPlantType.Plains;}
 	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
 	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
-	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.oxygen(aWorld, aX, aY, aZ) && WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.yellow_flower);}
+	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return WD.oxygen(aWorld, aX, aY, aZ) && WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.DANDELION);}
 	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}
 	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return T;}
 	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, 1, WD.meta(aWorld, aX, aY, aZ));}
@@ -161,7 +161,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 		
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
-		} else if (tBlock != Blocks.VINE && tBlock != Blocks.tallgrass && tBlock != Blocks.DEAD_BUSH && !tBlock.isReplaceable(aWorld, aX, aY, aZ)) {
+		} else if (tBlock != Blocks.VINE && tBlock != Blocks.DEAD_BUSH && tBlock != Blocks.DEAD_BUSH && !tBlock.isReplaceable(aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
 		

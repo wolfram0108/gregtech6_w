@@ -80,5 +80,5 @@ public class BlockTreeLog1FireProof extends BlockBaseBeam implements IBlockToola
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.log.getBlockHardness(aWorld, aX, aY, aZ) / 2;}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.OAK_LOG.getBlockHardness(aWorld, aX, aY, aZ) / 2;}
 }

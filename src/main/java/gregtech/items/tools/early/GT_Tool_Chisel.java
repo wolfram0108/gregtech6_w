@@ -55,7 +55,7 @@ public class GT_Tool_Chisel extends ToolStats {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
-		if (aBlock == Blocks.stone) {
+		if (aBlock == Blocks.STONE) {
 			aDrops.clear();
 			aDrops.add(ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 			return 0;
@@ -80,7 +80,7 @@ public class GT_Tool_Chisel extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_chisel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockSilverfish || aBlock == Blocks.stone || aBlock == Blocks.stonebrick || aBlock instanceof BlockStones;
+		return TOOL_chisel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockSilverfish || aBlock == Blocks.STONE || aBlock == Blocks.stonebrick || aBlock instanceof BlockStones;
 	}
 	
 	@Override

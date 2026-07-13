@@ -75,7 +75,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 		mIndicatorFlowers   =                     getConfigFile().get(mCategory, "IndicatorFlowers", aFlower != NB);
 		
 		if (mIndicatorFlowers && aFlower == NB) {
-			mFlower = Blocks.yellow_flower;
+			mFlower = Blocks.DANDELION;
 			mFlowerMeta = 0;
 		} else {
 			mFlower = (Block)aFlower;
@@ -159,7 +159,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 					if (tContact.getMaterial().isLiquid() || tContact == Blocks.FARMLAND) break;
 					if (!tContact.isOpaqueCube() || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 					if (!WD.easyRep(aWorld, tX, tY+1, tZ)) break;
-					if (tFlowers && tContact != Blocks.dirt && (!tRocks || aRandom.nextInt(4) > 0)) {
+					if (tFlowers && tContact != Blocks.DIRT && (!tRocks || aRandom.nextInt(4) > 0)) {
 						WD.set(aWorld, tX, tY+1, tZ, mFlower, mFlowerMeta, 0);
 						if (mFlower.canBlockStay(aWorld, tX, tY+1, tZ)) break;
 						WD.set(aWorld, tX, tY+1, tZ, NB, 0, 0);

@@ -564,7 +564,7 @@ public class Textures {
 			GRASSBLOCK_SIDE_DARK,
 		},
 		DIRTS = {
-			new IconContainerCopied(Blocks.dirt, 0, SIDE_BOTTOM),
+			new IconContainerCopied(Blocks.DIRT, 0, SIDE_BOTTOM),
 			PATH_TOP,
 			PATH_TOP,
 			PATH_TOP,

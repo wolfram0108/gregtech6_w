@@ -203,7 +203,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=2000;
 				continue;
 			}
-			if (aBlock == Blocks.wool || aBlock.getMaterial() == Material.carpet) {
+			if (aBlock == Blocks.WHITE_WOOL || aBlock.getMaterial() == Material.carpet) {
 				if (tFireAspect > 1) {
 					WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 					WD.fire(aPlayer.level(), aCoord, F);

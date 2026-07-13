@@ -277,7 +277,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case   5: case 203:
 			for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
-				if (tBlock == Blocks.MOSSY_COBBLESTONE || tBlock == Blocks.COBBLESTONE || tBlock == Blocks.stone) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.MOSSY_COBBLESTONE || tBlock == Blocks.COBBLESTONE || tBlock == Blocks.STONE) return new BlockPos(aX+i, aY+j, aZ+k);
 				byte tMeta = WD.meta(aWorld, aX+i, aY+j, aZ+k);
 				if (tBlock == Blocks.stonebrick && tMeta == 1) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock instanceof BlockStones && (BlockStones.SPAWNABLE[tMeta] || BlockStones.MOSSY[tMeta])) return new BlockPos(aX+i, aY+j, aZ+k);
@@ -622,7 +622,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
 			if (tTileEntity instanceof TileEntityFlowerPot) {
 				aBlock = Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem());
-				return aBlock == Blocks.yellow_flower || aBlock == Blocks.red_flower;
+				return aBlock == Blocks.DANDELION || aBlock == Blocks.POPPY;
 			}
 			return F;
 		}

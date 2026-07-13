@@ -67,7 +67,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 		if (tBlock != BlocksGT.oreBedrock && tBlock != BlocksGT.oreSmallBedrock && !WD.bedrock(tBlock)) return F;
 		
 		tBlock = (aDimType == DIM_NETHER ? Blocks.NETHERRACK : IL.EtFu_Deepslate.block());
-		if (ST.invalid(tBlock)) tBlock = Blocks.stone;
+		if (ST.invalid(tBlock)) tBlock = Blocks.STONE;
 		
 		for (int i = 0; i <= 6; i++) for (int tX = aMinX+i; tX <= aMaxX-i; tX++) for (int tZ = aMinZ+i; tZ <= aMaxZ-i; tZ++) {
 			if (!WD.opq(aWorld, tX, i+1, tZ, F, T)) WD.set(aWorld, tX, i+1, tZ, tBlock, 0, 0);

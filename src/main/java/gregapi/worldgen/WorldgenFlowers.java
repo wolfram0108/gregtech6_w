@@ -44,7 +44,7 @@ public class WorldgenFlowers extends WorldgenOnSurface {
 	@SafeVarargs
 	public WorldgenFlowers(String aName, boolean aDefault, Block aBlock, int aBlockMeta, int aAmount, int aProbability, Collection<String> aBiomeList, List<WorldgenObject>... aLists) {
 		super(aName, aDefault, aAmount, aProbability, aLists);
-		mBlock     = (aBlock instanceof IPlantable ? aBlock : Blocks.yellow_flower);
+		mBlock     = (aBlock instanceof IPlantable ? aBlock : Blocks.DANDELION);
 		mBlockMeta = UT.Code.bind4(aBlockMeta);
 		mBiomeList = aBiomeList;
 	}

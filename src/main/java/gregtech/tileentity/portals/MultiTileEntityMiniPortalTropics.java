@@ -122,10 +122,10 @@ public class MultiTileEntityMiniPortalTropics extends MultiTileEntityMiniPortal 
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.planks.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.planks.getExplosionResistance(null);}
+	@Override public float getBlockHardness() {return Blocks.OAK_PLANKS.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getExplosionResistance2() {return Blocks.OAK_PLANKS.getExplosionResistance(null);}
 	
-	public ITexture sTropicsPortal = BlockTextureCopied.get(ST.block(MD.TROPIC, "tile.portal", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sTropicsPortalFrame = BlockTextureCopied.get(ST.block(MD.TROPIC, "tile.bambooBundle", Blocks.planks), SIDE_FRONT, 0, UNCOLOURED, F, F, F), sTropicsPortalInactive = BlockTextureCopied.get(Blocks.WATER, SIDE_TOP, 0, 0x0088ffcc, F, T, T);
+	public ITexture sTropicsPortal = BlockTextureCopied.get(ST.block(MD.TROPIC, "tile.portal", Blocks.portal), SIDE_ANY, 0, UNCOLOURED, F, T, T), sTropicsPortalFrame = BlockTextureCopied.get(ST.block(MD.TROPIC, "tile.bambooBundle", Blocks.OAK_PLANKS), SIDE_FRONT, 0, UNCOLOURED, F, F, F), sTropicsPortalInactive = BlockTextureCopied.get(Blocks.WATER, SIDE_TOP, 0, 0x0088ffcc, F, T, T);
 	@Override public ITexture getPortalTexture() {return sTropicsPortal;}
 	@Override public ITexture getFrameTexture() {return sTropicsPortalFrame;}
 	@Override public ITexture getInactiveTexture() {return sTropicsPortalInactive;}

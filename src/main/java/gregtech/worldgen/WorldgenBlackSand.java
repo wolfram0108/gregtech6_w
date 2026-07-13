@@ -66,7 +66,7 @@ public class WorldgenBlackSand extends WorldgenObject {
 				// block-уровневым, без учёта состояния/меты — берём `defaultBlockState()` (тоже без учёта меты,
 				// как и раньше).
 				if (!tBlock.defaultBlockState().isSolidRender()) {if (tGenerated > 0) break; continue;}
-				// F6: `Blocks.dirt/gravel/sand/clay` — старые 1.7.10-имена полей (нижний регистр); реальные
+				// F6: `Blocks.DIRT/gravel/sand/clay` — старые 1.7.10-имена полей (нижний регистр); реальные
 				// поля neo — `Blocks.DIRT/GRAVEL/SAND/CLAY` (`Blocks.java:85,322,342,2099`), то же переименование,
 				// что применено волной 1 по всему остальному дереву.
 				if ((tBlock == Blocks.DIRT && tMeta < 2) || tBlock == Blocks.GRAVEL || tBlock == Blocks.SAND || tBlock == Blocks.CLAY || tBlock == BlocksGT.oreSmallGravel || tBlock == BlocksGT.oreGravel || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreRedSand) {

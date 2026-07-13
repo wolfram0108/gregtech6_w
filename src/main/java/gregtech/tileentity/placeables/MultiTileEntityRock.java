@@ -52,7 +52,7 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities implements IMTE_CanPlaceSnowLayerOnRemoval, IMTE_CanEntityDestroy, IMTE_IgnorePlayerCollisionWhenPlacing, IMTE_OnToolClick, IMTE_OnNeighborBlockChange, IMTE_GetBlockHardness, IMTE_IsSideSolid, IMTE_GetLightOpacity, IMTE_GetExplosionResistance, ITileEntityQuickObstructionCheck, IMTE_GetCollisionBoundingBoxFromPool, IMTE_GetSelectedBoundingBoxFromPool, IMTE_SetBlockBoundsBasedOnState {
-	public static final ITexture sStoneTexture = BlockTextureCopied.get(Blocks.stone);
+	public static final ITexture sStoneTexture = BlockTextureCopied.get(Blocks.STONE);
 	public ITexture mTexture = sStoneTexture;
 	public ItemStack mRock;
 	public float mMinX = PX_P[5], mMinZ = PX_P[5], mMaxX = PX_N[5], mMaxY = PX_P[2], mMaxZ = PX_N[5];
@@ -197,14 +197,14 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (tBlock == BlocksGT.Diggables) {
 			mTexture = BlockTextureCopied.get(BlocksGT.Kimberlite, SIDE_ANY, 0); return 1;
 		}
-		if (tBlock instanceof BlockStones || tBlock == Blocks.SNOW || tBlock == Blocks.stone || tBlock == Blocks.END_STONE || tBlock == Blocks.OBSIDIAN) {
+		if (tBlock instanceof BlockStones || tBlock == Blocks.SNOW || tBlock == Blocks.STONE || tBlock == Blocks.END_STONE || tBlock == Blocks.OBSIDIAN) {
 			mTexture = BlockTextureCopied.get(tBlock, SIDE_ANY, 0); return 1;
 		}
 		if (tBlock == Blocks.NETHERRACK || tBlock == Blocks.nether_brick || tBlock == Blocks.SOUL_SAND) {
 			mTexture = BlockTextureCopied.get(Blocks.NETHERRACK, SIDE_ANY, 0); return 1;
 		}
-		if (tBlock == Blocks.sandstone || tBlock == Blocks.sand || IL.AETHER_Sand.equal(tBlock)) {
-			mTexture = BlockTextureCopied.get(Blocks.sandstone, SIDE_FRONT, 0); return 1;
+		if (tBlock == Blocks.SANDSTONE || tBlock == Blocks.SAND || IL.AETHER_Sand.equal(tBlock)) {
+			mTexture = BlockTextureCopied.get(Blocks.SANDSTONE, SIDE_FRONT, 0); return 1;
 		}
 		if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.GRAVEL) {
 			mTexture = BlockTextureCopied.get(Blocks.COBBLESTONE, SIDE_ANY, 0); return 1;
@@ -214,11 +214,11 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		}
 		
 		if (level.provider.dimensionId == -1) {mTexture = BlockTextureCopied.get(Blocks.NETHERRACK); return 1;}
-		if (level.provider.dimensionId ==  0) {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
+		if (level.provider.dimensionId ==  0) {mTexture = BlockTextureCopied.get(Blocks.STONE); return 1;}
 		if (level.provider.dimensionId == +1) {mTexture = BlockTextureCopied.get(Blocks.END_STONE); return 1;}
-		if (WD.dimTF(level))                  {mTexture = BlockTextureCopied.get(Blocks.stone); return 1;}
-		if (WD.dimERE(level))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x907050, F, F, F); return 1;}
-		if (WD.dimBTL(level))                 {mTexture = BlockTextureCopied.get(Blocks.stone, SIDE_ANY, 0, 0x308030, F, F, F); return 1;}
+		if (WD.dimTF(level))                  {mTexture = BlockTextureCopied.get(Blocks.STONE); return 1;}
+		if (WD.dimERE(level))                 {mTexture = BlockTextureCopied.get(Blocks.STONE, SIDE_ANY, 0, 0x907050, F, F, F); return 1;}
+		if (WD.dimBTL(level))                 {mTexture = BlockTextureCopied.get(Blocks.STONE, SIDE_ANY, 0, 0x308030, F, F, F); return 1;}
 		if (WD.dimALF(level))                 {mTexture = BlockTextureCopied.get(BlocksGT.Marble); return 1;}
 		if (WD.dimATUM(level))                {mTexture = BlockTextureCopied.get(BlocksGT.Limestone); return 1;}
 		if (WD.dimAETHER(level))              {mTexture = BlockTextureCopied.get(BlocksGT.Andesite); return 1;}
@@ -228,7 +228,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 			if (tBlock.getMaterial() == Material.rock) {mTexture = BlockTextureCopied.get(tBlock, getMetaDataAtSide(SIDE_BOTTOM)); return 1;}
 			mTexture = BlockTextureCopied.get(Blocks.OBSIDIAN); return 1;
 		}
-		mTexture = BlockTextureCopied.get(Blocks.stone);
+		mTexture = BlockTextureCopied.get(Blocks.STONE);
 		return 1;
 	}
 	

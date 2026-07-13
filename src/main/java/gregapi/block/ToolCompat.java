@@ -96,7 +96,7 @@ public class ToolCompat {
 		
 		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || aEntityPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack))) {
 			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
-				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.dirt || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
+				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND.stepSound.getStepResourcePath(), (Blocks.FARMLAND.stepSound.getVolume() + 1.0F) * 0.5F, Blocks.FARMLAND.stepSound.getPitch() * 0.8F);
 					if (!aWorld.isClientSide()) aWorld.setBlock(aX, aY, aZ, Blocks.FARMLAND);
 					return 10000;
@@ -130,7 +130,7 @@ public class ToolCompat {
 				}
 			}
 			if (!rReturn && BlocksGT.Beam1 != null) {
-				if (aBlock == Blocks.log || IL.EtFu_Bark_Oak.equal(aBlock)) {
+				if (aBlock == Blocks.OAK_LOG || IL.EtFu_Bark_Oak.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, aMeta, 3);
 				} else if (IL.TF_Log_Darkwood.equal(aBlock) && (aMeta & 3) != 3) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, aMeta, 3);
@@ -157,7 +157,7 @@ public class ToolCompat {
 				}
 			}
 			if (!rReturn && BlocksGT.Beam2 != null) {
-				if (aBlock == Blocks.log2 || IL.EtFu_Bark_Acacia.equal(aBlock)) {
+				if (aBlock == Blocks.ACACIA_LOG || IL.EtFu_Bark_Acacia.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, aMeta, 3);
 				} else if (IL.IC2_Log_Rubber.equal(aBlock) || IL.MFR_Log_Rubber.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, 2, 3);
@@ -373,7 +373,7 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_prospector)) {
 			if (prospectOre(aBlock, aMeta, aChatReturn, aWorld, aX, aY, aZ)) return 100;
-			if (aBlock != Blocks.OBSIDIAN && (aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE) || WD.stone(aBlock, aMeta))) {
+			if (aBlock != Blocks.OBSIDIAN && (aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK) || aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE) || WD.stone(aBlock, aMeta))) {
 				if (prospectStone(aBlock, aMeta, aQuality, aChatReturn, aWorld, aSide, aX, aY, aZ)) return 10000;
 			}
 			return 0;

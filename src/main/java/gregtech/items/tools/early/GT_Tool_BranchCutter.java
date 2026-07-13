@@ -81,12 +81,12 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		if (aBlock.getMaterial() == Material.leaves) aEvent.dropChance = Math.min(1.0F, Math.max(aEvent.dropChance, (UT.Code.bind4(aStack.getItem().getHarvestLevel(aStack, ""))+1) * 0.2F));
-		if (aBlock == Blocks.leaves) {
+		if (aBlock == Blocks.OAK_LEAVES) {
 			aDrops.clear();
-			if ((aMetaData & 3) == 0 && RNGSUS.nextInt(9) <= aFortune * 2) aDrops.add(IL.Food_Apple_Red.get(1)); else aDrops.add(ST.make(Blocks.sapling, 1, aMetaData & 3));
-		} else if (aBlock == Blocks.leaves2) {
+			if ((aMetaData & 3) == 0 && RNGSUS.nextInt(9) <= aFortune * 2) aDrops.add(IL.Food_Apple_Red.get(1)); else aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, aMetaData & 3));
+		} else if (aBlock == Blocks.ACACIA_LEAVES) {
 			aDrops.clear();
-			aDrops.add(ST.make(Blocks.sapling, 1, (aMetaData & 3) + 4));
+			aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, (aMetaData & 3) + 4));
 		} else if (aBlock == Blocks.VINE) {
 			aDrops.clear();
 			aDrops.add(ST.make(Blocks.VINE, 1, 0));

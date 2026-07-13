@@ -131,8 +131,8 @@ public class Compat_Recipes_Tropicraft extends CompatMods {
 		CR.shaped(ST.make(tTorch, 2, 0), DEF, "  X", " S ", "S  ", 'X', OP.crushedCentrifuged.dat(MT.LigniteCoke)    , 'S', OP.stick.dat(MT.Bamboo));
 		
 		for (int i = 0; i < 16; i++) {
-		CR.shaped(ST.make(tChair   , 1, 15-i), CR.DEF_NCC_MIR, "BWB", "BWB", "BWB", 'B', OP.stick.dat(MT.Bamboo), 'W', ST.make(Blocks.wool, 1, i));
-		CR.shaped(ST.make(tUmbrella, 1, 15-i), CR.DEF_NCC_MIR, "WWW", " B ", " B ", 'B', OP.stick.dat(MT.Bamboo), 'W', ST.make(Blocks.wool, 1, i));
+		CR.shaped(ST.make(tChair   , 1, 15-i), CR.DEF_NCC_MIR, "BWB", "BWB", "BWB", 'B', OP.stick.dat(MT.Bamboo), 'W', ST.make(Blocks.WHITE_WOOL, 1, i));
+		CR.shaped(ST.make(tUmbrella, 1, 15-i), CR.DEF_NCC_MIR, "WWW", " B ", " B ", 'B', OP.stick.dat(MT.Bamboo), 'W', ST.make(Blocks.WHITE_WOOL, 1, i));
 		}
 		
 		CR.shaped(ST.make(MD.TROPIC, "portalEnchanter", 1, 0), CR.DEF_NCC_MIR, "ABZ", "ZBA", " B ", 'B', OP.stick.dat(MT.Bamboo), 'A', OP.gem.dat(MT.Azurite), 'Z', OP.gem.dat(MT.Zr));

@@ -99,7 +99,7 @@ public class BlockGrass extends BlockBaseMeta {
 		return tType == EnumPlantType.Plains || (tType == EnumPlantType.Beach && (WD.anywater(aWorld, aX+1, aY, aZ) || WD.anywater(aWorld, aX-1, aY, aZ) || WD.anywater(aWorld, aX, aY, aZ+1) || WD.anywater(aWorld, aX, aY, aZ-1)));
 	}
 	
-	public static final IconContainerCopied DIRT = new IconContainerCopied(Blocks.dirt, 0, SIDE_BOTTOM);
+	public static final IconContainerCopied DIRT = new IconContainerCopied(Blocks.DIRT, 0, SIDE_BOTTOM);
 	
 	@Override public IIcon getIcon(int aSide, int aMeta) {return (SIDES_BOTTOM[aSide]?DIRT:(SIDES_TOP[aSide]?Textures.BlockIcons.GRASSES_TOP:Textures.BlockIcons.GRASSES_SIDE)[aMeta % 16]).getIcon(0);}
 	@Override public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(ST.make(Blocks.DIRT, 1, 0));}

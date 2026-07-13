@@ -512,7 +512,7 @@ public class WD {
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
-			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.dirt,0,flags)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
 		}
 		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
 		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4): для своих блоков (IBlockExtendedMetaData) — канал
@@ -550,7 +550,7 @@ public class WD {
 	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aChunk.getBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ)).getBlock(); // было aChunk.getBlock(x,y-1,z)
-			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.dirt.defaultBlockState(), Block.UPDATE_ALL); // было aChunk.func_150807_a(x,y-1,z,Blocks.dirt,0)
+			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), Block.UPDATE_ALL); // было aChunk.func_150807_a(x,y-1,z,Blocks.DIRT,0)
 		}
 		return set(aChunk, aX, aY, aZ, aBlock, aMeta);
 	}
@@ -733,7 +733,7 @@ public class WD {
 	public static boolean grass(Level aWorld, int aX, int aY, int aZ) {return grass(block(aWorld, aX, aY, aZ), meta(aWorld, aX, aY, aZ));}
 	public static boolean grass(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta) {return grass(aBlock, aMeta);}
 	public static boolean grass(Block aBlock, long aMeta) {
-		if (aBlock == Blocks.tallgrass) return T;
+		if (aBlock == Blocks.DEAD_BUSH) return T;
 		if (aBlock == Blocks.double_plant)  return aMeta ==  2 || aMeta ==  3;
 		if (IL.TF_Tall_Grass.equal(aBlock)) return aMeta ==  8 || aMeta == 10;
 		return IL.AETHER_Tall_Grass.equal(aBlock);
@@ -794,9 +794,9 @@ public class WD {
 		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(aBlock, 1, aMeta))) return T;
-		if (Blocks.stone      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone     )) return T;
+		if (Blocks.STONE      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE     )) return T;
 		if (Blocks.GRAVEL     != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.GRAVEL    )) return T;
-		if (Blocks.sand       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.sand      )) return T;
+		if (Blocks.SAND       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.SAND      )) return T;
 		if (Blocks.NETHERRACK != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK)) return T;
 		if (Blocks.END_STONE  != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE )) return T;
 		return F;
@@ -814,9 +814,9 @@ public class WD {
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToNormalOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
-		if (Blocks.stone      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone     )) tBlock = BlocksGT.ore; else
+		if (Blocks.STONE      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE     )) tBlock = BlocksGT.ore; else
 		if (Blocks.GRAVEL     != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.GRAVEL    )) tBlock = BlocksGT.oreGravel; else
-		if (Blocks.sand       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.sand      )) tBlock = BlocksGT.oreSand; else
+		if (Blocks.SAND       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.SAND      )) tBlock = BlocksGT.oreSand; else
 		if (Blocks.NETHERRACK != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK)) tBlock = BlocksGT.oreNetherrack; else
 		if (Blocks.END_STONE  != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE )) tBlock = BlocksGT.oreEndstone;
 		}
@@ -835,9 +835,9 @@ public class WD {
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToSmallOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
-		if (Blocks.stone      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.stone     )) tBlock = BlocksGT.oreSmall; else
+		if (Blocks.STONE      != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.STONE     )) tBlock = BlocksGT.oreSmall; else
 		if (Blocks.GRAVEL     != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.GRAVEL    )) tBlock = BlocksGT.oreSmallGravel; else
-		if (Blocks.sand       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.sand      )) tBlock = BlocksGT.oreSmallSand; else
+		if (Blocks.SAND       != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.SAND      )) tBlock = BlocksGT.oreSmallSand; else
 		if (Blocks.NETHERRACK != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.NETHERRACK)) tBlock = BlocksGT.oreSmallNetherrack; else
 		if (Blocks.END_STONE  != aBlock && aBlock.isReplaceableOreGen(aWorld, aX, aY, aZ, Blocks.END_STONE )) tBlock = BlocksGT.oreSmallEndstone;
 		}
@@ -848,7 +848,7 @@ public class WD {
 	public static boolean removeBedrock(Level aWorld, int aX, int aY, int aZ) {
 		// было aWorld.getBlock(x,y,z) + aWorld.provider.dimensionId==DIM_NETHER — Level.dimension()==Level.NETHER,
 		// тот же приём F6, что уже применён у dimOverworldLike/dimPlanet выше в этом файле.
-		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(), tStone = (aWorld.dimension() == Level.NETHER ? Blocks.NETHERRACK : Blocks.stone);
+		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(), tStone = (aWorld.dimension() == Level.NETHER ? Blocks.NETHERRACK : Blocks.STONE);
 
 		if (tBlock == NB || bedrock(tBlock)) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) for (int i = 1; i < 7; i++) {

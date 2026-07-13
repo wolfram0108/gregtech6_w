@@ -919,7 +919,7 @@ public class GT_API extends Abstract_Mod {
 		// Register the GUI Handler.
 		// PORT-TODO(F7-gui, заменить старый Forge GUI-handler на реальный NeoForge menu/screen путь после сверки с референсом)
 		// Fixing vanilla Oak Plank Slab Recipe.
-		// F12: REMAP-RULES.md §C/§C-bis блок-флэттен (данные) — Blocks.planks/wooden_slab (1.7.10 meta
+		// F12: REMAP-RULES.md §C/§C-bis блок-флэттен (данные) — Blocks.OAK_PLANKS/wooden_slab (1.7.10 meta
 		// 0/1/2=oak/spruce/birch) удалены, заменены реальными UPPER_SNAKE-константами neo per-species.
 		CR.remove(ST.make(Blocks.OAK_PLANKS, 1, 0), ST.make(Blocks.SPRUCE_PLANKS, 1, 0), ST.make(Blocks.BIRCH_PLANKS, 1, 0));
 		CR.shaped(ST.make(Blocks.OAK_SLAB, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.OAK_PLANKS, 1, 0));

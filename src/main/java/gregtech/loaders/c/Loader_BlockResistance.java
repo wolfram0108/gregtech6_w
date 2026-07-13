@@ -32,7 +32,7 @@ import static gregapi.data.CS.*;
 public class Loader_BlockResistance implements Runnable {
 	@Override
 	public void run() {
-		Blocks.stone.setResistance(10);
+		Blocks.STONE.setResistance(10);
 		Blocks.COBBLESTONE.setResistance(10);
 		Blocks.stonebrick.setResistance(10);
 		Blocks.BRICKS.setResistance(20);

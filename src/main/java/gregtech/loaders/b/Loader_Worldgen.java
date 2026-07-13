@@ -170,7 +170,7 @@ public class Loader_Worldgen implements Runnable {
 		, new StoneLayerOres(MT.Cu                      , F, U16, 20, 50, ST.block(MD.EtFu, "copper_ore"), 0, BIOMES_MESA, BIOMES_DESERT, BIOMES_SAVANNA)
 		, new StoneLayerOres(MT.Fe                      , F, U16, 40, 80, Blocks.IRON_ORE)
 		, new StoneLayerOres(MT.Coal                    , F, U8 , 60,100, Blocks.COAL_ORE)
-		, new StoneLayerOres(MT.Stone                   , F, U48,  0,255, Blocks.monster_egg)
+		, new StoneLayerOres(MT.Stone                   , F, U48,  0,255, Blocks.INFESTED_STONE)
 		, new StoneLayerOres(MT.NaCl                    , F, U32, 50, 80, ST.block(MD.Salt, "saltOre"), 0)
 		, MD.DRPG    .mLoaded ? new StoneLayerOres(MT.UNUSED.Rupee      , U96,  5, 60, ST.block(MD.DRPG, "rupeeOre"            )) : null
 		, MD.DRPG    .mLoaded ? new StoneLayerOres(MT.UNUSED.Arlemite   , U96,  5, 60, ST.block(MD.DRPG, "arlemiteOre"         )) : null

@@ -144,7 +144,7 @@ public class GT_Tool_Axe extends ToolStats {
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		super.afterDealingDamage(aNormalDamage, aMagicDamage, aFireAspect, aCriticalHit, aEntity, aStack, aPlayer);
 		if (aEntity.level().isClientSide() || aNormalDamage < 2) return;
-		if ("EntityEnt".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity))) ST.drop(aEntity, Blocks.log, UT.Code.bindStack((int)(aNormalDamage / 2)), 0);
+		if ("EntityEnt".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity))) ST.drop(aEntity, Blocks.OAK_LOG, UT.Code.bindStack((int)(aNormalDamage / 2)), 0);
 	}
 	
 	@Override
