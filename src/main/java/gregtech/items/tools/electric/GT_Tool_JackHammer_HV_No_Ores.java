@@ -39,6 +39,6 @@ public class GT_Tool_JackHammer_HV_No_Ores extends GT_Tool_JackHammer_HV {
 		if (aBlock instanceof BlockSilverfish || BlocksGT.harvestableJackhammer.contains(aBlock)) return T;
 		if (aBlock instanceof BlockStones) return aMetaData < 3;
 		if (aBlock instanceof IPrefixBlock) return F;
-		return WD.stone(aBlock, aMetaData) && aBlock.getMaterial() == Material.rock;
+		return WD.stone(aBlock, aMetaData) && WD.getMaterial(aBlock) == Material.rock;
 	}
 }

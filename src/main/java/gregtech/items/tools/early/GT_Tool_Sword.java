@@ -106,7 +106,7 @@ public class GT_Tool_Sword extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_sword.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock.getMaterial() == Material.leaves || aBlock.getMaterial() == Material.gourd || aBlock.getMaterial() == Material.vine || aBlock.getMaterial() == Material.web || aBlock.getMaterial() == Material.cloth || aBlock.getMaterial() == Material.carpet || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.cactus || aBlock.getMaterial() == Material.cake || aBlock.getMaterial() == Material.tnt || aBlock.getMaterial() == Material.sponge || aBlock.getMaterial() == Material.water || IL.TC_Block_Flesh.equal(aBlock);
+		return TOOL_sword.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.gourd || WD.getMaterial(aBlock) == Material.vine || WD.getMaterial(aBlock) == Material.web || WD.getMaterial(aBlock) == Material.cloth || WD.getMaterial(aBlock) == Material.carpet || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.cactus || WD.getMaterial(aBlock) == Material.cake || WD.getMaterial(aBlock) == Material.tnt || WD.getMaterial(aBlock) == Material.sponge || WD.getMaterial(aBlock) == Material.water || IL.TC_Block_Flesh.equal(aBlock);
 	}
 	
 	@Override

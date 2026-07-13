@@ -96,7 +96,7 @@ public class GT_Tool_Axe extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMeta) {
-		return TOOL_axe.equalsIgnoreCase(aBlock.getHarvestTool(aMeta)) || aBlock instanceof HugeMushroomBlock || aBlock.getMaterial() == Material.wood || aBlock.getMaterial() == MaterialAdventure.WOOD || aBlock.getMaterial() == Material.cactus || aBlock.getMaterial() == Material.leaves || aBlock.getMaterial() == Material.vine || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.gourd || aBlock.getMaterial() == Material.coral;
+		return TOOL_axe.equalsIgnoreCase(aBlock.getHarvestTool(aMeta)) || aBlock instanceof HugeMushroomBlock || WD.getMaterial(aBlock) == Material.wood || WD.getMaterial(aBlock) == MaterialAdventure.WOOD || WD.getMaterial(aBlock) == Material.cactus || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.vine || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.gourd || WD.getMaterial(aBlock) == Material.coral;
 	}
 	
 	private static boolean LOCK = T;
@@ -137,7 +137,7 @@ public class GT_Tool_Axe extends ToolStats {
 			if (rAmount > 2.0F && (aBlock instanceof HugeMushroomBlock || MD.NeLi.owns(aBlock))) return aDefault / (4.0F * rAmount);
 			return 2.0F * aDefault / rAmount;
 		}
-		return aBlock.getMaterial() == Material.leaves || aBlock.getMaterial() == Material.vine || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.gourd ? aDefault / 4.0F : aDefault;
+		return WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.vine || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.gourd ? aDefault / 4.0F : aDefault;
 	}
 	
 	@Override

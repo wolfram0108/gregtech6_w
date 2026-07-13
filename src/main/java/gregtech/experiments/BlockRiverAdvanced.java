@@ -143,7 +143,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		if (WD.water(aBlock)) return WD.meta(aWorld, aX, aY, aZ) > 0;
 		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
 		if (displacements.containsKey(aBlock)) return displacements.get(aBlock);
-		Material aMaterial = aBlock.getMaterial();
+		Material aMaterial = WD.getMaterial(aBlock);
 		if (aMaterial.blocksMovement() || aMaterial.isLiquid() || aMaterial == Material.portal) return F;
 		return T;
 	}
@@ -160,7 +160,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 			}
 			return F;
 		}
-		Material aMaterial = aBlock.getMaterial();
+		Material aMaterial = WD.getMaterial(aBlock);
 		if (aMaterial.blocksMovement() || aMaterial.isLiquid() || aMaterial == Material.portal) return F;
 		aBlock.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
 		return T;

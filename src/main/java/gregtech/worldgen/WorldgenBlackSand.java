@@ -71,17 +71,17 @@ public class WorldgenBlackSand extends WorldgenObject {
 				// что применено волной 1 по всему остальному дереву.
 				if ((tBlock == Blocks.DIRT && tMeta < 2) || tBlock == Blocks.GRAVEL || tBlock == Blocks.SAND || tBlock == Blocks.CLAY || tBlock == BlocksGT.oreSmallGravel || tBlock == BlocksGT.oreGravel || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreRedSand) {
 					// PORT-TODO(F6, block-behavior: getMaterial()==wood/gourd): было "Don't take away the Dirt
-					// Block below Trees, Bushes and other Plants" — `if (tGenerated<=0 && (tLastBlock.getMaterial()
-					// == Material.wood || == Material.gourd)) continue;`. `Block.getMaterial()` удалён движком, F9
+					// Block below Trees, Bushes and other Plants" — `if (tGenerated<=0 && (WD.getMaterial(tLastBlock)
+					// == Material.wood || == Material.gourd)) continue;`. `WD.getMaterial(Block)` удалён движком, F9
 					// block-material shim ещё не готов (та же болезнь класса, что уже задокументирована в
 					// `WorldgenOresLarge.java` §C5, метка `F6, block-behavior: getMaterial()==grass/ground/sand/
 					// rock`) — не выдумываю замену. Гейт временно ОПУЩЕН (не проверяется): реже, чем в оригинале,
 					// сохраняется дёрн под деревом/кустом; сама генерация чёрного песка (эта ветка) не отключена.
 				} else {
 					if (tGenerated > 0) {
-						// PORT-TODO(F6, block-behavior: getMaterial()!=rock): было `if (tBlock.getMaterial() !=
+						// PORT-TODO(F6, block-behavior: getMaterial()!=rock): было `if (WD.getMaterial(tBlock) !=
 						// Material.rock) break;` (не сверлить второй слой сквозь неопознанный НЕ-камень).
-						// `Block.getMaterial()` удалён, F9 ещё не готов (см. PORT-TODO выше) — гейт временно
+						// `WD.getMaterial(Block)` удалён, F9 ещё не готов (см. PORT-TODO выше) — гейт временно
 						// ОПУЩЕН: второй слой чёрного песка ставится независимо от материала нижнего блока.
 					} else {
 						continue;

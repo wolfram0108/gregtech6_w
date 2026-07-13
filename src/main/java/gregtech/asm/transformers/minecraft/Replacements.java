@@ -75,7 +75,7 @@ public class Replacements {
 	}
 	
 	public static void BlockStaticLiquid_updateTick(BlockStaticLiquid self, Level world, int x, int y, int z, Random rand) {
-		if (self.getMaterial() == Material.lava)
+		if (WD.getMaterial(self) == Material.lava)
 		{
 			int l = rand.nextInt(3);
 			int i1;
@@ -87,7 +87,7 @@ public class Replacements {
 				z += rand.nextInt(3) - 1;
 				Block block = WD.block(world, x, y, z);
 
-				if (block.getMaterial() == Material.air)
+				if (WD.getMaterial(block) == Material.air)
 				{
 					if (
 						BlockStaticLiquid_isFlammable(world, x - 1, y, z, Direction.EAST) ||
@@ -101,7 +101,7 @@ public class Replacements {
 						return;
 					}
 				}
-				else if (block.getMaterial().blocksMovement())
+				else if (WD.getMaterial(block).blocksMovement())
 				{
 					return;
 				}

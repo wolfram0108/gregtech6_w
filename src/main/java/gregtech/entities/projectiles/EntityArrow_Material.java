@@ -109,7 +109,7 @@ public class EntityArrow_Material extends EntityProjectile {
 		
 		Block tBlock = WD.block(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 		
-		if (tBlock.getMaterial() != Material.air) {
+		if (WD.getMaterial(tBlock) != Material.air) {
 			tBlock.setBlockBoundsBasedOnState(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 			AxisAlignedBB axisalignedbb = tBlock.getCollisionBoundingBoxFromPool(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 			if (axisalignedbb != null && axisalignedbb.isVecInside(Vec3.createVectorHelper(getX(), getY(), getZ()))) inGround = T;
@@ -272,7 +272,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					arrowShake = 7;
 					setIsCritical(false);
 					
-					if (mHitBlock.getMaterial() != Material.air) mHitBlock.onEntityCollidedWithBlock(level(), mHitBlockX, mHitBlockY, mHitBlockZ, this);
+					if (WD.getMaterial(mHitBlock) != Material.air) mHitBlock.onEntityCollidedWithBlock(level(), mHitBlockX, mHitBlockY, mHitBlockZ, this);
 					
 					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
 					

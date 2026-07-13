@@ -108,7 +108,7 @@ public class GT_Tool_Screwdriver extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_screwdriver.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock.getMaterial() == Material.circuits;
+		return TOOL_screwdriver.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || WD.getMaterial(aBlock) == Material.circuits;
 	}
 	
 	@Override

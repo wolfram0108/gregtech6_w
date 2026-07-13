@@ -100,7 +100,7 @@ public class GT_Tool_MiningDrill_LV extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		String tTool = aBlock.getHarvestTool(aMetaData);
-		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_pickaxe) || tTool.equalsIgnoreCase(TOOL_shovel))) || aBlock instanceof BlockSilverfish || aBlock.getMaterial() == Material.rock || aBlock.getMaterial() == Material.iron || aBlock.getMaterial() == Material.anvil || aBlock.getMaterial() == Material.sand || aBlock.getMaterial() == Material.grass || aBlock.getMaterial() == Material.ground || aBlock.getMaterial() == Material.snow || aBlock.getMaterial() == Material.craftedSnow || aBlock.getMaterial() == Material.clay || aBlock.getMaterial() == Material.glass || aBlock.getMaterial() == Material.packedIce || aBlock.getMaterial() == Material.ice || aBlock == Blocks.FLOWER_POT;
+		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_pickaxe) || tTool.equalsIgnoreCase(TOOL_shovel))) || aBlock instanceof BlockSilverfish || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.iron || WD.getMaterial(aBlock) == Material.anvil || WD.getMaterial(aBlock) == Material.sand || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground || WD.getMaterial(aBlock) == Material.snow || WD.getMaterial(aBlock) == Material.craftedSnow || WD.getMaterial(aBlock) == Material.clay || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.packedIce || WD.getMaterial(aBlock) == Material.ice || aBlock == Blocks.FLOWER_POT;
 	}
 	
 	@Override

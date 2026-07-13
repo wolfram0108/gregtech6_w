@@ -130,7 +130,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 					// Burn whatever Block is in front of the Burning Box, if it is flammable.
 					WD.burn(level, getOffset(mFacing, 1), T, T);
 					// Check for Air, because Fire needs Oxygen.
-					if (!WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
+					if (!WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !WD.getMaterial(getBlockAtSide(mFacing)).isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing))) {
 						// Find and apply fitting Recipe.
 						Recipe tRecipe = mRecipes.findRecipe(this, mLastRecipe, T, Long.MAX_VALUE, NI, mTank.AS_ARRAY, ZL_IS);
 						if (tRecipe != null && tRecipe.isRecipeInputEqual(T, F, mTank.AS_ARRAY, ZL_IS)) {
@@ -247,7 +247,7 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 	@Override public Collection<TagData> getEnergyTypes(byte aSide) {return mEnergyTypeEmitted.AS_LIST;}
 	
 	@Override public boolean getStateRunningPassively() {return mBurning;}
-	@Override public boolean getStateRunningPossible() {return mBurning || (mTank.has() && !WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !getBlockAtSide(mFacing).getMaterial().isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
+	@Override public boolean getStateRunningPossible() {return mBurning || (mTank.has() && !WD.hasCollide(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)) && !WD.getMaterial(getBlockAtSide(mFacing)).isLiquid() && WD.oxygen(level, getOffsetX(mFacing), getOffsetY(mFacing), getOffsetZ(mFacing)));}
 	@Override public boolean getStateRunningActively() {return mBurning;}
 	
 	@Override public float getBlockHardness() {return mBurning ? super.getBlockHardness() * 16 : super.getBlockHardness();}

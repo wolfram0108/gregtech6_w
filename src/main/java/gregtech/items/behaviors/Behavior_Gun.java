@@ -203,7 +203,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=2000;
 				continue;
 			}
-			if (aBlock == Blocks.WHITE_WOOL || aBlock.getMaterial() == Material.carpet) {
+			if (aBlock == Blocks.WHITE_WOOL || WD.getMaterial(aBlock) == Material.carpet) {
 				if (tFireAspect > 1) {
 					WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 					WD.fire(aPlayer.level(), aCoord, F);
@@ -212,7 +212,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=4000;
 				continue;
 			}
-			if (aBlock.getMaterial() == Material.glass || aBlock == Blocks.ICE || aBlock == Blocks.REDSTONE_LAMP || aBlock == Blocks.REDSTONE_LAMP) {
+			if (WD.getMaterial(aBlock) == Material.glass || aBlock == Blocks.ICE || aBlock == Blocks.REDSTONE_LAMP || aBlock == Blocks.REDSTONE_LAMP) {
 				OreDictItemData tData = OM.anydata(ST.make(aBlock, 1, aMeta));
 				for (OreDictMaterialStack tMaterial : tData.getAllMaterialStacks()) {
 					long tAmount = tMaterial.mAmount / OP.scrapGt.mAmount;
@@ -225,7 +225,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=2000;
 				continue;
 			}
-			if (aBlock instanceof BlockFence || aBlock instanceof BlockFenceGate || aBlock == Blocks.COBWEB || aBlock == Blocks.SPAWNER || aBlock instanceof BlockPane || aBlock instanceof BlockRail || aBlock instanceof BlockTorch || aBlock instanceof BlockBaseBars || aBlock instanceof BlockBaseSpike || aBlock.getMaterial() == Material.cactus || aBlock.getMaterial() == Material.fire || aBlock.getMaterial() == Material.air || aBlock.getMaterial() == Material.cloth || aBlock.getMaterial() == Material.leaves || aBlock.getMaterial() == Material.plants || aBlock.getMaterial() == Material.vine) {
+			if (aBlock instanceof BlockFence || aBlock instanceof BlockFenceGate || aBlock == Blocks.COBWEB || aBlock == Blocks.SPAWNER || aBlock instanceof BlockPane || aBlock instanceof BlockRail || aBlock instanceof BlockTorch || aBlock instanceof BlockBaseBars || aBlock instanceof BlockBaseSpike || WD.getMaterial(aBlock) == Material.cactus || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.air || WD.getMaterial(aBlock) == Material.cloth || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.vine) {
 				// Just ignore or assume the Player shot through them.
 				tPower-=200;
 				continue;

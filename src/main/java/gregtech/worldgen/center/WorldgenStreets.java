@@ -366,7 +366,7 @@ public class WorldgenStreets extends WorldgenObject {
 				
 				for (int tOpaqueCount = 0, i = -16; i < 16; i++) for (int j = 0; j < 16; j++) {
 					Block tBlock = WD.block(aWorld, i, mHeight+9, aMinZ+j);
-					if (tBlock.getMaterial().isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && tBlock.getMaterial() != Material.wood && !tBlock.isWood(aWorld, i, mHeight+9, aMinZ+j) && !tBlock.isLeaves(aWorld, i, mHeight+9, aMinZ+j))) {
+					if (WD.getMaterial(tBlock).isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && WD.getMaterial(tBlock) != Material.wood && !tBlock.isWood(aWorld, i, mHeight+9, aMinZ+j) && !tBlock.isLeaves(aWorld, i, mHeight+9, aMinZ+j))) {
 						if (tOpaqueCount++ > 128) {
 							return generateRoadX(aWorld, aMinZ, F, F, T, F, F);
 						}
@@ -393,7 +393,7 @@ public class WorldgenStreets extends WorldgenObject {
 				
 				for (int tOpaqueCount = 0, i = -16; i < 16; i++) for (int j = 0; j < 16; j++) {
 					Block tBlock = WD.block(aWorld, aMinX+j, mHeight+9, i);
-					if (tBlock.getMaterial().isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && tBlock.getMaterial() != Material.wood && !tBlock.isWood(aWorld, aMinX+j, mHeight+9, i) && !tBlock.isLeaves(aWorld, aMinX+j, mHeight+9, i))) {
+					if (WD.getMaterial(tBlock).isLiquid() || WD.anywater(tBlock) || (WD.opq(tBlock) && WD.getMaterial(tBlock) != Material.wood && !tBlock.isWood(aWorld, aMinX+j, mHeight+9, i) && !tBlock.isLeaves(aWorld, aMinX+j, mHeight+9, i))) {
 						if (tOpaqueCount++ > 128) {
 							return generateRoadZ(aWorld, aMinX, F, F, T, F, F);
 						}
@@ -521,10 +521,10 @@ public class WorldgenStreets extends WorldgenObject {
 			WD.set(aWorld,  12, mHeight+3, aMinZ+14, Blocks.GLOWSTONE, 0, 0);
 		}
 		if (aSideWalls) {
-			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld,  13, mHeight+4, aMinZ+i, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld,  12, mHeight+k, aMinZ+j, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
-			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld, -14, mHeight+4, aMinZ+i, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, -13, mHeight+k, aMinZ+j, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
-			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld,  13, mHeight+4, aMinZ+i, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld,  12, mHeight+k, aMinZ+j, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
-			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld, -14, mHeight+4, aMinZ+i, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, -13, mHeight+k, aMinZ+j, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld,  13, mHeight+4, aMinZ+i, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld,  12, mHeight+k, aMinZ+j, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld, -14, mHeight+4, aMinZ+i, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, -13, mHeight+k, aMinZ+j, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld,  13, mHeight+4, aMinZ+i, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld,  12, mHeight+k, aMinZ+j, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld, -14, mHeight+4, aMinZ+i, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, -13, mHeight+k, aMinZ+j, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
 		}
 		
 		if (aMinZ >> 9 != (aMinZ-16) >> 9) {
@@ -758,10 +758,10 @@ public class WorldgenStreets extends WorldgenObject {
 			WD.set(aWorld, aMinX+14, mHeight+3,  12, Blocks.GLOWSTONE, 0, 0);
 		}
 		if (aSideWalls) {
-			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4,  13, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k,  12, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
-			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4, -14, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k, -13, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
-			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4,  13, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k,  12, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
-			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4, -14, T); if (tBlock.getMaterial().isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k, -13, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4,  13, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k,  12, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  0; i <  8; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4, -14, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 0; j <  8; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k, -13, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4,  13, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k,  12, WD.even(0, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
+			for (int i =  8; i < 16; i++) {Block tBlock = WD.block(aWorld, aMinX+i, mHeight+4, -14, T); if (WD.getMaterial(tBlock).isLiquid() || WD.opq(tBlock)) {for (int j = 8; j < 16; j++) for (int k = 2; k < 6; k++) WD.set(aWorld, aMinX+j, mHeight+k, -13, WD.even(1, k, j)?BlocksGT.CFoam:BlocksGT.Concrete, DYE_INDEX_LightGray, 0, T); break;}}
 		}
 		
 		if (aMinX >> 9 != (aMinX-16) >> 9) {

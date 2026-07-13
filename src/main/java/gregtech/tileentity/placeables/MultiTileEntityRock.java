@@ -225,7 +225,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (WD.dimTROPIC(level))              {mTexture = BlockTextureCopied.get(BlocksGT.Basalt); return 1;}
 		
 		if (BIOMES_SPACE.contains(getBiome().biomeName)) {
-			if (tBlock.getMaterial() == Material.rock) {mTexture = BlockTextureCopied.get(tBlock, getMetaDataAtSide(SIDE_BOTTOM)); return 1;}
+			if (WD.getMaterial(tBlock) == Material.rock) {mTexture = BlockTextureCopied.get(tBlock, getMetaDataAtSide(SIDE_BOTTOM)); return 1;}
 			mTexture = BlockTextureCopied.get(Blocks.OBSIDIAN); return 1;
 		}
 		mTexture = BlockTextureCopied.get(Blocks.STONE);

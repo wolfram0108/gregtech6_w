@@ -80,7 +80,7 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
-		if (aBlock.getMaterial() == Material.leaves) aEvent.dropChance = Math.min(1.0F, Math.max(aEvent.dropChance, (UT.Code.bind4(aStack.getItem().getHarvestLevel(aStack, ""))+1) * 0.2F));
+		if (WD.getMaterial(aBlock) == Material.leaves) aEvent.dropChance = Math.min(1.0F, Math.max(aEvent.dropChance, (UT.Code.bind4(aStack.getItem().getHarvestLevel(aStack, ""))+1) * 0.2F));
 		if (aBlock == Blocks.OAK_LEAVES) {
 			aDrops.clear();
 			if ((aMetaData & 3) == 0 && RNGSUS.nextInt(9) <= aFortune * 2) aDrops.add(IL.Food_Apple_Red.get(1)); else aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, aMetaData & 3));
@@ -119,7 +119,7 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return "grafter".equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock == Blocks.VINE || aBlock.getMaterial() == Material.leaves || IL.TF_Mazehedge.equal(aBlock);
+		return "grafter".equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock == Blocks.VINE || WD.getMaterial(aBlock) == Material.leaves || IL.TF_Mazehedge.equal(aBlock);
 	}
 	
 	@Override

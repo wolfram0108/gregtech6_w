@@ -52,7 +52,7 @@ public class WorldgenNetherCrystals extends WorldgenObject {
 		
 		while (WD.air(aWorld, aX, ++aY, aZ) && aY < aWorld.getHeight());
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
-		if (tBlock == Blocks.NETHER_BRICKS || tBlock.getMaterial() != Material.rock) return F;
+		if (tBlock == Blocks.NETHER_BRICKS || WD.getMaterial(tBlock) != Material.rock) return F;
 		if (--aY -10 < WD.waterLevel(aWorld)) return F;
 		
 		WD.set(aWorld, aX, aY, aZ, BlocksGT.CrystalOres, aMeta, 2);

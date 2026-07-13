@@ -103,7 +103,7 @@ public class GT_Tool_Scissors extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		String tTool = aBlock.getHarvestTool(aMetaData);
-		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_scissors) || tTool.equalsIgnoreCase(TOOL_shears))) || aBlock.getMaterial() == Material.cloth || aBlock.getMaterial() == Material.web || aBlock == Blocks.VINE || IL.TF_Mazehedge.equal(aBlock) || IL.EBXL_Vines.equal(aBlock) || IL.BoP_Vines.equal(aBlock);
+		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_scissors) || tTool.equalsIgnoreCase(TOOL_shears))) || WD.getMaterial(aBlock) == Material.cloth || WD.getMaterial(aBlock) == Material.web || aBlock == Blocks.VINE || IL.TF_Mazehedge.equal(aBlock) || IL.EBXL_Vines.equal(aBlock) || IL.BoP_Vines.equal(aBlock);
 	}
 	
 	@Override

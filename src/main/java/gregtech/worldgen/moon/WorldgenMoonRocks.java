@@ -53,7 +53,7 @@ public class WorldgenMoonRocks extends WorldgenObject {
 			int tX = aMinX + aRandom.nextInt(16), tZ = aMinZ + aRandom.nextInt(16);
 			for (int tY = aWorld.getHeight()-50; tY > 0; tY--) {
 				Block tContact = WD.block(aChunk, tX&15, tY, tZ&15);
-				if (tContact.getMaterial().isLiquid()) break;
+				if (WD.getMaterial(tContact).isLiquid()) break;
 				if (tContact == NB || tContact.isAir(aWorld, tX, tY, tZ)) continue;
 				if (!tContact.isOpaqueCube()) continue;
 				if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(6)==0?ST.save(NBT_VALUE, (aRandom.nextInt(4)==0?OP.oreRaw:OP.rockGt).mat(MT.MeteoricIron, 1)):null, F, T);

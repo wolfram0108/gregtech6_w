@@ -66,7 +66,7 @@ public class GT_Tool_Plunger extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_plunger.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock.getMaterial() == Material.dragonEgg;
+		return TOOL_plunger.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || WD.getMaterial(aBlock) == Material.dragonEgg;
 	}
 	
 	@Override

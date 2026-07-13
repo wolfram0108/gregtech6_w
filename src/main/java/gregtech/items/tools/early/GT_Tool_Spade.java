@@ -91,7 +91,7 @@ public class GT_Tool_Spade extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		if (BlocksGT.harvestableSpade.contains(aBlock)) return T;
-		return (TOOL_shovel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) && aBlock.getMaterial() != Material.sand && aBlock.getMaterial() != Material.snow && aBlock.getMaterial() != Material.craftedSnow) || aBlock.getMaterial() == Material.fire || aBlock.getMaterial() == Material.grass || aBlock.getMaterial() == Material.ground || aBlock.getMaterial() == Material.clay;
+		return (TOOL_shovel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) && WD.getMaterial(aBlock) != Material.sand && WD.getMaterial(aBlock) != Material.snow && WD.getMaterial(aBlock) != Material.craftedSnow) || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground || WD.getMaterial(aBlock) == Material.clay;
 	}
 	
 	@Override

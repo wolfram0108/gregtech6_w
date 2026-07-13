@@ -265,7 +265,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 						mWorld.spawnParticle("explode", (d0 + explosionX) / 2, (d1 + explosionY) / 2, (d2 + explosionZ) / 2, d3, d4, d5);
 						mWorld.spawnParticle("smoke", d0, d1, d2, d3, d4, d5);
 					}
-					if (tBlock.getMaterial() != Material.air) {
+					if (WD.getMaterial(tBlock) != Material.air) {
 						byte tMeta = WD.meta(mWorld, i, j, k);
 						tBlock.onBlockExploded(mWorld, i, j, k, this);
 						if (tBlock.canDropFromExplosion(this)) tBlock.dropBlockAsItemWithChance(mWorld, i, j, k, tMeta, 1, mFortune);

@@ -95,7 +95,7 @@ public class WorldgenHives extends WorldgenObject {
 			return (tCount == 5 && placeHive(tRegistry, aDimType, aWorld, tX, tY, tZ, DYE_INT_LightGray   ,   500, aRandom)) || rResult;
 		case DIM_AETHER:
 			tY = 16+aRandom.nextInt(96);
-			if (WD.block(aWorld, tX, tY, tZ).getMaterial() == Material.ground) return rResult;
+			if (WD.getMaterial(WD.block(aWorld, tX, tY, tZ)) == Material.ground) return rResult;
 			for (byte tSide : ALL_SIDES_VALID) {
 				if (WD.liquid(aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide])) return rResult;
 				if (WD.opq   (aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide], F, T)) tCount++;
@@ -126,7 +126,7 @@ public class WorldgenHives extends WorldgenObject {
 		case DIM_OVERWORLD: case DIM_ALFHEIM: case DIM_TROPICS: case DIM_UNKNOWN: case DIM_TWILIGHT: case DIM_A97:
 			for (tY = 8; tY < 28; tY++) {
 				Block tBlock = WD.block(aWorld, tX, tY, tZ);
-				if (tBlock.getMaterial() == Material.rock && WD.opq(tBlock) && WD.stone(tBlock, WD.meta(aWorld, tX, tY, tZ))) {
+				if (WD.getMaterial(tBlock) == Material.rock && WD.opq(tBlock) && WD.stone(tBlock, WD.meta(aWorld, tX, tY, tZ))) {
 					for (byte tSide : ALL_SIDES_VALID) {
 						if (WD.liquid(aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide])) {tCount = 0; break;}
 						if (WD.opq   (aWorld, tX+OFFX[tSide], tY+OFFY[tSide], tZ+OFFZ[tSide], F, T)) tCount++;
@@ -141,9 +141,9 @@ public class WorldgenHives extends WorldgenObject {
 			
 			for (tY = aWorld.provider.hasNoSky ? 80 : aWorld.getHeight()-50; tY > 2; tY--) {
 				Block tContact = WD.block(aWorld, tX, tY, tZ);
-				if (tContact.getMaterial().isLiquid()) return rResult;
+				if (WD.getMaterial(tContact).isLiquid()) return rResult;
 				if (tContact instanceof BlockStones && WD.meta(aWorld, tX, tY, tZ) != 0) return rResult;
-				if (!tContact.isOpaqueCube() || tContact.isLeaves(aWorld, tX, tY, tZ) || tContact.isWood(aWorld, tX, tY, tZ) || tContact.getMaterial() == Material.ice || tContact.getMaterial() == Material.wood || tContact.getMaterial() == Material.leaves) continue;
+				if (!tContact.isOpaqueCube() || tContact.isLeaves(aWorld, tX, tY, tZ) || tContact.isWood(aWorld, tX, tY, tZ) || WD.getMaterial(tContact) == Material.ice || WD.getMaterial(tContact) == Material.wood || WD.getMaterial(tContact) == Material.leaves) continue;
 				
 				for (byte tSide : ALL_SIDES_HORIZONTAL_DOWN) {
 					Block tBlock = WD.block(aWorld, tX+OFFX[tSide], tY-1+OFFY[tSide], tZ+OFFZ[tSide]);
@@ -174,13 +174,13 @@ public class WorldgenHives extends WorldgenObject {
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Pink      ,   800, aRandom) || rResult;
 					if (tContact == Blocks.SAND && WD.meta(aWorld, tX, tY, tZ) == 1)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Red       ,   900, aRandom) || rResult;
-					if (tContact == Blocks.SANDSTONE || tContact.getMaterial() == Material.sand)
+					if (tContact == Blocks.SANDSTONE || WD.getMaterial(tContact) == Material.sand)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Yellow    ,   900, aRandom) || rResult;
-					if (tContact == Blocks.GRAVEL || tContact.getMaterial() == Material.rock)
+					if (tContact == Blocks.GRAVEL || WD.getMaterial(tContact) == Material.rock)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_LightGray ,   500, aRandom) || rResult;
-					if (tContact == Blocks.GRASS_BLOCK || tContact.getMaterial() == Material.grass)
+					if (tContact == Blocks.GRASS_BLOCK || WD.getMaterial(tContact) == Material.grass)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, 0xffdd99          ,     0, aRandom) || rResult;
-					if (tContact == Blocks.DIRT || tContact.getMaterial() == Material.ground)
+					if (tContact == Blocks.DIRT || WD.getMaterial(tContact) == Material.ground)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Brown     ,     0, aRandom) || rResult;
 					// Lets make the magical Bumbles the Default if all else fails, so technically they are obtainable, even though I literally just made sure they can't spawn under the big Mushrooms. XD
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Purple    ,   200, aRandom) || rResult;

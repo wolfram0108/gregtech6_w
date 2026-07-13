@@ -142,7 +142,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 			int tX = aX+OFFX[tSide], tZ = aZ+OFFZ[tSide];
 			int tOtherDecay = quantaPerBlock - getQuantaValue(aWorld, tX, aY, tZ);
 			if (tOtherDecay >= quantaPerBlock) {
-				if (!WD.block(aWorld, tX, aY, tZ).getMaterial().blocksMovement()) {
+				if (!WD.getMaterial(WD.block(aWorld, tX, aY, tZ)).blocksMovement()) {
 					tOtherDecay = quantaPerBlock - getQuantaValue(aWorld, tX, aY-1, tZ);
 					if (tOtherDecay >= 0) {
 						int tPower = tOtherDecay - (tDecay - quantaPerBlock);
@@ -182,7 +182,7 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return T;
-		if (aBlock.getMaterial() == Material.water || WD.visOpq(aBlock)) return F;
+		if (WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return F;
 		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
@@ -203,8 +203,8 @@ public abstract class BlockWaterlike extends BlockFluidClassic implements IBlock
 	
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
 	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
-	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
-	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
+	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
+	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
 	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta == 0;}
 	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return !mEffects.isEmpty();}
 	public boolean isNormalCube() {return F;}

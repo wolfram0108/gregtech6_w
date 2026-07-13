@@ -176,13 +176,13 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					}
 				// Place Rock if on Opaque Surface.
 				} else if (WD.easyRep(aWorld, tX, tY, tZ, aBlock)) {
-					if (tCanPlaceRocks && !aBlock.getMaterial().isLiquid() && aRandom.nextInt(128) == 0) tRegistry.mBlock.placeBlock(aWorld, tX, tY, tZ, SIDE_UNKNOWN, (short)32757, ST.save(NBT_VALUE, OP.rockGt.mat(aRandom.nextBoolean()&&tLastOre!=null?tLastOre.mTargetCrushing.mMaterial:tLastRock, 1)), F, T);
+					if (tCanPlaceRocks && !WD.getMaterial(aBlock).isLiquid() && aRandom.nextInt(128) == 0) tRegistry.mBlock.placeBlock(aWorld, tX, tY, tZ, SIDE_UNKNOWN, (short)32757, ST.save(NBT_VALUE, OP.rockGt.mat(aRandom.nextBoolean()&&tLastOre!=null?tLastOre.mTargetCrushing.mMaterial:tLastRock, 1)), F, T);
 					tLastOre = null;
 					tCanPlaceRocks = F;
 				// Just check if the last Block was Opaque and of the right kind of Material.
 				} else {
 					if (aBlock.isOpaqueCube()) {
-						tCanPlaceRocks = (aBlock.getMaterial() == Material.clay || aBlock.getMaterial() == Material.sand || aBlock.getMaterial() == Material.grass || aBlock.getMaterial() == Material.ground);
+						tCanPlaceRocks = (WD.getMaterial(aBlock) == Material.clay || WD.getMaterial(aBlock) == Material.sand || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground);
 					} else {
 						tLastOre = null;
 						tCanPlaceRocks = F;
