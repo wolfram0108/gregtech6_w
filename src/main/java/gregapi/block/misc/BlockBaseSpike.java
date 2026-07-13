@@ -157,13 +157,13 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	// @Override
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
 		switch(WD.meta(aWorld, aX, aY, aZ) & 7) {
-		case SIDE_X_POS: return AABB.getBoundingBox(aX+0.4, aY    , aZ    , aX+1  , aY+1  , aZ+1  );
-		case SIDE_Y_POS: return AABB.getBoundingBox(aX    , aY+0.4, aZ    , aX+1  , aY+1  , aZ+1  );
-		case SIDE_Z_POS: return AABB.getBoundingBox(aX    , aY    , aZ+0.4, aX+1  , aY+1  , aZ+1  );
-		case SIDE_X_NEG: return AABB.getBoundingBox(aX    , aY    , aZ    , aX+0.6, aY+1  , aZ+1  );
-		case SIDE_Y_NEG: return AABB.getBoundingBox(aX    , aY    , aZ    , aX+1  , aY+0.6, aZ+1  );
-		case SIDE_Z_NEG: return AABB.getBoundingBox(aX    , aY    , aZ    , aX+1  , aY+1  , aZ+0.6);
-		default: return AABB.getBoundingBox(aX+0.125, aY+0.125, aZ+0.125, aX+0.875, aY+0.875, aZ+0.875);
+		case SIDE_X_POS: return new AABB(aX+0.4, aY    , aZ    , aX+1  , aY+1  , aZ+1  );
+		case SIDE_Y_POS: return new AABB(aX    , aY+0.4, aZ    , aX+1  , aY+1  , aZ+1  );
+		case SIDE_Z_POS: return new AABB(aX    , aY    , aZ+0.4, aX+1  , aY+1  , aZ+1  );
+		case SIDE_X_NEG: return new AABB(aX    , aY    , aZ    , aX+0.6, aY+1  , aZ+1  );
+		case SIDE_Y_NEG: return new AABB(aX    , aY    , aZ    , aX+1  , aY+0.6, aZ+1  );
+		case SIDE_Z_NEG: return new AABB(aX    , aY    , aZ    , aX+1  , aY+1  , aZ+0.6);
+		default: return new AABB(aX+0.125, aY+0.125, aZ+0.125, aX+0.875, aY+0.875, aZ+0.875);
 		}
 	}
 	
@@ -173,7 +173,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		super.addCollisionBoxesToList(aWorld, aX, aY, aZ, aAABB, aList, aEntity);
 	}
 	
-	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+1, aZ+1);}
+	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
 	public IIcon getIcon(int aSide, int aMeta) {return Blocks.IRON_BARS.getIcon(2, 0);}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}

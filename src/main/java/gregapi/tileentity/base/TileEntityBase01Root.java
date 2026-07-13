@@ -969,10 +969,10 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	// Makes a Bounding Box without having to constantly specify the Offset Coordinates.
 	
-	public AABB box(double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {return AABB.getBoundingBox(getBlockPos().getX()+aMinX, getBlockPos().getY()+aMinY, getBlockPos().getZ()+aMinZ, getBlockPos().getX()+aMaxX, getBlockPos().getY()+aMaxY, getBlockPos().getZ()+aMaxZ);}
-	public AABB box(double[] aBox) {return AABB.getBoundingBox(getBlockPos().getX()+aBox[0], getBlockPos().getY()+aBox[1], getBlockPos().getZ()+aBox[2], getBlockPos().getX()+aBox[3], getBlockPos().getY()+aBox[4], getBlockPos().getZ()+aBox[5]);}
-	public AABB box(float[] aBox) {return AABB.getBoundingBox(getBlockPos().getX()+aBox[0], getBlockPos().getY()+aBox[1], getBlockPos().getZ()+aBox[2], getBlockPos().getX()+aBox[3], getBlockPos().getY()+aBox[4], getBlockPos().getZ()+aBox[5]);}
-	public AABB box() {return AABB.getBoundingBox(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), getBlockPos().getX()+1, getBlockPos().getY()+1, getBlockPos().getZ()+1);}
+	public AABB box(double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {return new AABB(getBlockPos().getX()+aMinX, getBlockPos().getY()+aMinY, getBlockPos().getZ()+aMinZ, getBlockPos().getX()+aMaxX, getBlockPos().getY()+aMaxY, getBlockPos().getZ()+aMaxZ);}
+	public AABB box(double[] aBox) {return new AABB(getBlockPos().getX()+aBox[0], getBlockPos().getY()+aBox[1], getBlockPos().getZ()+aBox[2], getBlockPos().getX()+aBox[3], getBlockPos().getY()+aBox[4], getBlockPos().getZ()+aBox[5]);}
+	public AABB box(float[] aBox) {return new AABB(getBlockPos().getX()+aBox[0], getBlockPos().getY()+aBox[1], getBlockPos().getZ()+aBox[2], getBlockPos().getX()+aBox[3], getBlockPos().getY()+aBox[4], getBlockPos().getZ()+aBox[5]);}
+	public AABB box() {return new AABB(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), getBlockPos().getX()+1, getBlockPos().getY()+1, getBlockPos().getZ()+1);}
 	
 	public boolean box(AABB aAABB, List<AABB> aList, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {
 		AABB tBox = box(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);

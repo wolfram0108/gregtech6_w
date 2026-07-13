@@ -234,7 +234,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		boolean flag = (aMetaData & 8) != 0;
 		boolean flag1 = F;
 		@SuppressWarnings("unchecked")
-		List<EntityMinecart> list = aWorld.getEntitiesWithinAABB(EntityMinecart.class, AABB.getBoundingBox(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
+		List<EntityMinecart> list = aWorld.getEntitiesWithinAABB(EntityMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
 		
 		if (!list.isEmpty()) flag1 = T;
 		if (flag1 && !flag) {
@@ -265,10 +265,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public int getComparatorInputOverride(Level aWorld, int aX, int aY, int aZ, int aSide) {
 		if (mDetectorRail && (WD.meta(aWorld, aX, aY, aZ) & 8) > 0) {
 			@SuppressWarnings("unchecked")
-			List<EntityMinecartCommandBlock> list = aWorld.getEntitiesWithinAABB(EntityMinecartCommandBlock.class, AABB.getBoundingBox(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
+			List<EntityMinecartCommandBlock> list = aWorld.getEntitiesWithinAABB(EntityMinecartCommandBlock.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
 			if (list.size() > 0) return list.get(0).func_145822_e().func_145760_g();
 			@SuppressWarnings("unchecked")
-			List<EntityMinecart> list1 = aWorld.selectEntitiesWithinAABB(EntityMinecart.class, AABB.getBoundingBox(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875), IEntitySelector.selectInventories);
+			List<EntityMinecart> list1 = aWorld.selectEntitiesWithinAABB(EntityMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875), IEntitySelector.selectInventories);
 			if (list1.size() > 0) return AbstractContainerMenu.calcRedstoneFromInventory((Container)list1.get(0));
 		}
 		return 0;

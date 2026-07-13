@@ -72,10 +72,10 @@ public final class DelegatorTileEntity<T> extends WorldAndCoords {
 		mSideOfTileEntity = aSideOfTileEntity;
 	}
 	
-	public AABB box(double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {return AABB.getBoundingBox(mX+aMinX, mY+aMinY, mZ+aMinZ, mX+aMaxX, mY+aMaxY, mZ+aMaxZ);}
-	public AABB box(double[] aBox) {return AABB.getBoundingBox(mX+aBox[0], mY+aBox[1], mZ+aBox[2], mX+aBox[3], mY+aBox[4], mZ+aBox[5]);}
-	public AABB box(float[] aBox) {return AABB.getBoundingBox(mX+aBox[0], mY+aBox[1], mZ+aBox[2], mX+aBox[3], mY+aBox[4], mZ+aBox[5]);}
-	public AABB box() {return AABB.getBoundingBox(mX, mY, mZ, mX+1, mY+1, mZ+1);}
+	public AABB box(double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ) {return new AABB(mX+aMinX, mY+aMinY, mZ+aMinZ, mX+aMaxX, mY+aMaxY, mZ+aMaxZ);}
+	public AABB box(double[] aBox) {return new AABB(mX+aBox[0], mY+aBox[1], mZ+aBox[2], mX+aBox[3], mY+aBox[4], mZ+aBox[5]);}
+	public AABB box(float[] aBox) {return new AABB(mX+aBox[0], mY+aBox[1], mZ+aBox[2], mX+aBox[3], mY+aBox[4], mZ+aBox[5]);}
+	public AABB box() {return new AABB(mX, mY, mZ, mX+1, mY+1, mZ+1);}
 	
 	public Direction getForgeSideOfTileEntity() {return FORGE_DIR[mSideOfTileEntity];}
 	public Block getBlock() {return WD.block(mWorld, mX, mY, mZ);}

@@ -131,7 +131,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.block.mDefaultStackSize);}
 	@Override public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return aStack;}
 	
-	public boolean checkNoEntityCollision(Level aWorld, int aX, int aY, int aZ, byte aMeta, Entity aExceptThisOne) {return aWorld.checkNoEntityCollision(AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+1, aZ+1), aExceptThisOne);}
+	public boolean checkNoEntityCollision(Level aWorld, int aX, int aY, int aZ, byte aMeta, Entity aExceptThisOne) {return aWorld.checkNoEntityCollision(new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1), aExceptThisOne);}
 	public boolean isSideSolid(int aMeta, byte aSide) {return T;}
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {/**/}
 	public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {/**/}

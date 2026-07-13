@@ -117,7 +117,7 @@ public class ExplosionGT extends Explosion {
 		affectedBlockPositions.addAll(tPositions);
 		tSize *= 2;
 		@SuppressWarnings("rawtypes")
-		List tEntities = mWorld.getEntitiesWithinAABBExcludingEntity(exploder, AABB.getBoundingBox(UT.Code.roundDown(explosionX - tSize - 1), UT.Code.roundDown(explosionY - tSize - 1), UT.Code.roundDown(explosionZ - tSize - 1), UT.Code.roundDown(explosionX + tSize + 1), UT.Code.roundDown(explosionY + tSize + 1), UT.Code.roundDown(explosionZ + tSize + 1)));
+		List tEntities = mWorld.getEntitiesWithinAABBExcludingEntity(exploder, new AABB(UT.Code.roundDown(explosionX - tSize - 1), UT.Code.roundDown(explosionY - tSize - 1), UT.Code.roundDown(explosionZ - tSize - 1), UT.Code.roundDown(explosionX + tSize + 1), UT.Code.roundDown(explosionY + tSize + 1), UT.Code.roundDown(explosionZ + tSize + 1)));
 		net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tEntities, tSize);
 		Vec3 tVec3 = Vec3.createVectorHelper(explosionX, explosionY, explosionZ);
 		for (int i1 = 0; i1 < tEntities.size(); ++i1) {

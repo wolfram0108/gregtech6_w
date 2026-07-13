@@ -110,8 +110,8 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		return aStack;
 	}
 	
-	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
-	public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
+	public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+0.015625F, aZ+1);}
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(0, 0, 0, 1, 0.015625F, 1);}
 	
 	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}

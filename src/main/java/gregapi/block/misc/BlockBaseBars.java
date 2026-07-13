@@ -160,15 +160,15 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
 		for (Object tEntity : aWorld.loadedEntityList) if (tEntity instanceof Player) {
 			if (ST.equal(((Player)tEntity).getMainHandItem(), this) && ((Player)tEntity).distanceToSqr(aX, aY, aZ) <= 25) {
-				return  AABB.getBoundingBox(aX         , aY, aZ         , aX+1       , aY+1, aZ+1       );
+				return  new AABB(aX         , aY, aZ         , aX+1       , aY+1, aZ+1       );
 			}
 		}
 		switch (WD.meta(aWorld, aX, aY, aZ)) {
-		case  1: return AABB.getBoundingBox(aX         , aY, aZ         , aX+1       , aY+1, aZ+PX_P[ 1]);
-		case  2: return AABB.getBoundingBox(aX         , aY, aZ+PX_P[15], aX+1       , aY+1, aZ+1       );
-		case  4: return AABB.getBoundingBox(aX         , aY, aZ         , aX+PX_P[ 1], aY+1, aZ+1       );
-		case  8: return AABB.getBoundingBox(aX+PX_P[15], aY, aZ         , aX+1       , aY+1, aZ+1       );
-		default: return AABB.getBoundingBox(aX         , aY, aZ         , aX+1       , aY+1, aZ+1       );
+		case  1: return new AABB(aX         , aY, aZ         , aX+1       , aY+1, aZ+PX_P[ 1]);
+		case  2: return new AABB(aX         , aY, aZ+PX_P[15], aX+1       , aY+1, aZ+1       );
+		case  4: return new AABB(aX         , aY, aZ         , aX+PX_P[ 1], aY+1, aZ+1       );
+		case  8: return new AABB(aX+PX_P[15], aY, aZ         , aX+1       , aY+1, aZ+1       );
+		default: return new AABB(aX         , aY, aZ         , aX+1       , aY+1, aZ+1       );
 		}
 	}
 	
@@ -196,10 +196,10 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 		byte tMeta = WD.meta(aWorld, aX, aY, aZ);
 		AABB tBox;
 		// Z- = 1, Z+ = 2, X- = 4, X+ = 8
-		if ((tMeta & 1) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ         , aX+1       , aY+1, aZ+PX_P[ 2]); if (aAABB.intersects(tBox)) aList.add(tBox);}
-		if ((tMeta & 2) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ+PX_P[14], aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
-		if ((tMeta & 4) != 0) {tBox = AABB.getBoundingBox(aX         , aY, aZ         , aX+PX_P[ 2], aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
-		if ((tMeta & 8) != 0) {tBox = AABB.getBoundingBox(aX+PX_P[14], aY, aZ         , aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		if ((tMeta & 1) != 0) {tBox = new AABB(aX         , aY, aZ         , aX+1       , aY+1, aZ+PX_P[ 2]); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		if ((tMeta & 2) != 0) {tBox = new AABB(aX         , aY, aZ+PX_P[14], aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		if ((tMeta & 4) != 0) {tBox = new AABB(aX         , aY, aZ         , aX+PX_P[ 2], aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		if ((tMeta & 8) != 0) {tBox = new AABB(aX+PX_P[14], aY, aZ         , aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
 	}
 	
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}

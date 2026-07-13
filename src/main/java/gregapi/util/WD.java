@@ -122,7 +122,7 @@ public class WD {
 	public static ItemStack suck(Level aWorld, double aX, double aY, double aZ) {return suck(aWorld, aX, aY, aZ, 1, 1, 1);}
 	@SuppressWarnings("unchecked")
 	public static ItemStack suck(Level aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
-		for (ItemEntity tItem : (Iterable<ItemEntity>)aWorld.getEntitiesWithinAABB(ItemEntity.class, AABB.getBoundingBox(aX, aY, aZ, aX+aL, aY+aH, aZ+aW))) {
+		for (ItemEntity tItem : (Iterable<ItemEntity>)aWorld.getEntitiesWithinAABB(ItemEntity.class, new AABB(aX, aY, aZ, aX+aL, aY+aH, aZ+aW))) {
 			if (!tItem.isDead) {
 				aWorld.removeEntity(tItem);
 				ItemStack rStack = tItem.getEntityItem();
@@ -137,7 +137,7 @@ public class WD {
 	public static List<ItemStack> suckAll(Level aWorld, double aX, double aY, double aZ) {return suckAll(aWorld, aX, aY, aZ, 1, 1, 1);}
 	@SuppressWarnings("unchecked")
 	public static List<ItemStack> suckAll(Level aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
-		List<ItemEntity> tList = aWorld.getEntitiesWithinAABB(ItemEntity.class, AABB.getBoundingBox(aX, aY, aZ, aX+aL, aY+aH, aZ+aW));
+		List<ItemEntity> tList = aWorld.getEntitiesWithinAABB(ItemEntity.class, new AABB(aX, aY, aZ, aX+aL, aY+aH, aZ+aW));
 		if (tList.isEmpty()) return Collections.emptyList();
 		List<ItemStack> rOutput = ST.arraylist();
 		for (ItemEntity tItem : tList) {

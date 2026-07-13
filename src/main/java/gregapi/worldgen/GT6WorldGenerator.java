@@ -137,7 +137,7 @@ public class GT6WorldGenerator {
 				
 				// Kill off every single Item Entity that may have dropped during Worldgen.
 				// F6: было `(List<ItemEntity>)mWorld.getEntitiesWithinAABB(Class,AABB)` (удалённый Forge-метод)
-				// + `AABB.getBoundingBox(x1,y1,z1,x2,y2,z2)` (удалённая static-фабрика) + `Entity.setDead()`
+				// + `new AABB(x1,y1,z1,x2,y2,z2)` (удалённая static-фабрика) + `Entity.setDead()`
 				// (удалён). Реальные neo-эквиваленты: `EntityGetter.getEntitiesOfClass(Class,AABB)`
 				// (EntityGetter.java:50, уже без unchecked-каста), конструктор `AABB(double x6)` (AABB.java:23),
 				// `Entity.discard()` (Entity.java:409, `remove(RemovalReason.DISCARDED)`).
