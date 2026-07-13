@@ -131,3 +131,4 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\vazkii\botania\api\mana\IManaT
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\vazkii\botania\api\subtile\SubTileEntity.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\util\IIcon.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\texture\IIconRegister.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\RenderBlocks.java
