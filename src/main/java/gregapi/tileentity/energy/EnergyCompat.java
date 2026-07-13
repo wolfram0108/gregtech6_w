@@ -116,7 +116,7 @@ public class EnergyCompat {
 		if (BB_ENERGY &&  aTarget instanceof com.builtbroken.mc.api.energy.IEnergyBufferProvider && ((com.builtbroken.mc.api.energy.IEnergyBufferProvider)aTarget).getEnergyBuffer(FORGE_DIR[aSide]) != null) return T;
 		
 		if (IC_ENERGY) {
-			BlockEntity tConnected = (aTarget instanceof ic2.api.energy.tile.IEnergyTile || ic2.api.energy.EnergyNet.instance == null ? aTarget : ic2.api.energy.EnergyNet.instance.getTileEntity(aTarget.getWorldObj(), aTarget.getBlockPos().getX(), aTarget.getBlockPos().getY(), aTarget.getBlockPos().getZ()));
+			BlockEntity tConnected = (aTarget instanceof ic2.api.energy.tile.IEnergyTile || ic2.api.energy.EnergyNet.instance == null ? aTarget : ic2.api.energy.EnergyNet.instance.getTileEntity(aTarget.getLevel(), aTarget.getBlockPos().getX(), aTarget.getBlockPos().getY(), aTarget.getBlockPos().getZ()));
 			if (tConnected instanceof ic2.api.energy.tile.IEnergySink   && (aThis == null || ((ic2.api.energy.tile.IEnergySink  )tConnected).acceptsEnergyFrom(aThis, FORGE_DIR[aSide]))) return T;
 			if (tConnected instanceof ic2.api.energy.tile.IEnergySource && (aThis == null || ((ic2.api.energy.tile.IEnergySource)tConnected).emitsEnergyTo    (aThis, FORGE_DIR[aSide]))) return T;
 		}
@@ -129,7 +129,7 @@ public class EnergyCompat {
 	
 	public static boolean checkOverCharge(long aSize, BlockEntity aReceiver) {
 		if (aSize > VMAX[3]) {
-			Level tWorld = aReceiver.getWorldObj();
+			Level tWorld = aReceiver.getLevel();
 			WD.set(tWorld, aReceiver.getBlockPos().getX(), aReceiver.getBlockPos().getY(), aReceiver.getBlockPos().getZ(), NB, 0, 3);
 			tWorld.newExplosion(null, aReceiver.getBlockPos().getX()+0.5, aReceiver.getBlockPos().getY()+0.5, aReceiver.getBlockPos().getZ()+0.5, 5, F, T);
 			return T;
@@ -223,14 +223,14 @@ public class EnergyCompat {
 			
 			// IC2 Power at last, because special cases should always override the very "compatible" IC2 Stuff.
 			if (IC_ENERGY) {
-				BlockEntity tReceiver = (aReceiver instanceof ic2.api.energy.tile.IEnergyTile || ic2.api.energy.EnergyNet.instance == null ? aReceiver : ic2.api.energy.EnergyNet.instance.getTileEntity(aReceiver.getWorldObj(), aReceiver.getBlockPos().getX(), aReceiver.getBlockPos().getY(), aReceiver.getBlockPos().getZ()));
+				BlockEntity tReceiver = (aReceiver instanceof ic2.api.energy.tile.IEnergyTile || ic2.api.energy.EnergyNet.instance == null ? aReceiver : ic2.api.energy.EnergyNet.instance.getTileEntity(aReceiver.getLevel(), aReceiver.getBlockPos().getX(), aReceiver.getBlockPos().getY(), aReceiver.getBlockPos().getZ()));
 				if (tReceiver instanceof ic2.api.energy.tile.IEnergySink && ((ic2.api.energy.tile.IEnergySink)tReceiver).acceptsEnergyFrom(aEmitter instanceof BlockEntity ? (BlockEntity)aEmitter : null, FORGE_DIR[aSide])) {
 					long rUsedAmount = 0;
 					while (aAmount > rUsedAmount && ((ic2.api.energy.tile.IEnergySink)tReceiver).getDemandedEnergy() >= (rUsedAmount <= 0 && aSize <= VMAX[0] ? 4 : aSize) && ((ic2.api.energy.tile.IEnergySink)tReceiver).injectEnergy(FORGE_DIR[aSide], aSize, aSize) < aSize) rUsedAmount++;
 					if (rUsedAmount > 0) {
 						int tTier = ((ic2.api.energy.tile.IEnergySink)tReceiver).getSinkTier();
 						if (tTier >= 0 && tTier < VMAX.length-1 && aSize > VMAX[tTier]) {
-							Level tWorld = tReceiver.getWorldObj();
+							Level tWorld = tReceiver.getLevel();
 							WD.set(tWorld, tReceiver.getBlockPos().getX(), tReceiver.getBlockPos().getY(), tReceiver.getBlockPos().getZ(), NB, 0, 3);
 							tWorld.newExplosion(null, tReceiver.getBlockPos().getX()+0.5, tReceiver.getBlockPos().getY()+0.5, tReceiver.getBlockPos().getZ()+0.5, tTier+1, F, T);
 							return aAmount;

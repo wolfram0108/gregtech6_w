@@ -104,7 +104,7 @@ public class ChestGenHooksChestReplacer extends ChestGenHooks {
 			// Only unmodified Vanilla Chests!
 			if (aInventory.getClass() != ChestBlockEntity.class) return generateChestContent2(aRandom, aInventory);
 			// We need a World Object.
-			Level aWorld = ((ChestBlockEntity)aInventory).getWorldObj();
+			Level aWorld = ((ChestBlockEntity)aInventory).getLevel();
 			if (aWorld == null) return generateChestContent2(aRandom, aInventory);
 			// XYZ and check if the Block we replace is a regular Chest.
 			int aX = ((ChestBlockEntity)aInventory).getBlockPos().getX(), aY = ((ChestBlockEntity)aInventory).getBlockPos().getY(), aZ = ((ChestBlockEntity)aInventory).getBlockPos().getZ();

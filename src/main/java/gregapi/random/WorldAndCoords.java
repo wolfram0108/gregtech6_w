@@ -47,7 +47,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	
 	public WorldAndCoords(Level aWorld, int aX, int aY, int aZ) {mWorld = aWorld; mX = aX; mY = aY; mZ = aZ;}
 	public WorldAndCoords(Level aWorld, BlockPos aCoords) {mWorld = aWorld; mX = aCoords.getX(); mY = aCoords.getY(); mZ = aCoords.getZ();}
-	public WorldAndCoords(BlockEntity aTileEntity) {mWorld = aTileEntity.getWorldObj(); mX = aTileEntity.getBlockPos().getX(); mY = aTileEntity.getBlockPos().getY(); mZ = aTileEntity.getBlockPos().getZ();}
+	public WorldAndCoords(BlockEntity aTileEntity) {mWorld = aTileEntity.getLevel(); mX = aTileEntity.getBlockPos().getX(); mY = aTileEntity.getBlockPos().getY(); mZ = aTileEntity.getBlockPos().getZ();}
 	
 	@Override public Level getWorld() {return mWorld;}
 	@Override public int getX() {return mX;}
@@ -128,7 +128,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 		if (tTileEntity == null) return new DelegatorTileEntity<>(null, mWorld, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide]);
 		if (aNotConnectToDelegators && tTileEntity instanceof ITileEntityCanDelegate && ((ITileEntityCanDelegate)tTileEntity).isExtender(aSide)) return new DelegatorTileEntity<>(null, mWorld, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide]);
 		if (aAllowDelegates && tTileEntity instanceof ITileEntityDelegating) return ((ITileEntityDelegating)tTileEntity).getDelegateTileEntity(OPOS[aSide]);
-		return new DelegatorTileEntity<>(tTileEntity, tTileEntity.getWorldObj(), tTileEntity.getBlockPos().getX(), tTileEntity.getBlockPos().getY(), tTileEntity.getBlockPos().getZ(), OPOS[aSide]);
+		return new DelegatorTileEntity<>(tTileEntity, tTileEntity.getLevel(), tTileEntity.getBlockPos().getX(), tTileEntity.getBlockPos().getY(), tTileEntity.getBlockPos().getZ(), OPOS[aSide]);
 	}
 	
 	@Override

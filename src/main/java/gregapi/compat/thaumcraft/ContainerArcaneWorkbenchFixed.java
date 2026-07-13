@@ -48,7 +48,7 @@ public class ContainerArcaneWorkbenchFixed extends ContainerArcaneWorkbench {
 	// @Override
 	public void onCraftMatrixChanged(Container aInventory) {
 		if (mInventoryPlayer == null || mTileEntity == null) return;
-		mTileEntity.setInventorySlotContentsSoftly(9, CR.getany(mTileEntity.getWorldObj(), mTileEntity.stackList));
+		mTileEntity.setInventorySlotContentsSoftly(9, CR.getany(mTileEntity.getLevel(), mTileEntity.stackList));
 		Item tWand = ST.item(mTileEntity.getStackInSlot(10));
 		if (tWand instanceof ItemWandCasting && ((ItemWandCasting)tWand).consumeAllVisCrafting(mTileEntity.getStackInSlot(10), mInventoryPlayer.player, ThaumcraftCraftingManager.findMatchingArcaneRecipeAspects(mTileEntity, mInventoryPlayer.player), F)) {
 			mTileEntity.setInventorySlotContentsSoftly(9, ThaumcraftCraftingManager.findMatchingArcaneRecipe(mTileEntity, mInventoryPlayer.player));

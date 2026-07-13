@@ -246,7 +246,7 @@ public interface ITileEntityEnergy extends gregapi.tileentity.ITileEntityEnergy 
 		 * @return the amount of used Energy Packets.
 		 */
 		public static final long emitEnergyToSide(TagData aEnergyType, byte aSideOutOf, long aSize, long aAmount, BlockEntity aEmitter) {
-			DelegatorTileEntity<BlockEntity> tDelegator = aEmitter instanceof IHasWorldAndCoords ? ((IHasWorldAndCoords)aEmitter).getAdjacentTileEntity(aSideOutOf) : WD.te(aEmitter.getWorldObj(), aEmitter.getBlockPos().getX()+OFFX[aSideOutOf], aEmitter.getBlockPos().getY()+OFFY[aSideOutOf], aEmitter.getBlockPos().getZ()+OFFZ[aSideOutOf], OPOS[aSideOutOf], F);
+			DelegatorTileEntity<BlockEntity> tDelegator = aEmitter instanceof IHasWorldAndCoords ? ((IHasWorldAndCoords)aEmitter).getAdjacentTileEntity(aSideOutOf) : WD.te(aEmitter.getLevel(), aEmitter.getBlockPos().getX()+OFFX[aSideOutOf], aEmitter.getBlockPos().getY()+OFFY[aSideOutOf], aEmitter.getBlockPos().getZ()+OFFZ[aSideOutOf], OPOS[aSideOutOf], F);
 			return insertEnergyInto(aEnergyType, aSize, aAmount, aEmitter, tDelegator);
 		}
 		

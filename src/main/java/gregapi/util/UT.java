@@ -2643,7 +2643,7 @@ public class UT {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getWorld(), aTileEntity.getCoords());
 		}
 		public static boolean send(String aSound, BlockEntity aTileEntity) {
-			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
+			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aTileEntity.getLevel(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
 		}
 		public static boolean send(String aSound, Entity aEntity) {
 			return send(aSound, 1.0F, SFX.RANDOM_PITCH, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
@@ -2661,7 +2661,7 @@ public class UT {
 			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getWorld(), aTileEntity.getCoords());
 		}
 		public static boolean send(String aSound, float aVolume, BlockEntity aTileEntity) {
-			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
+			return send(aSound, aVolume, SFX.RANDOM_PITCH, aTileEntity.getLevel(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
 		}
 		public static boolean send(String aSound, float aVolume, Entity aEntity) {
 			return send(aSound, aVolume, SFX.RANDOM_PITCH, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
@@ -2679,7 +2679,7 @@ public class UT {
 			return send(aSound, aVolume, aPitch, aTileEntity.getWorld(), aTileEntity.getCoords());
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, BlockEntity aTileEntity) {
-			return send(aSound, aVolume, aPitch, aTileEntity.getWorldObj(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
+			return send(aSound, aVolume, aPitch, aTileEntity.getLevel(), new BlockPos(aTileEntity.getBlockPos().getX(), aTileEntity.getBlockPos().getY(), aTileEntity.getBlockPos().getZ()));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Entity aEntity) {
 			return send(aSound, aVolume, aPitch, aEntity.level(), new BlockPos(UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ())));
