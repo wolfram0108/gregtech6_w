@@ -35,6 +35,7 @@ import net.minecraft.entity.passive.EntityTameable;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.effect.MobEffectInstance;
 
 public class Behavior_FeedChocolate extends AbstractBehaviorDefault {
@@ -43,18 +44,18 @@ public class Behavior_FeedChocolate extends AbstractBehaviorDefault {
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof EntityTameable && ((EntityTameable)aEntity).isTamed()) {
-			((LivingEntity)aEntity).addPotionEffect(new MobEffectInstance(MobEffect.poison.id, 120, 0));
+			((LivingEntity)aEntity).addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
 			UT.Entities.consumeCurrentItem(aPlayer);
 			return T;
 		}
 		if (aEntity instanceof EntityHorse) {
-			((LivingEntity)aEntity).addPotionEffect(new MobEffectInstance(MobEffect.poison.id, 120, 0));
+			((LivingEntity)aEntity).addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
 			((EntityHorse)aEntity).level().playSoundAtEntity(aEntity, "eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F);
 			UT.Entities.consumeCurrentItem(aPlayer);
 			return T;
 		}
 		if (aEntity instanceof EntityAnimal) {
-			((LivingEntity)aEntity).addPotionEffect(new MobEffectInstance(MobEffect.poison.id, 120, 0));
+			((LivingEntity)aEntity).addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
 			UT.Entities.consumeCurrentItem(aPlayer);
 			return T;
 		}

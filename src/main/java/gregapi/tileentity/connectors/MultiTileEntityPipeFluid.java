@@ -55,6 +55,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -285,7 +286,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 				if (!mMagicProof && FL.magic(tFluid)) {
 					mTransferredAmount += GarbageGT.trash(tTank, FL.gas(tFluid) ? 16 : 4);
 					UT.Sounds.send(SFX.MC_FIZZ, this, F);
-					try {for (Entity tEntity : (List<Entity>)level.getEntitiesWithinAABB(Entity.class, box(-3, -3, -3, +4, +4, +4))) UT.Entities.applyPotion(tEntity, MobEffect.poison, 1200, 1, F);} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {for (Entity tEntity : (List<Entity>)level.getEntitiesWithinAABB(Entity.class, box(-3, -3, -3, +4, +4, +4))) UT.Entities.applyPotion(tEntity, MobEffects.POISON, 1200, 1, F);} catch(Throwable e) {e.printStackTrace(ERR);}
 					if (rng(100) == 0) {
 						GarbageGT.trash(mTanks);
 						WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), FL.gas(tFluid) ? IL.TC_Flux_Gas.block() : IL.TC_Flux_Goo.block(), IL.TC_Flux_Goo.exists() ? 7 : 0, 3);
