@@ -408,6 +408,12 @@ public class WD {
 	/** F-render: 1.7.10 WD.opaque(Block) = «непрозрачный полный куб» -> neo BlockState.canOcclude()
 	 *  (BlockBehaviour.java:658). Запрос по конкретному блоку — через его defaultBlockState. */
 	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().canOcclude();}
+	/** F-render: 1.7.10 Block-нормальный-куб = isOpaque && renderAsNormalBlock && !canProvidePower — ТОЧНО «redstone
+	 *  conductor» (полный непрозрачный блок, не источник сигнала). neo BlockState.isRedstoneConductor(BlockGetter,
+	 *  BlockPos) (BlockBehaviour.java:616) — канонический преемник (§8). */
+	public static boolean normalCube(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
+		return aBlock.defaultBlockState().isRedstoneConductor(aWorld, new BlockPos(aX, aY, aZ));
+	}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	

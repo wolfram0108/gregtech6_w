@@ -476,7 +476,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		Block tBlock = getBlock(getCoords());
 		level.notifyBlocksOfNeighborChange(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), tBlock);
 		if (this instanceof IMTE_IsProvidingStrongPower) for (byte tSide : ALL_SIDES_VALID) {
-			if (getBlockAtSide(tSide).isNormalCube(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide])) {
+			if (WD.normalCube(getBlockAtSide(tSide), level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide])) {
 				level.notifyBlocksOfNeighborChange(getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide], tBlock, OPOS[tSide]);
 			}
 		}

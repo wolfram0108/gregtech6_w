@@ -300,11 +300,11 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 				} else {
 					tRailMeta &= 7;
 					if (tRailMeta == 1) {
-							 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) WD.setMotionX(aCart, +0.02);
-						else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) WD.setMotionX(aCart, -0.02);
+							 if (WD.normalCube(WD.block(aWorld, aX-1, aY, aZ), aWorld, aX-1, aY, aZ)) WD.setMotionX(aCart, +0.02);
+						else if (WD.normalCube(WD.block(aWorld, aX+1, aY, aZ), aWorld, aX+1, aY, aZ)) WD.setMotionX(aCart, -0.02);
 					} else if (tRailMeta == 0) {
-							 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) WD.setMotionZ(aCart, +0.02);
-						else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) WD.setMotionZ(aCart, -0.02);
+							 if (WD.normalCube(WD.block(aWorld, aX, aY, aZ-1), aWorld, aX, aY, aZ-1)) WD.setMotionZ(aCart, +0.02);
+						else if (WD.normalCube(WD.block(aWorld, aX, aY, aZ+1), aWorld, aX, aY, aZ+1)) WD.setMotionZ(aCart, -0.02);
 					}
 				}
 			} else {
