@@ -397,6 +397,14 @@ public class WD {
 	public static float hardness(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		return aBlock.defaultBlockState().getDestroySpeed(aWorld, new BlockPos(aX, aY, aZ));
 	}
+	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public поля) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
+	 *  Покомпонентная запись обязана сохранять две другие оси -> централизуем здесь ОДИН раз (философия §2). */
+	public static double motionX(Entity aEntity) {return aEntity.getDeltaMovement().x;}
+	public static double motionY(Entity aEntity) {return aEntity.getDeltaMovement().y;}
+	public static double motionZ(Entity aEntity) {return aEntity.getDeltaMovement().z;}
+	public static void setMotionX(Entity aEntity, double aX) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(aX, v.y, v.z);}
+	public static void setMotionY(Entity aEntity, double aY) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(v.x, aY, v.z);}
+	public static void setMotionZ(Entity aEntity, double aZ) {net.minecraft.world.phys.Vec3 v = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(v.x, v.y, aZ);}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	

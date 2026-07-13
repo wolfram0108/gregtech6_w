@@ -300,21 +300,21 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 				} else {
 					tRailMeta &= 7;
 					if (tRailMeta == 1) {
-							 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) aCart.motionX = +0.02;
-						else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) aCart.motionX = -0.02;
+							 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) WD.setMotionX(aCart, +0.02);
+						else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) WD.setMotionX(aCart, -0.02);
 					} else if (tRailMeta == 0) {
-							 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) aCart.motionZ = +0.02;
-						else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) aCart.motionZ = -0.02;
+							 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) WD.setMotionZ(aCart, +0.02);
+						else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) WD.setMotionZ(aCart, -0.02);
 					}
 				}
 			} else {
 				if (tMotion < 0.03) {
-					aCart.motionX  = 0;
-					aCart.motionY  = 0;
-					aCart.motionZ  = 0;
+					WD.setMotionX(aCart, 0);
+					WD.setMotionY(aCart, 0);
+					WD.setMotionZ(aCart, 0);
 				} else {
 					aCart.getDeltaMovement().x /= 2;
-					aCart.motionY  = 0;
+					WD.setMotionY(aCart, 0);
 					aCart.getDeltaMovement().z /= 2;
 				}
 			}

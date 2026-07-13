@@ -655,54 +655,54 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 			double tSpeed = 0.15;
 			if (Math.abs(aEntity.getDeltaMovement().x) < tSpeed) {
 				if (       !WD.opq(aWorld, aX+tAddX  , aY, aZ, F, F) && !WD.hasCollide(aWorld, aX+tAddX  , aY+1, aZ)) {
-					aEntity.motionX = +tAddX*tSpeed;
+					WD.setMotionX(aEntity, +tAddX*tSpeed);
 				} else if (!WD.opq(aWorld, aX-tAddX  , aY, aZ, F, F) && !WD.hasCollide(aWorld, aX-tAddX  , aY+1, aZ)) {
-					aEntity.motionX = -tAddX*tSpeed;
+					WD.setMotionX(aEntity, -tAddX*tSpeed);
 				} else if (!WD.opq(aWorld, aX+tAddX*2, aY, aZ, F, F) && !WD.hasCollide(aWorld, aX+tAddX*2, aY+1, aZ)) {
-					aEntity.motionX = +tAddX*tSpeed;
+					WD.setMotionX(aEntity, +tAddX*tSpeed);
 				} else if (!WD.opq(aWorld, aX-tAddX*2, aY, aZ, F, F) && !WD.hasCollide(aWorld, aX-tAddX*2, aY+1, aZ)) {
-					aEntity.motionX = -tAddX*tSpeed;
+					WD.setMotionX(aEntity, -tAddX*tSpeed);
 				}
 			}
 			if (Math.abs(aEntity.getDeltaMovement().z) < tSpeed) {
 				if (       !WD.opq(aWorld, aX, aY, aZ+tAddZ  , F, F) && !WD.hasCollide(aWorld, aX, aY+1, aZ+tAddZ  )) {
-					aEntity.motionZ = +tAddZ*tSpeed;
+					WD.setMotionZ(aEntity, +tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX, aY, aZ-tAddZ  , F, F) && !WD.hasCollide(aWorld, aX, aY+1, aZ-tAddZ  )) {
-					aEntity.motionZ = -tAddZ*tSpeed;
+					WD.setMotionZ(aEntity, -tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX, aY, aZ+tAddZ*2, F, F) && !WD.hasCollide(aWorld, aX, aY+1, aZ+tAddZ*2)) {
-					aEntity.motionZ = +tAddZ*tSpeed;
+					WD.setMotionZ(aEntity, +tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX, aY, aZ-tAddZ*2, F, F) && !WD.hasCollide(aWorld, aX, aY+1, aZ-tAddZ*2)) {
-					aEntity.motionZ = -tAddZ*tSpeed;
+					WD.setMotionZ(aEntity, -tAddZ*tSpeed);
 				}
 			}
 			if (Math.abs(aEntity.getDeltaMovement().x) < tSpeed && Math.abs(aEntity.getDeltaMovement().z) < tSpeed) {
 				if (       !WD.opq(aWorld, aX+tAddX  , aY, aZ+tAddZ  , F, F) && !WD.hasCollide(aWorld, aX+tAddX  , aY+1, aZ+tAddZ  )) {
-					aEntity.motionX = +tAddX*tSpeed;
-					aEntity.motionZ = +tAddZ*tSpeed;
+					WD.setMotionX(aEntity, +tAddX*tSpeed);
+					WD.setMotionZ(aEntity, +tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX-tAddX  , aY, aZ-tAddZ  , F, F) && !WD.hasCollide(aWorld, aX-tAddX  , aY+1, aZ-tAddZ  )) {
-					aEntity.motionX = -tAddX*tSpeed;
-					aEntity.motionZ = -tAddZ*tSpeed;
+					WD.setMotionX(aEntity, -tAddX*tSpeed);
+					WD.setMotionZ(aEntity, -tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX+tAddX*2, aY, aZ+tAddZ*2, F, F) && !WD.hasCollide(aWorld, aX+tAddX*2, aY+1, aZ+tAddZ*2)) {
-					aEntity.motionX = +tAddX*tSpeed;
-					aEntity.motionZ = +tAddZ*tSpeed;
+					WD.setMotionX(aEntity, +tAddX*tSpeed);
+					WD.setMotionZ(aEntity, +tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX-tAddX*2, aY, aZ-tAddZ*2, F, F) && !WD.hasCollide(aWorld, aX-tAddX*2, aY+1, aZ-tAddZ*2)) {
-					aEntity.motionX = -tAddX*tSpeed;
-					aEntity.motionZ = -tAddZ*tSpeed;
+					WD.setMotionX(aEntity, -tAddX*tSpeed);
+					WD.setMotionZ(aEntity, -tAddZ*tSpeed);
 				}
 			}
 			if (Math.abs(aEntity.getDeltaMovement().x) < tSpeed && Math.abs(aEntity.getDeltaMovement().z) < tSpeed) {
 				if (       !WD.opq(aWorld, aX-tAddX  , aY, aZ+tAddZ  , F, F) && !WD.hasCollide(aWorld, aX-tAddX  , aY+1, aZ+tAddZ  )) {
-					aEntity.motionX = -tAddX*tSpeed;
-					aEntity.motionZ = +tAddZ*tSpeed;
+					WD.setMotionX(aEntity, -tAddX*tSpeed);
+					WD.setMotionZ(aEntity, +tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX+tAddX  , aY, aZ-tAddZ  , F, F) && !WD.hasCollide(aWorld, aX+tAddX  , aY+1, aZ-tAddZ  )) {
-					aEntity.motionX = +tAddX*tSpeed;
-					aEntity.motionZ = -tAddZ*tSpeed;
+					WD.setMotionX(aEntity, +tAddX*tSpeed);
+					WD.setMotionZ(aEntity, -tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX-tAddX*2, aY, aZ+tAddZ*2, F, F) && !WD.hasCollide(aWorld, aX-tAddX*2, aY+1, aZ+tAddZ*2)) {
-					aEntity.motionX = -tAddX*tSpeed;
-					aEntity.motionZ = +tAddZ*tSpeed;
+					WD.setMotionX(aEntity, -tAddX*tSpeed);
+					WD.setMotionZ(aEntity, +tAddZ*tSpeed);
 				} else if (!WD.opq(aWorld, aX+tAddX*2, aY, aZ-tAddZ*2, F, F) && !WD.hasCollide(aWorld, aX+tAddX*2, aY+1, aZ-tAddZ*2)) {
-					aEntity.motionX = +tAddX*tSpeed;
-					aEntity.motionZ = -tAddZ*tSpeed;
+					WD.setMotionX(aEntity, +tAddX*tSpeed);
+					WD.setMotionZ(aEntity, -tAddZ*tSpeed);
 				}
 			}
 		}

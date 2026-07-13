@@ -71,7 +71,7 @@ public class OreDictListenerItem_Washing extends OreDictListenerItem {
 						if (tStacks.size() > 0) ST.drop(aItem.level(), aItem.getX(), aItem.getY(), aItem.getZ(), tStacks.get(RNGSUS.nextInt(tStacks.size())));
 					}
 					ST.drop(aItem.level(), aItem.getX(), aItem.getY(), aItem.getZ(), tStack);
-					aItem.motionX = aItem.motionY = aItem.motionZ = 0;
+					WD.setMotionX(aItem, aItem.motionY = aItem.motionZ = 0);
 					aItem.setPosition(tX+0.5, tY+0.9, tZ+0.5);
 					return aStack.getCount() > 1 ? ST.amount(aStack.getCount() - 1, aStack) : null;
 				}
