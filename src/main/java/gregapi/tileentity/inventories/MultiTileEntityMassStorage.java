@@ -288,16 +288,16 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 					} else {
 						if (tAmount == -1) {
 							boolean temp = F;
-							for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) if (aPlayer.inventory.mainInventory[i] != null && allowInsertion(aPlayer.inventory.mainInventory[i])) {
-								ItemStack tStack = insertItems(aPlayer.inventory.mainInventory[i], F);
+							for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) if (aPlayer.getInventory().mainInventory[i] != null && allowInsertion(aPlayer.getInventory().mainInventory[i])) {
+								ItemStack tStack = insertItems(aPlayer.getInventory().mainInventory[i], F);
 								if (tStack == null) {
 									temp = T;
-									aPlayer.inventory.mainInventory[i] = null;
+									aPlayer.getInventory().mainInventory[i] = null;
 									continue;
 								}
-								if (tStack.getCount() < aPlayer.inventory.mainInventory[i].getCount()) {
+								if (tStack.getCount() < aPlayer.getInventory().mainInventory[i].getCount()) {
 									temp = T;
-									aPlayer.inventory.mainInventory[i] = tStack;
+									aPlayer.getInventory().mainInventory[i] = tStack;
 									continue;
 								}
 								break;

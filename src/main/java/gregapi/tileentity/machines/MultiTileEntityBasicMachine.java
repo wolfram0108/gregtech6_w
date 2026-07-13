@@ -657,7 +657,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				if (aRecipe.mFluidOutputs[j] == null) {
 					tRequiredEmptyTanks--;
 				} else for (int i = 0; i < mTanksOutput.length; i++) if (mTanksOutput[i].contains(aRecipe.mFluidOutputs[j])) {
-					if (mTanksOutput[i].has(Math.max(16000, 1+aRecipe.mFluidOutputs[j].amount*mParallel)) && !FluidsGT.VOID_OVERFLOW.contains(aRecipe.mFluidOutputs[j].getFluid().getName())) return 0;
+					if (mTanksOutput[i].has(Math.max(16000, 1+aRecipe.mFluidOutputs[j].getAmount()*mParallel)) && !FluidsGT.VOID_OVERFLOW.contains(aRecipe.mFluidOutputs[j].getFluid().getName())) return 0;
 					tRequiredEmptyTanks--;
 					break;
 				}
@@ -699,7 +699,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getFluidInputTarget(tAutoInput);
 			if (tTileEntity != null && tTileEntity.mTileEntity != null) {
 				FluidTankInfo[] tInfos = tTileEntity.mTileEntity.getTankInfo(FORGE_DIR[tTileEntity.mSideOfTileEntity]);
-				if (tInfos != null) for (FluidTankInfo tInfo : tInfos) if (tInfo != null && tInfo.fluid != null && tInfo.fluid.amount > 0 && getFluidTankFillable(SIDE_ANY, tInfo.fluid) != null) {
+				if (tInfos != null) for (FluidTankInfo tInfo : tInfos) if (tInfo != null && tInfo.fluid != null && tInfo.fluid.getAmount() > 0 && getFluidTankFillable(SIDE_ANY, tInfo.fluid) != null) {
 					if (FL.move_(tTileEntity, delegator(tAutoInput), tInfo.fluid) > 0) updateInventory();
 				}
 			}
@@ -1005,8 +1005,8 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	
 	@Override public void onFacingChange(byte aPreviousFacing) {updateAccessibleSlots();}
 	
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientBasicMachine(aPlayer.inventory, this, mRecipes, aGUIID, mGUITexture);}
-	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonBasicMachine(aPlayer.inventory, this, mRecipes, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientBasicMachine(aPlayer.getInventory(), this, mRecipes, aGUIID, mGUITexture);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonBasicMachine(aPlayer.getInventory(), this, mRecipes, aGUIID);}
 	
 	@Override public byte getVisualData() {return (byte)((mActive?1:0)|(mRunning?2:0));}
 	@Override public void setVisualData(byte aData) {mRunning=((aData&2)!=0); mActive=((aData&1)!=0);}

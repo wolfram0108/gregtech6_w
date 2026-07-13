@@ -3147,9 +3147,9 @@ public class UT {
 		public static boolean consumeCurrentItem(Player aPlayer) {
 			if (aPlayer == null) return F;
 			if (hasInfiniteItems(aPlayer)) return T;
-			ItemStack aStack = aPlayer.inventory.getStackInSlot(aPlayer.inventory.currentItem);
+			ItemStack aStack = aPlayer.getInventory().getStackInSlot(aPlayer.getInventory().currentItem);
 			if (ST.invalid(aStack)) return F;
-			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.currentItem, NI);}
+			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setInventorySlotContents(aPlayer.getInventory().currentItem, NI);}
 			ST.give(aPlayer, ST.container(aStack, T), F);
 			return T;
 		}

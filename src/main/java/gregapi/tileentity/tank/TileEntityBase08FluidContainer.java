@@ -210,11 +210,11 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				int aMeta = WD.meta(aWorld, aX, aY, aZ);
 				
 				if (aBlock instanceof CauldronBlock) {
-					if (aMeta >= 3 || mFluid.amount < 334) return F;
-					if (mFluid.amount >= 1000 && aMeta <= 0) {
+					if (aMeta >= 3 || mFluid.getAmount() < 334) return F;
+					if (mFluid.getAmount() >= 1000 && aMeta <= 0) {
 						aItem.drain(aStack, 1000, T);
 						WD.set(aWorld, aX, aY, aZ, aBlock, aMeta+3, 3);
-					} else if (mFluid.amount >= 667 && aMeta <= 1) {
+					} else if (mFluid.getAmount() >= 667 && aMeta <= 1) {
 						aItem.drain(aStack, 667, T);
 						WD.set(aWorld, aX, aY, aZ, aBlock, aMeta+2, 3);
 					} else if (aMeta <= 2) {
@@ -225,9 +225,9 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					return T;
 				}
 				
-				if (IL.GrC_Paddy.exists() && mFluid.amount >= 10) {
+				if (IL.GrC_Paddy.exists() && mFluid.getAmount() >= 10) {
 					if (IL.GrC_Paddy.block() == aBlock) {
-						int tIncrement = Math.min(7-aMeta, mFluid.amount/10);
+						int tIncrement = Math.min(7-aMeta, mFluid.getAmount()/10);
 						if (tIncrement > 0) {
 							aItem.drain(aStack, tIncrement*10, T);
 							aWorld.setBlockMetadataWithNotify(aX, aY, aZ, aMeta+tIncrement, 3);
@@ -237,7 +237,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 					}
 					if (IL.GrC_Paddy.block() == WD.block(aWorld, aX, aY-1, aZ)) {
 						int tMeta = WD.meta(aWorld, aX, aY-1, aZ);
-						int tIncrement = Math.min(7-tMeta, mFluid.amount/10);
+						int tIncrement = Math.min(7-tMeta, mFluid.getAmount()/10);
 						if (tIncrement > 0) {
 							aItem.drain(aStack, tIncrement*10, T);
 							aWorld.setBlockMetadataWithNotify(aX, aY-1, aZ, tMeta+tIncrement, 3);
@@ -251,7 +251,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				
 				try {if (tTileEntity instanceof ICropTile) {
 					int tHydration = ((ICropTile)tTileEntity).getHydrationStorage();
-					int tDrained = Math.min((200-tHydration)/10, mFluid.amount);
+					int tDrained = Math.min((200-tHydration)/10, mFluid.getAmount());
 					if (tDrained > 0) {
 						aItem.drain(aStack, tDrained, T);
 						((ICropTile)tTileEntity).setHydrationStorage(tHydration + tDrained*10);
@@ -261,7 +261,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				}} catch(Throwable e) {/**/}
 				
 				try {if (tTileEntity instanceof TileCrucible) {
-					if (FL.water(mFluid) && FL.nonzero(aItem.drain(aStack, (int)FL.fill((IFluidHandler)tTileEntity, SIDE_TOP, FL.Water.make(mFluid.amount), T), T))) {
+					if (FL.water(mFluid) && FL.nonzero(aItem.drain(aStack, (int)FL.fill((IFluidHandler)tTileEntity, SIDE_TOP, FL.Water.make(mFluid.getAmount()), T), T))) {
 						UT.Sounds.send(SFX.MC_LIQUID_WATER, aWorld, aX, aY, aZ);
 					}
 					return T;
@@ -311,7 +311,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				}
 				if (tBlock instanceof IFluidBlock) {
 					FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ, F);
-					if (tDrained != null && tDrained.amount > 0 && aItem.fill(aStack, tDrained, F) == tDrained.amount) {
+					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 						aItem.fill(aStack, tDrained, T);
 						((IFluidBlock)tBlock).drain(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ, T);
@@ -326,7 +326,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				
 				if (tBlock instanceof IFluidBlock) {
 					FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ, F);
-					if (tDrained != null && tDrained.amount > 0 && aItem.fill(aStack, tDrained, F) == tDrained.amount) {
+					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 						aItem.fill(aStack, tDrained, T);
 						((IFluidBlock)tBlock).drain(aWorld, tTarget.blockX, tTarget.blockY, tTarget.blockZ, T);
@@ -396,7 +396,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public int removeFluidFromConnectedTank(byte aSide, FluidStack aFluid, boolean aOnlyRemoveIfItCanRemoveAllAtOnce) {
-		if (mTank.contains(aFluid) && mTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.amount : 1)) return (int)mTank.remove(aFluid.amount);
+		if (mTank.contains(aFluid) && mTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.getAmount() : 1)) return (int)mTank.remove(aFluid.getAmount());
 		return 0;
 	}
 	

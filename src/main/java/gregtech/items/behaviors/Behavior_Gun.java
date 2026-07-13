@@ -287,8 +287,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			if (aPlayer.level() instanceof ServerLevel) {
 				if (UT.NBT.getEnchantmentLevel(Enchantment.looting, aBullet) > 0) {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
-					tPlayer.inventory.currentItem = 0;
-					tPlayer.inventory.setInventorySlotContents(0, aBullet);
+					tPlayer.getInventory().currentItem = 0;
+					tPlayer.getInventory().setInventorySlotContents(0, aBullet);
 					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.rotationPitch);
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
 					if (WD.dimTF(aPlayer.level())) tPlayer.capabilities.isCreativeMode = T;
@@ -380,51 +380,51 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		CompoundTag aNBT = UT.NBT.getOrCreate(aGun);
 		ItemStack aBullet = ST.load(aNBT, NBT_AMMO);
 		if (ST.valid(aBullet) && aBullet.getCount() > 0) return F;
-		if (isProjectile(aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem])) {
-			int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem].getCount());
+		if (isProjectile(aPlayer.getInventory().mainInventory[aPlayer.getInventory().currentItem])) {
+			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().mainInventory[aPlayer.getInventory().currentItem].getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
-			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[aPlayer.inventory.currentItem]));
+			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().mainInventory[aPlayer.getInventory().currentItem]));
 			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-			aPlayer.inventory.decrStackSize(aPlayer.inventory.currentItem, tConsumed);
+			aPlayer.getInventory().decrStackSize(aPlayer.getInventory().currentItem, tConsumed);
 			ST.update(aPlayer);
 			return T;
 		}
 		if (aOnlyCheckHeld) return F;
-		for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) if (aPlayer.inventory.mainInventory[i] == aGun) {
-			if (i < 27 && isProjectile(aPlayer.inventory.mainInventory[i+27])) {
-			if (i < 18 && isProjectile(aPlayer.inventory.mainInventory[i+18])) {
-			if (i <  9 && isProjectile(aPlayer.inventory.mainInventory[i+ 9])) {
-				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+ 9].getCount());
+		for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) if (aPlayer.getInventory().mainInventory[i] == aGun) {
+			if (i < 27 && isProjectile(aPlayer.getInventory().mainInventory[i+27])) {
+			if (i < 18 && isProjectile(aPlayer.getInventory().mainInventory[i+18])) {
+			if (i <  9 && isProjectile(aPlayer.getInventory().mainInventory[i+ 9])) {
+				int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().mainInventory[i+ 9].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
-				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+ 9]));
+				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().mainInventory[i+ 9]));
 				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-				aPlayer.inventory.decrStackSize(i+ 9, tConsumed);
+				aPlayer.getInventory().decrStackSize(i+ 9, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
-				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+18].getCount());
+				int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().mainInventory[i+18].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
-				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+18]));
+				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().mainInventory[i+18]));
 				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-				aPlayer.inventory.decrStackSize(i+18, tConsumed);
+				aPlayer.getInventory().decrStackSize(i+18, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
-				int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i+27].getCount());
+				int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().mainInventory[i+27].getCount());
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
-				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i+27]));
+				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().mainInventory[i+27]));
 				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-				aPlayer.inventory.decrStackSize(i+27, tConsumed);
+				aPlayer.getInventory().decrStackSize(i+27, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
 			break;
 		}
-		for (int i = aPlayer.inventory.mainInventory.length-1; i >= 0; i--) if (isProjectile(aPlayer.inventory.mainInventory[i])) {
-			int tConsumed = Math.min(mAmmoPerMag, aPlayer.inventory.mainInventory[i].getCount());
+		for (int i = aPlayer.getInventory().mainInventory.length-1; i >= 0; i--) if (isProjectile(aPlayer.getInventory().mainInventory[i])) {
+			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().mainInventory[i].getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
-			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.inventory.mainInventory[i]));
-			aPlayer.inventory.decrStackSize(i, tConsumed);
+			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().mainInventory[i]));
+			aPlayer.getInventory().decrStackSize(i, tConsumed);
 			ST.update(aPlayer);
 			return T;
 		}

@@ -1149,7 +1149,7 @@ public class ST {
 		return add(aPlayer, aStack, F);
 	}
 	public static boolean add(Entity aPlayer, ItemStack aStack, boolean aCurrentSlotFirst) {
-		return aPlayer instanceof Player && add(aPlayer, ((Player)aPlayer).inventory, aStack, aCurrentSlotFirst);
+		return aPlayer instanceof Player && add(aPlayer, ((Player)aPlayer).getInventory(), aStack, aCurrentSlotFirst);
 	}
 	public static boolean add(Entity aPlayer, Container aInv, ItemStack aStack, boolean aCurrentSlotFirst) {
 		if (aInv != null && valid(aStack)) {
@@ -1331,7 +1331,7 @@ public class ST {
 		return T;
 	}
 	
-	public static void denull(Entity  aPlayer) {if (aPlayer instanceof Player) denull(((Player)aPlayer).inventory);}
+	public static void denull(Entity  aPlayer) {if (aPlayer instanceof Player) denull(((Player)aPlayer).getInventory());}
 	public static void denull(Container aInv) {
 		if (aInv != null) for (int i = 0, j = aInv.getContainerSize(); i < j; i++) {
 			ItemStack tStack = aInv.getItem(i);
@@ -1339,7 +1339,7 @@ public class ST {
 		}
 	}
 	
-	public static ItemStack projectile(Entity  aPlayer, TagData aType) {if (aPlayer instanceof Player) return projectile(((Player)aPlayer).inventory, aType); return null;}
+	public static ItemStack projectile(Entity  aPlayer, TagData aType) {if (aPlayer instanceof Player) return projectile(((Player)aPlayer).getInventory(), aType); return null;}
 	public static ItemStack projectile(Container aInv, TagData aType) {
 		if (aInv != null) for (int i = 0, j = aInv.getContainerSize(); i < j; i++) {
 			ItemStack rStack = aInv.getItem(i);

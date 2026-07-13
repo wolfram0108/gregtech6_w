@@ -443,7 +443,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 			if (tFluidContained != null && ST.equal(slot(aSlot), FL.fill(tFluidContained, tContainer, F, T, F, T), F)) {
 				for (byte tSide : ALL_SIDES_VALID) {
 					DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide);
-					if (tDelegator.mTileEntity instanceof ITileEntityConnectedTank && ((ITileEntityConnectedTank)tDelegator.mTileEntity).removeFluidFromConnectedTank(tDelegator.mSideOfTileEntity, tFluidContained, T) >= tFluidContained.amount) {
+					if (tDelegator.mTileEntity instanceof ITileEntityConnectedTank && ((ITileEntityConnectedTank)tDelegator.mTileEntity).removeFluidFromConnectedTank(tDelegator.mSideOfTileEntity, tFluidContained, T) >= tFluidContained.getAmount()) {
 						// Yay, we wont need to change anything inside the Slot!
 						return T;
 					}
@@ -540,7 +540,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	
 	@Override
 	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
-		if (aFluid == null || aFluid.amount <= 0) return 0;
+		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
 		
 		for (int i : SLOTS_TOOLS) {
 			ItemStack tOutput = FL.fill(aFluid, slot(i), F, T, F, T);
@@ -553,7 +553,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 							updateInventory();
 							mSyncGUI = T;
 						}
-						return tFluid.amount * tOutput.getCount();
+						return tFluid.getAmount() * tOutput.getCount();
 					}
 					for (int j : SLOTS_TOOLS) {
 						if (!slotHas(j) || (ST.equal(tOutput, slot(j)) && slot(j).getCount() + tOutput.getCount() <= tOutput.getMaxStackSize())) {
@@ -563,7 +563,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 								updateInventory();
 								mSyncGUI = T;
 							}
-							return tFluid.amount * tOutput.getCount();
+							return tFluid.getAmount() * tOutput.getCount();
 						}
 					}
 				}
@@ -583,8 +583,8 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	@Override public FluidTankInfo[] getTankInfo(Direction aDirection) {return L1_FLUIDTANKINFO_DUMMY;}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new ContainerClientDefault(   new ContainerCommonDefault(aPlayer.inventory, this, aGUIID, 35, 36)) : new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.inventory, this, aGUIID);}
-	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ?                               new ContainerCommonDefault(aPlayer.inventory, this, aGUIID, 35, 36)  : new MultiTileEntityGUICommonAdvancedCraftingTable(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new ContainerClientDefault(   new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)) : new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ?                               new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)  : new MultiTileEntityGUICommonAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
 	
 	@Override public boolean needsToSyncEverything() {if (mSyncGUI) {mSyncGUI = F; return T;} return F;}
 	
@@ -604,47 +604,47 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 				if (aShiftclick) {
 					if (aRightclick) {
 						// SHIFT RIGHTCLICK
-						for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) {
-							if (aPlayer.inventory.mainInventory[i] == null || (ST.equal(tCraftedStack, aPlayer.inventory.mainInventory[i]) && tCraftedStack.getCount() + aPlayer.inventory.mainInventory[i].getCount() <= aPlayer.inventory.mainInventory[i].getMaxStackSize())) {
+						for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) {
+							if (aPlayer.getInventory().mainInventory[i] == null || (ST.equal(tCraftedStack, aPlayer.getInventory().mainInventory[i]) && tCraftedStack.getCount() + aPlayer.getInventory().mainInventory[i].getCount() <= aPlayer.getInventory().mainInventory[i].getMaxStackSize())) {
 								for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 									if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
-										return aPlayer.inventory.getItemStack();
+										return aPlayer.getInventory().getItemStack();
 									}
-									aPlayer.inventory.mainInventory[i] = (consumeMaterials(aPlayer, aPlayer.inventory.mainInventory[i], i != 0 || j != 0));
+									aPlayer.getInventory().mainInventory[i] = (consumeMaterials(aPlayer, aPlayer.getInventory().mainInventory[i], i != 0 || j != 0));
 								}
 							}
 						}
-						return aPlayer.inventory.getItemStack();
+						return aPlayer.getInventory().getItemStack();
 					}
 					// SHIFT LEFTCLICK
-					for (int i = 0; i < aPlayer.inventory.mainInventory.length; i++) {
-						if (aPlayer.inventory.mainInventory[i] == null || (ST.equal(tCraftedStack, aPlayer.inventory.mainInventory[i]) && tCraftedStack.getCount() + aPlayer.inventory.mainInventory[i].getCount() <= aPlayer.inventory.mainInventory[i].getMaxStackSize())) {
+					for (int i = 0; i < aPlayer.getInventory().mainInventory.length; i++) {
+						if (aPlayer.getInventory().mainInventory[i] == null || (ST.equal(tCraftedStack, aPlayer.getInventory().mainInventory[i]) && tCraftedStack.getCount() + aPlayer.getInventory().mainInventory[i].getCount() <= aPlayer.getInventory().mainInventory[i].getMaxStackSize())) {
 							boolean temp = F;
 							for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 								if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
-									return aPlayer.inventory.getItemStack();
+									return aPlayer.getInventory().getItemStack();
 								}
-								aPlayer.inventory.mainInventory[i] = (consumeMaterials(aPlayer, aPlayer.inventory.mainInventory[i], i != 0 || j != 0));
+								aPlayer.getInventory().mainInventory[i] = (consumeMaterials(aPlayer, aPlayer.getInventory().mainInventory[i], i != 0 || j != 0));
 								temp = T;
 							}
-							if (temp) return aPlayer.inventory.getItemStack();
+							if (temp) return aPlayer.getInventory().getItemStack();
 						}
 					}
-					return aPlayer.inventory.getItemStack();
+					return aPlayer.getInventory().getItemStack();
 				}
 				if (aRightclick) {
 					// RIGHTCLICK
 					for (int i = 0; i < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); i++) {
 						if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
-							return aPlayer.inventory.getItemStack();
+							return aPlayer.getInventory().getItemStack();
 						}
-						aPlayer.inventory.setItemStack(consumeMaterials(aPlayer, aPlayer.inventory.getItemStack(), i != 0));
+						aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.getInventory().getItemStack(), i != 0));
 					}
-					return aPlayer.inventory.getItemStack();
+					return aPlayer.getInventory().getItemStack();
 				}
 				// LEFTCLICK
-				if (canDoCraftingOutput()) aPlayer.inventory.setItemStack(consumeMaterials(aPlayer, aPlayer.inventory.getItemStack(), F));
-				return aPlayer.inventory.getItemStack();
+				if (canDoCraftingOutput()) aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.getInventory().getItemStack(), F));
+				return aPlayer.getInventory().getItemStack();
 			}
 			return null;
 		}

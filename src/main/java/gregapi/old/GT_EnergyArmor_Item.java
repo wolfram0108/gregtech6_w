@@ -67,12 +67,12 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 	
 	// @Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
-		ItemStack tStack = aPlayer.inventory.armorInventory[3-armorType];
+		ItemStack tStack = aPlayer.getInventory().armorInventory[3-armorType];
 		if (tStack != null) {
 			for (int i = 0; i < 9; i++) {
-				if (aPlayer.inventory.mainInventory[i] == aStack) {
-					aPlayer.inventory.armorInventory[3-armorType] = aPlayer.inventory.mainInventory[i];
-					aPlayer.inventory.mainInventory[i] = tStack;
+				if (aPlayer.getInventory().mainInventory[i] == aStack) {
+					aPlayer.getInventory().armorInventory[3-armorType] = aPlayer.getInventory().mainInventory[i];
+					aPlayer.getInventory().mainInventory[i] = tStack;
 					return tStack;
 				}
 			}

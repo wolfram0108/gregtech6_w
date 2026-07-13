@@ -192,8 +192,8 @@ public abstract class TileEntityBase10EnergyBatBox extends TileEntityBase09Facin
 		return tConsumed;
 	}
 	
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.inventory, this, aGUIID);}
-	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID);}
 	
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(invsize());}
 	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {return aStack != null && aStack.getItem() instanceof IItemEnergy && (((IItemEnergy)aStack.getItem()).isEnergyType(mEnergyType, aStack, F) || ((IItemEnergy)aStack.getItem()).isEnergyType(mEnergyType, aStack, T));}

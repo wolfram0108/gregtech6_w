@@ -148,7 +148,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				FluidStack tFluid = ((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, F);
 				if (tFluid != null) {
 					if (ST.valid(FL.fill(tFluid, aStack, F, T, F, T))) tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
-					if (FL.milk(tFluid) && tFluid.amount >= 1000) tBucket = ST.make(Items.milk_bucket, 1, 0);
+					if (FL.milk(tFluid) && tFluid.getAmount() >= 1000) tBucket = ST.make(Items.milk_bucket, 1, 0);
 				}
 			}
 		} else {
@@ -186,7 +186,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		if (aPlayer.level().isRemote) return F;
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		if (mFluid == null) return F;
-		if (FL.water(mFluid) && mFluid.amount >= 1000) {
+		if (FL.water(mFluid) && mFluid.getAmount() >= 1000) {
 			Block aBlock = WD.block(aWorld, aX, aY, aZ);
 			if (aBlock instanceof CauldronBlock) {
 				if (WD.meta(aWorld, aX, aY, aZ) < 3) {

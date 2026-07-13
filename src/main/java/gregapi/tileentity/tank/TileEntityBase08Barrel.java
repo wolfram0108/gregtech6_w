@@ -190,7 +190,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 						if (mMaxSealedTime <= 0 || mRecipe == null) {
 							mRecipe = RM.Fermenter.findRecipe(this, mRecipe, T, Long.MAX_VALUE, NI, FL.array(mTank.getFluid()), ST.tag(0));
 							if (mRecipe != null && mRecipe.mFluidInputs.length > 0 && mRecipe.mFluidOutputs.length > 0 && !FL.gas(mRecipe.mFluidInputs[0]) && !FL.gas(mRecipe.mFluidOutputs[0])) {
-								mMaxSealedTime = UT.Code.divup(Math.max(1, mRecipe.getAbsoluteTotalPower()) * Math.max(1, mTank.amount()), Math.max(1, mRecipe.mFluidInputs[0].amount));
+								mMaxSealedTime = UT.Code.divup(Math.max(1, mRecipe.getAbsoluteTotalPower()) * Math.max(1, mTank.amount()), Math.max(1, mRecipe.mFluidInputs[0].getAmount()));
 							} else {
 								mMaxSealedTime = 0;
 								mSealedTime = 0;
@@ -200,7 +200,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 							if (mSealedTime < mMaxSealedTime) {
 								mSealedTime++;
 							} else {
-								mTank.setFluid(FL.mul(mRecipe.mFluidOutputs[0], mTank.amount(), mRecipe.mFluidInputs[0].amount, F));
+								mTank.setFluid(FL.mul(mRecipe.mFluidOutputs[0], mTank.amount(), mRecipe.mFluidInputs[0].getAmount(), F));
 								mMaxSealedTime = 0;
 								mSealedTime = 0;
 								mRecipe = null;

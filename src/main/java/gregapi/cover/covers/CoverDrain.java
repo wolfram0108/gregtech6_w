@@ -164,10 +164,10 @@ public class CoverDrain extends AbstractCoverAttachment {
 			if (aEntity instanceof Player) {
 				if (MD.OB.mLoaded && SERVER_TIME % 5 == 0 && ((Player)aEntity).isSneaking() && FL.XP.exists()) try {
 					FluidStack tFluid = FL.XP.make(Math.min(1000, LiquidXpUtils.xpToLiquidRatio(EnchantmentUtils.getPlayerXP(((Player)aEntity)))));
-					if (tFluid.amount > 0) {
+					if (tFluid.getAmount() > 0) {
 						int tDrainedXP = LiquidXpUtils.liquidToXpRatio((int)FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], tFluid, F));
-						tFluid.amount = LiquidXpUtils.xpToLiquidRatio(tDrainedXP);
-						if (tFluid.amount > 0 && FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], tFluid, T)) {
+						tFluid.setAmount(LiquidXpUtils.xpToLiquidRatio(tDrainedXP));
+						if (tFluid.getAmount() > 0 && FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], tFluid, T)) {
 							EnchantmentUtils.addPlayerXP(((Player)aEntity), -tDrainedXP);
 							UT.Sounds.send(SFX.MC_XP, 0.1F, (RNGSUS.nextFloat()-RNGSUS.nextFloat()) * 0.35F + 0.9F, aEntity);
 						}

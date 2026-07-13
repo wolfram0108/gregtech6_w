@@ -1055,7 +1055,7 @@ public class WD {
 				rEUAmount+=V[3];
 				FluidTankInfo[] tTanks = ((IFluidHandler)aTileEntity).getTankInfo(FORGE_DIR[aSide]);
 				if (tTanks != null) for (byte i = 0; i < tTanks.length; i++) {
-					rList.add("Tank " + i + ": " + (tTanks[i].fluid==null?0:tTanks[i].fluid.amount) + " / " + tTanks[i].capacity + " " + FL.name(tTanks[i].fluid, T));
+					rList.add("Tank " + i + ": " + (tTanks[i].fluid==null?0:tTanks[i].fluid.getAmount()) + " / " + tTanks[i].capacity + " " + FL.name(tTanks[i].fluid, T));
 				}
 			}} catch(Throwable e) {e.printStackTrace(ERR);}
 			

@@ -278,7 +278,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 		
 		for (FluidTankGT tTank : mTanks) {
 			FluidStack tFluid = tTank.get();
-			if (tFluid != null && tFluid.amount > 0) {
+			if (tFluid != null && tFluid.getAmount() > 0) {
 				mTemperature = (tCheckTemperature ? FL.temperature(tFluid) : Math.max(mTemperature, FL.temperature(tFluid)));
 				tCheckTemperature = F;
 				
@@ -478,7 +478,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 	
 	@Override
 	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
-		if (aFluid == null || aFluid.amount <= 0) return 0;
+		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
 		FluidTankGT tTank = (FluidTankGT)getFluidTankFillable(UT.Code.side(aDirection), aFluid);
 		if (tTank == null) return 0;
 		int rFilledAmount = tTank.fill(aFluid, aDoFill);

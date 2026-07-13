@@ -370,15 +370,15 @@ public class Recipe {
 			
 			for (FluidStack aFluid : aRecipe.mFluidInputs) if (aFluid != null) {
 				String aFluidName = aFluid.getFluid().getName();
-				mMaxFluidInputSize = Math.max(mMaxFluidInputSize, aFluid.amount);
+				mMaxFluidInputSize = Math.max(mMaxFluidInputSize, aFluid.getAmount());
 				Collection<Recipe> tList = mRecipeFluidMap.get(aFluidName);
 				if (tList == null) mRecipeFluidMap.put(aFluidName, tList = new HashSet<>(1));
 				tList.add(aRecipe);
 				Long tSize = mMinInputTankSizes.get(aFluidName);
-				if (tSize == null || tSize < aFluid.amount) mMinInputTankSizes.put(aFluidName, (long)aFluid.amount);
+				if (tSize == null || tSize < aFluid.getAmount()) mMinInputTankSizes.put(aFluidName, (long)aFluid.getAmount());
 			}
 			for (FluidStack aFluid : aRecipe.mFluidOutputs) if (aFluid != null) {
-				mMaxFluidOutputSize = Math.max(mMaxFluidOutputSize, aFluid.amount);
+				mMaxFluidOutputSize = Math.max(mMaxFluidOutputSize, aFluid.getAmount());
 			}
 			return addToItemMap(aRecipe);
 		}
@@ -803,14 +803,14 @@ public class Recipe {
 		
 		for (FluidStack tFluid : mFluidInputs) if (tFluid != null) {
 			boolean temp = T;
-			for (FluidStack aFluid : aFluidInputs) if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aDontCheckStackSizes || aFluid.amount >= tFluid.amount)) {temp = F; break;}
+			for (FluidStack aFluid : aFluidInputs) if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aDontCheckStackSizes || aFluid.getAmount() >= tFluid.getAmount())) {temp = F; break;}
 			if (temp) return F;
 		}
 		
 		if (!checkStacksEqual(F, aDontCheckStackSizes, aInputs)) return F;
 		
 		if (aDecreaseStacksizeBySuccess) {
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.amount >= tFluid.amount) {aFluid.amount -= tFluid.amount; break;}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {aFluid.getAmount() -= tFluid.getAmount(); break;}
 			checkStacksEqual(T, F, aInputs);
 		}
 		
@@ -823,14 +823,14 @@ public class Recipe {
 		
 		for (FluidStack tFluid : mFluidInputs) if (tFluid != null) {
 			boolean temp = T;
-			for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aDontCheckStackSizes || aFluid.amount >= tFluid.amount)) {temp = F; break;}}
+			for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aDontCheckStackSizes || aFluid.getAmount() >= tFluid.getAmount())) {temp = F; break;}}
 			if (temp) return F;
 		}
 		
 		if (!checkStacksEqual(F, aDontCheckStackSizes, aInputs)) return F;
 		
 		if (aDecreaseStacksizeBySuccess) {
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.amount >= tFluid.amount) {tTank.drain(tFluid.amount, T); break;}}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {tTank.drain(tFluid.getAmount(), T); break;}}
 			checkStacksEqual(T, F, aInputs);
 		}
 		
@@ -846,13 +846,13 @@ public class Recipe {
 		while (rProcessCount < aMaxProcessCount) {
 			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) {
 				boolean temp = T;
-				for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.amount >= tFluid.amount) {temp = F; break;}}
+				for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {temp = F; break;}}
 				if (temp) return rProcessCount;
 			}
 			
 			if (!checkStacksEqual(F, F, aInputs)) return rProcessCount;
 			
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aFluid.amount >= tFluid.amount)) {tTank.drain(tFluid.amount, T); break;}}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && aFluid.isFluidEqual(tFluid) && (aFluid.getAmount() >= tFluid.getAmount())) {tTank.drain(tFluid.getAmount(), T); break;}}
 			checkStacksEqual(T, F, aInputs);
 			
 			rProcessCount++;
@@ -906,8 +906,8 @@ public class Recipe {
 		for (int i = 0; i < aChances     .length; i++) if (aChances[i] <=  0) aChances[i] = 10000;
 		for (int i = 0; i < aInputs      .length; i++) if (aInputs [i] != null) {aInputs [i] = ST.copy_     (aInputs [i]); if (aInputs [i].getCount() != 0) l = Math.min(aInputs [i].getCount(), l);}
 		for (int i = 0; i < aOutputs     .length; i++) if (aOutputs[i] != null) {aOutputs[i] = ST.validMeta_(aOutputs[i]); if (aOutputs[i].getCount() != 0) l = Math.min(aOutputs[i].getCount(), l);}
-		for (int i = 0; i < aFluidInputs .length; i++) {aFluidInputs [i] = aFluidInputs [i].copy(); if (aFluidInputs [i].amount != 0) l = Math.min(aFluidInputs [i].amount, l);}
-		for (int i = 0; i < aFluidOutputs.length; i++) {aFluidOutputs[i] = aFluidOutputs[i].copy(); if (aFluidOutputs[i].amount != 0) l = Math.min(aFluidOutputs[i].amount, l);}
+		for (int i = 0; i < aFluidInputs .length; i++) {aFluidInputs [i] = aFluidInputs [i].copy(); if (aFluidInputs [i].getAmount() != 0) l = Math.min(aFluidInputs [i].getAmount(), l);}
+		for (int i = 0; i < aFluidOutputs.length; i++) {aFluidOutputs[i] = aFluidOutputs[i].copy(); if (aFluidOutputs[i].getAmount() != 0) l = Math.min(aFluidOutputs[i].getAmount(), l);}
 		
 		if (aOptimize) {
 			for (int i = 0; i < aInputs.length; i++) if (aInputs[i] != NI && ST.meta_(aInputs[i]) != W) for (int j = 0; j < aOutputs.length; j++) {
@@ -927,13 +927,13 @@ public class Recipe {
 				boolean temp = T;
 				for (int j = 0; temp && j < aInputs      .length; j++) if (aInputs [j] != null && aInputs [j].getCount() % l != 0) temp = F;
 				for (int j = 0; temp && j < aOutputs     .length; j++) if (aOutputs[j] != null && aOutputs[j].getCount() % l != 0) temp = F;
-				for (int j = 0; temp && j < aFluidInputs .length; j++) if (aFluidInputs [j].amount % l != 0) temp = F;
-				for (int j = 0; temp && j < aFluidOutputs.length; j++) if (aFluidOutputs[j].amount % l != 0) temp = F;
+				for (int j = 0; temp && j < aFluidInputs .length; j++) if (aFluidInputs [j].getAmount() % l != 0) temp = F;
+				for (int j = 0; temp && j < aFluidOutputs.length; j++) if (aFluidOutputs[j].getAmount() % l != 0) temp = F;
 				if (temp) {
 					for (int j = 0; j < aInputs      .length; j++) if (aInputs [j] != null) aInputs [j].setCount(aInputs [j].getCount()/(l));
 					for (int j = 0; j < aOutputs     .length; j++) if (aOutputs[j] != null) aOutputs[j].setCount(aOutputs[j].getCount()/(l));
-					for (int j = 0; j < aFluidInputs .length; j++) aFluidInputs [j].amount /= l;
-					for (int j = 0; j < aFluidOutputs.length; j++) aFluidOutputs[j].amount /= l;
+					for (int j = 0; j < aFluidInputs .length; j++) aFluidInputs [j].getAmount() /= l;
+					for (int j = 0; j < aFluidOutputs.length; j++) aFluidOutputs[j].getAmount() /= l;
 					aDuration /= l;
 					break;
 				}

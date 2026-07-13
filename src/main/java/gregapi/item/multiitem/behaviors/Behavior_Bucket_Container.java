@@ -73,7 +73,7 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 		}
 		if (tBlock instanceof IFluidBlock) {
 			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, F);
-			if (tDrained != null && tDrained.amount > 0 && aItem.fill(aStack, tDrained, F) == tDrained.amount) {
+			if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 				// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 				aItem.fill(aStack, tDrained, T);
 				((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, T);
@@ -88,7 +88,7 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 		
 		if (tBlock instanceof IFluidBlock) {
 			FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, F);
-			if (tDrained != null && tDrained.amount > 0 && aItem.fill(aStack, tDrained, F) == tDrained.amount) {
+			if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
 				// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
 				aItem.fill(aStack, tDrained, T);
 				((IFluidBlock)tBlock).drain(aWorld, tPosition.blockX, tPosition.blockY, tPosition.blockZ, T);

@@ -190,12 +190,12 @@ public class RecipeMapHandlerPrefix extends RecipeMapHandler {
 	@Override
 	public boolean onAddedToMap(RecipeMap aMap) {
 		if (mFluidInputPerUnit != null) {
-			aMap.mMaxFluidInputSize = Math.max(mFlatFluidCosts ? mFluidInputPerUnit.amount : mFluidInputPerUnit.amount * 4, aMap.mMaxFluidInputSize);
+			aMap.mMaxFluidInputSize = Math.max(mFlatFluidCosts ? mFluidInputPerUnit.getAmount() : mFluidInputPerUnit.getAmount() * 4, aMap.mMaxFluidInputSize);
 			Long tSize = aMap.mMinInputTankSizes.get(mFluidInputPerUnit.getFluid().getName());
-			if (tSize == null || tSize < mFluidInputPerUnit.amount) aMap.mMinInputTankSizes.put(mFluidInputPerUnit.getFluid().getName(), (long)mFluidInputPerUnit.amount);
+			if (tSize == null || tSize < mFluidInputPerUnit.getAmount()) aMap.mMinInputTankSizes.put(mFluidInputPerUnit.getFluid().getName(), (long)mFluidInputPerUnit.getAmount());
 		}
 		if (mFluidOutputPerUnit != null) {
-			aMap.mMaxFluidOutputSize = Math.max(mFluidOutputPerUnit.amount * 16, aMap.mMaxFluidOutputSize);
+			aMap.mMaxFluidOutputSize = Math.max(mFluidOutputPerUnit.getAmount() * 16, aMap.mMaxFluidOutputSize);
 		}
 		return T;
 	}
