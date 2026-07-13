@@ -77,7 +77,7 @@ public abstract class TileEntityBase08DataSwitch extends TileEntityBase07Paintab
 			ItemStack aHeldItem = aPlayer.getInventory().getCurrentItem();
 			if (OM.is(OD_USB_STICKS[0], aHeldItem)) {
 				if (ItemNBT.has(aHeldItem) && ItemNBT.get(aHeldItem).contains(NBT_USB_TIER)) {
-					setUSBData(aSide, ItemNBT.get(aHeldItem).getByte(NBT_USB_TIER), ItemNBT.get(aHeldItem).getCompoundTag(NBT_USB_DATA));
+					setUSBData(aSide, ItemNBT.get(aHeldItem).getByte(NBT_USB_TIER), ItemNBT.get(aHeldItem).getCompoundOrEmpty(NBT_USB_DATA));
 					playClick();
 				} else {
 					setUSBData(aSide, 0, null);

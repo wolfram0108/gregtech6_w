@@ -94,7 +94,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_COLOR)) mRGBa = aNBT.getInteger(NBT_COLOR);
+		if (aNBT.contains(NBT_COLOR)) mRGBa = aNBT.getIntOr(NBT_COLOR, 0);
 		if (aNBT.contains(NBT_FACING)) mFacing = aNBT.getByte(NBT_FACING);
 		if (aNBT.contains(NBT_PAINTED)) mIsPainted = aNBT.getBoolean(NBT_PAINTED);
 		if (aNBT.contains(NBT_TRAPPED)) mIsTrapped = aNBT.getBoolean(NBT_TRAPPED);

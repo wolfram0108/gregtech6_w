@@ -68,7 +68,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 		if (aNBT.contains(NBT_PROGRESS)) mLife = aNBT.getLong(NBT_PROGRESS);
 		if (aNBT.contains(NBT_COOLDOWN)) mBreedingCountDown = aNBT.getLong(NBT_COOLDOWN);
 		if (aNBT.contains(NBT_INV_OUT)) {
-			mOffSpring = new ItemStack[aNBT.getInteger(NBT_INV_OUT)];
+			mOffSpring = new ItemStack[aNBT.getIntOr(NBT_INV_OUT, 0)];
 			for (int i = 0; i < mOffSpring.length; i++) mOffSpring[i] = ST.load(aNBT, NBT_INV_OUT+"."+i);
 		}
 	}

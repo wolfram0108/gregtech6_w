@@ -132,7 +132,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
 		if (aNBT.contains(NBT_DESIGN)) mDesign = UT.Code.unsignB(aNBT.getByte(NBT_DESIGN));
-		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getInteger(NBT_MODE);
+		if (aNBT.contains(NBT_MODE)) mMode = aNBT.getIntOr(NBT_MODE, 0);
 		
 		if (CODE_CLIENT) {
 			if (GT_API.sBlockIcons == null && aNBT.contains(NBT_TEXTURE)) {

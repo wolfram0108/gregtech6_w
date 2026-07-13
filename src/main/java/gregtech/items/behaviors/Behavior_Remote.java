@@ -115,10 +115,10 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	public static ArrayListNoNulls<BlockPos> getCoords(CompoundTag aNBT, int aDimension) {
 		ArrayListNoNulls<BlockPos> rList = new ArrayListNoNulls<>();
 		if (aNBT == null) return rList;
-		CompoundTag tNBT = aNBT.getCompoundTag("gt.remote.dim."+aDimension);
+		CompoundTag tNBT = aNBT.getCompoundOrEmpty("gt.remote.dim."+aDimension);
 		if (tNBT.isEmpty()) return rList;
 		int i = -1; while (tNBT.contains("c"+(++i))) {
-			rList.add(new BlockPos(tNBT.getInteger("x"+i), tNBT.getInteger("y"+i), tNBT.getInteger("z"+i)));
+			rList.add(new BlockPos(tNBT.getIntOr("x"+i, 0), tNBT.getIntOr("y"+i, 0), tNBT.getIntOr("z"+i, 0)));
 		}
 		return rList;
 	}

@@ -63,7 +63,7 @@ public class RecipeMapReplicator extends RecipeMap {
 				if (OM.is_(OD_USB_STICKS[3], aInput)) {
 					if (!aInput.hasTagCompound()) return rRecipe;
 					tUSB = aInput;
-					tData = ItemNBT.get(tUSB).getCompoundTag(NBT_USB_DATA);
+					tData = ItemNBT.get(tUSB).getCompoundOrEmpty(NBT_USB_DATA);
 				} else if (OM.is_(OD_USB_CABLES[3], aInput)) {
 					if (aTileEntity == null) return rRecipe;
 					tUSB = aInput;

@@ -137,7 +137,7 @@ public class RecipeMapAutocrafting extends RecipeMap {
 			rBlueprint = UT.NBT.getBlueprintCrafting(aSpecialSlot);
 		} else if (OM.is_(OD_USB_STICKS[1], aSpecialSlot)) {
 			if (!aSpecialSlot.hasTagCompound()) return rBlueprint;
-			CompoundTag tData = ItemNBT.get(aSpecialSlot).getCompoundTag(NBT_USB_DATA);
+			CompoundTag tData = ItemNBT.get(aSpecialSlot).getCompoundOrEmpty(NBT_USB_DATA);
 			if (tData == null) return rBlueprint;
 			rBlueprint = UT.NBT.getBlueprintCrafting(tData);
 		} else if (OM.is_(OD_USB_CABLES[1], aSpecialSlot)) {

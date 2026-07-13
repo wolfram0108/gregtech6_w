@@ -76,7 +76,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mMode = aNBT.getByte(NBT_MODE);
-		if (aNBT.contains(NBT_CAPACITY)) mMaxStorage = aNBT.getInteger(NBT_CAPACITY);
+		if (aNBT.contains(NBT_CAPACITY)) mMaxStorage = aNBT.getIntOr(NBT_CAPACITY, 0);
 		if (aNBT.contains(NBT_INPUT)) mPartialUnits = aNBT.getLong(NBT_INPUT);
 		if (aNBT.contains(NBT_STATE)) slot(1, ST.load(aNBT, NBT_STATE)); 
 	}
@@ -90,7 +90,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
-		if (isClientSide() && slotHas(1)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", slot(1).getDisplayName()));
+		if (isClientSide() && slotHas(1)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", slot(1).getDisplayName()));
 		UT.NBT.setNumber(aNBT, NBT_MODE, mMode);
 		return super.writeItemNBT2(aNBT);
 	}

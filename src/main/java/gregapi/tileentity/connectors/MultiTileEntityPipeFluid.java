@@ -114,7 +114,7 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 		if (aNBT.contains(NBT_TANK_CAPACITY)) mCapacity = aNBT.getLong(NBT_TANK_CAPACITY);
 		if (aNBT.contains(NBT_TEMPERATURE)) mMaxTemperature = aNBT.getLong(NBT_TEMPERATURE);
 		if (aNBT.contains(NBT_TANK_COUNT)) {
-			mTanks = new FluidTankGT[Math.max(1, aNBT.getInteger(NBT_TANK_COUNT))];
+			mTanks = new FluidTankGT[Math.max(1, aNBT.getIntOr(NBT_TANK_COUNT, 0))];
 			mLastReceivedFrom = new byte[mTanks.length];
 			for (int i = 0; i < mTanks.length; i++) {
 				mTanks[i] = new FluidTankGT(aNBT, NBT_TANK+"."+i, mCapacity).setIndex(i);

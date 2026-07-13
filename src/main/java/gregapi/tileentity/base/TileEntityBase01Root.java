@@ -140,9 +140,9 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// @Override
 	public void readFromNBT(CompoundTag aNBT) {
 		// load ID and Coords
-		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getInteger("x");
-		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getInteger("y");
-		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getInteger("z");
+		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getIntOr("x", 0);
+		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getIntOr("y", 0);
+		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getIntOr("z", 0);
 		// make sure Y is not negative because this causes crashes.
 		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 	}

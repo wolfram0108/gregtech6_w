@@ -53,7 +53,7 @@ public class CompatWD extends CompatBase implements ICompatWD, IBlockTransformer
 		if (aTransformation.getRotationSteps() % 4 == 0) return aMeta;
 		
 		byte tConnections = aNBT.getByte(NBT_CONNECTION);
-		CoverData tCovers = aNBT.contains(NBT_COVERS) ? CoverRegistry.coverdata(null, aNBT.getCompoundTag(NBT_COVERS)) : null;
+		CoverData tCovers = aNBT.contains(NBT_COVERS) ? CoverRegistry.coverdata(null, aNBT.getCompoundOrEmpty(NBT_COVERS)) : null;
 		
 		switch(aTransformation.getRotationSteps() % 4) {
 		case  1:

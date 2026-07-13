@@ -505,7 +505,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		String tTooltip = getFlowerTooltip(aMeta);
 		if (UT.Code.stringValid(tTooltip)) aList.add(LH.Chat.CYAN + "Requirement:" + LH.Chat._WHITE + tTooltip);
 		CompoundTag aBumbleTag = null;
-		if (ItemNBT.has(aStack)) aBumbleTag = ItemNBT.get(aStack).getCompoundTag("gt.bumble");
+		if (ItemNBT.has(aStack)) aBumbleTag = ItemNBT.get(aStack).getCompoundOrEmpty("gt.bumble");
 		if (aBumbleTag == null || aBumbleTag.isEmpty()) {
 			aList.add(LH.Chat.BLINKING_RED + "No Genetic Data to display");
 			aList.add(LH.Chat.CYAN + "Generates random 'Outsider-Plains-Biome' Genes when used");

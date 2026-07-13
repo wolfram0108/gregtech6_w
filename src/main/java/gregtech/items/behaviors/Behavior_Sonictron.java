@@ -81,13 +81,13 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	public static int getCurrentIndex(ItemStack aStack) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
-		return tNBTTagCompound.getInteger("mCurrentIndex");
+		return tNBTTagCompound.getIntOr("mCurrentIndex", 0);
 	}
 
 	public static int getTickTimer(ItemStack aStack) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
-		return tNBTTagCompound.getInteger("mTickTimer");
+		return tNBTTagCompound.getIntOr("mTickTimer", 0);
 	}
 
 	// PORT-TODO(F8, остаточный риск): оригинал НИГДЕ не вызывает setTagCompound для этого мутированного

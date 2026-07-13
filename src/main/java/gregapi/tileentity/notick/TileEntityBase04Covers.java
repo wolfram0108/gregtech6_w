@@ -66,7 +66,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_COVERS)) mCovers = CoverRegistry.coverdata(this, aNBT.getCompoundTag(NBT_COVERS));
+		if (aNBT.contains(NBT_COVERS)) mCovers = CoverRegistry.coverdata(this, aNBT.getCompoundOrEmpty(NBT_COVERS));
 	}
 	
 	@Override

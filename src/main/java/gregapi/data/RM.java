@@ -1070,8 +1070,8 @@ public class RM {
 		toSend.putInt("energy", energy);
 		toSend.put("input", UT.NBT.make());
 		toSend.put("output", UT.NBT.make());
-		input.writeToNBT(toSend.getCompoundTag("input"));
-		output.writeToNBT(toSend.getCompoundTag("output"));
+		input.writeToNBT(toSend.getCompoundOrEmpty("input"));
+		output.writeToNBT(toSend.getCompoundOrEmpty("output"));
 		InterModComms.sendMessage("ThermalExpansion", "FurnaceRecipe", toSend);
 	}
 	public static void te_pulverizer(int energy, ItemStack input, ItemStack primaryOutput) {
@@ -1087,9 +1087,9 @@ public class RM {
 		toSend.put("input", UT.NBT.make());
 		toSend.put("primaryOutput", UT.NBT.make());
 		toSend.put("secondaryOutput", UT.NBT.make());
-		input.writeToNBT(toSend.getCompoundTag("input"));
-		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
-		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
+		input.writeToNBT(toSend.getCompoundOrEmpty("input"));
+		primaryOutput.writeToNBT(toSend.getCompoundOrEmpty("primaryOutput"));
+		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundOrEmpty("secondaryOutput"));
 		toSend.putInt("secondaryChance", secondaryChance);
 		InterModComms.sendMessage("ThermalExpansion", "PulverizerRecipe", toSend);
 	}
@@ -1106,9 +1106,9 @@ public class RM {
 		toSend.put("input", UT.NBT.make());
 		toSend.put("primaryOutput", UT.NBT.make());
 		toSend.put("secondaryOutput", UT.NBT.make());
-		input.writeToNBT(toSend.getCompoundTag("input"));
-		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
-		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
+		input.writeToNBT(toSend.getCompoundOrEmpty("input"));
+		primaryOutput.writeToNBT(toSend.getCompoundOrEmpty("primaryOutput"));
+		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundOrEmpty("secondaryOutput"));
 		toSend.putInt("secondaryChance", secondaryChance);
 		InterModComms.sendMessage("ThermalExpansion", "SawmillRecipe", toSend);
 	}
@@ -1126,10 +1126,10 @@ public class RM {
 		toSend.put("secondaryInput", UT.NBT.make());
 		toSend.put("primaryOutput", UT.NBT.make());
 		toSend.put("secondaryOutput", UT.NBT.make());
-		primaryInput.writeToNBT(toSend.getCompoundTag("primaryInput"));
-		secondaryInput.writeToNBT(toSend.getCompoundTag("secondaryInput"));
-		primaryOutput.writeToNBT(toSend.getCompoundTag("primaryOutput"));
-		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundTag("secondaryOutput"));
+		primaryInput.writeToNBT(toSend.getCompoundOrEmpty("primaryInput"));
+		secondaryInput.writeToNBT(toSend.getCompoundOrEmpty("secondaryInput"));
+		primaryOutput.writeToNBT(toSend.getCompoundOrEmpty("primaryOutput"));
+		if (secondaryOutput != null) secondaryOutput.writeToNBT(toSend.getCompoundOrEmpty("secondaryOutput"));
 		toSend.putInt("secondaryChance", secondaryChance);
 		InterModComms.sendMessage("ThermalExpansion", "SmelterRecipe", toSend);
 	}
@@ -1144,8 +1144,8 @@ public class RM {
 		toSend.putInt("energy", energy);
 		toSend.put("input", UT.NBT.make());
 		toSend.put("output", UT.NBT.make());
-		input.writeToNBT(toSend.getCompoundTag("input"));
-		output.writeToNBT(toSend.getCompoundTag("output"));
+		input.writeToNBT(toSend.getCompoundOrEmpty("input"));
+		output.writeToNBT(toSend.getCompoundOrEmpty("output"));
 		InterModComms.sendMessage("ThermalExpansion", "CrucibleRecipe", toSend);
 	}
 	public static void te_fill(int energy, ItemStack input, ItemStack output, FluidStack fluid, boolean reversible) {
@@ -1155,10 +1155,10 @@ public class RM {
 		toSend.put("input", UT.NBT.make());
 		toSend.put("output", UT.NBT.make());
 		toSend.put("fluid", UT.NBT.make());
-		input.writeToNBT(toSend.getCompoundTag("input"));
-		output.writeToNBT(toSend.getCompoundTag("output"));
+		input.writeToNBT(toSend.getCompoundOrEmpty("input"));
+		output.writeToNBT(toSend.getCompoundOrEmpty("output"));
 		UT.NBT.setBoolean(toSend, "reversible", reversible);
-		fluid.writeToNBT(toSend.getCompoundTag("fluid"));
+		fluid.writeToNBT(toSend.getCompoundOrEmpty("fluid"));
 		InterModComms.sendMessage("ThermalExpansion", "TransposerFillRecipe", toSend);
 	}
 	public static void te_extract(int energy, ItemStack input, ItemStack output, FluidStack fluid, int chance, boolean reversible) {
@@ -1168,11 +1168,11 @@ public class RM {
 		toSend.put("input", UT.NBT.make());
 		toSend.put("output", UT.NBT.make());
 		toSend.put("fluid", UT.NBT.make());
-		input.writeToNBT(toSend.getCompoundTag("input"));
-		output.writeToNBT(toSend.getCompoundTag("output"));
+		input.writeToNBT(toSend.getCompoundOrEmpty("input"));
+		output.writeToNBT(toSend.getCompoundOrEmpty("output"));
 		UT.NBT.setBoolean(toSend, "reversible", reversible);
 		toSend.putInt("chance", chance);
-		fluid.writeToNBT(toSend.getCompoundTag("fluid"));
+		fluid.writeToNBT(toSend.getCompoundOrEmpty("fluid"));
 		InterModComms.sendMessage("ThermalExpansion", "TransposerExtractRecipe", toSend);
 	}
 }

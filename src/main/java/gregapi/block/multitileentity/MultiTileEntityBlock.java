@@ -124,7 +124,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 * @param aNormalCube if this Block is a normal Cube (for Redstone Stuff).
 	 */
 	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		super(aVanillaMaterial);
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
 		if (GAPI.mStartedInit) throw new IllegalStateException("Blocks can only be initialised within preInit!");
 		
 		mNameInternal = getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube);

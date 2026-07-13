@@ -74,14 +74,14 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		mCPU_Logic = aNBT.getInteger("gt.cpu.logic");
-		mCPU_Control = aNBT.getInteger("gt.cpu.control");
-		mCPU_Storage = aNBT.getInteger("gt.cpu.storage");
-		mCPU_Conversion = aNBT.getInteger("gt.cpu.conversion");
-		oCPU_Logic = aNBT.getInteger("gt.cpu.logic.used");
-		oCPU_Control = aNBT.getInteger("gt.cpu.control.used");
-		oCPU_Storage = aNBT.getInteger("gt.cpu.storage.used");
-		oCPU_Conversion = aNBT.getInteger("gt.cpu.conversion.used");
+		mCPU_Logic = aNBT.getIntOr("gt.cpu.logic", 0);
+		mCPU_Control = aNBT.getIntOr("gt.cpu.control", 0);
+		mCPU_Storage = aNBT.getIntOr("gt.cpu.storage", 0);
+		mCPU_Conversion = aNBT.getIntOr("gt.cpu.conversion", 0);
+		oCPU_Logic = aNBT.getIntOr("gt.cpu.logic.used", 0);
+		oCPU_Control = aNBT.getIntOr("gt.cpu.control.used", 0);
+		oCPU_Storage = aNBT.getIntOr("gt.cpu.storage.used", 0);
+		oCPU_Conversion = aNBT.getIntOr("gt.cpu.conversion.used", 0);
 		for (int i = 0; i < mTanks.length; i++) mTanks[i] = new FluidTankGT(16000).readFromNBT(aNBT, NBT_TANK+"."+i);
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {

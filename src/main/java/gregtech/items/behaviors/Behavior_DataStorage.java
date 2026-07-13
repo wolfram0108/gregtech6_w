@@ -37,7 +37,7 @@ public class Behavior_DataStorage extends AbstractBehaviorDefault {
 	@Override
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		if (aStack != null && ItemNBT.has(aStack)) {
-			CompoundTag tUSB = ItemNBT.get(aStack).getCompoundTag(NBT_USB_DATA);
+			CompoundTag tUSB = ItemNBT.get(aStack).getCompoundOrEmpty(NBT_USB_DATA);
 			if (tUSB != null) {
 				UT.NBT.getDataToolTip(tUSB, aList, T);
 				aList.add(LH.Chat.DGRAY + "Data: USB " + ItemNBT.get(aStack).getByte(NBT_USB_TIER) + ".0");

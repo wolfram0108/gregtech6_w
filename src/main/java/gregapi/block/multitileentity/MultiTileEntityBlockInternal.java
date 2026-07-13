@@ -50,7 +50,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	public MultiTileEntityRegistry mMultiTileEntityRegistry;
 	
 	public MultiTileEntityBlockInternal() {
-		super(Material.anvil);
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
 	}
 	
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}

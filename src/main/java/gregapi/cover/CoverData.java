@@ -60,7 +60,7 @@ public class CoverData {
 			, new short[] {aNBT.getShort("g"), aNBT.getShort("h"), aNBT.getShort("i"), aNBT.getShort("j"), aNBT.getShort("k"), aNBT.getShort("l")}
 			, new short[] {aNBT.getShort("m"), aNBT.getShort("n"), aNBT.getShort("o"), aNBT.getShort("p"), aNBT.getShort("q"), aNBT.getShort("r")}
 			, new short[] {aNBT.getShort("0"), aNBT.getShort("1"), aNBT.getShort("2"), aNBT.getShort("3"), aNBT.getShort("4"), aNBT.getShort("5")}
-			, new CompoundTag[] {aNBT.getCompoundTag("s"), aNBT.getCompoundTag("t"), aNBT.getCompoundTag("u"), aNBT.getCompoundTag("v"), aNBT.getCompoundTag("w"), aNBT.getCompoundTag("x")}
+			, new CompoundTag[] {aNBT.getCompoundOrEmpty("s"), aNBT.getCompoundOrEmpty("t"), aNBT.getCompoundOrEmpty("u"), aNBT.getCompoundOrEmpty("v"), aNBT.getCompoundOrEmpty("w"), aNBT.getCompoundOrEmpty("x")}
 			, aNBT.getBoolean("y")
 			, aTileEntity);
 	}

@@ -92,7 +92,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains("gt.mold")) mShape = aNBT.getInteger("gt.mold");
+		if (aNBT.contains("gt.mold")) mShape = aNBT.getIntOr("gt.mold", 0);
 		if (aNBT.contains(NBT_MODE)) mUseRedstone = aNBT.getBoolean(NBT_MODE);
 		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
 		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByte(NBT_CONNECTION);

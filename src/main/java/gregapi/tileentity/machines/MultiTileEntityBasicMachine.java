@@ -132,7 +132,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 		if (aNBT.contains(NBT_INPUT_MIN)) {mInputMin = aNBT.getLong(NBT_INPUT_MIN);}
 		if (aNBT.contains(NBT_INPUT_MAX)) {mInputMax = aNBT.getLong(NBT_INPUT_MAX);}
 		if (aNBT.contains(NBT_MINENERGY)) {mMinEnergy = aNBT.getLong(NBT_MINENERGY);}
-		if (aNBT.contains(NBT_PARALLEL)) {mParallel = Math.max(1, aNBT.getInteger(NBT_PARALLEL));}
+		if (aNBT.contains(NBT_PARALLEL)) {mParallel = Math.max(1, aNBT.getIntOr(NBT_PARALLEL, 0));}
 		if (aNBT.contains(NBT_PARALLEL_DURATION)) mParallelDuration = aNBT.getBoolean(NBT_PARALLEL_DURATION);
 		if (aNBT.contains(NBT_USE_OUTPUT_TANK)) mCanUseOutputTanks = aNBT.getBoolean(NBT_USE_OUTPUT_TANK);
 		if (aNBT.contains(NBT_PROGRESS)) {mProgress = aNBT.getLong(NBT_PROGRESS);}

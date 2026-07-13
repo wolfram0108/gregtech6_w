@@ -434,15 +434,15 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	public void setPlanName(ItemStack aStack, String aName) {
 		// F8: тег захвачен ОДИН раз, вложенная мутация коммитится явным ItemNBT.set (см. ItemNBT.java).
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		tNBT.getCompoundTag(NBT_USB_DATA).putString(NBT_REACTOR_SETUP_NAME, aName);
+		tNBT.getCompoundOrEmpty(NBT_USB_DATA).putString(NBT_REACTOR_SETUP_NAME, aName);
 		ItemNBT.set(aStack, tNBT);
 	}
 
 	public boolean hasSetup(ItemStack aStack) {
-		return OM.is(OD_USB_STICKS[2], aStack) && ItemNBT.has(aStack) && ItemNBT.get(aStack).getCompoundTag(NBT_USB_DATA).contains(NBT_REACTOR_SETUP);
+		return OM.is(OD_USB_STICKS[2], aStack) && ItemNBT.has(aStack) && ItemNBT.get(aStack).getCompoundOrEmpty(NBT_USB_DATA).contains(NBT_REACTOR_SETUP);
 	}
 
 	public String getSetup(ItemStack aStack) {
-		return ItemNBT.get(aStack).getCompoundTag(NBT_USB_DATA).getString(NBT_REACTOR_SETUP);
+		return ItemNBT.get(aStack).getCompoundOrEmpty(NBT_USB_DATA).getString(NBT_REACTOR_SETUP);
 	}
 }

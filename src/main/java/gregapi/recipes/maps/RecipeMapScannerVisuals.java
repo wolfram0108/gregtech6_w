@@ -102,8 +102,8 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 							rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tScanned), ST.amount(1, tUSB)), ST.array(ST.amount(1, tUSB), ST.amount(1, tScanned)), null, null, null, null, 64, 16, 0);
 							if (!rRecipe.mOutputs[0].hasTagCompound()) rRecipe.mOutputs[0].setTagCompound(UT.NBT.make());
 							CompoundTag tNBT = UT.NBT.make();
-							tNBT.putInt(NBT_CANVAS_BLOCK, ItemNBT.get(tScanned).getInteger(NBT_CANVAS_BLOCK));
-							tNBT.putInt(NBT_CANVAS_META, ItemNBT.get(tScanned).getInteger(NBT_CANVAS_META));
+							tNBT.putInt(NBT_CANVAS_BLOCK, ItemNBT.get(tScanned).getIntOr(NBT_CANVAS_BLOCK, 0));
+							tNBT.putInt(NBT_CANVAS_META, ItemNBT.get(tScanned).getIntOr(NBT_CANVAS_META, 0));
 							rRecipe.mOutputs[0].getTagCompound().put(NBT_USB_DATA, tNBT);
 							rRecipe.mOutputs[0].getTagCompound().putByte(NBT_USB_TIER, (byte)1);
 							return rRecipe;

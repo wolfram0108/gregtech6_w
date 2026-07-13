@@ -72,8 +72,8 @@ public abstract class MultiTileEntityReactorCore extends TileEntityBase10FacingD
 		mTanks[0].readFromNBT(aNBT, NBT_TANK+".0");
 		mTanks[1].readFromNBT(aNBT, NBT_TANK+".1");
 		for (int i = 0; i < 4; i++) {
-			mNeutronCounts[i] = aNBT.getInteger(NBT_VALUE+".m."+i);
-			oNeutronCounts[i] = aNBT.getInteger(NBT_VALUE+".o."+i);
+			mNeutronCounts[i] = aNBT.getIntOr(NBT_VALUE+".m."+i, 0);
+			oNeutronCounts[i] = aNBT.getIntOr(NBT_VALUE+".o."+i, 0);
 		}
 		
 		if (level != null && isServerSide() && mHasToAddTimer) {

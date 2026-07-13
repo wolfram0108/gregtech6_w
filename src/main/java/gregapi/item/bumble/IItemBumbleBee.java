@@ -97,7 +97,7 @@ public interface IItemBumbleBee {
 		public static CompoundTag getBumbleTag(ItemStack aBumbleBee) {
 			// F8: getOrCreate возвращает detached-копию (иммутабельный CustomData); мутацию setTag
 			// нужно закоммитить явным UT.NBT.set, иначе "gt.bumble" не долетит до стека (см. ItemNBT.java).
-			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee), rBumbleTag = aNBT.getCompoundTag("gt.bumble");
+			CompoundTag aNBT = UT.NBT.getOrCreate(aBumbleBee), rBumbleTag = aNBT.getCompoundOrEmpty("gt.bumble");
 			if (rBumbleTag == null || rBumbleTag.isEmpty()) rBumbleTag = getBumbleGenes(RNGSUS);
 			aNBT.put("gt.bumble", rBumbleTag);
 			UT.NBT.set(aBumbleBee, aNBT);

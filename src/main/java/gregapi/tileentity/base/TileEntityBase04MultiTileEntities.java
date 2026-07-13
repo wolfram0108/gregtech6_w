@@ -101,13 +101,13 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 			}
 		}
 		// read the Coords if it has them.
-		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getInteger("x");
-		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getInteger("y");
-		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getInteger("z");
+		if (aNBT.contains("x")) getBlockPos().getX() = aNBT.getIntOr("x", 0);
+		if (aNBT.contains("y")) getBlockPos().getY() = aNBT.getIntOr("y", 0);
+		if (aNBT.contains("z")) getBlockPos().getZ() = aNBT.getIntOr("z", 0);
 		// make sure Y is not negative because this causes crashes.
 		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
 		// read the custom Name.
-		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundTag("display").getString("Name");
+		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundOrEmpty("display").getString("Name");
 		// And now your custom readFromNBT.
 		try {readFromNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -121,7 +121,7 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 		aNBT.putShort(NBT_MTE_ID, mMTEID);
 		aNBT.putShort(NBT_MTE_REG, mMTERegistry);
 		// write the Custom Name
-		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", mCustomName));
 		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		// write the rest
 		try {writeToNBT2(aNBT);} catch(Throwable e) {e.printStackTrace(ERR);}
@@ -131,8 +131,8 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	@Override
 	public CompoundTag writeItemNBT(CompoundTag aNBT) {
-		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", mCustomName));
-		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", ERROR_MESSAGE));
+		if (UT.Code.stringValid(mCustomName)) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", mCustomName));
+		if (UT.Code.stringValid(ERROR_MESSAGE) && isClientSide()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", ERROR_MESSAGE));
 		if (isPainted()) {aNBT.putInt(NBT_COLOR, getPaint()); aNBT.putBoolean(NBT_PAINTED, T);}
 		return aNBT;
 	}

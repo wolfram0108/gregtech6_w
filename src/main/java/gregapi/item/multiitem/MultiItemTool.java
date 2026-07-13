@@ -433,7 +433,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		}
 		return 0;
 	}
-	// PORT-TODO(F8, остаточный риск): оригинал мутирует aNBT.getCompoundTag("GT.ToolStats") и НЕ вызывает
+	// PORT-TODO(F8, остаточный риск): оригинал мутирует aNBT.getCompoundOrEmpty("GT.ToolStats") и НЕ вызывает
 	// setTagCompound повторно — в 1.7.10 это был живой объект тега стека, мутация сохранялась сама.
 	// Под мостом ItemNBT (CustomData копирует тег на каждый get()) эта мутация НЕ долетает до стека:
 	// метод становится no-op. См. ItemNBT.java javadoc и decisions/F8-nbt-data-components.md §7.

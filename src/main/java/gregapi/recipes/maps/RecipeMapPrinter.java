@@ -64,7 +64,7 @@ public class RecipeMapPrinter extends RecipeMap {
 				if (OM.is_(OD_USB_STICKS[1], aInput)) {
 					if (!aInput.hasTagCompound()) return rRecipe;
 					tUSB = aInput;
-					tData = ItemNBT.get(tUSB).getCompoundTag(NBT_USB_DATA);
+					tData = ItemNBT.get(tUSB).getCompoundOrEmpty(NBT_USB_DATA);
 				} else if (OM.is_(OD_USB_CABLES[1], aInput)) {
 					if (aTileEntity == null) return rRecipe;
 					tUSB = aInput;
@@ -89,8 +89,8 @@ public class RecipeMapPrinter extends RecipeMap {
 					rRecipe = new Recipe(F, F, F, ST.array(ST.amount(1, tPaper), ST.amount(0, tUSB)), ST.array(ST.amount(1, tPaper)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T)), null, 64, 16, 0);
 					CompoundTag tNBT = rRecipe.mOutputs[0].getTagCompound();
 					if (tNBT == null) tNBT = UT.NBT.make();
-					tNBT.putInt(NBT_CANVAS_BLOCK, tData.getInteger(NBT_CANVAS_BLOCK));
-					tNBT.putInt(NBT_CANVAS_META, tData.getInteger(NBT_CANVAS_META));
+					tNBT.putInt(NBT_CANVAS_BLOCK, tData.getIntOr(NBT_CANVAS_BLOCK, 0));
+					tNBT.putInt(NBT_CANVAS_META, tData.getIntOr(NBT_CANVAS_META, 0));
 					UT.NBT.set(rRecipe.mOutputs[0], tNBT);
 					return rRecipe;
 				}

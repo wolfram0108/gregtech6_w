@@ -58,7 +58,7 @@ public class EntityFoodTracker implements AttachmentType {
 	
 	// @Override
 	public void loadNBTData(CompoundTag aNBT) {
-		CompoundTag tNBT = aNBT.getCompoundTag("gt.props.food");
+		CompoundTag tNBT = aNBT.getCompoundOrEmpty("gt.props.food");
 		if (tNBT == null) return;
 		mAlcohol     = tNBT.getByte("a");
 		mCaffeine    = tNBT.getByte("c");

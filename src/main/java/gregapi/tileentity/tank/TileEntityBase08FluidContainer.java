@@ -92,7 +92,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	@Override
 	public CompoundTag writeItemNBT2(CompoundTag aNBT) {
 		mTank.writeToNBT(aNBT, NBT_TANK);
-		if (isClientSide() && !mTank.isEmpty()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundTag("display"), "Name", FL.name(mTank, T)));
+		if (isClientSide() && !mTank.isEmpty()) aNBT.put("display", UT.NBT.makeString(aNBT.getCompoundOrEmpty("display"), "Name", FL.name(mTank, T)));
 		return super.writeItemNBT2(aNBT);
 	}
 	

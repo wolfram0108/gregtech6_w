@@ -65,7 +65,7 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mEnergy = aNBT.getLong(NBT_ENERGY);
-		mType = aNBT.getInteger(NBT_VALUE);
+		mType = aNBT.getIntOr(NBT_VALUE, 0);
 		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
 		mTank.readFromNBT(aNBT, NBT_TANK+"."+0);
 	}

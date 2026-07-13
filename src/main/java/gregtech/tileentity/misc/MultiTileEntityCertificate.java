@@ -92,7 +92,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 	
 	public static ItemStack getCertificate(int aAmount, String aName) {
 		CompoundTag tNBT = UT.NBT.make();
-		if (UT.Code.stringValid(aName)) tNBT.put("display", UT.NBT.makeString(tNBT.getCompoundTag("display"), "Name", aName));
+		if (UT.Code.stringValid(aName)) tNBT.put("display", UT.NBT.makeString(tNBT.getCompoundOrEmpty("display"), "Name", aName));
 		return MTE_REGISTRY.getItem(INSTANCE.getMultiTileEntityID(), aAmount, tNBT);
 	}
 	
