@@ -18,6 +18,7 @@
  */
 
 package gregapi.item.multiitem.behaviors;
+import net.minecraft.world.phys.BlockHitResult;
 
 import static gregapi.data.CS.*;
 
@@ -124,7 +125,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		HitResult aTarget = WD.getMOP(aWorld, aPlayer, mFluid == null);
 		if (aTarget == null || aTarget.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
-		int aX = aTarget.getBlockPos().getX(), aY = aTarget.getBlockPos().getY(), aZ = aTarget.getBlockPos().getZ();
+		int aX = ((BlockHitResult)aTarget).getBlockPos().getX(), aY = ((BlockHitResult)aTarget).getBlockPos().getY(), aZ = ((BlockHitResult)aTarget).getBlockPos().getZ();
 		ItemStack tBucket = ST.make(Items.BUCKET, 1, 0);
 		
 		if (mFluid == null) {
