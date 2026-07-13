@@ -94,7 +94,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 		float tResistance = mPlaceable.getExplosionResistance(aMeta);
 		if (tResistance >= 4) aList.add(LH.getToolTipBlastResistance(getBlock(), tResistance));
 		
-		aList.add(LH.getToolTipHarvest(getBlock().getMaterial(), getBlock().getHarvestTool(aMeta), getBlock().getHarvestLevel(aMeta)));
+		aList.add(LH.getToolTipHarvest(WD.getMaterial(getBlock()), getBlock().getHarvestTool(aMeta), getBlock().getHarvestLevel(aMeta)));
 		while (aList.remove(null));
 	}
 	

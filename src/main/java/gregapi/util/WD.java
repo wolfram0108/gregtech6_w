@@ -426,6 +426,38 @@ public class WD {
 		if (tKey == Level.END) return 1;
 		return tKey.location().hashCode();
 	}
+	/** F9: 1.7.10 WD.getMaterial(Block) удалён в neo (класс Material убран). GT6-блок (BlockBase) хранит портированный
+	 *  gregapi.block.Material; для ВАНИЛЬНЫХ neo-блоков классифицируем по идентичности (критичные fluid/air/fire —
+	 *  ТОЧНО, сверено с 1.7.10) + neo BlockTags (семьи logs/leaves/carpet — надёжнее ручного списка). Материалы —
+	 *  портированные 1:1 gregapi.block.Material (список сверен с референсом). PORT-TODO(F9, material-table): непокрытые
+	 *  блоки -> Material.rock (документированная деградация §10; критичные сравнения GT6 — water/lava/air/fire/wood/
+	 *  leaves/sand/grass/ground/gourd/cactus/vine/clay/carpet — покрыты, редкие блоки классиф. как rock). */
+	public static gregapi.block.Material getMaterial(Block aBlock) {
+		if (aBlock instanceof BlockBase) return WD.getMaterial(((BlockBase)aBlock));
+		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
+		if (tState.isAir())                                                                                      return gregapi.block.Material.air;
+		if (aBlock == Blocks.WATER || aBlock == Blocks.BUBBLE_COLUMN)                                            return gregapi.block.Material.water;
+		if (aBlock == Blocks.LAVA)                                                                               return gregapi.block.Material.lava;
+		if (aBlock == Blocks.FIRE || aBlock == Blocks.SOUL_FIRE)                                                 return gregapi.block.Material.fire;
+		if (aBlock == Blocks.CACTUS)                                                                             return gregapi.block.Material.cactus;
+		if (aBlock == Blocks.VINE)                                                                               return gregapi.block.Material.vine;
+		if (aBlock == Blocks.CLAY)                                                                               return gregapi.block.Material.clay;
+		if (aBlock == Blocks.MELON || aBlock == Blocks.PUMPKIN || aBlock == Blocks.CARVED_PUMPKIN || aBlock == Blocks.JACK_O_LANTERN) return gregapi.block.Material.gourd;
+		if (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.MYCELIUM || aBlock == Blocks.PODZOL)                return gregapi.block.Material.grass;
+		if (aBlock == Blocks.PACKED_ICE)                                                                         return gregapi.block.Material.packedIce;
+		if (aBlock == Blocks.ICE || aBlock == Blocks.BLUE_ICE || aBlock == Blocks.FROSTED_ICE)                   return gregapi.block.Material.ice;
+		if (aBlock == Blocks.SNOW || aBlock == Blocks.SNOW_BLOCK || aBlock == Blocks.POWDER_SNOW)                return gregapi.block.Material.snow;
+		if (aBlock == Blocks.COBWEB)                                                                             return gregapi.block.Material.web;
+		if (aBlock == Blocks.TNT)                                                                                return gregapi.block.Material.tnt;
+		if (tState.is(net.minecraft.tags.BlockTags.SAND))                                                        return gregapi.block.Material.sand;
+		if (aBlock == Blocks.DIRT || aBlock == Blocks.COARSE_DIRT || aBlock == Blocks.GRAVEL || aBlock == Blocks.FARMLAND || aBlock == Blocks.DIRT_PATH || aBlock == Blocks.ROOTED_DIRT || aBlock == Blocks.SOUL_SAND || aBlock == Blocks.SOUL_SOIL) return gregapi.block.Material.ground;
+		if (tState.is(net.minecraft.tags.BlockTags.LEAVES))                                                      return gregapi.block.Material.leaves;
+		if (tState.is(net.minecraft.tags.BlockTags.LOGS) || tState.is(net.minecraft.tags.BlockTags.PLANKS) || aBlock == Blocks.CRAFTING_TABLE || aBlock == Blocks.BOOKSHELF || aBlock == Blocks.CHEST || aBlock == Blocks.JUKEBOX || aBlock == Blocks.NOTE_BLOCK) return gregapi.block.Material.wood;
+		if (tState.is(net.minecraft.tags.BlockTags.WOOL_CARPETS))                                                return gregapi.block.Material.carpet;
+		if (tState.is(net.minecraft.tags.BlockTags.WOOL))                                                        return gregapi.block.Material.cloth;
+		if (tState.is(net.minecraft.tags.BlockTags.SAPLINGS) || tState.is(net.minecraft.tags.BlockTags.SMALL_FLOWERS) || tState.is(net.minecraft.tags.BlockTags.FLOWERS) || tState.is(net.minecraft.tags.BlockTags.CROPS) || aBlock == Blocks.SUGAR_CANE || aBlock == Blocks.SUNFLOWER) return gregapi.block.Material.plants;
+		return gregapi.block.Material.rock;
+	}
 
 	public static byte WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD = 0;
 	
@@ -827,9 +859,9 @@ public class WD {
 	public static boolean fire(Level aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
 		BlockPos tFirePos = new BlockPos(aX, aY, aZ);
 		Block tBlock = aWorld.getBlockState(tFirePos).getBlock(); // было aWorld.getBlock(x,y,z)
-		if (tBlock.getMaterial() == Material.lava || tBlock.getMaterial() == Material.fire) return F;
+		if (WD.getMaterial(tBlock) == Material.lava || WD.getMaterial(tBlock) == Material.fire) return F;
 		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z)==null — BlockState.getCollisionShape(level,pos).isEmpty() (BlockBehaviour.java:674)
-		if (tBlock.getMaterial() == Material.carpet || aWorld.getBlockState(tFirePos).getCollisionShape(aWorld, tFirePos).isEmpty()) {
+		if (WD.getMaterial(tBlock) == Material.carpet || aWorld.getBlockState(tFirePos).getCollisionShape(aWorld, tFirePos).isEmpty()) {
 			if (MD.TC.mLoaded && te(aWorld, aX, aY, aZ, T) instanceof INode) return F;
 			if (tBlock.getFlammability(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
 			if (tBlock instanceof IItemGT) return F;
@@ -1056,7 +1088,7 @@ public class WD {
 			rList.add("Hardness: " + WD.hardness(aBlock, aWorld, aX, aY, aZ) + " - " + LH.getToolTipBlastResistance(aBlock, tResistance));
 			int tHarvestLevel = aBlock.getHarvestLevel(aMeta);
 			String tHarvestTool = aBlock.getHarvestTool(aMeta);
-			rList.add(tHarvestLevel == 0 && aBlock.getMaterial().isAdventureModeExempt() ? "Hand-Harvestable, but " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " is faster" : "Tool to Harvest: " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " (" + tHarvestLevel + ")");
+			rList.add(tHarvestLevel == 0 && WD.getMaterial(aBlock).isAdventureModeExempt() ? "Hand-Harvestable, but " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " is faster" : "Tool to Harvest: " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " (" + tHarvestLevel + ")");
 			if (aBlock.isBeaconBase(aWorld, aX, aY, aZ, aX, aY+1, aZ)) rList.add("Is usable for Beacon Pyramids");
 			if (MD.GC.mLoaded && aBlock instanceof IPartialSealableBlock) rList.add(((IPartialSealableBlock)aBlock).isSealed(aWorld, aX, aY, aZ, FORGE_DIR[aSide ^ 1]) ? "Is Sealable on this Side" : "Is not Sealable on this Side");
 		} catch(Throwable e) {e.printStackTrace(ERR);}

@@ -113,7 +113,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		for (byte tSide : ALL_SIDES_VALID) {
 			Block tBlock = WD.block(aWorld, aX, aY, aZ, tSide, F);
 			// Check for broken Fluids of the same Material as this Fluid.
-			if (tBlock.getMaterial() == getMaterial() && WD.liquid_borken(tBlock)) {
+			if (WD.getMaterial(tBlock) == getMaterial() && WD.liquid_borken(tBlock)) {
 				// Get rid of Flowing Water/Lava adjacent to my Fluids, because Forge is fucked up.
 				if (WD.meta(aWorld, aX, aY, aZ, tSide, F) != 0 && WD.set(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], NB, 0, 2)) {
 					// The Water might have blocked a previous path.
@@ -136,7 +136,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 		// Flammability checks.
 		if (mFlammability > 0) for (byte tSide : ALL_SIDES_VALID) {
 			Block tBlock = WD.block(aWorld, aX, aY, aZ, tSide, F);
-			if (tBlock != this && (tBlock.getMaterial() == Material.lava || tBlock.getMaterial() == Material.fire)) {
+			if (tBlock != this && (WD.getMaterial(tBlock) == Material.lava || WD.getMaterial(tBlock) == Material.fire)) {
 				WD.burn(aWorld, aX, aY, aZ, T, F);
 				WD.burn(aWorld, aX-4+aRandom.nextInt(9), aY-4+aRandom.nextInt(9), aZ-4+aRandom.nextInt(9), F, F);
 				WD.burn(aWorld, aX-4+aRandom.nextInt(9), aY-4+aRandom.nextInt(9), aZ-4+aRandom.nextInt(9), F, F);
@@ -348,7 +348,7 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		if (aBlock == NB) return T;
-		if (aBlock == this || aBlock.getMaterial() == Material.water || WD.visOpq(aBlock)) return F;
+		if (aBlock == this || WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return F;
 		if (aBlock.isAir(aWorld, aX, aY, aZ)) return T;
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
@@ -368,8 +368,8 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 	
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
 	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
-	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
-	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.block(aWorld, aX, aY, aZ).getMaterial().isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
+	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
+	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
 	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta >= 7;}
 	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return mActLikeWeb || !mEffectsBathing.isEmpty() || !mEffectsBreathing.isEmpty();}
 	public boolean isNormalCube() {return F;}

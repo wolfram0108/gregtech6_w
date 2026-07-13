@@ -102,7 +102,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 						// F6: было `Block tContact = aChunk.getBlock(tX&15, tY, tZ&15)` — LevelChunk.getBlock(int,int,int)
 						// удалён; реальный neo — LevelChunk.getBlockState(BlockPos):BlockState (LevelChunk.java:210).
 						BlockState tContact = aChunk.getBlockState(new BlockPos(tX, tY, tZ));
-						// F6: было `tContact.getMaterial().isLiquid()` — Block.getMaterial() удалён (§C5); 1:1-замена
+						// F6: было `WD.getMaterial(tContact).isLiquid()` — WD.getMaterial(Block) удалён (§C5); 1:1-замена
 						// «материал блока — жидкость» это реальный BlockState.liquid() (BlockBehaviour.java:586, поле
 						// `liquid` напрямую наследует старое Material.isLiquid).
 						if (tContact.liquid()) break;
@@ -110,8 +110,8 @@ public class WorldgenOresLarge extends WorldgenObject {
 						// (пропуск не-цельных блоков при спуске к поверхности). isOpaqueCube() удалён (§C2 — dead-list);
 						// documented 1:1 нет (isSolidRender/canOcclude/isSolid близки, но не тождественны) — не выдумываю.
 						// PORT-TODO(F6, block-behavior: getMaterial()==grass/ground/sand/rock): было
-						// `if (tContact.getMaterial() != Material.grass && ... != Material.rock) break;` — индикатор
-						// ставится только на травяной/земляной/песчаный/каменный грунт. Block.getMaterial() удалён,
+						// `if (WD.getMaterial(tContact) != Material.grass && ... != Material.rock) break;` — индикатор
+						// ставится только на травяной/земляной/песчаный/каменный грунт. WD.getMaterial(Block) удалён,
 						// а Material.grass/ground/sand/rock — F9 block-material shim (ещё не сделан; WD.floor/opq/
 						// getMaterial в WD.java тоже не портированы). До готовности F9/F3 индикаторные камни
 						// (косметика над жилой) не ставятся — гейтим `break` (ничего не размещаем), чтобы не
@@ -119,7 +119,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 						break;
 						/* PORT-TODO(F6): восстановить при готовности F9(block-material)+F3(block-behavior):
 						if (!WD.opaque(tContact)) continue;
-						if (tContact.getMaterial() != Material.grass && tContact.getMaterial() != Material.ground && tContact.getMaterial() != Material.sand && tContact.getMaterial() != Material.rock) break;
+						if (WD.getMaterial(tContact) != Material.grass && WD.getMaterial(tContact) != Material.ground && WD.getMaterial(tContact) != Material.sand && WD.getMaterial(tContact) != Material.rock) break;
 						if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)!=0?ST.save(NBT_VALUE, OP.rockGt.mat(UT.Code.select(mTop, mTop, mBottom, mBetween, mSpread), 1)):UT.NBT.make(), F, T);
 						break;
 						*/

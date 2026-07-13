@@ -301,7 +301,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					} else {
 						aEvent.toolTip.add(LH.getToolTipBlastResistance(aBlock, aBlock.getExplosionResistance(null)));
 					}
-					aEvent.toolTip.add(LH.getToolTipHarvest(aBlock.getMaterial(), aBlock.getHarvestTool(aBlockMeta), aBlock.getHarvestLevel(aBlockMeta)));
+					aEvent.toolTip.add(LH.getToolTipHarvest(WD.getMaterial(aBlock), aBlock.getHarvestTool(aBlockMeta), aBlock.getHarvestLevel(aBlockMeta)));
 				}
 				if (BlocksGT.openableCrowbar.contains(aBlock)) {
 					aEvent.toolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_OPEN_CROWBAR));

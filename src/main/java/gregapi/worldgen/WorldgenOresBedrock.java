@@ -156,7 +156,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 				int tX = aMinX+aRandom.nextInt(tD*2)+8-tD, tZ = aMinZ+aRandom.nextInt(tD*2)+8-tD;
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {
 					Block tContact = WD.block(aWorld, tX, tY, tZ);
-					if (tContact.getMaterial().isLiquid() || tContact == Blocks.FARMLAND) break;
+					if (WD.getMaterial(tContact).isLiquid() || tContact == Blocks.FARMLAND) break;
 					if (!WD.opaque(tContact) || tContact.isWood(aWorld, tX, tY, tZ) || tContact.isLeaves(aWorld, tX, tY, tZ)) continue;
 					if (!WD.easyRep(aWorld, tX, tY+1, tZ)) break;
 					if (tFlowers && tContact != Blocks.DIRT && (!tRocks || aRandom.nextInt(4) > 0)) {
@@ -164,7 +164,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 						if (mFlower.canBlockStay(aWorld, tX, tY+1, tZ)) break;
 						WD.set(aWorld, tX, tY+1, tZ, NB, 0, 0);
 					}
-					if (tRocks && (tContact.getMaterial() == Material.grass || tContact.getMaterial() == Material.ground || tContact.getMaterial() == Material.sand || tContact.getMaterial() == Material.rock)) {
+					if (tRocks && (WD.getMaterial(tContact) == Material.grass || WD.getMaterial(tContact) == Material.ground || WD.getMaterial(tContact) == Material.sand || WD.getMaterial(tContact) == Material.rock)) {
 						tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, ST.save(NBT_VALUE, tRock), F, T);
 						break;
 					}

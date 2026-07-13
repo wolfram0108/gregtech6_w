@@ -1399,10 +1399,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				return;
 			}
 			if (BlocksGT.stoneToBrokenOres.containsKey(tBlock) || BlocksGT.stoneToNormalOres.containsKey(tBlock) || BlocksGT.stoneToSmallOres.containsKey(tBlock)) {
-				// PORT-TODO(EVENTS, Block.getMaterial): vanilla Block.getMaterial() (1.7.10) удалён — в neo классификация материала не
+				// PORT-TODO(EVENTS, Block.getMaterial): vanilla WD.getMaterial(Block) (1.7.10) удалён — в neo классификация материала не
 				// выражена простым Material-объектом на Block (сверено, net.minecraft.world.level.block.Block.java — метода нет); gregapi.block.Material
 				// (свой класс, тот же импорт) не содержит обратного моста Block→Material. Различение SAND/ROCK-множителя отложено — консервативно ROCK.
-				// if (aBlock2.getMaterial() == Material.sand || aBlock2.getMaterial() == Material.clay || aBlock2.getMaterial() == Material.grass || aBlock2.getMaterial() == Material.ground) {
+				// if (WD.getMaterial(aBlock2) == Material.sand || WD.getMaterial(aBlock2) == Material.clay || WD.getMaterial(aBlock2) == Material.grass || WD.getMaterial(aBlock2) == Material.ground) {
 				// 	aEvent.setNewSpeed((float)(aEvent.getNewSpeed() / HARDNESS_MULTIPLIER_SAND));
 				// 	return;
 				// }

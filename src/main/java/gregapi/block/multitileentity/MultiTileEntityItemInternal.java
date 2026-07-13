@@ -109,7 +109,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer == null) {aList.add("INVALID ITEM! THIS IS A BUG IF ACQUIRED IN A LEGIT WAY!"); return;}
 		if (tTileEntityContainer.mTileEntity instanceof IMTE_AddToolTips) try {((IMTE_AddToolTips)tTileEntityContainer.mTileEntity).addToolTips(aList, aStack, aF3_H);} catch(Throwable e) {e.printStackTrace(ERR);}
-		if (tTileEntityContainer.mTileEntity instanceof IMTE_GetFlammability ? ((IMTE_GetFlammability)tTileEntityContainer.mTileEntity).getFlammability(SIDE_ANY, tTileEntityContainer.mBlock.getMaterial().getCanBurn()) > 0 : tTileEntityContainer.mBlock.getMaterial().getCanBurn()) aList.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE));
+		if (tTileEntityContainer.mTileEntity instanceof IMTE_GetFlammability ? ((IMTE_GetFlammability)tTileEntityContainer.mTileEntity).getFlammability(SIDE_ANY, WD.getMaterial(tTileEntityContainer.mBlock).getCanBurn()) > 0 : WD.getMaterial(tTileEntityContainer.mBlock).getCanBurn()) aList.add(LH.Chat.RED + LH.get(LH.TOOLTIP_FLAMMABLE));
 		if (tTileEntityContainer.mTileEntity instanceof IMTE_GetEnchantPowerBonus) aList.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_ENCHANT_BONUS));
 		if (tTileEntityContainer.mTileEntity instanceof ITileEntityCoverable) {
 			CoverData tCoverData = ((ITileEntityCoverable)tTileEntityContainer.mTileEntity).getCoverData();
@@ -119,7 +119,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			float tResistance = ((IMTE_GetExplosionResistance)tTileEntityContainer.mTileEntity).getExplosionResistance();
 			if (tResistance >= 4) aList.add(LH.getToolTipBlastResistance(mBlock, tResistance));
 		}
-		aList.add(LH.getToolTipHarvest(tTileEntityContainer.mBlock.getMaterial(), tTileEntityContainer.mBlock.getHarvestTool(tTileEntityContainer.mBlockMetaData), tTileEntityContainer.mBlock.getHarvestLevel(tTileEntityContainer.mBlockMetaData)));
+		aList.add(LH.getToolTipHarvest(WD.getMaterial(tTileEntityContainer.mBlock), tTileEntityContainer.mBlock.getHarvestTool(tTileEntityContainer.mBlockMetaData), tTileEntityContainer.mBlock.getHarvestLevel(tTileEntityContainer.mBlockMetaData)));
 		while (aList.remove(null));
 		// Remove all Nulls and fix eventual Formatting mistakes. No longer needed because the Tooltip Event fixes it
 		//for (int i = 0, j = aList.size(); i < j; i++) if (aList.get(i) == null) {aList.remove(i--); j--;} else aList.set(i, LH.Chat.GRAY + aList.get(i) + LH.Chat.RESET_TOOLTIP);

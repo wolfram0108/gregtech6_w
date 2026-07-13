@@ -64,7 +64,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
 
-	/** F9: gregapi Material (портированная 1.7.10-модель) хранится блоком — neo `Block.getMaterial()` удалён. */
+	/** F9: gregapi Material (портированная 1.7.10-модель) хранится блоком — neo `WD.getMaterial(Block)` удалён. */
 	protected final Material mMaterial;
 	public Material getMaterial() {return mMaterial;}
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {

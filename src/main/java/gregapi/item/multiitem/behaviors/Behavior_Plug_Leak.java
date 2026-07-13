@@ -59,7 +59,7 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 				// Don't use any PrefixBlocks, TileEntities or Silverfish Blocks.
 				if (tBlock instanceof IPrefixBlock || tBlock instanceof EntityBlock || tBlock instanceof BlockSilverfish) continue;
 				// Only use Blocks that are typically mined.
-				if (tBlock.getMaterial() != Material.rock && tBlock.getMaterial() != Material.ground && tBlock.getMaterial() != Material.sand && tBlock.getMaterial() != Material.clay) continue;
+				if (WD.getMaterial(tBlock) != Material.rock && WD.getMaterial(tBlock) != Material.ground && WD.getMaterial(tBlock) != Material.sand && WD.getMaterial(tBlock) != Material.clay) continue;
 				// Don't use frikkin Ore Blocks or Storage Blocks for this!
 				if (OM.prefixcontainsany(OM.anydata(tStack), TD.Prefix.ORE, TD.Prefix.STORAGE_BASED)) continue;
 				// No Thaumcraft Blocks!

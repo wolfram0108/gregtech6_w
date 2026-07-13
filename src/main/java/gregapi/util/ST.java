@@ -822,7 +822,7 @@ public class ST {
 		Block aBlock = aTo.getBlock();
 		if (aBlock instanceof BaseRailBlock) {
 			// Do not eject shit onto Rails directly.
-		} else if (F /* PORT-TODO(этап3, F9): aBlock.getMaterial() == Material.lava — Block.getMaterial() удалён в neo, нет обратного запроса материала у произвольного Block (REMAP-RULES §C5) */ || aBlock instanceof FireBlock || (invalid(aBlock) && aTo.mY < 1)) {
+		} else if (F /* PORT-TODO(этап3, F9): WD.getMaterial(aBlock) == Material.lava — WD.getMaterial(Block) удалён в neo, нет обратного запроса материала у произвольного Block (REMAP-RULES §C5) */ || aBlock instanceof FireBlock || (invalid(aBlock) && aTo.mY < 1)) {
 			for (int aSlotFrom : aSlotsFrom) {
 				ItemStack aStackFrom = aFrom.mTileEntity.getItem(aSlotFrom);
 				if (aStackFrom != null && aMinMove <= aStackFrom.getCount() && (aFilter == null || aFilter.contains(aStackFrom, T) != aInvertFilter) && canTake(aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) {
@@ -1038,7 +1038,7 @@ public class ST {
 		if (tBlock == Blocks.OAK_SAPLING) return 100;
 		if (tBlock == Blocks.OAK_SLAB) return 150;
 		if (tBlock == Blocks.COAL_BLOCK) return 16000;
-		if (F /* PORT-TODO(этап3, F9): tBlock.getMaterial() == Material.wood — Block.getMaterial() удалён в neo */) return 300;
+		if (F /* PORT-TODO(этап3, F9): WD.getMaterial(tBlock) == Material.wood — WD.getMaterial(Block) удалён в neo */) return 300;
 		return 0;
 	}
 	

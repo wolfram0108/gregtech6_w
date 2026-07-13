@@ -103,7 +103,7 @@ public class ExplosionGT extends Explosion {
 				for (float tMul = 0.3F; tPow > 0; tPow -= tMul * 0.75F) {
 					int tFloorX = UT.Code.roundDown(tX), tFloorY = UT.Code.roundDown(tY), tFloorZ = UT.Code.roundDown(tZ);
 					Block tBlock = WD.block(mWorld, tFloorX, tFloorY, tFloorZ);
-					if (tBlock.getMaterial() != Material.air) {
+					if (WD.getMaterial(tBlock) != Material.air) {
 						float f3 = exploder != null ? exploder.func_145772_a(this, mWorld, tFloorX, tFloorY, tFloorZ, tBlock) : tBlock.getExplosionResistance(exploder, mWorld, tFloorX, tFloorY, tFloorZ, explosionX, explosionY, explosionZ);
 						tPow -= (f3 + 0.3F) * tMul;
 					}
@@ -172,7 +172,7 @@ public class ExplosionGT extends Explosion {
 					mWorld.spawnParticle("explode", (d0 + explosionX) / 2, (d1 + explosionY) / 2, (d2 + explosionZ) / 2, d3, d4, d5);
 					mWorld.spawnParticle("smoke", d0, d1, d2, d3, d4, d5);
 				}
-				if (tBlock.getMaterial() != Material.air) {
+				if (WD.getMaterial(tBlock) != Material.air) {
 					if (tBlock.canDropFromExplosion(this)) tBlock.dropBlockAsItemWithChance(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, WD.meta(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), 1 / explosionSize, 0);
 					tBlock.onBlockExploded(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, this);
 				}
@@ -184,7 +184,7 @@ public class ExplosionGT extends Explosion {
 			while (tIterator.hasNext()) {
 				final BlockPos tPos = (BlockPos)tIterator.next();
 				final Block tBlock = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ), tAbove = WD.block(mWorld, tPos.chunkPosX, tPos.chunkPosY - 1, tPos.chunkPosZ);
-				if (tBlock.getMaterial() == Material.air && tAbove.func_149730_j() && RNGSUS.nextInt(3) == 0) {
+				if (WD.getMaterial(tBlock) == Material.air && tAbove.func_149730_j() && RNGSUS.nextInt(3) == 0) {
 					mWorld.setBlock(tPos.chunkPosX, tPos.chunkPosY, tPos.chunkPosZ, Blocks.FIRE);
 				}
 			}
