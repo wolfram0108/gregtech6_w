@@ -1070,17 +1070,17 @@ public class ST {
 	// стек-лимит теперь Item.Properties#stacksTo/DataComponents.MAX_STACK_SIZE на регистрации, рантайм-смену
 	// гатим. Оригинал:
 	// Items.potionitem        .setMaxStackSize( 1);
-	// Items.glass_bottle      .setMaxStackSize(64);
+	// Items.GLASS_BOTTLE      .setMaxStackSize(64);
 	// Items.bed               .setMaxStackSize(64);
 	// Items.CAKE              .setMaxStackSize(64);
 	// Items.wooden_door       .setMaxStackSize( 8);
-	// Items.iron_door         .setMaxStackSize( 8);
+	// Items.IRON_DOOR         .setMaxStackSize( 8);
 	// Items.STICK             .setMaxStackSize(64);
-	// Items.written_book      .setMaxStackSize(64);
-	// Items.writable_book     .setMaxStackSize(64);
-	// Items.enchanted_book    .setMaxStackSize(64);
-	// Items.snowball          .setMaxStackSize(64);
-	// Items.egg               .setMaxStackSize(64);
+	// Items.WRITTEN_BOOK      .setMaxStackSize(64);
+	// Items.WRITABLE_BOOK     .setMaxStackSize(64);
+	// Items.ENCHANTED_BOOK    .setMaxStackSize(64);
+	// Items.SNOWBALL          .setMaxStackSize(64);
+	// Items.EGG               .setMaxStackSize(64);
 	public static boolean forceProperMaxStacksizes() {
 		return T;
 	}
@@ -1268,7 +1268,7 @@ public class ST {
 		//     achieve(aPlayer, AchievementList.buildSword);
 		// } else
 		// if (aItem instanceof ItemPickaxe) {
-		//     achieve(aPlayer, aItem != Items.wooden_pickaxe ? AchievementList.buildBetterPickaxe : AchievementList.buildPickaxe);
+		//     achieve(aPlayer, aItem != Items.WOODEN_PICKAXE ? AchievementList.buildBetterPickaxe : AchievementList.buildPickaxe);
 		// }
 
 		if (MD.MC.owns(aRegName)) {

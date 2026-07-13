@@ -173,7 +173,7 @@ public class Loader_Recipes_Furnace implements Runnable {
 			RM.add_smelting(OP.plate      .mat(tMat, 1), OP.plate      .mat(MT.Ceramic, 1), F, F, T);
 			RM.add_smelting(OP.plateTiny  .mat(tMat, 1), OP.plateTiny  .mat(MT.Ceramic, 1), F, F, T);
 			RM.add_smelting(OP.plateCurved.mat(tMat, 1), OP.plateCurved.mat(MT.Ceramic, 1), F, F, T);
-			RM.add_smelting(OP.ingot      .mat(tMat, 1), ST.make(Items.brick, 1, 0)       , F, F, T);
+			RM.add_smelting(OP.ingot      .mat(tMat, 1), ST.make(Items.BRICK, 1, 0)       , F, F, T);
 		}
 		
 		RUNNING = F;

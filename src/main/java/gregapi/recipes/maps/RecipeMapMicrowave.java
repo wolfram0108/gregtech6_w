@@ -52,7 +52,7 @@ public class RecipeMapMicrowave extends RecipeMapNonGTRecipes {
 		if (aRecipe != null && aRecipe.isRecipeInputEqual(F, T, aFluids, aInputs)) return aRecipe;
 		ItemStack tOutput = RM.get_smelting(aInputs[0]);
 		
-		if (ST.equal(aInputs[0], Items.book)) {
+		if (ST.equal(aInputs[0], Items.BOOK)) {
 			return new Recipe(F, F, T, ST.array(ST.amount(1, aInputs[0])), ST.array(ST.book("Manual_Microwave")), null, null, null, null, 32, 4, 0);
 		}
 		
@@ -60,10 +60,10 @@ public class RecipeMapMicrowave extends RecipeMapNonGTRecipes {
 		for (ItemStack tStack : ST.array(ST.container(aInputs[0], T), aInputs[0], ST.container(tOutput, T), tOutput)) if (ST.valid(tStack)) {
 			if (ST.equal(tStack, Blocks.NETHERRACK)
 			 || ST.equal(tStack, Blocks.TNT)
-			 || ST.equal(tStack, Items.egg)
+			 || ST.equal(tStack, Items.EGG)
 			 || ST.equal(tStack, Items.firework_charge)
 			 || ST.equal(tStack, Items.fireworks)
-			 || ST.equal(tStack, Items.fire_charge)
+			 || ST.equal(tStack, Items.FIRE_CHARGE)
 			) {
 				if (aTileEntity instanceof TileEntityBase01Root) ((TileEntityBase01Root)aTileEntity).overcharge(aSize * 4, TD.Energy.EU);
 				return null;

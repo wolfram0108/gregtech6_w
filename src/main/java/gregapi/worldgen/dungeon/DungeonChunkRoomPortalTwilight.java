@@ -41,7 +41,7 @@ public class DungeonChunkRoomPortalTwilight extends DungeonChunkRoomPortal {
 		
 		ListTag tInventory = new ListTag();
 		tInventory.add(UT.NBT.makeShort(ST.save(ST.book("Manual_Portal_TF")), "s", (short)22));
-		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.diamond, 1, 0)), "s", (short)31));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.DIAMOND, 1, 0)), "s", (short)31));
 		tInventory.add(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)12));
 		tInventory.add(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)39));
 		tInventory.add(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)14));

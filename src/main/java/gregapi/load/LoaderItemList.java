@@ -60,8 +60,8 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.ILLEGAL_DROPS.add(ST.make(MD.TC, "ItemThaumonomicon"            , 1,42));
 		ItemsGT.ILLEGAL_DROPS.add(ST.make(MD.RT, "opSpectreKey"                 , 1, W));
 		
-		ItemsGT.NON_AUTO_INSERT_ITEMS.add(ST.make(Items.arrow                   , 1, W));
-		ItemsGT.NON_AUTO_INSERT_ITEMS.add(ST.make(Items.fire_charge             , 1, W));
+		ItemsGT.NON_AUTO_INSERT_ITEMS.add(ST.make(Items.ARROW                   , 1, W));
+		ItemsGT.NON_AUTO_INSERT_ITEMS.add(ST.make(Items.FIRE_CHARGE             , 1, W));
 		ItemsGT.NON_AUTO_INSERT_ITEMS.add(ST.make(MD.BWM, "bolt"                , 1, W));
 		ItemsGT.NON_AUTO_INSERT_ITEMS.add(ST.make(MD.BWM, "bullet"              , 1, W));
 		ItemsGT.NON_AUTO_INSERT_ITEMS.add(ST.make(MD.BWM, "shot"                , 1, W));
@@ -236,8 +236,8 @@ public class LoaderItemList implements Runnable {
 		ItemsGT.AMMO_ITEMS.add(ST.make(MD.HBM, "clip_hp"                        , 1, W));
 		ItemsGT.AMMO_ITEMS.add(ST.make(MD.HBM, "clip_euthanasia"                , 1, W));
 		ItemsGT.AMMO_ITEMS.add(ST.make(MD.HBM, "clip_defabricator"              , 1, W));
-		ItemsGT.AMMO_ITEMS.add(ST.make(Items.arrow                              , 1, W));
-		ItemsGT.AMMO_ITEMS.add(ST.make(Items.fire_charge                        , 1, W));
+		ItemsGT.AMMO_ITEMS.add(ST.make(Items.ARROW                              , 1, W));
+		ItemsGT.AMMO_ITEMS.add(ST.make(Items.FIRE_CHARGE                        , 1, W));
 		ItemsGT.AMMO_ITEMS.add(ST.make(MD.BWM, "bolt"                           , 1, W));
 		ItemsGT.AMMO_ITEMS.add(ST.make(MD.BWM, "bullet"                         , 1, W));
 		ItemsGT.AMMO_ITEMS.add(ST.make(MD.BWM, "shot"                           , 1, W));
@@ -750,7 +750,7 @@ public class LoaderItemList implements Runnable {
 		
 		
 		
-		IL.Bottle_Empty                         .set(ST.make(Items.glass_bottle, 1, 0));
+		IL.Bottle_Empty                         .set(ST.make(Items.GLASS_BOTTLE, 1, 0));
 		
 		IL.Dye_Bonemeal                         .set(ST.make(Items.BONE_MEAL, 1, 0));
 		IL.Dye_SquidInk                         .set(ST.make(Items.INK_SAC, 1, 0));
@@ -758,12 +758,12 @@ public class LoaderItemList implements Runnable {
 		IL.Dye_Cocoa                            .set(ST.make(Items.COCOA_BEANS, 1, 0), null, "cropCocoa");
 		
 		IL.Bale_Wheat                           .set(ST.make(Blocks.HAY_BLOCK, 1, 0), null, "baleWheat");
-		IL.Crop_Wheat                           .set(ST.make(Items.wheat, 1, 0), null, "cropWheat");
-		IL.Food_Bread                           .set(ST.make(Items.bread, 1, 0), null, "foodBread", CR.DELATE);
+		IL.Crop_Wheat                           .set(ST.make(Items.WHEAT, 1, 0), null, "cropWheat");
+		IL.Food_Bread                           .set(ST.make(Items.BREAD, 1, 0), null, "foodBread", CR.DELATE);
 		IL.Food_Carrot                          .set(ST.make(Items.carrot, 1, 0), null, "cropCarrot");
 		IL.Food_Potato                          .set(ST.make(Items.potato, 1, 0), null, "cropPotato");
-		IL.Food_Potato_Baked                    .set(ST.make(Items.baked_potato, 1, 0));
-		IL.Food_Potato_Poisonous                .set(ST.make(Items.poisonous_potato, 1, 0));
+		IL.Food_Potato_Baked                    .set(ST.make(Items.BAKED_POTATO, 1, 0));
+		IL.Food_Potato_Poisonous                .set(ST.make(Items.POISONOUS_POTATO, 1, 0));
 		
 		IL.TiC_Stonetorch                       .set(ST.make(MD.TiC, "decoration.stonetorch", 1, 0), null, OD.blockTorch);
 		
@@ -771,7 +771,7 @@ public class LoaderItemList implements Runnable {
 		IL.TFC_Stick                            .set(ST.make(MD.TFCP.mLoaded?MD.TFCP:MD.TFC, "item.stick"   , 1, 0));
 		
 		IL.Torch                                .set(IL.TFC_Torch.get(1, ST.make(Blocks.TORCH, 1, 0)));
-		IL.Stick                                .set(IL.TFC_Stick.get(1, ST.make(Items.stick, 1, 0)));
+		IL.Stick                                .set(IL.TFC_Stick.get(1, ST.make(Items.STICK, 1, 0)));
 		
 		IL.Cell_Empty                           .set(ST.mkic("cell"                                         , 1   ), OP.cell.dat(MT.Empty), CR.DELATE);
 		IL.Cell_Water                           .set(ST.mkic("waterCell"                                    , 1   ), OP.cell.dat(MT.H2O ), OD.container1000water);
@@ -832,8 +832,8 @@ public class LoaderItemList implements Runnable {
 		IL.RC_Creosote_Capsule                  .set(ST.make(MD.RC, "fluid.creosote.wax"                    , 1, 0), null, OD.container1000creosote);
 		IL.RC_Creosote_RefractoryCapsule        .set(ST.make(MD.RC, "fluid.creosote.refactory"              , 1, 0), null, OD.container1000creosote);
 		
-		if (IL.RC_Creosote_Bottle.exists()) IL.RC_Creosote_Bottle.item().setContainerItem(Items.glass_bottle);
-		if (IL.RC_Creosote_Bucket.exists()) IL.RC_Creosote_Bucket.item().setContainerItem(Items.bucket);
+		if (IL.RC_Creosote_Bottle.exists()) IL.RC_Creosote_Bottle.item().setContainerItem(Items.GLASS_BOTTLE);
+		if (IL.RC_Creosote_Bucket.exists()) IL.RC_Creosote_Bucket.item().setContainerItem(Items.BUCKET);
 		if (IL.RC_Creosote_Cell.exists() && IL.Cell_Empty.exists()) IL.RC_Creosote_Cell.item().setContainerItem(IL.Cell_Empty.getItem());
 		
 		
@@ -945,8 +945,8 @@ public class LoaderItemList implements Runnable {
 		IL.TC_Bucket_Death                      .set(ST.make(MD.TC, "ItemBucketDeath"                       , 1, 0), new OreDictItemData(ANY.Fe, U*3), OD.itemPoison);
 		IL.TC_Bucket_Pure                       .set(ST.make(MD.TC, "ItemBucketPure"                        , 1, 0), new OreDictItemData(ANY.Fe, U*3));
 		
-		if (IL.TC_Bucket_Death.exists()) IL.TC_Bucket_Death.item().setContainerItem(Items.bucket);
-		if (IL.TC_Bucket_Pure .exists()) IL.TC_Bucket_Pure .item().setContainerItem(Items.bucket);
+		if (IL.TC_Bucket_Death.exists()) IL.TC_Bucket_Death.item().setContainerItem(Items.BUCKET);
+		if (IL.TC_Bucket_Pure .exists()) IL.TC_Bucket_Pure .item().setContainerItem(Items.BUCKET);
 		if (IL.TC_Gold_Ring   .exists()) IL.TC_Gold_Ring   .item().setMaxStackSize(64);
 		
 		
@@ -1026,16 +1026,16 @@ public class LoaderItemList implements Runnable {
 		if (IL.TF_Maze_Map .exists()) IL.TF_Maze_Map .item().setMaxStackSize(64);
 		if (IL.TF_Ore_Map  .exists()) IL.TF_Ore_Map  .item().setMaxStackSize(64);
 		// These Bottles should actually have an empty Variant.
-		if (IL.TF_Firefly_Jar    .exists()) IL.TF_Firefly_Jar    .item().setContainerItem(Items.glass_bottle);
-		if (IL.TF_Vial_FieryBlood.exists()) IL.TF_Vial_FieryBlood.item().setContainerItem(Items.glass_bottle);
-		if (IL.TF_Vial_FieryTears.exists()) IL.TF_Vial_FieryTears.item().setContainerItem(Items.glass_bottle);
+		if (IL.TF_Firefly_Jar    .exists()) IL.TF_Firefly_Jar    .item().setContainerItem(Items.GLASS_BOTTLE);
+		if (IL.TF_Vial_FieryBlood.exists()) IL.TF_Vial_FieryBlood.item().setContainerItem(Items.GLASS_BOTTLE);
+		if (IL.TF_Vial_FieryTears.exists()) IL.TF_Vial_FieryTears.item().setContainerItem(Items.GLASS_BOTTLE);
 		// Make this work as infinite Lighter in Crafting Recipes. It is absolutely useless otherwise since the Final Castle isn't finished.
 		if (IL.TF_Lamp_of_Cinders.exists()) IL.TF_Lamp_of_Cinders.item().setContainerItem(IL.TF_Lamp_of_Cinders.getItem());
 		
 		
 		IL.DRPG_Bucket_Tar                      .set(ST.make(MD.DRPG, "bucketOfTar"                         , 1, 0), null, "bucketTar");
 		
-		if (IL.DRPG_Bucket_Tar.exists()) IL.DRPG_Bucket_Tar.item().setContainerItem(Items.bucket);
+		if (IL.DRPG_Bucket_Tar.exists()) IL.DRPG_Bucket_Tar.item().setContainerItem(Items.BUCKET);
 		
 		
 		IL.PFAA_Sands                           .set(ST.make(MD.PFAA, "weakOreSand"                         , 1, 0));
@@ -1220,7 +1220,7 @@ public class LoaderItemList implements Runnable {
 		
 		
 		IL.GrC_Honey_Jar                        .set(ST.make(MD.GrC_Bees, "grc.honeyJar"                    , 1, 0), null, OD.container1000honey, CR.DELATE);
-		if (IL.GrC_Honey_Jar.exists()) IL.GrC_Honey_Jar.item().setContainerItem(Items.flower_pot);
+		if (IL.GrC_Honey_Jar.exists()) IL.GrC_Honey_Jar.item().setContainerItem(Items.FLOWER_POT);
 		
 		IL.GrC_Honey_Bucket                     .set(ST.make(MD.GrC_Bees, "grc.BucketFluidHoney"            , 1, 0), new OreDictItemData(ANY.Fe, U*3), OD.container1000honey, CR.DELATE);
 		IL.GrC_Honey_Bottle                     .set(ST.make(MD.GrC_Bees, "grc.BottleFluidHoney"            , 1, 0), null, OD.container250honey, CR.DELATE);
@@ -1427,13 +1427,13 @@ public class LoaderItemList implements Runnable {
 		if (IL.NeLi_Gloomstone              .exists()) MT.Gloomstone.mTextureSolid  = MT.Gloomstone.mTextureGem = MT.Gloomstone.mTextureMolten = BlockTextureCopied.get(IL.NeLi_Gloomstone.block(), 0);
 		if (IL.NeLi_Blackstone              .exists()) MT.STONES.Blackstone.mTextureSolid  = BlockTextureCopied.get(IL.NeLi_Blackstone.block(), 0);
 		if (IL.NeLi_Blackstone_Polished     .exists()) MT.STONES.Blackstone.mTextureSmooth = BlockTextureCopied.get(IL.NeLi_Blackstone_Polished.block(), 1);
-		if (IL.NeLi_Bowl_DevilishMaize      .exists()) IL.NeLi_Bowl_DevilishMaize      .item().setContainerItem(Items.bowl);
-		if (IL.NeLi_Bowl_DevilishPopcorn    .exists()) IL.NeLi_Bowl_DevilishPopcorn    .item().setContainerItem(Items.bowl);
-		if (IL.NeLi_Bowl_CrimsonStew        .exists()) IL.NeLi_Bowl_CrimsonStew        .item().setContainerItem(Items.bowl);
-		if (IL.NeLi_Bowl_WarpedStew         .exists()) IL.NeLi_Bowl_WarpedStew         .item().setContainerItem(Items.bowl);
-		if (IL.NeLi_Bowl_FoxfireStew        .exists()) IL.NeLi_Bowl_FoxfireStew        .item().setContainerItem(Items.bowl);
-//      if (IL.NeLi_Bucket_Spectral_Dew     .exists()) IL.NeLi_Bucket_Spectral_Dew     .item().setContainerItem(Items.bucket); Should be fixed on the Netherlicious Side now. ^^
-		if (IL.NeLi_Bottle_Hellderberryjuice.exists()) IL.NeLi_Bottle_Hellderberryjuice.item().setContainerItem(Items.glass_bottle);
+		if (IL.NeLi_Bowl_DevilishMaize      .exists()) IL.NeLi_Bowl_DevilishMaize      .item().setContainerItem(Items.BOWL);
+		if (IL.NeLi_Bowl_DevilishPopcorn    .exists()) IL.NeLi_Bowl_DevilishPopcorn    .item().setContainerItem(Items.BOWL);
+		if (IL.NeLi_Bowl_CrimsonStew        .exists()) IL.NeLi_Bowl_CrimsonStew        .item().setContainerItem(Items.BOWL);
+		if (IL.NeLi_Bowl_WarpedStew         .exists()) IL.NeLi_Bowl_WarpedStew         .item().setContainerItem(Items.BOWL);
+		if (IL.NeLi_Bowl_FoxfireStew        .exists()) IL.NeLi_Bowl_FoxfireStew        .item().setContainerItem(Items.BOWL);
+//      if (IL.NeLi_Bucket_Spectral_Dew     .exists()) IL.NeLi_Bucket_Spectral_Dew     .item().setContainerItem(Items.BUCKET); Should be fixed on the Netherlicious Side now. ^^
+		if (IL.NeLi_Bottle_Hellderberryjuice.exists()) IL.NeLi_Bottle_Hellderberryjuice.item().setContainerItem(Items.GLASS_BOTTLE);
 		
 		
 		IL.EtFu_Chorus_Flower                   .set(ST.make(MD.EtFu, "chorus_flower"                       , 1, 0));
@@ -1524,9 +1524,9 @@ public class LoaderItemList implements Runnable {
 		
 		if (IL.EtFu_Block_Copper    .exists()) MT.Cu            .mTextureSolid = BlockTextureCopied.get(IL.EtFu_Block_Copper    .block(), 0);
 		if (IL.EtFu_Block_Copper_Cut.exists()) MT.AnnealedCopper.mTextureSolid = BlockTextureCopied.get(IL.EtFu_Block_Copper_Cut.block(), 4);
-		if (IL.EtFu_Lingering_Potion.exists()) IL.EtFu_Lingering_Potion.item().setContainerItem(Items.glass_bottle);
-		if (IL.EtFu_Bottle_Honey    .exists()) IL.EtFu_Bottle_Honey    .item().setContainerItem(Items.glass_bottle);
-		if (IL.EtFu_Sus_Stew        .exists()) IL.EtFu_Sus_Stew        .item().setContainerItem(Items.bowl);
+		if (IL.EtFu_Lingering_Potion.exists()) IL.EtFu_Lingering_Potion.item().setContainerItem(Items.GLASS_BOTTLE);
+		if (IL.EtFu_Bottle_Honey    .exists()) IL.EtFu_Bottle_Honey    .item().setContainerItem(Items.GLASS_BOTTLE);
+		if (IL.EtFu_Sus_Stew        .exists()) IL.EtFu_Sus_Stew        .item().setContainerItem(Items.BOWL);
 		
 		
 		IL.GaSu_Granite                         .set(ST.make(MD.GaSu, "18Stones"                            , 1, 1), new OreDictItemData(MT.STONES.Granite   , U*9), OP.stone.dat(MT.STONES.Granite   ), CR.DELATE);
@@ -2088,8 +2088,8 @@ public class LoaderItemList implements Runnable {
 		IL.Ancient_Debris.set((IL.EtFu_Ancient_Debris.exists() ? IL.EtFu_Ancient_Debris : IL.NePl_Ancient_Debris).get(1));
 		
 		if (MD.BINNIE.mLoaded) {Item
-		tItem = ST.item(MD.BINNIE, "containerGlass"     ); if (tItem != null) tItem.setContainerItem(Items.glass_bottle);
-		tItem = ST.item(MD.BINNIE, "containerBucket"    ); if (tItem != null) tItem.setContainerItem(Items.bucket);
+		tItem = ST.item(MD.BINNIE, "containerGlass"     ); if (tItem != null) tItem.setContainerItem(Items.GLASS_BOTTLE);
+		tItem = ST.item(MD.BINNIE, "containerBucket"    ); if (tItem != null) tItem.setContainerItem(Items.BUCKET);
 		}
 		
 		if (MD.IC2C.mLoaded) {
@@ -2308,9 +2308,9 @@ public class LoaderItemList implements Runnable {
 		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.mkic("hazmatChestplate"                             , 1, W));
 		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.mkic("hazmatLeggings"                               , 1, W));
 		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.mkic("hazmatBoots"                                  , 1, W));
-		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.chainmail_helmet                         , 1, W));
-		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.chainmail_chestplate                     , 1, W));
-		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.chainmail_leggings                       , 1, W));
-		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.chainmail_boots                          , 1, W));
+		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.CHAINMAIL_HELMET                         , 1, W));
+		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.CHAINMAIL_CHESTPLATE                     , 1, W));
+		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.CHAINMAIL_LEGGINGS                       , 1, W));
+		ArmorsGT.HAZMATS_LIGHTNING              .add(ST.make(Items.CHAINMAIL_BOOTS                          , 1, W));
 	}
 }

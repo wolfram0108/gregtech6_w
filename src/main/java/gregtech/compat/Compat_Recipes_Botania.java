@@ -60,7 +60,7 @@ public class Compat_Recipes_Botania extends CompatMods {
 		RM.mortarize(tPetal, tDye);
 		}
 		
-		RM.packunpack(ST.make(Items.blaze_rod, 9, 0), ST.make(MD.BOTA, "blazeBlock", 1, 0));
+		RM.packunpack(ST.make(Items.BLAZE_ROD, 9, 0), ST.make(MD.BOTA, "blazeBlock", 1, 0));
 		
 		try {
 		BotaniaAPI.registerManaInfusionRecipe(OP.ingot.mat(MT.Manasteel, 1), OP.ingot.dat(ANY.Fe   ).toString(), 3000);

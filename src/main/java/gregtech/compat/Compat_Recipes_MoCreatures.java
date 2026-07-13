@@ -36,7 +36,7 @@ public class Compat_Recipes_MoCreatures extends CompatMods {
 	
 	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {
 		OUT.println("GT_Mod: Doing Mo'Creatures Recipes.");
-		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "fur", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.leather, 1, 0));
+		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "fur", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.LEATHER, 1, 0));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "furhelmet", 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "fur", 1));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "furchest" , 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "fur", 2));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "furlegs"  , 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "fur", 2));
@@ -46,7 +46,7 @@ public class Compat_Recipes_MoCreatures extends CompatMods {
 		RM.Loom.addRecipe2(T, 16,  128, ST.tag(6), ST.make(MD.MoCr, "fur", 7), ST.make(MD.MoCr, "furlegs"  , 1));
 		RM.Loom.addRecipe2(T, 16,  128, ST.tag(7), ST.make(MD.MoCr, "fur", 4), ST.make(MD.MoCr, "furboots" , 1));
 		
-		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "reptilehide", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.leather, 1, 0));
+		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "reptilehide", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.LEATHER, 1, 0));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "reptilehelmet", 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "reptilehide", 1));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "reptileplate" , 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "reptilehide", 2));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "reptilelegs"  , 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "reptilehide", 2));
@@ -56,7 +56,7 @@ public class Compat_Recipes_MoCreatures extends CompatMods {
 		RM.Loom.addRecipe2(T, 16,  128, ST.tag(6), ST.make(MD.MoCr, "reptilehide", 7), ST.make(MD.MoCr, "reptilelegs"  , 1));
 		RM.Loom.addRecipe2(T, 16,  128, ST.tag(7), ST.make(MD.MoCr, "reptilehide", 4), ST.make(MD.MoCr, "reptileboots" , 1));
 		
-		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "hide", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.leather, 1, 0));
+		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "hide", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.LEATHER, 1, 0));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "hidehelmet", 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "hide", 1));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "hidechest" , 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "hide", 2));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "hidelegs"  , 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "hide", 2));

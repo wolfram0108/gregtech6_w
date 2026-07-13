@@ -104,7 +104,7 @@ public class Compat_Recipes_TechGuns extends CompatMods {
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(MD.TG, "TechgunsAmmo", 1, 29), FL.Air_Nether    .make(16000), NF, ST.make(MD.TG, "TechgunsAmmo", 1, 28));
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(MD.TG, "TechgunsAmmo", 1, 29), FL.Air_End       .make(16000), NF, ST.make(MD.TG, "TechgunsAmmo", 1, 28));
 		
-		RM.Loom.addRecipe2(T, 16, 16, ST.make(Blocks.WHITE_WOOL, 4, 0), ST.make(Items.leather, 1, W), ST.make(MD.TG, "TechgunsAmmo", 3, 39));
+		RM.Loom.addRecipe2(T, 16, 16, ST.make(Blocks.WHITE_WOOL, 4, 0), ST.make(Items.LEATHER, 1, W), ST.make(MD.TG, "TechgunsAmmo", 3, 39));
 		
 		RM.Bath.addRecipe1(T, 0, 128, ST.make(MD.TG, "revolver", 1, W), MT.Au.liquid(U*8, T), NF, ST.make(MD.TG, "goldenrevolver", 1, 0));
 		
@@ -117,10 +117,10 @@ public class Compat_Recipes_TechGuns extends CompatMods {
 		
 		
 		for (OreDictMaterial tMat : ANY.Iron.mToThis) {ItemStack tStack = OP.casingSmall.mat(tMat, 2); if (ST.valid(tStack)) {
-		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Items.flint, 1, W), ST.make(MD.TG, "TechgunsAmmo", 1, 30));
+		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Items.FLINT, 1, W), ST.make(MD.TG, "TechgunsAmmo", 1, 30));
 		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Blocks.TNT, 1, W), ST.make(MD.TG, "TechgunsAmmo", 16, 93));
 		}}
-		RM.Press.addRecipe2(T, 16, 128, OP.casingSmall.mat(MT.HSLA, 2), ST.make(Items.flint, 1, W), ST.make(MD.TG, "TechgunsAmmo", 1, 30));
+		RM.Press.addRecipe2(T, 16, 128, OP.casingSmall.mat(MT.HSLA, 2), ST.make(Items.FLINT, 1, W), ST.make(MD.TG, "TechgunsAmmo", 1, 30));
 		RM.Press.addRecipe2(T, 16, 128, OP.casingSmall.mat(MT.HSLA, 2), ST.make(Blocks.TNT, 1, W), ST.make(MD.TG, "TechgunsAmmo", 16, 93));
 		
 		
@@ -130,7 +130,7 @@ public class Compat_Recipes_TechGuns extends CompatMods {
 		
 		
 		for (OreDictMaterial tMat : ANY.C.mToThis) {ItemStack tStack = OP.plate.mat(tMat, 1); if (ST.valid(tStack)) {
-		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Items.blaze_rod, 1, W), ST.make(MD.TG, "TechgunsAmmo", 2, 37));
+		RM.Press.addRecipe2(T, 16, 128, tStack, ST.make(Items.BLAZE_ROD, 1, W), ST.make(MD.TG, "TechgunsAmmo", 2, 37));
 		}}
 	}
 }

@@ -35,7 +35,7 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 		setEntityHitSound(SFX.IC_SPRAY);
 		setUsageAmounts(4, 16, 1);*/
 		/*
-		for (Object tName : Arrays.asList(UT.Stacks.make(Items.water_bucket, 1, W), OP.cell.dat(MT.Water), OP.capsule.dat(MT.Water))) {
+		for (Object tName : Arrays.asList(UT.Stacks.make(Items.WATER_BUCKET, 1, W), OP.cell.dat(MT.Water), OP.capsule.dat(MT.Water))) {
 			GT_ModHandler.addShapelessCraftingRecipe(UT.Stacks.make(Blocks.ICE, 1, 0), new Object[] {UT.Stacks.make(this, 1, W), tName});
 		}*/
 	}

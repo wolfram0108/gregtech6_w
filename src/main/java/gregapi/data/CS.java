@@ -1612,7 +1612,7 @@ public class CS {
 		public static void override(ItemStack aStack, int... aColors) {MAP.put(aStack, aColors);}
 		// Add Cotton as a Default Bush.
 		public static int[] DEFAULT = new int[] {0x22cc22, 0x33cc33, 0x44cc44, 0xeeeeee};
-		static {put(ST.make(Items.string, 1, 0), 0x22cc22, 0x33cc33, 0x44cc44, 0xeeeeee);}
+		static {put(ST.make(Items.STRING, 1, 0), 0x22cc22, 0x33cc33, 0x44cc44, 0xeeeeee);}
 	}
 	
 	public static class FoodsGT {

@@ -112,7 +112,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 							if (BooksGT.BOOK_REGISTER.containsKey(tStack, T)) {
 								slot(tSlot, ST.amount(1, tStack));
 							} else {
-								slot(tSlot, rng(4)!=0?ST.make(Items.book, 1, 0):ST.make(MD.LOSTBOOKS, "randomBook", 1, 0, Items.book));
+								slot(tSlot, rng(4)!=0?ST.make(Items.BOOK, 1, 0):ST.make(MD.LOSTBOOKS, "randomBook", 1, 0, Items.BOOK));
 							}
 						}
 					}
@@ -129,7 +129,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 							if (BooksGT.BOOK_REGISTER.containsKey(tStack, T)) {
 								slot(tSlot, ST.amount(1, tStack));
 							} else {
-								slot(tSlot, rng(4)!=0?ST.make(Items.book, 1, 0):ST.make(MD.LOSTBOOKS, "randomBook", 1, 0, Items.book));
+								slot(tSlot, rng(4)!=0?ST.make(Items.BOOK, 1, 0):ST.make(MD.LOSTBOOKS, "randomBook", 1, 0, Items.BOOK));
 							}
 						}
 					}
@@ -363,7 +363,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return 1;}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[mDisplay.length];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
-	@Override public ItemStack getDefaultStack(int aSlot) {return ST.make(Items.book, 1, 0);}
+	@Override public ItemStack getDefaultStack(int aSlot) {return ST.make(Items.BOOK, 1, 0);}
 	
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return slotHas(aSlot)                                                 && !ST.equal(slot(aSlot), Blocks.COBBLESTONE) && !ST.equal(slot(aSlot), Blocks.REDSTONE_TORCH) && !OD.lever.is(slot(aSlot)) && !OD.button.is(slot(aSlot));}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return !slotHas(aSlot) && BooksGT.BOOK_REGISTER.containsKey(aStack, T) && !ST.equal(slot(aSlot), Blocks.COBBLESTONE) && !ST.equal(slot(aSlot), Blocks.REDSTONE_TORCH) && !OD.lever.is(slot(aSlot)) && !OD.button.is(slot(aSlot));}

@@ -188,7 +188,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					// Also work on Ghasts and such. But no double dipping on Anti Creeper Damage!
 					if (tImplosion > 0 && UT.Entities.isExplosiveCreature(tHitEntity) && !Creeper.class.isInstance(tHitEntity)) tMagicDamage += 1.5F * tImplosion;
 					
-					int[] tDamages = onHitEntity(tHitEntity, tShootingEntity==null?this:tShootingEntity, mArrow==null?ST.make(Items.arrow, 1, 0):mArrow, (int)(tDamage*2), (int)(tMagicDamage*2), tKnockback, tFireDamage, tHitTimer);
+					int[] tDamages = onHitEntity(tHitEntity, tShootingEntity==null?this:tShootingEntity, mArrow==null?ST.make(Items.ARROW, 1, 0):mArrow, (int)(tDamage*2), (int)(tMagicDamage*2), tKnockback, tFireDamage, tHitTimer);
 					
 					if (tDamages != null) {
 						tDamage      = tDamages[0] / 2.0F;

@@ -126,7 +126,7 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 		if (ST.invalid(aOutput) || aChance <= 0) return F;
 		aOutput = OM.get_(aOutput);
 		aOutput.setCount(1);
-		//if (Config.troll && !ST.equal(aOutput, ST.make(Items.wooden_hoe, 1, 0))) return F;
+		//if (Config.troll && !ST.equal(aOutput, ST.make(Items.WOODEN_HOE, 1, 0))) return F;
 		aChance = (float)ConfigsGT.RECIPES.get(ConfigCategories.Machines.scrapboxdrops, aOutput, aChance);
 		if (aChance <= 0) return F;
 		ic2.api.recipe.Recipes.scrapboxDrops.addDrop(ST.copy(aOutput), aChance);

@@ -97,7 +97,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 			CR.delate(IL.BTRS_Backpack.wild(1));
 			CR.shaped(IL.BTRS_Backpack .get(1), DEF_REV_NCC, "LqL", "SCS", "LPL", 'L', OD.craftingLeather, 'S', OD.itemString, 'P', OP.plate.dat(MT.Au), 'C', OD.craftingChest);
 			
-			RM.packunpack(ST.make(Items.flint, 9, 0), ST.make(MD.BTRS, "flintBlock", 1, 0));
+			RM.packunpack(ST.make(Items.FLINT, 9, 0), ST.make(MD.BTRS, "flintBlock", 1, 0));
 		}
 		
 		
@@ -227,7 +227,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 			
 			CR.remove(IL.NeLi_Reed.get(1));
 			CR.remove(IL.NeLi_Reed.get(1), IL.NeLi_Reed.get(1), IL.NeLi_Reed.get(1));
-			CR.shaped(ST.make(Items.paper, 1, 0), DEF, "XXX", 'X', IL.NeLi_Reed);
+			CR.shaped(ST.make(Items.PAPER, 1, 0), DEF, "XXX", 'X', IL.NeLi_Reed);
 			
 			// HAS TO BE BEFORE REGULAR TORCHES!!!
 			CR.shapeless(IL.NeLi_Bonetorch_Soul  .get(4), DEF_NCC, new Object[] {OP.dust     .dat(MT.SoulSand), IL.NeLi_Bonetorch, IL.NeLi_Bonetorch, IL.NeLi_Bonetorch, IL.NeLi_Bonetorch});
@@ -337,8 +337,8 @@ public class Loader_Recipes_Temporary implements Runnable {
 			CR.shaped(IL.NeLi_Glass_Magenta        .get(1), DEF_NCC, " F ", "FGF", " F ", 'F', OP.gem.dat(MT.FluoriteMagenta), 'G', OD.blockGlassColorless);
 			
 			for (FluidStack tWater : FL.waters(125, 100))
-			RM.Bath    .addRecipe1(T,  0, 16           , IL.NeLi_Reed.get(1), tWater, NF, ST.make(Items.paper, 1, 0));
-			RM.Loom    .addRecipe2(T, 16, 16, ST.tag(0), IL.NeLi_Reed.get(1), ST.make(Items.paper, 1, 0));
+			RM.Bath    .addRecipe1(T,  0, 16           , IL.NeLi_Reed.get(1), tWater, NF, ST.make(Items.PAPER, 1, 0));
+			RM.Loom    .addRecipe2(T, 16, 16, ST.tag(0), IL.NeLi_Reed.get(1), ST.make(Items.PAPER, 1, 0));
 			RM.Squeezer.addRecipe1(T, 16, 16,      4000, IL.NeLi_Reed.get(1), NF, FL.Juice_Reed.make(10), IL.Remains_Plant.get(1));
 			RM.Juicer  .addRecipe1(T, 16, 16,      5000, IL.NeLi_Reed.get(1), NF, FL.Juice_Reed.make( 5), IL.Remains_Plant.get(1));
 			RM.Shredder.addRecipe1(T, 16, 16           , IL.NeLi_Reed.get(1), IL.Remains_Plant.get(1));
@@ -429,17 +429,17 @@ public class Loader_Recipes_Temporary implements Runnable {
 			RM.biomass(IL.NeLi_Foxfire_Lily               .wild(8));
 			
 			if (!IL.EtFu_Wart_Block_Nether.exists())
-			RM.compact(ST.make(Items.nether_wart, 1, 0), 9, IL.NeLi_Wart_Block_Nether .get(1));
+			RM.compact(ST.make(Items.NETHER_WART, 1, 0), 9, IL.NeLi_Wart_Block_Nether .get(1));
 			RM.compact(IL.NeLi_Wart_Crimson     .get(1), 9, IL.NeLi_Wart_Block_Crimson.get(1));
 			RM.compact(IL.NeLi_Wart_Warped      .get(1), 9, IL.NeLi_Wart_Block_Warped .get(1));
 			RM.compact(IL.NeLi_Wart_Soggy       .get(1), 9, IL.NeLi_Wart_Block_Soggy  .get(1));
 			
-			RM.box(ST.make(Items.bowl, 1, W), IL.NeLi_Bowl_CrimsonStew  .get(1), ST.make(MD.NeLi, "Fungus", 2, 0));
-			RM.box(ST.make(Items.bowl, 1, W), IL.NeLi_Bowl_WarpedStew   .get(1), ST.make(MD.NeLi, "Fungus", 2, 1));
-			RM.box(ST.make(Items.bowl, 1, W), IL.NeLi_Bowl_FoxfireStew  .get(1), ST.make(MD.NeLi, "Fungus", 2, 2));
-			RM.box(ST.make(Items.bowl, 1, W), IL.NeLi_Bowl_DevilishMaize.get(1), ST.make(MD.NeLi, "DevilishMaizeSeeds", 2, 0));
+			RM.box(ST.make(Items.BOWL, 1, W), IL.NeLi_Bowl_CrimsonStew  .get(1), ST.make(MD.NeLi, "Fungus", 2, 0));
+			RM.box(ST.make(Items.BOWL, 1, W), IL.NeLi_Bowl_WarpedStew   .get(1), ST.make(MD.NeLi, "Fungus", 2, 1));
+			RM.box(ST.make(Items.BOWL, 1, W), IL.NeLi_Bowl_FoxfireStew  .get(1), ST.make(MD.NeLi, "Fungus", 2, 2));
+			RM.box(ST.make(Items.BOWL, 1, W), IL.NeLi_Bowl_DevilishMaize.get(1), ST.make(MD.NeLi, "DevilishMaizeSeeds", 2, 0));
 			
-			RM.add_smelting(ST.make(Items.nether_wart, 1, 0), ST.make(MD.NeLi, "RoastedWart", 1, 0), 0.05F, F, T, F);
+			RM.add_smelting(ST.make(Items.NETHER_WART, 1, 0), ST.make(MD.NeLi, "RoastedWart", 1, 0), 0.05F, F, T, F);
 			
 			RM.smash(IL.NeLi_Quartz_Bricks                    .get(1), OP.gem.mat(MT.NetherQuartz, 4));
 			RM.smash(IL.NeLi_Quartz_Smooth                    .get(1), OP.gem.mat(MT.NetherQuartz, 4));
@@ -472,7 +472,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 			RM.smash(ST.make(MD.NeLi, "QuartzVoidBrickStairs" , 1, W), OP.gem.mat(MT.VoidQuartz, 6));
 			RM.smash(ST.make(MD.NeLi, "QuartzVoidStairs"      , 1, W), OP.gem.mat(MT.VoidQuartz, 6));
 			
-			RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.netherbrick, 2, 0), ST.make(Items.nether_wart, 2, 0), ST.make(MD.NeLi, "Netherbricks", 1, 2));
+			RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.netherbrick, 2, 0), ST.make(Items.NETHER_WART, 2, 0), ST.make(MD.NeLi, "Netherbricks", 1, 2));
 			RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.netherbrick, 2, 0), IL.NeLi_Wart_Crimson     .get(2), ST.make(MD.NeLi, "Netherbricks", 1, 2));
 			RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.netherbrick, 2, 0), IL.NeLi_Wart_Warped      .get(2), ST.make(MD.NeLi, "Netherbricks", 1, 5));
 			RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.netherbrick, 2, 0), ST.make(MD.NeLi, "Roots" , 2, 1), ST.make(MD.NeLi, "Netherbricks", 1, 5));
@@ -490,15 +490,15 @@ public class Loader_Recipes_Temporary implements Runnable {
 			CR.delate(MD.NePl, "SoulTorch", "NetheriteIngot", "ItemNetheriteSword", "NetheritePickaxe", "ItemNetheriteShovel", "ItemNetheriteAxe", "ItemNetheriteHoe", "NetheriteHelm", "NetheriteChest", "NetheriteLegg", "NetheriteBoots");
 			
 			if (ST.invalid(ST.make(MD.EtFu, "netherite_sword", 1, 0))) {
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_sword     , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteSword" , 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_pickaxe   , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.NePl, "NetheritePickaxe"   , 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_shovel    , 1, 0), MT.Netherite.liquid(1*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteShovel", 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_axe       , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteAxe"   , 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_hoe       , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteHoe"   , 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_helmet    , 1, 0), MT.Netherite.liquid(5*U4, T), NF, ST.make(MD.NePl, "NetheriteHelm"      , 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_chestplate, 1, 0), MT.Netherite.liquid(8*U4, T), NF, ST.make(MD.NePl, "NetheriteChest"     , 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_leggings  , 1, 0), MT.Netherite.liquid(7*U4, T), NF, ST.make(MD.NePl, "NetheriteLegg"      , 1, 0));
-				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_boots     , 1, 0), MT.Netherite.liquid(4*U4, T), NF, ST.make(MD.NePl, "NetheriteBoots"     , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_SWORD     , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteSword" , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_PICKAXE   , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.NePl, "NetheritePickaxe"   , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_SHOVEL    , 1, 0), MT.Netherite.liquid(1*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteShovel", 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_AXE       , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteAxe"   , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_HOE       , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.NePl, "ItemNetheriteHoe"   , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_HELMET    , 1, 0), MT.Netherite.liquid(5*U4, T), NF, ST.make(MD.NePl, "NetheriteHelm"      , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_CHESTPLATE, 1, 0), MT.Netherite.liquid(8*U4, T), NF, ST.make(MD.NePl, "NetheriteChest"     , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_LEGGINGS  , 1, 0), MT.Netherite.liquid(7*U4, T), NF, ST.make(MD.NePl, "NetheriteLegg"      , 1, 0));
+				RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_BOOTS     , 1, 0), MT.Netherite.liquid(4*U4, T), NF, ST.make(MD.NePl, "NetheriteBoots"     , 1, 0));
 			}
 			
 			RM.biomass(ST.make(MD.NePl, "WarpedFungus" , 8, W));
@@ -538,7 +538,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 				CR.shapeless(IL.NePl_Torch.get(1), DEF_NCC, new Object[] {OP.dustSmall.dat(MT.SoulSand), OD.blockTorch});
 				CR.shapeless(IL.NePl_Torch.get(1), DEF_NCC, new Object[] {OD.flowerWither              , OD.blockTorch});
 				
-				RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.netherbrick, 2, 0), ST.make(Items.nether_wart, 2, 0), ST.make(MD.NePl, "RedBricks", 1, 0));
+				RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.netherbrick, 2, 0), ST.make(Items.NETHER_WART, 2, 0), ST.make(MD.NePl, "RedBricks", 1, 0));
 				
 				RM.pack(rockGt.mat(MT.STONES.Basalt    , 4), IL.NePl_Basalt.get(1));
 				RM.pack(rockGt.mat(MT.STONES.Blackstone, 4), IL.NePl_Blackstone.get(1));
@@ -549,14 +549,14 @@ public class Loader_Recipes_Temporary implements Runnable {
 		
 		
 		if (MD.PFAA.mLoaded) {
-			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 45), ST.make(Items.clay_ball, 1, 0));
-			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 47), ST.make(Items.clay_ball, 1, 0));
-			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 48), ST.make(Items.clay_ball, 1, 0));
-			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 49), ST.make(Items.clay_ball, 1, 0));
-			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 45), ST.make(Items.brick, 1, 0), F, F, T);
-			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 47), ST.make(Items.brick, 1, 0), F, F, T);
-			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 48), ST.make(Items.brick, 1, 0), F, F, T);
-			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 49), ST.make(Items.brick, 1, 0), F, F, T);
+			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 45), ST.make(Items.CLAY_BALL, 1, 0));
+			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 47), ST.make(Items.CLAY_BALL, 1, 0));
+			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 48), ST.make(Items.CLAY_BALL, 1, 0));
+			RM.generify(ST.make(MD.PFAA, "earthyClump", 1, 49), ST.make(Items.CLAY_BALL, 1, 0));
+			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 45), ST.make(Items.BRICK, 1, 0), F, F, T);
+			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 47), ST.make(Items.BRICK, 1, 0), F, F, T);
+			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 48), ST.make(Items.BRICK, 1, 0), F, F, T);
+			RM.add_smelting(ST.make(MD.PFAA, "earthyClump", 1, 49), ST.make(Items.BRICK, 1, 0), F, F, T);
 			CR.shaped    (OP.plate.mat(MT.ClayBrown         , 1), CR.DEF_NCC, "R", "C", 'R', OreDictToolNames.rollingpin, 'C', ST.make(MD.PFAA, "earthyClump", 4, 45));
 			CR.shaped    (OP.plate.mat(MT.Bentonite         , 1), CR.DEF_NCC, "R", "C", 'R', OreDictToolNames.rollingpin, 'C', ST.make(MD.PFAA, "earthyClump", 4, 47));
 			CR.shaped    (OP.plate.mat(MT.Palygorskite      , 1), CR.DEF_NCC, "R", "C", 'R', OreDictToolNames.rollingpin, 'C', ST.make(MD.PFAA, "earthyClump", 4, 48));
@@ -611,7 +611,7 @@ public class Loader_Recipes_Temporary implements Runnable {
 		RM.mortarize(IL.ERE_Herbicide                  .get(1), IL.HBM_Poison_Powder.get(1, IL.IC2_Grin_Powder.get(1)));
 		RM.mortarize(IL.Food_Potato_Poisonous          .get(1), IL.HBM_Poison_Powder.get(1, IL.IC2_Grin_Powder.get(1)));
 		RM.mortarize(ST.make(Blocks.RED_MUSHROOM       , 1, W), IL.HBM_Poison_Powder.get(1, IL.IC2_Grin_Powder.get(1)));
-		RM.mortarize(ST.make(Items.spider_eye          , 1, W), IL.HBM_Poison_Powder.get(2, IL.IC2_Grin_Powder.get(2)));
+		RM.mortarize(ST.make(Items.SPIDER_EYE          , 1, W), IL.HBM_Poison_Powder.get(2, IL.IC2_Grin_Powder.get(2)));
 		RM.mortarize(ST.make(Items.fermented_spider_eye, 1, W), IL.HBM_Poison_Powder.get(3, IL.IC2_Grin_Powder.get(3)));
 		
 		RM.add_smelting(IL.Mud_Ball               .get(1), IL.BoP_Mud_Brick.get(1, IL.BTL_Mud_Brick.get(1, IL.ERE_Mud_Brick.get(1))), F, F, T);

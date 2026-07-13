@@ -48,11 +48,11 @@ public class Compat_Recipes_ThermalExpansion extends CompatMods {
 		CR.remove(IL.TE_Rod_Basalz.get(1));
 		CR.delate(MD.TE_FOUNDATION, "material", 512, 513, 514, 515);
 		
-		FL.set(new FluidContainerData(FL.Redstone.make(1440), ST.make(MD.TE_FOUNDATION, "bucket", 1, 0), ST.make(Items.bucket, 1, 0), F), F, F);
-		FL.set(new FluidContainerData(FL.Ender   .make( 576), ST.make(MD.TE_FOUNDATION, "bucket", 1, 2), ST.make(Items.bucket, 1, 0), F), F, F);
+		FL.set(new FluidContainerData(FL.Redstone.make(1440), ST.make(MD.TE_FOUNDATION, "bucket", 1, 0), ST.make(Items.BUCKET, 1, 0), F), F, F);
+		FL.set(new FluidContainerData(FL.Ender   .make( 576), ST.make(MD.TE_FOUNDATION, "bucket", 1, 2), ST.make(Items.BUCKET, 1, 0), F), F, F);
 		
 		for (FluidStack tRedstone : FL.array(FL.Redstone.make(L), FL.Redstone_TE.make(100))) {
-			RM.Injector     .addRecipe1(T, 16, 16, ST.make(Items.snowball, 1, W), FL.mul(tRedstone, 2), NF, OP.dustTiny.mat(MT.Blizz, 1));
+			RM.Injector     .addRecipe1(T, 16, 16, ST.make(Items.SNOWBALL, 1, W), FL.mul(tRedstone, 2), NF, OP.dustTiny.mat(MT.Blizz, 1));
 			RM.Injector     .addRecipe1(T, 16, 16, OP.dustSmall.mat(MT.Snow, 1) , FL.mul(tRedstone, 2), NF, OP.dustTiny.mat(MT.Blizz, 1));
 			RM.Injector     .addRecipe1(T, 16, 16, OP.dustSmall.mat(MT.Ice, 1)  , FL.mul(tRedstone, 2), NF, OP.dustTiny.mat(MT.Blizz, 1));
 			RM.Injector     .addRecipe1(T, 16, 64, ST.make(Blocks.SNOW, 1, W)   , FL.mul(tRedstone, 8), NF, OP.dustTiny.mat(MT.Blizz, 4));
@@ -127,11 +127,11 @@ public class Compat_Recipes_ThermalExpansion extends CompatMods {
 			
 			for (FluidStack tWater : FL.waters(1000, 800)) {
 			if (IL.FZ_Sludge.exists())
-			RM.Mixer            .addRecipe2(T, 16,   16, IL.FZ_Sludge   .get(2), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.clay_ball, 4, 0));
+			RM.Mixer            .addRecipe2(T, 16,   16, IL.FZ_Sludge   .get(2), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.CLAY_BALL, 4, 0));
 			if (IL.IE_Slag.exists())
-			RM.Mixer            .addRecipe2(T, 16,   16, IL.IE_Slag     .get(2), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.clay_ball, 4, 0));
-			RM.Mixer            .addRecipe2(T, 16,   16, IL.TE_Slag     .get(2), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.clay_ball, 4, 0));
-			RM.Mixer            .addRecipe2(T, 16,   16, IL.TE_Slag_Rich.get(1), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.clay_ball, 4, 0));
+			RM.Mixer            .addRecipe2(T, 16,   16, IL.IE_Slag     .get(2), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.CLAY_BALL, 4, 0));
+			RM.Mixer            .addRecipe2(T, 16,   16, IL.TE_Slag     .get(2), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.CLAY_BALL, 4, 0));
+			RM.Mixer            .addRecipe2(T, 16,   16, IL.TE_Slag_Rich.get(1), ST.make(Blocks.DIRT, 1, 0), tWater, NF, ST.make(Items.CLAY_BALL, 4, 0));
 			}
 			
 			for (OreDictMaterial tMat : new OreDictMaterial[] {MT.KNO3, MT.NaNO3, MT.Niter}) {
@@ -167,7 +167,7 @@ public class Compat_Recipes_ThermalExpansion extends CompatMods {
 				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aStack1, IL.IE_Slag     .get(1), aStack2), ST.make(MD.TE, "florb", 4, 0));
 				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aStack1, IL.TE_Slag     .get(1), aStack2), ST.make(MD.TE, "florb", 4, 0));
 				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aStack1, IL.TE_Slag_Rich.get(1), aStack2), ST.make(MD.TE, "florb", 4, 0));
-				RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.amount(4, aStack1), ST.make(Items.string, 4, W), aStack2), ST.make(MD.TE, "Sponge", 1, 1));
+				RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.amount(4, aStack1), ST.make(Items.STRING, 4, W), aStack2), ST.make(MD.TE, "Sponge", 1, 1));
 			}});
 			addListener(OP.dust.dat(ANY.Wood), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 				if (IL.FZ_Sludge.exists())
@@ -176,7 +176,7 @@ public class Compat_Recipes_ThermalExpansion extends CompatMods {
 				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.IE_Slag     .get(1), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "florb", 4, 1));
 				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.TE_Slag     .get(1), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "florb", 4, 1));
 				RM.Mixer        .addRecipeX(T, 16,   16, ST.array(aEvent.mStack, IL.TE_Slag_Rich.get(1), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "florb", 4, 1));
-				RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.amount(4, aEvent.mStack), ST.make(Items.string, 4, W), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "Sponge", 1, 2));
+				RM.Loom         .addRecipeX(T, 16,   16, ST.array(ST.amount(4, aEvent.mStack), ST.make(Items.STRING, 4, W), ST.make(Items.magma_cream, 1, W)), ST.make(MD.TE, "Sponge", 1, 2));
 			}});
 			}};
 		}

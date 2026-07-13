@@ -42,7 +42,7 @@ public class Compat_Recipes_Witchery extends CompatMods {
 	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Witchery Recipes.");
 		CR.remout(MD.WTCH, "ingredient", 26);
 		
-		CR.shaped(ST.make(MD.WTCH, "ingredient", 1,  7), CR.DEF_NCC, "B  ", "   ", "  k", 'B', Items.bone);
+		CR.shaped(ST.make(MD.WTCH, "ingredient", 1,  7), CR.DEF_NCC, "B  ", "   ", "  k", 'B', Items.BONE);
 		CR.shaped(ST.make(MD.WTCH, "ingredient", 1, 26), CR.DEF_NCC, " C ", "   ", "k R", 'C', OD.itemClay, 'R', OreDictToolNames.rollingpin);
 		
 		RM.smash(ST.make(MD.WTCH, "perpetualice", 1, 0), OM.dust(MT.Ice, U));

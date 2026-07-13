@@ -652,7 +652,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public int getSpriteNumber() {return 0;}
 	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aRegister) {/**/}
-	@OnlyIn(Dist.CLIENT) public IIcon getIconFromDamage(int aMeta) {itemIcon = Items.bread.getIconFromDamage(0); return itemIcon; /* Fixes Eating Animation Particles. */}
+	@OnlyIn(Dist.CLIENT) public IIcon getIconFromDamage(int aMeta) {itemIcon = Items.BREAD.getIconFromDamage(0); return itemIcon; /* Fixes Eating Animation Particles. */}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}

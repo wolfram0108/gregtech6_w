@@ -65,7 +65,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
 		if (aStack.getCount() > 1) return super.onDispense(aItem, aSource, aStack);
 		FluidStack mFluid = FL.getFluid(aStack, T);
-		ItemStack tBucket = ST.make(Items.bucket, 1, 0);
+		ItemStack tBucket = ST.make(Items.BUCKET, 1, 0);
 		
 		Direction aFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
 		Level aWorld = aSource.getWorld();
@@ -113,7 +113,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				if (ST.invalid(tBucket = FL.fill(mFluid, tBucket, F, T, F, T))) return super.onDispense(aItem, aSource, aStack);
 			}
 			if (ST.item_(tBucket) instanceof ItemBucket && ((ItemBucket)ST.item_(tBucket)).tryPlaceContainedLiquid(aWorld, aX, aY, aZ)) {
-				return processBucket(ST.make(Items.bucket, 1, 0), aStack, T);
+				return processBucket(ST.make(Items.BUCKET, 1, 0), aStack, T);
 			}
 		}
 		return super.onDispense(aItem, aSource, aStack);
@@ -125,7 +125,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		HitResult aTarget = WD.getMOP(aWorld, aPlayer, mFluid == null);
 		if (aTarget == null || aTarget.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
 		int aX = aTarget.getBlockPos().getX(), aY = aTarget.getBlockPos().getY(), aZ = aTarget.getBlockPos().getZ();
-		ItemStack tBucket = ST.make(Items.bucket, 1, 0);
+		ItemStack tBucket = ST.make(Items.BUCKET, 1, 0);
 		
 		if (mFluid == null) {
 			Block tFluidBlock = WD.block(aWorld, aX, aY, aZ);
@@ -148,7 +148,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				FluidStack tFluid = ((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, F);
 				if (tFluid != null) {
 					if (ST.valid(FL.fill(tFluid, aStack, F, T, F, T))) tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
-					if (FL.milk(tFluid) && tFluid.getAmount() >= 1000) tBucket = ST.make(Items.milk_bucket, 1, 0);
+					if (FL.milk(tFluid) && tFluid.getAmount() >= 1000) tBucket = ST.make(Items.MILK_BUCKET, 1, 0);
 				}
 			}
 		} else {
@@ -203,7 +203,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	protected ItemStack processBucket(ItemStack aBucket, ItemStack aStack, boolean aWasFull) {
 		if (aBucket == null) return aStack;
 		if (aWasFull) {
-			if (aBucket.getItem() == Items.bucket) {
+			if (aBucket.getItem() == Items.BUCKET) {
 				aBucket = ST.container(aStack, F);
 				if (aBucket == null) aStack.setCount(0); else aStack = aBucket;
 				return aStack;

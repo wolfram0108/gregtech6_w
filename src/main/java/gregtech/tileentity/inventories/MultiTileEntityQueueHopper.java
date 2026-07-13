@@ -142,7 +142,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 	@Override
 	public void onWalkOver2(LivingEntity aEntity) {
 		if (isServerSide() && (aEntity.getClass() == EntitySnowman.class || "EntityNewSnowGolem".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity)))) {
-			addStackToSlot(invsize()-1, ST.make(Items.snowball, 1, 0));
+			addStackToSlot(invsize()-1, ST.make(Items.SNOWBALL, 1, 0));
 		}
 	}
 	

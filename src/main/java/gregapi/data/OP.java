@@ -573,7 +573,7 @@ public class OP {
 		dustRefined.addListener(new OreDictListenerItem_Washing(dust, 1));
 		rockGt     .addListener(new OreDictListenerItem_Rocks());
 		
-		bottle.mContainerItem = ST.make(Items.glass_bottle, 1, 0);
+		bottle.mContainerItem = ST.make(Items.GLASS_BOTTLE, 1, 0);
 		
 		ingotHot.mHeatDamage = 3.0F;
 		

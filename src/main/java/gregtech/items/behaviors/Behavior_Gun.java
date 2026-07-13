@@ -170,7 +170,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				if (RNGSUS.nextInt(3) == 0) {
 					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Blocks.PUMPKIN, 1, 0));
 				} else {
-					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.pumpkin_seeds, 1+RNGSUS.nextInt(3), 0));
+					ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.PUMPKIN_SEEDS, 1+RNGSUS.nextInt(3), 0));
 				}
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
@@ -180,7 +180,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			}
 			if (aBlock == Blocks.melon_block) {
 				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.melon      , 1+RNGSUS.nextInt(6), 0));
-				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.melon_seeds, 1+RNGSUS.nextInt(3), 0));
+				ST.drop(aPlayer.level(), aCoord.getX()+0.2+RNGSUS.nextFloat()*0.6, aCoord.getY()+0.1+RNGSUS.nextFloat()*0.5, aCoord.getZ()+0.2+RNGSUS.nextFloat()*0.6, ST.make(Items.MELON_SEEDS, 1+RNGSUS.nextInt(3), 0));
 				WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 				if (tFireAspect > 1) WD.fire(aPlayer.level(), aCoord, F);
 				UT.Sounds.send(aBlock.stepSound.getBreakSound(), aPlayer.level(), aCoord);

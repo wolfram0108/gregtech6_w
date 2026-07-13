@@ -53,12 +53,12 @@ public class Compat_Recipes_Erebus extends CompatMods {
 		RM.Hammer       .addRecipe1(T, 16, 16       , ST.make(MD.ERE, "volcanicRock"        , 1, 0), OM.dust(MT.VolcanicAsh));
 		RM.Shredder     .addRecipe1(T, 16, 96       , ST.make(MD.ERE, "volcanicRock"        , 1, 0), OM.dust(MT.VolcanicAsh));
 		
-		RM.Sharpening   .addRecipe1(T, 16, 16       , ST.make(MD.ERE, "encrustedDiamond"    , 1, W), ST.make(Items.diamond, 1, 0), OM.dust(MT.VolcanicAsh, U2));
+		RM.Sharpening   .addRecipe1(T, 16, 16       , ST.make(MD.ERE, "encrustedDiamond"    , 1, W), ST.make(Items.DIAMOND, 1, 0), OM.dust(MT.VolcanicAsh, U2));
 		
 		RM.pack(rockGt.mat(MT.STONES.Gneiss    , 4), ST.make(MD.ERE, "gneiss", 1, 0));
 		
-		RM.pack(ST.make(Items.string, 9, 0), ST.make(MD.ERE, "blockSilk", 1, 0));
-		RM.unpack(ST.make(MD.ERE, "blockSilk", 1, 0), ST.make(Items.string, 9, 0));
+		RM.pack(ST.make(Items.STRING, 9, 0), ST.make(MD.ERE, "blockSilk", 1, 0));
+		RM.unpack(ST.make(MD.ERE, "blockSilk", 1, 0), ST.make(Items.STRING, 9, 0));
 		
 		CR.shaped(ST.make(MD.ERE, "gneiss"      , 1, 0), CR.DEF, "XX", "XX", 'X', rockGt.dat(MT.STONES.Gneiss));
 		
@@ -72,12 +72,12 @@ public class Compat_Recipes_Erebus extends CompatMods {
 		CR.shaped(ST.make(MD.ERE, "mirbrick", 4, 0), CR.DEF_MIR, "XY", "YX", 'X', OD.blockMudBricks, 'Y', OD.blockClay);
 		
 		
-		RM.pressurewash(ST.make(MD.ERE, "umberstone"        , 1, 3), ST.make(MD.ERE, "umberstone"        , 1, 1), ST.make(Items.string, 4, 0));
-		RM.pressurewash(ST.make(MD.ERE, "umberPaver"        , 1, 2), ST.make(MD.ERE, "umberPaver"        , 1, 0), ST.make(Items.string, 4, 0));
-		RM.pressurewash(ST.make(MD.ERE, "wallErebus"        , 1, 3), ST.make(MD.ERE, "wallErebus"        , 1, 1), ST.make(Items.string, 4, 0));
-		RM.pressurewash(ST.make(MD.ERE, "wallErebus"        , 1, 7), ST.make(MD.ERE, "wallErebus"        , 1, 5), ST.make(Items.string, 4, 0));
-		RM.pressurewash(ST.make(MD.ERE, "umbercobbleStairs3", 1, 0), ST.make(MD.ERE, "umbercobbleStairs1", 1, 0), ST.make(Items.string, 3, 0));
-		RM.pressurewash(ST.make(MD.ERE, "slab-umberstone3"  , 1, 0), ST.make(MD.ERE, "slab-umberstone1"  , 1, 0), ST.make(Items.string, 2, 0));
+		RM.pressurewash(ST.make(MD.ERE, "umberstone"        , 1, 3), ST.make(MD.ERE, "umberstone"        , 1, 1), ST.make(Items.STRING, 4, 0));
+		RM.pressurewash(ST.make(MD.ERE, "umberPaver"        , 1, 2), ST.make(MD.ERE, "umberPaver"        , 1, 0), ST.make(Items.STRING, 4, 0));
+		RM.pressurewash(ST.make(MD.ERE, "wallErebus"        , 1, 3), ST.make(MD.ERE, "wallErebus"        , 1, 1), ST.make(Items.STRING, 4, 0));
+		RM.pressurewash(ST.make(MD.ERE, "wallErebus"        , 1, 7), ST.make(MD.ERE, "wallErebus"        , 1, 5), ST.make(Items.STRING, 4, 0));
+		RM.pressurewash(ST.make(MD.ERE, "umbercobbleStairs3", 1, 0), ST.make(MD.ERE, "umbercobbleStairs1", 1, 0), ST.make(Items.STRING, 3, 0));
+		RM.pressurewash(ST.make(MD.ERE, "slab-umberstone3"  , 1, 0), ST.make(MD.ERE, "slab-umberstone1"  , 1, 0), ST.make(Items.STRING, 2, 0));
 		RM.moss(ST.make(MD.ERE, "umberstone"        , 1, 1), ST.make(MD.ERE, "umberstone"        , 1, 2));
 		RM.moss(ST.make(MD.ERE, "umberPaver"        , 1, 0), ST.make(MD.ERE, "umberPaver"        , 1, 1));
 		RM.moss(ST.make(MD.ERE, "wallErebus"        , 1, 1), ST.make(MD.ERE, "wallErebus"        , 1, 2));
@@ -133,9 +133,9 @@ public class Compat_Recipes_Erebus extends CompatMods {
 		RM.Squeezer     .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "materials"     , 1,22), NF, FL.Potion_Poison_2.make(750), ZL_IS);
 		RM.Juicer       .addRecipe1(T, 16, 16,  ST.make(MD.ERE, "materials"     , 1,22), NF, FL.Potion_Poison_2.make(750), ZL_IS);
 		
-		FL.set(new FluidContainerData(FL.Honey     .make(1000), ST.make(MD.ERE, "bucketHoney"      , 1, 0), ST.make(Items.bucket       , 1, 0), F), F, T);
-		FL.set(new FluidContainerData(FL.HoneyBoP  .make(1000), ST.make(MD.ERE, "bucketHoney"      , 1, 0), ST.make(Items.bucket       , 1, 0), F), F, F);
-		FL.set(new FluidContainerData(FL.HoneyGrC  .make(1000), ST.make(MD.ERE, "bucketHoney"      , 1, 0), ST.make(Items.bucket       , 1, 0), F), F, F);
+		FL.set(new FluidContainerData(FL.Honey     .make(1000), ST.make(MD.ERE, "bucketHoney"      , 1, 0), ST.make(Items.BUCKET       , 1, 0), F), F, T);
+		FL.set(new FluidContainerData(FL.HoneyBoP  .make(1000), ST.make(MD.ERE, "bucketHoney"      , 1, 0), ST.make(Items.BUCKET       , 1, 0), F), F, F);
+		FL.set(new FluidContainerData(FL.HoneyGrC  .make(1000), ST.make(MD.ERE, "bucketHoney"      , 1, 0), ST.make(Items.BUCKET       , 1, 0), F), F, F);
 		FL.set(new FluidContainerData(FL.Honey     .make(1000), ST.make(MD.ERE, "bambucketHoney"   , 1, 0), ST.make(MD.ERE, "bambucket", 1, 0), F), T, T);
 		FL.set(new FluidContainerData(FL.HoneyBoP  .make(1000), ST.make(MD.ERE, "bambucketHoney"   , 1, 0), ST.make(MD.ERE, "bambucket", 1, 0), F), T, F);
 		FL.set(new FluidContainerData(FL.HoneyGrC  .make(1000), ST.make(MD.ERE, "bambucketHoney"   , 1, 0), ST.make(MD.ERE, "bambucket", 1, 0), F), T, F);

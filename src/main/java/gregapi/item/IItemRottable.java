@@ -40,14 +40,14 @@ public interface IItemRottable {
 	
 	public static class RottingUtil {
 		public static ItemStack rotting(ItemStack aStack) {
-			if (aStack.getItem() == Items.milk_bucket) return IL.ENVM_Spoiled_Milk_Bucket.exists()?IL.ENVM_Spoiled_Milk_Bucket.get(aStack.getCount()):ST.make(Items.bucket, aStack.getCount(), 0);
+			if (aStack.getItem() == Items.MILK_BUCKET) return IL.ENVM_Spoiled_Milk_Bucket.exists()?IL.ENVM_Spoiled_Milk_Bucket.get(aStack.getCount()):ST.make(Items.BUCKET, aStack.getCount(), 0);
 			if (aStack.getItem() instanceof IItemRottable) return ((IItemRottable)aStack.getItem()).getRotten(aStack);
 			if (aStack.getItem() instanceof IFluidHandlerItem) return rotting(aStack, (IFluidHandlerItem)aStack.getItem());
 			return aStack;
 		}
 		
 		public static ItemStack rotting(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {
-			if (aStack.getItem() == Items.milk_bucket) return IL.ENVM_Spoiled_Milk_Bucket.exists()?IL.ENVM_Spoiled_Milk_Bucket.get(aStack.getCount()):ST.make(Items.bucket, aStack.getCount(), 0);
+			if (aStack.getItem() == Items.MILK_BUCKET) return IL.ENVM_Spoiled_Milk_Bucket.exists()?IL.ENVM_Spoiled_Milk_Bucket.get(aStack.getCount()):ST.make(Items.BUCKET, aStack.getCount(), 0);
 			if (aStack.getItem() instanceof IItemRottable) return ((IItemRottable)aStack.getItem()).getRotten(aStack, aWorld, aX, aY, aZ);
 			if (aStack.getItem() instanceof IFluidHandlerItem) return rotting(aStack, (IFluidHandlerItem)aStack.getItem());
 			return aStack;

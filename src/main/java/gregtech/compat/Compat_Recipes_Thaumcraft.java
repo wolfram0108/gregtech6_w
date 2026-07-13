@@ -62,11 +62,11 @@ public class Compat_Recipes_Thaumcraft extends CompatMods {
 		, ST.make(Blocks.BOOKSHELF, 1, 0, "Click a Bookshelf with a Wand")
 		, NI
 		, ST.make(ST.make(MD.TC, "WandCap", 2, 0), "Craft two Iron Wand Caps onto a Stick")
-		, ST.make(Items.stick, 1, 0, "Craft two Iron Wand Caps onto a Stick")
+		, ST.make(Items.STICK, 1, 0, "Craft two Iron Wand Caps onto a Stick")
 		, NI
 		), ST.array(IL.TC_Thaumonomicon.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		
-		RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.string, 1, W), MT.Tallow.liquid(U*2, T), NF, ST.make(MD.TC, "blockCandle", 1, 0), ST.make(MD.TC, "blockCandle", 1, 0), ST.make(MD.TC, "blockCandle", 1, 0));
+		RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.STRING, 1, W), MT.Tallow.liquid(U*2, T), NF, ST.make(MD.TC, "blockCandle", 1, 0), ST.make(MD.TC, "blockCandle", 1, 0), ST.make(MD.TC, "blockCandle", 1, 0));
 		
 		RM.Mixer.addRecipeX(T, 16, 16, ST.array(OM.dust(MT.Sugar)               , IL.TC_Nugget_Chicken  .wild(1), IL.TC_Nugget_Fish.wild(1), IL.TC_Nugget_Beef.wild(1)), IL.TC_Triple_Meat_Treat.get(1));
 		RM.Mixer.addRecipeX(T, 16, 16, ST.array(OM.dust(MT.Sugar)               , IL.TC_Nugget_Chicken  .wild(1), IL.TC_Nugget_Fish.wild(1), IL.TC_Nugget_Pork.wild(1)), IL.TC_Triple_Meat_Treat.get(1));
@@ -77,8 +77,8 @@ public class Compat_Recipes_Thaumcraft extends CompatMods {
 		RM.Mixer.addRecipeX(T, 16, 16, ST.array(OP.gemChipped.mat(MT.Sugar, 4)  , IL.TC_Nugget_Chicken  .wild(1), IL.TC_Nugget_Beef.wild(1), IL.TC_Nugget_Pork.wild(1)), IL.TC_Triple_Meat_Treat.get(1));
 		RM.Mixer.addRecipeX(T, 16, 16, ST.array(OP.gemChipped.mat(MT.Sugar, 4)  , IL.TC_Nugget_Fish     .wild(1), IL.TC_Nugget_Beef.wild(1), IL.TC_Nugget_Pork.wild(1)), IL.TC_Triple_Meat_Treat.get(1));
 		
-		RM.compact(ST.make(Items.rotten_flesh, 9, W), IL.TC_Block_Flesh.get(1));
-		RM.unpack(IL.TC_Block_Flesh.get(1), ST.make(Items.rotten_flesh, 9, 0));
+		RM.compact(ST.make(Items.ROTTEN_FLESH, 9, W), IL.TC_Block_Flesh.get(1));
+		RM.unpack(IL.TC_Block_Flesh.get(1), ST.make(Items.ROTTEN_FLESH, 9, 0));
 		
 		RM.compact(IL.TC_Tallow.get(9), 9, IL.TC_Block_Tallow.get(1));
 		RM.unpack(IL.TC_Block_Tallow.get(1), IL.TC_Tallow.get(9));
@@ -110,11 +110,11 @@ public class Compat_Recipes_Thaumcraft extends CompatMods {
 			, COMPAT_TC.addCrucibleRecipe(tKey, OD.logWood, OP.gem.mat(tMat, 2), TC.stack(TC.VACUOS, 2), TC.stack(TC.IGNIS, 1))
 		);
 		COMPAT_TC.addResearch(tKey = FILL_WATER_BUCKET
-			, "Water Transmutation", "Filling buckets with Water", null, CATEGORY_ALCHEMY, ST.make(Items.water_bucket, 1, 0), 2, RESEARCH_TYPE_NORMAL, 16, 5
+			, "Water Transmutation", "Filling buckets with Water", null, CATEGORY_ALCHEMY, ST.make(Items.WATER_BUCKET, 1, 0), 2, RESEARCH_TYPE_NORMAL, 16, 5
 			, Arrays.asList(TC.stack(TC.PERMUTATIO, 4), TC.stack(TC.AQUA, 4))
 			, null
 			, LH.add("gt.research.page.1." + tKey, "You have discovered a way of filling a Bucket with aqua essentia in order to simply get Water.")
-			, COMPAT_TC.addCrucibleRecipe(tKey, ST.make(Items.bucket            , 1, W), ST.make(Items.water_bucket, 1, 0), TC.stack(TC.AQUA, 4))
+			, COMPAT_TC.addCrucibleRecipe(tKey, ST.make(Items.BUCKET            , 1, W), ST.make(Items.WATER_BUCKET, 1, 0), TC.stack(TC.AQUA, 4))
 			, COMPAT_TC.addCrucibleRecipe(tKey, IL.Cell_Empty                   .get(1), IL.Cell_Water.get(1), TC.stack(TC.AQUA, 4))
 			, COMPAT_TC.addCrucibleRecipe(tKey, IL.FR_MagicCapsule              .get(1), FL.Water.fill(IL.FR_MagicCapsule              .get(1)), TC.stack(TC.AQUA,10))
 			, COMPAT_TC.addCrucibleRecipe(tKey, IL.FR_TinCapsule                .get(1), FL.Water.fill(IL.FR_TinCapsule                .get(1)), TC.stack(TC.AQUA, 4))

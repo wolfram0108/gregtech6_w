@@ -43,8 +43,8 @@ public class DungeonChunkRoomPortalNether extends DungeonChunkRoomPortal {
 		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Blocks.NETHERRACK, 16, 0)), "s", (short)11));
 		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Blocks.GLOWSTONE , 16, 0)), "s", (short)15));
 		tInventory.add(UT.NBT.makeShort(ST.save(ST.book("Manual_Hunting_Blaze"  )), "s", (short)22));
-		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.ghast_tear ,  4, 0)), "s", (short)29));
-		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.blaze_rod  ,  4, 0)), "s", (short)33));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.GHAST_TEAR ,  4, 0)), "s", (short)29));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.BLAZE_ROD  ,  4, 0)), "s", (short)33));
 		tInventory.add(UT.NBT.makeShort(ST.save(IL.Tool_MatchBox_Full     .get(1)), "s", (short)40));
 		
 		for (int tX = 1; tX < 15; tX++) for (int tZ = 1; tZ < 15; tZ++) {

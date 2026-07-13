@@ -63,10 +63,10 @@ public class WorldgenBushes extends WorldgenOnSurface {
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 		if (tRegistry == null) return F;
 		
-		ItemStack tBerry = UT.Code.select(new NoiseGenerator(aWorld).get(aX/2, 300, aZ/2, BushesGT.MAP.size()), new ItemStackContainer(Items.string, 1, 0), BushesGT.MAP.keySet().toArray(ZL_ISC)).toStack();
+		ItemStack tBerry = UT.Code.select(new NoiseGenerator(aWorld).get(aX/2, 300, aZ/2, BushesGT.MAP.size()), new ItemStackContainer(Items.STRING, 1, 0), BushesGT.MAP.keySet().toArray(ZL_ISC)).toStack();
 		
 		// Change Minecraft String to Harvestcraft Cotton, because it's in the static initializer as a default.
-		if (MD.HaC.mLoaded && ST.item(tBerry) == Items.string) tBerry = ST.make(MD.HaC, "cottonItem", 1, 0, tBerry);
+		if (MD.HaC.mLoaded && ST.item(tBerry) == Items.STRING) tBerry = ST.make(MD.HaC, "cottonItem", 1, 0, tBerry);
 		
 		if (placeBushCore(aWorld, aX, aY, aZ, tRegistry, tBerry, 3)) {
 			if (aRandom.nextBoolean() && placeBushCore(aWorld, aX-1, aY, aZ  , tRegistry, tBerry, 3)) placeBushSides(aWorld, aX-1, aY, aZ  , tRegistry, tBerry, 3);

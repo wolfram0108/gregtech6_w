@@ -32,13 +32,13 @@ import static gregapi.data.OP.gemChipped;
 
 public class Loader_Recipes_Potions implements Runnable {
 	@Override public void run() {
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.nether_wart   , 1, W), FL.DistW         .make(750), FL.Potion_Awkward         .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.NETHER_WART   , 1, W), FL.DistW         .make(750), FL.Potion_Awkward         .make(750), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.magma_cream   , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.speckled_melon, 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.ghast_tear    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GHAST_TEAR    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
 		
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.spider_eye    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.SPIDER_EYE    , 1, W), FL.DistW         .make(750), FL.Potion_Mundane         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, IL.Food_Potato_Poisonous    .get(1), FL.DistW         .make(750), FL.Potion_Poison_1        .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Blocks.RED_MUSHROOM , 1, W), FL.DistW         .make(750), FL.Potion_Poison_1        .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.PUFFERFISH, 1, 0), FL.DistW         .make(750), FL.Potion_Poison_2        .make(750), ZL_IS);
@@ -49,13 +49,13 @@ public class Loader_Recipes_Potions implements Runnable {
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.magma_cream   , 1, W), FL.Potion_Awkward.make(750), FL.Potion_FireResistance_1.make(750), ZL_IS);
 		
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.golden_carrot , 1, W), FL.Potion_Awkward.make(750), FL.Potion_NightVision_1   .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GOLDEN_CARROT , 1, W), FL.Potion_Awkward.make(750), FL.Potion_NightVision_1   .make(750), ZL_IS);
 		
 		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.speckled_melon, 1, W), FL.Potion_Awkward.make(750), FL.Potion_Heal_1          .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 16, ST.make(Items.speckled_melon, 1, W), FL.Potion_Thick  .make(250), FL.Potion_Heal_2          .make(250), ZL_IS);
 		
-		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.ghast_tear    , 1, W), FL.Potion_Awkward.make(750), FL.Potion_Regen_1         .make(750), ZL_IS);
-		RM.Distillery.addRecipe1(T, 16, 16, ST.make(Items.ghast_tear    , 1, W), FL.Potion_Thick  .make(250), FL.Potion_Regen_2         .make(250), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 48, ST.make(Items.GHAST_TEAR    , 1, W), FL.Potion_Awkward.make(750), FL.Potion_Regen_1         .make(750), ZL_IS);
+		RM.Distillery.addRecipe1(T, 16, 16, ST.make(Items.GHAST_TEAR    , 1, W), FL.Potion_Thick  .make(250), FL.Potion_Regen_2         .make(250), ZL_IS);
 		
 		for (ItemStack tStack : ST.array(OP.dust.mat(MT.As, 1), OP.dustSmall.mat(MT.As, 4), OP.dustTiny.mat(MT.As, 9))) if (tStack != null) {
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.DistW         .make(750), FL.Potion_Harm_1           .make(750), ZL_IS);
@@ -96,7 +96,7 @@ public class Loader_Recipes_Potions implements Runnable {
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.Potion_Awkward.make(750), FL.Potion_Jump_1           .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 16, tStack, FL.Potion_Mundane.make(250), FL.Potion_Jump_2           .make(250), ZL_IS);
 		}
-		for (ItemStack tStack : ST.array(ST.make(Items.spider_eye, 1, W), IL.Food_Potato_Poisonous.get(1), ST.make(Blocks.RED_MUSHROOM, 1, W))) if (tStack != null) {
+		for (ItemStack tStack : ST.array(ST.make(Items.SPIDER_EYE, 1, W), IL.Food_Potato_Poisonous.get(1), ST.make(Blocks.RED_MUSHROOM, 1, W))) if (tStack != null) {
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.DistW         .make(750), FL.Potion_Mundane          .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 48, tStack, FL.Potion_Awkward.make(750), FL.Potion_Poison_1         .make(750), ZL_IS);
 		RM.Distillery.addRecipe1(T, 16, 16, tStack, FL.Potion_Thick  .make(250), FL.Potion_Poison_2         .make(250), ZL_IS);

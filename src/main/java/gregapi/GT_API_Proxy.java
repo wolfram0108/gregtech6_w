@@ -859,7 +859,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							ST.drop(aPlayer, tRegistry == null ? IL.Bottle_Purple_Drink.get(6) : tRegistry.getItem(8762, 1, UT.NBT.make(NBT_INV_LIST, UT.NBT.makeInv(IL.Bottle_Purple_Drink.get(1), IL.Bottle_Empty.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Empty.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Empty.get(1)))));
 							ST.drop(aPlayer, IL.Grass_Dry.get(9));
 							ST.drop(aPlayer, IL.Stick.get(16));
-							ST.drop(aPlayer, Items.flint, 12, 0);
+							ST.drop(aPlayer, Items.FLINT, 12, 0);
 							ST.drop(aPlayer, Blocks.DIRT, 16, 0);
 							ST.drop(aPlayer, Blocks.OAK_SAPLING, 4, 0);
 							switch (RNGSUS.nextInt(4)) {
@@ -870,7 +870,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							}
 						} else {
 							UT.Entities.sendchat(aPlayer, CHAT_GREG + "It's dangerous to go alone! Take this.");
-							ST.drop(aPlayer, Items.stone_axe, 1, 0);
+							ST.drop(aPlayer, Items.STONE_AXE, 1, 0);
 						}
 					}
 				}
@@ -966,7 +966,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 									// ENCHANT: Enchantment_WerewolfDamage.INSTANCE (1.7.10 Java-объект чара) заменён на
 									// ResourceKey<Enchantment> KEY (см. gregapi/enchants/Enchantment_WerewolfDamage.java) —
 									// resolve через живой RegistryAccess сервера (тот же приём, что SILK_TOUCH/FORTUNE выше в этом файле).
-									ST.give(tPlayer, UT.NBT.addEnchantment(ST.make(Items.cookie, 1, 0, "Jr. Cookie"), aServerLevel.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantment_WerewolfDamage.KEY).value(), 1), F);
+									ST.give(tPlayer, UT.NBT.addEnchantment(ST.make(Items.COOKIE, 1, 0, "Jr. Cookie"), aServerLevel.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantment_WerewolfDamage.KEY).value(), 1), F);
 									UT.Entities.chat(tPlayer, Component.literal(CHAT_GREG + "Have a Jr. Cookie. Please tell Fatass to clean his Inventory, or smack him with it."));
 								} else if ("CrazyJ1984".equalsIgnoreCase(tPlayer.getScoreboardName())) {
 									ItemStack tArrow = ST.update(OP.arrowGtWood.mat(MT.Craponite, 1), aPlayer);
@@ -1136,7 +1136,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (RNGSUS.nextInt(100) < tNBT.getInt("chance").orElse(0)) UT.Entities.applyPotion(aPlayer, tNBT.getInt("id").orElse(0), tNBT.getInt("time").orElse(0), tNBT.getInt("lvl").orElse(0), F);
 		}
 
-		if (aEvent.getItem().getItem() == Items.apple) {
+		if (aEvent.getItem().getItem() == Items.APPLE) {
 			if (IL.GrC_Applecore.exists()) {
 				if (ST.invalid(aEvent.getResultStack())) aEvent.setResultStack(IL.GrC_Applecore.get(1)); else ST.give(aPlayer, IL.GrC_Applecore.get(1), F);
 			} else if (IL.Food_Apple_Red_Core.exists()) {
@@ -1456,8 +1456,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		while (aDrops.hasNext()) {
 			ItemStack aDrop = aDrops.next();
 			if (ST.invalid(aDrop) || ItemsGT.ILLEGAL_DROPS.contains(aDrop, T)) {aDrops.remove(); continue;}
-			if (ST.item_(aDrop) == Items.gold_nugget) ST.meta_(aDrop, 0);
-			if (FORCE_GRAVEL_NO_FLINT && aBlock == Blocks.GRAVEL && ST.item_(aDrop) == Items.flint) ST.set(aDrop, ST.make(Blocks.GRAVEL, 1, 0), T, F);
+			if (ST.item_(aDrop) == Items.GOLD_NUGGET) ST.meta_(aDrop, 0);
+			if (FORCE_GRAVEL_NO_FLINT && aBlock == Blocks.GRAVEL && ST.item_(aDrop) == Items.FLINT) ST.set(aDrop, ST.make(Blocks.GRAVEL, 1, 0), T, F);
 		}
 
 		if (aBlock == null) {aEvent.getDrops().clear(); for (ItemStack tStack : aDropStacks) if (ST.valid(tStack)) aEvent.getDrops().add(new ItemEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, tStack)); return;}
@@ -1551,22 +1551,22 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			ItemStack aStack = ST.update(OM.get(((ItemEntity)aEvent.getEntity()).getItem()), aEvent.getEntity());
 			if (ST.valid(aStack) && aStack.getCount() > 0) {
 				Item aItem = ST.item_(aStack);
-				if (ST.meta_(aStack) == W || aItem == Items.gold_nugget) ST.meta(aStack, 0);
+				if (ST.meta_(aStack) == W || aItem == Items.GOLD_NUGGET) ST.meta(aStack, 0);
 				if (ST.meta_(aStack) == 0 && aItem == IL.TF_Mushgloom.item()) ST.meta(aStack, 9);
 				// Check if this is likely a badly implemented Mob Drop from a Mo'Creatures Mob.
 				try {
 					Class<?> tMoCClass = Class.forName("drzhark.mocreatures.entity.IMoCEntity");
 					if (!aEvent.getEntity().level().getEntities(aEvent.getEntity(), aEvent.getEntity().getBoundingBox().inflate(0.5,1.0,0.5), tMoCClass::isInstance).isEmpty()) {
 					// Replace stupid Wooden and Stone Tools that clutter up Mob Farms for no reason, but only if nonplayerkill.
-					if (aItem == Items.wooden_sword || aItem == Items.wooden_pickaxe || aItem == Items.wooden_shovel || aItem == Items.wooden_axe || aItem == Items.wooden_hoe) {
+					if (aItem == Items.WOODEN_SWORD || aItem == Items.WOODEN_PICKAXE || aItem == Items.WOODEN_SHOVEL || aItem == Items.WOODEN_AXE || aItem == Items.WOODEN_HOE) {
 						ST.set(aStack, IL.Stick.get(1));
-					} else if (aItem == Items.stone_sword || aItem == Items.stone_pickaxe || aItem == Items.stone_shovel || aItem == Items.stone_axe || aItem == Items.stone_hoe) {
+					} else if (aItem == Items.STONE_SWORD || aItem == Items.STONE_PICKAXE || aItem == Items.STONE_SHOVEL || aItem == Items.STONE_AXE || aItem == Items.STONE_HOE) {
 						ST.set(aStack, IL.Stick.get(2));
 					}
 				}} catch(Throwable e) {/** Do Nothing */}
 				// Life Span Stuff
 				if (((ItemEntity)aEvent.getEntity()).lifespan > 1200) {
-					if (ST.item_(aStack) == Items.egg || ST.item_(aStack) == Items.feather || ST.item_(aStack) == Items.apple) {
+					if (ST.item_(aStack) == Items.EGG || ST.item_(aStack) == Items.FEATHER || ST.item_(aStack) == Items.APPLE) {
 						((ItemEntity)aEvent.getEntity()).lifespan = 1200;
 					} else {
 						if (((ItemEntity)aEvent.getEntity()).lifespan == 6000) {

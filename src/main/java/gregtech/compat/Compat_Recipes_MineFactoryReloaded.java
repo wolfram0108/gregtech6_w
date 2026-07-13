@@ -44,7 +44,7 @@ public class Compat_Recipes_MineFactoryReloaded extends CompatMods {
 		OUT.println("GT_Mod: Doing MineFactory Reloaded Recipes.");
 		CR.delate(MD.MFR, "machine.2", 0, 1);
 		CR.remove(OM.dust(MT.Plastic), OM.dust(MT.Plastic), NI, OM.dust(MT.Plastic), OM.dust(MT.Plastic));
-		CR.remove(ST.make(Items.milk_bucket, 1, 0), ST.make(Items.bucket, 1, 0), IL.Dye_Cocoa.get(1));
+		CR.remove(ST.make(Items.MILK_BUCKET, 1, 0), ST.make(Items.BUCKET, 1, 0), IL.Dye_Cocoa.get(1));
 		
 		CR.shaped(ST.make(MD.MFR, "machine.2" , 1, 0), CR.DEF_REV_NCC, new Object[] {"CDC", "DMD", "CDC", 'C', OD_CIRCUITS[6], 'D', OP.lens.dat(ANY.Diamond), 'M', OP.casingMachineQuadruple.dat(MT.Ad)});
 		CR.shaped(ST.make(MD.MFR, "machine.2" , 1, 1), CR.DEF_REV_NCC, new Object[] {"CSC", "LML", "CDC", 'C', OD_CIRCUITS[6], 'D', OP.lens.dat(ANY.Diamond), 'M', OP.casingMachineQuadruple.dat(MT.Ad), 'L', IL.Comp_Laser_Gas_CO2, 'S', ST.make(MD.MFR, "pinkslime", 1, 1)});

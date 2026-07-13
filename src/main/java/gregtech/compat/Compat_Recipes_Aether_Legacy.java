@@ -66,14 +66,14 @@ public class Compat_Recipes_Aether_Legacy extends CompatMods {
 		RM.sawing(16,  32, F, 100, ST.make(MD.AETHEL, "skyroot_fence"     , 1, W), IL.AETHER_Skyroot_Planks.get(1));
 		RM.sawing(16,  32, F, 100, ST.make(MD.AETHEL, "skyroot_fence_gate", 1, W), IL.AETHER_Skyroot_Planks.get(2), OM.dust(MT.Skyroot, OP.stick.mAmount * 4));
 		RM.sawing(16,  48, F, 100, ST.make(MD.AETHEL, "skyroot_bed_item"  , 1, W), IL.AETHER_Skyroot_Planks.get(3), ST.make(Blocks.WHITE_WOOL, 3, 0));
-		RM.sawing(16,  96, F, 100, ST.make(MD.AETHEL, "skyroot_bookshelf" , 1, W), IL.AETHER_Skyroot_Planks.get(6), ST.make(Items.book, 3, 0));
+		RM.sawing(16,  96, F, 100, ST.make(MD.AETHEL, "skyroot_bookshelf" , 1, W), IL.AETHER_Skyroot_Planks.get(6), ST.make(Items.BOOK, 3, 0));
 		
 		CR.shapeless(IL.AETHER_Skyroot_Planks.get(1), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, ST.item(MD.AETHEL, "skyroot_fence"     )});
 		CR.shapeless(IL.AETHER_Skyroot_Planks.get(2), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, ST.item(MD.AETHEL, "skyroot_fence_gate")});
 		CR.shapeless(IL.AETHER_Skyroot_Planks.get(3), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, ST.item(MD.AETHEL, "skyroot_bed_item"  )});
 		CR.shapeless(IL.AETHER_Skyroot_Planks.get(6), CR.DEF_NCC, new Object[] {OreDictToolNames.saw, ST.item(MD.AETHEL, "skyroot_bookshelf" )});
 		
-		RM.unbox(IL.AETHER_Skyroot_Planks.get(3), ST.make(MD.AETHEL, "skyrootBookshelf", 1, W), ST.make(Items.book, 3, 0));
+		RM.unbox(IL.AETHER_Skyroot_Planks.get(3), ST.make(MD.AETHEL, "skyrootBookshelf", 1, W), ST.make(Items.BOOK, 3, 0));
 		
 		// TODO: Magical Infuser
 		RM.Injector.addRecipe2(T, 16, 16, OP.gem.mat(MT.Ambrosium, 4), OP.dustTiny    .mat(MT.Gravitite, 9), ST.make(MD.AETHEL, "enchanted_gravitite", 1, 0));

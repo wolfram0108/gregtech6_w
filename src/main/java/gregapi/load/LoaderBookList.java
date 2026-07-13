@@ -32,20 +32,20 @@ public class LoaderBookList implements Runnable {
 	public void run() {
 		BooksGT.BOOK_REGISTER  .put(IL.Circuit_Selector.wild(1), (byte) 43);
 		
-		BooksGT.BOOKS_NORMAL   .add(Items.book           , W);
-		BooksGT.BOOKS_NORMAL   .add(Items.writable_book  , W);
-		BooksGT.BOOKS_NORMAL   .add(Items.written_book   , W);
-		BooksGT.BOOKS_ENCHANTED.add(Items.enchanted_book , W);
-		BooksGT.BOOK_REGISTER  .put(Items.paper          , W, (byte) 25);
-		BooksGT.BOOK_REGISTER  .put(Items.name_tag       , W, (byte) 25);
-		BooksGT.BOOK_REGISTER  .put(Items.map            , W, (byte) 25);
-		BooksGT.BOOK_REGISTER  .put(Items.filled_map     , W, (byte) 26);
-		BooksGT.BOOK_REGISTER  .put(Items.book           , W, (byte)  1);
-		BooksGT.BOOK_REGISTER  .put(Items.writable_book  , W, (byte)  1);
-		BooksGT.BOOK_REGISTER  .put(Items.written_book   , W, (byte)  1);
-		BooksGT.BOOK_REGISTER  .put(Items.enchanted_book , W, (byte)  2);
-		BooksGT.BOOK_REGISTER  .put(Items.item_frame     , W, (byte) 34);
-		BooksGT.BOOK_REGISTER  .put(Items.painting       , W, (byte) 34);
+		BooksGT.BOOKS_NORMAL   .add(Items.BOOK           , W);
+		BooksGT.BOOKS_NORMAL   .add(Items.WRITABLE_BOOK  , W);
+		BooksGT.BOOKS_NORMAL   .add(Items.WRITTEN_BOOK   , W);
+		BooksGT.BOOKS_ENCHANTED.add(Items.ENCHANTED_BOOK , W);
+		BooksGT.BOOK_REGISTER  .put(Items.PAPER          , W, (byte) 25);
+		BooksGT.BOOK_REGISTER  .put(Items.NAME_TAG       , W, (byte) 25);
+		BooksGT.BOOK_REGISTER  .put(Items.MAP            , W, (byte) 25);
+		BooksGT.BOOK_REGISTER  .put(Items.FILLED_MAP     , W, (byte) 26);
+		BooksGT.BOOK_REGISTER  .put(Items.BOOK           , W, (byte)  1);
+		BooksGT.BOOK_REGISTER  .put(Items.WRITABLE_BOOK  , W, (byte)  1);
+		BooksGT.BOOK_REGISTER  .put(Items.WRITTEN_BOOK   , W, (byte)  1);
+		BooksGT.BOOK_REGISTER  .put(Items.ENCHANTED_BOOK , W, (byte)  2);
+		BooksGT.BOOK_REGISTER  .put(Items.ITEM_FRAME     , W, (byte) 34);
+		BooksGT.BOOK_REGISTER  .put(Items.PAINTING       , W, (byte) 34);
 		BooksGT.BOOK_REGISTER  .put(Blocks.wooden_button , W, (byte)  1);
 		BooksGT.BOOK_REGISTER  .put(Blocks.STONE_BUTTON  , W, (byte)  2);
 		BooksGT.BOOK_REGISTER  .put(Blocks.LEVER         , W, (byte)  1);

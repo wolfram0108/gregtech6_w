@@ -66,7 +66,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 		if (mIcon == null || mIcon == Textures.BlockIcons.RENDERING_ERROR) mIcon = mMaterial.mTextureSetsBlock.get(OP.casingMachine.mIconIndexBlock);
 		for (int i = 0; i < mDisplay.length; i++) {
 			if (!slotHas(i)) {mDisplay[i] = 0; continue;}
-			if (ST.item(slot(i)) == Items.glass_bottle || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
+			if (ST.item(slot(i)) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
 			FluidStack tFluid = FL.getFluid(slot(i), T);
 			if (tFluid != null) {mDisplay[i] = (short)-FL.id(tFluid); continue;}
 			if (ST.item(slot(i)) == Items.experience_bottle) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
@@ -82,7 +82,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 		if (aIsServerSide && mInventoryChanged) {
 			for (int i = 0; i < mDisplay.length; i++) {
 				if (!slotHas(i)) {mDisplay[i] = 0; continue;}
-				if (ST.item(slot(i)) == Items.glass_bottle || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
+				if (ST.item(slot(i)) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_1.equal(slot(i), T, T) || IL.HBM_Bottle_Empty_2.equal(slot(i), T, T)) {mDisplay[i] = Short.MIN_VALUE; continue;}
 				FluidStack tFluid = FL.getFluid(slot(i), T);
 				if (tFluid != null) {mDisplay[i] = (short)-FL.id(tFluid); continue;}
 				if (ST.item(slot(i)) == Items.experience_bottle) {mDisplay[i] = (short)-FL.Potion_Jump_1.id(); continue;}
@@ -234,9 +234,9 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {
 		Item aItem = ST.item(aStack);
 		if (aItem == null) return F;
-		if (aItem == Items.potionitem || aItem == Items.glass_bottle || aItem == Items.experience_bottle || IL.BoP_Jar_Empty.equal(aStack, T, T) || IL.HBM_Bottle_Empty_1.equal(aStack, T, T) || IL.HBM_Bottle_Empty_2.equal(aStack, T, T)) return T;
+		if (aItem == Items.potionitem || aItem == Items.GLASS_BOTTLE || aItem == Items.experience_bottle || IL.BoP_Jar_Empty.equal(aStack, T, T) || IL.HBM_Bottle_Empty_1.equal(aStack, T, T) || IL.HBM_Bottle_Empty_2.equal(aStack, T, T)) return T;
 		ItemStack aContainer = ST.container(aStack, T);
-		return ST.item(aContainer) == Items.glass_bottle || IL.BoP_Jar_Empty.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_1.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_2.equal(aContainer, T, T);
+		return ST.item(aContainer) == Items.GLASS_BOTTLE || IL.BoP_Jar_Empty.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_1.equal(aContainer, T, T) || IL.HBM_Bottle_Empty_2.equal(aContainer, T, T);
 	}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.crate.bottles";}

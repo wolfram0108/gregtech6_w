@@ -129,7 +129,7 @@ public class Loader_Recipes_Woods implements Runnable {
 		RM.Squeezer     .addRecipe1(T, 16,   16, OM.dust(MT.WOODS.Maple        ), NF, FL.Sap_Maple   .make(5)          , OM.dust(MT.Wood));
 		RM.Squeezer     .addRecipe1(T, 16,   16, OM.dust(MT.WOODS.Rainbowood   ), NF, FL.Sap_Rainbow .make(5)          , OM.dust(MT.Wood));
 		
-		CR.shaped(ST.make(Items.bowl, 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, "k", "X", 'X', OD.plankWood);
+		CR.shaped(ST.make(Items.BOWL, 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, "k", "X", 'X', OD.plankWood);
 		
 		CR.shaped(IL.Stick.get(1), CR.DEF_NCC, "  ", " S", 'S', stick.dat(ANY.WoodDefault));
 		

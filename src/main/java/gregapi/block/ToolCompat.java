@@ -138,7 +138,7 @@ public class ToolCompat {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, (aMeta&12)|((aMeta & 2) == 0 ? 1 : 2), 3);
 				} else if (IL.HaC_Log_Paperbark.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, 3, 3);
-					if (rReturn) tBark = ST.make(Items.paper, 4, 0);
+					if (rReturn) tBark = ST.make(Items.PAPER, 4, 0);
 				}
 			}
 			if (!rReturn && BlocksGT.Beam3 != null) {
@@ -205,7 +205,7 @@ public class ToolCompat {
 				return tDamage;
 			}
 		}
-		if (aTool.equals(TOOL_igniter) && ST.item(aStack) != Items.flint_and_steel) {
+		if (aTool.equals(TOOL_igniter) && ST.item(aStack) != Items.FLINT_AND_STEEL) {
 			// Ignite any TNT Blocks.
 			if (aBlock instanceof BlockTNT) {
 				((BlockTNT)aBlock).func_150114_a(aWorld, aX, aY, aZ, 1, aEntityLiving);

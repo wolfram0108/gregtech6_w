@@ -60,7 +60,7 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		CR.shaped(ST.make(MD.FR, "letters"          , 1, 0), CR.DEF_NCC, "G", "P", 'P', OD.paperEmpty, 'G', OD.itemGlue);
 		CR.shaped(ST.make(MD.FR, "letters"          , 1, 0), CR.DEF_NCC, "G", "P", 'P', OD.paperEmpty, 'G', "listAllpropolis");
 		
-		RM.Printer.addRecipe2(F, 16,128, ST.make(Items.paper, 1, W), ST.tag(0), FL.Glue.make(200), NF, ST.make(MD.FR, "letters", 1, 0));
+		RM.Printer.addRecipe2(F, 16,128, ST.make(Items.PAPER, 1, W), ST.tag(0), FL.Glue.make(200), NF, ST.make(MD.FR, "letters", 1, 0));
 		
 		if (CR.has(ST.make(MD.FR, "stamps", 1, 0))) {
 		RM.Printer.addRecipe2(F, 16, 16, OP.plateTiny.mat(MT.Paper, 1), OM.dust(MT.Apatite               ,U9), FL.Glue.make( 25), NF, ST.make(MD.FR, "stamps", 1, 0));
@@ -194,13 +194,13 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCharcoal"         , 1), OP.gem.mat(MT.Charcoal, 9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCarrots"          , 1), IL.Food_Carrot.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedPotatoes"         , 1), IL.Food_Potato.get(9));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedNetherwart"       , 1), ST.make(Items.nether_wart, 9, 0));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCookies"          , 1), ST.make(Items.cookie, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedNetherwart"       , 1), ST.make(Items.NETHER_WART, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCookies"          , 1), ST.make(Items.COOKIE, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedWheat"            , 1), IL.Crop_Wheat.get(9));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSeeds"            , 1), ST.make(Items.wheat_seeds, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedSeeds"            , 1), ST.make(Items.WHEAT_SEEDS, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedReeds"            , 1), ST.make(Items.reeds, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedApples"           , 1), IL.Food_Apple_Red.get(9));
-		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedClay"             , 1), ST.make(Items.clay_ball, 9, 0));
+		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedClay"             , 1), ST.make(Items.CLAY_BALL, 9, 0));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedCrystallinePollen", 1), IL.FR_Pollen_Cluster_Crystalline.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedPollen"           , 1), IL.FR_Pollen_Cluster.get(9));
 		RM.boxunbox(tEmptyCrate, ST.make(MD.FR, "cratedPropolis"         , 1), IL.FR_Propolis.get(9));
@@ -284,7 +284,7 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), IL.FR_Propolis_Pulsating.get(5) , IL.FR_Pulsating_Mesh.get(1));
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), IL.FR_Pulsating_Mesh.get(5)     , OP.gem.mat(MT.EnderPearl, 1));
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), IL.FR_Silk.get(9)               , IL.FR_Silk_Woven.get(1));
-		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(1), IL.FR_Silk.get(3)               , ST.make(Items.string, 1, 0));
+		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(1), IL.FR_Silk.get(3)               , ST.make(Items.STRING, 1, 0));
 		
 		RM.Loom         .addRecipe2(T, 16,  128, ST.tag(4), IL.FR_Silk_Woven.get(5)         , ST.make(MD.FR, "apiaristHelmet", 1, 0));
 		RM.Loom         .addRecipe2(T, 16,  128, ST.tag(5), IL.FR_Silk_Woven.get(8)         , ST.make(MD.FR, "apiaristChest", 1, 0));
@@ -292,7 +292,7 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		RM.Loom         .addRecipe2(T, 16,  128, ST.tag(7), IL.FR_Silk_Woven.get(4)         , ST.make(MD.FR, "apiaristBoots", 1, 0));
 		
 		RM.Loom         .addRecipe2(T, 16,   16, IL.FR_Stick.get(8)                         , ST.make((Item)OP.plantGtFiber.mRegisteredPrefixItems.get(0), 1, W), ST.make(MD.FR, "frameImpregnated", 1, 0));
-		RM.Loom         .addRecipe2(T, 16,   16, IL.FR_Stick.get(8)                         , ST.make(Items.string, 1, W)                                       , ST.make(MD.FR, "frameImpregnated", 1, 0));
+		RM.Loom         .addRecipe2(T, 16,   16, IL.FR_Stick.get(8)                         , ST.make(Items.STRING, 1, W)                                       , ST.make(MD.FR, "frameImpregnated", 1, 0));
 		
 		RM.Canner       .addRecipe2(T, 16,   16, OM.dust(MT.I), IL.FR_TinCapsule.get(1), IL.FR_Iodine_Capsule.get(1));
 		RM.Canner       .addRecipe1(T, 16,   16, IL.FR_Iodine_Capsule.get(1), IL.FR_TinCapsule.get(1), OM.dust(MT.I));
@@ -377,16 +377,16 @@ public class Compat_Recipes_Forestry extends CompatMods {
 		}});
 		addListener(OP.stick.dat(ANY.WoodNormal), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 		RM.Loom         .addRecipe2(T, 16,   16, ST.amount(8, aEvent.mStack), ST.make((Item)OP.plantGtFiber.mRegisteredPrefixItems.get(0), 1, W), ST.make(MD.FR, "frameUntreated", 1, 0));
-		RM.Loom         .addRecipe2(T, 16,   16, ST.amount(8, aEvent.mStack), ST.make(Items.string, 1, W)                                       , ST.make(MD.FR, "frameUntreated", 1, 0));
+		RM.Loom         .addRecipe2(T, 16,   16, ST.amount(8, aEvent.mStack), ST.make(Items.STRING, 1, W)                                       , ST.make(MD.FR, "frameUntreated", 1, 0));
 		}});
 		}};
 		
 		RM.genericycle(OP.casingMachine.mat(MT.Bronze, 1), IL.FR_Casing_Sturdy.get(1));
 		
-		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.string, 1, W), MT.Wax        .liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
-		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.string, 1, W), MT.WaxBee     .liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
-		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.string, 1, W), MT.WaxPlant   .liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
-		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.string, 1, W), MT.WaxParaffin.liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
+		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.STRING, 1, W), MT.Wax        .liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
+		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.STRING, 1, W), MT.WaxBee     .liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
+		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.STRING, 1, W), MT.WaxPlant   .liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
+		RM.Bath         .addRecipe1(T,  0,  128, ST.make(Items.STRING, 1, W), MT.WaxParaffin.liquid(U*6, T), NF, IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4), IL.FR_Candle.get(4));
 		RM.Bath         .addRecipe1(T,  0,  128, IL.FR_Silk.get(1), MT.Wax        .liquid(U*2, T), NF, IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1));
 		RM.Bath         .addRecipe1(T,  0,  128, IL.FR_Silk.get(1), MT.WaxBee     .liquid(U*2, T), NF, IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1));
 		RM.Bath         .addRecipe1(T,  0,  128, IL.FR_Silk.get(1), MT.WaxPlant   .liquid(U*2, T), NF, IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1), IL.FR_Candle.get(1));

@@ -59,11 +59,11 @@ public class Loader_Recipes_Crops implements Runnable {
 			RM.ic2_extractor(aEvent.mStack, IL.Dye_Cactus.get(3));
 		}});
 		addListener("flowerCinderpearl", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.Squeezer .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.blaze_powder, 1, 0));
-			RM.Juicer   .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.blaze_powder, 1, 0));
-			RM.Shredder .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.blaze_powder, 1, 0));
-			RM.Mortar   .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.blaze_powder, 1, 0));
-			RM.ic2_extractor(aEvent.mStack, ST.make(Items.blaze_powder, 1, 0));
+			RM.Squeezer .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.BLAZE_POWDER, 1, 0));
+			RM.Juicer   .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.BLAZE_POWDER, 1, 0));
+			RM.Shredder .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.BLAZE_POWDER, 1, 0));
+			RM.Mortar   .addRecipe1(T, 16, 16, aEvent.mStack, ST.make(Items.BLAZE_POWDER, 1, 0));
+			RM.ic2_extractor(aEvent.mStack, ST.make(Items.BLAZE_POWDER, 1, 0));
 		}});
 		addListener("flowerShimmerleaf", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Squeezer .addRecipe1(T, 16, 16, 2000, aEvent.mStack, NF, MT.Hg.liquid(U, F), IL.Remains_Plant.get(1));
@@ -309,12 +309,12 @@ public class Loader_Recipes_Crops implements Runnable {
 		addListener("cropHemp", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Loom         .addRecipe2(T, 16, 16, ST.tag(10), ST.amount(4, aEvent.mStack), IL.Rope.get(1));
 			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 0), ST.amount(9, aEvent.mStack), ST.make(Blocks.WHITE_WOOL, 1, 0));
-			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 1), ST.amount(3, aEvent.mStack), ST.make(Items.string, 1, 0));
+			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 1), ST.amount(3, aEvent.mStack), ST.make(Items.STRING, 1, 0));
 			RM.crop(aEvent.mStack, FL.Oil_Hemp, 100, IL.Remains_Plant.get(1), 3000, null, null, 0, 0, 0, 0, 0);
 		}});
 		addListener("cropFlax", new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 0), ST.amount(4, aEvent.mStack), ST.make(Blocks.WHITE_WOOL, 1, 0));
-			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 1), ST.amount(2, aEvent.mStack), ST.make(Items.string, 1, 0));
+			RM.Loom         .addRecipe2(T, 16, 16, ST.tag( 1), ST.amount(2, aEvent.mStack), ST.make(Items.STRING, 1, 0));
 			RM.Squeezer     .addRecipe1(T, 16, 16, 3000, aEvent.mStack, NF, FL.lube(30), IL.Remains_Plant.get(1));
 			RM.Juicer       .addRecipe1(T, 16, 16, 4000, aEvent.mStack, NF, FL.lube(20), IL.Remains_Plant.get(1));
 		}});

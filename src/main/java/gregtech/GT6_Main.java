@@ -163,14 +163,14 @@ public class GT6_Main extends Abstract_Mod {
 		
 		RM.pulverizing(ST.make(Blocks.COBBLESTONE, 1, W), ST.make(Blocks.SAND, 1, 0), null, 0, F);
 		RM.pulverizing(ST.make(Blocks.STONE, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0), null, 0, F);
-		RM.pulverizing(ST.make(Blocks.GRAVEL     , 1, W), ST.make(Items.flint, 2, 0), OP.dust.mat(MT.Flint, 1), 10, F);
+		RM.pulverizing(ST.make(Blocks.GRAVEL     , 1, W), ST.make(Items.FLINT, 2, 0), OP.dust.mat(MT.Flint, 1), 10, F);
 		RM.pulverizing(ST.make(Blocks.FURNACE    , 1, W), ST.make(Blocks.SAND, 6, 0), null, 0, F);
 		RM.pulverizing(ST.make(Blocks.lit_furnace, 1, W), ST.make(Blocks.SAND, 6, 0), null, 0, F);
-		RM.pulverizing(ST.make(Items.bone        , 1, W), IL.Dye_Bonemeal.get(2), IL.Dye_Bonemeal.get(1), 50, T);
-		RM.pulverizing(ST.make(Items.blaze_rod   , 1, W), ST.make(Items.blaze_powder, 3, 0), ST.make(Items.blaze_powder, 1, 0), 50, T);
-		RM.pulverizing(ST.make(Blocks.PUMPKIN    , 1, W), ST.make(Items.pumpkin_seeds, 4, 0), null, 0, F);
-		RM.pulverizing(ST.make(Items.melon       , 1, W), ST.make(Items.melon_seeds, 1, 0), null, 0, F);
-		RM.pulverizing(ST.make(Blocks.WHITE_WOOL, 1, 0), ST.make(Items.string, 2, 0), ST.make(Items.string, 1, 0), 50, F);
+		RM.pulverizing(ST.make(Items.BONE        , 1, W), IL.Dye_Bonemeal.get(2), IL.Dye_Bonemeal.get(1), 50, T);
+		RM.pulverizing(ST.make(Items.BLAZE_ROD   , 1, W), ST.make(Items.BLAZE_POWDER, 3, 0), ST.make(Items.BLAZE_POWDER, 1, 0), 50, T);
+		RM.pulverizing(ST.make(Blocks.PUMPKIN    , 1, W), ST.make(Items.PUMPKIN_SEEDS, 4, 0), null, 0, F);
+		RM.pulverizing(ST.make(Items.melon       , 1, W), ST.make(Items.MELON_SEEDS, 1, 0), null, 0, F);
+		RM.pulverizing(ST.make(Blocks.WHITE_WOOL, 1, 0), ST.make(Items.STRING, 2, 0), ST.make(Items.STRING, 1, 0), 50, F);
 		
 		new Loader_Fluids().run();
 		new Loader_Tools().run();
@@ -341,7 +341,7 @@ public class GT6_Main extends Abstract_Mod {
 		for (ItemStack tStack : OreDictManager.getOres("gt:canvas", F))
 		RM.ScannerVisuals.addFakeRecipe(F, ST.array(tStack, IL.USB_Stick_1.get(1))                                              , ST.array(IL.USB_Stick_1.getWithName(1, "Containing scanned Block"                 ), tStack), null, null, ZL_FS, ZL_FS, 64, 16, 0);
 		RM.ScannerVisuals.addFakeRecipe(F, ST.array(ST.make(Blocks.CRAFTING_TABLE, 1, 0, "ANY BLOCK"), IL.USB_Stick_1.get(1))   , ST.array(IL.USB_Stick_1.getWithName(1, "Containing scanned Block"                 ), ST.make(Blocks.CRAFTING_TABLE, 1, 0, "ANY BLOCK")), null, null, ZL_FS, ZL_FS, 512, 16, 0);
-		RM.ScannerVisuals.addFakeRecipe(F, ST.array(ST.make(Items.filled_map, 1, W), IL.USB_Stick_1.get(1))                     , ST.array(IL.USB_Stick_1.getWithName(1, "Containing scanned Map"                   ), ST.make(Items.filled_map, 1, W)), null, null, ZL_FS, ZL_FS, 64, 16, 0);
+		RM.ScannerVisuals.addFakeRecipe(F, ST.array(ST.make(Items.FILLED_MAP, 1, W), IL.USB_Stick_1.get(1))                     , ST.array(IL.USB_Stick_1.getWithName(1, "Containing scanned Map"                   ), ST.make(Items.FILLED_MAP, 1, W)), null, null, ZL_FS, ZL_FS, 64, 16, 0);
 		if (IL.TF_Magic_Map.exists())
 		RM.ScannerVisuals.addFakeRecipe(F, ST.array(IL.TF_Magic_Map.wild(1), IL.USB_Stick_1.get(1))                             , ST.array(IL.USB_Stick_1.getWithName(1, "Containing scanned Magic Map"             ), IL.TF_Magic_Map.wild(1)), null, null, ZL_FS, ZL_FS, 64, 16, 0);
 		if (IL.TF_Maze_Map.exists())
@@ -359,18 +359,18 @@ public class GT6_Main extends Abstract_Mod {
 		RM.ScannerVisuals.addFakeRecipe(F, ST.array(IL.IE_Blueprint_Projectiles_Common.wild(1), IL.USB_Stick_1.get(1))          , ST.array(IL.USB_Stick_1.getWithName(1, "Containing scanned Engineer's Blueprint"  ), IL.IE_Blueprint_Projectiles_Common.wild(1)), null, null, ZL_FS, ZL_FS, 1024, 16, 0);
 		
 		
-		RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.paper, 8, W), ST.make(Items.compass, 1, W), NF, NF, ST.make(Items.map, 1, 0));
+		RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.PAPER, 8, W), ST.make(Items.COMPASS, 1, W), NF, NF, ST.make(Items.MAP, 1, 0));
 		
-		RM.Printer.addRecipe1(T, 16, 256, ST.make(Items.book, 1, W), DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], NF, ST.book("Manual_Printer", ST.make(ItemsGT.BOOKS, 1, 8)));
+		RM.Printer.addRecipe1(T, 16, 256, ST.make(Items.BOOK, 1, W), DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], NF, ST.book("Manual_Printer", ST.make(ItemsGT.BOOKS, 1, 8)));
 		
 		for (ItemStack tStack : OreDictManager.getOres("gt:canvas", F))
 		RM.Printer.addFakeRecipe(F, ST.array(tStack                             , IL.USB_Stick_1.getWithName(0, "Containing scanned Block"               )), ST.array(tStack                                    ), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T)), ZL_FS,   64, 16, 0);
 //      RM.Printer.addFakeRecipe(F, ST.array(IL.Paper_Punch_Card_Empty   .get(1), IL.USB_Stick_1.getWithName(0, "Containing scanned Punchcard"           )), ST.array(IL.Paper_Punch_Card_Encoded.get(1)        ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T)), ZL_FS,   32, 16, 0);
 		RM.Printer.addFakeRecipe(F, ST.array(IL.Paper_Blueprint_Empty    .get(1), IL.USB_Stick_1.getWithName(0, "Containing scanned Blueprint"           )), ST.array(IL.Paper_Blueprint_Used.get(1)            ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_White], 1, 9, T)), ZL_FS,   32, 16, 0);
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.paper, 1, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Blueprint"           )), ST.array(IL.Paper_Blueprint_Used.get(1)            ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue ], 1, 1, T)), ZL_FS,  128, 16, 0);
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.paper, 3, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Book"                )), ST.array(IL.Paper_Printed_Pages.get(1)             ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 2, T)), ZL_FS,  512, 16, 0);
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.paper, 6, W)         , IL.USB_Stick_1.getWithName(0, "Containing large scanned Book"          )), ST.array(IL.Paper_Printed_Pages_Many.get(1)        ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 1, T)), ZL_FS, 1024, 16, 0);
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.map, 1, W)           , IL.USB_Stick_1.getWithName(0, "Containing scanned Map"                 )), ST.array(ST.make(Items.filled_map, 1, 0)           ), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T)), ZL_FS,   64, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.PAPER, 1, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Blueprint"           )), ST.array(IL.Paper_Blueprint_Used.get(1)            ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue ], 1, 1, T)), ZL_FS,  128, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.PAPER, 3, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Book"                )), ST.array(IL.Paper_Printed_Pages.get(1)             ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 2, T)), ZL_FS,  512, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.PAPER, 6, W)         , IL.USB_Stick_1.getWithName(0, "Containing large scanned Book"          )), ST.array(IL.Paper_Printed_Pages_Many.get(1)        ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 1, T)), ZL_FS, 1024, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.MAP, 1, W)           , IL.USB_Stick_1.getWithName(0, "Containing scanned Map"                 )), ST.array(ST.make(Items.FILLED_MAP, 1, 0)           ), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T)), ZL_FS,   64, 16, 0);
 		if (IL.TF_Magic_Map.exists())
 		RM.Printer.addFakeRecipe(F, ST.array(IL.TF_Magic_Map_Empty      .wild(1), IL.USB_Stick_1.getWithName(0, "Containing scanned Magic Map"           )), ST.array(IL.TF_Magic_Map                    .get(1)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T)), ZL_FS,   64, 16, 0);
 		if (IL.TF_Maze_Map.exists())
@@ -378,13 +378,13 @@ public class GT6_Main extends Abstract_Mod {
 		if (IL.TF_Ore_Map.exists())
 		RM.Printer.addFakeRecipe(F, ST.array(IL.TF_Ore_Map_Empty        .wild(1), IL.USB_Stick_1.getWithName(0, "Containing scanned Maze Map"            )), ST.array(IL.TF_Ore_Map                      .get(1)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T)), ZL_FS,   64, 16, 0);
 		if (IL.GC_Schematic_1.exists())
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.paper, 8, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Schematics"          )), ST.array(IL.GC_Schematic_1.wild(1)                 ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), ZL_FS, 2048, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.PAPER, 8, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Schematics"          )), ST.array(IL.GC_Schematic_1.wild(1)                 ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), ZL_FS, 2048, 16, 0);
 		if (IL.GC_Schematic_2.exists())
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.paper, 8, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Schematics"          )), ST.array(IL.GC_Schematic_2.wild(1)                 ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), ZL_FS, 2048, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.PAPER, 8, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Schematics"          )), ST.array(IL.GC_Schematic_2.wild(1)                 ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), ZL_FS, 2048, 16, 0);
 		if (IL.GC_Schematic_3.exists())
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.paper, 8, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Schematics"          )), ST.array(IL.GC_Schematic_3.wild(1)                 ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), ZL_FS, 2048, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.PAPER, 8, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Schematics"          )), ST.array(IL.GC_Schematic_3.wild(1)                 ), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 4, 1, T)), ZL_FS, 2048, 16, 0);
 		if (IL.IE_Blueprint_Projectiles_Common.exists())
-		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.paper, 3, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Engineer's Blueprint")), ST.array(IL.IE_Blueprint_Projectiles_Common.wild(1)), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue ], 3, 1, T)), ZL_FS, 2048, 16, 0);
+		RM.Printer.addFakeRecipe(F, ST.array(ST.make(Items.PAPER, 3, W)         , IL.USB_Stick_1.getWithName(0, "Containing scanned Engineer's Blueprint")), ST.array(IL.IE_Blueprint_Projectiles_Common.wild(1)), null, null, FL.array(                                                                                                                                                                       FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Blue ], 3, 1, T)), ZL_FS, 2048, 16, 0);
 		
 		if (IL.IE_Treated_Stairs.exists())  RM.Bath.addFakeRecipe(F, ST.array(ST.make(Blocks.OAK_STAIRS  , 1, W)), ST.array(IL.IE_Treated_Stairs.get(1                               )), null, null, FL.array(FL.Oil_Creosote.make( 75)), ZL_FS, 102, 0, 0);
 											RM.Bath.addFakeRecipe(F, ST.array(ST.make(Blocks.OAK_SLAB, 1, 0)), ST.array(IL.IE_Treated_Slab  .get(1, IL.Treated_Planks_Slab.get(1))), null, null, FL.array(FL.Oil_Creosote.make( 50)), ZL_FS,  72, 0, 0);
@@ -400,13 +400,13 @@ public class GT6_Main extends Abstract_Mod {
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Book_Loot_MatDict.get(1)), ST.array(IL.Book_Loot_MatDict.getWithName(1, "1 Material Dictionary"             ), ST.make(ItemsGT.BOOKS, 1, 32002), ST.make(ItemsGT.BOOKS, 1, 32003)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bottle_Loot      .get(1)), ST.array(IL.Bottle_Loot      .getWithName(1, "Random Bottle of something"        ), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.potionitem, 1, 0), IL.Bottle_Holy_Water.get(1), IL.Bottle_Slime_Green.get(1), IL.Bottle_Ink.get(1), IL.Bottle_Indigo.get(1), IL.Bottle_Purple_Drink.get(1), IL.Bottle_Empty.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Sapling .get(1)), ST.array(IL.Bag_Loot_Sapling .getWithName(1, "Enough Saplings to plant one Tree" ), ST.make(Blocks.OAK_SAPLING, 1, 0), ST.make(Blocks.SPRUCE_SAPLING, 1, 0), ST.make(Blocks.BIRCH_SAPLING, 1, 0), ST.make(Blocks.JUNGLE_SAPLING, 4, 0), ST.make(Blocks.ACACIA_SAPLING, 1, 0), ST.make(Blocks.DARK_OAK_SAPLING, 4, 0), IL.TC_Silverwood_Sapling.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
-											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Seeds   .get(1)), ST.array(IL.Bag_Loot_Seeds   .getWithName(1, "A lot of one type of Seeds"        ), ST.make(Items.wheat_seeds, 1, 0), ST.make(Items.pumpkin_seeds, 1, 0), ST.make(Items.melon_seeds, 1, 0), IL.EtFu_Beet_Seeds.get(1), ST.make(MD.RoC, "rotarycraft_item_canola", 1, 0)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
+											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Seeds   .get(1)), ST.array(IL.Bag_Loot_Seeds   .getWithName(1, "A lot of one type of Seeds"        ), ST.make(Items.WHEAT_SEEDS, 1, 0), ST.make(Items.PUMPKIN_SEEDS, 1, 0), ST.make(Items.MELON_SEEDS, 1, 0), IL.EtFu_Beet_Seeds.get(1), ST.make(MD.RoC, "rotarycraft_item_canola", 1, 0)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Gems    .get(1)), ST.array(IL.Bag_Loot_Gems    .getWithName(1, "1 Flawless Gem and some other Gems"), OP.gemFlawless.mat(MT.Diamond, 1), OP.gem.mat(MT.Emerald, 1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 											RM.Unboxinator.addFakeRecipe(F, ST.array(IL.Bag_Loot_Misc    .get(1)), ST.array(IL.Bag_Loot_Misc    .getWithName(1, "Misc Item"                         ), IL.Tool_MatchBox_Full.get(1), IL.Dynamite.get(1), IL.Food_Can_Chum_4.get(1), OP.chemtube.mat(MT.Mcg, 1), IL.Pill_Cure_All.get(1), OP.rockGt.mat(MT.STONES.SkyStone, 1), OP.dust.mat(MT.OREMATS.Zeolite, 1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 		
-		if (IL.TC_Loot_Common  .exists())   RM.Unboxinator.addFakeRecipe(F, ST.array(IL.TC_Loot_Common   .get(1)), ST.array(IL.TC_Loot_Common  .getWithName(1, "8 to 12 Singular Items"),                            NI,                               NI, ST.make(Items.diamond, 1, 0), ST.make(Items.emerald, 1, 0), ST.make(Items.ender_pearl, 1, 0), IL.TC_Gold_Coin.get(1), ST.make(Items.GOLDEN_APPLE, 1, 0), ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.enchanted_book, 1, 0), IL.TC_Knowledge_Fragment.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
-		if (IL.TC_Loot_Uncommon.exists())   RM.Unboxinator.addFakeRecipe(F, ST.array(IL.TC_Loot_Uncommon .get(1)), ST.array(IL.TC_Loot_Uncommon.getWithName(1, "8 to 12 Singular Items"),                            NI,                               NI, ST.make(Items.diamond, 1, 0), ST.make(Items.emerald, 1, 0), ST.make(Items.ender_pearl, 1, 0), IL.TC_Gold_Coin.get(1), ST.make(Items.GOLDEN_APPLE, 1, 0), ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.enchanted_book, 1, 0), IL.TC_Knowledge_Fragment.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
-		if (IL.TC_Loot_Rare    .exists())   RM.Unboxinator.addFakeRecipe(F, ST.array(IL.TC_Loot_Rare     .get(1)), ST.array(IL.TC_Loot_Rare    .getWithName(1, "8 to 12 Singular Items"), IL.TC_Primordial_Pearl.get(1), ST.make(Items.nether_star, 1, 0), ST.make(Items.diamond, 1, 0), ST.make(Items.emerald, 1, 0), ST.make(Items.ender_pearl, 1, 0), IL.TC_Gold_Coin.get(1), ST.make(Items.GOLDEN_APPLE, 1, 0), ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.enchanted_book, 1, 0), IL.TC_Knowledge_Fragment.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
+		if (IL.TC_Loot_Common  .exists())   RM.Unboxinator.addFakeRecipe(F, ST.array(IL.TC_Loot_Common   .get(1)), ST.array(IL.TC_Loot_Common  .getWithName(1, "8 to 12 Singular Items"),                            NI,                               NI, ST.make(Items.DIAMOND, 1, 0), ST.make(Items.EMERALD, 1, 0), ST.make(Items.ENDER_PEARL, 1, 0), IL.TC_Gold_Coin.get(1), ST.make(Items.GOLDEN_APPLE, 1, 0), ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.ENCHANTED_BOOK, 1, 0), IL.TC_Knowledge_Fragment.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
+		if (IL.TC_Loot_Uncommon.exists())   RM.Unboxinator.addFakeRecipe(F, ST.array(IL.TC_Loot_Uncommon .get(1)), ST.array(IL.TC_Loot_Uncommon.getWithName(1, "8 to 12 Singular Items"),                            NI,                               NI, ST.make(Items.DIAMOND, 1, 0), ST.make(Items.EMERALD, 1, 0), ST.make(Items.ENDER_PEARL, 1, 0), IL.TC_Gold_Coin.get(1), ST.make(Items.GOLDEN_APPLE, 1, 0), ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.ENCHANTED_BOOK, 1, 0), IL.TC_Knowledge_Fragment.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
+		if (IL.TC_Loot_Rare    .exists())   RM.Unboxinator.addFakeRecipe(F, ST.array(IL.TC_Loot_Rare     .get(1)), ST.array(IL.TC_Loot_Rare    .getWithName(1, "8 to 12 Singular Items"), IL.TC_Primordial_Pearl.get(1), ST.make(Items.NETHER_STAR, 1, 0), ST.make(Items.DIAMOND, 1, 0), ST.make(Items.EMERALD, 1, 0), ST.make(Items.ENDER_PEARL, 1, 0), IL.TC_Gold_Coin.get(1), ST.make(Items.GOLDEN_APPLE, 1, 0), ST.make(Items.ENCHANTED_GOLDEN_APPLE, 1, 0), ST.make(Items.experience_bottle, 1, 0), ST.make(Items.ENCHANTED_BOOK, 1, 0), IL.TC_Knowledge_Fragment.get(1)), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 		
 		if (IL.LOOTBAGS_Bag_0.exists())     RM.Unboxinator.addFakeRecipe(F, ST.array(IL.LOOTBAGS_Bag_0   .get(1)), ST.array(IL.LOOTBAGS_Bag_0.getWithName(1, "Drops depending on Config")), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
 		if (IL.LOOTBAGS_Bag_1.exists())     RM.Unboxinator.addFakeRecipe(F, ST.array(IL.LOOTBAGS_Bag_1   .get(1)), ST.array(IL.LOOTBAGS_Bag_1.getWithName(1, "Drops depending on Config")), null, ZL_LONG, ZL_FS, ZL_FS, 16, 16, 0);
@@ -434,31 +434,31 @@ public class GT6_Main extends Abstract_Mod {
 			tChest = ChestGenHooks.getInfo(ChestGenHooks.STRONGHOLD_LIBRARY      ); tChest.setMax(tChest.getMax()+16); tChest.setMin(tChest.getMin()+ 8);
 		}
 		if (ConfigsGT.GREGTECH.get("general", "SmallerVanillaToolDurability", T)) {
-			Items.wooden_sword   .setMaxDamage(  8);
-			Items.wooden_pickaxe .setMaxDamage(  8);
-			Items.wooden_shovel  .setMaxDamage(  8);
-			Items.wooden_axe     .setMaxDamage(  8);
-			Items.wooden_hoe     .setMaxDamage(  8);
-			Items.stone_sword    .setMaxDamage( 16);
-			Items.stone_pickaxe  .setMaxDamage( 16);
-			Items.stone_shovel   .setMaxDamage( 16);
-			Items.stone_axe      .setMaxDamage( 16);
-			Items.stone_hoe      .setMaxDamage( 16);
-			Items.golden_sword   .setMaxDamage( 32);
-			Items.golden_pickaxe .setMaxDamage( 32);
-			Items.golden_shovel  .setMaxDamage( 32);
-			Items.golden_axe     .setMaxDamage( 32);
-			Items.golden_hoe     .setMaxDamage( 32);
-			Items.iron_sword     .setMaxDamage(128);
-			Items.iron_pickaxe   .setMaxDamage(128);
-			Items.iron_shovel    .setMaxDamage(128);
-			Items.iron_axe       .setMaxDamage(128);
-			Items.iron_hoe       .setMaxDamage(128);
-			Items.diamond_sword  .setMaxDamage(512);
-			Items.diamond_pickaxe.setMaxDamage(512);
-			Items.diamond_shovel .setMaxDamage(512);
-			Items.diamond_axe    .setMaxDamage(512);
-			Items.diamond_hoe    .setMaxDamage(512);
+			Items.WOODEN_SWORD   .setMaxDamage(  8);
+			Items.WOODEN_PICKAXE .setMaxDamage(  8);
+			Items.WOODEN_SHOVEL  .setMaxDamage(  8);
+			Items.WOODEN_AXE     .setMaxDamage(  8);
+			Items.WOODEN_HOE     .setMaxDamage(  8);
+			Items.STONE_SWORD    .setMaxDamage( 16);
+			Items.STONE_PICKAXE  .setMaxDamage( 16);
+			Items.STONE_SHOVEL   .setMaxDamage( 16);
+			Items.STONE_AXE      .setMaxDamage( 16);
+			Items.STONE_HOE      .setMaxDamage( 16);
+			Items.GOLDEN_SWORD   .setMaxDamage( 32);
+			Items.GOLDEN_PICKAXE .setMaxDamage( 32);
+			Items.GOLDEN_SHOVEL  .setMaxDamage( 32);
+			Items.GOLDEN_AXE     .setMaxDamage( 32);
+			Items.GOLDEN_HOE     .setMaxDamage( 32);
+			Items.IRON_SWORD     .setMaxDamage(128);
+			Items.IRON_PICKAXE   .setMaxDamage(128);
+			Items.IRON_SHOVEL    .setMaxDamage(128);
+			Items.IRON_AXE       .setMaxDamage(128);
+			Items.IRON_HOE       .setMaxDamage(128);
+			Items.DIAMOND_SWORD  .setMaxDamage(512);
+			Items.DIAMOND_PICKAXE.setMaxDamage(512);
+			Items.DIAMOND_SHOVEL .setMaxDamage(512);
+			Items.DIAMOND_AXE    .setMaxDamage(512);
+			Items.DIAMOND_HOE    .setMaxDamage(512);
 		}
 		
 		if (CODE_CLIENT) {

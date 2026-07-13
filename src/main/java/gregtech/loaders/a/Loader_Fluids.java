@@ -621,10 +621,10 @@ public class Loader_Fluids implements Runnable {
 		
 		new FoodStatDrink(FL.create("soymilk"                                    , "Soy Milk"                                , null                  , 1, 1000, 275)                                                                                         , "Milk Substitute"                                                 ,  0, 0.0F  ,  20, C+37,  0.50F,  0,  0,  0, 10,  0, ItemUseAnimation.drink, T, F, F).setMilk();
 		new FoodStatDrink(FL.create("grcmilk.milk"                               , "Milk"                                    , MT.Milk               , 1, 1000, 300)                                                                                         , "Got Milk?"                                                       ,  0, 0.0F  ,  20, C+37,  0.75F,  0,  0,  0,  0, 10, ItemUseAnimation.drink, T, F, F).setMilk();
-		new FoodStatDrink(FL.create("milk"                                       , "Milk"                                    , MT.Milk               , 1, 1000, 300, ST.make(Items.milk_bucket,1,0), ST.make(Items.bucket,1,0), 1000)                        , "Got Milk?"                                                       ,  0, 0.0F  ,  20, C+37,  0.75F,  0,  0,  0,  0, 10, ItemUseAnimation.drink, T, F, F).setMilk();
+		new FoodStatDrink(FL.create("milk"                                       , "Milk"                                    , MT.Milk               , 1, 1000, 300, ST.make(Items.MILK_BUCKET,1,0), ST.make(Items.BUCKET,1,0), 1000)                        , "Got Milk?"                                                       ,  0, 0.0F  ,  20, C+37,  0.75F,  0,  0,  0,  0, 10, ItemUseAnimation.drink, T, F, F).setMilk();
 		new FoodStatDrink(FL.create("spoiledmilk"                                , "Milk"                                    , null                  , 1, 1000, 300)                                                                                         , "Smells a little"                                                 ,  0, 0.0F  ,   0, C+37,  0.75F,  0,  0,  0,  0,  0, ItemUseAnimation.drink, T, F, F, MobEffect.hunger                   .id, 100, 1, 100);
 		new FoodStatDrink(FL.create("rottendrink"                                , "Rotten Drink"                            , null                  , 1, 1000, 275)                                                                                         , "Smells rotten"                                                   ,  0, 0.0F  ,   0, C+37,  0.75F,  0,  0,  0,  0,  0, ItemUseAnimation.drink, F, F, F, MobEffect.hunger                   .id, 100, 1, 100);
-		new FoodStatDrink(FL.create("mushroomsoup"                               , "Mushroom Stew"                           , null                  , 1, 1000, 300, ST.make(Items.mushroom_stew,1,0), ST.make(Items.bowl,1,0), 1000)                        , ""                                                                ,  2, 0.6F  ,   5, C+37,  0.15F,  0,  0, 10, 10,  0, ItemUseAnimation.eat  , T, F, F);
+		new FoodStatDrink(FL.create("mushroomsoup"                               , "Mushroom Stew"                           , null                  , 1, 1000, 300, ST.make(Items.mushroom_stew,1,0), ST.make(Items.BOWL,1,0), 1000)                        , ""                                                                ,  2, 0.6F  ,   5, C+37,  0.15F,  0,  0, 10, 10,  0, ItemUseAnimation.eat  , T, F, F);
 		
 		new FoodStatDrink("poison"                                                                                                                                                                                                                           , LH.Chat.RED   + "Poison"                                          ,  0, 0.0F  ,   0, C+37,  0.00F                    , ItemUseAnimation.drink, T, F, F, MobEffect.poison                   .id, 450, 1, 100);
 		
@@ -682,11 +682,11 @@ public class Loader_Fluids implements Runnable {
 		FL.reg(FL.Gas_Natural             .make(2000), ST.make(MD.MaCu, "fluids"                   , 1, 2), ST.make(MD.MaCu, "fluids", 1, 20), F, T, T);
 		FL.reg(FL.Ambrosia                .make(1000), IL.FR_Ambrosia                              .get(1), IL.FR_WaxCapsule.get(1), T, F, F);
 		FL.reg(FL.Honey                   .make( 250), IL.EtFu_Bottle_Honey                        .get(1), IL.Bottle_Empty.get(1), F, F, T);
-		FL.reg(FL.Honey                   .make(1000), IL.GrC_Honey_Jar                            .get(1), ST.make(Items.flower_pot, 1, 0));
+		FL.reg(FL.Honey                   .make(1000), IL.GrC_Honey_Jar                            .get(1), ST.make(Items.FLOWER_POT, 1, 0));
 		FL.reg(FL.Honey                   .make( 500), IL.BoP_Jar_Honey                            .get(1), IL.BoP_Jar_Empty.get(1, IL.Bottle_Empty.get(1)));
 		FL.reg(FL.Potion_Poison_2         .make( 500), IL.BoP_Jar_Poison                           .get(1), IL.BoP_Jar_Empty.get(1, IL.Bottle_Empty.get(1)));
 		FL.reg(FL.Poison                  .make( 500), IL.BoP_Jar_Poison                           .get(1), IL.BoP_Jar_Empty.get(1, IL.Bottle_Empty.get(1)));
-		FL.reg(FL.SpDew                   .make(1000), IL.NeLi_Bucket_Spectral_Dew                 .get(1), ST.make(Items.bucket, 1, 0), F, T, T);
+		FL.reg(FL.SpDew                   .make(1000), IL.NeLi_Bucket_Spectral_Dew                 .get(1), ST.make(Items.BUCKET, 1, 0), F, T, T);
 		FL.reg(FL.Water                   .make(5000), IL.SC2_Teapot_Water                         .get(1), IL.SC2_Teapot_Empty.get(1), F, T, T);
 		FL.reg(FL.DistW                   .make(5000), IL.SC2_Teapot_Water                         .get(1), IL.SC2_Teapot_Empty.get(1), F, T, F);
 		FL.reg(FL.SpDew                   .make(5000), IL.SC2_Teapot_Water                         .get(1), IL.SC2_Teapot_Empty.get(1), F, T, F);
@@ -717,9 +717,9 @@ public class Loader_Fluids implements Runnable {
 		FL.reg(FL.Tea_Sweet               .make( 450), ST.make(MD.SC2, "ItemTeacup"                , 1, 9), IL.SC2_Teacup_Empty.get(1), F, F, T);
 		FL.reg(FL.Latex                   .make(1000), IL.BTL_Bucket_Latex                         .get(1), IL.BTL_Bucket_Empty.get(1), F, T, T);
 		FL.reg(FL.Tar                     .make(1000), IL.BTL_Bucket_Tar                           .get(1), IL.BTL_Bucket_Empty.get(1), F, T, T);
-		FL.reg(FL.Tar                     .make(1000), IL.DRPG_Bucket_Tar                          .get(1), ST.make(Items.bucket, 1, 0), F, T, T);
-		FL.reg(FL.make("sulfuric_acid_fluid"  , 1000), ST.make(MD.HBM, "item.bucket_sulfuric_acid" , 1, 0), ST.make(Items.bucket, 1, 0), F, T, F);
-		FL.reg(FL.make("sulfuricacid"         , 1000), ST.make(MD.HBM, "item.bucket_sulfuric_acid" , 1, 0), ST.make(Items.bucket, 1, 0), F, T, T);
+		FL.reg(FL.Tar                     .make(1000), IL.DRPG_Bucket_Tar                          .get(1), ST.make(Items.BUCKET, 1, 0), F, T, T);
+		FL.reg(FL.make("sulfuric_acid_fluid"  , 1000), ST.make(MD.HBM, "item.bucket_sulfuric_acid" , 1, 0), ST.make(Items.BUCKET, 1, 0), F, T, F);
+		FL.reg(FL.make("sulfuricacid"         , 1000), ST.make(MD.HBM, "item.bucket_sulfuric_acid" , 1, 0), ST.make(Items.BUCKET, 1, 0), F, T, T);
 		
 		/* TODO
 		FL.registerFluidContainer(FL.make("potion.poison"        , 125), IL.Arrow_Head_Glass_Poison          .get(1), IL.Arrow_Head_Glass_Empty.get(1));

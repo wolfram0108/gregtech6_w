@@ -431,7 +431,7 @@ public class Loader_CraftingRecipes implements Runnable {
 		}
 		
 		if (OP.gear.mat(MT.Diamond, 1) != null) {
-			ItemStack tStack = CR.get(OP.gear.mat(MT.Fe, 1), ST.make(Items.redstone, 1, 0), OP.gear.mat(MT.Fe, 1), OP.gear.mat(MT.Au, 1), OP.gear.mat(MT.Fe, 1), OP.gear.mat(MT.Au, 1), OP.gear.mat(MT.Diamond, 1), ST.make(Items.diamond_pickaxe, 1, 0), OP.gear.mat(MT.Diamond, 1));
+			ItemStack tStack = CR.get(OP.gear.mat(MT.Fe, 1), ST.make(Items.REDSTONE, 1, 0), OP.gear.mat(MT.Fe, 1), OP.gear.mat(MT.Au, 1), OP.gear.mat(MT.Fe, 1), OP.gear.mat(MT.Au, 1), OP.gear.mat(MT.Diamond, 1), ST.make(Items.DIAMOND_PICKAXE, 1, 0), OP.gear.mat(MT.Diamond, 1));
 			if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.harderrecipes, "quarry", T)) {
 				CR.delate(tStack);
 				CR.shaped(tStack, DEF, "ICI", "GIG", "DPD", 'C', OD_CIRCUITS[3], 'D', OP.gear.dat(ANY.Diamond), 'G', OP.gear.dat(MT.Au), 'I', OP.gear.dat(ANY.Steel), 'P', ST.mkic("diamondDrill", 1, W));

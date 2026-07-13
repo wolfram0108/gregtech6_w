@@ -48,16 +48,16 @@ public class Compat_Recipes_Mariculture extends CompatMods {
 		
 		CR.shaped(ST.make(MD.MaCu, "crafting", 1,19), CR.DEF_REV_NCC, "h R", " R ", "R f", 'R', OP.stickLong.dat(MT.Ti));
 		
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.string           , 1, W), MT.Au       .liquid(4*U, T), NF, ST.make(MD.MaCu, "crafting", 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.STRING           , 1, W), MT.Au       .liquid(4*U, T), NF, ST.make(MD.MaCu, "crafting", 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(MD.MaCu, "crafting"    , 1,19), FL.Oil_Fish     .make(6500), NF, ST.make(MD.MaCu, "crafting", 1, 2));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(MD.MaCu, "crafting"    , 1,19), FL.Oil_Whale    .make(3250), NF, ST.make(MD.MaCu, "crafting", 1, 2));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.netherbrick      , 1, W), FL.Lava         .make( 100), NF, ST.make(MD.MaCu, "crafting", 1,14));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.brick            , 1, W), FL.Lava         .make( 250), NF, ST.make(MD.MaCu, "crafting", 1,14));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.BRICK            , 1, W), FL.Lava         .make( 250), NF, ST.make(MD.MaCu, "crafting", 1,14));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.netherbrick      , 1, W), FL.Lava_Pahoehoe.make( 200), NF, ST.make(MD.MaCu, "crafting", 1,14));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.brick            , 1, W), FL.Lava_Pahoehoe.make( 500), NF, ST.make(MD.MaCu, "crafting", 1,14));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.BRICK            , 1, W), FL.Lava_Pahoehoe.make( 500), NF, ST.make(MD.MaCu, "crafting", 1,14));
 		if (FL.Lava_Volcanic.exists()) {
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.netherbrick      , 1, W), FL.Lava_Volcanic.make( 200), NF, ST.make(MD.MaCu, "crafting", 1,14));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.brick            , 1, W), FL.Lava_Volcanic.make( 500), NF, ST.make(MD.MaCu, "crafting", 1,14));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Items.BRICK            , 1, W), FL.Lava_Volcanic.make( 500), NF, ST.make(MD.MaCu, "crafting", 1,14));
 		}
 		
 		RM.Mixer            .addRecipe1(T, 16,   48, OM.dust(MT.Sugar               ), FL.Milk   .make(500), FL.make("custard", 500), ZL_IS);

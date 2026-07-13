@@ -430,7 +430,7 @@ public class UT {
 			if (Code.stringValid(aMapping)) display(aPlayer, aMapping); else display(aPlayer, F, aStack);
 		}
 		public static void display(Player aPlayer, String aMapping) {
-			aPlayer.displayGUIBook(getWrittenBook(aMapping, T, ST.make(Items.written_book, 1, 0)));
+			aPlayer.displayGUIBook(getWrittenBook(aMapping, T, ST.make(Items.WRITTEN_BOOK, 1, 0)));
 		}
 		public static void display(Player aPlayer, boolean aWritable, ItemStack aStack) {
 			if (ST.invalid(aStack)) return;
@@ -438,7 +438,7 @@ public class UT {
 		}
 		public static void display(Player aPlayer, boolean aWritable, CompoundTag aNBT) {
 			if (aNBT == null || UT.Code.stringInvalid(UT.NBT.getBookTitle(aNBT))) return;
-			aPlayer.displayGUIBook(ST.make(aWritable?Items.writable_book:Items.written_book, 1, 0, aNBT));
+			aPlayer.displayGUIBook(ST.make(aWritable?Items.WRITABLE_BOOK:Items.WRITTEN_BOOK, 1, 0, aNBT));
 		}
 		
 		@Deprecated public static ItemStack getWrittenBook(String aMapping) {return getWrittenBook(aMapping, F, null);}
@@ -451,7 +451,7 @@ public class UT {
 			if (Code.stringInvalid(aMapping)) return null;
 			if (aForceRecreation && aMapping.startsWith("Material_Dictionary_")) UT.Books.createMaterialDictionary(OreDictMaterial.MATERIAL_MAP.get(aMapping.replaceFirst("Material_Dictionary_", "")), NI, NI);
 			ItemStack tStack = BOOK_MAP.get(aMapping);
-			if (tStack == null) return aStackToPutNBT==null?ST.make(Items.written_book, 1, 0):aStackToPutNBT;
+			if (tStack == null) return aStackToPutNBT==null?ST.make(Items.WRITTEN_BOOK, 1, 0):aStackToPutNBT;
 			if (aStackToPutNBT == null) aStackToPutNBT = ST.copy(tStack);
 			return NBT.set(aStackToPutNBT, (CompoundTag)ItemNBT.get(tStack).copy());
 		}
@@ -461,7 +461,7 @@ public class UT {
 		}
 		public static ItemStack getBookWithTitle(String aMapping, ItemStack aStackToPutNBT) {
 			ItemStack tStack = BOOK_MAP.get(aMapping);
-			if (tStack == null) return aStackToPutNBT==null?ST.make(Items.written_book, 1, 0):aStackToPutNBT;
+			if (tStack == null) return aStackToPutNBT==null?ST.make(Items.WRITTEN_BOOK, 1, 0):aStackToPutNBT;
 			if (aStackToPutNBT == null) aStackToPutNBT = ST.copy(tStack);
 			return NBT.set(aStackToPutNBT, NBT.make("title", NBT.getBookTitle(tStack), "author", NBT.getBookAuthor(tStack), "book", aMapping));
 		}
@@ -473,7 +473,7 @@ public class UT {
 		public static ItemStack createWrittenBook(String aMapping, String aTitle, String aAuthor, ItemStack aDefaultBook, boolean aLogging, String... aPages) {
 			if (Code.stringInvalid(aMapping)) return null;
 			ItemStack rStack = BOOK_MAP.get(aMapping);
-			if (rStack == null) rStack = aDefaultBook==null?ST.make(Items.written_book, 1, 0):ST.amount(1, aDefaultBook);
+			if (rStack == null) rStack = aDefaultBook==null?ST.make(Items.WRITTEN_BOOK, 1, 0):ST.amount(1, aDefaultBook);
 			if (Code.stringInvalid(aTitle) || Code.stringInvalid(aAuthor) || aPages.length <= 0) return null;
 			CompoundTag rNBT = NBT.make();
 			rNBT.putString("title", aTitle);

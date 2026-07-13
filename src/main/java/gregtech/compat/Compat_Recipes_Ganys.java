@@ -46,12 +46,12 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			CR.shapeless(                           tEtFuturumPurpur, new Object[] {tEtFuturumPurpurPillar});
 			CR.shaped(                              IL.EtFu_Block_Honey.get(1), CR.DEF | CR.DEL_OTHER_SHAPED_RECIPES | CR.DEL_OTHER_NATIVE_RECIPES, "XX", "XX", 'X', OD.container250honey);
 			CR.shapeless(                           IL.EtFu_Block_Honey.get(1), new Object[] {OD.container1000honey});
-			CR.shaped(                              ST.make(MD.EtFu, "slime", 1, 0), CR.DEF | CR.DEL_OTHER_SHAPED_RECIPES | CR.DEL_OTHER_NATIVE_RECIPES, "XXX", "XXX", "XXX", 'X', ST.make(Items.slime_ball, 1, W));
-			RM.ic2_compressor(                      ST.make(Items.slime_ball, 9, 0), ST.make(MD.EtFu, "slime", 1, 0));
-			RM.Compressor.addRecipe1(T, 16, 16,     ST.make(Items.slime_ball, 9, W), ST.make(MD.EtFu, "slime", 1, 0));
-			RM.Boxinator.addRecipe2(T, 16, 16,      ST.make(Items.slime_ball, 9, W), ST.tag(9), ST.make(MD.EtFu, "slime", 1, 0));
-			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.EtFu, "slime", 1, 0), ST.make(Items.slime_ball, 9, 0));
-			RM.ic2_extractor(                       ST.make(MD.EtFu, "slime", 1, 0), ST.make(Items.slime_ball, 9, 0));
+			CR.shaped(                              ST.make(MD.EtFu, "slime", 1, 0), CR.DEF | CR.DEL_OTHER_SHAPED_RECIPES | CR.DEL_OTHER_NATIVE_RECIPES, "XXX", "XXX", "XXX", 'X', ST.make(Items.SLIME_BALL, 1, W));
+			RM.ic2_compressor(                      ST.make(Items.SLIME_BALL, 9, 0), ST.make(MD.EtFu, "slime", 1, 0));
+			RM.Compressor.addRecipe1(T, 16, 16,     ST.make(Items.SLIME_BALL, 9, W), ST.make(MD.EtFu, "slime", 1, 0));
+			RM.Boxinator.addRecipe2(T, 16, 16,      ST.make(Items.SLIME_BALL, 9, W), ST.tag(9), ST.make(MD.EtFu, "slime", 1, 0));
+			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.EtFu, "slime", 1, 0), ST.make(Items.SLIME_BALL, 9, 0));
+			RM.ic2_extractor(                       ST.make(MD.EtFu, "slime", 1, 0), ST.make(Items.SLIME_BALL, 9, 0));
 			RM.Squeezer.addRecipe1(T, 16, 16,       ST.make(MD.EtFu, "sponge", 1, 1), NF, FL.Water.make(125), ST.make(MD.EtFu, "sponge", 1, 0));
 			RM.Drying.addRecipe1(T, 16, 16,         ST.make(MD.EtFu, "sponge", 1, 1), NF, FL.DistW.make(125), ST.make(MD.EtFu, "sponge", 1, 0));
 			RM.smash(                               ST.make(MD.EtFu, "red_sandstone", 1, W), ST.make(Blocks.RED_SAND, 1, 0));
@@ -98,19 +98,19 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			RM.biomass(ST.make(MD.EtFu, "lily_of_the_valley", 8, W));
 			RM.biomass(IL.EtFu_Wart_Block_Nether.wild(1));
 			
-			RM.compact(ST.make(Items.nether_wart, 1, 0), 9, IL.EtFu_Wart_Block_Nether.get(1));
+			RM.compact(ST.make(Items.NETHER_WART, 1, 0), 9, IL.EtFu_Wart_Block_Nether.get(1));
 			
 			CR.delate(MD.EtFu, "netherite_ingot", "netherite_sword", "netherite_pickaxe", "netherite_spade", "netherite_axe", "netherite_hoe", "netherite_helmet", "netherite_chestplate", "netherite_leggings", "netherite_boots", "copper_block", "cut_copper_slab", "cut_copper_stairs", "exposed_cut_copper_stairs", "weathered_cut_copper_stairs", "oxidized_cut_copper_stairs", "waxed_cut_copper_stairs", "waxed_exposed_cut_copper_stairs", "waxed_weathered_cut_copper_stairs", "waxed_oxidized_cut_copper_stairs");
 			
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_sword     , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.EtFu, "netherite_sword"     , 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_pickaxe   , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.EtFu, "netherite_pickaxe"   , 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_shovel    , 1, 0), MT.Netherite.liquid(1*U4, T), NF, ST.make(MD.EtFu, "netherite_spade"     , 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_axe       , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.EtFu, "netherite_axe"       , 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_hoe       , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.EtFu, "netherite_hoe"       , 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_helmet    , 1, 0), MT.Netherite.liquid(5*U4, T), NF, ST.make(MD.EtFu, "netherite_helmet"    , 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_chestplate, 1, 0), MT.Netherite.liquid(8*U4, T), NF, ST.make(MD.EtFu, "netherite_chestplate", 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_leggings  , 1, 0), MT.Netherite.liquid(7*U4, T), NF, ST.make(MD.EtFu, "netherite_leggings"  , 1, 0));
-			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.diamond_boots     , 1, 0), MT.Netherite.liquid(4*U4, T), NF, ST.make(MD.EtFu, "netherite_boots"     , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_SWORD     , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.EtFu, "netherite_sword"     , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_PICKAXE   , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.EtFu, "netherite_pickaxe"   , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_SHOVEL    , 1, 0), MT.Netherite.liquid(1*U4, T), NF, ST.make(MD.EtFu, "netherite_spade"     , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_AXE       , 1, 0), MT.Netherite.liquid(3*U4, T), NF, ST.make(MD.EtFu, "netherite_axe"       , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_HOE       , 1, 0), MT.Netherite.liquid(2*U4, T), NF, ST.make(MD.EtFu, "netherite_hoe"       , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_HELMET    , 1, 0), MT.Netherite.liquid(5*U4, T), NF, ST.make(MD.EtFu, "netherite_helmet"    , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_CHESTPLATE, 1, 0), MT.Netherite.liquid(8*U4, T), NF, ST.make(MD.EtFu, "netherite_chestplate", 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_LEGGINGS  , 1, 0), MT.Netherite.liquid(7*U4, T), NF, ST.make(MD.EtFu, "netherite_leggings"  , 1, 0));
+			RM.Bath.addRecipe1(T, 0, 128, ST.make(Items.DIAMOND_BOOTS     , 1, 0), MT.Netherite.liquid(4*U4, T), NF, ST.make(MD.EtFu, "netherite_boots"     , 1, 0));
 			
 			
 			if (IL.EtFu_Block_Copper.exists()) {
@@ -297,18 +297,18 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			if (MD.EtFu.mLoaded) {
 				CR.delate(MD.GaSu, "slimeBlock");
 			} else {
-				CR.shaped(                          ST.make(MD.GaSu, "slimeBlock", 1, 0), CR.DEF | CR.DEL_OTHER_SHAPED_RECIPES | CR.DEL_OTHER_NATIVE_RECIPES, "XXX", "XXX", "XXX", 'X', ST.make(Items.slime_ball, 1, W));
-				RM.ic2_compressor(                  ST.make(Items.slime_ball, 9, 0), ST.make(MD.GaSu, "slimeBlock", 1, 0));
-				RM.Compressor.addRecipe1(T, 16, 16, ST.make(Items.slime_ball, 9, W), ST.make(MD.GaSu, "slimeBlock", 1, 0));
-				RM.Boxinator.addRecipe2(T, 16, 16,  ST.make(Items.slime_ball, 9, W), ST.tag(9), ST.make(MD.GaSu, "slimeBlock", 1, 0));
-				RM.Unboxinator.addRecipe1(T, 16, 16,ST.make(MD.GaSu, "slimeBlock", 1, 0), ST.make(Items.slime_ball, 9, 0));
-				RM.ic2_extractor(                   ST.make(MD.GaSu, "slimeBlock", 1, 0), ST.make(Items.slime_ball, 9, 0));
-				CR.shapeless(                       ST.make(Items.slime_ball, 9, 0), CR.DEF, new Object[] {ST.make(MD.GaSu, "slimeBlock", 1, 0)});
+				CR.shaped(                          ST.make(MD.GaSu, "slimeBlock", 1, 0), CR.DEF | CR.DEL_OTHER_SHAPED_RECIPES | CR.DEL_OTHER_NATIVE_RECIPES, "XXX", "XXX", "XXX", 'X', ST.make(Items.SLIME_BALL, 1, W));
+				RM.ic2_compressor(                  ST.make(Items.SLIME_BALL, 9, 0), ST.make(MD.GaSu, "slimeBlock", 1, 0));
+				RM.Compressor.addRecipe1(T, 16, 16, ST.make(Items.SLIME_BALL, 9, W), ST.make(MD.GaSu, "slimeBlock", 1, 0));
+				RM.Boxinator.addRecipe2(T, 16, 16,  ST.make(Items.SLIME_BALL, 9, W), ST.tag(9), ST.make(MD.GaSu, "slimeBlock", 1, 0));
+				RM.Unboxinator.addRecipe1(T, 16, 16,ST.make(MD.GaSu, "slimeBlock", 1, 0), ST.make(Items.SLIME_BALL, 9, 0));
+				RM.ic2_extractor(                   ST.make(MD.GaSu, "slimeBlock", 1, 0), ST.make(Items.SLIME_BALL, 9, 0));
+				CR.shapeless(                       ST.make(Items.SLIME_BALL, 9, 0), CR.DEF, new Object[] {ST.make(MD.GaSu, "slimeBlock", 1, 0)});
 			}
 			
-			RM.Boxinator.addRecipe2(T, 16, 16,      ST.make(Items.flint, 9, W), ST.tag(9), ST.make(MD.GaSu, "storage", 1, 0));
-			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.GaSu, "storage", 1, 0), ST.make(Items.flint, 9, 0));
-			RM.ic2_extractor(                       ST.make(MD.GaSu, "storage", 1, 0), ST.make(Items.flint, 9, 0));
+			RM.Boxinator.addRecipe2(T, 16, 16,      ST.make(Items.FLINT, 9, W), ST.tag(9), ST.make(MD.GaSu, "storage", 1, 0));
+			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.GaSu, "storage", 1, 0), ST.make(Items.FLINT, 9, 0));
+			RM.ic2_extractor(                       ST.make(MD.GaSu, "storage", 1, 0), ST.make(Items.FLINT, 9, 0));
 			
 			RM.Boxinator.addRecipe2(T, 16, 16,      ST.make(Items.carrot, 9, W), ST.tag(9), ST.make(MD.GaSu, "storage", 1, 1));
 			RM.Unboxinator.addRecipe1(T, 16, 16,    ST.make(MD.GaSu, "storage", 1, 1), ST.make(Items.carrot, 9, 0));

@@ -85,26 +85,26 @@ public class Loader_Recipes_Hints implements Runnable {
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
 		  ST.make(aRegistry     .getItem(20271), "Get a cheap Printer and power it")
 		, ST.make(ItemsGT.BOTTLES    , 1, 32116, "Fill it with expensive proprietary Ink")
-		, ST.make(Items.book             , 1, 0, "Insert a basic empty Book to get a Manual")
+		, ST.make(Items.BOOK             , 1, 0, "Insert a basic empty Book to get a Manual")
 		, NI
 		, NI
 		, NI
-		), ST.array(ST.book("Manual_Printer", ST.make(Items.written_book, 1, 0))), null, ZL_LONG, FL.array(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black]), ZL_FS, 0, 0, 0);
+		), ST.array(ST.book("Manual_Printer", ST.make(Items.WRITTEN_BOOK, 1, 0))), null, ZL_LONG, FL.array(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black]), ZL_FS, 0, 0, 0);
 		
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
 		  ST.make(aRegistry     .getItem( 7000), "Any of the GT6 Bookshelves")
 		, ST.make(Blocks.ENCHANTING_TABLE, 1, 0, "Place the Shelves around the Enchanting Table")
-		, ST.make(Items.book             , 1, 0, "Fill the Shelves with ANYTHING that looks like a Book or Scroll")
+		, ST.make(Items.BOOK             , 1, 0, "Fill the Shelves with ANYTHING that looks like a Book or Scroll")
 		, ST.make(aRegistry     .getItem( 7123), "Any of the GT6 Bookshelves")
 		, ST.make(Items.experience_bottle, 1, 0, "Use your XP like normal")
-		, ST.make(Items.enchanted_book   , 1, 0, "Even counts DOUBLE if it is a magical thing!")
-		), ST.array(ST.make(Items.enchanted_book, 1, 0, "Get a more compact Enchantment Power Bonus!")), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
+		, ST.make(Items.ENCHANTED_BOOK   , 1, 0, "Even counts DOUBLE if it is a magical thing!")
+		), ST.array(ST.make(Items.ENCHANTED_BOOK, 1, 0, "Get a more compact Enchantment Power Bonus!")), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);
 		
 		RM.DidYouKnow.addFakeRecipe(F, ST.array(
 		  ST.make(aRegistry     .getItem(32714), "Have a Barrel or Drum filled with Liquid")
 		, ST.make(aRegistry     .getItem(32728), "Put a Tap on the Barrel/Drum")
 		, IL.Bottle_Empty        .getWithName(1, "Rightclick the Tap with a Fluid Container to fill it")
-		, ST.make(Items.cauldron         , 1, 0, "With enough Water, the Tap can fill vanilla Cauldrons below")
+		, ST.make(Items.CAULDRON         , 1, 0, "With enough Water, the Tap can fill vanilla Cauldrons below")
 		, ST.make(aRegistry     .getItem(32740), "Or have another top open Fluid Container below the Tap")
 		, ST.make(aRegistry     .getItem(32706), "Mixing Bowls and Bathing Pots are top open too!")
 		), ST.array(ST.make(Items.potionitem, 1, 0, "Ahh, bottled Tap Water!")), null, ZL_LONG, ZL_FS, ZL_FS, 0, 0, 0);

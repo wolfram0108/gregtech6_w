@@ -117,8 +117,8 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			uncommon .add(IL.Food_Cinnamon.get(12));
 			uncommon .add(IL.Bag_Loot_Seeds.get(1));
 			// Nametags and Leashes.
-			rare     .add(Items.name_tag, 4);
-			rare     .add(Items.lead, 2);
+			rare     .add(Items.NAME_TAG, 4);
+			rare     .add(Items.LEAD, 2);
 			rare     .add(IL.Bag_Loot_Seeds.get(4));
 			// A way to obtain Breeze Rods, even if not many.
 			rare     .add(OP.stick.mat(MT.Breeze, 4));
@@ -142,8 +142,8 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			// Clear the normal Junk List.
 			useless  .clear();
 			// Dimension Stuff that is nowhere else to be found.
-			useless  .add(Items.nether_wart, 12);
-			useless  .add(Items.quartz, 48);
+			useless  .add(Items.NETHER_WART, 12);
+			useless  .add(Items.QUARTZ, 48);
 			useless  .add(Blocks.SOUL_SAND, 24);
 			useless  .add(Blocks.NETHERRACK, 36);
 			if (IL.EtFu_Magmatic_Netherrack.exists())
@@ -158,7 +158,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			// The only practical way to get vanilla Ink.
 			useless  .add(IL.Dye_SquidInk.get(36));
 			useless  .add(IL.Bottle_Ink.get(16));
-			useless  .add(Items.feather, 8);
+			useless  .add(Items.FEATHER, 8);
 			useless  .add(FL.Potion_NightVision_1L.fill(IL.Porcelain_Cup.get(1)));
 			useless  .add(IL.Food_Pickle.get(8));
 			// A Guide to the Twilight Forest.
@@ -192,7 +192,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			// Clear the normal Junk List.
 			useless  .clear();
 			// Dimension Stuff that is nowhere else to be found.
-			useless  .add(Items.quartz, 48);
+			useless  .add(Items.QUARTZ, 48);
 			useless  .add(Blocks.END_STONE, 36);
 			if (IL.EtFu_Magmatic_Netherrack.exists())
 			useless  .add(IL.EtFu_Magmatic_Netherrack.get(24));
@@ -208,7 +208,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			useless  .add(OP.rockGt.mat(MT.STONES.SkyStone, 48));
 			}
 			// Enderpearls are a bitch to get in Twilight Forest.
-			useless  .add(Items.ender_pearl, 4);
+			useless  .add(Items.ENDER_PEARL, 4);
 		}
 		
 		// Urghast Loot
@@ -265,7 +265,7 @@ public class TwilightTreasureReplacer extends TFTreasure {
 			mLootBag    =  2;
 			mRares      =  1;
 			// Enderpearls are a bitch to get in Twilight Forest.
-			useless  .add(Items.ender_pearl, 16);
+			useless  .add(Items.ENDER_PEARL, 16);
 			// Dimension Stuff that is nowhere else to be found.
 			useless  .add(Blocks.END_STONE, 64);
 			if (IL.EtFu_Chorus_Fruit.exists())

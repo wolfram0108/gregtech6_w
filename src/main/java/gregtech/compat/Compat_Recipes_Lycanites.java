@@ -38,10 +38,10 @@ public class Compat_Recipes_Lycanites extends CompatMods {
 	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Lycanite Mobs Recipes.");
 		CR.delate(MD.LycM_Inferno, "bucketpurelava");
 		if (FL.Lava_Pure.exists()) {
-			RM.Mixer.addRecipe1(T, 16, 16, ST.make(Items.ghast_tear, 1, W), FL.Lava         .make(1000), FL.Lava_Pure.make(1000), ZL_IS);
-			RM.Mixer.addRecipe1(T, 16, 16, ST.make(Items.ghast_tear, 1, W), FL.Lava_Pahoehoe.make(1000), FL.Lava_Pure.make(1000), ZL_IS);
+			RM.Mixer.addRecipe1(T, 16, 16, ST.make(Items.GHAST_TEAR, 1, W), FL.Lava         .make(1000), FL.Lava_Pure.make(1000), ZL_IS);
+			RM.Mixer.addRecipe1(T, 16, 16, ST.make(Items.GHAST_TEAR, 1, W), FL.Lava_Pahoehoe.make(1000), FL.Lava_Pure.make(1000), ZL_IS);
 			if (FL.Lava_Volcanic.exists())
-			RM.Mixer.addRecipe1(T, 16, 16, ST.make(Items.ghast_tear, 1, W), FL.Lava_Volcanic.make(1000), FL.Lava_Pure.make(1000), ZL_IS);
+			RM.Mixer.addRecipe1(T, 16, 16, ST.make(Items.GHAST_TEAR, 1, W), FL.Lava_Volcanic.make(1000), FL.Lava_Pure.make(1000), ZL_IS);
 		}
 	}
 }

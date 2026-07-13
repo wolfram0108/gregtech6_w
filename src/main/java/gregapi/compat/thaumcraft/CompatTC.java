@@ -209,7 +209,7 @@ public class CompatTC extends CompatBase implements ICompatTC {
 	public void onServerStarting(ServerStartingEvent aEvent) {
 		// These ItemStacks are Enchanted BEFORE being copied in Thaumcraft, which leads to them always having the SAME Enchantment...
 		for (WeightedRandomLoot tLoot : WeightedRandomLoot.lootBagCommon) {
-			if (tLoot != null && (ST.equal(tLoot.item, Items.book) || ST.equal(tLoot.item, Items.enchanted_book))) {
+			if (tLoot != null && (ST.equal(tLoot.item, Items.BOOK) || ST.equal(tLoot.item, Items.ENCHANTED_BOOK))) {
 				ST.REVERT_TO_BOOK_TO_FIX_STUPID.add(tLoot.item);
 			}
 		}

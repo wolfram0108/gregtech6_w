@@ -40,7 +40,7 @@ import static gregapi.data.CS.*;
 public class Loader_Recipes_Foreign implements Runnable {
 	@Override public void run() {
 		for (Map<String, FluidContainerData> tMap : FL.EMPTY_TO_FLUID_TO_DATA.values()) for (FluidContainerData tData : tMap.values()) {
-			ItemStack tEmpty = (tData.emptyContainer.getItem() == Items.bucket || tData.emptyContainer.getCount() < 1 ? ST.container(tData.filledContainer, F) : tData.emptyContainer);
+			ItemStack tEmpty = (tData.emptyContainer.getItem() == Items.BUCKET || tData.emptyContainer.getCount() < 1 ? ST.container(tData.filledContainer, F) : tData.emptyContainer);
 			if (ST.valid(tEmpty)) RM.Canner.addRecipe1(T, 16, Math.max(tData.fluid.amount / 64, 16), tEmpty, tData.fluid, NF, tData.filledContainer);
 		}
 		for (FluidContainerData tData : FL.FULL_TO_DATA.values()) {
@@ -130,9 +130,9 @@ public class Loader_Recipes_Foreign implements Runnable {
 				// Adding some Recipes to it, so it is not completely useless.
 				CrusherRecipe.addRecipe(ST.make(Blocks.GRAVEL     , 1, 0), ST.make(Blocks.STONE, 1, 0), 1600);
 				CrusherRecipe.addRecipe(ST.make(Blocks.SAND, 1, 0), ST.make(Blocks.COBBLESTONE        , 1, 0), 1600);
-				CrusherRecipe.addRecipe(ST.make(Items.flint       , 2, 0), ST.make(Blocks.GRAVEL             , 1, 0), 1600);
+				CrusherRecipe.addRecipe(ST.make(Items.FLINT       , 2, 0), ST.make(Blocks.GRAVEL             , 1, 0), 1600);
 				CrusherRecipe.addRecipe(OP.dust     .mat(MT.Glowstone, 4), ST.make(Blocks.GLOWSTONE          , 1, 0), 3200);
-				CrusherRecipe.addRecipe(IL.Dye_Bonemeal           .get(4), ST.make(Items.bone                , 1, 0), 3200);
+				CrusherRecipe.addRecipe(IL.Dye_Bonemeal           .get(4), ST.make(Items.BONE                , 1, 0), 3200);
 				CrusherRecipe.addRecipe(OP.blockDust.mat(MT.Glass    , 1), OD.blockGlass                 .toString(), 6400);
 				CrusherRecipe.addRecipe(OP.dust     .mat(MT.Glass    , 1), OD.paneGlass                  .toString(), 1600);
 				CrusherRecipe.addRecipe(OP.blockDust.mat(MT.Obsidian , 1), OP.blockSolid.dat(MT.Obsidian).toString(),14400);
@@ -144,7 +144,7 @@ public class Loader_Recipes_Foreign implements Runnable {
 				CrusherRecipe.addRecipe(OP.dustTiny .mat(tMat        , 4), OP.stick     .dat(tMat       ).toString(), 3200);
 				}
 				for (int i = 0; i < 16; i++) {
-				CrusherRecipe.addRecipe(ST.make(Items.string      , 4, 0), ST.make(Blocks.WHITE_WOOL, 1, i)               , 3200);
+				CrusherRecipe.addRecipe(ST.make(Items.STRING      , 4, 0), ST.make(Blocks.WHITE_WOOL, 1, i)               , 3200);
 				}
 				for (OreDictMaterial tMat : new OreDictMaterial[] {MT.Fe, MT.Au, MT.Ag, MT.Cu, MT.Sn, MT.Zn, MT.Ni, MT.Co, MT.Ardite, MT.Pt, MT.Pb, MT.Ge, MT.Os, MT.Ir, MT.W, MT.Al, MT.Ti, MT.Cr, MT.Mn, MT.Steel, MT.Bronze, MT.Brass, MT.Electrum, MT.Constantan, MT.TinAlloy, MT.Invar, MT.MeteoricIron, MT.MeteoricSteel, MT.Desh, MT.BlueAlloy, MT.ElectrotineAlloy, MT.RedAlloy, MT.PurpleAlloy, MT.AncientDebris, MT.Netherite}) {
 				CrusherRecipe.addRecipe(OP.dust.mat(tMat             , 1), OP.ingot     .dat(tMat       ).toString(), 6400);

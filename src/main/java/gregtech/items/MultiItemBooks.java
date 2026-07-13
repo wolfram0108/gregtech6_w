@@ -68,7 +68,7 @@ public class MultiItemBooks extends MultiItemRandomWithCompat {
 		BooksGT.BOOK_REGISTER.put(addItem(32766, "Dusty Material Dictionary", "Loot: Book about a random Material", TC.stack(TC.COGNITIO, 3), TICKS_PER_SMELT, new OreDictItemData(MT.Paper, U * 3), new Behavior_Drop_Loot("gt.matdicts")), (byte)11); BooksGT.BOOKS_NORMAL.add(last()); IL.Book_Loot_MatDict.set(last());
 		
 		
-		RM.generify(ST.make(this, 1, W), ST.make(Items.written_book, 1, 0));
+		RM.generify(ST.make(this, 1, W), ST.make(Items.WRITTEN_BOOK, 1, 0));
 		
 		CR.shapeless(IL.Book_Aspectonomicon.get(1), CR.DEF_NCC, new Object[] {IL.Paper_Magic_Research_0, IL.Paper_Magic_Research_1, IL.Paper_Magic_Research_2, IL.Paper_Magic_Research_3, IL.Paper_Magic_Research_4, IL.Paper_Magic_Research_5, IL.Paper_Magic_Research_6, IL.Paper_Magic_Research_7, IL.Paper_Magic_Research_8});
 		

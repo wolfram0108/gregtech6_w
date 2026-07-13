@@ -38,11 +38,11 @@ public class Compat_Recipes_IndustrialCraft_Scrap extends CompatMods {
 	
 	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {
 		if (!MD.IC2C.mLoaded && COMPAT_IC2 != null) {
-			COMPAT_IC2.scrapbox(9.50F, ST.make(Items.wooden_hoe, 1, 0));
-			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.wooden_axe, 1, 0));
-			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.wooden_sword, 1, 0));
-			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.wooden_shovel, 1, 0));
-			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.wooden_pickaxe, 1, 0));
+			COMPAT_IC2.scrapbox(9.50F, ST.make(Items.WOODEN_HOE, 1, 0));
+			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.WOODEN_AXE, 1, 0));
+			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.WOODEN_SWORD, 1, 0));
+			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.WOODEN_SHOVEL, 1, 0));
+			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.WOODEN_PICKAXE, 1, 0));
 			COMPAT_IC2.scrapbox(2.00F, ST.make(Items.sign, 1, 0));
 			COMPAT_IC2.scrapbox(9.50F, IL.Stick.get(1));
 			COMPAT_IC2.scrapbox(5.00F, ST.make(Blocks.DIRT, 1, 0));
@@ -51,11 +51,11 @@ public class Compat_Recipes_IndustrialCraft_Scrap extends CompatMods {
 			COMPAT_IC2.scrapbox(0.50F, ST.make(Blocks.PUMPKIN, 1, 0));
 			COMPAT_IC2.scrapbox(1.00F, ST.make(Blocks.SOUL_SAND, 1, 0));
 			COMPAT_IC2.scrapbox(2.00F, ST.make(Blocks.NETHERRACK, 1, 0));
-			COMPAT_IC2.scrapbox(1.00F, ST.make(Items.bone, 1, 0));
-			COMPAT_IC2.scrapbox(9.00F, ST.make(Items.rotten_flesh, 1, 0));
-			COMPAT_IC2.scrapbox(0.40F, ST.make(Items.cooked_porkchop, 1, 0));
-			COMPAT_IC2.scrapbox(0.40F, ST.make(Items.cooked_beef, 1, 0));
-			COMPAT_IC2.scrapbox(0.40F, ST.make(Items.cooked_chicken, 1, 0));
+			COMPAT_IC2.scrapbox(1.00F, ST.make(Items.BONE, 1, 0));
+			COMPAT_IC2.scrapbox(9.00F, ST.make(Items.ROTTEN_FLESH, 1, 0));
+			COMPAT_IC2.scrapbox(0.40F, ST.make(Items.COOKED_PORKCHOP, 1, 0));
+			COMPAT_IC2.scrapbox(0.40F, ST.make(Items.COOKED_BEEF, 1, 0));
+			COMPAT_IC2.scrapbox(0.40F, ST.make(Items.COOKED_CHICKEN, 1, 0));
 			COMPAT_IC2.scrapbox(0.50F, IL.Food_Apple_Red.get(1));
 			COMPAT_IC2.scrapbox(0.50F, IL.Food_Bread.get(1));
 			COMPAT_IC2.scrapbox(0.10F, ST.make(Items.cake, 1, 0));
@@ -64,11 +64,11 @@ public class Compat_Recipes_IndustrialCraft_Scrap extends CompatMods {
 			COMPAT_IC2.scrapbox(1.00F, IL.Cell_Water.get(1));
 			COMPAT_IC2.scrapbox(2.00F, IL.Cell_Empty.get(1));
 			COMPAT_IC2.scrapbox(5.00F, OP.plate.mat(MT.Paper, 1));
-			COMPAT_IC2.scrapbox(1.00F, ST.make(Items.leather, 1, 0));
-			COMPAT_IC2.scrapbox(1.00F, ST.make(Items.feather, 1, 0));
+			COMPAT_IC2.scrapbox(1.00F, ST.make(Items.LEATHER, 1, 0));
+			COMPAT_IC2.scrapbox(1.00F, ST.make(Items.FEATHER, 1, 0));
 			COMPAT_IC2.scrapbox(0.70F, IL.IC2_Plantball.get(1));
 			COMPAT_IC2.scrapbox(3.80F, OP.dust.mat(MT.Wood, 1));
-			COMPAT_IC2.scrapbox(0.60F, ST.make(Items.slime_ball, 1, 0));
+			COMPAT_IC2.scrapbox(0.60F, ST.make(Items.SLIME_BALL, 1, 0));
 			COMPAT_IC2.scrapbox(0.80F, OP.dust.mat(MT.Rubber, 1));
 			COMPAT_IC2.scrapbox(2.70F, ST.mkic("suBattery", 1));
 			COMPAT_IC2.scrapbox(3.20F, IL.Circuit_Plate_Empty.get(1));
@@ -142,18 +142,18 @@ public class Compat_Recipes_IndustrialCraft_Scrap extends CompatMods {
 		
 		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "easymobgrinderrecycling", T)) {
 			// Skeletons
-			COMPAT_IC2.blacklist(ST.make(Items.arrow, 1, 0));
-			COMPAT_IC2.blacklist(ST.make(Items.bone, 1, 0));
+			COMPAT_IC2.blacklist(ST.make(Items.ARROW, 1, 0));
+			COMPAT_IC2.blacklist(ST.make(Items.BONE, 1, 0));
 			COMPAT_IC2.blacklist(IL.Dye_Bonemeal.get(1));
 			
 			// Zombies
-			COMPAT_IC2.blacklist(ST.make(Items.rotten_flesh, 1, 0));
+			COMPAT_IC2.blacklist(ST.make(Items.ROTTEN_FLESH, 1, 0));
 			
 			// Spiders
-			COMPAT_IC2.blacklist(ST.make(Items.string, 1, 0));
+			COMPAT_IC2.blacklist(ST.make(Items.STRING, 1, 0));
 			
 			// Chicken Eggs
-			COMPAT_IC2.blacklist(ST.make(Items.egg, 1, 0));
+			COMPAT_IC2.blacklist(ST.make(Items.EGG, 1, 0));
 		}
 		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "easystonerecycling", T)) {
 			ItemStack tStack = ST.make(Blocks.COBBLESTONE, 1, 0);

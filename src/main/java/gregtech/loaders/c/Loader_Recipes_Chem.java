@@ -488,7 +488,7 @@ public class Loader_Recipes_Chem implements Runnable {
 		RM.Melter       .addRecipe1(T, 16,  111 * 2, OM.dust(MT.Snow, U9)            , NF, FL.Water.make( 111), NI);
 		RM.Melter       .addRecipe1(T, 16,  250 * 2, OM.dust(MT.Snow, U4)            , NF, FL.Water.make( 250), NI);
 		RM.Melter       .addRecipe1(T, 16, 1000 * 2, OM.dust(MT.Snow)                , NF, FL.Water.make(1000), NI);
-		RM.Melter       .addRecipe1(T, 16,  250 * 2, ST.make(Items.snowball   , 1, W), NF, FL.Water.make( 250), NI);
+		RM.Melter       .addRecipe1(T, 16,  250 * 2, ST.make(Items.SNOWBALL   , 1, W), NF, FL.Water.make( 250), NI);
 		RM.Melter       .addRecipe1(T, 16, 1000 * 2, ST.make(Blocks.SNOW      , 1, W), NF, FL.Water.make(1000), NI);
 		
 		
@@ -503,7 +503,7 @@ public class Loader_Recipes_Chem implements Runnable {
 		RM.Smelter      .addRecipe1(T, 16,  111 * 2, OM.dust(MT.Snow, U9)            , NF, FL.Water.make( 111), NI);
 		RM.Smelter      .addRecipe1(T, 16,  250 * 2, OM.dust(MT.Snow, U4)            , NF, FL.Water.make( 250), NI);
 		RM.Smelter      .addRecipe1(T, 16, 1000 * 2, OM.dust(MT.Snow)                , NF, FL.Water.make(1000), NI);
-		RM.Smelter      .addRecipe1(T, 16,  250 * 2, ST.make(Items.snowball   , 1, W), NF, FL.Water.make( 250), NI);
+		RM.Smelter      .addRecipe1(T, 16,  250 * 2, ST.make(Items.SNOWBALL   , 1, W), NF, FL.Water.make( 250), NI);
 		RM.Smelter      .addRecipe1(T, 16, 1000 * 2, ST.make(Blocks.SNOW      , 1, W), NF, FL.Water.make(1000), NI);
 		
 		
@@ -518,7 +518,7 @@ public class Loader_Recipes_Chem implements Runnable {
 		RM.Drying       .addRecipe1(T, 16,  111 * 4, OM.dust(MT.Snow, U9)            , NF, FL.DistW.make( 111), NI);
 		RM.Drying       .addRecipe1(T, 16,  250 * 4, OM.dust(MT.Snow, U4)            , NF, FL.DistW.make( 250), NI);
 		RM.Drying       .addRecipe1(T, 16, 1000 * 4, OM.dust(MT.Snow)                , NF, FL.DistW.make(1000), NI);
-		RM.Drying       .addRecipe1(T, 16,  250 * 4, ST.make(Items.snowball   , 1, W), NF, FL.DistW.make( 250), NI);
+		RM.Drying       .addRecipe1(T, 16,  250 * 4, ST.make(Items.SNOWBALL   , 1, W), NF, FL.DistW.make( 250), NI);
 		RM.Drying       .addRecipe1(T, 16, 1000 * 4, ST.make(Blocks.SNOW      , 1, W), NF, FL.DistW.make(1000), NI);
 		
 		

@@ -129,9 +129,9 @@ public class Loader_Loot implements Runnable {
 		ST.LOOT_TABLES.add("gt.misc");
 		ChestGenHooks.getInfo("gt.misc").setMin( 8);
 		ChestGenHooks.getInfo("gt.misc").setMax(24);
-		addLoot("gt.misc", 144, 1, 4, ST.make(Items.name_tag      , 1, 0));
-		addLoot("gt.misc", 144, 2, 8, ST.make(Items.leather       , 1, 0));
-		addLoot("gt.misc", 144, 2, 8, ST.make(Items.flint         , 1, 0));
+		addLoot("gt.misc", 144, 1, 4, ST.make(Items.NAME_TAG      , 1, 0));
+		addLoot("gt.misc", 144, 2, 8, ST.make(Items.LEATHER       , 1, 0));
+		addLoot("gt.misc", 144, 2, 8, ST.make(Items.FLINT         , 1, 0));
 		addLoot("gt.misc",  13, 1, 1, ST.make(Items.record_13     , 1, 0));
 		addLoot("gt.misc",  13, 1, 1, ST.make(Items.record_cat    , 1, 0));
 		addLoot("gt.misc",  13, 1, 1, ST.make(Items.record_blocks , 1, 0));
@@ -224,9 +224,9 @@ public class Loader_Loot implements Runnable {
 		addLoot("gt.seeds",   9, 8,24, ST.make(BlocksGT.Glowtus, 1, i));
 		addLoot("gt.seeds", 144, 8,24, ST.make(Blocks.waterlily, 1, 0));
 		// Actual Seeds.
-		addLoot("gt.seeds", 144,16,48, ST.make(Items.wheat_seeds, 1, 0));
-		addLoot("gt.seeds", 144,16,48, ST.make(Items.pumpkin_seeds, 1, 0));
-		addLoot("gt.seeds", 144,16,48, ST.make(Items.melon_seeds, 1, 0));
+		addLoot("gt.seeds", 144,16,48, ST.make(Items.WHEAT_SEEDS, 1, 0));
+		addLoot("gt.seeds", 144,16,48, ST.make(Items.PUMPKIN_SEEDS, 1, 0));
+		addLoot("gt.seeds", 144,16,48, ST.make(Items.MELON_SEEDS, 1, 0));
 		addLoot("gt.seeds", 144,16,48, IL.EtFu_Beet_Seeds.get(1), F);
 		addLoot("gt.seeds", 144,16,48, IL.GaSu_Beet_Seeds.get(1), F);
 		addLoot("gt.seeds", 144,16,48, IL.BoP_Turnip_Seeds.get(1), F);
@@ -460,7 +460,7 @@ public class Loader_Loot implements Runnable {
 		addLoot(ChestGenHooks.PYRAMID_JUNGLE_CHEST    ,   5, 4, 8, IL.Bag_Loot_Gems.get(1));
 		addLoot(ChestGenHooks.PYRAMID_JUNGLE_CHEST    ,   5, 2, 4, IL.Bag_Loot_Misc.get(1));
 		
-		addLoot(ChestGenHooks.PYRAMID_JUNGLE_DISPENSER,  30, 2, 8, ST.make(Items.fire_charge,  1, 0));
+		addLoot(ChestGenHooks.PYRAMID_JUNGLE_DISPENSER,  30, 2, 8, ST.make(Items.FIRE_CHARGE,  1, 0));
 		addLoot(ChestGenHooks.PYRAMID_JUNGLE_DISPENSER,  20, 8,16, ST.update(OP.arrowGtWood.mat(MT.DamascusSteel, 1)));
 		addLoot(ChestGenHooks.PYRAMID_JUNGLE_DISPENSER,   1, 8,16, ST.update(OP.arrowGtWood.mat(MT.Ke, 1)));
 		

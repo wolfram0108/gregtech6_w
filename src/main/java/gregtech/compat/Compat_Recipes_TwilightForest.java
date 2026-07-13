@@ -108,7 +108,7 @@ public class Compat_Recipes_TwilightForest extends CompatMods {
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.Leaves_AB      , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
 		RM.Boxinator.addRecipe2(T,128,128, ST.make(BlocksGT.Leaves_CD      , 64, W), IL.TF_Pick_Giant.getWildcard(0), IL.TF_Giant_Leaves  .get(1));
 		
-		RM.Mixer.addRecipeX(T, 16, 64, ST.array(OM.dust(MT.Redstone, 4*U), IL.TF_BorerEssence.get(4), ST.make(Items.ghast_tear, 1, W)), OP.dust.mat(MT.Carminite, 4));
+		RM.Mixer.addRecipeX(T, 16, 64, ST.array(OM.dust(MT.Redstone, 4*U), IL.TF_BorerEssence.get(4), ST.make(Items.GHAST_TEAR, 1, W)), OP.dust.mat(MT.Carminite, 4));
 		
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.TF, "item.arcticHelm" , 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.TF, "item.arcticFur", 1));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.TF, "item.arcticPlate", 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.TF, "item.arcticFur", 2));
@@ -124,8 +124,8 @@ public class Compat_Recipes_TwilightForest extends CompatMods {
 		RM.Loom.addRecipe2(T, 16,  128, ST.tag(6), ST.make(MD.TF, "item.arcticFur", 7), ST.make(MD.TF, "item.arcticLegs" , 1));
 		RM.Loom.addRecipe2(T, 16,  128, ST.tag(7), ST.make(MD.TF, "item.arcticFur", 4), ST.make(MD.TF, "item.arcticBoots", 1));
 		
-		RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.paper, 8, W), IL.TF_Magic_Map_Focus.get(1), NF, NF, IL.TF_Magic_Map_Empty.get(1));
-		RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.paper, 8, W), IL.TF_Maze_Map_Focus .get(1), NF, NF, IL.TF_Maze_Map_Empty .get(1));
+		RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.PAPER, 8, W), IL.TF_Magic_Map_Focus.get(1), NF, NF, IL.TF_Magic_Map_Empty.get(1));
+		RM.Boxinator.addRecipe2(T, 16, 16, ST.make(Items.PAPER, 8, W), IL.TF_Maze_Map_Focus .get(1), NF, NF, IL.TF_Maze_Map_Empty .get(1));
 		
 		RM.Replicator.addRecipe1(F, 16, 288000, IL.TF_Trophy_Naga     .get(0), FL.Biomass   .make(16000), NF                   , IL.TF_NagaScale.get(1));
 		RM.Replicator.addRecipe1(F, 16, 288000, IL.TF_Trophy_Naga     .get(0), FL.BiomassIC2.make(16000), NF                   , IL.TF_NagaScale.get(1));
@@ -200,18 +200,18 @@ public class Compat_Recipes_TwilightForest extends CompatMods {
 			TFItems.giantPick  .setMaxDamage(10000); // Makes way more sense to actually have some Durability due to using 64 per harvest.
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
-		RM.Bath.addRecipe1(T, 0, 5*144, ST.make(Items.iron_helmet          , 1, W), FL.FieryBlood.make(5*L), NF, ST.make(MD.TF, "item.fieryHelm" , 1));
-		RM.Bath.addRecipe1(T, 0, 5*144, ST.make(Items.iron_helmet          , 1, W), FL.FieryTears.make(5*L), NF, ST.make(MD.TF, "item.fieryHelm" , 1));
-		RM.Bath.addRecipe1(T, 0, 8*144, ST.make(Items.iron_chestplate      , 1, W), FL.FieryBlood.make(8*L), NF, ST.make(MD.TF, "item.fieryPlate", 1));
-		RM.Bath.addRecipe1(T, 0, 8*144, ST.make(Items.iron_chestplate      , 1, W), FL.FieryTears.make(8*L), NF, ST.make(MD.TF, "item.fieryPlate", 1));
-		RM.Bath.addRecipe1(T, 0, 7*144, ST.make(Items.iron_leggings        , 1, W), FL.FieryBlood.make(7*L), NF, ST.make(MD.TF, "item.fieryLegs" , 1));
-		RM.Bath.addRecipe1(T, 0, 7*144, ST.make(Items.iron_leggings        , 1, W), FL.FieryTears.make(7*L), NF, ST.make(MD.TF, "item.fieryLegs" , 1));
-		RM.Bath.addRecipe1(T, 0, 4*144, ST.make(Items.iron_boots           , 1, W), FL.FieryBlood.make(4*L), NF, ST.make(MD.TF, "item.fieryBoots", 1));
-		RM.Bath.addRecipe1(T, 0, 4*144, ST.make(Items.iron_boots           , 1, W), FL.FieryTears.make(4*L), NF, ST.make(MD.TF, "item.fieryBoots", 1));
-		RM.Bath.addRecipe1(T, 0, 2*144, ST.make(Items.iron_sword           , 1, W), FL.FieryBlood.make(2*L), NF, ST.make(MD.TF, "item.fierySword", 1));
-		RM.Bath.addRecipe1(T, 0, 2*144, ST.make(Items.iron_sword           , 1, W), FL.FieryTears.make(2*L), NF, ST.make(MD.TF, "item.fierySword", 1));
-		RM.Bath.addRecipe1(T, 0, 3*144, ST.make(Items.iron_pickaxe         , 1, W), FL.FieryBlood.make(3*L), NF, ST.make(MD.TF, "item.fieryPick" , 1));
-		RM.Bath.addRecipe1(T, 0, 3*144, ST.make(Items.iron_pickaxe         , 1, W), FL.FieryTears.make(3*L), NF, ST.make(MD.TF, "item.fieryPick" , 1));
+		RM.Bath.addRecipe1(T, 0, 5*144, ST.make(Items.IRON_HELMET          , 1, W), FL.FieryBlood.make(5*L), NF, ST.make(MD.TF, "item.fieryHelm" , 1));
+		RM.Bath.addRecipe1(T, 0, 5*144, ST.make(Items.IRON_HELMET          , 1, W), FL.FieryTears.make(5*L), NF, ST.make(MD.TF, "item.fieryHelm" , 1));
+		RM.Bath.addRecipe1(T, 0, 8*144, ST.make(Items.IRON_CHESTPLATE      , 1, W), FL.FieryBlood.make(8*L), NF, ST.make(MD.TF, "item.fieryPlate", 1));
+		RM.Bath.addRecipe1(T, 0, 8*144, ST.make(Items.IRON_CHESTPLATE      , 1, W), FL.FieryTears.make(8*L), NF, ST.make(MD.TF, "item.fieryPlate", 1));
+		RM.Bath.addRecipe1(T, 0, 7*144, ST.make(Items.IRON_LEGGINGS        , 1, W), FL.FieryBlood.make(7*L), NF, ST.make(MD.TF, "item.fieryLegs" , 1));
+		RM.Bath.addRecipe1(T, 0, 7*144, ST.make(Items.IRON_LEGGINGS        , 1, W), FL.FieryTears.make(7*L), NF, ST.make(MD.TF, "item.fieryLegs" , 1));
+		RM.Bath.addRecipe1(T, 0, 4*144, ST.make(Items.IRON_BOOTS           , 1, W), FL.FieryBlood.make(4*L), NF, ST.make(MD.TF, "item.fieryBoots", 1));
+		RM.Bath.addRecipe1(T, 0, 4*144, ST.make(Items.IRON_BOOTS           , 1, W), FL.FieryTears.make(4*L), NF, ST.make(MD.TF, "item.fieryBoots", 1));
+		RM.Bath.addRecipe1(T, 0, 2*144, ST.make(Items.IRON_SWORD           , 1, W), FL.FieryBlood.make(2*L), NF, ST.make(MD.TF, "item.fierySword", 1));
+		RM.Bath.addRecipe1(T, 0, 2*144, ST.make(Items.IRON_SWORD           , 1, W), FL.FieryTears.make(2*L), NF, ST.make(MD.TF, "item.fierySword", 1));
+		RM.Bath.addRecipe1(T, 0, 3*144, ST.make(Items.IRON_PICKAXE         , 1, W), FL.FieryBlood.make(3*L), NF, ST.make(MD.TF, "item.fieryPick" , 1));
+		RM.Bath.addRecipe1(T, 0, 3*144, ST.make(Items.IRON_PICKAXE         , 1, W), FL.FieryTears.make(3*L), NF, ST.make(MD.TF, "item.fieryPick" , 1));
 		
 		RM.Bath.addRecipe1(T, 0, 5*144, ST.make(MD.TF, "item.knightlyHelm" , 1, W), FL.FieryBlood.make(5*L), NF, ST.make(MD.TF, "item.fieryHelm" , 1));
 		RM.Bath.addRecipe1(T, 0, 5*144, ST.make(MD.TF, "item.knightlyHelm" , 1, W), FL.FieryTears.make(5*L), NF, ST.make(MD.TF, "item.fieryHelm" , 1));

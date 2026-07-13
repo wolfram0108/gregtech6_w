@@ -149,10 +149,10 @@ public class RecipeMapPrinter extends RecipeMap {
 				}
 				return rRecipe;
 			}
-			if (ST.item_(tPaper) == Items.map) {
+			if (ST.item_(tPaper) == Items.MAP) {
 				short tMapID = UT.NBT.getMapID(tData);
 				if (tMapID < 0) return rRecipe;
-				return new Recipe(F, F, F, ST.array(ST.amount(1, tPaper), ST.amount(0, tUSB)), ST.array(ST.make(Items.filled_map, 1, tMapID)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T)), null, 64, 16, 0);
+				return new Recipe(F, F, F, ST.array(ST.amount(1, tPaper), ST.amount(0, tUSB)), ST.array(ST.make(Items.FILLED_MAP, 1, tMapID)), null, null, FL.array(FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Black], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Cyan], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Magenta], 1, 9, T), FL.mul(DYE_FLUIDS_CHEMICAL[DYE_INDEX_Yellow], 1, 9, T)), null, 64, 16, 0);
 			}
 			if (IL.TF_Magic_Map_Empty.equal(tPaper, T, T)) {
 				short tMapID = UT.NBT.getMagicMapID(tData);

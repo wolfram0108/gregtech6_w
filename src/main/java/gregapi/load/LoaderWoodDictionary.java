@@ -816,7 +816,7 @@ public class LoaderWoodDictionary implements Runnable {
 		if (MD.HaC.mLoaded) {
 			new SaplingEntry(ST.make(MD.HaC, "pamcinnamonSapling"   , 1, W), new WoodEntry(IL.HaC_Log_Cinnamon .wild(1), WoodDictionary.BEAMS.get(BlocksGT.BeamB, 1), IL.HaC_Cinnamon.get(1, IL.Food_Cinnamon.get(1, OM.dust(MT.Cinnamon))), MT.Cinnamon), WoodDictionary.LEAVES.get(Blocks.OAK_LEAVES, 3));
 			new SaplingEntry(ST.make(MD.HaC, "pammapleSapling"      , 1, W), new WoodEntry(IL.HaC_Log_Maple    .wild(1), WoodDictionary.BEAMS.get(BlocksGT.BeamA, 1)), WoodDictionary.LEAVES.get(Blocks.OAK_LEAVES, 1));
-			new SaplingEntry(ST.make(MD.HaC, "pampaperbarkSapling"  , 1, W), new WoodEntry(IL.HaC_Log_Paperbark.wild(1), WoodDictionary.BEAMS.get(BlocksGT.Beam1, 3), ST.make(Items.paper, 1, 0), MT.Paper), WoodDictionary.LEAVES.get(Blocks.OAK_LEAVES, 3));
+			new SaplingEntry(ST.make(MD.HaC, "pampaperbarkSapling"  , 1, W), new WoodEntry(IL.HaC_Log_Paperbark.wild(1), WoodDictionary.BEAMS.get(BlocksGT.Beam1, 3), ST.make(Items.PAPER, 1, 0), MT.Paper), WoodDictionary.LEAVES.get(Blocks.OAK_LEAVES, 3));
 			
 			new SaplingEntry(ST.make(MD.HaC, "pamappleSapling"      , 1, W), WoodDictionary.WOODS.get(Blocks.OAK_LOG, 0), WoodDictionary.LEAVES.get(Blocks.OAK_LEAVES, 0));
 			new SaplingEntry(ST.make(MD.HaC, "pamavocadoSapling"    , 1, W), WoodDictionary.WOODS.get(Blocks.OAK_LOG, 0), WoodDictionary.LEAVES.get(Blocks.OAK_LEAVES, 0));
