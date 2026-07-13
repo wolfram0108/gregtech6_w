@@ -142,7 +142,7 @@ public class BlockMetaType extends BlockBaseMeta {
 	
 	// @Override
 	public boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {
-		if (mBlock == this || aSide != OPOS[mSide] || (mBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ) != null && !aWorld.checkNoEntityCollision(mBlock.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ)))) return F;
+		if (mBlock == this || aSide != OPOS[mSide] || (WD.hasCollide(aWorld, aX, aY, aZ, mBlock) && !WD.noEntityCollision(aWorld, WD.collisionBox(aWorld, aX, aY, aZ, mBlock)))) return F;
 		ItemStack aStack = aPlayer.getMainHandItem();
 		byte aMetaData = WD.meta(aWorld, aX, aY, aZ);
 		if (ST.equal(aStack, mBlock.mSlabs[0], aMetaData)) {
