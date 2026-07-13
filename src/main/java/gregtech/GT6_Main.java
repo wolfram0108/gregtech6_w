@@ -293,7 +293,7 @@ public class GT6_Main extends Abstract_Mod {
 		
 		new Loader_Late_Items_And_Blocks().run();
 		
-		if (MD.IC2C.mLoaded) for (int i = 0; i <= 6; i++) FMLInterModComms.sendMessage(MD.IC2C.mID, "generatorDrop", ST.save(UT.NBT.makeInt("Key", i), "Value", IL.IC2_Machine.get(1)));
+		if (MD.IC2C.mLoaded) for (int i = 0; i <= 6; i++) {final var tIMC = ST.save(UT.NBT.makeInt("Key", i), "Value", IL.IC2_Machine.get(1)); net.neoforged.fml.InterModComms.sendTo(MD.IC2C.mID, "generatorDrop", () -> tIMC);}// было FMLInterModComms.sendMessage (1.7.10 FML, удалён -> neo InterModComms.sendTo; i вынесен в effectively-final tIMC для лямбды)
 		
 		ArrayListNoNulls<Runnable> tList = new ArrayListNoNulls<>(F,
 			new Loader_MultiTileEntities(),

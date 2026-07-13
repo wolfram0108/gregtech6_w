@@ -141,7 +141,7 @@ public class Loader_Blocks implements Runnable {
 		ListTag tNBTList = new ListTag();
 		tNBTList.add(new StringTag(ST.regName(BlocksGT.River)));
 		tNBTList.add(new StringTag(ST.regName(BlocksGT.Ocean)));
-		InterModComms.sendMessage(MD.IC2C.mID, "watergen", UT.NBT.make("blocks", tNBTList));
+		InterModComms.sendTo(MD.IC2C.mID, "watergen", () -> UT.NBT.make("blocks", tNBTList));
 		
 		BlocksGT.WaterGeothermal                                                = new BlockBaseFluid            ("gt.block.fluid.water.geothermal"  , FL.Water_Geothermal,    0, Material.water      ).setLighterThanWater().addEffectBathing(MobEffect.regeneration.id, 100, 0).addEffectBathing(MobEffect.resistance.id, 2400, 2);
 		if (COMPAT_TC != null) COMPAT_TC.registerThaumcraftAspectsToItem(ST.make(BlocksGT.WaterGeothermal, 1, W), F, TC.stack(TC.AQUA, 3), TC.stack(TC.SANO, 3));
