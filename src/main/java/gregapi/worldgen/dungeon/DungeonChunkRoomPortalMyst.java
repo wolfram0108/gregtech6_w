@@ -37,16 +37,16 @@ public class DungeonChunkRoomPortalMyst extends DungeonChunkRoomPortal {
 		aData.mTags.add(WorldgenDungeonGT.TAG_PORTAL_MYST);
 		
 		ListTag tInventory = new ListTag();
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)12));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)13));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)14));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)21));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)23));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)30));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)32));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)39));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)40));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)41));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)12));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)13));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)14));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)21));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)23));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)30));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)32));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)39));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)40));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Myst_Crystal.get(5)), "s", (short)41));
 		
 		Block tCrystal = IL.Myst_Crystal.block();
 		

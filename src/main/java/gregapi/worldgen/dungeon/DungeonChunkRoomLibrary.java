@@ -124,7 +124,7 @@ public class DungeonChunkRoomLibrary extends DungeonChunkRoomEmpty {
 				if (tKeyIndex < aData.mGeneratedKeys.length) {
 					aData.mGeneratedKeys[tKeyIndex] = T;
 					tList = new ListTag();
-					tList.appendTag(UT.NBT.makeShort(ST.save(aData.mKeyStacks[tKeyIndex]), "s", (short)aData.next(14)));
+					tList.add(UT.NBT.makeShort(ST.save(aData.mKeyStacks[tKeyIndex]), "s", (short)aData.next(14)));
 				}
 				
 				aData.shelf( 2, tY,  1, tShelf, SIDE_Z_POS, tLoots, tIndex--==0?tList:null);

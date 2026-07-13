@@ -134,7 +134,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 			if (stack != null) {
 				CompoundTag tag = UT.NBT.make();
 				tag.putByte("Slot", (byte) i);
-				tNBT_ItemList.appendTag(ST.save(stack));
+				tNBT_ItemList.add(ST.save(stack));
 			}
 		}
 		tNBT.put("Inventory", tNBT_ItemList);

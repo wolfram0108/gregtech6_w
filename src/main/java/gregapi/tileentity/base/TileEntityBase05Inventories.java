@@ -63,7 +63,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	public void writeToNBT2(CompoundTag aNBT) {
 		if (mInventory != null && mInventory.length > 0) {
 			ListTag tList = new ListTag();
-			for (short tSlot = 0; tSlot < mInventory.length; tSlot++) if (ST.valid(mInventory[tSlot]) && canSave (tSlot)) tList.appendTag(UT.NBT.makeShort(ST.save(mInventory[tSlot]), "s", tSlot));
+			for (short tSlot = 0; tSlot < mInventory.length; tSlot++) if (ST.valid(mInventory[tSlot]) && canSave (tSlot)) tList.add(UT.NBT.makeShort(ST.save(mInventory[tSlot]), "s", tSlot));
 			if (tList.tagCount() > 0) aNBT.put(NBT_INV_LIST, tList);
 		}
 	}
@@ -73,7 +73,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 		aNBT = super.writeItemNBT(aNBT);
 		if (mInventory != null && mInventory.length > 0) {
 			ListTag tList = new ListTag();
-			for (short tSlot = 0; tSlot < mInventory.length; tSlot++) if (ST.valid(mInventory[tSlot]) && keepSlot(tSlot)) tList.appendTag(UT.NBT.makeShort(ST.save(mInventory[tSlot]), "s", tSlot));
+			for (short tSlot = 0; tSlot < mInventory.length; tSlot++) if (ST.valid(mInventory[tSlot]) && keepSlot(tSlot)) tList.add(UT.NBT.makeShort(ST.save(mInventory[tSlot]), "s", tSlot));
 			if (tList.tagCount() > 0) aNBT.put(NBT_INV_LIST, tList);
 		}
 		return aNBT;

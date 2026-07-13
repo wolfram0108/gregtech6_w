@@ -475,7 +475,7 @@ public class UT {
 			ListTag tNBTList = new ListTag();
 			for (short i = 0; i < aPages.length; i++) {
 				if (aPages[i].length() < 256) {
-					tNBTList.appendTag(new StringTag(aPages[i].replaceAll("¶", "\n")));
+					tNBTList.add(new StringTag(aPages[i].replaceAll("¶", "\n")));
 				} else if (aLogging) {
 					ERR.println("WARNING: String for Page of written Book too long! ->\n" + aPages[i]);
 				}

@@ -41,13 +41,13 @@ public class DungeonChunkRoomPortalAether extends DungeonChunkRoomPortal {
 		aData.mTags.add(WorldgenDungeonGT.TAG_PORTAL_AETHER);
 		
 		ListTag tInventory = new ListTag();
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.Bottle_Holy_Water          .get(16)), "s", (short) 4));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.AETHER_Skyroot_Log         .get(64)), "s", (short)11));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Blocks.glowstone      , 16, 0)), "s", (short)15));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(MD.AETHEL, "lore_book",  1, 0)), "s", (short)22));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gem  .mat(MT.Ambrosium     , 16   )), "s", (short)29));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick.mat(MT.Breeze        ,  4   )), "s", (short)33));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Items.water_bucket    ,  1, 0)), "s", (short)40));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.Bottle_Holy_Water          .get(16)), "s", (short) 4));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.AETHER_Skyroot_Log         .get(64)), "s", (short)11));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Blocks.glowstone      , 16, 0)), "s", (short)15));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(MD.AETHEL, "lore_book",  1, 0)), "s", (short)22));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gem  .mat(MT.Ambrosium     , 16   )), "s", (short)29));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.stick.mat(MT.Breeze        ,  4   )), "s", (short)33));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.water_bucket    ,  1, 0)), "s", (short)40));
 		
 		for (int tX = 1; tX < 15; tX++) for (int tZ = 1; tZ < 15; tZ++) {
 			if ((tX == 3 || tX == 6 || tX == 9 || tX == 12) && (tZ == 3 || tZ == 6 || tZ == 9 || tZ == 12)) {

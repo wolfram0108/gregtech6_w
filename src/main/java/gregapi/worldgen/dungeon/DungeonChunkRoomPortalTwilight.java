@@ -40,12 +40,12 @@ public class DungeonChunkRoomPortalTwilight extends DungeonChunkRoomPortal {
 		aData.mTags.add(WorldgenDungeonGT.TAG_PORTAL_TWILIGHT);
 		
 		ListTag tInventory = new ListTag();
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.book("Manual_Portal_TF")), "s", (short)22));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(ST.make(Items.diamond, 1, 0)), "s", (short)31));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)12));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)39));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)14));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)41));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.book("Manual_Portal_TF")), "s", (short)22));
+		tInventory.add(UT.NBT.makeShort(ST.save(ST.make(Items.diamond, 1, 0)), "s", (short)31));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)12));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)39));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)14));
+		tInventory.add(UT.NBT.makeShort(ST.save(IL.TF_LiveRoot.get(8)), "s", (short)41));
 		
 		Block tMushgloom = IL.TF_Mushgloom.block();
 		

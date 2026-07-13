@@ -62,53 +62,53 @@ public class DungeonChunkRoomWorkshop extends DungeonChunkRoomEmpty {
 		
 		ListTag
 		tInventory = new ListTag();
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.StainlessSteel  , 16+aData.next(49))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.StainlessSteel  , 16+aData.next(49))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.StainlessSteel  ,  8+aData.next(25))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.StainlessSteel  ,  1+aData.next( 4))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.StainlessSteel  ,  8+aData.next(25))), "s", (short)     aData.next(36) ));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Bronze          , 32+aData.next(33))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Bronze          , 32+aData.next(33))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Bronze          , 32+aData.next(33))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Bronze          , 16+aData.next(49))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Bronze          , 16+aData.next(49))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Bronze          ,  8+aData.next(25))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Bronze          ,  1+aData.next( 4))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Bronze          ,  8+aData.next(25))), "s", (short)( 36+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Invar           , 32+aData.next(33))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Invar           , 32+aData.next(33))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Invar           , 32+aData.next(33))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Invar           , 16+aData.next(49))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Invar           , 16+aData.next(49))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Invar           ,  8+aData.next(25))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Invar           ,  1+aData.next( 4))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Invar           ,  8+aData.next(25))), "s", (short)( 72+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Brass           , 32+aData.next(33))), "s", (short)(108+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Brass           , 32+aData.next(33))), "s", (short)(108+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Brass           , 32+aData.next(33))), "s", (short)(108+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Brass           , 16+aData.next(49))), "s", (short)(108+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Brass           , 16+aData.next(49))), "s", (short)(108+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Brass           ,  8+aData.next(25))), "s", (short)(108+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Brass           ,  1+aData.next( 4))), "s", (short)(108+aData.next(36))));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Brass           ,  8+aData.next(25))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.StainlessSteel  , 32+aData.next(33))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.StainlessSteel  , 16+aData.next(49))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.StainlessSteel  , 16+aData.next(49))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.StainlessSteel  ,  8+aData.next(25))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.StainlessSteel  ,  1+aData.next( 4))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.StainlessSteel  ,  8+aData.next(25))), "s", (short)     aData.next(36) ));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Bronze          , 32+aData.next(33))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Bronze          , 32+aData.next(33))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Bronze          , 32+aData.next(33))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Bronze          , 16+aData.next(49))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Bronze          , 16+aData.next(49))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Bronze          ,  8+aData.next(25))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Bronze          ,  1+aData.next( 4))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Bronze          ,  8+aData.next(25))), "s", (short)( 36+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Invar           , 32+aData.next(33))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Invar           , 32+aData.next(33))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Invar           , 32+aData.next(33))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Invar           , 16+aData.next(49))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Invar           , 16+aData.next(49))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Invar           ,  8+aData.next(25))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Invar           ,  1+aData.next( 4))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Invar           ,  8+aData.next(25))), "s", (short)( 72+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Brass           , 32+aData.next(33))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Brass           , 32+aData.next(33))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Brass           , 32+aData.next(33))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Brass           , 16+aData.next(49))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Brass           , 16+aData.next(49))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Brass           ,  8+aData.next(25))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Brass           ,  1+aData.next( 4))), "s", (short)(108+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Brass           ,  8+aData.next(25))), "s", (short)(108+aData.next(36))));
 		aData.set             ( 1, 1,  3, SIDE_UNKNOWN, (short) 4011, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T, NBT_FACING, SIDE_X_POS, NBT_INV_LIST, tInventory), T, T);
 		aData.set             ( 1, 2,  3, SIDE_UNKNOWN, (short) 2010, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T, NBT_FACING, SIDE_X_POS, "gt.dungeonloot", ChestGenHooks.PYRAMID_JUNGLE_CHEST    ), T, T);
 		aData.coins           ( 1, 3,  3);
 		
 		
 		tInventory = new ListTag();
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Steel, 16+aData.next(49))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Steel, 16+aData.next(49))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Steel,  8+aData.next(25))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Steel,  1+aData.next( 4))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Steel,  8+aData.next(25))), "s", (short)aData.next(16)));
-		tInventory.appendTag(UT.NBT.makeShort(ST.save(aData.next1in2()?IL.Tool_Lighter_Invar_Full.get(1):IL.Tool_Lighter_Invar_Empty.get(1)), "s", (short)(35+aData.next(36))));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.stick          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ingot          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plate          .mat(MT.Steel, 32+aData.next(33))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.plateCurved    .mat(MT.Steel, 16+aData.next(49))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.screw          .mat(MT.Steel, 16+aData.next(49))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.ring           .mat(MT.Steel,  8+aData.next(25))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGt         .mat(MT.Steel,  1+aData.next( 4))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(OP.gearGtSmall    .mat(MT.Steel,  8+aData.next(25))), "s", (short)aData.next(16)));
+		tInventory.add(UT.NBT.makeShort(ST.save(aData.next1in2()?IL.Tool_Lighter_Invar_Full.get(1):IL.Tool_Lighter_Invar_Empty.get(1)), "s", (short)(35+aData.next(36))));
 		aData.set             ( 1, 1,  4, SIDE_UNKNOWN,  5011, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T, NBT_FACING, SIDE_X_POS, NBT_INV_LIST, tInventory), T, T);
 		aData.set             ( 1, 2,  4, SIDE_UNKNOWN, 32738, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T), T, T);
 		
@@ -119,7 +119,7 @@ public class DungeonChunkRoomWorkshop extends DungeonChunkRoomEmpty {
 		int tKeyIndex = aData.next(aData.mGeneratedKeys.length * 2);
 		if (tKeyIndex < aData.mGeneratedKeys.length) {
 			aData.mGeneratedKeys[tKeyIndex] = T;
-			tInventory.appendTag(UT.NBT.makeShort(ST.save(aData.mKeyStacks[tKeyIndex]), "s", (short)(10+aData.next(18))));
+			tInventory.add(UT.NBT.makeShort(ST.save(aData.mKeyStacks[tKeyIndex]), "s", (short)(10+aData.next(18))));
 		}
 		aData.set             ( 4, 3,  1, SIDE_UNKNOWN,  7111, UT.NBT.make(NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T, NBT_FACING, SIDE_Z_POS, NBT_INV_LIST, tInventory, "gt.dungeonloot.front", ChestGenHooks.VILLAGE_BLACKSMITH), T, T);
 		

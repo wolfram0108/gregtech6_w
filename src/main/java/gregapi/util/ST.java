@@ -1128,15 +1128,15 @@ public class ST {
 				// if (IL.EtFu_Sus_Stew.exists() && item_(tStack) == Items.MUSHROOM_STEW) {
 				//     ListTag tList = new ListTag();
 				//     switch(RNGSUS.nextInt(9)) {
-				//     case  1: tList.appendTag(UT.NBT.make("EffectId", MobEffect.field_76443_y .id, "EffectDuration",   7)); break;
-				//     case  2: tList.appendTag(UT.NBT.make("EffectId", MobEffect.fireResistance.id, "EffectDuration",  80)); break;
-				//     case  3: tList.appendTag(UT.NBT.make("EffectId", MobEffect.nightVision   .id, "EffectDuration", 100)); break;
-				//     case  4: tList.appendTag(UT.NBT.make("EffectId", MobEffect.weakness      .id, "EffectDuration", 180)); break;
-				//     case  5: tList.appendTag(UT.NBT.make("EffectId", MobEffect.regeneration  .id, "EffectDuration", 160)); break;
-				//     case  6: tList.appendTag(UT.NBT.make("EffectId", MobEffect.jump          .id, "EffectDuration", 120)); break;
-				//     case  7: tList.appendTag(UT.NBT.make("EffectId", MobEffect.poison        .id, "EffectDuration", 240)); break;
-				//     case  8: tList.appendTag(UT.NBT.make("EffectId", MobEffect.wither        .id, "EffectDuration", 160)); break;
-				//     default: tList.appendTag(UT.NBT.make("EffectId", MobEffect.blindness     .id, "EffectDuration", 160)); break;
+				//     case  1: tList.add(UT.NBT.make("EffectId", MobEffect.field_76443_y .id, "EffectDuration",   7)); break;
+				//     case  2: tList.add(UT.NBT.make("EffectId", MobEffect.fireResistance.id, "EffectDuration",  80)); break;
+				//     case  3: tList.add(UT.NBT.make("EffectId", MobEffect.nightVision   .id, "EffectDuration", 100)); break;
+				//     case  4: tList.add(UT.NBT.make("EffectId", MobEffect.weakness      .id, "EffectDuration", 180)); break;
+				//     case  5: tList.add(UT.NBT.make("EffectId", MobEffect.regeneration  .id, "EffectDuration", 160)); break;
+				//     case  6: tList.add(UT.NBT.make("EffectId", MobEffect.jump          .id, "EffectDuration", 120)); break;
+				//     case  7: tList.add(UT.NBT.make("EffectId", MobEffect.poison        .id, "EffectDuration", 240)); break;
+				//     case  8: tList.add(UT.NBT.make("EffectId", MobEffect.wither        .id, "EffectDuration", 160)); break;
+				//     default: tList.add(UT.NBT.make("EffectId", MobEffect.blindness     .id, "EffectDuration", 160)); break;
 				//     }
 				//     nbt(set(tStack, IL.EtFu_Sus_Stew.get(tStack.getCount())), UT.NBT.make("Effects", tList));
 				// }

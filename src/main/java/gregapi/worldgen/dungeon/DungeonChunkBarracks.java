@@ -113,7 +113,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		if (!aData.mGeneratedKeys[0]) {
 			aData.mGeneratedKeys[0] = T;
 			short tKeySlot = (short)aData.next(28);
-			tList.appendTag(UT.NBT.makeShort(ST.save(aData.mKeyStacks[0]), "s", tKeySlot));
+			tList.add(UT.NBT.makeShort(ST.save(aData.mKeyStacks[0]), "s", tKeySlot));
 			// Hint that there is something behind the Shelf.
 			if (tKeySlot >= 14) {aData.cobble( 3, 1, 0); aData.cobble( 3, 2, 0); aData.cobble( 3, 3, 0);}
 		}
@@ -124,7 +124,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		if (!aData.mGeneratedKeys[1]) {
 			aData.mGeneratedKeys[1] = T;
 			short tKeySlot = (short)aData.next(28);
-			tList.appendTag(UT.NBT.makeShort(ST.save(aData.mKeyStacks[1]), "s", tKeySlot));
+			tList.add(UT.NBT.makeShort(ST.save(aData.mKeyStacks[1]), "s", tKeySlot));
 			// Hint that there is something behind the Shelf.
 			if (tKeySlot >= 14) {aData.cobble( 3, 1,15); aData.cobble( 3, 2,15); aData.cobble( 3, 3,15);}
 		}
@@ -135,7 +135,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		if (!aData.mGeneratedKeys[3]) {
 			aData.mGeneratedKeys[3] = T;
 			short tKeySlot = (short)aData.next(28);
-			tList.appendTag(UT.NBT.makeShort(ST.save(aData.mKeyStacks[3]), "s", tKeySlot));
+			tList.add(UT.NBT.makeShort(ST.save(aData.mKeyStacks[3]), "s", tKeySlot));
 			// Hint that there is something behind the Shelf.
 			if (tKeySlot >= 14) {aData.cobble(12, 1, 0); aData.cobble(12, 2, 0); aData.cobble(12, 3, 0);}
 		}
@@ -146,7 +146,7 @@ public class DungeonChunkBarracks extends DungeonChunkRoomEmpty {
 		if (!aData.mGeneratedKeys[4]) {
 			aData.mGeneratedKeys[4] = T;
 			short tKeySlot = (short)aData.next(28);
-			tList.appendTag(UT.NBT.makeShort(ST.save(aData.mKeyStacks[4]), "s", tKeySlot));
+			tList.add(UT.NBT.makeShort(ST.save(aData.mKeyStacks[4]), "s", tKeySlot));
 			// Hint that there is something behind the Shelf.
 			if (tKeySlot >= 14) {aData.cobble(12, 1,15); aData.cobble(12, 2,15); aData.cobble(12, 3,15);}
 		}
