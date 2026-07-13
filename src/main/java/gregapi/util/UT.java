@@ -1364,7 +1364,7 @@ public class UT {
 		public static String stringValidate(Object aString) {return stringValidate(aString, "");}
 		public static String stringValidate(Object aString, String aReplacement) {
 			if (aString == null) return aReplacement;
-			if (aString instanceof Biome) return ((Biome)aString).biomeName;
+			if (aString instanceof Biome) return gregapi.code.BiomeNameSet.biomeKeyName((Biome)aString);
 			String rString = aString.toString();
 			return rString == null || rString.isEmpty() ? aReplacement : rString;
 		}

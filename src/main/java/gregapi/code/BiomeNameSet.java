@@ -59,7 +59,7 @@ public class BiomeNameSet extends AbstractSet<String> {
 	 * отложен отдельным чекпоинтом (`STATE.md`/`DEFERRED-LEDGER.md` §F6 "Хвост F6": "~40 leaf-worldgen
 	 * классов ... их generate-сигнатуры не тронуты") — не расширяем сейчас поверх границы этой задачи.
 	 */
-	private static String biomeKeyName(Object aName) {
+	public static String biomeKeyName(Object aName) {
 		if (aName instanceof Holder<?> aHolder) return aHolder.unwrapKey().map(k -> k.identifier().toString()).orElse("");
 		if (aName instanceof ResourceKey<?> aKey) return aKey.identifier().toString();
 		if (aName instanceof Biome) return "";

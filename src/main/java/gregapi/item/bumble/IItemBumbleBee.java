@@ -134,7 +134,7 @@ public interface IItemBumbleBee {
 		}
 		
 		public static CompoundTag getBumbleGenes(Random aRandom) {return getBumbleGenes(WD.envTemp(null), null, T, aRandom);}
-		public static CompoundTag getBumbleGenes(long aTemperature, Biome aBiome, boolean aHasSky, Random aRandom) {return getBumbleGenes(aTemperature, aBiome, aHasSky, !(BIOMES_DESERT.contains(aBiome.biomeName) || BIOMES_MESA.contains(aBiome.biomeName)), BIOMES_DESERT.contains(aBiome.biomeName) || BIOMES_MESA.contains(aBiome.biomeName), aRandom);}
+		public static CompoundTag getBumbleGenes(long aTemperature, Biome aBiome, boolean aHasSky, Random aRandom) {return getBumbleGenes(aTemperature, aBiome, aHasSky, !(BIOMES_DESERT.contains(aBiome) || BIOMES_MESA.contains(aBiome)), BIOMES_DESERT.contains(aBiome) || BIOMES_MESA.contains(aBiome), aRandom);}
 		public static CompoundTag getBumbleGenes(long aTemperature, Biome aBiome, boolean aHasSky, boolean aDay, boolean aNight, Random aRandom) {
 			CompoundTag rBumbleTag = UT.NBT.make();
 			setHumidityMin(rBumbleTag, WD.rainfall(aBiome) - 0.10F - aRandom.nextInt(41)/100.0F);

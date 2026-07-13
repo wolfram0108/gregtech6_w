@@ -44,7 +44,7 @@ public class WorldgenDeepOcean extends WorldgenObject {
 	
 	@Override
 	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		if (!aBiomeNames.contains(Biome.deepOcean.biomeName)) return F;
+		if (!aBiomeNames.contains(Biome.deepOcean)) return F;
 		int i = 3 + aRandom.nextInt(9), j = 30 + aRandom.nextInt(9), k = 3 + aRandom.nextInt(9), m = 0, n = 0;
 		if (WD.anywater(WD.block(aChunk, i, j, k))) {
 			switch (new NoiseGenerator(aWorld).get(aMinX+8, 32, aMinZ+8, 16)) {

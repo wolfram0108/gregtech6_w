@@ -49,7 +49,7 @@ public class CoverVent extends AbstractCoverAttachment {
 				case DIM_NETHER   : FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aSide], FL.Air_Nether.make(256000), T); return;
 				case DIM_END      : FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aSide], FL.Air_End   .make(256000), T); return;
 				}
-				String tBiome = aData.mTileEntity.getBiome(aData.mTileEntity.getOffsetX(aSide), aData.mTileEntity.getOffsetZ(aSide)).biomeName;
+				String tBiome = gregapi.code.BiomeNameSet.biomeKeyName(aData.mTileEntity.getBiome(aData.mTileEntity.getOffsetX(aSide), aData.mTileEntity.getOffsetZ(aSide)));
 				if (BIOMES_SPACE.contains(tBiome)) return;
 				if (BIOMES_END.contains(tBiome)) {
 					FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aSide], FL.Air_End.make(256000), T);

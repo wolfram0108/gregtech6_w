@@ -55,7 +55,7 @@ public class WorldgenPit extends WorldgenObject {
 	@Override
 	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
-		if (aRandom.nextInt(mDivider) > mChance || !(BIOMES_PLAINS.contains(aBiomes[7][7].biomeName) || BIOMES_SAVANNA.contains(aBiomes[7][7].biomeName))) return F;
+		if (aRandom.nextInt(mDivider) > mChance || !(BIOMES_PLAINS.contains(aBiomes[7][7]) || BIOMES_SAVANNA.contains(aBiomes[7][7]))) return F;
 		
 		int tX = aMinX-16, tZ = aMinZ-16, tUpperBound = WD.waterLevel(aWorld)+16, tLowerBound = WD.waterLevel(aWorld)-8;
 		for (int i = 0; i < 48; i++) for (int j = 0; j < 48; j++) if (SHAPE[i][j]) {

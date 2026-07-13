@@ -98,9 +98,9 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 				if (WD.dimAETHER(level))                      {aChatReturn.add(LH.Chat.GRAY + "Holy $#!T, it's a Rock.."); return 1;}
 				if (WD.dimALF   (level))                      {aChatReturn.add(LH.Chat.GRAY + "Wait that Rock is alive?!"); return 1;}
 				if (WD.dimTROPIC(level))                      {aChatReturn.add(LH.Chat.GRAY + "Seems to be a Chunk o'Head"); return 1;}
-				if (BIOMES_MOON.contains(getBiome().biomeName))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely not made of Cheese"); return 1;}
-				if (BIOMES_MARS.contains(getBiome().biomeName))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely from Mars"); return 1;}
-				if (BIOMES_SPACE.contains(getBiome().biomeName)) {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Space Rock"); return 1;}
+				if (BIOMES_MOON.contains(getBiome()))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely not made of Cheese"); return 1;}
+				if (BIOMES_MARS.contains(getBiome()))  {aChatReturn.add(LH.Chat.GRAY + "This is definitely from Mars"); return 1;}
+				if (BIOMES_SPACE.contains(getBiome())) {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Space Rock"); return 1;}
 				aChatReturn.add(LH.Chat.GRAY + "This definitely is a Rock");
 				return 1;
 			}
@@ -180,9 +180,9 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (WD.dimTROPIC(level)) return OP.rockGt.mat(MT.STONES.Basalt, aAmount);
 		if (WD.dimALF   (level)) return OP.rockGt.mat(MT.STONES.Livingrock, aAmount);
 		if (WD.dimTF    (level)) return OP.rockGt.mat(MT.Stone, aAmount);
-		if (BIOMES_MOON .contains(getBiome().biomeName)) return OP.rockGt.mat(MT.STONES.MoonRock, aAmount);
-		if (BIOMES_MARS .contains(getBiome().biomeName)) return OP.rockGt.mat(MT.STONES.MarsRock, aAmount);
-		if (BIOMES_SPACE.contains(getBiome().biomeName)) return OP.rockGt.mat(MT.STONES.SpaceRock, aAmount);
+		if (BIOMES_MOON .contains(getBiome())) return OP.rockGt.mat(MT.STONES.MoonRock, aAmount);
+		if (BIOMES_MARS .contains(getBiome())) return OP.rockGt.mat(MT.STONES.MarsRock, aAmount);
+		if (BIOMES_SPACE.contains(getBiome())) return OP.rockGt.mat(MT.STONES.SpaceRock, aAmount);
 		return OP.rockGt.mat(MT.Stone, aAmount);
 	}
 	
@@ -224,7 +224,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (WD.dimAETHER(level))              {mTexture = BlockTextureCopied.get(BlocksGT.Andesite); return 1;}
 		if (WD.dimTROPIC(level))              {mTexture = BlockTextureCopied.get(BlocksGT.Basalt); return 1;}
 		
-		if (BIOMES_SPACE.contains(getBiome().biomeName)) {
+		if (BIOMES_SPACE.contains(getBiome())) {
 			if (WD.getMaterial(tBlock) == Material.rock) {mTexture = BlockTextureCopied.get(tBlock, getMetaDataAtSide(SIDE_BOTTOM)); return 1;}
 			mTexture = BlockTextureCopied.get(Blocks.OBSIDIAN); return 1;
 		}
