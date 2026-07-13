@@ -49,7 +49,7 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 		if (aEntity instanceof EntityZombie && ((EntityZombie)aEntity).isVillager()) {
 			if (!mNeedsWeakness || ((EntityZombie)aEntity).isPotionActive(MobEffect.weakness)) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				if (!(aEntity).level().isRemote) {
+				if (!(aEntity).level().isClientSide()) {
 					int tCureTime = RNGSUS.nextInt(mAverageCureTime * 2) + 500;
 					CompoundTag tNBT = UT.NBT.make();
 					aEntity.writeToNBT(tNBT);

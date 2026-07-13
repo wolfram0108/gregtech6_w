@@ -85,7 +85,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 			if (tMaxHeight < 7) return F;
 			tMaxHeight = aY+7+aRandom.nextInt(tMaxHeight-6);
 			for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight-5, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogA, 0, 3);
 			
 			boolean tCanPlaceResinHole = T;
@@ -123,7 +123,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 			if (tMaxHeight < 9) return F;
 			tMaxHeight = aY+9+aRandom.nextInt(tMaxHeight-8);
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight-4, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogA, 1, 3);
 			
 			for (int tY = aY+1; tY < tMaxHeight; tY++) placeTree(aWorld, aX, tY, aZ, BlocksGT.LogA, 1);
@@ -155,7 +155,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 			if (tMaxHeight < 5) return F;
 			tMaxHeight = aY+5+aRandom.nextInt(tMaxHeight-4);
 			for (int i = -3; i <= 3; i++) for (int j = -3; j <= 3; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight-2, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogA, 2, 3);
 			
 			for (int tY = aY+1; tY < tMaxHeight; tY++) placeTree(aWorld, aX, tY, aZ, BlocksGT.LogA, 2);
@@ -188,7 +188,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 			if (tMaxHeight < 4) return F;
 			tMaxHeight = aY+4+aRandom.nextInt(tMaxHeight-3);
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight-2, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogA, 3, 3);
 			
 			for (int tY = aY+1; tY < tMaxHeight; tY++) placeTree(aWorld, aX, tY, aZ, BlocksGT.LogA, 3);
@@ -208,7 +208,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 		case 4:
 			if (getMaxHeight(aWorld, aX, aY, aZ, 4) < 4) return F;
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, aY+2, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogB, 0, 3);
 			
 			placeTree(aWorld, aX, aY+1, aZ, BlocksGT.LogB, 0);
@@ -230,7 +230,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 			if (tMaxHeight < 6) return F;
 			tMaxHeight = aY+6+aRandom.nextInt(tMaxHeight-5);
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight-4, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogB, 1, 3);
 			
 			for (int tY = aY+1; tY < tMaxHeight; tY++) placeTree(aWorld, aX, tY, aZ, BlocksGT.LogB, 1);
@@ -257,7 +257,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 			if (tMaxHeight < 8) return F;
 			tMaxHeight = aY+8+aRandom.nextInt(tMaxHeight-7);
 			for (int i = -3; i <= 3; i++) for (int j = -3; j <= 3; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogB, 2, 3);
 			
 			for (int tY = aY+1; tY < tMaxHeight; tY++) placeTree(aWorld, aX, tY, aZ, BlocksGT.LogB, 2);
@@ -290,7 +290,7 @@ public class BlockTreeSaplingAB extends BlockBaseSapling {
 			if (tMaxHeight < 7) return F;
 			tMaxHeight = aY+7+aRandom.nextInt(tMaxHeight-6);
 			for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight-4, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogB, 3, 3);
 			
 			for (int tY = aY+1; tY < tMaxHeight; tY++) placeTree(aWorld, aX, tY, aZ, BlocksGT.LogB, 3);

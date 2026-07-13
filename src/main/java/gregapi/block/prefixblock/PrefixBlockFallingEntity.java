@@ -68,7 +68,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 		motionX *= 0.9800000190734863D;
 		motionY *= 0.9800000190734863D;
 		motionZ *= 0.9800000190734863D;
-		if (!level().isRemote) {
+		if (!level().isClientSide()) {
 			int aX = UT.Code.roundDown(getX());
 			int aY = UT.Code.roundDown(getY());
 			int aZ = UT.Code.roundDown(getZ());
@@ -89,7 +89,7 @@ public class PrefixBlockFallingEntity extends FallingBlockEntity {
 						if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
 					}
 				}
-			} else if (field_145812_b > 100 && !level().isRemote && (aY < 1 || aY > 256) || field_145812_b > 600) {
+			} else if (field_145812_b > 100 && !level().isClientSide() && (aY < 1 || aY > 256) || field_145812_b > 600) {
 				if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
 				setDead();
 			}

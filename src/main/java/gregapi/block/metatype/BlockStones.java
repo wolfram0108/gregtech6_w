@@ -18,6 +18,8 @@
  */
 
 package gregapi.block.metatype;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.Block.SoundType;
 
 import gregapi.block.IBlockOnWalkOver;
 import gregapi.block.IBlockToolable;
@@ -618,7 +620,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
-		if (!aWorld.isRemote && WD.burning(aWorld, aX, aY, aZ)) switch(WD.meta(aWorld, aX, aY, aZ)) {
+		if (!aWorld.isClientSide() && WD.burning(aWorld, aX, aY, aZ)) switch(WD.meta(aWorld, aX, aY, aZ)) {
 		case MCOBL: WD.set(aWorld, aX, aY, aZ, this, COBBL, 3); break;
 		case MBRIK: WD.set(aWorld, aX, aY, aZ, this, BRICK, 3); break;
 		}

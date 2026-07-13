@@ -50,7 +50,7 @@ public class Drops_SmallOre extends Drops {
 		OreDictMaterial aMaterial = aBlock.getMetaMaterial(aMetaData);
 		if (aMaterial != null) aMaterial = aMaterial.mTargetCrushing.mMaterial;
 		
-		if (aWorld.isRemote) {
+		if (aWorld.isClientSide()) {
 			rList.add(ST.update(aBlock.getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_ANY)));
 		} else if (aMaterial != null) {
 			Random tRandom = new Random(aX ^ aY ^ aZ);

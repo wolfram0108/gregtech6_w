@@ -70,7 +70,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	
 	@Override
 	public void onAdjacentBlockChange(int aX, int aY, int aZ) {
-		if (!level.isRemote && mBlocked) {
+		if (!level.isClientSide() && mBlocked) {
 			mBlocked = F;
 			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
 			if (mItemNBT != null && mItemNBT.contains("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundTag("display").getString("Name")), level, getCoords());

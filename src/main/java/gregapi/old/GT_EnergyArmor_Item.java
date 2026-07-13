@@ -114,7 +114,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 	public void onArmorTick(Level aWorld, Player aPlayer, ItemStack aStack) {/*
 		if (mSpecials == 0) return;
 		
-		if (!aPlayer.worldObj.isRemote && (mSpecials & 1) != 0) {
+		if (!aPlayer.worldObj.isClientSide() && (mSpecials & 1) != 0) {
 			int var4 = aPlayer.getAir();
 			if (GT_ModHandler.canUseElectricItem(aStack, 1000) && var4 < 50) {
 				aPlayer.setAir(var4 + 250);
@@ -122,7 +122,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 			}
 		}
 		
-		if (!aPlayer.worldObj.isRemote && (mSpecials & 4) != 0) {
+		if (!aPlayer.worldObj.isClientSide() && (mSpecials & 4) != 0) {
 			if (GT_ModHandler.canUseElectricItem(aStack, 50000) && aPlayer.getFoodStats().needFood()) {
 				aPlayer.getFoodStats().addStats(1, 0.0F);
 				GT_ModHandler.useElectricItem(aStack, 50000, aPlayer);
@@ -144,7 +144,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 			aPlayer.setFire(0);
 		}
 		
-		if (!aPlayer.worldObj.isRemote && (mSpecials & 128) != 0) {
+		if (!aPlayer.worldObj.isClientSide() && (mSpecials & 128) != 0) {
 			float var6 = jumpChargeMap.containsKey(aPlayer) ? ((Float)jumpChargeMap.get(aPlayer)).floatValue() : 1.0F;
 
 			if (GT_ModHandler.canUseElectricItem(aStack, 1000) && aPlayer.onGround && var6 < 1.0F) {
@@ -197,7 +197,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 			}
 		}
 		
-		if (!aPlayer.worldObj.isRemote && (mSpecials & (16|32)) != 0) {
+		if (!aPlayer.worldObj.isClientSide() && (mSpecials & (16|32)) != 0) {
 			//if (GregTech_API.sWorldTickCounter%20==0) {
 				ItemStack tTargetChargeItem = aStack, tTargetDechargeItem = aStack;
 				
@@ -292,7 +292,7 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 	
 	// @ForgeSubscribe
 	public void onEntityLivingFallEvent(LivingFallEvent var1) {/*
-		if (!var1.entity.worldObj.isRemote && var1.entity instanceof EntityPlayer) {
+		if (!var1.entity.worldObj.isClientSide() && var1.entity instanceof EntityPlayer) {
 			EntityPlayer var2 = (EntityPlayer)var1.entity;
 			for (int i = 0; i < 4; i++) {
 				ItemStack var3 = var2.inventory.armorInventory[i];

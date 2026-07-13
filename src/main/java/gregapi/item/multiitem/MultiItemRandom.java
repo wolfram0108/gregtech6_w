@@ -307,7 +307,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 				}
 			}
 			
-			if (!aWorld.isRemote && MD.ENVM.mLoaded) {
+			if (!aWorld.isClientSide() && MD.ENVM.mLoaded) {
 				try {
 					float tTemperature = tStat.getTemperature(this, aStack, aPlayer) - C, tHydration = tStat.getHydration(this, aStack, aPlayer);
 					Object tTracker = EM_StatusManager.lookupTracker(aPlayer);

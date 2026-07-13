@@ -47,7 +47,7 @@ public class Behavior_Plunger_Fluid extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote) return F;
+		if (aWorld.isClientSide()) return F;
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity instanceof IFluidHandler) {
 			for (Direction tDirection : Direction.VALID_DIRECTIONS) if (((IFluidHandler)aTileEntity).drain(tDirection, 1000, F) != null) {

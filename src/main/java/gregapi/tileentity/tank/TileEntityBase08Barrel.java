@@ -18,6 +18,10 @@
  */
 
 package gregapi.tileentity.tank;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetMaxStackSize;

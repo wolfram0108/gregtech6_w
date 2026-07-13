@@ -178,7 +178,7 @@ public class GT_Tool_Saw extends ToolStats {
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		super.afterDealingDamage(aNormalDamage, aMagicDamage, aFireAspect, aCriticalHit, aEntity, aStack, aPlayer);
-		if (aEntity.level().isRemote || aNormalDamage < 3) return;
+		if (aEntity.level().isClientSide() || aNormalDamage < 3) return;
 		if ("EntityEnt".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity))) ST.drop(aEntity, Blocks.log, UT.Code.bindStack((int)(aNormalDamage / 3)), 0);
 	}
 	

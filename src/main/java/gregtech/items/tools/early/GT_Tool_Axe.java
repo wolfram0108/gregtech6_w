@@ -104,7 +104,7 @@ public class GT_Tool_Axe extends ToolStats {
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
 		int rAmount = 0;
-		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.level().isRemote && !aPlayer.isSneaking() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
+		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.level().isClientSide() && !aPlayer.isSneaking() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || aBlock.isWood(aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
 			LOCK = F;
 			try {
 				int tY = aY, tH = aPlayer.level().getHeight(), tCount = 0, tIncrement = UT.Code.roundUp(aBlock.getBlockHardness(aPlayer.level(), aX, aY, aZ) * getToolDamagePerBlockBreak());
@@ -143,7 +143,7 @@ public class GT_Tool_Axe extends ToolStats {
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		super.afterDealingDamage(aNormalDamage, aMagicDamage, aFireAspect, aCriticalHit, aEntity, aStack, aPlayer);
-		if (aEntity.level().isRemote || aNormalDamage < 2) return;
+		if (aEntity.level().isClientSide() || aNormalDamage < 2) return;
 		if ("EntityEnt".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity))) ST.drop(aEntity, Blocks.log, UT.Code.bindStack((int)(aNormalDamage / 2)), 0);
 	}
 	

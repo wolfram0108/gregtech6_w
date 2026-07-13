@@ -137,18 +137,18 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
-		if (!aWorld.isRemote) {
+		if (!aWorld.isClientSide()) {
 			if (aTool.equals(TOOL_softhammer) && mPowerRail) {
-				aWorld.isRemote = T;
+				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0);
-				aWorld.isRemote = F;
+				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
 			if (aTool.equals(TOOL_crowbar)) {
 				byte aMeta = WD.meta(aWorld, aX, aY, aZ);
-				aWorld.isRemote = T;
+				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, isPowered() ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
-				aWorld.isRemote = F;
+				aWorld.isClientSide() = F;
 				return tResult?2000:0;
 			}
 		}
@@ -213,7 +213,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	
 	// @Override
 	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
-		if (mDetectorRail && !aWorld.isRemote) {
+		if (mDetectorRail && !aWorld.isClientSide()) {
 			int l = WD.meta(aWorld, aX, aY, aZ);
 			if ((l & 8) == 0) func_150054_a(aWorld, aX, aY, aZ, l);
 		}
@@ -221,7 +221,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	
 	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
-		if (mDetectorRail && !aWorld.isRemote) {
+		if (mDetectorRail && !aWorld.isClientSide()) {
 			int l = WD.meta(aWorld, aX, aY, aZ);
 			if ((l & 8) != 0) func_150054_a(aWorld, aX, aY, aZ, l);
 		}

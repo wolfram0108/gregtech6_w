@@ -18,6 +18,11 @@
  */
 
 package gregapi.tileentity.base;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import gregapi.fluid.FluidTankInfo;
 
 import appeng.api.movable.IMovableTile;
@@ -176,8 +181,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override public BlockPos getCoords() {mReturnedCoordinates.posX = getBlockPos().getX(); mReturnedCoordinates.posY = getBlockPos().getY(); mReturnedCoordinates.posZ = getBlockPos().getZ(); return mReturnedCoordinates;}
 	@Override public BlockPos getOffset (byte aSide, int aMultiplier) {return new BlockPos(getOffsetX (aSide, aMultiplier), getOffsetY (aSide, aMultiplier), getOffsetZ (aSide, aMultiplier));}
 	@Override public BlockPos getOffsetN(byte aSide, int aMultiplier) {return new BlockPos(getOffsetXN(aSide, aMultiplier), getOffsetYN(aSide, aMultiplier), getOffsetZN(aSide, aMultiplier));}
-	@Override public boolean isServerSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer() : !level.isRemote;}
-	@Override public boolean isClientSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isClient() :  level.isRemote;}
+	@Override public boolean isServerSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer() : !level.isClientSide();}
+	@Override public boolean isClientSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isClient() :  level.isClientSide();}
 	@Override public boolean openGUI(Player aPlayer) {return openGUI(aPlayer, 0);}
 	/**
 	 * F-GUI (шов «GUI/меню», серверный центр): 1.7.10 {@code aPlayer.openGui(mod,id,world,x,y,z)} диспетчерил

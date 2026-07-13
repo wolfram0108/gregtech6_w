@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.base;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnPlaced;

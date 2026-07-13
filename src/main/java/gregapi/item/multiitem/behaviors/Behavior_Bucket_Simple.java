@@ -167,7 +167,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (FL.getFluid(aStack, T) == null && aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isChild()) {
-			if (aPlayer.level().isRemote) return T;
+			if (aPlayer.level().isClientSide()) return T;
 			if (aEntity.getClass() == EntityCow.class || aEntity.getClass() == EntityMooshroom.class) {
 				if (MD.HO.mLoaded && IguanaConfig.milkedTimeout > 0 && !UT.Entities.hasInfiniteItems(aPlayer)) {
 					CompoundTag tNBT = aEntity.getEntityData();
@@ -183,7 +183,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aPlayer.level().isRemote) return F;
+		if (aPlayer.level().isClientSide()) return F;
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		if (mFluid == null) return F;
 		if (FL.water(mFluid) && mFluid.getAmount() >= 1000) {

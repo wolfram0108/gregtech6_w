@@ -118,7 +118,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {
-			if (!aWorld.isRemote && aCauseBlockUpdates) {
+			if (!aWorld.isClientSide() && aCauseBlockUpdates) {
 				aWorld.notifyBlockChange(aX, aY, aZ, tReplacedBlock);
 				aWorld.func_147453_f(aX, aY, aZ, aMTEContainer.mBlock);
 			}

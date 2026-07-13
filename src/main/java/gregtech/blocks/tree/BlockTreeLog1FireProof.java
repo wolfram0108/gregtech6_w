@@ -67,7 +67,7 @@ public class BlockTreeLog1FireProof extends BlockBaseBeam implements IBlockToola
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_axe) || aTool.equals(TOOL_saw) || aTool.equals(TOOL_knife)) {
-			if (aWorld.isRemote) return 0;
+			if (aWorld.isClientSide()) return 0;
 			switch (WD.meta(aWorld, aX, aY, aZ) & PILLAR_DATA) {
 			case 0: ST.give(aPlayer, IL.Bark_Dry.get(1), aWorld, aX + OFFX[aSide], aY + OFFY[aSide], aZ + OFFZ[aSide]); break;
 			case 1: ST.give(aPlayer, IL.FR_Mulch.get(1, OM.dust(MT.WOODS.Rotten)), aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]); break;

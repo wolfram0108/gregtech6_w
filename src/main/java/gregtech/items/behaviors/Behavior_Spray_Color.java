@@ -59,7 +59,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote || aStack.getCount() != 1) return F;
+		if (aWorld.isClientSide() || aStack.getCount() != 1) return F;
 		
 		boolean rOutput = F;
 		
@@ -103,14 +103,14 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 		if (aEntity instanceof EntitySheep && !((EntitySheep)aEntity).getSheared() ) {
 			if (((EntitySheep)aEntity).getFleeceColor() != (~mColor & 15)) {
 				((EntitySheep)aEntity).setFleeceColor(~mColor & 15);
-				if (aEntity.level().isRemote) return T;
+				if (aEntity.level().isClientSide()) return T;
 				rUsed = T;
 			}
 		}
 		if (aEntity instanceof EntityWolf && ((EntityWolf)aEntity).isTamed()) {
 			if (((EntityWolf)aEntity).getCollarColor() != (~mColor & 15)) {
 				((EntityWolf)aEntity).setCollarColor(~mColor & 15);
-				if (aEntity.level().isRemote) return T;
+				if (aEntity.level().isClientSide()) return T;
 				rUsed = T;
 			}
 		}

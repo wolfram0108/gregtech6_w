@@ -403,13 +403,13 @@ public class BlockBaseFluid extends BlockFluidFinite implements IBlock, IItemGT,
 	// @Override
 	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		if (mActLikeWeb) aEntity.setInWeb();
-		if (!aWorld.isRemote && !mEffectsBathing.isEmpty() && aEntity instanceof LivingEntity && !UT.Entities.isWearingFullChemHazmat((LivingEntity)aEntity)) {
+		if (!aWorld.isClientSide() && !mEffectsBathing.isEmpty() && aEntity instanceof LivingEntity && !UT.Entities.isWearingFullChemHazmat((LivingEntity)aEntity)) {
 			for (int[] tEffects : mEffectsBathing) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
 		}
 	}
 	@Override
 	public void onHeadInside(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
-		if (!aWorld.isRemote && !mEffectsBreathing.isEmpty() && !UT.Entities.isImmuneToBreathingGases(aEntity)) {
+		if (!aWorld.isClientSide() && !mEffectsBreathing.isEmpty() && !UT.Entities.isImmuneToBreathingGases(aEntity)) {
 			for (int[] tEffects : mEffectsBreathing) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
 			if (getMaterial() != Material.water && SERVER_TIME % 20 == 0) aEntity.attackEntityFrom(DamageSource.drown, 2.0F);
 		}

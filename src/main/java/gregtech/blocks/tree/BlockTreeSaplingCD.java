@@ -74,7 +74,7 @@ public class BlockTreeSaplingCD extends BlockBaseSapling {
 			if (tMaxHeight < 16) return F;
 			tMaxHeight = aY+tMaxHeight-aRandom.nextInt(3);
 			for (int i = -3; i <= 3; i++) for (int j = -3; j <= 3; j++) if (i != 0 || j != 0) if (!canPlaceTree(aWorld, aX+i, tMaxHeight-5, aZ+j)) return F;
-			if (aWorld.isRemote) return T;
+			if (aWorld.isClientSide()) return T;
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.LogC, 0, 3);
 			
 			for (int tY = aY+1; tY < tMaxHeight; tY++) placeTree(aWorld, aX, tY, aZ, BlocksGT.LogC, 0);

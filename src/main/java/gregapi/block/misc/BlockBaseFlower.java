@@ -108,7 +108,7 @@ public abstract class BlockBaseFlower extends BlockFlower implements IBlockBase,
 	@Override public byte maxMeta() {return mMaxMeta;}
 	public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
-	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}}
+	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}}
 	
 	@Override public void addInformation(ItemStack aStack, byte aMeta, Player aPlayer, List<String> aList, boolean aF3_H) {/**/}
 	@Override public float getExplosionResistance(byte aMeta) {return 0;}

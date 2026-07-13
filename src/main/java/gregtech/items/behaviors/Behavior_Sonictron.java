@@ -37,7 +37,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		/*if (!aWorld.isRemote && aWorld.getBlock(aX, aY, aZ) == GregTech_API.sBlockMachines && aWorld.getBlockMetadata(aX, aY, aZ) == 6) {
+		/*if (!aWorld.isClientSide() && aWorld.getBlock(aX, aY, aZ) == GregTech_API.sBlockMachines && aWorld.getBlockMetadata(aX, aY, aZ) == 6) {
 			
 			GT_TileEntity_Sonictron tSonictron = (GT_TileEntity_Sonictron)WD.te(aWorld, aX, aY, aZ, T);
 			if (tSonictron != null) {

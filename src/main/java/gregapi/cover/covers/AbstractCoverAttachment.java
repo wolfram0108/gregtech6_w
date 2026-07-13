@@ -18,6 +18,7 @@
  */
 
 package gregapi.cover.covers;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import static gregapi.data.CS.*;
 

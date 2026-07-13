@@ -92,7 +92,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	@Override
 	public void onUpdate() {
 		onEntityUpdate();
-		if (mArrow == null && !level().isRemote) {
+		if (mArrow == null && !level().isClientSide()) {
 			setDead();
 			return;
 		}
@@ -223,7 +223,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								
 								LivingEntity tHitLivingEntity = (LivingEntity)tHitEntity;
 								
-								if (!level().isRemote) tHitLivingEntity.setArrowCountInEntity(tHitLivingEntity.getArrowCountInEntity() + 1);
+								if (!level().isClientSide()) tHitLivingEntity.setArrowCountInEntity(tHitLivingEntity.getArrowCountInEntity() + 1);
 								
 								if (tKnockback > 0) {
 									float tKnockbackDivider = MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ);
@@ -274,7 +274,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					
 					if (mHitBlock.getMaterial() != Material.air) mHitBlock.onEntityCollidedWithBlock(level(), mHitBlockX, mHitBlockY, mHitBlockZ, this);
 					
-					if (!level().isRemote && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
+					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(Enchantment.fireAspect, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
 					
 					if (breaksOnImpact()) setDead();
 				}
@@ -346,7 +346,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	
 	@Override
 	public void onCollideWithPlayer(Player aPlayer) {
-		if (!level().isRemote && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.inventory.addItemStackToInventory(getArrowItem())) {
+		if (!level().isClientSide() && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.inventory.addItemStackToInventory(getArrowItem())) {
 			playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
 			aPlayer.onItemPickup(this, 1);
 			setDead();

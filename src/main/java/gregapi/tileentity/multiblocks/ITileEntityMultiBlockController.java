@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.multiblocks;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;

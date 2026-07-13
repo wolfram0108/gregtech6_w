@@ -35,8 +35,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * Interface for getting connected to any Energy Network.
  * 
  * Note:
- * A correct implementation of this is only required Server Side (worldObj.isRemote == false).
- * Client Side Worlds (worldObj.isRemote == true) should never access any of these Functions nor expect anything from calling them.
+ * A correct implementation of this is only required Server Side (worldObj.isClientSide() == false).
+ * Client Side Worlds (worldObj.isClientSide() == true) should never access any of these Functions nor expect anything from calling them.
  * 
  * This is the moved Version of the Interface, so better use this instead.
  */

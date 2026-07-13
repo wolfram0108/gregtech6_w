@@ -60,7 +60,7 @@ public interface ITileEntityMachineBlockUpdateable {
 		 * You should call this Function in @Block.breakBlock and in @Block.onBlockAdded of your Machine.
 		 */
 		public static boolean causeMachineUpdate(Level aWorld, int aX, int aY, int aZ, Block aBlock, byte aMeta, boolean aRemoved) {
-			if (!aWorld.isRemote) new Thread(new MachineBlockUpdateRunnable(aWorld, new BlockPos(aX, aY, aZ), aBlock, aMeta, aRemoved), "Machine Block Updating").start();
+			if (!aWorld.isClientSide()) new Thread(new MachineBlockUpdateRunnable(aWorld, new BlockPos(aX, aY, aZ), aBlock, aMeta, aRemoved), "Machine Block Updating").start();
 			return T;
 		}
 		/**
@@ -69,7 +69,7 @@ public interface ITileEntityMachineBlockUpdateable {
 		 * You should call this Function in @Block.breakBlock and in @Block.onBlockAdded of your Machine.
 		 */
 		public static boolean causeMachineUpdate(Level aWorld, BlockPos aCoords, Block aBlock, byte aMeta, boolean aRemoved) {
-			if (!aWorld.isRemote) new Thread(new MachineBlockUpdateRunnable(aWorld, aCoords, aBlock, aMeta, aRemoved), "Machine Block Updating").start();
+			if (!aWorld.isClientSide()) new Thread(new MachineBlockUpdateRunnable(aWorld, aCoords, aBlock, aMeta, aRemoved), "Machine Block Updating").start();
 			return T;
 		}
 		

@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.tree;
+import net.minecraft.world.level.block.Block.SoundType;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
@@ -92,11 +93,11 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : super.getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
-	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isRemote) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}}
+	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isClientSide()) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}}
 	
 	@Override
 	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {
-		if (!aWorld.isRemote && !WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}
+		if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}
 	}
 	
 	@Override
@@ -108,7 +109,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	
 	// @Override
 	public void beginLeavesDecay(Level aWorld, int aX, int aY, int aZ) {
-		if (aWorld.isRemote) return;
+		if (aWorld.isClientSide()) return;
 		if (!WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 201+RNGSUS.nextInt(100)); return;}
 		if (WD.meta(aWorld, aX, aY, aZ) < 8) return;
 		aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 10+RNGSUS.nextInt(SLOW_LEAF_DECAY ? 6400 : 100));
@@ -116,7 +117,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
-		if (aWorld.isRemote) return;
+		if (aWorld.isClientSide()) return;
 		if (!WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aMeta < 8) return;

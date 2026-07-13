@@ -41,7 +41,7 @@ public class Behavior_Worldgen_Debugger extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote) return F;
+		if (aWorld.isClientSide()) return F;
 		for (int tX = (aX&~15), eX = (aX&~15)+16; tX < eX; tX++) for (int tZ = (aZ&~15), eZ = (aZ&~15)+16; tZ < eZ; tZ++) for (int tY = 1; tY < 250; tY++) {
 			Block tBlock = WD.block(aWorld, tX, tY, tZ);
 			if (tBlock instanceof IPrefixBlock) {

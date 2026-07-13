@@ -18,6 +18,7 @@
  */
 
 package gregapi.block;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import gregapi.util.WD;
 
 import java.util.List;

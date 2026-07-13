@@ -18,6 +18,13 @@
  */
 
 package gregapi.block;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.BlockSilverfish;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.BaseRailBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.DispenserBlock;
 
 import net.neoforged.fml.Logging;
 import forestry.apiculture.tiles.TileCandle;
@@ -91,13 +98,13 @@ public class ToolCompat {
 			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
 				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.grass || aBlock == Blocks.dirt || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					aWorld.playSoundEffect(aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.farmland.stepSound.getStepResourcePath(), (Blocks.farmland.stepSound.getVolume() + 1.0F) * 0.5F, Blocks.farmland.stepSound.getPitch() * 0.8F);
-					if (!aWorld.isRemote) aWorld.setBlock(aX, aY, aZ, Blocks.farmland);
+					if (!aWorld.isClientSide()) aWorld.setBlock(aX, aY, aZ, Blocks.farmland);
 					return 10000;
 				}
 			}
 		}
 		
-		if (aWorld.isRemote) return 0;
+		if (aWorld.isClientSide()) return 0;
 		
 		boolean aCanCollect = (ST.item(aStack) instanceof MultiItemTool && ((MultiItemTool)ST.item_(aStack)).canCollectDropsDirectly(aStack));
 		
@@ -250,36 +257,36 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_crowbar)) {
 			if (aBlock instanceof BaseRailBlock && (!MD.RC.mLoaded || !(MD.MC.owns(aBlock) || MD.RC.owns(aBlock)))) {
-				aWorld.isRemote = T;
+				aWorld.isClientSide() = T;
 				// Why the fuck are the two Coordinate Parameters in isFlexibleRail switched? And then it is used like x y z instead of using the broken namings.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, ((BaseRailBlock)aBlock).isFlexibleRail(aWorld, aX, aY, aZ) ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
-				aWorld.isRemote = F;
+				aWorld.isClientSide() = F;
 				return tResult?2000:0;
 			}
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			if (aBlock == Blocks.lit_redstone_lamp) {
-				aWorld.isRemote = T;
+				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.redstone_lamp, 0, 0);
-				aWorld.isRemote = F;
+				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.redstone_lamp) {
-				aWorld.isRemote = T;
+				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.lit_redstone_lamp, 0, 0);
-				aWorld.isRemote = F;
+				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.golden_rail) {
-				aWorld.isRemote = T;
+				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
-				aWorld.isRemote = F;
+				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.activator_rail) {
-				aWorld.isRemote = T;
+				aWorld.isClientSide() = T;
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
-				aWorld.isRemote = F;
+				aWorld.isClientSide() = F;
 				return tResult?10000:0;
 			}
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {

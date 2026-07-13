@@ -51,7 +51,7 @@ import static gregapi.data.CS.RNGSUS;
  * Значения (амплитуда {@code bind(1,5,(10*lvl)/7)}, длительность {@code lvl*200}, порог случайного
  * дропа {@code i=-1..<lvl}) не изменены.
  *
- * <p>Замены API 1:1 (движко-шов, не потеря): {@code aHurtEntity.worldObj.isRemote} →
+ * <p>Замены API 1:1 (движко-шов, не потеря): {@code aHurtEntity.worldObj.isClientSide()} →
  * {@code level().isClientSide()} ({@code Level.java:163}); {@code getCommandSenderName()} →
  * {@code getScoreboardName()} ({@code Entity.java:3200}, у {@code Player} переопределён на имя
  * профиля — {@code Player.java:1760-1763} — тот же семантический контракт: имя для игрока, иначе

@@ -18,6 +18,8 @@
  */
 
 package gregapi.util;
+import net.minecraft.world.level.block.BaseRailBlock;
+import net.minecraft.world.level.block.FireBlock;
 
 import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.GT_API;

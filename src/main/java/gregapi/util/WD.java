@@ -18,6 +18,15 @@
  */
 
 package gregapi.util;
+import net.minecraft.block.BlockBush;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.BlockSlab;
+import net.minecraft.block.BlockStairs;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraftforge.fluids.BlockFluidClassic;
+import net.minecraftforge.fluids.BlockFluidFinite;
+import net.minecraftforge.fluids.IFluidBlock;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import gregapi.fluid.FluidTankInfo;
 
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -168,7 +177,7 @@ public class WD {
 	public static HitResult getMOP(Level aWorld, Player aPlayer, boolean aFlag) {
 		Vec3 vec3 = Vec3.createVectorHelper(
 		  aPlayer.prevPosX + (aPlayer.getX() - aPlayer.prevPosX)
-		, aPlayer.prevPosY + (aPlayer.getY() - aPlayer.prevPosY) + (aWorld.isRemote ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
+		, aPlayer.prevPosY + (aPlayer.getY() - aPlayer.prevPosY) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
 		, aPlayer.prevPosZ + (aPlayer.getZ() - aPlayer.prevPosZ)
 		);
 		float  tPitch = aPlayer.prevRotationPitch + (aPlayer.rotationPitch - aPlayer.prevRotationPitch);
@@ -302,7 +311,7 @@ public class WD {
 	
 	/** Marks a Chunk dirty so it is saved */
 	public static boolean mark(Level aWorld, int aX, int aZ) {
-		if (aWorld == null || aWorld.isRemote) return F;
+		if (aWorld == null || aWorld.isClientSide()) return F;
 		// было aWorld.getChunkFromBlockCoords(x,z) — neo: Level.getChunk(int,int) (Level.java:202), блок-координаты
 		// >>4 переведены в чанк-координаты вручную (как делал старый метод внутри себя).
 		LevelChunk aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);

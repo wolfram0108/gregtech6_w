@@ -18,6 +18,19 @@
  */
 
 package gregapi.util;
+import net.minecraft.core.BlockPos;
+import net.minecraft.entity.monster.EntityBlaze;
+import net.minecraft.entity.monster.EntityIronGolem;
+import net.minecraft.entity.monster.EntityMagmaCube;
+import net.minecraft.entity.monster.EntitySkeleton;
+import net.minecraft.entity.monster.EntitySlime;
+import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.IIcon;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.phys.HitResult;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -2607,7 +2620,7 @@ public class UT {
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, float aPitch, BlockPos aCoords) {
 			if (!CODE_CLIENT || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
 			Player aPlayer = GT_API.api_proxy.getThePlayer();
-			if (aPlayer == null || !aPlayer.level().isRemote || Code.stringInvalid(aSound)) return F;
+			if (aPlayer == null || !aPlayer.level().isClientSide() || Code.stringInvalid(aSound)) return F;
 			sSoundsToPlay.add(new SoundWithLocation(aPlayer.level(), UT.Code.roundDown(aCoords.getX()), UT.Code.roundDown(aCoords.getY()), UT.Code.roundDown(aCoords.getZ()), aTimeUntilNextSound, aSound, aVolume, Float.isNaN(aPitch) || aPitch == SFX.RANDOM_PITCH ? SFX._7_GRAND_DAD_[SFX.PITCH_INDEX=((SFX.PITCH_INDEX+1)%SFX._7_GRAND_DAD_.length)] : aPitch));
 			return T;
 		}
@@ -2664,7 +2677,7 @@ public class UT {
 			return send(aSound, aVolume, aPitch, aWorld, new BlockPos(aX, aY, aZ));
 		}
 		public static boolean send(String aSound, float aVolume, float aPitch, Level aWorld, BlockPos aCoords) {
-			if (Code.stringInvalid(aSound) || aWorld == null || aWorld.isRemote) return F;
+			if (Code.stringInvalid(aSound) || aWorld == null || aWorld.isClientSide()) return F;
 			NW_API.sendToAllPlayersInRange(new PacketSound(aSound, aVolume, aPitch, aCoords), aWorld, aCoords);
 			return T;
 		}

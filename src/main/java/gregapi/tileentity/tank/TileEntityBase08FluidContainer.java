@@ -202,7 +202,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	
 	@Override
 	public boolean onItemUseFirst(MultiTileEntityItemInternal aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack) || aStack.getCount() != 1) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack) || aStack.getCount() != 1) return F;
 		if (canWaterCrops()) {
 			FluidStack mFluid = aItem.getFluid(aStack);
 			if (FL.water(mFluid)) {
@@ -363,7 +363,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			}
 		}
 		
-		if (!aWorld.isRemote && MD.ENVM.mLoaded) {
+		if (!aWorld.isClientSide() && MD.ENVM.mLoaded) {
 			try {
 				float tTemperature = FoodStatFluid.INSTANCE.getTemperature(aStack.getItem(), aStack, aPlayer) - C, tHydration = FoodStatFluid.INSTANCE.getHydration(aStack.getItem(), aStack, aPlayer);
 				Object tTracker = EM_StatusManager.lookupTracker(aPlayer);

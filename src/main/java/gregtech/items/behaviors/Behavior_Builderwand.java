@@ -42,7 +42,7 @@ import static gregapi.data.CS.*;
 public class Behavior_Builderwand extends AbstractBehaviorDefault {
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isRemote || aPlayer == null || !(aItem instanceof MultiItemTool) || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !(aItem instanceof MultiItemTool) || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		

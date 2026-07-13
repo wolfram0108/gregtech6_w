@@ -18,6 +18,7 @@
  */
 
 package gregtech.tileentity.energy.reactors;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.GT_API_Proxy;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool;

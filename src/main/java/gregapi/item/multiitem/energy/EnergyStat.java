@@ -18,6 +18,7 @@
  */
 
 package gregapi.item.multiitem.energy;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import static gregapi.data.CS.*;
 
@@ -90,7 +91,7 @@ public class EnergyStat implements IItemEnergy {
 	}
 	
 	public ItemStack rechargeFromPlayer(TagData aEnergyType, ItemStack aStack, LivingEntity aPlayer, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ) {
-		if (COMPAT_EU_ITEM == null || !mCanCharge || aPlayer == null || aPlayer.level().isRemote || aEnergyType != mType || aEnergyType != TD.Energy.EU) return aStack;
+		if (COMPAT_EU_ITEM == null || !mCanCharge || aPlayer == null || aPlayer.level().isClientSide() || aEnergyType != mType || aEnergyType != TD.Energy.EU) return aStack;
 		long tMinInput = getEnergySizeInputMin(aEnergyType, aStack), tCapacity = getEnergyCapacity(aEnergyType, aStack);
 		boolean temp = F;
 		try {for (int i = 1; i < 5; i++) {

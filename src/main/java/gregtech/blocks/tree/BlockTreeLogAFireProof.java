@@ -88,7 +88,7 @@ public class BlockTreeLogAFireProof extends BlockBaseLog implements IBlockToolab
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_axe) || aTool.equals(TOOL_saw) || aTool.equals(TOOL_knife)) {
-			if (aWorld.isRemote) return 0;
+			if (aWorld.isClientSide()) return 0;
 			byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.BeamA, aMeta, 3);
 			ST.give(aPlayer, OM.dust(MT.Bark), aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);

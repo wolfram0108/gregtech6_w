@@ -18,6 +18,7 @@
  */
 
 package gregapi.tileentity.notick;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;

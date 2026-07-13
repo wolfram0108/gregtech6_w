@@ -60,7 +60,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aPlayer.level().isRemote || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
+		if (aPlayer.level().isClientSide() || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
 		
 		boolean rOutput = F;
 		
@@ -81,7 +81,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isRemote || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
+		if (aWorld.isClientSide() || (aStack.getCount() != 1 && (mFuelAmount != 1 || mEmptyLighter != null))) return F;
 		
 		prepare(aStack);
 		if (ST.invalid(mUsedLighter)) {

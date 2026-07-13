@@ -18,6 +18,7 @@
  */
 
 package gregapi.cover;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.render.ITexture;
 import net.minecraft.world.entity.Entity;

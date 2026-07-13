@@ -18,6 +18,9 @@
  */
 
 package gregtech.items.behaviors;
+import net.minecraft.block.BlockPane;
+import net.minecraft.block.BlockStairs;
+import net.minecraft.world.level.block.Block;
 
 import com.mojang.authlib.GameProfile;
 import gregapi.block.misc.BlockBaseBars;
@@ -325,7 +328,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 	
 //  @Override public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, EntityPlayer aPlayer, Entity aEntity) {onItemRightClick(aItem, aStack, aPlayer.worldObj, aPlayer); return T;}
 	@Override public boolean onItemUse         (MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {onItemRightClick(aItem, aStack, aPlayer.level(), aPlayer); return T;}
-	@Override public boolean onItemUseFirst    (MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {if (aWorld.isRemote) return F; onItemRightClick(aItem, aStack, aPlayer.level(), aPlayer); return T;}
+	@Override public boolean onItemUseFirst    (MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {if (aWorld.isClientSide()) return F; onItemRightClick(aItem, aStack, aPlayer.level(), aPlayer); return T;}
 	
 	@Override
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aGun, Level aWorld, Player aPlayer) {

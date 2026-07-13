@@ -18,6 +18,7 @@
  */
 
 package gregapi.block;
+import net.minecraft.world.level.block.Block.SoundType;
 
 import gregapi.compat.galacticraft.IBlockSealable;
 import gregapi.util.UT;

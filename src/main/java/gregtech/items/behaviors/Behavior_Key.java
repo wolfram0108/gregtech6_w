@@ -43,7 +43,7 @@ public class Behavior_Key extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
-		if (aWorld.isRemote) return F;
+		if (aWorld.isClientSide()) return F;
 		
 		DelegatorTileEntity<BlockEntity> aTileEntity = WD.te(aWorld, aX, aY, aZ, aSide, T);
 		if (aTileEntity.mTileEntity instanceof ITileEntityKeyInteractable) {

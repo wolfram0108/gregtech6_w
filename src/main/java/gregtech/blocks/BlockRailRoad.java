@@ -60,7 +60,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	
 	@Override
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
-		if (!aWorld.isRemote) {
+		if (!aWorld.isClientSide()) {
 			if (!Level.doesBlockHaveSolidTopSurface(aWorld, aX, aY-1, aZ)) {
 				dropBlockAsItem(aWorld, aX, aY, aZ, 0, 0);
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
@@ -90,7 +90,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
-		if (!aWorld.isRemote) if (aTool.equals(TOOL_crowbar) || aTool.equals(TOOL_chisel) || aTool.equals(TOOL_shears) || aTool.equals(TOOL_scissors) || aTool.equals(TOOL_knife)) {
+		if (!aWorld.isClientSide()) if (aTool.equals(TOOL_crowbar) || aTool.equals(TOOL_chisel) || aTool.equals(TOOL_shears) || aTool.equals(TOOL_scissors) || aTool.equals(TOOL_knife)) {
 			return WD.set(aWorld, aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0)?1000:0;
 		}
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);

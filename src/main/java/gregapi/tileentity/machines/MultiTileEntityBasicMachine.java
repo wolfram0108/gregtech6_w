@@ -18,6 +18,10 @@
  */
 
 package gregapi.tileentity.machines;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import gregapi.fluid.FluidTankInfo;
 
 import buildcraft.api.tiles.IHasWork;

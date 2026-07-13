@@ -58,12 +58,12 @@ public class BlockCFoamFresh extends BlockColored implements IBlockFoamable {
 	
 	@Override
 	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {
-		if (!aWorld.isRemote) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 100+RNGSUS.nextInt(5900));
+		if (!aWorld.isClientSide()) aWorld.scheduleBlockUpdate(aX, aY, aZ, this, 100+RNGSUS.nextInt(5900));
 	}
 	
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
-		if (!aWorld.isRemote) dryFoam(aWorld, aX, aY, aZ, SIDE_ANY);
+		if (!aWorld.isClientSide()) dryFoam(aWorld, aX, aY, aZ, SIDE_ANY);
 	}
 	
 	@Override

@@ -54,7 +54,7 @@ public class Behavior_FlintAndTinder extends AbstractBehaviorDefault {
 			tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aPlayer, tChatReturn, aPlayer==null?null:aPlayer.inventory, aPlayer != null && aPlayer.isSneaking(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 		}
 		UT.Entities.sendchat(aPlayer, tChatReturn, F);
-		if (aWorld.isRemote) return F;
+		if (aWorld.isClientSide()) return F;
 		((MultiItemTool)aItem).doDamage(aStack, UT.Code.units(Math.max(10000, tDamage), 10000, 100, T), aPlayer, F);
 		UT.Sounds.send(SFX.MC_IGNITE, aWorld, aX, aY, aZ);
 		return T;
@@ -67,7 +67,7 @@ public class Behavior_FlintAndTinder extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aPlayer.level().isRemote) return F;
+		if (aPlayer.level().isClientSide()) return F;
 		if (aEntity instanceof Creeper) {
 			((MultiItemTool)aItem).doDamage(aStack, 100, aPlayer, F);
 			UT.Sounds.send(SFX.MC_IGNITE, aEntity);

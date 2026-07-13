@@ -18,6 +18,7 @@
  */
 
 package gregapi.item.multiitem;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.api.Optional;
 import gregapi.code.ArrayListNoNulls;
@@ -142,7 +143,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	// @Override
 	public boolean itemInteractionForEntity(ItemStack aStack, Player aPlayer, LivingEntity aEntity) {
-		if (!aPlayer.level().isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
+		if (!aPlayer.level().isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
 		if (destroyCheck(aStack, aPlayer)) return F;
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
@@ -162,7 +163,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	@Override
 	public boolean onLeftClickEntity(ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (!aPlayer.level().isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
+		if (!aPlayer.level().isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
 		if (destroyCheck(aStack, aPlayer)) return F;
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
@@ -183,7 +184,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	// @Override
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
 		if (MD.BbLC.owns(aWorld, aX, aY, aZ)) return F;
-		if (!aWorld.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
+		if (!aWorld.isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
 		if (destroyCheck(aStack, aPlayer)) return F;
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
@@ -204,7 +205,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
 		if (MD.BbLC.owns(aWorld, aX, aY, aZ)) return F;
-		if (!aWorld.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
+		if (!aWorld.isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
 		if (destroyCheck(aStack, aPlayer)) return F;
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
@@ -232,7 +233,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	// @Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (!aWorld.isRemote) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
+		if (!aWorld.isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return aStack;
 		ArrayList<IBehavior<MultiItem>> tList = mItemBehaviors.get(ST.meta_(aStack));
 		if (tList != null) for (IBehavior<MultiItem> tBehavior : tList) try {

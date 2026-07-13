@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.multitileentity;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;

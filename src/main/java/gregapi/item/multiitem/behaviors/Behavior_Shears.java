@@ -45,7 +45,7 @@ public class Behavior_Shears extends AbstractBehaviorDefault {
 	@Override
 	public boolean onLeftClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof IShearable) {
-			if (aPlayer.level().isRemote) return T;
+			if (aPlayer.level().isClientSide()) return T;
 			if (((IShearable)aEntity).isShearable(aStack, aPlayer.level(), (int)aEntity.getX(), (int)aEntity.getY(), (int)aEntity.getZ()) && ((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				int tFortune = UT.NBT.getEnchantmentLevelLootingFortune(aStack);
 				String tClass = UT.Reflection.getLowercaseClass(aEntity);

@@ -54,7 +54,7 @@ public class Behavior_Unlock_Item_Aspects extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (!aWorld.isRemote) {
+		if (!aWorld.isClientSide()) {
 			if (aPlayer != null) {
 				UT.Sounds.send(SFX.MC_HMM, aPlayer);
 				if (COMPAT_TC != null) {

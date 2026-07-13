@@ -18,6 +18,7 @@
  */
 
 package gregapi.random;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.delegate.ITileEntityCanDelegate;

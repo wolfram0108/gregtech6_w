@@ -92,14 +92,14 @@ public class BlockTreeLogB extends BlockBaseLogFlammable implements IBlockToolab
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (aTool.equals(TOOL_axe) || aTool.equals(TOOL_saw) || aTool.equals(TOOL_knife)) {
-			if (aWorld.isRemote) return 0;
+			if (aWorld.isClientSide()) return 0;
 			byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 			WD.set(aWorld, aX, aY, aZ, BlocksGT.BeamB, aMeta, 3);
 			ST.give(aPlayer, (aMeta & 3) == 1 ? IL.HaC_Cinnamon.get(1, IL.Food_Cinnamon.get(1, OM.dust(MT.Cinnamon))) : OM.dust(MT.Bark), aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);
 			return aTool.equals(TOOL_axe) ? 500 : 1000;
 		}
 		if (SIDES_HORIZONTAL[aSide] && aTool.equals(TOOL_drill) && WD.meta(aWorld, aX, aY, aZ) == 3) {
-			if (aWorld.isRemote) return 0;
+			if (aWorld.isClientSide()) return 0;
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 			if (tRegistry != null) {
 				tRegistry.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, (short)32760, UT.NBT.make(NBT_FACING, aSide), T, T);

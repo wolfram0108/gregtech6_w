@@ -171,7 +171,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 		if (mSize >= 16) return 0;
 		// This should never ever happen again...
 		if (ST.valid(mStacks[mSize]) || mSize == 0) {
-			ERR.println("ERROR: Attempted to add Sandwich Ingredient to already occupied Slot: " + mSize + " ; Clientside: " + level.isRemote);
+			ERR.println("ERROR: Attempted to add Sandwich Ingredient to already occupied Slot: " + mSize + " ; Clientside: " + level.isClientSide());
 			for (byte i = 0; i < mStacks.length; i++) if (ST.valid(mStacks[i])) {
 				ERR.println(i + ": " + ST.regName(mStacks[i]) + ":" + ST.meta(mStacks[i]) + " ; Display: " + mDisplay[i]);
 			} else {
@@ -270,7 +270,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 			aPlayer.getFoodStats().addStats(getTotalFood(), getTotalSaturation());
 		}
 		
-		if (!aWorld.isRemote && MD.ENVM.mLoaded) {
+		if (!aWorld.isClientSide() && MD.ENVM.mLoaded) {
 			try {
 				Object tTracker = EM_StatusManager.lookupTracker(aPlayer);
 				if (tTracker != null && ((EnviroDataTracker)tTracker).bodyTemp >= 0) {

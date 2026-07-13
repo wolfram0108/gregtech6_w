@@ -38,7 +38,7 @@ public class Behavior_Place_Workbench extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUse(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isRemote || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
 		// Don't place Workbenches on Wood or Plants, since this Class is supposed to be used by Axes and Saws.

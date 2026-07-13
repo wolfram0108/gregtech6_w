@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.multitileentity;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
@@ -195,7 +196,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 					}
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				try {
-					if (!aWorld.isRemote) {
+					if (!aWorld.isClientSide()) {
 						aWorld.notifyBlockChange(aX, aY, aZ, tReplacedBlock);
 						aWorld.func_147453_f(aX, aY, aZ, aMTEContainer.mBlock);
 					}

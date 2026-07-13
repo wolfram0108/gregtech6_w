@@ -134,7 +134,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 					tHeld.setCount(tHeld.getCount()-1);
 					if (tHeld.getCount() <= 0) mCreature.setCurrentItemOrArmor(0, NI);
 					
-					if (!mWorld.isRemote) {
+					if (!mWorld.isClientSide()) {
 						PrimedTnt entitytntprimed = new PrimedTnt(mWorld, mCreature.getX(), mCreature.getY(), mCreature.getZ(), mCreature);
 						mWorld.spawnEntityInWorld(entitytntprimed);
 						mWorld.playSoundAtEntity(entitytntprimed, "game.tnt.primed", 1, 1);

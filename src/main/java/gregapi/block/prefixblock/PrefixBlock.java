@@ -18,6 +18,8 @@
  */
 
 package gregapi.block.prefixblock;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.Block.SoundType;
 
 import gregapi.GT_API_Proxy;
 import gregapi.block.IBlockSyncData;
@@ -391,7 +393,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	// @Override
 	public void onBlockExploded(Level aWorld, int aX, int aY, int aZ, Explosion aExplosion) {
-		if (aWorld.isRemote) return;
+		if (aWorld.isClientSide()) return;
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
 		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
@@ -437,7 +439,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 			BlockEntity tTileEntity = createTileEntity(aWorld, aX, aY, aZ, aSide, aMetaData, aNBT);
 			WD.te(aWorld, aX, aY, aZ, tTileEntity, aCauseBlockUpdates);
 			scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, tTileEntity);
-			if (!aWorld.isRemote) GT_API_Proxy.SCHEDULED_TILEENTITY_UPDATES.add((PrefixBlockTileEntity)tTileEntity);
+			if (!aWorld.isClientSide()) GT_API_Proxy.SCHEDULED_TILEENTITY_UPDATES.add((PrefixBlockTileEntity)tTileEntity);
 			return T;
 		}
 		return F;
@@ -485,11 +487,11 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
-		if (!aWorld.isRemote && aTool.equals(TOOL_magnifyingglass)) {
+		if (!aWorld.isClientSide() && aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) aChatReturn.add("This is " + getLocalName(mPrefix, aMaterial));
 			return 1;
 		}
-		if (!aWorld.isRemote && aTool.equals(TOOL_prospector) && mPrefix.contains(TD.Prefix.ORE)) {
+		if (!aWorld.isClientSide() && aTool.equals(TOOL_prospector) && mPrefix.contains(TD.Prefix.ORE)) {
 			if (aChatReturn != null) aChatReturn.add(getLocalName(OP.ore, aMaterial)+"!");
 			return 100;
 		}
@@ -509,7 +511,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity == null && aWorld instanceof Level) aTileEntity = WD.te((Level)aWorld, aX, aY, aZ, createTileEntity((Level)aWorld, aX, aY, aZ, SIDE_ANY, aMetaData, null), F);
 		if (aTileEntity instanceof PrefixBlockTileEntity) ((PrefixBlockTileEntity)aTileEntity).mMetaData = aMetaData;
-		if (aWorld instanceof Level && ((Level)aWorld).isRemote) WD.update(aWorld, aX, aY, aZ);
+		if (aWorld instanceof Level && ((Level)aWorld).isClientSide()) WD.update(aWorld, aX, aY, aZ);
 	}
 	
 	@Override
@@ -531,7 +533,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	// @Override
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
-		if (aWorld.isRemote || checkGravity(aWorld, aX, aY, aZ)) return;
+		if (aWorld.isClientSide() || checkGravity(aWorld, aX, aY, aZ)) return;
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		OreDictMaterial aMaterial = getMetaMaterial(aTileEntity);
 		if (aMaterial != null) {
@@ -651,7 +653,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	protected boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
 		if (mGravity && aY > 0 && WD.te(aWorld, aX, aY, aZ, T) != null && FallingBlock.func_149831_e(aWorld, aX, aY - 1, aZ)) {
 			if (!FallingBlock.fallInstantly && aWorld.checkChunksExist(aX-32, aY-32, aZ-32, aX+32, aY+32, aZ+32)) {
-				if (!aWorld.isRemote) aWorld.spawnEntityInWorld(new PrefixBlockFallingEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UP)));
+				if (!aWorld.isClientSide()) aWorld.spawnEntityInWorld(new PrefixBlockFallingEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UP)));
 			} else {
 				short tMetaData = getMetaDataValue(aWorld, aX, aY, aZ);
 				if (tMetaData > 0) {

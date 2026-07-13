@@ -18,6 +18,7 @@
  */
 
 package gregtech.worldgen;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.data.*;

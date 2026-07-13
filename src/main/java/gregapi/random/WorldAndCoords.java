@@ -18,6 +18,7 @@
  */
 
 package gregapi.random;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
@@ -67,8 +68,8 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public BlockPos getCoords() {return new BlockPos(mX, mY, mZ);}
 	@Override public BlockPos getOffset (byte aSide, int aMultiplier) {return new BlockPos(getOffsetX (aSide, aMultiplier), getOffsetY (aSide, aMultiplier), getOffsetZ (aSide, aMultiplier));}
 	@Override public BlockPos getOffsetN(byte aSide, int aMultiplier) {return new BlockPos(getOffsetXN(aSide, aMultiplier), getOffsetYN(aSide, aMultiplier), getOffsetZN(aSide, aMultiplier));}
-	@Override public boolean isServerSide() {return mWorld == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer() : !mWorld.isRemote;}
-	@Override public boolean isClientSide() {return mWorld == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isClient() :  mWorld.isRemote;}
+	@Override public boolean isServerSide() {return mWorld == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer() : !mWorld.isClientSide();}
+	@Override public boolean isClientSide() {return mWorld == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isClient() :  mWorld.isClientSide();}
 	@Override public int rng(int aRange) {return RNGSUS.nextInt(aRange);}
 	@Override public int getRandomNumber(int aRange) {return RNGSUS.nextInt(aRange);}
 	@Override public BlockEntity getTileEntity   (int aX, int aY, int aZ) {return mWorld==null?null:WD.te(mWorld, aX, aY, aZ, T);}

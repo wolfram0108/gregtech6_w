@@ -47,7 +47,7 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isRemote || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tBlock.getBlockHardness(aWorld, aX, aY, aZ) < 0 && !BlocksGT.drillableDynamite.contains(tBlock)) return F;
 		byte tMeta = (byte)WD.meta(aWorld, aX, aY, aZ);

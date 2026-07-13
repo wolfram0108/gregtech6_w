@@ -43,7 +43,7 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 			for (Object tTask : ((EntityOcelot)aEntity).tasks.taskEntries) if (((EntityAITaskEntry)tTask).action instanceof EntityAITempt && ((EntityAITempt)((EntityAITaskEntry)tTask).action).isRunning()) {
 				if (aPlayer.getDistanceSqToEntity(aEntity) < 9.0D) {
 					UT.Entities.consumeCurrentItem(aPlayer);
-					if (!aPlayer.level().isRemote) {
+					if (!aPlayer.level().isClientSide()) {
 						if (RNGSUS.nextInt(3) == 0) {
 							((EntityOcelot)aEntity).setTamed(T);
 							((EntityOcelot)aEntity).setTameSkin(1 + RNGSUS.nextInt(3));

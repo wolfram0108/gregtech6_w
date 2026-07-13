@@ -175,7 +175,7 @@ public abstract class TileEntityBase08Battery extends TileEntityBase07Paintable 
 	}
 	
 	public ItemStack rechargeFromPlayer(TagData aEnergyType, ItemStack aStack, LivingEntity aPlayer, Container aInventory, Level aWorld, int aX, int aY, int aZ) {
-		if (COMPAT_EU_ITEM == null || aPlayer == null || aPlayer.level().isRemote || aEnergyType != mType || aEnergyType != TD.Energy.EU) return aStack;
+		if (COMPAT_EU_ITEM == null || aPlayer == null || aPlayer.level().isClientSide() || aEnergyType != mType || aEnergyType != TD.Energy.EU) return aStack;
 		long tMinInput = getEnergySizeInputMin(aEnergyType, aStack);
 		boolean temp = F;
 		try {for (int i = 1; i < 5; i++) {

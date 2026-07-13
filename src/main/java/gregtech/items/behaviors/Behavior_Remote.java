@@ -46,7 +46,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aWorld.isRemote || aPlayer == null || !aPlayer.isSneaking() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
+		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.isSneaking() || !aPlayer.canPlayerEdit(aX, aY, aZ, aSide, aStack)) return F;
 		CompoundTag aNBT = UT.NBT.getNBT(aStack);
 		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, aWorld.provider.dimensionId);
 		BlockPos tCoords = new BlockPos(aX, aY, aZ);
@@ -77,7 +77,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	// ItemNBT.set в конце — иначе правка списка координат из setCoords тихо терялась бы (см. ItemNBT.java).
 	@Override
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (aWorld.isRemote || aPlayer.isSneaking() || !ItemNBT.has(aStack)) return aStack;
+		if (aWorld.isClientSide() || aPlayer.isSneaking() || !ItemNBT.has(aStack)) return aStack;
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		ArrayListNoNulls<BlockPos> tToBeKept = new ArrayListNoNulls<>();
 		for (BlockPos tCoords : getCoords(aNBT, aWorld.provider.dimensionId)) {

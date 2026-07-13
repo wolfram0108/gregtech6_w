@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.misc;
+import net.minecraft.world.level.block.Block.SoundType;
 
 import static gregapi.data.CS.*;
 
@@ -87,7 +88,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	
 	@Override
 	public boolean onItemUseFirst(ItemBlockBase aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aStack.getCount() == 0 || aWorld.isRemote) return F;
+		if (aStack.getCount() == 0 || aWorld.isClientSide()) return F;
 		if (!aPlayer.isSneaking()) {
 			for (int i = 0; i < 2; i++) {
 				if (i == 1) {aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];}
