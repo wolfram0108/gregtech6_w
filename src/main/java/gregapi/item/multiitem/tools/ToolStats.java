@@ -112,16 +112,63 @@ public abstract class ToolStats implements IToolStats {
 		return 0;
 	}
 
-	// PORT-TODO(F9, block-material 1.7.10 grass/tallgrass/double_plant identity): тройное растение-семейство
-	// "tallgrass"/"double_plant" 1.7.10 расщеплено на отдельные Blocks-константы в современном ванильном
-	// дереве (флэттенинг блоков), 1:1 без риска "выдуманной константы" не установить в рамках этого захода
-	// (вне зоны item-базовых-классов) — деградация до "нет спец-дропа" (F), структура методов сохранена.
+	// F9-flatten: 1.7.10 meta-семейства расщеплены на отдельные neo-блоки (флэттенинг, константы verified javap). Порт 1:1
+	// с оригиналом (ToolStats.java:111-145): tallgrass meta1(grass)/2(fern)->SHORT_GRASS/FERN; double_plant meta2/3->TALL_GRASS/
+	// LARGE_FERN. Мод-ветки (TF/Aether/BoP) — F10 (вне scope CHARTER), сохранены 1:1, мёртвы без мода (IL.*.equal=F / MD.BoP.mLoaded=F).
 	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+		if (aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN) {
+			aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
+		}
+		if (aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN) {
+			aDrops.add(IL.Grass.get(2+RNGSUS.nextInt(1+aFortune)+RNGSUS.nextInt(1+aFortune))); return T;
+		}
+		if (IL.TF_Tall_Grass.equal(aBlock)) {
+			switch(aMetaData) {
+			case 10: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
+			}
+			return F;
+		}
+		if (IL.AETHER_Tall_Grass.equal(aBlock)) {
+			aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune)));
+			return T;
+		}
+		if (MD.BoP.mLoaded) {
+			if (aBlock == ST.block(MD.BoP, "foliage")) {
+				switch(aMetaData) {
+				case  1: if (RNGSUS.nextInt(4) <= aFortune) aDrops.add(IL.Grass.get(1)); return T;
+				case  2: if (RNGSUS.nextInt(2) <= aFortune) aDrops.add(IL.Grass.get(1)); return T;
+				case 10: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
+				case 11: aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
+				}
+				return F;
+			}
+		}
 		return F;
 	}
 
-	// PORT-TODO(F9, block-material 1.7.10 grass/tallgrass/double_plant identity): см. harvestGrass выше, тот же класс.
+	// F9-flatten: 1.7.10 tallgrass meta0(dead-shrub) + deadbush -> оба neo Blocks.DEAD_BUSH (оба роняли dead-stick, объединены 1:1).
+	// TF/BoP-ветки — F10 (вне scope), сохранены 1:1, мёртвы без мода. Порт 1:1 с оригиналом (ToolStats.java:148-176).
 	public boolean harvestStick(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
+		if (aBlock == Blocks.DEAD_BUSH) {
+			aDrops.add(OP.stick.mat(MT.WOODS.Dead, 1+RNGSUS.nextInt(2+aFortune)));
+			return T;
+		}
+		if (IL.TF_Tall_Grass.equal(aBlock)) {
+			switch(aMetaData) {
+			case 11: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
+			}
+			return F;
+		}
+		if (MD.BoP.mLoaded) {
+			if (aBlock == ST.block(MD.BoP, "foliage")) {
+				switch(aMetaData) {
+				case  4: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
+				case  8: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
+				case  9: aDrops.add(IL.Stick.get(1+RNGSUS.nextInt(2+aFortune))); return T;
+				}
+				return F;
+			}
+		}
 		return F;
 	}
 
