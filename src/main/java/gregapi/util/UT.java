@@ -3314,7 +3314,7 @@ public class UT {
 		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), aName, aNBT);}
 		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), aName, aNBT);}
 		@Deprecated public static ItemStack make(ItemStack aStack, String aName, CompoundTag aNBT) {if (aStack == null) return null; aStack = aStack.copy(); NBT.set(aStack, aNBT); if (aName != null) ST.name_(aStack, aName); return aStack;}
-		@Deprecated public static ItemStack make(ItemStackContainer aStack, String aName, CompoundTag aNBT) {if (aStack == null) return null; ItemStack rStack = aStack.toStack(); if (rStack == null) return null; NBT.set(rStack, aNBT); if (aName != null) rStack.setStackDisplayName(aName); return rStack;}
+		@Deprecated public static ItemStack make(ItemStackContainer aStack, String aName, CompoundTag aNBT) {if (aStack == null) return null; ItemStack rStack = aStack.toStack(); if (rStack == null) return null; NBT.set(rStack, aNBT); if (aName != null) ST.name_(rStack, aName); return rStack;}
 		@Deprecated public static ItemStack[] copyArray(Object... aStacks) {return ST.copyArray((ItemStack[])aStacks);}
 		@Deprecated public static ItemStack copy(Object... aStacks) {return ST.copyFirst(aStacks);}
 		@Deprecated public static ItemStack amount(long aAmount, Object... aStacks) {return ST.amount(aAmount, (ItemStack)aStacks[0]);}
