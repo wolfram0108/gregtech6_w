@@ -141,16 +141,16 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (!aWorld.isClientSide()) {
 			if (aTool.equals(TOOL_softhammer) && mPowerRail) {
-				aWorld.isClientSide() = T;
+				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0);
-				aWorld.isClientSide() = F;
+				;
 				return tResult?10000:0;
 			}
 			if (aTool.equals(TOOL_crowbar)) {
 				byte aMeta = WD.meta(aWorld, aX, aY, aZ);
-				aWorld.isClientSide() = T;
+				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, isPowered() ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
-				aWorld.isClientSide() = F;
+				;
 				return tResult?2000:0;
 			}
 		}

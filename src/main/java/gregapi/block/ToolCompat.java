@@ -265,36 +265,36 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_crowbar)) {
 			if (aBlock instanceof BaseRailBlock && (!MD.RC.mLoaded || !(MD.MC.owns(aBlock) || MD.RC.owns(aBlock)))) {
-				aWorld.isClientSide() = T;
+				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				// Why the fuck are the two Coordinate Parameters in isFlexibleRail switched? And then it is used like x y z instead of using the broken namings.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, ((BaseRailBlock)aBlock).isFlexibleRail(aWorld, aX, aY, aZ) ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
-				aWorld.isClientSide() = F;
+				;
 				return tResult?2000:0;
 			}
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			if (aBlock == Blocks.REDSTONE_LAMP) {
-				aWorld.isClientSide() = T;
+				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
-				aWorld.isClientSide() = F;
+				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.REDSTONE_LAMP) {
-				aWorld.isClientSide() = T;
+				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
-				aWorld.isClientSide() = F;
+				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.POWERED_RAIL) {
-				aWorld.isClientSide() = T;
+				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
-				aWorld.isClientSide() = F;
+				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.ACTIVATOR_RAIL) {
-				aWorld.isClientSide() = T;
+				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
-				aWorld.isClientSide() = F;
+				;
 				return tResult?10000:0;
 			}
 			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
