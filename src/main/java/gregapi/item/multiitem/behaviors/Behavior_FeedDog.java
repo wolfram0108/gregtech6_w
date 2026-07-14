@@ -40,7 +40,7 @@ public class Behavior_FeedDog extends AbstractBehaviorDefault {
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof Wolf) {
 			if (((Wolf)aEntity).isTame()) {
-				if (((Wolf)aEntity).getDataWatcher().getWatchableObjectFloat(18) < 20.0F) {
+				if (((Wolf)aEntity).getHealth() < 20.0F) { // 1.7.10 datawatcher-18 (здоровье волка) -> neo Wolf.getHealth(); хардкод 20 сохранён 1:1.
 					UT.Entities.consumeCurrentItem(aPlayer);
 					((Wolf)aEntity).heal(ST.food(aStack));
 					return T;
