@@ -56,6 +56,10 @@ if (project.hasProperty('coreOnly')) {
     // module-resolution FML. Они нужны только на КОМПИЛЯЦИИ; в рантайме material/prefix-дамп (server-side, без рендера)
     // их не вызывает (ленивая линковка). Стрипаем .class из вывода ПОСЛЕ compile, ДО test → модуль gregtech6 не экспортирует
     // эти пакеты → конфликт исчезает, GT6-импорты остаются verbatim-1:1 (код не тронут). Дёрнет рантайм → NoClassDefFound (тогда --patch-module).
+    // stripMcMirror удаляет .class из вывода → это ломает ИНКРЕМЕНТАЛЬНУЮ компиляцию на след. прогоне (gradle видит
+    // выход изменённым, но incremental-анализ путается: cpw.*/net.minecraft.* «package does not exist»). Полная компиляция
+    // регенерит миражи каждый раз → strip снова удаляет → консистентно. Под coreOnly компилируем 918 файлов (~15с) — ок для итераций.
+    tasks.named('compileJava').configure { options.incremental = false }
     def stripMirror = tasks.register('stripMcMirror') {
         doLast {
             def dir = file('build/classes/java/main')
