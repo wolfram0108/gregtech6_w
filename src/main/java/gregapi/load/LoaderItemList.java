@@ -47,9 +47,9 @@ public class LoaderItemList implements Runnable {
 	
 	@Override
 	public void run() {
-		BlocksGT.EtFu_Beetroot_Crop              = DeferredRegister.findBlock(MD.EtFu.mID, "beetroots");
-		BlocksGT.EtFu_Deepslate_Redstone_Ore     = DeferredRegister.findBlock(MD.EtFu.mID, "deepslate_redstone_ore");
-		BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore = DeferredRegister.findBlock(MD.EtFu.mID, "deepslate_lit_redstone_ore");
+		BlocksGT.EtFu_Beetroot_Crop              = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.EtFu.mID, "beetroots"));
+		BlocksGT.EtFu_Deepslate_Redstone_Ore     = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.EtFu.mID, "deepslate_redstone_ore"));
+		BlocksGT.EtFu_Deepslate_Lit_Redstone_Ore = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.EtFu.mID, "deepslate_lit_redstone_ore"));
 		
 		GarbageGT.BLACKLIST.add(ST.make(MD.TC, "ItemThaumonomicon"              , 1,42));
 		GarbageGT.BLACKLIST.add(ST.make(MD.RT, "opSpectreKey"                   , 1, W));
@@ -1724,8 +1724,12 @@ public class LoaderItemList implements Runnable {
 		IL.TG_Spawner_Bug                       .set(ST.make(MD.TG, "TGMonsterSpawner"                      , 1, 0));
 		IL.TG_Spawner_Zombie                    .set(ST.make(MD.TG, "TGMonsterSpawner"                      , 1, 1));
 		
-		if (IL.TG_Ore_Cluster_1.block() != NB) IL.TG_Ore_Cluster_1.block().setHardness(1000).setResistance(6000000).setHarvestLevel(TOOL_pickaxe, 3);
-		if (IL.TG_Ore_Cluster_2.block() != NB) IL.TG_Ore_Cluster_2.block().setHardness(1000).setResistance(6000000).setHarvestLevel(TOOL_pickaxe, 3);
+		// PORT-TODO(F12, block-property-runtime-mutation): 1.7.10 Block.setHardness(1000).setResistance(6000000).setHarvestLevel(pickaxe,3)
+		// — runtime-мутация свойств блока удалена (neo блоки иммутабельны, strength/harvest задаются при конструкции через
+		// BlockBehaviour.Properties). TG_Ore_Cluster — блоки внешнего мода (TG), их Properties недоступны из GT6 для правки в neo
+		// (в 1.7.10 Block был изменяемым синглтоном). No-op: значения прочности внешних кластер-руд не переопределяются (честная
+		// деградация, neo-пути нет — чужой блок иммутабелен). Восстановление — при F12-интеграции мода TG.
+		// if (IL.TG_Ore_Cluster_1.block() != NB) IL.TG_Ore_Cluster_1.block().setHardness(1000)...; (аналогично _2)
 		
 		
 		IL.MFR_Hammer                           .set(ST.make(MD.MFR, "hammer"                               , 1, 0)); ItemsGT.SPECIAL_CASE_TOOLS.add(IL.MFR_Hammer.wild(1));
