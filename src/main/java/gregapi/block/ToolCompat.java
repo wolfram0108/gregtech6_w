@@ -388,7 +388,7 @@ public class ToolCompat {
 		}
 		
 		} catch(Throwable e) {
-			Logging.severe("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getDescriptionId(), aTileEntity.getClass(), aTool, e.toString());
+			ERR.println(String.format("Exception occured when ToolCompat was used at the Coordinates: [%d;%d;%d] at '%s' with TileEntity '%s' using the Tool '%s' %s", aX, aY, aZ, aBlock.getDescriptionId(), aTileEntity.getClass(), aTool, e.toString())); // F2/logging: было Logging.severe(printf) — neo net.neoforged.fml.Logging = контейнер Marker'ов без .severe(); маршрут в централизованный ERR.println (GT_API_Proxy:25)
 			e.printStackTrace(ERR);
 		}
 		return 0;

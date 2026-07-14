@@ -98,7 +98,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 			EntityProjectile tProjectile = mEntityClass.getConstructor(Level.class, Double.TYPE, Double.TYPE, Double.TYPE).newInstance(aWorld, aX, aY, aZ);
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
 			return tProjectile;
-		} catch (Throwable e) {Logging.severe("Problems with '%s'", mEntityClass.getName()); Logging.severe(e.toString());}
+		} catch (Throwable e) {ERR.println(String.format("Problems with '%s'", mEntityClass.getName())); ERR.println(e.toString());}
 		return null;
 	}
 	
@@ -109,7 +109,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 			EntityProjectile tProjectile = mEntityClass.getConstructor(Level.class, LivingEntity.class, Float.TYPE).newInstance(aWorld, aEntity, mSpeedMultiplier * aSpeed);
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
 			return tProjectile;
-		} catch (Throwable e) {Logging.severe("Problems with '%s'", mEntityClass.getName()); Logging.severe(e.toString());}
+		} catch (Throwable e) {ERR.println(String.format("Problems with '%s'", mEntityClass.getName())); ERR.println(e.toString());}
 		return null;
 	}
 	
