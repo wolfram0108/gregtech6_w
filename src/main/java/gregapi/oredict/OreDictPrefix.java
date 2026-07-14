@@ -72,6 +72,16 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 	public CreativeModeTab mCreativeTab = null;
 	
 	public ItemStack mContainerItem = null;
+	// F5/F8-lazy: ItemStack НЕЛЬЗЯ создать в OP.<clinit> (Item.Holder.components не привязаны на @Mod-конструкции, neo
+	// Holder.java:273). Храним Item, mContainerItem материализуем лениво по первому обращению через containerItem().
+	private net.minecraft.world.item.Item mContainerItemLazy = null;
+	/** F5/F8-lazy-геттер mContainerItem: материализует из отложенного Item (когда компоненты уже привязаны). */
+	public ItemStack containerItem() {
+		if (mContainerItem == null && mContainerItemLazy != null) mContainerItem = ST.make(mContainerItemLazy, 1, 0);
+		return mContainerItem;
+	}
+	/** F5/F8-lazy-сеттер: отложить создание ItemStack (заменяет eager mContainerItem = ST.make(item) в OP.<clinit>). */
+	public OreDictPrefix containerItemLazy(net.minecraft.world.item.Item aItem) {mContainerItemLazy = aItem; return this;}
 	@SuppressWarnings("rawtypes")
 	private ICondition mCondition = ICondition.TRUE;
 	/** The Indices of the Icons inside the Texture Sets. -1 if it doesn't have a Set */

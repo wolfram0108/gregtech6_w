@@ -163,7 +163,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	public ItemStack getContainerItem(ItemStack aStack) {
 		if (ST.equal(aStack, mContainerItem, T)) return null;
 		if (mCraftingSound != null) UT.Sounds.play(mCraftingSound, 20, 1.0F);
-		return mContainerItem != null ? ST.amount(1, mContainerItem) : mPrefix.mContainerItem != null ? ST.amount(1, mContainerItem = mPrefix.mContainerItem) : null;
+		return mContainerItem != null ? ST.amount(1, mContainerItem) : mPrefix.containerItem() != null ? ST.amount(1, mContainerItem = mPrefix.containerItem()) : null;
 	}
 	
 	// @Override

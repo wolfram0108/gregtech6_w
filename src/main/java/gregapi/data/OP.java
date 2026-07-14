@@ -573,7 +573,7 @@ public class OP {
 		dustRefined.addListener(new OreDictListenerItem_Washing(dust, 1));
 		rockGt     .addListener(new OreDictListenerItem_Rocks());
 		
-		bottle.mContainerItem = ST.make(Items.GLASS_BOTTLE, 1, 0);
+		bottle.containerItemLazy(Items.GLASS_BOTTLE); // F5/F8-lazy: ItemStack нельзя создать здесь (OP.<clinit>, Holder.components не привязаны) — материализуется через bottle.containerItem()
 		
 		ingotHot.mHeatDamage = 3.0F;
 		
