@@ -83,7 +83,7 @@ public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Direc
 	@Override public String getFacingTool() {return TOOL_wrench;}
 	public short getFacing() {return mFacing;}
 	public void setFacing(short aFacing) {setPrimaryFacing(UT.Code.side(aFacing));}
-	public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return TOOL_wrench.equals(getFacingTool()) && getValidSides()[aSide] && (aPlayer == null || aPlayer.getHeldItem() == null || !ItemsGT.SPECIAL_CASE_TOOLS.contains(aPlayer.getHeldItem(), T));}
+	public boolean wrenchCanSetFacing(Player aPlayer, int aSide) {return TOOL_wrench.equals(getFacingTool()) && getValidSides()[aSide] && (aPlayer == null || aPlayer.getMainHandItem().isEmpty() || !ItemsGT.SPECIAL_CASE_TOOLS.contains(aPlayer.getMainHandItem(), T));} // getHeldItem()->neo getMainHandItem() (LivingEntity:2257); F15 ==null->isEmpty().
 	@Override public boolean isConnectedWrenchingOverlay(ItemStack aStack, byte aSide) {return aSide == mFacing;}
 	
 	public void setPrimaryFacing(byte aFacing) {if (isClientSide() || aFacing == mFacing) return; byte oFacing = mFacing; mFacing = aFacing; updateClientData(); causeBlockUpdate(); onFacingChange(oFacing); checkCoverValidity(); doEnetUpdate(); if (hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(this, F);}
