@@ -59,20 +59,23 @@ public class OreDictListenerItem_Washing extends OreDictListenerItem {
 		if (aMaterial != null) {
 			int tX = UT.Code.roundDown(aItem.getX()), tY = UT.Code.roundDown(aItem.getY()-0.25), tZ = UT.Code.roundDown(aItem.getZ());
 			Block tBlock = WD.block(aItem.level(), tX, tY, tZ);
-			byte tMetaData = (byte)WD.meta(aItem.level(), tX, tY, tZ);
-			
-			if (tBlock instanceof CauldronBlock && tMetaData > 0) {
+			// F-cauldron: 1.7.10 водяной котёл = CauldronBlock с metadata-уровнем (1-3); neo = LayeredCauldronBlock со
+			// BlockState-свойством LEVEL (LayeredCauldronBlock.java:39). Уровень читаем из состояния (WD.meta не отражает — метаданных нет).
+			net.minecraft.core.BlockPos tCauldronPos = new net.minecraft.core.BlockPos(tX, tY, tZ);
+			net.minecraft.world.level.block.state.BlockState tCauldronState = aItem.level().getBlockState(tCauldronPos);
+
+			if (tBlock instanceof net.minecraft.world.level.block.LayeredCauldronBlock && tCauldronState.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL) > 0) {
 				ItemStack tStack = mItemToGet.mat(aMaterial, 1);
 				if (tStack != null) {
-					((CauldronBlock)tBlock).func_150024_a(aItem.level(), tX, tY, tZ, tMetaData-1);
+					net.minecraft.world.level.block.LayeredCauldronBlock.lowerFillLevel(tCauldronState, aItem.level(), tCauldronPos); // 1.7.10 func_150024_a(...,meta-1) = декремент уровня на 1 (LayeredCauldronBlock.java:104).
 					if (mByProductPrefixes.length > 0 && RNGSUS.nextInt(mChance) > 0) {
 						ArrayListNoNulls<ItemStack> tStacks = ST.arraylist();
 						for (OreDictPrefix tPrefix : mByProductPrefixes) tStacks.add(tPrefix.mat(UT.Code.select(aMaterial, aMaterial.mByProducts), 1));
 						if (tStacks.size() > 0) ST.drop(aItem.level(), aItem.getX(), aItem.getY(), aItem.getZ(), tStacks.get(RNGSUS.nextInt(tStacks.size())));
 					}
 					ST.drop(aItem.level(), aItem.getX(), aItem.getY(), aItem.getZ(), tStack);
-					WD.setMotionX(aItem, aItem.motionY = aItem.motionZ = 0);
-					aItem.setPosition(tX+0.5, tY+0.9, tZ+0.5);
+					aItem.setDeltaMovement(0, 0, 0); // 1.7.10 motionX=motionY=motionZ=0 (поля удалены) -> neo setDeltaMovement(0,0,0) (Entity.java:3672).
+					aItem.setPos(tX+0.5, tY+0.9, tZ+0.5); // setPosition -> neo setPos (Entity.java:471).
 					return aStack.getCount() > 1 ? ST.amount(aStack.getCount() - 1, aStack) : null;
 				}
 			}
