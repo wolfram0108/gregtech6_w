@@ -89,7 +89,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {
 					Block tContact = WD.block(aWorld, tX, tY, tZ);
 					if (WD.getMaterial(tContact).isLiquid() || tContact == Blocks.FARMLAND) break;
-					if (!tContact.isOpaqueCube() || WD.wood(tContact, aWorld, tX, tY, tZ) || WD.leaves(tContact, aWorld, tX, tY, tZ)) continue;
+					if (!WD.opaque(tContact) || WD.wood(tContact, aWorld, tX, tY, tZ) || WD.leaves(tContact, aWorld, tX, tY, tZ)) continue;
 					if (!BlocksGT.plantableGrass.contains(tContact)) break;
 					for (int a = -1; a <= 1; a++) for (int b = -1; b <= 1; b++) if (aRandom.nextBoolean()) if (BlocksGT.plantableGrass.contains(WD.block(aWorld, tX+a, tY, tZ+b))) {
 						WD.set(aWorld, tX+a, tY, tZ+b, BlocksGT.Grass, mIndicatorType == 3 ? 0 : 3+mIndicatorType, 0);

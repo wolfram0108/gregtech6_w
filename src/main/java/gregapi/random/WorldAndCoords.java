@@ -76,7 +76,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public Block getBlock             (int aX, int aY, int aZ) {return mWorld==null?NB:WD.block(mWorld, aX, aY, aZ);}
 	@Override public byte getMetaData           (int aX, int aY, int aZ) {return mWorld==null?0:UT.Code.bind4(WD.meta(mWorld, aX, aY, aZ));}
 	@Override public byte getLightLevel         (int aX, int aY, int aZ) {return mWorld==null?0:UT.Code.bind4((long)WD.lightBrightness(mWorld, aX, aY, aZ)*15);}
-	@Override public boolean getOpacity         (int aX, int aY, int aZ) {return mWorld!=null&&WD.block(mWorld, aX, aY, aZ).isOpaqueCube();}
+	@Override public boolean getOpacity         (int aX, int aY, int aZ) {return mWorld!=null&&WD.opaque(WD.block(mWorld, aX, aY, aZ));}
 	@Override public boolean getSky             (int aX, int aY, int aZ) {return mWorld==null||WD.canSeeSky(mWorld, aX, aY, aZ);}
 	@Override public boolean getRain            (int aX, int aY, int aZ) {return mWorld==null||WD.precipitationHeight(mWorld, aX, aZ) <= aY;}
 	@Override public boolean getAir             (int aX, int aY, int aZ) {return mWorld==null||WD.block(mWorld, aX, aY, aZ).isAir(mWorld, aX, aY, aZ);}
@@ -87,7 +87,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public Block getBlock             (BlockPos aCoords) {return mWorld==null?NB:WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public byte getMetaData           (BlockPos aCoords) {return mWorld==null?0:UT.Code.bind4(WD.meta(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
 	@Override public byte getLightLevel         (BlockPos aCoords) {return mWorld==null?0:UT.Code.bind4((long)WD.lightBrightness(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ())*15);}
-	@Override public boolean getOpacity         (BlockPos aCoords) {return mWorld!=null&&WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isOpaqueCube();}
+	@Override public boolean getOpacity         (BlockPos aCoords) {return mWorld!=null&&WD.opaque(WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
 	@Override public boolean getSky             (BlockPos aCoords) {return mWorld==null||WD.canSeeSky(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public boolean getRain            (BlockPos aCoords) {return mWorld==null||WD.precipitationHeight(mWorld, aCoords.getX(), aCoords.getZ()) <= aCoords.getY();}
 	@Override public boolean getAir             (BlockPos aCoords) {return mWorld==null||WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}

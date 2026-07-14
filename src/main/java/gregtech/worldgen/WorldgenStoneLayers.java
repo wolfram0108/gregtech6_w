@@ -181,7 +181,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					tCanPlaceRocks = F;
 				// Just check if the last Block was Opaque and of the right kind of Material.
 				} else {
-					if (aBlock.isOpaqueCube()) {
+					if (WD.opaque(aBlock)) {
 						tCanPlaceRocks = (WD.getMaterial(aBlock) == Material.clay || WD.getMaterial(aBlock) == Material.sand || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground);
 					} else {
 						tLastOre = null;

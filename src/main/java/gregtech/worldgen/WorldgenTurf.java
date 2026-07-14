@@ -57,7 +57,7 @@ public class WorldgenTurf extends WorldgenObject {
 			for (int tY = tUpperBound, tGenerated = 0; tY > tLowerBound && tGenerated < 2; tY--, tLastBlock = tBlock) {
 				tBlock = WD.block(aWorld, tX+i, tY, tZ+j);
 				if (tBlock == BlocksGT.Diggables && 2 == WD.meta(aWorld, tX+i, tY, tZ+j)) {tGenerated++; continue;}
-				if (!tBlock.isOpaqueCube()) {if (tGenerated > 0) break; continue;}
+				if (!WD.opaque(tBlock)) {if (tGenerated > 0) break; continue;}
 				if (tBlock == Blocks.DIRT) {
 					if (tGenerated <= 0 && (WD.getMaterial(tLastBlock) == Material.wood || WD.getMaterial(tLastBlock) == Material.gourd)) continue;
 				} else {

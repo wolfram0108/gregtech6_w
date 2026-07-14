@@ -55,7 +55,7 @@ public class Loader_ItemIterator implements Runnable {
 			Block tBlock = ST.block(tItem);
 			
 			// Hide all those stupid Double Slabs from NEI...
-			if (tBlock instanceof SlabBlock && tBlock.isOpaqueCube()) ST.hide(tBlock);
+			if (tBlock instanceof SlabBlock && WD.opaque(tBlock)) ST.hide(tBlock);
 			
 			// IC2 Food Cans.
 			if (tCheckCans && tItem instanceof ItemFood && tItem != IL.IC2_Food_Can_Filled.item() && tItem != IL.IC2_Food_Can_Spoiled.item()) {

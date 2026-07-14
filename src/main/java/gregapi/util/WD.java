@@ -128,7 +128,7 @@ public class WD {
 	public static ItemStack suck(Level aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
 		for (ItemEntity tItem : (Iterable<ItemEntity>)aWorld.getEntitiesOfClass(ItemEntity.class, new AABB(aX, aY, aZ, aX+aL, aY+aH, aZ+aW))) {
 			if (!tItem.isRemoved()) {
-				aWorld.removeEntity(tItem);
+				tItem.discard();
 				ItemStack rStack = tItem.getEntityItem();
 				tItem.setEntityItemStack(ST.amount(0, rStack));
 				tItem.discard();
@@ -146,7 +146,7 @@ public class WD {
 		List<ItemStack> rOutput = ST.arraylist();
 		for (ItemEntity tItem : tList) {
 			if (!tItem.isRemoved()) {
-				aWorld.removeEntity(tItem);
+				tItem.discard();
 				ItemStack rStack = tItem.getEntityItem();
 				tItem.setEntityItemStack(ST.amount(0, rStack));
 				tItem.discard();

@@ -62,7 +62,7 @@ public class WorldgenSwamp extends WorldgenObject {
 				final ExtendedBlockStorage tStorage = tStorages[tY >> 4];
 				if (tStorage == null) continue;
 				final Block tBlock = tStorage.getBlockByExtId(tX, tY & 15, tZ);
-				if (tBlock.isOpaqueCube()) break;
+				if (WD.opaque(tBlock)) break;
 				if (tBlock != Blocks.WATER && tBlock != Blocks.WATER && !(tBlock instanceof BlockWaterlike && BIOMES_SWAMP.contains(aBiomes[tX][tZ]))) continue;
 				
 				if (tPlacedNone) {
