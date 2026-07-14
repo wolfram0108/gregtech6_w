@@ -99,7 +99,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.util.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.Fluid;
@@ -430,7 +429,7 @@ public class UT {
 			if (Code.stringValid(aMapping)) display(aPlayer, aMapping); else display(aPlayer, F, aStack);
 		}
 		public static void display(Player aPlayer, String aMapping) {
-			aPlayer.displayGUIBook(getWrittenBook(aMapping, T, ST.make(Items.WRITTEN_BOOK, 1, 0)));
+			aPlayer.openItemGui(getWrittenBook(aMapping, T, ST.make(Items.WRITTEN_BOOK, 1, 0)), net.minecraft.world.InteractionHand.MAIN_HAND); // F14: displayGUIBook(ItemStack) -> Player.openItemGui(ItemStack,InteractionHand) (Player.java:854, ServerPlayer шлёт ClientboundOpenBookPacket).
 		}
 		public static void display(Player aPlayer, boolean aWritable, ItemStack aStack) {
 			if (ST.invalid(aStack)) return;
@@ -438,7 +437,7 @@ public class UT {
 		}
 		public static void display(Player aPlayer, boolean aWritable, CompoundTag aNBT) {
 			if (aNBT == null || UT.Code.stringInvalid(UT.NBT.getBookTitle(aNBT))) return;
-			aPlayer.displayGUIBook(ST.make(aWritable?Items.WRITABLE_BOOK:Items.WRITTEN_BOOK, 1, 0, aNBT));
+			aPlayer.openItemGui(ST.make(aWritable?Items.WRITABLE_BOOK:Items.WRITTEN_BOOK, 1, 0, aNBT), net.minecraft.world.InteractionHand.MAIN_HAND); // F14: displayGUIBook -> Player.openItemGui.
 		}
 		
 		@Deprecated public static ItemStack getWrittenBook(String aMapping) {return getWrittenBook(aMapping, F, null);}
@@ -2908,10 +2907,11 @@ public class UT {
 		public static boolean isWereCreature(LivingEntity aEntity) {
 			if (aEntity instanceof Player) {
 				if ("Bear989Sr".equalsIgnoreCase(aEntity.getName().getString())) return T;
-				AttachmentType tWerewolfProperty = aEntity.getExtendedProperties("WerewolfPlayer");
-				if (tWerewolfProperty == null) return F;
-				Object tReturned = UT.Reflection.callPublicMethod(tWerewolfProperty, "getWerewolf");
-				return tReturned instanceof Boolean && (Boolean)tReturned;
+				// PORT-TODO(F-attachment/F10-werewolves): 1.7.10 Entity.getExtendedProperties("WerewolfPlayer")
+				// (IExtendedEntityProperties) удалён -> neo AttachmentType-модель (иная регистрация). Интеграция мода
+				// Werewolves (reflection getWerewolf) отложена: детекция игрока-оборотня недоступна без порта мода +
+				// регистрации AttachmentType. Возвращаем F (мод не загружен, API удалён) — честная деградация, не тихий стаб.
+				return F;
 			}
 			if (aEntity.getClass().getName().indexOf(".") < 0) return F;
 			String tClassName = UT.Reflection.getLowercaseClass(aEntity);
