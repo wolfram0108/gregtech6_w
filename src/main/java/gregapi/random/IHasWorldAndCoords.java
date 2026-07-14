@@ -42,7 +42,7 @@ public interface IHasWorldAndCoords extends IHasWorld, IHasCoords {
 	/** Do not return null! See {@link ITileEntityDelegating} */
 	public DelegatorTileEntity<BlockEntity> getAdjacentTileEntity(byte aSide);
 	/** Do not return null! See {@link ITileEntityDelegating} */
-	public DelegatorTileEntity<AbstractContainerMenu> getAdjacentInventory(byte aSide);
+	public DelegatorTileEntity<Container> getAdjacentInventory(byte aSide);
 	/** Do not return null! See {@link ITileEntityDelegating} */
 	public DelegatorTileEntity<WorldlyContainer> getAdjacentSidedInventory(byte aSide);
 	/** Do not return null! See {@link ITileEntityDelegating} */
@@ -51,7 +51,7 @@ public interface IHasWorldAndCoords extends IHasWorld, IHasCoords {
 	/** Do not return null! See {@link ITileEntityDelegating} if aAllowDelegates is false, it will check if the TileEntity can delegate, see {@link ITileEntityCanDelegate}, and if it can, then this will output a Delegator Object with a null TileEntity instead. */
 	public DelegatorTileEntity<BlockEntity> getAdjacentTileEntity(byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators);
 	/** Do not return null! See {@link ITileEntityDelegating} if aAllowDelegates is false, it will check if the TileEntity can delegate, see {@link ITileEntityCanDelegate}, and if it can, then this will output a Delegator Object with a null TileEntity instead. */
-	public DelegatorTileEntity<AbstractContainerMenu> getAdjacentInventory(byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators);
+	public DelegatorTileEntity<Container> getAdjacentInventory(byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators);
 	/** Do not return null! See {@link ITileEntityDelegating} if aAllowDelegates is false, it will check if the TileEntity can delegate, see {@link ITileEntityCanDelegate}, and if it can, then this will output a Delegator Object with a null TileEntity instead. */
 	public DelegatorTileEntity<WorldlyContainer> getAdjacentSidedInventory(byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators);
 	/** Do not return null! See {@link ITileEntityDelegating} if aAllowDelegates is false, it will check if the TileEntity can delegate, see {@link ITileEntityCanDelegate}, and if it can, then this will output a Delegator Object with a null TileEntity instead. */

@@ -266,10 +266,10 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override public BlockEntity getTileEntityOffset(int aX, int aY, int aZ) {return getTileEntity(getBlockPos().getX()+aX, getBlockPos().getY()+aY, getBlockPos().getZ()+aZ);}
 	@Override public BlockEntity getTileEntityAtSideAndDistance(byte aSide, int aDistance) {return getTileEntity(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
 	@Override public DelegatorTileEntity<BlockEntity         > getAdjacentTileEntity     (byte aSide) {return getAdjacentTileEntity(aSide, T, F);}
-	@Override public DelegatorTileEntity<AbstractContainerMenu         > getAdjacentInventory      (byte aSide) {return getAdjacentInventory(aSide, T, F);}
+	@Override public DelegatorTileEntity<Container         > getAdjacentInventory      (byte aSide) {return getAdjacentInventory(aSide, T, F);}
 	@Override public DelegatorTileEntity<WorldlyContainer    > getAdjacentSidedInventory (byte aSide) {return getAdjacentSidedInventory(aSide, T, F);}
 	@Override public DelegatorTileEntity<IFluidHandler      > getAdjacentTank           (byte aSide) {return getAdjacentTank(aSide, T, F);}
-	@Override public DelegatorTileEntity<AbstractContainerMenu         > getAdjacentInventory      (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof AbstractContainerMenu      ?(AbstractContainerMenu        )tDelegator.mTileEntity:null, tDelegator);}
+	@Override public DelegatorTileEntity<Container         > getAdjacentInventory      (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof Container      ?(Container        )tDelegator.mTileEntity:null, tDelegator);}
 	@Override public DelegatorTileEntity<WorldlyContainer    > getAdjacentSidedInventory (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof WorldlyContainer ?(WorldlyContainer   )tDelegator.mTileEntity:null, tDelegator);}
 	@Override public DelegatorTileEntity<IFluidHandler      > getAdjacentTank           (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof IFluidHandler   ?(IFluidHandler     )tDelegator.mTileEntity:null, tDelegator);}
 	
@@ -578,8 +578,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	public boolean interceptClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, Player aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {return F;}
 	public ItemStack slotClick(int aGUIID, Slot_Base aSlot, int aSlotIndex, int aInvSlot, Player aPlayer, boolean aShiftclick, boolean aRightclick, int aMouse, int aShift) {return null;}
-	public void killGUIs() {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) ((Player)tPlayer).closeScreen();}
-	public void rebootGUIs(int aGUIID) {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) {((Player)tPlayer).closeScreen(); openGUI((Player)tPlayer, aGUIID);}}
+	public void killGUIs() {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) ((Player)tPlayer).closeContainer();}
+	public void rebootGUIs(int aGUIID) {for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) {((Player)tPlayer).closeContainer(); openGUI((Player)tPlayer, aGUIID);}}
 	public long getOpenGUIs() {long rGUIs = 0; for (Object tPlayer : level.players()) if (tPlayer instanceof Player && ((Player)tPlayer).containerMenu instanceof ContainerCommon && ((ContainerCommon)((Player)tPlayer).containerMenu).mTileEntity == this) rGUIs++; return rGUIs;}
 	public boolean needsToSyncEverything() {return F;}
 	
@@ -603,7 +603,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	public void updateTanks() {/**/}
 	public void updateInventory() {/**/}
-	public void updateAdjacentInventories() {for (byte tSide : ALL_SIDES_VALID) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide); if (tDelegator.mTileEntity instanceof ITileEntityAdjacentInventoryUpdatable) ((ITileEntityAdjacentInventoryUpdatable)tDelegator.mTileEntity).adjacentInventoryUpdated(tDelegator.mSideOfTileEntity, (AbstractContainerMenu)this);}}
+	public void updateAdjacentInventories() {for (byte tSide : ALL_SIDES_VALID) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(tSide); if (tDelegator.mTileEntity instanceof ITileEntityAdjacentInventoryUpdatable) ((ITileEntityAdjacentInventoryUpdatable)tDelegator.mTileEntity).adjacentInventoryUpdated(tDelegator.mSideOfTileEntity, (Container)this);}}
 	
 	public void playClick() {UT.Sounds.send(SFX.MC_CLICK, this, F);}
 	public void playCollect() {UT.Sounds.send(SFX.MC_COLLECT, 0.2F, this, F);}

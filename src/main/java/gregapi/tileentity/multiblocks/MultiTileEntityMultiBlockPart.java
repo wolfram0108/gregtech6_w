@@ -237,7 +237,7 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	}
 	
 	@Override
-	public void adjacentInventoryUpdated(byte aSide, AbstractContainerMenu aTileEntity) {
+	public void adjacentInventoryUpdated(byte aSide, Container aTileEntity) {
 		ITileEntityMultiBlockController tTileEntity = getTarget(T);
 		if (tTileEntity instanceof ITileEntityAdjacentInventoryUpdatable) ((ITileEntityAdjacentInventoryUpdatable)tTileEntity).adjacentInventoryUpdated(aSide, aTileEntity);
 	}
