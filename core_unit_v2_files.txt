@@ -689,3 +689,4 @@ D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregtech/tileentity/energy/reactors/Mul
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregtech/tileentity/misc/MultiTileEntityGregOLantern.java
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregtech/worldgen/NoiseGenerator.java
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregtech/worldgen/TwilightTreasureReplacer.java
+D:\Temp\MC_NEW\gregtech6_w\src\main\java\gregapi\recipes\FurnaceRecipes.java

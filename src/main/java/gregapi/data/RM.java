@@ -40,7 +40,7 @@ import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
+import gregapi.recipes.FurnaceRecipes; // F11-smelting: 1.7.10 vanilla FurnaceRecipes воссоздан GT6-центром (neo убрал мутабельный список плавок)
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.fluids.FluidStack;
 import team.chisel.carving.Carving;
@@ -780,7 +780,7 @@ public class RM {
 	public static ItemStack get_smelting(ItemStack aInput) {return get_smelting(aInput, F, NI);}
 	public static ItemStack get_smelting(ItemStack aInput, boolean aRemoveInput, ItemStack aOutputSlot) {
 		if (aInput == null || aInput.getCount() < 1) return NI;
-		ItemStack rStack = OM.get(RecipeManager.smelting().getSmeltingResult(aInput));
+		ItemStack rStack = OM.get(FurnaceRecipes.smelting().getSmeltingResult(aInput));
 		if (rStack != null && (aOutputSlot == null || (ST.equal(rStack, aOutputSlot) && rStack.getCount() + aOutputSlot.getCount() <= aOutputSlot.getMaxStackSize()))) {
 			if (aRemoveInput) aInput.setCount(aInput.getCount()-1);
 			return rStack;
@@ -807,7 +807,7 @@ public class RM {
 		if (aRemoveOthers) rem_smelting(aInput);
 		aOutput = OM.get_(aOutput);
 		if (!ST.ingredable(aInput) || ST.equal_(aInput, aOutput, F) || !ConfigsGT.RECIPES.get(ConfigCategories.Machines.smelting, aInput, T)) return F;
-		RecipeManager.smelting().func_151394_a(aInput, ST.copy_(aOutput), aEXP);
+		FurnaceRecipes.smelting().func_151394_a(aInput, ST.copy_(aOutput), aEXP);
 		if (MD.EtFu.mLoaded) try {
 			if ( aSmoker) SmokerRecipes      .smelting().addRecipe(aInput, ST.copy_(aOutput), aEXP);
 			if ( aBlast ) BlastFurnaceRecipes.smelting().addRecipe(aInput, ST.copy_(aOutput), aEXP);
@@ -826,7 +826,7 @@ public class RM {
 		ItemStack tPyrotheum = OP.dust.mat(MT.Pyrotheum, 1);
 		if (ST.valid(tPyrotheum)) CR.remove(aInput, tPyrotheum);
 		boolean rReturn = F;
-		Iterator<Entry<ItemStack, ItemStack>> tIterator = RecipeManager.smelting().getSmeltingList().entrySet().iterator();
+		Iterator<Entry<ItemStack, ItemStack>> tIterator = FurnaceRecipes.smelting().getSmeltingList().entrySet().iterator();
 		while (tIterator.hasNext()) if (ST.equal(aInput, tIterator.next().getKey(), T)) {
 			tIterator.remove();
 			rReturn = T;
@@ -875,7 +875,7 @@ public class RM {
 	public static boolean rem_smelting(ItemStack aInput, ItemStack aOutput) {
 		if (ST.invalid(aInput) || ST.invalid(aOutput)) return F;
 		boolean rReturn = F;
-		Iterator<Entry<ItemStack, ItemStack>> tIterator = RecipeManager.smelting().getSmeltingList().entrySet().iterator();
+		Iterator<Entry<ItemStack, ItemStack>> tIterator = FurnaceRecipes.smelting().getSmeltingList().entrySet().iterator();
 		while (tIterator.hasNext()) {
 			Entry<ItemStack, ItemStack> tEntry = tIterator.next();
 			if (ST.equal(aInput, tEntry.getKey(), T) && ST.equal(aOutput, tEntry.getValue(), T)) {
@@ -1145,7 +1145,7 @@ public class RM {
 		toSend.put("input", UT.NBT.make());
 		toSend.put("output", UT.NBT.make());
 		ST.writeToNBT(input, toSend.getCompoundOrEmpty("input"));
-		ST.writeToNBT(output, toSend.getCompoundOrEmpty("output"));
+		FL.writeToNBT(output, toSend.getCompoundOrEmpty("output")); // output = FluidStack (не ItemStack) -> FL.writeToNBT (FL.java:1148)
 		InterModComms.sendTo("ThermalExpansion", "CrucibleRecipe", () -> toSend);
 	}
 	public static void te_fill(int energy, ItemStack input, ItemStack output, FluidStack fluid, boolean reversible) {

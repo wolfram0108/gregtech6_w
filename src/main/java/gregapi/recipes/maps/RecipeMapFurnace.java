@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
+import gregapi.recipes.FurnaceRecipes; // F11-smelting: GT6-центр вместо удалённого vanilla FurnaceRecipes
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 
@@ -143,7 +143,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 								}
 							} else {
 								// Guess we need to default to the normal Furnace way of determining XP
-								rXP = FL.XP.make(UT.Code.bind(1, tOutput.getCount() * 20L, UT.Code.roundUp(tOutput.getCount() * 20 * RecipeManager.smelting().func_151398_b(tOutput))));
+								rXP = FL.XP.make(UT.Code.bind(1, tOutput.getCount() * 20L, UT.Code.roundUp(tOutput.getCount() * 20 * FurnaceRecipes.smelting().func_151398_b(tOutput))));
 							}
 						}
 					}
