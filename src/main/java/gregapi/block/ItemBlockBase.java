@@ -44,12 +44,19 @@ import static gregapi.data.CS.*;
 
 public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public final IBlockBase mPlaceable;
-	
+
 	public ItemBlockBase(Block aBlock) {
 		super(aBlock);
 		mPlaceable = (IBlockBase)aBlock;
 		setMaxDamage(0);
 		setHasSubtypes(T);
+	}
+
+	// F-bounds: ItemBlockBase - обёртка над Block (mPlaceable/getBlock()), собственной геометрии не хранит ->
+	// маршрутизирует на ЦЕНТР WD.setBlockBounds (уже существует, gregapi/util/WD.java:122), тот же приём, что и
+	// весь остальной F-bounds шов.
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
+		WD.setBlockBounds(getBlock(), aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
 	
 	// @Override

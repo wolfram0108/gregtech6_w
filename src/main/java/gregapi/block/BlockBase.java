@@ -160,8 +160,16 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aY > 0 && useGravity(aMeta) && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) {
-			if (!FallingBlock.fallInstantly && aWorld.checkChunksExist(aX-32, aY-32, aZ-32, aX+32, aY+32, aZ+32)) {
-				if (!aWorld.isClientSide()) aWorld.addFreshEntity(new FallingBlockEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, aMeta));
+			// было BlockFalling.fallInstantly (1.7.10 static-поле, дефолт false, не найден ни в одном из 3 корней
+			// референса) -> дефолтное значение "T" (=!false), тот же эффект без движкового поля.
+			// было World.checkChunksExist(x0,y0,z0,x1,y1,z1) (симметричный диапазон ±32) -> ILevelReaderExtension.
+			// isAreaLoaded(BlockPos,int) [ILevelReaderExtension.java:19], тот же приём, что уже принят для
+			// doChunksNearChunkExist в block-behavior 2-м проходе (decisions/DEFERRED-LEDGER.md §B2).
+			if (T && aWorld.isAreaLoaded(new BlockPos(aX, aY, aZ), 32)) {
+				// было new FallingBlockEntity(World,x,y,z,Block,meta) + addFreshEntity (1.7.10-форма, приватный
+				// конструктор в neo) -> FallingBlockEntity.fall(Level,BlockPos,BlockState) [FallingBlockEntity.java:91],
+				// единственный публичный neo-путь спавна (сам заменяет исходный блок на fluid-state и вызывает addFreshEntity).
+				if (!aWorld.isClientSide()) FallingBlockEntity.fall(aWorld, new BlockPos(aX, aY, aZ), aWorld.getBlockState(new BlockPos(aX, aY, aZ)));
 			} else {
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				while (FallingBlock.isFree(WD.block(aWorld, aX, aY-1, aZ).defaultBlockState()) && aY > 0) --aY;

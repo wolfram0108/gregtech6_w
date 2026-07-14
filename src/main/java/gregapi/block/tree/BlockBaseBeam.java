@@ -57,7 +57,7 @@ public abstract class BlockBaseBeam extends BlockBaseMeta {
 	@Override public int damageDropped(int aMeta) {return aMeta & PILLAR_DATA;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & PILLAR_DATA;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.OAK_LOG, aWorld, aX, aY, aZ) / 2;}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.OAK_LOG.getExplosionResistance(null);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.OAK_LOG.getExplosionResistance();}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.log.mDefaultStackSize);}
 	public int getRenderType() {return PILLAR_RENDER;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}

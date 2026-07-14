@@ -48,7 +48,7 @@ import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.item.EntityBoat;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.BlockItem;
@@ -73,9 +73,14 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof EntityBoat)) super.addCollisionBoxesToList(aWorld, aX, aY, aZ, aAABB, aList, aEntity);}
+	// было super.addCollisionBoxesToList(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
+	// super-вызова (Block.java:661-669 recompSrc), тот же приём, что уже принят в MultiTileEntityBlock.
+	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {if (!(aEntity instanceof AbstractBoat)) {AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ); if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);}}
 	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {return aY >= 0 && aY < 256 && WD.getMaterial(WD.block(aWorld, aX, aY - 1, aZ)) == Material.water && WD.meta(aWorld, aX, aY - 1, aZ) == 0;}
-	public boolean canPlaceBlockAt(Level aWorld, int aX, int aY, int aZ) {return super.canPlaceBlockAt(aWorld, aX, aY, aZ) && canBlockStay(aWorld, aX, aY, aZ);}
+	// было Block.canPlaceBlockAt(World,x,y,z) (1.7.10, дефолт world.getBlock(x,y,z).isReplaceable(...), Block.java:1046-1049)
+	// удалён из neo целиком - inline-порт вместо super через уже-существующий центр WD.replaceable (тот же приём, что
+	// BlockBase.onItemUse уже использует для идентичной проверки).
+	public boolean canPlaceBlockAt(Level aWorld, int aX, int aY, int aZ) {return WD.replaceable(WD.block(aWorld, aX, aY, aZ), aWorld, aX, aY, aZ) && canBlockStay(aWorld, aX, aY, aZ);}
 	@Override public boolean checkNoEntityCollision(Level aWorld, int aX, int aY, int aZ, byte aMeta, Entity aExceptThisOne) {return T;}
 	@Override public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {checkAndDropBlock(aWorld, aX, aY, aZ);}
 	@Override public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {checkAndDropBlock(aWorld, aX, aY, aZ);}
@@ -89,13 +94,14 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	public Block getPlant(BlockGetter aWorld, int aX, int aY, int aZ) {return this;}
 	public int getPlantMetadata(BlockGetter aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.LILY_PAD, aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.LILY_PAD.getExplosionResistance(null);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.LILY_PAD.getExplosionResistance();}
 	@Override public int getItemStackLimit(ItemStack aStack) {return 64;}
 	
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
 		if (!canBlockStay(aWorld, aX, aY, aZ)) {
 			WD.dropBlockAsItem(aWorld, aX, aY, aZ, WD.meta(aWorld, aX, aY, aZ), 0);
-			WD.set(aWorld, aX, aY, aZ, getBlockById(0), 0, 2);
+			// было Block.getBlockById(0) (1.7.10 static-реестр по числовому ID, 0=воздух) -> centre-константа NB (=Blocks.AIR, CS.java:876)
+			WD.set(aWorld, aX, aY, aZ, NB, 0, 2);
 		}
 	}
 	

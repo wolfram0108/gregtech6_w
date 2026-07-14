@@ -48,6 +48,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.BlockGetter;
@@ -104,7 +105,9 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
 	}
 	
-	@Override public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {if ((WD.meta(aWorld, aX, aY, aZ) & 7) != SIDE_UP) {aEntity.getDeltaMovement().x *= 0.1; aEntity.getDeltaMovement().z *= 0.1;}}
+	// было Entity.motionX/motionZ (1.7.10 public мутируемые поля) -> neo Vec3 (getDeltaMovement()) immutable ->
+	// Entity.setDeltaMovement(double,double,double) [Entity.java:3672], тот же эффект.
+	@Override public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {if ((WD.meta(aWorld, aX, aY, aZ) & 7) != SIDE_UP) {Vec3 tMotion = aEntity.getDeltaMovement(); aEntity.setDeltaMovement(tMotion.x * 0.1, tMotion.y, tMotion.z * 0.1);}}
 	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return (aMeta & 7) < 6 ? (aMeta & 8) | OPOS[aSide] : aMeta;}
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) UT.Sounds.send(SFX.MC_ANVIL_LAND, 1, 2, aWorld, aX, aY, aZ);}
 	
@@ -143,8 +146,10 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	}
 	
 	// @Override
+	// было ForgeDirection.VALID_DIRECTIONS (1.7.10, все 6 реальных направлений, без UNKNOWN) -> neo Direction
+	// не имеет UNKNOWN-константы вовсе (Direction.java:33-38, ровно 6 значений) -> Direction.values() 1:1.
 	public Direction[] getValidRotations(Level aWorld, int aX, int aY, int aZ) {
-		return (WD.meta(aWorld, aX, aY, aZ) & 7) < 6 ? Direction.VALID_DIRECTIONS : null;
+		return (WD.meta(aWorld, aX, aY, aZ) & 7) < 6 ? Direction.values() : null;
 	}
 	
 	@Override
@@ -173,9 +178,12 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	}
 	
 	// @Override
+	// было super.addCollisionBoxesToList(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
+	// super-вызова (Block.java:661-669 recompSrc), тот же приём, что уже принят в MultiTileEntityBlock/BlockBaseLilyPad.
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {
 		if (aEntity instanceof ItemEntity || aEntity instanceof ExperienceOrb || aEntity instanceof Projectile) return;
-		super.addCollisionBoxesToList(aWorld, aX, aY, aZ, aAABB, aList, aEntity);
+		AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);
+		if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);
 	}
 	
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}

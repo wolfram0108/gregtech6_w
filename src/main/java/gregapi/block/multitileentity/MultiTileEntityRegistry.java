@@ -256,7 +256,8 @@ public class MultiTileEntityRegistry {
 		if (tClass == null || tClass.mBlock == null) return null;
 		MultiTileEntityContainer rContainer = new MultiTileEntityContainer((BlockEntity)UT.Reflection.callConstructor(tClass.mClass, -1, null, T), tClass.mBlock, tClass.mBlockMetaData);
 		if (rContainer.mTileEntity == null) return null;
-		rContainer.mTileEntity.setWorldObj(aWorld);
+		// было TileEntity.setWorldObj(World) (1.7.10, recompSrc TileEntity.java:70) -> BlockEntity.setLevel(Level) [BlockEntity.java:93]
+		rContainer.mTileEntity.setLevel(aWorld);
 		// PORT-TODO(WD, blockentity-position-immutable): было rContainer.mTileEntity.x/yCoord/zCoord = aX/aY/aZ
 		// -- neo BlockEntity.worldPosition (BlockEntity.java:48) protected final, сеттера нет ни в одном из
 		// 3 корней референса -- позицию рефлективно построенной TileEntity постфактум не переустановить.

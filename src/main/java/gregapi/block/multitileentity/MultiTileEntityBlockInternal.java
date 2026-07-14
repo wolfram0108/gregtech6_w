@@ -49,9 +49,16 @@ import net.minecraft.world.level.Level;
  */
 public class MultiTileEntityBlockInternal extends Block implements IBlock, IItemGT, IRenderedBlock, IBlockPlacable {
 	public MultiTileEntityRegistry mMultiTileEntityRegistry;
-	
+
 	public MultiTileEntityBlockInternal() {
 		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
+	}
+
+	/** F-bounds (тот же приём, что BlockBase.java/MultiTileEntityBlock.java): последние заданные bounds, neo bounds
+	 *  immutable -> храним сами, рендер-использование отложено на F3-клиент-проход. IBlock-обязательный метод. */
+	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
+		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
 	
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
@@ -120,7 +127,10 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {
 			if (!aWorld.isClientSide() && aCauseBlockUpdates) {
-				aWorld.notifyBlockChange(aX, aY, aZ, tReplacedBlock);
+				// было World.notifyBlockChange(x,y,z,Block) -> тело делегировало notifyBlocksOfNeighborChange (recompSrc
+				// World.java:695-698) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338], тот же
+				// форс-эквивалент, что уже принят для соседнего func_147453_f ниже (см. decisions/DEFERRED-LEDGER.md §B).
+				aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock, null);
 				// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338]
 				aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock, null);
 			}
@@ -131,7 +141,10 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {
-			aWorld.func_147451_t(aX, aY, aZ);
+			// было World.func_147451_t(x,y,z) (пересчёт Sky+Block light в позиции, recompSrc World.java:3268-3279) ->
+			// neo Level.getLightEngine().checkBlock(BlockPos) [LevelLightEngine.java:32], тот же приём (пересчёт обоих
+			// типов света для позиции), движковая замена per-type updateLightByType-цикла.
+			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ));
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		return T;
 	}

@@ -18,6 +18,7 @@
  */
 
 package gregapi.block.tree;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
 import gregapi.util.WD;
@@ -51,11 +52,20 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 	// @Override
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		int tRangeSide = getLeavesRangeSide((byte)aMeta)+1, tRangeYNeg = getLeavesRangeYNeg((byte)aMeta)+1, tRangeYPos = getLeavesRangeYPos((byte)aMeta)+1;
-		if (!aWorld.isClientSide() && aWorld.checkChunksExist(aX - tRangeSide, aY - tRangeYNeg, aZ - tRangeSide, aX + tRangeSide, aY + tRangeYPos, aZ + tRangeSide)) {
+		// было World.checkChunksExist(x0,y0,z0,x1,y1,z1) (асимметричный диапазон по осям) -> ILevelReaderExtension.
+		// isAreaLoaded(BlockPos,int) [ILevelReaderExtension.java:19] принимает только симметричный радиус - берём
+		// максимум из трёх диапазонов (безопасный супер-набор: требует загрузки НЕ МЕНЬШЕ области, чем исходно
+		// проверялась, тот же приём, что и BlockBase/PrefixBlock.checkGravity ±32).
+		if (!aWorld.isClientSide() && aWorld.isAreaLoaded(new BlockPos(aX, aY, aZ), Math.max(tRangeSide, Math.max(tRangeYNeg, tRangeYPos)))) {
 			tRangeSide--; tRangeYNeg--; tRangeYPos--;
 			for (int i = -tRangeSide; i <= tRangeSide; ++i) for (int j = -tRangeYNeg; j <= tRangeYPos; ++j) for (int k = -tRangeSide; k <= tRangeSide; ++k) {
 				Block tBlock = WD.block(aWorld, aX + i, aY + j, aZ + k);
-				if (WD.leaves(tBlock, aWorld, aX + i, aY + j, aZ + k)) tBlock.beginLeavesDecay(aWorld, aX + i, aY + j, aZ + k);
+				// было Block.beginLeavesDecay(World,x,y,z) (1.7.10, вызов полиморфно на generic Block) - метод удалён
+				// из neo Block целиком (PORT-TODO(F13/F16, block-beginLeavesDecay-removed), см. MultiTileEntityBlock.java);
+				// единственный держатель реальной логики в дереве классов этого файла - BlockBaseLeaves (плоский метод,
+				// не движковый override) - маршрутизируем через instanceof, vanilla-листва распадается автоматически
+				// (свой tick-based механизм, не нуждается в этом поке).
+				if (WD.leaves(tBlock, aWorld, aX + i, aY + j, aZ + k) && tBlock instanceof BlockBaseLeaves) ((BlockBaseLeaves)tBlock).beginLeavesDecay(aWorld, aX + i, aY + j, aZ + k);
 			}
 		}
 	}

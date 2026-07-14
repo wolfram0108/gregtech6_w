@@ -199,7 +199,10 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				try {
 					if (!aWorld.isClientSide()) {
-						aWorld.notifyBlockChange(aX, aY, aZ, tReplacedBlock);
+						// было World.notifyBlockChange(x,y,z,Block) -> тело делегировало notifyBlocksOfNeighborChange (recompSrc
+						// World.java:695-698) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338], тот же
+						// форс-эквивалент, что уже принят в MultiTileEntityBlockInternal.placeBlock.
+						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock, null);
 						// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338]
 						aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock, null);
 					}
@@ -210,7 +213,8 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 					}
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				try {
-					aWorld.func_147451_t(aX, aY, aZ);
+					// было World.func_147451_t(x,y,z) -> neo Level.getLightEngine().checkBlock(BlockPos) [LevelLightEngine.java:32]
+					aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ));
 				} catch(Throwable e) {e.printStackTrace(ERR);}
 				
 				aStack.setCount(aStack.getCount()-1);

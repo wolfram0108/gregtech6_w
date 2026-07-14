@@ -94,6 +94,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public boolean mRegisterToOreDict = T, mHidden = F;
 	
 	public final float mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ;
+	/** F-bounds (тот же приём, что BlockBase.java/MultiTileEntityBlock.java): последние заданные bounds (через
+	 *  setBlockBoundsBasedOnState -> setBlockBounds), neo bounds immutable -> храним сами отдельно от mMinX..mMaxZ
+	 *  (те final, интринсик-геометрия материала), рендер-использование отложено на F3-клиент-проход. */
+	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
+		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+	}
 	public final int mHarvestLevelOffset, mHarvestLevelMinimum, mHarvestLevelMaximum;
 	public final ITexture mTexture;
 	public final String mNameInternal, mTool, mModIDOwner;
@@ -587,8 +594,15 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {
 		aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* было Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */
 		UT.Entities.exhaust(aPlayer, 0.025F);
-		boolean aSilkTouch = EnchantmentHelper.getSilkTouchModifier(aPlayer);
-		int aFortune = EnchantmentHelper.getFortuneModifier(aPlayer);
+		// было EnchantmentHelper.getSilkTouchModifier(Player)/getFortuneModifier(Player) (1.7.10) - удалены в neo;
+		// реальный neo: EnchantmentHelper.getEnchantmentLevel(Holder<Enchantment>,LivingEntity) по Holder из
+		// RegistryAccess (сверено, EnchantmentHelper.java:292 + Enchantments.SILK_TOUCH/FORTUNE), тот же приём,
+		// что уже принят и одобрен ревизией в GT_API_Proxy.onBlockHarvestingEvent (GT_API_Proxy.java:1450-1451)
+		// и в MultiTileEntityBlock.harvestBlock (тот же класс проблемы).
+		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tSilkTouchHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH);
+		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE);
+		boolean aSilkTouch = EnchantmentHelper.getEnchantmentLevel(tSilkTouchHolder, aPlayer) > 0;
+		int aFortune = EnchantmentHelper.getEnchantmentLevel(tFortuneHolder, aPlayer);
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, aSilkTouch);
 		float aChance = WD.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, 0, aFortune, 1.0F, aSilkTouch, aPlayer);
 		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
@@ -602,6 +616,11 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public final BlockEntity createNewTileEntity(Level aWorld, int aMeta) {return null;}
 	/** Where I come from, we set the TileEntities ourselves instead of letting a Handler do it. */
 	public final BlockEntity createTileEntity(Level aWorld, int aMeta) {return null;}
+	// было EntityBlock.newBlockEntity(BlockPos,BlockState) (neo, EntityBlock.java:14, обязательный т.к. класс implements
+	// EntityBlock) - GT6 TE-создание для PrefixBlock идёт НЕ через это (createNewTileEntity/createTileEntity УЖЕ
+	// возвращают null и в 1.7.10-оракуле, PrefixBlock.java:584-586), а через явный placeBlock/createTileEntity(6 аргументов,
+	// см. ниже). null здесь 1:1 с оракулом, не деградация (тот же приём, что и MultiTileEntityBlock.newBlockEntity).
+	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return null;}
 	@Override public String toString() {return mNameInternal;}
 	public String getUnlocalizedName() {return mNameInternal;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
@@ -674,7 +693,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	protected boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
 		if (mGravity && aY > 0 && WD.te(aWorld, aX, aY, aZ, T) != null && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) {
-			if (!FallingBlock.fallInstantly && aWorld.checkChunksExist(aX-32, aY-32, aZ-32, aX+32, aY+32, aZ+32)) {
+			// было BlockFalling.fallInstantly (1.7.10 static-поле, дефолт false, не найден ни в одном из 3 корней) ->
+			// "T"; World.checkChunksExist(±32) -> ILevelReaderExtension.isAreaLoaded(BlockPos,int) [ILevelReaderExtension.java:19]
+			// (тот же приём, что и BlockBase.checkGravity/decisions/DEFERRED-LEDGER.md §B2).
+			if (T && aWorld.isAreaLoaded(new BlockPos(aX, aY, aZ), 32)) {
 				if (!aWorld.isClientSide()) aWorld.addFreshEntity(new PrefixBlockFallingEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UP)));
 			} else {
 				short tMetaData = getMetaDataValue(aWorld, aX, aY, aZ);

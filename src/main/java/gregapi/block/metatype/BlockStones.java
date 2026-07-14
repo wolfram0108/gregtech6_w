@@ -51,6 +51,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraftforge.common.EnumPlantType;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
@@ -616,8 +619,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	@Override
 	public float getExplosionResistance(byte aMeta) {
 		switch(aMeta) {
-		case RNFBR: return Blocks.STONE.getExplosionResistance(null) * mResistanceMultiplier * 2;
-		default   : return Blocks.STONE.getExplosionResistance(null) * mResistanceMultiplier;
+		case RNFBR: return Blocks.STONE.getExplosionResistance() * mResistanceMultiplier * 2;
+		default   : return Blocks.STONE.getExplosionResistance() * mResistanceMultiplier;
 		}
 	}
 	
@@ -631,14 +634,18 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	
 	@Override
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {
-		return PLANTABLE[WD.meta(aWorld, aX, aY, aZ)] && aPlant.getPlantType(aWorld, aX+aSide.offsetX, aY+aSide.offsetY, aZ+aSide.offsetZ) == EnumPlantType.Cave;
+		// было ForgeDirection.offsetX/Y/Z (1.7.10 public-поля) -> neo Direction.getStepX()/getStepY()/getStepZ() [Direction.java:247]
+		return PLANTABLE[WD.meta(aWorld, aX, aY, aZ)] && aPlant.getPlantType(aWorld, aX+aSide.getStepX(), aY+aSide.getStepY(), aZ+aSide.getStepZ()) == EnumPlantType.Cave;
 	}
 	
-	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return MOSSY[WD.meta(aWorld, aX, aY, aZ)];}
-	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return MOSSY[WD.meta(aWorld, aX, aY, aZ)];}
-	
-	// @Override
-	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {
+	// было IGrowable.func_149851_a/func_149852_a/func_149853_b (1.7.10) -> BonemealableBlock.isValidBonemealTarget
+	// (LevelReader,BlockPos,BlockState)/isBonemealSuccess(Level,RandomSource,BlockPos,BlockState)/performBonemeal
+	// (ServerLevel,RandomSource,BlockPos,BlockState) [BonemealableBlock.java:14-18]; координаты через aPos.getX/Y/Z(),
+	// тот же приём, что и весь остальной файл.
+	@Override public boolean isValidBonemealTarget(LevelReader aWorld, BlockPos aPos, BlockState aState) {return MOSSY[WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())];}
+	@Override public boolean isBonemealSuccess(Level aWorld, RandomSource aRandom, BlockPos aPos, BlockState aState) {return MOSSY[WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())];}
+	@Override public void performBonemeal(ServerLevel aWorld, RandomSource aRandom, BlockPos aPos, BlockState aState) {
+		int aX = aPos.getX(), aY = aPos.getY(), aZ = aPos.getZ();
 		for (byte[] tOffs : CUBE_3) {
 			Block tBlock = WD.block(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2]);
 			if (tBlock == Blocks.COBBLESTONE && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], Blocks.MOSSY_COBBLESTONE, 0, 3)) return;

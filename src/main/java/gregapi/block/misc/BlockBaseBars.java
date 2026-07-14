@@ -167,8 +167,10 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	
 	// @Override
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
-		for (Object tEntity : aWorld.loadedEntityList) if (tEntity instanceof Player) {
-			if (ST.equal(((Player)tEntity).getMainHandItem(), this) && ((Player)tEntity).distanceToSqr(aX, aY, aZ) <= 25) {
+		// было World.loadedEntityList (1.7.10 public-поле) -> neo EntityGetter.players() [EntityGetter.java:27]
+		// (уже отфильтрованный список игроков, instanceof-проверка больше не нужна).
+		for (Player tEntity : aWorld.players()) {
+			if (ST.equal(tEntity.getMainHandItem(), this) && tEntity.distanceToSqr(aX, aY, aZ) <= 25) {
 				return  new AABB(aX         , aY, aZ         , aX+1       , aY+1, aZ+1       );
 			}
 		}
@@ -183,8 +185,9 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	
 	// @Override
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {
-		if (aWorld instanceof Level) for (Object tEntity : ((Level)aWorld).loadedEntityList) if (tEntity instanceof Player) {
-			if (ST.equal(((Player)tEntity).getMainHandItem(), this) && ((Player)tEntity).distanceToSqr(aX, aY, aZ) <= 25) {
+		// было World.loadedEntityList (1.7.10 public-поле) -> neo EntityGetter.players() [EntityGetter.java:27]
+		if (aWorld instanceof Level) for (Player tEntity : ((Level)aWorld).players()) {
+			if (ST.equal(tEntity.getMainHandItem(), this) && tEntity.distanceToSqr(aX, aY, aZ) <= 25) {
 				setBlockBounds(0, 0, 0, 1, 1, 1);
 				return;
 			}

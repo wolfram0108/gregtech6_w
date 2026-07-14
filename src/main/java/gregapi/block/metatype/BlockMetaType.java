@@ -175,7 +175,9 @@ public class BlockMetaType extends BlockBaseMeta {
 	@Override public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
 	@Override public int getHarvestLevel(int aMeta) {return mHarvestLevel;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.STONE, aWorld, aX, aY, aZ) * mHardnessMultiplier;}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.STONE.getExplosionResistance(null) * mResistanceMultiplier;}
+	// было Block.getExplosionResistance(Entity) (1.7.10, вызов с null-Entity) -> Block.getExplosionResistance() [Block.java:453],
+	// тот же no-arg-fallback, что уже принят для аналогичного generic-вызова в WD.scan (WD.java:1123).
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.STONE.getExplosionResistance() * mResistanceMultiplier;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return mBlock == this || mSide == aSide;}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return mBlock == this;}
 	public boolean isNormalCube() {return mBlock == this;}
