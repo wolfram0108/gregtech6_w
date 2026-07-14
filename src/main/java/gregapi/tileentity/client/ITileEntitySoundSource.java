@@ -25,8 +25,14 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;
-import net.minecraft.client.audio.ISound;
-import net.minecraft.client.audio.ITickableSound;
+// F3-client-sound: 1.7.10 client.audio.ISound/ITickableSound удалены -> neo resources.sounds.SoundInstance/
+// TickableSoundInstance (интерфейс геттеров -> модель protected-полей). Наследуем AbstractTickableSoundInstance
+// (AbstractSoundInstance.java:14-27 несёт volume/pitch/x/y/z/looping/delay/attenuation), реализуем только tick().
+import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -35,34 +41,42 @@ import net.minecraft.resources.Identifier;
 public interface ITileEntitySoundSource extends ITileEntityUnloadable {
 	@OnlyIn(Dist.CLIENT)
 	public void startSound();
-	
+
 	@OnlyIn(Dist.CLIENT)
 	public void stopSound();
-	
+
 	@OnlyIn(Dist.CLIENT)
-	public static class SoundSourceTileEntity implements ITickableSound {
+	public static class SoundSourceTileEntity extends AbstractTickableSoundInstance {
 		public boolean mRunning = F;
 		public float mSoundStrength, mSoundModulation;
 		public final IHasWorldAndCoords mTileEntity;
-		public final Identifier mResource;
-		
+
 		public SoundSourceTileEntity(IHasWorldAndCoords aTileEntity, boolean aRunning, String aSoundName, float aSoundStrength, float aSoundModulation) {
+			// SoundEvent из строки-ресурса (createVariableRangeEvent, SoundEvent.java:35); источник BLOCKS (звук машины-блока).
+			super(SoundEvent.createVariableRangeEvent(Identifier.parse(aSoundName)), SoundSource.BLOCKS, RandomSource.create());
 			mTileEntity = aTileEntity;
-			mResource = Identifier.parse(aSoundName); // neo: ctor Identifier(String) private -> parse (Identifier.java:45)
+			mRunning = aRunning;
 			mSoundStrength = aSoundStrength;
 			mSoundModulation = aSoundModulation;
+			// 1.7.10 getVolume/getPitch/canRepeat/getRepeatDelay/getAttenuationType/getXYZPosF -> установка protected-полей.
+			this.volume = aSoundStrength;
+			this.pitch = aSoundModulation;
+			this.looping = aRunning;
+			this.delay = 1;
+			this.attenuation = SoundInstance.Attenuation.LINEAR;
+			this.x = mTileEntity == null ? 0 : mTileEntity.getX()+0.5D;
+			this.y = mTileEntity == null ? 0 : mTileEntity.getY()+0.5D;
+			this.z = mTileEntity == null ? 0 : mTileEntity.getZ()+0.5D;
 		}
-		
-		public Identifier getPositionedSoundLocation() {return mResource;}
-		public boolean canRepeat() {return mRunning;}
-		public boolean isDonePlaying() {return !mRunning;}
-		public int getRepeatDelay() {return 1;}
-		public float getVolume() {return mSoundStrength;}
-		public float getPitch() {return mSoundModulation;}
-		public float getXPosF() {return mTileEntity == null ? 0 : mTileEntity.getX()+0.5F;}
-		public float getYPosF() {return mTileEntity == null ? 0 : mTileEntity.getY()+0.5F;}
-		public float getZPosF() {return mTileEntity == null ? 0 : mTileEntity.getZ()+0.5F;}
-		public AttenuationType getAttenuationType() {return ISound.AttenuationType.LINEAR;}
-		public void update() {/**/}
+
+		@Override
+		public void tick() {
+			// 1.7.10 геттеры читали изменяемые поля живьём (getVolume/canRepeat/isDonePlaying=!mRunning) -> neo движок
+			// читает protected-поля покадрово: синхронизируем из GT6-полей и глушим звук, когда машина выключилась.
+			this.volume = mSoundStrength;
+			this.pitch = mSoundModulation;
+			this.looping = mRunning;
+			if (!mRunning) stop();
+		}
 	}
 }
