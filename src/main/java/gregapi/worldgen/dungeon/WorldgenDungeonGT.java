@@ -30,7 +30,10 @@ import gregapi.data.MT;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregapi.worldgen.WorldgenObject;
-import gregtech.tileentity.placeables.MultiTileEntityCoin;
+// F-layer-decouple: gregtech.tileentity.placeables.MultiTileEntityCoin — CONTENT-класс (вне ядра-272/среза,
+// не портирован). Прямой import из gregapi-worldgen = утечка core->content. Данные COIN_MAP (Map<OreDictMaterial,
+// ItemStack>) читаются рефлексией по имени класса в рантайме (когда контент загружен) — приём GT6 для
+// кросс-слойного доступа (UT.Reflection.getFieldContent, см. использование ниже). Значение — CORE-тип ItemStack.
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Item;
@@ -192,7 +195,10 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			while (b != tRoomLayout[a].length/2) {b+=(b>(tRoomLayout[a].length/2)?-1:+1); if (tRoomLayout[a][b] == 0) tRoomLayout[a][b] = -128; else break;}
 		}
 		
-		CompoundTag tCoin = (CompoundTag)MultiTileEntityCoin.COIN_MAP.get(UT.Code.select(MT.NULL, MT.Cu, MT.Cu, MT.Cu, MT.Ag, MT.Ag, MT.Au, MT.Au, MT.Pt)).getTagCompound();
+		@SuppressWarnings("unchecked")
+		java.util.Map<gregapi.oredict.OreDictMaterial, net.minecraft.world.item.ItemStack> tCoinMap = (java.util.Map<gregapi.oredict.OreDictMaterial, net.minecraft.world.item.ItemStack>)UT.Reflection.getFieldContent("gregtech.tileentity.placeables.MultiTileEntityCoin", "COIN_MAP", T, T);
+		net.minecraft.world.item.ItemStack tCoinStack = tCoinMap == null ? null : tCoinMap.get(UT.Code.select(MT.NULL, MT.Cu, MT.Cu, MT.Cu, MT.Ag, MT.Ag, MT.Au, MT.Au, MT.Pt));
+		CompoundTag tCoin = tCoinStack == null ? null : gregapi.code.ItemNBT.get(tCoinStack); // getTagCompound()->ItemNBT.get (neo NBT через DataComponents)
 		if (tCoin == null) tCoin = UT.NBT.make(); else tCoin = (CompoundTag)tCoin.copy();
 		
 		boolean
@@ -294,9 +300,14 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
 		}
 		for (BlockPos tCoords : tLightUpdateCoords) {
-			aWorld.setLightValue(LightLayer.Block, tCoords.getX(), tCoords.getY(), tCoords.getZ(), 15);
+			// F-lighting: 1.7.10 World.setLightValue(EnumSkyBlock,x,y,z,15) — ручная установка блок-света удалена из neo
+			// (свет полностью управляется LevelLightEngine, вычисляется из эмиссии блоков; прямого сеттера нет). Прежний
+			// форс «15» был предподсветкой источников — в neo обеспечивается самими светящимися блоками + движком света;
+			// здесь оставляем лишь пересчёт в точке (checkBlock), значение движок выведет сам.
+			aWorld.getLightEngine().checkBlock(tCoords);
 			for (byte tSide : ALL_SIDES_MIDDLE) {
-				aWorld.func_147451_t(tCoords.getX()+OFFX[tSide], tCoords.getY()+OFFY[tSide], tCoords.getZ()+OFFZ[tSide]);
+				// F-lighting: 1.7.10 World.func_147451_t (принудительный пересчёт света в точке) -> neo LevelLightEngine.checkBlock(BlockPos) (LevelLightEngine.java).
+				aWorld.getLightEngine().checkBlock(new BlockPos(tCoords.getX()+OFFX[tSide], tCoords.getY()+OFFY[tSide], tCoords.getZ()+OFFZ[tSide]));
 				WD.update(   aWorld, tCoords.getX()+OFFX[tSide], tCoords.getY()+OFFY[tSide], tCoords.getZ()+OFFZ[tSide]);
 			}
 		}
@@ -373,7 +384,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	public static boolean setBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags, int aRotationCount) {
 		WD.set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags);
-		while (aRotationCount-->0) aBlock.rotateBlock(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]);
+		while (aRotationCount-->0) WD.rotateBlock(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен WD.set выше)
 		return T;
 	}
 }

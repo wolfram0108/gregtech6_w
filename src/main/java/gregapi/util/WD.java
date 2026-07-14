@@ -644,7 +644,21 @@ public class WD {
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags) {
 		return set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, WD.opaque(aBlock));
 	}
-	
+
+	// F-tool-rotation ЦЕНТР: 1.7.10 Block.rotateBlock(World,x,y,z,ForgeDirection axis) удалён из neo (поворот —
+	// BlockState.rotate(Rotation), Y-осевой). Читаем состояние блока в позиции (вызыватели ставят блок WD.set-ом
+	// строкой выше, затем крутят) и rotate(CLOCKWISE_90): state.rotate уважает rotate-поведение каждого блока
+	// (направленные поворачиваются, ненаправленные возвращают себя — точнее прежнего Block.rotateBlock-дефолта=no-op).
+	// aAxis: neo Rotation Y-only (enum без горизонтальных осей); единственные вызыватели (worldgen dungeon) крутят
+	// вокруг SIDE_Y_POS(UP) -> Y-поворот; не-Y ось в срезе не встречается (при появлении — отдельный ADR F-tool-rotation).
+	public static boolean rotateBlock(Level aWorld, int aX, int aY, int aZ, Direction aAxis) {
+		if (aWorld == null) return F;
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockState tState = aWorld.getBlockState(tPos);
+		BlockState tRotated = tState.rotate(net.minecraft.world.level.block.Rotation.CLOCKWISE_90);
+		return tRotated != tState && aWorld.setBlock(tPos, tRotated, 3);
+	}
+
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)

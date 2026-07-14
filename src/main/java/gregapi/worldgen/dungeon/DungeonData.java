@@ -359,7 +359,7 @@ public class DungeonData extends WorldAndCoords {
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags, int aRotationCount) {
 		if (!set(aX, aY, aZ, aBlock, aMeta, aFlags)) return F;
-		while (aRotationCount-->0) aBlock.rotateBlock(mWorld, mX+aX, mY+aY, mZ+aZ, FORGE_DIR[SIDE_Y_POS]);
+		while (aRotationCount-->0) WD.rotateBlock(mWorld, mX+aX, mY+aY, mZ+aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен set выше)
 		return T;
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock1, int aMeta1, Block aBlock2, int aMeta2) {

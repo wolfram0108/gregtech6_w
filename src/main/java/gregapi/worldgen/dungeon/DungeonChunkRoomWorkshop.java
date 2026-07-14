@@ -28,7 +28,9 @@ import gregapi.fluid.FluidTankGT;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import gregtech.tileentity.tools.MultiTileEntityMold;
+// F-layer-decouple: gregtech.tileentity.tools.MultiTileEntityMold — CONTENT-класс (вне ядра-272/среза, не
+// портирован). MOLD_RECIPES (Map<Integer,OreDictPrefix>) читается рефлексией по имени класса (UT.Reflection.
+// getFieldContent) — приём GT6 для кросс-слойного доступа; ключи — CORE-тип Integer (см. ниже).
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.ListTag;
@@ -126,7 +128,9 @@ public class DungeonChunkRoomWorkshop extends DungeonChunkRoomEmpty {
 		
 		//-----
 		
-		ArrayListNoNulls<Integer> tMoldShapes = new ArrayListNoNulls<>(MultiTileEntityMold.MOLD_RECIPES.keySet());
+		@SuppressWarnings("unchecked")
+		java.util.Map<Integer, gregapi.oredict.OreDictPrefix> tMoldRecipes = (java.util.Map<Integer, gregapi.oredict.OreDictPrefix>)UT.Reflection.getFieldContent("gregtech.tileentity.tools.MultiTileEntityMold", "MOLD_RECIPES", T, T);
+		ArrayListNoNulls<Integer> tMoldShapes = new ArrayListNoNulls<>(tMoldRecipes == null ? java.util.Collections.emptySet() : tMoldRecipes.keySet());
 		int tCrucibleType = aData.next(3);
 		
 		aData.set             (14, 1,  1, SIDE_UNKNOWN,    11, UT.NBT.make("gt.dungeonloot", ChestGenHooks.VILLAGE_BLACKSMITH , NBT_FACING, SIDE_X_NEG), T, T);
