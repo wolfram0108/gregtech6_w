@@ -44,7 +44,7 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		HitResult tPosition = WD.getMOP(aWorld, aPlayer, T);
 		if (tPosition == null || tPosition.getType() != HitResult.Type.BLOCK) return aStack;
-		if (!aWorld.canMineBlock(aPlayer, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ())) return aStack;
+		if (!aWorld.mayInteract(aPlayer, ((BlockHitResult)tPosition).getBlockPos())) return aStack; // F-item-use: 1.7.10 World.canMineBlock(player,x,y,z) -> neo Level.mayInteract(Entity,BlockPos) (Level.java:887).
 		
 		Block tBlock = WD.block(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ());
 		if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
