@@ -54,7 +54,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.stats.AchievementList;
+// PORT-TODO(F-achievement): net.minecraft.stats.AchievementList + Player.triggerAchievement удалены в neo (достижения -> data-driven advancements, рантайм-триггер отсутствует); косметические триггеры сняты ниже.
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.Fluid;
@@ -108,9 +108,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		mUpdatedGrid = T; // Just in case someone like Greg used NEI or something to delete all Slots or so.
 		if (aPlayer != null) {
-			aPlayer.triggerAchievement(AchievementList.openInventory);
-			aPlayer.triggerAchievement(AchievementList.mineWood);
-			aPlayer.triggerAchievement(AchievementList.buildWorkBench);
+			// PORT-TODO(F-achievement): aPlayer.triggerAchievement(AchievementList.openInventory/mineWood/buildWorkBench) — API удалён в neo, косметические ачивки сняты.
 		}
 		if (SIDES_TOP[aSide]) return !isServerSide() || openGUI(aPlayer, 0);
 		if (ALONG_AXIS[aSide][mFacing]) return !isServerSide() || openGUI(aPlayer, 1);
