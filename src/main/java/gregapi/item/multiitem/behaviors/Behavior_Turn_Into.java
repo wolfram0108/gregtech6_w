@@ -37,7 +37,10 @@ public class Behavior_Turn_Into extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean isItemStackUsable(MultiItem aItem, ItemStack aStack) {
-		if (mTurnInto == null || !mTurnInto.exists() || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getFluid(aStack) != null)) return T;
+		// F5: 1.7.10 IFluidContainerItem.getFluid(ItemStack) -> neo IFluidHandlerItem.getFluidInTank(0)
+		// (IItemRottable.java:64, тот же приём). F15: getFluidInTank отдаёт FluidStack.EMPTY, не null ->
+		// !isEmpty(), не !=null.
+		if (mTurnInto == null || !mTurnInto.exists() || (aStack.getItem() instanceof IFluidHandlerItem && !((IFluidHandlerItem)aStack.getItem()).getFluidInTank(0).isEmpty())) return T;
 		ST.set(aStack, mTurnInto.get(1), F, F);
 		return T;
 	}

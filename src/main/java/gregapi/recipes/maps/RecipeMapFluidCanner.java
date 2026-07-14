@@ -70,7 +70,8 @@ public class RecipeMapFluidCanner extends RecipeMap {
 		return rRecipe;
 	}
 	
-	@Override public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aStack != null && (super.containsInput(aStack, aTileEntity, aSpecialSlot) || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getCapacity(aStack) > 0));}
+	// F5: 1.7.10 IFluidContainerItem.getCapacity(ItemStack) -> neo IFluidHandlerItem.getTankCapacity(0) (IItemRottable.java:64, тот же приём)
+	@Override public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aStack != null && (super.containsInput(aStack, aTileEntity, aSpecialSlot) || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getTankCapacity(0) > 0));}
 	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return T;}
 	@Override public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return T;}
 }

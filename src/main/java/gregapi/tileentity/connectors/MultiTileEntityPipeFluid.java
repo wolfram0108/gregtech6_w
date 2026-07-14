@@ -401,7 +401,10 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			// No Tank? Nothing to do then.
 			if (aAdjacentTanks[tSide] == null) continue;
 			// Check if the Tank can be filled with this Fluid.
-			if (aAdjacentTanks[tSide].mTileEntity.fill(aAdjacentTanks[tSide].getForgeSideOfTileEntity(), aTank.make(1), F) > 0 || aAdjacentTanks[tSide].mTileEntity.fill(aAdjacentTanks[tSide].getForgeSideOfTileEntity(), aTank.get(Long.MAX_VALUE), F) > 0) {
+			// F5: 1.7.10 IFluidHandler.fill(ForgeDirection,FluidStack,boolean) -> neo IFluidHandler.fill(FluidStack,
+			// FluidAction) без стороны (IFluidHandler.java:117 — сторона уже разрешена на этапе получения этой
+			// ссылки, capability lookup), boolean doFill=false -> FluidAction.SIMULATE (IFluidHandler.java:41-51).
+			if (aAdjacentTanks[tSide].mTileEntity.fill(aTank.make(1), IFluidHandler.FluidAction.SIMULATE) > 0 || aAdjacentTanks[tSide].mTileEntity.fill(aTank.get(Long.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0) {
 				// Add to a random Position in the List.
 				tTanks.add(rng(tTanks.size()+1), aAdjacentTanks[tSide]);
 				// One more Target.
@@ -496,7 +499,13 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			// Extenders should always be connectable.
 			if (aDelegator.mTileEntity instanceof ITileEntityCanDelegate) return T;
 			// Make sure at least one Tank exists at this Side to connect to.
-			if (UT.Code.exists(0, ((IFluidHandler)aDelegator.mTileEntity).getTankInfo(aDelegator.getForgeSideOfTileEntity()))) return T;
+			// F5: 1.7.10 IFluidHandler.getTankInfo(side):FluidTankInfo[] удалён из neo IFluidHandler целиком (0
+			// замены в 3 корнях, side уже разрешена на этапе получения ссылки) — gregapi.fluid.FluidTankInfo.java
+			// сам документирует этот пробел как "consumer-файлы вне области переходника" (FluidTankInfo.java:31-32);
+			// этот вызов — тот самый непортированный consumer. UT.Code.exists(0, array) проверял только
+			// array.length>0 (наличие ХОТЯ БЫ одного танка) — тот же вопрос честно закрывается getTanks()>0
+			// (IFluidHandler.java:60), без построения фиктивного FluidTankInfo[] ради одной длины.
+			if (((IFluidHandler)aDelegator.mTileEntity).getTanks() > 0) return T;
 			// Okay, nothing to do here.
 			return F;
 		}

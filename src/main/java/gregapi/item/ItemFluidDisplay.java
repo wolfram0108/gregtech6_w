@@ -46,9 +46,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 import java.util.Collection;
 import java.util.List;
@@ -63,7 +63,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	private final String mName;
 	
 	public ItemFluidDisplay() {
-		super();
+		super(new Item.Properties()); // было super() (neo Item требует Properties; PrefixItem.java:73/ItemBase.java:78 — тот же приём)
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
 		// F12/R3: регистрация через ЕДИНЫЙ центр (был выдуманный DeferredRegister.registerItem).
@@ -128,13 +128,16 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 			
 			aList.add(LH.Chat.RED + "Temperature: " + tTemperature + " K (" + (tTemperature-C) + "°C)");
 			
+			// F5: 1.7.10 Fluid.isGaseous(FluidStack) удалён -> FluidType.isLighterThanAir() (без FluidStack-арга,
+			// свойство типа жидкости, не стека; neoforge-decompiled/.../fluids/FluidType.java:807, тот же
+			// aFluid.getFluidType() приём, что уже используется ниже в этом файле для getDensity/getLightLevel/getViscosity).
 			if (FL.plasma(tFluid)) {
-				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.YELLOW + "Plasma" + (!aFluid.isGaseous(tFluid) ? LH.Chat.RED + " (Warning: Considered a Liquid by Mods other than GT!)" : LH.Chat.ORANGE + " (Note: Considered a Gas by Mods other than GT!)"));
+				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.YELLOW + "Plasma" + (!aFluid.getFluidType().isLighterThanAir() ? LH.Chat.RED + " (Warning: Considered a Liquid by Mods other than GT!)" : LH.Chat.ORANGE + " (Note: Considered a Gas by Mods other than GT!)"));
 			} else if (tGas) {
-				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.CYAN + "Gas" + (!aFluid.isGaseous(tFluid) ? LH.Chat.RED + " (Warning: Considered a Liquid by Mods other than GT!)" : ""));
+				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.CYAN + "Gas" + (!aFluid.getFluidType().isLighterThanAir() ? LH.Chat.RED + " (Warning: Considered a Liquid by Mods other than GT!)" : ""));
 			} else {
 				aList.add(LH.Chat.GREEN + "State: " + LH.Chat.BLUE + "Liquid" + (tMaterial != null && ST.valid(OP.ingot.mat(tMaterial.mMaterial, 1)) ? LH.Chat.CYAN + " (Might able to cast into Molds)" : ""));
-				if (aFluid.isGaseous(tFluid)) aList.add(LH.Chat.BLINKING_RED + " (Warning: Considered a Gas by Mods other than GT!)");
+				if (aFluid.getFluidType().isLighterThanAir()) aList.add(LH.Chat.BLINKING_RED + " (Warning: Considered a Gas by Mods other than GT!)");
 			}
 			
 			int tDensity = aFluid.getFluidType().getDensity(tFluid);
@@ -230,22 +233,21 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		}
 	}
 	
+	// PORT-TODO(F3, render): 1.7.10 Fluid.getBlock()/getStillIcon()/Block.getIcon(int,int) — старый Forge
+	// Fluid-render API (IIcon/getBlock/getStillIcon), 0 замены в 3 корнях (в neo — атлас спрайтов через
+	// baked-модели/IClientFluidTypeExtensions, не точечный метод); рендер = Фаза C.
 	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public IIcon getIconFromDamage(int aMeta) {
-		Fluid aFluid = FluidRegistry.getFluid(aMeta);
-		if (aFluid == null) return FluidRegistry.WATER.getStillIcon();
-		Block tBlock = aFluid.getBlock();
-		return tBlock != null && tBlock != NB ? tBlock.getIcon(0, 0) : aFluid.getStillIcon();
+		return null;
 	}
-	
+
+	// PORT-TODO(F3, render): 1.7.10 Fluid.getBlock()/Block.getRenderColor(int)/Fluid.getColor() — тот же
+	// удалённый Forge Fluid-render API, что и в getIconFromDamage выше; рендер = Фаза C.
 	// @Override
 	@OnlyIn(Dist.CLIENT)
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
-		Fluid aFluid = FL.fluid(ST.meta_(aStack));
-		if (aFluid == null) return 16777215;
-		Block tBlock = aFluid.getBlock();
-		return tBlock != null && tBlock != NB ? tBlock.getRenderColor(0) : aFluid.getColor();
+		return 16777215;
 	}
 	
 	// @Override
@@ -277,13 +279,11 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	@OnlyIn(Dist.CLIENT)
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
-		for (int i = 0, j = FluidRegistry.getMaxID(); i <= j; i++) {
-			Fluid tFluid = FL.fluid(i);
-			if (tFluid != null && !FluidsGT.HIDDEN.contains(FL.regName(tFluid))) {
-				ItemStack tStack = FL.display(tFluid);
-				if (tStack != null) aList.add(tStack);
-			}
-		}
+		// PORT-TODO(F3/F5, FluidRegistry.getMaxID): 1.7.10 FluidRegistry.getMaxID() (плотный int-id проход) —
+		// 0 замены в 3 корнях (neo Registry не даёт плотного max-id). Цикл и так не давал наблюдаемого эффекта:
+		// FL.display(Fluid) — уже задокументированный PORT-TODO-стаб (FL.java:742, decisions/F5-fluids.md §6,
+		// "вне области этого переходника"), всегда возвращал null -> tStack всегда null -> aList.add никогда не
+		// вызывался. Поведение (0 добавленных предметов из этой ветки) не изменилось. Рендер/creative-tab = Фаза C.
 		for (String tName : UT.Books.BOOK_LIST) aList.add(ST.book(tName));
 	}
 	
@@ -314,7 +314,9 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 			String tName = FluidsGT.FLUID_RENAMINGS.get(aName);
 			if (UT.Code.stringValid(tName)) aName = tName;
 			Fluid tFluid = FL.fluid_(aName);
-			if (tFluid != null) ST.meta_(aStack, tFluid.getID());
+			// F5: 1.7.10 Fluid.getID() удалён -> FL.id(Fluid) (FL.java:673, тот же центр-хелпер уже
+			// используется по всему дереву; PORT-TODO там же про нестабильность id между запусками — 1:1 наследуется).
+			if (tFluid != null) ST.meta_(aStack, FL.id(tFluid));
 			return;
 		}
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
@@ -352,4 +354,20 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	public FluidStack drain(ItemStack aStack, int aDrain, boolean aDoDrain) {
 		return getFluid(aStack);
 	}
+
+	// F5: neo IFluidHandlerItem (neoforge-decompiled/.../fluids/capability/IFluidHandlerItem.java:26, extends
+	// IFluidHandler) — item-bound capability-обёртка (getContainer()/getFluidInTank(int)/fill(FluidStack,
+	// FluidAction)), НЕ 1:1 с 1.7.10 IFluidContainerItem (статичные ItemStack-arg методы выше — getFluid(ItemStack)/
+	// getCapacity(ItemStack)/fill(ItemStack,...)/drain(ItemStack,...) — те и остаются реальной по-стековой логикой,
+	// используемой везде, где GT6-код вызывает их явно со стеком). Тот же предел уже принят и задокументирован в
+	// IItemRottable.java (RottingUtil.rotting) — ItemFluidDisplay singleton Item, без per-stack состояния; методы
+	// ниже — компилятор-обязательные заглушки интерфейса, честно деградированы (без контекста стека).
+	@Override public int getTanks() {return 1;}
+	@Override public FluidStack getFluidInTank(int aTank) {return NF;}
+	@Override public int getTankCapacity(int aTank) {return Integer.MAX_VALUE;}
+	@Override public boolean isFluidValid(int aTank, FluidStack aStack) {return T;}
+	@Override public int fill(FluidStack aResource, FluidAction aAction) {return 0;}
+	@Override public FluidStack drain(FluidStack aResource, FluidAction aAction) {return NF;}
+	@Override public FluidStack drain(int aMaxDrain, FluidAction aAction) {return NF;}
+	@Override public ItemStack getContainer() {return NI;} // нет per-stack состояния (singleton Item) — честный дефолт
 }
