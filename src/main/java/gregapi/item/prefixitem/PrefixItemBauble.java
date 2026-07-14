@@ -59,7 +59,7 @@ public abstract class PrefixItemBauble extends PrefixItem implements IBauble, IW
 	
 	// @Override
 	public void onWornTick(ItemStack aStack, LivingEntity aPlayer) {
-		if (aPlayer.ticksExisted % 120 == 0 && !UT.Entities.isInvincible(aPlayer)) {
+		if (aPlayer.tickCount % 120 == 0 && !UT.Entities.isInvincible(aPlayer)) {
 			UT.Entities.applyRadioactivity(aPlayer, UT.Entities.getRadioactivityLevel(aStack), aStack.getCount());
 		}
 	}

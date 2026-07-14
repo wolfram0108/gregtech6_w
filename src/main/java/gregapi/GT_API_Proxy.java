@@ -823,16 +823,16 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					while (tIterator.hasNext()) {
 						EntityLiving tEntity = tIterator.next();
 						if (tEntity.isRemoved()) {
-							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.ticksExisted + "     DEAD");
+							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.tickCount + "     DEAD");
 							tIterator.remove();
 						} else if (tEntity.isNoDespawnRequired()) {
-							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.ticksExisted + "     PERSISTENT");
+							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.tickCount + "     PERSISTENT");
 							tIterator.remove();
-						} else if (tEntity.ticksExisted != tEntity.getAge()) {
-							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.ticksExisted + "     GOT CLOSE TO PLAYER");
+						} else if (tEntity.tickCount != tEntity.getAge()) {
+							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.tickCount + "     GOT CLOSE TO PLAYER");
 							tIterator.remove();
 						} else {
-							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.ticksExisted);
+							DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.tickCount);
 						}
 					}
 					DEB.println("====01====");
@@ -841,7 +841,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					tIterator = mMobsToFastDespawn.iterator();
 					while (tIterator.hasNext()) {
 						EntityLiving tEntity = tIterator.next();
-						DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.ticksExisted);
+						DEB.println(tEntity.getClass() + "     " + tEntity.getAge() + "     " + tEntity.tickCount);
 					}
 					DEB.println("==========");
 					DEB.println("TEST END");

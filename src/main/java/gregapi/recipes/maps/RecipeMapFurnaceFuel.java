@@ -19,6 +19,7 @@
 
 package gregapi.recipes.maps;
 
+import gregapi.code.ItemNBT;
 import gregapi.data.FL;
 import gregapi.data.OP;
 import gregapi.data.TD;
@@ -84,7 +85,7 @@ public class RecipeMapFurnaceFuel extends RecipeMap {
 				} else {
 					rRecipe = new Recipe(F, F, T, ST.array(ST.amount(1, aInputs[0])), ST.array(tContainer), null, null, null, null, tFuelValue * EU_PER_FURNACE_TICK, -1, 0);
 				}
-				rRecipe.mCanBeBuffered = (aInputs[0].getTagCompound() == null);
+				rRecipe.mCanBeBuffered = (ItemNBT.get(aInputs[0]) == null);
 				if (rRecipe.mCanBeBuffered) addRecipe(rRecipe, F, F, T);
 			}
 		}

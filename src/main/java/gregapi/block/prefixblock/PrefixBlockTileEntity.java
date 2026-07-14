@@ -51,7 +51,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	@Override public String getTileEntityName() {return "gt.MetaBlockTileEntity";}
 	
 	// @Override
-	public net.minecraft.network.Packet getDescriptionPacket() {
+	@Override public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
 		if (!(mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), F, T))) {
 			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
 			if (mItemNBT != null && mItemNBT.contains("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundOrEmpty("display").getString("Name").orElse("")), level, getCoords());

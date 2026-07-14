@@ -44,7 +44,7 @@ public final class ModData implements ICondition<ITagDataContainer<?>> {
 		mID = aID;
 		mName = aName;
 		mPrefix = mID + ":";
-		mLoaded = ModList.isModLoaded(mID);
+		mLoaded = ModList.get().isLoaded(mID);
 		MODS.put(aID, this);
 		MODS.put(aID.toLowerCase(), this);
 		MODS.put(aID.toUpperCase(), this);
