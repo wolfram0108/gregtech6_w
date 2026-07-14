@@ -996,6 +996,14 @@ public class ST {
 		if (item_(aStack) instanceof MultiItemRandom) return ((MultiItemRandom)item_(aStack)).mFoodStats.get(meta_(aStack)) != null;
 		return aStack.has(DataComponents.FOOD); // было: item_(aStack) instanceof ItemFood — класс удалён в neo (REMAP-RULES §C-bis)
 	}
+	/** F-armor-detection: 1.7.10 класс ItemArmor удалён -> броня определяется компонентом DataComponents.EQUIPPABLE
+	 *  (Equippable.slot(), EquipmentSlot.isArmor()=HUMANOID_ARMOR|ANIMAL_ARMOR, EquipmentSlot.java:73). Центр item-домена. */
+	public static boolean armor(ItemStack aStack) {
+		if (invalid(aStack)) return F;
+		net.minecraft.world.item.equipment.Equippable tEquippable = aStack.get(DataComponents.EQUIPPABLE);
+		return tEquippable != null && tEquippable.slot().isArmor();
+	}
+
 	public static int food(ItemStack aStack) {
 		if (invalid(aStack)) return 0;
 		if (aStack.has(DataComponents.FOOD)) {try {return aStack.get(DataComponents.FOOD).nutrition();} catch(Throwable e) {return 1;}}
