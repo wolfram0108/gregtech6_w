@@ -52,7 +52,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 		if (aAmount <= 0) return F;
 		// Determine the Local Height from which to trace downwards.
 		int tMinHeight = Math.min(aWorld.getHeight()-2, WD.waterLevel(aWorld)-1)
-		,   tMaxHeight = Math.min(aWorld.getHeight()-1, aWorld.provider.hasNoSky ? 80 : tMinHeight * 2 + 16);
+		,   tMaxHeight = Math.min(aWorld.getHeight()-1, !aWorld.dimensionType().hasSkyLight() ? 80 : tMinHeight * 2 + 16);
 		// Mark some Target Positions for this Chunk.
 		boolean tTargets[][] = new boolean[16][16], rResult = F;
 		for (int i = 0; i < aAmount; i++) tTargets[aRandom.nextInt(16)][aRandom.nextInt(16)] = T;

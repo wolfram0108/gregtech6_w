@@ -778,8 +778,17 @@ public class GT_API_Post extends Abstract_Mod {
 			BlocksGT.FLOWERS.add(ST.block(MD.BOTA, "shinyFlower"       ));
 		}
 		
-		for (Enchantment tEnchant : Enchantment.enchantmentsList) if (tEnchant != null) {
-			if ("enchantment.Magnetization".equalsIgnoreCase(tEnchant.getName())) {
+		// F5-enchant-identity: 1.7.10 итерация Enchantment.enchantmentsList + идентификация по getName() ("enchantment.X")
+		// -> neo: итерация реестра Registries.ENCHANTMENT (registryKeySet:Registry.java:96), идентичность по ключу
+		// ResourceKey.location().getPath(). Валюта GT6-модели энчантов = ResourceKey<Enchantment> (OreDictMaterial:322/1206),
+		// потому tEnchant тут — ResourceKey (совпадает с addEnchantmentFor*). Vanilla-ключи выверены по neo Enchantments.java
+		// (mending:128/frost_walker:96/swift_sneak:99). Custom-энчанты (Magnetization/Cold Touch/railcraft) — из внешних
+		// модов (F10): если мод не загружен, ключа нет в реестре -> идентификация не сработает -> назначение пропущено
+		// (ровно как в 1.7.10 при отсутствии мода); точные neo-ключи этих модов — PORT-TODO(F10-enchant-custom-key).
+		net.minecraft.server.MinecraftServer tEnchServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		if (tEnchServer != null) for (net.minecraft.resources.ResourceKey<Enchantment> tEnchant : tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).registryKeySet()) {
+			String tEnchName = tEnchant.location().getPath();
+			if ("magnetization".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): Magneticraft-энчант, neo-ключ при порте мода
 				for (OreDictMaterial tMaterial : MT.ALL_MATERIALS_REGISTERED_HERE) {
 					if (tMaterial == MT.NeodymiumMagnetic) {
 						tMaterial.addEnchantmentForTools(tEnchant, 3).addEnchantmentForWeapons(tEnchant, 3).addEnchantmentForArmors(tEnchant, 3);
@@ -790,7 +799,7 @@ public class GT_API_Post extends Abstract_Mod {
 					}
 				}
 			}
-			if ("enchantment.swift_sneak".equalsIgnoreCase(tEnchant.getName())) {
+			if ("swift_sneak".equalsIgnoreCase(tEnchName)) {
 				if (MD.TF.mLoaded) {
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.tower_library  , "ultrarare")).addEnchantedBook(tEnchant, 2);
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.labyrinth_vault, "rare"     )).addEnchantedBook(tEnchant, 2);
@@ -800,7 +809,7 @@ public class GT_API_Post extends Abstract_Mod {
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.aurora_room    , "uncommon" )).addEnchantedBook(tEnchant, 1);
 				}
 			}
-			if ("enchantment.mending".equalsIgnoreCase(tEnchant.getName())) {
+			if ("mending".equalsIgnoreCase(tEnchName)) {
 				if (MD.TF.mLoaded) {
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.tower_library  , "ultrarare")).addEnchantedBook(tEnchant, 1);
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.labyrinth_vault, "rare"     )).addEnchantedBook(tEnchant, 1);
@@ -809,7 +818,7 @@ public class GT_API_Post extends Abstract_Mod {
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.troll_vault    , "uncommon" )).addEnchantedBook(tEnchant, 1);
 				}
 			}
-			if ("enchantment.Cold Touch".equalsIgnoreCase(tEnchant.getName())) {
+			if ("cold_touch".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): внешний энчант, neo-ключ при порте мода
 				MT.Ice                  .addEnchantmentForDamage(tEnchant, 1);
 				MT.Snow                 .addEnchantmentForDamage(tEnchant, 1);
 				MT.FrozenIron           .addEnchantmentForDamage(tEnchant, 2);
@@ -818,7 +827,7 @@ public class GT_API_Post extends Abstract_Mod {
 				MT.InfusedWater         .addEnchantmentForDamage(tEnchant, 4);
 				MT.Cryotheum            .addEnchantmentForDamage(tEnchant, 5);
 			}
-			if ("enchantment.frost_walker".equalsIgnoreCase(tEnchant.getName())) {
+			if ("frost_walker".equalsIgnoreCase(tEnchName)) {
 				MT.Ice                  .addEnchantmentForArmors(tEnchant, 1);
 				MT.Snow                 .addEnchantmentForArmors(tEnchant, 1);
 				MT.FrozenIron           .addEnchantmentForArmors(tEnchant, 1);
@@ -827,7 +836,7 @@ public class GT_API_Post extends Abstract_Mod {
 				MT.InfusedWater         .addEnchantmentForArmors(tEnchant, 1);
 				MT.Cryotheum            .addEnchantmentForArmors(tEnchant, 1);
 			}
-			if ("enchantment.railcraft.crowbar.implosion".equalsIgnoreCase(tEnchant.getName())) {
+			if ("implosion".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): Railcraft crowbar.implosion, neo-ключ при порте мода
 				for (OreDictMaterial tMat : ANY.Emerald   .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 5).addEnchantmentForAmmo(tEnchant, 7);
 				for (OreDictMaterial tMat : ANY.Sapphire  .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 3).addEnchantmentForAmmo(tEnchant, 5);
 				for (OreDictMaterial tMat : ANY.Garnet    .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 2).addEnchantmentForAmmo(tEnchant, 4);

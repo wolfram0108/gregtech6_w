@@ -314,7 +314,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override
 	public boolean getSky(int aX, int aY, int aZ) {
 		if (level == null) return T;
-		if (level.provider.hasNoSky) return F;
+		if (!level.dimensionType().hasSkyLight()) return F;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return T;
 		return WD.canSeeSky(level, aX, aY, aZ);
 	}
@@ -322,7 +322,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override
 	public boolean getRain(int aX, int aY, int aZ) {
 		if (level == null) return T;
-		if (level.provider.hasNoSky) return F;
+		if (!level.dimensionType().hasSkyLight()) return F;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return T;
 		return WD.precipitationHeight(level, aX, aZ) <= aY;
 	}
