@@ -538,8 +538,9 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		String aRegName = ST.regName(aBlock);
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		boolean rReturn = (getDigSpeed(aStack, aBlock, aMeta) > 0);
-		// PORT-TODO(F9, block-material): WD.hardness(Block, World,x,y,z) (meta-based) удалён — degraded до 1.0 (не найдено ни в одном из 3 корней референса; реальный аналог BlockState.getDestroySpeed(Level,BlockPos)).
-		double tDamage = tStats.getToolDamagePerBlockBreak() * 1.0;
+		// оригинал: * aBlock.getBlockHardness(aWorld,aX,aY,aZ). Способность ЕСТЬ — ЦЕНТР WD.hardness (уже
+		// через BlockState.getDestroySpeed, WD.java:360). Была ложная деградация до 1.0 — восстановлено 1:1.
+		double tDamage = tStats.getToolDamagePerBlockBreak() * WD.hardness(aBlock, aWorld, aX, aY, aZ);
 		OreDictMaterial aMat1 = getPrimaryMaterial(aStack);
 		if (WD.dimBTL(aWorld) && !aMat1.contains(TD.Properties.BETWEENLANDS)) tDamage *= 4;
 		if (MD.TFC.owns(aRegName) || MD.TFCP.owns(aRegName)) {
