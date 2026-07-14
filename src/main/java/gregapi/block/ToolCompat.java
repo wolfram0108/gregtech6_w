@@ -94,7 +94,7 @@ public class ToolCompat {
 	}
 	
 	/** Providing compatibility for vanilla Blocks and certain Mod Interfaces. */
-	public static long onToolClick(Block aBlock, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
+	public static long onToolClick(Block aBlock, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		Player aEntityPlayer = aPlayer instanceof Player ? (Player)aPlayer : null;

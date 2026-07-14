@@ -40,5 +40,5 @@ public abstract class AbstractCoverAttachment extends AbstractCoverDefault {
 	@Override public boolean isOpaque(byte aSide, CoverData aData) {return F;}
 	@Override public boolean isSealable(byte aCoverSide, CoverData aData) {return F;}
 	@Override public boolean onWalkOver(byte aCoverSide, CoverData aData, Entity aEntity) {return F;}
-	@Override public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {return aData.mTileEntity.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aCoverSide, aHitX, aHitY, aHitZ);}
+	@Override public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {return aData.mTileEntity.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aCoverSide, aHitX, aHitY, aHitZ);}
 }

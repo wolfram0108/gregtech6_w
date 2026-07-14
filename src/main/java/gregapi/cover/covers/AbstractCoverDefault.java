@@ -60,7 +60,7 @@ public abstract class AbstractCoverDefault implements ICover {
 	@Override public boolean interceptClickLeft (byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {return T;}
 	@Override public boolean onCoverClickedRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {return F;}
 	@Override public boolean interceptClickRight(byte aCoverSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {return T;}
-	@Override public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {return 0;}
+	@Override public long onToolClick(byte aCoverSide, CoverData aData, String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {return 0;}
 	@Override public ItemStack getCoverItem(byte aCoverSide, CoverData aData) {return ST.make(aData.mIDs[aCoverSide], 1, aData.mMetas[aCoverSide], aData.mNBTs[aCoverSide]==null||aData.mNBTs[aCoverSide].isEmpty()?null:aData.mNBTs[aCoverSide]);}
 	@Override public ITexture getCoverTextureSurface(byte aCoverSide, CoverData aData) {return null;}
 	@Override public ITexture getCoverTextureAttachment(byte aCoverSide, CoverData aData, byte aTextureSide) {return getCoverTextureSurface(aCoverSide, aData);}

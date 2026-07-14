@@ -167,7 +167,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	}
 	
 	@Override
-	public final long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public final long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (!allowInteraction(aPlayer)) return 0;
 		if (checkObstruction(aPlayer instanceof Player ? (Player)aPlayer : null, aSide, aHitX, aHitY, aHitZ)) return 0;
 		level.blockEntityChanged(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
@@ -206,7 +206,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	}
 	
 	@Override
-	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		return 0;
 	}
 	

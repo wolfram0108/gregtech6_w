@@ -88,7 +88,7 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	public static interface IMTE_GetFireSpreadSpeed                 extends IMultiTileEntity {public int getFireSpreadSpeed(byte aSide, boolean aDefault);}
 	public static interface IMTE_IsFireSource                       extends IMultiTileEntity {public boolean isFireSource(byte aSide);}
 	public static interface IMTE_CanEntityDestroy                   extends IMultiTileEntity {public boolean canEntityDestroy(Entity aEntity);}
-	public static interface IMTE_OnToolClick                        extends IMultiTileEntity {public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ);}
+	public static interface IMTE_OnToolClick                        extends IMultiTileEntity {public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ);}
 	public static interface IMTE_GetMaterialAtSide                  extends IMultiTileEntity {public OreDictMaterialStack getMaterialAtSide(byte aSide);}
 	public static interface IMTE_RemoveMaterialFromSide             extends IMultiTileEntity {public boolean removeMaterialFromSide(byte aSide, OreDictMaterialStack aMaterial);}
 	public static interface IMTE_GetDrops                           extends IMultiTileEntity {public ArrayListNoNulls<ItemStack> getDrops(int aFortune, boolean aSilkTouch);}
