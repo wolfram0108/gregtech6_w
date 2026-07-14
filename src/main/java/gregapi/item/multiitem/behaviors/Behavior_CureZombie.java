@@ -24,13 +24,12 @@ import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
 import gregapi.util.UT;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.monster.zombie.Zombie;
+// F-entity-identity: 1.7.10 EntityZombie.isVillager() -> neo отдельный класс ZombieVillager (ZombieVillager.java:59).
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.effect.MobEffectInstance;
 
 import java.util.List;
 
@@ -47,19 +46,25 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof Zombie && ((Zombie)aEntity).isVillager()) {
-			if (!mNeedsWeakness || ((Zombie)aEntity).hasEffect(MobEffects.WEAKNESS)) {
+		if (aEntity instanceof ZombieVillager) {
+			ZombieVillager tZombie = (ZombieVillager)aEntity;
+			if (!mNeedsWeakness || tZombie.hasEffect(MobEffects.WEAKNESS)) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				if (!(aEntity).level().isClientSide()) {
+				if (!tZombie.level().isClientSide()) {
 					int tCureTime = RNGSUS.nextInt(mAverageCureTime * 2) + 500;
-					CompoundTag tNBT = UT.NBT.make();
-					aEntity.writeToNBT(tNBT);
+					// F-entity-conversion (ADR: движок централизовал запуск конверсии в приватный ZombieVillager.startConverting).
+					// Оригинал GT6 заводил конверсию через NBT-ключ "ConversionTime" (writeToNBT/readFromNBT) + вручную:
+					// datawatcher-флаг 14 + removePotion(weakness) + addPotion(strength, tCureTime, min(diff-1,0)) + setEntityState(16).
+					// neo: тот же ключ "ConversionTime" читается readAdditionalSaveData (ZombieVillager.java:118-121) -> startConverting,
+					// который ЦЕНТРАЛИЗОВАННО делает ВСЁ ручное (флаг DATA_CONVERTING_ID + removeEffect(WEAKNESS) +
+					// addEffect(STRENGTH, time, min(diff.getId()-1,0)) + broadcastEntityEvent(16), строки 200-207) — ручные строки
+					// СНЯТЫ (движок их поглотил, 1:1 по эффекту, включая тот же min(diff-1,0)-амплитудный расчёт).
+					// save/load через ValueOutput/ValueInput (NBT-рефактор) -> мост TagValueOutput/TagValueInput(CompoundTag).
+					net.minecraft.world.level.storage.TagValueOutput tOut = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, tZombie.registryAccess());
+					tZombie.saveWithoutId(tOut);
+					CompoundTag tNBT = tOut.buildResult();
 					tNBT.putInt("ConversionTime", tCureTime);
-					aEntity.readFromNBT(tNBT);
-					aEntity.getDataWatcher().updateObject(14, Byte.valueOf((byte)1));
-					((Zombie)aEntity).removeEffect(MobEffects.WEAKNESS);
-					((Zombie)aEntity).addEffect(new MobEffectInstance(MobEffects.STRENGTH, tCureTime, Math.min(((Zombie)aEntity).level().difficultySetting.getDifficultyId() - 1, 0)));
-					aEntity.level().broadcastEntityEvent(aEntity, (byte)16);
+					tZombie.load(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, tZombie.registryAccess(), tNBT));
 				}
 				return T;
 			}

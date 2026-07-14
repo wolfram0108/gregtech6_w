@@ -53,16 +53,16 @@ public class Behavior_FeedGrass extends AbstractBehaviorDefault {
 				((Horse)aEntity).heal(1);
 				tConsume = T;
 			}
-			if (!((Horse)aEntity).isAdultHorse()) {
-				((Horse)aEntity).addGrowth(30);
+			if (((Horse)aEntity).isBaby()) { // 1.7.10 !isAdultHorse() == neo isBaby() (age<0, AgeableMob.java:245).
+				((Horse)aEntity).ageUp(30); // 1.7.10 addGrowth(30) == neo ageUp(30) (age+=sec*20, cap 0 — тождественная семантика, AgeableMob.java:143).
 				tConsume = T;
 			}
-			if (tConsume || !((Horse)aEntity).isTame()) {
+			if (tConsume || !((Horse)aEntity).isTamed()) { // AbstractHorse не extends TamableAnimal — своё isTamed() (AbstractHorse.java:173), не isTame().
 				tConsume = T;
-				((Horse)aEntity).increaseTemper(2);
+				((Horse)aEntity).modifyTemper(2); // 1.7.10 increaseTemper(2) == neo modifyTemper(2) (clamp temper+amount, AbstractHorse.java:248).
 			}
 			if (tConsume) {
-				((Horse)aEntity).level().playSoundAtEntity(aEntity, "eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F);
+				UT.Sounds.send("eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F, aEntity); // F-sound: 1.7.10 world.playSoundAtEntity(entity,String,vol,pitch) -> центр UT.Sounds.send(String,vol,pitch,Entity) 1:1.
 				UT.Entities.consumeCurrentItem(aPlayer);
 			}
 			return tConsume;

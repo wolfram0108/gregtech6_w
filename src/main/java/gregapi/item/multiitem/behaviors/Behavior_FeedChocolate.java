@@ -50,7 +50,7 @@ public class Behavior_FeedChocolate extends AbstractBehaviorDefault {
 		}
 		if (aEntity instanceof Horse) {
 			((LivingEntity)aEntity).addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
-			((Horse)aEntity).level().playSoundAtEntity(aEntity, "eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F);
+			UT.Sounds.send("eating", 1.0F, 1.0F + RNGSUS.nextFloat() - RNGSUS.nextFloat() * 0.2F, aEntity); // F-sound: 1.7.10 world.playSoundAtEntity(entity,String,vol,pitch) -> центр UT.Sounds.send(String,vol,pitch,Entity) 1:1.
 			UT.Entities.consumeCurrentItem(aPlayer);
 			return T;
 		}
