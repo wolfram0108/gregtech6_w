@@ -174,7 +174,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					if (tShootingEntity instanceof Player) NeoForge.EVENT_BUS.post(new AttackEntityEvent((Player)tShootingEntity, tHitEntity));
 					
 					float
-					tMagicDamage = tHitEntity instanceof LivingEntity?EnchantmentHelper.func_152377_a(mArrow, ((LivingEntity)tHitEntity).getCreatureAttribute()):0,
+					tMagicDamage = tHitEntity instanceof LivingEntity?UT.Enchantments.getDamageBonusVsCreature(mArrow, tHitEntity):0,
 					tDamage = UT.Code.roundUp(MathHelper.sqrt_double(motionX*motionX + motionY*motionY + motionZ*motionZ) * (getDamage() + Math.max(0, tData != null && tData.validMaterial() ? tData.mMaterial.mMaterial.mToolQuality-1 : 0)));
 					
 					if (getIsCritical()) tDamage += rand.nextInt((int)(tDamage / 2.0 + 2.0));

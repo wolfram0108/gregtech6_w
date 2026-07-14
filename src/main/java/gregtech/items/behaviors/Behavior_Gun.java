@@ -22,6 +22,10 @@ import net.minecraft.world.level.block.PumpkinBlock;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.BaseRailBlock;
+import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.Block;
 
 import com.mojang.authlib.GameProfile;
@@ -62,6 +66,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
@@ -100,8 +105,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		// What's the Angle we are looking from and to?
 		Vec3
 		tDir = aPlayer.getLookAngle(),
-		tPos = Vec3.createVectorHelper(aPlayer.getX(), aPlayer.getY() + aPlayer.getEyeHeight(), aPlayer.getZ()),
-		tAim = tPos.addVector(tDir.x * 200, tDir.y * 200, tDir.z * 200);
+		tPos = new Vec3(aPlayer.getX(), aPlayer.getY() + aPlayer.getEyeHeight(), aPlayer.getZ()),
+		tAim = tPos.add(tDir.x * 200, tDir.y * 200, tDir.z * 200);
 		// List all the Blocks that are on the way.
 		List<BlockPos> aCoords = WD.line(tPos, tAim);
 		// Gather random Information about the first Block.
@@ -114,13 +119,13 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		int tFireAspect = UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, aBullet);
 		
 		// Make a List of all possible Targets.
-		List tEntities = aPlayer.level().getEntities(aPlayer, AABB.getBoundingBox(Math.min(tPos.x, tAim.x)-2, Math.min(tPos.y, tAim.y)-2, Math.min(tPos.z, tAim.z)-2, Math.max(tPos.x, tAim.x)+2, Math.max(tPos.y, tAim.y)+2, Math.max(tPos.z, tAim.z)+2));
+		List tEntities = aPlayer.level().getEntities(aPlayer, new AABB(Math.min(tPos.x, tAim.x)-2, Math.min(tPos.y, tAim.y)-2, Math.min(tPos.z, tAim.z)-2, Math.max(tPos.x, tAim.x)+2, Math.max(tPos.y, tAim.y)+2, Math.max(tPos.z, tAim.z)+2));
 		List<Entity> tTargets = new ArrayListNoNulls<>();
 		for (Object tEntity : tEntities) if (tEntity instanceof Entity) {
 			AABB tBox = ((Entity)tEntity).getBoundingBox();
 			if (tBox != null) {
-				if (tEntity instanceof EndCrystal) tBox = tBox.getOffsetBoundingBox(0, 1.3, 0);
-				if (tBox.calculateIntercept(tPos, tAim) != null) tTargets.add((Entity)tEntity);
+				if (tEntity instanceof EndCrystal) tBox = tBox.move(0, 1.3, 0);
+				if (tBox.clip(tPos, tAim).isPresent()) tTargets.add((Entity)tEntity);
 			}
 		}
 		
@@ -236,9 +241,12 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower=0;
 				continue;
 			}
-			if (aBlock.canCollideCheck(aMeta, F) || aBlock.canCollideCheck(aMeta, T)) {
+			// F-collision: Block.canCollideCheck(meta,liquid) удалён (коллизия стала state+level+pos-driven,
+			// getCollisionShape). 1.7.10 (…, F)||(…, T) = «блок вообще коллидирует» — маршрут в центр
+			// WD.hasCollide (WD.java:896, было getCollisionBoundingBoxFromPool!=null), та же семантика 1:1.
+			if (WD.hasCollide(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), aBlock)) {
 				AABB tBox = WD.collisionBox(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), aBlock);
-				if (tBox != null && tBox.calculateIntercept(tPos, tAim) != null) {
+				if (tBox != null && tBox.clip(tPos, tAim).isPresent()) {
 					UT.Sounds.send(aBlock.defaultBlockState().getSoundType().getBreakSound(), aPlayer.level(), aCoord);
 					tPower=0;
 					continue;
@@ -253,11 +261,16 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 	public boolean hit(ItemStack aGun, ItemStack aBullet, Player aPlayer, Entity aTarget, long aPower, Vec3 aDir) {
 		try {
 		// In case the Entity is Invulnerable.
-		if (aTarget.isEntityInvulnerable()) return F;
+		if (aTarget.isInvulnerable()) return F;
 		// Player specific immunities, and I guess friendly fire prevention too.
-		if (aTarget instanceof Player && (((Player)aTarget).getAbilities().invulnerable || !aPlayer.canAttackPlayer((Player)aTarget))) return F;
+		if (aTarget instanceof Player && (((Player)aTarget).getAbilities().invulnerable || !aPlayer.canHarmPlayer((Player)aTarget))) return F;
 		// Endermen require Disjunction Enchantment on the Bullet, or having a Weakness Potion Effect on them.
-		if (aTarget instanceof EnderMan && ((EnderMan)aTarget).getActivePotionEffect(MobEffect.weakness) == null && UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.INSTANCE, aBullet) <= 0) for (int i = 0; i < 64; ++i) if (((EnderMan)aTarget).teleportRandomly()) return F;
+		// F-entity: getActivePotionEffect(MobEffect)->getEffect(Holder<MobEffect>) (LivingEntity.java:1006),
+		// weakness->MobEffects.WEAKNESS (MobEffects.java:75, Holder<MobEffect>). teleportRandomly() удалён
+		// (EnderMan.teleport() стал protected) — воспроизводим 1:1 через ПУБЛИЧНЫЙ LivingEntity.randomTeleport
+		// (LivingEntity.java:3705, аналог 1.7.10 teleportTo) с той же random-offset формулой, что neo
+		// EnderMan.teleport() (EnderMan.java:258-260): getX()+(rand-0.5)*64 / getY()+rand(64)-32 / getZ()+(rand-0.5)*64.
+		if (aTarget instanceof EnderMan && ((EnderMan)aTarget).getEffect(MobEffects.WEAKNESS) == null && UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.KEY, aBullet) <= 0) for (int i = 0; i < 64; ++i) if (((EnderMan)aTarget).randomTeleport(aTarget.getX() + (RNGSUS.nextDouble()-0.5D)*64.0D, aTarget.getY() + (RNGSUS.nextInt(64)-32), aTarget.getZ() + (RNGSUS.nextDouble()-0.5D)*64.0D, T)) return F;
 		// EntityLivingBase, Ender Dragon and End Crystals only.
 		if (!(aTarget instanceof LivingEntity || aTarget instanceof EnderDragonPart || aTarget instanceof EndCrystal)) return F;
 	//  // To make Railcrafts Damage Enchantments work... // I later figured I'd just hardcode it in.
@@ -269,7 +282,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		float
 		tMassFactor = (tData!=null&&tData.nonemptyMaterial() ? (float)tData.mMaterial.weight() / 50.0F : 1),
 		tSpeedFactor = Math.min(2.0F, aPower/5000.0F),
-		tMagicDamage = (aTarget instanceof LivingEntity ? EnchantmentHelper.func_152377_a(aBullet, ((LivingEntity)aTarget).getCreatureAttribute()) : aTarget instanceof EnderDragonPart ? UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.INSTANCE, aBullet) : 0),
+		tMagicDamage = (aTarget instanceof LivingEntity ? UT.Enchantments.getDamageBonusVsCreature(aBullet, aTarget) : aTarget instanceof EnderDragonPart ? UT.NBT.getEnchantmentLevel(Enchantment_EnderDamage.KEY, aBullet) : 0),
 		tDamage = tSpeedFactor * Math.max(0, tGunMat.mToolQuality*0.5F + tMassFactor);
 		int
 		tImplosion  =      UT.NBT.getEnchantmentLevelImplosion(aBullet),
@@ -277,7 +290,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		tKnockback  =     (UT.NBT.getEnchantmentLevel(Enchantments.PUNCH, aGun) + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK , aBullet));
 		
 		if (tImplosion  > 0 && UT.Entities.isExplosiveCreature(aTarget)) tMagicDamage += 1.5F*tImplosion;
-		if (tFireDamage > 0) aTarget.setFire(tFireDamage);
+		if (tFireDamage > 0) aTarget.igniteForSeconds(tFireDamage);
 		
 		Player tPlayer = aPlayer;
 		
@@ -294,7 +307,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getName().getString()));
 					tPlayer.getInventory().setSelectedSlot(0);
 					tPlayer.getInventory().setItem(0, aBullet);
-					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.getYRot(), aPlayer.getXRot());
+					tPlayer.snapTo(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.getYRot(), aPlayer.getXRot());
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
 					if (WD.dimTF(aPlayer.level())) tPlayer.getAbilities().instabuild = T;
 					tPlayer.discard();
@@ -303,21 +316,28 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 		}
 		
 		// To make Looting work at all...
-		DamageSource tDamageSource = DamageSources.getCombatDamage("player", tPlayer, DamageSources.getDeathMessage(aPlayer, aTarget, (tData!=null&&tData.validMaterial() ? "[VICTIM] got killed by [KILLER] shooting a Bullet made of " + tData.mMaterial.mMaterial.getLocal() : "[VICTIM] got shot by [KILLER]")), F).setProjectile();
+		// F-damage: neo DamageSource иммутабелен, флюент-мутаторы (setProjectile/setDamageBypassesArmor)
+		// живут на центре DamageSources.GregTechDamageSource (DamageSources.java:283,305) — переменную
+		// объявляем этим типом, а не базовым neo DamageSource (у него мутаторов нет). Оригинал 1.7.10
+		// тоже цепочно мутировал DamageSource; тип центра сохраняет ту же форму 1:1.
+		DamageSources.GregTechDamageSource tDamageSource = DamageSources.getCombatDamage("player", tPlayer, DamageSources.getDeathMessage(aPlayer, aTarget, (tData!=null&&tData.validMaterial() ? "[VICTIM] got killed by [KILLER] shooting a Bullet made of " + tData.mMaterial.mMaterial.getLocal() : "[VICTIM] got shot by [KILLER]")), F).setProjectile();
 		// Extremely Fast Bullets will penetrate Armor. You need a Rifle with the Power Enchantment for this. A Power 5 Carbine at point-blank could do too though.
 		if (aPower > 25000) tDamageSource.setDamageBypassesArmor();
 		// Smite Bullets will break one Lich Shield each, in order to make this somewhat beatable in Multiplayer.
 		if (MD.TF.mLoaded && aTarget instanceof EntityTFLich && UT.NBT.getEnchantmentLevel(Enchantments.SMITE, aBullet) > 0) tDamageSource.setDamageBypassesArmor();
 		
 		if (aTarget.hurtOrSimulate(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
-			aTarget.invulnerableTime = (aTarget instanceof LivingEntity ? ((LivingEntity)aTarget).maxHurtResistantTime : 20);
-			if (aTarget instanceof Creeper && tFireDamage > 0 && tImplosion <= 0) ((Creeper)aTarget).func_146079_cb();
-			if (tKnockback > 0) aTarget.addVelocity(aDir.x * tKnockback * aPower / 50000.0, 0.05, aDir.z * tKnockback * aPower / 50000.0);
+			// F-entity: 1.7.10 instance-поле LivingEntity.maxHurtResistantTime удалено — neo хранит длительность
+			// i-frames константой LivingEntity.INVULNERABLE_DURATION=20 (LivingEntity.java:173, protected static
+			// final). Обе ветки тернара были 20 (non-living тоже 20) → сворачивается в 20 (воспроизведение, не улучшение).
+			aTarget.invulnerableTime = 20;
+			if (aTarget instanceof Creeper && tFireDamage > 0 && tImplosion <= 0) ((Creeper)aTarget).ignite();
+			if (tKnockback > 0) aTarget.push(aDir.x * tKnockback * aPower / 50000.0, 0.05, aDir.z * tKnockback * aPower / 50000.0);
 			if (aTarget instanceof LivingEntity)
 			UT.Enchantments.applyBullshitA((LivingEntity)aTarget, aPlayer, aBullet);
 			UT.Enchantments.applyBullshitB(                  aPlayer, aTarget, aBullet);
 			if (aTarget instanceof Player && aPlayer instanceof ServerPlayer) ((ServerPlayer)aPlayer).connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0.0F));
-			if (tMagicDamage > 0.0F) aPlayer.onEnchantmentCritical(aTarget);
+			if (tMagicDamage > 0.0F) aPlayer.magicCrit(aTarget);
 			return T;
 		}
 		// Print Errors to the Log and send a Chat Message informing about its existence.

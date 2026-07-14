@@ -20,7 +20,7 @@
 package gregapi.fluid;
 
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidTank;
+import net.neoforged.neoforge.fluids.IFluidTank;
 
 /**
  * F5 компат-заглушка: Forge-1.7.10 {@code net.minecraftforge.fluids.FluidTankInfo} — простая
