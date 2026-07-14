@@ -147,12 +147,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	
 	public boolean checkGravity(Level aWorld, int aX, int aY, int aZ) {
 		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
-		if (aY > 0 && useGravity(aMeta) && FallingBlock.func_149831_e(aWorld, aX, aY - 1, aZ)) {
+		if (aY > 0 && useGravity(aMeta) && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) {
 			if (!FallingBlock.fallInstantly && aWorld.checkChunksExist(aX-32, aY-32, aZ-32, aX+32, aY+32, aZ+32)) {
 				if (!aWorld.isClientSide()) aWorld.addFreshEntity(new FallingBlockEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, aMeta));
 			} else {
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
-				while (FallingBlock.func_149831_e(aWorld, aX, aY-1, aZ) && aY > 0) --aY;
+				while (FallingBlock.isFree(WD.block(aWorld, aX, aY-1, aZ).defaultBlockState()) && aY > 0) --aY;
 				if (aY > 0) WD.set(aWorld, aX, aY, aZ, this, aMeta, 2);
 			}
 			return T;

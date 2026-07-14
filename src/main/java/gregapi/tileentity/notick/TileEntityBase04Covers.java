@@ -169,7 +169,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	public final long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (!allowInteraction(aPlayer)) return 0;
 		if (checkObstruction(aPlayer instanceof Player ? (Player)aPlayer : null, aSide, aHitX, aHitY, aHitZ)) return 0;
-		level.markTileEntityChunkModified(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
+		level.blockEntityChanged(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());
 		if (SIDES_VALID[aSide] && hasCovers()) {
 			byte tSide = usePipePlacementMode(aSide) && mCovers.mIDs[aSide] == 0 ? UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ) : aSide;
 			if (aTool.equals(TOOL_crowbar) && isServerSide()) {
