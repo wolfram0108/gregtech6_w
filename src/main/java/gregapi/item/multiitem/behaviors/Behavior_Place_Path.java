@@ -69,7 +69,7 @@ public class Behavior_Place_Path extends AbstractBehaviorDefault {
 			if (IL.EtFu_Path.exists()) {
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 					UT.Sounds.send(SFX.MC_DIG_GRAVEL, aWorld, aX, aY, aZ);
-					aWorld.setBlock(aX, aY, aZ, IL.EtFu_Path.block());
+					WD.set(aWorld, aX, aY, aZ, IL.EtFu_Path.block(), 0, 3);
 					return T;
 				}
 				return F;

@@ -66,7 +66,7 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 		if (aBlock == Blocks.WATER || aBlock == Blocks.WATER) {
 			if (aMeta == 0 && GT_ModHandler.damageOrDechargeItem(aStack, 1, 1000, aPlayer)) {
 				UT.Sounds.send(aWorld, SFX.IC_SPRAY, 1.0F, -1, aX, aY, aZ);
-				aWorld.setBlock(aX, aY, aZ, Blocks.ICE, 0, 3);
+				WD.set(aWorld, aX, aY, aZ, Blocks.ICE, 0, 3);
 				return true;
 			}
 			return false;
@@ -75,7 +75,7 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 		if (aBlock == Blocks.LAVA || aBlock == Blocks.LAVA) {
 			if (aMeta == 0 && GT_ModHandler.damageOrDechargeItem(aStack, 1, 1000, aPlayer)) {
 				UT.Sounds.send(aWorld, SFX.IC_SPRAY, 1.0F, -1, aX, aY, aZ);
-				aWorld.setBlock(aX, aY, aZ, Blocks.OBSIDIAN, 0, 3);
+				WD.set(aWorld, aX, aY, aZ, Blocks.OBSIDIAN, 0, 3);
 				return true;
 			}
 			return false;

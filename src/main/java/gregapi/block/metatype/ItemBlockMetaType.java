@@ -85,7 +85,7 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 			if (SIDES_VALID[((GT_Block_Stones)aBlock).mSide])
 			if (ST.equal(aStack, new ItemStack(mBlock.mBlock.mSlabs[0], 1, aMetaData), true))
 			if (WD.noEntityCollision(aWorld, WD.collisionBox(aWorld, aX, aY, aZ, mBlock.mBlock))) {
-				aWorld.setBlock(aX, aY, aZ, mBlock.mBlock, aMetaData, 3);
+				WD.set(aWorld, aX, aY, aZ, mBlock.mBlock, aMetaData, 3);
 				WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, mBlock.mBlock);
 				if (!aPlayer.getAbilities().instabuild) aStack.stackSize--;
 				mInterrupt = true;
