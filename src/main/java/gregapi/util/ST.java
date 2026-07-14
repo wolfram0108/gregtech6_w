@@ -393,10 +393,10 @@ public class ST {
 		if (UT.Entities.hasInfiniteItems(aPlayer)) return T;
 		if (invalid(aStack)) return F;
 		if (aStack.getCount() < aAmount) return F;
-		aStack.setCount(aStack.getCount()-(aAmount));
+		aStack.setCount((int)(aStack.getCount()-(aAmount))); // aAmount long -> явный cast (setCount(int))
 		if (!(aPlayer instanceof Player)) return T;
 		if (aStack.getCount() <= 0) {
-			if (aTriggerEvent) EventHooks.onPlayerDestroyItem((Player)aPlayer, aStack);
+			if (aTriggerEvent) EventHooks.onPlayerDestroyItem((Player)aPlayer, aStack, null); // neo: +@Nullable InteractionHand (EventHooks:235); generic decr без hand-контекста -> null
 			if (aRemove) for (int i = 0; i < ((Player)aPlayer).getInventory().getNonEquipmentItems().size(); i++) {
 				if (((Player)aPlayer).getInventory().getNonEquipmentItems().get(i) == aStack) {
 					((Player)aPlayer).getInventory().getNonEquipmentItems().set(i, ItemStack.EMPTY); // граница vanilla NonNullList требует non-null (было null=1.7.10 empty)
@@ -443,8 +443,10 @@ public class ST {
 	public static ItemStack[] array(ItemStack... aStacks) {return aStacks;}
 	public static ItemStack[] array(int aLength) {return new ItemStack[aLength];}
 	
-	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {return new ItemStack(aItem , UT.Code.bindInt(aSize), UT.Code.bindShort(aMeta));}
-	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {return new ItemStack(aBlock, UT.Code.bindInt(aSize), UT.Code.bindShort(aMeta));}
+	// F1-meta: neo ItemStack(ItemLike,int,int) 3-арг ctor с метой удалён (flattening) — мета хранится
+	// компонентом DAMAGE (та же F1-модель, что центр meta_:188 setDamageValue). 2-арг ctor + setDamageValue.
+	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); rStack.setDamageValue(UT.Code.bindShort(aMeta)); return rStack;}
+	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); rStack.setDamageValue(UT.Code.bindShort(aMeta)); return rStack;}
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
 		if (!aModID.mLoaded || UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;
 		ItemStack
@@ -729,19 +731,19 @@ public class ST {
 			Block aChestBlock = aPotentialChest.getBlock();
 			if (aPotentialChest.getBlockAtSide(SIDE_X_NEG) == aChestBlock) {
 				BlockEntity tAdjacentChest = aPotentialChest.getTileEntityAtSideAndDistance(SIDE_X_NEG, 1);
-				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer("fucking mojang hax", (Container)tAdjacentChest, (Container)aPotentialChest.mTileEntity), aPotentialChest);
+				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer((Container)tAdjacentChest, (Container)aPotentialChest.mTileEntity), aPotentialChest);
 			}
 			if (aPotentialChest.getBlockAtSide(SIDE_X_POS) == aChestBlock) {
 				BlockEntity tAdjacentChest = aPotentialChest.getTileEntityAtSideAndDistance(SIDE_X_POS, 1);
-				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer("fucking mojang hax", (Container)aPotentialChest.mTileEntity, (Container)tAdjacentChest), aPotentialChest);
+				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer((Container)aPotentialChest.mTileEntity, (Container)tAdjacentChest), aPotentialChest);
 			}
 			if (aPotentialChest.getBlockAtSide(SIDE_Z_NEG) == aChestBlock) {
 				BlockEntity tAdjacentChest = aPotentialChest.getTileEntityAtSideAndDistance(SIDE_Z_NEG, 1);
-				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer("fucking mojang hax", (Container)tAdjacentChest, (Container)aPotentialChest.mTileEntity), aPotentialChest);
+				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer((Container)tAdjacentChest, (Container)aPotentialChest.mTileEntity), aPotentialChest);
 			}
 			if (aPotentialChest.getBlockAtSide(SIDE_Z_POS) == aChestBlock) {
 				BlockEntity tAdjacentChest = aPotentialChest.getTileEntityAtSideAndDistance(SIDE_Z_POS, 1);
-				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer("fucking mojang hax", (Container)aPotentialChest.mTileEntity, (Container)tAdjacentChest), aPotentialChest);
+				if (tAdjacentChest instanceof ChestBlockEntity) return new DelegatorTileEntity(new CompoundContainer((Container)aPotentialChest.mTileEntity, (Container)tAdjacentChest), aPotentialChest);
 			}
 		}
 		return aPotentialChest;
@@ -1075,7 +1077,7 @@ public class ST {
 		if (invalid(aStack)) return "";
 		Object rName = OreDictManager.INSTANCE.getAssociation_(aStack, T);
 		if (rName != null) return rName.toString();
-		try {if (UT.Code.stringValid(rName = aStack.getUnlocalizedName())) return rName.toString();} catch (Throwable e) {/*Do nothing*/}
+		try {if (UT.Code.stringValid(rName = aStack.getItem().getDescriptionId())) return rName.toString();} catch (Throwable e) {/*Do nothing*/} // getUnlocalizedName()->Item.getDescriptionId() (Item.java:350; ItemStack не имеет, ключ на Item)
 		return item_(aStack) + "." + meta_(aStack);
 	}
 	public static String configNames(ItemStack... aStacks) {
