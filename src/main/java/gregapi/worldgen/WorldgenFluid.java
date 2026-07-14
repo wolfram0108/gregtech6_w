@@ -48,7 +48,7 @@ public class WorldgenFluid extends WorldgenBlob {
 		if (WD.bedrock(aWorld, aX, aY, aZ, tTargetedBlock)) {
 			return aY >= 1 && aY <= 4 ? WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0) : doBedrockStuff(aWorld, aX, aY, aZ, aRandom);
 		}
-		if (tTargetedBlock == NB || tTargetedBlock.isAir(aWorld, aX, aY, aZ)) {
+		if (tTargetedBlock == NB || WD.air(aWorld, aX, aY, aZ, tTargetedBlock)) {
 			return mAllowToGenerateinVoid && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		}
 		if (tTargetedBlock == Blocks.DIRT || tTargetedBlock == Blocks.SOUL_SAND || WD.ore_stone(tTargetedBlock, (byte)WD.meta(aWorld, aX, aY, aZ))) {
