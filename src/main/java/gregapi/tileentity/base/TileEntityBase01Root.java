@@ -339,7 +339,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean getAir(int aX, int aY, int aZ) {
 		if (level == null) return T;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aX, aZ) && !WD.exists(level, aX, aY, aZ)) return T;
-		return WD.block(level, aX, aY, aZ).isAir(level, aX, aY, aZ);
+		return WD.air(level, aX, aY, aZ);
 	}
 	
 	@Override
@@ -395,7 +395,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public boolean getAir(BlockPos aCoords) {
 		if (level == null) return T;
 		if (mIgnoreUnloadedChunks && crossedChunkBorder(aCoords) && !WD.exists(level, aCoords.getX(), aCoords.getY(), aCoords.getZ())) return T;
-		return WD.block(level, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(level, aCoords.getX(), aCoords.getY(), aCoords.getZ());
+		return WD.air(level, aCoords.getX(), aCoords.getY(), aCoords.getZ());
 	}
 	
 	@Override
@@ -610,8 +610,16 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	public void updateLightValue() {
 		if (this instanceof IMTE_GetLightValue) {
-			level.setLightValue(LightLayer.Block, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), ((IMTE_GetLightValue)this).getLightValue());
-			for (byte tSide : ALL_SIDES_MIDDLE) level.updateLightByType(LightLayer.Block, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide]);
+			// F-light: neo Level.setLightValue/updateLightByType(LightLayer,...) удалены — блок-свет движок
+			// выводит из BlockState getLightEmission через LevelLightEngine, произвольный рантайм-set не поддержан.
+			// Триггерим пересчёт движком: Level.getLightEngine().checkBlock (Level.java:375, LevelLightEngine:32)
+			// для блока и соседей.
+			// PORT-TODO(F-light): динамический per-TE свет (IMTE_GetLightValue.getLightValue()) должен питаться
+			// через getLightEmission блока (block-side wiring), иначе checkBlock пересчитает к статич. значению.
+			if (level != null) {
+				level.getLightEngine().checkBlock(getBlockPos());
+				for (byte tSide : ALL_SIDES_MIDDLE) level.getLightEngine().checkBlock(new BlockPos(getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide]));
+			}
 		}
 	}
 	
@@ -652,8 +660,11 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override
 	public byte getComparatorIncoming(byte aSide) {
 		if (level == null) return 0;
-		Block tBlock = getBlockAtSide(aSide);
-		return tBlock.hasComparatorInputOverride()?UT.Code.bind4(tBlock.getComparatorInputOverride(level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide])):getRedstoneIncoming(aSide);
+		// F-block: Forge Block.hasComparatorInputOverride()/getComparatorInputOverride(world,x,y,z,side) удалены ->
+		// neo BlockState.hasAnalogOutputSignal()/getAnalogOutputSignal(Level,BlockPos,Direction) (BlockBehaviour:628/632).
+		BlockPos tPos = new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide));
+		net.minecraft.world.level.block.state.BlockState tState = level.getBlockState(tPos);
+		return tState.hasAnalogOutputSignal()?UT.Code.bind4(tState.getAnalogOutputSignal(level, tPos, FORGE_DIR[OPOS[aSide]])):getRedstoneIncoming(aSide);
 	}
 	
 	// A Default implementation of the Fluid Tank behaviour, so that every TileEntity can use this to simplify its Code.
