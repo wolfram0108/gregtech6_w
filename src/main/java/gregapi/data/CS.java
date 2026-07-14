@@ -1492,13 +1492,13 @@ public class CS {
 			if (!aTargetFile.exists()) {try {aTargetFile.createNewFile();} catch (Throwable e) {e.printStackTrace(ERR);}}
 			CompoundTag aNBT = UT.NBT.make();
 			for (int i = 0; i < GARBAGE_ITEMS.size(); i++) ST.save(aNBT, ""+i, GARBAGE_ITEMS.get(i));
-			try {NbtIo.write(aNBT, aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
+			try {NbtIo.write(aNBT, aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
 			
 			aTargetFile = new File(new File(aSaveLocation, "gregtech"), "endergarbage.fluids.dat");
 			if (!aTargetFile.exists()) {try {aTargetFile.createNewFile();} catch (Throwable e) {e.printStackTrace(ERR);}}
 			aNBT = UT.NBT.make();
 			for (int i = 0; i < GARBAGE_FLUIDS.size(); i++) GARBAGE_FLUIDS.get(i).writeToNBT(aNBT, ""+i);
-			try {NbtIo.write(aNBT, aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
+			try {NbtIo.write(aNBT, aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
 		}
 		
 		public static void onServerLoad(File aSaveLocation) {
@@ -1506,7 +1506,7 @@ public class CS {
 			File aTargetFile = new File(new File(aSaveLocation, "gregtech"), "endergarbage.items.dat");
 			if (aTargetFile.exists()) {
 				CompoundTag aNBT = UT.NBT.make();
-				try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
+				try {aNBT = NbtIo.read(aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
 				for (int i = 0; i < Integer.MAX_VALUE; i++) {
 					if (!aNBT.contains(""+i)) break;
 					ItemStack aStack = ST.load(aNBT, ""+i);
@@ -1519,7 +1519,7 @@ public class CS {
 			aTargetFile = new File(new File(aSaveLocation, "gregtech"), "endergarbage.fluids.dat");
 			if (aTargetFile.exists()) {
 				CompoundTag aNBT = UT.NBT.make();
-				try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
+				try {aNBT = NbtIo.read(aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
 				for (int i = 0; i < Integer.MAX_VALUE; i++) {
 					if (!aNBT.contains(""+i)) break;
 					FluidTankGT tTank = new FluidTankGT().setPreventDraining().setVoidExcess();
