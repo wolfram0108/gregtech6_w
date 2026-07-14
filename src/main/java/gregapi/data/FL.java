@@ -897,17 +897,28 @@ public enum FL {
 	public static FluidStack mul(FluidStack aFluid, long aMultiplier) {return aFluid == null ? null : amount(aFluid, (long)aFluid.getAmount() * aMultiplier);}
 	public static FluidStack mul(FluidStack aFluid, long aMultiplier, long aDivider, boolean aRoundUp) {return aFluid == null ? null : amount(aFluid, Code.units(aFluid.getAmount(), aDivider, aMultiplier, aRoundUp));}
 
-	// PORT-TODO(F5, легаси перенос между тайлами, decisions/F5-fluids.md §8): 1.7.10
-	// IFluidHandler.fill/drain(ForgeDirection,...) с байтовыми сторонами и DelegatorTileEntity —
-	// заменяется поиском Capabilities.Fluid.BLOCK по Direction на КОНКРЕТНОМ BlockEntity/Level, что
-	// требует Level+BlockPos (которых нет в статическом контексте здесь) и относится к
-	// consumer-файлам (TileEntity*), не к этому переходнику. Безопасные дефолты 0/false ниже сохраняют
-	// компилируемость вызовов без изобретения несуществующего API.
-	public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return 0;}
-	public static long fill_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return 0;}
+	// F5-transfer шов (decisions/F5-fluids.md §8): 1.7.10 side-aware IFluidHandler.fill(ForgeDirection,
+	// FluidStack,boolean) -> neo IFluidHandler.fill(FluidStack,FluidAction) SIDELESS. GT6-TE несут свой
+	// side-aware fill(Direction,FluidStack,boolean) (TileEntityBase01Root:663, делегат getFluidTankFillable
+	// (side)) — маршрутизируем side ТУДА (instanceof GT6-TE); ванильному neo-хендлеру side неприменим ->
+	// прямой sideless fill(fluid,action). FORGE_DIR[side]=neo Direction (CS:660). Восстанавливает 1:1
+	// overload-семью 1.7.10 (gregtech6/.../data/FL.java:823-834), un-stub DelegatorTileEntity-варианты.
+	private static long fillSided(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {
+		return aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT ? tGT.fill(FORGE_DIR[aSide], aFluid, aDoFill) : aFluidHandler.fill(aFluid, aDoFill ? FluidAction.EXECUTE : FluidAction.SIMULATE);
+	}
+	public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler && aFluid != null ? fill_(aDelegator, aFluid, aDoFill) : 0;}
+	public static long fill_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return fill_((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity, aFluid, aDoFill);}
+	public static long fill (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null ? fill_(aFluidHandler, aSide, aFluid, aDoFill) : 0;}
+	public static long fill_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return fillSided(aFluidHandler, aSide, aFluid, aDoFill);}
+	public static long fill (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null ? fill_(aFluidHandler, aSides, aFluid, aDoFill) : 0;}
+	public static long fill_(IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {for (byte tSide : aSides) {long rFilled = fillSided(aFluidHandler, tSide, aFluid, aDoFill); if (rFilled > 0) return rFilled;} return 0;}
 
-	public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return F;}
-	public static boolean fillAll_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return F;}
+	public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler && aFluid != null && fillAll_(aDelegator, aFluid, aDoFill);}
+	public static boolean fillAll_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return fillAll_((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity, aFluid, aDoFill);}
+	public static boolean fillAll (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null && fillAll_(aFluidHandler, aSide, aFluid, aDoFill);}
+	public static boolean fillAll_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return fillSided(aFluidHandler, aSide, aFluid, F) == aFluid.getAmount() && (!aDoFill || fillSided(aFluidHandler, aSide, aFluid, T) > 0);}
+	public static boolean fillAll (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null && fillAll_(aFluidHandler, aSides, aFluid, aDoFill);}
+	public static boolean fillAll_(IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {for (byte tSide : aSides) if (fillSided(aFluidHandler, tSide, aFluid, F) == aFluid.getAmount() && (!aDoFill || fillSided(aFluidHandler, tSide, aFluid, T) > 0)) return T; return F;}
 
 	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return 0;}
 	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return 0;}
