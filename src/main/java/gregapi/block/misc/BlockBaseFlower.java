@@ -195,10 +195,9 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
 
-		// было World.canPlaceEntityOnSide(...) (1.7.10 Forge-хук, вето на размещение) - не найдено ни в одном из 3
-		// корней референса (удалён без замены) - PORT-TODO(F-hook-removed, world-canPlaceEntityOnSide): честная
-		// деградация - термин исключён из OR-цепи (эквивалент "не блокирует", тот же класс уже открыт в BlockBase.java).
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid())) return F;
+		// World.canPlaceEntityOnSide восстановлен 1:1 через ЦЕНТР WD.canPlaceEntityOnSide (Forge-хук удалён по ИМЕНИ,
+		// способность есть — коллизия формы с исключением размещающего + заменяемость цели; централизован в WD.java).
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aItem.getMetadata(aStack.getDamageValue())))) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);

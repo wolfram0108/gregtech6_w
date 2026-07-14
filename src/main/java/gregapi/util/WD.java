@@ -659,6 +659,23 @@ public class WD {
 		return tRotated != tState && aWorld.setBlock(tPos, tRotated, 3);
 	}
 
+	// F-hook-removed → ЦЕНТР (принцип 4: способность есть под другим именем). 1.7.10 Forge World.canPlaceEntityOnSide
+	// (block,x,y,z,skipColl,side,entity,stack) — удалено ИМЯ, но способность есть: neo CollisionGetter.isUnobstructed /
+	// коллизия формы. Воспроизводим семантику оригинала 1:1 (net/minecraft/world/World.java:3647-3649): (1) коллизия
+	// формы РАЗМЕЩАЕМОГО блока с сущностями, кроме размещающей (skipColl -> без проверки) — через уже существующий
+	// центр noEntityCollision(box, entity) = 1:1 с 1.7.10 checkNoEntityCollision(aabb, entity); (2) заменяемость цели —
+	// neo BlockState.canBeReplaced() (1.7.10 block1.isReplaceable). Ветку «anvil на circuits» опускаем: недостижима для
+	// GT6-блоков (aBlock всегда GT6-блок, никогда Blocks.ANVIL); block.canReplace для GT6-блока = T (BlockBase.canReplace),
+	// потому вторая половина сводится к canBeReplaced() цели.
+	public static boolean canPlaceEntityOnSide(Level aWorld, Block aBlock, int aX, int aY, int aZ, boolean aSkipCollisionCheck, int aSide, Entity aEntity, ItemStack aStack) {
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		if (!aSkipCollisionCheck) {
+			net.minecraft.world.phys.shapes.VoxelShape tShape = aBlock.defaultBlockState().getCollisionShape(aWorld, tPos);
+			if (!tShape.isEmpty() && !noEntityCollision(aWorld, tShape.bounds().move(aX, aY, aZ), aEntity)) return F;
+		}
+		return aWorld.getBlockState(tPos).canBeReplaced();
+	}
+
 	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)

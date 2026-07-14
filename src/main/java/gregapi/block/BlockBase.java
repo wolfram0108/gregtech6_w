@@ -210,8 +210,9 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		if (!canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
 		byte aMeta = UT.Code.bind4(aItem.getMetadata(ST.meta(aStack)));
 		if (!checkNoEntityCollision(aWorld, aX, aY, aZ, aMeta, null)) return F;
-		// canPlaceEntityOnSide (Forge World, удалён) — проверка коллизии с сущностями уже сделана checkNoEntityCollision выше (204).
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid())) return F;
+		// canPlaceEntityOnSide восстановлен 1:1 через ЦЕНТР WD.canPlaceEntityOnSide (Forge-хук удалён по ИМЕНИ, способность
+		// адаптирована централизованно — коллизия формы с исключением размещающего + заменяемость цели, WD.java).
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 
 		// ItemBlock.placeBlockAt (Forge, удалён; neo BlockItem.place перестроен на BlockPlaceContext) -> прямой WD.set
 		// этого блока с вычисленной onBlockPlaced-метой (тот же итог: блок поставлен, звук, расход стека).
