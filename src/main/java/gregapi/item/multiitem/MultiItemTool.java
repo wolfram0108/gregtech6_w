@@ -495,14 +495,12 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return useEnergy(TD.Energy.EU, aStack, aAmount, aPlayer, null, null, 0, 0, 0, T);
 	}
 	
-	// PORT-TODO(F9, block-material Block-meta mining hooks): getDigSpeed(ItemStack,Block,int)/
-	// canHarvestBlock(Block,ItemStack)/getHarvestLevel(ItemStack,String)/onBlockDestroyed(...) (1.7.10
-	// meta-based Item mining hooks) не существуют в 26.1.2 Item целиком — реальные аналоги
-	// (getDestroySpeed(ItemStack,BlockState)/isCorrectToolForDrops(ItemStack,BlockState), BlockTags-driven
-	// harvest-tier) требуют BlockState-конверсию (F9, не готова в этой зоне) — методы НЕ @Override, тела 1:1
-	// сохранены как внутренние доменные вычисления (используются другими методами этого же класса напрямую).
-	// Block.getHarvestLevel(int)/getBlockHardness(World,x,y,z) (meta-based) удалены — консервативные заглушки
-	// (0 / 1.0) ниже, помечены отдельно.
+	// F9-tool: getDigSpeed(ItemStack,Block,int)/canHarvestBlock/getHarvestLevel/onBlockDestroyed — GT6-внутренние
+	// доменные вычисления (тела 1:1, зовутся другими методами этого класса напрямую). Block.getHarvestLevel(int)/
+	// getBlockHardness(World,x,y,z) внутри — восстановлены через ЦЕНТРЫ WD.harvestLevel/WD.hardness (реальные порты,
+	// не заглушки). ОСТАЁТСЯ (F9-tool, отдельный фокус-проход): подключить эти доменные вычисления к neo-mining через
+	// @Override getDestroySpeed(ItemStack,BlockState)/isCorrectToolForDrops(ItemStack,BlockState) (BlockState->Block+meta
+	// конверсия по F13) — чтобы РЕАЛЬНАЯ добыча в игре шла по GT6-логике, а не neo-дефолту. См. STATE «F9-tool».
 	public float getDigSpeed(ItemStack aStack, Block aBlock, int aMeta) {
 		if (aBlock == NB || WD.bedrock(aBlock)) return 0;
 		if (ST.instaharvest(aBlock, aMeta)) return 10;
@@ -513,8 +511,9 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		OreDictMaterial tMaterial = getPrimaryMaterial(aStack);
 		if ((IL.TF_Mazestone.equal(aBlock) || IL.TF_Mazehedge.equal(aBlock) || IL.TF_Towerwood.equal(aBlock)) && tMaterial.contains(TD.Properties.MAZEBREAKER)) tMultiplier *= 40;
 		IToolStats tStats = getToolStats(aStack);
-		// PORT-TODO(F9, block-material): Block.getHarvestLevel(int aMeta) удалён (meta-based) — degraded до 0 (не найдено ни в одном из 3 корней референса).
-		if (tStats == null || tStats.getBaseQuality() + tMaterial.mToolQuality < UT.Code.bind4(0)) return 0;
+		// оригинал:482 ... < UT.Code.bind4(aBlock.getHarvestLevel(aMeta)). Способность ЕСТЬ — ЦЕНТР WD.harvestLevel
+		// (GT6-блок->BlockBase.getHarvestLevel, vanilla->neo NEEDS_*_TOOL теги). Была ложная деградация до 0 (любой инструмент копал всё) — 1:1 восстановлено.
+		if (tStats == null || tStats.getBaseQuality() + tMaterial.mToolQuality < UT.Code.bind4(WD.harvestLevel(aBlock, aMeta))) return 0;
 		return tStats.getMiningSpeed(aBlock, (byte)aMeta) * Math.max(Float.MIN_NORMAL, tStats.getSpeedMultiplier() * tMultiplier * tMaterial.mToolSpeed);
 	}
 

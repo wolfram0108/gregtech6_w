@@ -360,6 +360,19 @@ public class WD {
 	public static float hardness(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		return aBlock.defaultBlockState().getDestroySpeed(aWorld, new BlockPos(aX, aY, aZ));
 	}
+	/** F9-harvest-level ЦЕНТР: 1.7.10 Block.getHarvestLevel(int aMeta) (числовой требуемый уровень добычи 0=дерево/
+	 *  1=камень/2=железо/3=алмаз) удалён по ИМЕНИ, но способность есть под tag-моделью neo. GT6-блок хранит свой уровень
+	 *  (BlockBase.getHarvestLevel(meta)); vanilla-блок — через neo tier-теги BlockTags.NEEDS_*_TOOL (тот же смысл: какой
+	 *  ярус инструмента требуется). Прямой маппинг STONE=1/IRON=2/DIAMOND=3, иначе 0. Используется в проверке «инструмент
+	 *  достаточно силён» (MultiItemTool.getDigSpeed:517, было degraded до 0 = любой инструмент копал любой блок). */
+	public static int harvestLevel(Block aBlock, int aMeta) {
+		if (aBlock instanceof gregapi.block.BlockBase tBlockBase) return tBlockBase.getHarvestLevel(aMeta);
+		BlockState tState = aBlock.defaultBlockState();
+		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_DIAMOND_TOOL)) return 3;
+		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_IRON_TOOL  )) return 2;
+		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_STONE_TOOL )) return 1;
+		return 0;
+	}
 	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public поля) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
 	 *  Покомпонентная запись обязана сохранять две другие оси -> централизуем здесь ОДИН раз (философия §2). */
 	public static double motionX(Entity aEntity) {return aEntity.getDeltaMovement().x;}
