@@ -44,7 +44,7 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import gregtech.tileentity.misc.MultiTileEntityGregOLantern;
-import net.minecraft.block.*;
+
 import gregapi.block.Material;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;

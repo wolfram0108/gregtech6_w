@@ -48,7 +48,7 @@ import gregapi.util.WD;
 import ic2.api.crops.ICropTile;
 import ic2.api.tile.IWrenchable;
 import micdoodle8.mods.galacticraft.core.blocks.BlockAdvanced;
-import net.minecraft.block.*;
+
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -215,8 +215,8 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_igniter) && ST.item(aStack) != Items.FLINT_AND_STEEL) {
 			// Ignite any TNT Blocks.
-			if (aBlock instanceof BlockTNT) {
-				((BlockTNT)aBlock).func_150114_a(aWorld, aX, aY, aZ, 1, aEntityLiving);
+			if (aBlock instanceof net.minecraft.world.level.block.TntBlock) {
+				((net.minecraft.world.level.block.TntBlock)aBlock).func_150114_a(aWorld, aX, aY, aZ, 1, aEntityLiving);
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				return 10000;
 			}
@@ -244,7 +244,7 @@ public class ToolCompat {
 			}
 		}
 		if (aTool.equals(TOOL_rotator)) {
-			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock.getRenderType() == PILLAR_RENDER) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
@@ -259,7 +259,7 @@ public class ToolCompat {
 			if (aBlock.rotateBlock(aWorld, aX, aX, aX, Direction.getOrientation(aSide))) return 10000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
-			if (aBlock instanceof BlockRedstoneDiode) {
+			if (aBlock instanceof net.minecraft.world.level.block.DiodeBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta / 4) * 4  + (((aMeta%4) + 1) % 4), 3, F)) return 10000;
 			}
 		}
@@ -297,7 +297,7 @@ public class ToolCompat {
 				;
 				return tResult?10000:0;
 			}
-			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock.getRenderType() == PILLAR_RENDER) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
@@ -342,11 +342,11 @@ public class ToolCompat {
 				}
 			}
 			
-			if (aBlock instanceof BlockRotatedPillar || aBlock.getRenderType() == PILLAR_RENDER) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock.getRenderType() == PILLAR_RENDER) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			
-			if (aBlock instanceof BlockWorkbench || aBlock instanceof BlockBookshelf) {
+			if (aBlock instanceof net.minecraft.world.level.block.CraftingTableBlock || aBlock instanceof BlockBookshelf) {
 				if (WD.set(aWorld, aX, aY, aZ, NB, 0, 3)) {
 					ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, ST.make(aBlock, 1, aMeta));
 					return 10000;
@@ -371,7 +371,7 @@ public class ToolCompat {
 					if (SIDES_BOTTOM_HORIZONTAL[aTargetSide] && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aTargetSide, 3, F)) return 10000;
 				}
 			}
-			if (aBlock instanceof BaseRailBlock || aBlock instanceof BlockRedstoneDiode || aBlock instanceof BlockPistonExtension || aBlock instanceof PistonBaseBlock) {
+			if (aBlock instanceof BaseRailBlock || aBlock instanceof net.minecraft.world.level.block.DiodeBlock || aBlock instanceof net.minecraft.world.level.block.piston.PistonHeadBlock || aBlock instanceof PistonBaseBlock) {
 				// wrench doesn't work on those.
 			} else {
 				if (Arrays.asList(aBlock.getValidRotations(aWorld, aX, aY, aZ)).contains(Direction.getOrientation(aTargetSide))) {
