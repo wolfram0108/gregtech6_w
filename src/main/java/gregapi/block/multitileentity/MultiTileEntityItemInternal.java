@@ -64,7 +64,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -659,7 +659,9 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public int getSpriteNumber() {return 0;}
 	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aRegister) {/**/}
-	@OnlyIn(Dist.CLIENT) public IIcon getIconFromDamage(int aMeta) {itemIcon = Items.BREAD.getIconFromDamage(0); return itemIcon; /* Fixes Eating Animation Particles. */}
+	// PORT-TODO(F3, baked-рендер клиента): было itemIcon=Items.BREAD.getIconFromDamage(0) (фикс eating-particle 1.7.10) —
+	// и поле Item.itemIcon, и метод Item.getIconFromDamage(int) удалены в 26.1.2 целиком, замены нет до Фазы C.
+	@OnlyIn(Dist.CLIENT) public Identifier getIconFromDamage(int aMeta) {return null;}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}

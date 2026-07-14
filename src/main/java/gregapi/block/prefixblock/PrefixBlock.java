@@ -70,13 +70,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.event.EventHooks;
 
@@ -243,7 +242,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (mOpaque) VISUALLY_OPAQUE_BLOCKS.add(this);
 		mDrops = aDrops==null?new Drops(this, this, this, this, F, F, 0, 0):aDrops;
 		
-		if (CODE_CLIENT) MinecraftForgeClient.registerItemRenderer(Item.byBlock(this), RendererBlockTextured.INSTANCE);
+		// PORT-TODO(F3, baked-рендер клиента): было MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
+		// удалён целиком в 26.1.2, RendererBlockTextured больше не implements IItemRenderer — decisions/F3-render.md §2.1/§3
+		// "IItemRenderer"). Реальная регистрация item-модели — RegisterBlockStateModels/ModelEvent.RegisterStandalone (Фаза C).
 		
 		// Execute before all the other things. This is to ensure that PrefixBlocks are created before MultiItems.
 		(GAPI.mBeforeInit==null?GAPI.mBeforePostInit:GAPI.mBeforeInit).add(0, this);
@@ -277,12 +278,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	// @Override
-	public IIcon getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
+	public Identifier getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		return getIcon(aSide, getMetaDataValue(aWorld, aX, aY, aZ));
 	}
-	
+
 	// @Override
-	public IIcon getIcon(int aSide, int aMetaData) {
+	public Identifier getIcon(int aSide, int aMetaData) {
 		if (mPrefix.mIconIndexBlock >= 0) {
 			OreDictMaterial aMaterial = getMetaMaterial(aMetaData);
 			if (aMaterial != null && aMaterial.mTextureSetsBlock != null)

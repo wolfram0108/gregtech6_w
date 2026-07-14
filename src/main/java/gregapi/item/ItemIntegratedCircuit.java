@@ -32,11 +32,10 @@ import gregapi.data.OP;
 import gregapi.util.CR;
 import gregapi.util.OM;
 import gregapi.util.ST;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
@@ -87,10 +86,10 @@ public class ItemIntegratedCircuit extends ItemBase {
 		for (byte i = 0; i < 16; i++) CoverRegistry.put(ST.make(this, 1, i), new CoverSelectorTag(i));
 	}
 	
-	protected IIcon[] mIcons = new IIcon[256];
-	
+	protected Identifier[] mIcons = new Identifier[256];
+
 	@Override
-	public IIcon getIconFromDamage(int aMeta) {
+	public Identifier getIconFromDamage(int aMeta) {
 		return mIcons[aMeta & 255];
 	}
 	
@@ -114,8 +113,9 @@ public class ItemIntegratedCircuit extends ItemBase {
 	
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	public void registerIcons(IIconRegister aIconRegister) {
-		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = aIconRegister.registerIcon(mModID + ":" + mName + "/" + (byte)(i&255));
+	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	public void registerIcons(Object aIconRegister) {
+		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = Identifier.parse(mModID + ":" + mName + "/" + (byte)(i&255));
 		// Useful hack to register Item Icons. That is why the Selector Tag Item has to always exist.
 		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI) {
 			// Setting up and loading Icon Register for Items

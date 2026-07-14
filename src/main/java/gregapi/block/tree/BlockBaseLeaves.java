@@ -42,8 +42,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.util.IIcon;
-import net.minecraft.world.ColorizerFoliage;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.IShearable;
@@ -92,7 +92,7 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	public boolean isShearable(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_LEAVES;}
 	@Override public int getItemStackLimit(ItemStack aStack) {return UT.Code.bindStack(OP.treeLeaves.mDefaultStackSize);}
-	@Override public IIcon getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.opaque(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
+	@Override public Identifier getIcon(int aSide, int aMeta) {return mIcons[(aMeta&7)|(WD.opaque(Blocks.OAK_LEAVES)?8:0)].getIcon(0);}
 	public ArrayList<ItemStack> onSheared(ItemStack aItem, BlockGetter aWorld, int aX, int aY, int aZ, int aFortune) {return ST.arraylist(ST.make(this, 1, WD.meta(aWorld, aX, aY, aZ) & 7));}
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return MD.TFC.mLoaded || MD.TFCP.mLoaded ? null : WD.collisionBox(aWorld, aX, aY, aZ, this);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
@@ -151,9 +151,13 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	}
 	
 	@OnlyIn(Dist.CLIENT)
-	public int getBlockColor() {return ColorizerFoliage.getFoliageColor(0.5, 1.0);}
+	// было ColorizerFoliage.getFoliageColor(temp,rain) (1.7.10, тип удалён) -> FoliageColor.get(double,double)
+	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:14], идентичная формула/буфер пикселей.
+	public int getBlockColor() {return FoliageColor.get(0.5, 1.0);}
+	// было ColorizerFoliage.getFoliageColorBasic() (константа 4764952, тип удалён) -> FoliageColor.FOLIAGE_DEFAULT
+	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:6] (=0xFF48B518, младшие 24 бита совпадают: 0x48B518=4764952).
 	@OnlyIn(Dist.CLIENT)
-	public int getRenderColor(int p_149741_1_) {return ColorizerFoliage.getFoliageColorBasic();}
+	public int getRenderColor(int p_149741_1_) {return FoliageColor.FOLIAGE_DEFAULT;}
 	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		int l = 0, i1 = 0, j1 = 0;

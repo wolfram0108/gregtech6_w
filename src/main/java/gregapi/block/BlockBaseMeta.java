@@ -30,7 +30,7 @@ import gregapi.block.Material;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 
 /**
  * @author Gregorius Techneticies
@@ -47,6 +47,6 @@ public abstract class BlockBaseMeta extends BlockBaseSealable {
 	}
 	
 	@Override public byte maxMeta() {return mMaxMeta;}
-	public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
+	public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {for (int i = 0; i < maxMeta(); i++) aList.add(ST.make(aItem, 1, i));}
 }

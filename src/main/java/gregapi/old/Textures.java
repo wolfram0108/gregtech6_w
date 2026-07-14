@@ -25,10 +25,8 @@ import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.render.IconContainerCopied;
 import gregapi.util.UT;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.util.IIcon;
 import net.minecraft.resources.Identifier;
 
 import static gregapi.data.CS.*;
@@ -167,23 +165,24 @@ public class Textures {
 		, CRYSTAL_ORE_ARSENOPYRITE, CRYSTAL_ORE_CHALCOPYRITE, CRYSTAL_ORE_CINNABAR, CRYSTAL_ORE_COBALTITE, CRYSTAL_ORE_GALENA, CRYSTAL_ORE_KESTERITE, CRYSTAL_ORE_MOLYBDENITE, CRYSTAL_ORE_PYRITE, CRYSTAL_ORE_SPHALERITE, CRYSTAL_ORE_STANNITE, CRYSTAL_ORE_STIBNITE, CRYSTAL_ORE_TETRAHEDRITE
 		;
 		
-		public IIcon mIcon;
+		public Identifier mIcon;
 		public ITexture mTexture = new BlockTextureDefault(this);
-		
-		@Override public IIcon getIcon(int aRenderPass) {return mIcon;}
-		
+
+		@Override public Identifier getIcon(int aRenderPass) {return mIcon;}
+
 		private BlockIcons() {
 			if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);
 		}
-		
+
 		@Override
 		public void run() {
-			mIcon = GT_API.sBlockIcons.registerIcon(RES_PATH_BLOCK + "iconsets/" + this);
+			// PORT-TODO(F3, baked-рендер клиента): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути (см. gregapi.render.TextureSet).
+			mIcon = Identifier.parse(RES_PATH_BLOCK + "iconsets/" + this);
 		}
-		
+
 		@Override
 		public Identifier getTextureFile() {
-			return TextureAtlas.locationBlocksTexture;
+			return TextureAtlas.LOCATION_BLOCKS;
 		}
 		
 		public static final IIconContainer[]
@@ -705,41 +704,42 @@ public class Textures {
 		CONCRETES_REINFORCED = UT.Code.fill(CONCRETE_REINFORCED, new IIconContainer[16]);
 		
 		public static class CustomIcon implements IIconContainer, Runnable {
-			protected IIcon mIcon;
+			protected Identifier mIcon;
 			protected String mIconName;
-			
-			@Override public IIcon getIcon(int aRenderPass) {return mIcon;}
-			
+
+			@Override public Identifier getIcon(int aRenderPass) {return mIcon;}
+
 			public CustomIcon(String aIconName) {
 				mIconName = aIconName.indexOf(":") == -1 ? RES_PATH_BLOCK + aIconName : aIconName;
 				if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);
 			}
-			
+
 			@Override
 			public void run() {
-				mIcon = GT_API.sBlockIcons.registerIcon(mIconName);
+				// PORT-TODO(F3, baked-рендер клиента): было GT_API.sBlockIcons.registerIcon(mIconName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+				mIcon = Identifier.parse(mIconName);
 			}
-			
+
 			@Override
 			public Identifier getTextureFile() {
-				return TextureAtlas.locationBlocksTexture;
+				return TextureAtlas.LOCATION_BLOCKS;
 			}
-			
+
 			@Override
 			public short[] getIconColor(int aRenderPass) {
 				return UNCOLOURED;
 			}
-			
+
 			@Override
 			public int getIconPasses() {
 				return 1;
 			}
-			
+
 			@Override
-			public void registerIcons(IIconRegister aIconRegister) {
+			public void registerIcons(Object aIconRegister) {
 				//
 			}
-			
+
 			@Override
 			public boolean isUsingColorModulation(int aRenderPass) {
 				return aRenderPass == 0;
@@ -757,7 +757,7 @@ public class Textures {
 		}
 
 		@Override
-		public void registerIcons(IIconRegister aIconRegister) {
+		public void registerIcons(Object aIconRegister) {
 			//
 		}
 
@@ -766,7 +766,7 @@ public class Textures {
 			return aRenderPass == 0;
 		}
 	}
-	
+
 	public enum ItemIcons implements IIconContainer, Runnable {
 		  VOID // The Empty Texture
 		, RENDERING_ERROR
@@ -833,52 +833,54 @@ public class Textures {
 		
 		public static final ITexture[] ERROR_RENDERING = new ITexture[] {BlockTextureDefault.get(RENDERING_ERROR)};
 		
-		protected IIcon mIcon, mOverlay;
+		protected Identifier mIcon, mOverlay;
 		protected boolean mUseOverlay;
-		
-		@Override public IIcon getIcon(int aRenderPass) {return aRenderPass==1&&mOverlay!=null?mOverlay:mIcon;}
-		
+
+		@Override public Identifier getIcon(int aRenderPass) {return aRenderPass==1&&mOverlay!=null?mOverlay:mIcon;}
+
 		private ItemIcons() {
 			this(T);
 		}
-		
+
 		private ItemIcons(boolean aUseOverlay) {
 			mUseOverlay = aUseOverlay;
 			if (GT_API.sItemIconload != null) GT_API.sItemIconload.add(this);
 		}
-		
+
 		@Override
 		public Identifier getTextureFile() {
-			return TextureAtlas.locationItemsTexture;
+			return TextureAtlas.LOCATION_ITEMS;
 		}
-		
+
 		@Override
 		public void run() {
-			mIcon       = GT_API.sItemIcons.registerIcon(RES_PATH_ITEM + "iconsets/" + this);
+			// PORT-TODO(F3, baked-рендер клиента): было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+			mIcon       = Identifier.parse(RES_PATH_ITEM + "iconsets/" + this);
 			if (mUseOverlay)
-			mOverlay    = GT_API.sItemIcons.registerIcon(RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY");
+			mOverlay    = Identifier.parse(RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY");
 		}
-		
+
 		public static class CustomIcon implements IIconContainer, Runnable {
-			protected IIcon mIcon, mOverlay;
+			protected Identifier mIcon, mOverlay;
 			protected String mIconName;
-			
-			@Override public IIcon getIcon(int aRenderPass) {return aRenderPass==1?mOverlay:mIcon;}
-			
+
+			@Override public Identifier getIcon(int aRenderPass) {return aRenderPass==1?mOverlay:mIcon;}
+
 			public CustomIcon(String aIconName) {
 				mIconName = aIconName.indexOf(":") == -1 ? RES_PATH_ITEM + aIconName : aIconName;
 				if (GT_API.sItemIconload != null) GT_API.sItemIconload.add(this);
 			}
-			
+
 			@Override
 			public void run() {
-				mIcon       = GT_API.sItemIcons.registerIcon(mIconName);
-				mOverlay    = GT_API.sItemIcons.registerIcon(mIconName + "_OVERLAY");
+				// PORT-TODO(F3, baked-рендер клиента): было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+				mIcon       = Identifier.parse(mIconName);
+				mOverlay    = Identifier.parse(mIconName + "_OVERLAY");
 			}
-			
+
 			@Override
 			public Identifier getTextureFile() {
-				return TextureAtlas.locationItemsTexture;
+				return TextureAtlas.LOCATION_ITEMS;
 			}
 			@Override
 			public short[] getIconColor(int aRenderPass) {
@@ -889,7 +891,7 @@ public class Textures {
 				return 2;
 			}
 			@Override
-			public void registerIcons(IIconRegister aIconRegister) {
+			public void registerIcons(Object aIconRegister) {
 				//
 			}
 
@@ -898,7 +900,7 @@ public class Textures {
 				return aRenderPass == 0;
 			}
 		}
-		
+
 		@Override
 		public short[] getIconColor(int aRenderPass) {
 			return UNCOLOURED;
@@ -908,7 +910,7 @@ public class Textures {
 			return 2;
 		}
 		@Override
-		public void registerIcons(IIconRegister aIconRegister) {
+		public void registerIcons(Object aIconRegister) {
 			//
 		}
 

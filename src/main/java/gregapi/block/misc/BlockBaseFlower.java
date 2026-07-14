@@ -45,7 +45,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tileentity.TileEntityFlowerPot;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -110,7 +110,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public boolean isSealed(Level aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return mMaxMeta;}
-	public IIcon getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
+	public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
 	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}}
 	

@@ -24,9 +24,7 @@ import gregapi.render.BlockTextureDefault;
 import gregapi.render.IIconContainer;
 import gregapi.render.ITexture;
 import gregapi.util.UT;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.util.IIcon;
 import net.minecraft.resources.Identifier;
 
 import static gregapi.data.CS.*;
@@ -166,17 +164,18 @@ public class BI {
 	static {for (int i = 0; i < BAROMETER_SCALE.length; i++) BAROMETER_SCALE[i] = new Icon("overlays/barometer/"+(i<10?"0":"")+i);}
 	
 	private static class Icon implements IIconContainer, Runnable {
-		private IIcon mIcon;
+		private Identifier mIcon;
 		private String mIconName;
-		
+
 		protected Icon(String aIconName) {mIconName = aIconName; if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);}
-		
-		@Override public IIcon getIcon(int aRenderPass) {return mIcon;}
-		@Override public void run() {mIcon = GT_API.sBlockIcons.registerIcon(RES_PATH_API_BLOCK + mIconName);}
-		@Override public Identifier getTextureFile() {return TextureAtlas.locationBlocksTexture;}
+
+		@Override public Identifier getIcon(int aRenderPass) {return mIcon;}
+		// PORT-TODO(F3, baked-рендер клиента): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+		@Override public void run() {mIcon = Identifier.parse(RES_PATH_API_BLOCK + mIconName);}
+		@Override public Identifier getTextureFile() {return TextureAtlas.LOCATION_BLOCKS;}
 		@Override public short[] getIconColor(int aRenderPass) {return UNCOLOURED;}
 		@Override public int getIconPasses() {return 1;}
-		@Override public void registerIcons(IIconRegister aIconRegister) {/**/}
+		@Override public void registerIcons(Object aIconRegister) {/**/}
 		@Override public boolean isUsingColorModulation(int aRenderPass) {return true;}
 	}
 }

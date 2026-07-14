@@ -43,7 +43,6 @@ import gregapi.oredict.OreDictManager;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemUseAnimation;
@@ -51,7 +50,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.item.ItemFood;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -71,7 +70,7 @@ import static gregapi.data.CS.*;
 public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	public final BitSet mEnabledItems = new BitSet(32767);
 	public final BitSet mVisibleItems = new BitSet(32767);
-	public final IIcon[][] mIconList = new IIcon[32767][1];
+	public final Identifier[][] mIconList = new Identifier[32767][1];
 	
 	public final HashMap<Short, IFoodStat> mFoodStats = new HashMap<>();
 	public final HashMap<Short, IItemEnergy> mElectricStats = new HashMap<>();
@@ -360,17 +359,18 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	public void registerIcons(IIconRegister aIconRegister) {
+	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	public void registerIcons(Object aIconRegister) {
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta++) if (mEnabledItems.get(aMeta)) {
 			for (byte k = 1; k < mIconList[aMeta].length; k++) {
-				mIconList[aMeta][k] = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/" + aMeta + "/" + k);
+				mIconList[aMeta][k] = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta + "/" + k);
 			}
-			mIconList[aMeta][0] = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
+			mIconList[aMeta][0] = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
 		}
 	}
-	
+
 	// @Override
-	public IIcon getIconIndex(ItemStack aStack) {
+	public Identifier getIconIndex(ItemStack aStack) {
 		short aMetaData = ST.meta_(aStack);
 		if (!UT.Code.exists(aMetaData, mIconList)) return Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 		IItemEnergy tStats = mElectricStats.get(aMetaData);
@@ -385,22 +385,22 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	}
 	
 	// @Override
-	public IIcon getIcon(ItemStack aStack, int aRenderPass) {
+	public Identifier getIcon(ItemStack aStack, int aRenderPass) {
 		return getIconIndex(aStack);
 	}
-	
+
 	// @Override
-	public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
+	public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {
 		return getIcon(aStack, aRenderPass);
 	}
-	
+
 	@Override
-	public IIcon getIconFromDamage(int aMetaData) {
+	public Identifier getIconFromDamage(int aMetaData) {
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
-	
+
 	// @Override
-	public IIcon getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
 	

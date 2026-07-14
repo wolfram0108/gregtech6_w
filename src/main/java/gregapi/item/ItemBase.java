@@ -27,7 +27,6 @@ import gregapi.lang.LanguageHandler;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.DispenserBlock;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.dispenser.ProjectileDispenseBehavior;
 import net.minecraft.core.dispenser.BlockSource;
@@ -38,7 +37,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 
@@ -50,7 +49,7 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, IItemGT, IItemNoGTOverride {
-	protected IIcon mIcon;
+	protected Identifier mIcon;
 	protected final String mModID;
 	protected final String mName, mTooltip;
 	/** F16: 1.7.10 Item.setMaxStackSize мутировал поле итема. neo Item неизменяем (стек-размер — DataComponent),
@@ -129,8 +128,9 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	public String getUnlocalizedName(ItemStack aStack) {return getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
 	public final boolean getShareTag() {return T;} // just to be sure.
-	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {mIcon = aIconRegister.registerIcon(mModID + ":" + mName);}
-	public IIcon getIconFromDamage(int aMeta) {return mIcon;}
+	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	@OnlyIn(Dist.CLIENT) public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse(mModID + ":" + mName);}
+	public Identifier getIconFromDamage(int aMeta) {return mIcon;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}

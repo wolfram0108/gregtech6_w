@@ -27,10 +27,9 @@ import gregapi.data.CS.ItemsGT;
 import gregapi.data.MD;
 import gregapi.old.Textures;
 import gregapi.util.ST;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 
 /**
  * @author Gregorius Techneticies
@@ -43,13 +42,13 @@ public class ItemEmptySlot extends ItemBase {
 	}
 	
 	@Override
-	public IIcon getIconFromDamage(int aMeta) {
+	public Identifier getIconFromDamage(int aMeta) {
 		return Textures.ItemIcons.VOID.getIcon(0);
 	}
-	
+
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	public void registerIcons(IIconRegister aIconRegister) {
+	public void registerIcons(Object aIconRegister) {
 		// No Icons to register!
 	}
 	

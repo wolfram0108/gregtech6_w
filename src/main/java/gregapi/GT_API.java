@@ -164,9 +164,9 @@ public class GT_API extends Abstract_Mod {
 	// PORT-TODO(F3, baked-рендер клиента): 1.7.10 net.minecraft.client.renderer.texture.IIconRegister
 	// удалён из движка целиком (атлас-стежка теперь baked-модели, не immediate-mode Icon-регистрация).
 	// Тот же класс проблемы, что gregapi/render/TextureSet.java registerIcons(Object) (уже переведено) —
-	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) — отдельный F3-хвост.
+	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) уже переведены на Identifier.
 	@OnlyIn(Dist.CLIENT)
-	public static net.minecraft.client.renderer.texture.IIconRegister sBlockIcons, sItemIcons;
+	public static Object sBlockIcons, sItemIcons;
 
 	/**
 	 * Централизованный мост регистрации F12: ЕДИНСТВЕННАЯ точка, через которую весь мод регистрирует

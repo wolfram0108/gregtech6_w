@@ -38,7 +38,6 @@ import gregapi.util.WD;
 import gregtech.blocks.BlockDiggable;
 import gregtech.tileentity.plants.MultiTileEntityResinHoleRubber;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
@@ -51,7 +50,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.tileentity.TileEntityFlowerPot;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -646,12 +645,12 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		return F;
 	}
 	
-	public IIcon PRINCESS, QUEEN, SCANNED, DEAD;
-	
-	@Override public IIcon getIconIndex(ItemStack aStack) {return getIconFromDamage(ST.meta(aStack));}
-	@Override public IIcon getIconFromDamage(int aMetaData) {aMetaData /= 10; aMetaData *= 10; return UT.Code.exists(aMetaData, mIconList) && mIconList[aMetaData][0] != null ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);}
-	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
-	@Override public IIcon getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+	public Identifier PRINCESS, QUEEN, SCANNED, DEAD;
+
+	@Override public Identifier getIconIndex(ItemStack aStack) {return getIconFromDamage(ST.meta(aStack));}
+	@Override public Identifier getIconFromDamage(int aMetaData) {aMetaData /= 10; aMetaData *= 10; return UT.Code.exists(aMetaData, mIconList) && mIconList[aMetaData][0] != null ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);}
+	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
+	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
 	
 	@Override public boolean requiresMultipleRenderPasses() {return T;}
 	
@@ -666,19 +665,20 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	public void registerIcons(IIconRegister aIconRegister) {
-		PRINCESS    = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
-		QUEEN       = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/overlay_queen");
-		SCANNED     = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/overlay_scanned");
-		DEAD        = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/overlay_dead");
+	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	public void registerIcons(Object aIconRegister) {
+		PRINCESS    = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
+		QUEEN       = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_queen");
+		SCANNED     = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_scanned");
+		DEAD        = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_dead");
 
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta+=10) if (mEnabledItems.get(aMeta)) {
-			mIconList[aMeta][0] = aIconRegister.registerIcon(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
+			mIconList[aMeta][0] = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/" + aMeta);
 		}
 	}
-	
+
 	@Override
-	public IIcon getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		if (aRenderPass == 0) return getIconFromDamage(aMetaData);
 		if (aRenderPass == 1) {
 			switch(aMetaData % 10) {

@@ -38,7 +38,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 
@@ -127,13 +127,13 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	public int getRenderPasses(int metadata) {return 2;}
 	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {/**/}
 	public boolean requiresMultipleRenderPasses() {return mPrefix.mIconIndexItem >= 0;}
-	public IIcon getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
-	public IIcon getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}
-	public IIcon getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
-	public IIcon getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
-	
+	public Identifier getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
+	public Identifier getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}
+	public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+	public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
+
 	// @Override
-	public IIcon getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
 		if (mPrefix.mIconIndexItem >= 0) {
 			if (UT.Code.exists(aMetaData, mMaterialList) && mMaterialList[aMetaData].mTextureSetsItems != null)
 			return mMaterialList[aMetaData] .mTextureSetsItems.get(mPrefix.mIconIndexItem).getIcon(aRenderPass);

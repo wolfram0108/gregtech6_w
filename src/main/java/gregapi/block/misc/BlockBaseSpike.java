@@ -35,7 +35,6 @@ import gregapi.render.*;
 import gregapi.util.*;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
-import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -49,7 +48,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.util.IIcon;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -188,7 +187,8 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
-	public IIcon getIcon(int aSide, int aMeta) {return Blocks.IRON_BARS.getIcon(2, 0);}
+	// PORT-TODO(F3, baked-рендер клиента): было Blocks.IRON_BARS.getIcon(2,0) (vanilla Block.getIcon удалён в 26.1.2 целиком).
+	public Identifier getIcon(int aSide, int aMeta) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}
@@ -209,8 +209,10 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return APRIL_FOOLS ? 5 : 13;}
 		@Override public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return mTextureUsed;}
 		@Override public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
-		@Override public boolean renderItem (Block aBlock, RenderBlocks aRenderer) {return F;}
-		@Override public boolean renderBlock(Block aBlock, RenderBlocks aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+		// PORT-TODO(F3, baked-рендер клиента): было RenderBlocks aRenderer (тип удалён в 26.1.2) — параметр Object,
+		// тот же нейтральный держатель, что gregapi.render.IRenderedBlockObject#renderItem/renderBlock.
+		@Override public boolean renderItem (Block aBlock, Object aRenderer) {return F;}
+		@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 		@Override public IRenderedBlockObject passRenderingToObject(ItemStack aStack) {mTextureUsed = mTextureNormal; return this;}
 		@Override public IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {mTextureUsed = (APRIL_FOOLS ? BlockTextureDefault.get(Textures.BlockIcons.CFOAM_HARDENED, RAINBOW_ARRAY[WD.random(42069, aX, aY, aZ, 12) * 2]) : mTextureNormal); return this;}
 	}

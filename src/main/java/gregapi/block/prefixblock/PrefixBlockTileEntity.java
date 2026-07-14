@@ -31,7 +31,6 @@ import gregapi.tileentity.ITileEntitySynchronising;
 import gregapi.tileentity.base.TileEntityBase01Root;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
@@ -94,8 +93,10 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 		return mTexture;
 	}
 	
-	@Override public boolean renderItem(Block aBlock, RenderBlocks aRenderer) {return F;}
-	@Override public boolean renderBlock(Block aBlock, RenderBlocks aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+	// PORT-TODO(F3, baked-рендер клиента): было RenderBlocks aRenderer (тип удалён в 26.1.2) — параметр Object,
+	// тот же нейтральный держатель, что gregapi.render.IRenderedBlockObject#renderItem/renderBlock.
+	@Override public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
+	@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return F;}
 	@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 1;}
 	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m").orElse((short)0); if (aNBT.contains("gt.nbt.drop")) mItemNBT = aNBT.getCompoundOrEmpty("gt.nbt.drop");}
