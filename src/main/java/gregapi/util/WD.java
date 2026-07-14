@@ -24,8 +24,7 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.fluids.BlockFluidClassic;
-import net.minecraftforge.fluids.BlockFluidFinite;
+// F5: net.minecraftforge.fluids.BlockFluidClassic/BlockFluidFinite удалены (см. liquid_classic/liquid_finite ниже).
 import net.minecraftforge.fluids.IFluidBlock;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import gregapi.fluid.FluidTankInfo;
@@ -797,7 +796,9 @@ public class WD {
 	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return leafdecay(aWorld, aX, aY, aZ, aBlock, F, F);}
 	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea) {return leafdecay(aWorld, aX, aY, aZ, aBlock, aOnlyTopArea, F);}
 	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea, boolean aTreeCapitator) {
-		if (aBlock == null || aBlock.canSustainLeaves(aWorld, aX, aY, aZ)) {
+		// F-tree: Forge Block.canSustainLeaves (блок держит листву от распада — брёвна) удалён -> neo тег
+		// BlockTags.LOGS (BlockTags.java:38; leaf-decay в neo смотрит именно логи), проверка на состоянии.
+		if (aBlock == null || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.LOGS)) {
 			for (int j = (aOnlyTopArea ? 0 : -7); j <= 7; ++j) for (int i = -7; i <= 7; ++i) for (int k = -7; k <= 7; ++k) {
 				Block tBlock = aWorld.getBlockState(new BlockPos(aX+i, aY+j, aZ+k)).getBlock(); // было aWorld.getBlock(x+i,y+j,z+k)
 				if (tBlock != NB) {
@@ -819,10 +820,15 @@ public class WD {
 	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof IFluidBlock;}
 
 	public static boolean liquid_classic(Level aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof BlockFluidClassic;}
+	// F5: Forge net.minecraftforge.fluids.BlockFluidClassic удалён — модовые «классические» (бесконечный
+	// источник) жидкости в neo наследуют LiquidBlock (как ваниль). Проверки LiquidBlock достаточно 1:1.
+	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock;}
 
 	public static boolean liquid_finite(Level aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid_finite(Block aBlock) {return aBlock instanceof BlockFluidFinite;}
+	// PORT-TODO(F5, finite-fluid): Forge net.minecraftforge.fluids.BlockFluidFinite (жидкости с конечным
+	// объёмом на блок) удалён, у neo модели «конечной» жидкости-блока нет (все LiquidBlock-стиль/бесконечные).
+	// Деградация до F (ни один блок не «finite» в модели neo) — НЕ тихо, до появления neo-аналога.
+	public static boolean liquid_finite(Block aBlock) {return F;}
 
 	public static boolean liquid_borken(Level aWorld, int aX, int aY, int aZ) {return liquid_borken(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_borken(Block aBlock) {return !(aBlock instanceof IItemGT) && liquid_classic(aBlock);}
@@ -886,7 +892,7 @@ public class WD {
 	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
 	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || aBlock.canBeReplacedByLeaves(aWorld, aX, aY, aZ);}
+	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).canBeReplaced();}
 	
 	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
 	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой
@@ -1146,10 +1152,14 @@ public class WD {
 			// тот же фолбэк, что location-sensitive default сам использует при отсутствии переопределения.
 			float tResistance = aBlock.getExplosionResistance();
 			rList.add("Hardness: " + WD.hardness(aBlock, aWorld, aX, aY, aZ) + " - " + LH.getToolTipBlastResistance(aBlock, tResistance));
-			int tHarvestLevel = aBlock.getHarvestLevel(aMeta);
-			String tHarvestTool = aBlock.getHarvestTool(aMeta);
+			// F-tool: getHarvestLevel/getHarvestTool(int) — GT6-методы на BlockBase (Forge-точки на vanilla Block
+			// удалены). Отладочный скан произвольного блока: guard instanceof, ваниль -> 0/"" (нет GT6-tier).
+			int tHarvestLevel = aBlock instanceof BlockBase ? ((BlockBase)aBlock).getHarvestLevel(aMeta) : 0;
+			String tHarvestTool = aBlock instanceof BlockBase ? ((BlockBase)aBlock).getHarvestTool(aMeta) : "";
 			rList.add(tHarvestLevel == 0 && WD.getMaterial(aBlock).isAdventureModeExempt() ? "Hand-Harvestable, but " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " is faster" : "Tool to Harvest: " + (Code.stringValid(tHarvestTool)?Code.capitalise(tHarvestTool):"None") + " (" + tHarvestLevel + ")");
-			if (aBlock.isBeaconBase(aWorld, aX, aY, aZ, aX, aY+1, aZ)) rList.add("Is usable for Beacon Pyramids");
+			// F-block: Forge Block.isBeaconBase(world,x,y,z,bx,by,bz) удалён -> neo тег BlockTags.BEACON_BASE_BLOCKS
+			// (BlockTags.java:115), проверка на состоянии.
+			if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.BEACON_BASE_BLOCKS)) rList.add("Is usable for Beacon Pyramids");
 			if (MD.GC.mLoaded && aBlock instanceof IPartialSealableBlock) rList.add(((IPartialSealableBlock)aBlock).isSealed(aWorld, aX, aY, aZ, FORGE_DIR[aSide ^ 1]) ? "Is Sealable on this Side" : "Is not Sealable on this Side");
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (aTileEntity != null) {
