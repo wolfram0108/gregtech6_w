@@ -36,7 +36,7 @@ public class CoverAsphalt extends CoverTextureSimple {
 	
 	@Override
 	public boolean onWalkOver(byte aCoverSide, CoverData aData, Entity aEntity) {
-		if ((aEntity.getDeltaMovement().x != 0 || aEntity.getDeltaMovement().z != 0) && !aEntity.isInWater() && !aEntity.isShiftKeyDown()) {aEntity.getDeltaMovement().x *= 1.3; aEntity.getDeltaMovement().z *= 1.3;}
+		if ((aEntity.getDeltaMovement().x != 0 || aEntity.getDeltaMovement().z != 0) && !aEntity.isInWater() && !aEntity.isShiftKeyDown()) {aEntity.setDeltaMovement(aEntity.getDeltaMovement().multiply(1.3, 1, 1.3));} // neo Vec3 иммутабелен: .x*= -> setDeltaMovement(multiply(1.3,1,1.3)) (Vec3.java:164)
 		return T;
 	}
 }
