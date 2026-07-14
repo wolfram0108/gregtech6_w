@@ -2785,7 +2785,15 @@ public class UT {
 				PlayedSound tSound = new PlayedSound(mSound, mX, mY, mZ, mTimeUntilNextSound);
 				if (!sPlayedSounds.contains(tSound)) try {
 					sPlayedSounds.add(tSound);
-					mWorld.playSound(mX+0.5, mY+0.5, mZ+0.5, mSound, mVolume, mPitch, T);
+					// F-sound: neo Level.playSound(double,double,double,String,...) удалён — звук адресуется
+					// SoundEvent из реестра (Registry.getValue(Identifier), Registry.java:69), проигрывается
+					// Level.playLocalSound(...,SoundEvent,SoundSource,...) (Level.java:463). Резолвим mSound как
+					// neo sound-id; neo-native строки играют сразу.
+					// PORT-TODO(F-sound): легаси 1.7.10 SFX-строки ("random.click"/"game.neutral.swim") не смаплены
+					// на neo sound-id (отдельная аудио-таблица, как F3-render на клиенте) — до неё нерезолвнутые
+					// деградируют в no-op (звук не играет), НЕ крашат.
+					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(mSound));
+					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
 				} catch(Throwable e) {/**/}
 			}
 		}
@@ -3003,7 +3011,10 @@ public class UT {
 		}
 		
 		public static boolean applyRadioactivity(Entity aEntity, int aLevel, int aAmountOfItems) {
-			if (aLevel > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && ((LivingEntity)aEntity).getCreatureAttribute() != EntityTypeTags.UNDEAD && ((LivingEntity)aEntity).getCreatureAttribute() != EntityTypeTags.ARTHROPOD && !isWearingFullRadioHazmat(((LivingEntity)aEntity))) {
+			// F-entity: MobType/getCreatureAttribute() удалён — тип существа теперь EntityType-теги. Радиация не
+			// действует на нежить/членистоногих: !is(EntityTypeTags.UNDEAD/ARTHROPOD) (Entity.is(TagKey), идиома
+			// LivingEntity.canBreatheUnderwater:395; EntityTypeTags.java:11,30).
+			if (aLevel > 0 && aEntity instanceof LivingEntity && aEntity.isAlive() && !((LivingEntity)aEntity).is(EntityTypeTags.UNDEAD) && !((LivingEntity)aEntity).is(EntityTypeTags.ARTHROPOD) && !isWearingFullRadioHazmat(((LivingEntity)aEntity))) {
 				
 				EntityFoodTracker tTracker = EntityFoodTracker.get(aEntity);
 				if (tTracker != null) {tTracker.changeRadiation(aLevel * aAmountOfItems); return T;}
