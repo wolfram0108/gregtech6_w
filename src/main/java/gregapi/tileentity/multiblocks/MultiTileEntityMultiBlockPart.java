@@ -321,7 +321,20 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 		if (tTileEntity instanceof IMultiBlockInventory) return ((IMultiBlockInventory)tTileEntity).isItemValidForSlot(this, aSlot, aStack);
 		return F;
 	}
-	
+
+	// F14-inventory-contract: neo Container-мост поверх GT6-старых имён выше (getStackInSlot/getSizeInventory/
+	// setInventorySlotContents/decrStackSize/getStackInSlotOnClosing/isItemValidForSlot — делегаты в контроллер
+	// IMultiBlockInventory). notick-иерархия параллельна base/TileEntityBase05Inventories:112-120; MultiBlockPart
+	// реализует Container сам, тот же мост здесь без дублирования логики. setChanged наследуется от BlockEntity.
+	@Override public int getContainerSize() {return getSizeInventory();}
+	@Override public ItemStack getItem(int aSlot) {return getStackInSlot(aSlot);}
+	@Override public void setItem(int aSlot, ItemStack aStack) {setInventorySlotContents(aSlot, aStack);}
+	@Override public ItemStack removeItem(int aSlot, int aDecrement) {return decrStackSize(aSlot, aDecrement);}
+	@Override public ItemStack removeItemNoUpdate(int aSlot) {return getStackInSlotOnClosing(aSlot);}
+	@Override public boolean canPlaceItem(int aSlot, ItemStack aStack) {return isItemValidForSlot(aSlot, aStack);}
+	@Override public boolean isEmpty() {for (int i = 0, n = getContainerSize(); i < n; i++) {ItemStack tStack = getItem(i); if (tStack != null && !tStack.isEmpty()) return F;} return T;}
+	@Override public void clearContent() {for (int i = 0, n = getContainerSize(); i < n; i++) setItem(i, NI);}
+
 	@Override
 	public int[] getAccessibleSlotsFromSide2(byte aSide) {
 		if ((mMode & NO_ITEM) == NO_ITEM) return ZL_INTEGER;
@@ -694,6 +707,8 @@ public class MultiTileEntityMultiBlockPart extends TileEntityBase05Paintable imp
 	
 	// Useless Garbage :P
 	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
+	// neo Container.stillValid (1.7.10 isUseableByPlayer) — делегат к своей проверке дистанции (без дублирования).
+	@Override public boolean stillValid(Player aPlayer) {return isUseableByPlayer(aPlayer);}
 	@Override public void openInventory() {/**/}
 	@Override public void closeInventory() {/**/}
 }

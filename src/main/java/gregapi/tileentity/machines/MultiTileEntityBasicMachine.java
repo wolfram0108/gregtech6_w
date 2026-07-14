@@ -661,7 +661,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				if (aRecipe.mFluidOutputs[j] == null) {
 					tRequiredEmptyTanks--;
 				} else for (int i = 0; i < mTanksOutput.length; i++) if (mTanksOutput[i].contains(aRecipe.mFluidOutputs[j])) {
-					if (mTanksOutput[i].has(Math.max(16000, 1+aRecipe.mFluidOutputs[j].getAmount()*mParallel)) && !FluidsGT.VOID_OVERFLOW.contains(aRecipe.mFluidOutputs[j].getFluid().getName())) return 0;
+					if (mTanksOutput[i].has(Math.max(16000, 1+aRecipe.mFluidOutputs[j].getAmount()*mParallel)) && !FluidsGT.VOID_OVERFLOW.contains(FL.regName(aRecipe.mFluidOutputs[j].getFluid()))) return 0;
 					tRequiredEmptyTanks--;
 					break;
 				}
@@ -702,7 +702,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 		if (aUseAutoIO && !mDisabledFluidInput && SIDES_VALID[tAutoInput]) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getFluidInputTarget(tAutoInput);
 			if (tTileEntity != null && tTileEntity.mTileEntity != null) {
-				FluidTankInfo[] tInfos = tTileEntity.mTileEntity.getTankInfo(FORGE_DIR[tTileEntity.mSideOfTileEntity]);
+				FluidTankInfo[] tInfos = FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 				if (tInfos != null) for (FluidTankInfo tInfo : tInfos) if (tInfo != null && tInfo.fluid != null && tInfo.fluid.getAmount() > 0 && getFluidTankFillable(SIDE_ANY, tInfo.fluid) != null) {
 					if (FL.move_(tTileEntity, delegator(tAutoInput), tInfo.fluid) > 0) updateInventory();
 				}

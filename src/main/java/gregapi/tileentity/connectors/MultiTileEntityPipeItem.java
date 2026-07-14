@@ -272,7 +272,7 @@ public class MultiTileEntityPipeItem extends TileEntityBase10ConnectorRendered i
 	@Override public boolean canEmitItemsTo                 (byte aSide, Object aSender) {return (aSender != this || aSide != mLastReceivedFrom) && connected(aSide);}
 	@Override public boolean canAcceptItemsFrom             (byte aSide, Object aSender) {return connected(aSide);}
 	
-	@Override public boolean canConnect                     (byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {return aDelegator.mTileEntity instanceof WorldlyContainer ? aDelegator.mTileEntity instanceof ITileEntityCanDelegate || ((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity).length > 0 : ST.canConnect(aDelegator);}
+	@Override public boolean canConnect                     (byte aSide, DelegatorTileEntity<BlockEntity> aDelegator) {return aDelegator.mTileEntity instanceof WorldlyContainer ? aDelegator.mTileEntity instanceof ITileEntityCanDelegate || ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity]).length > 0 : ST.canConnect(aDelegator);}
 	
 	@Override public long getProgressValue                  (byte aSide) {return getPipeContent()*64;}
 	@Override public long getProgressMax                    (byte aSide) {return getMaxPipeCapacity()*64;}

@@ -921,6 +921,19 @@ public enum FL {
 	public static boolean fillAll (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return aFluidHandler != null && aFluid != null && fillAll_(aFluidHandler, aSides, aFluid, aDoFill);}
 	public static boolean fillAll_(IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {for (byte tSide : aSides) if (fillSided(aFluidHandler, tSide, aFluid, F) == aFluid.getAmount() && (!aDoFill || fillSided(aFluidHandler, tSide, aFluid, T) > 0)) return T; return F;}
 
+	// F5-capability: side-aware чтение танков из IFluidHandler. GT6-TE несут своё getTankInfo(Direction)
+	// (TileEntityBase01Root:731) — маршрутизируем ТУДА (instanceof, sided 1:1 c 1.7.10); ванильному neo-
+	// хендлеру side неприменим -> собираем FluidTankInfo[] из sideless neo-API getTanks/getFluidInTank/
+	// getTankCapacity (тот же приём, что fillSided:908). Заменяет 1.7.10 IFluidHandler.getTankInfo(ForgeDirection).
+	public static gregapi.fluid.FluidTankInfo[] getTankInfo(IFluidHandler aFluidHandler, byte aSide) {
+		if (aFluidHandler == null) return ZL_FLUIDTANKINFO;
+		if (aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT) return tGT.getTankInfo(FORGE_DIR[aSide]);
+		int tTanks = aFluidHandler.getTanks();
+		gregapi.fluid.FluidTankInfo[] rInfo = new gregapi.fluid.FluidTankInfo[tTanks];
+		for (int i = 0; i < tTanks; i++) rInfo[i] = new gregapi.fluid.FluidTankInfo(aFluidHandler.getFluidInTank(i), aFluidHandler.getTankCapacity(i));
+		return rInfo;
+	}
+
 	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return 0;}
 	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return 0;}
 	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return 0;}

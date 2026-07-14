@@ -46,6 +46,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
+import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.AABB;
@@ -366,6 +367,39 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 		return canExtractItem2(aSlot, aStack, UT.Code.side(aSide));
 	}
 	
+	// F14/WorldlyContainer: neo-мосты (getSlotsForFace/canPlaceItemThroughFace/canTakeItemThroughFace)
+	// поверх GT6-своих getAccessibleSlotsFromSide2/canInsertItem2/canExtractItem2 (1.7.10-имена
+	// getAccessibleSlotsFromSide(int)/canInsertItem/canExtractItem выше — не члены neo WorldlyContainer,
+	// сохранены как внутренние). Тот же централизованный мост, что и в base/TileEntityBase06Covers:322-349
+	// (notick-иерархия параллельна; MultiTileEntityMultiBlockPart наследует ОТСЮДА). Direction<->byte через
+	// UT.Code.side; cover-перехват 1:1 со старой формой.
+	@Override
+	public final int[] getSlotsForFace(Direction aSide) {
+		byte tSide = UT.Code.side(aSide);
+		if (hasCovers() && SIDES_VALID[tSide] && mCovers.mBehaviours[tSide] != null && mCovers.mBehaviours[tSide].getAccessibleSlotsFromSideOverride(UT.Code.side(aSide), mCovers, UT.Code.side(aSide))) return mCovers.mBehaviours[tSide].getAccessibleSlotsFromSide(UT.Code.side(aSide), mCovers, UT.Code.side(aSide), getAccessibleSlotsFromSide2(UT.Code.side(aSide)));
+		return getAccessibleSlotsFromSide2(UT.Code.side(aSide));
+	}
+
+	@Override
+	public final boolean canPlaceItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {
+		byte tSide = UT.Code.side(aSide);
+		if (hasCovers() && SIDES_VALID[tSide] && mCovers.mBehaviours[tSide] != null) {
+			if (mCovers.mBehaviours[tSide].interceptItemInsert(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
+			if (mCovers.mBehaviours[tSide].canInsertItemOverride(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return mCovers.mBehaviours[tSide].canInsertItem(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide)) && canInsertItem2(aSlot, aStack, UT.Code.side(aSide));
+		}
+		return canInsertItem2(aSlot, aStack, UT.Code.side(aSide));
+	}
+
+	@Override
+	public final boolean canTakeItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {
+		byte tSide = UT.Code.side(aSide);
+		if (hasCovers() && SIDES_VALID[tSide] && mCovers.mBehaviours[tSide] != null) {
+			if (mCovers.mBehaviours[tSide].interceptItemExtract(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
+			if (mCovers.mBehaviours[tSide].canExtractItemOverride(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return mCovers.mBehaviours[tSide].canExtractItem(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide)) && canExtractItem2(aSlot, aStack, UT.Code.side(aSide));
+		}
+		return canExtractItem2(aSlot, aStack, UT.Code.side(aSide));
+	}
+
 	@Override
 	protected final IFluidTank getFluidTankFillable(byte aSide, FluidStack aFluidToFill) {
 		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null) {

@@ -352,7 +352,11 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		
 		MultiItemTool.LAST_TOOL_COORDS_BEFORE_DAMAGE = getCoords();
 		
-		try {FMLCommonHandler.instance().firePlayerCraftingEvent(aPlayer, ST.copy(slot(31)), new CraftingInput(null, 3, 3));} catch(Throwable e) {e.printStackTrace(ERR);}
+		// F-mod-lifecycle: 1.7.10 FMLCommonHandler.firePlayerCraftingEvent(player, crafted, InventoryCrafting) —
+		// FMLCommonHandler удалён (compat-mirror no-op, событие в neo не публикуется). neo CraftingInput не имеет
+		// ctor (только CraftingInput.of/EMPTY) — прежний `new CraftingInput(null,3,3)` невалиден; матрица зеркалом
+		// отбрасывается -> CraftingInput.EMPTY (реальная 3x3-передача — отдельный шов при возврате крафт-события).
+		try {FMLCommonHandler.instance().firePlayerCraftingEvent(aPlayer, ST.copy(slot(31)), net.minecraft.world.item.crafting.CraftingInput.EMPTY);} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		ItemStack[] tRecipeStacks = {ST.amount(1, slot(21)), ST.amount(1, slot(22)), ST.amount(1, slot(23)), ST.amount(1, slot(24)), ST.amount(1, slot(25)), ST.amount(1, slot(26)), ST.amount(1, slot(27)), ST.amount(1, slot(28)), ST.amount(1, slot(29))};
 		
@@ -413,7 +417,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		
 		if (aHoldStack == null) aHoldStack = ST.copy(slot(31)); else aHoldStack.setCount(aHoldStack.getCount()+(slot(31).getCount()));
 		
-		aHoldStack.onCrafting(level, aPlayer, slot(31).getCount());
+		aHoldStack.onCraftedBy(aPlayer, slot(31).getCount()); // neo ItemStack.onCraftedBy(Player,int) — 1.7.10 onCrafting(World,EntityPlayer,int) уронил Level-аргумент (ItemStack.java neo).
 		
 		ST.check(aPlayer, aHoldStack);
 		
@@ -635,12 +639,12 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 						if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 							return aPlayer.containerMenu.getCarried();
 						}
-						aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), i != 0));
+						aPlayer.containerMenu.setCarried(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), i != 0)); // neo: несомый предмет курсора — на AbstractContainerMenu.setCarried (1.7.10 InventoryPlayer.setItemStack).
 					}
 					return aPlayer.containerMenu.getCarried();
 				}
 				// LEFTCLICK
-				if (canDoCraftingOutput()) aPlayer.getInventory().setItemStack(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), F));
+				if (canDoCraftingOutput()) aPlayer.containerMenu.setCarried(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), F)); // neo AbstractContainerMenu.setCarried (см. выше).
 				return aPlayer.containerMenu.getCarried();
 			}
 			return null;
