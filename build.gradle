@@ -51,6 +51,24 @@ if (project.hasProperty('coreOnly')) {
     sourceSets.main.java.setIncludes(includes)
     // SanityTest завязан на контент-класс GregTech6.MODID (исключён фильтром) — не компилировать под coreOnly.
     sourceSets.test.java.exclude('**/SanityTest.java')
+    // JPMS split-package: compat-mirror кладёт crutch-классы в net.minecraft.*/cpw.* (IIcon/IIconRegister/RenderBlocks/
+    // TileEntityFlowerPot/launchwrapper/cpw.mods.fml) — конфликт с реальными модулями minecraft/modlauncher при
+    // module-resolution FML. Они нужны только на КОМПИЛЯЦИИ; в рантайме material/prefix-дамп (server-side, без рендера)
+    // их не вызывает (ленивая линковка). Стрипаем .class из вывода ПОСЛЕ compile, ДО test → модуль gregtech6 не экспортирует
+    // эти пакеты → конфликт исчезает, GT6-импорты остаются verbatim-1:1 (код не тронут). Дёрнет рантайм → NoClassDefFound (тогда --patch-module).
+    def stripMirror = tasks.register('stripMcMirror') {
+        doLast {
+            def dir = file('build/classes/java/main')
+            def removed = 0
+            ['net/minecraft', 'cpw'].each { pkg ->
+                def t = file("$dir/$pkg")
+                if (t.exists()) { removed += fileTree(t).files.size(); delete t }
+            }
+            logger.lifecycle("[coreOnly] stripMcMirror: удалено ${removed} crutch-.class из рантайм-модуля")
+        }
+    }
+    tasks.named('stripMcMirror').configure { mustRunAfter tasks.named('classes') }
+    tasks.named('test').configure { dependsOn stripMirror }
     logger.lifecycle("[coreOnly] main.java сужен до ${includes.size()} файлов (ядро-692 + mirror); SanityTest исключён")
 }
 
