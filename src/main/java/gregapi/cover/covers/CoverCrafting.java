@@ -24,8 +24,7 @@ import gregapi.render.ITexture;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.inventory.ContainerWorkbench;
-import net.minecraft.network.play.server.S2DPacketOpenWindow;
+// F14: 1.7.10 ContainerWorkbench/S2DPacketOpenWindow удалены -> neo openMenu+CraftingMenu (см. onCoverClickedRight).
 
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
@@ -45,11 +44,12 @@ public class CoverCrafting extends CoverTextureMulti {
 	@Override
 	public boolean onCoverClickedRight(byte aSide, CoverData aData, Entity aPlayer, byte aSideClicked, float aHitX, float aHitY, float aHitZ) {
 		if (aPlayer instanceof ServerPlayer) {
-			((ServerPlayer)aPlayer).getNextWindowId();
-			((ServerPlayer)aPlayer).playerNetServerHandler.sendPacket(new S2DPacketOpenWindow(((ServerPlayer)aPlayer).currentWindowId, 1, "Crafting", 9, T));
-			((ServerPlayer)aPlayer).containerMenu = new ContainerWorkbench(((ServerPlayer)aPlayer).getInventory(), ((ServerPlayer)aPlayer).level(), aData.mTileEntity.getX(), aData.mTileEntity.getY(), aData.mTileEntity.getZ()) {public boolean canInteractWith(Player par1EntityPlayer) {return T;}};
-			((ServerPlayer)aPlayer).containerMenu.windowId = ((ServerPlayer)aPlayer).currentWindowId;
-			((ServerPlayer)aPlayer).containerMenu.addCraftingToCrafters(((ServerPlayer)aPlayer));
+			// F14: 1.7.10 ручное открытие GUI (getNextWindowId + S2DPacketOpenWindow + set containerMenu +
+			// addCraftingToCrafters) удалено — neo ServerPlayer.openMenu(MenuProvider) делает всё централизованно
+			// (счётчик окна, пакет, привязка меню, синхронизация). ContainerWorkbench->CraftingMenu (CraftingMenu.java:38).
+			// ContainerLevelAccess.NULL (ContainerLevelAccess.java:10) = stillValid всегда true — воспроизводит
+			// оригинальный override canInteractWith->true (кавер не настоящий верстак, доступен всегда).
+			((ServerPlayer)aPlayer).openMenu(new net.minecraft.world.SimpleMenuProvider((aId, aInv, aP) -> new net.minecraft.world.inventory.CraftingMenu(aId, aInv, net.minecraft.world.inventory.ContainerLevelAccess.NULL), net.minecraft.network.chat.Component.translatable("container.crafting")));
 		}
 		return T;
 	}
