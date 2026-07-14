@@ -151,6 +151,14 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	@Override public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return aStack;}
 	
 	public boolean checkNoEntityCollision(Level aWorld, int aX, int aY, int aZ, byte aMeta, Entity aExceptThisOne) {return WD.noEntityCollision(aWorld, new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1), aExceptThisOne);}
+
+	// F-block-placement: 1.7.10/Forge Block.canReplace(World,x,y,z,side,stack) и Block.onBlockPlaced(...,meta)
+	// удалены из neo (размещение перестроено на BlockPlaceContext/getStateForPlacement). Воспроизводим Forge-дефолты
+	// как GT6-хелперы: canReplace=T (реальная проверка заменяемости — WD.replaceable в onItemUse выше); onBlockPlaced
+	// возвращает мету без изменений (facing-подклассы переопределяют). ItemBlock.placeBlockAt/World.canPlaceEntityOnSide
+	// — заменены прямым WD.set + checkNoEntityCollision в onItemUse (см. ниже).
+	public boolean canReplace(Level aWorld, int aX, int aY, int aZ, int aSide, ItemStack aStack) {return T;}
+	public byte onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, byte aMeta) {return aMeta;}
 	public boolean isSideSolid(int aMeta, byte aSide) {return T;}
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {/**/}
 	public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {/**/}
@@ -202,9 +210,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		if (!canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
 		byte aMeta = UT.Code.bind4(aItem.getMetadata(ST.meta(aStack)));
 		if (!checkNoEntityCollision(aWorld, aX, aY, aZ, aMeta, null)) return F;
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
-		
-		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aMeta))) {
+		// canPlaceEntityOnSide (Forge World, удалён) — проверка коллизии с сущностями уже сделана checkNoEntityCollision выше (204).
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid())) return F;
+
+		// ItemBlock.placeBlockAt (Forge, удалён; neo BlockItem.place перестроен на BlockPlaceContext) -> прямой WD.set
+		// этого блока с вычисленной onBlockPlaced-метой (тот же итог: блок поставлен, звук, расход стека).
+		if (WD.set(aWorld, aX, aY, aZ, this, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aMeta), 3)) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);
 			aStack.setCount(aStack.getCount()-1);
 		}

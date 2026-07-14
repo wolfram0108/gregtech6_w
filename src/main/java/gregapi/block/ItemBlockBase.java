@@ -33,6 +33,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
@@ -46,7 +47,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public final IBlockBase mPlaceable;
 
 	public ItemBlockBase(Block aBlock) {
-		super(aBlock);
+		super(aBlock, new Item.Properties()); // было super(aBlock) — neo BlockItem(Block,Item.Properties) (как PrefixBlockItem:62)
 		mPlaceable = (IBlockBase)aBlock;
 		setMaxDamage(0);
 		setHasSubtypes(T);
@@ -62,7 +63,8 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
-		super.addInformation(aStack, aPlayer, aList, aF3_H);
+		// PORT-TODO(F13, item-tooltip): было super.addInformation(...) — neo Item/BlockItem не объявляет addInformation
+		// (appendHoverText — иная сигнатура/фаза); vanilla-хук убран, GT6-тултип ниже сохранён (как PrefixBlockItem:123).
 		byte aMeta = UT.Code.bind4(ST.meta_(aStack));
 		mPlaceable.addInformation(aStack, aMeta, aPlayer, aList, aF3_H);
 		if (WD.hasCollide(aPlayer.level(), 0, 0, 0, getBlock())) {
@@ -101,11 +103,18 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 		float tResistance = mPlaceable.getExplosionResistance(aMeta);
 		if (tResistance >= 4) aList.add(LH.getToolTipBlastResistance(getBlock(), tResistance));
 		
-		aList.add(LH.getToolTipHarvest(WD.getMaterial(getBlock()), getBlock().getHarvestTool(aMeta), getBlock().getHarvestLevel(aMeta)));
+		// F-tool: Block.getHarvestTool/getHarvestLevel удалены из vanilla neo (getBlock() статически — vanilla Block).
+		// GT6-данные живут на BlockBase (getHarvestTool/getHarvestLevel:87-88) — маршрут через каст (путь ЕСТЬ, не заглушка).
+		String tHarvestTool = TOOL_pickaxe; int tHarvestLevel = 0;
+		if (getBlock() instanceof gregapi.block.BlockBase tBB) {tHarvestTool = tBB.getHarvestTool(aMeta); tHarvestLevel = tBB.getHarvestLevel(aMeta);}
+		aList.add(LH.getToolTipHarvest(WD.getMaterial(getBlock()), tHarvestTool, tHarvestLevel));
 		while (aList.remove(null));
 	}
 	
-	@OnlyIn(Dist.CLIENT) public CreativeModeTab getCreativeTab() {return getBlock().getCreativeTabToDisplayOn();}
+	// PORT-TODO(F16, creative-tab): Block.getCreativeTabToDisplayOn удалён из neo (креатив-вкладки — event-based
+	// BuildCreativeModeTabContentsEvent/датаген, не per-block getter; BlockBase:77 та же F16-отсрочка). getCreativeTab
+	// в neo Item тоже не вызывается движком — no-op null до F16-фазы.
+	@OnlyIn(Dist.CLIENT) public CreativeModeTab getCreativeTab() {return null;}
 	public boolean func_150936_a(Level aWorld, int aX, int aY, int aZ, int aSide, Player aPlayer, ItemStack aStack) {return T;}
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUseFirst(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUse(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
