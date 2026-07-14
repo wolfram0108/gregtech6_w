@@ -57,7 +57,8 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 				// The Block has to be Opaque to ensure the Leak is plugged.
 				if (tBlock == NB || !WD.opaque(tBlock)) continue;
 				// No Bedrock, Obsidian or Black Granite!
-				if (WD.bedrock(tBlock) || tBlock.getHarvestLevel(ST.meta(tStack) & 15) >= 3) continue;
+				// F-tool: Block.getHarvestLevel(meta) удалён из vanilla neo (getHarvestLevel живёт на GT6-BlockBase:88) — каст (путь ЕСТЬ).
+			if (WD.bedrock(tBlock) || (tBlock instanceof gregapi.block.BlockBase tBlockBase ? tBlockBase.getHarvestLevel(ST.meta(tStack) & 15) : 0) >= 3) continue;
 				// Don't use any PrefixBlocks, TileEntities or Silverfish Blocks.
 				if (tBlock instanceof IPrefixBlock || tBlock instanceof EntityBlock || tBlock instanceof InfestedBlock) continue;
 				// Only use Blocks that are typically mined.

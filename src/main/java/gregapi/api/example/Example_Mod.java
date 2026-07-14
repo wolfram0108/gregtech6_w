@@ -66,16 +66,18 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	@Override public gregapi.api.Abstract_Proxy getProxy() {return PROXY;}
 	
 	// Do not change these 7 Functions. Just keep them this way.
-	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent       aEvent) {onModInit(aEvent);}
-	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent   aEvent) {onModPostInit(aEvent);}
+	// F-mod-lifecycle: onModPreInit/onModInit/onModPostInit принимают GT6-mirror FML-события (носители фазы, gregapi.api),
+	// а не neo-события — оборачиваем neo-событие в mirror перед вызовом (тот же приём, что GT_API.onPreLoad/onLoad/onPostLoad).
+	@cpw.mods.fml.common.Mod.EventHandler public final void onPreLoad           (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent    aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onLoad              (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent       aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
+	@cpw.mods.fml.common.Mod.EventHandler public final void onPostLoad          (net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent   aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarting    (net.neoforged.neoforge.event.server.ServerStartingEvent       aEvent) {onModServerStarting(aEvent);}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStarted     (net.neoforged.neoforge.event.server.ServerStartedEvent        aEvent) {onModServerStarted(aEvent);}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopping    (net.neoforged.neoforge.event.server.ServerStoppingEvent       aEvent) {onModServerStopping(aEvent);}
 	@cpw.mods.fml.common.Mod.EventHandler public final void onServerStopped     (net.neoforged.neoforge.event.server.ServerStoppedEvent        aEvent) {onModServerStopped(aEvent);}
 	
 	// @Override
-	public void onModPreInit2(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent aEvent) {
+	public void onModPreInit2(gregapi.api.FMLPreInitializationEvent aEvent) {
 		// If you want to make yourself a new OreDict Prefix for your Component Items or similar.
 		final gregapi.oredict.OreDictPrefix tExamplePrefix = gregapi.oredict.OreDictPrefix.createPrefix("exampleprefix"); // This newly created OreDict Prefix is named "exampleprefix", so an Aluminium Item with this Prefix would be named "exampleprefixAluminium" in the OreDict.
 		tExamplePrefix.setCategoryName("Examples"); // That is what the Creative Tab of it would be named.
@@ -153,7 +155,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	}
 	
 	// @Override
-	public void onModInit2(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent aEvent) {
+	public void onModInit2(gregapi.api.FMLInitializationEvent aEvent) {
 		// Gets your initialised Registry.
 		gregapi.block.multitileentity.MultiTileEntityRegistry tExampleRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("example.multitileentity");
 		
@@ -214,7 +216,7 @@ public final class Example_Mod extends gregapi.api.Abstract_Mod {
 	}
 	
 	// @Override
-	public void onModPostInit2(net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent aEvent) {
+	public void onModPostInit2(gregapi.api.FMLPostInitializationEvent aEvent) {
 		// Insert your PostInit Code here and not above
 	}
 	

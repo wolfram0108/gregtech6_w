@@ -31,7 +31,10 @@ public class CreativeTab extends CreativeModeTab {
 	public final short mMetaData;
 	
 	public CreativeTab(String aName, String aLocal, Item aItem, short aMetaData) {
-		super(aName);
+		// PORT-TODO(F16, creative-tab): 1.7.10 CreativeTabs(String) — neo CreativeModeTab строится через Builder (protected
+		// ctor CreativeModeTab(Builder); реальные вкладки регистрируются DeferredRegister<CreativeModeTab>+событие, не
+		// подклассом). Компайл-мост: super(builder с title=aName); полноценная F16-регистрация — отдельная фаза.
+		super(CreativeModeTab.builder().title(net.minecraft.network.chat.Component.literal(aName)));
 		LH.add("itemGroup." + aName, aLocal);
 		mItem = aItem;
 		mMetaData = aMetaData;

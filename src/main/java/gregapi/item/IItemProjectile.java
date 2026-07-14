@@ -38,17 +38,24 @@ public interface IItemProjectile {
 	
 	/** Class for being able to set the ItemStack when launching the Projectile. And for de-obfuscation of Parameters. */
 	public static abstract class EntityProjectile extends Arrow {
+		// F-entity-construction: neo Arrow требует ctor (EntityType,Level) / (Level,x,y,z,ItemStack,ItemStack) /
+		// (Level,LivingEntity,ItemStack,ItemStack) — 1.7.10-ctors (Level) / (Level,x,y,z) / (Level,shooter,target,
+		// speed,precision) / (Level,shooter,speed) удалены. Тип-плейсхолдер EntityType.ARROW (реальная регистрация
+		// EntityType — отложенный F12-entity, тот же PORT-TODO что GT_API:894). setProjectileStack задаёт снаряд отдельно.
 		public EntityProjectile(Level aWorld) {
-			super(aWorld);
+			super(net.minecraft.world.entity.EntityType.ARROW, aWorld);
 		}
 		public EntityProjectile(Level aWorld, double aX, double aY, double aZ) {
-			super(aWorld, aX, aY, aZ);
+			super(aWorld, aX, aY, aZ, ItemStack.EMPTY, ItemStack.EMPTY);
 		}
 		public EntityProjectile(Level aWorld, LivingEntity aShootingEntity, LivingEntity aWhateverThatIs, float aSpeed, float aPrecision) {
-			super(aWorld, aShootingEntity, aWhateverThatIs, aSpeed, aPrecision);
+			// PORT-TODO(F-entity-construction): прицельный ctor (target/speed/precision) удалён — в neo наведение через
+			// shoot()/shootFromRotation ПОСЛЕ конструкции. Владелец сохранён; наведение отложено (aWhateverThatIs/aSpeed/aPrecision).
+			super(aWorld, aShootingEntity, ItemStack.EMPTY, ItemStack.EMPTY);
 		}
 		public EntityProjectile(Level aWorld, LivingEntity aShootingEntity, float aSpeed) {
-			super(aWorld, aShootingEntity, aSpeed);
+			// PORT-TODO(F-entity-construction): скорость-ctor удалён; владелец сохранён, начальная скорость — через shoot() (отложено).
+			super(aWorld, aShootingEntity, ItemStack.EMPTY, ItemStack.EMPTY);
 		}
 		
 		public abstract void setProjectileStack(ItemStack aStack);
