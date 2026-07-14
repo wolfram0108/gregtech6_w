@@ -373,6 +373,25 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	// сохранены как внутренние). Тот же централизованный мост, что и в base/TileEntityBase06Covers:322-349
 	// (notick-иерархия параллельна; MultiTileEntityMultiBlockPart наследует ОТСЮДА). Direction<->byte через
 	// UT.Code.side; cover-перехват 1:1 со старой формой.
+	// F14-inventory-contract: neo Container.stillValid(Player) (1.7.10 isUseableByPlayer) — центрально в notick-базе,
+	// объявляющей WorldlyContainer/Container (покрывает ВСЕ notick-TE: BunkerBlock и др.). Тело 1:1 с base/
+	// TileEntityBase05Inventories:106 (isDead + allowInteraction + дистанция <=64). Остальные Container-методы notick-TE
+	// уже удовлетворены выше по цепочке; недоставало только stillValid.
+	@Override public boolean stillValid(Player aPlayer) {return !isDead() && allowInteraction(aPlayer) && aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
+
+	// F14-inventory-contract: полный neo Container-мост поверх GT6-старых имён этого класса (getStackInSlot/
+	// getSizeInventory/setInventorySlotContents/decrStackSize/getStackInSlotOnClosing/isItemValidForSlot ниже).
+	// Централизует контракт для ВСЕХ notick-TE (BunkerBlock и др.); параллель base/TileEntityBase05Inventories:112-120.
+	// Виртуальная диспетчеризация: подкласс, переопределяющий старые имена, автоматически получает и neo-поведение.
+	@Override public int getContainerSize() {return getSizeInventory();}
+	@Override public ItemStack getItem(int aSlot) {return getStackInSlot(aSlot);}
+	@Override public void setItem(int aSlot, ItemStack aStack) {setInventorySlotContents(aSlot, aStack);}
+	@Override public ItemStack removeItem(int aSlot, int aDecrement) {return decrStackSize(aSlot, aDecrement);}
+	@Override public ItemStack removeItemNoUpdate(int aSlot) {return getStackInSlotOnClosing(aSlot);}
+	@Override public boolean canPlaceItem(int aSlot, ItemStack aStack) {return isItemValidForSlot(aSlot, aStack);}
+	@Override public boolean isEmpty() {for (int i = 0, n = getContainerSize(); i < n; i++) {ItemStack tStack = getItem(i); if (tStack != null && !tStack.isEmpty()) return F;} return T;}
+	@Override public void clearContent() {for (int i = 0, n = getContainerSize(); i < n; i++) setItem(i, NI);}
+
 	@Override
 	public final int[] getSlotsForFace(Direction aSide) {
 		byte tSide = UT.Code.side(aSide);
