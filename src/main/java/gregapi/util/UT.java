@@ -78,7 +78,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.entity.monster.*;
+import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
@@ -1466,16 +1466,12 @@ public class UT {
 		/** estebes helped with the code for this one, and yes that cast down there is fucking necessary... */
 		public static short[] color(ItemStack aStack) {
 			if (ST.invalid(aStack)) return UNCOLOURED;
-			IIcon tIcon = null;
-			try {tIcon = aStack.getIconIndex();} catch(Throwable e) {return UNCOLOURED;} // And ofcourse some Mod needs to crash here...
-			if (tIcon == null) return UNCOLOURED;
-			String tResourceLocation = tIcon.getIconName();
-			if (stringInvalid(tResourceLocation)) return UNCOLOURED;
-			short[] rColor = color(tResourceLocation);
-			if (rColor == null) return UNCOLOURED;
-			short[] rModulation = getRGBaArray(aStack.getItem().getColorFromItemStack(aStack, 0));
-			for (byte i = 0; i < 3; i++) rColor[i] = (short)((rColor[i] * rModulation[i]) / 255);
-			return rColor;
+			// PORT-TODO(F3, baked-рендер клиента, Фаза C): 1.7.10 читал средний цвет из атлас-спрайта предмета
+			// (ItemStack.getIconIndex():IIcon + IIcon.getIconName() + Item.getColorFromItemStack) — весь этот
+			// immediate-mode/IIcon стек удалён в 26.1.2 (см. decisions/F3-render.md). Атлас-спрайт на клиенте
+			// станет TextureAtlasSprite/Material при Фазе C; тинт предмета — ItemColors. До неё деградируем до
+			// нейтрального UNCOLOURED (тинт «нет модуляции»), НЕ крашим — метод @OnlyIn(CLIENT), на сервере не зовётся.
+			return UNCOLOURED;
 		}
 		
 		@OnlyIn(Dist.CLIENT)
@@ -1489,7 +1485,9 @@ public class UT {
 				aux = Identifier.fromNamespaceAndPath("minecraft", "textures/items/" + aResourceLocation + ".png");
 			}
 			java.awt.image.BufferedImage tIcon = null;
-			try {tIcon = javax.imageio.ImageIO.read(Minecraft.getInstance().getResourceManager().getResource(aux).getInputStream());} catch (IOException e) {/**/}
+			// neo: ResourceManager.getResource(Identifier) -> Optional<Resource> (не бросает FileNotFound);
+			// Resource.getInputStream() -> open() (Resource.java). Читаем только если ресурс присутствует.
+			try {java.util.Optional<net.minecraft.server.packs.resources.Resource> tRes = Minecraft.getInstance().getResourceManager().getResource(aux); if (tRes.isPresent()) tIcon = javax.imageio.ImageIO.read(tRes.get().open());} catch (IOException e) {/**/}
 			return tIcon == null ? null : color(tIcon);
 		}
 		
@@ -2620,26 +2618,26 @@ public class UT {
 	
 	@Deprecated public static class Inventories {
 		@Deprecated public static boolean isConnectableNonInventoryPipe(Object aTileEntity, int aSide) {return F;}
-		@Deprecated public static byte moveStackIntoPipe(AbstractContainerMenu aTileEntity1, Object aTarget, int[] aGrabSlots, byte aGrabFrom, byte aPutTo, List<ItemStack> aFilter, boolean aInvertFilter, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
-		@Deprecated public static byte moveStackFromSlotAToSlotB(AbstractContainerMenu aTileEntity, AbstractContainerMenu aTarget, int aGrabFrom, int aPutTo, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
-		@Deprecated public static boolean isAllowedToTakeFromSlot(AbstractContainerMenu aTileEntity, int aSlot, byte aSide, ItemStack aStack) {return F;}
-		@Deprecated public static boolean isAllowedToPutIntoSlot(AbstractContainerMenu aTileEntity, int aSlot, byte aSide, ItemStack aStack, int aMaxStackSize) {return F;}
+		@Deprecated public static byte moveStackIntoPipe(Container aTileEntity1, Object aTarget, int[] aGrabSlots, byte aGrabFrom, byte aPutTo, List<ItemStack> aFilter, boolean aInvertFilter, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
+		@Deprecated public static byte moveStackFromSlotAToSlotB(Container aTileEntity, Container aTarget, int aGrabFrom, int aPutTo, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
+		@Deprecated public static boolean isAllowedToTakeFromSlot(Container aTileEntity, int aSlot, byte aSide, ItemStack aStack) {return F;}
+		@Deprecated public static boolean isAllowedToPutIntoSlot(Container aTileEntity, int aSlot, byte aSide, ItemStack aStack, int aMaxStackSize) {return F;}
 		@Deprecated public static byte moveOneItemStack(Object aTileEntity1, Object aTileEntity2, byte aGrabFrom, byte aPutTo) {return 0;}
 		@Deprecated public static byte moveOneItemStack(Object aTileEntity1, Object aTileEntity2, byte aGrabFrom, byte aPutTo, List<ItemStack> aFilter, boolean aInvertFilter, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
 		@Deprecated public static byte moveOneItemStackIntoSlot(Object aTileEntity1, Object aTarget, byte aGrabFrom, int aPutTo, List<ItemStack> aFilter, boolean aInvertFilter, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
-		@Deprecated public static byte moveFromSlotToSlot(AbstractContainerMenu aTileEntity1, AbstractContainerMenu aTileEntity2, int aGrabFrom, int aPutTo, List<ItemStack> aFilter, boolean aInvertFilter, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
-		@Deprecated public static void removeNullStacksFromInventory(AbstractContainerMenu aInventory) {ST.denull(aInventory);}
+		@Deprecated public static byte moveFromSlotToSlot(Container aTileEntity1, Container aTileEntity2, int aGrabFrom, int aPutTo, List<ItemStack> aFilter, boolean aInvertFilter, int aMaxTargetStackSize, int aMinTargetStackSize, int aMaxMoveAtOnce, int aMinMoveAtOnce) {return 0;}
+		@Deprecated public static void removeNullStacksFromInventory(Container aInventory) {ST.denull(aInventory);}
 		@Deprecated public static boolean unlockAchievement(Player aPlayer, Advancement aAchievement) {return ST.achieve(aPlayer, aAchievement);}
 		@Deprecated public static boolean checkAchievements(Player aPlayer, ItemStack aStack) {return ST.check(aPlayer, aStack);}
 		@Deprecated public static boolean addStackToPlayerInventory(Player aPlayer, ItemStack aStack) {return ST.add(aPlayer, aStack);}
 		@Deprecated public static boolean addStackToPlayerInventory(Player aPlayer, ItemStack aStack, boolean aCurrentSlotFirst) {return ST.add(aPlayer, aStack, aCurrentSlotFirst);}
-		@Deprecated public static boolean addStackToPlayerInventory(Player aPlayer, AbstractContainerMenu aInventory, ItemStack aStack, boolean aCurrentSlotFirst) {return ST.add(aPlayer, aInventory, aStack, aCurrentSlotFirst);}
+		@Deprecated public static boolean addStackToPlayerInventory(Player aPlayer, Container aInventory, ItemStack aStack, boolean aCurrentSlotFirst) {return ST.add(aPlayer, aInventory, aStack, aCurrentSlotFirst);}
 		@Deprecated public static boolean addStackToPlayerInventoryOrDrop(Player aPlayer, ItemStack aStack) {return ST.give(aPlayer, aStack);}
 		@Deprecated public static boolean addStackToPlayerInventoryOrDrop(Player aPlayer, ItemStack aStack, boolean aCurrentSlotFirst) {return ST.give(aPlayer, aStack, aCurrentSlotFirst);}
 		@Deprecated public static boolean addStackToPlayerInventoryOrDrop(Player aPlayer, ItemStack aStack, Level aWorld, double aX, double aY, double aZ) {return ST.give(aPlayer, aStack, aWorld, aX, aY, aZ);}
 		@Deprecated public static boolean addStackToPlayerInventoryOrDrop(Player aPlayer, ItemStack aStack, boolean aCurrentSlotFirst, Level aWorld, double aX, double aY, double aZ) {return ST.give(aPlayer, aStack, aCurrentSlotFirst, aWorld, aX, aY, aZ);}
-		@Deprecated public static boolean addStackToPlayerInventoryOrDrop(Player aPlayer, AbstractContainerMenu aInventory, ItemStack aStack, boolean aCurrentSlotFirst, Level aWorld, double aX, double aY, double aZ) {return ST.give(aPlayer, aInventory, aStack, aCurrentSlotFirst, aWorld, aX, aY, aZ);}
-		@Deprecated public static ItemStack getProjectile(TagData aProjectileType, AbstractContainerMenu aInventory) {return ST.projectile(aInventory, aProjectileType);}
+		@Deprecated public static boolean addStackToPlayerInventoryOrDrop(Player aPlayer, Container aInventory, ItemStack aStack, boolean aCurrentSlotFirst, Level aWorld, double aX, double aY, double aZ) {return ST.give(aPlayer, aInventory, aStack, aCurrentSlotFirst, aWorld, aX, aY, aZ);}
+		@Deprecated public static ItemStack getProjectile(TagData aProjectileType, Container aInventory) {return ST.projectile(aInventory, aProjectileType);}
 	}
 	
 	public static class Sounds {
@@ -2923,12 +2921,12 @@ public class UT {
 		public static int getRadioactivityLevel(ItemStack aStack, OreDictItemData aData) {
 			long rLevel = 0;
 			if (aData != null && aData.validMaterial()) {
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentTools  ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentWeapons) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentAmmo   ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentRanged ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
-				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (tEnchantment.mObject instanceof Enchantment_Radioactivity) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentTools  ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentWeapons) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentAmmo   ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentRanged ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
+				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
 			}
 			// PORT-TODO(F8, enchant-registry): легаси EnchantmentHelper.getEnchantmentLevel(int effectId,
 			// ItemStack) удалён из движка целиком (не переименован). Вдобавок Enchantment_Radioactivity
@@ -3340,19 +3338,19 @@ public class UT {
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta) {ItemStack rStack = make(aModID, aItem, aAmount); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(String aModID, String aItem, long aAmount, int aMeta, ItemStack aReplacement) {ItemStack rStack = make(aModID, aItem, aAmount, aReplacement); if (rStack == null) return null; meta(rStack, aMeta); return rStack;}
 		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData);}
-		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), null);}
-		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), null);}
+		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData) {return aItem == null ? null : make(ST.meta_(new ItemStack(aItem, Code.bindInt(aStacksize)), aMetaData), null);}
+		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData) {return aBlock == null || aBlock == NB ? null : make(ST.meta_(new ItemStack(aBlock, Code.bindInt(aStacksize)), aMetaData), null);}
 		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, CompoundTag aNBT) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData, aNBT);}
-		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, CompoundTag aNBT) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), aNBT);}
-		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, CompoundTag aNBT) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), aNBT);}
+		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, CompoundTag aNBT) {return aItem == null ? null : make(ST.meta_(new ItemStack(aItem, Code.bindInt(aStacksize)), aMetaData), aNBT);}
+		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, CompoundTag aNBT) {return aBlock == null || aBlock == NB ? null : make(ST.meta_(new ItemStack(aBlock, Code.bindInt(aStacksize)), aMetaData), aNBT);}
 		@Deprecated public static ItemStack make(ItemStack aStack, CompoundTag aNBT) {return make(aStack, null, aNBT);}
 		@Deprecated public static ItemStack make(ItemStackContainer aStack, CompoundTag aNBT) {return make(aStack, null, aNBT);}
 		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, String aName) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData, aName);}
-		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, String aName) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), aName, null);}
-		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, String aName) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), aName, null);}
+		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, String aName) {return aItem == null ? null : make(ST.meta_(new ItemStack(aItem, Code.bindInt(aStacksize)), aMetaData), aName, null);}
+		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, String aName) {return aBlock == null || aBlock == NB ? null : make(ST.meta_(new ItemStack(aBlock, Code.bindInt(aStacksize)), aMetaData), aName, null);}
 		@Deprecated public static ItemStack make(long aItemID, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aItemID==0?null:make(Item.byId((int)aItemID), aStacksize, aMetaData, aName, aNBT);}
-		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aItem == null ? null : make(new ItemStack(aItem, Code.bindInt(aStacksize), (int)aMetaData), aName, aNBT);}
-		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aBlock == null || aBlock == NB ? null : make(new ItemStack(aBlock, Code.bindInt(aStacksize), (int)aMetaData), aName, aNBT);}
+		@Deprecated public static ItemStack make(Item aItem, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aItem == null ? null : make(ST.meta_(new ItemStack(aItem, Code.bindInt(aStacksize)), aMetaData), aName, aNBT);}
+		@Deprecated public static ItemStack make(Block aBlock, long aStacksize, long aMetaData, String aName, CompoundTag aNBT) {return aBlock == null || aBlock == NB ? null : make(ST.meta_(new ItemStack(aBlock, Code.bindInt(aStacksize)), aMetaData), aName, aNBT);}
 		@Deprecated public static ItemStack make(ItemStack aStack, String aName, CompoundTag aNBT) {if (aStack == null) return null; aStack = aStack.copy(); NBT.set(aStack, aNBT); if (aName != null) ST.name_(aStack, aName); return aStack;}
 		@Deprecated public static ItemStack make(ItemStackContainer aStack, String aName, CompoundTag aNBT) {if (aStack == null) return null; ItemStack rStack = aStack.toStack(); if (rStack == null) return null; NBT.set(rStack, aNBT); if (aName != null) ST.name_(rStack, aName); return rStack;}
 		@Deprecated public static ItemStack[] copyArray(Object... aStacks) {return ST.copyArray((ItemStack[])aStacks);}
