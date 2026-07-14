@@ -316,6 +316,11 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 	public long mLiquidUnit = U, mGasUnit = U, mPlasmaUnit = U;
 	/** References to this Materials Fluid States. The amount of the FluidStack equals one Material Unit. It is usually either 144 or 1000, but other amounts are possible. Use "Util.translateUnits" for easy Math. */
 	public FluidStack mLiquid, mGas, mPlasma;
+	// F5-lazy: neo-FluidStack НЕЛЬЗЯ материализовать в MT.<clinit> (Holder.components жидкости ещё не привязаны на
+	// @Mod-конструкции, neo Holder.java:273 «Components not bound yet»). Храним FL+amount, mLiquid/mGas/mPlasma создаём
+	// ЛЕНИВО по первому обращению к геттеру (когда жидкости уже зарегистрированы). decisions/F5-fluids.md.
+	private FL mLiquidFL, mGasFL, mPlasmaFL;
+	private long mLiquidFLAmount, mGasFLAmount, mPlasmaFLAmount;
 	/** The Tags for this Material */
 	private final Set<TagData> mTags = new HashSetNoNulls<>();
 	/** Stores the Tool and Armor Enchants */
@@ -1278,6 +1283,24 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 		return this;
 	}
 	
+	/** F5-lazy: задать жидкость по FL+amount БЕЗ создания FluidStack (отложенная материализация — см. поля mLiquidFL).
+	 *  Заменяет eager-путь liquid(FL.X.make(amount)) в MT.<clinit>, где Holder.components ещё не привязаны. */
+	public OreDictMaterial liquid(FL aFluid, long aAmount) {return liquid(aFluid, aAmount, mLiquidUnit);}
+	public OreDictMaterial liquid(FL aFluid, long aAmount, long aUnit) {
+		if (aFluid != null) {mLiquidFL = aFluid; mLiquidFLAmount = aAmount; mLiquidUnit = aUnit;}
+		return this;
+	}
+	public OreDictMaterial gas(FL aFluid, long aAmount) {return gas(aFluid, aAmount, mGasUnit);}
+	public OreDictMaterial gas(FL aFluid, long aAmount, long aUnit) {
+		if (aFluid != null) {mGasFL = aFluid; mGasFLAmount = aAmount; mGasUnit = aUnit;}
+		return this;
+	}
+	public OreDictMaterial plasma(FL aFluid, long aAmount) {return plasma(aFluid, aAmount, mPlasmaUnit);}
+	public OreDictMaterial plasma(FL aFluid, long aAmount, long aUnit) {
+		if (aFluid != null) {mPlasmaFL = aFluid; mPlasmaFLAmount = aAmount; mPlasmaUnit = aUnit;}
+		return this;
+	}
+
 	/** Sets the Liquid State of this Material. It is advised to have either 144 or 1000 as Fluid Amount. */
 	public OreDictMaterial liquid(FluidStack aFluidStack) {
 		return liquid(aFluidStack, mLiquidUnit);
@@ -1308,6 +1331,7 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 	
 	/** Gets the Liquid State of this Material. */
 	public FluidStack liquid(long aMaterialAmount, boolean aRoundUp) {
+		materializeFluids();
 		if (mLiquid == null) return FL.Error.make(1);
 		FluidStack rFluid = mLiquid.copy();
 		rFluid.setAmount((int)UT.Code.units(aMaterialAmount, mLiquidUnit, rFluid.getAmount(), aRoundUp));
@@ -1316,6 +1340,7 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 	
 	/** Gets the Gaseous State of this Material. */
 	public FluidStack gas(long aMaterialAmount, boolean aRoundUp) {
+		materializeFluids();
 		if (mGas == null) return FL.Error.make(1);
 		FluidStack rFluid = mGas.copy();
 		rFluid.setAmount((int)UT.Code.units(aMaterialAmount, mGasUnit, rFluid.getAmount(), aRoundUp));
@@ -1324,10 +1349,27 @@ public final class OreDictMaterial implements ITagDataContainer<OreDictMaterial>
 	
 	/** Gets the Plasma State of this Material. */
 	public FluidStack plasma(long aMaterialAmount, boolean aRoundUp) {
+		materializeFluids();
 		if (mPlasma == null) return FL.Error.make(1);
 		FluidStack rFluid = mPlasma.copy();
 		rFluid.setAmount((int)UT.Code.units(aMaterialAmount, mPlasmaUnit, rFluid.getAmount(), aRoundUp));
 		return rFluid;
+	}
+
+	/** F5-lazy: материализовать mLiquid/mGas/mPlasma из отложенных FL+amount (заданных в MT.<clinit>, когда FluidStack ещё
+	 *  нельзя было создать — Holder.components не привязаны). Вызывать, когда жидкости уже зарегистрированы: лениво из геттеров
+	 *  ИЛИ явно (напр. дампер паритета читает поле mLiquid). Идемпотентно (материализует один раз) + заполняет FLUID_MAP по
+	 *  regName. ⚠️ FLUID_MAP теперь заполняется при первой материализации, не в момент liquid()-объявления (F5-followup:
+	 *  для полного мода — детерминированный проход после регистрации жидкостей; в core-дампе несущественно). */
+	public void materializeFluids() {
+		if (mLiquid == null && mLiquidFL != null) {mLiquid = mLiquidFL.make(mLiquidFLAmount); fluidMapPut(mLiquid, mLiquidFLAmount, mLiquidUnit);}
+		if (mGas    == null && mGasFL    != null) {mGas    = mGasFL   .make(mGasFLAmount);    fluidMapPut(mGas,    mGasFLAmount,    mGasUnit);}
+		if (mPlasma == null && mPlasmaFL != null) {mPlasma = mPlasmaFL.make(mPlasmaFLAmount); fluidMapPut(mPlasma, mPlasmaFLAmount, mPlasmaUnit);}
+	}
+	private void fluidMapPut(FluidStack aStack, long aAmount, long aUnit) {
+		if (aStack == null || aStack.getFluid() == null) return;
+		String tName = FL.regName(aStack.getFluid());
+		if (tName != null) FLUID_MAP.put(tName, OM.stack(this, UT.Code.units(aAmount, aUnit, U, T)));
 	}
 	
 	/**

@@ -73,6 +73,7 @@ public final class PortDump {
         List<String> lines = new ArrayList<>();
         for (OreDictMaterial m : OreDictMaterial.MATERIAL_MAP.values()) {
             if (m == null) continue;
+            m.materializeFluids(); // F5-lazy: mLiquid/mGas/mPlasma созданы отложенно (в MT.<clinit> Holder.components не привязаны) — материализуем перед чтением поля
             StringBuilder sb = new StringBuilder(256);
             sb.append(m.mNameInternal).append(',');
             sb.append(m.mID).append(',');
