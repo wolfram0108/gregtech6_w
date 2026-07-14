@@ -27,7 +27,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 // F5: net.minecraftforge.fluids.BlockFluidClassic/BlockFluidFinite удалены (см. liquid_classic/liquid_finite ниже).
 import net.minecraftforge.fluids.IFluidBlock;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import gregapi.fluid.FluidTankInfo;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import gregapi.GT_API;
@@ -60,7 +59,6 @@ import gregapi.tileentity.machines.*;
 import gregapi.util.UT.Code;
 import gregtech.blocks.fluids.BlockWaterlike;
 import micdoodle8.mods.galacticraft.api.block.IPartialSealableBlock;
-import micdoodle8.mods.galacticraft.api.world.IGalacticraftWorldProvider;
 import micdoodle8.mods.galacticraft.core.util.OxygenUtil;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -189,9 +187,9 @@ public class WD {
 	}
 	
 	public static HitResult getMOP(Level aWorld, Player aPlayer, boolean aFlag) {
-		Vec3 vec3 = Vec3.createVectorHelper(
+		Vec3 vec3 = new Vec3( // 1.7.10 Vec3.createVectorHelper(x,y,z) удалён -> neo ctor new Vec3(double,double,double).
 		  aPlayer.xo + (aPlayer.getX() - aPlayer.xo)
-		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
+		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getEyeHeight(net.minecraft.world.entity.Pose.STANDING) : aPlayer.getEyeHeight()) // F6-eye: 1.7.10 getDefaultEyeHeight() -> neo getEyeHeight(Pose.STANDING) (стоячая высота глаз, Entity.java:3381). isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
 		, aPlayer.zo + (aPlayer.getZ() - aPlayer.zo)
 		);
 		float  tPitch = aPlayer.xRotO + (aPlayer.getXRot() - aPlayer.xRotO);
@@ -245,6 +243,8 @@ public class WD {
 	public static boolean dimLM(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimLM — EndOfTime-провайдер по имени класса "WorldProviderEndOfTime" */}
 
 	public static boolean dimENVM(Level aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimENVM — Enviromine Caves-провайдер по имени класса "WorldProviderCaves" */}
+
+	public static boolean dimGC(Level aWorld) {return aWorld != null && MD.GC.mLoaded && F; /* PORT-TODO(F6/F10, WD world-provider identity): dimGC — Galacticraft-измерение определялось `aWorld.provider instanceof IGalacticraftWorldProvider`, WorldProvider удалён из движка (та же болезнь, что у семейства dimXXX выше) */}
 
 	public static boolean dimA97(Level aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimA97 — Aroma1997 Mining-провайдер по имени класса "WorldProviderMiner" */}
 
@@ -524,10 +524,10 @@ public class WD {
 	
 	
 	public static boolean oxygen(Level aWorld, int aX, int aY, int aZ) {
-		return  !MD.GC.mLoaded || !(aWorld.provider instanceof IGalacticraftWorldProvider) || OxygenUtil.checkTorchHasOxygen(aWorld, NB, aX, aY, aZ);
+		return  !MD.GC.mLoaded || !dimGC(aWorld) || OxygenUtil.checkTorchHasOxygen(aWorld, NB, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> центр dimGC (WorldProvider удалён).
 	}
 	public static boolean collectable_air(Level aWorld, int aX, int aY, int aZ) {
-		return (!MD.GC.mLoaded || !(aWorld.provider instanceof IGalacticraftWorldProvider)) && !hasCollide(aWorld, aX, aY, aZ) && !liquid(aWorld, aX, aY, aZ);
+		return (!MD.GC.mLoaded || !dimGC(aWorld)) && !hasCollide(aWorld, aX, aY, aZ) && !liquid(aWorld, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> центр dimGC.
 	}
 	
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
@@ -1229,9 +1229,14 @@ public class WD {
 			
 			try {if (aTileEntity instanceof IFluidHandler) {
 				rEUAmount+=V[3];
-				FluidTankInfo[] tTanks = ((IFluidHandler)aTileEntity).getTankInfo(FORGE_DIR[aSide]);
-				if (tTanks != null) for (byte i = 0; i < tTanks.length; i++) {
-					rList.add("Tank " + i + ": " + (tTanks[i].fluid==null?0:tTanks[i].fluid.getAmount()) + " / " + tTanks[i].capacity + " " + FL.name(tTanks[i].fluid, T));
+				// F5: 1.7.10 IFluidHandler.getTankInfo(ForgeDirection)->FluidTankInfo[] удалён -> neo sideless
+				// getTanks()/getFluidInTank(i)/getTankCapacity(i) (IFluidHandler.java:60/81/92; side-параметр снят
+				// движком — neo-capability side-specific при получении, не per-call). F15: getFluidInTank даёт EMPTY,
+				// не null -> isEmpty(); в FL.name пустой бак -> null для "" (1:1 с оригиналом fluid==null->"").
+				IFluidHandler tHandler = (IFluidHandler)aTileEntity;
+				for (int i = 0; i < tHandler.getTanks(); i++) {
+					net.neoforged.neoforge.fluids.FluidStack tFluid = tHandler.getFluidInTank(i);
+					rList.add("Tank " + i + ": " + (tFluid.isEmpty()?0:tFluid.getAmount()) + " / " + tHandler.getTankCapacity(i) + " " + FL.name(tFluid.isEmpty()?null:tFluid, T));
 				}
 			}} catch(Throwable e) {e.printStackTrace(ERR);}
 			
