@@ -99,10 +99,10 @@ public class EntityArrow_Material extends EntityProjectile {
 		
 		Entity tShootingEntity = shootingEntity;
 		
-		if (prevRotationPitch == 0.0F && prevRotationYaw == 0.0F) {
+		if (xRotO == 0.0F && yRotO == 0.0F) {
 			float f = MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ);
-			prevRotationYaw = rotationYaw = (float)(Math.atan2(motionX, motionZ) * 180.0D / Math.PI);
-			prevRotationPitch = rotationPitch = (float)(Math.atan2(motionY, f) * 180.0D / Math.PI);
+			yRotO = rotationYaw = (float)(Math.atan2(motionX, motionZ) * 180.0D / Math.PI);
+			xRotO = rotationPitch = (float)(Math.atan2(motionY, f) * 180.0D / Math.PI);
 		}
 		
 		if (mTicksAlive++ == 3000) setDead();
@@ -250,7 +250,7 @@ public class EntityArrow_Material extends EntityProjectile {
 							motionY *= -0.10000000149011612D;
 							motionZ *= -0.10000000149011612D;
 							rotationYaw += 180.0F;
-							prevRotationYaw += 180.0F;
+							yRotO += 180.0F;
 							ticksInAir = 0;
 						}
 					}
@@ -286,14 +286,14 @@ public class EntityArrow_Material extends EntityProjectile {
 			
 			rotationYaw = (float)(Math.atan2(motionX, motionZ) * 180.0D / Math.PI);
 			
-			for (rotationPitch = (float)(Math.atan2(motionY, MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ)) * 180.0D / Math.PI); rotationPitch - prevRotationPitch < -180.0F; prevRotationPitch -= 360.0F) {/**/}
+			for (rotationPitch = (float)(Math.atan2(motionY, MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ)) * 180.0D / Math.PI); rotationPitch - xRotO < -180.0F; xRotO -= 360.0F) {/**/}
 			
-			while (rotationPitch    - prevRotationPitch >= 180.0F) prevRotationPitch += 360.0F;
-			while (rotationYaw      - prevRotationYaw   < -180.0F) prevRotationYaw -= 360.0F;
-			while (rotationYaw      - prevRotationYaw   >= 180.0F) prevRotationYaw += 360.0F;
+			while (rotationPitch    - xRotO >= 180.0F) xRotO += 360.0F;
+			while (rotationYaw      - yRotO   < -180.0F) yRotO -= 360.0F;
+			while (rotationYaw      - yRotO   >= 180.0F) yRotO += 360.0F;
 			
-			rotationPitch = prevRotationPitch + (rotationPitch - prevRotationPitch) * 0.2F;
-			rotationYaw = prevRotationYaw + (rotationYaw - prevRotationYaw) * 0.2F;
+			rotationPitch = xRotO + (rotationPitch - xRotO) * 0.2F;
+			rotationYaw = yRotO + (rotationYaw - yRotO) * 0.2F;
 			float tFrictionMultiplier = 0.99F;
 			
 			if (isInWater()) {

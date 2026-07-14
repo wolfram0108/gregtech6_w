@@ -187,12 +187,12 @@ public class WD {
 	
 	public static HitResult getMOP(Level aWorld, Player aPlayer, boolean aFlag) {
 		Vec3 vec3 = Vec3.createVectorHelper(
-		  aPlayer.prevPosX + (aPlayer.getX() - aPlayer.prevPosX)
-		, aPlayer.prevPosY + (aPlayer.getY() - aPlayer.prevPosY) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
-		, aPlayer.prevPosZ + (aPlayer.getZ() - aPlayer.prevPosZ)
+		  aPlayer.xo + (aPlayer.getX() - aPlayer.xo)
+		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getDefaultEyeHeight() : aPlayer.getEyeHeight()) // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
+		, aPlayer.zo + (aPlayer.getZ() - aPlayer.zo)
 		);
-		float  tPitch = aPlayer.prevRotationPitch + (aPlayer.getXRot() - aPlayer.prevRotationPitch);
-		float  tYaw   = aPlayer.prevRotationYaw   + (aPlayer.rotationYaw   - aPlayer.prevRotationYaw  );
+		float  tPitch = aPlayer.xRotO + (aPlayer.getXRot() - aPlayer.xRotO);
+		float  tYaw   = aPlayer.yRotO   + (aPlayer.rotationYaw   - aPlayer.yRotO  );
 		float  tZ     =  Mth.cos(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tX     =  Mth.sin(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tW     = -Mth.cos(-tPitch * 0.017453292F);
