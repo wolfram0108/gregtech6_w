@@ -11,4 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public interface IEnergySource {
 	boolean emitsEnergyTo(BlockEntity aReceiver, Direction aSide);
 	int getSourceTier();
+	// GT6 вызывает в MultiTileEntityWireElectric.161-162 (javap IC2Classic:1.2.1.8-dev: double/void).
+	double getOfferedEnergy();
+	void drawEnergy(double amount);
 }
