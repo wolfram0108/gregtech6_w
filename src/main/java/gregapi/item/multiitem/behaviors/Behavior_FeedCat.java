@@ -58,9 +58,9 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 				}
 				return T;
 			}
-			if (((Ocelot)aEntity).isTamed() && ((Ocelot)aEntity).getGrowingAge() == 0 && !((Ocelot)aEntity).isInLove()) {
+			if (((Ocelot)aEntity).isTamed() && ((Ocelot)aEntity).getAge() == 0 && !((Ocelot)aEntity).isInLove()) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				((Ocelot)aEntity).func_146082_f(aPlayer);
+				((Ocelot)aEntity).setInLove(aPlayer);
 				return T;
 			}
 		}

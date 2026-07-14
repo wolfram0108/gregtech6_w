@@ -73,7 +73,7 @@ public interface IBehavior<E extends Item> {
 		@Override
 		public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
 			Direction enumfacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
-			Position iposition = DispenserBlock.func_149939_a(aSource);
+			Position iposition = DispenserBlock.getDispensePosition(aSource);
 			ItemStack itemstack1 = aStack.split(1);
 			DefaultDispenseItemBehavior.doDispense(aSource.level(), itemstack1, 6, enumfacing, iposition);
 			return aStack;

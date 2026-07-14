@@ -46,9 +46,9 @@ public class Behavior_FeedDog extends AbstractBehaviorDefault {
 					return T;
 				}
 				
-				if (((Wolf)aEntity).getGrowingAge() == 0 && !((Wolf)aEntity).isInLove()) {
+				if (((Wolf)aEntity).getAge() == 0 && !((Wolf)aEntity).isInLove()) {
 					UT.Entities.consumeCurrentItem(aPlayer);
-					((Wolf)aEntity).func_146082_f(aPlayer);
+					((Wolf)aEntity).setInLove(aPlayer);
 					return T;
 				}
 			}

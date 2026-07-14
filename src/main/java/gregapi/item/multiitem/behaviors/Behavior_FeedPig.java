@@ -39,9 +39,9 @@ public class Behavior_FeedPig extends AbstractBehaviorDefault {
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof Pig) {
-			if (((Animal)aEntity).getGrowingAge() == 0 && !((Animal)aEntity).isInLove()) {
+			if (((Animal)aEntity).getAge() == 0 && !((Animal)aEntity).isInLove()) {
 				UT.Entities.consumeCurrentItem(aPlayer);
-				((Animal)aEntity).func_146082_f(aPlayer);
+				((Animal)aEntity).setInLove(aPlayer);
 				return T;
 			}
 		}

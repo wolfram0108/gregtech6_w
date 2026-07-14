@@ -154,7 +154,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 	
 	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
 		Level aWorld = aSource.level();
-		Position tPosition = DispenserBlock.func_149939_a(aSource);
+		Position tPosition = DispenserBlock.getDispensePosition(aSource);
 		Direction tFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
 		EntityProjectile tProjectile = getProjectile(mProjectileType, aStack, aWorld, tPosition.getX(), tPosition.getY(), tPosition.getZ());
 		if (tProjectile != null) {
@@ -168,7 +168,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		
 		// Default Item Dropping.
 		Direction enumfacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
-		Position iposition = DispenserBlock.func_149939_a(aSource);
+		Position iposition = DispenserBlock.getDispensePosition(aSource);
 		ItemStack itemstack1 = aStack.split(1);
 		DefaultDispenseItemBehavior.doDispense(aSource.level(), itemstack1, 6, enumfacing, iposition);
 		return aStack;
