@@ -192,7 +192,7 @@ public class WD {
 		, aPlayer.zo + (aPlayer.getZ() - aPlayer.zo)
 		);
 		float  tPitch = aPlayer.xRotO + (aPlayer.getXRot() - aPlayer.xRotO);
-		float  tYaw   = aPlayer.yRotO   + (aPlayer.rotationYaw   - aPlayer.yRotO  );
+		float  tYaw   = aPlayer.yRotO   + (aPlayer.getYRot()   - aPlayer.yRotO  );
 		float  tZ     =  Mth.cos(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tX     =  Mth.sin(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tW     = -Mth.cos(-tPitch * 0.017453292F);

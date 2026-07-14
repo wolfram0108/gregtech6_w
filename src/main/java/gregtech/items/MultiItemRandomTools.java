@@ -612,9 +612,9 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		if (aPlayer == null) return getIconIndex(aStack);
 		BlockPos aTarget;
 		switch(ST.meta_(aStack)) {
-		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11002: aTarget = aPlayer.level().getSpawnPoint(); break;
 		case 11004: aTarget = LAST_DEATH_OF_THE_PLAYER; break;
 		default: return getIconIndex(aStack);
@@ -624,7 +624,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
 		if (tDistance <     1) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
 		// Point to Target, but with a little jiggle for getting closer!
-		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
+		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
 		if (tDistance <     4) return Textures.ItemIcons.COMPASS[(tIndex + (                            new Random(CLIENT_TIME   ).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <    16) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  2 != 0 ? 0 : new Random(CLIENT_TIME/ 2).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <   256) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  3 != 0 ? 0 : new Random(CLIENT_TIME/ 3).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
@@ -643,9 +643,9 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		if (aPlayer == null) return getIconFromDamage(aMetaData);
 		BlockPos aTarget;
 		switch(aMetaData) {
-		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.rotationYaw)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
+		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11002: aTarget = aPlayer.level().getSpawnPoint(); break;
 		case 11004: aTarget = LAST_DEATH_OF_THE_PLAYER; break;
 		default: return getIconFromDamage(aMetaData);
@@ -655,7 +655,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
 		if (tDistance <     1) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
 		// Point to Target, but with a little jiggle for getting closer!
-		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.rotationYaw-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
+		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
 		if (tDistance <     4) return Textures.ItemIcons.COMPASS[(tIndex + (                            new Random(CLIENT_TIME   ).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <    16) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  2 != 0 ? 0 : new Random(CLIENT_TIME/ 2).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);
 		if (tDistance <   256) return Textures.ItemIcons.COMPASS[(tIndex + (CLIENT_TIME %  3 != 0 ? 0 : new Random(CLIENT_TIME/ 3).nextInt(3)-1)) % Textures.ItemIcons.COMPASS.length].getIcon(0);

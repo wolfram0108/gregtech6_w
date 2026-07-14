@@ -1609,7 +1609,7 @@ public class UT {
 			return getHorizontalForPlayerPlacing(aPlayer);
 		}
 		public static byte getHorizontalForPlayerPlacing(Entity aPlayer) {
-			return COMPASS_DIRECTIONS[UT.Code.roundDown(4*aPlayer.rotationYaw/360+0.5)&3];
+			return COMPASS_DIRECTIONS[UT.Code.roundDown(4*aPlayer.getYRot()/360+0.5)&3];
 		}
 		
 		public static byte getSideForPlayerPlacing(Entity aPlayer, byte aDefaultFacing, boolean[] aAllowedFacings) {
