@@ -30,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 /**
  * @author Gregorius Techneticies
@@ -54,19 +55,25 @@ public interface IItemRottable {
 		}
 		
 		public static ItemStack rotting(ItemStack aStack, IFluidHandlerItem aItem) {
-			FluidStack tFluid = aItem.getFluid(aStack);
-			if (tFluid != null) {
+			// F5: neo IFluidHandlerItem (extends IFluidHandler) — getFluid(ItemStack) удалён -> getFluidInTank(0)
+			// (IFluidHandler.java:81, ёмкость item-обёртки = танк 0). F15: getFluidInTank даёт FluidStack.EMPTY,
+			// не null (1.7.10 getFluid отдавал null) -> проверка !isEmpty(), НЕ !=null (иначе всегда true).
+			// PORT-TODO(F5, handler-binding): aItem здесь — каст Item, не stack-bound capability-обёртка
+			// (aStack.getCapability(Capabilities.FluidHandler.ITEM)); мутации drain/fill применяются к обёртке —
+			// runtime-привязка к aStack требует паритет-проверки (компилятор это не судит).
+			FluidStack tFluid = aItem.getFluidInTank(0);
+			if (!tFluid.isEmpty()) {
 				if (FL.Milk_Spoiled.is(tFluid) || FL.Rotten_Drink.is(tFluid) || FL.Dirty_Water.is(tFluid) || FL.Swampwater.is(tFluid) || FL.Stagnant_Water.is(tFluid)) {
 					//
 				} else if (FluidsGT.WATER.contains(FL.regName(tFluid.getFluid()))) {
-					aItem.drain(aStack, Integer.MAX_VALUE, T);
-					aItem.fill(aStack, FL.Dirty_Water.make(tFluid.getAmount()), T);
+					aItem.drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
+					aItem.fill(FL.Dirty_Water.make(tFluid.getAmount()), FluidAction.EXECUTE);
 				} else if (FluidsGT.MILK.contains(FL.regName(tFluid.getFluid()))) {
-					aItem.drain(aStack, Integer.MAX_VALUE, T);
-					aItem.fill(aStack, FL.Milk_Spoiled.make(tFluid.getAmount()), T);
+					aItem.drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
+					aItem.fill(FL.Milk_Spoiled.make(tFluid.getAmount()), FluidAction.EXECUTE);
 				} else if (FluidsGT.FOOD.contains(FL.regName(tFluid.getFluid()))) {
-					aItem.drain(aStack, Integer.MAX_VALUE, T);
-					aItem.fill(aStack, FL.Rotten_Drink.make(tFluid.getAmount()), T);
+					aItem.drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
+					aItem.fill(FL.Rotten_Drink.make(tFluid.getAmount()), FluidAction.EXECUTE);
 				}
 			}
 			return aStack;

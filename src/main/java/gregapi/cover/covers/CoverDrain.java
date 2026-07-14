@@ -34,7 +34,8 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.EntityAgeable;
+import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.monster.MagmaCube;
@@ -84,7 +85,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 			}
 			if (SERVER_TIME % 100 == 50 && (FL.XP.exists() || FL.Mob.exists())) {
 				// Yes, I know that the AABB Check is a bit weird looking, but I think I will do more than just XP Orbs with this later on.
-				for (Entity tEntity : (Iterable<Entity>)aData.mTileEntity.getWorld().getEntitiesOfClass(ExperienceOrb.class, new AABB(aData.mTileEntity.getOffsetX(aCoverSide, 2)-1, aData.mTileEntity.getOffsetY(aCoverSide, 2)-1, aData.mTileEntity.getOffsetZ(aCoverSide, 2)-1, aData.mTileEntity.getOffsetX(aCoverSide, 2)+2, aData.mTileEntity.getOffsetY(aCoverSide, 2)+2, aData.mTileEntity.getOffsetZ(aCoverSide, 2)+2))) if (!tEntity.isRemoved()) {
+				for (Entity tEntity : aData.mTileEntity.getWorld().getEntitiesOfClass(ExperienceOrb.class, new AABB(aData.mTileEntity.getOffsetX(aCoverSide, 2)-1, aData.mTileEntity.getOffsetY(aCoverSide, 2)-1, aData.mTileEntity.getOffsetZ(aCoverSide, 2)-1, aData.mTileEntity.getOffsetX(aCoverSide, 2)+2, aData.mTileEntity.getOffsetY(aCoverSide, 2)+2, aData.mTileEntity.getOffsetZ(aCoverSide, 2)+2))) if (!tEntity.isRemoved()) {
 					if (tEntity instanceof ExperienceOrb) {
 						if (MD.OB.mLoaded) {
 							try {
@@ -149,7 +150,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 							if (tBlock instanceof IFluidBlock) {
 								((IFluidBlock)tBlock).drain(aData.mTileEntity.getWorld(), aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide), T);
 							} else {
-								aData.mTileEntity.getWorld().setBlockToAir(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide));
+								aData.mTileEntity.getWorld().removeBlock(new BlockPos(aData.mTileEntity.getOffsetX(aCoverSide), aData.mTileEntity.getOffsetY(aCoverSide), aData.mTileEntity.getOffsetZ(aCoverSide)), false); // было setBlockToAir(x,y,z) -> neo Level.removeBlock(BlockPos,boolean)
 							}
 						}
 					}
@@ -212,7 +213,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 					return F;
 				}
 				if (aEntity instanceof Animal && FL.Sewage.exists()) {
-					if (!(aEntity instanceof EntityAgeable) || !((EntityAgeable)aEntity).isChild()) {
+					if (!(aEntity instanceof AgeableMob) || !((AgeableMob)aEntity).isBaby()) { // EntityAgeable->AgeableMob, isChild()->isBaby() (AgeableMob.java)
 						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Sewage.make(Math.max(1, (long)(20 * aEntity.getBbWidth() * aEntity.getBbWidth() * aEntity.getBbHeight()))), T);
 						return T;
 					}
