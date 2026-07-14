@@ -3148,7 +3148,7 @@ public class UT {
 		public static boolean exhaust(Object aPlayer, double aExhaustion) {
 			if (aPlayer instanceof Player) {
 				if (isInvincible(aPlayer)) return T;
-				((Player)aPlayer).addExhaustion((float)aExhaustion * pot1Fatique(aPlayer));
+				((Player)aPlayer).causeFoodExhaustion((float)aExhaustion * pot1Fatique(aPlayer));
 				return T;
 			}
 			return F;
