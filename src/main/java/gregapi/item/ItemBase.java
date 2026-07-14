@@ -62,6 +62,13 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	protected int mMaxDamage = 0;
 	public ItemBase setMaxDamage(int aMaxDamage) {mMaxDamage = aMaxDamage; return this;}
 	@Override public int getMaxDamage(ItemStack aStack) {return mMaxDamage;}
+	/** F-item-property: 1.7.10 Item.setNoRepair() (canRepair=false) — запрет наковальня-ремонта. neo убрал простой
+	 *  флаг-override (ремонт через isValidRepairItem+durability); GT6-инструменты имеют свою логику ремонта — храним флаг для неё. */
+	protected boolean mNoRepair = false;
+	public ItemBase setNoRepair() {mNoRepair = true; return this;}
+	/** F3-render: 1.7.10 Item.setFull3D() — рендер-хинт (инструмент в руке в 3D). neo рендер модель-based, серверного
+	 *  эффекта нет — no-op, возвращает this для цепочки конструктора. */
+	public ItemBase setFull3D() {return this;}
 	/** F1: 1.7.10 Item.setHasSubtypes(true)/getHasSubtypes() — реальный флаг подтипов (metadata), потребители
 	 *  ЕСТЬ в этом же файле (addInformation/getUnlocalizedName ниже) и в MultiItem (extends ItemBase, вызывает
 	 *  setHasSubtypes(T) в ctor, полагается на неунаследованный getUnlocalizedName(ItemStack) отсюда) — не может
