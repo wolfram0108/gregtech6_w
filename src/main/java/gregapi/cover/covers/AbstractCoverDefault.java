@@ -39,6 +39,7 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 
 import java.util.List;
 
+import net.minecraft.core.BlockPos;
 import static gregapi.data.CS.F;
 import static gregapi.data.CS.T;
 

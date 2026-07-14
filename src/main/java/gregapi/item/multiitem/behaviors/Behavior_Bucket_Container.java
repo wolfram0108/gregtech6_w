@@ -20,6 +20,7 @@
 package gregapi.item.multiitem.behaviors;
 import net.minecraft.world.phys.BlockHitResult;
 
+import net.minecraft.core.BlockPos;
 import static gregapi.data.CS.*;
 
 import gregapi.data.CS.BlocksGT;
