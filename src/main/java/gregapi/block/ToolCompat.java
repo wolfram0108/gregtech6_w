@@ -265,10 +265,12 @@ public class ToolCompat {
 			if (aBlock instanceof HopperBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1)%6==1?(aMeta+1)%6:2, 3, F)) return 2500;
 			}
-			// PORT-TODO(F-tool-rotation, Block.rotateBlock(World,x,y,z,ForgeDirection)): метод удалён из движка целиком (нет аналога в IBlockExtension/Block).
-			// Ближайший neo-метод BlockState.rotate(Rotation) (BlockBehaviour.java:596) несовместим по модели (Rotation — 4 угла поворота 0/90/180/270,
-			// ForgeDirection — 6 осей направления) — не тот же контракт, честно не портируется. Общий catch-all для блоков вне explicit-веток выше
-			// (RotatedPillar/Piston/Dispenser/Pumpkin/Furnace/Chest/EnderChest/Hopper) — деградация: такие блоки инструментом-ротатором больше не крутятся.
+			// 1.7.10 aBlock.rotateBlock(aWorld,aX,aX,aX,ForgeDirection.getOrientation(aSide)) — способность «повернуть блок»
+			// адаптирована через ЦЕНТР WD.rotateBlock (neo BlockState.rotate: каждый блок сам поворачивается, ненаправленные
+			// возвращают себя -> WD.rotateBlock=F, эквивалент Forge-дефолта). Координаты aX,aX,aX — как в оригинале (verbatim,
+			// закон 1:1; вероятная опечатка GT6 aX vs aY,aZ НЕ исправляется — суждению не доверяем). Модель Forge-ось->Rotation-угол
+			// (принцип 6, форс-адаптация) — но реальный порт, не заглушка.
+			if (WD.rotateBlock(aWorld, aX, aX, aX, FORGE_DIR[aSide])) return 10000;
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			if (aBlock instanceof net.minecraft.world.level.block.DiodeBlock) {
@@ -388,9 +390,10 @@ public class ToolCompat {
 			if (aBlock instanceof BaseRailBlock || aBlock instanceof net.minecraft.world.level.block.DiodeBlock || aBlock instanceof net.minecraft.world.level.block.piston.PistonHeadBlock || aBlock instanceof PistonBaseBlock) {
 				// wrench doesn't work on those.
 			} else {
-				// PORT-TODO(F-tool-rotation, Block.getValidRotations(World,x,y,z)+Block.rotateBlock(...)): оба Forge-метода удалены из движка целиком,
-				// аналога getValidRotations нет нигде в neo/neoforge/fml (греп 0 по всем трём корням референса); rotateBlock — см. PORT-TODO(F-tool-rotation) выше.
-				// Деградация: для блоков вне explicit-веток выше (не Pumpkin/Piston/Dispenser/Furnace/Chest/Hopper) гаечный ключ больше не задаёт точную грань через getValidRotations.
+				// 1.7.10: if (Arrays.asList(getValidRotations(...)).contains(dir)) rotateBlock(...,dir). Способность есть — WD.rotateBlock
+				// (neo state.rotate) сама возвращает F для неповорачиваемых блоков, поэтому предчек getValidRotations в neo-модели
+				// ИЗБЫТОЧЕН (поглощён): поворачиваемый блок повернётся, прочий вернёт себя. Реальный порт через центр, не заглушка.
+				if (WD.rotateBlock(aWorld, aX, aY, aZ, FORGE_DIR[aTargetSide])) return 10000;
 			}
 		}
 		if (aTool.equals(TOOL_prospector)) {

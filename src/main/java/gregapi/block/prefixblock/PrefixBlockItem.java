@@ -93,7 +93,9 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 			if (WD.block(aWorld, aX, aY, aZ) == getBlock()) {
 				BlockPos tPos = new BlockPos(aX, aY, aZ);
 				getBlock().setPlacedBy(aWorld, tPos, aWorld.getBlockState(tPos), aPlayer, aStack); // было onBlockPlacedBy(World,x,y,z,EntityPlayer,ItemStack) -> Block.setPlacedBy(Level,BlockPos,BlockState,LivingEntity,ItemStack) (Block.java:473)
-				// PORT-TODO(F-hook-removed, onPostBlockPlaced): было Block.onPostBlockPlaced(World,x,y,z,meta) — 1.7.10-only post-place хук, 0 в 3 корнях референса, полностью удалён без замены.
+				// onPostBlockPlaced(World,x,y,z,meta): в GT6 НИКЕМ не переопределён (греп по gregapi/: единственная ссылка — этот
+				// вызыватель) -> вызывал vanilla-no-op, ничего не терял. Общий пост-place-хук в neo вызывается движком АВТОМАТИЧЕСКИ:
+				// BlockState.onPlace(Level,BlockPos,oldState,movedByPiston) из LevelChunk.setBlockState:328 при setBlock. Явный вызов не нужен — не деградация.
 			}
 			return T;
 		}

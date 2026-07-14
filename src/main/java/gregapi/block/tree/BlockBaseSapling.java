@@ -130,11 +130,12 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMeta | 8, 2, F);
 			return F;
 		}
-		// PORT-TODO(F-hook-removed, terraingen-saplingGrowTree): было net.minecraftforge.event.terraingen.
-		// TerrainGen.saplingGrowTree(World,Random,x,y,z) (1.7.10 Forge event-хук, вето на рост дерева) - не найдено
-		// ни в одном из 3 корней референса (пакет/событие отсутствует) - честная деградация до T (=vanilla-дефолт
-		// "не отменено", т.к. слушателя-веты больше нет).
-		return T && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
+		// 1.7.10 TerrainGen.saplingGrowTree(World,Random,x,y,z) — veto-событие роста дерева — СПОСОБНОСТЬ ЕСТЬ в neo:
+		// EventHooks.fireBlockGrowFeature(LevelAccessor,RandomSource,BlockPos,@Nullable Holder<ConfiguredFeature>)
+		// (neoforge EventHooks.java:770; тот же путь, что vanilla TreeGrower). GT6 растит императивно (свой grow(),
+		// ConfiguredFeature нет) -> holder=null (@Nullable допускает); интересует только отмена (isCanceled), ровно как
+		// оригинал возвращал allow/veto. RandomSource = aWorld.getRandom() (aRandom тут java.util.Random). Реальный порт.
+		return !net.neoforged.neoforge.event.EventHooks.fireBlockGrowFeature(aWorld, aWorld.getRandom(), new net.minecraft.core.BlockPos(aX, aY, aZ), null).isCanceled() && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
 	}
 	
 	public int getMaxHeight(Level aWorld, int aX, int aY, int aZ, int aMaxTreeHeight) {

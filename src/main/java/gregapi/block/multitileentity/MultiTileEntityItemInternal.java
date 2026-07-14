@@ -178,11 +178,11 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			}
 			Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
 
-			// PORT-TODO(F-hook-removed, Block.canReplace): было mBlock.canReplace(World,x,y,z,side,ItemStack) —
-			// vanilla Block.canReplace(World,int,int,int,int,ItemStack) удалён в 26.1.2 без 1:1 замены
-			// (canBeReplaced(BlockState,BlockPlaceContext) структурно несовместим, требует BlockPlaceContext),
-			// 0 в 3 корнях референса; MultiTileEntityBlockInternal.canReplace нигде не определён (ни в порту, ни
-			// в оригинале 1.7.10 — резолвился в дефолт vanilla Block.canReplace). Деградация до "не блокирует".
+			// Оригинал: !tReplacedBlock.isReplaceable(...) || !mBlock.canReplace(...). mBlock (MultiTileEntityBlockInternal)
+			// canReplace НЕ переопределён -> резолвился в vanilla Forge-дефолт Block.canReplace(w,x,y,z,side,stack) =
+			// { return w.getBlock(x,y,z).isReplaceable(w,x,y,z); } — т.е. проверка ЗАМЕНЯЕМОСТИ ЦЕЛИ, ДУБЛИРУЮЩАЯ первую
+			// клаузу. Способность (заменяемость цели) сохранена через WD.replaceable ниже — вторая клауза избыточна,
+			// поглощена. Не деградация: обе клаузы оригинала проверяли одно и то же.
 			if (!WD.replaceable(tReplacedBlock, aWorld, aX, aY, aZ)) return F;
 			if (aStack.getCount() == 0 || (aPlayer != null && !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) return F;
 			
