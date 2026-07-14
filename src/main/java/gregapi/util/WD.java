@@ -737,7 +737,10 @@ public class WD {
 		return T;
 	}
 	
-	public static Random random(Level aWorld, long aChunkX, long aChunkZ) {return random(aWorld.getSeed() ^ WD.dimensionId(aWorld), aChunkX >> 4, aChunkZ >> 4);}
+	/** F-worldgen: 1.7.10 {@code World.getSeed()} -> neo только {@code ServerLevel.getSeed()}:1697 (у базового Level
+	 *  сида нет). Детерм.-per-chunk random — worldgen (сервер), где aWorld всегда ServerLevel; клиент (нет worldgen) -> 0. */
+	public static long seed(Level aWorld) {return aWorld instanceof net.minecraft.server.level.ServerLevel tSL ? tSL.getSeed() : 0L;}
+	public static Random random(Level aWorld, long aChunkX, long aChunkZ) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aChunkX >> 4, aChunkZ >> 4);}
 	public static Random random(long aSeed, long aChunkX, long aChunkZ) {
 		// Seed is XOR-ed with the Dimension ID to prevent multiple Dimensions from being identical in Ore Generation.
 		// Yes that actually happened with Aromas Mining World, and resulted in a prospecting exploit.
@@ -753,7 +756,7 @@ public class WD {
 		return rRandom;
 	}
 	
-	public static int random(Level aWorld, int aX, int aY, int aZ, int aBound) {return random(aWorld.getSeed() ^ WD.dimensionId(aWorld), aX, aY, aZ, aBound);}
+	public static int random(Level aWorld, int aX, int aY, int aZ, int aBound) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aX, aY, aZ, aBound);}
 	public static int random(long aSeed, int aX, int aY, int aZ, int aBound) {
 		Random rRandom = new Random(aSeed ^ aY);
 		for (int i = 0; i < 10; i++) rRandom.nextInt(0x00ffffff);
