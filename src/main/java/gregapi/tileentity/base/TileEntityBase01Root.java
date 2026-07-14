@@ -127,7 +127,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	/** If this TileEntity is ticking at all */
 	public final boolean mIsTicking;
 	
-	private final BlockPos mReturnedCoordinates = new BlockPos();
+	// F-coord: neo BlockPos иммутабелен (нет no-arg ctor, полей posX/Y/Z) — 1.7.10 кэш-holder
+	// ChunkCoordinates удалён; getCoords() ниже отдаёт getBlockPos() напрямую (это и есть позиция BE).
 	
 	public TileEntityBase01Root(boolean aIsTicking) {
 		mIsTicking = aIsTicking;
@@ -215,7 +216,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override public int getOffsetXN(byte aSide, int aMultiplier) {return getBlockPos().getX() - OFFX[aSide] * aMultiplier;}
 	@Override public int getOffsetYN(byte aSide, int aMultiplier) {return getBlockPos().getY() - OFFY[aSide] * aMultiplier;}
 	@Override public int getOffsetZN(byte aSide, int aMultiplier) {return getBlockPos().getZ() - OFFZ[aSide] * aMultiplier;}
-	@Override public BlockPos getCoords() {mReturnedCoordinates.posX = getBlockPos().getX(); mReturnedCoordinates.posY = getBlockPos().getY(); mReturnedCoordinates.posZ = getBlockPos().getZ(); return mReturnedCoordinates;}
+	@Override public BlockPos getCoords() {return getBlockPos();}
 	@Override public BlockPos getOffset (byte aSide, int aMultiplier) {return new BlockPos(getOffsetX (aSide, aMultiplier), getOffsetY (aSide, aMultiplier), getOffsetZ (aSide, aMultiplier));}
 	@Override public BlockPos getOffsetN(byte aSide, int aMultiplier) {return new BlockPos(getOffsetXN(aSide, aMultiplier), getOffsetYN(aSide, aMultiplier), getOffsetZN(aSide, aMultiplier));}
 	@Override public boolean isServerSide() {return level == null ? cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer() : !level.isClientSide();}
@@ -419,20 +420,20 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	}
 	
 	// @Override
-	public void invalidate() {
-		super.invalidate();
+	public void setRemoved() {
+		super.setRemoved();
 		setDead();
 	}
 	
 	// @Override
-	public void validate() {
-		super.validate();
+	public void clearRemoved() {
+		super.clearRemoved();
 		setAlive();
 	}
 	
 	// @Override
-	public void onChunkUnload() {
-		super.onChunkUnload();
+	public void onChunkUnloaded() {
+		super.onChunkUnloaded();
 		setDead();
 	}
 	

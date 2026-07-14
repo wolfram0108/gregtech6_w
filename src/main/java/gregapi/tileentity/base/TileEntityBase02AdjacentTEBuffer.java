@@ -121,21 +121,21 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 	}
 	
 	@Override
-	public void validate() {
+	public void clearRemoved() {
 		clearNullMarkersFromTileEntityBuffer();
-		super.validate();
+		super.clearRemoved();
 	}
 	
 	@Override
-	public void invalidate() {
+	public void setRemoved() {
 		clearNullMarkersFromTileEntityBuffer();
-		super.invalidate();
+		super.setRemoved();
 	}
 	
 	@Override
-	public void onChunkUnload() {
+	public void onChunkUnloaded() {
 		clearNullMarkersFromTileEntityBuffer();
-		super.onChunkUnload();
+		super.onChunkUnloaded();
 	}
 	
 	@Override

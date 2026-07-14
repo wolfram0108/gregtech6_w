@@ -92,8 +92,8 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 	public final net.minecraft.network.Packet getDescriptionPacket() {return null;}
 	
 	@Override
-	public void validate() {
-		super.validate();
+	public void clearRemoved() {
+		super.clearRemoved();
 		updateClientData();
 	}
 	

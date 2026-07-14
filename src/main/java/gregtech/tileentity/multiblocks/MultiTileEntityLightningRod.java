@@ -160,21 +160,21 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 	}
 	
 	@Override
-	public void validate() {
-		super.validate();
+	public void clearRemoved() {
+		super.clearRemoved();
 		if (isServerSide() && !ALL_LIGHTNING_RODS.contains(this)) ALL_LIGHTNING_RODS.add(this);
 	}
 	
 	@Override
-	public void invalidate() {
+	public void setRemoved() {
 		if (isServerSide()) ALL_LIGHTNING_RODS.remove(this);
-		super.invalidate();
+		super.setRemoved();
 	}
 	
 	@Override
-	public void onChunkUnload() {
+	public void onChunkUnloaded() {
 		if (isServerSide()) ALL_LIGHTNING_RODS.remove(this);
-		super.onChunkUnload();
+		super.onChunkUnloaded();
 	}
 	
 	@Override public byte getDefaultSide() {return SIDE_BOTTOM;}

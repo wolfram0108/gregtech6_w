@@ -189,21 +189,21 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	}
 	
 	@Override
-	public void validate() {
-		super.validate();
+	public void clearRemoved() {
+		super.clearRemoved();
 		if (mActive) addThisPortalToLists();
 	}
 	
 	@Override
-	public void invalidate() {
+	public void setRemoved() {
 		disableThisPortal();
-		super.invalidate();
+		super.setRemoved();
 	}
 	
 	@Override
-	public void onChunkUnload() {
+	public void onChunkUnloaded() {
 		disableThisPortal();
-		super.onChunkUnload();
+		super.onChunkUnloaded();
 	}
 	
 	@Override public void onServerStart() {getPortalListA().clear(); getPortalListB().clear();}
