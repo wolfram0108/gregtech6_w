@@ -615,7 +615,7 @@ public final class OreDictManager {
 	public ItemStack setStack_(boolean aUseBlackList, ItemStack aStack) {
 		ItemStack tStack = getStack_(aUseBlackList, aStack);
 		if (tStack == null || ST.equal(aStack, tStack)) return aStack;
-		aStack.func_150996_a(tStack.getItem());
+		// F-itemstack-mutation: 1.7.10 func_150996_a(смена Item in-place) невозможна (neo ItemStack.item final, см. центр ST.set PORT-TODO item-final); сохраняем meta oredict-канонического стека.
 		return ST.meta_(aStack, ST.meta_(tStack));
 	}
 	
@@ -722,7 +722,7 @@ public final class OreDictManager {
 		if (rData != null) return rData;
 		rData = sItemStack2DataMap.get(new ItemStackContainer(aStack, W));
 		if (rData != null) return rData;
-		if (aAllowOverride && aStack.getItem().isDamageable()) {
+		if (aAllowOverride && aStack.isDamageableItem()) { // 1.7.10 Item.isDamageable() -> neo ItemStack.isDamageableItem() (ItemStack.java:441).
 			rData = sItemStack2DataMap.get(new ItemStackContainer(aStack, 0));
 			if (rData != null && rData.mUseVanillaDamage) {
 				OreDictMaterialStack[] tByProducts = new OreDictMaterialStack[rData.mByProducts.length];
