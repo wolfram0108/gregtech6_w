@@ -50,8 +50,8 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 			// Only place right next to Liquids or inside of Liquids.
 			if (!WD.liquid(WD.block(aWorld, aX+OFFX[aSide]+OFFX[tSide], aY+OFFY[aSide]+OFFY[tSide], aZ+OFFZ[aSide]+OFFZ[tSide]))) continue;
 			// Scan Inventory for suitable Items.
-			for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
-				ItemStack tStack = aPlayer.getInventory().getItem(Inventory.INVENTORY_SIZE-i-1);
+			for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
+				ItemStack tStack = aPlayer.getInventory().getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
 				if (ST.invalid(tStack)) continue;
 				Block tBlock = ST.block(tStack);
 				// The Block has to be Opaque to ensure the Leak is plugged.

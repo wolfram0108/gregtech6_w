@@ -96,7 +96,7 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 	
 	public void tryInsert(Player aPlayer, MultiTileEntityMassStorage aStorage, boolean aOnlyHand) {
 		if (aPlayer.inventory.getCurrentItem() != null) aPlayer.inventory.setItem(aPlayer.inventory.getSelectedSlot(), aStorage.insertItems(aPlayer.inventory.getItem(aPlayer.inventory.getSelectedSlot()), T));
-		if (!aOnlyHand) for (int i = 9; i < Inventory.INVENTORY_SIZE; i++) {
+		if (!aOnlyHand) for (int i = 9; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
 			if (aPlayer.inventory.getItem(i) != null && !ST.nonautoinsert(aPlayer.inventory.getItem(i)) && (aStorage.slotHas(1) || aPlayer.inventory.getItem(i).getMaxStackSize() > 1)) {
 				aPlayer.inventory.setItem(i, aStorage.insertItems(aPlayer.inventory.getItem(i), F));
 			}

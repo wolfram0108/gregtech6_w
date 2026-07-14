@@ -603,7 +603,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 				if (aShiftclick) {
 					if (aRightclick) {
 						// SHIFT RIGHTCLICK
-						for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+						for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
 							if (aPlayer.getInventory().getItem(i) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) {
 								for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 									if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
@@ -616,7 +616,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 						return aPlayer.containerMenu.getCarried();
 					}
 					// SHIFT LEFTCLICK
-					for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
+					for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
 						if (aPlayer.getInventory().getItem(i) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) {
 							boolean temp = F;
 							for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {

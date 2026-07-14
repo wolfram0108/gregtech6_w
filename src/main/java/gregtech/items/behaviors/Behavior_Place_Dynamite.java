@@ -56,8 +56,8 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 		if (tBlock instanceof BlockStones) {if (tMeta >= 3) return F;} else
 		if (!BlocksGT.drillableDynamite.contains(tBlock) && !StoneLayer.REPLACEABLE_BLOCKS.contains(tBlock) && !WD.ore_stone(tBlock, tMeta)) return F;
 		
-		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) {
-			ItemStack tStack = aPlayer.inventory.getItem(Inventory.INVENTORY_SIZE-i-1);
+		for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
+			ItemStack tStack = aPlayer.inventory.getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
 			if (IL.Boomstick.equal(tStack, F, T) || IL.Dynamite.equal(tStack, F, T) || IL.Dynamite_Strong.equal(tStack, F, T)) {
 				// F8: тег захвачен ОДИН раз в tOldTag (для восстановления) и ОДИН раз мутирован в tTempTag
 				// (NBT_MODE=T), затем закоммичен единым ItemNBT.set — иначе setBoolean на свежем get()

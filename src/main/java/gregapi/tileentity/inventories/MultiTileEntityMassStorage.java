@@ -288,7 +288,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 					} else {
 						if (tAmount == -1) {
 							boolean temp = F;
-							for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) if (aPlayer.getInventory().getItem(i) != null && allowInsertion(aPlayer.getInventory().getItem(i))) {
+							for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) if (aPlayer.getInventory().getItem(i) != null && allowInsertion(aPlayer.getInventory().getItem(i))) {
 								ItemStack tStack = insertItems(aPlayer.getInventory().getItem(i), F);
 								if (tStack == null) {
 									temp = T;

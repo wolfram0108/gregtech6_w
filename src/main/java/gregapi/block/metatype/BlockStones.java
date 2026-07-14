@@ -588,8 +588,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		}
 		if (aTool.equals(TOOL_drill) && !aSneaking) {
 			if (mBlock == this && aPlayer instanceof Player && aMeta == BRICK) {
-				for (int i = 0; i < ((Player)aPlayer).Inventory.INVENTORY_SIZE; i++) {
-					int tIndex = ((Player)aPlayer).Inventory.INVENTORY_SIZE-i-1;
+				for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
+					int tIndex = net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1;
 					ItemStack tStack = ((Player)aPlayer).getInventory().getItem(tIndex);
 					if (OM.is("stickAnyIronOrSteel", tStack)) {
 						if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), RNFBR, 3, F)) {

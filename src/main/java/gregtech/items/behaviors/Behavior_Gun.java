@@ -395,7 +395,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			return T;
 		}
 		if (aOnlyCheckHeld) return F;
-		for (int i = 0; i < Inventory.INVENTORY_SIZE; i++) if (aPlayer.getInventory().getItem(i) == aGun) {
+		for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) if (aPlayer.getInventory().getItem(i) == aGun) {
 			if (i < 27 && isProjectile(aPlayer.getInventory().getItem(i+27))) {
 			if (i < 18 && isProjectile(aPlayer.getInventory().getItem(i+18))) {
 			if (i <  9 && isProjectile(aPlayer.getInventory().getItem(i+ 9))) {
@@ -425,7 +425,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			}
 			break;
 		}
-		for (int i = Inventory.INVENTORY_SIZE-1; i >= 0; i--) if (isProjectile(aPlayer.getInventory().getItem(i))) {
+		for (int i = net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-1; i >= 0; i--) if (isProjectile(aPlayer.getInventory().getItem(i))) {
 			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(i).getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i)));
