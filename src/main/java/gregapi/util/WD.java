@@ -89,6 +89,10 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.LadderBlock;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
@@ -167,7 +171,7 @@ public class WD {
 		BlockPos tObstrPos = new BlockPos(aX, aY, aZ);
 		BlockState tObstrState = aWorld.getBlockState(tObstrPos); // было aWorld.getBlock(x,y,z) — BlockGetter.java:32
 		Block tBlock = tObstrState.getBlock();
-		if (tBlock instanceof BlockTrapDoor || tBlock instanceof BlockDoor || tBlock instanceof BlockLadder) return F;
+		if (tBlock instanceof TrapDoorBlock || tBlock instanceof DoorBlock || tBlock instanceof LadderBlock) return F;
 		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z) — BlockBehaviour.getCollisionShape(level,pos)
 		// (BlockBehaviour.java:674) даёт локальный VoxelShape; .move(pos).bounds() переносит в мировые координаты
 		// (VoxelShape.java:39,81); пустой шейп = старое null-возврату (нет коллизии).
@@ -203,7 +207,7 @@ public class WD {
 		// (ClipContext.java:96-110, ANY подбирает любую непустую FluidState, NONE — никогда); Block.OUTLINE — тот же
 		// режим формы, которым реально пользуется ванильный player-look-raytrace (Item.getPlayerPOVHitResult,
 		// Item.java:362-365); returnLastUncollidableBlock здесь всегда F (аналога нет, не задействован).
-		return aWorld.clip(new ClipContext(vec3, vec3.addVector(tX * tW * tReach, tY * tReach, tZ * tW * tReach), ClipContext.Block.OUTLINE, aFlag ? ClipContext.Fluid.ANY : ClipContext.Fluid.NONE, aPlayer));
+		return aWorld.clip(new ClipContext(vec3, vec3.add(tX * tW * tReach, tY * tReach, tZ * tW * tReach), ClipContext.Block.OUTLINE, aFlag ? ClipContext.Fluid.ANY : ClipContext.Fluid.NONE, aPlayer));
 	}
 	
 	// F6: было `WorldProvider aProvider`-перегрузки (числовой `dimensionId`, `UT.Reflection.getLowercaseClass`
@@ -391,7 +395,7 @@ public class WD {
 		if (tKey == Level.OVERWORLD) return 0;
 		if (tKey == Level.NETHER) return -1;
 		if (tKey == Level.END) return 1;
-		return tKey.location().hashCode();
+		return tKey.identifier().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:55)
 	}
 	/** F9: 1.7.10 WD.getMaterial(Block) удалён в neo (класс Material убран). GT6-блок (BlockBase) хранит портированный
 	 *  gregapi.block.Material; для ВАНИЛЬНЫХ neo-блоков классифицируем по идентичности (критичные fluid/air/fire —
@@ -912,13 +916,17 @@ public class WD {
 		// было tBlock.getCollisionBoundingBoxFromPool(world,x,y,z)==null — BlockState.getCollisionShape(level,pos).isEmpty() (BlockBehaviour.java:674)
 		if (WD.getMaterial(tBlock) == Material.carpet || aWorld.getBlockState(tFirePos).getCollisionShape(aWorld, tFirePos).isEmpty()) {
 			if (MD.TC.mLoaded && te(aWorld, aX, aY, aZ, T) instanceof INode) return F;
-			if (tBlock.getFlammability(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
+			// F-block: IBlockExtension.getFlammability(int meta,world,x,y,z,dir) -> BlockState.getFlammability(
+			// BlockGetter,BlockPos,Direction) (IBlockExtension.java:677) — на состоянии, не на Block.
+			if (aWorld.getBlockState(tFirePos).getFlammability(aWorld, tFirePos, FORGE_DIR[SIDE_ANY]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
 			if (tBlock instanceof IItemGT) return F;
 			if (aCheckFlammability) {
 				for (byte tSide : ALL_SIDES_VALID) {
+					BlockPos tAdjPos = new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]);
 					Block tAdjacent = block(aWorld, aX, aY, aZ, tSide);
 					if (tAdjacent == Blocks.CHEST || tAdjacent == Blocks.TRAPPED_CHEST) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE) (3-арг default meta=0,flags=3)
-					if (tAdjacent.getFlammability(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE)
+					// F-block: getFlammability на BlockState соседа (IBlockExtension.java:677), pos соседа вычислен.
+					if (aWorld.getBlockState(tAdjPos).getFlammability(aWorld, tAdjPos, FORGE_DIR_OPPOSITES[tSide]) > 0) return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE)
 				}
 			} else {
 				return aWorld.setBlock(tFirePos, Blocks.FIRE.defaultBlockState(), Block.UPDATE_ALL); // было aWorld.setBlock(x,y,z,Blocks.FIRE,0,3)
@@ -1008,7 +1016,9 @@ public class WD {
 	public static List<BlockPos> line(final Vec3 aStart, final Vec3 aEnd) {
 		List<BlockPos> rList = new ArrayListNoNulls<>();
 		if (Double.isNaN(aStart.x) || Double.isNaN(aStart.y) || Double.isNaN(aStart.z) || Double.isNaN(aEnd.x) || Double.isNaN(aEnd.y) || Double.isNaN(aEnd.z)) return rList;
-		Vec3 tPoint = Vec3.createVectorHelper(aStart.x, aStart.y, aStart.z);
+		// F-vec: neo Vec3 иммутабелен (поля x/y/z final) — 1.7.10 мутировал tPoint.xCoord покомпонентно;
+		// воспроизводим реассайном tPoint = new Vec3(...) (см. три ветки ниже), поведение 1:1.
+		Vec3 tPoint = new Vec3(aStart.x, aStart.y, aStart.z);
 		
 		int sx = UT.Code.roundDown(tPoint.x);
 		int sy = UT.Code.roundDown(tPoint.y);
@@ -1083,23 +1093,17 @@ public class WD {
 				if (ex > sx) whereTo = 4;
 				else whereTo = 5;
 				
-				tPoint.x = nx;
-				tPoint.y += disty * ndx;
-				tPoint.z += distz * ndx;
+				tPoint = new Vec3(nx, tPoint.y + disty * ndx, tPoint.z + distz * ndx);
 			} else if (ndy < ndz) {
 				if (ey > sy) whereTo = 0;
 				else whereTo = 1;
 				
-				tPoint.x += distx * ndy;
-				tPoint.y = ny;
-				tPoint.z += distz * ndy;
+				tPoint = new Vec3(tPoint.x + distx * ndy, ny, tPoint.z + distz * ndy);
 			} else {
 				if (ez > sz) whereTo = 2;
 				else whereTo = 3;
 				
-				tPoint.x += distx * ndz;
-				tPoint.y += disty * ndz;
-				tPoint.z = nz;
+				tPoint = new Vec3(tPoint.x + distx * ndz, tPoint.y + disty * ndz, nz);
 			}
 			
 			sx = UT.Code.roundDown(tPoint.x);
@@ -1127,7 +1131,10 @@ public class WD {
 		
 		rList.add("--- X: " + aX + " Y: " + aY + " Z: " + aZ + " ---");
 		try {
-			rList.add("Name: " + (aTileEntity instanceof AbstractContainerMenu && Code.stringValid(((AbstractContainerMenu)aTileEntity).getInventoryName()) ? ((AbstractContainerMenu)aTileEntity).getInventoryName() : aBlock.getDescriptionId()) + "  MetaData: " + aMeta);
+			// F-container: 1.7.10 TileEntity мог быть IWorldNameable.getInventoryName() (String). neo BlockEntity
+		// не Menu (instanceof AbstractContainerMenu невозможен) — кастомное имя даёт Nameable.getName():Component
+		// (Nameable.java:7), .getString() -> String для stringValid. Отладочный скан, поведение 1:1.
+		rList.add("Name: " + (aTileEntity instanceof net.minecraft.world.Nameable tNameable && Code.stringValid(tNameable.getName().getString()) ? tNameable.getName().getString() : aBlock.getDescriptionId()) + "  MetaData: " + aMeta);
 			rList.add("Registry: " + ST.regName(aBlock));
 			if (aScanLevel >= 10) {
 				rList.add("Block Class: " + aBlock.getClass());
