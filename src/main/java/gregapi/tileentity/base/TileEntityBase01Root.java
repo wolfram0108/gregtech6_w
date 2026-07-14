@@ -735,7 +735,26 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		for (int i = 0; i < tTanks.length; i++) rInfo[i] = new FluidTankInfo(tTanks[i]);
 		return rInfo;
 	}
-	
+
+	// F5-capability мост (decisions/F5-fluids.md): neo IFluidHandler (SIDELESS) — концертные методы
+	// поверх GT6-своих side-aware fill/drain/getTankInfo/canFill выше. Оригинал 1.7.10 реализовывал
+	// Forge-sided net.minecraftforge.fluids.IFluidHandler (6 side-методов); порт механически переименовал
+	// import в neo capability IFluidHandler (7 sideless-методов, ИНОЙ контракт — мис-порт). Leaf-TE,
+	// объявляющие `implements IFluidHandler` (MultiTileEntityBasicMachine/AdvancedCraftingTable/PipeFluid/
+	// MultiBlockPart), НАСЛЕДУЮТ эти 7 мостов ОТСЮДА — контракт закрыт ЦЕНТРАЛЬНО, без дублирования и без
+	// смены семантики не-fluid TE (те интерфейс не объявляют, лишних вызовов нет). sideless neo-вызов =
+	// сторона null -> UT.Code.side(null)=SIDE_ANY(6), родная GT6-конвенция «любая сторона». @Override не
+	// ставится намеренно: TE01Root сам IFluidHandler не объявляет — методы удовлетворяют интерфейс leaf-TE
+	// через наследование концертных членов (легальный Java-путь). FluidStack.EMPTY вместо null: neo
+	// IFluidHandler.drain обязан вернуть непустой стек-объект (FluidStack.java, контракт).
+	public int getTanks() {FluidTankInfo[] t = getTankInfo((Direction)null); return t == null ? 0 : t.length;}
+	public FluidStack getFluidInTank(int aTank) {FluidTankInfo[] t = getTankInfo((Direction)null); return t != null && aTank >= 0 && aTank < t.length && t[aTank] != null && t[aTank].fluid != null ? t[aTank].fluid : FluidStack.EMPTY;}
+	public int getTankCapacity(int aTank) {FluidTankInfo[] t = getTankInfo((Direction)null); return t != null && aTank >= 0 && aTank < t.length && t[aTank] != null ? t[aTank].capacity : 0;}
+	public boolean isFluidValid(int aTank, FluidStack aFluid) {return aFluid != null && !aFluid.isEmpty() && canFill((Direction)null, aFluid.getFluid());}
+	public int fill(FluidStack aFluid, FluidAction aAction) {return fill((Direction)null, aFluid, aAction.execute());}
+	public FluidStack drain(FluidStack aFluid, FluidAction aAction) {FluidStack r = drain((Direction)null, aFluid, aAction.execute()); return r == null ? FluidStack.EMPTY : r;}
+	public FluidStack drain(int aMaxDrain, FluidAction aAction) {FluidStack r = drain((Direction)null, aMaxDrain, aAction.execute()); return r == null ? FluidStack.EMPTY : r;}
+
 	// A Default implementation of the MultiBlock related Fluid Tank behaviour.
 	
 	protected IFluidTank getFluidTankFillable(MultiTileEntityMultiBlockPart aPart, byte aSide, FluidStack aFluidToFill) {return getFluidTankFillable(SIDE_ANY, aFluidToFill);}
