@@ -42,14 +42,23 @@ public class LoggerPlayerActivity implements Runnable {
 		mLog = aLog;
 	}
 	
+	// F7-event: 1.7.10 единое PlayerInteractEvent + поле action -> neo абстрактная база + суб-события (LeftClickBlock/
+	// RightClickBlock/RightClickItem/…). action восстановлен через instanceof; air-взаимодействия (RightClickItem/
+	// LeftClickEmpty) пропускаются = 1.7.10 RIGHT_CLICK_AIR-skip. Поля: entityPlayer->getEntity, world->getLevel,
+	// x/y/z->getPos(); provider!=null-проверка снята (WorldProvider удалён, дублировала level!=null).
+	// PORT-TODO(F7-event-bus-hierarchy): если neo-шина не доставляет суб-события подписчику БАЗОВОГО
+	// PlayerInteractEvent — разбить на два @SubscribeEvent (RightClickBlock+LeftClickBlock); лог косметичен.
 	@SubscribeEvent
 	public void onPlayerInteraction(PlayerInteractEvent aEvent) {
-		if (aEvent.entityPlayer != null && aEvent.entityPlayer.level() != null && aEvent.action != null && aEvent.world.provider != null && !aEvent.entityPlayer.level().isClientSide() && aEvent.action != null && aEvent.action != PlayerInteractEvent.Action.RIGHT_CLICK_AIR && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";"+aEvent.action.name()+";"+aEvent.entityPlayer.getName().getString()+";DIM:"+WD.dimensionId(aEvent.world)+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
+		String tAction = (aEvent instanceof PlayerInteractEvent.LeftClickBlock) ? "LEFT_CLICK_BLOCK" : (aEvent instanceof PlayerInteractEvent.RightClickBlock) ? "RIGHT_CLICK_BLOCK" : null;
+		if (tAction != null && aEvent.getEntity() != null && aEvent.getLevel() != null && !aEvent.getLevel().isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";"+tAction+";"+aEvent.getEntity().getName().getString()+";DIM:"+WD.dimensionId(aEvent.getLevel())+";"+aEvent.getPos().getX()+";"+aEvent.getPos().getY()+";"+aEvent.getPos().getZ()+";|;"+aEvent.getPos().getX()/10+";"+aEvent.getPos().getY()/10+";"+aEvent.getPos().getZ()/10);
 	}
 	
+	// F7-event: 1.7.10 BlockEvent.HarvestDropsEvent -> neo BlockDropsEvent (event/level). harvester->getBreaker():Entity,
+	// world->getLevel():ServerLevel, x/y/z->getPos().
 	@SubscribeEvent
-	public void onBlockHarvestingEvent(BlockEvent.HarvestDropsEvent aEvent) {
-		if (aEvent.harvester != null && !aEvent.world.isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";HARVEST_BLOCK;"+aEvent.harvester.getName().getString()+";DIM:"+WD.dimensionId(aEvent.world)+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
+	public void onBlockHarvestingEvent(net.neoforged.neoforge.event.level.BlockDropsEvent aEvent) {
+		if (aEvent.getBreaker() != null && !aEvent.getLevel().isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";HARVEST_BLOCK;"+aEvent.getBreaker().getName().getString()+";DIM:"+WD.dimensionId(aEvent.getLevel())+";"+aEvent.getPos().getX()+";"+aEvent.getPos().getY()+";"+aEvent.getPos().getZ()+";|;"+aEvent.getPos().getX()/10+";"+aEvent.getPos().getY()/10+";"+aEvent.getPos().getZ()/10);
 	}
 	
 	@Override
