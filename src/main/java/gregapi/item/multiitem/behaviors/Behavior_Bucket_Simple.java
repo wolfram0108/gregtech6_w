@@ -68,9 +68,9 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		ItemStack tBucket = ST.make(Items.BUCKET, 1, 0);
 		
-		Direction aFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
+		Direction aFacing = aSource.state().getValue(DispenserBlock.FACING); // F-dispenser: func_149937_b(metadata) -> facing из BlockState (BlockSource=record, pos()/state())
 		Level aWorld = aSource.level();
-		int aX = aSource.getXInt() + aFacing.getFrontOffsetX(), aY = aSource.getYInt() + aFacing.getFrontOffsetY(), aZ = aSource.getZInt() + aFacing.getFrontOffsetZ();
+		int aX = aSource.pos().getX() + aFacing.getStepX(), aY = aSource.pos().getY() + aFacing.getStepY(), aZ = aSource.pos().getZ() + aFacing.getStepZ(); // getXInt/getFrontOffsetX -> pos().getX()/getStepX()
 		
 		if (mFluid == null) {
 			Block tFluidBlock = WD.block(aWorld, aX, aY, aZ);
@@ -113,7 +113,9 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 			} else {
 				if (ST.invalid(tBucket = FL.fill(mFluid, tBucket, F, T, F, T))) return super.onDispense(aItem, aSource, aStack);
 			}
-			if (ST.item_(tBucket) instanceof BucketItem && ((BucketItem)ST.item_(tBucket)).tryPlaceContainedLiquid(aWorld, aX, aY, aZ)) {
+			// F-item-use: 1.7.10 BucketItem.tryPlaceContainedLiquid(world,x,y,z) -> neo BucketItem.emptyContents(LivingEntity,
+			// Level,BlockPos,BlockHitResult) (BucketItem.java). Диспенсер без игрока/хита -> null,null; ставит жидкость в (aX,aY,aZ).
+			if (ST.item_(tBucket) instanceof BucketItem tBucketItem && tBucketItem.emptyContents(null, aWorld, new net.minecraft.core.BlockPos(aX, aY, aZ), null)) {
 				return processBucket(ST.make(Items.BUCKET, 1, 0), aStack, T);
 			}
 		}
@@ -143,25 +145,37 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 				return tBucket == null ? aStack : tBucket;
 			}
 			if (tFluidBlock == Blocks.LAVA || tFluidBlock == Blocks.LAVA || tFluidBlock == Blocks.WATER || tFluidBlock == Blocks.WATER) {
-				if (WD.meta(aWorld, aX, aY, aZ) == 0) tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
+				// F-item-use: 1.7.10 vanilla Bucket.onItemRightClick(empty) заполнял бакет из источника по рейкасту -> neo use()
+				// работает по held-item и не возвращает стек. Воспроизводим ИТОГ напрямую: source (meta==0) -> vanilla полный
+				// бакет + удаление источника (WD.set NB). Ровно то, что делал vanilla-бакет.
+				if (WD.meta(aWorld, aX, aY, aZ) == 0) {
+					tBucket = ST.make(tFluidBlock == Blocks.LAVA ? Items.LAVA_BUCKET : Items.WATER_BUCKET, 1, 0);
+					WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
+				}
 			} else
 			if (tFluidBlock instanceof IFluidBlock) {
 				FluidStack tFluid = ((IFluidBlock)tFluidBlock).drain(aWorld, aX, aY, aZ, F);
 				if (tFluid != null) {
-					if (ST.valid(FL.fill(tFluid, aStack, F, T, F, T))) tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
+					// F-item-use: vanilla Bucket.onItemRightClick(tBucket) не заполняется от modded IFluidBlock (mirror, мод не загружен);
+					// GT6-бакет уже заполняется FL.fill(aStack) в общем потоке — vestigial vanilla-делегат убран, tBucket без изменений.
+					FL.fill(tFluid, aStack, F, T, F, T);
 					if (FL.milk(tFluid) && tFluid.getAmount() >= 1000) tBucket = ST.make(Items.MILK_BUCKET, 1, 0);
 				}
 			}
 		} else {
 			if (ST.valid(mDefaultFullBucket)) {
 				tBucket = ST.copy(mDefaultFullBucket);
-				tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
+				// F-item-use: onItemRightClick(full bucket)=опустошить (поставить жидкость) -> neo BucketItem.emptyContents(
+				// player,level,pos,hit); итог — пустой бакет. pos = соседний к клику блок (getBlockPos().relative(direction)).
+				if (ST.item_(tBucket) instanceof BucketItem tBucketItem) {tBucketItem.emptyContents(aPlayer, aWorld, ((BlockHitResult)aTarget).getBlockPos().relative(((BlockHitResult)aTarget).getDirection()), (BlockHitResult)aTarget); tBucket = ST.make(Items.BUCKET, 1, 0);}
 			} else {
 				if (ST.invalid(tBucket = FL.fill(mFluid, tBucket, F, T, F, T))) return aStack;
-				tBucket = tBucket.getItem().onItemRightClick(tBucket, aWorld, aPlayer);
+				// F-item-use: onItemRightClick(full bucket)=опустошить (поставить жидкость) -> neo BucketItem.emptyContents(
+				// player,level,pos,hit); итог — пустой бакет. pos = соседний к клику блок (getBlockPos().relative(direction)).
+				if (ST.item_(tBucket) instanceof BucketItem tBucketItem) {tBucketItem.emptyContents(aPlayer, aWorld, ((BlockHitResult)aTarget).getBlockPos().relative(((BlockHitResult)aTarget).getDirection()), (BlockHitResult)aTarget); tBucket = ST.make(Items.BUCKET, 1, 0);}
 			}
 		}
-		aPlayer.clearItemInUse();
+		aPlayer.stopUsingItem(); // 1.7.10 clearItemInUse -> neo LivingEntity.stopUsingItem()
 		return processBucket(tBucket, aStack, mFluid != null);
 	}
 	
@@ -189,9 +203,15 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		if (mFluid == null) return F;
 		if (FL.water(mFluid) && mFluid.getAmount() >= 1000) {
 			Block aBlock = WD.block(aWorld, aX, aY, aZ);
-			if (aBlock instanceof CauldronBlock) {
-				if (WD.meta(aWorld, aX, aY, aZ) < 3) {
-					((CauldronBlock)aBlock).func_150024_a(aWorld, aX, aY, aZ, 3);
+			// F-cauldron: 1.7.10 CauldronBlock c metadata-уровнем (0-3) + func_150024_a(...,3)=залить водой доверху. neo:
+			// пустой котёл = CauldronBlock, водяной = LayeredCauldronBlock со BlockState LEVEL (макс MAX_FILL_LEVEL=3).
+			// Заливка бакетом воды: ставим WATER_CAULDRON с LEVEL=MAX, если текущий уровень не полон (empty=0). Уровень из
+			// состояния (метаданных нет). AbstractCauldronBlock покрывает и пустой (CauldronBlock), и водяной (Layered).
+			if (aBlock instanceof net.minecraft.world.level.block.AbstractCauldronBlock) {
+				net.minecraft.core.BlockPos tCauldronPos = new net.minecraft.core.BlockPos(aX, aY, aZ);
+				int tLevel = aBlock instanceof net.minecraft.world.level.block.LayeredCauldronBlock ? aWorld.getBlockState(tCauldronPos).getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL) : 0;
+				if (tLevel < net.minecraft.world.level.block.LayeredCauldronBlock.MAX_FILL_LEVEL) {
+					aWorld.setBlockAndUpdate(tCauldronPos, Blocks.WATER_CAULDRON.defaultBlockState().setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, net.minecraft.world.level.block.LayeredCauldronBlock.MAX_FILL_LEVEL));
 					ST.set(aStack, ST.container(aStack, T));
 					return T;
 				}
