@@ -23,6 +23,7 @@ import gregapi.util.WD;
 import gregapi.code.TagData;
 import gregapi.data.MD;
 import gregapi.data.TD;
+import gregapi.random.ExplosionGT;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
@@ -131,7 +132,7 @@ public class EnergyCompat {
 		if (aSize > VMAX[3]) {
 			Level tWorld = aReceiver.getLevel();
 			WD.set(tWorld, aReceiver.getBlockPos().getX(), aReceiver.getBlockPos().getY(), aReceiver.getBlockPos().getZ(), NB, 0, 3);
-			tWorld.newExplosion(null, aReceiver.getBlockPos().getX()+0.5, aReceiver.getBlockPos().getY()+0.5, aReceiver.getBlockPos().getZ()+0.5, 5, F, T);
+			ExplosionGT.explode(tWorld, null, aReceiver.getBlockPos().getX()+0.5, aReceiver.getBlockPos().getY()+0.5, aReceiver.getBlockPos().getZ()+0.5, 5, F, T);
 			return T;
 		}
 		return F;
@@ -232,7 +233,7 @@ public class EnergyCompat {
 						if (tTier >= 0 && tTier < VMAX.length-1 && aSize > VMAX[tTier]) {
 							Level tWorld = tReceiver.getLevel();
 							WD.set(tWorld, tReceiver.getBlockPos().getX(), tReceiver.getBlockPos().getY(), tReceiver.getBlockPos().getZ(), NB, 0, 3);
-							tWorld.newExplosion(null, tReceiver.getBlockPos().getX()+0.5, tReceiver.getBlockPos().getY()+0.5, tReceiver.getBlockPos().getZ()+0.5, tTier+1, F, T);
+							ExplosionGT.explode(tWorld, null, tReceiver.getBlockPos().getX()+0.5, tReceiver.getBlockPos().getY()+0.5, tReceiver.getBlockPos().getZ()+0.5, tTier+1, F, T);
 							return aAmount;
 						}
 					}

@@ -1,5 +1,7 @@
 package com.builtbroken.mc.api.energy;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
-public interface IEnergyBuffer {}
+/** F10 ЗЕРКАЛО (compile-only) чужого API — Voltz/UniversalElectricity (builtbroken). Реально
+ *  используется — EnergyCompat.java:206: addEnergyToStorage. */
+public interface IEnergyBuffer {
+	long addEnergyToStorage(long aEnergy, boolean aSimulate);
+}

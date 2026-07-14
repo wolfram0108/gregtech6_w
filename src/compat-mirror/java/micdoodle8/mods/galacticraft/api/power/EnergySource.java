@@ -1,7 +1,11 @@
 package micdoodle8.mods.galacticraft.api.power;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
+import net.minecraft.core.Direction;
+
+/** F10 ЗЕРКАЛО (compile-only) чужого API — Galacticraft. EnergySourceAdjacent(Direction) —
+ *  реально используется CompatGC.java:37 (построение ENERGY_DIR по всем 7 FORGE_DIR). */
 public class EnergySource {
-    public static class EnergySourceAdjacent extends EnergySource {}
+	public static class EnergySourceAdjacent extends EnergySource {
+		public EnergySourceAdjacent(Direction aDir) {}
+	}
 }
