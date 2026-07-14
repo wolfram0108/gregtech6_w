@@ -248,9 +248,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		// координатный внутри).
 		if (TOOL_SOUNDS) UT.Sounds.play(tStats.getEntityHitSound(), 20, 1, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ()));
 		if (super.onLeftClickEntity(aStack, aPlayer, aEntity)) return T;
-		// PORT-TODO(item-base, canAttackWithItem): Entity.canAttackWithItem() (1.7.10, false while e.g. riding
-		// certain vehicles) удалён без замены в 3 корнях референса — деградация до T (консервативно: "может").
-		if (T) {
+		// 1.7.10 Entity.canAttackWithItem() -> neo Entity.isAttackable() (можно ли атаковать сущность). Способность есть, 1:1.
+		if (aEntity.isAttackable()) {
 			int tImplosion = UT.NBT.getEnchantmentLevelImplosion(aStack);
 			// PORT-TODO(F8, enchant-registry): EnchantmentHelper.getFireAspectModifier(Player)/
 			// getEnchantmentModifierLiving(Player,LivingEntity) (1.7.10 static lookups) удалены — зачарования
@@ -266,10 +265,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 				if (tImplosion > 0 && UT.Entities.isExplosiveCreature(aEntity) && !Creeper.class.isInstance(aEntity)) tMagicDamage += 1.5F * tImplosion;
 
 				if (tDamage + tMagicDamage > 0) {
-					// PORT-TODO(item-base, hurtResistantTime): Entity.hurtResistantTime (1.7.10 hit-invulnerability
-					// поле, использовалось для client-side hit-prediction) отсутствует в 26.1.2 — деградация до
-					// "реальный удар только на сервере" (безопаснее дублирующего клиентского предсказания).
-					boolean tRealHit = !aEntity.level().isClientSide();
+					// 1.7.10 Entity.hurtResistantTime -> neo Entity.invulnerableTime (то же поле hit-invulnerability, переименовано). Способность есть, 1:1.
+					boolean tRealHit = (!aEntity.level().isClientSide() || aEntity.invulnerableTime <= 0);
 					boolean tCriticalHit = aPlayer.fallDistance > 0 && !aPlayer.onGround() && !aPlayer.onClimbable() && !aPlayer.isInWater() && !aPlayer.hasEffect(MobEffects.BLINDNESS) && aPlayer.getVehicle() == null && aEntity instanceof LivingEntity;
 					if (tCriticalHit && tDamage > 0) tDamage *= 1.5;
 					float tFullDamage = (tDamage+tMagicDamage) * TFC_DAMAGE_MULTIPLIER;
@@ -283,6 +280,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 						float tDamageToDeal = tFullDamage;
 						while (tDamageToDeal > 0 && aEntity.hurtServer(tServerLevel, tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
 							tDamageToDeal -= 12;
+							if (tDamageToDeal > 0) aEntity.invulnerableTime = 0; // 1.7.10 hurtResistantTime=0 (было УРОНЕНО в порту) — сброс invuln-фреймов, чтобы следующий 12-урон прошёл (обход BTL-кэпа 40); invulnerableTime = переименованное поле
 						}
 						tRealHit &= (tDamageToDeal < tFullDamage);
 					} else if (tRealHit) {
