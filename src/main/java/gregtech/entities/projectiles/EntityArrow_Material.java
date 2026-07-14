@@ -234,7 +234,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								Enchantments.applyBullshitB(tShootingEntity instanceof LivingEntity?(LivingEntity)tShootingEntity:null, tHitLivingEntity                          , mArrow);
 								
 								if (tShootingEntity != null && tHitLivingEntity != tShootingEntity && tHitLivingEntity instanceof Player && tShootingEntity instanceof ServerPlayer) {
-									((ServerPlayer)tShootingEntity).playerNetServerHandler.sendPacket(new ClientboundGameEventPacket(6, 0.0F));
+									((ServerPlayer)tShootingEntity).connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0.0F));
 								}
 							}
 							

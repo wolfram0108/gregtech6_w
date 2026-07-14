@@ -316,7 +316,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			if (aTarget instanceof LivingEntity)
 			UT.Enchantments.applyBullshitA((LivingEntity)aTarget, aPlayer, aBullet);
 			UT.Enchantments.applyBullshitB(                  aPlayer, aTarget, aBullet);
-			if (aTarget instanceof Player && aPlayer instanceof ServerPlayer) ((ServerPlayer)aPlayer).playerNetServerHandler.sendPacket(new ClientboundGameEventPacket(6, 0.0F));
+			if (aTarget instanceof Player && aPlayer instanceof ServerPlayer) ((ServerPlayer)aPlayer).connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0.0F));
 			if (tMagicDamage > 0.0F) aPlayer.onEnchantmentCritical(aTarget);
 			return T;
 		}
