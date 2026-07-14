@@ -278,7 +278,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	public ItemStack onItemRightClick(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (canPickUpFluids() && aStack.getCount() == 1) {
 			HitResult tTarget = WD.getMOP(aWorld, aPlayer, T);
-			if (tTarget != null && tTarget.typeOfHit == HitResult.MovingObjectType.BLOCK && aWorld.canMineBlock(aPlayer, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ())) {
+			if (tTarget != null && tTarget.getType() == HitResult.Type.BLOCK && aWorld.canMineBlock(aPlayer, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ())) {
 				Block tBlock = WD.block(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ());
 				if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
 					if (WD.meta(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ()) == 0) {

@@ -102,7 +102,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	@Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
 		HitResult tPos = WD.getMOP(aWorld, aPlayer, T);
-		if (tPos == null || tPos.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
+		if (tPos == null || tPos.getType() != HitResult.Type.BLOCK) return aStack;
 		int aX = ((BlockHitResult)tPos).getBlockPos().getX(), aY = ((BlockHitResult)tPos).getBlockPos().getY(), aZ = ((BlockHitResult)tPos).getBlockPos().getZ();
 		if (!aWorld.canMineBlock(aPlayer, aX, aY, aZ) || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), ((BlockHitResult)tPos).getDirection(), aStack)) return aStack;
 		if (WD.getMaterial(WD.block(aWorld, aX, aY, aZ)) == Material.water && WD.meta(aWorld, aX, aY, aZ) == 0 && aWorld.isAirBlock(aX, aY+1, aZ)) {

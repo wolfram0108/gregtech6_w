@@ -124,7 +124,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		FluidStack mFluid = FL.getFluid(aStack, T);
 		HitResult aTarget = WD.getMOP(aWorld, aPlayer, mFluid == null);
-		if (aTarget == null || aTarget.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
+		if (aTarget == null || aTarget.getType() != HitResult.Type.BLOCK) return aStack;
 		int aX = ((BlockHitResult)aTarget).getBlockPos().getX(), aY = ((BlockHitResult)aTarget).getBlockPos().getY(), aZ = ((BlockHitResult)aTarget).getBlockPos().getZ();
 		ItemStack tBucket = ST.make(Items.BUCKET, 1, 0);
 		

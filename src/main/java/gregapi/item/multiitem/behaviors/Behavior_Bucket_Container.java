@@ -42,7 +42,7 @@ public class Behavior_Bucket_Container extends AbstractBehaviorDefault {
 	@Override
 	public ItemStack onItemRightClick(MultiItem aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		HitResult tPosition = WD.getMOP(aWorld, aPlayer, T);
-		if (tPosition == null || tPosition.typeOfHit != HitResult.MovingObjectType.BLOCK) return aStack;
+		if (tPosition == null || tPosition.getType() != HitResult.Type.BLOCK) return aStack;
 		if (!aWorld.canMineBlock(aPlayer, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ())) return aStack;
 		
 		Block tBlock = WD.block(aWorld, ((BlockHitResult)tPosition).getBlockPos().getX(), ((BlockHitResult)tPosition).getBlockPos().getY(), ((BlockHitResult)tPosition).getBlockPos().getZ());
