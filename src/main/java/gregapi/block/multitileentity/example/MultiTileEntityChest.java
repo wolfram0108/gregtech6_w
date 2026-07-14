@@ -252,7 +252,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override public void closeInventoryGUI() {mUsingPlayers--; if (mIsTrapped) causeBlockUpdate();}
 	@Override public float getExplosionResistance2() {return mResistance;}
 	@Override public float getBlockHardness() {return mHardness;}
-	@Override public int getComparatorInputOverride(byte aSide) {return AbstractContainerMenu.calcRedstoneFromInventory(this);}
+	@Override public int getComparatorInputOverride(byte aSide) {return AbstractContainerMenu.getRedstoneSignalFromContainer((Container)this);}
 	@Override public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return null;}
 	@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 0;}
 	@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return T;}
