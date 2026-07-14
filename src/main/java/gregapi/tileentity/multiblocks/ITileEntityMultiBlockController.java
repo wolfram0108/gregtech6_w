@@ -45,7 +45,7 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 	
 	public static class Util {
 		public static boolean checkAndSetTarget(ITileEntityMultiBlockController aController, int aX, int aY, int aZ, int aRegistryMeta, int aRegistryID, int aDesign, int aMode, BlockPos aClickedAt, Entity aPlayer, Container aInventory) {
-			BlockEntity tTileEntity = WD.te(aController, aX, aY, aZ, T);
+			BlockEntity tTileEntity = WD.te(aController.getWorld(), aX, aY, aZ, T); // WD.te принимает Level/BlockGetter, не ITileEntityMultiBlockController -> aController.getWorld().
 			if (tTileEntity == aController) return T;
 			
 			if ((aInventory != null || aPlayer != null) && (aClickedAt == null || (Math.abs(aX-aClickedAt.getX()) < 2 && Math.abs(aY-aClickedAt.getY()) < 2 && Math.abs(aZ-aClickedAt.getZ()) < 2))) {
@@ -56,7 +56,7 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 							UT.Sounds.send(SFX.MC_XP, aController.getWorld(), aX, aY, aZ);
 						}
 					} else for (int i = aInventory.getContainerSize()-1; i >= 0; i--) {
-						ItemStack tStack = aInventory.getSlot(i).getItem();
+						ItemStack tStack = aInventory.getItem(i); // F14: getSlot(i).getItem() (AbstractContainerMenu) -> Container.getItem(i).
 						if (ST.equal(aStack, tStack, T) && ST.use(aPlayer, T, T, tStack, 1)) {
 							if (WD.set(aController.getWorld(), aX, aY, aZ, tStack) && aPlayer != null) {
 								UT.Sounds.send(SFX.MC_XP, aController.getWorld(), aX, aY, aZ);
