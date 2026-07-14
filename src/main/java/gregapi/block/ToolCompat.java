@@ -58,13 +58,12 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.NeoForge;
-import net.minecraft.core.Direction;
-import net.neoforged.neoforge.event.level.BlockEvent.BlockToolModificationEvent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.fluids.IFluidBlock;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -103,7 +102,11 @@ public class ToolCompat {
 		try {
 		
 		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || (aEntityPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) {
-			if (!NeoForge.EVENT_BUS.post(new BlockToolModificationEvent(aEntityPlayer, aStack, aWorld, aX, aY, aZ))) {
+			// PORT-TODO(F-tool-event, UseHoeEvent): 1.7.10-ctor UseHoeEvent(player,stack,world,x,y,z) удалён; neo BlockToolModificationEvent(BlockState,UseOnContext,ItemAbility,boolean)
+			// (neoforge/event/level/BlockEvent.java:262) требует полноценный UseOnContext, а aEntityPlayer здесь может быть null (canPlayerEdit-ветка это допускает) —
+			// построение контекста неоправданно сложно для события, которое в GT6 существовало ЛИШЬ ради шанса другим модам отменить/переопределить вспашку;
+			// саму вспашку GT6 реализует напрямую ниже. Хук совместимости с другими модами (отмена события) НЕ реализован — деградация видима здесь.
+			{
 				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					WD.playStepSound(aWorld, aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND);
 					if (!aWorld.isClientSide()) WD.set(aWorld, aX, aY, aZ, Blocks.FARMLAND, 0, 3);
@@ -201,8 +204,13 @@ public class ToolCompat {
 				for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 7) {
 					byte  tMeta  = WD.meta (aWorld, aX+i, aY+j, aZ+k);
 					Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k);
-					if (tBlock.getClass() == aBlock.getClass() && !((BonemealableBlock)tBlock).func_149851_a(aWorld, aX+i, aY+j, aZ+k, F)) {
-						tBlock.onBlockActivated(aWorld, aX+i, aY+j, aZ+k, aEntityPlayer, aSide, aHitX, aHitY, aHitZ);
+					BlockPos tActPos = new BlockPos(aX+i, aY+j, aZ+k);
+					// было func_149851_a(World,x,y,z,isClient) — neo BonemealableBlock.isValidBonemealTarget(LevelReader,BlockPos,BlockState) (BonemealableBlock.java:14)
+					if (tBlock.getClass() == aBlock.getClass() && !((BonemealableBlock)tBlock).isValidBonemealTarget(aWorld, tActPos, aWorld.getBlockState(tActPos))) {
+						// было tBlock.onBlockActivated(World,x,y,z,player,side,hitX,hitY,hitZ) — neo BlockState.useWithoutItem(Level,Player,BlockHitResult) (BlockBehaviour.java:783);
+						// точный ванильный порядок диспетчеризации (useItemOn затем useWithoutItem, см. ServerPlayerGameMode.java:395-402) не воспроизведён —
+						// useWithoutItem ближайший по семантике одиночный вызов "активации блока вне зависимости от предмета в руке".
+						aWorld.getBlockState(tActPos).useWithoutItem(aWorld, aEntityPlayer, new BlockHitResult(new Vec3(aX+i+aHitX, aY+j+aHitY, aZ+k+aHitZ), FORGE_DIR[aSide], tActPos, F));
 						tDamage += 10000;
 					}
 					if (tMeta != WD.meta(aWorld, aX+i, aY+j, aZ+k) || tBlock != WD.block(aWorld, aX+i, aY+j, aZ+k)) {
@@ -216,21 +224,22 @@ public class ToolCompat {
 		if (aTool.equals(TOOL_igniter) && ST.item(aStack) != Items.FLINT_AND_STEEL) {
 			// Ignite any TNT Blocks.
 			if (aBlock instanceof net.minecraft.world.level.block.TntBlock) {
-				((net.minecraft.world.level.block.TntBlock)aBlock).func_150114_a(aWorld, aX, aY, aZ, 1, aEntityLiving);
+				// было func_150114_a(World,x,y,z,fuse,igniter) — neo TntBlock.onCaughtFire(BlockState,Level,BlockPos,Direction,LivingEntity) (TntBlock.java:152); face=null как в самом TntBlock (TntBlock.java:50,58,66 — не-hitResult-вызовы)
+				((net.minecraft.world.level.block.TntBlock)aBlock).onCaughtFire(aWorld.getBlockState(new BlockPos(aX, aY, aZ)), aWorld, new BlockPos(aX, aY, aZ), null, aEntityLiving);
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 				return 10000;
 			}
 			// Ignite Forestry Candles.
 			if (IL.FR_Candle.equal(aBlock) && aTileEntity instanceof TileCandle) {
 				((TileCandle)aTileEntity).setLit(T);
-				aWorld.markBlockForUpdate(aX, aY, aZ);
+				WD.update(aWorld, aX, aY, aZ); // было aWorld.markBlockForUpdate(x,y,z) — центр WD.update (WD.java:612)
 				return 1;
 			}
 			// This thing has a special Functionality, which should override spawning Fire Blocks.
 			if (!IL.TF_Lamp_of_Cinders.equal(aStack, T, T)) {
 				if (aEntityPlayer == null || (aEntityPlayer).mayUseItemAt(new BlockPos(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]), FORGE_DIR[aSide], aStack)) {
-					if (aWorld.isAirBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
-						if (WD.oxygen(aWorld, aX, aY, aZ)) aWorld.setBlock(aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.FIRE);
+					if (WD.air(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) { // было aWorld.isAirBlock(x,y,z) — центр WD.air (WD.java:859)
+						if (WD.oxygen(aWorld, aX, aY, aZ)) WD.set(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], Blocks.FIRE, 0, 3); // было aWorld.setBlock(x,y,z,Block) (meta=0,flags=3 по умолчанию Forge 1.7.10) — центр WD.set (WD.java:644)
 						return 10000;
 					}
 				}
@@ -244,7 +253,7 @@ public class ToolCompat {
 			}
 		}
 		if (aTool.equals(TOOL_rotator)) {
-			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock.getRenderType() == PILLAR_RENDER) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
@@ -256,7 +265,10 @@ public class ToolCompat {
 			if (aBlock instanceof HopperBlock) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta+1)%6==1?(aMeta+1)%6:2, 3, F)) return 2500;
 			}
-			if (aBlock.rotateBlock(aWorld, aX, aX, aX, Direction.getOrientation(aSide))) return 10000;
+			// PORT-TODO(F-tool-rotation, Block.rotateBlock(World,x,y,z,ForgeDirection)): метод удалён из движка целиком (нет аналога в IBlockExtension/Block).
+			// Ближайший neo-метод BlockState.rotate(Rotation) (BlockBehaviour.java:596) несовместим по модели (Rotation — 4 угла поворота 0/90/180/270,
+			// ForgeDirection — 6 осей направления) — не тот же контракт, честно не портируется. Общий catch-all для блоков вне explicit-веток выше
+			// (RotatedPillar/Piston/Dispenser/Pumpkin/Furnace/Chest/EnderChest/Hopper) — деградация: такие блоки инструментом-ротатором больше не крутятся.
 		}
 		if (aTool.equals(TOOL_screwdriver)) {
 			if (aBlock instanceof net.minecraft.world.level.block.DiodeBlock) {
@@ -267,7 +279,8 @@ public class ToolCompat {
 			if (aBlock instanceof BaseRailBlock && (!MD.RC.mLoaded || !(MD.MC.owns(aBlock) || MD.RC.owns(aBlock)))) {
 				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
 				// Why the fuck are the two Coordinate Parameters in isFlexibleRail switched? And then it is used like x y z instead of using the broken namings.
-				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, ((BaseRailBlock)aBlock).isFlexibleRail(aWorld, aX, aY, aZ) ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
+				// было isFlexibleRail(World,x,y,z) — neo BaseRailBlock.isFlexibleRail(BlockState,BlockGetter,BlockPos) (BaseRailBlock.java:310)
+				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, ((BaseRailBlock)aBlock).isFlexibleRail(aWorld.getBlockState(new BlockPos(aX, aY, aZ)), aWorld, new BlockPos(aX, aY, aZ)) ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
 				;
 				return tResult?2000:0;
 			}
@@ -297,7 +310,7 @@ public class ToolCompat {
 				;
 				return tResult?10000:0;
 			}
-			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock.getRenderType() == PILLAR_RENDER) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			if (aBlock instanceof PistonBaseBlock || aBlock instanceof DispenserBlock) {
@@ -323,7 +336,8 @@ public class ToolCompat {
 				}
 				if (((IWrenchable)aTileEntity).wrenchCanRemove(aEntityPlayer)) {
 					int tDamage = Math.max(10000, (int)(30000 / ((IWrenchable)aTileEntity).getWrenchDropRate()));
-					ArrayList<ItemStack> tDrops = aBlock.getDrops(aWorld, aX, aY, aZ, aMeta, 0);
+					// было aBlock.getDrops(World,x,y,z,meta,fortune) (Forge 1.7.10, возвращал ArrayList) — neo Block.getDrops(BlockState,ServerLevel,BlockPos,BlockEntity) (Block.java:361), возвращает List; aWorld тут гарантированно ServerLevel (уже прошли aWorld.isClientSide() return 0 выше)
+					List<ItemStack> tDrops = Block.getDrops(aWorld.getBlockState(new BlockPos(aX, aY, aZ)), (ServerLevel)aWorld, new BlockPos(aX, aY, aZ), aTileEntity);
 					ItemStack tOutput = ((IWrenchable)aTileEntity).getWrenchDrop(aEntityPlayer);
 					
 					if (WD.set(aWorld, aX, aY, aZ, NB, 0, 3)) {
@@ -342,11 +356,11 @@ public class ToolCompat {
 				}
 			}
 			
-			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock.getRenderType() == PILLAR_RENDER) {
+			if (aBlock instanceof net.minecraft.world.level.block.RotatedPillarBlock || aBlock instanceof gregapi.block.tree.BlockBaseLog || aBlock instanceof gregapi.block.tree.BlockBaseBeam || aBlock instanceof gregapi.block.misc.BlockBaseBale /* было aBlock.getRenderType()==PILLAR_RENDER — Forge-render-hook удалён из движка; ровно эти 3 класса возвращали PILLAR_RENDER(31) в оригинале (grep getRenderType по gregtech6/), instanceof — точный 1:1 эквивалент */) {
 				if (WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), (aMeta + 4) & 15, 3, F)) return 5000;
 			}
 			
-			if (aBlock instanceof net.minecraft.world.level.block.CraftingTableBlock || aBlock instanceof BlockBookshelf) {
+			if (aBlock instanceof net.minecraft.world.level.block.CraftingTableBlock || aBlock == Blocks.BOOKSHELF) { // было instanceof BlockBookshelf — класса нет в neo, ванильная книжная полка = обычный Block (Blocks.java:1179, register без класса); единственный экземпляр — прямое сравнение эквивалентно instanceof
 				if (WD.set(aWorld, aX, aY, aZ, NB, 0, 3)) {
 					ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, ST.make(aBlock, 1, aMeta));
 					return 10000;
@@ -374,9 +388,9 @@ public class ToolCompat {
 			if (aBlock instanceof BaseRailBlock || aBlock instanceof net.minecraft.world.level.block.DiodeBlock || aBlock instanceof net.minecraft.world.level.block.piston.PistonHeadBlock || aBlock instanceof PistonBaseBlock) {
 				// wrench doesn't work on those.
 			} else {
-				if (Arrays.asList(aBlock.getValidRotations(aWorld, aX, aY, aZ)).contains(Direction.getOrientation(aTargetSide))) {
-					if (aBlock.rotateBlock(aWorld, aX, aY, aZ, Direction.getOrientation(aTargetSide))) return 10000;
-				}
+				// PORT-TODO(F-tool-rotation, Block.getValidRotations(World,x,y,z)+Block.rotateBlock(...)): оба Forge-метода удалены из движка целиком,
+				// аналога getValidRotations нет нигде в neo/neoforge/fml (греп 0 по всем трём корням референса); rotateBlock — см. PORT-TODO(F-tool-rotation) выше.
+				// Деградация: для блоков вне explicit-веток выше (не Pumpkin/Piston/Dispenser/Furnace/Chest/Hopper) гаечный ключ больше не задаёт точную грань через getValidRotations.
 			}
 		}
 		if (aTool.equals(TOOL_prospector)) {
