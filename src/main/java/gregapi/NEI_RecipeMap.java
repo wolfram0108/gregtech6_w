@@ -637,7 +637,7 @@ public class NEI_RecipeMap extends TemplateRecipeHandler {
 		GuiDraw.drawTexturedModalRect(-5, -8, 0, 3, 176,  79);
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code Minecraft.getMinecraft().fontRenderer.drawString(...)}
+	/** PORT-TODO(F3, baked-рендер клиента): было {@code Minecraft.getInstance().fontRenderer.drawString(...)}
 	 *  (`getMinecraft()`→{@code getInstance()}, поле `fontRenderer`→{@code font}, метод {@code drawString}
 	 *  удалён у {@code Font} — текст экрана рисуется через {@code GuiGraphicsExtractor}, см. javadoc
 	 *  {@link gregapi.gui.ContainerClient} class); тот же паттерн, что {@code GuiDraw} F10-зеркало выше (no-op). */

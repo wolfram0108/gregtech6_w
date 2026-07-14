@@ -48,7 +48,7 @@ public interface ITileEntitySoundSource extends ITileEntityUnloadable {
 		
 		public SoundSourceTileEntity(IHasWorldAndCoords aTileEntity, boolean aRunning, String aSoundName, float aSoundStrength, float aSoundModulation) {
 			mTileEntity = aTileEntity;
-			mResource = new Identifier(aSoundName);
+			mResource = Identifier.parse(aSoundName); // neo: ctor Identifier(String) private -> parse (Identifier.java:45)
 			mSoundStrength = aSoundStrength;
 			mSoundModulation = aSoundModulation;
 		}

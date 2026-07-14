@@ -1484,12 +1484,12 @@ public class UT {
 			Identifier aux = null;
 			if (aResourceLocation.contains(":")) {
 				String[] modid_itemid = aResourceLocation.split(":");
-				aux = new Identifier(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png");
+				aux = Identifier.fromNamespaceAndPath(modid_itemid[0], "textures/items/" + modid_itemid[1] + ".png"); // neo: ctor Identifier(String,String) private -> fromNamespaceAndPath (Identifier.java:41)
 			} else {
-				aux = new Identifier("minecraft", "textures/items/" + aResourceLocation + ".png");
+				aux = Identifier.fromNamespaceAndPath("minecraft", "textures/items/" + aResourceLocation + ".png");
 			}
 			java.awt.image.BufferedImage tIcon = null;
-			try {tIcon = javax.imageio.ImageIO.read(Minecraft.getMinecraft().getResourceManager().getResource(aux).getInputStream());} catch (IOException e) {/**/}
+			try {tIcon = javax.imageio.ImageIO.read(Minecraft.getInstance().getResourceManager().getResource(aux).getInputStream());} catch (IOException e) {/**/}
 			return tIcon == null ? null : color(tIcon);
 		}
 		
