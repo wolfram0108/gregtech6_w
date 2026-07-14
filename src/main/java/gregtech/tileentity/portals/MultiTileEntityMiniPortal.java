@@ -390,7 +390,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public int getSizeInventory() {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getSizeInventory();
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getContainerSize();
 		}
 		return 0;
 	}
@@ -435,7 +435,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
 			if (tTileEntity.mTileEntity != null) {
-				int[] tReturn = new int[tTileEntity.mTileEntity.getSizeInventory()];
+				int[] tReturn = new int[tTileEntity.mTileEntity.getContainerSize()];
 				for (int i = 0; i < tReturn.length; i++) tReturn[i] = i;
 				return tReturn;
 			}

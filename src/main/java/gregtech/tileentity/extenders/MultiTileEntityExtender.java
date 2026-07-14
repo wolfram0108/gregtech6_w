@@ -206,7 +206,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public int getSizeInventory() {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getSizeInventory();
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getContainerSize();
 		}
 		return 0;
 	}
@@ -250,7 +250,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
-			if (tTileEntity.mTileEntity != null) return UT.Code.getAscendingArray(tTileEntity.mTileEntity.getSizeInventory());
+			if (tTileEntity.mTileEntity != null) return UT.Code.getAscendingArray(tTileEntity.mTileEntity.getContainerSize());
 		}
 		return ZL_INTEGER;
 	}

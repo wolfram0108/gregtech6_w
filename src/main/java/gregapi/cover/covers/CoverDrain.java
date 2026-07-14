@@ -88,7 +88,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 					if (tEntity instanceof ExperienceOrb) {
 						if (MD.OB.mLoaded) {
 							try {
-								if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.XP.make(LiquidXpUtils.xpToLiquidRatio(((ExperienceOrb)tEntity).getXpValue())), T)) {
+								if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.XP.make(LiquidXpUtils.xpToLiquidRatio(((ExperienceOrb)tEntity).getValue())), T)) {
 									UT.Sounds.send(SFX.MC_XP, 0.1F, (RNGSUS.nextFloat()-RNGSUS.nextFloat()) * 0.35F + 0.9F, (BlockEntity)aData.mTileEntity);
 									tEntity.discard();
 									tEntity.discard();
@@ -96,7 +96,7 @@ public class CoverDrain extends AbstractCoverAttachment {
 								}
 							} catch(Throwable e) {e.printStackTrace(ERR);}
 						}
-						if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.XP.make(((ExperienceOrb)tEntity).getXpValue() * 20, FL.Mob, UT.Code.units(((ExperienceOrb)tEntity).getXpValue(), 3, 200, F)), T)) {
+						if (FL.fillAll((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.XP.make(((ExperienceOrb)tEntity).getValue() * 20, FL.Mob, UT.Code.units(((ExperienceOrb)tEntity).getValue(), 3, 200, F)), T)) {
 							UT.Sounds.send(SFX.MC_XP, 0.1F, (RNGSUS.nextFloat()-RNGSUS.nextFloat()) * 0.35F + 0.9F, (BlockEntity)aData.mTileEntity);
 							tEntity.discard();
 							tEntity.discard();
@@ -185,16 +185,16 @@ public class CoverDrain extends AbstractCoverAttachment {
 				}
 				if (aEntity instanceof Slime) {
 					if (aEntity.getClass() == Slime.class) {
-						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Slime_Green.make(Math.max(1, ((Slime)aEntity).getSlimeSize())), T);
+						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Slime_Green.make(Math.max(1, ((Slime)aEntity).getSize())), T);
 						return T;
 					}
 					if (aEntity.getClass() == MagmaCube.class) {
-						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Blaze.make(Math.max(1, ((Slime)aEntity).getSlimeSize())), T);
+						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Blaze.make(Math.max(1, ((Slime)aEntity).getSize())), T);
 						return T;
 					}
 					String tClass = UT.Reflection.getLowercaseClass(aEntity);
 					if (tClass.equalsIgnoreCase("EntityTFMazeSlime")) {
-						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Slime_Green.make(Math.max(1, ((Slime)aEntity).getSlimeSize())), T);
+						FL.fill_((IFluidHandler)aData.mTileEntity, ALL_SIDES_THIS_AND_ANY[aCoverSide], FL.Slime_Green.make(Math.max(1, ((Slime)aEntity).getSize())), T);
 						return T;
 					}
 					if (tClass.equalsIgnoreCase("KingBlueSlime")) {

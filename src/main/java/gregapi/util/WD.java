@@ -290,7 +290,7 @@ public class WD {
 				return F;
 			}
 		}
-		aChunk.markUnsaved(); // было aChunk.setChunkModified() — neo: LevelChunk.markUnsaved() (см. Level.java:868 aWorld.getChunkAt(pos).markUnsaved())
+		aChunk.markUnsaved(); // было aChunk.markUnsaved() — neo: LevelChunk.markUnsaved() (см. Level.java:868 aWorld.getChunkAt(pos).markUnsaved())
 		return T;
 	}
 	/** Marks a Chunk dirty so it is saved */
@@ -506,14 +506,14 @@ public class WD {
 		if (aY < 0) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity);
 		if (aCauseTileEntityUpdates) aWorld.setBlockEntity(aTileEntity); // было aWorld.setTileEntity(x,y,z,te) — neo: Level.setBlockEntity(BlockEntity) (Level.java:681, позиция берётся из te.getBlockPos())
 		else {
-			LevelChunk tChunk = aWorld.getChunk(aX >> 4, aZ >> 4); // было aWorld.getChunkFromChunkCoords(cx,cz) — Level.getChunk(int,int) (Level.java:202)
+			LevelChunk tChunk = aWorld.getChunk(aX >> 4, aZ >> 4); // было aWorld.getChunk(cx,cz) — Level.getChunk(int,int) (Level.java:202)
 			if (tChunk != null) {
 				// было aWorld.addTileEntity(te) отдельно — neo: addAndRegisterBlockEntity(te) (LevelChunk.java:400) УЖЕ
 				// сам зовёт level.addFreshBlockEntities(List.of(be)) внутри (LevelChunk.java:408); отдельный вызов
 				// addFreshBlockEntities здесь дублировал бы регистрацию — оригинал (gregtech6 WD.java:347-348)
 				// добавлял в world-list один раз.
 				tChunk.addAndRegisterBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te) — LevelChunk.addAndRegisterBlockEntity(BlockEntity) (LevelChunk.java:400), позиция берётся из te.getBlockPos()
-				tChunk.markUnsaved(); // было tChunk.setChunkModified()
+				tChunk.markUnsaved(); // было tChunk.markUnsaved()
 			}
 		}
 		return aTileEntity;

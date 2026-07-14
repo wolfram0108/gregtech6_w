@@ -223,7 +223,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public int getSizeInventory() {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getSizeInventory();
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getContainerSize();
 		}
 		return 0;
 	}
@@ -266,7 +266,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
-			if (tTileEntity.mTileEntity != null) return UT.Code.getAscendingArray(tTileEntity.mTileEntity.getSizeInventory());
+			if (tTileEntity.mTileEntity != null) return UT.Code.getAscendingArray(tTileEntity.mTileEntity.getContainerSize());
 		}
 		return ZL_INTEGER;
 	}

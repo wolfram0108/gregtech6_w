@@ -54,7 +54,7 @@ public class MultiTileEntityStackometer extends MultiTileEntitySensorTE {
 					return rAmount;
 				}
 			}
-			for (int i = 0, j = ((Container)aDelegator.mTileEntity).getSizeInventory(); i < j; i++) {
+			for (int i = 0, j = ((Container)aDelegator.mTileEntity).getContainerSize(); i < j; i++) {
 				ItemStack tStack = ((Container)aDelegator.mTileEntity).getStackInSlot(i);
 				if (tStack != null && tStack.getCount() > 0 && !IL.Display_Fluid.equal(tStack, T, T)) rAmount++;
 			}
@@ -67,7 +67,7 @@ public class MultiTileEntityStackometer extends MultiTileEntitySensorTE {
 	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof Container) {
 			if (aDelegator.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity).length;
-			return ((Container)aDelegator.mTileEntity).getSizeInventory();
+			return ((Container)aDelegator.mTileEntity).getContainerSize();
 		}
 		return 0;
 	}

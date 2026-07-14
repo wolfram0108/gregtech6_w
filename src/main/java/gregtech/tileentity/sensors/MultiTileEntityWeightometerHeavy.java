@@ -53,7 +53,7 @@ public class MultiTileEntityWeightometerHeavy extends MultiTileEntitySensorTE {
 					rWeightKG += OM.weight(((Container)aDelegator.mTileEntity).getStackInSlot(i));
 					if (rWeightKG >= MAX_WEIGHT) break;
 				}
-			} else for (int i = 0, j = ((Container)aDelegator.mTileEntity).getSizeInventory(); i < j; i++) {
+			} else for (int i = 0, j = ((Container)aDelegator.mTileEntity).getContainerSize(); i < j; i++) {
 				rWeightKG += OM.weight(((Container)aDelegator.mTileEntity).getStackInSlot(i));
 				if (rWeightKG >= MAX_WEIGHT) break;
 			}

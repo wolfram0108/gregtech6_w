@@ -248,7 +248,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		}
 		
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] > 0) {
-			aWorld.getChunkFromChunkCoords((aMinX >> 4) + i, (aMinZ >> 4) + j).setChunkModified();
+			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
 			
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
@@ -275,10 +275,10 @@ public class WorldgenDungeonGT extends WorldgenObject {
 				break;
 			}
 			
-			aWorld.getChunkFromChunkCoords((aMinX >> 4) + i, (aMinZ >> 4) + j).setChunkModified();
+			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
 		}
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] < 0) {
-			aWorld.getChunkFromChunkCoords((aMinX >> 4) + i, (aMinZ >> 4) + j).setChunkModified();
+			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
 			
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
@@ -291,7 +291,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			case   -1: try {BARRACKS.generate(aData);} catch(Throwable e) {e.printStackTrace(ERR);} break;
 			}
 			
-			aWorld.getChunkFromChunkCoords((aMinX >> 4) + i, (aMinZ >> 4) + j).setChunkModified();
+			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
 		}
 		for (BlockPos tCoords : tLightUpdateCoords) {
 			aWorld.setLightValue(LightLayer.Block, tCoords.getX(), tCoords.getY(), tCoords.getZ(), 15);
