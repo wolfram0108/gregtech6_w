@@ -201,7 +201,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		, slotHas(28) ? slot(28).getItem() instanceof IItemGTContainerTool ? ST.make(slot(28), (CompoundTag)null) : slot(28) : null
 		, slotHas(29) ? slot(29).getItem() instanceof IItemGTContainerTool ? ST.make(slot(29), (CompoundTag)null) : slot(29) : null
 		);
-		if (slotHas(31)) aStack.setStackDisplayName(slot(31).getDisplayName());
+		if (slotHas(31)) ST.name_(aStack, slot(31).getDisplayName());
 		ST.set(aStack, IL.Paper_Blueprint_Used.get(1), F, F);
 		return T;
 	}

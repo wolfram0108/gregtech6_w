@@ -198,7 +198,11 @@ public class ST {
 	
 	public static ItemStack name (ItemStack aStack, String aName) {return aStack == null || aName == null ? aStack : name_(aStack, aName);}
 	public static ItemStack name_(ItemStack aStack, String aName) {aStack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal(aName)); return aStack;}
-	
+	/** F1/F8-стык: было {@code ItemStack.setStackDisplayName(...)} — в neo нет; когда имя уже {@code Component}
+	 *  (напр. {@code getDisplayName()} в neo возвращает Component, а не String 1.7.10) — ставим CUSTOM_NAME напрямую,
+	 *  сохраняя форматирование (не через literal(String), что теряло бы стиль). Центр тот же — {@code DataComponents.CUSTOM_NAME}. */
+	public static ItemStack name_(ItemStack aStack, net.minecraft.network.chat.Component aName) {aStack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, aName); return aStack;}
+
 	public static CompoundTag nbt (ItemStack aStack) {return aStack == null ? null : nbt_(aStack);}
 	public static CompoundTag nbt_(ItemStack aStack) {return ItemNBT.get(aStack);}
 	public static ItemStack      nbt (ItemStack aStack, CompoundTag aNBT) {return aStack == null ? null : nbt_(aStack, aNBT);}

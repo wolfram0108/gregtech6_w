@@ -49,12 +49,12 @@ public class RecipeMapFormingPress extends RecipeMap {
 		if (rRecipe == null) {
 			if (IL.Shape_Mold_Name.equal(aInputs[0], F, T)) {
 				ItemStack tOutput = ST.amount(1, aInputs[1]);
-				tOutput.setStackDisplayName(aInputs[0].getDisplayName());
+				ST.name_(tOutput, aInputs[0].getDisplayName());
 				return new Recipe(F, F, F, ST.array(IL.Shape_Mold_Name.get(0), ST.amount(1, aInputs[1])), ST.array(tOutput), null, null, null, null, 128, 8, 0);
 			}
 			if (IL.Shape_Mold_Name.equal(aInputs[1], F, T)) {
 				ItemStack tOutput = ST.amount(1, aInputs[0]);
-				tOutput.setStackDisplayName(aInputs[1].getDisplayName());
+				ST.name_(tOutput, aInputs[1].getDisplayName());
 				return new Recipe(F, F, F, ST.array(IL.Shape_Mold_Name.get(0), ST.amount(1, aInputs[0])), ST.array(tOutput), null, null, null, null, 128, 8, 0);
 			}
 			return null;
