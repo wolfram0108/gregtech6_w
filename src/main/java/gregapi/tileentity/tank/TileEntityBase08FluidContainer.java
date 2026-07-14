@@ -47,7 +47,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemUseAnimation;
-import net.minecraft.item.ItemFood;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -164,11 +164,13 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			if (aStack == null) return T;
 			if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer)) {
 				switch(FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack)) {
-				case eat: UT.Sounds.send(SFX.MC_EAT  , this, F); break;
-				default : UT.Sounds.send(SFX.MC_DRINK, this, F); break;
+				case EAT : UT.Sounds.send(SFX.MC_EAT  , this, F); break; // было "case eat" (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:16)
+				default  : UT.Sounds.send(SFX.MC_DRINK, this, F); break;
 				}
 				mTank.remove(250);
-				aStack.getItem().onEaten(aStack, level, aPlayer);
+				// было Item.onEaten(ItemStack,World,EntityPlayer) (1.7.10) -> neo Item.finishUsingItem(ItemStack,Level,LivingEntity)
+				// (Item.java:232), тот же приём возврата-как-statement (результат отбрасывался и там, и там).
+				aStack.getItem().finishUsingItem(aStack, level, aPlayer);
 			}
 		}
 		return T;
@@ -278,7 +280,8 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	public ItemStack onItemRightClick(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (canPickUpFluids() && aStack.getCount() == 1) {
 			HitResult tTarget = WD.getMOP(aWorld, aPlayer, T);
-			if (tTarget != null && tTarget.getType() == HitResult.Type.BLOCK && aWorld.canMineBlock(aPlayer, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ())) {
+			// было World.canMineBlock(EntityPlayer,x,y,z) (1.7.10) -> neo Level.mayInteract(Entity,BlockPos) (Level.java:887)
+			if (tTarget != null && tTarget.getType() == HitResult.Type.BLOCK && aWorld.mayInteract(aPlayer, ((BlockHitResult)tTarget).getBlockPos())) {
 				Block tBlock = WD.block(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ());
 				if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
 					if (WD.meta(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ()) == 0) {
@@ -338,7 +341,10 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 			}
 		}
 		if (isDrinkable() && aStack.getCount() == 1 && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || FoodStatFluid.INSTANCE.alwaysEdible(aStack.getItem(), aStack, aPlayer))) {
-			aPlayer.setItemInUse(aStack, Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32));
+			// было setItemInUse(ItemStack,int) (1.7.10) -> neo LivingEntity.startUsingItem(InteractionHand) (LivingEntity.java:3529),
+			// длительность больше не параметр — берётся движком из Item.getUseDuration(ItemStack,LivingEntity) (Item.java:328);
+			// getMaxItemUseDuration(aItem,aStack) ниже остаётся источником этого числа для будущего Item-хука (F13, вне этого шва).
+			aPlayer.startUsingItem(InteractionHand.MAIN_HAND);
 			return aStack;
 		}
 		return aStack;
@@ -349,7 +355,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	}
 	
 	public ItemUseAnimation getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return isDrinkable() && aStack.getCount() == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : ItemUseAnimation.none;
+		return isDrinkable() && aStack.getCount() == 1 ? FoodStatFluid.INSTANCE.getFoodAction(aStack.getItem(), aStack) : ItemUseAnimation.NONE; // было ItemUseAnimation.none (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:15)
 	}
 	
 	public ItemStack onEaten(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
@@ -359,7 +365,11 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		
 		if (tFoodLevel > 0) {
 			if (FoodStatFluid.INSTANCE.useAppleCoreFunctionality(aStack.getItem(), aStack, aPlayer)) {
-				aPlayer.getFoodData().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem()), aStack);
+				// PORT-TODO(F10, AppleCore ItemFoodProxy addStats): тот же неразрешимый 1:1 разрыв, что
+				// gregapi/item/multiitem/MultiItemRandom.java (FoodData.func_151686_a убран целиком в neo,
+				// компонентная FoodProperties-модель без per-item override hook) — тот же честный фолбэк.
+				UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem());
+				aPlayer.getFoodData().eat(tFoodLevel, FoodStatFluid.INSTANCE.getSaturation(aStack.getItem(), aStack, aPlayer));
 			} else {
 				aPlayer.getFoodData().eat(tFoodLevel, FoodStatFluid.INSTANCE.getSaturation(aStack.getItem(), aStack, aPlayer));
 			}

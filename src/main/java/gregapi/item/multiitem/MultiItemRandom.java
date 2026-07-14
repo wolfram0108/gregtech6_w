@@ -47,7 +47,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Item;
-import net.minecraft.item.ItemFood;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -105,7 +105,10 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		isItemStackUsable(aStack);
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
-		if (tStat != null && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || tStat.alwaysEdible(this, aStack, aPlayer))) aPlayer.setItemInUse(aStack, getMaxItemUseDuration(aStack));
+		// было setItemInUse(ItemStack,int) (1.7.10, явная длительность) -> neo LivingEntity.startUsingItem(InteractionHand)
+		// (LivingEntity.java:3529) — длительность больше не параметр, берётся движком из Item.getUseDuration(ItemStack,LivingEntity)
+		// (Item.java:328); 1.7.10 не знал рук (единственный слот) -> MAIN_HAND (тот же приём, что MultiItem.java:227).
+		if (tStat != null && (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood() || tStat.alwaysEdible(this, aStack, aPlayer))) aPlayer.startUsingItem(InteractionHand.MAIN_HAND);
 		return super.onItemRightClick(aStack, aWorld, aPlayer);
 	}
 	
@@ -287,7 +290,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	// @Override
 	public ItemUseAnimation getItemUseAction(ItemStack aStack) {
 		IFoodStat tStat = mFoodStats.get((short)getDamage(aStack));
-		return tStat == null ? ItemUseAnimation.none : tStat.getFoodAction(this, aStack);
+		return tStat == null ? ItemUseAnimation.NONE : tStat.getFoodAction(this, aStack); // было ItemUseAnimation.none (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:15)
 	}
 	
 	// @Override
@@ -300,7 +303,16 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 			
 			if (tFoodLevel * tSaturationLevel > 0) {
 				if (tStat.useAppleCoreFunctionality(this, aStack, aPlayer) && MD.APC.mLoaded) {
-					aPlayer.getFoodData().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, this), aStack);
+					// PORT-TODO(F10, AppleCore ItemFoodProxy addStats): 1.7.10 FoodStats.addStats(ItemFood,ItemStack)
+					// (SRG func_151686_a) давал AppleCore подменить итоговое питание через полиморфный ItemFood-хук
+					// (ItemFoodProxy). В neo FoodData (FoodData.java) такого метода нет вовсе — компонентная
+					// FoodProperties-модель без per-item override hook; 1:1 недостижимо архитектурно (не только
+					// переименование). Ветка недостижима в рантайме (MD.APC.mLoaded==F, AppleCore не портирован,
+					// decisions/F10-external-mod-compat.md) — сохраняем попытку сконструировать AppleCore-мост
+					// (compat-mirror squeek.applecore.api.food.ItemFoodProxy) и питаем тем же результатом, что и
+					// without-AppleCore ветка ниже.
+					UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, this);
+					aPlayer.getFoodData().eat(tFoodLevel, tSaturationLevel);
 				} else {
 					aPlayer.getFoodData().eat(tFoodLevel, tSaturationLevel);
 				}

@@ -103,7 +103,7 @@ public class FoodStatFluid implements IFoodStat {
 		IFoodStat rStats = null;
 		FluidStack tFluid = FL.getFluid(aStack, T);
 		if (tFluid != null) rStats = DrinksGT.REGISTER.get(FL.regName(tFluid.getFluid()));
-		if (rStats == null) return ItemUseAnimation.drink;
+		if (rStats == null) return ItemUseAnimation.DRINK; // было ItemUseAnimation.drink (1.7.10 enum-конвенция) -> UPPER_CASE (ItemUseAnimation.java:17)
 		return rStats.getFoodAction(aItem, aStack);
 	}
 	

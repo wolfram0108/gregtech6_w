@@ -350,6 +350,10 @@ public class GT_API extends Abstract_Mod {
 		// подписки (decisions/F5-fluids.md §3, gregapi/fluid/FluidGT.java; закрывает прежний долг F12↔F5 wiring).
 		gregapi.fluid.FluidGT.FLUID_TYPES.register(aModBus);
 		gregapi.fluid.FluidGT.FLUIDS.register(aModBus);
+		// F-attachment: центральный DeferredRegister Entity-attachment-типов (EntityFoodTracker) — тот же
+		// мод-бас, единая точка подписки (gregapi/player/EntityFoodTracker.java; замена 1.7.10
+		// IExtendedEntityProperties, ни один другой файл эту регистрацию не дублирует).
+		gregapi.player.EntityFoodTracker.ATTACHMENTS.register(aModBus);
 		// F11: центральный крафт-верстак-диспетчер (CustomRecipe SERIALIZERS) — тот же мод-бас, единая точка
 		// подписки (decisions/F11-crafting-recipe.md §7, gregapi/recipes/GT6CraftingDispatcher.java; закрывает
 		// прежний долг F12↔F11 wiring).
