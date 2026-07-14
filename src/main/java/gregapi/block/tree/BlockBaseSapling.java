@@ -24,6 +24,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.TallGrassBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 import gregapi.api.Optional;
 import gregapi.block.BlockBaseMeta;
@@ -50,7 +53,6 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.EnumPlantType;
 import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
-import net.minecraftforge.event.terraingen.TerrainGen;
 
 import java.util.Random;
 
@@ -68,12 +70,18 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons);
 		setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 0.8F, 0.9F);
 		/* PORT-TODO(F16) setCreativeTab */;
-		setTickRandomly(T);
-		setHardness(0);
+		// было setTickRandomly(true) (1.7.10 runtime мутатор, вызов ПОСЛЕ super()) -> перенесено на реальную
+		// override-точку BlockBehaviour.isRandomlyTicking(BlockState) [BlockBehaviour.java:382-384] ниже (в отличие
+		// от setHardness/setResistance у этой точки ЕСТЬ override, не no-op).
+		// PORT-TODO(F12, block-property-runtime-mutator): setHardness(0) (1.7.10 runtime мутатор) - тот же класс,
+		// что уже открыт GT_API.java:734, деградация до no-op (getBlockHardness ниже уже несёт GT6-own значение).
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));
 	}
-	
+
+	// было setTickRandomly(true) — см. комментарий в конструкторе выше.
+	@Override protected boolean isRandomlyTicking(BlockState aState) {return T;}
+
 	public abstract boolean grow(Level aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom);
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
@@ -108,10 +116,12 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override
 	public void updateTick2(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, Blocks.DEAD_BUSH, 0, 3); return;}
-		if (aWorld.isClientSide() || checkAndDropBlock(aWorld, aX, aY, aZ) || aWorld.getBlockLightValue(aX, aY+1, aZ) < 9 || aRandom.nextInt(7) != 0) return;
+		// было World.getBlockLightValue(x,y,z) (комбинированный блок+небо свет, recompSrc World.java:864-922) ->
+		// LevelReader.getMaxLocalRawBrightness(BlockPos) [LevelReader.java:163], тот же комбинированный смысл.
+		if (aWorld.isClientSide() || checkAndDropBlock(aWorld, aX, aY, aZ) || aWorld.getMaxLocalRawBrightness(new BlockPos(aX, aY+1, aZ)) < 9 || aRandom.nextInt(7) != 0) return;
 		tryGrow(aWorld, aX, aY, aZ, aRandom);
 	}
-	
+
 	public boolean tryGrow(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, Blocks.DEAD_BUSH, 0, 3); return F;}
 		if (TREE_GROWTH_TIME > 1 && RNGSUS.nextInt(TREE_GROWTH_TIME) > 0) return F;
@@ -120,7 +130,11 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 			WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMeta | 8, 2, F);
 			return F;
 		}
-		return TerrainGen.saplingGrowTree(aWorld, aRandom, aX, aY, aZ) && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
+		// PORT-TODO(F-hook-removed, terraingen-saplingGrowTree): было net.minecraftforge.event.terraingen.
+		// TerrainGen.saplingGrowTree(World,Random,x,y,z) (1.7.10 Forge event-хук, вето на рост дерева) - не найдено
+		// ни в одном из 3 корней референса (пакет/событие отсутствует) - честная деградация до T (=vanilla-дефолт
+		// "не отменено", т.к. слушателя-веты больше нет).
+		return T && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
 	}
 	
 	public int getMaxHeight(Level aWorld, int aX, int aY, int aZ, int aMaxTreeHeight) {
@@ -136,7 +150,25 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	
 	public boolean canPlaceTree(Level aWorld, int aX, int aY, int aZ) {
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
-		return tBlock == this || tBlock instanceof BlockTallGrass || tBlock instanceof SnowLayerBlock || tBlock instanceof BlockLeavesBase || tBlock.canBeReplacedByLeaves(aWorld, aX, aY, aZ);
+		// было BlockTallGrass/BlockLeavesBase (1.7.10 vanilla generic-базы) -> TallGrassBlock [TallGrassBlock.java:15,
+		// Blocks.java:707-732 - SHORT_GRASS/FERN оба instanceof TallGrassBlock, тот же класс что раньше нёс оба meta-
+		// варианта единого BlockTallGrass] / LeavesBlock [LeavesBlock.java:29 - абстрактная база всех vanilla-листьев].
+		return tBlock == this || tBlock instanceof TallGrassBlock || tBlock instanceof SnowLayerBlock || tBlock instanceof LeavesBlock || canBeReplacedByLeavesOf(tBlock, aWorld, aX, aY, aZ);
+	}
+
+	// PORT-TODO(F13, block-canBeReplacedByLeaves-generic-lost): 1.7.10 vanilla Block.canBeReplacedByLeaves(World,x,y,z)
+	// (recompSrc Block.java) - overridable generic vanilla-хук, у neo Block такой generic override-точки нет (не
+	// найдена ни в одном из 3 корней референса). Центральный аналог WD.wood/WD.leaves (instanceof-диспетчер,
+	// WD.java:473-484) сюда не распространён — WD god-класс, отдельный F-шов вне периметра этой задачи. Локальный
+	// instanceof-диспетчер по известным GT6-переопределениям (BlockBase/PrefixBlock/BlockBaseRail/BlockBaseFlower/
+	// MultiTileEntityBlock — грепом "canBeReplacedByLeaves" по gregapi/block), дефолт F = vanilla Block-дефолт.
+	private static boolean canBeReplacedByLeavesOf(Block aBlock, Level aWorld, int aX, int aY, int aZ) {
+		if (aBlock instanceof gregapi.block.BlockBase) return ((gregapi.block.BlockBase)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
+		if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock) return ((gregapi.block.prefixblock.PrefixBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
+		if (aBlock instanceof gregapi.block.misc.BlockBaseRail) return ((gregapi.block.misc.BlockBaseRail)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
+		if (aBlock instanceof gregapi.block.misc.BlockBaseFlower) return ((gregapi.block.misc.BlockBaseFlower)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
+		if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) return ((gregapi.block.multitileentity.MultiTileEntityBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
+		return F;
 	}
 	
 	// было Block.canPlaceBlockAt(World,x,y,z) (1.7.10, дефолт world.getBlock(x,y,z).isReplaceable(...), Block.java:1046-1049)

@@ -24,6 +24,7 @@ import net.minecraft.core.BlockPos;
 import gregapi.api.Optional;
 import gregapi.block.IBlockBase;
 import gregapi.block.ItemBlockBase;
+import gregapi.block.Material;
 import gregapi.compat.galacticraft.IBlockSealable;
 import gregapi.data.MD;
 import gregapi.render.IIconContainer;
@@ -35,6 +36,7 @@ import mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FlowerBlock;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
@@ -68,10 +70,19 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public IIconContainer[] mIcons;
 	/** For Creative Subsets, not actually important. */
 	private final byte mMaxMeta;
-	
+	/** F9: было super(Material.plants) — BlockFlower(1.7.10, recompSrc Block.java:26) — переходник не
+	 *  распространён на классы вне BlockBase (F9 4-bis, тот же приём переиспользован: собственное mMaterial/
+	 *  getMaterial(), не новая абстракция). */
+	protected final Material mMaterial = Material.plants;
+	public Material getMaterial() {return mMaterial;}
+
 	/** @param aSpeed is usually 0.4F */
 	public BlockBaseFlower(Class<? extends ItemBlockBase> aItemClass, String aNameInternal, long aMaxMeta, IIconContainer[] aIcons) {
-		super(0);
+		// F16/F9 форс движка: 1.7.10 BlockFlower(int) отбирал группу суб-типов (не эффект) - концепт исчез; neo
+		// FlowerBlock(SuspiciousStewEffects,Properties) [FlowerBlock.java:36] требует эффект похлёбки - GT6-цветы
+		// декоративные (без спец-эффекта) -> SuspiciousStewEffects.EMPTY [SuspiciousStewEffects.java:25], тот же
+		// Properties.of()-дефолт, что и остальные BlockBase-наследники (F9-мост твёрдости отложен туда же).
+		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
 		/* PORT-TODO(F16) setStepSound */;
@@ -140,6 +151,10 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	public boolean func_149851_a(Level aWorld, int aX, int aY, int aZ, boolean aIsRemote) {return T;}
 	public boolean func_149852_a(Level aWorld, Random aRandom, int aX, int aY, int aZ) {return T;}
 	public void func_149853_b(Level aWorld, Random aRandom, int aX, int aY, int aZ) {ST.drop(aWorld, aX+0.5, aY+0.5, aZ+0.5, this, 1, WD.meta(aWorld, aX, aY, aZ));}
+	// было Block.onBlockPlaced(World,x,y,z,side,hitX,hitY,hitZ,meta) (1.7.10 vanilla override-точка, дефолт identity
+	// return meta [recompSrc Block.java:1067-1069]) - удалено из neo целиком; GT6-own reintroduced generic-hook (тот
+	// же приём, что BlockBaseSpike/BlockBaseLog/BlockBaseBeam уже переопределяют), дефолт-идентичность как в оригинале.
+	public int onBlockPlaced(Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ, int aMeta) {return aMeta;}
 	
 	// @Override
 	public void checkAndDropBlock(Level aWorld, int aX, int aY, int aZ) {
@@ -160,21 +175,31 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		if (tTileEntity instanceof TileEntityFlowerPot) {
 			if (((TileEntityFlowerPot)tTileEntity).getFlowerPotItem() == null) {
 				((TileEntityFlowerPot)tTileEntity).func_145964_a(aItem, ST.meta(aStack));
-				tTileEntity.markDirty();
-				if (!WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ST.meta(aStack), 2, F)) aWorld.markBlockForUpdate(aX, aY, aZ);
+				// было TileEntity.markDirty() -> BlockEntity.setChanged() [BlockEntity.java:219]
+				tTileEntity.setChanged();
+				// было World.markBlockForUpdate(x,y,z) -> Level.setBlocksDirty(BlockPos,BlockState,BlockState)
+				// [Level.java:335], тот же приём, что уже принят в BlockBaseRail.func_150054_a (old==new, GT6 не
+				// отслеживает раздельно old/new BlockState в meta-модели).
+				if (!WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ST.meta(aStack), 2, F)) {BlockPos tPos = new BlockPos(aX, aY, aZ); BlockState tState = aWorld.getBlockState(tPos); aWorld.setBlocksDirty(tPos, tState, tState);}
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
 			}
 			return T;
 		}
-		
+
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
-		} else if (tBlock != Blocks.VINE && tBlock != Blocks.DEAD_BUSH && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
+		// было tBlock != Blocks.tallgrass (1.7.10 единый BlockTallGrass, meta grass/fern) -> neo раздвоил на
+		// Blocks.SHORT_GRASS/Blocks.FERN, оба instanceof TallGrassBlock [TallGrassBlock.java:15, Blocks.java:707-732] -
+		// instanceof как 1:1-эквивалент identity-проверки единого класса (второй tBlock!=DEAD_BUSH дубль-баг порта устранён).
+		} else if (tBlock != Blocks.VINE && !(tBlock instanceof net.minecraft.world.level.block.TallGrassBlock) && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
-		
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
-		
+
+		// было World.canPlaceEntityOnSide(...) (1.7.10 Forge-хук, вето на размещение) - не найдено ни в одном из 3
+		// корней референса (удалён без замены) - PORT-TODO(F-hook-removed, world-canPlaceEntityOnSide): честная
+		// деградация - термин исключён из OR-цепи (эквивалент "не блокирует", тот же класс уже открыт в BlockBase.java).
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid())) return F;
+
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aItem.getMetadata(aStack.getDamageValue())))) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);

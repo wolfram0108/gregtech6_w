@@ -71,7 +71,8 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 		mSaplings = aSaplings;
 		mLogMetas = aLogMetas;
 		mLogs = aLogs;
-		setHardness(0.2F);
+		// PORT-TODO(F12, block-property-runtime-mutator): setHardness(0.2F) (1.7.10 runtime мутатор) - тот же
+		// класс, что уже открыт GT_API.java:734, деградация до no-op (getBlockHardness ниже уже несёт GT6-own значение).
 	}
 	
 	@Override public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}
@@ -160,9 +161,16 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	public int getRenderColor(int p_149741_1_) {return FoliageColor.FOLIAGE_DEFAULT;}
 	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
+		// было aWorld.getBiomeGenForCoords(x,z) (2D, IBlockAccess несла getBiome сама) — BlockGetter самого getBiome
+		// не несёт (LevelReader.getBiome(BlockPos)); рендер вызывает colorMultiplier всегда с реальным Level (тот же
+		// cast-guard приём, что уже принят в BlockRiver.colorMultiplier, BlockRiver.java:114-115), F3-safe дефолт
+		// иначе; биом — через центр WD.biome(Level,x,z) (WD.java:551). Biome.getBiomeFoliageColor(x,y,z) (1.7.10
+		// позиционный) удалён - neo Biome.getFoliageColor() [Biome.java:227] беспозиционный, ближайший 1:1.
+		if (!(aWorld instanceof Level)) return 0x00ffffff;
+		Level aLevel = (Level)aWorld;
 		int l = 0, i1 = 0, j1 = 0;
 		for (int k1 = -1; k1 <= 1; ++k1) for (int l1 = -1; l1 <= 1; ++l1) {
-			int i2 = WD.biome(aWorld, aX + l1, aZ + k1).getBiomeFoliageColor(aX + l1, aY, aZ + k1);
+			int i2 = WD.biome(aLevel, aX + l1, aZ + k1).getFoliageColor();
 			l += (i2 & 16711680) >> 16;
 			i1 += (i2 & 65280) >> 8;
 			j1 += i2 & 255;

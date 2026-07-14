@@ -24,6 +24,7 @@ import net.minecraft.core.BlockPos;
 import gregapi.block.IBlockBase;
 import gregapi.block.IBlockToolable;
 import gregapi.block.ItemBlockBase;
+import gregapi.block.Material;
 import gregapi.block.ToolCompat;
 import gregapi.compat.galacticraft.IBlockSealable;
 import gregapi.data.LH;
@@ -34,9 +35,14 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseRailBlock;
+import net.minecraft.world.level.block.RailBlock;
+import net.minecraft.world.level.block.TallGrassBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.RailShape;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.client.renderer.texture.IIconRegister;
-import net.minecraft.command.IEntitySelector;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
@@ -69,10 +75,47 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public final IIconContainer mIconPrimary, mIconSecondary;
 	public final int mHarvestLevel;
 	public final boolean mPowerRail, mDetectorRail;
-	
+	/** F9: было super(Material.circuits) — BlockRailBase(1.7.10, recompSrc Block.java:34) — переходник не
+	 *  распространён на классы вне BlockBase (F9 4-bis, тот же приём переиспользован: собственное mMaterial/
+	 *  getMaterial(), не новая абстракция). */
+	protected final Material mMaterial = Material.circuits;
+	public Material getMaterial() {return mMaterial;}
+	/** F-bounds: BlockBaseRail не наследует BlockBase (наследует vanilla BaseRailBlock) — IBlock.setBlockBounds
+	 *  всё равно обязателен (implements IBlockBase extends IBlock); тот же приём, что BlockBase#setBlockBounds
+	 *  (BlockBase.java:67-69), локально (не новая абстракция, переиспользование формы). */
+	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
+		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+	}
+
+	// PORT-TODO(F16, block-baserailblock-state-property-model): neo BaseRailBlock ре-абстрагирует
+	// getShapeProperty()/codec() (BaseRailBlock.java:47,152) под BlockState-Property модель формы рельса
+	// (RailShape); GT6 хранит форму через meta (WD.meta/WD.set), не через BlockState-property. createBlockStateDefinition
+	// вызывается ВНУТРИ Block-конструктора [Block.java:235-239] ДО инициализации полей mPowerRail/mDetectorRail
+	// (порядок super->createBlockStateDefinition->поля подкласса) - per-instance выбор STRAIGHT(6-знач.,
+	// PoweredRailBlock.SHAPE)/CURVED(10-знач., RailBlock.SHAPE) недостижим на этом этапе. Используем безусловно
+	// более широкий RailBlock.SHAPE [RailBlock.java:16] (10 значений, надмножество PoweredRailBlock.SHAPE) для ВСЕХ
+	// вариантов - безопасный супернабор (state.getValue никогда не бросает), ценой утраты vanilla-валидации
+	// "нет кривых у powered/detector rail" (GT6 всё равно не пишет в это state через WD.meta-модель, потери
+	// функциональности нет). WATERLOGGED [BaseRailBlock.java:28] регистрируется рядом по той же причине
+	// (getFluidState/updateShape тоже требуют его в state, иначе state.getValue бросает).
+	private static final Property<RailShape> SHAPE_PROPERTY = RailBlock.SHAPE;
+	@Override public Property<RailShape> getShapeProperty() {return SHAPE_PROPERTY;}
+	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {builder.add(SHAPE_PROPERTY, WATERLOGGED);}
+	// PORT-TODO(F16, block-codec-not-datadriven): 1.7.10 не имел codec-based регистрации (класс отсутствовал как
+	// override-точка) - neo Block.codec() [Block.java:126-129] переабстрагирован BaseRailBlock.codec()
+	// [BaseRailBlock.java:47], требует MapCodec<? extends BaseRailBlock>; GT6 регистрирует блоки процедурно
+	// (ST.register, много-аргументный конструктор), несовместимо с simpleCodec(Function<Properties,B>)
+	// [BlockBehaviour.java:127] (однопараметрический). MapCodec.unit(...) - тот же приём, что F16-decision
+	// (decisions/F16-block-codec.md) уже утвердил для процедурно регистрируемых GT6-блоков (не участвует в
+	// реальной (де)сериализации), живой neo-пример использования — MapCodec.unit(Supplier) [EmptyModel.java:33].
+	@Override public MapCodec<? extends BaseRailBlock> codec() {return MapCodec.unit(() -> this);}
+
 	/** @param aSpeed is usually 0.4F */
 	public BlockBaseRail(Class<? extends ItemBlockBase> aItemClass, String aNameInternal, String aLocalName, boolean aPowerRail, boolean aDetectorRail, float aSpeed, float aExplosionResistance, int aHarvestLevel, IIconContainer aIconPrimary, IIconContainer aIconSecondary) {
-		super(aPowerRail || aDetectorRail);
+		// F16/F9 форс движка: neo BaseRailBlock(boolean,Properties) требует Properties [BaseRailBlock.java:41] -
+		// тот же Properties.of()-дефолт, что BlockBase уже использует (F9-мост твёрдости/материала отложен туда же).
+		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
 		mNameInternal = aNameInternal;
 		/* PORT-TODO(F16) setCreativeTab */;
 		ST.register(this, mNameInternal, aItemClass);
@@ -145,7 +188,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	@Override public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return aStack;}
 	
 	@Override
-	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
+	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, AbstractContainerMenu aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (!aWorld.isClientSide()) {
 			if (aTool.equals(TOOL_softhammer) && mPowerRail) {
 				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
@@ -292,10 +335,16 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		if (mDetectorRail && (WD.meta(aWorld, aX, aY, aZ) & 8) > 0) {
 			@SuppressWarnings("unchecked")
 			List<MinecartCommandBlock> list = aWorld.getEntitiesOfClass(MinecartCommandBlock.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875));
-			if (list.size() > 0) return list.get(0).func_145822_e().func_145760_g();
+			// было func_145822_e()/func_145760_g() (SRG, 1.7.10) -> MinecartCommandBlock.getCommandBlock()
+			// [MinecartCommandBlock.java:77] + BaseCommandBlock.getSuccessCount() [BaseCommandBlock.java:34]
+			if (list.size() > 0) return list.get(0).getCommandBlock().getSuccessCount();
 			@SuppressWarnings("unchecked")
-			List<AbstractMinecart> list1 = aWorld.selectEntitiesWithinAABB(AbstractMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875), IEntitySelector.selectInventories);
-			if (list1.size() > 0) return AbstractContainerMenu.calcRedstoneFromInventory((Container)list1.get(0));
+			// было World.selectEntitiesWithinAABB(Class,AABB,IEntitySelector) + IEntitySelector.selectInventories
+			// (1.7.10, тип/поле удалены) -> EntityGetter.getEntitiesOfClass(Class,AABB,Predicate) [EntityGetter.java:23],
+			// предикат instanceof Container (было instanceof IInventory) - тот же смысл отбора.
+			List<AbstractMinecart> list1 = aWorld.getEntitiesOfClass(AbstractMinecart.class, new AABB(aX + 0.125, aY, aZ + 0.125, aX + 0.875, aY + 0.875, aZ + 0.875), aEntity -> aEntity instanceof Container);
+			// было Container.calcRedstoneFromInventory(IInventory) -> AbstractContainerMenu.getRedstoneSignalFromContainer(Container) [AbstractContainerMenu.java:761]
+			if (list1.size() > 0) return AbstractContainerMenu.getRedstoneSignalFromContainer((Container)list1.get(0));
 		}
 		return 0;
 	}
@@ -322,8 +371,12 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 			double tMotion = Math.sqrt(aCart.getDeltaMovement().x*aCart.getDeltaMovement().x + aCart.getDeltaMovement().z*aCart.getDeltaMovement().z);
 			if ((tRailMeta & 8) != 0) {
 				if (tMotion > 0.01) {
-					aCart.getDeltaMovement().x *= 2;
-					aCart.getDeltaMovement().z *= 2;
+					// было aCart.motionX *= 2; aCart.motionZ *= 2; (1.7.10 мутируемые поля) -> neo Vec3 иммутабелен -
+					// центр WD.setMotionX/setMotionZ (уже используется ниже в этом же методе, WD.java:368,370),
+					// последовательные вызовы читают/пишут независимые оси без потери семантики.
+					net.minecraft.world.phys.Vec3 tMotionVec = aCart.getDeltaMovement();
+					WD.setMotionX(aCart, tMotionVec.x * 2);
+					WD.setMotionZ(aCart, tMotionVec.z * 2);
 				} else {
 					tRailMeta &= 7;
 					if (tRailMeta == 1) {
@@ -340,9 +393,11 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 					WD.setMotionY(aCart, 0);
 					WD.setMotionZ(aCart, 0);
 				} else {
-					aCart.getDeltaMovement().x /= 2;
+					// было aCart.motionX /= 2; ...; aCart.motionZ /= 2; (1.7.10 мутируемые поля) -> тот же центр
+					// WD.setMotionX/Y/Z, порядок трёх присвоений сохранён 1:1.
+					WD.setMotionX(aCart, aCart.getDeltaMovement().x / 2);
 					WD.setMotionY(aCart, 0);
-					aCart.getDeltaMovement().z /= 2;
+					WD.setMotionZ(aCart, aCart.getDeltaMovement().z / 2);
 				}
 			}
 		}
@@ -357,12 +412,18 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;
-		} else if (tBlock != Blocks.VINE && tBlock != Blocks.DEAD_BUSH && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
+		// было tBlock != Blocks.tallgrass (1.7.10 единый BlockTallGrass, meta grass/fern) -> neo раздвоил на
+		// Blocks.SHORT_GRASS/Blocks.FERN, оба instanceof TallGrassBlock [TallGrassBlock.java:15, Blocks.java:707-732] -
+		// instanceof как 1:1-эквивалент identity-проверки единого класса (второй tBlock!=DEAD_BUSH дубль-баг порта устранён).
+		} else if (tBlock != Blocks.VINE && !(tBlock instanceof TallGrassBlock) && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
-		
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
-		
+
+		// было World.canPlaceEntityOnSide(...) (1.7.10 Forge-хук, вето на размещение) - не найдено ни в одном из 3
+		// корней референса (удалён без замены) - PORT-TODO(F-hook-removed, world-canPlaceEntityOnSide): честная
+		// деградация - термин исключён из OR-цепи (эквивалент "не блокирует", тот же класс уже открыт в BlockBase.java).
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid())) return F;
+
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, SIDES_AXIS_X[UT.Code.getHorizontalForPlayerPlacing(aPlayer)] ? 1 : 0)) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);
 			aStack.setCount(aStack.getCount()-1);

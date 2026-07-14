@@ -110,8 +110,10 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		HitResult tPos = WD.getMOP(aWorld, aPlayer, T);
 		if (tPos == null || tPos.getType() != HitResult.Type.BLOCK) return aStack;
 		int aX = ((BlockHitResult)tPos).getBlockPos().getX(), aY = ((BlockHitResult)tPos).getBlockPos().getY(), aZ = ((BlockHitResult)tPos).getBlockPos().getZ();
-		if (!aWorld.canMineBlock(aPlayer, aX, aY, aZ) || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), ((BlockHitResult)tPos).getDirection(), aStack)) return aStack;
-		if (WD.getMaterial(WD.block(aWorld, aX, aY, aZ)) == Material.water && WD.meta(aWorld, aX, aY, aZ) == 0 && aWorld.isAirBlock(aX, aY+1, aZ)) {
+		// было World.canMineBlock(EntityPlayer,x,y,z) -> Level.mayInteract(Entity,BlockPos) [Level.java:887], тот же смысл (spawn-protection дефолт true).
+		if (!aWorld.mayInteract(aPlayer, new BlockPos(aX, aY, aZ)) || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), ((BlockHitResult)tPos).getDirection(), aStack)) return aStack;
+		// было World.isAirBlock(x,y,z) -> LevelReader.isEmptyBlock(BlockPos) [LevelReader.java:84-86]
+		if (WD.getMaterial(WD.block(aWorld, aX, aY, aZ)) == Material.water && WD.meta(aWorld, aX, aY, aZ) == 0 && aWorld.isEmptyBlock(new BlockPos(aX, aY+1, aZ))) {
 			WD.set(aWorld, aX, aY+1, aZ, this, ST.meta_(aStack), 3);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) {aStack.setCount(aStack.getCount()-1);}
 		}

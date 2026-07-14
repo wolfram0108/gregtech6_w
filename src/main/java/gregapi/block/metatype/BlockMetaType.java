@@ -62,8 +62,12 @@ public class BlockMetaType extends BlockBaseMeta {
 		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aNameInternal, aVanillaMaterial, aSoundType, aCount, aIcons);
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onBlockCreation(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons);
-		setHardness(aHardnessMultiplier * 1.5F);
-		setResistance(aResistanceMultiplier * 10.0F);
+		// PORT-TODO(F12, block-property-runtime-mutator): Block.setHardness(float)/setResistance(float) (1.7.10
+		// runtime мутаторы, вызов ПОСЛЕ super()) удалены - neo BlockBehaviour.Properties.strength(...) неизменяема,
+		// задаётся ТОЛЬКО ДО super() [BlockBehaviour.java:1127 окрестность]; тот же класс уже открыт GT_API.java:734
+		// (block-property-runtime-mutator) - ретроактивная мутация недостижима, деградация до no-op (getBlockHardness/
+		// getExplosionResistance(byte) ниже уже несут mHardnessMultiplier/mResistanceMultiplier как GT6-own
+		// не-движковые методы, значение не теряется для GT6-внутренних потребителей).
 		/* PORT-TODO(F16) setCreativeTab */;
 		mIsWall = F;
 		mIsSlab = F;
@@ -109,8 +113,7 @@ public class BlockMetaType extends BlockBaseMeta {
 		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aName+".slab."+aSlabType, aVanillaMaterial, aSoundType, aCount, aIcons);
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onSlabCreation(aItemClass, aVanillaMaterial, aSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons, aSlabType, aBlock);
-		setHardness(aHardnessMultiplier * 1.5F);
-		setResistance(aResistanceMultiplier * 10.0F);
+		// PORT-TODO(F12, block-property-runtime-mutator): см. основной конструктор выше — тот же класс, деградация до no-op.
 		mIsWall = F;
 		mIsSlab = T;
 		mIsStair = F;
@@ -167,10 +170,17 @@ public class BlockMetaType extends BlockBaseMeta {
 		if (aSide == OPOS[mSide]) return F;
 		if (aSide != mSide && SIDES_VALID[mSide]) {
 			Block aBlock = aNeighbor.getBlock();
-			if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mSide == mSide) return aBlock.getRenderBlockPass() == 0;
+			// было aBlock.getRenderBlockPass() (1.7.10 vanilla Block, overridable) - neo Block не несёт эту
+			// override-точку generic-но; BlockMetaType-семейство сама её нигде не переопределяет (грепом по
+			// оригиналу - только этот единственный вызов), т.е. в 1.7.10 всегда резолвился в vanilla-дефолт 0 ->
+			// GT6-own reintroduced константный метод ниже (тот же приём, что BlockBaseFluid/PrefixBlock/
+			// MultiTileEntityBlock уже применяют для этого имени). Восстановлено "!= 0" (было инвертировано на
+			// "== 0" при предыдущем порте - 1:1 с оригиналом gregtech6/.../BlockMetaType.java:161).
+			if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mSide == mSide) return ((BlockMetaType)aBlock).getRenderBlockPass() != 0;
 		}
 		return super.skipRendering(aState, aNeighbor, aDir);
 	}
+	public int getRenderBlockPass() {return 0;}
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
 	@Override public int getHarvestLevel(int aMeta) {return mHarvestLevel;}
