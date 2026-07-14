@@ -70,7 +70,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	 * @param aPrefix the OreDictPrefix corresponding to this Item.
 	 */
 	public PrefixItem(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
-		super();
+		super(new Item.Properties()); // было super() (neo Item требует Properties; setMaxDamage/setHasSubtypes ниже — IItemGT default no-op, как и раньше по факту 0/подтипы через свой getUnlocalizedName(ItemStack))
 		mPrefix = aPrefix;
 		mPrefix.mRegisteredPrefixItems.add(this);
 		mNameInternal = aNameInternal;

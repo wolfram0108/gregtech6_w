@@ -34,13 +34,12 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
-import net.minecraft.core.dispenser.ProjectileDispenseBehavior;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.Position;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -72,7 +71,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		mSpeedMultiplier = aSpeedMultiplier;
 		mStabbing = aStabbing;
 		mIsBullet = aIsBullet;
-		if (aDispensable) DispenserBlock.dispenseBehaviorRegistry.putObject(this, new MetaItemDispense());
+		if (aDispensable) DispenserBlock.registerBehavior(this, new MetaItemDispense()); // было dispenseBehaviorRegistry.putObject (DispenserBlock.java:61)
 	}
 	
 	@Override
@@ -155,27 +154,31 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
 		Level aWorld = aSource.level();
 		Position tPosition = DispenserBlock.getDispensePosition(aSource);
-		Direction tFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
-		EntityProjectile tProjectile = getProjectile(mProjectileType, aStack, aWorld, tPosition.getX(), tPosition.getY(), tPosition.getZ());
+		Direction tFacing = aSource.state().getValue(DispenserBlock.FACING); // было func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, приём ItemArmorBase.java:187
+		EntityProjectile tProjectile = getProjectile(mProjectileType, aStack, aWorld, tPosition.x(), tPosition.y(), tPosition.z()); // было Position.getX/getY/getZ() -> x()/y()/z() (Position.java:4-8)
 		if (tProjectile != null) {
-			tProjectile.setThrowableHeading(tFacing.getFrontOffsetX(), (tFacing.getFrontOffsetY() + 0.1F), tFacing.getFrontOffsetZ(), mSpeedMultiplier * 1.10F, mPrecision);
+			tProjectile.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision); // было setThrowableHeading(...)/Direction.getFrontOffsetX|Y|Z() -> Projectile.shoot(double,double,double,float,float) (Projectile.java:141), Direction.getStepX|Y|Z() (Direction.java:247-255)
 			tProjectile.setProjectileStack(ST.amount(1, aStack));
-			tProjectile.canBePickedUp = 1;
+			tProjectile.pickup = AbstractArrow.Pickup.ALLOWED; // было canBePickedUp=1 (int tri-state) -> AbstractArrow.Pickup enum, ALLOWED==ordinal 1 (AbstractArrow.java:72,746-749, LEGACY_CODEC подтверждает byOrdinal-соответствие)
 			aWorld.addFreshEntity(tProjectile);
 			if (aStack.getCount() < 100) aStack.setCount(aStack.getCount()-1);
 			return aStack;
 		}
-		
+
 		// Default Item Dropping.
-		Direction enumfacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
+		Direction enumfacing = aSource.state().getValue(DispenserBlock.FACING);
 		Position iposition = DispenserBlock.getDispensePosition(aSource);
 		ItemStack itemstack1 = aStack.split(1);
-		DefaultDispenseItemBehavior.doDispense(aSource.level(), itemstack1, 6, enumfacing, iposition);
+		DefaultDispenseItemBehavior.spawnItem(aSource.level(), itemstack1, 6, enumfacing, iposition); // было doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
 		return aStack;
 	}
-	
-	public static class MetaItemDispense extends ProjectileDispenseBehavior {
-		public ItemStack dispenseStack(BlockSource aSource, ItemStack aStack) {return ((PrefixItemProjectile)aStack.getItem()).onDispense(aSource, aStack);}
-		protected Projectile getProjectileEntity(Level aWorld, Position aPosition) {return null;}
+
+	/** PORT-TODO(F13, item-base компонентный редизайн): было {@code extends BehaviorProjectileDispense} с
+	 *  {@code getProjectileEntity(...)→null} (1.7.10, dead code) — neo {@code ProjectileDispenseBehavior} требует
+	 *  реального {@code ProjectileItem} в конструкторе (ProjectileDispenseBehavior.java:16), этот Item им не
+	 *  является — сведено к {@code DefaultDispenseItemBehavior}, приём уже принят {@code ItemArmorBase.java:203-208}. */
+	public static class MetaItemDispense extends DefaultDispenseItemBehavior {
+		@Override
+		protected ItemStack execute(BlockSource aSource, ItemStack aStack) {return ((PrefixItemProjectile)aStack.getItem()).onDispense(aSource, aStack);}
 	}
 }

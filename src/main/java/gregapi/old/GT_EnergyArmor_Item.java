@@ -31,28 +31,46 @@ import gregapi.data.LH;
 import gregapi.util.UT;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.item.ItemArmor;
+import net.minecraft.world.item.equipment.ArmorMaterials;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.minecraft.tags.TagKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 
-public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ {
+/**
+ * PORT-TODO(F13, item-base компонентный редизайн): было {@code extends ItemArmor} (1.7.10, armorType/renderIndex
+ * ctor-параметры + мутаторы setMaxStackSize/setMaxDamage/setNoRepair/setUnlocalizedName) — ItemArmor не существует
+ * в 26.1.2 (0 в 3 корнях референса), тот же приём, что уже принят в {@code gregapi.item.ItemArmorBase} (см. этот
+ * файл): {@code Item.Properties.humanoidArmor(ArmorMaterial,ArmorType)} + {@code .durability}/{@code .repairable}
+ * собранные ДО {@code super()} в {@link #makeProperties}, mName-поле вместо мутируемого unlocalizedName.
+ */
+public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	public int mCharge, mTransfer, mTier, mDamageEnergyCost, mSpecials;
 	public boolean mChargeProvider;
 	public double mArmorAbsorbtionPercentage;
-	
+	protected final String mName;
+	/** Было унаследованное поле {@code ItemArmor.armorType} (0=helmet,1=chest,2=legs,3=boots) — своё поле, та же семантика. */
+	protected final int mArmorType;
+	/** Было {@code armorInventory[0..3]} (1.7.10 boots/leggings/chest/helmet) — {@code EquipmentSlot[]}, тот же
+	 *  порядок FEET/LEGS/CHEST/HEAD, что уже принят центром брони (gregapi/GT_API_Proxy.java:1002). */
+	private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD};
+
 //  public static Map jumpChargeMap = new HashMap<>();
-	
+
 	public GT_EnergyArmor_Item(int aID, String aUnlocalized, String aEnglish, int aCharge, int aTransfer, int aTier, int aDamageEnergyCost, int aSpecials, double aArmorAbsorbtionPercentage, boolean aChargeProvider, int aType, int aArmorIndex) {
-		super(ArmorMaterial.DIAMOND, aArmorIndex, aType);
-		setMaxStackSize(1);
-		setMaxDamage(100);
-		setNoRepair();
-		setUnlocalizedName(aUnlocalized);
+		// aArmorIndex (было renderIndex, 1.7.10 ItemArmor 2й ctor-параметр) — не имеет neo-эквивалента (рендер-модель
+		// теперь EquipmentAssets/ResourceKey, не числовой индекс), не используется, как и раньше не влиял на логику.
+		super(makeProperties(aType));
+		mName = aUnlocalized;
+		mArmorType = aType;
 		LH.add(getUnlocalizedName(), aEnglish);
 		mCharge = Math.max(1, aCharge);
 		mTransfer = Math.max(1, aTransfer);
@@ -65,27 +83,54 @@ public class GT_EnergyArmor_Item extends ItemArmor /*implements ISpecialArmor*/ 
 		
 		NeoForge.EVENT_BUS.register(this);
 	}
-	
+
+	/** F13: собирает Properties ДО super() — durability/repair/humanoid-armor одним центром, тем же приёмом, что
+	 *  {@link gregapi.item.ItemArmorBase#makeProperties} (Item.Properties#humanoidArmor, Item.java:579). */
+	private static Item.Properties makeProperties(int aArmorType) {
+		return new Item.Properties()
+			.humanoidArmor(ArmorMaterials.DIAMOND, armorTypeFor(aArmorType)) // было ArmorMaterial.DIAMOND (1.7.10 enum) -> neo ArmorMaterials.DIAMOND (ArmorMaterials.java:24)
+			.durability(100) // было setMaxDamage(100); .durability() тоже даёт stacksTo(1), покрывает setMaxStackSize(1) (Item.java:440-444)
+			// было setNoRepair() — пустой (никогда не заполняемый) repair-тег даёт тот же эффект по следствию, приём ItemArmorBase.java:130-133
+			.repairable(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(ModIDs.GT, "repair/none")));
+	}
+
+	private static ArmorType armorTypeFor(int aArmorType) {
+		switch (aArmorType) {
+		case 0: return ArmorType.HELMET;
+		case 1: return ArmorType.CHESTPLATE;
+		case 2: return ArmorType.LEGGINGS;
+		case 3: return ArmorType.BOOTS;
+		}
+		throw new IllegalArgumentException("Unknown Armor Slot: "+aArmorType);
+	}
+
+	public final String getUnlocalizedName() {return mName;}
+	public final Item setUnlocalizedName(String aName) {return this;} // было мутатором 1.7.10 Item; имя теперь неизменяемо через mName, приём ItemBase.java:125
+
 	// @Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
-		ItemStack tStack = aPlayer.getInventory().armorInventory[3-armorType];
-		if (tStack != null) {
+		ItemStack tStack = aPlayer.getItemBySlot(ARMOR_SLOTS[3-mArmorType]); // было armorInventory[3-armorType] (F15: getItemBySlot никогда не null, EMPTY вместо)
+		if (!tStack.isEmpty()) {
 			for (int i = 0; i < 9; i++) {
 				if (aPlayer.getInventory().getItem(i) == aStack) {
-					aPlayer.getInventory().armorInventory[3-armorType] = aPlayer.getInventory().getItem(i);
+					aPlayer.setItemSlot(ARMOR_SLOTS[3-mArmorType], aPlayer.getInventory().getItem(i)); // было armorInventory[3-armorType] = mainInventory[i] -> LivingEntity.setItemSlot (LivingEntity.java:2329)
 					aPlayer.getInventory().setItem(i, tStack);
 					return tStack;
 				}
 			}
 		}
-		return super.onItemRightClick(aStack, aWorld, aPlayer);
+		// PORT-TODO(F-item-use): было super.onItemRightClick(aStack,aWorld,aPlayer) (реальный override 1.7.10
+		// ItemArmor.onItemRightClick) — neo Item не объявляет onItemRightClick вовсе (F-item-use контракт-шов,
+		// звать нечего). Честный фолбэк: возврат стека без изменений (как если бы подходящий слот не нашёлся).
+		return aStack;
 	}
 	
 	// @Override
 	@OnlyIn(Dist.CLIENT)
-	public void registerIcons(IIconRegister aIconRegister) {
-		this.itemIcon = aIconRegister.registerIcon(RES_PATH_ITEM + getUnlocalizedName());
-	}
+	// PORT-TODO(F3, baked-рендер клиента): было this.itemIcon=aIconRegister.registerIcon(...) — и поле Item.itemIcon,
+	// и IIconRegister удалены в 26.1.2 целиком (тот же класс проблемы, что ItemBase.java:131/getSubItems ниже в этом
+	// файле, уже сведённый к no-op); замены нет до Фазы C.
+	public void registerIcons(IIconRegister aIconRegister) {/**/}
 	
 	// @Override
 	@SuppressWarnings("unchecked")

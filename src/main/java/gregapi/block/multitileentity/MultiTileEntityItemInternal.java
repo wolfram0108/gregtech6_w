@@ -88,11 +88,18 @@ import static gregapi.data.CS.*;
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 , @Optional.Interface(iface = "vazkii.botania.api.item.IFlowerPlaceable", modid = ModIDs.BOTA)
 })
-public class MultiTileEntityItemInternal extends BlockItem implements squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, IFluidHandlerItem, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
+// PORT-TODO(EVENTS, IFluidHandlerItem-capability): implements-список НЕ содержит IFluidHandlerItem — 1.7.10
+// Forge IFluidContainerItem (getFluid/getCapacity/fill/drain, статичные ItemStack-arg методы) был механически
+// переименован в neo IFluidHandlerItem прошлым проходом, но это НЕ 1:1 замена (капабилити-контракт, item-bound,
+// getContainer()/getFluidInTank(int)/fill(FluidStack,FluidAction), @Deprecated(forRemoval),
+// neoforge-decompiled/.../IFluidHandlerItem.java:26) — этот класс физически не может реализовать getContainer()
+// (нет per-stack состояния, singleton Item). Тот же класс проблемы уже документирован GT_API_Proxy.java:890-898
+// (блок там тоже отключён). Восстановление — отдельный F5-редизайн (fluid transfer tail, STATE.md), не эта задача.
+public class MultiTileEntityItemInternal extends BlockItem implements squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
 	public final MultiTileEntityBlockInternal mBlock;
-	
+
 	public MultiTileEntityItemInternal(Block aBlock) {
-		super(aBlock);
+		super(aBlock, new Item.Properties()); // было super(aBlock) (neo BlockItem требует Properties тоже)
 		setMaxDamage(0);
 		setHasSubtypes(T);
 		mBlock = (MultiTileEntityBlockInternal)aBlock;
@@ -101,7 +108,10 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	// @Override
 	public String getItemStackDisplayName(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IMTE_GetItemName) return ((IMTE_GetItemName)tTileEntityContainer.mTileEntity).getItemName(aStack, super.getItemStackDisplayName(aStack));
+		// было super.getItemStackDisplayName(aStack) (реальный vanilla Item-hook 1.7.10, ItemBlock extends Item);
+		// neo BlockItem/Item не объявляет getItemStackDisplayName вовсе — звать нечего, честный эквивалент —
+		// та же формула, что и на дефолтной ветке ниже (LanguageHandler.get(getUnlocalizedName), приём ItemBase.java:132).
+		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IMTE_GetItemName) return ((IMTE_GetItemName)tTileEntityContainer.mTileEntity).getItemName(aStack, gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack)));
 		return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));
 	}
 	
@@ -169,7 +179,12 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			}
 			Block tReplacedBlock = WD.block(aWorld, aX, aY, aZ);
 
-			if (!WD.replaceable(tReplacedBlock, aWorld, aX, aY, aZ) || !mBlock.canReplace(aWorld, aX, aY, aZ, aSide, aStack)) return F;
+			// PORT-TODO(F-hook-removed, Block.canReplace): было mBlock.canReplace(World,x,y,z,side,ItemStack) —
+			// vanilla Block.canReplace(World,int,int,int,int,ItemStack) удалён в 26.1.2 без 1:1 замены
+			// (canBeReplaced(BlockState,BlockPlaceContext) структурно несовместим, требует BlockPlaceContext),
+			// 0 в 3 корнях референса; MultiTileEntityBlockInternal.canReplace нигде не определён (ни в порту, ни
+			// в оригинале 1.7.10 — резолвился в дефолт vanilla Block.canReplace). Деградация до "не блокирует".
+			if (!WD.replaceable(tReplacedBlock, aWorld, aX, aY, aZ)) return F;
 			if (aStack.getCount() == 0 || (aPlayer != null && !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) return F;
 			
 			MultiTileEntityContainer aMTEContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aWorld, aX, aY, aZ, aStack);
@@ -287,47 +302,52 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return rList.isEmpty() ? null : rList.size() > 1 ? new OreDictItemData(rList) : rList.get(0);
 	}
 	
+	// PORT-TODO(EVENTS, IFluidHandlerItem-capability): getFluid/getCapacity/fill/drain ниже — 1.7.10 Forge
+	// IFluidContainerItem-контракт (статичные ItemStack-arg методы), НЕ 1:1 совместим с neo IFluidHandlerItem
+	// (item-bound capability, getContainer()/getFluidInTank(int)/fill(FluidStack,FluidAction), deprecated-for-removal) —
+	// см. класс-level PORT-TODO выше и GT_API_Proxy.java:890-898 (тот же класс проблемы, там тоже отключено).
+	// Делегирование на tTileEntity отключено; F5-восстановление, не эта задача.
 	// @Override
 	public FluidStack getFluid(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-			FluidStack rFluid = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).getFluid(aStack);
-			updateItemStack(aStack);
-			return rFluid;
-		}
+		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
+		// 	FluidStack rFluid = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).getFluid(aStack);
+		// 	updateItemStack(aStack);
+		// 	return rFluid;
+		// }
 		return NF;
 	}
-	
+
 	// @Override
 	public int getCapacity(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-			int rCapacity = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).getCapacity(aStack);
-			updateItemStack(aStack);
-			return rCapacity;
-		}
+		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
+		// 	int rCapacity = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).getCapacity(aStack);
+		// 	updateItemStack(aStack);
+		// 	return rCapacity;
+		// }
 		return 0;
 	}
-	
+
 	// @Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-			int tFilled = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).fill(aStack, aFluid, aDoFill);
-			updateItemStack(aStack);
-			return tFilled;
-		}
+		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
+		// 	int tFilled = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).fill(aStack, aFluid, aDoFill);
+		// 	updateItemStack(aStack);
+		// 	return tFilled;
+		// }
 		return 0;
 	}
 	
 	// @Override
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-			FluidStack rFluid = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).drain(aStack, aMaxDrain, aDoDrain);
-			updateItemStack(aStack);
-			return rFluid;
-		}
+		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
+		// 	FluidStack rFluid = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).drain(aStack, aMaxDrain, aDoDrain);
+		// 	updateItemStack(aStack);
+		// 	return rFluid;
+		// }
 		return NF;
 	}
 	
@@ -415,7 +435,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			updateItemStack(aStack);
 			return rAction;
 		}
-		return ItemUseAnimation.none;
+		return ItemUseAnimation.NONE;
 	}
 	
 	// @Override
@@ -442,14 +462,17 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ItemStack getRotten(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemRottable) return ((IItemRottable)tTileEntityContainer.mTileEntity).getRotten(aStack);
-		return IItemRottable.RottingUtil.rotting(aStack, this);
+		// было RottingUtil.rotting(aStack, this) — this больше не IFluidHandlerItem (см. class-level PORT-TODO выше);
+		// 1-арг перегрузка делает тот же instanceof-чек сама (aStack.getItem() instanceof IFluidHandlerItem,
+		// IItemRottable.java:46) над тем же объектом (this==aStack.getItem() для этого типа) — тот же эффект, безопасно F.
+		return IItemRottable.RottingUtil.rotting(aStack);
 	}
-	
+
 	@Override
 	public ItemStack getRotten(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemRottable) return ((IItemRottable)tTileEntityContainer.mTileEntity).getRotten(aStack, aWorld, aX, aY, aZ);
-		return IItemRottable.RottingUtil.rotting(aStack, this);
+		return IItemRottable.RottingUtil.rotting(aStack, aWorld, aX, aY, aZ);
 	}
 	
 	

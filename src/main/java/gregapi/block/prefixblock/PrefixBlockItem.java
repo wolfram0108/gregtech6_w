@@ -34,6 +34,7 @@ import gregapi.oredict.OreDictPrefix;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -58,7 +59,7 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	public final PrefixBlock mBlock;
 	
 	public PrefixBlockItem(Block aBlock) {
-		super(aBlock);
+		super(aBlock, new Item.Properties()); // было super(aBlock) (neo BlockItem требует Properties тоже)
 		setMaxDamage(0);
 		setHasSubtypes(T);
 		mBlock = (PrefixBlock)aBlock;
@@ -66,11 +67,12 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		
 		if ((SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || "gt.meta.ore.normal.default".equalsIgnoreCase(mBlock.mNameInternal) || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) {
 			if (mBlock.mPrefix.mCreativeTab == null) mBlock.mPrefix.mCreativeTab = new CreativeTab(mBlock.mPrefix.mNameInternal, mBlock.mPrefix.mNameCategory, this, W);
-			mBlock.setCreativeTab(mBlock.mPrefix.mCreativeTab);
-			/* PORT-TODO(F16) setCreativeTab */;
+			// mBlock.setCreativeTab(mBlock.mPrefix.mCreativeTab);
+			/* PORT-TODO(F16) setCreativeTab — Block/Item.setCreativeTab не существует в 26.1.2 (0 в 3 корнях референса,
+			 * членство теперь через BuildCreativeModeTabContentsEvent), тот же класс проблемы, что ItemArmorBase.java:100-103. */;
 		} else {
-			mBlock.setCreativeTab(CreativeModeTab.tabBlock);
-			/* PORT-TODO(F16) setCreativeTab */;
+			// mBlock.setCreativeTab(CreativeModeTab.tabBlock);
+			/* PORT-TODO(F16) setCreativeTab — см. выше; CreativeModeTab.tabBlock (статическая константа) тоже удалена, вкладки теперь Holder/Registry. */;
 		}
 	}
 	
@@ -89,8 +91,9 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ, int aMeta) {
 		if (mBlock.placeBlock(aWorld, aX, aY, aZ, (byte)aSide, ST.meta_(aStack), ItemNBT.get(aStack), T, F)) {
 			if (WD.block(aWorld, aX, aY, aZ) == getBlock()) {
-				getBlock().onBlockPlacedBy(aWorld, aX, aY, aZ, aPlayer, aStack);
-				getBlock().onPostBlockPlaced(aWorld, aX, aY, aZ, ST.meta_(aStack));
+				BlockPos tPos = new BlockPos(aX, aY, aZ);
+				getBlock().setPlacedBy(aWorld, tPos, aWorld.getBlockState(tPos), aPlayer, aStack); // было onBlockPlacedBy(World,x,y,z,EntityPlayer,ItemStack) -> Block.setPlacedBy(Level,BlockPos,BlockState,LivingEntity,ItemStack) (Block.java:473)
+				// PORT-TODO(F-hook-removed, onPostBlockPlaced): было Block.onPostBlockPlaced(World,x,y,z,meta) — 1.7.10-only post-place хук, 0 в 3 корнях референса, полностью удалён без замены.
 			}
 			return T;
 		}
@@ -118,7 +121,9 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
-		super.addInformation(aStack, aPlayer, aList, aF3_H);
+		// PORT-TODO(F13, item-tooltip): было super.addInformation(...) (реальный vanilla Item-hook 1.7.10); neo
+		// Item/BlockItem не объявляет addInformation вовсе (appendHoverText — другая сигнатура, тот же класс
+		// проблемы, что ItemArmorBase.java:170-173) — вызывать нечего, убран.
 		if (mBlock.mSpawnProof) aList.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_SPAWNPROOF));
 		
 		if (MD.GC.mLoaded) {

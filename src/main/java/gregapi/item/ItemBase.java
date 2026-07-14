@@ -28,11 +28,9 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
-import net.minecraft.core.dispenser.ProjectileDispenseBehavior;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.Position;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -64,29 +62,34 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	protected int mMaxDamage = 0;
 	public ItemBase setMaxDamage(int aMaxDamage) {mMaxDamage = aMaxDamage; return this;}
 	@Override public int getMaxDamage(ItemStack aStack) {return mMaxDamage;}
-	/** F1: 1.7.10 Item.setHasSubtypes(true) включал числовые подтипы (metadata). neo-модель подтипов = DataComponents
-	 *  (F1, PrefixItem/MultiItem через компонент материала/варианта) — hasSubtypes концептуально устарел -> no-op 1:1. */
-	public ItemBase setHasSubtypes(boolean aHasSubtypes) {return this;}
-	
+	/** F1: 1.7.10 Item.setHasSubtypes(true)/getHasSubtypes() — реальный флаг подтипов (metadata), потребители
+	 *  ЕСТЬ в этом же файле (addInformation/getUnlocalizedName ниже) и в MultiItem (extends ItemBase, вызывает
+	 *  setHasSubtypes(T) в ctor, полагается на неунаследованный getUnlocalizedName(ItemStack) отсюда) — не может
+	 *  быть no-op (иначе молчаливая потеря суффикса подтипа в имени). Тот же приём хранения поля, что mMaxStackSize/
+	 *  mMaxDamage выше (IItemGT-дефолт no-op переопределён здесь реальным хранением). Дефолт F = ванильный. */
+	protected boolean mHasSubtypes = F;
+	public ItemBase setHasSubtypes(boolean aHasSubtypes) {mHasSubtypes = aHasSubtypes; return this;}
+	public boolean getHasSubtypes() {return mHasSubtypes;}
+
 	/**
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
 	public ItemBase(String aModID, String aUnlocalized, String aEnglish, String aEnglishTooltip) {
-		super();
+		super(new Item.Properties()); // было super() (neo Item требует Properties; mMaxStackSize/mMaxDamage override покрывают то, что раньше ставили setMaxStackSize/setMaxDamage)
 		if (GAPI.mStartedInit) throw new IllegalStateException("Items can only be initialised within preInit!");
 		mName = aUnlocalized;
 		mModID = aModID;
 		LH.add(mName, aEnglish);
 		if (UT.Code.stringValid(aEnglishTooltip)) LH.add(mTooltip = mName + ".tooltip_main", aEnglishTooltip); else mTooltip = null;
 		ST.register(this, mName);
-		DispenserBlock.dispenseBehaviorRegistry.putObject(this, new GT_Item_Dispense());
+		DispenserBlock.registerBehavior(this, new GT_Item_Dispense()); // было dispenseBehaviorRegistry.putObject (DispenserBlock.java:61)
 	}
 	
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		try {
-			if (getMaxDamage() > 0 && !getHasSubtypes()) aList.add((aStack.getMaxDamage() - getDamage(aStack)) + " / " + aStack.getMaxDamage());
+			if (getMaxDamage(aStack) > 0 && !getHasSubtypes()) aList.add((aStack.getMaxDamage() - getDamage(aStack)) + " / " + aStack.getMaxDamage());
 			if (mTooltip != null) aList.add(LanguageHandler.translate(mTooltip, mTooltip));
 			addAdditionalToolTips(aList, aStack, aF3_H);
 		} catch(Throwable e) {
@@ -100,22 +103,22 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	}
 	
 	public ItemStack onDispense(BlockSource aSource, ItemStack aStack) {
-		Direction enumfacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
+		Direction enumfacing = aSource.state().getValue(DispenserBlock.FACING); // было func_149937_b(getBlockMetadata()) -> BlockSource.state()/DispenserBlock.FACING, приём ItemArmorBase.java:187
 		Position iposition = DispenserBlock.getDispensePosition(aSource);
 		ItemStack itemstack1 = aStack.split(1);
-		DefaultDispenseItemBehavior.doDispense(aSource.level(), itemstack1, 6, enumfacing, iposition);
+		DefaultDispenseItemBehavior.spawnItem(aSource.level(), itemstack1, 6, enumfacing, iposition); // было doDispense -> spawnItem (DefaultDispenseItemBehavior.java:30)
 		return aStack;
 	}
-	
-	public static class GT_Item_Dispense extends ProjectileDispenseBehavior {
-		// @Override
-		public ItemStack dispenseStack(BlockSource aSource, ItemStack aStack) {
+
+	/** PORT-TODO(F13, item-base компонентный редизайн): было {@code extends BehaviorProjectileDispense} с
+	 *  {@code getProjectileEntity(...)→null} (1.7.10, dead code — projectile-функциональность никогда не
+	 *  использовалась). Neo {@code ProjectileDispenseBehavior} — конкретный класс, требующий реального
+	 *  {@code ProjectileItem} в конструкторе (ProjectileDispenseBehavior.java:16), этот Item им не является —
+	 *  сведено к {@code DefaultDispenseItemBehavior}, приём уже принят {@code ItemArmorBase.java:203-208}. */
+	public static class GT_Item_Dispense extends DefaultDispenseItemBehavior {
+		@Override
+		protected ItemStack execute(BlockSource aSource, ItemStack aStack) {
 			return ((ItemBase)aStack.getItem()).onDispense(aSource, aStack);
-		}
-		
-		// @Override
-		protected Projectile getProjectileEntity(Level aWorld, Position aPosition) {
-			return null;
 		}
 	}
 	
