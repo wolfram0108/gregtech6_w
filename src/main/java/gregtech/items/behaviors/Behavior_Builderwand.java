@@ -65,7 +65,7 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 					if (!(aPlayer).mayUseItemAt(new BlockPos(aX + tX, aY + tY, aZ + tZ), FORGE_DIR[aSide], tStack)) continue;
 					
 					int tOldSize = tStack.getCount();
-					if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX + tX, aY + tY, aZ + tZ, SIDE_TOP, 0.5F, 0.25F, 0.5F)) {
+					if (UT.tryPlaceItemIntoWorld(tStack, aPlayer, aWorld, aX + tX, aY + tY, aZ + tZ, SIDE_TOP, 0.5F, 0.25F, 0.5F)) {
 						UT.Sounds.send(SFX.MC_XP, aWorld, aX + tX, aY + tY, aZ + tZ);
 						if (UT.Entities.hasInfiniteItems(aPlayer)) {
 							tStack.setCount(tOldSize);
@@ -122,7 +122,7 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 				if (!(aPlayer).mayUseItemAt(new BlockPos(aX+tX+OFFX[aSide], aY+tY+OFFY[aSide], aZ+tZ+OFFZ[aSide]), FORGE_DIR[aSide], tStack)) continue;
 				
 				int tOldSize = tStack.getCount();
-				if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX+tX, aY+tY, aZ+tZ, aSide, aHitX, aHitY, aHitZ)) {
+				if (UT.tryPlaceItemIntoWorld(tStack, aPlayer, aWorld, aX+tX, aY+tY, aZ+tZ, aSide, aHitX, aHitY, aHitZ)) {
 					if (UT.Entities.hasInfiniteItems(aPlayer)) {
 						tStack.setCount(tOldSize);
 					} else {

@@ -49,7 +49,7 @@ public class Behavior_Place_Sapling extends AbstractBehaviorDefault {
 			if (IL.Bag_Loot_Sapling.equal(tStack)) continue;
 			
 			int tOldSize = ST.size(tStack);
-			if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
+			if (UT.tryPlaceItemIntoWorld(tStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
 				if (UT.Entities.hasInfiniteItems(aPlayer)) {
 					ST.size(tOldSize, tStack);
 				} else {

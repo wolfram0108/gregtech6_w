@@ -47,7 +47,7 @@ public class Behavior_Place_Torch extends AbstractBehaviorDefault {
 			if (WD.grass(aWorld, aX, aY, aZ)) {aSide = SIDE_TOP; WD.set(aWorld, aX, aY--, aZ, NB, 0, 3);}
 			
 			int tOldSize = tStack.getCount();
-			if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
+			if (UT.tryPlaceItemIntoWorld(tStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
 				if (UT.Entities.hasInfiniteItems(aPlayer)) {
 					tStack.setCount(tOldSize);
 				} else {

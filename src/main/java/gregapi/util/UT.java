@@ -37,6 +37,11 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.context.UseOnContext;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -3472,8 +3477,34 @@ public class UT {
 	}
 	
 	/**
+	 * F-item-use: 1.7.10 {@code ItemStack.tryPlaceItemIntoWorld(EntityPlayer, World, int, int, int, int,
+	 * float, float, float)} — метод физически удалён движком; neo заменяет его на
+	 * {@code Item.useOn(UseOnContext)} -> {@code InteractionResult} (сверено
+	 * neo-decompiled/net/minecraft/world/item/Item.java:198, вызывается через
+	 * neo-decompiled/net/minecraft/world/item/ItemStack.java:362 {@code ItemStack.useOn(UseOnContext)}).
+	 * Централизованный переходник (ОДНО место, без россыпи) — собирает {@code BlockHitResult}/
+	 * {@code UseOnContext} и переводит {@code InteractionResult} обратно в старый {@code boolean}-сигнал успеха.
+	 * Верифицированные neo-символы:
+	 *  - {@code BlockHitResult(Vec3, Direction, BlockPos, boolean)}: neo-decompiled/net/minecraft/world/phys/BlockHitResult.java:17
+	 *  - {@code Vec3(double, double, double)}: neo-decompiled/net/minecraft/world/phys/Vec3.java:65
+	 *  - {@code BlockPos(int, int, int)}: neo-decompiled/net/minecraft/core/BlockPos.java:59
+	 *  - {@code UseOnContext(Level, Player, InteractionHand, ItemStack, BlockHitResult)}: neo-decompiled/net/minecraft/world/item/context/UseOnContext.java:24
+	 *  - {@code InteractionHand.MAIN_HAND}: neo-decompiled/net/minecraft/world/InteractionHand.java:11
+	 *  - {@code ItemStack.useOn(UseOnContext)}: neo-decompiled/net/minecraft/world/item/ItemStack.java:362
+	 *  - {@code InteractionResult.consumesAction()}: neo-decompiled/net/minecraft/world/InteractionResult.java:18
+	 *  - {@code CS.FORGE_DIR}: gregapi/data/CS.java:660
+	 * @return успешно ли было размещение (1:1 со старым {@code boolean}-возвратом).
+	 */
+	public static boolean tryPlaceItemIntoWorld(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
+		BlockHitResult tHit = new BlockHitResult(new Vec3(aX+aHitX, aY+aHitY, aZ+aHitZ), FORGE_DIR[aSide], new BlockPos(aX, aY, aZ), F);
+		UseOnContext tCtx = new UseOnContext(aWorld, aPlayer, InteractionHand.MAIN_HAND, aStack, tHit);
+		InteractionResult tResult = aStack.useOn(tCtx);
+		return tResult.consumesAction();
+	}
+
+	/**
 	 * Yes, I have read all those warning that it might break. But I don't expect any further development on this Function by Forge during 1.7.10.
-	 * 
+	 *
 	 * That said, I've put a try/catch around this Stuff in case of random Errors.
 	 */
 	public static class LoadingBar {

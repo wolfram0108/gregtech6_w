@@ -68,7 +68,7 @@ public class Behavior_Plug_Leak extends AbstractBehaviorDefault {
 				if (MD.TC.owns(tBlock)) continue;
 				
 				int tOldSize = tStack.getCount();
-				if (tStack.tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
+				if (UT.tryPlaceItemIntoWorld(tStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ)) {
 					if (UT.Entities.hasInfiniteItems(aPlayer)) {
 						tStack.setCount(tOldSize);
 					} else {

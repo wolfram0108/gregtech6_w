@@ -34,6 +34,7 @@ import gregapi.code.ItemStackSet;
 import gregapi.compat.CompatBase;
 import gregapi.data.MD;
 import gregapi.util.ST;
+import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -84,6 +85,6 @@ public class CompatFR extends CompatBase implements ICompatFR, IFarmable {
 	
 	// @Override
 	public boolean plantSaplingAt(Player aPlayer, ItemStack aSeed, Level aWorld, int aX, int aY, int aZ) {
-		return aSeed.copy().tryPlaceItemIntoWorld(aPlayer, aWorld, aX, aY - 1, aZ, SIDE_UP, 0, 0, 0);
+		return UT.tryPlaceItemIntoWorld(aSeed.copy(), aPlayer, aWorld, aX, aY - 1, aZ, SIDE_UP, 0, 0, 0);
 	}
 }
