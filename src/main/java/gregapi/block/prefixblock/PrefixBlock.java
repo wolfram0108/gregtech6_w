@@ -296,7 +296,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// @Override
 	public int getRenderColor(int aMetaData) {
 		OreDictMaterial aMaterial = getMetaMaterial(aMetaData);
-		return aMaterial == null ? super.getRenderColor(aMetaData) : UT.Code.getRGBInt(aMaterial.fRGBa[mPrefix.mState]);
+		// F3-render (tint): super.getRenderColor(int) удалён из neo (block-color data-driven, регистрируется
+		// клиентски отдельной фазой). Дефолт при отсутствии материала = 0xFFFFFF (белый, без тонирования — ровно
+		// прежний Block.getRenderColor-дефолт 1.7.10). Материал-RGB сохранён.
+		return aMaterial == null ? 0xFFFFFF : UT.Code.getRGBInt(aMaterial.fRGBa[mPrefix.mState]);
 	}
 	
 	public ITexture getTexture(short aMetaData, boolean aRendersInWorld) {
@@ -612,7 +615,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public final ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aUnusableMetaData, int aFortune) {return mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, F);}
 	public int getExpDrop(BlockGetter aWorld, int aMeta, int aFortune) {return mDrops.getExp(this);}
 	public int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
-	public void getSubBlocks(Item aItem, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {aItem.getSubItems(aItem, aCreativeTab, aList);}
+	// F-creative: getSubItems — метод GT6-предмета (PrefixBlockItem:81), не член neo Item; предмет PrefixBlock всегда
+	// PrefixBlockItem (ctor Class<? extends PrefixBlockItem>) — каст. GT6 зовёт getSubBlocks внутренне (BlockMetaType:200),
+	// функционал сохранён (neo креатив-пайплайн его не зовёт — это отдельная F-creative event-фаза).
+	public void getSubBlocks(Item aItem, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {if (aItem instanceof PrefixBlockItem tItem) tItem.getSubItems(aItem, aCreativeTab, aList);}
 	/** Where I come from, we set the TileEntities ourselves instead of letting a Handler do it. */
 	public final BlockEntity createNewTileEntity(Level aWorld, int aMeta) {return null;}
 	/** Where I come from, we set the TileEntities ourselves instead of letting a Handler do it. */
@@ -631,7 +637,8 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX + mMinX, aY + mMinY, aZ + mMinZ, aX + mMaxX, aY + mMaxY, aZ + mMaxZ);}
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ);}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return mBaseHardness < 0 ? -1 : mBaseHardness == 0 ? 0 : Math.max(1, mBaseHardness * (1+getHarvestLevel(WD.meta(aWorld, aX, aY, aZ))));}
-	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?super.getRenderType():RendererBlockTextured.INSTANCE.mRenderID;}
+	// F3-render (отложенная фаза): super.getRenderType() удалён из neo (рендер data-driven) -> -1; см. MultiTileEntityBlock:436.
+	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
 	public int getHarvestLevel(int aMaterialToolQuality) {return (int)UT.Code.bind_(mHarvestLevelMinimum, mHarvestLevelMaximum, mHarvestLevelOffset + aMaterialToolQuality);}
 	public int tickRate(Level aWorld) {return 2;}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(getMetaDataValue(aWorld, aX, aY, aZ));}

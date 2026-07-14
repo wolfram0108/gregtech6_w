@@ -116,7 +116,9 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public Material getMaterial() {return mMaterial;}
 
 	public static String getName(String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		return "gt.block.multitileentity." + aNameOfVanillaMaterialField + "." + aSoundType.soundName + "." + aTool + "." + aHarvestLevelOffset + "." + aHarvestLevelMinimum + "." + aHarvestLevelMaximum + "." + aOpaque + "." + aNormalCube;
+		// F9/sound: 1.7.10 SoundType.soundName (String категории звука) удалён — neo SoundType без имени; стабильный
+		// уникальный идентификатор звука для рег-ключа = Identifier ломающего звука (SoundType.getBreakSound().location()).
+		return "gt.block.multitileentity." + aNameOfVanillaMaterialField + "." + aSoundType.getBreakSound().location() + "." + aTool + "." + aHarvestLevelOffset + "." + aHarvestLevelMinimum + "." + aHarvestLevelMaximum + "." + aOpaque + "." + aNormalCube;
 	}
 	
 	/**
@@ -433,7 +435,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void registerBlockIcons(IIconRegister aIconRegister) {/**/}
 	public final Identifier getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
 	public final Identifier getIcon(int aSide, int aMetaData) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
-	public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?super.getRenderType():RendererBlockTextured.INSTANCE.mRenderID;}
+	// F3-render (отложенная фаза): 1.7.10 Block.getRenderType()/super.getRenderType() удалён из neo (рендер
+	// data-driven через модели/getRenderShape; getRenderType в neo-пайплайне не вызывается — вызыватели ушли,
+	// см. ToolCompat instanceof-миграцию). super.getRenderType() -> -1 («нет кастом-render-ID»); при живом GT6-
+	// клиент-рендерере возвращает его mRenderID. Метод сохранён для клиентской F3-фазы, движком не зовётся.
+	public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
 	@Override public final IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T); return tTileEntity instanceof IRenderedBlockObject ? (IRenderedBlockObject)tTileEntity : null;}
 	// было onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
 	// [BlockBehaviour.java:206]; TileEntity.receiveClientEvent(id,data) -> BlockEntity.triggerEvent(int,int) [BlockEntity.java:270]

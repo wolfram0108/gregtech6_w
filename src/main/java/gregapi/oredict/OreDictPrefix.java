@@ -208,7 +208,7 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 	
 	public OreDictPrefix applyStackSizes() {
 		if (contains(PREFIX_UNUSED)) return this;
-		if (this != OP.block && this != OP.stone && this != OP.scrapGt) addListener(new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {if (!aEvent.mStack.getItem().isDamageable() && aEvent.mStack.getMaxStackSize() > 1 && !ST.isGT_(aEvent.mStack)) ST.setMaxStackSize(aEvent.mStack.getItem(), aEvent.mPrefix.mDefaultStackSize);}});
+		if (this != OP.block && this != OP.stone && this != OP.scrapGt) addListener(new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {if (!aEvent.mStack.isDamageableItem() && aEvent.mStack.getMaxStackSize() > 1 && !ST.isGT_(aEvent.mStack)) ST.setMaxStackSize(aEvent.mStack.getItem(), aEvent.mPrefix.mDefaultStackSize);}});
 		
 		ST.setMaxStackSize(Items.ENDER_PEARL, OP.gem.mDefaultStackSize);
 		ST.setMaxStackSize(Items.MUSIC_DISC_11, OP.record.mDefaultStackSize);

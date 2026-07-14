@@ -87,7 +87,8 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	}
 	
 	public final int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
-	public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?super.getRenderType():RendererBlockTextured.INSTANCE.mRenderID;}
+	// F3-render (отложенная фаза): super.getRenderType() удалён из neo (рендер data-driven) -> -1; см. MultiTileEntityBlock:436.
+	public final int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
 	@Override public final Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return mMultiTileEntityRegistry.mNameInternal;}
 	public final String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mMultiTileEntityRegistry.mNameInternal);}
