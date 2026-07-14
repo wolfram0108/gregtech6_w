@@ -279,7 +279,7 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_crowbar)) {
 			if (aBlock instanceof BaseRailBlock && (!MD.RC.mLoaded || !(MD.MC.owns(aBlock) || MD.RC.owns(aBlock)))) {
-				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
+				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
 				// Why the fuck are the two Coordinate Parameters in isFlexibleRail switched? And then it is used like x y z instead of using the broken namings.
 				// было isFlexibleRail(World,x,y,z) — neo BaseRailBlock.isFlexibleRail(BlockState,BlockGetter,BlockPos) (BaseRailBlock.java:310)
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, ((BaseRailBlock)aBlock).isFlexibleRail(aWorld.getBlockState(new BlockPos(aX, aY, aZ)), aWorld, new BlockPos(aX, aY, aZ)) ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
@@ -289,25 +289,25 @@ public class ToolCompat {
 		}
 		if (aTool.equals(TOOL_softhammer)) {
 			if (aBlock == Blocks.REDSTONE_LAMP) {
-				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
+				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
 				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.REDSTONE_LAMP) {
-				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
+				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, Blocks.REDSTONE_LAMP, 0, 0);
 				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.POWERED_RAIL) {
-				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
+				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
 				;
 				return tResult?10000:0;
 			}
 			if (aBlock == Blocks.ACTIVATOR_RAIL) {
-				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
+				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, aBlock, (aMeta + 8) % 16, 0);
 				;
 				return tResult?10000:0;

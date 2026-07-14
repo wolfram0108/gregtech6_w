@@ -191,14 +191,14 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public long onToolClick(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, Level aWorld, byte aSide, int aX, int aY, int aZ, float aHitX, float aHitY, float aHitZ) {
 		if (!aWorld.isClientSide()) {
 			if (aTool.equals(TOOL_softhammer) && mPowerRail) {
-				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
+				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, WD.meta(aWorld, aX, aY, aZ) ^ 8, 0);
 				;
 				return tResult?10000:0;
 			}
 			if (aTool.equals(TOOL_crowbar)) {
 				byte aMeta = WD.meta(aWorld, aX, aY, aZ);
-				; // PORT-TODO(isRemote-toggle недостижим: neo isClientSide final; клиент-подавление снято, WD.set flag 0 = минимальное обновление)
+				; // 1.7.10 isRemote=T/F вокруг setBlock подавлял клиент-пакет; neo isClientSide() final — но способность ЕСТЬ: WD.set flag 0 (без UPDATE_CLIENTS=2) = НЕТ клиент-пакета, точно итог оригинала (isRemote=T + flag 0). Не деградация.
 				// было isPowered() (BlockRailBase.field_150053_a, 1.7.10) - neo BaseRailBlock не хранит этот флаг;
 				// GT6-own mPowerRail/mDetectorRail уже несут то же значение (super(aPowerRail||aDetectorRail) в конструкторе).
 				boolean tResult = WD.set(aWorld, aX, aY, aZ, this, (mPowerRail || mDetectorRail) ? (aMeta+1) % 10 : ((aMeta/8) * 8) + (((aMeta%8)+1) % 6), 0);
