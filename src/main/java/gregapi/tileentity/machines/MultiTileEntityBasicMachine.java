@@ -822,7 +822,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 				for (int i = 0; i < mOutputFluids.length; i++) if (mOutputFluids[i] != null) for (int j = 0; j < mTanksOutput.length; j++) {
 					if (mTanksOutput[j].contains(mOutputFluids[i])) {
 						updateInventory();
-						mTanksOutput[j].add(mOutputFluids[i].amount);
+						mTanksOutput[j].add(mOutputFluids[i].getAmount());
 						mSuccessful = T;
 						mIgnited = 40;
 						mOutputFluids[i] = null;

@@ -163,7 +163,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		super.onTick2(aTimer, aIsServerSide);
 		if (aIsServerSide) {
 			FluidStack tFluid = mTank.getFluid();
-			if (tFluid != null && tFluid.amount > 0) {
+			if (tFluid != null && tFluid.getAmount() > 0) {
 				if (FL.temperature(tFluid) >= mMeltingPoint && meltdown()) return;
 				
 				if (!mMagicProof && FL.magic(tFluid)) {
@@ -310,7 +310,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 	
 	@Override
 	public int removeFluidFromConnectedTank(byte aSide, FluidStack aFluid, boolean aOnlyRemoveIfItCanRemoveAllAtOnce) {
-		if ((mMode & B[1]) == 0 && mTank.contains(aFluid) && mTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.amount : 1)) return (int)mTank.remove(aFluid.amount);
+		if ((mMode & B[1]) == 0 && mTank.contains(aFluid) && mTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.getAmount() : 1)) return (int)mTank.remove(aFluid.getAmount());
 		return 0;
 	}
 	
