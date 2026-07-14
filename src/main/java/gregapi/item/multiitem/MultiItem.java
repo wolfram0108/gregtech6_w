@@ -224,7 +224,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	public boolean destroyCheck(ItemStack aStack, Player aPlayer) {
 		if (aStack.getCount() <= 0) {
-			if (aPlayer != null) aPlayer.destroyCurrentEquippedItem();
+			if (aPlayer != null) aPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY); // 1.7.10 destroyCurrentEquippedItem() очищал выбранный слот руки -> neo setItemInHand(MAIN_HAND, EMPTY).
 			return T;
 		}
 		return F;
@@ -297,8 +297,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		
 		ItemStack tStack = FL.fill(aFluid, aStack, F, F, F, F);
 		if (tStack != null) {
-			aStack.setDamageValue(ST.meta_(tStack));
-			aStack.func_150996_a(tStack.getItem());
+			ST.set(aStack, tStack); // F-itemstack-mutation: 1.7.10 setItemDamage+func_150996_a(смена Item in-place) -> центр ST.set (item в neo final: копирует count/meta/NBT, PORT-TODO item-final в ST.set).
 			return FL.getFluid(tStack, F).getAmount();
 		}
 		
@@ -327,7 +326,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		int space = (int)(long)tStats[0] - tFluid.getAmount();
 		if (aFluid.getAmount() <= space) {
 			if (doFill) {
-				tFluid.getAmount() += aFluid.getAmount();
+				tFluid.setAmount(tFluid.getAmount() + aFluid.getAmount()); // F5: neo FluidStack.getAmount() не lvalue -> setAmount (FluidStack.java:472).
 				setFluidContent(aStack, tFluid);
 			}
 			return aFluid.getAmount();
@@ -352,8 +351,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 					aStack.setCount(0);
 					return tFluid;
 				}
-				aStack.setDamageValue(ST.meta_(tStack));
-				aStack.func_150996_a(tStack.getItem());
+				ST.set(aStack, tStack); // F-itemstack-mutation: setItemDamage+func_150996_a -> центр ST.set (item в neo final).
 			}
 			return tFluid;
 		}
@@ -366,7 +364,7 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		
 		if (tFluid.getAmount() < aMaxDrain) aMaxDrain = tFluid.getAmount();
 		if (aDoDrain) {
-			tFluid.getAmount() -= aMaxDrain;
+			tFluid.setAmount(tFluid.getAmount() - aMaxDrain); // F5: neo FluidStack.getAmount() не lvalue -> setAmount.
 			setFluidContent(aStack, tFluid);
 		}
 		
