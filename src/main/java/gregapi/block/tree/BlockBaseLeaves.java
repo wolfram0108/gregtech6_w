@@ -21,6 +21,7 @@ package gregapi.block.tree;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
@@ -102,11 +103,15 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 		if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 201+RNGSUS.nextInt(100)); return;}
 	}
 	
+	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
+	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
+	// была позицией СОСЕДА (стандартная 1.7.10-семантика shouldSideBeRendered) -> aNeighbor.getBlock() эквивалентен
+	// WD.block(aWorld,aX,aY,aZ) без потерь.
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
-		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		return !(WD.opaque(aBlock) || (WD.opaque(Blocks.OAK_LEAVES) && aBlock instanceof BlockBaseLeaves));
+	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
+		Block aBlock = aNeighbor.getBlock();
+		return WD.opaque(aBlock) || (WD.opaque(Blocks.OAK_LEAVES) && aBlock instanceof BlockBaseLeaves);
 	}
 	
 	// @Override

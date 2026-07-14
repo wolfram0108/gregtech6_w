@@ -21,6 +21,7 @@ package gregapi.block.misc;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.state.BlockState;
 
 import gregapi.block.BlockBaseSealable;
 import gregapi.block.IBlockOnWalkOver;
@@ -122,10 +123,14 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	@Override public boolean doesWalkSpeed(byte aMeta) {return T;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
-	@Override public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return T;}
+	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
+	// [BlockBehaviour.java:160]; исходное тело - константа T (всегда рендерить), не зависела от позиции/соседа,
+	// переносится без потерь с инверсией (shouldRender=T -> skipRendering=F).
+	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return F;}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0)); aList.add(ST.make(aItem, 1, 6)); aList.add(ST.make(aItem, 1, 7)); aList.add(ST.make(aItem, 1, 8)); aList.add(ST.make(aItem, 1, 14)); aList.add(ST.make(aItem, 1, 15));}
-	
-	// @Override
+
+	// PORT-TODO(F13/F16, block-getPickBlock-removed): 1.7.10 vanilla Block.getPickBlock удалён из neo целиком
+	// (не найден ни в одном из 3 корней; нет override-точки движка). Метод остаётся обычным GT6-методом.
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
 		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);

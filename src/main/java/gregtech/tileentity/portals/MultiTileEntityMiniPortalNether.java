@@ -22,7 +22,7 @@ package gregtech.tileentity.portals;
 import static gregapi.data.CS.*;
 
 import java.util.List;
-import java.util.Random;
+import net.minecraft.util.RandomSource;
 
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_RandomDisplayTick;
 import gregapi.code.ArrayListNoNulls;
@@ -59,7 +59,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 	}
 	
 	@Override
-	public void randomDisplayTick(Random aRandom) {
+	public void randomDisplayTick(RandomSource aRandom) {
 		if (mActive) for (int i = 0; i < 4; ++i) level.spawnParticle("portal", getBlockPos().getX() + aRandom.nextFloat(), getBlockPos().getY() + aRandom.nextFloat(), getBlockPos().getZ() + aRandom.nextFloat(), (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D, (aRandom.nextFloat() - 0.5D) * 0.5D);
 	}
 	

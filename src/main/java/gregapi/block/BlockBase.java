@@ -22,6 +22,8 @@ package gregapi.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.Explosion;
 
 import gregapi.data.LH;
 import gregapi.data.OP;
@@ -93,7 +95,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public boolean isOpaqueCube() {return T;}
 	public boolean func_149730_j() {return isOpaqueCube();}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return isSideSolid(WD.meta(aWorld, aX, aY, aZ), UT.Code.side(aDirection));}
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return isOpaqueCube() ? !WD.visOpq(WD.block(aWorld, aX, aY, aZ)) : super.shouldSideBeRendered(aWorld, aX, aY, aZ, aSide);}
+	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
+	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не
+	// передаёт World/BlockPos - для isOpaqueCube()==true ветка (константный результат от THIS-блока, позиция
+	// не нужна) переносится напрямую с инверсией; для else-ветки используем ванильный дефолт (position-lost).
+	@Override protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return isOpaqueCube() ? WD.visOpq(aNeighbor.getBlock()) : super.skipRendering(aState, aNeighbor, aDir);}
 	public int damageDropped(int aMeta) {return aMeta;}
 	public int quantityDropped(int aMeta, int aFortune, Random aRandom) {return 1;}
 	public ItemStack createStackedBlock(int aMeta) {return ST.make(this, 1, damageDropped(aMeta));}
@@ -108,8 +114,13 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public boolean isFlammable(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return isFlammable(WD.meta(aWorld, aX, aY, aZ));}
 	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return getFlammability(WD.meta(aWorld, aX, aY, aZ));}
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide) {return getFireSpreadSpeed(WD.meta(aWorld, aX, aY, aZ));}
-	public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return getExplosionResistance(WD.meta(aWorld, aX, aY, aZ));}
+	// было getExplosionResistance(Entity,World,x,y,z,eX,eY,eZ) -> IBlockExtension.getExplosionResistance
+	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]
+	@Override public float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {return getExplosionResistance(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));}
 	public float getExplosionResistance(Entity aEntity) {return getExplosionResistance((byte)0);}
+	// PORT-TODO(F13/F16, block-getBlockHardness-removed): 1.7.10 vanilla Block.getBlockHardness(World,x,y,z) не имеет
+	// override-точки в neo - BlockBehaviour.BlockStateBase.getDestroySpeed(BlockGetter,BlockPos) [BlockBehaviour.java:636]
+	// лишь возвращает запечённое в BlockState значение (не вызывает Block, не переопределяем). Метод остаётся обычным.
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 1;}
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return 1;}

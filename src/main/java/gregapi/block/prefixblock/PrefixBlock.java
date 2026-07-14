@@ -22,6 +22,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.LevelReader;
 
 import gregapi.GT_API_Proxy;
 import gregapi.block.IBlockSyncData;
@@ -206,8 +210,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		LH.add("oredict." + mPrefix.dat(MT.Empty).toString(), getLocalName(mPrefix, MT.Empty));
 		LH.add(mNameInternal+"."+W, "Any Sub-Block of this one"); // Local Name for the WildcardItem Variant.
 		
-		opaque = mOpaque;
-		lightOpacity = mOpaque ? 255 : 0;
+		// PORT-TODO(F13/F16, block-opaque-lightOpacity-removed): 1.7.10 vanilla Block-поля opaque/lightOpacity
+		// удалены в neo (BlockBehaviour больше не хранит их как мутируемые instance-поля). Собственные
+		// isOpaqueCube()/getLightOpacity() этого класса (см. ниже) уже читают mOpaque напрямую - функционально
+		// эквивалентно для внутреннего использования; интеграция в Properties остаётся отложенной F3-фазой.
 		
 		ST.register(this, mNameInternal, aItemClass==null?PrefixBlockItem.class:aItemClass);
 		
@@ -352,12 +358,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	
 	private static boolean LOCK = F;
 	
-	// @Override
-	public void onNeighborChange(BlockGetter aWorld, int aX, int aY, int aZ, int aTileX, int aTileY, int aTileZ) {
+	// было onNeighborChange(IBlockAccess,x,y,z,tileX,Y,Z) -> IBlockExtension.onNeighborChange(BlockState,LevelReader,BlockPos,BlockPos) [IBlockExtension.java:534]
+	@Override
+	public void onNeighborChange(BlockState aState, LevelReader aWorld, BlockPos aPos, BlockPos aNeighbor) {
 		if (!LOCK) {
 			LOCK = T;
-			BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-			if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aTileX, aTileY, aTileZ);
+			BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+			if (aTileEntity instanceof ITileEntity) ((ITileEntity)aTileEntity).onAdjacentBlockChange(aNeighbor.getX(), aNeighbor.getY(), aNeighbor.getZ());
 			LOCK = F;
 		}
 	}
@@ -403,17 +410,22 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (aMaterial != null && ((mCanExplode && aMaterial.contains(TD.Properties.EXPLOSIVE)) || (mCanBurn && aMaterial.contains(TD.Properties.FLAMMABLE) && mPrefix.contains(TD.Prefix.DUST_BASED)))) try {ExplosionGT.explode(aWorld, null, aX+0.5, aY+0.5, aZ+0.5, ((mPrefix.mAmount>0?mPrefix.mAmount:U)*0.7F)/U, T, T);} catch(StackOverflowError e) {ERR.println("WARNING: StackOverflow during Explosion has been prevented at: " + aX +" ; "+ aY +" ; "+ aZ);}
 	}
 	
-	// @Override
-	public float getExplosionResistance(Entity par1Entity, Level aWorld, int aX, int aY, int aZ, double explosionX, double explosionY, double explosionZ)       {
-		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
+	// было getExplosionResistance(Entity,World,x,y,z,expX,expY,expZ) -> IBlockExtension.getExplosionResistance
+	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; explosionX/Y/Z были не использованы
+	// исходным телом (только material-проверка по позиции) - без потери переносится напрямую.
+	@Override
+	public float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {
+		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
 		if (aMaterial != null && ((mCanExplode && aMaterial.contains(TD.Properties.EXPLOSIVE)) || (mCanBurn && aMaterial.contains(TD.Properties.FLAMMABLE) && mPrefix.contains(TD.Prefix.DUST_BASED)))) return 0;
-		return mBaseResistance * (1+getHarvestLevel(WD.meta(aWorld, aX, aY, aZ)));
+		return mBaseResistance * (1+getHarvestLevel(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())));
 	}
 	
-	// @Override
-	public boolean onBlockEventReceived(Level aWorld, int aX, int aY, int aZ, int aID, int aData) {
-		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		return aTileEntity == null || aTileEntity.receiveClientEvent(aID, aData);
+	// было onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
+	// [BlockBehaviour.java:206]; TileEntity.receiveClientEvent(id,data) -> BlockEntity.triggerEvent(int,int) [BlockEntity.java:270]
+	@Override
+	protected boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {
+		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);
 	}
 	
 	// @Override
@@ -421,16 +433,18 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return getMetaDataValue(aWorld, aX, aY, aZ);
 	}
 	
-	// @Override
+	// PORT-TODO(F13/F16, block-getPickBlock-removed): 1.7.10 vanilla Block.getPickBlock удалён из neo целиком
+	// (не найден ни в одном из 3 корней; нет override-точки движка). Метод остаётся обычным GT6-методом
+	// (не dispatch-ируется движком).
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
 	}
-	
+
 	// @Override
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int par6) {
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity != null) LAST_BROKEN_TILEENTITY.set(tTileEntity);
-		aWorld.removeTileEntity(aX, aY, aZ);
+		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // было aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
 	}
 	
 	@Override
@@ -565,13 +579,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// @Override
 	public void dropBlockAsItemWithChance(Level aWorld, int aX, int aY, int aZ, int aMeta, float aChance, int aFortune) {
 		ArrayList<ItemStack> tList = mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, F);
-		aChance = EventHooks.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, 0, aFortune, aChance, F, harvesters.get());
+		aChance = EventHooks.fireBlockHarvesting(tList, aWorld, this, aX, aY, aZ, 0, aFortune, aChance, F, LAST_HARVESTING_PLAYER.get());
 		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
 	}
 	
 	// @Override
 	public void harvestBlock(Level aWorld, Player aPlayer, int aX, int aY, int aZ, int aMeta) {
-		aPlayer.addStat(Stats.mineBlockStatArray[getIdFromBlock(this)], 1);
+		aPlayer.awardStat(Stats.BLOCK_MINED.get(this), 1); /* было Stats.mineBlockStatArray[getIdFromBlock(this)] (1.7.10 int-ID) -> Stats.BLOCK_MINED.get(Block) [Stats.java:12] + Player.awardStat [Player.java:1413] */
 		UT.Entities.exhaust(aPlayer, 0.025F);
 		boolean aSilkTouch = EnchantmentHelper.getSilkTouchModifier(aPlayer);
 		int aFortune = EnchantmentHelper.getFortuneModifier(aPlayer);
@@ -612,7 +626,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public boolean canSilkHarvest() {return F;}
 	public boolean func_149730_j() {return mOpaque;}
 	public boolean canCreatureSpawn(MobCategory aType, BlockGetter aWorld, int aX, int aY, int aZ) {return !mSpawnProof;}
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {setBlockBoundsBasedOnState(aWorld, aX, aY, aZ); return super.shouldSideBeRendered(aWorld, aX, aY, aZ, aSide);}
+	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
+	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не
+	// передаёт World/BlockPos вовсе - невозможно вызвать setBlockBoundsBasedOnState(aWorld,x,y,z) как раньше.
+	// PORT-TODO(F3, block-shouldSideBeRendered-position-lost): побочный эффект setBlockBoundsBasedOnState
+	// недостижим без позиции; используем ванильный дефолт (тот же fallback, что и в старой ветке
+	// super.shouldSideBeRendered, просто под новым именем/полярностью).
+	@Override protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return T;}
 	@Override public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return T;}
 	@Override public Block getBlock() {return this;}

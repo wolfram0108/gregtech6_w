@@ -59,7 +59,7 @@ public class Behavior_CureZombie extends AbstractBehaviorDefault {
 					aEntity.getDataWatcher().updateObject(14, Byte.valueOf((byte)1));
 					((Zombie)aEntity).removeEffect(MobEffects.WEAKNESS);
 					((Zombie)aEntity).addEffect(new MobEffectInstance(MobEffects.STRENGTH, tCureTime, Math.min(((Zombie)aEntity).level().difficultySetting.getDifficultyId() - 1, 0)));
-					aEntity.level().setEntityState(aEntity, (byte)16);
+					aEntity.level().broadcastEntityEvent(aEntity, (byte)16);
 				}
 				return T;
 			}

@@ -918,6 +918,10 @@ public class CS {
 	
 	/** Gets set when a TileEntity gets broken, in order to be able to access it for Drops, even though it just got deleted. */
 	public static ThreadLocal<BlockEntity> LAST_BROKEN_TILEENTITY = new ThreadLocal<>();
+
+	/** было Forge 1.7.10 Block.harvesters (static ThreadLocal<EntityPlayer>, унаследованное поле) - удалено в neo,
+	 *  своё GT6-поле с тем же назначением (кто ломает блок прямо сейчас, для fireBlockHarvesting без явного Player). */
+	public static ThreadLocal<net.minecraft.world.entity.player.Player> LAST_HARVESTING_PLAYER = new ThreadLocal<>();
 	
 	/** If you have to give something a World Parameter but there is no World... (Dummy World) */
 	public static DummyWorld DW;

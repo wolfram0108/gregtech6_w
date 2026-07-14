@@ -86,7 +86,9 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	@Override public String name(byte aMeta) {return mNameInternal + "." + aMeta;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 0;}
-	public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return 0;}
+	// было getExplosionResistance(Entity,World,x,y,z,eX,eY,eZ) -> IBlockExtension.getExplosionResistance
+	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; исходное тело игнорировало все параметры (константа 0).
+	@Override public float getExplosionResistance(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.level.Explosion aExplosion) {return 0;}
 	public float getExplosionResistance(Entity aEntity) {return 0;}
 	public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	public int getHarvestLevel(int aMeta) {return 0;}

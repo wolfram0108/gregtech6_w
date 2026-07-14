@@ -40,6 +40,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.util.IIcon;
 import net.minecraft.core.BlockPos;
@@ -355,15 +356,18 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return aAmount;
 	}
 	
-	// @Override
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
-		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		if (aBlock == NB) return T;
-		if (aBlock == this || WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return F;
-		if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir()) return T; // было aBlock.isAir(world,x,y,z) — BlockState.isAir()
-		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
-		return T;
+	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
+	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
+	// была позицией СОСЕДА -> aNeighbor.getBlock()/aNeighbor.isAir() эквивалентны без потерь для block-identity веток.
+	// PORT-TODO(F3, block-shouldSideBeRendered-position-lost): ITileEntitySurface-проверка соседа недостижима -
+	// новая сигнатура не передаёт позицию соседа для WD.te-поиска; используется дефолт "не ITileEntitySurface" ветки.
+	@Override
+	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
+		Block aBlock = aNeighbor.getBlock();
+		if (aBlock == NB) return F;
+		if (aBlock == this || WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return T;
+		if (aNeighbor.isAir()) return F; // было aBlock.isAir(world,x,y,z) — BlockState.isAir()
+		return F;
 	}
 	
 	// было Forge BlockFluidFinite.getQuantaValue(IBlockAccess,x,y,z) (@Override там же) — тело 1:1, GT6 сама

@@ -30,6 +30,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
@@ -50,9 +52,16 @@ public class Behavior_TripwireCutting extends AbstractBehaviorDefault {
 			if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				int aMeta = WD.meta(aWorld, aX, aY, aZ) | 8;
 				WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), aMeta, 4, F);
-				if (Blocks.TRIPWIRE.removedByPlayer(aWorld, aPlayer, aX, aY, aZ, T)) {
-					Blocks.TRIPWIRE.onBlockDestroyedByPlayer(aWorld, aX, aY, aZ, aMeta);
-					Blocks.TRIPWIRE.harvestBlock(aWorld, aPlayer, aX, aY, aZ, aMeta);
+				// было removedByPlayer(World,EntityPlayer,x,y,z,willHarvest) -> IBlockExtension.onDestroyedByPlayer
+				// (BlockState,Level,BlockPos,Player,ItemStack,boolean,FluidState) [IBlockExtension.java:238]
+				BlockPos aBlockPos = new BlockPos(aX, aY, aZ);
+				BlockState aBlockState = aWorld.getBlockState(aBlockPos);
+				if (Blocks.TRIPWIRE.onDestroyedByPlayer(aBlockState, aWorld, aBlockPos, aPlayer, aPlayer.getMainHandItem(), T, aWorld.getFluidState(aBlockPos))) {
+					// PORT-TODO(F13/F16, block-onBlockDestroyedByPlayer-harvestBlock-removed): 1.7.10 vanilla
+					// Block.onBlockDestroyedByPlayer/harvestBlock(World,Player,x,y,z,meta) не найдены ни в одном
+					// из 3 корней в этой форме (харвест/дроп-пайплайн неo целиком другой, отдельный F-шов, не
+					// входит в block-behavior @Override срез) - вызовы сняты, drop/harvest-эффект для
+					// tripwire-вырезания сейчас теряется (звук остаётся).
 					UT.Sounds.send(SFX.MC_SHEARS, aWorld, aX, aY, aZ);
 				}
 			}

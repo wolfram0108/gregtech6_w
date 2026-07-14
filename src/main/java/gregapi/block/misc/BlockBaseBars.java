@@ -22,6 +22,8 @@ package gregapi.block.misc;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.Direction;
 
 import static gregapi.data.CS.*;
 
@@ -151,9 +153,14 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return F;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
-	@Override public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return T;}
+	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
+	// [BlockBehaviour.java:160]; исходное тело - константа T (всегда рендерить) не зависела от позиции/соседа,
+	// переносится без потерь с инверсией (shouldRender=T -> skipRendering=F).
+	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return F;}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}
-	
+
+	// PORT-TODO(F13/F16, block-getPickBlock-removed): 1.7.10 vanilla Block.getPickBlock удалён из neo целиком
+	// (не найден ни в одном из 3 корней; нет override-точки движка). Метод остаётся обычным GT6-методом.
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {return ST.make(this, 1, 0);}
 	
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}

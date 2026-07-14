@@ -96,8 +96,14 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public final String getUnlocalizedName() {return mNameInternal;}
 	@Override public String name(byte aMeta) {return mNameInternal;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
+	// PORT-TODO(F13/F16, block-getBlockHardness-removed): 1.7.10 vanilla Block.getBlockHardness(World,x,y,z) не имеет
+	// override-точки в neo - BlockBehaviour.BlockStateBase.getDestroySpeed(BlockGetter,BlockPos) [BlockBehaviour.java:636]
+	// лишь возвращает запечённое в BlockState значение (не вызывает Block, не переопределяем). Метод остаётся обычным.
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.RAIL, aWorld, aX, aY, aZ);}
-	public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return mExplosionResistance;}
+	// было getExplosionResistance(Entity,World,x,y,z,eX,eY,eZ) -> IBlockExtension.getExplosionResistance
+	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; исходное тело игнорировало все
+	// параметры кроме this (константа mExplosionResistance) - переносится без потерь.
+	@Override public float getExplosionResistance(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.level.Explosion aExplosion) {return mExplosionResistance;}
 	public float getExplosionResistance(Entity aEntity) {return mExplosionResistance;}
 	public String getHarvestTool(int aMeta) {return TOOL_crowbar;}
 	public int getHarvestLevel(int aMeta) {return mHarvestLevel;}

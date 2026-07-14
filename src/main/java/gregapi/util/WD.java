@@ -1120,7 +1120,11 @@ public class WD {
 				rList.add("Block Class: " + aBlock.getClass());
 				if (aTileEntity != null) rList.add("TileEntity Class: " + aTileEntity.getClass());
 			}
-			float tResistance = aBlock.getExplosionResistance(aPlayer, aWorld, aX, aY, aZ, aPlayer.getX(), aPlayer.getY(), aPlayer.getZ());
+			// было getExplosionResistance(Entity,World,x,y,z,eX,eY,eZ) -> нет прямого эквивалента без реального Explosion-объекта
+			// (IBlockExtension.getExplosionResistance(BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]
+			// требует Explosion, которого у debug-scan нет); маршрутизируем на Block.getExplosionResistance() [Block.java:453] -
+			// тот же фолбэк, что location-sensitive default сам использует при отсутствии переопределения.
+			float tResistance = aBlock.getExplosionResistance();
 			rList.add("Hardness: " + WD.hardness(aBlock, aWorld, aX, aY, aZ) + " - " + LH.getToolTipBlastResistance(aBlock, tResistance));
 			int tHarvestLevel = aBlock.getHarvestLevel(aMeta);
 			String tHarvestTool = aBlock.getHarvestTool(aMeta);

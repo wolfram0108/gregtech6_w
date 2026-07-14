@@ -104,7 +104,7 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	public static interface IMTE_GetCollisionBoundingBoxFromPool    extends IMultiTileEntity {public AABB getCollisionBoundingBoxFromPool();}
 	public static interface IMTE_GetSelectedBoundingBoxFromPool     extends IMultiTileEntity {public AABB getSelectedBoundingBoxFromPool();}
 	public static interface IMTE_UpdateTick                         extends IMultiTileEntity {public void updateTick(Random aRandom);}
-	public static interface IMTE_RandomDisplayTick                  extends IMultiTileEntity {public void randomDisplayTick(Random aRandom);}
+	public static interface IMTE_RandomDisplayTick                  extends IMultiTileEntity {public void randomDisplayTick(net.minecraft.util.RandomSource aRandom);} // было java.util.Random - Block.animateTick теперь принимает RandomSource [Block.java:355]
 	public static interface IMTE_OnBlockDestroyedByPlayer           extends IMultiTileEntity {public void onBlockDestroyedByPlayer(int aRandom);}
 	public static interface IMTE_OnBlockAdded                       extends IMultiTileEntity {public void onBlockAdded();}
 	public static interface IMTE_DropXpOnBlockBreak                 extends IMultiTileEntity {public void dropXpOnBlockBreak(int aXP);}
