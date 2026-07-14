@@ -129,8 +129,8 @@ public class WD {
 		for (ItemEntity tItem : (Iterable<ItemEntity>)aWorld.getEntitiesOfClass(ItemEntity.class, new AABB(aX, aY, aZ, aX+aL, aY+aH, aZ+aW))) {
 			if (!tItem.isRemoved()) {
 				tItem.discard();
-				ItemStack rStack = tItem.getEntityItem();
-				tItem.setEntityItemStack(ST.amount(0, rStack));
+				ItemStack rStack = tItem.getItem();
+				tItem.setItem(ST.amount(0, rStack));
 				tItem.discard();
 				return rStack;
 			}
@@ -147,8 +147,8 @@ public class WD {
 		for (ItemEntity tItem : tList) {
 			if (!tItem.isRemoved()) {
 				tItem.discard();
-				ItemStack rStack = tItem.getEntityItem();
-				tItem.setEntityItemStack(ST.amount(0, rStack));
+				ItemStack rStack = tItem.getItem();
+				tItem.setItem(ST.amount(0, rStack));
 				tItem.discard();
 				rOutput.add(rStack);
 			}

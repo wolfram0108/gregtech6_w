@@ -158,7 +158,7 @@ public class Override_Drops {
 			if (aPlayerKill) {
 			@SuppressWarnings("rawtypes")
 			List tList = aDead.level().getEntities(aDead, aDead.getBoundingBox().expand(32, 32, 32));
-			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof EntityPigZombie) ((EntityPigZombie)tList.get(j)).hurt(aDead.level().damageSources().playerAttack((Player)tList.get(i)), 0); break;}// было DamageSource.causePlayerDamage (1.7.10 статик удалён) -> neo damageSources().playerAttack(Player)
+			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof net.minecraft.world.entity.monster.zombie.ZombifiedPiglin) ((net.minecraft.world.entity.monster.zombie.ZombifiedPiglin)tList.get(j)).hurt(aDead.level().damageSources().playerAttack((Player)tList.get(i)), 0); break;}// было DamageSource.causePlayerDamage (1.7.10 статик удалён) -> neo damageSources().playerAttack(Player)
 			
 			if (RNGSUS.nextInt( 2) == 0) aDrops.add(ST.entity(aDead, RNGSUS.nextBoolean()?OP.rockGt.mat(MT.Netherrack, 1):ST.make(Items.FLINT, 1, 0)));
 			if (RNGSUS.nextInt( 3) == 0) aDrops.add(ST.entity(aDead, Items.BONE, 1, 0));
@@ -357,7 +357,7 @@ public class Override_Drops {
 			tReplaceIron = T;
 		} else if ("SuperMutantElite".equalsIgnoreCase(aClass)) {// TODO what drops would even fit for this Mob?
 			tReplaceIron = T;
-		} else if (aDead instanceof EntityPigZombie) {
+		} else if (aDead instanceof net.minecraft.world.entity.monster.zombie.ZombifiedPiglin) {
 			tReplaceIron = T;
 			
 			if (MOBS_DROP_JUNK) {
@@ -478,7 +478,7 @@ public class Override_Drops {
 			while (tAmount-->0) aDrops.add(ST.entity(aDead, OP.stick.mat(MT.Blizz, 1)));
 		} else if (aClass.equalsIgnoreCase("EntityTFTowerGolem")) {
 			for (ItemEntity tEntity : aDrops) {
-				ItemStack tStack = tEntity.getEntityItem();
+				ItemStack tStack = tEntity.getItem();
 				if (OM.is("ingotAnyIronOrSteel", tStack)) ST.set(tStack, OP.ingot.mat(MT.IronWood, 1), F, F);
 			}
 		} else if (aClass.equalsIgnoreCase("EntityTFWraith")) {
@@ -672,7 +672,7 @@ public class Override_Drops {
 		
 		// All of this Drop replacement does NOT work with Mo'Creatures Mobs at all...
 		if (!(aDead instanceof Player)) {
-			for (ItemEntity tEntity : aDrops) if (tEntity != null) {ItemStack tStack = tEntity.getEntityItem(); if (ST.valid(tStack)) {
+			for (ItemEntity tEntity : aDrops) if (tEntity != null) {ItemStack tStack = tEntity.getItem(); if (ST.valid(tStack)) {
 				// Replace stupid Wooden and Stone Tools that clutter up Mob Farms for no reason, but only if nonplayerkill.
 				if (!aPlayerKill) {
 					Item tItem = ST.item_(tStack);
@@ -743,7 +743,7 @@ public class Override_Drops {
 					}
 				}
 				
-				tEntity.setEntityItemStack(tStack);
+				tEntity.setItem(tStack);
 				tRandomNumber++;
 			}}
 		}

@@ -2798,7 +2798,7 @@ public class UT {
 		}
 		
 		public static boolean isWearingFullHeatHazmat(LivingEntity aEntity) {
-			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == Blaze.class || aEntity.getClass() == EntityPigZombie.class || aEntity.getClass() == MagmaCube.class || aEntity.getClass() == EntityGhast.class) return T;
+			if (isCreative(aEntity) || aEntity.getClass() == WitherBoss.class || aEntity.getClass() == Blaze.class || aEntity.getClass() == net.minecraft.world.entity.monster.zombie.ZombifiedPiglin.class || aEntity.getClass() == MagmaCube.class || aEntity.getClass() == net.minecraft.world.entity.monster.Ghast.class) return T;
 			for (byte i = 1; i < 5; i++) if (!ArmorsGT.HAZMATS_HEAT.contains(UT.Entities.getEquipmentInSlot(aEntity, i), T)) return F;
 			return T;
 		}
