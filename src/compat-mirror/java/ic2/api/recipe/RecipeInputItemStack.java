@@ -8,4 +8,5 @@ import net.minecraft.world.item.ItemStack;
  *  Поля/остальные ctor/методы реального API не используются (греп 0) — не добавлены. */
 public class RecipeInputItemStack implements IRecipeInput {
 	public RecipeInputItemStack(ItemStack aInput, int aAmount) {/**/}
+	@Override public boolean matches(ItemStack aStack) {return false;} // compile-only мирор, мод не грузится.
 }

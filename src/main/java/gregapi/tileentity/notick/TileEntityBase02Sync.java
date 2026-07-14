@@ -93,7 +93,7 @@ public abstract class TileEntityBase02Sync extends TileEntityBase01Root implemen
 	
 	@Override public void onCoordinateChange() {super.onCoordinateChange(); updateClientData();}
 	
-	public final net.minecraft.network.Packet getDescriptionPacket() {updateClientData(); return null;}
+	@Override public final net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {updateClientData(); return null;}
 	
 	@Override
 	public final void sendUpdateToPlayer(ServerPlayer aPlayer) {

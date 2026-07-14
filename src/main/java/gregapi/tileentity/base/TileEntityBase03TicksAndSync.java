@@ -89,7 +89,7 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 	
 	@Override public void onCoordinateChange() {super.onCoordinateChange(); updateClientData();}
 	
-	public final net.minecraft.network.Packet getDescriptionPacket() {return null;}
+	@Override public final net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {return null;}
 	
 	@Override
 	public void clearRemoved() {

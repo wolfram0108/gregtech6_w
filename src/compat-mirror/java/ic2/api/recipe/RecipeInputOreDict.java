@@ -6,4 +6,5 @@ package ic2.api.recipe;
  *  Поля/остальные ctor/методы реального API не используются (греп 0) — не добавлены. */
 public class RecipeInputOreDict implements IRecipeInput {
 	public RecipeInputOreDict(String aOreDict, int aAmount) {/**/}
+	@Override public boolean matches(net.minecraft.world.item.ItemStack aStack) {return false;} // compile-only мирор, мод не грузится.
 }

@@ -74,7 +74,7 @@ public abstract class TileEntityBase08DataSwitch extends TileEntityBase07Paintab
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide() && isUseableByPlayerGUI(aPlayer)) {
-			ItemStack aHeldItem = aPlayer.getInventory().getCurrentItem();
+			ItemStack aHeldItem = aPlayer.getMainHandItem();
 			if (OM.is(OD_USB_STICKS[0], aHeldItem)) {
 				if (ItemNBT.has(aHeldItem) && ItemNBT.get(aHeldItem).contains(NBT_USB_TIER)) {
 					setUSBData(aSide, ItemNBT.get(aHeldItem).getByte(NBT_USB_TIER).orElse((byte)0), ItemNBT.get(aHeldItem).getCompoundOrEmpty(NBT_USB_DATA));

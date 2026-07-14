@@ -1163,7 +1163,7 @@ public class ST {
 				// PORT-TODO(scope, TwilightTreasureReplacer): тот же AbstractContainerMenu/Container-баг живёт в
 				// gregtech.worldgen.TwilightTreasureReplacer (вне границ этого шва) — мост через checked cast, пока
 				// сосед не починен отдельным заходом.
-				TwilightTreasureReplacer.generate((net.minecraft.world.inventory.AbstractContainerMenu)aInv, aLoot);
+				TwilightTreasureReplacer.generate((net.minecraft.world.Container)aInv, aLoot);
 			} else {
 				// PORT-TODO(stats-loot, chest-loot): WeightedRandomChestContent.generateChestContents(aRandom, ChestGenHooks.getItems(aLoot, aRandom), aInv, ChestGenHooks.getCount(aLoot, aRandom));
 			}

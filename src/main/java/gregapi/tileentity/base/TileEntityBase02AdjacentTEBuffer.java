@@ -112,7 +112,7 @@ public abstract class TileEntityBase02AdjacentTEBuffer extends TileEntityBase01R
 				mBufferedTileEntities[aSide] = null;
 				return getTileEntityAtSideAndDistance(aSide, aDistance);
 			}
-		} else if (mBufferedTileEntities[aSide].isInvalid()) {
+		} else if (mBufferedTileEntities[aSide].isRemoved()) {
 			mBufferedTileEntities[aSide] = null;
 			return getTileEntityAtSideAndDistance(aSide, aDistance);
 		}
