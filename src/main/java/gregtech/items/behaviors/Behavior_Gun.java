@@ -293,7 +293,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				if (UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, aBullet) > 0) {
 					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
 					tPlayer.getInventory().setSelectedSlot(0);
-					tPlayer.getInventory().setInventorySlotContents(0, aBullet);
+					tPlayer.getInventory().setItem(0, aBullet);
 					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.getXRot());
 					// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Bullet would do ZERO Damage.
 					if (WD.dimTF(aPlayer.level())) tPlayer.getAbilities().instabuild = T;
@@ -390,7 +390,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot())));
 			UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-			aPlayer.getInventory().decrStackSize(aPlayer.getInventory().getSelectedSlot(), tConsumed);
+			aPlayer.getInventory().removeItem(aPlayer.getInventory().getSelectedSlot(), tConsumed);
 			ST.update(aPlayer);
 			return T;
 		}
@@ -403,7 +403,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i+ 9)));
 				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-				aPlayer.getInventory().decrStackSize(i+ 9, tConsumed);
+				aPlayer.getInventory().removeItem(i+ 9, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
@@ -411,7 +411,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i+18)));
 				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-				aPlayer.getInventory().decrStackSize(i+18, tConsumed);
+				aPlayer.getInventory().removeItem(i+18, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
@@ -419,7 +419,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 				ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i+27)));
 				UT.NBT.set(aGun, aNBT); // F8: коммит detached-копии из getOrCreate (см. ItemNBT.java)
-				aPlayer.getInventory().decrStackSize(i+27, tConsumed);
+				aPlayer.getInventory().removeItem(i+27, tConsumed);
 				ST.update(aPlayer);
 				return T;
 			}
@@ -429,7 +429,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			int tConsumed = Math.min(mAmmoPerMag, aPlayer.getInventory().getItem(i).getCount());
 			UT.Sounds.send(SFX.MC_CLICK, 16, aPlayer);
 			ST.save(aNBT, NBT_AMMO, ST.amount(tConsumed, aPlayer.getInventory().getItem(i)));
-			aPlayer.getInventory().decrStackSize(i, tConsumed);
+			aPlayer.getInventory().removeItem(i, tConsumed);
 			ST.update(aPlayer);
 			return T;
 		}
