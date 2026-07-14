@@ -359,14 +359,14 @@ public class TwilightTreasureReplacer extends TFTreasure {
 	public boolean addToInventory(Container aInventory, ItemStack aStack) {
 		int tSlot = findEmptySlot(aInventory);
 		if (tSlot == -1) return F;
-		aInventory.setInventorySlotContents(tSlot, IL.TF_Uncrafting.equal(aStack, T, T) ? IL.TF_Transformation_Powder.get(12+RNGSUS.nextInt(13)) : ST.item(aStack) == Items.POTION ? IL.Bottle_Loot.get(1+RNGSUS.nextInt(2)) : aStack);
+		aInventory.setItem(tSlot, IL.TF_Uncrafting.equal(aStack, T, T) ? IL.TF_Transformation_Powder.get(12+RNGSUS.nextInt(13)) : ST.item(aStack) == Items.POTION ? IL.Bottle_Loot.get(1+RNGSUS.nextInt(2)) : aStack);
 		return T;
 	}
 	
 	public int findEmptySlot(Container aInventory) {
 		int j = aInventory.getContainerSize();
-		for (int i = 0; i < 100; i++) {int k = RNGSUS.nextInt(j); if (aInventory.getSlot(k).getItem() == null) return k;}
-		for (int i = 0; i <   j; i++) if (aInventory.getSlot(i).getItem() == null) return i;
+		for (int i = 0; i < 100; i++) {int k = RNGSUS.nextInt(j); if (aInventory.getItem(k).isEmpty()) return k;}
+		for (int i = 0; i <   j; i++) if (aInventory.getItem(i).isEmpty()) return i;
 		return -1;
 	}
 }
