@@ -1284,23 +1284,24 @@ public class ST {
 	
 	public static boolean achieve(Entity aPlayer, Advancement aAchievement) {
 		if (aAchievement == null|| !(aPlayer instanceof Player) || aPlayer.level() == null || aPlayer.level().isClientSide()) return F;
-		// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, aAchievement.parentAchievement); ((Player)aPlayer).triggerAchievement(aAchievement);
-		// — record Advancement (neo) не несёт parentAchievement (только parent()=Optional<Identifier> в реестр), и
-		// Player.triggerAchievement больше не существует — триггер теперь через data-driven PlayerAdvancements/criteria,
-		// нет 1:1. TFAchievementPage-поля в compat-mirror всегда null, так что этот путь сейчас недостижим.
+		// FORCED-ADAPTATION(F18-achievements): оригинал = achieve(parentAchievement)+triggerAchievement (stat-флаг+локальный тост).
+		// Neo удалил Achievement/AchievementList/triggerAchievement; единственный API PlayerAdvancements.award() навязывает
+		// выдачу рецептов+опыта+чат-анонс+событие (neo PlayerAdvancements.java:177-182) — добавленное поведение, нарушает
+		// verbatim-1:1 (принцип 6, PORTING-LAW). Решение: централизованный no-op. Полное доказательство + таблица старое→RL
+		// (2 достижения без эквивалента: mineWood/killCow) — decisions/F18-achievements.md. Паритет-вес нулевой.
 		return T;
 	}
 	
-	// PORT-TODO(STATS, vanilla-achievements-removed): net.minecraft.stats.AchievementList (1.7.10 Forge) has no 1:1 in modern
-	// MC — the static achievement-constant API was replaced by the data-driven Advancement/PlayerAdvancements
-	// criteria system. All `achieve(aPlayer, AchievementList.X)` calls below are stubbed out (no-op) below until
-	// the advancement subsystem itself is ported; original constant referenced in each comment for traceability.
+	// FORCED-ADAPTATION(F18-achievements): net.minecraft.stats.AchievementList/Achievement/triggerAchievement удалены в neo
+	// (data-driven Advancement/PlayerAdvancements). Выдача через award() навязывает рецепты/опыт/чат/событие — не 1:1;
+	// mineWood/killCow эквивалента не имеют. Решение (доказательство + таблица RL): decisions/F18-achievements.md.
+	// Ванильные вызовы achieve(aPlayer, AchievementList.X) ниже — централизованный no-op; исходная константа сохранена для трассы.
 	public static boolean check(Entity aPlayer, ItemStack aStack) {
 		if (!(aPlayer instanceof Player) || aPlayer.level() == null || aPlayer.level().isClientSide()) return F;
 
 		if (F /* PORT-TODO(этап-dimension, F?): WD.dimensionId(aPlayer.level()) == DIM_NETHER — WorldProvider/dimensionId
 		     удалены в neo (Level.dimension() -> ResourceKey<Level>), нет прямого 1:1 сравнения по числовому id */) {
-			// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.portal);
+			// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.portal);
 		}
 
 		if (invalid(aStack)) return F;
@@ -1311,7 +1312,7 @@ public class ST {
 		String aRegName = regName(aItem);
 
 		if (WoodDictionary.WOODS.containsKey(aStack, T) || WoodDictionary.BEAMS.containsKey(aStack, T) || WoodDictionary.PLANKS_ANY.containsKey(aStack, T) || OD.logWood.is_(aStack) || OD.logRubber.is_(aStack)) {
-			// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.mineWood);
+			// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.mineWood);
 		}
 
 		// PORT-TODO(этап-tools, F?): ItemHoe/ItemSword/ItemPickaxe классы удалены в neo (тот же класс проблемы,
@@ -1329,31 +1330,31 @@ public class ST {
 
 		if (MD.MC.owns(aRegName)) {
 			if (aItem == Items.COOKED_COD) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.cookFish);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.cookFish);
 			} else
 			if (aItem == Items.BREAD) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.makeBread);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.makeBread);
 			} else
 			if (aItem == Items.LEATHER || aItem == Items.BEEF || aItem == Items.COOKED_BEEF || aItem == Items.SADDLE) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.killCow);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.killCow);
 			} else
 			if (aBlock == Blocks.CAKE || aItem == Items.CAKE) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.bakeCake);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.bakeCake);
 			} else
 			if (aBlock == Blocks.FURNACE || aBlock == Blocks.FURNACE) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.buildFurnace);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.buildFurnace);
 			} else
 			if (aItem == Items.GHAST_TEAR) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.portal);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.portal);
 			} else
 			if (aItem == Items.BREWING_STAND || aBlock == Blocks.BREWING_STAND || aItem == Items.BLAZE_ROD || aItem == Items.BLAZE_POWDER || aItem == Items.ENDER_EYE) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.blazeRod);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.blazeRod);
 			} else
 			if (aBlock == Blocks.ENCHANTING_TABLE) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.enchantments);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.enchantments);
 			} else
 			if (aBlock == Blocks.BOOKSHELF) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.bookcase);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.bookcase);
 			}
 		}
 
@@ -1377,10 +1378,10 @@ public class ST {
 		
 		if (tData != null && !tData.mPrefix.containsAny(TD.Prefix.ORE_PROCESSING_BASED, TD.Prefix.ORE)) {
 			if (ANY.Diamond.mToThis.contains(tData.mMaterial.mMaterial) && tData.mPrefix.contains(TD.Prefix.GEM_BASED)) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.diamonds);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.diamonds);
 			}
 			if (ANY.Iron.mToThis.contains(tData.mMaterial.mMaterial)) {
-				// PORT-TODO(STATS, vanilla-achievements-removed): achieve(aPlayer, AchievementList.acquireIron);
+				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.acquireIron);
 			}
 			if (MD.TF.mLoaded && tData.mMaterial.mMaterial.mOriginalMod == MD.TF && tData.mMaterial.mMaterial.contains(TD.Properties.MAZEBREAKER)) {
 				achieve(aPlayer, TFAchievementPage.twilightProgressHydra);
