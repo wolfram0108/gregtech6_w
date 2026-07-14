@@ -495,10 +495,20 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	
 	// F9-tool: getDigSpeed(ItemStack,Block,int)/canHarvestBlock/getHarvestLevel/onBlockDestroyed — GT6-внутренние
 	// доменные вычисления (тела 1:1, зовутся другими методами этого класса напрямую). Block.getHarvestLevel(int)/
-	// getBlockHardness(World,x,y,z) внутри — восстановлены через ЦЕНТРЫ WD.harvestLevel/WD.hardness (реальные порты,
-	// не заглушки). ОСТАЁТСЯ (F9-tool, отдельный фокус-проход): подключить эти доменные вычисления к neo-mining через
-	// @Override getDestroySpeed(ItemStack,BlockState)/isCorrectToolForDrops(ItemStack,BlockState) (BlockState->Block+meta
-	// конверсия по F13) — чтобы РЕАЛЬНАЯ добыча в игре шла по GT6-логике, а не neo-дефолту. См. STATE «F9-tool».
+	// getBlockHardness(World,x,y,z) внутри — восстановлены через ЦЕНТРЫ WD.harvestLevel/WD.hardness (реальные порты).
+	// НЕO-MINING-МОСТ (принцип 4): подключаем GT6-доменные вычисления к реальной добыче движка. getDestroySpeed/
+	// isCorrectToolForDrops — БЕЗ позиции (F13: числовой меты в BlockState нет) → мета-0, РОВНО как GT6-canHarvestBlock:518
+	// всегда берёт (byte)0 (консистентно с оригиналом:487-488). mineBlock — С позицией → onBlockDestroyed с реальной метой
+	// (WD.meta(world,pos) внутри). Теперь инструмент в игре копает/дропает/изнашивается по GT6-логике, а не neo-дефолту.
+	@Override public float getDestroySpeed(ItemStack aStack, net.minecraft.world.level.block.state.BlockState aState) {
+		return getDigSpeed(aStack, aState.getBlock(), 0);
+	}
+	@Override public boolean isCorrectToolForDrops(ItemStack aStack, net.minecraft.world.level.block.state.BlockState aState) {
+		return canHarvestBlock(aState.getBlock(), aStack);
+	}
+	@Override public boolean mineBlock(ItemStack aStack, Level aWorld, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.LivingEntity aPlayer) {
+		return onBlockDestroyed(aStack, aWorld, aState.getBlock(), aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer);
+	}
 	public float getDigSpeed(ItemStack aStack, Block aBlock, int aMeta) {
 		if (aBlock == NB || WD.bedrock(aBlock)) return 0;
 		if (ST.instaharvest(aBlock, aMeta)) return 10;
