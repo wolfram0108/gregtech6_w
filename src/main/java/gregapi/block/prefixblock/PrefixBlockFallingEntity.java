@@ -22,6 +22,8 @@ import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
 
+import com.mojang.serialization.MapCodec;
+
 import gregapi.block.IBlockPlacable;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemNBT;
@@ -30,14 +32,20 @@ import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * @author Gregorius Techneticies
@@ -45,82 +53,94 @@ import net.minecraft.world.level.Level;
 public class PrefixBlockFallingEntity extends FallingBlockEntity {
 	protected IBlockPlacable mBlock;
 	protected ItemStack mStack;
-	
+	protected CompoundTag mBlockNBT;
+
 	public PrefixBlockFallingEntity(Level aWorld) {
-		super(aWorld);
+		super(EntityType.FALLING_BLOCK, aWorld); // PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md): плейсхолдер EntityType — своя EntityType-регистрация (DeferredRegister<EntityType>, см. GT_API.java:901-907) ещё не заведена ADR'ом
 	}
-	
+
 	public PrefixBlockFallingEntity(Level aWorld, double aX, double aY, double aZ, IBlockPlacable aBlock, ItemStack aStack) {
-		super(aWorld, aX, aY, aZ, (Block)aBlock, 0);
+		super(EntityType.FALLING_BLOCK, aWorld); // PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md): плейсхолдер EntityType, см. выше
+		setPos(aX, aY, aZ);
 		mBlock = aBlock;
 		mStack = aStack;
-		field_145810_d = ItemNBT.get(aStack);
+		mBlockNBT = ItemNBT.get(aStack);
+		// PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md): blockState (визуал падающего блока) остаётся дефолтным
+		// Blocks.SAND.defaultBlockState() — приватный конструктор FallingBlockEntity(Level,x,y,z,BlockState) (FallingBlockEntity.java:79)
+		// недоступен вне пакета neo, публичного сеттера нет.
 	}
-	
-	// @Override
-	public void onUpdate() {
-		prevPosX = getX();
-		prevPosY = getY();
-		prevPosZ = getZ();
-		++field_145812_b;
-		motionY -= 0.03999999910593033D;
-		moveEntity(motionX, motionY, motionZ);
-		motionX *= 0.9800000190734863D;
-		motionY *= 0.9800000190734863D;
-		motionZ *= 0.9800000190734863D;
+
+	@Override
+	public void tick() {
+		xo = getX();
+		yo = getY();
+		zo = getZ();
+		++time;
+		setDeltaMovement(getDeltaMovement().add(0.0D, -0.03999999910593033D, 0.0D));
+		move(MoverType.SELF, getDeltaMovement());
+		setDeltaMovement(getDeltaMovement().scale(0.9800000190734863D));
 		if (!level().isClientSide()) {
 			int aX = UT.Code.roundDown(getX());
 			int aY = UT.Code.roundDown(getY());
 			int aZ = UT.Code.roundDown(getZ());
-			if (field_145812_b == 1) {
-				if (WD.block(level(), aX, aY, aZ) != super.func_145805_f()) {
-					setDead();
+			if (time == 1) {
+				if (WD.block(level(), aX, aY, aZ) != getBlockState().getBlock()) {
+					discard();
 					return;
 				}
-				level().setBlockToAir(aX, aY, aZ);
+				WD.set(level(), aX, aY, aZ, Blocks.AIR, 0, 3);
 			}
-			if (onGround) {
-				motionX *= 0.699999988079071D;
-				motionZ *= 0.699999988079071D;
-				motionY *= -0.5D;
+			if (onGround()) {
+				Vec3 v = getDeltaMovement();
+				setDeltaMovement(v.x * 0.699999988079071D, v.y * -0.5D, v.z * 0.699999988079071D);
 				if (WD.block(level(), aX, aY, aZ) != Blocks.MOVING_PISTON) {
-					setDead();
-					if (!level().canPlaceEntityOnSide(super.func_145805_f(), aX, aY, aZ, T, 1, null, mStack) || FallingBlock.func_149831_e(level(), aX, aY - 1, aZ) || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), ItemNBT.get(mStack), T, T)) {
-						if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
+					discard();
+					if (WD.hasCollide(level(), aX, aY, aZ, getBlockState().getBlock()) || FallingBlock.isFree(WD.block(level(), aX, aY - 1, aZ).defaultBlockState()) || !mBlock.placeBlock(level(), aX, aY, aZ, (byte)1, ST.meta_(mStack), ItemNBT.get(mStack), T, T)) {
+						if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, tStack);}} else {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, mStack);}
 					}
 				}
-			} else if (field_145812_b > 100 && !level().isClientSide() && (aY < 1 || aY > 256) || field_145812_b > 600) {
-				if (field_145813_c) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) entityDropItem(tStack, 0.0F);} else entityDropItem(mStack, 0.0F);
-				setDead();
+			} else if (time > 100 && !level().isClientSide() && (aY < 1 || aY > 256) || time > 600) {
+				if (dropItem) if (mBlock instanceof PrefixBlock) {for (ItemStack tStack : ((PrefixBlock)mBlock).mDrops.getDrops((PrefixBlock)mBlock, level(), aX, aY, aZ, ST.meta_(mStack), null, 0, F)) {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, tStack);}} else {if (level() instanceof ServerLevel tServerLevel) spawnAtLocation(tServerLevel, mStack);}
+				discard();
 			}
 		}
 	}
-	
-	// @Override
+
+	@Override
 	@SuppressWarnings("unchecked")
-	protected void fall(float p_70069_1_) {
-		int i = Mth.ceiling_float_int(p_70069_1_ - 1.0F);
-		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntities(this, boundingBox))) {
-			if (tEntity instanceof LivingEntity) tEntity.hurt(damageSources().fallingBlock(this), TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor_float((float)i * 2), 40));// было DamageSource.fallingBlock (1.7.10 статик удалён) -> neo damageSources().fallingBlock(Entity=падающий блок=this)
+	public boolean causeFallDamage(double aFallDistance, float aDamageModifier, DamageSource aDamageSource) {
+		int i = Mth.ceil(aFallDistance - 1.0D);
+		if (i > 0) for (Entity tEntity : new ArrayListNoNulls<Entity>(level().getEntities(this, getBoundingBox()))) {
+			if (tEntity instanceof LivingEntity) tEntity.hurt(damageSources().fallingBlock(this), TFC_DAMAGE_MULTIPLIER * Math.min(Mth.floor((float)i * 2), 40));// было DamageSource.fallingBlock (1.7.10 статик удалён) -> neo damageSources().fallingBlock(Entity=падающий блок=this)
 		}
+		return false;
 	}
-	
-	// @Override
-	protected void writeEntityToNBT(CompoundTag aNBT) {
-		super.writeEntityToNBT(aNBT);
+
+	/**
+	 * F8 (шов «NBT-персистенс Entity», тот же приём моста CompoundTag<->ValueIO, что и F8-TE в
+	 * {@code TileEntityBase01Root.saveAdditional/loadAdditional}): neo зовёт
+	 * {@code addAdditionalSaveData(ValueOutput)}/{@code readAdditionalSaveData(ValueInput)}
+	 * (`neo-decompiled/net/minecraft/world/entity/Entity.java:2121,2123`), а не GT6/1.7.10-модель
+	 * {@code writeEntityToNBT}/{@code readEntityFromNBT}(NBTTagCompound). super.addAdditionalSaveData
+	 * вызывается первым, чтобы сохранить neo-собственные данные FallingBlockEntity (Time/DropItem/
+	 * BlockState/TileEntityData/…, см. FallingBlockEntity.java:290-302).
+	 */
+	@Override
+	protected void addAdditionalSaveData(ValueOutput output) {
+		super.addAdditionalSaveData(output);
+		CompoundTag aNBT = UT.NBT.make();
 		aNBT.putShort("MetaData", ST.meta_(mStack));
+		if (mBlockNBT != null) aNBT.put("TileEntityData", mBlockNBT);
+		output.store(aNBT);
 	}
-	
-	// @Override
-	protected void readEntityFromNBT(CompoundTag aNBT) {
-		super.readEntityFromNBT(aNBT);
-		mBlock = (IBlockPlacable)super.func_145805_f();
-		mStack = ST.make(super.func_145805_f(), 1, aNBT.getShort("MetaData"));
-		ItemNBT.set(mStack, field_145810_d);
-	}
-	
-	// @Override
-	public Block func_145805_f() {
-		return Blocks.GRAVEL;
+
+	@Override
+	protected void readAdditionalSaveData(ValueInput input) {
+		super.readAdditionalSaveData(input);
+		CompoundTag aNBT = input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC)).orElseGet(UT.NBT::make);
+		mBlock = (IBlockPlacable)getBlockState().getBlock();
+		mStack = ST.make(getBlockState().getBlock(), 1, aNBT.getShortOr("MetaData", (short)0));
+		mBlockNBT = aNBT.getCompound("TileEntityData").orElse(null);
+		ItemNBT.set(mStack, mBlockNBT);
 	}
 }
