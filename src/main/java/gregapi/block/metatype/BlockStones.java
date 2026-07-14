@@ -40,6 +40,7 @@ import gregapi.util.*;
 import mods.railcraft.common.carts.EntityTunnelBore;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -734,7 +735,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 	
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(ST.make(this, 1, mBlock == this && aMeta == STONE ? COBBL : aMeta));}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return SEALABLE[aMeta] && super.isSealable(aMeta, aSide);}
-	public int isProvidingWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return WD.meta(aWorld, aX, aY, aZ) == RSTBR ? 15 : 0;}
+	// было isProvidingWeakPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:356]
+	@Override protected int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {return WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()) == RSTBR ? 15 : 0;}
 	public boolean shouldCheckWeakPower(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return mBlock == this && WD.meta(aWorld, aX, aY, aZ) != RSTBR;}
 	@Override public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (MOSSY[WD.meta(aWorld, aX, aY, aZ)] && WD.burning(aWorld, aX, aY, aZ)) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate(aWorld));}
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {if (MOSSY[WD.meta(aWorld, aX, aY, aZ)] && WD.burning(aWorld, aX, aY, aZ)) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate(aWorld));}

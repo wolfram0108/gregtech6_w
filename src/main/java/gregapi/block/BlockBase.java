@@ -125,7 +125,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return 1;}
 	public final void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2); onNeighborBlockChange2(aWorld, aX, aY, aZ, aBlock);}
-	public final void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {if (useGravity(WD.meta(aWorld, aX, aY, aZ))) aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2); onBlockAdded2(aWorld, aX, aY, aZ);}
+	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]
+	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {if (useGravity(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()))) aWorld.scheduleTick(aPos, this, 2); onBlockAdded2(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());}
 	public IIcon getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return getIcon(aSide, WD.meta(aWorld, aX, aY, aZ));}
 	
 	@Override public String name(byte aMeta) {return aMeta == W ? mNameInternal : mNameInternal + "." + aMeta;}

@@ -33,6 +33,7 @@ import gregapi.render.RendererBlockTextured;
 import gregapi.tileentity.ITileEntity;
 import gregapi.tileentity.ITileEntityMachineBlockUpdateable;
 import gregapi.util.WD;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
@@ -120,7 +121,8 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		try {
 			if (!aWorld.isClientSide() && aCauseBlockUpdates) {
 				aWorld.notifyBlockChange(aX, aY, aZ, tReplacedBlock);
-				aWorld.func_147453_f(aX, aY, aZ, aMTEContainer.mBlock);
+				// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338]
+				aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock, null);
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {

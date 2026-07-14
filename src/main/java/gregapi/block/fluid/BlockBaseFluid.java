@@ -423,8 +423,9 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	}
 	
 	/** This Function has been named wrong. It should be onEntityOverlapWithBlock */
-	// @Override
-	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
+	// было onEntityCollidedWithBlock(World,x,y,z,Entity) -> BlockBehaviour.entityInside(BlockState,Level,BlockPos,Entity,InsideBlockEffectApplier,boolean) [BlockBehaviour.java:360];
+	// новые параметры effectApplier/isPrecise (батч damage-эффектов, F16-концепция без 1.7.10-аналога) не используются - GT6 их и раньше не применял.
+	@Override protected void entityInside(BlockState aState, Level aWorld, BlockPos aPos, Entity aEntity, net.minecraft.world.entity.InsideBlockEffectApplier aEffectApplier, boolean aIsPrecise) {
 		if (mActLikeWeb) aEntity.makeStuckInBlock(defaultBlockState(), new Vec3(0.25, 0.05F, 0.25)); // было setInWeb() — 1.7.10 Entity.setInWeb() удалён; Entity.makeStuckInBlock(BlockState,Vec3) — тот же приём/константа, что ванильный WebBlock.entityInside (WebBlock.java:28,33)
 		if (!aWorld.isClientSide() && !mEffectsBathing.isEmpty() && aEntity instanceof LivingEntity && !UT.Entities.isWearingFullChemHazmat((LivingEntity)aEntity)) {
 			for (int[] tEffects : mEffectsBathing) UT.Entities.applyPotion(aEntity, tEffects[0], tEffects[1], tEffects[2], F);
