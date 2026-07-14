@@ -20,6 +20,7 @@
 package gregapi.fluid;
 
 import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidTank;
 
 /**
  * F5 компат-заглушка: Forge-1.7.10 {@code net.minecraftforge.fluids.FluidTankInfo} — простая
@@ -37,5 +38,11 @@ public final class FluidTankInfo {
 	public FluidTankInfo(FluidStack aFluid, int aCapacity) {
 		fluid = aFluid;
 		capacity = aCapacity;
+	}
+
+	/** Forge-1.7.10 {@code FluidTankInfo(IFluidTank)} = пара (текущая жидкость, ёмкость бака).
+	 *  neo IFluidTank сохранил {@code getFluid()}/{@code getCapacity()} — 1:1. */
+	public FluidTankInfo(IFluidTank aTank) {
+		this(aTank.getFluid(), aTank.getCapacity());
 	}
 }

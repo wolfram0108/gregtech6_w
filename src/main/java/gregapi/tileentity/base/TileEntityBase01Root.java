@@ -24,6 +24,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import gregapi.fluid.FluidTankInfo;
 
 import appeng.api.movable.IMovableTile;
@@ -664,7 +665,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
 		IFluidTank tTank = getFluidTankFillable(UT.Code.side(aDirection), aFluid);
 		if (tTank == null) return 0;
-		int rFilledAmount = tTank.fill(aFluid, aDoFill);
+		int rFilledAmount = tTank.fill(aFluid, aDoFill ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 		if (rFilledAmount > 0 && aDoFill) updateTanks();
 		return rFilledAmount;
 	}
@@ -673,7 +674,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (aFluid == null || aFluid.getAmount() <= 0) return null;
 		IFluidTank tTank = getFluidTankDrainable(UT.Code.side(aDirection), aFluid);
 		if (tTank == null || FL.invalid(tTank.getFluid()) || tTank.getFluidAmount() == 0 || !FL.equal(tTank.getFluid(), aFluid)) return null;
-		FluidStack rDrained = tTank.drain(aFluid.getAmount(), aDoDrain);
+		FluidStack rDrained = tTank.drain(aFluid.getAmount(), aDoDrain ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 		if (rDrained != null && aDoDrain) updateTanks();
 		return rDrained;
 	}
@@ -682,7 +683,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (aAmountToDrain <= 0) return null;
 		IFluidTank tTank = getFluidTankDrainable(UT.Code.side(aDirection), null);
 		if (tTank == null || FL.invalid(tTank.getFluid()) || tTank.getFluidAmount() == 0) return null;
-		FluidStack rDrained = tTank.drain(aAmountToDrain, aDoDrain);
+		FluidStack rDrained = tTank.drain(aAmountToDrain, aDoDrain ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 		if (rDrained != null && aDoDrain) updateTanks();
 		return rDrained;
 	}
@@ -717,7 +718,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
 		IFluidTank tTank = getFluidTankFillable(aPart, SIDE_ANY, aFluid);
 		if (tTank == null) return 0;
-		int rFilledAmount = tTank.fill(aFluid, aDoFill);
+		int rFilledAmount = tTank.fill(aFluid, aDoFill ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 		if (rFilledAmount > 0 && aDoFill) updateTanks();
 		return rFilledAmount;
 	}
@@ -726,7 +727,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (aFluid == null || aFluid.getAmount() <= 0) return null;
 		IFluidTank tTank = getFluidTankDrainable(aPart, SIDE_ANY, aFluid);
 		if (tTank == null || FL.invalid(tTank.getFluid()) || tTank.getFluidAmount() == 0 || !FL.equal(tTank.getFluid(), aFluid)) return null;
-		FluidStack rDrained = tTank.drain(aFluid.getAmount(), aDoDrain);
+		FluidStack rDrained = tTank.drain(aFluid.getAmount(), aDoDrain ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 		if (rDrained != null && aDoDrain) updateTanks();
 		return rDrained;
 	}
@@ -735,7 +736,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		if (aAmountToDrain <= 0) return null;
 		IFluidTank tTank = getFluidTankDrainable(aPart, SIDE_ANY, null);
 		if (tTank == null || FL.invalid(tTank.getFluid()) || tTank.getFluidAmount() == 0) return null;
-		FluidStack rDrained = tTank.drain(aAmountToDrain, aDoDrain);
+		FluidStack rDrained = tTank.drain(aAmountToDrain, aDoDrain ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 		if (rDrained != null && aDoDrain) updateTanks();
 		return rDrained;
 	}
