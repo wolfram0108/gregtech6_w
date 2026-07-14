@@ -49,7 +49,7 @@ public class Override_Drops {
 		
 		if (aDead instanceof Player) {
 			// Do Nothing
-		} else if (aDead instanceof Animal && aDead.isChild()) {
+		} else if (aDead instanceof Animal && aDead.isBaby()) {
 			tReplaceIron = T;
 		} else if ("ZombieFarmer".equalsIgnoreCase(aClass)) {
 			tReplaceIron = T;

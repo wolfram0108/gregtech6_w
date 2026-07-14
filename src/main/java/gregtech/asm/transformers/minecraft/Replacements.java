@@ -60,7 +60,7 @@ public class Replacements {
 			// STAY THERE! DONT DESPAWN!
 			tZombieVillager.func_110163_bv();
 			// Convert to Child
-			tZombieVillager.setChild(aVillager.isChild());
+			tZombieVillager.setChild(aVillager.isBaby());
 			// Transfer Name Tag
 			tZombieVillager.setCustomNameTag(aVillager.getCustomNameTag());
 			// Prevent duping Name Tags

@@ -167,11 +167,11 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (FL.getFluid(aStack, T) == null && aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isChild()) {
+		if (FL.getFluid(aStack, T) == null && aEntity instanceof LivingEntity && !((LivingEntity)aEntity).isBaby()) {
 			if (aPlayer.level().isClientSide()) return T;
 			if (aEntity.getClass() == Cow.class || aEntity.getClass() == MushroomCow.class) {
 				if (MD.HO.mLoaded && IguanaConfig.milkedTimeout > 0 && !UT.Entities.hasInfiniteItems(aPlayer)) {
-					CompoundTag tNBT = aEntity.getEntityData();
+					CompoundTag tNBT = aEntity.getPersistentData();
 					if (tNBT.contains("Milked")) return T;
 					tNBT.putInt("Milked", IguanaConfig.milkedTimeout * 60);
 				}

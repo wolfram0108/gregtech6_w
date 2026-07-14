@@ -373,8 +373,8 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			}
 			
 			// Check if this Entity was already spawned, and not just unloaded and reloaded.
-			if (!aEvent.entity.level().isClientSide() && !aEvent.entity.getEntityData().contains("gt.spawned")) {
-				if (aEvent.entity instanceof Zombie && !((Zombie)aEvent.entity).isChild() && ST.invalid(UT.Entities.getEquipmentInSlot(((Zombie)aEvent.entity), 0))) {
+			if (!aEvent.entity.level().isClientSide() && !aEvent.entity.getPersistentData().contains("gt.spawned")) {
+				if (aEvent.entity instanceof Zombie && !((Zombie)aEvent.entity).isBaby() && ST.invalid(UT.Entities.getEquipmentInSlot(((Zombie)aEvent.entity), 0))) {
 					if (ZOMBIES_HOLD_TNT && RNGSUS.nextInt(250) == 0) {
 						((Zombie)aEvent.entity).setCurrentItemOrArmor(0, ST.make(Blocks.TNT, 1+RNGSUS.nextInt(2), 0));
 					} else if (ZOMBIES_HOLD_PICKAXES && RNGSUS.nextInt(100) == 0) {
@@ -382,7 +382,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 					}
 				}
 				// Mark Entity as has been spawned
-				aEvent.entity.getEntityData().putBoolean("gt.spawned", T);
+				aEvent.entity.getPersistentData().putBoolean("gt.spawned", T);
 			}
 			return;
 		}
