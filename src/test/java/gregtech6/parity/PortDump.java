@@ -45,27 +45,27 @@ public final class PortDump {
     private PortDump() {}
 
     public static void main(String[] args) throws Exception {
-        boolean full = args.length > 0 && args[0].equals("--full");
-        if (full) {
-            // Полный режим: нужен FML-launch-контекст (патченный MC-jar: SharedConstants.clinit -> FMLLoader).
-            System.out.println("[port-dump] bootstrap ванильных реестров…");
-            SharedConstants.setVersion(DetectedVersion.BUILT_IN);
-            Bootstrap.bootStrap();
-            Class.forName("gregapi.data.OP");   // static-init OP (префиксы + Items.GLASS_BOTTLE)
-        }
-        // MATERIALS-ONLY (по умолчанию): MT — чистые данные, не трогает ванильные классы -> запуск standalone без FML.
-        MT.init();
+        runFull();
+    }
+
+    /**
+     * Полный дамп material+prefix + parity-отчёт. ТРЕБУЕТ FML-runtime (см. класс-javadoc) — вызывать из
+     * gradle-теста ({@code ./gradlew test -PcoreOnly}), где FMLLoader инициализирован.
+     */
+    public static void runFull() throws Exception {
+        System.out.println("[port-dump] bootstrap ванильных реестров…");
+        SharedConstants.setVersion(DetectedVersion.BUILT_IN);
+        Bootstrap.bootStrap();
+        MT.init();                          // static-init MT (материалы) + init()
+        Class.forName("gregapi.data.OP");   // static-init OP (префиксы + Items.GLASS_BOTTLE)
 
         Files.createDirectories(DUMP);
         int nMat = dumpMaterials();
-        System.out.println("[port-dump] materials=" + nMat + (full ? "" : " (materials-only, без FML)"));
-        report("materials.csv");
+        int nPre = dumpPrefixes();
+        System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre);
 
-        if (full) {
-            int nPre = dumpPrefixes();
-            System.out.println("[port-dump] prefixes=" + nPre);
-            report("prefixes.csv");
-        }
+        report("materials.csv");
+        report("prefixes.csv");
     }
 
     // ------------------------------------------------------------------ materials.csv (зеркало DumpMaterials)

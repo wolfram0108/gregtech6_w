@@ -32,6 +32,28 @@ sourceSets.main.resources {
 // этот каталог и подключить настоящие зависимости — в ОДНОМ месте. Аналог compileOnly dev-jar'ов оракула.
 sourceSets.main.java.srcDir('src/compat-mirror/java')
 
+// -PcoreOnly (ОБРАТИМО, opt-in): сузить main.java до ядра-692 + mirror (917 файлов), исключив контент-слой
+// (568 файлов, 2860 ошибок компиляции). Нужно, чтобы `./gradlew test -PcoreOnly` собрался и запустил PortDump-@Test
+// в FML-runtime (единственный контекст, где заводится FMLLoader → parity-судья material/prefix). Обычная сборка
+// (без -PcoreOnly) НЕ тронута. Снять фильтр, когда контент-слой начнёт компилироваться. См. STATE.md «ПАРИТЕТ-ОСНАСТКА».
+if (project.hasProperty('coreOnly')) {
+    def toRel = { line ->
+        def p = line.trim().replace('\\', '/')
+        int i = p.indexOf('src/main/java/')
+        if (i >= 0) return p.substring(i + 'src/main/java/'.length())
+        int j = p.indexOf('src/compat-mirror/java/')
+        if (j >= 0) return p.substring(j + 'src/compat-mirror/java/'.length())
+        return null
+    }
+    def includes = []
+    file('core_unit_v2_files.txt').eachLine { def r = toRel(it); if (r) includes << r }
+    file('mirror_files.txt').eachLine { def r = toRel(it); if (r) includes << r }
+    sourceSets.main.java.setIncludes(includes)
+    // SanityTest завязан на контент-класс GregTech6.MODID (исключён фильтром) — не компилировать под coreOnly.
+    sourceSets.test.java.exclude('**/SanityTest.java')
+    logger.lifecycle("[coreOnly] main.java сужен до ${includes.size()} файлов (ядро-692 + mirror); SanityTest исключён")
+}
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 
