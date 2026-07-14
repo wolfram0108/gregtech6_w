@@ -135,11 +135,11 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		TC.VITREUS          .mAspect = Aspect.CRYSTAL;
 		TC.VOLATUS          .mAspect = Aspect.FLIGHT;
 		
-		TC.STRONTIO         .mAspect = new Aspect("strontio"    , 0xeec2b3, new Aspect[] {Aspect.MIND, Aspect.ENTROPY}      , new Identifier(RES_PATH_ASPECTS + "STRONTIO.png"), 1);
-		TC.NEBRISUM         .mAspect = new Aspect("nebrisum"    , 0xeeee7e, new Aspect[] {Aspect.MINE, Aspect.GREED}        , new Identifier(RES_PATH_ASPECTS + "NEBRISUM.png"), 1);
-		TC.ELECTRUM         .mAspect = new Aspect("electrum"    , 0xc0eeee, new Aspect[] {Aspect.ENERGY, Aspect.MECHANISM}  , new Identifier(RES_PATH_ASPECTS + "ELECTRUM.png"), 1);
-		TC.MAGNETO          .mAspect = new Aspect("magneto"     , 0xc0c0c0, new Aspect[] {Aspect.METAL, Aspect.TRAVEL}      , new Identifier(RES_PATH_ASPECTS + "MAGNETO.png"), 1);
-		TC.RADIO            .mAspect = new Aspect("radio"       , 0xc0ffc0, new Aspect[] {Aspect.LIGHT, Aspect.ENERGY}      , new Identifier(RES_PATH_ASPECTS + "RADIO.png"), 1);
+		TC.STRONTIO         .mAspect = new Aspect("strontio"    , 0xeec2b3, new Aspect[] {Aspect.MIND, Aspect.ENTROPY}      , Identifier.parse(RES_PATH_ASPECTS + "STRONTIO.png"), 1);
+		TC.NEBRISUM         .mAspect = new Aspect("nebrisum"    , 0xeeee7e, new Aspect[] {Aspect.MINE, Aspect.GREED}        , Identifier.parse(RES_PATH_ASPECTS + "NEBRISUM.png"), 1);
+		TC.ELECTRUM         .mAspect = new Aspect("electrum"    , 0xc0eeee, new Aspect[] {Aspect.ENERGY, Aspect.MECHANISM}  , Identifier.parse(RES_PATH_ASPECTS + "ELECTRUM.png"), 1);
+		TC.MAGNETO          .mAspect = new Aspect("magneto"     , 0xc0c0c0, new Aspect[] {Aspect.METAL, Aspect.TRAVEL}      , Identifier.parse(RES_PATH_ASPECTS + "MAGNETO.png"), 1);
+		TC.RADIO            .mAspect = new Aspect("radio"       , 0xc0ffc0, new Aspect[] {Aspect.LIGHT, Aspect.ENERGY}      , Identifier.parse(RES_PATH_ASPECTS + "RADIO.png"), 1);
 //      TC.REFLEXIO         .mAspect = new Aspect("reflexio"    , 0xf0f0f0, new Aspect[] {Aspect.ENERGY, Aspect.EXCHANGE}   , new ResourceLocation(RES_PATH_ASPECTS + "REFLEXIO.png"), 1);
 		
 		TC.REFLEXIO         .mAspect = Aspect.EXCHANGE;
@@ -232,7 +232,7 @@ public class CompatTC extends CompatBase implements ICompatTC {
 		ScanResult tScan;
 		if (ST.meta(aStack) == W) {
 			if (!ScanManager.hasBeenScanned(aPlayer, tScan = new ScanResult((byte)2, ST.id(aStack), 0, ST.entity(aPlayer, ST.make(ST.item(aStack), 1, 0)), ""))) rReturn |= ScanManager.completeScan(aPlayer, tScan, "@");
-			if (ST.item(aStack).getHasSubtypes()) for (int i = 1; i < 16; i++)
+			if (ST.item(aStack) instanceof gregapi.item.ItemBase && ((gregapi.item.ItemBase)ST.item(aStack)).getHasSubtypes()) for (int i = 1; i < 16; i++) // F1: getHasSubtypes() на GT6 ItemBase (neo Item без meta-подтипов); MultiItem extends ItemBase.
 			if (!ScanManager.hasBeenScanned(aPlayer, tScan = new ScanResult((byte)2, ST.id(aStack), i, ST.entity(aPlayer, ST.make(ST.item(aStack), 1, i)), ""))) rReturn |= ScanManager.completeScan(aPlayer, tScan, "@");
 		} else {
 			if (!ScanManager.hasBeenScanned(aPlayer, tScan = new ScanResult((byte)2, ST.id(aStack), ST.meta(aStack), ST.entity(aPlayer, ST.copy_(aStack)), ""))) rReturn |= ScanManager.completeScan(aPlayer, tScan, "@");
