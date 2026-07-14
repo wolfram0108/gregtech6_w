@@ -39,7 +39,7 @@ public class Behavior_FeedDog extends AbstractBehaviorDefault {
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
 		if (aEntity instanceof Wolf) {
-			if (((Wolf)aEntity).isTamed()) {
+			if (((Wolf)aEntity).isTame()) {
 				if (((Wolf)aEntity).getDataWatcher().getWatchableObjectFloat(18) < 20.0F) {
 					UT.Entities.consumeCurrentItem(aPlayer);
 					((Wolf)aEntity).heal(ST.food(aStack));

@@ -45,7 +45,7 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 					UT.Entities.consumeCurrentItem(aPlayer);
 					if (!aPlayer.level().isClientSide()) {
 						if (RNGSUS.nextInt(3) == 0) {
-							((Ocelot)aEntity).setTamed(T);
+							((Ocelot)aEntity).setTame(T, true);
 							((Ocelot)aEntity).setTameSkin(1 + RNGSUS.nextInt(3));
 							((Ocelot)aEntity).func_152115_b(aPlayer.getUUID().toString());
 							for (int i = 0; i < 7; ++i) aEntity.level().spawnParticle("heart", aEntity.getX() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), aEntity.getY() + 0.5D + (RNGSUS.nextFloat() * aEntity.getBbHeight()), aEntity.getZ() + (RNGSUS.nextFloat() * aEntity.getBbWidth() * 2.0F) - aEntity.getBbWidth(), RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D, RNGSUS.nextGaussian() * 0.02D);
@@ -58,7 +58,7 @@ public class Behavior_FeedCat extends AbstractBehaviorDefault {
 				}
 				return T;
 			}
-			if (((Ocelot)aEntity).isTamed() && ((Ocelot)aEntity).getAge() == 0 && !((Ocelot)aEntity).isInLove()) {
+			if (((Ocelot)aEntity).isTame() && ((Ocelot)aEntity).getAge() == 0 && !((Ocelot)aEntity).isInLove()) {
 				UT.Entities.consumeCurrentItem(aPlayer);
 				((Ocelot)aEntity).setInLove(aPlayer);
 				return T;

@@ -43,7 +43,7 @@ public class Behavior_FeedChocolate extends AbstractBehaviorDefault {
 	
 	@Override
 	public boolean onRightClickEntity(MultiItem aItem, ItemStack aStack, Player aPlayer, Entity aEntity) {
-		if (aEntity instanceof TamableAnimal && ((TamableAnimal)aEntity).isTamed()) {
+		if (aEntity instanceof TamableAnimal && ((TamableAnimal)aEntity).isTame()) {
 			((LivingEntity)aEntity).addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
 			UT.Entities.consumeCurrentItem(aPlayer);
 			return T;

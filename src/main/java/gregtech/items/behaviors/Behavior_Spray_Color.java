@@ -110,7 +110,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 				rUsed = T;
 			}
 		}
-		if (aEntity instanceof Wolf && ((Wolf)aEntity).isTamed()) {
+		if (aEntity instanceof Wolf && ((Wolf)aEntity).isTame()) {
 			if (((Wolf)aEntity).getCollarColor() != (~mColor & 15)) {
 				((Wolf)aEntity).setCollarColor(~mColor & 15);
 				if (aEntity.level().isClientSide()) return T;
