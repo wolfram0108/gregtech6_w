@@ -38,6 +38,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 import java.util.*;
 
@@ -811,7 +812,7 @@ public class Recipe {
 		if (!checkStacksEqual(F, aDontCheckStackSizes, aInputs)) return F;
 		
 		if (aDecreaseStacksizeBySuccess) {
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {aFluid.getAmount() -= tFluid.getAmount(); break;}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (FluidStack aFluid : aFluidInputs) if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {aFluid.shrink(tFluid.getAmount()); break;} // было aFluid.amount -= X — neo FluidStack.getAmount() метод (не lvalue), мутатор shrink(int) (FluidStack.java:208)
 			checkStacksEqual(T, F, aInputs);
 		}
 		
@@ -831,7 +832,7 @@ public class Recipe {
 		if (!checkStacksEqual(F, aDontCheckStackSizes, aInputs)) return F;
 		
 		if (aDecreaseStacksizeBySuccess) {
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {tTank.drain(tFluid.getAmount(), T); break;}}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && aFluid.getAmount() >= tFluid.getAmount()) {tTank.drain(tFluid.getAmount(), FluidAction.EXECUTE); break;}} // drain(int,boolean)->drain(int,FluidAction) (IFluidTank/IFluidHandler)
 			checkStacksEqual(T, F, aInputs);
 		}
 		
@@ -853,7 +854,7 @@ public class Recipe {
 			
 			if (!checkStacksEqual(F, F, aInputs)) return rProcessCount;
 			
-			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && (aFluid.getAmount() >= tFluid.getAmount())) {tTank.drain(tFluid.getAmount(), T); break;}}
+			for (FluidStack tFluid : mFluidInputs) if (tFluid != null) for (IFluidTank tTank : aFluidInputs) {FluidStack aFluid = tTank.getFluid(); if (aFluid != null && FL.equal(aFluid, tFluid) && (aFluid.getAmount() >= tFluid.getAmount())) {tTank.drain(tFluid.getAmount(), FluidAction.EXECUTE); break;}}
 			checkStacksEqual(T, F, aInputs);
 			
 			rProcessCount++;
@@ -933,8 +934,8 @@ public class Recipe {
 				if (temp) {
 					for (int j = 0; j < aInputs      .length; j++) if (aInputs [j] != null) aInputs [j].setCount(aInputs [j].getCount()/(l));
 					for (int j = 0; j < aOutputs     .length; j++) if (aOutputs[j] != null) aOutputs[j].setCount(aOutputs[j].getCount()/(l));
-					for (int j = 0; j < aFluidInputs .length; j++) aFluidInputs [j].getAmount() /= l;
-					for (int j = 0; j < aFluidOutputs.length; j++) aFluidOutputs[j].getAmount() /= l;
+					for (int j = 0; j < aFluidInputs .length; j++) aFluidInputs [j].setAmount(aFluidInputs [j].getAmount() / l); // neo FluidStack.getAmount() не lvalue -> setAmount(getAmount()/l)
+					for (int j = 0; j < aFluidOutputs.length; j++) aFluidOutputs[j].setAmount(aFluidOutputs[j].getAmount() / l);
 					aDuration /= l;
 					break;
 				}
