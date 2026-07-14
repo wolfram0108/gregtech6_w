@@ -19,6 +19,7 @@
 
 package gregapi.item.multiitem.food;
 
+import gregapi.data.FL;
 import static gregapi.data.CS.*;
 
 import java.util.List;

@@ -106,7 +106,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.AxeItem;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import gregapi.config.ModConfigSpec;
 import gregapi.recipes.RecipeSorter;
 import team.chisel.carving.Carving;
 import thaumcraft.api.ThaumcraftApi;
@@ -443,13 +443,8 @@ public class GT_API extends Abstract_Mod {
 		File
 		tFile = new File(DirectoriesGT.CONFIG_GT, "IDs.cfg");
 		if (!tFile.exists()) tFile = new File(DirectoriesGT.CONFIG_GT, "ids.cfg");
-		// PORT-TODO(F12, config-subsystem): 1.7.10 Forge Configuration(File)+Property.get(category,key,
-		// default) не имеет аналога — neo ModConfigSpec (реальный, но АРХИТЕКТУРНО другой: строится через
-		// ModConfigSpec.Builder на регистрации мода, читается через ConfigValue.get(), нет File-конструктора
-		// и нет per-call get(category,name,default)). gregapi.config.Config/gregapi.lang.LanguageHandler
-		// (владельцы sConfigFileIDs/sLangFile) сами ещё не портированы на этот API (отдельный шов вне
-		// зоны F12, свои 48/40 ошибок компиляции) — деградация до no-op здесь, дефолты берутся из кода.
-		
+		Config.sConfigFileIDs = new ModConfigSpec(tFile); Config.sConfigFileIDs.save();
+
 		ConfigsGT.GREGTECH      = new Config("GregTech.cfg").setUseDefaultInNames(F);
 		ConfigsGT.RECIPES       = new Config("Recipes.cfg");
 		ConfigsGT.WORLDGEN      = new Config("WorldGenerationNew.cfg");
@@ -462,10 +457,8 @@ public class GT_API extends Abstract_Mod {
 		
 		tFile = new File(DirectoriesGT.CONFIG_GT, "Stacksizes.cfg");
 		if (!tFile.exists()) tFile = new File(DirectoriesGT.CONFIG_GT, "stacksizes.cfg");
-		// PORT-TODO(F12, config-subsystem): см. PORT-TODO выше (sConfigFileIDs) — тот же класс проблемы,
-		// raw ModConfigSpec не даёт File-конструктор/per-call get(category,name,default). tStackConfig
-		// оставлен null; ниже используется дефолт tPrefix.mDefaultStackSize напрямую (без override из файла).
-		
+		ModConfigSpec tStackConfig = new ModConfigSpec(tFile);
+
 		tFile = new File(DirectoriesGT.LOGS, "gregtech.log");
 		if (!tFile.exists()) try {tFile.createNewFile();} catch(Throwable e) {/**/}
 		
@@ -651,12 +644,10 @@ public class GT_API extends Abstract_Mod {
 		
 		
 		for (OreDictPrefix tPrefix : OreDictPrefix.VALUES) if (!tPrefix.contains(TD.Prefix.PREFIX_UNUSED)) {
-			// PORT-TODO(F12, config-subsystem): было tStackConfig.get("stacksizes", tPrefix.mNameInternal+
-			// "_"+tPrefix.mDefaultStackSize, tPrefix.mDefaultStackSize).getInt() — config-файл не читается
-			// (см. PORT-TODO у объявления tStackConfig выше), используется скомпилированный дефолт напрямую.
-			tPrefix.setConfigStacksize(tPrefix.mDefaultStackSize);
+			tPrefix.setConfigStacksize(tStackConfig.get("stacksizes", tPrefix.mNameInternal+"_"+tPrefix.mDefaultStackSize, tPrefix.mDefaultStackSize).getInt());
 		}
-		
+		tStackConfig.save();
+
 		SURVIVAL_INTO_ADVENTURE_MODE            = ConfigsGT.GREGTECH.get("general", "forceAdventureMode"               , F);
 		ADVENTURE_MODE_KIT                      = ConfigsGT.GREGTECH.get("general", "AdventureModeStartingKit"         , !MD.GT.mLoaded);
 		HUNGER_BY_INVENTORY_WEIGHT              = ConfigsGT.GREGTECH.get("general", "AFK_Hunger"                       ,  MD.GT.mLoaded);
@@ -883,11 +874,8 @@ public class GT_API extends Abstract_Mod {
 		if (CODE_CLIENT) {
 			tFile = new File(DirectoriesGT.MINECRAFT, "GregTech.lang");
 			if (!tFile.exists()) tFile = new File(DirectoriesGT.MINECRAFT, "gregtech.lang");
-			// PORT-TODO(F12, config-subsystem): см. PORT-TODO у sConfigFileIDs выше — тот же класс проблемы
-			// (raw ModConfigSpec без File-конструктора/per-call get). LanguageHandler.sLangFile остаётся
-			// null (LanguageHandler уже null-safe на этот случай, читает английские дефолты), sUseFile —
-			// тот же дефолт F, что был третьим аргументом оригинального .get(..., F).
-			LanguageHandler.sUseFile = F;
+			LanguageHandler.sLangFile = new ModConfigSpec(tFile);
+			LanguageHandler.sUseFile = LanguageHandler.sLangFile.get("EnableLangFile", "UseThisFileAsLanguageFile", F).getBoolean(F);
 		} else {
 			sBlockIconload.clear();
 			sBlockIconload = null;

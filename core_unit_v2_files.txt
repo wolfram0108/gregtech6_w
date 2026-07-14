@@ -137,6 +137,8 @@ D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/computer/ICoverComputerizable.j
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/computer/ITileEntityComputerizable.java
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/config/Config.java
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/config/ConfigCategories.java
+D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/config/ConfigValue.java
+D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/config/ModConfigSpec.java
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/cover/CoverData.java
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/cover/CoverRegistry.java
 D:/Temp/MC_NEW/gregtech6_w/src/main/java/gregapi/cover/ICover.java

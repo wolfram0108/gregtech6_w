@@ -75,11 +75,13 @@ public class GT_Client extends GT_Proxy {
 	 * (`neo-decompiled/net/minecraft/world/entity/player/Player.java:1399`). {@code ClickEvent} — теперь
 	 * sealed-интерфейс с записями по действию ({@code ClickEvent.OpenFile(String)}/{@code .OpenUrl(URI)},
 	 * `neo-decompiled/net/minecraft/network/chat/ClickEvent.java:103-135`), стиль — {@code MutableComponent.withStyle}.
-	 * PORT-TODO(конфиг-подсистема, вне объёма F3): {@code ConfigsGT.CLIENT.mConfig.getConfigFile()} недостижим —
-	 * {@code gregapi.config.Config} использует {@code net.neoforged.neoforge.common.ModConfigSpec} неправильно
-	 * ({@code new ModConfigSpec(File)}/{@code .load()}/{@code .save()} не существуют у реального типа — САМ
-	 * класс уже содержит 24 независимые ошибки, не render, не трогается); кликабельная ссылка "открыть файл"
-	 * заменена на обычный текст без клика (сообщение показывается, клик недостижим до починки конфиг-подсистемы).
+	 * (ранее здесь была деградация из-за незакрытого "F12, config-subsystem" — {@code ConfigsGT.CLIENT.mConfig.
+	 * getConfigFile()} был недостижим, т.к. {@code gregapi.config.Config} использовал декларативный neo
+	 * {@code net.neoforged.neoforge.common.ModConfigSpec} без {@code File}-конструктора/{@code .load()}/
+	 * {@code .save()}; ЗАКРЫТО тем же чекпоинтом, что и эта ledger-метка — {@code gregapi.config.Config}
+	 * теперь использует свой {@code gregapi.config.ModConfigSpec} (динамический, файловый, воспроизводящий
+	 * 1.7.10 Forge Configuration/Property), {@code getConfigFile()} реален — кликабельная ссылка "открыть
+	 * файл" (было {@code ClickEvent.Action.OPEN_FILE}) восстановлена как {@code new ClickEvent.OpenFile(String)}).
 	 */
 	@SubscribeEvent
 	public void onPlayerTickEventClient(PlayerTickEvent.Post aEvent) {
@@ -93,6 +95,7 @@ public class GT_Client extends GT_Proxy {
 						tPlayer.sendSystemMessage(Component.literal(mMessage));
 						tPlayer.sendSystemMessage(Component.literal(LH.Chat.DGRAY + ""));
 						tLink = Component.literal(LH.Chat.DGRAY + "disable message in the clientside gregtech.cfg");
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (mVersionOutdated) {
@@ -101,6 +104,7 @@ public class GT_Client extends GT_Proxy {
 						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenUrl(URI.create("https://gregtech.mechaenetia.com/1.7.10"))));
 						tPlayer.sendSystemMessage(tLink);
 						tLink = Component.literal(LH.Chat.DGRAY + "disable checker in the clientside gregtech.cfg");
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (MD.IC2.mLoaded && !MD.IC2C.mLoaded) {
@@ -129,6 +133,7 @@ public class GT_Client extends GT_Proxy {
 						tPlayer.sendSystemMessage(Component.literal(LH.Chat.RED + "Warning! CustomOreGen will screw up all GregTech Worldgen with its Default Configs!"));
 						tPlayer.sendSystemMessage(Component.literal(LH.Chat.ORANGE + "If you don't even use CustomOreGen, I would highly recommend you to remove it."));
 						tLink = Component.literal(LH.Chat.DGRAY + "disable warning in the clientside gregtech.cfg");
+						tLink = tLink.withStyle(s -> s.withClickEvent(new ClickEvent.OpenFile(ConfigsGT.CLIENT.mConfig.getConfigFile().getAbsolutePath())));
 						tPlayer.sendSystemMessage(tLink);
 					}
 					if (WOODMANS_BDAY) {

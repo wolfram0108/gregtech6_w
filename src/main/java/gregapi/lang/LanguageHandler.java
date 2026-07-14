@@ -31,9 +31,11 @@ import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import gregapi.config.ConfigValue;
+import gregapi.config.ModConfigSpec;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import static gregapi.data.CS.*;
 
@@ -74,19 +76,28 @@ public class LanguageHandler {
 		if (aKey == null) return;
 		aKey = aKey.trim();
 		if (aKey.length() <= 0) return;
+		boolean tSave = F;
 		BACKUPMAP.put(aKey, aEnglish);
 		if (sLangFile == null) {
 			BUFFERMAP.put(aKey, aEnglish);
 		} else {
-			// PORT-TODO(F12, config-subsystem): тот же класс проблемы, что у GT_API.java (см.
-			// PORT-TODO "F12, config-subsystem" там) — ModConfigSpec строится через Builder на
-			// регистрации мода (статическая схема), нет File-конструктора и нет per-call
-			// get(category,name,default), как было у 1.7.10 Configuration/Property. Владельцы
-			// (gregapi.config.Config, эта sLangFile-ветка) сами не портированы на реальный
-			// ModConfigSpec — отдельный шов вне локализации. В текущем состоянии порта GT_API.java
-			// держит LanguageHandler.sLangFile===null (см. GT_API.java, "sUseFile — тот же дефолт F"),
-			// поэтому эта ветка фактически не выполняется; BACKUPMAP выше остаётся источником истины.
+			if (!BUFFERMAP.isEmpty()) {
+				tSave = T;
+				// PORT-TODO(LOCALIZATION, runtime-inject-to-vanilla-lang): см. set() выше — ДРУГАЯ,
+				// уже зарегистрированная метка (не эта задача): 1.7.10 LanguageRegistry.instance()
+				// .injectLanguage("en_US", TEMPMAP) регистрировал строку в ЖИВОЙ ванильной таблице
+				// переводов, аналога нет ни в одном из 3 корней neo — петля по TEMPMAP/injectLanguage
+				// снята здесь как и в set(). F12-часть (эта задача) — file round-trip: каждый
+				// буферизованный ключ регистрируется в sLangFile, иначе он никогда не попадёт в файл.
+				for (Entry<String, String> tEntry : BUFFERMAP.entrySet()) {
+					sLangFile.get("LanguageFile", tEntry.getKey(), tEntry.getValue());
+				}
+				BUFFERMAP.clear();
+			}
+			ConfigValue tProperty = sLangFile.get("LanguageFile", aKey, aEnglish);
+			tSave |= tProperty.wasRead();
 		}
+		if (tSave && mWritingEnabled) sLangFile.save();
 	}
 	
 	public static String get(String aKey, String aDefault) {
@@ -101,10 +112,9 @@ public class LanguageHandler {
 	
 	public static String langfile(String aKey, String aEnglish) {
 		if (sLangFile == null) return aEnglish;
-		// PORT-TODO(F12, config-subsystem): см. add() выше — тот же класс проблемы (ModConfigSpec
-		// без per-call get(category,name,default)); sLangFile-оверрайд не портирован, дефолт-строка
-		// возвращается как есть (тот же исход, что и sLangFile==null).
-		return aEnglish;
+		ConfigValue tProperty = sLangFile.get("LanguageFile", aKey, aEnglish);
+		if (tProperty.wasRead() && mWritingEnabled) sLangFile.save();
+		return sUseFile?tProperty.getString():aEnglish;
 	}
 
 	public static String translate(String aKey) {

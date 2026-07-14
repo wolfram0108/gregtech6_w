@@ -137,7 +137,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 				if (aFluid.isGaseous(tFluid)) aList.add(LH.Chat.BLINKING_RED + " (Warning: Considered a Gas by Mods other than GT!)");
 			}
 			
-			int tDensity = aFluid.getDensity(tFluid);
+			int tDensity = aFluid.getFluidType().getDensity(tFluid);
 			if (tDensity > 0) {
 				aList.add(LH.Chat.GREEN + "Density: " + tDensity + " ; Heavier than Air (typically moves down)");
 			} else if (tDensity < 0) {
@@ -146,10 +146,10 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 				aList.add(LH.Chat.GREEN + "Density: 0 ; As dense as Air (typically still moves down)");
 			}
 			
-			int tLuminosity = aFluid.getLuminosity(tFluid);
+			int tLuminosity = aFluid.getFluidType().getLightLevel(tFluid);
 			if (tLuminosity != 0) aList.add(LH.Chat.YELLOW + "Luminosity: " + tLuminosity);
 			
-			int tViscosity = aFluid.getViscosity(tFluid);
+			int tViscosity = aFluid.getFluidType().getViscosity(tFluid);
 			if (tViscosity != 0) aList.add(LH.Chat.BLUE + "Viscosity: " + tViscosity);
 			
 			if (FluidsGT.COOKING_OIL.contains(aName)) {
