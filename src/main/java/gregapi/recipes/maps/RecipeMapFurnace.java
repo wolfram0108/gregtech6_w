@@ -54,7 +54,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 		ItemStack tOutput = RM.get_smelting(aInputs[0]);
 		if (tOutput == null) return null;
 		
-		FluidStack tCookingOil = (aFluids != null && aFluids.length > 0 && aFluids[0] != null && FluidsGT.COOKING_OIL.contains(aFluids[0].getFluid().getName()) ? aFluids[0] : NF), rXP = NF;
+		FluidStack tCookingOil = (aFluids != null && aFluids.length > 0 && aFluids[0] != null && FluidsGT.COOKING_OIL.contains(FL.regName(aFluids[0].getFluid())) ? aFluids[0] : NF), rXP = NF;
 		if (FL.valid(tCookingOil) && tCookingOil.getAmount() >= 50 && !OD.listAllmeatsubstitute.is(aInputs[0]) && !OD.listAllmeatsubstitute.is(tOutput) && (OD.listAllmeatraw.is(aInputs[0]) || OD.listAllmeatcooked.is(tOutput))) {
 			tOutput.setCount(tOutput.getCount()+1);
 			tCookingOil = FL.amount(tCookingOil, 50);

@@ -53,7 +53,7 @@ public class RecipeMapBumblelyzer extends RecipeMap {
 		Recipe rRecipe = super.findRecipe(aTileEntity, aRecipe, aNotUnificated, aSize, aSpecialSlot, aFluids, aInputs);
 		if (aInputs == null || aFluids == null || aFluids.length < 1 || aFluids[0] == null || GAPI_POST.mFinishedServerStarted <= 0) return rRecipe;
 		if (rRecipe == null) {
-			if (FluidsGT.HONEY.contains(aFluids[0].getFluid().getName()) || FL.Honeydew.is(aFluids[0])) {
+			if (FluidsGT.HONEY.contains(FL.regName(aFluids[0].getFluid())) || FL.Honeydew.is(aFluids[0])) {
 				for (ItemStack aInput : aInputs) if (ST.valid(aInput)) {
 					aInput = ST.amount(1, aInput);
 					if (aInput.getItem() instanceof IItemBumbleBee) {

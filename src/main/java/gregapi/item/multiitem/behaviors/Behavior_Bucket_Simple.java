@@ -69,7 +69,7 @@ public class Behavior_Bucket_Simple extends AbstractBehaviorDefault {
 		ItemStack tBucket = ST.make(Items.BUCKET, 1, 0);
 		
 		Direction aFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
-		Level aWorld = aSource.getWorld();
+		Level aWorld = aSource.level();
 		int aX = aSource.getXInt() + aFacing.getFrontOffsetX(), aY = aSource.getYInt() + aFacing.getFrontOffsetY(), aZ = aSource.getZInt() + aFacing.getFrontOffsetZ();
 		
 		if (mFluid == null) {
