@@ -261,62 +261,18 @@ public class WD {
 
 	public static boolean dimAETHER(Level aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
 
+	/** было ручное 1.7.10 dimension-travel (DimensionManager/ridingEntity/removePlayerEntityDangerously/ClientboundRespawnPacket/
+	 *  theItemInWorldManager/getConfigurationManager/FMLCommonHandler.firePlayerChangedDimensionEvent/createEntityByName — все удалены) —
+	 *  neo Entity.teleportTo(ServerLevel,x,y,z,Set<Relative>,yRot,xRot,resetCamera) (Entity.java:3257) выполняет весь цикл кросс-мерного
+	 *  перемещения (спешивание/respawn-пакет/inventory-sync/пере-создание сущности) внутри. Целевой мир по int-dim через WD.dimensionId
+	 *  (getAllLevels:1239). resetCamera=F, координаты абсолютные (пустой Set<Relative>). PORT-TODO(F-dimension): модовые int-id зависят от WD.dimensionId-карты. */
 	public static boolean move(Entity aEntity, int aDimension, double aX, double aY, double aZ) {
-		ServerLevel tTargetWorld = DimensionManager.getWorld(aDimension), tOriginalWorld = DimensionManager.getWorld(WD.dimensionId(aEntity.level()));
-		if (tTargetWorld != null && tOriginalWorld != null && tTargetWorld != tOriginalWorld) {
-			if (aEntity.ridingEntity != null) aEntity.mountEntity(null);
-			if (aEntity.riddenByEntity != null) aEntity.riddenByEntity.mountEntity(null);
-			
-			if (aEntity instanceof ServerPlayer) {
-				ServerPlayer aPlayer = (ServerPlayer)aEntity;
-				aPlayer.dimension = aDimension;
-				aPlayer.playerNetServerHandler.sendPacket(new ClientboundRespawnPacket(aPlayer.dimension, aPlayer.level().difficultySetting, aPlayer.level().getWorldInfo().getTerrainType(), aPlayer.theItemInWorldManager.getGameType()));
-				tOriginalWorld.removePlayerEntityDangerously(aPlayer);
-				aPlayer.revive();
-				aPlayer.setWorld(tTargetWorld);
-				MinecraftServer.getServer().getConfigurationManager().func_72375_a(aPlayer, tOriginalWorld);
-				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.getXRot());
-				aPlayer.theItemInWorldManager.setWorld(tTargetWorld);
-				MinecraftServer.getServer().getConfigurationManager().updateTimeAndWeatherForPlayer(aPlayer, tTargetWorld);
-				MinecraftServer.getServer().getConfigurationManager().syncPlayerInventory(aPlayer);
-				@SuppressWarnings("rawtypes")
-				Iterator tIterator = aPlayer.getActivePotionEffects().iterator();
-				while (tIterator.hasNext()) {
-					MobEffectInstance potioneffect = (MobEffectInstance)tIterator.next();
-					aPlayer.playerNetServerHandler.sendPacket(new ClientboundUpdateMobEffectPacket(aPlayer.getEntityId(), potioneffect));
-				}
-				aPlayer.playerNetServerHandler.setPlayerLocation(aX+0.5, aY+0.5, aZ+0.5, aPlayer.rotationYaw, aPlayer.getXRot());
-				FMLCommonHandler.instance().firePlayerChangedDimensionEvent(aPlayer, WD.dimensionId(tOriginalWorld), aDimension);
-			} else {
-				aEntity.setPosition(aX+0.5, aY+0.5, aZ+0.5);
-				aEntity.level().removeEntity(aEntity);
-				aEntity.dimension = aDimension;
-				aEntity.revive();
-				Entity tNewEntity = EntityType.createEntityByName(EntityType.getEntityString(aEntity), tTargetWorld);
-				if (tNewEntity != null) {
-					tNewEntity.copyDataFrom(aEntity, T);
-					aEntity.discard();
-					tNewEntity.revive();
-					boolean temp = tNewEntity.forceSpawn;
-					tNewEntity.forceSpawn = T;
-					tTargetWorld.addFreshEntity(tNewEntity);
-					tNewEntity.forceSpawn = temp;
-					tNewEntity.revive();
-					aEntity = tNewEntity;
-				}
-			}
-			
-			if (aEntity instanceof LivingEntity) {
-				((LivingEntity)aEntity).setPositionAndUpdate(aX, aY, aZ);
-			} else {
-				aEntity.setPosition(aX, aY, aZ);
-			}
-			
-			tOriginalWorld.resetUpdateEntityTick();
-			tTargetWorld.resetUpdateEntityTick();
-			return T;
-		}
-		return F;
+		MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		if (tServer == null || !(aEntity.level() instanceof ServerLevel)) return F;
+		ServerLevel tTargetWorld = null;
+		for (ServerLevel tLevel : tServer.getAllLevels()) if (WD.dimensionId(tLevel) == aDimension) {tTargetWorld = tLevel; break;}
+		if (tTargetWorld == null || tTargetWorld == aEntity.level()) return F;
+		return aEntity.teleportTo(tTargetWorld, aX+0.5, aY+0.5, aZ+0.5, java.util.Set.<net.minecraft.world.entity.Relative>of(), aEntity.getYRot(), aEntity.getXRot(), F);
 	}
 	
 	
