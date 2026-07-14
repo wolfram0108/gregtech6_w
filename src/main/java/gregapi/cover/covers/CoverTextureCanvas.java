@@ -59,12 +59,14 @@ public class CoverTextureCanvas extends AbstractCoverDefault {
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
 		if (aStack != null && ItemNBT.has(aStack) && ItemNBT.get(aStack).contains(NBT_CANVAS_BLOCK)) {
-			aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(Block.getBlockById(ItemNBT.get(aStack).getIntOr(NBT_CANVAS_BLOCK, 0)), 1, ItemNBT.get(aStack).getIntOr(NBT_CANVAS_META, 0) & 15)));
+			// F-registry: 1.7.10 Block.getBlockById(int) удалён -> neo BuiltInRegistries.BLOCK.byId(int) (DefaultedMappedRegistry:64,
+			// plain block-id -> Block, missing->AIR). Легаси-NBT id блока (canvas); межверсийная id-семантика — legacy-NBT-compat.
+			aList.add(LH.Chat.CYAN + "Block Image: " + ST.names(ST.make(net.minecraft.core.registries.BuiltInRegistries.BLOCK.byId(ItemNBT.get(aStack).getIntOr(NBT_CANVAS_BLOCK, 0)), 1, ItemNBT.get(aStack).getIntOr(NBT_CANVAS_META, 0) & 15)));
 		}
 		super.addToolTips(aList, aStack, aF3_H);
 	}
 	
-	@Override public ITexture getCoverTextureSurface(byte aSide, CoverData aData) {return aData.mVisuals[aSide] == 0 ? null : BlockTextureCopied.get(Block.getBlockById((aData.mVisuals[aSide] >>> 4) & 4095), SIDE_ANY, aData.mVisuals[aSide] & 15);}
+	@Override public ITexture getCoverTextureSurface(byte aSide, CoverData aData) {return aData.mVisuals[aSide] == 0 ? null : BlockTextureCopied.get(net.minecraft.core.registries.BuiltInRegistries.BLOCK.byId((aData.mVisuals[aSide] >>> 4) & 4095), SIDE_ANY, aData.mVisuals[aSide] & 15);} // F-registry: Block.getBlockById -> BuiltInRegistries.BLOCK.byId.
 	@Override public ITexture getCoverTextureAttachment(byte aSide, CoverData aData, byte aTextureSide) {return aSide != aTextureSide ? mTexture : BlockTextureMulti.get(mTexture, getCoverTextureSurface(aSide, aData));}
 	@Override public ITexture getCoverTextureHolder(byte aSide, CoverData aData, byte aTextureSide) {return mTexture;}
 	@Override public boolean isSealable(byte aCoverSide, CoverData aData) {return F;}
