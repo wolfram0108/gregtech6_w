@@ -368,6 +368,13 @@ public class WD {
 	/** F-render: 1.7.10 WD.opaque(Block) = «непрозрачный полный куб» -> neo BlockState.canOcclude()
 	 *  (BlockBehaviour.java:658). Запрос по конкретному блоку — через его defaultBlockState. */
 	public static boolean opaque(Block aBlock) {return aBlock.defaultBlockState().canOcclude();}
+	/** F-harvest-event (decisions/): 1.7.10 {@code ForgeEventFactory.fireBlockHarvesting} фаерил HarvestDropsEvent —
+	 *  внешние моды правили список дропа и шанс, метод возвращал шанс. neo: модель дропов = движко-fired
+	 *  {@code BlockDropsEvent} при спавне через loot-систему, ПРЯМОГО EventHooks-эквивалента НЕТ (сверено
+	 *  neoforge/event/EventHooks.java). GT6 спавнит дроп ВРУЧНУЮ ({@code WD.dropBlockAsItem}), минуя loot; no-op:
+	 *  возвращаем {@code aDropChance} как есть, GT6-дроп сохранён 1:1. PORT-TODO(F-harvest-event): хук
+	 *  внешне-модовой модификации дропа/шанса не подключён (нужен ре-дизайн на BlockDropsEvent). */
+	public static float fireBlockHarvesting(java.util.List<ItemStack> aDrops, Level aWorld, Block aBlock, int aX, int aY, int aZ, int aMeta, int aFortune, float aDropChance, boolean aSilkTouch, Player aPlayer) {return aDropChance;}
 	/** F-render: 1.7.10 Block-нормальный-куб = isOpaque && renderAsNormalBlock && !canProvidePower — ТОЧНО «redstone
 	 *  conductor» (полный непрозрачный блок, не источник сигнала). neo BlockState.isRedstoneConductor(BlockGetter,
 	 *  BlockPos) (BlockBehaviour.java:616) — канонический преемник (§8). */
