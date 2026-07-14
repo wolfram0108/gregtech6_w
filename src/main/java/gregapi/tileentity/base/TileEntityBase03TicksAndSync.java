@@ -113,7 +113,7 @@ public abstract class TileEntityBase03TicksAndSync extends TileEntityBase02Adjac
 		boolean tIsServerSide = isServerSide();
 		try {
 			if (mTimer == 0) {
-				markDirty();
+				setChanged();
 				WD.mark(this);
 				onTickFirst(tIsServerSide);
 			}

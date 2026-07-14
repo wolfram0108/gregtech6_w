@@ -332,7 +332,7 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	public void openInventory() {/**/}
 	public void closeInventory() {/**/}
 	public int getInventoryStackLimit() {return 64;}
-	@Override public void markDirty() {super.markDirty();}
+	@Override public void setChanged() {super.setChanged();}
 	public ItemStack decrStackSize(int aSlot, int aDecrement) {return NI;}
 	public ItemStack getStackInSlotOnClosing(int aSlot) {return NI;}
 	public ItemStack getStackInSlot(int aSlot) {return NI;}

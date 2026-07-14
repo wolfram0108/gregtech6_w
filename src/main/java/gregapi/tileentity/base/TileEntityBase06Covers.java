@@ -56,6 +56,7 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 import java.util.List;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import static gregapi.data.CS.*;
 
 /**
@@ -318,28 +319,31 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 		return T;
 	}
 	
-	// @Override
-	public final int[] getAccessibleSlotsFromSide(int aSide) {
-		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].getAccessibleSlotsFromSideOverride(UT.Code.side(aSide), mCovers, UT.Code.side(aSide))) return mCovers.mBehaviours[aSide].getAccessibleSlotsFromSide(UT.Code.side(aSide), mCovers, UT.Code.side(aSide), getAccessibleSlotsFromSide2(UT.Code.side(aSide)));
+	@Override
+	public final int[] getSlotsForFace(Direction aSide) {
+		byte tSide = UT.Code.side(aSide);
+		if (hasCovers() && SIDES_VALID[tSide] && mCovers.mBehaviours[tSide] != null && mCovers.mBehaviours[tSide].getAccessibleSlotsFromSideOverride(UT.Code.side(aSide), mCovers, UT.Code.side(aSide))) return mCovers.mBehaviours[tSide].getAccessibleSlotsFromSide(UT.Code.side(aSide), mCovers, UT.Code.side(aSide), getAccessibleSlotsFromSide2(UT.Code.side(aSide)));
 		return getAccessibleSlotsFromSide2(UT.Code.side(aSide));
 	}
-	
-	// @Override
-	public final boolean canInsertItem(int aSlot, ItemStack aStack, int aSide) {
-		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null) {
-			if (mCovers.mBehaviours[aSide].interceptItemInsert(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
-			if (mCovers.mBehaviours[aSide].canInsertItemOverride(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return mCovers.mBehaviours[aSide].canInsertItem(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide)) && canInsertItem2(aSlot, aStack, UT.Code.side(aSide));
+
+	@Override
+	public final boolean canPlaceItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {
+		byte tSide = UT.Code.side(aSide);
+		if (hasCovers() && SIDES_VALID[tSide] && mCovers.mBehaviours[tSide] != null) {
+			if (mCovers.mBehaviours[tSide].interceptItemInsert(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
+			if (mCovers.mBehaviours[tSide].canInsertItemOverride(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return mCovers.mBehaviours[tSide].canInsertItem(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide)) && canInsertItem2(aSlot, aStack, UT.Code.side(aSide));
 		}
 		return canInsertItem2(aSlot, aStack, UT.Code.side(aSide));
 	}
-	
-	// @Override
-	public final boolean canExtractItem(int aSlot, ItemStack aStack, int aSide) {
+
+	@Override
+	public final boolean canTakeItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {
 		if (ST.invalid(aStack)) aStack = slot(aSlot);
 		if (ST.debug(aStack)) return F;
-		if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null) {
-			if (mCovers.mBehaviours[aSide].interceptItemExtract(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
-			if (mCovers.mBehaviours[aSide].canExtractItemOverride(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return mCovers.mBehaviours[aSide].canExtractItem(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide)) && canExtractItem2(aSlot, aStack, UT.Code.side(aSide));
+		byte tSide = UT.Code.side(aSide);
+		if (hasCovers() && SIDES_VALID[tSide] && mCovers.mBehaviours[tSide] != null) {
+			if (mCovers.mBehaviours[tSide].interceptItemExtract(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return F;
+			if (mCovers.mBehaviours[tSide].canExtractItemOverride(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide))) return mCovers.mBehaviours[tSide].canExtractItem(UT.Code.side(aSide), mCovers, aSlot, aStack, UT.Code.side(aSide)) && canExtractItem2(aSlot, aStack, UT.Code.side(aSide));
 		}
 		return canExtractItem2(aSlot, aStack, UT.Code.side(aSide));
 	}
@@ -374,7 +378,7 @@ public abstract class TileEntityBase06Covers extends TileEntityBase05Inventories
 		return getFluidTanks2(aSide);
 	}
 	
-	public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(getSizeInventory());}
+	public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(getContainerSize());}
 	public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return T;}
 	public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return T;}
 	protected IFluidTank getFluidTankFillable2(byte aSide, FluidStack aFluidToFill) {return null;}

@@ -199,7 +199,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	/** return the internal Name of this TileEntity to be registered. DO NOT START YOUR NAME WITH "gt."!!! */
 	public abstract String getTileEntityName();
 	
-	public void markDirty() {/* Oh no, I won't let this do anything anymore! It's only useful for Comparators and that didn't work properly anyways! */}
+	@Override public void setChanged() {/* Oh no, I won't let this do anything anymore! It's only useful for Comparators and that didn't work properly anyways! */}
 	@Override public Level getWorld() {return level;}
 	@Override public int getX() {return getBlockPos().getX();}
 	@Override public int getY() {return getBlockPos().getY();}

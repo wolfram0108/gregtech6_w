@@ -120,7 +120,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	@Override
 	public IPacket getClientDataPacket(boolean aSendAll) {
-		return getClientDataPacketByteArray(aSendAll, mFacing, mUsingPlayers, (byte)getSizeInventory(), (byte)UT.Code.getR(mRGBa), (byte)UT.Code.getG(mRGBa), (byte)UT.Code.getB(mRGBa));
+		return getClientDataPacketByteArray(aSendAll, mFacing, mUsingPlayers, (byte)getContainerSize(), (byte)UT.Code.getR(mRGBa), (byte)UT.Code.getG(mRGBa), (byte)UT.Code.getB(mRGBa));
 	}
 	
 	@Override
@@ -287,7 +287,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	public boolean receiveDataByteArray(byte[] aData, INetworkHandler aNetworkHandler) {
 		mFacing = (byte)(aData[0] & 7);
 		mUsingPlayers = aData[1];
-		if (UT.Code.unsignB(aData[2]) != getSizeInventory()) setInventory(new ItemStack[UT.Code.unsignB(aData[2])]);
+		if (UT.Code.unsignB(aData[2]) != getContainerSize()) setInventory(new ItemStack[UT.Code.unsignB(aData[2])]);
 		mRGBa = UT.Code.getRGBInt(new short[] {UT.Code.unsignB(aData[3]), UT.Code.unsignB(aData[4]), UT.Code.unsignB(aData[5])});
 		return T;
 	}

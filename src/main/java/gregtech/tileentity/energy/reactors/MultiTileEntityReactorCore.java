@@ -310,7 +310,7 @@ public abstract class MultiTileEntityReactorCore extends TileEntityBase10FacingD
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ZL_INTEGER;}
 	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {return F;}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}
-	@Override public int getInventoryStackLimit() {return 1;}
+	@Override public int getMaxStackSize() {return 1;}
 	
 	@Override public boolean getStateRunningPassively() {return mRunning;}
 	@Override public boolean getStateRunningPossible() {return mRunning;}

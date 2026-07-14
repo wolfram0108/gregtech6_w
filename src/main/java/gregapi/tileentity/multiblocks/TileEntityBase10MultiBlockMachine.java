@@ -152,17 +152,17 @@ public abstract class TileEntityBase10MultiBlockMachine extends MultiTileEntityB
 	@Override public int[] getAccessibleSlotsFromSide       (MultiTileEntityMultiBlockPart aPart, byte aSide) {return getAccessibleSlotsFromSide2(aSide);}
 	@Override public boolean canInsertItem                  (MultiTileEntityMultiBlockPart aPart, int aSlot, ItemStack aStack, byte aSide) {return canInsertItem2(aSlot, aStack, aSide);}
 	@Override public boolean canExtractItem                 (MultiTileEntityMultiBlockPart aPart, int aSlot, ItemStack aStack, byte aSide) {return canExtractItem2(aSlot, aStack, aSide);}
-	@Override public int getSizeInventory                   (MultiTileEntityMultiBlockPart aPart) {return getSizeInventory();}
-	@Override public ItemStack getStackInSlot               (MultiTileEntityMultiBlockPart aPart, int aSlot) {return getStackInSlot(aSlot);}
-	@Override public ItemStack decrStackSize                (MultiTileEntityMultiBlockPart aPart, int aSlot, int aDecrement) {return decrStackSize(aSlot, aDecrement);}
-	@Override public ItemStack getStackInSlotOnClosing      (MultiTileEntityMultiBlockPart aPart, int aSlot) {return getStackInSlotOnClosing(aSlot);}
-	@Override public void setInventorySlotContents          (MultiTileEntityMultiBlockPart aPart, int aSlot, ItemStack aStack) {setInventorySlotContents(aSlot, aStack);}
+	@Override public int getSizeInventory                   (MultiTileEntityMultiBlockPart aPart) {return getContainerSize();}
+	@Override public ItemStack getStackInSlot               (MultiTileEntityMultiBlockPart aPart, int aSlot) {return getItem(aSlot);}
+	@Override public ItemStack decrStackSize                (MultiTileEntityMultiBlockPart aPart, int aSlot, int aDecrement) {return removeItem(aSlot, aDecrement);}
+	@Override public ItemStack getStackInSlotOnClosing      (MultiTileEntityMultiBlockPart aPart, int aSlot) {return removeItemNoUpdate(aSlot);}
+	@Override public void setInventorySlotContents          (MultiTileEntityMultiBlockPart aPart, int aSlot, ItemStack aStack) {setItem(aSlot, aStack);}
 	@Override public String getInventoryName                (MultiTileEntityMultiBlockPart aPart) {return getInventoryName();}
 	@Override public boolean hasCustomInventoryName         (MultiTileEntityMultiBlockPart aPart) {return hasCustomInventoryName();}
-	@Override public int getInventoryStackLimit             (MultiTileEntityMultiBlockPart aPart) {return getInventoryStackLimit();}
-	@Override public void markDirty                         (MultiTileEntityMultiBlockPart aPart) {markDirty();}
-	@Override public boolean isUseableByPlayer              (MultiTileEntityMultiBlockPart aPart, Player aPlayer) {return isUseableByPlayer(aPlayer);}
+	@Override public int getInventoryStackLimit             (MultiTileEntityMultiBlockPart aPart) {return getMaxStackSize();}
+	@Override public void markDirty                         (MultiTileEntityMultiBlockPart aPart) {setChanged();}
+	@Override public boolean isUseableByPlayer              (MultiTileEntityMultiBlockPart aPart, Player aPlayer) {return stillValid(aPlayer);}
 	@Override public void openInventory                     (MultiTileEntityMultiBlockPart aPart) {openInventory();}
 	@Override public void closeInventory                    (MultiTileEntityMultiBlockPart aPart) {closeInventory();}
-	@Override public boolean isItemValidForSlot             (MultiTileEntityMultiBlockPart aPart, int aSlot, ItemStack aStack) {return isItemValidForSlot(aSlot, aStack);}
+	@Override public boolean isItemValidForSlot             (MultiTileEntityMultiBlockPart aPart, int aSlot, ItemStack aStack) {return canPlaceItem(aSlot, aStack);}
 }

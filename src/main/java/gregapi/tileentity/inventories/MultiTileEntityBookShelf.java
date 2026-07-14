@@ -359,7 +359,7 @@ public class MultiTileEntityBookShelf extends TileEntityBase09FacingSingle imple
 	@Override public boolean[] getValidSides() {return SIDES_HORIZONTAL;}
 	
 	// Inventory Stuff
-	@Override public int getInventoryStackLimit() {return 1;}
+	@Override public int getMaxStackSize() {return 1;}
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return 1;}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[mDisplay.length];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}

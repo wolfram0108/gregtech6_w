@@ -90,7 +90,7 @@ public abstract class TileEntityBase08DataSwitch extends TileEntityBase07Paintab
 		return T;
 	}
 	
-	@Override public int getInventoryStackLimit() {return 1;}
+	@Override public int getMaxStackSize() {return 1;}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	
 	@Override public byte getStateMode() {return mMode;}
@@ -102,9 +102,9 @@ public abstract class TileEntityBase08DataSwitch extends TileEntityBase07Paintab
 			for (byte tSide : ALL_SIDES_VALID) {
 				DelegatorTileEntity<Container> tDelegator = getAdjacentInventory(tSide);
 				if (tDelegator.mTileEntity != null) for (int i = 0, j = tDelegator.mTileEntity.getContainerSize(); i < j; i++) {
-					ItemStack tUSB = tDelegator.mTileEntity.getStackInSlot(i);
+					ItemStack tUSB = tDelegator.mTileEntity.getItem(i);
 					if (OM.is(OD_USB_CABLES[0], tUSB) && (!ItemNBT.has(tUSB) || !ItemNBT.get(tUSB).contains(NBT_USB_DIRECTION) || SIDES_EQUAL[ItemNBT.get(tUSB).getByte(NBT_USB_DIRECTION).orElse((byte)0)][tDelegator.mSideOfTileEntity])) {
-						tDelegator.mTileEntity.markDirty();
+						tDelegator.mTileEntity.setChanged();
 						break;
 					}
 				}

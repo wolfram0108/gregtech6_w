@@ -369,9 +369,9 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	}
 	
 	@Override
-	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
+	public void setItem(int aSlot, ItemStack aStack) {
 		if (aSlot == 0) slot(aSlot, insertItems(OM.get(aStack), F));
-		if (aSlot == 1 && slotHas(aSlot)) decrStackSize(aSlot, aStack == null ? slot(aSlot).getCount() : slot(aSlot).getCount() - aStack.getCount());
+		if (aSlot == 1 && slotHas(aSlot)) removeItem(aSlot, aStack == null ? slot(aSlot).getCount() : slot(aSlot).getCount() - aStack.getCount());
 	}
 	
 	public int getMaxContent() {
@@ -543,7 +543,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override public void onExploded(Explosion aExplosion) {slotKill(1); super.onExploded(aExplosion);}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[2];}
-	@Override public int getInventoryStackLimit() {return Math.min(slotHas(1) ? getMaxContent() - slot(1).getCount() : getMaxContent(), 64);}
+	@Override public int getMaxStackSize() {return Math.min(slotHas(1) ? getMaxContent() - slot(1).getCount() : getMaxContent(), 64);}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ACCESSIBLE_SLOTS;}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == 0 && (mMode & B[3]) == 0 && (!SIDES_BOTTOM[aSide] || (mMode & B[0]) == 0) && (!slotHas(1) || (slot(1).getCount() < getMaxContent() && allowInsertion(aStack)));}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == 0 || (slotHas(1) && slot(1).getCount() > 0 && (mMode & B[3]) == 0);}

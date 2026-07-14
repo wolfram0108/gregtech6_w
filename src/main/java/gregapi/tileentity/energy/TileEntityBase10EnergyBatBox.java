@@ -215,7 +215,7 @@ public abstract class TileEntityBase10EnergyBatBox extends TileEntityBase09Facin
 	@Override public long getProgressValue(byte aSide) {return mEnergy;}
 	@Override public long getProgressMax(byte aSide) {return mInput * 320 * invsize();}
 	
-	@Override public int getInventoryStackLimit() {return 1;}
+	@Override public int getMaxStackSize() {return 1;}
 	@Override public int getMinimumInventorySize() {return 1;}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	

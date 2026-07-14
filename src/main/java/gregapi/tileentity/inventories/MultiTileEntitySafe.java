@@ -68,7 +68,7 @@ public abstract class MultiTileEntitySafe extends TileEntityBase09FacingSingle i
 	
 	protected void generateDungeonLoot() {
 		if (isServerSide() && UT.Code.stringValid(mDungeonLootName)) {
-			for (int i = 0, j = getSizeInventory(); i < j; i++) if (!slotHas(i)) slot(i, ChestGenHooks.getOneItem(mDungeonLootName, RNGSUS));
+			for (int i = 0, j = getContainerSize(); i < j; i++) if (!slotHas(i)) slot(i, ChestGenHooks.getOneItem(mDungeonLootName, RNGSUS));
 			mDungeonLootName = "";
 		}
 	}
@@ -109,7 +109,7 @@ public abstract class MultiTileEntitySafe extends TileEntityBase09FacingSingle i
 	
 	// Inventory Stuff
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
-	@Override public int getInventoryStackLimit() {return 64;}
+	@Override public int getMaxStackSize() {return 64;}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ZL_INTEGER;}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}

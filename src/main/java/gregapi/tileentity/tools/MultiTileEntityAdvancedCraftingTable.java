@@ -461,14 +461,14 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		
 		// Consume the Item.
 		if (tContainer == null || (tContainer.isDamageableItem() && tContainer.getDamageValue() >= tContainer.getMaxDamage())) {
-			decrStackSize(aSlot, 1);
+			removeItem(aSlot, 1);
 			return T;
 		}
 		if (slot(aSlot).getCount() == 1) {
 			slot(aSlot, tContainer);
 			return T;
 		} 
-		decrStackSize(aSlot, 1);
+		removeItem(aSlot, 1);
 		for (int i : SLOTS_INPUT) {
 			if (!slotHas(i)) {
 				slot(i, tContainer);
@@ -500,9 +500,9 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	public static final int[] SLOTS_CRAFTING     = new int[] {21, 22, 23, 24, 25, 26, 27, 28, 29};
 	public static final int[] SLOTS_TOOLS        = new int[] {16, 17, 18, 19, 20};
 	
-	@Override public void setInventorySlotContents(int aSlot, ItemStack aStack)     {if (aSlot > 20 && aSlot <= 30 && !ST.equal(aStack, slot(aSlot), F)) mUpdatedGrid = T; super.setInventorySlotContents(aSlot, aStack);}
+	@Override public void setItem(int aSlot, ItemStack aStack)                      {if (aSlot > 20 && aSlot <= 30 && !ST.equal(aStack, slot(aSlot), F)) mUpdatedGrid = T; super.setItem(aSlot, aStack);}
 	@Override public void setInventorySlotContentsGUI(int aSlot, ItemStack aStack)  {if (aSlot > 20 && aSlot <= 30 && !ST.equal(aStack, slot(aSlot), F)) mUpdatedGrid = T; super.setInventorySlotContentsGUI(aSlot, aStack);}
-	@Override public ItemStack decrStackSize(int aSlot, int aDecrement)             {if (aSlot > 20 && aSlot <= 30 && aDecrement > 0) mUpdatedGrid = T; return super.decrStackSize(aSlot, aDecrement);}
+	@Override public ItemStack removeItem(int aSlot, int aDecrement)                {if (aSlot > 20 && aSlot <= 30 && aDecrement > 0) mUpdatedGrid = T; return super.removeItem(aSlot, aDecrement);}
 	@Override public ItemStack decrStackSizeGUI(int aSlot, int aDecrement)          {if (aSlot > 20 && aSlot <= 30 && aDecrement > 0) mUpdatedGrid = T; return super.decrStackSizeGUI(aSlot, aDecrement);}
 	
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return mBlocked16 ? mBlocked36 ? mFlushMode?SLOTS_FLUSHING:SLOTS : mFlushMode?SLOTS_36_FLUSHING:SLOTS_36 : mBlocked36 ? mFlushMode?SLOTS_16_FLUSHING:SLOTS_16 : mFlushMode?SLOTS_ALL_FLUSHING:SLOTS_ALL;}
@@ -555,7 +555,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 					for (int j : SLOTS_TOOLS) {
 						if (!slotHas(j) || (ST.equal(tOutput, slot(j)) && slot(j).getCount() + tOutput.getCount() <= tOutput.getMaxStackSize())) {
 							if (aDoFill) {
-								decrStackSize(i, 1);
+								removeItem(i, 1);
 								if (slotHas(j)) slot(j).setCount(slot(j).getCount()+1); else slot(j, tOutput);
 								updateInventory();
 								mSyncGUI = T;
