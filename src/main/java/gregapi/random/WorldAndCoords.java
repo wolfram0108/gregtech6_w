@@ -79,7 +79,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public boolean getOpacity         (int aX, int aY, int aZ) {return mWorld!=null&&WD.opaque(WD.block(mWorld, aX, aY, aZ));}
 	@Override public boolean getSky             (int aX, int aY, int aZ) {return mWorld==null||WD.canSeeSky(mWorld, aX, aY, aZ);}
 	@Override public boolean getRain            (int aX, int aY, int aZ) {return mWorld==null||WD.precipitationHeight(mWorld, aX, aZ) <= aY;}
-	@Override public boolean getAir             (int aX, int aY, int aZ) {return mWorld==null||WD.block(mWorld, aX, aY, aZ).isAir(mWorld, aX, aY, aZ);}
+	@Override public boolean getAir             (int aX, int aY, int aZ) {return mWorld==null||WD.air(mWorld, aX, aY, aZ);}
 	@Override public Biome getBiome() {return getBiome(mX, mZ);}
 	@Override public Biome getBiome      (int aX, int aZ) {return mWorld==null?null:WD.biome(mWorld, aX, aZ);}
 	@Override public Biome getBiome      (BlockPos aCoords) {return mWorld==null?null:WD.biome(mWorld, aCoords.getX(), aCoords.getZ());}
@@ -90,7 +90,7 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public boolean getOpacity         (BlockPos aCoords) {return mWorld!=null&&WD.opaque(WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()));}
 	@Override public boolean getSky             (BlockPos aCoords) {return mWorld==null||WD.canSeeSky(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public boolean getRain            (BlockPos aCoords) {return mWorld==null||WD.precipitationHeight(mWorld, aCoords.getX(), aCoords.getZ()) <= aCoords.getY();}
-	@Override public boolean getAir             (BlockPos aCoords) {return mWorld==null||WD.block(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ()).isAir(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
+	@Override public boolean getAir             (BlockPos aCoords) {return mWorld==null||WD.air(mWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ());}
 	@Override public Block getBlockOffset(int aX, int aY, int aZ) {return getBlock(mX+aX, mY+aY, mZ+aZ);}
 	@Override public Block getBlockAtSide(byte aSide) {return getBlockAtSideAndDistance(aSide, 1);}
 	@Override public Block getBlockAtSideAndDistance(byte aSide, int aDistance) {return getBlock(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
@@ -115,10 +115,10 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	@Override public BlockEntity getTileEntityOffset(int aX, int aY, int aZ) {return getTileEntity(mX+aX, mY+aY, mZ+aZ);}
 	@Override public BlockEntity getTileEntityAtSideAndDistance(byte aSide, int aDistance) {return getTileEntity(getOffsetX(aSide, aDistance), getOffsetY(aSide, aDistance), getOffsetZ(aSide, aDistance));}
 	@Override public DelegatorTileEntity<BlockEntity         > getAdjacentTileEntity     (byte aSide) {return getAdjacentTileEntity(aSide, T, F);}
-	@Override public DelegatorTileEntity<AbstractContainerMenu         > getAdjacentInventory      (byte aSide) {return getAdjacentInventory(aSide, T, F);}
+	@Override public DelegatorTileEntity<Container         > getAdjacentInventory      (byte aSide) {return getAdjacentInventory(aSide, T, F);}
 	@Override public DelegatorTileEntity<WorldlyContainer    > getAdjacentSidedInventory (byte aSide) {return getAdjacentSidedInventory(aSide, T, F);}
 	@Override public DelegatorTileEntity<IFluidHandler      > getAdjacentTank           (byte aSide) {return getAdjacentTank(aSide, T, F);}
-	@Override public DelegatorTileEntity<AbstractContainerMenu         > getAdjacentInventory      (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof AbstractContainerMenu      ?(AbstractContainerMenu        )tDelegator.mTileEntity:null, tDelegator);}
+	@Override public DelegatorTileEntity<Container         > getAdjacentInventory      (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof Container      ?(Container        )tDelegator.mTileEntity:null, tDelegator);}
 	@Override public DelegatorTileEntity<WorldlyContainer    > getAdjacentSidedInventory (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof WorldlyContainer ?(WorldlyContainer   )tDelegator.mTileEntity:null, tDelegator);}
 	@Override public DelegatorTileEntity<IFluidHandler      > getAdjacentTank           (byte aSide, boolean aAllowDelegates, boolean aNotConnectToDelegators) {DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(aSide, aAllowDelegates, aNotConnectToDelegators); return new DelegatorTileEntity<>(tDelegator.mTileEntity instanceof IFluidHandler   ?(IFluidHandler     )tDelegator.mTileEntity:null, tDelegator);}
 	
@@ -152,8 +152,11 @@ public class WorldAndCoords implements IHasWorldAndCoords, Comparable<WorldAndCo
 	
 	@Override
 	public byte getComparatorIncoming(byte aSide) {
-		Block tBlock = getBlockAtSide(aSide);
-		return tBlock.hasComparatorInputOverride()?UT.Code.bind4(tBlock.getComparatorInputOverride(mWorld, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), OPOS[aSide])):getRedstoneIncoming(aSide);
+		// F-block: Block.hasComparatorInputOverride/getComparatorInputOverride(world,x,y,z,side) ->
+		// BlockState.hasAnalogOutputSignal/getAnalogOutputSignal(Level,BlockPos,Direction) (BlockBehaviour:628/632).
+		BlockPos tPos = new BlockPos(getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide));
+		net.minecraft.world.level.block.state.BlockState tState = mWorld.getBlockState(tPos);
+		return tState.hasAnalogOutputSignal()?UT.Code.bind4(tState.getAnalogOutputSignal(mWorld, tPos, FORGE_DIR[OPOS[aSide]])):getRedstoneIncoming(aSide);
 	}
 	
 	@Override public boolean equals(Object aObject) {return aObject instanceof WorldAndCoords && ((WorldAndCoords)aObject).mWorld == mWorld && ((WorldAndCoords)aObject).mX == mX && ((WorldAndCoords)aObject).mY == mY && ((WorldAndCoords)aObject).mZ == mZ;}
