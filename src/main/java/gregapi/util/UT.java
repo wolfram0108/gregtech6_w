@@ -2861,7 +2861,7 @@ public class UT {
 		}
 		public static boolean isWereCreature(LivingEntity aEntity) {
 			if (aEntity instanceof Player) {
-				if ("Bear989Sr".equalsIgnoreCase(aEntity.getCommandSenderName())) return T;
+				if ("Bear989Sr".equalsIgnoreCase(aEntity.getName().getString())) return T;
 				AttachmentType tWerewolfProperty = aEntity.getExtendedProperties("WerewolfPlayer");
 				if (tWerewolfProperty == null) return F;
 				Object tReturned = UT.Reflection.callPublicMethod(tWerewolfProperty, "getWerewolf");

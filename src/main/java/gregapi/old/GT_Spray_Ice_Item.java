@@ -60,7 +60,7 @@ public class GT_Spray_Ice_Item extends GT_Tool_Item {
 		aX += OFFSETS_X[aSide]; aY += OFFSETS_Y[aSide]; aZ += OFFSETS_Z[aSide];
 		Block aBlock = aWorld.getBlock(aX, aY, aZ);
 		if (aBlock == null) return false;
-		byte aMeta = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
+		byte aMeta = (byte)WD.meta(aWorld, aX, aY, aZ);
 //      TileEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
 		if (aBlock == Blocks.WATER || aBlock == Blocks.WATER) {

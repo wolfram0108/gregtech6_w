@@ -260,7 +260,7 @@ public class MultiTileEntityRegistry {
 		// PORT-TODO(WD, blockentity-position-immutable): было rContainer.mTileEntity.x/yCoord/zCoord = aX/aY/aZ
 		// -- neo BlockEntity.worldPosition (BlockEntity.java:48) protected final, сеттера нет ни в одном из
 		// 3 корней референса -- позицию рефлективно построенной TileEntity постфактум не переустановить.
-		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)Block.getIdFromBlock(mBlock));
+		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(mBlock));
 		return rContainer;
 	}
 	

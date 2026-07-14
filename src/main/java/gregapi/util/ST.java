@@ -870,7 +870,7 @@ public class ST {
 		return IL.Circuit_Selector.getWithDamage(0, aNumber);
 	}
 	
-	public static ItemStack skull(Entity aPlayer) {return skull(aPlayer == null ? "" : aPlayer.getCommandSenderName());}
+	public static ItemStack skull(Entity aPlayer) {return skull(aPlayer == null ? "" : aPlayer.getName().getString());}
 	public static ItemStack skull(String aPlayer) {return ST.make(Items.PLAYER_HEAD, 1, 3, UT.Code.stringValid(aPlayer) ? UT.NBT.makeString("SkullOwner", aPlayer) : null);}
 	
 	public static ItemStack book(String aMapping) {

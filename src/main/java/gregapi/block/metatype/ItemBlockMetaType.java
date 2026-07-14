@@ -77,7 +77,7 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 			}
 			
 			Block aBlock = aWorld.getBlock(aX, aY, aZ);
-			byte aMetaData = (byte)aWorld.getBlockMetadata(aX, aY, aZ);
+			byte aMetaData = (byte)WD.meta(aWorld, aX, aY, aZ);
 			
 			if (aBlock instanceof GT_Block_Stones)
 			if ((aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))

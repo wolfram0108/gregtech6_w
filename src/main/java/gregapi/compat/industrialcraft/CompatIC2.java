@@ -89,7 +89,7 @@ public class CompatIC2 extends CompatBase implements ICompatIC2 {
 			CoverData tData = ((ITileEntityCoverable)tTileEntity).getCoverData();
 			if (tData != null && tData.mBehaviours[aEvent.side] instanceof CoverTextureCanvas) {
 				if (tData.mNBTs[aEvent.side] == null) tData.mNBTs[aEvent.side] = UT.NBT.make();
-				tData.mNBTs[aEvent.side].putInt(NBT_CANVAS_BLOCK, Block.getIdFromBlock(aEvent.referencedBlock));
+				tData.mNBTs[aEvent.side].putInt(NBT_CANVAS_BLOCK, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(aEvent.referencedBlock));
 				tData.mNBTs[aEvent.side].putInt(NBT_CANVAS_META , aEvent.referencedMeta);
 				tData.mBehaviours[aEvent.side].onCoverPlaced((byte)aEvent.side, tData, null, tData.getCoverItem((byte)aEvent.side));
 				aEvent.applied = T;

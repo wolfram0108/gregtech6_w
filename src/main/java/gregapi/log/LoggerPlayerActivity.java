@@ -44,12 +44,12 @@ public class LoggerPlayerActivity implements Runnable {
 	
 	@SubscribeEvent
 	public void onPlayerInteraction(PlayerInteractEvent aEvent) {
-		if (aEvent.entityPlayer != null && aEvent.entityPlayer.level() != null && aEvent.action != null && aEvent.world.provider != null && !aEvent.entityPlayer.level().isClientSide() && aEvent.action != null && aEvent.action != PlayerInteractEvent.Action.RIGHT_CLICK_AIR && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";"+aEvent.action.name()+";"+aEvent.entityPlayer.getCommandSenderName()+";DIM:"+WD.dimensionId(aEvent.world)+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
+		if (aEvent.entityPlayer != null && aEvent.entityPlayer.level() != null && aEvent.action != null && aEvent.world.provider != null && !aEvent.entityPlayer.level().isClientSide() && aEvent.action != null && aEvent.action != PlayerInteractEvent.Action.RIGHT_CLICK_AIR && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";"+aEvent.action.name()+";"+aEvent.entityPlayer.getName().getString()+";DIM:"+WD.dimensionId(aEvent.world)+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
 	}
 	
 	@SubscribeEvent
 	public void onBlockHarvestingEvent(BlockEvent.HarvestDropsEvent aEvent) {
-		if (aEvent.harvester != null && !aEvent.world.isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";HARVEST_BLOCK;"+aEvent.harvester.getCommandSenderName()+";DIM:"+WD.dimensionId(aEvent.world)+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
+		if (aEvent.harvester != null && !aEvent.world.isClientSide() && mLog != null) mBufferedPlayerActivity.add(UT.Code.dateAndTime()+";HARVEST_BLOCK;"+aEvent.harvester.getName().getString()+";DIM:"+WD.dimensionId(aEvent.world)+";"+aEvent.x+";"+aEvent.y+";"+aEvent.z+";|;"+aEvent.x/10+";"+aEvent.y/10+";"+aEvent.z/10);
 	}
 	
 	@Override

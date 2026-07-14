@@ -677,7 +677,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 				} else if (aEntity instanceof EntityEnderman) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.EnderPearl)), C+20);
 				} else if (aEntity instanceof Player) {
-					if ("GregoriusT".equalsIgnoreCase(aEntity.getCommandSenderName())) for (int i = 0; i < 16; i++) addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.Tc)), C+20);
+					if ("GregoriusT".equalsIgnoreCase(aEntity.getName().getString())) for (int i = 0; i < 16; i++) addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.Tc)), C+20);
 				}
 			}
 		}

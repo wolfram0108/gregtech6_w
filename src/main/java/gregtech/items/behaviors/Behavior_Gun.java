@@ -291,7 +291,7 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 			
 			if (aPlayer.level() instanceof ServerLevel) {
 				if (UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, aBullet) > 0) {
-					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getCommandSenderName()));
+					tPlayer = FakePlayerFactory.get((ServerLevel)aPlayer.level(), new GameProfile(new UUID(0, 0), ((LivingEntity)aPlayer).getName().getString()));
 					tPlayer.getInventory().setSelectedSlot(0);
 					tPlayer.getInventory().setItem(0, aBullet);
 					tPlayer.setPositionAndRotation(aPlayer.getX(), aPlayer.getY(), aPlayer.getZ(), aPlayer.rotationYaw, aPlayer.getXRot());

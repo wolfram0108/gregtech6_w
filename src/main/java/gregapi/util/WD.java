@@ -283,7 +283,7 @@ public class WD {
 		// >>4 переведены в чанк-координаты вручную (как делал старый метод внутри себя).
 		LevelChunk aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 		if (aChunk == null) {
-			aWorld.getBlockState(new BlockPos(aX, 0, aZ)); // было aWorld.getBlockMetadata(x,0,z) — тот же "трогающий" вызов для форс-загрузки чанка, результат отбрасывался и раньше
+			aWorld.getBlockState(new BlockPos(aX, 0, aZ)); // было WD.meta(aWorld, x,0,z) — тот же "трогающий" вызов для форс-загрузки чанка, результат отбрасывался и раньше
 			aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 			if (aChunk == null) {
 				ERR.println("Some important Chunk does not exist for some reason at Coordinates X: " + aX + " and Z: " + aZ);
@@ -917,7 +917,7 @@ public class WD {
 	public static boolean oreGenReplaceable(Level aWorld, int aX, int aY, int aZ, boolean aAllowAir) {
 		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return aAllowAir;
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(aBlock, 1, aMeta))) return T;
 		if (Blocks.STONE      != aBlock && WD.oreGen(aBlock, aWorld, aX, aY, aZ, Blocks.STONE     )) return T;
@@ -936,7 +936,7 @@ public class WD {
 		if (aID <= 0 && aID == W) return F;
 		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return F;
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z)
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToNormalOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
@@ -957,7 +957,7 @@ public class WD {
 		if (aID <= 0 && aID == W) return F;
 		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB || WD.bedrock(aBlock)) return F;
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z)
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
 		if (BlocksGT.sDontGenerateOresIn.contains(new ItemStackContainer(aBlock, 1, aMeta))) return F;
 		IBlockPlacable tBlock = BlocksGT.stoneToSmallOres.get(new ItemStackContainer(aBlock, 1, aMeta));
 		if (tBlock == null) {
@@ -981,7 +981,7 @@ public class WD {
 				BlockPos tRBPos = new BlockPos(aX+OFFX[tSide]*i, aY+OFFY[tSide]*i, aZ+OFFZ[tSide]*i);
 				tBlock = aWorld.getBlockState(tRBPos).getBlock(); // было aWorld.getBlock(x,y,z)
 				if (tBlock != NB && tBlock != tStone && !bedrock(tBlock)) {
-					int tMetaData = meta(aWorld, tRBPos.getX(), tRBPos.getY(), tRBPos.getZ()); // было aWorld.getBlockMetadata(x,y,z)
+					int tMetaData = meta(aWorld, tRBPos.getX(), tRBPos.getY(), tRBPos.getZ()); // было WD.meta(aWorld, x,y,z)
 					if (BlocksGT.stoneToNormalOres.containsKey(new ItemStackContainer(tBlock, 1, tMetaData))) {
 						return set(aWorld, aX, aY, aZ, tBlock, tMetaData, 0, F); // было aWorld.setBlock(x,y,z,block,meta,0) — маршрут через центр set(...)
 					}
@@ -1109,7 +1109,7 @@ public class WD {
 		long rEUAmount = 0;
 		
 		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
-		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)aWorld.getBlockMetadata(x,y,z)
+		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z)
 		BlockEntity aTileEntity = te(aWorld, aX, aY, aZ, T);
 		
 		rList.add("--- X: " + aX + " Y: " + aY + " Z: " + aZ + " ---");

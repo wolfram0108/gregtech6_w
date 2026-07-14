@@ -201,7 +201,7 @@ public class EntityArrow_Material extends EntityProjectile {
 						
 						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, mArrow) > 0) {
 							Player tPlayer = null;
-							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getCommandSenderName():"Arrow"));
+							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getName().getString():"Arrow"));
 							if (tPlayer != null) {
 								tPlayer.inventory.setSelectedSlot(0);
 								tPlayer.inventory.setInventorySlotContents(0, getArrowItem());
@@ -319,7 +319,7 @@ public class EntityArrow_Material extends EntityProjectile {
 		aNBT.putShort("yTile", (short)mHitBlockY);
 		aNBT.putShort("zTile", (short)mHitBlockZ);
 		aNBT.putShort("life", (short)mTicksAlive);
-		aNBT.putByte("inTile", (byte)Block.getIdFromBlock(mHitBlock));
+		aNBT.putByte("inTile", (byte)net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(mHitBlock));
 		aNBT.putByte("inData", (byte)mHitBlockMeta);
 		aNBT.putByte("shake", (byte)arrowShake);
 		aNBT.putByte("inGround", (byte)(inGround ? 1 : 0));

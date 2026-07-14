@@ -189,7 +189,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onPlayerInteraction(PlayerInteractEvent aEvent) {
 		if (aEvent.entityPlayer == null || aEvent.entityPlayer.level() == null || aEvent.action == null || aEvent.world.provider == null) return;
-		String aName = aEvent.entityPlayer.getCommandSenderName(), aNameLowercase = aName.toLowerCase();
+		String aName = aEvent.entityPlayer.getName().getString(), aNameLowercase = aName.toLowerCase();
 		if (!aEvent.world.isClientSide() && CHECKED_PLAYERS.add(aName)) {
 			if (mSupporterListSilver.contains(aEvent.entityPlayer.getUUID().toString()) || mSupporterListGold.contains(aEvent.entityPlayer.getUUID().toString()) || mSupporterListSilver.contains(aNameLowercase) || mSupporterListGold.contains(aNameLowercase)) {
 				if (!MultiTileEntityCertificate.ALREADY_RECEIVED.contains(aNameLowercase)) {
