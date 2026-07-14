@@ -727,10 +727,13 @@ public class WD {
 		aWorld.setBlock(new BlockPos(aX, aY, aZ), Blocks.OAK_WALL_SIGN.defaultBlockState().setValue(WallSignBlock.FACING, FORGE_DIR[aSide]), (int)aFlags);
 		BlockEntity tSign = te(aWorld, aX, aY, aZ, T);
 		if (!(tSign instanceof SignBlockEntity)) return F;
-		((SignBlockEntity)tSign).signText[0] = aLine1;
-		((SignBlockEntity)tSign).signText[1] = aLine2;
-		((SignBlockEntity)tSign).signText[2] = aLine3;
-		((SignBlockEntity)tSign).signText[3] = aLine4;
+		// было signText[0..3]=String (1.7.10 мутабельный массив строк) -> neo SignText immutable (front/back):
+		// getFrontText():77 -> цепочка setMessage(index,Component):84 (возвращает новый SignText) -> setText(SignText,isFront):161.
+		((SignBlockEntity)tSign).setText(((SignBlockEntity)tSign).getFrontText()
+			.setMessage(0, net.minecraft.network.chat.Component.literal(aLine1))
+			.setMessage(1, net.minecraft.network.chat.Component.literal(aLine2))
+			.setMessage(2, net.minecraft.network.chat.Component.literal(aLine3))
+			.setMessage(3, net.minecraft.network.chat.Component.literal(aLine4)), T);
 		return T;
 	}
 	
