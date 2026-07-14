@@ -648,7 +648,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (tStats.isRangedWeapon()) for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aMaterial.mEnchantmentRanged ) tEnchantments.add(new ObjectStack<>(tEnchantment.mObject, tEnchantment.mAmount));
 		
 		// Get Tool Specific Enchantments.
-		Enchantment[] tEnchants = tStats.getEnchantments(aStack, aMaterial);
+		ResourceKey<Enchantment>[] tEnchants = tStats.getEnchantments(aStack, aMaterial); // F-enchant-key: getEnchantments -> ResourceKey<Enchantment>[] (модель энчантов = ResourceKey).
 		int[] tLevels = tStats.getEnchantmentLevels(aStack, aMaterial);
 		
 		for (int i = 0; i < tEnchants.length; i++) if (tLevels[i] > 0) {

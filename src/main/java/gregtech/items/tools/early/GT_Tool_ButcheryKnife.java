@@ -84,7 +84,7 @@ public class GT_Tool_ButcheryKnife extends ToolStats {
 	}
 	
 	@Override
-	public Enchantment[] getEnchantments(ItemStack aStack, OreDictMaterial aMaterial) {
+	public net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] getEnchantments(ItemStack aStack, OreDictMaterial aMaterial) {
 		return LOOTING_ENCHANTMENT;
 	}
 	

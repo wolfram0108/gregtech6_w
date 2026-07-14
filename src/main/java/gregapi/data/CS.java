@@ -854,7 +854,7 @@ public class CS {
 	/** Zero-Length Array to save on Memory. */ public static final TagData                 [] ZL_TD                = new TagData[0], ZL_TAGDATA = ZL_TD;
 	/** Zero-Length Array to save on Memory. */ public static final OreDictMaterial         [] ZL_MT                = new OreDictMaterial[0], ZL_MATERIAL = ZL_MT;
 	/** Zero-Length Array to save on Memory. */ public static final OreDictMaterialStack    [] ZL_MS                = new OreDictMaterialStack[0], ZL_MATERIALSTACK = ZL_MS;
-	/** Zero-Length Array to save on Memory. */ public static final Enchantment             [] ZL_ENCHANTMENT       = new Enchantment[0];
+	/** Zero-Length Array to save on Memory. */ public static final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>[] ZL_ENCHANTMENT = new net.minecraft.resources.ResourceKey[0];
 	/** Zero-Length Array to save on Memory. */ public static final FluidTank               [] ZL_FLUIDTANK         = new FluidTank[0];
 	/** Zero-Length Array to save on Memory. */ public static final IFluidTank              [] ZL_IFLUIDTANK        = new IFluidTank[0];
 	/** Zero-Length Array to save on Memory. */ public static final FluidTankInfo           [] ZL_FLUIDTANKINFO     = new FluidTankInfo[0], L1_FLUIDTANKINFO_DUMMY = new FluidTankInfo[] {new FluidTankInfo(null, Integer.MAX_VALUE)};
