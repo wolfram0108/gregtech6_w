@@ -787,7 +787,11 @@ public class GT_API_Post extends Abstract_Mod {
 		// (ровно как в 1.7.10 при отсутствии мода); точные neo-ключи этих модов — PORT-TODO(F10-enchant-custom-key).
 		net.minecraft.server.MinecraftServer tEnchServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
 		if (tEnchServer != null) for (net.minecraft.resources.ResourceKey<Enchantment> tEnchant : tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).registryKeySet()) {
-			String tEnchName = tEnchant.location().getPath();
+			String tEnchName = tEnchant.identifier().getPath();
+			// F10-TF: twilightforest.TFTreasureTable.addEnchantedBook(Enchantment,int) ждёт ОБЪЕКТ Enchantment,
+			// а итератор даёт ResourceKey<Enchantment> — резолвим через реестр (сервер уже в scope, тот же
+			// приём, что UT.addEnchantment). GT6-методы material.addEnchantmentFor* принимают ResourceKey (не трогаем).
+			Enchantment tEnchValue = tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(tEnchant).value();
 			if ("magnetization".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): Magneticraft-энчант, neo-ключ при порте мода
 				for (OreDictMaterial tMaterial : MT.ALL_MATERIALS_REGISTERED_HERE) {
 					if (tMaterial == MT.NeodymiumMagnetic) {
@@ -801,21 +805,21 @@ public class GT_API_Post extends Abstract_Mod {
 			}
 			if ("swift_sneak".equalsIgnoreCase(tEnchName)) {
 				if (MD.TF.mLoaded) {
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.tower_library  , "ultrarare")).addEnchantedBook(tEnchant, 2);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.labyrinth_vault, "rare"     )).addEnchantedBook(tEnchant, 2);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.stronghold_room, "rare"     )).addEnchantedBook(tEnchant, 1);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.darktower_cache, "rare"     )).addEnchantedBook(tEnchant, 1);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.aurora_cache   , "rare"     )).addEnchantedBook(tEnchant, 1);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.aurora_room    , "uncommon" )).addEnchantedBook(tEnchant, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.tower_library  , "ultrarare")).addEnchantedBook(tEnchValue, 2);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.labyrinth_vault, "rare"     )).addEnchantedBook(tEnchValue, 2);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.stronghold_room, "rare"     )).addEnchantedBook(tEnchValue, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.darktower_cache, "rare"     )).addEnchantedBook(tEnchValue, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.aurora_cache   , "rare"     )).addEnchantedBook(tEnchValue, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.aurora_room    , "uncommon" )).addEnchantedBook(tEnchValue, 1);
 				}
 			}
 			if ("mending".equalsIgnoreCase(tEnchName)) {
 				if (MD.TF.mLoaded) {
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.tower_library  , "ultrarare")).addEnchantedBook(tEnchant, 1);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.labyrinth_vault, "rare"     )).addEnchantedBook(tEnchant, 1);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.darktower_key  , "rare"     )).addEnchantedBook(tEnchant, 1);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.aurora_room    , "rare"     )).addEnchantedBook(tEnchant, 1);
-					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.troll_vault    , "uncommon" )).addEnchantedBook(tEnchant, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.tower_library  , "ultrarare")).addEnchantedBook(tEnchValue, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.labyrinth_vault, "rare"     )).addEnchantedBook(tEnchValue, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.darktower_key  , "rare"     )).addEnchantedBook(tEnchValue, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.aurora_room    , "rare"     )).addEnchantedBook(tEnchValue, 1);
+					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.troll_vault    , "uncommon" )).addEnchantedBook(tEnchValue, 1);
 				}
 			}
 			if ("cold_touch".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): внешний энчант, neo-ключ при порте мода
@@ -898,7 +902,7 @@ public class GT_API_Post extends Abstract_Mod {
 	}
 	
 	@Override
-	public void onModServerStarting2(FMLServerStartingEvent aEvent) {
+	public void onModServerStarting2(ServerStartingEvent aEvent) {
 		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES) ic2.api.recipe.Recipes.compressor.getRecipes().clear();
 		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES ) ic2.api.recipe.Recipes.extractor .getRecipes().clear();
 		if (DISABLE_ALL_IC2_MACERATOR_RECIPES ) ic2.api.recipe.Recipes.macerator .getRecipes().clear();
@@ -906,7 +910,7 @@ public class GT_API_Post extends Abstract_Mod {
 		if (DISABLE_ALL_IC2_CENTRIFUGE_RECIPES) ic2.api.recipe.Recipes.centrifuge.getRecipes().clear();
 	}
 
-	@Override public void onModServerStarted2(FMLServerStartedEvent aEvent) {/**/}
-	@Override public void onModServerStopping2(FMLServerStoppingEvent aEvent) {/**/}
-	@Override public void onModServerStopped2(FMLServerStoppedEvent aEvent) {/**/}
+	@Override public void onModServerStarted2(ServerStartedEvent aEvent) {/**/}
+	@Override public void onModServerStopping2(ServerStoppingEvent aEvent) {/**/}
+	@Override public void onModServerStopped2(ServerStoppedEvent aEvent) {/**/}
 }
