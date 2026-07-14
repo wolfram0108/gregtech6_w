@@ -59,7 +59,7 @@ public class WorldgenStreets extends WorldgenObject {
 	
 	@Override
 	public boolean enabled(Level aWorld, int aDimType) {
-		return GENERATE_STREETS && aWorld.provider.dimensionId == DIM_OVERWORLD;
+		return GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override

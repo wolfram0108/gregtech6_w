@@ -65,7 +65,7 @@ public class MultiTileEntityMiniPortalBetweenlands extends MultiTileEntityMiniPo
 	public void findTargetPortal() {
 		mTarget = null;
 		if (MD.BTL.mLoaded && level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListBetweenlandsSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX(), tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ();
@@ -96,7 +96,7 @@ public class MultiTileEntityMiniPortalBetweenlands extends MultiTileEntityMiniPo
 	@Override
 	public void addThisPortalToLists() {
 		if (MD.BTL.mLoaded && level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListBetweenlandsSide) tPortal.findTargetPortal();
 				findTargetPortal();

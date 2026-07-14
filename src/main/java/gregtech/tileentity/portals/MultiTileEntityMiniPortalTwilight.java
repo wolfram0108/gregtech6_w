@@ -66,7 +66,7 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 	public void findTargetPortal() {
 		mTarget = null;
 		if (MD.TF.mLoaded && level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListTwilightSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX(), tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ();
@@ -97,7 +97,7 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 	@Override
 	public void addThisPortalToLists() {
 		if (MD.TF.mLoaded && level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListTwilightSide) tPortal.findTargetPortal();
 				findTargetPortal();

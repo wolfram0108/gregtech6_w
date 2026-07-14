@@ -67,7 +67,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 	public void findTargetPortal() {
 		mTarget = null;
 		if (level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListNetherSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX()*8, tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ()*8;
@@ -79,7 +79,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 						mTarget = tTarget;
 					}
 				}
-			} else if (level.provider.dimensionId == DIM_NETHER) {
+			} else if (WD.dimensionId(level) == DIM_NETHER) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.getBlockPos().getX()-getBlockPos().getX()*8, tZDifference = tTarget.getBlockPos().getZ()-getBlockPos().getZ()*8;
@@ -98,11 +98,11 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 	@Override
 	public void addThisPortalToLists() {
 		if (level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListNetherSide) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (level.provider.dimensionId == DIM_NETHER) {
+			} else if (WD.dimensionId(level) == DIM_NETHER) {
 				if (!sListNetherSide.contains(this)) sListNetherSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();

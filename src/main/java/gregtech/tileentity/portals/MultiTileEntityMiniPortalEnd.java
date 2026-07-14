@@ -63,7 +63,7 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 	public void findTargetPortal() {
 		mTarget = null;
 		if (level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListEndSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX()*128, tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ()*128;
@@ -75,7 +75,7 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 						mTarget = tTarget;
 					}
 				}
-			} else if (level.provider.dimensionId == DIM_END) {
+			} else if (WD.dimensionId(level) == DIM_END) {
 				long tShortestDistance = 512*512;
 				for (MultiTileEntityMiniPortal tTarget : sListWorldSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = tTarget.getBlockPos().getX()-getBlockPos().getX()*128, tZDifference = tTarget.getBlockPos().getZ()-getBlockPos().getZ()*128;
@@ -94,11 +94,11 @@ public class MultiTileEntityMiniPortalEnd extends MultiTileEntityMiniPortal {
 	@Override
 	public void addThisPortalToLists() {
 		if (level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListEndSide) tPortal.findTargetPortal();
 				findTargetPortal();
-			} else if (level.provider.dimensionId == DIM_END) {
+			} else if (WD.dimensionId(level) == DIM_END) {
 				if (!sListEndSide.contains(this)) sListEndSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListWorldSide) tPortal.findTargetPortal();
 				findTargetPortal();

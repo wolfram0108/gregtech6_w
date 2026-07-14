@@ -92,9 +92,9 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 			}
 			if (aChatReturn == null) return 1;
 			if (mRock == null) {
-				if (level.provider.dimensionId == -1)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rack"); return 1;}
-				if (level.provider.dimensionId ==  0)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rock"); return 1;}
-				if (level.provider.dimensionId == +1)         {aChatReturn.add(LH.Chat.GRAY + "There is definitely an End"); return 1;}
+				if (WD.dimensionId(level) == -1)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rack"); return 1;}
+				if (WD.dimensionId(level) ==  0)         {aChatReturn.add(LH.Chat.GRAY + "This is definitely a Rock"); return 1;}
+				if (WD.dimensionId(level) == +1)         {aChatReturn.add(LH.Chat.GRAY + "There is definitely an End"); return 1;}
 				if (WD.dimAETHER(level))                      {aChatReturn.add(LH.Chat.GRAY + "Holy $#!T, it's a Rock.."); return 1;}
 				if (WD.dimALF   (level))                      {aChatReturn.add(LH.Chat.GRAY + "Wait that Rock is alive?!"); return 1;}
 				if (WD.dimTROPIC(level))                      {aChatReturn.add(LH.Chat.GRAY + "Seems to be a Chunk o'Head"); return 1;}
@@ -170,9 +170,9 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		// Tell WAILA and the NEI Overlay that this is a normal Rock.
 		if (level == null || isClientSide()) return OP.rockGt.mat(MT.Stone, aAmount);
 		// Dimension and Biome specific Drops.
-		if (level.provider.dimensionId == -1) return OP.rockGt.mat(MT.Netherrack, aAmount);
-		if (level.provider.dimensionId ==  0) return OP.rockGt.mat(MT.Stone, aAmount);
-		if (level.provider.dimensionId == +1) return OP.rockGt.mat(MT.Endstone, aAmount);
+		if (WD.dimensionId(level) == -1) return OP.rockGt.mat(MT.Netherrack, aAmount);
+		if (WD.dimensionId(level) ==  0) return OP.rockGt.mat(MT.Stone, aAmount);
+		if (WD.dimensionId(level) == +1) return OP.rockGt.mat(MT.Endstone, aAmount);
 		if (WD.dimAETHER(level)) return OP.rockGt.mat(MT.STONES.Holystone, aAmount);
 		if (WD.dimERE   (level)) return OP.rockGt.mat(MT.STONES.Umber, aAmount);
 		if (WD.dimBTL   (level)) return OP.rockGt.mat(MT.STONES.Betweenstone, aAmount);
@@ -213,9 +213,9 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 			mTexture = BlockTextureCopied.get(BlocksGT.GraniteBlack, SIDE_ANY, 0); return 1;
 		}
 		
-		if (level.provider.dimensionId == -1) {mTexture = BlockTextureCopied.get(Blocks.NETHERRACK); return 1;}
-		if (level.provider.dimensionId ==  0) {mTexture = BlockTextureCopied.get(Blocks.STONE); return 1;}
-		if (level.provider.dimensionId == +1) {mTexture = BlockTextureCopied.get(Blocks.END_STONE); return 1;}
+		if (WD.dimensionId(level) == -1) {mTexture = BlockTextureCopied.get(Blocks.NETHERRACK); return 1;}
+		if (WD.dimensionId(level) ==  0) {mTexture = BlockTextureCopied.get(Blocks.STONE); return 1;}
+		if (WD.dimensionId(level) == +1) {mTexture = BlockTextureCopied.get(Blocks.END_STONE); return 1;}
 		if (WD.dimTF(level))                  {mTexture = BlockTextureCopied.get(Blocks.STONE); return 1;}
 		if (WD.dimERE(level))                 {mTexture = BlockTextureCopied.get(Blocks.STONE, SIDE_ANY, 0, 0x907050, F, F, F); return 1;}
 		if (WD.dimBTL(level))                 {mTexture = BlockTextureCopied.get(Blocks.STONE, SIDE_ANY, 0, 0x308030, F, F, F); return 1;}

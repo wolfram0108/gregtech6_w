@@ -144,7 +144,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	}
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onTerrainGenEvent(DecorateBiomeEvent.Decorate aEvent) {
-		if (aEvent.world.provider.dimensionId == 0) {
+		if (WD.dimensionId(aEvent.world) == 0) {
 			if (MD.RTG.mLoaded) {
 				String tClassName = UT.Reflection.getLowercaseClass(aEvent.world.provider.terrainType);
 				if ("WorldProviderSurfaceRTG".equalsIgnoreCase(tClassName) || "WorldTypeRTG".equalsIgnoreCase(tClassName)) return;
@@ -155,7 +155,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	}
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onTerrainGenEvent(PopulateChunkEvent.Populate aEvent) {
-		if (aEvent.world.provider.dimensionId == 0) {
+		if (WD.dimensionId(aEvent.world) == 0) {
 			if (mDisableVanillaLakes && (aEvent.type == Populate.EventType.LAKE || aEvent.type == Populate.EventType.LAVA)) {aEvent.setResult(Result.DENY); return;}
 			if (MD.RTG.mLoaded) {
 				String tClassName = UT.Reflection.getLowercaseClass(aEvent.world.provider.terrainType);

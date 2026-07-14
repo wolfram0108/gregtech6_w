@@ -59,7 +59,7 @@ public class WorldgenTesting extends WorldgenObject {
 	
 	@Override
 	public boolean enabled(Level aWorld, int aDimType) {
-		return GENERATE_TESTING && aWorld.provider.dimensionId == DIM_OVERWORLD;
+		return GENERATE_TESTING && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override

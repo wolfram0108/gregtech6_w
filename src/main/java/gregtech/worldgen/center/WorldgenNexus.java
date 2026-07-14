@@ -49,7 +49,7 @@ public class WorldgenNexus extends WorldgenObject {
 	
 	@Override
 	public boolean enabled(Level aWorld, int aDimType) {
-		return GENERATE_NEXUS && aWorld.provider.dimensionId == DIM_OVERWORLD;
+		return GENERATE_NEXUS && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override

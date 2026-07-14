@@ -52,7 +52,7 @@ public class WorldgenBeacon extends WorldgenObject {
 	
 	@Override
 	public boolean enabled(Level aWorld, int aDimType) {
-		return GENERATE_BEACON && aWorld.provider.dimensionId == DIM_OVERWORLD;
+		return GENERATE_BEACON && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override

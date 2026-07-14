@@ -48,7 +48,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aWorld.isClientSide() || aPlayer == null || !aPlayer.isShiftKeyDown() || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
 		CompoundTag aNBT = UT.NBT.getNBT(aStack);
-		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, aWorld.provider.dimensionId);
+		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, WD.dimensionId(aWorld));
 		BlockPos tCoords = new BlockPos(aX, aY, aZ);
 		if (tList.contains(tCoords)) {
 			UT.Entities.sendchat(aPlayer, "Coordinates removed!");
@@ -68,7 +68,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 				UT.Sounds.send(SFX.GT_BEEP, 0.5F, 0.5F, aWorld, tCoords);
 			}
 		}
-		setCoords(aNBT, aWorld.provider.dimensionId, tList);
+		setCoords(aNBT, WD.dimensionId(aWorld), tList);
 		UT.NBT.set(aStack, aNBT);
 		return T;
 	}
@@ -80,7 +80,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		if (aWorld.isClientSide() || aPlayer.isShiftKeyDown() || !ItemNBT.has(aStack)) return aStack;
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		ArrayListNoNulls<BlockPos> tToBeKept = new ArrayListNoNulls<>();
-		for (BlockPos tCoords : getCoords(aNBT, aWorld.provider.dimensionId)) {
+		for (BlockPos tCoords : getCoords(aNBT, WD.dimensionId(aWorld))) {
 			if (Math.abs(tCoords.getX() - aPlayer.getX()) <= 128 && Math.abs(tCoords.getY() - aPlayer.getY()) <= 128 && Math.abs(tCoords.getZ() - aPlayer.getZ()) <= 128) {
 				BlockEntity tTileEntity = WD.te(aWorld, tCoords, F);
 				if (tTileEntity instanceof ITileEntityRemoteActivateable && ((ITileEntityRemoteActivateable)tTileEntity).remoteActivate()) tToBeKept.add(tCoords);
@@ -88,7 +88,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 				tToBeKept.add(tCoords);
 			}
 		}
-		setCoords(aNBT, aWorld.provider.dimensionId, tToBeKept);
+		setCoords(aNBT, WD.dimensionId(aWorld), tToBeKept);
 		ItemNBT.set(aStack, aNBT);
 		UT.Sounds.send(SFX.MC_CLICK, aPlayer);
 		return aStack;
@@ -96,7 +96,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	
 	public static boolean addCoords(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
 		CompoundTag aNBT = UT.NBT.getNBT(aStack);
-		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, aWorld.provider.dimensionId);
+		ArrayListNoNulls<BlockPos> tList = getCoords(aNBT, WD.dimensionId(aWorld));
 		if (tList.size() >= 64) return F;
 		BlockPos tCoords = new BlockPos(aX, aY, aZ);
 		if (tList.contains(tCoords)) return T;
@@ -104,7 +104,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 		if (tTileEntity instanceof ITileEntityRemoteActivateable) {
 			UT.Sounds.send(SFX.GT_BEEP, 0.5F, 1.0F, aWorld, tCoords);
 			tList.add(tCoords);
-			setCoords(aNBT, aWorld.provider.dimensionId, tList);
+			setCoords(aNBT, WD.dimensionId(aWorld), tList);
 			UT.NBT.set(aStack, aNBT);
 			return T;
 		}

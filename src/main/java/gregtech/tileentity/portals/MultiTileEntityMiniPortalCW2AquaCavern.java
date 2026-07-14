@@ -63,7 +63,7 @@ public class MultiTileEntityMiniPortalCW2AquaCavern extends MultiTileEntityMiniP
 	public void findTargetPortal() {
 		mTarget = null;
 		if (level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListCW2Side) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX(), tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ();
@@ -94,7 +94,7 @@ public class MultiTileEntityMiniPortalCW2AquaCavern extends MultiTileEntityMiniP
 	@Override
 	public void addThisPortalToLists() {
 		if (level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListCW2Side) tPortal.findTargetPortal();
 				findTargetPortal();

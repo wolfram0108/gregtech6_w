@@ -171,7 +171,7 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 						}
 					}
 					// Create an Ore Block fitting to the Stone Types of this Dimension.
-					if (level.provider.dimensionId == DIM_NETHER) {
+					if (WD.dimensionId(level) == DIM_NETHER) {
 						// Netherrack Ore.
 						slot(0, ST.make((Block)BlocksGT.oreBrokenNetherrack, 1, tMaterial.mID));
 					} else if (WD.dimTF(level)) {
@@ -205,7 +205,7 @@ public class MultiTileEntityBedrockDrill extends TileEntityBase10MultiBlockBase 
 					if (rng(1000) == 0) {
 						// 0.1% Chance to get Bedrock Dust. Only really useful for the Byproducts it has, and Rotarycraft.
 						slot(0, OP.dust.mat(MT.Bedrock, 1));
-					} else if (level.provider.dimensionId == DIM_NETHER) {
+					} else if (WD.dimensionId(level) == DIM_NETHER) {
 						// Netherrack.
 						slot(0, ST.make(Blocks.NETHERRACK, 1, 0));
 					} else if (WD.dimTF(level)) {

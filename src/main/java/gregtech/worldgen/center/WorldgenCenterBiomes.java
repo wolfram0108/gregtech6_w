@@ -56,7 +56,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 	
 	@Override
 	public boolean enabled(Level aWorld, int aDimType) {
-		return GENERATE_BIOMES && aWorld.provider.dimensionId == DIM_OVERWORLD;
+		return GENERATE_BIOMES && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override

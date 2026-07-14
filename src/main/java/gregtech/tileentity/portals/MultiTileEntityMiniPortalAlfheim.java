@@ -67,7 +67,7 @@ public class MultiTileEntityMiniPortalAlfheim extends MultiTileEntityMiniPortal 
 	public void findTargetPortal() {
 		mTarget = null;
 		if (MD.ALF.mLoaded && level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				long tShortestDistance = 128*128;
 				for (MultiTileEntityMiniPortal tTarget : sListAlfheimSide) if (tTarget != this && !tTarget.isDead()) {
 					long tXDifference = getBlockPos().getX()-tTarget.getBlockPos().getX(), tZDifference = getBlockPos().getZ()-tTarget.getBlockPos().getZ();
@@ -98,7 +98,7 @@ public class MultiTileEntityMiniPortalAlfheim extends MultiTileEntityMiniPortal 
 	@Override
 	public void addThisPortalToLists() {
 		if (MD.ALF.mLoaded && level != null && isServerSide()) {
-			if (level.provider.dimensionId == DIM_OVERWORLD) {
+			if (WD.dimensionId(level) == DIM_OVERWORLD) {
 				if (!sListWorldSide.contains(this)) sListWorldSide.add(this);
 				for (MultiTileEntityMiniPortal tPortal : sListAlfheimSide) tPortal.findTargetPortal();
 				findTargetPortal();

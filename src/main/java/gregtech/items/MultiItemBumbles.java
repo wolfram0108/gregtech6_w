@@ -262,7 +262,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case   4: case 202:
 			Block tChorusFlower = ST.block(MD.EtFu, "chorus_flower", null);
 			if (tChorusFlower == null) {
-				if (aWorld.provider.dimensionId == 1 || BIOMES_END.contains(WD.biome(aWorld, aX, aZ))) return new BlockPos(aX, aY, aZ);
+				if (WD.dimensionId(aWorld) == 1 || BIOMES_END.contains(WD.biome(aWorld, aX, aZ))) return new BlockPos(aX, aY, aZ);
 				for (int j : tOrderY) for (int i : tOrderX) for (int k : tOrderZ) {
 					Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
 					if (tBlock == Blocks.END_PORTAL || tBlock == Blocks.DRAGON_EGG) return new BlockPos(aX+i, aY+j, aZ+k);
