@@ -103,7 +103,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.common.DimensionManager;
+
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraftforge.fluids.*;
 import thaumcraft.api.nodes.INode;
@@ -197,7 +197,7 @@ public class WD {
 		float  tX     =  Mth.sin(-tYaw   * 0.017453292F - (float)Math.PI);
 		float  tW     = -Mth.cos(-tPitch * 0.017453292F);
 		float  tY     =  Mth.sin(-tPitch * 0.017453292F);
-		double tReach = (aPlayer instanceof ServerPlayer ? ((ServerPlayer)aPlayer).theItemInWorldManager.getBlockReachDistance() : 5);
+		double tReach = (aPlayer instanceof ServerPlayer ? ((ServerPlayer)aPlayer).blockInteractionRange() : 5);
 		// было aWorld.func_147447_a(from,to,stopOnLiquid,ignoreBlockWithoutBoundingBox,returnLastUncollidableBlock=F) —
 		// neo: BlockGetter.clip(ClipContext) (BlockGetter.java:65). stopOnLiquid=aFlag -> ClipContext.Fluid.ANY/NONE
 		// (ClipContext.java:96-110, ANY подбирает любую непустую FluidState, NONE — никогда); Block.OUTLINE — тот же

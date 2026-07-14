@@ -3188,7 +3188,7 @@ public class UT {
 		
 		/** only works serverside for now */
 		public static boolean isSpectator(Object aPlayer) {
-			return aPlayer instanceof ServerPlayer && ((ServerPlayer)aPlayer).theItemInWorldManager.getGameType().getName().equalsIgnoreCase("spectator");
+			return aPlayer instanceof ServerPlayer && ((ServerPlayer)aPlayer).isSpectator();
 		}
 		
 		public static boolean isCreative(Object aPlayer) {

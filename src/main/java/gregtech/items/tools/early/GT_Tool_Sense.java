@@ -79,7 +79,7 @@ public class GT_Tool_Sense extends ToolStats {
 			sIsHarvestingRightNow.set(this);
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) if (i != 0 || j != 0 || k != 0) {
 				if (aStack.getItem().getDigSpeed(aStack, WD.block(aPlayer.level(), aX+i, aY+j, aZ+k), WD.meta(aPlayer.level(), aX+i, aY+j, aZ+k)) > 0) {
-					if (((ServerPlayer)aPlayer).theItemInWorldManager.tryHarvestBlock(aX+i, aY+j, aZ+k)) rConversions++;
+					if (((ServerPlayer)aPlayer).gameMode.destroyBlock(new net.minecraft.core.BlockPos(aX+i, aY+j, aZ+k))) rConversions++;
 				}
 			}
 			sIsHarvestingRightNow.set(null);
