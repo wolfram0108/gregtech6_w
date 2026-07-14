@@ -1,5 +1,12 @@
 package ic2.api.energy.event;
 
-/** F10 ЗЕРКАЛО (compile-only) чужого API. Минимум для компиляции ядра; члены добираются
- *  компилятором. Реальная зависимость — при возврате к интеграции. См. compat-mirror/README.md. */
-public interface EnergyTileUnloadEvent {}
+import ic2.api.energy.tile.IEnergyTile;
+
+/** F10 ЗЕРКАЛО (compile-only) чужого API IC2. GT6 постит его в NeoForge.EVENT_BUS из TileEntityBase01Root.
+ *  unloadFromEnet() (под @Optional.Method(IC2)). Реальный IC2-класс — конкретный Forge-Event с ctor(IEnergyTile);
+ *  здесь extends neo Event (bus.api.Event), чтобы годиться post(); без IC2 подписчиков нет → no-op.
+ *  См. compat-mirror/README.md. */
+public class EnergyTileUnloadEvent extends net.neoforged.bus.api.Event {
+	public final IEnergyTile tile;
+	public EnergyTileUnloadEvent(IEnergyTile aTile) {tile = aTile;}
+}

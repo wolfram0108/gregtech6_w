@@ -222,3 +222,5 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\ic2\api\recipe\IScrapboxManage
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\appeng\api\registries\IRegistries.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\appeng\api\recipes\IGrinderRecipeHandler.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\ic2\api\energy\IEnergyNet.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\buildcraft\api\core\IWorldProperty.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\squeek\applecore\api\food\ItemFoodProxy.java

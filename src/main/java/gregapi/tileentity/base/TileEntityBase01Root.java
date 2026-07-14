@@ -75,6 +75,7 @@ import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.common.extensions.ValueInputExtension;
@@ -129,8 +130,23 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	// F-coord: neo BlockPos иммутабелен (нет no-arg ctor, полей posX/Y/Z) — 1.7.10 кэш-holder
 	// ChunkCoordinates удалён; getCoords() ниже отдаёт getBlockPos() напрямую (это и есть позиция BE).
-	
+
+	// F-tileentity-construction (#16): neo BlockEntity требует super(BlockEntityType<?>,BlockPos,BlockState)
+	// (нет no-arg ctor; BlockEntity.java:BlockEntity(type,pos,state), worldPosition protected final). GT6 —
+	// динамическая MultiTileEntity-система (32000 вариантов на ОДИН тип; канонические инстансы создаются
+	// рефлексией Class.newInstance() в MultiTileEntityClassContainer:52, мировые — движком через
+	// BlockEntityType.create(pos,state)). Единый центральный тип-плейсхолдер на весь TE-иерарх: реальный
+	// (не-null) объект через публичный ctor BlockEntityType(BlockEntitySupplier,Block...) с пустым набором
+	// valid-блоков (isValid()==false) и factory→null. Канонические инстансы им НЕ создаются (рефлексия),
+	// им нужен лишь непустой аргумент super(). РЕАЛЬНАЯ регистрация типа в реестр (мировое размещение) —
+	// тот же отложенный ADR, что и в GT_API.java:872 (динамическая модель к статичному BlockEntityType neo
+	// не сводится 1:1 без ADR; не выдумываю). PLACEHOLDER_POS/STATE — ZERO/AIR (у канонических инстансов
+	// позиция не используется; у мировых движок задаёт реальную через create(pos,state) до loadAdditional).
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static final BlockEntityType<TileEntityBase01Root> MTE_TYPE = new BlockEntityType((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> null, new Block[0]);
+
 	public TileEntityBase01Root(boolean aIsTicking) {
+		super(MTE_TYPE, BlockPos.ZERO, Blocks.AIR.defaultBlockState());
 		mIsTicking = aIsTicking;
 	}
 	
