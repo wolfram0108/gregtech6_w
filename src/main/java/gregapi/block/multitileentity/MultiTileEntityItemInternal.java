@@ -20,7 +20,6 @@
 package gregapi.block.multitileentity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
@@ -548,7 +547,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return Collections.emptyList();
 	}
 	@Override
-	public long doEnergyInjection(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoInject) {
+	public long doEnergyInjection(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoInject) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemEnergy) return ((IItemEnergy)tTileEntityContainer.mTileEntity).doEnergyInjection(aEnergyType, aStack, aSize, aAmount, aInventory, aWorld, aX, aY, aZ, aDoInject);
 		return 0;
@@ -560,7 +559,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return F;
 	}
 	@Override
-	public long doEnergyExtraction(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoExtract) {
+	public long doEnergyExtraction(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoExtract) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemEnergy) return ((IItemEnergy)tTileEntityContainer.mTileEntity).doEnergyExtraction(aEnergyType, aStack, aSize, aAmount, aInventory, aWorld, aX, aY, aZ, aDoExtract);
 		return 0;
@@ -572,7 +571,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return F;
 	}
 	@Override
-	public boolean useEnergy(TagData aEnergyType, ItemStack aStack, long aEnergyAmount, LivingEntity aPlayer, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoUse) {
+	public boolean useEnergy(TagData aEnergyType, ItemStack aStack, long aEnergyAmount, LivingEntity aPlayer, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoUse) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemEnergy) return ((IItemEnergy)tTileEntityContainer.mTileEntity).useEnergy(aEnergyType, aStack, aEnergyAmount, aPlayer, aInventory, aWorld, aX, aY, aZ, aDoUse);
 		return F;

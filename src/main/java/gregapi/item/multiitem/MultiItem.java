@@ -18,7 +18,6 @@
  */
 
 package gregapi.item.multiitem;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.api.Optional;
 import gregapi.code.ArrayListNoNulls;
@@ -418,21 +417,21 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	}
 	
 	@Override
-	public long doEnergyInjection (TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoInject) {
+	public long doEnergyInjection (TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoInject) {
 		IItemEnergy tStats = getEnergyStats(aStack);
 		if (tStats == null) return 0;
 		return tStats.doEnergyInjection (aEnergyType, aStack, aSize, aAmount, aInventory, aWorld, aX, aY, aZ, aDoInject);
 	}
 	
 	@Override
-	public long doEnergyExtraction(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoExtract) {
+	public long doEnergyExtraction(TagData aEnergyType, ItemStack aStack, long aSize, long aAmount, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoExtract) {
 		IItemEnergy tStats = getEnergyStats(aStack);
 		if (tStats == null) return 0;
 		return tStats.doEnergyExtraction(aEnergyType, aStack, aSize, aAmount, aInventory, aWorld, aX, aY, aZ, aDoExtract);
 	}
 	
 	@Override
-	public boolean useEnergy(TagData aEnergyType, ItemStack aStack, long aEnergyAmount, LivingEntity aPlayer, AbstractContainerMenu aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoUse) {
+	public boolean useEnergy(TagData aEnergyType, ItemStack aStack, long aEnergyAmount, LivingEntity aPlayer, Container aInventory, Level aWorld, int aX, int aY, int aZ, boolean aDoUse) {
 		IItemEnergy tStats = getEnergyStats(aStack);
 		if (tStats == null) return F;
 		return tStats.useEnergy(aEnergyType, aStack, aEnergyAmount, aPlayer, aInventory, aWorld, aX, aY, aZ, aDoUse);

@@ -18,7 +18,6 @@
  */
 
 package gregtech.worldgen;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.data.*;
@@ -339,12 +338,12 @@ public class TwilightTreasureReplacer extends TFTreasure {
 		return tRegistry.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mChestID, UT.NBT.make(NBT_FACING, ALL_SIDES_HORIZONTAL[RNGSUS.nextInt(ALL_SIDES_HORIZONTAL.length)], NBT_TRAPPED, T, "gt.dungeonloot", mCategory), F, T);
 	}
 	
-	public static boolean generate(AbstractContainerMenu aInventory, String aCategory) {
+	public static boolean generate(Container aInventory, String aCategory) {
 		TwilightTreasureReplacer tTreasure = TWILIGHT_TREASURE.get(aCategory);
 		return tTreasure != null && tTreasure.generate(aInventory);
 	}
 	
-	public boolean generate(AbstractContainerMenu aInventory) {
+	public boolean generate(Container aInventory) {
 		boolean rReturn = T;
 		// About twice as much Loot as normal TF because the Loot is quite lackluster compared to the time investment otherwise.
 		for (int i = 0; i < mRares    ; i++) rReturn &= addToInventory(aInventory, mTreasure.getRareItem    (RNGSUS));
@@ -357,14 +356,14 @@ public class TwilightTreasureReplacer extends TFTreasure {
 		return rReturn;
 	}
 	
-	public boolean addToInventory(AbstractContainerMenu aInventory, ItemStack aStack) {
+	public boolean addToInventory(Container aInventory, ItemStack aStack) {
 		int tSlot = findEmptySlot(aInventory);
 		if (tSlot == -1) return F;
 		aInventory.setInventorySlotContents(tSlot, IL.TF_Uncrafting.equal(aStack, T, T) ? IL.TF_Transformation_Powder.get(12+RNGSUS.nextInt(13)) : ST.item(aStack) == Items.POTION ? IL.Bottle_Loot.get(1+RNGSUS.nextInt(2)) : aStack);
 		return T;
 	}
 	
-	public int findEmptySlot(AbstractContainerMenu aInventory) {
+	public int findEmptySlot(Container aInventory) {
 		int j = aInventory.getContainerSize();
 		for (int i = 0; i < 100; i++) {int k = RNGSUS.nextInt(j); if (aInventory.getSlot(k).getItem() == null) return k;}
 		for (int i = 0; i <   j; i++) if (aInventory.getSlot(i).getItem() == null) return i;

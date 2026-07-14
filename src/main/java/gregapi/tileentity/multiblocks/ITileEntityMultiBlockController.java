@@ -18,7 +18,6 @@
  */
 
 package gregapi.tileentity.multiblocks;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;
@@ -45,7 +44,7 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 	public long onToolClickMultiBlock(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ, BlockPos aFrom);
 	
 	public static class Util {
-		public static boolean checkAndSetTarget(ITileEntityMultiBlockController aController, int aX, int aY, int aZ, int aRegistryMeta, int aRegistryID, int aDesign, int aMode, BlockPos aClickedAt, Entity aPlayer, AbstractContainerMenu aInventory) {
+		public static boolean checkAndSetTarget(ITileEntityMultiBlockController aController, int aX, int aY, int aZ, int aRegistryMeta, int aRegistryID, int aDesign, int aMode, BlockPos aClickedAt, Entity aPlayer, Container aInventory) {
 			BlockEntity tTileEntity = WD.te(aController, aX, aY, aZ, T);
 			if (tTileEntity == aController) return T;
 			
@@ -77,7 +76,7 @@ public interface ITileEntityMultiBlockController extends ITileEntityUnloadable, 
 			return F;
 		}
 		
-		public static boolean checkAndSetTargetOffset(ITileEntityMultiBlockController aController, int aX, int aY, int aZ, int aRegistryMeta, int aRegistryID, int aDesign, int aMode, BlockPos aClickedAt, Entity aPlayer, AbstractContainerMenu aInventory) {
+		public static boolean checkAndSetTargetOffset(ITileEntityMultiBlockController aController, int aX, int aY, int aZ, int aRegistryMeta, int aRegistryID, int aDesign, int aMode, BlockPos aClickedAt, Entity aPlayer, Container aInventory) {
 			return checkAndSetTarget(aController, aX+aController.getX(), aY+aController.getY(), aZ+aController.getZ(), aRegistryMeta, aRegistryID, aDesign, aMode, aClickedAt, aPlayer, aInventory);
 		}
 		

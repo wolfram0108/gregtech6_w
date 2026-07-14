@@ -24,7 +24,6 @@ import gregapi.oredict.OreDictPrefix;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.Container;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -34,7 +33,7 @@ public interface IOreDictListenerItem {
 	public ItemStack onTickWorld        (OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, ItemEntity aItem);
 	public ItemStack onClickRight       (OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, Player aPlayer);
 	public void onTickPlayer            (OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, Player aPlayer, int aIndex);
-	public void onTickInventory         (OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, AbstractContainerMenu aInventory, int aIndex);
+	public void onTickInventory         (OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, Container aInventory, int aIndex);
 	
 	/** Returns null if it doesn't provide a ToolTip for this Behaviour. */
 	public String getListenerToolTip    (OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack);
@@ -57,7 +56,7 @@ public interface IOreDictListenerItem {
 		}
 		
 		@Override
-		public void onTickInventory(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, AbstractContainerMenu aInventory, int aIndex) {
+		public void onTickInventory(OreDictPrefix aPrefix, OreDictMaterial aMaterial, ItemStack aStack, Container aInventory, int aIndex) {
 			//
 		}
 		
