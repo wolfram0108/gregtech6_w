@@ -442,7 +442,8 @@ public class GT_API extends Abstract_Mod {
 			}
 		}
 		onModInit(new FMLInitializationEvent());
-		runDeferredItemInit(); // F1/F12/F16 item-model: выполнить отложенный stack-init предметов (OreDict-данные+рецепты) — здесь (setup, пост-bind) ST.make работает (материалы/префиксы/OP уже готовы)
+		// F1/F12/F16 item-model: runDeferredItemInit ПЕРЕНЕСЁН в onModServerStarting2 — onLoad(CommonSetup) НЕ пост-bind
+		// (верифицировано: Holder.components привязывает ReloadableServerResources на server-start, Holder.java:108).
 	}
 	
 	// PostInit: подписан в конструкторе на FMLLoadCompleteEvent (мод-шина) — родное neo-событие
@@ -1040,6 +1041,9 @@ public class GT_API extends Abstract_Mod {
 	
 	@Override
 	public void onModServerStarting2(ServerStartingEvent aEvent) {
+		// F1/F12/F16 item-model: отложенный stack-init предметов (OreDict-данные+рецепты) выполняется ЗДЕСЬ (server-start,
+		// пост-bind: Holder.components привязаны через ReloadableServerResources) — не в onLoad (тот pre-bind, «Components not bound»).
+		runDeferredItemInit();
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStarting(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
