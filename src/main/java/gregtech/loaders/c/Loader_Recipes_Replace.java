@@ -227,14 +227,14 @@ public class Loader_Recipes_Replace implements Runnable {
 			if (aRecipe.mPrefix == null || aRecipe.mMat == null) continue;
 			ItemStack tMat = aRecipe.mPrefix.mat(aRecipe.mMat, 1);
 			if (tMat == null) continue;
-			INGT.func_150996_a(tMat.getItem());
+			ST.setItem(INGT, tMat.getItem());
 			INGT.setCount(1);
 			ST.meta_(INGT, ST.meta_(tMat));
 			RecipeReplacer[] tReplacer = sRecipesMat;
 			if (aRecipe.mRod != null) {
 				ItemStack tRod = (aRecipe.mRod == ANY.Wood ? IL.Stick.get(1) : OP.stick.mat(aRecipe.mRod, 1));
 				if (tRod == null) continue;
-				STCK.func_150996_a(tRod.getItem());
+				ST.setItem(STCK, tRod.getItem());
 				STCK.setCount(1);
 				ST.meta_(STCK, ST.meta_(tRod));
 				tReplacer = sRecipesRod;

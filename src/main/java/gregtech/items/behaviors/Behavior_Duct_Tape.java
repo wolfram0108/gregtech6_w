@@ -64,7 +64,7 @@ public class Behavior_Duct_Tape extends AbstractBehaviorDefault {
 		long tUses = tNBT.getLongOr("gt.remaining", 0L);
 		
 		if (ST.equal(aStack, mFull, T)) {
-			aStack.func_150996_a(mUsed.getItem());
+			ST.setItem(aStack, mUsed.getItem());
 			ST.meta_(aStack, ST.meta_(mUsed));
 			tUses = mUses;
 		}
@@ -84,7 +84,7 @@ public class Behavior_Duct_Tape extends AbstractBehaviorDefault {
 			if (mEmpty == null) {
 				aStack.setCount(aStack.getCount()-1);
 			} else {
-				aStack.func_150996_a(mEmpty.getItem());
+				ST.setItem(aStack, mEmpty.getItem());
 				ST.meta_(aStack, ST.meta_(mEmpty));
 			}
 		}

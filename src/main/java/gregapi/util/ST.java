@@ -338,14 +338,25 @@ public class ST {
 	public static ItemStack set(ItemStack aSetStack, ItemStack aToStack, boolean aCheckStacksize, boolean aCheckNBT) {
 		if (aSetStack == aToStack) return aSetStack;
 		if (invalid(aSetStack) || invalid(aToStack)) return null;
-		// PORT-TODO(item-final, F?): aSetStack.func_150996_a(item_(aToStack)); — ItemStack.item в neo final,
-		// in-place смена Item на существующем объекте невозможна без copy (нет 1:1, REMAP-RULES §C-bis).
+		// F-item-final ЦЕНТР: 1.7.10 aSetStack.func_150996_a(Item) — in-place смена Item существующего стека. neo
+		// ItemStack.item = private final Holder<Item> (ItemStack.java:156) — прямого сеттера нет, а transmuteCopy даёт
+		// КОПИЮ (не 1:1: весь GT6 опирается на in-place мутацию по ссылке). Единственный 1:1-путь — reflection на final-поле
+		// через центр UT.Reflection.setField (безопасный try/catch-фолбэк: при неудаче item не сменится = прежнее поведение).
+		// Holder нового предмета = Item.builtInRegistryHolder() (Item.java:153). NeoForge runtime = official mappings → поле "item".
+		UT.Reflection.setField(aSetStack, "item", item_(aToStack).builtInRegistryHolder());
 		if (aCheckStacksize) aSetStack.setCount(aToStack.getCount());
 		meta_(aSetStack, meta_(aToStack));
 		if (aCheckNBT) ItemNBT.set(aSetStack, ItemNBT.get(aToStack));
 		return aSetStack;
 	}
-	
+	/** F-item-final ЦЕНТР: 1.7.10 {@code ItemStack.func_150996_a(Item)} — in-place смена ТОЛЬКО Item (count/meta/NBT сохранены).
+	 *  neo {@code ItemStack.item} = private final Holder<Item> — reflection на final-поле через центр {@link UT.Reflection#setField}
+	 *  (безопасный try/catch-фолбэк). Holder предмета = {@code Item.builtInRegistryHolder()}. Отличается от {@link #set}: тот копирует всё. */
+	public static ItemStack setItem(ItemStack aStack, Item aItem) {
+		if (valid(aStack) && aItem != null) UT.Reflection.setField(aStack, "item", aItem.builtInRegistryHolder());
+		return aStack;
+	}
+
 	public static ItemStack update (ItemStack aStack) {
 		return invalid(aStack)?aStack:update_(aStack);
 	}

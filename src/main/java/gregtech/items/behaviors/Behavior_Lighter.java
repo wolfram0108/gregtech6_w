@@ -122,7 +122,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 	
 	private void prepare(ItemStack aStack) {
 		if (ST.valid(mFullLighter) && ST.equal(aStack, mFullLighter, T)) {
-			aStack.func_150996_a(mUsedLighter.getItem());
+			ST.setItem(aStack, mUsedLighter.getItem());
 			ST.meta_(aStack, ST.meta_(mUsedLighter));
 			UT.NBT.setLighterFuel(aStack, mFuelAmount);
 		}
@@ -132,7 +132,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 		if (ST.invalid(mEmptyLighter)) {
 			aStack.setCount(aStack.getCount()-1);
 		} else {
-			aStack.func_150996_a(mEmptyLighter.getItem());
+			ST.setItem(aStack, mEmptyLighter.getItem());
 			ST.meta_(aStack, ST.meta_(mEmptyLighter));
 		}
 	}
