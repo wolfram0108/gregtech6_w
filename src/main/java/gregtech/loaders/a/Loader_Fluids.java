@@ -52,7 +52,7 @@ public class Loader_Fluids implements Runnable {
 		FL.create("enderair"                 , "Ender Air"           , null                  , 2,   1000,   280).setDensity(0);
 		FL.create("Steam"                    , "Steam"               , MT.H2O                , 2, 160000, C+100).setDensity(-1000);
 		MT.Ice.mGas = MT.H2O.mGas;
-		FL.setTemperature(MT.H2O.mGas.getFluid(), (int)(C+100)).setGaseous(T);
+		((gregapi.fluid.FluidGT)MT.H2O.mGas.getFluid()).setTemperature((int)(C+100)).setGaseous(T);
 		MT.Steam.gas(FL.Steam.make(160000));
 		
 		//-----
@@ -665,7 +665,7 @@ public class Loader_Fluids implements Runnable {
 		
 		
 		FL.Air       .fluid().setDensity(0);
-		FL.Air_Nether.fluid().setDensity(0);
+		((gregapi.fluid.FluidGT)FL.Air_Nether.fluid()).setDensity(0);
 		FL.Air_End   .fluid().setDensity(0);
 		
 		
