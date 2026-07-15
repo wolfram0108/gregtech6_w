@@ -187,6 +187,13 @@ public class GT_API extends Abstract_Mod {
 	 *  (maxDamage>0). Централизованная адаптация — ОТДЕЛЬНЫЙ компонент подтипа; {@code ST.meta_} get/set идёт через него,
 	 *  минуя кламп. Persistent (NBT ItemStack.CODEC) + network-synced. Ставится только при meta!=0 (meta-0 = без компонента,
 	 *  стекуется с ванилла). */
+	/** F12-followup (MTE-type-timing): единый placeholder-BlockEntityType всей MTE-иерархии. Создание BlockEntityType зовёт
+	 *  createIntrusiveHolder → только на RegisterEvent<BlockEntityType> (размороженный реестр). Регистрируем supplier'ом
+	 *  {@code TileEntityBase01Root.createType} (он создаёт+кэширует MTE_TYPE); прежде <clinit> создавал его лениво на
+	 *  server-start → «Registry is already frozen» → рушился весь Loader_MultiTileEntities (cables/wires/pipes = 0). */
+	public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, ModIDs.GAPI);
+	public static final Object MTE_TYPE_HOLDER = BLOCK_ENTITIES.register("mte", gregapi.tileentity.base.TileEntityBase01Root::createType);
+
 	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
 	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
 		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
@@ -429,6 +436,7 @@ public class GT_API extends Abstract_Mod {
 		ITEMS .register(aModBus);
 		BLOCKS.register(aModBus);
 		COMPONENTS.register(aModBus); // F12-followup (subtype-meta): регистрация компонента подтипа на mod-bus (RegisterEvent<DataComponentType>)
+		BLOCK_ENTITIES.register(aModBus); // F12-followup (MTE-type-timing): placeholder MTE_TYPE на RegisterEvent<BlockEntityType> (до freeze)
 		// F12-followup (block-split, MTE): слив DEFERRED_BLOCK_INIT на RegisterEvent<Block> (реестр разморожен) — единая
 		// точка для подсистем, чьё конструирование блока нельзя выразить одним registerBlockLazy (см. deferBlockInit).
 		aModBus.addListener(GT_API::onRegisterEvent);

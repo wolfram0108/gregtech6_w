@@ -142,13 +142,26 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// тот же отложенный ADR, что и в GT_API.java:872 (динамическая модель к статичному BlockEntityType neo
 	// не сводится 1:1 без ADR; не выдумываю). PLACEHOLDER_POS/STATE — ZERO/AIR (у канонических инстансов
 	// позиция не используется; у мировых движок задаёт реальную через create(pos,state) до loadAdditional).
+	// F12-followup (MTE-type-timing): создание BlockEntityType зовёт createIntrusiveHolder → нужен РАЗМОРОЖЕННЫЙ реестр
+	// (только на RegisterEvent<BlockEntityType>). Прежде поле было static final с инициализатором в <clinit>, который
+	// срабатывал ЛЕНИВО при первой загрузке класса (newInstance канонического инстанса на server-start, после freeze) →
+	// «Registry is already frozen». Теперь тип создаётся и РЕГИСТРИРУЕТСЯ через GT_API.BLOCK_ENTITIES (supplier зовёт
+	// createType() на RegisterEvent, реестр открыт, intrusive-holder связывается) → к server-start MTE_TYPE уже готов.
+	public static BlockEntityType<TileEntityBase01Root> MTE_TYPE;
+	// neo валидирует пустой varargs valid-блоков → «pass Set.of() instead of an empty varag». Плейсхолдер намеренно без
+	// valid-блоков (канонические инстансы создаются рефлексией, не движком) → передаём Set.of() (осознанно пустой).
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static final BlockEntityType<TileEntityBase01Root> MTE_TYPE = new BlockEntityType((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> null, new Block[0]);
+	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> null, java.util.Set.<Block>of());}
 
 	public TileEntityBase01Root(boolean aIsTicking) {
 		super(MTE_TYPE, BlockPos.ZERO, Blocks.AIR.defaultBlockState());
 		mIsTicking = aIsTicking;
 	}
+
+	// F12-followup (MTE-type): neo BlockEntity.<init> валидирует state против type.isValid(state); placeholder MTE_TYPE не
+	// имеет valid-блоков (Set.of()) → канонический инстанс (AIR-state) не прошёл бы → «Invalid block entity state».
+	// GT6 MTE — динамическая система (тип общий на всю иерархию, valid-блоки не применимы) → валидацию отключаем.
+	@Override public boolean isValidBlockState(net.minecraft.world.level.block.state.BlockState aState) {return true;}
 	
 	@Override
 	public void onTileEntityPlaced() {

@@ -54,12 +54,15 @@ public class LoaderWoodDictionary implements Runnable {
 		new SaplingEntry(ST.make(Blocks.JUNGLE_SAPLING, 4, 0), new WoodEntry(ST.make(Blocks.JUNGLE_LOG, 1, 0), new BeamEntry(ST.make(BlocksGT.Beam1, 1, 3), new PlankEntry(ST.make(Blocks.JUNGLE_PLANKS, 1, 0), ST.make(Blocks.JUNGLE_SLAB, 1, 0), ST.make(Blocks.JUNGLE_STAIRS  , 1, W), MT.WOODS.Jungle , 3))), ST.make(Blocks.JUNGLE_LEAVES, 1, 0));
 		new SaplingEntry(ST.make(Blocks.ACACIA_SAPLING, 1, 0), new WoodEntry(ST.make(Blocks.ACACIA_LOG, 1, 0), new BeamEntry(ST.make(BlocksGT.Beam2, 1, 0), new PlankEntry(ST.make(Blocks.ACACIA_PLANKS, 1, 0), ST.make(Blocks.ACACIA_SLAB, 1, 0), ST.make(Blocks.ACACIA_STAIRS  , 1, W), MT.WOODS.Acacia , 4))), ST.make(Blocks.ACACIA_LEAVES, 1, 0));
 		new SaplingEntry(ST.make(Blocks.DARK_OAK_SAPLING, 4, 0), new WoodEntry(ST.make(Blocks.DARK_OAK_LOG, 1, 0), new BeamEntry(ST.make(BlocksGT.Beam2, 1, 1), new PlankEntry(ST.make(Blocks.DARK_OAK_PLANKS, 1, 0), ST.make(Blocks.DARK_OAK_SLAB, 1, 0), ST.make(Blocks.DARK_OAK_STAIRS, 1, W), MT.WOODS.DarkOak, 5))), ST.make(Blocks.DARK_OAK_LEAVES, 1, 0));
+		// F4-flattening: 1.7.10 Blocks.planks имел meta 0-5 (oak/spruce/birch/jungle/acacia/darkoak) на ОДНОМ блоке;
+		// neo расщепил на отдельные *_PLANKS-блоки (все зарегистрированы выше под meta 0). PLANKS.get(OAK_PLANKS, 1..5)
+		// давал null (такой meta нет) → BeamEntry(beam, null) → NPE, обрывавший LoaderWoodDictionary. Маппим на блоки пород.
 		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 0));
-		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 1));
-		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 2), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 2));
-		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 3), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 3));
-		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 4));
-		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 5));
+		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.SPRUCE_PLANKS, 0));
+		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 2), WoodDictionary.PLANKS.get(Blocks.BIRCH_PLANKS, 0));
+		new BeamEntry(ST.make(BlocksGT.Beam1FireProof, 1, 3), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0));
+		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
+		new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 1), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
 		
 		// GregTech Trees
 		if (MD.GT.mLoaded) {
