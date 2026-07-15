@@ -664,9 +664,9 @@ public class Loader_Fluids implements Runnable {
 		}
 		
 		
-		FL.Air       .fluid().setDensity(0);
+		((gregapi.fluid.FluidGT)FL.Air       .fluid()).setDensity(0);
 		((gregapi.fluid.FluidGT)FL.Air_Nether.fluid()).setDensity(0);
-		FL.Air_End   .fluid().setDensity(0);
+		((gregapi.fluid.FluidGT)FL.Air_End   .fluid()).setDensity(0);
 		
 		
 		FL.reg(FL.Air                     .make(1000), IL.Cell_Air                                 .get(1), IL.Cell_Empty.get(1), F, T, T);
