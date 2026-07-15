@@ -73,11 +73,13 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		// F16/F9 форс движка, см. BlockFluidBaseGT). setBlockName удалён (имя — ST.register ниже, как
 		// BlockBase.java); setLightOpacity(...) удалено (own getLightOpacity() ниже уже хардкодит значение);
 		// setFluidStack(...) удалено (Forge-only stack-поле, GT6 drain() его не читает — мёртвый код).
-		super(BlockBehaviour.Properties.of().explosionResistance(30F), Material.water);
+		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
+		super(BlockBehaviour.Properties.of().explosionResistance(30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(aName)))), Material.water);
 		mFluid = aFluid;
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;
-		ST.register(this, aName, BlockItem.class);
+		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
+		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, aName, () -> (BlockItem)gregapi.util.UT.Reflection.callConstructor(BlockItem.class, 0, null, gregapi.data.CS.T, this));
 		LH.add(getUnlocalizedName(), getLocalizedName());
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
 		if (aHide) gregapi.GT_API.deferItemInit(() -> ST.hide(this));

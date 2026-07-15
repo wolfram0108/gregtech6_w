@@ -91,14 +91,16 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// было super(aFluid, aMaterial) + setResistance(FL.gas(mFluid)?1:30) — neo Block immutable (Properties
 		// ДО super, F16/F9 форс движка, см. BlockFluidBaseGT); resistance считаем от параметра aFluid (mFluid
 		// ещё не присвоен на этой стадии — тот же самый Fluid).
-		super(BlockBehaviour.Properties.of().explosionResistance(FL.gas(aFluid) ? 1F : 30F), aMaterial);
+		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
+		super(BlockBehaviour.Properties.of().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial);
 		mFluid = aFluid;
 		mAmountPerQuanta = aAmountPerQuanta;
 		mQuanta = FL.make(mFluid, mAmountPerQuanta);
 		mDensityDir = densityDir;
 		mFlammability = aFlammability;
 		mNameInternal = aNameInternal;
-		ST.register(this, mNameInternal, BlockItem.class);
+		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
+		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, mNameInternal, () -> (BlockItem)gregapi.util.UT.Reflection.callConstructor(BlockItem.class, 0, null, gregapi.data.CS.T, this));
 		FL.BLOCKS.put(FL.regName(mFluid), this);
 		displacements.put(this, F);
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...

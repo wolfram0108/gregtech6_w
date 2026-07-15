@@ -82,13 +82,16 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		// FlowerBlock(SuspiciousStewEffects,Properties) [FlowerBlock.java:36] требует эффект похлёбки - GT6-цветы
 		// декоративные (без спец-эффекта) -> SuspiciousStewEffects.EMPTY [SuspiciousStewEffects.java:25], тот же
 		// Properties.of()-дефолт, что и остальные BlockBase-наследники (F9-мост твёрдости отложен туда же).
-		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
+		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
+		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
 		/* PORT-TODO(F16) setStepSound */;
 		mNameInternal = aNameInternal;
 		/* PORT-TODO(F16) setCreativeTab */;
-		ST.register(this, mNameInternal, aItemClass);
+		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
+		final Class<? extends net.minecraft.world.item.BlockItem> tItemClass = aItemClass==null?gregapi.block.ItemBlockBase.class:aItemClass;
+		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, mNameInternal, () -> (net.minecraft.world.item.BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, gregapi.data.CS.T, this));
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
