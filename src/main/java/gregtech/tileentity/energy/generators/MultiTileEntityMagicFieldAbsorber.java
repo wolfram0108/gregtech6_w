@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.energy.generators;
 
+import gregapi.util.WD;
 import gregapi.code.TagData;
 import gregapi.data.IL;
 import gregapi.data.LH;

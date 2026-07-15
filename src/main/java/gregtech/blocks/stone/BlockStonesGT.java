@@ -52,6 +52,6 @@ public class BlockStonesGT extends BlockStones {
 	
 	
 	public boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {
-		return (mWitherProof && aEntity instanceof WitherBoss) ? F : super.canEntityDestroy(aWorld, aX, aY, aZ, aEntity);
+		return (mWitherProof && aEntity instanceof WitherBoss) ? F : T /* neo IBlockExtension.canEntityDestroy иной сигнатуры; база GT6 хук не несёт -> дефолт true */;
 	}
 }

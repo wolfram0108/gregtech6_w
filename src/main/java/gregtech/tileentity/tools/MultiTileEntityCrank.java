@@ -81,7 +81,7 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 			// Don't check for Villagers while Players operate the Crank.
 			if (!mActive) {
 				List<Villager> tList = new ArrayListNoNulls<>();
-				level.getChunkFromBlockCoords(getBlockPos().getX(), getBlockPos().getZ()).getEntitiesOfTypeWithinAAAB(Villager.class, box(), tList, null);
+				tList.addAll(level.getEntitiesOfClass(Villager.class, box()));
 				for (Villager tVillager : tList) if (UT.Code.roundDown(tVillager.getY()+tVillager.getEyeHeight()) == getBlockPos().getY() && UT.Code.roundDown(tVillager.getX()) == getBlockPos().getX() && UT.Code.roundDown(tVillager.getZ()) == getBlockPos().getZ()) {
 					mActive = T;
 					ITileEntityEnergy.Util.emitEnergyToSide(TD.Energy.RU, mFacing, -UT.Code.divup(8L*UT.Entities.pot2Strength(tVillager), UT.Entities.pot1Weakness(tVillager)), UT.Entities.pot1Haste(tVillager), this);

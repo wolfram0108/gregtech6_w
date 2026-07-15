@@ -128,7 +128,7 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	}
 	
 	@Override
-	public boolean inhibitMobSpawn(MobSpawnEvent.CheckSpawn aEvent, Level aWorld, int aX, int aY, int aZ) {
+	public boolean inhibitMobSpawn(MobSpawnEvent.PositionCheck aEvent, Level aWorld, int aX, int aY, int aZ) {
 		if (mCurrentRange <= 0 || aWorld != level || Math.abs(aX - getBlockPos().getX()) > mCurrentRange || Math.abs(aZ - getBlockPos().getZ()) > mCurrentRange) return F;
 		// Allow wild Mobs to spawn on Mossy Cobblestone.
 		for (int i = -5; i <= 5; i++) {
