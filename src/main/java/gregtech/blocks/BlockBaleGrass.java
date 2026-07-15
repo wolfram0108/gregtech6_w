@@ -102,7 +102,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 			return;
 		}
 		if (aRandom.nextInt(3) > 0 && WD.envTemp(aWorld, aX, aY, aZ) < C + 10) return;
-		if (aRandom.nextInt(3) > 0 && !(aWorld.isDaytime() && !aWorld.isRaining() && aWorld.canBlockSeeTheSky(aX, aY+2, aZ))) return;
+		if (aRandom.nextInt(3) > 0 && !(aWorld.isBrightOutside() && !aWorld.isRaining() && aWorld.canBlockSeeTheSky(aX, aY+2, aZ))) return;
 		Biome tBiome = WD.biome(aWorld, aX, aZ);
 		boolean tWet = (WD.rainfall(tBiome) > 0.8F || BIOMES_INFINITE_WATER.contains(tBiome));
 		if (!tWet) for (byte tSide : ALL_SIDES_VALID) if (WD.anywater(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide])) {tWet = T; break;}

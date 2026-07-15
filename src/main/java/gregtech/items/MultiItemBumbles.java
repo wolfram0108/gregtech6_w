@@ -313,7 +313,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 				if (tBlock == Blocks.FLOWER_POT) {
 					BlockEntity tTileEntity = WD.te(aWorld, aX+i, aY+j, aZ+k, F);
 					if (tTileEntity instanceof TileEntityFlowerPot) {
-						if (Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem()) == Blocks.CACTUS) return new BlockPos(aX+i, aY+j, aZ+k);
+						if (Block.byItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem()) == Blocks.CACTUS) return new BlockPos(aX+i, aY+j, aZ+k);
 					}
 					continue;
 				}
@@ -620,7 +620,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		if (aBlock == Blocks.FLOWER_POT) {
 			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
 			if (tTileEntity instanceof TileEntityFlowerPot) {
-				aBlock = Block.getBlockFromItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem());
+				aBlock = Block.byItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem());
 				return aBlock == Blocks.DANDELION || aBlock == Blocks.POPPY;
 			}
 			return F;

@@ -381,7 +381,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 			if (level.isThundering() && !Util.getStormproof(aBumbleTag)) return F;
 			if (level.isRaining() && mHumidity > 0 && !Util.getRainproof(aBumbleTag)) return F;
 		}
-		return level.isDaytime() ? Util.getDayActive(aBumbleTag) : Util.getNightActive(aBumbleTag);
+		return level.isBrightOutside() ? Util.getDayActive(aBumbleTag) : Util.getNightActive(aBumbleTag);
 	}
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.bumbliary";}
