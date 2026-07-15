@@ -139,7 +139,7 @@ public class Loader_Recipes_Replace implements Runnable {
 			if (COMPAT_IC2 != null && COMPAT_IC2.isReactorItem(aOutput)) continue;
 			if (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aOutput)) continue;
 			if (NON_REPLACEABLE.contains(aOutput, T)) continue;
-			if (sNonReplaceableNames.contains(aOutput.getUnlocalizedName())) continue;
+			if (sNonReplaceableNames.contains(aOutput.getDescriptionId())) continue;
 			
 			Object[] tRecipeInputs = null;
 			

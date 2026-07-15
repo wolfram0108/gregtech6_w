@@ -254,7 +254,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 								ItemStack[] tOutputs = tRecipe.getOutputs();
 								for (int i = 0, j = Math.min(tOutputs.length, 12); i < j; i++) addStackToSlot(i+1, tOutputs[i]);
 								UT.Entities.exhaust(tPlayer, tRecipe.getAbsoluteTotalPower() / 1000.0);
-								tPlayer.swingItem();
+								tPlayer.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 								updateInventory();
 								updateAdjacentInventories();
 							}

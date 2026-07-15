@@ -76,7 +76,7 @@ public class MultiTileEntityCrank extends TileEntityBase11AttachmentSmall implem
 			if (oActive) for (Player tPlayer : UT.Entities.getPlayersWithLastTarget(this)) {
 				mActive = T;
 				if (ITileEntityEnergy.Util.emitEnergyToSide(TD.Energy.RU, mFacing, -UT.Code.divup(8L*UT.Entities.pot2Strength(tPlayer), UT.Entities.pot1Weakness(tPlayer)), UT.Entities.pot1Haste(tPlayer), this) > 0) UT.Entities.exhaust(tPlayer, 0.025);
-				tPlayer.swingItem();
+				tPlayer.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 			}
 			// Don't check for Villagers while Players operate the Crank.
 			if (!mActive) {

@@ -126,7 +126,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 			ItemStack tHeld = ST.valisize(mCreature.getHeldItem());
 			
 			if (tHeld != null) {
-				mCreature.swingItem();
+				mCreature.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 				if (ZOMBIES_IGNITE_HELD_TNT && ST.equal_(tHeld, Blocks.TNT)) {
 					mAttackCoolDown = 20;
 					tAttacking = F;

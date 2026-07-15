@@ -66,7 +66,7 @@ public class Loader_ItemIterator implements Runnable {
 			
 			// TODO: Gah, too lazy to install those Mods again to do it proper, and those are not Registry Names, that I could just plop in somewhere else, welp...
 			String tName;
-			if ((tName = tItem.getUnlocalizedName()) != null) {
+			if ((tName = tItem.getDescriptionId()) != null) {
 				if (tName.equals("item.ItemSensorLocationCard") || tName.equals("item.ItemEnergySensorLocationCard") || tName.equals("item.ItemEnergyArrayLocationCard") || tName.equals("item.ItemTextCard")) {
 					// TODO: Also add Bookshelf Data
 					RM.unpack(ST.make(tItem, 1, W), IL.Circuit_Basic.get(2));
