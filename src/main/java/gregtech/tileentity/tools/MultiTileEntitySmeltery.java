@@ -19,6 +19,10 @@
 
 package gregtech.tileentity.tools;
 
+import net.minecraft.world.entity.monster.Silverfish;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.animal.sheep.Sheep;
@@ -66,8 +70,6 @@ import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.monster.*;
-import net.minecraft.entity.passive.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.Container;
@@ -652,11 +654,11 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(3*U, MT.MeatRaw)), C+37);
 				} else if (aEntity instanceof Pig || aEntity instanceof Sheep || aEntity instanceof Wolf || aEntity instanceof Squid) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.MeatRaw)), C+37);
-				} else if (aEntity instanceof Chicken || aEntity instanceof Ocelot || aEntity instanceof Spider || aEntity instanceof EntitySilverfish) {
+				} else if (aEntity instanceof Chicken || aEntity instanceof Ocelot || aEntity instanceof Spider || aEntity instanceof Silverfish) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRaw)), C+37);
-				} else if (aEntity instanceof EntityCreeper) {
+				} else if (aEntity instanceof Creeper) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.Gunpowder)), C+20);
-				} else if (aEntity instanceof EntityEnderman) {
+				} else if (aEntity instanceof EnderMan) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.EnderPearl)), C+20);
 				} else if (aEntity instanceof Player) {
 					if ("GregoriusT".equalsIgnoreCase(aEntity.getName().getString())) for (int i = 0; i < 16; i++) addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.Tc)), C+20);
@@ -699,7 +701,7 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(1);}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return SIDES_TOP[aSide] && !slotHas(0);}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}
-	@Override public int getInventoryStackLimit() {return 64;}
+	@Override public int getMaxStackSize() {return 64;}
 	
 	public static final List<TagData> ENERGYTYPES = new ArrayListNoNulls<>(F, TD.Energy.KU, TD.Energy.HU, TD.Energy.CU, TD.Energy.VIS_IGNIS);
 	
