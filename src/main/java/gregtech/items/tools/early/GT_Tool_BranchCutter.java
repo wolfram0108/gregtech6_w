@@ -82,7 +82,8 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	
 	@Override
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
-		if (WD.getMaterial(aBlock) == Material.leaves) aEvent.dropChance = Math.min(1.0F, Math.max(aEvent.dropChance, (UT.Code.bind4(aStack.getItem().getHarvestLevel(aStack, ""))+1) * 0.2F));
+		// F-harvest: 1.7.10 HarvestDropsEvent.dropChance (шанс выпадения ванильного дропа) удалён — neo BlockDropsEvent
+		// роняет getDrops() всегда (dropChance=1.0 эквивалент), а кастомный дроп задаётся aDrops ниже -> буст-строка no-op.
 		if (aBlock == Blocks.OAK_LEAVES) {
 			aDrops.clear();
 			if ((aMetaData & 3) == 0 && RNGSUS.nextInt(9) <= aFortune * 2) aDrops.add(IL.Food_Apple_Red.get(1)); else aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, aMetaData & 3));
@@ -94,7 +95,8 @@ public class GT_Tool_BranchCutter extends ToolStats {
 			aDrops.add(ST.make(Blocks.VINE, 1, 0));
 		} else if (aBlock instanceof BlockBaseLeaves) {
 			aDrops.clear();
-			aDrops.add(ST.make(aBlock.getItemDropped(aMetaData, RNGSUS, aFortune), 1, aBlock.damageDropped(aMetaData)));
+			aDrops.addAll(((BlockBaseLeaves)aBlock).getDrops(aPlayer.level(), aX, aY, aZ, aMetaData, aFortune)); // было getItemDropped(meta,rng,fortune)+damageDropped(meta) (1.7.10) -> GT6-leaves getDrops-центр
+
 		} else if (IL.IC2_Leaves_Rubber.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.IC2_Sapling_Rubber.get(1));
