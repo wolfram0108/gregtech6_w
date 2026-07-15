@@ -7,4 +7,5 @@ import net.minecraft.world.entity.player.Player;
 public class EnchantmentUtils {
 	public static int getPlayerXP(Player aPlayer) {return 0;}
 	public static void addPlayerXP(Player aPlayer, int aXP) {}
+	public static int getExperienceForLevel(int aLevel) {return 0;}
 }
