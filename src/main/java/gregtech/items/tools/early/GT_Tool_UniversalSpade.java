@@ -139,7 +139,7 @@ public class GT_Tool_UniversalSpade extends ToolStats {
 	@Override
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		super.onToolCrafted(aStack, aPlayer);
-		aPlayer.triggerAchievement(AchievementList.buildSword);
+		ST.achieve(aPlayer, AchievementList.buildSword);
 	}
 	
 	@Override

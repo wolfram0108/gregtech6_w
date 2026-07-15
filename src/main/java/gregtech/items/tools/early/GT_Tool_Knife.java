@@ -87,6 +87,6 @@ public class GT_Tool_Knife extends GT_Tool_Sword {
 	@Override
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		super.onToolCrafted(aStack, aPlayer);
-		aPlayer.triggerAchievement(AchievementList.buildSword);
+		ST.achieve(aPlayer, AchievementList.buildSword);
 	}
 }

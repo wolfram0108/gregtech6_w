@@ -9,4 +9,8 @@ import ic2.api.recipe.IRecipeInput;
  *  не добавлены. */
 public class IC2 {
 	public static void addValuableOre(IRecipeInput aInput, int aValue) {/**/}
+
+	/** IC2-достижения (внешний мод, гейт MD.IC.mLoaded; реальный IC2 инициализирует в рантайме). */
+	public interface IAchievements {void issueAchievement(net.minecraft.world.entity.player.Player aPlayer, String aName);}
+	public static IAchievements achievements;
 }

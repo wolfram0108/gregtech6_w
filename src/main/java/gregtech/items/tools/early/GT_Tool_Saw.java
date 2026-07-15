@@ -111,42 +111,42 @@ public class GT_Tool_Saw extends ToolStats {
 		if (IL.AETHER_Skyroot_Leaves_Gold.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Gold.get(1));
-			aPlayer.level().setBlockToAir(aX, aY, aZ);
+			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
 			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Green.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Green.get(1));
-			aPlayer.level().setBlockToAir(aX, aY, aZ);
+			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
 			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Blue.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Blue.get(1));
-			aPlayer.level().setBlockToAir(aX, aY, aZ);
+			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
 			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Dark.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Dark.get(1));
-			aPlayer.level().setBlockToAir(aX, aY, aZ);
+			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
 			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Purple.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Purple.get(1));
-			aPlayer.level().setBlockToAir(aX, aY, aZ);
+			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
 			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}
 		if (IL.AETHER_Skyroot_Leaves_Apple.equal(aBlock)) {
 			aDrops.clear();
 			aDrops.add(IL.AETHER_Skyroot_Leaves_Apple.get(1));
-			aPlayer.level().setBlockToAir(aX, aY, aZ);
+			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
 			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}

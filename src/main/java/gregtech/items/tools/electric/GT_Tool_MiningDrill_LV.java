@@ -125,8 +125,8 @@ public class GT_Tool_MiningDrill_LV extends ToolStats {
 	@Override
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		super.onToolCrafted(aStack, aPlayer);
-		aPlayer.triggerAchievement(AchievementList.buildPickaxe);
-		aPlayer.triggerAchievement(AchievementList.buildBetterPickaxe);
+		ST.achieve(aPlayer, AchievementList.buildPickaxe);
+		ST.achieve(aPlayer, AchievementList.buildBetterPickaxe);
 	}
 	
 	@Override

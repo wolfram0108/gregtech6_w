@@ -105,7 +105,7 @@ public class GT_Tool_Hoe extends ToolStats {
 	@Override
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		super.onToolCrafted(aStack, aPlayer);
-		aPlayer.triggerAchievement(AchievementList.buildHoe);
+		ST.achieve(aPlayer, AchievementList.buildHoe);
 	}
 	
 	@Override

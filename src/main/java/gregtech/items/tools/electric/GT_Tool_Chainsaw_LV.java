@@ -100,7 +100,7 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 		}
 		if ((WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce) && aDrops.isEmpty()) {
 			aDrops.add(ST.make(aBlock, 1, aMetaData));
-			aPlayer.level().setBlockToAir(aX, aY, aZ);
+			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 3);
 			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}
@@ -126,9 +126,9 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		super.onToolCrafted(aStack, aPlayer);
 		if (MD.IC2.mLoaded) try {
-		aPlayer.triggerAchievement(AchievementList.buildPickaxe);
-		aPlayer.triggerAchievement(AchievementList.buildFurnace);
-		aPlayer.triggerAchievement(AchievementList.acquireIron);
+		ST.achieve(aPlayer, AchievementList.buildPickaxe);
+		ST.achieve(aPlayer, AchievementList.buildFurnace);
+		ST.achieve(aPlayer, AchievementList.acquireIron);
 		ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildCable");
 		ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildGenerator");
 		ic2.core.IC2.achievements.issueAchievement(aPlayer, "buildBatBox");
