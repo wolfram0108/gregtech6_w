@@ -372,11 +372,26 @@ public final class PortDump {
         for (Map.Entry<String, gregapi.recipes.Recipe.RecipeMap> e : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAPS.entrySet()) {
             gregapi.recipes.Recipe.RecipeMap m = e.getValue();
             if (m == null || m.mRecipeList == null) continue;
+            triggerAllRecipesDeterministically(m);
             for (gregapi.recipes.Recipe r : m.mRecipeList) { if (r == null) continue; try { lines.add(recipeJson(e.getKey(), r)); } catch (Throwable t) {} }
         }
         Collections.sort(lines);
         Files.write(DUMP.resolve("recipes.jsonl"), lines, StandardCharsets.UTF_8);
         return lines.size();
+    }
+    private static void triggerAllRecipesDeterministically(gregapi.recipes.Recipe.RecipeMap map) {
+        // Робастный триггер (harness, не мод-код): прямой обход СНАПШОТА mRecipeMapHandlers с addAllRecipes до
+        // нулевого прироста. Обходит два дефекта getNEIAllRecipes как ПОЛНО-триггера: (1) remove-во-время-индексной-
+        // итерации (Recipe.java:557-560 пропускает сосед сдвинутого) + (2) 60s wall-clock таймаут (:561), из-за которых
+        // stability-цикл ложно стабилизировался рано. Цель harness — полностью проявить генерацию мода для замера паритета.
+        int prev = -1, guard = 0;
+        while (map.mRecipeList.size() != prev && guard < 10000) {
+            prev = map.mRecipeList.size();
+            guard++;
+            for (gregapi.recipes.IRecipeMapHandler h : new java.util.ArrayList<>(map.mRecipeMapHandlers)) {
+                try { h.addAllRecipes(map); } catch (Throwable ignore) {}
+            }
+        }
     }
     private static String recipeJson(String map, gregapi.recipes.Recipe r) {
         StringBuilder sb = new StringBuilder(256);
