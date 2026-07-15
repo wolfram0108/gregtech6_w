@@ -85,7 +85,7 @@ public final class PortDump {
         int nPre = dumpPrefixes();
         int nFl = dumpFluids();
         dumpMTE(); dumpTools(); dumpTags(); dumpWorldgen();
-        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         double tMat = report("materials.csv");
@@ -102,6 +102,8 @@ public final class PortDump {
         reportCI("unification.csv", 1);
         report("localization.csv", 1);
         reportCI("itemdata.csv", 1);
+        report("engine_items.csv", 1, 1);
+        report("engine_blocks.csv", 1, 1);
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -360,6 +362,25 @@ public final class PortDump {
         if (s == null || s.getItem() == null) return "null"; // golden DumpUtil.stackId(null)="null" (itemdata.unificationTarget)
         var k = BuiltInRegistries.ITEM.getKey(s.getItem());
         return (k == null ? "" : k.toString()) + ":" + gregapi.util.ST.meta_(s);
+    }
+
+    // ------------------------------------------------------------------ engine_items.csv + engine_blocks.csv (зеркало DumpEngine)
+    private static int dumpEngine() throws IOException {
+        List<String> il = new ArrayList<>();
+        for (net.minecraft.world.item.Item item : BuiltInRegistries.ITEM) {
+            var k = BuiltInRegistries.ITEM.getKey(item);
+            String rn = k == null ? "" : k.toString();
+            il.add(rn + "," + BuiltInRegistries.ITEM.getId(item) + "," + (k == null ? "" : k.getNamespace()) + "," + item.getClass().getName());
+        }
+        writeCsv("engine_items.csv", "registryName,id,modid,className", il);
+        List<String> bl = new ArrayList<>();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            var k = BuiltInRegistries.BLOCK.getKey(block);
+            String rn = k == null ? "" : k.toString();
+            bl.add(rn + "," + BuiltInRegistries.BLOCK.getId(block) + "," + (k == null ? "" : k.getNamespace()) + "," + block.getClass().getName());
+        }
+        writeCsv("engine_blocks.csv", "registryName,id,modid,className", bl);
+        return il.size();
     }
 
     private static String esc(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
