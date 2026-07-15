@@ -63,7 +63,8 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	private final String mName;
 	
 	public ItemFluidDisplay() {
-		super(new Item.Properties()); // было super() (neo Item требует Properties; PrefixItem.java:73/ItemBase.java:78 — тот же приём)
+		// F1/F16: neo Item.<init> требует ID в Properties (descriptionId) — задаём из (GAPI, "gt.display.fluid"), совпадает с DeferredRegister-именем.
+		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(MD.GAPI.mID, "gt.display.fluid"))));
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
 		// F12-lazy: САМО-регистрация убрана из конструктора — предмет регистрируется через DeferredRegister-supplier на

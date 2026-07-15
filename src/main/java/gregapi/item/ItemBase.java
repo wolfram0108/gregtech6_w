@@ -82,7 +82,9 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
 	public ItemBase(String aModID, String aUnlocalized, String aEnglish, String aEnglishTooltip) {
-		super(new Item.Properties()); // было super() (neo Item требует Properties; mMaxStackSize/mMaxDamage override покрывают то, что раньше ставили setMaxStackSize/setMaxDamage)
+		// F1/F16: neo Item.<init> вычисляет descriptionId и требует ID в Properties (иначе "Item id not set"). Задаём ID из
+		// (mModID, mName) — совпадает с DeferredRegister-именем регистрации (ITEMS.register(name, ...) на call-site). setId:660.
+		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModID, aUnlocalized))));
 		if (GAPI.mStartedInit) throw new IllegalStateException("Items can only be initialised within preInit!");
 		mName = aUnlocalized;
 		mModID = aModID;
