@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.machine;
 
+import gregapi.util.WD;
 import gregapi.data.CS.SFX;
 import gregapi.item.multiitem.MultiItemTool;
 import gregapi.item.multiitem.behaviors.Behavior_Tool;
@@ -34,7 +35,7 @@ public class GT_Tool_MonkeyWrench extends GT_Tool_Wrench {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		if (super.isMinableBlock(aBlock, aMetaData)) return T;
-		return TOOL_monkeywrench.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData));
+		return TOOL_monkeywrench.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData));
 	}
 	
 	@Override

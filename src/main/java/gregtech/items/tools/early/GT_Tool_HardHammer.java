@@ -82,7 +82,7 @@ public class GT_Tool_HardHammer extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		String tTool = aBlock.getHarvestTool(aMetaData);
+		String tTool = WD.harvestTool(aBlock, aMetaData);
 		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_hammer) || tTool.equalsIgnoreCase(TOOL_pickaxe))) || aBlock instanceof InfestedBlock || aBlock == Blocks.SPAWNER || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce || RM.Hammer.containsInput(ST.make(aBlock, 1, aMetaData), null, NI);
 	}
 	

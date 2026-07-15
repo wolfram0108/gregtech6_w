@@ -53,7 +53,7 @@ public class GT_Tool_Pickaxe extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_pickaxe.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof InfestedBlock || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.iron || WD.getMaterial(aBlock) == Material.anvil || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.packedIce || WD.getMaterial(aBlock) == Material.ice || aBlock == Blocks.FLOWER_POT;
+		return TOOL_pickaxe.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || aBlock instanceof InfestedBlock || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.iron || WD.getMaterial(aBlock) == Material.anvil || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.packedIce || WD.getMaterial(aBlock) == Material.ice || aBlock == Blocks.FLOWER_POT;
 	}
 	
 	@Override

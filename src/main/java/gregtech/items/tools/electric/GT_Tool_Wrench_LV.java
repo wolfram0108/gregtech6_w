@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.electric;
 
+import gregapi.util.WD;
 import gregapi.data.MT;
 import gregapi.data.OP;
 import gregapi.item.multiitem.MultiItemTool;
@@ -94,7 +95,7 @@ public class GT_Tool_Wrench_LV extends GT_Tool_Wrench {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		if (super.isMinableBlock(aBlock, aMetaData)) return T;
-		return TOOL_monkeywrench.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData));
+		return TOOL_monkeywrench.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData));
 	}
 	
 	@Override

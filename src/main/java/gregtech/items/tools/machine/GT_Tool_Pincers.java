@@ -107,7 +107,7 @@ public class GT_Tool_Pincers extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_pincers.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || WD.getMaterial(aBlock) == Material.dragonEgg;
+		return TOOL_pincers.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || WD.getMaterial(aBlock) == Material.dragonEgg;
 	}
 	
 	@Override

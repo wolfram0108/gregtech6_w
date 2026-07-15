@@ -61,7 +61,7 @@ public class GT_Tool_Plow extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_plow.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.snow || WD.getMaterial(aBlock) == Material.craftedSnow;
+		return TOOL_plow.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.snow || WD.getMaterial(aBlock) == Material.craftedSnow;
 	}
 	
 	@Override

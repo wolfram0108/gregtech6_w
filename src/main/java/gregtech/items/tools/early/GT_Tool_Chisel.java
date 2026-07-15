@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.early;
 
+import gregapi.util.WD;
 import gregapi.block.metatype.BlockStones;
 import gregapi.data.CS.SFX;
 import gregapi.data.MT;
@@ -80,7 +81,7 @@ public class GT_Tool_Chisel extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_chisel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof InfestedBlock || aBlock == Blocks.STONE || aBlock == Blocks.STONE_BRICKS || aBlock instanceof BlockStones;
+		return TOOL_chisel.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || aBlock instanceof InfestedBlock || aBlock == Blocks.STONE || aBlock == Blocks.STONE_BRICKS || aBlock instanceof BlockStones;
 	}
 	
 	@Override

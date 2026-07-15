@@ -80,7 +80,7 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		String tTool = aBlock.getHarvestTool(aMetaData);
+		String tTool = WD.harvestTool(aBlock, aMetaData);
 		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_axe) || tTool.equalsIgnoreCase(TOOL_saw))) || WD.getMaterial(aBlock) == Material.wood || WD.getMaterial(aBlock) == MaterialAdventure.WOOD || WD.getMaterial(aBlock) == Material.cactus || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.vine || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.gourd || WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce || WD.getMaterial(aBlock) == Material.coral;
 	}
 	

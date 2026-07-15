@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.machine;
 
+import gregapi.util.WD;
 import gregapi.data.MT;
 import gregapi.item.multiitem.MultiItemTool;
 import gregapi.item.multiitem.tools.ToolStats;
@@ -50,7 +51,7 @@ public class GT_Tool_FlintAndTinder extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_igniter.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData));
+		return TOOL_igniter.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData));
 	}
 	
 	@Override

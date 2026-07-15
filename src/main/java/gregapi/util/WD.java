@@ -373,6 +373,12 @@ public class WD {
 		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_STONE_TOOL )) return 1;
 		return 0;
 	}
+	/** F-tool ЦЕНТР: 1.7.10 {@code Block.getHarvestTool(int aMeta)} (Forge-точка на vanilla Block, строка-тип
+	 *  инструмента "pickaxe"/"shovel"/"axe"...) удалён по ИМЕНИ; GT6-блок хранит ({@code BlockBase.getHarvestTool(meta)}),
+	 *  vanilla-блок → "" (как ядро инлайнит UT.java:1202, ItemBlockBase:109). Централизует инлайн {@code instanceof BlockBase}. */
+	public static String harvestTool(Block aBlock, int aMeta) {
+		return aBlock instanceof gregapi.block.BlockBase tBlockBase ? tBlockBase.getHarvestTool(aMeta) : "";
+	}
 	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public поля) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
 	 *  Покомпонентная запись обязана сохранять две другие оси -> централизуем здесь ОДИН раз (философия §2). */
 	public static double motionX(Entity aEntity) {return aEntity.getDeltaMovement().x;}

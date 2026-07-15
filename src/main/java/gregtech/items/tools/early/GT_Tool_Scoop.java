@@ -83,7 +83,7 @@ public class GT_Tool_Scoop extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_scoop.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || WD.getMaterial(aBlock) == sBeeHiveMaterial;
+		return TOOL_scoop.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || WD.getMaterial(aBlock) == sBeeHiveMaterial;
 	}
 	
 	@Override

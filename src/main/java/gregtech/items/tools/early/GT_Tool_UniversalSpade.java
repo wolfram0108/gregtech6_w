@@ -91,7 +91,7 @@ public class GT_Tool_UniversalSpade extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		if (aBlock instanceof BaseRailBlock || BlocksGT.openableCrowbar.contains(aBlock)) return T;
-		String tTool = aBlock.getHarvestTool(aMetaData);
+		String tTool = WD.harvestTool(aBlock, aMetaData);
 		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_shovel) || tTool.equalsIgnoreCase(TOOL_axe) || tTool.equalsIgnoreCase(TOOL_saw) || tTool.equalsIgnoreCase(TOOL_sword) || tTool.equalsIgnoreCase(TOOL_crowbar))) || WD.getMaterial(aBlock) == Material.sand || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground || WD.getMaterial(aBlock) == Material.snow || WD.getMaterial(aBlock) == Material.craftedSnow || WD.getMaterial(aBlock) == Material.clay  || WD.getMaterial(aBlock) == Material.leaves || WD.getMaterial(aBlock) == Material.vine || WD.getMaterial(aBlock) == Material.wood || WD.getMaterial(aBlock) == MaterialAdventure.WOOD || WD.getMaterial(aBlock) == Material.cactus || WD.getMaterial(aBlock) == Material.circuits || WD.getMaterial(aBlock) == Material.gourd || WD.getMaterial(aBlock) == Material.web || WD.getMaterial(aBlock) == Material.cloth || WD.getMaterial(aBlock) == Material.carpet || WD.getMaterial(aBlock) == Material.plants || WD.getMaterial(aBlock) == Material.cake || WD.getMaterial(aBlock) == Material.tnt || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.sponge;
 	}
 	

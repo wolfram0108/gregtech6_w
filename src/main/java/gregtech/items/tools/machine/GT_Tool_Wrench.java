@@ -72,7 +72,7 @@ public class GT_Tool_Wrench extends ToolStats {
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
 		if (WD.getMaterial(aBlock) == Material.piston || WD.getMaterial(aBlock) == Material.redstoneLight || aBlock instanceof BlockBaseBars || aBlock == Blocks.HOPPER || aBlock == Blocks.DISPENSER || aBlock == Blocks.DROPPER) return T;
-		if (TOOL_wrench.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData))) return T;
+		if (TOOL_wrench.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData))) return T;
 		if (WD.getMaterial(aBlock).isLiquid()) return F;
 		String tName = ST.regName(aBlock);
 		if (UT.Code.stringInvalid(tName)) return F;

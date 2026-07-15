@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.machine;
 
+import gregapi.util.WD;
 import gregapi.data.MT;
 import gregapi.item.multiitem.MultiItemTool;
 import gregapi.item.multiitem.behaviors.Behavior_Tool;
@@ -83,7 +84,7 @@ public class GT_Tool_WireCutter extends ToolStats {
 			String tClass = UT.Reflection.getLowercaseClass(aBlock);
 			if (tClass.contains("cable") || tClass.contains("wire")) return T;
 		}
-		return TOOL_cutter.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData));
+		return TOOL_cutter.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData));
 	}
 	
 	@Override

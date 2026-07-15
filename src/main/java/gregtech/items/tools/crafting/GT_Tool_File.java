@@ -80,7 +80,7 @@ public class GT_Tool_File extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_file.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock instanceof BlockBaseBars || (aBlock instanceof IronBarsBlock && WD.getMaterial(aBlock) == Material.iron);
+		return TOOL_file.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || aBlock instanceof BlockBaseBars || (aBlock instanceof IronBarsBlock && WD.getMaterial(aBlock) == Material.iron);
 	}
 	
 	@Override

@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.early;
 
+import gregapi.util.WD;
 import gregapi.data.MT;
 import gregapi.item.multiitem.MultiItemTool;
 import gregapi.item.multiitem.behaviors.Behavior_Tool;
@@ -56,7 +57,7 @@ public class GT_Tool_HandDrill extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_drill.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData));
+		return TOOL_drill.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData));
 	}
 	
 	@Override

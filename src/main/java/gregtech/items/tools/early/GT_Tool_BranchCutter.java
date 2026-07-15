@@ -120,7 +120,7 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return "grafter".equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || aBlock == Blocks.VINE || WD.getMaterial(aBlock) == Material.leaves || IL.TF_Mazehedge.equal(aBlock);
+		return "grafter".equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || aBlock == Blocks.VINE || WD.getMaterial(aBlock) == Material.leaves || IL.TF_Mazehedge.equal(aBlock);
 	}
 	
 	@Override

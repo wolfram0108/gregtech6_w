@@ -75,7 +75,7 @@ public class GT_Tool_Shovel extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		return TOOL_shovel.equalsIgnoreCase(aBlock.getHarvestTool(aMetaData)) || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.sand || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground || WD.getMaterial(aBlock) == Material.snow || WD.getMaterial(aBlock) == Material.craftedSnow || WD.getMaterial(aBlock) == Material.clay;
+		return TOOL_shovel.equalsIgnoreCase(WD.harvestTool(aBlock, aMetaData)) || WD.getMaterial(aBlock) == Material.fire || WD.getMaterial(aBlock) == Material.sand || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground || WD.getMaterial(aBlock) == Material.snow || WD.getMaterial(aBlock) == Material.craftedSnow || WD.getMaterial(aBlock) == Material.clay;
 	}
 	
 	@Override

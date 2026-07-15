@@ -100,7 +100,7 @@ public class GT_Tool_MiningDrill_LV extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		String tTool = aBlock.getHarvestTool(aMetaData);
+		String tTool = WD.harvestTool(aBlock, aMetaData);
 		return (tTool != null && (tTool.equalsIgnoreCase(TOOL_pickaxe) || tTool.equalsIgnoreCase(TOOL_shovel))) || aBlock instanceof InfestedBlock || WD.getMaterial(aBlock) == Material.rock || WD.getMaterial(aBlock) == Material.iron || WD.getMaterial(aBlock) == Material.anvil || WD.getMaterial(aBlock) == Material.sand || WD.getMaterial(aBlock) == Material.grass || WD.getMaterial(aBlock) == Material.ground || WD.getMaterial(aBlock) == Material.snow || WD.getMaterial(aBlock) == Material.craftedSnow || WD.getMaterial(aBlock) == Material.clay || WD.getMaterial(aBlock) == Material.glass || WD.getMaterial(aBlock) == Material.packedIce || WD.getMaterial(aBlock) == Material.ice || aBlock == Blocks.FLOWER_POT;
 	}
 	
