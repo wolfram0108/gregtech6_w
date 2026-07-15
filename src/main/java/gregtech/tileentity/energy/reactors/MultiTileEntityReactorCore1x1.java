@@ -88,7 +88,7 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 				for (Object tEntity : ((net.minecraft.server.level.ServerLevel)level).getAllEntities()) if (tEntity instanceof LivingEntity) {
 					if (Math.abs(getBlockPos().getX() - ((LivingEntity)tEntity).getX()) > 200) continue;
 					if (Math.abs(getBlockPos().getZ() - ((LivingEntity)tEntity).getZ()) > 200) continue;
-					int tStrength = UT.Code.bindInt((long)(tCalc - Math.sqrt(((LivingEntity)tEntity).distanceToSqr(getBlockPos()).getX(), getBlockPos().getY(), getBlockPos().getZ())));
+					int tStrength = UT.Code.bindInt((long)(tCalc - Math.sqrt(((LivingEntity)tEntity).distanceToSqr(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()))));
 					if (tStrength > 0) UT.Entities.applyRadioactivity((LivingEntity)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
 				}
 			}
@@ -176,7 +176,7 @@ public class MultiTileEntityReactorCore1x1 extends MultiTileEntityReactorCore {
 					for (Object tEntity : ((net.minecraft.server.level.ServerLevel)level).getAllEntities()) if (tEntity instanceof LivingEntity) {
 						if (Math.abs(getBlockPos().getX() - ((LivingEntity)tEntity).getX()) > 500) continue;
 						if (Math.abs(getBlockPos().getZ() - ((LivingEntity)tEntity).getZ()) > 500) continue;
-						int tStrength = UT.Code.bindInt((long)(tCalc - Math.sqrt(((LivingEntity)tEntity).distanceToSqr(getBlockPos()).getX(), getBlockPos().getY(), getBlockPos().getZ())));
+						int tStrength = UT.Code.bindInt((long)(tCalc - Math.sqrt(((LivingEntity)tEntity).distanceToSqr(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()))));
 						if (tStrength > 0) UT.Entities.applyRadioactivity((LivingEntity)tEntity, (int)UT.Code.divup(tStrength, 10), tStrength);
 					}
 					updateClientData();

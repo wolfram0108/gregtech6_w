@@ -39,12 +39,12 @@ public class MultiTileEntityPlayerCounter extends MultiTileEntitySensorTE {
 	
 	@Override
 	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
-		return ((ServerLevel)level).func_73046_m().getCurrentPlayerCount();
+		return ((ServerLevel)level).getServer().getPlayerCount();
 	}
 	
 	@Override
 	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
-		return ((ServerLevel)level).func_73046_m().getMaxPlayers();
+		return ((ServerLevel)level).getServer().getMaxPlayers();
 	}
 	
 	@Override public short[] getSymbolColor() {return CA_LIGHT_BLUE_255;}
