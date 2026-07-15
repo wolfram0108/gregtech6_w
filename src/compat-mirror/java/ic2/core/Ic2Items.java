@@ -8,4 +8,5 @@ import net.minecraft.world.item.ItemStack;
  *  используются (греп 0) — не добавлены. */
 public class Ic2Items {
 	public static ItemStack coffeeBeans;
+	public static ItemStack tinOre, leadOre, copperOre, uraniumOre;
 }
