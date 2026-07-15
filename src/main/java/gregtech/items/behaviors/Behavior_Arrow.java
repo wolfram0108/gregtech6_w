@@ -99,7 +99,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 		Direction tFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
 		EntityProjectile tEntityArrow = getProjectile(aItem, TD.Projectiles.ARROW, aStack, aWorld, tPosition.getX(), tPosition.getY(), tPosition.getZ());
 		if (tEntityArrow != null) {
-			tEntityArrow.setThrowableHeading(tFacing.getFrontOffsetX(), (tFacing.getFrontOffsetY() + 0.1F), tFacing.getFrontOffsetZ(), mSpeedMultiplier * 1.10F, mPrecision);
+			tEntityArrow.setThrowableHeading(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision);
 			tEntityArrow.setProjectileStack(aStack);
 			tEntityArrow.canBePickedUp = 1;
 			aWorld.addFreshEntity(tEntityArrow);
