@@ -249,7 +249,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		mLastSide = aSide;
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getSlotsForFace(FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) return UT.Code.getAscendingArray(tTileEntity.mTileEntity.getContainerSize());
 		}
 		return ZL_INTEGER;
@@ -259,7 +259,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		mLastSide = aSide;
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canInsertItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canPlaceItemThroughFace(aSlot, aStack, FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) return T;
 		}
 		return F;
@@ -269,7 +269,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 		mLastSide = aSide;
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canExtractItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canTakeItemThroughFace(aSlot, aStack, FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) return T;
 		}
 		return F;
@@ -283,7 +283,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, aFluid)) return 0;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(tTileEntity.getForgeSideOfTileEntity(), aFluid, doFill);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(aFluid, doFill ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
 		}
 		return 0;
 	}
@@ -293,7 +293,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, aFluid)) return null;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(tTileEntity.getForgeSideOfTileEntity(), aFluid, doDrain);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(aFluid, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
 		}
 		return null;
 	}
@@ -303,7 +303,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, null)) return null;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(tTileEntity.getForgeSideOfTileEntity(), maxDrain, doDrain);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(maxDrain, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
 		}
 		return null;
 	}
@@ -313,7 +313,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canFill(tTileEntity.getForgeSideOfTileEntity(), aFluid);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0;
 		}
 		return F;
 	}
@@ -323,7 +323,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canDrain(tTileEntity.getForgeSideOfTileEntity(), aFluid);
+			if (tTileEntity.mTileEntity != null) return !tTileEntity.mTileEntity.drain(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).isEmpty();
 		}
 		return F;
 	}
@@ -331,7 +331,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public FluidTankInfo[] getTankInfo(Direction aDirection) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(UT.Code.side(aDirection)), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getTankInfo(tTileEntity.getForgeSideOfTileEntity());
+			if (tTileEntity.mTileEntity != null) return ZL_FLUIDTANKINFO;
 		}
 		return ZL_FLUIDTANKINFO;
 	}
