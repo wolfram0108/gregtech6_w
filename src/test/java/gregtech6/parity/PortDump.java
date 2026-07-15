@@ -68,8 +68,14 @@ public final class PortDump {
         int nPre = dumpPrefixes();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre);
 
-        report("materials.csv");
-        report("prefixes.csv");
+        double tMat = report("materials.csv");
+        double tPre = report("prefixes.csv");
+        // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
+        // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
+        // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
+        if (tMat < 85.0) throw new AssertionError("РЕГРЕСС material-паритета: " + tMat + "% < 85.0% (core-данные сломаны)");
+        if (tPre < 46.0) throw new AssertionError("РЕГРЕСС prefix-паритета: " + tPre + "% < 46.0% (core-данные сломаны)");
+        System.out.println("[parity] РЕГРЕСС-ГЕЙТ ОК: materials " + tMat + "% >= 85.0, prefixes " + tPre + "% >= 46.0");
     }
 
     // ------------------------------------------------------------------ materials.csv (зеркало DumpMaterials)
@@ -147,12 +153,12 @@ public final class PortDump {
     }
 
     // ------------------------------------------------------------------ parity-отчёт по одному файлу
-    private static void report(String file) {
+    private static double report(String file) {
         Path golden = ORACLE.resolve(file);
         Path port = DUMP.resolve(file);
         if (!Files.isRegularFile(golden)) {
             System.out.println("[parity] нет golden: " + golden.toAbsolutePath());
-            return;
+            return 0.0;
         }
         ParityDiff.ParitySet g = ParityDiff.fromCsv(golden, 1);
         ParityDiff.ParitySet p = ParityDiff.fromCsv(port, 1);
@@ -175,6 +181,7 @@ public final class PortDump {
             if (shown++ >= 5) break;
             System.out.println("   EXTRA в порте: " + key);
         }
+        return r.percent();
     }
 
     // ------------------------------------------------------------------ хелперы (зеркало DumpUtil)
