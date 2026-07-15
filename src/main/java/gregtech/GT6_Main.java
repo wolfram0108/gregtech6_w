@@ -578,7 +578,7 @@ public class GT6_Main extends Abstract_Mod {
 			ORD.println("ItemRegistry:");
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
 			
-			List tList = UT.Code.getWithoutNulls(Item.itemRegistry.getKeys().toArray(ZL_STRING));
+			List tList = UT.Code.getWithoutNulls(net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream().map(Object::toString).toArray(String[]::new));
 			
 			Collections.sort(tList);
 			for (Object tItemName : tList) ORD.println(tItemName);
@@ -617,7 +617,7 @@ public class GT6_Main extends Abstract_Mod {
 			ORD.println("Fluids:");
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
 			
-			tList = UT.Code.getWithoutNulls(FluidRegistry.getRegisteredFluids().keySet().toArray(ZL_STRING));
+			tList = UT.Code.getWithoutNulls(net.minecraft.core.registries.BuiltInRegistries.FLUID.keySet().stream().map(Object::toString).toArray(String[]::new));
 			Collections.sort(tList);
 			for (Object tFluidName : tList) ORD.println(tFluidName);
 			
