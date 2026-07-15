@@ -192,7 +192,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 	@Override
 	public int onDespawn(ItemEntity aEntity, ItemStack aStack) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
-		if (aNBT != null && !aEntity.level().isClientSide() && aEntity.onGround) {
+		if (aNBT != null && !aEntity.level().isClientSide() && aEntity.onGround()) {
 			if (aStack.getCount() > 0) for (byte tSide : ALL_SIDES_MIDDLE_DOWN) if (aStack.getCount() > 0) {
 				BlockEntity tTileEntity = WD.te(aEntity.level(), UT.Code.roundDown(aEntity.getX())+OFFX[tSide], UT.Code.roundDown(aEntity.getY())+OFFY[tSide], UT.Code.roundDown(aEntity.getZ())+OFFZ[tSide], T);
 				if (tTileEntity instanceof MultiTileEntityCoin) {
@@ -211,7 +211,7 @@ public class MultiTileEntityCoin extends TileEntityBase04MultiTileEntities imple
 			}
 			
 			if (aStack.getCount() > 0) for (byte tSide : ALL_SIDES_MIDDLE_DOWN) if (aStack.getCount() > 0) {
-				if (aEntity.level().canPlaceEntityOnSide(MTE_REGISTRY.mBlock, UT.Code.roundDown(aEntity.getX())+OFFX[tSide], UT.Code.roundDown(aEntity.getY())+OFFY[tSide], UT.Code.roundDown(aEntity.getZ())+OFFZ[tSide], F, SIDE_TOP, aEntity, aStack)) {
+				if (WD.canPlaceEntityOnSide(aEntity.level(), MTE_REGISTRY.mBlock, UT.Code.roundDown(aEntity.getX())+OFFX[tSide], UT.Code.roundDown(aEntity.getY())+OFFY[tSide], UT.Code.roundDown(aEntity.getZ())+OFFZ[tSide], F, SIDE_TOP, aEntity, aStack)) {
 					CompoundTag tNBT = (CompoundTag)aNBT.copy();
 					int tUsedAmount = 0;
 					for (int i = 0; i < mCoinStackSizes.length; i++) {
