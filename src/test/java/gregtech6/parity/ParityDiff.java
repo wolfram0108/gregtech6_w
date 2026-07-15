@@ -143,6 +143,20 @@ public final class ParityDiff {
         return new ParitySet(map);
     }
 
+    /** Case-insensitive: значение в lowercase. neo форсит lowercase ResourceLocation (camelCase gt.meta.arrowGtPlastic ->
+     *  arrowgtplastic — нео-константа, 1:1 невозможен) → lowercase-сравнение = семантический паритет. */
+    public static ParitySet fromCsvLower(Path file, int keyColumns) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String line : readLines(file)) {
+            String low = line.strip().toLowerCase();
+            if (low.isEmpty() || low.startsWith("#")) continue;
+            String[] cols = low.split(",", -1);
+            String key = keyColumns >= cols.length ? low : String.join("", Arrays.copyOfRange(cols, 0, keyColumns));
+            map.put(key, low);
+        }
+        return new ParitySet(map);
+    }
+
     public static ParitySet fromCsv(Path file, int keyColumns) {
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {

@@ -98,8 +98,8 @@ public final class PortDump {
         report("tag_links.csv", 2);     // ключ = object+objectType
         report("worldgen_veins.csv", 1);
         report("worldgen_layers.csv", 1);
-        report("oredict.csv", 1);
-        report("unification.csv", 1);
+        reportCI("oredict.csv", 1);      // CI: neo lowercase ResourceLocation-имена (camelCase gt.meta.* невозможен)
+        reportCI("unification.csv", 1);
         report("localization.csv", 1);
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
@@ -358,6 +358,15 @@ public final class PortDump {
         }
         ParityDiff.ParitySet g = ignoreCols.length == 0 ? ParityDiff.fromCsv(golden, keyCols) : ParityDiff.fromCsvIgnoring(golden, keyCols, ignoreCols);
         ParityDiff.ParitySet p = ignoreCols.length == 0 ? ParityDiff.fromCsv(port, keyCols) : ParityDiff.fromCsvIgnoring(port, keyCols, ignoreCols);
+        return reportSets(file, g, p);
+    }
+    /** Case-insensitive отчёт (neo lowercase ResourceLocation-имена). */
+    private static double reportCI(String file, int keyCols) {
+        Path golden = ORACLE.resolve(file), port = DUMP.resolve(file);
+        if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
+        return reportSets(file, ParityDiff.fromCsvLower(golden, keyCols), ParityDiff.fromCsvLower(port, keyCols));
+    }
+    private static double reportSets(String file, ParityDiff.ParitySet g, ParityDiff.ParitySet p) {
         ParityDiff.Report r = ParityDiff.diff(file, g, p);
         System.out.printf("[parity] %-14s golden=%d совпало=%d нет=%d лишних=%d отлич=%d  %6.2f%%%n",
                 file, r.goldenTotal, r.matched, r.missing.size(), r.extra.size(), r.differ.size(), r.percent());
