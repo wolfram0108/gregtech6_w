@@ -951,6 +951,8 @@ public class WD {
 	public static boolean air(Level aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean air(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !WD.opaque(aBlock) && te(aWorld, aX, aY, aZ, T) instanceof INode));} // было aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
 	public static boolean air(Block aBlock) {return aBlock == NB;}
+	/** BlockGetter-вариант (без Level-only TC/INode-проверки): чистый air-тест для блок-физики (canDisplace и т.п.). */
+	public static boolean air(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir();}
 	
 	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ) {return lava(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean lava(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == Blocks.LAVA || aBlock == Blocks.LAVA;}

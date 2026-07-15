@@ -245,7 +245,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	@Override
 	public ItemStack onItemRightClick(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (UT.Entities.isCreative(aPlayer) || aPlayer.getFoodData().needsFood()) {
-			aPlayer.setItemInUse(aStack, Math.max(FoodStatFluid.INSTANCE.getFoodLevel(aStack.getItem(), aStack, null) * 8, 32));
+			aPlayer.startUsingItem(net.minecraft.world.InteractionHand.MAIN_HAND); /* было setItemInUse(stack,duration); neo длительность из item.getUseDuration */
 			return aStack;
 		}
 		return aStack;

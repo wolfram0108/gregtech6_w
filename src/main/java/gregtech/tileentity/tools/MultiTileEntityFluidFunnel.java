@@ -82,7 +82,7 @@ public class MultiTileEntityFluidFunnel extends TileEntityBase11AttachmentSmall 
 						}
 						if (aStack.getItem() instanceof IFluidHandlerItem && aStack.getCount() == 1) {
 							UT.Sounds.send(SFX.MC_LIQUID_WATER, this, F);
-							((IFluidHandlerItem)aStack.getItem()).drain(aStack, ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).funnelFill(tDelegator.mSideOfTileEntity, tFluid, T), T);
+							net.neoforged.neoforge.fluids.FluidUtil.getFluidHandler(aStack).ifPresent(h -> h.drain(((ITileEntityFunnelAccessible)tDelegator.mTileEntity).funnelFill(tDelegator.mSideOfTileEntity, tFluid, T), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE));
 							return T;
 						}
 					}

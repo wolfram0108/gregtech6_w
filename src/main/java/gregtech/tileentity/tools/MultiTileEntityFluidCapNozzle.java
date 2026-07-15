@@ -82,7 +82,7 @@ public class MultiTileEntityFluidCapNozzle extends TileEntityBase11AttachmentSma
 						}
 						if (aStack.getItem() instanceof IFluidHandlerItem && aStack.getCount() == 1) {
 							UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
-							((IFluidHandlerItem)aStack.getItem()).drain(aStack, ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T), T);
+							net.neoforged.neoforge.fluids.FluidUtil.getFluidHandler(aStack).ifPresent(h -> h.drain(((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE));
 							return T;
 						}
 					}
