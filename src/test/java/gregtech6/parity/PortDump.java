@@ -32,8 +32,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Порт-дампер material/prefix + parity-прогон против golden-оракула (первый реальный судья критерия «паритет»).
@@ -82,6 +85,7 @@ public final class PortDump {
         int nPre = dumpPrefixes();
         int nFl = dumpFluids();
         dumpMTE(); dumpTools(); dumpTags(); dumpWorldgen();
+        dumpOreDict(); dumpUnification(); dumpLocalization();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         double tMat = report("materials.csv");
@@ -94,6 +98,9 @@ public final class PortDump {
         report("tag_links.csv", 2);     // ключ = object+objectType
         report("worldgen_veins.csv", 1);
         report("worldgen_layers.csv", 1);
+        report("oredict.csv", 1);
+        report("unification.csv", 1);
+        report("localization.csv", 1);
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -276,6 +283,61 @@ public final class PortDump {
                 + "," + (layer.mOres==null?0:layer.mOres.size()));
         writeCsv("worldgen_layers.csv", "material,materialSurface,stone,cobble,mossy,metaStone,metaCobble,metaMossy,oreCount", ll);
         return vl.size();
+    }
+
+    // ------------------------------------------------------------------ oredict.csv (зеркало DumpOreDict)
+    private static int dumpOreDict() throws IOException {
+        List<String> lines = new ArrayList<>();
+        List<String> names = new ArrayList<>(Arrays.asList(gregapi.oredict.OreDictionary.getOreNames()));
+        Collections.sort(names);
+        for (String name : names) {
+            if (name == null) continue;
+            List<String> stacks = new ArrayList<>();
+            for (ItemStack s : gregapi.oredict.OreDictionary.getOres(name, false)) { if (s == null || s.getItem() == null) continue; stacks.add(stackId(s)); }
+            Collections.sort(stacks);
+            lines.add(name + "," + String.join("|", stacks));
+        }
+        writeCsv("oredict.csv", "oreName,stacks", lines);
+        return lines.size();
+    }
+
+    // ------------------------------------------------------------------ unification.csv (зеркало DumpUnification)
+    @SuppressWarnings("unchecked")
+    private static int dumpUnification() throws IOException {
+        List<String> lines = new ArrayList<>();
+        try {
+            Field f = gregapi.oredict.OreDictManager.class.getDeclaredField("sName2StackMap");
+            f.setAccessible(true);
+            Map<String, ItemStack> map = (Map<String, ItemStack>) f.get(gregapi.oredict.OreDictManager.INSTANCE);
+            for (Map.Entry<String, ItemStack> e : map.entrySet()) { if (e.getKey() == null) continue; lines.add(e.getKey() + "," + stackId(e.getValue())); }
+        } catch (Throwable t) {}
+        writeCsv("unification.csv", "oreName,unifiedStack", lines);
+        return lines.size();
+    }
+
+    // ------------------------------------------------------------------ localization.csv (зеркало DumpLocalization, TAB)
+    @SuppressWarnings("unchecked")
+    private static int dumpLocalization() throws IOException {
+        List<String> lines = new ArrayList<>();
+        try {
+            Field f = gregapi.lang.LanguageHandler.class.getDeclaredField("BACKUPMAP");
+            f.setAccessible(true);
+            Map<String, String> m = (Map<String, String>) f.get(null);
+            for (Map.Entry<String, String> e : m.entrySet()) {
+                if (e.getKey() == null) continue;
+                String v = e.getValue() == null ? "" : e.getValue().replace("\n", " ").replace("\r", " ");
+                lines.add(e.getKey() + "\t" + v);
+            }
+        } catch (Throwable t) {}
+        writeCsv("localization.csv", "key\tvalue", lines);
+        return lines.size();
+    }
+
+    /** DumpUtil.stackId: реестр-имя предмета + ":" + subtype-meta. neo: BuiltInRegistries.ITEM.getKey. */
+    private static String stackId(ItemStack s) {
+        if (s == null || s.getItem() == null) return "";
+        var k = BuiltInRegistries.ITEM.getKey(s.getItem());
+        return (k == null ? "" : k.toString()) + ":" + gregapi.util.ST.meta_(s);
     }
 
     private static String esc(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
