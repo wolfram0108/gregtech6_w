@@ -76,7 +76,7 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 					}
 					ItemNBT.set(tStack, tOldTag);
 					// Add Dynamite Coords to Remote Activator if in Hotbar.
-					for (int j = 0; j < Inventory.getHotbarSize(); j++) if (IL.Tool_Remote_Activator.equal(aPlayer.getInventory().getItem(j), F, T)) {
+					for (int j = 0; j < net.minecraft.world.entity.player.Inventory.getSelectionSize(); j++) if (IL.Tool_Remote_Activator.equal(aPlayer.getInventory().getItem(j), F, T)) {
 						if (Behavior_Remote.addCoords(aPlayer.getInventory().getItem(j), aPlayer, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
 							break;
 						}
