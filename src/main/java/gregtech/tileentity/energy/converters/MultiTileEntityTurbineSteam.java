@@ -98,7 +98,7 @@ public class MultiTileEntityTurbineSteam extends TileEntityBase11Motor implement
 			if (mSteamCounter >= STEAM_PER_WATER) {
 				FluidStack tDistilledWater = FL.DistW.make(mSteamCounter / STEAM_PER_WATER);
 				for (byte tDir : FACING_SIDES[mFacing]) {
-					tDistilledWater.setAmount(tDistilledWater.getAmount() - FL.fill(getAdjacentTank(tDir), tDistilledWater.copy(), T));
+					tDistilledWater.setAmount((int)(tDistilledWater.getAmount() - FL.fill(getAdjacentTank(tDir), tDistilledWater.copy(), T)));
 					if (tDistilledWater.getAmount() <= 0) break;
 				}
 				GarbageGT.trash(tDistilledWater);
@@ -117,7 +117,7 @@ public class MultiTileEntityTurbineSteam extends TileEntityBase11Motor implement
 	@Override protected IFluidTank getFluidTankDrainable2(byte aSide, FluidStack aFluidToDrain) {return null;}
 	@Override protected IFluidTank[] getFluidTanks2(byte aSide) {return isOutput(aSide) ? null : mTank.AS_ARRAY;}
 	
-	@Override public void onWalkOver2(LivingEntity aEntity) {if (SIDES_TOP[mFacing] && mActivity.mState>0) {aEntity.rotationYaw=aEntity.rotationYaw+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1); aEntity.rotationYawHead=aEntity.rotationYawHead+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1);}}
+	@Override public void onWalkOver2(LivingEntity aEntity) {if (SIDES_TOP[mFacing] && mActivity.mState>0) {aEntity.setYRot(aEntity.getYRot()+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1)); aEntity.setYHeadRot(aEntity.getYHeadRot()+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1));}}
 	
 	@Override
 	public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {

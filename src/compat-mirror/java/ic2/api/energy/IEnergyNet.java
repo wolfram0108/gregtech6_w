@@ -10,4 +10,5 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  *  getTierFromPower реального API не используются (греп 0) — не добавлены. */
 public interface IEnergyNet {
 	BlockEntity getTileEntity(Level aWorld, int aX, int aY, int aZ);
+	NodeStats getNodeStats(BlockEntity aTile);
 }

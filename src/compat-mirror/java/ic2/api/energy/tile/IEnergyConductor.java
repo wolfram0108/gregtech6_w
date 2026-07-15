@@ -6,4 +6,7 @@ package ic2.api.energy.tile;
  *  removeInsulation/removeConductor реального API не используются (греп 0) — не добавлены. */
 public interface IEnergyConductor {
 	double getConductionLoss();
+	double getInsulationEnergyAbsorption();
+	double getInsulationBreakdownEnergy();
+	double getConductorBreakdownEnergy();
 }
