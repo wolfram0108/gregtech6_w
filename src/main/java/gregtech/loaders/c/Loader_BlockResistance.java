@@ -19,6 +19,7 @@
 
 package gregtech.loaders.c;
 
+import gregapi.util.WD;
 import gregapi.block.MaterialAdventure;
 import gregapi.data.IL;
 import gregapi.data.MD;
@@ -32,21 +33,21 @@ import static gregapi.data.CS.*;
 public class Loader_BlockResistance implements Runnable {
 	@Override
 	public void run() {
-		Blocks.STONE.setResistance(10);
-		Blocks.COBBLESTONE.setResistance(10);
-		Blocks.STONE_BRICKS.setResistance(10);
-		Blocks.BRICKS.setResistance(20);
-		Blocks.TERRACOTTA.setResistance(15);
-		Blocks.WHITE_TERRACOTTA.setResistance(15);
-		Blocks.IRON_BLOCK.setResistance(30);
-		Blocks.DIAMOND_BLOCK.setResistance(60);
-		Blocks.OBSIDIAN.setResistance(60);
-		Blocks.ENCHANTING_TABLE.setResistance(60);
-		Blocks.ENDER_CHEST.setResistance(60);
-		Blocks.ANVIL.setResistance(60);
-		Blocks.WATER.setResistance(30);
-		Blocks.WATER.setResistance(30);
-		Blocks.LAVA.setResistance(30);
+		WD.setResistance(Blocks.STONE, 10);
+		WD.setResistance(Blocks.COBBLESTONE, 10);
+		WD.setResistance(Blocks.STONE_BRICKS, 10);
+		WD.setResistance(Blocks.BRICKS, 20);
+		WD.setResistance(Blocks.TERRACOTTA, 15);
+		WD.setResistance(Blocks.WHITE_TERRACOTTA, 15);
+		WD.setResistance(Blocks.IRON_BLOCK, 30);
+		WD.setResistance(Blocks.DIAMOND_BLOCK, 60);
+		WD.setResistance(Blocks.OBSIDIAN, 60);
+		WD.setResistance(Blocks.ENCHANTING_TABLE, 60);
+		WD.setResistance(Blocks.ENDER_CHEST, 60);
+		WD.setResistance(Blocks.ANVIL, 60);
+		WD.setResistance(Blocks.WATER, 30);
+		WD.setResistance(Blocks.WATER, 30);
+		WD.setResistance(Blocks.LAVA, 30);
 		
 		if (MD.SD.mLoaded) {
 			Block
@@ -63,10 +64,10 @@ public class Loader_BlockResistance implements Runnable {
 		}
 		
 		Block
-		tBlock = IL.EtFu_Obsidian      .block(); if (tBlock != null && tBlock != NB) tBlock.setResistance(60);
-		tBlock = IL.NeLi_Obsidian      .block(); if (tBlock != null && tBlock != NB) tBlock.setResistance(60);
-		tBlock = IL.NePl_Obsidian      .block(); if (tBlock != null && tBlock != NB) tBlock.setResistance(60);
-		tBlock = IL.NePl_Ancient_Debris.block(); if (tBlock != null && tBlock != NB) tBlock.setResistance(60);
-		tBlock = IL.EtFu_Ancient_Debris.block(); if (tBlock != null && tBlock != NB) tBlock.setResistance(60);
+		tBlock = IL.EtFu_Obsidian      .block(); if (tBlock != null && tBlock != NB) WD.setResistance(tBlock, 60);
+		tBlock = IL.NeLi_Obsidian      .block(); if (tBlock != null && tBlock != NB) WD.setResistance(tBlock, 60);
+		tBlock = IL.NePl_Obsidian      .block(); if (tBlock != null && tBlock != NB) WD.setResistance(tBlock, 60);
+		tBlock = IL.NePl_Ancient_Debris.block(); if (tBlock != null && tBlock != NB) WD.setResistance(tBlock, 60);
+		tBlock = IL.EtFu_Ancient_Debris.block(); if (tBlock != null && tBlock != NB) WD.setResistance(tBlock, 60);
 	}
 }

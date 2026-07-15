@@ -373,6 +373,14 @@ public class WD {
 		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_STONE_TOOL )) return 1;
 		return 0;
 	}
+	/** F-block-resistance ЦЕНТР: 1.7.10 {@code Block.setResistance(float)} — RUNTIME-правка explosion-resistance (GT усиливает
+	 *  vanilla-блоки против взрывов, глобально на общий Block-объект). neo {@code BlockBehaviour.explosionResistance} =
+	 *  {@code protected final float} (BlockBehaviour.java:90, присвоено в конструкторе — не inline-константа) → сеттера нет.
+	 *  Единственный 1:1: reflection на final-поле суперкласса BlockBehaviour через центр {@link UT.Reflection#setField}
+	 *  (безопасный try/catch). GT6-1.7.10 делал ровно эту глобальную мутацию vanilla-блока. */
+	public static void setResistance(Block aBlock, float aResistance) {
+		UT.Reflection.setField(net.minecraft.world.level.block.state.BlockBehaviour.class, aBlock, "explosionResistance", aResistance);
+	}
 	/** F-tool ЦЕНТР: 1.7.10 {@code Block.getHarvestTool(int aMeta)} (Forge-точка на vanilla Block, строка-тип
 	 *  инструмента "pickaxe"/"shovel"/"axe"...) удалён по ИМЕНИ; GT6-блок хранит ({@code BlockBase.getHarvestTool(meta)}),
 	 *  vanilla-блок → "" (как ядро инлайнит UT.java:1202, ItemBlockBase:109). Централизует инлайн {@code instanceof BlockBase}. */
