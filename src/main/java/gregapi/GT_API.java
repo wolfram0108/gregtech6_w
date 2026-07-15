@@ -341,12 +341,15 @@ public class GT_API extends Abstract_Mod {
 			// F12-followup (block-split, MTE): вызвано из deferBlockInit во время RegisterEvent<Block> — блок УЖЕ построен
 			// (реестр разморожен), регистрируем его напрямую в реестр события (ключ санитизирован, совпадает с setId блока);
 			// BlockItem — в ITEMS-DR (обработается на RegisterEvent<Item> позже). DeferredRegister BLOCKS уже мог быть обработан.
-			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GAPI, sanitizeRegName(aRegistryName)), () -> aBlock);
-			ITEMS.register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
+			// F12-namespace (MTE): namespace=GT — gt.multitileentity контент GT6 (golden gregtech:), не gregapi. Единственные
+			// вызыватели registerBlock — MTE (ST.register из MultiTileEntityRegistry/MultiTileEntityBlock). Ключ реестра/item-DR
+			// совпадает с setId блока (ModIDs.GT) и ключом предмета (BuiltInRegistries.BLOCK.getKey(block)=GT). ~17k рецептов паритета.
+			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GT, sanitizeRegName(aRegistryName)), () -> aBlock);
+			itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 			return null;
 		}
-		DeferredBlock<Block> rBlock = BLOCKS.register(aRegistryName, () -> aBlock);
-		ITEMS.register(aRegistryName, () -> blockItemFor(aBlock, aItemClass));
+		DeferredBlock<Block> rBlock = blocksFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> aBlock);
+		itemsFor(ModIDs.GT).register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 		return rBlock;
 	}
 
