@@ -36,7 +36,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 
 import java.util.List;
 import java.util.Random;
@@ -60,7 +60,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 		
 		//final boolean tSlime = (aChunk.getRandomWithSeed(987234911L).nextInt(10) == 0);
 		final NoiseGenerator tNoise = new NoiseGenerator(aWorld);
-		final ExtendedBlockStorage[] aStorages = aChunk.getBlockStorageArray();
+		final LevelChunkSection[] aStorages = aChunk.getSections();
 		final int tListSize = StoneLayer.LAYERS.size(), tMaxHeight = aChunk.getTopFilledSegment()+15;
 		final StoneLayer[] tScan = new StoneLayer[7];
 		final byte tScanMinusOne = (byte)(tScan.length-1);
@@ -81,8 +81,8 @@ public class WorldgenStoneLayers extends WorldgenObject {
 			OreDictMaterial tLastRock = MT.STONES.Deepslate, tLastOre = null;
 			
 			for (int tY = 1; tY < tMaxHeight; tY++) {
-				final ExtendedBlockStorage aStorage = aStorages[tY >> 4];
-				final Block aBlock = (aStorage == null ? NB : aStorage.getBlockByExtId(i, tY & 15, j));
+				final LevelChunkSection aStorage = aStorages[tY >> 4];
+				final Block aBlock = (aStorage == null ? NB : aStorage.getBlockState(i, tY & 15, j).getBlock());
 				assert aStorage != null;
 				// Just mark as Opaque Ground.
 				if (aBlock == Blocks.BEDROCK) {

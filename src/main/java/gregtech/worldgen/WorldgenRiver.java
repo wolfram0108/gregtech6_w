@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 
 /**
  * @author Gregorius Techneticies
@@ -54,13 +54,13 @@ public class WorldgenRiver extends WorldgenObject {
 		for (String tName : aBiomeNames) if (BIOMES_RIVER.contains(tName) && !BIOMES_OCEAN.contains(tName)) {temp = F; break;}
 		if (temp) return F;
 		int tHeight = WD.waterLevel(aWorld, mHeight);
-		final ExtendedBlockStorage[] tStorages = aChunk.getBlockStorageArray();
+		final LevelChunkSection[] tStorages = aChunk.getSections();
 		for (int tX = 0; tX < 16; tX++) for (int tZ = 0; tZ < 16; tZ++) {
 			boolean tPlacedNone = T;
 			for (int tY = tHeight; tY > 0; tY--) {
-				final ExtendedBlockStorage tStorage = tStorages[tY >> 4];
+				final LevelChunkSection tStorage = tStorages[tY >> 4];
 				if (tStorage == null) continue;
-				final Block tBlock = tStorage.getBlockByExtId(tX, tY & 15, tZ);
+				final Block tBlock = tStorage.getBlockState(tX, tY & 15, tZ).getBlock();
 				if (WD.opaque(tBlock)) break;
 				if (tBlock != Blocks.WATER && tBlock != Blocks.WATER) continue;
 				
@@ -70,12 +70,12 @@ public class WorldgenRiver extends WorldgenObject {
 					BlockRiver.PLACEMENT_ALLOWED = T;
 					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
 						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-						aChunk.lastSaveTime = Long.MAX_VALUE;
+						aChunk.markUnsaved();
 						return F;
 					}
 					BlockRiver.PLACEMENT_ALLOWED = F;
 				} else {
-					tStorage.func_150818_a(tX, tY & 15, tZ, BlocksGT.River);
+					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.River.defaultBlockState());
 				}
 				temp = T;
 			}
