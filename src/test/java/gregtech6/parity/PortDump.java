@@ -85,7 +85,7 @@ public final class PortDump {
         int nPre = dumpPrefixes();
         int nFl = dumpFluids();
         dumpMTE(); dumpTools(); dumpTags(); dumpWorldgen();
-        dumpOreDict(); dumpUnification(); dumpLocalization();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         double tMat = report("materials.csv");
@@ -101,6 +101,7 @@ public final class PortDump {
         reportCI("oredict.csv", 1);      // CI: neo lowercase ResourceLocation-имена (camelCase gt.meta.* невозможен)
         reportCI("unification.csv", 1);
         report("localization.csv", 1);
+        reportCI("itemdata.csv", 1);
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -333,9 +334,30 @@ public final class PortDump {
         return lines.size();
     }
 
+    // ------------------------------------------------------------------ itemdata.csv (зеркало DumpUnification.itemData)
+    @SuppressWarnings("unchecked")
+    private static int dumpItemData() throws IOException {
+        List<String> lines = new ArrayList<>();
+        try {
+            Field f = gregapi.oredict.OreDictManager.class.getDeclaredField("sItemStack2DataMap");
+            f.setAccessible(true);
+            Map<?, gregapi.oredict.OreDictItemData> map = (Map<?, gregapi.oredict.OreDictItemData>) f.get(gregapi.oredict.OreDictManager.INSTANCE);
+            for (gregapi.oredict.OreDictItemData data : map.values()) {
+                if (data == null || data.mOreDictName == null) continue;
+                String prefix = data.mPrefix == null ? "" : data.mPrefix.mNameInternal;
+                List<String> bp = new ArrayList<>();
+                if (data.mByProducts != null) for (gregapi.oredict.OreDictMaterialStack s : data.mByProducts) bp.add(matStack(s));
+                Collections.sort(bp);
+                lines.add(data.mOreDictName + "," + prefix + "," + matStack(data.mMaterial) + "," + String.join("|", bp)
+                        + "," + data.mBlackListed + "," + data.mBlocked + "," + stackId(data.mUnificationTarget));
+            }
+        } catch (Throwable t) {}
+        writeCsv("itemdata.csv", "key,prefix,material,byproducts,blacklisted,blocked,unificationTarget", lines);
+        return lines.size();
+    }
     /** DumpUtil.stackId: реестр-имя предмета + ":" + subtype-meta. neo: BuiltInRegistries.ITEM.getKey. */
     private static String stackId(ItemStack s) {
-        if (s == null || s.getItem() == null) return "";
+        if (s == null || s.getItem() == null) return "null"; // golden DumpUtil.stackId(null)="null" (itemdata.unificationTarget)
         var k = BuiltInRegistries.ITEM.getKey(s.getItem());
         return (k == null ? "" : k.toString()) + ":" + gregapi.util.ST.meta_(s);
     }
