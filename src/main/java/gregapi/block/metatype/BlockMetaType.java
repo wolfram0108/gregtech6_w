@@ -88,6 +88,16 @@ public class BlockMetaType extends BlockBaseMeta {
 		, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_EAST    , this)
 		, null};
 		mSlabs[SIDE_INVALID] = mSlabs[SIDE_DOWN];
+		// F12-followup (block-split): слэбы созданы ВНУТРИ конструктора (makeSlab), а не через call-site registerBlockLazy —
+		// их neo-Block-реестр никто не регистрирует → «intrusive holders were not registered» на freeze. Регистрируем каждый
+		// уникальный слэб напрямую в реестр (конструкция идёт на RegisterEvent<Block>, реестр разморожен); ключ = setId слэба
+		// (GAPI:санитизированное имя). BlockItem слэба уже зарегистрирован его BlockBase-конструктором (registerItemLazy).
+		{
+			java.util.Set<Object> tSeenSlabs = new java.util.HashSet<>();
+			for (BlockMetaType tSlab : mSlabs) if (tSlab != null && tSeenSlabs.add(tSlab)) {
+				net.minecraft.core.Registry.register(net.minecraft.core.registries.BuiltInRegistries.BLOCK, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(tSlab.mNameInternal))), tSlab);
+			}
+		}
 		// F12-followup (block-split): конструкция блока идёт на RegisterEvent (реестр разморожен), но ST.hide/ST.make/рецепты
 		// создают ItemStack → компоненты связаны только на server-start. Откладываем эту дата-часть в deferItemInit (1:1 порядок).
 		gregapi.GT_API.deferItemInit(() -> {
