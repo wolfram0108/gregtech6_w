@@ -273,8 +273,8 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 	@Override public boolean getStateRunningActively() {return mBurning;}
 	
 	protected void spawnBurningParticles(double aX, double aY, double aZ) {
-		level.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
-		level.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
+		level.addParticle(net.minecraft.core.particles.ParticleTypes.SMOKE, aX, aY, aZ, 0, 0, 0);
+		level.addParticle(net.minecraft.core.particles.ParticleTypes.FLAME, aX, aY, aZ, 0, 0, 0);
 	}
 	
 	// Icons

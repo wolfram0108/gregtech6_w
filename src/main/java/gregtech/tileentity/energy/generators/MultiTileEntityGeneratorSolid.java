@@ -281,7 +281,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 	@Override public float getBlockHardness() {return mBurning ? super.getBlockHardness() * 16 : super.getBlockHardness();}
 	
 	protected void spawnBurningParticles(double aX, double aY, double aZ) {
-		level.spawnParticle("smoke", aX, aY, aZ, 0, 0, 0);
-		level.spawnParticle("flame", aX, aY, aZ, 0, 0, 0);
+		level.addParticle(net.minecraft.core.particles.ParticleTypes.SMOKE, aX, aY, aZ, 0, 0, 0);
+		level.addParticle(net.minecraft.core.particles.ParticleTypes.FLAME, aX, aY, aZ, 0, 0, 0);
 	}
 }
