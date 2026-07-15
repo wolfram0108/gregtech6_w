@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.entity.monster.EntityCaveSpider;
-import net.minecraft.entity.monster.EntitySpider;
+import net.minecraft.world.entity.monster.spider.Spider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -43,7 +43,7 @@ import static gregapi.data.CS.*;
 public class GT_Tool_Screwdriver extends ToolStats {
 	public static final List<String> mEffectiveList = Arrays.asList(
 		EntityCaveSpider.class.getName(),
-		EntitySpider.class.getName(),
+		Spider.class.getName(),
 		"EntityTFHedgeSpider",
 		"EntityTFKingSpider",
 		"EntityTFSwarmSpider",

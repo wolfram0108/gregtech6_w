@@ -41,7 +41,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.golem.IronGolem;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
-import net.minecraft.entity.monster.EntitySnowman;
+import net.minecraft.world.entity.animal.golem.SnowGolem;
 import net.minecraft.world.entity.animal.equine.Horse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -441,7 +441,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		if (UT.Entities.isWearingFullInsectHazmat(aAttacked)) return F;
 		boolean
 		  tSkeleton = (aAttacked instanceof Skeleton || (aAttacked instanceof Horse && ((Horse)aAttacked).getHorseType() == 4))
-		, tSnowGolem = (aAttacked.getClass() == EntitySnowman.class)
+		, tSnowGolem = (aAttacked.getClass() == SnowGolem.class)
 		, tIronGolem = (aAttacked instanceof IronGolem)
 		, tPlayer = (aAttacked instanceof Player)
 		;

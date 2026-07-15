@@ -19,12 +19,12 @@
 
 package gregtech.entities;
 
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import gregapi.damage.DamageSourceCombat;
 import gregapi.data.*;
 import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
-import net.minecraft.entity.EntityLiving;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.entity.monster.*;
@@ -398,7 +398,7 @@ public class Override_Drops {
 					aDrops.add(ST.entity(aDead, IL.Book_Loot_MatDict.get(1+RNGSUS.nextInt(3))));
 				}
 			}
-		} else if (aDead instanceof EntitySpider) {
+		} else if (aDead instanceof Spider) {
 			tReplaceIron = T;
 			
 			// Let a Spider Eye drop if not killed by a Player.
@@ -774,8 +774,8 @@ public class Override_Drops {
 			}
 		}
 		
-		if (MOBS_DROP_NAME && aDead instanceof EntityLiving && ((EntityLiving)aDead).isNoDespawnRequired() && ((EntityLiving)aDead).hasCustomNameTag()) {
-			aDrops.add(ST.entity(aDead, ST.make(Items.NAME_TAG, 1, 0, ((EntityLiving)aDead).getCustomNameTag())));
+		if (MOBS_DROP_NAME && aDead instanceof LivingEntity && ((LivingEntity)aDead).isNoDespawnRequired() && ((LivingEntity)aDead).hasCustomNameTag()) {
+			aDrops.add(ST.entity(aDead, ST.make(Items.NAME_TAG, 1, 0, ((LivingEntity)aDead).getCustomNameTag())));
 		}
 	}
 }

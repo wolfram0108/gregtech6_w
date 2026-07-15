@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.multiblocks;
 
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import gregapi.GT_API_Proxy;
 import gregapi.block.multitileentity.MultiTileEntityContainer;
 import gregapi.code.ArrayListNoNulls;
@@ -656,9 +657,9 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 		
 		if (UT.Entities.applyTemperatureDamage(aEntity, mTemperature) && mTemperature > 320) {
 			if (!aEntity.isAlive()) {
-				if (aEntity instanceof EntityVillager || aEntity instanceof EntityWitch) {
+				if (aEntity instanceof Villager || aEntity instanceof EntityWitch) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.SoylentGreen)), C+37);
-				} else if (aEntity instanceof EntitySnowman) {
+				} else if (aEntity instanceof SnowGolem) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Snow)), C-10);
 				} else if (aEntity instanceof IronGolem) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Fe)), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
@@ -670,7 +671,7 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(3*U, MT.MeatRaw)), C+37);
 				} else if (aEntity instanceof Pig || aEntity instanceof Sheep || aEntity instanceof Wolf || aEntity instanceof Squid) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.MeatRaw)), C+37);
-				} else if (aEntity instanceof EntityChicken || aEntity instanceof Ocelot || aEntity instanceof EntitySpider || aEntity instanceof EntitySilverfish) {
+				} else if (aEntity instanceof EntityChicken || aEntity instanceof Ocelot || aEntity instanceof Spider || aEntity instanceof EntitySilverfish) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRaw)), C+37);
 				} else if (aEntity instanceof EntityCreeper) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.Gunpowder)), C+20);

@@ -43,7 +43,7 @@ import net.minecraft.world.level.block.BaseRailBlock;
 import net.minecraft.command.IEntitySelector;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.monster.EntitySnowman;
+import net.minecraft.world.entity.animal.golem.SnowGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.Container;
@@ -141,7 +141,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 	
 	@Override
 	public void onWalkOver2(LivingEntity aEntity) {
-		if (isServerSide() && (aEntity.getClass() == EntitySnowman.class || "EntityNewSnowGolem".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity)))) {
+		if (isServerSide() && (aEntity.getClass() == SnowGolem.class || "EntityNewSnowGolem".equalsIgnoreCase(UT.Reflection.getLowercaseClass(aEntity)))) {
 			addStackToSlot(invsize()-1, ST.make(Items.SNOWBALL, 1, 0));
 		}
 	}

@@ -50,7 +50,7 @@ import gregtech.entities.projectiles.EntityArrow_Material;
 import gregtech.tileentity.misc.MultiTileEntityCertificate;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.entity.EntityLiving;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.ai.EntityAIAttackOnCollide;
 import net.minecraft.entity.ai.EntityAITasks;
 import net.minecraft.entity.ai.EntityAITempt;
@@ -58,7 +58,7 @@ import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.animal.feline.Ocelot;
-import net.minecraft.entity.passive.EntityVillager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.level.block.Blocks;
@@ -352,11 +352,11 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	public void onEntitySpawningEvent(EntityJoinLevelEvent aEvent) {
 		if (aEvent.entity == null) return;
 		
-		if (aEvent.entity instanceof EntityLiving) {
+		if (aEvent.entity instanceof LivingEntity) {
 			// AI Tasks for Entities
-			EntityAITasks tTasks = ((EntityLiving)aEvent.entity).tasks;
+			EntityAITasks tTasks = ((LivingEntity)aEvent.entity).tasks;
 			if (tTasks != null) {
-				if (aEvent.entity instanceof EntityVillager) {
+				if (aEvent.entity instanceof Villager) {
 					tTasks.addTask(3, new EntityAITempt((PathfinderMob)aEvent.entity, 0.6D, Items.EMERALD, F));
 				}
 				if (aEvent.entity instanceof Ocelot) {

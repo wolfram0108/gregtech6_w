@@ -29,7 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.zombie.Zombie;
-import net.minecraft.entity.passive.EntityVillager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
@@ -45,8 +45,8 @@ public class Replacements {
 	/** Zombies convert their Victim. */
 	public static void EntityZombie_onKillEntity(Object aZombie, Object aVictim) {
 		// Just ALWAYS convert Villagers, not only sometimes or when the stupid Difficulty Setting is right.
-		if (aVictim instanceof EntityVillager) {
-			EntityVillager aVillager = (EntityVillager)aVictim;
+		if (aVictim instanceof Villager) {
+			Villager aVillager = (Villager)aVictim;
 			Level aWorld = aVillager.level();
 			// Yep, new Zombie Object.
 			Zombie tZombieVillager = new Zombie(aWorld);

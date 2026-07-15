@@ -29,7 +29,7 @@ import gregapi.render.IIconContainer;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.monster.EntitySnowman;
+import net.minecraft.world.entity.animal.golem.SnowGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -49,7 +49,7 @@ public class GT_Tool_Plow extends ToolStats {
 	
 	@Override
 	public float getNormalDamageAgainstEntity(float aOriginalDamage, Entity aEntity, ItemStack aStack, Player aPlayer) {
-		return aEntity instanceof EntitySnowman ? aOriginalDamage*4 : aOriginalDamage;
+		return aEntity instanceof SnowGolem ? aOriginalDamage*4 : aOriginalDamage;
 	}
 	
 	@Override
