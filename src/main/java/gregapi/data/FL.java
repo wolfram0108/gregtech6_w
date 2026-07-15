@@ -893,6 +893,11 @@ public enum FL {
 	/** Замена {@code new FluidStack(existingStack, newAmount)} (копирующий конструктор с новой
 	 *  ёмкостью 1.7.10) — у real neo {@link FluidStack} такого конструктора нет, вместо него
 	 *  {@link FluidStack#copyWithAmount(int)} (реальный метод, `FluidStack.java:255`). */
+	/** F-fluid-temperature ЦЕНТР: 1.7.10 {@code Fluid.setTemperature(int)} — GT6 задаёт температуру своих molten-жидкостей.
+	 *  neo {@code net.minecraft.world.level.material.Fluid} сеттера НЕ имеет; GT6-жидкость = {@link FluidGT} (свой
+	 *  {@code setTemperature}, FluidGT:176). Контент зовёт на статик-типе {@code Fluid} → централизуем instanceof-каст
+	 *  (no-op для vanilla-жидкости — безопасно; GT6 задаёт temperature только своим FluidGT). */
+	public static void setTemperature(Fluid aFluid, long aTemperatureK) {if (aFluid instanceof FluidGT) ((FluidGT)aFluid).setTemperature(aTemperatureK);}
 	public static FluidStack amount(FluidStack aFluid, long aAmount) {return aFluid == null ? null : aFluid.copyWithAmount(Code.bindInt(aAmount));}
 
 	public static FluidStack mul(FluidStack aFluid, long aMultiplier) {return aFluid == null ? null : amount(aFluid, (long)aFluid.getAmount() * aMultiplier);}
