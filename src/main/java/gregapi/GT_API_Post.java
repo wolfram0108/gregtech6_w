@@ -229,7 +229,9 @@ public class GT_API_Post extends Abstract_Mod {
 	
 	@Override
 	public void onModInit2(FMLInitializationEvent aEvent) {
-		onModPreInit2Deferred(); // F12 boot-timing: бывший preInit-data-init (blacklists/Loaders — ST.make) выполняется здесь (setup, пост-bind), ПЕРВЫМ, до остального onModInit2. Порядок сохранён.
+		// F1/F12/F16 boot-timing: бывший preInit-data-init (blacklists/Loaders — ST.make) → deferItemInit (выполнится
+		// @onModServerStarting2, post-bind: Holder.components привязаны). onModInit2(CommonSetup) НЕ пост-bind. НЕ в паритет-данных.
+		gregapi.GT_API.deferItemInit(this::onModPreInit2Deferred);
 		new LoaderWoodDictionary().run();
 		
 		// Atum violates the "Items have to be created in preInit" Rule...

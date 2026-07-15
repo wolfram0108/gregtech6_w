@@ -399,9 +399,11 @@ public class GT_API extends Abstract_Mod {
 	 * {@link FMLCommonSetupEvent} (мод-шина).
 	 */
 	public void onLoad(FMLCommonSetupEvent aModEvent) {
-		// F12 boot-timing (ПЕРЕНЕСЕНО из @Mod-конструктора): vanilla-ore-target'ы создают ItemStack (ST.make(Blocks.X)),
-		// что невозможно в конструкции (Holder.components не привязаны) — здесь (FMLCommonSetupEvent, после регистрации
-		// и привязки) можно. Порядок «registered first» цел: этот блок ПЕРВЫЙ в onLoad, до конфиг-цикла и onModInit.
+		// F1/F12/F16 boot-timing: ore-target'ы + рецепты создают ItemStack (ST.make(Blocks/Items)) — onLoad(CommonSetup) НЕ
+		// пост-bind (Holder.components привязывает ReloadableServerResources на server-start). Оборачиваем в deferItemInit →
+		// выполнится в onModServerStarting2 (post-bind). НЕ в паритет-данных (ore-targets/recipes ≠ material/prefix scalar).
+		deferItemInit(() -> {
+		// vanilla-ore-target'ы. Порядок «registered first» сохранён (первый deferred).
 		// It is VERY important that those are registered first. Otherwise GregTech would output its own Storage Blocks.
 		// F12: REMAP-RULES.md §C/§C-bis блок-флэттен (данные, не поведение) — Blocks.<snake_case> удалены,
 		// заменены реальными UPPER_SNAKE-константами neo; RedSand и "smooth double stone slab" (meta 8) → RED_SAND/SMOOTH_STONE.
@@ -430,6 +432,7 @@ public class GT_API extends Abstract_Mod {
 		// Preventing a Water Dupe by registering this Recipe early so it won't be overridden
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.GLASS_BOTTLE, 1, 0), FL.Water.make(250), NF, ST.make(Items.POTION, 1, 0));
 		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.POTION, 1, 0), ST.make(Items.GLASS_BOTTLE, 1, 0));
+		}); // конец deferItemInit-обёртки ore-targets/recipes (выполнится @onModServerStarting2, post-bind)
 
 		for (OreDictMaterial tMaterial : OreDictMaterial.MATERIAL_ARRAY) if (tMaterial != null && !tMaterial.contains(TD.Properties.INVALID_MATERIAL)) {
 			tMaterial.mOreProcessingMultiplier = UT.Code.bindStack(ConfigsGT.OREPROCESSING.get(ConfigCategories.Materials.oreprocessingoutputmultiplier, tMaterial.mNameInternal, 1));
