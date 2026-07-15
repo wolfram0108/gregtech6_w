@@ -40,7 +40,6 @@ import gregapi.util.WD;
 import gregtech.tileentity.tools.MultiTileEntityAnvil;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseRailBlock;
-import net.minecraft.command.IEntitySelector;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.golem.SnowGolem;
@@ -171,7 +170,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 				if (!SIDES_TOP[mFacing] && !invempty()) {
 					DelegatorTileEntity tDelegator = getAdjacentTileEntity(mFacing);
 					if (tDelegator.getBlock() instanceof BaseRailBlock) {
-						List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
+						List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR);
 						if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 					}
 					while (tMovedItems + (mMode<=0?1:mMode) <= 64) {
@@ -185,7 +184,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 				}
 				DelegatorTileEntity tDelegator = getAdjacentTileEntity(SIDE_TOP);
 				if (tDelegator.getBlock() instanceof BaseRailBlock) {
-					List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), IEntitySelector.selectInventories);
+					List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR);
 					if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 				}
 				if (tDelegator.mTileEntity != null && !(tDelegator.mTileEntity instanceof MultiTileEntityAnvil)) {
