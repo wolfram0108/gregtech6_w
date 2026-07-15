@@ -38,7 +38,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.BlockFluidFinite;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import static gregapi.data.CS.*;
@@ -80,7 +79,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	
 	@Override
 	public IPacket getClientDataPacket(boolean aSendAll) {
-		return getClientDataPacketShort(aSendAll, (short)mFluid.getFluid().getID());
+		return getClientDataPacketShort(aSendAll, (short)gregapi.data.FL.id_(mFluid.getFluid()));
 	}
 	
 	@Override
@@ -108,15 +107,15 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 			}
 			if (tProduce) {
 				Block tBlock = FL.BLOCKS.get(FL.regName(mFluid.getFluid())), tAbove = getBlockAtSide(SIDE_UP);
-				if (ST.invalid(tBlock)) tBlock = mFluid.getFluid().getBlock();
+				if (ST.invalid(tBlock)) tBlock = mFluid.getFluid().defaultFluidState().createLegacyBlock().getBlock();
 				if (ST.valid(tBlock)) {
-					if (tBlock instanceof BlockFluidFinite) {
+					if (WD.liquid_finite(tBlock)) {
 						if (tAbove == tBlock) {
 							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);
-							tBlock.updateTick(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), RNGSUS);
-						} else if (WD.liquid(tAbove) || tAbove.isAir(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) {
+							{if (level instanceof net.minecraft.server.level.ServerLevel tSL) tBlock.defaultBlockState().randomTick(tSL, new net.minecraft.core.BlockPos(getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()), tSL.getRandom());}
+						} else if (WD.liquid(tAbove) || WD.air(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tAbove)) {
 							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 7, 3);
-							tBlock.updateTick(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), RNGSUS);
+							{if (level instanceof net.minecraft.server.level.ServerLevel tSL) tBlock.defaultBlockState().randomTick(tSL, new net.minecraft.core.BlockPos(getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()), tSL.getRandom());}
 						}
 					} else {
 						if (tAbove == tBlock) {
@@ -128,7 +127,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 											WD.set(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide], tBlock, 0, 3);
 											break;
 										}
-									} else if (tAbove.isAir(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide])) {
+									} else if (WD.air(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide], tAbove)) {
 										WD.set(level, getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+1, getBlockPos().getZ()+OFFZ[tSide], tBlock, 0, 3);
 										break;
 									}
@@ -136,7 +135,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 							} else {
 								WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 0, 3);
 							}
-						} else if (WD.liquid(tAbove) || tAbove.isAir(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) {
+						} else if (WD.liquid(tAbove) || WD.air(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tAbove)) {
 							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 0, 3);
 						}
 					}
@@ -151,7 +150,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_MAX;}
 	
-	@Override public float getExplosionResistance2() {return Blocks.BEDROCK.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.BEDROCK.getExplosionResistance();}
 	@Override public float getBlockHardness() {return -1;}
 	
 	@Override public boolean isSurfaceSolid         (byte aSide) {return T;}
