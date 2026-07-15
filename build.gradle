@@ -76,6 +76,29 @@ if (project.hasProperty('coreOnly')) {
     logger.lifecycle("[coreOnly] main.java сужен до ${includes.size()} файлов (ядро-692 + mirror); SanityTest исключён")
 }
 
+// -PparityFull: контент-слой ТЕПЕРЬ КОМПИЛИРУЕТСЯ (3903→0) -> main НЕ сужаем (полный контент для контент-зависимых
+// fluid/registeredCounts паритета), но JPMS split-package остаётся -> тот же stripMcMirror (удаляем net.minecraft/cpw
+// crutch-.class ПОСЛЕ compile, ДО test). Material/prefix-дамп server-side без рендера мираж не зовёт (ленивая линковка);
+// дёрнет рантайм → NoClassDefFound (тогда --patch-module конкретного пакета). Обычная сборка (без флага) НЕ тронута.
+if (project.hasProperty('parityFull')) {
+    tasks.named('compileJava').configure { options.incremental = false }
+    def stripMirrorFull = tasks.register('stripMcMirrorFull') {
+        doLast {
+            def dir = file('build/classes/java/main')
+            def removed = 0
+            ['net/minecraft', 'cpw'].each { pkg ->
+                def t = file("$dir/$pkg")
+                if (t.exists()) { removed += fileTree(t).files.size(); delete t }
+            }
+            logger.lifecycle("[parityFull] stripMcMirrorFull: удалено ${removed} crutch-.class из рантайм-модуля")
+        }
+    }
+    tasks.named('stripMcMirrorFull').configure { mustRunAfter tasks.named('classes') }
+    tasks.named('test').configure { dependsOn stripMirrorFull }
+    sourceSets.test.java.exclude('**/SanityTest.java')
+    logger.lifecycle("[parityFull] полный контент + stripMcMirror для JPMS")
+}
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 
