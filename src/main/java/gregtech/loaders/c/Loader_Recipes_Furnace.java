@@ -19,6 +19,7 @@
 
 package gregtech.loaders.c;
 
+import gregapi.recipes.FurnaceRecipes;
 import ganymedes01.etfuturum.recipes.BlastFurnaceRecipes;
 import ganymedes01.etfuturum.recipes.SmokerRecipes;
 import gregapi.data.*;
@@ -44,7 +45,7 @@ public class Loader_Recipes_Furnace implements Runnable {
 	@Override
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void run() {
-		Map<ItemStack, ItemStack>[] tMaps = new Map[] {RecipeManager.smelting().getSmeltingList(), null, null};
+		Map<ItemStack, ItemStack>[] tMaps = new Map[] {FurnaceRecipes.smelting().getSmeltingList(), null, null};
 		if (MD.EtFu.mLoaded) try {
 			tMaps[1] = ((Map)UT.Reflection.getFieldContent(SmokerRecipes      .smelting(), "smeltingList", T, D1));
 			tMaps[2] = ((Map)UT.Reflection.getFieldContent(BlastFurnaceRecipes.smelting(), "smeltingList", T, D1));

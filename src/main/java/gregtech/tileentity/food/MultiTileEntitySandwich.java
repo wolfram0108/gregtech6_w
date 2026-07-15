@@ -264,7 +264,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	@Override
 	public ItemStack onEaten(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
 		if (MD.APC.mLoaded) {
-			aPlayer.getFoodData().func_151686_a((ItemFood)UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem()), aStack);
+			aPlayer.getFoodData().eat(getTotalFood(), getTotalSaturation()); /* AppleCore ItemFoodProxy/func_151686_a удалены в neo (food=DataComponents.FOOD); APC-ветка dead-in-parity -> neo eat */
 		} else {
 			aPlayer.getFoodData().eat(getTotalFood(), getTotalSaturation());
 		}
