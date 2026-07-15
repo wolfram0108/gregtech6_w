@@ -27,28 +27,36 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
 import gregapi.util.WD;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.util.*;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
 
 import java.util.List;
 import java.util.UUID;
@@ -65,93 +73,92 @@ public class EntityArrow_Material extends EntityProjectile {
 	private int mTicksAlive = 0;
 	private int ticksInAir = 0;
 	private int mKnockback = 0;
-	
+
 	private ItemStack mArrow = null;
-	
+
 	public EntityArrow_Material(Level aWorld) {
 		super(aWorld);
 	}
-	
+
 	public EntityArrow_Material(Level aWorld, double aX, double aY, double aZ) {
 		super(aWorld, aX, aY, aZ);
 	}
-	
+
 	public EntityArrow_Material(Level aWorld, LivingEntity aEntity, float aSpeed) {
 		super(aWorld, aEntity, aSpeed);
 	}
-	
+
 	public EntityArrow_Material(Arrow aArrow, ItemStack aStack) {
 		super(aArrow.level());
-		shootingEntity = aArrow.shootingEntity;
-		CompoundTag tNBT = UT.NBT.make();
-		aArrow.writeToNBT(tNBT);
-		readFromNBT(tNBT);
+		setOwner(aArrow.getOwner());
+		// F-entity-nbt: neo save/load через ValueOutput/ValueInput (не CompoundTag) — мост TagValueOutput/TagValueInput (как ядро Behavior_CureZombie).
+		net.minecraft.world.level.storage.TagValueOutput tOut = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, aArrow.registryAccess());
+		aArrow.saveWithoutId(tOut);
+		load(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, registryAccess(), tOut.buildResult()));
 		setProjectileStack(aStack);
 	}
-	
+
 	@Override
-	public void onUpdate() {
-		onEntityUpdate();
+	public void tick() {
+		baseTick();
 		if (mArrow == null && !level().isClientSide()) {
-			setDead();
+			discard();
 			return;
 		}
-		
-		Entity tShootingEntity = shootingEntity;
-		
+
+		Entity tShootingEntity = getOwner();
+
 		if (xRotO == 0.0F && yRotO == 0.0F) {
-			float f = MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ);
-			yRotO = rotationYaw = (float)(Math.atan2(motionX, motionZ) * 180.0D / Math.PI);
-			xRotO = rotationPitch = (float)(Math.atan2(motionY, f) * 180.0D / Math.PI);
+			float f = (float)Math.sqrt(WD.motionX(this) * WD.motionX(this) + WD.motionZ(this) * WD.motionZ(this));
+			yRotO = (float)(Math.atan2(WD.motionX(this), WD.motionZ(this)) * 180.0D / Math.PI); setYRot(yRotO);
+			xRotO = (float)(Math.atan2(WD.motionY(this), f) * 180.0D / Math.PI); setXRot(xRotO);
 		}
-		
-		if (mTicksAlive++ == 3000) setDead();
-		
+
+		if (mTicksAlive++ == 3000) discard();
+
 		Block tBlock = WD.block(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
-		
+
 		if (WD.getMaterial(tBlock) != Material.air) {
-			tBlock.setBlockBoundsBasedOnState(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
-			AxisAlignedBB axisalignedbb = tBlock.getCollisionBoundingBoxFromPool(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
-			if (axisalignedbb != null && axisalignedbb.isVecInside(Vec3.createVectorHelper(getX(), getY(), getZ()))) inGround = T;
+			VoxelShape tShape = tBlock.defaultBlockState().getCollisionShape(level(), new BlockPos(mHitBlockX, mHitBlockY, mHitBlockZ));
+			if (!tShape.isEmpty() && tShape.bounds().move(mHitBlockX, mHitBlockY, mHitBlockZ).contains(getX(), getY(), getZ())) inGround = T;
 		}
-		
-		if (arrowShake > 0) arrowShake--;
-		
+
+		if (shakeTime > 0) shakeTime--;
+
 		if (inGround) {
 			int j = WD.meta(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 			if (tBlock != mHitBlock || j != mHitBlockMeta) {
 				inGround = F;
-				motionX *= (rand.nextFloat() * 0.2F);
-				motionY *= (rand.nextFloat() * 0.2F);
-				motionZ *= (rand.nextFloat() * 0.2F);
+				WD.setMotionX(this, WD.motionX(this) * (getRandom().nextFloat() * 0.2F));
+				WD.setMotionY(this, WD.motionY(this) * (getRandom().nextFloat() * 0.2F));
+				WD.setMotionZ(this, WD.motionZ(this) * (getRandom().nextFloat() * 0.2F));
 				mTicksAlive = 0;
 				ticksInAir = 0;
 			}
 		} else {
 			ticksInAir++;
-			Vec3 vec31 = Vec3.createVectorHelper(getX(), getY(), getZ());
-			Vec3 vec3 = Vec3.createVectorHelper(getX() + motionX, getY() + motionY, getZ() + motionZ);
-			MovingObjectPosition tVector = level().func_147447_a(vec31, vec3, F, T, F);
-			vec31 = Vec3.createVectorHelper(getX(), getY(), getZ());
-			vec3 = Vec3.createVectorHelper(getX() + motionX, getY() + motionY, getZ() + motionZ);
-			
-			if (tVector != null) vec3 = Vec3.createVectorHelper(tVector.hitVec.x, tVector.hitVec.y, tVector.hitVec.z);
-			
+			Vec3 vec31 = new Vec3(getX(), getY(), getZ());
+			Vec3 vec3 = new Vec3(getX() + WD.motionX(this), getY() + WD.motionY(this), getZ() + WD.motionZ(this));
+			HitResult tVector = level().clip(new ClipContext(vec31, vec3, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+			vec31 = new Vec3(getX(), getY(), getZ());
+			vec3 = new Vec3(getX() + WD.motionX(this), getY() + WD.motionY(this), getZ() + WD.motionZ(this));
+
+			if (tVector != null && tVector.getType() != HitResult.Type.MISS) vec3 = new Vec3(tVector.getLocation().x, tVector.getLocation().y, tVector.getLocation().z);
+
 			Entity tHitEntity = null;
-			@SuppressWarnings("rawtypes")
-			List tAllPotentiallyHitEntities = level().getEntities(this, boundingBox.addCoord(motionX, motionY, motionZ).expand(1.0D, 1.0D, 1.0D));
+			List<Entity> tAllPotentiallyHitEntities = level().getEntities(this, getBoundingBox().expandTowards(WD.motionX(this), WD.motionY(this), WD.motionZ(this)).inflate(1.0D, 1.0D, 1.0D));
 			double tSmallestDistance = Double.MAX_VALUE;
-			
+
 			for (int i = 0; i < tAllPotentiallyHitEntities.size(); ++i) {
-				Entity entity1 = (Entity)tAllPotentiallyHitEntities.get(i);
-				
-				if (entity1.canBeCollidedWith() && (entity1 != tShootingEntity || ticksInAir >= 5)) {
-					AxisAlignedBB axisalignedbb1 = entity1.getBoundingBox().expand(0.3, 0.3, 0.3);
-					MovingObjectPosition movingobjectposition1 = axisalignedbb1.calculateIntercept(vec31, vec3);
-					
-					if (movingobjectposition1 != null) {
-						double tDistance = vec31.distanceTo(movingobjectposition1.hitVec);
-						
+				Entity entity1 = tAllPotentiallyHitEntities.get(i);
+
+				if (entity1.canBeCollidedWith(this) && (entity1 != tShootingEntity || ticksInAir >= 5)) {
+					AABB axisalignedbb1 = entity1.getBoundingBox().inflate(0.3, 0.3, 0.3);
+					java.util.Optional<Vec3> movingobjectposition1 = axisalignedbb1.clip(vec31, vec3);
+
+					if (movingobjectposition1.isPresent()) {
+						double tDistance = vec31.distanceTo(movingobjectposition1.get());
+
 						if (tDistance < tSmallestDistance) {
 							tHitEntity = entity1;
 							tSmallestDistance = tDistance;
@@ -159,47 +166,47 @@ public class EntityArrow_Material extends EntityProjectile {
 					}
 				}
 			}
-			
-			if (tHitEntity != null) tVector = new MovingObjectPosition(tHitEntity);
-			
+
+			if (tHitEntity != null) tVector = new EntityHitResult(tHitEntity);
+
 			if (tVector != null && tHitEntity != null && tHitEntity instanceof Player) {
-				if (((Player)tHitEntity).getAbilities().invulnerable || (tShootingEntity instanceof Player && !((Player)tShootingEntity).canAttackPlayer((Player)tHitEntity))) tVector = null;
+				if (((Player)tHitEntity).getAbilities().invulnerable || (tShootingEntity instanceof Player && !((Player)tShootingEntity).canHarmPlayer((Player)tHitEntity))) tVector = null;
 			}
-			
-			if (tVector != null) {
+
+			if (tVector != null && tVector.getType() != HitResult.Type.MISS) {
 				if (tHitEntity != null) {
 					OreDictItemData tData = OM.anydata(mArrow);
-					
+
 					// To make Railcrafts Implosion Enchantment work...
-					if (tShootingEntity instanceof Player) NeoForge.EVENT_BUS.post(new AttackEntityEvent((Player)tShootingEntity, tHitEntity));
-					
+					if (tShootingEntity instanceof Player) NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent((Player)tShootingEntity, tHitEntity));
+
 					float
 					tMagicDamage = tHitEntity instanceof LivingEntity?UT.Enchantments.getDamageBonusVsCreature(mArrow, tHitEntity):0,
-					tDamage = UT.Code.roundUp(MathHelper.sqrt_double(motionX*motionX + motionY*motionY + motionZ*motionZ) * (getDamage() + Math.max(0, tData != null && tData.validMaterial() ? tData.mMaterial.mMaterial.mToolQuality-1 : 0)));
-					
-					if (getIsCritical()) tDamage += rand.nextInt((int)(tDamage / 2.0 + 2.0));
-					
+					tDamage = UT.Code.roundUp((float)Math.sqrt(WD.motionX(this)*WD.motionX(this) + WD.motionY(this)*WD.motionY(this) + WD.motionZ(this)*WD.motionZ(this)) * (mBaseDamage() + Math.max(0, tData != null && tData.validMaterial() ? tData.mMaterial.mMaterial.mToolQuality-1 : 0)));
+
+					if (isCritArrow()) tDamage += getRandom().nextInt((int)(tDamage / 2.0 + 2.0));
+
 					int
 					tImplosion  = UT.NBT.getEnchantmentLevelImplosion(mArrow),
-					tFireDamage = (isBurning()?5:0) + 4 * UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow),
-					tKnockback  = mKnockback + UT.NBT.getEnchantmentLevel(Enchantments.KNOCKBACK, mArrow),
+					tFireDamage = (isOnFire()?5:0) + 4 * UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, mArrow),
+					tKnockback  = mKnockback + UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.KNOCKBACK, mArrow),
 					tHitTimer   = -1;
-					
+
 					// Also work on Ghasts and such. But no double dipping on Anti Creeper Damage!
 					if (tImplosion > 0 && UT.Entities.isExplosiveCreature(tHitEntity) && !Creeper.class.isInstance(tHitEntity)) tMagicDamage += 1.5F * tImplosion;
-					
+
 					int[] tDamages = onHitEntity(tHitEntity, tShootingEntity==null?this:tShootingEntity, mArrow==null?ST.make(Items.ARROW, 1, 0):mArrow, (int)(tDamage*2), (int)(tMagicDamage*2), tKnockback, tFireDamage, tHitTimer);
-					
+
 					if (tDamages != null) {
 						tDamage      = tDamages[0] / 2.0F;
 						tMagicDamage = tDamages[1] / 2.0F;
 						tKnockback   = tDamages[2];
 						tFireDamage  = tDamages[3];
 						tHitTimer    = tDamages[4];
-						
-						if (tFireDamage > 0 && !(tHitEntity instanceof EnderMan)) tHitEntity.setFire(tFireDamage);
-						
-						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(Enchantments.LOOTING, mArrow) > 0) {
+
+						if (tFireDamage > 0 && !(tHitEntity instanceof EnderMan)) tHitEntity.igniteForSeconds(tFireDamage);
+
+						if (!(tHitEntity instanceof Player) && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.LOOTING, mArrow) > 0) {
 							Player tPlayer = null;
 							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getName().getString():"Arrow"));
 							if (tPlayer != null) {
@@ -211,148 +218,146 @@ public class EntityArrow_Material extends EntityProjectile {
 								tPlayer.discard();
 							}
 						}
-						
+
 						// To make Looting work at all...
-						DamageSource tDamageSource = DamageSource.causeArrowDamage(this, tShootingEntity==null?this:tShootingEntity);
-						
+						DamageSource tDamageSource = damageSources().arrow(this, tShootingEntity==null?this:tShootingEntity);
+
 						if (tDamage + tMagicDamage > 0 && tHitEntity.hurtOrSimulate(tDamageSource, (tDamage + tMagicDamage) * TFC_DAMAGE_MULTIPLIER)) {
 							if (tHitEntity instanceof LivingEntity) {
 								if (tHitTimer >= 0) tHitEntity.invulnerableTime = tHitTimer;
-								
-								if (tHitEntity instanceof Creeper && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow) > 0 && tImplosion <= 0) ((Creeper)tHitEntity).func_146079_cb();
-								
+
+								if (tHitEntity instanceof Creeper && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, mArrow) > 0 && tImplosion <= 0) ((Creeper)tHitEntity).ignite();
+
 								LivingEntity tHitLivingEntity = (LivingEntity)tHitEntity;
-								
-								if (!level().isClientSide()) tHitLivingEntity.setArrowCountInEntity(tHitLivingEntity.getArrowCountInEntity() + 1);
-								
+
+								if (!level().isClientSide()) tHitLivingEntity.setArrowCount(tHitLivingEntity.getArrowCount() + 1);
+
 								if (tKnockback > 0) {
-									float tKnockbackDivider = MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ);
-									if (tKnockbackDivider > 0.0F) tHitLivingEntity.addVelocity(motionX * tKnockback * 0.6000000238418579D / tKnockbackDivider, 0.1D, motionZ * tKnockback * 0.6000000238418579D / tKnockbackDivider);
+									float tKnockbackDivider = (float)Math.sqrt(WD.motionX(this) * WD.motionX(this) + WD.motionZ(this) * WD.motionZ(this));
+									if (tKnockbackDivider > 0.0F) tHitLivingEntity.push(WD.motionX(this) * tKnockback * 0.6000000238418579D / tKnockbackDivider, 0.1D, WD.motionZ(this) * tKnockback * 0.6000000238418579D / tKnockbackDivider);
 								}
-								
+
 								Enchantments.applyBullshitA(tHitLivingEntity                                                                  , tShootingEntity==null?this:tShootingEntity, mArrow);
 								Enchantments.applyBullshitB(tShootingEntity instanceof LivingEntity?(LivingEntity)tShootingEntity:null, tHitLivingEntity                          , mArrow);
-								
+
 								if (tShootingEntity != null && tHitLivingEntity != tShootingEntity && tHitLivingEntity instanceof Player && tShootingEntity instanceof ServerPlayer) {
-									((ServerPlayer)tShootingEntity).connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0.0F));
+									((ServerPlayer)tShootingEntity).connection.send(new net.minecraft.network.protocol.game.ClientboundGameEventPacket(net.minecraft.network.protocol.game.ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND, 0.0F));
 								}
 							}
-							
-							if (tShootingEntity instanceof Player && tMagicDamage > 0.0F) ((Player)tShootingEntity).onEnchantmentCritical(tHitEntity);
-							
-							if (!(tHitEntity instanceof EnderMan) || ((EnderMan)tHitEntity).getActivePotionEffect(MobEffect.weakness) != null) {
-								if (tFireDamage > 0) tHitEntity.setFire(tFireDamage);
-								playSound("random.bowhit", 1.0F, 1.2F / (rand.nextFloat() * 0.2F + 0.9F));
-								setDead();
+
+							// PORT-TODO(F-enchant-crit-visual): 1.7.10 Player.onEnchantmentCritical(entity) — клиент-визуал крит-энчант-частиц, удалён в neo без прямого аналога. GT6-урон сохранён 1:1, потерян лишь визуал.
+
+							if (!(tHitEntity instanceof EnderMan) || ((EnderMan)tHitEntity).getEffect(MobEffects.WEAKNESS) != null) {
+								if (tFireDamage > 0) tHitEntity.igniteForSeconds(tFireDamage);
+								playSound(SoundEvents.ARROW_HIT, 1.0F, 1.2F / (getRandom().nextFloat() * 0.2F + 0.9F));
+								discard();
 							}
 						} else {
-							motionX *= -0.10000000149011612D;
-							motionY *= -0.10000000149011612D;
-							motionZ *= -0.10000000149011612D;
-							rotationYaw += 180.0F;
+							WD.setMotionX(this, WD.motionX(this) * -0.10000000149011612D);
+							WD.setMotionY(this, WD.motionY(this) * -0.10000000149011612D);
+							WD.setMotionZ(this, WD.motionZ(this) * -0.10000000149011612D);
+							setYRot(getYRot() + 180.0F);
 							yRotO += 180.0F;
 							ticksInAir = 0;
 						}
 					}
 				} else {
-					mHitBlockX = tVector.getBlockPos().getX();
-					mHitBlockY = tVector.getBlockPos().getY();
-					mHitBlockZ = tVector.getBlockPos().getZ();
+					BlockHitResult tBlockVector = (BlockHitResult)tVector;
+					mHitBlockX = tBlockVector.getBlockPos().getX();
+					mHitBlockY = tBlockVector.getBlockPos().getY();
+					mHitBlockZ = tBlockVector.getBlockPos().getZ();
 					mHitBlock = WD.block(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
 					mHitBlockMeta = WD.meta(level(), mHitBlockX, mHitBlockY, mHitBlockZ);
-					motionX = ((float)(tVector.hitVec.x - getX()));
-					motionY = ((float)(tVector.hitVec.y - getY()));
-					motionZ = ((float)(tVector.hitVec.z - getZ()));
-					float f2 = MathHelper.sqrt_double(motionX * motionX + motionY * motionY + motionZ * motionZ);
-					posX -= motionX / f2 * 0.05000000074505806D;
-					posY -= motionY / f2 * 0.05000000074505806D;
-					posZ -= motionZ / f2 * 0.05000000074505806D;
-					playSound("random.bowhit", 1.0F, 1.2F / (rand.nextFloat() * 0.2F + 0.9F));
+					WD.setMotionX(this, (float)(tVector.getLocation().x - getX()));
+					WD.setMotionY(this, (float)(tVector.getLocation().y - getY()));
+					WD.setMotionZ(this, (float)(tVector.getLocation().z - getZ()));
+					float f2 = (float)Math.sqrt(WD.motionX(this) * WD.motionX(this) + WD.motionY(this) * WD.motionY(this) + WD.motionZ(this) * WD.motionZ(this));
+					setPos(getX() - WD.motionX(this) / f2 * 0.05000000074505806D, getY() - WD.motionY(this) / f2 * 0.05000000074505806D, getZ() - WD.motionZ(this) / f2 * 0.05000000074505806D);
+					playSound(SoundEvents.ARROW_HIT, 1.0F, 1.2F / (getRandom().nextFloat() * 0.2F + 0.9F));
 					inGround = true;
-					arrowShake = 7;
-					setIsCritical(false);
-					
-					if (WD.getMaterial(mHitBlock) != Material.air) mHitBlock.onEntityCollidedWithBlock(level(), mHitBlockX, mHitBlockY, mHitBlockZ, this);
-					
-					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(Enchantments.FIRE_ASPECT, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
-					
-					if (breaksOnImpact()) setDead();
+					shakeTime = 7;
+					setCritArrow(false);
+
+					// PORT-TODO(F-block-entity-collide): 1.7.10 Block.onEntityCollidedWithBlock(стрела попала в блок) — neo entityInside приватен и требует InsideBlockEffectApplier (авто-система collision); ручной 1:1-вызов недоступен, edge-case спец-блоков реагирующих на попадание стрелы.
+
+					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
+
+					if (breaksOnImpact()) discard();
 				}
 			}
-			
-			if (getIsCritical()) for (int i = 0; i < 4; ++i) level().spawnParticle("crit", getX() + motionX * i / 4.0D, getY() + motionY * i / 4.0D, getZ() + motionZ * i / 4.0D, -motionX, -motionY + 0.2D, -motionZ);
-			
-			posX += motionX; posY += motionY; posZ += motionZ;
-			
-			rotationYaw = (float)(Math.atan2(motionX, motionZ) * 180.0D / Math.PI);
-			
-			for (rotationPitch = (float)(Math.atan2(motionY, MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ)) * 180.0D / Math.PI); rotationPitch - xRotO < -180.0F; xRotO -= 360.0F) {/**/}
-			
-			while (rotationPitch    - xRotO >= 180.0F) xRotO += 360.0F;
-			while (rotationYaw      - yRotO   < -180.0F) yRotO -= 360.0F;
-			while (rotationYaw      - yRotO   >= 180.0F) yRotO += 360.0F;
-			
-			rotationPitch = xRotO + (rotationPitch - xRotO) * 0.2F;
-			rotationYaw = yRotO + (rotationYaw - yRotO) * 0.2F;
+
+			if (isCritArrow()) for (int i = 0; i < 4; ++i) level().addParticle(ParticleTypes.CRIT, getX() + WD.motionX(this) * i / 4.0D, getY() + WD.motionY(this) * i / 4.0D, getZ() + WD.motionZ(this) * i / 4.0D, -WD.motionX(this), -WD.motionY(this) + 0.2D, -WD.motionZ(this));
+
+			setPos(getX() + WD.motionX(this), getY() + WD.motionY(this), getZ() + WD.motionZ(this));
+
+			setYRot((float)(Math.atan2(WD.motionX(this), WD.motionZ(this)) * 180.0D / Math.PI));
+
+			setXRot((float)(Math.atan2(WD.motionY(this), (float)Math.sqrt(WD.motionX(this) * WD.motionX(this) + WD.motionZ(this) * WD.motionZ(this))) * 180.0D / Math.PI));
+			while (getXRot() - xRotO  < -180.0F) xRotO -= 360.0F;
+			while (getXRot() - xRotO >= 180.0F) xRotO += 360.0F;
+			while (getYRot() - yRotO  < -180.0F) yRotO -= 360.0F;
+			while (getYRot() - yRotO >= 180.0F) yRotO += 360.0F;
+
+			setXRot(xRotO + (getXRot() - xRotO) * 0.2F);
+			setYRot(yRotO + (getYRot() - yRotO) * 0.2F);
 			float tFrictionMultiplier = 0.99F;
-			
+
 			if (isInWater()) {
-				for (int l = 0; l < 4; ++l) level().spawnParticle("bubble", getX() - motionX * 0.25, getY() - motionY * 0.25, getZ() - motionZ * 0.25, motionX, motionY, motionZ);
+				for (int l = 0; l < 4; ++l) level().addParticle(ParticleTypes.BUBBLE, getX() - WD.motionX(this) * 0.25, getY() - WD.motionY(this) * 0.25, getZ() - WD.motionZ(this) * 0.25, WD.motionX(this), WD.motionY(this), WD.motionZ(this));
 				tFrictionMultiplier = 0.8F;
 			}
-			
-			if (isWet()) extinguish();
-			
-			motionX *= tFrictionMultiplier;
-			motionY *= tFrictionMultiplier;
-			motionZ *= tFrictionMultiplier;
-			motionY -= 0.05F;
-			setPosition(getX(), getY(), getZ());
-			func_145775_I();
+
+			if (isInWaterOrRain()) extinguishFire();
+
+			WD.setMotionX(this, WD.motionX(this) * tFrictionMultiplier);
+			WD.setMotionY(this, WD.motionY(this) * tFrictionMultiplier);
+			WD.setMotionZ(this, WD.motionZ(this) * tFrictionMultiplier - 0.05F);
+			setPos(getX(), getY(), getZ());
+			// F-entity: 1.7.10 func_145775_I() (doBlockCollisions) — neo делает block-collisions авто в move/tick, ручной вызов не нужен.
 		}
 	}
-	
+
 	@Override
-	public void writeEntityToNBT(CompoundTag aNBT) {
-		super.writeEntityToNBT(aNBT);
+	public void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput aNBT) {
+		super.addAdditionalSaveData(aNBT);
 		aNBT.putShort("xTile", (short)mHitBlockX);
 		aNBT.putShort("yTile", (short)mHitBlockY);
 		aNBT.putShort("zTile", (short)mHitBlockZ);
 		aNBT.putShort("life", (short)mTicksAlive);
 		aNBT.putByte("inTile", (byte)net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(mHitBlock));
 		aNBT.putByte("inData", (byte)mHitBlockMeta);
-		aNBT.putByte("shake", (byte)arrowShake);
+		aNBT.putByte("shake", (byte)shakeTime);
 		aNBT.putByte("inGround", (byte)(inGround ? 1 : 0));
-		aNBT.putByte("pickup", (byte)canBePickedUp);
-		aNBT.putDouble("damage", getDamage());
-		aNBT.put("mArrow", ST.save(mArrow));
+		aNBT.putByte("pickup", (byte)pickup.ordinal());
+		aNBT.putDouble("damage", mBaseDamage());
+		if (ST.valid(mArrow)) aNBT.store("mArrow", ItemStack.CODEC, mArrow);
 	}
-	
+
 	@Override
-	public void readEntityFromNBT(CompoundTag aNBT) {
-		super.readEntityFromNBT(aNBT);
+	public void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput aNBT) {
+		super.readAdditionalSaveData(aNBT);
 		mHitBlockX = aNBT.getShortOr("xTile", (short)0);
 		mHitBlockY = aNBT.getShortOr("yTile", (short)0);
 		mHitBlockZ = aNBT.getShortOr("zTile", (short)0);
 		mTicksAlive = aNBT.getShortOr("life", (short)0);
-		mHitBlock = Block.getBlockById(aNBT.getByteOr("inTile", (byte)0) & 255);
+		mHitBlock = Block.stateById(aNBT.getByteOr("inTile", (byte)0) & 255).getBlock();
 		mHitBlockMeta = aNBT.getByteOr("inData", (byte)0) & 255;
-		arrowShake = aNBT.getByteOr("shake", (byte)0) & 255;
+		shakeTime = aNBT.getByteOr("shake", (byte)0) & 255;
 		inGround = aNBT.getByteOr("inGround", (byte)0) == 1;
-		setDamage(aNBT.getDoubleOr("damage", 0.0D));
-		canBePickedUp = aNBT.getByte("pickup");
-		mArrow = ST.load(aNBT, "mArrow");
+		setBaseDamage(aNBT.getDoubleOr("damage", 0.0D));
+		pickup = AbstractArrow.Pickup.byOrdinal(aNBT.getByteOr("pickup", (byte)0));
+		mArrow = aNBT.read("mArrow", ItemStack.CODEC).orElse(null);
 	}
-	
+
 	@Override
-	public void onCollideWithPlayer(Player aPlayer) {
-		if (!level().isClientSide() && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.getInventory().addItemStackToInventory(getArrowItem())) {
-			playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
-			aPlayer.onItemPickup(this, 1);
-			setDead();
+	public void playerTouch(Player aPlayer) {
+		if (!level().isClientSide() && inGround && shakeTime <= 0 && pickup == AbstractArrow.Pickup.ALLOWED && aPlayer.getInventory().add(getArrowItem())) {
+			playSound(SoundEvents.ITEM_PICKUP, 0.2F, ((getRandom().nextFloat() - getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+			aPlayer.take(this, 1);
+			discard();
 		}
 	}
-	
+
 	/**
 	 * @param aHitEntity the hit Entity
 	 * @param aShootingEntity the shooting Entity
@@ -366,22 +371,28 @@ public class EntityArrow_Material extends EntityProjectile {
 	public int[] onHitEntity(Entity aHitEntity, Entity aShootingEntity, ItemStack aArrow, int aRegularDamage, int aMagicDamage, int aKnockback, int aFireDamage, int aHitTimer) {
 		return new int[] {aRegularDamage, aMagicDamage, aKnockback, aFireDamage, aHitTimer};
 	}
-	
+
 	@Override
 	public void setProjectileStack(ItemStack aStack) {
 		mArrow = ST.update(ST.amount(1, aStack), this);
 	}
-	
+
 	public ItemStack getArrowItem() {
 		return ST.copy(mArrow);
 	}
-	
+
 	public boolean breaksOnImpact() {
 		return false;
 	}
-	
-	@Override
+
+	// F-arrow-knockback: 1.7.10 AbstractArrow.setKnockbackStrength(int) — GT6 хранит собственный mKnockback (используется в tick при расчёте урона). neo AbstractArrow.setKnockback(int) отдельный; это GT6-метод, не @Override.
 	public void setKnockbackStrength(int aKnockback) {
 		mKnockback = aKnockback;
+	}
+
+	/** F-arrow-damage: neo AbstractArrow.baseDamage private, публичного геттера нет (только setBaseDamage). 1.7.10 getDamage()
+	 *  читал урон — reflection на baseDamage (единственный 1:1-read; super сам сохраняет "damage" в NBT). */
+	private double mBaseDamage() {
+		try {java.lang.reflect.Field f = net.minecraft.world.entity.projectile.arrow.AbstractArrow.class.getDeclaredField("baseDamage"); f.setAccessible(true); return f.getDouble(this);} catch (Throwable e) {return 2.0;}
 	}
 }
