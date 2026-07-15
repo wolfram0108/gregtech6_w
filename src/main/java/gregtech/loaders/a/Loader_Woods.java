@@ -19,6 +19,7 @@
 
 package gregtech.loaders.a;
 
+import gregapi.GT_API;
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.data.*;
 import gregapi.oredict.OreDictManager;
@@ -35,40 +36,44 @@ public class Loader_Woods implements Runnable {
 	@Override
 	@SuppressWarnings("deprecation")
 	public void run() {
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Log1             = new BlockTreeLog1            ("gt.block.log.1"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Log1FireProof    = new BlockTreeLog1FireProof   ("gt.block.log.1.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogA             = new BlockTreeLogA            ("gt.block.log.a"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogAFireProof    = new BlockTreeLogAFireProof   ("gt.block.log.a.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogB             = new BlockTreeLogB            ("gt.block.log.b"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogBFireProof    = new BlockTreeLogBFireProof   ("gt.block.log.b.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogC             = new BlockTreeLogC            ("gt.block.log.c"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogCFireProof    = new BlockTreeLogCFireProof   ("gt.block.log.c.fireproof"));
+		// F12-followup (block-split): 28 конструкций деревьев → registerBlockLazy (конструкция на RegisterEvent<Block>,
+		// реестр разморожен); поле BlocksGT.X и VISUALLY_OPAQUE_BLOCKS.add — внутри supplier (нужен инстанс). Пост-настройка
+		// (ST.make/CR.shaped/OM/OreDict, ниже) — deferItemInit (server-start): поля заселены RegisterEvent'ом + компоненты связаны.
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.1"            , () -> {BlockTreeLog1             b = new BlockTreeLog1            ("gt.block.log.1"            ); BlocksGT.Log1             = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.1.fireproof"  , () -> {BlockTreeLog1FireProof    b = new BlockTreeLog1FireProof   ("gt.block.log.1.fireproof"  ); BlocksGT.Log1FireProof    = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.a"            , () -> {BlockTreeLogA             b = new BlockTreeLogA            ("gt.block.log.a"            ); BlocksGT.LogA             = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.a.fireproof"  , () -> {BlockTreeLogAFireProof    b = new BlockTreeLogAFireProof   ("gt.block.log.a.fireproof"  ); BlocksGT.LogAFireProof    = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.b"            , () -> {BlockTreeLogB             b = new BlockTreeLogB            ("gt.block.log.b"            ); BlocksGT.LogB             = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.b.fireproof"  , () -> {BlockTreeLogBFireProof    b = new BlockTreeLogBFireProof   ("gt.block.log.b.fireproof"  ); BlocksGT.LogBFireProof    = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.c"            , () -> {BlockTreeLogC             b = new BlockTreeLogC            ("gt.block.log.c"            ); BlocksGT.LogC             = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.log.c.fireproof"  , () -> {BlockTreeLogCFireProof    b = new BlockTreeLogCFireProof   ("gt.block.log.c.fireproof"  ); BlocksGT.LogCFireProof    = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 	//  VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogD             = new BlockTreeLogD            ("gt.block.log.d"));
 	//  VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.LogDFireProof    = new BlockTreeLogDFireProof   ("gt.block.log.d.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamA            = new BlockTreeBeamA           ("gt.block.beam.a"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamAFireProof   = new BlockTreeBeamAFireProof  ("gt.block.beam.a.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamB            = new BlockTreeBeamB           ("gt.block.beam.b"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamBFireProof   = new BlockTreeBeamBFireProof  ("gt.block.beam.b.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamC            = new BlockTreeBeamC           ("gt.block.beam.c"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamCFireProof   = new BlockTreeBeamCFireProof  ("gt.block.beam.c.fireproof"));
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.a"           , () -> {BlockTreeBeamA            b = new BlockTreeBeamA           ("gt.block.beam.a"           ); BlocksGT.BeamA            = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.a.fireproof" , () -> {BlockTreeBeamAFireProof   b = new BlockTreeBeamAFireProof  ("gt.block.beam.a.fireproof" ); BlocksGT.BeamAFireProof   = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.b"           , () -> {BlockTreeBeamB            b = new BlockTreeBeamB           ("gt.block.beam.b"           ); BlocksGT.BeamB            = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.b.fireproof" , () -> {BlockTreeBeamBFireProof   b = new BlockTreeBeamBFireProof  ("gt.block.beam.b.fireproof" ); BlocksGT.BeamBFireProof   = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.c"           , () -> {BlockTreeBeamC            b = new BlockTreeBeamC           ("gt.block.beam.c"           ); BlocksGT.BeamC            = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.c.fireproof" , () -> {BlockTreeBeamCFireProof   b = new BlockTreeBeamCFireProof  ("gt.block.beam.c.fireproof" ); BlocksGT.BeamCFireProof   = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
 	//  VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamD            = new BlockTreeBeamD           ("gt.block.beam.d"));
-	//  VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamDFireProof   = new BlockTreeBeamDFireProof  ("gt.block.beam.d.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Beam1            = new BlockTreeBeam1           ("gt.block.beam.1"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Beam1FireProof   = new BlockTreeBeam1FireProof  ("gt.block.beam.1.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Beam2            = new BlockTreeBeam2           ("gt.block.beam.2"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Beam2FireProof   = new BlockTreeBeam2FireProof  ("gt.block.beam.2.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Beam3            = new BlockTreeBeam3           ("gt.block.beam.3"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Beam3FireProof   = new BlockTreeBeam3FireProof  ("gt.block.beam.3.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Planks           = new BlockTreePlanks          ("gt.block.planks"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.PlanksFireProof  = new BlockTreePlanksFireProof ("gt.block.planks.fireproof"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Planks2          = new BlockTreePlanks2         ("gt.block.planks2"));
-		VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.Planks2FireProof = new BlockTreePlanks2FireProof("gt.block.planks2.fireproof"));
-		
-		BlocksGT.Saplings_AB = new BlockTreeSaplingAB("gt.block.sapling"); BlocksGT.Sapling = BlocksGT.Saplings_AB;
-		BlocksGT.Saplings_CD = new BlockTreeSaplingCD("gt.block.sapling.cd");
-		BlocksGT.Leaves_AB   = new BlockTreeLeavesAB ("gt.block.leaves", BlocksGT.Saplings_AB); BlocksGT.Leaves  = BlocksGT.Leaves_AB;
-		BlocksGT.Leaves_CD   = new BlockTreeLeavesCD ("gt.block.leaves.cd", BlocksGT.Saplings_CD);
-		
+	//  VISUALLY_OPAQUE_BLOCKS.add(BlocksGT.BeamDFireProof   = new BlockTreeBeamDFireProof   ("gt.block.beam.d.fireproof"));
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.1"           , () -> {BlockTreeBeam1            b = new BlockTreeBeam1           ("gt.block.beam.1"           ); BlocksGT.Beam1            = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.1.fireproof" , () -> {BlockTreeBeam1FireProof   b = new BlockTreeBeam1FireProof  ("gt.block.beam.1.fireproof" ); BlocksGT.Beam1FireProof   = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.2"           , () -> {BlockTreeBeam2            b = new BlockTreeBeam2           ("gt.block.beam.2"           ); BlocksGT.Beam2            = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.2.fireproof" , () -> {BlockTreeBeam2FireProof   b = new BlockTreeBeam2FireProof  ("gt.block.beam.2.fireproof" ); BlocksGT.Beam2FireProof   = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.3"           , () -> {BlockTreeBeam3            b = new BlockTreeBeam3           ("gt.block.beam.3"           ); BlocksGT.Beam3            = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.beam.3.fireproof" , () -> {BlockTreeBeam3FireProof   b = new BlockTreeBeam3FireProof  ("gt.block.beam.3.fireproof" ); BlocksGT.Beam3FireProof   = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.planks"           , () -> {BlockTreePlanks           b = new BlockTreePlanks          ("gt.block.planks"           ); BlocksGT.Planks           = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.planks.fireproof" , () -> {BlockTreePlanksFireProof  b = new BlockTreePlanksFireProof ("gt.block.planks.fireproof" ); BlocksGT.PlanksFireProof  = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.planks2"          , () -> {BlockTreePlanks2          b = new BlockTreePlanks2         ("gt.block.planks2"          ); BlocksGT.Planks2          = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.planks2.fireproof", () -> {BlockTreePlanks2FireProof b = new BlockTreePlanks2FireProof("gt.block.planks2.fireproof"); BlocksGT.Planks2FireProof = b; VISUALLY_OPAQUE_BLOCKS.add(b); return b;});
+
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.sapling"          , () -> {BlockTreeSaplingAB b = new BlockTreeSaplingAB("gt.block.sapling"   ); BlocksGT.Saplings_AB = b; BlocksGT.Sapling = b; return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.sapling.cd"       , () -> {BlockTreeSaplingCD b = new BlockTreeSaplingCD("gt.block.sapling.cd"); BlocksGT.Saplings_CD = b; return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.leaves"           , () -> {BlockTreeLeavesAB  b = new BlockTreeLeavesAB ("gt.block.leaves"   , BlocksGT.Saplings_AB); BlocksGT.Leaves_AB = b; BlocksGT.Leaves = b; return b;});
+		GT_API.registerBlockLazy(gregapi.data.CS.ModIDs.GAPI, "gt.block.leaves.cd"        , () -> {BlockTreeLeavesCD  b = new BlockTreeLeavesCD ("gt.block.leaves.cd", BlocksGT.Saplings_CD); BlocksGT.Leaves_CD = b; return b;});
+
+		gregapi.GT_API.deferItemInit(() -> {
 		IL.Plank_Stairs       .set(ST.make(Blocks.OAK_STAIRS, 1, 0));
 		IL.Plank_Slab         .set(ST.make(((BlockMetaType)BlocksGT.Planks).mSlabs[0], 1, 9));
 		IL.Plank              .set(ST.make(BlocksGT.Planks, 1,  9));
@@ -122,5 +127,6 @@ public class Loader_Woods implements Runnable {
 		OM.data(ST.make(BlocksGT.BeamCFireProof, 1, W), ANY.Wood, U*8);
 		OM.data(ST.make(BlocksGT.BeamD         , 1, W), ANY.Wood, U*8);
 		OM.data(ST.make(BlocksGT.BeamDFireProof, 1, W), ANY.Wood, U*8);
+		});
 	}
 }
