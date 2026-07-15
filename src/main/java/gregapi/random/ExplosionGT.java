@@ -118,12 +118,13 @@ public class ExplosionGT extends ServerExplosion {
 		exploder = aEntity;
 	}
 
-	private Level mWorld;
-	private final double explosionX, explosionY, explosionZ;
-	private final float explosionSize;
-	private final Entity exploder;
-	private boolean isFlaming, isSmoking;
-	private final List<BlockPos> affectedBlockPositions = new ArrayList<>();
+	// protected (было private): подклассы GT6 (DynamiteExplosion в MultiTileEntityDynamite) переиспользуют центр — extends ExplosionGT + доступ к воспроизведённым 1.7.10-полям (§принцип-5, не дублировать).
+	protected Level mWorld;
+	protected final double explosionX, explosionY, explosionZ;
+	protected final float explosionSize;
+	protected final Entity exploder;
+	protected boolean isFlaming, isSmoking;
+	protected final List<BlockPos> affectedBlockPositions = new ArrayList<>();
 	@SuppressWarnings("rawtypes")
 	private Map field_77288_k = new HashMap<>();
 
