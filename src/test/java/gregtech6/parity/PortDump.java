@@ -1,6 +1,8 @@
 package gregtech6.parity;
 
 import gregapi.data.MT;
+import gregapi.data.FL;
+import gregapi.fluid.FluidGT;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.oredict.OreDictMaterialStack;
 import gregapi.oredict.OreDictPrefix;
@@ -66,10 +68,12 @@ public final class PortDump {
         Files.createDirectories(DUMP);
         int nMat = dumpMaterials();
         int nPre = dumpPrefixes();
-        System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre);
+        int nFl = dumpFluids();
+        System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         double tMat = report("materials.csv");
         double tPre = report("prefixes.csv");
+        report("fluids.csv"); // расширение harness: паритет жидкостей (мягко, без гейта пока)
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -149,6 +153,27 @@ public final class PortDump {
         writeCsv("prefixes.csv",
                 "mNameInternal,mAmount,mWeight,mState,configStackSize,defaultStackSize,minimumStackSize,"
                 + "familiarCount,byproductCount,registeredMaterialsCount,registeredItemsCount", lines);
+        return lines.size();
+    }
+
+    // ------------------------------------------------------------------ fluids.csv (зеркало DumpFluids)
+    private static int dumpFluids() throws IOException {
+        // F5-шов: в neo FluidGT НЕ extends Fluid (отдельный holder). golden читал mRGBa рефлексией с Fluid-объекта
+        // (1.7.10 Fluid == FluidGT); порт-эквивалент — FluidGT.BY_NAME по имени жидкости + публичный getRGBa().
+        List<String> lines = new ArrayList<>();
+        for (FL fl : FL.values()) {
+            try {
+                Fluid f = fl.fluid();
+                int id = -1; long temp = 0; boolean gas = false;
+                if (f != null) { id = fl.id(); temp = FL.temperature(f); gas = FL.gas(f); }
+                List<String> allNames = new ArrayList<>();
+                if (fl.mAllNames != null) for (String n : fl.mAllNames) allNames.add(n);
+                String rgbaStr = "";
+                if (f != null) { FluidGT tGT = FluidGT.BY_NAME.get(fl.mName.toLowerCase()); if (tGT != null) rgbaStr = rgba(tGT.getRGBa()); }
+                lines.add(fl.mName + "," + id + "," + temp + "," + gas + "," + String.join("|", allNames) + "," + rgbaStr);
+            } catch (Throwable t) {}
+        }
+        writeCsv("fluids.csv", "mName,fluidId,temperatureK,gaseous,allNames,rgba", lines);
         return lines.size();
     }
 
