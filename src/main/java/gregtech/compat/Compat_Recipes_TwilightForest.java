@@ -194,10 +194,10 @@ public class Compat_Recipes_TwilightForest extends CompatMods {
 		
 		// Those things are quite rare, so their low Durability is making them a tad bit too useless otherwise.
 		if (ConfigsGT.GREGTECH.get("general", "BetterTwilightDurability", T)) try {
-			TFItems.crumbleHorn.setMaxDamage(10000);
-			TFItems.peacockFan .setMaxDamage(10000);
-			TFItems.oreMagnet  .setMaxDamage(10000); // Okay 12 is definitely ridiculous, that is sometimes even less than ONE Ore Vein!
-			TFItems.giantPick  .setMaxDamage(10000); // Makes way more sense to actually have some Durability due to using 64 per harvest.
+			ST.setMaxDamage(TFItems.crumbleHorn, 10000);
+			ST.setMaxDamage(TFItems.peacockFan, 10000);
+			ST.setMaxDamage(TFItems.oreMagnet, 10000); // Okay 12 is definitely ridiculous, that is sometimes even less than ONE Ore Vein!
+			ST.setMaxDamage(TFItems.giantPick, 10000); // Makes way more sense to actually have some Durability due to using 64 per harvest.
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		RM.Bath.addRecipe1(T, 0, 5*144, ST.make(Items.IRON_HELMET          , 1, W), FL.FieryBlood.make(5*L), NF, ST.make(MD.TF, "item.fieryHelm" , 1));
