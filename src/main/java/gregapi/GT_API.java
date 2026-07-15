@@ -415,6 +415,14 @@ public class GT_API extends Abstract_Mod {
 		OreDictManager.INSTANCE.setTarget_(OP.blockGem  , MT.Coal      , ST.make(Blocks.COAL_BLOCK       , 1, 0), T, F, T);
 		OreDictManager.INSTANCE.setTarget_(OP.blockDust , MT.Redstone  , ST.make(Blocks.REDSTONE_BLOCK   , 1, 0), T, F, T);
 
+		// F12 boot-timing (ПЕРЕНЕСЕНО из onModPreInit2): рецепт-фиксы создают ItemStack (ST.make) — невозможно в preInit
+		// (Holder.components не привязаны); здесь (после регистрации+привязки) можно. Fixing vanilla Oak Plank Slab Recipe.
+		CR.remove(ST.make(Blocks.OAK_PLANKS, 1, 0), ST.make(Blocks.SPRUCE_PLANKS, 1, 0), ST.make(Blocks.BIRCH_PLANKS, 1, 0));
+		CR.shaped(ST.make(Blocks.OAK_SLAB, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.OAK_PLANKS, 1, 0));
+		// Preventing a Water Dupe by registering this Recipe early so it won't be overridden
+		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.GLASS_BOTTLE, 1, 0), FL.Water.make(250), NF, ST.make(Items.POTION, 1, 0));
+		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.POTION, 1, 0), ST.make(Items.GLASS_BOTTLE, 1, 0));
+
 		for (OreDictMaterial tMaterial : OreDictMaterial.MATERIAL_ARRAY) if (tMaterial != null && !tMaterial.contains(TD.Properties.INVALID_MATERIAL)) {
 			tMaterial.mOreProcessingMultiplier = UT.Code.bindStack(ConfigsGT.OREPROCESSING.get(ConfigCategories.Materials.oreprocessingoutputmultiplier, tMaterial.mNameInternal, 1));
 			tMaterial.mOreMultiplier = (byte)ConfigsGT.MATERIAL.get(tMaterial.mNameInternal, "MultiplierOre", tMaterial.mOreMultiplier);
@@ -919,14 +927,8 @@ public class GT_API extends Abstract_Mod {
 		IL.Empty_Slot.set(GT_API.ITEMS.register("gt.empty_slot", ItemEmptySlot::new)); // F12-lazy: construct@RegisterEvent-supplier
 		// Register the GUI Handler.
 		// PORT-TODO(F7-gui, заменить старый Forge GUI-handler на реальный NeoForge menu/screen путь после сверки с референсом)
-		// Fixing vanilla Oak Plank Slab Recipe.
-		// F12: REMAP-RULES.md §C/§C-bis блок-флэттен (данные) — Blocks.OAK_PLANKS/wooden_slab (1.7.10 meta
-		// 0/1/2=oak/spruce/birch) удалены, заменены реальными UPPER_SNAKE-константами neo per-species.
-		CR.remove(ST.make(Blocks.OAK_PLANKS, 1, 0), ST.make(Blocks.SPRUCE_PLANKS, 1, 0), ST.make(Blocks.BIRCH_PLANKS, 1, 0));
-		CR.shaped(ST.make(Blocks.OAK_SLAB, 6, 0), CR.NONE, "WWW", 'W', ST.make(Blocks.OAK_PLANKS, 1, 0));
-		// Preventing a Water Dupe by registering this Recipe early so it won't be overridden
-		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.GLASS_BOTTLE, 1, 0), FL.Water.make(250), NF, ST.make(Items.POTION, 1, 0));
-		RM.Canner.addRecipe1(T, 16, 16, ST.make(Items.POTION, 1, 0), ST.make(Items.GLASS_BOTTLE, 1, 0));
+		// F12 boot-timing: рецепт-фиксы (ST.make = ItemStack) ПЕРЕНЕСЕНЫ в onLoad (FMLCommonSetupEvent) — стеки нельзя
+		// создавать в preInit (Holder.components не привязаны). См. onLoad. (Было: CR.remove/CR.shaped/RM.Canner.addRecipe1 тут.)
 		
 		// F12: снят FML-хак принудительной перестановки GAPI в начало activeModList через reflection
 		// (LoadController/ModList/ModContainer — внутренние классы FML 1.7.10, аналога в neo нет).
