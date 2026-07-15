@@ -124,8 +124,8 @@ public class MultiTileEntityEngineSteam extends TileEntityBase09FacingSingle imp
 					mTank.remove(tConversions * STEAM_PER_WATER);
 					FluidStack tDistilledWater = FL.DistW.make(tConversions);
 					for (byte tDir : FACING_SIDES[mFacing]) {
-						if (tDistilledWater.amount <= 0) break;
-						tDistilledWater.amount -= FL.fill(getAdjacentTileEntity(tDir), tDistilledWater.copy(), T);
+						if (tDistilledWater.getAmount() <= 0) break;
+						tDistilledWater.setAmount(tDistilledWater.getAmount() - FL.fill(getAdjacentTileEntity(tDir), tDistilledWater.copy(), T));
 					}
 					GarbageGT.trash(tDistilledWater);
 				}

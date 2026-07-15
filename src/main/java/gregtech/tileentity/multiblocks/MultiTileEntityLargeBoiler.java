@@ -224,15 +224,15 @@ public class MultiTileEntityLargeBoiler extends TileEntityBase10MultiBlockBase i
 					
 					if (tTargets == 1) {
 						for (int i = 0; i < tDelegators.length; i++) if (tDelegators[i] != null) {
-							FL.move_(mTanks[1], tDelegators[i], tDrainableSteam.amount);
+							FL.move_(mTanks[1], tDelegators[i], tDrainableSteam.getAmount());
 							break;
 						}
-					} else if (tTargets > 1 && tDrainableSteam.amount >= tTargets) {
-						if (UT.Code.sum(tTargetAmounts) > tDrainableSteam.amount) {
-							int tMoveable = tDrainableSteam.amount, tOriginalTargets = tTargets;
+					} else if (tTargets > 1 && tDrainableSteam.getAmount() >= tTargets) {
+						if (UT.Code.sum(tTargetAmounts) > tDrainableSteam.getAmount()) {
+							int tMoveable = tDrainableSteam.getAmount(), tOriginalTargets = tTargets;
 							for (int i = 0; i < tDelegators.length; i++) if (tDelegators[i] != null) {
-								if (tTargetAmounts[i] <= tDrainableSteam.amount / tOriginalTargets) {
-									tMoveable -= FL.move_(mTanks[1], tDelegators[i], tDrainableSteam.amount / tOriginalTargets);
+								if (tTargetAmounts[i] <= tDrainableSteam.getAmount() / tOriginalTargets) {
+									tMoveable -= FL.move_(mTanks[1], tDelegators[i], tDrainableSteam.getAmount() / tOriginalTargets);
 									tDelegators[i] = null;
 									if (--tTargets < 2) break;
 								}

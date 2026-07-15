@@ -85,17 +85,17 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 					return T;
 				}
 				FluidStack aFluid = ((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, Integer.MAX_VALUE, F);
-				if (!FL.gas(aFluid, T) && aFluid.amount > 0 && (mAcidProof || !FL.acid(aFluid))) {
+				if (!FL.gas(aFluid, T) && aFluid.getAmount() > 0 && (mAcidProof || !FL.acid(aFluid))) {
 					if (aStack == null) {
 						DelegatorTileEntity<BlockEntity> tDelegator2 = getAdjacentTileEntity(SIDE_BOTTOM);
 						if (tDelegator2.mTileEntity == null) {
 							if (tDelegator2.getBlock() instanceof CauldronBlock) {
 								byte tMeta = tDelegator2.getMetaData();
-								if (tMeta < 3 && FL.water(aFluid) && aFluid.amount >= 334) {
-									if (aFluid.amount >= 1000 && tMeta <= 0) {
+								if (tMeta < 3 && FL.water(aFluid) && aFluid.getAmount() >= 334) {
+									if (aFluid.getAmount() >= 1000 && tMeta <= 0) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, 1000, T);
 										tDelegator2.setMetaData((byte)(tMeta + 3));
-									} else if (aFluid.amount >= 667 && tMeta <= 1) {
+									} else if (aFluid.getAmount() >= 667 && tMeta <= 1) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity,  667, T);
 										tDelegator2.setMetaData((byte)(tMeta + 2));
 									} else if (tMeta <= 2) {
@@ -110,7 +110,7 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 						} else if (tDelegator2.mTileEntity instanceof ITileEntityTapFillable) {
 							OreDictMaterialStack tMaterial = OreDictMaterial.FLUID_MAP.get(FL.regName(aFluid.getFluid()));
 							aFluid = aFluid.copy();
-							aFluid.amount = Math.min(aFluid.amount, FL.lava(aFluid) ? 1000 : !FL.water(aFluid) && tMaterial != null && tMaterial.mAmount > 0 ? UT.Code.bindInt(tMaterial.mAmount) : 250);
+							aFluid.setAmount(Math.min(aFluid.getAmount(), FL.lava(aFluid) ? 1000 : !FL.water(aFluid) && tMaterial != null && tMaterial.mAmount > 0 ? UT.Code.bindInt(tMaterial.mAmount) : 250));
 							if (FL.nonzero(((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, UT.Code.bindInt(((ITileEntityTapFillable)tDelegator2.mTileEntity).tapFill(tDelegator2.mSideOfTileEntity, aFluid, T)), T))) {
 								UT.Sounds.send(SFX.IC_SPRAY, 1.0F, 2.0F, this, F);
 								UT.Sounds.send(SFX.MC_LIQUID_WATER, this, F);
@@ -120,8 +120,8 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 							ItemStack tStack = FL.fill(aFluid, IL.Bottle_Empty.get(1), F, F);
 							if (ST.valid(tStack)) {
 								FluidStack tFluid = FL.mul(FL.getFluid(tStack, T), ((MultiTileEntitySandwich)tDelegator2.mTileEntity).getIngredientCount(), 4, T);
-								if (tFluid != null && tFluid.amount <= aFluid.amount && ((MultiTileEntitySandwich)tDelegator2.mTileEntity).addIngredient(tStack) > 0) {
-									((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tFluid.amount, T);
+								if (tFluid != null && tFluid.getAmount() <= aFluid.getAmount() && ((MultiTileEntitySandwich)tDelegator2.mTileEntity).addIngredient(tStack) > 0) {
+									((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tFluid.getAmount(), T);
 									UT.Sounds.send(SFX.IC_SPRAY, 1.0F, 2.0F, this, F);
 									return T;
 								}
@@ -132,7 +132,7 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 						if (FL.XP.is(aFluid)) {
 							if (MD.OB.mLoaded) {
 								try {
-									int tXP = Math.min(LiquidXpUtils.liquidToXpRatio(aFluid.amount), Math.max(10, UT.Code.roundUp(EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel+1) - (EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel) + (aPlayer.experience * aPlayer.xpBarCap())))));
+									int tXP = Math.min(LiquidXpUtils.liquidToXpRatio(aFluid.getAmount()), Math.max(10, UT.Code.roundUp(EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel+1) - (EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel) + (aPlayer.experience * aPlayer.xpBarCap())))));
 									int tDrain = LiquidXpUtils.xpToLiquidRatio(tXP);
 									if (tDrain > 0 && tXP > 0) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tDrain, T);
@@ -142,7 +142,7 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 								return T;
 							}
 							// Even if OpenBlocks is not installed, in case Liquid XP exists somewhere, just turn it into regular XP at the default Rate, with one bucket of XP per click.
-							int tXP = Math.min(50, aFluid.amount/20);
+							int tXP = Math.min(50, aFluid.getAmount()/20);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tXP*20, T);
 								level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
@@ -151,7 +151,7 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 						}
 						// Act like Liquid XP too.
 						if (FL.Mob.is(aFluid)) {
-							int tXP = Math.min(50, (aFluid.amount*3)/200);
+							int tXP = Math.min(50, (aFluid.getAmount()*3)/200);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, (tXP*200)/3, T);
 								level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
@@ -163,7 +163,7 @@ public class MultiTileEntityFluidTap extends TileEntityBase11AttachmentSmall {
 					}
 					FluidStack tNewFluid = aFluid.copy();
 					ItemStack tStack = FL.fill(tNewFluid, ST.amount(1, aStack), T, T, T, T);
-					if (aFluid.amount > tNewFluid.amount && ((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, aFluid.amount - tNewFluid.amount, T) != null) {
+					if (aFluid.getAmount() > tNewFluid.getAmount() && ((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, aFluid.getAmount() - tNewFluid.getAmount(), T) != null) {
 						UT.Sounds.send(SFX.IC_SPRAY, 1.0F, 2.0F, this, F);
 						aStack.setCount(aStack.getCount()-1);
 						ST.give(aPlayer, tStack, T);

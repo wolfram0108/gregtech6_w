@@ -98,8 +98,8 @@ public class MultiTileEntityTurbineSteam extends TileEntityBase11Motor implement
 			if (mSteamCounter >= STEAM_PER_WATER) {
 				FluidStack tDistilledWater = FL.DistW.make(mSteamCounter / STEAM_PER_WATER);
 				for (byte tDir : FACING_SIDES[mFacing]) {
-					tDistilledWater.amount -= FL.fill(getAdjacentTank(tDir), tDistilledWater.copy(), T);
-					if (tDistilledWater.amount <= 0) break;
+					tDistilledWater.setAmount(tDistilledWater.getAmount() - FL.fill(getAdjacentTank(tDir), tDistilledWater.copy(), T));
+					if (tDistilledWater.getAmount() <= 0) break;
 				}
 				GarbageGT.trash(tDistilledWater);
 				mSteamCounter %= STEAM_PER_WATER;

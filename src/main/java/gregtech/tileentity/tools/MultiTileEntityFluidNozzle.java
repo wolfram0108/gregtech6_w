@@ -79,13 +79,13 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 					return T;
 				}
 				FluidStack aFluid = ((ITileEntityTapAccessible)tDelegator.mTileEntity).nozzleDrain(tDelegator.mSideOfTileEntity, Integer.MAX_VALUE, F);
-				if (FL.gas(aFluid, F) && aFluid.amount > 0 && (mAcidProof || !FL.acid(aFluid))) {
+				if (FL.gas(aFluid, F) && aFluid.getAmount() > 0 && (mAcidProof || !FL.acid(aFluid))) {
 					if (aStack == null) {
 						// Drop XP in case the Fluid is labeled as a Gas
 						if (FL.XP.is(aFluid)) {
 							if (MD.OB.mLoaded) {
 								try {
-									int tXP = Math.min(LiquidXpUtils.liquidToXpRatio(aFluid.amount), UT.Code.roundUp(EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel+1) - (EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel)+(aPlayer.experience * aPlayer.xpBarCap()))));
+									int tXP = Math.min(LiquidXpUtils.liquidToXpRatio(aFluid.getAmount()), UT.Code.roundUp(EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel+1) - (EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel)+(aPlayer.experience * aPlayer.xpBarCap()))));
 									int tDrain = LiquidXpUtils.xpToLiquidRatio(tXP);
 									if (tDrain > 0 && tXP > 0) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tDrain, T);
@@ -95,7 +95,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 								return T;
 							}
 							// Even if OpenBlocks is not installed, in case Liquid XP exists somewhere, just turn it into regular XP at the default Rate, with one bucket of XP per click.
-							int tXP = Math.min(50, aFluid.amount/20);
+							int tXP = Math.min(50, aFluid.getAmount()/20);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tXP*20, T);
 								level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
@@ -104,7 +104,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 						}
 						// Act like Liquid XP too.
 						if (FL.Mob.is(aFluid)) {
-							int tXP = Math.min(50, (aFluid.amount*3)/200);
+							int tXP = Math.min(50, (aFluid.getAmount()*3)/200);
 							if (tXP > 0) {
 								((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, (tXP*200)/3, T);
 								level.addFreshEntity(new ExperienceOrb(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.2, getBlockPos().getZ()+0.5, tXP));
@@ -116,7 +116,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 					}
 					FluidStack tNewFluid = aFluid.copy();
 					ItemStack tStack = FL.fill(tNewFluid, ST.amount(1, aStack), T, T, T, T);
-					if (aFluid.amount > tNewFluid.amount && ((ITileEntityTapAccessible)tDelegator.mTileEntity).nozzleDrain(tDelegator.mSideOfTileEntity, aFluid.amount - tNewFluid.amount, T) != null) {
+					if (aFluid.getAmount() > tNewFluid.getAmount() && ((ITileEntityTapAccessible)tDelegator.mTileEntity).nozzleDrain(tDelegator.mSideOfTileEntity, aFluid.getAmount() - tNewFluid.getAmount(), T) != null) {
 						UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
 						aStack.setCount(aStack.getCount()-1);
 						ST.give(aPlayer, tStack, T);

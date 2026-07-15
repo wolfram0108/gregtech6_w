@@ -193,7 +193,7 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 			}
 		}
 		for (int i = 0; i < mTanksOutput.length && i < aRecipe.mFluidOutputs.length; i++) if (mTanksOutput[i].has()) {
-			if (aRecipe.mNeedsEmptyOutput || (aRecipe.mFluidOutputs[i] != null && (!mTanksOutput[i].contains(aRecipe.mFluidOutputs[i]) || FL.temperature(aRecipe.mFluidOutputs[i]) >= mMaterial.mMeltingPoint - 100 || FL.lighter(aRecipe.mFluidOutputs[i]) || !FL.simple(aRecipe.mFluidOutputs[i]) || mTanksOutput[i].has(Math.max(1000, 1+aRecipe.mFluidOutputs[i].amount))))) {
+			if (aRecipe.mNeedsEmptyOutput || (aRecipe.mFluidOutputs[i] != null && (!mTanksOutput[i].contains(aRecipe.mFluidOutputs[i]) || FL.temperature(aRecipe.mFluidOutputs[i]) >= mMaterial.mMeltingPoint - 100 || FL.lighter(aRecipe.mFluidOutputs[i]) || !FL.simple(aRecipe.mFluidOutputs[i]) || mTanksOutput[i].has(Math.max(1000, 1+aRecipe.mFluidOutputs[i].getAmount()))))) {
 				return F;
 			}
 		}

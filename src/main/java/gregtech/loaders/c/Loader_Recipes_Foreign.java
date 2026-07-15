@@ -41,14 +41,14 @@ public class Loader_Recipes_Foreign implements Runnable {
 	@Override public void run() {
 		for (Map<String, FluidContainerData> tMap : FL.EMPTY_TO_FLUID_TO_DATA.values()) for (FluidContainerData tData : tMap.values()) {
 			ItemStack tEmpty = (tData.emptyContainer.getItem() == Items.BUCKET || tData.emptyContainer.getCount() < 1 ? ST.container(tData.filledContainer, F) : tData.emptyContainer);
-			if (ST.valid(tEmpty)) RM.Canner.addRecipe1(T, 16, Math.max(tData.fluid.amount / 64, 16), tEmpty, tData.fluid, NF, tData.filledContainer);
+			if (ST.valid(tEmpty)) RM.Canner.addRecipe1(T, 16, Math.max(tData.fluid.getAmount() / 64, 16), tEmpty, tData.fluid, NF, tData.filledContainer);
 		}
 		for (FluidContainerData tData : FL.FULL_TO_DATA.values()) {
-			RM.Canner.addRecipe1(T, 16, Math.max(tData.fluid.amount / 64, 16), tData.filledContainer, NF, tData.fluid, ST.container(tData.filledContainer, T));
+			RM.Canner.addRecipe1(T, 16, Math.max(tData.fluid.getAmount() / 64, 16), tData.filledContainer, NF, tData.fluid, ST.container(tData.filledContainer, T));
 			if (MD.FR.mLoaded) {
-			if (IL.FR_TinCapsule       .equal(tData.emptyContainer)) RM.Squeezer.addRecipe1(T, 16, Math.max(tData.fluid.amount / 64, 16),  500, tData.filledContainer, NF, tData.fluid, OM.ingot(MT.Sn));
-			if (IL.FR_WaxCapsule       .equal(tData.emptyContainer)) RM.Squeezer.addRecipe1(T, 16, Math.max(tData.fluid.amount / 64, 16), 1000, tData.filledContainer, NF, tData.fluid, OM.dust(MT.WaxBee));
-			if (IL.FR_RefractoryCapsule.equal(tData.emptyContainer)) RM.Squeezer.addRecipe1(T, 16, Math.max(tData.fluid.amount / 64, 16), 1000, tData.filledContainer, NF, tData.fluid, OM.dust(MT.WaxRefractory));
+			if (IL.FR_TinCapsule       .equal(tData.emptyContainer)) RM.Squeezer.addRecipe1(T, 16, Math.max(tData.fluid.getAmount() / 64, 16),  500, tData.filledContainer, NF, tData.fluid, OM.ingot(MT.Sn));
+			if (IL.FR_WaxCapsule       .equal(tData.emptyContainer)) RM.Squeezer.addRecipe1(T, 16, Math.max(tData.fluid.getAmount() / 64, 16), 1000, tData.filledContainer, NF, tData.fluid, OM.dust(MT.WaxBee));
+			if (IL.FR_RefractoryCapsule.equal(tData.emptyContainer)) RM.Squeezer.addRecipe1(T, 16, Math.max(tData.fluid.getAmount() / 64, 16), 1000, tData.filledContainer, NF, tData.fluid, OM.dust(MT.WaxRefractory));
 			}
 		}
 		if (MD.FR.mLoaded) {

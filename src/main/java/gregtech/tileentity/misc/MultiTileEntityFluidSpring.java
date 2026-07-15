@@ -98,11 +98,11 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	@Override
 	public void onTick(long aTimer, boolean aIsServerSide) {
 		super.onTick(aTimer, aIsServerSide);
-		if (mFluid.amount <= 0) mFluid.amount = 600;
+		if (mFluid.getAmount() <= 0) mFluid.setAmount(600);
 		if (aIsServerSide) {
 			boolean tProduce = F;
 			if (mActive) {
-				tProduce = (rng(mFluid.amount) == 0);
+				tProduce = (rng(mFluid.getAmount()) == 0);
 			} else if (SERVER_TIME % 20 == 1 && !WD.liquid(getBlockAtSide(SIDE_UP))) {
 				tProduce = mActive = T;
 			}

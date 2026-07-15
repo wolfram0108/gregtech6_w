@@ -118,7 +118,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 	
 	protected boolean canOutput(Recipe aRecipe) {
 		for (int i = 0; i < mTanks.length && i < aRecipe.mFluidOutputs.length; i++) if (mTanks[i].has()) {
-			if (aRecipe.mNeedsEmptyOutput || (aRecipe.mFluidOutputs[i] != null && (!mTanks[i].contains(aRecipe.mFluidOutputs[i]) || FL.temperature(aRecipe.mFluidOutputs[i]) >= mMaterial.mMeltingPoint - 100 || FL.lighter(aRecipe.mFluidOutputs[i]) || mTanks[i].has(Math.max(1000, 1+aRecipe.mFluidOutputs[i].amount))))) {
+			if (aRecipe.mNeedsEmptyOutput || (aRecipe.mFluidOutputs[i] != null && (!mTanks[i].contains(aRecipe.mFluidOutputs[i]) || FL.temperature(aRecipe.mFluidOutputs[i]) >= mMaterial.mMeltingPoint - 100 || FL.lighter(aRecipe.mFluidOutputs[i]) || mTanks[i].has(Math.max(1000, 1+aRecipe.mFluidOutputs[i].getAmount()))))) {
 				return F;
 			}
 		}
@@ -309,7 +309,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 	@Override
 	public int removeFluidFromConnectedTank(byte aSide, FluidStack aFluid, boolean aOnlyRemoveIfItCanRemoveAllAtOnce) {
 		if (aFluid == NF) return 0;
-		for (FluidTankGT tTank : mTanks) if (tTank.contains(aFluid)) if (tTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.amount : 1)) return (int)tTank.remove(aFluid.amount);
+		for (FluidTankGT tTank : mTanks) if (tTank.contains(aFluid)) if (tTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.getAmount() : 1)) return (int)tTank.remove(aFluid.getAmount());
 		return 0;
 	}
 	

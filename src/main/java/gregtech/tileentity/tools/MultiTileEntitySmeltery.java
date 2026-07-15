@@ -455,10 +455,10 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 							if (mTemperature >= tLightest.mMaterial.mMeltingPoint && (tTemperature < 320 || mTemperature >= tTemperature)) {
 								tFluid = tLightest.mMaterial.liquid(tLightest.mAmount, F);
 								if (FL.nonzero(tFluid)) {
-									int tAmount = tFluid.amount;
+									int tAmount = tFluid.getAmount();
 									ItemStack tStack = FL.fill(tFluid, ST.amount(1, aStack), T, T, T, T);
 									if (ST.valid(tStack)) {
-										tLightest.mAmount -= UT.Code.units(tAmount - tFluid.amount, tLightest.mMaterial.mLiquid.amount, tLightest.mMaterial.mLiquidUnit, T);
+										tLightest.mAmount -= UT.Code.units(tAmount - tFluid.getAmount(), tLightest.mMaterial.mLiquid.getAmount(), tLightest.mMaterial.mLiquidUnit, T);
 										aStack.setCount(aStack.getCount()-1);
 										ST.give(aPlayer, tStack, T);
 										return T;
@@ -472,13 +472,13 @@ public class MultiTileEntitySmeltery extends TileEntityBase07Paintable implement
 							OreDictMaterialStack tFluidData = OreDictMaterial.FLUID_MAP.get(FL.regName(tFluid.getFluid()));
 							if (tFluidData != null) {
 								if (FL.equal(tFluidData.mMaterial.mLiquid, tFluid)) {
-									if (addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(tFluidData.mMaterial, UT.Code.units(tFluid.amount, tFluidData.mMaterial.mLiquid.amount, tFluidData.mMaterial.mLiquidUnit, F))), UT.Code.bind(FL.temperature(tFluid), tFluidData.mMaterial.mMeltingPoint+25, tFluidData.mMaterial.mBoilingPoint-1))) {
+									if (addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(tFluidData.mMaterial, UT.Code.units(tFluid.getAmount(), tFluidData.mMaterial.mLiquid.getAmount(), tFluidData.mMaterial.mLiquidUnit, F))), UT.Code.bind(FL.temperature(tFluid), tFluidData.mMaterial.mMeltingPoint+25, tFluidData.mMaterial.mBoilingPoint-1))) {
 										aStack.setCount(aStack.getCount()-1);
 										ST.give(aPlayer, tStack, T);
 										return T;
 									}
 								} else {
-									if (addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(tFluidData.mMaterial, UT.Code.units(tFluid.amount, tFluidData.mAmount, U, F))), UT.Code.bind(FL.temperature(tFluid), tFluidData.mMaterial.mMeltingPoint+25, tFluidData.mMaterial.mBoilingPoint-1))) {
+									if (addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(tFluidData.mMaterial, UT.Code.units(tFluid.getAmount(), tFluidData.mAmount, U, F))), UT.Code.bind(FL.temperature(tFluid), tFluidData.mMaterial.mMeltingPoint+25, tFluidData.mMaterial.mBoilingPoint-1))) {
 										aStack.setCount(aStack.getCount()-1);
 										ST.give(aPlayer, tStack, T);
 										return T;

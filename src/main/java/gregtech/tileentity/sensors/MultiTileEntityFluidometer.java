@@ -48,7 +48,7 @@ public class MultiTileEntityFluidometer extends MultiTileEntitySensorTE {
 			FluidTankInfo[] tInfo = ((IFluidHandler)aDelegator.mTileEntity).getTankInfo(FORGE_DIR[aDelegator.mSideOfTileEntity]);
 			if (tInfo != null) {
 				long rFluid = 0;
-				for (FluidTankInfo tTank : tInfo) if (tTank != null && tTank.fluid != null) rFluid += tTank.fluid.amount;
+				for (FluidTankInfo tTank : tInfo) if (tTank != null && tTank.fluid != null) rFluid += tTank.fluid.getAmount();
 				return rFluid;
 			}
 		}
@@ -58,7 +58,7 @@ public class MultiTileEntityFluidometer extends MultiTileEntitySensorTE {
 		}
 		if (tBlock instanceof IFluidBlock) {
 			FluidStack tFluid = ((IFluidBlock)tBlock).drain(aDelegator.mWorld, aDelegator.mX, aDelegator.mY, aDelegator.mZ, F);
-			return tFluid == null ? 0 : tFluid.amount;
+			return tFluid == null ? 0 : tFluid.getAmount();
 		}
 		return 0;
 	}

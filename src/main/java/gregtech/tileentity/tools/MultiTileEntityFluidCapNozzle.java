@@ -70,11 +70,11 @@ public class MultiTileEntityFluidCapNozzle extends TileEntityBase11AttachmentSma
 			ItemStack aStack = aPlayer.getMainHandItem();
 			if (aStack != null) {
 				FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
-				if (FL.gas(tFluid, F) && tFluid.amount > 0 && (mAcidProof || !FL.acid(tFluid))) {
+				if (FL.gas(tFluid, F) && tFluid.getAmount() > 0 && (mAcidProof || !FL.acid(tFluid))) {
 					DelegatorTileEntity<BlockEntity> tDelegator = getAdjacentTileEntity(mFacing);
 					if (tDelegator.mTileEntity instanceof ITileEntityFunnelAccessible) {
 						int tAmount = ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, F);
-						if (tAmount >= tFluid.amount && ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T) > 0) {
+						if (tAmount >= tFluid.getAmount() && ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T) > 0) {
 							UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
 							aStack.setCount(aStack.getCount()-1);
 							ST.give(aPlayer, ST.container(ST.amount(1, aStack), T), T);
