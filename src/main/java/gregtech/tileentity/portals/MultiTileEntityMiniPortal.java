@@ -361,7 +361,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return null;
 	}
 	@Override
-	public ItemStack getStackInSlotOnClosing(int aSlot) {
+	public ItemStack removeItemNoUpdate(int aSlot) {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItemNoUpdate(aSlot);
@@ -369,26 +369,22 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return null;
 	}
 	@Override
-	public ItemStack getStackInSlot(int aSlot) {
+	public ItemStack getItem(int aSlot) {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getItem(aSlot);
 		}
 		return null;
 	}
-	@Override
+	// F-container-name: neo Container УДАЛИЛ getInventoryName/hasCustomInventoryName (нет name-концепции у Container) — GT6-internal, target-делегация убрана (target.getInventoryName нет в neo).
 	public String getInventoryName() {
-		if (mTarget != null) {
-			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryName();
-		}
 		String rName = getCustomName();
 		if (UT.Code.stringValid(rName)) return rName;
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID());
 		return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());
 	}
 	@Override
-	public int getSizeInventory() {
+	public int getContainerSize() {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getContainerSize();
@@ -396,7 +392,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return 0;
 	}
 	@Override
-	public int getInventoryStackLimit() {
+	public int getMaxStackSize() {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getMaxStackSize();
@@ -404,22 +400,17 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return 0;
 	}
 	@Override
-	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
+	public void setItem(int aSlot, ItemStack aStack) {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity != null) tTileEntity.mTileEntity.setItem(aSlot, aStack);
 		}
 	}
-	@Override
 	public boolean hasCustomInventoryName() {
-		if (mTarget != null) {
-			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.hasCustomInventoryName();
-		}
 		return getCustomName() != null;
 	}
 	@Override
-	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
+	public boolean canPlaceItem(int aSlot, ItemStack aStack) {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canPlaceItem(aSlot, aStack);
