@@ -49,7 +49,7 @@ public class MultiTileEntityWeightometerLight extends MultiTileEntitySensorTE {
 			rWeightKG = ((ITileEntityWeight)aDelegator.mTileEntity).getWeightValue(aDelegator.mSideOfTileEntity);
 		} else if (aDelegator.mTileEntity instanceof Container) {
 			if (aDelegator.mTileEntity instanceof WorldlyContainer) {
-				for (int i : ((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity)) {
+				for (int i : ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity])) {
 					rWeightKG += OM.weight(((Container)aDelegator.mTileEntity).getItem(i));
 					if (rWeightKG >= MAX_WEIGHT) break;
 				}

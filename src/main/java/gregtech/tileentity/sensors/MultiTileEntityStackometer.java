@@ -44,8 +44,8 @@ public class MultiTileEntityStackometer extends MultiTileEntitySensorTE {
 		if (aDelegator.mTileEntity instanceof Container) {
 			long rAmount = 0;
 			if (aDelegator.mTileEntity instanceof WorldlyContainer) {
-				int[] tSlots = ((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity);
-				if (tSlots == null || tSlots.length <= 0) try {tSlots = ((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(SIDE_ANY);} catch(Throwable e) {tSlots = null;}
+				int[] tSlots = ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity]);
+				if (tSlots == null || tSlots.length <= 0) try {tSlots = ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[SIDE_ANY]);} catch(Throwable e) {tSlots = null;}
 				if (tSlots != null && tSlots.length >  0) {
 					for (int i : tSlots) {
 						ItemStack tStack = ((Container)aDelegator.mTileEntity).getItem(i);
@@ -66,7 +66,7 @@ public class MultiTileEntityStackometer extends MultiTileEntitySensorTE {
 	@Override
 	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof Container) {
-			if (aDelegator.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity).length;
+			if (aDelegator.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)aDelegator.mTileEntity).getSlotsForFace(FORGE_DIR[aDelegator.mSideOfTileEntity]).length;
 			return ((Container)aDelegator.mTileEntity).getContainerSize();
 		}
 		return 0;
