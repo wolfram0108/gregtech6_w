@@ -252,19 +252,19 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		
 		@Override
 		public ItemStack slotClick(int aSlotIndex, int aMouseclick, int aShifthold, Player aPlayer) {
-			if (aSlotIndex < 0 || aSlotIndex >= inventorySlots.size()) return super.slotClick(aSlotIndex, aMouseclick, aShifthold, aPlayer);
+			if (aSlotIndex < 0 || aSlotIndex >= slots.size()) return super.slotClick(aSlotIndex, aMouseclick, aShifthold, aPlayer);
 			if (aSlotIndex >= mTileEntity.getSizeInventoryGUI()) {
 				if (aShifthold != 1) return super.slotClick(aSlotIndex, aMouseclick, aShifthold, aPlayer);
-				Slot tSlot = (Slot)inventorySlots.get(aSlotIndex);
+				Slot tSlot = (Slot)slots.get(aSlotIndex);
 				if (tSlot != null) {
-					ItemStack tStack = tSlot.getStack();
+					ItemStack tStack = tSlot.getItem();
 					if (tStack != null) {
 						if ((((MultiTileEntityFilter)mTileEntity).mModes & EXTENDER_INV) == 0) {
 							FluidStack tFluid = FL.getFluid(tStack, T);
 							if (tFluid != null && ((MultiTileEntityFilter)mTileEntity).allowInput(tFluid) == ((MultiTileEntityFilter)mTileEntity).mInverted) {
 								for (int i = 0; i < ((MultiTileEntityFilter)mTileEntity).mFilter.length; i++) if (ST.invalid(((MultiTileEntityFilter)mTileEntity).mFilter[i])) {
 									((MultiTileEntityFilter)mTileEntity).mFilter[i] = FL.display(tFluid.getFluid());
-									detectAndSendChanges();
+									broadcastChanges();
 									return null;
 								}
 							}
@@ -272,7 +272,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 							if (((MultiTileEntityFilter)mTileEntity).allowInput(tStack) == ((MultiTileEntityFilter)mTileEntity).mInverted) {
 								for (int i = 0; i < ((MultiTileEntityFilter)mTileEntity).mFilter.length; i++) if (ST.invalid(((MultiTileEntityFilter)mTileEntity).mFilter[i])) {
 									((MultiTileEntityFilter)mTileEntity).mFilter[i] = ST.amount(1, tStack);
-									detectAndSendChanges();
+									broadcastChanges();
 									return null;
 								}
 							}
@@ -281,11 +281,11 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 				}
 				return null;
 			}
-			Slot tSlot = (Slot)inventorySlots.get(aSlotIndex);
+			Slot tSlot = (Slot)slots.get(aSlotIndex);
 			if (tSlot != null) {
 				ItemStack tStack = aPlayer.getInventory().getItemStack();
 				if (tStack == null) {
-					tStack = tSlot.getStack();
+					tStack = tSlot.getItem();
 					if (aMouseclick == 0) {
 						tSlot.set(null);
 					} else if (tStack != null && !IL.Display_Fluid.equal(tStack, T, T)) {
