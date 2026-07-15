@@ -99,12 +99,12 @@ public class BlockRockOres extends BlockBaseMeta {
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W));
 	}
 	
-	@Override
+	
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		return ST.arraylist(OP.oreRaw.mat(ORE_MATERIALS[aMeta], aFortune>0?2+RNGSUS.nextInt(aFortune*2+2):2));
 	}
 	
-	@Override
+	
 	public int getExpDrop(BlockGetter aWorld, int aMeta, int aFortune) {
 		return RNGSUS.nextInt(8) == 0 ? 1 : 0;
 	}

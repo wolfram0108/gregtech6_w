@@ -70,7 +70,7 @@ public class BlockSpikeSuper extends BlockBaseSpike {
 		}
 	}
 	
-	@Override
+	
 	public void onEntityCollidedWithBlock(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aEntity instanceof LivingEntity) {
@@ -82,7 +82,7 @@ public class BlockSpikeSuper extends BlockBaseSpike {
 		}
 	}
 	
-	@Override
+	
 	public boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		return WD.meta(aWorld, aX, aY, aZ) < 8 || !(aEntity instanceof WitherBoss || aEntity instanceof EnderDragon);
 	}

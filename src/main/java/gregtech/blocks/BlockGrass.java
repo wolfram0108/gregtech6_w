@@ -102,8 +102,8 @@ public class BlockGrass extends BlockBaseMeta {
 	
 	public static final IconContainerCopied DIRT = new IconContainerCopied(Blocks.DIRT, 0, SIDE_BOTTOM);
 	
-	@Override public Identifier getIcon(int aSide, int aMeta) {return (SIDES_BOTTOM[aSide]?DIRT:(SIDES_TOP[aSide]?Textures.BlockIcons.GRASSES_TOP:Textures.BlockIcons.GRASSES_SIDE)[aMeta % 16]).getIcon(0);}
-	@Override public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(ST.make(Blocks.DIRT, 1, 0));}
+	public Identifier getIcon(int aSide, int aMeta) {return (SIDES_BOTTOM[aSide]?DIRT:(SIDES_TOP[aSide]?Textures.BlockIcons.GRASSES_TOP:Textures.BlockIcons.GRASSES_SIDE)[aMeta % 16]).getIcon(0);}
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(ST.make(Blocks.DIRT, 1, 0));}
 	@Override public boolean doesPistonPush  (byte aMeta) {return T;}
 	@Override public boolean canCreatureSpawn(byte aMeta) {return F;}
 	@Override public boolean isSealable      (byte aMeta, byte aSide) {return F;}

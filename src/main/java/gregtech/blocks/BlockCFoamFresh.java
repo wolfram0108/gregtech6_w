@@ -68,7 +68,7 @@ public class BlockCFoamFresh extends BlockColored implements IBlockFoamable {
 		if (!aWorld.isClientSide()) dryFoam(aWorld, aX, aY, aZ, SIDE_ANY);
 	}
 	
-	@Override
+	
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		return ST.arraylist();
 	}
@@ -93,7 +93,7 @@ public class BlockCFoamFresh extends BlockColored implements IBlockFoamable {
 		return T;
 	}
 	
-	@Override
+	
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
 		return null;
 	}

@@ -49,6 +49,6 @@ public class BlockGlowtus extends BlockBaseLilyPad implements Runnable {
 		RM.ic2_extractor(ST.make(this, 1, W), OM.dust(MT.Glowstone, U4));
 	}
 	
-	@Override public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
-	@Override public int getLightValue() {return 15;}
+	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
+	public int getLightValue() {return 15;}
 }

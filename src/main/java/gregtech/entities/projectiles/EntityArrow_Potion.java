@@ -42,13 +42,13 @@ public class EntityArrow_Potion extends EntityArrow_Material {
 		super(aWorld, aEntity, aSpeed);
 	}
 	
-	@Override
+	
 	public void writeEntityToNBT(CompoundTag aNBT) {
 		super.writeEntityToNBT(aNBT);
 		aNBT.putIntArray("mPotions", mPotions);
 	}
 	
-	@Override
+	
 	public void readEntityFromNBT(CompoundTag aNBT) {
 		super.readEntityFromNBT(aNBT);
 		setPotions(aNBT.getIntArray("mPotions"));

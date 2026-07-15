@@ -60,7 +60,7 @@ public class BlockRailRoad extends BlockBaseRail {
 		return F;
 	}
 	
-	@Override
+	
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (!aWorld.isClientSide()) {
 			if (!Level.doesBlockHaveSolidTopSurface(aWorld, aX, aY-1, aZ)) {
@@ -75,17 +75,17 @@ public class BlockRailRoad extends BlockBaseRail {
 		// NO-OP
 	}
 	
-	@Override
+	
 	protected void func_150052_a(Level aWorld, int aX, int aY, int aZ, boolean p_150052_5_) {
 		// NO-OP
 	}
 	
-	@Override
+	
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		// NO-OP
 	}
 	
-	@Override
+	
 	public void breakBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		// NO-OP
 	}

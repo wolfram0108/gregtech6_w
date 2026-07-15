@@ -652,9 +652,9 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
 	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
 	
-	@Override public boolean requiresMultipleRenderPasses() {return T;}
+	public boolean requiresMultipleRenderPasses() {return T;}
 	
-	@Override
+	
 	public int getRenderPasses(int aMetaData) {
 		switch(aMetaData % 10) {
 		case 6: case 7: case 8: case 9: return 3;

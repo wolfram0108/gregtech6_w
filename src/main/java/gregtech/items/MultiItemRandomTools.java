@@ -602,8 +602,8 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		for (IItemContainer tContainer : IL.KEYS) BooksGT.BOOK_REGISTER.put(tContainer, (byte)1);
 	}
 	
-	@Override public int getRenderPasses(int aMetaData) {return UT.Code.inside(11000, 11004, aMetaData) ? 2 : 1;}
-	@Override public boolean requiresMultipleRenderPasses() {return T;}
+	public int getRenderPasses(int aMetaData) {return UT.Code.inside(11000, 11004, aMetaData) ? 2 : 1;}
+	public boolean requiresMultipleRenderPasses() {return T;}
 	
 	@Override
 	public Identifier getIcon(ItemStack aStack, int aRenderPass) {

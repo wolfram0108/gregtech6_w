@@ -111,7 +111,7 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 		return tType == EnumPlantType.Plains || tType == EnumPlantType.Water || tType == EnumPlantType.Desert || tType == EnumPlantType.Beach;
 	}
 	
-	@Override
+	
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
 		switch(aMeta) {
 		case  0: return ST.arraylist(IL.Mud_Ball.get(4));

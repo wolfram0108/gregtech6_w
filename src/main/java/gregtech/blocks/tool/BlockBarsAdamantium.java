@@ -53,7 +53,7 @@ public class BlockBarsAdamantium extends BlockBaseBars {
 	
 	@Override public float getExplosionResistance(byte aMeta) {return 100;}
 	
-	@Override
+	
 	public boolean canEntityDestroy(BlockGetter aWorld, int aX, int aY, int aZ, Entity aEntity) {
 		return !(aEntity instanceof WitherBoss || aEntity instanceof EnderDragon);
 	}

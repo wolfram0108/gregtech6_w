@@ -44,12 +44,12 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		tickRate = 1;
 	}
 	
-	@Override
+	
 	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
 		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate);
 	}
 	
-	@Override
+	
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		// Scan surroundings.
 		Block[] aBlocks  = new Block[7];

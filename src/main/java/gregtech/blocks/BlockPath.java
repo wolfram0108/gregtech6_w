@@ -70,8 +70,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
 	}
 	
-	@Override
-	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) { // GT6-хук (не neo @Override); мост дропа зовёт его как у core-блоков
 		switch(aMeta) {
 		case  1: return ST.arraylist(IL.AETHER_Dirt.get(1));
 		case  2: return ST.arraylist(IL.BoP_Dirt_Loamy.get(1));
@@ -88,14 +87,13 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		}
 	}
 	
-	@Override
-	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
+	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) { // GT6 render-хук (мост neo=skipRendering в BlockBase); F-shape/render отложены core-wide
 		if (SIDES_TOP[aSide]) return T;
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		return tBlock != Blocks.FARMLAND && !WD.visOpq(tBlock);
 	}
 	
-	@Override public int getRenderType() {return RendererBlockTextured.INSTANCE==null?0:RendererBlockTextured.INSTANCE.mRenderID;}
+	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?0:RendererBlockTextured.INSTANCE.mRenderID;}
 	
 	@Override
 	public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {
@@ -140,7 +138,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	@Override public Identifier getIcon(int aSide, int aMeta) {return (SIDES_TOP[aSide]?Textures.BlockIcons.PATH_TOP:Textures.BlockIcons.DIRTS[aMeta % 16]).getIcon(0);}
 	
 	
-	@Override @SuppressWarnings({"unchecked"})
+	@SuppressWarnings({"unchecked"})
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, List aList, Entity aEntity) {
 		AABB
 		tAABB = new AABB(aX, aY, aZ, aX+1, aY+0.5  , aZ+1); if (tAABB.intersects(aAABB)) aList.add(tAABB);
@@ -148,9 +146,9 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		tAABB = new AABB(aX, aY, aZ, aX+1, aY+0.875, aZ+1); if (tAABB.intersects(aAABB)) aList.add(tAABB);
 		tAABB = new AABB(aX, aY, aZ, aX+1, aY+1    , aZ+1); if (tAABB.intersects(aAABB)) aList.add(tAABB);
 	}
-	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
-	@Override public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
-	@Override public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(0, 0, 0, 1, (isHalfBlock(aWorld, aX, aY, aZ)?0.5F:1), 1);}
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
+	public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
+	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(0, 0, 0, 1, (isHalfBlock(aWorld, aX, aY, aZ)?0.5F:1), 1);}
 	@Override public boolean doesWalkSpeed(byte aMeta) {return T;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
 	@Override public boolean canCreatureSpawn(byte aMeta) {return F;}
@@ -163,7 +161,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GRASS_BLOCK.getExplosionResistance() * 1.5F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return SIDES_BOTTOM_HORIZONTAL[aSide];}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
-	@Override public boolean isNormalCube() {return F;}
+	public boolean isNormalCube() {return F;}
 	@Override public boolean isOpaqueCube() {return F;}
 	@Override public boolean renderAsNormalBlock() {return F;}
 }
