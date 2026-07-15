@@ -21,7 +21,9 @@ package gregtech;
 
 import gregapi.util.WD;
 import cpw.mods.fml.common.*;
-import cpw.mods.fml.common.event.*;
+import gregapi.api.FMLPreInitializationEvent;
+import gregapi.api.FMLInitializationEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
@@ -69,7 +71,6 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.common.ChestGenHooks;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
-import net.minecraftforge.fluids.FluidRegistry;
 import gregapi.oredict.OreDictionary;
 
 import java.util.ArrayList;
@@ -101,19 +102,10 @@ public class GT6_Main extends Abstract_Mod {
 	
 	@Override
 	public void onModPreInit2(FMLPreInitializationEvent aEvent) {
-		try {
-			LoadController tLoadController = ((LoadController)UT.Reflection.getFieldContent(Loader.instance(), "modController", T, T));
-			List<ModContainer> tModList = tLoadController.getActiveModList(), tNewModsList = new ArrayList<>(tModList.size());
-			ModContainer tGregTech = null;
-			for (short i = 0; i < tModList.size(); i++) {
-				ModContainer tMod = tModList.get(i);
-				if (tMod.getModId().equalsIgnoreCase(MD.GT.mID)) tGregTech = tMod; else tNewModsList.add(tMod);
-			}
-			if (tGregTech != null) tNewModsList.add(tGregTech);
-			UT.Reflection.setFieldContent(tLoadController, "activeModList", tNewModsList);
-		} catch(Throwable e) {
-			e.printStackTrace(ERR);
-		}
+		// FORCED-ADAPTATION(F12-mod-order): 1.7.10 переставлял GregTech в конец FML modController.activeModList
+		// (рефлексия Loader.instance().modController) чтобы грузиться последним. Neo удалил LoadController/ModContainer/
+		// Loader — порядок загрузки декларативный через зависимости (@Mod dependencies="required-after:GAPI_POST" выше +
+		// mods.toml). Приём переносится на neo-механизм зависимостей; рефлексивная перестановка obsolete и удалена.
 		
 		gt_proxy.mSkeletonsShootGTArrows = ConfigsGT.GREGTECH.get("general", "SkeletonsShootGTArrows", 16);
 		gt_proxy.mFlintChance            = (int)UT.Code.bind(1, 100, ConfigsGT.GREGTECH.get("general", "FlintAndSteelChance", 30));
@@ -660,11 +652,11 @@ public class GT6_Main extends Abstract_Mod {
 	@Override public String getModNameForLog() {return "GT_Mod";}
 	@Override public Abstract_Proxy getProxy() {return gt_proxy;}
 
-	@Mod.EventHandler public void onPreLoad         (FMLPreInitializationEvent  aEvent) {onModPreInit(aEvent);}
-	@Mod.EventHandler public void onLoad            (FMLInitializationEvent     aEvent) {onModInit(aEvent);}
-	@Mod.EventHandler public void onPostLoad        (FMLPostInitializationEvent aEvent) {onModPostInit(aEvent);}
-	@Mod.EventHandler public void onServerStarting  (FMLServerStartingEvent     aEvent) {onModServerStarting(aEvent);}
-	@Mod.EventHandler public void onServerStarted   (FMLServerStartedEvent      aEvent) {onModServerStarted(aEvent);}
-	@Mod.EventHandler public void onServerStopping  (FMLServerStoppingEvent     aEvent) {onModServerStopping(aEvent);}
-	@Mod.EventHandler public void onServerStopped   (FMLServerStoppedEvent      aEvent) {onModServerStopped(aEvent);}
+	@Mod.EventHandler public void onPreLoad         (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent  aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
+	@Mod.EventHandler public void onLoad            (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent  aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
+	@Mod.EventHandler public void onPostLoad        (net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
+	@Mod.EventHandler public void onServerStarting  (net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
+	@Mod.EventHandler public void onServerStarted   (net.neoforged.neoforge.event.server.ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
+	@Mod.EventHandler public void onServerStopping  (net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
+	@Mod.EventHandler public void onServerStopped   (net.neoforged.neoforge.event.server.ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 }
