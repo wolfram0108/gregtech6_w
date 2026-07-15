@@ -41,7 +41,8 @@ import static gregapi.data.CS.*;
 public class MultiItemBooks extends MultiItemRandomWithCompat {
 	public MultiItemBooks(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		OM.reg(OD.craftingBook, ST.make(this, 1, W));
+		// F12-followup (item-split): OM.reg(ST.make) — ItemStack → компоненты только на server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> OM.reg(OD.craftingBook, ST.make(this, 1, W)));
 		BooksGT.BOOK_REGISTER.put(this, W, (byte)3);
 		/* PORT-TODO(F16) setCreativeTab */;
 	}

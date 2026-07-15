@@ -154,6 +154,9 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		// Воспроизводим humanoidArmor вручную 1:1, вызывая enchantable ТОЛЬКО при >0 (0 → компонент Enchantable опущен =
 		// непокоряемо, 1:1 со СЛЕДСТВИЕМ оригинала). durability(aDurability) в конце перезаписывает поверх (R8, см. выше).
 		Item.Properties rProperties = new Item.Properties()
+			// F12-followup (item-split): neo Item требует id в Properties (иначе «Item id not set»); ключ = (modID, unlocalized),
+			// санитизирован, совпадает с именем регистрации registerItemLazy на call-site (как ItemBase:87).
+			.setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModID, gregapi.GT_API.sanitizeRegName(aUnlocalized))))
 			.durability(tType.getDurability(tMaterial.durability()))
 			.attributes(tMaterial.createAttributes(tType))
 			.component(net.minecraft.core.component.DataComponents.EQUIPPABLE, net.minecraft.world.item.equipment.Equippable.builder(tType.getSlot()).setEquipSound(tMaterial.equipSound()).setAsset(tMaterial.assetId()).build())
