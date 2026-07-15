@@ -63,7 +63,7 @@ public class BlockRailRoad extends BlockBaseRail {
 	
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
 		if (!aWorld.isClientSide()) {
-			if (!Level.doesBlockHaveSolidTopSurface(aWorld, aX, aY-1, aZ)) {
+			if (!WD.floor(aWorld, aX, aY-1, aZ)) {
 				WD.dropBlockAsItem(aWorld, aX, aY, aZ, 0, 0);
 				WD.set(aWorld, aX, aY, aZ, NB, 0, 3);
 			}
@@ -106,11 +106,11 @@ public class BlockRailRoad extends BlockBaseRail {
 		} else {
 			byte tRailMeta = WD.meta(7, aWorld, aX, aY, aZ);
 			if (tRailMeta == 1) {
-					 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) WD.setMotionX(aCart, +0.02);
-				else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) WD.setMotionX(aCart, -0.02);
+					 if (WD.normalCube(WD.block(aWorld, aX-1, aY, aZ), aWorld, aX-1, aY, aZ)) WD.setMotionX(aCart, +0.02);
+				else if (WD.normalCube(WD.block(aWorld, aX+1, aY, aZ), aWorld, aX+1, aY, aZ)) WD.setMotionX(aCart, -0.02);
 			} else if (tRailMeta == 0) {
-					 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) WD.setMotionZ(aCart, +0.02);
-				else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) WD.setMotionZ(aCart, -0.02);
+					 if (WD.normalCube(WD.block(aWorld, aX, aY, aZ-1), aWorld, aX, aY, aZ-1)) WD.setMotionZ(aCart, +0.02);
+				else if (WD.normalCube(WD.block(aWorld, aX, aY, aZ+1), aWorld, aX, aY, aZ+1)) WD.setMotionZ(aCart, -0.02);
 			}
 		}
 	}
@@ -126,7 +126,7 @@ public class BlockRailRoad extends BlockBaseRail {
 			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		}
 		
-		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !aWorld.canPlaceEntityOnSide(this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
+		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 		
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, SIDES_AXIS_X[UT.Code.getHorizontalForPlayerPlacing(aPlayer)] ? aHitZ > 0.5 ? 9 : 1 : aHitX > 0.5 ? 8 : 0)) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);
