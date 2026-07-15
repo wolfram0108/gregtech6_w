@@ -38,7 +38,7 @@ public class ItemEmptySlot extends ItemBase {
 	public ItemEmptySlot() {
 		super(MD.GAPI.mID, "gt.empty_slot", "Empty Slot", "This Slot has to be left Empty");
 		ItemsGT.ILLEGAL_DROPS.add(this);
-		ST.hide(this);
+		gregapi.GT_API.deferItemInit(() -> ST.hide(this)); // F1/F12/F16: ST.hide создаёт стек (ST.make) — отложить в setup (пост-freeze), т.к. конструкция @RegisterEvent (компоненты не привязаны)
 	}
 	
 	@Override

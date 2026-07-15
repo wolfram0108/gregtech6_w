@@ -180,6 +180,14 @@ public class GT_API extends Abstract_Mod {
 	public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems (ModIDs.GAPI);
 	public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ModIDs.GAPI);
 
+	/** F1/F12/F16 item-model сепарация: GT6-предметы делали OreDict-данные+рецепты (ST.make = стек себя) В КОНСТРУКТОРЕ, но
+	 *  neo конструирует предмет @RegisterEvent (реестр открыт для intrusive-holder), а стеки можно только @пост-freeze
+	 *  (Holder.components привязаны позже). Конструктор регистрирует свой stack-init сюда (Runnable, без стеков), а
+	 *  {@link #runDeferredItemInit()} выполняет их в setup (пост-bind). См. decisions/F12-registration-lifecycle.md. */
+	public static final List<Runnable> DEFERRED_ITEM_INIT = new ArrayListNoNulls<>();
+	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
+	private static void runDeferredItemInit() {for (Runnable tInit : DEFERRED_ITEM_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_ITEM_INIT.clear();}
+
 	/**
 	 * F12: мод-шина, сохранённая из конструктора, чтобы лениво созданные под-неймспейсы могли
 	 * подписаться на {@code RegisterEvent} (см. {@link #itemsFor(String)}).
@@ -434,6 +442,7 @@ public class GT_API extends Abstract_Mod {
 			}
 		}
 		onModInit(new FMLInitializationEvent());
+		runDeferredItemInit(); // F1/F12/F16 item-model: выполнить отложенный stack-init предметов (OreDict-данные+рецепты) — здесь (setup, пост-bind) ST.make работает (материалы/префиксы/OP уже готовы)
 	}
 	
 	// PostInit: подписан в конструкторе на FMLLoadCompleteEvent (мод-шина) — родное neo-событие

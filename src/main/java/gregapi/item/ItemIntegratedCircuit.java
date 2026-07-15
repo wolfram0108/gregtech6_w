@@ -51,7 +51,13 @@ public class ItemIntegratedCircuit extends ItemBase {
 		setMaxDamage(0);
 		
 		LH.add(mName + ".configuration", "Configuration: ");
-		
+		// F1/F12/F16 item-model: stack-init (OreDict-данные + рецепты + CoverRegistry — ST.make(this)) вынесен в initDeferred(),
+		// выполняется @пост-freeze (gregapi.GT_API.runDeferredItemInit в setup); конструкция идёт @RegisterEvent, где компоненты
+		// не привязаны и ST.make упал бы "Components not bound yet". Было: инлайн в конструкторе.
+		gregapi.GT_API.deferItemInit(this::initDeferred);
+	}
+
+	private void initDeferred() {
 		OM.data(ST.make(this, 1, W), ANY.Iron, U2*11);
 		
 		CR.shaped(ST.make(this, 1, 0), CR.DEF_NCC, "GhG", "SSS", "GwG", 'G', OP.gearGtSmall.dat(ANY.Iron), 'S', OP.stick.dat(ANY.Iron));
