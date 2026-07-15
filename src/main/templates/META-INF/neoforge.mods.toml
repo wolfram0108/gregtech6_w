@@ -64,6 +64,17 @@ description='''
 GT6 GAPI_POST-мод (gregapi.GT_API_Post) — грузится после GAPI и совместимых модов.
 '''
 
+# F12 §4.4: контент-мод GT (gregtech.GT6_Main) переведён на реальный neo-@Mod(value=gregtech) —
+# теперь его lifecycle (Loader_Fluids/Items/PrefixBlocks/…) реально запускается движком. Загружается
+# ПОСЛЕ gregapi_post (оригинал GT6_Main.java: dependencies="required-after:"+GAPI_POST).
+[[mods]] #mandatory
+modId="gregtech" #mandatory
+version="${mod_version}" #mandatory
+displayName="GregTech" #mandatory
+description='''
+GT6 контент-мод (gregtech.GT6_Main) — грузится последним, после GAPI и GAPI_POST.
+'''
+
 # УЛИКА R7 (доработка): {@code @Mod.depends()} на Java-стороне (gregapi.GT_API/GT_API_Post) НЕ задаёт
 # порядок загрузки — он только фильтрует entrypoint-класс по наличию modId в списке загруженных модов
 # (fml-decompiled net/neoforged/fml/javafmlmod/FMLJavaModLanguageProvider.java:33). Реальный порядок
@@ -82,6 +93,14 @@ GT6 GAPI_POST-мод (gregapi.GT_API_Post) — грузится после GAPI 
 
 [[dependencies.gregapi_post]]
     modId="gregapi"
+    type="required"
+    versionRange="[${mod_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+# GT-мод грузится ПОСЛЕ gregapi_post (ordering=AFTER ⇒ ребро gregapi_post→gregtech в ModSorter).
+[[dependencies.gregtech]]
+    modId="gregapi_post"
     type="required"
     versionRange="[${mod_version},)"
     ordering="AFTER"

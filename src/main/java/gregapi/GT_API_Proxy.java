@@ -206,39 +206,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public GT_API_Proxy() {
 		// F7 (контракт-шов, компилятор слеп): neo EventBus.register(this) ЗАПРЕЩЁН — правило «супертип регистрируемого
 		// объекта не смеет нести @SubscribeEvent» (fml EventBus.java:117-126), а base-класс держит все обработчики
-		// централизованно (философия «одно место»). Реплицируем annotation-scan-регистрацию через per-method addListener
-		// (обходит проверку иерархии; методы остаются на месте, НЕ дублируются в Server/Client). getClass().getMethods()
-		// берёт РАНТАЙМ-тип → ловит ВСЕ @SubscribeEvent (base + подкласс, включая клиентские у Proxy_Client) → без тихого
-		// пропуска, как сканил register() в 1.7.10. Оригинал слал на 2 шины — F7 уже свёл к одной NeoForge.EVENT_BUS.
-		for (java.lang.reflect.Method tMethod : getClass().getMethods()) {
-			SubscribeEvent tAnnotation = tMethod.getAnnotation(SubscribeEvent.class);
-			if (tAnnotation == null || tMethod.getParameterCount() != 1) continue;
-			Class<?> tParameter = tMethod.getParameterTypes()[0];
-			if (!net.neoforged.bus.api.Event.class.isAssignableFrom(tParameter)) continue;
-			java.util.function.Consumer<net.neoforged.bus.api.Event> tDispatch = aEvent -> {
-				try {
-					tMethod.invoke(this, aEvent);
-				} catch (ReflectiveOperationException e) {
-					throw new RuntimeException("GT_API_Proxy: сбой диспетчеризации события " + tMethod, e);
-				}
-			};
-			// neo запрещает addListener для АБСТРАКТНОГО event-класса (напр. ServerTickEvent/LevelTickEvent — фаза 1.7.10
-			// раскладывается на конкретные .Pre/.Post). GT6-метод берёт абстрактную базу и внутри ветвится instanceof .Pre/.Post
-			// (1:1 phase-check) → регистрируем на КАЖДЫЙ конкретный вложенный подкласс; метод принимает оба, instanceof разрулит.
-			if (java.lang.reflect.Modifier.isAbstract(tParameter.getModifiers())) {
-				for (Class<?> tSub : tParameter.getDeclaredClasses()) {
-					if (!java.lang.reflect.Modifier.isAbstract(tSub.getModifiers()) && tParameter.isAssignableFrom(tSub)) {
-						@SuppressWarnings({"unchecked", "rawtypes"})
-						Class<net.neoforged.bus.api.Event> tSubType = (Class) tSub;
-						NeoForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tSubType, tDispatch);
-					}
-				}
-			} else {
-				@SuppressWarnings({"unchecked", "rawtypes"})
-				Class<net.neoforged.bus.api.Event> tEventType = (Class) tParameter;
-				NeoForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tEventType, tDispatch);
-			}
-		}
+		// централизованно (философия «одно место»). Механизм вынесен в Abstract_Proxy.registerSubscribeEvents() —
+		// один per-method-addListener на весь мод (тот же приём применяет gregtech.GT_Proxy).
+		registerSubscribeEvents();
 	}
 
 	/**

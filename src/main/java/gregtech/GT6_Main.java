@@ -20,7 +20,13 @@
 package gregtech;
 
 import gregapi.util.WD;
-import cpw.mods.fml.common.*;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import gregapi.api.FMLPreInitializationEvent;
 import gregapi.api.FMLInitializationEvent;
 import gregapi.api.FMLPostInitializationEvent;
@@ -83,21 +89,27 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F12, mod-GT): перевод этого мода на neo-{@code @Mod} + конструктор-подписки (как сделано
- * в {@code gregapi.GT_API}) ОТЛОЖЕН в порт контента по decisions/F12-registration-lifecycle.md §4.1
- * (GT6_Main — контент-824, компилируется только вместе с контентом; половинчатая конвертация ломает
- * shim-контракт Abstract_Mod — доказано мех-ремапом в Example_Mod/GT_Client/GT_Proxy). Пока остаётся
- * FML-{@code @Mod}/{@code @SidedProxy}/{@code @Mod.EventHandler} (не компилируется — ожидаемо, deferred).
- * Прямые DeferredRegister из этого класса (R3) уже убраны в этом заходе (см. ниже по коду).
+ * F12 (decisions/F12-registration-lifecycle.md §4,4.4): контент-мод GT переведён на реальный neo-{@code @Mod}
+ * (value=gregtech) + конструктор-подписки фаз, как {@code gregapi.GT_API_Post}. {@code @SidedProxy}→{@code FMLEnvironment.getDist()},
+ * {@code @Mod.EventHandler}→подписка на шину. Теперь его lifecycle (Loader_Fluids/Items/PrefixBlocks/…) реально
+ * запускается движком (был мёртвый {@code cpw.mods.fml} — neo его игнорировал, загрузчики не бежали).
  */
-@Mod(modid=ModIDs.GT, name="GregTech", version="GT6-MC1710", dependencies="required-after:"+ModIDs.GAPI_POST)
+@Mod(value = ModIDs.GT, depends = {ModIDs.GAPI_POST})
 public class GT6_Main extends Abstract_Mod {
-	@SidedProxy(modId = ModIDs.GT, clientSide = "gregtech.GT_Client", serverSide = "gregtech.GT_Server")
-	public static GT_Proxy gt_proxy;
-	
-	public GT6_Main() {
+	// F12: замена @SidedProxy (neo не имеет annotation-диспетчера сторон) — сторона по FMLEnvironment.getDist(), как gregapi.GT_API#api_proxy.
+	public static GT_Proxy gt_proxy = FMLEnvironment.getDist().isClient() ? new GT_Client() : new GT_Server();
+
+	public GT6_Main(IEventBus aModBus) {
 		GT = this;
 		NW_GT = new NetworkHandler(MD.GT.mID, "GREG");
+		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на шину (образец gregapi.GT_API_Post).
+		aModBus.addListener(this::onPreLoad);
+		aModBus.addListener(this::onLoad);
+		aModBus.addListener(this::onPostLoad);
+		NeoForge.EVENT_BUS.addListener(this::onServerStarting);
+		NeoForge.EVENT_BUS.addListener(this::onServerStarted);
+		NeoForge.EVENT_BUS.addListener(this::onServerStopping);
+		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
 	}
 	
 	@Override
@@ -654,11 +666,12 @@ public class GT6_Main extends Abstract_Mod {
 	@Override public String getModNameForLog() {return "GT_Mod";}
 	@Override public Abstract_Proxy getProxy() {return gt_proxy;}
 
-	@Mod.EventHandler public void onPreLoad         (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent  aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
-	@Mod.EventHandler public void onLoad            (net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent  aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
-	@Mod.EventHandler public void onPostLoad        (net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
-	@Mod.EventHandler public void onServerStarting  (net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
-	@Mod.EventHandler public void onServerStarted   (net.neoforged.neoforge.event.server.ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
-	@Mod.EventHandler public void onServerStopping  (net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
-	@Mod.EventHandler public void onServerStopped   (net.neoforged.neoforge.event.server.ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
+	// F12: подписаны в конструкторе (замена @Mod.EventHandler). PreInit→FMLConstructModEvent, Init→FMLCommonSetupEvent, PostInit→FMLLoadCompleteEvent (маппинг как gregapi.GT_API_Post).
+	public void onPreLoad         (FMLConstructModEvent aEvent) {onModPreInit(new gregapi.api.FMLPreInitializationEvent(net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().toFile()));}
+	public void onLoad            (FMLCommonSetupEvent  aEvent) {onModInit(new gregapi.api.FMLInitializationEvent());}
+	public void onPostLoad        (FMLLoadCompleteEvent aEvent) {onModPostInit(new gregapi.api.FMLPostInitializationEvent());}
+	public void onServerStarting  (net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {onModServerStarting(aEvent);}
+	public void onServerStarted   (net.neoforged.neoforge.event.server.ServerStartedEvent  aEvent) {onModServerStarted(aEvent);}
+	public void onServerStopping  (net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {onModServerStopping(aEvent);}
+	public void onServerStopped   (net.neoforged.neoforge.event.server.ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 }

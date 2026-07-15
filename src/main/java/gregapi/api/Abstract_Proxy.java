@@ -33,6 +33,40 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
  * Base Proxy used for all my Mods.
  */
 public abstract class Abstract_Proxy {
+	/** F7 (централизованно, «одно место»): регистрация {@code @SubscribeEvent}-методов прокси на
+	 *  {@code NeoForge.EVENT_BUS} через per-method {@code addListener} — обходит запрет neo на
+	 *  {@code register(this)}, когда обработчики лежат на СУПЕРтипе (base-прокси держит их
+	 *  централизованно, а инстанс — Server/Client-подкласс; {@code EventBus.checkSupertypes} иначе бьёт
+	 *  IllegalArgumentException). {@code getClass().getMethods()} берёт РАНТАЙМ-тип → ловит base+подкласс
+	 *  (включая клиентские у *_Client) без тихого пропуска. Абстрактный event-класс (ServerTickEvent и т.п.,
+	 *  фаза 1.7.10) раскладывается на конкретные вложенные подклассы — метод берёт базу, instanceof внутри
+	 *  разрулит. Зовётся из конструктора КОНКРЕТНОГО прокси (GT_API_Proxy/GT_Proxy). */
+	protected final void registerSubscribeEvents() {
+		for (java.lang.reflect.Method tMethod : getClass().getMethods()) {
+			net.neoforged.bus.api.SubscribeEvent tAnnotation = tMethod.getAnnotation(net.neoforged.bus.api.SubscribeEvent.class);
+			if (tAnnotation == null || tMethod.getParameterCount() != 1) continue;
+			Class<?> tParameter = tMethod.getParameterTypes()[0];
+			if (!net.neoforged.bus.api.Event.class.isAssignableFrom(tParameter)) continue;
+			java.util.function.Consumer<net.neoforged.bus.api.Event> tDispatch = aEvent -> {
+				try {tMethod.invoke(this, aEvent);}
+				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: сбой диспетчеризации события " + tMethod, e);}
+			};
+			if (java.lang.reflect.Modifier.isAbstract(tParameter.getModifiers())) {
+				for (Class<?> tSub : tParameter.getDeclaredClasses()) {
+					if (!java.lang.reflect.Modifier.isAbstract(tSub.getModifiers()) && tParameter.isAssignableFrom(tSub)) {
+						@SuppressWarnings({"unchecked", "rawtypes"})
+						Class<net.neoforged.bus.api.Event> tSubType = (Class) tSub;
+						net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tSubType, tDispatch);
+					}
+				}
+			} else {
+				@SuppressWarnings({"unchecked", "rawtypes"})
+				Class<net.neoforged.bus.api.Event> tEventType = (Class) tParameter;
+				net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(tAnnotation.priority(), tAnnotation.receiveCanceled(), tEventType, tDispatch);
+			}
+		}
+	}
+
 	public void onProxyBeforePreInit        (Abstract_Mod aMod, FMLPreInitializationEvent   aEvent) {/**/}
 	public void onProxyBeforeInit           (Abstract_Mod aMod, FMLInitializationEvent      aEvent) {/**/}
 	public void onProxyBeforePostInit       (Abstract_Mod aMod, FMLPostInitializationEvent  aEvent) {/**/}

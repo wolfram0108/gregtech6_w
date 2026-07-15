@@ -95,7 +95,9 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	
 	public GT_Proxy() {
 		// neo: единая NeoForge.EVENT_BUS; ORE_GEN_BUS/TERRAIN_GEN_BUS и FML-шина удалены движком (см. F-event-model кластер A).
-		NeoForge.EVENT_BUS.register(this);
+		// F7 (централизованно, Abstract_Proxy): register(this) запрещён neo — @SubscribeEvent на супертипе GT_Proxy, а
+		// инстанс — GT_Server/GT_Client-подкласс; per-method addListener обходит проверку иерархии. Одно место на весь мод.
+		registerSubscribeEvents();
 	}
 
 	@Override
