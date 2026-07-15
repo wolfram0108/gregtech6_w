@@ -1096,7 +1096,9 @@ public class ST {
 		if (tBlock == Blocks.OAK_SAPLING) return 100;
 		if (tBlock == Blocks.OAK_SLAB) return 150;
 		if (tBlock == Blocks.COAL_BLOCK) return 16000;
-		if (F /* PORT-TODO(этап3, F9): WD.getMaterial(tBlock) == Material.wood — WD.getMaterial(Block) удалён в neo */) return 300;
+		// F9: 1.7.10 WD.getMaterial(tBlock)==Material.wood → 300. neo убрал Material — эквивалент «дерево» = SoundType.WOOD
+		// (тот же приём, что WD block-sound-центр). tBlock валиден (block_(tItem)!=NB проверять не нужно: NB.defaultBlockState — air, sound!=WOOD).
+		if (tBlock != NB && tBlock.defaultBlockState().getSoundType() == net.minecraft.world.level.block.SoundType.WOOD) return 300;
 		return 0;
 	}
 	
