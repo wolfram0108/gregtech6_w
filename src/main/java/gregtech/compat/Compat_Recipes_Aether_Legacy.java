@@ -38,7 +38,7 @@ public class Compat_Recipes_Aether_Legacy extends CompatMods {
 	public Compat_Recipes_Aether_Legacy(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
 	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Aether Recipes.");
-		ST.item(MD.AETHEL, "moa_egg").setMaxStackSize(64);
+		ST.setMaxStackSize(ST.item(MD.AETHEL, "moa_egg"), 64);
 		
 		CR.shaped(ST.make(MD.AETHER, "zanite_ring", 1, 0), DEF | DEL_OTHER_SHAPED_RECIPES, " X ", "X X", " X ", 'X', OP.gem.dat(MT.Zanite));
 		
