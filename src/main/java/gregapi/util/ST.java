@@ -183,9 +183,11 @@ public class ST {
 	public static Block block_(long aID) {return BuiltInRegistries.BLOCK.byId((int)aID);}
 	
 	public static short     meta (ItemStack aStack) {return aStack == null ? 0 : meta_(aStack);}
-	public static short     meta_(ItemStack aStack) {return (short)aStack.getDamageValue();}
+	// F12-followup (subtype-meta): GT6-подтип хранится в компоненте GT_API.SUBTYPE (не в damage-value — тот клампится к
+	// [0,maxDamage], у meta-предметов maxDamage=0 → схлопывание в 0). meta-0 = компонент отсутствует (дефолт 0, стек с ванилла).
+	public static short     meta_(ItemStack aStack) {return gregapi.GT_API.SUBTYPE.isBound() ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE.get(), 0) : 0;}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
-	public static ItemStack meta_(ItemStack aStack, long aMeta) {aStack.setDamageValue((int)aMeta); return aStack;}
+	public static ItemStack meta_(ItemStack aStack, long aMeta) {int tMeta = (short)aMeta; if (gregapi.GT_API.SUBTYPE.isBound()) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE.get(), tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE.get());} return aStack;}
 	
 	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : UT.Code.bindByte(aStack.getCount());}
 	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : size_(aSize, aStack);}
@@ -465,7 +467,7 @@ public class ST {
 	
 	// F1-meta: neo ItemStack(ItemLike,int,int) 3-арг ctor с метой удалён (flattening) — мета хранится
 	// компонентом DAMAGE (та же F1-модель, что центр meta_:188 setDamageValue). 2-арг ctor + setDamageValue.
-	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); rStack.setDamageValue(UT.Code.bindShort(aMeta)); return rStack;}
+	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
 	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); rStack.setDamageValue(UT.Code.bindShort(aMeta)); return rStack;}
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
 		if (!aModID.mLoaded || UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;

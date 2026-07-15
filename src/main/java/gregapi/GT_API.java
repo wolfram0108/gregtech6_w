@@ -180,6 +180,20 @@ public class GT_API extends Abstract_Mod {
 	public static final DeferredRegister.Items  ITEMS  = DeferredRegister.createItems (ModIDs.GAPI);
 	public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ModIDs.GAPI);
 
+	/** F12-followup (subtype-meta): GT6 1.7.10 хранит ПОДТИП предмета в damage-value (getItemDamage 0..32767) — meta-предметы
+	 *  (PrefixItem/MultiItem, maxDamage=0) держат тысячи подтипов на одном Item через meta. neo клампит setDamageValue к
+	 *  [0,maxDamage] (IItemExtension.setDamage) → у maxDamage=0 ВСЯ meta схлопывается в 0 (все материал-стеки становятся
+	 *  идентичны → унификация/рецепты/MTE ломаются). Переиспользовать DAMAGE нельзя: он же durability реальных предметов
+	 *  (maxDamage>0). Централизованная адаптация — ОТДЕЛЬНЫЙ компонент подтипа; {@code ST.meta_} get/set идёт через него,
+	 *  минуя кламп. Persistent (NBT ItemStack.CODEC) + network-synced. Ставится только при meta!=0 (meta-0 = без компонента,
+	 *  стекуется с ванилла). */
+	public static final DeferredRegister<net.minecraft.core.component.DataComponentType<?>> COMPONENTS = DeferredRegister.create(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, ModIDs.GAPI);
+	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<Integer>> SUBTYPE =
+		COMPONENTS.register("subtype", () -> net.minecraft.core.component.DataComponentType.<Integer>builder()
+			.persistent(com.mojang.serialization.Codec.INT)
+			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT)
+			.build());
+
 	/** F1/F12/F16 item-model сепарация: GT6-предметы делали OreDict-данные+рецепты (ST.make = стек себя) В КОНСТРУКТОРЕ, но
 	 *  neo конструирует предмет @RegisterEvent (реестр открыт для intrusive-holder), а стеки можно только @пост-freeze
 	 *  (Holder.components привязаны позже). Конструктор регистрирует свой stack-init сюда (Runnable, без стеков), а
@@ -414,6 +428,7 @@ public class GT_API extends Abstract_Mod {
 		sModBus = aModBus;
 		ITEMS .register(aModBus);
 		BLOCKS.register(aModBus);
+		COMPONENTS.register(aModBus); // F12-followup (subtype-meta): регистрация компонента подтипа на mod-bus (RegisterEvent<DataComponentType>)
 		// F12-followup (block-split, MTE): слив DEFERRED_BLOCK_INIT на RegisterEvent<Block> (реестр разморожен) — единая
 		// точка для подсистем, чьё конструирование блока нельзя выразить одним registerBlockLazy (см. deferBlockInit).
 		aModBus.addListener(GT_API::onRegisterEvent);
