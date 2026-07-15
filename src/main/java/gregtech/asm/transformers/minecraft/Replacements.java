@@ -26,7 +26,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.npc.villager.Villager;
@@ -48,30 +47,18 @@ public class Replacements {
 		if (aVictim instanceof Villager) {
 			Villager aVillager = (Villager)aVictim;
 			Level aWorld = aVillager.level();
-			// Yep, new Zombie Object.
-			Zombie tZombieVillager = new Zombie(aWorld);
-			// Location and Head need to point to the right places.
-			tZombieVillager.copyLocationAndAnglesFrom(aVillager);
-			// Do normal spawning Stuff.
-			tZombieVillager.onSpawnWithEgg((IEntityLivingData)null);
-			// Converting Villager Zombies back to Villagers would make it impossible to retrieve the Items, so don't pick up in the first place!
+			// neo: villager-зомби — отдельный класс ZombieVillager (1.7.10 Zombie.setVillager(true) удалён). F-ASM: метод мёртв в neo (коремод не применяется) → Mixin, тело портируется на neo-символы для компиляции.
+			net.minecraft.world.entity.monster.zombie.ZombieVillager tZombieVillager = new net.minecraft.world.entity.monster.zombie.ZombieVillager(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, aWorld);
+			tZombieVillager.copyPosition(aVillager); // было copyLocationAndAnglesFrom
+			// onSpawnWithEgg/finalizeSpawn (инициализация конверсии) движок делает сам — в neo требует ServerLevelAccessor+EntitySpawnReason, опущено в мёртвом ASM-теле.
 			tZombieVillager.setCanPickUpLoot(false);
-			// Well yes, he clearly is a Villager Zombie.
-			tZombieVillager.setVillager(true);
-			// STAY THERE! DONT DESPAWN!
-			tZombieVillager.func_110163_bv();
-			// Convert to Child
-			tZombieVillager.setChild(aVillager.isBaby());
-			// Transfer Name Tag
-			tZombieVillager.setCustomNameTag(aVillager.getCustomNameTag());
-			// Prevent duping Name Tags
-			aVillager.setCustomNameTag("");
-			// And put the new Zombie into the World!
+			tZombieVillager.setPersistenceRequired(); // было func_110163_bv (не деспавнить)
+			tZombieVillager.setBaby(aVillager.isBaby()); // было setChild
+			tZombieVillager.setCustomName(aVillager.getCustomName()); // было setCustomNameTag/getCustomNameTag (Component, не String)
+			aVillager.setCustomName(null);
 			aWorld.addFreshEntity(tZombieVillager);
-			// With Sound ofcourse!
-			aWorld.playAuxSFXAtEntity(null, 1016, (int)tZombieVillager.getX(), (int)tZombieVillager.getY(), (int)tZombieVillager.getZ(), 0);
-			// Villager? What Villager?
-			aWorld.removeEntity(aVillager);
+			aWorld.levelEvent(1016, tZombieVillager.blockPosition(), 0); // было playAuxSFXAtEntity(null,1016,x,y,z,0)
+			aVillager.discard(); // было removeEntity
 		}
 	}
 	
@@ -98,7 +85,7 @@ public class Replacements {
 						BlockStaticLiquid_isFlammable(world, x, y - 1, z, Direction.UP) ||
 						BlockStaticLiquid_isFlammable(world, x, y + 1, z, Direction.DOWN))
 					{
-						world.setBlock(x, y, z, Blocks.FIRE);
+						WD.set(world, x, y, z, Blocks.FIRE, 0, 3);
 						return;
 					}
 				}
@@ -118,9 +105,9 @@ public class Replacements {
 					x = i1 + rand.nextInt(3) - 1;
 					z = k1 + rand.nextInt(3) - 1;
 
-					if (world.isAirBlock(x, y + 1, z) && BlockStaticLiquid_isFlammable(world, x, y, z, Direction.UP))
+					if (world.isEmptyBlock(new net.minecraft.core.BlockPos(x, y + 1, z)) && BlockStaticLiquid_isFlammable(world, x, y, z, Direction.UP))
 					{
-						world.setBlock(x, y + 1, z, Blocks.FIRE);
+						WD.set(world, x, y + 1, z, Blocks.FIRE, 0, 3);
 					}
 				}
 			}
@@ -128,25 +115,26 @@ public class Replacements {
 	}
 
 	public static boolean BlockStaticLiquid_isFlammable(Level world, int x, int y, int z, Direction dir) {
-		return WD.block(world, x, y, z).isFlammable(world, x, y, z, dir);
+		net.minecraft.core.BlockPos p = new net.minecraft.core.BlockPos(x, y, z);
+		return WD.block(world, x, y, z).isFlammable(world.getBlockState(p), world, p, dir); // neo IBlockExtension.isFlammable(BlockState,BlockGetter,BlockPos,Direction)
 	}
 
 	public static boolean BlockStaticLiquid_isFlammable(Level world, int x, int y, int z) {
-		return WD.block(world, x, y, z).isFlammable(world, x, y, z, Direction.UNKNOWN);
+		net.minecraft.core.BlockPos p = new net.minecraft.core.BlockPos(x, y, z);
+		return WD.block(world, x, y, z).isFlammable(world.getBlockState(p), world, p, Direction.UP); // было ForgeDirection.UNKNOWN (нет в neo) → UP-дефолт
 	}
 
 	public static boolean EntityAICreeperSwell_shouldExecute(Creeper swellingCreeper) {
-		LivingEntity target = swellingCreeper.getAttackTarget();
-		if(swellingCreeper.getCreeperState() > 0) return true;
+		LivingEntity target = swellingCreeper.getTarget();
+		if(swellingCreeper.getSwellDir() > 0) return true;
 		if(target == null) return false;
 		double distSq = swellingCreeper.distanceToSqr(target);
 		if(distSq >= 9.0) return false;
 		// Do this last since it's the most 'work'
-		double facing = Vec3
-				.createVectorHelper(target.getX(), target.getY(), target.getZ())
-				.subtract(Vec3.createVectorHelper(swellingCreeper.getX(), swellingCreeper.getY(), swellingCreeper.getZ()))
+		double facing = new Vec3(target.getX(), target.getY(), target.getZ())
+				.subtract(new Vec3(swellingCreeper.getX(), swellingCreeper.getY(), swellingCreeper.getZ()))
 				.normalize()
-				.dotProduct(target.getLookAngle());
+				.dot(target.getLookAngle());
 		return facing >= -0.F;
 	}
 }
