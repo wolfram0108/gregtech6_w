@@ -32,7 +32,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.tileentity.TileEntityBeacon;
+import net.minecraft.world.level.block.entity.BeaconBlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -68,46 +68,46 @@ public class WorldgenBeacon extends WorldgenObject {
 			
 			WD.set(aWorld, -1, mHeight+5, -1, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, -1, mHeight+5, -1, T);
-			if (tTileEntity instanceof TileEntityBeacon) {
+			if (tTileEntity instanceof BeaconBlockEntity) {
 				CompoundTag tNBT = UT.NBT.make();
-				tTileEntity.writeToNBT(tNBT);
+				tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
 				tNBT.putInt("Primary", /*moveSpeed*/1);
 				tNBT.putInt("Secondary", /*moveSpeed*/1);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.readFromNBT(tNBT);
+				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
 			}
 			
 			WD.set(aWorld, -1, mHeight+5, 0, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, -1, mHeight+5, 0, T);
-			if (tTileEntity instanceof TileEntityBeacon) {
+			if (tTileEntity instanceof BeaconBlockEntity) {
 				CompoundTag tNBT = UT.NBT.make();
-				tTileEntity.writeToNBT(tNBT);
+				tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
 				tNBT.putInt("Primary", /*digSpeed*/3);
 				tNBT.putInt("Secondary", /*digSpeed*/3);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.readFromNBT(tNBT);
+				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
 			}
 			
 			WD.set(aWorld, 0, mHeight+5, -1, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, 0, mHeight+5, -1, T);
-			if (tTileEntity instanceof TileEntityBeacon) {
+			if (tTileEntity instanceof BeaconBlockEntity) {
 				CompoundTag tNBT = UT.NBT.make();
-				tTileEntity.writeToNBT(tNBT);
+				tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
 				tNBT.putInt("Primary", /*damageBoost*/5);
 				tNBT.putInt("Secondary", /*damageBoost*/5);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.readFromNBT(tNBT);
+				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
 			}
 			
 			WD.set(aWorld, 0, mHeight+5, 0, Blocks.BEACON, 0, 3);
 			tTileEntity = WD.te(aWorld, 0, mHeight+5, 0, T);
-			if (tTileEntity instanceof TileEntityBeacon) {
+			if (tTileEntity instanceof BeaconBlockEntity) {
 				CompoundTag tNBT = UT.NBT.make();
-				tTileEntity.writeToNBT(tNBT);
+				tNBT = tTileEntity.saveWithoutMetadata(aWorld.registryAccess());
 				tNBT.putInt("Primary", /*resistance*/11);
 				tNBT.putInt("Secondary", /*regeneration*/10);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.readFromNBT(tNBT);
+				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
 			}
 		}
 		
