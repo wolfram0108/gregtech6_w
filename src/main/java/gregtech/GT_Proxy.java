@@ -219,7 +219,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 						if (WD.meta(aEvent.getLevel(), tTarget.getBlockPos().getX(), tTarget.getBlockPos().getY(), tTarget.getBlockPos().getZ()) != 0) return;
 						for (int i = 0; i < 3 && aStack.getCount() > 0; i++) {
 							if (aStack.getCount() == 1) {
-								aEvent.getEntity().inventory.setItem(aEvent.getEntity().inventory.getSelectedSlot(), ST.make(Items.POTION, 1, 0));
+								aEvent.getEntity().getInventory().setItem(aEvent.getEntity().getInventory().getSelectedSlot(), ST.make(Items.POTION, 1, 0));
 							} else {
 								ST.use(aEvent.getEntity(), aStack);
 								ST.give(aEvent.getEntity(), ST.make(Items.POTION, 1, 0), F);
@@ -276,7 +276,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 						return;
 					}
 					List<String> tChatReturn = new ArrayListNoNulls<>();
-					long tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, aStack.getDamageValue()*10000, 1, aEvent.getEntity(), tChatReturn, aEvent.getEntity().inventory, aEvent.getEntity().isShiftKeyDown(), aStack, aEvent.getLevel(), (byte)aEvent.getFace(), aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
+					long tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, aStack.getDamageValue()*10000, 1, aEvent.getEntity(), tChatReturn, aEvent.getEntity().getInventory(), aEvent.getEntity().isShiftKeyDown(), aStack, aEvent.getLevel(), (byte)aEvent.getFace(), aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
 					UT.Entities.sendchat(aEvent.getEntity(), tChatReturn, F);
 					if (tDamage > 0) {
 						aEvent.setCanceled(T);
@@ -337,7 +337,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			if (aEvent.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
 				if (aEvent.getEntity().isBurning()) {
 					List<String> tChatReturn = new ArrayListNoNulls<>();
-					long tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aEvent.getEntity(), tChatReturn, aEvent.getEntity().inventory, aEvent.getEntity().isShiftKeyDown(), NI, aEvent.getLevel(), (byte)aEvent.getFace(), aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
+					long tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aEvent.getEntity(), tChatReturn, aEvent.getEntity().getInventory(), aEvent.getEntity().isShiftKeyDown(), NI, aEvent.getLevel(), (byte)aEvent.getFace(), aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
 					UT.Entities.sendchat(aEvent.getEntity(), tChatReturn, F);
 					if (tDamage > 0) {
 						UT.Sounds.send(SFX.MC_IGNITE, aEvent.getLevel(), aEvent.x, aEvent.y, aEvent.z);
