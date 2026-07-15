@@ -335,7 +335,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 			}
 		} else {
 			if (aEvent.action == PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK) {
-				if (aEvent.getEntity().isBurning()) {
+				if (aEvent.getEntity().isOnFire()) {
 					List<String> tChatReturn = new ArrayListNoNulls<>();
 					long tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 1, aEvent.getEntity(), tChatReturn, aEvent.getEntity().getInventory(), aEvent.getEntity().isShiftKeyDown(), NI, aEvent.getLevel(), (byte)aEvent.getFace(), aEvent.x, aEvent.y, aEvent.z, 0.5F, 0.5F, 0.5F);
 					UT.Entities.sendchat(aEvent.getEntity(), tChatReturn, F);
@@ -416,7 +416,7 @@ public abstract class GT_Proxy extends Abstract_Proxy {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onEntityLivingDropsEventEvent(LivingDropsEvent aEvent) {
 		if (aEvent.entity.level().isClientSide() || aEvent.entityLiving == null) return;
-		Override_Drops.handleDrops(aEvent.entityLiving, UT.Reflection.getLowercaseClass(aEvent.entityLiving), aEvent.drops, aEvent.source, aEvent.lootingLevel, aEvent.entityLiving.isBurning(), aEvent.recentlyHit);
+		Override_Drops.handleDrops(aEvent.entityLiving, UT.Reflection.getLowercaseClass(aEvent.entityLiving), aEvent.drops, aEvent.source, aEvent.lootingLevel, aEvent.entityLiving.isOnFire(), aEvent.recentlyHit);
 	}
 	
 	@SubscribeEvent(priority = EventPriority.HIGHEST)

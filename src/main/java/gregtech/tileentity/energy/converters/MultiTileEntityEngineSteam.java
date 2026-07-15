@@ -387,7 +387,7 @@ public class MultiTileEntityEngineSteam extends TileEntityBase09FacingSingle imp
 			float translatefact = step / 16;
 
 			float[] angle = {0, 0, 0};
-			float[] translate = {orientation.offsetX, orientation.offsetY, orientation.offsetZ};
+			float[] translate = {orientation.getStepX(), orientation.getStepY(), orientation.getStepZ()};
 
 			switch (orientation) {
 				case EAST:

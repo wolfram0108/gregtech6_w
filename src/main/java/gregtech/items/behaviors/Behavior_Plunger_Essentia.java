@@ -52,7 +52,7 @@ public class Behavior_Plunger_Essentia extends AbstractBehaviorDefault {
 		if (aTileEntity instanceof IEssentiaTransport) {
 			if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
 				UT.Sounds.send(SFX.IC_TRAMPOLINE, 1.0F, -1, aWorld, aX, aY, aZ);
-				for (Direction tDirection : Direction.VALID_DIRECTIONS) ((IEssentiaTransport)aTileEntity).takeEssentia(((IEssentiaTransport)aTileEntity).getEssentiaType(tDirection), ((IEssentiaTransport)aTileEntity).getEssentiaAmount(tDirection), tDirection);
+				for (Direction tDirection : Direction.values()) ((IEssentiaTransport)aTileEntity).takeEssentia(((IEssentiaTransport)aTileEntity).getEssentiaType(tDirection), ((IEssentiaTransport)aTileEntity).getEssentiaAmount(tDirection), tDirection);
 				return T;
 			}
 		}

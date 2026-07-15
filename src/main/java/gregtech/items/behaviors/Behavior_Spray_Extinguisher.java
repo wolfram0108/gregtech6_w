@@ -122,7 +122,7 @@ public class Behavior_Spray_Extinguisher extends AbstractBehaviorDefault {
 				((Blaze)tEntity).hurt(DamageSources.getCombatDamage("player", aPlayer, null, F), 10);
 				rUses += 10;
 			} else {
-				if (((Entity)tEntity).isBurning()) {
+				if (((Entity)tEntity).isOnFire()) {
 					((Entity)tEntity).extinguish();
 					rUses += 10;
 				}
