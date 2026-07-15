@@ -231,7 +231,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public int getInventoryStackLimit() {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryStackLimit();
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getMaxStackSize();
 		}
 		return 0;
 	}
@@ -254,7 +254,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.isItemValidForSlot(aSlot, aStack);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canPlaceItem(aSlot, aStack);
 		}
 		return F;
 	}

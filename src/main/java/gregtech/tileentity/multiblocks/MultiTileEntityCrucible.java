@@ -214,23 +214,23 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 			} else if (tData.mPrefix == null) {
 				List<OreDictMaterialStack> tList = new ArrayListNoNulls<>();
 				for (OreDictMaterialStack tMaterial : tData.getAllMaterialStacks()) if (tMaterial.mAmount > 0) tList.add(tMaterial.clone());
-				if (addMaterialStacks(tList, tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(tList, tTemperature)) removeItem(0, 1);
 			} else if (tData.mPrefix == OP.oreRaw) {
-				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier     )), tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier     )), tTemperature)) removeItem(0, 1);
 			} else if (tData.mPrefix == OP.blockRaw) {
-				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier *  9)), tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier *  9)), tTemperature)) removeItem(0, 1);
 			} else if (tData.mPrefix == OP.crateGtRaw) {
-				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier * 16)), tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier * 16)), tTemperature)) removeItem(0, 1);
 			} else if (tData.mPrefix == OP.crateGt64Raw) {
-				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier * 64)), tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier * 64)), tTemperature)) removeItem(0, 1);
 			} else if (tData.mPrefix.contains(TD.Prefix.STANDARD_ORE)) {
-				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier     )), tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier     )), tTemperature)) removeItem(0, 1);
 			} else if (tData.mPrefix.contains(TD.Prefix.DENSE_ORE)) {
-				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier *  2)), tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(Arrays.asList(OM.stack(tData.mMaterial.mMaterial.mTargetCrushing.mMaterial, tData.mMaterial.mMaterial.mTargetCrushing.mAmount * tData.mMaterial.mMaterial.mOreMultiplier *  2)), tTemperature)) removeItem(0, 1);
 			} else {
 				List<OreDictMaterialStack> tList = new ArrayListNoNulls<>();
 				for (OreDictMaterialStack tMaterial : tData.getAllMaterialStacks()) if (tMaterial.mAmount > 0) tList.add(tMaterial.clone());
-				if (addMaterialStacks(tList, tTemperature)) decrStackSize(0, 1);
+				if (addMaterialStacks(tList, tTemperature)) removeItem(0, 1);
 			}
 		}
 		

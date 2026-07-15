@@ -399,7 +399,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public int getInventoryStackLimit() {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryStackLimit();
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getMaxStackSize();
 		}
 		return 0;
 	}
@@ -422,7 +422,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.isItemValidForSlot(aSlot, aStack);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canPlaceItem(aSlot, aStack);
 		}
 		return F;
 	}

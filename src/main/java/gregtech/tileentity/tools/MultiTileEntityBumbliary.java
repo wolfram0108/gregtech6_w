@@ -159,7 +159,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 							}
 							if (tPrincessSlot >= 0) {
 								slot(SLOT_ROYAL, ST.amount(1, slot(tPrincessSlot)));
-								decrStackSize(tPrincessSlot, 1);
+								removeItem(tPrincessSlot, 1);
 							}
 						} else {
 							if (mLife %  300 == 150 && rng(10000) < Util.getAggressiveness(tRoyalTag)) {
@@ -256,7 +256,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 								int tLoss = (tBreedSlot == SLOT_DRONE && tBreedStack.getCount() > 1 ? 2 : 1);
 								ItemStack tDead = tBreedItem.bumbleKill(ST.amount(tLoss, tBreedStack));
 								for (int tDeadSlot : SLOTS_DEAD) if (addStackToSlot(tDeadSlot, tDead)) break;
-								decrStackSize(tBreedSlot, tLoss);
+								removeItem(tBreedSlot, tLoss);
 								
 								slot(SLOT_ROYAL, ST.amount(1, tRoyalItem.bumbleCrown(tRoyalStack)));
 								

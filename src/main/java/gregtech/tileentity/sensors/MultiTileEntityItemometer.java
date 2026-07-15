@@ -66,8 +66,8 @@ public class MultiTileEntityItemometer extends MultiTileEntitySensorTE {
 	@Override
 	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof Container) {
-			if (aDelegator.mTileEntity instanceof WorldlyContainer) return (long)((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity).length * ((Container)aDelegator.mTileEntity).getInventoryStackLimit();
-			return (long)((Container)aDelegator.mTileEntity).getContainerSize() * ((Container)aDelegator.mTileEntity).getInventoryStackLimit();
+			if (aDelegator.mTileEntity instanceof WorldlyContainer) return (long)((WorldlyContainer)aDelegator.mTileEntity).getAccessibleSlotsFromSide(aDelegator.mSideOfTileEntity).length * ((Container)aDelegator.mTileEntity).getMaxStackSize();
+			return (long)((Container)aDelegator.mTileEntity).getContainerSize() * ((Container)aDelegator.mTileEntity).getMaxStackSize();
 		}
 		return 0;
 	}

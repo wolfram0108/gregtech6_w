@@ -106,7 +106,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 				if (OM.prefixcontainsmaterialmatches(tData, mContent == null || mContent.mMaterial == MT.NULL ? null : mContent.mMaterial, TD.Prefix.DUST_BASED)) {
 					int tSize = (int)Math.min(slot(0).getCount(), UT.Code.divup(DUST_TYPES[mMode].mAmount - (mContent == null ? 0 : mContent.mAmount), tData.mMaterial.mAmount));
 					mContent = OM.stack(tData.mMaterial.mMaterial, tData.mMaterial.mAmount * tSize + (mContent == null ? 0 : mContent.mAmount));
-					decrStackSize(0, tSize);
+					removeItem(0, tSize);
 					temp = T;
 				}
 			}

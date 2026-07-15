@@ -308,7 +308,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 			if (ST.equal(aStack, tOutputStack) && aStack.getCount() < aStack.getMaxStackSize()) {
 				int tDifference = Math.min(tOutputStack.getCount(), aStack.getMaxStackSize() - aStack.getCount());
 				aStack.setCount(aStack.getCount()+(tDifference));
-				decrStackSize(0, tDifference);
+				removeItem(0, tDifference);
 				if (aCauseDamage) UT.Entities.applyTemperatureDamage(aPlayer, mTemperature, 1, 5.0F);
 				return T;
 			}

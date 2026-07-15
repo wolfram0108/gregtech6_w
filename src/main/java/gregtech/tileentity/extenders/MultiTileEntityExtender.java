@@ -214,7 +214,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public int getInventoryStackLimit() {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryStackLimit();
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getMaxStackSize();
 		}
 		return 0;
 	}
@@ -237,7 +237,7 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.isItemValidForSlot(aSlot, aStack);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canPlaceItem(aSlot, aStack);
 		}
 		return F;
 	}
