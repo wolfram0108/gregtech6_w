@@ -122,10 +122,10 @@ public class Loader_Recipes_Replace implements Runnable {
 		List<ItemStack> tStickList = OreDictionary.getOres(OD.stickWood.toString());
 		HashSetNoNulls<Object> tAlreadyScannedItems = new HashSetNoNulls<>();
 		ArrayListNoNulls<RecipeReplacement> tList = new ArrayListNoNulls<>();
-		List<Recipe> tRecipeList = CR.list();
+		List<ICraftingRecipeGT> tRecipeList = CR.list(); // CR.list() отдаёт GT6-буфер ICraftingRecipeGT (не neo Recipe)
 		boolean tUseProgressBar = UT.LoadingBar.start("Looking up Recipes", tRecipeList.size());
 		for (int l = 0; l < tRecipeList.size(); l++) {
-			Recipe tRecipe = tRecipeList.get(l);
+			ICraftingRecipeGT tRecipe = tRecipeList.get(l);
 			if (tUseProgressBar) UT.LoadingBar.step("");
 			ItemStack aOutput = tRecipe.getRecipeOutput();
 			if (ST.invalid(aOutput)) continue;
@@ -133,21 +133,21 @@ public class Loader_Recipes_Replace implements Runnable {
 			if (aOutput.getMaxDamage() <= 0) continue;
 			if (aOutput.getMaxStackSize() != 1) continue;
 			if (tRecipe instanceof ShapelessRecipe) continue;
-			if (tRecipe instanceof ShapelessOreRecipe) continue;
-			if (tRecipe instanceof ICraftingRecipeGT) continue;
+			if (tRecipe instanceof ICraftingRecipeGT) continue; // GT6-буфер: ВСЕ элементы CR.list() — ICraftingRecipeGT -> тело ниже недостижимо (см. F11-recipe-scan ниже)
 			if (ST.block(aOutput) != NB) continue;
 			if (COMPAT_IC2 != null && COMPAT_IC2.isReactorItem(aOutput)) continue;
 			if (COMPAT_EU_ITEM != null && COMPAT_EU_ITEM.is(aOutput)) continue;
 			if (NON_REPLACEABLE.contains(aOutput, T)) continue;
-			if (sNonReplaceableNames.contains(aOutput.getDescriptionId())) continue;
+			if (sNonReplaceableNames.contains(aOutput.getItem().getDescriptionId())) continue;
 			
 			Object[] tRecipeInputs = null;
-			
-			if (tRecipe instanceof ShapedOreRecipe) {
-				tRecipeInputs = ((ShapedOreRecipe)tRecipe).getInput();
-			} else if (tRecipe instanceof ShapedRecipe) {
-				tRecipeInputs = ((ShapedRecipe)tRecipe).recipeItems;
-			} else if (MD.IC2.mLoaded && tRecipe instanceof ic2.core.AdvRecipe) {
+
+			// F11-recipe-scan: 1.7.10 читал вход через Forge ShapedOreRecipe.getInput()/ShapedRecipe.recipeItems — оба
+			// класса удалены в neo; neo-рецепты живут в RecipeManager (server-lifecycle), а НЕ в GT6-буфере CR.list().
+			// Кросс-мод скан входов чужих рецептов требует RecipeManager (отдельная ADR-recipe-scan). GT6-буфер
+			// (ICraftingRecipeGT) вход не отдаёт, и цикл выше (стр. instanceof ICraftingRecipeGT) скипает все его элементы
+			// -> этот блок недостижим. IC2 AdvRecipe сохранён (зеркало compile-only).
+			if (MD.IC2.mLoaded && tRecipe instanceof ic2.core.AdvRecipe) {
 				tRecipeInputs = ((ic2.core.AdvRecipe)tRecipe).input;
 			}
 			
@@ -263,24 +263,26 @@ public class Loader_Recipes_Replace implements Runnable {
 		if (tUseProgressBar) UT.LoadingBar.finish();
 	}
 	
-	public static ItemStack getRecipeOutput(Recipe aRecipe, ItemStack... aStacks) {
+	public static ItemStack getRecipeOutput(ICraftingRecipeGT aRecipe, ItemStack... aStacks) {
 		if (aRecipe == null || aStacks == null) return null;
-		for (byte i = 0; i < aStacks.length; i++) if (aStacks[i] != null) {
-			CraftingInput aCrafting = new CraftingInput(new AbstractContainerMenu() {@Override public boolean stillValid(Player aPlayer) {return F;} @Override public ItemStack quickMoveStack(Player aPlayer, int aIndex) {return ItemStack.EMPTY;}}, 3, 3);
-			for (int j = 0; j < 9 && j < aStacks.length; j++) aCrafting.setItem(j, aStacks[j]);
-			if (!aRecipe.matches(aCrafting, DW)) return null;
-			ItemStack rOutput = aRecipe.getCraftingResult(aCrafting);
-			if (rOutput == null || rOutput.getCount() <= 0) return null;
-			return rOutput;
-		}
-		return null;
+		boolean tAny = F; for (ItemStack s : aStacks) if (s != null) {tAny = T; break;}
+		if (!tAny) return null;
+		// neo CraftingInput иммутабелен (нет setItem/публичного ctor) -> фабрика CraftingInput.of(w,h,List). GT6-рецепт
+		// собирается через свои matches/getCraftingResult (ICraftingRecipeGT), а не neo assemble (provider не нужен).
+		java.util.List<ItemStack> tItems = new java.util.ArrayList<>();
+		for (int j = 0; j < 9; j++) tItems.add(j < aStacks.length && aStacks[j] != null ? aStacks[j] : ItemStack.EMPTY);
+		CraftingInput aCrafting = CraftingInput.of(3, 3, tItems);
+		if (!aRecipe.matches(aCrafting, DW)) return null;
+		ItemStack rOutput = aRecipe.getCraftingResult(aCrafting);
+		if (rOutput == null || rOutput.getCount() <= 0) return null;
+		return rOutput;
 	}
 	
 	public static class RecipeReplacement {
-		public final Recipe mRecipe;
+		public final ICraftingRecipeGT mRecipe; // GT6-буфер CR.list() (не neo Recipe)
 		public final OreDictPrefix mPrefix;
 		public OreDictMaterial mMat, mRod;
-		public RecipeReplacement(Recipe aRecipe, OreDictPrefix aPrefix, OreDictMaterial aMat, OreDictMaterial aRod) {mRecipe = aRecipe; mPrefix = aPrefix; mMat = aMat; mRod = aRod;}
+		public RecipeReplacement(ICraftingRecipeGT aRecipe, OreDictPrefix aPrefix, OreDictMaterial aMat, OreDictMaterial aRod) {mRecipe = aRecipe; mPrefix = aPrefix; mMat = aMat; mRod = aRod;}
 	}
 	
 	public static class RecipeReplacer {
