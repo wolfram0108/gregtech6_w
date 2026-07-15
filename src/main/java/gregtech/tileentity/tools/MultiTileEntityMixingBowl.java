@@ -19,6 +19,8 @@
 
 package gregtech.tileentity.tools;
 
+import net.neoforged.neoforge.fluids.IFluidTank;
+import net.neoforged.neoforge.fluids.FluidStack;
 import gregapi.util.WD;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool;
@@ -463,8 +465,8 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 	@Override
 	public int removeFluidFromConnectedTank(byte aSide, FluidStack aFluid, boolean aOnlyRemoveIfItCanRemoveAllAtOnce) {
 		if (aFluid == NF) return 0;
-		for (FluidTankGT tTank : mTanksInput ) if (tTank.contains(aFluid)) if (tTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.amount : 1)) return (int)tTank.remove(aFluid.amount);
-		for (FluidTankGT tTank : mTanksOutput) if (tTank.contains(aFluid)) if (tTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.amount : 1)) return (int)tTank.remove(aFluid.amount);
+		for (FluidTankGT tTank : mTanksInput ) if (tTank.contains(aFluid)) if (tTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.getAmount() : 1)) return (int)tTank.remove(aFluid.getAmount());
+		for (FluidTankGT tTank : mTanksOutput) if (tTank.contains(aFluid)) if (tTank.has(aOnlyRemoveIfItCanRemoveAllAtOnce ? aFluid.getAmount() : 1)) return (int)tTank.remove(aFluid.getAmount());
 		return 0;
 	}
 
