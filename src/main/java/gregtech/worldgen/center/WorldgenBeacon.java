@@ -74,7 +74,7 @@ public class WorldgenBeacon extends WorldgenObject {
 				tNBT.putInt("Primary", /*moveSpeed*/1);
 				tNBT.putInt("Secondary", /*moveSpeed*/1);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
+				tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
 			}
 			
 			WD.set(aWorld, -1, mHeight+5, 0, Blocks.BEACON, 0, 3);
@@ -85,7 +85,7 @@ public class WorldgenBeacon extends WorldgenObject {
 				tNBT.putInt("Primary", /*digSpeed*/3);
 				tNBT.putInt("Secondary", /*digSpeed*/3);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
+				tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
 			}
 			
 			WD.set(aWorld, 0, mHeight+5, -1, Blocks.BEACON, 0, 3);
@@ -96,7 +96,7 @@ public class WorldgenBeacon extends WorldgenObject {
 				tNBT.putInt("Primary", /*damageBoost*/5);
 				tNBT.putInt("Secondary", /*damageBoost*/5);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
+				tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
 			}
 			
 			WD.set(aWorld, 0, mHeight+5, 0, Blocks.BEACON, 0, 3);
@@ -107,7 +107,7 @@ public class WorldgenBeacon extends WorldgenObject {
 				tNBT.putInt("Primary", /*resistance*/11);
 				tNBT.putInt("Secondary", /*regeneration*/10);
 				tNBT.putInt("Levels", 4);
-				tTileEntity.loadWithComponents(tNBT, aWorld.registryAccess());
+				tTileEntity.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, aWorld.registryAccess(), tNBT));
 			}
 		}
 		
