@@ -51,7 +51,7 @@ public class WorldgenColtan extends WorldgenObject {
 	
 	@Override
 	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		Random tRandom = new Random(aWorld.getSeed()+5);
+		Random tRandom = new Random(((net.minecraft.server.level.ServerLevel)aWorld).getSeed()+5);
 		int tX = (int)(tRandom.nextGaussian()*1500), tZ = (int)(tRandom.nextGaussian()*1500);
 		// Generate Bedrock Vein where the Coltass points to.
 		if ((tX>>4) == (aMinX>>4) && (tZ>>4) == (aMinZ>>4)) WorldgenOresBedrock.generateVein(MT.OREMATS.Coltan, aWorld, aDimType, aMinX, aMinZ, aRandom);

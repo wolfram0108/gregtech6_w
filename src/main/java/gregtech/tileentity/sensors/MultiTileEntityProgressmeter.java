@@ -43,8 +43,8 @@ public class MultiTileEntityProgressmeter extends MultiTileEntitySensorTE {
 	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof ITileEntityProgress) return ((ITileEntityProgress)aDelegator.mTileEntity).getProgressValue(aDelegator.mSideOfTileEntity);
 		if (aDelegator.mTileEntity instanceof SpawnerBlockEntity) {
-			BaseSpawner tLogic = ((SpawnerBlockEntity)aDelegator.mTileEntity).func_145881_a();
-			if (tLogic != null) return tLogic.spawnDelay;
+			BaseSpawner tLogic = ((SpawnerBlockEntity)aDelegator.mTileEntity).getSpawner();
+			if (tLogic != null) return (Integer)UT.Reflection.getFieldContent(tLogic, "spawnDelay");
 		}
 		return 0;
 	}
@@ -52,7 +52,7 @@ public class MultiTileEntityProgressmeter extends MultiTileEntitySensorTE {
 	public long getCurrentMax  (DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof ITileEntityProgress) return ((ITileEntityProgress)aDelegator.mTileEntity).getProgressMax(aDelegator.mSideOfTileEntity);
 		if (aDelegator.mTileEntity instanceof SpawnerBlockEntity) {
-			BaseSpawner tLogic = ((SpawnerBlockEntity)aDelegator.mTileEntity).func_145881_a();
+			BaseSpawner tLogic = ((SpawnerBlockEntity)aDelegator.mTileEntity).getSpawner();
 			if (tLogic != null) return Long.MAX_VALUE;
 		}
 		return 0;
