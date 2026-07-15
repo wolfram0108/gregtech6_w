@@ -102,11 +102,16 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		// сеттер) — тот же класс проблемы во всём gregtech.items, центра ещё нет нигде в дереве (grep=0).
 		// setCreativeTab(CreativeModeTab.tabCombat);
 		if (UT.Code.stringValid(aEnglishTooltip)) LH.add(mTooltip = mName + ".tooltip_main", aEnglishTooltip); else mTooltip = null;
-		ST.register(this, mName);
+		// F12-followup (item-split): само-регистрация УБРАНА — конструкция идёт на RegisterEvent через
+		// GT_API.registerItemLazy(name, ()->new ItemArmorBase(...)) на call-site (Item.<init> createIntrusiveHolder требует
+		// разморож. реестр). Рецепт (ST.make(this)+aRecipe) создаёт стеки → отложен на server-start (компоненты привязаны там).
 		if (aRecipe != null && aRecipe.length > 0) {
-			CR.shaped(ST.make(this, 1, 0), CR.DEF_REV_NCC, aRecipe);
-			OreDictItemData tData = OM.data(ST.make(this, 1, 0));
-			if (tData != null) tData.setUseVanillaDamage();
+			final Object[] fRecipe = aRecipe;
+			gregapi.GT_API.deferItemInit(() -> {
+				CR.shaped(ST.make(this, 1, 0), CR.DEF_REV_NCC, fRecipe);
+				OreDictItemData tData = OM.data(ST.make(this, 1, 0));
+				if (tData != null) tData.setUseVanillaDamage();
+			});
 		}
 	}
 

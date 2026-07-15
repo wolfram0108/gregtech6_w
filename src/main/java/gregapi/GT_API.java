@@ -226,6 +226,14 @@ public class GT_API extends Abstract_Mod {
 		return itemsFor(aModIDOwner).register(aRegistryName, () -> aItem);
 	}
 
+	/** F12-followup (item-split): ленивая регистрация — supplier КОНСТРУИРУЕТ предмет на RegisterEvent (реестр разморожен →
+	 *  {@code Item.<init>}→{@code createIntrusiveHolder} валиден), а не эагерно в preInit (реестр заморожен → freeze). Call-site:
+	 *  {@code GT_API.registerItemLazy(modId, name, () -> Field = new ItemX(...))} — supplier строит предмет, присваивает поле и
+	 *  возвращает его. Тот же приём, что fluid-split (FluidGT source-supplier). Заменяет эагер {@code new ItemX()} + self-register. */
+	public static DeferredItem<Item> registerItemLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Item> aSupplier) {
+		return itemsFor(aModIDOwner).register(aRegistryName, aSupplier);
+	}
+
 	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Block, String, Class)} (был прямой
 	 *  выдуманный {@code DeferredRegister.registerBlock(...)}). Пара Block+BlockItem регистрируется под
 	 *  одним и тем же именем — как было в оригинальном {@code GameRegistry.registerBlock(Block, Class, String)}. */
