@@ -62,7 +62,7 @@ public class MultiTileEntityMortar extends TileEntityBase07Paintable implements 
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
-		if (aNBT.contains(NBT_DESIGN)) mStyle = aNBT.getByte(NBT_DESIGN);
+		if (aNBT.contains(NBT_DESIGN)) mStyle = aNBT.getByteOr(NBT_DESIGN, (byte)0);
 	}
 	
 	@Override

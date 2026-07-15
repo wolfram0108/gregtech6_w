@@ -93,10 +93,10 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains("gt.mold")) mShape = aNBT.getIntOr("gt.mold", 0);
-		if (aNBT.contains(NBT_MODE)) mUseRedstone = aNBT.getBoolean(NBT_MODE);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByte(NBT_CONNECTION);
-		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
+		if (aNBT.contains(NBT_MODE)) mUseRedstone = aNBT.getBooleanOr(NBT_MODE, false);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBooleanOr(NBT_ACIDPROOF, false);
+		if (aNBT.contains(NBT_CONNECTION)) mAutoPullDirections = aNBT.getByteOr(NBT_CONNECTION, (byte)0);
+		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLongOr(NBT_TEMPERATURE, 0L);
 		mContent = OreDictMaterialStack.load(NBT_MATERIALS, aNBT);
 	}
 	

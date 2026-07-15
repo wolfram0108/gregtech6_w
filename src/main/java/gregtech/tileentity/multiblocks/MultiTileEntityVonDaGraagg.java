@@ -59,7 +59,7 @@ public class MultiTileEntityVonDaGraagg extends TileEntityBase10MultiBlockBase i
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_ACCEPTED, ""));
 	}
 	
 	@Override

@@ -62,9 +62,9 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		for (int i = 0; i < mShape[0].length; i++) mShape[0][i] = UT.Code.getBitsS(aNBT.getShort("gt.coin.shape.0."+i));
-		for (int i = 0; i < mShape[1].length; i++) mShape[1][i] = UT.Code.getBitsS(aNBT.getShort("gt.coin.shape.1."+i));
-		mIsUnique = aNBT.getBoolean("gt.coin.unique");
+		for (int i = 0; i < mShape[0].length; i++) mShape[0][i] = UT.Code.getBitsS(aNBT.getShortOr("gt.coin.shape.0."+i, (short)0));
+		for (int i = 0; i < mShape[1].length; i++) mShape[1][i] = UT.Code.getBitsS(aNBT.getShortOr("gt.coin.shape.1."+i, (short)0));
+		mIsUnique = aNBT.getBooleanOr("gt.coin.unique", false);
 	}
 	
 	@Override

@@ -32,6 +32,6 @@ public abstract class MultiTileEntityPanelColored extends MultiTileEntityPanel {
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mColor = aNBT.getByte(NBT_COLOR);
+		mColor = aNBT.getByteOr(NBT_COLOR, (byte)0);
 	}
 }

@@ -116,7 +116,7 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 		ListTag tNBT_ItemList = tNBT.getTagList("Inventory", 10);
 		for (int i = 0; i < tNBT_ItemList.size(); i++) {
 			CompoundTag tag = tNBT_ItemList.getCompoundTagAt(i);
-			byte slot = tag.getByte("Slot");
+			byte slot = tag.getByteOr("Slot", (byte)0);
 			if (slot >= 0 && slot < tInventory.length) {
 				tInventory[slot] = ST.load(tag);
 			}

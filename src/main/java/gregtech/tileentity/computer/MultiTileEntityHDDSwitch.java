@@ -60,7 +60,7 @@ public class MultiTileEntityHDDSwitch extends TileEntityBase08DataSwitch {
 		ItemStack tDrive = slot(0);
 		if (OM.is(OD_USB_DRIVES[aUSBTier], tDrive) && ItemNBT.has(tDrive)) {
 			CompoundTag tDriveData = ItemNBT.get(tDrive).getCompoundOrEmpty(NBT_USB_DRIVE);
-			if (tDriveData.getByte(NBT_USB_TIER+mMode) <= aUSBTier) return tDriveData.contains(NBT_USB_DATA+mMode) ? tDriveData.getCompoundOrEmpty(NBT_USB_DATA+mMode) : null;
+			if (tDriveData.getByteOr(NBT_USB_TIER+mMode, (byte)0) <= aUSBTier) return tDriveData.contains(NBT_USB_DATA+mMode) ? tDriveData.getCompoundOrEmpty(NBT_USB_DATA+mMode) : null;
 		}
 		return null;
 	}

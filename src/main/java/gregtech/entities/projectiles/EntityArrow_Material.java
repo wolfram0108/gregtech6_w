@@ -331,15 +331,15 @@ public class EntityArrow_Material extends EntityProjectile {
 	@Override
 	public void readEntityFromNBT(CompoundTag aNBT) {
 		super.readEntityFromNBT(aNBT);
-		mHitBlockX = aNBT.getShort("xTile");
-		mHitBlockY = aNBT.getShort("yTile");
-		mHitBlockZ = aNBT.getShort("zTile");
-		mTicksAlive = aNBT.getShort("life");
-		mHitBlock = Block.getBlockById(aNBT.getByte("inTile") & 255);
-		mHitBlockMeta = aNBT.getByte("inData") & 255;
-		arrowShake = aNBT.getByte("shake") & 255;
-		inGround = aNBT.getByte("inGround") == 1;
-		setDamage(aNBT.getDouble("damage"));
+		mHitBlockX = aNBT.getShortOr("xTile", (short)0);
+		mHitBlockY = aNBT.getShortOr("yTile", (short)0);
+		mHitBlockZ = aNBT.getShortOr("zTile", (short)0);
+		mTicksAlive = aNBT.getShortOr("life", (short)0);
+		mHitBlock = Block.getBlockById(aNBT.getByteOr("inTile", (byte)0) & 255);
+		mHitBlockMeta = aNBT.getByteOr("inData", (byte)0) & 255;
+		arrowShake = aNBT.getByteOr("shake", (byte)0) & 255;
+		inGround = aNBT.getByteOr("inGround", (byte)0) == 1;
+		setDamage(aNBT.getDoubleOr("damage", 0.0D));
 		canBePickedUp = aNBT.getByte("pickup");
 		mArrow = ST.load(aNBT, "mArrow");
 	}

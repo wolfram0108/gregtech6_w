@@ -68,12 +68,12 @@ public class MultiTileEntityPump extends TileEntityBase09FacingSingle implements
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.contains(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLong(NBT_ACTIVE_DATA);}
-		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT);}
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyType = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBooleanOr(NBT_ACTIVE, false);
+		if (aNBT.contains(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLongOr(NBT_ACTIVE_DATA, 0L);}
+		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLongOr(NBT_INPUT, 0L);}
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyType = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_ACCEPTED, ""));
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}
 	

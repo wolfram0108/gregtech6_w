@@ -75,7 +75,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 			try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
 			if (aNBT != null) for (int i = 0; i < Integer.MAX_VALUE; i++) {
 				if (!aNBT.contains(""+i)) break;
-				String tString = aNBT.getString(""+i);
+				String tString = aNBT.getStringOr(""+i, "");
 				if (!ALREADY_RECEIVED.contains(tString)) ALREADY_RECEIVED.add(tString);
 			}
 		}

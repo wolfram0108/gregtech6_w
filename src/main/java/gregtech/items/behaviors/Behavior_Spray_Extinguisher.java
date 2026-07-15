@@ -64,7 +64,7 @@ public class Behavior_Spray_Extinguisher extends AbstractBehaviorDefault {
 		
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
-		long tUses = tNBT.getLong("gt.remaining");
+		long tUses = tNBT.getLongOr("gt.remaining", 0L);
 		
 		if (ST.equal(aStack, mFull, T)) {
 			aStack.func_150996_a(mUsed.getItem());
@@ -142,7 +142,7 @@ public class Behavior_Spray_Extinguisher extends AbstractBehaviorDefault {
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.extinguisher.tooltip"));
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
+		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLongOr("gt.remaining", 0L));
 		aList.add(LH.get("gt.behaviour.extinguisher.uses") + " " + (tRemaining / 10) + "." + (tRemaining % 10));
 		aList.add(LH.get("gt.behaviour.unstackable"));
 		return aList;

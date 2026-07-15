@@ -57,7 +57,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBooleanOr(NBT_ACIDPROOF, false);
 	}
 	
 	@Override

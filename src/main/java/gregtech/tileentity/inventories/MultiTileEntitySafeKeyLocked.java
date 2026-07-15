@@ -53,8 +53,8 @@ public class MultiTileEntitySafeKeyLocked extends MultiTileEntitySafe implements
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_KEY)) mID = aNBT.getLong(NBT_KEY);
-		if (aNBT.contains(NBT_OPEN)) mOpened = aNBT.getBoolean(NBT_OPEN);
+		if (aNBT.contains(NBT_KEY)) mID = aNBT.getLongOr(NBT_KEY, 0L);
+		if (aNBT.contains(NBT_OPEN)) mOpened = aNBT.getBooleanOr(NBT_OPEN, false);
 	}
 	
 	@Override

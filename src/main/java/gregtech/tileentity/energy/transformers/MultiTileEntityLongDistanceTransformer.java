@@ -67,17 +67,17 @@ public class MultiTileEntityLongDistanceTransformer extends TileEntityBase09Faci
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_WASTE_ENERGY)) mWasteEnergy = aNBT.getBoolean(NBT_WASTE_ENERGY);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.contains(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLong(NBT_ACTIVE_DATA);}
-		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLong(NBT_INPUT);}
-		if (aNBT.contains(NBT_OUTPUT)) {mOutput = aNBT.getLong(NBT_OUTPUT);}
-		if (aNBT.contains(NBT_DISTANCE)) {mDistance = aNBT.getLong(NBT_DISTANCE);}
-		if (aNBT.contains(NBT_THROUGHPUT)) {mThroughput = aNBT.getLong(NBT_THROUGHPUT);}
-		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		if (aNBT.contains(NBT_WASTE_ENERGY)) mWasteEnergy = aNBT.getBooleanOr(NBT_WASTE_ENERGY, false);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBooleanOr(NBT_ACTIVE, false);
+		if (aNBT.contains(NBT_ACTIVE_DATA)) {mActiveData = aNBT.getLongOr(NBT_ACTIVE_DATA, 0L);}
+		if (aNBT.contains(NBT_INPUT)) {mInput = aNBT.getLongOr(NBT_INPUT, 0L);}
+		if (aNBT.contains(NBT_OUTPUT)) {mOutput = aNBT.getLongOr(NBT_OUTPUT, 0L);}
+		if (aNBT.contains(NBT_DISTANCE)) {mDistance = aNBT.getLongOr(NBT_DISTANCE, 0L);}
+		if (aNBT.contains(NBT_THROUGHPUT)) {mThroughput = aNBT.getLongOr(NBT_THROUGHPUT, 0L);}
+		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLongOr(NBT_TARGET_X, 0L)), UT.Code.bindInt(aNBT.getLongOr(NBT_TARGET_Y, 0L)), UT.Code.bindInt(aNBT.getLongOr(NBT_TARGET_Z, 0L)));}
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_ACCEPTED, ""));
 	}
 	
 	@Override

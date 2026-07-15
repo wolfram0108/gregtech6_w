@@ -66,10 +66,10 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_STATE)) mCountDown = aNBT.getByte(NBT_STATE);
-		if (aNBT.contains(NBT_MODE)) mSunk = aNBT.getBoolean(NBT_MODE);
-		if (aNBT.contains(NBT_QUALITY)) mMaxExplosionResistance = aNBT.getLong(NBT_QUALITY);
-		if (aNBT.contains(NBT_FORTUNE)) mFortune = aNBT.getByte(NBT_FORTUNE);
+		if (aNBT.contains(NBT_STATE)) mCountDown = aNBT.getByteOr(NBT_STATE, (byte)0);
+		if (aNBT.contains(NBT_MODE)) mSunk = aNBT.getBooleanOr(NBT_MODE, false);
+		if (aNBT.contains(NBT_QUALITY)) mMaxExplosionResistance = aNBT.getLongOr(NBT_QUALITY, 0L);
+		if (aNBT.contains(NBT_FORTUNE)) mFortune = aNBT.getByteOr(NBT_FORTUNE, (byte)0);
 	}
 	
 	@Override

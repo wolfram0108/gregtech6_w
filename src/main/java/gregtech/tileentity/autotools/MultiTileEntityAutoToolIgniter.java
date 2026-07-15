@@ -55,11 +55,11 @@ public class MultiTileEntityAutoToolIgniter extends TileEntityBase09FacingSingle
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.contains(NBT_INPUT)) mInput = aNBT.getLong(NBT_INPUT);
-		if (aNBT.contains(NBT_QUALITY)) mQuality = aNBT.getByte(NBT_QUALITY);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
+		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
+		if (aNBT.contains(NBT_INPUT)) mInput = aNBT.getLongOr(NBT_INPUT, 0L);
+		if (aNBT.contains(NBT_QUALITY)) mQuality = aNBT.getByteOr(NBT_QUALITY, (byte)0);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_ACCEPTED, ""));
 	}
 	
 	@Override

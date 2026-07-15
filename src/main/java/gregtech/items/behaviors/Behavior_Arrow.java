@@ -78,7 +78,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	public boolean isItemStackUsable(MultiItem aItem, ItemStack aStack) {
 		if (mEnchantment != null && mLevel > 0) {
 			CompoundTag tNBT = UT.NBT.getNBT(aStack);
-			if (!tNBT.getBoolean("gt.u")) {
+			if (!tNBT.getBooleanOr("gt.u", false)) {
 				tNBT.putBoolean("gt.u", T);
 				UT.NBT.set(aStack, tNBT);
 				UT.NBT.addEnchantment(aStack, mEnchantment, mLevel);

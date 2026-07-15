@@ -60,7 +60,7 @@ public class MultiTileEntityBottleCrate extends TileEntityBase09FacingSingle imp
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains(NBT_TEXTURE)) {
-			short tShelfID = aNBT.getShort(NBT_TEXTURE);
+			short tShelfID = aNBT.getShortOr(NBT_TEXTURE, (short)0);
 			if (UT.Code.exists(tShelfID, PlankData.PLANK_ICONS)) mIcon = PlankData.PLANK_ICONS[tShelfID];
 		}
 		if (mIcon == null || mIcon == Textures.BlockIcons.RENDERING_ERROR) mIcon = mMaterial.mTextureSetsBlock.get(OP.casingMachine.mIconIndexBlock);

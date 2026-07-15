@@ -71,7 +71,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 		if (aNBT.contains(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
 		
 		int tCapacity = 1000;
-		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLong(NBT_TANK_CAPACITY));
+		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLongOr(NBT_TANK_CAPACITY, 0L));
 		mTanksInput = new FluidTankGT[mRecipes.mInputFluidCount];
 		for (int i = 0; i < mTanksInput.length; i++) mTanksInput[i] = new FluidTankGT(tCapacity).readFromNBT(aNBT, NBT_TANK+".in."+i);
 		mTanksOutput = new FluidTankGT[mRecipes.mOutputFluidCount];

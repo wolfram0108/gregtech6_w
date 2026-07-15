@@ -66,11 +66,11 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_MODE)) mModes = aNBT.getByte(NBT_MODE);
+		if (aNBT.contains(NBT_MODE)) mModes = aNBT.getByteOr(NBT_MODE, (byte)0);
 		
 		if (CODE_CLIENT) {
 			if (GT_API.sBlockIcons == null && aNBT.contains(NBT_TEXTURE)) {
-				String tTextureName = aNBT.getString(NBT_TEXTURE);
+				String tTextureName = aNBT.getStringOr(NBT_TEXTURE, "");
 				mTextures = new IIconContainer[] {
 				new Textures.BlockIcons.CustomIcon("machines/extenders/"+tTextureName+"/colored/in"),
 				new Textures.BlockIcons.CustomIcon("machines/extenders/"+tTextureName+"/colored/out"),

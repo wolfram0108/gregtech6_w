@@ -60,8 +60,8 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_STATE)) mState = aNBT.getByte(NBT_STATE);
-		if (aNBT.contains(NBT_PROGRESS)) mClickCount = aNBT.getByte(NBT_PROGRESS);
+		if (aNBT.contains(NBT_STATE)) mState = aNBT.getByteOr(NBT_STATE, (byte)0);
+		if (aNBT.contains(NBT_PROGRESS)) mClickCount = aNBT.getByteOr(NBT_PROGRESS, (byte)0);
 		if (aNBT.contains(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
 	}
 	

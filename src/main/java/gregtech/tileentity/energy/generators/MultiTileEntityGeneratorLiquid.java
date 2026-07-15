@@ -75,13 +75,13 @@ public class MultiTileEntityGeneratorLiquid extends TileEntityBase09FacingSingle
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLong(NBT_ENERGY);
-		mBurning = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.contains(NBT_COOLDOWN)) mCooldown = aNBT.getByte(NBT_COOLDOWN);
-		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
+		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
+		mBurning = aNBT.getBooleanOr(NBT_ACTIVE, false);
+		if (aNBT.contains(NBT_COOLDOWN)) mCooldown = aNBT.getByteOr(NBT_COOLDOWN, (byte)0);
+		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLongOr(NBT_OUTPUT, 0L);
 		if (aNBT.contains(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
-		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
 		mTank.setCapacity(mRate * 10);
 		mTank.readFromNBT(aNBT, NBT_TANK);
 	}

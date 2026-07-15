@@ -64,9 +64,9 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.contains(NBT_TEMPERATURE)) {mTemperature = aNBT.getLong(NBT_TEMPERATURE);}
-		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLong(NBT_TARGET_X)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Y)), UT.Code.bindInt(aNBT.getLong(NBT_TARGET_Z)));}
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
+		if (aNBT.contains(NBT_TEMPERATURE)) {mTemperature = aNBT.getLongOr(NBT_TEMPERATURE, 0L);}
+		if (aNBT.contains(NBT_TARGET)) {mTargetPos = new BlockPos(UT.Code.bindInt(aNBT.getLongOr(NBT_TARGET_X, 0L)), UT.Code.bindInt(aNBT.getLongOr(NBT_TARGET_Y, 0L)), UT.Code.bindInt(aNBT.getLongOr(NBT_TARGET_Z, 0L)));}
 	}
 	
 	@Override

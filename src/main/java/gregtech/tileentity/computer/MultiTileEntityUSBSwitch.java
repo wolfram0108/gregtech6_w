@@ -58,7 +58,7 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 	@Override
 	public CompoundTag getUSBData(byte aSide, int aUSBTier) {
 		ItemStack tUSB = slot(mMode);
-		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB) && ItemNBT.has(tUSB) && ItemNBT.get(tUSB).getByte(NBT_USB_TIER) <= aUSBTier) {
+		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB) && ItemNBT.has(tUSB) && ItemNBT.get(tUSB).getByteOr(NBT_USB_TIER, (byte)0) <= aUSBTier) {
 			return ItemNBT.get(tUSB).getCompoundOrEmpty(NBT_USB_DATA);
 		}
 		return null;

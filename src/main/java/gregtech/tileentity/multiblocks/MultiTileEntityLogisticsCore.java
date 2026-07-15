@@ -72,8 +72,8 @@ public class MultiTileEntityLogisticsCore extends TileEntityBase10MultiBlockBase
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getString(NBT_ENERGY_ACCEPTED));
-		mEnergy = aNBT.getLong(NBT_ENERGY);
+		if (aNBT.contains(NBT_ENERGY_ACCEPTED)) mEnergyTypeAccepted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_ACCEPTED, ""));
+		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
 		mCPU_Logic = aNBT.getIntOr("gt.cpu.logic", 0);
 		mCPU_Control = aNBT.getIntOr("gt.cpu.control", 0);
 		mCPU_Storage = aNBT.getIntOr("gt.cpu.storage", 0);

@@ -76,7 +76,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 		
 		CompoundTag tNBT = ItemNBT.get(aStack);
 		if (tNBT == null) tNBT = UT.NBT.make();
-		long tUses = tNBT.getLong("gt.remaining");
+		long tUses = tNBT.getLongOr("gt.remaining", 0L);
 		
 		if (ST.equal(aStack, mFull, T)) {
 			aStack.func_150996_a(mUsed.getItem());
@@ -187,7 +187,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	}
 	
 	public long getMode(ItemStack aStack) {
-		return UT.NBT.getNBT(aStack).getLong(NBT_MODE);
+		return UT.NBT.getNBT(aStack).getLongOr(NBT_MODE, 0L);
 	}
 	
 	public void switchMode(ItemStack aStack, Player aPlayer) {
@@ -210,7 +210,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 	public List<String> getAdditionalToolTips(MultiItem aItem, List<String> aList, ItemStack aStack) {
 		aList.add(LH.get("gt.behaviour.foamspray."+mColor+".tooltip"));
 		CompoundTag tNBT = ItemNBT.get(aStack);
-		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLong("gt.remaining"));
+		long tRemaining = (ST.equal(aStack, mFull, T)?mUses:tNBT==null?0:tNBT.getLongOr("gt.remaining", 0L));
 		aList.add(LH.get("gt.behaviour.foamspray.uses") + " " + (tRemaining / 10) + "." + (tRemaining % 10));
 		aList.add(LH.get("gt.behaviour.unstackable"));
 		return aList;

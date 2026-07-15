@@ -90,11 +90,11 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.contains(NBT_DESIGN)) mWalls = aNBT.getShort(NBT_DESIGN);
-		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBoolean(NBT_ACIDPROOF);
-		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLong(NBT_TEMPERATURE);
-		if (aNBT.contains(NBT_TEMPERATURE+".old")) oTemperature = aNBT.getLong(NBT_TEMPERATURE+".old");
+		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
+		if (aNBT.contains(NBT_DESIGN)) mWalls = aNBT.getShortOr(NBT_DESIGN, (short)0);
+		if (aNBT.contains(NBT_ACIDPROOF)) mAcidProof = aNBT.getBooleanOr(NBT_ACIDPROOF, false);
+		if (aNBT.contains(NBT_TEMPERATURE)) mTemperature = aNBT.getLongOr(NBT_TEMPERATURE, 0L);
+		if (aNBT.contains(NBT_TEMPERATURE+".old")) oTemperature = aNBT.getLongOr(NBT_TEMPERATURE+".old", 0L);
 		mContent = OreDictMaterialStack.loadList(NBT_MATERIALS, aNBT);
 		mMeltDown = (mTemperature+100 > getTemperatureMax(SIDE_ANY));
 	}

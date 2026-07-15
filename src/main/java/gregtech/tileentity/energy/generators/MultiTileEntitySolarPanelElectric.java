@@ -51,12 +51,12 @@ public class MultiTileEntitySolarPanelElectric extends TileEntityBase09FacingSin
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLong(NBT_ENERGY);
-		if (aNBT.contains(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBoolean(NBT_ACTIVE_ENERGY);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBoolean(NBT_ACTIVE);
-		if (aNBT.contains(NBT_OUTPUT)) mOutput = aNBT.getLong(NBT_OUTPUT);
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
+		if (aNBT.contains(NBT_ACTIVE_ENERGY)) mEmitsEnergy = aNBT.getBooleanOr(NBT_ACTIVE_ENERGY, false);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
+		if (aNBT.contains(NBT_ACTIVE)) mActive = aNBT.getBooleanOr(NBT_ACTIVE, false);
+		if (aNBT.contains(NBT_OUTPUT)) mOutput = aNBT.getLongOr(NBT_OUTPUT, 0L);
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
 	}
 	
 	@Override

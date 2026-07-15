@@ -46,7 +46,7 @@ public class MultiTileEntityLargeDynamo extends TileEntityBase11MultiBlockConver
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_DESIGN)) mDynamoWalls = aNBT.getShort(NBT_DESIGN);
+		if (aNBT.contains(NBT_DESIGN)) mDynamoWalls = aNBT.getShortOr(NBT_DESIGN, (short)0);
 	}
 	
 	@Override

@@ -49,7 +49,7 @@ public class MultiTileEntityBarometerGasCylinder extends TileEntityBase09FluidCo
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
 		mCapacity = mTank.capacity();
-		if (aNBT.contains(NBT_MODE)) mTank.setCapacity(aNBT.getLong(NBT_MODE));
+		if (aNBT.contains(NBT_MODE)) mTank.setCapacity(aNBT.getLongOr(NBT_MODE, 0L));
 	}
 	
 	@Override

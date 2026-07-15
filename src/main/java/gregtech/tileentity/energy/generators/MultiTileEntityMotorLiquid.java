@@ -72,13 +72,13 @@ public class MultiTileEntityMotorLiquid extends TileEntityBase09FacingSingle imp
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		mEnergy = aNBT.getLong(NBT_ENERGY);
+		mEnergy = aNBT.getLongOr(NBT_ENERGY, 0L);
 		mActivity = new TE_Behavior_Active_Trinary(this, aNBT);
-		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBoolean(NBT_STOPPED);
-		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLong(NBT_OUTPUT);
+		if (aNBT.contains(NBT_STOPPED)) mStopped = aNBT.getBooleanOr(NBT_STOPPED, false);
+		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLongOr(NBT_OUTPUT, 0L);
 		if (aNBT.contains(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
-		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShort(NBT_EFFICIENCY));
-		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getString(NBT_ENERGY_EMITTED));
+		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
+		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
 		mTanks[0].readFromNBT(aNBT, NBT_TANK+".0").setCapacity(mRate * 10);
 		mTanks[1].readFromNBT(aNBT, NBT_TANK+".1").setCapacity(mRate * 10);
 	}

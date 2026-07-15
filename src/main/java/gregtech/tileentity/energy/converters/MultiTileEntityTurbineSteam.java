@@ -53,8 +53,8 @@ public class MultiTileEntityTurbineSteam extends TileEntityBase11Motor implement
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_ENERGY_SU)) mSteamCounter = aNBT.getLong(NBT_ENERGY_SU);
-		if (aNBT.contains(NBT_OUTPUT_SU)) mEnergyProducedNextTick = aNBT.getLong(NBT_OUTPUT_SU);
+		if (aNBT.contains(NBT_ENERGY_SU)) mSteamCounter = aNBT.getLongOr(NBT_ENERGY_SU, 0L);
+		if (aNBT.contains(NBT_OUTPUT_SU)) mEnergyProducedNextTick = aNBT.getLongOr(NBT_OUTPUT_SU, 0L);
 		mTank.readFromNBT(aNBT, NBT_TANK+"."+0);
 		mTank.setCapacity(mConverter.mEnergyIN.mMax*4);
 	}
