@@ -781,7 +781,10 @@ public final class OreDictManager {
 	}
 	public boolean registerOre_(Object aName, ItemStack aStack) {
 		if (CR.DELATE == aName) {if (MD.GT.mLoaded) CR.delate(aStack); return MD.GT.mLoaded;}
-		if (Abstract_Mod.sStartedPostInit > 0) throw new IllegalStateException("Late OreDict Registration using GT OreDict Utility. Only @Init and @PreInit are allowed for this when you use this Function instead of the Forge one.");
+		// F12-followup (oredict-timing): guard «Only @Init/@PreInit» подавлён в окне runDeferredItemInit (server-start) —
+		// neo привязывает Holder.components только там, потому весь stack-based контент-пайплайн GT6 (init-фаза) сдвинут
+		// в это окно; sDeferredItemInitRunning ограничивает послабление ровно этим окном (см. GT_API.runDeferredItemInit).
+		if (Abstract_Mod.sStartedPostInit > 0 && !gregapi.GT_API.sDeferredItemInitRunning) throw new IllegalStateException("Late OreDict Registration using GT OreDict Utility. Only @Init and @PreInit are allowed for this when you use this Function instead of the Forge one.");
 		String tName = aName.toString();
 		if (UT.Code.stringInvalid(tName)) return F;
 		addKnownName(tName);

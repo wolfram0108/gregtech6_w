@@ -102,8 +102,12 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	}
 	
 	/** This ensures, that all Materials are registered at the time this Item registers to the OreDictionary. */
+	// F12-followup (item-split): тело делает ST.make/OreDict-регистрацию (Holder.components привязаны только на server-start) →
+	// отложено в runDeferredItemInit. run() вызывается на @Init (mBeforeInit) → defer добавлен ДО postInit-дефферов, сохраняя
+	// GT6-порядок «PrefixItems до MultiItems». Guard registerOre_ «Only @Init/@PreInit» подавлён в этом окне (см. GT_API).
 	@Override
-	public void run() {
+	public void run() {gregapi.GT_API.deferItemInit(this::runDeferred);}
+	private void runDeferred() {
 		boolean tUnificationAllowed = (mPrefix.contains(TD.Prefix.UNIFICATABLE) && !mPrefix.contains(TD.Prefix.UNIFICATABLE_RECIPES));
 		for (short i = 0; i < mMaterialList.length; i++) if (mPrefix.isGeneratingItem(mMaterialList[i])) {
 			ItemStack tStack = ST.update_(ST.make(this, 1, i));

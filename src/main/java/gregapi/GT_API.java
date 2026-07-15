@@ -186,9 +186,18 @@ public class GT_API extends Abstract_Mod {
 	 *  {@link #runDeferredItemInit()} выполняет их в setup (пост-bind). См. decisions/F12-registration-lifecycle.md. */
 	public static final List<Runnable> DEFERRED_ITEM_INIT = new ArrayListNoNulls<>();
 	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
+	/** F12-followup (oredict-timing): окно исполнения отложенного stack-init на server-start. В 1.7.10 GT6 весь контент-пайплайн
+	 *  (make-стеки → OreDict-регистрация → рецепты) шёл @Init/@PreInit; neo привязывает Holder.components только на server-start
+	 *  (ReloadableServerResources) → тот же пайплайн физически сдвинут сюда. OreDictManager.registerOre_ имеет guard
+	 *  «Only @Init/@PreInit» (sStartedPostInit>0 → throw) — во время ЭТОГО окна guard подавляется: это init GT6, сдвинутый во времени. */
+	public static boolean sDeferredItemInitRunning = false;
 	// drain-loop: коллбэк может добавить новый deferItemInit (вложенная отложка, напр. блок→слэб) — обрабатываем FIFO
 	// без ConcurrentModification; список опустошается полностью, включая добавленное во время выполнения.
-	public static void runDeferredItemInit() {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
+	public static void runDeferredItemInit() {
+		sDeferredItemInitRunning = true;
+		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
+		finally {sDeferredItemInitRunning = false;}
+	}
 
 	/** F12-followup (block-split, MTE): некоторые GT6-подсистемы (MultiTileEntityRegistry/MultiTileEntityBlock) СТРОЯТ
 	 *  neo-Block вне DeferredRegister-supplier И вне preInit (getOrCreate вызывается и на preInit, и на init, с дедупом и
