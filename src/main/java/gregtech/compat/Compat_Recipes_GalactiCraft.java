@@ -19,6 +19,7 @@
 
 package gregtech.compat;
 
+import gregapi.recipes.ICraftingRecipeGT;
 import static gregapi.data.CS.*;
 
 import java.util.List;
@@ -85,7 +86,7 @@ public class Compat_Recipes_GalactiCraft extends CompatMods {
 			, tItemH = ST.item(MD.GC_PLANETS, "item.null")
 			, tItemI = ST.item(MD.GC_PLANETS, "item.itemBasicAsteroids");
 			
-			for (Recipe tRecipe : CR.list()) if (tRecipe.getClass() == ShapedOreRecipe.class) {
+			for (ICraftingRecipeGT tRecipe : CR.list()) if (tRecipe.getClass() == ShapedOreRecipe.class) {
 				ItemStack tOutput = tRecipe.getRecipeOutput();
 				if (ST.valid(tOutput)) {
 					Object[] tInputs = ((ShapedOreRecipe)tRecipe).getInput();

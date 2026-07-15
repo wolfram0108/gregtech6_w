@@ -19,6 +19,8 @@
 
 package gregtech.compat;
 
+import java.util.List;
+import gregapi.recipes.ICraftingRecipeGT;
 import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
@@ -64,10 +66,10 @@ public class Compat_Recipes_HarvestCraft extends CompatMods {
 		ArrayList<ItemStack> tListFoodBarley = OreDictionary.getOres("dustBarley"), tListCropBarley = OreDictionary.getOres("cropBarley");
 		ArrayList<ItemStack> tListFoodVanilla = OreDictionary.getOres("foodVanilla"), tListDustVanilla = OreDictionary.getOres("dustVanilla");
 		ArrayList<ItemStack> tListFoodOliveOil = OreDictionary.getOres("foodOliveoil"), tListFoodCookingOil = OreDictionary.getOres("listAllcookingoil");
-		for (Recipe tRecipe : CR.list()) if (tRecipe.getClass() == ShapelessOreRecipe.class) {
+		for (ICraftingRecipeGT tRecipe : CR.list()) if (tRecipe.getClass() == ShapelessOreRecipe.class) {
 			ItemStack tOutput = tRecipe.getRecipeOutput();
 			if (ST.valid(tOutput) && tOutput.has(net.minecraft.core.component.DataComponents.FOOD)) {
-				ArrayList<Object> tInputs = ((ShapelessOreRecipe)tRecipe).getInput();
+				List<Object> tInputs = ((ShapelessOreRecipe)tRecipe).getInput();
 				int tSize = tInputs.size();
 				if (tSize > 2) for (int i = 0; i < tSize; i++) {
 					if (tListFoodLemon == tInputs.get(i)) tInputs.set(i, IL.Food_Lemon_Sliced.get(1)); else
