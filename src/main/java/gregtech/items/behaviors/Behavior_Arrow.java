@@ -46,7 +46,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	public static Behavior_Arrow DEFAULT_PLASTIC = new Behavior_Arrow(EntityArrow_Material.class, 1.50F, 6.0F);
 	
 	private final int mLevel;
-	private final Enchantment mEnchantment;
+	private final net.minecraft.resources.ResourceKey<Enchantment> mEnchantment; // neo: энчант адресуется ResourceKey (UT.NBT.addEnchantment)
 	private final float mSpeedMultiplier, mPrecision;
 	private final Class<? extends EntityArrow_Material> mArrow;
 	
@@ -54,7 +54,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 		this(aArrow, aSpeed, aPrecision, null, 0);
 	}
 	
-	public Behavior_Arrow(Class<? extends EntityArrow_Material> aArrow, float aSpeed, float aPrecision, Enchantment aEnchantment, int aLevel) {
+	public Behavior_Arrow(Class<? extends EntityArrow_Material> aArrow, float aSpeed, float aPrecision, net.minecraft.resources.ResourceKey<Enchantment> aEnchantment, int aLevel) {
 		mArrow = aArrow;
 		mSpeedMultiplier = aSpeed;
 		mPrecision = aPrecision;
@@ -68,7 +68,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 			Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 			Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
-			if (aStack.getCount() <= 0) aPlayer.destroyCurrentEquippedItem();
+			if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ItemStack.EMPTY);
 			return F;
 		}
 		return F;
@@ -97,11 +97,11 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 		Level aWorld = aSource.level();
 		Position tPosition = DispenserBlock.getDispensePosition(aSource);
 		Direction tFacing = aSource.state().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
-		EntityProjectile tEntityArrow = getProjectile(aItem, TD.Projectiles.ARROW, aStack, aWorld, tPosition.getX(), tPosition.getY(), tPosition.getZ());
+		EntityProjectile tEntityArrow = getProjectile(aItem, TD.Projectiles.ARROW, aStack, aWorld, tPosition.x(), tPosition.y(), tPosition.z());
 		if (tEntityArrow != null) {
 			tEntityArrow.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision);
 			tEntityArrow.setProjectileStack(aStack);
-			tEntityArrow.canBePickedUp = 1;
+			tEntityArrow.pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.ALLOWED;
 			aWorld.addFreshEntity(tEntityArrow);
 			if (aStack.getCount() < 100) aStack.setCount(aStack.getCount()-1);
 			return aStack;
