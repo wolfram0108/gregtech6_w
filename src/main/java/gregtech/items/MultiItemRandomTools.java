@@ -621,7 +621,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		}
 		// Spin to Win!
 		if (aTarget   == null) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
-		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
+		double tDistance = aTarget.distanceToSqr(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
 		if (tDistance <     1) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
 		// Point to Target, but with a little jiggle for getting closer!
 		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);
@@ -652,7 +652,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		}
 		// Spin to Win!
 		if (aTarget   == null) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
-		double tDistance = aTarget.getDistanceSquared(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
+		double tDistance = aTarget.distanceToSqr(UT.Code.roundDown(aPlayer.getX()), aTarget.getY(), UT.Code.roundDown(aPlayer.getZ()));
 		if (tDistance <     1) return Textures.ItemIcons.COMPASS[(int)(CLIENT_TIME % Textures.ItemIcons.COMPASS.length)].getIcon(0);
 		// Point to Target, but with a little jiggle for getting closer!
 		int tIndex = Textures.ItemIcons.COMPASS.length + (UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(aTarget.getZ()+0.5-aPlayer.getZ(), aTarget.getX()+0.5-aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length);

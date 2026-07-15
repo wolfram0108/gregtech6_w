@@ -10,6 +10,11 @@ public class Carving {
         public Group getGroup(String aName) {
             return null;
         }
+
+        /** Реально используется GregTech (Loader_Rocks: getGroup(Block, meta).addVariation). */
+        public Group getGroup(net.minecraft.world.level.block.Block aBlock, int aMeta) {
+            return new Group();
+        }
     }
 
     public static class Group {
