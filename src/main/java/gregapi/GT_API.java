@@ -188,6 +188,26 @@ public class GT_API extends Abstract_Mod {
 	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
 	public static void runDeferredItemInit() {for (Runnable tInit : DEFERRED_ITEM_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_ITEM_INIT.clear();}
 
+	/** F12-followup (block-split, MTE): некоторые GT6-подсистемы (MultiTileEntityRegistry/MultiTileEntityBlock) СТРОЯТ
+	 *  neo-Block вне DeferredRegister-supplier И вне preInit (getOrCreate вызывается и на preInit, и на init, с дедупом и
+	 *  setMapColor на возврате) — их нельзя выразить одним registerBlockLazy. Их конструирующий код оборачивается в
+	 *  deferBlockInit(Runnable): очередь выполняется НА RegisterEvent&lt;Block&gt; (реестр разморожен → intrusive-holder ок),
+	 *  а сама регистрация блока идёт через {@link #registerBlock} (ветка event.register, т.к. DeferredRegister уже мог быть
+	 *  обработан). BlockItem регистрируется в ITEMS-DR (RegisterEvent&lt;Item&gt; позже). */
+	public static final List<Runnable> DEFERRED_BLOCK_INIT = new ArrayListNoNulls<>();
+	public static void deferBlockInit(Runnable aInit) {if (aInit != null) DEFERRED_BLOCK_INIT.add(aInit);}
+	/** Активное RegisterEvent&lt;Block&gt; во время слива DEFERRED_BLOCK_INIT; ненулевой ⇒ {@link #registerBlock} регистрирует
+	 *  блок напрямую в реестр этого события (DeferredRegister этой фазы уже обработан). */
+	public static net.neoforged.neoforge.registries.RegisterEvent sBlockRegisterEvent = null;
+	private static void runDeferredBlockInit(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+		sBlockRegisterEvent = aEvent;
+		try {for (Runnable tInit : DEFERRED_BLOCK_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_BLOCK_INIT.clear();}
+		finally {sBlockRegisterEvent = null;}
+	}
+	private static void onRegisterEvent(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+		if (aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.BLOCK)) runDeferredBlockInit(aEvent);
+	}
+
 	/**
 	 * F12: мод-шина, сохранённая из конструктора, чтобы лениво созданные под-неймспейсы могли
 	 * подписаться на {@code RegisterEvent} (см. {@link #itemsFor(String)}).
@@ -262,6 +282,14 @@ public class GT_API extends Abstract_Mod {
 	 *  выдуманный {@code DeferredRegister.registerBlock(...)}). Пара Block+BlockItem регистрируется под
 	 *  одним и тем же именем — как было в оригинальном {@code GameRegistry.registerBlock(Block, Class, String)}. */
 	public static DeferredBlock<Block> registerBlock(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
+		if (sBlockRegisterEvent != null) {
+			// F12-followup (block-split, MTE): вызвано из deferBlockInit во время RegisterEvent<Block> — блок УЖЕ построен
+			// (реестр разморожен), регистрируем его напрямую в реестр события (ключ санитизирован, совпадает с setId блока);
+			// BlockItem — в ITEMS-DR (обработается на RegisterEvent<Item> позже). DeferredRegister BLOCKS уже мог быть обработан.
+			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GAPI, sanitizeRegName(aRegistryName)), () -> aBlock);
+			ITEMS.register(sanitizeRegName(aRegistryName), () -> (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock));
+			return null;
+		}
 		DeferredBlock<Block> rBlock = BLOCKS.register(aRegistryName, () -> aBlock);
 		ITEMS.register(aRegistryName, () -> (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock));
 		return rBlock;
@@ -363,6 +391,9 @@ public class GT_API extends Abstract_Mod {
 		sModBus = aModBus;
 		ITEMS .register(aModBus);
 		BLOCKS.register(aModBus);
+		// F12-followup (block-split, MTE): слив DEFERRED_BLOCK_INIT на RegisterEvent<Block> (реестр разморожен) — единая
+		// точка для подсистем, чьё конструирование блока нельзя выразить одним registerBlockLazy (см. deferBlockInit).
+		aModBus.addListener(GT_API::onRegisterEvent);
 		// F6: центральный ворлдген-переходник (Feature/PlacedFeature/BiomeModifier) — тот же мод-бас,
 		// единая точка подписки (decisions/F6-worldgen.md, gregapi/worldgen/GT6WorldgenFeature.java).
 		gregapi.worldgen.GT6WorldgenFeature.register(aModBus);

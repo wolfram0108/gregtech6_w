@@ -88,6 +88,9 @@ public class BlockMetaType extends BlockBaseMeta {
 		, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_EAST    , this)
 		, null};
 		mSlabs[SIDE_INVALID] = mSlabs[SIDE_DOWN];
+		// F12-followup (block-split): конструкция блока идёт на RegisterEvent (реестр разморожен), но ST.hide/ST.make/рецепты
+		// создают ItemStack → компоненты связаны только на server-start. Откладываем эту дата-часть в deferItemInit (1:1 порядок).
+		gregapi.GT_API.deferItemInit(() -> {
 		ST.hide(mSlabs[SIDE_UP]);
 		ST.hide(mSlabs[SIDE_NORTH]);
 		ST.hide(mSlabs[SIDE_SOUTH]);
@@ -101,8 +104,8 @@ public class BlockMetaType extends BlockBaseMeta {
 				CR.shaped(ST.make(mSlabs[0], 2, i), CR.DEF, "sX", 'X', ST.make(this, 1, i));
 			}
 		}
-		
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
+		});
 	}
 	
 	protected BlockMetaType makeSlab(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aVanillaSoundType, String aName, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons, byte aSlabType, BlockMetaType aBlock) {
@@ -133,8 +136,8 @@ public class BlockMetaType extends BlockBaseMeta {
 		mSide == SIDE_Y_NEG ? 0.5F : 1.0F,
 		mSide == SIDE_Z_NEG ? 0.5F : 1.0F
 		);
-		
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
+		// F12-followup (block-split): ST.make (ItemStack) — компоненты только на server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> {if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));});
 	}
 	
 	public void onBlockCreation(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aSoundType, String aName, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons) {

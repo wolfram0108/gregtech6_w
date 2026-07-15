@@ -149,7 +149,10 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 * @param aNormalCube if this Block is a normal Cube (for Redstone Stuff).
 	 */
 	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
+		// F12-followup (block-split, MTE): setId в Properties (neo Block требует id); namespace=GAPI (совпадает с реестром
+		// ST.register→registerBlock ниже). Имя вычисляется тем же getName(...), что и mNameInternal (стр. ниже) → ключ совпадает.
+		// Конструкция идёт на RegisterEvent через GT_API.deferBlockInit (call-site getOrCreate/Loader_Others).
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube))))));
 		mMaterial = aVanillaMaterial;
 		if (GAPI.mStartedInit) throw new IllegalStateException("Blocks can only be initialised within preInit!");
 		

@@ -38,8 +38,12 @@ import net.minecraft.world.level.block.Blocks;
 public class Loader_Others implements Runnable {
 	@Override
 	public void run() {
+		// F12-followup (block-split, MTE): регистр+material-блоки СТРОЯТ neo-Block → только на RegisterEvent (реестр разморожен).
+		// Оборачиваем в deferBlockInit (исполнится на RegisterEvent<Block>); setMapColor/дедуп работают там (блок построен).
+		// Loader_MultiTileEntities (init) повторно вызовет getOrCreate — вернёт те же блоки из карты (без конструкции).
+		gregapi.GT_API.deferBlockInit(() -> {
 		new MultiTileEntityRegistry("gt.multitileentity");
-		
+
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "iron"          , Material.iron                 , SoundType.METAL  , TOOL_pickaxe      , 0, 0, 15, F, F);
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "iron"          , Material.iron                 , SoundType.METAL  , TOOL_shovel       , 0, 0, 15, F, F);
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "machine"       , MaterialMachines.instance     , SoundType.METAL  , TOOL_cutter       , 0, 0, 15, F, F);
@@ -54,9 +58,10 @@ public class Loader_Others implements Runnable {
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "redstoneLight" , Material.redstoneLight        , SoundType.WOOD   , TOOL_axe          , 0, 0, 15, F, F).setMapColor(Material.wood.getMaterialMapColor());
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "redstoneLight" , Material.redstoneLight        , SoundType.WOOL  , TOOL_shears       , 0, 0, 15, F, F).setMapColor(Material.cloth.getMaterialMapColor());
 		MultiTileEntityBlock.getOrCreate(MD.GT.mID, "rock"          , MaterialScoopable.instance    , SoundType.WOOD   , TOOL_scoop        , 0, 0, 15, F, F);
-		
-		
-		
+		});
+
+
+
 		BooksGT.BOOK_TEXTURES_BACK[255] = BooksGT.BOOK_TEXTURES_SIDE[255] = BlockTextureDefault.get(new IconContainerCopied(Blocks.COBBLESTONE, 0, 0));
 		
 		BooksGT.BOOK_TEXTURES_BACK[  1] = BlockTextureDefault.get("books/BOOK_VANILLA_BACK");

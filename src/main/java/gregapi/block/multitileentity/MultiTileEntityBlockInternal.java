@@ -50,8 +50,10 @@ import net.minecraft.world.level.Level;
 public class MultiTileEntityBlockInternal extends Block implements IBlock, IItemGT, IRenderedBlock, IBlockPlacable {
 	public MultiTileEntityRegistry mMultiTileEntityRegistry;
 
-	public MultiTileEntityBlockInternal() {
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
+	public MultiTileEntityBlockInternal(String aNameInternal) {
+		// F12-followup (block-split, MTE): setId в Properties (neo Block требует id, иначе «Block id not set»); namespace=GAPI
+		// (совпадает с реестром ST.register→registerBlock). Конструкция идёт на RegisterEvent через GT_API.deferBlockInit (call-site).
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 	}
 
 	/** F-bounds (тот же приём, что BlockBase.java/MultiTileEntityBlock.java): последние заданные bounds, neo bounds
