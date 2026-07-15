@@ -31,7 +31,7 @@ import gregapi.item.multiitem.behaviors.Behavior_Tool;
 import gregapi.item.multiitem.tools.ToolStats;
 import gregapi.render.IIconContainer;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.WaterlilyBlock;
+import net.minecraft.world.level.block.LilyPadBlock;
 import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
@@ -67,7 +67,7 @@ public class GT_Tool_Sense extends ToolStats {
 	
 	@Override
 	public boolean isMinableBlock(Block aBlock, byte aMetaData) {
-		if (aBlock instanceof BlockBaseLilyPad || aBlock instanceof WaterlilyBlock) return F;
+		if (aBlock instanceof BlockBaseLilyPad || aBlock instanceof LilyPadBlock) return F;
 		if (MD.BoP.mLoaded &&  aBlock instanceof BlockBOPLilypad) return F;
 		if (MD.TF .mLoaded && (aBlock instanceof BlockTFHugeLilyPad || aBlock instanceof BlockTFHugeWaterLily)) return F;
 		String tTool = WD.harvestTool(aBlock, aMetaData);
@@ -80,7 +80,7 @@ public class GT_Tool_Sense extends ToolStats {
 		if (sIsHarvestingRightNow.get() == null && aPlayer instanceof ServerPlayer) {
 			sIsHarvestingRightNow.set(this);
 			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) if (i != 0 || j != 0 || k != 0) {
-				if (aStack.getItem().getDigSpeed(aStack, WD.block(aPlayer.level(), aX+i, aY+j, aZ+k), WD.meta(aPlayer.level(), aX+i, aY+j, aZ+k)) > 0) {
+				if (((MultiItemTool)aStack.getItem()).getDigSpeed(aStack, WD.block(aPlayer.level(), aX+i, aY+j, aZ+k), WD.meta(aPlayer.level(), aX+i, aY+j, aZ+k)) > 0) {
 					if (((ServerPlayer)aPlayer).gameMode.destroyBlock(new net.minecraft.core.BlockPos(aX+i, aY+j, aZ+k))) rConversions++;
 				}
 			}
