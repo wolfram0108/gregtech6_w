@@ -68,7 +68,7 @@ public class MultiTileEntityReactorRodBreeder extends MultiTileEntityReactorRodB
 		aList.add(LH.Chat.CYAN + "The " + LH.Chat.YELLOW + "Loss" + LH.Chat.CYAN + " value gets subtracted from Neutrons entering this Rod");
 		aList.add(LH.Chat.CYAN + "This applies to each side where Neutrons enter, not to the total of all sides");
 		aList.add(LH.Chat.CYAN + "Remaining Neutrons on this Rod get added to the breeding process");
-		if (mProductName.equals("")) mProductName = ST.meta(aStack.copy(), mProduct).getDisplayName();
+		if (mProductName.equals("")) mProductName = ST.meta(aStack.copy(), mProduct).getDisplayName().getString();
 		aList.add(LH.Chat.GREEN + "Turns into: " + LH.Chat.WHITE + mProductName);
 		aList.add(LH.Chat.CYAN + "Needed: " + LH.Chat.WHITE + mDurability + LH.Chat.PURPLE + " Neutrons");
 		aList.add(LH.Chat.YELLOW + "Loss: " + LH.Chat.WHITE + mNeutronLoss + LH.Chat.PURPLE + " Neutrons");

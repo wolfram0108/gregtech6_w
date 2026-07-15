@@ -46,7 +46,7 @@ public class MultiTileEntityReactorRodProduct extends MultiTileEntityReactorRodB
 		aList.add(LH.Chat.DGRAY + "Used in Nuclear Reactor Core");
 		aList.add(LH.Chat.CYAN + "Emits half the Heat per Neutron on this Rod");
 		aList.add(LH.Chat.CYAN + "Can be centrifuged to get valuable materials");
-		if (mBreedingName.equals(""))  mBreedingName = ST.meta(aStack.copy(), mBreeding).getDisplayName();
+		if (mBreedingName.equals(""))  mBreedingName = ST.meta(aStack.copy(), mBreeding).getDisplayName().getString();
 		aList.add(LH.Chat.GREEN + "Breed from " + mBreedingName);
 	}
 

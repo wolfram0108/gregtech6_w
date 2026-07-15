@@ -43,15 +43,14 @@ public class EntityArrow_Potion extends EntityArrow_Material {
 	}
 	
 	
-	public void writeEntityToNBT(CompoundTag aNBT) {
-		super.writeEntityToNBT(aNBT);
+	@Override public void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput aNBT) {
+		super.addAdditionalSaveData(aNBT);
 		aNBT.putIntArray("mPotions", mPotions);
 	}
-	
-	
-	public void readEntityFromNBT(CompoundTag aNBT) {
-		super.readEntityFromNBT(aNBT);
-		setPotions(aNBT.getIntArray("mPotions"));
+
+	@Override public void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput aNBT) {
+		super.readAdditionalSaveData(aNBT);
+		setPotions(aNBT.getIntArray("mPotions").orElse(new int[0])); // neo ValueInput.getIntArray -> Optional<int[]>
 	}
 	
 	@Override
