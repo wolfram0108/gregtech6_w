@@ -19,6 +19,21 @@
 
 package gregtech.tileentity.multiblocks;
 
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.animal.sheep.Sheep;
+import net.minecraft.world.entity.animal.golem.SnowGolem;
+import net.minecraft.world.entity.monster.spider.Spider;
+import net.minecraft.world.entity.animal.squid.Squid;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.Witch;
+import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.animal.cow.MushroomCow;
+import net.minecraft.world.entity.animal.feline.Ocelot;
+import net.minecraft.world.entity.animal.equine.Horse;
+import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
 import gregapi.GT_API_Proxy;
 import gregapi.block.multitileentity.MultiTileEntityContainer;
@@ -657,21 +672,21 @@ public class MultiTileEntityCrucible extends TileEntityBase10MultiBlockBase impl
 		
 		if (UT.Entities.applyTemperatureDamage(aEntity, mTemperature) && mTemperature > 320) {
 			if (!aEntity.isAlive()) {
-				if (aEntity instanceof Villager || aEntity instanceof EntityWitch) {
+				if (aEntity instanceof Villager || aEntity instanceof Witch) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.SoylentGreen)), C+37);
 				} else if (aEntity instanceof SnowGolem) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Snow)), C-10);
 				} else if (aEntity instanceof IronGolem) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(4*U, MT.Fe)), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
 				} else if (aEntity instanceof Skeleton) {
-					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, ((Skeleton)aEntity).getSkeletonType() == 1 ? MT.BoneWither : MT.Bone), ((Skeleton)aEntity).getSkeletonType() == 1 ? OM.stack(1*U, MT.Coal) : null), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
+					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, (aEntity instanceof WitherSkeleton) ? MT.BoneWither : MT.Bone), (aEntity instanceof WitherSkeleton) ? OM.stack(1*U, MT.Coal) : null), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
 				} else if (aEntity instanceof Zombie) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRotten)), WD.envTemp(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
 				} else if (aEntity instanceof MushroomCow || aEntity instanceof Cow || aEntity instanceof Horse) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(3*U, MT.MeatRaw)), C+37);
 				} else if (aEntity instanceof Pig || aEntity instanceof Sheep || aEntity instanceof Wolf || aEntity instanceof Squid) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(2*U, MT.MeatRaw)), C+37);
-				} else if (aEntity instanceof EntityChicken || aEntity instanceof Ocelot || aEntity instanceof Spider || aEntity instanceof EntitySilverfish) {
+				} else if (aEntity instanceof Chicken || aEntity instanceof Ocelot || aEntity instanceof Spider || aEntity instanceof EntitySilverfish) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.MeatRaw)), C+37);
 				} else if (aEntity instanceof EntityCreeper) {
 					addMaterialStacks(new ArrayListNoNulls<>(F, OM.stack(1*U, MT.Gunpowder)), C+20);
