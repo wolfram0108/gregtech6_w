@@ -2649,12 +2649,12 @@ public class UT {
 		public static List<SoundWithLocation> sSoundsToPlay = new ArrayListNoNulls<>();
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume) {
-			if (!CODE_CLIENT || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
+			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
 			return play(aSound, aTimeUntilNextSound, aVolume, GT_API.api_proxy.getThePlayer());
 		}
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, Entity aEntity) {
-			if (!CODE_CLIENT || aEntity == null || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
+			if (!CODE_CLIENT || aEntity == null || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
 			return play(aSound, aTimeUntilNextSound, aVolume, UT.Code.roundDown(aEntity.getX()), UT.Code.roundDown(aEntity.getY()), UT.Code.roundDown(aEntity.getZ()));
 		}
 		
@@ -2664,7 +2664,7 @@ public class UT {
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, BlockPos aCoords) {
 			if (aCoords == null) return play(aSound, aTimeUntilNextSound, aVolume);
-			if (!CODE_CLIENT || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
+			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
 			return play(aSound, aTimeUntilNextSound, aVolume, 0.9F + RNGSUS.nextFloat() * 0.2F, aCoords.getX(), aCoords.getY(), aCoords.getZ());
 		}
 		
@@ -2673,7 +2673,7 @@ public class UT {
 		}
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume, float aPitch, BlockPos aCoords) {
-			if (!CODE_CLIENT || cpw.mods.fml.common.FMLCommonHandler.instance().getEffectiveSide().isServer()) return F;
+			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
 			Player aPlayer = GT_API.api_proxy.getThePlayer();
 			if (aPlayer == null || !aPlayer.level().isClientSide() || Code.stringInvalid(aSound)) return F;
 			sSoundsToPlay.add(new SoundWithLocation(aPlayer.level(), UT.Code.roundDown(aCoords.getX()), UT.Code.roundDown(aCoords.getY()), UT.Code.roundDown(aCoords.getZ()), aTimeUntilNextSound, aSound, aVolume, Float.isNaN(aPitch) || aPitch == SFX.RANDOM_PITCH ? SFX._7_GRAND_DAD_[SFX.PITCH_INDEX=((SFX.PITCH_INDEX+1)%SFX._7_GRAND_DAD_.length)] : aPitch));
