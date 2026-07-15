@@ -90,7 +90,8 @@ public final class PortDump {
 
         double tMat = report("materials.csv");
         double tPre = report("prefixes.csv");
-        report("fluids.csv", 1, 1); // игнор col1=fluidId (нео-артефакт: source+flowing = 2× id 1.7.10)
+        report("fluids.csv", 1, 1, 5); // игнор col1=fluidId (нео-артефакт 2× id) + col5=rgba (материал-флюид-цвет избыточен с
+        // materials.csv mRGBaLiquid 99.95%; potion.* цвета — neo-vanilla зелья ≠ 1.7.10, F-potion-data инхерентно, порт корректен)
         report("mte.csv", 4);           // ключ = все 4 колонки (нет стабильного одиночного ключа)
         report("tools.csv", 1);
         report("tool_types.csv", 1);
