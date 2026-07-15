@@ -59,7 +59,8 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	public final PrefixBlock mBlock;
 	
 	public PrefixBlockItem(Block aBlock) {
-		super(aBlock, new Item.Properties()); // было super(aBlock) (neo BlockItem требует Properties тоже)
+		// F12-followup (item-split): id в Properties из ключа блока (BlockItem делит id с блоком; конструкция на RegisterEvent<Item>).
+		super(aBlock, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
 		setMaxDamage(0);
 		setHasSubtypes(T);
 		mBlock = (PrefixBlock)aBlock;

@@ -283,17 +283,29 @@ public class GT_API extends Abstract_Mod {
 	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Block, String, Class)} (был прямой
 	 *  выдуманный {@code DeferredRegister.registerBlock(...)}). Пара Block+BlockItem регистрируется под
 	 *  одним и тем же именем — как было в оригинальном {@code GameRegistry.registerBlock(Block, Class, String)}. */
+	/** F12-followup (item-split): центральная сборка BlockItem для блока. neo {@code BlockItem} НЕ имеет (Block)-конструктора
+	 *  (только (Block,Properties)) → {@code callConstructor(BlockItem.class,...)} вернул бы null; строим напрямую с id,
+	 *  производным из ключа уже-зарегистрированного блока (BlockItem делит id с блоком). Кастомный класс
+	 *  (ItemBlockBase/PrefixBlockItem/ItemBlockMetaType/…) имеет (Block)-конструктор и сам ставит id из ключа блока. */
+	public static BlockItem blockItemFor(Block aBlock, Class<? extends BlockItem> aItemClass) {
+		if (aItemClass != null && aItemClass != BlockItem.class) {
+			BlockItem rItem = (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock);
+			if (rItem != null) return rItem;
+		}
+		return new BlockItem(aBlock, new net.minecraft.world.item.Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock))));
+	}
+
 	public static DeferredBlock<Block> registerBlock(Block aBlock, String aRegistryName, Class<? extends BlockItem> aItemClass) {
 		if (sBlockRegisterEvent != null) {
 			// F12-followup (block-split, MTE): вызвано из deferBlockInit во время RegisterEvent<Block> — блок УЖЕ построен
 			// (реестр разморожен), регистрируем его напрямую в реестр события (ключ санитизирован, совпадает с setId блока);
 			// BlockItem — в ITEMS-DR (обработается на RegisterEvent<Item> позже). DeferredRegister BLOCKS уже мог быть обработан.
 			sBlockRegisterEvent.register(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(ModIDs.GAPI, sanitizeRegName(aRegistryName)), () -> aBlock);
-			ITEMS.register(sanitizeRegName(aRegistryName), () -> (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock));
+			ITEMS.register(sanitizeRegName(aRegistryName), () -> blockItemFor(aBlock, aItemClass));
 			return null;
 		}
 		DeferredBlock<Block> rBlock = BLOCKS.register(aRegistryName, () -> aBlock);
-		ITEMS.register(aRegistryName, () -> (BlockItem)UT.Reflection.callConstructor(aItemClass, 0, null, T, aBlock));
+		ITEMS.register(aRegistryName, () -> blockItemFor(aBlock, aItemClass));
 		return rBlock;
 	}
 

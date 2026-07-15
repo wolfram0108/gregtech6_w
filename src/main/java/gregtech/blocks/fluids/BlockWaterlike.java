@@ -79,7 +79,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
-		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, aName, () -> (BlockItem)gregapi.util.UT.Reflection.callConstructor(BlockItem.class, 0, null, gregapi.data.CS.T, this));
+		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, aName, () -> gregapi.GT_API.blockItemFor(this, BlockItem.class));
 		LH.add(getUnlocalizedName(), getLocalizedName());
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
 		if (aHide) gregapi.GT_API.deferItemInit(() -> ST.hide(this));

@@ -101,7 +101,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		mFlammability = aFlammability;
 		mNameInternal = aNameInternal;
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
-		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, mNameInternal, () -> (BlockItem)gregapi.util.UT.Reflection.callConstructor(BlockItem.class, 0, null, gregapi.data.CS.T, this));
+		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, mNameInternal, () -> gregapi.GT_API.blockItemFor(this, BlockItem.class));
 		FL.BLOCKS.put(FL.regName(mFluid), this);
 		displacements.put(this, F);
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
