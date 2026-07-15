@@ -429,6 +429,11 @@ public class WD {
 		net.minecraft.world.level.block.SoundType tSound = aBlock.defaultBlockState().getSoundType();
 		aWorld.playSound(null, aX, aY, aZ, tSound.getStepSound(), net.minecraft.sounds.SoundSource.BLOCKS, (tSound.getVolume() + 1.0F) / 2.0F, tSound.getPitch() * 0.8F);
 	}
+	/** F-sound ЦЕНТР: 1.7.10 {@code Block.stepSound} (public поле {@code Block.SoundType}) удалено; neo — SoundType через
+	 *  {@code defaultBlockState().getSoundType()} ({@code SoundType.java}). Запрос звук-типа блока — в одном месте. */
+	public static net.minecraft.world.level.block.SoundType soundType(Block aBlock) {
+		return aBlock.defaultBlockState().getSoundType();
+	}
 	public static gregapi.block.Material getMaterial(Block aBlock) {
 		if (aBlock instanceof BlockBase) return ((BlockBase)aBlock).getMaterial();
 		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
