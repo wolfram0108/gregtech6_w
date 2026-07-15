@@ -39,6 +39,7 @@ import static gregapi.data.CS.ALL_SIDES_VALID;
 public class BlockTreePlanksFireProof extends BlockBasePlanks {
 	public BlockTreePlanksFireProof(String aName) {
 		super(ItemBlockMetaType.class, Material.wood, SoundType.WOOD, aName, "", ANY.Wood, 1, 1, 0, 16, Textures.BlockIcons.PLANKS);
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Rubberwood Planks (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".1", "Maple Planks (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".2", "Willow Planks (Fireproof)");
@@ -62,6 +63,7 @@ public class BlockTreePlanksFireProof extends BlockBasePlanks {
 			if (i != 10) OM.reg(ST.make(this, 1, i), OD.plankWood);
 			for (byte tSide : ALL_SIDES_VALID) OM.reg(ST.make(mSlabs[tSide], 1, i), OD.slabWood);
 		}
+		});
 	}
 	
 	@Override

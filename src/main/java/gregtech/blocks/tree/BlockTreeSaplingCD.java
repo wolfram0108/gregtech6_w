@@ -43,6 +43,7 @@ import static gregapi.data.CS.*;
 public class BlockTreeSaplingCD extends BlockBaseSapling {
 	public BlockTreeSaplingCD(String aUnlocalised) {
 		super(null, aUnlocalised, Material.plants, SoundType.GRASS, 1, Textures.BlockIcons.SAPLINGS_CD);
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Blue Spruce Sapling");
 	//  LH.add(getUnlocalizedName()+ ".1", " Sapling");
 	//  LH.add(getUnlocalizedName()+ ".2", " Sapling");
@@ -64,6 +65,7 @@ public class BlockTreeSaplingCD extends BlockBaseSapling {
 			OM.reg(ST.make(this, 1, i), OP.treeSapling);
 			OM.reg(ST.make(this, 1, i+8), OP.treeSapling);
 		}
+		});
 	}
 	
 	@Override

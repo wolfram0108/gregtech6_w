@@ -37,9 +37,11 @@ public class BlockGlowtus extends BlockBaseLilyPad implements Runnable {
 		
 		GT.mBeforePostInit.add(this);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		for (int i = 0; i < 16; i++) LH.add(getUnlocalizedName()+"."+i, DYE_NAMES[i] + " Glowtus");
 		
 		OM.data(ST.make(this, 1, W), MT.Glowstone, U4);
+		});
 	}
 	
 	@Override

@@ -49,6 +49,7 @@ public class BlockTreeLogB extends BlockBaseLogFlammable implements IBlockToolab
 	public BlockTreeLogB(String aUnlocalised) {
 		super(null, aUnlocalised, Material.wood, SoundType.WOOD, 4, Textures.BlockIcons.LOGS_B);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Hazel Log");
 		LH.add(getUnlocalizedName()+ ".4", "Hazel Log");
 		LH.add(getUnlocalizedName()+ ".8", "Hazel Log");
@@ -84,6 +85,7 @@ public class BlockTreeLogB extends BlockBaseLogFlammable implements IBlockToolab
 		OM.reg(ST.make(this, 1, 7), OD.logWood);
 		OM.reg(ST.make(this, 1,11), OD.logWood);
 		OM.reg(ST.make(this, 1,15), OD.logWood);
+		});
 	}
 	
 	@Override public int getLeavesRangeSide(byte aMeta) {return ((BlockBaseLeaves)BlocksGT.Leaves_AB).getLeavesRangeSide((byte)((aMeta & 3)|4));}

@@ -66,9 +66,12 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		super(ItemBlockBase.class, aNameInternal, Material.plants, SoundType.GRASS, aMaxMeta, aIcons);
 		setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.015625F, 1.0F);
 		/* PORT-TODO(F16) setCreativeTab */;
+		// F12-followup (block-split): RM.chisel/COMPAT_FR используют ST.make → server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> {
 		RM.chisel(aNameInternal, ST.make(this, 1, W));
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));
+		});
 	}
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}

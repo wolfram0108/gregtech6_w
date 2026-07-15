@@ -40,7 +40,7 @@ import net.minecraft.world.item.BlockItem;
 public class BlockConcreteReinforced extends BlockColored {
 	public BlockConcreteReinforced(String aUnlocalised) {
 		super(ItemBlockMetaType.class, Material.rock, SoundType.STONE, aUnlocalised, "Reinforced Concrete", null, 8.0F, 4.0F, 3, Textures.BlockIcons.CONCRETES_REINFORCED);
-		OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Concrete, U , ANY.Iron, OP.stick.mAmount  ));
+		gregapi.GT_API.deferItemInit(() -> OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Concrete, U , ANY.Iron, OP.stick.mAmount  )));
 	}
 	
 	@Override

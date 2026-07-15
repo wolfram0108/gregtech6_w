@@ -178,8 +178,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// F3-рендер) остаётся отложенной отдельной фазой.
 
 		if (MD.Mek.mLoaded) try {MekanismAPI.addBoxBlacklist(this, W);} catch(Throwable e) {e.printStackTrace(ERR);}
-		
-		ST.hide(this);
+		// F12-followup (block-split): ST.hide → ST.make (ItemStack) → server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 	
 	// @Override

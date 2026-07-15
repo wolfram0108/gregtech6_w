@@ -46,6 +46,7 @@ public class BlockCrystalOres extends BlockBaseMeta {
 	
 	public BlockCrystalOres(String aUnlocalised) {
 		super(null, aUnlocalised, Material.glass, SoundType.GLASS, ORE_MATERIALS.length, Textures.BlockIcons.CRYSTAL_ORES);
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Arsenopyrite Crystal");
 		LH.add(getUnlocalizedName()+ ".1", "Chalcopyrite Crystal");
 		LH.add(getUnlocalizedName()+ ".2", "Cinnabar Crystal");
@@ -66,6 +67,7 @@ public class BlockCrystalOres extends BlockBaseMeta {
 		
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W));
+		});
 	}
 	
 	

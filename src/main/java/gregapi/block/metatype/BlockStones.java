@@ -141,6 +141,9 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		}
 		
 		OP.blockSolid.disableItemGeneration(mMaterial);
+		// F12-followup (block-split): весь дата-инит (setTarget/OM.data/OM.reg_/mEqualBlocks/texture/RC/COMPAT_FR) использует
+		// ST.make → компоненты только на server-start → deferItemInit (порядок 1:1).
+		gregapi.GT_API.deferItemInit(() -> {
 		OreDictManager.INSTANCE.setTarget(OP.blockSolid, aMaterial, ST.make(this, 1, SMOTH));
 		
 		OM.data(ST.make(this, 1, RNFBR), new OreDictItemData(mMaterial, U*9, ANY.Iron, OP.stick.mAmount));
@@ -213,6 +216,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		if (COMPAT_FR != null) for (int i = 0; i < maxMeta(); i++) COMPAT_FR.addToBackpacks(SPAWNABLE[i]?"digger":"builder", ST.make(this, 1, i));
+		});
 	}
 	
 	@Override
@@ -242,6 +246,8 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 			LH.add(getUnlocalizedName()+".14", aDefaultLocalised+" Windmill Tiles B Slab");
 			LH.add(getUnlocalizedName()+".15", aDefaultLocalised+" Square Bricks Slab");
 		}
+		// F12-followup (block-split): OM.data/mEqualBlocks используют ST.make → server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> {
 		OM.data(ST.make(this, 1, STONE), new OreDictItemData(mMaterial, 9*U2));
 		OM.data(ST.make(this, 1, COBBL), new OreDictItemData(mMaterial, 9*U2));
 		OM.data(ST.make(this, 1, MCOBL), new OreDictItemData(mMaterial, 9*U2));
@@ -258,8 +264,9 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 		OM.data(ST.make(this, 1, WINDA), new OreDictItemData(mMaterial, 9*U2));
 		OM.data(ST.make(this, 1, WINDB), new OreDictItemData(mMaterial, 9*U2));
 		OM.data(ST.make(this, 1, QBRIK), new OreDictItemData(mMaterial, 9*U2));
-		
+
 		for (int i = 0; i < maxMeta(); i++) mEqualBlocks[i].add(ST.make(this, 1, i));
+		});
 	}
 	
 	@Override

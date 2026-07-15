@@ -50,7 +50,9 @@ import static gregapi.data.CS.*;
 public class BlockGlassGlow extends BlockColored {
 	public BlockGlassGlow(String aUnlocalised) {
 		super(ItemBlockMetaType.class, Material.glass, SoundType.GLASS, aUnlocalised, "Glow Glass", null, 0.5F, 0.5F, 0, Textures.BlockIcons.GLASSES_CLEAR);
+		gregapi.GT_API.deferItemInit(() -> {
 		OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Glass, U *9, ANY.Glowstone, U ));
+		});
 		setLightLevel(1.0F);
 		BlocksGT.breakableGlass.add(this);
 	}

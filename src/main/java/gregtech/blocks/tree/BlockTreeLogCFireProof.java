@@ -45,6 +45,7 @@ public class BlockTreeLogCFireProof extends BlockBaseLog implements IBlockToolab
 	public BlockTreeLogCFireProof(String aUnlocalised) {
 		super(null, aUnlocalised, Material.wood, SoundType.WOOD, 1, Textures.BlockIcons.LOGS_C);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Blue Spruce Log (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".4", "Blue Spruce Log (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".8", "Blue Spruce Log (Fireproof)");
@@ -53,6 +54,7 @@ public class BlockTreeLogCFireProof extends BlockBaseLog implements IBlockToolab
 		OM.reg(ST.make(this, 1, 4), OD.logWood);
 		OM.reg(ST.make(this, 1, 8), OD.logWood);
 		OM.reg(ST.make(this, 1,12), OD.logWood);
+		});
 		
 	//  LH.add(getUnlocalizedName()+ ".1", " Log (Fireproof)");
 	//  LH.add(getUnlocalizedName()+ ".5", " Log (Fireproof)");

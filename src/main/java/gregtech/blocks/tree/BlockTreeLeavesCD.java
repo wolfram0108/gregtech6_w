@@ -46,6 +46,7 @@ import static gregapi.data.CS.*;
 public class BlockTreeLeavesCD extends BlockBaseLeaves implements Runnable {
 	public BlockTreeLeavesCD(String aUnlocalised, Block aSaplings) {
 		super(null, aUnlocalised, Material.leaves, SoundType.GRASS, 1, Textures.BlockIcons.LEAVES_CD, aSaplings, new Block[] {BlocksGT.LogC, BlocksGT.LogC, BlocksGT.LogC, BlocksGT.LogC, BlocksGT.LogD, BlocksGT.LogD, BlocksGT.LogD, BlocksGT.LogD}, new byte[] {0, 1, 2, 3, 0, 1, 2, 3});
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Blue Spruce Leaves");
 	//  LH.add(getUnlocalizedName()+ ".1", " Leaves");
 	//  LH.add(getUnlocalizedName()+ ".2", " Leaves");
@@ -67,6 +68,7 @@ public class BlockTreeLeavesCD extends BlockBaseLeaves implements Runnable {
 			OM.reg(ST.make(this, 1, i), OP.treeLeaves);
 			OM.reg(ST.make(this, 1, i+8), OP.treeLeaves);
 		}
+		});
 		
 		GAPI.mAfterPostInit.add(this);
 	}

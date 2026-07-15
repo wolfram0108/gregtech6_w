@@ -61,8 +61,10 @@ public class BlockRockOres extends BlockBaseMeta {
 		LH.add(getUnlocalizedName()+ ".7", "Milky Quartz");
 		LH.add(getUnlocalizedName()+ ".8", "Nether Quartz");
 		
+		// F12-followup (block-split): OM.reg/COMPAT_IC2.valuable используют ST.make → server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> {
 		for (int i = 0; i < maxMeta(); i++) OM.reg(ST.make(this, 1, i), OP.oreDense.dat(ORE_MATERIALS[i]));
-		
+
 		if (COMPAT_IC2 != null) {
 		COMPAT_IC2.valuable(this,  0, 1);
 		COMPAT_IC2.valuable(this,  1, 1);
@@ -81,7 +83,8 @@ public class BlockRockOres extends BlockBaseMeta {
 		COMPAT_IC2.valuable(this, 14, 0);
 		COMPAT_IC2.valuable(this, 15, 0);
 		}
-		
+		});
+
 		BlocksGT.drillableDynamite.add(this);
 		BlocksGT.harvestableJackhammer.add(this);
 		
@@ -95,8 +98,10 @@ public class BlockRockOres extends BlockBaseMeta {
 		StoneLayer.LAYERS.add(new StoneLayer(this, 7, ORE_MATERIALS[7]).setNoDeep());
 	//  StoneLayer.LAYERS.add(new StoneLayer(this, 8, ORE_MATERIALS[7]).setNoDeep()); Nope, Nether Quartz is not for the Overworld.
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W));
+		});
 	}
 	
 	

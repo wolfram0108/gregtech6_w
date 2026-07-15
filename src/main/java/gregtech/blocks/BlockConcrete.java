@@ -51,7 +51,7 @@ public class BlockConcrete extends BlockColored implements IBlockToolable {
 	public BlockConcrete(String aUnlocalised) {
 		super(ItemBlockMetaType.class, Material.rock, SoundType.STONE, aUnlocalised, "Concrete", null, 2.0F, 1.0F, 1, Textures.BlockIcons.CONCRETES);
 		MT.Concrete.mTextureSolid = BlockTextureCopied.get(this, SIDE_TOP, DYE_INDEX_LightGray);
-		OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Concrete, U ));
+		gregapi.GT_API.deferItemInit(() -> OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Concrete, U )));
 	}
 	
 	@Override

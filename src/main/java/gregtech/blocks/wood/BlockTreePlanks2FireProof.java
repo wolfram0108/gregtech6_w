@@ -43,6 +43,7 @@ import net.minecraft.world.item.ItemStack;
 public class BlockTreePlanks2FireProof extends BlockBasePlanks {
 	public BlockTreePlanks2FireProof(String aName) {
 		super(ItemBlockMetaType.class, Material.wood, SoundType.WOOD, aName, "", ANY.Wood, 1, 1, 0, 1, Textures.BlockIcons.PLANKS_2);
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Blue Spruce Planks (Fireproof)");
 	//  LH.add(getUnlocalizedName()+ ".1", " Planks (Fireproof)");
 	//  LH.add(getUnlocalizedName()+ ".2", " Planks (Fireproof)");
@@ -64,6 +65,7 @@ public class BlockTreePlanks2FireProof extends BlockBasePlanks {
 			OM.reg(ST.make(this, 1, i), OD.plankWood);
 			for (byte tSide : ALL_SIDES_VALID) OM.reg(ST.make(mSlabs[tSide], 1, i), OD.slabWood);
 		}
+		});
 	}
 	
 	@Override

@@ -132,7 +132,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		mDetectorRail = aDetectorRail;
 		mPowerRail = aPowerRail;
 		if (aPowerRail) REDSTONE_SINKS.add(this);
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}
 	
 	@Override

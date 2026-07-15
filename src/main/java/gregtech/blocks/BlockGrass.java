@@ -70,6 +70,7 @@ public class BlockGrass extends BlockBaseMeta {
 		BlocksGT.plantableTrees.add(this);
 		BlocksGT.plantableGrass.add(this);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		RM.generify(ST.make(this, 1, W), ST.make(Blocks.GRASS_BLOCK, 1, 0));
 		CR.shapeless(ST.make(Blocks.GRASS_BLOCK, 1, 0), new Object[] {this});
 		
@@ -81,6 +82,7 @@ public class BlockGrass extends BlockBaseMeta {
 		CR.shapeless(ST.make(this, 8, 5), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Brown    ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
 		
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
+		});
 	}
 	
 	static {

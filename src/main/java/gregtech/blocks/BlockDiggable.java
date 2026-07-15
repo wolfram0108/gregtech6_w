@@ -65,6 +65,7 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 		MT.Palygorskite.mTextureSolid = BlockTextureCopied.get(this, SIDE_TOP, 5);
 		MT.Kaolinite   .mTextureSolid = BlockTextureCopied.get(this, SIDE_TOP, 6);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		RM.generify(ST.make(this, 1, 1), ST.make(Blocks.CLAY, 1, 0));
 		RM.generify(ST.make(this, 1, 3), ST.make(Blocks.CLAY, 1, 0));
 		RM.generify(ST.make(this, 1, 4), ST.make(Blocks.CLAY, 1, 0));
@@ -95,12 +96,15 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 		OM.reg(ST.make(this, 1, 4), OD.blockClay);
 		OM.reg(ST.make(this, 1, 5), OD.blockClay);
 		OM.reg(ST.make(this, 1, 6), OD.blockClay);
+		});
 		
 		BlocksGT.drillableDynamite.add(this);
 		BlocksGT.harvestableSpade.add(this);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
+		});
 	}
 	
 	@Override

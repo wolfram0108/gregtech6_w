@@ -46,16 +46,19 @@ public class BlockSands extends BlockBaseMeta {
 		MT.OREMATS.BasalticMineralSand.mTextureDust = BlockTextureCopied.get(this, SIDE_TOP, 1);
 		MT.OREMATS.GraniticMineralSand.mTextureDust = BlockTextureCopied.get(this, SIDE_TOP, 2);
 		
+		// F12-followup (block-split): OM.reg/getRecipeFor/COMPAT_* используют ST.make → server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> {
 		OM.reg(ST.make(this, 1, 0), OP.blockDust.dat(MT.OREMATS.Magnetite          ));
 		OM.reg(ST.make(this, 1, 1), OP.blockDust.dat(MT.OREMATS.BasalticMineralSand));
 		OM.reg(ST.make(this, 1, 2), OP.blockDust.dat(MT.OREMATS.GraniticMineralSand));
-		
+
 		for (byte i = 0; i < maxMeta(); i++) {
 			((RecipeMapCrucible)RM.CrucibleSmelting).getRecipeFor(ST.make(this, 1, i));
 		}
-		
+
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
+		});
 	}
 	
 	@Override public boolean useGravity(byte aMeta) {return T;}

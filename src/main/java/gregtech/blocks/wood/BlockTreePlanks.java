@@ -39,6 +39,7 @@ import static gregapi.data.CS.ALL_SIDES_VALID;
 public class BlockTreePlanks extends BlockBasePlanksFlammable {
 	public BlockTreePlanks(String aName) {
 		super(ItemBlockMetaType.class, Material.wood, SoundType.WOOD, aName, "", ANY.Wood, 1, 1, 0, 16, Textures.BlockIcons.PLANKS);
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Rubberwood Planks");
 		LH.add(getUnlocalizedName()+ ".1", "Maple Planks");
 		LH.add(getUnlocalizedName()+ ".2", "Willow Planks");
@@ -62,6 +63,7 @@ public class BlockTreePlanks extends BlockBasePlanksFlammable {
 			if (i != 10) OM.reg(ST.make(this, 1, i), OD.plankWood);
 			for (byte tSide : ALL_SIDES_VALID) OM.reg(ST.make(mSlabs[tSide], 1, i), OD.slabWood);
 		}
+		});
 	}
 	
 	@Override

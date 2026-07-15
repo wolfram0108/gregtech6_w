@@ -32,6 +32,7 @@ public class BlockBaleCrop extends BlockBaseBale {
 	public BlockBaleCrop(String aUnlocalised) {
 		super(null, aUnlocalised, Material.grass, SoundType.GRASS, 4, Textures.BlockIcons.BALES_CROP);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Rye Bale");
 		LH.add(getUnlocalizedName()+ ".4", "Rye Bale");
 		LH.add(getUnlocalizedName()+ ".8", "Rye Bale");
@@ -71,5 +72,6 @@ public class BlockBaleCrop extends BlockBaseBale {
 		OM.reg(ST.make(this, 1,11), "baleRice");
 		OM.reg(ST.make(this, 1,15), "baleRice");
 		IL.Bale_Rice.set(ST.make(this, 1, 3));
+		});
 	}
 }

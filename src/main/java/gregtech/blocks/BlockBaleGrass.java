@@ -44,6 +44,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 	public BlockBaleGrass(String aUnlocalised) {
 		super(null, aUnlocalised, Material.grass, SoundType.GRASS, 4, Textures.BlockIcons.BALES_GRASS);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		LH.add(getUnlocalizedName()+ ".0", "Grass Bale");
 		LH.add(getUnlocalizedName()+ ".4", "Grass Bale");
 		LH.add(getUnlocalizedName()+ ".8", "Grass Bale");
@@ -83,6 +84,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 		OM.reg(ST.make(this, 1,11), "baleGrassRotten");
 		OM.reg(ST.make(this, 1,15), "baleGrassRotten");
 		IL.Bale_Rotten.set(ST.make(this, 1, 3));
+		});
 	}
 	
 	@Override

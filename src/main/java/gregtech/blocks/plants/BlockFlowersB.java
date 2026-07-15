@@ -54,11 +54,13 @@ public class BlockFlowersB extends BlockBaseFlower implements Runnable {
 		GT.mBeforePostInit.add(this);
 		BlocksGT.FLOWERS.add(this);
 		
+		gregapi.GT_API.deferItemInit(() -> {
 		OM.data(ST.make(this, 1, 0), MT.WOODS.Acacia, U);
 		OM.data(ST.make(this, 1, 1), MT.WOODS.Acacia, U);
 		OM.data(ST.make(this, 1, 6), MT.WOODS.Palm  , U);
 		
 		for (int i = 2; i < maxMeta(); i++) if (i != 6) OM.reg(ST.make(this, 1, i), OD.flower);
+		});
 	}
 	
 	@Override

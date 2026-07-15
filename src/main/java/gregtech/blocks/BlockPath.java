@@ -67,7 +67,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 		LH.add(getUnlocalizedName()+".15", "Path");
 		setBlockBounds(0, 0, 0, 1, PIXELS_NEG[1], 1);
 		
-		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
+		if (COMPAT_FR  != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W)));
 	}
 	
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) { // GT6-хук (не neo @Override); мост дропа зовёт его как у core-блоков
