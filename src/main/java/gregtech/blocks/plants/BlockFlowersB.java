@@ -134,7 +134,7 @@ public class BlockFlowersB extends BlockBaseFlower implements Runnable {
 	
 	@Override
 	public boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {
-		return WD.oxygen(aWorld, aX, aY, aZ) && WD.block(aWorld, aX, aY - 1, aZ).canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, (IPlantable)Blocks.CACTUS);
+		return WD.oxygen(aWorld, aX, aY, aZ) && WD.canSustainPlant(aWorld, aX, aY - 1, aZ, Direction.UP, Blocks.CACTUS);
 	}
 	
 	@Override

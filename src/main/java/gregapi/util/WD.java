@@ -411,6 +411,14 @@ public class WD {
 	public static boolean normalCube(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 		return aBlock.defaultBlockState().isRedstoneConductor(aWorld, new BlockPos(aX, aY, aZ));
 	}
+	/** F-plant: 1.7.10 Block.canSustainPlant(IBlockAccess,x,y,z,side,IPlantable):boolean -> neo
+	 *  IBlockExtension.canSustainPlant(BlockState,BlockGetter,BlockPos,Direction,BlockState):TriState (растение как
+	 *  BlockState, не IPlantable). Централизованный переходник: собирает состояние блока по координатам, растение
+	 *  как defaultBlockState(), TriState.toBoolean(F) (недетерм. -> не растёт, консервативно 1:1). */
+	public static boolean canSustainPlant(Level aWorld, int aX, int aY, int aZ, Direction aSide, Block aPlant) {
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		return aWorld.getBlockState(tPos).getBlock().canSustainPlant(aWorld.getBlockState(tPos), aWorld, tPos, aSide, aPlant.defaultBlockState()).toBoolean(F);
+	}
 	/** F-dimension: 1.7.10 World-провайдер числовой id -> neo числового id НЕТ (Level.dimension() =
 	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). PORT-TODO(F-dimension,
 	 *  modded-dim-id): модовым измерениям стабильного int в neo нет -> hash ключа (уникален в рамках сессии, но

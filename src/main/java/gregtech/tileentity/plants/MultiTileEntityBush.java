@@ -84,7 +84,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		aList.add(LH.Chat.CYAN + (ST.valid(mBerry)?LH.get(mBerry.getDescriptionId(), mBerry.getDisplayName()):"Rightclick with a Berry to set Output"));
+		aList.add(LH.Chat.CYAN + (ST.valid(mBerry)?LH.get(mBerry.getItem().getDescriptionId(), mBerry.getDisplayName()):"Rightclick with a Berry to set Output"));
 	}
 	
 	@Override
@@ -124,7 +124,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 					}
 				} else {
 					Block tBlock = getBlockAtSide(SIDE_BOTTOM);
-					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_UP], Blocks.DANDELION) ? 1 : 0);
+					mSpeed = (byte)(IL.AETHER_Grass_Enchanted.equal(tBlock) || IL.AETHER_Grass_Enchanted_Vanilla.equal(tBlock) ? 2 : BlocksGT.plantableGreens.contains(tBlock) || WD.canSustainPlant(level, getBlockPos().getX(), getBlockPos().getY()-1, getBlockPos().getZ(), FORGE_DIR[SIDE_UP], Blocks.DANDELION) ? 1 : 0);
 				}
 			}
 			
@@ -155,7 +155,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isClientSide()) return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 		if (aTool.equals(TOOL_magnifyingglass)) {
-			if (aChatReturn != null && ST.valid(mBerry)) aChatReturn.add("Grows " + (CODE_CLIENT ? mBerry.getDisplayName() : LH.get(mBerry.getDisplayName())));
+			if (aChatReturn != null && ST.valid(mBerry)) aChatReturn.add("Grows " + (CODE_CLIENT ? mBerry.getDisplayName().getString() : LH.get(mBerry.getDisplayName().getString())));
 			return 1;
 		}
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
@@ -189,7 +189,7 @@ public class MultiTileEntityBush extends TileEntityBase09FacingSingle implements
 			return T;
 		}
 		Block tBlock = WD.block(aWorld, aX, aY-1, aZ);
-		if (BlocksGT.plantableGreens.contains(tBlock) || tBlock.canSustainPlant(aWorld, aX, aY-1, aZ, FORGE_DIR[SIDE_UP], Blocks.DANDELION)) {
+		if (BlocksGT.plantableGreens.contains(tBlock) || WD.canSustainPlant(aWorld, aX, aY-1, aZ, FORGE_DIR[SIDE_UP], Blocks.DANDELION)) {
 			mFacing = SIDE_UNDEFINED;
 			mSpeed = 1;
 			return T;
