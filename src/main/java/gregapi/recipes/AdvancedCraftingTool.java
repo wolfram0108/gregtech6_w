@@ -66,19 +66,29 @@ public class AdvancedCraftingTool extends ShapelessOreRecipe implements ICraftin
 	@Override
 	public void onOreRegistration(OreDictRegistrationContainer aEvent) {
 		if (aEvent.mMaterial != MT.Empty && mCondition.isTrue(aEvent.mMaterial)) {
-			if (aEvent.mMaterial.mHandleMaterial == ANY.Wood || aEvent.mMaterial.mHandleMaterial == ANY.WoodPlastic) {
-				RM.ToolHeads.addRecipeX(F,F,T,F,F, 0, 0, ST.array(aEvent.mStack, NI, IL.Stick.get(1)), mTool.getToolWithStats(mToolID, aEvent.mMaterial, aEvent.mMaterial.mHandleMaterial));
-			} else {
-				if (!aEvent.mMaterial.mHandleMaterial.contains(TD.Properties.INVALID_MATERIAL)) {
-					ItemStack tHandle = OP.stick.mat(aEvent.mMaterial.mHandleMaterial, 1);
-					if (ST.valid(tHandle)) RM.ToolHeads.addRecipeX(F,F,T,F,F, 0, 0, ST.array(aEvent.mStack, NI, tHandle), mTool.getToolWithStats(mToolID, aEvent.mMaterial, aEvent.mMaterial.mHandleMaterial));
+			// F-toolhead-handle-timing: рукоять берётся из IL.Stick (ванильный stick, LoaderItemList) / OP.stick.mat(handleMat)
+			// (stick-префикс). В порту весь stack-init (LoaderItemList + prefix-регистрация) отложен на server-start
+			// (runDeferredItemInit), и в момент срабатывания этого OreDict-листенера sticks ещё НЕ готовы (IL.Stick=null,
+			// OP.stick.mat=null) → рукоять терялась (порт выдавал toolhead-рецепты без рукояти, паритет toolhead=0). Golden
+			// (1.7.10, синхронно) имел sticks готовыми к этому моменту. Fix: отложить генерацию рецепта в конец drain-очереди —
+			// выполнится, когда IL.Stick/OP.stick уже зарегистрированы (тот же приём отложки stack-init, что во всём порту).
+			final OreDictMaterial tMat = aEvent.mMaterial;
+			final ItemStack tHead = ST.copy(aEvent.mStack);
+			gregapi.GT_API.deferItemInit(() -> {
+				if (tMat.mHandleMaterial == ANY.Wood || tMat.mHandleMaterial == ANY.WoodPlastic) {
+					RM.ToolHeads.addRecipeX(F,F,T,F,F, 0, 0, ST.array(tHead, NI, IL.Stick.get(1)), mTool.getToolWithStats(mToolID, tMat, tMat.mHandleMaterial));
+				} else {
+					if (!tMat.mHandleMaterial.contains(TD.Properties.INVALID_MATERIAL)) {
+						ItemStack tHandle = OP.stick.mat(tMat.mHandleMaterial, 1);
+						if (ST.valid(tHandle)) RM.ToolHeads.addRecipeX(F,F,T,F,F, 0, 0, ST.array(tHead, NI, tHandle), mTool.getToolWithStats(mToolID, tMat, tMat.mHandleMaterial));
+					}
+					for (OreDictMaterial tHandleMaterial : tMat.mHandleMaterial.mToThis)
+					if (!tHandleMaterial                 .contains(TD.Properties.INVALID_MATERIAL)) {
+						ItemStack tHandle = OP.stick.mat(tHandleMaterial                 , 1);
+						if (ST.valid(tHandle)) RM.ToolHeads.addRecipeX(F,F,T,F,F, 0, 0, ST.array(tHead, NI, tHandle), mTool.getToolWithStats(mToolID, tMat, tHandleMaterial));
+					}
 				}
-				for (OreDictMaterial tHandleMaterial : aEvent.mMaterial.mHandleMaterial.mToThis)
-				if (!tHandleMaterial                 .contains(TD.Properties.INVALID_MATERIAL)) {
-					ItemStack tHandle = OP.stick.mat(tHandleMaterial                 , 1);
-					if (ST.valid(tHandle)) RM.ToolHeads.addRecipeX(F,F,T,F,F, 0, 0, ST.array(aEvent.mStack, NI, tHandle), mTool.getToolWithStats(mToolID, aEvent.mMaterial, tHandleMaterial));
-				}
-			}
+			});
 		}
 	}
 	
