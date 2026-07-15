@@ -104,7 +104,7 @@ public class Config implements Runnable {
 		if (UT.Code.stringInvalid(aName)) return aDefault;
 		ConfigValue tProperty = mConfig.get(aCategory.toString().replaceAll("\\|", "_"), (aName+(mUsesDefaultsInNames?"_"+aDefault:"")).replaceAll("\\|", "_"), aDefault);
 		boolean rResult = tProperty.getBoolean(aDefault);
-		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead()) mConfig.save();
+		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead() && !gregapi.GT_API.sDeferredItemInitRunning) mConfig.save();
 		return rResult;
 	}
 	
@@ -116,7 +116,11 @@ public class Config implements Runnable {
 		if (UT.Code.stringInvalid(aName)) return UT.Code.bindInt(aDefault);
 		ConfigValue tProperty = mConfig.get(aCategory.toString().replaceAll("\\|", "_"), (aName+(mUsesDefaultsInNames?"_"+UT.Code.bindInt(aDefault):"")).replaceAll("\\|", "_"), UT.Code.bindInt(aDefault));
 		int rResult = tProperty.getInt(UT.Code.bindInt(aDefault));
-		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead()) mConfig.save();
+		// F12-followup (oredict-timing): save-on-edit НЕ во время runDeferredItemInit. GT6 1.7.10 добавлял контент (рецепты
+		// с config.get) на @Init/@PostInit — ДО sFinalized → save не срабатывал. neo сдвинул контент-init на server-start
+		// (уже sFinalized) → save() полного файла на КАЖДОМ новом свойстве × тысячи рецептов → OutOfMemoryError, обрывающий
+		// отложенный init (MTE connectors/поздние loaders). Подавляем в окне (восстанавливает 1.7.10-поведение bulk-save).
+		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead() && !gregapi.GT_API.sDeferredItemInitRunning) mConfig.save();
 		return rResult;
 	}
 	
@@ -128,7 +132,7 @@ public class Config implements Runnable {
 		if (UT.Code.stringInvalid(aName)) return aDefault;
 		ConfigValue tProperty = mConfig.get(aCategory.toString().replaceAll("\\|", "_"), (aName+(mUsesDefaultsInNames?"_"+aDefault:"")).replaceAll("\\|", "_"), aDefault);
 		String rResult = tProperty.getString();
-		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead()) mConfig.save();
+		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead() && !gregapi.GT_API.sDeferredItemInitRunning) mConfig.save();
 		return rResult;
 	}
 	
@@ -137,7 +141,7 @@ public class Config implements Runnable {
 		if (UT.Code.stringInvalid(aName)) return aDefault;
 		ConfigValue tProperty = mConfig.get(aCategory.toString().replaceAll("\\|", "_"), (aName+(mUsesDefaultsInNames?"_"+aDefault.mNameInternal:"")).replaceAll("\\|", "_"), aDefault.mNameInternal);
 		OreDictMaterial rResult = OreDictMaterial.get(tProperty.getString());
-		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead()) mConfig.save();
+		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead() && !gregapi.GT_API.sDeferredItemInitRunning) mConfig.save();
 		return rResult;
 	}
 	
@@ -149,7 +153,7 @@ public class Config implements Runnable {
 		if (UT.Code.stringInvalid(aName)) return aDefault;
 		ConfigValue tProperty = mConfig.get(aCategory.toString().replaceAll("\\|", "_"), (aName+(mUsesDefaultsInNames?"_"+aDefault:"")).replaceAll("\\|", "_"), aDefault);
 		double rResult = tProperty.getDouble(aDefault);
-		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead()) mConfig.save();
+		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI && mSaveOnEdit && !tProperty.wasRead() && !gregapi.GT_API.sDeferredItemInitRunning) mConfig.save();
 		return rResult;
 	}
 	

@@ -94,7 +94,12 @@ if (project.hasProperty('parityFull')) {
         }
     }
     tasks.named('stripMcMirrorFull').configure { mustRunAfter tasks.named('classes') }
-    tasks.named('test').configure { dependsOn stripMirrorFull }
+    tasks.named('test').configure {
+        dependsOn stripMirrorFull
+        // Полностью прогруженный GT6 (тысячи предметов/рецептов + дампы) не влезает в дефолтный heap → OutOfMemoryError
+        // в Server thread, обрывающий отложенный init до генерации дампа. Поднимаем память тест-JVM.
+        maxHeapSize = '6G'
+    }
     sourceSets.test.java.exclude('**/SanityTest.java')
     logger.lifecycle("[parityFull] полный контент + stripMcMirror для JPMS")
 }
