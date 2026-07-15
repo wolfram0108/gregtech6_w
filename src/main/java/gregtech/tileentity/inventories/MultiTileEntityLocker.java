@@ -54,6 +54,9 @@ public class MultiTileEntityLocker extends TileEntityBase09FacingSingle implemen
 		}
 	}
 	
+	/** 1.7.10 armorInventory[i] -> neo EquipmentSlot: i=0 boots(FEET), 1 LEGS, 2 CHEST, 3 helm(HEAD). */
+	private static final net.minecraft.world.entity.EquipmentSlot[] ARMOR_SLOTS = {net.minecraft.world.entity.EquipmentSlot.FEET, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.HEAD};
+
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aSide != mFacing) return F;
@@ -61,10 +64,10 @@ public class MultiTileEntityLocker extends TileEntityBase09FacingSingle implemen
 			boolean temp = F;
 			for (int i = 0; i < 4; i++) {
 				ItemStack tStack = slot(i);
-				if (tStack == null || tStack.getItem().isValidArmor(tStack, 3-i, aPlayer)) {
-					if (!IL.BTRS_Backpack.equal(aPlayer.getInventory().armorInventory[i], T, T) && !IL.BTRS_Thaumpack.equal(aPlayer.getInventory().armorInventory[i], T, T)) {
-						slot(i, aPlayer.getInventory().armorInventory[i]);
-						aPlayer.getInventory().armorInventory[i] = tStack;
+				if (tStack == null || aPlayer.getEquipmentSlotForItem(tStack) == ARMOR_SLOTS[i]) {
+					if (!IL.BTRS_Backpack.equal(aPlayer.getItemBySlot(ARMOR_SLOTS[i]), T, T) && !IL.BTRS_Thaumpack.equal(aPlayer.getItemBySlot(ARMOR_SLOTS[i]), T, T)) {
+						slot(i, aPlayer.getItemBySlot(ARMOR_SLOTS[i]));
+						aPlayer.setItemSlot(ARMOR_SLOTS[i], tStack);
 						temp = T;
 					}
 				}
@@ -81,7 +84,7 @@ public class MultiTileEntityLocker extends TileEntityBase09FacingSingle implemen
 	@Override public boolean canDrop(int aSlot) {return T;}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[4];}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(invsize());}
-	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {if (ST.valid(aStack)) try {return aStack.getItem().isValidArmor(aStack, 3-aSlot, null);} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
+	@Override public boolean canInsertItem2 (int aSlot, ItemStack aStack, byte aSide) {if (ST.valid(aStack)) try {net.minecraft.world.item.equipment.Equippable tEq = aStack.get(net.minecraft.core.component.DataComponents.EQUIPPABLE); return tEq != null && tEq.slot() == ARMOR_SLOTS[aSlot];} catch(Throwable e) {e.printStackTrace(ERR);} return F;}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return T;}
 	@Override public boolean getStateRunningPassively   () {return UT.Code.containsSomething(getInventory());}
 	@Override public boolean getStateRunningPossible    () {return UT.Code.containsSomething(getInventory());}
