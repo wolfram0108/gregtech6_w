@@ -1,18 +1,27 @@
 package gregtech6.parity;
 
+import net.minecraft.server.MinecraftServer;
+import net.neoforged.testframework.junit.EphemeralTestServerProvider;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Запуск порт-дампера material/prefix + parity-отчёт в FML-runtime (gradle {@code test -PcoreOnly}).
+ * Запуск порт-дампера material/prefix + parity-отчёт в FML-runtime с ЭФЕМЕРНЫМ СЕРВЕРОМ.
  *
- * <p>Единственный контекст, где заводится {@code FMLLoader} (материал-init GT6 монолитно тянет его через
- * ModData/GT_API — см. {@link PortDump} javadoc). Пока НЕ ассертит 100% (первый прогон, расхождения = сигнал
- * дрейфа/F5). Ассерт-порог добавить, когда срез позеленеет.</p>
+ * <p>{@link EphemeralTestServerProvider} стартует настоящий (headless) MC-сервер: мод грузится → server-start →
+ * GT6 {@code deferItemInit}-pipeline выполняется (регистрация OreDict/targets, привязка Holder.components жидкостей —
+ * всё это возможно только на server-start, см. STATE.md «ФУНДАМЕНТАЛЬНАЯ КОРРЕКЦИЯ»). ТОЛЬКО в этом контексте дамп
+ * материалов/префиксов полон (registeredMaterialsCount/registeredItemsCount, fluid-колонки заполнены).</p>
+ *
+ * <p>Пока НЕ ассертит 100% (расхождения = сигнал реального дрейфа/тихих data-drop). Ассерт-порог — когда срез позеленеет.</p>
  */
+@ExtendWith(EphemeralTestServerProvider.class)
 class PortDumpTest {
 
     @Test
-    void dumpAndReportParity() throws Exception {
+    void dumpAndReportParity(MinecraftServer server) throws Exception {
+        // server-параметр → EphemeralTestServer стартует сервер (deferItemInit-pipeline выполнен, компоненты привязаны) ДО дампа.
         PortDump.runFull();
     }
 }

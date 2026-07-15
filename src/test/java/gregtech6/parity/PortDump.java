@@ -58,6 +58,10 @@ public final class PortDump {
         try {SharedConstants.setVersion(DetectedVersion.BUILT_IN); Bootstrap.bootStrap();} catch (Throwable e) {System.out.println("[port-dump] bootstrap уже сделан FML: " + e);}
         MT.init();                          // static-init MT (материалы) + init() — идемпотентно (мод уже инициализировал)
         Class.forName("gregapi.data.OP");   // static-init OP (префиксы)
+        // Выполнить отложенный data-init (loaders/targets/associations — заполняют registeredMaterialsCount/registeredItemsCount,
+        // fluid-компоненты). В @Test (после EphemeralTestServer server-start) компоненты привязаны → ST.make работает. onModServerStarting2
+        // в тесте не срабатывает, потому зовём явно здесь.
+        gregapi.GT_API.runDeferredItemInit();
 
         Files.createDirectories(DUMP);
         int nMat = dumpMaterials();

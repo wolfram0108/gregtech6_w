@@ -186,7 +186,7 @@ public class GT_API extends Abstract_Mod {
 	 *  {@link #runDeferredItemInit()} выполняет их в setup (пост-bind). См. decisions/F12-registration-lifecycle.md. */
 	public static final List<Runnable> DEFERRED_ITEM_INIT = new ArrayListNoNulls<>();
 	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
-	private static void runDeferredItemInit() {for (Runnable tInit : DEFERRED_ITEM_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_ITEM_INIT.clear();}
+	public static void runDeferredItemInit() {for (Runnable tInit : DEFERRED_ITEM_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_ITEM_INIT.clear();}
 
 	/**
 	 * F12: мод-шина, сохранённая из конструктора, чтобы лениво созданные под-неймспейсы могли
