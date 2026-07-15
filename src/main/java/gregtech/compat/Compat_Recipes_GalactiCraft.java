@@ -23,7 +23,7 @@ import static gregapi.data.CS.*;
 
 import java.util.List;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -51,7 +51,7 @@ import gregapi.recipes.ShapedOreRecipe;
 public class Compat_Recipes_GalactiCraft extends CompatMods {
 	public Compat_Recipes_GalactiCraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {
 		if (MD.GC.mLoaded) {
 			OUT.println("GT_Mod: Doing Galacticraft Recipes.");
 			for (OreDictMaterial tMat : ANY.Steel.mToThis) {

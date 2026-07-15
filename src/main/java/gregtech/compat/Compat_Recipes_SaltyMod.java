@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -35,7 +35,7 @@ import static gregapi.data.CS.T;
 public class Compat_Recipes_SaltyMod extends CompatMods {
 	public Compat_Recipes_SaltyMod(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Salty Mod Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Salty Mod Recipes.");
 		CR.delate(MD.Salt, "saltStar", "saltDirt", "mineralMud", "mudBlock", "mudBrickWet");
 		
 		RM.compactunpack(IL.Salt_Mud_Ball.get(4), 4, IL.Salt_Mud.get(1));

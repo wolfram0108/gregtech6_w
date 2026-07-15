@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -37,7 +37,7 @@ import static gregapi.data.CS.*;
 public class Compat_Recipes_ExtraUtilities extends CompatMods {
 	public Compat_Recipes_ExtraUtilities(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Extra Utilities Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Extra Utilities Recipes.");
 		ItemsGT.VOIDING_ITEMS.add(MD.ExU, "trashcan", 0);
 		if (ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "extra-utilities-trash-can-items", T)) {
 			ItemsGT.RECIPE_REMOVED_USE_TRASH_BIN_INSTEAD.add(MD.ExU, "trashcan", 0);

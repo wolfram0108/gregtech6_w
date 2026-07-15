@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -38,7 +38,7 @@ import static gregapi.data.CS.*;
 public class Compat_Recipes_Ganys extends CompatMods {
 	public Compat_Recipes_Ganys(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {
 		if (MD.EtFu.mLoaded) {OUT.println("GT_Mod: Doing Recipes of the Future.");
 			ItemStack tEtFuturumPurpur = ST.make(MD.EtFu, "purpur_block", 1, 0), tEtFuturumPurpurPillar = ST.make(MD.EtFu, "purpur_pillar", 1, 0);
 			RM.sawing(16, 16, F, 100,               tEtFuturumPurpur, ST.make(MD.EtFu, "purpur_slab", 2, 0));

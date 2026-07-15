@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -31,7 +31,7 @@ import gregapi.util.CR;
 public class Compat_Recipes_RandomThings extends CompatMods {
 	public Compat_Recipes_RandomThings(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing RandomThings Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing RandomThings Recipes.");
 		
 		CR.delate(MD.RT, "ingredient", 4);
 	}

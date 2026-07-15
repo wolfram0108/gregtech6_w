@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -36,7 +36,7 @@ import static gregapi.util.CR.DEF;
 public class Compat_Recipes_BiomesOPlenty extends CompatMods {
 	public Compat_Recipes_BiomesOPlenty(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing BoP Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing BoP Recipes.");
 		RM.add_smelting(IL.BoP_Mud     .get(1), IL.BoP_Mud_Brick.get(1), T, F, T);
 		
 		RM.compactsmash (IL.BoP_Celestial.get(4), 4, IL.BoP_Celestial_Block.get(1));

@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -34,7 +34,7 @@ import static gregapi.data.CS.*;
 public class Compat_Recipes_MoCreatures extends CompatMods {
 	public Compat_Recipes_MoCreatures(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {
 		OUT.println("GT_Mod: Doing Mo'Creatures Recipes.");
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "fur", 1), IL.Shape_Slicer_Flat.get(0), ST.make(Items.LEATHER, 1, 0));
 		RM.Slicer.addRecipe2(T, 16, 16, ST.make(MD.MoCr, "furhelmet", 1, W), IL.Shape_Slicer_Split.get(0), ST.make(MD.MoCr, "fur", 1));

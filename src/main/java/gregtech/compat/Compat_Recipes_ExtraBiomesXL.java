@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -34,7 +34,7 @@ import net.minecraft.world.item.Items;
 public class Compat_Recipes_ExtraBiomesXL extends CompatMods {
 	public Compat_Recipes_ExtraBiomesXL(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing EBXL Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing EBXL Recipes.");
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.EBXL, "vines"      , 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Red], ST.make(Items.INK_SAC, 1, DYE_INDEX_Red));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.EBXL, "waterplant1", 1, 0), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_Green], IL.Dye_Cactus.get(1));
 		RM.Squeezer.addRecipe1(T, 16, 16, ST.make(MD.EBXL, "flower1"    , 1, 1), NF, DYE_FLUIDS_FLOWER[DYE_INDEX_LightBlue], ST.make(Items.INK_SAC, 1, DYE_INDEX_LightBlue));

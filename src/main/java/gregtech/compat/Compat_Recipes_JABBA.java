@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -35,7 +35,7 @@ import gregapi.util.ST;
 public class Compat_Recipes_JABBA extends CompatMods {
 	public Compat_Recipes_JABBA(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing JABBA Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing JABBA Recipes.");
 		RM.sawing(16, 800, F, 5000, ST.make(MD.JABBA, "barrel", 1, W), IL.Plank.get(50), OP.dustSmall.mat(MT.Wood, 30));
 	}
 }

@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -40,7 +40,7 @@ import static gregapi.data.CS.*;
 public class Compat_Recipes_Thaumcraft extends CompatMods {
 	public Compat_Recipes_Thaumcraft(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing TC Recipes and Research.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing TC Recipes and Research.");
 		RM.food_can(IL.TC_Nugget_Chicken    .wild(9), 8, "Canned Chicken Nuggets", IL.CANS_MEAT);
 		RM.food_can(IL.TC_Nugget_Beef       .wild(9), 8, "Canned Beef Nuggets", IL.CANS_MEAT);
 		RM.food_can(IL.TC_Nugget_Pork       .wild(9), 8, "Canned Pork Nuggets", IL.CANS_MEAT);

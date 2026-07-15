@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -35,7 +35,7 @@ import gregapi.util.ST;
 public class Compat_Recipes_BetterBeginnings extends CompatMods {
 	public Compat_Recipes_BetterBeginnings(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Better Beginnings Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Better Beginnings Recipes.");
 		// They forgot to OreDict the Wooden Planks in this one.
 		CR.shaped(ST.make(MD.BB, "doubleWorkbench", 1, 0), CR.DEF, "PP", "PP", 'P', OD.plankAnyWood);
 		RM.Mortar.addRecipe1(T, 16, 32, ST.make(MD.BB, "boneShard", 1, W), IL.Dye_Bonemeal.get(1));

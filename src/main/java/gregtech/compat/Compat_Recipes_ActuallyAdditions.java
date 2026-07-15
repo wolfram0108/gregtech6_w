@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -43,7 +43,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 public class Compat_Recipes_ActuallyAdditions extends CompatMods {
 	public Compat_Recipes_ActuallyAdditions(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Actually Adding Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Actually Adding Recipes.");
 		CR.shaped(ST.make(MD.AA, "itemFood", 1,  7), CR.DEF_REM_NCC, " k", "D ", 'D', IL.Food_Dough_Egg_Flat);
 		CR.shaped(ST.make(MD.AA, "itemFood", 2, 10), CR.DEF_REM_NCC, " k", "X ", 'X', "foodBread");
 		CR.shaped(ST.make(MD.AA, "itemFood", 1,  8), CR.DEF_REM_NCC, "C", "Z", 'Z', IL.Food_CakeBottom, 'C', "foodChocolatecream");

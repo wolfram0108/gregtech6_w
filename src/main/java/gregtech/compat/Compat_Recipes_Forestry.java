@@ -19,7 +19,7 @@
 
 package gregtech.compat;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -43,7 +43,7 @@ import static gregapi.data.CS.*;
 public class Compat_Recipes_Forestry extends CompatMods {
 	public Compat_Recipes_Forestry(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Forestry Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Forestry Recipes.");
 		CR.delate(MD.FR, "honeyedSlice", "letters", "soil", "gearTin", "gearCopper", "gearBronze");
 		
 		OM.data(CR.get(null, OP.ingot.mat(MT.Sn, 1), null, OP.ingot.mat(MT.Sn, 1), null, OP.ingot.mat(MT.Sn, 1), null, null, null), new OreDictItemData(MT.Sn, U * 3));

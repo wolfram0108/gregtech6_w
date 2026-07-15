@@ -21,7 +21,7 @@ package gregtech.compat;
 
 import static gregapi.data.CS.*;
 
-import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ModData;
 import gregapi.compat.CompatMods;
@@ -37,7 +37,7 @@ import net.minecraft.world.item.Items;
 public class Compat_Recipes_MagicBees extends CompatMods {
 	public Compat_Recipes_MagicBees(ModData aMod, Abstract_Mod aGTMod) {super(aMod, aGTMod);}
 	
-	@Override public void onPostLoad(FMLLoadCompleteEvent aInitEvent) {OUT.println("GT_Mod: Doing Magic Bees Recipes.");
+	@Override public void onPostLoad(FMLPostInitializationEvent aInitEvent) {OUT.println("GT_Mod: Doing Magic Bees Recipes.");
 		RM.Centrifuge   .addRecipe1(T, 16,   64                                                , IL.FRMB_Propolis_Unstable .get(1), ZL_FS, FL.array(FL.Latex.make(L  ), FL.Glue.make( 250)), ZL_IS);
 		RM.Centrifuge   .addRecipe1(T, 16,   64, new long[] { 9000}                            , IL.FRMB_Propolis_Breezey  .get(1), ZL_FS, FL.array(FL.Latex.make(L  ), FL.Glue.make( 250)), OM.dust(MT.InfusedAir, U3));
 		RM.Centrifuge   .addRecipe1(T, 16,   64, new long[] { 9000}                            , IL.FRMB_Propolis_Burning  .get(1), ZL_FS, FL.array(FL.Latex.make(L  ), FL.Glue.make( 250)), OM.dust(MT.InfusedFire, U3));
