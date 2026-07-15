@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.sensors;
 
+import gregapi.data.FL;
 import static gregapi.data.CS.*;
 
 import gregapi.data.BI;
@@ -45,7 +46,7 @@ public class MultiTileEntityBucketometer extends MultiTileEntitySensorTE {
 	@Override
 	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof IFluidHandler) {
-			FluidTankInfo[] tInfo = ((IFluidHandler)aDelegator.mTileEntity).getTankInfo(FORGE_DIR[aDelegator.mSideOfTileEntity]);
+			FluidTankInfo[] tInfo = FL.getTankInfo((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity);
 			if (tInfo != null) {
 				long rFluid = 0;
 				for (FluidTankInfo tTank : tInfo) if (tTank != null && tTank.fluid != null) rFluid += tTank.fluid.getAmount();
@@ -66,7 +67,7 @@ public class MultiTileEntityBucketometer extends MultiTileEntitySensorTE {
 	@Override
 	public long getCurrentMax(DelegatorTileEntity<BlockEntity> aDelegator) {
 		if (aDelegator.mTileEntity instanceof IFluidHandler) {
-			FluidTankInfo[] tInfo = ((IFluidHandler)aDelegator.mTileEntity).getTankInfo(FORGE_DIR[aDelegator.mSideOfTileEntity]);
+			FluidTankInfo[] tInfo = FL.getTankInfo((IFluidHandler)aDelegator.mTileEntity, aDelegator.mSideOfTileEntity);
 			if (tInfo != null) {
 				long rCapacity = 0;
 				for (FluidTankInfo tTank : tInfo) if (tTank != null) rCapacity += tTank.capacity;
