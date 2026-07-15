@@ -1186,7 +1186,7 @@ public enum FL {
 	
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, 1000, 300, null, null, 0, aFluidList);}
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, null, null, 0, aFluidList);}
-	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase()), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
+	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, java.util.function.Supplier<ItemStack> aFullContainer, java.util.function.Supplier<ItemStack> aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase()), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
 
 	/**
 	 * Регистрирует ОДНУ GT6-жидкость (данные 1:1 из вызывающего кода) через {@link FluidGT}
@@ -1200,7 +1200,7 @@ public enum FL {
 	 * DeferredRegister (регистрирует только свои записи), не воспроизведено.
 	 */
 	@SafeVarargs
-	public static FluidGT create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
+	public static FluidGT create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, java.util.function.Supplier<ItemStack> aFullContainer, java.util.function.Supplier<ItemStack> aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
 		aName = aName.toLowerCase();
 		aLocalized = (aLocalized==null?aMaterial==null||aMaterial==MT.NULL?UT.Code.capitaliseWords(aName):aMaterial.getLocal():aLocalized);
 
@@ -1256,7 +1256,12 @@ public enum FL {
 		// neo-аналога (см. блок `reg(...)` выше) — оригинал шёл в рецепт-фолбэк ТОЛЬКО если регистрация
 		// не удавалась; теперь регистрации в принципе нет, поэтому фолбэк — ВСЕГДА при заданной паре.
 		if (aFullContainer != null && aEmptyContainer != null) {
-			RM.Canner.addRecipe1(T, 16, Math.max(aFluidAmount / 64, 16), aFullContainer, NF, make(rFluid.getFluid(), aFluidAmount), ST.container(aFullContainer, F));
+			// F12/F5: контейнер-Supplier зовётся на server-start (ST.make внутри создаёт стек — компоненты привязаны только там);
+			// rFluid.getFluid() тоже привязан после RegisterEvent. Весь контейнер-рецепт отложен (register рано / стек поздно).
+			final java.util.function.Supplier<ItemStack> fFull = aFullContainer;
+			final gregapi.fluid.FluidGT fReg = rFluid;
+			final int fAmt = aFluidAmount;
+			gregapi.GT_API.deferItemInit(() -> {ItemStack tFull = fFull.get(); RM.Canner.addRecipe1(T, 16, Math.max(fAmt / 64, 16), tFull, NF, make(fReg.getFluid(), fAmt), ST.container(tFull, F));});
 		}
 		return rFluid;
 	}
