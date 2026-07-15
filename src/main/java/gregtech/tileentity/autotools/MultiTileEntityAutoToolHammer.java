@@ -98,7 +98,7 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 								if (tHardness >= 0 && tHardness * 50 <= mEnergy) {
 									List<ItemStack> tDrops = tBlock.getDrops(tD.mWorld, tD.mX, tD.mY, tD.mZ, tMetaData, 0);
 									GT_Tool_HardHammer.INSTANCE.convertBlockDrops(tDrops, null, null, tBlock, Long.MAX_VALUE, tD.mX, tD.mY, tD.mZ, tMetaData, 0, F, null);
-									tD.mWorld.func_147480_a(tD.mX, tD.mY, tD.mZ, F);
+									tD.mWorld.destroyBlock(new net.minecraft.core.BlockPos(tD.mX, tD.mY, tD.mZ), F);
 									for (ItemStack tStack : tDrops) ST.drop(tD.mWorld, tD.mX+0.5, tD.mY+0.5, tD.mZ+0.5, tStack);
 									mSendSound = 1;
 								}

@@ -69,7 +69,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 			long tFuelAmount = UT.NBT.getLighterFuel(aStack);
 			if (ST.equal(aStack, mUsedLighter, T)) {
 				UT.Sounds.send(SFX.MC_IGNITE, aEntity);
-				((Creeper)aEntity).func_146079_cb();
+				((Creeper)aEntity).ignite();
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) tFuelAmount--;
 				rOutput = T;
 			}

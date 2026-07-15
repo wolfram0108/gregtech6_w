@@ -71,7 +71,7 @@ public class Behavior_FlintAndTinder extends AbstractBehaviorDefault {
 		if (aEntity instanceof Creeper) {
 			((MultiItemTool)aItem).doDamage(aStack, 100, aPlayer, F);
 			UT.Sounds.send(SFX.MC_IGNITE, aEntity);
-			((Creeper)aEntity).func_146079_cb();
+			((Creeper)aEntity).ignite();
 			return T;
 		}
 		return F;

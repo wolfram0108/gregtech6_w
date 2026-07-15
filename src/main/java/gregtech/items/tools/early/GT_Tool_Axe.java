@@ -117,7 +117,7 @@ public class GT_Tool_Axe extends ToolStats {
 					tCount++;
 				}
 				// Harvesting...
-				while (--tY > aY && tCount-->0 && aPlayer.level().func_147480_a(aX, tY, aZ, T)) {
+				while (--tY > aY && tCount-->0 && aPlayer.level().destroyBlock(new net.minecraft.core.BlockPos(aX, tY, aZ), T)) {
 					if (FAST_LEAF_DECAY) WD.leafdecay(aPlayer.level(), aX, tY, aZ, null, T, T);
 				}
 				if (FAST_LEAF_DECAY) WD.leafdecay(aPlayer.level(), aX, aY, aZ, null, T, T);
