@@ -30,7 +30,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
-import net.minecraft.item.ItemFood;
 
 import java.util.Iterator;
 
@@ -59,8 +58,8 @@ public class Loader_ItemIterator implements Runnable {
 			if (tBlock instanceof SlabBlock && WD.opaque(tBlock)) ST.hide(tBlock);
 			
 			// IC2 Food Cans.
-			if (tCheckCans && tItem instanceof ItemFood && tItem != IL.IC2_Food_Can_Filled.item() && tItem != IL.IC2_Food_Can_Spoiled.item()) {
-				int tFoodValue = ((ItemFood)tItem).func_150905_g(ST.make(tItem, 1, 0));
+			if (tCheckCans && tItem.components().has(net.minecraft.core.component.DataComponents.FOOD) && tItem != IL.IC2_Food_Can_Filled.item() && tItem != IL.IC2_Food_Can_Spoiled.item()) {
+				int tFoodValue = ST.make(tItem, 1, 0).get(net.minecraft.core.component.DataComponents.FOOD).nutrition();
 				if (tFoodValue > 0) RM.Canner.addRecipe2(T, 16, 16L*tFoodValue, ST.make(tItem, 1, W), IL.IC2_Food_Can_Empty.get(tFoodValue), IL.IC2_Food_Can_Filled.get(tFoodValue), ST.container(ST.make(tItem, 1, 0), T));
 			}
 			

@@ -34,7 +34,6 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
-import net.minecraft.item.ItemFood;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -67,7 +66,7 @@ public class Compat_Recipes_HarvestCraft extends CompatMods {
 		ArrayList<ItemStack> tListFoodOliveOil = OreDictionary.getOres("foodOliveoil"), tListFoodCookingOil = OreDictionary.getOres("listAllcookingoil");
 		for (Recipe tRecipe : CR.list()) if (tRecipe.getClass() == ShapelessOreRecipe.class) {
 			ItemStack tOutput = tRecipe.getRecipeOutput();
-			if (ST.valid(tOutput) && tOutput.getItem() instanceof ItemFood) {
+			if (ST.valid(tOutput) && tOutput.has(net.minecraft.core.component.DataComponents.FOOD)) {
 				ArrayList<Object> tInputs = ((ShapelessOreRecipe)tRecipe).getInput();
 				int tSize = tInputs.size();
 				if (tSize > 2) for (int i = 0; i < tSize; i++) {
