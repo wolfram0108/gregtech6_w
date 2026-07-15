@@ -18,14 +18,10 @@ public class TFTreasure {
     protected TFTreasureTable rare;
     protected TFTreasureTable ultrarare;
 
-    public static TFTreasure tower_library;
-    public static TFTreasure labyrinth_vault;
-    public static TFTreasure stronghold_room;
-    public static TFTreasure darktower_cache;
-    public static TFTreasure aurora_cache;
-    public static TFTreasure aurora_room;
-    public static TFTreasure darktower_key;
-    public static TFTreasure troll_vault;
+    public static TFTreasure tower_library, tower_room, labyrinth_vault, labyrinth_room, labyrinth_deadend,
+        stronghold_room, stronghold_cache, stronghold_boss, darktower_cache, darktower_key, darktower_boss,
+        aurora_cache, aurora_room, aurora_boss, troll_vault, troll_garden, hill1, hill2, hill3,
+        hedgemaze, basement, tree_cache;
 
     public TFTreasure(int aIndex) {}
 
