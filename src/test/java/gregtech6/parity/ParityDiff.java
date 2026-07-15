@@ -157,13 +157,23 @@ public final class ParityDiff {
     /** Case-insensitive: значение в lowercase. neo форсит lowercase ResourceLocation (camelCase gt.meta.arrowGtPlastic ->
      *  arrowgtplastic — нео-константа, 1:1 невозможен) → lowercase-сравнение = семантический паритет. */
     public static ParitySet fromCsvLower(Path file, int keyColumns) {
+        return fromCsvLowerIgnoring(file, keyColumns);
+    }
+
+    /** CI + обнуление {@code ignoreCols} (0-based) перед сравнением. itemdata.unificationTarget (col6) — ЛЕНИВЫЙ КЭШ
+     *  (getStack_:630 популяция post-пасс, зависит от порядка runtime getStack_-вызовов) → НЕДЕТЕРМИНИРОВАН между прогонами
+     *  (порт 113k непустых vs golden 45k, инверсия per-entry). Несемантичен (как fluidId) → игнор даёт честный паритет данных. */
+    public static ParitySet fromCsvLowerIgnoring(Path file, int keyColumns, int... ignoreCols) {
+        java.util.Set<Integer> ignore = new java.util.HashSet<>();
+        for (int c : ignoreCols) ignore.add(c);
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {
             String low = line.strip().toLowerCase();
             if (low.isEmpty() || low.startsWith("#")) continue;
             String[] cols = low.split(",", -1);
             String key = keyColumns >= cols.length ? low : String.join("", Arrays.copyOfRange(cols, 0, keyColumns));
-            map.put(key, low);
+            for (int c : ignore) if (c >= 0 && c < cols.length) cols[c] = "";
+            map.put(key, String.join(",", cols));
         }
         return new ParitySet(map);
     }
