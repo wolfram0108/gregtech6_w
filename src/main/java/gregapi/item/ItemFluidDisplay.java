@@ -70,7 +70,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		// F12-lazy: САМО-регистрация убрана из конструктора — предмет регистрируется через DeferredRegister-supplier на
 		// call-site (GT_API.onModPreInit2: IL.Display_Fluid.set(GT_API.ITEMS.register(name, ItemFluidDisplay::new))), т.к.
 		// конструкция должна идти на RegisterEvent (intrusive-holder нужен открытый реестр), не в preInit. Иначе двойная регистрация.
-		if (ConfigsGT.CLIENT.get(ConfigCategories.visibility, "HiddenGTFluidDisplay", F)) ST.hide(this);
+		if (ConfigsGT.CLIENT.get(ConfigCategories.visibility, "HiddenGTFluidDisplay", F)) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 		ItemsGT.DEBUG_ITEMS.add(this);
 		ItemsGT.ILLEGAL_DROPS.add(this);
 		GarbageGT.BLACKLIST.add(this);

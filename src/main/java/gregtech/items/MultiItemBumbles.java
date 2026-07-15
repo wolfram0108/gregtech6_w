@@ -62,7 +62,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public MultiItemBumbles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
 		/* PORT-TODO(F16) setCreativeTab */;
-		if (!SHOW_BUMBLEBEES) ST.hide(this);
+		if (!SHOW_BUMBLEBEES) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 	
 	@Override
