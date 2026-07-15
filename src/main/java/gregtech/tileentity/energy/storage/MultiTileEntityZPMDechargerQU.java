@@ -33,7 +33,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.ItemStack;
 
 public class MultiTileEntityZPMDechargerQU extends TileEntityBase10EnergyBatBox {
-	@Override public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {return IL.ZPM.equal(aStack, F, T);}
+	@Override public boolean canPlaceItem(int aSlot, ItemStack aStack) {return IL.ZPM.equal(aStack, F, T);}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return IL.ZPM.equal(aStack, F, T);}
 	
 	@Override

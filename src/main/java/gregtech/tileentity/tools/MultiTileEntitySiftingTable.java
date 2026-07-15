@@ -440,7 +440,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 	// Inventory Stuff
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[13];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
-	@Override public int getInventoryStackLimit() {return 1;}
+	@Override public int getMaxStackSize() {return 1;}
 
 	private static final int[] ACCESSIBLE_SLOTS = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 

@@ -245,7 +245,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(invsize());}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return aSide != mFacing;}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return mLock || aSide != mFacing;}
-	@Override public int getInventoryStackLimit() {return mMode<=0?64:mMode*Math.max(1, 64/mMode);}
+	@Override public int getMaxStackSize() {return mMode<=0?64:mMode*Math.max(1, 64/mMode);}
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return mMode<=0?64:mMode*Math.max(1, 64/mMode);}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	

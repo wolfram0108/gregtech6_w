@@ -227,7 +227,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return new int[] {0, invsize() - 1};}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == 0;}
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == invsize() - 1 && (mLock || aSide != mFacing);}
-	@Override public int getInventoryStackLimit() {return mMode;}
+	@Override public int getMaxStackSize() {return mMode;}
 	@Override public int getInventoryStackLimitGUI(int aSlot) {return mMode;}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	

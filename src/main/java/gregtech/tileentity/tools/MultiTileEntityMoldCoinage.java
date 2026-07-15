@@ -250,7 +250,7 @@ public class MultiTileEntityMoldCoinage extends TileEntityBase07Paintable implem
 	// Inventory Stuff
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[1];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
-	@Override public int getInventoryStackLimit() {return 1;}
+	@Override public int getMaxStackSize() {return 1;}
 	
 	private static final int[] ACCESSIBLE_SLOTS = new int[] {0};
 	

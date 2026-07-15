@@ -261,7 +261,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 	@Override public void adjacentInventoryUpdated(byte aSide, Container aTileEntity) {if (SIDES_VERTICAL[aSide]) updateInventory();}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[2];}
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
-	@Override public int getInventoryStackLimit() {return 64;}
+	@Override public int getMaxStackSize() {return 64;}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ACCESSIBLE_SLOTS;}
 	
 	private static final int[] ACCESSIBLE_SLOTS = new int[] {0, 1};

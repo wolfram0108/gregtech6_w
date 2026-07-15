@@ -103,7 +103,7 @@ public class MultiTileEntityEnderGarbageDump extends TileEntityBase07Paintable i
 	}
 	
 	@Override
-	public ItemStack decrStackSize(int aSlot, int aDecrement) {
+	public ItemStack removeItem(int aSlot, int aDecrement) {
 		ItemStack tStack = GarbageGT.GARBAGE_ITEMS.get(aSlot);
 		if (tStack == null) return null;
 		aDecrement = Math.min(tStack.getCount(), aDecrement);
@@ -115,17 +115,17 @@ public class MultiTileEntityEnderGarbageDump extends TileEntityBase07Paintable i
 	}
 	
 	@Override
-	public ItemStack getStackInSlot(int aSlot) {
+	public ItemStack getItem(int aSlot) {
 		return GarbageGT.GARBAGE_ITEMS.get(aSlot);
 	}
 	
 	@Override
-	public int getSizeInventory() {
+	public int getContainerSize() {
 		return GarbageGT.GARBAGE_ITEMS.size();
 	}
 	
 	@Override
-	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
+	public void setItem(int aSlot, ItemStack aStack) {
 		GarbageGT.GARBAGE_ITEMS.get(aSlot).setCount((aStack == null ? 0 : aStack.getCount()));
 		updateInventory();
 	}
@@ -165,7 +165,7 @@ public class MultiTileEntityEnderGarbageDump extends TileEntityBase07Paintable i
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.ender.garbage.dump";}
 	
-	@Override public int getInventoryStackLimit() {return Integer.MAX_VALUE;}
+	@Override public int getMaxStackSize() {return Integer.MAX_VALUE;}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return ZL_IS;}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 }

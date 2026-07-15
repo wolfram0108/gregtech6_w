@@ -188,7 +188,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	@Override public boolean isExtender(byte aSide) {return F;}
 	
 	@Override
-	public ItemStack decrStackSize(int aSlot, int aDecrement) {
+	public ItemStack removeItem(int aSlot, int aDecrement) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItem(aSlot, aDecrement);
@@ -196,7 +196,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 		return null;
 	}
 	@Override
-	public ItemStack getStackInSlotOnClosing(int aSlot) {
+	public ItemStack removeItemNoUpdate(int aSlot) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItemNoUpdate(aSlot);
@@ -204,7 +204,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 		return null;
 	}
 	@Override
-	public ItemStack getStackInSlot(int aSlot) {
+	public ItemStack getItem(int aSlot) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getItem(aSlot);
@@ -220,7 +220,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 		return super.getInventoryName();
 	}
 	@Override
-	public int getSizeInventory() {
+	public int getContainerSize() {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getContainerSize();
@@ -228,7 +228,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 		return 0;
 	}
 	@Override
-	public int getInventoryStackLimit() {
+	public int getMaxStackSize() {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getMaxStackSize();
@@ -236,7 +236,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 		return 0;
 	}
 	@Override
-	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
+	public void setItem(int aSlot, ItemStack aStack) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) tTileEntity.mTileEntity.setItem(aSlot, aStack);
@@ -251,7 +251,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 		return getCustomName() != null;
 	}
 	@Override
-	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
+	public boolean canPlaceItem(int aSlot, ItemStack aStack) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canPlaceItem(aSlot, aStack);
