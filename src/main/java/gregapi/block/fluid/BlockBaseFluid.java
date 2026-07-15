@@ -70,7 +70,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public final String mNameInternal;
 	public final int mFlammability, mAmountPerQuanta, mDensityDir;
 	public final Fluid mFluid;
-	public final FluidStack mQuanta;
+	// F12-followup (block-split): было final; FL.make(=new FluidStack) требует компоненты (server-start), присваивание отложено.
+	public FluidStack mQuanta;
 	
 	public BlockBaseFluid(String aNameInternal, FL aFluid, int aFlammability) {
 		this(aNameInternal, aFluid.fluid(), aFlammability);
@@ -95,7 +96,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		super(BlockBehaviour.Properties.of().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial);
 		mFluid = aFluid;
 		mAmountPerQuanta = aAmountPerQuanta;
-		mQuanta = FL.make(mFluid, mAmountPerQuanta);
+		gregapi.GT_API.deferItemInit(() -> mQuanta = FL.make(mFluid, mAmountPerQuanta));
 		mDensityDir = densityDir;
 		mFlammability = aFlammability;
 		mNameInternal = aNameInternal;
