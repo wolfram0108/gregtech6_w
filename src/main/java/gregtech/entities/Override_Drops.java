@@ -20,6 +20,22 @@
 package gregtech.entities;
 
 import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.animal.equine.Horse;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.animal.equine.Donkey;
+import net.minecraft.world.entity.animal.equine.Mule;
+import net.minecraft.world.entity.animal.equine.ZombieHorse;
+import net.minecraft.world.entity.animal.equine.SkeletonHorse;
+import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.entity.monster.spider.Spider;
+import net.minecraft.world.entity.animal.sheep.Sheep;
+import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.animal.cow.MushroomCow;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
 import gregapi.damage.DamageSourceCombat;
 import gregapi.data.*;
 import gregapi.util.OM;
@@ -27,8 +43,9 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.entity.monster.*;
-import net.minecraft.entity.passive.*;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Witch;
+import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
@@ -157,7 +174,7 @@ public class Override_Drops {
 			
 			if (aPlayerKill) {
 			@SuppressWarnings("rawtypes")
-			List tList = aDead.level().getEntities(aDead, aDead.getBoundingBox().expand(32, 32, 32));
+			List tList = aDead.level().getEntities(aDead, aDead.getBoundingBox().inflate(32, 32, 32));
 			for (int i = 0; i < tList.size(); i++) if (tList.get(i) instanceof Player) {for (int j = 0; j < tList.size(); j++) if (tList.get(j) instanceof net.minecraft.world.entity.monster.zombie.ZombifiedPiglin) ((net.minecraft.world.entity.monster.zombie.ZombifiedPiglin)tList.get(j)).hurt(aDead.level().damageSources().playerAttack((Player)tList.get(i)), 0); break;}// было DamageSource.causePlayerDamage (1.7.10 статик удалён) -> neo damageSources().playerAttack(Player)
 			
 			if (RNGSUS.nextInt( 2) == 0) aDrops.add(ST.entity(aDead, RNGSUS.nextBoolean()?OP.rockGt.mat(MT.Netherrack, 1):ST.make(Items.FLINT, 1, 0)));
@@ -393,7 +410,7 @@ public class Override_Drops {
 					).get(1)));
 					}
 				}
-				if (MOBS_DROP_BOOK && ((Zombie)aDead).isVillager()) {
+				if (MOBS_DROP_BOOK && aDead instanceof ZombieVillager) {
 					aDrops.add(ST.entity(aDead, IL.Book_Loot_Guide  .get(1+RNGSUS.nextInt(3))));
 					aDrops.add(ST.entity(aDead, IL.Book_Loot_MatDict.get(1+RNGSUS.nextInt(3))));
 				}
@@ -434,7 +451,7 @@ public class Override_Drops {
 			}
 			
 			}
-		} else if (aDead instanceof EntityWitch) {
+		} else if (aDead instanceof Witch) {
 			tReplaceIron = T;
 			if (aPlayerKill || tRandomNumber == 0) {
 				aDrops.add(ST.entity(aDead, IL.Bottle_Loot.get(1+RNGSUS.nextInt(aLooting+1))));
@@ -626,13 +643,13 @@ public class Override_Drops {
 			int tAmount = RNGSUS.nextInt(3);
 			if (aLooting > 0) tAmount += RNGSUS.nextInt(aLooting + 1);
 			while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_DogMeat_Cooked.get(1):IL.Food_DogMeat_Raw.get(1)));
-		} else if (aDead instanceof Horse) {
+		} else if (aDead instanceof AbstractHorse) {
 			tReplaceIron = T;
 			int tAmount = 1+RNGSUS.nextInt(3);
 			if (aLooting > 0) tAmount += RNGSUS.nextInt(aLooting + 1);
-			if (RNGSUS.nextInt(Math.max(1, 10-(int)(((Horse)aDead).getHorseJumpStrength()*10.0))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
-			if (RNGSUS.nextInt(Math.max(1, 30-(int)(((Horse)aDead).getMaxHealth()))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
-			switch(((Horse)aDead).getHorseType()) {
+			if (RNGSUS.nextInt(Math.max(1, 10-(int)(((AbstractHorse)aDead).getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH)*10.0))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
+			if (RNGSUS.nextInt(Math.max(1, 30-(int)(((AbstractHorse)aDead).getMaxHealth()))) == 0) tAmount += 1+RNGSUS.nextInt(aLooting + 1)/2;
+			switch(aDead instanceof Donkey ? 1 : aDead instanceof Mule ? 2 : aDead instanceof ZombieHorse ? 3 : aDead instanceof SkeletonHorse ? 4 : 0) {
 			default: while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_Horse_Cooked .get(1):IL.Food_Horse_Raw .get(1))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Horse .get(1))); break;
 			case  1: while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_Donkey_Cooked.get(1):IL.Food_Donkey_Raw.get(1))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Donkey.get(1))); break;
 			case  2: while (tAmount-->0) aDrops.add(ST.entity(aDead, aBurn?IL.Food_Mule_Cooked  .get(1):IL.Food_Mule_Raw  .get(1))); for (int i = 0; i < 4; i++) if (RNGSUS.nextInt(100) <= 25 + aLooting * 5) aDrops.add(ST.entity(aDead, IL.Hoof_Mule  .get(1))); break;
@@ -664,7 +681,7 @@ public class Override_Drops {
 			}
 		} else if (aDead instanceof Pig) {
 			tReplaceIron = T;
-		} else if (aDead instanceof EntityChicken) {
+		} else if (aDead instanceof Chicken) {
 			tReplaceIron = T;
 		}
 		
@@ -752,19 +769,19 @@ public class Override_Drops {
 		
 		// Beheading Damage replaces all the Drops with one Head, if Heads available for Mob.
 		if (aDamage instanceof DamageSourceCombat && ((DamageSourceCombat)aDamage).mBeheadingDamage) {
-			if (aDead instanceof EntityCreeper) {
+			if (aDead instanceof Creeper) {
 				aDrops.clear();
 				aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 4)));
 			} else if (aDead instanceof Player) {
 				// No Drop deletion for Players though.
 				aDrops.add(ST.entity(aDead, ST.skull(aDead)));
 			} else if (aDead.getClass() == Zombie.class) {
-				if (!((Zombie)aDead).isVillager()) {
+				if (!(aDead instanceof ZombieVillager)) {
 					aDrops.clear();
 					aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 2)));
 				}
 			} else if (aDead.getClass() == Skeleton.class) {
-				if (((Skeleton)aDead).getSkeletonType() == 1) {
+				if (aDead instanceof WitherSkeleton) {
 					aDrops.clear();
 					aDrops.add(ST.entity(aDead, ST.make(Items.SKELETON_SKULL, 1, 1)));
 				} else {
@@ -774,8 +791,8 @@ public class Override_Drops {
 			}
 		}
 		
-		if (MOBS_DROP_NAME && aDead instanceof LivingEntity && ((LivingEntity)aDead).isNoDespawnRequired() && ((LivingEntity)aDead).hasCustomNameTag()) {
-			aDrops.add(ST.entity(aDead, ST.make(Items.NAME_TAG, 1, 0, ((LivingEntity)aDead).getCustomNameTag())));
+		if (MOBS_DROP_NAME && aDead instanceof net.minecraft.world.entity.Mob && ((net.minecraft.world.entity.Mob)aDead).isPersistenceRequired() && ((LivingEntity)aDead).hasCustomName()) {
+			aDrops.add(ST.entity(aDead, ST.make(Items.NAME_TAG, 1, 0, ((LivingEntity)aDead).getCustomName().getString())));
 		}
 	}
 }
