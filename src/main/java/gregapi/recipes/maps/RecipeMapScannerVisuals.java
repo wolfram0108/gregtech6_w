@@ -47,6 +47,10 @@ import static gregapi.data.CS.*;
 public class RecipeMapScannerVisuals extends RecipeMap {
 	public RecipeMapScannerVisuals(Collection<Recipe> aRecipeList, String aUnlocalizedName, String aNameLocal, String aNameNEI, long aProgressBarDirection, long aProgressBarAmount, String aNEIGUIPath, long aInputItemsCount, long aOutputItemsCount, long aMinimalInputItems, long aInputFluidCount, long aOutputFluidCount, long aMinimalInputFluids, long aMinimalInputs, long aPower, String aNEISpecialValuePre, long aNEISpecialValueMultiplier, String aNEISpecialValuePost, boolean aShowVoltageAmperageInNEI, boolean aNEIAllowed, boolean aConfigAllowed, boolean aNeedsOutputs, boolean aCombinePower, boolean aUseBucketSizeIn, boolean aUseBucketSizeOut) {
 		super(aRecipeList, aUnlocalizedName, aNameLocal, aNameNEI, aProgressBarDirection, aProgressBarAmount, aNEIGUIPath, aInputItemsCount, aOutputItemsCount, aMinimalInputItems, aInputFluidCount, aOutputFluidCount, aMinimalInputFluids, aMinimalInputs, aPower, aNEISpecialValuePre, aNEISpecialValueMultiplier, aNEISpecialValuePost, F, aShowVoltageAmperageInNEI, aNEIAllowed, aConfigAllowed, aNeedsOutputs, aCombinePower, aUseBucketSizeIn, aUseBucketSizeOut);
+		// F12-followup (item-split): RecipeMap строится на RM.<clinit> (до server-start), но mMappings.put(ST.make) создаёт
+		// ItemStack → компоненты только на server-start. mMappings читается лишь в findRecipe после старта (guard там) →
+		// откладываем заполнение в deferItemInit (server-start). Иначе RM.<clinit> падает → NoClassDefFoundError на весь RM.
+		gregapi.GT_API.deferItemInit(() -> {
 		mMappings.put(Items.FLINT_AND_STEEL , W, ST.make(Blocks.FIRE, 1, 0));
 		mMappings.put(Items.SUGAR_CANE           , W, ST.make(Blocks.SUGAR_CANE, 1, 0));
 		mMappings.put(Items.SNOWBALL        , W, ST.make(Blocks.SNOW, 1, 0));
@@ -73,6 +77,7 @@ public class RecipeMapScannerVisuals extends RecipeMap {
 		mMappings.put(Items.CAULDRON        , W, ST.make(Blocks.CAULDRON, 1, 0));
 		mMappings.put(Items.BREWING_STAND   , W, ST.make(Blocks.BREWING_STAND, 1, 0));
 		mMappings.put(Items.FLOWER_POT      , W, ST.make(Blocks.FLOWER_POT, 1, 0));
+		});
 	}
 	
 	public final ItemStackMap<ItemStackContainer, ItemStack> mMappings = new ItemStackMap<>();
