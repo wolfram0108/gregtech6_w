@@ -371,7 +371,7 @@ public class WorldgenTesting extends WorldgenObject {
 			WD.set                     (aWorld, 47, mHeight+2, -18, Blocks.ANVIL, 0, 3);
 		}
 		
-		aWorld.setSpawnLocation(0, mHeight+5, 0);
+		WD.setSpawnLocation(aWorld, 0, mHeight+5, 0);
 		return T;
 	}
 }

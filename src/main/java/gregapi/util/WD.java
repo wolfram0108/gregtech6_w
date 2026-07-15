@@ -419,6 +419,11 @@ public class WD {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		return aWorld.getBlockState(tPos).getBlock().canSustainPlant(aWorld.getBlockState(tPos), aWorld, tPos, aSide, aPlant.defaultBlockState()).toBoolean(F);
 	}
+	/** F-spawn: 1.7.10 World.setSpawnLocation(x,y,z) -> neo ServerLevel.setRespawnData(RespawnData) (ServerLevel:1507;
+	 *  spawn = GlobalPos+yaw/pitch). Централизованный переходник (worldgen задаёт мир-спавн). Чтение — getRespawnData().pos(). */
+	public static void setSpawnLocation(Level aWorld, int aX, int aY, int aZ) {
+		if (aWorld instanceof net.minecraft.server.level.ServerLevel sl) sl.setRespawnData(new net.minecraft.world.level.storage.LevelData.RespawnData(net.minecraft.core.GlobalPos.of(sl.dimension(), new BlockPos(aX, aY, aZ)), 0.0F, 0.0F));
+	}
 	/** F-dimension: 1.7.10 World-провайдер числовой id -> neo числового id НЕТ (Level.dimension() =
 	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). PORT-TODO(F-dimension,
 	 *  modded-dim-id): модовым измерениям стабильного int в neo нет -> hash ключа (уникален в рамках сессии, но

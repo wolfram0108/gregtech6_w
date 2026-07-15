@@ -355,7 +355,7 @@ public class WorldgenStreets extends WorldgenObject {
 					}
 				}
 				
-				aWorld.setSpawnLocation(0, mHeight+5, 0);
+				WD.setSpawnLocation(aWorld, 0, mHeight+5, 0);
 				return T;
 			}
 			if (aMinZ < -96 || aMinZ > 80) {

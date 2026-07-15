@@ -94,7 +94,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 					for (int k = 1; k < mHeight-10; k++) WD.set(aChunk, i, k, j, Blocks.STONE, 1);
 				}
 				BlockRiver.PLACEMENT_ALLOWED = F;
-				aWorld.setSpawnLocation(0, mHeight+5, 0);
+				WD.setSpawnLocation(aWorld, 0, mHeight+5, 0);
 				return T;
 			}
 			if (aMinX < 0) {

@@ -333,7 +333,7 @@ public class WorldgenNexus extends WorldgenObject {
 		WD.set(aChunk,12, mHeight+1,10, GENERATE_STREETS?BlocksGT.CFoam:Blocks.WHITE_TERRACOTTA, DYE_INDEX_Black);
 		WD.set(aChunk,11, mHeight+1,10, GENERATE_STREETS?BlocksGT.CFoam:Blocks.WHITE_TERRACOTTA, DYE_INDEX_Black);
 		
-		aWorld.setSpawnLocation(0, mHeight+5, 0);
+		WD.setSpawnLocation(aWorld, 0, mHeight+5, 0);
 		return T;
 	}
 }
