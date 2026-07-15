@@ -410,7 +410,7 @@ public class GT6_Main extends Abstract_Mod {
 											RM.BedrockOreList.addFakeRecipe(F, ST.array(ST.make(Blocks.BEDROCK, 1, W)), ST.array(ST.make(Blocks.COBBLESTONE, 1, 0, "Various Cobblestone Types"), OP.dust.mat(MT.Bedrock, 1)), null, new long[] {9990, 10}, FL.array(FL.lube(100)), null, 0, 0, 0);
 		if (IL.BTL_Bedrock.exists())        RM.BedrockOreList.addFakeRecipe(F, ST.array(IL.BTL_Bedrock        .get(1)), ST.array(ST.make(Blocks.COBBLESTONE, 1, 0, "Various Cobblestone Types"), OP.dust.mat(MT.Bedrock, 1)), null, new long[] {9990, 10}, FL.array(FL.lube(100)), null, 0, 0, 0);
 		
-		RM.ByProductList.mRecipeMachineList.add(ST.make(Items .cauldron, 1, 0));
+		RM.ByProductList.mRecipeMachineList.add(ST.make(Items.CAULDRON, 1, 0));
 		RM.ByProductList.mRecipeMachineList.add(ST.make(Blocks.CAULDRON, 1, 0));
 		
 		if (ConfigsGT.GREGTECH.get("general", "IncreaseDungeonLoot", T)) {
@@ -497,7 +497,7 @@ public class GT6_Main extends Abstract_Mod {
 	}
 
 	@Override
-	public void onModServerStarting2(FMLServerStartingEvent aEvent) {
+	public void onModServerStarting2(net.neoforged.neoforge.event.server.ServerStartingEvent aEvent) {
 		for (FluidContainerData tData : FluidContainerRegistry.getRegisteredFluidContainerData()) if (tData.filledContainer.getItem() == Items.POTION && ST.meta_(tData.filledContainer) == 0) {tData.fluid.setAmount(0); break;}
 		
 		
@@ -565,7 +565,7 @@ public class GT6_Main extends Abstract_Mod {
 	
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void onModServerStopping2(FMLServerStoppingEvent aEvent) {
+	public void onModServerStopping2(net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) {
 		try {
 		if (D1 || ORD != System.out) {
 			ORD.println("*");
@@ -644,8 +644,8 @@ public class GT6_Main extends Abstract_Mod {
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	
-	@Override public void onModServerStarted2(FMLServerStartedEvent aEvent) {/**/}
-	@Override public void onModServerStopped2(FMLServerStoppedEvent aEvent) {/**/}
+	@Override public void onModServerStarted2(net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) {/**/}
+	@Override public void onModServerStopped2(net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) {/**/}
 
 	@Override public String getModID() {return MD.GT.mID;}
 	@Override public String getModName() {return MD.GT.mName;}
