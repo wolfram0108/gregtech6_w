@@ -252,6 +252,7 @@ public abstract class TileEntityBase08Barrel extends TileEntityBase07Paintable i
 		return mTank.getCapacity();
 	}
 	
+	@Override public ItemStack getContainer() {return NI;} // neo IFluidHandlerItem: TE-контейнер не имеет backing item-стека (честный дефолт, как ItemFluidDisplay)
 	// @Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		if ((mMode & B[1]) != 0) return 0;

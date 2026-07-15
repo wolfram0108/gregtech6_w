@@ -391,6 +391,8 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		}
 		return 0;
 	}
+	@Override public boolean isEmpty() {for (int i = 0, n = getContainerSize(); i < n; i++) {ItemStack tStack = getItem(i); if (tStack != null && !tStack.isEmpty()) return F;} return T;} // neo Container.isEmpty() — централизовано в базе портала (все 19 подклассов), паттерн как TileEntityBase04Covers
+	@Override public void clearContent() {/* neo Clearable: портал делегирует к смежному инвентарю, своего содержимого не держит */}
 	@Override
 	public int getMaxStackSize() {
 		if (mTarget != null) {

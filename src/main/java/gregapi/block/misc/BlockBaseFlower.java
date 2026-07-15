@@ -94,6 +94,11 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	}
 	
 	public final String getUnlocalizedName() {return mNameInternal;}
+	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {/* IBlock-хук; F-shape отложена core-wide, FlowerBlock несёт свой neo SHAPE */}
+	// neo BonemealableBlock: GT6-цветы декоративны — костная мука неприменима (как ванильные одиночные цветы).
+	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState) {return F;}
+	@Override public boolean isBonemealSuccess(net.minecraft.world.level.Level aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {return F;}
+	@Override public void performBonemeal(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {/**/}
 	@Override public String name(byte aMeta) {return mNameInternal + "." + aMeta;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 0;}

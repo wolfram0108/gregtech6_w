@@ -83,6 +83,13 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	@Override protected boolean isRandomlyTicking(BlockState aState) {return T;}
 
 	public abstract boolean grow(Level aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom);
+
+	// neo BonemealableBlock.performBonemeal — маршрут в GT6 grow() (централизовано в базе сапплингов, покрывает AB/CD).
+	@Override public void performBonemeal(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {
+		grow(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()), new Random(aRandom.nextLong()));
+	}
+	@Override public boolean isBonemealSuccess(Level aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {return aRandom.nextFloat() < 0.45F;} // ванильный шанс сапплинга (SaplingBlock)
+	@Override public boolean isValidBonemealTarget(net.minecraft.world.level.LevelReader aWorld, BlockPos aPos, BlockState aState) {return T;} // сапплинг всегда bonemeal-цель
 	
 	@Override public String getHarvestTool(int aMeta) {return TOOL_sword;}
 	@Override public int damageDropped(int aMeta) {return aMeta & 7;}

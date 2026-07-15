@@ -189,6 +189,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		return mTank.getCapacity();
 	}
 	
+	@Override public ItemStack getContainer() {return NI;} // neo IFluidHandlerItem: TE-контейнер не имеет backing item-стека (честный дефолт, как ItemFluidDisplay)
 	// @Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		if (!isFluidAllowed(aFluid) || aStack.getCount() != 1) return 0;
