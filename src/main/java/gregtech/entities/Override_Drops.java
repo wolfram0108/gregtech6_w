@@ -57,7 +57,7 @@ import java.util.List;
 import static gregapi.data.CS.*;
 
 public class Override_Drops {
-	public static void handleDrops(LivingEntity aDead, String aClass, List<ItemEntity> aDrops, DamageSource aDamage, int aLooting, boolean aBurn, boolean aPlayerKill) {
+	public static void handleDrops(LivingEntity aDead, String aClass, java.util.Collection<ItemEntity> aDrops, DamageSource aDamage, int aLooting, boolean aBurn, boolean aPlayerKill) { // neo LivingDropsEvent.getDrops() -> Collection<ItemEntity> (было List; тело использует лишь add/remove(Object)/iterate)
 		if (UT.Code.stringInvalid(aClass) || "EntityTFLichMinion".equalsIgnoreCase(aClass) || "EntitySkeletonBoss".equalsIgnoreCase(aClass)) return;
 		final boolean aSpace = aClass.startsWith("entityevolved") || aClass.startsWith("entityalien");
 		boolean tReplaceIron = aClass.startsWith("entitygaia");
