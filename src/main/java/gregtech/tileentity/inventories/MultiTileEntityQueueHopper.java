@@ -157,7 +157,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 				if (!SIDES_TOP[mFacing] && !invempty()) {
 					DelegatorTileEntity tDelegator = getAdjacentTileEntity(mFacing);
 					if (tDelegator.getBlock() instanceof BaseRailBlock) {
-						List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR);
+						List tList = level.getEntities((net.minecraft.world.entity.Entity)null, tDelegator.box(0, 0, 0, 1, 1, 1), net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR);
 						if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 					}
 					while (tMovedItems < mMode) {
@@ -171,7 +171,7 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 				}
 				DelegatorTileEntity tDelegator = getAdjacentTileEntity(SIDE_TOP);
 				if (tDelegator.getBlock() instanceof BaseRailBlock) {
-					List tList = level.getEntities(null, tDelegator.box(0, 0, 0, 1, 1, 1), net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR);
+					List tList = level.getEntities((net.minecraft.world.entity.Entity)null, tDelegator.box(0, 0, 0, 1, 1, 1), net.minecraft.world.entity.EntitySelector.CONTAINER_ENTITY_SELECTOR);
 					if (tList != null && !tList.isEmpty()) tDelegator = new DelegatorTileEntity<>((Container)tList.get(0), tDelegator);
 				}
 				if (tDelegator.mTileEntity != null && !(tDelegator.mTileEntity instanceof MultiTileEntityAnvil)) {

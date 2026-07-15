@@ -61,7 +61,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 		if (!aTargetFile.exists()) {try {aTargetFile.createNewFile();} catch (Throwable e) {e.printStackTrace(ERR);}}
 		CompoundTag aNBT = UT.NBT.make();
 		for (int i = 0; i < ALREADY_RECEIVED.size(); i++) aNBT.putString(""+i, ALREADY_RECEIVED.get(i));
-		try {NbtIo.write(aNBT, aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
+		try {NbtIo.write(aNBT, aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
 		ALREADY_RECEIVED_SIZE = ALREADY_RECEIVED.size();
 	}
 	
@@ -72,7 +72,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 		File aTargetFile = new File(new File(aSaveLocation, "gregtech"), "certificates.support.dat");
 		if (aTargetFile.exists()) {
 			CompoundTag aNBT = null;
-			try {aNBT = NbtIo.read(aTargetFile);} catch (Throwable e) {e.printStackTrace(ERR);}
+			try {aNBT = NbtIo.read(aTargetFile.toPath());} catch (Throwable e) {e.printStackTrace(ERR);}
 			if (aNBT != null) for (int i = 0; i < Integer.MAX_VALUE; i++) {
 				if (!aNBT.contains(""+i)) break;
 				String tString = aNBT.getStringOr(""+i, "");
@@ -131,7 +131,7 @@ public class MultiTileEntityCertificate extends TileEntityBase09FacingSingle imp
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
 			// This is simply a helper Function for quickly getting Registry Names of Items.
-			if (D1) for (ItemStack tStack : aPlayer.getInventory().mainInventory) if (ST.valid(tStack)) {
+			if (D1) for (ItemStack tStack : aPlayer.getInventory().items) if (ST.valid(tStack)) {
 				DEB.println("ST.make(\"" + ST.regName(tStack) + "\"      , 1, " + ST.meta_(tStack) + ");                            // " + ST.namesAndSizes(tStack));
 			}
 			// Now for the actual thing that this needs to do on Rightclick.
