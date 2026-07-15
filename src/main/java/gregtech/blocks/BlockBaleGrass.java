@@ -97,7 +97,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 		if ((aMeta & 1) == 1) return;
 		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 1100 + RNGSUS.nextInt(200));
 		if (aRandom.nextInt(3) > 0) return;
-		if (aWorld.provider.isHellWorld && (aMeta & 2) == 0) {
+		if (aWorld.dimension() == net.minecraft.world.level.Level.NETHER && (aMeta & 2) == 0) {
 			WD.set(aWorld, aX, aY, aZ, this, (aMeta & PILLAR_BITS) | 1, 3);
 			return;
 		}
@@ -133,7 +133,7 @@ public class BlockBaleGrass extends BlockBaseBale {
 		if ((aMeta & 3) == 0) {
 			aList.add(LH.Chat.CYAN + LH.get("gt.tooltip.bale"));
 			if (aPlayer != null) {
-				if (aPlayer.level().provider.isHellWorld) {
+				if (aPlayer.level().dimension() == net.minecraft.world.level.Level.NETHER) {
 					aList.add(LH.Chat.YELLOW + LH.get("gt.tooltip.bale.dry"));
 				} else {
 					int aX = UT.Code.roundDown(aPlayer.getX()), aY = UT.Code.roundDown(aPlayer.getY()), aZ = UT.Code.roundDown(aPlayer.getZ());
