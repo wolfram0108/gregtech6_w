@@ -228,10 +228,9 @@ public class GT_API_Post extends Abstract_Mod {
 	}
 	
 	@Override
-	public void onModInit2(FMLInitializationEvent aEvent) {
-		// F1/F12/F16 boot-timing: бывший preInit-data-init (blacklists/Loaders — ST.make) → deferItemInit (выполнится
-		// @onModServerStarting2, post-bind: Holder.components привязаны). onModInit2(CommonSetup) НЕ пост-bind. НЕ в паритет-данных.
-		gregapi.GT_API.deferItemInit(this::onModPreInit2Deferred);
+	public void onModInit2(FMLInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(this::onModInit2Deferred);} // F1/F12/F16: ВЕСЬ Init-data-init (loaders/recipes/associations — ST.make) отложен на server-start (post-bind); onModInit2(CommonSetup) НЕ пост-bind. НЕ в паритет-данных.
+	private void onModInit2Deferred() {
+		onModPreInit2Deferred(); // бывший preInit-data-init (blacklists/loaders)
 		new LoaderWoodDictionary().run();
 		
 		// Atum violates the "Items have to be created in preInit" Rule...
@@ -727,7 +726,8 @@ public class GT_API_Post extends Abstract_Mod {
 	}
 	
 	@Override
-	public void onModPostInit2(FMLPostInitializationEvent aEvent) {
+	public void onModPostInit2(FMLPostInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(() -> onModPostInit2Deferred(aEvent));} // F1/F12/F16: PostInit-data-init (ST.make) отложен на server-start (post-bind)
+	private void onModPostInit2Deferred(FMLPostInitializationEvent aEvent) {
 		if (DISABLE_ALL_IC2_COMPRESSOR_RECIPES  ) ic2.api.recipe.Recipes.compressor.getRecipes().clear();
 		if (DISABLE_ALL_IC2_EXTRACTOR_RECIPES   ) ic2.api.recipe.Recipes.extractor .getRecipes().clear();
 		if (DISABLE_ALL_IC2_MACERATOR_RECIPES   ) ic2.api.recipe.Recipes.macerator .getRecipes().clear();

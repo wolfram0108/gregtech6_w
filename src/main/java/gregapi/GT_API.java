@@ -966,7 +966,8 @@ public class GT_API extends Abstract_Mod {
 	}
 	
 	@Override
-	public void onModPostInit2(FMLPostInitializationEvent aEvent) {
+	public void onModPostInit2(FMLPostInitializationEvent aEvent) {deferItemInit(() -> onModPostInit2Deferred(aEvent));} // F1/F12/F16: PostInit-data-init (ST.make/static-init) отложен на server-start (post-bind); LoadComplete НЕ пост-bind
+	private void onModPostInit2Deferred(FMLPostInitializationEvent aEvent) {
 		if (MD.IC2.mLoaded) {
 			PotionsGT.ID_RADIATION    = ic2.api.info.Info.POTION_RADIATION.id;
 		}

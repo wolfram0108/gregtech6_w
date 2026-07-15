@@ -53,11 +53,11 @@ public final class PortDump {
      * gradle-теста ({@code ./gradlew test -PcoreOnly}), где FMLLoader инициализирован.
      */
     public static void runFull() throws Exception {
-        System.out.println("[port-dump] bootstrap ванильных реестров…");
-        SharedConstants.setVersion(DetectedVersion.BUILT_IN);
-        Bootstrap.bootStrap();
-        MT.init();                          // static-init MT (материалы) + init()
-        Class.forName("gregapi.data.OP");   // static-init OP (префиксы + Items.GLASS_BOTTLE)
+        // В FML-контексте (coreOnly test) SharedConstants/Bootstrap УЖЕ инициализированы загрузкой мода — guard от
+        // "Cannot override the current game version!". Standalone (без FML) — инициализируем сами.
+        try {SharedConstants.setVersion(DetectedVersion.BUILT_IN); Bootstrap.bootStrap();} catch (Throwable e) {System.out.println("[port-dump] bootstrap уже сделан FML: " + e);}
+        MT.init();                          // static-init MT (материалы) + init() — идемпотентно (мод уже инициализировал)
+        Class.forName("gregapi.data.OP");   // static-init OP (префиксы)
 
         Files.createDirectories(DUMP);
         int nMat = dumpMaterials();
@@ -73,7 +73,10 @@ public final class PortDump {
         List<String> lines = new ArrayList<>();
         for (OreDictMaterial m : OreDictMaterial.MATERIAL_MAP.values()) {
             if (m == null) continue;
-            m.materializeFluids(); // F5-lazy: mLiquid/mGas/mPlasma созданы отложенно (в MT.<clinit> Holder.components не привязаны) — материализуем перед чтением поля
+            // F5-lazy: материализовать mLiquid/mGas/mPlasma перед чтением. Резилиентно: GT6-fluid-компоненты привязаны только
+            // на server-start; без server (plain @Test) FluidStack не создать → пропускаем fluid-колонки (пусты), scalar-колонки
+            // всех 2215 материалов дампятся. Fluid-паритет — при EphemeralTestServer (см. STATE).
+            try {m.materializeFluids();} catch (Throwable e) {/* компоненты не привязаны (нет server) — fluid-колонки пусты */}
             StringBuilder sb = new StringBuilder(256);
             sb.append(m.mNameInternal).append(',');
             sb.append(m.mID).append(',');
