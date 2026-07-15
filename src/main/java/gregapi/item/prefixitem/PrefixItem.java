@@ -88,7 +88,11 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		mPrefix.addTextureSet(aModIDTextures, T);
 		LH.add("oredict." + mPrefix.dat(MT.Empty).toString(), getLocalName(mPrefix, MT.Empty));
 		LH.add(mNameInternal+"."+W, "Any Sub-Item of this one"); // Local Name for the WildcardItem Variant.
-		mPrefix.mRegisteredItems.add(this); // this optimizes some processes by decreasing the size of the Set.
+		// F12-followup (item-split, hashCode-стабильность): ItemStackContainer.hashCode = id_(Item) = Item.getId(), а до
+		// РЕГИСТРАЦИИ предмета (ctor идёт внутри DeferredRegister-supplier на RegisterEvent) getId=-1 → запись легла бы в
+		// «мёртвый» бакет, и дедуп в onOreRegistration её не находит (даёт лишний предмет). Откладываем add на server-start,
+		// где id_ стабилен (совпадает с id_ в дедуп-контейнере) → wildcard-дедуп {this,W} схлопывает все суб-предметы в 1.
+		gregapi.GT_API.deferItemInit(() -> mPrefix.mRegisteredItems.add(this)); // this optimizes some processes by decreasing the size of the Set.
 		
 		if (SHOW_HIDDEN_PREFIXES || !mPrefix.contains(TD.Creative.HIDDEN)) {
 			if (mPrefix.mCreativeTab == null) mPrefix.mCreativeTab = new CreativeTab(mPrefix.mNameInternal, mPrefix.mNameCategory, this, W);

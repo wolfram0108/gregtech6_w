@@ -229,8 +229,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		final Class<? extends PrefixBlockItem> tItemClass = aItemClass==null?PrefixBlockItem.class:aItemClass;
 		gregapi.GT_API.registerItemLazy(aModIDOwner, mNameInternal, () -> (net.minecraft.world.item.BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, T, this));
 		
-		mPrefix.mRegisteredItems.add(this); // this optimizes some processes by decreasing the size of the Set.
-		
+		// F12-followup (block-split, hashCode-стабильность): как в PrefixItem — id_(BlockItem) до регистрации = -1 →
+		// запись в «мёртвом» бакете, дедуп не находит. Откладываем add на server-start (id_ стабилен) → wildcard-дедуп схлопывает.
+		gregapi.GT_API.deferItemInit(() -> mPrefix.mRegisteredItems.add(this)); // this optimizes some processes by decreasing the size of the Set.
+
 		if (mPrefix.contains(TD.Prefix.ORE)) {
 			if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W)));
 			if (COMPAT_IC2 != null && mBaseHardness >= 0) {
@@ -257,8 +259,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	/** This ensures, that all Materials are registered at the time this Item registers to the OreDictionary. */
+	// F12-followup (block-split): тело делает ST.make/OreDict-регистрацию (Holder.components привязаны только на server-start) →
+	// отложено в runDeferredItemInit (тот же приём, что PrefixItem.run). run() вызывается на @Init (mBeforeInit) → defer добавлен
+	// до postInit-дефферов; guard registerOre_ «Only @Init/@PreInit» подавлён в окне (см. GT_API.sDeferredItemInitRunning).
 	@Override
-	public void run() {
+	public void run() {gregapi.GT_API.deferItemInit(this::runDeferred);}
+	private void runDeferred() {
 		for (short i = 0; i < mMaterialList.length; i++) if (mPrefix.isGeneratingItem(mMaterialList[i])) {
 			LH.add("oredict." + mPrefix.dat(mMaterialList[i]).toString(), getLocalName(mPrefix, mMaterialList[i]));
 		}
