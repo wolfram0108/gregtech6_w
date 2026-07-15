@@ -628,7 +628,10 @@ public final class OreDictManager {
 		ItemStack rStack = null;
 		if (tAssociation == null || (aUseBlackList && tAssociation.mBlocked)) return ST.copy(aStack);
 		if (tAssociation.mUnificationTarget == null) tAssociation.mUnificationTarget = sName2StackMap.get(tAssociation.toString());
-		if (ST.invalid(rStack = ST.amount(aStack.getCount(), tAssociation.mUnificationTarget))) return ST.copy(aStack);
+		// F-size0-catalyst: ЛОГИЧЕСКИЙ размер (ST.size), не raw getCount — унификация size-0-катализатора (напр. lens в
+		// laserengraver, ST.amount(0,...)) хранится как count=1+маркер ZEROSIZE; getCount()=1 потерял бы «0» и маркер.
+		// ST.amount(ST.size=0, target) пере-применяет маркер. Для обычных стеков ST.size=getCount → без изменений.
+		if (ST.invalid(rStack = ST.amount(ST.size(aStack), tAssociation.mUnificationTarget))) return ST.copy(aStack);
 		ItemNBT.set(rStack, ItemNBT.get(aStack)); // F8 стык: было ST.setNBT(rStack, ItemNBT.get(aStack)) — ItemNBT-мост
 		return rStack;
 	}
