@@ -33,7 +33,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.LivingEntity;
 
 public class MultiTileEntityMotorElectric extends TileEntityBase11Motor implements ITileEntityEnergyElectricityAcceptor, ITileEntitySwitchableMode {
-	@Override public void onWalkOver2(LivingEntity aEntity) {if (SIDES_TOP[mFacing] && mActivity.mState>0) {aEntity.rotationYaw=aEntity.rotationYaw+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1); aEntity.rotationYawHead=aEntity.rotationYawHead+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1);}}
+	@Override public void onWalkOver2(LivingEntity aEntity) {if (SIDES_TOP[mFacing] && mActivity.mState>0) {aEntity.setYRot(aEntity.getYRot()+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1)); aEntity.setYHeadRot(aEntity.getYHeadRot()+(mCounterClockwise?-5:+5)*(mConverter.mFast?2:1));}}
 	
 	@Override
 	public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
