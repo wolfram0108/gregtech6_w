@@ -215,7 +215,6 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public String getInventoryName() {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryName();
 		}
 		return super.getInventoryName();
 	}
@@ -246,7 +245,6 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public boolean hasCustomInventoryName() {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.hasCustomInventoryName();
 		}
 		return getCustomName() != null;
 	}
@@ -265,7 +263,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public int[] getAccessibleSlotsFromSide2(byte aSide) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getSlotsForFace(FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) return UT.Code.getAscendingArray(tTileEntity.mTileEntity.getContainerSize());
 		}
 		return ZL_INTEGER;
@@ -274,7 +272,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canInsertItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canPlaceItemThroughFace(aSlot, aStack, FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) return T;
 		}
 		return F;

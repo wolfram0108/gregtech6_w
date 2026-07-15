@@ -199,7 +199,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	public int fill(Direction aSide, FluidStack aFluid, boolean aDoFill) {
 		if (checkTarget() && FL.temperature(aFluid) <= mTemperature) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(tTileEntity.getForgeSideOfTileEntity(), aFluid, aDoFill);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(aFluid, aDoFill ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
 		}
 		return 0;
 	}
@@ -215,7 +215,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	public boolean canFill(Direction aSide, Fluid aFluid) {
 		if (checkTarget() && FL.temperature(aFluid) <= mTemperature) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canFill(tTileEntity.getForgeSideOfTileEntity(), aFluid);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0;
 		}
 		return F;
 	}
@@ -227,7 +227,7 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	public FluidTankInfo[] getTankInfo(Direction aSide) {
 		if (checkTarget()) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getTankInfo(tTileEntity.getForgeSideOfTileEntity());
+			if (tTileEntity.mTileEntity != null) return ZL_FLUIDTANKINFO;
 		}
 		return ZL_FLUIDTANKINFO;
 	}
