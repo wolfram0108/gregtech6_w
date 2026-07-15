@@ -59,7 +59,7 @@ public class WorldgenRacks extends WorldgenObject {
 			for (int tY = aRandom.nextInt(WD.bedrock(aWorld, tX, 255, tZ) ? 200 : 80)+47, tH = Math.max(0, tY-40); tY > tH; tY--) {
 				Block tContact = WD.block(aChunk, tX&15, tY, tZ&15);
 				if (WD.getMaterial(tContact).isLiquid() || tContact == Blocks.FARMLAND) break;
-				if (tContact == NB || tContact.isAir(aWorld, tX, tY, tZ)) continue;
+				if (tContact == NB || WD.air(aWorld, tX, tY, tZ, tContact)) continue;
 				if (WD.getMaterial(tContact) != Material.grass && WD.getMaterial(tContact) != Material.ground && WD.getMaterial(tContact) != Material.sand && WD.getMaterial(tContact) != Material.rock) continue;
 				if (WD.easyRep(aWorld, tX, tY+1, tZ)) {
 					switch(aRandom.nextInt(24)) {
