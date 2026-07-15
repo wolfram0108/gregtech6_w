@@ -151,7 +151,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	public ItemStack decrStackSize(int aSlot, int aDecrement) {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.decrStackSize(aSlot, aDecrement);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItem(aSlot, aDecrement);
 		}
 		return null;
 	}

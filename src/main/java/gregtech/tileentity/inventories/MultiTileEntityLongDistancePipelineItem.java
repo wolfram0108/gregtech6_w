@@ -191,7 +191,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public ItemStack decrStackSize(int aSlot, int aDecrement) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.decrStackSize(aSlot, aDecrement);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItem(aSlot, aDecrement);
 		}
 		return null;
 	}

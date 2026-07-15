@@ -356,7 +356,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public ItemStack decrStackSize(int aSlot, int aDecrement) {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.decrStackSize(aSlot, aDecrement);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItem(aSlot, aDecrement);
 		}
 		return null;
 	}

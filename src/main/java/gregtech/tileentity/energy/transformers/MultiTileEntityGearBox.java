@@ -127,7 +127,7 @@ public class MultiTileEntityGearBox extends TileEntityBase07Paintable implements
 			if (aPlayerInventory != null) for (int i = 0, j = aPlayerInventory.getContainerSize(); i < j; i++) {
 				OreDictItemData tData = OM.data(aPlayerInventory.getItem(i));
 				if (tData != null && tData.mPrefix == OP.gearGt && tData.mMaterial != null && (tData.mMaterial.mMaterial == mMaterial || mMaterial.mToThis.contains(tData.mMaterial.mMaterial))) {
-					if (aPlayer == null) aPlayerInventory.decrStackSize(i, 1); else ST.use(aPlayer, T, aPlayerInventory.getItem(i));
+					if (aPlayer == null) aPlayerInventory.removeItem(i, 1); else ST.use(aPlayer, T, aPlayerInventory.getItem(i));
 					mAxleGear |= B[tSide];
 					mJammed = F;
 					mGearsWork = checkGears();
