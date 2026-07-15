@@ -440,7 +440,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public boolean bumbleAttack(ItemStack aBumbleBee, short aMetaData, LivingEntity aAttacked) {
 		if (UT.Entities.isWearingFullInsectHazmat(aAttacked)) return F;
 		boolean
-		  tSkeleton = (aAttacked instanceof Skeleton || (aAttacked instanceof Horse && ((Horse)aAttacked).getHorseType() == 4))
+		  tSkeleton = (aAttacked instanceof Skeleton || aAttacked instanceof net.minecraft.world.entity.animal.equine.SkeletonHorse)
 		, tSnowGolem = (aAttacked.getClass() == SnowGolem.class)
 		, tIronGolem = (aAttacked instanceof IronGolem)
 		, tPlayer = (aAttacked instanceof Player)
@@ -450,7 +450,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 		case   9: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*2);
 		case   6: return !tSkeleton && !tSnowGolem && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*4);
 		case   8: return F;
-		case   3: if (!tSkeleton && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage().setFireDamage(), (1+((aMetaData / 10) % 10))*2)) {aAttacked.setFire((1+((aMetaData / 10) % 10))*10); return T;} return F;
+		case   3: if (!tSkeleton && !tIronGolem && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage().setFireDamage(), (1+((aMetaData / 10) % 10))*2)) {aAttacked.setRemainingFireTicks((1+((aMetaData / 10) % 10))*10*20); return T;} return F;
 		case 105: case 200: case 201: case 202: case 203: return !tPlayer && aAttacked.hurtOrSimulate(DamageSources.getBumbleDamage(), (1+((aMetaData / 10) % 10))*10);
 		}
 	}
