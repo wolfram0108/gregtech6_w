@@ -259,7 +259,7 @@ public class MultiTileEntitySandwich extends TileEntityBase03MultiTileEntities i
 	
 	@Override
 	public ItemUseAnimation getItemUseAction(MultiTileEntityItemInternal aItem, ItemStack aStack) {
-		return ItemUseAnimation.eat;
+		return ItemUseAnimation.EAT;
 	}
 	
 	@Override
