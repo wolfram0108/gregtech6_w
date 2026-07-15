@@ -914,9 +914,9 @@ public class GT_API extends Abstract_Mod {
 		// intrusive-holder); IL хранит supplier, mStack материализует лениво в рантайме. Было: IL.Display_Fluid.set(new ItemFluidDisplay()).
 		IL.Display_Fluid.set(GT_API.ITEMS.register("gt.display.fluid", ItemFluidDisplay::new));
 		// Initialises the Integrated Circuit Item.
-		IL.Circuit_Selector.set(new ItemIntegratedCircuit());
+		IL.Circuit_Selector.set(GT_API.ITEMS.register("gt.integrated_circuit", ItemIntegratedCircuit::new)); // F12-lazy: construct@RegisterEvent-supplier
 		// Initialises the Empty Slot Marker Item.
-		IL.Empty_Slot.set(new ItemEmptySlot());
+		IL.Empty_Slot.set(GT_API.ITEMS.register("gt.empty_slot", ItemEmptySlot::new)); // F12-lazy: construct@RegisterEvent-supplier
 		// Register the GUI Handler.
 		// PORT-TODO(F7-gui, заменить старый Forge GUI-handler на реальный NeoForge menu/screen путь после сверки с референсом)
 		// Fixing vanilla Oak Plank Slab Recipe.

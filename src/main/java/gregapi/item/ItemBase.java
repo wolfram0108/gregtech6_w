@@ -88,7 +88,11 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 		mModID = aModID;
 		LH.add(mName, aEnglish);
 		if (UT.Code.stringValid(aEnglishTooltip)) LH.add(mTooltip = mName + ".tooltip_main", aEnglishTooltip); else mTooltip = null;
-		ST.register(this, mName);
+		// F12: САМО-регистрация убрана из конструктора. Конструкция GT6-предмета теперь идёт на RegisterEvent (intrusive-holder
+		// требует открытый реестр) через DeferredRegister-supplier `GT_API.ITEMS.register(name, ItemX::new)` на call-site —
+		// а self-register ПОСЛЕ конструкции (на RegisterEvent) для DeferredRegister слишком поздно. Регистрация = обязанность
+		// call-site (supplier declared в preInit, construct@RegisterEvent). ⚠️ КОНТЕНТ-предметы (MultiItem/GT_Tool_Item и др.
+		// ItemBase-наследники) при порте контент-слоя ТОЖЕ перевести на supplier-паттерн (F12-followup). Было: ST.register(this, mName).
 		DispenserBlock.registerBehavior(this, new GT_Item_Dispense()); // было dispenseBehaviorRegistry.putObject (DispenserBlock.java:61)
 	}
 	
