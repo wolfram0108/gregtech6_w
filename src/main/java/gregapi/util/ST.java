@@ -468,7 +468,7 @@ public class ST {
 	// F1-meta: neo ItemStack(ItemLike,int,int) 3-арг ctor с метой удалён (flattening) — мета хранится
 	// компонентом DAMAGE (та же F1-модель, что центр meta_:188 setDamageValue). 2-арг ctor + setDamageValue.
 	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
-	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); rStack.setDamageValue(UT.Code.bindShort(aMeta)); return rStack;}
+	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
 		if (!aModID.mLoaded || UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;
 		ItemStack
