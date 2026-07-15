@@ -497,7 +497,7 @@ public class Recipe {
 			
 			try {
 				// Now look for the Recipes inside the Item HashMaps, but only when the Recipes usually have Items.
-				if (mInputItemsCount > 0) for (ItemStack tStack1 : aInputs) if (tStack1 != null) {
+				if (mInputItemsCount > 0) for (ItemStack tStack1 : aInputs) if (ST.valid(tStack1)) { // F15: было tStack1 != null (1.7.10 null=нет-предмета); neo ItemStack.EMPTY != null проходит проверку, но getStack_(EMPTY)=null → NPE ниже. ST.valid ловит и null, и EMPTY.
 					Collection<Recipe>
 					tRecipes = mRecipeItemMap.get(tStack1);
 					if (tRecipes != null) for (Recipe tRecipe : tRecipes) if (!tRecipe.mFakeRecipe && tRecipe.isRecipeInputEqual(F, T, aFluids, aInputs)) return tRecipe.mEnabled&&UT.Code.abs_greater_equal(aSize*mPower, tRecipe.mEUt)?oRecipe=tRecipe:null;
