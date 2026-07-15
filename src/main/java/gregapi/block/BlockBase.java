@@ -86,7 +86,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		mNameInternal = aNameInternal;
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ (RegisterEvent<Block>, ITEMS открыт)
 		// регистрируем ТОЛЬКО BlockItem через supplier. Было: ST.register(this,...) (регистрировало блок эагер→freeze + BlockItem).
-		final Class<? extends BlockItem> tItemClass = aItemClass==null?gregapi.item.ItemBlockBase.class:aItemClass;
+		final Class<? extends BlockItem> tItemClass = aItemClass==null?gregapi.block.ItemBlockBase.class:aItemClass;
 		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, mNameInternal, () -> (BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, T, this));
 		LH.add(mNameInternal+"."+W, "Any Sub-Block of this one");
 	}
