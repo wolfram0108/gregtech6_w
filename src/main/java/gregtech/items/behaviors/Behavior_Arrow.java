@@ -96,10 +96,10 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 	public ItemStack onDispense(MultiItem aItem, BlockSource aSource, ItemStack aStack) {
 		Level aWorld = aSource.level();
 		Position tPosition = DispenserBlock.getDispensePosition(aSource);
-		Direction tFacing = DispenserBlock.func_149937_b(aSource.getBlockMetadata());
+		Direction tFacing = aSource.state().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
 		EntityProjectile tEntityArrow = getProjectile(aItem, TD.Projectiles.ARROW, aStack, aWorld, tPosition.getX(), tPosition.getY(), tPosition.getZ());
 		if (tEntityArrow != null) {
-			tEntityArrow.setThrowableHeading(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision);
+			tEntityArrow.shoot(tFacing.getStepX(), (tFacing.getStepY() + 0.1F), tFacing.getStepZ(), mSpeedMultiplier * 1.10F, mPrecision);
 			tEntityArrow.setProjectileStack(aStack);
 			tEntityArrow.canBePickedUp = 1;
 			aWorld.addFreshEntity(tEntityArrow);
