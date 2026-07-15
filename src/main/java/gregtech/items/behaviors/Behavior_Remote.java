@@ -18,6 +18,7 @@
  */
 
 package gregtech.items.behaviors;
+import static gregapi.data.CS.FORGE_DIR;
 
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemNBT;
