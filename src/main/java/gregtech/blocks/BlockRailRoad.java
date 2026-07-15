@@ -107,11 +107,11 @@ public class BlockRailRoad extends BlockBaseRail {
 		} else {
 			byte tRailMeta = WD.meta(7, aWorld, aX, aY, aZ);
 			if (tRailMeta == 1) {
-					 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) aCart.motionX = +0.02;
-				else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) aCart.motionX = -0.02;
+					 if (WD.block(aWorld, aX-1, aY, aZ).isNormalCube(aWorld, aX-1, aY, aZ)) aCart.setDeltaMovement(+0.02, aCart.getDeltaMovement().y, aCart.getDeltaMovement().z);
+				else if (WD.block(aWorld, aX+1, aY, aZ).isNormalCube(aWorld, aX+1, aY, aZ)) aCart.setDeltaMovement(-0.02, aCart.getDeltaMovement().y, aCart.getDeltaMovement().z);
 			} else if (tRailMeta == 0) {
-					 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) aCart.motionZ = +0.02;
-				else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) aCart.motionZ = -0.02;
+					 if (WD.block(aWorld, aX, aY, aZ-1).isNormalCube(aWorld, aX, aY, aZ-1)) aCart.setDeltaMovement(aCart.getDeltaMovement().x, aCart.getDeltaMovement().y, +0.02);
+				else if (WD.block(aWorld, aX, aY, aZ+1).isNormalCube(aWorld, aX, aY, aZ+1)) aCart.setDeltaMovement(aCart.getDeltaMovement().x, aCart.getDeltaMovement().y, -0.02);
 			}
 		}
 	}
