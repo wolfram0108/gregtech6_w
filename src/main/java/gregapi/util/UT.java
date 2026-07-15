@@ -398,28 +398,28 @@ public class UT {
 		// Оригинал 1.7.10 (gregtech6/src/main/java/gregapi/util/UT.java:492-513) держал ДВЕ раздельные
 		// копии одной и той же логики (UT.Fluids и FL) — как уже сделано для load/save чуть выше в этом
 		// же классе, дублирование заменено на делегирование единственному центру FL (decisions/F5-fluids.md).
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aTexture, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createLiquid(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createLiquid(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createLiquid(aMaterial, aTexture, aFluidList);}
 
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aTexture, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aAmount, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aAmount, aTexture, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createMolten(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createMolten(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aTexture, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createMolten(OreDictMaterial aMaterial, long aAmount, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aAmount, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createMolten(OreDictMaterial aMaterial, long aAmount, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createMolten(aMaterial, aAmount, aTexture, aFluidList);}
 
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createGas(aMaterial, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createGas(aMaterial, aTexture, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createGas(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createGas(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createGas(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createGas(aMaterial, aTexture, aFluidList);}
 
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createVapour(aMaterial, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createVapour(aMaterial, aTexture, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createVapour(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createVapour(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createVapour(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createVapour(aMaterial, aTexture, aFluidList);}
 
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createPlasma(aMaterial, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createPlasma(aMaterial, aTexture, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createPlasma(OreDictMaterial aMaterial, Set<String>... aFluidList) {return FL.createPlasma(aMaterial, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT createPlasma(OreDictMaterial aMaterial, IIconContainer aTexture, Set<String>... aFluidList) {return FL.createPlasma(aMaterial, aTexture, aFluidList);}
 
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return FL.create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, aFluidList);}
-		@Deprecated @SafeVarargs public static net.minecraft.world.level.material.Fluid create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return FL.create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return FL.create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, aFluidList);}
+		@Deprecated @SafeVarargs public static gregapi.fluid.FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return FL.create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
 
 		@Deprecated @SafeVarargs
-		public static net.minecraft.world.level.material.Fluid create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
+		public static gregapi.fluid.FluidGT create(String aName, IIconContainer aTexture, String aLocalized, OreDictMaterial aMaterial, short[] aRGBa, int aState, long aAmountPerUnit, long aTemperatureK, ItemStack aFullContainer, ItemStack aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {
 			return FL.create(aName, aTexture, aLocalized, aMaterial, aRGBa, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);
 		}
 	}

@@ -60,34 +60,35 @@ import java.util.Map;
  * {@link FluidType} (свойства) + {@link Fluid} (поведение), оба регистрируются через
  * {@link DeferredRegister} (`decisions/F5-fluids.md` §1,3).
  *
- * <p>Критичный публичный контракт 1:1: методы {@code FL.create*} исторически возвращали движковый
- * {@code Fluid}, и потребители могли делать как присваивание в {@link Fluid}, так и chain-вызовы
- * старых forge-сеттеров. Поэтому {@code FluidGT} — НЕ внешний wrapper, а настоящий neo
- * {@link FlowingFluid}/{@link Fluid}-подтип (source-fluid), регистрируемый в {@link #FLUIDS}; chain-сеттеры
- * остаются на самом объекте. Flowing-пара создаётся централизованно через реальный
- * {@link BaseFlowingFluid.Flowing}.
+ * <p><b>F12/F5 отложенная конструкция source-fluid'а (2026-07-15).</b> neo {@link Fluid}-конструктор в
+ * поле зовёт {@code BuiltInRegistries.FLUID.createIntrusiveHolder(this)} — это ТРЕБУЕТ окна регистрации
+ * (реестр разморожен только внутри {@code RegisterEvent}). Значит source-{@link Fluid} НЕЛЬЗЯ строить
+ * эагерно в фазе «preInit» (реестр заморожен → «Registry is already frozen»). Поэтому {@code FluidGT} —
+ * это лёгкий <b>config-holder + координатор регистрации</b> (строится эагерно, БЕЗ наследования
+ * {@link Fluid}), а реальный source-{@link Fluid} — вложенный {@link Source}, который {@link DeferredRegister}
+ * строит supplier'ом уже НА {@code RegisterEvent} (разморожено). Chainable-сеттеры остаются на самом
+ * {@code FluidGT} (config), а {@link Source}/{@link GTFluidType} читают эти поля живьём — оригинальная
+ * возможность GT6 донастраивать жидкость после создания сохранена 1:1.
  *
- * <p>Свойства при этом остаются изменяемыми 1:1: {@link #setDensity}/{@link #setViscosity}/
- * {@link #setLuminosity}/{@link #setTemperature}/{@link #setGaseous} мутируют поля, а внутренний
- * {@link GTFluidType} читает эти поля на каждый вызов геттера. Это сохраняет оригинальную возможность
- * GT6 донастраивать жидкость после создания.
+ * <p>Публичный контракт {@code FL.create*} возвращает {@code FluidGT} (config-holder); движковый
+ * {@link Fluid} доступен лениво через {@link #getFluid()} (резолв {@code mSourceHolder}, привязан после
+ * RegisterEvent). Никто в GT6 не присваивал результат {@code FL.create} напрямую в {@link Fluid}-переменную
+ * (сверено грепом) — только chain-сеттеры и передача в {@link OreDictMaterial}/{@code make}/{@code FoodStatDrink}
+ * (последний берёт лишь ИМЯ), что теперь либо отложено на server-start, либо идёт через {@code mName}.
  *
  * <p>Референс сигнатур (НЕ выдумано):
  * <ul>
- * <li>{@code Fluid} abstract surface — {@code D:/Temp/MC_NEW/neo-decompiled/net/minecraft/world/level/material/Fluid.java:27-153}.</li>
+ * <li>{@code Fluid} abstract surface + {@code createIntrusiveHolder}-поле — {@code neo-decompiled/net/minecraft/world/level/material/Fluid.java:27-153}.</li>
  * <li>{@code FlowingFluid} abstract surface/source-flowing contract — {@code .../FlowingFluid.java:35,248,254,269,283,345,429,474}.</li>
- * <li>{@code DeferredRegister<FluidType>}/{@code <Fluid>} и source/flowing-пара —
- *     {@code D:/Temp/MC_NEW/NeoForge/tests/src/main/java/net/neoforged/neoforge/oldtest/fluid/NewFluidTest.java:65-81}
- *     и {@code FluidTypeTest.java:83-101}.</li>
- * <li>{@link BaseFlowingFluid.Properties}/{@code .Flowing} —
- *     {@code D:/Temp/MC_NEW/neoforge-decompiled/net/neoforged/neoforge/fluids/BaseFlowingFluid.java:175-221}.</li>
+ * <li>{@code RegisterEvent.register}=={@code Registry.register(reg,name,supplier.get())} — {@code neoforge-decompiled/.../registries/RegisterEvent.java:46-48}; {@code DeferredRegister} зовёт supplier на RegisterEvent — {@code DeferredRegister.java:42-43,214-234}.</li>
+ * <li>{@link BaseFlowingFluid.Properties}/{@code .Flowing} — {@code neoforge-decompiled/net/neoforged/neoforge/fluids/BaseFlowingFluid.java:175-221}.</li>
  * </ul>
  *
  * <p>Клиентский рендер и мировые water-блоки (Ocean/River/Swamp) — вне области этого переходника
  * (F3/render и surface-B F5). Здесь регистрируются только {@link FluidType}+source/flowing {@link Fluid},
  * достаточные для танков/рецептов.
  */
-public class FluidGT extends FlowingFluid {
+public class FluidGT {
 
 	/** Центральные DeferredRegister'ы мода — ЕДИНСТВЕННОЕ место, где GT6 регистрирует жидкости в neo.
 	 *  {@code .register(modEventBus)} для обоих вызывается из центрального @Mod-конструктора
@@ -96,10 +97,10 @@ public class FluidGT extends FlowingFluid {
 	public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, MD.GAPI.mID);
 	public static final DeferredRegister<Fluid>      FLUIDS      = DeferredRegister.create(BuiltInRegistries.FLUID, MD.GAPI.mID);
 
-	/** GT6-имя (часто БЕЗ namespace, иногда с пробелами — напр. "rc jet fuel") -> source FluidGT. */
+	/** GT6-имя (часто БЕЗ namespace, иногда с пробелами — напр. "rc jet fuel") -> config-holder FluidGT. */
 	public static final Map<String, FluidGT> BY_NAME = new LinkedHashMap<>();
 
-	/** Обратный индекс {@link Fluid}-объект -> {@link FluidGT}; строится лениво. */
+	/** Обратный индекс {@link Fluid}-объект (source ИЛИ flowing) -> {@link FluidGT}; строится лениво. */
 	private static Map<Fluid, FluidGT> BY_FLUID_CACHE;
 
 	public final String mName;
@@ -115,7 +116,7 @@ public class FluidGT extends FlowingFluid {
 
 	private final FluidType mType;
 	public final DeferredHolder<FluidType, FluidType> mTypeHolder;
-	public final DeferredHolder<Fluid, FluidGT>       mSourceHolder;
+	public final DeferredHolder<Fluid, Source>        mSourceHolder;
 	public final DeferredHolder<Fluid, FlowingFluid>  mFlowingHolder;
 
 	public FluidGT(String aName, IIconContainer aTexture, short[] aRGBa, long aTemperatureK, boolean aGaseous) {
@@ -127,8 +128,10 @@ public class FluidGT extends FlowingFluid {
 		mType = new GTFluidType(FluidType.Properties.create().descriptionId(getUnlocalizedName()));
 
 		String tRegName = safeRegName(mName);
+		// F12/F5: source и flowing строятся supplier'ом НА RegisterEvent (реестр разморожен → createIntrusiveHolder ок);
+		// FluidType не интрузивен → его можно держать эагерно. mType — эагер, mSource/mFlowing — отложенная конструкция.
 		mTypeHolder    = FLUID_TYPES.register(tRegName, () -> mType);
-		mSourceHolder  = FLUIDS.register(tRegName, () -> this);
+		mSourceHolder  = FLUIDS.register(tRegName, () -> new Source());
 		mFlowingHolder = FLUIDS.register(tRegName + "_flowing", () -> new BaseFlowingFluid.Flowing(fluidProperties()));
 
 		BY_NAME.put(mName, this);
@@ -147,7 +150,7 @@ public class FluidGT extends FlowingFluid {
 	private BaseFlowingFluid.Properties fluidProperties() {
 		// PORT-TODO(F5, поверхность B): .block()/.bucket() (decisions/F5-fluids.md §3,5)
 		// намеренно не заданы для content-fluid'ов; мировые water-блоки — отдельная форсированная замена.
-		return new BaseFlowingFluid.Properties(this::getFluidType, () -> this, mFlowingHolder::value);
+		return new BaseFlowingFluid.Properties(() -> mType, mSourceHolder::value, mFlowingHolder::value);
 	}
 
 	/** neo {@link Identifier}-путь не допускает пробелы/произвольные символы — санитизация ТОЛЬКО для ключа регистрации. */
@@ -159,10 +162,10 @@ public class FluidGT extends FlowingFluid {
 	public String getUnlocalizedName() {return "fluid." + mName;}
 	public String getLocalizedName()   {return LH.get(getUnlocalizedName());}
 
-	/** Source-fluid — это сам FluidGT (реальный neo Fluid), не wrapper вокруг чужого объекта. */
-	public Fluid getFluid()        {return this;}
-	public Fluid getFlowingFluid() {return mFlowingHolder.isBound() ? mFlowingHolder.value() : this;}
-	@Override public FluidType getFluidType() {return mType;}
+	/** Source-fluid — вложенный {@link Source}, привязан после RegisterEvent (резолв holder'а). */
+	public Fluid getFluid()        {return mSourceHolder.value();}
+	public Fluid getFlowingFluid() {return mFlowingHolder.isBound() ? mFlowingHolder.value() : mSourceHolder.value();}
+	public FluidType getFluidType() {return mType;}
 
 	public boolean isGaseous() {return mGaseous;}
 	public int     getDensity() {return mDensity;}
@@ -180,34 +183,14 @@ public class FluidGT extends FlowingFluid {
 	public FluidGT setLuminosity(int aLuminosity)      {mLuminosity = aLuminosity; return this;}
 	public FluidGT setRGBa(short[] aRGBa)              {mRGBa = aRGBa; return this;}
 
-	// ===== Реальный FlowingFluid/Fluid source-contract, сигнатуры из neo-decompiled =====
-
-	@Override public Fluid getFlowing() {return getFlowingFluid();}
-	@Override public Fluid getSource() {return this;}
-	@Override protected boolean canConvertToSource(ServerLevel aLevel) {return false;}
-	@Override protected void beforeDestroyingBlock(LevelAccessor aLevel, BlockPos aPos, BlockState aState) {
-		BlockEntity tBlockEntity = aState.hasBlockEntity() ? aLevel.getBlockEntity(aPos) : null;
-		Block.dropResources(aState, aLevel, aPos, tBlockEntity);
-	}
-	@Override protected int getSlopeFindDistance(LevelReader aLevel) {return 4;}
-	@Override protected int getDropOff(LevelReader aLevel) {return 1;}
-	@Override public int getAmount(FluidState aState) {return 8;}
-	@Override public boolean isSource(FluidState aState) {return true;}
-	@Override public Item getBucket() {return Items.AIR;}
-	@Override protected boolean canBeReplacedWith(FluidState aState, BlockGetter aLevel, BlockPos aPos, Fluid aOther, Direction aDirection) {return aDirection == Direction.DOWN && !isSame(aOther);}
-	@Override public int getTickDelay(LevelReader aLevel) {return 5;}
-	@Override protected float getExplosionResistance() {return 1.0F;}
-	@Override protected BlockState createLegacyBlock(FluidState aState) {return Blocks.AIR.defaultBlockState();}
-	@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isBound() && aFluid == mFlowingHolder.value());}
-
 	/** Находит GT6-переходник по neo {@link Fluid} (source ИЛИ flowing). */
 	public static FluidGT of(Fluid aFluid) {
 		if (aFluid == null) return null;
-		if (aFluid instanceof FluidGT tGT) return tGT;
+		if (aFluid instanceof Source tSource) return tSource.owner();
 		if (BY_FLUID_CACHE == null || BY_FLUID_CACHE.size() < BY_NAME.size()) {
 			Map<Fluid, FluidGT> tMap = new IdentityHashMap<>();
 			for (FluidGT tGT : BY_NAME.values()) {
-				tMap.put(tGT, tGT);
+				if (tGT.mSourceHolder.isBound())  tMap.put(tGT.mSourceHolder.value(),  tGT);
 				if (tGT.mFlowingHolder.isBound()) tMap.put(tGT.mFlowingHolder.value(), tGT);
 			}
 			BY_FLUID_CACHE = tMap;
@@ -231,5 +214,35 @@ public class FluidGT extends FlowingFluid {
 		@Override public int getDensity()     {return mDensity;}
 		@Override public int getViscosity()   {return mViscosity;}
 		@Override public int getLightLevel()  {return mLuminosity;}
+	}
+
+	/**
+	 * Реальный source-{@link Fluid}. Вложенный (нестатический) — читает config объемлющего {@link FluidGT}
+	 * живьём. Строится {@link DeferredRegister}-supplier'ом НА {@code RegisterEvent} (реестр разморожен →
+	 * {@code Fluid.<init>}→{@code createIntrusiveHolder} валиден). Контракт-методы source/flowing — сигнатуры
+	 * из neo-decompiled {@link FlowingFluid}, поведение 1:1 из оригинального FluidGT.
+	 */
+	public final class Source extends FlowingFluid {
+		/** Обратная ссылка на config-holder (для {@link FluidGT#of}). */
+		public FluidGT owner() {return FluidGT.this;}
+
+		@Override public Fluid getFlowing() {return getFlowingFluid();}
+		@Override public Fluid getSource() {return this;}
+		@Override protected boolean canConvertToSource(ServerLevel aLevel) {return false;}
+		@Override protected void beforeDestroyingBlock(LevelAccessor aLevel, BlockPos aPos, BlockState aState) {
+			BlockEntity tBlockEntity = aState.hasBlockEntity() ? aLevel.getBlockEntity(aPos) : null;
+			Block.dropResources(aState, aLevel, aPos, tBlockEntity);
+		}
+		@Override protected int getSlopeFindDistance(LevelReader aLevel) {return 4;}
+		@Override protected int getDropOff(LevelReader aLevel) {return 1;}
+		@Override public int getAmount(FluidState aState) {return 8;}
+		@Override public boolean isSource(FluidState aState) {return true;}
+		@Override public Item getBucket() {return Items.AIR;}
+		@Override protected boolean canBeReplacedWith(FluidState aState, BlockGetter aLevel, BlockPos aPos, Fluid aOther, Direction aDirection) {return aDirection == Direction.DOWN && !isSame(aOther);}
+		@Override public int getTickDelay(LevelReader aLevel) {return 5;}
+		@Override protected float getExplosionResistance() {return 1.0F;}
+		@Override protected BlockState createLegacyBlock(FluidState aState) {return Blocks.AIR.defaultBlockState();}
+		@Override public boolean isSame(Fluid aFluid) {return aFluid == this || (mFlowingHolder != null && mFlowingHolder.isBound() && aFluid == mFlowingHolder.value());}
+		@Override public FluidType getFluidType() {return mType;}
 	}
 }

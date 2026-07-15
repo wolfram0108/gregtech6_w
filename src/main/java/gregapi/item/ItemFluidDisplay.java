@@ -193,7 +193,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 				}
 			}
 			
-			if (aFluid instanceof FluidGT) {
+			if (FluidGT.of(aFluid) != null) {
 				aList.add(LH.Chat.DGRAY + "Fluid owned by GT6");
 			} else {
 				if (FL.Water.is(aFluid) || FL.Lava.is(aFluid)) {

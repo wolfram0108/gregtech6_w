@@ -74,7 +74,20 @@ public class FoodStatDrink extends FoodStat {
 			DrinksGT.REGISTER.put(mFluid, this);
 		}
 	}
-	
+
+	// F12/F5: source-Fluid отложен (FluidGT-split, createIntrusiveHolder только на RegisterEvent) → FL.create(...) теперь
+	// возвращает config-holder FluidGT, а не Fluid. Drink хранит лишь ИМЯ (mFluid=String) → берём FluidGT.mName напрямую,
+	// БЕЗ резолва движкового Fluid (не нужен) → отложка не требуется. Перегрузки 1:1 с Fluid-версиями выше.
+	public FoodStatDrink(gregapi.fluid.FluidGT aFluid, String aToolTip, int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, int aRadiation, ItemUseAnimation aAction, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, int... aPotionEffects) {
+		this(aFluid == null ? null : aFluid.mName, aToolTip, aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, aAlcohol, aCaffeine, aDehydration, aSugar, aFat, aRadiation, aAction, aAlwaysEdible, aInvisibleParticles, aIsRotten, aPotionEffects);
+	}
+	public FoodStatDrink(gregapi.fluid.FluidGT aFluid, String aToolTip, int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, int aAlcohol, int aCaffeine, int aDehydration, int aSugar, int aFat, ItemUseAnimation aAction, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, int... aPotionEffects) {
+		this(aFluid == null ? null : aFluid.mName, aToolTip, aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, aAlcohol, aCaffeine, aDehydration, aSugar, aFat, 0, aAction, aAlwaysEdible, aInvisibleParticles, aIsRotten, aPotionEffects);
+	}
+	public FoodStatDrink(gregapi.fluid.FluidGT aFluid, String aToolTip, int aFoodLevel, float aSaturation, float aHydration, float aTemperature, float aTemperatureEffect, ItemUseAnimation aAction, boolean aAlwaysEdible, boolean aInvisibleParticles, boolean aIsRotten, int... aPotionEffects) {
+		this(aFluid == null ? null : aFluid.mName, aToolTip, aFoodLevel, aSaturation, aHydration, aTemperature, aTemperatureEffect, aAction, aAlwaysEdible, aInvisibleParticles, aIsRotten, aPotionEffects);
+	}
+
 	@Override
 	public void addAdditionalToolTips(Item aItem, List<String> aList, ItemStack aStack, boolean aF3_H) {
 		String tTooltip = LH.get("gt.drink." + mFluid, "");

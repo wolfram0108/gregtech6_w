@@ -51,9 +51,14 @@ public class Loader_Fluids implements Runnable {
 		FL.create("netherair"                , "Nether Air"          , null                  , 2,   1000,   370).setDensity(0);
 		FL.create("enderair"                 , "Ender Air"           , null                  , 2,   1000,   280).setDensity(0);
 		FL.create("Steam"                    , "Steam"               , MT.H2O                , 2, 160000, C+100).setDensity(-1000);
-		MT.Ice.mGas = MT.H2O.mGas;
-		((gregapi.fluid.FluidGT)MT.H2O.mGas.getFluid()).setTemperature((int)(C+100)).setGaseous(T);
-		MT.Steam.gas(FL.Steam.make(160000));
+		// F12/F5: MT.H2O.mGas — отложенная FluidGT-ассоциация (создаётся на server-start); FL.Steam.make тоже требует
+		// зарегистрированной жидкости. Весь блок отложен на server-start (post-RegisterEvent), где стеки валидны.
+		gregapi.GT_API.deferItemInit(() -> {
+			MT.Ice.mGas = MT.H2O.mGas;
+			gregapi.fluid.FluidGT tSteam = gregapi.fluid.FluidGT.of(MT.H2O.mGas.getFluid());
+			if (tSteam != null) tSteam.setTemperature((int)(C+100)).setGaseous(T);
+			MT.Steam.gas(FL.Steam.make(160000));
+		});
 		
 		//-----
 		
@@ -109,8 +114,11 @@ public class Loader_Fluids implements Runnable {
 		FL.create("fieryblood"               , "Fiery Blood"         , null                  , 1,      L,  1500).setLuminosity(10);
 		FL.create("fierytears"               , "Fiery Tears"         , null                  , 1,      L,  1500).setLuminosity(10);
 		
-		DYE_FLUIDS[0].add(FL.make(FL.create("squidink"    , "Squid Ink"       , null, 1, L, 300), L));
-		DYE_FLUIDS[4].add(FL.make(FL.create("indigo"      , "Indigo Dye"      , null, 1, L, 300), L));
+		// F12/F5: FL.create регистрирует жидкость (рано, до RegisterEvent), но FL.make создаёт FluidStack (source-Fluid
+		// привязан только на server-start) → make+add отложены на server-start (post-bind).
+		gregapi.fluid.FluidGT fSquidInk = FL.create("squidink"    , "Squid Ink"       , null, 1, L, 300);
+		gregapi.fluid.FluidGT fIndigo   = FL.create("indigo"      , "Indigo Dye"      , null, 1, L, 300);
+		gregapi.GT_API.deferItemInit(() -> {DYE_FLUIDS[0].add(FL.make(fSquidInk.getFluid(), L)); DYE_FLUIDS[4].add(FL.make(fIndigo.getFluid(), L));});
 		
 		IIconContainer
 		tDyeWaterMixed  = new Textures.BlockIcons.CustomIcon("fluids/dyes.water"),
@@ -119,11 +127,20 @@ public class Loader_Fluids implements Runnable {
 		tDyedCFoam      = new Textures.BlockIcons.CustomIcon("fluids/cfoam");
 		
 		for (byte i = 0; i < 16; i++) {
-			DYE_FLUIDS[i].add(DYE_FLUIDS_WATER   [i] = FL.make(FL.create("dye.watermixed." + DYE_OREDICTS_POST[i].toLowerCase(), tDyeWaterMixed, "Water Mixed " + DYE_NAMES[i] + " Dye", null, DYES[i], 1,   L, 300, NI, NI, 0, FluidsGT.SIMPLE, FluidsGT.DYE), L));
-			DYE_FLUIDS[i].add(DYE_FLUIDS_FLOWER  [i] = FL.make(FL.create("dye.flower."     + DYE_OREDICTS_POST[i].toLowerCase(), tDyeFlower    , DYE_NAMES[i] + " Flower Dye"          , null, DYES[i], 1,   L, 300, NI, NI, 0, FluidsGT.SIMPLE, FluidsGT.DYE), L));
-			DYE_FLUIDS[i].add(DYE_FLUIDS_CHEMICAL[i] = FL.make(FL.create("dye.chemical."   + DYE_OREDICTS_POST[i].toLowerCase(), tDyeChemical  , "Chemical " + DYE_NAMES[i] + " Dye"   , null, DYES[i], 1,   L, 300, NI, NI, 0, FluidsGT.SIMPLE, FluidsGT.DYE), L));
-			DYED_C_FOAMS                         [i] = FL.make(FL.create("cfoam."          + DYE_OREDICTS_POST[i].toLowerCase(), tDyedCFoam    , DYE_NAMES[i] + " C-Foam"              , null, DYES[i], 1, 100, 300, NI, NI, 0), 100);
-			DYED_C_FOAMS_OWNED                   [i] = FL.make(FL.create("cfoam.owned."    + DYE_OREDICTS_POST[i].toLowerCase(), tDyedCFoam    , "Advanced " + DYE_NAMES[i] + " C-Foam", null, DYES[i], 1, 100, 300, NI, NI, 0), 100);
+			final int fi = i;
+			// FL.create — регистрация рано; FL.make (стек) + присвоение массивов — отложены на server-start (source-Fluid привязан).
+			gregapi.fluid.FluidGT fDyeWater = FL.create("dye.watermixed." + DYE_OREDICTS_POST[i].toLowerCase(), tDyeWaterMixed, "Water Mixed " + DYE_NAMES[i] + " Dye", null, DYES[i], 1,   L, 300, NI, NI, 0, FluidsGT.SIMPLE, FluidsGT.DYE);
+			gregapi.fluid.FluidGT fDyeFlower = FL.create("dye.flower."     + DYE_OREDICTS_POST[i].toLowerCase(), tDyeFlower    , DYE_NAMES[i] + " Flower Dye"          , null, DYES[i], 1,   L, 300, NI, NI, 0, FluidsGT.SIMPLE, FluidsGT.DYE);
+			gregapi.fluid.FluidGT fDyeChemical = FL.create("dye.chemical."   + DYE_OREDICTS_POST[i].toLowerCase(), tDyeChemical  , "Chemical " + DYE_NAMES[i] + " Dye"   , null, DYES[i], 1,   L, 300, NI, NI, 0, FluidsGT.SIMPLE, FluidsGT.DYE);
+			gregapi.fluid.FluidGT fCFoam = FL.create("cfoam."          + DYE_OREDICTS_POST[i].toLowerCase(), tDyedCFoam    , DYE_NAMES[i] + " C-Foam"              , null, DYES[i], 1, 100, 300, NI, NI, 0);
+			gregapi.fluid.FluidGT fCFoamOwned = FL.create("cfoam.owned."    + DYE_OREDICTS_POST[i].toLowerCase(), tDyedCFoam    , "Advanced " + DYE_NAMES[i] + " C-Foam", null, DYES[i], 1, 100, 300, NI, NI, 0);
+			gregapi.GT_API.deferItemInit(() -> {
+				DYE_FLUIDS[fi].add(DYE_FLUIDS_WATER   [fi] = FL.make(fDyeWater.getFluid(), L));
+				DYE_FLUIDS[fi].add(DYE_FLUIDS_FLOWER  [fi] = FL.make(fDyeFlower.getFluid(), L));
+				DYE_FLUIDS[fi].add(DYE_FLUIDS_CHEMICAL[fi] = FL.make(fDyeChemical.getFluid(), L));
+				DYED_C_FOAMS                          [fi] = FL.make(fCFoam.getFluid(), 100);
+				DYED_C_FOAMS_OWNED                    [fi] = FL.make(fCFoamOwned.getFluid(), 100);
+			});
 		}
 		
 		//-----
@@ -664,9 +681,13 @@ public class Loader_Fluids implements Runnable {
 		}
 		
 		
-		((gregapi.fluid.FluidGT)FL.Air       .fluid()).setDensity(0);
-		((gregapi.fluid.FluidGT)FL.Air_Nether.fluid()).setDensity(0);
-		((gregapi.fluid.FluidGT)FL.Air_End   .fluid()).setDensity(0);
+		// F12/F5: FL.X.fluid() резолвит source-Fluid (привязан на server-start) → setDensity-config отложен туда же (of()-каст).
+		gregapi.GT_API.deferItemInit(() -> {
+			gregapi.fluid.FluidGT tAir;
+			if ((tAir = gregapi.fluid.FluidGT.of(FL.Air       .fluid())) != null) tAir.setDensity(0);
+			if ((tAir = gregapi.fluid.FluidGT.of(FL.Air_Nether.fluid())) != null) tAir.setDensity(0);
+			if ((tAir = gregapi.fluid.FluidGT.of(FL.Air_End   .fluid())) != null) tAir.setDensity(0);
+		});
 		
 		
 		FL.reg(FL.Air                     .make(1000), IL.Cell_Air                                 .get(1), IL.Cell_Empty.get(1), F, T, T);
