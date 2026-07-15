@@ -435,31 +435,31 @@ public class GT6_Main extends Abstract_Mod {
 			tChest = ChestGenHooks.getInfo(ChestGenHooks.STRONGHOLD_LIBRARY      ); tChest.setMax(tChest.getMax()+16); tChest.setMin(tChest.getMin()+ 8);
 		}
 		if (ConfigsGT.GREGTECH.get("general", "SmallerVanillaToolDurability", T)) {
-			Items.WOODEN_SWORD   .setMaxDamage(  8);
-			Items.WOODEN_PICKAXE .setMaxDamage(  8);
-			Items.WOODEN_SHOVEL  .setMaxDamage(  8);
-			Items.WOODEN_AXE     .setMaxDamage(  8);
-			Items.WOODEN_HOE     .setMaxDamage(  8);
-			Items.STONE_SWORD    .setMaxDamage( 16);
-			Items.STONE_PICKAXE  .setMaxDamage( 16);
-			Items.STONE_SHOVEL   .setMaxDamage( 16);
-			Items.STONE_AXE      .setMaxDamage( 16);
-			Items.STONE_HOE      .setMaxDamage( 16);
-			Items.GOLDEN_SWORD   .setMaxDamage( 32);
-			Items.GOLDEN_PICKAXE .setMaxDamage( 32);
-			Items.GOLDEN_SHOVEL  .setMaxDamage( 32);
-			Items.GOLDEN_AXE     .setMaxDamage( 32);
-			Items.GOLDEN_HOE     .setMaxDamage( 32);
-			Items.IRON_SWORD     .setMaxDamage(128);
-			Items.IRON_PICKAXE   .setMaxDamage(128);
-			Items.IRON_SHOVEL    .setMaxDamage(128);
-			Items.IRON_AXE       .setMaxDamage(128);
-			Items.IRON_HOE       .setMaxDamage(128);
-			Items.DIAMOND_SWORD  .setMaxDamage(512);
-			Items.DIAMOND_PICKAXE.setMaxDamage(512);
-			Items.DIAMOND_SHOVEL .setMaxDamage(512);
-			Items.DIAMOND_AXE    .setMaxDamage(512);
-			Items.DIAMOND_HOE    .setMaxDamage(512);
+			ST.setMaxDamage(ST, Items.WOODEN_SWORD,   8);
+			ST.setMaxDamage(ST, Items.WOODEN_PICKAXE,   8);
+			ST.setMaxDamage(ST, Items.WOODEN_SHOVEL,   8);
+			ST.setMaxDamage(ST, Items.WOODEN_AXE,   8);
+			ST.setMaxDamage(ST, Items.WOODEN_HOE,   8);
+			ST.setMaxDamage(ST, Items.STONE_SWORD,  16);
+			ST.setMaxDamage(ST, Items.STONE_PICKAXE,  16);
+			ST.setMaxDamage(ST, Items.STONE_SHOVEL,  16);
+			ST.setMaxDamage(ST, Items.STONE_AXE,  16);
+			ST.setMaxDamage(ST, Items.STONE_HOE,  16);
+			ST.setMaxDamage(ST, Items.GOLDEN_SWORD,  32);
+			ST.setMaxDamage(ST, Items.GOLDEN_PICKAXE,  32);
+			ST.setMaxDamage(ST, Items.GOLDEN_SHOVEL,  32);
+			ST.setMaxDamage(ST, Items.GOLDEN_AXE,  32);
+			ST.setMaxDamage(ST, Items.GOLDEN_HOE,  32);
+			ST.setMaxDamage(ST, Items.IRON_SWORD, 128);
+			ST.setMaxDamage(ST, Items.IRON_PICKAXE, 128);
+			ST.setMaxDamage(ST, Items.IRON_SHOVEL, 128);
+			ST.setMaxDamage(ST, Items.IRON_AXE, 128);
+			ST.setMaxDamage(ST, Items.IRON_HOE, 128);
+			ST.setMaxDamage(ST, Items.DIAMOND_SWORD, 512);
+			ST.setMaxDamage(ST, Items.DIAMOND_PICKAXE, 512);
+			ST.setMaxDamage(ST, Items.DIAMOND_SHOVEL, 512);
+			ST.setMaxDamage(ST, Items.DIAMOND_AXE, 512);
+			ST.setMaxDamage(ST, Items.DIAMOND_HOE, 512);
 		}
 		
 		if (CODE_CLIENT) {

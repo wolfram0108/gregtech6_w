@@ -356,6 +356,15 @@ public class ST {
 		if (valid(aStack) && aItem != null) UT.Reflection.setField(aStack, "item", aItem.builtInRegistryHolder());
 		return aStack;
 	}
+	/** F12-vanilla-durability ЦЕНТР: 1.7.10 {@code Item.setMaxDamage(int)} мутировал durability (GT config
+	 *  SmallerVanillaToolDurability урезает vanilla-инструменты). neo: {@code MAX_DAMAGE} = DataComponent на
+	 *  {@code builtInRegistryHolder().components()} (Holder.java:133). Публичный {@code Holder.Reference.bindComponents}
+	 *  (Holder.java:262) — БЕЗ reflection: пересобрать component-map с новым MAX_DAMAGE. GT6-item durability = ItemBase.mMaxDamage (F12). */
+	public static void setMaxDamage(Item aItem, int aMaxDamage) {
+		if (aItem == null) return;
+		net.minecraft.core.Holder.Reference<Item> tHolder = aItem.builtInRegistryHolder();
+		tHolder.bindComponents(net.minecraft.core.component.DataComponentMap.builder().addAll(tHolder.components()).set(net.minecraft.core.component.DataComponents.MAX_DAMAGE, aMaxDamage).build());
+	}
 
 	public static ItemStack update (ItemStack aStack) {
 		return invalid(aStack)?aStack:update_(aStack);
