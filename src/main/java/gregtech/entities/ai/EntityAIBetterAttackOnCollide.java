@@ -24,80 +24,81 @@ import static gregapi.data.CS.*;
 import gregapi.util.ST;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.entity.ai.EntityAIAttackOnCollide;
-import net.minecraft.entity.ai.EntityAIBase;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.level.pathfinder.Node;
+import net.minecraft.world.entity.EquipmentSlot;
+import java.util.EnumSet;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.pathfinding.PathEntity;
-import net.minecraft.pathfinding.PathPoint;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 
 // Started off as a refactored copy of `EntityAIAttackOnCollide`
-public class EntityAIBetterAttackOnCollide extends EntityAIBase {
+public class EntityAIBetterAttackOnCollide extends Goal {
 	public Level mWorld;
-	public PathEntity mPath;
+	public Path mPath;
 	public Class<?> mTargetClass;
 	public PathfinderMob mCreature;
 	public int mAttackCoolDown, mPathCoolDown, mFailedPathFindingPenalty;
 	public double mX, mY, mZ, mSpeedToTarget;
 	public boolean mLastingMemory;
 	
-	public EntityAIBetterAttackOnCollide(EntityAIAttackOnCollide orig) {
-		mTargetClass = orig.classTarget;
-		mCreature = orig.attacker;
+	public EntityAIBetterAttackOnCollide(PathfinderMob aCreature, Class<?> aTargetClass, double aSpeed, boolean aLongMemory) {
+		mTargetClass = aTargetClass;
+		mCreature = aCreature;
 		mWorld = mCreature.level();
-		mSpeedToTarget = orig.speedTowardsTarget;
-		mLastingMemory = orig.longMemory;
-		setMutexBits(3);
+		mSpeedToTarget = aSpeed;
+		mLastingMemory = aLongMemory;
+		setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
 	}
 	
 	@Override
-	public boolean shouldExecute() {
-		LivingEntity entitylivingbase = mCreature.getAttackTarget();
+	public boolean canUse() {
+		LivingEntity entitylivingbase = mCreature.getTarget();
 		if (entitylivingbase == null) return F;
 		if (!entitylivingbase.isAlive()) return F;
 		if (mTargetClass != null && !mTargetClass.isAssignableFrom(entitylivingbase.getClass())) return F;
 		
 		if (--mPathCoolDown <= 0) {
-			mPath = mCreature.getNavigator().getPathToEntityLiving(entitylivingbase);
-			mPathCoolDown = 4 + mCreature.getRNG().nextInt(7);
+			mPath = mCreature.getNavigation().createPath(entitylivingbase, 0);
+			mPathCoolDown = 4 + mCreature.getRandom().nextInt(7);
 			return mPath != null;
 		}
 		return T;
 	}
 	
 	@Override
-	public boolean continueExecuting() {
-		LivingEntity tTarget = mCreature.getAttackTarget();
-		return tTarget != null && tTarget.isAlive() && (!mLastingMemory ? !mCreature.getNavigator().noPath() : mCreature.isWithinHomeDistance(Mth.floor_double(tTarget.getX()), Mth.floor_double(tTarget.getY()), Mth.floor_double(tTarget.getZ())));
+	public boolean canContinueToUse() {
+		LivingEntity tTarget = mCreature.getTarget();
+		return tTarget != null && tTarget.isAlive() && (mLastingMemory || !mCreature.getNavigation().isDone());
 	}
 	
 	@Override
-	public void startExecuting() {
-		mCreature.getNavigator().setPath(mPath, mSpeedToTarget);
+	public void start() {
+		mCreature.getNavigation().moveTo(mPath, mSpeedToTarget);
 		mPathCoolDown = 0;
 	}
 	
 	@Override
-	public void resetTask() {
-		mCreature.getNavigator().clearPathEntity();
+	public void stop() {
+		mCreature.getNavigation().stop();
 	}
 	
 	@Override
-	public void updateTask() {
-		LivingEntity tTarget = mCreature.getAttackTarget();
-		mCreature.getLookHelper().setLookPositionWithEntity(tTarget, 30, 30);
+	public void tick() {
+		LivingEntity tTarget = mCreature.getTarget();
+		mCreature.getLookControl().setLookAt(tTarget, 30, 30);
 		double tTargetDistance = mCreature.distanceToSqr(tTarget.getX(), tTarget.getBoundingBox().minY, tTarget.getZ());
-		double tLookRadius = mCreature.width * mCreature.width * 4 + tTarget.width;
+		double tLookRadius = mCreature.getBbWidth() * mCreature.getBbWidth() * 4 + tTarget.getBbWidth();
 		mPathCoolDown--;
-		if ((mLastingMemory || mCreature.getEntitySenses().canSee(tTarget)) && mPathCoolDown <= 0 && ((mX == 0 && mY == 0 && mZ == 0) || tTarget.distanceToSqr(mX, mY, mZ) >= 1 || mCreature.getRNG().nextFloat() < 0.05F)) {
+		if ((mLastingMemory || mCreature.getSensing().hasLineOfSight(tTarget)) && mPathCoolDown <= 0 && ((mX == 0 && mY == 0 && mZ == 0) || tTarget.distanceToSqr(mX, mY, mZ) >= 1 || mCreature.getRandom().nextFloat() < 0.05F)) {
 			mX = tTarget.getX(); mY = tTarget.getBoundingBox().minY; mZ = tTarget.getZ();
 			
-			mPathCoolDown = mFailedPathFindingPenalty + 4 + mCreature.getRNG().nextInt(7);
-			if (mCreature.getNavigator().getPath() != null) {
-				PathPoint tPathPoint = mCreature.getNavigator().getPath().getFinalPathPoint();
+			mPathCoolDown = mFailedPathFindingPenalty + 4 + mCreature.getRandom().nextInt(7);
+			if (mCreature.getNavigation().getPath() != null) {
+				Node tPathPoint = mCreature.getNavigation().getPath().getEndNode();
 				if (tPathPoint != null && tTarget.distanceToSqr(tPathPoint.x, tPathPoint.y, tPathPoint.z) < 1) {
 					mFailedPathFindingPenalty = 0;
 				} else {
@@ -113,7 +114,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 				mPathCoolDown += 5;
 			}
 			
-			if (!mCreature.getNavigator().tryMoveToEntityLiving(tTarget, mSpeedToTarget)) {
+			if (!mCreature.getNavigation().moveTo(tTarget, mSpeedToTarget)) {
 				mPathCoolDown += 15;
 			}
 		}
@@ -123,7 +124,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 			mAttackCoolDown = 5;
 			
 			boolean tAttacking = T;
-			ItemStack tHeld = ST.valisize(mCreature.getHeldItem());
+			ItemStack tHeld = ST.valisize(mCreature.getMainHandItem());
 			
 			if (tHeld != null) {
 				mCreature.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
@@ -132,12 +133,12 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 					tAttacking = F;
 					
 					tHeld.setCount(tHeld.getCount()-1);
-					if (tHeld.getCount() <= 0) mCreature.setCurrentItemOrArmor(0, NI);
+					if (tHeld.getCount() <= 0) mCreature.setItemSlot(EquipmentSlot.MAINHAND, NI);
 					
 					if (!mWorld.isClientSide()) {
 						PrimedTnt entitytntprimed = new PrimedTnt(mWorld, mCreature.getX(), mCreature.getY(), mCreature.getZ(), mCreature);
 						mWorld.addFreshEntity(entitytntprimed);
-						mWorld.playSoundAtEntity(entitytntprimed, "game.tnt.primed", 1, 1);
+						mWorld.playSound(null, entitytntprimed.getX(), entitytntprimed.getY(), entitytntprimed.getZ(), net.minecraft.sounds.SoundEvents.TNT_PRIMED, net.minecraft.sounds.SoundSource.HOSTILE, 1, 1);
 					}
 				} else
 				if (ZOMBIES_DIG_WITH_TOOLS) {
@@ -148,7 +149,7 @@ public class EntityAIBetterAttackOnCollide extends EntityAIBase {
 				}
 			}
 			
-			if (tAttacking) mCreature.attackEntityAsMob(tTarget);
+			if (tAttacking) mCreature.doHurtTarget((net.minecraft.server.level.ServerLevel)mWorld, tTarget);
 			
 			// TODO: playSound("creeper.primed", 1, 0.5);
 		}
