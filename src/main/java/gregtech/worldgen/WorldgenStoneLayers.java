@@ -61,7 +61,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 		//final boolean tSlime = (aChunk.getRandomWithSeed(987234911L).nextInt(10) == 0);
 		final NoiseGenerator tNoise = new NoiseGenerator(aWorld);
 		final LevelChunkSection[] aStorages = aChunk.getSections();
-		final int tListSize = StoneLayer.LAYERS.size(), tMaxHeight = aChunk.getTopFilledSegment()+15;
+		final int tListSize = StoneLayer.LAYERS.size(), tMaxHeight = aChunk.getHighestSectionPosition()+15;
 		final StoneLayer[] tScan = new StoneLayer[7];
 		final byte tScanMinusOne = (byte)(tScan.length-1);
 		
@@ -93,7 +93,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					tLastOre = null;
 					tCanPlaceRocks = F;
 				// Stone and Ore Generation in vanilla Stone.
-				} else if (aBlock == Blocks.STONE || (aBlock == Blocks.INFESTED_STONE && aStorage.getExtBlockMetadata(i, tY & 15, j) == 0)) {
+				} else if (aBlock == Blocks.STONE || (aBlock == Blocks.INFESTED_STONE && WD.meta(aWorld, aChunk.getPos().getMinBlockX()+i, tY, aChunk.getPos().getMinBlockZ()+j) == 0)) {
 					tCanPlaceRocks = T;
 					boolean temp = T;
 					if (tScan[5] == tScan[1]) {
@@ -140,7 +140,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					}
 				// Check for the GT6 Stone being natural. Unlikely case due to GT6 Stone being the thing that is supposed to generate this very moment and not before. But Villages would otherwise see their House Materials replaed.
 				} else if (aBlock instanceof BlockStones) {
-					tCanPlaceRocks = (aStorage.getExtBlockMetadata(i, tY & 15, j) < 3);
+					tCanPlaceRocks = (WD.meta(aWorld, aChunk.getPos().getMinBlockX()+i, tY, aChunk.getPos().getMinBlockZ()+j) < 3);
 				// Stone and Ore Generation in replaceable Blocks.
 				} else if (aBlock == tLastReplaced || StoneLayer.REPLACEABLE_BLOCKS.contains(aBlock)) {
 					tLastReplaced = aBlock;
