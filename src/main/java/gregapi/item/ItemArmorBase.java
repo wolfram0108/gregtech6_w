@@ -149,7 +149,18 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		// DataComponents.MAX_DAMAGE поверх (component()→componentInitializer.andThen(...set(type,value)),
 		// последующий set с тем же DataComponentType в builder'е перезаписывает предыдущий, Item.java:692-695,
 		// DataComponentInitializers.java:123-126) — итоговая прочность == aDurability, 1:1 с оригиналом.
-		return new Item.Properties().humanoidArmor(tMaterial, tType).durability(aDurability);
+		// R8-фикс + F-armor-enchant0: 1.7.10 hazmat-броня НЕПОКОРЯЕМА (aEnchantability=0), но neo humanoidArmor() (Item.java:579)
+		// БЕЗУСЛОВНО зовёт enchantable(material.enchantmentValue()) → Enchantable.<init>:18 требует >0 → краш на RegisterEvent<Item>.
+		// Воспроизводим humanoidArmor вручную 1:1, вызывая enchantable ТОЛЬКО при >0 (0 → компонент Enchantable опущен =
+		// непокоряемо, 1:1 со СЛЕДСТВИЕМ оригинала). durability(aDurability) в конце перезаписывает поверх (R8, см. выше).
+		Item.Properties rProperties = new Item.Properties()
+			.durability(tType.getDurability(tMaterial.durability()))
+			.attributes(tMaterial.createAttributes(tType))
+			.component(net.minecraft.core.component.DataComponents.EQUIPPABLE, net.minecraft.world.item.equipment.Equippable.builder(tType.getSlot()).setEquipSound(tMaterial.equipSound()).setAsset(tMaterial.assetId()).build())
+			.repairable(tMaterial.repairIngredient());
+		if (aEnchantability > 0) rProperties.enchantable(aEnchantability);
+		rProperties.durability(aDurability);
+		return rProperties;
 	}
 
 	/** aShields[] — индексы 1:1 с этим же классом собственным aSlot-соглашением (0=head,1=chest,2=legs,3=boots, см. gregtech/loaders/a/Loader_Tools.java); во всех текущих вызовах массив однороден, порядок не влияет на значения. */
