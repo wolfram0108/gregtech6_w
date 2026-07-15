@@ -70,7 +70,7 @@ public class GT_Tool_Plow extends ToolStats {
 		int rConversions = 0;
 		if (sIsHarvestingRightNow.get() == null && aPlayer instanceof ServerPlayer) {
 			sIsHarvestingRightNow.set(this);
-			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) if (i != 0 || j != 0 || k != 0) if (aStack.getItem().getDigSpeed(aStack, WD.block(aPlayer.level(), aX+i, aY+j, aZ+k), WD.meta(aPlayer.level(), aX+i, aY+j, aZ+k)) > 0) if (((ServerPlayer)aPlayer).gameMode.destroyBlock(new net.minecraft.core.BlockPos(aX+i, aY+j, aZ+k))) rConversions++;
+			for (int i = -1; i < 2; i++) for (int j = -1; j < 2; j++) for (int k = -1; k < 2; k++) if (i != 0 || j != 0 || k != 0) if (((gregapi.item.multiitem.tools.MultiItemTool)aStack.getItem()).getDigSpeed(aStack, WD.block(aPlayer.level(), aX+i, aY+j, aZ+k), WD.meta(aPlayer.level(), aX+i, aY+j, aZ+k)) > 0) if (((ServerPlayer)aPlayer).gameMode.destroyBlock(new net.minecraft.core.BlockPos(aX+i, aY+j, aZ+k))) rConversions++;
 			sIsHarvestingRightNow.set(null);
 		}
 		return rConversions;
