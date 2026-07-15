@@ -85,7 +85,7 @@ public class MultiTileEntityFluidNozzle extends TileEntityBase11AttachmentSmall 
 						if (FL.XP.is(aFluid)) {
 							if (MD.OB.mLoaded) {
 								try {
-									int tXP = Math.min(LiquidXpUtils.liquidToXpRatio(aFluid.getAmount()), UT.Code.roundUp(EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel+1) - (EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel)+(aPlayer.experience * aPlayer.xpBarCap()))));
+									int tXP = Math.min(LiquidXpUtils.liquidToXpRatio(aFluid.getAmount()), UT.Code.roundUp(EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel+1) - (EnchantmentUtils.getExperienceForLevel(aPlayer.experienceLevel)+(aPlayer.experience * aPlayer.getXpNeededForNextLevel()))));
 									int tDrain = LiquidXpUtils.xpToLiquidRatio(tXP);
 									if (tDrain > 0 && tXP > 0) {
 										((ITileEntityTapAccessible)tDelegator.mTileEntity).tapDrain(tDelegator.mSideOfTileEntity, tDrain, T);
