@@ -73,7 +73,7 @@ public final class PortDump {
 
         double tMat = report("materials.csv");
         double tPre = report("prefixes.csv");
-        report("fluids.csv"); // расширение harness: паритет жидкостей (мягко, без гейта пока)
+        report("fluids.csv", 1, 1); // паритет жидкостей; игнор col1=fluidId (нео-артефакт: source+flowing = 2× id 1.7.10)
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -178,15 +178,17 @@ public final class PortDump {
     }
 
     // ------------------------------------------------------------------ parity-отчёт по одному файлу
-    private static double report(String file) {
+    private static double report(String file) { return report(file, 1); }
+    /** {@code ignoreCols} — 0-based индексы artifact-колонок (registry-id), игнорируемых для СЕМАНТИЧЕСКОГО паритета. */
+    private static double report(String file, int keyCols, int... ignoreCols) {
         Path golden = ORACLE.resolve(file);
         Path port = DUMP.resolve(file);
         if (!Files.isRegularFile(golden)) {
             System.out.println("[parity] нет golden: " + golden.toAbsolutePath());
             return 0.0;
         }
-        ParityDiff.ParitySet g = ParityDiff.fromCsv(golden, 1);
-        ParityDiff.ParitySet p = ParityDiff.fromCsv(port, 1);
+        ParityDiff.ParitySet g = ignoreCols.length == 0 ? ParityDiff.fromCsv(golden, keyCols) : ParityDiff.fromCsvIgnoring(golden, keyCols, ignoreCols);
+        ParityDiff.ParitySet p = ignoreCols.length == 0 ? ParityDiff.fromCsv(port, keyCols) : ParityDiff.fromCsvIgnoring(port, keyCols, ignoreCols);
         ParityDiff.Report r = ParityDiff.diff(file, g, p);
         System.out.printf("[parity] %-14s golden=%d совпало=%d нет=%d лишних=%d отлич=%d  %6.2f%%%n",
                 file, r.goldenTotal, r.matched, r.missing.size(), r.extra.size(), r.differ.size(), r.percent());

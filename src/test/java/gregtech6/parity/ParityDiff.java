@@ -126,6 +126,23 @@ public final class ParityDiff {
      * Загружает CSV как набор записей. Ключ — первые {@code keyColumns} колонок (через запятую),
      * значение — вся строка. Пустые строки и строки, начинающиеся с {@code #}, пропускаются.
      */
+    /** {@code ignoreCols} — индексы колонок (0-based), обнуляемые ПЕРЕД сравнением: registry-position id (fluidId, block/item
+     *  numeric id) — нео-артефакты (в neo не совпадут 1:1 с 1.7.10), несемантичны → игнор даёт СЕМАНТИЧЕСКИЙ паритет. */
+    public static ParitySet fromCsvIgnoring(Path file, int keyColumns, int... ignoreCols) {
+        java.util.Set<Integer> ignore = new java.util.HashSet<>();
+        for (int c : ignoreCols) ignore.add(c);
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String line : readLines(file)) {
+            String trimmed = line.strip();
+            if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+            String[] cols = trimmed.split(",", -1);
+            String key = keyColumns >= cols.length ? trimmed : String.join("", Arrays.copyOfRange(cols, 0, keyColumns));
+            for (int c : ignore) if (c >= 0 && c < cols.length) cols[c] = "";
+            map.put(key, String.join(",", cols));
+        }
+        return new ParitySet(map);
+    }
+
     public static ParitySet fromCsv(Path file, int keyColumns) {
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {
