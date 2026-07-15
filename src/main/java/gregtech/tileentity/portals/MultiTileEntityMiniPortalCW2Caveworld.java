@@ -124,7 +124,7 @@ public class MultiTileEntityMiniPortalCW2Caveworld extends MultiTileEntityMiniPo
 	}
 	
 	@Override public float getBlockHardness() {return WD.hardness(Blocks.MOSSY_COBBLESTONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.MOSSY_COBBLESTONE.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.MOSSY_COBBLESTONE.getExplosionResistance();}
 	
 	public ITexture sCW2Portal = BlockTextureCopied.get(ST.block(MD.CW2, "caveworld_portal", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sCW2PortalFrame = BlockTextureCopied.get(Blocks.MOSSY_COBBLESTONE, SIDE_ANY, 0);
 	@Override public ITexture getPortalTexture() {return sCW2Portal;}

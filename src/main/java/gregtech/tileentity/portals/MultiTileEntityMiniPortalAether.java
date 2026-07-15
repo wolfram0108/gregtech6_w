@@ -127,7 +127,7 @@ public class MultiTileEntityMiniPortalAether extends MultiTileEntityMiniPortal {
 	}
 	
 	@Override public float getBlockHardness() {return WD.hardness(Blocks.GLOWSTONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.GLOWSTONE.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.GLOWSTONE.getExplosionResistance();}
 	
 	public ITexture sAetherPortal = BlockTextureCopied.get(ST.block(MD.AETHEL.mLoaded ? MD.AETHEL : MD.AETHER, MD.AETHEL.mLoaded ? "aether_portal" : "aetherPortal", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sAetherPortalFrame = BlockTextureCopied.get(Blocks.GLOWSTONE, SIDE_ANY, 0, UNCOLOURED, F, F, F);
 	@Override public ITexture getPortalTexture() {return sAetherPortal;}

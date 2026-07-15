@@ -84,5 +84,5 @@ public class BlockCrystalOres extends BlockBaseMeta {
 	@Override public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.GLOWSTONE, aWorld, aX, aY, aZ);}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GLOWSTONE.getExplosionResistance(null);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GLOWSTONE.getExplosionResistance();}
 }

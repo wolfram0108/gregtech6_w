@@ -117,5 +117,5 @@ public class BlockVanillaOresA extends BlockBaseMeta {
 	@Override public int getFlammability(byte aMeta) {return BURN_LEVELS[aMeta];}
 	@Override public int getFireSpreadSpeed(byte aMeta) {return 0;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.STONE, aWorld, aX, aY, aZ) * HARDNESS_LEVELS[WD.meta(aWorld, aX, aY, aZ)];}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.STONE.getExplosionResistance(null);}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.STONE.getExplosionResistance();}
 }

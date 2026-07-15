@@ -78,7 +78,7 @@ public class MultiTileEntityBumbleHive extends TileEntityBase07Paintable impleme
 	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]])) : null;}
 	
 	@Override public float getExplosionResistance2(Entity aExploder, double aExplosionX, double aExplosionY, double aExplosionZ) {return Blocks.JACK_O_LANTERN.getExplosionResistance(aExploder);}
-	@Override public float getExplosionResistance2() {return Blocks.JACK_O_LANTERN.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.JACK_O_LANTERN.getExplosionResistance();}
 	@Override public float getBlockHardness() {return WD.hardness(Blocks.JACK_O_LANTERN, null, 0, 0, 0);}
 	@Override public int getFireSpreadSpeed(byte aSide, boolean aDefault) {return 300;}
 	@Override public int getFlammability(byte aSide, boolean aDefault) {return 300;}

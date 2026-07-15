@@ -129,7 +129,7 @@ public class MultiTileEntityMiniPortalNether extends MultiTileEntityMiniPortal i
 	}
 	
 	@Override public float getBlockHardness() {return WD.hardness(Blocks.OBSIDIAN, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.OBSIDIAN.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.OBSIDIAN.getExplosionResistance();}
 	
 	public ITexture sNetherPortal = BlockTextureCopied.get(Blocks.NETHER_PORTAL, SIDE_ANY, 0, UNCOLOURED, F, T, T), sNetherPortalFrame = BlockTextureCopied.get(Blocks.OBSIDIAN, SIDE_ANY, 0);
 	@Override public ITexture getPortalTexture() {return sNetherPortal;}

@@ -126,7 +126,7 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 	}
 	
 	@Override public float getBlockHardness() {return WD.hardness(Blocks.GRASS_BLOCK, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.GRASS_BLOCK.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.GRASS_BLOCK.getExplosionResistance();}
 	
 	public ITexture sTwilightPortal = BlockTextureCopied.get(Blocks.NETHER_PORTAL, SIDE_ANY, 0, UNCOLOURED, F, T, T), sTwilightPortalFrame = BlockTextureCopied.get(Blocks.GRASS_BLOCK, SIDE_TOP, 0, DYE_Green, F, F, F), sTwilightPortalInactive = BlockTextureCopied.get(Blocks.WATER, SIDE_TOP, 0, UNCOLOURED, F, F, F);
 	@Override public ITexture getPortalTexture() {return sTwilightPortal;}

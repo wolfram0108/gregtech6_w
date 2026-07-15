@@ -123,7 +123,7 @@ public class MultiTileEntityMiniPortalTropics extends MultiTileEntityMiniPortal 
 	}
 	
 	@Override public float getBlockHardness() {return WD.hardness(Blocks.OAK_PLANKS, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.OAK_PLANKS.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.OAK_PLANKS.getExplosionResistance();}
 	
 	public ITexture sTropicsPortal = BlockTextureCopied.get(ST.block(MD.TROPIC, "tile.portal", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sTropicsPortalFrame = BlockTextureCopied.get(ST.block(MD.TROPIC, "tile.bambooBundle", Blocks.OAK_PLANKS), SIDE_FRONT, 0, UNCOLOURED, F, F, F), sTropicsPortalInactive = BlockTextureCopied.get(Blocks.WATER, SIDE_TOP, 0, 0x0088ffcc, F, T, T);
 	@Override public ITexture getPortalTexture() {return sTropicsPortal;}
