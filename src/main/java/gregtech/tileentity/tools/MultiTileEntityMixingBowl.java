@@ -18,6 +18,8 @@
  */
 
 package gregtech.tileentity.tools;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraft.world.level.material.Fluid;
 
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -153,7 +155,7 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 						FluidStack tWater = FL.Water.make((long)Math.max(1, WD.rainfall(tBiome)*200) * (level.isThundering()?2:1));
 						if (tWater != null) {
 							IFluidTank tTank = getFluidTankFillable2(SIDE_TOP, tWater);
-							if (tTank != null) tTank.fill(tWater, T);
+							if (tTank != null) tTank.fill(tWater, IFluidHandler.FluidAction.EXECUTE);
 						}
 					}
 				}
@@ -162,13 +164,13 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 			boolean tBreak = F;
 			mDisplay = 0;
 			for (FluidTankGT tTank : mTanksOutput) if (tTank.has()) {
-				mDisplay = (short)(-2-tTank.getFluid().getFluidID());
+				mDisplay = (short)(-2-FL.id_(tTank.getFluid()));
 				tBreak = T;
 				break;
 			}
 			if (!tBreak) {
 				for (FluidTankGT tTank : mTanksInput) if (tTank.has()) {
-					mDisplay = (short)(-2-tTank.getFluid().getFluidID());
+					mDisplay = (short)(-2-FL.id_(tTank.getFluid()));
 					tBreak = T;
 					break;
 				}
@@ -404,7 +406,7 @@ public class MultiTileEntityMixingBowl extends TileEntityBase07Paintable impleme
 		case  5:
 			if (mDisplay == 0 || SIDE_TOP != aSide) return null;
 			if (mDisplay < -1) {
-				Fluid tFluid = FluidRegistry.getFluid(-mDisplay-2);
+				Fluid tFluid = FL.fluid(-mDisplay-2);
 				return tFluid == null ? BlockTextureCopied.get(Blocks.WATER, SIDE_ANY, 0, UNCOLOURED, F, F, F) : BlockTextureFluid.get(FL.make(tFluid, 1000));
 			}
 			if (UT.Code.exists(mDisplay, OreDictMaterial.MATERIAL_ARRAY)) return OreDictMaterial.MATERIAL_ARRAY[mDisplay].getTextureDust();
