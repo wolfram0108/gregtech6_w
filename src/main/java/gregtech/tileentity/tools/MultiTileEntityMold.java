@@ -300,7 +300,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 			if (tData != null) for (Advancement tAchievement : tData.mMaterial.mMaterial.mAchievementsForCreation) ST.achieve(aPlayer, tAchievement);
 			ItemStack aStack = aPlayer.getMainHandItem();
 			if (aStack == null) {
-				aPlayer.getInventory().setInventorySlotContents(aPlayer.getInventory().getSelectedSlot(), tOutputStack);
+				aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), tOutputStack);
 				slotKill(0);
 				if (aCauseDamage) UT.Entities.applyTemperatureDamage(aPlayer, mTemperature, 1, 5.0F);
 				return T;

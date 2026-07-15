@@ -267,7 +267,7 @@ public class Loader_Recipes_Replace implements Runnable {
 		if (aRecipe == null || aStacks == null) return null;
 		for (byte i = 0; i < aStacks.length; i++) if (aStacks[i] != null) {
 			CraftingInput aCrafting = new CraftingInput(new AbstractContainerMenu() {@Override public boolean canInteractWith(Player aPlayer) {return F;}}, 3, 3);
-			for (int j = 0; j < 9 && j < aStacks.length; j++) aCrafting.setInventorySlotContents(j, aStacks[j]);
+			for (int j = 0; j < 9 && j < aStacks.length; j++) aCrafting.setItem(j, aStacks[j]);
 			if (!aRecipe.matches(aCrafting, DW)) return null;
 			ItemStack rOutput = aRecipe.getCraftingResult(aCrafting);
 			if (rOutput == null || rOutput.getCount() <= 0) return null;

@@ -115,7 +115,7 @@ public class MultiTileEntityMiniPortalAlfheim extends MultiTileEntityMiniPortal 
 	@Override
 	public boolean onBlockActivated2(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			ItemStack aStack = aPlayer.getInventory().getCurrentItem();
+			ItemStack aStack = aPlayer.getInventory().getSelectedItem();
 			if (ST.valid(aStack) && aStack.getCount() > 0 && IL.ALF_Gateway_Core.equal(aStack, F, T)) {
 				setPortalActive();
 				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());

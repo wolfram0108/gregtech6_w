@@ -129,7 +129,7 @@ public class MultiTileEntityDustFunnel extends TileEntityBase07Paintable impleme
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		if (isServerSide() && SIDES_TOP[aSide] && canInsertItem2(0, aPlayer.getInventory().getCurrentItem(), aSide)) ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().getSelectedSlot(), 0);
+		if (isServerSide() && SIDES_TOP[aSide] && canInsertItem2(0, aPlayer.getInventory().getSelectedItem(), aSide)) ST.move(aPlayer.getInventory(), this, aPlayer.getInventory().getSelectedSlot(), 0);
 		return T;
 	}
 	

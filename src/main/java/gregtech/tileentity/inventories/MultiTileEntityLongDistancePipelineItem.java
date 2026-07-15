@@ -199,7 +199,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public ItemStack getStackInSlotOnClosing(int aSlot) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getStackInSlotOnClosing(aSlot);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItemNoUpdate(aSlot);
 		}
 		return null;
 	}
@@ -207,7 +207,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public ItemStack getStackInSlot(int aSlot) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getStackInSlot(aSlot);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getItem(aSlot);
 		}
 		return null;
 	}
@@ -239,7 +239,7 @@ public class MultiTileEntityLongDistancePipelineItem extends TileEntityBase09Fac
 	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
 		if (checkTarget()) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) tTileEntity.mTileEntity.setInventorySlotContents(aSlot, aStack);
+			if (tTileEntity.mTileEntity != null) tTileEntity.mTileEntity.setItem(aSlot, aStack);
 		}
 	}
 	@Override
