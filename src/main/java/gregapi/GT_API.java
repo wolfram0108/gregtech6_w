@@ -231,7 +231,15 @@ public class GT_API extends Abstract_Mod {
 	 *  {@code GT_API.registerItemLazy(modId, name, () -> Field = new ItemX(...))} — supplier строит предмет, присваивает поле и
 	 *  возвращает его. Тот же приём, что fluid-split (FluidGT source-supplier). Заменяет эагер {@code new ItemX()} + self-register. */
 	public static DeferredItem<Item> registerItemLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Item> aSupplier) {
-		return itemsFor(aModIDOwner).register(aRegistryName, aSupplier);
+		return itemsFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aSupplier);
+	}
+
+	/** neo {@link net.minecraft.resources.Identifier}-путь допускает только [a-z0-9/._-]; GT6-имена предметов содержат
+	 *  заглавные (напр. {@code gt.meta.dustSmall}) — санитизируем ТОЛЬКО ключ регистрации (тот же приём, что
+	 *  {@code FluidGT.safeRegName}). Идентичность предмета для oredict/паритета — по объекту/{@code mNameInternal}, не по ключу. */
+	public static String sanitizeRegName(String aName) {
+		String rName = aName.toLowerCase().replaceAll("[^a-z0-9/._-]", "_");
+		return rName.isEmpty() ? "unnamed" : rName;
 	}
 
 	/** F12/R3-мост, вызывается из {@code gregapi.util.ST.register(Block, String, Class)} (был прямой

@@ -79,10 +79,10 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		
 		setMaxDamage(0);
 		setHasSubtypes(T);
-		// F12/R3: регистрация через ЕДИНЫЙ центр (был выдуманный DeferredRegister.registerItem);
-		// неймспейс — modId владельца (аддон может быть не GAPI), как в оригинале GameRegistry.registerItem(item,name,modId).
-		GT_API.registerItem(this, mNameInternal, aModIDOwner);
-		
+		// F12-followup (item-split): само-рег УБРАНА — конструкция PrefixItem идёт на RegisterEvent через call-site
+		// GT_API.registerItemLazy(modId, name, ()->new PrefixItem(...)) (Item.<init> createIntrusiveHolder требует разморож.
+		// реестр). mPrefix.mRegisteredItems.add(this) ниже остаётся в конструкторе — выполнится на RegisterEvent (паритет).
+
 		mPrefix.addTextureSet(aModIDTextures, T);
 		LH.add("oredict." + mPrefix.dat(MT.Empty).toString(), getLocalName(mPrefix, MT.Empty));
 		LH.add(mNameInternal+"."+W, "Any Sub-Item of this one"); // Local Name for the WildcardItem Variant.
