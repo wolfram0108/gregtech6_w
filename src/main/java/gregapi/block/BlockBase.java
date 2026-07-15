@@ -81,13 +81,13 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		// BuildCreativeModeTabContentsEvent-датаген) → PORT-TODO(F16). Твёрдость/light/mapColor из Material — мост F9, дефолт пока.
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром BLOCKS,
 		// куда ST.register клал блок), ключ санитизирован. Конструкция — на RegisterEvent через registerBlockLazy на call-site.
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GAPI, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mMaterial = aMaterial;
 		mNameInternal = aNameInternal;
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ (RegisterEvent<Block>, ITEMS открыт)
 		// регистрируем ТОЛЬКО BlockItem через supplier. Было: ST.register(this,...) (регистрировало блок эагер→freeze + BlockItem).
 		final Class<? extends BlockItem> tItemClass = aItemClass==null?gregapi.block.ItemBlockBase.class:aItemClass;
-		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GAPI, mNameInternal, () -> (BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, T, this));
+		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GT, mNameInternal, () -> (BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, T, this));
 		LH.add(mNameInternal+"."+W, "Any Sub-Block of this one");
 	}
 	
