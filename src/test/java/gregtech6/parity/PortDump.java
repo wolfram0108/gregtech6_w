@@ -103,8 +103,8 @@ public final class PortDump {
         reportCI("unification.csv", 1);
         report("localization.csv", 1);
         reportCI("itemdata.csv", 1, new int[]{6}); // игнор col6 unificationTarget: ленивый недетерминир. кэш (getStack_:630), несемантичен как fluidId
-        report("engine_items.csv", 1, 1);
-        report("engine_blocks.csv", 1, 1);
+        reportEngine("engine_items.csv"); // GT6-регистрация (искл. vanilla minecraft: neo 1.21 ≠ 1.7.10 count+класс-имена, инхерентно)
+        reportEngine("engine_blocks.csv");
         report("recipemaps.csv", 1, 20);
         reportJsonl("recipes.jsonl"); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
@@ -492,6 +492,13 @@ public final class PortDump {
         return reportSets(file, g, p);
     }
     /** Case-insensitive отчёт (neo lowercase ResourceLocation-имена). */
+    // engine_*.csv: registryName,id,modid,className. Ключ=col0, игнор id(col1) — registry-position артефакт; ИСКЛ vanilla
+    // (col2 modid==minecraft): neo 1.21 vanilla ≠ 1.7.10 (count+класс-имена) — не GT6-логика. Даёт паритет GT6-регистрации.
+    private static double reportEngine(String file) {
+        Path golden = ORACLE.resolve(file), port = DUMP.resolve(file);
+        if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
+        return reportSets(file, ParityDiff.fromCsvLowerExcl(golden, 1, 2, "minecraft", 1), ParityDiff.fromCsvLowerExcl(port, 1, 2, "minecraft", 1));
+    }
     private static double reportCI(String file, int keyCols) { return reportCI(file, keyCols, new int[0]); }
     private static double reportCI(String file, int keyCols, int[] ignoreCols) {
         Path golden = ORACLE.resolve(file), port = DUMP.resolve(file);

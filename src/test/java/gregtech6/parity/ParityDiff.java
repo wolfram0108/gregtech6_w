@@ -178,6 +178,26 @@ public final class ParityDiff {
         return new ParitySet(map);
     }
 
+    /** CI + игнор колонок + ИСКЛЮЧЕНИЕ строк, где колонка {@code exclCol} == {@code exclVal} (lowercase). engine_*.csv дампят
+     *  ВЕСЬ реестр вкл. vanilla (modid=minecraft): neo 1.21 ≠ 1.7.10 vanilla (count+класс-имена net.minecraft.item.ItemBlock→
+     *  world.item.BlockItem) — не GT6-логика. Исключаем vanilla → честный паритет GT6-регистрации (gregtech/gregapi). */
+    public static ParitySet fromCsvLowerExcl(Path file, int keyColumns, int exclCol, String exclVal, int... ignoreCols) {
+        java.util.Set<Integer> ignore = new java.util.HashSet<>();
+        for (int c : ignoreCols) ignore.add(c);
+        String exl = exclVal.toLowerCase();
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String line : readLines(file)) {
+            String low = line.strip().toLowerCase();
+            if (low.isEmpty() || low.startsWith("#")) continue;
+            String[] cols = low.split(",", -1);
+            if (exclCol >= 0 && exclCol < cols.length && cols[exclCol].equals(exl)) continue;
+            String key = keyColumns >= cols.length ? low : String.join("", Arrays.copyOfRange(cols, 0, keyColumns));
+            for (int c : ignore) if (c >= 0 && c < cols.length) cols[c] = "";
+            map.put(key, String.join(",", cols));
+        }
+        return new ParitySet(map);
+    }
+
     public static ParitySet fromCsv(Path file, int keyColumns) {
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {
