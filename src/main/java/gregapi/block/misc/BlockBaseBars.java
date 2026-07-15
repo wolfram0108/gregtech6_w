@@ -65,10 +65,10 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	public BlockBaseBars(String aNameInternal, OreDictMaterial aMat, Material aVanillaMaterial, SoundType aSoundType) {
 		super(null, aNameInternal, aVanillaMaterial, aSoundType);
 		/* PORT-TODO(F16) setCreativeTab */;
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 		mMat = aMat;
 		
-		CR.shaped(ST.make(this, 3, 0), CR.DEF_REV_NCC_MIR, "BBB", aVanillaMaterial == Material.wood ? "r v" : "h w", "BBB", 'B', OP.stick.dat(mMat));
+		gregapi.GT_API.deferItemInit(() -> CR.shaped(ST.make(this, 3, 0), CR.DEF_REV_NCC_MIR, "BBB", aVanillaMaterial == Material.wood ? "r v" : "h w", "BBB", 'B', OP.stick.dat(mMat)));
 		
 		if (CODE_CLIENT) {
 			mRenderers[ 0] = new BarRendererItem(aMat);

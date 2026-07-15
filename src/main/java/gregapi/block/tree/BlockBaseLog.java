@@ -51,7 +51,8 @@ public abstract class BlockBaseLog extends BlockBaseTree {
 	public BlockBaseLog(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(4, aMaxMeta), aIcons);
 		
-		// To make All-Bark Logs.
+		// To make All-Bark Logs. F12-followup (block-split): RM.chisel/CR.shapeless используют ST.make → server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> {
 		for (byte tMeta = 0; tMeta < maxMeta(); tMeta++) {
 			RM.chisel(aNameInternal+"."+tMeta, ST.make(this, 1, tMeta), ST.make(this, 1, tMeta|12));
 			
@@ -61,8 +62,9 @@ public abstract class BlockBaseLog extends BlockBaseTree {
 			CR.shapeless(ST.make(this, 1, tMeta|12), CR.DEF_NCC, new Object[] {OP.dust.dat(MT.Bark), ST.make(this, 1, tMeta)});
 			CR.shapeless(ST.make(this, 1, tMeta|12), CR.DEF_NCC, new Object[] {OP.dustSmall.dat(MT.Bark), ST.make(this, 1, tMeta)});
 		}
+		});
 	}
-	
+
 	@Override public String getHarvestTool(int aMeta) {return TOOL_axe;}
 	@Override public int damageDropped(int aMeta) {return aMeta & PILLAR_DATA;}
 	@Override public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ) & PILLAR_DATA;}

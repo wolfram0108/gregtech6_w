@@ -186,7 +186,9 @@ public class GT_API extends Abstract_Mod {
 	 *  {@link #runDeferredItemInit()} выполняет их в setup (пост-bind). См. decisions/F12-registration-lifecycle.md. */
 	public static final List<Runnable> DEFERRED_ITEM_INIT = new ArrayListNoNulls<>();
 	public static void deferItemInit(Runnable aInit) {if (aInit != null) DEFERRED_ITEM_INIT.add(aInit);}
-	public static void runDeferredItemInit() {for (Runnable tInit : DEFERRED_ITEM_INIT) try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);} DEFERRED_ITEM_INIT.clear();}
+	// drain-loop: коллбэк может добавить новый deferItemInit (вложенная отложка, напр. блок→слэб) — обрабатываем FIFO
+	// без ConcurrentModification; список опустошается полностью, включая добавленное во время выполнения.
+	public static void runDeferredItemInit() {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
 
 	/** F12-followup (block-split, MTE): некоторые GT6-подсистемы (MultiTileEntityRegistry/MultiTileEntityBlock) СТРОЯТ
 	 *  neo-Block вне DeferredRegister-supplier И вне preInit (getOrCreate вызывается и на preInit, и на init, с дедупом и

@@ -80,7 +80,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		ST.register(this, aName, BlockItem.class);
 		LH.add(getUnlocalizedName(), getLocalizedName());
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
-		if (aHide) ST.hide(this);
+		if (aHide) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 
 	// @Override

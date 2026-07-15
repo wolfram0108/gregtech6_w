@@ -232,14 +232,14 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		mPrefix.mRegisteredItems.add(this); // this optimizes some processes by decreasing the size of the Set.
 		
 		if (mPrefix.contains(TD.Prefix.ORE)) {
-			if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W));
+			if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W)));
 			if (COMPAT_IC2 != null && mBaseHardness >= 0) {
 				for (byte i = 0; i < 16; i++) COMPAT_IC2.valuable(this, i, 3);
 			}
 		} else if (mPrefix.containsAny(TD.Prefix.DUST_BASED, TD.Prefix.INGOT_BASED, TD.Prefix.GEM_BASED)) {
-			if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W));
+			if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("miner", ST.make(this, 1, W)));
 		} else {
-			if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
+			if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 		}
 		
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}

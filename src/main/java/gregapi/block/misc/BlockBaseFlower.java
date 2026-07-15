@@ -90,7 +90,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		/* PORT-TODO(F16) setCreativeTab */;
 		ST.register(this, mNameInternal, aItemClass);
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
 	
 	public final String getUnlocalizedName() {return mNameInternal;}

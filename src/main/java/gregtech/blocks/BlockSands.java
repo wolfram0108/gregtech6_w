@@ -57,7 +57,7 @@ public class BlockSands extends BlockBaseMeta {
 		}
 
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
-		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W)));
 		});
 	}
 	

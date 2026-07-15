@@ -81,7 +81,7 @@ public class BlockGrass extends BlockBaseMeta {
 		CR.shapeless(ST.make(this, 8, 4), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Yellow   ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
 		CR.shapeless(ST.make(this, 8, 5), new Object[] {Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, DYE_OREDICTS[DYE_INDEX_Brown    ], Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK, Blocks.GRASS_BLOCK});
 		
-		if (COMPAT_FR  != null) COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("digger", ST.make(this, 1, W)));
 		});
 	}
 	

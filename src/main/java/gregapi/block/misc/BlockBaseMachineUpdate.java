@@ -43,7 +43,7 @@ public abstract class BlockBaseMachineUpdate extends BlockBaseMeta {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, aMaxMeta, aIcons);
 		ITileEntityMachineBlockUpdateable.Util.registerMachineBlock(this, aBitMask);
 		/* PORT-TODO(F16) setCreativeTab */;
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}
 	
 	@Override public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ)                           {if (ITileEntityMachineBlockUpdateable.Util.isMachineBlock(this, WD.meta(aWorld, aX, aY, aZ))) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, this, UT.Code.bind4(WD.meta(aWorld, aX, aY, aZ)), F);}

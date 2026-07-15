@@ -42,7 +42,7 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 	public BlockBaseTree(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, aMaxMeta, aIcons);
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
 	
 	public abstract int getLeavesRangeSide(byte aMeta);

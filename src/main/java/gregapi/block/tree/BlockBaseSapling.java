@@ -76,7 +76,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		// PORT-TODO(F12, block-property-runtime-mutator): setHardness(0) (1.7.10 runtime мутатор) - тот же класс,
 		// что уже открыт GT_API.java:734, деградация до no-op (getBlockHardness ниже уже несёт GT6-own значение).
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
 
 	// было setTickRandomly(true) — см. комментарий в конструкторе выше.

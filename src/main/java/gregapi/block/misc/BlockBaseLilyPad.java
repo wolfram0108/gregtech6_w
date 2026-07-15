@@ -70,7 +70,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 		gregapi.GT_API.deferItemInit(() -> {
 		RM.chisel(aNameInternal, ST.make(this, 1, W));
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 		});
 	}
 	

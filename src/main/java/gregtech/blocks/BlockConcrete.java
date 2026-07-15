@@ -61,7 +61,7 @@ public class BlockConcrete extends BlockColored implements IBlockToolable {
 	
 	protected BlockConcrete(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aVanillaSoundType, String aName, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons, byte aSlabType, BlockMetaType aBlock) {
 		super(aItemClass, aVanillaMaterial, aVanillaSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons, aSlabType, aBlock);
-		OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Concrete, U2));
+		gregapi.GT_API.deferItemInit(() -> OM.data(ST.make(this, 1, W), new OreDictItemData(MT.Concrete, U2)));
 	}
 	
 	@Override

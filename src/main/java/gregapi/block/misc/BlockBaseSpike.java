@@ -65,7 +65,8 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		super(null, aNameInternal, Material.iron, SoundType.METAL);
 		/* PORT-TODO(F16) setCreativeTab */;
 		mMat1 = aMat1; mMat2 = aMat2;
-		
+		// F12-followup (block-split): рецепты/OM.data используют ST.make → server-start → deferItemInit.
+		gregapi.GT_API.deferItemInit(() -> {
 		CR.shaped(ST.make(this, 1, 0), CR.DEF_NCC, "BTB", "TPT", "BTB", 'B', OP.toolHeadSword.dat(mMat1), 'P', OP.plate.dat(mMat1), 'T', OP.screw.dat(mMat1));
 		CR.shaped(ST.make(this, 1, 6), CR.DEF_NCC, "TBT", "BPB", "TBT", 'B', OP.toolHeadSword.dat(mMat1), 'P', OP.plate.dat(mMat1), 'T', OP.screw.dat(mMat1));
 		CR.shaped(ST.make(this, 1, 8), CR.DEF_NCC, "BTB", "TPT", "BTB", 'B', OP.toolHeadSword.dat(mMat2), 'P', OP.plate.dat(mMat2), 'T', OP.screw.dat(mMat2));
@@ -83,7 +84,8 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		OM.data(ST.make(this, 1, 8), aMat2, U*9);
 		OM.data(ST.make(this, 1,14), aMat2, U*9);
 		OM.data(ST.make(this, 1,15), aMat2, U*9);
-		
+		});
+
 		if (CODE_CLIENT) {
 			mRenderers[ 0] = new SpikeRendererYNeg(aMat1);
 			mRenderers[ 1] = new SpikeRendererYPos(aMat1);
@@ -101,7 +103,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 			mRenderers[14] = mRenderers[15] = new SpikeRendererOmni(aMat2);
 		}
 		
-		if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));
+		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}
 	
 	// было Entity.motionX/motionZ (1.7.10 public мутируемые поля) -> neo Vec3 (getDeltaMovement()) immutable ->
