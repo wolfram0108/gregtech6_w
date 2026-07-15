@@ -85,7 +85,7 @@ public final class PortDump {
         int nPre = dumpPrefixes();
         int nFl = dumpFluids();
         dumpMTE(); dumpTools(); dumpTags(); dumpWorldgen();
-        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipeMaps();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         double tMat = report("materials.csv");
@@ -104,6 +104,7 @@ public final class PortDump {
         reportCI("itemdata.csv", 1);
         report("engine_items.csv", 1, 1);
         report("engine_blocks.csv", 1, 1);
+        report("recipemaps.csv", 1, 20); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -362,6 +363,21 @@ public final class PortDump {
         if (s == null || s.getItem() == null) return "null"; // golden DumpUtil.stackId(null)="null" (itemdata.unificationTarget)
         var k = BuiltInRegistries.ITEM.getKey(s.getItem());
         return (k == null ? "" : k.toString()) + ":" + gregapi.util.ST.meta_(s);
+    }
+
+    // ------------------------------------------------------------------ recipemaps.csv (зеркало DumpRecipes)
+    private static int dumpRecipeMaps() throws IOException {
+        List<String> lines = new ArrayList<>();
+        for (gregapi.recipes.Recipe.RecipeMap m : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAPS.values()) {
+            if (m == null) continue;
+            lines.add(m.mNameInternal + "," + m.mInputItemsCount + "," + m.mOutputItemsCount + "," + m.mInputFluidCount + ","
+                    + m.mOutputFluidCount + "," + m.mMinimalInputItems + "," + m.mMinimalInputFluids + "," + m.mMinimalInputs + ","
+                    + m.mPower + "," + m.mNEISpecialValueMultiplier + "," + m.mProgressBarDirection + "," + m.mProgressBarAmount + ","
+                    + m.mNEIAllowed + "," + m.mShowVoltageAmperageInNEI + "," + m.mNeedsOutputs + "," + m.mCombinePower + ","
+                    + m.mUseBucketSizeIn + "," + m.mUseBucketSizeOut + "," + m.mMaxFluidInputSize + "," + m.mMaxFluidOutputSize + "," + m.mRecipeList.size());
+        }
+        writeCsv("recipemaps.csv", "mNameInternal,inItems,outItems,inFluid,outFluid,minInItems,minInFluid,minIn,power,neiSpecialMul,progDir,progAmount,neiAllowed,showVA,needsOutputs,combinePower,bucketIn,bucketOut,maxFluidIn,maxFluidOut,recipeCount", lines);
+        return lines.size();
     }
 
     // ------------------------------------------------------------------ engine_items.csv + engine_blocks.csv (зеркало DumpEngine)
