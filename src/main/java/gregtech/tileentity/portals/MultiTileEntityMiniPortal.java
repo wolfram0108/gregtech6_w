@@ -268,7 +268,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	@Override public int getFireSpreadSpeed(byte aSide, boolean aDefault) {return 0;}
 	@Override public int getFlammability(byte aSide, boolean aDefault) {return 0;}
 	@Override public float getBlockHardness() {return WD.hardness(Blocks.STONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
-	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
+	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance();}
 	
 	@Override
 	public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {
@@ -353,7 +353,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public byte mLastSide = SIDE_UNKNOWN;
 	
 	@Override
-	public ItemStack decrStackSize(int aSlot, int aDecrement) {
+	public ItemStack removeItem(int aSlot, int aDecrement) {
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItem(aSlot, aDecrement);
@@ -418,14 +418,14 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return F;
 	}
 	
-	// Relay Sided Inventories
-	
+	// Relay Sided Inventories (neo WorldlyContainer: getSlotsForFace/canPlaceItemThroughFace/canTakeItemThroughFace = final в базе → override ХУКИ *2(byte); target-делегация к neo-методам через FORGE_DIR[side])
+
 	@Override
-	public int[] getAccessibleSlotsFromSide(int aSide) {
-		mLastSide = (byte)aSide;
+	public int[] getSlotsForFace(Direction aSide) {
+		mLastSide = UT.Code.side(aSide);
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getAccessibleSlotsFromSide(tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).getSlotsForFace(FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) {
 				int[] tReturn = new int[tTileEntity.mTileEntity.getContainerSize()];
 				for (int i = 0; i < tReturn.length; i++) tReturn[i] = i;
@@ -435,33 +435,33 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		return ZL_INTEGER;
 	}
 	@Override
-	public boolean canInsertItem(int aSlot, ItemStack aStack, int aSide) {
-		mLastSide = (byte)aSide;
+	public boolean canPlaceItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {
+		mLastSide = UT.Code.side(aSide);
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canInsertItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canPlaceItemThroughFace(aSlot, aStack, FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) return T;
 		}
 		return F;
 	}
 	@Override
-	public boolean canExtractItem(int aSlot, ItemStack aStack, int aSide) {
-		mLastSide = (byte)aSide;
+	public boolean canTakeItemThroughFace(int aSlot, ItemStack aStack, Direction aSide) {
+		mLastSide = UT.Code.side(aSide);
 		if (mTarget != null) {
 			DelegatorTileEntity<Container> tTileEntity = mTarget.getAdjacentInventory(OPOS[mLastSide]);
-			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canExtractItem(aSlot, aStack, tTileEntity.mSideOfTileEntity);
+			if (tTileEntity.mTileEntity instanceof WorldlyContainer) return ((WorldlyContainer)tTileEntity.mTileEntity).canTakeItemThroughFace(aSlot, aStack, FORGE_DIR[tTileEntity.mSideOfTileEntity]);
 			if (tTileEntity.mTileEntity != null) return T;
 		}
 		return F;
 	}
-	
-	// Relay Tanks
-	
+
+	// Relay Tanks (neo IFluidHandler.fill/drain(FluidStack/int, FluidAction) — side убран; base fill/drain(Direction,...) переопределяем, тело к neo target)
+
 	@Override
 	public int fill(Direction from, FluidStack resource, boolean doFill) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(tTileEntity.getForgeSideOfTileEntity(), resource, doFill);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(resource, doFill ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
 		}
 		return 0;
 	}
@@ -469,7 +469,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public FluidStack drain(Direction from, FluidStack resource, boolean doDrain) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(tTileEntity.getForgeSideOfTileEntity(), resource, doDrain);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(resource, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
 		}
 		return null;
 	}
@@ -477,15 +477,16 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public FluidStack drain(Direction from, int maxDrain, boolean doDrain) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(tTileEntity.getForgeSideOfTileEntity(), maxDrain, doDrain);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(maxDrain, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
 		}
 		return null;
 	}
+	// F-fluid-relay-query: 1.7.10 canFill/canDrain(Direction,Fluid) side-based — neo IFluidHandler удалил; эквивалент = fill/drain-симуляция (SIMULATE) на target 1:1 по смыслу «примет/отдаст ли».
 	@Override
 	public boolean canFill(Direction from, Fluid fluid) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canFill(tTileEntity.getForgeSideOfTileEntity(), fluid);
+			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(new FluidStack(fluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0;
 		}
 		return F;
 	}
@@ -493,20 +494,17 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public boolean canDrain(Direction from, Fluid fluid) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canDrain(tTileEntity.getForgeSideOfTileEntity(), fluid);
+			if (tTileEntity.mTileEntity != null) return !tTileEntity.mTileEntity.drain(new FluidStack(fluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).isEmpty();
 		}
 		return F;
 	}
+	// PORT-TODO(F-fluid-relay-tankinfo): 1.7.10 getTankInfo(Direction)→FluidTankInfo[] — neo IFluidHandler: getTanks/getFluidInTank/getTankCapacity (модель сменилась). Реальный fill/drain-релей работает; агрегат-запрос tank-info пуст (deprecated путь, вызывателей в neo нет).
 	@Override
 	public FluidTankInfo[] getTankInfo(Direction from) {
-		if (mTarget != null) {
-			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getTankInfo(tTileEntity.getForgeSideOfTileEntity());
-		}
 		return ZL_FLUIDTANKINFO;
 	}
-	
-	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
-	@Override public void openInventory() {/**/}
-	@Override public void closeInventory() {/**/}
+
+	@Override public boolean stillValid(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX() + 0.5D, getBlockPos().getY() + 0.5D, getBlockPos().getZ() + 0.5D) <= 64D;}
+	@Override public void startOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
+	@Override public void stopOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
 }
