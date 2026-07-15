@@ -313,8 +313,12 @@ public class GT6_Main extends Abstract_Mod {
 		);
 		
 		if (MD.MO.mLoaded) try {/*FORCED-ADAPTATION(F3-texture): neo текстуры data-driven (model JSON); программный cross-mod setBlockTextureName удалён neo*/;} catch(Throwable e) {e.printStackTrace(ERR);}
-		
-		for (Runnable tRunnable : tList) try {tRunnable.run();} catch(Throwable e) {e.printStackTrace(ERR);}
+
+		// F12-followup (oredict-timing): init-загрузчики (MultiTileEntities/Books/OreProcessing/ItemIterator) делают
+		// ST.make/OM.data (MTE cable/wire/pipe, ore-обработка) → компоненты привязаны только на server-start. Тот же приём,
+		// что уже применён к onModPostInit2. MTE-блоки конструируются отдельно через deferBlockInit (RegisterEvent);
+		// aRegistry.add лишь регистрирует метаданные+OreDict-данные (ST.make возврата) — безопасно откладывается.
+		gregapi.GT_API.deferItemInit(() -> {for (Runnable tRunnable : tList) try {tRunnable.run();} catch(Throwable e) {e.printStackTrace(ERR);}});
 	}
 	
 	@Override

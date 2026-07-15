@@ -94,11 +94,10 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	
 	private boolean mAllowedToAddItems = F;
 	
+	// F12-followup (oredict-timing): addItems() делает ST.make/OM.reg (Holder.components привязаны только на server-start).
+	// run() вызывается на @Init (mBeforeInit) → отложено в runDeferredItemInit (тот же приём, что PrefixItem.run).
 	@Override
-	public final void run() {
-		mAllowedToAddItems = T;
-		addItems();
-	}
+	public final void run() {gregapi.GT_API.deferItemInit(() -> {mAllowedToAddItems = T; addItems();});}
 	
 	@Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
