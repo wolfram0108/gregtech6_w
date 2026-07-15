@@ -84,7 +84,7 @@ public class BlockSpikeFancy extends BlockBaseSpike {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
 		if (aEntity instanceof LivingEntity) {
 			if (aMeta < 8) {
-				if (((LivingEntity)aEntity).getCreatureAttribute() == EntityTypeTags.UNDEAD)
+				if (((LivingEntity)aEntity).getType().is(EntityTypeTags.UNDEAD))
 				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 20.0F : 10.0F));
 				else if (!(aEntity instanceof IronGolem || aEntity instanceof Skeleton || aEntity instanceof Slime))
 				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  2.0F :  1.0F));

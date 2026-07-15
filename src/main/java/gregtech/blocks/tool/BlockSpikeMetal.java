@@ -87,7 +87,7 @@ public class BlockSpikeMetal extends BlockBaseSpike {
 				else if (!(aEntity instanceof IronGolem || aEntity instanceof Skeleton))
 				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  2.0F :  1.0F));
 			} else {
-				if (((LivingEntity)aEntity).getCreatureAttribute() == EntityTypeTags.ARTHROPOD)
+				if (((LivingEntity)aEntity).getType().is(EntityTypeTags.ARTHROPOD))
 				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ? 20.0F : 10.0F));
 				else if (!(aEntity instanceof IronGolem || aEntity instanceof Skeleton || aEntity instanceof Slime))
 				aEntity.hurt(DamageSources.getSpikeDamage(), TFC_DAMAGE_MULTIPLIER * ((aMeta & 7) < 6 ?  2.0F :  1.0F));
