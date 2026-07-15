@@ -153,7 +153,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 	}
 	
 	@Override
-	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
+	public boolean canPlaceItem(int aSlot, ItemStack aStack) {
 		if ((mModes & EXTENDER_INV) != 0 && ST.valid(aStack) && (mLastSide == mFacing || allowInput(aStack))) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canPlaceItem(aSlot, aStack);

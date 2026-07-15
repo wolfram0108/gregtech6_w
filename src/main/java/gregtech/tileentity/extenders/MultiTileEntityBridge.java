@@ -148,7 +148,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	public byte mLastSide = SIDE_UNKNOWN;
 	
 	@Override
-	public ItemStack decrStackSize(int aSlot, int aDecrement) {
+	public ItemStack removeItem(int aSlot, int aDecrement) {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItem(aSlot, aDecrement);
@@ -156,7 +156,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		return null;
 	}
 	@Override
-	public ItemStack getStackInSlotOnClosing(int aSlot) {
+	public ItemStack removeItemNoUpdate(int aSlot) {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.removeItemNoUpdate(aSlot);
@@ -164,7 +164,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		return null;
 	}
 	@Override
-	public ItemStack getStackInSlot(int aSlot) {
+	public ItemStack getItem(int aSlot) {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getItem(aSlot);
@@ -180,7 +180,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		return super.getInventoryName();
 	}
 	@Override
-	public int getSizeInventory() {
+	public int getContainerSize() {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getContainerSize();
@@ -188,7 +188,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		return 0;
 	}
 	@Override
-	public int getInventoryStackLimit() {
+	public int getMaxStackSize() {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getMaxStackSize();
@@ -196,7 +196,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		return 0;
 	}
 	@Override
-	public void setInventorySlotContents(int aSlot, ItemStack aStack) {
+	public void setItem(int aSlot, ItemStack aStack) {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) tTileEntity.mTileEntity.setItem(aSlot, aStack);
@@ -211,7 +211,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 		return getCustomName() != null;
 	}
 	@Override
-	public boolean isItemValidForSlot(int aSlot, ItemStack aStack) {
+	public boolean canPlaceItem(int aSlot, ItemStack aStack) {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
 			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.canPlaceItem(aSlot, aStack);
@@ -398,8 +398,8 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	
 	public byte getExtenderTargetSide(byte aSide) {return OPOS[aSide];}
 	
-	@Override public boolean isUseableByPlayer(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5) <= 64;}
-	@Override public void openInventory() {/**/}
-	@Override public void closeInventory() {/**/}
+	@Override public boolean stillValid(Player aPlayer) {return aPlayer.distanceToSqr(getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5) <= 64;}
+	@Override public void startOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
+	@Override public void stopOpen(net.minecraft.world.entity.ContainerUser aUser) {/**/}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 }
