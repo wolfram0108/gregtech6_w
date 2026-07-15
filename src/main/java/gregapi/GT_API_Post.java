@@ -131,7 +131,9 @@ public class GT_API_Post extends Abstract_Mod {
 	public void onServerStopped   (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 
 	@Override
-	public void onModPreInit2(FMLPreInitializationEvent aEvent) {
+	public void onModPreInit2(FMLPreInitializationEvent aEvent) {} // F12 boot-timing: data-init перенесён в onModInit2 (setup, пост-bind) — стеки (ST.make) нельзя создавать в preInit (Holder.components не привязаны, Holder.java:273)
+	// F12: тело бывшего onModPreInit2 (blacklists/Loaders/byproducts) вызывается из onModInit2, где реестр привязан. Порядок GT6-init сохранён (эта часть — первой в onModInit2).
+	private void onModPreInit2Deferred() {
 		// Fixing Items of certain Mods.
 		// PORT-TODO(F12, item-maxdamage-subtypes-runtime-mutator): Item.setMaxDamage(int)/
 		// setHasSubtypes(boolean) (1.7.10 runtime-мутаторы на уже созданном чужом Item) удалены из
@@ -227,6 +229,7 @@ public class GT_API_Post extends Abstract_Mod {
 	
 	@Override
 	public void onModInit2(FMLInitializationEvent aEvent) {
+		onModPreInit2Deferred(); // F12 boot-timing: бывший preInit-data-init (blacklists/Loaders — ST.make) выполняется здесь (setup, пост-bind), ПЕРВЫМ, до остального onModInit2. Порядок сохранён.
 		new LoaderWoodDictionary().run();
 		
 		// Atum violates the "Items have to be created in preInit" Rule...
