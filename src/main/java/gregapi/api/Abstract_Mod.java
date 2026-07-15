@@ -265,6 +265,10 @@ public abstract class Abstract_Mod {
 			OUT.println(getModNameForLog() + ": PostInit-Phase finished!");
 			ORD.println(getModNameForLog() + ": PostInit-Phase finished!");
 			
+			// F12-followup (item-split): compat.onPostLoad (рецепт-загрузчики) + mAfterPostInit (MultiItem.addItems) делают
+			// ST.make/CR/RM → компоненты только на server-start. На postInit они падали молча (try/catch) → рецепты/предметы
+			// терялись (низкий prefixes-паритет). Откладываем ОБА в deferItemInit (server-start), порядок сохранён.
+			gregapi.GT_API.deferItemInit(() -> {
 			if (!mCompatClasses.isEmpty()) {
 				UT.LoadingBar.start("Loading Compat (PostInit)", mCompatClasses.size());
 				for (ICompat tCompat : mCompatClasses) {
@@ -274,8 +278,8 @@ public abstract class Abstract_Mod {
 				}
 				UT.LoadingBar.finish();
 			}
-			
 			loadRunnables("After PostInit", mAfterPostInit); mAfterPostInit.clear(); mAfterPostInit = null;
+			});
 			
 			loadRunnables("Finalize", mFinalize); mFinalize.clear(); mFinalize = null;
 			
