@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.sensors;
 
+import gregapi.util.UT;
 import static gregapi.data.CS.*;
 
 import gregapi.data.BI;

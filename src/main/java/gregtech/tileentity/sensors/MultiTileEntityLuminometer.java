@@ -38,7 +38,7 @@ public class MultiTileEntityLuminometer extends MultiTileEntitySensorTE {
 	
 	@Override
 	public long getCurrentValue(DelegatorTileEntity<BlockEntity> aDelegator) {
-		return aDelegator.mWorld.getBlockLightValue(aDelegator.mX, aDelegator.mY, aDelegator.mZ);
+		return aDelegator.mWorld.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, new net.minecraft.core.BlockPos(aDelegator.mX, aDelegator.mY, aDelegator.mZ));
 	}
 	
 	@Override

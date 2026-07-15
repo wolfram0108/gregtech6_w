@@ -110,7 +110,7 @@ public class MultiTileEntityJuicer extends TileEntityBase07Paintable implements 
 		if (aIsServerSide) {
 			mDisplay = 0;
 			for (FluidTankGT tTank : mTanks) if (tTank.has()) {
-				mDisplay = (short)(tTank.getFluid().getFluidID()+1);
+				mDisplay = (short)(FL.id_(tTank.getFluid())+1);
 				break;
 			}
 		}

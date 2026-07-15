@@ -41,7 +41,7 @@ public class Behavior_Arrow_Potion extends Behavior_Arrow {
 		mPotions = aPotions;
 	}
 	
-	public Behavior_Arrow_Potion(float aSpeed, float aPrecision, Enchantment aEnchantment, int aLevel, int... aPotions) {
+	public Behavior_Arrow_Potion(float aSpeed, float aPrecision, net.minecraft.resources.ResourceKey<Enchantment> aEnchantment, int aLevel, int... aPotions) {
 		super(EntityArrow_Potion.class, aSpeed, aPrecision, aEnchantment, aLevel);
 		mPotions = aPotions;
 	}

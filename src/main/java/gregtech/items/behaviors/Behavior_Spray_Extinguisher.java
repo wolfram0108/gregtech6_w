@@ -123,7 +123,7 @@ public class Behavior_Spray_Extinguisher extends AbstractBehaviorDefault {
 				rUses += 10;
 			} else {
 				if (((Entity)tEntity).isOnFire()) {
-					((Entity)tEntity).extinguish();
+					((Entity)tEntity).clearFire();
 					rUses += 10;
 				}
 			}
