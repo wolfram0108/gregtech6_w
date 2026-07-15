@@ -62,7 +62,7 @@ public class MultiTileEntitySiftingTable extends TileEntityBase07Paintable imple
 		super.readFromNBT2(aNBT);
 		if (aNBT.contains(NBT_STATE)) mState = aNBT.getByteOr(NBT_STATE, (byte)0);
 		if (aNBT.contains(NBT_PROGRESS)) mClickCount = aNBT.getByteOr(NBT_PROGRESS, (byte)0);
-		if (aNBT.contains(NBT_RECIPEMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP));
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
 	}
 	
 	@Override

@@ -50,7 +50,7 @@ public class MultiTileEntityLargeTurbineGas extends MultiTileEntityLargeTurbine 
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_FUELMAP)) mRecipes = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP));
+		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
 		for (int i = 0; i < mTanksOutput.length; i++)
 		mTanksOutput[i].readFromNBT(aNBT, NBT_TANK+"."+i).setCapacity(mEnergyIN.mMax*16);
 		mInputTank.readFromNBT(aNBT, NBT_TANK).setCapacity(mEnergyIN.mMax*4);
