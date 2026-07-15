@@ -166,6 +166,9 @@ public class GT6_Main extends Abstract_Mod {
 		OP.crushedCentrifuged    .disableItemGeneration(MT.Ad, MT.Fe, MT.Si, MT.Al, MT.Ti, MT.W, MT.F, MT.Ta, MT.Nb, MT.Dilithium);
 		OP.crushedCentrifugedTiny.disableItemGeneration(MT.Ad, MT.Fe, MT.Si, MT.Al, MT.Ti, MT.W, MT.F, MT.Ta, MT.Nb, MT.Dilithium);
 		
+		// F12 boot-timing: эти рецепты создают ItemStack (ST.make) — невозможно в preInit (FMLConstructModEvent, Holder.components
+		// не привязаны, «Components not bound»); отложены на server-start (post-bind), как ore-target'ы/рецепты в gregapi.GT_API.onLoad.
+		gregapi.GT_API.deferItemInit(() -> {
 		RM.pulverizing(ST.make(Blocks.COBBLESTONE, 1, W), ST.make(Blocks.SAND, 1, 0), null, 0, F);
 		RM.pulverizing(ST.make(Blocks.STONE, 1, 0), ST.make(Blocks.COBBLESTONE, 1, 0), null, 0, F);
 		RM.pulverizing(ST.make(Blocks.GRAVEL     , 1, W), ST.make(Items.FLINT, 2, 0), OP.dust.mat(MT.Flint, 1), 10, F);
@@ -176,7 +179,8 @@ public class GT6_Main extends Abstract_Mod {
 		RM.pulverizing(ST.make(Blocks.PUMPKIN    , 1, W), ST.make(Items.PUMPKIN_SEEDS, 4, 0), null, 0, F);
 		RM.pulverizing(ST.make(Items.MELON_SLICE       , 1, W), ST.make(Items.MELON_SEEDS, 1, 0), null, 0, F);
 		RM.pulverizing(ST.make(Blocks.WHITE_WOOL, 1, 0), ST.make(Items.STRING, 2, 0), ST.make(Items.STRING, 1, 0), 50, F);
-		
+		});
+
 		new Loader_Fluids().run();
 		new Loader_Tools().run();
 		new Loader_Items().run();
