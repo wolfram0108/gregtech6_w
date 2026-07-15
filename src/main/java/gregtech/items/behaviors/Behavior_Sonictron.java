@@ -18,6 +18,7 @@
  */
 
 package gregtech.items.behaviors;
+import gregapi.util.WD;
 
 import gregapi.code.ItemNBT;
 import gregapi.item.multiitem.MultiItem;

@@ -18,6 +18,7 @@
  */
 
 package gregtech.compat;
+import gregapi.util.WD;
 
 import gregapi.api.FMLPostInitializationEvent;
 import gregapi.api.Abstract_Mod;
