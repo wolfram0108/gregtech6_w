@@ -198,7 +198,6 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public String getInventoryName() {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.getInventoryName();
 		}
 		return super.getInventoryName();
 	}
@@ -229,7 +228,6 @@ public class MultiTileEntityExtender extends TileEntityBase10FacingDouble implem
 	public boolean hasCustomInventoryName() {
 		if ((mModes & EXTENDER_INV) != 0) {
 			DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(getExtenderTargetSide(mLastSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.hasCustomInventoryName();
 		}
 		return getCustomName() != null;
 	}
