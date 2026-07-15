@@ -51,7 +51,7 @@ public class Behavior_Plunger_Item extends AbstractBehaviorDefault {
 								ItemStack tStack = tTileEntity.decrStackSize(i, 64);
 								if (tStack != null) {
 									EntityItem tEntity = new EntityItem(aWorld, ((IGregTechTileEntity)aTileEntity).getOffsetX((byte)aSide, 1) + 0.5, ((IGregTechTileEntity)aTileEntity).getOffsetY((byte)aSide, 1) + 0.5, ((IGregTechTileEntity)aTileEntity).getOffsetZ((byte)aSide, 1) + 0.5, tStack);
-									tEntity.setDeltaMovement(0, 0, 0);
+									WD.setMotionX(tEntity, 0); WD.setMotionY(tEntity, 0); WD.setMotionZ(tEntity, 0);
 									aWorld.addFreshEntity(tEntity);
 									UT.Sounds.send(aWorld, GregTech_API.sSoundList.get(101), 1.0F, -1, aX, aY, aZ);
 								}

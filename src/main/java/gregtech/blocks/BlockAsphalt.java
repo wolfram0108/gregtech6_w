@@ -62,9 +62,9 @@ public class BlockAsphalt extends BlockColored implements IBlockOnWalkOver {
 	
 	@Override
 	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
-		if ((aEntity.getDeltaMovement().x != 0 || aEntity.getDeltaMovement().z != 0) && !aEntity.isInWater() && !aEntity.isShiftKeyDown()) {
+		if ((WD.motionX(aEntity) != 0 || WD.motionZ(aEntity) != 0) && !aEntity.isInWater() && !aEntity.isShiftKeyDown()) {
 			double tSpeed = (mSide == SIDE_BOTTOM && WD.block(aWorld, aX, aY-1, aZ).slipperiness >= 0.8 ? 1.05 : 1.3);
-			aEntity.setDeltaMovement(aEntity.getDeltaMovement().multiply(tSpeed, 1, tSpeed));
+			WD.setMotionX(aEntity, WD.motionX(aEntity)*tSpeed); WD.setMotionZ(aEntity, WD.motionZ(aEntity)*tSpeed);
 		}
 	}
 	

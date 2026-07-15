@@ -117,9 +117,9 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	
 	@Override
 	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
-		if ((aEntity.getDeltaMovement().x != 0 || aEntity.getDeltaMovement().z != 0) && !aEntity.isInWater() && !aEntity.isShiftKeyDown()) {
+		if ((WD.motionX(aEntity) != 0 || WD.motionZ(aEntity) != 0) && !aEntity.isInWater() && !aEntity.isShiftKeyDown()) {
 			double tSpeed = (WD.block(aWorld, aX, aY-1, aZ).slipperiness >= 0.8 && isHalfBlock(aWorld, aX, aY, aZ) ? 1.05 : 1.1);
-			aEntity.setDeltaMovement(aEntity.getDeltaMovement().multiply(tSpeed, 1, tSpeed));
+			WD.setMotionX(aEntity, WD.motionX(aEntity)*tSpeed); WD.setMotionZ(aEntity, WD.motionZ(aEntity)*tSpeed);
 		}
 		// Convert Et Futurum Grass Paths to this when adjacent.
 		if (IL.EtFu_Path.exists()) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
