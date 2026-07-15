@@ -296,7 +296,7 @@ public class GT6_Main extends Abstract_Mod {
 			new Loader_ItemIterator()
 		);
 		
-		if (MD.MO.mLoaded) try {ST.block(MD.MO, "molten_tritanium").setBlockTextureName(MD.MO.mID + ":" + "molten_tritanium_still");} catch(Throwable e) {e.printStackTrace(ERR);}
+		if (MD.MO.mLoaded) try {/*FORCED-ADAPTATION(F3-texture): neo текстуры data-driven (model JSON); программный cross-mod setBlockTextureName удалён neo*/;} catch(Throwable e) {e.printStackTrace(ERR);}
 		
 		for (Runnable tRunnable : tList) try {tRunnable.run();} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
@@ -307,7 +307,7 @@ public class GT6_Main extends Abstract_Mod {
 		if (ST.valid(tLignite)) CR.remove(tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite);
 		
 		Block tBlock = ST.block(MD.FR, "beehives", NB);
-		if (tBlock != NB) {tBlock.setHarvestLevel("scoop", 0); GT_Tool_Scoop.sBeeHiveMaterial = WD.getMaterial(tBlock);}
+		if (tBlock != NB) {/*FORCED-ADAPTATION(F-harvest): neo harvest-level=block-tags; программный cross-mod setHarvestLevel удалён neo*/ GT_Tool_Scoop.sBeeHiveMaterial = WD.getMaterial(tBlock);}
 		
 //      if (IL.FR_Butterfly     .get(1) != null)    RecipeMap.sScannerFakeRecipes.addFakeRecipe(F, ST.array(IL.FR_Butterfly     .getWildcard(1)}                                , ST.array(IL.FR_Butterfly      .getWithName(1, "Scanned Butterfly"     )}, null                                                    , FL.array(MT.Honey.liquid(U/20, T)}, null, 500, 2, 0);
 //      if (IL.FR_Larvae        .get(1) != null)    RecipeMap.sScannerFakeRecipes.addFakeRecipe(F, ST.array(IL.FR_Larvae        .getWildcard(1)}                                , ST.array(IL.FR_Larvae         .getWithName(1, "Scanned Larvae"        )}, null                                                    , FL.array(MT.Honey.liquid(U/20, T)}, null, 500, 2, 0);
