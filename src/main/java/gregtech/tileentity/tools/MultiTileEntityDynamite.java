@@ -19,6 +19,8 @@
 
 package gregtech.tileentity.tools;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
 import gregapi.block.metatype.BlockStones;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetSelectedBoundingBoxFromPool;
@@ -143,7 +145,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	public void explode(boolean aInstant) {
 		mDontDrop = T;
 		WD.set(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), NB, 0, 3);
-		Explosion tExplosion = mSunk ? new DynamiteExplosion(level, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune) : new DynamiteExplosion(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5, mMaxExplosionResistance, mFortune);
+		DynamiteExplosion tExplosion = mSunk ? new DynamiteExplosion(level, getOffsetXN(mFacing)+0.5, getOffsetYN(mFacing)+0.5, getOffsetZN(mFacing)+0.5, mMaxExplosionResistance, mFortune) : new DynamiteExplosion(level, getBlockPos().getX()+0.5, getBlockPos().getY()+0.5, getBlockPos().getZ()+0.5, mMaxExplosionResistance, mFortune);
 		tExplosion.doExplosionA();
 		tExplosion.doExplosionB(T);
 	}
@@ -206,16 +208,15 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 	
 	@Override public String getTileEntityName() {return "gt.multitileentity.dynamite";}
 	
-	public static class DynamiteExplosion extends Explosion {
-		public Level mWorld;
+	// F-explosion: extends GT6-ЦЕНТР ExplosionGT (переиспользует воспроизведённые 1.7.10-поля explosionX/Y/Z/exploder/isSmoking/affectedBlockPositions + neo-паттерны), НЕ neo Explosion-интерфейс (принцип 5).
+	public static class DynamiteExplosion extends gregapi.random.ExplosionGT {
 		public float mMaxExplosionResistance;
 		public byte mFortune;
-		
+
 		public DynamiteExplosion(Level aWorld, double aX, double aY, double aZ, float aMaxExplosionResistance, byte aFortune) {
 			super(aWorld, null, aX, aY, aZ, 1);
 			mMaxExplosionResistance = aMaxExplosionResistance;
 			mFortune = aFortune;
-			mWorld = aWorld;
 		}
 		
 		@Override
@@ -224,51 +225,32 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 			for (int tX = UT.Code.roundDown(explosionX) - 1; tX <= UT.Code.roundDown(explosionX) + 1; tX++) for (int tY = UT.Code.roundDown(explosionY) - 1; tY <= UT.Code.roundDown(explosionY) + 1; tY++) for (int tZ = UT.Code.roundDown(explosionZ) - 1; tZ <= UT.Code.roundDown(explosionZ) + 1; tZ++) {
 				Block tBlock = WD.block(mWorld, tX, tY, tZ);
 				if (tBlock == Blocks.SPAWNER || WD.bedrock(tBlock)) continue;
-				if (tBlock.getExplosionResistance(exploder, mWorld, tX, tY, tZ, explosionX, explosionY, explosionZ) <= mMaxExplosionResistance) affectedBlockPositions.add(new BlockPos(tX, tY, tZ));
+				BlockPos tPos = new BlockPos(tX, tY, tZ);
+				if (tBlock.getExplosionResistance(mWorld.getBlockState(tPos), mWorld, tPos, this) <= mMaxExplosionResistance) affectedBlockPositions.add(tPos);
 			}
-			List tList = mWorld.getEntities(exploder, AABB.getBoundingBox(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));
-			net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tList, explosionSize);
-			DamageSource tSource = DamageSource.setExplosionSource(this);
+			List tList = mWorld.getEntities(exploder, new AABB(explosionX - 2, explosionY - 2, explosionZ - 2, explosionX + 2, explosionY + 2, explosionZ + 2));
+			net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(mWorld, this, tList, affectedBlockPositions);
+			DamageSource tSource = mWorld.damageSources().explosion(this);
 			for (Object tEntity : tList) if (!(tEntity instanceof ItemEntity)) ((Entity)tEntity).hurt(tSource, 2*mMaxExplosionResistance*TFC_DAMAGE_MULTIPLIER);
-			explosionSize = 1F;
+			// explosionSize уже 1F (ExplosionGT-конструктор power=1, поле final).
 		}
 		
 		@Override
 		@SuppressWarnings("rawtypes")
 		public void doExplosionB(boolean aEffects) {
-			mWorld.playSoundEffect(explosionX, explosionY, explosionZ, "random.explode", 4.0F, (1.0F + (RNGSUS.nextFloat() - RNGSUS.nextFloat()) * 0.2F) * 0.7F);
-			if (explosionSize >= 2.0F && isSmoking) {
-				mWorld.spawnParticle("hugeexplosion", explosionX, explosionY, explosionZ, 1, 0, 0);
-			} else {
-				mWorld.spawnParticle("largeexplode", explosionX, explosionY, explosionZ, 1, 0, 0);
-			}
-			Iterator iterator;
-			BlockPos tCoords;
-			int i, j, k;
-			Block tBlock;
-			
+			// PORT-TODO(F-explosion, particle-sound effects): 1.7.10 playSoundEffect(String "random.explode")/spawnParticle(String "hugeexplosion"/"largeexplode"/"explode"/"smoke") удалены (ParticleOptions/SoundEvent-система) — как gregapi ExplosionGT.doExplosionB: визуал/звук взрыва идёт клиенту через explosion-packet, рантайм-паритет = END-гейт.
 			if (isSmoking) {
-				iterator = affectedBlockPositions.iterator();
+				Iterator iterator = affectedBlockPositions.iterator();
 				while (iterator.hasNext()) {
-					tCoords = (BlockPos)iterator.next();
-					i = tCoords.chunkPosX;
-					j = tCoords.chunkPosY;
-					k = tCoords.chunkPosZ;
-					tBlock = WD.block(mWorld, i, j, k);
-					
-					if (aEffects) {
-						double d0 = (i + RNGSUS.nextFloat()), d1 = (j + RNGSUS.nextFloat()), d2 = (k + RNGSUS.nextFloat()), d3 = d0 - explosionX, d4 = d1 - explosionY, d5 = d2 - explosionZ, d6 = Math.sqrt(d3*d3 + d4*d4 + d5*d5);
-						d3 /= d6; d4 /= d6; d5 /= d6;
-						double d7 = 0.5 / (d6 / explosionSize + 0.1);
-						d7 *= (RNGSUS.nextFloat() * RNGSUS.nextFloat() + 0.3);
-						d3 *= d7; d4 *= d7; d5 *= d7;
-						mWorld.spawnParticle("explode", (d0 + explosionX) / 2, (d1 + explosionY) / 2, (d2 + explosionZ) / 2, d3, d4, d5);
-						mWorld.spawnParticle("smoke", d0, d1, d2, d3, d4, d5);
-					}
+					BlockPos tCoords = (BlockPos)iterator.next();
+					int i = tCoords.getX(), j = tCoords.getY(), k = tCoords.getZ();
+					Block tBlock = WD.block(mWorld, i, j, k);
 					if (WD.getMaterial(tBlock) != Material.air) {
-						byte tMeta = WD.meta(mWorld, i, j, k);
-						tBlock.onBlockExploded(mWorld, i, j, k, this);
-						if (tBlock.canDropFromExplosion(this)) tBlock.dropBlockAsItemWithChance(mWorld, i, j, k, tMeta, 1, mFortune);
+						BlockPos tPos = new BlockPos(i, j, k);
+						BlockState tState = mWorld.getBlockState(tPos);
+						// PORT-TODO(F-explosion, drop-chance loot-table): 1.7.10 dropBlockAsItemWithChance(...,chance,fortune) удалён — дроп через loot-table (Block.dropResources); mFortune/chance-распределение не идентично (loot-модель), как ExplosionGT.
+						if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this)) Block.dropResources(tState, mWorld, tPos);
+						if (mWorld instanceof ServerLevel tServerLevel) tBlock.onBlockExploded(tState, tServerLevel, tPos, this);
 					}
 				}
 			}
