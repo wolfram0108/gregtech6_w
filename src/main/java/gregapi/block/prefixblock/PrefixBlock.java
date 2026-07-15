@@ -179,7 +179,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 * @param aRenderOverlayInWorld if the Icon Overlay is to be rendered InWorld. Used for Crates and Ores.
 	 */
 	public PrefixBlock(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterialStack aHullMaterial, Class<? extends PrefixBlockItem> aItemClass, Drops aDrops, ITexture aTexture, Material aVanillaMaterial, SoundType aSoundType, String aTool, float aBaseHardness, float aBaseResistance, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ, boolean aGravity, boolean aBeaconBase, boolean aEnderDragonProof, boolean aWitherProof, boolean aOpaque, boolean aNormalCube, boolean aPlacementChecksTemperature, boolean aPlacementChecksAntimatter, boolean aCanBurn, boolean aCanExplode, boolean aRenderOverlayInWorld, boolean aCanGlow, boolean aCanLight, boolean aSpawnProof, OreDictMaterial... aMaterialList) {
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of());
+		// F12-followup (block-split): setId в Properties (neo Block.<init> требует ID, иначе «Block id not set»); namespace=владелец,
+		// ключ санитизирован (совпадает с registerBlockLazy на call-site). Конструкция идёт на RegisterEvent через supplier.
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mPrefix = aPrefix;
 		mNameInternal = aNameInternal;
 		mMaterialList = (aMaterialList.length > 0 ? aMaterialList : OreDictMaterial.MATERIAL_ARRAY);
@@ -221,7 +223,11 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// isOpaqueCube()/getLightOpacity() этого класса (см. ниже) уже читают mOpaque напрямую - функционально
 		// эквивалентно для внутреннего использования; интеграция в Properties остаётся отложенной F3-фазой.
 		
-		ST.register(this, mNameInternal, aItemClass==null?PrefixBlockItem.class:aItemClass);
+		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ (на RegisterEvent<Block>, ITEMS ещё
+		// открыт) регистрируем ТОЛЬКО BlockItem через supplier (тот же приём, что item-split). Было: ST.register(this,...) — оно
+		// регистрировало и блок (эагер→freeze) и BlockItem.
+		final Class<? extends PrefixBlockItem> tItemClass = aItemClass==null?PrefixBlockItem.class:aItemClass;
+		gregapi.GT_API.registerItemLazy(aModIDOwner, mNameInternal, () -> (net.minecraft.world.item.BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, T, this));
 		
 		mPrefix.mRegisteredItems.add(this); // this optimizes some processes by decreasing the size of the Set.
 		

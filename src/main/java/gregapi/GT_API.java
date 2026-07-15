@@ -234,6 +234,22 @@ public class GT_API extends Abstract_Mod {
 		return itemsFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aSupplier);
 	}
 
+	private static final Map<String, DeferredRegister.Blocks> BLOCKS_BY_NS = new HashMap<>();
+	static {BLOCKS_BY_NS.put(ModIDs.GAPI, BLOCKS);}
+	private static DeferredRegister.Blocks blocksFor(String aNamespace) {
+		DeferredRegister.Blocks rReg = BLOCKS_BY_NS.get(aNamespace);
+		if (rReg == null) {rReg = DeferredRegister.createBlocks(aNamespace); if (sModBus != null) rReg.register(sModBus); BLOCKS_BY_NS.put(aNamespace, rReg);}
+		return rReg;
+	}
+
+	/** F12-followup (block-split): ленивая регистрация БЛОКА — supplier конструирует блок на RegisterEvent (реестр разморожен →
+	 *  {@code Block.<init>}→{@code createIntrusiveHolder}+setId валидны). BlockItem регистрирует САМ конструктор блока через
+	 *  {@link #registerItemLazy} (работает на RegisterEvent&lt;Block&gt;, т.к. RegisterEvent&lt;Item&gt; ещё не сработал). Call-site:
+	 *  {@code GT_API.registerBlockLazy(modId, name, () -> Field = new BlockX(...))}. Тот же приём, что item/fluid-split. */
+	public static void registerBlockLazy(String aModIDOwner, String aRegistryName, java.util.function.Supplier<? extends Block> aBlockSupplier) {
+		blocksFor(aModIDOwner).register(sanitizeRegName(aRegistryName), aBlockSupplier);
+	}
+
 	/** neo {@link net.minecraft.resources.Identifier}-путь допускает только [a-z0-9/._-]; GT6-имена предметов содержат
 	 *  заглавные (напр. {@code gt.meta.dustSmall}) — санитизируем ТОЛЬКО ключ регистрации (тот же приём, что
 	 *  {@code FluidGT.safeRegName}). Идентичность предмета для oredict/паритета — по объекту/{@code mNameInternal}, не по ключу. */
