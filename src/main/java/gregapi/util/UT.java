@@ -3135,6 +3135,14 @@ public class UT {
 			Holder<MobEffect> tPotion = VANILLA_POTION_IDS.get(aID);
 			return tPotion != null && applyPotion(aEntity, tPotion, aDuration, aLevel, aInvisibleParticles);
 		}
+		/** Замена 1.7.10 {@code Potion.getLiquidColor()}: цвет зелья по 1.7.10 vanilla-id через neo {@link MobEffect#getColor()}
+		 *  из той же карты {@link #VANILLA_POTION_IDS} (конверсия с движком централизована в одном месте). 1.7.10
+		 *  {@code Potion(id, isBad, color)} — тот же {@code color} служил liquidColor ⇒ neo effect-color = faithful 1:1.
+		 *  Неизвестный/кастом-id (нет в карте) ⇒ 0 (как оригинал при отсутствии зелья). */
+		public static int potionColor(int aID) {
+			Holder<MobEffect> tPotion = VANILLA_POTION_IDS.get(aID);
+			return tPotion == null ? 0 : tPotion.value().getColor();
+		}
 		public static boolean applyPotion(Entity aEntity, Holder<MobEffect> aPotion, int aDuration, int aLevel, boolean aInvisibleParticles) {
 			if (aDuration <= 0 || !(aEntity instanceof LivingEntity)) return F;
 			if (aLevel >= 0) {
