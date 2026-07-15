@@ -45,7 +45,8 @@ public class BlockGlowtus extends BlockBaseLilyPad implements Runnable {
 	}
 	
 	@Override
-	public void run() {
+	public void run() {gregapi.GT_API.deferItemInit(this::runBody);}
+	private void runBody() {
 		RM.biomass(ST.make(this, 4, W));
 		RM.mortarize(ST.make(this, 1, W), OM.dust(MT.Glowstone, U4));
 		RM.ic2_extractor(ST.make(this, 1, W), OM.dust(MT.Glowstone, U4));

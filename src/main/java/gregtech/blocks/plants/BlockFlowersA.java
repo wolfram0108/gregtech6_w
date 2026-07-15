@@ -83,7 +83,8 @@ public class BlockFlowersA extends BlockBaseFlower implements Runnable {
 	}
 	
 	@Override
-	public void run() {
+	public void run() {gregapi.GT_API.deferItemInit(this::runBody);}
+	private void runBody() {
 		RM.biomass(ST.make(this, 8, W));
 		
 		RM.mortarize(ST.make(this, 1, 0), OM.dust(MT.Wheat));
