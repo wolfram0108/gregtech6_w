@@ -44,6 +44,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.IShearable;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,14 +86,14 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 	}
 	
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		if (WD.getMaterial(aBlock) == Material.leaves && aBlock instanceof IShearable) {
 			WD.set(aPlayer.level(), aX, aY, aZ, aBlock, aMetaData, 0);
 			if (((IShearable)aBlock).isShearable(aStack, aPlayer.level(), aX, aY, aZ)) {
 				ArrayList<ItemStack> tDrops = ((IShearable)aBlock).onSheared(aStack, aPlayer.level(), aX, aY, aZ, aFortune);
 				aDrops.clear();
 				aDrops.addAll(tDrops);
-				aEvent.dropChance = 1.0F;
+				/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			}
 			WD.set(aPlayer.level(), aX, aY, aZ, NB, 0, 0);
 			return 0;
@@ -100,7 +101,7 @@ public class GT_Tool_Chainsaw_LV extends GT_Tool_Axe {
 		if ((WD.getMaterial(aBlock) == Material.ice || WD.getMaterial(aBlock) == Material.packedIce) && aDrops.isEmpty()) {
 			aDrops.add(ST.make(aBlock, 1, aMetaData));
 			aPlayer.level().setBlockToAir(aX, aY, aZ);
-			aEvent.dropChance = 1.0F;
+			/*neo: BlockDropsEvent getDrops() падают всегда; dropChance убран*/;
 			return 0;
 		}
 		return super.convertBlockDrops(aDrops, aStack, aPlayer, aBlock, aAvailableDurability, aX, aY, aZ, aMetaData, aFortune, aSilkTouch, aEvent);

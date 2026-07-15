@@ -35,6 +35,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.List;
 
@@ -80,7 +81,7 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	@Override public boolean isGrafter()                                                    {return T;}
 	
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		if (WD.getMaterial(aBlock) == Material.leaves) aEvent.dropChance = Math.min(1.0F, Math.max(aEvent.dropChance, (UT.Code.bind4(aStack.getItem().getHarvestLevel(aStack, ""))+1) * 0.2F));
 		if (aBlock == Blocks.OAK_LEAVES) {
 			aDrops.clear();

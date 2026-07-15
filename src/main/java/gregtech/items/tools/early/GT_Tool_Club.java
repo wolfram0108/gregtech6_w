@@ -38,6 +38,7 @@ import net.minecraft.stats.AchievementList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 
 import java.util.List;
 
@@ -57,7 +58,7 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 	@Override public boolean isMiningTool()                                                 {return F;}
 	
 	@Override
-	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockEvent.HarvestDropsEvent aEvent) {
+	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		Block aDrop = aDrops.size() == 1 ? ST.block(aDrops.get(0)) : NB;
 		if (aDrop == NB) aDrop = aBlock;
 		if (aDrop == Blocks.STONE || aDrop == Blocks.COBBLESTONE || aDrop == Blocks.MOSSY_COBBLESTONE || aDrop == Blocks.STONE_BRICKS || aDrop == Blocks.STONE_BRICK_STAIRS || aDrop == Blocks.COBBLESTONE_WALL || aDrop == Blocks.STONE_BUTTON || aDrop == Blocks.STONE_PRESSURE_PLATE) {
