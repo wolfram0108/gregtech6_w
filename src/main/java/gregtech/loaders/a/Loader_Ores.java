@@ -417,6 +417,17 @@ public class Loader_Ores implements Runnable {
 		BlocksGT.stoneToSmallOres .put(new ItemStackContainer(IL.BOTA_Andesite.get(1)), BlocksGT.ores_small [7]);
 		}
 		});
+
+		// F12-followup (block-split): перенесено из Loader_Late_Items_And_Blocks (init-фаза) — rockset использует registerBlockLazy,
+		// который работает ТОЛЬКО на preInit (DeferredRegister закрыт после RegisterEvent). Здесь preInit → регистрация корректна.
+		// Моды не загружены в parity → fallback на STONE. Для реального env с этими модами — ограничение cross-mod-тайминга (ADR отдельно).
+		if (MD.AETHEL.mLoaded) {
+		rockset(MD.AETHEL, "holystone", 1, 0, "holystone", 1, "aether.holystone", OP.oreHolystone, MT.STONES.Holystone);
+		}
+		rockset(MD.PR_EXPLORATION, "projectred.exploration.stone", 3, 3, "projectred.exploration.stone", 2, "pr.basalt", OP.oreBasalt, MT.STONES.Basalt);
+		rockset(MD.PR_EXPLORATION, "projectred.exploration.stone"                                      , 0, "pr.marble", OP.oreMarble, MT.STONES.Marble);
+		rockset(MD.BP, "basalt", 0, 0, "basalt_cobble", 0, "bp.basalt", OP.oreBasalt, MT.STONES.Basalt);
+		rockset(MD.BP, "marble"                       , 0, "bp.marble", OP.oreMarble, MT.STONES.Marble);
 	}
 
 	public static boolean rockset(ModData aMod, String aRock, int aMeta, String aName, OreDictPrefix aPrefix, OreDictMaterial aDrops) {

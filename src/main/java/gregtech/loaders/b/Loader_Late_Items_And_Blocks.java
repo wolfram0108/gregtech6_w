@@ -79,14 +79,7 @@ public class Loader_Late_Items_And_Blocks implements Runnable {
 			}
 		}
 		
-		if (MD.AETHEL.mLoaded) {
-		Loader_Ores.rockset(MD.AETHEL, "holystone", 1, 0, "holystone", 1, "aether.holystone", OP.oreHolystone, MT.STONES.Holystone);
-		}
-		
-		Loader_Ores.rockset(MD.PR_EXPLORATION, "projectred.exploration.stone", 3, 3, "projectred.exploration.stone", 2, "pr.basalt", OP.oreBasalt, MT.STONES.Basalt);
-		Loader_Ores.rockset(MD.PR_EXPLORATION, "projectred.exploration.stone"                                      , 0, "pr.marble", OP.oreMarble, MT.STONES.Marble);
-		
-		Loader_Ores.rockset(MD.BP, "basalt", 0, 0, "basalt_cobble", 0, "bp.basalt", OP.oreBasalt, MT.STONES.Basalt);
-		Loader_Ores.rockset(MD.BP, "marble"                       , 0, "bp.marble", OP.oreMarble, MT.STONES.Marble);
+		// F12-followup (block-split): rockset-вызовы (AETHEL/PR_EXPLORATION/BP) ПЕРЕНЕСЕНЫ в Loader_Ores.run() (preInit) —
+		// registerBlockLazy работает только до RegisterEvent, а этот загрузчик идёт на init-фазе (DR уже закрыт). См. Loader_Ores.
 	}
 }
