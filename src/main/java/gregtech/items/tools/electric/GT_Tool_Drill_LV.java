@@ -31,7 +31,7 @@ import gregapi.util.ST;
 import gregtech.items.behaviors.Behavior_Place_Dynamite;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.monster.CaveSpider;
+import net.minecraft.world.entity.monster.CaveSpider;
 import net.minecraft.world.entity.monster.spider.Spider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;

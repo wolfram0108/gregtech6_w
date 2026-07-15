@@ -171,7 +171,7 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 					return T;
 				}
 			} else if (!slotHas(0)) {
-				if (canInsertItem(0, aStack, SIDE_INSIDE)) {
+				if (canInsertItem2(0, aStack, SIDE_INSIDE)) {
 					slot(0, aStack);
 					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), null);
 					return T;

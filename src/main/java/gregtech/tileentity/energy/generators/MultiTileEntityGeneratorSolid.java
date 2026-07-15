@@ -194,7 +194,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 					return T;
 				}
 			} else if (!slotHas(0)) {
-				if (canInsertItem(0, aStack, SIDE_INSIDE)) {
+				if (canInsertItem2(0, aStack, SIDE_INSIDE)) {
 					slot(0, aStack);
 					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), null);
 					return T;
