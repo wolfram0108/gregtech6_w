@@ -125,7 +125,7 @@ public class Behavior_Remote extends AbstractBehaviorDefault {
 	
 	public static void setCoords(CompoundTag aNBT, int aDimension, ArrayListNoNulls<BlockPos> aList) {
 		if (aList.isEmpty()) {
-			aNBT.removeTag("gt.remote.dim."+aDimension);
+			aNBT.remove("gt.remote.dim."+aDimension);
 		} else {
 			CompoundTag tNBT = UT.NBT.make();
 			for (int i = 0, j = aList.size(); i < j; i++) {

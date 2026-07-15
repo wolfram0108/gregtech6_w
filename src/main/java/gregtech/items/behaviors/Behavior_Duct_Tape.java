@@ -76,7 +76,7 @@ public class Behavior_Duct_Tape extends AbstractBehaviorDefault {
 				rOutput = T;
 			}
 		}
-		tNBT.removeTag("gt.remaining");
+		tNBT.remove("gt.remaining");
 		if (tUses > 0) UT.NBT.setNumber(tNBT, "gt.remaining", tUses);
 		UT.NBT.set(aStack, tNBT);
 		

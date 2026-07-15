@@ -75,14 +75,14 @@ public class MultiTileEntityHDDSwitch extends TileEntityBase08DataSwitch {
 			CompoundTag tNBT = ItemNBT.has(tDrive) ? ItemNBT.get(tDrive) : UT.NBT.make();
 			CompoundTag tDriveData = tNBT.getCompoundOrEmpty(NBT_USB_DRIVE);
 			if (aData == null || aData.isEmpty()) {
-				tDriveData.removeTag(NBT_USB_DATA+mMode);
-				tDriveData.removeTag(NBT_USB_TIER+mMode);
+				tDriveData.remove(NBT_USB_DATA+mMode);
+				tDriveData.remove(NBT_USB_TIER+mMode);
 			} else {
 				tDriveData.put(NBT_USB_DATA+mMode, aData);
 				tDriveData.putByte(NBT_USB_TIER+mMode, (byte)aUSBTier);
 			}
 			if (tDriveData.isEmpty()) {
-				tNBT.removeTag(NBT_USB_DRIVE);
+				tNBT.remove(NBT_USB_DRIVE);
 			} else {
 				tNBT.put(NBT_USB_DRIVE, tDriveData);
 			}

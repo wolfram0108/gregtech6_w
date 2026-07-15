@@ -94,7 +94,7 @@ public class Behavior_Spray_Foam extends AbstractBehaviorDefault {
 		
 		if (tUses <= 0) {
 			tUses = 0;
-			tNBT.removeTag(NBT_MODE);
+			tNBT.remove(NBT_MODE);
 			if (mEmpty == null) {
 				aStack.setCount(aStack.getCount()-1);
 			} else {

@@ -72,8 +72,8 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 		if (OM.is(OD_USB_STICKS[aUSBTier], tUSB)) {
 			CompoundTag tNBT = ItemNBT.has(tUSB) ? ItemNBT.get(tUSB) : UT.NBT.make();
 			if (aData == null || aData.isEmpty()) {
-				tNBT.removeTag(NBT_USB_DATA);
-				tNBT.removeTag(NBT_USB_TIER);
+				tNBT.remove(NBT_USB_DATA);
+				tNBT.remove(NBT_USB_TIER);
 			} else {
 				tNBT.put(NBT_USB_DATA, aData);
 				tNBT.putByte(NBT_USB_TIER, (byte)aUSBTier);
