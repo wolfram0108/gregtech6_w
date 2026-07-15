@@ -647,7 +647,7 @@ public class WorldgenStreets extends WorldgenObject {
 		}
 		
 		// Kill every living thing close by except Players.
-		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesOfClass(LivingEntity.class, AABB.getBoundingBox(-16, mHeight, aMinZ, +16, mHeight+8, aMinZ+16))) if (!(tEntity instanceof Player)) tEntity.discard();
+		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesOfClass(LivingEntity.class, new AABB(-16, mHeight, aMinZ, +16, mHeight+8, aMinZ+16))) if (!(tEntity instanceof Player)) tEntity.discard();
 		return T;
 	}
 	
@@ -884,7 +884,7 @@ public class WorldgenStreets extends WorldgenObject {
 		}
 		
 		// Kill every living thing close by except Players.
-		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesOfClass(LivingEntity.class, AABB.getBoundingBox(aMinX, mHeight, -16, aMinX+16, mHeight+8, +16))) if (!(tEntity instanceof Player)) tEntity.discard();
+		for (LivingEntity tEntity : (List<LivingEntity>)aWorld.getEntitiesOfClass(LivingEntity.class, new AABB(aMinX, mHeight, -16, aMinX+16, mHeight+8, +16))) if (!(tEntity instanceof Player)) tEntity.discard();
 		return T;
 	}
 }
