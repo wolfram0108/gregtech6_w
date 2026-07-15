@@ -373,7 +373,9 @@ public final class PortDump {
             gregapi.recipes.Recipe.RecipeMap m = e.getValue();
             if (m == null || m.mRecipeList == null) continue;
             triggerAllRecipesDeterministically(m);
-            for (gregapi.recipes.Recipe r : m.mRecipeList) { if (r == null) continue; try { lines.add(recipeJson(e.getKey(), r)); } catch (Throwable t) {} }
+            // Имя карты = mNameInternal (как golden DumpRecipes:35), НЕ ключ RECIPE_MAPS: алиас-карты (Debarker=PressureWasher
+            // под 2 ключами, RM.java:182) иначе дампятся под ключом-псевдонимом → фантомная карта. mNameInternal канонический.
+            for (gregapi.recipes.Recipe r : m.mRecipeList) { if (r == null) continue; try { lines.add(recipeJson(m.mNameInternal, r)); } catch (Throwable t) {} }
         }
         Collections.sort(lines);
         Files.write(DUMP.resolve("recipes.jsonl"), lines, StandardCharsets.UTF_8);
