@@ -39,7 +39,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.gen.feature.WorldGenTrees;
 
 /**
  * @author Gregorius Techneticies
@@ -68,19 +67,19 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (aMinX >= -96 && aMinX <= 80 && aMinZ >= -96 && aMinZ <= 80) {
 			if (GENERATE_STREETS && aMinX >= -32 && aMinX <= 16 && aMinZ >= -32 && aMinZ <= 16) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.river.biomeID);
+				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.RIVER);
 				return T;
 			}
 			if (GENERATE_NEXUS && aMinX == 16 && aMinZ == -48) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)null.biomeID);
+				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* FORCED-ADAPTATION: биом обнулён прежним проходом (removed/modded в neo) -> PLAINS-дефолт */
 				return T;
 			}
 			if (GENERATE_TESTING && (aMinX == 32 || aMinX == 48) && (aMinZ == -32 || aMinZ == -48)) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)null.biomeID);
+				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* FORCED-ADAPTATION: биом обнулён прежним проходом (removed/modded в neo) -> PLAINS-дефолт */
 				return T;
 			}
 			if (aMinX == -16 || aMinX == 0 || aMinZ == -16 || aMinZ == 0) {
-				Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.river.biomeID);
+				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.RIVER);
 				BlockRiver.PLACEMENT_ALLOWED = T;
 				for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 					for (int k = -3; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
@@ -100,7 +99,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 			if (aMinX < 0) {
 				if (aMinZ < 0) {
 					if ((aMinX == -80 || aMinX == -64) && (aMinZ == -80 || aMinZ == -64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.icePlains.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.SNOWY_PLAINS);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.ICE, 0);
@@ -112,7 +111,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 							for (int k = 1; k < mHeight-5; k++) WD.set(aChunk, i, k, j, k < 32 ? BlocksGT.SchistGreen : BlocksGT.SchistBlue, aRandom.nextBoolean()?2:0);
 						}
 					} else {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.coldTaiga.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.SNOWY_TAIGA);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 2; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight+1, j, Blocks.SNOW, aRandom.nextInt(2));
@@ -130,14 +129,14 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						WD.set(aChunk,  4, mHeight+1, 12, NB, aRandom.nextInt(2));
 						WD.set(aChunk, 12, mHeight+1, 12, NB, aRandom.nextInt(2));
 						
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 1, 1, F).generate(aWorld, aRandom, aMinX+ 4, mHeight+1, aMinZ+ 4);
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 1, 1, F).generate(aWorld, aRandom, aMinX+12, mHeight+1, aMinZ+ 4);
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 1, 1, F).generate(aWorld, aRandom, aMinX+ 4, mHeight+1, aMinZ+12);
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 1, 1, F).generate(aWorld, aRandom, aMinX+12, mHeight+1, aMinZ+12);
+						WD.placeTree(aWorld, aMinX+ 4, mHeight+1, aMinZ+ 4);
+						WD.placeTree(aWorld, aMinX+12, mHeight+1, aMinZ+ 4);
+						WD.placeTree(aWorld, aMinX+ 4, mHeight+1, aMinZ+12);
+						WD.placeTree(aWorld, aMinX+12, mHeight+1, aMinZ+12);
 					}
 				} else {
 					if ((aMinX == -80 || aMinX == -64) && (aMinZ == 48 || aMinZ == 64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.forest.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.FOREST);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.GRASS_BLOCK, 0);
@@ -153,13 +152,13 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						WD.set(aChunk,  6, mHeight+1, 10, Blocks.PUMPKIN, 0);
 						WD.set(aChunk, 10, mHeight+1, 10, Blocks.PUMPKIN, 0);
 						
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 0, 0, F).generate(aWorld, aRandom, aMinX+ 4, mHeight+1, aMinZ+ 4);
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 2, 2, F).generate(aWorld, aRandom, aMinX+12, mHeight+1, aMinZ+ 4);
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 2, 2, F).generate(aWorld, aRandom, aMinX+ 4, mHeight+1, aMinZ+12);
-						new WorldGenTrees(F, 4+aRandom.nextInt(3), 0, 0, F).generate(aWorld, aRandom, aMinX+12, mHeight+1, aMinZ+12);
+						WD.placeTree(aWorld, aMinX+ 4, mHeight+1, aMinZ+ 4);
+						WD.placeTree(aWorld, aMinX+12, mHeight+1, aMinZ+ 4);
+						WD.placeTree(aWorld, aMinX+ 4, mHeight+1, aMinZ+12);
+						WD.placeTree(aWorld, aMinX+12, mHeight+1, aMinZ+12);
 					} else {
 						MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
-						Arrays.fill(aChunk.getBiomeArray(), (byte)null.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.PLAINS); /* FORCED-ADAPTATION: биом обнулён прежним проходом (removed/modded в neo) -> PLAINS-дефолт */
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.GRASS_BLOCK, 0);
@@ -192,7 +191,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 			} else {
 				if (aMinZ < 0) {
 					if ((aMinX == 48 || aMinX == 64) && (aMinZ == -80 || aMinZ == -64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.mesa.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.BADLANDS);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.SAND, 1);
@@ -210,7 +209,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 							WD.set(aChunk, 12, mHeight+i, 12, Blocks.CACTUS, 0);
 						}
 					} else {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.desert.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.DESERT);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.SAND, 0);
@@ -224,7 +223,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 					}
 				} else {
 					if ((aMinX == 48 || aMinX == 64) && (aMinZ == 48 || aMinZ == 64)) {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.swampland.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.SWAMP);
 						for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
 							for (int k = 1; k < 64; k++) WD.set(aChunk, i, mHeight+k, j, NB, 0);
 							WD.set(aChunk, i, mHeight  , j, Blocks.WATER, 0);
@@ -241,7 +240,7 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						WD.set(aChunk,  4, mHeight+1, 12, Blocks.LILY_PAD, 0);
 						WD.set(aChunk, 12, mHeight+1, 12, Blocks.LILY_PAD, 0);
 					} else {
-						Arrays.fill(aChunk.getBiomeArray(), (byte)Biome.jungle.biomeID);
+						WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.JUNGLE);
 						if (IL.EtFu_Dirt.exists()) {
 							Block tBlock = IL.EtFu_Dirt.block();
 							for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
@@ -268,10 +267,10 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 						}
 						WD.set(aChunk, 6+aRandom.nextInt(4), mHeight+1, 6+aRandom.nextInt(4), Blocks.MELON, 0);
 						
-						new WorldGenTrees(F, 9+aRandom.nextInt(3), 3, 3, T).generate(aWorld, aRandom, aMinX+ 4, mHeight+1, aMinZ+ 4);
-						new WorldGenTrees(F, 9+aRandom.nextInt(3), 3, 3, T).generate(aWorld, aRandom, aMinX+12, mHeight+1, aMinZ+ 4);
-						new WorldGenTrees(F, 9+aRandom.nextInt(3), 3, 3, T).generate(aWorld, aRandom, aMinX+ 4, mHeight+1, aMinZ+12);
-						new WorldGenTrees(F, 9+aRandom.nextInt(3), 3, 3, T).generate(aWorld, aRandom, aMinX+12, mHeight+1, aMinZ+12);
+						WD.placeTree(aWorld, aMinX+ 4, mHeight+1, aMinZ+ 4);
+						WD.placeTree(aWorld, aMinX+12, mHeight+1, aMinZ+ 4);
+						WD.placeTree(aWorld, aMinX+ 4, mHeight+1, aMinZ+12);
+						WD.placeTree(aWorld, aMinX+12, mHeight+1, aMinZ+12);
 					}
 				}
 			}

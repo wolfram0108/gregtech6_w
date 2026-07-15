@@ -424,6 +424,22 @@ public class WD {
 	public static void setSpawnLocation(Level aWorld, int aX, int aY, int aZ) {
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel sl) sl.setRespawnData(new net.minecraft.world.level.storage.LevelData.RespawnData(net.minecraft.core.GlobalPos.of(sl.dimension(), new BlockPos(aX, aY, aZ)), 0.0F, 0.0F));
 	}
+	/** F-worldgen: 1.7.10 {@code Arrays.fill(chunk.getBiomeArray(), (byte)Biome.X.biomeID)} — byte-массив биомов удалён;
+	 *  neo хранит биомы в per-section {@code PalettedContainer<Holder<Biome>>} (RO), единственный сеттер —
+	 *  {@code ChunkAccess.fillBiomesFromNoise(BiomeResolver, Climate.Sampler)} (ChunkAccess:447). Центр: заполняет весь
+	 *  чанк одним биомом через constant-resolver. Числовой biomeID в neo отсутствует -> адрес по {@code ResourceKey<Biome>}. */
+	public static void setBiomes(Level aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk, net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome> aBiome) {
+		if (!(aWorld instanceof net.minecraft.server.level.ServerLevel tSL)) return;
+		net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> tHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getOrThrow(aBiome);
+		aChunk.fillBiomesFromNoise((qx, qy, qz, sampler) -> tHolder, tSL.getChunkSource().randomState().sampler());
+	}
+	/** F-worldgen: 1.7.10 {@code new WorldGenTrees(...).generate(world,rng,x,y,z)} (WorldGenTrees удалён) -> neo
+	 *  Feature-система: размещаем ванильное {@code TreeFeatures.OAK} {@link net.minecraft.world.level.levelgen.feature.ConfiguredFeature#place}
+	 *  (ConfiguredFeature:24). FORCED-ADAPTATION: 1.7.10-параметры высоты/меты дерева -> фикс-конфиг OAK (косметика). */
+	public static void placeTree(Level aWorld, int aX, int aY, int aZ) {
+		if (!(aWorld instanceof net.minecraft.server.level.ServerLevel tSL)) return;
+		aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE).getOrThrow(net.minecraft.data.worldgen.features.TreeFeatures.OAK).value().place(tSL, tSL.getChunkSource().getGenerator(), tSL.getRandom(), new BlockPos(aX, aY, aZ));
+	}
 	/** F-dimension: 1.7.10 World-провайдер числовой id -> neo числового id НЕТ (Level.dimension() =
 	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). PORT-TODO(F-dimension,
 	 *  modded-dim-id): модовым измерениям стабильного int в neo нет -> hash ключа (уникален в рамках сессии, но
