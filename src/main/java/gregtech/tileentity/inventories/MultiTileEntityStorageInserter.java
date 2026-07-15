@@ -48,20 +48,20 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 		if (!UT.Entities.isPlayer(aPlayer)) return T;
 		ArrayListNoNulls<MultiTileEntityMassStorage> tList = new ArrayListNoNulls<>();
 		int tX = getOffsetX(aSide), tY = getOffsetY(aSide), tZ = getOffsetZ(aSide);
-		boolean tDirectionsToGo[] = new boolean[] {T,T,T,T}, tOnlyHand = (aPlayer.inventory.getCurrentItem() != null);
+		boolean tDirectionsToGo[] = new boolean[] {T,T,T,T}, tOnlyHand = (aPlayer.getInventory().getCurrentItem() != null);
 		for (int i = 0; i <= 6 && checkColumn(aPlayer, tX, --tY, tZ, tList, tOnlyHand); i++) if (i == 6) return T;
 		for (int i = 0; i < 50 && UT.Code.containsBoolean(T, tDirectionsToGo); i++) {
-			if (tOnlyHand && aPlayer.inventory.getCurrentItem() == null) break;
+			if (tOnlyHand && aPlayer.getInventory().getCurrentItem() == null) break;
 			if (tDirectionsToGo[0] && checkColumn(aPlayer, tX+i, tY, tZ  , tList, tOnlyHand)) tDirectionsToGo[0] = F;
-			if (tOnlyHand && aPlayer.inventory.getCurrentItem() == null) break;
+			if (tOnlyHand && aPlayer.getInventory().getCurrentItem() == null) break;
 			if (tDirectionsToGo[1] && checkColumn(aPlayer, tX-i, tY, tZ  , tList, tOnlyHand)) tDirectionsToGo[1] = F;
-			if (tOnlyHand && aPlayer.inventory.getCurrentItem() == null) break;
+			if (tOnlyHand && aPlayer.getInventory().getCurrentItem() == null) break;
 			if (tDirectionsToGo[2] && checkColumn(aPlayer, tX  , tY, tZ+i, tList, tOnlyHand)) tDirectionsToGo[2] = F;
-			if (tOnlyHand && aPlayer.inventory.getCurrentItem() == null) break;
+			if (tOnlyHand && aPlayer.getInventory().getCurrentItem() == null) break;
 			if (tDirectionsToGo[3] && checkColumn(aPlayer, tX  , tY, tZ-i, tList, tOnlyHand)) tDirectionsToGo[3] = F;
 		}
 		for (MultiTileEntityMassStorage tTileEntity : tList) {
-			if (tOnlyHand && aPlayer.inventory.getCurrentItem() == null) break;
+			if (tOnlyHand && aPlayer.getInventory().getCurrentItem() == null) break;
 			tryInsert(aPlayer, tTileEntity, tOnlyHand);
 		}
 		ST.update(aPlayer);
@@ -83,7 +83,7 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 						temp = F;
 						if (((MultiTileEntityMassStorage)tTileEntity).slotHas(1)) {
 							tryInsert(aPlayer, (MultiTileEntityMassStorage)tTileEntity, aOnlyHand);
-							if (aOnlyHand && aPlayer.inventory.getCurrentItem() == null) return temp;
+							if (aOnlyHand && aPlayer.getInventory().getCurrentItem() == null) return temp;
 						} else {
 							aList.add((MultiTileEntityMassStorage)tTileEntity);
 						}
@@ -95,10 +95,10 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 	}
 	
 	public void tryInsert(Player aPlayer, MultiTileEntityMassStorage aStorage, boolean aOnlyHand) {
-		if (aPlayer.inventory.getCurrentItem() != null) aPlayer.inventory.setItem(aPlayer.inventory.getSelectedSlot(), aStorage.insertItems(aPlayer.inventory.getItem(aPlayer.inventory.getSelectedSlot()), T));
+		if (aPlayer.getInventory().getCurrentItem() != null) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), aStorage.insertItems(aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()), T));
 		if (!aOnlyHand) for (int i = 9; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-			if (aPlayer.inventory.getItem(i) != null && !ST.nonautoinsert(aPlayer.inventory.getItem(i)) && (aStorage.slotHas(1) || aPlayer.inventory.getItem(i).getMaxStackSize() > 1)) {
-				aPlayer.inventory.setItem(i, aStorage.insertItems(aPlayer.inventory.getItem(i), F));
+			if (aPlayer.getInventory().getItem(i) != null && !ST.nonautoinsert(aPlayer.getInventory().getItem(i)) && (aStorage.slotHas(1) || aPlayer.getInventory().getItem(i).getMaxStackSize() > 1)) {
+				aPlayer.getInventory().setItem(i, aStorage.insertItems(aPlayer.getInventory().getItem(i), F));
 			}
 		}
 	}

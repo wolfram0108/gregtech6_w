@@ -327,8 +327,8 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]])) : null;}
 	
 	@OnlyIn(Dist.CLIENT)
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.inventory, this, aGUIID) : new MultiTileEntityGUIClientBumbliary(aPlayer.inventory, this, aGUIID);}
-	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.inventory, this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUIClientBumbliary(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	
 	public static final int SLOT_ROYAL = 13, SLOT_DRONE = 22
 	, SLOTS_COMBS[] = {0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 24, 25, 26}

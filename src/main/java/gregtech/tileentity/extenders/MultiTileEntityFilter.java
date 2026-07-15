@@ -89,8 +89,8 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 	}
 	
 	@Override public DelegatorTileEntity<BlockEntity> getDelegateTileEntity(byte aSide) {return delegator(aSide);}
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUIClientFilter(aPlayer.inventory, this, aGUIID);}
-	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUICommonFilter(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUIClientFilter(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUICommonFilter(aPlayer.getInventory(), this, aGUIID);}
 	@Override public int getSizeInventoryGUI() {return mFilter==null?0:mFilter.length;}
 	@Override public ItemStack getStackInSlotGUI(int aSlot) {return mFilter[aSlot];}
 	@Override public ItemStack decrStackSizeGUI(int aSlot, int aDecrement) {mInventoryChanged = T; if (mFilter[aSlot] != null) {if (mFilter[aSlot].getCount() <= aDecrement) {ItemStack tStack = mFilter[aSlot]; mFilter[aSlot] = null; return tStack;} ItemStack rStack = mFilter[aSlot].split(aDecrement); if (mFilter[aSlot].getCount() <= 0) mFilter[aSlot] = null; return rStack;} return null;}
@@ -283,7 +283,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 			}
 			Slot tSlot = (Slot)inventorySlots.get(aSlotIndex);
 			if (tSlot != null) {
-				ItemStack tStack = aPlayer.inventory.getItemStack();
+				ItemStack tStack = aPlayer.getInventory().getItemStack();
 				if (tStack == null) {
 					tStack = tSlot.getStack();
 					if (aMouseclick == 0) {

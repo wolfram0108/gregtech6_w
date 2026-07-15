@@ -278,6 +278,6 @@ public class MultiTileEntityQueueHopper extends TileEntityBase09FacingSingle imp
 	
 	@Override public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 	
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.inventory, this, aGUIID);}
-	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID);}
 }

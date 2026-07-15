@@ -89,7 +89,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 			long tDamage = 0;
 			if (RNGSUS.nextInt(10000) < mChance) {
 				List<String> tChatReturn = new ArrayListNoNulls<>();
-				tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 3, aPlayer, tChatReturn, aPlayer.inventory, aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
+				tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 3, aPlayer, tChatReturn, aPlayer.getInventory(), aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 				UT.Entities.sendchat(aPlayer, tChatReturn, F);
 			} else {
 				tDamage = 10000;
@@ -103,7 +103,7 @@ public class Behavior_Lighter extends AbstractBehaviorDefault {
 			long tDamage = 0;
 			if (RNGSUS.nextInt(10000) < mChance) {
 				List<String> tChatReturn = new ArrayListNoNulls<>();
-				tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 3, aPlayer, tChatReturn, aPlayer.inventory, aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
+				tDamage = IBlockToolable.Util.onToolClick(TOOL_igniter, Long.MAX_VALUE, 3, aPlayer, tChatReturn, aPlayer.getInventory(), aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 				UT.Entities.sendchat(aPlayer, tChatReturn, F);
 			} else {
 				tDamage = 10000;

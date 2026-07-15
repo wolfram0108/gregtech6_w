@@ -113,6 +113,6 @@ public class MultiTileEntityHDDSwitch extends TileEntityBase08DataSwitch {
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[1];}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return OM.is(OD_USB_DRIVES[0], aStack);}
 	
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.inventory, this, aGUIID, RES_PATH_GUI + "machines/HDDSwitch.png");}
-	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.inventory, this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID, RES_PATH_GUI + "machines/HDDSwitch.png");}
+	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID);}
 }

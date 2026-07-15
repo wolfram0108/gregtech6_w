@@ -183,20 +183,20 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 			ItemStack aStack = aPlayer.getMainHandItem();
 			if (aStack == null) {
 				if (slotHas(1)) {
-					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), slot(1));
+					aPlayer.getInventory().setInventorySlotContents(aPlayer.getInventory().getSelectedSlot(), slot(1));
 					slotKill(1);
 					if (mBurning) UT.Entities.applyHeatDamage(aPlayer, Math.max(1.0F, Math.min(5.0F, mRate / 20.0F)));
 					return T;
 				}
 				if (!mBurning && slotHas(0)) {
-					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), slot(0));
+					aPlayer.getInventory().setInventorySlotContents(aPlayer.getInventory().getSelectedSlot(), slot(0));
 					slotKill(0);
 					return T;
 				}
 			} else if (!slotHas(0)) {
 				if (canInsertItem(0, aStack, SIDE_INSIDE)) {
 					slot(0, aStack);
-					aPlayer.inventory.setInventorySlotContents(aPlayer.inventory.getSelectedSlot(), null);
+					aPlayer.getInventory().setInventorySlotContents(aPlayer.getInventory().getSelectedSlot(), null);
 					return T;
 				}
 			} else if (ST.equal(aStack, slot(0))) {

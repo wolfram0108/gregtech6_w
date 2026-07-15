@@ -58,7 +58,7 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 				if (!(aPlayer).mayUseItemAt(new BlockPos(aX+tX+OFFX[aSide], aY+tY+OFFY[aSide], aZ+tZ+OFFZ[aSide]), FORGE_DIR[aSide], aStack)) continue;
 				// Scan Inventory for equal Blocks.
 				for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-					ItemStack tStack = aPlayer.inventory.getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE - i - 1);
+					ItemStack tStack = aPlayer.getInventory().getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE - i - 1);
 					if (ST.block(tStack) != (tY == 2 ? Blocks.OAK_SLAB : Blocks.GLASS)) continue;
 					
 					// Doublechecking Block Permissions at that location.
@@ -97,7 +97,7 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 			if (!(aPlayer).mayUseItemAt(new BlockPos(aX+tX+OFFX[aSide], aY+tY+OFFY[aSide], aZ+tZ+OFFZ[aSide]), FORGE_DIR[aSide], aStack)) continue;
 			// Scan Inventory for equal Blocks.
 			for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-				ItemStack tStack = aPlayer.inventory.getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
+				ItemStack tStack = aPlayer.getInventory().getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
 				if (ST.invalid(tStack)) continue;
 				Block tBlock = ST.block(tStack);
 				if (ST.invalid(tBlock)) {

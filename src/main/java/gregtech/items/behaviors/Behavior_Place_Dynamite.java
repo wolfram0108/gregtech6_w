@@ -57,7 +57,7 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 		if (!BlocksGT.drillableDynamite.contains(tBlock) && !StoneLayer.REPLACEABLE_BLOCKS.contains(tBlock) && !WD.ore_stone(tBlock, tMeta)) return F;
 		
 		for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-			ItemStack tStack = aPlayer.inventory.getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
+			ItemStack tStack = aPlayer.getInventory().getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
 			if (IL.Boomstick.equal(tStack, F, T) || IL.Dynamite.equal(tStack, F, T) || IL.Dynamite_Strong.equal(tStack, F, T)) {
 				// F8: тег захвачен ОДИН раз в tOldTag (для восстановления) и ОДИН раз мутирован в tTempTag
 				// (NBT_MODE=T), затем закоммичен единым ItemNBT.set — иначе setBoolean на свежем get()
@@ -76,8 +76,8 @@ public class Behavior_Place_Dynamite extends AbstractBehaviorDefault {
 					}
 					ItemNBT.set(tStack, tOldTag);
 					// Add Dynamite Coords to Remote Activator if in Hotbar.
-					for (int j = 0; j < Inventory.getHotbarSize(); j++) if (IL.Tool_Remote_Activator.equal(aPlayer.inventory.getItem(j), F, T)) {
-						if (Behavior_Remote.addCoords(aPlayer.inventory.getItem(j), aPlayer, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
+					for (int j = 0; j < Inventory.getHotbarSize(); j++) if (IL.Tool_Remote_Activator.equal(aPlayer.getInventory().getItem(j), F, T)) {
+						if (Behavior_Remote.addCoords(aPlayer.getInventory().getItem(j), aPlayer, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide])) {
 							break;
 						}
 					}

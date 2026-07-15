@@ -203,8 +203,8 @@ public class EntityArrow_Material extends EntityProjectile {
 							Player tPlayer = null;
 							if (level() instanceof ServerLevel) tPlayer = FakePlayerFactory.get((ServerLevel)level(), new GameProfile(new UUID(0, 0), tShootingEntity instanceof LivingEntity?((LivingEntity)tShootingEntity).getName().getString():"Arrow"));
 							if (tPlayer != null) {
-								tPlayer.inventory.setSelectedSlot(0);
-								tPlayer.inventory.setInventorySlotContents(0, getArrowItem());
+								tPlayer.getInventory().setSelectedSlot(0);
+								tPlayer.getInventory().setInventorySlotContents(0, getArrowItem());
 								// Bypasses Twilight Forest Progression Checks. Yeah this is needed or else any Looting Arrow would do ZERO Damage.
 								if (WD.dimTF(level())) tPlayer.getAbilities().instabuild = T;
 								tShootingEntity = tPlayer;
@@ -346,7 +346,7 @@ public class EntityArrow_Material extends EntityProjectile {
 	
 	@Override
 	public void onCollideWithPlayer(Player aPlayer) {
-		if (!level().isClientSide() && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.inventory.addItemStackToInventory(getArrowItem())) {
+		if (!level().isClientSide() && inGround && arrowShake <= 0 && canBePickedUp == 1 && aPlayer.getInventory().addItemStackToInventory(getArrowItem())) {
 			playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
 			aPlayer.onItemPickup(this, 1);
 			setDead();

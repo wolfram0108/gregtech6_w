@@ -48,7 +48,7 @@ public class Behavior_Cropnalyzer extends AbstractBehaviorDefault {
 			ArrayList<String> tList = new ArrayListNoNulls<>();
 			long tUsedEnergy = getCropScan(tList, aWorld, aX, aY, aZ);
 			if (tUsedEnergy <= 0) return F;
-			if (aItem.useEnergy(TD.Energy.EU, aStack, tUsedEnergy, aPlayer, aPlayer.inventory, aWorld, aX, aY, aZ, T)) UT.Entities.sendchat(aPlayer, tList, F);
+			if (aItem.useEnergy(TD.Energy.EU, aStack, tUsedEnergy, aPlayer, aPlayer.getInventory(), aWorld, aX, aY, aZ, T)) UT.Entities.sendchat(aPlayer, tList, F);
 			return T;
 		}
 		UT.Sounds.play(SFX.IC_SCANNER, 20, 1.0F, aX, aY, aZ);

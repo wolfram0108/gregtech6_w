@@ -69,7 +69,7 @@ public class BlockConcrete extends BlockColored implements IBlockToolable {
 		if (aTool.equals(TOOL_drill)) {
 			if (mBlock == this && aPlayer instanceof Player) {
 				for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-					ItemStack tStack = ((Player)aPlayer).inventory.getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
+					ItemStack tStack = ((Player)aPlayer).getInventory().getItem(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE-i-1);
 					if (OM.is("stickAnyIronOrSteel", tStack)) {
 						if (WD.set(aWorld, aX, aY, aZ, BlocksGT.ConcreteReinforced, WD.meta(aWorld, aX, aY, aZ), 3)) {
 							ST.use(aPlayer, T, tStack);

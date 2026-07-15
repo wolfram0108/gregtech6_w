@@ -62,9 +62,9 @@ public class MultiTileEntityLocker extends TileEntityBase09FacingSingle implemen
 			for (int i = 0; i < 4; i++) {
 				ItemStack tStack = slot(i);
 				if (tStack == null || tStack.getItem().isValidArmor(tStack, 3-i, aPlayer)) {
-					if (!IL.BTRS_Backpack.equal(aPlayer.inventory.armorInventory[i], T, T) && !IL.BTRS_Thaumpack.equal(aPlayer.inventory.armorInventory[i], T, T)) {
-						slot(i, aPlayer.inventory.armorInventory[i]);
-						aPlayer.inventory.armorInventory[i] = tStack;
+					if (!IL.BTRS_Backpack.equal(aPlayer.getInventory().armorInventory[i], T, T) && !IL.BTRS_Thaumpack.equal(aPlayer.getInventory().armorInventory[i], T, T)) {
+						slot(i, aPlayer.getInventory().armorInventory[i]);
+						aPlayer.getInventory().armorInventory[i] = tStack;
 						temp = T;
 					}
 				}
