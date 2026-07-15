@@ -46,14 +46,14 @@ public class Behavior_Watering_Crops extends AbstractBehaviorDefault {
 	@Override
 	public boolean onItemUseFirst(MultiItem aItem, ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, byte aSide, float hitX, float hitY, float hitZ) {
 		if (aWorld.isClientSide() || aPlayer == null || !(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
-		FluidStack mFluid = ((IFluidHandlerItem)aItem).getFluid(aStack);
+		FluidStack mFluid = FL.getFluid(aStack, T); // F5-fluid-item: 1.7.10 IFluidContainerItem.getFluid(stack) -> центр FL.getFluid(stack,checkContainers)
 		if (FL.water(mFluid)) {
 			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
 			try {if (tTileEntity instanceof ICropTile) {
 				int tHydration = ((ICropTile)tTileEntity).getHydrationStorage();
 				int tDrained = Math.min((200-tHydration)/10, mFluid.getAmount());
 				if (tDrained > 0) {
-					((IFluidHandlerItem)aItem).drain(aStack, tDrained, T);
+					net.neoforged.neoforge.fluids.FluidUtil.getFluidHandler(aStack).ifPresent(h -> h.drain(tDrained, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE)); // F5-fluid-item: 1.7.10 IFluidContainerItem.drain(stack,amt,do) -> neo per-stack FluidUtil.getFluidHandler
 					((ICropTile)tTileEntity).setHydrationStorage(tHydration + tDrained*10);
 					UT.Sounds.send(SFX.MC_LIQUID_WATER, aWorld, aX, aY, aZ);
 				}

@@ -50,9 +50,9 @@ public class Behavior_Plunger_Fluid extends AbstractBehaviorDefault {
 		if (aWorld.isClientSide()) return F;
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity instanceof IFluidHandler) {
-			for (Direction tDirection : Direction.values()) if (((IFluidHandler)aTileEntity).drain(tDirection, 1000, F) != null) {
+			for (Direction tDirection : Direction.values()) if (!((IFluidHandler)aTileEntity).drain(1000, IFluidHandler.FluidAction.SIMULATE).isEmpty()) { // F5-relay: neo IFluidHandler.drain(int,FluidAction) side-agnostic; FluidStack не null -> isEmpty
 				if (((MultiItemTool)aItem).doDamage(aStack, mCosts, aPlayer, F)) {
-					((IFluidHandler)aTileEntity).drain(tDirection, 1000, T);
+					((IFluidHandler)aTileEntity).drain(1000, IFluidHandler.FluidAction.EXECUTE);
 					UT.Sounds.send(SFX.IC_TRAMPOLINE, 1.0F, -1, aTileEntity);
 					return T;
 				}
