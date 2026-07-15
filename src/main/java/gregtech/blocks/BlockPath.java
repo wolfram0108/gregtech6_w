@@ -118,7 +118,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	@Override
 	public void onWalkOver(LivingEntity aEntity, Level aWorld, int aX, int aY, int aZ) {
 		if ((WD.motionX(aEntity) != 0 || WD.motionZ(aEntity) != 0) && !aEntity.isInWater() && !aEntity.isShiftKeyDown()) {
-			double tSpeed = (WD.block(aWorld, aX, aY-1, aZ).slipperiness >= 0.8 && isHalfBlock(aWorld, aX, aY, aZ) ? 1.05 : 1.1);
+			double tSpeed = (WD.block(aWorld, aX, aY-1, aZ).getFriction() >= 0.8 && isHalfBlock(aWorld, aX, aY, aZ) ? 1.05 : 1.1);
 			WD.setMotionX(aEntity, WD.motionX(aEntity)*tSpeed); WD.setMotionZ(aEntity, WD.motionZ(aEntity)*tSpeed);
 		}
 		// Convert Et Futurum Grass Paths to this when adjacent.
@@ -143,13 +143,13 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	@Override @SuppressWarnings({"unchecked"})
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, List aList, Entity aEntity) {
 		AABB
-		tAABB = AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.5  , aZ+1); if (tAABB.intersectsWith(aAABB)) aList.add(tAABB);
+		tAABB = new AABB(aX, aY, aZ, aX+1, aY+0.5  , aZ+1); if (tAABB.intersects(aAABB)) aList.add(tAABB);
 		if (isHalfBlock(aWorld, aX, aY, aZ)) return;
-		tAABB = AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+0.875, aZ+1); if (tAABB.intersectsWith(aAABB)) aList.add(tAABB);
-		tAABB = AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+1    , aZ+1); if (tAABB.intersectsWith(aAABB)) aList.add(tAABB);
+		tAABB = new AABB(aX, aY, aZ, aX+1, aY+0.875, aZ+1); if (tAABB.intersects(aAABB)) aList.add(tAABB);
+		tAABB = new AABB(aX, aY, aZ, aX+1, aY+1    , aZ+1); if (tAABB.intersects(aAABB)) aList.add(tAABB);
 	}
-	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
-	@Override public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return AABB.getBoundingBox(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
+	@Override public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
+	@Override public AABB getSelectedBoundingBoxFromPool (Level aWorld, int aX, int aY, int aZ) {return new AABB(aX, aY, aZ, aX+1, aY+(isHalfBlock(aWorld, aX, aY, aZ)?0.5:1), aZ+1);}
 	@Override public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(0, 0, 0, 1, (isHalfBlock(aWorld, aX, aY, aZ)?0.5F:1), 1);}
 	@Override public boolean doesWalkSpeed(byte aMeta) {return T;}
 	@Override public boolean doesPistonPush(byte aMeta) {return T;}
@@ -160,7 +160,7 @@ public class BlockPath extends BlockBaseMeta implements IBlockOnWalkOver, IRende
 	@Override public String getHarvestTool(int aMeta) {return TOOL_shovel;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
 	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.GRASS_BLOCK, aWorld, aX, aY, aZ) * 2;}
-	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GRASS_BLOCK.getExplosionResistance(null) * 1.5F;}
+	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GRASS_BLOCK.getExplosionResistance() * 1.5F;}
 	@Override public boolean isSideSolid(int aMeta, byte aSide) {return SIDES_BOTTOM_HORIZONTAL[aSide];}
 	@Override public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
 	@Override public boolean isNormalCube() {return F;}
