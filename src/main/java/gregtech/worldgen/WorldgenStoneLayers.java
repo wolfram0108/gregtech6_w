@@ -117,8 +117,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					if (temp) {
 						tLastRock = tScan[3].mMaterialSurface;
 						if (aBlock != tScan[3].mStone) {
-							aStorage.func_150818_a(i, tY & 15, j, tScan[3].mStone);
-							aStorage.setExtBlockMetadata(i, tY & 15, j, tScan[3].mMetaStone);
+							WD.set(aChunk, i, tY, j, tScan[3].mStone, tScan[3].mMetaStone);
 						}
 					}
 				// Cobblestone Generation.
@@ -127,8 +126,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					if (tScan[3].mCobble != null) {
 						tLastRock = tScan[3].mMaterialSurface;
 						if (aBlock != tScan[3].mCobble) {
-							aStorage.func_150818_a(i, tY & 15, j, tScan[3].mCobble);
-							aStorage.setExtBlockMetadata(i, tY & 15, j, tScan[3].mMetaCobble);
+							WD.set(aChunk, i, tY, j, tScan[3].mCobble, tScan[3].mMetaCobble);
 						}
 					}
 				// Mossy Cobblestone Generation.
@@ -137,8 +135,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					if (tScan[3].mMossy != null) {
 						tLastRock = tScan[3].mMaterialSurface;
 						if (aBlock != tScan[3].mMossy) {
-							aStorage.func_150818_a(i, tY & 15, j, tScan[3].mMossy);
-							aStorage.setExtBlockMetadata(i, tY & 15, j, tScan[3].mMetaMossy);
+							WD.set(aChunk, i, tY, j, tScan[3].mMossy, tScan[3].mMetaMossy);
 						}
 					}
 				// Check for the GT6 Stone being natural. Unlikely case due to GT6 Stone being the thing that is supposed to generate this very moment and not before. But Villages would otherwise see their House Materials replaed.
@@ -170,8 +167,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 					if (temp) {
 						tLastRock = tScan[3].mMaterialSurface;
 						if (aBlock != tScan[3].mStone) {
-							aStorage.func_150818_a(i, tY & 15, j, tScan[3].mStone);
-							aStorage.setExtBlockMetadata(i, tY & 15, j, tScan[3].mMetaStone);
+							WD.set(aChunk, i, tY, j, tScan[3].mStone, tScan[3].mMetaStone);
 						}
 					}
 				// Place Rock if on Opaque Surface.
