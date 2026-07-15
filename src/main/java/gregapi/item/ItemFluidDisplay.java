@@ -66,8 +66,9 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		super(new Item.Properties()); // было super() (neo Item требует Properties; PrefixItem.java:73/ItemBase.java:78 — тот же приём)
 		mName = "gt.display.fluid";
 		LH.add(mName, "Fluid Display");
-		// F12/R3: регистрация через ЕДИНЫЙ центр (был выдуманный DeferredRegister.registerItem).
-		GT_API.registerItem(this, mName, MD.GAPI.mID);
+		// F12-lazy: САМО-регистрация убрана из конструктора — предмет регистрируется через DeferredRegister-supplier на
+		// call-site (GT_API.onModPreInit2: IL.Display_Fluid.set(GT_API.ITEMS.register(name, ItemFluidDisplay::new))), т.к.
+		// конструкция должна идти на RegisterEvent (intrusive-holder нужен открытый реестр), не в preInit. Иначе двойная регистрация.
 		if (ConfigsGT.CLIENT.get(ConfigCategories.visibility, "HiddenGTFluidDisplay", F)) ST.hide(this);
 		ItemsGT.DEBUG_ITEMS.add(this);
 		ItemsGT.ILLEGAL_DROPS.add(this);

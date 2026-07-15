@@ -910,7 +910,9 @@ public class GT_API extends Abstract_Mod {
 		new Enchantment_Radioactivity();
 		new Enchantment_SlimeDamage();
 		// Initialises the Fluid Display Item.
-		IL.Display_Fluid.set(new ItemFluidDisplay());
+		// F12-lazy: конструкция предмета отложена в DeferredRegister-supplier (вызов на RegisterEvent — реестр открыт для
+		// intrusive-holder); IL хранит supplier, mStack материализует лениво в рантайме. Было: IL.Display_Fluid.set(new ItemFluidDisplay()).
+		IL.Display_Fluid.set(GT_API.ITEMS.register("gt.display.fluid", ItemFluidDisplay::new));
 		// Initialises the Integrated Circuit Item.
 		IL.Circuit_Selector.set(new ItemIntegratedCircuit());
 		// Initialises the Empty Slot Marker Item.
