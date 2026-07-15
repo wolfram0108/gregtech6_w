@@ -319,6 +319,9 @@ public class GT6_Main extends Abstract_Mod {
 	
 	@Override
 	public void onModPostInit2(FMLPostInitializationEvent aEvent) {
+		// F12-followup (item-split): весь postInit — рецепты/ST.make/FL.make → компоненты только на server-start.
+		// Откладываем ВСЁ тело в deferItemInit (выполнится в runDeferredItemInit на server-start); ничего в GT до старта не зависит.
+		gregapi.GT_API.deferItemInit(() -> {
 		ItemStack tLignite = ST.make(MD.UB, "ligniteCoal", 1, 0);
 		if (ST.valid(tLignite)) CR.remove(tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite, tLignite);
 		
@@ -510,6 +513,7 @@ public class GT6_Main extends Abstract_Mod {
 		}
 		
 		for (MultiItemRandom tItem : ItemsGT.ALL_MULTI_ITEMS) for (Entry<Short, ArrayList<IBehavior<MultiItem>>> tEntry : tItem.mItemBehaviors.entrySet()) for (IBehavior<MultiItem> tBehavior : tEntry.getValue()) if (tBehavior instanceof Behavior_Turn_Into) if (((Behavior_Turn_Into)tBehavior).mTurnInto.exists()) tItem.mVisibleItems.set(tEntry.getKey(), F);
+		});
 	}
 
 	@Override
