@@ -329,25 +329,25 @@ public class Loader_Tools implements Runnable {
 		toolHeadHammer             .addListener(new OreProcessing_Tool(CLUB                  , tCategory + "Club"                ,T,F,0,0, null, new String[][] {{" II", "III", "HI "}, {" GG", "GGG", "HG "}, {" RR", "RRR", "HR "}}, null                                                                                , null         , null, null, null                              , null, new And(ANTIMATTER.NOT, MT.Wood.NOT)));
 		toolHeadArrow              .addListener(new OreProcessing_Tool(HAND_DRILL            , tCategory + "HandDrill"           ,T,F,0,0, null, new String[][] {{"  X", "HYH", "YH "}}                                              , null                                                                                , toolHeadArrow, bolt, null, null                              , null, new And(ANTIMATTER.NOT, MT.Wood.NOT, WOOD.NOT, BOUNCY.NOT, STRETCHY.NOT, typemin(2), qualmin(2))));
 		
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(MAGNIFYING_GLASS , lens                       , typemin(1), MT.Glass));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(HARDHAMMER       , toolHeadHammer             , new Nor(WOOD, BOUNCY, STRETCHY)));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(SOFTHAMMER       , toolHeadHammer             , new Or (WOOD, BOUNCY, STRETCHY), MT.Rubber));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(SWORD            , toolHeadSword              ));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(BUILDERWAND      , toolHeadBuilderwand        , MT.YellowSapphire)); // Suggests using Gems for those Wands since you usually only have one workable Gem per Type.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(CONSTRUCTION_PICK, toolHeadConstructionPickaxe));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(GEM_PICK         , toolHeadPickaxeGem         , MT.Amber)); // Amber, to show the Silk Touch usage first.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(PICKAXE          , toolHeadPickaxe            , MT.Bronze)); // Suggests Bronze for early Tools.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(SHOVEL           , toolHeadShovel             , MT.Bronze)); // Suggests Bronze for early Tools.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(SPADE            , toolHeadSpade              ));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(AXE              , toolHeadAxe                , MT.Bronze)); // Suggests Bronze for early Tools.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(DOUBLE_AXE       , toolHeadAxeDouble          ));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(HOE              , toolHeadHoe                , MT.WOODS.Birch)); // Suggests Wood for Hoes. Surely no particular reason to chose Birch there.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(SENSE            , toolHeadSense              ));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(PLOW             , toolHeadPlow               , MT.WOODS.Spruce)); // Suggests Wood for Plows.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(FILE             , toolHeadFile               , MT.Pb)); // Lead, to make it easier to see for Beginners.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(CHISEL           , toolHeadChisel             , MT.Pb)); // Lead, to make it easier to see for Beginners.
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(SCREWDRIVER      , toolHeadScrewdriver        ));
-		DeferredRegister.addRecipe(new AdvancedCraftingTool(SAW              , toolHeadSaw                ));
+		CR.BUFFER.add(new AdvancedCraftingTool(MAGNIFYING_GLASS , lens                       , typemin(1), MT.Glass));
+		CR.BUFFER.add(new AdvancedCraftingTool(HARDHAMMER       , toolHeadHammer             , new Nor(WOOD, BOUNCY, STRETCHY)));
+		CR.BUFFER.add(new AdvancedCraftingTool(SOFTHAMMER       , toolHeadHammer             , new Or (WOOD, BOUNCY, STRETCHY), MT.Rubber));
+		CR.BUFFER.add(new AdvancedCraftingTool(SWORD            , toolHeadSword              ));
+		CR.BUFFER.add(new AdvancedCraftingTool(BUILDERWAND      , toolHeadBuilderwand        , MT.YellowSapphire)); // Suggests using Gems for those Wands since you usually only have one workable Gem per Type.
+		CR.BUFFER.add(new AdvancedCraftingTool(CONSTRUCTION_PICK, toolHeadConstructionPickaxe));
+		CR.BUFFER.add(new AdvancedCraftingTool(GEM_PICK         , toolHeadPickaxeGem         , MT.Amber)); // Amber, to show the Silk Touch usage first.
+		CR.BUFFER.add(new AdvancedCraftingTool(PICKAXE          , toolHeadPickaxe            , MT.Bronze)); // Suggests Bronze for early Tools.
+		CR.BUFFER.add(new AdvancedCraftingTool(SHOVEL           , toolHeadShovel             , MT.Bronze)); // Suggests Bronze for early Tools.
+		CR.BUFFER.add(new AdvancedCraftingTool(SPADE            , toolHeadSpade              ));
+		CR.BUFFER.add(new AdvancedCraftingTool(AXE              , toolHeadAxe                , MT.Bronze)); // Suggests Bronze for early Tools.
+		CR.BUFFER.add(new AdvancedCraftingTool(DOUBLE_AXE       , toolHeadAxeDouble          ));
+		CR.BUFFER.add(new AdvancedCraftingTool(HOE              , toolHeadHoe                , MT.WOODS.Birch)); // Suggests Wood for Hoes. Surely no particular reason to chose Birch there.
+		CR.BUFFER.add(new AdvancedCraftingTool(SENSE            , toolHeadSense              ));
+		CR.BUFFER.add(new AdvancedCraftingTool(PLOW             , toolHeadPlow               , MT.WOODS.Spruce)); // Suggests Wood for Plows.
+		CR.BUFFER.add(new AdvancedCraftingTool(FILE             , toolHeadFile               , MT.Pb)); // Lead, to make it easier to see for Beginners.
+		CR.BUFFER.add(new AdvancedCraftingTool(CHISEL           , toolHeadChisel             , MT.Pb)); // Lead, to make it easier to see for Beginners.
+		CR.BUFFER.add(new AdvancedCraftingTool(SCREWDRIVER      , toolHeadScrewdriver        ));
+		CR.BUFFER.add(new AdvancedCraftingTool(SAW              , toolHeadSaw                ));
 		
 		ICondition tCondition = new And(ANTIMATTER.NOT, WOOD.NOT, BOUNCY.NOT, STRETCHY.NOT, typemin(3), qualmin(1));
 		
