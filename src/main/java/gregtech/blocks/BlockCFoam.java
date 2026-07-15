@@ -19,6 +19,7 @@
 
 package gregtech.blocks;
 
+import gregapi.util.WD;
 import static gregapi.data.CS.*;
 
 import gregapi.block.IBlockFoamable;

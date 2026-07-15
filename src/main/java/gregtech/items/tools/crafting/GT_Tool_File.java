@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.crafting;
 
+import gregapi.util.WD;
 import gregapi.block.misc.BlockBaseBars;
 import gregapi.data.MT;
 import gregapi.data.OP;

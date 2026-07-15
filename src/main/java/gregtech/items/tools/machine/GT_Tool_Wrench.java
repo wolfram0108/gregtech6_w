@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.machine;
 
+import gregapi.util.WD;
 import gregapi.block.misc.BlockBaseBars;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.MD;

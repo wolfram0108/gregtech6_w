@@ -19,6 +19,7 @@
 
 package gregtech;
 
+import gregapi.util.WD;
 import cpw.mods.fml.common.*;
 import cpw.mods.fml.common.event.*;
 import net.neoforged.neoforge.registries.DeferredRegister;

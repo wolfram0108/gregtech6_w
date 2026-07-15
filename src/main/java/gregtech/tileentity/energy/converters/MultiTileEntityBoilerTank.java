@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.energy.converters;
 
+import gregapi.util.WD;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnEntityCollidedWithBlock;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_RemovedByPlayer;

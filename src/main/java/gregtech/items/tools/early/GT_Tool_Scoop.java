@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.early;
 
+import gregapi.util.WD;
 import gregapi.data.MD;
 import gregapi.data.MT;
 import gregapi.item.multiitem.MultiItem;

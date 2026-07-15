@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.early;
 
+import gregapi.util.WD;
 import biomesoplenty.common.blocks.BlockBOPLilypad;
 import gregapi.block.misc.BlockBaseLilyPad;
 import gregapi.data.IL;

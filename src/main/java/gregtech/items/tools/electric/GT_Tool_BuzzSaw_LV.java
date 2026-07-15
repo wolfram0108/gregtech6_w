@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.electric;
 
+import gregapi.util.WD;
 import gregapi.block.misc.BlockBaseBars;
 import gregapi.data.CS.SFX;
 import gregapi.data.MD;

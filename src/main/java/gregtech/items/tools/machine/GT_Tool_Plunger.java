@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.machine;
 
+import gregapi.util.WD;
 import gregapi.data.MT;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.MultiItemTool;

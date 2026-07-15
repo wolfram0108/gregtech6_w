@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.electric;
 
+import gregapi.util.WD;
 import gregapi.data.CS.*;
 import gregapi.data.MT;
 import gregapi.data.OP;

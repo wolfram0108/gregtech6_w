@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.early;
 
+import gregapi.util.WD;
 import gregapi.block.tree.BlockBaseLeaves;
 import gregapi.data.IL;
 import gregapi.data.MT;

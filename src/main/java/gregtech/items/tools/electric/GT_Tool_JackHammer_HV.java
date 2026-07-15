@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.electric;
 
+import gregapi.util.WD;
 import gregapi.data.RM;
 import gregapi.item.multiitem.MultiItemTool;
 import gregapi.item.multiitem.behaviors.Behavior_Switch_Metadata;

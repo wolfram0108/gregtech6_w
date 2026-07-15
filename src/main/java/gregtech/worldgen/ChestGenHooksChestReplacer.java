@@ -19,6 +19,7 @@
 
 package gregtech.worldgen;
 
+import gregapi.util.WD;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Blocks;

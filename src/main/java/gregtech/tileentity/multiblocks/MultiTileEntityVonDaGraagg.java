@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.multiblocks;
 
+import gregapi.util.WD;
 import gregapi.GT_API_Proxy;
 import gregapi.block.metatype.BlockStones;
 import gregapi.code.TagData;

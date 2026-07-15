@@ -19,6 +19,7 @@
 
 package gregtech.blocks.wood;
 
+import gregapi.util.WD;
 import gregapi.block.metatype.BlockBasePlanksFlammable;
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.block.metatype.ItemBlockMetaType;

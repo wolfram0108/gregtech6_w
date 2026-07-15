@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.misc;
 
+import gregapi.util.WD;
 import static gregapi.data.CS.*;
 
 import java.util.List;

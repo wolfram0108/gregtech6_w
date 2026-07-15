@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.electric;
 
+import gregapi.util.WD;
 import gregapi.block.MaterialAdventure;
 import gregapi.data.MD;
 import gregapi.data.MT;

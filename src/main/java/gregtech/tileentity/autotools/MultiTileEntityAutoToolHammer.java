@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.autotools;
 
+import gregapi.util.WD;
 import static gregapi.data.CS.*;
 
 import java.util.Collection;

@@ -19,6 +19,7 @@
 
 package gregtech.items.tools.machine;
 
+import gregapi.util.WD;
 import gregapi.data.IL;
 import gregapi.data.MT;
 import gregapi.data.RM;

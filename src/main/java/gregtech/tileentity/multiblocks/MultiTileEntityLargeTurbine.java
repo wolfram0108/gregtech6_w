@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.multiblocks;
 
+import gregapi.util.WD;
 import gregapi.code.TagData;
 import gregapi.old.Textures;
 import gregapi.render.BlockTextureDefault;

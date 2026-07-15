@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tree;
 
+import gregapi.util.WD;
 import gregapi.block.IBlockToolable;
 import gregapi.block.ToolCompat;
 import gregapi.block.tree.BlockBaseBeamFlammable;

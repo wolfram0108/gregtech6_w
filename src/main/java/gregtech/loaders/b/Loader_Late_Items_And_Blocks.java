@@ -19,6 +19,7 @@
 
 package gregtech.loaders.b;
 
+import gregapi.util.WD;
 import gregapi.block.behaviors.Drops;
 import gregapi.block.behaviors.Drops_SmallOre;
 import gregapi.block.prefixblock.PrefixBlock;
