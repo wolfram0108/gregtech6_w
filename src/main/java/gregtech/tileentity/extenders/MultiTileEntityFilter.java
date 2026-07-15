@@ -251,10 +251,11 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		@Override public int getShiftClickSlotCount() {return 0;}
 		
 		@Override
-		public ItemStack slotClick(int aSlotIndex, int aMouseclick, int aShifthold, Player aPlayer) {
-			if (aSlotIndex < 0 || aSlotIndex >= slots.size()) return super.slotClick(aSlotIndex, aMouseclick, aShifthold, aPlayer);
+		public void clicked(int aSlotIndex, int aMouseclick, net.minecraft.world.inventory.ContainerInput aType, Player aPlayer) {
+			int aShifthold = aType.id();
+			if (aSlotIndex < 0 || aSlotIndex >= slots.size()) {super.clicked(aSlotIndex, aMouseclick, aType, aPlayer); return;}
 			if (aSlotIndex >= mTileEntity.getSizeInventoryGUI()) {
-				if (aShifthold != 1) return super.slotClick(aSlotIndex, aMouseclick, aShifthold, aPlayer);
+				if (aShifthold != 1) {super.clicked(aSlotIndex, aMouseclick, aType, aPlayer); return;}
 				Slot tSlot = (Slot)slots.get(aSlotIndex);
 				if (tSlot != null) {
 					ItemStack tStack = tSlot.getItem();
@@ -265,7 +266,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 								for (int i = 0; i < ((MultiTileEntityFilter)mTileEntity).mFilter.length; i++) if (ST.invalid(((MultiTileEntityFilter)mTileEntity).mFilter[i])) {
 									((MultiTileEntityFilter)mTileEntity).mFilter[i] = FL.display(tFluid.getFluid());
 									broadcastChanges();
-									return null;
+									return;
 								}
 							}
 						} else {
@@ -273,17 +274,17 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 								for (int i = 0; i < ((MultiTileEntityFilter)mTileEntity).mFilter.length; i++) if (ST.invalid(((MultiTileEntityFilter)mTileEntity).mFilter[i])) {
 									((MultiTileEntityFilter)mTileEntity).mFilter[i] = ST.amount(1, tStack);
 									broadcastChanges();
-									return null;
+									return;
 								}
 							}
 						}
 					}
 				}
-				return null;
+				return;
 			}
 			Slot tSlot = (Slot)slots.get(aSlotIndex);
 			if (tSlot != null) {
-				ItemStack tStack = aPlayer.getInventory().getItemStack();
+				ItemStack tStack = getCarried();
 				if (tStack == null) {
 					tStack = tSlot.getItem();
 					if (aMouseclick == 0) {
@@ -326,7 +327,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 					}
 				}
 			}
-			return null;
+			return;
 		}
 	}
 	

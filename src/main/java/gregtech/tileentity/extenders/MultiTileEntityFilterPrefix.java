@@ -255,10 +255,11 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 		}
 		
 		@Override
-		public ItemStack slotClick(int aSlotIndex, int aMouseclick, int aShifthold, Player aPlayer) {
-			if (aSlotIndex < 0 || aSlotIndex >= mTileEntity.getSizeInventoryGUI()) return super.slotClick(aSlotIndex, aMouseclick, aShifthold, aPlayer);
+		public void clicked(int aSlotIndex, int aMouseclick, net.minecraft.world.inventory.ContainerInput aType, Player aPlayer) {
+			int aShifthold = aType.id();
+			if (aSlotIndex < 0 || aSlotIndex >= mTileEntity.getSizeInventoryGUI()) {super.clicked(aSlotIndex, aMouseclick, aType, aPlayer); return;}
 			
-			ItemStack tStack = aPlayer.getInventory().getItemStack();
+			ItemStack tStack = getCarried();
 			if (tStack == null) {
 				((MultiTileEntityFilterPrefix)mTileEntity).mFilter = null;
 			} else {
@@ -272,7 +273,7 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 					((MultiTileEntityFilterPrefix)mTileEntity).mFilter = tData.mPrefix;
 				}
 			}
-			return null;
+			return;
 		}
 	}
 	
