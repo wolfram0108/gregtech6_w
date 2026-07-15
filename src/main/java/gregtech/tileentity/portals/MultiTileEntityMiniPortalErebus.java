@@ -124,7 +124,7 @@ public class MultiTileEntityMiniPortalErebus extends MultiTileEntityMiniPortal {
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getBlockHardness() {return WD.hardness(Blocks.STONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
 	
 	public ITexture sErebusPortal = BlockTextureCopied.get(ST.block(MD.ERE, "portal", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sErebusPortalFrame = BlockTextureCopied.get(ST.block(MD.ERE, "umberstone", Blocks.STONE), SIDE_ANY, 0, UNCOLOURED, F, F, F), sErebusPortalInactive = BlockTextureCopied.get(Blocks.OAK_LEAVES, SIDE_ANY, 0, DYE_Green, F, F, F);

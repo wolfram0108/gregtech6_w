@@ -124,7 +124,7 @@ public class MultiTileEntityMiniPortalEndOfTime extends MultiTileEntityMiniPorta
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getBlockHardness() {return WD.hardness(Blocks.STONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
 	
 	public ITexture sEndOfTimePortal = BlockTextureCopied.get(ST.block(MD.ExU, "dark_portal", ST.block(MD.ExS, "deepPortal", Blocks.NETHER_PORTAL)), SIDE_ANY, 0, UNCOLOURED, F, T, T), sEndOfTimePortalFrame = BlockTextureCopied.get(ST.block(MD.ExU, "dark_portal", ST.block(MD.ExS, "deepPortal", Blocks.STONE_BRICKS)), SIDE_ANY, 2, UNCOLOURED, F, F, F);

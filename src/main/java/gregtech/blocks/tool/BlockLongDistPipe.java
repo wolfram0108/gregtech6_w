@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tool;
 
+import gregapi.util.WD;
 import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 
@@ -43,7 +44,7 @@ public class BlockLongDistPipe extends BlockBaseMachineUpdate {
 	@Override public String getHarvestTool(int aMeta) {return TOOL_wrench;}
 	@Override public int getHarvestLevel(int aMeta) {return 3;}
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return T;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.IRON_BLOCK.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.IRON_BLOCK, aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(Entity aEntity, Level aWorld, int aX, int aY, int aZ, double eX, double eY, double eZ) {return 20;}
 	@Override public float getExplosionResistance(Entity aEntity) {return 20;}
 	@Override public float getExplosionResistance(byte aMeta) {return 20;}

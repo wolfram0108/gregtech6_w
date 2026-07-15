@@ -107,7 +107,7 @@ public class GT_Tool_Axe extends ToolStats {
 		if (LOCK && !MD.TreeCap.mLoaded && !aPlayer.level().isClientSide() && !aPlayer.isShiftKeyDown() && !aBlock.getClass().getName().startsWith("com.ferreusveritas.dynamictrees") && (aBlock instanceof HugeMushroomBlock || WD.wood(aBlock, aPlayer.level(), aX, aY, aZ) || OP.log.contains(ST.make(aBlock, 1, aMeta)) || WoodDictionary.WOODS.containsKey(aBlock, aMeta, T))) {
 			LOCK = F;
 			try {
-				int tY = aY, tH = aPlayer.level().getHeight(), tCount = 0, tIncrement = UT.Code.roundUp(aBlock.getBlockHardness(aPlayer.level(), aX, aY, aZ) * getToolDamagePerBlockBreak());
+				int tY = aY, tH = aPlayer.level().getHeight(), tCount = 0, tIncrement = UT.Code.roundUp(WD.hardness(aBlock, aPlayer.level(), aX, aY, aZ) * getToolDamagePerBlockBreak());
 				// Checking...
 				while (++tY < tH) {
 					if (WD.block(aPlayer.level(), aX, tY, aZ) != aBlock) break;

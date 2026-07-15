@@ -123,7 +123,7 @@ public class MultiTileEntityMiniPortalEnviromine extends MultiTileEntityMiniPort
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getBlockHardness() {return WD.hardness(Blocks.STONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
 	
 	public ITexture sEnvirominePortal = BlockTextureCopied.get(Blocks.NETHER_PORTAL, SIDE_ANY, 0, 0x00ff0000, F, T, T), sEnvirominePortalFrame = BlockTextureCopied.get(Blocks.BEDROCK, SIDE_ANY, 0, UNCOLOURED, F, F, F);

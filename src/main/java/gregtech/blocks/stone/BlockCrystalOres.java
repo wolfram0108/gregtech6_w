@@ -19,6 +19,7 @@
 
 package gregtech.blocks.stone;
 
+import gregapi.util.WD;
 import net.minecraft.world.level.block.SoundType;
 import gregapi.block.BlockBaseMeta;
 import gregapi.data.LH;
@@ -82,6 +83,6 @@ public class BlockCrystalOres extends BlockBaseMeta {
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public String getHarvestTool(int aMeta) {return TOOL_pickaxe;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.GLOWSTONE.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.GLOWSTONE, aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.GLOWSTONE.getExplosionResistance(null);}
 }

@@ -125,7 +125,7 @@ public class MultiTileEntityMiniPortalAlfheim extends MultiTileEntityMiniPortal 
 		return T;
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getBlockHardness() {return WD.hardness(Blocks.STONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
 	
 	public ITexture sAlfheimPortal = BlockTextureCopied.get(Blocks.NETHER_PORTAL, SIDE_ANY, 0, 0x000088ff, F, T, T), sMidgardPortal = BlockTextureCopied.get(Blocks.NETHER_PORTAL, SIDE_ANY, 0, 0x00ffff00, F, T, T), sAlfheimPortalFrame = BlockTextureCopied.get(ST.block(MD.BOTA, "dreamwood", Blocks.OAK_PLANKS));

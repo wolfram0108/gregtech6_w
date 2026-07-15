@@ -19,6 +19,7 @@
 
 package gregtech.blocks;
 
+import gregapi.util.WD;
 import net.minecraft.world.level.block.SoundType;
 import gregapi.block.BlockBaseMeta;
 import gregapi.data.*;
@@ -63,6 +64,6 @@ public class BlockSands extends BlockBaseMeta {
 	@Override public boolean isSealable(byte aMeta, byte aSide) {return F;}
 	@Override public String getHarvestTool(int aMeta) {return TOOL_shovel;}
 	@Override public int getHarvestLevel(int aMeta) {return 0;}
-	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return Blocks.SAND.getBlockHardness(aWorld, aX, aY, aZ);}
+	@Override public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return WD.hardness(Blocks.SAND, aWorld, aX, aY, aZ);}
 	@Override public float getExplosionResistance(byte aMeta) {return Blocks.SAND.getExplosionResistance(null);}
 }

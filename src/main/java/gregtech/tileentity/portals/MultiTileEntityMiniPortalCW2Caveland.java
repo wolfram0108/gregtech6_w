@@ -123,7 +123,7 @@ public class MultiTileEntityMiniPortalCW2Caveland extends MultiTileEntityMiniPor
 		return super.onToolClick(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@Override public float getBlockHardness() {return Blocks.MOSSY_COBBLESTONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getBlockHardness() {return WD.hardness(Blocks.MOSSY_COBBLESTONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.MOSSY_COBBLESTONE.getExplosionResistance(null);}
 	
 	public ITexture sCW2Portal = BlockTextureCopied.get(ST.block(MD.CW2, "caveland_portal", Blocks.NETHER_PORTAL), SIDE_ANY, 0, UNCOLOURED, F, T, T), sCW2PortalFrame = BlockTextureCopied.get(Blocks.MOSSY_COBBLESTONE, SIDE_ANY, 0);

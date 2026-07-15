@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.portals;
 
+import gregapi.util.WD;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.data.LH;
@@ -266,7 +267,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	
 	@Override public int getFireSpreadSpeed(byte aSide, boolean aDefault) {return 0;}
 	@Override public int getFlammability(byte aSide, boolean aDefault) {return 0;}
-	@Override public float getBlockHardness() {return Blocks.STONE.getBlockHardness(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
+	@Override public float getBlockHardness() {return WD.hardness(Blocks.STONE, level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ());}
 	@Override public float getExplosionResistance2() {return Blocks.STONE.getExplosionResistance(null);}
 	
 	@Override

@@ -94,7 +94,7 @@ public class MultiTileEntityAutoToolHammer extends TileEntityBase09FacingSingle 
 						if (GT_Tool_HardHammer.INSTANCE.isMinableBlock(tBlock, tMetaData)) {
 							mSendSound = 2;
 							if (tBlock.getHarvestLevel(tMetaData) <= mQuality) {
-								float tHardness = tBlock.getBlockHardness(tD.mWorld, tD.mX, tD.mY, tD.mZ);
+								float tHardness = WD.hardness(tBlock, tD.mWorld, tD.mX, tD.mY, tD.mZ);
 								if (tHardness >= 0 && tHardness * 50 <= mEnergy) {
 									List<ItemStack> tDrops = tBlock.getDrops(tD.mWorld, tD.mX, tD.mY, tD.mZ, tMetaData, 0);
 									GT_Tool_HardHammer.INSTANCE.convertBlockDrops(tDrops, null, null, tBlock, Long.MAX_VALUE, tD.mX, tD.mY, tD.mZ, tMetaData, 0, F, null);

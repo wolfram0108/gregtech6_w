@@ -111,7 +111,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 				while(mSunk) {
 					Block tBlock = getBlockAtSide(OPOS[mFacing]);
 					if (BlocksGT.drillableDynamite.contains(tBlock)) break;
-					if (tBlock.getBlockHardness(level, getBlockPos().getX()+OFFX[OPOS[mFacing]], getBlockPos().getY()+OFFY[OPOS[mFacing]], getBlockPos().getZ()+OFFZ[OPOS[mFacing]]) >= 0) {
+					if (WD.hardness(tBlock, level, getBlockPos().getX()+OFFX[OPOS[mFacing]], getBlockPos().getY()+OFFY[OPOS[mFacing]], getBlockPos().getZ()+OFFZ[OPOS[mFacing]]) >= 0) {
 						if (tBlock instanceof BlockStones) {
 							if (getMetaDataAtSide(OPOS[mFacing]) < 3) break;
 						} else {
