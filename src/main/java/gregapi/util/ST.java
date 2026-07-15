@@ -189,9 +189,18 @@ public class ST {
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
 	public static ItemStack meta_(ItemStack aStack, long aMeta) {int tMeta = (short)aMeta; if (gregapi.GT_API.SUBTYPE.isBound()) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE.get(), tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE.get());} return aStack;}
 	
-	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : UT.Code.bindByte(aStack.getCount());}
+	// F-size0-catalyst: логический размер. GT6 size-0-стек (катализатор) хранится в neo как count=1 + маркер GT_API.ZEROSIZE
+	// (neo не держит count<=0 без превращения в AIR/EMPTY). size() отдаёт 0 для маркированных → recipe-matching/consume/дамп
+	// видят логический 0. Совпадает со старым поведением size(AIR-катализатор)=0 → существующие вызыватели не затронуты.
+	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : (gregapi.GT_API.ZEROSIZE.isBound() && aStack.has(gregapi.GT_API.ZEROSIZE.get()) ? 0 : UT.Code.bindByte(aStack.getCount()));}
 	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : size_(aSize, aStack);}
-	public static ItemStack size_(long aSize, ItemStack aStack) {aStack.setCount((int)aSize); return aStack;}
+	// aSize<=0 = GT6-катализатор: держим count=1 (иначе neo → EMPTY/AIR, идентичность теряется) + маркер ZEROSIZE; логический
+	// размер читается через ST.size(). aSize>=1 — обычный setCount + снять маркер (если стек переиспользуется).
+	public static ItemStack size_(long aSize, ItemStack aStack) {
+		if (aSize <= 0) {aStack.setCount(1); if (gregapi.GT_API.ZEROSIZE.isBound()) aStack.set(gregapi.GT_API.ZEROSIZE.get(), net.minecraft.util.Unit.INSTANCE);}
+		else {aStack.setCount((int)aSize); if (gregapi.GT_API.ZEROSIZE.isBound() && aStack.has(gregapi.GT_API.ZEROSIZE.get())) aStack.remove(gregapi.GT_API.ZEROSIZE.get());}
+		return aStack;
+	}
 	
 	public static byte maxsize(ItemStack aStack) {return (byte)(aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? 64 : item_(aStack).getMaxStackSize(aStack));}
 	

@@ -201,6 +201,17 @@ public class GT_API extends Abstract_Mod {
 			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT)
 			.build());
 
+	/** F-size0-catalyst: GT6 использует стек размера 0 как катализатор ("вход нужен, но не расходуется": extruder-shape/mold).
+	 *  1.7.10 держал stackSize=0 с сохранённым item; neo count<=0 → isEmpty → getItem=AIR, copy→EMPTY (item теряется).
+	 *  Адаптация (центр ST.size_): size-0-стек хранится как count=1 + этот маркер; {@link gregapi.util.ST#size(ItemStack)}
+	 *  отдаёт 0 для маркированных → recipe-matching/consume/дамп видят логический 0, идентичность сохранена. ST.equal
+	 *  сравнивает только item+meta+nbt (не произвольные компоненты) → маркер прозрачен для сравнений. См. decisions/F-size0-catalyst. */
+	public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.core.component.DataComponentType<?>, net.minecraft.core.component.DataComponentType<net.minecraft.util.Unit>> ZEROSIZE =
+		COMPONENTS.register("zerosize", () -> net.minecraft.core.component.DataComponentType.<net.minecraft.util.Unit>builder()
+			.persistent(net.minecraft.util.Unit.CODEC)
+			.networkSynchronized(net.minecraft.network.codec.StreamCodec.unit(net.minecraft.util.Unit.INSTANCE))
+			.build());
+
 	/** F1/F12/F16 item-model сепарация: GT6-предметы делали OreDict-данные+рецепты (ST.make = стек себя) В КОНСТРУКТОРЕ, но
 	 *  neo конструирует предмет @RegisterEvent (реестр открыт для intrusive-holder), а стеки можно только @пост-freeze
 	 *  (Holder.components привязаны позже). Конструктор регистрирует свой stack-init сюда (Runnable, без стеков), а

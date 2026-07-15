@@ -418,7 +418,7 @@ public final class PortDump {
     private static String recItems(ItemStack[] arr) {
         if (arr == null) return "";
         StringBuilder sb = new StringBuilder();
-        for (ItemStack s : arr) { if (sb.length() > 0) sb.append(','); sb.append('"').append(s == null ? "null" : esc(stackId(s) + ":" + s.getCount())).append('"'); }
+        for (ItemStack s : arr) { if (sb.length() > 0) sb.append(','); sb.append('"').append(s == null ? "null" : esc(stackId(s) + ":" + gregapi.util.ST.size(s))).append('"'); } // F-size0-catalyst: ST.size даёт 0 для size-0-катализатора (golden 1.7.10 stackSize=0)
         return sb.toString();
     }
     private static String recFluids(FluidStack[] arr) {

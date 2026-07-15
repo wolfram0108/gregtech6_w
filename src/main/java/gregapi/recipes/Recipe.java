@@ -779,8 +779,8 @@ public class Recipe {
 			for (int i = 0; i < aInputs.length; i++) if (!tChecked[i]) {
 				ItemStack aInput = aInputs[i];
 				if (ST.valid(aInput)) {
-					if ((aDontCheckStackSizes || aInput.getCount() >= tInput.getCount()) && OreDictManager.INSTANCE.equal_(F, aInput, tInput, mNoNBTChecks || !(ItemNBT.get(tInput) != null))) {
-						if (aDecreaseStacksizeBySuccess) aInput.setCount(aInput.getCount()-(tInput.getCount()));
+					if ((aDontCheckStackSizes || aInput.getCount() >= ST.size(tInput)) && OreDictManager.INSTANCE.equal_(F, aInput, tInput, mNoNBTChecks || !(ItemNBT.get(tInput) != null))) {
+						if (aDecreaseStacksizeBySuccess) aInput.setCount(aInput.getCount()-(ST.size(tInput))); // F-size0-catalyst: ST.size=0 для size-0-катализатора (shape/mold) → не расходуется, как 1.7.10 stackSize=0
 						tChecked[i] = T;
 						temp = F;
 						break;
