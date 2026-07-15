@@ -1181,12 +1181,29 @@ public class ST {
 	LOOT_TABLES         = new ArrayListNoNulls<>(F, "dungeonChest", "villageBlacksmith", "mineshaftCorridor", "strongholdLibrary", "strongholdCrossing", "strongholdCorridor", "pyramidDesertyChest", "pyramidJungleChest", "pyramidJungleDispenser", "bonusChest"),
 	LOOT_TABLES_VANILLA = new ArrayListNoNulls<>(F, "dungeonChest", "villageBlacksmith", "mineshaftCorridor", "strongholdLibrary", "strongholdCrossing", "strongholdCorridor", "pyramidDesertyChest", "pyramidJungleChest", "pyramidJungleDispenser", "bonusChest");
 	
-	// PORT-TODO(stats-loot, chest-loot): net.minecraftforge.common.ChestGenHooks / net.minecraft.util.WeightedRandomChestContent
-	// (1.7.10 Forge chest-loot-hook API) have no 1:1 in modern MC — chest loot is now generated from data-driven
-	// LootTable/LootPool JSON, not from an in-code hook keyed by a loot-table name string. Stubbed below.
+	// stats-loot: 1.7.10 ChestGenHooks.getOneItem(random-vanilla-table, RNGSUS) — Forge chest-loot-hook удалён; neo chest-loot =
+	// data-driven LootTable JSON. Эквивалент: server.reloadableRegistries().getLootTable(ResourceKey).getRandomItems(LootParams) →
+	// один предмет. 1.7.10-имена таблиц отображены на neo BuiltInLootTables (1:1, порядок LOOT_TABLES_VANILLA). Вне сервера
+	// (recipe-def-время у Unboxinator) сервер null → null (косметика, как оригинал вне мира).
+	private static final java.util.List<net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> VANILLA_LOOT_KEYS = java.util.Arrays.asList(
+		net.minecraft.world.level.storage.loot.BuiltInLootTables.SIMPLE_DUNGEON, net.minecraft.world.level.storage.loot.BuiltInLootTables.VILLAGE_WEAPONSMITH,
+		net.minecraft.world.level.storage.loot.BuiltInLootTables.ABANDONED_MINESHAFT, net.minecraft.world.level.storage.loot.BuiltInLootTables.STRONGHOLD_LIBRARY,
+		net.minecraft.world.level.storage.loot.BuiltInLootTables.STRONGHOLD_CROSSING, net.minecraft.world.level.storage.loot.BuiltInLootTables.STRONGHOLD_CORRIDOR,
+		net.minecraft.world.level.storage.loot.BuiltInLootTables.DESERT_PYRAMID, net.minecraft.world.level.storage.loot.BuiltInLootTables.JUNGLE_TEMPLE,
+		net.minecraft.world.level.storage.loot.BuiltInLootTables.JUNGLE_TEMPLE_DISPENSER, net.minecraft.world.level.storage.loot.BuiltInLootTables.SPAWN_BONUS_CHEST);
 	public static ItemStack generateOneVanillaLoot() {
-		// PORT-TODO(stats-loot, chest-loot): return ChestGenHooks.getOneItem(UT.Code.select("dungeonChest", LOOT_TABLES_VANILLA), RNGSUS);
-		return null;
+		net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+		if (tServer == null) return null;
+		net.minecraft.server.level.ServerLevel tLevel = tServer.overworld();
+		if (tLevel == null) return null;
+		try {
+			net.minecraft.world.level.storage.loot.LootTable tTable = tServer.reloadableRegistries().getLootTable(UT.Code.select(net.minecraft.world.level.storage.loot.BuiltInLootTables.SIMPLE_DUNGEON, VANILLA_LOOT_KEYS));
+			net.minecraft.world.level.storage.loot.LootParams tParams = new net.minecraft.world.level.storage.loot.LootParams.Builder(tLevel)
+				.withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, net.minecraft.world.phys.Vec3.ZERO)
+				.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST);
+			it.unimi.dsi.fastutil.objects.ObjectArrayList<ItemStack> tItems = tTable.getRandomItems(tParams);
+			return tItems.isEmpty() ? null : tItems.get(0);
+		} catch (Throwable e) { return null; }
 	}
 
 	public static boolean generateLoot(Random aRandom, String aLoot, Container aInv) {
