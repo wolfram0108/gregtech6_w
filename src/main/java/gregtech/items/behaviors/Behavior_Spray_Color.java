@@ -30,7 +30,6 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockColored;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.animal.wolf.Wolf;
@@ -103,16 +102,16 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 		
 		boolean rUsed = F;
 		
-		if (aEntity instanceof Sheep && !((Sheep)aEntity).getSheared() ) {
-			if (((Sheep)aEntity).getFleeceColor() != (~mColor & 15)) {
-				((Sheep)aEntity).setFleeceColor(~mColor & 15);
+		if (aEntity instanceof Sheep && !((Sheep)aEntity).isSheared() ) {
+			if (((Sheep)aEntity).getColor().getId() != (~mColor & 15)) {
+				((Sheep)aEntity).setColor(net.minecraft.world.item.DyeColor.byId(~mColor & 15));
 				if (aEntity.level().isClientSide()) return T;
 				rUsed = T;
 			}
 		}
 		if (aEntity instanceof Wolf && ((Wolf)aEntity).isTame()) {
-			if (((Wolf)aEntity).getCollarColor() != (~mColor & 15)) {
-				((Wolf)aEntity).setCollarColor(~mColor & 15);
+			if (((Wolf)aEntity).getCollarColor().getId() != (~mColor & 15)) {
+				UT.Reflection.callMethod((Wolf)aEntity, "setCollarColor", true, false, true, net.minecraft.world.item.DyeColor.byId(~mColor & 15));
 				if (aEntity.level().isClientSide()) return T;
 				rUsed = T;
 			}
@@ -149,7 +148,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	
 	private boolean colorize(Level aWorld, int aX, int aY, int aZ, byte aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		if (aBlock != NB && (mAllowedVanillaBlocks.contains(aBlock) || aBlock instanceof BlockColored || IL.TE_Rockwool.block() == aBlock || aBlock == BlocksGT.Grass)) {
+		if (aBlock != NB && (mAllowedVanillaBlocks.contains(aBlock) || aBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.WOOL) || IL.TE_Rockwool.block() == aBlock || aBlock == BlocksGT.Grass)) {
 			if (aBlock == Blocks.TERRACOTTA  ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_TERRACOTTA, ~mColor & 15, 3);
 			if (aBlock == Blocks.GLASS_PANE     ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_STAINED_GLASS_PANE   , ~mColor & 15, 3);
 			if (aBlock == Blocks.GLASS          ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_STAINED_GLASS        , ~mColor & 15, 3);
@@ -167,7 +166,7 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 			}
 			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ~mColor & 15, 3, F);
 		}
-		return aBlock.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
+		throw new UnsupportedOperationException("PORT-TODO(F-block-recolor): forge Block.recolourBlock удалён в neo (цветные блоки = отдельные типы, не state); ре-экспрессировать как замена блока на цветной вариант по карте color->block");
 	}
 	
 	static {
