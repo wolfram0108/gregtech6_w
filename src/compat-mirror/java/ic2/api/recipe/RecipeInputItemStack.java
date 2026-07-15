@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
  *  ctor(ItemStack,int) — реально вызывается CompatIC2.java:155.
  *  Поля/остальные ctor/методы реального API не используются (греп 0) — не добавлены. */
 public class RecipeInputItemStack implements IRecipeInput {
-	public RecipeInputItemStack(ItemStack aInput, int aAmount) {/**/}
+	public ItemStack input; // реально читается GregTech (Loader_Recipes_Replace: .input как ItemStack)
+	public RecipeInputItemStack(ItemStack aInput, int aAmount) {input = aInput;}
 	@Override public boolean matches(ItemStack aStack) {return false;} // compile-only мирор, мод не грузится.
 }
