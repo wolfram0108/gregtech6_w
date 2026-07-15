@@ -2,7 +2,19 @@ package gregtech6.parity;
 
 import gregapi.data.MT;
 import gregapi.data.FL;
+import gregapi.data.CS;
 import gregapi.fluid.FluidGT;
+import gregapi.code.TagData;
+import gregapi.block.multitileentity.MultiTileEntityRegistry;
+import gregapi.block.multitileentity.MultiTileEntityClassContainer;
+import gregapi.worldgen.WorldgenOresLarge;
+import gregapi.worldgen.StoneLayer;
+import gregapi.item.multiitem.MultiItemTool;
+import gregapi.item.multiitem.tools.IToolStats;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.registries.BuiltInRegistries;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import gregapi.oredict.OreDictMaterial;
 import gregapi.oredict.OreDictMaterialStack;
 import gregapi.oredict.OreDictPrefix;
@@ -69,11 +81,19 @@ public final class PortDump {
         int nMat = dumpMaterials();
         int nPre = dumpPrefixes();
         int nFl = dumpFluids();
+        dumpMTE(); dumpTools(); dumpTags(); dumpWorldgen();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         double tMat = report("materials.csv");
         double tPre = report("prefixes.csv");
-        report("fluids.csv", 1, 1); // паритет жидкостей; игнор col1=fluidId (нео-артефакт: source+flowing = 2× id 1.7.10)
+        report("fluids.csv", 1, 1); // игнор col1=fluidId (нео-артефакт: source+flowing = 2× id 1.7.10)
+        report("mte.csv", 4);           // ключ = все 4 колонки (нет стабильного одиночного ключа)
+        report("tools.csv", 1);
+        report("tool_types.csv", 1);
+        report("tags.csv", 1);
+        report("tag_links.csv", 2);     // ключ = object+objectType
+        report("worldgen_veins.csv", 1);
+        report("worldgen_layers.csv", 1);
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -175,6 +195,93 @@ public final class PortDump {
         }
         writeCsv("fluids.csv", "mName,fluidId,temperatureK,gaseous,allNames,rgba", lines);
         return lines.size();
+    }
+
+    // ------------------------------------------------------------------ mte.csv (зеркало DumpRegistry)
+    @SuppressWarnings("unchecked")
+    private static int dumpMTE() throws IOException {
+        List<String> lines = new ArrayList<>();
+        try {
+            Field f = MultiTileEntityRegistry.class.getDeclaredField("NAMED_REGISTRIES");
+            f.setAccessible(true);
+            java.util.Map<String, MultiTileEntityRegistry> regs = (java.util.Map<String, MultiTileEntityRegistry>) f.get(null);
+            for (java.util.Map.Entry<String, MultiTileEntityRegistry> e : regs.entrySet()) {
+                MultiTileEntityRegistry reg = e.getValue();
+                if (reg == null || reg.mRegistry == null) continue;
+                String rn = e.getKey() == null ? "" : e.getKey();
+                for (MultiTileEntityClassContainer c : reg.mRegistry.values())
+                    lines.add(rn + "," + c.mID + "," + c.mBlockMetaData + "," + (c.mClass == null ? "" : c.mClass.getName()));
+            }
+        } catch (Throwable t) {}
+        writeCsv("mte.csv", "registry,id,blockMetaData,className", lines);
+        return lines.size();
+    }
+
+    // ------------------------------------------------------------------ tools.csv + tool_types.csv
+    private static int dumpTools() throws IOException {
+        List<String> lines = new ArrayList<>();
+        try {
+            MultiItemTool meta = CS.ToolsGT.sMetaTool;
+            if (meta != null && meta.mToolStats != null)
+                for (java.util.Map.Entry<Short, IToolStats> e : meta.mToolStats.entrySet())
+                    lines.add(e.getKey() + "," + (e.getValue() == null ? "" : e.getValue().getClass().getName()));
+        } catch (Throwable t) {}
+        writeCsv("tools.csv", "id,toolStatsClass", lines);
+        List<String> tt = new ArrayList<>();
+        try {
+            for (Field field : CS.ToolsGT.class.getDeclaredFields()) {
+                int m = field.getModifiers();
+                if (!Modifier.isStatic(m) || !Modifier.isPublic(m) || field.getType() != short.class) continue;
+                try { tt.add(field.getName() + "," + field.getShort(null)); } catch (Throwable t) {}
+            }
+        } catch (Throwable t) {}
+        writeCsv("tool_types.csv", "name,id", tt);
+        return lines.size();
+    }
+
+    // ------------------------------------------------------------------ tags.csv + tag_links.csv
+    private static int dumpTags() throws IOException {
+        List<String> lines = new ArrayList<>();
+        for (TagData td : TagData.TAGS) lines.add(td.mTagID + "," + td.mName + "," + esc(td.mChatFormat).replace(",", " "));
+        writeCsv("tags.csv", "mTagID,mName,chatFormat", lines);
+        List<String> tl = new ArrayList<>();
+        for (OreDictMaterial m : OreDictMaterial.MATERIAL_MAP.values()) try {
+            List<String> tn = new ArrayList<>(); for (TagData td : TagData.TAGS) if (m.contains(td)) tn.add(td.mName); Collections.sort(tn);
+            if (!tn.isEmpty()) tl.add(m.mNameInternal + ",material," + String.join("|", tn));
+        } catch (Throwable t) {}
+        for (OreDictPrefix p : OreDictPrefix.VALUES) { if (p == null) continue; try {
+            List<String> tn = new ArrayList<>(); for (TagData td : TagData.TAGS) if (p.contains(td)) tn.add(td.mName); Collections.sort(tn);
+            if (!tn.isEmpty()) tl.add(p.mNameInternal + ",prefix," + String.join("|", tn));
+        } catch (Throwable t) {} }
+        writeCsv("tag_links.csv", "object,objectType,tags", tl);
+        return lines.size();
+    }
+
+    // ------------------------------------------------------------------ worldgen_veins.csv + worldgen_layers.csv
+    private static int dumpWorldgen() throws IOException {
+        java.util.Set<WorldgenOresLarge> veins = Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Field fld : CS.class.getDeclaredFields()) {
+            if (!Modifier.isStatic(fld.getModifiers()) || !List.class.isAssignableFrom(fld.getType())) continue;
+            try { fld.setAccessible(true); Object v = fld.get(null);
+                if (v instanceof List) for (Object o : (List<?>) v) if (o instanceof WorldgenOresLarge) veins.add((WorldgenOresLarge) o);
+            } catch (Throwable t) {}
+        }
+        List<String> vl = new ArrayList<>();
+        for (WorldgenOresLarge v : veins) vl.add((v.mName==null?"":v.mName) + "," + matName(v.mTop) + "," + matName(v.mBottom) + "," + matName(v.mBetween)
+                + "," + matName(v.mSpread) + "," + v.mWeight + "," + v.mDistance + "," + v.mMinY + "," + v.mMaxY + "," + v.mDensity + "," + v.mSize + "," + v.mIndicatorRocks);
+        writeCsv("worldgen_veins.csv", "name,top,bottom,between,spread,weight,distance,minY,maxY,density,size,indicatorRocks", vl);
+        List<String> ll = new ArrayList<>();
+        for (StoneLayer layer : StoneLayer.LAYERS) ll.add(matName(layer.mMaterial) + "," + matName(layer.mMaterialSurface) + "," + blockName(layer.mStone)
+                + "," + blockName(layer.mCobble) + "," + blockName(layer.mMossy) + "," + layer.mMetaStone + "," + layer.mMetaCobble + "," + layer.mMetaMossy
+                + "," + (layer.mOres==null?0:layer.mOres.size()));
+        writeCsv("worldgen_layers.csv", "material,materialSurface,stone,cobble,mossy,metaStone,metaCobble,metaMossy,oreCount", ll);
+        return vl.size();
+    }
+
+    private static String esc(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
+    private static String blockName(Block block) {
+        if (block == null) return "";
+        try { var k = BuiltInRegistries.BLOCK.getKey(block); return k == null ? "" : k.toString(); } catch (Throwable t) { return ""; }
     }
 
     // ------------------------------------------------------------------ parity-отчёт по одному файлу
