@@ -143,6 +143,17 @@ public final class ParityDiff {
         return new ParitySet(map);
     }
 
+    /** Whole-line CI (для .jsonl): ключ=значение=lowercase-строка. Set-overlap (рецепты — нео-lowercase имена + trigger-порядок). */
+    public static ParitySet fromLinesCI(Path file) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String line : readLines(file)) {
+            String low = line.strip().toLowerCase();
+            if (low.isEmpty() || low.startsWith("#")) continue;
+            map.put(low, low);
+        }
+        return new ParitySet(map);
+    }
+
     /** Case-insensitive: значение в lowercase. neo форсит lowercase ResourceLocation (camelCase gt.meta.arrowGtPlastic ->
      *  arrowgtplastic — нео-константа, 1:1 невозможен) → lowercase-сравнение = семантический паритет. */
     public static ParitySet fromCsvLower(Path file, int keyColumns) {

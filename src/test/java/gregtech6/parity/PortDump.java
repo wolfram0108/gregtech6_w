@@ -85,7 +85,7 @@ public final class PortDump {
         int nPre = dumpPrefixes();
         int nFl = dumpFluids();
         dumpMTE(); dumpTools(); dumpTags(); dumpWorldgen();
-        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipeMaps();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipeMaps(); dumpRecipes();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         double tMat = report("materials.csv");
@@ -104,7 +104,8 @@ public final class PortDump {
         reportCI("itemdata.csv", 1);
         report("engine_items.csv", 1, 1);
         report("engine_blocks.csv", 1, 1);
-        report("recipemaps.csv", 1, 20); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
+        report("recipemaps.csv", 1, 20);
+        reportJsonl("recipes.jsonl"); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
         // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
         // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
         // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
@@ -365,6 +366,59 @@ public final class PortDump {
         return (k == null ? "" : k.toString()) + ":" + gregapi.util.ST.meta_(s);
     }
 
+    // ------------------------------------------------------------------ recipes.jsonl (зеркало DumpRecipes.recipeJson)
+    private static int dumpRecipes() throws IOException {
+        List<String> lines = new ArrayList<>();
+        for (Map.Entry<String, gregapi.recipes.Recipe.RecipeMap> e : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAPS.entrySet()) {
+            gregapi.recipes.Recipe.RecipeMap m = e.getValue();
+            if (m == null || m.mRecipeList == null) continue;
+            for (gregapi.recipes.Recipe r : m.mRecipeList) { if (r == null) continue; try { lines.add(recipeJson(e.getKey(), r)); } catch (Throwable t) {} }
+        }
+        Collections.sort(lines);
+        Files.write(DUMP.resolve("recipes.jsonl"), lines, StandardCharsets.UTF_8);
+        return lines.size();
+    }
+    private static String recipeJson(String map, gregapi.recipes.Recipe r) {
+        StringBuilder sb = new StringBuilder(256);
+        sb.append("{\"map\":\"").append(esc(map)).append('"');
+        sb.append(",\"in\":[").append(recItems(r.mInputs)).append(']');
+        sb.append(",\"fin\":[").append(recFluids(r.mFluidInputs)).append(']');
+        sb.append(",\"out\":[").append(recItems(r.mOutputs)).append(']');
+        sb.append(",\"fout\":[").append(recFluids(r.mFluidOutputs)).append(']');
+        sb.append(",\"chn\":[").append(longs(r.mChances)).append(']');
+        sb.append(",\"chnmax\":[").append(longs(r.mMaxChances)).append(']');
+        sb.append(",\"eut\":").append(r.mEUt);
+        sb.append(",\"dur\":").append(r.mDuration);
+        sb.append(",\"spv\":").append(r.mSpecialValue);
+        sb.append(",\"en\":").append(r.mEnabled);
+        sb.append(",\"hid\":").append(r.mHidden);
+        sb.append(",\"fake\":").append(r.mFakeRecipe);
+        sb.append(",\"nempty\":").append(r.mNeedsEmptyOutput);
+        sb.append(",\"buf\":").append(r.mCanBeBuffered);
+        sb.append(",\"nonbt\":").append(r.mNoNBTChecks);
+        sb.append(",\"spec\":\"").append(r.mSpecialItems == null ? "" : esc(r.mSpecialItems.getClass().getSimpleName())).append('"');
+        sb.append('}');
+        return sb.toString();
+    }
+    private static String recItems(ItemStack[] arr) {
+        if (arr == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (ItemStack s : arr) { if (sb.length() > 0) sb.append(','); sb.append('"').append(s == null ? "null" : esc(stackId(s) + ":" + s.getCount())).append('"'); }
+        return sb.toString();
+    }
+    private static String recFluids(FluidStack[] arr) {
+        if (arr == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (FluidStack s : arr) { if (sb.length() > 0) sb.append(','); String v = (s == null || s.getFluid() == null) ? "null" : (FluidGT.nameOf(s.getFluid()) + ":" + s.getAmount()); sb.append('"').append(esc(v)).append('"'); }
+        return sb.toString();
+    }
+    private static String longs(long[] arr) {
+        if (arr == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (long v : arr) { if (sb.length() > 0) sb.append(','); sb.append(v); }
+        return sb.toString();
+    }
+
     // ------------------------------------------------------------------ recipemaps.csv (зеркало DumpRecipes)
     private static int dumpRecipeMaps() throws IOException {
         List<String> lines = new ArrayList<>();
@@ -424,6 +478,12 @@ public final class PortDump {
         Path golden = ORACLE.resolve(file), port = DUMP.resolve(file);
         if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
         return reportSets(file, ParityDiff.fromCsvLower(golden, keyCols), ParityDiff.fromCsvLower(port, keyCols));
+    }
+    /** Whole-line CI set-overlap отчёт (для .jsonl рецептов). */
+    private static double reportJsonl(String file) {
+        Path golden = ORACLE.resolve(file), port = DUMP.resolve(file);
+        if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
+        return reportSets(file, ParityDiff.fromLinesCI(golden), ParityDiff.fromLinesCI(port));
     }
     private static double reportSets(String file, ParityDiff.ParitySet g, ParityDiff.ParitySet p) {
         ParityDiff.Report r = ParityDiff.diff(file, g, p);
