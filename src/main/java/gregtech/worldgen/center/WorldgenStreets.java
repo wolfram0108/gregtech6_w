@@ -315,8 +315,8 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.putInt("Primary", MobEffect.moveSpeed.id);
-						tNBT.putInt("Secondary", MobEffect.moveSpeed.id);
+						tNBT.putInt("Primary", /*moveSpeed*/1);
+						tNBT.putInt("Secondary", /*moveSpeed*/1);
 						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
@@ -326,8 +326,8 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.putInt("Primary", MobEffect.digSpeed.id);
-						tNBT.putInt("Secondary", MobEffect.digSpeed.id);
+						tNBT.putInt("Primary", /*digSpeed*/3);
+						tNBT.putInt("Secondary", /*digSpeed*/3);
 						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
@@ -337,8 +337,8 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.putInt("Primary", MobEffect.damageBoost.id);
-						tNBT.putInt("Secondary", MobEffect.damageBoost.id);
+						tNBT.putInt("Primary", /*damageBoost*/5);
+						tNBT.putInt("Secondary", /*damageBoost*/5);
 						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
@@ -348,8 +348,8 @@ public class WorldgenStreets extends WorldgenObject {
 					if (tTileEntity instanceof TileEntityBeacon) {
 						CompoundTag tNBT = UT.NBT.make();
 						tTileEntity.writeToNBT(tNBT);
-						tNBT.putInt("Primary", MobEffect.resistance.id);
-						tNBT.putInt("Secondary", MobEffect.regeneration.id);
+						tNBT.putInt("Primary", /*resistance*/11);
+						tNBT.putInt("Secondary", /*regeneration*/10);
 						tNBT.putInt("Levels", 4);
 						tTileEntity.readFromNBT(tNBT);
 					}
