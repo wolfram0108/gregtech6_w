@@ -70,7 +70,9 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	 * @param aPrefix the OreDictPrefix corresponding to this Item.
 	 */
 	public PrefixItem(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterial... aMaterialList) {
-		super(new Item.Properties()); // было super() (neo Item требует Properties; setMaxDamage/setHasSubtypes ниже — IItemGT default no-op, как и раньше по факту 0/подтипы через свой getUnlocalizedName(ItemStack))
+		// F12-followup (item-split): setId в Properties (иначе «Item id not set»); ключ = (владелец, имя), санитизирован,
+		// совпадает с registerItemLazy на call-site. (было super() → super(new Item.Properties()) без id.)
+		super(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mPrefix = aPrefix;
 		mPrefix.mRegisteredPrefixItems.add(this);
 		mNameInternal = aNameInternal;
