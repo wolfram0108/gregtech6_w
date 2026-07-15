@@ -208,7 +208,7 @@ public class MultiTileEntityHopper extends TileEntityBase09FacingSingle implemen
 					mCheck = -1;
 				}
 				if (mInventoryChanged) {
-					for (int i = 0, k = invsize(), l = getInventoryStackLimit(); i < k; i++) for (int j = i+1; j < k; j++) if (slotHas(j)) {
+					for (int i = 0, k = invsize(), l = getMaxStackSize(); i < k; i++) for (int j = i+1; j < k; j++) if (slotHas(j)) {
 						int tMaxSize = Math.min(l, slot(j).getMaxStackSize());
 						if (slotHas(i)) {
 							if (slot(i).getCount() < tMaxSize && ST.equal(slot(i), slot(j))) {
