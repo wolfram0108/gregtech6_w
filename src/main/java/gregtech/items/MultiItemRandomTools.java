@@ -615,7 +615,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11002: aTarget = aPlayer.level().getSharedSpawnPos(); break;
+		case 11002: aTarget = aPlayer.level().getRespawnData().pos(); break;
 		case 11004: aTarget = LAST_DEATH_OF_THE_PLAYER; break;
 		default: return getIconIndex(aStack);
 		}
@@ -646,7 +646,7 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		case 11000: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260+aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11001: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361260-aPlayer.getYRot())/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
 		case 11003: return Textures.ItemIcons.COMPASS[UT.Code.roundDown(0.5+Textures.ItemIcons.COMPASS.length*(361170+aPlayer.getYRot()-Math.atan2(-aPlayer.getZ(), -aPlayer.getX())*180/Math.PI)/360)%Textures.ItemIcons.COMPASS.length].getIcon(0);
-		case 11002: aTarget = aPlayer.level().getSharedSpawnPos(); break;
+		case 11002: aTarget = aPlayer.level().getRespawnData().pos(); break;
 		case 11004: aTarget = LAST_DEATH_OF_THE_PLAYER; break;
 		default: return getIconFromDamage(aMetaData);
 		}
