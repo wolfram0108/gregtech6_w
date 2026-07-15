@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tree;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.block.tree.BlockBaseSapling;
 import gregapi.data.CS.*;

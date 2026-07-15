@@ -19,6 +19,7 @@
 
 package gregtech.blocks.stone;
 
+import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 
 import gregapi.block.metatype.BlockMetaType;

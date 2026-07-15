@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tree;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.IBlockToolable;
 import gregapi.block.ToolCompat;
 import gregapi.block.tree.BlockBaseLeaves;
@@ -44,7 +45,7 @@ import static gregapi.data.CS.*;
 
 public class BlockTreeLogC extends BlockBaseLogFlammable implements IBlockToolable {
 	public BlockTreeLogC(String aUnlocalised) {
-		super(null, aUnlocalised, Material.wood, soundTypeWood, 1, Textures.BlockIcons.LOGS_C);
+		super(null, aUnlocalised, Material.wood, SoundType.WOOD, 1, Textures.BlockIcons.LOGS_C);
 		
 		LH.add(getUnlocalizedName()+ ".0", "Blue Spruce Log");
 		LH.add(getUnlocalizedName()+ ".4", "Blue Spruce Log");

@@ -19,6 +19,7 @@
 
 package gregtech.blocks.stone;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.BlockBaseMeta;
 import gregapi.data.LH;
 import gregapi.data.MD;
@@ -43,7 +44,7 @@ public class BlockCrystalOres extends BlockBaseMeta {
 	public static OreDictMaterial[] ORE_MATERIALS = {MT.OREMATS.Arsenopyrite, MT.OREMATS.Chalcopyrite, MT.OREMATS.Cinnabar, MT.OREMATS.Cobaltite, MT.OREMATS.Galena, MT.OREMATS.Kesterite, MT.OREMATS.Molybdenite, MT.Pyrite, MT.OREMATS.Sphalerite, MT.OREMATS.Stannite, MT.OREMATS.Stibnite, MT.OREMATS.Tetrahedrite};
 	
 	public BlockCrystalOres(String aUnlocalised) {
-		super(null, aUnlocalised, Material.glass, soundTypeGlass, ORE_MATERIALS.length, Textures.BlockIcons.CRYSTAL_ORES);
+		super(null, aUnlocalised, Material.glass, SoundType.GLASS, ORE_MATERIALS.length, Textures.BlockIcons.CRYSTAL_ORES);
 		LH.add(getUnlocalizedName()+ ".0", "Arsenopyrite Crystal");
 		LH.add(getUnlocalizedName()+ ".1", "Chalcopyrite Crystal");
 		LH.add(getUnlocalizedName()+ ".2", "Cinnabar Crystal");

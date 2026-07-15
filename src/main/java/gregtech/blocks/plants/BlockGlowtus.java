@@ -19,6 +19,7 @@
 
 package gregtech.blocks.plants;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.misc.BlockBaseLilyPad;
 import gregapi.data.LH;
 import gregapi.data.MT;

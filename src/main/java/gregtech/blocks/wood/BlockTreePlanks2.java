@@ -19,6 +19,7 @@
 
 package gregtech.blocks.wood;
 
+import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 
 import java.util.List;
@@ -41,7 +42,7 @@ import net.minecraft.world.item.ItemStack;
 
 public class BlockTreePlanks2 extends BlockBasePlanksFlammable {
 	public BlockTreePlanks2(String aName) {
-		super(ItemBlockMetaType.class, Material.wood, soundTypeWood, aName, "", ANY.Wood, 1, 1, 0, 1, Textures.BlockIcons.PLANKS_2);
+		super(ItemBlockMetaType.class, Material.wood, SoundType.WOOD, aName, "", ANY.Wood, 1, 1, 0, 1, Textures.BlockIcons.PLANKS_2);
 		LH.add(getUnlocalizedName()+ ".0", "Blue Spruce Planks");
 	//  LH.add(getUnlocalizedName()+ ".1", " Planks");
 	//  LH.add(getUnlocalizedName()+ ".2", " Planks");

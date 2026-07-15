@@ -19,6 +19,7 @@
 
 package gregtech.blocks;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.BlockBaseMeta;
 import gregapi.block.IBlockOnWalkOver;
 import gregapi.data.*;
@@ -47,7 +48,7 @@ public class BlockDiggable extends BlockBaseMeta implements IBlockOnWalkOver {
 	public static boolean[] IS_CLAY = {F,T,F,T,T,T,T,F,F,F,F,F,F,F,F,F};
 	
 	public BlockDiggable(String aUnlocalised) {
-		super(null, aUnlocalised, Material.ground, soundTypeGravel, 7, Textures.BlockIcons.DIGGABLES);
+		super(null, aUnlocalised, Material.ground, SoundType.GRAVEL, 7, Textures.BlockIcons.DIGGABLES);
 		LH.add(getUnlocalizedName()+ ".0", "Mud");
 		LH.add(getUnlocalizedName()+ ".1", "Brown Clay");
 		LH.add(getUnlocalizedName()+ ".2", "Turf");

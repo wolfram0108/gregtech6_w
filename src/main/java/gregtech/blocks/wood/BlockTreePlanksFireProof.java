@@ -19,6 +19,7 @@
 
 package gregtech.blocks.wood;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.util.WD;
 import gregapi.block.metatype.BlockBasePlanks;
 import gregapi.block.metatype.BlockMetaType;
@@ -37,7 +38,7 @@ import static gregapi.data.CS.ALL_SIDES_VALID;
 
 public class BlockTreePlanksFireProof extends BlockBasePlanks {
 	public BlockTreePlanksFireProof(String aName) {
-		super(ItemBlockMetaType.class, Material.wood, soundTypeWood, aName, "", ANY.Wood, 1, 1, 0, 16, Textures.BlockIcons.PLANKS);
+		super(ItemBlockMetaType.class, Material.wood, SoundType.WOOD, aName, "", ANY.Wood, 1, 1, 0, 16, Textures.BlockIcons.PLANKS);
 		LH.add(getUnlocalizedName()+ ".0", "Rubberwood Planks (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".1", "Maple Planks (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".2", "Willow Planks (Fireproof)");

@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tree;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.util.WD;
 import gregapi.block.IBlockToolable;
 import gregapi.block.ToolCompat;
@@ -42,7 +43,7 @@ import static gregapi.data.CS.*;
 
 public class BlockTreeLog1FireProof extends BlockBaseBeam implements IBlockToolable {
 	public BlockTreeLog1FireProof(String aUnlocalised) {
-		super(null, aUnlocalised, Material.wood, soundTypeWood, 4, Textures.BlockIcons.LOGS_1);
+		super(null, aUnlocalised, Material.wood, SoundType.WOOD, 4, Textures.BlockIcons.LOGS_1);
 		
 		LH.add(getUnlocalizedName()+ ".0", "Dead Log (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".4", "Dead Log (Fireproof)");

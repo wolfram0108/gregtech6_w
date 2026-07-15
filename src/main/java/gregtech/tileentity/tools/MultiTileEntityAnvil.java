@@ -19,6 +19,7 @@
 
 package gregtech.tileentity.tools;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetSelectedBoundingBoxFromPool;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnRegistration;

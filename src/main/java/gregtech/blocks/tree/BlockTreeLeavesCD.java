@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tree;
 
+import net.minecraft.world.level.block.SoundType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.tree.BlockBaseLeaves;

@@ -19,6 +19,7 @@
 
 package gregtech.blocks.wood;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.tree.BlockBaseBeam;
 import gregapi.data.LH;
 import gregapi.old.Textures;
@@ -26,7 +27,7 @@ import gregapi.block.Material;
 
 public class BlockTreeBeam2FireProof extends BlockBaseBeam {
 	public BlockTreeBeam2FireProof(String aUnlocalised) {
-		super(null, aUnlocalised, Material.wood, soundTypeWood, 4, Textures.BlockIcons.BEAMS_2);
+		super(null, aUnlocalised, Material.wood, SoundType.WOOD, 4, Textures.BlockIcons.BEAMS_2);
 		
 		LH.add(getUnlocalizedName()+ ".0", "Acacia Beam (Fireproof)");
 		LH.add(getUnlocalizedName()+ ".4", "Acacia Beam (Fireproof)");

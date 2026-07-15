@@ -19,6 +19,7 @@
 
 package gregtech.blocks;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.BlockBaseMeta;
 import gregapi.block.IBlockOnWalkOver;
 import gregapi.data.IL;

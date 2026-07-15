@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tool;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.misc.BlockBaseBars;
 import gregapi.data.ANY;
 import gregapi.data.LH;
@@ -27,7 +28,7 @@ import gregapi.block.Material;
 
 public class BlockBarsWood extends BlockBaseBars {
 	public BlockBarsWood(String aNameInternal) {
-		super(aNameInternal, ANY.Wood, Material.wood, Block.soundTypeWood);
+		super(aNameInternal, ANY.Wood, Material.wood, SoundType.WOOD);
 		LH.add(getUnlocalizedName()+ ".0", "Wood Bars");
 		LH.add(getUnlocalizedName()+ ".1", "Wood Bars");
 		LH.add(getUnlocalizedName()+ ".2", "Wood Bars");

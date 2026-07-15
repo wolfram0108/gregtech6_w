@@ -18,6 +18,7 @@
  */
 
 package gregtech.blocks;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.core.BlockPos;
 
 import gregapi.block.misc.BlockBaseBale;

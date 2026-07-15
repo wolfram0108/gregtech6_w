@@ -19,6 +19,7 @@
 
 package gregtech.blocks.wood;
 
+import net.minecraft.world.level.block.SoundType;
 import gregapi.block.tree.BlockBaseBeamFlammable;
 import gregapi.data.LH;
 import gregapi.old.Textures;
@@ -26,7 +27,7 @@ import gregapi.block.Material;
 
 public class BlockTreeBeamA extends BlockBaseBeamFlammable {
 	public BlockTreeBeamA(String aUnlocalised) {
-		super(null, aUnlocalised, Material.wood, soundTypeWood, 4, Textures.BlockIcons.BEAMS_A);
+		super(null, aUnlocalised, Material.wood, SoundType.WOOD, 4, Textures.BlockIcons.BEAMS_A);
 		
 		LH.add(getUnlocalizedName()+ ".0", "Rubber Beam");
 		LH.add(getUnlocalizedName()+ ".4", "Rubber Beam");

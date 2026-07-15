@@ -19,6 +19,7 @@
 
 package gregtech.loaders.a;
 
+import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 
 import com.cricketcraft.chisel.api.carving.CarvingUtils;

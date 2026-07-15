@@ -19,6 +19,7 @@
 
 package gregtech.blocks.tool;
 
+import net.minecraft.world.level.block.SoundType;
 import static gregapi.data.CS.*;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class BlockLongDistWire extends BlockBaseMachineUpdate {
 	public final byte[] mTiers;
 	
 	public BlockLongDistWire(String aUnlocalised, IIconContainer[] aIcons, byte[] aTiers) {
-		super(null, aUnlocalised, Material.iron, soundTypeCloth, 16, aIcons, ~0);
+		super(null, aUnlocalised, Material.iron, SoundType.WOOL, 16, aIcons, ~0);
 		mTiers = aTiers;
 		for (byte i = 0; i < 16; i++) LH.add(aUnlocalised+"."+i, "Long Distance Electric Wire ("+VN[mTiers[i]]+")");
 	}
