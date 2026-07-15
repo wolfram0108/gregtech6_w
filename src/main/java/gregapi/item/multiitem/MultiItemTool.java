@@ -431,14 +431,16 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		}
 		return 0;
 	}
-	// PORT-TODO(F8, остаточный риск): оригинал мутирует aNBT.getCompoundOrEmpty("GT.ToolStats") и НЕ вызывает
-	// setTagCompound повторно — в 1.7.10 это был живой объект тега стека, мутация сохранялась сама.
-	// Под мостом ItemNBT (CustomData копирует тег на каждый get()) эта мутация НЕ долетает до стека:
-	// метод становится no-op. См. ItemNBT.java javadoc и decisions/F8-nbt-data-components.md §7.
+	// F8-nbt: оригинал мутировал живой тег стека (1.7.10 getTagCompound = ссылка). Под мостом ItemNBT (neo CustomData копирует
+	// тег на get()) мутацию надо вернуть в стек: get(копия) → mutate → put суб-тег обратно → ItemNBT.set(aStack, ...). Иначе
+	// метод no-op → инструменты не изнашиваются (doDamage:464). См. decisions/F8-nbt-data-components.md §7.
 	public static final boolean setToolDamage(ItemStack aStack, long aDamage) {
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		if (aNBT != null) {
-			UT.NBT.setNumber(aNBT.getCompoundOrEmpty("GT.ToolStats"), "k", aDamage);
+			CompoundTag tStats = aNBT.getCompoundOrEmpty("GT.ToolStats");
+			UT.NBT.setNumber(tStats, "k", aDamage);
+			aNBT.put("GT.ToolStats", tStats);
+			ItemNBT.set(aStack, aNBT);
 			return T;
 		}
 		return F;
@@ -610,44 +612,49 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public boolean isItemStackUsable(ItemStack aStack) {
 		if (aStack.getCount() <= 0) return F;
 
-		// PORT-TODO(F8, остаточный риск): ниже aNBT.remove("ench")/setTag("ench", ...) мутируют локальный
-		// снимок без повторного commit через ItemNBT.set — в 1.7.10 это был живой тег стека. Под мостом
-		// ItemNBT эти правки в тег стека НЕ попадают (см. ItemNBT.java javadoc, decisions/F8-nbt-data-components.md §7).
+		// F8-nbt: aNBT.remove("ench")/put("ench",...) мутируют СНИМОК (neo CustomData копирует тег на get()) — надо вернуть в
+		// стек через ItemNBT.set, иначе в 1.7.10-семантике «живого тега» правки терялись → энчанты переприменялись каждый вызов
+		// (маркер "ench" не персистился). См. decisions/F8-nbt-data-components.md §7.
 		CompoundTag aNBT = ItemNBT.get(aStack);
 		// The Tool has no Data? Treat it like a single use Creative Tool.
 		if (aNBT == null) return T;
-		
+
 		// Invalid Tool Index?
 		if (!isUsableMeta(aStack)) {
 			aNBT.remove("ench");
+			ItemNBT.set(aStack, aNBT);
 			return F;
 		}
-		
+
 		IToolStats tStats = getToolStatsInternal(aStack);
 		// No Tool Data?
 		if (tStats == null) {
 			aNBT.remove("ench");
+			ItemNBT.set(aStack, aNBT);
 			return F;
 		}
-		
+
 		OreDictMaterial aMaterial = getPrimaryMaterial(aStack);
 		// "Empty" Toolheads should not be able to do things.
 		if (aMaterial == MT.Empty) {
 			aNBT.remove("ench");
+			ItemNBT.set(aStack, aNBT);
 			return F;
 		}
-		
+
 		// Some Behavior declaring this unusable?
 		if (!super.isItemStackUsable(aStack)) {
 			aNBT.remove("ench");
+			ItemNBT.set(aStack, aNBT);
 			return F;
 		}
-		
+
 		// If no Enchantments, checks ends successfully early.
 		if (aNBT.contains("ench")) return T;
-		
+
 		// Abuse a potentially empty List as a boolean to see if a Tool already has enchants or not.
 		aNBT.put("ench", new ListTag());
+		ItemNBT.set(aStack, aNBT);
 		
 		List<ObjectStack<ResourceKey<Enchantment>>> tEnchantments = new ArrayListNoNulls<>();
 		// Get Material Specific Enchantments for applicable Tool Classes.
