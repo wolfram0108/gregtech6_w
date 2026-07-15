@@ -625,16 +625,18 @@ public class GT6_Main extends Abstract_Mod {
 			ORD.println("Biomes:");
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
 			
-			for (int i = 0; i < Biome.getBiomeGenArray().length; i++) {
-				if (Biome.getBiomeGenArray()[i] != null) ORD.println(Biome.getBiomeGenArray()[i].biomeID + " = " + Biome.getBiomeGenArray()[i].biomeName);
+			net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> tBiomeReg = aEvent.getServer().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME);
+			for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome>, net.minecraft.world.level.biome.Biome> tE : tBiomeReg.entrySet()) {
+				ORD.println(tE.getKey().toString());
 			}
 			
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
 			ORD.println("Enchantments:");
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
 			
-			for (int i = 0; i < Enchantment.enchantmentsList.length; i++) {
-				if (Enchantment.enchantmentsList[i] != null) ORD.println(i + " = " + Enchantment.enchantmentsList[i].getName());
+			net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> tEnchReg = aEvent.getServer().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+			for (java.util.Map.Entry<net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>, net.minecraft.world.item.enchantment.Enchantment> tE : tEnchReg.entrySet()) {
+				ORD.println(tE.getKey().toString());
 			}
 			
 			ORD.println("*"); ORD.println("*"); ORD.println("*");
