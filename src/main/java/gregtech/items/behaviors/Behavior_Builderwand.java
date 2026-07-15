@@ -102,7 +102,7 @@ public class Behavior_Builderwand extends AbstractBehaviorDefault {
 				Block tBlock = ST.block(tStack);
 				if (ST.invalid(tBlock)) {
 					if (tStack.getItem() instanceof BlockItem) {
-						tBlock = ((BlockItem)tStack.getItem()).field_150939_a;
+						tBlock = ((BlockItem)tStack.getItem()).getBlock();
 						if (ST.invalid(tBlock)) continue;
 					} else continue;
 				}
