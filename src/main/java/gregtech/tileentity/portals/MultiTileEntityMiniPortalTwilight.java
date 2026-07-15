@@ -33,7 +33,6 @@ import gregapi.util.OM;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
-import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
@@ -119,7 +118,7 @@ public class MultiTileEntityMiniPortalTwilight extends MultiTileEntityMiniPortal
 				setPortalActive();
 				if (mTarget != null) UT.Entities.sendchat(aPlayer, "X: " + mTarget.getBlockPos().getX() + "   Y: " + mTarget.getBlockPos().getY() + "   Z: " + mTarget.getBlockPos().getZ());
 				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
-				level.addWeatherEffect(new EntityLightningBolt(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()));
+				{net.minecraft.world.entity.LightningBolt tLB = new net.minecraft.world.entity.LightningBolt(net.minecraft.world.entity.EntityType.LIGHTNING_BOLT, level); tLB.setPos(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ()); level.addFreshEntity(tLB);}
 			}
 		}
 		return T;

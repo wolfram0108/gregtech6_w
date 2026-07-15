@@ -33,7 +33,6 @@ import gregapi.tileentity.multiblocks.TileEntityBase10MultiBlockBase;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -141,7 +140,7 @@ public class MultiTileEntityLightningRod extends TileEntityBase10MultiBlockBase 
 								}
 							}
 							if (temp) {
-								level.addWeatherEffect(new EntityLightningBolt(level, getBlockPos().getX(), getBlockPos().getY()+mSize+4, getBlockPos().getZ()));
+								{net.minecraft.world.entity.LightningBolt tLB = new net.minecraft.world.entity.LightningBolt(net.minecraft.world.entity.EntityType.LIGHTNING_BOLT, level); tLB.setPos(getBlockPos().getX(), getBlockPos().getY()+mSize+4, getBlockPos().getZ()); level.addFreshEntity(tLB);}
 								mEnergy = mCapacity;
 							}
 						}
