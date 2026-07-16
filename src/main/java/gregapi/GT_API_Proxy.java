@@ -741,8 +741,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 						if (!aEntity.isRemoved() && aEntity.isOnFire() && (tBreak || (tFireProof && !MD.MC.owns(rStack)))) {
 							UT.Reflection.setField(ItemEntity.class, aEntity, "health", 250, F);
-							// PORT-TODO(EVENTS, ItemEntity.field_70291_e): 1.7.10 SRG-имя без neo-соответствия (второе приватное поле рядом с "health"
-							// в 1.7.10 ItemEntity больше не существует, сверено ItemEntity.java) — второй reflection-хак опущен.
+							// EVENTS: golden ставил "health" И "field_70291_e" — это ОДНО поле (field_70291_e = SRG-имя health в 1.7.10
+							// EntityItem; дублирование деобф+SRG). health=250 выше уже покрывает оба → второй set был избыточен, не потеря.
 							aEntity.extinguishFire();
 						}
 					}
