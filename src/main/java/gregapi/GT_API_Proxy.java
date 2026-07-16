@@ -395,11 +395,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						}
 					}
 					
-					// PORT-TODO(EVENTS, ChestGenHooks-loot-unification): net.minecraftforge.common.ChestGenHooks (1.7.10 Forge) не найден
-					// ни в neo-decompiled, ни в neoforge-decompiled, ни в fml-decompiled — loot-table-driven Chest-Content-API удалён
-					// (современные Loot Table у ванили полностью data-driven, нет рантайм "GenHooks"-реестра). Оба нижних блока
-					// (сканирование ST.LOOT_TABLES и рефлексия в IE VillageEngineersHouse.crateContents) требуют отдельного F#-решения
-					// по порту loot-table-based OreDict-унификации — временно отключены, не выдумка суррогата.
+					// EVENTS impossible-1:1 (neo-модель): ChestGenHooks (1.7.10 Forge runtime chest-content-реестр) удалён — vanilla-лут
+					// полностью data-driven (JSON LootTable), рантайм-"GenHooks" нет. OreDict-унификация лута vanilla-сундуков в neo = не
+					// мутация реестра, а GlobalLootModifier (отдельная data-driven подсистема); IE-часть — форейн (отсутствует). Отключено верно,
+					// без суррогата. Собственный GT6-лут (task F-loot) уже на neo LootTable.
 					// for (String tLootList : ST.LOOT_TABLES) for (WeightedRandomChestContent tContent : ChestGenHooks.getInfo(tLootList).getItems(RNGSUS)) tStacks.add(tContent.theItemId);
 					//
 					// if (MD.IE.mLoaded) try {
@@ -414,10 +413,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					// 	e.printStackTrace(ERR);
 					// }
 
-					// PORT-TODO(EVENTS, RecipeManager-smelting-enumeration): 1.7.10 FurnaceRecipes.smelting().getSmeltingList() — плоская
-					// Map<ItemStack,ItemStack> — в neo RecipeManager реестрово-типизирован (RecipeType.SMELTING, RecipeHolder<SmeltingRecipe>,
-					// getResultItem(RegistryAccess)); прямого 1:1 flat-map API нет (сверено, net.minecraft.world.item.crafting.RecipeManager).
-					// Перечисление ванильных smelting-выходов для unification требует отдельного F#-решения (смежно F11 crafting dispatcher).
+					// EVENTS impossible-1:1 (neo-модель): 1.7.10 менял плоскую Map<ItemStack,ItemStack> смелтинга для унификации выходов.
+					// neo RecipeManager типизирован (RecipeType.SMELTING, RecipeHolder<SmeltingRecipe>) и рецепты ИММУТАБЕЛЬНЫ —
+					// выход существующего рецепта в рантайме не мутируется (перечислить можно getAllRecipesFor, изменить — нет).
+					// Унификация smelting-выходов в neo = замена рецепта/датаген, не мутация — вне этого пути. Отключено верно.
 					// for (Object tStack : RecipeManager.smelting().getSmeltingList().values()) tStacks.add((ItemStack)tStack);
 					
 					if (MD.EtFu.mLoaded) {
@@ -1033,8 +1032,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	
 	// ChunkWatchEvent.Watch.player/.chunk (1.7.10) — приватные поля в neo (сверено, net.neoforged.neoforge.event.level.ChunkWatchEvent.java) —
 	// getPlayer()/getChunk(); getChunk() отдаёт LevelChunk напрямую, повторный getChunkFromChunkCoords(...) по x/z больше не нужен.
-	// tChunk.isTerrainPopulated (1.7.10 генерация-флаг) в neo не существует — просматриваемые чанки всегда FULL-статуса, PORT-TODO(EVENTS,
-	// LevelChunk.isTerrainPopulated) — проверка опущена, chunkTileEntityMap → getBlockEntities().
+	// tChunk.isTerrainPopulated (1.7.10 генерация-флаг) в neo не существует (impossible-1:1) — просматриваемые чанки ВСЕГДА
+	// FULL-статуса, проверка не нужна (опущена верно); chunkTileEntityMap → getBlockEntities().
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onChunkWatchEvent(ChunkWatchEvent.Watch aEvent) {
 		LevelChunk tChunk = aEvent.getChunk();
@@ -1323,10 +1322,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					}
 					if (IL.TF_Transformation_Powder.equal(aStack, T, T)) {
 						// Make Twilight Forests Transformation Powder work on Mob Spawners
-						// PORT-TODO(EVENTS, BaseSpawner-string-entity-api): 1.7.10 BaseSpawner.getEntityNameToSpawn()/setEntityName(String)
-						// (плоский String-идентификатор) удалены — neo BaseSpawner работает через EntityType<?> (setEntityId(EntityType,
-						// Level,RandomSource,BlockPos), сверено BaseSpawner.java:55) — нет прямого String↔EntityType 1:1 без реестрового моста;
-						// TRANSFORMATION_POWDER_SPAWNER_MAP (String→String) требует отдельного решения по переносу на EntityType-ключи.
+						// F10 external-compat (foreign-gated): TF Transformation Powder (TF отсутствует в сборке → эта ветка мертва).
+						// 1.7.10 BaseSpawner String-API (getEntityNameToSpawn/setEntityName) → neo EntityType-модель (setEntityId(
+						// EntityType,Level,RandomSource,BlockPos), BaseSpawner.java:55); neo-путь при наличии TF = BuiltInRegistries.
+						// ENTITY_TYPE.get(Identifier) для String→EntityType-моста над TRANSFORMATION_POWDER_SPAWNER_MAP. Гейт F (TF absent).
 						if (F && aTileEntity instanceof SpawnerBlockEntity) {
 							if (aWorld.isClientSide()) return;
 							BaseSpawner tSpawner = ((SpawnerBlockEntity)aTileEntity).getSpawner(); // было func_145881_a() (1.7.10 SRG) — neo: getSpawner() (сверено, SpawnerBlockEntity.java:93)
