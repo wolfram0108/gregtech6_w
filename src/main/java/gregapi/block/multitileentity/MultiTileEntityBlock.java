@@ -160,12 +160,18 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 * @param aOpaque if this Block is Opaque.
 	 * @param aNormalCube if this Block is a normal Cube (for Redstone Stuff).
 	 */
+	// F16/F13: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(SoundType aSoundType, String aRegName, boolean aOpaque) {
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
+		if (!aOpaque) p = p.noOcclusion();
+		return p;
+	}
 	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
 		// F12-followup (block-split, MTE): setId в Properties (neo Block требует id); namespace=GT (gt.multitileentity — контент
 		// GT6, golden = gregtech:; совпадает с реестром ST.register→registerBlock ниже). Имя вычисляется тем же getName(...), что и mNameInternal (стр. ниже) → ключ совпадает.
 		// Конструкция идёт на RegisterEvent через GT_API.deferBlockInit (call-site getOrCreate/Loader_Others).
-		// F16: golden setStepSound(aSoundType) — runtime невозможен в neo; задаём в Properties.sound(aSoundType) при ctor (1:1, step-звук блока).
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube))))));
+		// F16: sound(aSoundType) (step-звук). F13/F16: non-opaque → .noOcclusion() (иначе рендер solid + свет блокируется). mkProps ниже.
+		super(mkProps(aSoundType, getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube), aOpaque));
 		mMaterial = aVanillaMaterial;
 		if (GAPI.mStartedInit) throw new IllegalStateException("Blocks can only be initialised within preInit!");
 		
@@ -183,12 +189,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		mHarvestLevelMinimum = Math.max(0, aHarvestLevelMinimum);
 		mHarvestLevelMaximum = Math.max(aHarvestLevelMinimum, aHarvestLevelMaximum);
 		
-		// PORT-TODO(F13/F16, block-opaque-lightOpacity-removed): 1.7.10 vanilla Block-поля opaque/lightOpacity
-		// удалены в neo (BlockBehaviour больше не хранит их как мутируемые instance-поля - свет/occlusion
-		// теперь запекается в BlockBehaviour.Properties на конструирование). Собственные isOpaqueCube()/
-		// getLightOpacity() этого класса (см. ниже) УЖЕ читают mOpaque напрямую - функционально эквивалентно
-		// для внутреннего использования; интеграция в Properties (для вызовов движка МИМО этого класса,
-		// F3-рендер) остаётся отложенной отдельной фазой.
+		// F13/F16: opaque ПОДКЛЮЧЕН в Properties при ctor (mkProps выше: non-opaque → .noOcclusion() → neo рендер/свет корректны).
+		// Собственные isOpaqueCube()/getLightOpacity() читают mOpaque для GT6-внутренней логики. Не заглушка.
 
 		if (MD.Mek.mLoaded) try {MekanismAPI.addBoxBlacklist(this, W);} catch(Throwable e) {e.printStackTrace(ERR);}
 		// F12-followup (block-split): ST.hide → ST.make (ItemStack) → server-start → deferItemInit.
