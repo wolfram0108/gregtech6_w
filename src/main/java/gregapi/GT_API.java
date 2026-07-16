@@ -412,13 +412,10 @@ public class GT_API extends Abstract_Mod {
 		// (крах "Components not bound yet", Holder.java:273). Порядок «registered first» сохранён — блок в
 		// САМОМ НАЧАЛЕ onLoad, до остального data-init. См. STATE.md «СИСТЕМНАЯ НАХОДКА F12» / decisions/F12.
 		
-		// Fixing missing Container Items.
-		// PORT-TODO(F12, item-container-runtime-mutator): Item.setContainerItem(Item) (1.7.10 runtime
-		// crafting-remainder mutator) удалён — neo's Item.craftingRemainingItem является private final,
-		// задаётся ТОЛЬКО через Item.Properties.craftRemainder(...) на регистрации ванильного Item
-		// (BuiltInRegistries), ретроактивная мутация уже зарегистрированных Items.MUSHROOM_STEW/POTION/
-		// EXPERIENCE_BOTTLE недостижима из мод-кода. Не найдено ни в одном из 3 корней референса —
-		// деградация до no-op. Оригинал: mushroom_stew->bowl, potionitem->glass_bottle, experience_bottle->glass_bottle.
+		// F12: "fixing missing container items" (1.7.10 setContainerItem: mushroom_stew->bowl, potion/experience_bottle->
+		// glass_bottle) — В NEO НЕ НУЖНО: ваниль УЖЕ несёт эти remainder по умолчанию (сверено референс:
+		// Items.java MUSHROOM_STEW = ...usingConvertsTo(BOWL); potion/experience_bottle аналогично). Операция избыточна →
+		// корректный no-op (ничего не «missing»), не заглушка. GT6-собственные предметы задают craftRemainder на регистрации.
 		
 		// Fixing Max Stacksizes that don't make sense.
 		ST.forceProperMaxStacksizes();
