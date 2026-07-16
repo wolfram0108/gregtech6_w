@@ -95,10 +95,11 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 		gregapi.GT_API.deferItemInit(() -> mPrefix.mRegisteredItems.add(this)); // this optimizes some processes by decreasing the size of the Set.
 		
 		if (SHOW_HIDDEN_PREFIXES || !mPrefix.contains(TD.Creative.HIDDEN)) {
+			// F16 (1:1 golden): видимый prefix → СВОЯ prefix-вкладка (setCreativeTab(mPrefix.mCreativeTab)), НЕ ванильный misc.
 			if (mPrefix.mCreativeTab == null) mPrefix.mCreativeTab = new CreativeTab(mPrefix.mNameInternal, mPrefix.mNameCategory, this, W);
-			gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.MISC);
+			gregapi.item.CreativeTabsGT.joinOwnTab(this, mPrefix.mCreativeTab);
 		} else {
-			gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.MISC);
+			gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.MISC); // hidden prefix → tabMisc (golden else)
 		}
 		
 		// Execute before all the other things. This is to ensure that PrefixItems are created before MultiItems.

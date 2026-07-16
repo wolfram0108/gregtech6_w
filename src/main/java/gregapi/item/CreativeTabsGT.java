@@ -56,13 +56,42 @@ public final class CreativeTabsGT {
 
 	private static final List<Object[]> ASSIGNMENTS = new ArrayList<>(); // {ItemLike (Block|Item), ResourceKey<CreativeModeTab>}
 
-	/** F16 собственные GT-вкладки (1:1 golden): 1.7.10 создавал 7 своих CreativeTabs (по одной на god-item: Technology,
-	 *  Nature&Foods, Cans, Bottles, Books, Bumblebees, Equipment). Их нельзя свести в ванильные — они отдельные вкладки с
-	 *  иконкой+заголовком. Здесь регистрируем каждую как настоящий neo CreativeModeTab (RegisterEvent&lt;CreativeModeTab&gt;). */
-	static final List<CreativeTab> OWN_TABS = new ArrayList<>();
+	/** F16 собственные GT-вкладки (1:1 golden): 1.7.10 создавал свои CreativeTabs — 7 god-item-вкладок (Technology,
+	 *  Nature&Foods, Cans, Bottles, Books, Bumblebees, Equipment) + per-prefix (mPrefix.mCreativeTab) + per-MTE-registry
+	 *  (mCreativeTabs). Их нельзя свести в ванильные — отдельные вкладки с иконкой+заголовком. Вкладка РАЗДЕЛЯЕМА: несколько
+	 *  предметов присоединяются к ней (setCreativeTab). Карта вкладка→члены; displayItems перечисляет getSubItems всех членов.
+	 *  Регистрируем каждую как настоящий neo CreativeModeTab (RegisterEvent&lt;CreativeModeTab&gt;). */
+	static final java.util.LinkedHashMap<String, CreativeTab>    OWN_TABS        = new java.util.LinkedHashMap<>(); // имя → вкладка (для регистрации)
+	static final java.util.LinkedHashMap<String, List<Item>>    OWN_TAB_MEMBERS = new java.util.LinkedHashMap<>(); // имя → члены (getSubItems)
+	static final java.util.LinkedHashMap<String, CreativeTab[]>  OWN_TAB_REF     = new java.util.LinkedHashMap<>(); // имя → holder инстанса (заполняется после super())
 
-	/** Вызывается из ctor {@link CreativeTab} (создаётся в ctor god-item — замена setCreativeTab(new CreativeTab(...))). */
-	static void registerOwnTab(CreativeTab aTab) {if (aTab != null) OWN_TABS.add(aTab);}
+	/** F16: строит neo Builder для собственной GT-вкладки. Ключ — имя (доступно ДО super(), в отличие от this): displayItems
+	 *  захватывает СПИСОК членов + holder инстанса вкладки (не this — стена лямбды-в-super()). Инстанс кладётся в holder
+	 *  registerOwnTab'ом (после super). Реальная вкладка нужна MTE-члену: его getSubItems фильтрует варианты по mCreativeTabID.
+	 *  Авто-джойнит создателя aItem. */
+	static CreativeModeTab.Builder builderFor(String aName, String aLocal, Item aItem, int aMeta) {
+		List<Item> tMembers = OWN_TAB_MEMBERS.computeIfAbsent(aName, k -> new ArrayList<>());
+		CreativeTab[] tRef = OWN_TAB_REF.computeIfAbsent(aName, k -> new CreativeTab[1]);
+		if (aItem != null && !tMembers.contains(aItem)) tMembers.add(aItem);
+		return CreativeModeTab.builder()
+			.title(net.minecraft.network.chat.Component.literal(aLocal))
+			.icon(() -> aItem == null ? new ItemStack(Items.STONE) : gregapi.util.ST.make(aItem, 1, aMeta & 0xFFFF))
+			.displayItems((aParams, aOutput) -> populate(tMembers, tRef[0], aOutput));
+	}
+
+	/** Вызывается из ctor {@link CreativeTab}: запоминает инстанс вкладки под её именем (реестр + holder для displayItems). */
+	static void registerOwnTab(CreativeTab aTab) {
+		if (aTab == null || aTab.mName == null) return;
+		OWN_TABS.put(aTab.mName, aTab);
+		OWN_TAB_REF.computeIfAbsent(aTab.mName, k -> new CreativeTab[1])[0] = aTab;
+	}
+
+	/** Присоединить предмет к собственной GT-вкладке (замена setCreativeTab(tab)). Дедуп: повторное присоединение игнорируется. */
+	public static void joinOwnTab(Item aItem, CreativeModeTab aTab) {
+		if (aItem == null || !(aTab instanceof CreativeTab tTab) || tTab.mName == null) return;
+		List<Item> tMembers = OWN_TAB_MEMBERS.computeIfAbsent(tTab.mName, k -> new ArrayList<>());
+		if (!tMembers.contains(aItem)) tMembers.add(aItem);
+	}
 
 	/** Вызывается из ctor блока/предмета (замена setCreativeTab). aOwner — сам блок или предмет (ItemLike). */
 	public static void assign(ItemLike aOwner, ResourceKey<CreativeModeTab> aTab) {
@@ -79,18 +108,21 @@ public final class CreativeTabsGT {
 	 *  заполнен ctor'ами god-items. Каждая CreativeTab — валидный neo CreativeModeTab (super(builder) с icon+displayItems). */
 	private static void onRegisterTabs(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
 		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB)) return;
-		for (CreativeTab tTab : OWN_TABS) try {
+		for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) try {
+			final CreativeTab tTab = tE.getValue();
 			aEvent.register(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,
-				net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tTab.mName)), () -> tTab);
+				net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tE.getKey())), () -> tTab);
 		} catch (Throwable e) {/* boot-safe: сбой одной вкладки не рушит загрузку */}
 	}
 
-	/** F16: наполнение собственной GT-вкладки (client-only, вызывается из displayItems-генератора вкладки). Перечисление —
-	 *  тем же getSubItems god-item, что и раньше (порт сохранил). */
-	static void populate(Item aItem, CreativeModeTab.Output aOutput) {
-		if (aItem == null) return;
-		try {for (ItemStack tStack : enumerate(aItem, aItem)) if (tStack != null && !tStack.isEmpty()) aOutput.accept(tStack);}
-		catch (Throwable e) {/* boot-safe */}
+	/** F16: наполнение собственной GT-вкладки (client-only, из displayItems-генератора). Перечисляет getSubItems ВСЕХ членов
+	 *  вкладки (несколько предметов могут делить одну вкладку — prefix/MTE), что и делал 1.7.10 (vanilla звал getSubItems
+	 *  каждого предмета вкладки). */
+	static void populate(List<Item> aMembers, CreativeModeTab aTab, CreativeModeTab.Output aOutput) {
+		if (aMembers == null) return;
+		for (Item tItem : aMembers) try {
+			for (ItemStack tStack : enumerate(tItem, tItem, aTab)) if (tStack != null && !tStack.isEmpty()) aOutput.accept(tStack);
+		} catch (Throwable e) {/* boot-safe */}
 	}
 
 	private static void onBuildContents(BuildCreativeModeTabContentsEvent aEvent) {
@@ -100,7 +132,7 @@ public final class CreativeTabsGT {
 				ItemLike tOwner = (ItemLike)tA[0];
 				Item tItem = tOwner.asItem();
 				if (tItem == null || tItem == Items.AIR) continue;
-				for (ItemStack tStack : enumerate(tOwner, tItem)) if (tStack != null && !tStack.isEmpty()) aEvent.accept(tStack);
+				for (ItemStack tStack : enumerate(tOwner, tItem, null)) if (tStack != null && !tStack.isEmpty()) aEvent.accept(tStack);
 			} catch (Throwable e) {/* boot-safe: сбой одного назначения не рушит загрузку вкладок */}
 		}
 	}
@@ -108,19 +140,19 @@ public final class CreativeTabsGT {
 	/** Варианты для вкладки: getSubItems(Item,CreativeModeTab,List) у предмета либо getSubBlocks(...) у блока (порт сохранил
 	 *  эти методы); при отсутствии/пустоте — базовый стек. Рефлексия — потому что общего интерфейса нет (россыпь классов). */
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	private static List<ItemStack> enumerate(ItemLike aOwner, Item aItem) {
+	private static List<ItemStack> enumerate(ItemLike aOwner, Item aItem, CreativeModeTab aTab) {
 		List<ItemStack> tList = new ArrayList<>();
-		invokeSub(aItem, "getSubItems", aItem, tList);
-		if (tList.isEmpty() && aOwner instanceof net.minecraft.world.level.block.Block tBlock) invokeSub(tBlock, "getSubBlocks", aItem, tList);
+		invokeSub(aItem, "getSubItems", aItem, aTab, tList);
+		if (tList.isEmpty() && aOwner instanceof net.minecraft.world.level.block.Block tBlock) invokeSub(tBlock, "getSubBlocks", aItem, aTab, tList);
 		if (tList.isEmpty()) tList.add(new ItemStack(aItem));
 		return tList;
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	private static void invokeSub(Object aTarget, String aMethod, Item aItem, List aList) {
+	private static void invokeSub(Object aTarget, String aMethod, Item aItem, CreativeModeTab aTab, List aList) {
 		try {
 			java.lang.reflect.Method m = aTarget.getClass().getMethod(aMethod, Item.class, CreativeModeTab.class, List.class);
-			m.invoke(aTarget, aItem, null, aList);
+			m.invoke(aTarget, aItem, aTab, aList); // передаём реальную вкладку: MTE getSubItems фильтрует варианты по mCreativeTabID
 		} catch (Throwable ignored) {/* метод отсутствует/сигнатура иная — базовый стек */}
 	}
 }

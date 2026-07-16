@@ -32,14 +32,11 @@ public class CreativeTab extends CreativeModeTab {
 	public final short mMetaData;
 
 	public CreativeTab(String aName, String aLocal, Item aItem, short aMetaData) {
-		// F16 creative-tab (1:1): 1.7.10 CreativeTabs(String) → neo CreativeModeTab через Builder. Строим ПОЛНЫЙ builder
-		// (title/icon/displayItems), а сам инстанс (валидный CreativeModeTab) регистрируется CreativeTabsGT на
-		// RegisterEvent<CreativeModeTab>. Заголовок literal(aLocal): GT6-локализация не доходит до vanilla lang (BACKUPMAP),
-		// поэтому даём готовую строку напрямую (тот же видимый результат). LH.add сохраняем (другой код читает ключ).
-		super(CreativeModeTab.builder()
-			.title(net.minecraft.network.chat.Component.literal(aLocal))
-			.icon(() -> gregapi.util.ST.make(aItem, 1, aMetaData & 0xFFFF))
-			.displayItems((aParams, aOutput) -> CreativeTabsGT.populate(aItem, aOutput)));
+		// F16 creative-tab (1:1): 1.7.10 CreativeTabs(String) → neo CreativeModeTab через Builder. Полный builder строит
+		// CreativeTabsGT.builderFor (title/icon/displayItems; ключ-имя доступен ДО super(), захват списка членов вместо this).
+		// Сам инстанс (валидный CreativeModeTab) регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. Заголовок
+		// literal(aLocal): GT6-локализация не доходит до vanilla lang (BACKUPMAP) → даём готовую строку. LH.add сохраняем.
+		super(CreativeTabsGT.builderFor(aName, aLocal, aItem, aMetaData & 0xFFFF));
 		LH.add("itemGroup." + aName, aLocal);
 		mName = aName;
 		mItem = aItem;

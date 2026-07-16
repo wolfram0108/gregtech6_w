@@ -322,10 +322,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return 0;
 	}
 	
-	// PORT-TODO(F13, creative-tab): Item.getSubItems(Item,CreativeModeTab,List) (1.7.10 creative-tab population
-	// hook) удалён — 26.1.2 наполняет вкладки через BuildCreativeModeTabContentsEvent/CreativeModeTab.Builder.
-	// displayItems, нет per-Item override; тот же класс проблемы, что setCreativeTab (ItemArmorBase.java,
-	// MultiItemFood.java), центра ещё нет нигде в дереве. Список-строящая логика сохранена 1:1 доменным методом.
+	// F13/F16 creative-tab: getSubItems сохранён 1:1 как перечислитель вариантов; ПОДКЛЮЧЁН — CreativeTabsGT.populate
+	// вызывает его рефлексивно из displayItems-генератора GT-вкладки (см. CreativeTabsGT). Не заглушка.
 	@SuppressWarnings("unchecked")
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
 		for (int i = 0; i < 32766; i+=2) if (getToolStats(ST.make(this, 1, i)) != null) {

@@ -67,12 +67,12 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		mBlock.mPrefix.mRegisteredPrefixItems.add(this);
 		
 		if ((SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || "gt.meta.ore.normal.default".equalsIgnoreCase(mBlock.mNameInternal) || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) {
+			// F16 (1:1 golden): видимый prefix-блок → СВОЯ prefix-вкладка (setCreativeTab(mPrefix.mCreativeTab)), НЕ ванильный
+			// tabBlock. this = BlockItem блока (в neo вкладки наполняются предметами, а не блоками) — присоединяем его.
 			if (mBlock.mPrefix.mCreativeTab == null) mBlock.mPrefix.mCreativeTab = new CreativeTab(mBlock.mPrefix.mNameInternal, mBlock.mPrefix.mNameCategory, this, W);
-			// F16: golden — prefix-специфичная GT-вкладка (mPrefix.mCreativeTab); полная регистрация кастомных вкладок —
-			// отдельная под-фаза, prefix-блоки (руды/материалы/хранилище) маршрутизируем в BUILDING_BLOCKS (building-block-подобны).
-			gregapi.item.CreativeTabsGT.assign(mBlock, gregapi.item.CreativeTabsGT.BLOCK);
+			gregapi.item.CreativeTabsGT.joinOwnTab(this, mBlock.mPrefix.mCreativeTab);
 		} else {
-			gregapi.item.CreativeTabsGT.assign(mBlock, gregapi.item.CreativeTabsGT.BLOCK);
+			gregapi.item.CreativeTabsGT.assign(mBlock, gregapi.item.CreativeTabsGT.BLOCK); // hidden/ore-скрытый → tabBlock (golden else)
 		}
 	}
 	
