@@ -145,8 +145,10 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean getShareTag() {return T;} // just to be sure.
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
-	public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse(mModID + ":" + mName);}
-	public Identifier getIconFromDamage(int aMeta) {return mIcon;}
+	public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse((mModID + ":" + mName).toLowerCase(java.util.Locale.ROOT));}
+	// F3-render: registerIcons (1.7.10 IIconRegister-хук) в neo НЕ вызывается → mIcon оставался null → GT6ItemModel.resolveIcon
+	// возвращал null → предмет не рисовался (пусто/пурпур). Строим mIcon ЛЕНИВО при первом запросе (тот же путь "modid:name").
+	public Identifier getIconFromDamage(int aMeta) {if (mIcon == null) registerIcons(null); return mIcon;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
