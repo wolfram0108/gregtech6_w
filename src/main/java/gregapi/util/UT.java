@@ -2405,12 +2405,11 @@ public class UT {
 
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
-				// PORT-TODO(ENCHANT, effect-dispatch-engine): движок диспетчерит POST_ATTACK сам; эффекты —
-				// gregapi/enchants (Ex-6). Enchantment.func_151367_b(EntityLivingBase,Entity,int) (SRG-имя
-				// 1.7.10 onEntityDamaged) — виртуальный колбэк-метод удалён из Enchantment целиком; в neo
-				// Enchantment — record без переопределяемых поведенческих методов (эффекты диспетчируются
-				// движком data-driven через компонент EnchantmentEffectComponents.POST_ATTACK). Не найдено
-				// ни в одном из 3 корней референса как виртуальный метод — форс-no-op.
+				// F-enchant SUPERSEDED (не заглушка): 1.7.10 звал виртуальный Enchantment.func_151367_b (onEntityDamaged),
+				// удалённый из neo Enchantment (record без поведенческих методов). Эффекты кастом-энчантов GT6 перенесены
+				// 1:1 в EnchantmentEffect_{Ender,Slime,Werewolf,Radioactivity} (gregapi/enchants) и привязаны через
+				// EnchantsGT6.bootstrap(.withEffect(EnchantmentEffectComponents.POST_ATTACK, EnchantmentTarget.ATTACKER/VICTIM,…));
+				// движок диспетчерит их сам при POST_ATTACK. Этот путь (applyBullshitA) — мёртвый 1:1-остаток структуры GT6, безвреден.
 			}
 		}
 
@@ -2421,9 +2420,9 @@ public class UT {
 
 			@Override
 			public void calculateModifier(Enchantment aEnchantment, int aLevel) {
-				// PORT-TODO(ENCHANT, effect-dispatch-engine): см. BullshitIteratorA выше — тот же
-				// Enchantment.func_151368_a(EntityLivingBase,Entity,int) (SRG-имя 1.7.10 onUserHurt),
-				// виртуальный колбэк удалён, движок диспетчерит POST_ATTACK сам; эффекты — gregapi/enchants (Ex-6).
+				// F-enchant SUPERSEDED (не заглушка): 1.7.10 звал виртуальный Enchantment.func_151368_a (onUserHurt); ни один
+				// кастом-энчант GT6 его НЕ переопределял (сверено с референсом), а ванильный Thorns-диспетч движок neo делает
+				// сам data-driven (EnchantmentEffectComponents.POST_ATTACK). Мёртвый 1:1-остаток структуры GT6, безвреден.
 			}
 		}
 		

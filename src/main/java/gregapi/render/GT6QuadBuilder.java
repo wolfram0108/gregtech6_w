@@ -83,6 +83,27 @@ public final class GT6QuadBuilder {
 		try {return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).getSprite(aIcon);} catch (Throwable e) {return null;}
 	}
 
+	/** F3 block-icon-data: neo-замена удалённого 1.7.10 {@code Block.getIcon(side,meta)} — {@link Identifier} спрайта
+	 *  грани ВАНИЛЬНОГО блока из его baked {@link net.minecraft.client.renderer.block.dispatch.BlockStateModel} (спрайт
+	 *  quad'а нужной стороны; particle-спрайт — fallback). Централизация §3: единственная точка «скопировать текстуру
+	 *  другого блока» — используют {@link IconContainerCopied} и {@link BlockTextureCopied}. meta 1.7.10 схлопнут в
+	 *  {@code defaultBlockState} (в neo вариантные под-блоки — отдельные Block'и, в вызывателях meta практически 0).
+	 *  aSide 0..5 = {@code Direction.from3DDataValue} (тот же маппинг, что {@link #putFace}); SIDE_ANY/вне диапазона → particle. */
+	public static Identifier resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide) {
+		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
+		net.minecraft.client.renderer.block.BlockStateModelSet tSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
+		if (aSide >= 0 && aSide <= 5) {
+			Direction tDir = Direction.from3DDataValue(aSide);
+			List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new ArrayList<>();
+			tSet.get(tState).collectParts(net.minecraft.util.RandomSource.create(42L), tParts);
+			for (net.minecraft.client.renderer.block.dispatch.BlockStateModelPart tPart : tParts) {
+				List<BakedQuad> tQuads = tPart.getQuads(tDir);
+				if (tQuads != null && !tQuads.isEmpty()) return tQuads.get(0).materialInfo().sprite().contents().name();
+			}
+		}
+		return tSet.getParticleMaterial(tState).sprite().contents().name();
+	}
+
 	/** Грань по текущим bounds (4 вершины) с UV из спрайта (клип по bounds) + tint из RGBa (0..255). AE2 QuartzGlassModel.createQuad/putVertex. */
 	private BakedQuad boundedFace(Direction aDir, TextureAtlasSprite aSprite, short[] aRGBa) {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;

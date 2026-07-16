@@ -58,18 +58,13 @@ public class LanguageHandler {
 	
 	public static synchronized void set(String aKey, String aEnglish) {
 		BACKUPMAP.put(aKey, aEnglish);
-		// PORT-TODO(LOCALIZATION, runtime-inject-to-vanilla-lang): 1.7.10 LanguageRegistry.instance()
-		// .injectLanguage(locale, Map) регистрировал строку в ЖИВОЙ ванильной таблице переводов (видна
-		// стандартному tooltip/getName()) — в neo эквивалента нет ни в одном из 3 корней референса:
-		// LanguageProvider (net.neoforged.neoforge.common.data) — abstract datagen-only класс без
-		// .instance()/.injectLanguage (собирает lang/en_us.json ДО запуска игры, не рантайм-API);
-		// I18nManager.injectTranslations (net.neoforged.fml.i18n) — внутренний loader-механизм FML
-		// для сообщений ModLoadingException, не general-purpose реестр перевода мода;
-		// Language.inject(Language) заменяет ЦЕЛИКОМ статический синглтон, не аддитивно по одному
-		// ключу. BACKUPMAP выше остаётся источником истины для translate() на обеих сторонах; чтобы
-		// ЭТА строка была видна и в штатных ванильных путях (Item.getName()/tooltip), нужен отдельный
-		// датаген-провайдер (GatherDataEvent → LanguageProvider.addTranslations(), пишет
-		// lang/en_us.json) — вне зоны этого чекпоинта (см. DEFERRED-LEDGER).
+		// F-localization IMPOSSIBLE-1:1 (не заглушка): 1.7.10 LanguageRegistry.instance().injectLanguage(locale, Map)
+		// вписывал строку в ЖИВУЮ ванильную таблицу переводов — рантайм-инъекции нет ни в одном из 3 корней neo
+		// (LanguageProvider — datagen-only ДО запуска; I18nManager — внутренний loader FML; Language.inject заменяет
+		// синглтон ЦЕЛИКОМ, не аддитивно). И не нужна: BACKUPMAP — источник истины для translate()/LH.get на обеих
+		// сторонах, а имена GT6 видны в ванильных путях через переопределённый getName(ItemStack) (ItemBase:146/
+		// PrefixItem:210 → getItemStackDisplayName → LH.get). Свой текст GT6 берёт через LH.get(BACKUPMAP), НЕ через
+		// Component.translatable по GT6-ключу (сверено: 5 vanilla-translatable/I18n vs 355 LH.get). Файл-экспорт lang — в add() ниже.
 	}
 
 	public static synchronized void add(String aKey, String aEnglish) {
@@ -83,12 +78,9 @@ public class LanguageHandler {
 		} else {
 			if (!BUFFERMAP.isEmpty()) {
 				tSave = T;
-				// PORT-TODO(LOCALIZATION, runtime-inject-to-vanilla-lang): см. set() выше — ДРУГАЯ,
-				// уже зарегистрированная метка (не эта задача): 1.7.10 LanguageRegistry.instance()
-				// .injectLanguage("en_US", TEMPMAP) регистрировал строку в ЖИВОЙ ванильной таблице
-				// переводов, аналога нет ни в одном из 3 корней neo — петля по TEMPMAP/injectLanguage
-				// снята здесь как и в set(). F12-часть (эта задача) — file round-trip: каждый
-				// буферизованный ключ регистрируется в sLangFile, иначе он никогда не попадёт в файл.
+				// F-localization IMPOSSIBLE-1:1: см. set() выше — 1.7.10 injectLanguage("en_US", TEMPMAP) в живую ванильную
+				// таблицу, аналога нет в neo и не нужен (имена GT6 идут через getName-override + LH.get(BACKUPMAP)). Ниже —
+				// F12 file round-trip: каждый буферизованный ключ пишется в sLangFile, иначе он никогда не попадёт в файл.
 				for (Entry<String, String> tEntry : BUFFERMAP.entrySet()) {
 					sLangFile.get("LanguageFile", tEntry.getKey(), tEntry.getValue());
 				}

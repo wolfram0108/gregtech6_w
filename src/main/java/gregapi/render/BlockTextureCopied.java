@@ -31,10 +31,11 @@ import net.minecraft.resources.Identifier;
  *
  * glow-эвристика (fire/lava/flowing_lava/glowstone/lit_redstone_lamp) — это ДАННЫЕ (набор
  * самосветящихся ванильных блоков), перенесена 1:1 (REMAP-RULES §A: данные не гатим).
- * PORT-TODO(F3, block-icon-data): {@code Block.getIcon(side,meta)} и {@code Block.getRenderColor(meta)}
- * удалены из neo {@code Block} (REMAP-RULES §C2) — прямого 1:1-доступа к цвету/иконке блока нет;
- * до block-icon-data фазы держатель иконки — {@code null}, цвет — {@code UNCOLOURED} (заглушки
- * помечены явно, оригинальные строки сохранены — это не тихое обнуление данных).
+ * F3 block-icon-data ЗАКРЫТ: {@code Block.getIcon(side,meta)} удалён из neo (baked-model рендер) — спрайт грани
+ * копируемого ванильного блока резолвится из его baked {@code BlockStateModel} ({@link GT6QuadBuilder#resolveBlockFaceIcon}).
+ * PORT-TODO(F3, block-render-color): {@code Block.getRenderColor(meta)} удалён из neo {@code Block} (REMAP-RULES §C2) —
+ * 1:1-доступа к цвету рендера блока нет (для биом-тинта нужен neo {@code BlockColors}); тинт — {@code UNCOLOURED}
+ * (заглушка помечена явно, оригинальная строка сохранена — не тихое обнуление; корректно для всех не-биом-тинт блоков).
  */
 public class BlockTextureCopied implements ITexture {
 	private final Block mBlock;
@@ -116,9 +117,14 @@ public class BlockTextureCopied implements ITexture {
 	}
 
 	private Identifier getIcon(int aSide) {
-		// PORT-TODO(F3, block-icon-data): было mBlock.getIcon(mSide, mMeta) + fallback RENDERING_ERROR — Block.getIcon удалён из neo
-		// (BakedModel-рендер); crash-only per /goal (F3-фаза заменит реальной моделью).
-		throw new UnsupportedOperationException("PORT-TODO(F3, block-icon-data): neo BakedModel-рендер, 1.7.10 getIcon мёртв — crash-only per /goal");
+		// F3 block-icon-data: было mBlock.getIcon(mSide==SIDE_ANY?aSide:mSide, mMeta) + catch→RENDERING_ERROR (1:1) —
+		// Block.getIcon удалён из neo (baked-model рендер); спрайт грани резолвим из baked BlockStateModel ванильного
+		// блока (централизованный GT6QuadBuilder.resolveBlockFaceIcon, §3). meta схлопнут в defaultBlockState (см. резолвер).
+		try {
+			return GT6QuadBuilder.resolveBlockFaceIcon(mBlock, mSide == SIDE_ANY ? aSide : mSide);
+		} catch (Throwable e) {
+			return gregapi.old.Textures.BlockIcons.RENDERING_ERROR.getIcon(0);
+		}
 	}
 
 	@Override

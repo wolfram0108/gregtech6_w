@@ -28,9 +28,9 @@ import net.minecraft.resources.Identifier;
 /**
  * @author Gregorius Techneticies
  *
- * Copies the Icon of another Block's Side+Meta (e.g. Dirt below Grass). PORT-TODO(F3, baked-рендер
- * клиента): {@code Block.getIcon(side,meta)} удалён в 26.1.2 (мёртвый immediate-mode метод, см.
- * REMAP-RULES §C2) — до baked-фазы {@link #getIcon(int)} отдаёт {@code null}-держатель.
+ * Copies the Icon of another Block's Side+Meta (e.g. Dirt below Grass). F3 block-icon-data ЗАКРЫТ:
+ * {@code Block.getIcon(side,meta)} удалён в 26.1.2 (baked-model рендер) — {@link #getIcon(int)} резолвит спрайт
+ * грани копируемого блока из его baked {@code BlockStateModel} ({@link GT6QuadBuilder#resolveBlockFaceIcon}).
  */
 public class IconContainerCopied implements IIconContainer {
 	private final Block mBlock;
@@ -46,9 +46,14 @@ public class IconContainerCopied implements IIconContainer {
 
 	@Override
 	public Identifier getIcon(int aRenderPass) {
-		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было mBlock.getIcon(mSide, mMeta) — Block.getIcon удалён (neo BakedModel-рендер);
-		// crash-only per /goal (F3-фаза заменит реальной моделью).
-		throw new UnsupportedOperationException("PORT-TODO(F3, baked-рендер): neo BakedModel-рендер, 1.7.10 getIcon мёртв — crash-only per /goal");
+		// F3 block-icon-data: было mBlock.getIcon(mSide, mMeta) — Block.getIcon удалён (neo baked-model рендер);
+		// спрайт грани копируемого блока резолвим из его baked BlockStateModel (централизованный §3
+		// GT6QuadBuilder.resolveBlockFaceIcon). catch→RENDERING_ERROR — модели могут быть не готовы вне рендер-тика (не крашим).
+		try {
+			return GT6QuadBuilder.resolveBlockFaceIcon(mBlock, mSide);
+		} catch (Throwable e) {
+			return gregapi.old.Textures.BlockIcons.RENDERING_ERROR.getIcon(0);
+		}
 	}
 
 	@Override

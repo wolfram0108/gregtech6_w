@@ -166,7 +166,13 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 			}
 			return WD.meta(aWorld, aX, aY, aZ) != (~mColor & 15) && WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ~mColor & 15, 3, F);
 		}
-		throw new UnsupportedOperationException("PORT-TODO(F-block-recolor): forge Block.recolourBlock удалён в neo (цветные блоки = отдельные типы, не state); ре-экспрессировать как замена блока на цветной вариант по карте color->block");
+		// F-block-recolor: было aBlock.recolourBlock(world,x,y,z,FORGE_DIR[aSide],~mColor&15) — 1.7.10 Forge-метод на
+		// ЛЮБОМ Block (дефолт false) удалён из neo. GT6-блоки, что его переопределяли, несут recolourBlock как СВОЙ метод
+		// (BlockColored; MultiTileEntityBlock → делегирует IMTE_RecolourBlock тайла) — зовём его; прочие блоки не
+		// перекрашиваются (1:1 с forge-дефолтом false). Это единственная точка вызова (централизация §3).
+		if (aBlock instanceof gregapi.block.metatype.BlockColored tBC) return tBC.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
+		if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock tMTE) return tMTE.recolourBlock(aWorld, aX, aY, aZ, FORGE_DIR[aSide], ~mColor & 15);
+		return F;
 	}
 	
 	static {
