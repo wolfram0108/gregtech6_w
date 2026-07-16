@@ -251,16 +251,18 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		// 1.7.10 Entity.canAttackWithItem() -> neo Entity.isAttackable() (можно ли атаковать сущность). Способность есть, 1:1.
 		if (aEntity.isAttackable()) {
 			int tImplosion = UT.NBT.getEnchantmentLevelImplosion(aStack);
-			// PORT-TODO(F8, enchant-registry): EnchantmentHelper.getFireAspectModifier(Player)/
-			// getEnchantmentModifierLiving(Player,LivingEntity) (1.7.10 static lookups) удалены — зачарования
-			// data-driven, Holder<Enchantment> недоступен в этом статическом контексте — деградация до 0.
-			int tFireAspect = 0;
+			// F8 (1:1): 1.7.10 EnchantmentHelper.getFireAspectModifier(aPlayer) — уровень Fire Aspect на оружии.
+			// Enchantments.FIRE_ASPECT в neo = ResourceKey (не удалён); ported UT.NBT.getEnchantmentLevel читает уровень со стека.
+			int tFireAspect = UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, aStack);
 			boolean tIgnitesFire = !aEntity.isOnFire() && tFireAspect > 0 && aEntity instanceof LivingEntity;
 			if (tIgnitesFire) aEntity.igniteForSeconds(1);
 			if (aEntity.skipAttackInteraction(aPlayer)) {
 				if (tIgnitesFire) aEntity.clearFire();
 			} else {
-				float tMagicDamage = tStats.getMagicDamageAgainstEntity(0, aEntity, aStack, aPlayer), tDamage = tStats.getNormalDamageAgainstEntity((float)aPlayer.getAttributeValue(Attributes.ATTACK_DAMAGE) + getToolCombatDamage(aStack), aEntity, aStack, aPlayer);
+				// F8 (1:1): 1-й арг — урон-бонус чар (Sharpness/Smite/Bane) против жертвы. 1.7.10 getEnchantmentModifierLiving(
+				// aPlayer,entity); neo-эквивалент ported UT.Enchantments.getDamageBonusVsCreature (EnchantmentHelper.modifyDamage,
+				// тот же центр, что зовут EntityArrow_Material/Behavior_Gun). Было 0.
+				float tMagicDamage = tStats.getMagicDamageAgainstEntity(aEntity instanceof LivingEntity ? UT.Enchantments.getDamageBonusVsCreature(aStack, aEntity) : 0, aEntity, aStack, aPlayer), tDamage = tStats.getNormalDamageAgainstEntity((float)aPlayer.getAttributeValue(Attributes.ATTACK_DAMAGE) + getToolCombatDamage(aStack), aEntity, aStack, aPlayer);
 				// Also work on Ghasts and such. But no double dipping on Anti Creeper Damage!
 				if (tImplosion > 0 && UT.Entities.isExplosiveCreature(aEntity) && !Creeper.class.isInstance(aEntity)) tMagicDamage += 1.5F * tImplosion;
 
