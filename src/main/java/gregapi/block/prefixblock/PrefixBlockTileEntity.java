@@ -47,6 +47,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	public CompoundTag mItemNBT = null;
 	
 	public PrefixBlockTileEntity() {super(F);}
+	public PrefixBlockTileEntity(net.minecraft.core.BlockPos aPos) {super(F, aPos);}
 	
 	@Override public String getTileEntityName() {return "gt.MetaBlockTileEntity";}
 	

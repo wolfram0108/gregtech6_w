@@ -169,9 +169,42 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	public static void register(IEventBus aModBus) {
 		FEATURES.register(aModBus);
 		aModBus.addListener(GT6WorldgenFeature::onGatherDataStatic);
+		// F6-worldgen (реальный порт семантики 1.7.10 IWorldGenerator post-populate): подписка на game-шину.
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkLoad);
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
 	}
 
 	private static void onGatherDataStatic(GatherDataEvent.Client aEvent) {
 		GT6_WORLDGEN.get().onGatherData(aEvent);
+	}
+
+	// F6-worldgen (faithful, БЕЗ каскада): GT6WorldGenerator требует настоящий Level (TE-руды/саженцы/делегаты/
+	// updateNeighbors), а neo Feature даёт WorldGenRegion → ServerLevel.getChunk(текущий генерируемый чанк) делает
+	// CompletableFuture.join и виснет (deadlock). РЕШЕНИЕ 1:1 с 1.7.10 IWorldGenerator (post-populate): ловим
+	// ChunkEvent.Load(isNewChunk) и ОТКЛАДЫВАЕМ на следующий server-tick (javadoc ChunkEvent.Load: "interactions with
+	// the level must be delayed until the next game tick to prevent deadlocking") → к тику чанк ПОЛНОСТЬЮ сгенерирован
+	// (getChunk=FULL мгновенно, нет deadlock), доступен настоящий ServerLevel. GT6WorldGenerator НЕ тронут (Level-цепь 1:1).
+	private record ChunkReq(ServerLevel level, int blockX, int blockZ) {}
+	private static final java.util.Queue<ChunkReq> CHUNK_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+	private static void onChunkLoad(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
+		if (aEvent.isNewChunk() && aEvent.getLevel() instanceof ServerLevel tLevel) {
+			net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
+			CHUNK_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
+		}
+	}
+
+	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
+		// Троттлинг: не более N чанков за тик (полный GT6-ворлдген чанка тяжёл; спавн грузит сотни чанков разом →
+		// без лимита тик слишком долгий → watchdog). Очередь дренится за несколько тиков.
+		ChunkReq tReq; int tN = 0;
+		while (tN < 8 && (tReq = CHUNK_QUEUE.poll()) != null) {
+			try {
+				GT6WorldGenerator.generate(tReq.level(), tReq.blockX(), tReq.blockZ(), false);
+				tN++;
+			} catch (Throwable e) {
+				e.printStackTrace(gregapi.data.CS.ERR);
+			}
+		}
 	}
 }

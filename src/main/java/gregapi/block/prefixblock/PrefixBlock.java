@@ -481,7 +481,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override
 	public boolean placeBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		OreDictMaterial aMaterial = getMetaMaterial(aMetaData);
-		if (aMaterial != null && (aForcePlacement || ((!mPlacementChecksAntimatter || !aMaterial.contains(TD.Atomic.ANTIMATTER)) && (!mPlacementChecksTemperature || aMaterial.mMeltingPoint > WD.temperature(aWorld, aX, aY, aZ)))) && WD.set(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMaterial.mToolQuality), aCauseBlockUpdates?3:0)) {
+		// F6-worldgen (флаг): без aCauseBlockUpdates ставим с UPDATE_KNOWN_SHAPE (16), чтобы neo пропустил neighbor-shape-update.
+		// Иначе setBlock во время ворлдгена читает соседний (ещё не сгенерированный) чанк → синхронная его генерация → каскад
+		// (тик >60с → watchdog-краш). 1:1 с 1.7.10: ворлдген клал флагом 2 (без neighbor-notify), тут UPDATE_KNOWN_SHAPE — эквивалент.
+		if (aMaterial != null && (aForcePlacement || ((!mPlacementChecksAntimatter || !aMaterial.contains(TD.Atomic.ANTIMATTER)) && (!mPlacementChecksTemperature || aMaterial.mMeltingPoint > WD.temperature(aWorld, aX, aY, aZ)))) && WD.set(aWorld, aX, aY, aZ, this, UT.Code.bind4(aMaterial.mToolQuality), aCauseBlockUpdates?3:net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE)) {
 			// This darn TileEntity update is ruining World generation Code (infinite Loops when placing TileEntities on Chunk Borders). I'm glad I finally found a way to disable it.
 			BlockEntity tTileEntity = createTileEntity(aWorld, aX, aY, aZ, aSide, aMetaData, aNBT);
 			WD.te(aWorld, aX, aY, aZ, tTileEntity, aCauseBlockUpdates);
@@ -712,7 +715,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	public BlockEntity createTileEntity(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT) {
-		PrefixBlockTileEntity rTileEntity = new PrefixBlockTileEntity();
+		PrefixBlockTileEntity rTileEntity = new PrefixBlockTileEntity(new net.minecraft.core.BlockPos(aX, aY, aZ));
 		if (aNBT != null) rTileEntity.readFromNBT(aNBT);
 		rTileEntity.mMetaData = aMetaData;
 		rTileEntity.mItemNBT = aNBT == null ? null : aNBT.contains("gt.nbt.drop") ? aNBT.getCompoundOrEmpty("gt.nbt.drop") : aNBT;

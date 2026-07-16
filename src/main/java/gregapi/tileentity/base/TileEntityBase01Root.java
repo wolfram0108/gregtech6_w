@@ -150,10 +150,24 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// neo валидирует пустой varargs valid-блоков → «pass Set.of() instead of an empty varag». Плейсхолдер намеренно без
 	// valid-блоков (канонические инстансы создаются рефлексией, не движком) → передаём Set.of() (осознанно пустой).
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> null, java.util.Set.<Block>of());}
+	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType<TileEntityBase01Root>((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> null, java.util.Set.<Block>of()) {
+		// F-tileentity-construction: MTE_TYPE — ОБЩИЙ placeholder-тип всей GT6-TE-иерархии (динамические блоки, valid-блоки
+		// не применимы). neo BlockEntityType.isValid(state) = validBlocks.contains(block) → пустой Set → всегда false →
+		// LevelChunk.setBlockEntity отклоняет TE («state ... does not allow it», TE не регистрируется). Override → true
+		// (валидность решает isValidBlockState на самом TE; тип общий). Чинит размещение ВСЕХ GT6-TE (PrefixBlock-руды и пр.).
+		@Override public boolean isValid(net.minecraft.world.level.block.state.BlockState aState) {return true;}
+	};}
 
 	public TileEntityBase01Root(boolean aIsTicking) {
 		super(MTE_TYPE, BlockPos.ZERO, Blocks.AIR.defaultBlockState());
+		mIsTicking = aIsTicking;
+	}
+
+	// F-tileentity-construction: конструктор с РЕАЛЬНОЙ позицией (worldPosition final, ставится только тут) — для ручного
+	// размещения GT6-TE (PrefixBlock-руды в ворлдгене): без неё TE садился на BlockPos.ZERO (0,0,0) → neo setBlockEntity
+	// ставил TE не туда («state does not allow it»). state=AIR — как в no-arg ctor (валидацию type отключает isValidBlockState).
+	public TileEntityBase01Root(boolean aIsTicking, BlockPos aPos) {
+		super(MTE_TYPE, aPos, Blocks.AIR.defaultBlockState());
 		mIsTicking = aIsTicking;
 	}
 
