@@ -140,7 +140,21 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				tMap.put(tState, tModel); tCount++;
 			}
 		}
-		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states.");
+		// F3-render: единая item-модель GT6-предметам (НЕ BlockItem — те рендерятся моделью блока). GT6-namespace, getIconIndex-иконка.
+		gregapi.render.GT6ItemModel tItemModel = new gregapi.render.GT6ItemModel();
+		java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.renderer.item.ItemModel> tItemMap = aEvent.getBakingResult().itemStackModels();
+		int tItemCount = 0;
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (tItem instanceof net.minecraft.world.item.BlockItem) continue;
+			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			if (tKey == null || !isGregNamespace(tKey.getNamespace())) continue;
+			tItemMap.put(tKey, tItemModel); tItemCount++;
+		}
+		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states, GT6ItemModel into " + tItemCount + " items.");
+	}
+
+	private static boolean isGregNamespace(String aNs) {
+		return aNs.equals(gregapi.data.CS.ModIDs.GT) || aNs.equals("gregtech") || aNs.equals("gregapi");
 	}
 	
 	@Override

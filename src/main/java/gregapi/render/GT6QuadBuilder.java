@@ -76,7 +76,10 @@ public final class GT6QuadBuilder {
 	public List<BakedQuad> quads() {return mAll;}
 	public boolean isEmpty() {return mAll.isEmpty();}
 
-	private static TextureAtlasSprite sprite(Identifier aIcon) {
+	private static TextureAtlasSprite sprite(Identifier aIcon) {return resolveSprite(aIcon);}
+
+	/** Резолв спрайта из block-атласа (GT6-текстуры динамические, в block-атласе). Используется и GT6ItemModel. */
+	public static TextureAtlasSprite resolveSprite(Identifier aIcon) {
 		try {return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).getSprite(aIcon);} catch (Throwable e) {return null;}
 	}
 
