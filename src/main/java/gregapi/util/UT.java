@@ -302,12 +302,8 @@ public class UT {
 
 		@Deprecated public static long fill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fill (aDelegator, aFluid, aDoFill);}
 		@Deprecated public static long fill_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fill_(aDelegator, aFluid, aDoFill);}
-		// PORT-TODO(F5, item-capability бакет/канистра): 1.7.10 IFluidHandler.fill(ForgeDirection,FluidStack,
-		// boolean) адресовал СТОРОНУ явным параметром одного хендлера; в neo capability-модель выдаёт УЖЕ
-		// per-side хендлер через getCapability (сторона решается там, не на fill()) — реальный
-		// IFluidHandler.fill(FluidStack,FluidAction) параметра стороны не принимает вообще, прямого 1:1
-		// нет (не только переименование). Не найдено вызывающих ни в этом файле, ни во всём дереве (grep) —
-		// форс-no-op сохраняет сигнатуру (реальный IFluidHandler-тип, не изобретая новый API).
+		// F5 dead-deprecated (0 вызывателей — живой путь FL.fill/fillAll(IFluidHandler,side,...), реализован через fillSided,
+		// см. CoverDrain). Эти  UT-обёртки IFluidHandler+side мертвы; neo fill без side-параметра. Сигнатура сохранена.
 		@Deprecated public static long fill (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return 0;}
 		@Deprecated public static long fill_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return 0;}
 		@Deprecated public static long fill (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return 0;}
@@ -315,7 +311,7 @@ public class UT {
 
 		@Deprecated public static boolean fillAll (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fillAll (aDelegator, aFluid, aDoFill);}
 		@Deprecated public static boolean fillAll_(@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoFill) {return FL.fillAll_(aDelegator, aFluid, aDoFill);}
-		// PORT-TODO(F5, item-capability бакет/канистра) — см. fill(IFluidHandler,...) выше, тот же класс.
+		// F5 dead-deprecated (0 вызывателей, живой путь FL.*) — см. выше.
 		@Deprecated public static boolean fillAll (IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return F;}
 		@Deprecated public static boolean fillAll_(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoFill) {return F;}
 		@Deprecated public static boolean fillAll (IFluidHandler aFluidHandler, byte[] aSides, FluidStack aFluid, boolean aDoFill) {return F;}
