@@ -222,8 +222,8 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public int getRenderBlockPass() {return 1;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 	public IIcon getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
-	public int getRenderColor(int aMeta) {return 0x00ffffff;}
-	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
+	public int getRenderColor(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
+	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
 	
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
 	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}

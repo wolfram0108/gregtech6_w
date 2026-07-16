@@ -116,9 +116,9 @@ public class BlockTextureCopied implements ITexture {
 	}
 
 	private Identifier getIcon(int aSide) {
-		// PORT-TODO(F3, block-icon-data): было (try) mSide==SIDE_ANY ? mBlock.getIcon(aSide, mMeta) : mBlock.getIcon(mSide, mMeta)
-		// с fallback Textures.BlockIcons.RENDERING_ERROR.getIcon(0) — Block.getIcon удалён из neo (REMAP-RULES §C2), 1:1 нет.
-		return null;
+		// PORT-TODO(F3, block-icon-data): было mBlock.getIcon(mSide, mMeta) + fallback RENDERING_ERROR — Block.getIcon удалён из neo
+		// (BakedModel-рендер); crash-only per /goal (F3-фаза заменит реальной моделью).
+		throw new UnsupportedOperationException("PORT-TODO(F3, block-icon-data): neo BakedModel-рендер, 1.7.10 getIcon мёртв — crash-only per /goal");
 	}
 
 	@Override
