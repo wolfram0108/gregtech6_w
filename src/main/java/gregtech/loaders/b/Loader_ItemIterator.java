@@ -50,7 +50,9 @@ public class Loader_ItemIterator implements Runnable {
 		}
 		
 		Item tItem;
-		Iterator<Item> tIterator = GameData.getItemRegistry().iterator();
+		// F12: cpw GameData.getItemRegistry() (stripped-mirror, NoClassDefFound в рантайме → роняло ВЕСЬ item-итератор
+		// → oredict/рецепты по всем предметам терялись) → neo BuiltInRegistries.ITEM (тот же полный перебор предметов).
+		Iterator<Item> tIterator = net.minecraft.core.registries.BuiltInRegistries.ITEM.iterator();
 		while (tIterator.hasNext()) if ((tItem = tIterator.next()) != null && !ST.isGT(tItem)) {
 			Block tBlock = ST.block(tItem);
 			
