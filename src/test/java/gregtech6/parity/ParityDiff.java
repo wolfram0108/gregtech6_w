@@ -242,6 +242,11 @@ public final class ParityDiff {
             if (exclCol >= 0 && exclCol < cols.length && cols[exclCol].equals(exl)) continue;
             String key = keyColumns >= cols.length ? low : String.join("", Arrays.copyOfRange(cols, 0, keyColumns));
             for (int c : ignore) if (c >= 0 && c < cols.length) cols[c] = "";
+            // className (net.minecraft.*): 1.13 flattening ПЕРЕИМЕНОВАЛ vanilla item/block-классы (net.minecraft.item.ItemBlock->
+            // world.item.BlockItem; ItemFood/ItemSword/ItemSpade->Item/ShovelItem — генерик через компоненты). GT6 регистрирует
+            // блок/предмет с ТЕМ ЖЕ vanilla-классом в обоих движках, сменилось лишь имя класса движком → схлопываем к токену
+            // (ловит GT-class->vanilla регрессию, гасит инхерентный ренейм). Симметрично. Тот же класс, что vanilla-flattening.
+            for (int c = 0; c < cols.length; c++) if (cols[c].startsWith("net.minecraft.")) cols[c] = "net.minecraft.*";
             map.put(key, String.join(",", cols));
         }
         return new ParitySet(map);
