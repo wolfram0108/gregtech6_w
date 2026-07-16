@@ -94,6 +94,7 @@ public class TextureSet {
 
 		@Override
 		public Identifier getIcon(int aRenderPass) {
+			if (mIconColored == null) registerIcons(null); // F3-render: 1.7.10 icon-load-фаза (sItemIconload) в neo не портирована → ленивое построение при первом рендере.
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
 
@@ -114,9 +115,10 @@ public class TextureSet {
 
 		@Override
 		public void registerIcons(Object aIconRegister) {
-			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
-			mIconColored = Identifier.parse(mMod+":materialicons/"+mName);
-			mIconOverlay = Identifier.parse(mMod+":materialicons/"+mName+"_OVERLAY");
+			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую.
+			// lowercase: neo Identifier.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
+			mIconColored = Identifier.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
+			mIconOverlay = Identifier.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		@Override
@@ -147,6 +149,7 @@ public class TextureSet {
 
 		@Override
 		public Identifier getIcon(int aRenderPass) {
+			if (mIconColored == null) registerIcons(null); // F3-render: 1.7.10 icon-load-фаза (sBlockIconload) в neo не портирована → ленивое построение при первом рендере.
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
 
@@ -167,9 +170,10 @@ public class TextureSet {
 
 		@Override
 		public void registerIcons(Object aIconRegister) {
-			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
-			mIconColored = Identifier.parse(mMod+":materialicons/"+mName);
-			mIconOverlay = Identifier.parse(mMod+":materialicons/"+mName+"_OVERLAY");
+			// F3 superseded-render: было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую.
+			// lowercase: neo Identifier.assertValidPath запрещает заглавные (имена наборов/файлов GT6 были заглавные, файлы уже переименованы).
+			mIconColored = Identifier.parse((mMod+":materialicons/"+mName).toLowerCase(java.util.Locale.ROOT));
+			mIconOverlay = Identifier.parse((mMod+":materialicons/"+mName+"_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		@Override
