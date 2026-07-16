@@ -224,10 +224,10 @@ public abstract class ToolStats implements IToolStats {
 	@Override
 	public void afterDealingDamage(float aNormalDamage, float aMagicDamage, int aFireAspect, boolean aCriticalHit, Entity aEntity, ItemStack aStack, Player aPlayer) {
 		if (aEntity instanceof LivingEntity && aFireAspect > 0) aEntity.igniteForSeconds(aFireAspect * 4);
-		// PORT-TODO(F8, enchant-registry): EnchantmentHelper.getKnockbackModifier(Player,LivingEntity) (1.7.10
-		// static lookup) удалён — knockback-зачарования теперь через ServerLevel+Holder-визитор
-		// (EnchantmentHelper.runIterationOnEquipment), недоступный в этом статическом контексте. Спринт-компонент сохранён 1:1.
-		int tKnockback = (aPlayer.isSprinting()?1:0);
+		// F8 (1:1): 1.7.10 tKnockback = sprint + getKnockbackModifier(player,entity) (уровень Knockback-чары). neo-эквивалент —
+		// EnchantmentHelper.modifyKnockback(sl,weapon,victim,source,base) [EnchantmentHelper.java:217]: base=0 → чистый вклад
+		// Knockback-чары со стека. server-only (нужен ServerLevel). Было утеряно — восстановлено. Спринт-компонент 1:1.
+		int tKnockback = (aPlayer.isSprinting()?1:0) + (aEntity instanceof LivingEntity && aEntity.level() instanceof net.minecraft.server.level.ServerLevel tSL ? (int)net.minecraft.world.item.enchantment.EnchantmentHelper.modifyKnockback(tSL, aStack, aEntity, tSL.damageSources().playerAttack(aPlayer), 0.0F) : 0);
 		if (tKnockback > 0) {
 			aEntity.push(-Mth.sin((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5, 0.1, Mth.cos((float)(aPlayer.getYRot() * Math.PI / 180)) * tKnockback * 0.5);
 			Vec3 tMotion = aPlayer.getDeltaMovement();
