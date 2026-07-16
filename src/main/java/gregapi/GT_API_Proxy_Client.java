@@ -120,6 +120,33 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {
 		aModBus.addListener(this::onRegisterBlockStateModels);
 		aModBus.addListener(this::onModifyBakingResult);
+		aModBus.addListener(this::onRegisterFluidModels);
+	}
+
+	// F5/F3-render (client): единый динамический FluidModel ВСЕМ GT6-жидкостям (замена «Missing FluidModel» на реальный
+	// рендер). GT6-жидкость = still/flow-текстура (mTexture, IIconContainer) + цвет (mRGBa, тинтит серый молтен). neo 26
+	// рендерит жидкости через FluidModel.Unbaked(still, flow, overlay, tintSource) на RegisterFluidModelsEvent (mod-bus).
+	// Централизация 1:1 (одна модель-фабрика на весь мод, как GT6BlockModel/GT6ItemModel). Fallback на воду при null-иконе.
+	private void onRegisterFluidModels(net.neoforged.neoforge.client.event.RegisterFluidModelsEvent aEvent) {
+		net.minecraft.client.resources.model.sprite.Material tWaterStill = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.Identifier.withDefaultNamespace("block/water_still"));
+		net.minecraft.client.resources.model.sprite.Material tWaterFlow  = new net.minecraft.client.resources.model.sprite.Material(net.minecraft.resources.Identifier.withDefaultNamespace("block/water_flow"));
+		int tCount = 0;
+		for (gregapi.fluid.FluidGT tF : gregapi.fluid.FluidGT.BY_NAME.values()) {
+			try {
+				net.minecraft.resources.Identifier tTex = null;
+				try { if (tF.mTexture != null) tTex = tF.mTexture.getIcon(0); } catch (Throwable e) {/* невалидная икона → fallback вода */}
+				net.minecraft.client.resources.model.sprite.Material tStill = tTex != null ? new net.minecraft.client.resources.model.sprite.Material(tTex) : tWaterStill;
+				net.minecraft.client.resources.model.sprite.Material tFlow  = tTex != null ? tStill : tWaterFlow;
+				short[] tRGBa = tF.getRGBa();
+				int tTint = (tRGBa != null && tRGBa.length >= 3) ? (0xFF000000 | ((tRGBa[0]&0xFF)<<16) | ((tRGBa[1]&0xFF)<<8) | (tRGBa[2]&0xFF)) : 0xFFFFFFFF;
+				net.minecraft.client.renderer.block.FluidModel.Unbaked tModel = new net.minecraft.client.renderer.block.FluidModel.Unbaked(tStill, tFlow, null, net.neoforged.neoforge.client.fluid.FluidTintSources.constant(tTint));
+				net.minecraft.world.level.material.Fluid tSource  = tF.mSourceHolder.value();
+				net.minecraft.world.level.material.Fluid tFlowing = tF.mFlowingHolder.isBound() ? tF.mFlowingHolder.value() : tSource;
+				aEvent.register(tModel, tSource, tFlowing);
+				tCount++;
+			} catch (Throwable e) {/* сбой одной жидкости не рушит остальные */}
+		}
+		gregapi.data.CS.OUT.println("[GT6] F3-render: FluidModel зарегистрированы для " + tCount + " GT6-жидкостей.");
 	}
 
 	private void onRegisterBlockStateModels(net.neoforged.neoforge.client.event.RegisterBlockStateModels aEvent) {
@@ -130,7 +157,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// (модель динамическая — читает блок/позицию/состояние в collectParts, один инстанс на весь мод).
 	private void onModifyBakingResult(net.neoforged.neoforge.client.event.ModelEvent.ModifyBakingResult aEvent) {
 		net.minecraft.client.resources.model.sprite.Material.Baked tParticle = new net.minecraft.client.resources.model.sprite.Material.Baked(
-			aEvent.getTextureGetter().apply(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "blocks/system/error")), false);
+			// sprite-id БЕЗ "blocks/" префикса: atlas-source (assets/minecraft/atlases/blocks.json) кладёт textures/blocks/** с prefix:"" → gregtech:system/error (как GT6BlockModel:56). Прежний "blocks/system/error" не находился → "Failed to retrieve texture".
+			aEvent.getTextureGetter().apply(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "system/error")), false);
 		gregapi.render.GT6BlockModel tModel = new gregapi.render.GT6BlockModel(tParticle);
 		java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel> tMap = aEvent.getBakingResult().blockStateModels();
 		int tCount = 0;
