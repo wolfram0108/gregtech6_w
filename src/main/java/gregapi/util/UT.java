@@ -2949,15 +2949,10 @@ public class UT {
 				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentFishing) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
 				for (ObjectStack<ResourceKey<Enchantment>> tEnchantment : aData.mMaterial.mMaterial.mEnchantmentArmors ) if (Enchantment_Radioactivity.KEY.equals(tEnchantment.mObject)) rLevel = Math.max(rLevel, tEnchantment.mAmount);
 			}
-			// PORT-TODO(F8, enchant-registry): легаси EnchantmentHelper.getEnchantmentLevel(int effectId,
-			// ItemStack) удалён из движка целиком (не переименован). Вдобавок Enchantment_Radioactivity
-			// (gregapi.enchants, зона Ex-6) сама ещё не переведена на registry-driven Holder<Enchantment>
-			// (сейчас extends мёртвый net.minecraft.enchantment.EnchantmentDamage — Enchantment в neo record,
-			// не наследуется), поэтому даже Holder.direct(Enchantment_Radioactivity.INSTANCE) (приём
-			// getEnchantmentLevel(Enchantment,ItemStack) выше) неприменим — самого объекта нужного типа нет.
-			// Не найдено ни в одном из 3 корней референса как рабочий путь — вклад надетого зачарования через
-			// vanilla-канал (в отличие от GT6-материала в циклах выше) не учитывается до готовности
-			// Holder<Enchantment> у Enchantment_Radioactivity и шва ENCHANT.
+			// F8 (1:1): было EnchantmentHelper.getEnchantmentLevel(Enchantment_Radioactivity.INSTANCE.effectId, aStack) —
+			// вклад НАДЕТОЙ Radioactivity-чары (в дополнение к GT6-материалу выше). Enchantment_Radioactivity теперь
+			// registry-driven (KEY, забутстрапена EnchantsGT6) → ported UT.NBT.getEnchantmentLevel(KEY, стек) читает уровень.
+			rLevel = Math.max(rLevel, NBT.getEnchantmentLevel(Enchantment_Radioactivity.KEY, aStack));
 			return Code.bindInt(rLevel);
 		}
 		
