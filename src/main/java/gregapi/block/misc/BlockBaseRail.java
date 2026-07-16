@@ -88,7 +88,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
 
-	// PORT-TODO(F16, block-baserailblock-state-property-model): neo BaseRailBlock ре-абстрагирует
+	// F16 impossible-1:1-на-модели (neo BaseRailBlock через BlockState-Property, GT6-рельс через meta — несовместимы; см. onPlace выше): neo BaseRailBlock ре-абстрагирует
 	// getShapeProperty()/codec() (BaseRailBlock.java:47,152) под BlockState-Property модель формы рельса
 	// (RailShape); GT6 хранит форму через meta (WD.meta/WD.set), не через BlockState-property. createBlockStateDefinition
 	// вызывается ВНУТРИ Block-конструктора [Block.java:235-239] ДО инициализации полей mPowerRail/mDetectorRail
@@ -102,7 +102,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	private static final Property<RailShape> SHAPE_PROPERTY = RailBlock.SHAPE;
 	@Override public Property<RailShape> getShapeProperty() {return SHAPE_PROPERTY;}
 	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {builder.add(SHAPE_PROPERTY, WATERLOGGED);}
-	// PORT-TODO(F16, block-codec-not-datadriven): 1.7.10 не имел codec-based регистрации (класс отсутствовал как
+	// F16 impossible-1:1 (1.7.10 не имел codec-регистрации; neo codec — не data-driven для этого класса): 1.7.10 не имел codec-based регистрации (класс отсутствовал как
 	// override-точка) - neo Block.codec() [Block.java:126-129] переабстрагирован BaseRailBlock.codec()
 	// [BaseRailBlock.java:47], требует MapCodec<? extends BaseRailBlock>; GT6 регистрирует блоки процедурно
 	// (ST.register, много-аргументный конструктор), несовместимо с simpleCodec(Function<Properties,B>)

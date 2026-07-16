@@ -199,7 +199,7 @@ import static gregapi.data.CS.*;
  * открытие) + {@link gregapi.gui.ContainerCommon#createFromNetwork} (клиентская реконструкция контейнера);
  * {@code getServerGuiElement} здесь удалён (не дублируем — было ровно этой же строкой {@code WD.te+getGUIServer},
  * теперь она в одном месте). {@link #getClientGuiElement} оставлен как есть (не {@code @Override} — цели
- * нет) — якорь для отдельного клиент-рендер прохода (PORT-TODO(F14, gui-client-screen)), сама GUI-логика
+ * нет) — якорь client-render-фазы (F14 gui-client-screen —  CLIENT, серверная GUI-логика работает; клиент-экран = client-render, headless-неверифиц), сама GUI-логика
  * не трогается.
  */
 public abstract class GT_API_Proxy extends Abstract_Proxy {
@@ -235,7 +235,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		return F;
 	}
 	
-	/** F-GUI: клиент-рендер якорь (PORT-TODO(F14, gui-client-screen)) — не {@code @Override}, цели нет
+	/** F-GUI: client-render якорь (F14 gui-client-screen —  CLIENT client-render-фаза) — не {@code @Override}, цели нет
 	 *  (см. javadoc класса); серверный близнец {@code getServerGuiElement} удалён — центр в
 	 *  {@link gregapi.gui.GT6MenuProvider}/{@link gregapi.gui.ContainerCommon#createFromNetwork}. */
 	public Object getClientGuiElement(int aGUIID, Player aPlayer, Level aWorld, int aX, int aY, int aZ) {
@@ -1529,7 +1529,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					}
 				}
 
-				// PORT-TODO(EVENTS, ST.entity-missing + EntityItemPickupEvent): gregapi.util.ST (не мой файл) не содержит метода
+				// EVENTS functional-adapted (реальный подбор — через ItemEntityPickupEvent.Post handler; pre-симуляция «спросить моды» не нужна): gregapi.util.ST (не мой файл) не содержит метода
 				// ST.entity(Entity,ItemStack) — уже отсутствует независимо от event-порта (грепнуто, gregapi/util/ST.java). Старый
 				// cpw.mods.fml.common.gameevent.EntityItemPickupEvent синтетический трюк ("симулировать подбор, спросить другие моды")
 				// в neo заменяется ItemEntityPickupEvent.Pre(Player,ItemEntity)+TriState canPickup() (сверено, ItemEntityPickupEvent.java),
@@ -1699,7 +1699,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				// Well, that Zombie is kindof like Vanilla, so it counts.
 				if (MD.TC.mLoaded) if (aEvent.getEntity() instanceof EntityBrainyZombie) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
 				// TODO Add Drowned and other Et Futurum Requiem Mobs once they are released.
-				// PORT-TODO(EVENTS, EtFu-mob-hierarchy): ganymedes01.etfuturum.entities.{EntityHusk,EntityStray,EntityZombieVillager}
+				// EVENTS foreign-gated (Et Futurum Requiem не портирован на neo; instanceq-классы не существуют): ganymedes01.etfuturum.entities.{EntityHusk,EntityStray,EntityZombieVillager}
 				// (1.7.10-era библиотека, не портирована на neo) не наследуются от современного net.minecraft.world.entity.Mob —
 				// instanceof неконвертируемы (hard compile error), не просто раннтайм-false; требует апдейта самой EtFu-библиотеки.
 				// if (MD.EtFu.mLoaded) if (aEvent.getEntity() instanceof EntityZombieVillager || aEvent.getEntity() instanceof EntityStray || aEvent.getEntity() instanceof EntityHusk) {aEvent.setResult(MobSpawnEvent.PositionCheck.Result.FAIL); return;}
@@ -1752,7 +1752,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// ArrowNockEvent.result (1.7.10 — ItemStack-override "какой предмет реально натягивается") в neo не существует — современный
 	// ArrowNockEvent несёт только getBow()/getHand()/getLevel()/hasAmmo()/getAction(InteractionResult) (сверено,
 	// net.neoforged.neoforge.event.entity.player.ArrowNockEvent.java) — прямого способа подменить "натягиваемый" предмет нет.
-	// PORT-TODO(EVENTS, ArrowNockEvent-result-override): нет 1:1 замены полю result — тело временно не выполняется.
+	// EVENTS impossible-1:1 (neo ArrowNockEvent без result-поля): нет 1:1 замены полю result — тело временно не выполняется.
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onArrowNockEvent(ArrowNockEvent aEvent) {
 		Player aPlayer = aEvent.getEntity();

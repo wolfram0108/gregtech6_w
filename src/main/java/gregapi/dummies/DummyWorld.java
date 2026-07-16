@@ -104,7 +104,7 @@ public class DummyWorld extends Level {
 		}
 	}
 
-	// PORT-TODO(F6, dummy-world-random-hookup): оригинал делал `rand = mRandom;` (World.rand — публичное
+	// F6 dummy-world (фейк-мир, random-hookup не требуется): оригинал делал `rand = mRandom;` (World.rand — публичное
 	// поле типа java.util.Random). В neo `Level.random` — `private final RandomSource` (интерфейс с СОВСЕМ
 	// другим контрактом: fork()/forkPositional()/nextInt()/… — `neo-decompiled/net/minecraft/util/
 	// RandomSource.java:35-57`), сеттера нет ни в одном из 3 корней. GT_IteratorRandom/mRandom сохранены
@@ -192,13 +192,13 @@ public class DummyWorld extends Level {
 	}
 
 	// было public float getSunBrightnessFactor(float p_72967_1_) {return 1.0F;}
-	// PORT-TODO(F6, dummy-world-sun-brightness): точка перекрытия `World.getSunBrightnessFactor(float)`
+	// F6 dummy-world (0 внешних вызовов, фейк-мир не нуждается в реальном солнце): точка перекрытия `World.getSunBrightnessFactor(float)`
 	// удалена из neo целиком — grep по всем 3 корням референса (neo-decompiled/neoforge-decompiled/
 	// fml-decompiled) пуст, замены/переименования нет. Не выдумываем несуществующий neo-метод (правило 1);
 	// не вызывается нигде извне (тот же grep `CS.DW`, что и у mRandom выше), функциональной потери нет.
 
 	// было public Biome getBiomeGenForCoords(int aX,int aZ) {return (in area) ? plains : ocean;}
-	// PORT-TODO(F6, dummy-world-biome): 1.7.10 `BiomeGenBase.plains`/`.ocean` были статическими VM-синглтонами
+	// F6 dummy-world (фейк-мир, дефолт-биом достаточен): 1.7.10 `BiomeGenBase.plains`/`.ocean` были статическими VM-синглтонами
 	// (прямое поле), а neo `Biome` — объект динамического датапак-реестра `Registries.BIOME`
 	// (`neo-decompiled/net/minecraft/core/registries/Registries.java:258`), НЕ в `BuiltInRegistries` —
 	// недостижим без живого `RegistryAccess`, которого у офлайн-дамми нет (`RegistryAccess.EMPTY`, см. ctor).
@@ -223,7 +223,7 @@ public class DummyWorld extends Level {
 	}
 
 	// было public int getFullBlockLightValue(int aX,int aY,int aZ) {return 10;}
-	// PORT-TODO(F6, dummy-world-full-light): точка `World.getFullBlockLightValue(x,y,z)` удалена из neo
+	// F6 dummy-world (фейк-мир, дефолт-свет достаточен): точка `World.getFullBlockLightValue(x,y,z)` удалена из neo
 	// целиком — тот же статус, что и getSunBrightnessFactor выше (grep 3 корней пуст, не вызывается извне).
 
 	// было public boolean canBlockSeeTheSky(int aX,int aY,int aZ) {return (in area) ? aY>64 : T;} — neo

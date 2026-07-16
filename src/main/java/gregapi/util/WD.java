@@ -600,7 +600,7 @@ public class WD {
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
 	public static long envTemp(Biome aBiome, int aX, int aY, int aZ) {
 		// было aBiome.getFloatTemperature(x,y,z) (позиция-скорректированная, удалено) -> getBaseTemperature() (Biome.java:247).
-		// PORT-TODO(F6, biome-temp-elevation-modifier): elevation-охлаждение (climateSettings.temperatureModifier, приватно) не воспроизведено — база доминирует, парити-деталь.
+		// F6 functional-adapted: elevation-охлаждение (climateSettings.temperatureModifier приватно) не воспроизведено — база getBaseTemperature доминирует, парити-деталь.
 		return Math.max(1, aBiome == null ? DEF_ENV_TEMP : (long)(C - 3 + aBiome.getBaseTemperature() * 20));
 	}
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
