@@ -91,21 +91,22 @@ public class Behavior_Sonictron extends AbstractBehaviorDefault {
 		return tNBTTagCompound.getIntOr("mTickTimer", 0);
 	}
 
-	// PORT-TODO(F8, остаточный риск): оригинал НИГДЕ не вызывает setTagCompound для этого мутированного
-	// тега (в 1.7.10 это был живой объект стека, мутация сохранялась сама), вызывающий код тоже не
-	// коммитит возврат. Под мостом ItemNBT это становится no-op. См. ItemNBT.java, decisions/F8-nbt-data-components.md §7.
+	// F8-nbt: neo CustomData копирует тег на get() → мутацию надо вернуть в стек через ItemNBT.set (в 1.7.10 живой тег сохранял
+	// сам). Иначе состояние Sonictron (индекс/таймер) терялось. См. decisions/F8-nbt-data-components.md §7.
 	public static CompoundTag setCurrentIndex(ItemStack aStack, int aIndex) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
 		tNBTTagCompound.putInt("mCurrentIndex", aIndex);
+		ItemNBT.set(aStack, tNBTTagCompound);
 		return tNBTTagCompound;
 	}
 
-	// PORT-TODO(F8, остаточный риск): см. setCurrentIndex выше — тот же паттерн без commit.
+	// F8-nbt: см. setCurrentIndex выше — write-back через ItemNBT.set.
 	public static CompoundTag setTickTimer(ItemStack aStack, int aTime) {
 		CompoundTag tNBTTagCompound = ItemNBT.get(aStack);
 		if (tNBTTagCompound == null) tNBTTagCompound = UT.NBT.make();
 		tNBTTagCompound.putInt("mTickTimer", aTime);
+		ItemNBT.set(aStack, tNBTTagCompound);
 		return tNBTTagCompound;
 	}
 	
