@@ -1382,6 +1382,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onUseHoeEvent(net.neoforged.neoforge.event.level.BlockEvent.BlockToolModificationEvent aEvent) {
 		// if (aEvent.getItemAbility() == net.neoforged.neoforge.common.ItemAbilities.HOE_TILL && aEvent.getState().getBlock() == Blocks.DIRT /* metadata!=0 PORT-TODO выше */) aEvent.setCanceled(T);
 	}
+
+	// F12: blast-resistant-mob-spawners (golden mob_spawner.setResistance(6000000) = blast-immune). neo Properties immutable →
+	// эквивалент через ExplosionEvent.Detonate: убираем SPAWNER-позиции из разрушаемых (спавнер переживает взрыв). Config кэширован.
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onExplosionDetonate(net.neoforged.neoforge.event.level.ExplosionEvent.Detonate aEvent) {
+		if (BLAST_RESISTANT_MOB_SPAWNERS) aEvent.getAffectedBlocks().removeIf(p -> aEvent.getLevel().getBlockState(p).getBlock() == net.minecraft.world.level.block.Blocks.SPAWNER);
+	}
 	
 	@SubscribeEvent(priority = EventPriority.LOWEST) 
 	@SuppressWarnings("unlikely-arg-type")
@@ -1395,6 +1402,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			BlockPos tPos = aEvent.getPosition().orElse(BlockPos.ZERO);
 			int aX = tPos.getX(), aY = tPos.getY(), aZ = tPos.getZ();
 			Block aBlock2 = aEvent.getState().getBlock();
+			// F12: harder-mob-spawners (golden setHardness(500) vs ванильные 5 → ×100 медленнее). neo Properties immutable →
+			// эквивалент через BreakSpeed: speed × (5/500)=0.01 для vanilla-спавнера. Config-флаг кэширован в GT_API.
+			if (HARDER_MOB_SPAWNERS && aBlock2 == net.minecraft.world.level.block.Blocks.SPAWNER) aEvent.setNewSpeed(aEvent.getNewSpeed() * 0.01F);
 			byte aMeta = WD.meta(aPlayer.level(), aX, aY, aZ);
 			if (aPlayer != null) {
 				ItemStack aStack = aPlayer.getMainHandItem();

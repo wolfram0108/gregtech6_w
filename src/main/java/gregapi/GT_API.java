@@ -888,13 +888,11 @@ public class GT_API extends Abstract_Mod {
 		
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDOUT"             , F)) System.out.close();
 		if (ConfigsGT.GREGTECH.get("general", "disable_STDERR"             , F)) System.err.close();
-		// PORT-TODO(F12, block-property-runtime-mutator): Block.setHardness(float)/setResistance(float)
-		// (1.7.10 runtime мутаторы) удалены — neo BlockBehaviour.Properties.strength(destroyTime,
-		// explosionResistance) неизменяема, задаётся ТОЛЬКО при регистрации блока; Blocks.SPAWNER уже
-		// зарегистрирован ванилью, ретроактивная мутация недостижима. Не найдено ни в одном из 3 корней
-		// референса — деградация до no-op.
-		if (ConfigsGT.GREGTECH.get("general", "hardermobspawners"          , T)) {/**/}
-		if (ConfigsGT.GREGTECH.get("general", "blastresistantmobspawners"  , T)) {/**/} else {/**/}
+		// F12: 1.7.10 Blocks.mob_spawner.setHardness(500)/setResistance(6000000) — runtime-мутация vanilla-блока (neo Properties
+		// immutable). Кэшируем config-флаги; hardness применяется через PlayerEvent.BreakSpeed (GT_API_Proxy.onBlockBreakSpeedEvent,
+		// SPAWNER → speed×0.01 = 5/500), blast-resistance — через ExplosionEvent (GT_API_Proxy, SPAWNER исключается из разрушаемых).
+		HARDER_MOB_SPAWNERS          = ConfigsGT.GREGTECH.get("general", "hardermobspawners"          , T);
+		BLAST_RESISTANT_MOB_SPAWNERS = ConfigsGT.GREGTECH.get("general", "blastresistantmobspawners"  , T);
 		
 		FIRE_EXPLOSIONS                     = ConfigsGT.GREGTECH.get("machines", "explode_by_fire"    , T);
 		RAIN_EXPLOSIONS                     = ConfigsGT.GREGTECH.get("machines", "explode_by_rain"    , T);
