@@ -117,7 +117,10 @@ public final class GT6QuadBuilder {
 			tBuilder.addVertex(c[i][0], c[i][1], c[i][2]);
 			tBuilder.setColor(r, g, b, a);
 			tBuilder.setNormal((float)n.x, (float)n.y, (float)n.z);
-			tBuilder.setUv(aSprite.getU(c[i][3]), aSprite.getV(c[i][4]));
+			// КРИТ (прозрачные/мусорные блоки): corners даёт u,v в 0..16 (block-texture конвенция), а neo getU/getV(offset)
+			// ждут offset 0..1 (u0+(u1-u0)*offset) → без /16 UV в 16× мимо спрайта = сэмпл вне текстуры (прозрачные щели
+			// атласа) → блок прозрачный. GT6ItemModel.flatFace уже делит на 16f — блочный путь этого не делал. Нормализуем.
+			tBuilder.setUv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
 		}
 		return tBuilder.bakeQuad();
 	}
