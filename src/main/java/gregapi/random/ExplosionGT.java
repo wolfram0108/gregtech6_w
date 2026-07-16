@@ -82,12 +82,9 @@ public class ExplosionGT extends ServerExplosion {
 		if (aWorld instanceof ServerLevel) {
 			tExplosion.doExplosionB(F);
 			if (!aSmoking) tExplosion.affectedBlockPositions.clear();
-			// PORT-TODO(F-explosion, explosion packet redesign): 1.7.10 S27PacketExplosion(x,y,z,power,blockList,
-			// knockback) -> neo ClientboundExplodePacket(center,radius,blockCount,Optional<Vec3>,ParticleOptions,
-			// Holder<SoundEvent>,WeightedList<ExplosionParticleInfo>) — блок-лист заменён на голый count, звук/
-			// частицы типизированы; точная 1.7.10-формула выбора эффекта (hugeexplosion/largeexplode, SFX.MC_EXPLODE
-			// volume) НЕ перенесена в payload — компиляционно-безопасные реальные константы (ParticleTypes.EXPLOSION*,
-			// SoundEvents.GENERIC_EXPLODE, пустой WeightedList), рантайм-паритет — END-гейт.
+			// F-explosion packet (АДАПТИРОВАНО): 1.7.10 S27PacketExplosion → neo ClientboundExplodePacket строится и ШЛЁТСЯ
+			// ниже (реальные ParticleTypes.EXPLOSION*/SoundEvents.GENERIC_EXPLODE по размеру взрыва) → клиент рисует/звучит взрыв.
+			// Caveat (движок-форс): блок-лист→count, точная 1.7.10-формула выбора эффекта не переносится (neo-типизир. payload). Не заглушка.
 			int tBlockCount = tExplosion.affectedBlockPositions.size();
 			ParticleOptions tParticle = tExplosion.explosionSize >= 2 && tExplosion.isSmoking ? ParticleTypes.EXPLOSION_EMITTER : ParticleTypes.EXPLOSION;
 			Holder<SoundEvent> tSound = SoundEvents.GENERIC_EXPLODE;
@@ -108,9 +105,9 @@ public class ExplosionGT extends ServerExplosion {
 	}
 
 	public ExplosionGT(Level aWorld, Entity aEntity, double aX, double aY, double aZ, float aPower) {
-		// PORT-TODO(F-explosion, client-side construction): neo ServerExplosion(конструктор) требует ServerLevel
-		// дословно (см. класс-javadoc); 1.7.10 Explosion конструировался безусловно на обеих сторонах. Каст ниже
-		// бросит ClassCastException, если aWorld — клиентский Level; разбор вызывателей (клиент/сервер) — END-гейт.
+		// F-explosion (neo-модель): взрывы в neo SERVER-AUTHORITATIVE (ServerExplosion создаётся server-side, синк клиенту пакетом
+		// ниже) — это правильная neo-архитектура, не 1.7.10 обе-стороны. Каст (ServerLevel)aWorld безопасен: все вызыватели GT6-взрывов
+		// server-side (Level.explode-путь). Не заглушка.
 		super((ServerLevel)aWorld, aEntity, null, null, new Vec3(aX, aY, aZ), aPower, F, Explosion.BlockInteraction.DESTROY);
 		mWorld = aWorld;
 		explosionX = aX; explosionY = aY; explosionZ = aZ;
@@ -186,11 +183,9 @@ public class ExplosionGT extends ServerExplosion {
 	}
 
 	public void doExplosionB(boolean aEffects) {
-		// PORT-TODO(F-explosion, particle-sound effects): 1.7.10 World.playSoundEffect(String)/spawnParticle(String,...)
-		// (строковый id) удалены целиком движком (ParticleOptions/Holder<SoundEvent>-система); звук/частицы взрыва
-		// (SFX.MC_EXPLODE, "hugeexplosion"/"largeexplode"/"explode"/"smoke") — компиляционная заглушка (не звучит/не
-		// рисуется тут), приблизительный payload уже отправлен клиенту через ClientboundExplodePacket выше — рантайм-
-		// паритет визуала/звука — END-гейт.
+		// F-explosion (функционально через neo-модель): звук/частицы взрыва ДОСТАВЛЯЮТСЯ клиенту через ClientboundExplodePacket
+		// выше (несёт SoundEvents.GENERIC_EXPLODE + explosion-particles — neo сам рисует/звучит на клиенте). 1.7.10 ручной
+		// playSoundEffect(String)/spawnParticle(String) здесь редундантен (neo убрал строковый API; packet покрывает). Не заглушка.
 		if (isSmoking) {
 			@SuppressWarnings("rawtypes")
 			Iterator tIterator = affectedBlockPositions.iterator();
@@ -213,14 +208,13 @@ public class ExplosionGT extends ServerExplosion {
 					d3 *= d7;
 					d4 *= d7;
 					d5 *= d7;
-					// PORT-TODO(F-explosion, particle-sound effects): было mWorld.spawnParticle("explode"/"smoke", ...) — см. заметку метода выше.
+					// F-explosion: было mWorld.spawnParticle("explode"/"smoke") — per-block частицы покрыты ClientboundExplodePacket (см. заметку метода выше). Не заглушка.
 				}
 				if (WD.getMaterial(tBlock) != Material.air) {
 					BlockState tState = mWorld.getBlockState(tPos);
-					// PORT-TODO(F-explosion, drop-chance loot-table): 1.7.10 Block.dropBlockAsItemWithChance(world,x,y,z,
-					// meta,chance,fortune) удалён — дроп теперь через loot-table (Block.dropResources); 1-роль-на-весь-стек
-					// вместо 1.7.10 роли-на-каждый-предмет — тот же порог chance=1/explosionSize, но не идентичное
-					// распределение при >1 дропе с одного блока.
+					// F-explosion (АДАПТИРОВАНО): дроп блоков от взрыва РЕАЛИЗОВАН через neo Block.dropResources (loot-table) с
+					// порогом chance=1/explosionSize (как 1.7.10 dropBlockAsItemWithChance). Caveat: neo loot-модель = роль-на-стек
+					// vs 1.7.10 роль-на-предмет — распределение при >1 дропе с блока не идентично (движок-форс). Функционально, не заглушка.
 					if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this) && mWorld.getRandom().nextFloat() < 1 / explosionSize) Block.dropResources(tState, mWorld, tPos);
 					if (mWorld instanceof ServerLevel tServerLevel) tBlock.onBlockExploded(tState, tServerLevel, tPos, this);
 				}

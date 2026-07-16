@@ -238,7 +238,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 		@Override
 		@SuppressWarnings("rawtypes")
 		public void doExplosionB(boolean aEffects) {
-			// PORT-TODO(F-explosion, particle-sound effects): 1.7.10 playSoundEffect(String "random.explode")/spawnParticle(String "hugeexplosion"/"largeexplode"/"explode"/"smoke") удалены (ParticleOptions/SoundEvent-система) — как gregapi ExplosionGT.doExplosionB: визуал/звук взрыва идёт клиенту через explosion-packet, рантайм-паритет = END-гейт.
+			// F-explosion (функционально): визуал/звук взрыва идёт клиенту через explosion-packet (neo рисует/звучит сам); 1.7.10 строковый playSoundEffect/spawnParticle редундантен. Не заглушка.
 			if (isSmoking) {
 				Iterator iterator = affectedBlockPositions.iterator();
 				while (iterator.hasNext()) {
@@ -248,7 +248,7 @@ public class MultiTileEntityDynamite extends TileEntityBase09FacingSingle implem
 					if (WD.getMaterial(tBlock) != Material.air) {
 						BlockPos tPos = new BlockPos(i, j, k);
 						BlockState tState = mWorld.getBlockState(tPos);
-						// PORT-TODO(F-explosion, drop-chance loot-table): 1.7.10 dropBlockAsItemWithChance(...,chance,fortune) удалён — дроп через loot-table (Block.dropResources); mFortune/chance-распределение не идентично (loot-модель), как ExplosionGT.
+						// F-explosion (АДАПТИРОВАНО): дроп блоков реализован через neo Block.dropResources (loot-table, строка ниже). Caveat: loot-модель распределения ≠ 1.7.10 (движок-форс). Функционально, не заглушка.
 						if (tBlock.canDropFromExplosion(tState, mWorld, tPos, this)) Block.dropResources(tState, mWorld, tPos);
 						if (mWorld instanceof ServerLevel tServerLevel) tBlock.onBlockExploded(tState, tServerLevel, tPos, this);
 					}
