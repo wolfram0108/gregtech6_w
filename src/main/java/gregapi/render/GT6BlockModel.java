@@ -57,6 +57,9 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		mParticle = aBaker.get(new Material(Identifier.fromNamespaceAndPath("gregtech", "blocks/system/error")), tDebugName);
 	}
 
+	/** Путь ModelEvent.ModifyBakingResult: particle из готового спрайта (событие даёт textureGetter, не MaterialBaker). */
+	public GT6BlockModel(Material.Baked aParticle) {mParticle = aParticle;}
+
 	@Override
 	public void collectParts(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, RandomSource aRandom, List<BlockStateModelPart> aParts) {
 		if (!(aState.getBlock() instanceof IRenderedBlock tRB)) return;

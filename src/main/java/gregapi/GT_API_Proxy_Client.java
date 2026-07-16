@@ -113,14 +113,34 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 
 	// F3-render (client): регистрация единого динамического типа модели всех GT6-блоков на mod-bus.
 	// Замена удалённого `RenderingRegistry.registerBlockHandler`/render-id диспетчера (decisions/F3-render.md §2.1):
-	// один `GT6BlockModel.Unbaked` тип, на который ссылаются blockstate-JSON всех блоков (централизация 1:1).
+	// один `GT6BlockModel` тип. Две точки: (1) RegisterBlockStateModels — тип для blockstate-JSON (fallback);
+	// (2) ModifyBakingResult — рантайм-инъекция модели ВСЕМ GT6-блокам (IRenderedBlock) БЕЗ JSON — процедурный
+	// мод (сотни блоков динамически) не может держать тысячи статичных JSON; централизация 1:1 (одна модель на весь мод).
 	@Override
 	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {
 		aModBus.addListener(this::onRegisterBlockStateModels);
+		aModBus.addListener(this::onModifyBakingResult);
 	}
 
 	private void onRegisterBlockStateModels(net.neoforged.neoforge.client.event.RegisterBlockStateModels aEvent) {
 		aEvent.registerModel(gregapi.render.GT6BlockModel.Unbaked.ID, gregapi.render.GT6BlockModel.Unbaked.MAP_CODEC);
+	}
+
+	// Рантайм-инъекция: каждому BlockState каждого GT6-блока-рендера назначаем единственный GT6BlockModel
+	// (модель динамическая — читает блок/позицию/состояние в collectParts, один инстанс на весь мод).
+	private void onModifyBakingResult(net.neoforged.neoforge.client.event.ModelEvent.ModifyBakingResult aEvent) {
+		net.minecraft.client.resources.model.sprite.Material.Baked tParticle = new net.minecraft.client.resources.model.sprite.Material.Baked(
+			aEvent.getTextureGetter().apply(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "blocks/system/error")), false);
+		gregapi.render.GT6BlockModel tModel = new gregapi.render.GT6BlockModel(tParticle);
+		java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel> tMap = aEvent.getBakingResult().blockStateModels();
+		int tCount = 0;
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			if (!(tBlock instanceof gregapi.render.IRenderedBlock)) continue;
+			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
+				tMap.put(tState, tModel); tCount++;
+			}
+		}
+		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states.");
 	}
 	
 	@Override
