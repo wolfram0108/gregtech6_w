@@ -57,11 +57,11 @@ public class Behavior_TripwireCutting extends AbstractBehaviorDefault {
 				BlockPos aBlockPos = new BlockPos(aX, aY, aZ);
 				BlockState aBlockState = aWorld.getBlockState(aBlockPos);
 				if (Blocks.TRIPWIRE.onDestroyedByPlayer(aBlockState, aWorld, aBlockPos, aPlayer, aPlayer.getMainHandItem(), T, aWorld.getFluidState(aBlockPos))) {
-					// PORT-TODO(F13/F16, block-onBlockDestroyedByPlayer-harvestBlock-removed): 1.7.10 vanilla
-					// Block.onBlockDestroyedByPlayer/harvestBlock(World,Player,x,y,z,meta) не найдены ни в одном
-					// из 3 корней в этой форме (харвест/дроп-пайплайн неo целиком другой, отдельный F-шов, не
-					// входит в block-behavior @Override срез) - вызовы сняты, drop/harvest-эффект для
-					// tripwire-вырезания сейчас теряется (звук остаётся).
+					// F13 (1:1): 1.7.10 harvestBlock(World,Player,x,y,z,meta) ронял дроп tripwire (струну). Восстановлено ниже через
+					// neo Block.dropResources(state,level,pos,be,breaker,tool) [Block.java:398] — loot по инструменту игрока.
+					// onDestroyedByPlayer уже снёс блок в air; дропаем по захваченному aBlockState. Дроп восстановлен 1:1,
+					// звук остаётся.
+					net.minecraft.world.level.block.Block.dropResources(aBlockState, aWorld, aBlockPos, null, aPlayer, aPlayer.getMainHandItem());
 					UT.Sounds.send(SFX.MC_SHEARS, aWorld, aX, aY, aZ);
 				}
 			}

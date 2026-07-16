@@ -60,11 +60,9 @@ public abstract class BlockBaseTree extends BlockBaseMeta {
 			tRangeSide--; tRangeYNeg--; tRangeYPos--;
 			for (int i = -tRangeSide; i <= tRangeSide; ++i) for (int j = -tRangeYNeg; j <= tRangeYPos; ++j) for (int k = -tRangeSide; k <= tRangeSide; ++k) {
 				Block tBlock = WD.block(aWorld, aX + i, aY + j, aZ + k);
-				// было Block.beginLeavesDecay(World,x,y,z) (1.7.10, вызов полиморфно на generic Block) - метод удалён
-				// из neo Block целиком (PORT-TODO(F13/F16, block-beginLeavesDecay-removed), см. MultiTileEntityBlock.java);
-				// единственный держатель реальной логики в дереве классов этого файла - BlockBaseLeaves (плоский метод,
-				// не движковый override) - маршрутизируем через instanceof, vanilla-листва распадается автоматически
-				// (свой tick-based механизм, не нуждается в этом поке).
+				// F13 functional-adapted: 1.7.10 Block.beginLeavesDecay(World,x,y,z) — generic Block-хук, удалён из neo. Реальную
+				// GT6-логику несёт только BlockBaseLeaves (плоский метод) → маршрутизируем instanceof'ом; vanilla-листва
+				// распадается своим tick-механизмом (в этом поке не нуждается). Не заглушка: GT6-логика вызывается.
 				if (WD.leaves(tBlock, aWorld, aX + i, aY + j, aZ + k) && tBlock instanceof BlockBaseLeaves) ((BlockBaseLeaves)tBlock).beginLeavesDecay(aWorld, aX + i, aY + j, aZ + k);
 			}
 		}

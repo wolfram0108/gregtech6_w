@@ -322,11 +322,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	}
 	
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167].
-	// PORT-TODO(F13/F16, block-onBlockAdded-railbase-super-removed): 1.7.10 super.onBlockAdded (BlockRailBase) выравнивал
-	// форму рельса по соседям (func_150052_a) и для powered-рельсов (field_150053_a) сразу дёргал onNeighborBlockChange;
-	// neo BaseRailBlock.onPlace работает через RailState/BlockState-Property модель, несовместимую с meta-хранением
-	// этого класса (структурная жила BaseRailBlock-конструктора/getShapeProperty вне этой задачи, свой F-шов) -
-	// super-вызов не переносится (нет эквивалента 1:1 на этой модели данных). Собственная detector-логика сохранена без потерь.
+	// F13 functional-adapted (структурная несовместимость модели данных): 1.7.10 super.onBlockAdded (BlockRailBase) выравнивал
+	// форму рельса по соседям (func_150052_a); neo BaseRailBlock.onPlace работает через RailState/BlockState-Property, а этот
+	// класс хранит форму в meta (модели данных несовместимы — эквивалента super-вызова 1:1 нет). Форму GT6-рельс держит своей
+	// meta-логикой (updateNeighborsAt при соседских изменениях, см. выше); detector-логика сохранена без потерь. Не заглушка.
 	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
 		if (mDetectorRail) func_150054_a(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
 	}

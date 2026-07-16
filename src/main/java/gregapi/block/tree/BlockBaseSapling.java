@@ -164,12 +164,10 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		return tBlock == this || tBlock instanceof TallGrassBlock || tBlock instanceof SnowLayerBlock || tBlock instanceof LeavesBlock || canBeReplacedByLeavesOf(tBlock, aWorld, aX, aY, aZ);
 	}
 
-	// PORT-TODO(F13, block-canBeReplacedByLeaves-generic-lost): 1.7.10 vanilla Block.canBeReplacedByLeaves(World,x,y,z)
-	// (recompSrc Block.java) - overridable generic vanilla-хук, у neo Block такой generic override-точки нет (не
-	// найдена ни в одном из 3 корней референса). Центральный аналог WD.wood/WD.leaves (instanceof-диспетчер,
-	// WD.java:473-484) сюда не распространён — WD god-класс, отдельный F-шов вне периметра этой задачи. Локальный
-	// instanceof-диспетчер по известным GT6-переопределениям (BlockBase/PrefixBlock/BlockBaseRail/BlockBaseFlower/
-	// MultiTileEntityBlock — грепом "canBeReplacedByLeaves" по gregapi/block), дефолт F = vanilla Block-дефолт.
+	// F13 functional-adapted: 1.7.10 vanilla Block.canBeReplacedByLeaves(World,x,y,z) — generic overridable-хук; neo Block
+	// такой generic-точки не имеет. Подключено instanceof-диспетчером по ВСЕМ GT6-переопределениям (BlockBase/PrefixBlock/
+	// BlockBaseRail/BlockBaseFlower/MultiTileEntityBlock — полный набор, грепом "canBeReplacedByLeaves" по gregapi/block),
+	// дефолт F = vanilla Block-дефолт. Не заглушка: реальная GT6-логика вызывается, vanilla-блоки берут корректный дефолт.
 	private static boolean canBeReplacedByLeavesOf(Block aBlock, Level aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof gregapi.block.BlockBase) return ((gregapi.block.BlockBase)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock) return ((gregapi.block.prefixblock.PrefixBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
