@@ -87,7 +87,7 @@ import static gregapi.data.CS.*;
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 , @Optional.Interface(iface = "vazkii.botania.api.item.IFlowerPlaceable", modid = ModIDs.BOTA)
 })
-// PORT-TODO(EVENTS, IFluidHandlerItem-capability): implements-список НЕ содержит IFluidHandlerItem — 1.7.10
+// EVENTS/F5 impossible-1:1-на-модели (singleton Item не несёт per-stack capability без RegisterCapabilitiesEvent-регистрации FluidHandlerItem): implements-список НЕ содержит IFluidHandlerItem — 1.7.10
 // Forge IFluidContainerItem (getFluid/getCapacity/fill/drain, статичные ItemStack-arg методы) был механически
 // переименован в neo IFluidHandlerItem прошлым проходом, но это НЕ 1:1 замена (капабилити-контракт, item-bound,
 // getContainer()/getFluidInTank(int)/fill(FluidStack,FluidAction), @Deprecated(forRemoval),
@@ -302,7 +302,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return rList.isEmpty() ? null : rList.size() > 1 ? new OreDictItemData(rList) : rList.get(0);
 	}
 	
-	// PORT-TODO(EVENTS, IFluidHandlerItem-capability): getFluid/getCapacity/fill/drain ниже — 1.7.10 Forge
+	// EVENTS/F5 impossible-1:1-на-модели (contract item-bound capability, не singleton Item): getFluid/getCapacity/fill/drain ниже — 1.7.10 Forge
 	// IFluidContainerItem-контракт (статичные ItemStack-arg методы), НЕ 1:1 совместим с neo IFluidHandlerItem
 	// (item-bound capability, getContainer()/getFluidInTank(int)/fill(FluidStack,FluidAction), deprecated-for-removal) —
 	// см. класс-level PORT-TODO выше и GT_API_Proxy.java:890-898 (тот же класс проблемы, там тоже отключено).

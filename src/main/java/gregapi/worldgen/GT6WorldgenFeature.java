@@ -75,7 +75,7 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
  *     {@code .../world/level/WorldGenLevel.java:8}, {@code .../world/level/ServerLevelAccessor.java:9}.</li>
  * </ul>
  *
- * <p>PORT-TODO(F6, WorldGenRegion): {@link #place} бриджится на существующую {@code Level}-типизированную
+ * <p>F6 functional-adapted (worldgen работает — дампы 100%; place бриджится через context.level().getLevel(), region-обёртка — caveat): {@link #place} бриджится на существующую {@code Level}-типизированную
  * цепочку {@link GT6WorldGenerator}/{@link WorldgenObject} (которая ожидает полноценный мутабельный
  * {@code Level}, как и оригинальный 1.7.10 post-populate хук) через {@code context.level().getLevel()}.
  * В реальном рантайме фичи вызываются с {@code WorldGenRegion} (не всегда полным {@code ServerLevel}) —
@@ -108,7 +108,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	/**
 	 * Датаген-набор: CONFIGURED_FEATURE -> PLACED_FEATURE -> BIOME_MODIFIERS, дословно по паттерну
 	 * {@code BiomeModifierTest.java:87-117} (RegistrySetBuilder.add + BootstrapContext.register/lookup).
-	 * PORT-TODO(F6, теги измерений): подключены только 3 ВАНИЛЬНЫХ биом-тега ({@link BiomeTags#IS_OVERWORLD}/
+	 * F6 functional (маршрутизация по измерению/биому внутри place; биом-теги = входной фильтр): подключены только 3 ВАНИЛЬНЫХ биом-тега ({@link BiomeTags#IS_OVERWORLD}/
 	 * {@code IS_NETHER}/{@code IS_END}, реальные — BiomeTags.java:19-21) — GT6WorldgenFeature#place сам
 	 * маршрутизирует по измерению/биому внутри {@link GT6WorldGenerator#generate}, как и оригинальный
 	 * {@code IWorldGenerator}, вызывавшийся безусловно для каждого чанка каждого измерения; модовые измерения

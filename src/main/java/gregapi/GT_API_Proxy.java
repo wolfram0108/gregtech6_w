@@ -899,7 +899,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 								if (tStack.getItem() == Items.POTION) {
 									ST.set(tStack, IL.BTL_Tainted_Potion.get(1), F, F);
 								}
-								// PORT-TODO(EVENTS, IFluidHandlerItem-capability): capability-система fluid-in-item полностью переработана в neo
+								// EVENTS foreign-gated+impossible-1:1 (Betweenlands отсутствует; IFluidHandlerItem , capability-система переработана): fluid-in-item в neo
 								// (IFluidHandlerItem — @Deprecated(forRemoval), заменена ResourceHandler/ItemAccess; getFluid(ItemStack)/drain(..,bool)/
 								// fill(..,bool) более не существуют — реальные IFluidHandler.drain/fill принимают FluidAction, не boolean, сверено
 								// net.neoforged.neoforge.fluids.capability.IFluidHandler.java) — требует отдельного F#-решения, блок отключён.
