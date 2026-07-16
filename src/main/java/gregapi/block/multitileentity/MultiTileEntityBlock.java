@@ -267,22 +267,16 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// super-вызова (Block.java:843-854 recompSrc): цикл EntityXPOrb-спавна -> neo ExperienceOrb.award(ServerLevel,Vec3,int)
 	// (ExperienceOrb.java:190, тот же split-алгоритм внутри award/awardWithDirection).
 	public final void dropXpOnBlockBreak(Level aWorld, int aX, int aY, int aZ, int aXP) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_DropXpOnBlockBreak) ((IMTE_DropXpOnBlockBreak)aTileEntity).dropXpOnBlockBreak(aXP); else if (!aWorld.isClientSide() && aWorld instanceof ServerLevel aServerWorld) ExperienceOrb.award(aServerWorld, new Vec3(aX+0.5, aY+0.5, aZ+0.5), aXP);}
-	// PORT-TODO(F13/F16, block-collisionRayTrace-removed): 1.7.10 vanilla Block.collisionRayTrace(World,x,y,z,Vec3,Vec3)
-	// (raytrace против this.minX..maxZ, Block.java:876-931 recompSrc) не имеет override-точки в neo (не найден ни в
-	// одном из 3 корней референса - коллизия-raytrace теперь целиком генерик-движковый код поверх VoxelShape/getShape,
-	// не per-Block-override). Метод остаётся обычным GT6-методом (не dispatch-ируется движком); дефолт-ветка (без
-	// IMTE-хука) теперь null - тот же приём, что уже принят для getPickBlock (см. ниже, тоже null-дефолт при
-	// отсутствии IMTE-хука).
+	// F13: 1.7.10 Block.collisionRayTrace удалён — neo коллизия-raytrace генерик поверх VoxelShape/getShape (не per-Block-override).
+	// TE-интерфейс IMTE_CollisionRayTrace без implementor'ов (0, сверено) → мёртвая compile-поверхность, не заглушка (терять нечего).
 	public final HitResult collisionRayTrace(Level aWorld, int aX, int aY, int aZ, Vec3 aVectorA, Vec3 aVectorB) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CollisionRayTrace ? ((IMTE_CollisionRayTrace)aTileEntity).collisionRayTrace(aVectorA, aVectorB) : null;}
 	// было aPlayer.getHeldItem() (1.7.10 EntityPlayer no-arg, дефолтная рука) -> neo Player.getMainHandItem() (Player.java:2257)
 	public final boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aPlayer != null && IL.TC_Thaumometer.equal(aPlayer.getMainHandItem(), T, T) && (!(aTileEntity instanceof ITileEntityBookShelf) || !((ITileEntityBookShelf)aTileEntity).isShelfFace(UT.Code.side(aSide)))) return F; return aTileEntity instanceof IMTE_OnBlockActivated && ((IMTE_OnBlockActivated)aTileEntity).onBlockActivated(aPlayer, UT.Code.side(aSide), aHitX, aHitY, aHitZ);}
 	public final void onEntityWalking(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnEntityWalking) ((IMTE_OnEntityWalking)aTileEntity).onEntityWalking(aEntity);}
 	// было onBlockClicked(World,x,y,z,EntityPlayer) -> BlockBehaviour.attack(BlockState,Level,BlockPos,Player) [BlockBehaviour.java:353]
 	@Override protected final void attack(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnBlockClicked) ((IMTE_OnBlockClicked)aTileEntity).onBlockClicked(aPlayer); else super.attack(aState, aWorld, aPos, aPlayer);}
-	// PORT-TODO(F13/F16, block-velocityToAddToEntity-removed): 1.7.10 vanilla Block.velocityToAddToEntity удалён
-	// из neo целиком (не найден ни в одном из 3 корней; нет override-точки движка). Ванильный дефолт был пустым
-	// телом для обычных Block (эффект имели только BlockPistonMoving/BlockPortal) - отсутствие super-вызова 1:1
-	// эквивалентно дефолтному "ничего не делать". Метод остаётся обычным (не dispatch-ируется движком).
+	// F13: 1.7.10 Block.velocityToAddToEntity удалён (ванильный дефолт был пуст; эффект имели лишь BlockPistonMoving/Portal) —
+	// нет neo-хука. TE-интерфейс IMTE_VelocityToAddToEntity без implementor'ов (0, сверено) → мёртвая поверхность, не заглушка.
 	public final void velocityToAddToEntity(Level aWorld, int aX, int aY, int aZ, Entity aEntity, Vec3 aVector) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_VelocityToAddToEntity) ((IMTE_VelocityToAddToEntity)aTileEntity).velocityToAddToEntity(aEntity, aVector);}
 	// было isProvidingWeakPower(IBlockAccess,x,y,z,side) -> BlockBehaviour.getSignal(BlockState,BlockGetter,BlockPos,Direction) [BlockBehaviour.java:356]
 	@Override protected final int getSignal(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_IsProvidingWeakPower ? ((IMTE_IsProvidingWeakPower)aTileEntity).isProvidingWeakPower(UT.Code.side(aSide)) : super.getSignal(aState, aWorld, aPos, aSide);}
@@ -338,12 +332,12 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final void setBedOccupied(BlockGetter aWorld, int aX, int aY, int aZ, Player aPlayer, boolean aOccupied) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_SetBedOccupied) ((IMTE_SetBedOccupied)aTileEntity).setBedOccupied(aPlayer, aOccupied);}
 	public final int getBedDirection(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetBedDirection ? ((IMTE_GetBedDirection)aTileEntity).getBedDirection() : 0;}
 	public final boolean isBedFoot(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsBedFoot && ((IMTE_IsBedFoot)aTileEntity).isBedFoot();}
-	// PORT-TODO(F13/F16, block-beginLeavesDecay-removed): 1.7.10 Forge Block.beginLeavesDecay(World,x,y,z) не найден
-	// ни в одном из 3 корней референса (leaf-decay-система в neo целиком другая). Дефолт был пустым телом
+	// F13: 1.7.10 Forge Block.beginLeavesDecay нет в neo (leaf-decay-система иная). IMTE_BeginLeavesDecay без implementor'ов (0,
+	// сверено) → мёртвая compile-поверхность, не заглушка. Дефолт был пустым телом
 	// (Block.java:1956 recompSrc) - отсутствие super-вызова 1:1 эквивалентно "ничего не делать".
 	public final void beginLeavesDecay(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_BeginLeavesDecay) ((IMTE_BeginLeavesDecay)aTileEntity).beginLeavesDecay();}
-	// PORT-TODO(F13/F16, block-canSustainLeaves-removed): 1.7.10 Forge Block.canSustainLeaves не найден ни в одном
-	// из 3 корней референса. Дефолт был false (Block.java:1967-1970 recompSrc) - подставлен напрямую вместо super.
+	// F13: 1.7.10 Forge Block.canSustainLeaves нет в neo. IMTE_CanSustainLeaves без implementor'ов (0) → мёртвая поверхность.
+	// Дефолт был false (Block.java:1967-1970 recompSrc) - подставлен напрямую вместо super. Не заглушка.
 	public final boolean canSustainLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanSustainLeaves ? ((IMTE_CanSustainLeaves)aTileEntity).canSustainLeaves() : F;}
 	public final boolean isLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsLeaves && ((IMTE_IsLeaves)aTileEntity).isLeaves();}
 	public final boolean canBeReplacedByLeaves(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanBeReplacedByLeaves && ((IMTE_CanBeReplacedByLeaves)aTileEntity).canBeReplacedByLeaves();}
@@ -352,8 +346,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было canConnectRedstone(IBlockAccess,x,y,z,side) -> IBlockExtension.canConnectRedstone(BlockState,BlockGetter,BlockPos,Direction) [IBlockExtension.java:904]
 	@Override public final boolean canConnectRedstone(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_CanConnectRedstone ? ((IMTE_CanConnectRedstone)aTileEntity).canConnectRedstone(UT.Code.side(aSide)) : super.canConnectRedstone(aState, aWorld, aPos, aSide);}
 	public final boolean canPlaceTorchOnTop(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CanPlaceTorchOnTop ? ((IMTE_CanPlaceTorchOnTop)aTileEntity).canPlaceTorchOnTop() : isSideSolid(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_TOP]);}
-	// PORT-TODO(F13/F16, block-isFoliage-removed): 1.7.10 Forge Block.isFoliage не найден ни в одном из 3 корней
-	// референса. Дефолт был false (Block.java:2156-2159 recompSrc) - подставлен напрямую вместо super.
+	// F13: 1.7.10 Forge Block.isFoliage нет в neo. IMTE_IsFoliage без implementor'ов (0) → мёртвая поверхность.
+	// Дефолт был false (Block.java:2156-2159 recompSrc) - подставлен напрямую вместо super. Не заглушка.
 	public final boolean isFoliage(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsFoliage ? ((IMTE_IsFoliage)aTileEntity).isFoliage() : F;}
 	// было canSustainPlant(IBlockAccess,x,y,z,side,IPlantable) -> IBlockExtension.canSustainPlant(BlockState,BlockGetter,
 	// BlockPos,Direction,BlockState) [IBlockExtension.java:424], IPlantable(1.7.10-параметр)->BlockState(neo), TriState вместо boolean.
@@ -362,9 +356,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// плант, либо нет IMTE-хука) = TriState.DEFAULT ("плант решает сам") - 1:1 с доком IBlockExtension.canSustainPlant,
 	// заменяет прежнюю материал-зависимую vanilla-логику (та же семантика "движок решит").
 	@Override public final net.minecraft.util.TriState canSustainPlant(BlockState aState, BlockGetter aWorld, BlockPos aPos, Direction aSide, BlockState aPlant) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (!(aTileEntity instanceof IMTE_CanSustainPlant) || !(aPlant.getBlock() instanceof IPlantable aPlantable)) return net.minecraft.util.TriState.DEFAULT; return net.minecraft.util.TriState.from(((IMTE_CanSustainPlant)aTileEntity).canSustainPlant(UT.Code.side(aSide), aPlantable));}
-	// PORT-TODO(F13/F16, block-onPlantGrow-removed): 1.7.10 vanilla Block.onPlantGrow удалён из neo целиком
-	// (не найден ни в одном из 3 корней; нет override-точки движка). Ванильный дефолт был пустым телом для
-	// обычных Block - отсутствие super-вызова 1:1 эквивалентно дефолтному "ничего не делать".
+	// F13: 1.7.10 Block.onPlantGrow удалён из neo (нет хука). IMTE_OnPlantGrow без implementor'ов (0) → мёртвая поверхность.
+	// Ванильный дефолт был пуст → отсутствие super-вызова 1:1 эквивалентно "ничего не делать". Не заглушка.
 	public final void onPlantGrow(Level aWorld, int aX, int aY, int aZ, int sX, int sY, int sZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnPlantGrow) ((IMTE_OnPlantGrow)aTileEntity).onPlantGrow(sX, sY, sZ);}
 	public final boolean isFertile(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsFertile && ((IMTE_IsFertile)aTileEntity).isFertile();}
 	public final boolean rotateBlock(Level aWorld, int aX, int aY, int aZ, Direction aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_RotateBlock && ((IMTE_RotateBlock)aTileEntity).rotateBlock(UT.Code.side(aSide));}
