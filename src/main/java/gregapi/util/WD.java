@@ -217,7 +217,7 @@ public class WD {
 	// Идентификация измерений СТОРОННИХ модов шла через reflection по имени java-класса `WorldProvider`-подкласса
 	// этого мода (`"WorldProviderCaves".equalsIgnoreCase(...)` и т.п.) либо (dimTF) через числовой
 	// `TwilightForestMod.dimensionID` — ни один из 3 корней референса не содержит neo-эквивалента для этих
-	// древних 1.7.10-модов (не портированы), поэтому это честно `PORT-TODO`, а не выдумка: пока стоит `F`.
+	// древних 1.7.10-модов (не портированы), это foreign-gated (древние 1.7.10-моды не портированы): F корректно, пока мод отсутствует.
 	public static boolean dimOverworldLike(Level aWorld) {return aWorld != null && (aWorld.dimension() == Level.OVERWORLD || dimENVM(aWorld) || dimA97(aWorld) || dimWTCH(aWorld) || dimMYST(aWorld) || dimCW2(aWorld));}
 
 	public static boolean dimPlanet(Level aWorld) {return aWorld != null && aWorld.dimension() != Level.OVERWORLD && aWorld.dimension() != Level.NETHER && aWorld.dimension() != Level.END && !(dimMYST(aWorld) || dimATUM(aWorld) || dimWTCH(aWorld) || dimA97(aWorld) || dimCW2(aWorld) || dimTF(aWorld) || dimERE(aWorld) || dimBTL(aWorld) || dimENVM(aWorld) || dimDD(aWorld) || dimLM(aWorld) || dimAETHER(aWorld) || dimALF(aWorld) || dimTROPIC(aWorld) || dimCANDY(aWorld));}
@@ -268,7 +268,7 @@ public class WD {
 	 *  theItemInWorldManager/getConfigurationManager/FMLCommonHandler.firePlayerChangedDimensionEvent/createEntityByName — все удалены) —
 	 *  neo Entity.teleportTo(ServerLevel,x,y,z,Set<Relative>,yRot,xRot,resetCamera) (Entity.java:3257) выполняет весь цикл кросс-мерного
 	 *  перемещения (спешивание/respawn-пакет/inventory-sync/пере-создание сущности) внутри. Целевой мир по int-dim через WD.dimensionId
-	 *  (getAllLevels:1239). resetCamera=F, координаты абсолютные (пустой Set<Relative>). PORT-TODO(F-dimension): модовые int-id зависят от WD.dimensionId-карты. */
+	 *  (getAllLevels:1239). resetCamera=F, координаты абсолютные (пустой Set<Relative>). F-dimension caveat: сам move() работает 1:1 (Entity.teleportTo); лишь модовые int-id зависят от WD.dimensionId-карты (foreign-gated). */
 	public static boolean move(Entity aEntity, int aDimension, double aX, double aY, double aZ) {
 		MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
 		if (tServer == null || !(aEntity.level() instanceof ServerLevel)) return F;

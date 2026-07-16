@@ -761,8 +761,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (aOrb.getValue() >= Short.MAX_VALUE) continue;
 				if (aOrb.getValue() <= 0) {aOrb.setValue(0); aOrb.discard(); continue;}
 				for (ExperienceOrb tOrb : tOrbs) if (aOrb != tOrb && !tOrb.isRemoved() && tOrb.getValue() > 0 && tOrb.getValue() < Short.MAX_VALUE && aOrb.distanceToSqr(tOrb) <= 3) {
-					// PORT-TODO(EVENTS, ExperienceOrb.age-merge): neo ExperienceOrb.age приватно, без public-сеттера (сверено, ExperienceOrb.java) —
-					// перенос возраста при слиянии орбов (1.7.10 xpOrbAge, public) прямого 1:1 не имеет, шаг пропущен.
+					// EVENTS impossible-1:1: neo ExperienceOrb.age приватно, без public-сеттера — перенос возраста при слиянии
+					// орбов (1.7.10 xpOrbAge public) не выразим; слияние значения работает, возраст сохраняет выживший орб (age
+					// влияет лишь на despawn-таймер, ~5 мин) → шаг пропущен, слияние XP функционально.
 					if (aOrb.getValue() + tOrb.getValue() > Short.MAX_VALUE) {
 						tOrb.setValue(tOrb.getValue() - (Short.MAX_VALUE - aOrb.getValue()));
 						aOrb.setValue(Short.MAX_VALUE);
@@ -1193,9 +1194,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 			// Just rightclick the Trophy to get the Achievement/Progress.
 			if (IL.TF_Trophy.equal(aBlock)) {
-				// PORT-TODO(EVENTS, Block.getItemDropped/getDamageValue): 1.7.10 metadata-based Block-API (getItemDropped(meta,Random,fortune),
-				// getDamageValue(World,x,y,z)) удалено в пользу LootTable+BlockState (сверено, net.minecraft.world.level.block.Block.java —
-				// методов нет); ST.check сам уже форс-no-op (см. gregapi.util.ST.check, PORT-TODO stats-loot) — вызов отключён.
+				// EVENTS/F18-redundant: вызов кормил ТОЛЬКО ST.check→vanilla-достижение (F18, neo авто-выдаёт advancement) — moot.
+				// 1.7.10 metadata Block-API (getItemDropped/getDamageValue) удалено в пользу LootTable+BlockState (impossible-1:1),
+				// но здесь не нужно: ST.check и так no-op. Отключено верно.
 				// ST.check(aPlayer, ST.make(aBlock.getItemDropped(0, RNGSUS, 0), 1, aBlock.getDamageValue(aWorld, aX, aY, aZ)));
 				return;
 			}
@@ -1374,12 +1375,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	
 	// UseHoeEvent (1.7.10, world/x/y/z/entityPlayer поля) не существует в neo — заменён общим BlockToolModificationEvent (ЛЮБАЯ
 	// ItemAbility, не только мотыга — сверено, net.neoforged.neoforge.event.level.BlockEvent.java), поэтому добавлена явная проверка
-	// getItemAbility()==ItemAbilities.HOE_TILL. blockMetadata (1.7.10 dirt-вариант: 1=coarse dirt, 2=podzol) удалён — в neo это отдельные
-	// Block-типы (Blocks.COARSE_DIRT/Blocks.PODZOL), не метадата Blocks.DIRT (сверено, аналогично общей проблеме Blocks.* по файлу).
-	// PORT-TODO(EVENTS, dirt-metadata-variant): нет 1:1 переноса проверки "dirt с ненулевой metadata" без переизобретения списка блоков.
+	// getItemAbility()==ItemAbilities.HOE_TILL. F6 (1:1): 1.7.10 «Blocks.dirt && metadata!=0» (coarse=1/podzol=2) → в neo это
+	// ОТДЕЛЬНЫЕ Block-типы Blocks.COARSE_DIRT/Blocks.PODZOL (не метадата dirt) — точный набор, не переизобретение. Восстановлено.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onUseHoeEvent(net.neoforged.neoforge.event.level.BlockEvent.BlockToolModificationEvent aEvent) {
-		// if (aEvent.getItemAbility() == net.neoforged.neoforge.common.ItemAbilities.HOE_TILL && aEvent.getState().getBlock() == Blocks.DIRT /* metadata!=0 PORT-TODO выше */) aEvent.setCanceled(T);
+		if (aEvent.getItemAbility() == net.neoforged.neoforge.common.ItemAbilities.HOE_TILL && (aEvent.getState().getBlock() == Blocks.COARSE_DIRT || aEvent.getState().getBlock() == Blocks.PODZOL)) aEvent.setCanceled(T);
 	}
 
 	// F12: blast-resistant-mob-spawners (golden mob_spawner.setResistance(6000000) = blast-immune). neo Properties immutable →

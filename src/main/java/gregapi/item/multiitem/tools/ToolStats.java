@@ -234,9 +234,9 @@ public abstract class ToolStats implements IToolStats {
 			aPlayer.setDeltaMovement(tMotion.x * 0.6, tMotion.y, tMotion.z * 0.6);
 			aPlayer.setSprinting(F);
 		}
-		// PORT-TODO(item-base, critical-hit hook): Player.onCriticalHit/onEnchantmentCritical (1.7.10 client
-		// feedback hooks) удалены — критический удар полностью внутренний server-side расчёт в 26.1.2, нет
-		// public override-точки для мод-кода. Деградация до no-op.
+		// item-base impossible-1:1: Player.onCriticalHit/onEnchantmentCritical (1.7.10 КЛИЕНТ-feedback hooks) удалены —
+		// крит-удар в 26.1.2 полностью внутренний server-расчёт, public override-точки для мод-кода нет. Крит-УРОН
+		// применяется (tDamage*=1.5 в вызывателе); утрачен лишь клиент-визуал частиц → no-op ВЕРЕН.
 		if (aEntity instanceof LivingEntity) Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 		Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 		if (aEntity instanceof LivingEntity) aPlayer.awardStat(Stats.DAMAGE_DEALT, Math.round((aNormalDamage+aMagicDamage) * 10));

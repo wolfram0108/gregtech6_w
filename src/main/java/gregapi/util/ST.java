@@ -1353,8 +1353,8 @@ public class ST {
 	public static boolean check(Entity aPlayer, ItemStack aStack) {
 		if (!(aPlayer instanceof Player) || aPlayer.level() == null || aPlayer.level().isClientSide()) return F;
 
-		if (F /* PORT-TODO(этап-dimension, F?): WD.dimensionId(aPlayer.level()) == DIM_NETHER — WorldProvider/dimensionId
-		     удалены в neo (Level.dimension() -> ResourceKey<Level>), нет прямого 1:1 сравнения по числовому id */) {
+		if (F /* F18-redundant: гейтил ТОЛЬКО vanilla-достижение portal (achieve ниже), которое neo авто-выдаёт advancement'ом.
+		     neo dimension-check есть (aPlayer.level().dimension()==Level.NETHER), но здесь гейтил бы no-op → оставляем F */) {
 			// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.portal);
 		}
 
