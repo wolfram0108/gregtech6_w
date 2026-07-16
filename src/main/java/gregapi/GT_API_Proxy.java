@@ -1780,17 +1780,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			if (tSpeed >= 1.0F) tArrowEntity.setCritArrow(T); // было setIsCritical(boolean) (1.7.10) — neo AbstractArrow: setCritArrow(boolean) (сверено, AbstractArrow.java:540)
 
-			// PORT-TODO(EVENTS, AbstractArrow-enchant-bonus-api): Enchantments.POWER/.punch/.flame (1.7.10 static enum-like поля) удалены
-			// (та же проблема класса, что и Blocks.*/Items.* по файлу) — плюс AbstractArrow больше не несёт getDamage()/setKnockbackStrength(int)/
-			// setFire(int) в старом виде (сверено, AbstractArrow.java — только setBaseDamage(double), нет getter; knockback/fire — другие пути:
-			// Entity.setRemainingFireTicks(int) вместо setFire(int), knockback вообще не найден как метод). Требует отдельного F#-решения.
-			// int
-			// tLevel = UT.NBT.getEnchantmentLevel(Enchantments.POWER, aEvent.getBow());
-			// if (tLevel > 0) tArrowEntity.setDamage(tArrowEntity.getDamage() + tLevel * 0.5D + 0.5D);
-			// tLevel = UT.NBT.getEnchantmentLevel(Enchantments.PUNCH, aEvent.getBow());
-			// if (tLevel > 0) tArrowEntity.setKnockbackStrength(tLevel);
-			// tLevel = UT.NBT.getEnchantmentLevel(Enchantments.FLAME, aEvent.getBow());
-			// if (tLevel > 0) tArrowEntity.setFire(tLevel * 100);
+			// PORT-TODO(F-entity-construction, arrow-weapon-enchants): neo сменил МОДЕЛЬ — POWER/PUNCH/FLAME больше не применяются
+			// вручную (getDamage/setKnockbackStrength/setFire сняты; baseDamage private без getter, knockback — не публичный сеттер).
+			// Движок применяет их АВТОМАТИЧЕСКИ из firedFromWeapon (AbstractArrow.java:98/422/511: EnchantmentHelper.modifyDamage +
+			// doKnockback по firedFromWeapon). neo-путь 1:1 = протащить лук как firedFromWeapon в ctor снаряда — но EntityProjectile
+			// строится с ItemStack.EMPTY (см. IItemProjectile:EntityProjectile), а его EntityType — плейсхолдер ARROW: обе завязки —
+			// на отложенную F-entity-construction (реальная регистрация EntityType + проброс лука в конструкцию снаряда). Enchant'ы
+			// (Enchantments.POWER/PUNCH/FLAME) в neo = ResourceKey, НЕ удалены — блокирует именно конструкция снаряда, не сами чары.
 
 			aEvent.getBow().hurtAndBreak(1, aPlayer, InteractionHand.MAIN_HAND); // было damageItem(int,EntityLivingBase) (1.7.10) — neo: hurtAndBreak(int,LivingEntity,InteractionHand) (сверено, ItemStack.java:524)
 			aEvent.getBow().getItem();

@@ -556,10 +556,10 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 			if (IL.TF_Mazestone.equal(aBlock)) if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
 			if (IL.TF_Mazehedge.equal(aBlock)) {
 				if (aMat1.contains(TD.Properties.MAZEBREAKER)) tDamage /= 40; else tDamage *= 16;
-				// PORT-TODO(F8, enchant-registry): Enchantments.SILK_TOUCH (1.7.10 static instance) удалён —
-				// зачарования data-driven, нет живого Holder<Enchantment> в статическом контексте; деградация
-				// до "нет шёлковой нити" (ветка отдаёт особый дроп безусловно).
-				if (!aWorld.isClientSide()) {
+				// F8 (1:1): было UT.NBT.getEnchantmentLevel(Enchantment.silkTouch, aStack) <= 0 — особый Mazehedge-дроп ТОЛЬКО без
+				// шёлкового касания. Enchantments.SILK_TOUCH в neo = ResourceKey (не удалён); ported UT.NBT.getEnchantmentLevel
+				// (UT.java:2257) читает уровень чар со стека. Гейт восстановлен: с silk-touch особый дроп НЕ выдаётся.
+				if (!aWorld.isClientSide() && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH, aStack) <= 0) {
 					if (aPlayer instanceof Player && canCollectDropsDirectly(aStack, aBlock, aMeta)) {
 						ST.give(aPlayer, IL.TF_Mazehedge.get(1), aWorld, aX, aY, aZ);
 					} else {

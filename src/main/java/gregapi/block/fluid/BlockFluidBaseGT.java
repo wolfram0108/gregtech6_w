@@ -115,10 +115,9 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock {
 		return this.density > tDensity;
 	}
 
-	/** было Forge {@code BlockFluidBase.displaceIfPossible(World,x,y,z)} — тело 1:1 (drop-эффект вытесняемого
-	 *  Blocks, было {@code block.dropBlockAsItem(...)}, 1.7.10-only метод удалён в neo — PORT-TODO(F5,
-	 *  fluid-displace-drop): вытеснение само по себе (true/false) сохранено 1:1, побочный drop предмета из
-	 *  вытесняемого блока отложен, компилируем без него, ничего кроме этого drop-эффекта не теряется). */
+	/** было Forge {@code BlockFluidBase.displaceIfPossible(World,x,y,z)} — тело 1:1. F5 (1:1): при density==MAX_VALUE
+	 *  Forge-оригинал ронял вытесняемый блок ({@code block.dropBlockAsItem}) ДО вытеснения → neo Block.dropResources
+	 *  (Block.java:380). Дроп восстановлен (был отложен как silent no-op). Отличие от canDisplace — только этот побочный drop. */
 	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {
 		BlockPos aPos = new BlockPos(aX, aY, aZ);
 		if (aWorld.getBlockState(aPos).isAir()) return T;
@@ -128,7 +127,10 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock {
 		Material aBlockMaterial = WD.getMaterial(aBlock);
 		if (aBlockMaterial.blocksMovement() || aBlockMaterial == Material.portal) return F;
 		int tDensity = getDensity(aWorld, aX, aY, aZ);
-		if (tDensity == Integer.MAX_VALUE) return T;
+		if (tDensity == Integer.MAX_VALUE) {
+			if (aWorld instanceof net.minecraft.server.level.ServerLevel) net.minecraft.world.level.block.Block.dropResources(aWorld.getBlockState(aPos), aWorld, aPos); // Forge dropBlockAsItem вытесняемого блока
+			return T;
+		}
 		return this.density > tDensity;
 	}
 
