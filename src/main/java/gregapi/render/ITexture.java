@@ -28,15 +28,11 @@ import net.minecraft.resources.Identifier;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F3, серверная поверхность): в 1.7.10 этот интерфейс дёргал по каждой стороне напрямую
- * immediate-mode рендерер (RenderBlocks/Tessellator/GL11/IIcon) — весь этот стек в 26.1.2 удалён
- * без замены (см. decisions/F3-render.md §1). Реальная замена —
- * {@code DynamicBlockStateModel.collectParts(level,pos,state,random,parts)} +
- * {@code CubeBuilder}/{@code QuadBakingVertexConsumer} (decisions/F3-render.md §2.1-2.2) — это
- * клиентский baked-рендер, отдельная поздняя фаза. Этот файл хранит только 1:1-структуру
- * (имена методов/форму классов) как серверную компилирующуюся поверхность: {@code RenderBlocks}
- * заменён нейтральным держателем {@code Object aRenderer}, {@code IIcon} — на {@link Identifier},
- * а всё тело AO/Tessellator (было ~700 строк) сведено к no-op заглушкам с PORT-TODO.
+ * F3-render: в 1.7.10 этот интерфейс дёргал по каждой стороне immediate-mode рендерер
+ * (RenderBlocks/Tessellator/GL11/IIcon) — стек удалён в 26.1.2. РЕАЛИЗОВАНА замена (decisions/F3-render.md §8):
+ * {@code aRenderer} = {@link GT6QuadBuilder}, per-side {@code renderXPos/...} → {@code Util.renderSide} →
+ * {@code putFace(side, Identifier, RGBa)} строит BakedQuad; сборка в {@link GT6BlockModel} (DynamicBlockStateModel).
+ * {@code IIcon} → {@link Identifier}. immediate-mode AO/Tessellator заменён декларативным baked-путём.
  */
 public interface ITexture {
 	public void renderXPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds);
@@ -49,27 +45,26 @@ public interface ITexture {
 	public boolean isValidTexture();
 
 	/**
-	 * PORT-TODO(F3, baked-рендер клиента): было Tessellator/GL11/RenderBlocks immediate-mode рендер
-	 * (per-side UV + Ambient-Occlusion, ~700 строк). Реальная замена — CubeBuilder/QuadCollection.Builder
-	 * внутри DynamicBlockStateModel.collectParts() (decisions/F3-render.md §2.1-2.2). До той фазы все
-	 * методы этого держателя — no-op, сохраняющий лишь булев признак "текстура задана".
+	 * F3-render: было Tessellator/GL11/RenderBlocks immediate-mode (per-side UV + AO, ~700 строк). РЕАЛИЗОВАНА замена —
+	 * per-side {@code renderX/Y/Z} строят BakedQuad через {@link GT6QuadBuilder} (мост в {@code aRenderer}); сборка в
+	 * {@link GT6BlockModel}. AO/яркость даёт neo baked-путь (лайтмап на рендере), поэтому alpha-blending setup/teardown не нужны.
 	 */
 	public static class Util {
 		public static boolean OPTIFINE_LOADED = F, GT_ALPHA_BLENDING = F, MC_ALPHA_BLENDING = F, IS_RENDERING_ALPHA = F;
 
-		/** PORT-TODO(F3, baked-рендер клиента): было RenderBlocks/GL11 alpha-blending Setup вокруг многопроходного рендера. */
+		/** F3-render: было GL11 alpha-blending Setup; в baked-пути не нужно (neo сам управляет blend по RenderType). No-op. */
 		public static void startRendering(Object aRenderer, Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 			//
 		}
 
-		/** PORT-TODO(F3, baked-рендер клиента): было RenderBlocks/GL11 alpha-blending Teardown. */
+		/** F3-render: было GL11 alpha-blending Teardown; в baked-пути не нужно. No-op. */
 		public static void endRendering(Object aRenderer, Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
 			//
 		}
 
 		//=============================================================================================================
-		// PORT-TODO(F3, baked-рендер клиента): prepare+do+applyAmbientOcclusion Rendering (было ~700 строк
-		// Tessellator.addVertexWithUV/GL11 по каждой стороне) — удалено, заменит CubeBuilder внутри collectParts().
+		// F3-render: prepare+do+applyAmbientOcclusion (было ~700 строк Tessellator/GL11 по стороне) — заменено
+		// декларативным baked-путём: per-side quad в GT6QuadBuilder, AO/яркость даёт neo на рендере.
 		//=============================================================================================================
 
 		public static boolean renderSide(byte aSide, Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {

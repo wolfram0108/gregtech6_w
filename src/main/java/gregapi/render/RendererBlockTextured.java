@@ -28,17 +28,13 @@ import net.minecraft.world.level.BlockGetter;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F3, baked-рендер клиента): в 1.7.10 диспетчер реализовывал
- * {@code ISimpleBlockRenderingHandler}+{@code IItemRenderer} и рисовал immediate-mode через
- * {@code RenderBlocks}/{@code Tesselator}/{@code GL11} — весь этот стек удалён в 26.1.2
- * (decisions/F3-render.md §1). Реальная замена диспетчера — {@code DynamicBlockStateModel}
- * (world-рендер, §2.1) + item-модель через {@code ItemStackRenderState}/{@code ItemModelResolver}
- * (инвентарь-рендер, §3 таблица "IItemRenderer"); регистрация — {@code RegisterBlockStateModels}/
- * {@code ModelEvent.RegisterStandalone}, НЕ {@code RenderingRegistry.registerBlockHandler}. Это
- * клиентская baked-фаза — здесь только серверная поверхность: поле {@code mRenderID}/{@code INSTANCE}
- * (используются в 11+ местах как "есть ли рендерер"/"id рендер-типа") и статические per-side
- * помощники, на которые опирается {@link IRenderedBlockObject.ErrorRenderer} — тело обоих гатится
- * до no-op.
+ * F3-render: в 1.7.10 диспетчер реализовывал {@code ISimpleBlockRenderingHandler}+{@code IItemRenderer}
+ * (immediate-mode {@code RenderBlocks}/{@code Tesselator}/{@code GL11}) — стек удалён в 26.1.2. РЕАЛИЗОВАНА
+ * замена (decisions/F3-render.md §8): логика {@code renderWorldBlock} воспроизведена 1:1 в
+ * {@link GT6BlockModel}{@code .collectParts} (DynamicBlockStateModel), item-рендер — {@link GT6ItemModel}
+ * ({@code ItemStackRenderState}), регистрация — {@code RegisterBlockStateModels}+{@code ModifyBakingResult}.
+ * Этот класс держит лишь серверную поверхность: {@code mRenderID}/{@code INSTANCE} (11+ мест как "есть ли
+ * рендерер"/"id рендер-типа") — no-op-совместимость; реальный рендер — в GT6BlockModel/GT6ItemModel.
  */
 public class RendererBlockTextured {
 	public final int mRenderID;
@@ -50,7 +46,7 @@ public class RendererBlockTextured {
 		mRenderID = aRenderID;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode Tesselator/GL11 через RenderBlocks (см. class javadoc). */
+	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
 	public static boolean renderNegativeYFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -58,7 +54,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode Tesselator/GL11 через RenderBlocks (см. class javadoc). */
+	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
 	public static boolean renderPositiveYFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -66,7 +62,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode Tesselator/GL11 через RenderBlocks (см. class javadoc). */
+	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
 	public static boolean renderNegativeZFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -74,7 +70,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode Tesselator/GL11 через RenderBlocks (см. class javadoc). */
+	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
 	public static boolean renderPositiveZFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -82,7 +78,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode Tesselator/GL11 через RenderBlocks (см. class javadoc). */
+	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
 	public static boolean renderNegativeXFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
@@ -90,7 +86,7 @@ public class RendererBlockTextured {
 		return T;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode Tesselator/GL11 через RenderBlocks (см. class javadoc). */
+	/** F3-render: было immediate-mode Tesselator/GL11; логика воспроизведена 1:1 в GT6BlockModel.collectParts (baked). */
 	public static boolean renderPositiveXFacing(BlockGetter aWorld, Object aRenderer, Block aBlock, int aX, int aY, int aZ, ITexture aIcon, boolean aFullBlock, boolean aShouldSideBeRendered, Object aRenderedBlockObject) {
 		if (aIcon == null || !aIcon.isValidTexture()) return F;
 		if (aWorld != null && aFullBlock && !aShouldSideBeRendered) return F;
