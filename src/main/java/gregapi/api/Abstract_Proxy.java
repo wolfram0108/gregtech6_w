@@ -47,6 +47,11 @@ public abstract class Abstract_Proxy {
 			if (tAnnotation == null || tMethod.getParameterCount() != 1) continue;
 			Class<?> tParameter = tMethod.getParameterTypes()[0];
 			if (!net.neoforged.bus.api.Event.class.isAssignableFrom(tParameter)) continue;
+			// F7 bus-раздел (форс движка): mod-bus события (IModBusEvent, напр. TextureAtlasStitchedEvent/ModelEvent/
+			// RegisterEvent) НЕЛЬЗЯ вешать на общую NeoForge.EVENT_BUS — neo бросает "IModBusEvent not allowed on the
+			// common bus" при регистрации (крашило runData/runClient на конструкции мода). Они регистрируются на mod-шине
+			// отдельно (registerClientModels/RegisterEvent-хендлеры). Здесь — только game-bus @SubscribeEvent.
+			if (net.neoforged.fml.event.IModBusEvent.class.isAssignableFrom(tParameter)) continue;
 			java.util.function.Consumer<net.neoforged.bus.api.Event> tDispatch = aEvent -> {
 				try {tMethod.invoke(this, aEvent);}
 				catch (ReflectiveOperationException e) {throw new RuntimeException("Abstract_Proxy: сбой диспетчеризации события " + tMethod, e);}
