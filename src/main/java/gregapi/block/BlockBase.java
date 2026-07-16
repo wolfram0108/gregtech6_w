@@ -82,14 +82,15 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public Material getMaterial() {return mMaterial;}
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
 		// F16/F9 форс движка: neo `Block` immutable (данные в Properties ДО super). setStepSound встроен в Properties.sound;
-		// setBlockName удалён (имя через реестр — ST.register ниже); setCreativeTab удалён (creative-tab через
-		// BuildCreativeModeTabContentsEvent-датаген) → PORT-TODO(F16). Light ПОДКЛЮЧЁН (lightLevel(lightOf) — ленивая функция читает
+		// setBlockName удалён (имя через реестр — ST.register ниже); setCreativeTab(tabBlock) → CreativeTabsGT.assign(BLOCK) ниже
+		// (last-wins: subclass-ctor переопределит). Light ПОДКЛЮЧЁН (lightLevel(lightOf) — ленивая функция читает
 		// mLightLevel). Твёрдость/mapColor per-meta варьируются → динамические override'ы (getDestroyProgress/getMapColor), не Properties.
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром BLOCKS,
 		// куда ST.register клал блок), ключ санитизирован. Конструкция — на RegisterEvent через registerBlockLazy на call-site.
 		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mMaterial = aMaterial;
 		mNameInternal = aNameInternal;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.BLOCK); // F16 1:1: 1.7.10 setCreativeTab(tabBlock); last-wins → subclass переопределит
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ (RegisterEvent<Block>, ITEMS открыт)
 		// регистрируем ТОЛЬКО BlockItem через supplier. Было: ST.register(this,...) (регистрировало блок эагер→freeze + BlockItem).
 		final Class<? extends BlockItem> tItemClass = aItemClass==null?gregapi.block.ItemBlockBase.class:aItemClass;

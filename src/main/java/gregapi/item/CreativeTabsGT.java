@@ -93,9 +93,12 @@ public final class CreativeTabsGT {
 		if (!tMembers.contains(aItem)) tMembers.add(aItem);
 	}
 
-	/** Вызывается из ctor блока/предмета (замена setCreativeTab). aOwner — сам блок или предмет (ItemLike). */
+	/** Вызывается из ctor блока/предмета (замена setCreativeTab). aOwner — сам блок или предмет (ItemLike). LAST-WINS: как
+	 *  1.7.10 setCreativeTab (повторный вызов заменял вкладку) — subclass-ctor (позже super) переопределяет базовую. */
 	public static void assign(ItemLike aOwner, ResourceKey<CreativeModeTab> aTab) {
-		if (aOwner != null && aTab != null) ASSIGNMENTS.add(new Object[]{aOwner, aTab});
+		if (aOwner == null || aTab == null) return;
+		for (Object[] tA : ASSIGNMENTS) if (tA[0] == aOwner) {tA[1] = aTab; return;}
+		ASSIGNMENTS.add(new Object[]{aOwner, aTab});
 	}
 
 	/** Единая подписка на mod-bus (вызов из GT_API ctor). */
