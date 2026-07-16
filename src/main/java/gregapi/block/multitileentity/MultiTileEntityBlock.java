@@ -305,9 +305,13 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 	public final void onBlockHarvested(Level aWorld, int aX, int aY, int aZ, int aMetaData, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockHarvested) ((IMTE_OnBlockHarvested)aTileEntity).onBlockHarvested(aMetaData, aPlayer);}
 	public final void onBlockPreDestroy(Level aWorld, int aX, int aY, int aZ, int aMetaData) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockPreDestroy) ((IMTE_OnBlockPreDestroy)aTileEntity).onBlockPreDestroy(aMetaData);}
-	// PORT-TODO(F13/F16, block-fillWithRain-removed): 1.7.10 vanilla Block.fillWithRain(World,x,y,z) удалён из neo
-	// целиком (не найден ни в одном из 3 корней; нет override-точки движка). Ванильный дефолт был пустым телом
-	// (Block.java:1399 recompSrc) - отсутствие super-вызова 1:1 эквивалентно дефолтному "ничего не делать".
+	// F13: 1.7.10 Block.fillWithRain(World,x,y,z) → neo Block.handlePrecipitation(state,level,pos,precipitation) (overridable).
+	// Ниже neo-хук диспетчит IMTE_FillWithRain при ДОЖДЕ (fillWithRain был rain-specific), 1:1. GT6-метод сохранён.
+	@Override public void handlePrecipitation(BlockState aState, Level aWorld, BlockPos aPos, net.minecraft.world.level.biome.Biome.Precipitation aPrecipitation) {
+		BlockEntity tTE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		if (aPrecipitation == net.minecraft.world.level.biome.Biome.Precipitation.RAIN && tTE instanceof IMTE_FillWithRain) ((IMTE_FillWithRain)tTE).fillWithRain();
+		else super.handlePrecipitation(aState, aWorld, aPos, aPrecipitation);
+	}
 	public final void fillWithRain(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_FillWithRain) ((IMTE_FillWithRain)aTileEntity).fillWithRain();}
 	// было hasComparatorInputOverride()/getComparatorInputOverride(World,x,y,z,side) -> BlockBehaviour.hasAnalogOutputSignal(BlockState)
 	// [BlockBehaviour.java:226] / BlockBehaviour.getAnalogOutputSignal(BlockState,Level,BlockPos,Direction) [BlockBehaviour.java:310];
