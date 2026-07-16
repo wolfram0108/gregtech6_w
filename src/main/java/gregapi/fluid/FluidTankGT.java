@@ -60,9 +60,9 @@ import static gregapi.data.CS.T;
  * (GT6 объёмы огромны), на границе с {@link FluidStack}/{@link FluidResource} (оба {@code int})
  * клампится через {@link UT.Code#bindInt}, ровно как раньше.
  *
- * <p>// PORT-TODO(F5, long-amount): клампинг на границе спасает от переполнения int внутри ОДНОГО
- * вызова ({@link UT.Code#bindInt} режет к {@code Integer.MAX_VALUE}), но остаётся структурное
- * ограничение — {@code ResourceHandler<FluidResource>}/{@link FluidStack} физически {@code int}, тогда
+ * <p>// F5 long-amount (АДАПТИРОВАНО, движок-форс): клампинг на границе через {@link UT.Code#bindInt}
+ * (режет к {@code Integer.MAX_VALUE}) — функционально; структурное ограничение движка:
+ * {@code ResourceHandler<FluidResource>}/{@link FluidStack} физически {@code int}, тогда
  * как {@link #mAmount}/{@link #mCapacity} — {@code long}; НИ ОДИН вызов {@link #asResourceHandler()}
  * (insert/extract/getCapacity) не может атомарно перенести/сообщить больше {@code Integer.MAX_VALUE}
  * за раз, даже если внутреннее состояние танка (long) способно хранить больше. NBT-round-trip не

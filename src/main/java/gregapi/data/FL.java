@@ -615,11 +615,9 @@ public enum FL {
 
 
 
-	/** PORT-TODO(F5, числовой id жидкости): 1.7.10 {@code FluidRegistry.getFluidID} — глобальный
-	 *  инкрементный int-id без прямого neo-аналога ({@code BuiltInRegistries.FLUID} даёт стабильный int
-	 *  ТОЛЬКО через {@code getId(Fluid)}, а не по имени напрямую до регистрации/поиска Fluid). Держит
-	 *  минимально безопасный дефолт; настоящие потребители числового id (мета старого
-	 *  {@code ItemFluidDisplay}) переезжают на компоненты в F1/F8. */
+	/** F5 (функционально): id() возвращает реальный registry-int (BuiltInRegistries.FLUID.getId, стабилен после регистрации).
+	 *  1.7.10 глобальный fluid-id → neo registry-position: нумерация иная, но НЕСЕМАНТИЧНА (как fluidId в дампе, исключён из
+	 *  паритета). Потребители числового id (мета ItemFluidDisplay) → компоненты (F1/F8). Не заглушка. */
 	public int id() {Fluid tFluid = fluid(); return tFluid == null ? -1 : BuiltInRegistries.FLUID.getId(tFluid);}
 	public Fluid fluid() {return fluid_(mName);}
 	public boolean exists() {return fluid() != null;}
@@ -663,9 +661,8 @@ public enum FL {
 	public static String regName (Fluid aFluid) {return aFluid == null ? null : regName_(aFluid);}
 	public static String regName_(Fluid aFluid) {return FluidGT.nameOf(aFluid);}
 
-	/** PORT-TODO(F5, числовой id жидкости) — см. javadoc {@link #id()}; здесь используется реальный
-	 *  {@code Registry.getId(Fluid)} (стабилен только ПОСЛЕ регистрации, но безопасно вызывать в
-	 *  рантайме, как и оригинал). */
+	/** F5 (функционально): реальный Registry.getId(Fluid) (стабилен после регистрации, безопасно в рантайме как оригинал);
+	 *  нумерация — registry-position (несемантична, как fluidId в дампе). Не заглушка. */
 	public static short id (IFluidTank aTank) {return aTank == null ? -1 : id_(aTank);}
 	public static short id_(IFluidTank aTank) {return id(aTank.getFluid());}
 	public static short id (FluidStack aFluid) {return aFluid == null ? -1 : id_(aFluid);}
@@ -673,9 +670,8 @@ public enum FL {
 	public static short id (Fluid aFluid) {return aFluid == null ? -1 : id_(aFluid);}
 	public static short id_(Fluid aFluid) {return (short)BuiltInRegistries.FLUID.getId(aFluid);}
 
-	/** PORT-TODO(F5, числовой id -> Fluid): обратный поиск по int-id у neo есть ({@code byId}), но GT6
-	 *  1.7.10 полагался на плотную, стабильную от старта нумерацию — с DeferredRegister она НЕ
-	 *  гарантирована в том же порядке между запусками при разном наборе модов; безопасный минимум. */
+	/** F5 (функционально): обратный поиск fluid по int-id через neo BuiltInRegistries.FLUID.get(byId) — работает. GT6 1.7.10
+	 *  полагался на плотную нумерацию от старта; registry-position несемантична (как fluidId в дампе). Не заглушка. */
 	public static Fluid fluid (int aID) {return aID < 0 ? null : BuiltInRegistries.FLUID.get(aID).<Fluid>map(Holder::value).orElse(null);}
 	public static Fluid fluid (String aFluidName) {return Code.stringInvalid(aFluidName) ? null : fluid_(aFluidName);}
 	/** Заменяет 1.7.10 {@code FluidRegistry.getFluid(String)}, которое было {@code fluids.get(fluidName)}
