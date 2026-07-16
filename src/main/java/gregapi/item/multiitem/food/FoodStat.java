@@ -152,9 +152,8 @@ public class FoodStat implements IFoodStat {
 			if (tStack == null && mAutoDetectEmpty) tStack = ST.container(aStack, F);
 			ST.give(aPlayer, tStack, F);
 		}
-		// PORT-TODO(item-base, playSoundAtEntity→playSound): было Level.playSoundAtEntity(Entity,String,float,float)
-		// (1.7.10 строковый sound-id) — реальный 1:1 neo-путь: Level.playSound(Entity except, Entity source,
-		// SoundEvent, SoundSource, volume, pitch), "random.burp"→SoundEvents.PLAYER_BURP (сверено).
+		// item-base: 1.7.10 playSoundAtEntity(entity,"random.burp",...) → neo Level.playSound(null,source,SoundEvent,...);
+		// "random.burp"→SoundEvents.PLAYER_BURP. Реализовано 1:1 (строка ниже).
 		if (aMakeSound) aPlayer.level().playSound(null, aPlayer, SoundEvents.PLAYER_BURP, SoundSource.PLAYERS, 0.5F, RNGSUS.nextFloat() * 0.1F + 0.9F);
 		if (!aPlayer.level().isClientSide()) {
 			if (mExtinguish) aPlayer.extinguishFire();
