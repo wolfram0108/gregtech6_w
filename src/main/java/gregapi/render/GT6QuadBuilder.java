@@ -128,6 +128,46 @@ public final class GT6QuadBuilder {
 		return tBuilder.bakeQuad();
 	}
 
+	/** F3-render cross-модель (растения/цветы): X-форма из 2 диагональных плоскостей, каждая ДВУСТОРОННЯЯ (unculled,
+	 *  видна с обеих сторон). Текстура полная (UV 0..16 /16f, как vanilla block/cross). Используют IRenderedCross-блоки. */
+	public void crossFace(Identifier aIcon, short[] aRGBa) {
+		if (aIcon == null) return;
+		TextureAtlasSprite tSprite = sprite(aIcon);
+		if (tSprite == null) return;
+		mFullCube = false; // cross никогда не куб — грани не cull-aware
+		addCrossPlane(new float[][]{{0,0,0},{1,0,1},{1,1,1},{0,1,0}}, tSprite, aRGBa); // диагональ SW->NE
+		addCrossPlane(new float[][]{{1,0,0},{0,0,1},{0,1,1},{1,1,0}}, tSprite, aRGBa); // диагональ SE->NW
+	}
+	private void addCrossPlane(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa) {
+		for (boolean tReverse : new boolean[]{false, true}) { // front + back = плоскость видна с обеих сторон
+			BakedQuad tQuad = planeQuad(aCorners, aSprite, aRGBa, tReverse);
+			if (tQuad != null) {mQuads.addUnculledFace(tQuad); mAll.add(tQuad);}
+		}
+	}
+	/** Один quad произвольной плоскости (4 вершины) с полной UV + tint. aReverse — обратная намотка (задняя сторона). */
+	private BakedQuad planeQuad(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa, boolean aReverse) {
+		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
+		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
+		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
+		int a = aRGBa != null && aRGBa.length >= 4 ? (aRGBa[3] & 0xFF) : 255;
+		float[][] tUV = {{0,16},{16,16},{16,0},{0,0}}; // bottom-left, bottom-right, top-right, top-left
+		float nx = aCorners[1][2]-aCorners[0][2], nz = -(aCorners[1][0]-aCorners[0][0]); // нормаль плоскости в XZ (для освещения; cull отключён)
+		float nlen = (float)Math.sqrt(nx*nx+nz*nz); if (nlen > 0) {nx/=nlen; nz/=nlen;}
+		if (aReverse) {nx = -nx; nz = -nz;}
+		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
+		tBuilder.setSprite(new Material.Baked(aSprite, false));
+		tBuilder.setDirection(Direction.UP);
+		int[] tOrder = aReverse ? new int[]{3,2,1,0} : new int[]{0,1,2,3};
+		for (int idx = 0; idx < 4; idx++) {
+			int i = tOrder[idx];
+			tBuilder.addVertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
+			tBuilder.setColor(r, g, b, a);
+			tBuilder.setNormal(nx, 0, nz);
+			tBuilder.setUv(aSprite.getU(tUV[i][0] / 16f), aSprite.getV(tUV[i][1] / 16f));
+		}
+		return tBuilder.bakeQuad();
+	}
+
 	/** 4 угла грани по bounds b={minX,minY,minZ,maxX,maxY,maxZ}, CCW относительно нормали; {x,y,z,u,v} (u,v в 0..16 → UV клипается по bounds).
 	 *  При full-cube (0..1) сводится к прежнему поведению (u,v = 0..16). */
 	private static float[][] corners(Direction aDir, float[] b) {

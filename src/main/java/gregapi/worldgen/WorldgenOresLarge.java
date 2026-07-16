@@ -89,7 +89,9 @@ public class WorldgenOresLarge extends WorldgenObject {
 		if (GENERATING_SPECIAL) return F;
 		if (mDistance > 0 && Math.abs(aMinX) <= mDistance && Math.abs(aMinZ) <= mDistance) return F;
 		
-		int tMinY = mMinY + WD.random(aWorld, aOriginChunkX, aOriginChunkZ).nextInt(mMaxY - mMinY - 5);
+		// F6 §4.1: окно жилы [mMinY..mMaxY] (старый мир 0..255) растягивается sea-anchored под MC26 (-64..319).
+		int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
+		int tMinY = tRMinY + WD.random(aWorld, aOriginChunkX, aOriginChunkZ).nextInt(Math.max(1, tRMaxY - tRMinY - 5));
 		
 		// F6: было `WD.dimensionId(aWorld) == 0` (буквально ванильный Overworld) — сверено на реальную
 		// константу Level.OVERWORLD (Level.java:95), как и в WorldgenObject.checkForMajorWorldgen.

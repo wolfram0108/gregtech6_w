@@ -144,13 +144,16 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		if (aRandom.nextInt(mProbability) != 0 || checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
 		if (Math.abs(aMinZ) < 256+mMaxSize*16 && Math.abs(aMinX) < 256+mMaxSize*16) return F;
 		if ((GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD) && (Math.abs(aMinX) < 256+mMaxSize*16 || Math.abs(aMinZ) < 256+mMaxSize*16)) return F;
-		if (Math.abs(aMinX/16)%(mMaxSize+4) != (mMaxSize+4)/2 || Math.abs(aMinZ/16)%(mMaxSize+4) != (mMaxSize+4)/2 || !WD.bedrock(aWorld, aMinX+8, 0, aMinZ+8)) return F;
+		// F6-Y-scale (КОРЕНЬ «данжи не генерятся»): бедрок MC26 на getMinY() (был Y=0) — проверка бедрока в центре якорится к дну мира.
+		if (Math.abs(aMinX/16)%(mMaxSize+4) != (mMaxSize+4)/2 || Math.abs(aMinZ/16)%(mMaxSize+4) != (mMaxSize+4)/2 || !WD.bedrock(aWorld, aMinX+8, WD.minY(aWorld), aMinZ+8)) return F;
 		
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 		
 		if (tRegistry == null) return F;
 		
-		int tOffsetY = mMinY + aRandom.nextInt(Math.max(1, mMaxY-mMinY)), tColor = aRandom.nextInt(16);
+		// F6 §4.1: окно глубины данжа [mMinY..mMaxY] (старый мир) растягивается sea-anchored под MC26.
+		int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
+		int tOffsetY = tRMinY + aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), tColor = aRandom.nextInt(16);
 		
 		BlockStones
 		tPrimaryBlock   = (BlockStones)BlocksGT.stones[aRandom.nextInt(BlocksGT.stones.length)],
@@ -178,7 +181,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		aMinX -= (tRoomLayout   .length / 2) * 16;
 		aMinZ -= (tRoomLayout[0].length / 2) * 16;
 		
-		for (int i = 0; i < tRoomLayout.length; i++) for (int j = 0; j < tRoomLayout[i].length; j++) WD.set(aWorld, aMinX+8+i*16, 254, aMinZ+8+j*16, NB, 0, 3);
+		for (int i = 0; i < tRoomLayout.length; i++) for (int j = 0; j < tRoomLayout[i].length; j++) WD.set(aWorld, aMinX+8+i*16, WD.maxY(aWorld)-1, aMinZ+8+j*16, NB, 0, 3); // F6-Y-scale: маркер у потолка (был 254 = старый 255-1) → maxY-1.
 		
 		for (int i = 0, j = 0, k = -1, l = 0; k >= -IMPORTANT_ROOM_COUNT && l < 10000; l++) {
 			i = 1+aRandom.nextInt(tRoomLayout   .length-2);

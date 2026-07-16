@@ -65,11 +65,16 @@ import static gregapi.data.CS.*;
 @Optional.InterfaceList(value = {
 	@Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.block.IOxygenReliantBlock", modid = ModIDs.GC)
 })
-public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase, IBlockSealable, IOxygenReliantBlock, BonemealableBlock {
+public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase, IBlockSealable, IOxygenReliantBlock, BonemealableBlock, gregapi.render.IRenderedCross, gregapi.block.IBlockExtendedMetaData {
 	public final String mNameInternal;
 	public IIconContainer[] mIcons;
 	/** For Creative Subsets, not actually important. */
 	private final byte mMaxMeta;
+
+	/** F3-render/meta: вариант цветка (per-ore индикатор бедрок-руд) — в blockstate-property (синкается с чанком, без TE):
+	 *  WD.set→setExtendedMetaData ставит, WD.meta→getExtendedMetaData читает, GT6BlockModel рисует cross по нему (IRenderedCross). */
+	public static final net.minecraft.world.level.block.state.properties.IntegerProperty META = net.minecraft.world.level.block.state.properties.IntegerProperty.create("meta", 0, 15);
+	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(META);}
 	/** F9: было super(Material.plants) — BlockFlower(1.7.10, recompSrc Block.java:26) — переходник не
 	 *  распространён на классы вне BlockBase (F9 4-bis, тот же приём переиспользован: собственное mMaterial/
 	 *  getMaterial(), не новая абстракция). */
@@ -85,6 +90,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
 		// F16: golden setStepSound(soundTypeGrass) — runtime-мутатор в neo невозможен, задаём в Properties.sound(GRASS) при ctor (1:1).
 		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(net.minecraft.world.level.block.SoundType.GRASS).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // F3-render/meta: дефолт META=0
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
 		mNameInternal = aNameInternal;
@@ -130,6 +136,24 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return mMaxMeta;}
 	public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
+
+	// F3-render/meta (IBlockExtendedMetaData): вариант цветка в blockstate-property META (WD.set/WD.meta маршрутизируют сюда).
+	@Override public short getExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ) {
+		BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ));
+		return (short)(tState.getBlock() == this ? tState.getValue(META).intValue() : 0);
+	}
+	@Override public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
+		if (!(aWorld instanceof Level tLevel)) return;
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockState tState = tLevel.getBlockState(tPos);
+		if (tState.getBlock() == this) tLevel.setBlock(tPos, tState.setValue(META, (int)UT.Code.bind4(aMetaData)), 3);
+	}
+	// F3-render (IRenderedCross): текстура cross-модели per-мета (getIcon уже per-мета из mIcons); GT6BlockModel рисует X-форму.
+	@Override public Identifier getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
+		if (mIcons == null || mIcons.length == 0) return null;
+		IIconContainer tIcon = mIcons[UT.Code.bind4(aWorld == null ? 0 : WD.meta(aWorld, aX, aY, aZ)) % mIcons.length];
+		return tIcon == null ? null : tIcon.getIcon(0);
+	}
 	public void onOxygenAdded(Level aWorld, int aX, int aY, int aZ) {/**/}
 	public void onOxygenRemoved(Level aWorld, int aX, int aY, int aZ) {if (!aWorld.isClientSide() && !WD.oxygen(aWorld, aX, aY, aZ)) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}}
 	

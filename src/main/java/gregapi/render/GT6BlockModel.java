@@ -66,6 +66,13 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		int tX = aPos.getX(), tY = aPos.getY(), tZ = aPos.getZ();
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 
+		// F3-render cross-модель (растения/цветы, IRenderedCross): X-форма из 2 диагональных плоскостей, минуя кубическую цепочку.
+		if (tRB instanceof IRenderedCross tCross) {
+			tQB.crossFace(tCross.getCrossIcon(aLevel, tX, tY, tZ), tCross.getCrossRGBa(aLevel, tX, tY, tZ));
+			aParts.add(new SimpleModelWrapper(tQB.build(), true, mParticle));
+			return;
+		}
+
 		// 1:1-порт RendererBlockTextured.renderWorldBlock: двойной passRenderingToObject → ветвь блока / ветвь рендер-объекта.
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aLevel, tX, tY, tZ);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aLevel, tX, tY, tZ);

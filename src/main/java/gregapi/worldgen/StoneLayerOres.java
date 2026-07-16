@@ -83,26 +83,47 @@ public class StoneLayerOres {
 		if (aMinY > aMaxY) {mMinY = aMaxY; mMaxY = aMinY;} else {mMinY = aMinY; mMaxY = aMaxY;}
 	}
 	
+	// F6 §4.1 (decisions/F6-worldgen.md): окно Y руды задано в старом мире [0..255]; в MC26 (-64..319) РАСТЯГИВАЕТСЯ
+	// sea-anchored (WD.remapY, море — якорь) + шанс масштабируется ОБРАТНО растяжению (сохранить исходное КОЛИЧЕСТВО
+	// руды в зоне, §4.1 п.3 — иначе на удвоенной высоте плотность бы упала вдвое). Кэш по (minY,seaLevel) измерения:
+	// считается один раз, а не на каждый из миллионов вызовов check() за чанк.
+	private transient int mRemapKey = Integer.MIN_VALUE, mRemapMinY, mRemapMaxY;
+	private transient long mRemapChance;
+	private void ensureRemap(Level aWorld) {
+		int tKey = aWorld.getMinY() * 1000003 + aWorld.getSeaLevel();
+		if (tKey == mRemapKey) return;
+		mRemapKey = tKey;
+		mRemapMinY = WD.remapY(aWorld, mMinY);
+		mRemapMaxY = WD.remapY(aWorld, mMaxY);
+		long tOldSpan = Math.max(1, mMaxY - mMinY), tNewSpan = Math.max(1, mRemapMaxY - mRemapMinY);
+		mRemapChance = UT.Code.bind(1, U, mChance * tOldSpan / tNewSpan);
+	}
+
 	@SuppressWarnings("unlikely-arg-type")
 	public boolean check(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome, int aRandomNumber) {
-		return aY >= mMinY && aY <= mMaxY && aRandomNumber           < mChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
+		ensureRemap(aWorld);
+		return aY >= mRemapMinY && aY <= mRemapMaxY && aRandomNumber           < mRemapChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
 	}
 	@SuppressWarnings("unlikely-arg-type")
 	public boolean check(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome, Random aRandom) {
-		return aY >= mMinY && aY <= mMaxY && aRandom.nextInt((int)U) < mChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
+		ensureRemap(aWorld);
+		return aY >= mRemapMinY && aY <= mRemapMaxY && aRandom.nextInt((int)U) < mRemapChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
 	}
 	@SuppressWarnings("unlikely-arg-type")
 	public boolean check(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
-		return aY >= mMinY && aY <= mMaxY && RNGSUS .nextInt((int)U) < mChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
+		ensureRemap(aWorld);
+		return aY >= mRemapMinY && aY <= mRemapMaxY && RNGSUS .nextInt((int)U) < mRemapChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
 	}
-	
+
 	public boolean set(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome, Random aRandom) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
-		return aY == mMinY || aY == mMaxY || aRandom.nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
+		ensureRemap(aWorld);
+		return aY == mRemapMinY || aY == mRemapMaxY || aRandom.nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
 	}
 	public boolean set(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
-		return aY == mMinY || aY == mMaxY || RNGSUS .nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
+		ensureRemap(aWorld);
+		return aY == mRemapMinY || aY == mRemapMaxY || RNGSUS .nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
 	}
 	public boolean normal(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
