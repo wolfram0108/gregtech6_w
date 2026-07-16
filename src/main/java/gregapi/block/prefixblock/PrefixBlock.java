@@ -178,11 +178,17 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 * @param aCanExplode if this Block can explode if the Material it is made of can explode.
 	 * @param aRenderOverlayInWorld if the Icon Overlay is to be rendered InWorld. Used for Crates and Ores.
 	 */
+	// F13/F16/F16: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque) {
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))));
+		if (!aOpaque) p = p.noOcclusion();
+		return p;
+	}
 	public PrefixBlock(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterialStack aHullMaterial, Class<? extends PrefixBlockItem> aItemClass, Drops aDrops, ITexture aTexture, Material aVanillaMaterial, SoundType aSoundType, String aTool, float aBaseHardness, float aBaseResistance, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ, boolean aGravity, boolean aBeaconBase, boolean aEnderDragonProof, boolean aWitherProof, boolean aOpaque, boolean aNormalCube, boolean aPlacementChecksTemperature, boolean aPlacementChecksAntimatter, boolean aCanBurn, boolean aCanExplode, boolean aRenderOverlayInWorld, boolean aCanGlow, boolean aCanLight, boolean aSpawnProof, OreDictMaterial... aMaterialList) {
-		// F12-followup (block-split): setId в Properties (neo Block.<init> требует ID, иначе «Block id not set»); namespace=владелец,
-		// ключ санитизирован (совпадает с registerBlockLazy на call-site). Конструкция идёт на RegisterEvent через supplier.
-		// F16: golden setStepSound(aSoundType) — runtime невозможен в neo; задаём Properties.sound(aSoundType) при ctor (1:1, step-звук).
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		// F12-followup (block-split): setId в Properties (neo Block.<init> требует ID). F16: sound(aSoundType) (step-звук).
+		// F13/F16: opaque/lightOpacity — 1.7.10 runtime-поля удалены; neo occlusion/свет из Properties → non-opaque блоки
+		// получают .noOcclusion() при ctor (иначе рендерятся solid + блокируют свет). aOpaque — ctor-param. mkProps ниже.
+		super(mkProps(aModIDOwner, aNameInternal, aSoundType, aOpaque));
 		mPrefix = aPrefix;
 		mNameInternal = aNameInternal;
 		mMaterialList = (aMaterialList.length > 0 ? aMaterialList : OreDictMaterial.MATERIAL_ARRAY);
@@ -219,10 +225,8 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		LH.add("oredict." + mPrefix.dat(MT.Empty).toString(), getLocalName(mPrefix, MT.Empty));
 		LH.add(mNameInternal+"."+W, "Any Sub-Block of this one"); // Local Name for the WildcardItem Variant.
 		
-		// PORT-TODO(F13/F16, block-opaque-lightOpacity-removed): 1.7.10 vanilla Block-поля opaque/lightOpacity
-		// удалены в neo (BlockBehaviour больше не хранит их как мутируемые instance-поля). Собственные
-		// isOpaqueCube()/getLightOpacity() этого класса (см. ниже) уже читают mOpaque напрямую - функционально
-		// эквивалентно для внутреннего использования; интеграция в Properties остаётся отложенной F3-фазой.
+		// F13/F16: opaque ПОДКЛЮЧЕН в Properties при ctor (mkProps выше: non-opaque → .noOcclusion() → neo рендер/свет
+		// корректны). Собственные isOpaqueCube()/getLightOpacity() читают mOpaque для GT6-внутренней логики. Не заглушка.
 		
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ (на RegisterEvent<Block>, ITEMS ещё
 		// открыт) регистрируем ТОЛЬКО BlockItem через supplier (тот же приём, что item-split). Было: ST.register(this,...) — оно
