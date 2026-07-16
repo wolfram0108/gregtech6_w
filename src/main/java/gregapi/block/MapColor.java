@@ -65,4 +65,10 @@ public class MapColor {
 			throw new IndexOutOfBoundsException("Map colour ID must be between 0 and 63 (inclusive)");
 		}
 	}
+
+	// F9-bridge (централизованный, одно место на весь мод): gregapi MapColor (1:1-порт 1.7.10 палитры) → движковый
+	// net.minecraft.world.level.material.MapColor. Индексы 0-63 совпадают (обе — ванильная 64-цветная палитра, тот же порядок).
+	public net.minecraft.world.level.material.MapColor toNeo() {
+		return net.minecraft.world.level.material.MapColor.byId(colorIndex);
+	}
 }

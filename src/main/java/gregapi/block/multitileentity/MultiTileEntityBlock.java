@@ -219,11 +219,12 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		mMapColor = aMapColor;
 		return this;
 	}
-	// было getMapColor(int) -> IBlockExtension.getMapColor(BlockState,BlockGetter,BlockPos,MapColor) [IBlockExtension.java:990];
-	// gregapi.block.MapColor (F9-переходник, свой тип, не движковый) не мостится на движковый net.minecraft.world.level.material.MapColor
-	// без НОВОГО центра конверсии (WD.java не трогать по scope этого захода) - PORT-TODO(F13/F16, block-getMapColor-conversion-bridge):
-	// возвращаем движковый дефолт (запечённый в Properties), тот же fallback, что и раньше при mMapColor==null.
-	@Override public final net.minecraft.world.level.material.MapColor getMapColor(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.level.material.MapColor aDefaultColor) {return aDefaultColor;}
+	// F13: getMapColor(int) → IBlockExtension.getMapColor(BlockState,BlockGetter,BlockPos,MapColor). Мост gregapi.block.MapColor→
+	// движковый централизован в MapColor.toNeo() (F9-bridge, индексы 0-63 совпадают). Возвращаем GT6-цвет блока 1:1; null → дефолт.
+	@Override public final net.minecraft.world.level.material.MapColor getMapColor(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.level.material.MapColor aDefaultColor) {
+		MapColor tGT = getMapColor(0);
+		return tGT != null ? tGT.toNeo() : aDefaultColor;
+	}
 	
 	private static boolean LOCK = F;
 	
