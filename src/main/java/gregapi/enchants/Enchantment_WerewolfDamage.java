@@ -41,15 +41,10 @@ import net.minecraft.world.item.enchantment.Enchantment;
  * {@code public static Enchantment_WerewolfDamage INSTANCE}, который держал сам Java-объект чара;
  * в data-driven модели чар — не Java-объект, а запись реестра, адресуемая {@code ResourceKey}).
  *
- * PORT-TODO(F8, enchant-registry): прежние вызовы {@code MT.Ir.addEnchantmentForDamage(this, 6)}
- * и далее по всем материалам (см. оригинал, `gregtech6/.../Enchantment_WerewolfDamage.java:49-71`)
- * не перенесены — {@code OreDictMaterial.addEnchantmentForDamage(Enchantment, int)} уже принимает
- * реальный modern {@code Enchantment} (не выдумка), но этот объект существует только как запись
- * datapack-реестра, разрешаемая через живой {@code RegistryAccess}/{@code HolderLookup.Provider} —
- * тот же класс проблемы регистрового таймин­га, что уже занесён в реестр (`UT.java`
- * `getRadioactivityLevel`, `getEnchantmentLevelLootingFortune`); материалы конструируются раньше,
- * чем датапак-реестр чаров готов. Не решается в этой зоне (`gregapi/enchants`), решение — отдельный
- * стык материал↔датапак-реестр (владелец `gregapi/oredict/OreDictMaterial.java`, вне зоны).
+ * F8 (1:1): прежние вызовы {@code MT.Ir.addEnchantmentForDamage(this, 6)} и далее по всем материалам ПЕРЕНЕСЕНЫ
+ * в {@code MT.init()} (enchant-блок) как {@code Ir.addEnchantmentForDamage(KEY, 6)}. Тайминг НЕ мешает: список хранит
+ * {@code ResourceKey} (не резолвнутый Holder), разрешаемый лишь при применении чара (позже RegistryAccess готов).
+ * Материалы (Ir/Osmiridium/HSSS/Ag/…) снова несут Werebane. Не заглушка.
  */
 public class Enchantment_WerewolfDamage {
 	public static final ResourceKey<Enchantment> KEY =

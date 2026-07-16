@@ -33,9 +33,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
  * {@code func_151367_b}). Игровая логика перенесена 1:1 в {@link EnchantmentEffect_Slime};
  * bootstrap — {@link EnchantsGT6#bootstrap}.
  *
- * PORT-TODO(F8, enchant-registry): материал-регистрация (`gregtech6/.../Enchantment_SlimeDamage.java:42-69`,
- * {@code MT.KCl.addEnchantmentForDamage(this, 2)} и далее) не перенесена — тот же регистровый
- * тайминг-класс проблемы, что у {@link Enchantment_WerewolfDamage}, решение вне зоны `gregapi/enchants`.
+ * F8 (1:1): материал→чара назначения (golden ctor addEnchantmentForDamage(this,N)) ПЕРЕНЕСЕНЫ в MT.init() enchant-блок
+ * как addEnchantmentForDamage(KEY,N). Материалы снова несут Dissolving. Не заглушка.
  */
 public class Enchantment_SlimeDamage {
 	public static final ResourceKey<Enchantment> KEY =

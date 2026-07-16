@@ -31,9 +31,9 @@ import net.minecraft.world.item.enchantment.Enchantment;
  * <p>Форс движка, см. {@link Enchantment_WerewolfDamage}. Игровая логика перенесена 1:1 в
  * {@link EnchantmentEffect_Ender}; bootstrap — {@link EnchantsGT6#bootstrap}.
  *
- * PORT-TODO(F8, enchant-registry): материал-регистрация (`gregtech6/.../Enchantment_EnderDamage.java:42-62`,
- * {@code MT.Hg.addEnchantmentForDamage(this, 3)} и далее) не перенесена — тот же регистровый
- * тайминг-класс проблемы, что у {@link Enchantment_WerewolfDamage}, решение вне зоны `gregapi/enchants`.
+ * F8 (1:1): материал→чара назначения (golden ctor {@code MT.Hg.addEnchantmentForDamage(this,3)} и далее) ПЕРЕНЕСЕНЫ
+ * в {@code MT.init()} (enchant-блок, рядом с vanilla-назначениями) как {@code Hg.addEnchantmentForDamage(KEY,3)}.
+ * Материалы Hg/Ag/сталь/… снова несут Disjunction. Не заглушка.
  */
 public class Enchantment_EnderDamage {
 	public static final ResourceKey<Enchantment> KEY =

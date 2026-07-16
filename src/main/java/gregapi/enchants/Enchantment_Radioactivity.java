@@ -40,10 +40,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
  * `EnchantsGT6.bootstrap`) и ОТСУТСТВИЕМ членства в теге {@code EnchantmentTags.IN_ENCHANTING_TABLE}
  * (не добавляется нигде в этой зоне) — функционально тот же результат «никогда не выпадает».
  *
- * PORT-TODO(F8, enchant-registry): материал-регистрация (`gregtech6/.../Enchantment_Radioactivity.java:41-54`,
- * {@code MT.Cyanite.addEnchantmentForTools(this,1).addEnchantmentForDamage(this,1)...} и далее по
- * tools/damage/ranged/armors) не перенесена — тот же регистровый тайминг-класс проблемы, что у
- * {@link Enchantment_WerewolfDamage}, решение вне зоны `gregapi/enchants`.
+ * F8 (1:1): материал→чара назначения (golden ctor addEnchantmentForTools(this,N)) ПЕРЕНЕСЕНЫ в MT.init() enchant-блок
+ * как addEnchantmentForTools(KEY,N). Материалы (уран/плутоний/…) снова несут Radioactivity. Не заглушка.
  */
 public class Enchantment_Radioactivity {
 	public static final ResourceKey<Enchantment> KEY =
