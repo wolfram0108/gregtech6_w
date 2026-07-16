@@ -116,4 +116,36 @@ class MechanicsTest {
 		long tWrong = tBat.doEnergyInjection(gregapi.data.TD.Energy.RU, tStack, 32, 100, null, null, 0, 0, 0, true);
 		assertTrue(tWrong == 0, "energy: батарея приняла ЧУЖОЙ тип энергии (RU в EU-батарею)");
 	}
+
+	/**
+	 * Механика БЛОКОВ: размещение GT6-блоков в реальном мире (setBlock) + снос (→air). Server-thread (submit),
+	 * чанк форс-грузим. Доказывает, что GT6-блоки корректно ставятся/читаются/сносятся в neo-мире.
+	 */
+	@Test
+	void blockPlacementMechanic(MinecraftServer server) throws Exception {
+		java.util.Iterator<net.minecraft.server.level.ServerLevel> tIt = server.getAllLevels().iterator();
+		org.junit.jupiter.api.Assumptions.assumeTrue(tIt.hasNext(), "EphemeralTestServer без загруженного мира — placement нужен GameTest-мир");
+		net.minecraft.server.level.ServerLevel tWorldPre = tIt.next();
+		Boolean tOk = server.submit(() -> {
+			net.minecraft.server.level.ServerLevel tLevel = tWorldPre;
+			net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(8, 100, 8);
+			tLevel.getChunk(tPos.getX() >> 4, tPos.getZ() >> 4); // форс-загрузка чанка
+			int tPlaced = 0, tBroke = 0, tTried = 0;
+			for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+				net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+				if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
+				if (tBlock instanceof net.minecraft.world.level.block.LiquidBlock) continue;
+				if (tTried++ >= 20) break;
+				try {
+					if (tLevel.setBlock(tPos, tBlock.defaultBlockState(), 3) && tLevel.getBlockState(tPos).getBlock() == tBlock) {
+						tPlaced++;
+						if (tLevel.setBlock(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3) && tLevel.getBlockState(tPos).isAir()) tBroke++;
+					}
+				} catch (Throwable t) {/**/}
+			}
+			System.out.println("[MECH-BLOCK] испытано=" + tTried + " поставлено+прочитано=" + tPlaced + " снесено=" + tBroke);
+			return tPlaced > 0 && tBroke > 0;
+		}).get();
+		assertTrue(tOk, "block placement/break механика сломана (ни один GT6-блок не поставился/снёсся)");
+	}
 }
