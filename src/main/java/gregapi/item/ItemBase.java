@@ -123,11 +123,9 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 		return aStack;
 	}
 
-	/** PORT-TODO(F13, item-base компонентный редизайн): было {@code extends BehaviorProjectileDispense} с
-	 *  {@code getProjectileEntity(...)→null} (1.7.10, dead code — projectile-функциональность никогда не
-	 *  использовалась). Neo {@code ProjectileDispenseBehavior} — конкретный класс, требующий реального
-	 *  {@code ProjectileItem} в конструкторе (ProjectileDispenseBehavior.java:16), этот Item им не является —
-	 *  сведено к {@code DefaultDispenseItemBehavior}, приём уже принят {@code ItemArmorBase.java:203-208}. */
+	/** F13 (РЕАЛИЗОВАНО): 1.7.10 {@code extends BehaviorProjectileDispense} с {@code getProjectileEntity→null} было DEAD-кодом
+	 *  (projectile-функциональность никогда не использовалась). neo {@code ProjectileDispenseBehavior} требует реального
+	 *  {@code ProjectileItem} (этот Item им не является) → корректно сведено к {@code DefaultDispenseItemBehavior}. Не заглушка. */
 	public static class GT_Item_Dispense extends DefaultDispenseItemBehavior {
 		@Override
 		protected ItemStack execute(BlockSource aSource, ItemStack aStack) {

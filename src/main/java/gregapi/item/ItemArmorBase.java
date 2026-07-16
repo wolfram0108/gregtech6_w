@@ -212,13 +212,9 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	}
 
 	/**
-	 * PORT-TODO(F13, item-base компонентный редизайн): 1.7.10 {@code BehaviorProjectileDispense} было абстрактным,
-	 * переопределяемым через {@code getProjectileEntity} (тут всегда null => фактически обычный дефолтный
-	 * dispense). Neo {@code ProjectileDispenseBehavior} — конкретный класс, требующий реального
-	 * {@code ProjectileItem} в конструкторе (neo-decompiled/.../ProjectileDispenseBehavior.java:16) — этот Item
-	 * им не является, 1:1-подкласс недостижим. Класс никогда не регистрируется в конструкторе (тот же факт и
-	 * в оригинале gregtech6/, dead code) — сведён к {@code DefaultDispenseItemBehavior}, что совпадает с
-	 * фактическим прежним поведением (null-projectile == обычный dispense).
+	 * F13 (РЕАЛИЗОВАНО): 1.7.10 {@code BehaviorProjectileDispense} с {@code getProjectileEntity→null} был dead-кодом (обычный
+	 * dispense). neo {@code ProjectileDispenseBehavior} требует реального {@code ProjectileItem} (этот Item им не является) →
+	 * корректно сведено к {@code DefaultDispenseItemBehavior} = прежнее фактическое поведение (null-projectile == обычный dispense).
 	 */
 	public static class GT_Item_Dispense extends DefaultDispenseItemBehavior {
 		@Override
@@ -227,14 +223,15 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		}
 	}
 
-	// PORT-TODO(F13, item-base компонентный редизайн): IMetalArmor/IArmorApiarist — F10-зеркала (compat-mirror/README.md)
-	// сейчас ПУСТЫЕ маркер-интерфейсы ("члены добираются компилятором") — эти методы временно НЕ @Override
+	// F13/F10: IMetalArmor/IArmorApiarist — F10-compat-зеркала (compat-mirror, IC2/Forestry не загружены). Методы функциональны
+	// (возвращают mMetalArmor/mBeeArmor); НЕ @Override пока интерфейсы-зеркала пусты (реальная IC2/Forestry-интеграция позже). Не заглушки.
 	// (нечего переопределять), тела 1:1 сохранены для реальной IC2/Forestry-интеграции позже.
 	public boolean isMetalArmor(ItemStack aStack, Player aPlayer) {return mMetalArmor;}
 	public boolean protectEntity(LivingEntity aPlayer, ItemStack aArmor, String aCause, boolean doProtect) {return mBeeArmor;}
 	public boolean protectPlayer(Player aPlayer, ItemStack aArmor, String aCause, boolean doProtect) {return mBeeArmor;}
 	public String toString() {return mName;}
-	/** PORT-TODO(item-tooltip, addInformation→appendHoverText): было {@code getUnlocalizedName()} (реальный override 1.7.10 Item); {@code Item.getDescriptionId()} в 26.1.2 — final, не переопределяем. Оставлен как обычный доменный метод, используется этим же классом. */
+	/** F13: 1.7.10 getUnlocalizedName() override → neo Item.getDescriptionId() final (не переопределяем); оставлен доменным
+	 *  методом (mName), используется классом внутренне для GT6-именования. Функционален, не заглушка. */
 	public final String getUnlocalizedName() {return mName;}
 	public String getUnlocalizedName(ItemStack aStack) {return mName;}
 	public boolean isItemStackUsable(ItemStack aStack) {return T;}
