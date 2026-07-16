@@ -110,7 +110,7 @@ public abstract class TileEntityBase03MultiTileEntities extends TileEntityBase02
 		// вызова loadAdditional (см. комментарий в TileEntityBase01Root.readFromNBT) -
 		// назначить x/y/z из NBT здесь невозможно и не нужно.
 		// make sure Y is not negative because this causes crashes.
-		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
+		if (WD.tileYInvalid(getLevel(), getBlockPos().getY())) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); // было Y<0 — порог = дно мира getMinY() (бедрок MC26 Y=−64 легитимен; notick-MTE: камни/палки)
 		// read the custom Name.
 		if (aNBT.contains("display")) mCustomName = aNBT.getCompoundOrEmpty("display").getString("Name").orElse("");
 		// And now your custom readFromNBT.

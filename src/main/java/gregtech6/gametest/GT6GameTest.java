@@ -47,6 +47,7 @@ public class GT6GameTest extends GameTestInstance {
 		switch (mKind) {
 			case "block":    runBlock(aHelper);    break;
 			case "interact": runInteract(aHelper); break;
+			case "mte":      runMTE(aHelper);      break;
 			default: aHelper.fail(Component.literal("неизвестный GT6-тест: " + mKind));
 		}
 	}
@@ -108,6 +109,43 @@ public class GT6GameTest extends GameTestInstance {
 				"[GT6-GAMETEST-INTERACT] испытано=" + tTried + " хендлер_отработал=" + tInteracted));
 		if (tInteracted > 0) aHelper.succeed();
 		else aHelper.fail(Component.literal("взаимодействие игрок-блок сломано: ни один GT6-блок не отработал use-хендлер без падения"));
+	}
+
+	/**
+	 * Живой гейт MTE-РАЗМЕЩЕНИЯ: ставим MTE-блоки (камень 32757, палка 32756) настоящим путём GT6 —
+	 * {@code registry.mBlock.placeBlock(...)} (тот же, что зовёт worldgen WorldgenRocks), затем читаем
+	 * {@code getBlockEntity(pos)}. Диагностика корня «камни/палки=0»: MTE-TE создаётся no-arg-конструктором
+	 * (pos=BlockPos.ZERO, worldPosition в neo immutable) → WD.te крепит его по te.getBlockPos()=(0,0,0), а не на
+	 * реальную позицию. Тест ждёт: TE не-null И te.getBlockPos()==позиция блока. До фикса — красный (ZERO).
+	 */
+	private void runMTE(GameTestHelper aHelper) {
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		if (tReg == null) { aHelper.fail(Component.literal("реестр gt.multitileentity не найден")); return; }
+		int[] tIDs = {32757, 32756};
+		String[] tNames = {"rock", "stick"};
+		int[] tRelX = {2, 6};
+		StringBuilder tReport = new StringBuilder("[GT6-GAMETEST-MTE] ");
+		int tOK = 0;
+		for (int i = 0; i < tIDs.length; i++) {
+			BlockPos tRel = new BlockPos(tRelX[i], 1, 4);
+			BlockPos tAbs = aHelper.absolutePos(tRel);
+			boolean tPlaced = false; net.minecraft.world.level.block.entity.BlockEntity tTE = null; String tTEPos = "нет";
+			try {
+				tPlaced = tReg.mBlock.placeBlock(aHelper.getLevel(), tAbs.getX(), tAbs.getY(), tAbs.getZ(), gregapi.data.CS.SIDE_UNKNOWN, (short)tIDs[i], null, false, true);
+				tTE = aHelper.getLevel().getBlockEntity(tAbs);
+				if (tTE != null) tTEPos = tTE.getBlockPos().toShortString();
+			} catch (Throwable t) { tReport.append(tNames[i]).append("=EXC(").append(t).append(") "); continue; }
+			if (tTE != null && tTE.getBlockPos().equals(tAbs) && tTE instanceof gregapi.block.multitileentity.IMultiTileEntity) tOK++;
+			tReport.append(tNames[i]).append("{placed=").append(tPlaced)
+				.append(" te=").append(tTE == null ? "null" : tTE.getClass().getSimpleName()).append(" tePos=").append(tTEPos)
+				.append(" ждали=").append(tAbs.toShortString()).append("} ");
+		}
+		aHelper.getLevel().getServer().sendSystemMessage(Component.literal(tReport.toString()));
+		// Гейт Ключа 1 (доказано mte2, EXIT=0): MTE-TE (камни/палки) садятся на СВОЮ позицию (не BlockPos.ZERO) на Y=−57 (Y-порог
+		// снят). LOAD-реконструкция (стаб→реальный MTE) — ОТДЕЛЬНЫЙ заход: getRegistry(int) не находит реестр по сохранённому id
+		// (reg=1168 валиден, regFound=false → ItemStackContainer Block-vs-Item ключ), а подмена стаба ломала Saving worlds. Здесь не тестируем.
+		if (tOK == tIDs.length) aHelper.succeed();
+		else aHelper.fail(Component.literal("MTE placement сломан: " + tReport));
 	}
 
 	@Override public MapCodec<? extends GameTestInstance> codec() { return CODEC; }

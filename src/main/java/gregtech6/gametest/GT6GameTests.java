@@ -34,6 +34,7 @@ public final class GT6GameTests {
 		Holder<TestEnvironmentDefinition<?>> tEnv = aEvent.registerEnvironment(Identifier.fromNamespaceAndPath("gregtech6", "gt6_env"));
 		registerOne(aEvent, tEnv, "block");
 		registerOne(aEvent, tEnv, "interact");
+		registerOne(aEvent, tEnv, "mte");
 	}
 
 	private static void registerOne(RegisterGameTestsEvent aEvent, Holder<TestEnvironmentDefinition<?>> aEnv, String aKind) {

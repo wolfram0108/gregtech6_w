@@ -218,6 +218,11 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
 			CHUNK_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
 		}
+		// F-tileentity-construction (load-реконструкция MTE-стабов) — ОТЛОЖЕНА (не подключаем на server-tick): (1) подмена стаба в
+		// мире ломала «Saving worlds» (shutdown-зависание); (2) корень recon-FAIL — getRegistry(int) не находит реестр по сохранённому
+		// registry-id (GameTest-диагностика: reg=1168 валиден, но regFound=false → REGISTRIES по mBlock не матчит Item.byId(reg);
+		// ItemStackContainer Block-vs-Item ключ). Нужен отдельный заход (registry-id resolution). reconstructMTE/reconstructChunkMTEs
+		// ниже готовы (pos-канал даёт позицию), ждут этого фикса. Камни/палки/руды в СВЕЖЕМ мире (placement) работают и без этого.
 	}
 
 	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
@@ -236,6 +241,31 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				e.printStackTrace(gregapi.data.CS.ERR);
 			}
 		}
+	}
+
+	/** F-tileentity-construction (load-реконструкция): пройти BE загруженного чанка, заменить каждый {@link gregapi.tileentity.base.TileEntityLoaderStub}
+	 *  (пустышку, которой neo подменил GT6-MTE при чтении NBT) реальным MTE через реестр. Отложено на server-tick (чанк FULL, setBlockEntity безопасен). */
+	public static void reconstructChunkMTEs(ServerLevel aLevel, int aChunkX, int aChunkZ) {
+		net.minecraft.world.level.chunk.LevelChunk tChunk = aLevel.getChunkSource().getChunkNow(aChunkX, aChunkZ);
+		if (tChunk == null) return;
+		java.util.List<net.minecraft.world.level.block.entity.BlockEntity> tStubs = null;
+		for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())
+			if (tBE instanceof gregapi.tileentity.base.TileEntityLoaderStub) {(tStubs == null ? tStubs = new java.util.ArrayList<>() : tStubs).add(tBE);}
+		if (tStubs != null) for (net.minecraft.world.level.block.entity.BlockEntity tBE : tStubs) reconstructMTE(aLevel, (gregapi.tileentity.base.TileEntityLoaderStub)tBE);
+	}
+
+	/** Собрать реальный MTE из захваченного стабом NBT (reg/id) и заменить им стаб. pos-канал getNewTileEntityContainer даёт позицию из pos стаба. */
+	public static void reconstructMTE(ServerLevel aLevel, gregapi.tileentity.base.TileEntityLoaderStub aStub) {
+		net.minecraft.nbt.CompoundTag tNBT = aStub.mLoadedNBT;
+		if (tNBT == null) return;
+		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG).orElse((short)0);
+		short tID  = tNBT.getShort(gregapi.data.CS.NBT_MTE_ID ).orElse((short)0);
+		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tReg);
+		if (tRegistry == null) return;
+		net.minecraft.core.BlockPos tPos = aStub.getBlockPos();
+		gregapi.block.multitileentity.MultiTileEntityContainer tContainer = tRegistry.getNewTileEntityContainer(aLevel, tPos.getX(), tPos.getY(), tPos.getZ(), tID, tNBT);
+		if (tContainer == null || tContainer.mTileEntity == null) return;
+		aLevel.setBlockEntity(tContainer.mTileEntity); // pos-канал → реальная pos → крепит на своё место, заменяя стаб
 	}
 
 	/** F3-render #3: заставить клиентов, уже отслеживающих этот чанк, перезагрузить его (после того как GT6-worldgen дописал блоки). */

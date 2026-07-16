@@ -568,7 +568,7 @@ public class WD {
 	
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
 	public static BlockEntity te(Level aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
-		if (aY < 0) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity);
+		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // было aY<0 — MC26 бедрок Y=−64 легитимен, порог = дно мира getMinY()
 		if (aCauseTileEntityUpdates) aWorld.setBlockEntity(aTileEntity); // было aWorld.setTileEntity(x,y,z,te) — neo: Level.setBlockEntity(BlockEntity) (Level.java:681, позиция берётся из te.getBlockPos())
 		else {
 			LevelChunk tChunk = aWorld.getChunk(aX >> 4, aZ >> 4); // было aWorld.getChunk(cx,cz) — Level.getChunk(int,int) (Level.java:202)
@@ -671,7 +671,14 @@ public class WD {
 		if (aOldY <= SEA_OLD) return tMinY + Math.round((aOldY - OLD_BOTTOM) * (tSea - tMinY) / (float)(SEA_OLD - OLD_BOTTOM));
 		return tSea + Math.round((aOldY - SEA_OLD) * (tMaxY - tSea) / (float)(OLD_TOP - SEA_OLD));
 	}
-	
+	/** F-tileentity-construction Y-порог (ADR): 1.7.10 инвалидировал TE при Y<0 (мир [0..255], Y<0 = аномалия-баг).
+	 *  MC26 мир [minY..maxY] (обычно −64..319), Y<0 ЛЕГИТИМЕН (бедрок на minY=−64, бедрок-руды/источники флюидов там же)
+	 *  → инвалидируем ТОЛЬКО при Y ниже дна мира getMinY(). Без level (item-form/detached TE) — сохраняем старый Y<0
+	 *  (мира нет, любой отрицательный Y — аномалия). Единственный центр Y-порога инвалидации TE на весь мод. */
+	public static boolean tileYInvalid(net.minecraft.world.level.Level aLevel, int aY) {
+		return aY < (aLevel != null ? aLevel.getMinY() : 0);
+	}
+
 	/** @return the regular Temperature of the World at this Location according to Gregs calculations. In Kelvin, ofcourse. */
 	public static long temperature(Level aWorld, int aX, int aY, int aZ) {
 		long rTemperature = envTemp(aWorld, aX, aY, aZ);

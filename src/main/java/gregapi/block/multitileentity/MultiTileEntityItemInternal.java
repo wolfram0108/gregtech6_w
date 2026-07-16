@@ -166,7 +166,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	
 	// @Override
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
-		if (aY < 0 || aY > aWorld.getHeight()) return F;
+		if (aY < WD.minY(aWorld) || aY > WD.maxY(aWorld)) return F; // было aY<0 || aY>getHeight() — MC26: Y∈[minY..maxY], getHeight()=COUNT(384)≠верх; порог через центр WD
 		
 		try {
 			Block tClickedBlock = WD.block(aWorld, aX, aY, aZ);

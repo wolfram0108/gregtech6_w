@@ -162,8 +162,18 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		@Override public boolean isValid(net.minecraft.world.level.block.state.BlockState aState) {return true;}
 	};}
 
+	// F-tileentity-construction (ADR, placement-pos): реальная мировая pos у вручную-создаваемого MTE-TE. worldPosition в
+	// neo immutable (BlockEntity.java:48-59, ставится только super-ctor), а вся MTE-иерархия наследует no-arg-конструкторы
+	// (Class.newInstance канонических инстансов, MultiTileEntityClassContainer:52) — протянуть (BlockPos)-ctor через сотни
+	// классов = массовое дублирование (нарушение централизации). Централизованный канал: getNewTileEntityContainer выставляет
+	// PENDING_WORLD_POS перед созданием, no-arg-ctor подхватывает в super(). Пусто (канонический инстанс / item-form) → ZERO
+	// (позиция не нужна). 1:1-аналог удалённого 1.7.10 te.xCoord/yCoord/zCoord=aX/aY/aZ (то же назначение мировой позиции при
+	// создании TE в мире, иным механизмом — движок сменил модель на immutable-pos-в-конструкторе).
+	public static final ThreadLocal<BlockPos> PENDING_WORLD_POS = new ThreadLocal<>();
+	private static BlockPos pendingPosOrZero() {BlockPos p = PENDING_WORLD_POS.get(); return p != null ? p : BlockPos.ZERO;}
+
 	public TileEntityBase01Root(boolean aIsTicking) {
-		super(MTE_TYPE, BlockPos.ZERO, Blocks.AIR.defaultBlockState());
+		super(MTE_TYPE, pendingPosOrZero(), Blocks.AIR.defaultBlockState());
 		mIsTicking = aIsTicking;
 	}
 
@@ -208,13 +218,13 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		// loadWithComponents->loadAdditional) - назначить x/y/z из NBT (как в 1.7.10
 		// xCoord=aNBT.getInteger("x")) невозможно и не нужно, координата уже верна.
 		// make sure Y is not negative because this causes crashes.
-		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
+		if (WD.tileYInvalid(getLevel(), getBlockPos().getY())) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); // было Y<0 — порог = дно мира getMinY() (бедрок MC26 Y=−64 легитимен)
 	}
 
 	// @Override
 	public void writeToNBT(CompoundTag aNBT) {
 		// make sure Y is not negative because this causes crashes.
-		if (getBlockPos().getY() < 0) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this);
+		if (WD.tileYInvalid(getLevel(), getBlockPos().getY())) WD.invalidateTileEntityWithNegativeYCoord(getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), this); // было Y<0 — порог = дно мира getMinY() (бедрок MC26 Y=−64 легитимен)
 		// save ID and Coords
 		aNBT.putString("id", getTileEntityName());
 		aNBT.putInt("x", getBlockPos().getX());

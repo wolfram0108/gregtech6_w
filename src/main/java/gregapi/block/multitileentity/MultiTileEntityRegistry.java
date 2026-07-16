@@ -254,15 +254,25 @@ public class MultiTileEntityRegistry {
 	public MultiTileEntityContainer getNewTileEntityContainer(Level aWorld, int aX, int aY, int aZ, int aID, CompoundTag aNBT) {
 		MultiTileEntityClassContainer tClass = mRegistry.get((short)aID);
 		if (tClass == null || tClass.mBlock == null) return null;
-		MultiTileEntityContainer rContainer = new MultiTileEntityContainer((BlockEntity)UT.Reflection.callConstructor(tClass.mClass, -1, null, T), tClass.mBlock, tClass.mBlockMetaData);
+		// F-tileentity-construction (ADR, placement-pos): при МИРОВОЙ постановке (aWorld!=null) передаём реальную (aX,aY,aZ) в
+		// no-arg-конструктор MTE через центральный канал PENDING_WORLD_POS (worldPosition в neo immutable — BlockEntity.java:48-59;
+		// вся MTE-иерархия на no-arg-ctor, см. TileEntityBase01Root). Иначе TE садится на BlockPos.ZERO, а WD.te крепит его по
+		// te.getBlockPos()=(0,0,0), не на своё место → камни/палки/источники/машины остаются без TE (region-scan gt.multitileentity=0).
+		// aWorld==null (item-form/getDrops/detached) → канал пуст → ZERO (data-контейнер, позиция не нужна). Тот же канал даёт pos и
+		// load-реконструкции MTE (getNewTileEntity с реальными координатами стаба на ChunkEvent.Load).
+		BlockEntity tTileEntity;
+		if (aWorld != null) gregapi.tileentity.base.TileEntityBase01Root.PENDING_WORLD_POS.set(new net.minecraft.core.BlockPos(aX, aY, aZ));
+		try {tTileEntity = (BlockEntity)UT.Reflection.callConstructor(tClass.mClass, -1, null, T);}
+		finally {gregapi.tileentity.base.TileEntityBase01Root.PENDING_WORLD_POS.remove();}
+		MultiTileEntityContainer rContainer = new MultiTileEntityContainer(tTileEntity, tClass.mBlock, tClass.mBlockMetaData);
 		if (rContainer.mTileEntity == null) return null;
 		// было TileEntity.setWorldObj(World) (1.7.10, recompSrc TileEntity.java:70) -> BlockEntity.setLevel(Level) [BlockEntity.java:93]
 		rContainer.mTileEntity.setLevel(aWorld);
-		// F IMPOSSIBLE-1:1 + НЕ ВАЖНО (blockentity-position-immutable): было rContainer.mTileEntity.x/yCoord/zCoord = aX/aY/aZ —
-		// neo BlockEntity.worldPosition (BlockEntity.java:48) protected final, сеттера нет. Но этот TE — DETACHED data-контейнер
-		// (рефлективная конструкция pos=-1 для NBT-чтения/getDrops/item-form), НЕ размещённый в мире; реальную (pos,state)
-		// даёт neo при постановке блока через BlockEntityType. Позиция здесь не используется → воспроизводить незачем.
-		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(mBlock));
+		// F-registry-id (мисport): registry-ID тайла = ST.id(mBlock) (item-id блока, = currentID() «RegistryID used by world»),
+		// потому что getRegistry(int) резолвит его через Item.byId(id) (REGISTRIES по mBlock). Порт ошибочно клал BLOCK.getId(mBlock)
+		// (block-registry-id ≠ item-id) → getRegistry(сохранённый id) возвращал null → load-реконструкция MTE и рантайм getRegistry
+		// (дропы/пакеты getMultiTileEntityRegistryID) не находили реестр. 1:1 с оригиналом (getMultiTileEntityRegistryID=item-id).
+		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)ST.id(mBlock));
 		return rContainer;
 	}
 	
