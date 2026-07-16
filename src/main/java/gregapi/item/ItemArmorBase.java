@@ -97,10 +97,8 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		mMetalArmor = aMetalArmor;
 		mBeeArmor = aBeeArmor;
 		LH.add(mName, aEnglish);
-		// PORT-TODO(F13, creative-tab): Item.setCreativeTab не существует в 26.1.2 (creative-tab членство
-		// теперь через BuildCreativeModeTabContentsEvent/CreativeModeTab.Builder.displayItems, не per-Item
-		// сеттер) — тот же класс проблемы во всём gregtech.items, центра ещё нет нигде в дереве (grep=0).
-		// setCreativeTab(CreativeModeTab.tabCombat);
+		// F13/F16: golden setCreativeTab(tabCombat) → централизованный CreativeTabsGT.assign + BuildCreativeModeTabContentsEvent.
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.COMBAT);
 		if (UT.Code.stringValid(aEnglishTooltip)) LH.add(mTooltip = mName + ".tooltip_main", aEnglishTooltip); else mTooltip = null;
 		// F12-followup (item-split): само-регистрация УБРАНА — конструкция идёт на RegisterEvent через
 		// GT_API.registerItemLazy(name, ()->new ItemArmorBase(...)) на call-site (Item.<init> createIntrusiveHolder требует
