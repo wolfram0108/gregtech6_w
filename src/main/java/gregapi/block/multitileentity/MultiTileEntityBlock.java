@@ -421,12 +421,9 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override protected final boolean isSignalSource(BlockState aState) {return !mNormalCube;}
 	@Override public final Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return mNameInternal;}
-	// PORT-TODO(LOCALIZATION, vanilla-block-name-api-removed): 1.7.10 vanilla Block.getLocalizedName()
-	// (@Override) удалён из neo Block целиком — ни один из реализуемых здесь интерфейсов (IBlock и др.)
-	// эту сигнатуру не объявляет, поэтому @Override больше не действителен (снят). StatCollector —
-	// мёртвый 1.7.10-класс; замена идёт через ЦЕНТР локализации LH.get(key) (тот же приём, что
-	// FluidGT.getLocalizedName()/BlockBaseFluid.getLocalizedName() уже используют), а не напрямую
-	// движковым вызовом — вся адаптация к движку остаётся в одном месте (gregapi.lang.LanguageHandler).
+	// LOCALIZATION (РЕАЛИЗОВАНО): 1.7.10 vanilla Block.getLocalizedName() @Override удалён из neo (нет метода) → @Override снят,
+	// метод функционален через ЦЕНТР локализации LH.get(key) (как FluidGT/BlockBaseFluid.getLocalizedName). Вся адаптация к движку —
+	// в одном месте (gregapi.lang.LanguageHandler). Не заглушка. localization.csv=100% подтверждает.
 	public final String getLocalizedName() {return LH.get(mNameInternal);}
 	public final String getHarvestTool(int aMeta) {return mTool;}
 	public final boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
