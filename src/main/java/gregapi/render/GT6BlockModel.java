@@ -52,7 +52,8 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 
 	GT6BlockModel(MaterialBaker aBaker) {
 		net.minecraft.client.resources.model.ModelDebugName tDebugName = getClass()::toString;
-		mParticle = aBaker.get(new Material(Identifier.fromNamespaceAndPath("gregtech", "blocks/system/error")), tDebugName);
+		// sprite-id без blocks/ префикса: atlas-source (assets/minecraft/atlases/blocks.json) кладёт textures/blocks/** с prefix:"" → gregtech:system/error.
+		mParticle = aBaker.get(new Material(Identifier.fromNamespaceAndPath("gregtech", "system/error")), tDebugName);
 	}
 
 	/** Путь ModelEvent.ModifyBakingResult: particle из готового спрайта (событие даёт textureGetter, не MaterialBaker). */
