@@ -49,7 +49,11 @@ public class GT6ItemModel implements ItemModel {
 		try {
 			Identifier tIcon = resolveIcon(aItem);
 			if (tIcon == null) return;
-			TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon);
+			// item-иконки — в ITEMS-атласе (atlases/items.json, textures/items/**): материал-предметы берут item-версию
+			// materialicons, а gt.multiitem.* (еда/книги/инструменты) иначе вообще не в атласе → пурпур. BLOCKS — fallback
+			// для редких иконок, копирующих грань блока (IconContainerCopied/BlockTextureCopied).
+			TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
+			if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
 			if (tSprite == null) return;
 			ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 			List<BakedQuad> tQuads = tLayer.prepareQuadList();

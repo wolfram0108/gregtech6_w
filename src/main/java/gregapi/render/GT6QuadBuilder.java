@@ -76,9 +76,14 @@ public final class GT6QuadBuilder {
 
 	private static TextureAtlasSprite sprite(Identifier aIcon) {return resolveSprite(aIcon);}
 
-	/** Резолв спрайта из block-атласа (GT6-текстуры динамические, в block-атласе). Используется и GT6ItemModel. */
-	public static TextureAtlasSprite resolveSprite(Identifier aIcon) {
-		try {return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).getSprite(aIcon);} catch (Throwable e) {return null;}
+	/** Резолв спрайта из block-атласа (по умолчанию — блок-грани через putFace/resolveBlockFaceIcon). */
+	public static TextureAtlasSprite resolveSprite(Identifier aIcon) {return resolveSprite(aIcon, net.minecraft.data.AtlasIds.BLOCKS);}
+
+	/** Резолв спрайта из указанного атласа. GT6-текстуры динамические: блок-грани — в BLOCKS (atlases/blocks.json),
+	 *  item-иконки — в ITEMS (atlases/items.json, textures/items/**). GT6ItemModel резолвит из ITEMS (материал-предметы
+	 *  берут item-версию materialicons, а не блочную; gt.multiitem.* иначе не в атласе → пурпур). */
+	public static TextureAtlasSprite resolveSprite(Identifier aIcon, Identifier aAtlas) {
+		try {return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(aAtlas).getSprite(aIcon);} catch (Throwable e) {return null;}
 	}
 
 	/** F3 block-icon-data: neo-замена удалённого 1.7.10 {@code Block.getIcon(side,meta)} — {@link Identifier} спрайта
