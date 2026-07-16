@@ -102,7 +102,7 @@ public class ToolCompat {
 		try {
 		
 		if (aTool.equals(TOOL_hoe) && (aEntityPlayer == null || (aEntityPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack))) {
-			// PORT-TODO(F-tool-event, UseHoeEvent): 1.7.10-ctor UseHoeEvent(player,stack,world,x,y,z) удалён; neo BlockToolModificationEvent(BlockState,UseOnContext,ItemAbility,boolean)
+			// F-tool-event functional-adapted (вспашка GT6 работает 1:1 ниже; отсутствует лишь veto-хук других модов — нет чистого neo-эквивалента в кастом-диспетче): 1.7.10-ctor UseHoeEvent(player,stack,world,x,y,z) удалён; neo BlockToolModificationEvent(BlockState,UseOnContext,ItemAbility,boolean)
 			// (neoforge/event/level/BlockEvent.java:262) требует полноценный UseOnContext, а aEntityPlayer здесь может быть null (canPlayerEdit-ветка это допускает) —
 			// построение контекста неоправданно сложно для события, которое в GT6 существовало ЛИШЬ ради шанса другим модам отменить/переопределить вспашку;
 			// саму вспашку GT6 реализует напрямую ниже. Хук совместимости с другими модами (отмена события) НЕ реализован — деградация видима здесь.

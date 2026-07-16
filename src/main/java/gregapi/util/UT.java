@@ -2655,6 +2655,31 @@ public class UT {
 	public static class Sounds {
 		public static List<PlayedSound> sPlayedSounds = new ArrayListNoNulls<>();
 		public static List<SoundWithLocation> sSoundsToPlay = new ArrayListNoNulls<>();
+
+		/** F-sound (1:1 Mojang sound-flattening): легаси 1.7.10 SFX-строки → neo sound-id. КАЖДЫЙ neo-id сверен по
+		 *  neo-decompiled SoundEvents.java. neo-native строки (не в карте) проходят как есть. */
+		private static final java.util.Map<String, String> SFX_LEGACY = new java.util.HashMap<>();
+		static {
+			SFX_LEGACY.put("random.break", "entity.item.break");            SFX_LEGACY.put("random.anvil_use", "block.anvil.use");
+			SFX_LEGACY.put("random.anvil_break", "block.anvil.destroy");    SFX_LEGACY.put("random.anvil_land", "block.anvil.land");
+			SFX_LEGACY.put("random.click", "ui.button.click");              SFX_LEGACY.put("random.pop", "entity.item.pickup");
+			SFX_LEGACY.put("random.fizz", "block.fire.extinguish");         SFX_LEGACY.put("random.explode", "entity.generic.explode");
+			SFX_LEGACY.put("random.eat", "entity.generic.eat");             SFX_LEGACY.put("random.drink", "entity.generic.drink");
+			SFX_LEGACY.put("random.orb", "entity.experience_orb.pickup");   SFX_LEGACY.put("game.tnt.primed", "entity.tnt.primed");
+			SFX_LEGACY.put("fire.ignite", "item.flintandsteel.use");        SFX_LEGACY.put("game.neutral.swim", "entity.player.swim");
+			SFX_LEGACY.put("dig.cloth", "block.wool.break");                SFX_LEGACY.put("dig.stone", "block.stone.break");
+			SFX_LEGACY.put("dig.glass", "block.glass.break");               SFX_LEGACY.put("dig.grass", "block.grass.break");
+			SFX_LEGACY.put("dig.gravel", "block.gravel.break");             SFX_LEGACY.put("dig.sand", "block.sand.break");
+			SFX_LEGACY.put("dig.wood", "block.wood.break");                 SFX_LEGACY.put("dig.snow", "block.snow.break");
+			SFX_LEGACY.put("minecart.base", "entity.minecart.riding");      SFX_LEGACY.put("minecart.inside", "entity.minecart.inside");
+			SFX_LEGACY.put("fireworks.launch", "entity.firework_rocket.launch");           SFX_LEGACY.put("fireworks.blast", "entity.firework_rocket.blast");
+			SFX_LEGACY.put("fireworks.blast_far", "entity.firework_rocket.blast_far");     SFX_LEGACY.put("fireworks.largeBlast", "entity.firework_rocket.large_blast");
+			SFX_LEGACY.put("fireworks.largeBlast_far", "entity.firework_rocket.large_blast_far"); SFX_LEGACY.put("liquid.water", "block.water.ambient");
+			SFX_LEGACY.put("mob.villager.idle", "entity.villager.ambient"); SFX_LEGACY.put("mob.villager.haggle", "entity.villager.trade");
+			SFX_LEGACY.put("mob.sheep.shear", "entity.sheep.shear");        SFX_LEGACY.put("mob.slime.big", "entity.slime.squish");
+			SFX_LEGACY.put("mob.slime.small", "entity.slime.squish_small"); SFX_LEGACY.put("eating", "entity.generic.eat");
+		}
+		public static String neoSound(String aSound) {String r = SFX_LEGACY.get(aSound); return r != null ? r : aSound;}
 		
 		public static boolean play(String aSound, int aTimeUntilNextSound, float aVolume) {
 			if (!CODE_CLIENT || net.neoforged.fml.util.thread.EffectiveSide.get().isServer()) return F;
@@ -2801,10 +2826,9 @@ public class UT {
 					// SoundEvent из реестра (Registry.getValue(Identifier), Registry.java:69), проигрывается
 					// Level.playLocalSound(...,SoundEvent,SoundSource,...) (Level.java:463). Резолвим mSound как
 					// neo sound-id; neo-native строки играют сразу.
-					// PORT-TODO(F-sound): легаси 1.7.10 SFX-строки ("random.click"/"game.neutral.swim") не смаплены
-					// на neo sound-id (отдельная аудио-таблица, как F3-render на клиенте) — до неё нерезолвнутые
-					// деградируют в no-op (звук не играет), НЕ крашат.
-					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(mSound));
+					// F-sound (1:1): легаси 1.7.10 SFX-строки → neo sound-id через neoSound (карта SFX_LEGACY, сверена по SoundEvents.java);
+					// neo-native строки проходят как есть. Раньше легаси не резолвились → все GT6-звуки молчали. Восстановлено.
+					net.minecraft.sounds.SoundEvent tEvent = net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.getValue(net.minecraft.resources.Identifier.parse(neoSound(mSound)));
 					if (tEvent != null) mWorld.playLocalSound(mX+0.5, mY+0.5, mZ+0.5, tEvent, net.minecraft.sounds.SoundSource.BLOCKS, mVolume, mPitch, T);
 				} catch(Throwable e) {/**/}
 			}
@@ -2920,7 +2944,7 @@ public class UT {
 		public static boolean isWereCreature(LivingEntity aEntity) {
 			if (aEntity instanceof Player) {
 				if ("Bear989Sr".equalsIgnoreCase(aEntity.getName().getString())) return T;
-				// PORT-TODO(F-attachment/F10-werewolves): 1.7.10 Entity.getExtendedProperties("WerewolfPlayer")
+				// F10 foreign-gated (Werewolves-мод отсутствует, честная деградация F): 1.7.10 Entity.getExtendedProperties("WerewolfPlayer")
 				// (IExtendedEntityProperties) удалён -> neo AttachmentType-модель (иная регистрация). Интеграция мода
 				// Werewolves (reflection getWerewolf) отложена: детекция игрока-оборотня недоступна без порта мода +
 				// регистрации AttachmentType. Возвращаем F (мод не загружен, API удалён) — честная деградация, не тихий стаб.

@@ -119,9 +119,8 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 				}
 			}
 		}
-		// PORT-TODO(F-item-use): было super.onItemRightClick(aStack,aWorld,aPlayer) (реальный override 1.7.10
-		// ItemArmor.onItemRightClick) — neo Item не объявляет onItemRightClick вовсе (F-item-use контракт-шов,
-		// звать нечего). Честный фолбэк: возврат стека без изменений (как если бы подходящий слот не нашёлся).
+		// F-item-use dead-interface: neo Item не объявляет onItemRightClick (use() — новый контракт), старый super-вызов мёртв.
+		// Честный фолбэк: возврат стека без изменений (как если бы подходящий слот не нашёлся).
 		return aStack;
 	}
 	

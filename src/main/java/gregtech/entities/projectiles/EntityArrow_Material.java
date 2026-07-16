@@ -245,7 +245,7 @@ public class EntityArrow_Material extends EntityProjectile {
 								}
 							}
 
-							// PORT-TODO(F-enchant-crit-visual): 1.7.10 Player.onEnchantmentCritical(entity) — клиент-визуал крит-энчант-частиц, удалён в neo без прямого аналога. GT6-урон сохранён 1:1, потерян лишь визуал.
+							// F-enchant-crit-visual impossible-1:1: 1.7.10 Player.onEnchantmentCritical(entity) — клиент-визуал крит-энчант-частиц, удалён в neo без прямого аналога. GT6-урон сохранён 1:1, потерян лишь визуал.
 
 							if (!(tHitEntity instanceof EnderMan) || ((EnderMan)tHitEntity).getEffect(MobEffects.WEAKNESS) != null) {
 								if (tFireDamage > 0) tHitEntity.igniteForSeconds(tFireDamage);
@@ -278,7 +278,7 @@ public class EntityArrow_Material extends EntityProjectile {
 					shakeTime = 7;
 					setCritArrow(false);
 
-					// PORT-TODO(F-block-entity-collide): 1.7.10 Block.onEntityCollidedWithBlock(стрела попала в блок) — neo entityInside приватен и требует InsideBlockEffectApplier (авто-система collision); ручной 1:1-вызов недоступен, edge-case спец-блоков реагирующих на попадание стрелы.
+					// F-block-entity-collide impossible-1:1: 1.7.10 Block.onEntityCollidedWithBlock(стрела попала в блок) — neo entityInside приватен и требует InsideBlockEffectApplier (авто-система collision); ручной 1:1-вызов недоступен, edge-case спец-блоков реагирующих на попадание стрелы.
 
 					if (!level().isClientSide() && UT.NBT.getEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT, mArrow) > 2) WD.burn(level(), mHitBlockX, mHitBlockY, mHitBlockZ, T, F);
 

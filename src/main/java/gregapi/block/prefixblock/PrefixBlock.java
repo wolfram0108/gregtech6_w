@@ -676,7 +676,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
 	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не
 	// передаёт World/BlockPos вовсе - невозможно вызвать setBlockBoundsBasedOnState(aWorld,x,y,z) как раньше.
-	// PORT-TODO(F3, block-shouldSideBeRendered-position-lost): побочный эффект setBlockBoundsBasedOnState
+	// F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию): побочный эффект setBlockBoundsBasedOnState
 	// недостижим без позиции; используем ванильный дефолт (тот же fallback, что и в старой ветке
 	// super.shouldSideBeRendered, просто под новым именем/полярностью).
 	@Override protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}

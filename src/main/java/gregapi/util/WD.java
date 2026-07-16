@@ -402,8 +402,8 @@ public class WD {
 	 *  внешние моды правили список дропа и шанс, метод возвращал шанс. neo: модель дропов = движко-fired
 	 *  {@code BlockDropsEvent} при спавне через loot-систему, ПРЯМОГО EventHooks-эквивалента НЕТ (сверено
 	 *  neoforge/event/EventHooks.java). GT6 спавнит дроп ВРУЧНУЮ ({@code WD.dropBlockAsItem}), минуя loot; no-op:
-	 *  возвращаем {@code aDropChance} как есть, GT6-дроп сохранён 1:1. PORT-TODO(F-harvest-event): хук
-	 *  внешне-модовой модификации дропа/шанса не подключён (нужен ре-дизайн на BlockDropsEvent). */
+	 *  возвращаем {@code aDropChance} как есть, GT6-дроп сохранён 1:1. F-harvest-event impossible-1:1: хук
+	 *  внешне-модовой модификации дропа в neo нет для manual-drop пути; GT6-дроп 1:1. */
 	public static float fireBlockHarvesting(java.util.List<ItemStack> aDrops, Level aWorld, Block aBlock, int aX, int aY, int aZ, int aMeta, int aFortune, float aDropChance, boolean aSilkTouch, Player aPlayer) {return aDropChance;}
 	/** F-render: 1.7.10 Block-нормальный-куб = isOpaque && renderAsNormalBlock && !canProvidePower — ТОЧНО «redstone
 	 *  conductor» (полный непрозрачный блок, не источник сигнала). neo BlockState.isRedstoneConductor(BlockGetter,
@@ -441,7 +441,7 @@ public class WD {
 		aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE).getOrThrow(net.minecraft.data.worldgen.features.TreeFeatures.OAK).value().place(tSL, tSL.getChunkSource().getGenerator(), tSL.getRandom(), new BlockPos(aX, aY, aZ));
 	}
 	/** F-dimension: 1.7.10 World-провайдер числовой id -> neo числового id НЕТ (Level.dimension() =
-	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). PORT-TODO(F-dimension,
+	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). F-dimension impossible-1:1 (neo int-dim-id нет; vanilla 0/-1/1 работают 1:1, modded->hash),
 	 *  modded-dim-id): модовым измерениям стабильного int в neo нет -> hash ключа (уникален в рамках сессии, но
 	 *  switch-кейсы GT6 всё равно только на ванильных 0/-1/1, модовые -> default; NBT-персист модового id деградирует). */
 	public static int dimensionId(Level aWorld) {

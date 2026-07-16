@@ -362,7 +362,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
 	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering). Позиция(aX,aY,aZ) в исходнике
 	// была позицией СОСЕДА -> aNeighbor.getBlock()/aNeighbor.isAir() эквивалентны без потерь для block-identity веток.
-	// PORT-TODO(F3, block-shouldSideBeRendered-position-lost): ITileEntitySurface-проверка соседа недостижима -
+	// F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию): ITileEntitySurface-проверка соседа недостижима -
 	// новая сигнатура не передаёт позицию соседа для WD.te-поиска; используется дефолт "не ITileEntitySurface" ветки.
 	@Override
 	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {

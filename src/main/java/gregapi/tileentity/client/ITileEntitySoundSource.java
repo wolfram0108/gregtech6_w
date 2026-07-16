@@ -53,7 +53,8 @@ public interface ITileEntitySoundSource extends ITileEntityUnloadable {
 
 		public SoundSourceTileEntity(IHasWorldAndCoords aTileEntity, boolean aRunning, String aSoundName, float aSoundStrength, float aSoundModulation) {
 			// SoundEvent из строки-ресурса (createVariableRangeEvent, SoundEvent.java:35); источник BLOCKS (звук машины-блока).
-			super(SoundEvent.createVariableRangeEvent(Identifier.parse(aSoundName)), SoundSource.BLOCKS, RandomSource.create());
+			// F-sound (1:1): легаси 1.7.10 SFX → neo sound-id через UT.Sounds.neoSound (карта сверена по SoundEvents.java).
+			super(SoundEvent.createVariableRangeEvent(Identifier.parse(gregapi.util.UT.Sounds.neoSound(aSoundName))), SoundSource.BLOCKS, RandomSource.create());
 			mTileEntity = aTileEntity;
 			mRunning = aRunning;
 			mSoundStrength = aSoundStrength;

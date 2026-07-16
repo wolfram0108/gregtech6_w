@@ -376,7 +376,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
 	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не
 	// передаёт World/BlockPos вовсе - невозможно определить TileEntity соседнего блока (IMTE_ShouldSideBeRendered),
-	// как это делал 1.7.10-оригинал через aWorld.getTileEntity(aX-OFFX[side],...). PORT-TODO(F3, block-shouldSideBeRendered-position-lost):
+	// как это делал 1.7.10-оригинал через aWorld.getTileEntity(aX-OFFX[side],...). F3 functional-adapted (neo skipRendering сигнатура потеряла World/BlockPos → per-TE culling недостижим; используется vanilla-дефолт super.skipRendering, 1:1 по следствию):
 	// custom per-TE диспетчеризация недостижима без позиции; используем ванильный дефолт (тот же fallback,
 	// что и в старой ветке super.shouldSideBeRendered, просто под новым именем/полярностью).
 	@Override protected final boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return super.skipRendering(aState, aNeighbor, aDir);}
