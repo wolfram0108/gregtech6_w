@@ -289,11 +289,20 @@ public class ST {
 		return aItem;
 	}
 
-	/** F16/F10: применяет накопленные vanilla/форейн stack-size-override на ModifyDefaultComponentsEvent (mod-bus, GT_API).
+	/** F16/F10: применяет vanilla/форейн stack-size-override на ModifyDefaultComponentsEvent (mod-bus, GT_API). Тайминг-безопасно:
+	 *  прямые vanilla-твики (golden ST.forceProperMaxStacksizes 1:1) применяются в самом хендлере (не зависят от порядка загрузки).
 	 *  craftRemainder так НЕ применить — craftingRemainingItem у neo Item иммутабельное поле (не компонент), см. setContainerItem. */
 	public static void applyVanillaComponentOverrides(net.neoforged.neoforge.event.ModifyDefaultComponentsEvent aEvent) {
+		// форейн-мод override'ы (карта, если форейн-предмет присутствует)
 		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet())
 			aEvent.modify(tE.getKey(), b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, tE.getValue()));
+		// golden ST.forceProperMaxStacksizes() 1:1: GT6 менял стек vanilla-предметов (potion→1; glass_bottle/cake/stick/книги/
+		// snowball/egg→64; bed→64; двери→8). 1.7.10 «bed»/«wooden_door» флэттились в neo → применяем ко ВСЕМ вариантам класса.
+		aEvent.modify(net.minecraft.world.item.Items.POTION, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 1));
+		for (Item tItem : new Item[]{net.minecraft.world.item.Items.GLASS_BOTTLE, net.minecraft.world.item.Items.CAKE, net.minecraft.world.item.Items.STICK, net.minecraft.world.item.Items.WRITTEN_BOOK, net.minecraft.world.item.Items.WRITABLE_BOOK, net.minecraft.world.item.Items.ENCHANTED_BOOK, net.minecraft.world.item.Items.SNOWBALL, net.minecraft.world.item.Items.EGG})
+			aEvent.modify(tItem, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 64));
+		aEvent.modifyMatching((tItem, tComps) -> tItem instanceof net.minecraft.world.item.BedItem, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 64)); // 1.7.10 bed→64 (все цвета)
+		aEvent.modifyMatching((tItem, tComps) -> tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof net.minecraft.world.level.block.DoorBlock, b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 8)); // 1.7.10 wooden_door+iron_door→8 (все двери)
 	}
 
 	/** F8 read-modify-write: 1.7.10 `stack.getTagCompound().putX(k,v)` мутировал ЖИВОЙ тег стека. neo CustomData
@@ -1090,11 +1099,10 @@ public class ST {
 		long rFuelValue = tFuelServer == null ? 0 : aStack.getBurnTime(null, tFuelServer.fuelValues());
 		if (rFuelValue > 0) return rFuelValue;
 		Item tItem = item_(aStack);
-		// PORT-TODO(этап-tools, F?): ItemTool/ItemSword/ItemHoe классы удалены в neo (инструменты — обычный
-		// Item с Item.Properties().pickaxe/sword/hoe(...), тип инструмента больше не Java-класс) — нет 1:1:
-		// if (tItem instanceof ItemTool  && ((ItemTool )tItem).getToolMaterialName().equals("WOOD")) return 200;
-		// if (tItem instanceof ItemSword && ((ItemSword)tItem).getToolMaterialName().equals("WOOD")) return 200;
-		// if (tItem instanceof ItemHoe   && ((ItemHoe  )tItem).getToolMaterialName().equals("WOOD")) return 200;
+		// F9 redundant (1:1 покрыт выше): 1.7.10 давал 200 fuel деревянным vanilla-инструментам через instanceof
+		// ItemTool/ItemSword/ItemHoe (классы удалены — инструмент теперь Item+компоненты). В neo это ИЗБЫТОЧНО:
+		// getBurnTime (выше, строка ~1090) читает data-driven fuel-registry, где vanilla деревянные инструменты уже
+		// несут burn-time 200 → return rFuelValue сработал бы раньше. Отдельная instanceof-проверка не нужна.
 		if (tItem == Items.STICK) return 100;
 		if (tItem == Items.COAL) return 1600;
 		if (tItem == Items.BLAZE_ROD) return 2400;
@@ -1162,21 +1170,10 @@ public class ST {
 		if (aStack != null) try {codechicken.nei.api.API.hideItem(aStack);} catch(Throwable e) {/**/}
 	}
 	
-	// PORT-TODO(этап-item-props, F?): Item#setMaxStackSize — рантайм-мутатор удалён в neo (REMAP-RULES §C-bis);
-	// стек-лимит теперь Item.Properties#stacksTo/DataComponents.MAX_STACK_SIZE на регистрации, рантайм-смену
-	// гатим. Оригинал:
-	// Items.POTION        .setMaxStackSize( 1);
-	// Items.GLASS_BOTTLE      .setMaxStackSize(64);
-	// Items.WHITE_BED               .setMaxStackSize(64);
-	// Items.CAKE              .setMaxStackSize(64);
-	// Items.OAK_DOOR       .setMaxStackSize( 8);
-	// Items.IRON_DOOR         .setMaxStackSize( 8);
-	// Items.STICK             .setMaxStackSize(64);
-	// Items.WRITTEN_BOOK      .setMaxStackSize(64);
-	// Items.WRITABLE_BOOK     .setMaxStackSize(64);
-	// Items.ENCHANTED_BOOK    .setMaxStackSize(64);
-	// Items.SNOWBALL          .setMaxStackSize(64);
-	// Items.EGG               .setMaxStackSize(64);
+	// F16 ПОДКЛЮЧЕНО (1:1 golden forceProperMaxStacksizes): GT6-смена стека vanilla-предметов (setMaxStackSize —
+	// рантайм-мутатор, удалён; стек-лимит = DataComponents.MAX_STACK_SIZE на регистрации) реализована в
+	// applyVanillaComponentOverrides (выше) через ModifyDefaultComponentsEvent: potion→1; glass_bottle/cake/stick/
+	// written_book/writable_book/enchanted_book/snowball/egg→64; все кровати→64; все двери→8. Не заглушка.
 	public static boolean forceProperMaxStacksizes() {
 		return T;
 	}
@@ -1372,18 +1369,10 @@ public class ST {
 			// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.mineWood);
 		}
 
-		// PORT-TODO(этап-tools, F?): ItemHoe/ItemSword/ItemPickaxe классы удалены в neo (тот же класс проблемы,
-		// что fuel() выше, ST.java:982) — нет 1:1 instanceof-проверки типа инструмента, весь блок дословно ушёл
-		// в комментарий вместе с уже no-op'нутыми (STATS, vanilla-achievements-removed) вызовами achieve. Оригинал:
-		// if (aItem instanceof ItemHoe) {
-		//     achieve(aPlayer, AchievementList.buildHoe);
-		// } else
-		// if (aItem instanceof ItemSword) {
-		//     achieve(aPlayer, AchievementList.buildSword);
-		// } else
-		// if (aItem instanceof ItemPickaxe) {
-		//     achieve(aPlayer, aItem != Items.WOODEN_PICKAXE ? AchievementList.buildBetterPickaxe : AchievementList.buildPickaxe);
-		// }
+		// FORCED-ADAPTATION(F18, как соседние ниже): весь блок — лишь вручную выдавал vanilla-достижения
+		// buildHoe/buildSword/buildPickaxe по instanceof типа инструмента. В neo достижения = advancements, которые
+		// движок авто-выдаёт при получении предмета → ручная выдача ИЗБЫТОЧНА (а классы ItemHoe/ItemSword/ItemPickaxe
+		// всё равно удалены). Оригинал (no-op в neo): achieve(buildHoe) для ItemHoe / buildSword / buildBetter?Pickaxe.
 
 		if (MD.MC.owns(aRegName)) {
 			if (aItem == Items.COOKED_COD) {

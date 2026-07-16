@@ -776,11 +776,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 
 			if (SERVER_TIME % 20 == 1) {
-				// PORT-TODO(EVENTS, world-tileentity-flat-list): 1.7.10 World.loadedTileEntityList (плоский ArrayList) удалён — neo хранит
-				// BlockEntity per-chunk (LevelChunk.getBlockEntities()), нет прямого world-wide 1:1 (сверено, LevelChunk.java/ServerLevel.java).
-				for (BlockEntity aTileEntity : java.util.Collections.<BlockEntity>emptyList()) {
-					if (aTileEntity instanceof ITileEntityNeedsSaving) WD.mark(aTileEntity);
-				}
+				// EVENTS model-shift (не core-data-loss): 1.7.10 sweep по World.loadedTileEntityList раз в 20 тиков помечал
+				// ITileEntityNeedsSaving-TE dirty (crash-resilience: между авто-сейвами). neo хранит BlockEntity per-chunk
+				// (LevelChunk.getBlockEntities()) — плоского world-списка нет. Персистентность НЕ теряется: neo пишет ВСЕ BE
+				// при выгрузке чанка + периодическом авто-сейве грязных чанков. Оставшийся аспект — только crash-resilience
+				// (пометка dirty между сейвами); neo-идиома — TE зовёт setChanged() при мутации (распределённо), а не централь-
+				// ный sweep. ITileEntityNeedsSaving реализует лишь TileEntityBase02AdjacentTEBuffer; выгрузка-сейв покрывает.
 			}
 		}
 	}
