@@ -243,6 +243,7 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	@Override public void updateItemStack(ItemStack aStack) {isItemStackUsable(aStack);}
 	@Override public void updateItemStack(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {updateItemStack(aStack);}
 
-	/** PORT-TODO(item-tooltip, addInformation→appendHoverText): было {@code onCreated(ItemStack,World,EntityPlayer)}; neo {@code Item.onCraftedBy(ItemStack,Player)} (Item.java:310) не имеет параметра Level — сигнатура сузилась 1:1 по доступным данным. */
+	/** F1 (1:1): было {@code onCreated(ItemStack,World,EntityPlayer)} → neo {@code Item.onCraftedBy(ItemStack,Player)} (Item.java:310)
+	 *  без Level. Оригинальное тело = только isItemStackUsable(aStack), World НЕ использовался → потеря параметра = ноль потерь, полный 1:1. */
 	@Override public void onCraftedBy(ItemStack aStack, Player aPlayer) {isItemStackUsable(aStack);}
 }

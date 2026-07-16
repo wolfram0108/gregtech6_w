@@ -133,9 +133,8 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
-		// PORT-TODO(F13, item-tooltip): было super.addInformation(...) (реальный vanilla Item-hook 1.7.10); neo
-		// Item/BlockItem не объявляет addInformation вовсе (appendHoverText — другая сигнатура, тот же класс
-		// проблемы, что ItemArmorBase.java:170-173) — вызывать нечего, убран.
+		// F13 (1:1): GT6-тултип ПОДКЛЮЧЁН — appendHoverText (выше) зовёт этот addInformation. Снятый super.addInformation
+		// в 1.7.10 vanilla был пустым (Item/ItemBlock его не наполняли) → мёртвый вызов, потери нет. Не заглушка.
 		if (mBlock.mSpawnProof) aList.add(LH.Chat.CYAN + LH.get(LH.TOOLTIP_SPAWNPROOF));
 		
 		if (MD.GC.mLoaded) {

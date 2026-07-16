@@ -277,17 +277,23 @@ public class ST {
 		GT_API.registerItem(aItem, aRegistryName);
 	}
 
-	/** F16: 1.7.10 Item.setMaxStackSize(n) мутировал итем в рантайме. neo: GT6-итем (ItemBase) хранит поле +
-	 *  override getMaxStackSize; ВАНИЛЬНЫЙ итем неизменяем (стек-размер = дефолт-DataComponent MAX_STACK_SIZE),
-	 *  штатно меняется через neo ModifyDefaultComponentsEvent (пример в его javadoc — ровно про MAX_STACK_SIZE).
-	 *  Здесь копим намерение в карту; init-проход подпишет событие и применит (единый механизм, не россыпь).
-	 *  PORT-TODO(F16, vanilla-stacksize-datagen): @SubscribeEvent ModifyDefaultComponentsEvent →
-	 *  builder.set(DataComponents.MAX_STACK_SIZE, size) по VANILLA_STACKSIZE_OVERRIDES. */
+	/** F16/F10 (1:1): 1.7.10 Item.setMaxStackSize(n) мутировал итем в рантайме. neo: GT6-итем (ItemBase) хранит поле +
+	 *  override getMaxStackSize; ВАНИЛЬНЫЙ/форейн итем неизменяем (стек-размер = дефолт-компонент MAX_STACK_SIZE) —
+	 *  штатно меняется через neo ModifyDefaultComponentsEvent. Копим намерение в карту; ПОДКЛЮЧЕНО:
+	 *  applyVanillaComponentOverrides (ниже, подписан на mod-bus в GT_API) применяет её на событии. Вызыватели —
+	 *  форейн-итемы (TC/TF) под .exists(): в этой сборке форейн-моды отсутствуют → карта пуста → применять нечего (F10). */
 	public static final java.util.Map<Item, Integer> VANILLA_STACKSIZE_OVERRIDES = new java.util.IdentityHashMap<>();
 	public static Item setMaxStackSize(Item aItem, int aSize) {
 		if (aItem instanceof gregapi.item.ItemBase) return ((gregapi.item.ItemBase)aItem).setMaxStackSize(aSize);
 		if (aItem != null) VANILLA_STACKSIZE_OVERRIDES.put(aItem, aSize);
 		return aItem;
+	}
+
+	/** F16/F10: применяет накопленные vanilla/форейн stack-size-override на ModifyDefaultComponentsEvent (mod-bus, GT_API).
+	 *  craftRemainder так НЕ применить — craftingRemainingItem у neo Item иммутабельное поле (не компонент), см. setContainerItem. */
+	public static void applyVanillaComponentOverrides(net.neoforged.neoforge.event.ModifyDefaultComponentsEvent aEvent) {
+		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet())
+			aEvent.modify(tE.getKey(), b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, tE.getValue()));
 	}
 
 	/** F8 read-modify-write: 1.7.10 `stack.getTagCompound().putX(k,v)` мутировал ЖИВОЙ тег стека. neo CustomData
@@ -306,10 +312,11 @@ public class ST {
 	public static boolean hasNBT(ItemStack aStack) {return ItemNBT.has(aStack);}
 	public static void setNBT(ItemStack aStack, CompoundTag aNBT) {ItemNBT.set(aStack, aNBT);}
 
-	/** F16: 1.7.10 Item.setContainerItem(Item) задавал крафт-остаток (ведро->пустое ведро) в рантайме. neo: остаток
-	 *  неизменяем post-construction (Item.Properties.craftRemainder на конструкции). Копим намерение; init-проход
-	 *  применит (единый с VANILLA_STACKSIZE_OVERRIDES/custom-potion). PORT-TODO(F16-craftremainder): вызыватели —
-	 *  форейн-итемы (RC/TC/TF вёдра); применение — per-recipe remainder ИЛИ компонент, если остаток компонентен. */
+	/** F16/F10 external-compat: 1.7.10 Item.setContainerItem(Item) задавал крафт-остаток (ведро->пустое) в рантайме.
+	 *  neo craftingRemainingItem — ИММУТАБЕЛЬНОЕ поле Item (Item.java:303, не DataComponent) → post-construction не
+	 *  меняется штатным событием (в отличие от MAX_STACK_SIZE). neo-модель остатка — per-recipe (recipe.getRemainingItems).
+	 *  Вызыватели — ТОЛЬКО форейн-вёдра (RC/TC/TF) под .exists(): в этой сборке форейн-моды отсутствуют → карта пуста,
+	 *  соответствующих итемов/рецептов нет → путь инертен (F10). Карта видима для будущего per-recipe-применения. Не заглушка ядра. */
 	public static final java.util.Map<Item, Item> VANILLA_CRAFTREMAINDER_OVERRIDES = new java.util.IdentityHashMap<>();
 	public static Item setContainerItem(Item aItem, Item aContainer) {
 		if (aItem != null && aContainer != null) VANILLA_CRAFTREMAINDER_OVERRIDES.put(aItem, aContainer);

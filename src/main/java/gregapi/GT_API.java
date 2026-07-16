@@ -476,6 +476,8 @@ public class GT_API extends Abstract_Mod {
 		api_proxy.registerClientModels(aModBus);
 		// F16-creative-tab: единый хендлер наполнения вкладок (замена россыпи setCreativeTab) — тот же мод-бас.
 		gregapi.item.CreativeTabsGT.register(aModBus);
+		// F16/F10: применение накопленных vanilla/форейн stack-size-override (ST.setMaxStackSize) через ModifyDefaultComponentsEvent.
+		aModBus.addListener(gregapi.util.ST::applyVanillaComponentOverrides);
 
 		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую.
 		// GT6-трёхфазный контракт (Pre/Init/Post) сохранён 1:1 поверх родных событий жизненного цикла neo:
