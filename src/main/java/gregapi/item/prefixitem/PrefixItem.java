@@ -205,6 +205,8 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	public final String getUnlocalizedName() {return mNameInternal;}
 	public final Item setUnlocalizedName(String aName) {return this;}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
+	// LOCALIZATION-display: neo getName(ItemStack) → GT6-имя (LH.get); иначе raw-ключ из vanilla-lang.
+	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {updateItemStack(aStack);}

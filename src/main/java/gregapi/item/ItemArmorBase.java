@@ -233,6 +233,8 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	/** F13: 1.7.10 getUnlocalizedName() override → neo Item.getDescriptionId() final (не переопределяем); оставлен доменным
 	 *  методом (mName), используется классом внутренне для GT6-именования. Функционален, не заглушка. */
 	public final String getUnlocalizedName() {return mName;}
+	// LOCALIZATION-display: neo getName(ItemStack) → GT6-имя брони (LH.get(mName)); иначе raw-ключ из vanilla-lang.
+	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = gregapi.lang.LanguageHandler.get(mName); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public String getUnlocalizedName(ItemStack aStack) {return mName;}
 	public boolean isItemStackUsable(ItemStack aStack) {return T;}
 	public ItemStack make(long aMetaData) {return ST.make(this, 1, aMetaData);}

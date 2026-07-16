@@ -141,6 +141,9 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	public final String getUnlocalizedName() {return mName;}
 	public String getUnlocalizedName(ItemStack aStack) {return getHasSubtypes()?mName+"."+ST.meta_(aStack):mName;}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
+	// LOCALIZATION-display: neo берёт имя через getName(ItemStack) (не 1.7.10 getItemStackDisplayName) — мост в GT6-имя
+	// (LH.get). Без этого neo брал бы из vanilla-lang (куда BACKUPMAP не попадает) → показывались raw-ключи.
+	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean getShareTag() {return T;} // just to be sure.
 	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 	@OnlyIn(Dist.CLIENT) public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse(mModID + ":" + mName);}
