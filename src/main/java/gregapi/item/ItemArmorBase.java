@@ -183,10 +183,16 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 		throw new IllegalArgumentException("Unknown Armor Slot: "+aSlot);
 	}
 
-	/** PORT-TODO(item-tooltip, addInformation→appendHoverText): {@code Item.appendHoverText} сигнатура полностью
-	 * иная в 26.1.2 (Consumer&lt;Component&gt;+TooltipContext/TooltipDisplay/TooltipFlag вместо List+Player+boolean),
-	 * тот же класс проблемы во всех Item-наследниках gregtech.items (ItemBase/MultiItem, вне зоны этого захода).
-	 * Текст-строящая логика сохранена 1:1 на будущее подключение, метод сейчас не вызывается движком. */
+	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост: GT6-тултип через addInformation → neo builder. ПОДКЛЮЧЕНО.
+	@Override @SuppressWarnings({"rawtypes", "unchecked"})
+	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
+		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
+		if (tPlayer == null) return;
+		java.util.List tList = new java.util.ArrayList();
+		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
+		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
+	}
+
 	@SuppressWarnings("unchecked")
 	public void addInformation(ItemStack aStack, Player aPlayer, @SuppressWarnings("rawtypes") List aList, boolean aF3_H) {
 		if (aStack.getMaxDamage() > 0) aList.add((aStack.getMaxDamage() - aStack.getDamageValue()) + " / " + aStack.getMaxDamage());
