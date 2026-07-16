@@ -168,7 +168,9 @@ public class Textures {
 		public Identifier mIcon;
 		public ITexture mTexture = new BlockTextureDefault(this);
 
-		@Override public Identifier getIcon(int aRenderPass) {return mIcon;}
+		// КРИТ (прозрачные блоки): mIcon строился ТОЛЬКО в run() из sBlockIconload (1.7.10 icon-load-фаза, в neo НЕ портирована) →
+		// mIcon=null → 0 quads → прозрачно (rockores/crystalores и все iconset-блоки). Фикс: ленивое построение при первом getIcon.
+		@Override public Identifier getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
 
 		private BlockIcons() {
 			if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);
@@ -177,7 +179,8 @@ public class Textures {
 		@Override
 		public void run() {
 			// F3-render: было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути (см. gregapi.render.TextureSet). Адаптировано.
-			mIcon = Identifier.parse(RES_PATH_BLOCK + "iconsets/" + this);
+			// lowercase: имя энума ЗАГЛАВНОЕ (ORE_ANTHRACITE), а neo Identifier требует lowercase + файлы лоуэркейзены (iconsets/ore_anthracite.png).
+				try { mIcon = Identifier.parse((RES_PATH_BLOCK + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
 		}
 
 		@Override
@@ -707,7 +710,10 @@ public class Textures {
 			protected Identifier mIcon;
 			protected String mIconName;
 
-			@Override public Identifier getIcon(int aRenderPass) {return mIcon;}
+			// КРИТ (прозрачные блоки): mIcon раньше строился ТОЛЬКО в run() из sBlockIconload — а эта 1.7.10 icon-load-фаза в neo
+			// НЕ портирована → run() не звался → mIcon=null → getIcon отдавал null → putFace пропускал грань → 0 quads (BlockStones/
+			// RockOres и ВСЕ CustomIcon-блоки прозрачны). Фикс: ленивое построение при первом getIcon (как TextureSet.getIcon).
+			@Override public Identifier getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
 
 			public CustomIcon(String aIconName) {
 				mIconName = aIconName.indexOf(":") == -1 ? RES_PATH_BLOCK + aIconName : aIconName;
@@ -717,7 +723,10 @@ public class Textures {
 			@Override
 			public void run() {
 				// F3-render: было GT_API.sBlockIcons.registerIcon(mIconName) (IIconRegister удалён) — Identifier строим напрямую из того же пути. Адаптировано.
-				mIcon = Identifier.parse(mIconName);
+				// КРИТ (прозрачные блоки): пути CustomIcon содержат ЗАГЛАВНЫЕ варианты (stones/X/STONE, COBBLE, BRICKS...), а neo
+				// Identifier ТРЕБУЕТ lowercase (заглавные → ResourceLocationException) + текстур-файлы лоуэркейзены. Без lowercase
+				// mIcon=null → putFace пропускает грань → 0 quads → блок ПРОЗРАЧНЫЙ (BlockStones/RockOres и все CustomIcon-блоки).
+				try { mIcon = Identifier.parse(mIconName.toLowerCase(java.util.Locale.ROOT)); } catch (Throwable e) { mIcon = null; }
 			}
 
 			@Override
