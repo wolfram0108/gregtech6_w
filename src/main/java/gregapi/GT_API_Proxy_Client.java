@@ -121,13 +121,20 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aModBus.addListener(this::onRegisterBlockStateModels);
 		aModBus.addListener(this::onModifyBakingResult);
 		aModBus.addListener(this::onRegisterFluidModels);
-		aModBus.addListener(this::onBakingCompleted);
 	}
 
-	// Приёмочный скан рендера (гейт ②): после стежки атласа и baking моделей проверяем, что item-иконки GT6 резолвятся
-	// (не пурпур). BakingCompleted — main-thread, атлас+модели готовы (ModelEvent.java:93). Пишет found/missing в gregtech.log.
-	private void onBakingCompleted(net.neoforged.neoforge.client.event.ModelEvent.BakingCompleted aEvent) {
-		try {gregapi.render.GT6ItemModel.probeItemIcons();} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] скан упал: " + e);}
+	// Приёмочный скан рендера (гейт ②): на первом client-tick, когда атлас стежен И DataComponents ПРИВЯЗАНЫ (на
+	// ModelEvent.BakingCompleted они ещё не bound → Item.getDefaultInstance NPE «Components not bound yet»). Проверяем,
+	// что item-иконки GT6 резолвятся (не пурпур). Once. Пишет found/missing в gregtech.log (game-bus, авто-регистр).
+	private boolean mIconsProbed = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onClientTickProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mIconsProbed) return;
+		// Ждём ЗАГРУЖЕННЫЙ МИР: DataComponents предметов привязываются на world-load, в меню ItemStack/getDefaultInstance
+		// NPE-ит («Components not bound yet»). При входе игрока в мир (level!=null) components готовы, атлас стежен → probe истинный.
+		if (Minecraft.getInstance().level == null) return;
+		mIconsProbed = true;
+		try { gregapi.render.GT6ItemModel.probeItemIcons(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] скан упал: " + e); }
 	}
 
 	// F5/F3-render (client): единый динамический FluidModel ВСЕМ GT6-жидкостям (замена «Missing FluidModel» на реальный

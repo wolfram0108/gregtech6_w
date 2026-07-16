@@ -78,21 +78,23 @@ public class GT6ItemModel implements ItemModel {
 	 * Зовётся один раз на первом client-tick (атлас стежен). Автоматизирует визуальный гейт, не заменяя, но давая механику.
 	 */
 	public static void probeItemIcons() {
-		int tFound = 0, tMissing = 0; java.util.List<String> tSamples = new java.util.ArrayList<>();
+		int tFound = 0, tMissing = 0, tNullIcon = 0, tTotal = 0;
+		java.util.List<String> tNullSamples = new java.util.ArrayList<>(), tMissSamples = new java.util.ArrayList<>();
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
 			if (tItem instanceof net.minecraft.world.item.BlockItem) continue;
-			try {
-				Identifier tIcon = resolveIcon(new ItemStack(tItem));
-				if (tIcon == null) continue; // предмет без GT6-иконки (модель ничего не рисует) — не пурпур
-				TextureAtlasSprite tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
-				if (tS == null) tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
-				if (tS != null) tFound++; else {tMissing++; if (tSamples.size() < 20) tSamples.add(tKey.getPath() + "→" + tIcon);}
-			} catch (Throwable e) {/* один предмет не рушит скан */}
+			tTotal++;
+			Identifier tIcon = null; String tErr = "";
+			try { tIcon = resolveIcon(new ItemStack(tItem)); } catch (Throwable e) { tErr = "EXC:" + e.getClass().getSimpleName(); }
+			if (tIcon == null) { tNullIcon++; if (tNullSamples.size() < 12) tNullSamples.add(tKey.getPath() + "[" + tItem.getClass().getSimpleName() + "]" + tErr); continue; }
+			TextureAtlasSprite tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
+			if (tS == null) tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
+			if (tS != null) tFound++; else { tMissing++; if (tMissSamples.size() < 12) tMissSamples.add(tKey.getPath() + "→" + tIcon); }
 		}
-		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] item-иконки: found=" + tFound + " missing(пурпур)=" + tMissing);
-		if (!tSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] примеры missing: " + tSamples);
+		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] total=" + tTotal + " found=" + tFound + " missing(пурпур)=" + tMissing + " null-icon(не рисуется)=" + tNullIcon);
+		if (!tNullSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] NULL-icon примеры: " + tNullSamples);
+		if (!tMissSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] MISSING-sprite примеры: " + tMissSamples);
 	}
 
 	private static Identifier tryIcon(Object aTarget, String aMethod, Class<?> aArgType, Object aArg) {
