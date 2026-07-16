@@ -43,6 +43,44 @@ public final class ParityDiff {
     private ParityDiff() {
     }
 
+    // ---------------------------------------------------------------------------------------------------
+    // Vanilla-flattening нормализация (СЕМАНТИЧЕСКИЙ паритет рецептов): 1.13 "The Flattening" переименовал
+    // vanilla-предметы minecraft:<id>:<meta> -> minecraft:<flat_name> (planks:0->oak_planks, dye:15->bone_meal, ...).
+    // golden-дамп = 1.7.10-имена, порт-дамп = neo-имена: ОДИН GT6-рецепт двоится (missing+extra) лишь из-за смены
+    // vanilla-ID-схемы движком — НЕ различие GT6-логики. Карта — ДОСЛОВНО из референса Mojang
+    // net.minecraft.util.datafix.fixes.ItemStackTheFlatteningFix (ресурс flattening.txt, 320 пар, не выдумано).
+    // Применяется СИММЕТРИЧНО к обеим сторонам: golden (1.7.10) -> neo, порт (уже neo) без изменений. Тот же класс
+    // семантик-нормализации, что уже принятые CI-lowercase / ignore registry-id (см. gt6-mojang-datafix-identity-judge).
+    private static final Map<String, String> FLATTEN = loadFlattening();
+    private static final java.util.regex.Pattern VANILLA_TOKEN = java.util.regex.Pattern.compile("minecraft:([a-z_0-9]+):(\\d+):");
+
+    private static Map<String, String> loadFlattening() {
+        Map<String, String> m = new java.util.HashMap<>();
+        try (java.io.InputStream in = ParityDiff.class.getResourceAsStream("/flattening.txt")) {
+            if (in == null) return m;
+            for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
+                int eq = line.indexOf('=');
+                if (eq <= 0) continue;
+                m.put(line.substring(0, eq).strip(), line.substring(eq + 1).strip()); // "minecraft:planks.0" -> "minecraft:oak_planks"
+            }
+        } catch (IOException e) { /* нет ресурса — нормализация выключена */ }
+        return m;
+    }
+
+    /** Заменить vanilla-item токены minecraft:<name>:<meta>:<count> на flat-имя (meta->0), если <name>.<meta> есть в карте Mojang.
+     *  Флюиды (name:amount, без второго ':') и GT-предметы (не minecraft:) не трогаются. */
+    static String flattenVanilla(String line) {
+        if (FLATTEN.isEmpty() || line.indexOf("minecraft:") < 0) return line;
+        java.util.regex.Matcher m = VANILLA_TOKEN.matcher(line);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            String flat = FLATTEN.get("minecraft:" + m.group(1) + "." + m.group(2));
+            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(flat != null ? flat + ":0:" : m.group()));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
     /** Набор записей одного дампа: ключ → каноническое значение (вся запись). Ключи отсортированы. */
     public static final class ParitySet {
         private final SortedMap<String, String> records;
@@ -148,6 +186,17 @@ public final class ParityDiff {
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {
             String low = line.strip().toLowerCase();
+            if (low.isEmpty() || low.startsWith("#")) continue;
+            map.put(low, low);
+        }
+        return new ParitySet(map);
+    }
+
+    /** Как {@link #fromLinesCI}, но с vanilla-flattening нормализацией (recipes.jsonl): 1.7.10 vanilla-ID -> neo. */
+    public static ParitySet fromLinesFlattenCI(Path file) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String line : readLines(file)) {
+            String low = flattenVanilla(line.strip()).toLowerCase();
             if (low.isEmpty() || low.startsWith("#")) continue;
             map.put(low, low);
         }

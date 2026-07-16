@@ -512,7 +512,7 @@ public final class PortDump {
     private static double reportJsonl(String file) {
         Path golden = ORACLE.resolve(file), port = DUMP.resolve(file);
         if (!Files.isRegularFile(golden)) { System.out.println("[parity] нет golden: " + golden); return 0.0; }
-        return reportSets(file, ParityDiff.fromLinesCI(golden), ParityDiff.fromLinesCI(port));
+        return reportSets(file, ParityDiff.fromLinesFlattenCI(golden), ParityDiff.fromLinesFlattenCI(port));
     }
     private static double reportSets(String file, ParityDiff.ParitySet g, ParityDiff.ParitySet p) {
         ParityDiff.Report r = ParityDiff.diff(file, g, p);
