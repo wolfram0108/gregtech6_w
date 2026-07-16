@@ -59,7 +59,7 @@ public class AdvancedCraftingTool extends ShapelessOreRecipe implements ICraftin
 		mCondition = aCondition;
 		mToolHead = aToolHead;
 		mToolID = UT.Code.bind15(aToolID);
-		
+
 		aToolHead.addListener(this);
 	}
 	

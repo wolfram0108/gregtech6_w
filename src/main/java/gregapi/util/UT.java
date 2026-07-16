@@ -2313,7 +2313,13 @@ public class UT {
 			// server-реестр (в 1.7.10 был статический объект Enchantment.X). Нет сервера => энчантовать нечем.
 			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
 			if (tServer == null) return aStack;
-			Holder<Enchantment> tHolder = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(aEnchantment);
+			// F8 robustness: getOrThrow → get (Optional). Если ключ энчанта не в реестре (напр. кастом gregapi-энчант ещё
+			// не привязан/не зарегистрирован в этом контексте), НЕ роняем — как в 1.7.10 несуществующим энчантом просто
+			// не зачаровать (тогда объект был бы null). getOrThrow здесь каскадно рушил ВЕСЬ deferItemInit-Runnable
+			// (getToolWithStats радиоактивного материала → toolhead + масса tool-рецептов терялись целиком).
+			java.util.Optional<Holder.Reference<Enchantment>> tOpt = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).get(aEnchantment);
+			if (tOpt.isEmpty()) return aStack;
+			Holder<Enchantment> tHolder = tOpt.get();
 			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
 			ItemEnchantments.Mutable tMutable = new ItemEnchantments.Mutable(aStack.getOrDefault(tType, ItemEnchantments.EMPTY));
 			tMutable.set(tHolder, (byte)aLevel);
