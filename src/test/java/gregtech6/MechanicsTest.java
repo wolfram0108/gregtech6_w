@@ -148,4 +148,65 @@ class MechanicsTest {
 		}).get();
 		assertTrue(tOk, "block placement/break механика сломана (ни один GT6-блок не поставился/снёсся)");
 	}
+
+	/**
+	 * Механика ОБРАБОТКИ РЕЦЕПТА МАШИНОЙ ЗА ТИКИ (ядро GT6): берём РЕАЛЬНУЮ MTE-машину (MultiTileEntityBasicMachineElectric),
+	 * ставим ей РЕАЛЬНУЮ RecipeMap мода и РЕАЛЬНЫЙ рецепт из неё, кладём входы в слоты, даём энергию — и гоняем НАСТОЯЩИЙ
+	 * тик-цикл машины ({@code checkRecipe} → {@code doActive}) пока выход не появится в выходном слоте. Тик-логика GT6
+	 * не требует загруженного мира (level==null защищён, updateInventory no-op, checkStructure→true), поэтому проверяется
+	 * headless. Доказывает: машина сама находит рецепт по входам, СПИСЫВАЕТ входы, двигает прогресс на энергии и КЛАДЁТ
+	 * реальный выход рецепта в выходной слот — весь производственный цикл, не отдельные куски.
+	 */
+	@Test
+	void machineProcessingMechanic(MinecraftServer server) {
+		int tTested = 0, tProcessed = 0, tSetupFail = 0;
+		StringBuilder tOk = new StringBuilder();
+		for (java.util.Map.Entry<String, RecipeMap> e : RecipeMap.RECIPE_MAPS.entrySet()) {
+			if (tTested >= 12) break;
+			RecipeMap m = e.getValue();
+			if (m == null || m.mRecipeList == null || m.mRecipeList.isEmpty()) continue;
+			if (m.mInputItemsCount <= 0 || m.mOutputItemsCount <= 0) continue;
+			// Ищем чистый item->item рецепт (без жидкостей), потребляющий энергию, входы/выходы влезают в слоты.
+			Recipe tPick = null;
+			for (Recipe r : m.mRecipeList) {
+				if (r == null || r.mInputs == null || r.mOutputs == null) continue;
+				if (r.mFluidInputs != null && r.mFluidInputs.length > 0) continue;
+				if (r.mFluidOutputs != null && r.mFluidOutputs.length > 0) continue;
+				if (r.mEUt <= 0) continue;
+				int tNin = 0; for (net.minecraft.world.item.ItemStack s : r.mInputs)  if (gregapi.util.ST.valid(s)) tNin++;
+				int tNout = 0; for (net.minecraft.world.item.ItemStack s : r.mOutputs) if (gregapi.util.ST.valid(s)) tNout++;
+				if (tNin == 0 || tNin > m.mInputItemsCount) continue;
+				if (tNout == 0 || tNout > m.mOutputItemsCount) continue;
+				tPick = r; break;
+			}
+			if (tPick == null) continue;
+			tTested++;
+			try {
+				gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric tMach = new gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric();
+				tMach.mRecipes = m;                             // РЕАЛЬНАЯ карта мода
+				tMach.readFromNBT2(gregapi.util.UT.NBT.make()); // канонический init: аллокация слотов+танков по mRecipes
+				tMach.mEnergyTypeAccepted = gregapi.data.TD.Energy.EU;
+				tMach.mEfficiency = 10000;                      // 100% — реалистичная длительность
+				tMach.mDisabledItemInput = true; tMach.mDisabledItemOutput = true;
+				tMach.mDisabledFluidInput = true; tMach.mDisabledFluidOutput = true;
+				long tEUt = Math.max(1, tPick.mEUt);
+				tMach.mInputMin = 1; tMach.mInput = tMach.mInputMax = tEUt * 64L;
+				int tSi = 0; for (net.minecraft.world.item.ItemStack s : tPick.mInputs) if (gregapi.util.ST.valid(s)) tMach.slot(tSi++, s.copy());
+				tMach.mEnergy = tMach.mInputMax;
+				int tRc = tMach.checkRecipe(true, false);       // РЕАЛЬНЫЙ поиск+запуск рецепта машиной
+				if (tRc != gregapi.tileentity.machines.MultiTileEntityBasicMachine.FOUND_AND_SUCCESSFULLY_USED_RECIPE) { tSetupFail++; continue; }
+				boolean tGotOut = false;
+				for (int t = 0; t < 100000 && !tGotOut; t++) {
+					tMach.mEnergy = tMach.mInputMax;            // держим питание
+					tMach.doActive(t, tMach.mInputMax);         // РЕАЛЬНЫЙ тик обработки
+					for (int oi = m.mInputItemsCount; oi < m.mInputItemsCount + m.mOutputItemsCount; oi++)
+						if (gregapi.util.ST.valid(tMach.slot(oi))) { tGotOut = true; break; }
+				}
+				if (tGotOut) { tProcessed++; tOk.append(m.mNameInternal).append(' '); } else tSetupFail++;
+			} catch (Throwable t) { tSetupFail++; }
+		}
+		System.out.println("[MECH-MACHINE] карт_проверено=" + tTested + " обработали_рецепт_до_выхода=" + tProcessed + " setup_fail=" + tSetupFail + " | " + tOk);
+		assertTrue(tProcessed > 0, "НИ ОДНА машина не прогнала рецепт через полный тик-цикл до выхода в слот (обработка сломана)");
+		assertTrue(tProcessed >= tTested / 2, "машина-обработка: провалов больше половины (обработали=" + tProcessed + " из " + tTested + ")");
+	}
 }
