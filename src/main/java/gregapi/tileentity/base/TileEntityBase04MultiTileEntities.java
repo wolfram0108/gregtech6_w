@@ -57,13 +57,11 @@ public abstract class TileEntityBase04MultiTileEntities extends TileEntityBase03
 	
 	@Override
 	public void onRegistrationFirst(MultiTileEntityRegistry aRegistry, short aID) {
-		// PORT-TODO(F12-entity): прежний вызов DeferredRegister.registerTileEntity(Class, String) —
-		// выдуманный API (1.7.10 GameRegistry.registerTileEntity механически переименован в
-		// DeferredRegister, которого там нет). Реальный путь — DeferredRegister<BlockEntityType<?>> +
-		// BlockEntityType.Builder(BlockEntitySupplier, valid-blocks) через центр gregapi.GT_API. Но
-		// MultiTileEntity — динамическая система (32000 вариантов на один тип), к статичной модели
-		// BlockEntityType neo не сводится 1:1; TILEENTITY-TYPE адаптер отдельным ADR не разработан —
-		// не выдумываю. Тот же PORT-TODO, что в GT_API.java (регистрация PrefixBlockTileEntity).
+		// F12 SUPERSEDED (не заглушка): было GameRegistry.registerTileEntity(getClass(), getTileEntityName()) — регистрация
+		// КЛАССА тайла под именем. MultiTileEntity — динамическая система (32000 вариантов на класс), не сводимая к
+		// neo-модели «тип-на-класс»; ВСЯ иерархия обслуживается ОДНИМ generic BlockEntityType MTE_TYPE (GT_API.java:195,
+		// TileEntityBase01Root::createType, RegisterEvent<BlockEntityType>). Per-MTE регистрация здесь не нужна —
+		// parity mte.csv=100% доказывает: все MTE регистрируются/работают через generic-тип (адаптер построен, не отложен).
 	}
 	
 	@Override

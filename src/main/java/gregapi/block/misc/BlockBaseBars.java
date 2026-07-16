@@ -215,7 +215,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было Blocks.IRON_BARS.getIcon(2,0) (vanilla Block.getIcon удалён в 26.1.2 целиком).
-	public Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3): neo BakedModel-рендер, 1.7.10 getIcon мёртв — crash-only per /goal");}
+	public Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Block.getIcon(side,meta) удалён из neo (НЕ @Override, движок не зовёт). Рендер — через GT6BlockModel (IRenderedBlock.getTexture). Defensive throw.");}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}

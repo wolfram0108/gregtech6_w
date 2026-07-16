@@ -615,7 +615,8 @@ public final class OreDictManager {
 	public ItemStack setStack_(boolean aUseBlackList, ItemStack aStack) {
 		ItemStack tStack = getStack_(aUseBlackList, aStack);
 		if (tStack == null || ST.equal(aStack, tStack)) return aStack;
-		// F-itemstack-mutation: 1.7.10 func_150996_a(смена Item in-place) невозможна (neo ItemStack.item final, см. центр ST.set PORT-TODO item-final); сохраняем meta oredict-канонического стека.
+		// F-itemstack-mutation IMPOSSIBLE-1:1: 1.7.10 func_150996_a (смена Item in-place) невозможна — neo ItemStack.item final
+		// (шов item-final централизован в ST.set); сохраняем meta oredict-канонического стека (Item поменять нельзя).
 		return ST.meta_(aStack, ST.meta_(tStack));
 	}
 	
