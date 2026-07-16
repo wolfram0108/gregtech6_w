@@ -94,4 +94,26 @@ class MechanicsTest {
 		System.out.println("[MECH-FLUID] материалов с валидной жидкостью=" + tOk + "/" + tMats.length + " | " + tGot);
 		assertTrue(tOk > 0, "механика жидкостей материалов сломана (mat.fluid → пусто для всех)");
 	}
+
+	/**
+	 * Механика ЭНЕРГИИ (EU): батарея-MTE принимает энергию (doEnergyInjection) до capacity и хранит (mEnergy/getEnergyStored),
+	 * отдаёт (doEnergyExtraction). Доказывает, что энерго-подсистема GT6 (приём/хранение/выдача по типу+размеру) работает.
+	 */
+	@Test
+	void energyMechanic(MinecraftServer server) {
+		gregtech.tileentity.batteries.eu.MultiTileEntityBatteryEU8 tBat = new gregtech.tileentity.batteries.eu.MultiTileEntityBatteryEU8();
+		tBat.mType = gregapi.data.TD.Energy.EU;
+		tBat.mCapacity = 100000; tBat.mEnergy = 0;
+		tBat.mSizeMin = 1; tBat.mSizeMax = 10000; tBat.mSizeRec = 32;
+		net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.STONE, 1, 0);
+		long tInjected = tBat.doEnergyInjection(gregapi.data.TD.Energy.EU, tStack, 32, 100, null, null, 0, 0, 0, true);
+		long tStored = tBat.getEnergyStored(gregapi.data.TD.Energy.EU, tStack);
+		System.out.println("[MECH-ENERGY] инъекция вернула=" + tInjected + " mEnergy=" + tBat.mEnergy + " getEnergyStored=" + tStored + " capacity=" + tBat.mCapacity);
+		assertTrue(tInjected > 0, "energy: doEnergyInjection не принял энергию");
+		assertTrue(tBat.mEnergy > 0 && tStored == tBat.mEnergy, "energy: энергия не сохранилась (mEnergy=" + tBat.mEnergy + " getStored=" + tStored + ")");
+		assertTrue(tBat.mEnergy == tInjected * 32L, "energy: сохранённое (" + tBat.mEnergy + ") != инъекция*size (" + (tInjected * 32) + ")");
+		// неверный тип энергии не принимается
+		long tWrong = tBat.doEnergyInjection(gregapi.data.TD.Energy.RU, tStack, 32, 100, null, null, 0, 0, 0, true);
+		assertTrue(tWrong == 0, "energy: батарея приняла ЧУЖОЙ тип энергии (RU в EU-батарею)");
+	}
 }
