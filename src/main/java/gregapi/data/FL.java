@@ -61,11 +61,11 @@ import static gregapi.data.CS.FluidsGT.*;
  * F5 центральный переходник (`decisions/F5-fluids.md`) — регистрация каждой жидкости и
  * chainable-мутация после регистрации живёт в {@link FluidGT} (см. его javadoc); ЭТОТ класс — оракул
  * данных (enum ~196 констант, НЕ тронуты) + утилиты 1:1 поверх реальных neo-типов
- * {@link Fluid}(vanilla, поведение)/{@link FluidStack}(neo, immutable data). Forge-1.7.10-only
- * машинерия без neo-аналога (глобальный числовой id жидкости `FluidRegistry`, авто-реестр
- * бакетов/канистр `FluidContainerRegistry`, `IFluidHandler.fill(ForgeDirection,...)`-перенос между
- * тайлами) — помечена меткой семейства F5 (см. конкретные PORT-TODO ниже по файлу) и гатится до
- * безопасного дефолта (REMAP-RULES §A: данные не трогать, поведение можно гатить).
+ * {@link Fluid}(vanilla, поведение)/{@link FluidStack}(neo, immutable data). Из Forge-1.7.10-only машинерии:
+ * контейнер-сторона (`FluidContainerRegistry` авто-реестр бакетов/канистр, запрос/fill/getEmpty) — уже
+ * ВОССОЗДАНА поверх neo (см. getFluid/contains/getEmpty/fill + реестры FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA);
+ * глобальный числовой id жидкости (`FluidRegistry`) — IMPOSSIBLE-1:1 (neo Registry без плотного id, см. id()).
+ * REMAP-RULES §A: данные не трогать; остаток — в комментариях ниже по файлу.
  */
 @SuppressWarnings("unchecked")
 public enum FL {
