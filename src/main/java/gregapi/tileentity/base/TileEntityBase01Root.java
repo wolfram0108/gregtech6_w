@@ -171,6 +171,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		mIsTicking = aIsTicking;
 	}
 
+	// F-tileentity-construction (кэш-blockstate): ctor с РЕАЛЬНЫМ blockstate размещаемого блока. Без него TE кэширует
+	// AIR (2-арг выше), и neo при setBlockEntity логирует «Block state mismatch … updating» (LevelChunk:442, безвредно —
+	// сам чинит строкой 445), но это шум и неверный кэш до фикса. Передача точного state (= defaultBlockState блока, как
+	// ставит WD.set) убирает предупреждение и делает кэш верным 1:1 при ручном размещении GT6-TE (PrefixBlock-руды).
+	public TileEntityBase01Root(boolean aIsTicking, BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
+		super(MTE_TYPE, aPos, aState);
+		mIsTicking = aIsTicking;
+	}
+
 	// F12-followup (MTE-type): neo BlockEntity.<init> валидирует state против type.isValid(state); placeholder MTE_TYPE не
 	// имеет valid-блоков (Set.of()) → канонический инстанс (AIR-state) не прошёл бы → «Invalid block entity state».
 	// GT6 MTE — динамическая система (тип общий на всю иерархию, valid-блоки не применимы) → валидацию отключаем.

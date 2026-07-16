@@ -715,7 +715,9 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	public BlockEntity createTileEntity(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT) {
-		PrefixBlockTileEntity rTileEntity = new PrefixBlockTileEntity(new net.minecraft.core.BlockPos(aX, aY, aZ));
+		// blockstate руды передаём в TE (= defaultBlockState, как ставит WD.set) → TE кэширует верный state сразу,
+		// без «Block state mismatch … updating» на загрузке чанка (руды и так генерировались, это был лишь шум кэша).
+		PrefixBlockTileEntity rTileEntity = new PrefixBlockTileEntity(new net.minecraft.core.BlockPos(aX, aY, aZ), defaultBlockState());
 		if (aNBT != null) rTileEntity.readFromNBT(aNBT);
 		rTileEntity.mMetaData = aMetaData;
 		rTileEntity.mItemNBT = aNBT == null ? null : aNBT.contains("gt.nbt.drop") ? aNBT.getCompoundOrEmpty("gt.nbt.drop") : aNBT;

@@ -48,6 +48,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	
 	public PrefixBlockTileEntity() {super(F);}
 	public PrefixBlockTileEntity(net.minecraft.core.BlockPos aPos) {super(F, aPos);}
+	public PrefixBlockTileEntity(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {super(F, aPos, aState);}
 	
 	@Override public String getTileEntityName() {return "gt.MetaBlockTileEntity";}
 	
