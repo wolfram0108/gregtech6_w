@@ -85,28 +85,36 @@ public interface ITexture {
 			}
 		}
 
-		/** Side = 5. PORT-TODO(F3, baked-рендер клиента): было doRenderXPos+prepareRenderXPos+applyAmbientOcclusionXPos. */
+		// F3-render: per-side мост immediate-mode → декларативный quad. aRenderer=GT6QuadBuilder аккумулирует full-cube грань
+		// из (side, Identifier, RGBa). Reused GT6 per-side texture-логика (BlockTextureDefault даёт icon+RGBa на сторону).
+		/** Side = 5 (X_POS/EAST). */
 		public static boolean renderXPos(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_POS, aIcon, aRGBa);
 			return aIcon != null;
 		}
-		/** Side = 4. PORT-TODO(F3, baked-рендер клиента): было doRenderXNeg+prepareRenderXNeg+applyAmbientOcclusionXNeg. */
+		/** Side = 4 (X_NEG/WEST). */
 		public static boolean renderXNeg(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_X_NEG, aIcon, aRGBa);
 			return aIcon != null;
 		}
-		/** Side = 1. PORT-TODO(F3, baked-рендер клиента): было doRenderYPos+prepareRenderYPos+applyAmbientOcclusionYPos. */
+		/** Side = 1 (Y_POS/UP). */
 		public static boolean renderYPos(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Y_POS, aIcon, aRGBa);
 			return aIcon != null;
 		}
-		/** Side = 0. PORT-TODO(F3, baked-рендер клиента): было doRenderYNeg (renderFixedNegativeYFacing)+prepareRenderYNeg+applyAmbientOcclusionYNeg. */
+		/** Side = 0 (Y_NEG/DOWN). */
 		public static boolean renderYNeg(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Y_NEG, aIcon, aRGBa);
 			return aIcon != null;
 		}
-		/** Side = 3. PORT-TODO(F3, baked-рендер клиента): было doRenderZPos+prepareRenderZPos+applyAmbientOcclusionZPos. */
+		/** Side = 3 (Z_POS/SOUTH). */
 		public static boolean renderZPos(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_POS, aIcon, aRGBa);
 			return aIcon != null;
 		}
-		/** Side = 2. PORT-TODO(F3, baked-рендер клиента): было doRenderZNeg+prepareRenderZNeg+applyAmbientOcclusionZNeg. */
+		/** Side = 2 (Z_NEG/NORTH). */
 		public static boolean renderZNeg(Identifier aIcon, short[] aRGBa, boolean aAllowAlpha, boolean aUseConstantBrightness, boolean aEnableAO, Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
+			if (aRenderer instanceof GT6QuadBuilder tB) tB.putFace((byte)SIDE_Z_NEG, aIcon, aRGBa);
 			return aIcon != null;
 		}
 	}
