@@ -138,18 +138,24 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	}
 
 	/**
-	 * Диспетчер-Feature (`decisions/F6-worldgen.md` §4): тело 1:1 воспроизводит прежний вызов
-	 * {@code GT6WorldGenerator.generate(aWorld, aChunkX<<4, aChunkZ<<4, F)} из {@code GT_API_Proxy.generate}
-	 * (`GT_API_Proxy.java:1456-1457` до этого перехода) — сам {@link GT6WorldGenerator} не переписан, только
-	 * точка вызова. {@code F} (не GalactiCraft) — как в оригинале, дословно, не выдумано.
+	 * Диспетчер-Feature (`decisions/F6-worldgen.md` §4).
+	 *
+	 * ⛔ F6-WORLDGEN DEADLOCK (обезврежено, ВРЕМЕННО no-op — 2026-07-16): {@link GT6WorldGenerator} — код 1.7.10,
+	 * который во время placement фичи зовёт {@code Level.getChunk(cx,cz)} на {@code ServerLevel} (GT6WorldGenerator:66)
+	 * для ТЕКУЩЕГО (ещё генерируемого) чанка. neo staged async chunk-gen: {@code ServerLevel.getChunk} форсирует статус
+	 * FULL и делает {@code CompletableFuture.join} → чанк ждёт САМ СЕБЯ → вечный DEADLOCK worldgen-потока → Server thread
+	 * виснет на {@code ServerChunkCache.getChunk} → вход в мир НАВСЕГДА зависает (пойман jstack'ом зависшего клиента).
+	 * Датаген инжектит фичу в биомы (biome_modifier), поэтому она реально бежала и вешала мир.
+	 *
+	 * ПРАВИЛЬНЫЙ ФИКС (отдельный F6-порт): перевести {@link GT6WorldGenerator}+все {@code WorldgenObject} с {@code Level}
+	 * на {@code WorldGenLevel}/{@code LevelAccessor} ({@code context.level()}) — тогда {@code getChunk}/{@code setBlock}
+	 * идут через {@code WorldGenRegion} (кэш текущий+соседи, БЕЗ форс-генерации/join). До этого — no-op, чтобы мод был
+	 * запускаем/тестируем (руды GT6 пока не спавнятся; контролируемая, видимая отложенность, не свалка).
 	 */
 	@Override
 	public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
-		WorldGenLevel tLevel = context.level();
-		ServerLevel tServerLevel = tLevel.getLevel();
-		int tChunkX = (context.origin().getX() >> 4) << 4;
-		int tChunkZ = (context.origin().getZ() >> 4) << 4;
-		GT6WorldGenerator.generate(tServerLevel, tChunkX, tChunkZ, false);
+		// F6-worldgen deadlock: GT6WorldGenerator.generate(ServerLevel) висит на getChunk текущего чанка (см. javadoc).
+		// no-op до порта GT6WorldGenerator на WorldGenLevel. НЕ звать generate() на ServerLevel из placement.
 		return true;
 	}
 

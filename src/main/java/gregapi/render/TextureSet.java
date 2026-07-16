@@ -94,7 +94,9 @@ public class TextureSet {
 
 		@Override
 		public Identifier getIcon(int aRenderPass) {
-			if (mIconColored == null) registerIcons(null); // F3-render: 1.7.10 icon-load-фаза (sItemIconload) в neo не портирована → ленивое построение при первом рендере.
+			// F3-render: 1.7.10 icon-load-фаза (sItemIconload) в neo не портирована → ленивое построение при первом рендере.
+			// try/catch: getIcon на render-потоке НЕ должен кидать (Identifier.parse бросает на невалидном пути) → null-safe (putFace пропустит).
+			if (mIconColored == null) try { registerIcons(null); } catch (Throwable e) {/* невалидный путь → остаётся null */}
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
 
@@ -149,7 +151,9 @@ public class TextureSet {
 
 		@Override
 		public Identifier getIcon(int aRenderPass) {
-			if (mIconColored == null) registerIcons(null); // F3-render: 1.7.10 icon-load-фаза (sBlockIconload) в neo не портирована → ленивое построение при первом рендере.
+			// F3-render: 1.7.10 icon-load-фаза (sBlockIconload) в neo не портирована → ленивое построение при первом рендере.
+			// try/catch: getIcon на render-потоке НЕ должен кидать (Identifier.parse бросает на невалидном пути) → null-safe (putFace пропустит).
+			if (mIconColored == null) try { registerIcons(null); } catch (Throwable e) {/* невалидный путь → остаётся null */}
 			return aRenderPass == 0 ? mIconColored : mIconOverlay;
 		}
 
