@@ -258,9 +258,10 @@ public class MultiTileEntityRegistry {
 		if (rContainer.mTileEntity == null) return null;
 		// было TileEntity.setWorldObj(World) (1.7.10, recompSrc TileEntity.java:70) -> BlockEntity.setLevel(Level) [BlockEntity.java:93]
 		rContainer.mTileEntity.setLevel(aWorld);
-		// PORT-TODO(WD, blockentity-position-immutable): было rContainer.mTileEntity.x/yCoord/zCoord = aX/aY/aZ
-		// -- neo BlockEntity.worldPosition (BlockEntity.java:48) protected final, сеттера нет ни в одном из
-		// 3 корней референса -- позицию рефлективно построенной TileEntity постфактум не переустановить.
+		// F IMPOSSIBLE-1:1 + НЕ ВАЖНО (blockentity-position-immutable): было rContainer.mTileEntity.x/yCoord/zCoord = aX/aY/aZ —
+		// neo BlockEntity.worldPosition (BlockEntity.java:48) protected final, сеттера нет. Но этот TE — DETACHED data-контейнер
+		// (рефлективная конструкция pos=-1 для NBT-чтения/getDrops/item-form), НЕ размещённый в мире; реальную (pos,state)
+		// даёт neo при постановке блока через BlockEntityType. Позиция здесь не используется → воспроизводить незачем.
 		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(mBlock));
 		return rContainer;
 	}

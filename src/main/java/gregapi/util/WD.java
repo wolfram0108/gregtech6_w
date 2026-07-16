@@ -559,9 +559,10 @@ public class WD {
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD == 9) UT.Entities.chat(null, "Please provide the gregtech.log File to Greg, there was a LOT of weird Errors");
 		if (WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD < 99) WARN_ABOUT_TILEENTITY_NEGATIVE_Y_COORD++;
 		aTileEntity.setRemoved(); // было .invalidate() — neo: BlockEntity.setRemoved() (BlockEntity.java:252)
-		// PORT-TODO(WD, blockentity-position-immutable): было aTileEntity.y = 0 — neo BlockEntity.worldPosition
-		// (BlockEntity.java:48) protected final, задаётся один раз конструктором (.java:57-59), сеттера нет ни в
-		// одном из 3 корней референса — постфактум обнулить Y у уже созданной TileEntity недостижимо.
+		// F IMPOSSIBLE-1:1 + OBSOLETE (blockentity-position-immutable): было aTileEntity.y = 0 — neo BlockEntity.worldPosition
+		// (BlockEntity.java:48) protected final, задаётся конструктором, сеттера нет ни в одном из 3 корней. Недостижимо И
+		// не нужно: обнуление Y — 1.7.10-хак против бага с TE на «отрицательном» Y (тогда Y∈0..255); в neo Y∈-64..320
+		// легитимен, аномалии нет. setRemoved() выше — корректное удаление; Y-reset воспроизводить незачем.
 		return aTileEntity;
 	}
 	
