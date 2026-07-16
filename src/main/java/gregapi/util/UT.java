@@ -2375,22 +2375,30 @@ public class UT {
 			for (int i = 0; i < aStacks.length; i++) applyBullshit(aBullshitModifier, aStacks[i]);
 		}
 
+		// F8: 1.7.10 EntityLivingBase.getLastActiveItems() (снимок «в руках+броне», ItemStack[5]) — прямого метода в neo нет,
+		// НО реконструируется из getItemBySlot(EquipmentSlot) (MAINHAND + 4 брони), 1:1. Централизованный хелпер.
+		public static ItemStack[] lastActiveItems(LivingEntity aEntity) {
+			if (aEntity == null) return new ItemStack[0];
+			return new ItemStack[] {
+				aEntity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND),
+				aEntity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET),
+				aEntity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.LEGS),
+				aEntity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST),
+				aEntity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD)};
+		}
 		public static void applyBullshitA(LivingEntity aPlayer, Entity aEntity, ItemStack aStack) {
 			mBullshitIteratorA.mPlayer = aPlayer;
 			mBullshitIteratorA.mEntity = aEntity;
-			// PORT-TODO(F8, enchant-registry): LivingEntity.getLastActiveItems() (1.7.10 EntityLivingBase)
-			// удалён из neo LivingEntity целиком, не переименован (снимок предметов "в руках+броне" за тик).
-			// Не найдено ни в одном из 3 корней референса — деградация до пустого массива (applyBullshit
-			// и так уже no-op, см. выше).
-			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorA, new ItemStack[0]);
+			// F8: getLastActiveItems → lastActiveItems (реконструкция из getItemBySlot), armor-enchant эффекты восстановлены 1:1.
+			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorA, lastActiveItems(aPlayer));
 			if (aStack != null) applyBullshit(mBullshitIteratorA, aStack);
 		}
 
 		public static void applyBullshitB(LivingEntity aPlayer, Entity aEntity, ItemStack aStack) {
 			mBullshitIteratorB.mPlayer = aPlayer;
 			mBullshitIteratorB.mEntity = aEntity;
-			// PORT-TODO(F8, enchant-registry): см. applyBullshitA выше — тот же LivingEntity.getLastActiveItems().
-			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorB, new ItemStack[0]);
+			// F8: см. applyBullshitA — getLastActiveItems → lastActiveItems (реконструкция из getItemBySlot), 1:1.
+			if (aPlayer != null) applyArrayOfBullshit(mBullshitIteratorB, lastActiveItems(aPlayer));
 			if (aStack != null) applyBullshit(mBullshitIteratorB, aStack);
 		}
 
