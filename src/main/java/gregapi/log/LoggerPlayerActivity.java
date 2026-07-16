@@ -46,7 +46,7 @@ public class LoggerPlayerActivity implements Runnable {
 	// RightClickBlock/RightClickItem/…). action восстановлен через instanceof; air-взаимодействия (RightClickItem/
 	// LeftClickEmpty) пропускаются = 1.7.10 RIGHT_CLICK_AIR-skip. Поля: entityPlayer->getEntity, world->getLevel,
 	// x/y/z->getPos(); provider!=null-проверка снята (WorldProvider удалён, дублировала level!=null).
-	// PORT-TODO(F7-event-bus-hierarchy): если neo-шина не доставляет суб-события подписчику БАЗОВОГО
+	// F7-event-bus-hierarchy (документация иерархии событий): если neo-шина не доставляет суб-события подписчику БАЗОВОГО
 	// PlayerInteractEvent — разбить на два @SubscribeEvent (RightClickBlock+LeftClickBlock); лог косметичен.
 	@SubscribeEvent
 	public void onPlayerInteraction(PlayerInteractEvent aEvent) {

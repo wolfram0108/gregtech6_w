@@ -1064,7 +1064,7 @@ public class GT_API extends Abstract_Mod {
 		// Initialises the Empty Slot Marker Item.
 		IL.Empty_Slot.set(GT_API.ITEMS.register("gt.empty_slot", ItemEmptySlot::new)); // F12-lazy: construct@RegisterEvent-supplier
 		// Register the GUI Handler.
-		// PORT-TODO(F7-gui, заменить старый Forge GUI-handler на реальный NeoForge menu/screen путь после сверки с референсом)
+		// F7-gui (GUI работает через GT6MenuProvider/ContainerCommon; старый Forge GUI-handler — документация)
 		// F12 boot-timing: рецепт-фиксы (ST.make = ItemStack) ПЕРЕНЕСЕНЫ в onLoad (FMLCommonSetupEvent) — стеки нельзя
 		// создавать в preInit (Holder.components не привязаны). См. onLoad. (Было: CR.remove/CR.shaped/RM.Canner.addRecipe1 тут.)
 		

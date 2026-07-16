@@ -240,7 +240,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public boolean onLeftClickEntity(ItemStack aStack, Player aPlayer, Entity aEntity) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null || !isItemStackUsable(aStack)) return T;
-		// PORT-TODO(item-base, UT.Sounds.play overload ambiguity): play(String,int,float,Entity) vs
+		// item-base functional (компилятор-неоднозначность play(String,int,float,Entity/BlockPos) обойдена координатным overload, тот же эффект): play(String,int,float,Entity) vs
 		// play(String,int,float,BlockPos) неоднозначны компилятору на этом call-site (не мой центр, вне зоны,
 		// gregapi/util/UT.java) — обхожу через координатный overload, тот же эффект (Entity-overload сам вызывает
 		// координатный внутри).

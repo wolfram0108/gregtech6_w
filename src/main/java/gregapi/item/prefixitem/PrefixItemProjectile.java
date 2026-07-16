@@ -173,7 +173,7 @@ public class PrefixItemProjectile extends PrefixItem implements IItemProjectile 
 		return aStack;
 	}
 
-	/** PORT-TODO(F13, item-base компонентный редизайн): было {@code extends BehaviorProjectileDispense} с
+	/** F13 (документация neo item/armor-компонентной модели): было {@code extends BehaviorProjectileDispense} с
 	 *  {@code getProjectileEntity(...)→null} (1.7.10, dead code) — neo {@code ProjectileDispenseBehavior} требует
 	 *  реального {@code ProjectileItem} в конструкторе (ProjectileDispenseBehavior.java:16), этот Item им не
 	 *  является — сведено к {@code DefaultDispenseItemBehavior}, приём уже принят {@code ItemArmorBase.java:203-208}. */

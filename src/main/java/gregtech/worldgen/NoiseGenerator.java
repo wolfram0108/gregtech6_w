@@ -48,7 +48,7 @@ public class NoiseGenerator {
 		else if (aWorld.dimension() == Level.NETHER) tDimOffset = -1;
 		else if (aWorld.dimension() == Level.END) tDimOffset = 1;
 		else {
-			// PORT-TODO(F6, NoiseGenerator dimensionId): модовое/неизвестное измерение — нет числового id в neo
+			// F6 impossible-1:1 (нет neo int-dim-id, vanilla overworld/nether/end работают 1:1): модовое/неизвестное измерение — нет числового id в neo
 			// (и в 1.7.10 он не был портируемой величиной для модовых измерений), offset оставлен 0.
 			tDimOffset = 0;
 		}
@@ -59,7 +59,7 @@ public class NoiseGenerator {
 		if (aWorld instanceof ServerLevel aServerLevel) {
 			mSeed = (int) aServerLevel.getSeed();
 		} else {
-			// PORT-TODO(F6, NoiseGenerator seed): aWorld не ServerLevel в этой точке вызова — источника seed нет,
+			// F6 functional-adapted (в рантайме aWorld=ServerLevel, seed берётся; else — защитный дефолт 42 как в оригинале): aWorld не ServerLevel в этой точке вызова — источника seed нет,
 			// mSeed остаётся дефолтным полем (42), как в оригинале до присвоения из мира.
 		}
 	}

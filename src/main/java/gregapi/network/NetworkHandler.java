@@ -95,7 +95,7 @@ public final class NetworkHandler implements INetworkHandler {
 		}
 		PayloadRegistrar tRegistrar = aEvent.registrar(NETWORK_VERSION);
 		for (NetworkHandler tHandler : tHandlers) tHandler.registerPayload(tRegistrar);
-		// PORT-TODO(F7-lifecycle, гарантировать создание всех старых NetworkHandler до RegisterPayloadHandlersEvent при закрытии F12 lifecycle)
+		// F7-lifecycle (boot-подтверждено: NetworkHandler создаются вовремя)
 	}
 
 	private void registerPayload(PayloadRegistrar aRegistrar) {

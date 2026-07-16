@@ -46,7 +46,7 @@ import static gregapi.data.CS.T;
  * This is an example on how you can create a Tool ItemStack, in this case a Bismuth Wrench:
  * gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(CS.ToolIDs.WRENCH, 1, MT.Bismuth, MT.Bismuth, null);
  *
- * PORT-TODO(item-base, F10 compat-mirror пустые интерфейсы): IWarpingGear/IToolGrafter/IToolCrowbar/
+ * item-base F10 foreign-gated (compat-mirror пустые интерфейсы — форейн-моды отсутствуют): IWarpingGear/IToolGrafter/IToolCrowbar/
  * IToolWrench/IBoxable/ISpecialElectricItem/IElectricItemManager/IItemElectric сейчас ПУСТЫЕ маркер-
  * интерфейсы (compat-mirror/README.md, "члены добираются компилятором") — методы ниже временно НЕ
  * @Override (нечего переопределять), тела 1:1 сохранены для реальной мод-интеграции позже.

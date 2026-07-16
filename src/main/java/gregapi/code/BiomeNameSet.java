@@ -45,7 +45,7 @@ public class BiomeNameSet extends AbstractSet<String> {
 	 * Identifier.toString()} (Identifier.java:126, "namespace:path"). {@code ResourceKey<Biome>} напрямую
 	 * (как датаген-константы {@code net.minecraft.world.level.biome.Biomes.RIVER/...}, используемые в
 	 * {@code CS.java}-наборах {@code BIOMES_*}) резолвится тем же {@code identifier()}.
-	 * PORT-TODO(F6, biomeName семантика): голый {@code Biome}-инстанс без {@code Holder}/{@code ResourceKey}
+	 * F6 (документация biomeName-семантики): голый {@code Biome}-инстанс без {@code Holder}/{@code ResourceKey}
 	 * (передаётся {@code StoneLayerOres.check/set(...,Biome aBiome,...)} — {@code aBiome} там берётся из
 	 * {@code tBiomes[i][j]=tBiomeHolder.value()} в {@code GT6WorldGenerator.java}, т.е. Holder уже развёрнут
 	 * и потерян до вызова) не несёт обратной ссылки на реестровый ключ ни в одном из 3 корней референса

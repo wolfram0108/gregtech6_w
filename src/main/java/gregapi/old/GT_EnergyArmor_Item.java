@@ -46,7 +46,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 
 /**
- * PORT-TODO(F13, item-base компонентный редизайн): было {@code extends ItemArmor} (1.7.10, armorType/renderIndex
+ * F13 (документация neo item/armor-компонентной модели): было {@code extends ItemArmor} (1.7.10, armorType/renderIndex
  * ctor-параметры + мутаторы setMaxStackSize/setMaxDamage/setNoRepair/setUnlocalizedName) — ItemArmor не существует
  * в 26.1.2 (0 в 3 корнях референса), тот же приём, что уже принят в {@code gregapi.item.ItemArmorBase} (см. этот
  * файл): {@code Item.Properties.humanoidArmor(ArmorMaterial,ArmorType)} + {@code .durability}/{@code .repairable}
