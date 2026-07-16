@@ -927,12 +927,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							OreDictItemData tData = OM.anydata_(tStack);
 							if (tData != null && tData.validMaterial()) {
 								if ((tData.mMaterial.mMaterial == MT.Bedrockium || tData.mMaterial.mMaterial == MT.Neutronium) && (tData.validPrefix() || tData.mByProducts.length <= 0)) {
-									// PORT-TODO(EVENTS, MobEffect-legacy-static-ids): 1.7.10 Potion-константы (MobEffect.moveSlowdown и т.п.) как
-									// static-поля с числовым .id удалены — современный MobEffect реестрово-Holder-based, без 1:1 (сверено,
-									// net.minecraft.world.effect.MobEffect.java + Mob-эффекты теперь через MobEffects.* Holder). Требует
-									// отдельного F#-решения по переносу PotionsGT/числовых id (смежно UT.Entities.applyPotion(int)).
-									// MobEffectInstance tEffect = null;
-									// UT.Entities.applyPotion(aPlayer, MobEffect.moveSlowdown.id, Math.max(140, ((tEffect = aPlayer.getActivePotionEffect(MobEffect.moveSlowdown))==null?0:tEffect.getDuration())), 3, F);
+									// EVENTS: 1.7.10 Potion.moveSlowdown → neo MobEffects.SLOWNESS (Holder, существует — ренейм, не удаление).
+									// getActivePotionEffect→getEffect. Восстановлено 1:1 (applyPotion(Entity,Holder,...) уже поддержан, UT.java:3036).
+									net.minecraft.world.effect.MobEffectInstance tEffect = null;
+									UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.SLOWNESS, Math.max(140, ((tEffect = aPlayer.getEffect(net.minecraft.world.effect.MobEffects.SLOWNESS))==null?0:tEffect.getDuration())), 3, F);
 								}
 								if (tData.mMaterial.mMaterial == MT.Craponite) {
 									tCraponite++;
@@ -952,8 +950,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					if ("Bear989Sr".equalsIgnoreCase(aPlayer.getScoreboardName())) {
 						if (tCraponite > 0) {
 							// Crazy started to give Bear her Craponite Arrows, lets not let him have those.
-							// PORT-TODO(EVENTS, MobEffect-legacy-static-ids): MobEffect.poison (см. отметку выше по moveSlowdown) — без 1:1.
-							// UT.Entities.applyPotion(aPlayer, MobEffect.poison, 1200, tCraponite, T);
+							// EVENTS: Potion.poison → neo MobEffects.POISON (Holder, существует). Восстановлено 1:1.
+							UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.POISON, 1200, tCraponite, T);
 						}
 						if (--BEAR_INVENTORY_COOL_DOWN < 0 && tEmptySlots < 4 && aPlayer.level() instanceof ServerLevel aServerLevel) {
 							BEAR_INVENTORY_COOL_DOWN = 100;
@@ -1075,9 +1073,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			} else
 			if (!ItemsGT.NO_TOOL_FATIQUE.contains(aOriginal, T) && (aOriginal.is(ItemTags.SWORDS) || aOriginal.is(ItemTags.AXES) || aOriginal.is(ItemTags.PICKAXES) || aOriginal.is(ItemTags.SHOVELS) || aOriginal.is(ItemTags.HOES))) {
 				// If you work so hard that your Tool breaks, you should probably take a break yourself. :P
-				// PORT-TODO(EVENTS, MobEffect-legacy-static-ids): MobEffect.weakness/.digSlowdown (см. отметку выше по moveSlowdown) — без 1:1.
-				// UT.Entities.applyPotion(aPlayer, MobEffect.weakness   ,  300, 2, F);
-				// UT.Entities.applyPotion(aPlayer, MobEffect.digSlowdown, 1200, 2, F);
+				// EVENTS: Potion.weakness/digSlowdown → neo MobEffects.WEAKNESS/MINING_FATIGUE (Holder, существуют). Восстановлено 1:1.
+				UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.WEAKNESS      ,  300, 2, F);
+				UT.Entities.applyPotion(aPlayer, net.minecraft.world.effect.MobEffects.MINING_FATIGUE, 1200, 2, F);
 			}
 		}
 		//
