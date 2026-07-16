@@ -462,7 +462,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ItemStack getRotten(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemRottable) return ((IItemRottable)tTileEntityContainer.mTileEntity).getRotten(aStack);
-		// было RottingUtil.rotting(aStack, this) — this больше не IFluidHandlerItem (см. class-level PORT-TODO выше);
+		// было RottingUtil.rotting(aStack, this) — this больше не IFluidHandlerItem (F5 item-capability, шов на class-level выше);
 		// 1-арг перегрузка делает тот же instanceof-чек сама (aStack.getItem() instanceof IFluidHandlerItem,
 		// IItemRottable.java:46) над тем же объектом (this==aStack.getItem() для этого типа) — тот же эффект, безопасно F.
 		return IItemRottable.RottingUtil.rotting(aStack);

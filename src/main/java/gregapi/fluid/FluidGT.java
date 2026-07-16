@@ -138,14 +138,11 @@ public class FluidGT {
 		BY_FLUID_CACHE = null;
 	}
 
-	// PORT-TODO(F5, post-init защита значений): оригинал (gregtech6/src/main/java/gregapi/fluid/FluidGT.java:49-52)
-	// реализовывал Runnable и регистрировал себя в GT.mAfterPostInit/mAfterServerStarted +
-	// GAPI_POST.mAfterPostInit/mAfterServerStarted — защита "Ensure that no Mod fucked up the Values"
-	// (после PostInit/старта сервера принудительно переустанавливает mGas/mTemperature на случай, если
-	// сторонний мод их подменил через FluidRegistry). Эти списки колбэков (GT/GAPI_POST) в порте пока
-	// не существуют — они часть отдельного, ещё не портированного механизма пост-инициализации, не F5.
-	// До его появления защитный ре-апплай значений не воспроизведён; риск минимален, т.к. в 26.1.2 нет
-	// глобального мутируемого FluidRegistry, который сторонний мод мог бы изменить под ногами.
+	// F5 SUPERSEDED (не заглушка): оригинал (FluidGT.java:49-52) регистрировал Runnable в GT.mAfterPostInit/
+	// mAfterServerStarted — принудительно переустанавливал mGas/mTemperature ПОСЛЕ пост-инита ("Ensure that no Mod
+	// fucked up the Values"): защита от подмены значений сторонним модом через ГЛОБАЛЬНЫЙ мутируемый Forge FluidRegistry.
+	// В neo 26.1.2 такого реестра НЕТ (жидкости — неизменяемые registry-объекты; чужой мод не может подменить mGas/
+	// mTemperature под ногами) → сама угроза устранена движком, защитный ре-апплай не нужен (осознанно не воспроизведён).
 
 	private BaseFlowingFluid.Properties fluidProperties() {
 		// PORT-TODO(F5, поверхность B): .block()/.bucket() (decisions/F5-fluids.md §3,5)

@@ -1210,7 +1210,23 @@ public class ST {
 				// сосед не починен отдельным заходом.
 				TwilightTreasureReplacer.generate((net.minecraft.world.Container)aInv, aLoot);
 			} else {
-				// PORT-TODO(stats-loot, chest-loot): WeightedRandomChestContent.generateChestContents(aRandom, ChestGenHooks.getItems(aLoot, aRandom), aInv, ChestGenHooks.getCount(aLoot, aRandom));
+				// F-loot: было WeightedRandomChestContent.generateChestContents(aRandom, ChestGenHooks.getItems(aLoot, aRandom),
+				// aInv, ChestGenHooks.getCount(aLoot, aRandom)) — ChestGenHooks/WeightedRandomChestContent удалены (neo loot
+				// data-driven). aLoot (1.7.10-имя) → индекс в LOOT_TABLES_VANILLA → VANILLA_LOOT_KEYS (1:1 порядок, см. generateOneVanillaLoot)
+				// → LootTable.fill(Container, LootParams(CHEST), seed). Дефолт SIMPLE_DUNGEON для неизвестного имени.
+				net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+				if (tServer != null) {
+					net.minecraft.server.level.ServerLevel tLevel = tServer.overworld();
+					if (tLevel != null) {
+						int tIndex = LOOT_TABLES_VANILLA.indexOf(aLoot);
+						net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> tKey = (tIndex >= 0 && tIndex < VANILLA_LOOT_KEYS.size()) ? VANILLA_LOOT_KEYS.get(tIndex) : net.minecraft.world.level.storage.loot.BuiltInLootTables.SIMPLE_DUNGEON;
+						net.minecraft.world.level.storage.loot.LootTable tTable = tServer.reloadableRegistries().getLootTable(tKey);
+						net.minecraft.world.level.storage.loot.LootParams tParams = new net.minecraft.world.level.storage.loot.LootParams.Builder(tLevel)
+							.withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, net.minecraft.world.phys.Vec3.ZERO)
+							.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST);
+						tTable.fill(aInv, tParams, aRandom.nextLong());
+					}
+				}
 			}
 			for (int i = 0, j = aInv.getContainerSize(); i < j; i++) {
 				ItemStack tStack = aInv.getItem(i);
