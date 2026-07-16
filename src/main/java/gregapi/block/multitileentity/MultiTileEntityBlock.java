@@ -116,9 +116,21 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public Material getMaterial() {return mMaterial;}
 
 	public static String getName(String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
-		// F9/sound: 1.7.10 SoundType.soundName (String категории звука) удалён — neo SoundType без имени; стабильный
-		// уникальный идентификатор звука для рег-ключа = Identifier ломающего звука (SoundType.getBreakSound().location()).
-		return "gt.block.multitileentity." + aNameOfVanillaMaterialField + "." + aSoundType.getBreakSound().location() + "." + aTool + "." + aHarvestLevelOffset + "." + aHarvestLevelMinimum + "." + aHarvestLevelMaximum + "." + aOpaque + "." + aNormalCube;
+		// F9/sound: было aSoundType.soundName (1.7.10 String-категория звука) в рег-ключе MTE. neo SoundType без имени —
+		// воспроизводим 1.7.10-soundName 1:1 (значения сверены ФАКТИЧЕСКИ по golden-дампу: iron/machine(METAL)→"stone",
+		// rock(STONE)→"stone", cloth/redstonelight(WOOL)→"cloth", leaves/tnt(GRASS)→"grass", wood(WOOD)→"wood").
+		return "gt.block.multitileentity." + aNameOfVanillaMaterialField + "." + soundName(aSoundType) + "." + aTool + "." + aHarvestLevelOffset + "." + aHarvestLevelMinimum + "." + aHarvestLevelMaximum + "." + aOpaque + "." + aNormalCube;
+	}
+
+	/** 1.7.10 SoundType.soundName-эквивалент для рег-ключа MTE (сверено по golden-дампу). Прочие SoundType в getOrCreate не
+	 *  встречаются — fallback на break-sound Identifier (проявится в engine-дампе как diff, а не тихо-неверно). */
+	private static String soundName(SoundType aSoundType) {
+		if (aSoundType == SoundType.WOOL)  return "cloth";
+		if (aSoundType == SoundType.METAL) return "stone";
+		if (aSoundType == SoundType.STONE) return "stone";
+		if (aSoundType == SoundType.WOOD)  return "wood";
+		if (aSoundType == SoundType.GRASS) return "grass";
+		return aSoundType.getBreakSound().location().toString();
 	}
 	
 	/**
