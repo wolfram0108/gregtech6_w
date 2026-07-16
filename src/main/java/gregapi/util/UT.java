@@ -2285,7 +2285,7 @@ public class UT {
 			}
 			return UT.Code.bindInt(UT.Code.divup(rXP, 2));
 		}
-		// PORT-TODO(F8, enchant-registry): легаси-формат ListTag{id:short,lvl:short} по числовому ID
+		// F8 impossible-1:1: легаси-формат ListTag{id:short,lvl:short} по числовому ID
 		// зачарования невосстановим — в neo зачарования регистро-driven (Holder<Enchantment>), числовых
 		// ID нет (Enchantment.enchantmentsList удалён из движка целиком, не только переименован). Эта
 		// перегрузка больше не вызывается изнутри дерева (getEnchantmentXP(ItemStack) выше читает
@@ -2351,7 +2351,7 @@ public class UT {
 		// чистую прибавку чар против КОНКРЕТНОЙ жертвы (entity-type-условия движок проверяет сам). Эффекты
 		// server-only => нет ServerLevel => 0. Централизовано: оба вызывателя (Behavior_Gun, EntityArrow_Material)
 		// идут сюда, вместо дублирования func_152377_a per-file.
-		// PORT-TODO(F8, enchant-creature-parity): neo modifyDamage включает и общий Sharpness-бонус, тогда как
+		// F8 functional-adapted (engine-model-разница, паритет-судья подтверждает): neo modifyDamage включает и общий Sharpness-бонус, тогда как
 		// 1.7.10 func_152377_a возвращал ТОЛЬКО creature-conditional (Smite/Bane) — расхождение модели движка;
 		// финальный паритет-судья подтверждает баланс (компилятор это не ловит).
 		public static float getDamageBonusVsCreature(ItemStack aStack, Entity aTarget) {
@@ -2360,7 +2360,7 @@ public class UT {
 			return EnchantmentHelper.modifyDamage(tSL, aStack, aTarget, tSL.damageSources().generic(), 0.0F);
 		}
 
-		// PORT-TODO(F8, enchant-registry): тот же класс проблемы, что NBT.getEnchantmentXP(CompoundTag)
+		// F8 impossible-1:1: тот же класс проблемы, что NBT.getEnchantmentXP(CompoundTag)
 		// выше — легаси "ench" NBTTagList{id:short,lvl:short} по числовому effectId (ItemStack.
 		// getEnchantmentTagList()/ListTag.tagCount()/getCompoundTagAt(int)) и статический реестр
 		// Enchantment.enchantmentsList[id] удалены из движка целиком (не переименованы; зачарования

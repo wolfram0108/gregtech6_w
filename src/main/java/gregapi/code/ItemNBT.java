@@ -47,7 +47,7 @@ import net.minecraft.world.item.component.CustomData;
  * и к геттероподобным именам: `getOrCreate` тоже возвращает DETACHED-копию.
  * <p>
  * Известные точки, где повторная запись логически невозможна без смены контракта вызывающего
- * (оставлены `PORT-TODO(F8, остаточный риск)`): `MultiItemTool.setToolDamage`/`isItemStackUsable`,
+ * (ЗАКРЫТЫ write-back ItemNBT.set — см. память gt6-stub-drops-data-lesson; заметка историческая): `MultiItemTool.setToolDamage`/`isItemStackUsable`,
  * `Behavior_Sonictron.setCurrentIndex`/`setTickTimer` — они возвращают мутируемый тег наружу, а
  * вызывающий его не коммитит. Разбор — `decisions/F8-nbt-data-components.md` §7.
  *

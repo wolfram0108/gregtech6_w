@@ -132,7 +132,7 @@ public class EnchantsGT6 {
 	 * <li>{@code supportedItems}: {@code ItemTags.WEAPON_ENCHANTABLE} (3 damage-чара, оригинал только
 	 *     {@code addEnchantmentForDamage}) / {@code ItemTags.EQUIPPABLE_ENCHANTABLE} (Radioactivity,
 	 *     оригинал — tools+damage+ranged+armors, широкий охват) — функционально не влияет на реальное
-	 *     GT6-назначение чара предмету (материал-driven, см. PORT-TODO(F8, enchant-registry) в
+	 *     GT6-назначение чара предмету (материал-driven, см. F8-заметку в
 	 *     {@code Enchantment_WerewolfDamage} и др.), только на легальность vanilla {@code /enchant}.</li>
 	 * </ul>
 	 */
