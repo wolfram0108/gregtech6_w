@@ -150,7 +150,11 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	// neo валидирует пустой varargs valid-блоков → «pass Set.of() instead of an empty varag». Плейсхолдер намеренно без
 	// valid-блоков (канонические инстансы создаются рефлексией, не движком) → передаём Set.of() (осознанно пустой).
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType<TileEntityBase01Root>((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> null, java.util.Set.<Block>of()) {
+	// F-tileentity-construction (LOAD-путь): neo world-load зовёт supplier для реконструкции TE из NBT. Прежний ->null
+	// падал NPE (BlockEntity.loadStatic:206) на ЛЮБОМ сохранённом GT6-TE. Диспетчер по блоку: PrefixBlock-руды дают
+	// PrefixBlockTileEntity(pos,state) СРАЗУ (класс выводится из блока; loadAdditional дочитает mMetaData=материал); прочие
+	// GT6-TE (MTE-машины, класс = sub-ID из NBT, недоступен здесь) → TileEntityLoaderStub, реконструкция на ChunkEvent.Load.
+	public static BlockEntityType<TileEntityBase01Root> createType() {return MTE_TYPE = new BlockEntityType<TileEntityBase01Root>((BlockEntityType.BlockEntitySupplier<TileEntityBase01Root>)(aPos, aState) -> aState.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock ? new gregapi.block.prefixblock.PrefixBlockTileEntity(aPos, aState) : new TileEntityLoaderStub(aPos, aState), java.util.Set.<Block>of()) {
 		// F-tileentity-construction: MTE_TYPE — ОБЩИЙ placeholder-тип всей GT6-TE-иерархии (динамические блоки, valid-блоки
 		// не применимы). neo BlockEntityType.isValid(state) = validBlocks.contains(block) → пустой Set → всегда false →
 		// LevelChunk.setBlockEntity отклоняет TE («state ... does not allow it», TE не регистрируется). Override → true
