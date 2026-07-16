@@ -209,4 +209,8 @@ class MechanicsTest {
 		assertTrue(tProcessed > 0, "НИ ОДНА машина не прогнала рецепт через полный тик-цикл до выхода в слот (обработка сломана)");
 		assertTrue(tProcessed >= tTested / 2, "машина-обработка: провалов больше половины (обработали=" + tProcessed + " из " + tTested + ")");
 	}
+
+	// (Убран headless iconResourceProbe: getIconIndex требует client-инициализированные TextureSet → в EphemeralTestServer
+	//  NPE-ит для 139/140 предметов. Скан рендера item-иконок достижим ТОЛЬКО в client-контексте — probe-оснастка встроена в
+	//  GT6ItemModel.probeItemIcons на ModelEvent.BakingCompleted (сработает в интерактивном runClient пользователя).)
 }
