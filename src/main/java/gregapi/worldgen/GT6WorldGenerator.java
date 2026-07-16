@@ -73,7 +73,7 @@ public class GT6WorldGenerator {
 				// Реальный neo-путь: `LevelReader.getBiome(BlockPos): Holder<Biome>` (LevelReader.java:42-43,
 				// `.value()` — используемый паттерн тот же, что и в самом Level.java:952), который в отличие от
 				// 1.7.10 не возвращает null для загруженного чанка — фолбэк на hell/sky/plains поэтому исчез
-				// (недостижим на практике; см. PORT-TODO ниже, если когда-либо словим NPE/ISE здесь). Имя биома
+				// (недостижим на практике; см. F6-примечание ниже, если когда-либо словим NPE/ISE здесь). Имя биома
 				// (для BiomeNameSet) берётся из самого Holder через `unwrapKey()` (Holder.java:40, паттерн
 				// `unwrapKey().map(k->k.identifier().toString())` — как в самом Holder.java:47) — биом
 				// НЕ built-in реестр (data-driven/datapack), `BuiltInRegistries.BIOME` не существует.
@@ -89,7 +89,7 @@ public class GT6WorldGenerator {
 				// `Raid.java:675`). ПОКОЛОННО (i,j) — не одна высота на весь чанк, как было бы при одиночном
 				// `tBiomeY` (высота поверхности разная в каждой из 16x16 колонок).
 				for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {
-					// PORT-TODO(F6, биом-грид): .value() может бросить, если Holder не bound — на загруженном
+					// F6-примечание (не заглушка; код ниже работает): .value() может бросить, если Holder не bound — на загруженном
 					// чанке такого практически не бывает, отдельный try/catch не заводим (упадёт в общий catch
 					// вызывающего WorldgenObject, если вообще случится).
 					int tX = mMinX+i, tZ = mMinZ+j;
@@ -108,7 +108,7 @@ public class GT6WorldGenerator {
 					} catch (Throwable e) {
 						e.printStackTrace(ERR);
 					}
-					// PORT-TODO(F6, чанк-корраптион-хак): было `if (tChunk.lastSaveTime==Long.MAX_VALUE) {
+					// F6 impossible-1:1 (переносить нечего): было `if (tChunk.lastSaveTime==Long.MAX_VALUE) {
 					// tChunk.hasEntities=tChunk.isModified=F; throw new RuntimeException(...);}` — защита от
 					// конкретного 1.7.10-бага повреждения чанка через сигнальное значение lastSaveTime.
 					// `lastSaveTime`/`hasEntities`/`isModified` как публичные поля LevelChunk удалены (нет
@@ -142,7 +142,7 @@ public class GT6WorldGenerator {
 				// (EntityGetter.java:50, уже без unchecked-каста), конструктор `AABB(double x6)` (AABB.java:23),
 				// `Entity.discard()` (Entity.java:409, `remove(RemovalReason.DISCARDED)`).
 				for (ItemEntity tEntity : mWorld.getEntitiesOfClass(ItemEntity.class, new AABB(mMinX-32, 0, mMinZ-32, mMinX+48, 256, mMinZ+48))) tEntity.discard();
-				// PORT-TODO(F6, precipitationHeightMap): было `Arrays.fill(tChunk.precipitationHeightMap,-999)` —
+				// F6 impossible-1:1 (поле удалено; neo Heightmap пересчитывает сам, ручной сброс не нужен): было `Arrays.fill(tChunk.precipitationHeightMap,-999)` —
 				// обходной 1.7.10-хак против убийства снегом пеньков деревьев. Поле удалено, современный
 				// Heightmap-механизм (`net.minecraft.world.level.levelgen.Heightmap`) считается движком заново
 				// на лету — прямого ручного "сброса" в neo нет и, судя по всему, не нужен (движок сам
@@ -164,13 +164,13 @@ public class GT6WorldGenerator {
 		// NoiseGenerator.java). Ветка `case -2147483648` (Integer.MIN_VALUE) была сигнальным значением "мир
 		// недогружен/провайдер не готов" — в neo `aWorld.dimension()` для валидного `Level`-объекта всегда
 		// возвращает настоящий `ResourceKey<Level>`, такого сигнального состояния не бывает — ветка не имеет
-		// аналога, PORT-TODO ниже. Три ванильных ветки сверены на реальные `Level.OVERWORLD/NETHER/END`
+		// аналога (см. F6-примечание ниже). Три ванильных ветки сверены на реальные `Level.OVERWORLD/NETHER/END`
 		// (Level.java:95-97).
 		ResourceKey<Level> tDim = aWorld.dimension();
 		if (tDim == Level.OVERWORLD) {generate(new WorldGenContainer(TFC ? GEN_TFC : PFAA ? GEN_PFAA : GENERATE_STONE ? GEN_GT : GEN_OVERWORLD, TFC ? ORE_TFC : PFAA ? ORE_PFAA : GENERATE_STONE ? null : ORE_OVERWORLD, DIM_OVERWORLD, aWorld, aX, aZ)); return;}
 		if (tDim == Level.NETHER   ) {generate(new WorldGenContainer(GEN_NETHER, ORE_NETHER, DIM_NETHER, aWorld, aX, aZ)); return;}
 		if (tDim == Level.END      ) {generate(new WorldGenContainer(GEN_END   , ORE_END   , DIM_END   , aWorld, aX, aZ)); return;}
-		// PORT-TODO(F6, dimensionId==Integer.MIN_VALUE): сигнальная ветка "мир не готов" из 1.7.10 не имеет
+		// F6 impossible-1:1 (сигнал «мир не готов» из 1.7.10 без neo-аналога): сигнальная ветка "мир не готов" из 1.7.10 не имеет
 		// аналога в neo (см. комментарий выше) — намеренно опущена, а не угадана.
 
 		if (WD.dimENVM         (aWorld)) {generate(new WorldGenContainer(GENERATE_STONE ? GEN_ENVM_GT           : GEN_ENVM          , GENERATE_STONE ? null : ORE_ENVM          , DIM_ENVM          , aWorld, aX, aZ)); return;}

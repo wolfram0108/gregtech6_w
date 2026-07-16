@@ -1419,13 +1419,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				return;
 			}
 			if (BlocksGT.stoneToBrokenOres.containsKey(tBlock) || BlocksGT.stoneToNormalOres.containsKey(tBlock) || BlocksGT.stoneToSmallOres.containsKey(tBlock)) {
-				// PORT-TODO(EVENTS, Block.getMaterial): vanilla WD.getMaterial(Block) (1.7.10) удалён — в neo классификация материала не
-				// выражена простым Material-объектом на Block (сверено, net.minecraft.world.level.block.Block.java — метода нет); gregapi.block.Material
-				// (свой класс, тот же импорт) не содержит обратного моста Block→Material. Различение SAND/ROCK-множителя отложено — консервативно ROCK.
-				// if (WD.getMaterial(aBlock2) == Material.sand || WD.getMaterial(aBlock2) == Material.clay || WD.getMaterial(aBlock2) == Material.grass || WD.getMaterial(aBlock2) == Material.ground) {
-				// 	aEvent.setNewSpeed((float)(aEvent.getNewSpeed() / HARDNESS_MULTIPLIER_SAND));
-				// 	return;
-				// }
+				// F9 (1:1): SAND/ROCK-множитель по материалу нижнего блока. WD.getMaterial(Block) РЕАЛИЗОВАН (Block→gregapi.Material
+				// мост, WD.java:474) — стух-тег «удалён» снят.
+				if (WD.getMaterial(aBlock2) == gregapi.block.Material.sand || WD.getMaterial(aBlock2) == gregapi.block.Material.clay || WD.getMaterial(aBlock2) == gregapi.block.Material.grass || WD.getMaterial(aBlock2) == gregapi.block.Material.ground) {
+					aEvent.setNewSpeed((float)(aEvent.getNewSpeed() / HARDNESS_MULTIPLIER_SAND));
+					return;
+				}
 				aEvent.setNewSpeed((float)(aEvent.getNewSpeed() / HARDNESS_MULTIPLIER_ROCK));
 				return;
 			}

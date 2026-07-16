@@ -888,7 +888,7 @@ public class ST {
 		Block aBlock = aTo.getBlock();
 		if (aBlock instanceof BaseRailBlock) {
 			// Do not eject shit onto Rails directly.
-		} else if (F /* PORT-TODO(этап3, F9): WD.getMaterial(aBlock) == Material.lava — WD.getMaterial(Block) удалён в neo, нет обратного запроса материала у произвольного Block (REMAP-RULES §C5) */ || aBlock instanceof FireBlock || (invalid(aBlock) && aTo.mY < 1)) {
+		} else if (WD.getMaterial(aBlock) == gregapi.block.Material.lava /* F9 (1:1): не выбрасывать предметы на лаву; WD.getMaterial реализован (стух-тег снят) */ || aBlock instanceof FireBlock || (invalid(aBlock) && aTo.mY < 1)) {
 			for (int aSlotFrom : aSlotsFrom) {
 				ItemStack aStackFrom = aFrom.mTileEntity.getItem(aSlotFrom);
 				if (aStackFrom != null && aMinMove <= aStackFrom.getCount() && (aFilter == null || aFilter.contains(aStackFrom, T) != aInvertFilter) && canTake(aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) {
