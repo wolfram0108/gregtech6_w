@@ -380,9 +380,14 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было randomDisplayTick(World,x,y,z,Random) -> Block.animateTick(BlockState,Level,BlockPos,RandomSource) [Block.java:355]
 	@Override public final void animateTick(BlockState aState, Level aWorld, BlockPos aPos, RandomSource aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_RandomDisplayTick) ((IMTE_RandomDisplayTick)aTileEntity).randomDisplayTick(aRandom); else super.animateTick(aState, aWorld, aPos, aRandom);}
 	public final void onBlockExploded(Level aWorld, int aX, int aY, int aZ, Explosion aExplosion) {if (aWorld.isClientSide()) return; BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity); if (aTileEntity instanceof IMTE_OnBlockExploded) ((IMTE_OnBlockExploded)aTileEntity).onExploded(aExplosion); else WD.set(aWorld, aX, aY, aZ, NB, 0, 3);}
-	// PORT-TODO(F13/F16, block-getPickBlock-removed): 1.7.10 vanilla Block.getPickBlock удалён из neo целиком
-	// (не найден ни в одном из 3 корней; нет override-точки движка - middle-click pick теперь идёт через
-	// BlockState/Item.getCloneItemStack по-иному пути). Методы остаются обычными GT6-методами (не dispatch-ятся движком).
+	// F13: 1.7.10 Block.getPickBlock(HitResult,World,x,y,z,Player) удалён — neo middle-click идёт через
+	// IBlockExtension.getCloneItemStack(LevelReader,BlockPos,BlockState,boolean,Player). Ниже — этот neo-хук
+	// делегирует в GT6-getPickBlock (TE-диспетчер IMTE_GetPickBlock), восстанавливая поведение 1:1. GT6-методы сохранены.
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+		BlockEntity tTE = WD.te(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		ItemStack r = tTE instanceof IMTE_GetPickBlock ? ((IMTE_GetPickBlock)tTE).getPickBlock(null) : null;
+		return ST.valid(r) ? r : super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer);
+	}
 	public final ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetPickBlock?((IMTE_GetPickBlock)aTileEntity).getPickBlock(aTarget):null;}
 	public final ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ                      ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetPickBlock?((IMTE_GetPickBlock)aTileEntity).getPickBlock(aTarget):null;}
 	@Override public final ItemStack getItemStackFromBlock(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetStackFromBlock?((IMTE_GetStackFromBlock)aTileEntity).getStackFromBlock(aSide):null;}

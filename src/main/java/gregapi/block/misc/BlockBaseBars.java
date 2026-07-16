@@ -158,8 +158,8 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return F;}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}
 
-	// PORT-TODO(F13/F16, block-getPickBlock-removed): 1.7.10 vanilla Block.getPickBlock удалён из neo целиком
-	// (не найден ни в одном из 3 корней; нет override-точки движка). Метод остаётся обычным GT6-методом.
+	// F13: getPickBlock возвращал ST.make(this,1,0) = ровно то, что даёт neo-дефолт getCloneItemStack (block-item meta0) →
+	// отдельный override не нужен, поведение 1:1 покрыто дефолтом. GT6-метод сохранён для внутренних вызовов.
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {return ST.make(this, 1, 0);}
 	
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}

@@ -456,9 +456,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return getMetaDataValue(aWorld, aX, aY, aZ);
 	}
 	
-	// PORT-TODO(F13/F16, block-getPickBlock-removed): 1.7.10 vanilla Block.getPickBlock удалён из neo целиком
-	// (не найден ни в одном из 3 корней; нет override-точки движка). Метод остаётся обычным GT6-методом
-	// (не dispatch-ируется движком).
+	// F13: 1.7.10 Block.getPickBlock удалён — neo middle-click через IBlockExtension.getCloneItemStack; ниже neo-хук
+	// делегирует в GT6-getPickBlock (getItemStackFromBlock), восстанавливая поведение 1:1. GT6-метод сохранён.
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+		ItemStack r = getItemStackFromBlock(aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), SIDE_UNKNOWN);
+		return ST.valid(r) ? r : super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer);
+	}
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		return getItemStackFromBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN);
 	}

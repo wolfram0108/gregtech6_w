@@ -133,8 +133,11 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	@Override public boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {return F;}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0)); aList.add(ST.make(aItem, 1, 6)); aList.add(ST.make(aItem, 1, 7)); aList.add(ST.make(aItem, 1, 8)); aList.add(ST.make(aItem, 1, 14)); aList.add(ST.make(aItem, 1, 15));}
 
-	// PORT-TODO(F13/F16, block-getPickBlock-removed): 1.7.10 vanilla Block.getPickBlock удалён из neo целиком
-	// (не найден ни в одном из 3 корней; нет override-точки движка). Метод остаётся обычным GT6-методом.
+	// F13: neo middle-click через IBlockExtension.getCloneItemStack — делегируем в GT6-getPickBlock (meta-specific), 1:1.
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, boolean aIncludeData, Player aPlayer) {
+		int aMeta = WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);
+	}
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {
 		int aMeta = WD.meta(aWorld, aX, aY, aZ);
 		return ST.make(this, 1, (aMeta & 7) < 6 ? aMeta & 8 : aMeta);
