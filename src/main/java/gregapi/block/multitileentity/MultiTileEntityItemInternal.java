@@ -23,7 +23,6 @@ import net.minecraft.core.BlockPos;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.TagData;
@@ -151,7 +150,6 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
 		if (aTab instanceof CreativeTab) {
@@ -681,10 +679,10 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public int getSpriteNumber() {return 0;}
-	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aRegister) {/**/}
+	public void registerIcons(IIconRegister aRegister) {/**/}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было itemIcon=Items.BREAD.getIconFromDamage(0) (фикс eating-particle 1.7.10) —
 	// и поле Item.itemIcon, и метод Item.getIconFromDamage(int) удалены в 26.1.2 целиком, замены нет до Фазы C.
-	@OnlyIn(Dist.CLIENT) public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) удалён из neo (НЕ @Override; было itemIcon для eating-particle). MTEItemInternal — BlockItem, рендерится моделью блока; GT6ItemModel пропускает BlockItem'ы. Defensive throw.");}
+	public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) удалён из neo (НЕ @Override; было itemIcon для eating-particle). MTEItemInternal — BlockItem, рендерится моделью блока; GT6ItemModel пропускает BlockItem'ы. Defensive throw.");}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}

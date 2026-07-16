@@ -24,7 +24,6 @@ import static gregapi.data.CS.*;
 import java.util.ArrayList;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.LH;
 import gregapi.util.ST;
@@ -156,7 +155,6 @@ public class GT_BaseCrop extends CropCard {
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public void registerSprites(IIconRegister iconRegister) {
 		textures = new IIcon[maxSize()];
 		for (int i = 1; i <= textures.length; i++) textures[i - 1] = iconRegister.registerIcon(RES_PATH_BLOCK + "crop/"+name()+"/"+i);

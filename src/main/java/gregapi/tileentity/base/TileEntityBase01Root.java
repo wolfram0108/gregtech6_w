@@ -30,7 +30,6 @@ import gregapi.fluid.FluidTankInfo;
 import appeng.api.movable.IMovableTile;
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetLightValue;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_IsProvidingStrongPower;
@@ -601,7 +600,6 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	public float getExplosionResistance2(Entity aExploder, double aExplosionX, double aExplosionY, double aExplosionZ) {return getExplosionResistance2();}
 	public float getExplosionResistance2() {return 0;}
 	
-	@OnlyIn(Dist.CLIENT)
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return null;}
 	@Override public Object getGUIServer(int aGUIID, Player aPlayer) {return null;}
 	
@@ -621,14 +619,14 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 * параметр ретипирован в {@code Object}, как в центральных {@code gregapi.render.IRenderedBlockObject}/
 	 * {@code IRenderedBlockObjectSideCheck} (иначе эти default-реализации не удовлетворяют абстрактные
 	 * методы интерфейсов, и КАЖДЫЙ конкретный MultiTileEntity-класс должен дублировать их сам). */
-	@OnlyIn(Dist.CLIENT) public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
-	@OnlyIn(Dist.CLIENT) public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
-	@OnlyIn(Dist.CLIENT) public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
-	@OnlyIn(Dist.CLIENT) public boolean renderFullBlockSide(Block aBlock, Object aRenderer, byte aSide) {return shouldSideBeRendered(aSide);}
-	@OnlyIn(Dist.CLIENT) public final IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return ERROR_MESSAGE == null ? passRenderingToObject2(aStack) : ErrorRenderer.INSTANCE;}
-	@OnlyIn(Dist.CLIENT) public final IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {return ERROR_MESSAGE == null ? passRenderingToObject2(aWorld, aX, aY, aZ) : ErrorRenderer.INSTANCE;}
-	@OnlyIn(Dist.CLIENT) public IRenderedBlockObject passRenderingToObject2(ItemStack aStack) {return (IRenderedBlockObject)this;}
-	@OnlyIn(Dist.CLIENT) public IRenderedBlockObject passRenderingToObject2(BlockGetter aWorld, int aX, int aY, int aZ) {return (IRenderedBlockObject)this;}
+	public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
+	public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
+	public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered) {return T;}
+	public boolean renderFullBlockSide(Block aBlock, Object aRenderer, byte aSide) {return shouldSideBeRendered(aSide);}
+	public final IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return ERROR_MESSAGE == null ? passRenderingToObject2(aStack) : ErrorRenderer.INSTANCE;}
+	public final IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {return ERROR_MESSAGE == null ? passRenderingToObject2(aWorld, aX, aY, aZ) : ErrorRenderer.INSTANCE;}
+	public IRenderedBlockObject passRenderingToObject2(ItemStack aStack) {return (IRenderedBlockObject)this;}
+	public IRenderedBlockObject passRenderingToObject2(BlockGetter aWorld, int aX, int aY, int aZ) {return (IRenderedBlockObject)this;}
 	
 	public void updateTanks() {/**/}
 	public void updateInventory() {/**/}

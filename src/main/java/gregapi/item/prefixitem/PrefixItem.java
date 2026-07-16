@@ -20,7 +20,6 @@
 package gregapi.item.prefixitem;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
 import gregapi.code.ModData;
 import gregapi.data.*;
@@ -136,7 +135,7 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	
 	public int getSpriteNumber() {return 1;}
 	public int getRenderPasses(int metadata) {return 2;}
-	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister) {/**/}
+	public void registerIcons(IIconRegister aIconRegister) {/**/}
 	public boolean requiresMultipleRenderPasses() {return mPrefix.mIconIndexItem >= 0;}
 	public Identifier getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
 	public Identifier getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}

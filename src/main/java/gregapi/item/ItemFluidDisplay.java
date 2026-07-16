@@ -20,7 +20,6 @@
 package gregapi.item;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
 import gregapi.code.ItemNBT;
@@ -212,7 +211,6 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public void registerIcons(IIconRegister aIconRegister) {
 		// Useful hack to register Block Icons. That is why the Fluid Display Item has to always exist.
 		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI) {
@@ -239,7 +237,6 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	// Fluid-render API (IIcon/getBlock/getStillIcon), 0 замены в 3 корнях (в neo — атлас спрайтов через
 	// baked-модели/IClientFluidTypeExtensions, не точечный метод); рендер = Фаза C.
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public IIcon getIconFromDamage(int aMeta) {
 		return null;
 	}
@@ -247,7 +244,6 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	// PORT-TODO(F3, render): 1.7.10 Fluid.getBlock()/Block.getRenderColor(int)/Fluid.getColor() — тот же
 	// удалённый Forge Fluid-render API, что и в getIconFromDamage выше; рендер = Фаза C.
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
 		return 16777215;
 	}
@@ -271,14 +267,12 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {
 		Fluid aFluid = FL.fluid(ST.meta_(aStack));
 		return aFluid != null && FluidsGT.ENCHANTED_EFFECT.contains(FL.regName(aFluid));
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
 		// PORT-TODO(F3/F5, FluidRegistry.getMaxID): 1.7.10 FluidRegistry.getMaxID() (плотный int-id проход) —

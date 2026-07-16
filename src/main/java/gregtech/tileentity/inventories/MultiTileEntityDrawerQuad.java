@@ -24,7 +24,6 @@ import static gregapi.data.CS.*;
 import java.util.List;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.LH;
 import gregapi.data.LH.Chat;
 import gregapi.data.TD;
@@ -99,7 +98,6 @@ public class MultiTileEntityDrawerQuad extends TileEntityBase09FacingSingle impl
 		return super.onToolClick2(aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aSide, aHitX, aHitY, aHitZ);
 	}
 	
-	@OnlyIn(Dist.CLIENT)
 	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, (aGUIID % 4) * 36, 36));}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return                            new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, (aGUIID % 4) * 36, 36);}
 	

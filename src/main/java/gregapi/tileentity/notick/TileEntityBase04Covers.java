@@ -21,7 +21,6 @@ package gregapi.tileentity.notick;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.cover.CoverData;
@@ -550,10 +549,8 @@ public abstract class TileEntityBase04Covers extends TileEntityBase03MultiTileEn
 	public void addCollisionBoxesToList2(AABB aAABB, List<AABB> aList, Entity aEntity) {/**/}
 	
 	// GUI Stuff
-	@OnlyIn(Dist.CLIENT)
 	@Override public final Object getGUIClient(int aGUIID, Player aPlayer) {return aGUIID <= -1 && aGUIID >= -6 ? hasCovers() && mCovers.mBehaviours[-aGUIID-1] != null ? mCovers.mBehaviours[-aGUIID-1].getGUIServer((byte)(-aGUIID-1), mCovers, aPlayer) : null : getGUIClient2(aGUIID, aPlayer);}
 	@Override public final Object getGUIServer(int aGUIID, Player aPlayer) {return aGUIID <= -1 && aGUIID >= -6 ? hasCovers() && mCovers.mBehaviours[-aGUIID-1] != null ? mCovers.mBehaviours[-aGUIID-1].getGUIClient((byte)(-aGUIID-1), mCovers, aPlayer) : null : getGUIServer2(aGUIID, aPlayer);}
-	@OnlyIn(Dist.CLIENT)
 	public Object getGUIClient2(int aGUIID, Player aPlayer) {return null;}
 	public Object getGUIServer2(int aGUIID, Player aPlayer) {return null;}
 	

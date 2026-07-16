@@ -22,7 +22,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.CS.ModIDs;
 import gregapi.network.INetworkHandler;
@@ -159,9 +158,9 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	public static interface IMTE_IsSealable                         extends IMultiTileEntity {public boolean isSealable(byte aSide);}
 	public static interface IMTE_OnOxygenRemoved                    extends IMultiTileEntity {public void onOxygenRemoved();}
 	public static interface IMTE_OnOxygenAdded                      extends IMultiTileEntity {public void onOxygenAdded();}
-	public static interface IMTE_RegisterIcons                      extends IMultiTileEntity {@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aIconRegister);}
-	public static interface IMTE_AddHitEffects                      extends IMultiTileEntity {@OnlyIn(Dist.CLIENT) public boolean addHitEffects(Level aWorld, HitResult aTarget, ParticleEngine aRenderer);}
-	public static interface IMTE_AddDestroyEffects                  extends IMultiTileEntity {@OnlyIn(Dist.CLIENT) public boolean addDestroyEffects(int aMetaData, ParticleEngine aRenderer);}
+	public static interface IMTE_RegisterIcons                      extends IMultiTileEntity {public void registerIcons(IIconRegister aIconRegister);}
+	public static interface IMTE_AddHitEffects                      extends IMultiTileEntity {public boolean addHitEffects(Level aWorld, HitResult aTarget, ParticleEngine aRenderer);}
+	public static interface IMTE_AddDestroyEffects                  extends IMultiTileEntity {public boolean addDestroyEffects(int aMetaData, ParticleEngine aRenderer);}
 	
 	public static interface IMTE_SyncDataByte extends IMultiTileEntity {
 		/**
@@ -263,19 +262,16 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	
 	public static interface IMTE_OnRegistrationClient extends IMultiTileEntity {
 		/** Called when the TileEntity is being registered at the MultiTileEntity Registry. */
-		@OnlyIn(Dist.CLIENT)
 		public void onRegistrationClient(MultiTileEntityRegistry aRegistry, short aID);
 	}
 	
 	public static interface IMTE_OnRegistrationFirstClient extends IMultiTileEntity {
 		/** Called when a TileEntity of this particular Class is being registered first at any MultiTileEntity Registry. So basically one call per Class. */
-		@OnlyIn(Dist.CLIENT)
 		public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID);
 	}
 	
 	public static interface IMTE_OnRegistrationFirstOfRegisterClient extends IMultiTileEntity {
 		/** Called when a TileEntity of this particular Class is being registered first at a MultiTileEntity Registry. So basically one call per Class and Registry. */
-		@OnlyIn(Dist.CLIENT)
 		public void onRegistrationFirstOfRegisterClient(MultiTileEntityRegistry aRegistry, short aID);
 	}
 	

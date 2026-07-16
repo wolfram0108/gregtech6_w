@@ -20,7 +20,6 @@
 package gregtech.tileentity.tools;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
 import gregapi.data.LH;
 import gregapi.data.LH.Chat;
@@ -326,7 +325,6 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	
 	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]])) : null;}
 	
-	@OnlyIn(Dist.CLIENT)
 	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUIClientBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	
@@ -494,14 +492,12 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 		@Override public int getShiftClickSlotCount() {return 36;}
 	}
 	
-	@OnlyIn(Dist.CLIENT)
 	public class MultiTileEntityGUIClientBumbliary extends ContainerClient {
 		public MultiTileEntityGUIClientBumbliary(Inventory aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
 			super(new MultiTileEntityGUICommonBumbliary(aInventoryPlayer, aTileEntity, aGUIID), RES_PATH_GUI + "machines/Bumbliary.png");
 		}
 	}
 	
-	@OnlyIn(Dist.CLIENT)
 	public class MultiTileEntityGUIClientBumbliaryScoop extends ContainerClient {
 		public MultiTileEntityGUIClientBumbliaryScoop(Inventory aInventoryPlayer, MultiTileEntityBumbliary aTileEntity, int aGUIID) {
 			super(new MultiTileEntityGUICommonBumbliaryScoop(aInventoryPlayer, aTileEntity, aGUIID), RES_PATH_GUI + "machines/Bumbliary.png");

@@ -36,7 +36,6 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.api.Abstract_Mod;
 import gregapi.api.Abstract_Proxy;
 import gregapi.api.FMLInitializationEvent;
@@ -172,7 +171,6 @@ public class GT_API extends Abstract_Mod {
 	// удалён из движка целиком (атлас-стежка теперь baked-модели, не immediate-mode Icon-регистрация).
 	// Тот же класс проблемы, что gregapi/render/TextureSet.java registerIcons(Object) (уже переведено) —
 	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) уже переведены на Identifier.
-	@OnlyIn(Dist.CLIENT)
 	public static Object sBlockIcons, sItemIcons;
 
 	/**

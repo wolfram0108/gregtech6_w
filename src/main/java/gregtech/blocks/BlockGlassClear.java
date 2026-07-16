@@ -21,7 +21,6 @@ package gregtech.blocks;
 
 import net.minecraft.world.level.block.SoundType;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.metatype.BlockColored;
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.block.metatype.ItemBlockMetaType;
@@ -75,7 +74,6 @@ public class BlockGlassClear extends BlockColored {
 	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {return ST.arraylist(OP.scrapGt.mat(MT.Glass, mBlock == this ? 80 : 40));}
 	
 	
-	@OnlyIn(Dist.CLIENT)
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		if (aSide == OPOS[mSide]) return T;
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);

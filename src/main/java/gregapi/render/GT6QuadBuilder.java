@@ -31,7 +31,6 @@ import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
 
 /**
@@ -44,7 +43,6 @@ import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
  * Мост в {@link ITexture.Util}: если {@code aRenderer instanceof GT6QuadBuilder} → {@code putFace(side, icon, RGBa)}.
  * См. decisions/F3-render.md §2 (AE2 QuartzGlassModel/CubeBuilder-паттерн).
  */
-@OnlyIn(Dist.CLIENT)
 public final class GT6QuadBuilder {
 	private final QuadCollection.Builder mQuads = new QuadCollection.Builder();
 	private final List<BakedQuad> mAll = new ArrayList<>();

@@ -21,7 +21,6 @@ package gregapi.tileentity.inventories;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetMaxStackSize;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnRegistrationFirstClient;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_SyncDataInteger;
@@ -698,7 +697,6 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	}
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID) {
 		ClientRegistry.bindTileEntitySpecialRenderer(getClass(), MultiTileEntityRendererMassStorage.INSTANCE);
 	}
@@ -711,7 +709,6 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	 * F3-render.md §2.5, паттерн "рендер предмета внутри" — секция {@code ChargerRenderer}/
 	 * {@code BlockEntityRenderHelper.submitRenderItem2d}); тело {@code submit} ниже — no-op заглушка.
 	 */
-	@OnlyIn(Dist.CLIENT)
 	public static class MultiTileEntityRendererMassStorage implements BlockEntityRenderer<MultiTileEntityMassStorage, BlockEntityRenderState> {
 		public static MultiTileEntityRendererMassStorage INSTANCE = new MultiTileEntityRendererMassStorage();
 

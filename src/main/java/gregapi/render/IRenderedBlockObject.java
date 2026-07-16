@@ -23,7 +23,6 @@ import gregapi.util.WD;
 import static gregapi.data.CS.*;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -36,35 +35,27 @@ import net.minecraft.world.level.BlockGetter;
  */
 public interface IRenderedBlockObject {
 	/** @return the Textures rendered by {@link RendererBlockTextured} */
-	@OnlyIn(Dist.CLIENT)
 	public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered);
 
 	/** if this uses said Render Pass or if it can be skipped entirely. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean usesRenderPass(int aRenderPass, boolean[] aShouldSideBeRendered);
 
 	/** sets the Block Size rendered by {@link RendererBlockTextured} return false for letting it select the normal Block Bounds. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered);
 
 	/** gets the Amount of Render Passes for this TileEntity or similar Handler. Only gets called once per Rendering. */
-	@OnlyIn(Dist.CLIENT)
 	public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered);
 
 	/** returning true stops all the other Rendering from happening. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean renderItem(Block aBlock, Object aRenderer);
 
 	/** returning true stops all the other Rendering from happening. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ);
 
 	/** return "this" if you want to use the functions above. */
-	@OnlyIn(Dist.CLIENT)
 	public IRenderedBlockObject passRenderingToObject(ItemStack aStack);
 
 	/** return "this" if you want to use the functions above. */
-	@OnlyIn(Dist.CLIENT)
 	public IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ);
 
 	public static class ErrorRenderer implements IRenderedBlockObjectSideCheck, IRenderedBlockObject {

@@ -25,7 +25,6 @@ import gregapi.util.WD;
 import static gregapi.data.CS.*;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.LH;
 import gregapi.oredict.OreDictItemData;
 import gregapi.oredict.OreDictMaterial;
@@ -66,13 +65,11 @@ public class BlockColored extends BlockMetaType {
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int aMeta) {
 		return DYES_INT[UT.Code.bind4(aMeta)];
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		return DYES_INT[UT.Code.bind4(WD.meta(aWorld, aX, aY, aZ))];
 	}

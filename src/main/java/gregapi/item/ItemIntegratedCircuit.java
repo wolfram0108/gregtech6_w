@@ -20,7 +20,6 @@
 package gregapi.item;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
 import gregapi.cover.CoverRegistry;
@@ -111,14 +110,12 @@ public class ItemIntegratedCircuit extends ItemBase {
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	@SuppressWarnings("unchecked")
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
 		aList.add(ST.make(this, 1, 0));
 	}
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
 		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = Identifier.parse(mModID + ":" + mName + "/" + (byte)(i&255));

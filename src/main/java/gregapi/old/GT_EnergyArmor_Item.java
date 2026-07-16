@@ -25,7 +25,6 @@ import static gregapi.data.CS.*;
 import java.util.List;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.util.UT;
@@ -125,7 +124,6 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было this.itemIcon=aIconRegister.registerIcon(...) — и поле Item.itemIcon,
 	// и IIconRegister удалены в 26.1.2 целиком (тот же класс проблемы, что ItemBase.java:131/getSubItems ниже в этом
 	// файле, уже сведённый к no-op); замены нет до Фазы C.
@@ -281,7 +279,6 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 //  @SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab var2, @SuppressWarnings("rawtypes") List var3) {
 		//ItemStack tCharged = ST.make(this, 1, 0), tUncharged = ST.make(this, 1, getMaxDamage());

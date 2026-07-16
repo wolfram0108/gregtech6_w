@@ -22,7 +22,6 @@ package gregtech.blocks.tree;
 import net.minecraft.world.level.block.SoundType;
 import gregapi.util.WD;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.tree.BlockBaseLeaves;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.CS.*;
@@ -131,13 +130,11 @@ public class BlockTreeLeavesAB extends BlockBaseLeaves implements Runnable {
 	}
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int aMeta) {
 		return (aMeta & 7) == 7 ? RAINBOW_ARRAY[(int)((CLIENT_TIME / 10) % RAINBOW_ARRAY.length)] : UNCOLORED;
 	}
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		return (WD.meta(aWorld, aX, aY, aZ) & 7) == 7 ? RAINBOW_ARRAY[(Math.abs(aX) + Math.abs(aY) + Math.abs(aZ)) % RAINBOW_ARRAY.length] : UNCOLORED;
 	}

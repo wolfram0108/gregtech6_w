@@ -20,7 +20,6 @@
 package gregapi.render;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.world.level.block.Block;
 
 /**
@@ -31,6 +30,5 @@ import net.minecraft.world.level.block.Block;
  */
 public interface IRenderedBlockObjectSideCheck {
 	/** returning false stops all the other Rendering from happening on that Side. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean renderFullBlockSide(Block aBlock, Object aRenderer, byte aSide);
 }

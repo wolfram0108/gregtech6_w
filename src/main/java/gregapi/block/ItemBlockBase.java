@@ -21,7 +21,6 @@ package gregapi.block;
 import gregapi.util.WD;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.LH;
 import gregapi.data.MD;
 import gregapi.item.IItemGT;
@@ -125,7 +124,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	
 	// F16 dead-interface: getCreativeTab движком neo НЕ вызывается (per-block getter удалён; вкладки — event-based).
 	// Членство блока во вкладке подключено централизованно: BlockBase ctor → CreativeTabsGT.assign(...). Метод мёртв (0 вызовов).
-	@OnlyIn(Dist.CLIENT) public CreativeModeTab getCreativeTab() {return null;}
+	public CreativeModeTab getCreativeTab() {return null;}
 	public boolean func_150936_a(Level aWorld, int aX, int aY, int aZ, int aSide, Player aPlayer, ItemStack aStack) {return T;}
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUseFirst(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUse(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}

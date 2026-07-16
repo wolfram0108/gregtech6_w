@@ -36,7 +36,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
 
@@ -48,7 +47,6 @@ import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
  * механизм отрисовки (immediate→baked). Спрайты — из block-атласа в рантайме (динамика материал×префикс). Регистрация типа —
  * {@code RegisterBlockStateModels} (GT_API_Proxy_Client); blockstate-JSON блоков ссылаются на этот тип (датаген). См. F3-render.md §2.
  */
-@OnlyIn(Dist.CLIENT)
 public class GT6BlockModel implements DynamicBlockStateModel {
 	private final Material.Baked mParticle;
 

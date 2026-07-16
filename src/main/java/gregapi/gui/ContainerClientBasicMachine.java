@@ -22,14 +22,12 @@ package gregapi.gui;
 import static gregapi.data.CS.*;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.LH;
 import gregapi.recipes.Recipe.RecipeMap;
 import gregapi.tileentity.ITileEntityInventoryGUI;
 import gregapi.util.UT;
 import net.minecraft.world.entity.player.Inventory;
 
-@OnlyIn(Dist.CLIENT)
 public class ContainerClientBasicMachine extends ContainerClient {
 	private RecipeMap mRecipes;
 	

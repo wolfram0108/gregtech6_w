@@ -44,7 +44,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.context.UseOnContext;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.GT_API;
 import gregapi.code.*;
 import gregapi.damage.DamageSources;
@@ -1462,7 +1461,6 @@ public class UT {
 		public static short getB(int aColors) {return (short) (aColors         & 255);}
 		public static short getA(int aColors) {return (short)((aColors >>> 24) & 255);}
 		
-		@OnlyIn(Dist.CLIENT)
 		/** estebes helped with the code for this one, and yes that cast down there is fucking necessary... */
 		public static short[] color(ItemStack aStack) {
 			if (ST.invalid(aStack)) return UNCOLOURED;
@@ -1474,7 +1472,6 @@ public class UT {
 			return UNCOLOURED;
 		}
 		
-		@OnlyIn(Dist.CLIENT)
 		/** estebes helped with the code for this one */
 		public static short[] color(String aResourceLocation) {
 			Identifier aux = null;
@@ -1491,7 +1488,6 @@ public class UT {
 			return tIcon == null ? null : color(tIcon);
 		}
 		
-		@OnlyIn(Dist.CLIENT)
 		/** estebes helped with the code for this one */
 		public static short[] color(java.awt.image.BufferedImage icon) {
 			long tR = 0, tG = 0, tB = 0, tPixels = 0;

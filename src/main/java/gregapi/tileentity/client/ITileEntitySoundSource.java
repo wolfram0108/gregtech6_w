@@ -22,7 +22,6 @@ package gregapi.tileentity.client;
 import static gregapi.data.CS.*;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.random.IHasWorldAndCoords;
 import gregapi.tileentity.ITileEntityUnloadable;
 // F3-client-sound: 1.7.10 client.audio.ISound/ITickableSound удалены -> neo resources.sounds.SoundInstance/
@@ -39,13 +38,10 @@ import net.minecraft.resources.Identifier;
  * @author Gregorius Techneticies
  */
 public interface ITileEntitySoundSource extends ITileEntityUnloadable {
-	@OnlyIn(Dist.CLIENT)
 	public void startSound();
 
-	@OnlyIn(Dist.CLIENT)
 	public void stopSound();
 
-	@OnlyIn(Dist.CLIENT)
 	public static class SoundSourceTileEntity extends AbstractTickableSoundInstance {
 		public boolean mRunning = F;
 		public float mSoundStrength, mSoundModulation;

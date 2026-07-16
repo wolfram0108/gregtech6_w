@@ -21,7 +21,6 @@ package gregapi.block.multitileentity.example;
 
 import cpw.mods.fml.client.registry.ClientRegistry;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
 import gregapi.block.multitileentity.MultiTileEntityContainer;
@@ -327,17 +326,14 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 		return T;
 	}
 	
-	@OnlyIn(Dist.CLIENT)
 	private static MultiTileEntityRendererChest RENDERER;
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID) {
 		ClientRegistry.bindTileEntitySpecialRenderer(getClass(), RENDERER = new MultiTileEntityRendererChest());
 	}
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public void onRegistrationClient(MultiTileEntityRegistry aRegistry, short aID) {
 		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code new Identifier(namespace,path)} — конструктор
 		 * стал {@code private} в 26.1.2, фабрика {@code Identifier.fromNamespaceAndPath(namespace,path)}
@@ -355,7 +351,6 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	 * {@code InscriberRenderer.java:55-276} (F3-render.md §2.5). Реальная перерисовка крышки —
 	 * {@code CubeBuilder}/{@code submitCustomGeometry} по образцу эталона; тело {@code submit} ниже — no-op заглушка.
 	 */
-	@OnlyIn(Dist.CLIENT)
 	public static class MultiTileEntityRendererChest implements BlockEntityRenderer<MultiTileEntityChest, BlockEntityRenderState> {
 		private static final MultiTileEntityModelChest sModel = new MultiTileEntityModelChest();
 		public final Map<String, Identifier[]> mResources = new HashMap<>();
@@ -374,7 +369,6 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code ModelBase}/{@code ModelRenderer} (immediate-mode
 	 *  3D-модель крышки сундука через box+rotationPoint, тип удалён целиком) — держатель-заглушка
 	 *  (см. javadoc {@link MultiTileEntityRendererChest}), реальная геометрия — {@code CubeBuilder}. */
-	@OnlyIn(Dist.CLIENT)
 	public static class MultiTileEntityModelChest {
 		public MultiTileEntityModelChest() {
 			//

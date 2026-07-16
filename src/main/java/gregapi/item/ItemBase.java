@@ -20,7 +20,6 @@
 package gregapi.item;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.TagData;
 import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;
@@ -146,7 +145,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean getShareTag() {return T;} // just to be sure.
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
-	@OnlyIn(Dist.CLIENT) public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse(mModID + ":" + mName);}
+	public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse(mModID + ":" + mName);}
 	public Identifier getIconFromDamage(int aMeta) {return mIcon;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}

@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import gregapi.api.Optional;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.MD;
 import gregapi.data.OP;
@@ -109,7 +108,6 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 	// была позицией СОСЕДА (стандартная 1.7.10-семантика shouldSideBeRendered) -> aNeighbor.getBlock() эквивалентен
 	// WD.block(aWorld,aX,aY,aZ) без потерь.
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		Block aBlock = aNeighbor.getBlock();
 		return WD.opaque(aBlock) || (WD.opaque(Blocks.OAK_LEAVES) && aBlock instanceof BlockBaseLeaves);
@@ -151,15 +149,12 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 		return rDrops;
 	}
 	
-	@OnlyIn(Dist.CLIENT)
 	// было ColorizerFoliage.getFoliageColor(temp,rain) (1.7.10, тип удалён) -> FoliageColor.get(double,double)
 	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:14], идентичная формула/буфер пикселей.
 	public int getBlockColor() {return FoliageColor.get(0.5, 1.0);}
 	// было ColorizerFoliage.getFoliageColorBasic() (константа 4764952, тип удалён) -> FoliageColor.FOLIAGE_DEFAULT
 	// [neo-decompiled/net/minecraft/world/level/FoliageColor.java:6] (=0xFF48B518, младшие 24 бита совпадают: 0x48B518=4764952).
-	@OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int p_149741_1_) {return FoliageColor.FOLIAGE_DEFAULT;}
-	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		// было aWorld.getBiomeGenForCoords(x,z) (2D, IBlockAccess несла getBiome сама) — BlockGetter самого getBiome
 		// не несёт (LevelReader.getBiome(BlockPos)); рендер вызывает colorMultiplier всегда с реальным Level (тот же

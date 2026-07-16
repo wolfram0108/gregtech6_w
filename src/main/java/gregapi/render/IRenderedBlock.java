@@ -20,7 +20,6 @@
 package gregapi.render;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 
@@ -29,42 +28,32 @@ import net.minecraft.world.level.BlockGetter;
  */
 public interface IRenderedBlock {
 	/** @return the Textures rendered by {@link RendererBlockTextured} for the Inventory Rendering */
-	@OnlyIn(Dist.CLIENT)
 	public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack);
 	
 	/** @return the Textures rendered by {@link RendererBlockTextured} for the World Rendering */
-	@OnlyIn(Dist.CLIENT)
 	public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ);
 	
 	/** if this uses said Render Pass or if it can be skipped entirely. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean usesRenderPass(int aRenderPass, ItemStack aStack);
 	
 	/** if this uses said Render Pass or if it can be skipped entirely. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered);
 	
 	/** sets the Block Size rendered by {@link RendererBlockTextured} for the Inventory Rendering. return false for letting it select the normal Block Bounds. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean setBlockBounds(int aRenderPass, ItemStack aStack);
 	
 	/** sets the Block Size rendered by {@link RendererBlockTextured} for the World Rendering. return false for letting it select the normal Block Bounds. */
-	@OnlyIn(Dist.CLIENT)
 	public boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered);
 	
 	/** gets the Amount of Render Passes for this Block for the Inventory Rendering */
-	@OnlyIn(Dist.CLIENT)
 	public int getRenderPasses(ItemStack aStack);
 	
 	/** gets the Amount of Render Passes for this Block for the World Rendering */
-	@OnlyIn(Dist.CLIENT)
 	public int getRenderPasses(BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered);
 	
 	/** if this Block lets the TileEntity or a similar Handler do all the Inventory Render work. */
-	@OnlyIn(Dist.CLIENT)
 	public IRenderedBlockObject passRenderingToObject(ItemStack aStack);
 	
 	/** if this Block lets the TileEntity or a similar Handler do all the World Render work. */
-	@OnlyIn(Dist.CLIENT)
 	public IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ);
 }

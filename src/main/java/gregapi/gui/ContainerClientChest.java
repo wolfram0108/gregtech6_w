@@ -24,7 +24,6 @@ import static gregapi.data.CS.*;
 import org.lwjgl.opengl.GL11;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.tileentity.ITileEntityInventoryGUI;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.client.resources.language.I18n;
@@ -32,7 +31,6 @@ import net.minecraft.client.resources.language.I18n;
 /**
  * @author Gregorius Techneticies
  */
-@OnlyIn(Dist.CLIENT)
 public class ContainerClientChest extends ContainerClient {
 	private int mRows;
 	

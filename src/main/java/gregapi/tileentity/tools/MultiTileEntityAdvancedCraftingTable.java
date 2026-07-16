@@ -22,7 +22,6 @@ import gregapi.fluid.FluidTankInfo;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.FL;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -583,7 +582,6 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	@Override public boolean canDrain(Direction aDirection, Fluid aFluid) {return F;}
 	@Override public FluidTankInfo[] getTankInfo(Direction aDirection) {return L1_FLUIDTANKINFO_DUMMY;}
 	
-	@OnlyIn(Dist.CLIENT)
 	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new ContainerClientDefault(   new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)) : new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ?                               new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)  : new MultiTileEntityGUICommonAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
 	
@@ -746,7 +744,6 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		}
 	}
 	
-	@OnlyIn(Dist.CLIENT)
 	public class MultiTileEntityGUIClientAdvancedCraftingTable extends ContainerClient {
 		public MultiTileEntityGUIClientAdvancedCraftingTable(Inventory aInventoryPlayer, MultiTileEntityAdvancedCraftingTable aTileEntity, int aGUIID) {
 			super(new MultiTileEntityGUICommonAdvancedCraftingTable(aInventoryPlayer, aTileEntity, aGUIID), aTileEntity.mGUITexture);

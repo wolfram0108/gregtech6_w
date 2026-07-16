@@ -20,7 +20,6 @@
 package gregtech.tileentity.extenders;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackSet;
 import gregapi.data.FL;
@@ -277,7 +276,6 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 		}
 	}
 	
-	@OnlyIn(Dist.CLIENT)
 	public class MultiTileEntityGUIClientFilterPrefix extends ContainerClient {
 		public MultiTileEntityGUIClientFilterPrefix(Inventory aInventoryPlayer, MultiTileEntityFilterPrefix aTileEntity, int aGUIID) {
 			super(new MultiTileEntityGUICommonFilterPrefix(aInventoryPlayer, aTileEntity, aGUIID), RES_PATH_GUI + "machines/FilterPrefix.png");

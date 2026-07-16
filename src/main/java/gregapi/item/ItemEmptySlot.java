@@ -22,7 +22,6 @@ package gregapi.item;
 import java.util.List;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.data.CS.ItemsGT;
 import gregapi.data.MD;
 import gregapi.old.Textures;
@@ -47,13 +46,11 @@ public class ItemEmptySlot extends ItemBase {
 	}
 
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public void registerIcons(Object aIconRegister) {
 		// No Icons to register!
 	}
 	
 	// @Override
-	@OnlyIn(Dist.CLIENT)
 	public final void getSubItems(Item var1, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {
 		//
 	}

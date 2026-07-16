@@ -22,7 +22,6 @@ package gregapi.gui;
 import static gregapi.data.CS.*;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -45,7 +44,6 @@ import net.minecraft.resources.Identifier;
  * Реальная перерисовка — decisions/F3-render.md §2.7 (BER/{@code GuiGraphicsExtractor}-путь); тело каждого
  * рисующего метода ниже — no-op заглушка, сигнатуры сохранены 1:1.
  */
-@OnlyIn(Dist.CLIENT)
 public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 
 	public boolean mCrashed = F;

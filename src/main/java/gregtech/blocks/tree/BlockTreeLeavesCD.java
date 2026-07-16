@@ -21,7 +21,6 @@ package gregtech.blocks.tree;
 
 import net.minecraft.world.level.block.SoundType;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.tree.BlockBaseLeaves;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.data.CS.*;
@@ -116,13 +115,11 @@ public class BlockTreeLeavesCD extends BlockBaseLeaves implements Runnable {
 	}
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public int getRenderColor(int aMeta) {
 		return UNCOLORED;
 	}
 	
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {
 		return UNCOLORED;
 	}

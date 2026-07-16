@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Random;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.block.BlockBaseMeta;
 import gregapi.data.OP;
 import gregapi.data.RM;
@@ -174,7 +173,6 @@ public class BlockMetaType extends BlockBaseMeta {
 	// была позицией СОСЕДА (стандартная 1.7.10-семантика shouldSideBeRendered) -> aNeighbor.getBlock() эквивалентен
 	// WD.block(aWorld,aX,aY,aZ) без потерь, доп. world/pos не требовались.
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	protected boolean skipRendering(BlockState aState, BlockState aNeighbor, Direction aDir) {
 		byte aSide = UT.Code.side(aDir);
 		if (aSide == OPOS[mSide]) return F;

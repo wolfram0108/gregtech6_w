@@ -20,7 +20,6 @@
 package gregapi.render;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.world.entity.player.Player;
@@ -32,7 +31,6 @@ import net.minecraft.world.item.ItemStack;
  * (0 вызывателей, суперседирован). {@code mRenderBlocks} — нейтральный held-объект ("передать дальше"). Единственное живое —
  * {@code drawWrenchOverlay} (косметический overlay соединений труб/проводов при наведении с гаечным ключом).
  */
-@OnlyIn(Dist.CLIENT)
 public class RenderHelper {
 	/** F3-render: было {@code RenderBlocks} (тип удалён); нейтральный held-объект, тело не трогается. */
 	public static Object mRenderBlocks = null;

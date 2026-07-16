@@ -21,7 +21,6 @@ package gregapi.item.multiitem;
 import net.minecraft.resources.ResourceKey;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackSet;
@@ -755,7 +754,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public boolean requiresMultipleRenderPasses() {return T;}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было registerIcons(IIconRegister) (тип атлас-стежки 1.7.10 удалён) —
 	// параметр Object, тот же нейтральный держатель что gregapi.render.IIconContainer#registerIcons(Object).
-	@OnlyIn(Dist.CLIENT) public void registerIcons(Object aIconRegister) {/**/}
+	public void registerIcons(Object aIconRegister) {/**/}
 	@Override @SuppressWarnings("deprecation") public boolean isFoil(ItemStack aStack) {return F;}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было hasEffect(ItemStack,int aRenderPass) (multi-pass glint, тип удалён).
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}

@@ -22,14 +22,12 @@ package gregapi.gui;
 import static gregapi.data.CS.*;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.tileentity.ITileEntityInventoryGUI;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
  * @author Gregorius Techneticies
  */
-@OnlyIn(Dist.CLIENT)
 public class ContainerClientDefault extends ContainerClient {
 	public ContainerClientDefault(Inventory aInventoryPlayer, ITileEntityInventoryGUI aTileEntity) {
 		this(aInventoryPlayer, aTileEntity, RES_PATH_GUI + "chests/" + aTileEntity.getSizeInventoryGUI() + ".png");
