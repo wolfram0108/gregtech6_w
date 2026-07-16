@@ -97,11 +97,19 @@ import static gregapi.data.CS.*;
 @Mod(value = ModIDs.GT, depends = {ModIDs.GAPI_POST})
 public class GT6_Main extends Abstract_Mod {
 	// F12: замена @SidedProxy (neo не имеет annotation-диспетчера сторон) — сторона по FMLEnvironment.getDist(), как gregapi.GT_API#api_proxy.
-	public static GT_Proxy gt_proxy = FMLEnvironment.getDist().isClient() ? new GT_Client() : new GT_Server();
+	// Присваивается в конструкторе (не инлайн в статик-инициализаторе поля): клиентский GT_Client в конструкции
+	// строит PlayerModelRenderer (client-render), а @SidedProxy оригинала инъектировался FML при конструировании
+	// мода (после class-init) — тот же тайминг, class-init не тянет client-render раньше времени.
+	public static GT_Proxy gt_proxy;
 
 	public GT6_Main(IEventBus aModBus) {
 		GT = this;
+		gt_proxy = FMLEnvironment.getDist().isClient() ? new GT_Client() : new GT_Server();
 		NW_GT = new NetworkHandler(MD.GT.mID, "GREG");
+		// F12-entity: центральная регистрация EntityType мода (EntitiesGT.ARROW_*) на мод-шину + клиентские
+		// рендереры сущностей через EntityRenderersEvent (registerClientRenderers — no-op на сервере).
+		gregtech.entities.EntitiesGT.register(aModBus);
+		gt_proxy.registerClientRenderers(aModBus);
 		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на шину (образец gregapi.GT_API_Post).
 		aModBus.addListener(this::onPreLoad);
 		aModBus.addListener(this::onLoad);
@@ -141,13 +149,10 @@ public class GT6_Main extends Abstract_Mod {
 			COMPAT_IC2.scrapbox(200.0F, IL.IC2_Scrap.get(1));
 		}
 		
-		// PORT-TODO(F12-entity, decisions/F12-registration-lifecycle.md, R3): прежний вызов
-		// (`DeferredRegister.registerModEntity(Class, String, int, Object, int, int, boolean)`) —
-		// выдуманный API, 1.7.10 GameRegistry.registerModEntity механически переименован в
-		// DeferredRegister, которого там никогда не было. Настоящая замена — DeferredRegister.Entities
-		// (см. центр gregapi.GT_API.ITEMS/BLOCKS — тот же приём) с EntityType.EntityFactory,
-		// совместимым с конструктором EntityArrow_Material/EntityArrow_Potion; ENTITY-TYPE адаптер
-		// отдельным ADR ещё не разработан — не выдумываю фабрику без сверки конструктора сущности.
+		// F12-entity (ЗАКРЫТО): 1.7.10 EntityRegistry.registerModEntity(EntityArrow_Material/_Potion, …) заменён
+		// центральным DeferredRegister<EntityType<?>> в gregtech.entities.EntitiesGT (тот же приём, что
+		// gregapi.GT_API.ITEMS/BLOCKS); регистрация на мод-шину — в конструкторе GT6_Main. Фабрика EntityType —
+		// тип-ctor (EntityType,Level) сущностей; рендереры — EntityRenderersEvent (GT_Client#registerClientRenderers).
 		
 		for (OreDictMaterial tWood : ANY.Wood.mToThis) OP.plate.disableItemGeneration(tWood);
 		OP.blockDust             .disableItemGeneration(MT.OREMATS.Magnetite, MT.OREMATS.GraniticMineralSand, MT.OREMATS.BasalticMineralSand);

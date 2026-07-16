@@ -20,6 +20,7 @@
 package gregapi.item;
 
 import gregapi.code.TagData;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.item.ItemStack;
@@ -38,26 +39,26 @@ public interface IItemProjectile {
 	
 	/** Class for being able to set the ItemStack when launching the Projectile. And for de-obfuscation of Parameters. */
 	public static abstract class EntityProjectile extends Arrow {
-		// F-entity-construction: neo Arrow требует ctor (EntityType,Level) / (Level,x,y,z,ItemStack,ItemStack) /
-		// (Level,LivingEntity,ItemStack,ItemStack) — 1.7.10-ctors (Level) / (Level,x,y,z) / (Level,shooter,target,
-		// speed,precision) / (Level,shooter,speed) удалены. Тип-плейсхолдер EntityType.ARROW (реальная регистрация
-		// EntityType — отложенный F12-entity, тот же PORT-TODO что GT_API:894). setProjectileStack задаёт снаряд отдельно.
-		public EntityProjectile(Level aWorld) {
-			super(net.minecraft.world.entity.EntityType.ARROW, aWorld);
+		// F-entity-construction (ЗАКРЫТО): РЕАЛЬНЫЙ EntityType протягивается сюда подклассами (EntityArrow_Material/
+		// _Potion → gregtech.entities.EntitiesGT.ARROW_*), заменяя прежний плейсхолдер EntityType.ARROW. neo Arrow
+		// позиционные ctor'ы (Level,x,y,z,…)/(Level,shooter,…) внутри ХАРДКОДЯТ EntityType.ARROW (neo-decompiled
+		// Arrow.java:29,34), поэтому строим через тип-ctor super(aType,aWorld) + setPos / shootFromRotation.
+		// Скоростной ctor воспроизводит 1.7.10 EntityArrow(World,shooter,speed): позиция у глаз стрелка, скорость от
+		// взгляда (vanilla setThrowableHeading(..., speed*1.5, 1.0) ≡ neo shootFromRotation(shooter,pitch,yaw,0,speed*1.5,1.0)).
+		protected EntityProjectile(EntityType<? extends Arrow> aType, Level aWorld) {
+			super(aType, aWorld);
 		}
-		public EntityProjectile(Level aWorld, double aX, double aY, double aZ) {
-			super(aWorld, aX, aY, aZ, ItemStack.EMPTY, ItemStack.EMPTY);
+		protected EntityProjectile(EntityType<? extends Arrow> aType, Level aWorld, double aX, double aY, double aZ) {
+			super(aType, aWorld);
+			setPos(aX, aY, aZ);
 		}
-		public EntityProjectile(Level aWorld, LivingEntity aShootingEntity, LivingEntity aWhateverThatIs, float aSpeed, float aPrecision) {
-			// PORT-TODO(F-entity-construction): прицельный ctor (target/speed/precision) удалён — в neo наведение через
-			// shoot()/shootFromRotation ПОСЛЕ конструкции. Владелец сохранён; наведение отложено (aWhateverThatIs/aSpeed/aPrecision).
-			super(aWorld, aShootingEntity, ItemStack.EMPTY, ItemStack.EMPTY);
+		protected EntityProjectile(EntityType<? extends Arrow> aType, Level aWorld, LivingEntity aShootingEntity, float aSpeed) {
+			super(aType, aWorld);
+			setPos(aShootingEntity.getX(), aShootingEntity.getEyeY() - 0.1, aShootingEntity.getZ());
+			setOwner(aShootingEntity);
+			shootFromRotation(aShootingEntity, aShootingEntity.getXRot(), aShootingEntity.getYRot(), 0.0F, aSpeed * 1.5F, 1.0F);
 		}
-		public EntityProjectile(Level aWorld, LivingEntity aShootingEntity, float aSpeed) {
-			// PORT-TODO(F-entity-construction): скорость-ctor удалён; владелец сохранён, начальная скорость — через shoot() (отложено).
-			super(aWorld, aShootingEntity, ItemStack.EMPTY, ItemStack.EMPTY);
-		}
-		
+
 		public abstract void setProjectileStack(ItemStack aStack);
 	}
 }

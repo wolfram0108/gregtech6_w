@@ -21,6 +21,8 @@ package gregtech.entities.projectiles;
 
 import com.mojang.authlib.GameProfile;
 import gregapi.item.IItemProjectile.EntityProjectile;
+import gregtech.entities.EntitiesGT;
+import net.minecraft.world.entity.EntityType;
 import gregapi.oredict.OreDictItemData;
 import gregapi.util.OM;
 import gregapi.util.ST;
@@ -76,20 +78,33 @@ public class EntityArrow_Material extends EntityProjectile {
 
 	private ItemStack mArrow = null;
 
+	// F12-entity: тип-ctor (EntityType,Level) = фабрика реестра (EntitiesGT.ARROW_MATERIAL, ссылка EntityArrow_Material::new);
+	// public (как vanilla Arrow(EntityType,Level)) — доступна для method-reference из EntitiesGT. Позиционные/скоростные
+	// type-ctor'ы protected — подкласс EntityArrow_Potion передаёт в них свой ARROW_POTION. Convenience-ctor'ы → ARROW_MATERIAL.
+	public EntityArrow_Material(EntityType<? extends EntityArrow_Material> aType, Level aWorld) {
+		super(aType, aWorld);
+	}
+	protected EntityArrow_Material(EntityType<? extends EntityArrow_Material> aType, Level aWorld, double aX, double aY, double aZ) {
+		super(aType, aWorld, aX, aY, aZ);
+	}
+	protected EntityArrow_Material(EntityType<? extends EntityArrow_Material> aType, Level aWorld, LivingEntity aEntity, float aSpeed) {
+		super(aType, aWorld, aEntity, aSpeed);
+	}
+
 	public EntityArrow_Material(Level aWorld) {
-		super(aWorld);
+		this(EntitiesGT.ARROW_MATERIAL.get(), aWorld);
 	}
 
 	public EntityArrow_Material(Level aWorld, double aX, double aY, double aZ) {
-		super(aWorld, aX, aY, aZ);
+		this(EntitiesGT.ARROW_MATERIAL.get(), aWorld, aX, aY, aZ);
 	}
 
 	public EntityArrow_Material(Level aWorld, LivingEntity aEntity, float aSpeed) {
-		super(aWorld, aEntity, aSpeed);
+		this(EntitiesGT.ARROW_MATERIAL.get(), aWorld, aEntity, aSpeed);
 	}
 
 	public EntityArrow_Material(Arrow aArrow, ItemStack aStack) {
-		super(aArrow.level());
+		this(EntitiesGT.ARROW_MATERIAL.get(), aArrow.level());
 		setOwner(aArrow.getOwner());
 		// F-entity-nbt: neo save/load через ValueOutput/ValueInput (не CompoundTag) — мост TagValueOutput/TagValueInput (как ядро Behavior_CureZombie).
 		net.minecraft.world.level.storage.TagValueOutput tOut = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, aArrow.registryAccess());

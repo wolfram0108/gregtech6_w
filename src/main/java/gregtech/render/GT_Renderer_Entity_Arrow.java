@@ -21,10 +21,9 @@ package gregtech.render;
 
 import static gregapi.data.CS.*;
 
-import cpw.mods.fml.client.registry.RenderingRegistry;
 import net.minecraft.client.renderer.entity.ArrowRenderer;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.ArrowRenderState;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.resources.Identifier;
 
@@ -40,10 +39,12 @@ import net.minecraft.resources.Identifier;
 public class GT_Renderer_Entity_Arrow extends ArrowRenderer<Arrow, ArrowRenderState> {
 	private final Identifier mTexture;
 
-	public GT_Renderer_Entity_Arrow(Class<? extends Entity> aArrowClass, String aTextureName) {
-		super(null);
+	// F12-entity/F3-render (ЗАКРЫТО): реальный EntityRendererProvider.Context (не null) — рендерер строится в
+	// EntityRenderersEvent.RegisterRenderers (GT_Client#registerClientRenderers), где Context доступен. 1.7.10
+	// RenderingRegistry.registerEntityRenderingHandler(class, this) удалён — регистрация теперь по EntityType.
+	public GT_Renderer_Entity_Arrow(EntityRendererProvider.Context aContext, String aTextureName) {
+		super(aContext);
 		mTexture = Identifier.parse(RES_PATH_ENTITY+aTextureName+".png");
-		RenderingRegistry.registerEntityRenderingHandler(aArrowClass, this);
 	}
 
 	@Override

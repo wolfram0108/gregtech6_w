@@ -20,7 +20,9 @@
 package gregtech.entities.projectiles;
 
 import gregapi.util.UT;
+import gregtech.entities.EntitiesGT;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -30,16 +32,22 @@ import static gregapi.data.CS.*;
 
 public class EntityArrow_Potion extends EntityArrow_Material {
 	
+	// F12-entity: тип-ctor = фабрика (EntitiesGT.ARROW_POTION, ссылка EntityArrow_Potion::new). Convenience-ctor'ы
+	// передают ARROW_POTION в protected type-ctor'ы EntityArrow_Material (иначе потион-стрела получила бы ARROW_MATERIAL).
+	public EntityArrow_Potion(EntityType<? extends EntityArrow_Potion> aType, Level aWorld) {
+		super(aType, aWorld);
+	}
+
 	public EntityArrow_Potion(Level aWorld) {
-		super(aWorld);
+		super(EntitiesGT.ARROW_POTION.get(), aWorld);
 	}
-	
+
 	public EntityArrow_Potion(Level aWorld, double aX, double aY, double aZ) {
-		super(aWorld, aX, aY, aZ);
+		super(EntitiesGT.ARROW_POTION.get(), aWorld, aX, aY, aZ);
 	}
-	
+
 	public EntityArrow_Potion(Level aWorld, LivingEntity aEntity, float aSpeed) {
-		super(aWorld, aEntity, aSpeed);
+		super(EntitiesGT.ARROW_POTION.get(), aWorld, aEntity, aSpeed);
 	}
 	
 	

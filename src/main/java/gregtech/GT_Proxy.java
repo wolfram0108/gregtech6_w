@@ -23,6 +23,7 @@ import net.minecraft.core.BlockPos;
 
 import gregapi.api.FMLPreInitializationEvent;
 import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import gregapi.GT_API;
 import gregapi.api.Abstract_Mod;
@@ -85,6 +86,9 @@ import java.util.Set;
 import static gregapi.data.CS.*;
 
 public abstract class GT_Proxy extends Abstract_Proxy {
+	// F12-entity: мод-шинная регистрация клиентских рендереров сущностей — база no-op (сервер), override в GT_Client.
+	public void registerClientRenderers(IEventBus aModBus) {/**/}
+
 	public final HashSetNoNulls<String> mSupporterListSilver = new HashSetNoNulls<>();
 	public final HashSetNoNulls<String> mSupporterListGold = new HashSetNoNulls<>();
 	

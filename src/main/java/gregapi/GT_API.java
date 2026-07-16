@@ -153,8 +153,15 @@ public class GT_API extends Abstract_Mod {
 	 * Замена {@code @SidedProxy}: neo не имеет annotation-диспетчера сторон, поэтому сторона выбирается
 	 * напрямую по {@link FMLEnvironment#getDist()} (сверено: {@code DistExecutor} в этой версии neo не
 	 * существует — decisions/F12-registration-lifecycle.md §7).
+	 *
+	 * Присваивается в конструкторе ПОСЛЕ {@link MT#init()} (не инлайн в статик-инициализаторе поля):
+	 * клиентский {@link GT_API_Proxy_Client} в своём конструкторе читает {@code MT.*.mRGBa}, а построение
+	 * материалов идёт через {@link #STACKMAPS}. Инлайн-инициализация поля api_proxy шла бы в порядке
+	 * class-init ДО STACKMAPS (объявлен ниже) → на клиенте MT тянулся раньше времени и падал NPE
+	 * ("STACKMAPS is null"). Оригинальный {@code @SidedProxy} инъектировался FML при конструировании мода
+	 * (после class-init) — тот же тайминг воспроизведён построением прокси в конструкторе.
 	 */
-	public static GT_API_Proxy api_proxy = FMLEnvironment.getDist().isClient() ? new GT_API_Proxy_Client() : new GT_API_Proxy_Server();
+	public static GT_API_Proxy api_proxy;
 
 	public static final Collection<Map<ItemStackContainer, ?>> STACKMAPS = new ArrayListNoNulls<>();
 
@@ -363,6 +370,9 @@ public class GT_API extends Abstract_Mod {
 		
 		// A bunch of Code that is there to statically initialize the Database in the right order and without crashes.
 		MT.init();
+		// Замена @SidedProxy: строим сторонний прокси здесь, ПОСЛЕ MT.init() (клиентский прокси в ctor читает
+		// MT.*.mRGBa), а не инлайн в статик-инициализаторе поля — иначе class-init тянул MT до STACKMAPS и падал NPE.
+		api_proxy = FMLEnvironment.getDist().isClient() ? new GT_API_Proxy_Client() : new GT_API_Proxy_Server();
 		BI.BAROMETER.toString();
 		OP.ore.toString();
 		

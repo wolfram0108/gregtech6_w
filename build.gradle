@@ -104,6 +104,32 @@ if (project.hasProperty('parityFull')) {
     logger.lifecycle("[parityFull] полный контент + stripMcMirror для JPMS")
 }
 
+// runClient/runData/runServer (module-режим дев-запуска): те же JPMS split-package crutch-классы
+// (net.minecraft.*/cpw.* из compat-mirror, зона F10), что и в test, конфликтуют с модулями minecraft/jei при
+// module-resolution (ResolutionException «Modules minecraft and gregtech6 export package net.minecraft.*»).
+// Стрипаем их из рантайм-вывода build/classes/java/main ПОСЛЕ compile, ДО запуска — ровно как stripMcMirror
+// для test. Рантайм GT6 их не зовёт: render-shim'ы (IIcon/IIconRegister/RenderBlocks) superseded пайплайном
+// GT6BlockModel (baked-модели), server-путь доказан parity-тестом. Если рантайм всё же дёрнет конкретный
+// класс → точечный NoClassDefFound укажет его, тогда адаптируем адресно. incremental=false: strip удаляет
+// .class из вывода, инкрементальная компиляция на след. прогоне путается («package does not exist») —
+// полная компиляция регенерит миражи каждый раз, strip снова удаляет → консистентно.
+tasks.named('compileJava').configure { options.incremental = false }
+def stripRunMirror = tasks.register('stripRunMirror') {
+    doLast {
+        def dir = file('build/classes/java/main')
+        def removed = 0
+        ['net/minecraft', 'cpw'].each { pkg ->
+            def t = file("$dir/$pkg")
+            if (t.exists()) { removed += fileTree(t).files.size(); delete t }
+        }
+        logger.lifecycle("[run] stripRunMirror: удалено ${removed} crutch-.class из рантайм-модуля")
+    }
+}
+stripRunMirror.configure { mustRunAfter tasks.named('classes') }
+['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
+    tasks.matching { it.name == rn }.configureEach { dependsOn stripRunMirror }
+}
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 

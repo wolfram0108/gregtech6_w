@@ -28,10 +28,13 @@ import gregapi.api.Abstract_Mod;
 import gregapi.config.ConfigCategories;
 import gregapi.data.LH;
 import gregapi.data.MD;
+import gregtech.entities.EntitiesGT;
 import gregtech.entities.projectiles.EntityArrow_Material;
 import gregtech.entities.projectiles.EntityArrow_Potion;
 import gregtech.render.GT_Renderer_Entity_Arrow;
 import gregtech.render.PlayerModelRenderer;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.ClickEvent;
@@ -58,8 +61,22 @@ public class GT_Client extends GT_Proxy {
 	@Override
 	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLPreInitializationEvent aEvent) {
 		super.onProxyAfterPreInit(aMod, aEvent);
-		new GT_Renderer_Entity_Arrow(EntityArrow_Material.class, "arrow");
-		new GT_Renderer_Entity_Arrow(EntityArrow_Potion.class, "arrow_potions");
+		// F12-entity: рендереры стрел регистрируются через EntityRenderersEvent (см. registerClientRenderers),
+		// а не прямым new здесь — в PreInit нет EntityRendererProvider.Context (был краш super(null)).
+	}
+
+	// F12-entity: мод-шинная регистрация клиентских рендереров сущностей (замена удалённого 1.7.10
+	// RenderingRegistry.registerEntityRenderingHandler). Вызывается из GT6_Main-конструктора только на клиенте
+	// (база GT_Proxy#registerClientRenderers — no-op, сервер клиент-классы не грузит). EntityRenderersEvent —
+	// IModBusEvent, поэтому вешаем явным addListener на мод-шину (Abstract_Proxy.registerSubscribeEvents их пропускает).
+	@Override
+	public void registerClientRenderers(IEventBus aModBus) {
+		aModBus.addListener(this::onRegisterEntityRenderers);
+	}
+
+	private void onRegisterEntityRenderers(EntityRenderersEvent.RegisterRenderers aEvent) {
+		aEvent.registerEntityRenderer(EntitiesGT.ARROW_MATERIAL.get(), aContext -> new GT_Renderer_Entity_Arrow(aContext, "arrow"));
+		aEvent.registerEntityRenderer(EntitiesGT.ARROW_POTION.get()  , aContext -> new GT_Renderer_Entity_Arrow(aContext, "arrow_potions"));
 	}
 	
 	private boolean FIRST_CLIENT_PLAYER_TICK = T;

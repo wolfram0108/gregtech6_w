@@ -38,7 +38,9 @@ import static gregapi.data.CS.RES_PATH_MODEL;
  * реальная перерисовка плаща — {@code SubmitNodeCollector}/BER-путь (§2.5).
  */
 public class PlayerModelRenderer {
-	private final Identifier[] mResources = new Identifier[] {Identifier.parse(RES_PATH_MODEL + "BrainTech.png"), Identifier.parse(RES_PATH_MODEL + "Silver.png"), Identifier.parse(RES_PATH_MODEL + "MrBrain.png"), Identifier.parse(RES_PATH_MODEL + "Dev.png"), Identifier.parse(RES_PATH_MODEL + "Gold.png"), Identifier.parse(RES_PATH_MODEL + "Crazy.png"), Identifier.parse(RES_PATH_MODEL + "Sus.png")};
+	// neo Identifier.assertValidPath запрещает заглавные в path (1.7.10 ResourceLocation их допускал) — имена
+	// плащей-текстур приведены к lowercase (файлы переименованы синхронно). Порядок/логика выбора плаща 1:1.
+	private final Identifier[] mResources = new Identifier[] {Identifier.parse(RES_PATH_MODEL + "braintech.png"), Identifier.parse(RES_PATH_MODEL + "silver.png"), Identifier.parse(RES_PATH_MODEL + "mrbrain.png"), Identifier.parse(RES_PATH_MODEL + "dev.png"), Identifier.parse(RES_PATH_MODEL + "gold.png"), Identifier.parse(RES_PATH_MODEL + "crazy.png"), Identifier.parse(RES_PATH_MODEL + "sus.png")};
 	private final Collection<String> mSupporterListSilver, mSupporterListGold;
 
 	public PlayerModelRenderer(Collection<String> aSupporterListSilver, Collection<String> aSupporterListGold) {
