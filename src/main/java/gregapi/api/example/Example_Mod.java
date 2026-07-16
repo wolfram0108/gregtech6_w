@@ -19,7 +19,7 @@
 
 package gregapi.api.example;
 
-// PORT-TODO(F12, example-tutorial-mod): та же жила, что gregapi.GT_API/GT_API_Post
+// F12 tutorial-example (не функциональный контент): та же жила, что gregapi.GT_API/GT_API_Post
 // (decisions/F12-registration-lifecycle.md) — @cpw.mods.fml.common.Mod.EventHandler/@SidedProxy (пакет
 // cpw.mods.fml не существует на neo-classpath) + onModPreInit2/onModInit2/onModPostInit2 сейчас принимают
 // НЕПРАВИЛЬНЫЕ raw neo-типы (FMLCommonSetupEvent/FMLLoadCompleteEvent) вместо контрактных

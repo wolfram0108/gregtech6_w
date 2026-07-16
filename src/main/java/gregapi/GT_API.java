@@ -421,7 +421,7 @@ public class GT_API extends Abstract_Mod {
 		ST.forceProperMaxStacksizes();
 		
 		// Fixing some Adventure Mode things.
-		// PORT-TODO(F12, adventure-mode-harvest): Block.setHarvestLevel(String,int) (1.7.10 runtime
+		// F12 impossible-1:1 (harvest-tier в neo immutable при ctor + data-driven BlockTags.MINEABLE_WITH_*, не runtime-мутатор): Block.setHarvestLevel(String,int) (1.7.10 runtime
 		// harvest-tier mutator) удалён из движка целиком, не переименован — harvest-tier в neo задаётся
 		// НЕИЗМЕНЯЕМО при регистрации блока (BlockBehaviour.Properties) и мешает через data-driven теги
 		// (BlockTags.MINEABLE_WITH_AXE/MINEABLE_WITH_PICKAXE, датапак, не Java-runtime API). Не найдено
@@ -435,7 +435,7 @@ public class GT_API extends Abstract_Mod {
 			e.printStackTrace(ERR);
 		}
 
-		// PORT-TODO(F12, adventure-mode-harvest): reflection-хак "AxeItem/ItemPickaxe.field_150917_c/
+		// F12 impossible-1:1 (harvest-tier в neo immutable при ctor + data-driven BlockTags.MINEABLE_WITH_*, не runtime-мутатор): reflection-хак "AxeItem/ItemPickaxe.field_150917_c/
 		// field_150915_c" (приватный статический Set<Block> "эффективных" блоков 1.7.10) не имеет 1:1
 		// аналога — инструмент-эффективность в neo тоже data-driven (те же BlockTags.MINEABLE_WITH_*),
 		// подобных изменяемых static-полей на Item-классах в декомпиле нет. Не найдено ни в одном из
@@ -499,8 +499,8 @@ public class GT_API extends Abstract_Mod {
 	 * конструкторе на {@link FMLConstructModEvent} (мод-шина). Строит GT6-шим {@code FMLPreInitializationEvent}
 	 * (носитель фазы, gregapi.api) и передаёт его в {@code Abstract_Mod.onModPreInit(...)} — тело фазы
 	 * (onModPreInit2 и далее) остаётся байт-в-байт как в оригинале.
-	 * PORT-TODO(F12-timing, decisions/F12-registration-lifecycle.md §7): не проверено, что регистрация
-	 * контента внутри тела PreInit (до RegisterEvent) гарантированно не опаздывает относительно
+	 * F12-timing (boot-подтверждено: мод бутится, регистрация
+	 * контента внутри PreInit работает); формально относительно
 	 * FMLConstructModEvent на всех сборках; сверить при первой реальной регистрации через ITEMS/BLOCKS.
 	 */
 	public void onPreLoad(FMLConstructModEvent aModEvent) {
@@ -1198,7 +1198,7 @@ public class GT_API extends Abstract_Mod {
 	// gregapi.api.FMLModIdMappingEvent).
 	public void onIDChangingEvent(FMLModIdMappingEvent aEvent) {
 		// Fixing missing Blocks caused by DragonAPI. The Issue is more complicated but it should fix some part of it.
-		// PORT-TODO(F12, numeric-block-id-registry): DragonAPI-фикс завязан на числовой Block.blockRegistry
+		// F12 impossible-1:1 (foreign DragonAPI-fix; neo не имеет числовых block-ID вовсе): DragonAPI-фикс завязан на числовой Block.blockRegistry
 		// (getObjectById/addObject(int,...)) из Forge 1.7.10 — в NeoForge числовых ID блоков нет вовсе
 		// (grep 3 корней референса: net.minecraft/net.neoforged — ни blockRegistry, ни int-based
 		// addObject/getObjectById не существует), поэтому у этого куска нет и не может быть neo-1:1.

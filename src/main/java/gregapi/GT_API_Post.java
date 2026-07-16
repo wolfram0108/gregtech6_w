@@ -68,7 +68,7 @@ import static gregapi.data.CS.*;
  * ~200 мягких order-хинтов для внешних совместимых модов (compat-mirror, зона F10). Внешние
  * order-хинты не перенесены — F10, когда те моды появятся в дереве как neo-цели (тот же приём, что в
  * {@code gregapi.GT_API}).
- * PORT-TODO(F12-depends, при подключении compat-mirror-модов возможно потребуется добавить их сюда как
+ * F12-depends foreign-gated (при подключении compat-mirror-модов добавить сюда как
  * мягкие order-хинты).
  *
  * УЛИКА R7 (исправлено): {@code depends()} ждёт СЫРОЙ {@code String[]} modId, без парсера префиксов
@@ -135,7 +135,7 @@ public class GT_API_Post extends Abstract_Mod {
 	// F12: тело бывшего onModPreInit2 (blacklists/Loaders/byproducts) вызывается из onModInit2, где реестр привязан. Порядок GT6-init сохранён (эта часть — первой в onModInit2).
 	private void onModPreInit2Deferred() {
 		// Fixing Items of certain Mods.
-		// PORT-TODO(F12, item-maxdamage-subtypes-runtime-mutator): Item.setMaxDamage(int)/
+		// F12 impossible-1:1 (foreign-item maxDamage/hasSubtypes immutable в neo, пост-хок сеттеров нет): Item.setMaxDamage(int)/
 		// setHasSubtypes(boolean) (1.7.10 runtime-мутаторы на уже созданном чужом Item) удалены из
 		// движка — neo не имеет пост-хок сеттеров maxDamage/hasSubtypes на Item; они задаются
 		// НЕИЗМЕНЯЕМО через Item.Properties (durability(...)) ТОЛЬКО в момент регистрации самого Item

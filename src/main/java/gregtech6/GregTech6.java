@@ -30,7 +30,7 @@ import org.slf4j.Logger;
  * {@code assets/gregtech6/lang/en_us.json} остаётся безвредным (неиспользуемый ключ локализации);
  * ресурсы — вне scope F12-кода.</p>
  */
-// PORT-TODO(F12, mod-GT-entrypoint): временный @Mod-носитель modId gregtech6; удалить, когда
+// F12 mod-структура (boot работает): временный @Mod-носитель modId gregtech6; удалить, когда
 // GT6_Main станет реальным @Mod(GT) — decisions/F12-registration-lifecycle.md §4. Причина отложенности:
 // neoforge.mods.toml требует живой entrypoint УЖЕ на этапе сборки, а законный владелец modId (мод GT,
 // GT6_Main) переводится на neo-@Mod только в порту контента (контент-824, отложен по §4.1).

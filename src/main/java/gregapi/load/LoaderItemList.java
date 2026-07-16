@@ -1724,7 +1724,7 @@ public class LoaderItemList implements Runnable {
 		IL.TG_Spawner_Bug                       .set(ST.make(MD.TG, "TGMonsterSpawner"                      , 1, 0));
 		IL.TG_Spawner_Zombie                    .set(ST.make(MD.TG, "TGMonsterSpawner"                      , 1, 1));
 		
-		// PORT-TODO(F12, block-property-runtime-mutation): 1.7.10 Block.setHardness(1000).setResistance(6000000).setHarvestLevel(pickaxe,3)
+		// F12 impossible-1:1 (foreign TG-блоки immutable в neo; свойства задаются при ctor через Properties, не runtime): 1.7.10 Block.setHardness(1000).setResistance(6000000).setHarvestLevel(pickaxe,3)
 		// — runtime-мутация свойств блока удалена (neo блоки иммутабельны, strength/harvest задаются при конструкции через
 		// BlockBehaviour.Properties). TG_Ore_Cluster — блоки внешнего мода (TG), их Properties недоступны из GT6 для правки в neo
 		// (в 1.7.10 Block был изменяемым синглтоном). No-op: значения прочности внешних кластер-руд не переопределяются (честная
