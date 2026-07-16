@@ -240,8 +240,9 @@ public abstract class ToolStats implements IToolStats {
 		if (aEntity instanceof LivingEntity) Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 		Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 		if (aEntity instanceof LivingEntity) aPlayer.awardStat(Stats.DAMAGE_DEALT, Math.round((aNormalDamage+aMagicDamage) * 10));
-		// PORT-TODO(item-base, hurtResistantTime): Entity.hurtResistantTime (1.7.10 hit-invulnerability-frames
-		// поле) отсутствует в 26.1.2 (боевая модель урона переработана целиком) — нет 1:1-держателя в 3 корнях референса.
+		// item-base: 1.7.10 Entity.hurtResistantTime → neo Entity.invulnerableTime (переименовано, поле ЕСТЬ) — контроль
+		// частоты повторного удара инструментом. Восстановлено 1:1 (было ошибочно снято как «поле отсутствует»).
+		aEntity.invulnerableTime = Math.max(1, getHurtResistanceTime(aEntity.invulnerableTime, aEntity));
 		UT.Entities.exhaust(aPlayer, getExhaustionPerAttack(aEntity));
 	}
 
