@@ -139,7 +139,7 @@ public class WorldgenHives extends WorldgenObject {
 				}
 			}
 			
-			for (tY = !aWorld.dimensionType().hasSkyLight() ? 80 : aWorld.getHeight()-50; tY > 2; tY--) {
+			for (tY = !aWorld.dimensionType().hasSkyLight() ? 80 : WD.topY(aWorld)-50; tY > 2; tY--) { // F6-Y-scale: no-arg getHeight()=COUNT в MC26 → topY (maxY+1).
 				Block tContact = WD.block(aWorld, tX, tY, tZ);
 				if (WD.getMaterial(tContact).isLiquid()) return rResult;
 				if (tContact instanceof BlockStones && WD.meta(aWorld, tX, tY, tZ) != 0) return rResult;

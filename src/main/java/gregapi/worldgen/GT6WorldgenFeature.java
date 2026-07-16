@@ -44,8 +44,10 @@ import net.minecraft.world.level.levelgen.placement.BiomeFilter;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
+import net.minecraft.data.worldgen.placement.OrePlacements;
 import net.neoforged.neoforge.common.world.BiomeModifier;
 import net.neoforged.neoforge.common.world.BiomeModifiers.AddFeaturesBiomeModifier;
+import net.neoforged.neoforge.common.world.BiomeModifiers.RemoveFeaturesBiomeModifier;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -104,6 +106,11 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_nether"));
 	private static final ResourceKey<BiomeModifier> ADD_GT6_WORLDGEN_END =
 		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "add_gt6_worldgen_end"));
+	// F6 §4.2.2: отключение ванильных руд MC26 (GT6 замещает их своими — bedrock-руды + stone-layer перекрытие REPLACEABLE_BLOCKS).
+	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_OVERWORLD =
+		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_overworld"));
+	private static final ResourceKey<BiomeModifier> REMOVE_VANILLA_ORES_NETHER =
+		ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(MD.GAPI.mID, "remove_vanilla_ores_nether"));
 
 	/**
 	 * Датаген-набор: CONFIGURED_FEATURE -> PLACED_FEATURE -> BIOME_MODIFIERS, дословно по паттерну
@@ -131,6 +138,25 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_NETHER), tPlaced, Decoration.UNDERGROUND_ORES));
 			ctx.register(ADD_GT6_WORLDGEN_END, new AddFeaturesBiomeModifier(
 				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_END), tPlaced, Decoration.UNDERGROUND_ORES));
+			// F6 §4.2.2: убрать ванильные руды MC26 (allSteps — авторитетная сигнатура javap RemoveFeaturesBiomeModifier). Ключи — OrePlacements (одна фича покрывает stone+deepslate-вариант руды).
+			var tPF = ctx.lookup(Registries.PLACED_FEATURE);
+			ctx.register(REMOVE_VANILLA_ORES_OVERWORLD, RemoveFeaturesBiomeModifier.allSteps(
+				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_OVERWORLD),
+				HolderSet.direct(
+					tPF.getOrThrow(OrePlacements.ORE_COAL_UPPER), tPF.getOrThrow(OrePlacements.ORE_COAL_LOWER),
+					tPF.getOrThrow(OrePlacements.ORE_IRON_UPPER), tPF.getOrThrow(OrePlacements.ORE_IRON_MIDDLE), tPF.getOrThrow(OrePlacements.ORE_IRON_SMALL),
+					tPF.getOrThrow(OrePlacements.ORE_GOLD), tPF.getOrThrow(OrePlacements.ORE_GOLD_LOWER), tPF.getOrThrow(OrePlacements.ORE_GOLD_EXTRA),
+					tPF.getOrThrow(OrePlacements.ORE_REDSTONE), tPF.getOrThrow(OrePlacements.ORE_REDSTONE_LOWER),
+					tPF.getOrThrow(OrePlacements.ORE_DIAMOND), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_MEDIUM), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_LARGE), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_BURIED),
+					tPF.getOrThrow(OrePlacements.ORE_LAPIS), tPF.getOrThrow(OrePlacements.ORE_LAPIS_BURIED),
+					tPF.getOrThrow(OrePlacements.ORE_COPPER), tPF.getOrThrow(OrePlacements.ORE_COPPER_LARGE),
+					tPF.getOrThrow(OrePlacements.ORE_EMERALD))));
+			ctx.register(REMOVE_VANILLA_ORES_NETHER, RemoveFeaturesBiomeModifier.allSteps(
+				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_NETHER),
+				HolderSet.direct(
+					tPF.getOrThrow(OrePlacements.ORE_QUARTZ_NETHER), tPF.getOrThrow(OrePlacements.ORE_QUARTZ_DELTAS),
+					tPF.getOrThrow(OrePlacements.ORE_GOLD_NETHER),
+					tPF.getOrThrow(OrePlacements.ORE_ANCIENT_DEBRIS_LARGE), tPF.getOrThrow(OrePlacements.ORE_ANCIENT_DEBRIS_SMALL))));
 		});
 
 	public GT6WorldgenFeature() {
@@ -201,10 +227,23 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		while (tN < 8 && (tReq = CHUNK_QUEUE.poll()) != null) {
 			try {
 				GT6WorldGenerator.generate(tReq.level(), tReq.blockX(), tReq.blockZ(), false);
+				// F3-render #3 (стухший меш): post-populate пишет блоки через WD.set(chunk) БЕЗ клиент-нотификации → уже
+				// отправленный клиенту чанк (спавн/быстрое движение) показывает довордген-ваниль. Помечаем чанк на повторную
+				// отправку отслеживающим игрокам (для чанков впереди игрока список getPlayers пуст → ноль стоимости).
+				resendChunk(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4);
 				tN++;
 			} catch (Throwable e) {
 				e.printStackTrace(gregapi.data.CS.ERR);
 			}
+		}
+	}
+
+	/** F3-render #3: заставить клиентов, уже отслеживающих этот чанк, перезагрузить его (после того как GT6-worldgen дописал блоки). */
+	private static void resendChunk(ServerLevel aLevel, int aChunkX, int aChunkZ) {
+		net.minecraft.world.level.chunk.LevelChunk tChunk = aLevel.getChunkSource().getChunkNow(aChunkX, aChunkZ);
+		if (tChunk == null) return;
+		for (net.minecraft.server.level.ServerPlayer tPlayer : aLevel.getChunkSource().chunkMap.getPlayers(tChunk.getPos(), false)) {
+			tPlayer.connection.chunkSender.markChunkPendingToSend(tChunk);
 		}
 	}
 }

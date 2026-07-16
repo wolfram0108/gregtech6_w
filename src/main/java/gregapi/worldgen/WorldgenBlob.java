@@ -87,10 +87,10 @@ public abstract class WorldgenBlob extends WorldgenObject {
 					for (int j = 0; j <= mSize; ++j) {
 						double bX = aX1 + (aX2 - aX1) * j / mSize, bY = aY1 + (aY2 - aY1) * j / mSize, bZ = aZ1 + (aZ2 - aZ1) * j / mSize, b = ((Mth.sin(j * (float)Math.PI / mSize) + 1) * tRandoms[j] + 1) / 2;
 						bMinX = Math.min(bMinX, UT.Code.roundDown(bX - b));
-						bMinY = Math.min(bMinY, Math.max(0, UT.Code.roundDown(bY - b)));
+						bMinY = Math.min(bMinY, Math.max(WD.minY(aWorld), UT.Code.roundDown(bY - b)));
 						bMinZ = Math.min(bMinZ, UT.Code.roundDown(bZ - b));
 						bMaxX = Math.max(bMaxX, UT.Code.roundDown(bX + b));
-						bMaxY = Math.max(bMaxY, Math.min(aWorld.getHeight(), UT.Code.roundDown(bY + b)));
+						bMaxY = Math.max(bMaxY, Math.min(WD.topY(aWorld), UT.Code.roundDown(bY + b)));
 						bMaxZ = Math.max(bMaxZ, UT.Code.roundDown(bZ + b));
 					}
 					
@@ -99,10 +99,10 @@ public abstract class WorldgenBlob extends WorldgenObject {
 					for (int j = 0; j <= mSize; ++j) {
 						double bX = aX1 + (aX2 - aX1) * j / mSize, bY = aY1 + (aY2 - aY1) * j / mSize, bZ = aZ1 + (aZ2 - aZ1) * j / mSize, b = ((Mth.sin(j * (float)Math.PI / mSize) + 1) * tRandoms[j] + 1) / 2;
 						int tMinX = UT.Code.roundDown(bX - b);
-						int tMinY = Math.max(0, UT.Code.roundDown(bY - b));
+						int tMinY = Math.max(WD.minY(aWorld), UT.Code.roundDown(bY - b));
 						int tMinZ = UT.Code.roundDown(bZ - b);
 						int tMaxX = UT.Code.roundDown(bX + b);
-						int tMaxY = Math.min(aWorld.getHeight(), UT.Code.roundDown(bY + b));
+						int tMaxY = Math.min(WD.topY(aWorld), UT.Code.roundDown(bY + b));
 						int tMaxZ = UT.Code.roundDown(bZ + b);
 						
 						for (int eX = tMinX; eX <= tMaxX; ++eX) {

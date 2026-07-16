@@ -149,8 +149,9 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			ItemStack tRock = (tRegistry == null ? null : OP.oreRaw.mat(mMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : mMaterial, 1));
 			boolean tFlowers = (mIndicatorFlowers && !BIOMES_WASTELANDS.contains(aBiomes[8][8])), tRocks = ST.valid(tRock);
 			
-			int tMinHeight = Math.min(aWorld.getHeight()-2, WD.waterLevel(aWorld)-1)
-			,   tMaxHeight = Math.min(aWorld.getHeight()-1, tMinHeight * 2 + 16);
+			// F6-Y-scale: no-arg getHeight()=COUNT(384) в MC26 ≠ верх мира → WD.topY (maxY+1 = старая семантика getHeight()).
+			int tMinHeight = Math.min(WD.topY(aWorld)-2, WD.waterLevel(aWorld)-1)
+			,   tMaxHeight = Math.min(WD.topY(aWorld)-1, tMinHeight * 2 + 16);
 			// Generate first an 8x8 of 4, then a 16x16 of 8, and at the end a 32x32 of 16 Rocks/Flowers. That way the Pattern gets denser in the middle, and Chunk Boundary Issues of GalactiCraft wont be as terrible.
 			for (int tD = 4; tD <= 16; tD *= 2) try {for (int i = 0; i < tD; i++) {
 				int tX = aMinX+aRandom.nextInt(tD*2)+8-tD, tZ = aMinZ+aRandom.nextInt(tD*2)+8-tD;
@@ -180,40 +181,43 @@ public class WorldgenOresBedrock extends WorldgenObject {
 	
 	public static boolean generateVein(OreDictMaterial aMaterial, Level aWorld, int aDimType, int aMinX, int aMinZ, Random aRandom) {
 		try {
-			Block tStone = WD.block(aWorld, aMinX+8, 0, aMinZ+8);
+			// F6-Y-scale: бедрок MC26 на getMinY() (был Y=0). Бедрок-руда/жила якорятся к дну мира (tMinY), жила растёт вверх относительно него.
+			final int tMinY = WD.minY(aWorld);
+			Block tStone = WD.block(aWorld, aMinX+8, tMinY, aMinZ+8);
 			// Requires existing Bedrock!
 			if (tStone != BlocksGT.oreBedrock && tStone != BlocksGT.oreSmallBedrock && !WD.bedrock(tStone)) return F;
 			// Generate the bedrock Ore Blocks.
 			for (int tX = 5; tX < 11; tX++) for (int tZ = 5; tZ < 11; tZ++) {
 				switch(aRandom.nextInt(6)) {
-				case 0:         BlocksGT.oreBedrock     .placeBlock(aWorld, aMinX+tX, 0, aMinZ+tZ, SIDE_UNKNOWN, (aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial).mID, null, F, T); break;
-				case 1: case 2: BlocksGT.oreSmallBedrock.placeBlock(aWorld, aMinX+tX, 0, aMinZ+tZ, SIDE_UNKNOWN, (aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial).mID, null, F, T); break;
+				case 0:         BlocksGT.oreBedrock     .placeBlock(aWorld, aMinX+tX, tMinY, aMinZ+tZ, SIDE_UNKNOWN, (aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial).mID, null, F, T); break;
+				case 1: case 2: BlocksGT.oreSmallBedrock.placeBlock(aWorld, aMinX+tX, tMinY, aMinZ+tZ, SIDE_UNKNOWN, (aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial).mID, null, F, T); break;
 				}
 			}
 			// At least one Ore Block must be there. So force place a large one somewhere in the Center.
-			BlocksGT.oreBedrock.placeBlock(aWorld, aMinX+6+aRandom.nextInt(4), 0, aMinZ+6+aRandom.nextInt(4), SIDE_UNKNOWN, (aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial).mID, null, F, T);
+			BlocksGT.oreBedrock.placeBlock(aWorld, aMinX+6+aRandom.nextInt(4), tMinY, aMinZ+6+aRandom.nextInt(4), SIDE_UNKNOWN, (aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial).mID, null, F, T);
 			// Use Deepslate if available, except in the Nether.
 			tStone = (aDimType == DIM_NETHER ? Blocks.NETHERRACK : StoneLayer.DEEPSLATE == null ? NB : StoneLayer.DEEPSLATE.mStone);
 			// Keep Distances within the Chunk for this important step.
 			int[] tD1 = new int[] { 5,  4,  2,  1,  0,  2,  5};
 			int[] tD2 = new int[] {11, 12, 14, 15, 16, 14, 11};
 			// Portion a Muffin shaped Ore Blob around the Bedrock Spot.
-			for (int tY = 1; tY < tD1.length; tY++) for (int tX = tD1[tY]; tX < tD2[tY]; tX++) for (int tZ = tD1[tY]; tZ < tD2[tY]; tZ++) {
+			// F6-Y-scale: маффин-жила Y 1..6 — ОТНОСИТЕЛЬНО бедрока (tD1/tD2 индексируются tY, поэтому tY 1..6 сохраняем; абсолютная высота = tMinY+tY).
+			for (int tY = 1; tY < tD1.length; tY++) { final int tAbsY = tMinY + tY; for (int tX = tD1[tY]; tX < tD2[tY]; tX++) for (int tZ = tD1[tY]; tZ < tD2[tY]; tZ++) {
 				if (GENERATED_NO_BEDROCK_ORE) if (tStone != NB) {
-					WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, tStone, 0, 0);
+					WD.set(aWorld, aMinX+tX, tAbsY, aMinZ+tZ, tStone, 0, 0);
 				} else {
-					WD.removeBedrock(aWorld, aMinX+tX, tY, aMinZ+tZ);
+					WD.removeBedrock(aWorld, aMinX+tX, tAbsY, aMinZ+tZ);
 				}
 				switch(aRandom.nextInt(6)) {
-				case 0:         WD.setOre     (aWorld, aMinX+tX, tY, aMinZ+tZ, aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial); break;
-				case 1: case 2: WD.setSmallOre(aWorld, aMinX+tX, tY, aMinZ+tZ, aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial); break;
+				case 0:         WD.setOre     (aWorld, aMinX+tX, tAbsY, aMinZ+tZ, aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial); break;
+				case 1: case 2: WD.setSmallOre(aWorld, aMinX+tX, tAbsY, aMinZ+tZ, aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial); break;
 				}
-			}
+			}}
 			
 			for (int i = 5+aRandom.nextInt(3); i-->0;) {
 				int tX = 5+aRandom.nextInt(6), tZ = 5+aRandom.nextInt(6), tW = WD.waterLevel(aWorld);
 				
-				for (int tY = tD1.length; tY < tW; tY++) {
+				for (int tY = tMinY + tD1.length; tY < tW; tY++) {
 					switch(aRandom.nextInt(7)) {case 0: tX++; break; case 1: tX--; break; case 2: tZ++; break; case 3: tZ--; break;}
 					if (tX <= 0 || tX >= 15 || tZ <= 0 || tZ >= 15) {
 						WD.setSmallOre(aWorld, aMinX+tX, tY, aMinZ+tZ, aMaterial == ANY.Hexorium ? UT.Code.select(MT.HexoriumBlack, ANY.Hexorium.mToThis.toArray(ZL_MATERIAL)) : aMaterial);

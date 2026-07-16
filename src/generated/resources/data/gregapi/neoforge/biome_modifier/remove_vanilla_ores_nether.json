@@ -1,0 +1,11 @@
+{
+  "type": "neoforge:remove_features",
+  "biomes": "#minecraft:is_nether",
+  "features": [
+    "minecraft:ore_quartz_nether",
+    "minecraft:ore_quartz_deltas",
+    "minecraft:ore_gold_nether",
+    "minecraft:ore_ancient_debris_large",
+    "minecraft:ore_debris_small"
+  ]
+}

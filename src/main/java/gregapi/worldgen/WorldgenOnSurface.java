@@ -51,8 +51,9 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 		int aAmount = canGenerate(aWorld, aChunk, aDimType, aMinX, aMinZ, aMaxX, aMaxZ, aRandom, aBiomes, aBiomeNames);
 		if (aAmount <= 0) return F;
 		// Determine the Local Height from which to trace downwards.
-		int tMinHeight = Math.min(aWorld.getHeight()-2, WD.waterLevel(aWorld)-1)
-		,   tMaxHeight = Math.min(aWorld.getHeight()-1, !aWorld.dimensionType().hasSkyLight() ? 80 : tMinHeight * 2 + 16);
+		// F6-Y-scale: no-arg getHeight()=COUNT(384) в MC26 ≠ верх мира → WD.topY (maxY+1 = старая getHeight()); окно якорено к морю (waterLevel).
+		int tMinHeight = Math.min(WD.topY(aWorld)-2, WD.waterLevel(aWorld)-1)
+		,   tMaxHeight = Math.min(WD.topY(aWorld)-1, !aWorld.dimensionType().hasSkyLight() ? 80 : tMinHeight * 2 + 16);
 		// Mark some Target Positions for this Chunk.
 		boolean tTargets[][] = new boolean[16][16], rResult = F;
 		for (int i = 0; i < aAmount; i++) tTargets[aRandom.nextInt(16)][aRandom.nextInt(16)] = T;

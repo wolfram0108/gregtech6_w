@@ -131,7 +131,12 @@ public class StoneLayer {
 	public StoneLayer setNoDeep() {mNoDeep = T; return this;}
 	
 	/** List of Stone and Ore Blocks, that can simply be replaced by the Stone Layers. */
-	public static final Set<Block> REPLACEABLE_BLOCKS = new HashSetNoNulls<>(F, Blocks.STONE, Blocks.COAL_ORE, Blocks.IRON_ORE, Blocks.GOLD_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.LAPIS_ORE, Blocks.REDSTONE_ORE, Blocks.REDSTONE_ORE);
+	public static final Set<Block> REPLACEABLE_BLOCKS = new HashSetNoNulls<>(F
+	, Blocks.STONE, Blocks.COAL_ORE, Blocks.IRON_ORE, Blocks.COPPER_ORE, Blocks.GOLD_ORE, Blocks.DIAMOND_ORE, Blocks.EMERALD_ORE, Blocks.LAPIS_ORE, Blocks.REDSTONE_ORE
+	// F6 §4.2.1 (MC26): новые ванильные камни MC26 — GT6 трактует как «stone», stone-layer-проход замещает их своими слоями (иначе остаются ванильными, не покрытыми GT6).
+	, Blocks.DEEPSLATE, Blocks.GRANITE, Blocks.DIORITE, Blocks.ANDESITE, Blocks.TUFF, Blocks.CALCITE, Blocks.BASALT
+	// F6 §4.2.2 (fallback к датаген-remove): deepslate-варианты ванильных руд + медь — если руда проскользнула мимо remove_features, stone-проход её перекроет GT6-камнем.
+	, Blocks.DEEPSLATE_COAL_ORE, Blocks.DEEPSLATE_IRON_ORE, Blocks.DEEPSLATE_COPPER_ORE, Blocks.DEEPSLATE_GOLD_ORE, Blocks.DEEPSLATE_DIAMOND_ORE, Blocks.DEEPSLATE_EMERALD_ORE, Blocks.DEEPSLATE_LAPIS_ORE, Blocks.DEEPSLATE_REDSTONE_ORE);
 	/** List of generateable Stone Layers, via ItemStack of the Stone Block, so that MetaData is usable. */
 	public static final List<StoneLayer> LAYERS = new ArrayListNoNulls<>();
 	/** Deepslate Special Case. */

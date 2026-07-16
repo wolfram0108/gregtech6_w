@@ -52,6 +52,11 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	
 	@Override public String getTileEntityName() {return "gt.MetaBlockTileEntity";}
 	
+	// F3-render #2 (руда рендерилась материалом «none»): getUpdateTag по умолчанию ПУСТ (BlockEntity:245) → на загрузке чанка
+	// клиент НЕ получал mMetaData (материал руды) → рендер материала «none» / «загрузка». saveCustomOnly отдаёт данные через
+	// saveAdditional→writeToNBT (mMetaData «m»); клиент применяет через handleUpdateTag→loadWithComponents→loadAdditional→readFromNBT.
+	@Override public net.minecraft.nbt.CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider aProvider) {return saveCustomOnly(aProvider);}
+
 	// @Override
 	@Override public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
 		if (!(mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), F, T))) {
@@ -87,7 +92,10 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	}
 	
 	private ITexture mTexture;
-	
+
+	/** F3-render #2: приход mMetaData (материал) при синке — сбросить кэш текстуры, иначе меш остаётся с material=none. */
+	public void receiveMetaData(short aMetaData) {mMetaData = aMetaData; mTexture = null;}
+
 	@Override
 	public ITexture getTexture(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
 		if (!aShouldSideBeRendered[aSide]) return null;
@@ -101,7 +109,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}
 	@Override public boolean setBlockBounds(Block aBlock, int aRenderPass, boolean[] aShouldSideBeRendered) {return F;}
 	@Override public int getRenderPasses(Block aBlock, boolean[] aShouldSideBeRendered) {return 1;}
-	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m").orElse((short)0); if (aNBT.contains("gt.nbt.drop")) mItemNBT = aNBT.getCompoundOrEmpty("gt.nbt.drop");}
+	@Override public void readFromNBT(CompoundTag aNBT) {super.readFromNBT(aNBT); mMetaData = aNBT.getShort("m").orElse((short)0); if (aNBT.contains("gt.nbt.drop")) mItemNBT = aNBT.getCompoundOrEmpty("gt.nbt.drop"); mTexture = null;/*F3-render #2: перестроить текстуру после загрузки/синка материала*/}
 	@Override public void writeToNBT(CompoundTag aNBT) {super.writeToNBT(aNBT); aNBT.putShort("m", mMetaData); if (mItemNBT != null && !mItemNBT.isEmpty()) aNBT.put("gt.nbt.drop", mItemNBT);}
 	@Override public void processPacket(INetworkHandler aNetworkHandler) {/**/}
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return null;}

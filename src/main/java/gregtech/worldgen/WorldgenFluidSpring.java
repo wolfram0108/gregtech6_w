@@ -63,27 +63,30 @@ public class WorldgenFluidSpring extends WorldgenObject {
 		
 		WorldgenOresBedrock.CAN_GENERATE_BEDROCK_ORE = F;
 		
-		Block tBlock = WD.block(aWorld, aMinX+8, 0, aMinZ+8);
+		// F6-Y-scale: бедрок MC26 на getMinY() (был Y=0) — родник и слои жидкости якорятся к дну мира (tMinY).
+		final int tMinY = WD.minY(aWorld);
+		Block tBlock = WD.block(aWorld, aMinX+8, tMinY, aMinZ+8);
 		if (tBlock != BlocksGT.oreBedrock && tBlock != BlocksGT.oreSmallBedrock && !WD.bedrock(tBlock)) return F;
 		
 		tBlock = (aDimType == DIM_NETHER ? Blocks.NETHERRACK : IL.EtFu_Deepslate.block());
 		if (ST.invalid(tBlock)) tBlock = Blocks.STONE;
 		
 		for (int i = 0; i <= 6; i++) for (int tX = aMinX+i; tX <= aMaxX-i; tX++) for (int tZ = aMinZ+i; tZ <= aMaxZ-i; tZ++) {
-			if (!WD.opq(aWorld, tX, i+1, tZ, F, T)) WD.set(aWorld, tX, i+1, tZ, tBlock, 0, 0);
-			
-			if (i > 0) WD.set(aWorld, tX, i, tZ, mBlock, mMeta, 0);
-			
-			if (mSpringFluid != null && i > 2 && aRandom.nextInt(16) == 0 && WD.bedrock(aWorld, tX, 0, tZ)) {
-				MultiTileEntityFluidSpring.setBlock(aWorld, tX, 0, tZ, mSpringFluid);
+			if (!WD.opq(aWorld, tX, tMinY+i+1, tZ, F, T)) WD.set(aWorld, tX, tMinY+i+1, tZ, tBlock, 0, 0);
+
+			if (i > 0) WD.set(aWorld, tX, tMinY+i, tZ, mBlock, mMeta, 0);
+
+			if (mSpringFluid != null && i > 2 && aRandom.nextInt(16) == 0 && WD.bedrock(aWorld, tX, tMinY, tZ)) {
+				MultiTileEntityFluidSpring.setBlock(aWorld, tX, tMinY, tZ, mSpringFluid);
 			}
 		}
 		
 		switch (mIndicatorType) {
 		// Yellow or Brown Grass.
 		case  1: case  2: case  3:
-			int tMinHeight = Math.min(aWorld.getHeight()-2, WD.waterLevel(aWorld)-1)
-			,   tMaxHeight = Math.min(aWorld.getHeight()-1, tMinHeight * 2 + 16);
+			// F6-Y-scale: no-arg getHeight()=COUNT в MC26 → WD.topY (maxY+1 = старая getHeight()).
+			int tMinHeight = Math.min(WD.topY(aWorld)-2, WD.waterLevel(aWorld)-1)
+			,   tMaxHeight = Math.min(WD.topY(aWorld)-1, tMinHeight * 2 + 16);
 			for (int i = 0; i < 6; i++) {
 				int tX = aMinX+4+aRandom.nextInt(8), tZ = aMinZ+4+aRandom.nextInt(8);
 				for (int tY = tMaxHeight; tY > tMinHeight; tY--) {

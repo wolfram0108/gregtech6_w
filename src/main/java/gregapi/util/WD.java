@@ -651,6 +651,26 @@ public class WD {
 	public static int waterLevel() {
 		return waterLevel(62);
 	}
+
+	// ===== F6-Y-scale ЦЕНТР (§4.1 decisions/F6-worldgen.md): единый адаптер высот worldgen'а (принцип 2/4). =====
+	// Мир 1.7.10 = [0..255], бедрок Y=0, море 62 (SEA_old, дефолт waterLevel). Мир MC26 = [getMinY()..getMaxY()]
+	// (обычно −64..319), бедрок на getMinY(), море getSeaLevel() (63). GT6-генераторы жёстко зашиты на старые
+	// абсолютные Y (0/255/getHeight()) → без адаптации кладут не туда (руды/вода/бедрок/поверхность мимо). Все
+	// worldgen-Y проходят через ЭТОТ центр, не копипастом по файлам — эталон section-index уже в WorldgenStoneLayers.
+	private static final int OLD_BOTTOM = 0, OLD_TOP = 255, SEA_OLD = 62;
+	/** Нижняя граница мира (worldgen: заменяет жёсткий 0 / бедрок-якорь). */
+	public static int minY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMinY();}
+	/** Верхняя граница мира ВКЛючительно (worldgen: заменяет жёсткий 255). */
+	public static int maxY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxY();}
+	/** maxY+1 = старая семантика {@code World.getHeight()} (был 256). MC26 no-arg getHeight()=COUNT(384) ≠ верх — заменять этим. */
+	public static int topY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxY()+1;}
+	/** §4.1 sea-anchored: старый абсолютный Y (мир [0..255], море 62) → новый Y (мир [minY..maxY], море getSeaLevel),
+	 *  раздельно по подземной [0..62]→[minY..sea] и надземной [62..255]→[sea..maxY] части (море — якорь, не дно). */
+	public static int remapY(Level aWorld, int aOldY) {
+		int tSea = aWorld.getSeaLevel(), tMinY = aWorld.getMinY(), tMaxY = aWorld.getMaxY();
+		if (aOldY <= SEA_OLD) return tMinY + Math.round((aOldY - OLD_BOTTOM) * (tSea - tMinY) / (float)(SEA_OLD - OLD_BOTTOM));
+		return tSea + Math.round((aOldY - SEA_OLD) * (tMaxY - tSea) / (float)(OLD_TOP - SEA_OLD));
+	}
 	
 	/** @return the regular Temperature of the World at this Location according to Gregs calculations. In Kelvin, ofcourse. */
 	public static long temperature(Level aWorld, int aX, int aY, int aZ) {

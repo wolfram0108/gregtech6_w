@@ -560,7 +560,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
 		BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (aTileEntity == null && aWorld instanceof Level) aTileEntity = WD.te((Level)aWorld, aX, aY, aZ, createTileEntity((Level)aWorld, aX, aY, aZ, SIDE_ANY, aMetaData, null), F);
-		if (aTileEntity instanceof PrefixBlockTileEntity) ((PrefixBlockTileEntity)aTileEntity).mMetaData = aMetaData;
+		if (aTileEntity instanceof PrefixBlockTileEntity) ((PrefixBlockTileEntity)aTileEntity).receiveMetaData(aMetaData); // F3-render #2: сбрасывает кэш mTexture вместе с mMetaData.
 		if (aWorld instanceof Level && ((Level)aWorld).isClientSide()) WD.update(aWorld, aX, aY, aZ);
 	}
 	

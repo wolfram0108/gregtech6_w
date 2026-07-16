@@ -98,7 +98,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 			if (tRegistry != null) {
 				for (int i = 0, j = 1+aRandom.nextInt(3); i < j; i++) {
 					int tX = aMinX + aRandom.nextInt(16), tZ = aMinZ + aRandom.nextInt(16);
-					for (int tY = Math.min(aWorld.getHeight(), tMinY+25); tY >= tMinY-10 && tY > 0; tY--) {
+					for (int tY = Math.min(WD.topY(aWorld), tMinY+25); tY >= tMinY-10 && tY > WD.minY(aWorld); tY--) {
 						// F6: было `Block tContact = aChunk.getBlock(tX&15, tY, tZ&15)` — LevelChunk.getBlock(int,int,int)
 						// удалён; реальный neo — LevelChunk.getBlockState(BlockPos):BlockState (LevelChunk.java:210).
 						BlockState tContact = aChunk.getBlockState(new BlockPos(tX, tY, tZ));

@@ -53,12 +53,15 @@ public class WorldgenRiver extends WorldgenObject {
 		boolean temp = T;
 		for (String tName : aBiomeNames) if (BIOMES_RIVER.contains(tName) && !BIOMES_OCEAN.contains(tName)) {temp = F; break;}
 		if (temp) return F;
-		int tHeight = WD.waterLevel(aWorld, mHeight);
+		// F6-Y-scale: старт скана = реальная поверхность воды (getSeaLevel), нижняя граница minY, индекс секции getSectionIndex (эталон WorldgenStoneLayers d6dc0f2d).
+		int tHeight = Math.max(WD.waterLevel(aWorld, mHeight), aWorld.getSeaLevel());
 		final LevelChunkSection[] tStorages = aChunk.getSections();
+		final int tMinY = WD.minY(aWorld);
 		for (int tX = 0; tX < 16; tX++) for (int tZ = 0; tZ < 16; tZ++) {
 			boolean tPlacedNone = T;
-			for (int tY = tHeight; tY > 0; tY--) {
-				final LevelChunkSection tStorage = tStorages[tY >> 4];
+			for (int tY = tHeight; tY > tMinY; tY--) {
+				final int tSectionIndex = aChunk.getSectionIndex(tY);
+				final LevelChunkSection tStorage = (tSectionIndex >= 0 && tSectionIndex < tStorages.length) ? tStorages[tSectionIndex] : null;
 				if (tStorage == null) continue;
 				final Block tBlock = tStorage.getBlockState(tX, tY & 15, tZ).getBlock();
 				if (WD.opaque(tBlock)) break;
