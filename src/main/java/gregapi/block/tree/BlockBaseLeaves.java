@@ -71,8 +71,8 @@ public abstract class BlockBaseLeaves extends BlockBaseTree implements IShearabl
 		mSaplings = aSaplings;
 		mLogMetas = aLogMetas;
 		mLogs = aLogs;
-		// PORT-TODO(F12, block-property-runtime-mutator): setHardness(0.2F) (1.7.10 runtime мутатор) - тот же
-		// класс, что уже открыт GT_API.java:734, деградация до no-op (getBlockHardness ниже уже несёт GT6-own значение).
+		// F12-hardness: 1.7.10 setHardness(0.2F) (runtime мутатор) заменён getBlockHardness ниже (OAK_LEAVES) →
+		// подключён к neo через BlockBase.getDestroyProgress (централизованно, 1:1). Runtime-мутатор не нужен.
 	}
 	
 	@Override public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return F;}

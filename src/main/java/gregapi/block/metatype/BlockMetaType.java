@@ -62,12 +62,9 @@ public class BlockMetaType extends BlockBaseMeta {
 		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aNameInternal, aVanillaMaterial, aSoundType, aCount, aIcons);
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onBlockCreation(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons);
-		// PORT-TODO(F12, block-property-runtime-mutator): Block.setHardness(float)/setResistance(float) (1.7.10
-		// runtime мутаторы, вызов ПОСЛЕ super()) удалены - neo BlockBehaviour.Properties.strength(...) неизменяема,
-		// задаётся ТОЛЬКО ДО super() [BlockBehaviour.java:1127 окрестность]; тот же класс уже открыт GT_API.java:734
-		// (block-property-runtime-mutator) - ретроактивная мутация недостижима, деградация до no-op (getBlockHardness/
-		// getExplosionResistance(byte) ниже уже несут mHardnessMultiplier/mResistanceMultiplier как GT6-own
-		// не-движковые методы, значение не теряется для GT6-внутренних потребителей).
+		// F12-hardness: 1.7.10 setHardness/setResistance (runtime мутаторы после super) — neo Properties.strength неизменяема.
+		// Заменены: getBlockHardness (WD.hardness(STONE)*mHardnessMultiplier) → neo через BlockBase.getDestroyProgress;
+		// getExplosionResistance(byte) → neo через BlockBase.getExplosionResistance(BlockState,...). Оба подключены 1:1, значение активно.
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.BLOCK);
 		mIsWall = F;
 		mIsSlab = F;
@@ -126,7 +123,7 @@ public class BlockMetaType extends BlockBaseMeta {
 		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aName+".slab."+aSlabType, aVanillaMaterial, aSoundType, aCount, aIcons);
 		if (aItemClass == null) aItemClass = ItemBlockMetaType.class;
 		onSlabCreation(aItemClass, aVanillaMaterial, aSoundType, aName, aDefaultLocalised, aMaterial, aResistanceMultiplier, aHardnessMultiplier, aHarvestLevel, aCount, aIcons, aSlabType, aBlock);
-		// PORT-TODO(F12, block-property-runtime-mutator): см. основной конструктор выше — тот же класс, деградация до no-op.
+		// F12-hardness: см. основной конструктор выше — getBlockHardness/getExplosionResistance подключены к neo (getDestroyProgress), 1:1.
 		mIsWall = F;
 		mIsSlab = T;
 		mIsStair = F;

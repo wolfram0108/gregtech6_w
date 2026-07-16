@@ -129,9 +129,16 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]
 	@Override public float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {return getExplosionResistance(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));}
 	public float getExplosionResistance(Entity aEntity) {return getExplosionResistance((byte)0);}
-	// PORT-TODO(F13/F16, block-getBlockHardness-removed): 1.7.10 vanilla Block.getBlockHardness(World,x,y,z) не имеет
-	// override-точки в neo - BlockBehaviour.BlockStateBase.getDestroySpeed(BlockGetter,BlockPos) [BlockBehaviour.java:636]
-	// лишь возвращает запечённое в BlockState значение (не вызывает Block, не переопределяем). Метод остаётся обычным.
+	// F12/F9-hardness: getDestroySpeed(BlockGetter,BlockPos) возвращает лишь запечённый Properties.destroyTime (не зовёт Block,
+	// neo Properties immutable → runtime setHardness невозможен), НО getDestroyProgress(state,player,world,pos) — overridable
+	// динамический хук. Подключаем GT6-getBlockHardness (субклассы дают vanilla/GT6-значения) по vanilla-формуле — 1:1.
+	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {
+		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
+		float tHardness = getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+		if (tHardness < 0) return 0.0F; // vanilla hardness < 0 = неразрушим
+		int tHarvest = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
+		return aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tHarvest;
+	}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 1;}
 	@Override public Block getBlock() {return this;}
 	@Override public byte maxMeta() {return 1;}

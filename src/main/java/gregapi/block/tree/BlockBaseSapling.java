@@ -73,8 +73,8 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		// было setTickRandomly(true) (1.7.10 runtime мутатор, вызов ПОСЛЕ super()) -> перенесено на реальную
 		// override-точку BlockBehaviour.isRandomlyTicking(BlockState) [BlockBehaviour.java:382-384] ниже (в отличие
 		// от setHardness/setResistance у этой точки ЕСТЬ override, не no-op).
-		// PORT-TODO(F12, block-property-runtime-mutator): setHardness(0) (1.7.10 runtime мутатор) - тот же класс,
-		// что уже открыт GT_API.java:734, деградация до no-op (getBlockHardness ниже уже несёт GT6-own значение).
+		// F12-hardness: 1.7.10 setHardness(0) заменён getBlockHardness ниже (OAK_SAPLING) → подключён к neo через
+		// BlockBase.getDestroyProgress (централизованно, 1:1). Runtime-мутатор не нужен.
 		if (MD.RC.mLoaded) try {EntityTunnelBore.addMineableBlock(this);} catch(Throwable e) {e.printStackTrace(ERR);}
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("forester", ST.make(this, 1, W)));
 	}
