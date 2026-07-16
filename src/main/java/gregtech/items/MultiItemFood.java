@@ -61,8 +61,7 @@ import static gregapi.data.CS.*;
 public class MultiItemFood extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemFood(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		// F16 creative-tab: neo Item без setCreativeTab (табы = DeferredRegister+событие, UI-фаза). Конструкция CreativeTab (1:1
-		// golden ctor) даёт LH.add имени вкладки — localization-паритет.
+		// F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
 		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Nature & Foods", this, (short)12000);
 	}
 	

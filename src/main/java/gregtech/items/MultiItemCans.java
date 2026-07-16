@@ -39,7 +39,7 @@ import static gregapi.data.CS.*;
 public class MultiItemCans extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemCans(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Cans", this, (short)74); // F16 creative-tab: LH.add имени вкладки (localization-паритет), UI-регистрация — F16-фаза
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Cans", this, (short)74); // F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
 	}
 	
 	@Override

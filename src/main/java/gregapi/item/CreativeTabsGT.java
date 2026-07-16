@@ -56,6 +56,14 @@ public final class CreativeTabsGT {
 
 	private static final List<Object[]> ASSIGNMENTS = new ArrayList<>(); // {ItemLike (Block|Item), ResourceKey<CreativeModeTab>}
 
+	/** F16 собственные GT-вкладки (1:1 golden): 1.7.10 создавал 7 своих CreativeTabs (по одной на god-item: Technology,
+	 *  Nature&Foods, Cans, Bottles, Books, Bumblebees, Equipment). Их нельзя свести в ванильные — они отдельные вкладки с
+	 *  иконкой+заголовком. Здесь регистрируем каждую как настоящий neo CreativeModeTab (RegisterEvent&lt;CreativeModeTab&gt;). */
+	static final List<CreativeTab> OWN_TABS = new ArrayList<>();
+
+	/** Вызывается из ctor {@link CreativeTab} (создаётся в ctor god-item — замена setCreativeTab(new CreativeTab(...))). */
+	static void registerOwnTab(CreativeTab aTab) {if (aTab != null) OWN_TABS.add(aTab);}
+
 	/** Вызывается из ctor блока/предмета (замена setCreativeTab). aOwner — сам блок или предмет (ItemLike). */
 	public static void assign(ItemLike aOwner, ResourceKey<CreativeModeTab> aTab) {
 		if (aOwner != null && aTab != null) ASSIGNMENTS.add(new Object[]{aOwner, aTab});
@@ -64,6 +72,25 @@ public final class CreativeTabsGT {
 	/** Единая подписка на mod-bus (вызов из GT_API ctor). */
 	public static void register(IEventBus aModBus) {
 		aModBus.addListener(CreativeTabsGT::onBuildContents);
+		aModBus.addListener(CreativeTabsGT::onRegisterTabs);
+	}
+
+	/** F16: регистрируем 7 собственных GT-вкладок в реестр CREATIVE_MODE_TAB. К моменту этого события (после ITEM) OWN_TABS
+	 *  заполнен ctor'ами god-items. Каждая CreativeTab — валидный neo CreativeModeTab (super(builder) с icon+displayItems). */
+	private static void onRegisterTabs(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
+		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB)) return;
+		for (CreativeTab tTab : OWN_TABS) try {
+			aEvent.register(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,
+				net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tTab.mName)), () -> tTab);
+		} catch (Throwable e) {/* boot-safe: сбой одной вкладки не рушит загрузку */}
+	}
+
+	/** F16: наполнение собственной GT-вкладки (client-only, вызывается из displayItems-генератора вкладки). Перечисление —
+	 *  тем же getSubItems god-item, что и раньше (порт сохранил). */
+	static void populate(Item aItem, CreativeModeTab.Output aOutput) {
+		if (aItem == null) return;
+		try {for (ItemStack tStack : enumerate(aItem, aItem)) if (tStack != null && !tStack.isEmpty()) aOutput.accept(tStack);}
+		catch (Throwable e) {/* boot-safe */}
 	}
 
 	private static void onBuildContents(BuildCreativeModeTabContentsEvent aEvent) {

@@ -27,17 +27,24 @@ import net.minecraft.world.item.Item;
  * @author Gregorius Techneticies
  */
 public class CreativeTab extends CreativeModeTab {
+	public final String mName;
 	public final Item mItem;
 	public final short mMetaData;
-	
+
 	public CreativeTab(String aName, String aLocal, Item aItem, short aMetaData) {
-		// PORT-TODO(F16, creative-tab): 1.7.10 CreativeTabs(String) — neo CreativeModeTab строится через Builder (protected
-		// ctor CreativeModeTab(Builder); реальные вкладки регистрируются DeferredRegister<CreativeModeTab>+событие, не
-		// подклассом). Компайл-мост: super(builder с title=aName); полноценная F16-регистрация — отдельная фаза.
-		super(CreativeModeTab.builder().title(net.minecraft.network.chat.Component.literal(aName)));
+		// F16 creative-tab (1:1): 1.7.10 CreativeTabs(String) → neo CreativeModeTab через Builder. Строим ПОЛНЫЙ builder
+		// (title/icon/displayItems), а сам инстанс (валидный CreativeModeTab) регистрируется CreativeTabsGT на
+		// RegisterEvent<CreativeModeTab>. Заголовок literal(aLocal): GT6-локализация не доходит до vanilla lang (BACKUPMAP),
+		// поэтому даём готовую строку напрямую (тот же видимый результат). LH.add сохраняем (другой код читает ключ).
+		super(CreativeModeTab.builder()
+			.title(net.minecraft.network.chat.Component.literal(aLocal))
+			.icon(() -> gregapi.util.ST.make(aItem, 1, aMetaData & 0xFFFF))
+			.displayItems((aParams, aOutput) -> CreativeTabsGT.populate(aItem, aOutput)));
 		LH.add("itemGroup." + aName, aLocal);
+		mName = aName;
 		mItem = aItem;
 		mMetaData = aMetaData;
+		CreativeTabsGT.registerOwnTab(this);
 	}
 	
 	// @Override

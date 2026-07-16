@@ -61,7 +61,7 @@ import static gregapi.data.CS.*;
 public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItemBumbleBee {
 	public MultiItemBumbles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bumblebees", this, (short)2); // F16 creative-tab: LH.add имени вкладки (localization-паритет), UI-регистрация — F16-фаза
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bumblebees", this, (short)2); // F16 creative-tab: своя GT-вкладка (icon+displayItems), регистрируется CreativeTabsGT на RegisterEvent<CreativeModeTab>. 1:1.
 		if (!SHOW_BUMBLEBEES) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
 	}
 	
