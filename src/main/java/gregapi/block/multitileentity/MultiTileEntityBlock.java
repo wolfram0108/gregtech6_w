@@ -294,11 +294,15 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final boolean canBlockStay(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return !(aTileEntity instanceof IMTE_CanBlockStay) || ((IMTE_CanBlockStay)aTileEntity).canBlockStay();}
 	// было onFallenUpon(World,x,y,z,Entity,dist) -> Block.fallOn(Level,BlockState,BlockPos,Entity,double) [Block.java:484] - fallDistance теперь double, не float.
 	@Override public final void fallOn(Level aWorld, BlockState aState, BlockPos aPos, Entity aEntity, double aFallDistance) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); if (aTileEntity instanceof IMTE_OnFallenUpon) ((IMTE_OnFallenUpon)aTileEntity).onFallenUpon(aEntity, (float)aFallDistance); else super.fallOn(aWorld, aState, aPos, aEntity, aFallDistance);}
-	// PORT-TODO(F13/F16, block-onBlockHarvested-onBlockPreDestroy-removed): 1.7.10 vanilla Block.onBlockHarvested/
-	// onBlockPreDestroy удалены из neo целиком (не найдены ни в одном из 3 корней референса - harvest/drop-pайплайн
-	// в neo полностью другой, loot-table Block.getDrops/Block.dropResources, отдельный F-шов, см. класс-javadoc ниже
-	// про onBlockDestroyedByPlayer/harvestBlock). Методы остаются обычными GT6-методами (не dispatch-ятся движком),
-	// TE-хуки IMTE_OnBlockHarvested/IMTE_OnBlockPreDestroy теперь недостижимы через vanilla-путь.
+	// F13: 1.7.10 Block.onBlockHarvested/onBlockPreDestroy удалены — neo destroy-пайплайн зовёт playerWillDestroy
+	// (Level,BlockPos,BlockState,Player) перед снятием блока. Ниже neo-хук диспетчит оба TE-хука 1:1. GT6-методы сохранены.
+	@Override public BlockState playerWillDestroy(Level aWorld, BlockPos aPos, BlockState aState, Player aPlayer) {
+		BlockEntity tTE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		int tMeta = WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		if (tTE instanceof IMTE_OnBlockHarvested) ((IMTE_OnBlockHarvested)tTE).onBlockHarvested(tMeta, aPlayer);
+		if (tTE instanceof IMTE_OnBlockPreDestroy) ((IMTE_OnBlockPreDestroy)tTE).onBlockPreDestroy(tMeta);
+		return super.playerWillDestroy(aWorld, aPos, aState, aPlayer);
+	}
 	public final void onBlockHarvested(Level aWorld, int aX, int aY, int aZ, int aMetaData, Player aPlayer) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockHarvested) ((IMTE_OnBlockHarvested)aTileEntity).onBlockHarvested(aMetaData, aPlayer);}
 	public final void onBlockPreDestroy(Level aWorld, int aX, int aY, int aZ, int aMetaData) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockPreDestroy) ((IMTE_OnBlockPreDestroy)aTileEntity).onBlockPreDestroy(aMetaData);}
 	// PORT-TODO(F13/F16, block-fillWithRain-removed): 1.7.10 vanilla Block.fillWithRain(World,x,y,z) удалён из neo
