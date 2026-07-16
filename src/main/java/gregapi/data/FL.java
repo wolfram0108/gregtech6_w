@@ -1067,11 +1067,22 @@ public enum FL {
 			return NI;
 		}
 		if (aIsNonCannerCheck && IL.GC_Canister.exists() && (IL.GC_Canister.equal(aStack, T, T) || ST.equal(ST.container(aStack, T), IL.GC_Canister.wild(1)))) return aStack;
-		// PORT-TODO(F5, item-capability бакет/канистра): ветка старого IFluidHandlerItem-как-Item
-		// (`aStack.getItem() instanceof IFluidHandlerItem`) убрана — в neo Item САМ не реализует
-		// IFluidHandlerItem, доступ идёт через capability на ItemStack (ItemAccess), что требует
-		// per-item регистрации (F1/F8), не относится к этому переходнику.
-		return NI;
+		// F5 (1:1): динамическая GT6-ячейка (MultiItem — жидкость в NBT/компоненте; было instanceof IFluidContainerItem).
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI && tMI.getCapacity(ST.amount(1, aStack)) > 0) {
+			ItemStack tOne = ST.amount(1, aStack); FluidStack tCur = tMI.getFluid(tOne);
+			if ((tCur == null || (equal(tCur, aFluid, T) && tCur.getAmount() < tMI.getCapacity(tOne))) && (aAllowPartialFilling || tMI.getCapacity(tOne) <= aFluid.getAmount())) {
+				if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(aFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(aFluid) || acid(aFluid) || powerconducting(aFluid))) return aStack;
+				int tFilled = tMI.fill(tOne, aFluid, T); if (aRemoveFluidDirectly) aFluid.shrink(tFilled);
+				return tOne;
+			}
+		}
+		// F5 (1:1): FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA-реестр (bookkeeping восстановлен) — фикс empty->filled контейнеры.
+		Map<String, FluidContainerData> tFluidToContainer = EMPTY_TO_FLUID_TO_DATA.get(new ItemStackContainer(aStack));
+		if (tFluidToContainer == null) return NI;
+		FluidContainerData tData = tFluidToContainer.get(FluidGT.nameOf(aFluid.getFluid()));
+		if (tData == null || tData.fluid.getAmount() > aFluid.getAmount()) return NI;
+		if (aRemoveFluidDirectly) aFluid.shrink(tData.fluid.getAmount());
+		return ST.amount(1, tData.filledContainer);
 	}
 
 	public static ItemStack fill(IFluidTank aTank, ItemStack aStack, boolean aRemoveFluidDirectly, boolean aCheckIFluidContainerItems) {
@@ -1092,18 +1103,49 @@ public enum FL {
 			return NI;
 		}
 		if (aIsNonCannerCheck && IL.GC_Canister.exists() && (IL.GC_Canister.equal(aStack, T, T) || ST.equal(ST.container(aStack, T), IL.GC_Canister.wild(1)))) return aStack;
-		// PORT-TODO(F5, item-capability бакет/канистра) — см. выше.
-		return NI;
+		// F5 (1:1): динамическая GT6-ячейка (MultiItem); слив из танка.
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI && tMI.getCapacity(ST.amount(1, aStack)) > 0) {
+			ItemStack tOne = ST.amount(1, aStack); FluidStack tCur = tMI.getFluid(tOne);
+			if ((tCur == null || (equal(tCur, aFluid, T) && tCur.getAmount() < tMI.getCapacity(tOne))) && (aAllowPartialFilling || tMI.getCapacity(tOne) <= aFluid.getAmount())) {
+				if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(aFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(aFluid) || acid(aFluid) || powerconducting(aFluid))) return aStack;
+				int tFilled = tMI.fill(tOne, aFluid, T); if (aRemoveFluidDirectly) aTank.drain(tFilled, FluidAction.EXECUTE);
+				return tOne;
+			}
+		}
+		// F5 (1:1): EMPTY_TO_FLUID_TO_DATA-реестр — фикс empty->filled контейнеры; слив из танка.
+		Map<String, FluidContainerData> tFluidToContainer = EMPTY_TO_FLUID_TO_DATA.get(new ItemStackContainer(aStack));
+		if (tFluidToContainer == null) return NI;
+		FluidContainerData tData = tFluidToContainer.get(FluidGT.nameOf(aFluid.getFluid()));
+		if (tData == null || tData.fluid.getAmount() > aFluid.getAmount()) return NI;
+		if (aRemoveFluidDirectly) aTank.drain((int)tData.fluid.getAmount(), FluidAction.EXECUTE);
+		return ST.amount(1, tData.filledContainer);
 	}
 
-	/** PORT-TODO(F5, авто-реестр бакетов/канистр) — см. блок {@link #reg} выше. */
-	public static boolean contains(ItemStack aStack, FluidStack aFluid, boolean aCheckIFluidContainerItems) {return F;}
+	/** F5 (1:1): содержит ли контейнер данную жидкость. FULL_TO_DATA-реестр (bookkeeping восстановлен) + динамические
+	 *  GT6-ячейки (MultiItem.getFluid — NBT/компонент-жидкость). Было `instanceof IFluidContainerItem` (порт снял интерфейс). */
+	public static boolean contains(ItemStack aStack, FluidStack aFluid, boolean aCheckIFluidContainerItems) {
+		if (ST.invalid(aStack) || aFluid == null) return F;
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI) {FluidStack tF = tMI.getFluid(ST.amount(1, aStack)); if (tF != null) return equal(tF, aFluid, T);}
+		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
+		return tData != null && equal(tData.fluid, aFluid, T);
+	}
 
-	/** PORT-TODO(F5, авто-реестр бакетов/канистр) — см. блок {@link #reg} выше. */
-	public static FluidStack getFluid(ItemStack aStack, boolean aCheckIFluidContainerItems) {return NF;}
+	/** F5 (1:1): жидкость в контейнере. Динамические GT6-ячейки (MultiItem.getFluid) + FULL_TO_DATA-реестр (фикс-контейнеры). */
+	public static FluidStack getFluid(ItemStack aStack, boolean aCheckIFluidContainerItems) {
+		if (ST.invalid(aStack)) return NF;
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI) {FluidStack tF = tMI.getFluid(ST.amount(1, aStack)); if (tF != null) return tF;}
+		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
+		return tData == null ? NF : tData.fluid.copy();
+	}
 
-	/** PORT-TODO(F5, авто-реестр бакетов/канистр) — см. блок {@link #reg} выше. */
-	public static ItemStack getEmpty(ItemStack aStack, boolean aCheckIFluidContainerItems) {return NI;}
+	/** F5 (1:1): пустой контейнер после слива. FULL_TO_DATA-реестр (фикс full->empty) + динамические GT6-ячейки (getContainerItem). */
+	public static ItemStack getEmpty(ItemStack aStack, boolean aCheckIFluidContainerItems) {
+		if (ST.invalid(aStack)) return NI;
+		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
+		if (tData != null) return ST.amount(1, tData.emptyContainer);
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI && tMI.getFluid(ST.amount(1, aStack)) != null) return tMI.getContainerItem(ST.amount(1, aStack));
+		return NI;
+	}
 	
 	
 	
