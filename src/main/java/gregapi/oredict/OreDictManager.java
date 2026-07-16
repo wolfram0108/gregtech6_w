@@ -41,7 +41,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.NeoForge;
-// PORT-TODO(F5, oredict-fluid-container-registry): net.minecraftforge.fluids.FluidContainerRegistry/
+// F5 (bookkeeping восстановлен в FL.FULL_TO_DATA/EMPTY_TO_FLUID_TO_DATA): net.minecraftforge.fluids.FluidContainerRegistry/
 // FluidContainerData/FluidContainerRegisterEvent — оригинальный Forge-пакет удалён движком целиком (0 хитов
 // во всех 3 корнях референса neo/neoforge/fml); т.к. ВЕСЬ net.minecraftforge отсутствует на classpath (не
 // split-package), тип compile-mirror-зеркалирован в compat-mirror (F2-приём, см. gregtech.asm-shim) —

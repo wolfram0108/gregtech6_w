@@ -982,9 +982,9 @@ public class ST {
 	public static boolean ingredable(ItemStack aStack) {
 		if (invalid(aStack)) return F;
 		if (item_(aStack) instanceof IItemGTContainerTool) return F;
-		// PORT-TODO(F5, fluid-item-capability): item_(aStack) instanceof IFluidHandlerItem && ((IFluidHandlerItem)item_(aStack)).getCapacity(aStack) > 0 —
-		// устаревший IFluidHandler(Item) в neo больше не принимает ItemStack (новый ResourceHandler/FluidResource);
-		// консьюмер-репойнт на gregapi.fluid/FL — отдельный проход (REMAP-RULES §C4).
+		// F5 (реализовано): наполненный fluid-контейнер — не ингредиент. FL.getFluid (реестр + динамич. GT6-ячейки) ловит жидкость;
+		// было instanceof IFluidHandlerItem.getCapacity>0 (интерфейс снят). Пустые контейнеры ловятся getCraftingRemainder ниже.
+		if (FL.getFluid(aStack, T) != null) return F;
 		if (item_(aStack).getCraftingRemainder(aStack) != null) return F;
 		if (ItemsGT.CONTAINER_DURABILITY.contains(aStack, T)) return F;
 		if (IL.Cell_Empty.equal(aStack, F, T) || IL.SC2_Teapot_Empty.equal(aStack, F, T) || IL.SC2_Teacup_Empty.equal(aStack, F, T)) return T;

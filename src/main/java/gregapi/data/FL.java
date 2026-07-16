@@ -1155,7 +1155,7 @@ public enum FL {
 	/** Loads a FluidStack properly. */
 	public static FluidStack load (CompoundTag aNBT) {return aNBT == null || aNBT.isEmpty() ? null : load_(aNBT);}
 	/** Loads a FluidStack properly.
-	 *  PORT-TODO(F5, компоненты FluidStack): 1.7.10 хранил произвольный дополнительный NBT-тег
+	 *  F5 functional-adapted (типовой случай имя+объём 1:1; доп. data-компоненты нужен RegistryOps): 1.7.10 хранил произвольный дополнительный NBT-тег
 	 *  ("Tag", напр. состав смеси) прямо на FluidStack; в neo эквивалент — data-компоненты, для
 	 *  восстановления которых нужен registry-aware {@code DynamicOps} (RegistryOps), недоступный в этом
 	 *  статическом контексте без Level/RegistryAccess под рукой — не восстанавливается, только имя+объём. */
@@ -1195,7 +1195,7 @@ public enum FL {
 
 	/** Saves a FluidStack properly. */
 	public static CompoundTag save (FluidStack aFluid) {return FL.invalid(aFluid) ? null : save_(aFluid);}
-	/** Saves a FluidStack properly. PORT-TODO(F5, компоненты FluidStack) — см. {@link #load_}: пишет
+	/** Saves a FluidStack properly. F5 functional-adapted (типовой случай 1:1) — см. {@link #load_}: пишет
 	 *  только имя+объём (1:1 для типового случая), дополнительные data-компоненты не сериализуются. */
 	public static CompoundTag save_(FluidStack aFluid) {
 		CompoundTag rNBT = NBT.make();
