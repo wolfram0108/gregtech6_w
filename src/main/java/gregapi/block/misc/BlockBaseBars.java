@@ -215,7 +215,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
 	// PORT-TODO(F3, baked-рендер клиента): было Blocks.IRON_BARS.getIcon(2,0) (vanilla Block.getIcon удалён в 26.1.2 целиком).
-	public Identifier getIcon(int aSide, int aMeta) {return null;}
+	public Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3): neo BakedModel-рендер, 1.7.10 getIcon мёртв — crash-only per /goal");}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return F;}

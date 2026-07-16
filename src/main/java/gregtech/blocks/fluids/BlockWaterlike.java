@@ -221,7 +221,7 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
-	public IIcon getIcon(int aSide, int aMeta) {return null;} // PORT-TODO(F3, fluid icon rendering): было Blocks.water.getIcon(side,meta) — 1.7.10 IIcon-атлас удалён, реальный рендер — RegisterFluidModelsEvent (F5-доклад §3)
+	public IIcon getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
 	public int getRenderColor(int aMeta) {return 0x00ffffff;}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;}
 	

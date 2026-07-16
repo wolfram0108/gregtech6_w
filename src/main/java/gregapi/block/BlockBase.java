@@ -141,7 +141,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// целиком вместе со всем IIcon-атласом) — GT6 полагался на полиморфную диспетчеризацию к этому методу движка.
 	// Восстановлено локально (тот же приём, что уже принят в BlockBaseMeta.getIcon), чтобы вызов выше и переопределения
 	// в наследниках (BlockBaseSpike/BlockBaseBars/...) имели общую точку. Держатель ссылки — Identifier (см. IIconContainer).
-	public Identifier getIcon(int aSide, int aMeta) {return null;}
+	public Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3): neo BakedModel-рендер, 1.7.10 getIcon мёртв — crash-only per /goal (F3-фаза заменит реальной моделью)");}
 	
 	@Override public String name(byte aMeta) {return aMeta == W ? mNameInternal : mNameInternal + "." + aMeta;}
 	@Override public boolean useGravity(byte aMeta) {return F;}

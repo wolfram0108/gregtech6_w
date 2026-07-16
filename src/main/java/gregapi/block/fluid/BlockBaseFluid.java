@@ -385,7 +385,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public final String getUnlocalizedName() {return FL.name(mFluid, F);} // было mFluid.getUnlocalizedName() (Forge Fluid) — FL.name(Fluid,boolean) центр (F5, см. BlockWaterlike)
 	public String getLocalizedName() {return FL.name(mFluid, T);} // было LH.get(mFluid.getUnlocalizedName()) — FL.name(...,T) уже включает LH-локализацию (FL.java:952)
 	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
-	public IIcon getIcon(int aSide, int aMeta) {return null;} // PORT-TODO(F3, fluid icon rendering): было mFluid.getStillIcon()/getFlowingIcon() (Forge Fluid) — 1.7.10 IIcon-атлас удалён, реальный рендер — RegisterFluidModelsEvent (F5-доклад §3)
+	public IIcon getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было mFluid.getStillIcon()/getFlowingIcon() — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
 	public int getRenderColor(int aMeta) {return 0x00ffffff;} // PORT-TODO(F3, fluid tint): было mFluid.getColor() (Forge Fluid) — neo-тинт из FluidTintSources.constant на FluidType (F5-доклад §3)
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00ffffff;} // PORT-TODO(F3, fluid tint): см. getRenderColor выше
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}

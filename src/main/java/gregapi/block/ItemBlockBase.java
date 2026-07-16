@@ -122,7 +122,7 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {return mPlaceable.onItemUse(this, aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ);}
 	// PORT-TODO(F3, baked-рендер клиента): было getBlock().getIcon(SIDE_TOP,aMeta) (vanilla Block.getIcon удалён в 26.1.2 —
 	// getBlock() статически типизирован как vanilla Block, не как наша BlockBase, поэтому центр IIconContainer недоступен здесь).
-	public Identifier getIconFromDamage(int aMeta) {return null;}
+	public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3): neo BakedModel-рендер, 1.7.10 getIconFromDamage мёртв — crash-only per /goal (F3-фаза заменит моделью)");}
 	@Override public Block getBlock() {return super.getBlock();}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public String getUnlocalizedName(ItemStack aStack) {return mPlaceable.name(UT.Code.bind4(getDamage(aStack)));}
