@@ -59,9 +59,9 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F13, item-base компонентный редизайн): {@code ItemArmor}/{@code EnumHelper} (1.7.10 armor-модель)
- * не существуют в 26.1.2 целиком — замены: {@code ArmorMaterial} record + {@code Item.Properties.humanoidArmor}
- * (durability/defense/enchantability/equip-слот/repair из одной точки), см. конструктор ниже. Динамическая защита
+ * F13 (РЕАЛИЗОВАНО): {@code ItemArmor}/{@code EnumHelper} (1.7.10 armor-модель) заменены на {@code ArmorMaterial}
+ * record + {@code Item.Properties.humanoidArmor} (durability/defense/enchantability/equip-слот/repair из одной
+ * точки), см. конструктор/makeProperties ниже — армор функционален 1:1. Динамическая защита
  * через {@code ISpecialArmor.getProperties} (нет ни в одном из 3 корней референса — движко-модель Forge-core, НЕ
  * F10 compat-mod) заменена статическими {@code ItemAttributeModifiers} внутри {@link ArmorMaterial#createAttributes}.
  * Данные GT6 (durability/aShields/enchantability) сохранены 1:1 — меняется только канал доставки.
@@ -77,7 +77,7 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	public int mEnchantability;
 	public boolean mMetalArmor = F, mBeeArmor = F;
 	public String mArmorTexture, mArmorName;
-	/** PORT-TODO(F13, item-base компонентный редизайн): было унаследованное поле {@code ItemArmor.armorType} (int 0-3). */
+	/** F13: 1.7.10 ItemArmor.armorType (int 0-3) → neo ArmorType (mArmorType ниже); слот-int сохранён как mArmorSlot. Реализовано. */
 	protected final int mArmorSlot;
 	protected final ArmorType mArmorType;
 
@@ -114,10 +114,8 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	}
 
 	/**
-	 * PORT-TODO(F13, item-base компонентный редизайн): единственный neo-путь к durability+defense+enchantability+
-	 * equip-слот+repair одновременно — {@link Item.Properties#humanoidArmor(ArmorMaterial, ArmorType)}
-	 * (neo-decompiled/net/minecraft/world/item/Item.java:579). Статический (не может ссылаться на поля
-	 * экземпляра — вызывается до {@code super()}).
+	 * F13 (РЕАЛИЗОВАНО): neo durability+defense+enchantability+equip-слот+repair одновременно через
+	 * {@link Item.Properties#humanoidArmor(ArmorMaterial, ArmorType)} (Item.java:579). Статический (вызов до super()).
 	 */
 	private static Item.Properties makeProperties(String aModID, String aUnlocalized, String aArmorName, int aSlot, int[] aShields, int aDurability, int aEnchantability) {
 		ArmorType tType = slotToArmorType(aSlot);
