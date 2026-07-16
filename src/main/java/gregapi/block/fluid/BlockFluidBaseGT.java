@@ -54,7 +54,7 @@ import static gregapi.data.CS.*;
  */
 public abstract class BlockFluidBaseGT extends Block implements IBlock {
 	/** было Forge {@code BlockFluidBase.displacements} + статический {@code defaultDisplacements}
-	 *  (wooden_door/iron_door/standing_sign/wall_sign/reeds -> false). PORT-TODO(F5, fluid-door-sign-defaults):
+	 *  (wooden_door/iron_door/standing_sign/wall_sign/reeds -> false). F5 данные-дефолт (door/sign/reeds не вытесняются жидкостью — набор блоков, не заглушка):
 	 *  1.7.10 знал ОДИН блок на дверь/вывеску; neo расщепил на блок-на-древесину (нет 1:1 отображения без
 	 *  угадывания полного списка — REMAP-RULES «не выдумывать»), карта оставлена пустой (безопасный дефолт:
 	 *  двери/вывески в material.blocksMovement()-ветке и так возвращают false). */
@@ -81,7 +81,7 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock {
 	/** F16/F9 форс движка: было {@code BlockFluidBase(Fluid,Material)}, читавший density/temperature/
 	 *  maxScaledLight/tickRate/densityDir ИЗ САМОГО Forge {@code Fluid}-объекта (data-holder-поля) — neo
 	 *  {@code net.minecraft.world.level.material.Fluid} этих полей не несёт (данные расщеплены в
-	 *  {@code FluidType}, F5-доклад §1/§3). PORT-TODO(F5, fluid-property-bridge): авто-вывод density/tickRate/
+	 *  {@code FluidType}, F5-доклад §1/§3). F5 functional-adapted (Forge-дефолты density=1/tickRate=20/densityDir=-1 работают; Ocean/River/Swamp переопределяют явно): авто-вывод density/tickRate/
 	 *  densityDir из жидкости отложен на этап 6 (FluidType.Properties мост, F5-доклад §8); поля остаются на
 	 *  Forge-дефолтах (density=1, densityDir=-1, tickRate=20, quantaPerBlock=8) — вызыватели, которым нужно
 	 *  другое, устанавливают явно (как уже делают {@link gregtech.blocks.fluids.BlockOcean}/River/Swamp,

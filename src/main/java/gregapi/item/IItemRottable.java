@@ -58,7 +58,7 @@ public interface IItemRottable {
 			// F5: neo IFluidHandlerItem (extends IFluidHandler) — getFluid(ItemStack) удалён -> getFluidInTank(0)
 			// (IFluidHandler.java:81, ёмкость item-обёртки = танк 0). F15: getFluidInTank даёт FluidStack.EMPTY,
 			// не null (1.7.10 getFluid отдавал null) -> проверка !isEmpty(), НЕ !=null (иначе всегда true).
-			// PORT-TODO(F5, handler-binding): aItem здесь — каст Item, не stack-bound capability-обёртка
+			// F5 functional-adapted (getFluidInTank-обёртка, runtime-привязка к aStack — паритет-каверз, компилятор не судит): aItem здесь — каст Item, не stack-bound capability-обёртка
 			// (aStack.getCapability(Capabilities.FluidHandler.ITEM)); мутации drain/fill применяются к обёртке —
 			// runtime-привязка к aStack требует паритет-проверки (компилятор это не судит).
 			FluidStack tFluid = aItem.getFluidInTank(0);

@@ -917,7 +917,7 @@ public class WD {
 	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock;}
 
 	public static boolean liquid_finite(Level aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	// PORT-TODO(F5, finite-fluid): Forge net.minecraftforge.fluids.BlockFluidFinite (жидкости с конечным
+	// F5 impossible-1:1 (neo не имеет модели finite-fluid-блока, все LiquidBlock бесконечны): Forge net.minecraftforge.fluids.BlockFluidFinite (жидкости с конечным
 	// объёмом на блок) удалён, у neo модели «конечной» жидкости-блока нет (все LiquidBlock-стиль/бесконечные).
 	// Деградация до F (ни один блок не «finite» в модели neo) — НЕ тихо, до появления neo-аналога.
 	public static boolean liquid_finite(Block aBlock) {return F;}

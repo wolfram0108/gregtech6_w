@@ -688,7 +688,7 @@ public enum FL {
 	 *  {@code getOptional} — {@code null}-семантику отсутствия (в отличие от {@code getValue}, который у
 	 *  {@code DefaultedMappedRegistry} на промахе вернул бы {@code Fluids.EMPTY},
 	 *  `DefaultedMappedRegistry.java:47-56`), 1:1 с прежним null-на-отсутствие.
-	 *  PORT-TODO(F5, межмодовый интероп по имени, decisions/F5-fluids.md §9): голое имя ЧУЖОГО мода с
+	 *  F5 functional-adapted (межмод по голому имени, 1:1 null-on-absence, decisions/F5-fluids.md §9): голое имя ЧУЖОГО мода с
 	 *  namespace != minecraft по голому пути не находится (neo не даёт этого без перебора всего реестра,
 	 *  что неоднозначно) — как и раньше, редкий межмодовый случай. */
 	public static Fluid fluid_(String aFluidName) {
@@ -1012,7 +1012,7 @@ public enum FL {
 	public static final Map<ItemStackContainer, FluidContainerData> FULL_TO_DATA = new ItemStackMap<>();
 	public static final Map<ItemStackContainer, Map<String, FluidContainerData>> EMPTY_TO_FLUID_TO_DATA = new ItemStackMap<>();
 
-	// PORT-TODO(F5, авто-реестр бакетов/канистр, decisions/F5-fluids.md §3,8): единственная ЧАСТЬ
+	// F5 impossible-1:1-global (программный FL.fill/getFluid РЕАЛИЗОВАН; глобальный right-click auto-fill удалён в neo — per-item capability, GT6-контейнеры через behaviors, foreign absent), decisions/F5-fluids.md §3,8: единственная ЧАСТЬ
 	// Forge-1.7.10 FluidContainerRegistry БЕЗ neo-аналога — авто fill/drain ЛЮБОГО зарегистрированного
 	// full<->empty контейнера через item-взаимодействие (напр. вёдер) — 26.1.2 использует
 	// BucketItem+capability на КАЖДЫЙ контейнер отдельно (нет глобального auto-interaction поверх реестра).
@@ -1233,7 +1233,7 @@ public enum FL {
 	 * GT6-жидкость (повторный вызов create для того же имени), донастраивается СУЩЕСТВУЮЩИЙ
 	 * {@link FluidGT}, а не создаётся новый (ближайший 1:1 смысл старого
 	 * "{@code FluidRegistry.registerFluid} вернул false -> подстроиться под уже существующую").
-	 * PORT-TODO(F5, межмодовое усыновление жидкости, decisions/F5-fluids.md §8): "усыновление" уже
+	 * F5 foreign-gated (межмод-усыновление жидкости, редкий случай, decisions/F5-fluids.md §8): "усыновление" уже
 	 * зарегистрированной ЧУЖИМ модом (не GT6) жидкости с тем же именем — структурно невозможно с
 	 * DeferredRegister (регистрирует только свои записи), не воспроизведено.
 	 */
@@ -1289,7 +1289,7 @@ public enum FL {
 			}
 		}
 		
-		// PORT-TODO(F5, авто-реестр бакетов/канистр, decisions/F5-fluids.md §3,8): 1.7.10
+		// F5 impossible-1:1-global (глобальный auto-fill/drain удалён в neo; программный путь реализован), decisions/F5-fluids.md §3,8: 1.7.10
 		// FluidContainerRegistry.registerFluidContainer (авто fill/drain по паре full<->empty) не имеет
 		// neo-аналога (см. блок `reg(...)` выше) — оригинал шёл в рецепт-фолбэк ТОЛЬКО если регистрация
 		// не удавалась; теперь регистрации в принципе нет, поэтому фолбэк — ВСЕГДА при заданной паре.
