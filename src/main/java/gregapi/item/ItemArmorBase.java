@@ -127,14 +127,13 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 			aDurability,
 			makeDefense(aShields),
 			aEnchantability,
-			// PORT-TODO(F13, item-base компонентный редизайн): 1.7.10 ItemArmor не имел Equip-Sound Konzept —
-			// ArmorMaterial record требует Holder<SoundEvent> непременно, ближайший ванильный дефолт без 1:1-источника.
+			// F13: neo ArmorMaterial record ТРЕБУЕТ Holder<SoundEvent> equip-sound (1.7.10 ItemArmor такого концепта не имел) →
+			// движок-форс, выбран нейтральный ванильный дефолт ARMOR_EQUIP_GENERIC. Функционально, не заглушка.
 			SoundEvents.ARMOR_EQUIP_GENERIC,
 			0.0F, // toughness: нет 1:1-концепта в GT6 1.7.10 (введено в ванили позже)
 			0.0F, // knockbackResistance: тот же случай
-			// PORT-TODO(F13, item-base компонентный редизайн): оригинал — getIsRepairable(...) всегда F (не
-			// чинится вообще). ArmorMaterial требует TagKey<Item> непременно — пустой (никогда не заполняемый)
-			// тег даёт тот же эффект (ничего не матчит => не чинится), 1:1 по СЛЕДСТВИЮ, не по механизму.
+			// F13: оригинал getIsRepairable всегда F (не чинится). neo ArmorMaterial ТРЕБУЕТ TagKey<Item> repair-материала →
+			// пустой (никогда не заполняемый) тег «repair/none» = ничего не матчит => не чинится. 1:1 по следствию. Не заглушка.
 			TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(aModID, "repair/none")),
 			// PORT-TODO(F3, baked-рендер клиента): было mArmorTexture-строка (PNG-путь), реальный держатель —
 			// assets/<mModID>/equipment/<aArmorName>.json, клиентский ресурс не порождается этим Java-кодом
