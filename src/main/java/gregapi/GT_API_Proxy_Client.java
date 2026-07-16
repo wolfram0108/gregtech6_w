@@ -110,6 +110,18 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try {return RenderingRegistry.addNewArmourRendererPrefix(aPrefix);} catch(Throwable e) {/**/}
 		return 0;
 	}
+
+	// F3-render (client): регистрация единого динамического типа модели всех GT6-блоков на mod-bus.
+	// Замена удалённого `RenderingRegistry.registerBlockHandler`/render-id диспетчера (decisions/F3-render.md §2.1):
+	// один `GT6BlockModel.Unbaked` тип, на который ссылаются blockstate-JSON всех блоков (централизация 1:1).
+	@Override
+	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {
+		aModBus.addListener(this::onRegisterBlockStateModels);
+	}
+
+	private void onRegisterBlockStateModels(net.neoforged.neoforge.client.event.RegisterBlockStateModels aEvent) {
+		aEvent.registerModel(gregapi.render.GT6BlockModel.Unbaked.ID, gregapi.render.GT6BlockModel.Unbaked.MAP_CODEC);
+	}
 	
 	@Override
 	public Player getThePlayer() {

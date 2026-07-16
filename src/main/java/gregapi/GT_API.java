@@ -474,6 +474,9 @@ public class GT_API extends Abstract_Mod {
 		GT6CraftingDispatcher.register(aModBus);
 		// F14: центральный MenuType GUI (ContainerCommon) — тот же мод-бас, единая точка подписки (decisions/F14-gui-menu.md)
 		gregapi.gui.ContainerCommon.register(aModBus);
+		// F3-render (client): единый динамический тип модели GT6BlockModel на mod-bus (RegisterBlockStateModels).
+		// Только клиент — делегируем в клиент-прокси (server: no-op), общий код не грузит client-only классы.
+		api_proxy.registerClientModels(aModBus);
 
 		// F12: замена annotation-диспетчера @Mod.EventHandler — подписка фаз на мод-шину напрямую.
 		// GT6-трёхфазный контракт (Pre/Init/Post) сохранён 1:1 поверх родных событий жизненного цикла neo:

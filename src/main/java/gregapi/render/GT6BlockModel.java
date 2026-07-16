@@ -1,0 +1,130 @@
+/**
+ * Copyright (c) 2019 Gregorius Techneticies
+ *
+ * This file is part of GregTech.
+ *
+ * GregTech is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GregTech is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GregTech. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package gregapi.render;
+
+import java.util.List;
+
+import com.mojang.serialization.MapCodec;
+
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+import net.minecraft.client.resources.model.ModelBaker;
+import net.minecraft.client.resources.model.SimpleModelWrapper;
+import net.minecraft.client.resources.model.sprite.Material;
+import net.minecraft.client.resources.model.sprite.MaterialBaker;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
+import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
+
+/**
+ * F3-render (client): единая динамическая модель ВСЕХ GT6-блоков (аналог одного {@code RendererBlockTextured} у Грегориуса —
+ * централизация 1:1). neo зовёт {@link #collectParts} → берём {@link IRenderedBlock} из блока → per pass×side зовём его
+ * {@code getTexture(...)} → {@link ITexture}{@code .render<Side>(quadBuilder,...)} → {@link GT6QuadBuilder} аккумулирует quads
+ * → {@code parts.add(SimpleModelWrapper)}. GT6 per-side texture-логика переиспользуется без переписывания; заменён лишь
+ * механизм отрисовки (immediate→baked). Спрайты — из block-атласа в рантайме (динамика материал×префикс). Регистрация типа —
+ * {@code RegisterBlockStateModels} (GT_API_Proxy_Client); blockstate-JSON блоков ссылаются на этот тип (датаген). См. F3-render.md §2.
+ */
+@OnlyIn(Dist.CLIENT)
+public class GT6BlockModel implements DynamicBlockStateModel {
+	private final Material.Baked mParticle;
+
+	GT6BlockModel(MaterialBaker aBaker) {
+		net.minecraft.client.resources.model.ModelDebugName tDebugName = getClass()::toString;
+		mParticle = aBaker.get(new Material(Identifier.fromNamespaceAndPath("gregtech", "blocks/system/error")), tDebugName);
+	}
+
+	@Override
+	public void collectParts(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, RandomSource aRandom, List<BlockStateModelPart> aParts) {
+		if (!(aState.getBlock() instanceof IRenderedBlock tRB)) return;
+		Block tBlock = aState.getBlock();
+		int tX = aPos.getX(), tY = aPos.getY(), tZ = aPos.getZ();
+		GT6QuadBuilder tQB = new GT6QuadBuilder();
+
+		// 1:1-порт RendererBlockTextured.renderWorldBlock: двойной passRenderingToObject → ветвь блока / ветвь рендер-объекта.
+		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aLevel, tX, tY, tZ);
+		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aLevel, tX, tY, tZ);
+
+		if (tRenderer == null) {
+			boolean[] tSides = sides(tBlock, tRB instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)tRB : null);
+			for (int i = 0, j = tRB.getRenderPasses(aLevel, tX, tY, tZ, tSides); i < j; i++) {
+				if (!tRB.usesRenderPass(i, aLevel, tX, tY, tZ, tSides)) continue;
+				tRB.setBlockBounds(i, aLevel, tX, tY, tZ, tSides);
+				applyBounds(tQB, tBlock);
+				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRB.getTexture(i, s, tSides, aLevel, tX, tY, tZ), tX, tY, tZ);
+			}
+		} else if (!tRenderer.renderBlock(tBlock, tQB, aLevel, tX, tY, tZ)) {
+			boolean[] tSides = sides(tBlock, tRenderer instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)tRenderer : null);
+			for (int i = 0, j = tRenderer.getRenderPasses(tBlock, tSides); i < j; i++) {
+				if (!tRenderer.usesRenderPass(i, tSides)) continue;
+				tRenderer.setBlockBounds(tBlock, i, tSides);
+				applyBounds(tQB, tBlock);
+				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRenderer.getTexture(tBlock, i, s, tSides), tX, tY, tZ);
+			}
+		}
+		aParts.add(new SimpleModelWrapper(tQB.build(), true, mParticle));
+	}
+
+	/** tSides: у SideCheck-объекта — renderFullBlockSide; иначе все true (соседнее скрытие делает neo через addCulledFace). */
+	private static boolean[] sides(Block aBlock, IRenderedBlockObjectSideCheck aCheck) {
+		boolean[] r = {true, true, true, true, true, true};
+		if (aCheck != null) for (byte s = 0; s < 6; s++) r[s] = aCheck.renderFullBlockSide(aBlock, null, s);
+		return r;
+	}
+
+	/** Перенести текущие render-bounds блока (после setBlockBounds) в quad-builder (было RenderBlocks.setRenderBoundsFromBlock). */
+	private static void applyBounds(GT6QuadBuilder aQB, Block aBlock) {
+		aQB.setBounds(aBlock instanceof gregapi.block.BlockBase tB ? tB.getRenderBounds() : null);
+	}
+
+	/** Один per-side вызов ITexture (диспетчер по стороне) → GT6QuadBuilder аккумулирует грань. */
+	private static void face(GT6QuadBuilder aQB, Block aBlock, byte aSide, ITexture aTex, int aX, int aY, int aZ) {
+		if (aTex == null || !aTex.isValidTexture()) return;
+		switch (aSide) {
+		case 0: aTex.renderYNeg(aQB, aBlock, aX, aY, aZ, 240, false); break;
+		case 1: aTex.renderYPos(aQB, aBlock, aX, aY, aZ, 240, false); break;
+		case 2: aTex.renderZNeg(aQB, aBlock, aX, aY, aZ, 240, false); break;
+		case 3: aTex.renderZPos(aQB, aBlock, aX, aY, aZ, 240, false); break;
+		case 4: aTex.renderXNeg(aQB, aBlock, aX, aY, aZ, 240, false); break;
+		case 5: aTex.renderXPos(aQB, aBlock, aX, aY, aZ, 240, false); break;
+		}
+	}
+
+	@Override
+	public Material.Baked particleMaterial() {return mParticle;}
+
+	@Override
+	public int materialFlags() {return 0;}
+
+	/** Unbaked-тип модели для регистрации (RegisterBlockStateModels). blockstate-JSON: {@code {"model":{"type":"gregtech:gt6block"}}}. */
+	public record Unbaked() implements CustomUnbakedBlockStateModel {
+		public static final Identifier ID = Identifier.fromNamespaceAndPath("gregtech", "gt6block");
+		public static final MapCodec<Unbaked> MAP_CODEC = MapCodec.unit(Unbaked::new);
+		@Override public BlockStateModel bake(ModelBaker aBaker) {return new GT6BlockModel(aBaker.materials());}
+		@Override public void resolveDependencies(Resolver aResolver) {}
+		@Override public MapCodec<Unbaked> codec() {return MAP_CODEC;}
+	}
+}

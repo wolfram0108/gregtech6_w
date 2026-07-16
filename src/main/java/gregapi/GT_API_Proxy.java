@@ -285,6 +285,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		checkSaveLocation(null, T);
 		MultiTileEntityRegistry.onServerStop();
 	}
+
+	/**
+	 * F3-render (client): единая точка подписки клиентских модель-типов на mod-bus. На сервере no-op
+	 * (общий код не грузит client-only классы). Клиент-прокси регистрирует {@code GT6BlockModel.Unbaked}
+	 * через {@code RegisterBlockStateModels} (decisions/F3-render.md §2.1). Централизация 1:1 — один тип на весь мод.
+	 */
+	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {/* server: no-op */}
 	
 	// DimensionManager (1.7.10 Forge) neo-эквивалента не имеет (не найден ни в neo-decompiled, ни в neoforge-decompiled, ни в fml-decompiled) —
 	// реальный neo-путь к текущему save-root: ServerLevel.getServer().getWorldPath(LevelResource.ROOT) (сверено, MinecraftServer.java:2058 + LevelResource.java:16).

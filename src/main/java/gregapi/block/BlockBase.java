@@ -67,6 +67,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
+	/** F3-render: текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} для GT6BlockModel (было RenderBlocks.setRenderBoundsFromBlock). */
+	public float[] getRenderBounds() {return mRenderBounds;}
 	/** F-light: 1.7.10 Block.setLightLevel(float) мутировал эмиссию блока; neo эмиссия — construction-time
 	 *  Properties.lightLevel (BlockBehaviour) -> мост отложен (как F-shape mRenderBounds). Храним значение видимо. */
 	protected float mLightLevel = 0.0F;
