@@ -109,9 +109,8 @@ public class AdvancedCraftingShaped extends ShapedOreRecipe implements ICrafting
 			if (mDismantleable) {
 				CompoundTag rNBT = ItemNBT.get(rStack), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				// PORT-TODO(F11, trimmed-сетка): 1.7.10 InventoryCrafting был фикс-9 (3x3); neo CraftingInput
-				// подрезается до фактического габарита (F11-crafting-recipe.md §7) — граница Math.min(9,size())
-				// сохраняет 1:1 для полной 3x3 сетки и просто не переполняется на меньшей.
+				// F11 (АДАПТИРОВАНО): 1.7.10 InventoryCrafting фикс-9 (3x3); neo CraftingInput подрезается до габарита
+				// (F11-crafting-recipe.md §7) — Math.min(9,size()) сохраняет 1:1 для полной 3x3 и не переполняется на меньшей. Не заглушка.
 				for (int i = 0, j = Math.min(9, aGrid.size()); i < j; i++) {
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, T) == null && !(tStack.getItem() instanceof MultiItemTool)) {

@@ -120,8 +120,8 @@ public class AdvancedCraftingShapeless extends ShapelessOreRecipe implements ICr
 			if (mDismantleable) {
 				CompoundTag rNBT = ItemNBT.get(rStack), tNBT = UT.NBT.make();
 				if (rNBT == null) rNBT = UT.NBT.make();
-				// PORT-TODO(F11, trimmed-сетка): см. AdvancedCraftingShaped — Math.min(9,size()) охраняет
-				// подрезанную neo-сетку (F11-crafting-recipe.md §7), 1:1 для полного 3x3.
+				// F11 (АДАПТИРОВАНО): см. AdvancedCraftingShaped — Math.min(9,size()) охраняет подрезанную neo-сетку
+				// (F11-crafting-recipe.md §7), 1:1 для полного 3x3. Не заглушка.
 				for (int i = 0, j = Math.min(9, aGrid.size()); i < j; i++) {
 					ItemStack tStack = aGrid.getItem(i);
 					if (ST.valid(tStack) && ST.container(tStack, true) == null && !(tStack.getItem() instanceof MultiItemTool)) {
