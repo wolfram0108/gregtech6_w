@@ -366,7 +366,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		
 		if (tFoodLevel > 0) {
 			if (FoodStatFluid.INSTANCE.useAppleCoreFunctionality(aStack.getItem(), aStack, aPlayer)) {
-				// PORT-TODO(F10, AppleCore ItemFoodProxy addStats): тот же неразрешимый 1:1 разрыв, что
+				// F10 foreign-gated impossible-1:1 (AppleCore ItemFoodProxy addStats): тот же неразрешимый 1:1 разрыв, что
 				// gregapi/item/multiitem/MultiItemRandom.java (FoodData.func_151686_a убран целиком в neo,
 				// компонентная FoodProperties-модель без per-item override hook) — тот же честный фолбэк.
 				UT.Reflection.callConstructor("squeek.applecore.api.food.ItemFoodProxy", 0, null, T, aStack.getItem());

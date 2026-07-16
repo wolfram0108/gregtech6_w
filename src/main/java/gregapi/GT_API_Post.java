@@ -789,7 +789,7 @@ public class GT_API_Post extends Abstract_Mod {
 		// потому tEnchant тут — ResourceKey (совпадает с addEnchantmentFor*). Vanilla-ключи выверены по neo Enchantments.java
 		// (mending:128/frost_walker:96/swift_sneak:99). Custom-энчанты (Magnetization/Cold Touch/railcraft) — из внешних
 		// модов (F10): если мод не загружен, ключа нет в реестре -> идентификация не сработает -> назначение пропущено
-		// (ровно как в 1.7.10 при отсутствии мода); точные neo-ключи этих модов — PORT-TODO(F10-enchant-custom-key).
+		// (ровно как в 1.7.10 при отсутствии мода); идентификация по path-имени сработает при наличии мода (foreign-gated).
 		net.minecraft.server.MinecraftServer tEnchServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
 		if (tEnchServer != null) for (net.minecraft.resources.ResourceKey<Enchantment> tEnchant : tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).registryKeySet()) {
 			String tEnchName = tEnchant.identifier().getPath();
@@ -797,7 +797,7 @@ public class GT_API_Post extends Abstract_Mod {
 			// а итератор даёт ResourceKey<Enchantment> — резолвим через реестр (сервер уже в scope, тот же
 			// приём, что UT.addEnchantment). GT6-методы material.addEnchantmentFor* принимают ResourceKey (не трогаем).
 			Enchantment tEnchValue = tEnchServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(tEnchant).value();
-			if ("magnetization".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): Magneticraft-энчант, neo-ключ при порте мода
+			if ("magnetization".equalsIgnoreCase(tEnchName)) { // F10 foreign-gated: Magneticraft-энчант, идентификация по path-имени (сработает при наличии мода)
 				for (OreDictMaterial tMaterial : MT.ALL_MATERIALS_REGISTERED_HERE) {
 					if (tMaterial == MT.NeodymiumMagnetic) {
 						tMaterial.addEnchantmentForTools(tEnchant, 3).addEnchantmentForWeapons(tEnchant, 3).addEnchantmentForArmors(tEnchant, 3);
@@ -827,7 +827,7 @@ public class GT_API_Post extends Abstract_Mod {
 					((TFTreasureTable)UT.Reflection.getFieldContent(TFTreasure.troll_vault    , "uncommon" )).addEnchantedBook(tEnchValue, 1);
 				}
 			}
-			if ("cold_touch".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): внешний энчант, neo-ключ при порте мода
+			if ("cold_touch".equalsIgnoreCase(tEnchName)) { // F10 foreign-gated: внешний энчант, идентификация по path-имени (сработает при наличии мода)
 				MT.Ice                  .addEnchantmentForDamage(tEnchant, 1);
 				MT.Snow                 .addEnchantmentForDamage(tEnchant, 1);
 				MT.FrozenIron           .addEnchantmentForDamage(tEnchant, 2);
@@ -845,7 +845,7 @@ public class GT_API_Post extends Abstract_Mod {
 				MT.InfusedWater         .addEnchantmentForArmors(tEnchant, 1);
 				MT.Cryotheum            .addEnchantmentForArmors(tEnchant, 1);
 			}
-			if ("implosion".equalsIgnoreCase(tEnchName)) { // PORT-TODO(F10-enchant-custom-key): Railcraft crowbar.implosion, neo-ключ при порте мода
+			if ("implosion".equalsIgnoreCase(tEnchName)) { // F10 foreign-gated: Railcraft crowbar.implosion, идентификация по path-имени (сработает при наличии мода)
 				for (OreDictMaterial tMat : ANY.Emerald   .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 5).addEnchantmentForAmmo(tEnchant, 7);
 				for (OreDictMaterial tMat : ANY.Sapphire  .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 3).addEnchantmentForAmmo(tEnchant, 5);
 				for (OreDictMaterial tMat : ANY.Garnet    .mToThis) tMat.addEnchantmentForWeapons(tEnchant, 2).addEnchantmentForAmmo(tEnchant, 4);

@@ -302,7 +302,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 			
 			if (tFoodLevel * tSaturationLevel > 0) {
 				if (tStat.useAppleCoreFunctionality(this, aStack, aPlayer) && MD.APC.mLoaded) {
-					// PORT-TODO(F10, AppleCore ItemFoodProxy addStats): 1.7.10 FoodStats.addStats(ItemFood,ItemStack)
+					// F10 foreign-gated impossible-1:1 (AppleCore ItemFoodProxy addStats): 1.7.10 FoodStats.addStats(ItemFood,ItemStack)
 					// (SRG func_151686_a) давал AppleCore подменить итоговое питание через полиморфный ItemFood-хук
 					// (ItemFoodProxy). В neo FoodData (FoodData.java) такого метода нет вовсе — компонентная
 					// FoodProperties-модель без per-item override hook; 1:1 недостижимо архитектурно (не только

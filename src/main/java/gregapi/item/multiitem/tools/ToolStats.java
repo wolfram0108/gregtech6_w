@@ -198,9 +198,9 @@ public abstract class ToolStats implements IToolStats {
 		return ZL_INTEGER;
 	}
 
-	// PORT-TODO(item-base, achievements→advancements): AchievementList (1.7.10) удалён целиком — 26.1.2
-	// использует data-driven Advancements/CriteriaTriggers, нет прямого API-триггера по имени из мод-кода
-	// без собственных CriteriaTrigger-регистраций (отдельный шов, не item-base). Деградация до no-op.
+	// F18 achievements→advancements (подсистема, decisions/F18-achievements.md): AchievementList удалён; neo = data-driven
+	// Advancements + CriteriaTriggers. GT6-достижение крафта инструмента = собственный CriteriaTrigger (advancement JSON +
+	// регистрация триггера) — отдельная подсистема (task #26). no-op = текущее состояние до её постройки.
 	@Override
 	public void onToolCrafted(ItemStack aStack, Player aPlayer) {
 		//

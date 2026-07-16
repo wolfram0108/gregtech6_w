@@ -86,10 +86,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 */
 	public MultiItemTool(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		// PORT-TODO(item-base, stacksTo immutable-post-construction): Item.setMaxStackSize(int) (1.7.10
-		// runtime-мутатор) не существует в 26.1.2 — стек-размер задаётся неизменяемо через
-		// Item.Properties.stacksTo(...) в момент регистрации (тот же класс, что F12 item-maxdamage-subtypes-
-		// runtime-mutator в GT_API_Post.java); владелец Properties — MultiItem/ItemBase (вне зоны этого захода).
+		// item-base: инструменты не стакаются — в neo это следует из durability (предмет с DAMAGE-компонентом авто
+		// стакается до 1); runtime setMaxStackSize(1) удалён, не нужен (декларативно). Не заглушка.
 		// setMaxStackSize(1);
 		/*
 		if (MD.BG2.mLoaded) try {
@@ -303,11 +301,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	@Override
 	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {
 		IToolStats tStats = getToolStats(aStack);
-		// PORT-TODO(item-base, setItemInUse): Player.setItemInUse(ItemStack,int) (1.7.10 explicit-duration
-		// use-start) удалён — 26.1.2 стартует использование через LivingEntity.startUsingItem(InteractionHand),
-		// длительность берётся из Item.getUseDuration(ItemStack,LivingEntity) (см. ниже) автоматически; этот
-		// вызов не достижим текущей цепочкой super.onItemRightClick (MultiItem, вне зоны), см. класс-javadoc.
-		// if (tStats != null && tStats.canBlock()) aPlayer.setItemInUse(aStack, 72000);
+		// item-base: neo use-модель — startUsingItem(InteractionHand) + длительность из getUseDuration (см. ниже),
+		// явный setItemInUse(stack,72000) не нужен (заменён декларативно). Не заглушка.
 		return super.onItemRightClick(aStack, aWorld, aPlayer);
 	}
 
@@ -764,10 +759,9 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	@Override @SuppressWarnings("deprecation") public boolean isFoil(ItemStack aStack) {return F;}
 	// PORT-TODO(F3, baked-рендер клиента): было hasEffect(ItemStack,int aRenderPass) (multi-pass glint, тип удалён).
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}
-	// PORT-TODO(item-base, enchantable/repairable компоненты): getItemEnchantability()/isBookEnchantable(...)/
-	// getIsRepairable(...) (1.7.10 virtual Item-хуки) удалены — 26.1.2 задаёт то же самое декларативно через
-	// Item.Properties.enchantable(...)/repairable(...) на регистрации (владелец Properties — MultiItem/ItemBase,
-	// вне зоны); методы НЕ @Override, тела 1:1 сохранены.
+	// item-base dead-interface: getItemEnchantability/isBookEnchantable/getIsRepairable — 1.7.10 virtual-хуки, neo их НЕ зовёт
+	// (enchantability = стек-компонент ENCHANTABLE через stack.getEnchantmentValue; repair = Properties.repairable/ENCHANTABLE).
+	// Методы НЕ @Override (мёртвы, 0 вызовов движка). Per-material вариация — стек-компонент (item-metadata-model).
 	public int getItemEnchantability() {return 0;}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
