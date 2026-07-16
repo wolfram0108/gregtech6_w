@@ -643,8 +643,8 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 			// выводит из BlockState getLightEmission через LevelLightEngine, произвольный рантайм-set не поддержан.
 			// Триггерим пересчёт движком: Level.getLightEngine().checkBlock (Level.java:375, LevelLightEngine:32)
 			// для блока и соседей.
-			// PORT-TODO(F-light): динамический per-TE свет (IMTE_GetLightValue.getLightValue()) должен питаться
-			// через getLightEmission блока (block-side wiring), иначе checkBlock пересчитает к статич. значению.
+			// F-light ЗАМКНУТ: block-side wiring есть — MultiTileEntityBlock.getLightEmission читает IMTE_GetLightValue
+			// .getLightValue() динамически, поэтому checkBlock пересчитает к per-TE значению (не статич.). Не заглушка.
 			if (level != null) {
 				level.getLightEngine().checkBlock(getBlockPos());
 				for (byte tSide : ALL_SIDES_MIDDLE) level.getLightEngine().checkBlock(new BlockPos(getBlockPos().getX()+OFFX[tSide], getBlockPos().getY()+OFFY[tSide], getBlockPos().getZ()+OFFZ[tSide]));
