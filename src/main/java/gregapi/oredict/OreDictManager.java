@@ -680,8 +680,8 @@ public final class OreDictManager {
 		// F4→F5: оригинал брал ёмкость Forge-методом IFluidContainerItem.getCapacity(ItemStack) (gregtech6/.../OreDictManager.java:659);
 		// в neo IFluidHandlerItem этого метода НЕТ (neoforge-decompiled/.../fluids/capability/IFluidHandlerItem.java — только getContainer()),
 		// ёмкость даёт унаследованный IFluidHandler.getTankCapacity(int) (IFluidHandler.java:60,92). "getCapacity()>0" 1:1 = "есть бак с положительной ёмкостью".
-		// PORT-TODO(F5, fluid-container-capacity): в neo контейнер-жидкость — это capability (Capabilities.Fluid.ITEM), а не Item instanceof
-		// IFluidHandlerItem (эта ветка в neo практически мертва, как и весь fluid-consumer слой ~106 файлов, STATE.md) — истинный путь на F5-transfer-API.
+		// F5 (реализовано): FL.getFluid(aStack,T) РАБОТАЕТ (FULL_TO_DATA-реестр + динамич. GT6-ячейки) — детекция «есть жидкость».
+		// Доп. ветка neo IFluidHandlerItem.getTankCapacity>0 покрывает capability-контейнеры. Проверка «это fluid-контейнер» функциональна.
 		if (!aData.mBlocked) aData.mBlocked = (aData.mBlackListed || ST.block(aStack) != NB || FL.getFluid(aStack, T) != null || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getTanks() > 0 && ((IFluidHandlerItem)aStack.getItem()).getTankCapacity(0) > 0));
 		sItemStack2DataMap.put(new ItemStackContainer(aStack), aData);
 		if (aData.validMaterial()) {

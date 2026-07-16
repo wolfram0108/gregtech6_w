@@ -1011,18 +1011,9 @@ public class ST {
 			if (IL.SC2_Teacup_Empty.equal(aStack, F, T)) return NI;
 			if (IL.SC2_Teacup_Empty.equal(aStack, T, T)) return IL.SC2_Teacup_Empty.get(1);
 		}
-		// PORT-TODO(F5, fluid-item-capability): устаревший IFluidHandler(Item).getCapacity(ItemStack)/drain(ItemStack,int,boolean)
-		// удалён в neo (новый ResourceHandler/FluidResource); консьюмер-репойнт на gregapi.fluid/FL — отдельный проход
-		// (REMAP-RULES §C4). Оригинал:
-		// if (aCheckIFluidContainerItems && item_(aStack) instanceof IFluidHandlerItem && ((IFluidHandlerItem)item_(aStack)).getCapacity(aStack) > 0) {
-		//     ItemStack tStack = amount(1, aStack);
-		//     ((IFluidHandlerItem)item_(aStack)).drain(tStack, Integer.MAX_VALUE, T);
-		//     if (tStack.getCount() <= 0) return NI;
-		//     if (ItemNBT.get(tStack) == null) return tStack;
-		//     if (ItemNBT.get(tStack).isEmpty()) ItemNBT.set(tStack, null);
-		//     return tStack;
-		// }
-		return NI;
+		// F5 (1:1): пустой контейнер после слива — через FL.getEmpty (реализован: FULL_TO_DATA-реестр + динамич. GT6-ячейки).
+		// Было instanceof IFluidHandlerItem.drain (порт снял интерфейс); FL.getEmpty делает тот же слив→пустой централизованно.
+		return FL.getEmpty(aStack, aCheckIFluidContainerItems);
 	}
 	
 	public static ItemStack container(ItemStack aStack, boolean aCheckIFluidContainerItems, int aSize) {
