@@ -54,5 +54,20 @@ public class EntitiesGT {
 	/** Подписка DeferredRegister на мод-шину (вызывается из конструктора GT6_Main, как остальные центральные реестры). */
 	public static void register(IEventBus aModBus) {
 		ENTITY_TYPES.register(aModBus);
+		aModBus.addListener(EntitiesGT::onAttributeModification);
+	}
+
+	// F-entity-ai (КРИТ, крах входа в мир): GT_Proxy.onEntitySpawningEvent добавляет TemptGoal виллагеру (изумруд) и
+	// оцелоту (банки). В MC26 TemptGoal.canUse читает атрибут minecraft:tempt_range (RangedAttribute, новый в neo) →
+	// сущность БЕЗ него крашится при тике ('Can't find attribute minecraft:tempt_range'). Vanilla-виллагер этот атрибут
+	// НЕ несёт (в vanilla он не temptable). Регистрируем tempt_range виллагеру и оцелоту через EntityAttributeModificationEvent
+	// (mod-bus); guard has() — оцелот в vanilla уже temptable (не дублируем, add на существующий кинул бы).
+	private static void onAttributeModification(net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent aEvent) {
+		addTemptRange(aEvent, EntityType.VILLAGER);
+		addTemptRange(aEvent, EntityType.OCELOT);
+	}
+
+	private static void addTemptRange(net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent aEvent, EntityType<? extends net.minecraft.world.entity.LivingEntity> aType) {
+		if (!aEvent.has(aType, net.minecraft.world.entity.ai.attributes.Attributes.TEMPT_RANGE)) aEvent.add(aType, net.minecraft.world.entity.ai.attributes.Attributes.TEMPT_RANGE);
 	}
 }
