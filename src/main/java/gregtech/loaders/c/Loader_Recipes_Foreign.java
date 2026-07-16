@@ -40,6 +40,9 @@ import static gregapi.data.CS.*;
 public class Loader_Recipes_Foreign implements Runnable {
 	@Override public void run() {
 		for (Map<String, FluidContainerData> tMap : FL.EMPTY_TO_FLUID_TO_DATA.values()) for (FluidContainerData tData : tMap.values()) {
+			// F5 robustness: emptyContainer может быть null (жидкость без явной пустой тары в реестре). БЕЗ гарда NPE
+			// рушил ВЕСЬ остаток Loader_Recipes_Foreign.run → foreign canner-рецепты после этой точки терялись (canner −943).
+			if (tData.emptyContainer == null) continue;
 			ItemStack tEmpty = (tData.emptyContainer.getItem() == Items.BUCKET || tData.emptyContainer.getCount() < 1 ? ST.container(tData.filledContainer, F) : tData.emptyContainer);
 			if (ST.valid(tEmpty)) RM.Canner.addRecipe1(T, 16, Math.max(tData.fluid.getAmount() / 64, 16), tEmpty, tData.fluid, NF, tData.filledContainer);
 		}
