@@ -22,20 +22,16 @@ package gregapi.old;
 import gregapi.render.IIconContainer;
 
 /**
- * PORT-TODO(F3, baked-рендер клиента): 1.7.10 рисовал квад иконки прямо в мир ({@code Tessellator}
- * immediate-mode: {@code startDrawingQuads/setNormal/addVertexWithUV/draw}) — весь стек удалён в
- * 26.1.2 (decisions/F3-render.md §1, класс {@code com.mojang.blaze3d.vertex.Tesselator} больше не
- * даёт прямого доступа к {@code instance}/immediate-режиму). Параметр {@code IIcon} (тип удалён)
- * заменён центральной поверхностью {@link IIconContainer} (см. её PORT-TODO(F3) на {@code getIcon}).
- * Реальная замена рисования — {@code CubeBuilder}/{@code QuadBakingVertexConsumer} (F3-render.md §2.2);
- * не вызывается ни из одного места мода (нет ссылающихся файлов) — тело temporарно no-op до той фазы.
+ * F3-render: 1.7.10 рисовал квад иконки immediate-mode ({@code Tessellator}) — стек удалён в 26.1.2. Замена рисования —
+ * {@link gregapi.render.GT6QuadBuilder}/{@code QuadBakingVertexConsumer} (F3-render.md §8). {@code IIcon}→{@link IIconContainer}.
+ * Этот util НЕ вызывается ни из одного места мода (нет ссылающихся файлов) — мёртв, тело no-op.
  */
 public class GT_RenderUtil {
 	public static void renderItemIcon(IIconContainer icon, double size, double z, float nx, float ny, float nz) {
 		renderItemIcon(icon, 0, 0, size, size, z, nx, ny, nz);
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode рисование квада (см. class javadoc). */
+	/** F3-render: было immediate-mode рисование квада; мёртв (см. class javadoc). No-op. */
 	public static void renderItemIcon(IIconContainer icon, double xStart, double yStart, double xEnd, double yEnd, double z, float nx, float ny, float nz) {
 		if (icon == null) return;
 		//

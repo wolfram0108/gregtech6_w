@@ -176,7 +176,7 @@ public class Textures {
 
 		@Override
 		public void run() {
-			// PORT-TODO(F3, baked-рендер клиента): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути (см. gregapi.render.TextureSet).
+			// F3-render: было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути (см. gregapi.render.TextureSet). Адаптировано.
 			mIcon = Identifier.parse(RES_PATH_BLOCK + "iconsets/" + this);
 		}
 
@@ -716,7 +716,7 @@ public class Textures {
 
 			@Override
 			public void run() {
-				// PORT-TODO(F3, baked-рендер клиента): было GT_API.sBlockIcons.registerIcon(mIconName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+				// F3-render: было GT_API.sBlockIcons.registerIcon(mIconName) (IIconRegister удалён) — Identifier строим напрямую из того же пути. Адаптировано.
 				mIcon = Identifier.parse(mIconName);
 			}
 
@@ -854,7 +854,7 @@ public class Textures {
 
 		@Override
 		public void run() {
-			// PORT-TODO(F3, baked-рендер клиента): было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+			// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути. Адаптировано.
 			mIcon       = Identifier.parse(RES_PATH_ITEM + "iconsets/" + this);
 			if (mUseOverlay)
 			mOverlay    = Identifier.parse(RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY");
@@ -873,7 +873,7 @@ public class Textures {
 
 			@Override
 			public void run() {
-				// PORT-TODO(F3, baked-рендер клиента): было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+				// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути. Адаптировано.
 				mIcon       = Identifier.parse(mIconName);
 				mOverlay    = Identifier.parse(mIconName + "_OVERLAY");
 			}

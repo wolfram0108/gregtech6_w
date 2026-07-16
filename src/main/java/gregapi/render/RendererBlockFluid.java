@@ -20,14 +20,10 @@
 package gregapi.render;
 
 /**
- * PORT-TODO(F3, baked-рендер клиента): в 1.7.10 рисовал жидкостный блок immediate-mode через
- * {@code Tesselator}/{@code RenderBlocks} по Forge-API {@code BlockFluidBase}/{@code IFluidBlock}/
- * {@code FluidRegistry} (все удалены в 26.1.2, и все — старый Forge-API кастомных жидкостей, не
- * относящийся к владельцу F5 {@code gregapi.fluid}/{@code FL} — REMAP-RULES §C4; F5 закрыт, сюда не
- * лезем). Реальная замена геометрии жидкости — {@code DynamicBlockStateModel.collectParts()} +
- * {@code CubeBuilder} по высоте потока (decisions/F3-render.md §2.1-2.2), клиентская baked-фаза.
- * Здесь — только серверная поверхность: {@code RENDER_ID}/{@code INSTANCE} (читаются внешними
- * блок-классами как "id рендер-типа жидкости"), тело рендера гатится до no-op.
+ * F3-render: в 1.7.10 рисовал жидкостный блок immediate-mode (Forge {@code BlockFluidBase}/{@code FluidRegistry}, всё удалено).
+ * Геометрия жидкости в neo — baked через {@link GT6BlockModel} (fluid-блок как IRenderedBlock) ЛИБО neo fluid-система; старый
+ * Forge-кастом-жидкостный рендер сюда не относится (F5 закрыт отдельно). Этот класс держит лишь серверную поверхность:
+ * {@code RENDER_ID}/{@code INSTANCE} (читаются блок-классами как "id рендер-типа") — no-op-совместимость.
  */
 public class RendererBlockFluid {
 	public static int RENDER_ID = 0;

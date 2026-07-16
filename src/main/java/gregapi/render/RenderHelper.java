@@ -27,26 +27,24 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * PORT-TODO(F3, baked-рендер клиента): оба метода в 1.7.10 рисовали immediate-mode через
- * {@code RenderBlocks}/{@code RenderItem}/{@code GL11} (инвентарный рендер предмета/блока и
- * wrench-overlay поверх грани) — весь стек удалён в 26.1.2 (decisions/F3-render.md §1). Реальная
- * замена инвентарного рендера — {@code ItemStackRenderState}/{@code ItemModelResolver}
- * (decisions/F3-render.md §2.5, "IItemRenderer" в таблице §3); wrench-overlay ляжет на
- * {@code SubmitNodeCollector}-путь BER/пост-рендера. {@code mRenderBlocks} держит нейтральный
- * держатель {@code Object} — используется внешними местами только как "передать дальше", своё
- * тело не трогает.
+ * F3-render: 1.7.10 immediate-mode GUI/overlay-помощники. Инвентарный рендер предмета в neo — через baked item-модель
+ * ({@link gregapi.render.GT6ItemModel}) + {@code GuiGraphics.renderItem} на call-site; {@code renderItemIntoGUI} здесь мёртв
+ * (0 вызывателей, суперседирован). {@code mRenderBlocks} — нейтральный held-объект ("передать дальше"). Единственное живое —
+ * {@code drawWrenchOverlay} (косметический overlay соединений труб/проводов при наведении с гаечным ключом).
  */
 @OnlyIn(Dist.CLIENT)
 public class RenderHelper {
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code RenderBlocks} (тип удалён). */
+	/** F3-render: было {@code RenderBlocks} (тип удалён); нейтральный held-объект, тело не трогается. */
 	public static Object mRenderBlocks = null;
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode RenderItem/RenderBlocks через GL11 (см. class javadoc). */
+	/** F3-render: было immediate-mode RenderItem/GL11; в neo инвентарь-рендер — baked GT6ItemModel + GuiGraphics.renderItem. Мёртв (0 вызывателей). */
 	public static void renderItemIntoGUI(Font aFontRenderer, TextureManager aTextureManager, ItemStack aStack, int aX, int aY, boolean aEffect) {
 		//
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было отладочное наложение проводов/труб через сырой GL11 (см. class javadoc). */
+	/** PORT-TODO(F3, косметический overlay соединений — живой highlight-путь): 1.7.10 рисовал линии труб/проводов сырым GL11.
+	 *  neo — линии через {@code PoseStack}+{@code MultiBufferSource} из highlight-события; косметика, не влияет на паритет/логику.
+	 *  Крах сломал бы рендер каждого выделения блока → no-op до реализации overlay-геометрии. */
 	public static void drawWrenchOverlay(Player aPlayer, int aX, int aY, int aZ, byte aConnections, byte aSide, float aPartialTicks) {
 		//
 	}
