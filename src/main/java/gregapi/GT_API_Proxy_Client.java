@@ -121,6 +121,13 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aModBus.addListener(this::onRegisterBlockStateModels);
 		aModBus.addListener(this::onModifyBakingResult);
 		aModBus.addListener(this::onRegisterFluidModels);
+		aModBus.addListener(this::onBakingCompleted);
+	}
+
+	// Приёмочный скан рендера (гейт ②): после стежки атласа и baking моделей проверяем, что item-иконки GT6 резолвятся
+	// (не пурпур). BakingCompleted — main-thread, атлас+модели готовы (ModelEvent.java:93). Пишет found/missing в gregtech.log.
+	private void onBakingCompleted(net.neoforged.neoforge.client.event.ModelEvent.BakingCompleted aEvent) {
+		try {gregapi.render.GT6ItemModel.probeItemIcons();} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] скан упал: " + e);}
 	}
 
 	// F5/F3-render (client): единый динамический FluidModel ВСЕМ GT6-жидкостям (замена «Missing FluidModel» на реальный

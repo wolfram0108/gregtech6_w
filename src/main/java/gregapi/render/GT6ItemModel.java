@@ -63,12 +63,36 @@ public class GT6ItemModel implements ItemModel {
 		} catch (Throwable e) {/* render-safe: сбой одного предмета не рушит рендер */}
 	}
 
-	/** Икона предмета: GT6 {@code getIconIndex(ItemStack)} (PrefixItem/MultiItem) → Identifier; иначе {@code getIconFromDamage(int)}. */
-	private static Identifier resolveIcon(ItemStack aItem) {
+	/** Икона предмета: GT6 {@code getIconIndex(ItemStack)} (PrefixItem/MultiItem) → Identifier; иначе {@code getIconFromDamage(int)}.
+	 *  public — переиспользуется скан-оснасткой рендера (GT6RenderProbe) для приёмки «иконки не пурпур». */
+	public static Identifier resolveIcon(ItemStack aItem) {
 		Object tItem = aItem.getItem();
 		Identifier r = tryIcon(tItem, "getIconIndex", ItemStack.class, aItem);
 		if (r == null) r = tryIcon(tItem, "getIconFromDamage", int.class, aItem.getDamageValue());
 		return r;
+	}
+
+	/**
+	 * Приёмочный СКАН РЕНДЕРА (гейт ②, «текстуры не пурпур»): для всех GT6-предметов (не BlockItem) проверяет, что иконка
+	 * резолвится в атласе (ITEMS, fallback BLOCKS) — не missing/пурпур. Пишет found/missing + примеры в gregtech.log.
+	 * Зовётся один раз на первом client-tick (атлас стежен). Автоматизирует визуальный гейт, не заменяя, но давая механику.
+	 */
+	public static void probeItemIcons() {
+		int tFound = 0, tMissing = 0; java.util.List<String> tSamples = new java.util.ArrayList<>();
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
+			if (tItem instanceof net.minecraft.world.item.BlockItem) continue;
+			try {
+				Identifier tIcon = resolveIcon(new ItemStack(tItem));
+				if (tIcon == null) continue; // предмет без GT6-иконки (модель ничего не рисует) — не пурпур
+				TextureAtlasSprite tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
+				if (tS == null) tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
+				if (tS != null) tFound++; else {tMissing++; if (tSamples.size() < 20) tSamples.add(tKey.getPath() + "→" + tIcon);}
+			} catch (Throwable e) {/* один предмет не рушит скан */}
+		}
+		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] item-иконки: found=" + tFound + " missing(пурпур)=" + tMissing);
+		if (!tSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] примеры missing: " + tSamples);
 	}
 
 	private static Identifier tryIcon(Object aTarget, String aMethod, Class<?> aArgType, Object aArg) {

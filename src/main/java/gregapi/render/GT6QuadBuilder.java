@@ -83,7 +83,13 @@ public final class GT6QuadBuilder {
 	 *  item-иконки — в ITEMS (atlases/items.json, textures/items/**). GT6ItemModel резолвит из ITEMS (материал-предметы
 	 *  берут item-версию materialicons, а не блочную; gt.multiitem.* иначе не в атласе → пурпур). */
 	public static TextureAtlasSprite resolveSprite(Identifier aIcon, Identifier aAtlas) {
-		try {return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(aAtlas).getSprite(aIcon);} catch (Throwable e) {return null;}
+		try {
+			net.minecraft.client.renderer.texture.TextureAtlas tAtlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(aAtlas);
+			TextureAtlasSprite tSprite = tAtlas.getSprite(aIcon);
+			// getSprite возвращает MISSING-спрайт (не null) при отсутствии (TextureAtlas.java:255) → приводим к null: даёт
+			// работать fallback (ITEMS→BLOCKS в GT6ItemModel) и пропуск грани в putFace вместо пурпур-квада; детекция пурпура.
+			return tSprite == tAtlas.missingSprite() ? null : tSprite;
+		} catch (Throwable e) {return null;}
 	}
 
 	/** F3 block-icon-data: neo-замена удалённого 1.7.10 {@code Block.getIcon(side,meta)} — {@link Identifier} спрайта
