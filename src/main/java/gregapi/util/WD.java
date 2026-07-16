@@ -222,47 +222,47 @@ public class WD {
 
 	public static boolean dimPlanet(Level aWorld) {return aWorld != null && aWorld.dimension() != Level.OVERWORLD && aWorld.dimension() != Level.NETHER && aWorld.dimension() != Level.END && !(dimMYST(aWorld) || dimATUM(aWorld) || dimWTCH(aWorld) || dimA97(aWorld) || dimCW2(aWorld) || dimTF(aWorld) || dimERE(aWorld) || dimBTL(aWorld) || dimENVM(aWorld) || dimDD(aWorld) || dimLM(aWorld) || dimAETHER(aWorld) || dimALF(aWorld) || dimTROPIC(aWorld) || dimCANDY(aWorld));}
 
-	public static boolean dimMYST(Level aWorld) {return aWorld != null && MD.MYST.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimMYST — Mystcraft-провайдер определялся по имени java-класса ("com.xcompwiz.mystcraft"), WorldProvider удалён, аналога нет ни в одном из 3 корней референса */}
+	public static boolean dimMYST(Level aWorld) {return aWorld != null && MD.MYST.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimMYST — Mystcraft-провайдер определялся по имени java-класса ("com.xcompwiz.mystcraft"), WorldProvider удалён, аналога нет ни в одном из 3 корней референса */}
 
-	public static boolean dimCANDY(Level aWorld) {return aWorld != null && MD.CANDY.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCANDY — CandyCraft-провайдер по имени класса "WorldProviderCandy" */}
+	public static boolean dimCANDY(Level aWorld) {return aWorld != null && MD.CANDY.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCANDY — CandyCraft-провайдер по имени класса "WorldProviderCandy" */}
 
-	public static boolean dimTROPIC(Level aWorld) {return aWorld != null && MD.TROPIC.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimTROPIC — Tropicraft-провайдер по имени класса "WorldProviderTropicraft" */}
+	public static boolean dimTROPIC(Level aWorld) {return aWorld != null && MD.TROPIC.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTROPIC — Tropicraft-провайдер по имени класса "WorldProviderTropicraft" */}
 
-	public static boolean dimATUM(Level aWorld) {return aWorld != null && MD.ATUM.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimATUM — Atum-провайдер по имени класса "AtumWorldProvider" */}
+	public static boolean dimATUM(Level aWorld) {return aWorld != null && MD.ATUM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimATUM — Atum-провайдер по имени класса "AtumWorldProvider" */}
 
-	public static boolean dimTF(Level aWorld) {return aWorld != null && MD.TF.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimTF — сравнение с числовым TwilightForestMod.dimensionID, WorldProvider.dimensionId удалён вместе с числовой identity измерений */}
+	public static boolean dimTF(Level aWorld) {return aWorld != null && MD.TF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTF — сравнение с числовым TwilightForestMod.dimensionID, WorldProvider.dimensionId удалён вместе с числовой identity измерений */}
 
-	public static boolean dimBTL(Level aWorld) {return aWorld != null && MD.BTL.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimBTL — Betweenlands-провайдер по имени класса "WorldProviderBetweenlands" */}
+	public static boolean dimBTL(Level aWorld) {return aWorld != null && MD.BTL.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimBTL — Betweenlands-провайдер по имени класса "WorldProviderBetweenlands" */}
 
-	public static boolean dimERE(Level aWorld) {return aWorld != null && MD.ERE.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimERE — Erebus-провайдер по имени класса "WorldProviderErebus" */}
+	public static boolean dimERE(Level aWorld) {return aWorld != null && MD.ERE.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimERE — Erebus-провайдер по имени класса "WorldProviderErebus" */}
 
-	public static boolean dimALF(Level aWorld) {return aWorld != null && MD.ALF.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimALF — Alfheim-провайдер по имени класса "WorldProviderAlfheim" */}
+	public static boolean dimALF(Level aWorld) {return aWorld != null && MD.ALF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimALF — Alfheim-провайдер по имени класса "WorldProviderAlfheim" */}
 
-	public static boolean dimDD(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimDD — Underdark-провайдер по имени класса "WorldProviderUnderdark" */}
+	public static boolean dimDD(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimDD — Underdark-провайдер по имени класса "WorldProviderUnderdark" */}
 
-	public static boolean dimLM(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimLM — EndOfTime-провайдер по имени класса "WorldProviderEndOfTime" */}
+	public static boolean dimLM(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimLM — EndOfTime-провайдер по имени класса "WorldProviderEndOfTime" */}
 
-	public static boolean dimENVM(Level aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimENVM — Enviromine Caves-провайдер по имени класса "WorldProviderCaves" */}
+	public static boolean dimENVM(Level aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimENVM — Enviromine Caves-провайдер по имени класса "WorldProviderCaves" */}
 
-	public static boolean dimGC(Level aWorld) {return aWorld != null && MD.GC.mLoaded && F; /* PORT-TODO(F6/F10, WD world-provider identity): dimGC — Galacticraft-измерение определялось `aWorld.provider instanceof IGalacticraftWorldProvider`, WorldProvider удалён из движка (та же болезнь, что у семейства dimXXX выше) */}
+	public static boolean dimGC(Level aWorld) {return aWorld != null && MD.GC.mLoaded && F; /* F6/F10 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimGC — Galacticraft-измерение определялось `aWorld.provider instanceof IGalacticraftWorldProvider`, WorldProvider удалён из движка (та же болезнь, что у семейства dimXXX выше) */}
 
-	public static boolean dimA97(Level aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimA97 — Aroma1997 Mining-провайдер по имени класса "WorldProviderMiner" */}
+	public static boolean dimA97(Level aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimA97 — Aroma1997 Mining-провайдер по имени класса "WorldProviderMiner" */}
 
 	public static boolean dimCW2(Level aWorld) {return aWorld != null && (dimCW2AquaCavern(aWorld) || dimCW2Caveland(aWorld) || dimCW2Cavenia(aWorld) || dimCW2Cavern(aWorld) || dimCW2Caveworld(aWorld));}
 
-	public static boolean dimCW2AquaCavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2AquaCavern — по имени класса "WorldProviderAquaCavern" */}
+	public static boolean dimCW2AquaCavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2AquaCavern — по имени класса "WorldProviderAquaCavern" */}
 
-	public static boolean dimCW2Caveland(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Caveland — по имени класса "WorldProviderCaveland" */}
+	public static boolean dimCW2Caveland(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveland — по имени класса "WorldProviderCaveland" */}
 
-	public static boolean dimCW2Cavenia(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Cavenia — по имени класса "WorldProviderCavenia" */}
+	public static boolean dimCW2Cavenia(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavenia — по имени класса "WorldProviderCavenia" */}
 
-	public static boolean dimCW2Cavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Cavern — по имени класса "WorldProviderCavern" */}
+	public static boolean dimCW2Cavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavern — по имени класса "WorldProviderCavern" */}
 
-	public static boolean dimCW2Caveworld(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimCW2Caveworld — по имени класса "WorldProviderCaveworld" */}
+	public static boolean dimCW2Caveworld(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveworld — по имени класса "WorldProviderCaveworld" */}
 
-	public static boolean dimWTCH(Level aWorld) {return aWorld != null && MD.WTCH.mLoaded && F; /* PORT-TODO(F6, WD world-provider identity): dimWTCH — Witchery Dream World-провайдер по имени класса "WorldProviderDreamWorld" */}
+	public static boolean dimWTCH(Level aWorld) {return aWorld != null && MD.WTCH.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimWTCH — Witchery Dream World-провайдер по имени класса "WorldProviderDreamWorld" */}
 
-	public static boolean dimAETHER(Level aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* PORT-TODO(F6, WD world-provider identity): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
+	public static boolean dimAETHER(Level aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
 
 	/** было ручное 1.7.10 dimension-travel (DimensionManager/ridingEntity/removePlayerEntityDangerously/ClientboundRespawnPacket/
 	 *  theItemInWorldManager/getConfigurationManager/FMLCommonHandler.firePlayerChangedDimensionEvent/createEntityByName — все удалены) —

@@ -106,23 +106,14 @@ public class WorldgenOresLarge extends WorldgenObject {
 						// «материал блока — жидкость» это реальный BlockState.liquid() (BlockBehaviour.java:586, поле
 						// `liquid` напрямую наследует старое Material.isLiquid).
 						if (tContact.liquid()) break;
-						// PORT-TODO(F6, block-behavior: isOpaqueCube): было `if (!WD.opaque(tContact)) continue;`
-						// (пропуск не-цельных блоков при спуске к поверхности). isOpaqueCube() удалён (§C2 — dead-list);
-						// documented 1:1 нет (isSolidRender/canOcclude/isSolid близки, но не тождественны) — не выдумываю.
-						// PORT-TODO(F6, block-behavior: getMaterial()==grass/ground/sand/rock): было
-						// `if (WD.getMaterial(tContact) != Material.grass && ... != Material.rock) break;` — индикатор
-						// ставится только на травяной/земляной/песчаный/каменный грунт. WD.getMaterial(Block) удалён,
-						// а Material.grass/ground/sand/rock — F9 block-material shim (ещё не сделан; WD.floor/opq/
-						// getMaterial в WD.java тоже не портированы). До готовности F9/F3 индикаторные камни
-						// (косметика над жилой) не ставятся — гейтим `break` (ничего не размещаем), чтобы не
-						// поставить индикатор в неверном месте. Сама генерация ЖИЛЫ (цикл ниже, WD.setOre) не затронута.
-						break;
-						/* PORT-TODO(F6): восстановить при готовности F9(block-material)+F3(block-behavior):
-						if (!WD.opaque(tContact)) continue;
-						if (WD.getMaterial(tContact) != Material.grass && WD.getMaterial(tContact) != Material.ground && WD.getMaterial(tContact) != Material.sand && WD.getMaterial(tContact) != Material.rock) break;
+						// F6 (1:1): было isOpaqueCube() (пропуск не-цельных блоков при спуске) → BlockState.canOcclude() (WD.opaque).
+						if (!tContact.canOcclude()) continue;
+						// F6 (1:1): индикатор ставится только на grass/ground/sand/rock. WD.getMaterial(Block) РЕАЛИЗОВАН
+						// (vanilla-классификация по идентичности+тегам, WD.java:474) — стух-тег снят.
+						gregapi.block.Material tMat = WD.getMaterial(tContact.getBlock());
+						if (tMat != gregapi.block.Material.grass && tMat != gregapi.block.Material.ground && tMat != gregapi.block.Material.sand && tMat != gregapi.block.Material.rock) break;
 						if (WD.easyRep(aWorld, tX, tY+1, tZ)) tRegistry.mBlock.placeBlock(aWorld, tX, tY+1, tZ, SIDE_UNKNOWN, (short)32757, aRandom.nextInt(3)!=0?ST.save(NBT_VALUE, OP.rockGt.mat(UT.Code.select(mTop, mTop, mBottom, mBetween, mSpread), 1)):UT.NBT.make(), F, T);
 						break;
-						*/
 					}
 				}
 			}

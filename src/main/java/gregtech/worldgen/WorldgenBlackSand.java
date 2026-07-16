@@ -70,19 +70,13 @@ public class WorldgenBlackSand extends WorldgenObject {
 				// поля neo — `Blocks.DIRT/GRAVEL/SAND/CLAY` (`Blocks.java:85,322,342,2099`), то же переименование,
 				// что применено волной 1 по всему остальному дереву.
 				if ((tBlock == Blocks.DIRT && tMeta < 2) || tBlock == Blocks.GRAVEL || tBlock == Blocks.SAND || tBlock == Blocks.CLAY || tBlock == BlocksGT.oreSmallGravel || tBlock == BlocksGT.oreGravel || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreRedSand) {
-					// PORT-TODO(F6, block-behavior: getMaterial()==wood/gourd): было "Don't take away the Dirt
-					// Block below Trees, Bushes and other Plants" — `if (tGenerated<=0 && (WD.getMaterial(tLastBlock)
-					// == Material.wood || == Material.gourd)) continue;`. `WD.getMaterial(Block)` удалён движком, F9
-					// block-material shim ещё не готов (та же болезнь класса, что уже задокументирована в
-					// `WorldgenOresLarge.java` §C5, метка `F6, block-behavior: getMaterial()==grass/ground/sand/
-					// rock`) — не выдумываю замену. Гейт временно ОПУЩЕН (не проверяется): реже, чем в оригинале,
-					// сохраняется дёрн под деревом/кустом; сама генерация чёрного песка (эта ветка) не отключена.
+					// F6 (1:1): не забирать дёрн под деревьями/кустами/растениями. WD.getMaterial(Block) РЕАЛИЗОВАН
+					// (vanilla-классификация, WD.java:474) — стух-тег снят.
+					if (tGenerated <= 0 && (WD.getMaterial(tLastBlock) == gregapi.block.Material.wood || WD.getMaterial(tLastBlock) == gregapi.block.Material.gourd)) continue;
 				} else {
 					if (tGenerated > 0) {
-						// PORT-TODO(F6, block-behavior: getMaterial()!=rock): было `if (WD.getMaterial(tBlock) !=
-						// Material.rock) break;` (не сверлить второй слой сквозь неопознанный НЕ-камень).
-						// `WD.getMaterial(Block)` удалён, F9 ещё не готов (см. PORT-TODO выше) — гейт временно
-						// ОПУЩЕН: второй слой чёрного песка ставится независимо от материала нижнего блока.
+						// F6 (1:1): не сверлить второй слой сквозь неопознанный НЕ-камень. WD.getMaterial реализован — стух-тег снят.
+						if (WD.getMaterial(tBlock) != gregapi.block.Material.rock) break;
 					} else {
 						continue;
 					}
