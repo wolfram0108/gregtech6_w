@@ -1,0 +1,8 @@
+{
+  "feature": "gregapi:gt6_worldgen",
+  "placement": [
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}

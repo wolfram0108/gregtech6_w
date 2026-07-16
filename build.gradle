@@ -185,7 +185,10 @@ neoForge {
             // gameDirectory = project.file('run-data')
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+            // F-datagen: mod_id (gregtech6) — контейнер БЕЗ @Mod-класса; GatherDataEvent шлётся только на мод-шины из набора --mod,
+            // а датапак-провайдер (энчанты/ворлдген) подписан на шине gregapi (GT6WorldgenFeature.register из GT_API-конструктора).
+            // → --mod gregapi, иначе событие не доходит до хендлера и провайдеры не запускаются (0 ms / пустой src/generated).
+            programArguments.addAll '--mod', 'gregapi', '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
 
         // applies to all the run configs above
