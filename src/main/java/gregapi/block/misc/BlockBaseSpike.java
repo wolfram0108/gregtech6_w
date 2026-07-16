@@ -63,7 +63,7 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 	
 	public BlockBaseSpike(String aNameInternal, OreDictMaterial aMat1, OreDictMaterial aMat2) {
 		super(null, aNameInternal, Material.iron, SoundType.METAL);
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.REDSTONE);
 		mMat1 = aMat1; mMat2 = aMat2;
 		// F12-followup (block-split): рецепты/OM.data используют ST.make → server-start → deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> {

@@ -49,7 +49,7 @@ public class BlockColored extends BlockMetaType {
 		if (aDefaultLocalised != null) for (int i = 0; i < 16; i++) LH.add(getUnlocalizedName()+"."+i, DYE_NAMES[i] + " " + aDefaultLocalised);
 		// F12-followup (block-split): OM.data(ST.make(...)) — ItemStack → компоненты только на server-start → deferItemInit.
 		if (aMaterial != null) gregapi.GT_API.deferItemInit(() -> {for (int i = 0; i < 16; i++) OM.data(ST.make(this, 1, i), new OreDictItemData(aMaterial, U));});
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 	}
 	
 	@Override
@@ -62,7 +62,7 @@ public class BlockColored extends BlockMetaType {
 		if (aDefaultLocalised != null) for (int i = 0; i < 16; i++) LH.add(getUnlocalizedName()+"."+i, DYE_NAMES[i] + " " + aDefaultLocalised + " Slab");
 		// F12-followup (block-split): OM.data(ST.make(...)) — ItemStack → server-start → deferItemInit.
 		if (aMaterial != null) gregapi.GT_API.deferItemInit(() -> {for (int i = 0; i < 16; i++) OM.data(ST.make(this, 1, i), new OreDictItemData(aMaterial, U2));});
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 	}
 	
 	// @Override

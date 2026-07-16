@@ -65,7 +65,7 @@ public class BlockBaseLilyPad extends BlockBaseMeta implements IPlantable, IRend
 	public BlockBaseLilyPad(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(ItemBlockBase.class, aNameInternal, Material.plants, SoundType.GRASS, aMaxMeta, aIcons);
 		setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.015625F, 1.0F);
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 		// F12-followup (block-split): RM.chisel/COMPAT_FR используют ST.make → server-start → deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> {
 		RM.chisel(aNameInternal, ST.make(this, 1, W));

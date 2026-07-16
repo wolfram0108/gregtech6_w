@@ -88,7 +88,7 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		mIcons = aIcons;
 		/* PORT-TODO(F16) setStepSound */;
 		mNameInternal = aNameInternal;
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site (Loader_Blocks); ЗДЕСЬ — только BlockItem.
 		final Class<? extends net.minecraft.world.item.BlockItem> tItemClass = aItemClass==null?gregapi.block.ItemBlockBase.class:aItemClass;
 		gregapi.GT_API.registerItemLazy(gregapi.data.CS.ModIDs.GT, mNameInternal, () -> (net.minecraft.world.item.BlockItem)gregapi.util.UT.Reflection.callConstructor(tItemClass, 0, null, gregapi.data.CS.T, this));

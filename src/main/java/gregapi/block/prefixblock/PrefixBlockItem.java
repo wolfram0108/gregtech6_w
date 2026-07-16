@@ -68,12 +68,11 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		
 		if ((SHOW_HIDDEN_PREFIXES || !mBlock.mPrefix.contains(TD.Creative.HIDDEN)) && (SHOW_ORE_BLOCK_PREFIXES || "gt.meta.ore.normal.default".equalsIgnoreCase(mBlock.mNameInternal) || !mBlock.mPrefix.contains(TD.Prefix.ORE) || mBlock.mPrefix.contains(TD.Prefix.STORAGE_BASED))) {
 			if (mBlock.mPrefix.mCreativeTab == null) mBlock.mPrefix.mCreativeTab = new CreativeTab(mBlock.mPrefix.mNameInternal, mBlock.mPrefix.mNameCategory, this, W);
-			// mBlock.setCreativeTab(mBlock.mPrefix.mCreativeTab);
-			/* PORT-TODO(F16) setCreativeTab — Block/Item.setCreativeTab не существует в 26.1.2 (0 в 3 корнях референса,
-			 * членство теперь через BuildCreativeModeTabContentsEvent), тот же класс проблемы, что ItemArmorBase.java:100-103. */;
+			// F16: golden — prefix-специфичная GT-вкладка (mPrefix.mCreativeTab); полная регистрация кастомных вкладок —
+			// отдельная под-фаза, prefix-блоки (руды/материалы/хранилище) маршрутизируем в BUILDING_BLOCKS (building-block-подобны).
+			gregapi.item.CreativeTabsGT.assign(mBlock, gregapi.item.CreativeTabsGT.BLOCK);
 		} else {
-			// mBlock.setCreativeTab(CreativeModeTab.tabBlock);
-			/* PORT-TODO(F16) setCreativeTab — см. выше; CreativeModeTab.tabBlock (статическая константа) тоже удалена, вкладки теперь Holder/Registry. */;
+			gregapi.item.CreativeTabsGT.assign(mBlock, gregapi.item.CreativeTabsGT.BLOCK);
 		}
 	}
 	

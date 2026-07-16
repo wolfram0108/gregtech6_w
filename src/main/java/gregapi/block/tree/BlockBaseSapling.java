@@ -69,7 +69,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	public BlockBaseSapling(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType, Math.min(8, aMaxMeta), aIcons);
 		setBlockBounds(0.1F, 0.0F, 0.1F, 0.9F, 0.8F, 0.9F);
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.DECORATIONS);
 		// было setTickRandomly(true) (1.7.10 runtime мутатор, вызов ПОСЛЕ super()) -> перенесено на реальную
 		// override-точку BlockBehaviour.isRandomlyTicking(BlockState) [BlockBehaviour.java:382-384] ниже (в отличие
 		// от setHardness/setResistance у этой точки ЕСТЬ override, не no-op).

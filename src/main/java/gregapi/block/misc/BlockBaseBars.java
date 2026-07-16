@@ -64,7 +64,7 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	
 	public BlockBaseBars(String aNameInternal, OreDictMaterial aMat, Material aVanillaMaterial, SoundType aSoundType) {
 		super(null, aNameInternal, aVanillaMaterial, aSoundType);
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.REDSTONE);
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 		mMat = aMat;
 		

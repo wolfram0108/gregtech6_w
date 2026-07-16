@@ -68,7 +68,7 @@ public class BlockMetaType extends BlockBaseMeta {
 		// (block-property-runtime-mutator) - ретроактивная мутация недостижима, деградация до no-op (getBlockHardness/
 		// getExplosionResistance(byte) ниже уже несут mHardnessMultiplier/mResistanceMultiplier как GT6-own
 		// не-движковые методы, значение не теряется для GT6-внутренних потребителей).
-		/* PORT-TODO(F16) setCreativeTab */;
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.BLOCK);
 		mIsWall = F;
 		mIsSlab = F;
 		mIsStair = F;
