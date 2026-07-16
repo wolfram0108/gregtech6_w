@@ -93,7 +93,7 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 		return mTexture;
 	}
 	
-	// PORT-TODO(F3, baked-рендер клиента): было RenderBlocks aRenderer (тип удалён в 26.1.2) — параметр Object,
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было RenderBlocks aRenderer (тип удалён в 26.1.2) — параметр Object,
 	// тот же нейтральный держатель, что gregapi.render.IRenderedBlockObject#renderItem/renderBlock.
 	@Override public boolean renderItem(Block aBlock, Object aRenderer) {return F;}
 	@Override public boolean renderBlock(Block aBlock, Object aRenderer, BlockGetter aWorld, int aX, int aY, int aZ) {return F;}

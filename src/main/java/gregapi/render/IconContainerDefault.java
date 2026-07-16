@@ -25,7 +25,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.Identifier;
 
 /**
- * PORT-TODO(F3, baked-рендер клиента): конструкторы принимали {@code IIcon} (тип удалён в 26.1.2) —
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): конструкторы принимали {@code IIcon} (тип удалён в 26.1.2) —
  * теперь принимают {@link Identifier} как нейтральный держатель ссылки на текстуру, форвард-совместимый
  * с будущим {@code Material(Identifier)} (decisions/F3-render.md §2.3).
  */

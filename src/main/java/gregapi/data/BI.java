@@ -170,7 +170,7 @@ public class BI {
 		protected Icon(String aIconName) {mIconName = aIconName; if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);}
 
 		@Override public Identifier getIcon(int aRenderPass) {return mIcon;}
-		// PORT-TODO(F3, baked-рендер клиента): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 		@Override public void run() {mIcon = Identifier.parse(RES_PATH_API_BLOCK + mIconName);}
 		@Override public Identifier getTextureFile() {return TextureAtlas.LOCATION_BLOCKS;}
 		@Override public short[] getIconColor(int aRenderPass) {return UNCOLOURED;}

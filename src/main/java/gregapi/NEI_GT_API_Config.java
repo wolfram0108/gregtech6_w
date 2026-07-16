@@ -36,7 +36,7 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 	// @Override
 	public void loadConfig() {
 		NEI = T;
-		/* PORT-TODO(F3, baked-рендер клиента): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
+		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
 		 * (Forge 1.7.10 API, {@code instance()}/{@code getIndexedModList()} удалены) — neo эквивалент
 		 * {@code ModList.get().getModContainerById(id)} (`fml-decompiled/net/neoforged/fml/ModList.java:76,128`)
 		 * → {@code ModContainer.getModInfo().getVersion()} (`ModContainer.java:41`, {@code ArtifactVersion}, не String). */
@@ -47,7 +47,7 @@ public class NEI_GT_API_Config implements codechicken.nei.api.IConfigureNEI, Run
 	@Override
 	public void run() {
 		NEI = T;
-		/* PORT-TODO(F3, baked-рендер клиента): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
+		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code ModList.instance().getIndexedModList().get(id).getVersion()}
 		 * (Forge 1.7.10 API, {@code instance()}/{@code getIndexedModList()} удалены) — neo эквивалент
 		 * {@code ModList.get().getModContainerById(id)} (`fml-decompiled/net/neoforged/fml/ModList.java:76,128`)
 		 * → {@code ModContainer.getModInfo().getVersion()} (`ModContainer.java:41`, {@code ArtifactVersion}, не String). */

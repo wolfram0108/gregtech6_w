@@ -25,7 +25,7 @@ import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F3, baked-рендер клиента): 1.7.10 {@code net.minecraftforge.client.event.DrawBlockHighlightEvent}
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code net.minecraftforge.client.event.DrawBlockHighlightEvent}
  * (immediate-mode, поля {@code player}/{@code target}/{@code currentItem}/{@code partialTicks}) удалён
  * целиком в 26.1.2 — событие пересобрано вокруг {@code BlockOutlineRenderState}
  * (`neoforge-decompiled/net/neoforged/neoforge/client/event/ExtractBlockOutlineRenderStateEvent.java:33-145`,

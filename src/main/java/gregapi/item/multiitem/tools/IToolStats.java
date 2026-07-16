@@ -213,7 +213,7 @@ public interface IToolStats {
 	public void afterBreaking(ItemStack aStack, Player aPlayer);
 	
 	public int getRenderPasses();
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code IIcon getIcon(...)} (тип удалён в 26.1.2) — держатель ссылки на текстуру, тот же F3-канал что {@code gregapi.render.IIconContainer#getIcon(int)}. */
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code IIcon getIcon(...)} (тип удалён в 26.1.2) — держатель ссылки на текстуру, тот же F3-канал что {@code gregapi.render.IIconContainer#getIcon(int)}. */
 	public Identifier getIcon(ItemStack aStack, int aRenderPass);
 	public short[] getRGBa(ItemStack aStack, int aRenderPass);
 }

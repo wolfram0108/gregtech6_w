@@ -131,7 +131,7 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 			// F13: оригинал getIsRepairable всегда F (не чинится). neo ArmorMaterial ТРЕБУЕТ TagKey<Item> repair-материала →
 			// пустой (никогда не заполняемый) тег «repair/none» = ничего не матчит => не чинится. 1:1 по следствию. Не заглушка.
 			TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(aModID, "repair/none")),
-			// PORT-TODO(F3, baked-рендер клиента): было mArmorTexture-строка (PNG-путь), реальный держатель —
+			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было mArmorTexture-строка (PNG-путь), реальный держатель —
 			// assets/<mModID>/equipment/<aArmorName>.json, клиентский ресурс не порождается этим Java-кодом
 			// (оригинал тоже не порождал PNG из кода — только ссылался строкой).
 			ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.fromNamespaceAndPath(aModID, aArmorName))

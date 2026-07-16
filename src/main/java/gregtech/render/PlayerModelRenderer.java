@@ -27,7 +27,7 @@ import java.util.Collection;
 import static gregapi.data.CS.RES_PATH_MODEL;
 
 /**
- * PORT-TODO(F3, baked-рендер клиента): 1.7.10 {@code RenderPlayer} (immediate-mode: GL11 push/pop-матрицы,
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code RenderPlayer} (immediate-mode: GL11 push/pop-матрицы,
  * ручная интерполяция позиции игрока по SRG-полям {@code field_71091_bM}.., {@code ModelBiped.renderCloak})
  * — весь этот стек удалён в 26.1.2 (decisions/F3-render.md §1). Класс больше не наследует движковый
  * рендерер игрока (тип удалён без замены с той же формой) — держит только чистую бизнес-логику выбора
@@ -68,7 +68,7 @@ public class PlayerModelRenderer {
 		return null;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode рисование плаща через {@code ModelBiped.renderCloak}
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было immediate-mode рисование плаща через {@code ModelBiped.renderCloak}
 	 *  (см. class javadoc) — тело заглушка, {@link #getResource(String)} (реальный выбор текстуры) сохранён живым. */
 	public void receiveRenderSpecialsEvent(RenderPlayerEvent.Pre<?> aEvent) {
 		//

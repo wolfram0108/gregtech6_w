@@ -36,7 +36,7 @@ import net.minecraft.resources.Identifier;
 public interface IIconContainer {
 	/**
 	 * @return держатель ссылки на текстуру для этого Render Pass.
-	 * PORT-TODO(F3, baked-рендер клиента): было {@code IIcon getIcon(int)}.
+	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code IIcon getIcon(int)}.
 	 */
 	@OnlyIn(Dist.CLIENT)
 	public Identifier getIcon(int aRenderPass);
@@ -67,7 +67,7 @@ public interface IIconContainer {
 
 	/**
 	 * Registers the Icon of this IconContainer.
-	 * PORT-TODO(F3, baked-рендер клиента): было {@code registerIcons(IIconRegister)} (атлас-стежка
+	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code registerIcons(IIconRegister)} (атлас-стежка
 	 * 1.7.10, тип удалён). Параметр — нейтральный держатель до реальной привязки к
 	 * {@code ModelBaker.materials()}/атласу; реализациям следует не-op'ить на сервере.
 	 */

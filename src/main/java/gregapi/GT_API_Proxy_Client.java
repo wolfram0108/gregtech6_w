@@ -162,7 +162,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		return Minecraft.getInstance().player;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code PlayerControllerMP.sendUseItem(player,world,stack)}
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code PlayerControllerMP.sendUseItem(player,world,stack)}
 	 *  с явным {@code ItemStack} (тип метода удалён). Neo {@code MultiPlayerGameMode.useItem(Player,InteractionHand)}
 	 *  берёт предмет из руки игрока, а не явный {@code aStack} — семантика "использовать ИМЕННО этот стек"
 	 *  недостижима без него (движко-шов), поэтому используется основная рука как ближайший эквивалент. */
@@ -175,14 +175,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// @Override
 	@SuppressWarnings("deprecation")
 	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
-		/** PORT-TODO(F3, baked-рендер клиента): было {@code RenderingRegistry.registerEntityRenderingHandler}
+		/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code RenderingRegistry.registerEntityRenderingHandler}
 		 *  (`cpw.mods.fml.client.registry`, F10-зеркало compile-only) с {@code new RenderFallingBlock()} —
 		 *  в 26.1.2 {@code FallingBlockRenderer} требует {@code EntityRendererProvider.Context} и
 		 *  регистрируется через {@code EntityRenderersEvent.RegisterRenderers} (decisions/F3-render.md §2.5/§6),
 		 *  НЕ через этот пре-инит хук FML common setup. Заглушка сохраняет вызов центра (F10-зеркало)
 		 *  с нейтральным held-объектом. */
 		RenderingRegistry.registerEntityRenderingHandler(PrefixBlockFallingEntity.class, null);
-		/** PORT-TODO(F3, baked-рендер клиента): {@code RenderingRegistry.registerBlockHandler}/{@code getNextAvailableRenderId}
+		/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code RenderingRegistry.registerBlockHandler}/{@code getNextAvailableRenderId}
 		 *  (F10-зеркало) — старый render-id диспетчер blockstate-рендера удалён целиком (decisions/F3-render.md §1,3);
 		 *  замена — {@code DynamicBlockStateModel}/{@code RegisterBlockStateModels} (там же §2.1). {@link RendererBlockFluid}/
 		 *  {@link RendererBlockTextured} держат серверную поверхность (см. их class javadoc) — id тут заведомо no-op (0). */
@@ -377,7 +377,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					} else {
 						aToolTip.add(LH.getToolTipBlastResistance(aBlock, aBlock.getExplosionResistance()));
 					}
-					// PORT-TODO(F3, baked-рендер клиента): было {@code Block.getHarvestTool(meta)/getHarvestLevel(meta)}
+					// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code Block.getHarvestTool(meta)/getHarvestLevel(meta)}
 					// (API удалено целиком в 26.1.2 — заменено тег-системой {@code BlockTags.MINEABLE_WITH_*} без
 					// прямого "имя инструмента + уровень" аксессора; равноценной замены нет) — строка не добавляется.
 				}
@@ -394,13 +394,13 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_SANDWICHABLE));
 			}
 
-			/* PORT-TODO(F3, baked-рендер клиента): было {@code Item.isBeaconPayment(ItemStack)} (Forge 1.7.10,
+			/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code Item.isBeaconPayment(ItemStack)} (Forge 1.7.10,
 			 * метод удалён) — neo эквивалент тег {@code ItemTags.BEACON_PAYMENT_ITEMS}. */
 			if (aEvent.getItemStack().is(net.minecraft.tags.ItemTags.BEACON_PAYMENT_ITEMS)) {
 				aToolTip.add(LH.Chat.DGRAY + LH.get(LH.TOOLTIP_BEACON_PAYMENT));
 			}
 
-			/* PORT-TODO(F3, baked-рендер клиента): было {@code cpw.mods.fml.common.registry.GameRegistry.getFuelValue(ItemStack)}
+			/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code cpw.mods.fml.common.registry.GameRegistry.getFuelValue(ItemStack)}
 			 * (Forge 1.7.10 static API, удалён) — neo {@code Level.fuelValues().burnDuration(ItemStack)}
 			 * (`neo-decompiled/net/minecraft/world/level/block/entity/FuelValues.java:38`), инстанс с клиентского
 			 * {@code Minecraft.getInstance().level} (ближайший клиентский эквивалент world-контекста). */
@@ -597,14 +597,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch(Throwable e) {
 			e.printStackTrace(ERR);
 		} finally {
-			// PORT-TODO(F3, baked-рендер клиента): синхронизация локальной List<String> обратно в
+			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): синхронизация локальной List<String> обратно в
 			// List<Component> события (см. class javadoc метода) — движко-форсированный шов.
 			tTT.clear();
 			for (String s : aToolTip) tTT.add(s == null ? null : Component.literal(s));
 		}
 	}
 	
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent}
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent}
 	 *  с полем {@code phase}/сравнением {@code == ServerTickEvent.END} (тип+поле удалены, F10-зеркало
 	 *  `compat-mirror/java/cpw/mods/fml/common/gameevent/TickEvent.java` явным PORT-TODO уступает это
 	 *  движко-шов сюда) — neo раздельно шлёт {@code ClientTickEvent.Pre}/{@code .Post}
@@ -615,7 +615,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	public void onClientTickEvent(ClientTickEvent.Post aEvent) {
 		{
 			if (CLIENT_TIME == 10) {
-				// PORT-TODO(F3, baked-рендер клиента): было "Initializing the Fake Furnace Recipe Map" через
+				// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было "Initializing the Fake Furnace Recipe Map" через
 				// {@code RecipeManager.smelting().getSmeltingList()} — 1.7.10-статика {@code RecipeManager.smelting()}
 				// удалена целиком (neo {@code RecipeManager} инстанс-ориентирован, читается из {@code Level});
 				// фейковая furnace-recipe-карта не заполняется до отдельного захода (не render).
@@ -711,7 +711,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 	
-	/** PORT-TODO(F3, baked-рендер клиента): см. javadoc {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): см. javadoc {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}
 	 *  — {@link ExtractBlockOutlineRenderStateEvent} не несёт {@code player}/{@code currentItem}/{@code partialTicks}
 	 *  старого события. Игрок восстановлен через {@code Minecraft.getInstance().player} (тот же центральный
 	 *  паттерн, что {@link #getThePlayer()}); {@code sideHit} — из {@code getHitResult().getDirection()};

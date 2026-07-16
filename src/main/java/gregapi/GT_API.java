@@ -161,7 +161,7 @@ public class GT_API extends Abstract_Mod {
 	/** Used to register Icons. It is not necessary to make those into Lists */
 	public static Set<Runnable> sBlockIconload = new HashSetNoNulls<>(), sItemIconload = new HashSetNoNulls<>();
 	/** The Icon Registers from Blocks and Items. They will get set right before the corresponding Icon Load Phase as executed in the Runnable List above. */
-	// PORT-TODO(F3, baked-рендер клиента): 1.7.10 net.minecraft.client.renderer.texture.IIconRegister
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 net.minecraft.client.renderer.texture.IIconRegister
 	// удалён из движка целиком (атлас-стежка теперь baked-модели, не immediate-mode Icon-регистрация).
 	// Тот же класс проблемы, что gregapi/render/TextureSet.java registerIcons(Object) (уже переведено) —
 	// поле типизировано как Object (та же деградация), консьюмеры (BI/Textures.java) уже переведены на Identifier.

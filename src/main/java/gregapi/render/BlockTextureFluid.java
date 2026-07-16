@@ -37,7 +37,7 @@ import net.neoforged.neoforge.fluids.IFluidTank;
  * переиспользуем оттуда, НЕ дублируем и НЕ гатим (REMAP-RULES §A/§C4, философия: центр F5 —
  * единственный источник данных жидкости): свечение {@link FluidGT#getLuminosity()} (:153), цвет
  * {@link FluidGT#getRGBa()} (:155), ссылку-иконку {@link FluidGT#mTexture} (:98).
- * PORT-TODO(F3, baked-рендер клиента): САМ рендер жидкости (baked-геометрия по высоте потока) —
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): САМ рендер жидкости (baked-геометрия по высоте потока) —
  * клиентская поздняя фаза (decisions/F3-render.md §2.1-2.2); здесь только держатель данных.
  */
 public class BlockTextureFluid implements ITexture {

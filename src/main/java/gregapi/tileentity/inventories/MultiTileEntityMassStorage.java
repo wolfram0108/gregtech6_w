@@ -704,7 +704,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	}
 	
 	/**
-	 * PORT-TODO(F3, baked-рендер клиента): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
+	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
 	 * push/pop-матрицы+{@code OpenGlHelper}+{@code ForgeHooksClient.renderInventoryItem}, рисующий
 	 * хранимый предмет на грани блока) — весь стек удалён в 26.1.2 (decisions/F3-render.md §1). Замена —
 	 * {@code BlockEntityRenderer<T,S>} нового API (эталон {@code InscriberRenderer.java:55-276},

@@ -318,7 +318,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override public Object getGUIClient(int aGUIID, Player aPlayer) {return new ContainerClientChest(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer(int aGUIID, Player aPlayer) {return new ContainerCommonChest(aPlayer.getInventory(), this, aGUIID);}
 	
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code TileEntityRendererDispatcher.instance.renderTileEntityAt(...)}
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code TileEntityRendererDispatcher.instance.renderTileEntityAt(...)}
 	 *  (пакет {@code net.minecraft.client.renderer.tileentity} удалён целиком, замены нет — item-рендер
 	 *  теперь {@code ItemStackRenderState}/{@code ItemModelResolver}, decisions/F3-render.md §2.5/§3
 	 *  "IItemRenderer"); параметр ретипирован {@code Object} (см. {@link gregapi.render.IRenderedBlockObject}). */
@@ -339,14 +339,14 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public void onRegistrationClient(MultiTileEntityRegistry aRegistry, short aID) {
-		/* PORT-TODO(F3, baked-рендер клиента): было {@code new Identifier(namespace,path)} — конструктор
+		/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code new Identifier(namespace,path)} — конструктор
 		 * стал {@code private} в 26.1.2, фабрика {@code Identifier.fromNamespaceAndPath(namespace,path)}
 		 * (`neo-decompiled/net/minecraft/resources/Identifier.java:41`). */
 		RENDERER.mResources.put(mTextureName, new Identifier[] {Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".colored.png"), Identifier.fromNamespaceAndPath(MD.GT.mID, TEX_DIR_MODEL + aRegistry.mNameInternal + "/" + mTextureName + ".plain.png")});
 	}
 
 	/**
-	 * PORT-TODO(F3, baked-рендер клиента): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
+	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
 	 * push/pop-матрицы, {@code OpenGlHelper.glBlendFunc}, ручной {@code bindTexture}+{@code ModelBase}/
 	 * {@code ModelRenderer} с крутящейся крышкой сундука) — весь стек удалён в 26.1.2 (decisions/F3-render.md
 	 * §1). Замена — {@code BlockEntityRenderer<T,S>} нового API (`neo-decompiled/net/minecraft/client/
@@ -371,7 +371,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 		}
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code ModelBase}/{@code ModelRenderer} (immediate-mode
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code ModelBase}/{@code ModelRenderer} (immediate-mode
 	 *  3D-модель крышки сундука через box+rotationPoint, тип удалён целиком) — держатель-заглушка
 	 *  (см. javadoc {@link MultiTileEntityRendererChest}), реальная геометрия — {@code CubeBuilder}. */
 	@OnlyIn(Dist.CLIENT)

@@ -101,7 +101,7 @@ public class MultiTileEntityRegistry {
 	/** @param aNameInternal the internal Name of the Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!! */
 	public MultiTileEntityRegistry(String aNameInternal, MultiTileEntityBlockInternal aBlock, Class<? extends BlockItem> aItemClass, Object aItemRenderer) {
 		this(aNameInternal, regblock(aNameInternal, aBlock, aItemClass));
-		// PORT-TODO(F3, baked-рендер клиента): было MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
+		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
 		// удалён целиком в 26.1.2, RendererBlockTextured больше не implements IItemRenderer — decisions/F3-render.md §2.1/§3
 		// "IItemRenderer"). Реальная регистрация item-модели — RegisterBlockStateModels/ModelEvent.RegisterStandalone (Фаза C).
 	}

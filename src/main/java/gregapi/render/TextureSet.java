@@ -32,7 +32,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F3, baked-рендер клиента): {@code IIconRegister} (атлас-стежка 1.7.10) удалён в 26.1.2.
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code IIconRegister} (атлас-стежка 1.7.10) удалён в 26.1.2.
  * {@link #registerIcons(Object)} больше не стежёт атлас — строит {@link Identifier} прямо из
  * {@code mMod:materialicons/mName} (тот же путь, что раньше шёл в registerIcon(String)), форвард-
  * совместимо с будущим {@code Material(Identifier)} (decisions/F3-render.md §2.3).
@@ -114,7 +114,7 @@ public class TextureSet {
 
 		@Override
 		public void registerIcons(Object aIconRegister) {
-			// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 			mIconColored = Identifier.parse(mMod+":materialicons/"+mName);
 			mIconOverlay = Identifier.parse(mMod+":materialicons/"+mName+"_OVERLAY");
 		}
@@ -167,7 +167,7 @@ public class TextureSet {
 
 		@Override
 		public void registerIcons(Object aIconRegister) {
-			// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+			// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mMod+":materialicons/"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 			mIconColored = Identifier.parse(mMod+":materialicons/"+mName);
 			mIconOverlay = Identifier.parse(mMod+":materialicons/"+mName+"_OVERLAY");
 		}

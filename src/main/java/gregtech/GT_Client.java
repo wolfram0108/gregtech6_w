@@ -52,7 +52,7 @@ public class GT_Client extends GT_Proxy {
 	
 	public GT_Client() {super();}
 	
-	/* PORT-TODO(F3, baked-рендер клиента): было {@code FMLPreInitializationEvent} из старого FML —
+	/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code FMLPreInitializationEvent} из старого FML —
 	 * тип совпадает с центральным F12-переходником {@code gregapi.api.FMLPreInitializationEvent}
 	 * (см. {@code Abstract_Proxy#onProxyAfterPreInit}), сигнатура ретипирована для реального {@code @Override}. */
 	@Override
@@ -147,14 +147,14 @@ public class GT_Client extends GT_Proxy {
 		}
 	}
 	
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code new ResourceLocation(String)} (одноаргументный
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code new ResourceLocation(String)} (одноаргументный
 	 *  конструктор) — {@code Identifier} конструктор {@code private} в 26.1.2, публичная фабрика для
 	 *  ванильного namespace — {@code Identifier.withDefaultNamespace(path)}
 	 *  (`neo-decompiled/net/minecraft/resources/Identifier.java:49`). */
 	private Identifier WATER_OVERLAY = Identifier.withDefaultNamespace("textures/misc/underwater.png");
 
 	/**
-	 * PORT-TODO(F3, baked-рендер клиента): было {@code net.minecraftforge.client.event.RenderBlockOverlayEvent}
+	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code net.minecraftforge.client.event.RenderBlockOverlayEvent}
 	 * (immediate-mode: {@code Tessellator}/GL11 квад болотной пелены) — заменён на
 	 * {@code RenderBlockScreenEffectEvent} (`neoforge-decompiled/net/neoforged/neoforge/client/event/
 	 * RenderBlockScreenEffectEvent.java:29-116`, {@code getBlockState()} вместо старого {@code blockForOverlay}).

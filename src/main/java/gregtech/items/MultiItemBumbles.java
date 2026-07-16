@@ -665,7 +665,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
 		PRINCESS    = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_princess");
 		QUEEN       = Identifier.parse(mModID + ":" + getUnlocalizedName() + "/overlay_queen");

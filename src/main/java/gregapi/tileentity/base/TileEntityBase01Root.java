@@ -617,7 +617,7 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return tTileEntity instanceof ITileEntitySurface ? !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]) : !WD.visOpq(level, getOffsetX(aSide), getOffsetY(aSide), getOffsetZ(aSide), SIDES_VERTICAL[aSide] || WD.border(getBlockPos().getX(), getBlockPos().getZ(), getOffsetX(aSide), getOffsetZ(aSide)), F);
 	}
 	
-	/* PORT-TODO(F3, baked-рендер клиента): было {@code RenderBlocks} (immediate-mode тип, удалён) —
+	/* F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code RenderBlocks} (immediate-mode тип, удалён) —
 	 * параметр ретипирован в {@code Object}, как в центральных {@code gregapi.render.IRenderedBlockObject}/
 	 * {@code IRenderedBlockObjectSideCheck} (иначе эти default-реализации не удовлетворяют абстрактные
 	 * методы интерфейсов, и КАЖДЫЙ конкретный MultiTileEntity-класс должен дублировать их сам). */
@@ -1111,11 +1111,11 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		return F;
 	}
 	
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code DrawBlockHighlightEvent} (тип удалён, см.
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code DrawBlockHighlightEvent} (тип удалён, см.
 	 *  {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight} javadoc). */
 	public boolean onDrawBlockHighlight2(ExtractBlockOutlineRenderStateEvent aEvent) {return F;}
 
-	/** PORT-TODO(F3, baked-рендер клиента): новое {@link ExtractBlockOutlineRenderStateEvent} не несёт
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): новое {@link ExtractBlockOutlineRenderStateEvent} не несёт
 	 *  {@code player}/{@code currentItem}/{@code partialTicks} 1.7.10-события (см. javadoc интерфейса
 	 *  {@link gregapi.tileentity.render.ITileEntityOnDrawBlockHighlight}) — wrench-overlay решение по
 	 *  предмету в руке недостижимо из этого события до BER-пути (decisions/F3-render.md §2.5/§2.7);

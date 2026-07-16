@@ -119,7 +119,7 @@ public class ItemIntegratedCircuit extends ItemBase {
 	
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
 		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = Identifier.parse(mModID + ":" + mName + "/" + (byte)(i&255));
 		// Useful hack to register Item Icons. That is why the Selector Tag Item has to always exist.

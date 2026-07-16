@@ -255,7 +255,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		if (mOpaque) VISUALLY_OPAQUE_BLOCKS.add(this);
 		mDrops = aDrops==null?new Drops(this, this, this, this, F, F, 0, 0):aDrops;
 		
-		// PORT-TODO(F3, baked-рендер клиента): было MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
+		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было MinecraftForgeClient.registerItemRenderer(...) (net.minecraftforge.client
 		// удалён целиком в 26.1.2, RendererBlockTextured больше не implements IItemRenderer — decisions/F3-render.md §2.1/§3
 		// "IItemRenderer"). Реальная регистрация item-модели — RegisterBlockStateModels/ModelEvent.RegisterStandalone (Фаза C).
 		

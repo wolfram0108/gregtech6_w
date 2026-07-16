@@ -145,7 +145,7 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	// (LH.get). Без этого neo брал бы из vanilla-lang (куда BACKUPMAP не попадает) → показывались raw-ключи.
 	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean getShareTag() {return T;} // just to be sure.
-	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(mModID+":"+mName) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 	@OnlyIn(Dist.CLIENT) public void registerIcons(Object aIconRegister) {mIcon = Identifier.parse(mModID + ":" + mName);}
 	public Identifier getIconFromDamage(int aMeta) {return mIcon;}
 	public void onCreated(ItemStack aStack, Level aWorld, Player aPlayer) {isItemStackUsable(aStack);}

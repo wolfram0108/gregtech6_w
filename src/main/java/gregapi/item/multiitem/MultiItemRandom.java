@@ -370,7 +370,7 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 	
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	// PORT-TODO(F3, baked-рендер клиента): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
 		for (short aMeta = 0, tMaxMeta = (short)mEnabledItems.length(); aMeta < tMaxMeta; aMeta++) if (mEnabledItems.get(aMeta)) {
 			for (byte k = 1; k < mIconList[aMeta].length; k++) {

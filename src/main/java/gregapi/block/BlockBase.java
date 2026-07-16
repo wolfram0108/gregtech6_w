@@ -151,7 +151,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]
 	@Override protected final void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {if (useGravity(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()))) aWorld.scheduleTick(aPos, this, 2); onBlockAdded2(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());}
 	public Identifier getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return getIcon(aSide, WD.meta(aWorld, aX, aY, aZ));}
-	// PORT-TODO(F3, baked-рендер клиента): было наследуемое vanilla Block.getIcon(int,int) (1.7.10, удалено в 26.1.2
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было наследуемое vanilla Block.getIcon(int,int) (1.7.10, удалено в 26.1.2
 	// целиком вместе со всем IIcon-атласом) — GT6 полагался на полиморфную диспетчеризацию к этому методу движка.
 	// Восстановлено локально (тот же приём, что уже принят в BlockBaseMeta.getIcon), чтобы вызов выше и переопределения
 	// в наследниках (BlockBaseSpike/BlockBaseBars/...) имели общую точку. Держатель ссылки — Identifier (см. IIconContainer).

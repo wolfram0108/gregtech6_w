@@ -29,7 +29,7 @@ import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.resources.Identifier;
 
 /**
- * PORT-TODO(F3, baked-рендер клиента): 1.7.10 {@code RenderArrow.getEntityTexture(Arrow)} (по инстансу
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code RenderArrow.getEntityTexture(Arrow)} (по инстансу
  * сущности) заменён в 26.1.2 на {@code ArrowRenderer<T,S>.getTextureLocation(S state)} (по render-state,
  * `neo-decompiled/net/minecraft/client/renderer/entity/ArrowRenderer.java:17-36`) — движко-шов, тот же
  * держатель {@code mTexture} возвращается независимо от параметра, семантика 1:1. Конструктор требует

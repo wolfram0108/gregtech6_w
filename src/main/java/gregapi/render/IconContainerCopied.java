@@ -46,7 +46,7 @@ public class IconContainerCopied implements IIconContainer {
 
 	@Override
 	public Identifier getIcon(int aRenderPass) {
-		// PORT-TODO(F3, baked-рендер клиента): было mBlock.getIcon(mSide, mMeta) — Block.getIcon удалён (neo BakedModel-рендер);
+		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было mBlock.getIcon(mSide, mMeta) — Block.getIcon удалён (neo BakedModel-рендер);
 		// crash-only per /goal (F3-фаза заменит реальной моделью).
 		throw new UnsupportedOperationException("PORT-TODO(F3, baked-рендер): neo BakedModel-рендер, 1.7.10 getIcon мёртв — crash-only per /goal");
 	}

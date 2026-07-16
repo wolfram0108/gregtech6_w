@@ -33,7 +33,7 @@ import net.minecraft.resources.Identifier;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F3, baked-рендер клиента): 1.7.10 {@code GuiContainer} (immediate-mode: {@code drawGuiContainerBackgroundLayer}
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): 1.7.10 {@code GuiContainer} (immediate-mode: {@code drawGuiContainerBackgroundLayer}
  * рисовал фон через {@code mc.renderEngine.bindTexture}+GL11, {@code drawTexturedModalRect} слал квады в
  * {@code Tessellator}, {@code drawScreen} каждый кадр перерисовывал tooltip) заменён {@code AbstractContainerScreen<T>}
  * — новый extract-render-state API 26.1.2 (`neo-decompiled/net/minecraft/client/gui/screens/inventory/AbstractContainerScreen.java:103-128`:
@@ -56,15 +56,15 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 
 	public ContainerCommon mContainer;
 
-	/** PORT-TODO(F3, baked-рендер клиента): было поле {@code GuiScreen.mc} (переименовано в {@code Screen.minecraft}, см. class javadoc). */
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было поле {@code GuiScreen.mc} (переименовано в {@code Screen.minecraft}, см. class javadoc). */
 	protected final Minecraft mc;
-	/** PORT-TODO(F3, baked-рендер клиента): было поле {@code GuiScreen.fontRendererObj} (переименовано в {@code Screen.font}, см. class javadoc). */
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было поле {@code GuiScreen.fontRendererObj} (переименовано в {@code Screen.font}, см. class javadoc). */
 	protected final Font fontRendererObj;
-	/** PORT-TODO(F3, baked-рендер клиента): были мутируемые поля {@code GuiContainer.xSize/ySize}; в 26.1.2
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): были мутируемые поля {@code GuiContainer.xSize/ySize}; в 26.1.2
 	 *  {@code AbstractContainerScreen.imageWidth/imageHeight} — {@code final} (подклассы GT6 мутируют
 	 *  {@code ySize} ПОСЛЕ {@code super(...)}, см. {@link ContainerClientChest}) — отдельный держатель, см. class javadoc. */
 	protected int xSize, ySize;
-	/** PORT-TODO(F3, baked-рендер клиента): было поле {@code GuiContainer.allowUserInput} (см. class javadoc). */
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было поле {@code GuiContainer.allowUserInput} (см. class javadoc). */
 	protected boolean allowUserInput;
 
 	public int getLeft() {return leftPos;}
@@ -80,30 +80,30 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 		ySize = imageHeight;
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было immediate-mode рисование заголовка (см. class javadoc). */
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было immediate-mode рисование заголовка (см. class javadoc). */
 	protected void drawGuiContainerForegroundLayer(int par1, int par2) {
 		//
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code mc.renderEngine.bindTexture}+GL11 (см. class javadoc). */
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code mc.renderEngine.bindTexture}+GL11 (см. class javadoc). */
 	protected void drawGuiContainerBackgroundLayer(float par1, int par2, int par3) {
 		drawGuiContainerBackgroundLayer2(par1, par2, par3);
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code drawTexturedModalRect} через Tessellator (см. class javadoc). */
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code drawTexturedModalRect} через Tessellator (см. class javadoc). */
 	protected void drawGuiContainerBackgroundLayer2(float par1, int par2, int par3) {
 		int x = (width - xSize) / 2;
 		int y = (height - ySize) / 2;
 		drawTexturedModalRect(x, y, 0, 0, xSize, ySize);
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code GuiScreen.drawTexturedModalRect} (immediate-mode
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code GuiScreen.drawTexturedModalRect} (immediate-mode
 	 *  квад в {@code Tessellator}, тип удалён, см. class javadoc). */
 	protected void drawTexturedModalRect(int aX, int aY, int aU, int aV, int aW, int aH) {
 		//
 	}
 
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code GuiScreen.drawScreen(int,int,float)} — весь immediate-mode
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code GuiScreen.drawScreen(int,int,float)} — весь immediate-mode
 	 *  цикл кадра, включая per-slot tooltip через {@code drawHoveringText} (метод/API удалены, см. class javadoc). */
 	public void drawScreen(int aX, int aY, float par3) {
 		//

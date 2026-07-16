@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.Block;
 /**
  * @author Gregorius Techneticies
  *
- * PORT-TODO(F3, baked-рендер клиента): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
+ * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code RenderBlocks} удалён в 26.1.2 — параметр заменён
  * нейтральным держателем {@code Object aRenderer} (см. {@link ITexture}).
  */
 public class BlockTextureSided implements ITexture {

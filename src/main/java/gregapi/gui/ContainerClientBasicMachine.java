@@ -39,7 +39,7 @@ public class ContainerClientBasicMachine extends ContainerClient {
 		mNEI = mRecipes.mNameNEI;
 	}
 	
-	/** PORT-TODO(F3, baked-рендер клиента): было {@code FontRenderer.drawString} (метод удалён у {@code Font},
+	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code FontRenderer.drawString} (метод удалён у {@code Font},
 	 *  текст экрана теперь рисуется через {@code GuiGraphicsExtractor} в extract-фазе — см. javadoc
 	 *  {@link ContainerClient} class). */
 	@Override

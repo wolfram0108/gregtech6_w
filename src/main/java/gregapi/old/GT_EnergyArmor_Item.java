@@ -127,7 +127,7 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	
 	// @Override
 	@OnlyIn(Dist.CLIENT)
-	// PORT-TODO(F3, baked-рендер клиента): было this.itemIcon=aIconRegister.registerIcon(...) — и поле Item.itemIcon,
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было this.itemIcon=aIconRegister.registerIcon(...) — и поле Item.itemIcon,
 	// и IIconRegister удалены в 26.1.2 целиком (тот же класс проблемы, что ItemBase.java:131/getSubItems ниже в этом
 	// файле, уже сведённый к no-op); замены нет до Фазы C.
 	public void registerIcons(IIconRegister aIconRegister) {/**/}

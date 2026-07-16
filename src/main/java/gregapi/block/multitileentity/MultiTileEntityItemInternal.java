@@ -682,7 +682,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public int getSpriteNumber() {return 0;}
 	@OnlyIn(Dist.CLIENT) public void registerIcons(IIconRegister aRegister) {/**/}
-	// PORT-TODO(F3, baked-рендер клиента): было itemIcon=Items.BREAD.getIconFromDamage(0) (фикс eating-particle 1.7.10) —
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было itemIcon=Items.BREAD.getIconFromDamage(0) (фикс eating-particle 1.7.10) —
 	// и поле Item.itemIcon, и метод Item.getIconFromDamage(int) удалены в 26.1.2 целиком, замены нет до Фазы C.
 	@OnlyIn(Dist.CLIENT) public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3): neo BakedModel-рендер, 1.7.10 getIconFromDamage мёртв — crash-only per /goal");}
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}

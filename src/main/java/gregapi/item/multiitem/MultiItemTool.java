@@ -693,7 +693,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return getUnusableMeta(ST.meta(aStack));
 	}
 	
-	// PORT-TODO(F3, baked-рендер клиента): getRenderPasses(int)/getColorFromItemStack(ItemStack,int)/
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): getRenderPasses(int)/getColorFromItemStack(ItemStack,int)/
 	// getIconIndex/getIconFromDamage/getIconFromDamageForRenderPass/getIcon(...) (1.7.10 multi-pass IIcon
 	// Item-рендер) не существуют в 26.1.2 Item целиком — держатель текстуры теперь Identifier (см.
 	// gregapi.render.IIconContainer, тот же центр); методы НЕ @Override, тела 1:1 сохранены (внутренние
@@ -748,16 +748,16 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	public IToolStats getToolStatsInternal(int aDamage) {return mToolStats.get((short)aDamage);}
 	@Override public final boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	@Override public final int getItemStackLimit(ItemStack aStack) {return 1;}
-	// PORT-TODO(F3, baked-рендер клиента): isFull3D/getSpriteNumber/requiresMultipleRenderPasses (1.7.10
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): isFull3D/getSpriteNumber/requiresMultipleRenderPasses (1.7.10
 	// multi-pass Item-рендер) не существуют в 26.1.2 — методы НЕ @Override, тела 1:1 сохранены.
 	public boolean isFull3D() {return T;}
 	public int getSpriteNumber() {return 1;}
 	public boolean requiresMultipleRenderPasses() {return T;}
-	// PORT-TODO(F3, baked-рендер клиента): было registerIcons(IIconRegister) (тип атлас-стежки 1.7.10 удалён) —
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было registerIcons(IIconRegister) (тип атлас-стежки 1.7.10 удалён) —
 	// параметр Object, тот же нейтральный держатель что gregapi.render.IIconContainer#registerIcons(Object).
 	@OnlyIn(Dist.CLIENT) public void registerIcons(Object aIconRegister) {/**/}
 	@Override @SuppressWarnings("deprecation") public boolean isFoil(ItemStack aStack) {return F;}
-	// PORT-TODO(F3, baked-рендер клиента): было hasEffect(ItemStack,int aRenderPass) (multi-pass glint, тип удалён).
+	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было hasEffect(ItemStack,int aRenderPass) (multi-pass glint, тип удалён).
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {return F;}
 	// item-base dead-interface: getItemEnchantability/isBookEnchantable/getIsRepairable — 1.7.10 virtual-хуки, neo их НЕ зовёт
 	// (enchantability = стек-компонент ENCHANTABLE через stack.getEnchantmentValue; repair = Properties.repairable/ENCHANTABLE).
