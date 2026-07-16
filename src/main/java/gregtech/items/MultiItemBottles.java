@@ -38,7 +38,7 @@ import static gregapi.data.CS.*;
 public class MultiItemBottles extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemBottles(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		/* PORT-TODO(F16) setCreativeTab */;
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Bottles", this, (short)1600); // F16 creative-tab: LH.add имени вкладки (localization-паритет), UI-регистрация — F16-фаза
 	}
 	
 	@Override

@@ -44,7 +44,7 @@ public class MultiItemBooks extends MultiItemRandomWithCompat {
 		// F12-followup (item-split): OM.reg(ST.make) — ItemStack → компоненты только на server-start → deferItemInit.
 		gregapi.GT_API.deferItemInit(() -> OM.reg(OD.craftingBook, ST.make(this, 1, W)));
 		BooksGT.BOOK_REGISTER.put(this, W, (byte)3);
-		/* PORT-TODO(F16) setCreativeTab */;
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Books", this, (short)32000); // F16 creative-tab: LH.add имени вкладки (localization-паритет), UI-регистрация — F16-фаза
 	}
 	
 	@Override

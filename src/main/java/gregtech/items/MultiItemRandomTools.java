@@ -57,7 +57,7 @@ import static gregapi.data.OP.chunkGt;
 public class MultiItemRandomTools extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemRandomTools(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		/* PORT-TODO(F16) setCreativeTab */;
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Equipment", this, (short)5008); // F16 creative-tab: LH.add имени вкладки (localization-паритет), UI-регистрация — F16-фаза
 	}
 	
 	@Override

@@ -61,9 +61,9 @@ import static gregapi.data.CS.*;
 public class MultiItemFood extends MultiItemRandomWithCompat implements IItemRottable {
 	public MultiItemFood(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		// PORT-TODO(F13, creative-tab): Item.setCreativeTab не существует в 26.1.2 (см. ItemArmorBase.java,
-		// MultiItemTool.java для того же класса проблемы) — центра ещё нет нигде в дереве.
-		// setCreativeTab(new CreativeTab(getUnlocalizedName(), "GregTech: Nature & Foods", this, (short)12000));
+		// F16 creative-tab: neo Item без setCreativeTab (табы = DeferredRegister+событие, UI-фаза). Конструкция CreativeTab (1:1
+		// golden ctor) даёт LH.add имени вкладки — localization-паритет.
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Nature & Foods", this, (short)12000);
 	}
 	
 	@Override

@@ -40,7 +40,9 @@ import static gregapi.data.CS.*;
 public class MultiItemTechnological extends MultiItemRandomWithCompat {
 	public MultiItemTechnological(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		/* PORT-TODO(F16) setCreativeTab */;
+		// F16 creative-tab: neo Item не имеет setCreativeTab (табы = DeferredRegister+событие, UI-фаза). Но конструкция
+		// gregapi.item.CreativeTab (1:1 golden ctor) даёт LH.add("itemGroup."+name, local) — локализация имени вкладки (паритет localization).
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Technology", this, (short)30501);
 	}
 	
 	@Override
