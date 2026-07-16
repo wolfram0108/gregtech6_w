@@ -196,7 +196,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		
 		mMinX = (float)aMinX; mMinY = (float)aMinY; mMinZ = (float)aMinZ; mMaxX = (float)aMaxX; mMaxY = (float)aMaxY; mMaxZ = (float)aMaxZ;
 		
-		/* PORT-TODO(F16) setStepSound */;
+		// F16: setStepSound ПОДКЛЮЧЕН — звук выставлен в mkProps выше (.sound(aSoundType) при ctor). Не заглушка.
 		mOpaque = aOpaque;
 		mGravity = aGravity;
 		mCanBurn = aCanBurn;

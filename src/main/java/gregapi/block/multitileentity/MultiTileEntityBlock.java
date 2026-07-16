@@ -180,7 +180,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		
 		MULTITILEENTITYBLOCKMAP.put(aModID + ":" + mNameInternal, this);
 		
-		/* PORT-TODO(F16) setStepSound */;
+		// F16: setStepSound ПОДКЛЮЧЕН — звук выставлен в mkProps выше (.sound(aSoundType) при ctor). Не заглушка.
 		mOpaque = aOpaque;
 		mNormalCube = aNormalCube;
 		

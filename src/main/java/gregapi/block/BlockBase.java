@@ -69,10 +69,13 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	}
 	/** F3-render: текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} для GT6BlockModel (было RenderBlocks.setRenderBoundsFromBlock). */
 	public float[] getRenderBounds() {return mRenderBounds;}
-	/** F-light: 1.7.10 Block.setLightLevel(float) мутировал эмиссию блока; neo эмиссия — construction-time
-	 *  Properties.lightLevel (BlockBehaviour) -> мост отложен (как F-shape mRenderBounds). Храним значение видимо. */
+	/** F-light: 1.7.10 Block.setLightLevel(float) мутировал эмиссию. neo эмиссия — Properties.lightLevel(ToIntFunction<BlockState>),
+	 *  выставляется при ctor, но ВЫЧИСЛЯЕТСЯ лениво (initCache после регистрации) → функция читает mLightLevel через
+	 *  state.getBlock() уже ПОСЛЕ setLightLevel подкласса. Мост подключён (lightOf ниже в mkProps). setLightLevel хранит поле. */
 	protected float mLightLevel = 0.0F;
 	public void setLightLevel(float aLightLevel) {mLightLevel = aLightLevel;}
+	/** F-light мост: neo lightLevel-функция; читает mLightLevel инстанса через state.getBlock() в момент initCache (после setLightLevel). */
+	private static int lightOf(net.minecraft.world.level.block.state.BlockState aState) {return aState.getBlock() instanceof BlockBase b ? (int)(15.0F * b.mLightLevel) : 0;}
 
 	/** F9: gregapi Material (портированная 1.7.10-модель) хранится блоком — neo `WD.getMaterial(Block)` удалён. */
 	protected final Material mMaterial;
@@ -80,10 +83,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
 		// F16/F9 форс движка: neo `Block` immutable (данные в Properties ДО super). setStepSound встроен в Properties.sound;
 		// setBlockName удалён (имя через реестр — ST.register ниже); setCreativeTab удалён (creative-tab через
-		// BuildCreativeModeTabContentsEvent-датаген) → PORT-TODO(F16). Твёрдость/light/mapColor из Material — мост F9, дефолт пока.
+		// BuildCreativeModeTabContentsEvent-датаген) → PORT-TODO(F16). Light ПОДКЛЮЧЁН (lightLevel(lightOf) — ленивая функция читает
+		// mLightLevel). Твёрдость/mapColor per-meta варьируются → динамические override'ы (getDestroyProgress/getMapColor), не Properties.
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром BLOCKS,
 		// куда ST.register клал блок), ключ санитизирован. Конструкция — на RegisterEvent через registerBlockLazy на call-site.
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mMaterial = aMaterial;
 		mNameInternal = aNameInternal;
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ (RegisterEvent<Block>, ITEMS открыт)
