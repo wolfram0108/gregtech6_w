@@ -467,10 +467,9 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// было getPlayerRelativeBlockHardness(EntityPlayer,World,x,y,z) -> BlockBehaviour.getDestroyProgress
 	// (BlockState,Player,BlockGetter,BlockPos) [BlockBehaviour.java:340]
 	@Override protected final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetPlayerRelativeBlockHardness ? ((IMTE_GetPlayerRelativeBlockHardness)aTileEntity).getPlayerRelativeBlockHardness(aPlayer, super.getDestroyProgress(aState, aPlayer, aWorld, aPos)) : super.getDestroyProgress(aState, aPlayer, aWorld, aPos);}
-	// PORT-TODO(F13/F16, block-getBlockHardness-removed): 1.7.10 vanilla Block.getBlockHardness(World,x,y,z) не имеет
-	// override-точки в neo - BlockBehaviour.BlockStateBase.getDestroySpeed(BlockGetter,BlockPos) [BlockBehaviour.java:636]
-	// лишь возвращает запечённое в BlockState значение (не вызывает Block, не переопределяем), не найдено overridable
-	// эквивалента ни в Block.java, ни в IBlockExtension. Метод остаётся обычным (не dispatch-ируется движком).
+	// F13: движок-facing динамическая твёрдость (скорость добычи игроком) ПОДКЛЮЧЕНА выше через getDestroyProgress
+	// (стр. ~469, TE-диспетчер IMTE_GetPlayerRelativeBlockHardness). Этот getBlockHardness — внутренний GT6-хелпер
+	// (TE-твёрдость для собственной логики), не стаб; движок его не зовёт (у него getDestroyProgress).
 	public final float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetBlockHardness?((IMTE_GetBlockHardness)aTileEntity).getBlockHardness():1.0F;}
 	// было getExplosionResistance(Entity,World,x,y,z,expX,expY,expZ) -> IBlockExtension.getExplosionResistance
 	// (BlockState,BlockGetter,BlockPos,Explosion) [IBlockExtension.java:333]; Explosion.getDirectSourceEntity()/center() заменяют потерянные параметры
