@@ -113,7 +113,10 @@ public final class GT6QuadBuilder {
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
 		tBuilder.setSprite(new Material.Baked(aSprite, false));
 		tBuilder.setDirection(aDir);
-		for (int i = 0; i < 4; i++) {
+		// КРИТ (инвертированные нормали — 'видно блок изнутри'): neo выводит нормаль/facing грани ИЗ winding вершин
+		// (FaceBakery.computeQuadNormal), а corners давал CW-порядок (нормаль внутрь) → GPU back-face-cull скрывал грань
+		// снаружи. Реверсируем порядок вершин (3→0) → нормаль наружу, грань видима снаружи. UV/позиция per-vertex сохранены.
+		for (int i = 3; i >= 0; i--) {
 			tBuilder.addVertex(c[i][0], c[i][1], c[i][2]);
 			tBuilder.setColor(r, g, b, a);
 			tBuilder.setNormal((float)n.x, (float)n.y, (float)n.z);
