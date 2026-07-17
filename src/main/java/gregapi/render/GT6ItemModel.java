@@ -89,7 +89,13 @@ public class GT6ItemModel implements ItemModel {
 			Identifier tIcon = null; String tErr = "";
 			try { tIcon = resolveIcon(new ItemStack(tItem)); } catch (Throwable e) { tErr = "EXC:" + e.getClass().getSimpleName(); }
 			String tCls = tItem.getClass().getSimpleName();
-			if (tIcon == null) { tNullIcon++; tNullByClass.merge(tCls + tErr, 1, Integer::sum); if (tNullSamples.size() < 12) tNullSamples.add(tKey.getPath() + "[" + tCls + "]" + tErr); continue; }
+			if (tIcon == null) {
+				tNullIcon++; tNullByClass.merge(tCls + tErr, 1, Integer::sum);
+				if (tItem instanceof gregapi.item.prefixitem.PrefixItem tPI) {
+					if (tNullSamples.size() < 25) try { tNullSamples.add("PFX:" + tKey.getPath() + "[idx=" + tPI.mPrefix.mIconIndexItem + " mats=" + tPI.mMaterialList.length + "]"); } catch (Throwable e) { tNullSamples.add("PFX:" + tKey.getPath() + "[EXC" + e.getClass().getSimpleName() + "]"); }
+				} else if (tNullSamples.size() < 8) tNullSamples.add(tKey.getPath() + "[" + tCls + "]" + tErr);
+				continue;
+			}
 			TextureAtlasSprite tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
 			if (tS == null) tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
 			if (tS != null) { tFound++; if (tFoundSamples.size() < 12) tFoundSamples.add(tKey.getPath() + "[" + tCls + "]→" + tIcon); }
@@ -97,6 +103,7 @@ public class GT6ItemModel implements ItemModel {
 		}
 		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] total=" + tTotal + " found=" + tFound + " missing(пурпур)=" + tMissing + " null-icon(не рисуется)=" + tNullIcon);
 		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] NULL-по-классам: " + tNullByClass);
+		if (!tNullSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] NULL-детали: " + tNullSamples);
 		if (!tFoundSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] FOUND примеры: " + tFoundSamples);
 		if (!tMissSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] MISSING-sprite примеры: " + tMissSamples);
 	}
