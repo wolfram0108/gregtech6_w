@@ -18,9 +18,7 @@
  */
 
 package gregtech.tileentity.extenders;
-import net.neoforged.api.distmarker.OnlyIn;
 
-import net.neoforged.api.distmarker.Dist;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackSet;
 import gregapi.data.FL;
@@ -99,7 +97,7 @@ public class MultiTileEntityFilterPrefix extends MultiTileEntityExtender impleme
 	}
 	
 	@Override public DelegatorTileEntity<BlockEntity> getDelegateTileEntity(byte aSide) {return delegator(aSide);}
-	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUIClientFilterPrefix(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUIClientFilterPrefix(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new MultiTileEntityGUICommonFilterPrefix(aPlayer.getInventory(), this, aGUIID);}
 	@Override public int getSizeInventoryGUI() {return 1;}
 	@Override public ItemStack getStackInSlotGUI(int aSlot) {return mCycle;}

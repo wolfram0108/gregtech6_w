@@ -18,8 +18,6 @@
  */
 
 package gregapi.tileentity.energy;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import static gregapi.data.CS.*;
 
@@ -194,7 +192,7 @@ public abstract class TileEntityBase10EnergyBatBox extends TileEntityBase09Facin
 		return tConsumed;
 	}
 	
-	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID);}
 	
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return UT.Code.getAscendingArray(invsize());}

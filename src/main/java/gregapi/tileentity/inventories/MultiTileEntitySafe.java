@@ -18,8 +18,6 @@
  */
 
 package gregapi.tileentity.inventories;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
@@ -117,6 +115,6 @@ public abstract class MultiTileEntitySafe extends TileEntityBase09FacingSingle i
 	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return F;}
 	@Override public void onExploded(Explosion aExplosion) {setToAir();}
 	
-	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID);}
 }

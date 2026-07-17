@@ -18,11 +18,9 @@
  */
 
 package gregapi.tileentity.tools;
-import net.neoforged.api.distmarker.OnlyIn;
 import gregapi.fluid.FluidTankInfo;
 
 import cpw.mods.fml.common.FMLCommonHandler;
-import net.neoforged.api.distmarker.Dist;
 import gregapi.data.FL;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -586,7 +584,7 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 	// F-dist: тернар двух клиент-GUI-классов заставлял компилятор писать их общий клиентский супертип в StackMapTable →
 	// верификатор грузил AbstractContainerScreen на dedicated-сервере (клиент-класс отсутствует) → NoClassDefFoundError
 	// обрывал Loader_MultiTileEntities. Разбито на отдельные return (одиночное значение → нет LUB-merge → нет загрузки).
-	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {if (aGUIID == 1) return new ContainerClientDefault(new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)); return new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {if (aGUIID == 1) return new ContainerClientDefault(new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)); return new MultiTileEntityGUIClientAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ?                               new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID, 35, 36)  : new MultiTileEntityGUICommonAdvancedCraftingTable(aPlayer.getInventory(), this, aGUIID);}
 	
 	@Override public boolean needsToSyncEverything() {if (mSyncGUI) {mSyncGUI = F; return T;} return F;}

@@ -18,8 +18,6 @@
  */
 
 package gregapi.tileentity.machines;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
@@ -1011,7 +1009,7 @@ public class MultiTileEntityBasicMachine extends TileEntityBase09FacingSingle im
 	
 	@Override public void onFacingChange(byte aPreviousFacing) {updateAccessibleSlots();}
 	
-	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientBasicMachine(aPlayer.getInventory(), this, mRecipes, aGUIID, mGUITexture);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientBasicMachine(aPlayer.getInventory(), this, mRecipes, aGUIID, mGUITexture);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonBasicMachine(aPlayer.getInventory(), this, mRecipes, aGUIID);}
 	
 	@Override public byte getVisualData() {return (byte)((mActive?1:0)|(mRunning?2:0));}

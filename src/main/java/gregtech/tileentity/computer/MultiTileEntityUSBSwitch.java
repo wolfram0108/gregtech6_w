@@ -18,8 +18,6 @@
  */
 
 package gregtech.tileentity.computer;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import static gregapi.data.CS.*;
 
@@ -107,6 +105,6 @@ public class MultiTileEntityUSBSwitch extends TileEntityBase08DataSwitch {
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[16];}
 	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return OM.is(OD_USB_STICKS[0], aStack);}
 	
-	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID, RES_PATH_GUI + "machines/USBSwitch.png");}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return new ContainerClientDefault(aPlayer.getInventory(), this, aGUIID, RES_PATH_GUI + "machines/USBSwitch.png");}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return new ContainerCommonDefault(aPlayer.getInventory(), this, aGUIID);}
 }

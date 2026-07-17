@@ -18,9 +18,7 @@
  */
 
 package gregtech.tileentity.tools;
-import net.neoforged.api.distmarker.OnlyIn;
 
-import net.neoforged.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
 import gregapi.data.LH;
 import gregapi.data.LH.Chat;
@@ -328,7 +326,7 @@ public class MultiTileEntityBumbliary extends TileEntityBase07Paintable implemen
 	
 	// F-dist: тернар двух клиент-GUI-классов → компилятор писал их клиентский супертип в StackMapTable → верификатор грузил
 	// AbstractContainerScreen на сервере → NoClassDefFoundError обрывал загрузчик MTE. Разбито на отдельные return.
-	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {if (aGUIID == 1) return new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.getInventory(), this, aGUIID); return new MultiTileEntityGUIClientBumbliary(aPlayer.getInventory(), this, aGUIID);}
+	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {if (aGUIID == 1) return new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.getInventory(), this, aGUIID); return new MultiTileEntityGUIClientBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	
 	public static final int SLOT_ROYAL = 13, SLOT_DRONE = 22
