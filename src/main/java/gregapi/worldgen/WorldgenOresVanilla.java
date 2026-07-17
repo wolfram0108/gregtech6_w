@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.util.ST;
 import gregapi.util.UT;
@@ -47,7 +48,7 @@ public class WorldgenOresVanilla extends WorldgenBlob {
 	}
 	
 	@Override
-	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom) {
 		Block tTargetedBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tTargetedBlock == NB || WD.air(aWorld, aX, aY, aZ, tTargetedBlock)) return mAllowToGenerateinVoid && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		return (mReplaceBlock == null ? !ST.isGT(tTargetedBlock) && WD.oreGen(tTargetedBlock, aWorld, aX, aY, aZ, Blocks.STONE) : tTargetedBlock == mReplaceBlock && WD.meta(aWorld, aX, aY, aZ) == mReplaceMeta) && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);

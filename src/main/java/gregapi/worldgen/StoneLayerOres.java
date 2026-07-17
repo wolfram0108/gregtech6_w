@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.WorldGenLevel;
 import gregapi.util.WD;
 
 import gregapi.code.BiomeNameSet;
@@ -89,7 +90,7 @@ public class StoneLayerOres {
 	// считается один раз, а не на каждый из миллионов вызовов check() за чанк.
 	private transient int mRemapKey = Integer.MIN_VALUE, mRemapMinY, mRemapMaxY;
 	private transient long mRemapChance;
-	private void ensureRemap(Level aWorld) {
+	private void ensureRemap(WorldGenLevel aWorld) {
 		int tKey = aWorld.getMinY() * 1000003 + aWorld.getSeaLevel();
 		if (tKey == mRemapKey) return;
 		mRemapKey = tKey;
@@ -100,40 +101,40 @@ public class StoneLayerOres {
 	}
 
 	@SuppressWarnings("unlikely-arg-type")
-	public boolean check(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome, int aRandomNumber) {
+	public boolean check(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome, int aRandomNumber) {
 		ensureRemap(aWorld);
 		return aY >= mRemapMinY && aY <= mRemapMaxY && aRandomNumber           < mRemapChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
 	}
 	@SuppressWarnings("unlikely-arg-type")
-	public boolean check(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome, Random aRandom) {
+	public boolean check(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome, Random aRandom) {
 		ensureRemap(aWorld);
 		return aY >= mRemapMinY && aY <= mRemapMaxY && aRandom.nextInt((int)U) < mRemapChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
 	}
 	@SuppressWarnings("unlikely-arg-type")
-	public boolean check(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
+	public boolean check(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome) {
 		ensureRemap(aWorld);
 		return aY >= mRemapMinY && aY <= mRemapMaxY && RNGSUS .nextInt((int)U) < mRemapChance && (mTargetBiomes.isEmpty() || mTargetBiomes.contains(aBiome));
 	}
 
-	public boolean set(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome, Random aRandom) {
+	public boolean set(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome, Random aRandom) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		ensureRemap(aWorld);
 		return aY == mRemapMinY || aY == mRemapMaxY || aRandom.nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
 	}
-	public boolean set(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
+	public boolean set(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		ensureRemap(aWorld);
 		return aY == mRemapMinY || aY == mRemapMaxY || RNGSUS .nextBoolean() ? small(aLayer, aWorld, aX, aY, aZ, aBiome) : normal(aLayer, aWorld, aX, aY, aZ, aBiome);
 	}
-	public boolean normal(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
+	public boolean normal(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aLayer.mOre       != null && aLayer.mOre      .placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mMaterial.mID, null, F, T);
 	}
-	public boolean small(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
+	public boolean small(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aLayer.mOreSmall  != null && aLayer.mOreSmall .placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mMaterial.mID, null, F, T);
 	}
-	public boolean broken(StoneLayer aLayer, Level aWorld, int aX, int aY, int aZ, Biome aBiome) {
+	public boolean broken(StoneLayer aLayer, WorldGenLevel aWorld, int aX, int aY, int aZ, Biome aBiome) {
 		if (mBlock != null) return WD.set(aWorld, aX, aY, aZ, mBlock, mMeta, 0);
 		return aLayer.mOreBroken != null && aLayer.mOreBroken.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, mMaterial.mID, null, F, T);
 	}

@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen.center;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -54,17 +56,17 @@ public class WorldgenCenterBiomes extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean enabled(Level aWorld, int aDimType) {
+	public boolean enabled(WorldGenLevel aWorld, int aDimType) {
 		return GENERATE_BIOMES && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override
-	public void reset(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public void reset(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (GENERATE_BIOMES && aDimType == DIM_OVERWORLD && aMinX >= -96 && aMinX <= 80 && aMinZ >= -96 && aMinZ <= 80) GENERATING_SPECIAL = T;
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (aMinX >= -96 && aMinX <= 80 && aMinZ >= -96 && aMinZ <= 80) {
 			if (GENERATE_STREETS && aMinX >= -32 && aMinX <= 16 && aMinZ >= -32 && aMinZ <= 16) {
 				WD.setBiomes(aWorld, aChunk, net.minecraft.world.level.biome.Biomes.RIVER);

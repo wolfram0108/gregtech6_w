@@ -73,7 +73,7 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 	public static MultiTileEntityRegistry MTE_REGISTRY = null;
 	public static MultiTileEntityFluidSpring INSTANCE;
 	
-	public static boolean setBlock(Level aWorld, int aX, int aY, int aZ, FluidStack aSpring) {
+	public static boolean setBlock(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, FluidStack aSpring) {
 		return MTE_REGISTRY.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UP, INSTANCE.getMultiTileEntityID(), UT.NBT.make("gt.spring", aSpring), T, F);
 	}
 	

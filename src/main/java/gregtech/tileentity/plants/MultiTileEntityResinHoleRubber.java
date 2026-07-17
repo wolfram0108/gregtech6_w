@@ -45,7 +45,7 @@ public class MultiTileEntityResinHoleRubber extends MultiTileEntityTreeHole {
 	
 	public static List<MultiTileEntityResinHoleRubber> sListResinHoles = new ArrayListNoNulls<>();
 	
-	public static boolean nearby(Level aWorld, int aX, int aY, int aZ) {
+	public static boolean nearby(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ) {
 		Iterator<MultiTileEntityResinHoleRubber> tIterator = sListResinHoles.iterator();
 		while (tIterator.hasNext()) {
 			MultiTileEntityResinHoleRubber tHole = tIterator.next();

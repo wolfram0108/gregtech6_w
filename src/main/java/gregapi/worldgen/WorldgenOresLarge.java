@@ -18,6 +18,8 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -85,7 +87,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 		if (mTop.mID <= 0 && mBottom.mID <= 0 && mBetween.mID <= 0 && mSpread.mID <= 0) mInvalid = T;
 	}
 	
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aMinX, int aMinZ, int aMaxX, int aMaxZ, int aOriginChunkX, int aOriginChunkZ, Random aRandom) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aMinX, int aMinZ, int aMaxX, int aMaxZ, int aOriginChunkX, int aOriginChunkZ, Random aRandom) {
 		if (GENERATING_SPECIAL) return F;
 		if (mDistance > 0 && Math.abs(aMinX) <= mDistance && Math.abs(aMinZ) <= mDistance) return F;
 		
@@ -95,7 +97,7 @@ public class WorldgenOresLarge extends WorldgenObject {
 		
 		// F6: было `WD.dimensionId(aWorld) == 0` (буквально ванильный Overworld) — сверено на реальную
 		// константу Level.OVERWORLD (Level.java:95), как и в WorldgenObject.checkForMajorWorldgen.
-		if (mIndicatorRocks && (!(GENERATE_STREETS && aWorld.dimension() == Level.OVERWORLD) || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) {
+		if (mIndicatorRocks && (!(GENERATE_STREETS && aWorld.getLevel().dimension() == Level.OVERWORLD) || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) {
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 			if (tRegistry != null) {
 				for (int i = 0, j = 1+aRandom.nextInt(3); i < j; i++) {

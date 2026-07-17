@@ -18,6 +18,8 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -46,7 +48,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		// How many times can we cast a ray downwards?
 		int aAmount = canGenerate(aWorld, aChunk, aDimType, aMinX, aMinZ, aMaxX, aMaxZ, aRandom, aBiomes, aBiomeNames);
 		if (aAmount <= 0) return F;
@@ -76,7 +78,7 @@ public abstract class WorldgenOnSurface extends WorldgenObject {
 		return rResult;
 	}
 	
-	public int canGenerate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {return checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ) ? 0 : mAmount;}
+	public int canGenerate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {return checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ) ? 0 : mAmount;}
 	
-	public abstract boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact);
+	public abstract boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact);
 }

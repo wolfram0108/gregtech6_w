@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen.tree;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.block.tree.BlockBaseSapling;
 import gregapi.util.WD;
@@ -44,7 +46,7 @@ public class WorldgenTreeCoconut extends WorldgenOnSurface {
 	}
 	
 	@Override
-	public int canGenerate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public int canGenerate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return 0;
 		boolean temp = F;
 		for (String tName : aBiomeNames) {
@@ -59,7 +61,7 @@ public class WorldgenTreeCoconut extends WorldgenOnSurface {
 	}
 	
 	@Override
-	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
+	public boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
 		if (!BlocksGT.plantableTrees.contains(aContact)) return F;
 		if (!WD.easyRep(aWorld, aX, aY+1, aZ)) return F;
 		return ((BlockBaseSapling)BlocksGT.Saplings_AB).grow(aWorld, aX, aY+1, aZ, (byte)6, aRandom);

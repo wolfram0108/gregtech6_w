@@ -18,6 +18,7 @@
  */
 
 package gregtech.worldgen;
+import net.minecraft.world.level.WorldGenLevel;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -42,11 +43,11 @@ public class NoiseGenerator {
 	 * не был стабильной величиной (назначался DimensionManager по порядку регистрации), поэтому 1:1 портировать
 	 * нечего — гатим.
 	 */
-	public NoiseGenerator(Level aWorld) {
+	public NoiseGenerator(WorldGenLevel aWorld) {
 		int tDimOffset;
-		if (aWorld.dimension() == Level.OVERWORLD) tDimOffset = 0;
-		else if (aWorld.dimension() == Level.NETHER) tDimOffset = -1;
-		else if (aWorld.dimension() == Level.END) tDimOffset = 1;
+		if (aWorld.getLevel().dimension() == Level.OVERWORLD) tDimOffset = 0;
+		else if (aWorld.getLevel().dimension() == Level.NETHER) tDimOffset = -1;
+		else if (aWorld.getLevel().dimension() == Level.END) tDimOffset = 1;
 		else {
 			// F6 impossible-1:1 (нет neo int-dim-id, vanilla overworld/nether/end работают 1:1): модовое/неизвестное измерение — нет числового id в neo
 			// (и в 1.7.10 он не был портируемой величиной для модовых измерений), offset оставлен 0.
@@ -54,7 +55,7 @@ public class NoiseGenerator {
 		}
 		mOffsetY = 512 * tDimOffset;
 		// getSeed() есть у WorldGenLevel (WorldGenLevel.java:8) и ServerLevel (ServerLevel.java:1697), но не у
-		// базового Level; на практике aWorld в местах вызова (WorldgenObject.generate(Level aWorld,...) и
+		// базового Level; на практике aWorld в местах вызова (WorldgenObject.generate(WorldGenLevel aWorld,...) и
 		// далее) в рантайме — ServerLevel (единственный класс, одновременно являющийся Level и WorldGenLevel).
 		if (aWorld instanceof ServerLevel aServerLevel) {
 			mSeed = (int) aServerLevel.getSeed();

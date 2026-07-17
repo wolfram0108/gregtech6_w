@@ -72,6 +72,7 @@ import gregapi.block.metatype.BlockStones;
 import net.minecraft.core.Direction;
 // F#(WD-block): доступ к блокам мира переучен на BlockPos/BlockState (world.getBlockState(pos).getBlock() —
 // BlockGetter.java:32 + BlockBehaviour.java:521 getBlock()); координатные типы/шейпы/рейтрейс — ниже.
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -104,6 +105,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.ChunkAccess;
 
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraftforge.fluids.*;
@@ -124,9 +126,9 @@ public class WD {
 		if (aBlock instanceof gregapi.block.IBlock) ((gregapi.block.IBlock)aBlock).setBlockBounds(aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
 	public static ItemStack suck(IHasWorldAndCoords aCoordinates) {return suck(aCoordinates.getWorld(), aCoordinates.getX(), aCoordinates.getY(), aCoordinates.getZ());}
-	public static ItemStack suck(Level aWorld, double aX, double aY, double aZ) {return suck(aWorld, aX, aY, aZ, 1, 1, 1);}
+	public static ItemStack suck(LevelAccessor aWorld, double aX, double aY, double aZ) {return suck(aWorld, aX, aY, aZ, 1, 1, 1);}
 	@SuppressWarnings("unchecked")
-	public static ItemStack suck(Level aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
+	public static ItemStack suck(LevelAccessor aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
 		for (ItemEntity tItem : (Iterable<ItemEntity>)aWorld.getEntitiesOfClass(ItemEntity.class, new AABB(aX, aY, aZ, aX+aL, aY+aH, aZ+aW))) {
 			if (!tItem.isRemoved()) {
 				tItem.discard();
@@ -139,9 +141,9 @@ public class WD {
 		return null;
 	}
 	public static List<ItemStack> suckAll(IHasWorldAndCoords aCoordinates) {return suckAll(aCoordinates.getWorld(), aCoordinates.getX(), aCoordinates.getY(), aCoordinates.getZ());}
-	public static List<ItemStack> suckAll(Level aWorld, double aX, double aY, double aZ) {return suckAll(aWorld, aX, aY, aZ, 1, 1, 1);}
+	public static List<ItemStack> suckAll(LevelAccessor aWorld, double aX, double aY, double aZ) {return suckAll(aWorld, aX, aY, aZ, 1, 1, 1);}
 	@SuppressWarnings("unchecked")
-	public static List<ItemStack> suckAll(Level aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
+	public static List<ItemStack> suckAll(LevelAccessor aWorld, double aX, double aY, double aZ, double aL, double aH, double aW) {
 		List<ItemEntity> tList = aWorld.getEntitiesOfClass(ItemEntity.class, new AABB(aX, aY, aZ, aX+aL, aY+aH, aZ+aW));
 		if (tList.isEmpty()) return Collections.emptyList();
 		List<ItemStack> rOutput = ST.arraylist();
@@ -157,7 +159,7 @@ public class WD {
 		return rOutput;
 	}
 	
-	public static boolean obstructed(Level aWorld, int aX, int aY, int aZ, byte aSide) {
+	public static boolean obstructed(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {
 		if (!OBSTRUCTION_CHECKS) return F;
 		aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
 		BlockEntity tTileEntity = te(aWorld, aX, aY, aZ, T);
@@ -186,7 +188,7 @@ public class WD {
 		return F;
 	}
 	
-	public static HitResult getMOP(Level aWorld, Player aPlayer, boolean aFlag) {
+	public static HitResult getMOP(LevelAccessor aWorld, Player aPlayer, boolean aFlag) {
 		Vec3 vec3 = new Vec3( // 1.7.10 Vec3.createVectorHelper(x,y,z) удалён -> neo ctor new Vec3(double,double,double).
 		  aPlayer.xo + (aPlayer.getX() - aPlayer.xo)
 		, aPlayer.yo + (aPlayer.getY() - aPlayer.yo) + (aWorld.isClientSide() ? aPlayer.getEyeHeight() - aPlayer.getEyeHeight(net.minecraft.world.entity.Pose.STANDING) : aPlayer.getEyeHeight()) // F6-eye: 1.7.10 getDefaultEyeHeight() -> neo getEyeHeight(Pose.STANDING) (стоячая высота глаз, Entity.java:3381). isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
@@ -218,51 +220,62 @@ public class WD {
 	// этого мода (`"WorldProviderCaves".equalsIgnoreCase(...)` и т.п.) либо (dimTF) через числовой
 	// `TwilightForestMod.dimensionID` — ни один из 3 корней референса не содержит neo-эквивалента для этих
 	// древних 1.7.10-модов (не портированы), это foreign-gated (древние 1.7.10-моды не портированы): F корректно, пока мод отсутствует.
-	public static boolean dimOverworldLike(Level aWorld) {return aWorld != null && (aWorld.dimension() == Level.OVERWORLD || dimENVM(aWorld) || dimA97(aWorld) || dimWTCH(aWorld) || dimMYST(aWorld) || dimCW2(aWorld));}
+	/** F6 dimension-identity ЦЕНТР: у neo-измерения нет числового id, ключ измерения = {@code ResourceKey<Level>}.
+	 *  {@code Level} даёт {@code dimension()} напрямую; worldgen-приёмник {@code WorldGenLevel}/{@code ServerLevelAccessor}
+	 *  знает свой {@code ServerLevel} через {@code getLevel()} → {@code getLevel().dimension()}. Единственный вход на весь
+	 *  мод, приёмник {@code LevelAccessor} (общий супертип Level и WorldGenLevel) — заменяет прямой {@code aWorld.dimension()},
+	 *  которого на голом {@code LevelAccessor} нет. */
+	public static net.minecraft.resources.ResourceKey<Level> dimKey(LevelAccessor aWorld) {
+		if (aWorld instanceof Level) return ((Level)aWorld).dimension();
+		if (aWorld instanceof net.minecraft.world.level.ServerLevelAccessor) return ((net.minecraft.world.level.ServerLevelAccessor)aWorld).getLevel().dimension();
+		return null;
+	}
 
-	public static boolean dimPlanet(Level aWorld) {return aWorld != null && aWorld.dimension() != Level.OVERWORLD && aWorld.dimension() != Level.NETHER && aWorld.dimension() != Level.END && !(dimMYST(aWorld) || dimATUM(aWorld) || dimWTCH(aWorld) || dimA97(aWorld) || dimCW2(aWorld) || dimTF(aWorld) || dimERE(aWorld) || dimBTL(aWorld) || dimENVM(aWorld) || dimDD(aWorld) || dimLM(aWorld) || dimAETHER(aWorld) || dimALF(aWorld) || dimTROPIC(aWorld) || dimCANDY(aWorld));}
+	public static boolean dimOverworldLike(LevelAccessor aWorld) {return aWorld != null && (dimKey(aWorld) == Level.OVERWORLD || dimENVM(aWorld) || dimA97(aWorld) || dimWTCH(aWorld) || dimMYST(aWorld) || dimCW2(aWorld));}
 
-	public static boolean dimMYST(Level aWorld) {return aWorld != null && MD.MYST.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimMYST — Mystcraft-провайдер определялся по имени java-класса ("com.xcompwiz.mystcraft"), WorldProvider удалён, аналога нет ни в одном из 3 корней референса */}
+	public static boolean dimPlanet(LevelAccessor aWorld) {return aWorld != null && dimKey(aWorld) != Level.OVERWORLD && dimKey(aWorld) != Level.NETHER && dimKey(aWorld) != Level.END && !(dimMYST(aWorld) || dimATUM(aWorld) || dimWTCH(aWorld) || dimA97(aWorld) || dimCW2(aWorld) || dimTF(aWorld) || dimERE(aWorld) || dimBTL(aWorld) || dimENVM(aWorld) || dimDD(aWorld) || dimLM(aWorld) || dimAETHER(aWorld) || dimALF(aWorld) || dimTROPIC(aWorld) || dimCANDY(aWorld));}
 
-	public static boolean dimCANDY(Level aWorld) {return aWorld != null && MD.CANDY.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCANDY — CandyCraft-провайдер по имени класса "WorldProviderCandy" */}
+	public static boolean dimMYST(LevelAccessor aWorld) {return aWorld != null && MD.MYST.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimMYST — Mystcraft-провайдер определялся по имени java-класса ("com.xcompwiz.mystcraft"), WorldProvider удалён, аналога нет ни в одном из 3 корней референса */}
 
-	public static boolean dimTROPIC(Level aWorld) {return aWorld != null && MD.TROPIC.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTROPIC — Tropicraft-провайдер по имени класса "WorldProviderTropicraft" */}
+	public static boolean dimCANDY(LevelAccessor aWorld) {return aWorld != null && MD.CANDY.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCANDY — CandyCraft-провайдер по имени класса "WorldProviderCandy" */}
 
-	public static boolean dimATUM(Level aWorld) {return aWorld != null && MD.ATUM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimATUM — Atum-провайдер по имени класса "AtumWorldProvider" */}
+	public static boolean dimTROPIC(LevelAccessor aWorld) {return aWorld != null && MD.TROPIC.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTROPIC — Tropicraft-провайдер по имени класса "WorldProviderTropicraft" */}
 
-	public static boolean dimTF(Level aWorld) {return aWorld != null && MD.TF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTF — сравнение с числовым TwilightForestMod.dimensionID, WorldProvider.dimensionId удалён вместе с числовой identity измерений */}
+	public static boolean dimATUM(LevelAccessor aWorld) {return aWorld != null && MD.ATUM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimATUM — Atum-провайдер по имени класса "AtumWorldProvider" */}
 
-	public static boolean dimBTL(Level aWorld) {return aWorld != null && MD.BTL.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimBTL — Betweenlands-провайдер по имени класса "WorldProviderBetweenlands" */}
+	public static boolean dimTF(LevelAccessor aWorld) {return aWorld != null && MD.TF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimTF — сравнение с числовым TwilightForestMod.dimensionID, WorldProvider.dimensionId удалён вместе с числовой identity измерений */}
 
-	public static boolean dimERE(Level aWorld) {return aWorld != null && MD.ERE.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimERE — Erebus-провайдер по имени класса "WorldProviderErebus" */}
+	public static boolean dimBTL(LevelAccessor aWorld) {return aWorld != null && MD.BTL.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimBTL — Betweenlands-провайдер по имени класса "WorldProviderBetweenlands" */}
 
-	public static boolean dimALF(Level aWorld) {return aWorld != null && MD.ALF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimALF — Alfheim-провайдер по имени класса "WorldProviderAlfheim" */}
+	public static boolean dimERE(LevelAccessor aWorld) {return aWorld != null && MD.ERE.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimERE — Erebus-провайдер по имени класса "WorldProviderErebus" */}
 
-	public static boolean dimDD(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimDD — Underdark-провайдер по имени класса "WorldProviderUnderdark" */}
+	public static boolean dimALF(LevelAccessor aWorld) {return aWorld != null && MD.ALF.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimALF — Alfheim-провайдер по имени класса "WorldProviderAlfheim" */}
 
-	public static boolean dimLM(Level aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimLM — EndOfTime-провайдер по имени класса "WorldProviderEndOfTime" */}
+	public static boolean dimDD(LevelAccessor aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimDD — Underdark-провайдер по имени класса "WorldProviderUnderdark" */}
 
-	public static boolean dimENVM(Level aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimENVM — Enviromine Caves-провайдер по имени класса "WorldProviderCaves" */}
+	public static boolean dimLM(LevelAccessor aWorld) {return aWorld != null && (MD.ExU.mLoaded || MD.ExS.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimLM — EndOfTime-провайдер по имени класса "WorldProviderEndOfTime" */}
 
-	public static boolean dimGC(Level aWorld) {return aWorld != null && MD.GC.mLoaded && F; /* F6/F10 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimGC — Galacticraft-измерение определялось `aWorld.provider instanceof IGalacticraftWorldProvider`, WorldProvider удалён из движка (та же болезнь, что у семейства dimXXX выше) */}
+	public static boolean dimENVM(LevelAccessor aWorld) {return aWorld != null && MD.ENVM.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimENVM — Enviromine Caves-провайдер по имени класса "WorldProviderCaves" */}
 
-	public static boolean dimA97(Level aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimA97 — Aroma1997 Mining-провайдер по имени класса "WorldProviderMiner" */}
+	public static boolean dimGC(LevelAccessor aWorld) {return aWorld != null && MD.GC.mLoaded && F; /* F6/F10 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimGC — Galacticraft-измерение определялось `aWorld.provider instanceof IGalacticraftWorldProvider`, WorldProvider удалён из движка (та же болезнь, что у семейства dimXXX выше) */}
 
-	public static boolean dimCW2(Level aWorld) {return aWorld != null && (dimCW2AquaCavern(aWorld) || dimCW2Caveland(aWorld) || dimCW2Cavenia(aWorld) || dimCW2Cavern(aWorld) || dimCW2Caveworld(aWorld));}
+	public static boolean dimA97(LevelAccessor aWorld) {return aWorld != null && MD.A97_MINING.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimA97 — Aroma1997 Mining-провайдер по имени класса "WorldProviderMiner" */}
 
-	public static boolean dimCW2AquaCavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2AquaCavern — по имени класса "WorldProviderAquaCavern" */}
+	public static boolean dimCW2(LevelAccessor aWorld) {return aWorld != null && (dimCW2AquaCavern(aWorld) || dimCW2Caveland(aWorld) || dimCW2Cavenia(aWorld) || dimCW2Cavern(aWorld) || dimCW2Caveworld(aWorld));}
 
-	public static boolean dimCW2Caveland(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveland — по имени класса "WorldProviderCaveland" */}
+	public static boolean dimCW2AquaCavern(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2AquaCavern — по имени класса "WorldProviderAquaCavern" */}
 
-	public static boolean dimCW2Cavenia(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavenia — по имени класса "WorldProviderCavenia" */}
+	public static boolean dimCW2Caveland(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveland — по имени класса "WorldProviderCaveland" */}
 
-	public static boolean dimCW2Cavern(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavern — по имени класса "WorldProviderCavern" */}
+	public static boolean dimCW2Cavenia(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavenia — по имени класса "WorldProviderCavenia" */}
 
-	public static boolean dimCW2Caveworld(Level aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveworld — по имени класса "WorldProviderCaveworld" */}
+	public static boolean dimCW2Cavern(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Cavern — по имени класса "WorldProviderCavern" */}
 
-	public static boolean dimWTCH(Level aWorld) {return aWorld != null && MD.WTCH.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimWTCH — Witchery Dream World-провайдер по имени класса "WorldProviderDreamWorld" */}
+	public static boolean dimCW2Caveworld(LevelAccessor aWorld) {return aWorld != null && MD.CW2.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimCW2Caveworld — по имени класса "WorldProviderCaveworld" */}
 
-	public static boolean dimAETHER(Level aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
+	public static boolean dimWTCH(LevelAccessor aWorld) {return aWorld != null && MD.WTCH.mLoaded && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimWTCH — Witchery Dream World-провайдер по имени класса "WorldProviderDreamWorld" */}
+
+	public static boolean dimAETHER(LevelAccessor aWorld) {return aWorld != null && (MD.AETHER.mLoaded || MD.AETHEL.mLoaded) && F; /* F6 impossible-1:1 (foreign-gated; neo dimension-identity = aWorld.dimension() ResourceKey, ключ форейн-измерения существует лишь с портом мода; MD.*.mLoaded отсутствует -> false верно): dimAETHER — Aether-провайдер по имени класса "AetherWorldProvider"/"WorldProviderAether" */}
 
 	/** было ручное 1.7.10 dimension-travel (DimensionManager/ridingEntity/removePlayerEntityDangerously/ClientboundRespawnPacket/
 	 *  theItemInWorldManager/getConfigurationManager/FMLCommonHandler.firePlayerChangedDimensionEvent/createEntityByName — все удалены) —
@@ -280,11 +293,11 @@ public class WD {
 	
 	
 	/** Marks a Chunk dirty so it is saved */
-	public static boolean mark(Level aWorld, int aX, int aZ) {
+	public static boolean mark(LevelAccessor aWorld, int aX, int aZ) {
 		if (aWorld == null || aWorld.isClientSide()) return F;
 		// было aWorld.getChunkFromBlockCoords(x,z) — neo: Level.getChunk(int,int) (Level.java:202), блок-координаты
 		// >>4 переведены в чанк-координаты вручную (как делал старый метод внутри себя).
-		LevelChunk aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
+		ChunkAccess aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 		if (aChunk == null) {
 			aWorld.getBlockState(new BlockPos(aX, 0, aZ)); // было WD.meta(aWorld, x,0,z) — тот же "трогающий" вызов для форс-загрузки чанка, результат отбрасывался и раньше
 			aChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
@@ -313,13 +326,13 @@ public class WD {
 		return aTileEntity instanceof ITileEntityDelegating ? ((ITileEntityDelegating)aTileEntity).getDelegateTileEntity(aSide) : new DelegatorTileEntity<>(aTileEntity, aWorld, aX, aY, aZ, aSide);
 	}
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
-	public static BlockEntity te(Level aWorld, BlockPos aCoords, boolean aLoadUnloadedChunks) {
+	public static BlockEntity te(LevelAccessor aWorld, BlockPos aCoords, boolean aLoadUnloadedChunks) {
 		return te(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aLoadUnloadedChunks);
 	}
 	/** to get a TileEntity properly, according to my additional Interfaces. Normally you should set aLoadUnloadedChunks to false, unless you have already checked these Coordinates, or you want to load Chunks */
-	public static BlockEntity te(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
+	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		if (aLoadUnloadedChunks || aWorld.isLoaded(tPos)) { // было WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695)
+		if (aLoadUnloadedChunks || aWorld.hasChunkAt(tPos)) { // было WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695)
 			BlockEntity rTileEntity = aWorld.getBlockEntity(tPos); // было WD.te(aWorld, x, y, z, T) — BlockGetter.java:25 / Level.java:671
 			if (rTileEntity instanceof ITileEntityUnloadable && ((ITileEntityUnloadable)rTileEntity).isDead()) return null;
 			if (rTileEntity != null) return rTileEntity;
@@ -348,11 +361,11 @@ public class WD {
 	}
 	/** F-world: 1.7.10 World.blockExists(x,y,z) = «чанк с этим блоком загружен». Порт централизовал вызовы как
 	 *  WD.exists, но метод не был определён. neo-эквивалент — Level.isLoaded(BlockPos) (Level.java:695). */
-	public static boolean exists(Level aWorld, int aX, int aY, int aZ) {
-		return aWorld != null && aWorld.isLoaded(new BlockPos(aX, aY, aZ));
+	public static boolean exists(LevelAccessor aWorld, int aX, int aY, int aZ) {
+		return aWorld != null && aWorld.hasChunkAt(new BlockPos(aX, aY, aZ));
 	}
 	/** F-world: 1.7.10 World-небовидимость(x,y,z) -> neo canSeeSky(BlockPos) (BlockAndLightGetter.java:17). */
-	public static boolean canSeeSky(Level aWorld, int aX, int aY, int aZ) {
+	public static boolean canSeeSky(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		return aWorld != null && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
 	}
 	/** F-world: 1.7.10 WD.hardness(Block, world,x,y,z) -> neo BlockState.getDestroySpeed(BlockGetter,BlockPos)
@@ -415,20 +428,20 @@ public class WD {
 	 *  IBlockExtension.canSustainPlant(BlockState,BlockGetter,BlockPos,Direction,BlockState):TriState (растение как
 	 *  BlockState, не IPlantable). Централизованный переходник: собирает состояние блока по координатам, растение
 	 *  как defaultBlockState(), TriState.toBoolean(F) (недетерм. -> не растёт, консервативно 1:1). */
-	public static boolean canSustainPlant(Level aWorld, int aX, int aY, int aZ, Direction aSide, Block aPlant) {
+	public static boolean canSustainPlant(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aSide, Block aPlant) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		return aWorld.getBlockState(tPos).getBlock().canSustainPlant(aWorld.getBlockState(tPos), aWorld, tPos, aSide, aPlant.defaultBlockState()).toBoolean(F);
 	}
 	/** F-spawn: 1.7.10 World.setSpawnLocation(x,y,z) -> neo ServerLevel.setRespawnData(RespawnData) (ServerLevel:1507;
 	 *  spawn = GlobalPos+yaw/pitch). Централизованный переходник (worldgen задаёт мир-спавн). Чтение — getRespawnData().pos(). */
-	public static void setSpawnLocation(Level aWorld, int aX, int aY, int aZ) {
+	public static void setSpawnLocation(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel sl) sl.setRespawnData(new net.minecraft.world.level.storage.LevelData.RespawnData(net.minecraft.core.GlobalPos.of(sl.dimension(), new BlockPos(aX, aY, aZ)), 0.0F, 0.0F));
 	}
 	/** F-worldgen: 1.7.10 {@code Arrays.fill(chunk.getBiomeArray(), (byte)Biome.X.biomeID)} — byte-массив биомов удалён;
 	 *  neo хранит биомы в per-section {@code PalettedContainer<Holder<Biome>>} (RO), единственный сеттер —
 	 *  {@code ChunkAccess.fillBiomesFromNoise(BiomeResolver, Climate.Sampler)} (ChunkAccess:447). Центр: заполняет весь
 	 *  чанк одним биомом через constant-resolver. Числовой biomeID в neo отсутствует -> адрес по {@code ResourceKey<Biome>}. */
-	public static void setBiomes(Level aWorld, net.minecraft.world.level.chunk.LevelChunk aChunk, net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome> aBiome) {
+	public static void setBiomes(LevelAccessor aWorld, ChunkAccess aChunk, net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome> aBiome) {
 		if (!(aWorld instanceof net.minecraft.server.level.ServerLevel tSL)) return;
 		net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> tHolder = aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getOrThrow(aBiome);
 		aChunk.fillBiomesFromNoise((qx, qy, qz, sampler) -> tHolder, tSL.getChunkSource().randomState().sampler());
@@ -436,7 +449,7 @@ public class WD {
 	/** F-worldgen: 1.7.10 {@code new WorldGenTrees(...).generate(world,rng,x,y,z)} (WorldGenTrees удалён) -> neo
 	 *  Feature-система: размещаем ванильное {@code TreeFeatures.OAK} {@link net.minecraft.world.level.levelgen.feature.ConfiguredFeature#place}
 	 *  (ConfiguredFeature:24). FORCED-ADAPTATION: 1.7.10-параметры высоты/меты дерева -> фикс-конфиг OAK (косметика). */
-	public static void placeTree(Level aWorld, int aX, int aY, int aZ) {
+	public static void placeTree(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		if (!(aWorld instanceof net.minecraft.server.level.ServerLevel tSL)) return;
 		aWorld.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE).getOrThrow(net.minecraft.data.worldgen.features.TreeFeatures.OAK).value().place(tSL, tSL.getChunkSource().getGenerator(), tSL.getRandom(), new BlockPos(aX, aY, aZ));
 	}
@@ -444,13 +457,13 @@ public class WD {
 	 *  ResourceKey<Level>). Ванильные 1:1: overworld=0, nether=-1, end=1 (Level.java:95-97). F-dimension impossible-1:1 (neo int-dim-id нет; vanilla 0/-1/1 работают 1:1, modded->hash),
 	 *  modded-dim-id): модовым измерениям стабильного int в neo нет -> hash ключа (уникален в рамках сессии, но
 	 *  switch-кейсы GT6 всё равно только на ванильных 0/-1/1, модовые -> default; NBT-персист модового id деградирует). */
-	public static int dimensionId(Level aWorld) {
+	public static int dimensionId(LevelAccessor aWorld) {
 		if (aWorld == null) return 0;
-		net.minecraft.resources.ResourceKey<Level> tKey = aWorld.dimension();
+		net.minecraft.resources.ResourceKey<Level> tKey = dimKey(aWorld);
 		if (tKey == Level.OVERWORLD) return 0;
 		if (tKey == Level.NETHER) return -1;
 		if (tKey == Level.END) return 1;
-		return tKey.identifier().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:55)
+		return tKey == null ? 0 : tKey.identifier().hashCode(); // neo ResourceKey: location()->identifier() (ResourceKey.java:55); null-ключ (экзотический LevelAccessor без Level/ServerLevelAccessor) -> 0 как overworld-дефолт
 	}
 	/** F9: 1.7.10 WD.getMaterial(Block) удалён в neo (класс Material убран). GT6-блок (BlockBase) хранит портированный
 	 *  gregapi.block.Material; для ВАНИЛЬНЫХ neo-блоков классифицируем по идентичности (критичные fluid/air/fire —
@@ -523,7 +536,7 @@ public class WD {
 	 *  (сверено с `gregtech6/.../BlockBase.java`, дефолт), переопределяют только MultiTileEntityBlock.java:245
 	 *  (TileEntity-делегирование) и BlockStones.java:746 (каменные руды/генерация). Ванильный Forge 1.7.10
 	 *  {@code Block.isReplaceableOreGen} дефолт = identity ({@code this==target}). */
-	public static boolean oreGen(Block aBlock, Level aWorld, int aX, int aY, int aZ, Block aTarget) {
+	public static boolean oreGen(Block aBlock, LevelAccessor aWorld, int aX, int aY, int aZ, Block aTarget) {
 		if (aBlock instanceof MultiTileEntityBlock) return ((MultiTileEntityBlock)aBlock).isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget);
 		if (aBlock instanceof BlockStones) return ((BlockStones)aBlock).isReplaceableOreGen(aWorld, aX, aY, aZ, aTarget);
 		return aBlock == aTarget;
@@ -567,17 +580,19 @@ public class WD {
 	}
 	
 	/** Sets the TileEntity at the passed position, with the option of turning adjacent TileEntity updates off. */
-	public static BlockEntity te(Level aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
+	public static BlockEntity te(LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity, boolean aCauseTileEntityUpdates) {
 		if (tileYInvalid(aWorld, aY)) return invalidateTileEntityWithNegativeYCoord(aX, aY, aZ, aTileEntity); // было aY<0 — MC26 бедрок Y=−64 легитимен, порог = дно мира getMinY()
-		if (aCauseTileEntityUpdates) aWorld.setBlockEntity(aTileEntity); // было aWorld.setTileEntity(x,y,z,te) — neo: Level.setBlockEntity(BlockEntity) (Level.java:681, позиция берётся из te.getBlockPos())
+		if (aCauseTileEntityUpdates && aWorld instanceof Level tLevel) tLevel.setBlockEntity(aTileEntity); // было aWorld.setTileEntity(x,y,z,te) — neo: Level.setBlockEntity(BlockEntity) (Level.java:681, позиция берётся из te.getBlockPos()); Level-специфичный полный путь (обновления соседей) — только для реального Level
 		else {
-			LevelChunk tChunk = aWorld.getChunk(aX >> 4, aZ >> 4); // было aWorld.getChunk(cx,cz) — Level.getChunk(int,int) (Level.java:202)
+			// F6-worldgen ЦЕНТР BE-размещения: приёмник расширен до LevelAccessor (worldgen идёт по WorldGenLevel/WorldGenRegion,
+			// а не Level). getChunk на LevelReader отдаёт ChunkAccess (Level=full-чанк, worldgen=ProtoChunk/ImposterProtoChunk).
+			// ChunkAccess.setBlockEntity(BlockEntity) (ChunkAccess.java:129, абстрактный — есть и у LevelChunk, и у ProtoChunk)
+			// кладёт BE в чанк без обновления соседей (аналог 1.7.10-ветки "без TileEntity-update"). Прежний
+			// LevelChunk.addAndRegisterBlockEntity был доступен ТОЛЬКО на full-чанке (Level) → ломал worldgen-путь; setBlockEntity
+			// на ChunkAccess работает и для ещё-генерящегося чанка (BE промотируется движком при финализации ProtoChunk→LevelChunk).
+			ChunkAccess tChunk = aWorld.getChunk(aX >> 4, aZ >> 4);
 			if (tChunk != null) {
-				// было aWorld.addTileEntity(te) отдельно — neo: addAndRegisterBlockEntity(te) (LevelChunk.java:400) УЖЕ
-				// сам зовёт level.addFreshBlockEntities(List.of(be)) внутри (LevelChunk.java:408); отдельный вызов
-				// addFreshBlockEntities здесь дублировал бы регистрацию — оригинал (gregtech6 WD.java:347-348)
-				// добавлял в world-list один раз.
-				tChunk.addAndRegisterBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te) — LevelChunk.addAndRegisterBlockEntity(BlockEntity) (LevelChunk.java:400), позиция берётся из te.getBlockPos()
+				tChunk.setBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te)/addAndRegisterBlockEntity (LevelChunk-only) — neo: ChunkAccess.setBlockEntity(BlockEntity), позиция из te.getBlockPos()
 				tChunk.markUnsaved(); // было tChunk.markUnsaved()
 			}
 		}
@@ -588,12 +603,12 @@ public class WD {
 	public static boolean oxygen(Level aWorld, int aX, int aY, int aZ) {
 		return  !MD.GC.mLoaded || !dimGC(aWorld) || OxygenUtil.checkTorchHasOxygen(aWorld, NB, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> центр dimGC (WorldProvider удалён).
 	}
-	public static boolean collectable_air(Level aWorld, int aX, int aY, int aZ) {
+	public static boolean collectable_air(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		return (!MD.GC.mLoaded || !dimGC(aWorld)) && !hasCollide(aWorld, aX, aY, aZ) && !liquid(aWorld, aX, aY, aZ); // F10: aWorld.provider instanceof IGalacticraftWorldProvider -> центр dimGC.
 	}
 	
 	/** @return the regular Environment Temperature of the World at this Location according to my calculations. In Kelvin, ofcourse. */
-	public static long envTemp(Level aWorld, int aX, int aY, int aZ) {
+	public static long envTemp(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		// было aWorld.getBiomeGenForCoords(x,z) (2D) — neo: LevelReader.getBiome(BlockPos) (LevelReader.java:42),
 		// возвращает Holder<Biome>; .value() (Holder.java:17) разворачивает до Biome (сигнатура envTemp(Biome,...) не меняется).
 		return envTemp(aWorld.getBiome(new BlockPos(aX, aY, aZ)).value(), aX, aY, aZ);
@@ -610,25 +625,25 @@ public class WD {
 	}
 	// F6-центр biome/climate/light/precipitation (было World.getBiomeGenForCoords/getLightBrightness/getPrecipitationHeight + Biome.rainfall/temperature поля — удалены):
 	/** было World.getBiomeGenForCoords(x,z) (2D, BiomeGenBase) -> Level.getBiome(BlockPos).value() (LevelReader:42, Holder.value()); 2D-форма берёт Y=getSeaLevel() (LevelReader:66) как поверхностный столбец. */
-	public static Biome biome(Level aWorld, int aX, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aWorld.getSeaLevel(), aZ)).value();}
-	public static Biome biome(Level aWorld, int aX, int aY, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aY, aZ)).value();}
+	public static Biome biome(LevelAccessor aWorld, int aX, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aWorld.getSeaLevel(), aZ)).value();}
+	public static Biome biome(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? null : aWorld.getBiome(new BlockPos(aX, aY, aZ)).value();}
 	/** было Biome.rainfall (поле, удалено) -> Biome.getModifiedClimateSettings().downfall() (Biome.java:367 record ClimateSettings.downfall, :458 getModifiedClimateSettings). */
 	public static float rainfall(Biome aBiome) {return aBiome == null ? 0 : aBiome.getModifiedClimateSettings().downfall();}
 	/** было World.getLightBrightness(x,y,z) (float 0..1) -> LevelLightEngine.getRawBrightness(pos,0)/15 (LevelLightEngine.java:146, Level.getLightEngine() :375). */
-	public static float lightBrightness(Level aWorld, int aX, int aY, int aZ) {return aWorld == null ? 0 : aWorld.getLightEngine().getRawBrightness(new BlockPos(aX, aY, aZ), 0) / 15.0F;}
+	public static float lightBrightness(LevelAccessor aWorld, int aX, int aY, int aZ) {return aWorld == null ? 0 : aWorld.getLightEngine().getRawBrightness(new BlockPos(aX, aY, aZ), 0) / 15.0F;}
 	/** было World.getPrecipitationHeight(x,z) -> Level.getHeight(Heightmap.MOTION_BLOCKING,x,z) (Level.java:359, Heightmap:147). */
-	public static int precipitationHeight(Level aWorld, int aX, int aZ) {return aWorld == null ? 0 : aWorld.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, aX, aZ);}
+	public static int precipitationHeight(LevelAccessor aWorld, int aX, int aZ) {return aWorld == null ? 0 : aWorld.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, aX, aZ);}
 	/** было Block.dropBlockAsItem(world,x,y,z,meta,fortune) (лут блока, удалён) -> Block.dropResources(state,level,pos) (Block.java:380).
 	 *  F6/F13 functional-adapted: fortune-параметр не нужен (все вызыватели fortune=0; dropResources — дефолтный лут). */
-	public static void dropBlockAsItem(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {if (aWorld == null) return; BlockPos tPos = new BlockPos(aX, aY, aZ); Block.dropResources(aWorld.getBlockState(tPos), aWorld, tPos);}
-	/** было Block.dropBlockAsItem(world,x,y,z,ItemStack) (конкретный стек) -> Block.popResource(level,pos,stack) (Block.java:407). */
+	public static void dropBlockAsItem(LevelAccessor aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {if (aWorld == null) return; BlockPos tPos = new BlockPos(aX, aY, aZ); Block.dropResources(aWorld.getBlockState(tPos), aWorld, tPos, aWorld.getBlockEntity(tPos));} // 4-арг dropResources(BlockState,LevelAccessor,BlockPos,BlockEntity) (Block.java:389) — принимает LevelAccessor (3-арг брал Level)
+	/** было Block.dropBlockAsItem(world,x,y,z,ItemStack) (конкретный стек) -> Block.popResource(level,pos,stack) (Block.java:407, приёмник Level — спавн ItemEntity, gameplay). */
 	public static void dropBlockAsItem(Level aWorld, int aX, int aY, int aZ, ItemStack aStack) {if (aWorld != null && ST.valid(aStack)) Block.popResource(aWorld, new BlockPos(aX, aY, aZ), aStack);}
 	/** было Block.getCollisionBoundingBoxFromPool(w,x,y,z) (world-space AABB или null) -> getCollisionShape(w,pos).bounds().move(x,y,z)
 	 *  (VoxelShape.bounds:39/isEmpty:73, AABB.move:220); пустая форма -> null (1:1 с 1.7.10 «нет коллизии»). */
-	public static AABB collisionBox(Level aWorld, int aX, int aY, int aZ, Block aBlock) {if (aWorld == null) return null; BlockPos tPos = new BlockPos(aX, aY, aZ); net.minecraft.world.phys.shapes.VoxelShape tShape = aWorld.getBlockState(tPos).getCollisionShape(aWorld, tPos); return tShape.isEmpty() ? null : tShape.bounds().move(aX, aY, aZ);}
+	public static AABB collisionBox(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {if (aWorld == null) return null; BlockPos tPos = new BlockPos(aX, aY, aZ); net.minecraft.world.phys.shapes.VoxelShape tShape = aWorld.getBlockState(tPos).getCollisionShape(aWorld, tPos); return tShape.isEmpty() ? null : tShape.bounds().move(aX, aY, aZ);}
 	/** было World.checkNoEntityCollision(AABB) (нет сущностей в боксе) -> EntityGetter.getEntities(null,bb).isEmpty() (EntityGetter:29); null-бокс -> true (нет коллизии). */
-	public static boolean noEntityCollision(Level aWorld, AABB aBox) {return aWorld == null || aBox == null || aWorld.getEntities((Entity)null, aBox).isEmpty();}
-	public static boolean noEntityCollision(Level aWorld, AABB aBox, Entity aExcept) {return aWorld == null || aBox == null || aWorld.getEntities(aExcept, aBox).isEmpty();}
+	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox) {return aWorld == null || aBox == null || aWorld.getEntities((Entity)null, aBox).isEmpty();}
+	public static boolean noEntityCollision(LevelAccessor aWorld, AABB aBox, Entity aExcept) {return aWorld == null || aBox == null || aWorld.getEntities(aExcept, aBox).isEmpty();}
 	
 	// F6: было `WorldProvider aProvider`-перегрузки ПАРАЛЛЕЛЬНО с `Level aWorld`-перегрузками (вызов через
 	// `aWorld.provider`) — та же болезнь, что у семейства `dimXXX` выше: `WorldProvider` в neo удалён, компилятор
@@ -636,12 +651,12 @@ public class WD {
 	// `waterLevel(Level, int)`; `dimensionId == DIM_OVERWORLD` -> `Level.dimension() == Level.OVERWORLD`,
 	// `hasNoSky` -> `!dimensionType().hasSkyLight()` (см. `decisions/README.md` «Dimension-identity»).
 	/** @return the Height of the Water Level that should probably be in this World. */
-	public static int waterLevel(Level aWorld) {
+	public static int waterLevel(LevelAccessor aWorld) {
 		return waterLevel(aWorld, 62);
 	}
 	/** @return the Height of the Water Level that should probably be in this World. */
-	public static int waterLevel(Level aWorld, int aDefaultOverworld) {
-		return aWorld.dimension() == Level.OVERWORLD ? waterLevel(aDefaultOverworld) : !aWorld.dimensionType().hasSkyLight() || dimTF(aWorld) ? 31 : 62;
+	public static int waterLevel(LevelAccessor aWorld, int aDefaultOverworld) {
+		return dimKey(aWorld) == Level.OVERWORLD ? waterLevel(aDefaultOverworld) : !aWorld.dimensionType().hasSkyLight() || dimTF(aWorld) ? 31 : 62;
 	}
 	/** @return the Height of the Water Level that should probably be in the Overworld. */
 	public static int waterLevel(int aDefaultOverworld) {
@@ -666,7 +681,7 @@ public class WD {
 	public static int topY(net.minecraft.world.level.LevelHeightAccessor aWorld) {return aWorld.getMaxY()+1;}
 	/** §4.1 sea-anchored: старый абсолютный Y (мир [0..255], море 62) → новый Y (мир [minY..maxY], море getSeaLevel),
 	 *  раздельно по подземной [0..62]→[minY..sea] и надземной [62..255]→[sea..maxY] части (море — якорь, не дно). */
-	public static int remapY(Level aWorld, int aOldY) {
+	public static int remapY(LevelAccessor aWorld, int aOldY) {
 		int tSea = aWorld.getSeaLevel(), tMinY = aWorld.getMinY(), tMaxY = aWorld.getMaxY();
 		if (aOldY <= SEA_OLD) return tMinY + Math.round((aOldY - OLD_BOTTOM) * (tSea - tMinY) / (float)(SEA_OLD - OLD_BOTTOM));
 		return tSea + Math.round((aOldY - SEA_OLD) * (tMaxY - tSea) / (float)(OLD_TOP - SEA_OLD));
@@ -678,12 +693,12 @@ public class WD {
 	 *  НЕ инвалидируем — прежний fallback-порог 0 ложно ловил ВСЕ подземные руды (Y<0, легитимные) → setRemoved() удалял их
 	 *  BE (материал руды терялся → серое вкрапление) + печатал Throwable-стектрейс каждой (спам ×десятки тысяч). Позиция на
 	 *  загрузке легитимна (сохранена движком), а minY без level не узнать → безопасно пропустить (проверим при наличии level). */
-	public static boolean tileYInvalid(net.minecraft.world.level.Level aLevel, int aY) {
+	public static boolean tileYInvalid(LevelAccessor aLevel, int aY) {
 		return aLevel != null && aY < aLevel.getMinY();
 	}
 
 	/** @return the regular Temperature of the World at this Location according to Gregs calculations. In Kelvin, ofcourse. */
-	public static long temperature(Level aWorld, int aX, int aY, int aZ) {
+	public static long temperature(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		long rTemperature = envTemp(aWorld, aX, aY, aZ);
 		if (burning(aWorld, aX, aY, aZ)) rTemperature = Math.max(rTemperature, C + 200);
 		for (BlockPos tCoords : new BlockPos[] {new BlockPos(aX, aY, aZ), new BlockPos(aX+1, aY, aZ), new BlockPos(aX-1, aY, aZ), new BlockPos(aX, aY+1, aZ), new BlockPos(aX, aY-1, aZ), new BlockPos(aX, aY, aZ+1), new BlockPos(aX, aY, aZ-1)}) {
@@ -694,7 +709,7 @@ public class WD {
 		return rTemperature;
 	}
 	
-	public static ItemStack stack(Level aWorld, int aX, int aY, int aZ) {
+	public static ItemStack stack(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		// было aWorld.getBlockMetadata(x,y,z) в ветке else — числовой меты в neo больше нет (МОДЕЛЬ МЕТЫ п.4):
 		// для ванильных блоков (не IBlockExtendedMetaData) возвращаем 0, не выдумывая числовую таблицу.
@@ -719,21 +734,21 @@ public class WD {
 	// было aWorld.getBlock(x,y,z) — neo: BlockGetter.getBlockState(BlockPos).getBlock() (BlockGetter.java:32); было
 	// WD.exists(aWorld, x, y, z) — Level.isLoaded(BlockPos) (Level.java:695).
 	public static Block block(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock();}
-	public static Block block(Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.isLoaded(tP) ? aWorld.getBlockState(tP).getBlock() : NB;}
-	public static Block block(Level        aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
-	public static Block block(Level        aWorld, int aX, int aY, int aZ, byte aSide) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
+	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? aWorld.getBlockState(tP).getBlock() : NB;}
+	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
+	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	// МОДЕЛЬ МЕТЫ п.4: числовой меты в neo больше нет — для IBlockExtendedMetaData (свои блоки, п.1) реальное
 	// значение, иначе 0 (не выдумываем числовую таблицу для ванильных блоков).
 	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {Block tB = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); return UT.Code.bind4(tB instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);}
-	public static byte  meta (Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.isLoaded(new BlockPos(aX, aY, aZ)) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
-	public static byte  meta (Level        aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
-	public static byte  meta (Level        aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
+	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.hasChunkAt(new BlockPos(aX, aY, aZ)) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
+	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
+	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	public static byte  meta (long aBitAnd, BlockGetter aWorld, int aX, int aY, int aZ) {return UT.Code.bind4(meta(aWorld, aX, aY, aZ) & aBitAnd);}
-	public static byte  meta (long aBitAnd, Level        aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.isLoaded(new BlockPos(aX, aY, aZ)) ? UT.Code.bind4(meta((BlockGetter)aWorld, aX, aY, aZ) & aBitAnd) : 0;}
-	public static byte  meta (long aBitAnd, Level        aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
-	public static byte  meta (long aBitAnd, Level        aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
+	public static byte  meta (long aBitAnd, LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.hasChunkAt(new BlockPos(aX, aY, aZ)) ? UT.Code.bind4(meta((BlockGetter)aWorld, aX, aY, aZ) & aBitAnd) : 0;}
+	public static byte  meta (long aBitAnd, LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
+	public static byte  meta (long aBitAnd, LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aBitAnd, aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	
-	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags) {
+	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags) {
 		return set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, WD.opaque(aBlock));
 	}
 
@@ -743,7 +758,7 @@ public class WD {
 	// (направленные поворачиваются, ненаправленные возвращают себя — точнее прежнего Block.rotateBlock-дефолта=no-op).
 	// aAxis: neo Rotation Y-only (enum без горизонтальных осей); единственные вызыватели (worldgen dungeon) крутят
 	// вокруг SIDE_Y_POS(UP) -> Y-поворот; не-Y ось в срезе не встречается (при появлении — отдельный ADR F-tool-rotation).
-	public static boolean rotateBlock(Level aWorld, int aX, int aY, int aZ, Direction aAxis) {
+	public static boolean rotateBlock(LevelAccessor aWorld, int aX, int aY, int aZ, Direction aAxis) {
 		if (aWorld == null) return F;
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		BlockState tState = aWorld.getBlockState(tPos);
@@ -759,7 +774,7 @@ public class WD {
 	// neo BlockState.canBeReplaced() (1.7.10 block1.isReplaceable). Ветку «anvil на circuits» опускаем: недостижима для
 	// GT6-блоков (aBlock всегда GT6-блок, никогда Blocks.ANVIL); block.canReplace для GT6-блока = T (BlockBase.canReplace),
 	// потому вторая половина сводится к canBeReplaced() цели.
-	public static boolean canPlaceEntityOnSide(Level aWorld, Block aBlock, int aX, int aY, int aZ, boolean aSkipCollisionCheck, int aSide, Entity aEntity, ItemStack aStack) {
+	public static boolean canPlaceEntityOnSide(LevelAccessor aWorld, Block aBlock, int aX, int aY, int aZ, boolean aSkipCollisionCheck, int aSide, Entity aEntity, ItemStack aStack) {
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		if (!aSkipCollisionCheck) {
 			net.minecraft.world.phys.shapes.VoxelShape tShape = aBlock.defaultBlockState().getCollisionShape(aWorld, tPos);
@@ -768,7 +783,7 @@ public class WD {
 		return aWorld.getBlockState(tPos).canBeReplaced();
 	}
 
-	public static boolean set(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
+	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
 			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
@@ -790,23 +805,28 @@ public class WD {
 		return rSet;
 	}
 
-	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {
-		// было aChunk.func_150807_a(localX,y,localZ,block,meta) — neo: LevelChunk.setBlockState(BlockPos,BlockState,flags)
-		// (LevelChunk.java:270) хочет МИРОВОЙ BlockPos (маскирует &15 внутри себя, используя абсолютные координаты
-		// для heightmap/light engine) — ChunkPos.getBlockAt(localX,y,localZ) (ChunkPos.java:151) переводит локальные
-		// координаты чанка в мировые, сохраняя тот же вызывающий контракт (локальные x/z 0-15).
+	public static boolean set(ChunkAccess aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {
+		// было aChunk.func_150807_a(localX,y,localZ,block,meta) — neo: ChunkAccess.setBlockState(BlockPos,BlockState,flags)
+		// (LevelChunk.java:270 / ChunkAccess) хочет МИРОВОЙ BlockPos (маскирует &15 внутри себя, используя абсолютные
+		// координаты для heightmap/light engine) — ChunkPos.getBlockAt(localX,y,localZ) (ChunkPos.java:151) переводит
+		// локальные координаты чанка в мировые, сохраняя тот же вызывающий контракт (локальные x/z 0-15).
+		// F6-worldgen: приёмник расширен LevelChunk->ChunkAccess (worldgen пишет напрямую в генерящийся ProtoChunk/
+		// ImposterProtoChunk, не в full-чанк). setBlockState/getPos/getBlockState — все на ChunkAccess.
 		BlockPos tChunkSetPos = aChunk.getPos().getBlockAt(aX, aY, aZ);
 		boolean rSet = aChunk.setBlockState(tChunkSetPos, aBlock.defaultBlockState(), Block.UPDATE_ALL) != null;
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);
-			if (((IBlockExtendedMetaData)aBlock).getExtendedMetaData(aChunk.getLevel(), tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ()) != tNewMeta) {
-				((IBlockExtendedMetaData)aBlock).setExtendedMetaData(aChunk.getLevel(), tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ(), tNewMeta);
+			// мета-канал IBlockExtendedMetaData принимает BlockGetter (IBlockExtendedMetaData.java:28-29); сам ChunkAccess
+			// ЕСТЬ BlockGetter (ChunkAccess extends BlockGetter) → передаём чанк напрямую вместо LevelChunk-only getLevel()
+			// (у ProtoChunk getLevel() нет). TileEntity ищется через ChunkAccess.getBlockEntity(pos) — доступен на генерации.
+			if (((IBlockExtendedMetaData)aBlock).getExtendedMetaData(aChunk, tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ()) != tNewMeta) {
+				((IBlockExtendedMetaData)aBlock).setExtendedMetaData(aChunk, tChunkSetPos.getX(), tChunkSetPos.getY(), tChunkSetPos.getZ(), tNewMeta);
 				rSet = true;
 			}
 		}
 		return rSet;
 	}
-	public static boolean set(LevelChunk aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta, boolean aRemoveGrassBelow) {
+	public static boolean set(ChunkAccess aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aChunk.getBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ)).getBlock(); // было aChunk.getBlock(x,y-1,z)
 			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aChunk.setBlockState(aChunk.getPos().getBlockAt(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), Block.UPDATE_ALL); // было aChunk.func_150807_a(x,y-1,z,Blocks.DIRT,0)
@@ -814,19 +834,19 @@ public class WD {
 		return set(aChunk, aX, aY, aZ, aBlock, aMeta);
 	}
 
-	public static boolean replace(Level aWorld, int aX, int aY, int aZ, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
+	public static boolean replace(LevelAccessor aWorld, int aX, int aY, int aZ, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		if (aTargetBlock == null || aReplaceBlock == null) return F;
 		if (aReplaceBlock != block(aWorld, aX, aY, aZ)) return F;
 		if (aReplaceMeta != W && aReplaceMeta != meta(aWorld, aX, aY, aZ)) return F;
 		return set(aWorld, aX, aY, aZ, aTargetBlock, aTargetMeta, Block.UPDATE_CLIENTS, F); // было aWorld.setBlock(x,y,z,block,meta,2) — флаг 2=UPDATE_CLIENTS (Block.java:91-104); маршрут через центр set(...) — мета своих блоков (IBlockExtendedMetaData) не теряется
 	}
-	public static boolean replace(Level aWorld, BlockPos aCoords, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
+	public static boolean replace(LevelAccessor aWorld, BlockPos aCoords, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		return replace(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta);
 	}
-	public static boolean replaceAll(Level aWorld, int aX, int aY, int aZ, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
+	public static boolean replaceAll(LevelAccessor aWorld, int aX, int aY, int aZ, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		return replaceAll(aWorld, new BlockPos(aX, aY, aZ), aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta);
 	}
-	public static boolean replaceAll(Level aWorld, BlockPos aCoords, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
+	public static boolean replaceAll(LevelAccessor aWorld, BlockPos aCoords, Block aReplaceBlock, long aReplaceMeta, Block aTargetBlock, long aTargetMeta) {
 		if (!replace(aWorld, aCoords, aReplaceBlock, aReplaceMeta, aTargetBlock, aTargetMeta)) return F;
 		HashSetNoNulls<BlockPos> tSwap,
 		tDone  = new HashSetNoNulls<>(F, aCoords),
@@ -846,7 +866,7 @@ public class WD {
 		return T;
 	}
 	
-	public static boolean sign(Level aWorld, int aX, int aY, int aZ, byte aSide, long aFlags, String aLine1, String aLine2, String aLine3, String aLine4) {
+	public static boolean sign(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, long aFlags, String aLine1, String aLine2, String aLine3, String aLine4) {
 		// было aWorld.setBlock(x,y,z,Blocks.OAK_WALL_SIGN,aSide,flags) — aSide был прямой мета-ориентацией wall_sign
 		// (2-5); neo: WallSignBlock.FACING (EnumProperty<Direction>, WallSignBlock.java:30) через уже
 		// централизованный FORGE_DIR[side]->Direction (тот же массив, что используется по всему файлу).
@@ -865,8 +885,8 @@ public class WD {
 	
 	/** F-worldgen: 1.7.10 {@code World.getSeed()} -> neo только {@code ServerLevel.getSeed()}:1697 (у базового Level
 	 *  сида нет). Детерм.-per-chunk random — worldgen (сервер), где aWorld всегда ServerLevel; клиент (нет worldgen) -> 0. */
-	public static long seed(Level aWorld) {return aWorld instanceof net.minecraft.server.level.ServerLevel tSL ? tSL.getSeed() : 0L;}
-	public static Random random(Level aWorld, long aChunkX, long aChunkZ) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aChunkX >> 4, aChunkZ >> 4);}
+	public static long seed(LevelAccessor aWorld) {return aWorld instanceof net.minecraft.server.level.ServerLevel tSL ? tSL.getSeed() : 0L;}
+	public static Random random(LevelAccessor aWorld, long aChunkX, long aChunkZ) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aChunkX >> 4, aChunkZ >> 4);}
 	public static Random random(long aSeed, long aChunkX, long aChunkZ) {
 		// Seed is XOR-ed with the Dimension ID to prevent multiple Dimensions from being identical in Ore Generation.
 		// Yes that actually happened with Aromas Mining World, and resulted in a prospecting exploit.
@@ -882,7 +902,7 @@ public class WD {
 		return rRandom;
 	}
 	
-	public static int random(Level aWorld, int aX, int aY, int aZ, int aBound) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aX, aY, aZ, aBound);}
+	public static int random(LevelAccessor aWorld, int aX, int aY, int aZ, int aBound) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aX, aY, aZ, aBound);}
 	public static int random(long aSeed, int aX, int aY, int aZ, int aBound) {
 		Random rRandom = new Random(aSeed ^ aY);
 		for (int i = 0; i < 10; i++) rRandom.nextInt(0x00ffffff);
@@ -906,9 +926,9 @@ public class WD {
 	public static int evenness(int... aCoords) {int i = 0; for (int tCoord : aCoords) {i <<= 1; if (tCoord % 2 != 0) i++;} return i;}
 	
 	// было aWorld.getBlock(x,y,z)/getBlockMetadata(x,y,z)/setBlock(x,y,z,block,meta,flags) — meta через централизованный meta(...)
-	public static boolean setIfDiff(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {return (block(aWorld, aX, aY, aZ) != aBlock || meta(aWorld, aX, aY, aZ) != aMeta) && set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, F);} // было aWorld.setBlock(x,y,z,block,meta,flags) — маршрут через центр set(...)
+	public static boolean setIfDiff(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {return (block(aWorld, aX, aY, aZ) != aBlock || meta(aWorld, aX, aY, aZ) != aMeta) && set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags, F);} // было aWorld.setBlock(x,y,z,block,meta,flags) — маршрут через центр set(...)
 
-	public static boolean set(Level aWorld, int aX, int aY, int aZ, ItemStack aStack) {
+	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, ItemStack aStack) {
 		Block tBlock = ST.block(aStack);
 		if (tBlock == NB) return F;
 		if (tBlock instanceof IBlockPlacable) return ((IBlockPlacable)tBlock).placeBlock(aWorld, aX, aY, aZ, (byte)6, ST.meta_(aStack), ItemNBT.get(aStack), T, F);
@@ -916,9 +936,9 @@ public class WD {
 		return F;
 	}
 
-	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return leafdecay(aWorld, aX, aY, aZ, aBlock, F, F);}
-	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea) {return leafdecay(aWorld, aX, aY, aZ, aBlock, aOnlyTopArea, F);}
-	public static boolean leafdecay(Level aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea, boolean aTreeCapitator) {
+	public static boolean leafdecay(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return leafdecay(aWorld, aX, aY, aZ, aBlock, F, F);}
+	public static boolean leafdecay(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea) {return leafdecay(aWorld, aX, aY, aZ, aBlock, aOnlyTopArea, F);}
+	public static boolean leafdecay(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, boolean aOnlyTopArea, boolean aTreeCapitator) {
 		// F-tree: Forge Block.canSustainLeaves (блок держит листву от распада — брёвна) удалён -> neo тег
 		// BlockTags.LOGS (BlockTags.java:38; leaf-decay в neo смотрит именно логи), проверка на состоянии.
 		if (aBlock == null || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).is(net.minecraft.tags.BlockTags.LOGS)) {
@@ -939,21 +959,21 @@ public class WD {
 		return F;
 	}
 	
-	public static boolean liquid(Level aWorld, int aX, int aY, int aZ) {return liquid(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof IFluidBlock;}
 
-	public static boolean liquid_classic(Level aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid_classic(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	// F5: Forge net.minecraftforge.fluids.BlockFluidClassic удалён — модовые «классические» (бесконечный
 	// источник) жидкости в neo наследуют LiquidBlock (как ваниль). Проверки LiquidBlock достаточно 1:1.
 	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock;}
 
-	public static boolean liquid_finite(Level aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid_finite(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	// F5 impossible-1:1 (neo не имеет модели finite-fluid-блока, все LiquidBlock бесконечны): Forge net.minecraftforge.fluids.BlockFluidFinite (жидкости с конечным
 	// объёмом на блок) удалён, у neo модели «конечной» жидкости-блока нет (все LiquidBlock-стиль/бесконечные).
 	// Деградация до F (ни один блок не «finite» в модели neo) — НЕ тихо, до появления neo-аналога.
 	public static boolean liquid_finite(Block aBlock) {return F;}
 
-	public static boolean liquid_borken(Level aWorld, int aX, int aY, int aZ) {return liquid_borken(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean liquid_borken(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_borken(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_borken(Block aBlock) {return !(aBlock instanceof IItemGT) && liquid_classic(aBlock);}
 	
 	public static boolean stone(Block aBlock, short aMeta) {
@@ -963,24 +983,24 @@ public class WD {
 		return BlocksGT.stoneToNormalOres.containsKey(tStack) || BlocksGT.stoneToBrokenOres.containsKey(tStack) || BlocksGT.stoneToSmallOres.containsKey(tStack);
 	}
 	
-	public static boolean floor(Level aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean floor(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.sideSolid(aBlock, aWorld, aX, aY, aZ, FORGE_DIR[SIDE_UP]) || floor(aBlock);}
+	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ) {return floor(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean floor(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.sideSolid(aBlock, aWorld, aX, aY, aZ, FORGE_DIR[SIDE_UP]) || floor(aBlock);}
 	public static boolean floor(Block aBlock) {return WD.opaque(aBlock) || aBlock instanceof SlabBlock || aBlock instanceof StairBlock || aBlock instanceof BlockMetaType;}
 	
 	@SuppressWarnings("unlikely-arg-type")
 	public static boolean ore(Block aBlock, short aMeta) {return (aBlock instanceof IBlockPlacable && (BlocksGT.stoneToBrokenOres.containsValue(aBlock) || BlocksGT.stoneToNormalOres.containsValue(aBlock) || BlocksGT.stoneToSmallOres.containsValue(aBlock)) || OM.prefixcontains(ST.make(aBlock, 1, aMeta), TD.Prefix.ORE));}
 	public static boolean ore_stone(Block aBlock, short aMeta) {return ore(aBlock, aMeta) || stone(aBlock, aMeta);}
 	
-	public static boolean visOcc(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return visOpq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && visOpq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && visOpq(aWorld, aX, aY+1, aZ, T, aDefault) && visOpq(aWorld, aX, aY-1, aZ, T, aDefault) && visOpq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && visOpq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean visOpq(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.isLoaded(tP) ? visOpq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
+	public static boolean visOcc(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return visOpq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && visOpq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && visOpq(aWorld, aX, aY+1, aZ, T, aDefault) && visOpq(aWorld, aX, aY-1, aZ, T, aDefault) && visOpq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && visOpq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
+	public static boolean visOpq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? visOpq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
 	public static boolean visOpq(Block aBlock) {return WD.opaque(aBlock) || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);}
 	
-	public static boolean occ(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return opq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && opq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && opq(aWorld, aX, aY+1, aZ, T, aDefault) && opq(aWorld, aX, aY-1, aZ, T, aDefault) && opq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && opq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
-	public static boolean opq(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.isLoaded(tP) ? opq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
+	public static boolean occ(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return opq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && opq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && opq(aWorld, aX, aY+1, aZ, T, aDefault) && opq(aWorld, aX, aY-1, aZ, T, aDefault) && opq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && opq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
+	public static boolean opq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? opq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
 	public static boolean opq(Block aBlock) {return WD.opaque(aBlock) && !(aBlock instanceof LeavesBlock);}
 	
-	public static boolean air(Level aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean air(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !WD.opaque(aBlock) && te(aWorld, aX, aY, aZ, T) instanceof INode));} // было aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
+	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ) {return air(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean air(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir() && !(MD.TC.mLoaded && !WD.opaque(aBlock) && te(aWorld, aX, aY, aZ, T) instanceof INode));} // было aBlock.isAir(world,x,y,z) — BlockBehaviour.java:575 state.isAir()
 	public static boolean air(Block aBlock) {return aBlock == NB;}
 	/** BlockGetter-вариант (без Level-only TC/INode-проверки): чистый air-тест для блок-физики (canDisplace и т.п.). */
 	public static boolean air(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock == NB || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir();}
@@ -999,13 +1019,13 @@ public class WD {
 	public static boolean anywater(BlockGetter aWorld, int aX, int aY, int aZ, Block aBlock) {return aBlock instanceof BlockWaterlike || water(aWorld, aX, aY, aZ, aBlock) || waterstream(aBlock);}
 	public static boolean anywater(Block aBlock) {return aBlock instanceof BlockWaterlike || water(aBlock) || waterstream(aBlock);}
 	
-	public static boolean bedrock(Level aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean bedrock(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return bedrock(aBlock);}
+	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {return bedrock(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean bedrock(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return bedrock(aBlock);}
 	public static boolean bedrock(Block aBlock) {return aBlock == Blocks.BEDROCK || IL.BTL_Bedrock.equal(aBlock);}
 	
-	public static boolean grass(Level aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return grass(block(aWorld, aX, aY, aZ, aLoadUnloadedChunks), meta(aWorld, aX, aY, aZ, aLoadUnloadedChunks));}
-	public static boolean grass(Level aWorld, int aX, int aY, int aZ) {return grass(block(aWorld, aX, aY, aZ), meta(aWorld, aX, aY, aZ));}
-	public static boolean grass(Level aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta) {return grass(aBlock, aMeta);}
+	public static boolean grass(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return grass(block(aWorld, aX, aY, aZ, aLoadUnloadedChunks), meta(aWorld, aX, aY, aZ, aLoadUnloadedChunks));}
+	public static boolean grass(LevelAccessor aWorld, int aX, int aY, int aZ) {return grass(block(aWorld, aX, aY, aZ), meta(aWorld, aX, aY, aZ));}
+	public static boolean grass(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta) {return grass(aBlock, aMeta);}
 	public static boolean grass(Block aBlock, long aMeta) {
 		if (aBlock == Blocks.DEAD_BUSH) return T;
 		if (aBlock == Blocks.SUNFLOWER)  return aMeta ==  2 || aMeta ==  3;
@@ -1013,34 +1033,34 @@ public class WD {
 		return IL.AETHER_Tall_Grass.equal(aBlock);
 	}
 	
-	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean irrelevant(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
+	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ) {return irrelevant(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean irrelevant(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock == Blocks.VINE || aBlock == Blocks.SNOW || aBlock == Blocks.FIRE || grass(aWorld, aX, aY, aZ) || anywater(aBlock);}
 	
-	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean easyRep(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).canBeReplaced();}
+	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ) {return easyRep(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean easyRep(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return air(aWorld, aX, aY, aZ, aBlock) || aBlock instanceof BushBlock || aBlock instanceof SnowLayerBlock || aBlock instanceof FireBlock || WD.leaves(aBlock, aWorld, aX, aY, aZ) || aWorld.getBlockState(new BlockPos(aX, aY, aZ)).canBeReplaced();}
 	
 	// было aWorld.getBiomeGenForCoords(x,z) — LevelReader.getBiome(BlockPos) (LevelReader.java:42); F6-центр
 	// BiomeNameSet.contains(Holder<Biome>) резолвит идентичность сам (unwrapKey().identifier()), сырой
 	// .value().biomeName (мёртвое 1.7.10-поле) больше не нужен — gregapi/code/BiomeNameSet.java.
-	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
-	public static boolean infiniteWater(Level aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
+	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ              ) {int tLevel = waterLevel(aWorld); return                                                                                       UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ)));}
+	public static boolean infiniteWater(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {int tLevel = waterLevel(aWorld); return waterstream(aBlock) || ((aBlock == Blocks.WATER || aBlock == Blocks.WATER) && UT.Code.inside(tLevel-15, tLevel, aY) && BIOMES_RIVER_LAKE.contains(aWorld.getBiome(new BlockPos(aX, aY, aZ))));}
 	
-	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ) {return hasCollide(aWorld, aX, aY, aZ, aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	// было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null — BlockState.getCollisionShape(level,pos).isEmpty()
 	// перевёрнуто (BlockBehaviour.java:674; VoxelShape.isEmpty(), VoxelShape.java:73); isOpaqueCube() не тронут.
-	public static boolean hasCollide(Level aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.opaque(aBlock) || !aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getCollisionShape(aWorld, new BlockPos(aX, aY, aZ)).isEmpty();}
+	public static boolean hasCollide(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock) {return WD.opaque(aBlock) || !aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getCollisionShape(aWorld, new BlockPos(aX, aY, aZ)).isEmpty();}
 
-	public static boolean hasCollide(Level aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, aWorld.getBlockState(aCoords).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean hasCollide(Level aWorld, BlockPos aCoords, Block aBlock) {return WD.opaque(aBlock) || !aWorld.getBlockState(aCoords).getCollisionShape(aWorld, aCoords).isEmpty();} // было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null
+	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords) {return hasCollide(aWorld, aCoords, aWorld.getBlockState(aCoords).getBlock());} // было aWorld.getBlock(x,y,z)
+	public static boolean hasCollide(LevelAccessor aWorld, BlockPos aCoords, Block aBlock) {return WD.opaque(aBlock) || !aWorld.getBlockState(aCoords).getCollisionShape(aWorld, aCoords).isEmpty();} // было aBlock.getCollisionBoundingBoxFromPool(world,x,y,z)!=null
 	
-	public static boolean flaming(Level aWorld, int aX, int aY, int aZ) {return block(aWorld, aX, aY, aZ, F) instanceof FireBlock;}
-	public static boolean burning(Level aWorld, int aX, int aY, int aZ) {return flaming(aWorld, aX, aY, aZ) || flaming(aWorld, aX+1, aY, aZ) || flaming(aWorld, aX-1, aY, aZ) || flaming(aWorld, aX, aY+1, aZ) || flaming(aWorld, aX, aY-1, aZ) || flaming(aWorld, aX, aY, aZ+1) || flaming(aWorld, aX, aY, aZ-1);}
+	public static boolean flaming(LevelAccessor aWorld, int aX, int aY, int aZ) {return block(aWorld, aX, aY, aZ, F) instanceof FireBlock;}
+	public static boolean burning(LevelAccessor aWorld, int aX, int aY, int aZ) {return flaming(aWorld, aX, aY, aZ) || flaming(aWorld, aX+1, aY, aZ) || flaming(aWorld, aX-1, aY, aZ) || flaming(aWorld, aX, aY+1, aZ) || flaming(aWorld, aX, aY-1, aZ) || flaming(aWorld, aX, aY, aZ+1) || flaming(aWorld, aX, aY, aZ-1);}
 	
-	public static void burn(Level aWorld, BlockPos aCoords, boolean aReplaceCenter, boolean aCheckFlammability) {for (byte tSide : aReplaceCenter?ALL_SIDES_MIDDLE_UP:ALL_SIDES_VALID) fire(aWorld, aCoords.getX()+OFFX[tSide], aCoords.getY()+OFFY[tSide], aCoords.getZ()+OFFZ[tSide], aCheckFlammability);}
-	public static void burn(Level aWorld, int aX, int aY, int aZ  , boolean aReplaceCenter, boolean aCheckFlammability) {for (byte tSide : aReplaceCenter?ALL_SIDES_MIDDLE_UP:ALL_SIDES_VALID) fire(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], aCheckFlammability);}
+	public static void burn(LevelAccessor aWorld, BlockPos aCoords, boolean aReplaceCenter, boolean aCheckFlammability) {for (byte tSide : aReplaceCenter?ALL_SIDES_MIDDLE_UP:ALL_SIDES_VALID) fire(aWorld, aCoords.getX()+OFFX[tSide], aCoords.getY()+OFFY[tSide], aCoords.getZ()+OFFZ[tSide], aCheckFlammability);}
+	public static void burn(LevelAccessor aWorld, int aX, int aY, int aZ  , boolean aReplaceCenter, boolean aCheckFlammability) {for (byte tSide : aReplaceCenter?ALL_SIDES_MIDDLE_UP:ALL_SIDES_VALID) fire(aWorld, aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide], aCheckFlammability);}
 	
-	public static boolean fire(Level aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aCheckFlammability);}
-	public static boolean fire(Level aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
+	public static boolean fire(LevelAccessor aWorld, BlockPos aCoords, boolean aCheckFlammability) {return fire(aWorld, aCoords.getX(), aCoords.getY(), aCoords.getZ(), aCheckFlammability);}
+	public static boolean fire(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aCheckFlammability) {
 		BlockPos tFirePos = new BlockPos(aX, aY, aZ);
 		Block tBlock = aWorld.getBlockState(tFirePos).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (WD.getMaterial(tBlock) == Material.lava || WD.getMaterial(tBlock) == Material.fire) return F;
@@ -1066,7 +1086,7 @@ public class WD {
 		return F;
 	}
 	
-	public static boolean oreGenReplaceable(Level aWorld, int aX, int aY, int aZ, boolean aAllowAir) {
+	public static boolean oreGenReplaceable(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aAllowAir) {
 		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return aAllowAir;
 		byte aMeta = meta(aWorld, aX, aY, aZ); // было (byte)WD.meta(aWorld, x,y,z) — централизованный meta(...), МОДЕЛЬ МЕТЫ п.4
@@ -1080,11 +1100,11 @@ public class WD {
 		return F;
 	}
 	
-	public static boolean setOre(Level aWorld, int aX, int aY, int aZ, OreDictMaterial aMaterial) {
+	public static boolean setOre(LevelAccessor aWorld, int aX, int aY, int aZ, OreDictMaterial aMaterial) {
 		return aMaterial != null && setOre(aWorld, aX, aY, aZ, aMaterial.mID);
 	}
 	
-	public static boolean setOre(Level aWorld, int aX, int aY, int aZ, short aID) {
+	public static boolean setOre(LevelAccessor aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
 		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB) return F;
@@ -1101,11 +1121,11 @@ public class WD {
 		return tBlock != null && tBlock.placeBlock(aWorld, aX, aY, aZ, (byte)6, aID, null, F, T);
 	}
 	
-	public static boolean setSmallOre(Level aWorld, int aX, int aY, int aZ, OreDictMaterial aMaterial) {
+	public static boolean setSmallOre(LevelAccessor aWorld, int aX, int aY, int aZ, OreDictMaterial aMaterial) {
 		return aMaterial != null && setSmallOre(aWorld, aX, aY, aZ, aMaterial.mID);
 	}
 	
-	public static boolean setSmallOre(Level aWorld, int aX, int aY, int aZ, short aID) {
+	public static boolean setSmallOre(LevelAccessor aWorld, int aX, int aY, int aZ, short aID) {
 		if (aID <= 0 && aID == W) return F;
 		Block aBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); // было aWorld.getBlock(x,y,z)
 		if (aBlock == NB || WD.bedrock(aBlock)) return F;
@@ -1123,10 +1143,10 @@ public class WD {
 	}
 	
 	/** Removes Bedrock from that Position and replaces it with regular Stone of the region. */
-	public static boolean removeBedrock(Level aWorld, int aX, int aY, int aZ) {
+	public static boolean removeBedrock(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		// было aWorld.getBlock(x,y,z) + WD.dimensionId(aWorld)==DIM_NETHER — Level.dimension()==Level.NETHER,
 		// тот же приём F6, что уже применён у dimOverworldLike/dimPlanet выше в этом файле.
-		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(), tStone = (aWorld.dimension() == Level.NETHER ? Blocks.NETHERRACK : Blocks.STONE);
+		Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(), tStone = (dimKey(aWorld) == Level.NETHER ? Blocks.NETHERRACK : Blocks.STONE);
 
 		if (tBlock == NB || bedrock(tBlock)) {
 			for (byte tSide : ALL_SIDES_BUT_BOTTOM) for (int i = 1; i < 7; i++) {

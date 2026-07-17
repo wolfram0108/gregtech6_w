@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen.center;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -51,12 +53,12 @@ public class WorldgenBeacon extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean enabled(Level aWorld, int aDimType) {
+	public boolean enabled(WorldGenLevel aWorld, int aDimType) {
 		return GENERATE_BEACON && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if ((aMinX != -16 && aMinX != 0) || (aMinZ == -16 && aMinZ == 0)) return F;
 		if (!GENERATE_STREETS) {
 			for (int i = -5; i < 5; i++) for (int j = -5; j < 5; j++) WD.set(aWorld, i, mHeight+1, j, Blocks.IRON_BLOCK, 0, 0);

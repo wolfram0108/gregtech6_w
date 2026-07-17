@@ -82,7 +82,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	// было setTickRandomly(true) — см. комментарий в конструкторе выше.
 	@Override protected boolean isRandomlyTicking(BlockState aState) {return T;}
 
-	public abstract boolean grow(Level aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom);
+	public abstract boolean grow(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aMeta, Random aRandom);
 
 	// neo BonemealableBlock.performBonemeal — маршрут в GT6 grow() (централизовано в базе сапплингов, покрывает AB/CD).
 	@Override public void performBonemeal(net.minecraft.server.level.ServerLevel aWorld, net.minecraft.util.RandomSource aRandom, BlockPos aPos, BlockState aState) {
@@ -145,18 +145,18 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 		return !net.neoforged.neoforge.event.EventHooks.fireBlockGrowFeature(aWorld, aWorld.getRandom(), new net.minecraft.core.BlockPos(aX, aY, aZ), null).isCanceled() && grow(aWorld, aX, aY, aZ, aMeta, aRandom);
 	}
 	
-	public int getMaxHeight(Level aWorld, int aX, int aY, int aZ, int aMaxTreeHeight) {
+	public int getMaxHeight(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, int aMaxTreeHeight) {
 		aMaxTreeHeight--;
 		int rMaxHeight = 0;
 		while (rMaxHeight++ < aMaxTreeHeight) if (aY+rMaxHeight >= aWorld.getHeight() || !canPlaceTree(aWorld, aX, aY+rMaxHeight, aZ)) return rMaxHeight-1;
 		return rMaxHeight;
 	}
 	
-	public boolean placeTree(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
+	public boolean placeTree(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta) {
 		return canPlaceTree(aWorld, aX, aY, aZ) && WD.set(aWorld, aX, aY, aZ, aBlock, aMeta, 3);
 	}
 	
-	public boolean canPlaceTree(Level aWorld, int aX, int aY, int aZ) {
+	public boolean canPlaceTree(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ) {
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		// было BlockTallGrass/BlockLeavesBase (1.7.10 vanilla generic-базы) -> TallGrassBlock [TallGrassBlock.java:15,
 		// Blocks.java:707-732 - SHORT_GRASS/FERN оба instanceof TallGrassBlock, тот же класс что раньше нёс оба meta-
@@ -168,7 +168,7 @@ public abstract class BlockBaseSapling extends BlockBaseMeta implements IPlantab
 	// такой generic-точки не имеет. Подключено instanceof-диспетчером по ВСЕМ GT6-переопределениям (BlockBase/PrefixBlock/
 	// BlockBaseRail/BlockBaseFlower/MultiTileEntityBlock — полный набор, грепом "canBeReplacedByLeaves" по gregapi/block),
 	// дефолт F = vanilla Block-дефолт. Не заглушка: реальная GT6-логика вызывается, vanilla-блоки берут корректный дефолт.
-	private static boolean canBeReplacedByLeavesOf(Block aBlock, Level aWorld, int aX, int aY, int aZ) {
+	private static boolean canBeReplacedByLeavesOf(Block aBlock, net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ) {
 		if (aBlock instanceof gregapi.block.BlockBase) return ((gregapi.block.BlockBase)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.prefixblock.PrefixBlock) return ((gregapi.block.prefixblock.PrefixBlock)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);
 		if (aBlock instanceof gregapi.block.misc.BlockBaseRail) return ((gregapi.block.misc.BlockBaseRail)aBlock).canBeReplacedByLeaves(aWorld, aX, aY, aZ);

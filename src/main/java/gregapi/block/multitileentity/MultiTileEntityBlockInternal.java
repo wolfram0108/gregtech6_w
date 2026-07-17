@@ -96,7 +96,11 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	public final String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mMultiTileEntityRegistry.mNameInternal);}
 	
 	@Override
-	public boolean placeBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+	public boolean placeBlock(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+		// F6-worldgen: приёмник расширен до LevelAccessor (контракт IBlockPlacable). Блок+BE ставятся через WD.set/WD.te (оба
+		// на LevelAccessor: setBlock — LevelWriter, BE — ChunkAccess.setBlockEntity при worldgen) — MTE (флюид-спринги, резин-холы)
+		// ГЕНЕРИРУЮТСЯ worldgen'ом, значит размещение обязано работать и на WorldGenLevel, а не только gameplay-Level. Level-специфичная
+		// РЕАКТИВНОСТЬ (causeMachineUpdate/updateNeighborsAt — уведомление машин/соседей) при worldgen не нужна и невозможна → под гейтом instanceof Level.
 		MultiTileEntityContainer aMTEContainer = mMultiTileEntityRegistry.getNewTileEntityContainer(aWorld, aX, aY, aZ, aMetaData, aNBT);
 		if (aMTEContainer == null) return F;
 		
@@ -124,18 +128,20 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		
 		
 		try {
-			if (aMTEContainer.mTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData) {
-				if (((IMTE_HasMultiBlockMachineRelevantData)aMTEContainer.mTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(aWorld, aX, aY, aZ, aMTEContainer.mBlock, aMTEContainer.mBlockMetaData, F);
+			// causeMachineUpdate — Level-only реактивность (уведомление многоблок-машин); при worldgen (не-Level) пропускаем.
+			if (aWorld instanceof Level tLevelMU && aMTEContainer.mTileEntity instanceof IMTE_HasMultiBlockMachineRelevantData) {
+				if (((IMTE_HasMultiBlockMachineRelevantData)aMTEContainer.mTileEntity).hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(tLevelMU, aX, aY, aZ, aMTEContainer.mBlock, aMTEContainer.mBlockMetaData, F);
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {
-			if (!aWorld.isClientSide() && aCauseBlockUpdates) {
+			// updateNeighborsAt — Level-only; при worldgen (не-Level) уведомление соседей не нужно/невозможно (регион ещё генерится).
+			if (aWorld instanceof Level tLevelNU && !tLevelNU.isClientSide() && aCauseBlockUpdates) {
 				// было World.notifyBlockChange(x,y,z,Block) -> тело делегировало notifyBlocksOfNeighborChange (recompSrc
 				// World.java:695-698) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338], тот же
 				// форс-эквивалент, что уже принят для соседнего func_147453_f ниже (см. decisions/DEFERRED-LEDGER.md §B).
-				aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock, null);
+				tLevelNU.updateNeighborsAt(new BlockPos(aX, aY, aZ), tReplacedBlock, null);
 				// было World.func_147453_f(x,y,z,Block) -> Level.updateNeighborsAt(BlockPos,Block,Orientation) [Level.java:338]
-				aWorld.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock, null);
+				tLevelNU.updateNeighborsAt(new BlockPos(aX, aY, aZ), aMTEContainer.mBlock, null);
 			}
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {

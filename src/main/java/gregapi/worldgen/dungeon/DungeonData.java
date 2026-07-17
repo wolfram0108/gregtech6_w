@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen.dungeon;
+import net.minecraft.world.level.WorldGenLevel;
 import gregapi.util.WD;
 
 import gregapi.block.IBlockPlacable;
@@ -66,8 +67,8 @@ public class DungeonData extends WorldAndCoords {
 	public final CompoundTag mCoin;
 	public final Random mRandom;
 	
-	public DungeonData(Level aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<BlockPos> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, CompoundTag aCoin) {
-		super(aWorld, aX, aY, aZ);
+	public DungeonData(WorldGenLevel aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<BlockPos> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, CompoundTag aCoin) {
+		super(aWorld.getLevel(), aX, aY, aZ); // WorldAndCoords держит полный Level (общая gameplay-база); worldgen-приёмник WorldGenLevel -> итоговый ServerLevel через getLevel(). Данжи — Level-based (отложенная подсистема).
 		mStructure = aStructure;
 		mPrimary = aPrimaryBlock;
 		mSecondary = aSecondaryBlock;

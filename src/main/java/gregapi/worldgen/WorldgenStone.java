@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.WorldGenLevel;
 import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
@@ -44,7 +45,7 @@ public class WorldgenStone extends WorldgenBlob {
 	}
 	
 	@Override
-	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom) {
 		Block tTargetedBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tTargetedBlock == NB || WD.air(aWorld, aX, aY, aZ, tTargetedBlock)) return mAllowToGenerateinVoid && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		if (tTargetedBlock instanceof IBlockExtendedMetaData) return overrideBlock((IBlockExtendedMetaData)tTargetedBlock, aWorld, aX, aY, aZ);
@@ -52,7 +53,7 @@ public class WorldgenStone extends WorldgenBlob {
 	}
 	
 	@SuppressWarnings("unlikely-arg-type")
-	private boolean overrideBlock(IBlockExtendedMetaData aBlock, Level aWorld, int aX, int aY, int aZ) {
+	private boolean overrideBlock(IBlockExtendedMetaData aBlock, WorldGenLevel aWorld, int aX, int aY, int aZ) {
 		if (!BlocksGT.stoneOverridable.contains(aBlock)) return F;
 		short aID = aBlock.getExtendedMetaData(aWorld, aX, aY, aZ);
 		IBlockPlacable tBlock = null;

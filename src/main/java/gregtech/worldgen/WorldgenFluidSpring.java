@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.data.IL;
 import gregapi.util.ST;
@@ -58,7 +60,7 @@ public class WorldgenFluidSpring extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (GENERATING_SPECIAL || !WorldgenOresBedrock.GENERATED_NO_BEDROCK_ORE || !WorldgenOresBedrock.CAN_GENERATE_BEDROCK_ORE || aRandom.nextInt(mProbability) != 0) return F;
 		
 		WorldgenOresBedrock.CAN_GENERATE_BEDROCK_ORE = F;

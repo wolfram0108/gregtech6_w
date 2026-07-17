@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen.tree;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -45,14 +47,14 @@ public class WorldgenLogDry extends WorldgenOnSurface {
 	}
 	
 	@Override
-	public int canGenerate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public int canGenerate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return 0;
 		for (String tName : aBiomeNames) if (BIOMES_PLAINS.contains(tName) || BIOMES_WOODS.contains(tName) || BIOMES_SAVANNA.contains(tName) || BIOMES_DESERT.contains(tName) || BIOMES_MESA.contains(tName) || BIOMES_WASTELANDS.contains(tName)) return mAmount;
 		return 0;
 	}
 	
 	@Override
-	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
+	public boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom, Block aContact) {
 		if (!BlocksGT.plantableGreens.contains(aContact) && aContact != Blocks.SAND) return F;
 		if (!WD.air(aWorld, aX, aY+1, aZ)) return F;
 		switch(aRandom.nextInt(3)) {

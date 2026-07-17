@@ -18,6 +18,8 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -43,12 +45,12 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class GT6WorldGenerator {
 	public static class WorldGenContainer implements Runnable {
 		public final int mMinX, mMinZ, mMaxX, mMaxZ, mDimType;
-		public final Level mWorld;
+		public final WorldGenLevel mWorld;
 		public final Random mRandom;
 		public final List<WorldgenObject> mGenNormal;
 		public final List<WorldgenObject> mGenLargeOres;
 		
-		public WorldGenContainer(List<WorldgenObject> aGenNormal, List<WorldgenObject> aGenLargeOres, int aDimType, Level aWorld, int aX, int aZ) {
+		public WorldGenContainer(List<WorldgenObject> aGenNormal, List<WorldgenObject> aGenLargeOres, int aDimType, WorldGenLevel aWorld, int aX, int aZ) {
 			mMinX = aX; mMinZ = aZ; mMaxX = aX + 15; mMaxZ = aZ + 15;
 			mDimType = aDimType;
 			mWorld = aWorld;
@@ -63,7 +65,7 @@ public class GT6WorldGenerator {
 				// F6: было `mWorld.getChunkFromBlockCoords(blockX,blockZ)` (взятие чанка по блок-координатам) —
 				// удалено; реальный neo-эквивалент `Level.getChunk(chunkX,chunkZ)` берёт ЧАНКОВЫЕ координаты
 				// (Level.java:202-203), поэтому блок-координаты сдвинуты `>>4`, как делал сам старый метод внутри.
-				LevelChunk tChunk = mWorld.getChunk((mMinX+7) >> 4, (mMinZ+7) >> 4);
+				ChunkAccess tChunk = mWorld.getChunk((mMinX+7) >> 4, (mMinZ+7) >> 4);
 				if (tChunk == null) return;
 				Biome[][] tBiomes = new Biome[16][16];
 				BiomeNameSet tBiomeNames = new BiomeNameSet();
@@ -141,7 +143,7 @@ public class GT6WorldGenerator {
 				// (удалён). Реальные neo-эквиваленты: `EntityGetter.getEntitiesOfClass(Class,AABB)`
 				// (EntityGetter.java:50, уже без unchecked-каста), конструктор `AABB(double x6)` (AABB.java:23),
 				// `Entity.discard()` (Entity.java:409, `remove(RemovalReason.DISCARDED)`).
-				for (ItemEntity tEntity : mWorld.getEntitiesOfClass(ItemEntity.class, new AABB(mMinX-32, 0, mMinZ-32, mMinX+48, 256, mMinZ+48))) tEntity.discard();
+				for (ItemEntity tEntity : mWorld.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(mMinX-32, 0, mMinZ-32, mMinX+48, 256, mMinZ+48))) tEntity.discard();
 				// F6 impossible-1:1 (поле удалено; neo Heightmap пересчитывает сам, ручной сброс не нужен): было `Arrays.fill(tChunk.precipitationHeightMap,-999)` —
 				// обходной 1.7.10-хак против убийства снегом пеньков деревьев. Поле удалено, современный
 				// Heightmap-механизм (`net.minecraft.world.level.levelgen.Heightmap`) считается движком заново
@@ -158,15 +160,15 @@ public class GT6WorldGenerator {
 	private static boolean LOCK = F;
 	public static boolean PFAA = F, TFC = F;
 	
-	public static void generate(Level aWorld, int aX, int aZ, boolean aGalactiCraft) {
+	public static void generate(WorldGenLevel aWorld, int aX, int aZ, boolean aGalactiCraft) {
 		// F6: было `switch(WD.dimensionId(aWorld)) {case -2147483648: return; case DIM_OVERWORLD: ...}` —
 		// `WorldProvider.dimensionId` удалён, у измерения в neo нет числового id вообще (см. javadoc
 		// NoiseGenerator.java). Ветка `case -2147483648` (Integer.MIN_VALUE) была сигнальным значением "мир
-		// недогружен/провайдер не готов" — в neo `aWorld.dimension()` для валидного `Level`-объекта всегда
+		// недогружен/провайдер не готов" — в neo `aWorld.getLevel().dimension()` для валидного `Level`-объекта всегда
 		// возвращает настоящий `ResourceKey<Level>`, такого сигнального состояния не бывает — ветка не имеет
 		// аналога (см. F6-примечание ниже). Три ванильных ветки сверены на реальные `Level.OVERWORLD/NETHER/END`
 		// (Level.java:95-97).
-		ResourceKey<Level> tDim = aWorld.dimension();
+		ResourceKey<Level> tDim = aWorld.getLevel().dimension();
 		if (tDim == Level.OVERWORLD) {generate(new WorldGenContainer(TFC ? GEN_TFC : PFAA ? GEN_PFAA : GENERATE_STONE ? GEN_GT : GEN_OVERWORLD, TFC ? ORE_TFC : PFAA ? ORE_PFAA : GENERATE_STONE ? null : ORE_OVERWORLD, DIM_OVERWORLD, aWorld, aX, aZ)); return;}
 		if (tDim == Level.NETHER   ) {generate(new WorldGenContainer(GEN_NETHER, ORE_NETHER, DIM_NETHER, aWorld, aX, aZ)); return;}
 		if (tDim == Level.END      ) {generate(new WorldGenContainer(GEN_END   , ORE_END   , DIM_END   , aWorld, aX, aZ)); return;}

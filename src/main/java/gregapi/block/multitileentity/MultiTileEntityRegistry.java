@@ -259,7 +259,7 @@ public class MultiTileEntityRegistry {
 	public MultiTileEntityContainer getNewTileEntityContainer(Level aWorld, int aX, int aY, int aZ, ItemStack aStack)           {return getNewTileEntityContainer(aWorld, aX, aY, aZ, ST.meta_(aStack), ItemNBT.get(aStack));}
 	
 	public MultiTileEntityContainer getNewTileEntityContainer(int aID, CompoundTag aNBT) {return getNewTileEntityContainer(null, 0, 0, 0, aID, aNBT);}
-	public MultiTileEntityContainer getNewTileEntityContainer(Level aWorld, int aX, int aY, int aZ, int aID, CompoundTag aNBT) {
+	public MultiTileEntityContainer getNewTileEntityContainer(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, int aID, CompoundTag aNBT) {
 		MultiTileEntityClassContainer tClass = mRegistry.get((short)aID);
 		if (tClass == null || tClass.mBlock == null) return null;
 		// F-tileentity-construction (ADR, placement-pos): при МИРОВОЙ постановке (aWorld!=null) передаём реальную (aX,aY,aZ) в
@@ -274,8 +274,11 @@ public class MultiTileEntityRegistry {
 		finally {gregapi.tileentity.base.TileEntityBase01Root.PENDING_WORLD_POS.remove();}
 		MultiTileEntityContainer rContainer = new MultiTileEntityContainer(tTileEntity, tClass.mBlock, tClass.mBlockMetaData);
 		if (rContainer.mTileEntity == null) return null;
-		// было TileEntity.setWorldObj(World) (1.7.10, recompSrc TileEntity.java:70) -> BlockEntity.setLevel(Level) [BlockEntity.java:93]
-		rContainer.mTileEntity.setLevel(aWorld);
+		// было TileEntity.setWorldObj(World) (1.7.10, recompSrc TileEntity.java:70) -> BlockEntity.setLevel(Level) [BlockEntity.java:93].
+		// F6-worldgen: приёмник расширен до LevelAccessor; BE.setLevel хочет полный Level → на worldgen (WorldGenLevel/
+		// ServerLevelAccessor) берём итоговый ServerLevel через getLevel() (BE к нему и привяжется при финализации чанка);
+		// на gameplay это сам Level; экзотический LevelAccessor без обоих → null (как aWorld==null: контейнер без мира).
+		rContainer.mTileEntity.setLevel(aWorld instanceof Level tLvl ? tLvl : aWorld instanceof net.minecraft.world.level.ServerLevelAccessor tSLA ? tSLA.getLevel() : null);
 		// F-registry-id (КОРНЕВОЙ фикс load-реконструкции): registry-ID тайла = ITEM-id блок-итема, т.к. getRegistry(int) матчит его как
 		// `ST.id(ST.item(reg.mBlock)) == id` (см. getRegistry). В 1.7.10 block-id==item-id (общее id-пространство, ItemBlock делил id блока) —
 		// там ST.id(mBlock) годился. В neo BLOCK и ITEM — РАЗНЫЕ реестры с независимыми id, а `ST.id(mBlock)` резолвится в overload id(Block)=

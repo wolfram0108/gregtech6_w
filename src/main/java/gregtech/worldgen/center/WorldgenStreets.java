@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen.center;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.code.HashSetNoNulls;
@@ -58,12 +60,12 @@ public class WorldgenStreets extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean enabled(Level aWorld, int aDimType) {
+	public boolean enabled(WorldGenLevel aWorld, int aDimType) {
 		return GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (aMinX == -16 || aMinX == 0) {
 			if (aMinZ == -16 || aMinZ == 0) {
 				for (int i = -32; i < 32; i++) for (int j = -32; j < 32; j++) {
@@ -415,7 +417,7 @@ public class WorldgenStreets extends WorldgenObject {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public final boolean generateRoadX(Level aWorld, int aMinZ, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
+	public final boolean generateRoadX(WorldGenLevel aWorld, int aMinZ, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
 		for (int i = 0; i < 16; i++) {
 			if (aLand) {
 				for (int j = mHeight+1; j > 0; j--) if (!WD.opq(aWorld, -13, j, aMinZ+i, T, T)) WD.set(aWorld, -13, j, aMinZ+i, Blocks.GRAVEL, 1, 0, T); else break;
@@ -652,7 +654,7 @@ public class WorldgenStreets extends WorldgenObject {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public final boolean generateRoadZ(Level aWorld, int aMinX, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
+	public final boolean generateRoadZ(WorldGenLevel aWorld, int aMinX, boolean aLand, boolean aKillSky, boolean aTunnel, boolean aBridge, boolean aSideWalls) {
 		for (int i = 0; i < 16; i++) {
 			if (aLand) {
 				for (int j = mHeight+1; j > 0; j--) if (!WD.opq(aWorld, aMinX+i, j, -13, T, T)) WD.set(aWorld, aMinX+i, j, -13, Blocks.GRAVEL, 1, 0, T); else break;

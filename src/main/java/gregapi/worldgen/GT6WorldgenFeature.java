@@ -164,24 +164,23 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	}
 
 	/**
-	 * Диспетчер-Feature (`decisions/F6-worldgen.md` §4).
+	 * Диспетчер-Feature (`decisions/F6-worldgen.md` §4) — ЧИСТАЯ АРХИТЕКТУРА (2026-07-17).
 	 *
-	 * ⛔ F6-WORLDGEN DEADLOCK (обезврежено, ВРЕМЕННО no-op — 2026-07-16): {@link GT6WorldGenerator} — код 1.7.10,
-	 * который во время placement фичи зовёт {@code Level.getChunk(cx,cz)} на {@code ServerLevel} (GT6WorldGenerator:66)
-	 * для ТЕКУЩЕГО (ещё генерируемого) чанка. neo staged async chunk-gen: {@code ServerLevel.getChunk} форсирует статус
-	 * FULL и делает {@code CompletableFuture.join} → чанк ждёт САМ СЕБЯ → вечный DEADLOCK worldgen-потока → Server thread
-	 * виснет на {@code ServerChunkCache.getChunk} → вход в мир НАВСЕГДА зависает (пойман jstack'ом зависшего клиента).
-	 * Датаген инжектит фичу в биомы (biome_modifier), поэтому она реально бежала и вешала мир.
+	 * <p>{@link GT6WorldGenerator} и вся цепочка {@link WorldgenObject}-подклассов переведены с {@code Level} на
+	 * {@code WorldGenLevel}/{@code LevelAccessor} (централизованно через god-класс {@code WD} — как и у Грегориуса,
+	 * в одном месте). Благодаря этому генерация идёт ПРЯМО в стадии FEATURES по {@code context.level()}
+	 * ({@code WorldGenRegion}: доступ к центральному чанку + уже-загруженным соседям, {@code getChunk}/{@code setBlock}
+	 * БЕЗ форс-генерации/{@code CompletableFuture.join}).
 	 *
-	 * ПРАВИЛЬНЫЙ ФИКС (отдельный F6-порт): перевести {@link GT6WorldGenerator}+все {@code WorldgenObject} с {@code Level}
-	 * на {@code WorldGenLevel}/{@code LevelAccessor} ({@code context.level()}) — тогда {@code getChunk}/{@code setBlock}
-	 * идут через {@code WorldGenRegion} (кэш текущий+соседи, БЕЗ форс-генерации/join). До этого — no-op, чтобы мод был
-	 * запускаем/тестируем (руды GT6 пока не спавнятся; контролируемая, видимая отложенность, не свалка).
+	 * <p>⛔ Прежний DEADLOCK снят В КОРНЕ: серверно-тиковый обход ({@code onServerTick}→{@code ServerLevel.getChunk}
+	 * ТЕКУЩЕГО генерируемого чанка → {@code join} → чанк ждёт сам себя → вечное зависание входа в мир) БОЛЬШЕ НЕ
+	 * СУЩЕСТВУЕТ — генерация в законном слоте движка (Feature.place на регионе) реентранси не создаёт. Точка входа 1:1
+	 * с 1.7.10 post-populate: {@code generate(world, blockX, blockZ)}.
 	 */
 	@Override
 	public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
-		// F6-worldgen deadlock: GT6WorldGenerator.generate(ServerLevel) висит на getChunk текущего чанка (см. javadoc).
-		// no-op до порта GT6WorldGenerator на WorldGenLevel. НЕ звать generate() на ServerLevel из placement.
+		net.minecraft.core.BlockPos tOrigin = context.origin();
+		GT6WorldGenerator.generate(context.level(), tOrigin.getX(), tOrigin.getZ(), false);
 		return true;
 	}
 
@@ -195,7 +194,9 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	public static void register(IEventBus aModBus) {
 		FEATURES.register(aModBus);
 		aModBus.addListener(GT6WorldgenFeature::onGatherDataStatic);
-		// F6-worldgen (реальный порт семантики 1.7.10 IWorldGenerator post-populate): подписка на game-шину.
+		// F6-worldgen: сама ГЕНЕРАЦИЯ руд/слоёв/деревьев теперь в Feature.place (стадия FEATURES, WorldGenLevel) — серверно-тиковый
+		// обход СНЯТ. На game-шине остаётся ТОЛЬКО load-реконструкция MTE-стабов (отдельный механизм, F-tileentity-construction):
+		// ChunkEvent.Load ловит стабы → server-tick заменяет реальными MTE (FULL-чанк, setBlockEntity безопасен вне save-цикла).
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkLoad);
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
 	}
@@ -204,49 +205,27 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		GT6_WORLDGEN.get().onGatherData(aEvent);
 	}
 
-	// F6-worldgen (faithful, БЕЗ каскада): GT6WorldGenerator требует настоящий Level (TE-руды/саженцы/делегаты/
-	// updateNeighbors), а neo Feature даёт WorldGenRegion → ServerLevel.getChunk(текущий генерируемый чанк) делает
-	// CompletableFuture.join и виснет (deadlock). РЕШЕНИЕ 1:1 с 1.7.10 IWorldGenerator (post-populate): ловим
-	// ChunkEvent.Load(isNewChunk) и ОТКЛАДЫВАЕМ на следующий server-tick (javadoc ChunkEvent.Load: "interactions with
-	// the level must be delayed until the next game tick to prevent deadlocking") → к тику чанк ПОЛНОСТЬЮ сгенерирован
-	// (getChunk=FULL мгновенно, нет deadlock), доступен настоящий ServerLevel. GT6WorldGenerator НЕ тронут (Level-цепь 1:1).
-	private record ChunkReq(ServerLevel level, int blockX, int blockZ) {}
-	private static final java.util.Queue<ChunkReq> CHUNK_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
 	// F-tileentity-construction (load-реконструкция MTE-стабов): очередь чанков для замены TileEntityLoaderStub реальным MTE.
-	// Отдельная от CHUNK_QUEUE (та — только НОВЫЕ чанки под ворлдген; стабы приходят на ЛЮБОЙ load существующего чанка с диска).
+	// Стабы приходят на ЛЮБОЙ load существующего чанка с диска (neo подменяет GT6-MTE пустышкой при чтении NBT).
+	private record ChunkReq(ServerLevel level, int blockX, int blockZ) {}
 	private static final java.util.Queue<ChunkReq> STUB_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
 	private static void onChunkLoad(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
 		if (aEvent.getLevel() instanceof ServerLevel tLevel) {
 			net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
-			if (aEvent.isNewChunk()) CHUNK_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
-			// F-tileentity-construction (load-реконструкция): ОТКЛАДЫВАЕМ на server-tick (как ворлдген) — подмена стаба (setBlockEntity)
-			// ВО ВРЕМЯ ChunkEvent.Load (сам идёт и при save/shutdown «Saving worlds») давала реентранси-зависание; server-tick.Post при
-			// save не выполняется. Корневой блокер снят: registry-id теперь item-id (см. MultiTileEntityRegistry.getNewTileEntityContainer)
+			// F6-worldgen: генерация руд/слоёв ПЕРЕЕХАЛА в Feature.place (WorldGenLevel) — здесь БОЛЬШЕ НЕТ CHUNK_QUEUE (снят deadlock).
+			// F-tileentity-construction (load-реконструкция): ОТКЛАДЫВАЕМ на server-tick — подмена стаба (setBlockEntity) ВО ВРЕМЯ
+			// ChunkEvent.Load (сам идёт и при save/shutdown «Saving worlds») давала реентранси-зависание; server-tick.Post при save
+			// не выполняется. Корневой блокер снят: registry-id теперь item-id (см. MultiTileEntityRegistry.getNewTileEntityContainer)
 			// → getRegistry(reg) находит реестр. Стабы возникают на КАЖДОЙ загрузке не-PrefixBlock MTE (общий MTE_TYPE) → sweep каждый load.
 			STUB_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
 		}
 	}
 
 	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
-		// Троттлинг: не более N чанков за тик (полный GT6-ворлдген чанка тяжёл; спавн грузит сотни чанков разом →
-		// без лимита тик слишком долгий → watchdog). Очередь дренится за несколько тиков.
-		ChunkReq tReq; int tN = 0;
-		while (tN < 8 && (tReq = CHUNK_QUEUE.poll()) != null) {
-			try {
-				GT6WorldGenerator.generate(tReq.level(), tReq.blockX(), tReq.blockZ(), false);
-				// F3-render #3 (стухший меш): post-populate пишет блоки через WD.set(chunk) БЕЗ клиент-нотификации → уже
-				// отправленный клиенту чанк (спавн/быстрое движение) показывает довордген-ваниль. Помечаем чанк на повторную
-				// отправку отслеживающим игрокам (для чанков впереди игрока список getPlayers пуст → ноль стоимости).
-				resendChunk(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4);
-				tN++;
-			} catch (Throwable e) {
-				e.printStackTrace(gregapi.data.CS.ERR);
-			}
-		}
-		// F-tileentity-construction (load-реконструкция MTE-стабов): дренируем отдельной квотой (throttle) — заменяем стабы
-		// реальными MTE в уже-FULL чанках (setBlockEntity безопасен на server-tick, вне save-цикла).
-		int tM = 0;
+		// F-tileentity-construction (load-реконструкция MTE-стабов): дренируем квотой (throttle) — заменяем стабы реальными MTE
+		// в уже-FULL чанках (setBlockEntity безопасен на server-tick, вне save-цикла). Worldgen-дренаж СНЯТ (генерация в Feature.place).
+		ChunkReq tReq; int tM = 0;
 		while (tM < 16 && (tReq = STUB_QUEUE.poll()) != null) {
 			try {
 				reconstructChunkMTEs(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4);
@@ -280,14 +259,5 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		gregapi.block.multitileentity.MultiTileEntityContainer tContainer = tRegistry.getNewTileEntityContainer(aLevel, tPos.getX(), tPos.getY(), tPos.getZ(), tID, tNBT);
 		if (tContainer == null || tContainer.mTileEntity == null) return;
 		aLevel.setBlockEntity(tContainer.mTileEntity); // pos-канал → реальная pos → крепит на своё место, заменяя стаб
-	}
-
-	/** F3-render #3: заставить клиентов, уже отслеживающих этот чанк, перезагрузить его (после того как GT6-worldgen дописал блоки). */
-	private static void resendChunk(ServerLevel aLevel, int aChunkX, int aChunkZ) {
-		net.minecraft.world.level.chunk.LevelChunk tChunk = aLevel.getChunkSource().getChunkNow(aChunkX, aChunkZ);
-		if (tChunk == null) return;
-		for (net.minecraft.server.level.ServerPlayer tPlayer : aLevel.getChunkSource().chunkMap.getPlayers(tChunk.getPos(), false)) {
-			tPlayer.connection.chunkSender.markChunkPendingToSend(tChunk);
-		}
 	}
 }

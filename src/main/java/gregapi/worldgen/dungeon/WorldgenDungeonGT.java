@@ -18,6 +18,8 @@
  */
 
 package gregapi.worldgen.dungeon;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.block.metatype.BlockStones;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -140,7 +142,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	public static final int ROOM_ID_COUNT = 1, IMPORTANT_ROOM_COUNT = 2;
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (aRandom.nextInt(mProbability) != 0 || checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
 		if (Math.abs(aMinZ) < 256+mMaxSize*16 && Math.abs(aMinX) < 256+mMaxSize*16) return F;
 		if ((GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD) && (Math.abs(aMinX) < 256+mMaxSize*16 || Math.abs(aMinZ) < 256+mMaxSize*16)) return F;
@@ -317,62 +319,62 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		return T;
 	}
 	
-	public static boolean setRandomBricks   (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, 3+aRandom.nextInt(3), 2);}
-	public static boolean setStandardBrick  (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.BRICK, 2);}
-	public static boolean setRedstoneBrick  (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.RSTBR, 3);}
-	public static boolean setCrackedBrick   (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.CRACK, 2);}
-	public static boolean setMossyBrick     (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.MBRIK, 2);}
-	public static boolean setChiseledStone  (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.CHISL, 2);}
-	public static boolean setStoneTiles     (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.TILES, 2);}
-	public static boolean setSmallTiles     (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.STILE, 2);}
-	public static boolean setSmallBricks    (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.SBRIK, 2);}
-	public static boolean setSmoothBlock    (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.SMOTH, 2);}
-	public static boolean setAirBlock       (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, NB, 0, 2);}
+	public static boolean setRandomBricks   (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, 3+aRandom.nextInt(3), 2);}
+	public static boolean setStandardBrick  (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.BRICK, 2);}
+	public static boolean setRedstoneBrick  (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.RSTBR, 3);}
+	public static boolean setCrackedBrick   (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.CRACK, 2);}
+	public static boolean setMossyBrick     (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.MBRIK, 2);}
+	public static boolean setChiseledStone  (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.CHISL, 2);}
+	public static boolean setStoneTiles     (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.TILES, 2);}
+	public static boolean setSmallTiles     (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.STILE, 2);}
+	public static boolean setSmallBricks    (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.SBRIK, 2);}
+	public static boolean setSmoothBlock    (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aSecondary : aPrimary, BlockStones.SMOTH, 2);}
+	public static boolean setAirBlock       (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, NB, 0, 2);}
 	
-	public static boolean setRandomBricks   (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, 3+aRandom.nextInt(3), 2);}
-	public static boolean setStandardBrick  (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.BRICK, 2);}
-	public static boolean setRedstoneBrick  (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.RSTBR, 3);}
-	public static boolean setCrackedBrick   (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.CRACK, 2);}
-	public static boolean setMossyBrick     (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.MBRIK, 2);}
-	public static boolean setChiseledStone  (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.CHISL, 2);}
-	public static boolean setStoneTiles     (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.TILES, 2);}
-	public static boolean setSmallTiles     (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.STILE, 2);}
-	public static boolean setSmallBricks    (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.SBRIK, 2);}
-	public static boolean setSmoothBlock    (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.SMOTH, 2);}
-	public static boolean setAirBlock       (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, NB, 0, 2);}
+	public static boolean setRandomBricks   (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, 3+aRandom.nextInt(3), 2);}
+	public static boolean setStandardBrick  (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.BRICK, 2);}
+	public static boolean setRedstoneBrick  (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.RSTBR, 3);}
+	public static boolean setCrackedBrick   (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.CRACK, 2);}
+	public static boolean setMossyBrick     (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.MBRIK, 2);}
+	public static boolean setChiseledStone  (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.CHISL, 2);}
+	public static boolean setStoneTiles     (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.TILES, 2);}
+	public static boolean setSmallTiles     (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.STILE, 2);}
+	public static boolean setSmallBricks    (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.SBRIK, 2);}
+	public static boolean setSmoothBlock    (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, aY == aData.mY+2 ? aData.mSecondary : aData.mPrimary, BlockStones.SMOTH, 2);}
+	public static boolean setAirBlock       (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, NB, 0, 2);}
 	
-	public static boolean setGlass          (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, BlocksGT.Glass, aData.mColor, 2);}
-	public static boolean setGlowGlass      (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, BlocksGT.GlowGlass, aData.mColor, 2);}
-	public static boolean setColored        (Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, BlocksGT.Concrete, aData.mColor, 2);}
+	public static boolean setGlass          (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, BlocksGT.Glass, aData.mColor, 2);}
+	public static boolean setGlowGlass      (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, BlocksGT.GlowGlass, aData.mColor, 2);}
+	public static boolean setColored        (WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {return WD.set(aWorld, aX, aY, aZ, BlocksGT.Concrete, aData.mColor, 2);}
 	
-	public static boolean setLampBlock(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom, int aGenerateRedstoneBrick) {
+	public static boolean setLampBlock(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Block aPrimary, Block aSecondary, Random aRandom, int aGenerateRedstoneBrick) {
 		aData.mLightUpdateCoords.add(new BlockPos(aX, aY, aZ));
 		if (aGenerateRedstoneBrick != 0) setRedstoneBrick(aWorld, aX, aY+aGenerateRedstoneBrick, aZ, aData, aRandom);
 		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 		return T;
 	}
 	
-	public static boolean setLampBlock(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom, int aGenerateRedstoneBrick) {
+	public static boolean setLampBlock(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom, int aGenerateRedstoneBrick) {
 		aData.mLightUpdateCoords.add(new BlockPos(aX, aY, aZ));
 		if (aGenerateRedstoneBrick != 0) setRedstoneBrick(aWorld, aX, aY+aGenerateRedstoneBrick, aZ, aData, aRandom);
 		WD.set(aWorld, aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 		return T;
 	}
 	
-	public static boolean setCoins(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
+	public static boolean setCoins(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
 		for (int i = 0; i < 16; i++) aData.mCoin.putByte("gt.coin.stacksize."+i, (byte)(aRandom.nextInt(3) == 0 ? aRandom.nextInt(8) : 0));
 		aData.mCoin.putByte("gt.coin.stacksize."+aRandom.nextInt(16), (byte)(1+aRandom.nextInt(8)));
 		aData.mMTERegistryGT.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, (short)32700, aData.mCoin, T, T);
 		return T;
 	}
 	
-	public static boolean setFlower(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
+	public static boolean setFlower(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
 		int tIndex = aRandom.nextInt(BlocksGT.FLOWER_TILES.length);
 		WD.set(aWorld, aX, aY, aZ, BlocksGT.FLOWER_TILES[tIndex], BlocksGT.FLOWER_METAS[tIndex], 2);
 		return T;
 	}
 	
-	public static boolean setFlowerPot(Level aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
+	public static boolean setFlowerPot(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
 		int tIndex = aRandom.nextInt(BlocksGT.POT_FLOWER_TILES.length);
 		WD.set(aWorld, aX, aY, aZ, Blocks.FLOWER_POT, 0, 2);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
@@ -380,12 +382,12 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		return T;
 	}
 	
-	public static boolean setBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {
+	public static boolean setBlock(WorldGenLevel aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {
 		WD.set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags);
 		return T;
 	}
 	
-	public static boolean setBlock(Level aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags, int aRotationCount) {
+	public static boolean setBlock(WorldGenLevel aWorld, int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags, int aRotationCount) {
 		WD.set(aWorld, aX, aY, aZ, aBlock, aMeta, aFlags);
 		while (aRotationCount-->0) WD.rotateBlock(aWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен WD.set выше)
 		return T;

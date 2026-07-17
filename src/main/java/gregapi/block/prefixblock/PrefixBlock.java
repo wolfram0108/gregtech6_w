@@ -409,7 +409,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, aTileEntity);
 	}
 	
-	public boolean scheduleUpdateIfNeeded(Level aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity) {
+	public boolean scheduleUpdateIfNeeded(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, BlockEntity aTileEntity) {
 		if (mGravity && aY > 0 && FallingBlock.isFree(WD.block(aWorld, aX, aY - 1, aZ).defaultBlockState())) {
 			aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, 2);
 			return T;
@@ -479,7 +479,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	@Override
-	public boolean placeBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+	public boolean placeBlock(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
 		OreDictMaterial aMaterial = getMetaMaterial(aMetaData);
 		// F6-worldgen (флаг): без aCauseBlockUpdates ставим с UPDATE_KNOWN_SHAPE (16), чтобы neo пропустил neighbor-shape-update.
 		// Иначе setBlock во время ворлдгена читает соседний (ещё не сгенерированный) чанк → синхронная его генерация → каскад
@@ -714,7 +714,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return getMetaMaterial(WD.te(aWorld, aX, aY, aZ, T));
 	}
 	
-	public BlockEntity createTileEntity(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT) {
+	public BlockEntity createTileEntity(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT) {
 		// blockstate руды передаём в TE (= defaultBlockState, как ставит WD.set) → TE кэширует верный state сразу,
 		// без «Block state mismatch … updating» на загрузке чанка (руды и так генерировались, это был лишь шум кэша).
 		PrefixBlockTileEntity rTileEntity = new PrefixBlockTileEntity(new net.minecraft.core.BlockPos(aX, aY, aZ), defaultBlockState());

@@ -18,6 +18,8 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 import gregapi.util.WD;
 
 import gregapi.util.UT;
@@ -60,7 +62,7 @@ public abstract class WorldgenBlob extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (mBiomeList != null) {
 			boolean temp = T;
 			for (String tName : aBiomeNames) if (mBiomeList.contains(tName)) {temp = F; break;}
@@ -131,5 +133,5 @@ public abstract class WorldgenBlob extends WorldgenObject {
 		return F;
 	}
 	
-	public abstract boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom);
+	public abstract boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom);
 }

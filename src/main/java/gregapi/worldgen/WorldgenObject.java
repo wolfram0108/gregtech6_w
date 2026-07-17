@@ -18,6 +18,8 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 import gregapi.util.WD;
 
 import static gregapi.data.CS.*;
@@ -59,14 +61,14 @@ public abstract class WorldgenObject {
 		for (List<WorldgenObject> aList : aLists) aList.add(this);
 	}
 	
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		// Insert your WorldGen Code Here.
 		return F;
 	}
 	
-	public boolean enabled(Level aWorld, int aDimType) {
+	public boolean enabled(WorldGenLevel aWorld, int aDimType) {
 		if (mInvalid) return F;
-		ResourceKey<Level> tDim = aWorld.dimension();
+		ResourceKey<Level> tDim = aWorld.getLevel().dimension();
 		Boolean tAllowed = mDimEnabled.get(tDim);
 		if (tAllowed != null) return tAllowed && mEnabled;
 		// F6: было `aWorld.provider.getDimensionName().replaceAll(" ", "_")` (человекочитаемое имя измерения,
@@ -79,12 +81,12 @@ public abstract class WorldgenObject {
 		return tValue && mEnabled;
 	}
 
-	public void reset(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {/**/}
+	public void reset(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {/**/}
 
-	public boolean checkForMajorWorldgen(Level aWorld, int aMinX, int aMinZ, int aMaxX, int aMaxZ) {
+	public boolean checkForMajorWorldgen(WorldGenLevel aWorld, int aMinX, int aMinZ, int aMaxX, int aMaxZ) {
 		// F6: было `WD.dimensionId(aWorld) == DIM_OVERWORLD` (DIM_OVERWORLD=0, CS.java:904, буквально
 		// ванильный Overworld-id) — сверено на реальную константу Level.OVERWORLD (Level.java:95).
-		if (aWorld.dimension() == Level.OVERWORLD) {
+		if (aWorld.getLevel().dimension() == Level.OVERWORLD) {
 			if (GENERATE_STREETS && (Math.abs(aMinX) < 64 || Math.abs(aMaxX) < 64 || Math.abs(aMinZ) < 64 || Math.abs(aMaxZ) < 64)) return T;
 			if (GENERATE_BIOMES && aMinX >= -96 && aMinX <= 80 && aMinZ >= -96 && aMinZ <= 80) return T;
 		}

@@ -18,6 +18,7 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -40,7 +41,7 @@ public class WorldgenFluid extends WorldgenBlob {
 	}
 	
 	@Override
-	public boolean tryPlaceStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public boolean tryPlaceStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom) {
 		Block tTargetedBlock = WD.block(aWorld, aX, aY, aZ);
 		if (tTargetedBlock == mBlock && WD.meta(aWorld, aX, aY, aZ) == mBlockMeta) {
 			return T;
@@ -59,7 +60,7 @@ public class WorldgenFluid extends WorldgenBlob {
 		return F;
 	}
 	
-	public boolean doBedrockStuff(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
+	public boolean doBedrockStuff(WorldGenLevel aWorld, int aX, int aY, int aZ, Random aRandom) {
 		return F;
 	}
 }

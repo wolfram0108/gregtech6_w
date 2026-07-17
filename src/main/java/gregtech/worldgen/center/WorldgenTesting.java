@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen.center;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.block.metatype.BlockMetaType;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -58,12 +60,12 @@ public class WorldgenTesting extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean enabled(Level aWorld, int aDimType) {
+	public boolean enabled(WorldGenLevel aWorld, int aDimType) {
 		return GENERATE_TESTING && WD.dimensionId(aWorld) == DIM_OVERWORLD;
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if ((aMinX != 32 && aMinX != 48) || (aMinZ != -32 && aMinZ != -48)) return F;
 		
 		for (int i = 0; i < 16; i++) for (int j = 0; j < 16; j++) {

@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.block.metatype.BlockStones;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -55,7 +57,7 @@ public class WorldgenStoneLayers extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (GENERATING_SPECIAL) return F;
 		
 		//final boolean tSlime = (aChunk.getRandomWithSeed(987234911L).nextInt(10) == 0);
@@ -199,5 +201,5 @@ public class WorldgenStoneLayers extends WorldgenObject {
 		return T;
 	}
 	
-	@Override public boolean enabled(Level aWorld, int aDimType) {return GENERATE_STONE;}
+	@Override public boolean enabled(WorldGenLevel aWorld, int aDimType) {return GENERATE_STONE;}
 }

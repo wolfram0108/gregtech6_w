@@ -29,5 +29,5 @@ import net.minecraft.world.level.Level;
  */
 public interface IBlockPlacable {
 	/** Places the Block at this Location with the given MetaData and NBT (of an Item for example). The NBT Tag may be null! */
-	public boolean placeBlock(Level aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement);
+	public boolean placeBlock(net.minecraft.world.level.LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, short aMetaData, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement);
 }

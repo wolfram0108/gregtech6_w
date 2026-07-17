@@ -18,6 +18,7 @@
  */
 
 package gregtech.worldgen;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
 import gregapi.data.*;

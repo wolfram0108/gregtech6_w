@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -43,7 +45,7 @@ public class WorldgenDeepOcean extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (!aBiomeNames.contains("Deep Ocean")) return F;
 		int i = 3 + aRandom.nextInt(9), j = WD.waterLevel(aWorld)-32 + aRandom.nextInt(9), k = 3 + aRandom.nextInt(9), m = 0, n = 0; // F6-Y-scale: база пилона Y=30 была sea-32 (sea_old=62) → якорим к морю (дно нового океана).
 		if (WD.anywater(WD.block(aChunk, i, j, k))) {

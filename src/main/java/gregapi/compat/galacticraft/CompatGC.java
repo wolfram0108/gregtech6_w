@@ -49,6 +49,11 @@ public class CompatGC extends CompatBase implements ICompatGC {
 	
 	@SubscribeEvent
 	public void populate(GCCoreEventPopulate.Post aEvent) {
-		GT6WorldGenerator.generate(aEvent.worldObj, aEvent.chunkX, aEvent.chunkZ, T);
+		// F6/F10-DEFERRED (GC worldgen): GT6WorldGenerator.generate теперь работает по WorldGenLevel (data-driven Feature-путь
+		// стадии FEATURES — чистая архитектура вместо серверно-тикового хака). GC-populate — ЛЕГАСИ Forge-событие, отдаёт полный
+		// Level (worldObj), а не WorldGenLevel региона → напрямую скормить нельзя. Интеграция GC-worldgen требует СОБСТВЕННОГО
+		// GC-Feature (как у ванильных измерений), что относится к порту самого Galacticraft — foreign-gated, MD.GC не портирован,
+		// событие в текущем состоянии не приходит. Ноль-действие корректно, пока GC отсутствует; при порте GC — завести GC-Feature.
+		if (aEvent.worldObj instanceof net.minecraft.world.level.WorldGenLevel tWGL) GT6WorldGenerator.generate(tWGL, aEvent.chunkX, aEvent.chunkZ, T);
 	}
 }

@@ -18,6 +18,8 @@
  */
 
 package gregapi.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import static gregapi.data.CS.*;
 
@@ -133,12 +135,12 @@ public class WorldgenOresBedrock extends WorldgenObject {
 	}
 	
 	@Override
-	public void reset(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public void reset(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		GENERATED_NO_BEDROCK_ORE = CAN_GENERATE_BEDROCK_ORE = T;
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (GENERATING_SPECIAL || !CAN_GENERATE_BEDROCK_ORE || aRandom.nextInt(mProbability) != 0) return F;
 		if (!generateVein(mMaterial, aWorld, aDimType, aMinX, aMinZ, aRandom)) return F;
 		
@@ -179,7 +181,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 		return T;
 	}
 	
-	public static boolean generateVein(OreDictMaterial aMaterial, Level aWorld, int aDimType, int aMinX, int aMinZ, Random aRandom) {
+	public static boolean generateVein(OreDictMaterial aMaterial, net.minecraft.world.level.LevelAccessor aWorld, int aDimType, int aMinX, int aMinZ, Random aRandom) {
 		try {
 			// F6-Y-scale: бедрок MC26 на getMinY() (был Y=0). Бедрок-руда/жила якорятся к дну мира (tMinY), жила растёт вверх относительно него.
 			final int tMinY = WD.minY(aWorld);

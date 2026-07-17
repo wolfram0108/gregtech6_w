@@ -18,6 +18,8 @@
  */
 
 package gregtech.worldgen;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.WorldGenLevel;
 
 import gregapi.block.metatype.BlockStones;
 import gregapi.block.multitileentity.MultiTileEntityRegistry;
@@ -52,7 +54,7 @@ public class WorldgenHives extends WorldgenObject {
 	}
 	
 	@Override
-	public boolean generate(Level aWorld, LevelChunk aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
 		if (checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 		if (tRegistry == null) return F;
@@ -192,13 +194,13 @@ public class WorldgenHives extends WorldgenObject {
 		return rResult;
 	}
 	
-	public boolean placeHive(MultiTileEntityRegistry aRegistry, int aDimType, Level aWorld, int aX, int aY, int aZ, int aColor, int aSpeciesID, Random aRandom) {
+	public boolean placeHive(MultiTileEntityRegistry aRegistry, int aDimType, WorldGenLevel aWorld, int aX, int aY, int aZ, int aColor, int aSpeciesID, Random aRandom) {
 		CompoundTag aBumbleTag;
 		if (aDimType == DIM_OVERWORLD) {
 			aBumbleTag = IItemBumbleBee.Util.getBumbleGenes(WD.envTemp(aWorld, aX, aY, aZ), WD.biome(aWorld, aX, aZ), !!aWorld.dimensionType().hasSkyLight() && WD.precipitationHeight(aWorld, aX, aZ) <= aY + 5, aRandom);
 		} else {
 			// Just pick whichever is the current time of day, because most dimensions don't have passage of daytime.
-			aBumbleTag = IItemBumbleBee.Util.getBumbleGenes(WD.envTemp(aWorld, aX, aY, aZ), WD.biome(aWorld, aX, aZ), !!aWorld.dimensionType().hasSkyLight() && WD.precipitationHeight(aWorld, aX, aZ) <= aY + 5, aWorld.isBrightOutside(), !aWorld.isBrightOutside(), aRandom);
+			aBumbleTag = IItemBumbleBee.Util.getBumbleGenes(WD.envTemp(aWorld, aX, aY, aZ), WD.biome(aWorld, aX, aZ), !!aWorld.dimensionType().hasSkyLight() && WD.precipitationHeight(aWorld, aX, aZ) <= aY + 5, aWorld.getLevel().isBrightOutside(), !aWorld.getLevel().isBrightOutside(), aRandom); // isBrightOutside — Level-only; worldgen-приёмник WorldGenLevel -> итоговый ServerLevel через getLevel()
 		}
 		return aRegistry.mBlock.placeBlock(aWorld, aX, aY, aZ, SIDE_UNKNOWN, (short)32755, UT.NBT.make(NBT_COLOR, aColor, NBT_INV_LIST, UT.NBT.makeInv(((IItemBumbleBee)ItemsGT.BUMBLEBEES).bumbleProductStack(NI, (short)aSpeciesID, UT.Code.units(IItemBumbleBee.Util.getWorkForce(aBumbleTag), 10000, 10, T), 0), IItemBumbleBee.Util.setBumbleTag(ST.make(ItemsGT.BUMBLEBEES, 1, aSpeciesID+1), aBumbleTag), IItemBumbleBee.Util.setBumbleTag(ST.make(ItemsGT.BUMBLEBEES, IItemBumbleBee.Util.getOffspring(aBumbleTag), aSpeciesID), aBumbleTag)), NBT_PAINTED, T), F, T);
 	}
