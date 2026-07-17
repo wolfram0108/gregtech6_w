@@ -57,7 +57,17 @@ public class WorldgenOresBedrock extends WorldgenObject {
 	public final Block mFlower;
 	public final byte mFlowerMeta;
 	
-	public static boolean GENERATED_NO_BEDROCK_ORE = T, CAN_GENERATE_BEDROCK_ORE = T;
+	// F6-worldgen: neo генерит чанки ПАРАЛЛЕЛЬНО (worker-потоки, стадия FEATURES). Прежние public static boolean флаги
+	// координации «бедрок-руда XOR флюид-родник на чанк» КЛОББЕРИЛИСЬ между параллельными чанками (chunk B сбрасывал флаг,
+	// что читал chunk A между reset и generate) → флюид-родники не спавнились (гейт не проходил). ThreadLocal: у каждого
+	// worker-потока свой флаг → координация в рамках одного чанка (генерится одним потоком, WorldgenObject-ы последовательно
+	// reset-фаза→generate-фаза) ЦЕЛА; параллельные чанки не мешают. 1:1 с 1.7.10 (там chunk-gen серийный, static работал).
+	private static final ThreadLocal<Boolean> TL_GENERATED_NO_BEDROCK_ORE = ThreadLocal.withInitial(() -> Boolean.TRUE);
+	private static final ThreadLocal<Boolean> TL_CAN_GENERATE_BEDROCK_ORE = ThreadLocal.withInitial(() -> Boolean.TRUE);
+	public static boolean generatedNoBedrockOre() {return TL_GENERATED_NO_BEDROCK_ORE.get();}
+	public static void setGeneratedNoBedrockOre(boolean aValue) {TL_GENERATED_NO_BEDROCK_ORE.set(aValue);}
+	public static boolean canGenerateBedrockOre() {return TL_CAN_GENERATE_BEDROCK_ORE.get();}
+	public static void setCanGenerateBedrockOre(boolean aValue) {TL_CAN_GENERATE_BEDROCK_ORE.set(aValue);}
 	
 	@SafeVarargs
 	public WorldgenOresBedrock(String aName, boolean aDefault, int aProbability, OreDictMaterial aPrimary, List<WorldgenObject>... aLists) {
@@ -136,15 +146,15 @@ public class WorldgenOresBedrock extends WorldgenObject {
 	
 	@Override
 	public void reset(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		GENERATED_NO_BEDROCK_ORE = CAN_GENERATE_BEDROCK_ORE = T;
+		setGeneratedNoBedrockOre(T); setCanGenerateBedrockOre(T);
 	}
-	
+
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		if (GENERATING_SPECIAL || !CAN_GENERATE_BEDROCK_ORE || aRandom.nextInt(mProbability) != 0) return F;
+		if (GENERATING_SPECIAL || !canGenerateBedrockOre() || aRandom.nextInt(mProbability) != 0) return F;
 		if (!generateVein(mMaterial, aWorld, aDimType, aMinX, aMinZ, aRandom)) return F;
-		
-		GENERATED_NO_BEDROCK_ORE = F;
+
+		setGeneratedNoBedrockOre(F);
 		
 		if ((mIndicatorRocks || mIndicatorFlowers) && (!GENERATE_STREETS || WD.dimensionId(aWorld) != 0 || (Math.abs(aMinX) >= 64 && Math.abs(aMaxX) >= 64 && Math.abs(aMinZ) >= 64 && Math.abs(aMaxZ) >= 64))) { 
 			MultiTileEntityRegistry tRegistry = (mIndicatorRocks ? MultiTileEntityRegistry.getRegistry("gt.multitileentity") : null);
@@ -205,7 +215,7 @@ public class WorldgenOresBedrock extends WorldgenObject {
 			// Portion a Muffin shaped Ore Blob around the Bedrock Spot.
 			// F6-Y-scale: маффин-жила Y 1..6 — ОТНОСИТЕЛЬНО бедрока (tD1/tD2 индексируются tY, поэтому tY 1..6 сохраняем; абсолютная высота = tMinY+tY).
 			for (int tY = 1; tY < tD1.length; tY++) { final int tAbsY = tMinY + tY; for (int tX = tD1[tY]; tX < tD2[tY]; tX++) for (int tZ = tD1[tY]; tZ < tD2[tY]; tZ++) {
-				if (GENERATED_NO_BEDROCK_ORE) if (tStone != NB) {
+				if (generatedNoBedrockOre()) if (tStone != NB) {
 					WD.set(aWorld, aMinX+tX, tAbsY, aMinZ+tZ, tStone, 0, 0);
 				} else {
 					WD.removeBedrock(aWorld, aMinX+tX, tAbsY, aMinZ+tZ);

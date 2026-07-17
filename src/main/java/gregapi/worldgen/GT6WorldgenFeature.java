@@ -231,6 +231,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	private static void dumpWorldgenStress(net.minecraft.server.level.ServerLevel aLvl) {
 		int tOre=0, tOreMat=0, tOreNull=0, tStone=0, tFluid=0, tMTE=0;
 		java.util.HashMap<String,Integer> tMats = new java.util.HashMap<>();
+		java.util.HashMap<String,Integer> tMTEs = new java.util.HashMap<>(); // разбивка MTE по классам (флуид-спринги/rocks/resin-holes)
 		int tMinY=aLvl.getMinY(), tMaxY=aLvl.getSeaLevel()+8;
 		net.minecraft.core.BlockPos.MutableBlockPos tM = new net.minecraft.core.BlockPos.MutableBlockPos();
 		for (int cx=-STRESS_R; cx<=STRESS_R; cx++) for (int cz=-STRESS_R; cz<=STRESS_R; cz++)
@@ -243,12 +244,17 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 					if (tMat==null) tOreNull++; else { tOreMat++; tMats.merge(tMat.mNameInternal,1,Integer::sum); }
 				} else if (tB instanceof gregapi.block.metatype.BlockStones) tStone++;
 				else if (tB instanceof gregapi.block.fluid.BlockBaseFluid) tFluid++;
-				else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) tMTE++;
+				else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {
+					tMTE++;
+					net.minecraft.world.level.block.entity.BlockEntity tBE = aLvl.getBlockEntity(tM);
+					tMTEs.merge(tBE==null?"(null-BE)":tBE.getClass().getSimpleName(), 1, Integer::sum);
+				}
 			}
 		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] === ДАМП (±"+STRESS_R+" чанков, Y["+tMinY+".."+tMaxY+"]) ===");
 		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] РУДЫ total="+tOre+" материал-резолв(сервер)="+tOreMat+" null="+tOreNull);
-		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] камень="+tStone+" флюид="+tFluid+" MTE="+tMTE);
-		tMats.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(15).forEach(e-> gregapi.data.CS.OUT.println("[GT6-WGSTRESS]   "+e.getKey()+"="+e.getValue()));
+		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] камень="+tStone+" флюид-блоки="+tFluid+" MTE="+tMTE);
+		tMTEs.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).forEach(e-> gregapi.data.CS.OUT.println("[GT6-WGSTRESS]   MTE "+e.getKey()+"="+e.getValue()));
+		tMats.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(15).forEach(e-> gregapi.data.CS.OUT.println("[GT6-WGSTRESS]   мат "+e.getKey()+"="+e.getValue()));
 		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] DONE");
 	}
 

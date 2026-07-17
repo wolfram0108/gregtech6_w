@@ -61,9 +61,9 @@ public class WorldgenFluidSpring extends WorldgenObject {
 	
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		if (GENERATING_SPECIAL || !WorldgenOresBedrock.GENERATED_NO_BEDROCK_ORE || !WorldgenOresBedrock.CAN_GENERATE_BEDROCK_ORE || aRandom.nextInt(mProbability) != 0) return F;
-		
-		WorldgenOresBedrock.CAN_GENERATE_BEDROCK_ORE = F;
+		if (GENERATING_SPECIAL || !WorldgenOresBedrock.generatedNoBedrockOre() || !WorldgenOresBedrock.canGenerateBedrockOre() || aRandom.nextInt(mProbability) != 0) return F;
+
+		WorldgenOresBedrock.setCanGenerateBedrockOre(F);
 		
 		// F6-Y-scale: бедрок MC26 на getMinY() (был Y=0) — родник и слои жидкости якорятся к дну мира (tMinY).
 		final int tMinY = WD.minY(aWorld);
