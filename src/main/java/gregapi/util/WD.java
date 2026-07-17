@@ -673,10 +673,13 @@ public class WD {
 	}
 	/** F-tileentity-construction Y-порог (ADR): 1.7.10 инвалидировал TE при Y<0 (мир [0..255], Y<0 = аномалия-баг).
 	 *  MC26 мир [minY..maxY] (обычно −64..319), Y<0 ЛЕГИТИМЕН (бедрок на minY=−64, бедрок-руды/источники флюидов там же)
-	 *  → инвалидируем ТОЛЬКО при Y ниже дна мира getMinY(). Без level (item-form/detached TE) — сохраняем старый Y<0
-	 *  (мира нет, любой отрицательный Y — аномалия). Единственный центр Y-порога инвалидации TE на весь мод. */
+	 *  → инвалидируем ТОЛЬКО при Y ниже дна мира getMinY(). Единственный центр Y-порога инвалидации TE на весь мод.
+	 *  КРИТ (спам + удаление руд): БЕЗ level (getLevel()==null во время chunk-load loadStatic→readFromNBT, до attach к миру)
+	 *  НЕ инвалидируем — прежний fallback-порог 0 ложно ловил ВСЕ подземные руды (Y<0, легитимные) → setRemoved() удалял их
+	 *  BE (материал руды терялся → серое вкрапление) + печатал Throwable-стектрейс каждой (спам ×десятки тысяч). Позиция на
+	 *  загрузке легитимна (сохранена движком), а minY без level не узнать → безопасно пропустить (проверим при наличии level). */
 	public static boolean tileYInvalid(net.minecraft.world.level.Level aLevel, int aY) {
-		return aY < (aLevel != null ? aLevel.getMinY() : 0);
+		return aLevel != null && aY < aLevel.getMinY();
 	}
 
 	/** @return the regular Temperature of the World at this Location according to Gregs calculations. In Kelvin, ofcourse. */
