@@ -182,6 +182,38 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			tOut.println("[GT6-ORE-PROBE]   материал " + e.getKey() + " = " + e.getValue()));
 	}
 
+	// F6-worldgen АВТОНОМНЫЙ вход в мир (гейт: файл run/wgautoworld.flag): quickPlay упирается в диалог-подтверждение
+	// (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ создаём свежий CREATIVE-мир через штатный
+	// клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» → «Создать», минует ВСЕ диалоги). Старый
+	// тест-мир удаляем сами. Ноль ручных действий. После входа — ore-probe (выше) дампует руды/материал в gregtech.log.
+	private boolean mAutoWorldTriggered = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onAutoWorldCreate(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mAutoWorldTriggered) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (!(tMC.screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;
+		if (!new java.io.File("wgautoworld.flag").exists()) return;
+		mAutoWorldTriggered = true;
+		try {
+			java.io.File tOld = new java.io.File("saves/GT6WGTest");
+			if (tOld.exists()) deleteRecursive(tOld);
+			gregapi.data.CS.OUT.println("[GT6-AUTOWORLD] создаю свежий CREATIVE-мир GT6WGTest (программно, минуя диалоги)...");
+			net.minecraft.world.level.LevelSettings tSettings = new net.minecraft.world.level.LevelSettings(
+				"GT6 WG Test", net.minecraft.world.level.GameType.CREATIVE,
+				net.minecraft.world.level.LevelSettings.DifficultySettings.DEFAULT, true,
+				net.minecraft.world.level.WorldDataConfiguration.DEFAULT);
+			tMC.createWorldOpenFlows().createFreshLevel("GT6WGTest", tSettings,
+				net.minecraft.world.level.levelgen.WorldOptions.defaultWithRandomSeed(),
+				net.minecraft.world.level.levelgen.presets.WorldPresets::createNormalWorldDimensions,
+				tMC.screen);
+		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-AUTOWORLD] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+	private static void deleteRecursive(java.io.File aFile) {
+		java.io.File[] tKids = aFile.listFiles();
+		if (tKids != null) for (java.io.File tK : tKids) deleteRecursive(tK);
+		aFile.delete();
+	}
+
 	// F5/F3-render (client): единый динамический FluidModel ВСЕМ GT6-жидкостям (замена «Missing FluidModel» на реальный
 	// рендер). GT6-жидкость = still/flow-текстура (mTexture, IIconContainer) + цвет (mRGBa, тинтит серый молтен). neo 26
 	// рендерит жидкости через FluidModel.Unbaked(still, flow, overlay, tintSource) на RegisterFluidModelsEvent (mod-bus).

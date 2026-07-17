@@ -368,8 +368,12 @@ public class WD {
 	 *  тогда возвращаем null (движок пересчитает светимость BE после финализации чанка). Для не-Level BlockGetter (чанк/регион)
 	 *  {@code getBlockEntity} и так неблокирующий (чтение из карты BE). */
 	public static BlockEntity teNonForcing(BlockGetter aWorld, int aX, int aY, int aZ) {
-		if (aWorld instanceof Level tLevel) {
-			net.minecraft.world.level.chunk.ChunkAccess tChunk = tLevel.getChunk(aX >> 4, aZ >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+		// КРИТ: getChunk(cx,cz,FULL,false) НЕ неблокирующий — requireChunk=false лишь «вернуть null вместо throw», но
+		// main-thread-future + join ОСТАЁТСЯ → на off-thread (light-поток при генерации) всё равно дедлок. Единственный
+		// истинно неблокирующий доступ — ServerChunkCache.getChunkNow(cx,cz): читает карту загруженных FULL-чанков, БЕЗ join
+		// (null для ещё-генерируемого ProtoChunk → запечённый дефолт света; BE-свет пересчитается после FULL). jstack подтвердил.
+		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
+			net.minecraft.world.level.chunk.LevelChunk tChunk = tSL.getChunkSource().getChunkNow(aX >> 4, aZ >> 4);
 			return tChunk == null ? null : tChunk.getBlockEntity(new BlockPos(aX, aY, aZ));
 		}
 		return aWorld == null ? null : aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));

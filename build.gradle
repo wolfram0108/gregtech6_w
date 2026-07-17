@@ -166,8 +166,9 @@ neoForge {
             // Авто-вход в существующий мир для приёмочного render-probe (гейт ②): в меню DataComponents предметов НЕ bound
             // (ItemStack NPE «Components not bound yet»), а на world-load — bound. quickPlay грузит мир при старте →
             // level!=null → GT_API_Proxy_Client.onClientTickProbe вызывает GT6ItemModel.probeItemIcons (found/missing в gregtech.log).
-            // ОТКЛЮЧЕНО: обычный запуск в главное меню (для ручного тестирования/создания мира). Раскомментировать для авто-probe.
-            // programArguments.addAll '--quickPlaySingleplayer', 'New World'
+            // ОТКЛЮЧЕНО: обычный запуск в главное меню. Авто-вход в мир — через клиент-хук onAutoWorldCreate (гейт wgautoworld.flag),
+            // который на TitleScreen сам создаёт свежий CREATIVE-мир (createFreshLevel, минуя диалоги). quickPlay НЕ годится (виснет на диалоге).
+            // programArguments.addAll '--quickPlaySingleplayer', 'GT6WGTest'
         }
 
         server {
