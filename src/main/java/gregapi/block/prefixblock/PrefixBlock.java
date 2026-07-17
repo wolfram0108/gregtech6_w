@@ -646,11 +646,13 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public final BlockEntity createNewTileEntity(Level aWorld, int aMeta) {return null;}
 	/** Where I come from, we set the TileEntities ourselves instead of letting a Handler do it. */
 	public final BlockEntity createTileEntity(Level aWorld, int aMeta) {return null;}
-	// было EntityBlock.newBlockEntity(BlockPos,BlockState) (neo, EntityBlock.java:14, обязательный т.к. класс implements
-	// EntityBlock) - GT6 TE-создание для PrefixBlock идёт НЕ через это (createNewTileEntity/createTileEntity УЖЕ
-	// возвращают null и в 1.7.10-оракуле, PrefixBlock.java:584-586), а через явный placeBlock/createTileEntity(6 аргументов,
-	// см. ниже). null здесь 1:1 с оракулом, не деградация (тот же приём, что и MultiTileEntityBlock.newBlockEntity).
-	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return null;}
+	// F3-render КОРЕНЬ «руды в прогрузке/серое вкрапление»: neo объявляет наличие BE у блока ЧЕРЕЗ newBlockEntity (это
+	// ЕДИНСТВЕННЫЙ путь в neo — в отличие от 1.7.10, где TE ставились вручную). Прежний null → neo на КЛИЕНТЕ не создавал BE
+	// для руды → синхронизированный сервером PrefixBlockTileEntity (mMetaData=материал) не удерживался (be=null у 203/203 руд,
+	// GT6-ORE-PROBE) → материал недоступен → getMetaMaterial=NULL → серое вкрапление без цвета. Возвращаем свежий
+	// PrefixBlockTileEntity (mMetaData дочитывается из синка readFromNBT/receiveMetaData; placeBlock всё равно ставит свой BE
+	// с материалом на сервере). Комментарий-предшественник ошибочно счёл null «1:1 с оракулом» — оракул 1.7.10 имел иной путь.
+	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return new PrefixBlockTileEntity(aPos, aState);}
 	@Override public String toString() {return mNameInternal;}
 	public String getUnlocalizedName() {return mNameInternal;}
 	public String getLocalizedName() {return gregapi.lang.LanguageHandler.get(mNameInternal);}
