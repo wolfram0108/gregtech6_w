@@ -489,7 +489,12 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 			BlockEntity tTileEntity = createTileEntity(aWorld, aX, aY, aZ, aSide, aMetaData, aNBT);
 			WD.te(aWorld, aX, aY, aZ, tTileEntity, aCauseBlockUpdates);
 			scheduleUpdateIfNeeded(aWorld, aX, aY, aZ, tTileEntity);
-			if (!aWorld.isClientSide()) GT_API_Proxy.SCHEDULED_TILEENTITY_UPDATES.add((PrefixBlockTileEntity)tTileEntity);
+			// F6-worldgen: планировать occlusion-апдейт ТОЛЬКО при размещении в настоящем Level (gameplay). Во время worldgen
+			// aWorld=WorldGenLevel/WorldGenRegion — BE ставится на ProtoChunk, его level ещё НЕ привязан (привяжется при
+			// ProtoChunk→LevelChunk). Прежний безусловный add клал 96741 руд-BE с level=null → onScheduledUpdate→visOcc(null)→NPE
+			// на каждом server-tick. Синк материала руды клиенту в worldgen не нужен (нет игроков) и всё равно идёт через
+			// getUpdateTag на chunk-load. 1:1 с духом Грегориуса «This darn TileEntity update is ruining World generation Code».
+			if (aWorld instanceof Level && !aWorld.isClientSide()) GT_API_Proxy.SCHEDULED_TILEENTITY_UPDATES.add((PrefixBlockTileEntity)tTileEntity);
 			return T;
 		}
 		return F;

@@ -18,6 +18,7 @@
  */
 
 package gregtech.tileentity.tools;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import net.neoforged.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
@@ -325,7 +326,9 @@ public class MultiTileEntityBumbliaryAdvanced extends TileEntityBase07Paintable 
 	
 	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]])) : null;}
 	
-	@Override public Object getGUIClient2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUIClientBumbliary(aPlayer.getInventory(), this, aGUIID);}
+	// F-dist: тернар двух клиент-GUI-классов → компилятор писал их клиентский супертип в StackMapTable → верификатор грузил
+	// AbstractContainerScreen на сервере → NoClassDefFoundError обрывал загрузчик MTE. Разбито на отдельные return.
+	@Override @OnlyIn(Dist.CLIENT) public Object getGUIClient2(int aGUIID, Player aPlayer) {if (aGUIID == 1) return new MultiTileEntityGUIClientBumbliaryScoop(aPlayer.getInventory(), this, aGUIID); return new MultiTileEntityGUIClientBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	@Override public Object getGUIServer2(int aGUIID, Player aPlayer) {return aGUIID == 1 ? new MultiTileEntityGUICommonBumbliaryScoop(aPlayer.getInventory(), this, aGUIID) : new MultiTileEntityGUICommonBumbliary(aPlayer.getInventory(), this, aGUIID);}
 	
 	public static final int SLOT_ROYAL = 7, SLOT_DRONE = 12
