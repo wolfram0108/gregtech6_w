@@ -259,13 +259,25 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) { if (!isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it).getNamespace())) continue; int n = countSub(it, "getSubItems", it); tVarItems += Math.max(n,1); if (n>1) tItemMulti++; }
 		for (net.minecraft.world.level.block.Block bl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) { if (!isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(bl).getNamespace())) continue; int n = countSub(bl, "getSubBlocks", bl.asItem()); if (n==0) n = countSub(bl.asItem(), "getSubItems", bl.asItem()); tVarBlocks += Math.max(n,1); if (n>1) tBlockMulti++; }
 		o.println("[GT6-ENGINE] 1c. ВАРИАНТЫ (реальный контент): ITEM-вариантов=" + tVarItems + " (мульти-предметов="+tItemMulti+")  BLOCK-вариантов=" + tVarBlocks + " (мульти-блоков="+tBlockMulti+")  ИТОГО="+(tVarItems+tVarBlocks));
+		// Ф1.1 DIAG: в auto-world креатив-инвентарь не открывался → tryRebuildTabContents движком не вызывался → все табы пусты.
+		// Форсируем построение содержимого, чтобы судить МЕХАНИЗМ наполнения (onBuildContents/populate), а не тайминг открытия меню.
+		try { net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(tMC.level.enabledFeatures(), true, tMC.level.registryAccess()); }
+		catch (Throwable e) { o.println("[GT6-ENGINE] 2-FORCE tryRebuildTabContents упал: " + e); }
 		// 2. КРЕАТИВ: сколько gregtech-предметов реально попадает в creative-вкладки (getDisplayItems после BuildContents).
-		int tTabsTotal=0, tTabsGreg=0, tCreativeGreg=0;
+		// Ф1.2: тут же — имена РЕАЛЬНО ОТОБРАЖАЕМЫХ вариантов (не базовых стеков): getHoverName читаемое или сырой ключ.
+		int tTabsTotal=0, tTabsGreg=0, tCreativeGreg=0, tCreativeAll=0, tVarNameOk=0, tVarNameRaw=0, tVarShown=0; StringBuilder tVarRawSamples = new StringBuilder();
 		for (net.minecraft.world.item.CreativeModeTab tab : net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB) { tTabsTotal++;
 			var tk = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab); if (tk != null && isGregNamespace(tk.getNamespace())) tTabsGreg++;
-			try { for (net.minecraft.world.item.ItemStack st : tab.getDisplayItems()) if (isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(st.getItem()).getNamespace())) tCreativeGreg++; } catch (Throwable e) {}
+			try { for (net.minecraft.world.item.ItemStack st : tab.getDisplayItems()) { tCreativeAll++;
+				if (isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(st.getItem()).getNamespace())) { tCreativeGreg++;
+					try { String nm = st.getHoverName().getString(); boolean tRaw = nm==null||nm.isEmpty()||nm.contains("gt.")||nm.startsWith("item.")||nm.startsWith("block.");
+						if (tRaw) { tVarNameRaw++; if (tVarShown<8) { tVarRawSamples.append(" [").append(nm).append("]"); tVarShown++; } } else tVarNameOk++;
+					} catch (Throwable e) { tVarNameRaw++; }
+				}
+			} } catch (Throwable e) {}
 		}
-		o.println("[GT6-ENGINE] 2. КРЕАТИВ: всего-вкладок=" + tTabsTotal + " gregtech-вкладок=" + tTabsGreg + " gregtech-предметов-в-табах=" + tCreativeGreg);
+		o.println("[GT6-ENGINE] 2. КРЕАТИВ: всего-вкладок=" + tTabsTotal + " gregtech-вкладок=" + tTabsGreg + " gregtech-предметов-в-табах=" + tCreativeGreg + " ВСЕГО-предметов-во-всех-табах=" + tCreativeAll);
+		o.println("[GT6-ENGINE] 2b. ИМЕНА ВАРИАНТОВ (отображаемых в креативе): читаемых=" + tVarNameOk + " сырой-ключ=" + tVarNameRaw + " сырые-примеры:" + tVarRawSamples);
 		// 3. РЕЦЕПТЫ в игре (server RecipeManager).
 		try { net.minecraft.server.MinecraftServer srv = tMC.getSingleplayerServer();
 			if (srv == null) o.println("[GT6-ENGINE] 3. РЕЦЕПТЫ: singleplayer-сервера нет");
@@ -279,6 +291,21 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			for (gregapi.recipes.Recipe.RecipeMap rm : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAP_LIST) { tMaps++; int s = rm.mRecipeList.size(); tGT6Rec += s; if (s>0) tNonEmpty++; }
 			o.println("[GT6-ENGINE] 4. GT6-RECIPEMAPS (машины, СВОЯ система): карт=" + tMaps + " непустых=" + tNonEmpty + " ВСЕГО-РЕЦЕПТОВ=" + tGT6Rec);
 		} catch (Throwable e) { o.println("[GT6-ENGINE] 4. GT6-RECIPEMAPS: скан упал=" + e); }
+		// 5. ИМЕНА (Ф1.2): getName GT6-предмета — читаемое имя или сырой ключ? (мост ItemBase.getName → LanguageHandler; если не наполнено — вернёт ключ).
+		int tNameOk=0, tNameRaw=0, tNameShown=0; StringBuilder tNameSamples = new StringBuilder();
+		for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			if (!isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it).getNamespace())) continue;
+			try {
+				String nm = it.getName(new net.minecraft.world.item.ItemStack(it)).getString();
+				boolean tRaw = nm == null || nm.isEmpty() || nm.contains("gt.") || nm.startsWith("item.") || nm.startsWith("block.");
+				if (tRaw) tNameRaw++; else tNameOk++;
+				if (tNameShown < 8) { tNameSamples.append(" [").append(nm).append("]"); tNameShown++; }
+			} catch (Throwable e) { tNameRaw++; }
+		}
+		o.println("[GT6-ENGINE] 5. ИМЕНА (getName): читаемых=" + tNameOk + " сырой-ключ=" + tNameRaw + " примеры:" + tNameSamples);
+		// 6. КРАФТ (Ф1.4): RecipeManager gregtech=1 — это диспетчер F11 (CustomRecipe); реальные рецепты в CR.BUFFER, обслуживает 1 диспетчер.
+		try { o.println("[GT6-ENGINE] 6. КРАФТ CR.BUFFER (F11-диспетчер обслуживает): буфер-крафт-рецептов=" + gregapi.util.CR.list().size()); }
+		catch (Throwable e) { o.println("[GT6-ENGINE] 6. КРАФТ CR.BUFFER: скан упал=" + e); }
 		o.println("[GT6-ENGINE] ================= КОНЕЦ ЗАМЕРА =================");
 	}
 
