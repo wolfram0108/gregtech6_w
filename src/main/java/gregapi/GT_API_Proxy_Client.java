@@ -244,6 +244,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private void dumpEngineState(net.minecraft.client.Minecraft tMC) {
 		java.io.PrintStream o = gregapi.data.CS.OUT;
 		o.println("[GT6-ENGINE] ================= ЗАМЕР СОСТОЯНИЯ В ИГРЕ =================");
+		// Ф1.3: форс-триггер полного старта JEI — в headless авто-мире JEI стартует только при открытии экрана
+		// (StartEventObserver), потому registerCategories/registerRecipes GT6_JEI_Plugin иначе не отрабатывают и не логируются.
+		// Открываем инвентарь-экран → JEI регистрирует категории (успех/ошибку залогирует сама JEI в modloading-worker).
+		try { tMC.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(tMC.player)); o.println("[GT6-ENGINE] JEI-триггер: инвентарь-экран открыт (форс-старт JEI)"); }
+		catch (Throwable e) { o.println("[GT6-ENGINE] JEI-триггер упал: " + e); }
 		// 1. РЕГИСТРАЦИЯ: сколько gregtech-предметов/блоков реально в реестрах движка.
 		int tItems=0, tBlocks=0;
 		for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) if (isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it).getNamespace())) tItems++;
@@ -291,6 +296,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			for (gregapi.recipes.Recipe.RecipeMap rm : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAP_LIST) { tMaps++; int s = rm.mRecipeList.size(); tGT6Rec += s; if (s>0) tNonEmpty++; }
 			o.println("[GT6-ENGINE] 4. GT6-RECIPEMAPS (машины, СВОЯ система): карт=" + tMaps + " непустых=" + tNonEmpty + " ВСЕГО-РЕЦЕПТОВ=" + tGT6Rec);
 		} catch (Throwable e) { o.println("[GT6-ENGINE] 4. GT6-RECIPEMAPS: скан упал=" + e); }
+		// 4b. JEI (Ф1.3): сколько категорий/рецептов зарегистрирует GT6_JEI_Plugin — та же логика (mNEIAllowed && непустая getNEIAllRecipes).
+		try { int tJeiCats=0; long tJeiRecipes=0;
+			for (gregapi.recipes.Recipe.RecipeMap rm : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAP_LIST) { if (!rm.mNEIAllowed) continue; try { java.util.List<gregapi.recipes.Recipe> l = rm.getNEIAllRecipes(); if (l != null && !l.isEmpty()) { tJeiCats++; tJeiRecipes += l.size(); } } catch (Throwable e) {} }
+			o.println("[GT6-ENGINE] 4b. JEI (ожидаемо от плагина): категорий=" + tJeiCats + " рецептов-в-них=" + tJeiRecipes);
+		} catch (Throwable e) { o.println("[GT6-ENGINE] 4b. JEI: скан упал=" + e); }
 		// 5. ИМЕНА (Ф1.2): getName GT6-предмета — читаемое имя или сырой ключ? (мост ItemBase.getName → LanguageHandler; если не наполнено — вернёт ключ).
 		int tNameOk=0, tNameRaw=0, tNameShown=0; StringBuilder tNameSamples = new StringBuilder();
 		for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
