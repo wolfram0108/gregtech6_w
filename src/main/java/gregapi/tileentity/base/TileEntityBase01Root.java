@@ -261,6 +261,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		readFromNBT(tNBT);
 	}
 
+	// F6-worldgen КЛИЕНТ-СИНК: сознательно НЕ переопределяем getUpdateTag на корне всех MTE. Проверено механикой (4 прогона
+	// A/B/C/D): getUpdateTag=saveCustomOnly закрывал лишь 1 из ~2-4 edge-case null-BE (маргинально), но это ШИРОКОЕ изменение —
+	// saveCustomOnly на ВСЕХ BE (включая машины) → лишний трафик chunk-пакета и утечка server-полей на клиент. Плохой размен.
+	// ВАЖНО (диагностировано): флуд «Block state mismatch … != air, updating» (~9.5k/мир) от getUpdateTag НЕ зависит — он есть
+	// и без него (замер: WD.te привязывает 772k BE, при air=0; блок исчезает ПОЗЖЕ). Корень: GT6-фича сидит в ранней стадии
+	// Decoration.UNDERGROUND_ORES, а поздние стадии (VEGETAL/TOP_LAYER) перестраивают объём и стирают её декор-блоки → orphan-BE.
+	// Отложено в слой вордген-декора/MTE-контента (см. STATE.md). Клиент-синк worldgen-MTE делает целевой механизм:
+	// WORLDGEN_MTE + onChunkWatch/drainPendingSync (GT6WorldgenFeature) — sendClientData тем BE, чей блок РЕАЛЬНО MTE.
+
 	/** return the internal Name of this TileEntity to be registered. DO NOT START YOUR NAME WITH "gt."!!! */
 	public abstract String getTileEntityName();
 	
