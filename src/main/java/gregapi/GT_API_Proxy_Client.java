@@ -137,6 +137,51 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.render.GT6ItemModel.probeItemIcons(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] скан упал: " + e); }
 	}
 
+	// F6-worldgen приёмка гейт② (АВТОНОМНАЯ, не нужен пользователь): после входа в мир сканируем объём вокруг игрока —
+	// (1) сгенерировал ли worldgen GT6-блоки (руды/камни/флюиды/MTE) на КЛИЕНТСКОМ интегрированном сервере;
+	// (2) РЕЗОЛВИТСЯ ли материал руды на КЛИЕНТЕ (getMetaMaterial(BE)!=null = цветное вкрапление; null = серое «в прогрузке»).
+	// Ждём ~200 тиков (10с): чанки загружены, BE-синк mMetaData дошёл. Пишет в gregtech.log (game-bus). Once.
+	private int mOreProbeTick = -1;
+	private boolean mOreProbed = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onOreMaterialProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mOreProbed) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) { mOreProbeTick = -1; return; }
+		if (mOreProbeTick < 0) mOreProbeTick = 0;
+		if (++mOreProbeTick < 200) return;
+		mOreProbed = true;
+		try { probeOreMaterials(tMC); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-ORE-PROBE] скан упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
+	private void probeOreMaterials(net.minecraft.client.Minecraft tMC) {
+		net.minecraft.world.level.Level tLevel = tMC.level;
+		net.minecraft.core.BlockPos tP = tMC.player.blockPosition();
+		java.io.PrintStream tOut = gregapi.data.CS.OUT;
+		int tOreTotal=0, tOreResolved=0, tOreGrey=0, tOreNoBE=0, tStoneGT=0, tFluidGT=0, tMTE=0;
+		java.util.HashMap<String,Integer> tMatCounts = new java.util.HashMap<>();
+		int tMinY = tLevel.getMinY(), tMaxScanY = tP.getY()+4;
+		net.minecraft.core.BlockPos.MutableBlockPos tM = new net.minecraft.core.BlockPos.MutableBlockPos();
+		for (int dx=-40; dx<=40; dx++) for (int dz=-40; dz<=40; dz++) for (int y=tMinY; y<=tMaxScanY; y++) {
+			tM.set(tP.getX()+dx, y, tP.getZ()+dz);
+			net.minecraft.world.level.block.Block tB = tLevel.getBlockState(tM).getBlock();
+			if (tB instanceof gregapi.block.prefixblock.PrefixBlock tPB) {
+				tOreTotal++;
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tM);
+				if (!(tBE instanceof gregapi.block.prefixblock.PrefixBlockTileEntity)) { tOreNoBE++; continue; }
+				gregapi.oredict.OreDictMaterial tMat = tPB.getMetaMaterial(tBE);
+				if (tMat == null) tOreGrey++; else { tOreResolved++; tMatCounts.merge(tMat.mNameInternal, 1, Integer::sum); }
+			} else if (tB instanceof gregapi.block.metatype.BlockStones) tStoneGT++;
+			else if (tB instanceof gregapi.block.fluid.BlockBaseFluid) tFluidGT++;
+			else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) tMTE++;
+		}
+		tOut.println("[GT6-ORE-PROBE] pos=" + tP + " scan=±40xz Y[" + tMinY + ".." + tMaxScanY + "]");
+		tOut.println("[GT6-ORE-PROBE] РУДЫ: total=" + tOreTotal + " resolved(цвет)=" + tOreResolved + " grey(material=null)=" + tOreGrey + " noBE=" + tOreNoBE);
+		tOut.println("[GT6-ORE-PROBE] WORLDGEN-блоки: GT6-камень=" + tStoneGT + " GT6-флюид=" + tFluidGT + " MTE=" + tMTE);
+		tMatCounts.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(12).forEach(e ->
+			tOut.println("[GT6-ORE-PROBE]   материал " + e.getKey() + " = " + e.getValue()));
+	}
+
 	// F5/F3-render (client): единый динамический FluidModel ВСЕМ GT6-жидкостям (замена «Missing FluidModel» на реальный
 	// рендер). GT6-жидкость = still/flow-текстура (mTexture, IIconContainer) + цвет (mRGBa, тинтит серый молтен). neo 26
 	// рендерит жидкости через FluidModel.Unbaked(still, flow, overlay, tintSource) на RegisterFluidModelsEvent (mod-bus).

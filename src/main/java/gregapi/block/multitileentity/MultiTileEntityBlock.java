@@ -319,7 +319,10 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// IBlockExtension.getLightEmission(BlockState,BlockGetter,BlockPos) [IBlockExtension.java:152]; дефолт (без IMTE-хука) =
 	// aState.getLightEmission() (запечённое в Properties значение), тот же дефолт, что вернул бы super.getLightValue.
 	@Override public final boolean hasDynamicLightEmission(BlockState aState) {return T;}
-	@Override public final int getLightEmission(BlockState aState, BlockGetter aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetLightValue ? UT.Code.bind4(((IMTE_GetLightValue)aTileEntity).getLightValue()) : aState.getLightEmission();}
+	// F6-worldgen КРИТ (дедлок): свет-движок зовёт getLightEmission ВО ВРЕМЯ генерации чанка (hasDynamicLightEmission=T) →
+	// обычный WD.te форсит getChunk.join генерируемого чанка → light-поток ждёт сам себя → вечное зависание входа в мир.
+	// Берём BE НЕблокирующе (WD.teNonForcing: только из уже-FULL чанка, иначе null → запечённый дефолт; BE-свет пересчитается после gen).
+	@Override public final int getLightEmission(BlockState aState, BlockGetter aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.teNonForcing(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); return aTileEntity instanceof IMTE_GetLightValue ? UT.Code.bind4(((IMTE_GetLightValue)aTileEntity).getLightValue()) : aState.getLightEmission();}
 	public final boolean isLadder(BlockGetter aWorld, int aX, int aY, int aZ, LivingEntity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsLadder && ((IMTE_IsLadder)aTileEntity).isLadder(aEntity);}
 	public final boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsNormalCube ? ((IMTE_IsNormalCube)aTileEntity).isNormalCube() : mNormalCube;}
 	public final boolean isReplaceable(BlockGetter aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_IsReplaceable ? ((IMTE_IsReplaceable)aTileEntity).isReplaceable() : getMaterial().isReplaceable();}

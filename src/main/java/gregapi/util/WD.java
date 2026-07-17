@@ -359,6 +359,21 @@ public class WD {
 		Block tBlock = aWorld.getBlockState(tPos).getBlock();
 		return tBlock instanceof IBlockTileEntity ? ((IBlockTileEntity)tBlock).getTileEntity(aWorld, aX, aY, aZ) : null;
 	}
+	/** F6-worldgen/lighting КРИТ (дедлок при генерации): BE-доступ БЕЗ форс-загрузки чанка. Блок-методы, которые движок
+	 *  зовёт ВО ВРЕМЯ генерации чанка / расчёта света ({@link gregapi.block.multitileentity.MultiTileEntityBlock#getLightEmission}
+	 *  и т.п.), НЕ смеют идти через обычный {@link #te} — тот форсирует {@code Level.getBlockState}→{@code getChunk}→
+	 *  {@code CompletableFuture.join} на ТЕКУЩЕМ генерируемом чанке → light-engine-поток ждёт чанк, который сам же генерит →
+	 *  вечный DEADLOCK (jstack: BlockLightEngine.getEmission→MTE.getLightEmission→WD.te→ServerChunkCache.getChunk.join).
+	 *  Берём BE ТОЛЬКО из уже-FULL чанка: {@code getChunk(cx,cz,FULL,false)} неблокирующий (null, если чанк ещё не готов) →
+	 *  тогда возвращаем null (движок пересчитает светимость BE после финализации чанка). Для не-Level BlockGetter (чанк/регион)
+	 *  {@code getBlockEntity} и так неблокирующий (чтение из карты BE). */
+	public static BlockEntity teNonForcing(BlockGetter aWorld, int aX, int aY, int aZ) {
+		if (aWorld instanceof Level tLevel) {
+			net.minecraft.world.level.chunk.ChunkAccess tChunk = tLevel.getChunk(aX >> 4, aZ >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+			return tChunk == null ? null : tChunk.getBlockEntity(new BlockPos(aX, aY, aZ));
+		}
+		return aWorld == null ? null : aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
+	}
 	/** F-world: 1.7.10 World.blockExists(x,y,z) = «чанк с этим блоком загружен». Порт централизовал вызовы как
 	 *  WD.exists, но метод не был определён. neo-эквивалент — Level.isLoaded(BlockPos) (Level.java:695). */
 	public static boolean exists(LevelAccessor aWorld, int aX, int aY, int aZ) {
