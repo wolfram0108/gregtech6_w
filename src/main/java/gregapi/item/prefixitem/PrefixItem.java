@@ -135,7 +135,11 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	
 	public int getSpriteNumber() {return 1;}
 	public int getRenderPasses(int metadata) {return 2;}
-	public void registerIcons(IIconRegister aIconRegister) {/**/}
+	// F3-render: тип параметра был IIconRegister (net.minecraft.client.renderer.texture — УДАЛЁН в neo, только в
+	// compat-mirror при компиляции, вырезан из рантайма). getMethod-рефлексия GT6ItemModel.resolveIcon перечисляет
+	// методы класса → сигнатура с отсутствующим типом → NoClassDefFoundError → resolveIcon возвращал null → предмет
+	// не рисовался (пусто/пурпур). Параметр → Object (метод всё равно no-op в neo), рефлексия больше не падает.
+	public void registerIcons(Object aIconRegister) {/**/}
 	public boolean requiresMultipleRenderPasses() {return mPrefix.mIconIndexItem >= 0;}
 	public Identifier getIconIndex(ItemStack aStack) {return getIconFromDamageForRenderPass(ST.meta_(aStack), 0);}
 	public Identifier getIconFromDamage(int aMetaData) {return getIconFromDamageForRenderPass(aMetaData, 0);}

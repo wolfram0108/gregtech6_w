@@ -87,6 +87,14 @@ public class GT6ItemModel implements ItemModel {
 			String tH = "Fe.mTextureSetsItems.size=" + tFe.mTextureSetsItems.size() + " INSTANCES_ITEM=" + gregapi.render.TextureSet.INSTANCES_ITEM.size();
 			if (!tFe.mTextureSetsItems.isEmpty()) { Object ic0 = tFe.mTextureSetsItems.get(0); tH += " ic0=" + ic0.getClass().getSimpleName() + " getIcon0=" + ic0.getClass().getMethod("getIcon", int.class).invoke(ic0, 0); }
 			gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] Fe-header: " + tH);
+			// РЕАЛЬНЫЙ рендер-путь (валидная meta): dust iron → getIconFromDamageForRenderPass(Fe.mID) → resolveSprite → не пурпур?
+			net.minecraft.world.item.Item tDust = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "gt.meta.dust"));
+			if (tDust instanceof gregapi.item.prefixitem.PrefixItem tDPI) {
+				Object ic = tDPI.getClass().getMethod("getIconFromDamageForRenderPass", int.class, int.class).invoke(tDPI, (int)tFe.mID, 0);
+				String tR = "dust-iron getIconFDR(Fe.mID=" + tFe.mID + ")=" + ic;
+				if (ic instanceof Identifier idi) { TextureAtlasSprite sp = GT6QuadBuilder.resolveSprite(idi, net.minecraft.data.AtlasIds.ITEMS); if (sp == null) sp = GT6QuadBuilder.resolveSprite(idi, net.minecraft.data.AtlasIds.BLOCKS); tR += " → sprite=" + (sp != null ? "VALID(не-пурпур)" : "PURPLE!"); }
+				gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] REAL-PATH: " + tR);
+			}
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] Fe-header EXC " + e); }
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
