@@ -281,6 +281,9 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	// на placeBlock (worldgen) регистрируем (реестр,pos,id,nbt) по ЧАНКУ MTE; когда ЭТОТ чанк сам финализируется
 	// (ChunkEvent.Load), переприкрепляем BE к настоящему LevelChunk — тогда привязка держится и синкается клиенту.
 	private static final java.util.Map<Long, java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity>> WORLDGEN_MTE = new java.util.concurrent.ConcurrentHashMap<>();
+	// PENDING_SYNC: свеже-записанные worldgen-MTE для НЕМЕДЛЕННОГО синка на server-tick тем, кто УЖЕ трекает чанк. Ловит
+	// кросс-чанк MTE (redstonelight-декор), добавленные в УЖЕ-отправленный игроку чанк (onChunkWatch по нему уже прошёл).
+	private static final java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity> PENDING_SYNC = new java.util.concurrent.ConcurrentLinkedQueue<>();
 	private static long chunkKey(int aCX, int aCZ) {return ((long)aCX << 32) | (aCZ & 0xFFFFFFFFL);}
 
 	/** Вызывается из {@code WD.te} при worldgen-привязке ЛЮБОГО MTE-BE (aWorld не Level — WorldGenRegion). WD.te —
@@ -291,6 +294,29 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		if (aTileEntity == null) return;
 		net.minecraft.core.BlockPos tPos = aTileEntity.getBlockPos();
 		WORLDGEN_MTE.computeIfAbsent(chunkKey(tPos.getX() >> 4, tPos.getZ() >> 4), k -> new java.util.concurrent.ConcurrentLinkedQueue<>()).add(aTileEntity);
+		PENDING_SYNC.add(aTileEntity);
+	}
+
+	/** Немедленный синк свеже-записанных worldgen-MTE (server-tick): если ИХ чанк загружен — переприкрепить-если-потерян +
+	 *  sendClientData всем в радиусе. Для чанка, ещё не отправленного игроку, это no-op (некому в радиусе) — его подхватит
+	 *  onChunkWatch при отправке. Ловит именно кросс-чанк MTE в УЖЕ-отправленном чанке. Обрабатываем один раз (drain), квота. */
+	private static void drainPendingSync(net.minecraft.server.MinecraftServer aServer) {
+		net.minecraft.world.level.block.entity.BlockEntity tBE; int tN = 0;
+		while (tN < 256 && (tBE = PENDING_SYNC.poll()) != null) { tN++;
+			try {
+				net.minecraft.core.BlockPos tPos = tBE.getBlockPos();
+				int tCX = tPos.getX() >> 4, tCZ = tPos.getZ() >> 4;
+				for (net.minecraft.server.level.ServerLevel tL : aServer.getAllLevels()) {
+					net.minecraft.world.level.chunk.LevelChunk tC = tL.getChunkSource().getChunkNow(tCX, tCZ);
+					if (tC == null) continue;
+					if (!(tC.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) break;
+					net.minecraft.world.level.block.entity.BlockEntity tCur = tC.getBlockEntity(tPos);
+					if (tCur == null) { tBE.clearRemoved(); tL.setBlockEntity(tBE); tCur = tBE; }
+					if (tCur instanceof gregapi.tileentity.base.TileEntityBase03TicksAndSync tSync) tSync.sendClientData(true, null);
+					break;
+				}
+			} catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
+		}
 	}
 
 	private static void onChunkLoad(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
@@ -308,6 +334,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 
 	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
 		drainStubs(STUB_QUEUE, 16);
+		drainPendingSync(aEvent.getServer());
 	}
 
 	/** КЛИЕНТ-СИНК worldgen-MTE. КОРЕНЬ прозрачности: сервер ИМЕЕТ BE worldgen-MTE (source/rock/redstonelight), но клиент
