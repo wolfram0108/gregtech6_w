@@ -126,6 +126,7 @@ public class GT6GameTest extends GameTestInstance {
 		int[] tRelX = {2, 6};
 		StringBuilder tReport = new StringBuilder("[GT6-GAMETEST-MTE] ");
 		int tOK = 0;
+		BlockPos tRockAbs = null; net.minecraft.world.level.block.entity.BlockEntity tRockTE = null;
 		for (int i = 0; i < tIDs.length; i++) {
 			BlockPos tRel = new BlockPos(tRelX[i], 1, 4);
 			BlockPos tAbs = aHelper.absolutePos(tRel);
@@ -136,16 +137,49 @@ public class GT6GameTest extends GameTestInstance {
 				if (tTE != null) tTEPos = tTE.getBlockPos().toShortString();
 			} catch (Throwable t) { tReport.append(tNames[i]).append("=EXC(").append(t).append(") "); continue; }
 			if (tTE != null && tTE.getBlockPos().equals(tAbs) && tTE instanceof gregapi.block.multitileentity.IMultiTileEntity) tOK++;
+			if (i == 0) { tRockAbs = tAbs; tRockTE = tTE; }
 			tReport.append(tNames[i]).append("{placed=").append(tPlaced)
 				.append(" te=").append(tTE == null ? "null" : tTE.getClass().getSimpleName()).append(" tePos=").append(tTEPos)
 				.append(" ждали=").append(tAbs.toShortString()).append("} ");
 		}
 		aHelper.getLevel().getServer().sendSystemMessage(Component.literal(tReport.toString()));
-		// Гейт Ключа 1 (доказано mte2, EXIT=0): MTE-TE (камни/палки) садятся на СВОЮ позицию (не BlockPos.ZERO) на Y=−57 (Y-порог
-		// снят). LOAD-реконструкция (стаб→реальный MTE) — ОТДЕЛЬНЫЙ заход: getRegistry(int) не находит реестр по сохранённому id
-		// (reg=1168 валиден, regFound=false → ItemStackContainer Block-vs-Item ключ), а подмена стаба ломала Saving worlds. Здесь не тестируем.
-		if (tOK == tIDs.length) aHelper.succeed();
-		else aHelper.fail(Component.literal("MTE placement сломан: " + tReport));
+		if (tOK != tIDs.length) { aHelper.fail(Component.literal("MTE placement сломан: " + tReport)); return; }
+
+		// ── Гейт Ключа 1 (LOAD): выживает ли MTE save/load? Полный цикл БЕЗ реального reload (headless): реальный TE → writeToNBT
+		// (как neo сохраняет на диск: NBT_MTE_REG=item-id + данные) → сделать TileEntityLoaderStub с этим NBT (как neo подменяет на
+		// load) → GT6WorldgenFeature.reconstructMTE → проверить, что на позиции снова РЕАЛЬНЫЙ MTE (не стаб) с тем же mteid.
+		// Корневой фикс, что это разблокировал: registry-id теперь item-id (getRegistry(reg) находит реестр; был block-id 1168 → null).
+		StringBuilder tR2 = new StringBuilder("[GT6-GAMETEST-MTE-LOAD] ");
+		boolean tLoadOK = false;
+		try {
+			gregapi.block.multitileentity.IMultiTileEntity tMTE = (gregapi.block.multitileentity.IMultiTileEntity)tRockTE;
+			short tRegID = tMTE.getMultiTileEntityRegistryID();
+			boolean tRegFound = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tRegID) != null;
+			tR2.append("regID=").append(tRegID).append(" regFound=").append(tRegFound).append(" ");
+			// как neo сохраняет: writeToNBT (public на базе MTE; в интерфейсе нет → рефлексия)
+			net.minecraft.nbt.CompoundTag tSaveNBT = gregapi.util.UT.NBT.make();
+			tRockTE.getClass().getMethod("writeToNBT", net.minecraft.nbt.CompoundTag.class).invoke(tRockTE, tSaveNBT);
+			short tSavedReg = tSaveNBT.getShort(gregapi.data.CS.NBT_MTE_REG).orElse((short)-1);
+			short tSavedID  = tSaveNBT.getShort(gregapi.data.CS.NBT_MTE_ID ).orElse((short)-1);
+			tR2.append("savedReg=").append(tSavedReg).append(" savedID=").append(tSavedID).append(" ");
+			// как neo подменяет на load: ставим TileEntityLoaderStub на позицию (заменяя реальный камень) → потом реконструкция.
+			// setBlockEntity(стаб) гарантирует, что «reloaded» ниже — результат РЕКОНСТРУКЦИИ, а не уцелевший оригинал.
+			BlockState tState = aHelper.getLevel().getBlockState(tRockAbs);
+			gregapi.tileentity.base.TileEntityLoaderStub tStub = new gregapi.tileentity.base.TileEntityLoaderStub(tRockAbs, tState);
+			tStub.setLevel(aHelper.getLevel());
+			tStub.mLoadedNBT = tSaveNBT;
+			aHelper.getLevel().setBlockEntity(tStub);
+			tR2.append("stubSet=").append(aHelper.getLevel().getBlockEntity(tRockAbs) instanceof gregapi.tileentity.base.TileEntityLoaderStub).append(" ");
+			gregapi.worldgen.GT6WorldgenFeature.reconstructMTE(aHelper.getLevel(), tStub);
+			net.minecraft.world.level.block.entity.BlockEntity tReloaded = aHelper.getLevel().getBlockEntity(tRockAbs);
+			boolean tReal = tReloaded instanceof gregapi.block.multitileentity.IMultiTileEntity && !(tReloaded instanceof gregapi.tileentity.base.TileEntityLoaderStub);
+			short tReloadID = tReal ? ((gregapi.block.multitileentity.IMultiTileEntity)tReloaded).getMultiTileEntityID() : -1;
+			tR2.append("reloaded=").append(tReloaded == null ? "null" : tReloaded.getClass().getSimpleName()).append(" reloadID=").append(tReloadID).append(" ");
+			tLoadOK = tRegFound && tReal && tReloadID == 32757;
+		} catch (Throwable t) { tR2.append("EXC(").append(t).append(") "); }
+		aHelper.getLevel().getServer().sendSystemMessage(Component.literal(tR2.toString()));
+		if (tLoadOK) aHelper.succeed();
+		else aHelper.fail(Component.literal("MTE load-реконструкция сломана: " + tR2));
 	}
 
 	@Override public MapCodec<? extends GameTestInstance> codec() { return CODEC; }

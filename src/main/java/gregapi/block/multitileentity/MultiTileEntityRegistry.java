@@ -23,8 +23,6 @@ import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.code.ArrayListNoNulls;
 import gregapi.code.HashSetNoNulls;
 import gregapi.code.ItemNBT;
-import gregapi.code.ItemStackContainer;
-import gregapi.code.ItemStackMap;
 import gregapi.data.LH;
 import gregapi.item.CreativeTab;
 import gregapi.recipes.Recipe.RecipeMap;
@@ -77,7 +75,6 @@ import static gregapi.data.CS.*;
  */
 public class MultiTileEntityRegistry {
 	private static final HashMap<String, MultiTileEntityRegistry> NAMED_REGISTRIES = new HashMap<>();
-	private static final ItemStackMap<ItemStackContainer, MultiTileEntityRegistry> REGISTRIES = new ItemStackMap<>();
 	private static final HashSetNoNulls<Class<?>> sRegisteredTileEntities = new HashSetNoNulls<>();
 	private static final HashSetNoNulls<String> sRegisteredTileEntityClassNames = new HashSetNoNulls<>();
 	private final HashSetNoNulls<Class<?>> mRegisteredTileEntities = new HashSetNoNulls<>();
@@ -112,13 +109,18 @@ public class MultiTileEntityRegistry {
 		mNameInternal = aNameInternal;
 		mBlock = aBlock;
 		mBlock.mMultiTileEntityRegistry = this;
-		REGISTRIES.put(mBlock, W, this);
 		NAMED_REGISTRIES.put(mNameInternal, this);
 	}
 	
 	/** Whatever you do, DO NOT GET THE UTTERLY RETARDED IDEA OF ADDING YOUR MULTITILEENTITIES TO MY OWN REGISTRY!!! Create your own instance! */
+	// F-registry-id (КОРЕНЬ regFound=false): прежний REGISTRIES.get(new ItemStackContainer(Item.byId(reg))) промахивался, ПОТОМУ ЧТО
+	// REGISTRIES (ItemStackMap) заполнялся в конструкторе на PreInit — когда блок-итем ЕЩЁ НЕ зарегистрирован (neo DeferredRegister
+	// создаёт объект на RegisterEvent) → ключ mItem = Item.byBlock(mBlock) = AIR (воздух, id 0). А get по реальному Item.byId(reg) ≠ AIR →
+	// null ДАЖЕ с верным item-id (GameTest: regID=1646 валиден, regFound=false). Резолвим по СВЕЖЕМУ ключу на CALL-time (рантайм/load —
+	// итемы заморожены, Item.byBlock(mBlock) резолвится): item-id блок-итема каждого реестра. Реестров единицы (NAMED_REGISTRIES), перебор дёшев.
 	public static MultiTileEntityRegistry getRegistry(int aRegistryID) {
-		return REGISTRIES.get(new ItemStackContainer(Item.byId(aRegistryID), 1, W));
+		for (MultiTileEntityRegistry tRegistry : NAMED_REGISTRIES.values()) if (ST.id(ST.item(tRegistry.mBlock)) == aRegistryID) return tRegistry;
+		return null;
 	}
 	
 	/** Whatever you do, DO NOT GET THE UTTERLY RETARDED IDEA OF ADDING YOUR MULTITILEENTITIES TO MY OWN REGISTRY!!! Create your own instance! */
@@ -143,7 +145,8 @@ public class MultiTileEntityRegistry {
 	}
 	
 	/** Returns the MultiTileEntityRegistry ID that is currently used by this World. */
-	public int currentID() {return ST.id(mBlock);}
+	// F-registry-id: item-id блок-итема (Item.byId-резолвимый в getRegistry), НЕ block-id (см. коммент в getNewTileEntityContainer).
+	public int currentID() {return ST.id(ST.item(mBlock));}
 	
 	/** Adds a new MultiTileEntity. It is highly recommended to do this in either the PreInit or the Init Phase. PostInit might not work well.*/
 	public ItemStack add(String aLocalised, String aCategoricalName, int aID, int aCreativeTabID, Class<? extends BlockEntity> aClass, int aBlockMetaData, int aStackSize, MultiTileEntityBlock aBlock, CompoundTag aParameters, Object... aRecipe) {
@@ -268,11 +271,12 @@ public class MultiTileEntityRegistry {
 		if (rContainer.mTileEntity == null) return null;
 		// было TileEntity.setWorldObj(World) (1.7.10, recompSrc TileEntity.java:70) -> BlockEntity.setLevel(Level) [BlockEntity.java:93]
 		rContainer.mTileEntity.setLevel(aWorld);
-		// F-registry-id (мисport): registry-ID тайла = ST.id(mBlock) (item-id блока, = currentID() «RegistryID used by world»),
-		// потому что getRegistry(int) резолвит его через Item.byId(id) (REGISTRIES по mBlock). Порт ошибочно клал BLOCK.getId(mBlock)
-		// (block-registry-id ≠ item-id) → getRegistry(сохранённый id) возвращал null → load-реконструкция MTE и рантайм getRegistry
-		// (дропы/пакеты getMultiTileEntityRegistryID) не находили реестр. 1:1 с оригиналом (getMultiTileEntityRegistryID=item-id).
-		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)ST.id(mBlock));
+		// F-registry-id (КОРНЕВОЙ фикс load-реконструкции): registry-ID тайла = ITEM-id блок-итема, т.к. getRegistry(int) матчит его как
+		// `ST.id(ST.item(reg.mBlock)) == id` (см. getRegistry). В 1.7.10 block-id==item-id (общее id-пространство, ItemBlock делил id блока) —
+		// там ST.id(mBlock) годился. В neo BLOCK и ITEM — РАЗНЫЕ реестры с независимыми id, а `ST.id(mBlock)` резолвится в overload id(Block)=
+		// BLOCK.getId → block-id (напр. 1168) ≠ item-id → getRegistry(block-id) промахивался. Правильно: ST.id(ST.item(mBlock)) = item-id
+		// (ST.item(Block)=Item.byBlock). getMultiTileEntityRegistryID() теперь = item-id, network-safe (item-id синхронизирован клиент/сервер).
+		((IMultiTileEntity)rContainer.mTileEntity).initFromNBT(aNBT == null || aNBT.isEmpty() ? tClass.mParameters : UT.NBT.fuse(aNBT, tClass.mParameters), (short)aID, (short)ST.id(ST.item(mBlock)));
 		return rContainer;
 	}
 	

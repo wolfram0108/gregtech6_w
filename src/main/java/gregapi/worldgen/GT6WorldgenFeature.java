@@ -212,17 +212,20 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	// (getChunk=FULL мгновенно, нет deadlock), доступен настоящий ServerLevel. GT6WorldGenerator НЕ тронут (Level-цепь 1:1).
 	private record ChunkReq(ServerLevel level, int blockX, int blockZ) {}
 	private static final java.util.Queue<ChunkReq> CHUNK_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	// F-tileentity-construction (load-реконструкция MTE-стабов): очередь чанков для замены TileEntityLoaderStub реальным MTE.
+	// Отдельная от CHUNK_QUEUE (та — только НОВЫЕ чанки под ворлдген; стабы приходят на ЛЮБОЙ load существующего чанка с диска).
+	private static final java.util.Queue<ChunkReq> STUB_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
 	private static void onChunkLoad(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
-		if (aEvent.isNewChunk() && aEvent.getLevel() instanceof ServerLevel tLevel) {
+		if (aEvent.getLevel() instanceof ServerLevel tLevel) {
 			net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
-			CHUNK_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
+			if (aEvent.isNewChunk()) CHUNK_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
+			// F-tileentity-construction (load-реконструкция): ОТКЛАДЫВАЕМ на server-tick (как ворлдген) — подмена стаба (setBlockEntity)
+			// ВО ВРЕМЯ ChunkEvent.Load (сам идёт и при save/shutdown «Saving worlds») давала реентранси-зависание; server-tick.Post при
+			// save не выполняется. Корневой блокер снят: registry-id теперь item-id (см. MultiTileEntityRegistry.getNewTileEntityContainer)
+			// → getRegistry(reg) находит реестр. Стабы возникают на КАЖДОЙ загрузке не-PrefixBlock MTE (общий MTE_TYPE) → sweep каждый load.
+			STUB_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
 		}
-		// F-tileentity-construction (load-реконструкция MTE-стабов) — ОТЛОЖЕНА (не подключаем на server-tick): (1) подмена стаба в
-		// мире ломала «Saving worlds» (shutdown-зависание); (2) корень recon-FAIL — getRegistry(int) не находит реестр по сохранённому
-		// registry-id (GameTest-диагностика: reg=1168 валиден, но regFound=false → REGISTRIES по mBlock не матчит Item.byId(reg);
-		// ItemStackContainer Block-vs-Item ключ). Нужен отдельный заход (registry-id resolution). reconstructMTE/reconstructChunkMTEs
-		// ниже готовы (pos-канал даёт позицию), ждут этого фикса. Камни/палки/руды в СВЕЖЕМ мире (placement) работают и без этого.
 	}
 
 	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
@@ -237,6 +240,17 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				// отправку отслеживающим игрокам (для чанков впереди игрока список getPlayers пуст → ноль стоимости).
 				resendChunk(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4);
 				tN++;
+			} catch (Throwable e) {
+				e.printStackTrace(gregapi.data.CS.ERR);
+			}
+		}
+		// F-tileentity-construction (load-реконструкция MTE-стабов): дренируем отдельной квотой (throttle) — заменяем стабы
+		// реальными MTE в уже-FULL чанках (setBlockEntity безопасен на server-tick, вне save-цикла).
+		int tM = 0;
+		while (tM < 16 && (tReq = STUB_QUEUE.poll()) != null) {
+			try {
+				reconstructChunkMTEs(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4);
+				tM++;
 			} catch (Throwable e) {
 				e.printStackTrace(gregapi.data.CS.ERR);
 			}
