@@ -79,6 +79,14 @@ public class ItemArmorBase extends Item implements IItemUpdatable, IItemGT, IIte
 	/** F13: 1.7.10 ItemArmor.armorType (int 0-3) → neo ArmorType (mArmorType ниже); слот-int сохранён как mArmorSlot. Реализовано. */
 	protected final int mArmorSlot;
 	protected final ArmorType mArmorType;
+	// F3-render: 1.7.10 ItemArmorBase.getIconFromDamage→mIcon (registerIcon "modID:armor/<name>/<slot>") утрачен при порте
+	// (registerIcons/IIconRegister-хук мёртв в neo) → GT6ItemModel.resolveIcon возвращал null → броня-предмет не рисовался.
+	// Восстанавливаем 1:1: ленивое построение того же Identifier (armor/<name>/<slot>) при первом запросе.
+	protected net.minecraft.resources.Identifier mIcon;
+	public net.minecraft.resources.Identifier getIconFromDamage(int aMeta) {
+		if (mIcon == null) mIcon = net.minecraft.resources.Identifier.parse((mModID + ":armor/" + mArmorName + "/" + mArmorSlot).toLowerCase(java.util.Locale.ROOT)); // sprite-id БЕЗ "textures/" (items.json prefix:"" → textures/items/armor/<name>/<slot>.png)
+		return mIcon;
+	}
 
 	/**
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
