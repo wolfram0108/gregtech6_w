@@ -20,8 +20,12 @@
 package gregapi.jei;
 
 import gregapi.data.MD;
+import gregapi.recipes.ICraftingRecipeGT;
 import gregapi.recipes.Recipe;
 import gregapi.recipes.Recipe.RecipeMap;
+import gregapi.recipes.ShapedOreRecipe;
+import gregapi.recipes.ShapelessOreRecipe;
+import gregapi.util.CR;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -32,8 +36,10 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,17 +59,10 @@ import static gregapi.data.CS.*;
  * инстанциировать плагин; выделен в отдельный пакет {@code gregapi.jei}, чтобы не тянуть JEI-типы в
  * общий код).
  *
- * PORT-TODO(F11, Ф1.3-crafting-jei): крафт-рецепты GT6 ({@code CR.BUFFER}/{@code ICraftingRecipeGT},
- * F11-диспетчер {@code decisions/F11-crafting-recipe.md}) в JEI НЕ выведены. Причина: они не являются
- * neo {@code CraftingRecipe} (см. javadoc {@code ICraftingRecipeGT}: "F11 — собственный крафт-контракт
- * ... НЕ neo Recipe"), поэтому не попадают в {@code RecipeTypes.CRAFTING} автоматически; а собственная
- * generic-категория (по образцу {@link GT6_JEI_RecipeCategory}) требует ширины/высоты сетки, которых
- * {@code ShapedOreRecipe}/{@code ShapelessOreRecipe} (единственные конкретные реализации с публичным
- * {@code getInput()}) НЕ выставляют публично (`gregapi/recipes/ShapedOreRecipe.java`: {@code mWidth}/
- * {@code mHeight} — protected; `gregapi/recipes/ICraftingRecipeGT.java` — общий контракт вовсе без
- * {@code getInput()}). Требует либо нового public-геттера на F11-файлах (вне периметра этой задачи —
- * F11 уже закрытый шов, decisions/F11-crafting-recipe.md), либо полноценного {@code CraftingRecipe}-
- * адаптера. Машинные рецепты (RecipeMap→JEI) выше не затронуты и работают независимо.
+ * <p>Крафт-рецепты GT6 (F11-буфер {@code CR.BUFFER}/{@code ICraftingRecipeGT}, диспетчер
+ * {@code CustomRecipe}, decisions/F11-crafting-recipe.md §Ф1.3-crafting-jei) — тот же {@code CR.list()},
+ * своя категория {@link GT6_JEI_CraftingCategory} (см. её javadoc: почему не встроенная
+ * {@code RecipeTypes.CRAFTING}, и как она переиспользует нативный JEI {@code ICraftingGridHelper}).</p>
  */
 @JeiPlugin
 public final class GT6_JEI_Plugin implements IModPlugin {
@@ -73,6 +72,9 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	private final Map<RecipeMap, RecipeType<Recipe>> mTypes = new LinkedHashMap<>();
 	/** RecipeMap -> её видимые рецепты ({@code mEnabled && !mHidden}, gregapi/recipes/Recipe.java:564), посчитанные ОДИН раз в {@link #registerCategories} и переиспользуемые в {@link #registerRecipes} (не плодим параллельный пересчёт). */
 	private final Map<RecipeMap, List<Recipe>> mRecipes = new LinkedHashMap<>();
+	/** Ф1.3-crafting-jei: F11-буфер {@code CR.list()}, отфильтрованный до {@link ShapedOreRecipe}/{@link ShapelessOreRecipe}-наследников
+	 *  (1:1 с тем, что показывал NEI — см. {@link GT6_JEI_CraftingCategory} javadoc), посчитан ОДИН раз в {@link #registerCategories}. */
+	private List<ICraftingRecipeGT> mCraftingRecipes = Collections.emptyList();
 
 	@Override
 	public Identifier getPluginUid() {
@@ -83,6 +85,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	public void registerCategories(IRecipeCategoryRegistration aRegistration) {
 		mTypes.clear();
 		mRecipes.clear();
+		mCraftingRecipes = Collections.emptyList();
 		IGuiHelper tGuiHelper = aRegistration.getJeiHelpers().getGuiHelper();
 		List<IRecipeCategory<?>> tCategories = new ArrayList<>();
 		// Единственный центр рецептов GT6 (как старый NEI_GT_API_Config.java:70): каждая карта с
@@ -102,6 +105,24 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				e.printStackTrace(ERR);
 			}
 		}
+
+		// Ф1.3-crafting-jei: крафт-верстак GT6 (F11-буфер) — своя категория, см. GT6_JEI_CraftingCategory
+		// javadoc. Показываются только Shaped/ShapelessOreRecipe-наследники (1:1 с тем, что NEI мог отрисовать).
+		try {
+			List<ICraftingRecipeGT> tCraftingList = new ArrayList<>();
+			for (ICraftingRecipeGT tRecipe : CR.list()) {
+				if (tRecipe == null) continue;
+				if (tRecipe instanceof ShapedOreRecipe || tRecipe instanceof ShapelessOreRecipe) tCraftingList.add(tRecipe);
+			}
+			if (!tCraftingList.isEmpty()) {
+				mCraftingRecipes = tCraftingList;
+				tCategories.add(new GT6_JEI_CraftingCategory(tGuiHelper));
+			}
+		} catch (Throwable e) {
+			ERR.println("JEI: GT6 crafting-table category failed to register, skipping.");
+			e.printStackTrace(ERR);
+		}
+
 		aRegistration.addRecipeCategories(tCategories.toArray(new IRecipeCategory<?>[0]));
 	}
 
@@ -115,6 +136,15 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				e.printStackTrace(ERR);
 			}
 		}
+
+		if (!mCraftingRecipes.isEmpty()) {
+			try {
+				aRegistration.addRecipes(GT6_JEI_CraftingCategory.TYPE, mCraftingRecipes);
+			} catch (Throwable e) {
+				ERR.println("JEI: GT6 crafting-table recipes failed to register, skipping.");
+				e.printStackTrace(ERR);
+			}
+		}
 	}
 
 	@Override
@@ -125,6 +155,15 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				if (!tMachines.isEmpty()) aRegistration.addCraftingStation(tEntry.getValue(), tMachines.toArray(new ItemStack[0]));
 			} catch (Throwable e) {
 				ERR.println("JEI: RecipeMap '" + tEntry.getKey().mNameInternal + "' failed to register its catalysts, skipping.");
+				e.printStackTrace(ERR);
+			}
+		}
+
+		if (!mCraftingRecipes.isEmpty()) {
+			try {
+				aRegistration.addCraftingStation(GT6_JEI_CraftingCategory.TYPE, Blocks.CRAFTING_TABLE);
+			} catch (Throwable e) {
+				ERR.println("JEI: GT6 crafting-table category failed to register its catalyst, skipping.");
 				e.printStackTrace(ERR);
 			}
 		}

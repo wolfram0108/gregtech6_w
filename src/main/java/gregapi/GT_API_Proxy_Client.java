@@ -313,8 +313,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			} catch (Throwable e) { tNameRaw++; }
 		}
 		o.println("[GT6-ENGINE] 5. ИМЕНА (getName): читаемых=" + tNameOk + " сырой-ключ=" + tNameRaw + " примеры:" + tNameSamples);
-		// 6. КРАФТ (Ф1.4): RecipeManager gregtech=1 — это диспетчер F11 (CustomRecipe); реальные рецепты в CR.BUFFER, обслуживает 1 диспетчер.
-		try { o.println("[GT6-ENGINE] 6. КРАФТ CR.BUFFER (F11-диспетчер обслуживает): буфер-крафт-рецептов=" + gregapi.util.CR.list().size()); }
+		// 6. КРАФТ (Ф1.4/Ф1.3): RecipeManager gregtech=1 = диспетчер F11; рецепты в CR.BUFFER. Ф1.3: в JEI-крафт идут Shaped/Shapeless-наследники.
+		try { int tCrTotal=gregapi.util.CR.list().size(), tCrJei=0;
+			for (gregapi.recipes.ICraftingRecipeGT r : gregapi.util.CR.list()) if (r instanceof gregapi.recipes.ShapedOreRecipe || r instanceof gregapi.recipes.ShapelessOreRecipe) tCrJei++;
+			o.println("[GT6-ENGINE] 6. КРАФТ CR.BUFFER (F11-диспетчер): буфер-крафт-рецептов=" + tCrTotal + " из них в JEI-крафт (shaped/shapeless)=" + tCrJei); }
 		catch (Throwable e) { o.println("[GT6-ENGINE] 6. КРАФТ CR.BUFFER: скан упал=" + e); }
 		o.println("[GT6-ENGINE] ================= КОНЕЦ ЗАМЕРА =================");
 	}

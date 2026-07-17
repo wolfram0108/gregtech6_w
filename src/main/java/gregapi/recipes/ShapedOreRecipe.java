@@ -108,6 +108,11 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 	/** @return входы ячеек ({@code null}/{@code ItemStack}/{@code List<ItemStack>}) — как у Forge-{@code getInput()} ({@code Object[]}). */
 	public Object[] getInput() {return mInput;}
 
+	/** Read-only геттер на {@link #mWidth} (Ф1.3-crafting-jei: ширина сетки нужна JEI-раскладке; не ломает F11-шов, шире протокол не меняет). */
+	public int getWidth() {return mWidth;}
+	/** Read-only геттер на {@link #mHeight} (Ф1.3-crafting-jei: высота сетки нужна JEI-раскладке; не ломает F11-шов, шире протокол не меняет). */
+	public int getHeight() {return mHeight;}
+
 	@Override public int getRecipeSize() {return mWidth * mHeight;}
 	@Override public ItemStack getRecipeOutput() {return mOutput;}
 	@Override public boolean isRemovableByGT() {return T;}
