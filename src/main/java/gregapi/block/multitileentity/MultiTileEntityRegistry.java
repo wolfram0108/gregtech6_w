@@ -193,19 +193,24 @@ public class MultiTileEntityRegistry {
 		mLastRegisteredID = aClassContainer.mID;
 		mRegistrations.add(aClassContainer);
 		if (!mCreativeTabs.containsKey(aClassContainer.mCreativeTabID)) mCreativeTabs.put(aClassContainer.mCreativeTabID, new CreativeTab(mNameInternal+"."+aClassContainer.mCreativeTabID, aCategoricalName, Item.byBlock(mBlock), aClassContainer.mCreativeTabID));
+		// F3-render (КРИТ, гейт②-находка): *Client-хуки регистрации — это TESR/immediate-mode рендер-инициализация (напр.
+		// MultiTileEntityChest.onRegistrationFirstClient → ClientRegistry.bindTileEntitySpecialRenderer, 1.7.10-API удалён в neo →
+		// NoSuchFieldException). БЕЗ try-catch необработанное исключение ОБРЫВАЛО Loader_MultiTileEntities → в runClient регистрировался
+		// лишь 1 MTE из сотен (рок/палка/машины отсутствовали → placeBlock=false, worldgen пуст). Рендер MTE = Фаза C: сбой client-хука
+		// = лог+продолжить (тот же приём, что вся отложенная F3-render-инициализация). Серверные хуки НЕ глушим (их сбой = реальный баг).
 		if (sRegisteredTileEntityClassNames.add(aClassContainer.mCanonicalTileEntity.getClass().getName()) && sRegisteredTileEntities.add(aClassContainer.mCanonicalTileEntity.getClass())) {
 			if (aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirst) ((IMTE_OnRegistrationFirst)aClassContainer.mCanonicalTileEntity).onRegistrationFirst(this, aClassContainer.mID);
-			if (CODE_CLIENT && aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirstClient) ((IMTE_OnRegistrationFirstClient)aClassContainer.mCanonicalTileEntity).onRegistrationFirstClient(this, aClassContainer.mID);
+			if (CODE_CLIENT && aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirstClient) try {((IMTE_OnRegistrationFirstClient)aClassContainer.mCanonicalTileEntity).onRegistrationFirstClient(this, aClassContainer.mID);} catch (Throwable e) {e.printStackTrace(ERR);}
 		}
 		if (mRegisteredTileEntities.add(aClassContainer.mCanonicalTileEntity.getClass())) {
 			if (aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirstOfRegister) ((IMTE_OnRegistrationFirstOfRegister)aClassContainer.mCanonicalTileEntity).onRegistrationFirstOfRegister(this, aClassContainer.mID);
-			if (aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirstOfRegisterClient) ((IMTE_OnRegistrationFirstOfRegisterClient)aClassContainer.mCanonicalTileEntity).onRegistrationFirstOfRegisterClient(this, aClassContainer.mID);
+			if (CODE_CLIENT && aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationFirstOfRegisterClient) try {((IMTE_OnRegistrationFirstOfRegisterClient)aClassContainer.mCanonicalTileEntity).onRegistrationFirstOfRegisterClient(this, aClassContainer.mID);} catch (Throwable e) {e.printStackTrace(ERR);}
 		}
 		if (aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistration) {
 			((IMTE_OnRegistration)aClassContainer.mCanonicalTileEntity).onRegistration(this, aClassContainer.mID);
 		}
 		if (CODE_CLIENT && aClassContainer.mCanonicalTileEntity instanceof IMTE_OnRegistrationClient) {
-			((IMTE_OnRegistrationClient)aClassContainer.mCanonicalTileEntity).onRegistrationClient(this, aClassContainer.mID);
+			try {((IMTE_OnRegistrationClient)aClassContainer.mCanonicalTileEntity).onRegistrationClient(this, aClassContainer.mID);} catch (Throwable e) {e.printStackTrace(ERR);}
 		}
 		if (aRecipe != null && aRecipe.length > 1) {
 			if (aRecipe[0] instanceof Object[]) aRecipe = (Object[])aRecipe[0];
