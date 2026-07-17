@@ -36,13 +36,11 @@ import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.IIcon;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -58,7 +56,9 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUpdatable, IItemGT {
-	protected IIcon mIcon;
+	// F3-render: было IIcon (удалённый 1.7.10-класс) — поле мёртвое (нигде не читается); тип сменён на neo Identifier,
+	// чтобы убрать ссылку на removed-класс (иначе перечисление методов класса в GT6ItemModel.resolveIcon → NoClassDefFoundError).
+	protected net.minecraft.resources.Identifier mIcon;
 	private final String mName;
 	
 	public ItemFluidDisplay() {
@@ -211,33 +211,20 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	}
 	
 	// @Override
-	public void registerIcons(IIconRegister aIconRegister) {
-		// Useful hack to register Block Icons. That is why the Fluid Display Item has to always exist.
-		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI) {
-			// Setting up and loading Icon Register for Blocks
-			GT_API.sBlockIcons = aIconRegister;
-			for (Runnable tRunnable : GT_API.sBlockIconload) {
-				try {
-					tRunnable.run();
-				} catch(Throwable e) {
-					e.printStackTrace(ERR);
-				}
-			}
-			if (MD.IC2.mLoaded) {
-				try {
-					for (gregapi.old.GT_BaseCrop tCrop : gregapi.old.GT_BaseCrop.sCropList) tCrop.registerSprites(aIconRegister);
-				} catch(Throwable e) {
-					e.printStackTrace(ERR);
-				}
-			}
-		}
+	// F3-render: было registerIcons(IIconRegister) (removed-класс в сигнатуре ломал перечисление методов в resolveIcon →
+	// NoClassDefFoundError) — param сменён на Object. «Useful hack» диспетчеризации sBlockIconload (1.7.10: этот предмет был
+	// ДРАЙВЕРОМ block-icon-load-фазы) МЁРТВ в neo — GT_API.sBlockIconload обнуляется на init (GT_API.java:1048); block-иконки
+	// строятся ЛЕНИВО (BI.Icon / Textures.java:171). Убран: ленивый вызов итерировал бы null → NPE.
+	public void registerIcons(Object aIconRegister) {
+		//
 	}
-	
-	// PORT-TODO(F3, render): 1.7.10 Fluid.getBlock()/getStillIcon()/Block.getIcon(int,int) — старый Forge
-	// Fluid-render API (IIcon/getBlock/getStillIcon), 0 замены в 3 корнях (в neo — атлас спрайтов через
-	// baked-модели/IClientFluidTypeExtensions, не точечный метод); рендер = Фаза C.
+
+	// PORT-TODO(F3, render): 1.7.10 Fluid.getBlock()/getStillIcon()/Block.getIcon(int,int) — старый Forge Fluid-render API,
+	// в neo — атлас спрайтов через baked-модели/IClientFluidTypeExtensions. Иконка флюид-дисплея = still-текстура флюида →
+	// закрывается ВМЕСТЕ с фазой флюидов (Фаза C, п.2 вектора). До неё законно null (единственный отложенный item-рендер).
+	// Тип возврата IIcon (removed) → Identifier: иначе перечисление методов в resolveIcon → NoClassDefFoundError.
 	// @Override
-	public IIcon getIconFromDamage(int aMeta) {
+	public net.minecraft.resources.Identifier getIconFromDamage(int aMeta) {
 		return null;
 	}
 

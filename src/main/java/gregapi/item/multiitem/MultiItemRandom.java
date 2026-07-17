@@ -377,8 +377,17 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 		}
 	}
 
+	// F3-render (ленивый триггер, тот же приём, что ItemBase.getIconFromDamage): registerIcons(IIconRegister) в neo НЕ
+	// вызывается (Forge texture-stitch хук удалён) → mIconList оставался null → getIconIndex/getIconFromDamage возвращали
+	// null → предмет не рисовался (пусто). Наполняем mIconList ЛЕНИВО при первом запросе иконки тем же registerIcons-перебором.
+	// protected: подклассы (MultiItemBumbles), переопределяющие getIconFromDamage со своим чтением mIconList, обязаны
+	// тоже лениво триггерить наполнение (иначе минуют родительский триггер) — тот же централизованный приём.
+	protected boolean mIconsRegistered = F;
+	protected void ensureIconsRegistered() {if (!mIconsRegistered) {mIconsRegistered = T; registerIcons(null);}}
+
 	// @Override
 	public Identifier getIconIndex(ItemStack aStack) {
+		ensureIconsRegistered();
 		short aMetaData = ST.meta_(aStack);
 		if (!UT.Code.exists(aMetaData, mIconList)) return Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 		IItemEnergy tStats = mElectricStats.get(aMetaData);
@@ -404,11 +413,13 @@ public abstract class MultiItemRandom extends MultiItem implements Runnable {
 
 	@Override
 	public Identifier getIconFromDamage(int aMetaData) {
+		ensureIconsRegistered();
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
 
 	// @Override
 	public Identifier getIconFromDamageForRenderPass(int aMetaData, int aRenderPass) {
+		ensureIconsRegistered();
 		return UT.Code.exists(aMetaData, mIconList) ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);
 	}
 	

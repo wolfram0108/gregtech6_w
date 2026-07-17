@@ -93,8 +93,13 @@ public class ItemIntegratedCircuit extends ItemBase {
 	
 	protected Identifier[] mIcons = new Identifier[256];
 
+	private boolean mIconsRegistered = F;
+
 	@Override
+	// F3-render (ленивый триггер, тот же приём, что ItemBase.getIconFromDamage): registerIcons в neo НЕ вызывается →
+	// mIcons оставался null → предмет не рисовался. Наполняем ЛЕНИВО при первом запросе тем же registerIcons-перебором.
 	public Identifier getIconFromDamage(int aMeta) {
+		if (!mIconsRegistered) registerIcons(null);
 		return mIcons[aMeta & 255];
 	}
 	
@@ -118,19 +123,11 @@ public class ItemIntegratedCircuit extends ItemBase {
 	@Override
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было aIconRegister.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 	public void registerIcons(Object aIconRegister) {
+		mIconsRegistered = T;
 		for (int i = 0; i < 25/*TODO mIcons.length*/; i++) mIcons[i] = Identifier.parse(mModID + ":" + mName + "/" + (byte)(i&255));
-		// Useful hack to register Item Icons. That is why the Selector Tag Item has to always exist.
-		if (Abstract_Mod.sFinalized >= Abstract_Mod.sModCountUsingGTAPI) {
-			// Setting up and loading Icon Register for Items
-			GT_API.sItemIcons = aIconRegister;
-			for (Runnable tRunnable : GT_API.sItemIconload) {
-				try {
-					tRunnable.run();
-				} catch(Throwable e) {
-					e.printStackTrace(ERR);
-				}
-			}
-		}
+		// F3-render: «useful hack» диспетчеризации sItemIconload (1.7.10: этот предмет был ДРАЙВЕРОМ item-icon-load-фазы всего
+		// мода) МЁРТВ в neo — GT_API.sItemIconload обнуляется на init (GT_API.java:1050); icon-load-фаза заменена ленивым
+		// построением в TextureSet.java:97 / ItemIcons.getIcon. Убран: ленивый вызов на рендере итерировал бы null → NPE.
 	}
 	
 	private static String getModeString(int aMetaData) {

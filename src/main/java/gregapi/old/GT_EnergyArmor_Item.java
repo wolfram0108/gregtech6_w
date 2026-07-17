@@ -28,7 +28,6 @@ import net.neoforged.api.distmarker.Dist;
 import gregapi.code.ItemNBT;
 import gregapi.data.LH;
 import gregapi.util.UT;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -127,7 +126,9 @@ public class GT_EnergyArmor_Item extends Item /*implements ISpecialArmor*/ {
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было this.itemIcon=aIconRegister.registerIcon(...) — и поле Item.itemIcon,
 	// и IIconRegister удалены в 26.1.2 целиком (тот же класс проблемы, что ItemBase.java:131/getSubItems ниже в этом
 	// файле, уже сведённый к no-op); замены нет до Фазы C.
-	public void registerIcons(IIconRegister aIconRegister) {/**/}
+	// F3-render: param был IIconRegister (removed-класс в сигнатуре ломает перечисление методов в GT6ItemModel.resolveIcon
+	// → NoClassDefFoundError → предмет не рисуется) → Object. Тело no-op (icon-load-фаза 1.7.10 в neo не портирована).
+	public void registerIcons(Object aIconRegister) {/**/}
 	
 	// @Override
 	@SuppressWarnings("unchecked")

@@ -845,7 +845,10 @@ public class Textures {
 		protected Identifier mIcon, mOverlay;
 		protected boolean mUseOverlay;
 
-		@Override public Identifier getIcon(int aRenderPass) {return aRenderPass==1&&mOverlay!=null?mOverlay:mIcon;}
+		// F3-render (ленивый, тот же приём, что TextureSet.java:97 / BI.Icon): mIcon строился ТОЛЬКО в run() из sItemIconload
+		// (1.7.10 icon-load-фаза), а она в neo НЕ портирована (GT_API.sItemIconload обнуляется на init) → mIcon оставался null →
+		// getIcon возвращал null → предмет (напр. VOID/RENDERING_ERROR) не рисовался. Строим ЛЕНИВО при первом запросе.
+		@Override public Identifier getIcon(int aRenderPass) {if (mIcon == null) run(); return aRenderPass==1&&mOverlay!=null?mOverlay:mIcon;}
 
 		private ItemIcons() {
 			this(T);
@@ -864,16 +867,20 @@ public class Textures {
 		@Override
 		public void run() {
 			// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути. Адаптировано.
-			mIcon       = Identifier.parse(RES_PATH_ITEM + "iconsets/" + this);
+			// toLowerCase: enum-имена uppercase (VOID/RENDERING_ERROR), а neo Identifier требует lowercase-путь (иначе parse
+			// бросает) + ассеты лежат lowercase (iconsets/void.png) — тот же приём, что ItemBase.registerIcons.
+			mIcon       = Identifier.parse((RES_PATH_ITEM + "iconsets/" + this).toLowerCase(java.util.Locale.ROOT));
 			if (mUseOverlay)
-			mOverlay    = Identifier.parse(RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY");
+			mOverlay    = Identifier.parse((RES_PATH_ITEM + "iconsets/" + this + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 		}
 
 		public static class CustomIcon implements IIconContainer, Runnable {
 			protected Identifier mIcon, mOverlay;
 			protected String mIconName;
 
-			@Override public Identifier getIcon(int aRenderPass) {return aRenderPass==1?mOverlay:mIcon;}
+			// F3-render (ленивый, тот же приём, что TextureSet.java:97): mIcon строился ТОЛЬКО в run() из sItemIconload —
+			// эта 1.7.10 icon-load-фаза в neo не портирована → строим ЛЕНИВО при первом запросе.
+			@Override public Identifier getIcon(int aRenderPass) {if (mIcon == null) run(); return aRenderPass==1?mOverlay:mIcon;}
 
 			public CustomIcon(String aIconName) {
 				mIconName = aIconName.indexOf(":") == -1 ? RES_PATH_ITEM + aIconName : aIconName;
@@ -883,8 +890,9 @@ public class Textures {
 			@Override
 			public void run() {
 				// F3-render: было GT_API.sItemIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути. Адаптировано.
-				mIcon       = Identifier.parse(mIconName);
-				mOverlay    = Identifier.parse(mIconName + "_OVERLAY");
+				// toLowerCase: neo Identifier требует lowercase-путь (иначе parse бросает), ассеты lowercase — как ItemBase.registerIcons.
+				mIcon       = Identifier.parse(mIconName.toLowerCase(java.util.Locale.ROOT));
+				mOverlay    = Identifier.parse((mIconName + "_OVERLAY").toLowerCase(java.util.Locale.ROOT));
 			}
 
 			@Override

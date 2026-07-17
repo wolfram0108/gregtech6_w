@@ -647,7 +647,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public Identifier PRINCESS, QUEEN, SCANNED, DEAD;
 
 	@Override public Identifier getIconIndex(ItemStack aStack) {return getIconFromDamage(ST.meta(aStack));}
-	@Override public Identifier getIconFromDamage(int aMetaData) {aMetaData /= 10; aMetaData *= 10; return UT.Code.exists(aMetaData, mIconList) && mIconList[aMetaData][0] != null ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);}
+	@Override public Identifier getIconFromDamage(int aMetaData) {ensureIconsRegistered(); aMetaData /= 10; aMetaData *= 10; return UT.Code.exists(aMetaData, mIconList) && mIconList[aMetaData][0] != null ? mIconList[aMetaData][0] : Textures.ItemIcons.RENDERING_ERROR.getIcon(0);}
 	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass, Player aPlayer, ItemStack aUsedStack, int aUseRemaining) {return getIcon(aStack, aRenderPass);}
 	@Override public Identifier getIcon(ItemStack aStack, int aRenderPass) {return getIconFromDamageForRenderPass(ST.meta_(aStack), aRenderPass);}
 	
