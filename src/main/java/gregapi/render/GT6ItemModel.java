@@ -101,6 +101,10 @@ public class GT6ItemModel implements ItemModel {
 				tIcon = resolveIcon(tStack);
 			} catch (Throwable e) { tErr = "EXC:" + e.getClass().getSimpleName(); }
 			String tCls = tItem.getClass().getSimpleName();
+			// РЕШАЮЩАЯ проверка: retry с ЯВНО валидным материалом (iron) — если резолвится, дыры нет (probe meta=0 был артефакт).
+			if (tIcon == null && tItem instanceof gregapi.item.prefixitem.PrefixItem) {
+				try { tIcon = resolveIcon(gregapi.util.ST.make(tItem, 1, gregapi.data.MT.Fe.mID)); } catch (Throwable e) {}
+			}
 			if (tIcon == null) {
 				tNullIcon++; tNullByClass.merge(tCls + tErr, 1, Integer::sum);
 				if (tItem instanceof gregapi.item.prefixitem.PrefixItem tPI) {
