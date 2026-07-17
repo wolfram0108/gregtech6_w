@@ -172,6 +172,10 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	
 	public final String getUnlocalizedName() {return mBlock.getUnlocalizedName();}
 	public String getItemStackDisplayName(ItemStack aStack) {return gregapi.lang.LanguageHandler.get(getUnlocalizedName(aStack));}
+	// Ф1.2 (мис-порт): PrefixBlockItem extends ванильный BlockItem (не ItemBlockBase) → не наследовал GT6-мост имени.
+	// getUnlocalizedName(ItemStack) выше уже даёт ключ "oredict."+prefix.dat(material) (имя зарегистрировано в PrefixBlock),
+	// но ванильный BlockItem.getName его не звал → сырой ключ у крейтов/руд-в-камне/storage. Маршрут в GT6-имя, как ItemBlockBase:137.
+	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
 	public final boolean hasContainerItem(ItemStack aStack) {return getContainerItem(aStack) != null;}
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
