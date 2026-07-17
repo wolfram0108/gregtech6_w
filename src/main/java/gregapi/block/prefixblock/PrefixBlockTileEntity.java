@@ -57,13 +57,13 @@ public class PrefixBlockTileEntity extends TileEntityBase01Root implements IRend
 	// saveAdditional→writeToNBT (mMetaData «m»); клиент применяет через handleUpdateTag→loadWithComponents→loadAdditional→readFromNBT.
 	@Override public net.minecraft.nbt.CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider aProvider) {return saveCustomOnly(aProvider);}
 
-	// F3-render (руды-материал): GT6-оптимизация mBlocked (не синкать окклюдированные руды кастом-пакетом) НЕСОВМЕСТИМА с neo —
-	// клиенту нужны данные BE (mMetaData=материал) на chunk-load, иначе вкрапление серое. Возвращаем СТАНДАРТНЫЙ neo BE-пакет
-	// (несёт getUpdateTag=saveCustomOnly=«m»-материал) ВСЕМ trackers → материал синкается надёжно. Флаг mBlocked обновляем (нужен
-	// прочей логике); кастом PacketSyncDataShort больше не нужен (neo-пакет несёт то же). onScheduledUpdate/onAdjacentBlockChange ниже — тоже на neo-путь.
+	// @Override
 	@Override public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
-		mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), F, T);
-		return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+		if (!(mBlocked = WD.visOcc(level, getBlockPos().getX(), getBlockPos().getY(), getBlockPos().getZ(), F, T))) {
+			NW_API.sendToAllPlayersInRange(new PacketSyncDataShort(getCoords(), mMetaData), level, getCoords());
+			if (mItemNBT != null && mItemNBT.contains("display")) NW_API.sendToAllPlayersInRange(new PacketSyncDataName(getCoords(), mItemNBT.getCompoundOrEmpty("display").getString("Name").orElse("")), level, getCoords());
+		}
+		return null;
 	}
 	
 	@Override
