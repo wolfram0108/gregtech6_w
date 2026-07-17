@@ -153,16 +153,20 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// (2) РЕЗОЛВИТСЯ ли материал руды на КЛИЕНТЕ (getMetaMaterial(BE)!=null = цветное вкрапление; null = серое «в прогрузке»).
 	// Ждём ~200 тиков (10с): чанки загружены, BE-синк mMetaData дошёл. Пишет в gregtech.log (game-bus). Once.
 	private int mOreProbeTick = -1;
-	private boolean mOreProbed = false;
+	private int mOreProbeRuns = 0;
 	private boolean mFluidDiagDone = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onOreMaterialProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if (mOreProbed) return;
+		if (mOreProbeRuns >= 2) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) { mOreProbeTick = -1; return; }
 		if (mOreProbeTick < 0) mOreProbeTick = 0;
-		if (++mOreProbeTick < 200) return;
-		mOreProbed = true;
+		++mOreProbeTick;
+		// Двухфазный: фаза 1 на 200 тиках, фаза 2 на 1000 тиках — сравнить srvBE null-BE MTE (тайминг серверного BE vs постоянная потеря).
+		if (mOreProbeRuns == 0 && mOreProbeTick < 200) return;
+		if (mOreProbeRuns == 1 && mOreProbeTick < 1000) return;
+		mOreProbeRuns++;
+		gregapi.data.CS.OUT.println("[GT6-ORE-PROBE] === ФАЗА "+mOreProbeRuns+" (тик "+mOreProbeTick+") ===");
 		try { probeOreMaterials(tMC); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-ORE-PROBE] скан упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
@@ -191,7 +195,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				tMTE++;
 				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tM);
 				tMTEs.merge(tBE==null?"(null-BE)":tBE.getClass().getSimpleName(), 1, Integer::sum);
-				if (tBE==null && tNullBE.size()<8) tNullBE.add(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB)+"@Y"+y);
+				if (tBE==null && tNullBE.size()<8) {
+					// srvBE: есть ли BE на интегрированном СЕРВЕРЕ в той же позиции? != null → потеря на sync сервер→клиент; == null → сервер не имеет BE (gen/промоушен ProtoChunk→LevelChunk).
+					String tSrv = "?"; try { net.minecraft.server.MinecraftServer tSrvMc = tMC.getSingleplayerServer(); if (tSrvMc != null) { net.minecraft.world.level.block.entity.BlockEntity tSB = tSrvMc.overworld().getBlockEntity(tM.immutable()); tSrv = tSB==null?"null":tSB.getClass().getSimpleName(); } } catch (Throwable e) { tSrv = "ERR:"+e; }
+					tNullBE.add(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB)+"@Y"+y+" srvBE="+tSrv);
+				}
 			}
 		}
 		tOut.println("[GT6-ORE-PROBE] pos=" + tP + " scan=±40xz Y[" + tMinY + ".." + tMaxScanY + "]");
