@@ -87,7 +87,19 @@ public class GT6ItemModel implements ItemModel {
 			if (tItem instanceof net.minecraft.world.item.BlockItem) continue;
 			tTotal++;
 			Identifier tIcon = null; String tErr = "";
-			try { tIcon = resolveIcon(new ItemStack(tItem)); } catch (Throwable e) { tErr = "EXC:" + e.getClass().getSimpleName(); }
+			try {
+				// ВАЛИДНЫЙ вариант через getSubItems (meta=0 у PrefixItem/MultiItem = невалидный материал → ложный null);
+				// берём первый creative-вариант (реальный dust=iron и т.п.), как его видит игрок.
+				ItemStack tStack = null;
+				try {
+					java.util.List<ItemStack> tList = new java.util.ArrayList<>();
+					java.lang.reflect.Method gsi = tItem.getClass().getMethod("getSubItems", net.minecraft.world.item.Item.class, net.minecraft.world.item.CreativeModeTab.class, java.util.List.class);
+					gsi.invoke(tItem, tItem, null, tList);
+					if (!tList.isEmpty()) tStack = tList.get(0);
+				} catch (Throwable e) {/* нет getSubItems — single-variant */}
+				if (tStack == null) tStack = new ItemStack(tItem);
+				tIcon = resolveIcon(tStack);
+			} catch (Throwable e) { tErr = "EXC:" + e.getClass().getSimpleName(); }
 			String tCls = tItem.getClass().getSimpleName();
 			if (tIcon == null) {
 				tNullIcon++; tNullByClass.merge(tCls + tErr, 1, Integer::sum);
