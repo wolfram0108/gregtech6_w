@@ -125,12 +125,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		// And finally properly set the TileEntity for real!
 		WD.te (aWorld, aX, aY, aZ, aMTEContainer.mTileEntity, aCauseBlockUpdates);
 		// Yep, all this just to set one Block and its TileEntity properly...
-		// F6-worldgen: MTE, размещённые worldgen'ом КРОСС-ЧАНКОВО (листва деревьев, бедрок-фичи спрингов) в СОСЕДНИЙ
-		// чанк, теряют серверный BE при финализации соседа — в модели neo Feature.place запись BE в уже-полный сосед
-		// не персистит (центр-чанк ProtoChunk персистит, сосед-LevelChunk — нет). Диагностика (клиент-probe): srvBE=null
-		// постоянно. Регистрируем размещение по чанку MTE → переприкрепляем BE на ChunkEvent.Load ЭТОГО чанка, когда он
-		// сам финализируется как настоящий LevelChunk (привязка персистит + синкается клиенту). Только worldgen (не Level).
-		if (!(aWorld instanceof Level)) gregapi.worldgen.GT6WorldgenFeature.recordWorldgenMTE(mMultiTileEntityRegistry, aX, aY, aZ, aMetaData, aNBT);
+		// (кросс-чанк BE-персист регистрируется централизованно в WD.te — единственной точке привязки MTE-BE)
 		
 		
 		try {

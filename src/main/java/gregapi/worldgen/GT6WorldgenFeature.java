@@ -198,6 +198,8 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// обход СНЯТ. На game-шине остаётся ТОЛЬКО load-реконструкция MTE-стабов (отдельный механизм, F-tileentity-construction):
 		// ChunkEvent.Load ловит стабы → server-tick заменяет реальными MTE (FULL-чанк, setBlockEntity безопасен вне save-цикла).
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkLoad);
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkUnload);
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkWatch);
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
 		registerWorldgenStressProbe();
 	}
@@ -278,16 +280,17 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	// ProtoChunk персистит). Диагностика: srvBE=null постоянно для leaves@surface / rock@Y-64 / спрингов. Решение:
 	// на placeBlock (worldgen) регистрируем (реестр,pos,id,nbt) по ЧАНКУ MTE; когда ЭТОТ чанк сам финализируется
 	// (ChunkEvent.Load), переприкрепляем BE к настоящему LevelChunk — тогда привязка держится и синкается клиенту.
-	private record WgMTE(int x, int y, int z, gregapi.block.multitileentity.MultiTileEntityRegistry reg, short id, net.minecraft.nbt.CompoundTag nbt) {}
-	private static final java.util.Map<Long, java.util.Queue<WgMTE>> WORLDGEN_MTE = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.util.Map<Long, java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity>> WORLDGEN_MTE = new java.util.concurrent.ConcurrentHashMap<>();
 	private static long chunkKey(int aCX, int aCZ) {return ((long)aCX << 32) | (aCZ & 0xFFFFFFFFL);}
 
-	/** Вызывается из MultiTileEntityBlockInternal.placeBlock при worldgen-размещении MTE (aWorld не Level). Регистрирует
-	 *  размещение по ЧАНКУ MTE для последующего переприкрепления BE на ChunkEvent.Load (кросс-чанк BE-персист). */
-	public static void recordWorldgenMTE(gregapi.block.multitileentity.MultiTileEntityRegistry aReg, int aX, int aY, int aZ, short aID, net.minecraft.nbt.CompoundTag aNBT) {
-		if (aReg == null) return;
-		WORLDGEN_MTE.computeIfAbsent(chunkKey(aX >> 4, aZ >> 4), k -> new java.util.concurrent.ConcurrentLinkedQueue<>())
-			.add(new WgMTE(aX, aY, aZ, aReg, aID, aNBT == null ? null : aNBT.copy()));
+	/** Вызывается из {@code WD.te} при worldgen-привязке ЛЮБОГО MTE-BE (aWorld не Level — WorldGenRegion). WD.te —
+	 *  единственная центральная точка привязки MTE-BE (placeBlock И прямые пути идут через неё) → captures ВСЁ. Запись
+	 *  по ЧАНКУ нужна, чтобы на {@link #onChunkWatch отправке чанка игроку} синкнуть ему эти worldgen-MTE (сами они не
+	 *  синкаются: getUpdatePacket=null, а GT6-getClientDataPacket зовётся лишь при gameplay) — иначе клиент их не видит. */
+	public static void recordWorldgenMTE(net.minecraft.world.level.block.entity.BlockEntity aTileEntity) {
+		if (aTileEntity == null) return;
+		net.minecraft.core.BlockPos tPos = aTileEntity.getBlockPos();
+		WORLDGEN_MTE.computeIfAbsent(chunkKey(tPos.getX() >> 4, tPos.getZ() >> 4), k -> new java.util.concurrent.ConcurrentLinkedQueue<>()).add(aTileEntity);
 	}
 
 	private static void onChunkLoad(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
@@ -305,41 +308,39 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 
 	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
 		drainStubs(STUB_QUEUE, 16);
-		sweepWorldgenMTE(aEvent.getServer());
 	}
 
-	/** Периодический sweep реестра кросс-чанк worldgen-MTE: запись могла быть добавлена ПОСЛЕ ChunkEvent.Load соседа
-	 *  (кросс-чанк запись после его финализации) → onChunkLoad её не подхватил. Каждый тик проходим записи; если ИХ
-	 *  чанк сейчас загружен (getChunkNow) в каком-либо измерении сервера — переприкрепляем BE и убираем запись. */
-	private static void sweepWorldgenMTE(net.minecraft.server.MinecraftServer aServer) {
-		if (WORLDGEN_MTE.isEmpty()) return;
-		int tBudget = 64; // ограничение на тик
-		java.util.Iterator<java.util.Map.Entry<Long, java.util.Queue<WgMTE>>> tIt = WORLDGEN_MTE.entrySet().iterator();
-		while (tIt.hasNext() && tBudget > 0) {
-			java.util.Map.Entry<Long, java.util.Queue<WgMTE>> tE = tIt.next();
-			long tKey = tE.getKey();
-			int tCX = (int)(tKey >> 32), tCZ = (int)tKey;
-			net.minecraft.world.level.chunk.LevelChunk tChunk = null;
-			net.minecraft.server.level.ServerLevel tLevel = null;
-			for (net.minecraft.server.level.ServerLevel tL : aServer.getAllLevels()) {
-				net.minecraft.world.level.chunk.LevelChunk tC = tL.getChunkSource().getChunkNow(tCX, tCZ);
-				if (tC != null) { tChunk = tC; tLevel = tL; break; }
-			}
-			if (tChunk == null) continue; // чанк ещё не загружен — оставляем запись до загрузки
-			tIt.remove();
-			tBudget--;
-			for (WgMTE tM : tE.getValue()) {
-				try {
-					net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(tM.x(), tM.y(), tM.z());
-					if (!(tChunk.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) continue;
-					if (tChunk.getBlockEntity(tPos) != null) continue;
-					gregapi.block.multitileentity.MultiTileEntityContainer tCont = tM.reg().getNewTileEntityContainer(tLevel, tM.x(), tM.y(), tM.z(), tM.id(), tM.nbt());
-					if (tCont == null || tCont.mTileEntity == null) continue;
-					tLevel.setBlockEntity(tCont.mTileEntity);
-					tLevel.getChunkSource().blockChanged(tPos);
-				} catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
-			}
+	/** КЛИЕНТ-СИНК worldgen-MTE. КОРЕНЬ прозрачности: сервер ИМЕЕТ BE worldgen-MTE (source/rock/redstonelight), но клиент
+	 *  НЕ получает (chunk-пакет не несёт MTE-BE — getUpdatePacket=null; а GT6-синк getClientDataPacket зовётся только при
+	 *  gameplay-размещении/апдейте, не при worldgen). Здесь ловим МОМЕНТ отправки чанка игроку (ChunkWatchEvent.Sent) и
+	 *  синкаем ему все worldgen-MTE этого чанка (+ переприкрепляем, если BE всё же потерялся кросс-чанк). Точный тайминг,
+	 *  без per-tick overhead. См. sweepWorldgenMTE удалён — был пустой (всё skip-hasBE). */
+	private static void onChunkWatch(net.neoforged.neoforge.event.level.ChunkWatchEvent.Sent aEvent) {
+		net.minecraft.world.level.ChunkPos tCP = aEvent.getPos();
+		int tCX = tCP.getMinBlockX() >> 4, tCZ = tCP.getMinBlockZ() >> 4;
+		java.util.Queue<net.minecraft.world.level.block.entity.BlockEntity> tQueue = WORLDGEN_MTE.get(chunkKey(tCX, tCZ));
+		if (tQueue == null || tQueue.isEmpty()) return;
+		net.minecraft.server.level.ServerLevel tLevel = aEvent.getLevel();
+		net.minecraft.server.level.ServerPlayer tPlayer = aEvent.getPlayer();
+		net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tCX, tCZ);
+		if (tChunk == null) return;
+		for (net.minecraft.world.level.block.entity.BlockEntity tBE : tQueue) {
+			try {
+				net.minecraft.core.BlockPos tPos = tBE.getBlockPos();
+				if (!(tChunk.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) continue;
+				net.minecraft.world.level.block.entity.BlockEntity tCur = tChunk.getBlockEntity(tPos);
+				if (tCur == null) { tBE.clearRemoved(); tLevel.setBlockEntity(tBE); tCur = tBE; } // BE всё же потерялся кросс-чанк — переприкрепить
+				// СИНК клиенту, получившему чанк: worldgen-MTE не синкаются авто (getUpdatePacket=null) → шлём GT6-пакет данных (PacketSyncDataIDs → клиент создаёт BE).
+				if (tCur instanceof gregapi.tileentity.base.TileEntityBase03TicksAndSync tSync) tSync.sendClientData(true, null);
+			} catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 		}
+	}
+
+	/** Выгрузка чанка → снять его записи (при перезагрузке MTE придёт стабом, его подхватит stub-реконструкция). */
+	private static void onChunkUnload(net.neoforged.neoforge.event.level.ChunkEvent.Unload aEvent) {
+		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel)) return;
+		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
+		WORLDGEN_MTE.remove(chunkKey(tPos.getMinBlockX() >> 4, tPos.getMinBlockZ() >> 4));
 	}
 
 	/** Клиентский дренаж (вызывается из GT_API_Proxy_Client на ClientTickEvent) — реконструкция MTE-стабов на ClientLevel. */
@@ -364,31 +365,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())
 			if (tBE instanceof gregapi.tileentity.base.TileEntityLoaderStub) {(tStubs == null ? tStubs = new java.util.ArrayList<>() : tStubs).add(tBE);}
 		if (tStubs != null) for (net.minecraft.world.level.block.entity.BlockEntity tBE : tStubs) reconstructMTE(aLevel, (gregapi.tileentity.base.TileEntityLoaderStub)tBE);
-		// Кросс-чанк BE-персист: переприкрепить worldgen-MTE, чей BE не пережил финализацию соседа (server-only реестр).
-		reattachWorldgenMTEs(aLevel, tChunk, aChunkX, aChunkZ);
-	}
-
-	/** Переприкрепить BE к worldgen-MTE этого чанка, если он потерялся при финализации (кросс-чанк). Реестр WORLDGEN_MTE
-	 *  наполняется на СЕРВЕРЕ в placeBlock; на клиенте пуст → no-op. Чанк теперь настоящий LevelChunk → setBlockEntity держится. */
-	private static void reattachWorldgenMTEs(net.minecraft.world.level.Level aLevel, net.minecraft.world.level.chunk.LevelChunk aChunk, int aChunkX, int aChunkZ) {
-		// СТРОГО server-only: WORLDGEN_MTE — общий static (в синглплеере клиент+сервер = один JVM); клиентский
-		// reconstructChunkMTEs НЕ должен удалять/трогать серверный реестр (иначе гонка съест запись до сервера).
-		if (!(aLevel instanceof net.minecraft.server.level.ServerLevel)) return;
-		java.util.Queue<WgMTE> tQueue = WORLDGEN_MTE.remove(chunkKey(aChunkX, aChunkZ));
-		if (tQueue == null || tQueue.isEmpty()) return;
-		for (WgMTE tM : tQueue) {
-			try {
-				net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(tM.x(), tM.y(), tM.z());
-				// блок на месте? (мог быть перекрыт последующей генерацией) + BE ещё отсутствует?
-				if (!(aChunk.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) continue;
-				if (aChunk.getBlockEntity(tPos) != null) continue;
-				gregapi.block.multitileentity.MultiTileEntityContainer tContainer = tM.reg().getNewTileEntityContainer(aLevel, tM.x(), tM.y(), tM.z(), tM.id(), tM.nbt());
-				if (tContainer == null || tContainer.mTileEntity == null) continue;
-				aLevel.setBlockEntity(tContainer.mTileEntity); // pos-канал → крепит на своё место (реальный LevelChunk → держится)
-				// синк клиенту: чанк мог уже уйти игроку без BE → форс block-update, чтобы дошёл BE-пакет.
-				((net.minecraft.server.level.ServerLevel)aLevel).getChunkSource().blockChanged(tPos);
-			} catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
-		}
+		// (кросс-чанк BE-персист переприкрепляется server-tick sweep'ом sweepWorldgenMTE — здесь только stub-реконструкция)
 	}
 
 	/** Собрать реальный MTE из захваченного стабом NBT (reg/id) и заменить им стаб. pos-канал getNewTileEntityContainer даёт позицию из pos стаба. Level (сервер И клиент). */

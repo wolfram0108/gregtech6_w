@@ -613,6 +613,12 @@ public class WD {
 			if (tChunk != null) {
 				tChunk.setBlockEntity(aTileEntity); // было tChunk.func_150812_a(x&15,y,z&15,te)/addAndRegisterBlockEntity (LevelChunk-only) — neo: ChunkAccess.setBlockEntity(BlockEntity), позиция из te.getBlockPos()
 				tChunk.markUnsaved(); // было tChunk.markUnsaved()
+				// F6-worldgen КРОСС-ЧАНК BE-ПЕРСИСТ (ЦЕНТР): worldgen кладёт MTE и в СОСЕДНИЕ чанки региона; в модели neo
+				// Feature.place BE-запись в уже-финализированный сосед-LevelChunk НЕ персистит (центр-ProtoChunk персистит) →
+				// srvBE=null постоянно (клиент: источники/камни/redstonelight/листва прозрачны). WD.te — ЕДИНСТВЕННАЯ точка
+				// привязки MTE-BE в worldgen (placeBlock И прямые пути) → регистрируем ЗДЕСЬ для переприкрепления, когда чанк
+				// MTE сам финализируется в LevelChunk (server-tick sweep / ChunkEvent.Load). Только worldgen (не Level), только MTE (не руды).
+				if (!(aWorld instanceof Level) && aTileEntity instanceof gregapi.block.multitileentity.IMultiTileEntity) gregapi.worldgen.GT6WorldgenFeature.recordWorldgenMTE(aTileEntity);
 			}
 		}
 		return aTileEntity;

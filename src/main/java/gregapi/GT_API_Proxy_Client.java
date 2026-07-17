@@ -208,6 +208,24 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		tMTEs.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).forEach(e ->
 			tOut.println("[GT6-ORE-PROBE]   MTE " + e.getKey() + " = " + e.getValue()));
 		if (!tNullBE.isEmpty()) tOut.println("[GT6-ORE-PROBE]   null-BE блоки: " + tNullBE);
+		// ЦЕЛЕВОЙ скан ИСТОЧНИКОВ: широкий бедрок-слой (±100, Y дно..дно+3) — источники редки, у спавна нет. Считаем FluidSpring + состояние BE/srvBE.
+		try { int tSpring=0, tSpringBE=0, tSpringNull=0; java.util.List<String> tSp = new java.util.ArrayList<>();
+		  net.minecraft.server.MinecraftServer tSrvMc = tMC.getSingleplayerServer();
+		  // блок ИСТОЧНИКА = блок его class-контейнера (aStone), НЕ registry-default mBlock (разные!).
+		  net.minecraft.world.level.block.Block tSpringBlock = null;
+		  try { var tReg = gregtech.tileentity.misc.MultiTileEntityFluidSpring.MTE_REGISTRY; var tInst = gregtech.tileentity.misc.MultiTileEntityFluidSpring.INSTANCE;
+		        if (tReg != null && tInst != null) { var tCC = tReg.getClassContainer(tInst.getMultiTileEntityID()); if (tCC != null) tSpringBlock = tCC.mBlock; } } catch (Throwable e) {}
+		  for (int dx=-100; dx<=100 && tSpringBlock!=null; dx++) for (int dz=-100; dz<=100; dz++) for (int y=tMinY; y<=tMinY+3; y++) {
+			tM.set(tP.getX()+dx, y, tP.getZ()+dz);
+			if (tLevel.getBlockState(tM).getBlock() == tSpringBlock) { tSpring++;
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tM);
+				if (tBE instanceof gregtech.tileentity.misc.MultiTileEntityFluidSpring) tSpringBE++; else { tSpringNull++;
+					if (tSp.size()<6) { String tSrv="?"; try{ if(tSrvMc!=null){var s=tSrvMc.overworld().getBlockEntity(tM.immutable()); tSrv=s==null?"null":s.getClass().getSimpleName();}}catch(Throwable e){} tSp.add("@Y"+y+" clientBE="+(tBE==null?"null":tBE.getClass().getSimpleName())+" srvBE="+tSrv); } }
+			}
+		  }
+		  tOut.println("[GT6-ORE-PROBE] ИСТОЧНИКИ(spring) ±100 бедрок: всего="+tSpring+" настоящий-BE="+tSpringBE+" плохой-BE="+tSpringNull);
+		  if (!tSp.isEmpty()) tOut.println("[GT6-ORE-PROBE]   плохие источники: "+tSp);
+		} catch (Throwable e) { tOut.println("[GT6-ORE-PROBE] spring-scan упал: "+e); }
 		tMatCounts.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(12).forEach(e ->
 			tOut.println("[GT6-ORE-PROBE]   материал " + e.getKey() + " = " + e.getValue()));
 	}
@@ -233,7 +251,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				net.minecraft.world.level.LevelSettings.DifficultySettings.DEFAULT, true,
 				net.minecraft.world.level.WorldDataConfiguration.DEFAULT);
 			tMC.createWorldOpenFlows().createFreshLevel("GT6WGTest", tSettings,
-				net.minecraft.world.level.levelgen.WorldOptions.defaultWithRandomSeed(),
+				new net.minecraft.world.level.levelgen.WorldOptions(4242L, true, false), // ФИКС-сид: детерминированная генерация для чистого измерения reattach (было defaultWithRandomSeed)
 				net.minecraft.world.level.levelgen.presets.WorldPresets::createNormalWorldDimensions,
 				tMC.screen);
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-AUTOWORLD] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
