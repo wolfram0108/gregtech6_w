@@ -229,7 +229,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		});
 	}
 	private static void dumpWorldgenStress(net.minecraft.server.level.ServerLevel aLvl) {
-		int tOre=0, tOreMat=0, tOreNull=0, tStone=0, tFluid=0, tMTE=0;
+		int tOre=0, tOreMat=0, tOreNull=0, tStone=0, tFluid=0, tMTE=0, tBedrockOre=0;
 		java.util.HashMap<String,Integer> tMats = new java.util.HashMap<>();
 		java.util.HashMap<String,Integer> tMTEs = new java.util.HashMap<>(); // разбивка MTE по классам (флуид-спринги/rocks/resin-holes)
 		int tMinY=aLvl.getMinY(), tMaxY=aLvl.getSeaLevel()+8;
@@ -240,6 +240,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				net.minecraft.world.level.block.Block tB = aLvl.getBlockState(tM).getBlock();
 				if (tB instanceof gregapi.block.prefixblock.PrefixBlock tPB) {
 					tOre++;
+					if (tB == gregapi.data.CS.BlocksGT.oreBedrock || tB == gregapi.data.CS.BlocksGT.oreSmallBedrock) tBedrockOre++;
 					gregapi.oredict.OreDictMaterial tMat = tPB.getMetaMaterial(aLvl.getBlockEntity(tM));
 					if (tMat==null) tOreNull++; else { tOreMat++; tMats.merge(tMat.mNameInternal,1,Integer::sum); }
 				} else if (tB instanceof gregapi.block.metatype.BlockStones) tStone++;
@@ -251,7 +252,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				}
 			}
 		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] === ДАМП (±"+STRESS_R+" чанков, Y["+tMinY+".."+tMaxY+"]) ===");
-		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] РУДЫ total="+tOre+" материал-резолв(сервер)="+tOreMat+" null="+tOreNull);
+		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] РУДЫ total="+tOre+" материал-резолв(сервер)="+tOreMat+" null="+tOreNull+" ИЗ НИХ бедрок-жилы="+tBedrockOre);
 		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] камень="+tStone+" флюид-блоки="+tFluid+" MTE="+tMTE);
 		tMTEs.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).forEach(e-> gregapi.data.CS.OUT.println("[GT6-WGSTRESS]   MTE "+e.getKey()+"="+e.getValue()));
 		tMats.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(15).forEach(e-> gregapi.data.CS.OUT.println("[GT6-WGSTRESS]   мат "+e.getKey()+"="+e.getValue()));
