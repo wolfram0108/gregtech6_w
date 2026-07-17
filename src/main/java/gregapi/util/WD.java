@@ -1012,7 +1012,11 @@ public class WD {
 	
 	public static boolean visOcc(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return visOpq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && visOpq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && visOpq(aWorld, aX, aY+1, aZ, T, aDefault) && visOpq(aWorld, aX, aY-1, aZ, T, aDefault) && visOpq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && visOpq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
 	public static boolean visOpq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? visOpq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
-	public static boolean visOpq(Block aBlock) {return WD.opaque(aBlock) || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);}
+	// F3-render КОРЕНЬ «грань GT6-блока пропадает на стыке с забором/слабом/любым НЕ-полным соседом»: 1.7.10 скрывал грань,
+	// если сосед isOpaqueCube() (ПОЛНЫЙ непрозрачный куб). Порт ошибочно взял canOcclude() (WD.opaque) — а он TRUE и для слабов/
+	// лестниц/заборов (они окклюдят ЧАСТИЧНО) → грань GT6-блока против них скрывалась. Верный neo-эквивалент isOpaqueCube =
+	// BlockState.isSolidRender() (=Block.isShapeFullBlock(occlusionShape), BlockBehaviour.java:499) — TRUE только для ПОЛНОГО куба.
+	public static boolean visOpq(Block aBlock) {return aBlock.defaultBlockState().isSolidRender() || VISUALLY_OPAQUE_BLOCKS.contains(aBlock);}
 	
 	public static boolean occ(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {return opq(aWorld, aX+1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX+1, aZ), aDefault) && opq(aWorld, aX-1, aY, aZ, aLoadUnloadedChunks || !border(aX, aZ, aX-1, aZ), aDefault) && opq(aWorld, aX, aY+1, aZ, T, aDefault) && opq(aWorld, aX, aY-1, aZ, T, aDefault) && opq(aWorld, aX, aY, aZ+1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ+1), aDefault) && opq(aWorld, aX, aY, aZ-1, aLoadUnloadedChunks || !border(aX, aZ, aX, aZ-1), aDefault);}
 	public static boolean opq(LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks, boolean aDefault) {BlockPos tP = new BlockPos(aX, aY, aZ); return aLoadUnloadedChunks || aWorld.hasChunkAt(tP) ? opq(aWorld.getBlockState(tP).getBlock()) : aDefault;} // было blockExists/getBlock(x,y,z)
