@@ -99,7 +99,9 @@ public class BlockTextureFluid implements ITexture {
 	}
 
 	public BlockTextureFluid(Fluid aFluid, boolean aAllowAlpha) {
-		this(FL.make(aFluid, 0), aAllowAlpha);
+		// КРИТ (флюид-блоки прозрачные): amount=0 → neo FluidStack трактует как EMPTY → getFluid()=EMPTY →
+		// FluidGT.of(EMPTY)=null → mIcon null → грань не рисовалась. amount текстуре не важен, даём ненулевой.
+		this(FL.make(aFluid, 1000), aAllowAlpha);
 	}
 
 	public BlockTextureFluid(Fluid aFluid) {

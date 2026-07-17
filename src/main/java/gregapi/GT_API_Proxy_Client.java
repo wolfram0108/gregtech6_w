@@ -143,6 +143,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// Ждём ~200 тиков (10с): чанки загружены, BE-синк mMetaData дошёл. Пишет в gregtech.log (game-bus). Once.
 	private int mOreProbeTick = -1;
 	private boolean mOreProbed = false;
+	private boolean mFluidDiagDone = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onOreMaterialProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mOreProbed) return;

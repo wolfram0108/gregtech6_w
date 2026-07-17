@@ -143,6 +143,13 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
+		// F6-worldgen DEADLOCK (ОТКЛЮЧЕНО, ОТЛОЖЕНО #39): вся данж-подсистема (DungeonData/DungeonChunk*) портирована «Level-based»
+		// (WorldAndCoords держит полный ServerLevel через aWorld.getLevel()) → ЛЮБОй её доступ к миру (WD.opq/WD.block/getBlockState)
+		// форсирует ServerChunkCache.getChunk(текущий генерируемый чанк).join → light-подобный реентрантный дедлок входа в мир
+		// (jstack: DungeonChunkPillar.generate→WD.opq→Level.getBlockState→getChunk.join). Интермиттентно (данжи редкие). Данжи —
+		// отдельный заход ПОСЛЕ машин/труб/геометрии (#39); их корректная работа в Feature.place требует ПОЛНОГО ре-порта всего
+		// доступа данж-подсистемы на WorldGenLevel (регион), а не ServerLevel. До тех пор — skip (данжи не генерируются, контролируемая отложенность).
+		if (true) return F;
 		if (aRandom.nextInt(mProbability) != 0 || checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
 		if (Math.abs(aMinZ) < 256+mMaxSize*16 && Math.abs(aMinX) < 256+mMaxSize*16) return F;
 		if ((GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD) && (Math.abs(aMinX) < 256+mMaxSize*16 || Math.abs(aMinZ) < 256+mMaxSize*16)) return F;
