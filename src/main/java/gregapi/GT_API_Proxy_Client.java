@@ -160,6 +160,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		java.io.PrintStream tOut = gregapi.data.CS.OUT;
 		int tOreTotal=0, tOreResolved=0, tOreGrey=0, tOreNoBE=0, tStoneGT=0, tFluidGT=0, tMTE=0;
 		java.util.HashMap<String,Integer> tMatCounts = new java.util.HashMap<>();
+		java.util.HashMap<String,Integer> tMTEs = new java.util.HashMap<>();
 		int tMinY = tLevel.getMinY(), tMaxScanY = tP.getY()+4;
 		net.minecraft.core.BlockPos.MutableBlockPos tM = new net.minecraft.core.BlockPos.MutableBlockPos();
 		for (int dx=-40; dx<=40; dx++) for (int dz=-40; dz<=40; dz++) for (int y=tMinY; y<=tMaxScanY; y++) {
@@ -173,11 +174,17 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				if (tMat == null) tOreGrey++; else { tOreResolved++; tMatCounts.merge(tMat.mNameInternal, 1, Integer::sum); }
 			} else if (tB instanceof gregapi.block.metatype.BlockStones) tStoneGT++;
 			else if (tB instanceof gregapi.block.fluid.BlockBaseFluid) tFluidGT++;
-			else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) tMTE++;
+			else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {
+				tMTE++;
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tM);
+				tMTEs.merge(tBE==null?"(null-BE)":tBE.getClass().getSimpleName(), 1, Integer::sum);
+			}
 		}
 		tOut.println("[GT6-ORE-PROBE] pos=" + tP + " scan=±40xz Y[" + tMinY + ".." + tMaxScanY + "]");
 		tOut.println("[GT6-ORE-PROBE] РУДЫ: total=" + tOreTotal + " resolved(цвет)=" + tOreResolved + " grey(material=null)=" + tOreGrey + " noBE=" + tOreNoBE);
 		tOut.println("[GT6-ORE-PROBE] WORLDGEN-блоки: GT6-камень=" + tStoneGT + " GT6-флюид=" + tFluidGT + " MTE=" + tMTE);
+		tMTEs.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).forEach(e ->
+			tOut.println("[GT6-ORE-PROBE]   MTE " + e.getKey() + " = " + e.getValue()));
 		tMatCounts.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(12).forEach(e ->
 			tOut.println("[GT6-ORE-PROBE]   материал " + e.getKey() + " = " + e.getValue()));
 	}
