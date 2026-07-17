@@ -137,6 +137,17 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.render.GT6ItemModel.probeItemIcons(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] скан упал: " + e); }
 	}
 
+	// F-tileentity-construction (КЛИЕНТ-реконструкция MTE-BE): neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE →
+	// TileEntityLoaderStub при десериализации BE чанка НА КЛИЕНТЕ. Стаб — не IRenderedBlockObject → passRenderingToObject=null
+	// → getRenderPasses=0 → MTE-блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Серверная реконструкция
+	// (server-tick) клиент не покрывает — у него ОТДЕЛЬНЫЕ BE. Здесь дренируем клиентскую очередь стабов на client-tick,
+	// заменяя их настоящими MTE (единый механизм GT6WorldgenFeature.reconstructChunkMTEs, теперь Level-обобщённый).
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onClientMTEReconstruct(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (Minecraft.getInstance().level == null) return;
+		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
 	// F6-worldgen приёмка гейт② (АВТОНОМНАЯ, не нужен пользователь): после входа в мир сканируем объём вокруг игрока —
 	// (1) сгенерировал ли worldgen GT6-блоки (руды/камни/флюиды/MTE) на КЛИЕНТСКОМ интегрированном сервере;
 	// (2) РЕЗОЛВИТСЯ ли материал руды на КЛИЕНТЕ (getMetaMaterial(BE)!=null = цветное вкрапление; null = серое «в прогрузке»).
@@ -162,6 +173,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		int tOreTotal=0, tOreResolved=0, tOreGrey=0, tOreNoBE=0, tStoneGT=0, tFluidGT=0, tMTE=0;
 		java.util.HashMap<String,Integer> tMatCounts = new java.util.HashMap<>();
 		java.util.HashMap<String,Integer> tMTEs = new java.util.HashMap<>();
+		java.util.List<String> tNullBE = new java.util.ArrayList<>();
 		int tMinY = tLevel.getMinY(), tMaxScanY = tP.getY()+4;
 		net.minecraft.core.BlockPos.MutableBlockPos tM = new net.minecraft.core.BlockPos.MutableBlockPos();
 		for (int dx=-40; dx<=40; dx++) for (int dz=-40; dz<=40; dz++) for (int y=tMinY; y<=tMaxScanY; y++) {
@@ -179,6 +191,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				tMTE++;
 				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tM);
 				tMTEs.merge(tBE==null?"(null-BE)":tBE.getClass().getSimpleName(), 1, Integer::sum);
+				if (tBE==null && tNullBE.size()<8) tNullBE.add(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB)+"@Y"+y);
 			}
 		}
 		tOut.println("[GT6-ORE-PROBE] pos=" + tP + " scan=±40xz Y[" + tMinY + ".." + tMaxScanY + "]");
@@ -186,6 +199,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		tOut.println("[GT6-ORE-PROBE] WORLDGEN-блоки: GT6-камень=" + tStoneGT + " GT6-флюид=" + tFluidGT + " MTE=" + tMTE);
 		tMTEs.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).forEach(e ->
 			tOut.println("[GT6-ORE-PROBE]   MTE " + e.getKey() + " = " + e.getValue()));
+		if (!tNullBE.isEmpty()) tOut.println("[GT6-ORE-PROBE]   null-BE блоки: " + tNullBE);
 		tMatCounts.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(12).forEach(e ->
 			tOut.println("[GT6-ORE-PROBE]   материал " + e.getKey() + " = " + e.getValue()));
 	}

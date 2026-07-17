@@ -264,49 +264,57 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	}
 
 	// F-tileentity-construction (load-реконструкция MTE-стабов): очередь чанков для замены TileEntityLoaderStub реальным MTE.
-	// Стабы приходят на ЛЮБОЙ load существующего чанка с диска (neo подменяет GT6-MTE пустышкой при чтении NBT).
-	private record ChunkReq(ServerLevel level, int blockX, int blockZ) {}
+	// Стабы приходят на ЛЮБОЙ load чанка с MTE (neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE → TileEntityLoaderStub при
+	// чтении NBT). ДВА уровня: серверный (STUB_QUEUE, дренаж server-tick) И КЛИЕНТСКИЙ (CLIENT_STUB_QUEUE, дренаж client-tick).
+	// Без клиентской реконструкции MTE-BE на клиенте остаётся стабом → не IRenderedBlockObject → passRenderingToObject=null →
+	// getRenderPasses=0 → блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Реконструкция ЕДИНА (reconstructChunkMTEs).
+	private record ChunkReq(net.minecraft.world.level.Level level, int blockX, int blockZ) {}
 	private static final java.util.Queue<ChunkReq> STUB_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	public  static final java.util.Queue<ChunkReq> CLIENT_STUB_QUEUE = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
 	private static void onChunkLoad(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
+		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
 		if (aEvent.getLevel() instanceof ServerLevel tLevel) {
-			net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
-			// F6-worldgen: генерация руд/слоёв ПЕРЕЕХАЛА в Feature.place (WorldGenLevel) — здесь БОЛЬШЕ НЕТ CHUNK_QUEUE (снят deadlock).
-			// F-tileentity-construction (load-реконструкция): ОТКЛАДЫВАЕМ на server-tick — подмена стаба (setBlockEntity) ВО ВРЕМЯ
-			// ChunkEvent.Load (сам идёт и при save/shutdown «Saving worlds») давала реентранси-зависание; server-tick.Post при save
-			// не выполняется. Корневой блокер снят: registry-id теперь item-id (см. MultiTileEntityRegistry.getNewTileEntityContainer)
-			// → getRegistry(reg) находит реестр. Стабы возникают на КАЖДОЙ загрузке не-PrefixBlock MTE (общий MTE_TYPE) → sweep каждый load.
+			// ОТКЛАДЫВАЕМ на server-tick — подмена стаба (setBlockEntity) ВО ВРЕМЯ ChunkEvent.Load (идёт и при save/shutdown) давала
+			// реентранси-зависание; server-tick.Post при save не выполняется. Стабы на КАЖДОЙ загрузке не-PrefixBlock MTE → sweep каждый load.
 			STUB_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
+		} else if (aEvent.getLevel() instanceof net.minecraft.world.level.Level tLevel && tLevel.isClientSide()) {
+			// КЛИЕНТ: тот же механизм — стаб→настоящий MTE, но на client-tick (иначе MTE прозрачны). ClientLevel-класс не трогаем
+			// в common-коде (isClientSide-гейт); дренаж — GT_API_Proxy_Client.onClientMTEReconstruct.
+			CLIENT_STUB_QUEUE.add(new ChunkReq(tLevel, tPos.getMinBlockX(), tPos.getMinBlockZ()));
 		}
 	}
 
 	private static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) {
-		// F-tileentity-construction (load-реконструкция MTE-стабов): дренируем квотой (throttle) — заменяем стабы реальными MTE
-		// в уже-FULL чанках (setBlockEntity безопасен на server-tick, вне save-цикла). Worldgen-дренаж СНЯТ (генерация в Feature.place).
+		drainStubs(STUB_QUEUE, 16);
+	}
+
+	/** Клиентский дренаж (вызывается из GT_API_Proxy_Client на ClientTickEvent) — реконструкция MTE-стабов на ClientLevel. */
+	public static void drainClientStubs() {drainStubs(CLIENT_STUB_QUEUE, 32);}
+
+	private static void drainStubs(java.util.Queue<ChunkReq> aQueue, int aQuota) {
 		ChunkReq tReq; int tM = 0;
-		while (tM < 16 && (tReq = STUB_QUEUE.poll()) != null) {
-			try {
-				reconstructChunkMTEs(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4);
-				tM++;
-			} catch (Throwable e) {
-				e.printStackTrace(gregapi.data.CS.ERR);
-			}
+		while (tM < aQuota && (tReq = aQueue.poll()) != null) {
+			try { reconstructChunkMTEs(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4); tM++; }
+			catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 		}
 	}
 
 	/** F-tileentity-construction (load-реконструкция): пройти BE загруженного чанка, заменить каждый {@link gregapi.tileentity.base.TileEntityLoaderStub}
 	 *  (пустышку, которой neo подменил GT6-MTE при чтении NBT) реальным MTE через реестр. Отложено на server-tick (чанк FULL, setBlockEntity безопасен). */
-	public static void reconstructChunkMTEs(ServerLevel aLevel, int aChunkX, int aChunkZ) {
-		net.minecraft.world.level.chunk.LevelChunk tChunk = aLevel.getChunkSource().getChunkNow(aChunkX, aChunkZ);
-		if (tChunk == null) return;
+	public static void reconstructChunkMTEs(net.minecraft.world.level.Level aLevel, int aChunkX, int aChunkZ) {
+		// getChunk(cx,cz,FULL,false) — неблокирующий на main-thread (server-tick И client-tick), работает и для ClientLevel
+		// (в отличие от server-only getChunkSource().getChunkNow). null/не-FULL → пропуск (реконструируем при следующем load).
+		net.minecraft.world.level.chunk.ChunkAccess tCA = aLevel.getChunk(aChunkX, aChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+		if (!(tCA instanceof net.minecraft.world.level.chunk.LevelChunk tChunk)) return;
 		java.util.List<net.minecraft.world.level.block.entity.BlockEntity> tStubs = null;
 		for (net.minecraft.world.level.block.entity.BlockEntity tBE : tChunk.getBlockEntities().values())
 			if (tBE instanceof gregapi.tileentity.base.TileEntityLoaderStub) {(tStubs == null ? tStubs = new java.util.ArrayList<>() : tStubs).add(tBE);}
 		if (tStubs != null) for (net.minecraft.world.level.block.entity.BlockEntity tBE : tStubs) reconstructMTE(aLevel, (gregapi.tileentity.base.TileEntityLoaderStub)tBE);
 	}
 
-	/** Собрать реальный MTE из захваченного стабом NBT (reg/id) и заменить им стаб. pos-канал getNewTileEntityContainer даёт позицию из pos стаба. */
-	public static void reconstructMTE(ServerLevel aLevel, gregapi.tileentity.base.TileEntityLoaderStub aStub) {
+	/** Собрать реальный MTE из захваченного стабом NBT (reg/id) и заменить им стаб. pos-канал getNewTileEntityContainer даёт позицию из pos стаба. Level (сервер И клиент). */
+	public static void reconstructMTE(net.minecraft.world.level.Level aLevel, gregapi.tileentity.base.TileEntityLoaderStub aStub) {
 		net.minecraft.nbt.CompoundTag tNBT = aStub.mLoadedNBT;
 		if (tNBT == null) return;
 		short tReg = tNBT.getShort(gregapi.data.CS.NBT_MTE_REG).orElse((short)0);
