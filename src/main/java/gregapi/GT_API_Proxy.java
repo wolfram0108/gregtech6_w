@@ -230,7 +230,19 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public Player getThePlayer() {
 		return null;
 	}
-	
+
+	/** S6: client-only {@code Minecraft.getInstance().isSingleplayer()} нельзя звать из общего кода (на dedicated
+	 *  класса {@code Minecraft} нет). Центр side-разделения (тот же приём, что {@link #getThePlayer()}): сервер = F. */
+	public boolean isSingleplayer() {
+		return F;
+	}
+
+	/** S6: чтение assets-ресурса (PNG иконки для среднего цвета) идёт через client {@code Minecraft.getResourceManager()};
+	 *  из общего кода нельзя (на dedicated нет Minecraft/assets). Центр: сервер = null (assets предметов на сервере нет). */
+	public java.io.InputStream getResourceStream(net.minecraft.resources.Identifier aRL) {
+		return null;
+	}
+
 	public boolean sendUseItemPacket(Player aPlayer, Level aWorld, ItemStack aStack) {
 		return F;
 	}

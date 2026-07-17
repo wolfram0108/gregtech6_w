@@ -71,7 +71,6 @@ import ic2.api.recipe.IRecipeInput;
 import ic2.api.recipe.RecipeOutput;
 import mods.railcraft.common.items.enchantment.RailcraftEnchantments;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
@@ -1484,7 +1483,8 @@ public class UT {
 			java.awt.image.BufferedImage tIcon = null;
 			// neo: ResourceManager.getResource(Identifier) -> Optional<Resource> (не бросает FileNotFound);
 			// Resource.getInputStream() -> open() (Resource.java). Читаем только если ресурс присутствует.
-			try {java.util.Optional<net.minecraft.server.packs.resources.Resource> tRes = Minecraft.getInstance().getResourceManager().getResource(aux); if (tRes.isPresent()) tIcon = javax.imageio.ImageIO.read(tRes.get().open());} catch (IOException e) {/**/}
+			// S6: доступ к client resource manager — через центр (GT_API_Proxy.getResourceStream), на сервере null (не грузим Minecraft).
+			try {java.io.InputStream tStream = gregapi.GT_API.api_proxy.getResourceStream(aux); if (tStream != null) tIcon = javax.imageio.ImageIO.read(tStream);} catch (IOException e) {/**/}
 			return tIcon == null ? null : color(tIcon);
 		}
 		

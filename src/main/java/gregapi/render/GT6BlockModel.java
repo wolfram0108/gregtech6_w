@@ -73,6 +73,11 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 			return;
 		}
 
+		// F3-render: MTE-блоки рисует BER (MultiTileEntityBER), НЕ baked-модель. Причина (probe, окончательно): neo section-compile
+		// регион (worker-снапшот) НЕ отдаёт MTE-BE (getBlockEntity=null 100%) → тут геометрию собрать нельзя. BER берёт живой BE на
+		// main-thread. Пропускаем (пустой меш; часть MTE регион случайно захватывал — рисовали бы дважды с BER). Флюид/BlockBase — ниже (render на блоке).
+		if (tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {aParts.add(new SimpleModelWrapper(tQB.build(), true, mParticle)); return;}
+
 		// 1:1-порт RendererBlockTextured.renderWorldBlock: двойной passRenderingToObject → ветвь блока / ветвь рендер-объекта.
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aLevel, tX, tY, tZ);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aLevel, tX, tY, tZ);
@@ -85,16 +90,23 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 				applyBounds(tQB, tBlock);
 				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRB.getTexture(i, s, tSides, aLevel, tX, tY, tZ), tX, tY, tZ);
 			}
-		} else if (!tRenderer.renderBlock(tBlock, tQB, aLevel, tX, tY, tZ)) {
-			boolean[] tSides = sides(tBlock, tRenderer instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)tRenderer : null);
-			for (int i = 0, j = tRenderer.getRenderPasses(tBlock, tSides); i < j; i++) {
-				if (!tRenderer.usesRenderPass(i, tSides)) continue;
-				tRenderer.setBlockBounds(tBlock, i, tSides);
-				applyBounds(tQB, tBlock);
-				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRenderer.getTexture(tBlock, i, s, tSides), tX, tY, tZ);
-			}
+		} else {
+			buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);
 		}
 		aParts.add(new SimpleModelWrapper(tQB.build(), true, mParticle));
+	}
+
+	/** F3-render: ветвь рендер-объекта (getRenderPasses→setBlockBounds→getTexture→quads). Общий код collectParts (baked) и
+	 *  MultiTileEntityBER (BER, живой BE на main-thread). renderBlock=true → объект сам нарисовал, цикл не нужен. */
+	public static void buildRendererQuads(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
+		if (aRenderer.renderBlock(aBlock, aQB, aLevel, aX, aY, aZ)) return;
+		boolean[] tSides = sides(aBlock, aRenderer instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)aRenderer : null);
+		for (int i = 0, j = aRenderer.getRenderPasses(aBlock, tSides); i < j; i++) {
+			if (!aRenderer.usesRenderPass(i, tSides)) continue;
+			aRenderer.setBlockBounds(aBlock, i, tSides);
+			applyBounds(aQB, aBlock);
+			for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, aRenderer.getTexture(aBlock, i, s, tSides), aX, aY, aZ);
+		}
 	}
 
 	/** tSides: у SideCheck-объекта — renderFullBlockSide; иначе все true (соседнее скрытие делает neo через addCulledFace). */

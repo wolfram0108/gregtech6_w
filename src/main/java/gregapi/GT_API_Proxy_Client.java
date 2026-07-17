@@ -121,6 +121,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aModBus.addListener(this::onRegisterBlockStateModels);
 		aModBus.addListener(this::onModifyBakingResult);
 		aModBus.addListener(this::onRegisterFluidModels);
+		aModBus.addListener(this::onRegisterBlockEntityRenderers);
+	}
+
+	// F3-render: MTE-блоки рисует BER (не baked — регион не отдаёт MTE-BE, см. MultiTileEntityBER). Один generic BER на весь
+	// MTE_TYPE (централизация 1:1). Руды/стабы отсеиваются внутри BER (гейт MultiTileEntityBlock+IRenderedBlockObject).
+	private void onRegisterBlockEntityRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers aEvent) {
+		if (gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE != null)
+			aEvent.registerBlockEntityRenderer(gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE, gregapi.render.MultiTileEntityBER::new);
 	}
 
 	// Приёмочный скан рендера (гейт ②): на первом client-tick, когда атлас стежен И DataComponents ПРИВЯЗАНЫ (на
@@ -228,6 +236,61 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { tOut.println("[GT6-ORE-PROBE] spring-scan упал: "+e); }
 		tMatCounts.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(12).forEach(e ->
 			tOut.println("[GT6-ORE-PROBE]   материал " + e.getKey() + " = " + e.getValue()));
+		if (mOreProbeRuns == 1) try { dumpEngineState(tMC); } catch (Throwable e) { tOut.println("[GT6-ENGINE] дамп упал: "+e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
+	// ЗАМЕР СОСТОЯНИЯ В ИГРЕ (движковые данные, не визуал): сколько GT6-контента реально ЗАРЕГИСТРИРОВАНО, в КРЕАТИВЕ, в
+	// RecipeManager. Ответ на «почему пусто в креативе» ЧИСЛАМИ, не предположением. (иконки — существующий item-probe отдельно.)
+	private void dumpEngineState(net.minecraft.client.Minecraft tMC) {
+		java.io.PrintStream o = gregapi.data.CS.OUT;
+		o.println("[GT6-ENGINE] ================= ЗАМЕР СОСТОЯНИЯ В ИГРЕ =================");
+		// 1. РЕГИСТРАЦИЯ: сколько gregtech-предметов/блоков реально в реестрах движка.
+		int tItems=0, tBlocks=0;
+		for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) if (isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it).getNamespace())) tItems++;
+		for (net.minecraft.world.level.block.Block bl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) if (isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(bl).getNamespace())) tBlocks++;
+		o.println("[GT6-ENGINE] 1. РЕГИСТРАЦИЯ: gregtech ITEM=" + tItems + "  BLOCK=" + tBlocks);
+		// 1b. BLOCKITEM: сколько gregtech-блоков имеют item-форму (asItem()!=AIR). Нет item → блок не в креативе, нельзя взять/поставить.
+		int tBlkWithItem=0, tBlkNoItem=0;
+		for (net.minecraft.world.level.block.Block bl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) { if (!isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(bl).getNamespace())) continue; if (bl.asItem() == net.minecraft.world.item.Items.AIR) tBlkNoItem++; else tBlkWithItem++; }
+		o.println("[GT6-ENGINE] 1b. BLOCKITEM: gregtech-блоков С item-формой=" + tBlkWithItem + "  БЕЗ item (asItem=AIR)=" + tBlkNoItem);
+		// 1c. РЕАЛЬНЫЙ КОНТЕНТ = ВАРИАНТЫ (getSubItems/getSubBlocks), не база-реестр. GT6 мета-модель: 1 MultiItem = тысячи вариантов
+		// (материал×префикс), 1 MTE-блок = тысячи по ID. Это десятки/сотни тысяч. Если тут ~847 (только база) — генерация вариантов СЛОМАНА.
+		long tVarItems=0, tVarBlocks=0; int tItemMulti=0, tBlockMulti=0;
+		for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) { if (!isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(it).getNamespace())) continue; int n = countSub(it, "getSubItems", it); tVarItems += Math.max(n,1); if (n>1) tItemMulti++; }
+		for (net.minecraft.world.level.block.Block bl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) { if (!isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(bl).getNamespace())) continue; int n = countSub(bl, "getSubBlocks", bl.asItem()); if (n==0) n = countSub(bl.asItem(), "getSubItems", bl.asItem()); tVarBlocks += Math.max(n,1); if (n>1) tBlockMulti++; }
+		o.println("[GT6-ENGINE] 1c. ВАРИАНТЫ (реальный контент): ITEM-вариантов=" + tVarItems + " (мульти-предметов="+tItemMulti+")  BLOCK-вариантов=" + tVarBlocks + " (мульти-блоков="+tBlockMulti+")  ИТОГО="+(tVarItems+tVarBlocks));
+		// 2. КРЕАТИВ: сколько gregtech-предметов реально попадает в creative-вкладки (getDisplayItems после BuildContents).
+		int tTabsTotal=0, tTabsGreg=0, tCreativeGreg=0;
+		for (net.minecraft.world.item.CreativeModeTab tab : net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB) { tTabsTotal++;
+			var tk = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getKey(tab); if (tk != null && isGregNamespace(tk.getNamespace())) tTabsGreg++;
+			try { for (net.minecraft.world.item.ItemStack st : tab.getDisplayItems()) if (isGregNamespace(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(st.getItem()).getNamespace())) tCreativeGreg++; } catch (Throwable e) {}
+		}
+		o.println("[GT6-ENGINE] 2. КРЕАТИВ: всего-вкладок=" + tTabsTotal + " gregtech-вкладок=" + tTabsGreg + " gregtech-предметов-в-табах=" + tCreativeGreg);
+		// 3. РЕЦЕПТЫ в игре (server RecipeManager).
+		try { net.minecraft.server.MinecraftServer srv = tMC.getSingleplayerServer();
+			if (srv == null) o.println("[GT6-ENGINE] 3. РЕЦЕПТЫ: singleplayer-сервера нет");
+			else { int tRec=0, tRecGreg=0;
+				for (net.minecraft.world.item.crafting.RecipeHolder<?> rh : srv.getRecipeManager().getRecipes()) { tRec++; if (isGregNamespace(rh.id().identifier().getNamespace())) tRecGreg++; }
+				o.println("[GT6-ENGINE] 3. РЕЦЕПТЫ: всего в RecipeManager=" + tRec + " gregtech=" + tRecGreg);
+			}
+		} catch (Throwable e) { o.println("[GT6-ENGINE] 3. РЕЦЕПТЫ (neo RecipeManager): скан упал=" + e); }
+		// 4. GT6-RECIPEMAP-система (машинные рецепты — мацератор/ассемблер/EBF/химреактор — это ~300k, СВОЯ система GT6, не neo RecipeManager).
+		try { int tMaps=0; long tGT6Rec=0; int tNonEmpty=0;
+			for (gregapi.recipes.Recipe.RecipeMap rm : gregapi.recipes.Recipe.RecipeMap.RECIPE_MAP_LIST) { tMaps++; int s = rm.mRecipeList.size(); tGT6Rec += s; if (s>0) tNonEmpty++; }
+			o.println("[GT6-ENGINE] 4. GT6-RECIPEMAPS (машины, СВОЯ система): карт=" + tMaps + " непустых=" + tNonEmpty + " ВСЕГО-РЕЦЕПТОВ=" + tGT6Rec);
+		} catch (Throwable e) { o.println("[GT6-ENGINE] 4. GT6-RECIPEMAPS: скан упал=" + e); }
+		o.println("[GT6-ENGINE] ================= КОНЕЦ ЗАМЕРА =================");
+	}
+
+	/** Перечислить варианты предмета/блока через его getSubItems/getSubBlocks(Item,CreativeModeTab,List) — та же рефлексия, что CreativeTabsGT. Вернуть кол-во. */
+	private static int countSub(Object aTarget, String aMethod, net.minecraft.world.item.Item aItem) {
+		if (aTarget == null || aItem == null) return 0;
+		try {
+			java.util.List<net.minecraft.world.item.ItemStack> tList = new java.util.ArrayList<>();
+			java.lang.reflect.Method m = aTarget.getClass().getMethod(aMethod, net.minecraft.world.item.Item.class, net.minecraft.world.item.CreativeModeTab.class, java.util.List.class);
+			m.invoke(aTarget, aItem, null, tList);
+			return tList.size();
+		} catch (Throwable e) { return 0; }
 	}
 
 	// F6-worldgen АВТОНОМНЫЙ вход в мир (гейт: файл run/wgautoworld.flag): quickPlay упирается в диалог-подтверждение
@@ -327,6 +390,20 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@Override
 	public Player getThePlayer() {
 		return Minecraft.getInstance().player;
+	}
+
+	@Override
+	public boolean isSingleplayer() {
+		return Minecraft.getInstance().isSingleplayer();
+	}
+
+	@Override
+	public java.io.InputStream getResourceStream(net.minecraft.resources.Identifier aRL) {
+		try {
+			java.util.Optional<net.minecraft.server.packs.resources.Resource> tRes = Minecraft.getInstance().getResourceManager().getResource(aRL);
+			if (tRes.isPresent()) return tRes.get().open();
+		} catch (java.io.IOException e) {/**/}
+		return null;
 	}
 
 	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code PlayerControllerMP.sendUseItem(player,world,stack)}

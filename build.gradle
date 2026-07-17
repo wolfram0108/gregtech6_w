@@ -245,8 +245,8 @@ dependencies {
     // импортирует — плагинов ещё нет). Раскомментировать при написании JEI-плагинов GregTech6 / когда сеть
     // до blamejared будет стабильна. localRuntime оставлен (он на runtime-пути, компиляцию не трогает;
     // подтянет полный JEI при запуске игры для приёмки визуала).
-    // compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
-    // compileOnly "mezz.jei:jei-${jei_minecraft_version}-neoforge-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${jei_minecraft_version}-neoforge-api:${jei_version}"
     localRuntime "mezz.jei:jei-${jei_minecraft_version}-neoforge:${jei_version}"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
