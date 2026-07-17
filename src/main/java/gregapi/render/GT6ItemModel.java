@@ -79,7 +79,8 @@ public class GT6ItemModel implements ItemModel {
 	 */
 	public static void probeItemIcons() {
 		int tFound = 0, tMissing = 0, tNullIcon = 0, tTotal = 0;
-		java.util.List<String> tNullSamples = new java.util.ArrayList<>(), tMissSamples = new java.util.ArrayList<>();
+		java.util.List<String> tNullSamples = new java.util.ArrayList<>(), tMissSamples = new java.util.ArrayList<>(), tFoundSamples = new java.util.ArrayList<>();
+		java.util.Map<String,Integer> tNullByClass = new java.util.TreeMap<>();
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
@@ -87,13 +88,16 @@ public class GT6ItemModel implements ItemModel {
 			tTotal++;
 			Identifier tIcon = null; String tErr = "";
 			try { tIcon = resolveIcon(new ItemStack(tItem)); } catch (Throwable e) { tErr = "EXC:" + e.getClass().getSimpleName(); }
-			if (tIcon == null) { tNullIcon++; if (tNullSamples.size() < 12) tNullSamples.add(tKey.getPath() + "[" + tItem.getClass().getSimpleName() + "]" + tErr); continue; }
+			String tCls = tItem.getClass().getSimpleName();
+			if (tIcon == null) { tNullIcon++; tNullByClass.merge(tCls + tErr, 1, Integer::sum); if (tNullSamples.size() < 12) tNullSamples.add(tKey.getPath() + "[" + tCls + "]" + tErr); continue; }
 			TextureAtlasSprite tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
 			if (tS == null) tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
-			if (tS != null) tFound++; else { tMissing++; if (tMissSamples.size() < 12) tMissSamples.add(tKey.getPath() + "→" + tIcon); }
+			if (tS != null) { tFound++; if (tFoundSamples.size() < 12) tFoundSamples.add(tKey.getPath() + "[" + tCls + "]→" + tIcon); }
+			else { tMissing++; if (tMissSamples.size() < 12) tMissSamples.add(tKey.getPath() + "[" + tCls + "]→" + tIcon); }
 		}
 		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] total=" + tTotal + " found=" + tFound + " missing(пурпур)=" + tMissing + " null-icon(не рисуется)=" + tNullIcon);
-		if (!tNullSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] NULL-icon примеры: " + tNullSamples);
+		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] NULL-по-классам: " + tNullByClass);
+		if (!tFoundSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] FOUND примеры: " + tFoundSamples);
 		if (!tMissSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] MISSING-sprite примеры: " + tMissSamples);
 	}
 
