@@ -28,6 +28,7 @@ import gregapi.data.LH;
 import gregapi.item.IItemGT;
 import gregapi.lang.LanguageHandler;
 import gregapi.render.RendererBlockFluid;
+import net.minecraft.world.item.ItemStack;
 import gregapi.tileentity.data.ITileEntitySurface;
 import gregapi.util.ST;
 import gregapi.util.UT;
@@ -64,7 +65,7 @@ import static gregapi.data.CS.*;
  * (см. его javadoc). Тела GT6-собственных методов (updateTick/tryToFlowVerticallyInto/updateFluidBlocks/...) —
  * 1:1, только API-свод.
  */
-public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside {
+public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside, gregapi.render.IRenderedBlock {
 	public static int FLUID_UPDATE_FLAGS = 2;
 	
 	public final String mNameInternal;
@@ -390,6 +391,24 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): см. getRenderColor; crash-only per /goal");}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
+
+	// F3-render (флюид-блок ВИДИМ): было мёртвый getRenderType()=RendererBlockFluid.RENDER_ID (1.7.10) + getIcon/getRenderColor
+	// кидали PORT-TODO → флюид-блок (нефть/газ/гео-вода worldgen'а) НЕ рисовался (прозрачный). Реализуем IRenderedBlock — та же
+	// централизованная модель GT6BlockModel, что у всех грег-блоков (onModifyBakingResult инжектит её каждому IRenderedBlock).
+	// Текстура+цвет флюида — из центра F5 (BlockTextureFluid → FluidGT.of(mFluid): still-иконка + mRGBa + свечение). Одна текстура
+	// на все грани/один проход, полный куб. Кэшируем (mFluid final). alpha=T (флюид полупрозрачный, если слой это позволит).
+	private gregapi.render.ITexture mRenderTexture = null;
+	private gregapi.render.ITexture renderTexture() {if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(mFluid, T); return mRenderTexture;}
+	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return renderTexture();}
+	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return renderTexture();}
+	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return aRenderPass == 0;}
+	@Override public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return aRenderPass == 0;}
+	@Override public boolean setBlockBounds(int aRenderPass, ItemStack aStack) {return F;}
+	@Override public boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return F;}
+	@Override public int getRenderPasses(ItemStack aStack) {return 1;}
+	@Override public int getRenderPasses(BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return 1;}
+	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return null;}
+	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 	
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
