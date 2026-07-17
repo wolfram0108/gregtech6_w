@@ -81,6 +81,13 @@ public class GT6ItemModel implements ItemModel {
 		int tFound = 0, tMissing = 0, tNullIcon = 0, tTotal = 0;
 		java.util.List<String> tNullSamples = new java.util.ArrayList<>(), tMissSamples = new java.util.ArrayList<>(), tFoundSamples = new java.util.ArrayList<>();
 		java.util.Map<String,Integer> tNullByClass = new java.util.TreeMap<>();
+		// КОРЕНЬ-ПРОВЕРКА (once): наполнен ли material.mTextureSetsItems + работает ли TextureSetIconItem.getIcon.
+		try {
+			gregapi.oredict.OreDictMaterial tFe = gregapi.data.MT.Fe;
+			String tH = "Fe.mTextureSetsItems.size=" + tFe.mTextureSetsItems.size() + " INSTANCES_ITEM=" + gregapi.render.TextureSet.INSTANCES_ITEM.size();
+			if (!tFe.mTextureSetsItems.isEmpty()) { Object ic0 = tFe.mTextureSetsItems.get(0); tH += " ic0=" + ic0.getClass().getSimpleName() + " getIcon0=" + ic0.getClass().getMethod("getIcon", int.class).invoke(ic0, 0); }
+			gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] Fe-header: " + tH);
+		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] Fe-header EXC " + e); }
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
@@ -108,7 +115,17 @@ public class GT6ItemModel implements ItemModel {
 			if (tIcon == null) {
 				tNullIcon++; tNullByClass.merge(tCls + tErr, 1, Integer::sum);
 				if (tItem instanceof gregapi.item.prefixitem.PrefixItem tPI) {
-					if (tNullSamples.size() < 25) try { tNullSamples.add("PFX:" + tKey.getPath() + "[idx=" + tPI.mPrefix.mIconIndexItem + " mats=" + tPI.mMaterialList.length + "]"); } catch (Throwable e) { tNullSamples.add("PFX:" + tKey.getPath() + "[EXC" + e.getClass().getSimpleName() + "]"); }
+					if (tNullSamples.size() < 6) try {
+						gregapi.oredict.OreDictMaterial tFe = gregapi.data.MT.Fe;
+						int tIdx = tPI.mPrefix.mIconIndexItem;
+						String tD = "idx=" + tIdx + " FeTsiSz=" + tFe.mTextureSetsItems.size();
+						if (tIdx >= 0 && tIdx < tFe.mTextureSetsItems.size()) {
+							Object tIC = tFe.mTextureSetsItems.get(tIdx);
+							Object ic = tIC.getClass().getMethod("getIcon", int.class).invoke(tIC, 0);
+							tD += " IC=" + tIC.getClass().getSimpleName() + " getIcon0=" + ic;
+						} else tD += " OOB!";
+						tNullSamples.add("PFX:" + tKey.getPath() + "[" + tD + "]");
+					} catch (Throwable e) { tNullSamples.add("PFX:" + tKey.getPath() + "[EXC " + e.getClass().getSimpleName() + ":" + e.getMessage() + "]"); }
 				} else if (tNullSamples.size() < 8) tNullSamples.add(tKey.getPath() + "[" + tCls + "]" + tErr);
 				continue;
 			}
