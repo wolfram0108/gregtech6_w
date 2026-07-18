@@ -58,10 +58,13 @@ public final class GT6QuadBuilder {
 	}
 
 	/** GT6 side-байт → neo Direction: SIDE_Y_NEG=0=DOWN, Y_POS=1=UP, Z_NEG=2=NORTH, Z_POS=3=SOUTH, X_NEG=4=WEST, X_POS=5=EAST. */
+	/** Диаг П9: имена спрайтов, НЕ найденных в атласе (грань молча пропускалась → «частично без текстур»). */
+	public static final java.util.Set<String> sMissingSprites = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
 	public void putFace(byte aSide, Identifier aIcon, short[] aRGBa) {
 		if (aIcon == null || aSide < 0 || aSide > 5) return;
 		TextureAtlasSprite tSprite = sprite(aIcon);
-		if (tSprite == null) return;
+		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
 		Direction tDir = Direction.from3DDataValue(aSide);
 		BakedQuad tQuad = boundedFace(tDir, tSprite, aRGBa);
 		if (tQuad == null) return;
@@ -118,7 +121,9 @@ public final class GT6QuadBuilder {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		int a = aRGBa != null && aRGBa.length >= 4 ? (aRGBa[3] & 0xFF) : 255;
+		// 1.7.10 тинт грани шёл setColorOpaque_I (альфы у тинта НЕТ); GT6-цвета часто RGB-int с нулевой альфой →
+		// a=0 в neo делал грань ПРОЗРАЧНОЙ (машины «без текстур», виден только overlay). 0 → 255.
+		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
 		float[][] c = corners(aDir, mBounds);
 		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
@@ -160,7 +165,9 @@ public final class GT6QuadBuilder {
 		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
 		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
 		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
-		int a = aRGBa != null && aRGBa.length >= 4 ? (aRGBa[3] & 0xFF) : 255;
+		// 1.7.10 тинт грани шёл setColorOpaque_I (альфы у тинта НЕТ); GT6-цвета часто RGB-int с нулевой альфой →
+		// a=0 в neo делал грань ПРОЗРАЧНОЙ (машины «без текстур», виден только overlay). 0 → 255.
+		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
 		float[][] tUV = {{0,16},{16,16},{16,0},{0,0}}; // bottom-left, bottom-right, top-right, top-left
 		float nx = aCorners[1][2]-aCorners[0][2], nz = -(aCorners[1][0]-aCorners[0][0]); // нормаль плоскости в XZ (для освещения; cull отключён)
 		float nlen = (float)Math.sqrt(nx*nx+nz*nz); if (nlen > 0) {nx/=nlen; nz/=nlen;}

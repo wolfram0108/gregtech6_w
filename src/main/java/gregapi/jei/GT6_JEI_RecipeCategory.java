@@ -55,11 +55,13 @@ import static gregapi.data.CS.*;
 public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe> {
 	/** См. {@code gregapi.NEI_RecipeMap.sOffsetX/sOffsetY} (gregapi/NEI_RecipeMap.java:66). */
 	private static final int OFFSET_X = 5, OFFSET_Y = 11;
-	private static final int WIDTH = 180, HEIGHT = 145;
+	private static final int WIDTH = 176, HEIGHT = 155;
 
 	private final RecipeMap mMap;
-	/** Фон 1:1 c NEI drawBackground (gregapi/NEI_RecipeMap.java:629-635): machines/NEI.png @(−5,−16) + GUI-текстура
-	 *  карты @(−5,−8) v=3 h=79; в JEI-координатах (слоты сдвинуты на OFFSET) это (0,−5)→клип v=5 и (0,3). */
+	/** Система координат ЗАЯКОРЕНА ПО ПИКСЕЛЯМ (замер canner.png: рамка входа-1 @текстуры (34,24) ⇒ предмет (35,25)
+	 *  = сырые NEI-числа слотов) → JEI-координата = NEI-число БЕЗ офсета, GUI-текстура рисуется @(0,3) с v=3
+	 *  (текстур-пиксель == JEI-пиксель); NEI.png сдвинут на 11 вверх относительно GUI-текстуры
+	 *  (сведение систем 1.7.10: машина @(−5,−8,v3), NEI @(−5,−16)) → клип v=11, высота 155 @(0,0). */
 	private final IDrawable mBackNEI, mBackGui;
 
 	public GT6_JEI_RecipeCategory(RecipeMap aMap, RecipeType<Recipe> aType, IGuiHelper aGuiHelper) {
@@ -67,7 +69,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		mMap = aMap;
 		IDrawable tNEI = null, tGui = null;
 		try {
-			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
+			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 11, 176, 155);
 			String tGuiPath = gregapi.util.UT.Code.stringValid(aMap.mGUIPath) ? aMap.mGUIPath : RES_PATH_GUI + aMap.mNameInternal + ".png";
 			tGui = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
 		} catch (Throwable e) {ERR.println("JEI: фон категории '" + aMap.mNameInternal + "' не собрался: " + e);}
@@ -199,10 +201,10 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 
 			// gregapi/NEI_RecipeMap.java:280-281.
 			if (aRecipe.mSpecialItems instanceof ItemStack && ST.valid((ItemStack)aRecipe.mSpecialItems)) {
-				aBuilder.addInputSlot(80 - OFFSET_X, 43 - OFFSET_Y).addItemStack((ItemStack)aRecipe.mSpecialItems);
+				aBuilder.addInputSlot(80, 43).addItemStack((ItemStack)aRecipe.mSpecialItems);
 			}
 			if (!mMap.mRecipeMachineList.isEmpty()) {
-				aBuilder.addInputSlot(152 - OFFSET_X, 83 - OFFSET_Y).addItemStacks(mMap.mRecipeMachineList);
+				aBuilder.addInputSlot(152, 83).addItemStacks(mMap.mRecipeMachineList);
 			}
 
 			tStartIndex = 0;
@@ -321,11 +323,11 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 			// от ItemStack, где F15 заменил null на EMPTY).
 			for (int i = 0; i < aRecipe.mFluidInputs.length && i < mMap.mInputFluidCount; i++) {
 				FluidStack tFluid = aRecipe.mFluidInputs[i];
-				if (tFluid != null) aBuilder.addInputSlot(53 - (i%3)*18 - OFFSET_X, 63 - (i/3)*18 - OFFSET_Y).addIngredient(NeoForgeTypes.FLUID_STACK, tFluid);
+				if (tFluid != null) aBuilder.addInputSlot(53 - (i%3)*18, 63 - (i/3)*18).addIngredient(NeoForgeTypes.FLUID_STACK, tFluid);
 			}
 			for (int i = 0; i < aRecipe.mFluidOutputs.length && i < mMap.mOutputFluidCount; i++) {
 				FluidStack tFluid = aRecipe.mFluidOutputs[i];
-				if (tFluid != null) aBuilder.addOutputSlot(107 + (i%3)*18 - OFFSET_X, 63 - (i/3)*18 - OFFSET_Y).addIngredient(NeoForgeTypes.FLUID_STACK, tFluid);
+				if (tFluid != null) aBuilder.addOutputSlot(107 + (i%3)*18, 63 - (i/3)*18).addIngredient(NeoForgeTypes.FLUID_STACK, tFluid);
 			}
 		} catch (Throwable e) {
 			ERR.println("JEI: RecipeMap '" + mMap.mNameInternal + "' failed to lay out a recipe, skipping its slots.");
@@ -336,7 +338,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	/** gregapi/NEI_RecipeMap.java:177 и аналоги: добавляет входной предмет-слот, если он есть, и возвращает следующий индекс. */
 	private static int in(IRecipeLayoutBuilder aBuilder, Recipe aRecipe, int aIndex, int aX, int aY) {
 		ItemStack tStack = aRecipe.getRepresentativeInput(aIndex);
-		if (tStack != null) aBuilder.addInputSlot(aX - OFFSET_X, aY - OFFSET_Y).addItemStack(tStack);
+		if (tStack != null) aBuilder.addInputSlot(aX, aY).addItemStack(tStack);
 		return aIndex + 1;
 	}
 
@@ -344,7 +346,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	private static int out(IRecipeLayoutBuilder aBuilder, Recipe aRecipe, int aIndex, int aX, int aY) {
 		ItemStack tStack = aRecipe.getOutput(aIndex);
 		if (tStack != null) {
-			IRecipeSlotBuilder tSlot = aBuilder.addOutputSlot(aX - OFFSET_X, aY - OFFSET_Y).addItemStack(tStack);
+			IRecipeSlotBuilder tSlot = aBuilder.addOutputSlot(aX, aY).addItemStack(tStack);
 			int tChance = aRecipe.getOutputChance(aIndex), tMax = aRecipe.getMaxChance(aIndex);
 			if (tChance > 0 && tChance != tMax) {
 				long tPercent = UT.Code.units(tChance, tMax, 10000, F);
@@ -389,7 +391,10 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 			if (tDuration > 0) tLines.add(Component.literal("Time: " + (tDuration < 1200 ? UT.Code.makeString(tDuration) + " ticks" : tDuration < 36000 ? UT.Code.makeString(tDuration/20) + " secs" : UT.Code.makeString(tDuration/1200) + " mins")));
 			if (UT.Code.stringValid(mMap.mNEISpecialValuePre) || UT.Code.stringValid(mMap.mNEISpecialValuePost))
 				tLines.add(Component.literal(mMap.mNEISpecialValuePre + UT.Code.makeString(aRecipe.mSpecialValue * mMap.mNEISpecialValueMultiplier) + mMap.mNEISpecialValuePost));
-			if (!tLines.isEmpty()) aBuilder.addText(tLines, 4, 96);
+			// NEI drawText @(10,73..123) шаг 10, чёрный без тени; addText(w,h)+setPosition (было (4,96) — 4px ширины
+			// давали текст-СТОЛБИК по букве, «Costs: 2…» вертикально)
+			if (!tLines.isEmpty()) aBuilder.addText(tLines, WIDTH - (10) - 4, 60)
+				.setPosition(10, 73).setColor(0xFF000000).setShadow(false).setLineSpacing(2);
 		} catch (Throwable e) {
 			ERR.println("JEI: RecipeMap '" + mMap.mNameInternal + "' failed to build its info text, skipping.");
 			e.printStackTrace(ERR);

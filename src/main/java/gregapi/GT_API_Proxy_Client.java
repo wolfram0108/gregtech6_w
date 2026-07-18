@@ -235,6 +235,44 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					}
 					for (net.minecraft.world.item.ItemStack tS : tMachines) tPlayer.getInventory().add(tS.copy());
 					gregapi.render.GT6ItemModel.dumpStacks(tMachines, "descriptor.port.machines.jsonl");
+					// П9-замер «машины без текстур»: item-форма ВСЕХ MTE — счёт пустых (ни блок-квадов, ни спец-рендера) по классам
+					try {
+						java.util.Map<String,int[]> tByCls = new java.util.TreeMap<>();
+						int tEmptyAll = 0, tTotalAll = 0;
+						for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+							if (tC.mHidden) continue;
+							net.minecraft.world.item.ItemStack tS = tReg.getItem(tC.mID);
+							if (!gregapi.util.ST.valid(tS)) continue;
+							tTotalAll++;
+							boolean tEmpty;
+							try {
+								gregapi.render.GT6QuadBuilder tQB = new gregapi.render.GT6QuadBuilder();
+								gregapi.render.GT6BlockModel.buildInventoryQuads(tQB, tReg.mBlock, tS);
+								tEmpty = tQB.quads().isEmpty() && gregapi.render.MultiTileEntityBER.SPECIAL_ITEM_FORM.extractArgument(tS) == null;
+							} catch (Throwable e) { tEmpty = true; }
+							int[] tA = tByCls.computeIfAbsent(tC.mClass.getSimpleName(), k -> new int[2]);
+							tA[0]++; if (tEmpty) { tA[1]++; tEmptyAll++; }
+						}
+						gregapi.data.CS.OUT.println("[GT6-MACHINE-FORM] item-формы MTE: всего=" + tTotalAll + " ПУСТЫХ=" + tEmptyAll);
+						tByCls.entrySet().stream().filter(e2 -> e2.getValue()[1] > 0).limit(40).forEach(e2 ->
+							gregapi.data.CS.OUT.println("[GT6-MACHINE-FORM]   " + e2.getKey() + ": " + e2.getValue()[1] + "/" + e2.getValue()[0] + " пустых"));
+						gregapi.data.CS.OUT.println("[GT6-MACHINE-FORM] MISSING-спрайтов (грань молча пропущена): " + gregapi.render.GT6QuadBuilder.sMissingSprites.size());
+						int tMs = 0; for (String tMiss : gregapi.render.GT6QuadBuilder.sMissingSprites) { if (++tMs > 30) break; gregapi.data.CS.OUT.println("[GT6-MACHINE-FORM]   MISSING " + tMiss); }
+						// цвет вершин (тинт) первых квадов 3 машин: чёрный (ff000000) = корень «чёрные машины»
+						for (int tID2 : new int[]{32745, 1204, 20001, 100, 1000}) try {
+							net.minecraft.world.item.ItemStack tS2 = tReg.getItem(tID2);
+							if (!gregapi.util.ST.valid(tS2)) continue;
+							gregapi.render.GT6QuadBuilder tQB2 = new gregapi.render.GT6QuadBuilder();
+							gregapi.render.GT6BlockModel.buildInventoryQuads(tQB2, tReg.mBlock, tS2);
+							StringBuilder tCol = new StringBuilder();
+							int tQn = 0;
+							for (net.minecraft.client.resources.model.geometry.BakedQuad tQ : tQB2.quads()) {
+								if (++tQn > 4) break;
+								tCol.append(tQ.materialInfo().sprite().contents().name().getPath()).append("=").append(Integer.toHexString(tQ.bakedColors().color(0))).append(" ");
+							}
+							gregapi.data.CS.OUT.println("[GT6-MACHINE-FORM] id=" + tID2 + " quads=" + tQB2.quads().size() + " вершина-цвета: " + tCol);
+						} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-MACHINE-FORM] цвет id=" + tID2 + " EXC " + e); }
+					} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-MACHINE-FORM] упал: " + e); }
 				}
 			} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-MACHINE-PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-INJECT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
@@ -308,6 +346,28 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				net.minecraft.world.level.block.entity.BlockEntity tBE = tP.level().getBlockEntity(fPos);
 				boolean tOpened = tBE instanceof gregapi.tileentity.ITileEntityGUI tGUI && tGUI.openGUI(tP);
 				o.println("[GT6-GUI-PROBE] BE=" + (tBE == null ? "null" : tBE.getClass().getSimpleName()) + " openGUI=" + tOpened);
+				// П8-судья (каверы): синтез кавера на машине реальным центром setCoverItem → рендер-пассы должны вырасти на 12
+				try {
+					if (tBE instanceof gregapi.tileentity.base.TileEntityBase06Covers tCov) {
+						int tPassesBefore = tCov instanceof gregapi.render.IRenderedBlockObject tRO ? tRO.getRenderPasses(tBE.getBlockState().getBlock(), new boolean[]{true,true,true,true,true,true}) : -1;
+						net.minecraft.world.item.ItemStack tCoverStack = null;
+						for (java.util.Map.Entry<gregapi.code.ItemStackContainer, gregapi.cover.ICover> tE : gregapi.cover.CoverRegistry.COVERS.entrySet()) {tCoverStack = tE.getKey().toStack(); if (gregapi.util.ST.valid(tCoverStack)) break;}
+						boolean tSet = tCoverStack != null && tCov.setCoverItem((byte)2, tCoverStack, tP, true, true);
+						int tPassesAfter = tCov instanceof gregapi.render.IRenderedBlockObject tRO2 ? tRO2.getRenderPasses(tBE.getBlockState().getBlock(), new boolean[]{true,true,true,true,true,true}) : -1;
+						o.println("[GT6-COVER-PROBE] cover=" + (tCoverStack == null ? "нет-в-реестре" : tCoverStack.getHoverName().getString()) + " set=" + tSet + " passes " + tPassesBefore + "→" + tPassesAfter + " (+12 = кавер-пассы живы)");
+					}
+				} catch (Throwable e) { o.println("[GT6-COVER-PROBE] упал: " + e); }
+				// П8-судья (mActive-анимация): форс mActive → текстура пасса меняется (getTexture2 active-набор)
+				try {
+					if (tBE instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tM) {
+						boolean[] tAll = {true,true,true,true,true,true};
+						Object tTexIdle = tM.getTexture2(tBE.getBlockState().getBlock(), 1, (byte)3, tAll);
+						tM.mActive = true;
+						Object tTexActive = tM.getTexture2(tBE.getBlockState().getBlock(), 1, (byte)3, tAll);
+						tM.mActive = false;
+						o.println("[GT6-ACTIVE-PROBE] текстура idle==" + (tTexIdle == null ? "null" : "ok") + " active==" + (tTexActive == null ? "null" : "ok") + " различаются=" + (tTexIdle != null && !String.valueOf(tTexIdle).equals(String.valueOf(tTexActive))) + " (true = mActive-канал жив)");
+					}
+				} catch (Throwable e) { o.println("[GT6-ACTIVE-PROBE] упал: " + e); }
 			} catch (Throwable e) { o.println("[GT6-GUI-PROBE] open-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 			return;
 		}

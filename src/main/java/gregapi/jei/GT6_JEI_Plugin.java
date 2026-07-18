@@ -94,9 +94,11 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			if (tKey == null) continue;
 			String tNs = tKey.getNamespace();
 			if (!tNs.equals(ModIDs.GT) && !tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
-			try {aRegistration.registerFromDataComponentTypes(tItem, tSubtype); tCount++;} catch (Throwable e) {/**/}
+			// SUBTYPE (мета 1.7.10) + CUSTOM_DATA (ItemNBT-центр F8: монеты/батареи/сундуки различаются NBT-материалом,
+			// не метой — 1.7.10 NEI различал их по NBT; без заявки — «389 duplicate items» Coins)
+			try {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, net.minecraft.core.component.DataComponents.CUSTOM_DATA); tCount++;} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] SUBTYPE-подтипы заявлены для " + tCount + " предметов.");
+		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA подтипы заявлены для " + tCount + " предметов.");
 	}
 
 	@Override
