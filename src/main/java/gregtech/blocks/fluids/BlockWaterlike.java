@@ -202,6 +202,20 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		return -1;
 	}
 
+	// F5-B (реверс воды mc26): движок применяет погружение/утопление/плавание/push/current/туман ТОЛЬКО через
+	// getFluidState(pos), и entity отслеживает лишь fluid в теге FluidTags.WATER (EntityFluidInteraction:251 +
+	// getTrackerFor:124 — иначе tracker=null и никаких эффектов; isInWater = isInFluid(FluidTags.WATER)). Мировая
+	// вода GT6 (Ocean/River/Swamp, Material.water) отдаёт vanilla WATER FluidState по своим квантам (meta 0 =
+	// source полный; meta>0 = flowing, amount = quantaPerBlock-meta) → игрок ведёт себя как в воде mc26, включая
+	// весь vanilla-рендер воды. Кванты и разлив остаются на GT6 (updateFlow); vanilla fluid-tick НЕ планируется
+	// (блок не LiquidBlock, scheduleTick — только свой block-tick), двойного разлива нет.
+	@Override protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
+		int tMeta = aState.getValue(FLUID_META);
+		if (tMeta <= 0) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
+		int tAmount = net.minecraft.util.Mth.clamp(quantaPerBlock - tMeta, 1, 8);
+		return net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(tAmount, false);
+	}
+
 	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);

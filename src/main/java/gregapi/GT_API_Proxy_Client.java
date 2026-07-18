@@ -345,6 +345,56 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PLACE-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// B1-СУДЬЯ (F5-жидкости, гейт: файл run/gt6fluidprobe.flag): проверка, что движок mc26 распознаёт мировую воду GT6
+	// (Ocean/River/Swamp) как ВОДУ — заливает куб Ocean вокруг игрока и через ~2с читает ДВИЖКОВЫЕ флаги погружения
+	// (isInWater/isUnderWater/isEyeInFluid(WATER)/getFluidHeight/air/deltaY). Реальный путь: те же поля, что vanilla-вода
+	// ставит в Entity.baseTick через EntityFluidInteraction. isInWater=true = получен весь vanilla-водоканал (push/утопление/плавание).
+	private int mFluidProbePhase = 0; private int mFluidProbeTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onFluidProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mFluidProbePhase >= 2) return;
+		if (!new java.io.File("gt6fluidprobe.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mFluidProbePhase = 2; return; }
+		++mFluidProbeTick;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		if (mFluidProbePhase == 0 && mFluidProbeTick >= 300) {
+			mFluidProbePhase = 1;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				net.minecraft.core.BlockPos tC = tP.blockPosition();
+				net.minecraft.world.level.block.Block tOcean = gregapi.data.CS.BlocksGT.Ocean;
+				int tSet = 0;
+				for (int dx=-1; dx<=1; dx++) for (int dz=-1; dz<=1; dz++) for (int dy=0; dy<=2; dy++) {
+					net.minecraft.core.BlockPos tPp = tC.offset(dx, dy, dz);
+					if (gregapi.util.WD.set(tW, tPp.getX(), tPp.getY(), tPp.getZ(), tOcean, 0, 3)) tSet++;
+				}
+				net.minecraft.world.level.block.state.BlockState tSt = tW.getBlockState(tC);
+				o.println("[GT6-FLUID-PROBE] залито Ocean-блоков=" + tSet + " @центр " + tC.getX()+","+tC.getY()+","+tC.getZ()
+					+ " block=" + tSt.getBlock().getClass().getSimpleName() + " fluidState.empty=" + tSt.getFluidState().isEmpty()
+					+ " fluidType=" + (tSt.getFluidState().isEmpty() ? "-" : tSt.getFluidState().getType().getClass().getSimpleName())
+					+ " isWaterTag=" + tSt.getFluidState().is(net.minecraft.tags.FluidTags.WATER));
+			} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] заливка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		if (mFluidProbePhase == 1 && mFluidProbeTick >= 340) {
+			mFluidProbePhase = 2;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				o.println("[GT6-FLUID-PROBE] игрок: isInWater=" + tP.isInWater() + " isUnderWater=" + tP.isUnderWater()
+					+ " eyeInWater=" + tP.isEyeInFluid(net.minecraft.tags.FluidTags.WATER)
+					+ " fluidHeightWater=" + String.format("%.3f", tP.getFluidHeight(net.minecraft.tags.FluidTags.WATER))
+					+ " air=" + tP.getAirSupply() + "/" + tP.getMaxAirSupply()
+					+ " deltaY=" + String.format("%.4f", tP.getDeltaMovement().y)
+					+ " (isInWater=true = движок видит GT6-воду как воду mc26 → погружение/push/утопление/плавание живы)");
+			} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] замер упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+	}
+
 	// П1-СУДЬЯ (F14-gui, гейт: файл run/gt6guiprobe.flag): авто-открытие GUI машины РЕАЛЬНЫМ путём — сервер-тред
 	// размещает машину предметом (onItemUse, тот же код, что клик игрока) → ITileEntityGUI.openGUI (openMenu → пакет →
 	// клиент-экран) → замер экрана (класс/фон/размеры/слоты) + счётчики отрисовки ContainerClient (blit/text per frame).
