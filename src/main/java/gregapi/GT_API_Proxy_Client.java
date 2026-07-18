@@ -278,6 +278,73 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-INJECT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
+	// N1-СУДЬЯ (F-useOn установка, гейт: файл run/gt6placeprobe.flag): проверка, что блок мода встаёт РЕАЛЬНЫМ клик-путём.
+	// НЕ прямой onItemUse (то мерило в обход движка), а ServerPlayerGameMode.useItemOn — ТОТ ЖЕ метод, что сервер зовёт
+	// при ServerboundUseItemOnPacket (ServerGamePacketListenerImpl:1382). Для каждого корня-предмета (MTE машина/сундук,
+	// PrefixBlockItem-руда, ItemBlockBase-камень): ставим гарантированный пол STONE, кликаем по его верху сеткой useItemOn,
+	// читаем движком результат (блок мода встал? BE создан?). Успех = мост useOn→onItemUse жив на реальном пути.
+	private int mPlaceProbePhase = 0; private int mPlaceProbeTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onPlaceProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mPlaceProbePhase >= 1) return;
+		if (!new java.io.File("gt6placeprobe.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mPlaceProbePhase = 1; return; }
+		if (++mPlaceProbeTick < 300) return;
+		mPlaceProbePhase = 1;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		tSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tW = tP.level();
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			// набор тестовых стеков: по одному каждого корня установки
+			java.util.List<net.minecraft.world.item.ItemStack> tStacks = new java.util.ArrayList<>();
+			java.util.List<String> tNames = new java.util.ArrayList<>();
+			if (tReg != null) {
+				net.minecraft.world.item.ItemStack tM = tReg.getItem(20001); if (gregapi.util.ST.valid(tM)) {tStacks.add(tM); tNames.add("MTE-машина#20001");}
+				net.minecraft.world.item.ItemStack tC = tReg.getItem(32745); if (gregapi.util.ST.valid(tC)) {tStacks.add(tC); tNames.add("MTE-сундук#32745");}
+			}
+			net.minecraft.world.item.ItemStack tPrefix = null, tPlain = null;
+			for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+				if (tPrefix == null && it instanceof gregapi.block.prefixblock.PrefixBlockItem) {
+					java.util.List<net.minecraft.world.item.ItemStack> tV = new java.util.ArrayList<>();
+					try { ((gregapi.block.prefixblock.PrefixBlockItem)it).getSubItems(it, null, tV); } catch (Throwable e) {/**/}
+					if (!tV.isEmpty()) tPrefix = tV.get(0);
+				}
+				if (tPlain == null && it instanceof gregapi.block.ItemBlockBase && !(it instanceof gregapi.block.prefixblock.PrefixBlockItem)) {
+					net.minecraft.world.item.ItemStack tS0 = gregapi.util.ST.make(it, 1, 0);
+					if (gregapi.util.ST.valid(tS0)) tPlain = tS0;
+				}
+			}
+			if (tPrefix != null) {tStacks.add(tPrefix); tNames.add("PrefixBlockItem-руда");}
+			if (tPlain  != null) {tStacks.add(tPlain);  tNames.add("ItemBlockBase-блок");}
+			tP.setShiftKeyDown(true); // обход onlyPlaceableWhenSneaking + активации кликнутого блока
+			for (int i = 0; i < tStacks.size(); i++) {
+				net.minecraft.core.BlockPos tBase = tP.blockPosition().offset(1+i, -1, 0); // гарантированный пол
+				net.minecraft.core.BlockPos tTarget = tBase.above();
+				tW.setBlock(tBase,   net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tTarget, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				net.minecraft.world.item.ItemStack tHand = tStacks.get(i).copy();
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tHand);
+				net.minecraft.world.phys.Vec3 tLoc = new net.minecraft.world.phys.Vec3(tBase.getX()+0.5, tBase.getY()+1.0, tBase.getZ()+0.5);
+				net.minecraft.world.phys.BlockHitResult tHit = new net.minecraft.world.phys.BlockHitResult(tLoc, net.minecraft.core.Direction.UP, tBase, false);
+				net.minecraft.world.InteractionResult tRes;
+				try { tRes = tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tHit); }
+				catch (Throwable e) { o.println("[GT6-PLACE-PROBE] " + tNames.get(i) + " useItemOn УПАЛ: " + e); e.printStackTrace(gregapi.data.CS.ERR); continue; }
+				net.minecraft.world.level.block.state.BlockState tSt = tW.getBlockState(tTarget);
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tW.getBlockEntity(tTarget);
+				boolean tPlaced = !tSt.isAir();
+				boolean tMod = tPlaced && (tSt.getBlock().getClass().getName().startsWith("gregapi.") || tSt.getBlock().getClass().getName().startsWith("gregtech."));
+				o.println("[GT6-PLACE-PROBE] " + tNames.get(i) + " result=" + tRes + " placed=" + (tPlaced ? tSt.getBlock().getClass().getSimpleName() : "AIR")
+					+ " be=" + (tBE == null ? "null" : tBE.getClass().getSimpleName()) + " modBlock=" + tMod + " @" + tTarget.getX() + "," + tTarget.getY() + "," + tTarget.getZ());
+			}
+			tP.setShiftKeyDown(false);
+			o.println("[GT6-PLACE-PROBE] итог: протестировано корней=" + tStacks.size() + " (modBlock=true у всех = мост useOn→onItemUse жив на реальном клик-пути)");
+		} catch (Throwable e) { o.println("[GT6-PLACE-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+
 	// П1-СУДЬЯ (F14-gui, гейт: файл run/gt6guiprobe.flag): авто-открытие GUI машины РЕАЛЬНЫМ путём — сервер-тред
 	// размещает машину предметом (onItemUse, тот же код, что клик игрока) → ITileEntityGUI.openGUI (openMenu → пакет →
 	// клиент-экран) → замер экрана (класс/фон/размеры/слоты) + счётчики отрисовки ContainerClient (blit/text per frame).

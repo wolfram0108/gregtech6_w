@@ -40,6 +40,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 import vazkii.botania.api.item.IFlowerPlaceable;
@@ -87,6 +90,27 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 		if (aList.isEmpty()) ST.hide(this);
 	}
 	
+	// F-useOn мост: neo зовёт useOn(UseOnContext), а не 1.7.10 onItemUse. PrefixBlockItem (руды/материал-блоки) в 1.7.10
+	// НЕ имел своего onItemUse — использовал vanilla ItemBlock.onItemUse-скелет → placeBlockAt (перенос NBT-материала).
+	// Скелет воспроизведён 1:1 (образец BlockBase.onItemUse:222), завершение — свой placeBlockAt (mBlock.placeBlock+ItemNBT);
+	// мета материала берётся placeBlockAt из стека (ST.meta_) сам, переданный aMeta-аргумент им игнорируется.
+	@Override public InteractionResult useOn(UseOnContext aCtx) {return IItemGT.bridgeUseOn(this, aCtx);}
+	@Override public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
+		if (aStack.getCount() == 0) return F;
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
+		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
+			aSide = SIDE_UP;
+		} else if (tBlock != Blocks.VINE && tBlock != Blocks.DEAD_BUSH && !WD.replaceable(tBlock, aWorld, aX, aY, aZ)) {
+			aX += OFFX[aSide]; aY += OFFY[aSide]; aZ += OFFZ[aSide];
+		}
+		if (!WD.replaceable(WD.block(aWorld, aX, aY, aZ), aWorld, aX, aY, aZ)) return F;
+		if (aPlayer != null && !aPlayer.mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack)) return F;
+		if (placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, ST.meta_(aStack))) {
+			aStack.setCount(aStack.getCount()-1);
+		}
+		return T;
+	}
+
 	// @Override
 	public boolean placeBlockAt(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ, int aMeta) {
 		if (mBlock.placeBlock(aWorld, aX, aY, aZ, (byte)aSide, ST.meta_(aStack), ItemNBT.get(aStack), T, F)) {

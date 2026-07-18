@@ -61,6 +61,8 @@ import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
@@ -184,7 +186,12 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return mBlock.mMultiTileEntityRegistry.mCreativeTabs.values().toArray(new CreativeModeTab[mBlock.mMultiTileEntityRegistry.mCreativeTabs.size()]);
 	}
 	
-	// @Override
+	// F-useOn мост: neo зовёт useOn/onItemUseFirst(UseOnContext), а не 1.7.10 onItemUse(x,y,z,side,hit) — распаковка+делегация
+	// в существующие тела (IItemGT-центр). onItemUseFirst-мост нужен MTE (единственный с реальной first-логикой IMTE_OnItemUseFirst).
+	@Override public InteractionResult useOn(UseOnContext aCtx) {return IItemGT.bridgeUseOn(this, aCtx);}
+	@Override public InteractionResult onItemUseFirst(ItemStack aStack, UseOnContext aCtx) {return IItemGT.bridgeUseOnFirst(this, aCtx);}
+
+	@Override
 	public boolean onItemUse(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aY < WD.minY(aWorld) || aY > WD.maxY(aWorld)) return F; // было aY<0 || aY>getHeight() — MC26: Y∈[minY..maxY], getHeight()=COUNT(384)≠верх; порог через центр WD
 		
