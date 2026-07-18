@@ -389,6 +389,26 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			o.println("[GT6-STONE-PROBE] block=" + tStone.getClass().getSimpleName() + " set=" + tSet + " грани valid=" + tValid + " null=" + tNull
 				+ " " + tIconInfo + " faceFullUp(снег)=" + tFaceFullUp + " @" + tPos.getX()+","+tPos.getY()+","+tPos.getZ()
 				+ " (valid=6 = рисуется НЕ прозрачен; PURPLE = missing-спрайт; faceFullUp=true у полного блока = снег норма)");
+			// MTE-Rock (камешек): после F-shape-моста getCollisionShape должен стать маленьким/пустым → снег НЕ ляжет
+			try {
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				net.minecraft.world.item.ItemStack tRockStack = tReg == null ? null : tReg.getItem(32757);
+				if (gregapi.util.ST.valid(tRockStack) && tRockStack.getItem() instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tRockItem) {
+					net.minecraft.core.BlockPos tRPos = tP.blockPosition().offset(2, 0, 0);
+					tW.setBlock(tRPos.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					tW.setBlock(tRPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					boolean tRockPlaced = tRockItem.onItemUse(tRockStack, tP, tW, tRPos.getX(), tRPos.getY()-1, tRPos.getZ(), gregapi.data.CS.SIDE_TOP, 0.5f, 1.0f, 0.5f);
+					net.minecraft.world.level.block.entity.BlockEntity tSrvBE = tW.getBlockEntity(tRPos);
+					net.minecraft.world.level.block.state.BlockState tRockState = tW.getBlockState(tRPos);
+					net.minecraft.world.phys.shapes.VoxelShape tRockColl = tRockState.getCollisionShape(tW, tRPos);
+					net.minecraft.world.phys.shapes.VoxelShape tRockShape = tRockState.getShape(tW, tRPos);
+					boolean tRockFaceFull = net.minecraft.world.level.block.Block.isFaceFull(tRockColl, net.minecraft.core.Direction.UP);
+					o.println("[GT6-STONE-PROBE] MTE-Rock placed=" + tRockPlaced + " blockCls=" + tRockState.getBlock().getClass().getSimpleName()
+						+ " srvBE=" + (tSrvBE == null ? "null" : tSrvBE.getClass().getSimpleName())
+						+ " collEmpty=" + tRockColl.isEmpty() + " shapeEmpty=" + tRockShape.isEmpty() + " faceFullUp(снег)=" + tRockFaceFull + " @" + tRPos.getX()+","+tRPos.getY()+","+tRPos.getZ()
+						+ " (faceFullUp=false = снег НЕ ляжет — F-shape-мост жив; blockCls показывает ветку иерархии)");
+				} else o.println("[GT6-STONE-PROBE] MTE-Rock item невалиден (id 32757)");
+			} catch (Throwable e) { o.println("[GT6-STONE-PROBE] MTE-Rock замер упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 		} catch (Throwable e) { o.println("[GT6-STONE-PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 

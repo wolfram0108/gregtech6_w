@@ -162,7 +162,10 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 */
 	// F16/F13: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(SoundType aSoundType, String aRegName, boolean aOpaque) {
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
+		// F-shape: dynamicShape() ОБЯЗАТЕЛЕН — иначе neo кэширует getCollisionShape (строит его раз с EmptyBlockGetter/
+		// BlockPos.ZERO, BlockBehaviour:916) → per-BE форма (getCollisionShape-мост ниже, MTE-Rock/трубы) игнорируется,
+		// снег/коллизия/isFaceSturdy берутся из статического кэша = полный куб. dynamicShape → кэш не строится → мост живёт.
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
 		if (!aOpaque) p = p.noOcclusion();
 		return p;
 	}
@@ -262,6 +265,26 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// getCollisionBoundingBoxFromPool + intersects-проверка, тот же алгоритм, что был у vanilla-дефолта.
 	@SuppressWarnings("unchecked") public final void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_AddCollisionBoxesToList) ((IMTE_AddCollisionBoxesToList)aTileEntity).addCollisionBoxesToList(aAABB, aList, aEntity); else if (aTileEntity != null) {AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ); if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);}}
 	public final AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_GetCollisionBoundingBoxFromPool ? ((IMTE_GetCollisionBoundingBoxFromPool)aTileEntity).getCollisionBoundingBoxFromPool() : aTileEntity == null ? null : new AABB(aX, aY, aZ, aX+1, aY+1, aZ+1);}
+	// F-shape (класс «канал движка сместился», как F-tick/useOn): 1.7.10 getCollisionBoundingBoxFromPool/getSelectedBoundingBox
+	// (AABB) удалены — neo форма блока через VoxelShape (getCollisionShape=коллизия/снег, getShape=outline). БЕЗ моста MTE-блоки
+	// давали дефолтный ПОЛНЫЙ КУБ → снег ложился на камешки (SnowLayerBlock.canSurvive→isFaceFull(getCollisionShape,UP)),
+	// коллизия/outline полные (камешек непроходим). Мост: BE-AABB (абсолютная, box()=pos+bounds) → относительный VoxelShape
+	// (move(-pos)); null коллизия (напр. MTE-Rock) → Shapes.empty (проходим, снег не ляжет). Централизованно на весь MTE-слой.
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		if (!(aWorld instanceof Level tLevel)) return super.getCollisionShape(aState, aWorld, aPos, aContext);
+		AABB tBox = getCollisionBoundingBoxFromPool(tLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+		return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));
+	}
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		if (aWorld instanceof Level tLevel) {
+			BlockEntity tTileEntity = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+			if (tTileEntity instanceof IMTE_GetSelectedBoundingBoxFromPool tSel) {
+				AABB tBox = tSel.getSelectedBoundingBoxFromPool();
+				if (tBox != null) return net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));
+			}
+		}
+		return super.getShape(aState, aWorld, aPos, aContext); // обычные MTE (машины/сундуки) — полный куб (как было)
+	}
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_UpdateTick) ((IMTE_UpdateTick)aTileEntity).updateTick(aRandom);}
 	public final void onBlockDestroyedByPlayer(Level aWorld, int aX, int aY, int aZ, int aRandom) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnBlockDestroyedByPlayer) ((IMTE_OnBlockDestroyedByPlayer)aTileEntity).onBlockDestroyedByPlayer(aRandom);}
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167]

@@ -55,7 +55,9 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	public MultiTileEntityBlockInternal(String aNameInternal) {
 		// F12-followup (block-split, MTE): setId в Properties (neo Block требует id, иначе «Block id not set»); namespace=GT
 		// (gt.multitileentity — контент GT6, golden = gregtech:; совпадает с реестром ST.register→registerBlock). Конструкция на RegisterEvent через GT_API.deferBlockInit (call-site).
-		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		// F-shape: dynamicShape() ОБЯЗАТЕЛЕН — иначе neo кэширует getCollisionShape (EmptyBlockGetter/ZERO) → per-BE
+		// shape-мост (ниже) игнорируется, снег/коллизия из статического кэша = полный куб. См. MultiTileEntityBlock:165.
+		super(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 	}
 
 	/** F-bounds (тот же приём, что BlockBase.java/MultiTileEntityBlock.java): последние заданные bounds, neo bounds
@@ -160,5 +162,29 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ));
 		} catch(Throwable e) {e.printStackTrace(ERR);}
 		return T;
+	}
+
+	// F-shape (см. MultiTileEntityBlock:265 — тот же приём для ВТОРОЙ MTE-блок-иерархии Internal; обе extends vanilla Block,
+	// общего GT6-предка нет → мост дублируется, как useOn-мост на корнях-предметах). BE-AABB (абсолютная, box()=pos+bounds) →
+	// относительный VoxelShape; null коллизия (MTE-Rock) → empty (снег не ляжет, камешек проходим). getShape — маленький outline.
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		if (aWorld instanceof Level tLevel) {
+			BlockEntity tBE = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+			if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool tC) {
+				net.minecraft.world.phys.AABB tBox = tC.getCollisionBoundingBoxFromPool();
+				return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));
+			}
+		}
+		return super.getCollisionShape(aState, aWorld, aPos, aContext);
+	}
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		if (aWorld instanceof Level tLevel) {
+			BlockEntity tBE = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+			if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetSelectedBoundingBoxFromPool tS) {
+				net.minecraft.world.phys.AABB tBox = tS.getSelectedBoundingBoxFromPool();
+				if (tBox != null) return net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));
+			}
+		}
+		return super.getShape(aState, aWorld, aPos, aContext);
 	}
 }
