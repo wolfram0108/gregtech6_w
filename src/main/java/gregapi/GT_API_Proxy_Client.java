@@ -172,7 +172,22 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// A/B-эталон: ванильные предметы рендерятся ВАНИЛЬНЫМ путём (не GT6ItemModel) → сравнить яркость/цвет с GT6-кирками (разводит «GT6-рендер сломан» vs «глобально»)
 			tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE));
 			tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
-			gregapi.data.CS.OUT.println("[GT6-INJECT] синтезировано в инвентарь: " + tCands.size() + " (Vibranium+Adamantium кирки) + ванильные iron_pickaxe/stick для A/B");
+			// BLOCK-item кандидаты (путь renderBlockInventory): первые GT6-блок-предметы (IRenderedBlock) + ванильные блоки STONE/FURNACE
+			// для A/B изометрии — проверка block-GUI трансформации (3D-куб vs плоская тёмная грань).
+			int tBlkAdded = 0;
+			for (net.minecraft.world.item.Item tItm : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+				if (tBlkAdded >= 4) break;
+				net.minecraft.resources.Identifier tK = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItm);
+				if (tK == null || !isGregNamespace(tK.getNamespace())) continue;
+				if (tItm instanceof net.minecraft.world.item.BlockItem tBI2 && tBI2.getBlock() instanceof gregapi.render.IRenderedBlock) {
+					tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(tItm));
+					gregapi.data.CS.OUT.println("[GT6-INJECT] block-item кандидат: " + tK);
+					tBlkAdded++;
+				}
+			}
+			tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.level.block.Blocks.STONE));
+			tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.level.block.Blocks.FURNACE));
+			gregapi.data.CS.OUT.println("[GT6-INJECT] синтезировано в инвентарь: " + tCands.size() + " (Vibranium+Adamantium кирки) + " + tBlkAdded + " GT6-блок-предметов + ванильные iron_pickaxe/stick/stone/furnace для A/B");
 			gregapi.render.GT6ItemModel.dumpStacks(tCands, "descriptor.port.candidate.jsonl");
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-INJECT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 	}

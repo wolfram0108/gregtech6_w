@@ -70,7 +70,7 @@ public class GT6ItemModel implements ItemModel {
 			// (canonical-TE/block-level, buildInventoryQuads); предмет-ПРЕДМЕТ (материал/MultiItem) → плоские иконки ПО РЕНДЕР-ПАССАМ с
 			// per-pass тинтом (getColorFromItemStack) — как ванильный мульти-пасс item-icon (PrefixItem: 2 пасса, pass0 тинт материала).
 			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
-				renderBlockInventory(aOutput, aItem, tBI.getBlock());
+				renderBlockInventory(aOutput, aItem, tBI.getBlock(), aCtx);
 			} else {
 				renderFlatItem(aOutput, aItem, tItem);
 			}
@@ -78,7 +78,7 @@ public class GT6ItemModel implements ItemModel {
 	}
 
 	/** Предмет-форма БЛОКА: 3D-геометрия блока в инвентаре через {@link GT6BlockModel#buildInventoryQuads} (= renderInventoryBlock). */
-	private static void renderBlockInventory(ItemStackRenderState aOutput, ItemStack aStack, net.minecraft.world.level.block.Block aBlock) {
+	private static void renderBlockInventory(ItemStackRenderState aOutput, ItemStack aStack, net.minecraft.world.level.block.Block aBlock, net.minecraft.world.item.ItemDisplayContext aCtx) {
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 		try { GT6BlockModel.buildInventoryQuads(tQB, aBlock, aStack); } catch (Throwable e) {}
 		List<BakedQuad> tBuilt = tQB.quads();
@@ -89,6 +89,12 @@ public class GT6ItemModel implements ItemModel {
 		for (BakedQuad q : tBuilt) try { tIdSpr.add(q.materialInfo().sprite().contents().name().toString()); } catch (Throwable e) {}
 		for (String s : tIdSpr) aOutput.appendModelIdentityElement(s);
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
+		// КОРЕНЬ «блоки в инвентаре — плоская тёмная грань, не 3D-куб»: buildInventoryQuads даёт куб в 0..1, но без display-
+		// трансформации neo рисует его фронтально (видна одна грань; ITEMS_3D-диффуз на неповёрнутой грани тёмный). В 1.7.10
+		// изометрию блока-предмета применял движок (RenderBlocks.renderBlockAsItem), в neo — ItemTransforms модели. Берём
+		// КАНОНИЧЕСКУЮ block-GUI трансформацию (изометрия 30/225, scale 0.625) ИЗ ДВИЖКА (block/block.json), не хардкодим.
+		net.minecraft.client.resources.model.cuboid.ItemTransforms tTr = blockGuiTransforms();
+		if (tTr != null) tLayer.setItemTransform(tTr.getTransform(aCtx));
 		if (aStack.hasFoil()) {
 			tLayer.setFoilType(ItemStackRenderState.FoilType.STANDARD);
 			aOutput.setAnimated();
@@ -127,6 +133,30 @@ public class GT6ItemModel implements ItemModel {
 			tQuads.add(flatFace(tSprite, false, tColor));
 			tLayer.setParticleMaterial(new Material.Baked(tSprite, false));
 		}
+	}
+
+	// Каноническая block-GUI трансформация (изометрия) — кэш; читается ИЗ ДВИЖКА один раз (после bake атласа/моделей).
+	private static net.minecraft.client.resources.model.cuboid.ItemTransforms sBlockGuiTransforms;
+	private static boolean sBlockGuiTransformsTried = false;
+	/** ItemTransforms ванильного {@code minecraft:block/block} (его {@code display.gui} — изометрия 30/225, scale 0.625),
+	 *  взятые из движкового {@link net.minecraft.client.resources.model.ResolvedModel} — НЕ хардкод-константа (§«не выдумывать
+	 *  константы»). 1.7.10 применял ту же изометрию в {@code RenderBlocks.renderBlockAsItem}; в neo носитель — ItemTransforms
+	 *  модели. Публичного геттера нет → рефлексия приватного {@code ModelBakery.resolvedModels} (идиома проекта, как iconForPass). */
+	private static net.minecraft.client.resources.model.cuboid.ItemTransforms blockGuiTransforms() {
+		if (sBlockGuiTransformsTried) return sBlockGuiTransforms;
+		sBlockGuiTransformsTried = true;
+		try {
+			net.minecraft.client.resources.model.ModelBakery tBakery = net.minecraft.client.Minecraft.getInstance().getModelManager().getModelBakery();
+			java.lang.reflect.Field tF = net.minecraft.client.resources.model.ModelBakery.class.getDeclaredField("resolvedModels");
+			tF.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.resources.model.ResolvedModel> tResolved =
+				(java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.resources.model.ResolvedModel>) tF.get(tBakery);
+			net.minecraft.client.resources.model.ResolvedModel tBlock = tResolved.get(net.minecraft.resources.Identifier.withDefaultNamespace("block/block"));
+			if (tBlock != null) sBlockGuiTransforms = tBlock.getTopTransforms();
+			gregapi.data.CS.OUT.println("[GT6-BLOCKITEM] block/block transforms=" + (sBlockGuiTransforms != null ? "OK gui=" + sBlockGuiTransforms.getTransform(net.minecraft.world.item.ItemDisplayContext.GUI) : "NULL(fallback NO_TRANSFORM)"));
+		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-BLOCKITEM] transform-fetch упал: " + e); }
+		return sBlockGuiTransforms;
 	}
 
 	/** Число рендер-пассов предмета (PrefixItem.getRenderPasses(int)=2). Нет метода → 1 пасс. */
