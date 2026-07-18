@@ -75,6 +75,12 @@ public class ModConfigSpec {
 		return mCategories.computeIfAbsent(aCategory, aKey -> new LinkedHashMap<>());
 	}
 
+	/** было {@code Configuration.getCategory(String)} — Configuration.java:132-140 (доступ к записям категории;
+	 *  1.7.10 возвращал ConfigCategory-карту). Читатели итерируют ключи (напр. кэш creative-вкладок F16). */
+	public Map<String, ConfigValue> getCategory(String aCategory) {
+		return category(aCategory);
+	}
+
 	/** было {@code Configuration.get(String,String,boolean)} — Configuration.java:166-169. */
 	public ConfigValue get(String aCategory, String aKey, boolean aDefault) {
 		return get(aCategory, aKey, Boolean.toString(aDefault));

@@ -68,15 +68,71 @@ public final class CreativeTabsGT {
 	/** F16: строит neo Builder для собственной GT-вкладки. Ключ — имя (доступно ДО super(), в отличие от this): displayItems
 	 *  захватывает СПИСОК членов + holder инстанса вкладки (не this — стена лямбды-в-super()). Инстанс кладётся в holder
 	 *  registerOwnTab'ом (после super). Реальная вкладка нужна MTE-члену: его getSubItems фильтрует варианты по mCreativeTabID.
-	 *  Авто-джойнит создателя aItem. */
+	 *  Авто-джойнит создателя aItem. Иконка — ЖИВАЯ через holder: шелл (F16-shell, aItem=null) после бинда реальной вкладки
+	 *  показывает её иконку (holder перезаписан registerOwnTab), а не вечный камень. */
 	static CreativeModeTab.Builder builderFor(String aName, String aLocal, Item aItem, int aMeta) {
 		List<Item> tMembers = OWN_TAB_MEMBERS.computeIfAbsent(aName, k -> new ArrayList<>());
 		CreativeTab[] tRef = OWN_TAB_REF.computeIfAbsent(aName, k -> new CreativeTab[1]);
 		if (aItem != null && !tMembers.contains(aItem)) tMembers.add(aItem);
 		return CreativeModeTab.builder()
 			.title(net.minecraft.network.chat.Component.literal(aLocal))
-			.icon(() -> aItem == null ? new ItemStack(Items.STONE) : gregapi.util.ST.make(aItem, 1, aMeta & 0xFFFF))
+			.icon(() -> {
+				CreativeTab tLive = tRef[0];
+				Item tIcon = (tLive != null && tLive.mItem != null) ? tLive.mItem : aItem;
+				int tIconMeta = (tLive != null && tLive.mItem != null) ? (tLive.mMetaData & 0xFFFF) : (aMeta & 0xFFFF);
+				return tIcon == null ? new ItemStack(Items.STONE) : gregapi.util.ST.make(tIcon, 1, tIconMeta);
+			})
 			.displayItems((aParams, aOutput) -> populate(tMembers, tRef[0], aOutput));
+	}
+
+	/** F16-shell (тайминг vs замороженный реестр): вкладки MTE-машин порождаются генератором на server-start
+	 *  (Loader_MultiTileEntities в deferItemInit — F12), а реестр CreativeModeTab замораживается на буте → напрямую они
+	 *  в реестр не успевают. Адаптация БЕЗ новой сущности — существующий центр конфигов GT6 (ConfigsGT.GREGTECH):
+	 *  на server-start {@link #writeShellCache} пишет СВОЙ список вкладок (кэш собственного генератора, не копия оригинала);
+	 *  на буте {@link #createShellsFromCache} поднимает вкладки-шеллы из кэша ДО регистрации реестра. Реальная вкладка,
+	 *  создаваясь на server-start, биндится к шеллу существующим механизмом (registerOwnTab перезаписывает holder,
+	 *  члены доливаются в общий список) — содержимое/иконка/фильтр оживают без перерегистрации. Первый в жизни запуск
+	 *  (кэша ещё нет) показывает вкладки со второго запуска; кэш самообновляется каждый server-start. */
+	private static final String SHELL_CATEGORY = "creativetabshells";
+
+	/** Читает кэш и создаёт шеллы (ctor CreativeTab сам кладёт их в OWN_TABS/REF). Зовётся в начале onRegisterTabs. */
+	private static void createShellsFromCache() {
+		try {
+			gregapi.config.Config tCfg = gregapi.data.CS.ConfigsGT.GREGTECH;
+			if (tCfg == null) return;
+			int tShells = 0;
+			for (java.util.Map.Entry<String, gregapi.config.ConfigValue> tE : tCfg.mConfig.getCategory(SHELL_CATEGORY).entrySet()) try {
+				String tName = tE.getKey();
+				if (OWN_TABS.containsKey(tName)) continue;
+				String tVal = tE.getValue().getString();
+				int tSplit = tVal.indexOf('|');
+				if (tSplit < 0) continue;
+				short tMeta = Short.parseShort(tVal.substring(0, tSplit));
+				String tLocal = tVal.substring(tSplit + 1);
+				new CreativeTab(tName, tLocal, null, tMeta); // ctor → registerOwnTab → попадёт в регистрацию ниже
+				++tShells;
+			} catch (Throwable e) {/* битая запись кэша не рушит остальные */}
+			gregapi.data.CS.OUT.println("[GT6-F16] шеллов вкладок из кэша: " + tShells + " (итого к регистрации: " + OWN_TABS.size() + ")");
+		} catch (Throwable e) {/* нет конфига — нет шеллов (первый запуск) */}
+	}
+
+	/** Пишет ПОЛНЫЙ текущий набор собственных вкладок в кэш (server-start, после deferred-init — генератор уже отработал). */
+	public static void writeShellCache() {
+		try {
+			gregapi.config.Config tCfg = gregapi.data.CS.ConfigsGT.GREGTECH;
+			if (tCfg == null) return;
+			int tNew = 0;
+			for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) {
+				CreativeTab tTab = tE.getValue();
+				String tLocal = gregapi.data.LH.get("itemGroup." + tE.getKey(), tE.getKey());
+				java.util.Map<String, gregapi.config.ConfigValue> tCat = tCfg.mConfig.getCategory(SHELL_CATEGORY);
+				if (!tCat.containsKey(tE.getKey())) tNew++;
+				tCfg.mConfig.get(SHELL_CATEGORY, tE.getKey(), tTab.mMetaData + "|" + tLocal);
+			}
+			tCfg.mConfig.save();
+			gregapi.data.CS.OUT.println("[GT6-F16] кэш creative-вкладок: всего=" + OWN_TABS.size() + " новых=" + tNew
+				+ (tNew > 0 ? " (новые вкладки видимы со СЛЕДУЮЩЕГО запуска — реестр neo заморожен на буте)" : ""));
+		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-F16] запись кэша вкладок упала: " + e); }
 	}
 
 	/** Вызывается из ctor {@link CreativeTab}: запоминает инстанс вкладки под её именем (реестр + holder для displayItems). */
@@ -111,6 +167,7 @@ public final class CreativeTabsGT {
 	 *  заполнен ctor'ами god-items. Каждая CreativeTab — валидный neo CreativeModeTab (super(builder) с icon+displayItems). */
 	private static void onRegisterTabs(net.neoforged.neoforge.registries.RegisterEvent aEvent) {
 		if (!aEvent.getRegistryKey().equals(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB)) return;
+		createShellsFromCache(); // F16-shell: вкладки server-start-генератора (MTE) поднимаются из кэша ДО заморозки реестра
 		for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) try {
 			final CreativeTab tTab = tE.getValue();
 			aEvent.register(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,

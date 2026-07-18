@@ -1184,6 +1184,9 @@ public class GT_API extends Abstract_Mod {
 		// F1/F12/F16 item-model: отложенный stack-init предметов (OreDict-данные+рецепты) выполняется ЗДЕСЬ (server-start,
 		// пост-bind: Holder.components привязаны через ReloadableServerResources) — не в onLoad (тот pre-bind, «Components not bound»).
 		runDeferredItemInit();
+		// F16-shell: генератор вкладок (MTE-загрузчик) отработал строкой выше → фиксируем полный набор собственных
+		// вкладок в конфиг-кэш; на СЛЕДУЮЩЕМ буте createShellsFromCache поднимет их до заморозки реестра CreativeModeTab.
+		gregapi.item.CreativeTabsGT.writeShellCache();
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStarting(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
 	}
 	

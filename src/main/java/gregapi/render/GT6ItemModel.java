@@ -86,8 +86,14 @@ public class GT6ItemModel implements ItemModel {
 		// identity-вклад (канон, как в renderFlatItem): пиксели зависят от набора спрайтов квадов → в identity,
 		// иначе стеки с одинаковыми item+meta, но разным видом (NBT/state) делят один кэш-слот GuiItemAtlas.
 		java.util.TreeSet<String> tIdSpr = new java.util.TreeSet<>();
-		for (BakedQuad q : tBuilt) try { tIdSpr.add(q.materialInfo().sprite().contents().name().toString()); } catch (Throwable e) {}
+		boolean tAnimated = false;
+		for (BakedQuad q : tBuilt) try {
+			tIdSpr.add(q.materialInfo().sprite().contents().name().toString());
+			if (q.materialInfo().sprite().contents().isAnimated()) tAnimated = true;
+		} catch (Throwable e) {}
 		for (String s : tIdSpr) aOutput.appendModelIdentityElement(s);
+		// канон CuboidItemModelWrapper.update:100-102: анимированный спрайт грани → setAnimated (иначе GUI-атлас кэширует статику)
+		if (tAnimated) aOutput.setAnimated();
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 		// КОРЕНЬ «блоки в инвентаре — плоская тёмная грань, не 3D-куб»: buildInventoryQuads даёт куб в 0..1, но без display-
 		// трансформации neo рисует его фронтально (видна одна грань; ITEMS_3D-диффуз на неповёрнутой грани тёмный). В 1.7.10
@@ -121,6 +127,9 @@ public class GT6ItemModel implements ItemModel {
 			// оба в identity, иначе GuiItemAtlas отдаёт чужой кэш-слот (инструменты: материал в NBT, meta одинаковая).
 			aOutput.appendModelIdentityElement(tSprite.contents().name());
 			aOutput.appendModelIdentityElement(tColor);
+			// канон CuboidItemModelWrapper.update:100-102 (hasMaterialFlag(2)→setAnimated): анимированный спрайт (пчёлы,
+			// жидкости) требует setAnimated — иначе GuiItemAtlas рисует слот один раз (READY) и анимация замирает статикой.
+			if (tSprite.contents().isAnimated()) aOutput.setAnimated();
 			ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 			tLayer.setUsesBlockLight(false); // эталон ItemModelGenerator=GuiLight.FRONT: плоский предмет в GUI full-bright; без этого слой block-shade'ится (SOUTH-грань ~0.8) → предмет «затемнён» и цвет искажён тенью
 			if (aStack.hasFoil()) { // 1:1: GT6-1.7.10 рисует глинт по hasEffect (=isItemEnchanted) поверх пассов; канон neo — FoilType на слое + identity + animated (глинт скроллится)
