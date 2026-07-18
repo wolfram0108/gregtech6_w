@@ -251,6 +251,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { tMissB = tMC.getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).missingSprite(); } catch (Throwable e) {}
 		int[] tNB=new int[4], tBI=new int[4]; // [total, invisible, purple, valid]
 		java.util.HashSet<String> tDNB=new java.util.HashSet<>(), tDBI=new java.util.HashSet<>();
+		java.util.HashSet<String> tIdent=new java.util.HashSet<>(); // РАЗЛИЧНЫЕ model-identity (ключ GUI-кэша): мало = одна иконка всем
 		java.util.List<String> tBadNB=new java.util.ArrayList<>(), tBadBI=new java.util.ArrayList<>(), tOkBI=new java.util.ArrayList<>();
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
@@ -263,8 +264,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			for (net.minecraft.world.item.ItemStack tStack : tVars) {
 				tC[0]++;
 				try {
-					net.minecraft.client.renderer.item.ItemStackRenderState tRS = new net.minecraft.client.renderer.item.ItemStackRenderState();
+					net.minecraft.client.renderer.item.TrackingItemStackRenderState tRS = new net.minecraft.client.renderer.item.TrackingItemStackRenderState();
 					tResolver.updateForTopItem(tRS, tStack, net.minecraft.world.item.ItemDisplayContext.GUI, tMC.level, null, 0);
+					try { tIdent.add(String.valueOf(tRS.getModelIdentity())); } catch (Throwable e) {}
 					if (tRS.isEmpty()) { tC[1]++; if (tBad.size()<10) tBad.add(tKey.getPath()+"[пусто]"); continue; }
 					net.minecraft.client.resources.model.sprite.Material.Baked tPM = tRS.pickParticleMaterial(tRnd);
 					net.minecraft.client.renderer.texture.TextureAtlasSprite tSp = tPM==null?null:tPM.sprite();
@@ -273,6 +275,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				} catch (Throwable e) { tC[2]++; if (tBad.size()<10) tBad.add(tKey.getPath()+"[EXC:"+e.getClass().getSimpleName()+"]"); }
 			}
 		}
+		o.println("[GT6-ICONS] РАЗЛИЧНЫХ model-identity (ключ GUI-кэша иконок)="+tIdent.size()+" из "+(tNB[0]+tBI[0])+" вариантов  (мало=одна иконка всем; ≈вариантам=у каждого своя)");
 		o.println("[GT6-ICONS] НЕ-БЛОК предметы: вариантов="+tNB[0]+" невидимых="+tNB[1]+" ПУРПУР="+tNB[2]+" валидных="+tNB[3]+" разл-спрайтов="+tDNB.size());
 		o.println("[GT6-ICONS] BLOCK-предметы:  вариантов="+tBI[0]+" невидимых="+tBI[1]+" ПУРПУР="+tBI[2]+" валидных="+tBI[3]+" разл-спрайтов="+tDBI.size());
 		if (!tOkBI.isEmpty()) o.println("[GT6-ICONS] block ОК-примеры: "+tOkBI);
