@@ -143,6 +143,13 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		if (Minecraft.getInstance().level == null) return;
 		mIconsProbed = true;
 		try { gregapi.render.GT6ItemModel.probeItemIcons(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] скан упал: " + e); }
+		// ВИЗУАЛ-ПАРИТЕТ: ПОРТ-СТОРОНА компаратора. Полный порт-дескриптор ВСЕХ предметов (спрайт+тинт per pass) на РЕАЛЬНОМ
+		// рендер-пути (тем же кодом getIcon/itemColor, что рисует update). СИММЕТРИЧЕН golden-дескриптору оригинала 1.7.10
+		// (оракул client, DumpRenderItems: getIcon().getIconName()+getColorFromItemStack per pass). Компаратор порт↔golden
+		// → visual-parity % + MISMATCH. Под флагом gt6inject.flag.
+		if (new java.io.File("gt6inject.flag").exists()) {
+			try { gregapi.render.GT6ItemModel.dumpItemDescriptors(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-VP] полный дамп упал: " + e); }
+		}
 	}
 
 	// КАНДИДАТ-ИНЖЕКТОР (визуал-паритет Ф2): под флагом run/gt6inject.flag СИНТЕЗИРУЕТ процедурные предметы-кандидаты
