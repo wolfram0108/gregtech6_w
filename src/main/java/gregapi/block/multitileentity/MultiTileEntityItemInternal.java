@@ -104,6 +104,26 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		mBlock = (MultiTileEntityBlockInternal)aBlock;
 	}
 	
+	// F1-контракт (1.7.10 itemDamage==meta): дословный GT6-код (getUnlocalizedName и др.) зовёт getDamage за ПОДТИПОМ
+	// (ID машины); neo-дефолт (IItemExtension) читает DAMAGE-компонент = 0 у meta-предметов → все имена/данные с ID 0.
+	// Восстанавливаем контракт корня: не-повреждаемый стек → subtype-мета (центр F1 ST.meta_). Как на прочих корнях иерархии.
+	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : gregapi.util.ST.meta_(aStack);}
+
+	// LOCALIZATION-display: neo берёт имя через getName(ItemStack) — мост в GT6-имя (LH через getItemStackDisplayName);
+	// тот же мост, что ItemBase:145/PrefixItem:213/ItemBlockBase. Без него — сырой ключ "item.gregtech.gt.multitileentity".
+	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
+
+	// F13: neo зовёт appendHoverText (не 1.7.10 addInformation) — мост как ItemBlockBase:65 (собираем GT6-тултип через
+	// addInformation ниже). Без него у машин нет характеристик (ёмкость/прочность/EU из NBT-параметров).
+	@Override @SuppressWarnings({"rawtypes", "unchecked"})
+	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
+		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
+		if (tPlayer == null) return;
+		java.util.List tList = new java.util.ArrayList();
+		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
+		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
+	}
+
 	// @Override
 	public String getItemStackDisplayName(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);

@@ -252,6 +252,21 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
 		return tFluid == null ? "INVALID FLUID ID!!!" : FL.name(tFluid, T);
 	}
+
+	// F1-контракт (1.7.10 itemDamage==meta): meta = fluid-ID; neo-дефолт getDamage читает DAMAGE-компонент (0). Как на прочих корнях.
+	@Override public int getDamage(ItemStack aStack) {return getMaxDamage(aStack) > 0 ? super.getDamage(aStack) : ST.meta_(aStack);}
+
+	// LOCALIZATION-display: мост getName → GT6-имя (как ItemBase:145); без него дисплей жидкости — сырой ключ.
+	@Override public net.minecraft.network.chat.Component getName(ItemStack aStack) {String s = getItemStackDisplayName(aStack); return s != null && !s.isEmpty() ? net.minecraft.network.chat.Component.literal(s) : super.getName(aStack);}
+
+	// F13-мост appendHoverText → addInformation (как ItemBlockBase:65): количество/температура жидкости в тултипе.
+	@Override @SuppressWarnings({"rawtypes", "unchecked"})
+	public void appendHoverText(ItemStack aStack, net.minecraft.world.item.Item.TooltipContext aCtx, net.minecraft.world.item.component.TooltipDisplay aDisplay, java.util.function.Consumer<net.minecraft.network.chat.Component> aBuilder, net.minecraft.world.item.TooltipFlag aFlag) {
+		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
+		java.util.List tList = new java.util.ArrayList();
+		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
+		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
+	}
 	
 	// @Override
 	public boolean hasEffect(ItemStack aStack, int aRenderPass) {

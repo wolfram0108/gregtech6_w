@@ -283,7 +283,11 @@ public class GT6ItemModel implements ItemModel {
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
 			java.util.List<ItemStack> tVariants = new java.util.ArrayList<>();
-			try {
+			// MTE — прямой вызов: рефлексия по классу с вырезанными compat-интерфейсами кидает NoClassDefFoundError молча
+			// (ловушка №3, см. CreativeTabsGT.enumerate) → машинные варианты не попадали в дамп вовсе.
+			if (tItem instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tMTE) {
+				try { tMTE.getSubItems(tItem, null, tVariants); } catch (Throwable e) {}
+			} else try {
 				java.lang.reflect.Method gsi = tItem.getClass().getMethod("getSubItems", net.minecraft.world.item.Item.class, net.minecraft.world.item.CreativeModeTab.class, java.util.List.class);
 				gsi.invoke(tItem, tItem, null, tVariants);
 			} catch (Throwable e) {/* нет getSubItems — одиночный вариант */}
