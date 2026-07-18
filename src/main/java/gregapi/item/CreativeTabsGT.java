@@ -135,6 +135,52 @@ public final class CreativeTabsGT {
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-F16] запись кэша вкладок упала: " + e); }
 	}
 
+	/** ПРОБА (диагностика «вкладки пусты», gated flag в вызывателе): по каждой собственной вкладке — члены/варианты
+	 *  (тот же enumerate, что кормит displayItems) и ФАКТИЧЕСКИ построенное движком содержимое (getDisplayItems). */
+	public static void probeOwnTabs() {
+		int tEmpty = 0, tTotal = 0, tShown = 0;
+		for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) {
+			tTotal++;
+			List<Item> tMembers = OWN_TAB_MEMBERS.get(tE.getKey());
+			CreativeTab[] tRefH = OWN_TAB_REF.get(tE.getKey());
+			CreativeTab tTab = tRefH == null ? null : tRefH[0];
+			int tEnum = 0;
+			if (tMembers != null) for (Item tItem : tMembers) try { tEnum += enumerate(tItem, tItem, tTab).size(); } catch (Throwable e) {}
+			int tBuilt = -1;
+			try { tBuilt = tE.getValue().getDisplayItems().size(); } catch (Throwable e) {}
+			if (tBuilt <= 0) tEmpty++;
+			boolean tIsMTE = tE.getKey().startsWith("gt.multitileentity");
+			if (tIsMTE ? tShown < 8 : false) { // фокус диагностики: машинные вкладки + АНАТОМИЯ члена (ключ/класс/реестр)
+				tShown++;
+				StringBuilder tSB = new StringBuilder("[GT6-F16-PROBE] ").append(tE.getKey())
+					.append(" members=").append(tMembers == null ? 0 : tMembers.size()).append(" enum=").append(tEnum).append(" built=").append(tBuilt);
+				if (tMembers != null && !tMembers.isEmpty()) {
+					Item tM = tMembers.get(0);
+					tSB.append(" member0=").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tM)).append(" cls=").append(tM.getClass().getSimpleName());
+					if (tM instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tMI)
+						try { tSB.append(" regs=").append(tMI.mBlock.mMultiTileEntityRegistry.mRegistrations.size()); } catch (Throwable e) { tSB.append(" regs=EXC"); }
+				}
+				gregapi.data.CS.OUT.println(tSB.toString());
+				// ВСКРЫТИЕ (первая машинная вкладка): ручной повтор цикла getSubItems БЕЗ глотания исключений —
+				// счётчик совпадений фильтра + ПЕРВОЕ исключение getItem (invokeSub глотает Throwable → пусто молча).
+				if (tShown == 1 && tMembers != null && !tMembers.isEmpty() && tMembers.get(0) instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tMI2 && tTab != null) {
+					int tMatch = 0, tAdded = 0; Throwable tFirst = null; String tFirstAt = "";
+					for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tMI2.mBlock.mMultiTileEntityRegistry.mRegistrations) {
+						if (tC.mHidden) continue;
+						if (tTab.mMetaData != tC.mCreativeTabID) continue;
+						tMatch++;
+						try { net.minecraft.world.item.ItemStack tS = tMI2.mBlock.mMultiTileEntityRegistry.getItem(tC.mID); if (tS != null && !tS.isEmpty()) tAdded++; }
+						catch (Throwable e) { if (tFirst == null) { tFirst = e; tFirstAt = "getItem(" + tC.mID + ")"; } }
+					}
+					gregapi.data.CS.OUT.println("[GT6-F16-PROBE-DEEP] tab=" + tE.getKey() + " tabMeta=" + tTab.mMetaData + " filterMatch=" + tMatch + " addedOK=" + tAdded
+						+ (tFirst != null ? (" FIRST-EXC@" + tFirstAt + ": " + tFirst) : ""));
+					if (tFirst != null) tFirst.printStackTrace(gregapi.data.CS.ERR);
+				}
+			}
+		}
+		gregapi.data.CS.OUT.println("[GT6-F16-PROBE] вкладок=" + tTotal + " пустых(built<=0)=" + tEmpty);
+	}
+
 	/** Вызывается из ctor {@link CreativeTab}: запоминает инстанс вкладки под её именем (реестр + holder для displayItems). */
 	static void registerOwnTab(CreativeTab aTab) {
 		if (aTab == null || aTab.mName == null) return;
@@ -202,6 +248,15 @@ public final class CreativeTabsGT {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static List<ItemStack> enumerate(ItemLike aOwner, Item aItem, CreativeModeTab aTab) {
 		List<ItemStack> tList = new ArrayList<>();
+		// MTE-предмет — ПРЯМОЙ вызов, не рефлексия: его класс несёт compat-интерфейсы (applecore/IC2), вырезанные из
+		// рантайма (stripRunMirror) → Class.getMethod перечисляет методы класса → NoClassDefFoundError → invokeSub молча
+		// отдавал пусто → ВСЕ вкладки машин пусты (вскрытие: ручной цикл filterMatch=121 addedOK=121 без исключений).
+		// Прямой virtual-вызов посторонние интерфейсы не резолвит. Прецедент ловушки: PrefixItem.registerIcons(Object).
+		if (aItem instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tMTE) {
+			try { tMTE.getSubItems(aItem, aTab, tList); } catch (Throwable e) {/* boot-safe */}
+			if (tList.isEmpty()) tList.add(new ItemStack(aItem));
+			return tList;
+		}
 		invokeSub(aItem, "getSubItems", aItem, aTab, tList);
 		if (tList.isEmpty() && aOwner instanceof net.minecraft.world.level.block.Block tBlock) invokeSub(tBlock, "getSubBlocks", aItem, aTab, tList);
 		if (tList.isEmpty()) tList.add(new ItemStack(aItem));

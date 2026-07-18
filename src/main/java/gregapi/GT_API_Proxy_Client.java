@@ -196,6 +196,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.level.block.Blocks.FURNACE));
 			gregapi.data.CS.OUT.println("[GT6-INJECT] синтезировано в инвентарь: " + tCands.size() + " (Vibranium+Adamantium кирки) + " + tBlkAdded + " GT6-блок-предметов + ванильные iron_pickaxe/stick/stone/furnace для A/B");
 			gregapi.render.GT6ItemModel.dumpStacks(tCands, "descriptor.port.candidate.jsonl");
+			try { gregapi.item.CreativeTabsGT.probeOwnTabs(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-F16-PROBE] упал: " + e); }
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-INJECT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
