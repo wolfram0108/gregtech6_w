@@ -126,10 +126,36 @@ public class ContainerCommon extends AbstractContainerMenu {
 		BlockPos tPos = aData.readBlockPos();
 		int tGUIID = aData.readInt();
 		BlockEntity tTileEntity = WD.te(aInv.player.level(), tPos, T);
-		if (!(tTileEntity instanceof ITileEntityGUI)) return null;
+		// null-BE (клиент ещё не получил синк — race server-place↔open): 1.7.10 getClientGuiElement=null тихо НЕ открывал
+		// GUI; в neo null из фабрики = исключение пакет-хендлера = ДИСКОННЕКТ → не-null заглушка, экран закрывает себя сам.
+		if (!(tTileEntity instanceof ITileEntityGUI)) return new ContainerCommon(aWindowID, aInv);
 		final BlockEntity fTileEntity = tTileEntity;
 		Object tGUI = withWindowID(aWindowID, () -> ((ITileEntityGUI)fTileEntity).getGUIServer(tGUIID, aInv.player));
-		return tGUI instanceof ContainerCommon ? (ContainerCommon)tGUI : null;
+		return tGUI instanceof ContainerCommon ? (ContainerCommon)tGUI : new ContainerCommon(aWindowID, aInv);
+	}
+
+	/** Заглушка null-реконструкции (см. {@link #createFromNetwork}): mTileEntity==null — маркер «GUI не открылся»,
+	 *  {@link ContainerClient} закрывает такой экран на первом тике. */
+	public ContainerCommon(int aWindowID, Inventory aInventoryPlayer) {
+		super(MENU_TYPE.get(), aWindowID);
+		mInventoryPlayer = aInventoryPlayer;
+		mTileEntity = null;
+		mSlotCount = 0; mOffset = 0; mGUIID = 0;
+	}
+
+	// Пакет-гейты заглушки: сервер-меню настоящее (N слотов) и шлёт content/data — у заглушки слотов 0, vanilla-приём
+	// упал бы IndexOutOfBounds → «Network Protocol Error» (дисконнект). Глотаем до закрытия первым тиком экрана.
+	@Override public void initializeContents(int aStateID, java.util.List<ItemStack> aItems, ItemStack aCarried) {
+		if (mTileEntity == null && aItems.size() > slots.size()) return;
+		super.initializeContents(aStateID, aItems, aCarried);
+	}
+	@Override public void setItem(int aSlot, int aStateID, ItemStack aStack) {
+		if (mTileEntity == null && aSlot >= slots.size()) return;
+		super.setItem(aSlot, aStateID, aStack);
+	}
+	@Override public void setData(int aID, int aValue) {
+		if (mTileEntity == null) return;
+		super.setData(aID, aValue);
 	}
 
 	public final int mOffset, mSlotCount, mGUIID;
@@ -425,7 +451,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 	 */
 	public boolean doesBindPlayerInventory() {return T;}
 
-	@Override public boolean stillValid(Player aPlayer) {return mTileEntity.isUseableByPlayerGUI(aPlayer);}
+	@Override public boolean stillValid(Player aPlayer) {return mTileEntity != null && mTileEntity.isUseableByPlayerGUI(aPlayer);}
 
 	protected void bindPlayerInventory(Inventory aInventoryPlayer, int aOffset) {
 		for (int i = 0; i < 3; i++) for (int j = 0; j < 9; j++) {

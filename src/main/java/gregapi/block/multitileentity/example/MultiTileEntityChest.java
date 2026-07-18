@@ -19,7 +19,6 @@
 
 package gregapi.block.multitileentity.example;
 
-import cpw.mods.fml.client.registry.ClientRegistry;
 import net.neoforged.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.*;
 import gregapi.block.multitileentity.MultiTileEntityBlockInternal;
@@ -327,10 +326,12 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	}
 	
 	private static MultiTileEntityRendererChest RENDERER;
-	
+
 	@Override
 	public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID) {
-		ClientRegistry.bindTileEntitySpecialRenderer(getClass(), RENDERER = new MultiTileEntityRendererChest());
+		// было ClientRegistry.bindTileEntitySpecialRenderer (FML-диспетчер по классу TE; API мёртв, зеркало вырезано из
+		// рантайма) → тот же диспетч по классу в едином GT6-BER (MTE_TYPE один на все MTE, см. MultiTileEntityBER).
+		gregapi.render.MultiTileEntityBER.bindSpecialRenderer(getClass(), RENDERER = new MultiTileEntityRendererChest());
 	}
 	
 	@Override
@@ -351,31 +352,72 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	 * {@code InscriberRenderer.java:55-276} (F3-render.md §2.5). Реальная перерисовка крышки —
 	 * {@code CubeBuilder}/{@code submitCustomGeometry} по образцу эталона; тело {@code submit} ниже — no-op заглушка.
 	 */
-	public static class MultiTileEntityRendererChest implements BlockEntityRenderer<MultiTileEntityChest, BlockEntityRenderState> {
+	/** Состояние кадра спец-рендера сундука (extract на main-thread, submit только читает). */
+	public static class MTEChestRenderState extends BlockEntityRenderState {
+		public float mLidAngleRad; public byte mChestFacing; public int mChestRGBa; public Identifier[] mChestTextures;
+	}
+
+	public static class MultiTileEntityRendererChest implements BlockEntityRenderer<MultiTileEntityChest, MTEChestRenderState> {
 		private static final MultiTileEntityModelChest sModel = new MultiTileEntityModelChest();
 		public final Map<String, Identifier[]> mResources = new HashMap<>();
 
 		@Override
-		public BlockEntityRenderState createRenderState() {
-			return new BlockEntityRenderState();
+		public MTEChestRenderState createRenderState() {
+			return new MTEChestRenderState();
 		}
 
 		@Override
-		public void submit(BlockEntityRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
-			//
+		public void extractRenderState(MultiTileEntityChest aChest, MTEChestRenderState aState, float aPartialTick, net.minecraft.world.phys.Vec3 aCameraPos, net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay aBreakProgress) {
+			BlockEntityRenderer.super.extractRenderState(aChest, aState, aPartialTick, aCameraPos, aBreakProgress);
+			// 1.7.10 renderTileEntityAt: интерполяция крышки + кубическая кривая — дословно.
+			double tLidAngle = 1 - (aChest.oLidAngle + (aChest.mLidAngle - aChest.oLidAngle) * aPartialTick); tLidAngle = -(((1 - tLidAngle*tLidAngle*tLidAngle) * Math.PI) / 2);
+			aState.mLidAngleRad = (float)tLidAngle;
+			aState.mChestFacing = aChest.mFacing;
+			aState.mChestRGBa = aChest.mRGBa;
+			aState.mChestTextures = mResources.get(aChest.mTextureName);
+		}
+
+		@Override
+		public void submit(MTEChestRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
+			Identifier[] tLocation = aState.mChestTextures;
+			if (tLocation == null || tLocation.length < 2) return;
+			// матрицы 1:1 с 1.7.10 (translate(0,1,1)+scale(1,-1,-1) — модель и текстуры в перевёрнутой системе 1.7.10)
+			aPoseStack.pushPose();
+			aPoseStack.translate(0, 1, 1);
+			aPoseStack.scale(1, -1, -1);
+			aPoseStack.translate(0.5f, 0.5f, 0.5f);
+			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[aState.mChestFacing] * 90 - 180));
+			aPoseStack.translate(-0.5f, -0.5f, -0.5f);
+			short[] tRGBa = UT.Code.getRGBaArray(aState.mChestRGBa);
+			// пасс 1: .colored.png с тинтом mRGBa; пасс 2: .plain.png белым (blend+alpha 1.7.10 → entityCutout)
+			sModel.submit(aNodes, aPoseStack, tLocation[0], aState.mLidAngleRad, aState.lightCoords, net.minecraft.util.ARGB.color(255, tRGBa[0], tRGBa[1], tRGBa[2]));
+			sModel.submit(aNodes, aPoseStack, tLocation[1], aState.mLidAngleRad, aState.lightCoords, -1);
+			aPoseStack.popPose();
 		}
 	}
 
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code ModelBase}/{@code ModelRenderer} (immediate-mode
-	 *  3D-модель крышки сундука через box+rotationPoint, тип удалён целиком) — держатель-заглушка
-	 *  (см. javadoc {@link MultiTileEntityRendererChest}), реальная геометрия — {@code CubeBuilder}. */
+	/** Модель сундука 1:1 (боксы/rotationPoints/texOffs дословно из 1.7.10 ModelBase-версии; ModelPart — neo-носитель ModelRenderer). */
 	public static class MultiTileEntityModelChest {
+		private final net.minecraft.client.model.geom.ModelPart mRoot, mLid, mKnob;
+
 		public MultiTileEntityModelChest() {
-			//
+			net.minecraft.client.model.geom.builders.MeshDefinition tMesh = new net.minecraft.client.model.geom.builders.MeshDefinition();
+			net.minecraft.client.model.geom.builders.PartDefinition tRoot = tMesh.getRoot();
+			tRoot.addOrReplaceChild("lid",    net.minecraft.client.model.geom.builders.CubeListBuilder.create().texOffs(0,  0).addBox( 0, -5, -14, 14,  5, 14), net.minecraft.client.model.geom.PartPose.offset(1, 7, 15));
+			tRoot.addOrReplaceChild("knob",   net.minecraft.client.model.geom.builders.CubeListBuilder.create().texOffs(0,  0).addBox(-1, -2, -15,  2,  4,  1), net.minecraft.client.model.geom.PartPose.offset(8, 7, 15));
+			tRoot.addOrReplaceChild("bottom", net.minecraft.client.model.geom.builders.CubeListBuilder.create().texOffs(0, 19).addBox( 0,  0,   0, 14, 10, 14), net.minecraft.client.model.geom.PartPose.offset(1, 6, 1));
+			mRoot = net.minecraft.client.model.geom.builders.LayerDefinition.create(tMesh, 64, 64).bakeRoot();
+			mLid  = mRoot.getChild("lid");
+			mKnob = mRoot.getChild("knob");
 		}
 
-		public void render(double aLidAngle) {
-			//
+		public void submit(SubmitNodeCollector aNodes, PoseStack aPoseStack, Identifier aTexture, float aLidAngle, int aLight, int aColor) {
+			mKnob.xRot = mLid.xRot = aLidAngle;
+			aNodes.submitCustomGeometry(aPoseStack, net.minecraft.client.renderer.rendertype.RenderTypes.entityCutout(aTexture), (tPose, tBuffer) -> {
+				PoseStack tStack = new PoseStack();
+				tStack.mulPose(tPose.pose());
+				mRoot.render(tStack, tBuffer, aLight, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, aColor);
+			});
 		}
 	}
 }

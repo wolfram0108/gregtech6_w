@@ -58,10 +58,26 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 	private static final int WIDTH = 180, HEIGHT = 145;
 
 	private final RecipeMap mMap;
+	/** Фон 1:1 c NEI drawBackground (gregapi/NEI_RecipeMap.java:629-635): machines/NEI.png @(−5,−16) + GUI-текстура
+	 *  карты @(−5,−8) v=3 h=79; в JEI-координатах (слоты сдвинуты на OFFSET) это (0,−5)→клип v=5 и (0,3). */
+	private final IDrawable mBackNEI, mBackGui;
 
 	public GT6_JEI_RecipeCategory(RecipeMap aMap, RecipeType<Recipe> aType, IGuiHelper aGuiHelper) {
 		super(aType, Component.literal(aMap.mNameLocal), icon(aMap, aGuiHelper), WIDTH, HEIGHT);
 		mMap = aMap;
+		IDrawable tNEI = null, tGui = null;
+		try {
+			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
+			String tGuiPath = gregapi.util.UT.Code.stringValid(aMap.mGUIPath) ? aMap.mGUIPath : RES_PATH_GUI + aMap.mNameInternal + ".png";
+			tGui = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
+		} catch (Throwable e) {ERR.println("JEI: фон категории '" + aMap.mNameInternal + "' не собрался: " + e);}
+		mBackNEI = tNEI; mBackGui = tGui;
+	}
+
+	@Override
+	public void draw(Recipe aRecipe, mezz.jei.api.gui.ingredient.IRecipeSlotsView aSlotsView, net.minecraft.client.gui.GuiGraphicsExtractor aGraphics, double aMouseX, double aMouseY) {
+		if (mBackNEI != null) mBackNEI.draw(aGraphics, 0, 0);
+		if (mBackGui != null) mBackGui.draw(aGraphics, 0, 3);
 	}
 
 	private static IDrawable icon(RecipeMap aMap, IGuiHelper aGuiHelper) {

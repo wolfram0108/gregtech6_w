@@ -19,7 +19,6 @@
 
 package gregapi.tileentity.inventories;
 
-import cpw.mods.fml.client.registry.ClientRegistry;
 import net.neoforged.api.distmarker.Dist;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetMaxStackSize;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnRegistrationFirstClient;
@@ -698,28 +697,48 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public void onRegistrationFirstClient(MultiTileEntityRegistry aRegistry, short aID) {
-		ClientRegistry.bindTileEntitySpecialRenderer(getClass(), MultiTileEntityRendererMassStorage.INSTANCE);
+		// было ClientRegistry.bindTileEntitySpecialRenderer (FML-диспетчер по классу TE; API мёртв) →
+		// тот же диспетч по классу в едином GT6-BER (MTE_TYPE один на все MTE, см. MultiTileEntityBER).
+		gregapi.render.MultiTileEntityBER.bindSpecialRenderer(getClass(), MultiTileEntityRendererMassStorage.INSTANCE);
 	}
-	
-	/**
-	 * F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code TileEntitySpecialRenderer} (immediate-mode: GL11
-	 * push/pop-матрицы+{@code OpenGlHelper}+{@code ForgeHooksClient.renderInventoryItem}, рисующий
-	 * хранимый предмет на грани блока) — весь стек удалён в 26.1.2 (decisions/F3-render.md §1). Замена —
-	 * {@code BlockEntityRenderer<T,S>} нового API (эталон {@code InscriberRenderer.java:55-276},
-	 * F3-render.md §2.5, паттерн "рендер предмета внутри" — секция {@code ChargerRenderer}/
-	 * {@code BlockEntityRenderHelper.submitRenderItem2d}); тело {@code submit} ниже — no-op заглушка.
-	 */
-	public static class MultiTileEntityRendererMassStorage implements BlockEntityRenderer<MultiTileEntityMassStorage, BlockEntityRenderState> {
+
+	/** Состояние кадра спец-рендера (extract на main-thread, submit только читает). */
+	public static class MTEMassStorageRenderState extends BlockEntityRenderState {
+		public net.minecraft.client.renderer.item.ItemStackRenderState mItem; public byte mStorageFacing;
+	}
+
+	public static class MultiTileEntityRendererMassStorage implements BlockEntityRenderer<MultiTileEntityMassStorage, MTEMassStorageRenderState> {
 		public static MultiTileEntityRendererMassStorage INSTANCE = new MultiTileEntityRendererMassStorage();
 
 		@Override
-		public BlockEntityRenderState createRenderState() {
-			return new BlockEntityRenderState();
+		public MTEMassStorageRenderState createRenderState() {
+			return new MTEMassStorageRenderState();
 		}
 
 		@Override
-		public void submit(BlockEntityRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
-			//
+		public void extractRenderState(MultiTileEntityMassStorage aStorage, MTEMassStorageRenderState aState, float aPartialTick, net.minecraft.world.phys.Vec3 aCameraPos, net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay aBreakProgress) {
+			BlockEntityRenderer.super.extractRenderState(aStorage, aState, aPartialTick, aCameraPos, aBreakProgress);
+			aState.mItem = null;
+			if (!aStorage.slotHas(1) || !aStorage.isFaceVisible()) return;
+			aState.mStorageFacing = aStorage.mFacing;
+			// FIXED-контекст = плоский показ стека (рамочный путь движка) — neo-носитель 1.7.10 renderItemIntoGUI-формы
+			aState.mItem = new net.minecraft.client.renderer.item.ItemStackRenderState();
+			net.minecraft.client.Minecraft.getInstance().getItemModelResolver().updateForTopItem(aState.mItem, aStorage.slot(1), net.minecraft.world.item.ItemDisplayContext.FIXED, aStorage.getLevel(), null, 0);
+		}
+
+		@Override
+		public void submit(MTEMassStorageRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
+			if (aState.mItem == null) return;
+			byte tFacing = aState.mStorageFacing;
+			// матрицы 1:1 с 1.7.10: центр грани +0.502 наружу, Y+0.625, сдвиг ±0.25 вбок; поворот 180°Z + компас;
+			// сплющивание по Z (2D-вид); fullbright (ориг lightmap 240/240).
+			aPoseStack.pushPose();
+			aPoseStack.translate(0.5 + OFFX[tFacing]*0.502 - OFFZ[tFacing]*0.25, 0.625, 0.5 + OFFZ[tFacing]*0.502 + OFFX[tFacing]*0.25);
+			aPoseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180));
+			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[tFacing] * 90));
+			aPoseStack.scale(0.5f, 0.5f, 0.0001f);
+			aState.mItem.submit(aPoseStack, aNodes, 0xF000F0 /* fullbright 240/240, ориг setLightmapTextureCoords */, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, 0);
+			aPoseStack.popPose();
 		}
 	}
 }

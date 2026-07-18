@@ -81,6 +81,24 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		return PLUGIN_UID;
 	}
 
+	/** F1-jei: JEI различает варианты предмета только по ЗАЯВЛЕННЫМ компонентам (registerFromDataComponentTypes);
+	 *  без заявки SUBTYPE все процедурные варианты (itemDamage 1.7.10) схлопываются в один предмет
+	 *  (лог-улика «289 duplicate items», ingredient-лист пуст по моду). Заявляем SUBTYPE всем gt-предметам. */
+	@Override
+	public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration aRegistration) {
+		if (!gregapi.GT_API.SUBTYPE.isBound()) return;
+		net.minecraft.core.component.DataComponentType<?> tSubtype = gregapi.GT_API.SUBTYPE.get();
+		int tCount = 0;
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			if (tKey == null) continue;
+			String tNs = tKey.getNamespace();
+			if (!tNs.equals(ModIDs.GT) && !tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
+			try {aRegistration.registerFromDataComponentTypes(tItem, tSubtype); tCount++;} catch (Throwable e) {/**/}
+		}
+		OUT.println("[GT6-JEI] SUBTYPE-подтипы заявлены для " + tCount + " предметов.");
+	}
+
 	@Override
 	public void registerCategories(IRecipeCategoryRegistration aRegistration) {
 		mTypes.clear();

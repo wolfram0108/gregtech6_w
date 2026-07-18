@@ -45,11 +45,8 @@ public class ContainerClientDefault extends ContainerClient {
 		super(aContainer, RES_PATH_GUI + "chests/" + aContainer.mSlotCount + ".png");
 	}
 	
-	/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code FontRenderer.drawString} (метод удалён у {@code Font},
-	 *  текст экрана теперь рисуется через {@code GuiGraphicsExtractor} в extract-фазе — см. javadoc
-	 *  {@link ContainerClient} class). */
 	@Override
 	protected void drawGuiContainerForegroundLayer(int p_146979_1_, int p_146979_2_) {
-		//
+		if (mContainer.mSlotCount != 16 && mContainer.mSlotCount <= 27) drawString(fontRendererObj, mContainer.mTileEntity.getInventoryNameGUI(), 8,  4, 4210752);
 	}
 }

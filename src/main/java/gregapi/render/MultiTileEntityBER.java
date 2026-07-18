@@ -52,17 +52,31 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 
 	public MultiTileEntityBER(BlockEntityRendererProvider.Context aContext) {/* per-BE геометрия строится в extractRenderState; ресурсы контекста тут не нужны */}
 
+	// F3-render спец-рендеры (1.7.10 ClientRegistry.bindTileEntitySpecialRenderer = vanilla-диспетчер по КЛАССУ TE;
+	// в neo BER регистрируется по BlockEntityType, а у всех MTE он ОДИН — MTE_TYPE) → диспетч по классу живёт здесь,
+	// в едином BER: реестр класс→рендерер, extract/submit делегируются. Оба живых TESR GT6 (Chest/MassStorage) идут сюда.
+	@SuppressWarnings("rawtypes")
+	private static final java.util.Map<Class<?>, BlockEntityRenderer> SPECIAL_RENDERERS = new java.util.HashMap<>();
+	public static void bindSpecialRenderer(Class<?> aTileEntityClass, @SuppressWarnings("rawtypes") BlockEntityRenderer aRenderer) {SPECIAL_RENDERERS.put(aTileEntityClass, aRenderer);}
+
+	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
+	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong();
+
 	/** Снапшот геометрии, собранной на main-thread (thread-safe: submit его лишь читает). */
 	public static class MTERenderState extends BlockEntityRenderState {
 		public List<BakedQuad> mQuads;
+		@SuppressWarnings("rawtypes") public BlockEntityRenderer mSpecialRenderer;
+		public BlockEntityRenderState mSpecialState;
 	}
 
 	@Override public MTERenderState createRenderState() {return new MTERenderState();}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void extractRenderState(TileEntityBase01Root aBE, MTERenderState aState, float aPartialTicks, Vec3 aCameraPos, ModelFeatureRenderer.CrumblingOverlay aBreakProgress) {
 		BlockEntityRenderer.super.extractRenderState(aBE, aState, aPartialTicks, aCameraPos, aBreakProgress); // база: blockPos/lightCoords/breakProgress
 		aState.mQuads = null;
+		aState.mSpecialRenderer = null; aState.mSpecialState = null;
 		Block tBlock = aBE.getBlockState().getBlock();
 		// Только MTE-блоки с render-объектом: руды(PrefixBlock/PrefixBlockTileEntity) и стабы(TileEntityLoaderStub, render-данных нет) → baked/пусто.
 		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) return;
@@ -70,17 +84,28 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 		try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
 		if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
+		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
+		if (tSpecial != null) try {
+			aState.mSpecialRenderer = tSpecial;
+			aState.mSpecialState = (BlockEntityRenderState)tSpecial.createRenderState();
+			tSpecial.extractRenderState(aBE, aState.mSpecialState, aPartialTicks, aCameraPos, aBreakProgress);
+			sSpecialExtract.incrementAndGet();
+		} catch (Throwable e) {aState.mSpecialRenderer = null; aState.mSpecialState = null;}
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void submit(MTERenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
 		final List<BakedQuad> tQuads = aState.mQuads;
-		if (tQuads == null || tQuads.isEmpty()) return;
-		final QuadInstance tQI = new QuadInstance(); // color=-1 (белый, не перетинтит baked-цвет quad'а); light из позиции блока
-		tQI.setLightCoords(aState.lightCoords);
-		// quads GT6QuadBuilder — уже в локальных координатах блока 0..1 (как baked-модель); PoseStack на submit уже в позиции блока.
-		aNodes.submitCustomGeometry(aPoseStack, Sheets.cutoutBlockSheet(), (tPose, tBuffer) -> {
-			for (BakedQuad tQuad : tQuads) tBuffer.putBakedQuad(tPose, tQuad, tQI);
-		});
+		if (tQuads != null && !tQuads.isEmpty()) {
+			final QuadInstance tQI = new QuadInstance(); // color=-1 (белый, не перетинтит baked-цвет quad'а); light из позиции блока
+			tQI.setLightCoords(aState.lightCoords);
+			// quads GT6QuadBuilder — уже в локальных координатах блока 0..1 (как baked-модель); PoseStack на submit уже в позиции блока.
+			aNodes.submitCustomGeometry(aPoseStack, Sheets.cutoutBlockSheet(), (tPose, tBuffer) -> {
+				for (BakedQuad tQuad : tQuads) tBuffer.putBakedQuad(tPose, tQuad, tQI);
+			});
+		}
+		if (aState.mSpecialRenderer != null && aState.mSpecialState != null)
+			try {aState.mSpecialRenderer.submit(aState.mSpecialState, aPoseStack, aNodes, aCamera); sSpecialSubmit.incrementAndGet();} catch (Throwable e) {/* спец-рендер не должен ронять кадр */}
 	}
 }

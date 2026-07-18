@@ -50,7 +50,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 
@@ -338,17 +337,15 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 			ySize = 114 + mRows * 18;
 		}
 		
-		/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code FontRenderer.drawString} (метод удалён у {@code Font},
-		 *  текст экрана теперь рисуется через {@code GuiGraphicsExtractor} в extract-фазе — см. javadoc
-		 *  {@link gregapi.gui.ContainerClient} class). */
 		@Override
 		protected void drawGuiContainerForegroundLayer(int p_146979_1_, int p_146979_2_) {
-			//
+			drawString(fontRendererObj, mContainer.mTileEntity.getInventoryNameGUI(), 8, 6, 4210752);
+			drawString(fontRendererObj, gregapi.lang.LanguageHandler.translate("container.inventory"), 8, ySize - 94, 4210752);
 		}
-		
+
 		@Override
 		protected void drawGuiContainerBackgroundLayer2(float par1, int par2, int par3) {
-			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+			// был GL11.glColor4f(1,1,1,1) — в neo цвет пер-blit (дефолт белый)
 			int k = (width - xSize) / 2;
 			int l = (height - ySize) / 2;
 			drawTexturedModalRect(k, l, 0, 0, xSize, mRows * 18 + 17);

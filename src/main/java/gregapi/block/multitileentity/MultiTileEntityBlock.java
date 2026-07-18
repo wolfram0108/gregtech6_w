@@ -449,6 +449,15 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// MultiTileEntityRegistry.getNewTileEntity (см. receiveData выше) - сетевой/явный путь. null здесь 1:1 с оракулом,
 	// не деградация.
 	@Override public final BlockEntity newBlockEntity(BlockPos aPos, BlockState aState) {return null;}
+	// F-tick (шов «тики BE», центр на весь MTE-класс): 1.7.10 World сам тикал TileEntity с canUpdate()==true
+	// (updateEntity каждый тик, ОБЕ стороны — recompSrc World.updateEntities); в neo тики BE идут ТОЛЬКО через
+	// EntityBlock.getTicker → BlockEntityTicker (Level.tickBlockEntities). Без шва весь механизм TE03+ мёртв:
+	// onTick*, sendClientData-синк клиенту (place-путь), анимации (mLidAngle), doBlockUpdate. canUpdate 1:1 (TE01:572).
+	@Override public final <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(Level aLevel, BlockState aState, net.minecraft.world.level.block.entity.BlockEntityType<T> aType) {
+		return (tLevel, tPos, tState, tBE) -> {
+			if (tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tTE && tTE.canUpdate()) tTE.updateEntity();
+		};
+	}
 	public final void getSubBlocks(Item aItem, CreativeModeTab aCreativeTab, @SuppressWarnings("rawtypes") List aList) {/**/}
 	@Override public final ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public final boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return F;}

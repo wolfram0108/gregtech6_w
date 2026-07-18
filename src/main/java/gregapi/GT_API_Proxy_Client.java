@@ -122,6 +122,23 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aModBus.addListener(this::onModifyBakingResult);
 		aModBus.addListener(this::onRegisterFluidModels);
 		aModBus.addListener(this::onRegisterBlockEntityRenderers);
+		aModBus.addListener(this::onRegisterMenuScreens);
+	}
+
+	// F14-gui: КЛИЕНТ-регистрация экрана для ContainerCommon.MENU_TYPE (без неё neo падает при открытии любого GUI мода —
+	// «no screen for menu type»). Фабрика маршрутизирует в ЕДИНЫЙ GT6-центр getGUIClient (тот же, что строил экран в
+	// 1.7.10 — per-machine ContainerClient-подкласс+текстура); fallback (getGUIClient=null/исключение) — обёртка
+	// neo-реконструированного menu базовым ContainerClient (без краша).
+	private void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent aEvent) {
+		if (gregapi.gui.ContainerCommon.MENU_TYPE == null) return;
+		aEvent.<gregapi.gui.ContainerCommon, gregapi.gui.ContainerClient>register(gregapi.gui.ContainerCommon.MENU_TYPE.get(), (aMenu, aInv, aTitle) -> {
+			// исключение отсюда = дисконнект (neoforge ClientPayloadHandler.createMenuScreen catch→disconnect) → тотальный null-гейт
+			if (aMenu == null) aMenu = new gregapi.gui.ContainerCommon(0, aInv);
+			try { if (aMenu.mTileEntity instanceof gregapi.tileentity.ITileEntityGUI tGUI) { Object tScreen = tGUI.getGUIClient(aMenu.mGUIID, aInv.player); if (tScreen instanceof gregapi.gui.ContainerClient tCC) return tCC; } }
+			catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-GUI] getGUIClient упал, fallback-экран: "+e); }
+			return new gregapi.gui.ContainerClient(aMenu, gregapi.data.CS.RES_PATH_GUI + "chests/" + (aMenu.mTileEntity == null ? 1 : aMenu.mTileEntity.getSizeInventoryGUI()) + ".png");
+		});
+		gregapi.data.CS.OUT.println("[GT6-GUI] MenuScreens: экран для ContainerCommon.MENU_TYPE зарегистрирован (F14).");
 	}
 
 	// F3-render: MTE-блоки рисует BER (не baked — регион не отдаёт MTE-BE, см. MultiTileEntityBER). Один generic BER на весь
@@ -197,7 +214,100 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			gregapi.data.CS.OUT.println("[GT6-INJECT] синтезировано в инвентарь: " + tCands.size() + " (Vibranium+Adamantium кирки) + " + tBlkAdded + " GT6-блок-предметов + ванильные iron_pickaxe/stick/stone/furnace для A/B");
 			gregapi.render.GT6ItemModel.dumpStacks(tCands, "descriptor.port.candidate.jsonl");
 			try { gregapi.item.CreativeTabsGT.probeOwnTabs(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-F16-PROBE] упал: " + e); }
+			// MACHINE-проба (имя/текстура/тултип item-формы машин): по 1 стеку из вкладок Chests(32745)/SteamBoilers(1204)/
+			// BasicMachines(20001) — hover-имя, число тултип-строк, render-дескриптор (спрайты block-пути) в дамп.
+			try {
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg != null) {
+					java.util.List<net.minecraft.world.item.ItemStack> tMachines = new java.util.ArrayList<>();
+					short[] tWantTabs = {32745, 1204, 20001};
+					for (short tTab : tWantTabs) for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+						if (tC.mCreativeTabID == tTab && !tC.mHidden) {
+							net.minecraft.world.item.ItemStack tS = tReg.getItem(tC.mID);
+							if (gregapi.util.ST.valid(tS)) {
+								tMachines.add(tS);
+								String tName = "?"; try { tName = tS.getHoverName().getString(); } catch (Throwable e) { tName = "EXC:" + e.getClass().getSimpleName(); }
+								int tTips = -1; try { tTips = tS.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.EMPTY, null, net.minecraft.world.item.TooltipFlag.NORMAL).size(); } catch (Throwable e) {}
+								gregapi.data.CS.OUT.println("[GT6-MACHINE-PROBE] tab=" + tTab + " id=" + tC.mID + " class=" + tC.mClass.getSimpleName() + " name=\"" + tName + "\" tooltipLines=" + tTips);
+							}
+							break;
+						}
+					}
+					for (net.minecraft.world.item.ItemStack tS : tMachines) tPlayer.getInventory().add(tS.copy());
+					gregapi.render.GT6ItemModel.dumpStacks(tMachines, "descriptor.port.machines.jsonl");
+				}
+			} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-MACHINE-PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-INJECT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
+	// П1-СУДЬЯ (F14-gui, гейт: файл run/gt6guiprobe.flag): авто-открытие GUI машины РЕАЛЬНЫМ путём — сервер-тред
+	// размещает машину предметом (onItemUse, тот же код, что клик игрока) → ITileEntityGUI.openGUI (openMenu → пакет →
+	// клиент-экран) → замер экрана (класс/фон/размеры/слоты) + счётчики отрисовки ContainerClient (blit/text per frame).
+	private int mGuiProbePhase = 0; private int mGuiProbeTick = 0; private long mGuiProbeBlit0 = 0, mGuiProbeText0 = 0;
+	private net.minecraft.core.BlockPos mGuiProbePos = null;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onGuiProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mGuiProbePhase >= 4) return;
+		if (!new java.io.File("gt6guiprobe.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		++mGuiProbeTick;
+		java.io.PrintStream o = gregapi.data.CS.OUT;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mGuiProbePhase = 4; return; }
+		if (mGuiProbePhase == 0 && mGuiProbeTick >= 300) {
+			mGuiProbePhase = 1;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				net.minecraft.core.BlockPos tPP = tP.blockPosition();
+				// машина (GUI-судья) + сундук 32745 и mass-storage (П2-судья спец-рендеров) в ряд
+				int[] tIDs = {20001, 32745};
+				for (int i = 0; i < tIDs.length; i++) {
+					net.minecraft.world.item.ItemStack tS = tReg.getItem(tIDs[i]);
+					int tX = tPP.getX()+2, tZ = tPP.getZ()+i*2, tY = tPP.getY();
+					while (tY > tW.getMinY()+1 && tW.getBlockState(new net.minecraft.core.BlockPos(tX, tY-1, tZ)).isAir()) tY--;
+					boolean tPlaced = gregapi.util.ST.valid(tS) && tS.getItem() instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tItem
+						&& tItem.onItemUse(tS, tP, tW, tX, tY-1, tZ, gregapi.data.CS.SIDE_TOP, 0.5f, 1.0f, 0.5f);
+					if (i == 0) mGuiProbePos = new net.minecraft.core.BlockPos(tX, tY, tZ);
+					o.println("[GT6-GUI-PROBE] place id=" + tIDs[i] + " → " + tPlaced + " @" + tX + "," + tY + "," + tZ);
+				}
+			} catch (Throwable e) { o.println("[GT6-GUI-PROBE] place-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		// открытие ОТДЕЛЬНОЙ фазой (клиент-BE успевает синкнуться после place; race закрыт и центром — null-заглушка)
+		if (mGuiProbePhase == 1 && mGuiProbeTick >= 340) {
+			mGuiProbePhase = 2;
+			final net.minecraft.core.BlockPos fPos = mGuiProbePos;
+			if (fPos == null) { mGuiProbePhase = 4; return; }
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tP.level().getBlockEntity(fPos);
+				boolean tOpened = tBE instanceof gregapi.tileentity.ITileEntityGUI tGUI && tGUI.openGUI(tP);
+				o.println("[GT6-GUI-PROBE] BE=" + (tBE == null ? "null" : tBE.getClass().getSimpleName()) + " openGUI=" + tOpened);
+			} catch (Throwable e) { o.println("[GT6-GUI-PROBE] open-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		if (mGuiProbePhase == 2 && mGuiProbeTick >= 400) {
+			mGuiProbePhase = 3;
+			net.minecraft.client.gui.screens.Screen tScr = tMC.screen;
+			if (tScr instanceof gregapi.gui.ContainerClient tCC) {
+				o.println("[GT6-GUI-PROBE] экран=" + tScr.getClass().getSimpleName() + " фон=" + tCC.mBackground + " size=" + tCC.getLeft() + "," + tCC.getTop() + " слотов=" + tCC.getMenu().slots.size());
+			} else {
+				o.println("[GT6-GUI-PROBE] экран НЕ ContainerClient: " + (tScr == null ? "null" : tScr.getClass().getName()));
+			}
+			mGuiProbeBlit0 = gregapi.gui.ContainerClient.sBlitCalls.get();
+			mGuiProbeText0 = gregapi.gui.ContainerClient.sTextCalls.get();
+			o.println("[GT6-GUI-PROBE] счётчики@400: blit=" + mGuiProbeBlit0 + " text=" + mGuiProbeText0);
+			return;
+		}
+		if (mGuiProbePhase == 3 && mGuiProbeTick >= 460) {
+			mGuiProbePhase = 4;
+			long tB = gregapi.gui.ContainerClient.sBlitCalls.get(), tT = gregapi.gui.ContainerClient.sTextCalls.get();
+			o.println("[GT6-GUI-PROBE] счётчики@460: blit=" + tB + " (Δ" + (tB-mGuiProbeBlit0) + ") text=" + tT + " (Δ" + (tT-mGuiProbeText0) + ") — Δ>0 = движок рисует фон/текст каждый кадр");
+			o.println("[GT6-SPECIAL-PROBE] спец-рендеры (Chest/MassStorage): extract=" + gregapi.render.MultiTileEntityBER.sSpecialExtract.get() + " submit=" + gregapi.render.MultiTileEntityBER.sSpecialSubmit.get() + " — >0 = BER-диспетч по классу жив");
+		}
 	}
 
 	// F-tileentity-construction (КЛИЕНТ-реконструкция MTE-BE): neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE →
