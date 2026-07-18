@@ -109,6 +109,32 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		}
 	}
 
+	/** F3-render item-форма блока (3D-иконка в инвентаре) — ДОСЛОВНОЕ воспроизведение {@code RendererBlockTextured.renderInventoryBlock}
+	 *  (референс gregtech6): либо TE-ветка через {@code passRenderingToObject(ItemStack)}→canonical-TE (MTE; level=null → дефолт-рендер),
+	 *  либо block-level ветка {@code getRenderPasses(stack)/getTexture(pass,side,stack)} (руды/простые). SIDES_ITEM_RENDER = все грани true.
+	 *  Тот же {@link #face}/{@link GT6QuadBuilder} — один центр рендера, как один RendererBlockTextured у Грегориуса. */
+	public static void buildInventoryQuads(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {
+		if (!(aBlock instanceof IRenderedBlock tRB)) return;
+		boolean[] tSides = {true, true, true, true, true, true}; // SIDES_ITEM_RENDER (без соседей → все грани)
+		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aStack);
+		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aStack);
+		if (tRenderer != null) {
+			for (int i = 0, j = tRenderer.getRenderPasses(aBlock, tSides); i < j; i++) {
+				if (!tRenderer.usesRenderPass(i, tSides)) continue;
+				tRenderer.setBlockBounds(aBlock, i, tSides);
+				applyBounds(aQB, aBlock);
+				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRenderer.getTexture(aBlock, i, s, tSides), 0, 0, 0);
+			}
+		} else {
+			for (int i = 0, j = tRB.getRenderPasses(aStack); i < j; i++) {
+				if (!tRB.usesRenderPass(i, aStack)) continue;
+				tRB.setBlockBounds(i, aStack);
+				applyBounds(aQB, aBlock);
+				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRB.getTexture(i, s, aStack), 0, 0, 0);
+			}
+		}
+	}
+
 	/** tSides: у SideCheck-объекта — renderFullBlockSide; иначе все true (соседнее скрытие делает neo через addCulledFace). */
 	private static boolean[] sides(Block aBlock, IRenderedBlockObjectSideCheck aCheck) {
 		boolean[] r = {true, true, true, true, true, true};

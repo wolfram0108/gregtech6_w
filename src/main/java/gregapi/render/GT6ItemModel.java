@@ -47,20 +47,63 @@ public class GT6ItemModel implements ItemModel {
 	public void update(ItemStackRenderState aOutput, ItemStack aItem, ItemModelResolver aResolver, ItemDisplayContext aCtx, net.minecraft.client.multiplayer.ClientLevel aLevel, net.minecraft.world.entity.ItemOwner aOwner, int aSeed) {
 		aOutput.appendModelIdentityElement(this);
 		try {
-			Identifier tIcon = resolveIcon(aItem);
-			if (tIcon == null) return;
-			// item-иконки — в ITEMS-атласе (atlases/items.json, textures/items/**): материал-предметы берут item-версию
-			// materialicons, а gt.multiitem.* (еда/книги/инструменты) иначе вообще не в атласе → пурпур. BLOCKS — fallback
-			// для редких иконок, копирующих грань блока (IconContainerCopied/BlockTextureCopied).
+			net.minecraft.world.item.Item tItem = aItem.getItem();
+			// ЦЕНТР item-рендера, воспроизводит RendererBlockTextured.renderInventoryBlock (референс): предмет-БЛОК → 3D-геометрия блока
+			// (canonical-TE/block-level, buildInventoryQuads); предмет-ПРЕДМЕТ (материал/MultiItem) → плоские иконки ПО РЕНДЕР-ПАССАМ с
+			// per-pass тинтом (getColorFromItemStack) — как ванильный мульти-пасс item-icon (PrefixItem: 2 пасса, pass0 тинт материала).
+			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
+				renderBlockInventory(aOutput, aItem, tBI.getBlock());
+			} else {
+				renderFlatItem(aOutput, aItem, tItem);
+			}
+		} catch (Throwable e) {/* render-safe: сбой одного предмета не рушит рендер */}
+	}
+
+	/** Предмет-форма БЛОКА: 3D-геометрия блока в инвентаре через {@link GT6BlockModel#buildInventoryQuads} (= renderInventoryBlock). */
+	private static void renderBlockInventory(ItemStackRenderState aOutput, ItemStack aStack, net.minecraft.world.level.block.Block aBlock) {
+		GT6QuadBuilder tQB = new GT6QuadBuilder();
+		try { GT6BlockModel.buildInventoryQuads(tQB, aBlock, aStack); } catch (Throwable e) {}
+		List<BakedQuad> tBuilt = tQB.quads();
+		if (tBuilt.isEmpty()) return;
+		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
+		tLayer.prepareQuadList().addAll(tBuilt);
+		tLayer.setUsesBlockLight(true);
+		try { tLayer.setParticleMaterial(new Material.Baked(tBuilt.get(0).materialInfo().sprite(), false)); } catch (Throwable e) {}
+	}
+
+	/** Предмет-ПРЕДМЕТ (материал/MultiItem): по РЕНДЕР-ПАССАМ getIcon(stack,pass) + тинт getColorFromItemStack(stack,pass). */
+	private static void renderFlatItem(ItemStackRenderState aOutput, ItemStack aStack, net.minecraft.world.item.Item aItem) {
+		int tPasses = itemRenderPasses(aItem, aStack);
+		for (int tPass = 0; tPass < tPasses; tPass++) {
+			Identifier tIcon = iconForPass(aItem, aStack, tPass);
+			if (tIcon == null) { if (tPass == 0) return; else continue; }
 			TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
 			if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
-			if (tSprite == null) return;
+			if (tSprite == null) continue;
+			int tColor = itemColor(aItem, aStack, tPass);
 			ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 			List<BakedQuad> tQuads = tLayer.prepareQuadList();
-			tQuads.add(flatFace(tSprite, true));   // front (+Z)
-			tQuads.add(flatFace(tSprite, false));  // back  (-Z)
+			tQuads.add(flatFace(tSprite, true, tColor));
+			tQuads.add(flatFace(tSprite, false, tColor));
 			tLayer.setParticleMaterial(new Material.Baked(tSprite, false));
-		} catch (Throwable e) {/* render-safe: сбой одного предмета не рушит рендер */}
+		}
+	}
+
+	/** Число рендер-пассов предмета (PrefixItem.getRenderPasses(int)=2). Нет метода → 1 пасс. */
+	private static int itemRenderPasses(Object aItem, ItemStack aStack) {
+		try { java.lang.reflect.Method m = aItem.getClass().getMethod("getRenderPasses", int.class); Object r = m.invoke(aItem, (int)gregapi.util.ST.meta_(aStack)); if (r instanceof Integer ri && ri > 0) return Math.min(ri, 8); } catch (Throwable e) {}
+		return 1;
+	}
+	/** Иконка предмета на пасс: GT6 {@code getIcon(stack,pass)} (=getIconFromDamageForRenderPass); fallback pass0 getIconIndex/getIconFromDamage. */
+	private static Identifier iconForPass(Object aItem, ItemStack aStack, int aPass) {
+		try { java.lang.reflect.Method m = aItem.getClass().getMethod("getIcon", ItemStack.class, int.class); Object o = m.invoke(aItem, aStack, aPass); if (o instanceof Identifier id) return id; } catch (Throwable e) {}
+		if (aPass == 0) { Identifier r = tryIcon(aItem, "getIconIndex", ItemStack.class, aStack); if (r == null) r = tryIcon(aItem, "getIconFromDamage", int.class, aStack.getDamageValue()); return r; }
+		return null;
+	}
+	/** GT6 {@code getColorFromItemStack(stack,pass)} → 0xRRGGBB (pass0 = материал-тинт, иначе 0xFFFFFF белый). */
+	private static int itemColor(Object aItem, ItemStack aStack, int aPass) {
+		try { java.lang.reflect.Method m = aItem.getClass().getMethod("getColorFromItemStack", ItemStack.class, int.class); Object c = m.invoke(aItem, aStack, aPass); if (c instanceof Integer ci) return ci; } catch (Throwable e) {}
+		return 0xFFFFFF;
 	}
 
 	/** Икона предмета: GT6 {@code getIconIndex(ItemStack)} (PrefixItem/MultiItem) → Identifier; иначе {@code getIconFromDamage(int)}.
@@ -157,8 +200,9 @@ public class GT6ItemModel implements ItemModel {
 		} catch (Throwable ignored) {return null;}
 	}
 
-	/** Плоская грань предмета 16×16 (плоскость z=8/16) из спрайта, front (+Z) либо back (−Z). */
-	private static BakedQuad flatFace(TextureAtlasSprite aSprite, boolean aFront) {
+	/** Плоская грань предмета 16×16 (плоскость z=8/16) из спрайта, front (+Z) либо back (−Z), с тинтом aColor (0xRRGGBB). */
+	private static BakedQuad flatFace(TextureAtlasSprite aSprite, boolean aFront, int aColor) {
+		int r=(aColor>>16)&0xFF, g=(aColor>>8)&0xFF, b8=aColor&0xFF;
 		Direction tDir = aFront ? Direction.SOUTH : Direction.NORTH;
 		float z = 0.5f;
 		float[][] c = aFront
@@ -170,7 +214,7 @@ public class GT6ItemModel implements ItemModel {
 		b.setDirection(tDir);
 		for (int i = 0; i < 4; i++) {
 			b.addVertex(c[i][0], c[i][1], c[i][2]);
-			b.setColor(255, 255, 255, 255);
+			b.setColor(r, g, b8, 255);
 			b.setNormal((float)n.x, (float)n.y, (float)n.z);
 			b.setUv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
 		}

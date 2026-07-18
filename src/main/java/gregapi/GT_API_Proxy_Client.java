@@ -236,7 +236,48 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { tOut.println("[GT6-ORE-PROBE] spring-scan упал: "+e); }
 		tMatCounts.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(12).forEach(e ->
 			tOut.println("[GT6-ORE-PROBE]   материал " + e.getKey() + " = " + e.getValue()));
+		if (mOreProbeRuns == 1) try { probeIconsHonest(tMC); } catch (Throwable e) { tOut.println("[GT6-ICONS] скан упал: "+e); e.printStackTrace(gregapi.data.CS.ERR); }
 		if (mOreProbeRuns == 1) try { dumpEngineState(tMC); } catch (Throwable e) { tOut.println("[GT6-ENGINE] дамп упал: "+e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
+	// ЧЕСТНЫЙ icon-замер = что neo РЕАЛЬНО рисует (ItemModelResolver.updateForTopItem, та же модель, что в креативе/JEI/руке) по ВСЕМ
+	// вариантам ВКЛЮЧАЯ block-предметы: isEmpty()=невидим, particle==missing=ПУРПУР. Единственный датчик, совпавший с глазами пользователя.
+	private void probeIconsHonest(net.minecraft.client.Minecraft tMC) {
+		java.io.PrintStream o = gregapi.data.CS.OUT;
+		net.minecraft.client.renderer.item.ItemModelResolver tResolver = tMC.getItemModelResolver();
+		net.minecraft.util.RandomSource tRnd = net.minecraft.util.RandomSource.create(0L);
+		net.minecraft.client.renderer.texture.TextureAtlasSprite tMissI=null, tMissB=null;
+		try { tMissI = tMC.getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.ITEMS).missingSprite(); } catch (Throwable e) {}
+		try { tMissB = tMC.getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).missingSprite(); } catch (Throwable e) {}
+		int[] tNB=new int[4], tBI=new int[4]; // [total, invisible, purple, valid]
+		java.util.HashSet<String> tDNB=new java.util.HashSet<>(), tDBI=new java.util.HashSet<>();
+		java.util.List<String> tBadNB=new java.util.ArrayList<>(), tBadBI=new java.util.ArrayList<>(), tOkBI=new java.util.ArrayList<>();
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			if (tKey==null || !isGregNamespace(tKey.getNamespace())) continue;
+			boolean tIsBlock = tItem instanceof net.minecraft.world.item.BlockItem;
+			int[] tC = tIsBlock?tBI:tNB; java.util.HashSet<String> tDS = tIsBlock?tDBI:tDNB; java.util.List<String> tBad = tIsBlock?tBadBI:tBadNB;
+			java.util.List<net.minecraft.world.item.ItemStack> tVars = new java.util.ArrayList<>();
+			try { java.lang.reflect.Method gsi = tItem.getClass().getMethod("getSubItems", net.minecraft.world.item.Item.class, net.minecraft.world.item.CreativeModeTab.class, java.util.List.class); gsi.invoke(tItem, tItem, null, tVars); } catch (Throwable e) {}
+			if (tVars.isEmpty()) tVars.add(new net.minecraft.world.item.ItemStack(tItem));
+			for (net.minecraft.world.item.ItemStack tStack : tVars) {
+				tC[0]++;
+				try {
+					net.minecraft.client.renderer.item.ItemStackRenderState tRS = new net.minecraft.client.renderer.item.ItemStackRenderState();
+					tResolver.updateForTopItem(tRS, tStack, net.minecraft.world.item.ItemDisplayContext.GUI, tMC.level, null, 0);
+					if (tRS.isEmpty()) { tC[1]++; if (tBad.size()<10) tBad.add(tKey.getPath()+"[пусто]"); continue; }
+					net.minecraft.client.resources.model.sprite.Material.Baked tPM = tRS.pickParticleMaterial(tRnd);
+					net.minecraft.client.renderer.texture.TextureAtlasSprite tSp = tPM==null?null:tPM.sprite();
+					if (tSp==null || tSp==tMissI || tSp==tMissB) { tC[2]++; if (tBad.size()<10) tBad.add(tKey.getPath()+"[missing]"); }
+					else { tC[3]++; tDS.add(tSp.contents().name().toString()); if (tIsBlock && tOkBI.size()<10) tOkBI.add(tKey.getPath()); }
+				} catch (Throwable e) { tC[2]++; if (tBad.size()<10) tBad.add(tKey.getPath()+"[EXC:"+e.getClass().getSimpleName()+"]"); }
+			}
+		}
+		o.println("[GT6-ICONS] НЕ-БЛОК предметы: вариантов="+tNB[0]+" невидимых="+tNB[1]+" ПУРПУР="+tNB[2]+" валидных="+tNB[3]+" разл-спрайтов="+tDNB.size());
+		o.println("[GT6-ICONS] BLOCK-предметы:  вариантов="+tBI[0]+" невидимых="+tBI[1]+" ПУРПУР="+tBI[2]+" валидных="+tBI[3]+" разл-спрайтов="+tDBI.size());
+		if (!tOkBI.isEmpty()) o.println("[GT6-ICONS] block ОК-примеры: "+tOkBI);
+		if (!tBadBI.isEmpty()) o.println("[GT6-ICONS] block битые: "+tBadBI);
+		if (!tBadNB.isEmpty()) o.println("[GT6-ICONS] не-блок битые: "+tBadNB);
 	}
 
 	// ЗАМЕР СОСТОЯНИЯ В ИГРЕ (движковые данные, не визуал): сколько GT6-контента реально ЗАРЕГИСТРИРОВАНО, в КРЕАТИВЕ, в
@@ -409,14 +450,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				tMap.put(tState, tModel); tCount++;
 			}
 		}
-		// F3-render: единая item-модель GT6-предметам (НЕ BlockItem — те рендерятся моделью блока). GT6-namespace, getIconIndex-иконка.
+		// F3-render: ЕДИНАЯ item-модель ВСЕМ GT6-предметам (включая block-предметы: их item-форму рисует GT6ItemModel через
+		// buildInventoryQuads = renderInventoryBlock). Прежде block-предметы пропускались → у них не было item-модели → пурпур.
 		gregapi.render.GT6ItemModel tItemModel = new gregapi.render.GT6ItemModel();
 		java.util.Map<net.minecraft.resources.Identifier, net.minecraft.client.renderer.item.ItemModel> tItemMap = aEvent.getBakingResult().itemStackModels();
 		int tItemCount = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-			if (tItem instanceof net.minecraft.world.item.BlockItem) continue;
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !isGregNamespace(tKey.getNamespace())) continue;
+			// block-предмет инжектим только если его блок — IRenderedBlock (иначе оставляем дефолтную модель блока).
+			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && !(tBI.getBlock() instanceof gregapi.render.IRenderedBlock)) continue;
 			tItemMap.put(tKey, tItemModel); tItemCount++;
 		}
 		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states, GT6ItemModel into " + tItemCount + " items.");
