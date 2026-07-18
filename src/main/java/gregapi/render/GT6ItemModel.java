@@ -341,9 +341,14 @@ public class GT6ItemModel implements ItemModel {
 				GT6QuadBuilder tQB = new GT6QuadBuilder();
 				try { GT6BlockModel.buildInventoryQuads(tQB, tBI.getBlock(), aStack); } catch (Throwable e) {}
 				java.util.TreeSet<String> tSpr = new java.util.TreeSet<>();
-				for (BakedQuad q : tQB.quads()) try { tSpr.add(q.materialInfo().sprite().contents().name().toString()); } catch (Throwable e) {}
+				int tBlockTint = -1;
+				for (BakedQuad q : tQB.quads()) try {
+					tSpr.add(q.materialInfo().sprite().contents().name().toString());
+					// тинт block-item = цвет первого НЕ-белого квада (colored-слой; golden пишет getRenderColor)
+					if (tBlockTint == -1) { int c = q.bakedColors().color(0) & 0xFFFFFF; if (c != 0xFFFFFF) tBlockTint = c; }
+				} catch (Throwable e) {}
 				boolean tF = true; for (String s : tSpr) { if (!tF) sb.append(','); tF = false; sb.append('"').append(jsonEsc(s)).append('"'); }
-				sb.append(']');
+				sb.append(']').append(",\"tint\":\"").append(String.format("%06x", (tBlockTint == -1 ? 0xFFFFFF : tBlockTint))).append('"');
 			} else {
 				sb.append(",\"path\":\"flat\",\"p\":[");
 				int tPasses = itemRenderPasses(tItem, aStack);

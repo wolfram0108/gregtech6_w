@@ -55,9 +55,25 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 	// (BlockTextureDefault.get, client-safe → null на сервере). Один render-pass, полный блок, все стороны = иконка меты.
 	// Убирает «Missing model for variant Block{gregtech:gt.block.*}» (было: не-IRenderedBlock → плейсхолдер). Иконка per-side
 	// не различается (getIcon(side,meta) сам игнорирует side у этих блоков — 1:1 с оригиналом).
-	private gregapi.render.ITexture texOf(int aMeta) {return (mIcons == null || mIcons.length == 0) ? null : gregapi.render.BlockTextureDefault.get(mIcons[aMeta % mIcons.length]);}
-	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, net.minecraft.world.item.ItemStack aStack) {return texOf(gregapi.util.ST.meta_(aStack));}
-	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return texOf(gregapi.util.WD.meta(aWorld, aX, aY, aZ));}
+	// per-side выбор — через САМ getIcon(side,meta) (наследники — BlockBaseBeam/Bale — переопределяют его
+	// per-side логикой top/side; прежний texOf(meta) игнорировал side → item/мир-формы теряли боковые грани,
+	// пойман block-item golden-компаратором: порт rye_top vs golden rye_side+rye_top).
+	private gregapi.render.ITexture texOf(byte aSide, int aMeta) {
+		if (mIcons == null || mIcons.length == 0) return null;
+		final net.minecraft.resources.Identifier tIcon = getIcon(aSide, aMeta);
+		final gregapi.render.IIconContainer tBase = mIcons[aMeta % mIcons.length];
+		if (tIcon == null || tIcon.equals(tBase.getIcon(0))) return gregapi.render.BlockTextureDefault.get(tBase);
+		return gregapi.render.BlockTextureDefault.get(new gregapi.render.IIconContainer() {
+			@Override public net.minecraft.resources.Identifier getIcon(int aRenderPass) {return tIcon;}
+			@Override public boolean isUsingColorModulation(int aRenderPass) {return tBase.isUsingColorModulation(aRenderPass);}
+			@Override public short[] getIconColor(int aRenderPass) {return tBase.getIconColor(aRenderPass);}
+			@Override public int getIconPasses() {return tBase.getIconPasses();}
+			@Override public net.minecraft.resources.Identifier getTextureFile() {return tBase.getTextureFile();}
+			@Override public void registerIcons(Object aIconRegister) {/* атлас-стежка мертва (F3) */}
+		});
+	}
+	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, net.minecraft.world.item.ItemStack aStack) {return texOf(aSide, gregapi.util.ST.meta_(aStack));}
+	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {return texOf(aSide, gregapi.util.WD.meta(aWorld, aX, aY, aZ));}
 	@Override public boolean usesRenderPass(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {return aRenderPass == 0;}
 	@Override public boolean usesRenderPass(int aRenderPass, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return aRenderPass == 0;}
 	@Override public boolean setBlockBounds(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {return true;}
