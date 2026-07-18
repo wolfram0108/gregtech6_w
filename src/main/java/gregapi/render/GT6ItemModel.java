@@ -43,9 +43,24 @@ import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
  */
 public class GT6ItemModel implements ItemModel {
 
+	// РЕШАЮЩИЙ дамп (once, первые 30 РАЗНЫХ GT6-предметов): какой спрайт РЕАЛЬНО кладётся в quad каждого предмета — одинаковый у всех или разный.
+	private static final java.util.Set<String> sDumpSeen = new java.util.HashSet<>();
+	private static void dumpItemSprite(ItemStack aStack, TextureAtlasSprite aSprite, String aVia) {
+		try {
+			net.minecraft.resources.Identifier k = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
+			if (k == null || !(k.getNamespace().equals("gregtech")||k.getNamespace().equals("gregapi"))) return;
+			String key = k.getPath()+"#"+aStack.getDamageValue();
+			if (sDumpSeen.size() < 30 && sDumpSeen.add(k.getPath())) gregapi.data.CS.OUT.println("[GT6-ITEMDUMP] "+key+" via="+aVia+" sprite="+(aSprite==null?"null":aSprite.contents().name()));
+		} catch (Throwable e) {}
+	}
+
 	@Override
 	public void update(ItemStackRenderState aOutput, ItemStack aItem, ItemModelResolver aResolver, ItemDisplayContext aCtx, net.minecraft.client.multiplayer.ClientLevel aLevel, net.minecraft.world.entity.ItemOwner aOwner, int aSeed) {
 		aOutput.appendModelIdentityElement(this);
+		// КРИТ: GUI кэширует иконку по getModelIdentity() (GuiItemAtlas.getOrUpdate). Один общий GT6ItemModel на все предметы →
+		// один identity → один слот → одна текстура у ВСЕХ. Добавляем ПО-ВАРИАНТНЫЙ ключ (item+GT6-meta) → у каждого свой слот.
+		aOutput.appendModelIdentityElement(aItem.getItem());
+		aOutput.appendModelIdentityElement((int) gregapi.util.ST.meta_(aItem));
 		try {
 			net.minecraft.world.item.Item tItem = aItem.getItem();
 			// ЦЕНТР item-рендера, воспроизводит RendererBlockTextured.renderInventoryBlock (референс): предмет-БЛОК → 3D-геометрия блока
@@ -68,6 +83,7 @@ public class GT6ItemModel implements ItemModel {
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 		tLayer.prepareQuadList().addAll(tBuilt);
 		tLayer.setUsesBlockLight(true);
+		try { dumpItemSprite(aStack, tBuilt.get(0).materialInfo().sprite(), "block"); } catch (Throwable e) {}
 		try { tLayer.setParticleMaterial(new Material.Baked(tBuilt.get(0).materialInfo().sprite(), false)); } catch (Throwable e) {}
 	}
 
@@ -80,6 +96,7 @@ public class GT6ItemModel implements ItemModel {
 			TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
 			if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
 			if (tSprite == null) continue;
+			if (tPass == 0) dumpItemSprite(aStack, tSprite, "flat");
 			int tColor = itemColor(aItem, aStack, tPass);
 			ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
 			List<BakedQuad> tQuads = tLayer.prepareQuadList();
