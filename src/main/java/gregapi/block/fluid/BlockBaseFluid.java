@@ -404,7 +404,15 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return aRenderPass == 0;}
 	@Override public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return aRenderPass == 0;}
 	@Override public boolean setBlockBounds(int aRenderPass, ItemStack aStack) {return F;}
-	@Override public boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return F;}
+	// высота поверхности 1:1 Forge BlockFluidBase.getFluidHeightForRender: сверху жидкость → полный куб,
+	// иначе quanta/quantaPerBlock(8) * 0.875 (кванты живут в мете, getQuantaValue).
+	@Override public boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {
+		Block tAbove = WD.block(aWorld, aX, aY - mDensityDir, aZ);
+		float tHeight = tAbove == this || tAbove instanceof BlockFluidBaseGT || WD.getMaterial(tAbove).isLiquid()
+			? 1F : Math.max(1, getQuantaValue(aWorld, aX, aY, aZ)) / 8F * 0.875F;
+		setBlockBounds(0, 0, 0, 1, tHeight, 1);
+		return T;
+	}
 	@Override public int getRenderPasses(ItemStack aStack) {return 1;}
 	@Override public int getRenderPasses(BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return 1;}
 	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return null;}

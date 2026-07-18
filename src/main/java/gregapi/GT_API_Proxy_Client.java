@@ -273,6 +273,28 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					if (i == 0) mGuiProbePos = new net.minecraft.core.BlockPos(tX, tY, tZ);
 					o.println("[GT6-GUI-PROBE] place id=" + tIDs[i] + " → " + tPlaced + " @" + tX + "," + tY + "," + tZ);
 				}
+				// П4-замер (жидкости, до правок): place полного fluid-блока + мета/FluidState/текстура-резолв
+				try {
+					java.util.Iterator<java.util.Map.Entry<String, net.minecraft.world.level.block.Block>> tIt = gregapi.data.FL.BLOCKS.entrySet().iterator();
+					if (tIt.hasNext()) {
+						java.util.Map.Entry<String, net.minecraft.world.level.block.Block> tE = tIt.next();
+						int fX = tPP.getX()+4, fZ = tPP.getZ(), fY = tPP.getY();
+						while (fY > tW.getMinY()+1 && tW.getBlockState(new net.minecraft.core.BlockPos(fX, fY-1, fZ)).isAir()) fY--;
+						boolean tFSet = gregapi.util.WD.set(tW, fX, fY, fZ, tE.getValue(), 7, 3);
+						net.minecraft.world.level.block.state.BlockState tFS = tW.getBlockState(new net.minecraft.core.BlockPos(fX, fY, fZ));
+						Object tTex = null; try { tTex = ((gregapi.render.IRenderedBlock)tE.getValue()).getTexture(0, (byte)1, new boolean[]{true,true,true,true,true,true}, tW, fX, fY, fZ); } catch (Throwable e) { tTex = "EXC:"+e; }
+						String tIconInfo = "?";
+						try {
+							gregapi.fluid.FluidGT tFG = gregapi.fluid.FluidGT.of(((gregapi.block.fluid.BlockBaseFluid)tE.getValue()).mFluid);
+							net.minecraft.resources.Identifier tIcon = tFG == null || tFG.mTexture == null ? null : tFG.mTexture.getIcon(0);
+							net.minecraft.client.renderer.texture.TextureAtlasSprite tSpr = tIcon == null ? null : gregapi.render.GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
+							tIconInfo = "icon=" + tIcon + " sprite=" + (tSpr == null ? "PURPLE!" : "VALID");
+						} catch (Throwable e) { tIconInfo = "EXC:" + e; }
+						o.println("[GT6-FLUID-PROBE] fluid=" + tE.getKey() + " set=" + tFSet + " state=" + tFS.getBlock().getClass().getSimpleName()
+							+ " meta=" + gregapi.util.WD.meta(tW, fX, fY, fZ) + " fluidState.empty=" + tFS.getFluidState().isEmpty()
+							+ " tex=" + (tTex == null ? "NULL" : tTex.getClass().getSimpleName()) + " " + tIconInfo + " @" + fX + "," + fY + "," + fZ);
+					} else o.println("[GT6-FLUID-PROBE] FL.BLOCKS пуст");
+				} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 			} catch (Throwable e) { o.println("[GT6-GUI-PROBE] place-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 			return;
 		}
@@ -307,6 +329,23 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			long tB = gregapi.gui.ContainerClient.sBlitCalls.get(), tT = gregapi.gui.ContainerClient.sTextCalls.get();
 			o.println("[GT6-GUI-PROBE] счётчики@460: blit=" + tB + " (Δ" + (tB-mGuiProbeBlit0) + ") text=" + tT + " (Δ" + (tT-mGuiProbeText0) + ") — Δ>0 = движок рисует фон/текст каждый кадр");
 			o.println("[GT6-SPECIAL-PROBE] спец-рендеры (Chest/MassStorage): extract=" + gregapi.render.MultiTileEntityBER.sSpecialExtract.get() + " submit=" + gregapi.render.MultiTileEntityBER.sSpecialSubmit.get() + " itemForm=" + gregapi.render.MultiTileEntityBER.sSpecialItemForm.get() + " — >0 = BER-диспетч/спец-item-форма живы");
+			// П4-судья (растекание): через ~8с после заливки полного кванта — счёт fluid-блоков и мет вокруг точки
+			try {
+				net.minecraft.server.MinecraftServer tS2 = tMC.getSingleplayerServer();
+				if (tS2 != null && mGuiProbePos != null) tS2.execute(() -> {
+					net.minecraft.server.level.ServerLevel tW = tS2.getPlayerList().getPlayers().get(0).level();
+					net.minecraft.core.BlockPos tC = mGuiProbePos.offset(2, 0, 0);
+					int tCount = 0; StringBuilder tMetas = new StringBuilder();
+					for (int dx=-4; dx<=4; dx++) for (int dz=-4; dz<=4; dz++) for (int dy=-2; dy<=1; dy++) {
+						net.minecraft.core.BlockPos tPp = tC.offset(dx, dy, dz);
+						if (tW.getBlockState(tPp).getBlock() instanceof gregapi.block.fluid.BlockBaseFluid) {
+							tCount++;
+							if (tCount <= 12) tMetas.append(dx).append(",").append(dy).append(",").append(dz).append(":m").append(gregapi.util.WD.meta(tW, tPp.getX(), tPp.getY(), tPp.getZ())).append(" ");
+						}
+					}
+					gregapi.data.CS.OUT.println("[GT6-FLUID-PROBE] растекание: fluid-блоков=" + tCount + " меты: " + tMetas + " (1 блок с метой 7 = мета жива; >1 блока = поток жив)");
+				});
+			} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] финал упал: " + e); }
 		}
 	}
 

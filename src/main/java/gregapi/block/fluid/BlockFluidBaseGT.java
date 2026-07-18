@@ -27,6 +27,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +53,7 @@ import static gregapi.data.CS.*;
  * тик целиком в Ocean/River/Swamp и никогда не зовёт {@code super.updateTick}) не портирован — не выдумываем
  * мёртвый код.
  */
-public abstract class BlockFluidBaseGT extends Block implements IBlock {
+public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.block.IBlockExtendedMetaData {
 	/** было Forge {@code BlockFluidBase.displacements} + статический {@code defaultDisplacements}
 	 *  (wooden_door/iron_door/standing_sign/wall_sign/reeds -> false). F5 данные-дефолт (door/sign/reeds не вытесняются жидкостью — набор блоков, не заглушка):
 	 *  1.7.10 знал ОДИН блок на дверь/вывеску; neo расщепил на блок-на-древесину (нет 1:1 отображения без
@@ -90,6 +91,43 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock {
 	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial) {
 		super(aProperties);
 		mMaterial = aMaterial;
+		registerDefaultState(getStateDefinition().any().setValue(FLUID_META, 0));
+	}
+
+	// МОДЕЛЬ МЕТЫ (кванты 1.7.10): Forge BlockFluidFinite хранил кванты В МЕТЕ блока (0..7 → 1..8 квант);
+	// neo-носитель числовой меты = blockstate-property (как vanilla LiquidBlock.LEVEL 0..15). Канал WD.set/WD.meta
+	// (IBlockExtendedMetaData) → вся дословная quanta-логика (updateTick/drain/updateFluidBlocks) оживает без правок.
+	public static final net.minecraft.world.level.block.state.properties.IntegerProperty FLUID_META =
+		net.minecraft.world.level.block.state.properties.IntegerProperty.create("gt6_meta", 0, 15);
+
+	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> aBuilder) {
+		aBuilder.add(FLUID_META);
+	}
+
+	public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
+		if (!(aWorld instanceof net.minecraft.world.level.LevelAccessor tLevel)) return;
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockState tState = tLevel.getBlockState(tPos);
+		if (tState.getBlock() == this) tLevel.setBlock(tPos, tState.setValue(FLUID_META, aMetaData & 15), FLUID_UPDATE_FLAGS_META);
+	}
+	public short getExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ) {
+		BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ));
+		return (short)(tState.getBlock() == this ? tState.getValue(FLUID_META) : 0);
+	}
+	/** флаг 2 (SEND_TO_CLIENT без соседей) — мета-запись не должна каскадить апдейты (каскад делает сама GT6-логика). */
+	protected static final int FLUID_UPDATE_FLAGS_META = 2;
+
+	// F-tick жидкостей: 1.7.10 World.scheduleBlockUpdate → Block.updateTick; neo — BlockBehaviour.tick.
+	// onBlockAdded (Forge BlockFluidBase) планировал первый тик — neo onPlace 1:1.
+	public void updateTick(Level aWorld, int aX, int aY, int aZ, java.util.Random aRandom) {/* переопределяют BlockBaseFluid/Ocean/River/Swamp */}
+	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), new java.util.Random(aRandom.nextLong()));
+	}
+	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
+		aWorld.scheduleTick(aPos, this, tickRate);
+	}
+	@Override protected void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
+		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);
 	}
 
 	public abstract int getQuantaValue(BlockGetter aWorld, int aX, int aY, int aZ);
