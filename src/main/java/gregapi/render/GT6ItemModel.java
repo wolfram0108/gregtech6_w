@@ -82,7 +82,20 @@ public class GT6ItemModel implements ItemModel {
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 		try { GT6BlockModel.buildInventoryQuads(tQB, aBlock, aStack); } catch (Throwable e) {}
 		List<BakedQuad> tBuilt = tQB.quads();
-		if (tBuilt.isEmpty()) return;
+		if (tBuilt.isEmpty()) {
+			// 1.7.10 renderItem TESR-классов (Chest/MassStorage): item-форму рисовал спец-рендер (renderTileEntityAt(this,0,0,0,0));
+			// neo-носитель — special-model слой, тот же зарегистрированный рендерер, что и в мире (BER-диспетч по классу).
+			net.minecraft.world.level.block.entity.BlockEntity tArg = MultiTileEntityBER.SPECIAL_ITEM_FORM.extractArgument(aStack);
+			if (tArg != null) {
+				aOutput.appendModelIdentityElement("mte-special:" + tArg.getClass().getName());
+				ItemStackRenderState.LayerRenderState tSpLayer = aOutput.newLayer();
+				net.minecraft.client.resources.model.cuboid.ItemTransforms tSpTr = blockGuiTransforms();
+				if (tSpTr != null) tSpLayer.setItemTransform(tSpTr.getTransform(aCtx));
+				tSpLayer.setupSpecialModel(MultiTileEntityBER.SPECIAL_ITEM_FORM, tArg);
+				aOutput.setAnimated(); // спец-рендер per-frame (крышка/содержимое) — кэш GUI-атласа не для него
+			}
+			return;
+		}
 		// identity-вклад (канон, как в renderFlatItem): пиксели зависят от набора спрайтов квадов → в identity,
 		// иначе стеки с одинаковыми item+meta, но разным видом (NBT/state) делят один кэш-слот GuiItemAtlas.
 		java.util.TreeSet<String> tIdSpr = new java.util.TreeSet<>();

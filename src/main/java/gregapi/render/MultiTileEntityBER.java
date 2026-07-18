@@ -60,7 +60,41 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	public static void bindSpecialRenderer(Class<?> aTileEntityClass, @SuppressWarnings("rawtypes") BlockEntityRenderer aRenderer) {SPECIAL_RENDERERS.put(aTileEntityClass, aRenderer);}
 
 	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
-	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong();
+	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
+
+	public static boolean hasSpecialRenderer(Class<?> aTileEntityClass) {return SPECIAL_RENDERERS.containsKey(aTileEntityClass);}
+
+	/** Item-форма TESR-классов: 1.7.10 renderItem звал renderTileEntityAt(this,0,0,0,0) на canonical-TE (данные из NBT
+	 *  стека); neo-носитель — special-model слой предмета ({@code LayerRenderState.setupSpecialModel}) → ЭТОТ адаптер:
+	 *  тот же зарегистрированный спец-рендерер (диспетч по классу), extract с detached-BE (fullbright по extractBase). */
+	public static final net.minecraft.client.renderer.special.SpecialModelRenderer<net.minecraft.world.level.block.entity.BlockEntity> SPECIAL_ITEM_FORM = new net.minecraft.client.renderer.special.SpecialModelRenderer<net.minecraft.world.level.block.entity.BlockEntity>() {
+		@Override
+		@SuppressWarnings("unchecked")
+		public void submit(net.minecraft.world.level.block.entity.BlockEntity aBE, PoseStack aPoseStack, SubmitNodeCollector aNodes, int aLight, int aOverlay, boolean aFoil, int aOutline) {
+			if (aBE == null) return;
+			@SuppressWarnings("rawtypes") BlockEntityRenderer tRenderer = SPECIAL_RENDERERS.get(aBE.getClass());
+			if (tRenderer == null) return;
+			try {
+				BlockEntityRenderState tState = (BlockEntityRenderState)tRenderer.createRenderState();
+				tRenderer.extractRenderState(aBE, tState, 0, Vec3.ZERO, null);
+				tState.lightCoords = aLight;
+				tRenderer.submit(tState, aPoseStack, aNodes, null);
+				sSpecialItemForm.incrementAndGet();
+			} catch (Throwable e) {/* item-форма не должна ронять рендер */}
+		}
+		@Override public void getExtents(java.util.function.Consumer<org.joml.Vector3fc> aOutput) {
+			for (int x = 0; x <= 1; x++) for (int y = 0; y <= 1; y++) for (int z = 0; z <= 1; z++) aOutput.accept(new org.joml.Vector3f(x, y, z));
+		}
+		@Override public net.minecraft.world.level.block.entity.BlockEntity extractArgument(net.minecraft.world.item.ItemStack aStack) {
+			try {
+				if (aStack.getItem() instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tMTE) {
+					gregapi.block.multitileentity.MultiTileEntityContainer tCont = tMTE.mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
+					if (tCont != null && tCont.mTileEntity != null && SPECIAL_RENDERERS.containsKey(tCont.mTileEntity.getClass())) return tCont.mTileEntity;
+				}
+			} catch (Throwable e) {/**/}
+			return null;
+		}
+	};
 
 	/** Снапшот геометрии, собранной на main-thread (thread-safe: submit его лишь читает). */
 	public static class MTERenderState extends BlockEntityRenderState {

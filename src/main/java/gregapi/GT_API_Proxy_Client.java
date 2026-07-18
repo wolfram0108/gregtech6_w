@@ -306,7 +306,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			mGuiProbePhase = 4;
 			long tB = gregapi.gui.ContainerClient.sBlitCalls.get(), tT = gregapi.gui.ContainerClient.sTextCalls.get();
 			o.println("[GT6-GUI-PROBE] счётчики@460: blit=" + tB + " (Δ" + (tB-mGuiProbeBlit0) + ") text=" + tT + " (Δ" + (tT-mGuiProbeText0) + ") — Δ>0 = движок рисует фон/текст каждый кадр");
-			o.println("[GT6-SPECIAL-PROBE] спец-рендеры (Chest/MassStorage): extract=" + gregapi.render.MultiTileEntityBER.sSpecialExtract.get() + " submit=" + gregapi.render.MultiTileEntityBER.sSpecialSubmit.get() + " — >0 = BER-диспетч по классу жив");
+			o.println("[GT6-SPECIAL-PROBE] спец-рендеры (Chest/MassStorage): extract=" + gregapi.render.MultiTileEntityBER.sSpecialExtract.get() + " submit=" + gregapi.render.MultiTileEntityBER.sSpecialSubmit.get() + " itemForm=" + gregapi.render.MultiTileEntityBER.sSpecialItemForm.get() + " — >0 = BER-диспетч/спец-item-форма живы");
 		}
 	}
 
