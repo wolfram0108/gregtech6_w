@@ -345,6 +345,53 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PLACE-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// N5-СУДЬЯ (worldgen-камни прозрачны+снег, гейт gt6inject.flag): ставит реальный BlockStones над игроком и замеряет
+	// ДВИЖКОВО: (рендер) getTexture 6 граней valid/null + резолв спрайта mIcons[0] (PURPLE=missing); (снег) collision
+	// shape isFaceFull(UP) — true у полного каменного блока = снег ляжет (норма для полного куба; MTE-камешек box=null → false).
+	private int mStoneProbePhase = 0; private int mStoneProbeTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onStoneProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mStoneProbePhase >= 1) return;
+		if (!new java.io.File("gt6inject.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mStoneProbePhase = 1; return; }
+		if (++mStoneProbeTick < 320) return;
+		mStoneProbePhase = 1;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		tSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tW = tP.level();
+			net.minecraft.world.level.block.Block tStone = null;
+			for (net.minecraft.world.level.block.Block b : net.minecraft.core.registries.BuiltInRegistries.BLOCK) if (b instanceof gregapi.block.metatype.BlockStones) { tStone = b; break; }
+			if (tStone == null) { o.println("[GT6-STONE-PROBE] BlockStones не найден в реестре"); return; }
+			net.minecraft.core.BlockPos tPos = tP.blockPosition().above(3);
+			boolean tSet = tW.setBlock(tPos, tStone.defaultBlockState(), 3);
+			net.minecraft.world.phys.shapes.VoxelShape tColl = tW.getBlockState(tPos).getCollisionShape(tW, tPos);
+			boolean tFaceFullUp = net.minecraft.world.level.block.Block.isFaceFull(tColl, net.minecraft.core.Direction.UP);
+			int tValid = 0, tNull = 0;
+			boolean[] tAll = {true,true,true,true,true,true};
+			if (tStone instanceof gregapi.render.IRenderedBlock rb) {
+				for (byte s = 0; s < 6; s++) {
+					try { gregapi.render.ITexture tx = rb.getTexture(0, s, tAll, tW, tPos.getX(), tPos.getY(), tPos.getZ());
+						if (tx == null || !tx.isValidTexture()) tNull++; else tValid++;
+					} catch (Throwable e) { tNull++; }
+				}
+			}
+			String tIconInfo = "?";
+			try {
+				gregapi.block.metatype.BlockStones tSB = (gregapi.block.metatype.BlockStones)tStone;
+				net.minecraft.resources.Identifier tIcon = tSB.mIcons != null && tSB.mIcons.length > 0 ? tSB.mIcons[0].getIcon(0) : null;
+				net.minecraft.client.renderer.texture.TextureAtlasSprite tSpr = tIcon == null ? null : gregapi.render.GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
+				tIconInfo = "icon=" + tIcon + " sprite=" + (tSpr == null ? "PURPLE/null" : "VALID");
+			} catch (Throwable e) { tIconInfo = "EXC:" + e; }
+			o.println("[GT6-STONE-PROBE] block=" + tStone.getClass().getSimpleName() + " set=" + tSet + " грани valid=" + tValid + " null=" + tNull
+				+ " " + tIconInfo + " faceFullUp(снег)=" + tFaceFullUp + " @" + tPos.getX()+","+tPos.getY()+","+tPos.getZ()
+				+ " (valid=6 = рисуется НЕ прозрачен; PURPLE = missing-спрайт; faceFullUp=true у полного блока = снег норма)");
+		} catch (Throwable e) { o.println("[GT6-STONE-PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+
 	// B1-СУДЬЯ (F5-жидкости, гейт: файл run/gt6fluidprobe.flag): проверка, что движок mc26 распознаёт мировую воду GT6
 	// (Ocean/River/Swamp) как ВОДУ — заливает куб Ocean вокруг игрока и через ~2с читает ДВИЖКОВЫЕ флаги погружения
 	// (isInWater/isUnderWater/isEyeInFluid(WATER)/getFluidHeight/air/deltaY). Реальный путь: те же поля, что vanilla-вода

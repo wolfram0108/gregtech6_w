@@ -66,7 +66,16 @@ public class MultiItemToolWithCompat extends MultiItemTool implements IWarpingGe
 	 * Creates the Item using these Parameters.
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */
-	public MultiItemToolWithCompat(String aModID, String aUnlocalized) {super(aModID, aUnlocalized);}
+	public MultiItemToolWithCompat(String aModID, String aUnlocalized) {
+		super(aModID, aUnlocalized);
+		// F16 creative-tab (1:1 наблюдаемого — инструменты БЫЛИ в креативе 1.7.10; исходник им setCreativeTab явно не
+		// задавал, канал шёл vanilla-дефолтом). Воспроизводим наблюдаемое ТЕМ ЖЕ существующим порт-механизмом god-item-
+		// вкладок (CreativeTab ctor → CreativeTabsGT.registerOwnTab/displayItems), что MultiItemRandomTools:60 (Equipment)
+		// и MultiItemTechnological:44 (Technology) — своя вкладка «GregTech: Tools». getSubItems (перечислитель вариантов
+		// инструментов) уже был, но не звался: предмет не попадал ни в ASSIGNMENTS, ни в OWN_TAB_MEMBERS. Иконка вкладки —
+		// pickaxe (мета=tool-id; материал резолвится лениво из displayItems, после addTool в Loader_Tools).
+		new gregapi.item.CreativeTab(getUnlocalizedName(), "GregTech: Tools", this, (short)gregapi.data.CS.ToolsGT.PICKAXE);
+	}
 
 	public int getWarp(ItemStack aStack, Player aPlayer) {
 		return getPrimaryMaterial(aStack).contains(TD.Properties.WARPING) || getSecondaryMaterial(aStack).contains(TD.Properties.WARPING) ? 1 : 0;

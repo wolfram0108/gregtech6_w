@@ -179,6 +179,20 @@ public final class CreativeTabsGT {
 			}
 		}
 		gregapi.data.CS.OUT.println("[GT6-F16-PROBE] вкладок=" + tTotal + " пустых(built<=0)=" + tEmpty);
+		// N6-судья (инструменты в креативе): явный замер собственной вкладки инструментов (gt.metatool.*) — built = реальное
+		// содержимое, построенное движком через displayItems-генератор. built>0 = инструменты подключены к креатив-каналу.
+		CreativeTab tToolTab = null;
+		for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) if (tE.getKey().contains("metatool")) { tToolTab = tE.getValue(); break; }
+		if (tToolTab != null) {
+			// enum = реальные варианты, которые displayItems-генератор выдаст в креатив (getDisplayItems-кэш в probe-момент
+			// ещё пуст — строится при первом открытии креатива, потому built=0 у всех — артефакт замера). enum>0 = подключено.
+			List<Item> tMem = OWN_TAB_MEMBERS.get(tToolTab.mName);
+			int tEnum = 0;
+			if (tMem != null) for (Item tItem : tMem) try { tEnum += enumerate(tItem, tItem, tToolTab).size(); } catch (Throwable e) {}
+			gregapi.data.CS.OUT.println("[GT6-TOOL-PROBE] вкладка инструментов='" + tToolTab.mName + "' members=" + (tMem == null ? 0 : tMem.size()) + " enum=" + tEnum + " (enum>0 = инструменты перечисляются в креатив)");
+		} else {
+			gregapi.data.CS.OUT.println("[GT6-TOOL-PROBE] вкладка инструментов НЕ найдена в OWN_TABS (fix не сработал)");
+		}
 	}
 
 	/** Вызывается из ctor {@link CreativeTab}: запоминает инстанс вкладки под её именем (реестр + holder для displayItems). */
