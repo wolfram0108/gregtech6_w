@@ -399,14 +399,17 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					tW.setBlock(tRPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 					boolean tRockPlaced = tRockItem.onItemUse(tRockStack, tP, tW, tRPos.getX(), tRPos.getY()-1, tRPos.getZ(), gregapi.data.CS.SIDE_TOP, 0.5f, 1.0f, 0.5f);
 					net.minecraft.world.level.block.entity.BlockEntity tSrvBE = tW.getBlockEntity(tRPos);
+					// N5-прозрачность: getUpdateTag (то, что уходит клиенту в chunk-пакете). Пустой (size=0) = клиент получит
+					// пустой BE → mRock/mTexture теряются → прозрачен. Подтверждает корень (TileEntityBase01Root не переопределяет getUpdateTag).
+					int tUpdTagSize = -1; try { if (tSrvBE != null) tUpdTagSize = tSrvBE.getUpdateTag(tW.registryAccess()).size(); } catch (Throwable e) { tUpdTagSize = -2; }
 					net.minecraft.world.level.block.state.BlockState tRockState = tW.getBlockState(tRPos);
 					net.minecraft.world.phys.shapes.VoxelShape tRockColl = tRockState.getCollisionShape(tW, tRPos);
 					net.minecraft.world.phys.shapes.VoxelShape tRockShape = tRockState.getShape(tW, tRPos);
 					boolean tRockFaceFull = net.minecraft.world.level.block.Block.isFaceFull(tRockColl, net.minecraft.core.Direction.UP);
 					o.println("[GT6-STONE-PROBE] MTE-Rock placed=" + tRockPlaced + " blockCls=" + tRockState.getBlock().getClass().getSimpleName()
-						+ " srvBE=" + (tSrvBE == null ? "null" : tSrvBE.getClass().getSimpleName())
+						+ " srvBE=" + (tSrvBE == null ? "null" : tSrvBE.getClass().getSimpleName()) + " updateTagSize=" + tUpdTagSize
 						+ " collEmpty=" + tRockColl.isEmpty() + " shapeEmpty=" + tRockShape.isEmpty() + " faceFullUp(снег)=" + tRockFaceFull + " @" + tRPos.getX()+","+tRPos.getY()+","+tRPos.getZ()
-						+ " (faceFullUp=false = снег НЕ ляжет — F-shape-мост жив; blockCls показывает ветку иерархии)");
+						+ " (faceFullUp=false = снег НЕ ляжет; updateTagSize=0 = клиент получит ПУСТОЙ BE → прозрачность)");
 				} else o.println("[GT6-STONE-PROBE] MTE-Rock item невалиден (id 32757)");
 			} catch (Throwable e) { o.println("[GT6-STONE-PROBE] MTE-Rock замер упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 		} catch (Throwable e) { o.println("[GT6-STONE-PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
