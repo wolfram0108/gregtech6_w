@@ -1224,7 +1224,8 @@ public enum FL {
 	
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, 1000, 300, null, null, 0, aFluidList);}
 	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, Set<String>... aFluidList) {return create(aName, aLocalized, aMaterial, aState, aAmountPerUnit, aTemperatureK, null, null, 0, aFluidList);}
-	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, java.util.function.Supplier<ItemStack> aFullContainer, java.util.function.Supplier<ItemStack> aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase()), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
+	// путь текстуры: пробел → «_» (neo Identifier отвергает пробел; имя ЖИДКОСТИ не трогаем — рецепты ссылаются на «molten hsla»)
+	@SafeVarargs public static FluidGT create(String aName, String aLocalized, OreDictMaterial aMaterial, int aState, long aAmountPerUnit, long aTemperatureK, java.util.function.Supplier<ItemStack> aFullContainer, java.util.function.Supplier<ItemStack> aEmptyContainer, int aFluidAmount, Set<String>... aFluidList) {return create(aName, new Textures.BlockIcons.CustomIcon("fluids/" + aName.toLowerCase().replace(' ', '_')), aLocalized, aMaterial, null, aState, aAmountPerUnit, aTemperatureK, aFullContainer, aEmptyContainer, aFluidAmount, aFluidList);}
 
 	/**
 	 * Регистрирует ОДНУ GT6-жидкость (данные 1:1 из вызывающего кода) через {@link FluidGT}

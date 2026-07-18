@@ -404,8 +404,17 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry(tReg);
 		if (tRegistry == null) return;
 		net.minecraft.core.BlockPos tPos = aStub.getBlockPos();
+		// блок-гейт (корень mismatch-флуда): BE-сирота (блок в позиции не MTE — затёрт/air) НЕ реконструируется,
+		// стаб снимается → мир самоочищается от сирот вместо вечного «Block state mismatch … != air» при каждой загрузке.
+		if (!(aLevel.getBlockState(tPos).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) {
+			aLevel.removeBlockEntity(tPos);
+			long tN = sOrphansCleaned.incrementAndGet();
+			if (tN <= 20 || tN % 500 == 0) gregapi.data.CS.OUT.println("[GT6-WG] BE-сирота вычищен @" + tPos.toShortString() + " (блок=" + aLevel.getBlockState(tPos).getBlock() + "), всего=" + tN);
+			return;
+		}
 		gregapi.block.multitileentity.MultiTileEntityContainer tContainer = tRegistry.getNewTileEntityContainer(aLevel, tPos.getX(), tPos.getY(), tPos.getZ(), tID, tNBT);
 		if (tContainer == null || tContainer.mTileEntity == null) return;
 		aLevel.setBlockEntity(tContainer.mTileEntity); // pos-канал → реальная pos → крепит на своё место, заменяя стаб
 	}
+	private static final java.util.concurrent.atomic.AtomicLong sOrphansCleaned = new java.util.concurrent.atomic.AtomicLong();
 }

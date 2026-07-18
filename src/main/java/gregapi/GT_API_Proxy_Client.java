@@ -344,6 +344,15 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						}
 					}
 					gregapi.data.CS.OUT.println("[GT6-FLUID-PROBE] растекание: fluid-блоков=" + tCount + " меты: " + tMetas + " (1 блок с метой 7 = мета жива; >1 блока = поток жив)");
+					gregapi.data.CS.OUT.println("[GT6-WG-PROBE] placeBlock-откаты: гейт1(до BE)=" + gregapi.block.multitileentity.MultiTileEntityBlockInternal.sPlaceAbort1.get() + " гейт2(после BE)=" + gregapi.block.multitileentity.MultiTileEntityBlockInternal.sPlaceAbort2.get());
+					gregapi.data.CS.OUT.println("[GT6-WG-PROBE] статусы чанков-приёмников worldgen-BE: " + gregapi.util.WD.sWgBEStatus);
+					int tShown = 0;
+					for (Object[] tS : gregapi.util.WD.sWgBESamples) {
+						if (++tShown > 25) break;
+						net.minecraft.core.BlockPos tBP = (net.minecraft.core.BlockPos)tS[0];
+						String tNow = tW.hasChunkAt(tBP) ? String.valueOf(tW.getBlockState(tBP).getBlock()) : "чанк-не-загружен";
+						gregapi.data.CS.OUT.println("[GT6-WG-PROBE] BE " + tS[1] + " @" + tBP.toShortString() + " (" + tS[3] + "): при-записи=" + tS[2] + " сейчас=" + tNow);
+					}
 				});
 			} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] финал упал: " + e); }
 		}

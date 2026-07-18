@@ -33,5 +33,9 @@ public class MultiTileEntityContainer {
 		mBlockMetaData = aBlockMetaData;
 		mTileEntity = aTileEntity;
 		mBlock = aBlock;
+		// BE-кэш state: MTE-BE конструируется ДО установки блока (air-кэш) → vanilla LevelChunk.setBlockEntity
+		// печатал «Block state mismatch … != air, updating» на КАЖДЫЙ worldgen-MTE (~10k/мир, чистый шум — блок жив,
+		// vanilla сам чинил). Кэш выставляется контейнер-блоком сразу.
+		if (aTileEntity != null && aBlock != null) try {aTileEntity.setBlockState(aBlock.defaultBlockState());} catch (Throwable e) {/**/}
 	}
 }

@@ -48,6 +48,8 @@ import net.minecraft.world.level.Level;
  * @author Gregorius Techneticies
  */
 public class MultiTileEntityBlockInternal extends Block implements IBlock, IItemGT, IRenderedBlock, IBlockPlacable {
+	/** Диаг-счётчики П5 (mismatch-сироты): откаты placeBlock по гейтам «блок не встал». */
+	public static final java.util.concurrent.atomic.AtomicLong sPlaceAbort1 = new java.util.concurrent.atomic.AtomicLong(), sPlaceAbort2 = new java.util.concurrent.atomic.AtomicLong();
 	public MultiTileEntityRegistry mMultiTileEntityRegistry;
 
 	public MultiTileEntityBlockInternal(String aNameInternal) {
@@ -111,7 +113,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		// Set Block with reverse MetaData first.
 		WD.set(aWorld, aX, aY, aZ, aMTEContainer.mBlock, 15-aMTEContainer.mBlockMetaData, 2);
 		// Make sure the Block has been set, yes I know setBlock has a true/false return value, but guess what, it is not reliable in 0.0001% of cases!
-		if (WD.block(aWorld, aX, aY, aZ) != aMTEContainer.mBlock) {WD.set(aWorld, aX, aY, aZ, NB, 0, 0); return F;}
+		if (WD.block(aWorld, aX, aY, aZ) != aMTEContainer.mBlock) {sPlaceAbort1.incrementAndGet(); WD.set(aWorld, aX, aY, aZ, NB, 0, 0); return F;}
 		// TileEntity should not refresh yet!
 		((IMultiTileEntity)aMTEContainer.mTileEntity).setShouldRefresh(F);
 		// Fake-Set the TileEntity first, bypassing a lot of checks.
@@ -121,7 +123,8 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		// When the TileEntity is set now it SHOULD refresh!
 		((IMultiTileEntity)aMTEContainer.mTileEntity).setShouldRefresh(T);
 		// But make sure again that the Block we have set was actually set properly, because 0.0001%!
-		if (WD.block(aWorld, aX, aY, aZ) != aMTEContainer.mBlock) {WD.set(aWorld, aX, aY, aZ, NB, 0, 0); return F;}
+		// (диагноз mismatch-сирот: при откате BE уже приклеен fake-set'ом выше — снимаем, иначе BE-сирота в сейве)
+		if (WD.block(aWorld, aX, aY, aZ) != aMTEContainer.mBlock) {sPlaceAbort2.incrementAndGet(); try {aWorld.getChunk(aX >> 4, aZ >> 4).removeBlockEntity(new BlockPos(aX, aY, aZ));} catch (Throwable e) {/**/} WD.set(aWorld, aX, aY, aZ, NB, 0, 0); return F;}
 		// And finally properly set the TileEntity for real!
 		WD.te (aWorld, aX, aY, aZ, aMTEContainer.mTileEntity, aCauseBlockUpdates);
 		// Yep, all this just to set one Block and its TileEntity properly...
