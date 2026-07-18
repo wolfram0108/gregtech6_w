@@ -57,8 +57,11 @@ public class GT6ItemModel implements ItemModel {
 	@Override
 	public void update(ItemStackRenderState aOutput, ItemStack aItem, ItemModelResolver aResolver, ItemDisplayContext aCtx, net.minecraft.client.multiplayer.ClientLevel aLevel, net.minecraft.world.entity.ItemOwner aOwner, int aSeed) {
 		aOutput.appendModelIdentityElement(this);
-		// КРИТ: GUI кэширует иконку по getModelIdentity() (GuiItemAtlas.getOrUpdate). Один общий GT6ItemModel на все предметы →
-		// один identity → один слот → одна текстура у ВСЕХ. Добавляем ПО-ВАРИАНТНЫЙ ключ (item+GT6-meta) → у каждого свой слот.
+		// КРИТ: GUI кэширует ПИКСЕЛИ предмета по getModelIdentity() (GuiItemAtlas.getOrUpdate: identity совпал → слот READY →
+		// перерисовки НЕТ). Канон Mojang (CuboidItemModelWrapper.update): identity обязан включать ВСЁ, от чего зависят пиксели —
+		// каждый вычисленный тинт и foil добавляются appendModelIdentityElement. Поэтому: базовый ключ (item+GT6-meta) здесь, а
+		// ПЕР-ПАССОВЫЕ спрайт+тинт+foil добавляют renderFlatItem/renderBlockInventory (у инструментов материал в NBT, не в meta —
+		// без этого все инструменты одного типа делили ОДИН слот атласа и показывали первый отрисованный, Steel-серый без NBT).
 		aOutput.appendModelIdentityElement(aItem.getItem());
 		aOutput.appendModelIdentityElement((int) gregapi.util.ST.meta_(aItem));
 		try {
@@ -80,7 +83,17 @@ public class GT6ItemModel implements ItemModel {
 		try { GT6BlockModel.buildInventoryQuads(tQB, aBlock, aStack); } catch (Throwable e) {}
 		List<BakedQuad> tBuilt = tQB.quads();
 		if (tBuilt.isEmpty()) return;
+		// identity-вклад (канон, как в renderFlatItem): пиксели зависят от набора спрайтов квадов → в identity,
+		// иначе стеки с одинаковыми item+meta, но разным видом (NBT/state) делят один кэш-слот GuiItemAtlas.
+		java.util.TreeSet<String> tIdSpr = new java.util.TreeSet<>();
+		for (BakedQuad q : tBuilt) try { tIdSpr.add(q.materialInfo().sprite().contents().name().toString()); } catch (Throwable e) {}
+		for (String s : tIdSpr) aOutput.appendModelIdentityElement(s);
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
+		if (aStack.hasFoil()) {
+			tLayer.setFoilType(ItemStackRenderState.FoilType.STANDARD);
+			aOutput.setAnimated();
+			aOutput.appendModelIdentityElement(ItemStackRenderState.FoilType.STANDARD);
+		}
 		tLayer.prepareQuadList().addAll(tBuilt);
 		tLayer.setUsesBlockLight(true);
 		try { dumpItemSprite(aStack, tBuilt.get(0).materialInfo().sprite(), "block"); } catch (Throwable e) {}
@@ -98,7 +111,17 @@ public class GT6ItemModel implements ItemModel {
 			if (tSprite == null) continue;
 			if (tPass == 0) dumpItemSprite(aStack, tSprite, "flat");
 			int tColor = itemColor(aItem, aStack, tPass);
+			// identity-вклад пасса (канон CuboidItemModelWrapper.update:92): пиксели зависят от спрайта и тинта →
+			// оба в identity, иначе GuiItemAtlas отдаёт чужой кэш-слот (инструменты: материал в NBT, meta одинаковая).
+			aOutput.appendModelIdentityElement(tSprite.contents().name());
+			aOutput.appendModelIdentityElement(tColor);
 			ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
+			tLayer.setUsesBlockLight(false); // эталон ItemModelGenerator=GuiLight.FRONT: плоский предмет в GUI full-bright; без этого слой block-shade'ится (SOUTH-грань ~0.8) → предмет «затемнён» и цвет искажён тенью
+			if (aStack.hasFoil()) { // 1:1: GT6-1.7.10 рисует глинт по hasEffect (=isItemEnchanted) поверх пассов; канон neo — FoilType на слое + identity + animated (глинт скроллится)
+				tLayer.setFoilType(ItemStackRenderState.FoilType.STANDARD);
+				aOutput.setAnimated();
+				aOutput.appendModelIdentityElement(ItemStackRenderState.FoilType.STANDARD);
+			}
 			List<BakedQuad> tQuads = tLayer.prepareQuadList();
 			tQuads.add(flatFace(tSprite, true, tColor));
 			tQuads.add(flatFace(tSprite, false, tColor));
@@ -209,6 +232,87 @@ public class GT6ItemModel implements ItemModel {
 		if (!tMissSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] MISSING-sprite примеры: " + tMissSamples);
 	}
 
+	// ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+	// ВИЗУАЛ-ПАРИТЕТ (Ф2, судья 1:1 с оригиналом). Заменяет недействительный probeItemIcons (140 предметов, метрика
+	// «непурпур»). Снимает ПОЛНЫЙ render-дескриптор КАЖДОГО креатив-варианта тем же кодом, что рисует update()
+	// (iconForPass/itemColor/resolveSprite) → реально резолвнутый спрайт+тинт per pass. НЕ судит сам («found») —
+	// пишет ЧТО резолвится, чтобы компаратор сравнил с золотым дескриптором оригинала. Слепые зоны (throw) → "ERR", не "ok".
+	/** Дамп порт-дескриптора ВСЕХ GT6 item-вариантов (реальный креатив-набор через getSubItems). Файл gt6dump/descriptor.port.item.jsonl. */
+	public static void dumpItemDescriptors() {
+		java.util.List<String> tLines = new java.util.ArrayList<>();
+		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+			if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
+			java.util.List<ItemStack> tVariants = new java.util.ArrayList<>();
+			try {
+				java.lang.reflect.Method gsi = tItem.getClass().getMethod("getSubItems", net.minecraft.world.item.Item.class, net.minecraft.world.item.CreativeModeTab.class, java.util.List.class);
+				gsi.invoke(tItem, tItem, null, tVariants);
+			} catch (Throwable e) {/* нет getSubItems — одиночный вариант */}
+			if (tVariants.isEmpty()) tVariants.add(new ItemStack(tItem));
+			for (ItemStack tSt : tVariants) if (gregapi.util.ST.valid(tSt)) try { tLines.add(describeStack(tSt)); } catch (Throwable e) {}
+		}
+		java.util.Collections.sort(tLines);
+		try {
+			java.nio.file.Path tDir = java.nio.file.Path.of("gt6dump");
+			java.nio.file.Files.createDirectories(tDir);
+			java.nio.file.Files.write(tDir.resolve("descriptor.port.item.jsonl"), tLines, java.nio.charset.StandardCharsets.UTF_8);
+			gregapi.data.CS.OUT.println("[GT6-VP] item-дескрипторов=" + tLines.size() + " → gt6dump/descriptor.port.item.jsonl");
+		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-VP] запись дампа упала: " + e); }
+	}
+
+	/** Дамп render-дескриптора КОНКРЕТНЫХ стеков (для инжектора кандидата) в gt6dump/<aName> + в лог построчно. */
+	public static void dumpStacks(java.util.List<ItemStack> aStacks, String aName) {
+		java.util.List<String> tLines = new java.util.ArrayList<>();
+		for (ItemStack tS : aStacks) if (gregapi.util.ST.valid(tS)) try { tLines.add(describeStack(tS)); } catch (Throwable e) {}
+		try {
+			java.nio.file.Path tDir = java.nio.file.Path.of("gt6dump");
+			java.nio.file.Files.createDirectories(tDir);
+			java.nio.file.Files.write(tDir.resolve(aName), tLines, java.nio.charset.StandardCharsets.UTF_8);
+			gregapi.data.CS.OUT.println("[GT6-VP] дескрипторов кандидата=" + tLines.size() + " → gt6dump/" + aName);
+			for (String tL : tLines) gregapi.data.CS.OUT.println("[GT6-VP-CAND] " + tL);
+		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-VP] запись кандидата упала: " + e); }
+	}
+
+	/** Render-дескриптор одного стека: реально резолвнутый спрайт+тинт per pass (для flat) либо набор спрайтов (для block-item). */
+	private static String describeStack(ItemStack aStack) {
+		net.minecraft.resources.Identifier k = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
+		String tKey = (k == null ? "?" : k.toString()) + "#" + gregapi.util.ST.meta_(aStack);
+		net.minecraft.world.item.Item tItem = aStack.getItem();
+		StringBuilder sb = new StringBuilder(160).append("{\"k\":\"").append(jsonEsc(tKey)).append('"');
+		try {
+			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
+				sb.append(",\"path\":\"block\",\"spr\":[");
+				GT6QuadBuilder tQB = new GT6QuadBuilder();
+				try { GT6BlockModel.buildInventoryQuads(tQB, tBI.getBlock(), aStack); } catch (Throwable e) {}
+				java.util.TreeSet<String> tSpr = new java.util.TreeSet<>();
+				for (BakedQuad q : tQB.quads()) try { tSpr.add(q.materialInfo().sprite().contents().name().toString()); } catch (Throwable e) {}
+				boolean tF = true; for (String s : tSpr) { if (!tF) sb.append(','); tF = false; sb.append('"').append(jsonEsc(s)).append('"'); }
+				sb.append(']');
+			} else {
+				sb.append(",\"path\":\"flat\",\"p\":[");
+				int tPasses = itemRenderPasses(tItem, aStack);
+				for (int p = 0; p < tPasses; p++) {
+					Identifier tIcon = iconForPass(tItem, aStack, p);
+					String tSprite;
+					if (tIcon == null) tSprite = "null";
+					else {
+						TextureAtlasSprite s = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
+						if (s == null) s = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
+						tSprite = (s == null) ? ("MISSING:" + tIcon) : s.contents().name().toString();
+					}
+					int tTint = itemColor(tItem, aStack, p);
+					if (p > 0) sb.append(',');
+					sb.append("{\"pass\":").append(p).append(",\"icon\":\"").append(jsonEsc(tIcon == null ? "null" : tIcon.toString()))
+					  .append("\",\"sprite\":\"").append(jsonEsc(tSprite)).append("\",\"tint\":\"").append(String.format("%06x", tTint & 0xFFFFFF)).append("\"}");
+				}
+				sb.append(']');
+			}
+		} catch (Throwable e) { sb.append(",\"err\":\"").append(jsonEsc(e.getClass().getSimpleName())).append('"'); }
+		return sb.append('}').toString();
+	}
+
+	private static String jsonEsc(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
+
 	private static Identifier tryIcon(Object aTarget, String aMethod, Class<?> aArgType, Object aArg) {
 		try {
 			java.lang.reflect.Method m = aTarget.getClass().getMethod(aMethod, aArgType);
@@ -221,7 +325,7 @@ public class GT6ItemModel implements ItemModel {
 	private static BakedQuad flatFace(TextureAtlasSprite aSprite, boolean aFront, int aColor) {
 		int r=(aColor>>16)&0xFF, g=(aColor>>8)&0xFF, b8=aColor&0xFF;
 		Direction tDir = aFront ? Direction.SOUTH : Direction.NORTH;
-		float z = 0.5f;
+		float z = aFront ? 8.5f/16f : 7.5f/16f; // разнести front/back на 1px (как ItemModelGenerator): обе на z=0.5 → z-fight, тёмная задняя грань проступает
 		float[][] c = aFront
 			? new float[][]{{0,0,z, 0,16},{0,1,z, 0,0},{1,1,z, 16,0},{1,0,z, 16,16}}
 			: new float[][]{{1,0,z, 16,16},{1,1,z, 16,0},{0,1,z, 0,0},{0,0,z, 0,16}};
@@ -229,9 +333,10 @@ public class GT6ItemModel implements ItemModel {
 		QuadBakingVertexConsumer b = new QuadBakingVertexConsumer();
 		b.setSprite(new Material.Baked(aSprite, false));
 		b.setDirection(tDir);
-		for (int i = 0; i < 4; i++) {
+		b.setLightEmission(15); // full-bright: putBakedQuad берёт light=getLightCoordsWithEmission(lightEmission); GUI даёт тёмный lightCoords (даже без-тинтовая полоса тёмная) → форсим эмиссию 15 (как эталон плоского item-icon)
+		for (int i = 3; i >= 0; i--) { // КОРЕНЬ затемнения: winding вершин был инвертирован vs канон Mojang (FaceInfo) → GPU backface-cull скрывал SOUTH-грань (яркая нормаль) и показывал NORTH-грань (тёмная под ITEMS_FLAT-диффузом). Реверс порядка (i=3→0) чинит winding — тот же приём, что уже в GT6QuadBuilder.boundedFace:130
 			b.addVertex(c[i][0], c[i][1], c[i][2]);
-			b.setColor(r, g, b8, 255);
+			b.setColor(r, g, b8, 255); // тинт материала (белая проба подтвердила: цвет-механизм работает; корень — свет)
 			b.setNormal((float)n.x, (float)n.y, (float)n.z);
 			b.setUv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
 		}

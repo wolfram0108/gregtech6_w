@@ -145,6 +145,38 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.render.GT6ItemModel.probeItemIcons(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] скан упал: " + e); }
 	}
 
+	// КАНДИДАТ-ИНЖЕКТОР (визуал-паритет Ф2): под флагом run/gt6inject.flag СИНТЕЗИРУЕТ процедурные предметы-кандидаты
+	// (кирка Vibranium + Adamantium) прямо в инвентарь игрока при входе в мир (интегро-сервер) + дампит их render-дескриптор.
+	// Не крафт, не креатив-список — прямой sMetaTool.getToolWithStats (тот же стек, что дал бы крафт: слои+тинт+зачар). Once, gated.
+	private boolean mCandidateInjected = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onCandidateInject(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mCandidateInjected) return;
+		if (!new java.io.File("gt6inject.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null || tSrv.getPlayerList().getPlayers().isEmpty()) return;
+		mCandidateInjected = true;
+		try {
+			net.minecraft.server.level.ServerPlayer tPlayer = tSrv.getPlayerList().getPlayers().get(0);
+			gregapi.item.multiitem.MultiItemTool tMeta = gregapi.data.CS.ToolsGT.sMetaTool;
+			java.util.List<net.minecraft.world.item.ItemStack> tCands = new java.util.ArrayList<>();
+			if (tMeta != null) {
+				net.minecraft.world.item.ItemStack tVib = tMeta.getToolWithStats(gregapi.data.CS.ToolsGT.CONSTRUCTION_PICK, gregapi.data.MT.Vb, gregapi.data.MT.WOODS.Spruce);
+				net.minecraft.world.item.ItemStack tAda = tMeta.getToolWithStats(gregapi.data.CS.ToolsGT.CONSTRUCTION_PICK, gregapi.data.MT.Ad, gregapi.data.MT.WOODS.Spruce);
+				if (gregapi.util.ST.valid(tVib)) tCands.add(tVib);
+				if (gregapi.util.ST.valid(tAda)) tCands.add(tAda);
+			}
+			for (net.minecraft.world.item.ItemStack tS : tCands) tPlayer.getInventory().add(tS.copy());
+			// A/B-эталон: ванильные предметы рендерятся ВАНИЛЬНЫМ путём (не GT6ItemModel) → сравнить яркость/цвет с GT6-кирками (разводит «GT6-рендер сломан» vs «глобально»)
+			tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE));
+			tPlayer.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+			gregapi.data.CS.OUT.println("[GT6-INJECT] синтезировано в инвентарь: " + tCands.size() + " (Vibranium+Adamantium кирки) + ванильные iron_pickaxe/stick для A/B");
+			gregapi.render.GT6ItemModel.dumpStacks(tCands, "descriptor.port.candidate.jsonl");
+		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-INJECT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
 	// F-tileentity-construction (КЛИЕНТ-реконструкция MTE-BE): neo подменяет не-PrefixBlock GT6-MTE общим MTE_TYPE →
 	// TileEntityLoaderStub при десериализации BE чанка НА КЛИЕНТЕ. Стаб — не IRenderedBlockObject → passRenderingToObject=null
 	// → getRenderPasses=0 → MTE-блок НЕ рисуется (прозрачный: камни/палки/флюид-источники/машины). Серверная реконструкция
