@@ -182,6 +182,22 @@ public class GT_Client extends GT_Proxy {
 	@SubscribeEvent
 	public void receiveRenderEvent(RenderBlockScreenEffectEvent aEvent) {
 		if (aEvent.getBlockState().getBlock() == BlocksGT.Swamp) {
+			// 1.7.10 квад болотной пелены дословно (цвет (0, brightness/2, 0, 0.75), UV от yaw/pitch,
+			// плоскость z=-0.5) через канон ScreenEffectRenderer.renderFluid (26.1.2: buffer+RenderTypes.blockScreenEffect).
+			try {
+				net.minecraft.world.entity.player.Player tPlayer = GT_API.api_proxy.getThePlayer();
+				if (tPlayer != null) {
+					float tBright = tPlayer.getLightLevelDependentMagicValue(); // было getBrightness(partialTicks)
+					int tColor = net.minecraft.util.ARGB.colorFromFloat(0.75F, 0F, tBright / 2F, 0F);
+					float tUo = -tPlayer.getYRot() / 64F, tVo = tPlayer.getXRot() / 64F;
+					org.joml.Matrix4f tPose = aEvent.getPoseStack().last().pose();
+					com.mojang.blaze3d.vertex.VertexConsumer tBuf = aEvent.getBufferSource().getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.blockScreenEffect(WATER_OVERLAY));
+					tBuf.addVertex(tPose, -1, -1, -0.5F).setUv(4 + tUo, 4 + tVo).setColor(tColor);
+					tBuf.addVertex(tPose,  1, -1, -0.5F).setUv(    tUo, 4 + tVo).setColor(tColor);
+					tBuf.addVertex(tPose,  1,  1, -0.5F).setUv(    tUo,     tVo).setColor(tColor);
+					tBuf.addVertex(tPose, -1,  1, -0.5F).setUv(4 + tUo,     tVo).setColor(tColor);
+				}
+			} catch (Throwable e) {e.printStackTrace(ERR);}
 			aEvent.setCanceled(T);
 		}
 	}

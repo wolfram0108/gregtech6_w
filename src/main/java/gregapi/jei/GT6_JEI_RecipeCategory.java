@@ -55,7 +55,7 @@ import static gregapi.data.CS.*;
 public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe> {
 	/** См. {@code gregapi.NEI_RecipeMap.sOffsetX/sOffsetY} (gregapi/NEI_RecipeMap.java:66). */
 	private static final int OFFSET_X = 5, OFFSET_Y = 11;
-	private static final int WIDTH = 176, HEIGHT = 155;
+	private static final int WIDTH = 176, HEIGHT = 161;
 
 	private final RecipeMap mMap;
 	/** Система координат ЗАЯКОРЕНА ПО ПИКСЕЛЯМ (замер canner.png: рамка входа-1 @текстуры (34,24) ⇒ предмет (35,25)
@@ -69,7 +69,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 		mMap = aMap;
 		IDrawable tNEI = null, tGui = null;
 		try {
-			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 11, 176, 155);
+			tNEI = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse((RES_PATH_GUI + "machines/NEI.png").toLowerCase(java.util.Locale.ROOT)), 0, 5, 176, 161);
 			String tGuiPath = gregapi.util.UT.Code.stringValid(aMap.mGUIPath) ? aMap.mGUIPath : RES_PATH_GUI + aMap.mNameInternal + ".png";
 			tGui = aGuiHelper.createDrawable(net.minecraft.resources.Identifier.parse(tGuiPath.toLowerCase(java.util.Locale.ROOT)), 0, 3, 176, 79);
 		} catch (Throwable e) {ERR.println("JEI: фон категории '" + aMap.mNameInternal + "' не собрался: " + e);}
@@ -394,7 +394,7 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 			// NEI drawText @(10,73..123) шаг 10, чёрный без тени; addText(w,h)+setPosition (было (4,96) — 4px ширины
 			// давали текст-СТОЛБИК по букве, «Costs: 2…» вертикально)
 			if (!tLines.isEmpty()) aBuilder.addText(tLines, WIDTH - (10) - 4, 60)
-				.setPosition(10, 73).setColor(0xFF000000).setShadow(false).setLineSpacing(2);
+				.setPosition(15, 84).setColor(0xFF000000).setShadow(false).setLineSpacing(2);
 		} catch (Throwable e) {
 			ERR.println("JEI: RecipeMap '" + mMap.mNameInternal + "' failed to build its info text, skipping.");
 			e.printStackTrace(ERR);
