@@ -606,12 +606,12 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 					if (aRightclick) {
 						// SHIFT RIGHTCLICK
 						for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-							if (aPlayer.getInventory().getItem(i) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) {
+							if (ST.n(aPlayer.getInventory().getItem(i)) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) { // F15: neo getItem=EMPTY, 1.7.10 null
 								for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 									if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 										return aPlayer.containerMenu.getCarried();
 									}
-									aPlayer.getInventory().setItem(i, (consumeMaterials(aPlayer, aPlayer.getInventory().getItem(i), i != 0 || j != 0)));
+									aPlayer.getInventory().setItem(i, ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.getInventory().getItem(i)), i != 0 || j != 0))); // F15-границы: вход null-семантика, выход EMPTY-семантика
 								}
 							}
 						}
@@ -619,13 +619,13 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 					}
 					// SHIFT LEFTCLICK
 					for (int i = 0; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-						if (aPlayer.getInventory().getItem(i) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) {
+						if (ST.n(aPlayer.getInventory().getItem(i)) == null || (ST.equal(tCraftedStack, aPlayer.getInventory().getItem(i)) && tCraftedStack.getCount() + aPlayer.getInventory().getItem(i).getCount() <= aPlayer.getInventory().getItem(i).getMaxStackSize())) { // F15: neo getItem=EMPTY, 1.7.10 null
 							boolean temp = F;
 							for (int j = 0; j < tCraftedStack.getMaxStackSize() / tCraftedStack.getCount() && canDoCraftingOutput(); j++) {
 								if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 									return aPlayer.containerMenu.getCarried();
 								}
-								aPlayer.getInventory().setItem(i, (consumeMaterials(aPlayer, aPlayer.getInventory().getItem(i), i != 0 || j != 0)));
+								aPlayer.getInventory().setItem(i, ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.getInventory().getItem(i)), i != 0 || j != 0))); // F15-границы: вход null-семантика, выход EMPTY-семантика
 								temp = T;
 							}
 							if (temp) return aPlayer.containerMenu.getCarried();
@@ -639,12 +639,12 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 						if (!ST.equal(tStack = getCraftingOutput(T), tCraftedStack) || tStack.getCount() != tCraftedStack.getCount()) {
 							return aPlayer.containerMenu.getCarried();
 						}
-						aPlayer.containerMenu.setCarried(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), i != 0)); // neo: несомый предмет курсора — на AbstractContainerMenu.setCarried (1.7.10 InventoryPlayer.setItemStack).
+						aPlayer.containerMenu.setCarried(ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.containerMenu.getCarried()), i != 0))); // neo setCarried (1.7.10 InventoryPlayer.setItemStack); F15: getCarried=EMPTY ↔ 1.7.10 null-курсор.
 					}
 					return aPlayer.containerMenu.getCarried();
 				}
 				// LEFTCLICK
-				if (canDoCraftingOutput()) aPlayer.containerMenu.setCarried(consumeMaterials(aPlayer, aPlayer.containerMenu.getCarried(), F)); // neo AbstractContainerMenu.setCarried (см. выше).
+				if (canDoCraftingOutput()) aPlayer.containerMenu.setCarried(ST.nn(consumeMaterials(aPlayer, ST.n(aPlayer.containerMenu.getCarried()), F))); // neo setCarried (см. выше); F15: EMPTY→null на входе.
 				return aPlayer.containerMenu.getCarried();
 			}
 			return null;

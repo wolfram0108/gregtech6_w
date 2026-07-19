@@ -2657,6 +2657,7 @@ public class UT {
 		 *  neo-decompiled SoundEvents.java. neo-native строки (не в карте) проходят как есть. */
 		private static final java.util.Map<String, String> SFX_LEGACY = new java.util.HashMap<>();
 		static {
+			SFX_LEGACY.put("random.chestopen", "block.chest.open");         SFX_LEGACY.put("random.chestclosed", "block.chest.close"); // сверено: SoundEvents.java:352,354
 			SFX_LEGACY.put("random.break", "entity.item.break");            SFX_LEGACY.put("random.anvil_use", "block.anvil.use");
 			SFX_LEGACY.put("random.anvil_break", "block.anvil.destroy");    SFX_LEGACY.put("random.anvil_land", "block.anvil.land");
 			SFX_LEGACY.put("random.click", "ui.button.click");              SFX_LEGACY.put("random.pop", "entity.item.pickup");

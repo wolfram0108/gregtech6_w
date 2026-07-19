@@ -352,15 +352,65 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ItemBase.onItemUseFirst → MultiItem → Behavior_Tool → IBlockToolable.Util.onToolClick → TileEntityBase09FacingSingle:68
 	// должен сменить mFacing на кликнутую сторону; заодно фиксируем износ (GT.ToolStats.k до/после).
 	private int mToolProbePhase = 0; private int mToolProbeTick = 0;
+	private net.minecraft.core.BlockPos mProbeChestPos, mProbeTablePos;
+	private static long probeLong(Object aObj, Class<?> aDecl, String aField) {
+		try { java.lang.reflect.Field f = aDecl.getDeclaredField(aField); f.setAccessible(true); return f.getLong(aObj); } catch (Throwable e) { return Long.MIN_VALUE; }
+	}
+	private static double probeNum(Object aObj, Class<?> aDecl, String aField) {
+		try { java.lang.reflect.Field f = aDecl.getDeclaredField(aField); f.setAccessible(true); Object v = f.get(aObj); return v instanceof Number tN ? tN.doubleValue() : Double.NaN; } catch (Throwable e) { return Double.NaN; }
+	}
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onToolProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if (mToolProbePhase >= 1) return;
+		if (mToolProbePhase >= 2) return;
 		if (!new java.io.File("gt6toolprobe.flag").exists()) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
-		if (tSrv == null) { mToolProbePhase = 1; return; }
-		if (++mToolProbeTick < 300) return;
+		if (tSrv == null) { mToolProbePhase = 2; return; }
+		++mToolProbeTick;
+		if (mToolProbePhase == 1) {
+			// ФАЗА 2 (~6с после установки): замер тиков и синка — сервер-BE стола/сундука + КЛИЕНТ-BE сундука (крышка)
+			if (mToolProbeTick < 420) return;
+			mToolProbePhase = 2;
+			final java.io.PrintStream o2 = gregapi.data.CS.OUT;
+			try {
+				if (mProbeChestPos != null) {
+					net.minecraft.world.level.block.entity.BlockEntity tCBE = tMC.level.getBlockEntity(mProbeChestPos);
+					o2.println("[GT6-TICK-PROBE] КЛИЕНТ сундук: be=" + (tCBE == null ? "null" : tCBE.getClass().getSimpleName())
+						+ " mTimer=" + (tCBE == null ? "-" : probeLong(tCBE, gregapi.tileentity.base.TileEntityBase02AdjacentTEBuffer.class, "mTimer"))
+						+ " mUsingPlayers=" + (tCBE == null ? "-" : probeNum(tCBE, gregapi.block.multitileentity.example.MultiTileEntityChest.class, "mUsingPlayers"))
+						+ " mLidAngle=" + (tCBE == null ? "-" : probeNum(tCBE, gregapi.block.multitileentity.example.MultiTileEntityChest.class, "mLidAngle")));
+				}
+				net.minecraft.world.item.ItemStack tCliMenu31 = null;
+				for (net.minecraft.world.inventory.Slot tS : tMC.player.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tCliMenu31 = tS.getItem(); break; }
+				o2.println("[GT6-CRAFT-PROBE] КЛИЕНТ-меню слот31=" + tCliMenu31 + " (меню=" + tMC.player.containerMenu.getClass().getSimpleName() + ")");
+			} catch (Throwable e) { o2.println("[GT6-TICK-PROBE] клиент-фаза упала: " + e); }
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				if (mProbeChestPos != null) {
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tW.getBlockEntity(mProbeChestPos);
+					o2.println("[GT6-TICK-PROBE] СЕРВЕР сундук: be=" + (tBE == null ? "null" : tBE.getClass().getSimpleName())
+						+ " mTimer=" + (tBE == null ? "-" : probeLong(tBE, gregapi.tileentity.base.TileEntityBase02AdjacentTEBuffer.class, "mTimer"))
+						+ " mUsingPlayers=" + (tBE == null ? "-" : probeNum(tBE, gregapi.block.multitileentity.example.MultiTileEntityChest.class, "mUsingPlayers"))
+						+ " canUpdate=" + (tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tR ? tR.canUpdate() : null));
+				}
+				if (mProbeTablePos != null) {
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tW.getBlockEntity(mProbeTablePos);
+					o2.println("[GT6-TICK-PROBE] СЕРВЕР стол: be=" + (tBE == null ? "null" : tBE.getClass().getSimpleName())
+						+ " mTimer=" + (tBE == null ? "-" : probeLong(tBE, gregapi.tileentity.base.TileEntityBase02AdjacentTEBuffer.class, "mTimer"))
+						+ " canUpdate=" + (tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tR ? tR.canUpdate() : null)
+						+ " mUpdatedGrid=" + (tBE instanceof gregapi.tileentity.tools.MultiTileEntityAdvancedCraftingTable tT ? tT.mUpdatedGrid : null)
+						+ " inv31=" + (tBE instanceof net.minecraft.world.Container tC ? tC.getItem(31) : "-"));
+					net.minecraft.world.item.ItemStack tSrvMenu31 = null;
+					for (net.minecraft.world.inventory.Slot tS : tP.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tSrvMenu31 = tS.getItem(); break; }
+					o2.println("[GT6-CRAFT-PROBE] сервер-меню слот31=" + tSrvMenu31 + " (меню=" + tP.containerMenu.getClass().getSimpleName() + ")");
+				}
+				o2.println("[GT6-TICK-PROBE] итог: mTimer>0 обе стороны = тики живы; клиент mUsingPlayers>0 = синк крышки жив");
+			} catch (Throwable e) { o2.println("[GT6-TICK-PROBE] сервер-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		if (mToolProbeTick < 300) return;
 		mToolProbePhase = 1;
 		final java.io.PrintStream o = gregapi.data.CS.OUT;
 		tSrv.execute(() -> { try {
@@ -434,7 +484,33 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				boolean tOpened = tP.containerMenu != tP.inventoryMenu;
 				o.println("[GT6-CHEST-PROBE] be=" + (tCBE == null ? "null" : tCBE.getClass().getSimpleName()) + " result=" + tCRes
 					+ " menu=" + tP.containerMenu.getClass().getSimpleName() + " открыт=" + tOpened);
+				mProbeChestPos = tTarget; // GUI остаётся открытым до фазы 2 → mUsingPlayers>0, крышка должна анимироваться
 			} else o.println("[GT6-CHEST-PROBE] MTE#32745 невалиден");
+			// крафт-стол: ищем ID по каноническому классу, ставим рядом (для фазы-2 замера тиков)
+			short tTableID = -1;
+			for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations)
+				if (tC.mCanonicalTileEntity instanceof gregapi.tileentity.tools.MultiTileEntityAdvancedCraftingTable) { tTableID = tC.mID; break; }
+			if (tTableID >= 0) {
+				net.minecraft.core.BlockPos tTBase = tBase.offset(0, 0, 2);
+				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tTBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(tTBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tTableID).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tTBase.getX()+0.5, tTBase.getY()+1.0, tTBase.getZ()+0.5), net.minecraft.core.Direction.UP, tTBase, false));
+				tP.setShiftKeyDown(false);
+				mProbeTablePos = tTBase.above();
+				o.println("[GT6-CRAFT-PROBE] стол MTE#" + tTableID + " установлен: be=" + (tW.getBlockEntity(mProbeTablePos) == null ? "null" : tW.getBlockEntity(mProbeTablePos).getClass().getSimpleName()));
+				// кладём ванильный рецепт (бревно→доски) в сетку и открываем GUI стола: фаза 2 сверит слот 31 сервер↔клиент
+				if (tW.getBlockEntity(mProbeTablePos) instanceof net.minecraft.world.Container tCont) {
+					tCont.setItem(21, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.OAK_LOG));
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+					tP.gameMode.useItemOn(tP, tW, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mProbeTablePos.getX()+1.0, mProbeTablePos.getY()+0.5, mProbeTablePos.getZ()+0.5), net.minecraft.core.Direction.EAST, mProbeTablePos, false));
+					o.println("[GT6-CRAFT-PROBE] бревно в слот 21, меню=" + tP.containerMenu.getClass().getSimpleName());
+				}
+			} else o.println("[GT6-CRAFT-PROBE] AdvancedCraftingTable не найден в реестре");
 		} catch (Throwable e) { o.println("[GT6-TOOL-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 

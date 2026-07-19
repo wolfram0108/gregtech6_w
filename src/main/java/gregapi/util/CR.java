@@ -525,7 +525,16 @@ public class CR {
 		
 		List<ICraftingRecipeGT> tList = list();
 		for (int i = 0; i < tList.size(); i++) if (tList.get(i).matches(aCrafting, aWorld)) return (sLastRecipe = tList.get(i)).getCraftingResult(aCrafting);
-		
+
+		// F11: в 1.7.10 list() был ГЛОБАЛЬНЫМ CraftingManager-списком — стол GT6 крафтил и ВАНИЛЬНЫЕ рецепты.
+		// В neo они живут в датапак-RecipeManager (на mod-init пуст, поэтому не в BUFFER) — консультируем его
+		// здесь же, в едином центре подбора (тот же смысл «глобального списка», 1:1 поведение стола).
+		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
+			java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>> tVanilla =
+				tSL.getServer().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, aCrafting, tSL);
+			if (tVanilla.isPresent()) return tVanilla.get().value().assemble(aCrafting);
+		}
+
 		int tIndex = 0;
 		ItemStack tStack1 = null, tStack2 = null;
 		for (int i = 0, j = aCrafting.size(); i < j; i++) {

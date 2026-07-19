@@ -154,6 +154,9 @@ public class ST {
 	 * весь мод обязан пересекать границу только через {@link #nn} / {@link #ni}, не ad-hoc тернарниками.
 	 */
 	public static ItemStack nn(ItemStack aStack) {return aStack == null ? ItemStack.EMPTY : aStack;}
+	/** F15-обратная граница: neo отдаёт EMPTY там, где 1.7.10 отдавал null (курсор getCarried, слоты Inventory.getItem).
+	 *  GT6-тела 1:1 рассуждают null-семантикой — на входе из движка нормализуем EMPTY→null этим хелпером (пара к {@link #nn}). */
+	public static ItemStack n(ItemStack aStack) {return aStack == null || aStack.isEmpty() ? null : aStack;}
 	/** F15: движок→GT6. Движковый синглтон {@code ItemStack.EMPTY} (и null) → null (GT6-пусто); ЗНАЧИМЫЙ
 	 *  {@code count==0} (стек — не тот же объект, что {@code ItemStack.EMPTY}) переживает границу как есть. */
 	public static ItemStack ni(ItemStack aStack) {return (aStack == null || aStack == ItemStack.EMPTY) ? null : aStack;}
