@@ -467,6 +467,16 @@ public class GT6ItemModel implements ItemModel {
 		return sb.toString();
 	}
 
+	// A/GAP-4 (варьирование соединений труб/проводов): connector-TE рендерит по mConnections (getTexture2 по соединениям
+	// соседей). Дескриптор мерит дефолт mConnections=0 (изолированная труба); здесь ставим mConnections=aConn (рефлексия)
+	// перед getTexture → спрайт по соединению. Ключ несёт @conn (симметрично порт↔golden). Восстановление 0 после — не нужно
+	// (canonical-TE одноразовый для дампа).
+	public static String describeWorldBlockConn(net.minecraft.world.level.block.entity.BlockEntity aBE, net.minecraft.world.level.block.Block aBlock, byte aConn) {
+		try { java.lang.reflect.Field f = aBE == null ? null : findField(aBE.getClass(), "mConnections"); if (f != null) f.setByte(aBE, aConn); } catch (Throwable e) {}
+		String tBase = describeWorldBlockCanonical(aBE, aBlock);
+		return tBase.replaceFirst("(\\{\"k\":\"[^\"]*)\"", "$1@conn" + aConn + "\"");
+	}
+
 	private static java.lang.reflect.Field findField(Class<?> aClass, String aName) {
 		for (Class<?> c = aClass; c != null && c != Object.class; c = c.getSuperclass()) try { java.lang.reflect.Field f = c.getDeclaredField(aName); f.setAccessible(true); return f; } catch (Throwable e) {}
 		return null;

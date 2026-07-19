@@ -372,6 +372,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
 					if (tC.mCanonicalTileEntity == null || !tSeen.add(tC.mCanonicalTileEntity.getClass())) continue;
 					try { tLines.add(gregapi.render.GT6ItemModel.describeWorldBlockCanonical(tC.mCanonicalTileEntity, tBlk)); } catch (Throwable e) {/* один класс не рушит дамп */}
+					// GAP-4: connector-TE (трубы/провода) — доп. дамп с mConnections=63 (все соединения), рендер по соединениям.
+					if (tC.mCanonicalTileEntity instanceof gregapi.tileentity.connectors.TileEntityBase10ConnectorRendered)
+						try { tLines.add(gregapi.render.GT6ItemModel.describeWorldBlockConn(tC.mCanonicalTileEntity, tBlk, (byte) 63)); } catch (Throwable e) {/**/}
 				}
 				java.nio.file.Path tDir = java.nio.file.Paths.get("gt6dump");
 				java.nio.file.Files.createDirectories(tDir);
