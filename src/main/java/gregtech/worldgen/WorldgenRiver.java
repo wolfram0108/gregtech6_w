@@ -71,14 +71,21 @@ public class WorldgenRiver extends WorldgenObject {
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;
-					
-					BlockRiver.PLACEMENT_ALLOWED = T;
-					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
-						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-						aChunk.markUnsaved();
-						return F;
+					// worldgen-заморозка (как ванильный генератор): ВЕРХНИЙ слой воды в ХОЛОДНОМ биоме генерится сразу льдом,
+					// а не мёрзнет позже через randomTick при приходе игрока (иначе GT6-чанки без льда рядом с замёрзшими
+					// vanilla-чанками). Холод = vanilla-условие !warmEnoughToRain (Biome:184). Под льдом — River (ниже по циклу).
+					net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ);
+					if (!aWorld.getBiome(tP).value().warmEnoughToRain(tP, aWorld.getSeaLevel())) {
+						tStorage.setBlockState(tX, tY & 15, tZ, Blocks.ICE.defaultBlockState());
+					} else {
+						BlockRiver.PLACEMENT_ALLOWED = T;
+						if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.River, 0, 0)) {
+							WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
+							aChunk.markUnsaved();
+							return F;
+						}
+						BlockRiver.PLACEMENT_ALLOWED = F;
 					}
-					BlockRiver.PLACEMENT_ALLOWED = F;
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.River.defaultBlockState());
 				}
