@@ -505,13 +505,57 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// (Ocean/River/Swamp) как ВОДУ — заливает куб Ocean вокруг игрока и через ~2с читает ДВИЖКОВЫЕ флаги погружения
 	// (isInWater/isUnderWater/isEyeInFluid(WATER)/getFluidHeight/air/deltaY). Реальный путь: те же поля, что vanilla-вода
 	// ставит в Entity.baseTick через EntityFluidInteraction. isInWater=true = получен весь vanilla-водоканал (push/утопление/плавание).
-	private int mFluidProbePhase = 0; private int mFluidProbeTick = 0;
+	private int mFluidProbePhase = 0; private int mFluidProbeTick = 0; private boolean mB5Done = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onFluidProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mFluidProbePhase >= 2) return;
 		if (!new java.io.File("gt6fluidprobe.flag").exists()) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
+		// B5-СУДЬЯ (цвет/рендер материал-жидкостей движком, клиент): render-type (translucent?), FluidGT-цвет+текстура,
+		// getTexture(→BlockTextureFluid) — что neo РЕАЛЬНО рисует для BlockBaseFluid (масла/кислоты) через GT6BlockModel.
+		// Вода (BlockWaterlike/Ocean) — B1-B4 (getFluidState→WATER, vanilla mc26-рендер = goal «реальная вода 26 версии»).
+		if (!mB5Done) {
+			mB5Done = true;
+			final java.io.PrintStream ob5 = gregapi.data.CS.OUT;
+			try {
+				net.minecraft.core.Direction[] tDirs = {null, net.minecraft.core.Direction.UP, net.minecraft.core.Direction.DOWN,
+					net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH, net.minecraft.core.Direction.EAST, net.minecraft.core.Direction.WEST};
+				net.minecraft.client.renderer.block.BlockStateModelSet tSet = tMC.getModelManager().getBlockStateModelSet();
+				// Инвариант B-цвета: FL-enum-жидкости (масла) несут цвет В ТЕКСТУРЕ → tint UNCOLOURED; расплавы (molten.X)
+				// на generic-текстуре → tint = mRGBaLiquid (цвет материала). Статистика по ВСЕМ + примеры расплавов (цветные).
+				int tTotal = 0, tColoured = 0, tRendered = 0, tTransl = 0;
+				java.util.List<String> tMolten = new java.util.ArrayList<>();
+				for (net.minecraft.world.level.block.Block bl : gregapi.data.FL.BLOCKS.values()) {
+					if (!(bl instanceof gregapi.block.fluid.BlockBaseFluid tMF)) continue;
+					tTotal++;
+					String tNm = gregapi.data.FL.name(tMF.mFluid, false);
+					gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(tMF.mFluid);
+					short[] tRGBa = (tGT == null) ? null : tGT.getRGBa();
+					boolean tColour = tRGBa != null && !((tRGBa[0] & 0xFF) == 255 && (tRGBa[1] & 0xFF) == 255 && (tRGBa[2] & 0xFF) == 255);
+					if (tColour) tColoured++;
+					// рендер + слой (первые 60 для скорости)
+					if (tTotal <= 60) {
+						net.minecraft.world.level.block.state.BlockState tS = tMF.defaultBlockState();
+						java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new java.util.ArrayList<>();
+						tSet.get(tS).collectParts(tMC.level, tMC.player.blockPosition(), tS, net.minecraft.util.RandomSource.create(42L), tParts);
+						int tQn = 0; boolean tT = false;
+						for (net.minecraft.client.renderer.block.dispatch.BlockStateModelPart tp : tParts)
+							for (net.minecraft.core.Direction d : tDirs) {
+								java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> qs = tp.getQuads(d);
+								if (qs != null) for (net.minecraft.client.resources.model.geometry.BakedQuad q : qs) { tQn++; if ("TRANSLUCENT".equals(String.valueOf(q.materialInfo().layer()))) tT = true; }
+							}
+						if (tQn > 0) tRendered++;
+						if (tT) tTransl++;
+					}
+					if (tNm.contains("molten") && tMolten.size() < 5)
+						tMolten.add(tNm + " rgba=" + (tRGBa == null ? "?" : (tRGBa[0] & 0xFF) + "," + (tRGBa[1] & 0xFF) + "," + (tRGBa[2] & 0xFF)));
+				}
+				ob5.println("[GT6-FLUID-PROBE] B5 ИТОГ: BlockBaseFluid=" + tTotal + " цветных-tint(≠белый)=" + tColoured
+					+ " рендерятся(quads>0, из 60)=" + tRendered + " translucent(из 60)=" + tTransl);
+				ob5.println("[GT6-FLUID-PROBE] B5 расплавы-примеры: " + tMolten);
+			} catch (Throwable e) { ob5.println("[GT6-FLUID-PROBE] B5 упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+		}
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
 		if (tSrv == null) { mFluidProbePhase = 2; return; }
 		++mFluidProbeTick;
