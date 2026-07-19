@@ -85,6 +85,8 @@ public class WorldgenRiver extends WorldgenObject {
 							return F;
 						}
 						BlockRiver.PLACEMENT_ALLOWED = F;
+						// Стартовый тик 1:1 onBlockAdded (10+rand(90)) — см. WorldgenSwamp (neo прото-чанк без колбэков).
+						aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.River, 10+RNGSUS.nextInt(90));
 					}
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.River.defaultBlockState());

@@ -85,6 +85,9 @@ public class WorldgenOcean extends WorldgenObject {
 							return F;
 						}
 						BlockOcean.PLACEMENT_ALLOWED = F;
+						// Стартовый тик 1:1 onBlockAdded Ocean (гейт UPDATE_TICK: чистый океан-чанк не тикает —
+						// оригинальная оптимизация); см. WorldgenSwamp (neo прото-чанк без колбэков).
+						if (BlockOcean.UPDATE_TICK) aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.Ocean, 10+RNGSUS.nextInt(90));
 					}
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.Ocean.defaultBlockState());

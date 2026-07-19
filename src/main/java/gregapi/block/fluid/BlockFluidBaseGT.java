@@ -143,7 +143,13 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), new java.util.Random(aRandom.nextLong()));
 	}
 	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
-		aWorld.scheduleTick(aPos, this, tickRate);
+		onBlockAdded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
+	}
+	/** было Forge {@code BlockFluidBase.onBlockAdded(World,x,y,z)} (:227-230) — тело 1:1. Диспатч из onPlace
+	 *  ОБЯЗАТЕЛЕН: Ocean/River/Swamp переопределяют (PLACEMENT_ALLOWED-гейт + стартовый тик 10+rand(90)) —
+	 *  без диспатча их канал был сиротой (болото не тикало → грязь не конвертировалась). */
+	public void onBlockAdded(Level aWorld, int aX, int aY, int aZ) {
+		aWorld.scheduleTick(new BlockPos(aX, aY, aZ), this, tickRate);
 	}
 	@Override protected void neighborChanged(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock, net.minecraft.world.level.redstone.Orientation aOrientation, boolean aMovedByPiston) {
 		onNeighborBlockChange(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aBlock);

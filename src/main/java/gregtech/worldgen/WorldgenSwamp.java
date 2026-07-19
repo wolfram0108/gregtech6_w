@@ -80,6 +80,11 @@ public class WorldgenSwamp extends WorldgenObject {
 						return F;
 					}
 					BlockSwamp.PLACEMENT_ALLOWED = F;
+					// Стартовый тик 1:1 onBlockAdded (10+rand(90)): в 1.7.10 populate шёл по живому миру и
+					// onBlockAdded планировал его сам; neo прото-чанк колбэков не даёт → планируем явно
+					// (тик персистится в ProtoChunkTicks). Отсюда каскад вниз (updateTick тикает aY-1) —
+					// конверсия грязи болотом и вся над-логика вод оживают без соседского события.
+					aWorld.scheduleTick(new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ), BlocksGT.Swamp, 10+RNGSUS.nextInt(90));
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.Swamp.defaultBlockState());
 				}
