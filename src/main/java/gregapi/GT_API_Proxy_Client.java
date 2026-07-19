@@ -154,6 +154,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private boolean mIconsProbed = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onClientTickProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!new java.io.File("gt6probe.flag").exists()) return; // debug визуал-паритета — по умолчанию ВЫКЛ (гейт флагом)
 		if (mIconsProbed) return;
 		// Ждём ЗАГРУЖЕННЫЙ МИР: DataComponents предметов привязываются на world-load, в меню ItemStack/getDefaultInstance
 		// NPE-ит («Components not bound yet»). При входе игрока в мир (level!=null) components готовы, атлас стежен → probe истинный.
@@ -791,6 +792,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private boolean mFluidDiagDone = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onOreMaterialProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!new java.io.File("gt6probe.flag").exists()) return; // debug (ore/icons/engine-дамп + форс-открытие инвентаря) — ВЫКЛ по умолчанию
 		if (mOreProbeRuns >= 2) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) { mOreProbeTick = -1; return; }
