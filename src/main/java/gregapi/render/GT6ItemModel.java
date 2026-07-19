@@ -388,22 +388,52 @@ public class GT6ItemModel implements ItemModel {
 		try { java.lang.reflect.Field fA = be == null ? null : findField(be.getClass(), "mActive"); if (fA != null) tActive = fA.getBoolean(be); } catch (Throwable e) {}
 		StringBuilder sb = new StringBuilder(200).append("{\"k\":\"").append(jsonEsc((k == null ? "?" : k.toString()) + "#" + teName))
 			.append("\",\"path\":\"world\",\"facing\":").append(tFacing).append(",\"conn\":").append(tConn).append(",\"active\":").append(tActive).append(",\"spr\":[");
-		GT6QuadBuilder tQB = new GT6QuadBuilder();
+		// СИММЕТРИЯ с golden (DumpRenderBlocks): getTexture(block,pass,side,sides) НАПРЯМУЮ на BE + распаковка ITexture→Identifier
+		// (не buildRendererQuads: он renderBlock-gate → пустые квады для машин/спец-BER; golden берёт getTexture напрямую).
+		java.util.TreeSet<String> tSpr = new java.util.TreeSet<>();
+		String tTintS = null;
 		try {
 			if (be instanceof gregapi.render.IRenderedBlockObject ro) {
 				gregapi.render.IRenderedBlockObject ro2 = ro.passRenderingToObject(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
-				gregapi.render.GT6BlockModel.buildRendererQuads(tQB, ro2 != null ? ro2 : ro, b, aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+				if (ro2 != null) ro = ro2;
+				boolean[] tAll = {true,true,true,true,true,true};
+				int tPasses = Math.min(8, Math.max(1, ro.getRenderPasses(b, tAll)));
+				for (int pass = 0; pass < tPasses; pass++) {
+					if (!ro.usesRenderPass(pass, tAll)) continue;
+					for (byte side = 0; side < 6; side++) try { tTintS = collectIconsWorld(ro.getTexture(b, pass, side, tAll), tSpr, tTintS); } catch (Throwable e) {}
+				}
 			}
 		} catch (Throwable e) {}
-		java.util.TreeSet<String> tSpr = new java.util.TreeSet<>();
-		int tTint = -1;
-		for (BakedQuad q : tQB.quads()) try {
-			tSpr.add(q.materialInfo().sprite().contents().name().toString());
-			if (tTint == -1) { int c = q.bakedColors().color(0) & 0xFFFFFF; if (c != 0xFFFFFF) tTint = c; }
-		} catch (Throwable e) {}
 		boolean tF = true; for (String s : tSpr) { if (!tF) sb.append(','); tF = false; sb.append('"').append(jsonEsc(s)).append('"'); }
-		sb.append(']').append(",\"tint\":\"").append(String.format("%06x", (tTint == -1 ? 0xFFFFFF : tTint))).append("\"}");
+		sb.append(']').append(",\"tint\":\"").append(tTintS == null ? "ffffff" : tTintS).append("\"}");
 		return sb.toString();
+	}
+
+	/** Распаковка порт-ITexture → имена спрайтов (Identifier.toString, симметрично golden IIcon.getIconName) + первый не-белый тинт. */
+	private static String collectIconsWorld(gregapi.render.ITexture tx, java.util.Set<String> out, String tint) {
+		if (tx == null) return tint;
+		try {
+			if (tx instanceof gregapi.render.BlockTextureMulti tM) {
+				java.lang.reflect.Field f = gregapi.render.BlockTextureMulti.class.getDeclaredField("mTextures"); f.setAccessible(true);
+				Object[] arr = (Object[]) f.get(tM); if (arr != null) for (Object sub : arr) tint = collectIconsWorld((gregapi.render.ITexture) sub, out, tint);
+				return tint;
+			}
+			if (tx instanceof gregapi.render.BlockTextureDefault tD) {
+				java.lang.reflect.Field f = gregapi.render.BlockTextureDefault.class.getDeclaredField("mIconContainer"); f.setAccessible(true);
+				Object cont = f.get(tD);
+				if (cont instanceof gregapi.render.IIconContainer tIC) { net.minecraft.resources.Identifier ic = tIC.getIcon(0); if (ic != null) out.add(ic.toString()); }
+				java.lang.reflect.Field fc = gregapi.render.BlockTextureDefault.class.getDeclaredField("fRGBa"); fc.setAccessible(true);
+				short[] rgba = (short[]) fc.get(tD);
+				if (tint == null && rgba != null && rgba.length >= 3 && !(rgba[0] == 255 && rgba[1] == 255 && rgba[2] == 255)) tint = String.format("%02x%02x%02x", rgba[0] & 0xFF, rgba[1] & 0xFF, rgba[2] & 0xFF);
+				return tint;
+			}
+			if (tx instanceof gregapi.render.BlockTextureSided tS) {
+				java.lang.reflect.Field f = gregapi.render.BlockTextureSided.class.getDeclaredField("mIconContainers"); f.setAccessible(true);
+				Object[] arr = (Object[]) f.get(tS); if (arr != null) for (Object cont : arr) if (cont instanceof gregapi.render.IIconContainer tIC) { net.minecraft.resources.Identifier ic = tIC.getIcon(0); if (ic != null) out.add(ic.toString()); }
+				return tint;
+			}
+		} catch (Throwable e) {}
+		return tint;
 	}
 
 	private static java.lang.reflect.Field findField(Class<?> aClass, String aName) {
