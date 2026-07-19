@@ -379,7 +379,18 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						net.minecraft.core.BlockPos tFlr = tBase.offset((tGx % 16) * 2, 0, (tGx / 16) * 2);
 						tW.setBlock(tFlr.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
 						tW.setBlock(tFlr, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-						boolean tPl = tIt.onItemUse(tS, tP, tW, tFlr.getX(), tFlr.getY()-1, tFlr.getZ(), gregapi.data.CS.SIDE_TOP, 0.5f, 1.0f, 0.5f);
+						// прямой container-placement (BE-init как MTE.onItemUse:214-221, БЕЗ canPlace/collision-гейтов) — для ДАМПА
+						// нужен лишь живой BE (getTexture), не проверка клика (та закрыта N1). Все классы встают (батареи/спец тоже).
+						gregapi.block.multitileentity.MultiTileEntityContainer tMTE = tReg.getNewTileEntityContainer(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tS);
+						boolean tPl = false;
+						if (tMTE != null) {
+							((gregapi.block.multitileentity.IMultiTileEntity) tMTE.mTileEntity).setShouldRefresh(false);
+							gregapi.util.WD.te(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tMTE.mTileEntity, false);
+							gregapi.util.WD.set(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tMTE.mBlock, tMTE.mBlockMetaData, 0, false);
+							((gregapi.block.multitileentity.IMultiTileEntity) tMTE.mTileEntity).setShouldRefresh(true);
+							gregapi.util.WD.te(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tMTE.mTileEntity, true);
+							tPl = true;
+						}
 						if (tPl) mBlockDumpPositions.add(tFlr);
 						tGx++;
 					} catch (Throwable e) {/* один класс не рушит дамп */}
