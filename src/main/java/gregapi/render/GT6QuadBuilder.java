@@ -172,6 +172,43 @@ public final class GT6QuadBuilder {
 		return tBuilder.bakeQuad();
 	}
 
+	/** F3-fluid: quad жидкости с произвольными вершинами {x,y,z,u,v} (u,v в texel-единицах 0..16, как 1.7.10
+	 *  getInterpolatedU/V) — кванта-высоты/склоны поверхности. Всегда unculled (видимость решает
+	 *  {@link RendererBlockFluid} 1:1-логикой shouldSideBeRendered, а не neo-cull). aBothSides — вторая обратная
+	 *  намотка (1.7.10 рендерил без backface-cull и дублировал winding: поверхность видна из-под жидкости). */
+	public void fluidQuad(float[][] aCorners, Direction aDir, Identifier aIcon, short[] aRGBa, boolean aBothSides) {
+		if (aIcon == null || aCorners == null || aCorners.length < 4) return;
+		TextureAtlasSprite tSprite = sprite(aIcon);
+		if (tSprite == null) {if (sMissingSprites.size() < 400) sMissingSprites.add(aIcon.toString()); return;}
+		mFullCube = false;
+		BakedQuad tQuad = vertexQuad(aCorners, tSprite, aRGBa, aDir, false);
+		if (tQuad != null) {mQuads.addUnculledFace(tQuad); mAll.add(tQuad);}
+		if (aBothSides) {
+			BakedQuad tBack = vertexQuad(aCorners, tSprite, aRGBa, aDir.getOpposite(), true);
+			if (tBack != null) {mQuads.addUnculledFace(tBack); mAll.add(tBack);}
+		}
+	}
+	/** Один quad по 4 вершинам {x,y,z,u,v} (u,v 0..16) с tint; aReverse — обратная намотка. */
+	private BakedQuad vertexQuad(float[][] aCorners, TextureAtlasSprite aSprite, short[] aRGBa, Direction aDir, boolean aReverse) {
+		int r = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[0] & 0xFF) : 255;
+		int g = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[1] & 0xFF) : 255;
+		int b = aRGBa != null && aRGBa.length >= 3 ? (aRGBa[2] & 0xFF) : 255;
+		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
+		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
+		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
+		tBuilder.setSprite(new Material.Baked(aSprite, false));
+		tBuilder.setDirection(aDir);
+		int[] tOrder = aReverse ? new int[]{3,2,1,0} : new int[]{0,1,2,3};
+		for (int idx = 0; idx < 4; idx++) {
+			int i = tOrder[idx];
+			tBuilder.addVertex(aCorners[i][0], aCorners[i][1], aCorners[i][2]);
+			tBuilder.setColor(r, g, b, a);
+			tBuilder.setNormal((float)n.x, (float)n.y, (float)n.z);
+			tBuilder.setUv(aSprite.getU(aCorners[i][3] / 16f), aSprite.getV(aCorners[i][4] / 16f));
+		}
+		return tBuilder.bakeQuad();
+	}
+
 	/** F3-render cross-модель (растения/цветы): X-форма из 2 диагональных плоскостей, каждая ДВУСТОРОННЯЯ (unculled,
 	 *  видна с обеих сторон). Текстура полная (UV 0..16 /16f, как vanilla block/cross). Используют IRenderedCross-блоки. */
 	public void crossFace(Identifier aIcon, short[] aRGBa) {

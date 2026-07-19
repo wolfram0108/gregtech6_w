@@ -204,4 +204,70 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 		if (tQuantaRemaining >= aBelowThis) return -1;
 		return tQuantaRemaining;
 	}
+
+	/** аксессор densityDir для рендера (было 1.7.10 {@code FL.dir(BlockFluidBase)} / прямое поле). */
+	public int dir() {return densityDir;}
+
+	/** было Forge {@code BlockFluidBase.getQuantaPercentage(IBlockAccess,x,y,z)} (:452) — тело 1:1. */
+	public final float getQuantaPercentage(BlockGetter aWorld, int aX, int aY, int aZ) {
+		return getQuantaValue(aWorld, aX, aY, aZ) / quantaPerBlockFloat;
+	}
+
+	/** было 1.7.10 {@code Block.isBlockSolid(IBlockAccess,x,y,z,side)} — тело {@code material.isSolid()}
+	 *  (тот же приём, что {@link gregtech.blocks.fluids.BlockWaterlike}). */
+	protected boolean isBlockSolid(BlockGetter aWorld, int aX, int aY, int aZ, byte aSide) {
+		return WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isSolid();
+	}
+
+	/** было Forge {@code BlockFluidBase.getFlowVector(IBlockAccess,x,y,z)} (:458-515) — тело 1:1
+	 *  (Vec3.createVectorHelper→new Vec3, addVector→add; {@code (y-y)*power}=0 свёрнут). Читает рендер
+	 *  ({@link gregapi.render.RendererBlockFluid} — поворот текстуры поверхности по направлению потока). */
+	public net.minecraft.world.phys.Vec3 getFlowVector(BlockGetter aWorld, int aX, int aY, int aZ) {
+		net.minecraft.world.phys.Vec3 vec = new net.minecraft.world.phys.Vec3(0, 0, 0);
+		int decay = quantaPerBlock - getQuantaValue(aWorld, aX, aY, aZ);
+		for (int side = 0; side < 4; ++side) {
+			int x2 = aX, z2 = aZ;
+			switch (side) {
+			case 0: --x2; break;
+			case 1: --z2; break;
+			case 2: ++x2; break;
+			default: ++z2; break;
+			}
+			int otherDecay = quantaPerBlock - getQuantaValue(aWorld, x2, aY, z2);
+			if (otherDecay >= quantaPerBlock) {
+				if (!WD.getMaterial(WD.block(aWorld, x2, aY, z2)).blocksMovement()) {
+					otherDecay = quantaPerBlock - getQuantaValue(aWorld, x2, aY - 1, z2);
+					if (otherDecay >= 0) {
+						int power = otherDecay - (decay - quantaPerBlock);
+						vec = vec.add((x2 - aX) * power, 0, (z2 - aZ) * power);
+					}
+				}
+			} else if (otherDecay >= 0) {
+				int power = otherDecay - decay;
+				vec = vec.add((x2 - aX) * power, 0, (z2 - aZ) * power);
+			}
+		}
+		if (WD.block(aWorld, aX, aY + 1, aZ) == this) {
+			boolean flag =
+				isBlockSolid(aWorld, aX    , aY    , aZ - 1, (byte)2) ||
+				isBlockSolid(aWorld, aX    , aY    , aZ + 1, (byte)3) ||
+				isBlockSolid(aWorld, aX - 1, aY    , aZ    , (byte)4) ||
+				isBlockSolid(aWorld, aX + 1, aY    , aZ    , (byte)5) ||
+				isBlockSolid(aWorld, aX    , aY + 1, aZ - 1, (byte)2) ||
+				isBlockSolid(aWorld, aX    , aY + 1, aZ + 1, (byte)3) ||
+				isBlockSolid(aWorld, aX - 1, aY + 1, aZ    , (byte)4) ||
+				isBlockSolid(aWorld, aX + 1, aY + 1, aZ    , (byte)5);
+			if (flag) vec = vec.normalize().add(0.0D, -6.0D, 0.0D);
+		}
+		return vec.normalize();
+	}
+
+	/** было Forge {@code BlockFluidBase.getFlowDirection(IBlockAccess,x,y,z)} (static :421-430) — тело 1:1
+	 *  (+instanceof-гейт перед кастом: зовётся только на позиции самой жидкости, семантика не меняется). */
+	public static double getFlowDirection(BlockGetter aWorld, int aX, int aY, int aZ) {
+		Block tBlock = WD.block(aWorld, aX, aY, aZ);
+		if (!(tBlock instanceof BlockFluidBaseGT) || !WD.getMaterial(tBlock).isLiquid()) return -1000.0D;
+		net.minecraft.world.phys.Vec3 vec = ((BlockFluidBaseGT)tBlock).getFlowVector(aWorld, aX, aY, aZ);
+		return vec.x == 0.0D && vec.z == 0.0D ? -1000.0D : Math.atan2(vec.z, vec.x) - Math.PI / 2D;
+	}
 }

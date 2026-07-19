@@ -73,6 +73,15 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 			return;
 		}
 
+		// F3-fluid: жидкости-блоки (нефти/газ/гео-вода) — 1:1 порт RendererBlockFluid.renderWorldBlock:
+		// кванта-высота, склоны угловых высот по соседям 3×3 (смыкают уровни без дыр), газ зеркально от потолка.
+		// Вместо box-пути IRenderedBlock (тот оставлен для item-формы).
+		if (tBlock instanceof gregapi.block.fluid.BlockBaseFluid tFluid) {
+			RendererBlockFluid.collectFluidQuads(tQB, aLevel, tX, tY, tZ, tFluid);
+			aParts.add(new SimpleModelWrapper(tQB.build(), true, mParticle));
+			return;
+		}
+
 		// F3-render: MTE-блоки рисует BER (MultiTileEntityBER), НЕ baked-модель. Причина (probe, окончательно): neo section-compile
 		// регион (worker-снапшот) НЕ отдаёт MTE-BE (getBlockEntity=null 100%) → тут геометрию собрать нельзя. BER берёт живой BE на
 		// main-thread. Пропускаем (пустой меш; часть MTE регион случайно захватывал — рисовали бы дважды с BER). Флюид/BlockBase — ниже (render на блоке).

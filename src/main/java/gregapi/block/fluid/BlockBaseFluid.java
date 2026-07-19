@@ -429,7 +429,21 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// Текстура+цвет флюида — из центра F5 (BlockTextureFluid → FluidGT.of(mFluid): still-иконка + mRGBa + свечение). Одна текстура
 	// на все грани/один проход, полный куб. Кэшируем (mFluid final). alpha=T (флюид полупрозрачный, если слой это позволит).
 	private gregapi.render.ITexture mRenderTexture = null;
-	private gregapi.render.ITexture renderTexture() {if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(mFluid, T); return mRenderTexture;}
+	public gregapi.render.ITexture renderTexture() {if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(mFluid, T); return mRenderTexture;}
+
+	/** было shouldSideBeRendered(IBlockAccess,x,y,z,side) (:348-356 оригинала) — тело 1:1, world-aware
+	 *  (координаты СОСЕДА). Читает {@link gregapi.render.RendererBlockFluid} — neo skipRendering потерял
+	 *  World/BlockPos, а fluid-мешу видимость нужна per-позиции (грань к соседней жидкости/opaque скрыта,
+	 *  склоны угловых высот смыкают уровни без дыр). */
+	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
+		Block aBlock = WD.block(aWorld, aX, aY, aZ);
+		if (aBlock == NB) return T;
+		if (aBlock == this || WD.getMaterial(aBlock) == Material.water || WD.visOpq(aBlock)) return F;
+		if (aWorld.getBlockState(new BlockPos(aX, aY, aZ)).isAir()) return T;
+		BlockEntity tTileEntity = aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
+		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
+		return T;
+	}
 	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return renderTexture();}
 	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return renderTexture();}
 	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return aRenderPass == 0;}

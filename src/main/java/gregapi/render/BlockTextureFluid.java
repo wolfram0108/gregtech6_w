@@ -112,6 +112,10 @@ public class BlockTextureFluid implements ITexture {
 		return mIcon;
 	}
 
+	/** Иконка жидкости для fluid-меша ({@link RendererBlockFluid}): GT6-жидкость несёт ОДНУ текстуру
+	 *  (FL.create → CustomIcon("fluids/имя")) — still==flowing, как Forge Fluid.setIcons(still) 1.7.10. */
+	public Identifier icon() {return mIcon;}
+
 	@Override
 	public void renderXPos(Object aRenderer, Block aBlock, int aX, int aY, int aZ, int aBrightness, boolean aChangedBlockBounds) {
 		ITexture.Util.renderSide(SIDE_X_POS, getIcon(5), mRGBa, mAllowAlpha, mLuminosity > aBrightness, T, aRenderer, aBlock, aX, aY, aZ, Math.max(mLuminosity, aBrightness), aChangedBlockBounds);
