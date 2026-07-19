@@ -43,16 +43,6 @@ import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
  */
 public class GT6ItemModel implements ItemModel {
 
-	// РЕШАЮЩИЙ дамп (once, первые 30 РАЗНЫХ GT6-предметов): какой спрайт РЕАЛЬНО кладётся в quad каждого предмета — одинаковый у всех или разный.
-	private static final java.util.Set<String> sDumpSeen = new java.util.HashSet<>();
-	private static void dumpItemSprite(ItemStack aStack, TextureAtlasSprite aSprite, String aVia) {
-		try {
-			net.minecraft.resources.Identifier k = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
-			if (k == null || !(k.getNamespace().equals("gregtech")||k.getNamespace().equals("gregapi"))) return;
-			String key = k.getPath()+"#"+aStack.getDamageValue();
-			if (sDumpSeen.size() < 30 && sDumpSeen.add(k.getPath())) gregapi.data.CS.OUT.println("[GT6-ITEMDUMP] "+key+" via="+aVia+" sprite="+(aSprite==null?"null":aSprite.contents().name()));
-		} catch (Throwable e) {}
-	}
 
 	@Override
 	public void update(ItemStackRenderState aOutput, ItemStack aItem, ItemModelResolver aResolver, ItemDisplayContext aCtx, net.minecraft.client.multiplayer.ClientLevel aLevel, net.minecraft.world.entity.ItemOwner aOwner, int aSeed) {
@@ -121,7 +111,6 @@ public class GT6ItemModel implements ItemModel {
 		}
 		tLayer.prepareQuadList().addAll(tBuilt);
 		tLayer.setUsesBlockLight(true);
-		try { dumpItemSprite(aStack, tBuilt.get(0).materialInfo().sprite(), "block"); } catch (Throwable e) {}
 		try { tLayer.setParticleMaterial(new Material.Baked(tBuilt.get(0).materialInfo().sprite(), false)); } catch (Throwable e) {}
 	}
 
@@ -134,7 +123,6 @@ public class GT6ItemModel implements ItemModel {
 			TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
 			if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
 			if (tSprite == null) continue;
-			if (tPass == 0) dumpItemSprite(aStack, tSprite, "flat");
 			int tColor = itemColor(aItem, aStack, tPass);
 			// identity-вклад пасса (канон CuboidItemModelWrapper.update:92): пиксели зависят от спрайта и тинта →
 			// оба в identity, иначе GuiItemAtlas отдаёт чужой кэш-слот (инструменты: материал в NBT, meta одинаковая).
