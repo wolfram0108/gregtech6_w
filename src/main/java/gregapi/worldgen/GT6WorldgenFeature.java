@@ -358,7 +358,11 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 				net.minecraft.world.level.block.entity.BlockEntity tCur = tChunk.getBlockEntity(tPos);
 				if (tCur == null) { tBE.clearRemoved(); tLevel.setBlockEntity(tBE); tCur = tBE; } // BE всё же потерялся кросс-чанк — переприкрепить
 				// СИНК клиенту, получившему чанк: worldgen-MTE не синкаются авто (getUpdatePacket=null) → шлём GT6-пакет данных (PacketSyncDataIDs → клиент создаёт BE).
-				if (tCur instanceof gregapi.tileentity.base.TileEntityBase03TicksAndSync tSync) tSync.sendClientData(true, null);
+				// N5-прозрачность: было только TileEntityBase03TicksAndSync (ТИКУЮЩИЕ) → non-ticking worldgen-MTE (камешки Rock/палки —
+				// TileEntityBase03MultiTileEntities, getUpdateTag=0) клиенту не синкались → прозрачны. Оба корня реализуют общий
+				// ITileEntitySynchronising.sendUpdateToPlayer (Base02Sync:99 и TicksAndSync:101 → sendClientData) — синкаем ЧЕРЕЗ него
+				// целевому игроку, получившему чанк (точнее broadcast). Покрывает обе ветки MTE одним централизованным вызовом.
+				if (tCur instanceof gregapi.tileentity.ITileEntitySynchronising tSync) tSync.sendUpdateToPlayer(tPlayer);
 			} catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 		}
 	}

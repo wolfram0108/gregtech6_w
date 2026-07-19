@@ -345,6 +345,38 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PLACE-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// N5-прозрачность СУДЬЯ (гейт gt6inject.flag): скан клиент-чанков на worldgen-камешки MultiTileEntityRock — клиент-BE
+	// существует (не прозрачен) + level!=null (mTexture реальная). До onChunkWatch-фикса non-ticking worldgen-MTE клиенту не
+	// синкались (getUpdateTag=0) → found=0. После (sendUpdateToPlayer через ITileEntitySynchronising) → found>0.
+	private int mRockScanPhase = 0; private int mRockScanTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onRockScan(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mRockScanPhase >= 1) return;
+		if (!new java.io.File("gt6inject.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		if (++mRockScanTick < 420) return;
+		mRockScanPhase = 1;
+		java.io.PrintStream o = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.world.level.Level tCL = tMC.level;
+			net.minecraft.core.BlockPos tPP = tMC.player.blockPosition();
+			int tFound = 0, tLevelOK = 0, tTexOK = 0;
+			for (int dx = -24; dx <= 24; dx++) for (int dz = -24; dz <= 24; dz++) for (int dy = -6; dy <= 6; dy++) {
+				net.minecraft.core.BlockPos tSP = tPP.offset(dx, dy, dz);
+				if (!(tCL.getBlockState(tSP).getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) continue;
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tCL.getBlockEntity(tSP);
+				if (tBE instanceof gregtech.tileentity.placeables.MultiTileEntityRock tRk) {
+					tFound++;
+					if (tRk.getLevel() != null) tLevelOK++;
+					try { if (tRk.mTexture != null) tTexOK++; } catch (Throwable e) {/**/}
+				}
+			}
+			o.println("[GT6-ROCKSCAN] клиент worldgen-камешки: found=" + tFound + " levelOK=" + tLevelOK + " texOK=" + tTexOK
+				+ " (found>0 = клиент-BE камешков ЕСТЬ → не прозрачны; onChunkWatch non-ticking синк жив)");
+		} catch (Throwable e) { o.println("[GT6-ROCKSCAN] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
 	// N5-СУДЬЯ (worldgen-камни прозрачны+снег, гейт gt6inject.flag): ставит реальный BlockStones над игроком и замеряет
 	// ДВИЖКОВО: (рендер) getTexture 6 граней valid/null + резолв спрайта mIcons[0] (PURPLE=missing); (снег) collision
 	// shape isFaceFull(UP) — true у полного каменного блока = снег ляжет (норма для полного куба; MTE-камешек box=null → false).
