@@ -83,7 +83,7 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 		if (aNBT.contains(NBT_OUTPUT)) mRate = aNBT.getLongOr(NBT_OUTPUT, 0L);
 		// F16 MTE-canonical-init: RECIPE_MAPS.get может вернуть null (карта ещё не зарегистрирована при построении
 		// канонического инстанса на server-start) — не перезатираем дефолт mRecipes (FM.FluidBed), иначе NPE на :87.
-		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMap = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP)); if (tMap != null) mRecipes = tMap;}
+		if (aNBT.contains(NBT_FUELMAP)) {RecipeMap tMap = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_FUELMAP).orElse("")); if (tMap != null) mRecipes = tMap;}
 		if (aNBT.contains(NBT_EFFICIENCY)) mEfficiency = (short)UT.Code.bind_(0, 10000, aNBT.getShortOr(NBT_EFFICIENCY, (short)0));
 		if (aNBT.contains(NBT_ENERGY_EMITTED)) mEnergyTypeEmitted = TagData.createTagData(aNBT.getStringOr(NBT_ENERGY_EMITTED, ""));
 		mTank.setCapacity(Math.max(mRecipes.mMaxFluidInputSize, mRate));

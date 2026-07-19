@@ -139,7 +139,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// id клиента ≠ id сервера → ВСЕ пакеты контента/слотов меню молча дропаются клиентом (проверка id в
 			// handleContainerSetSlot/Content). Оборачиваем фабрику мостом с id сетевого меню (= серверный id).
 			final gregapi.gui.ContainerCommon fMenu = aMenu;
-			try { if (aMenu.mTileEntity instanceof gregapi.tileentity.ITileEntityGUI tGUI) { Object tScreen = gregapi.gui.ContainerCommon.withWindowID(fMenu.containerId, () -> tGUI.getGUIClient(fMenu.mGUIID, aInv.player)); if (tScreen instanceof gregapi.gui.ContainerClient tCC) return tCC; } }
+			try { if (aMenu.mTileEntity instanceof gregapi.tileentity.ITileEntityGUI tGUI) { Object tScreen = gregapi.gui.ContainerCommon.withWindowID(fMenu.containerId, () -> tGUI.getGUIClient(fMenu.mGUIID, aInv.player)); if (tScreen instanceof gregapi.gui.ContainerClient tCC) {
+				// счётчик-баланс (сундук-«хор»): сетевой контейнер (createFromNetwork) УЖЕ вызвал openInventoryGUI на клиент-TE,
+				// и свежий контейнер из getGUIClient вызвал ЕЩЁ раз; removed() при закрытии декрементит ОДИН раз → клиентский
+				// mUsingPlayers залипал >0 навсегда (крышка вечно открыта, звук у всех «открытых» при входе в зону).
+				// Компенсация: закрываем счёт сетевого контейнера — экран владеет только своим.
+				fMenu.mTileEntity.closeInventoryGUI();
+				return tCC;
+			} } }
 			catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-GUI] getGUIClient упал, fallback-экран: "+e); }
 			return new gregapi.gui.ContainerClient(aMenu, gregapi.data.CS.RES_PATH_GUI + "chests/" + (aMenu.mTileEntity == null ? 1 : aMenu.mTileEntity.getSizeInventoryGUI()) + ".png");
 		});
@@ -357,7 +364,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ItemBase.onItemUseFirst → MultiItem → Behavior_Tool → IBlockToolable.Util.onToolClick → TileEntityBase09FacingSingle:68
 	// должен сменить mFacing на кликнутую сторону; заодно фиксируем износ (GT.ToolStats.k до/после).
 	private int mToolProbePhase = 0; private int mToolProbeTick = 0;
-	private net.minecraft.core.BlockPos mProbeChestPos, mProbeTablePos, mProbePipePos, mProbePipePos2;
+	private net.minecraft.core.BlockPos mProbeChestPos, mProbeTablePos, mProbePipePos, mProbePipePos2, mProbeElectroPos, mProbeSchemePipePos;
+	private net.minecraft.core.BlockPos[] mProbeChest3;
 	private static long probeLong(Object aObj, Class<?> aDecl, String aField) {
 		try { java.lang.reflect.Field f = aDecl.getDeclaredField(aField); f.setAccessible(true); return f.getLong(aObj); } catch (Throwable e) { return Long.MIN_VALUE; }
 	}
@@ -409,6 +417,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				for (net.minecraft.world.inventory.Slot tS : tMC.player.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tCli31 = tS.getItem(); break; }
 				o4.println("[GT6-SYNC-PROBE] ФАЗА4 КЛИЕНТ: меню=" + tMC.player.containerMenu.getClass().getSimpleName()
 					+ " слот31=" + tCli31 + " (ждали: пусто = per-tick дифф доносит)");
+				if (mProbeChest3 != null) {
+					StringBuilder tSB = new StringBuilder("[GT6-CHEST3-PROBE] КЛИЕНТ:");
+					for (int i = 0; i < 3; i++) {
+						net.minecraft.world.level.block.entity.BlockEntity tBE3 = tMC.level.getBlockEntity(mProbeChest3[i]);
+						tSB.append(" #").append(i).append(":using=").append(tBE3 == null ? "-" : (long)probeNum(tBE3, gregapi.block.multitileentity.example.MultiTileEntityChest.class, "mUsingPlayers"))
+							.append(",lid=").append(tBE3 == null ? "-" : probeNum(tBE3, gregapi.block.multitileentity.example.MultiTileEntityChest.class, "mLidAngle"));
+					}
+					tSB.append(" (ждали: >0 ТОЛЬКО у #0)");
+					o4.println(tSB.toString());
+				}
 			} catch (Throwable e) { o4.println("[GT6-SYNC-PROBE] фаза4 клиент упала: " + e); }
 			tSrv.execute(() -> { try {
 				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
@@ -430,6 +448,31 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					o4.println("[GT6-PIPE-PROBE] труба-2 (GT6-River сбоку) через ~15с: блок=" + tPS.getBlock().getClass().getSimpleName()
 						+ " be=" + (tPBE == null ? "null" : tPBE.getClass().getSimpleName())
 						+ " цела=" + (tPS.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock) + " (air=orphan-cleanup, вода=вытеснение)");
+				}
+				if (mProbeSchemePipePos != null) {
+					net.minecraft.world.level.block.entity.BlockEntity tPipeBE = tP.level().getBlockEntity(mProbeSchemePipePos);
+					net.minecraft.world.level.block.entity.BlockEntity tElBE = mProbeElectroPos == null ? null : tP.level().getBlockEntity(mProbeElectroPos);
+					String tPipeFluid = tPipeBE instanceof net.neoforged.neoforge.fluids.capability.IFluidHandler tFH ? String.valueOf(tFH.getFluidInTank(0)) : "-";
+					String tElFluid = "-", tElRecipes = "-", tElTex = "-";
+					if (tElBE instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tM) {
+						tElRecipes = tM.mRecipes == null ? "null" : tM.mRecipes.mNameInternal;
+						tElTex = tM.mGUITexture;
+						tElFluid = tM.mTanksInput.length > 0 ? String.valueOf(tM.mTanksInput[0].getFluid()) : "нет танков";
+					}
+					boolean tCoverOn = tPipeBE instanceof gregapi.tileentity.base.TileEntityBase06Covers tTC && tTC.mCovers != null && tTC.mCovers.mIDs[5] != 0;
+					o4.println("[GT6-SCHEME-PROBE] через ~15с: ковер(EAST)=" + tCoverOn + " труба-танк0=" + tPipeFluid
+						+ " | эл-лизер: recipes=" + tElRecipes + " guiTex=" + tElTex + " танк-in0=" + tElFluid
+						+ " | блок-восточнее-трубы=" + tP.level().getBlockState(mProbeSchemePipePos.offset(1, 0, 0)).getBlock().getClass().getSimpleName()
+						+ " мета=" + gregapi.util.WD.meta(tP.level(), mProbeSchemePipePos.getX()+1, mProbeSchemePipePos.getY(), mProbeSchemePipePos.getZ())
+						+ " isSource=" + tP.level().getFluidState(mProbeSchemePipePos.offset(1, 0, 0)).isSource());
+				}
+				if (mProbeChest3 != null) {
+					StringBuilder tSB = new StringBuilder("[GT6-CHEST3-PROBE] СЕРВЕР:");
+					for (int i = 0; i < 3; i++) {
+						net.minecraft.world.level.block.entity.BlockEntity tBE3 = tP.level().getBlockEntity(mProbeChest3[i]);
+						tSB.append(" #").append(i).append(":using=").append(tBE3 == null ? "-" : (long)probeNum(tBE3, gregapi.block.multitileentity.example.MultiTileEntityChest.class, "mUsingPlayers"));
+					}
+					o4.println(tSB.toString());
 				}
 			} catch (Throwable e) { o4.println("[GT6-SYNC-PROBE] фаза4 сервер упала: " + e); } });
 			return;
@@ -478,6 +521,18 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					try { tP.containerMenu.broadcastFullState(); o2.println("[GT6-CRAFT-PROBE] broadcastFullState отправлен (контроль diff-пути)"); } catch (Throwable e) { o2.println("[GT6-CRAFT-PROBE] broadcastFullState УПАЛ: " + e); }
 				}
 				o2.println("[GT6-TICK-PROBE] итог: mTimer>0 обе стороны = тики живы; клиент mUsingPlayers>0 = синк крышки жив");
+				// СХЕМА-ДИАГНОСТИКА: прямой вызов цепочки заливки (мимо ковра) — где обрывается драйн
+				if (mProbeSchemePipePos != null) {
+					net.minecraft.world.level.block.entity.BlockEntity tPipeBE = tW.getBlockEntity(mProbeSchemePipePos);
+					if (tPipeBE instanceof net.neoforged.neoforge.fluids.capability.IFluidHandler tFH && tPipeBE instanceof gregapi.tileentity.base.TileEntityBase06Covers tT6) {
+						long tR = gregapi.data.FL.fill_(tFH, gregapi.data.CS.ALL_SIDES_THIS_AND_ANY[5], gregapi.data.FL.Water.make(1000), true);
+						net.minecraft.world.level.block.Block tSideBlock = tT6.getBlockAtSide((byte)5);
+						o2.println("[GT6-SCHEME-DIAG] прямой FL.fill_(труба, {EAST,ANY}, вода1000)=" + tR
+							+ " getBlockAtSide(EAST)=" + (tSideBlock == null ? "null" : tSideBlock.getClass().getSimpleName())
+							+ " ==Blocks.WATER=" + (tSideBlock == net.minecraft.world.level.block.Blocks.WATER)
+							+ " metaAtSide=" + tT6.getMetaDataAtSide((byte)5));
+					}
+				}
 				// СИНК-ТЕСТ: переоткрыть меню стола (client-BE уже реконструирован → экран не самозакроется),
 				// затем СЛОМАТЬ рецепт (второе бревно в слот 24) → сервер-тик очистит слот 31 → per-tick дифф
 				// обязан донести очистку клиенту; фаза 3 сверит.
@@ -596,7 +651,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// труба + вода (репорт: «блок сразу пропадает при контакте с водой»): ставим трубу, рядом источник воды
 			short tPipeID = -1;
 			for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations)
-				if (tC.mCanonicalTileEntity instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid) { tPipeID = tC.mID; break; }
+				if (tC.mCanonicalTileEntity instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPF
+					&& tPF.getTankCapacity(0) >= 1000) { tPipeID = tC.mID; break; } // танк ≥1000: fillAll-контракт «всё или ничего» на 1000mb-куске
 			if (tPipeID >= 0) {
 				net.minecraft.core.BlockPos tPBase = tBase.offset(-3, 0, 0);
 				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
@@ -629,6 +685,64 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					o.println("[GT6-PIPE-PROBE] труба-2 @" + mProbePipePos2.toShortString() + " be=" + (tW.getBlockEntity(mProbePipePos2) == null ? "null" : tW.getBlockEntity(mProbePipePos2).getClass().getSimpleName()) + "; GT6-River рядом");
 				} else o.println("[GT6-PIPE-PROBE] BlocksGT.River == null — GT6-вода недоступна пробе");
 			} else o.println("[GT6-PIPE-PROBE] PipeFluid не найден в реестре");
+			// СХЕМА ИГРОКА: электролизер (низ) + труба сверху + GT6-River сбоку от трубы + drain-ковер на трубе к воде
+			if (tPipeID >= 0 && gregapi.data.CS.BlocksGT.River != null) {
+				net.minecraft.core.BlockPos tEBase = tBase.offset(-3, 0, 3);
+				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tEBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(tEBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(20091).copy()); // Electrolyzer (LV)
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tEBase.getX()+0.5, tEBase.getY()+1.0, tEBase.getZ()+0.5), net.minecraft.core.Direction.UP, tEBase, false));
+				mProbeElectroPos = tEBase.above();
+				net.minecraft.core.BlockPos tEPipe = mProbeElectroPos.above();
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tPipeID).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mProbeElectroPos.getX()+0.5, mProbeElectroPos.getY()+1.0, mProbeElectroPos.getZ()+0.5), net.minecraft.core.Direction.UP, mProbeElectroPos, false));
+				tP.setShiftKeyDown(false);
+				mProbeSchemePipePos = tEPipe;
+				// река сбоку от трубы (восток), ЗАМУРОВАНА (конечная GT6-вода иначе растечётся и уйдёт из ячейки)
+				tW.setBlock(tEPipe.offset(1, -1, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tEPipe.offset(2,  0, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tEPipe.offset(1,  0, 1), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tEPipe.offset(1,  0,-1), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tEPipe.offset(1,  1, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tEPipe.offset(1, 0, 0), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3); // ванильный ИСТОЧНИК (одиночная GT6-река испаряется — артефакт пробы)
+				// drain-ковер на восточную грань трубы (движковым кликом, как игрок)
+				net.minecraft.world.item.ItemStack tDrain = gregapi.data.IL.Cover_Drain.get(1);
+				if (gregapi.util.ST.valid(tDrain)) {
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tDrain);
+					net.minecraft.world.InteractionResult tCoverRes = tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tEPipe.getX()+1.0, tEPipe.getY()+0.5, tEPipe.getZ()+0.5), net.minecraft.core.Direction.EAST, tEPipe, false));
+					boolean tCoverOn = tW.getBlockEntity(tEPipe) instanceof gregapi.tileentity.base.TileEntityBase06Covers tTC && tTC.mCovers != null && tTC.mCovers.mIDs[5] != 0;
+					o.println("[GT6-SCHEME-PROBE] эл-лизер be=" + (tW.getBlockEntity(mProbeElectroPos) == null ? "null" : tW.getBlockEntity(mProbeElectroPos).getClass().getSimpleName())
+						+ " труба be=" + (tW.getBlockEntity(tEPipe) == null ? "null" : tW.getBlockEntity(tEPipe).getClass().getSimpleName())
+						+ " ковер: result=" + tCoverRes + " установлен(EAST)=" + tCoverOn);
+				} else o.println("[GT6-SCHEME-PROBE] IL.Cover_Drain невалиден");
+			}
+			// ТРИО СУНДУКОВ (репорт «анимация+звук у всех разом»): три сундука, открываем ТОЛЬКО первый
+			net.minecraft.world.item.ItemStack tChest3 = tReg.getItem(32745);
+			if (gregapi.util.ST.valid(tChest3)) {
+				net.minecraft.core.BlockPos tCBase = tBase.offset(3, 0, 2);
+				for (int dx = -1; dx <= 3; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tCBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				mProbeChest3 = new net.minecraft.core.BlockPos[3];
+				tP.setShiftKeyDown(true);
+				for (int i = 0; i < 3; i++) {
+					net.minecraft.core.BlockPos tF = tCBase.offset(i, 0, 0);
+					tW.setBlock(tF, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tChest3.copy());
+					tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tF.getX()+0.5, tF.getY()+1.0, tF.getZ()+0.5), net.minecraft.core.Direction.UP, tF, false));
+					mProbeChest3[i] = tF.above();
+				}
+				tP.setShiftKeyDown(false);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+				tP.gameMode.useItemOn(tP, tW, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mProbeChest3[0].getX()+0.5, mProbeChest3[0].getY()+1.0, mProbeChest3[0].getZ()+0.5), net.minecraft.core.Direction.UP, mProbeChest3[0], false));
+				o.println("[GT6-CHEST3-PROBE] 3 сундука; открыт ТОЛЬКО #0, меню=" + tP.containerMenu.getClass().getSimpleName());
+			}
 		} catch (Throwable e) { o.println("[GT6-TOOL-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 

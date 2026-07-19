@@ -73,7 +73,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
-		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP)); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
+		if (aNBT.contains(NBT_RECIPEMAP)) {RecipeMap tMapGuard = RecipeMap.RECIPE_MAPS.get(aNBT.getString(NBT_RECIPEMAP).orElse("")); if (tMapGuard != null) mRecipes = tMapGuard;} /* F16 MTE-canonical-init: не перезатирать дефолт при null-lookup */
 		
 		int tCapacity = 1000;
 		if (aNBT.contains(NBT_TANK_CAPACITY)) tCapacity = UT.Code.bindInt(aNBT.getLongOr(NBT_TANK_CAPACITY, 0L));
