@@ -115,6 +115,18 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public boolean renderAsNormalBlock() {return T;}
 	public boolean isOpaqueCube() {return T;}
 	public boolean func_149730_j() {return isOpaqueCube();}
+	// F-occlusion МОСТ (репорт игрока: кувшинка/слаб рядом с блоком делает его прозрачным): 1.7.10-канал
+	// isOpaqueCube() портирован per-класс (LilyPad/Bars/Spike/Sapling/Leaves/Path/Glass=F, слабы BlockMetaType=
+	// mBlock==this), но ОСИРОТЕЛ — neo вырезает грани соседей по occlusion-форме состояния (canOcclude +
+	// getOcclusionShape; дефолт = ПОЛНЫЙ куб → не-полные блоки глушили рендер за собой). Мост: не-opaque →
+	// occlusion-форма ПУСТА (сосед рисуется) и свет проходит (1.7.10 lightOpacity = isOpaqueCube?255:0).
+	// Кэш состояний строится ПОСЛЕ ctor (initCache) → override и per-класс isOpaqueCube резолвятся корректно.
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState aState) {
+		return isOpaqueCube() ? super.getOcclusionShape(aState) : net.minecraft.world.phys.shapes.Shapes.empty();
+	}
+	@Override protected boolean propagatesSkylightDown(BlockState aState) {
+		return !isOpaqueCube() || super.propagatesSkylightDown(aState);
+	}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return isSideSolid(WD.meta(aWorld, aX, aY, aZ), UT.Code.side(aDirection));}
 	// было shouldSideBeRendered(IBlockAccess,x,y,z,side) -> BlockBehaviour.skipRendering(BlockState,BlockState,Direction)
 	// [BlockBehaviour.java:160], семантика ИНВЕРТИРОВАНА (shouldRender -> skipRendering) И новая сигнатура не

@@ -162,6 +162,12 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public boolean isNormalCube(BlockGetter aWorld, int aX, int aY, int aZ)  {return F;}
 	public boolean renderAsNormalBlock() {return F;}
 	public boolean isOpaqueCube() {return F;}
+	// F-occlusion мост (тот же приём, что BlockBase — рельс вне той иерархии, extends BaseRailBlock):
+	// не-opaque → occlusion-форма пуста (сосед не вырезается) + свет проходит.
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(net.minecraft.world.level.block.state.BlockState aState) {
+		return net.minecraft.world.phys.shapes.Shapes.empty();
+	}
+	@Override protected boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState) {return true;}
 	public boolean isSideSolid(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return F;}
 	public int damageDropped(int aMeta) {return 0;}
 	public int quantityDropped(Random par1Random) {return 1;}
