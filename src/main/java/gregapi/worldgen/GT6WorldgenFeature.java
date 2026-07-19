@@ -194,6 +194,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	public static void register(IEventBus aModBus) {
 		FEATURES.register(aModBus);
 		aModBus.addListener(GT6WorldgenFeature::onGatherDataStatic);
+		aModBus.addListener(GT6WorldgenFeature::onRegisterSpawnPlacements);
 		// F6-worldgen: сама ГЕНЕРАЦИЯ руд/слоёв/деревьев теперь в Feature.place (стадия FEATURES, WorldGenLevel) — серверно-тиковый
 		// обход СНЯТ. На game-шине остаётся ТОЛЬКО load-реконструкция MTE-стабов (отдельный механизм, F-tileentity-construction):
 		// ChunkEvent.Load ловит стабы → server-tick заменяет реальными MTE (FULL-чанк, setBlockEntity безопасен вне save-цикла).
@@ -202,6 +203,33 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkWatch);
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
 		registerWorldgenStressProbe();
+	}
+
+	// R1-живность: GT6-вода (River/Ocean/Swamp) заместила Blocks.WATER своим блоком → vanilla water-спаун молчит, т.к.
+	// хардкодит is(Blocks.WATER) (WaterAnimal.checkSurfaceWaterAnimalSpawnRules:78). Оригинал GT6 1.7.10 не имел проблемы
+	// (спаун шёл по Material.water). Каноничный neo-мост: RegisterSpawnPlacementsEvent c Operation.OR добавляет водным
+	// мобам predicate, где верх/низ проверяются по ТЕГУ FluidTags.WATER (GT6-вода его несёт через getFluidState), а не по
+	// конкретному Blocks.WATER. OR не ломает vanilla-спаун (в vanilla-воде работает исходный predicate) — только расширяет.
+	public static void onRegisterSpawnPlacements(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent) {
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.COD);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SALMON);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.PUFFERFISH);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.TROPICAL_FISH);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SQUID);
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.GLOW_SQUID);
+	}
+
+	private static <T extends net.minecraft.world.entity.Entity> void addGT6WaterSpawn(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent, net.minecraft.world.entity.EntityType<T> aType) {
+		aEvent.register(aType, GT6WorldgenFeature::gt6WaterSpawnPredicate, net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation.OR);
+	}
+
+	// Копия vanilla WaterAnimal.checkSurfaceWaterAnimalSpawnRules (seaLevel-13..seaLevel), НО above по тегу FluidTags.WATER
+	// (GT6-вода удовлетворяет) вместо getBlockState(above).is(Blocks.WATER). Below и так был по тегу — не трогаем.
+	private static <T extends net.minecraft.world.entity.Entity> boolean gt6WaterSpawnPredicate(net.minecraft.world.entity.EntityType<T> aType, net.minecraft.world.level.ServerLevelAccessor aLevel, net.minecraft.world.entity.EntitySpawnReason aReason, net.minecraft.core.BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		int tSea = aLevel.getSeaLevel();
+		return aPos.getY() >= tSea - 13 && aPos.getY() <= tSea
+			&& aLevel.getFluidState(aPos.below()).is(net.minecraft.tags.FluidTags.WATER)
+			&& aLevel.getFluidState(aPos.above()).is(net.minecraft.tags.FluidTags.WATER);
 	}
 
 	// ── F6-worldgen АВТОНОМНАЯ headless-приёмка (dev-диагностика; гейт: файл run/wgstress.flag, вне флага НЕ активна) ──
