@@ -198,6 +198,32 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	@Override
 	public Material.Baked particleMaterial() {return mParticle;}
 
+	/** Партиклы разрушения/удара (репорт игрока: ВСЕ GT-блоки крошатся error-текстурой): единая модель на весь мод
+	 *  отдавала статичный mParticle=system/error. neo-канал pos-aware (Forge-патч TerrainParticle.updateSprite →
+	 *  BlockStateModelSet.getParticleMaterial(state,level,pos) → ЭТОТ метод) — резолвим 1:1 с 1.7.10
+	 *  EntityDiggingFX (block.getIcon(0, meta)): родной канал getIcon у BlockBase-иерархии, текстура жидкости у
+	 *  fluid-блоков; MTE/нет иконки → фолбэк mParticle. */
+	@Override
+	public Material.Baked particleMaterial(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState) {
+		try {
+			Block tBlock = aState.getBlock();
+			Identifier tIcon = null;
+			if (tBlock instanceof gregapi.block.BlockBase tB) {
+				try {tIcon = tB.getIcon(0, gregapi.util.WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()));} catch (Throwable e) {/* defensive-throw getIcon → фолбэк */}
+			} else if (tBlock instanceof gregapi.block.fluid.BlockBaseFluid tF && tF.renderTexture() instanceof BlockTextureFluid tT) {
+				tIcon = tT.icon();
+			}
+			// 1:1-дефолт 1.7.10 (BlockBase.getIcon:103 и MultiTileEntityBlock.getIcon:293 оба → CFOAM_HARDENED):
+			// партиклы MTE/безыконных блоков — серая CFoam-крошка, НЕ error-текстура.
+			if (tIcon == null) tIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
+			if (tIcon != null) {
+				net.minecraft.client.renderer.texture.TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon);
+				if (tSprite != null) return new Material.Baked(tSprite, false);
+			}
+		} catch (Throwable e) {/* партикл не рушит рендер */}
+		return mParticle;
+	}
+
 	@Override
 	public int materialFlags() {return 0;}
 

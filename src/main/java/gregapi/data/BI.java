@@ -169,7 +169,10 @@ public class BI {
 
 		protected Icon(String aIconName) {mIconName = aIconName; if (GT_API.sBlockIconload != null) GT_API.sBlockIconload.add(this);}
 
-		@Override public Identifier getIcon(int aRenderPass) {return mIcon;}
+		// Ленивое построение (репорт игрока: нет индикатора давления бойлера): цикл sBlockIconload в neo не гоняется →
+		// mIcon оставался null → слои BAROMETER/BAROMETER_SCALE молча пропускались putFace. Тот же приём, что у ВСЕХ
+		// icon-классов Textures.java:173/716/851/883 и TextureSet:99/156 — BI.Icon был единственным без него.
+		@Override public Identifier getIcon(int aRenderPass) {if (mIcon == null) run(); return mIcon;}
 		// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было GT_API.sBlockIcons.registerIcon(...) (IIconRegister удалён) — Identifier строим напрямую из того же пути.
 		@Override public void run() {mIcon = Identifier.parse(RES_PATH_API_BLOCK + mIconName);}
 		@Override public Identifier getTextureFile() {return TextureAtlas.LOCATION_BLOCKS;}
