@@ -102,7 +102,16 @@ public final class GT6QuadBuilder {
 	 *  {@code defaultBlockState} (в neo вариантные под-блоки — отдельные Block'и, в вызывателях meta практически 0).
 	 *  aSide 0..5 = {@code Direction.from3DDataValue} (тот же маппинг, что {@link #putFace}); SIDE_ANY/вне диапазона → particle. */
 	public static Identifier resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide) {
-		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
+		return resolveBlockFaceIcon(aBlock, aSide, 0);
+	}
+
+	/** F3 block-icon-data (meta-aware): 1:1 к 1.7.10 {@code Block.getIcon(side,meta)}. Варианты 1.7.10 (stonebrick 0..3,
+	 *  dirt 0..2, sand 0..1) в neo — ОТДЕЛЬНЫЕ блоки (Flattening 1.13, таблица Mojang), не meta одного блока → сопоставляем
+	 *  (базовый-neo-блок,meta)→блок-вариант, иначе defaultBlockState базового. Централизация §3: единственная точка учёта meta
+	 *  для {@link BlockTextureCopied}/{@link IconContainerCopied} (их 1.7.10-предок звал getIcon с meta). */
+	public static Identifier resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide, int aMeta) {
+		net.minecraft.world.level.block.Block tVariant = flattenVariant(aBlock, aMeta);
+		net.minecraft.world.level.block.state.BlockState tState = (tVariant != null ? tVariant : aBlock).defaultBlockState();
 		net.minecraft.client.renderer.block.BlockStateModelSet tSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
 		if (aSide >= 0 && aSide <= 5) {
 			Direction tDir = Direction.from3DDataValue(aSide);
@@ -114,6 +123,25 @@ public final class GT6QuadBuilder {
 			}
 		}
 		return tSet.getParticleMaterial(tState).sprite().contents().name();
+	}
+
+	/** Flattening 1.13 (таблица Mojang): 1.7.10 meta-варианты ванильных блоков → отдельные neo-блоки. Возвращает
+	 *  блок-вариант для (базовый,meta) либо null (meta 0 / не мульти-блок → базовый). Только достоверные vanilla-таблицы. */
+	private static net.minecraft.world.level.block.Block flattenVariant(net.minecraft.world.level.block.Block aBase, int aMeta) {
+		if (aMeta == 0) return null;
+		net.minecraft.world.level.block.Block B = aBase;
+		net.minecraft.world.level.block.Block[] Bk = null;
+		if (B == net.minecraft.world.level.block.Blocks.STONE_BRICKS) Bk = new net.minecraft.world.level.block.Block[]{
+			net.minecraft.world.level.block.Blocks.STONE_BRICKS, net.minecraft.world.level.block.Blocks.MOSSY_STONE_BRICKS,
+			net.minecraft.world.level.block.Blocks.CRACKED_STONE_BRICKS, net.minecraft.world.level.block.Blocks.CHISELED_STONE_BRICKS};
+		else if (B == net.minecraft.world.level.block.Blocks.DIRT) Bk = new net.minecraft.world.level.block.Block[]{
+			net.minecraft.world.level.block.Blocks.DIRT, net.minecraft.world.level.block.Blocks.COARSE_DIRT, net.minecraft.world.level.block.Blocks.PODZOL};
+		else if (B == net.minecraft.world.level.block.Blocks.SAND) Bk = new net.minecraft.world.level.block.Block[]{
+			net.minecraft.world.level.block.Blocks.SAND, net.minecraft.world.level.block.Blocks.RED_SAND};
+		else if (B == net.minecraft.world.level.block.Blocks.SANDSTONE) Bk = new net.minecraft.world.level.block.Block[]{ // 1.7.10 sandstone: 0 normal,1 chiseled,2 smooth
+			net.minecraft.world.level.block.Blocks.SANDSTONE, net.minecraft.world.level.block.Blocks.CHISELED_SANDSTONE, net.minecraft.world.level.block.Blocks.SMOOTH_SANDSTONE};
+		if (Bk != null && aMeta > 0 && aMeta < Bk.length) return Bk[aMeta];
+		return null;
 	}
 
 	/** Грань по текущим bounds (4 вершины) с UV из спрайта (клип по bounds) + tint из RGBa (0..255). AE2 QuartzGlassModel.createQuad/putVertex. */

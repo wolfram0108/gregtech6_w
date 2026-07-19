@@ -119,9 +119,9 @@ public class BlockTextureCopied implements ITexture {
 	private Identifier getIcon(int aSide) {
 		// F3 block-icon-data: было mBlock.getIcon(mSide==SIDE_ANY?aSide:mSide, mMeta) + catch→RENDERING_ERROR (1:1) —
 		// Block.getIcon удалён из neo (baked-model рендер); спрайт грани резолвим из baked BlockStateModel ванильного
-		// блока (централизованный GT6QuadBuilder.resolveBlockFaceIcon, §3). meta схлопнут в defaultBlockState (см. резолвер).
+		// блока (централизованный GT6QuadBuilder.resolveBlockFaceIcon, §3). mMeta учтён (Flattening-варианты, см. резолвер).
 		try {
-			return GT6QuadBuilder.resolveBlockFaceIcon(mBlock, mSide == SIDE_ANY ? aSide : mSide);
+			return GT6QuadBuilder.resolveBlockFaceIcon(mBlock, mSide == SIDE_ANY ? aSide : mSide, mMeta);
 		} catch (Throwable e) {
 			return gregapi.old.Textures.BlockIcons.RENDERING_ERROR.getIcon(0);
 		}

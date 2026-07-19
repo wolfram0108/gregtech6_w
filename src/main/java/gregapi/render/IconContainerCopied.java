@@ -48,9 +48,9 @@ public class IconContainerCopied implements IIconContainer {
 	public Identifier getIcon(int aRenderPass) {
 		// F3 block-icon-data: было mBlock.getIcon(mSide, mMeta) — Block.getIcon удалён (neo baked-model рендер);
 		// спрайт грани копируемого блока резолвим из его baked BlockStateModel (централизованный §3
-		// GT6QuadBuilder.resolveBlockFaceIcon). catch→RENDERING_ERROR — модели могут быть не готовы вне рендер-тика (не крашим).
+		// GT6QuadBuilder.resolveBlockFaceIcon), mMeta учтён (Flattening-варианты). catch→RENDERING_ERROR — модели могут быть не готовы вне рендер-тика.
 		try {
-			return GT6QuadBuilder.resolveBlockFaceIcon(mBlock, mSide);
+			return GT6QuadBuilder.resolveBlockFaceIcon(mBlock, mSide, mMeta);
 		} catch (Throwable e) {
 			return gregapi.old.Textures.BlockIcons.RENDERING_ERROR.getIcon(0);
 		}
