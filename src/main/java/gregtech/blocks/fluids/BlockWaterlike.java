@@ -152,10 +152,26 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		int tFlowMeta  = (WD.block(aWorld, aX, aY-densityDir, aZ) instanceof BlockWaterlike ? 1 : quantaPerBlock - quantaRemaining + 1);
 		if (tFlowMeta >= quantaPerBlock) return;
 		
-		if (WD.exists(aWorld, aX, aY, aZ-1) && displaceIfPossible(aWorld, aX  , aY, aZ-1)) WD.set(aWorld, aX  , aY, aZ-1, this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
-		if (WD.exists(aWorld, aX, aY, aZ+1) && displaceIfPossible(aWorld, aX  , aY, aZ+1)) WD.set(aWorld, aX  , aY, aZ+1, this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
-		if (WD.exists(aWorld, aX-1, aY, aZ) && displaceIfPossible(aWorld, aX-1, aY, aZ  )) WD.set(aWorld, aX-1, aY, aZ  , this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
-		if (WD.exists(aWorld, aX+1, aY, aZ) && displaceIfPossible(aWorld, aX+1, aY, aZ  )) WD.set(aWorld, aX+1, aY, aZ  , this, tFlowMeta, WATER_UPDATE_FLAGS | 1);
+		if (WD.exists(aWorld, aX, aY, aZ-1)) flowTo(aWorld, aX  , aY, aZ-1, tFlowMeta);
+		if (WD.exists(aWorld, aX, aY, aZ+1)) flowTo(aWorld, aX  , aY, aZ+1, tFlowMeta);
+		if (WD.exists(aWorld, aX-1, aY, aZ)) flowTo(aWorld, aX-1, aY, aZ  , tFlowMeta);
+		if (WD.exists(aWorld, aX+1, aY, aZ)) flowTo(aWorld, aX+1, aY, aZ  , tFlowMeta);
+	}
+
+	// B4 (слабы/неполные блоки «как mc26»): растекание на waterloggable-блок (slab/stairs/fence — SimpleWaterloggedBlock)
+	// → WATERLOG его (вода внутри, блок остаётся), как vanilla-вода mc26; иначе — прежний displace+set. Waterlogging нет в
+	// 1.7.10 (там вода не переживала слабы) — изобретено канонично neo (SimpleWaterloggedBlock/WATERLOGGED). Централизовано:
+	// один хелпер на все 4 направления растекания (был повтор displaceIfPossible+WD.set).
+	public boolean flowTo(Level aWorld, int aX, int aY, int aZ, int aMeta) {
+		net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aX, aY, aZ);
+		net.minecraft.world.level.block.state.BlockState tSt = aWorld.getBlockState(tP);
+		if (tSt.getBlock() instanceof net.minecraft.world.level.block.SimpleWaterloggedBlock
+		 && tSt.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)
+		 && !tSt.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)) {
+			return aWorld.setBlock(tP, tSt.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
+		}
+		if (displaceIfPossible(aWorld, aX, aY, aZ)) { WD.set(aWorld, aX, aY, aZ, this, aMeta, WATER_UPDATE_FLAGS | 1); return true; }
+		return false;
 	}
 	
 	// @Override

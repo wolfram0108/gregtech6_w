@@ -561,6 +561,18 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 								+ " (isWaterTag=true = content-жидкость даёт погружение/утопление как B1)");
 						} else o.println("[GT6-FLUID-PROBE] B2 content-water BlockBaseFluid не найден в FL.BLOCKS");
 					} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] B2 упал: " + e); }
+					// B4-судья (слабы/waterlogging): Ocean.flowTo на STONE_SLAB → slab становится waterlogged (вода внутри, как mc26).
+					try {
+						net.minecraft.core.BlockPos tSlP = tC.offset(7, 0, 0);
+						tW.setBlock(tSlP, net.minecraft.world.level.block.Blocks.STONE_SLAB.defaultBlockState(), 3);
+						boolean tWlBefore = tW.getBlockState(tSlP).getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
+						boolean tFlowed = tOcean instanceof gregtech.blocks.fluids.BlockWaterlike tOw && tOw.flowTo(tW, tSlP.getX(), tSlP.getY(), tSlP.getZ(), 0);
+						net.minecraft.world.level.block.state.BlockState tSlSt = tW.getBlockState(tSlP);
+						boolean tWlAfter = tSlSt.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
+						o.println("[GT6-FLUID-PROBE] B4 slab=" + tSlSt.getBlock().getClass().getSimpleName() + " waterlogged " + tWlBefore + "→" + tWlAfter
+							+ " flowTo=" + tFlowed + " fluidState.isWater=" + tSlSt.getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+							+ " (waterlogged=true = вода переживает слаб как mc26)");
+					} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] B4 упал: " + e); }
 				} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] заливка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 			return;
 		}
