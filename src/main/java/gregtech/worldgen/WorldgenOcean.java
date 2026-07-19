@@ -71,14 +71,21 @@ public class WorldgenOcean extends WorldgenObject {
 				
 				if (tPlacedNone) {
 					tPlacedNone = F;
-					BlockOcean.UPDATE_TICK = (aBiomeNames.size() > 1);
-					BlockOcean.PLACEMENT_ALLOWED = T;
-					if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Ocean, 0, 0)) {
-						WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
-						aChunk.markUnsaved();
-						return F;
+					// worldgen-заморозка (как River/vanilla): верхний слой воды в холодном биоме (!warmEnoughToRain) → сразу лёд,
+					// под ним Ocean. Даёт замёрзшую поверхность frozen-ocean при генерации, а не через runtime randomTick.
+					net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(aMinX+tX, tY, aMinZ+tZ);
+					if (!aWorld.getBiome(tP).value().warmEnoughToRain(tP, aWorld.getSeaLevel())) {
+						tStorage.setBlockState(tX, tY & 15, tZ, Blocks.ICE.defaultBlockState());
+					} else {
+						BlockOcean.UPDATE_TICK = (aBiomeNames.size() > 1);
+						BlockOcean.PLACEMENT_ALLOWED = T;
+						if (!WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, BlocksGT.Ocean, 0, 0)) {
+							WD.set(aWorld, aMinX+tX, tY, aMinZ+tZ, Blocks.WATER, 0, 0);
+							aChunk.markUnsaved();
+							return F;
+						}
+						BlockOcean.PLACEMENT_ALLOWED = F;
 					}
-					BlockOcean.PLACEMENT_ALLOWED = F;
 				} else {
 					tStorage.setBlockState(tX, tY & 15, tZ, BlocksGT.Ocean.defaultBlockState());
 				}
