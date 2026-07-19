@@ -87,6 +87,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
+	@Override public float[] getRenderBounds() {return mRenderBounds;}
 
 	// F16 impossible-1:1-на-модели (neo BaseRailBlock через BlockState-Property, GT6-рельс через meta — несовместимы; см. onPlace выше): neo BaseRailBlock ре-абстрагирует
 	// getShapeProperty()/codec() (BaseRailBlock.java:47,152) под BlockState-Property модель формы рельса

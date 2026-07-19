@@ -49,6 +49,18 @@ public final class GT6QuadBuilder {
 	/** Текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} (1.7.10 RenderBlocks.setRenderBoundsFromBlock, обновляется per-pass). */
 	private final float[] mBounds = {0, 0, 0, 1, 1, 1};
 	private boolean mFullCube = true;
+	/** F3-render PILLAR: 1.7.10 RenderBlocks.uvRotate{Bottom,Top,East,West,North,South} → per-face поворот UV;
+	 *  индекс = Direction.get3DDataValue (DOWN,UP,NORTH,SOUTH,WEST,EAST). Реализован вариант 1 — единственный,
+	 *  который ставит vanilla renderBlockLog (RenderBlocks:4435-4446, PILLAR-блоки GT6: брёвна/балки/тюки). */
+	private final byte[] mUVRotate = new byte[6];
+
+	/** Выставить повороты UV per-face (порядок: DOWN,UP,NORTH,SOUTH,WEST,EAST; 0=нет, 1=вариант 1 renderBlockLog). */
+	public void setUVRotate(int aDown, int aUp, int aNorth, int aSouth, int aWest, int aEast) {
+		mUVRotate[0] = (byte)aDown; mUVRotate[1] = (byte)aUp; mUVRotate[2] = (byte)aNorth;
+		mUVRotate[3] = (byte)aSouth; mUVRotate[4] = (byte)aWest; mUVRotate[5] = (byte)aEast;
+	}
+	/** Сброс поворотов (1.7.10 renderBlockLog обнулял uvRotate* после renderStandardBlock). */
+	public void clearUVRotate() {java.util.Arrays.fill(mUVRotate, (byte)0);}
 
 	/** F3-render: обновить текущие render-bounds перед проходом (GT6BlockModel читает {@code BlockBase.getRenderBounds()} после setBlockBounds). */
 	public void setBounds(float[] aBounds) {
@@ -110,6 +122,14 @@ public final class GT6QuadBuilder {
 	 *  (базовый-neo-блок,meta)→блок-вариант, иначе defaultBlockState базового. Централизация §3: единственная точка учёта meta
 	 *  для {@link BlockTextureCopied}/{@link IconContainerCopied} (их 1.7.10-предок звал getIcon с meta). */
 	public static Identifier resolveBlockFaceIcon(net.minecraft.world.level.block.Block aBlock, int aSide, int aMeta) {
+		// GT6-блок-цель (LIVE-DEFECTS №5): его модель — динамический GT6BlockModel, который БЕЗ level/pos квадов не отдаёт
+		// → baked-путь ниже падал в particle = system/error (жёлто-красный X у камешков на GT6-породах). Родной 1.7.10-канал
+		// Block.getIcon(side,meta) сохранён на BlockBase-иерархии (BlockBaseMeta/Log/Beam/Grass/...) — спрашиваем его напрямую;
+		// defensive-throw/null у классов без канала → штатный baked-путь ниже.
+		if (aBlock instanceof gregapi.block.BlockBase tGT6) try {
+			Identifier tIcon = tGT6.getIcon(aSide, aMeta);
+			if (tIcon != null) return tIcon;
+		} catch (Throwable e) {/* классы с defensive-throw getIcon → baked-путь */}
 		net.minecraft.world.level.block.Block tVariant = flattenVariant(aBlock, aMeta);
 		net.minecraft.world.level.block.state.BlockState tState = (tVariant != null ? tVariant : aBlock).defaultBlockState();
 		net.minecraft.client.renderer.block.BlockStateModelSet tSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
@@ -153,6 +173,7 @@ public final class GT6QuadBuilder {
 		// a=0 в neo делал грань ПРОЗРАЧНОЙ (машины «без текстур», виден только overlay). 0 → 255.
 		int a = aRGBa != null && aRGBa.length >= 4 && (aRGBa[3] & 0xFF) != 0 ? (aRGBa[3] & 0xFF) : 255;
 		float[][] c = corners(aDir, mBounds);
+		if (mUVRotate[aDir.get3DDataValue()] == 1) rotateUV1(aDir, c, mBounds);
 		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
 		tBuilder.setSprite(new Material.Baked(aSprite, false));
@@ -250,6 +271,25 @@ public final class GT6QuadBuilder {
 		}
 		return tBuilder.bakeQuad();
 	}
+
+	/** F3-render PILLAR: вариант 1 поворота UV — ДОСЛОВНО из 1.7.10 RenderBlocks (ветки uvRotate*==1 в
+	 *  renderFaceYNeg:7254/YPos:7349/ZNeg:7485/ZPos:7588/XNeg:7704/XPos:7840, включая свопы d7..d10),
+	 *  сведено в per-vertex UV-таблицы для порядка вершин {@link #corners}. Соответствие полей 1.7.10 → грань:
+	 *  uvRotateBottom→DOWN, Top→UP, East→ZNeg(NORTH), West→ZPos(SOUTH), North→XNeg(WEST), South→XPos(EAST). */
+	private static void rotateUV1(Direction aDir, float[][] c, float[] b) {
+		float u0x = b[0]*16, u1x = b[3]*16, u0z = b[2]*16, u1z = b[5]*16;
+		float v0y = (1-b[1])*16, v1y = (1-b[4])*16, ty0 = b[1]*16, ty1 = b[4]*16;
+		switch (aDir) {
+		case DOWN:  uv(c,0, 16-u0z, u0x); uv(c,1, 16-u1z, u0x); uv(c,2, 16-u1z, u1x); uv(c,3, 16-u0z, u1x); break;
+		case UP:    uv(c,0, u1z, 16-u0x); uv(c,1, u0z, 16-u0x); uv(c,2, u0z, 16-u1x); uv(c,3, u1z, 16-u1x); break;
+		case NORTH: uv(c,0, v1y, u1x);    uv(c,1, v0y, u1x);    uv(c,2, v0y, u0x);    uv(c,3, v1y, u0x);    break;
+		case SOUTH: uv(c,0, ty1, 16-u0x); uv(c,1, ty0, 16-u0x); uv(c,2, ty0, 16-u1x); uv(c,3, ty1, 16-u1x); break;
+		case WEST:  uv(c,0, ty1, 16-u0z); uv(c,1, ty0, 16-u0z); uv(c,2, ty0, 16-u1z); uv(c,3, ty1, 16-u1z); break;
+		case EAST:  uv(c,0, v1y, u1z);    uv(c,1, v0y, u1z);    uv(c,2, v0y, u0z);    uv(c,3, v1y, u0z);    break;
+		default: break;
+		}
+	}
+	private static void uv(float[][] c, int i, float u, float v) {c[i][3] = u; c[i][4] = v;}
 
 	/** 4 угла грани по bounds b={minX,minY,minZ,maxX,maxY,maxZ}, CCW относительно нормали; {x,y,z,u,v} (u,v в 0..16 → UV клипается по bounds).
 	 *  При full-cube (0..1) сводится к прежнему поведению (u,v = 0..16). */

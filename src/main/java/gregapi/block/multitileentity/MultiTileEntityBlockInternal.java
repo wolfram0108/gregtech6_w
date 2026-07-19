@@ -66,7 +66,8 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
-	
+	@Override public float[] getRenderBounds() {return mRenderBounds;}
+
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return null;}
 	@Override public ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	@Override public boolean setBlockBounds(int aRenderPass, ItemStack aStack) {return F;}

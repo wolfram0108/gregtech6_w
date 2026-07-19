@@ -100,6 +100,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
+	@Override public float[] getRenderBounds() {return mRenderBounds;}
 	public final int mHarvestLevelOffset, mHarvestLevelMinimum, mHarvestLevelMaximum;
 	public final ITexture mTexture;
 	public final String mNameInternal, mTool, mModIDOwner;

@@ -92,6 +92,13 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aLevel, tX, tY, tZ);
 
 		if (tRenderer == null) {
+			// 1:1 RenderBlocks.renderBlockLog (диспетчер renderType==PILLAR_RENDER, RenderBlocks:350,4430): PILLAR-блоки
+			// (брёвна/балки/тюки) поворачивают UV граней по оси укладки из меты: X(4)→низ/верх/север/юг, Z(8)→запад/восток.
+			if (tBlock instanceof gregapi.block.BlockBase tBB && tBB.getRenderType() == gregapi.data.CS.PILLAR_RENDER) {
+				int tAxis = gregapi.util.WD.meta(aLevel, tX, tY, tZ) & gregapi.data.CS.PILLAR_BITS;
+				if (tAxis == gregapi.data.CS.PILLAR_X) tQB.setUVRotate(1, 1, 1, 1, 0, 0);
+				else if (tAxis == gregapi.data.CS.PILLAR_Z) tQB.setUVRotate(0, 0, 0, 0, 1, 1);
+			}
 			boolean[] tSides = sides(tBlock, tRB instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)tRB : null);
 			for (int i = 0, j = tRB.getRenderPasses(aLevel, tX, tY, tZ, tSides); i < j; i++) {
 				if (!tRB.usesRenderPass(i, aLevel, tX, tY, tZ, tSides)) continue;
@@ -99,6 +106,7 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 				applyBounds(tQB, tBlock);
 				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRB.getTexture(i, s, tSides, aLevel, tX, tY, tZ), tX, tY, tZ);
 			}
+			tQB.clearUVRotate(); // 1:1 renderBlockLog: сброс uvRotate* после renderStandardBlock
 		} else {
 			buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);
 		}
@@ -152,10 +160,11 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	}
 
 	/** Перенести текущие render-bounds блока (после setBlockBounds) в quad-builder (было RenderBlocks.setRenderBoundsFromBlock).
-	 *  Носители bounds — обе Block-иерархии GT6 (BlockBase и BlockFluidBaseGT: кванта-высота жидкости). */
+	 *  Чтение — через общий контракт IBlock.getRenderBounds: Block-иерархий GT6 ШЕСТЬ (BlockBase/BlockFluidBaseGT/
+	 *  MultiTileEntityBlock/MultiTileEntityBlockInternal/BlockBaseRail/PrefixBlock, общего предка нет) — instanceof-цепочка
+	 *  по классам теряла MTE (под-боксы пассов схлопывались в полный куб: LIVE-DEFECTS №2/№7). */
 	private static void applyBounds(GT6QuadBuilder aQB, Block aBlock) {
-		aQB.setBounds(aBlock instanceof gregapi.block.BlockBase tB ? tB.getRenderBounds()
-		            : aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT tF ? tF.getRenderBounds() : null);
+		aQB.setBounds(aBlock instanceof gregapi.block.IBlock tI ? tI.getRenderBounds() : null);
 	}
 
 	/** Один per-side вызов ITexture (диспетчер по стороне) → GT6QuadBuilder аккумулирует грань. */

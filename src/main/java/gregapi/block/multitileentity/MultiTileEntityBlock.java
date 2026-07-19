@@ -110,6 +110,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
+	@Override public float[] getRenderBounds() {return mRenderBounds;}
 
 	/** F9-хвост: gregapi Material хранится MTE-блоком (тот же паттерн, что BlockBase); neo убрал ванильный Block.getMaterial()/blockMaterial. */
 	protected final Material mMaterial;

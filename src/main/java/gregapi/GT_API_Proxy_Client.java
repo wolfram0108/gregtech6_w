@@ -400,6 +400,65 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 
+	// U2-СУДЬЯ под-боксов (гейт gt6geomprobe.flag): канал render-bounds MTE конец-в-конец на ЖИВОМ клиент-BE
+	// (client-placement, метод F3-render.md §9): для каждого MTE-класса — пассы × setBlockBounds → чтение
+	// IBlock.getRenderBounds (то, что ест GT6BlockModel.applyBounds). Критерий U2: у многопассовых объектов
+	// bounds пассов РАЗЛИЧНЫ (не один куб). До фикса applyBounds (MTE≠BlockBase→null): у ВСЕХ был куб.
+	private boolean mGeomProbeDone = false; private int mGeomProbeTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onGeomProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mGeomProbeDone) return;
+		if (!new java.io.File("gt6geomprobe.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		if (++mGeomProbeTick < 100) return;
+		mGeomProbeDone = true;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		try {
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			if (tReg == null) {o.println("[GT6-GEOMPROBE] реестр null"); return;}
+			net.minecraft.core.BlockPos tBase = tMC.player.blockPosition().offset(0, 8, 0);
+			boolean[] tSides = {true, true, true, true, true, true};
+			int tTotal = 0, tMulti = 0, tDistinctOK = 0, tSubBox = 0, tQuadsTotal = 0;
+			java.util.List<String> tExamples = new java.util.ArrayList<>();
+			java.util.Set<Class<?>> tSeen = new java.util.HashSet<>();
+			int tSlot = 0;
+			for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+				if (tC.mCanonicalTileEntity == null || !tSeen.add(tC.mCanonicalTileEntity.getClass())) continue;
+				net.minecraft.core.BlockPos tPos = tBase.offset((tSlot % 32) * 2, ((tSlot / 32) % 8) * 2, (tSlot / 256) * 2); ++tSlot;
+				try {
+					gregapi.block.multitileentity.MultiTileEntityContainer tCont = tReg.getNewTileEntityContainer(tMC.level, tPos.getX(), tPos.getY(), tPos.getZ(), tC.mID, null);
+					if (tCont == null || !(tCont.mTileEntity instanceof gregapi.render.IRenderedBlockObject tR)) continue;
+					tMC.level.setBlock(tPos, tCont.mBlock.defaultBlockState(), 3);
+					tMC.level.setBlockEntity(tCont.mTileEntity);
+					++tTotal;
+					net.minecraft.world.level.block.Block tBlk = tCont.mBlock;
+					int tPasses = tR.getRenderPasses(tBlk, tSides);
+					if (tPasses > 1) ++tMulti;
+					java.util.Set<String> tDistinct = new java.util.HashSet<>();
+					boolean tHasSub = false;
+					for (int p = 0; p < tPasses; p++) {
+						if (!tR.usesRenderPass(p, tSides)) continue;
+						tR.setBlockBounds(tBlk, p, tSides);
+						float[] b = tBlk instanceof gregapi.block.IBlock tI ? tI.getRenderBounds() : null;
+						if (b == null) continue;
+						tDistinct.add(java.util.Arrays.toString(b));
+						if (b[0] > 0.001F || b[1] > 0.001F || b[2] > 0.001F || b[3] < 0.999F || b[4] < 0.999F || b[5] < 0.999F) tHasSub = true;
+					}
+					if (tDistinct.size() > 1) ++tDistinctOK;
+					if (tHasSub) ++tSubBox;
+					gregapi.render.GT6QuadBuilder tQB = new gregapi.render.GT6QuadBuilder();
+					gregapi.render.GT6BlockModel.buildRendererQuads(tQB, tR, tBlk, tMC.level, tPos.getX(), tPos.getY(), tPos.getZ());
+					tQuadsTotal += tQB.quads().size();
+					if (tExamples.size() < 12 && (tDistinct.size() > 1 || tHasSub))
+						tExamples.add(tC.mCanonicalTileEntity.getClass().getSimpleName() + "{passes=" + tPasses + " distinct=" + tDistinct.size() + " sub=" + tHasSub + " quads=" + tQB.quads().size() + "}");
+				} catch (Throwable e) {/* один класс не рушит пробу */}
+			}
+			o.println("[GT6-GEOMPROBE] MTE-классов=" + tTotal + " многопассовых=" + tMulti + " с-различными-bounds=" + tDistinctOK + " с-под-боксами=" + tSubBox + " quads=" + tQuadsTotal);
+			o.println("[GT6-GEOMPROBE] примеры: " + String.join(", ", tExamples));
+		} catch (Throwable e) {o.println("[GT6-GEOMPROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+	}
+
 	// N5-прозрачность СУДЬЯ (гейт gt6inject.flag): скан клиент-чанков на worldgen-камешки MultiTileEntityRock — клиент-BE
 	// существует (не прозрачен) + level!=null (mTexture реальная). До onChunkWatch-фикса non-ticking worldgen-MTE клиенту не
 	// синкались (getUpdateTag=0) → found=0. После (sendUpdateToPlayer через ITileEntitySynchronising) → found>0.

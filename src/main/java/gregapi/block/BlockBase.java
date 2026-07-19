@@ -69,6 +69,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	}
 	/** F3-render: текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} для GT6BlockModel (было RenderBlocks.setRenderBoundsFromBlock). */
 	public float[] getRenderBounds() {return mRenderBounds;}
+	/** F3-render диспетчер-канал 1.7.10 (RenderBlocks.renderBlockByRenderType): vanilla Block.getRenderType()==0 —
+	 *  стандартный куб; PILLAR-классы (BlockBaseBeam/Log/Bale) возвращают PILLAR_RENDER=31 → GT6BlockModel
+	 *  применяет поворот UV по оси укладки (1:1 renderBlockLog). Метод существовал на подклассах и до этого —
+	 *  без базового дефолта модель не могла его диспетчеризовать. */
+	public int getRenderType() {return 0;}
 	/** F-light: 1.7.10 Block.setLightLevel(float) мутировал эмиссию. neo эмиссия — Properties.lightLevel(ToIntFunction<BlockState>),
 	 *  выставляется при ctor, но ВЫЧИСЛЯЕТСЯ лениво (initCache после регистрации) → функция читает mLightLevel через
 	 *  state.getBlock() уже ПОСЛЕ setLightLevel подкласса. Мост подключён (lightOf ниже в mkProps). setLightLevel хранит поле. */

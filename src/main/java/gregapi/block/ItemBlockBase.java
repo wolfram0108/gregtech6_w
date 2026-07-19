@@ -60,6 +60,8 @@ public class ItemBlockBase extends BlockItem implements IBlock, IItemGT {
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		WD.setBlockBounds(getBlock(), aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ);
 	}
+	// симметрично setBlockBounds: чтение — с обёрнутого блока (сам ничего не хранит).
+	@Override public float[] getRenderBounds() {return getBlock() instanceof IBlock tI ? tI.getRenderBounds() : null;}
 	
 	// F13: neo BlockItem зовёт appendHoverText (не 1.7.10 addInformation) — мост: собираем GT6-тултип (List<String>) через
 	// addInformation ниже, отдаём в neo builder как Component. Player — из клиент-прокси (getThePlayer, null на сервере → пропуск).
