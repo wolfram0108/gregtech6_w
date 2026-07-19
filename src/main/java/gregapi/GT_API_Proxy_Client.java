@@ -548,7 +548,20 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					+ " block=" + tSt.getBlock().getClass().getSimpleName() + " fluidState.empty=" + tSt.getFluidState().isEmpty()
 					+ " fluidType=" + (tSt.getFluidState().isEmpty() ? "-" : tSt.getFluidState().getType().getClass().getSimpleName())
 					+ " isWaterTag=" + tSt.getFluidState().is(net.minecraft.tags.FluidTags.WATER));
-			} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] заливка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+					// B2-судья (content-жидкости BlockBaseFluid water/lava): getFluidState.is(WATER) → тег → эффекты (механизм доказан B1 Ocean).
+					try {
+						net.minecraft.world.level.block.Block tCW = null;
+						for (net.minecraft.world.level.block.Block bl : gregapi.data.FL.BLOCKS.values()) if (bl instanceof gregapi.block.fluid.BlockBaseFluid bf && bf.getMaterial() == gregapi.block.Material.water) { tCW = bl; break; }
+						if (tCW != null) {
+							net.minecraft.core.BlockPos tCP = tC.offset(5, 0, 0);
+							gregapi.util.WD.set(tW, tCP.getX(), tCP.getY(), tCP.getZ(), tCW, 7, 3);
+							net.minecraft.world.level.block.state.BlockState tCS = tW.getBlockState(tCP);
+							o.println("[GT6-FLUID-PROBE] B2 content-water=" + gregapi.data.FL.name(((gregapi.block.fluid.BlockBaseFluid)tCW).mFluid, false)
+								+ " fluidState.empty=" + tCS.getFluidState().isEmpty() + " isWaterTag=" + tCS.getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+								+ " (isWaterTag=true = content-жидкость даёт погружение/утопление как B1)");
+						} else o.println("[GT6-FLUID-PROBE] B2 content-water BlockBaseFluid не найден в FL.BLOCKS");
+					} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] B2 упал: " + e); }
+				} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] заливка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 			return;
 		}
 		if (mFluidProbePhase == 1 && mFluidProbeTick >= 340) {

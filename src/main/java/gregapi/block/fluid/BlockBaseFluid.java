@@ -382,6 +382,18 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		return WD.meta(aWorld, aX, aY, aZ)+1;
 	}
 
+	// F5-B2 (реверс воды mc26, content-жидкости): погружение/утопление/push через getFluidState (см. BlockWaterlike). Движок
+	// применяет эффекты только для fluid в теге FluidTags.WATER/LAVA (EntityFluidInteraction). Content-жидкость с материалом
+	// water/lava → vanilla WATER/LAVA FluidState по квантам (meta+1=1..8, полный=8) → игрок тонет/горит в ней. Прочие
+	// (газ/материал-специфика) → super=EMPTY: у них GT6-эффекты (bathing/breathing/drown) уже в entityInside/onHeadInside.
+	@Override protected net.minecraft.world.level.material.FluidState getFluidState(BlockState aState) {
+		int tQuanta = aState.getValue(FLUID_META) + 1;
+		gregapi.block.Material tMat = getMaterial();
+		if (tMat == gregapi.block.Material.water) return tQuanta >= 8 ? net.minecraft.world.level.material.Fluids.WATER.defaultFluidState() : net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(net.minecraft.util.Mth.clamp(tQuanta, 1, 8), false);
+		if (tMat == gregapi.block.Material.lava ) return tQuanta >= 8 ? net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState()  : net.minecraft.world.level.material.Fluids.FLOWING_LAVA.getFlowing(net.minecraft.util.Mth.clamp(tQuanta, 1, 8), false);
+		return super.getFluidState(aState);
+	}
+
 	@Override public Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return FL.name(mFluid, F);} // было mFluid.getUnlocalizedName() (Forge Fluid) — FL.name(Fluid,boolean) центр (F5, см. BlockWaterlike)
 	public String getLocalizedName() {return FL.name(mFluid, T);} // было LH.get(mFluid.getUnlocalizedName()) — FL.name(...,T) уже включает LH-локализацию (FL.java:952)
