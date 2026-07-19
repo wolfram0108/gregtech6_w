@@ -77,6 +77,24 @@ public class ItemBase extends Item implements IItemProjectile, IItemUpdatable, I
 	public ItemBase setHasSubtypes(boolean aHasSubtypes) {mHasSubtypes = aHasSubtypes; return this;}
 	public boolean getHasSubtypes() {return mHasSubtypes;}
 
+	// F-useOn (канал сместился, как N1-установка): в 1.7.10 движок звал Item.onItemUseFirst → Block.onBlockActivated →
+	// Item.onItemUse, ПКМ-в-воздух — Item.onItemRightClick. В neo та же цепь — ServerPlayerGameMode.useItemOn:
+	// itemStack.onItemUseFirst(:388) → state.useItemOn(:395) → itemStack.useOn(:415); воздух — Item.use(:207). GT6-контракты
+	// (onItemUse/onItemUseFirst из IItemGT; onItemRightClick ниже) движком не вызывались → канал MultiItem-поведений
+	// (Behavior_Tool: ключ/отвёртка/лом/кусачки + износ doDamage) был сиротой. Мост центральный: ItemBase — корень всех
+	// GT6-предметов (MultiItem/MultiItemTool/ItemFluidDisplay…); распаковка контекста единственная — IItemGT.bridgeUseOn*.
+	@Override public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext aCtx) {return IItemGT.bridgeUseOn(this, aCtx);}
+	@Override public net.minecraft.world.InteractionResult onItemUseFirst(ItemStack aStack, net.minecraft.world.item.context.UseOnContext aCtx) {return IItemGT.bridgeUseOnFirst(this, aCtx);}
+	/** 1.7.10-контракт Item.onItemRightClick (ПКМ-в-воздух; движок клал возврат обратно в руку). Дефолт — ванильный no-op
+	 *  (возврат того же стека); MultiItem переопределяет диспатчем по behavior-списку. */
+	public ItemStack onItemRightClick(ItemStack aStack, Level aWorld, Player aPlayer) {return aStack;}
+	@Override public net.minecraft.world.InteractionResult use(Level aWorld, Player aPlayer, net.minecraft.world.InteractionHand aHand) {
+		ItemStack tStack = aPlayer.getItemInHand(aHand);
+		ItemStack tResult = onItemRightClick(tStack, aWorld, aPlayer);
+		if (tResult != tStack) {aPlayer.setItemInHand(aHand, tResult); return net.minecraft.world.InteractionResult.SUCCESS;}
+		return super.use(aWorld, aPlayer, aHand);
+	}
+
 	/**
 	 * @param aUnlocalized The unlocalised Name of this Item. DO NOT START YOUR UNLOCALISED NAME WITH "gt."!!!
 	 */

@@ -346,6 +346,98 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PLACE-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// Ф3.0-СУДЬЯ (F-useOn инструменты, гейт: файл gt6toolprobe.flag): проверка канала инструментов РЕАЛЬНЫМ клик-путём.
+	// ServerPlayerGameMode.useItemOn (:388 itemStack.onItemUseFirst → :395 state.useItemOn → :415 itemStack.useOn) — тот же
+	// метод, что при ServerboundUseItemOnPacket. Ставим MTE-машину, читаем mFacing, кликаем ключом в бок → мост
+	// ItemBase.onItemUseFirst → MultiItem → Behavior_Tool → IBlockToolable.Util.onToolClick → TileEntityBase09FacingSingle:68
+	// должен сменить mFacing на кликнутую сторону; заодно фиксируем износ (GT.ToolStats.k до/после).
+	private int mToolProbePhase = 0; private int mToolProbeTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onToolProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mToolProbePhase >= 1) return;
+		if (!new java.io.File("gt6toolprobe.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mToolProbePhase = 1; return; }
+		if (++mToolProbeTick < 300) return;
+		mToolProbePhase = 1;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		tSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tW = tP.level();
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			if (tReg == null) { o.println("[GT6-TOOL-PROBE] реестр null"); return; }
+			// 1) установка машины реальным клик-путём (как в PLACE-PROBE)
+			net.minecraft.core.BlockPos tBase = tP.blockPosition().offset(2, -1, 2);
+			net.minecraft.core.BlockPos tTarget = tBase.above();
+			// воздушный карман 3×3×3 вокруг цели (иначе checkObstruction душит клик рельефом — артефакт замера, не баг)
+			for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+				tW.setBlock(tBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			tW.setBlock(tBase,   net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			net.minecraft.world.item.ItemStack tMachine = tReg.getItem(20001);
+			if (!gregapi.util.ST.valid(tMachine)) { o.println("[GT6-TOOL-PROBE] MTE#20001 невалиден"); return; }
+			tP.setShiftKeyDown(true);
+			tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tMachine.copy());
+			net.minecraft.world.phys.BlockHitResult tPlaceHit = new net.minecraft.world.phys.BlockHitResult(
+				new net.minecraft.world.phys.Vec3(tBase.getX()+0.5, tBase.getY()+1.0, tBase.getZ()+0.5), net.minecraft.core.Direction.UP, tBase, false);
+			tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tPlaceHit);
+			tP.setShiftKeyDown(false);
+			net.minecraft.world.level.block.entity.BlockEntity tBE = tW.getBlockEntity(tTarget);
+			if (!(tBE instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFS)) {
+				o.println("[GT6-TOOL-PROBE] машина не встала или BE не FacingSingle: " + (tBE == null ? "null" : tBE.getClass().getSimpleName())); return; }
+			byte tFacingBefore = tFS.mFacing;
+			// 2) ключ в руку, клик в ВОСТОЧНЫЙ бок машины по центру грани
+			net.minecraft.world.item.ItemStack tWrench = gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, gregapi.data.MT.Steel, gregapi.data.MT.Steel);
+			if (!gregapi.util.ST.valid(tWrench)) { o.println("[GT6-TOOL-PROBE] ключ не синтезирован"); return; }
+			long tDmgBefore = ((gregapi.item.multiitem.MultiItemTool)gregapi.util.ST.item_(tWrench)).getToolDamage(tWrench);
+			tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tWrench);
+			// износ гейтится hasInfiniteItems (креатив → без износа, 1:1 doDamage:434) — на время клика SURVIVAL
+			tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+			net.minecraft.world.phys.BlockHitResult tToolHit = new net.minecraft.world.phys.BlockHitResult(
+				new net.minecraft.world.phys.Vec3(tTarget.getX()+1.0, tTarget.getY()+0.5, tTarget.getZ()+0.5), net.minecraft.core.Direction.EAST, tTarget, false);
+			net.minecraft.world.InteractionResult tRes = tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tToolHit);
+			byte tFacingAfter = tFS.mFacing;
+			net.minecraft.world.item.ItemStack tWrenchAfter = tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
+			long tDmgAfter = gregapi.util.ST.valid(tWrenchAfter) && gregapi.util.ST.item_(tWrenchAfter) instanceof gregapi.item.multiitem.MultiItemTool tMT ? tMT.getToolDamage(tWrenchAfter) : -1;
+			o.println("[GT6-TOOL-PROBE] SURVIVAL: be=" + tBE.getClass().getSimpleName() + " result=" + tRes
+				+ " facing " + tFacingBefore + "→" + tFacingAfter + " (клик EAST=5; смена=" + (tFacingBefore != tFacingAfter) + ")"
+				+ " wear " + tDmgBefore + "→" + tDmgAfter + " (износ=" + (tDmgAfter > tDmgBefore) + ")");
+			// послойная диагностика (мерить, не гадать): item-слой и блок-слой напрямую, всё ещё SURVIVAL
+			if (tFacingAfter == tFacingBefore) {
+				net.minecraft.world.item.ItemStack tHand = tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
+				gregapi.item.multiitem.MultiItemTool tTool = (gregapi.item.multiitem.MultiItemTool)gregapi.util.ST.item_(tHand);
+				o.println("[GT6-TOOL-PROBE] DIAG usable=" + tTool.isItemStackUsable(tHand)
+					+ " itemLayer=" + tTool.onItemUseFirst(tHand, tP, tW, tTarget.getX(), tTarget.getY(), tTarget.getZ(), 5, 1.0F, 0.5F, 0.5F)
+					+ " facingПосле_itemLayer=" + tFS.mFacing);
+				java.util.List<String> tChat = new gregapi.code.ArrayListNoNulls<>();
+				long tDirect = gregapi.block.IBlockToolable.Util.onToolClick(gregapi.data.CS.TOOL_wrench, Long.MAX_VALUE, 3, tP, tChat, tP.getInventory(), false, tHand, tW, (byte)5, tTarget.getX(), tTarget.getY(), tTarget.getZ(), 1.0F, 0.5F, 0.5F);
+				o.println("[GT6-TOOL-PROBE] DIAG blockLayer tDamage=" + tDirect + " chat=" + tChat + " facingПосле_blockLayer=" + tFS.mFacing);
+			}
+			// контрольный клик в CREATIVE тем же движковым путём
+			tP.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+			byte tFacingBefore2 = tFS.mFacing;
+			net.minecraft.world.InteractionResult tRes2 = tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tToolHit);
+			o.println("[GT6-TOOL-PROBE] CREATIVE: result=" + tRes2 + " facing " + tFacingBefore2 + "→" + tFS.mFacing);
+			o.println("[GT6-TOOL-PROBE] итог: SURVIVAL-поворот=" + (tFacingAfter != tFacingBefore) + " износ=" + (tDmgAfter > tDmgBefore) + " (оба true = мост жив полностью)");
+			// сундук (жалоба игрока «сундуки нельзя открыть»): ставим MTE-сундук и ПКМ пустой рукой → должен открыться GUI
+			tW.setBlock(tTarget, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			net.minecraft.world.item.ItemStack tChest = tReg.getItem(32745);
+			if (gregapi.util.ST.valid(tChest)) {
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tChest.copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tPlaceHit);
+				tP.setShiftKeyDown(false);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+				net.minecraft.world.level.block.entity.BlockEntity tCBE = tW.getBlockEntity(tTarget);
+				net.minecraft.world.InteractionResult tCRes = tP.gameMode.useItemOn(tP, tW, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND, tToolHit);
+				boolean tOpened = tP.containerMenu != tP.inventoryMenu;
+				o.println("[GT6-CHEST-PROBE] be=" + (tCBE == null ? "null" : tCBE.getClass().getSimpleName()) + " result=" + tCRes
+					+ " menu=" + tP.containerMenu.getClass().getSimpleName() + " открыт=" + tOpened);
+			} else o.println("[GT6-CHEST-PROBE] MTE#32745 невалиден");
+		} catch (Throwable e) { o.println("[GT6-TOOL-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+
 	// A/GAP-1 СУДЬЯ-ДАМПЕР (гейт gt6blockdump.flag): порт-дескриптор 3D-объектов-В-МИРЕ. Ставит по 1 представителю КАЖДОГО
 	// уникального MTE-TE-класса (шкафы/трубы/провода/монетки/сундуки) в сетку, затем на КЛИЕНТЕ (живой BE, реальный BER-путь)
 	// собирает world-квады → descriptor.port.block.jsonl. Это порт-сторона паритета блоков-в-мире (item-форма 98.28% не покрывает
