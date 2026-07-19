@@ -506,6 +506,10 @@ public class WD {
 	}
 	public static gregapi.block.Material getMaterial(Block aBlock) {
 		if (aBlock instanceof BlockBase) return ((BlockBase)aBlock).getMaterial();
+		// GT6-жидкости (BlockWaterlike Ocean/River/Swamp, BlockBaseFluid масла/химия) — BlockFluidBaseGT (НЕ BlockBase),
+		// несут собственный Material (water/lava/gas/материал). Без этой ветки getMaterial возвращал fallback (rock) →
+		// isLiquid()=false → декор-guard'ы worldgen (rocks/lily/stone-layers `!isLiquid()`) садили декор на воду.
+		if (aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT) return ((gregapi.block.fluid.BlockFluidBaseGT)aBlock).getMaterial();
 		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
 		if (tState.isAir())                                                                                      return gregapi.block.Material.air;
 		if (aBlock == Blocks.WATER || aBlock == Blocks.BUBBLE_COLUMN)                                            return gregapi.block.Material.water;
