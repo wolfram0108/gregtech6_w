@@ -400,6 +400,13 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 
+	// НАДЁЖНЫЙ МОСТ синка (пара к буферу NetworkHandler.PENDING): каждый клиент-тик доигрываем координатные
+	// GT6-пакеты, обогнавшие свой чанк при логине (иначе worldgen-MTE стартовой области оставались без клиент-BE).
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onPendingPackets(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		gregapi.network.NetworkHandler.processPending(Minecraft.getInstance().level);
+	}
+
 	// U2-СУДЬЯ под-боксов (гейт gt6geomprobe.flag): канал render-bounds MTE конец-в-конец на ЖИВОМ клиент-BE
 	// (client-placement, метод F3-render.md §9): для каждого MTE-класса — пассы × setBlockBounds → чтение
 	// IBlock.getRenderBounds (то, что ест GT6BlockModel.applyBounds). Критерий U2: у многопассовых объектов
@@ -456,6 +463,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			}
 			o.println("[GT6-GEOMPROBE] MTE-классов=" + tTotal + " многопассовых=" + tMulti + " с-различными-bounds=" + tDistinctOK + " с-под-боксами=" + tSubBox + " quads=" + tQuadsTotal);
 			o.println("[GT6-GEOMPROBE] примеры: " + String.join(", ", tExamples));
+			// Улика R3/крусибл («нет грани/верхней части»): спрайты, НЕ найденные в атласе — их грани putFace молча пропускает.
+			java.util.List<String> tMiss = new java.util.ArrayList<>(gregapi.render.GT6QuadBuilder.sMissingSprites);
+			java.util.Collections.sort(tMiss);
+			o.println("[GT6-GEOMPROBE] missing-спрайтов=" + tMiss.size() + (tMiss.isEmpty() ? "" : ": " + String.join(", ", tMiss.subList(0, Math.min(40, tMiss.size())))));
 		} catch (Throwable e) {o.println("[GT6-GEOMPROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 

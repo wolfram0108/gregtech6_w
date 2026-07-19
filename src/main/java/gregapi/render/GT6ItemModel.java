@@ -90,11 +90,16 @@ public class GT6ItemModel implements ItemModel {
 		// иначе стеки с одинаковыми item+meta, но разным видом (NBT/state) делят один кэш-слот GuiItemAtlas.
 		java.util.TreeSet<String> tIdSpr = new java.util.TreeSet<>();
 		boolean tAnimated = false;
+		int tColorHash = 1; // репорт игрока «все монеты одного цвета в креативе/JEI»: цвет монеты — ВЕРШИННЫЙ тинт при
+		// ОДИНАКОВЫХ спрайтах → identity из одних спрайтов сливала все материалы в один слот пиксель-кэша GuiItemAtlas.
+		// Канон (identity включает ВСЁ, от чего зависят пиксели) → домешиваем vertex-цвета квадов.
 		for (BakedQuad q : tBuilt) try {
 			tIdSpr.add(q.materialInfo().sprite().contents().name().toString());
 			if (q.materialInfo().sprite().contents().isAnimated()) tAnimated = true;
+			for (int v = 0; v < 4; v++) tColorHash = 31 * tColorHash + q.bakedColors().color(v);
 		} catch (Throwable e) {}
 		for (String s : tIdSpr) aOutput.appendModelIdentityElement(s);
+		aOutput.appendModelIdentityElement(tColorHash);
 		// канон CuboidItemModelWrapper.update:100-102: анимированный спрайт грани → setAnimated (иначе GUI-атлас кэширует статику)
 		if (tAnimated) aOutput.setAnimated();
 		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();

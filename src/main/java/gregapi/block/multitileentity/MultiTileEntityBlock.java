@@ -298,6 +298,27 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// TE-интерфейс IMTE_CollisionRayTrace без implementor'ов (0, сверено) → мёртвая compile-поверхность, не заглушка (терять нечего).
 	public final HitResult collisionRayTrace(Level aWorld, int aX, int aY, int aZ, Vec3 aVectorA, Vec3 aVectorB) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); return aTileEntity instanceof IMTE_CollisionRayTrace ? ((IMTE_CollisionRayTrace)aTileEntity).collisionRayTrace(aVectorA, aVectorB) : null;}
 	// было aPlayer.getHeldItem() (1.7.10 EntityPlayer no-arg, дефолтная рука) -> neo Player.getMainHandItem() (Player.java:2257)
+	// U4-МОСТ активации (репорты игрока: штабель слитков/монет не пополняется кликом — ставится НОВЫЙ блок выше;
+	// GUI батарейного бокса не открывается): GT6 onBlockActivated ниже — 1:1-порт, но ОСИРОТЕЛ («канал сместился»):
+	// neo зовёт BlockBehaviour.useItemOn (с предметом, ДО установки item'ом — как 1.7.10 activateBlockOrUseItem
+	// звал Block.onBlockActivated до Item.onItemUse) и useWithoutItem (пустая рука). Мостим ОБА в GT6-канал:
+	// true → SUCCESS/SUCCESS_SERVER (клик поглощён, установка не происходит — слиток уходит В штабель).
+	@Override protected net.minecraft.world.InteractionResult useItemOn(ItemStack aStack, BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
+		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
+			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+		return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
+	}
+	@Override protected net.minecraft.world.InteractionResult useWithoutItem(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
+		if (bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
+			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+		return net.minecraft.world.InteractionResult.PASS;
+	}
+	private boolean bridgeBlockActivated(Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
+		net.minecraft.world.phys.Vec3 tHitVec = aHit.getLocation();
+		return onBlockActivated(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer, aHit.getDirection().get3DDataValue(),
+			(float)(tHitVec.x - aPos.getX()), (float)(tHitVec.y - aPos.getY()), (float)(tHitVec.z - aPos.getZ()));
+	}
+
 	public final boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aPlayer != null && IL.TC_Thaumometer.equal(aPlayer.getMainHandItem(), T, T) && (!(aTileEntity instanceof ITileEntityBookShelf) || !((ITileEntityBookShelf)aTileEntity).isShelfFace(UT.Code.side(aSide)))) return F; return aTileEntity instanceof IMTE_OnBlockActivated && ((IMTE_OnBlockActivated)aTileEntity).onBlockActivated(aPlayer, UT.Code.side(aSide), aHitX, aHitY, aHitZ);}
 	public final void onEntityWalking(Level aWorld, int aX, int aY, int aZ, Entity aEntity) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aTileEntity instanceof IMTE_OnEntityWalking) ((IMTE_OnEntityWalking)aTileEntity).onEntityWalking(aEntity);}
 	// было onBlockClicked(World,x,y,z,EntityPlayer) -> BlockBehaviour.attack(BlockState,Level,BlockPos,Player) [BlockBehaviour.java:353]

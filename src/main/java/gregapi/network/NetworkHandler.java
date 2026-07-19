@@ -105,7 +105,44 @@ public final class NetworkHandler implements INetworkHandler {
 	private void handlePayload(GT6Payload aPayload, IPayloadContext aContext) {
 		IPacket tPacket = decode(aPayload.data());
 		if (tPacket == null) return;
-		aContext.enqueueWork(() -> tPacket.process(getProcessingWorld(aContext), this));
+		aContext.enqueueWork(() -> {
+			BlockGetter tWorld = getProcessingWorld(aContext);
+			// НАДЁЖНЫЙ МОСТ (репорт игрока: worldgen-MTE невидимы в стартовой области при входе): даже на
+			// ChunkWatchEvent.Sent координатный GT6-пакет может обгонять чанк при логин-очереди (chunk-sender
+			// троттлит бандл, payload-канал — нет) → блока ещё нет → пакет молча терялся → клиент-BE не создавался.
+			// Вместо гонки — буфер: пакет в незагруженный чанк откладывается и доигрывается по тикам (processPending).
+			if (tWorld instanceof Level tLevel && tLevel.isClientSide() && tPacket instanceof gregapi.network.packets.PacketCoordinates tPC
+			 && !tLevel.hasChunkAt(new BlockPos(tPC.mX, tPC.mY, tPC.mZ))) {
+				queuePending(tPC, this);
+				return;
+			}
+			tPacket.process(tWorld, this);
+		});
+	}
+
+	// ---- Клиентский буфер отложенных координатных пакетов (пакет обогнал чанк) ----
+	private static final class PendingPacket {
+		final gregapi.network.packets.PacketCoordinates mPacket; final NetworkHandler mHandler; int mTTL = 600; // ~30с
+		PendingPacket(gregapi.network.packets.PacketCoordinates aPacket, NetworkHandler aHandler) {mPacket = aPacket; mHandler = aHandler;}
+	}
+	private static final java.util.ArrayDeque<PendingPacket> PENDING = new java.util.ArrayDeque<>();
+	private static void queuePending(gregapi.network.packets.PacketCoordinates aPacket, NetworkHandler aHandler) {
+		synchronized (PENDING) {if (PENDING.size() < 8192) PENDING.add(new PendingPacket(aPacket, aHandler));}
+	}
+	/** Доигрывание отложенных пакетов (зовёт клиент-тик GT_API_Proxy_Client); aWorld — текущий клиент-Level. */
+	public static void processPending(Level aWorld) {
+		if (aWorld == null) {synchronized (PENDING) {PENDING.clear();} return;}
+		java.util.List<PendingPacket> tReady = null;
+		synchronized (PENDING) {
+			for (java.util.Iterator<PendingPacket> it = PENDING.iterator(); it.hasNext();) {
+				PendingPacket tP = it.next();
+				if (aWorld.hasChunkAt(new BlockPos(tP.mPacket.mX, tP.mPacket.mY, tP.mPacket.mZ))) {
+					if (tReady == null) tReady = new ArrayList<>();
+					tReady.add(tP); it.remove();
+				} else if (--tP.mTTL <= 0) it.remove();
+			}
+		}
+		if (tReady != null) for (PendingPacket tP : tReady) try {tP.mPacket.process(aWorld, tP.mHandler);} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 
 	private BlockGetter getProcessingWorld(IPayloadContext aContext) {
