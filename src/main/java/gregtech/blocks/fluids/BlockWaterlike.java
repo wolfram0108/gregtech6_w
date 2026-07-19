@@ -232,6 +232,15 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		return net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(tAmount, false);
 	}
 
+	// F5-B block-контракт (ПЕРЕНОС эталона vanilla LiquidBlock, decisions/F-water-vanilla-to-gt6.md): вода — НЕ baked-model
+	// блок, а рисуется ЧЕРЕЗ getFluidState→WATER (neo FluidRenderer); проходима и прозрачна. Без этих 4 override neo рисовал
+	// missing-model (getRenderShape дефолт MODEL + нет json) и полный коллайдер (в воду нельзя войти). 1:1 к LiquidBlock:
+	// getRenderShape:136 INVISIBLE, getShape:147 empty, getCollisionShape:82 empty (проходима), propagatesSkylightDown:115 false.
+	@Override protected net.minecraft.world.level.block.RenderShape getRenderShape(net.minecraft.world.level.block.state.BlockState aState) {return net.minecraft.world.level.block.RenderShape.INVISIBLE;}
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aLevel, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aLevel, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
+	@Override protected boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState) {return false;}
+
 	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
