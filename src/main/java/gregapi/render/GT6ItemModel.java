@@ -372,6 +372,45 @@ public class GT6ItemModel implements ItemModel {
 		return sb.append('}').toString();
 	}
 
+	// A/GAP-1 (система паритета 3D-объектов-В-МИРЕ): дескриптор рендера блока В МИРЕ (не item-форма). MTE-3D-объекты
+	// (шкафы/трубы/провода/монетки) рисуются BER-путём buildRendererQuads на ЖИВОМ BE (getTexture по FACING/mActive/
+	// mConnections — item-форма их НЕ покрывает, там mConnections=0/mActive=0). Тот же извлекатель спрайтов+тинта, что
+	// describeStack (переиспользование). Ключ несёт TE-класс+meta+facing+connections — многомерность world-состояния.
+	public static String describeWorldBlock(net.minecraft.world.level.BlockGetter aLevel, net.minecraft.core.BlockPos aPos) {
+		net.minecraft.world.level.block.state.BlockState st = aLevel.getBlockState(aPos);
+		net.minecraft.world.level.block.Block b = st.getBlock();
+		net.minecraft.resources.Identifier k = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(b);
+		net.minecraft.world.level.block.entity.BlockEntity be = aLevel.getBlockEntity(aPos);
+		String teName = be == null ? "-" : be.getClass().getSimpleName();
+		byte tFacing = -1, tConn = -1; boolean tActive = false;
+		try { java.lang.reflect.Field fF = be == null ? null : findField(be.getClass(), "mFacing"); if (fF != null) tFacing = fF.getByte(be); } catch (Throwable e) {}
+		try { java.lang.reflect.Field fC = be == null ? null : findField(be.getClass(), "mConnections"); if (fC != null) tConn = fC.getByte(be); } catch (Throwable e) {}
+		try { java.lang.reflect.Field fA = be == null ? null : findField(be.getClass(), "mActive"); if (fA != null) tActive = fA.getBoolean(be); } catch (Throwable e) {}
+		StringBuilder sb = new StringBuilder(200).append("{\"k\":\"").append(jsonEsc((k == null ? "?" : k.toString()) + "#" + teName))
+			.append("\",\"path\":\"world\",\"facing\":").append(tFacing).append(",\"conn\":").append(tConn).append(",\"active\":").append(tActive).append(",\"spr\":[");
+		GT6QuadBuilder tQB = new GT6QuadBuilder();
+		try {
+			if (be instanceof gregapi.render.IRenderedBlockObject ro) {
+				gregapi.render.IRenderedBlockObject ro2 = ro.passRenderingToObject(aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+				gregapi.render.GT6BlockModel.buildRendererQuads(tQB, ro2 != null ? ro2 : ro, b, aLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+			}
+		} catch (Throwable e) {}
+		java.util.TreeSet<String> tSpr = new java.util.TreeSet<>();
+		int tTint = -1;
+		for (BakedQuad q : tQB.quads()) try {
+			tSpr.add(q.materialInfo().sprite().contents().name().toString());
+			if (tTint == -1) { int c = q.bakedColors().color(0) & 0xFFFFFF; if (c != 0xFFFFFF) tTint = c; }
+		} catch (Throwable e) {}
+		boolean tF = true; for (String s : tSpr) { if (!tF) sb.append(','); tF = false; sb.append('"').append(jsonEsc(s)).append('"'); }
+		sb.append(']').append(",\"tint\":\"").append(String.format("%06x", (tTint == -1 ? 0xFFFFFF : tTint))).append("\"}");
+		return sb.toString();
+	}
+
+	private static java.lang.reflect.Field findField(Class<?> aClass, String aName) {
+		for (Class<?> c = aClass; c != null && c != Object.class; c = c.getSuperclass()) try { java.lang.reflect.Field f = c.getDeclaredField(aName); f.setAccessible(true); return f; } catch (Throwable e) {}
+		return null;
+	}
+
 	private static String jsonEsc(String s) { return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\""); }
 
 	private static Identifier tryIcon(Object aTarget, String aMethod, Class<?> aArgType, Object aArg) {

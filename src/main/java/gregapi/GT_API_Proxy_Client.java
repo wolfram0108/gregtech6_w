@@ -345,6 +345,64 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PLACE-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// A/GAP-1 СУДЬЯ-ДАМПЕР (гейт gt6blockdump.flag): порт-дескриптор 3D-объектов-В-МИРЕ. Ставит по 1 представителю КАЖДОГО
+	// уникального MTE-TE-класса (шкафы/трубы/провода/монетки/сундуки) в сетку, затем на КЛИЕНТЕ (живой BE, реальный BER-путь)
+	// собирает world-квады → descriptor.port.block.jsonl. Это порт-сторона паритета блоков-в-мире (item-форма 98.28% не покрывает
+	// FACING/mActive/mConnections). Пара к оракул-DumpRenderBlocks (GAP-2, след.) + компаратор (GAP-3).
+	private int mBlockDumpPhase = 0; private int mBlockDumpTick = 0;
+	private final java.util.List<net.minecraft.core.BlockPos> mBlockDumpPositions = new java.util.ArrayList<>();
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onWorldBlockDump(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mBlockDumpPhase >= 2) return;
+		if (!new java.io.File("gt6blockdump.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mBlockDumpPhase = 2; return; }
+		++mBlockDumpTick;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		if (mBlockDumpPhase == 0 && mBlockDumpTick >= 300) {
+			mBlockDumpPhase = 1;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null) { o.println("[GT6-BLOCKDUMP] реестр gt.multitileentity null"); return; }
+				net.minecraft.core.BlockPos tBase = tP.blockPosition().offset(3, 0, 3);
+				java.util.Set<Class<?>> tSeen = new java.util.HashSet<>();
+				int tGx = 0;
+				for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+					try {
+						if (tC.mCanonicalTileEntity == null || !tSeen.add(tC.mCanonicalTileEntity.getClass())) continue;
+						net.minecraft.world.item.ItemStack tS = tReg.getItem(tC.mID);
+						if (!gregapi.util.ST.valid(tS) || !(tS.getItem() instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tIt)) continue;
+						net.minecraft.core.BlockPos tFlr = tBase.offset((tGx % 16) * 2, 0, (tGx / 16) * 2);
+						tW.setBlock(tFlr.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						tW.setBlock(tFlr, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+						boolean tPl = tIt.onItemUse(tS, tP, tW, tFlr.getX(), tFlr.getY()-1, tFlr.getZ(), gregapi.data.CS.SIDE_TOP, 0.5f, 1.0f, 0.5f);
+						if (tPl) mBlockDumpPositions.add(tFlr);
+						tGx++;
+					} catch (Throwable e) {/* один класс не рушит дамп */}
+				}
+				o.println("[GT6-BLOCKDUMP] поставлено уникальных TE-классов: " + mBlockDumpPositions.size() + " (из " + tSeen.size() + " уникальных)");
+			} catch (Throwable e) { o.println("[GT6-BLOCKDUMP] place-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		if (mBlockDumpPhase == 1 && mBlockDumpTick >= 380) {
+			mBlockDumpPhase = 2;
+			try {
+				java.util.List<String> tLines = new java.util.ArrayList<>();
+				for (net.minecraft.core.BlockPos tPos : mBlockDumpPositions) try { tLines.add(gregapi.render.GT6ItemModel.describeWorldBlock(tMC.level, tPos)); } catch (Throwable e) {/**/}
+				java.nio.file.Path tDir = java.nio.file.Paths.get("gt6dump");
+				java.nio.file.Files.createDirectories(tDir);
+				java.nio.file.Files.write(tDir.resolve("descriptor.port.block.jsonl"), tLines, java.nio.charset.StandardCharsets.UTF_8);
+				long tWithSpr = tLines.stream().filter(s -> s.contains("\"spr\":[\"")).count();
+				o.println("[GT6-BLOCKDUMP] descriptor.port.block.jsonl записан: " + tLines.size() + " world-блоков, с непустыми спрайтами=" + tWithSpr + " (клиент BER-путь)");
+			} catch (Throwable e) { o.println("[GT6-BLOCKDUMP] dump-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+			return;
+		}
+	}
+
 	// N5-прозрачность СУДЬЯ (гейт gt6inject.flag): скан клиент-чанков на worldgen-камешки MultiTileEntityRock — клиент-BE
 	// существует (не прозрачен) + level!=null (mTexture реальная). До onChunkWatch-фикса non-ticking worldgen-MTE клиенту не
 	// синкались (getUpdateTag=0) → found=0. После (sendUpdateToPlayer через ITileEntitySynchronising) → found>0.
