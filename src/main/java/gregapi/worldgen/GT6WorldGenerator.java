@@ -95,7 +95,13 @@ public class GT6WorldGenerator {
 					// чанке такого практически не бывает, отдельный try/catch не заводим (упадёт в общий catch
 					// вызывающего WorldgenObject, если вообще случится).
 					int tX = mMinX+i, tZ = mMinZ+j;
-					Holder<Biome> tBiomeHolder = mWorld.getBiome(new BlockPos(tX, mWorld.getHeight(Heightmap.Types.WORLD_SURFACE, tX, tZ), tZ));
+					// ТОЧНЫЙ биом-канал (R-стык-чанков 2026-07-19): было mWorld.getBiome(pos) = BiomeManager с
+					// ШУМОВЫМ ДЖИТТЕРОМ ±2-3 блока (обфускация границ для визуала/спавна) — 1.7.10 генлейер давал
+					// ТОЧНЫЙ биом per-колонка. Джиттер у границы биомов подмешивал «болото» в речные колонны →
+					// WorldgenSwamp захватывал воду/берега на речной стороне (резко по шву чанка). Реальный точный
+					// канал = сохранённый quart-биом чанка: ChunkAccess.getNoiseBiome (ChunkAccess.java:432, без
+					// джиттера; quart-координаты мира = блок >>2, Y — поверхность колонки).
+					Holder<Biome> tBiomeHolder = tChunk.getNoiseBiome(tX >> 2, mWorld.getHeight(Heightmap.Types.WORLD_SURFACE, tX, tZ) >> 2, tZ >> 2);
 					tBiomes[i][j] = tBiomeHolder.value();
 					tBiomeHolder.unwrapKey().ifPresent(k -> tBiomeNames.add(k.identifier().toString()));
 				}
