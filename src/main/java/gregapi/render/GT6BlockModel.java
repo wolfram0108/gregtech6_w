@@ -100,12 +100,18 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 				else if (tAxis == gregapi.data.CS.PILLAR_Z) tQB.setUVRotate(0, 0, 0, 0, 1, 1);
 			}
 			boolean[] tSides = sides(tBlock, tRB instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)tRB : null);
+			// КОНТРАКТ setBlockBounds (1:1 renderWorldBlock RendererBlockTextured:121): true → перечитать bounds из блока;
+			// false → ПОЛНЫЙ КУБ (сброс 0..1 в блок). Игнор return читал ПОСЛЕДНИЕ сохранённые bounds ОБЩЕГО Block-инстанса
+			// → мини-бокс камешка протекал в машины/центры кустов на том же блоке (регресс d87e09e4, репорт игрока).
+			boolean tNeedsToSetBounds = true;
 			for (int i = 0, j = tRB.getRenderPasses(aLevel, tX, tY, tZ, tSides); i < j; i++) {
 				if (!tRB.usesRenderPass(i, aLevel, tX, tY, tZ, tSides)) continue;
-				tRB.setBlockBounds(i, aLevel, tX, tY, tZ, tSides);
+				if (tRB.setBlockBounds(i, aLevel, tX, tY, tZ, tSides)) {tNeedsToSetBounds = true;}
+				else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 				applyBounds(tQB, tBlock);
 				for (byte s = 0; s < 6; s++) face(tQB, tBlock, s, tRB.getTexture(i, s, tSides, aLevel, tX, tY, tZ), tX, tY, tZ);
 			}
+			if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(tBlock, 0, 0, 0, 1, 1, 1); // анти-протечка общего блока (1:1 :132)
 			tQB.clearUVRotate(); // 1:1 renderBlockLog: сброс uvRotate* после renderStandardBlock
 		} else {
 			buildRendererQuads(tQB, tRenderer, tBlock, aLevel, tX, tY, tZ);
@@ -118,12 +124,16 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	public static void buildRendererQuads(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
 		if (aRenderer.renderBlock(aBlock, aQB, aLevel, aX, aY, aZ)) return;
 		boolean[] tSides = sides(aBlock, aRenderer instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)aRenderer : null);
+		// КОНТРАКТ setBlockBounds (1:1 renderWorldBlock, ветвь рендер-объекта :146): false → полный куб, не стухшие bounds.
+		boolean tNeedsToSetBounds = true;
 		for (int i = 0, j = aRenderer.getRenderPasses(aBlock, tSides); i < j; i++) {
 			if (!aRenderer.usesRenderPass(i, tSides)) continue;
-			aRenderer.setBlockBounds(aBlock, i, tSides);
+			if (aRenderer.setBlockBounds(aBlock, i, tSides)) {tNeedsToSetBounds = true;}
+			else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 			applyBounds(aQB, aBlock);
 			for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, aRenderer.getTexture(aBlock, i, s, tSides), aX, aY, aZ);
 		}
+		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // анти-протечка общего блока (1:1 :158)
 	}
 
 	/** F3-render item-форма блока (3D-иконка в инвентаре) — ДОСЛОВНОЕ воспроизведение {@code RendererBlockTextured.renderInventoryBlock}
@@ -135,21 +145,26 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		boolean[] tSides = {true, true, true, true, true, true}; // SIDES_ITEM_RENDER (без соседей → все грани)
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aStack);
 		if (tRenderer != null) tRenderer = tRenderer.passRenderingToObject(aStack);
+		// КОНТРАКТ setBlockBounds (1:1 renderInventoryBlock RendererBlockTextured:67/81): false → полный куб + анти-протечка.
+		boolean tNeedsToSetBounds = true;
 		if (tRenderer != null) {
 			for (int i = 0, j = tRenderer.getRenderPasses(aBlock, tSides); i < j; i++) {
 				if (!tRenderer.usesRenderPass(i, tSides)) continue;
-				tRenderer.setBlockBounds(aBlock, i, tSides);
+				if (tRenderer.setBlockBounds(aBlock, i, tSides)) {tNeedsToSetBounds = true;}
+				else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 				applyBounds(aQB, aBlock);
 				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRenderer.getTexture(aBlock, i, s, tSides), 0, 0, 0);
 			}
 		} else {
 			for (int i = 0, j = tRB.getRenderPasses(aStack); i < j; i++) {
 				if (!tRB.usesRenderPass(i, aStack)) continue;
-				tRB.setBlockBounds(i, aStack);
+				if (tRB.setBlockBounds(i, aStack)) {tNeedsToSetBounds = true;}
+				else {if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); tNeedsToSetBounds = false;}
 				applyBounds(aQB, aBlock);
 				for (byte s = 0; s < 6; s++) face(aQB, aBlock, s, tRB.getTexture(i, s, aStack), 0, 0, 0);
 			}
 		}
+		if (tNeedsToSetBounds) gregapi.util.WD.setBlockBounds(aBlock, 0, 0, 0, 1, 1, 1); // 1:1 :92
 	}
 
 	/** tSides: у SideCheck-объекта — renderFullBlockSide; иначе все true (соседнее скрытие делает neo через addCulledFace). */
