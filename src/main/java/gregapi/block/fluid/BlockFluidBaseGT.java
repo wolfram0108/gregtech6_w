@@ -78,6 +78,9 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
 		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
 	}
+	/** тот же контракт, что {@link gregapi.block.BlockBase#getRenderBounds()} — читает GT6BlockModel.applyBounds
+	 *  (без этого кванта-высота жидкости терялась и блок рисовался полным кубом). */
+	public float[] getRenderBounds() {return mRenderBounds;}
 
 	/** F16/F9 форс движка: было {@code BlockFluidBase(Fluid,Material)}, читавший density/temperature/
 	 *  maxScaledLight/tickRate/densityDir ИЗ САМОГО Forge {@code Fluid}-объекта (data-holder-поля) — neo

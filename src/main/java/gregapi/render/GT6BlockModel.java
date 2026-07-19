@@ -142,9 +142,11 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 		return r;
 	}
 
-	/** Перенести текущие render-bounds блока (после setBlockBounds) в quad-builder (было RenderBlocks.setRenderBoundsFromBlock). */
+	/** Перенести текущие render-bounds блока (после setBlockBounds) в quad-builder (было RenderBlocks.setRenderBoundsFromBlock).
+	 *  Носители bounds — обе Block-иерархии GT6 (BlockBase и BlockFluidBaseGT: кванта-высота жидкости). */
 	private static void applyBounds(GT6QuadBuilder aQB, Block aBlock) {
-		aQB.setBounds(aBlock instanceof gregapi.block.BlockBase tB ? tB.getRenderBounds() : null);
+		aQB.setBounds(aBlock instanceof gregapi.block.BlockBase tB ? tB.getRenderBounds()
+		            : aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT tF ? tF.getRenderBounds() : null);
 	}
 
 	/** Один per-side вызов ITexture (диспетчер по стороне) → GT6QuadBuilder аккумулирует грань. */

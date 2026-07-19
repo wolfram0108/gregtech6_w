@@ -94,7 +94,10 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// ДО super, F16/F9 форс движка, см. BlockFluidBaseGT); resistance считаем от параметра aFluid (mFluid
 		// ещё не присвоен на этой стадии — тот же самый Fluid).
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
-		super(BlockBehaviour.Properties.of().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial, aFluid);
+		// .replaceable().liquid().pushReaction(DESTROY).noLootTable() — 1:1 c 1.7.10 MaterialOil/MaterialGas
+		// (MaterialLiquid: setReplaceable + setNoPushMobility; дропов у Forge BlockFluidBase не было) — без
+		// replaceable в neo НЕЛЬЗЯ поставить блок в жидкость (у vanilla-воды тот же набор флагов, Blocks.java:297-304).
+		super(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial, aFluid);
 		mFluid = aFluid;
 		mAmountPerQuanta = aAmountPerQuanta;
 		gregapi.GT_API.deferItemInit(() -> mQuanta = FL.make(mFluid, mAmountPerQuanta));
@@ -447,8 +450,11 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 	
-	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
-	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return mFlammability;}
+	// F-fire мост: было Forge Block.getFlammability/getFireSpreadSpeed(IBlockAccess,x,y,z,side) — в neo канал огня
+	// живёт в IBlockExtension.getFlammability/getFireSpreadSpeed(BlockState,BlockGetter,BlockPos,Direction)
+	// (IBlockExtension.java:677/721, читает FireBlock). Старая сигнатура была мёртвой — нефть не поджигалась.
+	@Override public int getFlammability(BlockState aState, BlockGetter aLevel, BlockPos aPos, Direction aDirection) {return mFlammability;}
+	@Override public int getFireSpreadSpeed(BlockState aState, BlockGetter aLevel, BlockPos aPos, Direction aDirection) {return mFlammability;}
 	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
 	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
 	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta >= 7;}

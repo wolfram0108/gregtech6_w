@@ -77,7 +77,9 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 		// Fluid-перегрузка супер-ктора: перенос характеристик 1:1 c Forge BlockFluidBase(Fluid,Material) —
 		// воды получают density=1000 (иначе нефти 600-900 «плотнее» воды density=1 и вытесняли бы её) и
 		// tickRate=5, который подклассы переставляют после super (Ocean/River 20, Swamp 10 — 1:1).
-		super(BlockBehaviour.Properties.of().explosionResistance(30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aName)))), Material.water, aFluid);
+		// .replaceable().liquid().pushReaction(DESTROY).noLootTable() — 1:1 с Material.water 1.7.10 (MaterialLiquid:
+		// replaceable + noPushMobility), эталон vanilla-вода Blocks.java:297-304: в воду можно ставить блоки (замещение).
+		super(BlockBehaviour.Properties.of().replaceable().liquid().pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY).noLootTable().explosionResistance(30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aName)))), Material.water, aFluid);
 		mFluid = aFluid;
 		quantaPerBlock = (aFlowsOut ? 8 : 3);
 		quantaPerBlockFloat = quantaPerBlock;
