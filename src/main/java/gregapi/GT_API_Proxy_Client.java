@@ -134,7 +134,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aEvent.<gregapi.gui.ContainerCommon, gregapi.gui.ContainerClient>register(gregapi.gui.ContainerCommon.MENU_TYPE.get(), (aMenu, aInv, aTitle) -> {
 			// исключение отсюда = дисконнект (neoforge ClientPayloadHandler.createMenuScreen catch→disconnect) → тотальный null-гейт
 			if (aMenu == null) aMenu = new gregapi.gui.ContainerCommon(0, aInv);
-			try { if (aMenu.mTileEntity instanceof gregapi.tileentity.ITileEntityGUI tGUI) { Object tScreen = tGUI.getGUIClient(aMenu.mGUIID, aInv.player); if (tScreen instanceof gregapi.gui.ContainerClient tCC) return tCC; } }
+			// containerId-мост (корень «слот есть на сервере, но не отображается»): getGUIClient строит СВЕЖИЙ
+			// клиент-контейнер легаси-конструктором (id из sPendingWindowID); вне withWindowID тот равен -1 →
+			// id клиента ≠ id сервера → ВСЕ пакеты контента/слотов меню молча дропаются клиентом (проверка id в
+			// handleContainerSetSlot/Content). Оборачиваем фабрику мостом с id сетевого меню (= серверный id).
+			final gregapi.gui.ContainerCommon fMenu = aMenu;
+			try { if (aMenu.mTileEntity instanceof gregapi.tileentity.ITileEntityGUI tGUI) { Object tScreen = gregapi.gui.ContainerCommon.withWindowID(fMenu.containerId, () -> tGUI.getGUIClient(fMenu.mGUIID, aInv.player)); if (tScreen instanceof gregapi.gui.ContainerClient tCC) return tCC; } }
 			catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-GUI] getGUIClient упал, fallback-экран: "+e); }
 			return new gregapi.gui.ContainerClient(aMenu, gregapi.data.CS.RES_PATH_GUI + "chests/" + (aMenu.mTileEntity == null ? 1 : aMenu.mTileEntity.getSizeInventoryGUI()) + ".png");
 		});
@@ -361,13 +366,60 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onToolProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if (mToolProbePhase >= 2) return;
+		if (mToolProbePhase >= 4) return;
 		if (!new java.io.File("gt6toolprobe.flag").exists()) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
-		if (tSrv == null) { mToolProbePhase = 2; return; }
+		if (tSrv == null) { mToolProbePhase = 4; return; }
+		// фоновый запуск без фокуса — авто-пауза убивает тики и закрывает меню; пробе нужен живой сервер
+		tMC.options.pauseOnLostFocus = false;
+		if (tMC.screen instanceof net.minecraft.client.gui.screens.PauseScreen) tMC.setScreen(null);
 		++mToolProbeTick;
+		if (mToolProbePhase == 2) {
+			// ФАЗА 3 (~4с после переоткрытия): клиент ДОЛЖЕН видеть доски в слоте 31 (initial-data открытия); затем ломаем рецепт
+			if (mToolProbeTick < 540) return;
+			mToolProbePhase = 3;
+			final java.io.PrintStream o3 = gregapi.data.CS.OUT;
+			try {
+				net.minecraft.world.item.ItemStack tCli31 = null;
+				for (net.minecraft.world.inventory.Slot tS : tMC.player.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tCli31 = tS.getItem(); break; }
+				o3.println("[GT6-SYNC-PROBE] ФАЗА3 КЛИЕНТ: меню=" + tMC.player.containerMenu.getClass().getSimpleName()
+					+ " containerId=" + tMC.player.containerMenu.containerId
+					+ " слот31=" + tCli31 + " screen=" + (tMC.screen == null ? "null" : tMC.screen.getClass().getSimpleName())
+					+ " (ждали: 2 доски — донеслось открытием/диффом)");
+			} catch (Throwable e) { o3.println("[GT6-SYNC-PROBE] фаза3 клиент упала: " + e); }
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.world.level.block.entity.BlockEntity tBE = mProbeTablePos == null ? null : tP.level().getBlockEntity(mProbeTablePos);
+				if (tBE instanceof net.minecraft.world.Container tCont) tCont.setItem(24, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.OAK_LOG));
+				net.minecraft.world.item.ItemStack tSrv31 = null;
+				for (net.minecraft.world.inventory.Slot tS : tP.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tSrv31 = tS.getItem(); break; }
+				o3.println("[GT6-SYNC-PROBE] ФАЗА3 СЕРВЕР: containerId=" + tP.containerMenu.containerId + " слот31(до ломки)=" + tSrv31 + "; рецепт сломан (бревно в 24) — фаза 4 ждёт очистку у клиента");
+			} catch (Throwable e) { o3.println("[GT6-SYNC-PROBE] фаза3 сервер упала: " + e); } });
+			return;
+		}
+		if (mToolProbePhase == 3) {
+			// ФАЗА 4 (~3с после ломки): per-tick дифф должен ДОНЕСТИ очистку слота 31
+			if (mToolProbeTick < 620) return;
+			mToolProbePhase = 4;
+			final java.io.PrintStream o4 = gregapi.data.CS.OUT;
+			try {
+				net.minecraft.world.item.ItemStack tCli31 = null;
+				for (net.minecraft.world.inventory.Slot tS : tMC.player.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tCli31 = tS.getItem(); break; }
+				o4.println("[GT6-SYNC-PROBE] ФАЗА4 КЛИЕНТ: меню=" + tMC.player.containerMenu.getClass().getSimpleName()
+					+ " слот31=" + tCli31 + " (ждали: пусто = per-tick дифф доносит)");
+			} catch (Throwable e) { o4.println("[GT6-SYNC-PROBE] фаза4 клиент упала: " + e); }
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.world.item.ItemStack tSrv31 = null;
+				for (net.minecraft.world.inventory.Slot tS : tP.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tSrv31 = tS.getItem(); break; }
+				net.minecraft.world.level.block.entity.BlockEntity tBE = mProbeTablePos == null ? null : tP.level().getBlockEntity(mProbeTablePos);
+				o4.println("[GT6-SYNC-PROBE] ФАЗА4 СЕРВЕР: меню=" + tP.containerMenu.getClass().getSimpleName() + " слот31=" + tSrv31
+					+ " TE-inv31=" + (tBE instanceof net.minecraft.world.Container tC ? String.valueOf(tC.getItem(31)) : "-"));
+			} catch (Throwable e) { o4.println("[GT6-SYNC-PROBE] фаза4 сервер упала: " + e); } });
+			return;
+		}
 		if (mToolProbePhase == 1) {
 			// ФАЗА 2 (~6с после установки): замер тиков и синка — сервер-BE стола/сундука + КЛИЕНТ-BE сундука (крышка)
 			if (mToolProbeTick < 420) return;
@@ -383,7 +435,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				}
 				net.minecraft.world.item.ItemStack tCliMenu31 = null;
 				for (net.minecraft.world.inventory.Slot tS : tMC.player.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tCliMenu31 = tS.getItem(); break; }
-				o2.println("[GT6-CRAFT-PROBE] КЛИЕНТ-меню слот31=" + tCliMenu31 + " (меню=" + tMC.player.containerMenu.getClass().getSimpleName() + ")");
+				net.minecraft.world.level.block.entity.BlockEntity tCliTBE = mProbeTablePos == null ? null : tMC.level.getBlockEntity(mProbeTablePos);
+				o2.println("[GT6-CRAFT-PROBE] КЛИЕНТ-меню слот31=" + tCliMenu31 + " (меню=" + tMC.player.containerMenu.getClass().getSimpleName()
+					+ ") КЛИЕНТ-TE=" + (tCliTBE == null ? "null" : tCliTBE.getClass().getSimpleName())
+					+ " КЛИЕНТ-TE-inv31=" + (tCliTBE instanceof net.minecraft.world.Container tCC ? String.valueOf(tCC.getItem(31)) : "-")
+					+ " screen=" + (tMC.screen == null ? "null" : tMC.screen.getClass().getSimpleName()));
 			} catch (Throwable e) { o2.println("[GT6-TICK-PROBE] клиент-фаза упала: " + e); }
 			tSrv.execute(() -> { try {
 				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
@@ -404,9 +460,19 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						+ " inv31=" + (tBE instanceof net.minecraft.world.Container tC ? tC.getItem(31) : "-"));
 					net.minecraft.world.item.ItemStack tSrvMenu31 = null;
 					for (net.minecraft.world.inventory.Slot tS : tP.containerMenu.slots) if (tS.getSlotIndex() == 31 && !(tS.container instanceof net.minecraft.world.entity.player.Inventory)) { tSrvMenu31 = tS.getItem(); break; }
-					o2.println("[GT6-CRAFT-PROBE] сервер-меню слот31=" + tSrvMenu31 + " (меню=" + tP.containerMenu.getClass().getSimpleName() + ")");
+					o2.println("[GT6-CRAFT-PROBE] сервер-меню слот31=" + tSrvMenu31 + " (меню=" + tP.containerMenu.getClass().getSimpleName() + " stillValid=" + tP.containerMenu.stillValid(tP) + ")");
+					try { tP.containerMenu.broadcastFullState(); o2.println("[GT6-CRAFT-PROBE] broadcastFullState отправлен (контроль diff-пути)"); } catch (Throwable e) { o2.println("[GT6-CRAFT-PROBE] broadcastFullState УПАЛ: " + e); }
 				}
 				o2.println("[GT6-TICK-PROBE] итог: mTimer>0 обе стороны = тики живы; клиент mUsingPlayers>0 = синк крышки жив");
+				// СИНК-ТЕСТ: переоткрыть меню стола (client-BE уже реконструирован → экран не самозакроется),
+				// затем СЛОМАТЬ рецепт (второе бревно в слот 24) → сервер-тик очистит слот 31 → per-tick дифф
+				// обязан донести очистку клиенту; фаза 3 сверит.
+				if (mProbeTablePos != null && tW.getBlockEntity(mProbeTablePos) instanceof net.minecraft.world.Container tCont) {
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+					net.minecraft.world.InteractionResult tReopen = tP.gameMode.useItemOn(tP, tW, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mProbeTablePos.getX()+0.5, mProbeTablePos.getY()+1.0, mProbeTablePos.getZ()+0.5), net.minecraft.core.Direction.UP, mProbeTablePos, false));
+					o2.println("[GT6-SYNC-PROBE] переоткрытие=" + tReopen + " меню=" + tP.containerMenu.getClass().getSimpleName() + "; фаза 3 сверит клиент-слот31 (ждём доски)");
+				}
 			} catch (Throwable e) { o2.println("[GT6-TICK-PROBE] сервер-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 			return;
 		}
@@ -473,7 +539,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// сундук (жалоба игрока «сундуки нельзя открыть»): ставим MTE-сундук и ПКМ пустой рукой → должен открыться GUI
 			tW.setBlock(tTarget, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 			net.minecraft.world.item.ItemStack tChest = tReg.getItem(32745);
-			if (gregapi.util.ST.valid(tChest)) {
+			if (false && gregapi.util.ST.valid(tChest)) { // сундук-часть ВЫКЛЮЧЕНА: механика доказана, изолируем стол
 				tP.setShiftKeyDown(true);
 				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tChest.copy());
 				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tPlaceHit);
@@ -502,13 +568,15 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				tP.setShiftKeyDown(false);
 				mProbeTablePos = tTBase.above();
 				o.println("[GT6-CRAFT-PROBE] стол MTE#" + tTableID + " установлен: be=" + (tW.getBlockEntity(mProbeTablePos) == null ? "null" : tW.getBlockEntity(mProbeTablePos).getClass().getSimpleName()));
-				// кладём ванильный рецепт (бревно→доски) в сетку и открываем GUI стола: фаза 2 сверит слот 31 сервер↔клиент
+				// сценарий игрока: открыть GUI стола, ПОТОМ положить бревно в сетку; фаза 2 сверит все звенья синка
 				if (tW.getBlockEntity(mProbeTablePos) instanceof net.minecraft.world.Container tCont) {
-					tCont.setItem(21, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.OAK_LOG));
 					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
-					tP.gameMode.useItemOn(tP, tW, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
-						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mProbeTablePos.getX()+1.0, mProbeTablePos.getY()+0.5, mProbeTablePos.getZ()+0.5), net.minecraft.core.Direction.EAST, mProbeTablePos, false));
-					o.println("[GT6-CRAFT-PROBE] бревно в слот 21, меню=" + tP.containerMenu.getClass().getSimpleName());
+					net.minecraft.world.InteractionResult tOpenRes = tP.gameMode.useItemOn(tP, tW, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mProbeTablePos.getX()+0.5, mProbeTablePos.getY()+1.0, mProbeTablePos.getZ()+0.5), net.minecraft.core.Direction.UP, mProbeTablePos, false));
+					Object tGUIS = null; try { tGUIS = ((gregapi.tileentity.ITileEntityGUI)tW.getBlockEntity(mProbeTablePos)).getGUIServer(0, tP); } catch (Throwable e) { tGUIS = "EX:" + e; }
+					tCont.setItem(21, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.OAK_LOG));
+					o.println("[GT6-CRAFT-PROBE] открытие=" + tOpenRes + " меню=" + tP.containerMenu.getClass().getSimpleName()
+						+ " getGUIServer=" + (tGUIS == null ? "null" : tGUIS.getClass().getSimpleName()) + "; бревно в слот 21");
 				}
 			} else o.println("[GT6-CRAFT-PROBE] AdvancedCraftingTable не найден в реестре");
 		} catch (Throwable e) { o.println("[GT6-TOOL-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });

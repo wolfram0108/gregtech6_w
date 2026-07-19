@@ -106,7 +106,7 @@ public class ContainerCommon extends AbstractContainerMenu {
 	 */
 	private static int sPendingWindowID = -1;
 
-	static <T> T withWindowID(int aWindowID, Supplier<T> aFactory) {
+	public static <T> T withWindowID(int aWindowID, Supplier<T> aFactory) { // public: нужен и клиент-фабрике экранов (GT_API_Proxy_Client, containerId-мост)
 		int tPrev = sPendingWindowID;
 		sPendingWindowID = aWindowID;
 		try {

@@ -610,10 +610,10 @@ public class ST {
 		int[] aSlotsTo   = (!aIgnoreSideTo   && aTo  .mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aTo  .mTileEntity).getSlotsForFace(FORGE_DIR[aTo  .mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aTo  .mTileEntity).getContainerSize()));
 		
 		for (int aSlotFrom : aSlotsFrom) {
-			ItemStack aStackFrom = ((Container)aFrom.mTileEntity).getItem(aSlotFrom);
+			ItemStack aStackFrom = n(((Container)aFrom.mTileEntity).getItem(aSlotFrom)); // F15: vanilla-Container отдаёт EMPTY, 1.7.10-тело рассуждает null
 			if (aStackFrom == null || aStackFrom.getCount() < aMinMove || (aFilter != null && aFilter.contains(aStackFrom, T) == aInvertFilter) || !canTake((Container)aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) continue;
 			for (int aSlotTo : aSlotsTo) {
-				ItemStack aStackTo = ((Container)aTo.mTileEntity).getItem(aSlotTo);
+				ItemStack aStackTo = n(((Container)aTo.mTileEntity).getItem(aSlotTo)); // F15: см. выше
 				int tMovable = Math.min(aMaxMove, canPut((Container)aTo.mTileEntity, aIgnoreSideTo ? SIDE_ANY : aTo.mSideOfTileEntity, aTo.mSideOfTileEntity, aSlotTo, aStackFrom, aStackTo, Math.min(aMaxSize, aStackFrom.getMaxStackSize())));
 				if (tMovable < aMinMove || tMovable + (aStackTo == null ? 0 : aStackTo.getCount()) < aMinSize) continue;
 				// Actually Moving the Stack
@@ -638,15 +638,15 @@ public class ST {
 		int rMoved = 0;
 		
 		for (int aSlotFrom : aSlotsFrom) {
-			ItemStack aStackFrom = ((Container)aFrom.mTileEntity).getItem(aSlotFrom);
+			ItemStack aStackFrom = n(((Container)aFrom.mTileEntity).getItem(aSlotFrom)); // F15: vanilla-Container отдаёт EMPTY, 1.7.10-тело рассуждает null
 			if (aStackFrom == null || aStackFrom.getCount() < aMinMove || (aFilter != null && aFilter.contains(aStackFrom, T) == aInvertFilter) || !canTake((Container)aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) continue;
 			for (int aSlotTo : aSlotsTo) {
-				ItemStack aStackTo = ((Container)aTo.mTileEntity).getItem(aSlotTo);
+				ItemStack aStackTo = n(((Container)aTo.mTileEntity).getItem(aSlotTo)); // F15: см. выше
 				int tMovable = Math.min(aMaxMove, canPut((Container)aTo.mTileEntity, aIgnoreSideTo ? SIDE_ANY : aTo.mSideOfTileEntity, aTo.mSideOfTileEntity, aSlotTo, aStackFrom, aStackTo, Math.min(aMaxSize, aStackFrom.getMaxStackSize())));
 				if (tMovable < aMinMove || tMovable + (aStackTo == null ? 0 : aStackTo.getCount()) < aMinSize) continue;
 				// Actually Moving the Stack
 				rMoved += move_((Container)aFrom.mTileEntity, (Container)aTo.mTileEntity, aStackFrom, aStackTo, aSlotFrom, aSlotTo, tMovable);
-				aStackFrom = ((Container)aFrom.mTileEntity).getItem(aSlotFrom);
+				aStackFrom = n(((Container)aFrom.mTileEntity).getItem(aSlotFrom)); // F15: vanilla-Container отдаёт EMPTY, 1.7.10-тело рассуждает null
 				if (size(aStackFrom) < 1) break;
 			}
 		}
@@ -666,10 +666,10 @@ public class ST {
 		aTo = getPotentialDoubleChest(aTo);
 		int[] aSlotsTo   = (!aIgnoreSideTo   && aTo  .mTileEntity instanceof WorldlyContainer ? ((WorldlyContainer)aTo  .mTileEntity).getSlotsForFace(FORGE_DIR[aTo  .mSideOfTileEntity]) : UT.Code.getAscendingArray(((Container)aTo  .mTileEntity).getContainerSize()));
 		
-		ItemStack aStackFrom = ((Container)aFrom.mTileEntity).getItem(aSlotFrom);
+		ItemStack aStackFrom = n(((Container)aFrom.mTileEntity).getItem(aSlotFrom)); // F15: vanilla-Container отдаёт EMPTY, 1.7.10-тело рассуждает null
 		if (aStackFrom == null || aStackFrom.getCount() < aMinMove || (aFilter != null && aFilter.contains(aStackFrom, T) == aInvertFilter) || !canTake((Container)aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) return 0;
 		for (int aSlotTo : aSlotsTo) {
-			ItemStack aStackTo = ((Container)aTo.mTileEntity).getItem(aSlotTo);
+			ItemStack aStackTo = n(((Container)aTo.mTileEntity).getItem(aSlotTo)); // F15: см. выше
 			int tMovable = Math.min(aMaxMove, canPut((Container)aTo.mTileEntity, aIgnoreSideTo ? SIDE_ANY : aTo.mSideOfTileEntity, aTo.mSideOfTileEntity, aSlotTo, aStackFrom, aStackTo, Math.min(aMaxSize, aStackFrom.getMaxStackSize())));
 			if (tMovable < aMinMove || tMovable + (aStackTo == null ? 0 : aStackTo.getCount()) < aMinSize) continue;
 			// Actually Moving the Stack
@@ -691,9 +691,9 @@ public class ST {
 		if (aSlotTo >= ((Container)aTo.mTileEntity).getContainerSize()) return 0;
 		
 		for (int aSlotFrom : aSlotsFrom) {
-			ItemStack aStackFrom = ((Container)aFrom.mTileEntity).getItem(aSlotFrom);
+			ItemStack aStackFrom = n(((Container)aFrom.mTileEntity).getItem(aSlotFrom)); // F15: vanilla-Container отдаёт EMPTY, 1.7.10-тело рассуждает null
 			if (aStackFrom == null || aStackFrom.getCount() < aMinMove || (aFilter != null && aFilter.contains(aStackFrom, T) == aInvertFilter) || !canTake((Container)aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) continue;
-			ItemStack aStackTo = ((Container)aTo.mTileEntity).getItem(aSlotTo);
+			ItemStack aStackTo = n(((Container)aTo.mTileEntity).getItem(aSlotTo)); // F15: см. выше
 			int tMovable = Math.min(aMaxMove, canPut((Container)aTo.mTileEntity, aIgnoreSideTo ? SIDE_ANY : aTo.mSideOfTileEntity, aTo.mSideOfTileEntity, aSlotTo, aStackFrom, aStackTo, Math.min(aMaxSize, aStackFrom.getMaxStackSize())));
 			if (tMovable < aMinMove || tMovable + (aStackTo == null ? 0 : aStackTo.getCount()) < aMinSize) continue;
 			// Actually Moving the Stack
@@ -713,9 +713,9 @@ public class ST {
 			if (aTo.mTileEntity instanceof Container) {
 				aTo = getPotentialDoubleChest(aTo);
 				if (aSlotTo >= ((Container)aTo.mTileEntity).getContainerSize()) return 0;
-				ItemStack aStackFrom = ((Container)aFrom.mTileEntity).getItem(aSlotFrom);
+				ItemStack aStackFrom = n(((Container)aFrom.mTileEntity).getItem(aSlotFrom)); // F15: vanilla-Container отдаёт EMPTY, 1.7.10-тело рассуждает null
 				if (aStackFrom == null || aStackFrom.getCount() < aMinMove || (aFilter != null && aFilter.contains(aStackFrom, T) == aInvertFilter) || !canTake((Container)aFrom.mTileEntity, aIgnoreSideFrom ? SIDE_ANY : aFrom.mSideOfTileEntity, aFrom.mSideOfTileEntity, aSlotFrom, aStackFrom)) return 0;
-				ItemStack aStackTo = ((Container)aTo.mTileEntity).getItem(aSlotTo);
+				ItemStack aStackTo = n(((Container)aTo.mTileEntity).getItem(aSlotTo)); // F15: см. выше
 				int tMovable = Math.min(aMaxMove, canPut((Container)aTo.mTileEntity, aIgnoreSideTo ? SIDE_ANY : aTo.mSideOfTileEntity, aTo.mSideOfTileEntity, aSlotTo, aStackFrom, aStackTo, Math.min(aMaxSize, aStackFrom.getMaxStackSize())));
 				if (tMovable < aMinMove || tMovable + (aStackTo == null ? 0 : aStackTo.getCount()) < aMinSize) return 0;
 				// Actually Moving the Stack
@@ -729,11 +729,11 @@ public class ST {
 	
 	public static int move(Container aInv, int aSlotFrom, int aSlotTo) {
 		if (aSlotFrom == aSlotTo) return 0;
-		ItemStack aStackFrom = aInv.getItem(aSlotFrom), aStackTo = aInv.getItem(aSlotTo);
+		ItemStack aStackFrom = n(aInv.getItem(aSlotFrom)), aStackTo = n(aInv.getItem(aSlotTo)); // F15
 		return aStackFrom != null && (aStackTo == null || equal_(aStackFrom, aStackTo, F)) ? move_(aInv, aStackFrom, aStackTo, aSlotFrom, aSlotTo, Math.min(aStackFrom.getCount(), Math.min(aInv.getMaxStackSize(), aStackTo == null ? aStackFrom.getMaxStackSize() : aStackTo.getMaxStackSize() - aStackTo.getCount()))) : 0;
 	}
 	public static int move(Container aInv, int aSlotFrom, int aSlotTo, int aCount) {
-		return move(aInv, aInv.getItem(aSlotFrom), aInv.getItem(aSlotTo), aSlotFrom, aSlotTo, aCount);
+		return move(aInv, n(aInv.getItem(aSlotFrom)), n(aInv.getItem(aSlotTo)), aSlotFrom, aSlotTo, aCount); // F15
 	}
 	public static int move(Container aInv, ItemStack aStackFrom, ItemStack aStackTo, int aSlotFrom, int aSlotTo, int aCount) {
 		return aStackFrom != null && (aStackTo == null || equal_(aStackFrom, aStackTo, F)) ? move_(aInv, aStackFrom, aStackTo, aSlotFrom, aSlotTo, aCount) : 0;
@@ -750,11 +750,11 @@ public class ST {
 		return aCount;
 	}
 	public static int move(Container aFrom, Container aTo, int aSlotFrom, int aSlotTo) {
-		ItemStack aStackFrom = aFrom.getItem(aSlotFrom), aStackTo = aTo.getItem(aSlotTo);
+		ItemStack aStackFrom = n(aFrom.getItem(aSlotFrom)), aStackTo = n(aTo.getItem(aSlotTo)); // F15
 		return aStackFrom != null && (aStackTo == null || equal_(aStackFrom, aStackTo, F)) ? move_(aFrom, aTo, aStackFrom, aStackTo, aSlotFrom, aSlotTo, Math.min(aStackFrom.getCount(), Math.min(aTo.getMaxStackSize(), aStackTo == null ? aStackFrom.getMaxStackSize() : aStackTo.getMaxStackSize() - aStackTo.getCount()))) : 0;
 	}
 	public static int move(Container aFrom, Container aTo, int aSlotFrom, int aSlotTo, int aCount) {
-		return move(aFrom, aTo, aFrom.getItem(aSlotFrom), aTo.getItem(aSlotTo), aSlotFrom, aSlotTo, aCount);
+		return move(aFrom, aTo, n(aFrom.getItem(aSlotFrom)), n(aTo.getItem(aSlotTo)), aSlotFrom, aSlotTo, aCount); // F15
 	}
 	public static int move(Container aFrom, Container aTo, ItemStack aStackFrom, ItemStack aStackTo, int aSlotFrom, int aSlotTo, int aCount) {
 		return aStackFrom != null && (aStackTo == null || equal_(aStackFrom, aStackTo, F)) ? move_(aFrom, aTo, aStackFrom, aStackTo, aSlotFrom, aSlotTo, aCount) : 0;
@@ -825,12 +825,12 @@ public class ST {
 	}
 	
 	@Deprecated public static int canPut(Container aTo, byte aSideTo, int aSlotTo, ItemStack aStackFrom) {return canPut(aTo, aSideTo, aSlotTo, aStackFrom, aStackFrom.getMaxStackSize());}
-	@Deprecated public static int canPut(Container aTo, byte aSideTo, int aSlotTo, ItemStack aStackFrom, int aMaxSize) {return canPut(aTo, aSideTo, aSlotTo, aStackFrom, aTo.getItem(aSlotTo));}
+	@Deprecated public static int canPut(Container aTo, byte aSideTo, int aSlotTo, ItemStack aStackFrom, int aMaxSize) {return canPut(aTo, aSideTo, aSlotTo, aStackFrom, n(aTo.getItem(aSlotTo)));} // F15
 	@Deprecated public static int canPut(Container aTo, byte aSideTo, int aSlotTo, ItemStack aStackFrom, ItemStack aStackTo) {return canPut(aTo, aSideTo, aSlotTo, aStackFrom, aStackTo, aStackFrom.getMaxStackSize());}
 	@Deprecated public static int canPut(Container aTo, byte aSideTo, int aSlotTo, ItemStack aStackFrom, ItemStack aStackTo, int aMaxSize) {return canPut(aTo, aSideTo, aSideTo, aSlotTo, aStackFrom, aStackTo, aMaxSize);}
 	
 	public static int canPut(Container aTo, byte aSideTo, byte aSideFallbackTo, int aSlotTo, ItemStack aStackFrom) {return canPut(aTo, aSideTo, aSideFallbackTo, aSlotTo, aStackFrom, aStackFrom.getMaxStackSize());}
-	public static int canPut(Container aTo, byte aSideTo, byte aSideFallbackTo, int aSlotTo, ItemStack aStackFrom, int aMaxSize) {return canPut(aTo, aSideTo, aSideFallbackTo, aSlotTo, aStackFrom, aTo.getItem(aSlotTo));}
+	public static int canPut(Container aTo, byte aSideTo, byte aSideFallbackTo, int aSlotTo, ItemStack aStackFrom, int aMaxSize) {return canPut(aTo, aSideTo, aSideFallbackTo, aSlotTo, aStackFrom, n(aTo.getItem(aSlotTo)));} // F15
 	public static int canPut(Container aTo, byte aSideTo, byte aSideFallbackTo, int aSlotTo, ItemStack aStackFrom, ItemStack aStackTo) {return canPut(aTo, aSideTo, aSideFallbackTo, aSlotTo, aStackFrom, aStackTo, aStackFrom.getMaxStackSize());}
 	public static int canPut(Container aTo, byte aSideTo, byte aSideFallbackTo, int aSlotTo, ItemStack aStackFrom, ItemStack aStackTo, int aMaxSize) {
 		int rMaxMove = (aStackTo == null ? Math.min(aMaxSize, aTo.getMaxStackSize()) : equal_(aStackTo, aStackFrom, F) ? Math.min(aMaxSize, aTo.getMaxStackSize()) - aStackTo.getCount() : 0);
