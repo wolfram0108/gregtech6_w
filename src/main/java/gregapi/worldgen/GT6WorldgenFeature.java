@@ -202,6 +202,17 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkUnload);
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onChunkWatch);
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(GT6WorldgenFeature::onServerTick);
+		// КРИТ (второй мир виснет): static-очереди worldgen (STUB_QUEUE/CLIENT_STUB_QUEUE/WORLDGEN_MTE/PENDING_SYNC) держат
+		// ChunkReq со ссылкой на LEVEL и BlockEntity ПЕРВОГО мира. При выходе они НЕ очищались → второй мир: drainStubs
+		// обрабатывает stale-ChunkReq с мёртвым level → getChunk на нём виснет → freeze после ~9 чанков. Чистим на остановке
+		// сервера (между мирами singleplayer). BlockRiver-статик тоже сбрасываем (PLACEMENT_ALLOWED — не переносить в новый мир).
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppingEvent aEvent) -> {
+			STUB_QUEUE.clear();
+			CLIENT_STUB_QUEUE.clear();
+			WORLDGEN_MTE.clear();
+			PENDING_SYNC.clear();
+			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
+		});
 		registerWorldgenStressProbe();
 	}
 
