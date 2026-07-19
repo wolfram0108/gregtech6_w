@@ -1167,7 +1167,19 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	 *  сохранены. */
 	public final boolean onDrawBlockHighlight(ExtractBlockOutlineRenderStateEvent aEvent) {
 		FORCE_FULL_SELECTION_BOXES = F;
-		if (onDrawBlockHighlight2(aEvent)) return T;
+		// 1:1 с оригиналом (TileEntityBase01Root:995-1005): предмет в руке — через Minecraft (1.7.10-событие несло
+		// currentItem, neo-событие нет; тот же приём, что GT_API_Proxy_Client.onDrawBlockHighlight). Метод зовётся
+		// ТОЛЬКО из клиент-обработчика события — Minecraft здесь резолвится лениво, серверная верификация не трогает.
+		byte tSide = (byte)aEvent.getHitResult().getDirection().ordinal();
+		if (!SIDES_VALID[tSide] || onDrawBlockHighlight2(aEvent)) return T;
+		net.minecraft.world.entity.player.Player tPlayer = net.minecraft.client.Minecraft.getInstance().player;
+		ItemStack tHeld = tPlayer == null ? null : tPlayer.getMainHandItem();
+		if (ST.valid(tHeld) && isUsingWrenchingOverlay(tHeld, tSide)) {
+			byte tConnections = 0;
+			for (byte i = 0; i < 6; i++) if (isConnectedWrenchingOverlay(tHeld, i)) tConnections |= (byte)(1 << i);
+			gregapi.render.RenderHelper.drawWrenchOverlay(aEvent, tConnections, tSide);
+			return T;
+		}
 		return T;
 	}
 	

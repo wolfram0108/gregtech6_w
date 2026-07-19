@@ -1920,14 +1920,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		Block
 		aBlock = ST.block(tPlayer.getMainHandItem());
 		if (aBlock instanceof BlockMetaType && ((BlockMetaType)aBlock).mIsSlab) {
-			RenderHelper.drawWrenchOverlay(tPlayer, aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), (byte)0, tSide, 0F);
+			RenderHelper.drawWrenchOverlay(aEvent, (byte)0, tSide);
 			return;
 		}
 		aBlock = WD.block(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ());
 		BlockEntity aTileEntity = WD.te(tPlayer.level(), aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), T);
 		if (!(aTileEntity instanceof ITileEntityOnDrawBlockHighlight) || !((ITileEntityOnDrawBlockHighlight)aTileEntity).onDrawBlockHighlight(aEvent)) {
 			if ((ROTATABLE_VANILLA_BLOCKS.contains(aBlock) || (ToolCompat.IC_WRENCHABLE && aTileEntity instanceof ic2.api.tile.IWrenchable)) && ST.valid(tPlayer.getMainHandItem()) && ToolsGT.contains(TOOL_wrench, tPlayer.getMainHandItem())) {
-				RenderHelper.drawWrenchOverlay(tPlayer, aEvent.getBlockPos().getX(), aEvent.getBlockPos().getY(), aEvent.getBlockPos().getZ(), (byte)0, tSide, 0F);
+				RenderHelper.drawWrenchOverlay(aEvent, (byte)0, tSide);
 				return;
 			}
 		}
