@@ -573,6 +573,17 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 							+ " flowTo=" + tFlowed + " fluidState.isWater=" + tSlSt.getFluidState().is(net.minecraft.tags.FluidTags.WATER)
 							+ " (waterlogged=true = вода переживает слаб как mc26)");
 					} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] B4 упал: " + e); }
+					// B3-судья (поглощение исходной воды): Ocean над vanilla WATER → updateTick → vanilla water поглощён в Ocean (как грег).
+					try {
+						net.minecraft.core.BlockPos tOP = tC.offset(9, 3, 0);
+						gregapi.util.WD.set(tW, tOP.getX(), tOP.getY(), tOP.getZ(), tOcean, 0, 3);            // Ocean-source сверху
+						tW.setBlock(tOP.below(), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3); // vanilla вода снизу
+						boolean tWasWater = tW.getBlockState(tOP.below()).getBlock() == net.minecraft.world.level.block.Blocks.WATER;
+						if (tOcean instanceof gregtech.blocks.fluids.BlockWaterlike) ((gregtech.blocks.fluids.BlockOcean) tOcean).updateTick(tW, tOP.getX(), tOP.getY(), tOP.getZ(), new java.util.Random());
+						net.minecraft.world.level.block.Block tBelowAfter = tW.getBlockState(tOP.below()).getBlock();
+						o.println("[GT6-FLUID-PROBE] B3 поглощение: под-vanilla-water=" + tWasWater + " → после updateTick below=" + tBelowAfter.getClass().getSimpleName()
+							+ " поглощён=" + (tBelowAfter == tOcean) + " (поглощён=true = грег впитывает исходную воду mc26)");
+					} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] B3 упал: " + e); }
 				} catch (Throwable e) { o.println("[GT6-FLUID-PROBE] заливка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 			return;
 		}
