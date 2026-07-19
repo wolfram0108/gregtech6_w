@@ -432,6 +432,14 @@ public class GT6ItemModel implements ItemModel {
 				Object[] arr = (Object[]) f.get(tS); if (arr != null) for (Object cont : arr) if (cont instanceof gregapi.render.IIconContainer tIC) { net.minecraft.resources.Identifier ic = tIC.getIcon(0); if (ic != null) out.add(ic.toString()); }
 				return tint;
 			}
+			// Rock/Stick/MiniPortal используют BlockTextureCopied (copy текстуры ванильного блока) — симметрично golden collectIcons.
+			if (tx instanceof gregapi.render.BlockTextureCopied tCp) {
+				java.lang.reflect.Method m = gregapi.render.BlockTextureCopied.class.getDeclaredMethod("getIcon", int.class); m.setAccessible(true);
+				for (int side = 0; side < 6; side++) { Object ic = m.invoke(tCp, side); if (ic instanceof net.minecraft.resources.Identifier id) out.add(id.toString()); }
+				try { java.lang.reflect.Field fr = gregapi.render.BlockTextureCopied.class.getDeclaredField("mRGBa"); fr.setAccessible(true); short[] rgba = (short[]) fr.get(tCp);
+					if (tint == null && rgba != null && rgba.length >= 3 && !(rgba[0] == 255 && rgba[1] == 255 && rgba[2] == 255)) tint = String.format("%02x%02x%02x", rgba[0] & 0xFF, rgba[1] & 0xFF, rgba[2] & 0xFF); } catch (Throwable e) {}
+				return tint;
+			}
 		} catch (Throwable e) {}
 		return tint;
 	}
