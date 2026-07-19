@@ -362,41 +362,23 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		++mBlockDumpTick;
 		final java.io.PrintStream o = gregapi.data.CS.OUT;
 		if (mBlockDumpPhase == 0 && mBlockDumpTick >= 300) {
-			mBlockDumpPhase = 1;
-			tSrv.execute(() -> { try {
-				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
-				net.minecraft.server.level.ServerLevel tW = tP.level();
+			mBlockDumpPhase = 2; // A/GAP-3 симметрия: canonical-TE (без мира, level=null) — точная пара golden DumpRenderBlocks; фаза-1 (живой BE) не нужна.
+			try {
 				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
 				if (tReg == null) { o.println("[GT6-BLOCKDUMP] реестр gt.multitileentity null"); return; }
-				net.minecraft.core.BlockPos tBase = tP.blockPosition().offset(3, 0, 3);
+				net.minecraft.world.level.block.Block tBlk = tReg.mBlock;
+				java.util.List<String> tLines = new java.util.ArrayList<>();
 				java.util.Set<Class<?>> tSeen = new java.util.HashSet<>();
-				int tGx = 0;
 				for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
-					try {
-						if (tC.mCanonicalTileEntity == null || !tSeen.add(tC.mCanonicalTileEntity.getClass())) continue;
-						net.minecraft.world.item.ItemStack tS = tReg.getItem(tC.mID);
-						if (!gregapi.util.ST.valid(tS) || !(tS.getItem() instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tIt)) continue;
-						net.minecraft.core.BlockPos tFlr = tBase.offset((tGx % 16) * 2, 0, (tGx / 16) * 2);
-						tW.setBlock(tFlr.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
-						tW.setBlock(tFlr, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-						// прямой container-placement (BE-init как MTE.onItemUse:214-221, БЕЗ canPlace/collision-гейтов) — для ДАМПА
-						// нужен лишь живой BE (getTexture), не проверка клика (та закрыта N1). Все классы встают (батареи/спец тоже).
-						gregapi.block.multitileentity.MultiTileEntityContainer tMTE = tReg.getNewTileEntityContainer(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tS);
-						boolean tPl = false;
-						if (tMTE != null) {
-							((gregapi.block.multitileentity.IMultiTileEntity) tMTE.mTileEntity).setShouldRefresh(false);
-							gregapi.util.WD.te(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tMTE.mTileEntity, false);
-							gregapi.util.WD.set(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tMTE.mBlock, tMTE.mBlockMetaData, 0, false);
-							((gregapi.block.multitileentity.IMultiTileEntity) tMTE.mTileEntity).setShouldRefresh(true);
-							gregapi.util.WD.te(tW, tFlr.getX(), tFlr.getY(), tFlr.getZ(), tMTE.mTileEntity, true);
-							tPl = true;
-						}
-						if (tPl) mBlockDumpPositions.add(tFlr);
-						tGx++;
-					} catch (Throwable e) {/* один класс не рушит дамп */}
+					if (tC.mCanonicalTileEntity == null || !tSeen.add(tC.mCanonicalTileEntity.getClass())) continue;
+					try { tLines.add(gregapi.render.GT6ItemModel.describeWorldBlockCanonical(tC.mCanonicalTileEntity, tBlk)); } catch (Throwable e) {/* один класс не рушит дамп */}
 				}
-				o.println("[GT6-BLOCKDUMP] поставлено уникальных TE-классов: " + mBlockDumpPositions.size() + " (из " + tSeen.size() + " уникальных)");
-			} catch (Throwable e) { o.println("[GT6-BLOCKDUMP] place-фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+				java.nio.file.Path tDir = java.nio.file.Paths.get("gt6dump");
+				java.nio.file.Files.createDirectories(tDir);
+				java.nio.file.Files.write(tDir.resolve("descriptor.port.block.jsonl"), tLines, java.nio.charset.StandardCharsets.UTF_8);
+				long tWithSpr = tLines.stream().filter(s -> s.contains("\"spr\":[\"")).count();
+				o.println("[GT6-BLOCKDUMP] canonical descriptor.port.block.jsonl: TE-классов=" + tLines.size() + " с непустыми спрайтами=" + tWithSpr + " (симметрия golden)");
+			} catch (Throwable e) { o.println("[GT6-BLOCKDUMP] canonical-дамп упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 			return;
 		}
 		if (mBlockDumpPhase == 1 && mBlockDumpTick >= 380) {

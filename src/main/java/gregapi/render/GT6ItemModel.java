@@ -444,6 +444,29 @@ public class GT6ItemModel implements ItemModel {
 		return tint;
 	}
 
+	// A/GAP-3 симметрия эталона: golden = canonical-TE (оракул без мира). Порт был живой-BE → 50 расхождений (facing/level-
+	// дефолт). Тот же getTexture, но на canonical-TE (из реестра, level=null) — точная симметрия с golden DumpRenderBlocks.
+	public static String describeWorldBlockCanonical(net.minecraft.world.level.block.entity.BlockEntity aBE, net.minecraft.world.level.block.Block aBlock) {
+		net.minecraft.resources.Identifier k = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(aBlock);
+		String teName = aBE == null ? "-" : aBE.getClass().getSimpleName();
+		StringBuilder sb = new StringBuilder(200).append("{\"k\":\"").append(jsonEsc((k == null ? "?" : k.toString()) + "#" + teName)).append("\",\"path\":\"world\",\"spr\":[");
+		java.util.TreeSet<String> tSpr = new java.util.TreeSet<>();
+		String tTintS = null;
+		try {
+			if (aBE instanceof gregapi.render.IRenderedBlockObject ro) {
+				boolean[] tAll = {true,true,true,true,true,true};
+				int tPasses = Math.min(8, Math.max(1, ro.getRenderPasses(aBlock, tAll)));
+				for (int pass = 0; pass < tPasses; pass++) {
+					if (!ro.usesRenderPass(pass, tAll)) continue;
+					for (byte side = 0; side < 6; side++) try { tTintS = collectIconsWorld(ro.getTexture(aBlock, pass, side, tAll), tSpr, tTintS); } catch (Throwable e) {}
+				}
+			}
+		} catch (Throwable e) {}
+		boolean tF = true; for (String s : tSpr) { if (!tF) sb.append(','); tF = false; sb.append('"').append(jsonEsc(s)).append('"'); }
+		sb.append(']').append(",\"tint\":\"").append(tTintS == null ? "ffffff" : tTintS).append("\"}");
+		return sb.toString();
+	}
+
 	private static java.lang.reflect.Field findField(Class<?> aClass, String aName) {
 		for (Class<?> c = aClass; c != null && c != Object.class; c = c.getSuperclass()) try { java.lang.reflect.Field f = c.getDeclaredField(aName); f.setAccessible(true); return f; } catch (Throwable e) {}
 		return null;
