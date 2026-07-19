@@ -387,10 +387,15 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	// water/lava → vanilla WATER/LAVA FluidState по квантам (meta+1=1..8, полный=8) → игрок тонет/горит в ней. Прочие
 	// (газ/материал-специфика) → super=EMPTY: у них GT6-эффекты (bathing/breathing/drown) уже в entityInside/onHeadInside.
 	@Override protected net.minecraft.world.level.material.FluidState getFluidState(BlockState aState) {
-		int tQuanta = aState.getValue(FLUID_META) + 1;
+		// SOURCE-ВСЕГДА (НЕ FLOWING): критично. Neo вызывает FluidState.tick() для любого non-EMPTY FLOWING-состояния
+		// (LevelChunk.postProcessGeneration / ServerLevel.tickFluid) → FlowingFluid.getNewLiquid не находит vanilla-источников
+		// (GT6-источник ≠ Blocks.WATER) → EMPTY → level.setBlock(AIR) УДАЛЯЕТ GT6-flowing мгновенно («гейзер появился и пропал»).
+		// isSource-состояния движок НЕ тикает. GT6-flow (updateTick по FLUID_META/quanta) полностью независим от FluidState —
+		// FluidState нужен лишь для физики (тег WATER/LAVA → погружение/тонешь/горишь); визуал BlockBaseFluid — GT6BlockModel.
+		// Исходник Forge 1.7.10 getFluidState НЕ имел (конфликта двух tick-систем не было). Материал water/lava → source-тег.
 		gregapi.block.Material tMat = getMaterial();
-		if (tMat == gregapi.block.Material.water) return tQuanta >= 8 ? net.minecraft.world.level.material.Fluids.WATER.defaultFluidState() : net.minecraft.world.level.material.Fluids.FLOWING_WATER.getFlowing(net.minecraft.util.Mth.clamp(tQuanta, 1, 8), false);
-		if (tMat == gregapi.block.Material.lava ) return tQuanta >= 8 ? net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState()  : net.minecraft.world.level.material.Fluids.FLOWING_LAVA.getFlowing(net.minecraft.util.Mth.clamp(tQuanta, 1, 8), false);
+		if (tMat == gregapi.block.Material.water) return net.minecraft.world.level.material.Fluids.WATER.defaultFluidState();
+		if (tMat == gregapi.block.Material.lava ) return net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState();
 		return super.getFluidState(aState);
 	}
 
