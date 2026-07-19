@@ -357,7 +357,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ItemBase.onItemUseFirst → MultiItem → Behavior_Tool → IBlockToolable.Util.onToolClick → TileEntityBase09FacingSingle:68
 	// должен сменить mFacing на кликнутую сторону; заодно фиксируем износ (GT.ToolStats.k до/после).
 	private int mToolProbePhase = 0; private int mToolProbeTick = 0;
-	private net.minecraft.core.BlockPos mProbeChestPos, mProbeTablePos;
+	private net.minecraft.core.BlockPos mProbeChestPos, mProbeTablePos, mProbePipePos, mProbePipePos2;
 	private static long probeLong(Object aObj, Class<?> aDecl, String aField) {
 		try { java.lang.reflect.Field f = aDecl.getDeclaredField(aField); f.setAccessible(true); return f.getLong(aObj); } catch (Throwable e) { return Long.MIN_VALUE; }
 	}
@@ -417,6 +417,20 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				net.minecraft.world.level.block.entity.BlockEntity tBE = mProbeTablePos == null ? null : tP.level().getBlockEntity(mProbeTablePos);
 				o4.println("[GT6-SYNC-PROBE] ФАЗА4 СЕРВЕР: меню=" + tP.containerMenu.getClass().getSimpleName() + " слот31=" + tSrv31
 					+ " TE-inv31=" + (tBE instanceof net.minecraft.world.Container tC ? String.valueOf(tC.getItem(31)) : "-"));
+				if (mProbePipePos != null) {
+					net.minecraft.world.level.block.state.BlockState tPS = tP.level().getBlockState(mProbePipePos);
+					net.minecraft.world.level.block.entity.BlockEntity tPBE = tP.level().getBlockEntity(mProbePipePos);
+					o4.println("[GT6-PIPE-PROBE] труба-1 (ваниль сверху) через ~15с: блок=" + tPS.getBlock().getClass().getSimpleName()
+						+ " be=" + (tPBE == null ? "null" : tPBE.getClass().getSimpleName())
+						+ " цела=" + (tPS.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock));
+				}
+				if (mProbePipePos2 != null) {
+					net.minecraft.world.level.block.state.BlockState tPS = tP.level().getBlockState(mProbePipePos2);
+					net.minecraft.world.level.block.entity.BlockEntity tPBE = tP.level().getBlockEntity(mProbePipePos2);
+					o4.println("[GT6-PIPE-PROBE] труба-2 (GT6-River сбоку) через ~15с: блок=" + tPS.getBlock().getClass().getSimpleName()
+						+ " be=" + (tPBE == null ? "null" : tPBE.getClass().getSimpleName())
+						+ " цела=" + (tPS.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock) + " (air=orphan-cleanup, вода=вытеснение)");
+				}
 			} catch (Throwable e) { o4.println("[GT6-SYNC-PROBE] фаза4 сервер упала: " + e); } });
 			return;
 		}
@@ -579,6 +593,42 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						+ " getGUIServer=" + (tGUIS == null ? "null" : tGUIS.getClass().getSimpleName()) + "; бревно в слот 21");
 				}
 			} else o.println("[GT6-CRAFT-PROBE] AdvancedCraftingTable не найден в реестре");
+			// труба + вода (репорт: «блок сразу пропадает при контакте с водой»): ставим трубу, рядом источник воды
+			short tPipeID = -1;
+			for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations)
+				if (tC.mCanonicalTileEntity instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid) { tPipeID = tC.mID; break; }
+			if (tPipeID >= 0) {
+				net.minecraft.core.BlockPos tPBase = tBase.offset(-3, 0, 0);
+				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tPBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(tPBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tPBase.offset(1, 0, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3); // пол под воду
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tPipeID).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tPBase.getX()+0.5, tPBase.getY()+1.0, tPBase.getZ()+0.5), net.minecraft.core.Direction.UP, tPBase, false));
+				tP.setShiftKeyDown(false);
+				mProbePipePos = tPBase.above();
+				o.println("[GT6-PIPE-PROBE] труба MTE#" + tPipeID + " @" + mProbePipePos.toShortString() + ": блок=" + tW.getBlockState(mProbePipePos).getBlock().getClass().getSimpleName()
+					+ " be=" + (tW.getBlockEntity(mProbePipePos) == null ? "null" : tW.getBlockEntity(mProbePipePos).getClass().getSimpleName()) + "; вода: ванильная сверху-сбоку");
+				tW.setBlock(mProbePipePos.offset(1, 1, 0), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3); // льётся сверху-сбоку НА трубу
+				// вторая труба + GT6-вода (River) рядом — игрок тестирует у мировой воды
+				net.minecraft.core.BlockPos tP2Base = tPBase.offset(0, 0, -3);
+				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tP2Base.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(tP2Base, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tW.setBlock(tP2Base.offset(1, 0, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tPipeID).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tP2Base.getX()+0.5, tP2Base.getY()+1.0, tP2Base.getZ()+0.5), net.minecraft.core.Direction.UP, tP2Base, false));
+				tP.setShiftKeyDown(false);
+				mProbePipePos2 = tP2Base.above();
+				if (gregapi.data.CS.BlocksGT.River != null) {
+					tW.setBlock(mProbePipePos2.offset(1, 0, 0), gregapi.data.CS.BlocksGT.River.defaultBlockState(), 3);
+					o.println("[GT6-PIPE-PROBE] труба-2 @" + mProbePipePos2.toShortString() + " be=" + (tW.getBlockEntity(mProbePipePos2) == null ? "null" : tW.getBlockEntity(mProbePipePos2).getClass().getSimpleName()) + "; GT6-River рядом");
+				} else o.println("[GT6-PIPE-PROBE] BlocksGT.River == null — GT6-вода недоступна пробе");
+			} else o.println("[GT6-PIPE-PROBE] PipeFluid не найден в реестре");
 		} catch (Throwable e) { o.println("[GT6-TOOL-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 

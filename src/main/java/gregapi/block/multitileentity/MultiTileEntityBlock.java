@@ -166,7 +166,11 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// F-shape: dynamicShape() ОБЯЗАТЕЛЕН — иначе neo кэширует getCollisionShape (строит его раз с EmptyBlockGetter/
 		// BlockPos.ZERO, BlockBehaviour:916) → per-BE форма (getCollisionShape-мост ниже, MTE-Rock/трубы) игнорируется,
 		// снег/коллизия/isFaceSturdy берутся из статического кэша = полный куб. dynamicShape → кэш не строится → мост живёт.
-		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
+		// F-shape ПОБОЧКА (труба исчезала под водой): dynamicShape() => shape-кэш не строится => calculateSolid()
+		// (BlockBehaviour:472-478) возвращает false при cache==null => legacySolid=false => blocksMotion()=false =>
+		// ванильная вода считает блок проницаемым (FlowingFluid.canHoldFluid) и УНИЧТОЖАЕТ его при затоплении.
+		// 1.7.10: у MTE твёрдый Material (machine/rock) — вода обтекала. forceSolidOn() (BlockBehaviour:473) => 1:1.
+		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
 		if (!aOpaque) p = p.noOcclusion();
 		return p;
 	}
