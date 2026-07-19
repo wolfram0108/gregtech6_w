@@ -71,7 +71,7 @@ public class BlockRiver extends BlockWaterlike {
 		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — см. BlockOcean
 			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ)); // было func_147451_t(x,y,z) — см. BlockOcean
 			WD.update(aWorld, aX, aY, aZ);
-			if (aY > 0) {
+			if (aY > WD.minY(aWorld)) { // F6-Y-scale: было aY > 0, дно neo = getMinY()
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
 				} else {
@@ -84,7 +84,7 @@ public class BlockRiver extends BlockWaterlike {
 			PLACEMENT_ALLOWED = F;
 			return;
 		}
-		if (aY <= 0) {
+		if (aY <= WD.minY(aWorld)) { // F6-Y-scale: было aY <= 0, дно neo = getMinY()
 			updateFlow(aWorld, aX, aY, aZ, aRandom);
 			PLACEMENT_ALLOWED = F;
 			return;

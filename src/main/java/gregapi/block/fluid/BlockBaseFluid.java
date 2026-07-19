@@ -94,7 +94,7 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// ДО super, F16/F9 форс движка, см. BlockFluidBaseGT); resistance считаем от параметра aFluid (mFluid
 		// ещё не присвоен на этой стадии — тот же самый Fluid).
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
-		super(BlockBehaviour.Properties.of().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial);
+		super(BlockBehaviour.Properties.of().explosionResistance(FL.gas(aFluid) ? 1F : 30F).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), aMaterial, aFluid);
 		mFluid = aFluid;
 		mAmountPerQuanta = aAmountPerQuanta;
 		gregapi.GT_API.deferItemInit(() -> mQuanta = FL.make(mFluid, mAmountPerQuanta));
@@ -140,7 +140,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	}
 	
 	public void updateFluidBlocks(Level aWorld, int aX, int aY, int aZ, boolean aAll) {
-		for (int j = mDensityDir > 0 ? -1 : 0; j < (mDensityDir > 0 ? 1 : 2); j++) if (UT.Code.inside(0, aWorld.getHeight(), aY+j)) for (int i = -4; i <= 4; i++) for (int k = -4; k <= 4; k++) if (i != 0 || j != 0 || k != 0) {
+		// F6-Y-scale: было inside(0, aWorld.getHeight(), aY+j) — границы мира neo [minY..topY), не [0..256).
+		for (int j = mDensityDir > 0 ? -1 : 0; j < (mDensityDir > 0 ? 1 : 2); j++) if (UT.Code.inside(WD.minY(aWorld), WD.topY(aWorld), aY+j)) for (int i = -4; i <= 4; i++) for (int k = -4; k <= 4; k++) if (i != 0 || j != 0 || k != 0) {
 			if (WD.block(aWorld, aX+i, aY+j, aZ+k) == this && (aAll || WD.meta(aWorld, aX+i, aY+j, aZ+k) > (j == 0 ? Math.abs(i) : 0))) {
 				aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), this, tickRate);
 			}
@@ -162,9 +163,11 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		}
 		
 		int tRemainingQuanta = WD.meta(aWorld, aX, aY, aZ)+1;
-		
+
 		// Trash Fluid Blocks that get in contact with the vertical World Limits.
-		if (aY <= 0 || aY+1 >= aWorld.getHeight()) {
+		// F6-Y-scale: было aY <= 0 || aY+1 >= aWorld.getHeight() (мир 1.7.10 [0..255]); neo дно = getMinY() (-64) —
+		// бедрок-источники живут НИЖЕ нуля, старая проверка мгновенно трэшила их жидкость (эталон WorldgenOcean d6dc0f2d).
+		if (aY <= WD.minY(aWorld) || aY+1 >= WD.topY(aWorld)) {
 			if (WD.set(aWorld, aX, aY, aZ, NB, 0, FLUID_UPDATE_FLAGS | 1)) GarbageGT.trash(FL.mul(mQuanta, tRemainingQuanta));
 			return;
 		}
@@ -255,7 +258,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		// First do the Water specific check.
 		if (mLighterThanWater) {
 			int tY = aY;
-			while (++tY < aWorld.getHeight() && WD.anywater(aWorld, aX, tY, aZ));
+			// F6-Y-scale: было ++tY < aWorld.getHeight() — верх мира neo = topY (320), no-arg getHeight()=COUNT(384).
+			while (++tY < WD.topY(aWorld) && WD.anywater(aWorld, aX, tY, aZ));
 			if (tY-1 > aY) {
 				Block tBlock = WD.block(aWorld, aX, tY, aZ);
 				if (tBlock == this) {

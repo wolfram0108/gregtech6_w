@@ -78,7 +78,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		if (SIDES_INVALID[aSource]) {WD.set(aWorld, aX, aY, aZ, NB, 0, 3); return;}
 		
 		// Stop once you reach the bottom of the Map.
-		if (aY <= 0) return;
+		if (aY <= WD.minY(aWorld)) return; // F6-Y-scale: было aY <= 0, дно neo = getMinY()
 		
 		// We are going down? Carve out Dirt, Gravel, Sand and the likes.
 		if (SIDES_BOTTOM[aFlow] && SIDES_HORIZONTAL[aSource]) {

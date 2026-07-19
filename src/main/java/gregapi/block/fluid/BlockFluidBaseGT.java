@@ -82,16 +82,32 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	/** F16/F9 форс движка: было {@code BlockFluidBase(Fluid,Material)}, читавший density/temperature/
 	 *  maxScaledLight/tickRate/densityDir ИЗ САМОГО Forge {@code Fluid}-объекта (data-holder-поля) — neo
 	 *  {@code net.minecraft.world.level.material.Fluid} этих полей не несёт (данные расщеплены в
-	 *  {@code FluidType}, F5-доклад §1/§3). F5 functional-adapted (Forge-дефолты density=1/tickRate=20/densityDir=-1 работают; Ocean/River/Swamp переопределяют явно): авто-вывод density/tickRate/
-	 *  densityDir из жидкости отложен на этап 6 (FluidType.Properties мост, F5-доклад §8); поля остаются на
-	 *  Forge-дефолтах (density=1, densityDir=-1, tickRate=20, quantaPerBlock=8) — вызыватели, которым нужно
-	 *  другое, устанавливают явно (как уже делают {@link gregtech.blocks.fluids.BlockOcean}/River/Swamp,
-	 *  переставляющие {@code tickRate} сразу после {@code super(...)}).
-	 */
+	 *  {@code FluidType}, F5-доклад §1/§3). Перенос характеристик воспроизведён Fluid-перегрузкой ниже
+	 *  (данные из {@link gregapi.fluid.FluidGT}); эта 2-арг перегрузка оставляет Forge-дефолты
+	 *  (density=1, densityDir=-1, tickRate=20, quantaPerBlock=8). */
 	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial) {
 		super(aProperties);
 		mMaterial = aMaterial;
 		registerDefaultState(getStateDefinition().any().setValue(FLUID_META, 0));
+	}
+
+	/** Перенос характеристик Fluid→блок 1:1 с Forge {@code BlockFluidBase(Fluid,Material)} (:68-72):
+	 *  {@code density = fluid.density; tickRate = fluid.viscosity / 200; densityDir = density > 0 ? -1 : 1}.
+	 *  В neo data-holder-поля Fluid'а живут в {@link gregapi.fluid.FluidGT} (F5) — центр {@code FluidGT.of(Fluid)}.
+	 *  Отсюда: газ (density −500) течёт ВВЕРХ (densityDir=+1), нефти несут плотности 600-900, воды 1000;
+	 *  tickRate: LIQUID 1000/200=5 (как vanilla-вода), GAS 200/200=1. Подклассы, которым нужен иной tickRate,
+	 *  переставляют его ПОСЛЕ super (Ocean/River/Swamp 20/20/10 — 1:1 с исходником).
+	 *  {@code maxScaledLight} (luminosity) НЕ перенесён: у всех 10 мировых жидкостей luminosity=0
+	 *  (Loader_Fluids: воды/нефти/газ без setLuminosity) — мёртвое поле не выдумываем.
+	 *  {@code temperature} НЕ перенесён: в порту никто не читает (Forge-static getTemperature не портирован). */
+	public BlockFluidBaseGT(BlockBehaviour.Properties aProperties, Material aMaterial, net.minecraft.world.level.material.Fluid aFluid) {
+		this(aProperties, aMaterial);
+		gregapi.fluid.FluidGT tFluid = gregapi.fluid.FluidGT.of(aFluid);
+		if (tFluid != null) {
+			density    = tFluid.getDensity();
+			tickRate   = tFluid.getViscosity() / 200;
+			densityDir = tFluid.getDensity() > 0 ? -1 : 1;
+		}
 	}
 
 	// МОДЕЛЬ МЕТЫ (кванты 1.7.10): Forge BlockFluidFinite хранил кванты В МЕТЕ блока (0..7 → 1..8 квант);
