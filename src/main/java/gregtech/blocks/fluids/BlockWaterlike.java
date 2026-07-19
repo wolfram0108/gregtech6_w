@@ -241,6 +241,22 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aLevel, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {return net.minecraft.world.phys.shapes.Shapes.empty();}
 	@Override protected boolean propagatesSkylightDown(net.minecraft.world.level.block.state.BlockState aState) {return false;}
 
+	// R1-заморозка (зимние биомы): vanilla замораживает воду в холодном биоме, но Biome.shouldFreeze:161 требует
+	// blockState instanceof LiquidBlock — GT6-вода им НЕ является → не мёрзла. Воспроизводим УСЛОВИЯ vanilla 1:1
+	// (Biome.shouldFreeze:154-172: !warmEnoughToRain + brightness(BLOCK)<10 + source + НЕ окружён водой=край), механизм —
+	// randomTick GT6-блока (vanilla делает это через ServerLevel.tickChunk по heightmap; здесь — surface-check above).
+	// Оригинал GT6 1.7.10 мёрз через vanilla (Material.water); в neo instanceof-хардкод → свой перенос. Ставит Blocks.ICE.
+	@Override protected boolean isRandomlyTicking(net.minecraft.world.level.block.state.BlockState aState) {return true;}
+	@Override protected void randomTick(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.server.level.ServerLevel aLevel, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		if (WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()) != 0) return;                                  // только source (полный блок)
+		if (!aLevel.getBlockState(aPos.above()).isAir()) return;                                                  // только верхний открытый слой (surface)
+		net.minecraft.world.level.biome.Biome tBiome = aLevel.getBiome(aPos).value();
+		if (tBiome.warmEnoughToRain(aPos, aLevel.getSeaLevel())) return;                                          // тёплый биом — не мёрзнет
+		if (aLevel.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, aPos) >= 10) return;                 // у источника света — не мёрзнет
+		if (aLevel.isWaterAt(aPos.west()) && aLevel.isWaterAt(aPos.east()) && aLevel.isWaterAt(aPos.north()) && aLevel.isWaterAt(aPos.south())) return; // окружён водой — не мёрзнет (только края)
+		aLevel.setBlockAndUpdate(aPos, net.minecraft.world.level.block.Blocks.ICE.defaultBlockState());
+	}
+
 	// @Override
 	public boolean shouldSideBeRendered(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
