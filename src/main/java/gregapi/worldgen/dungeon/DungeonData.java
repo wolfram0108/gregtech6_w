@@ -328,20 +328,11 @@ public class DungeonData extends WorldAndCoords {
 	}
 	
 	public boolean pot(int aX, int aY, int aZ) {
-		int tIndex = next(BlocksGT.POT_FLOWER_TILES.length);
+		// PORT-TODO(F16, flower-pot): 1.7.10 наполнял горшок через TileEntityFlowerPot (compat-mirror, в рантайме
+		// класса НЕТ → NoClassDefFoundError на первом же instanceof, как краш ПКМ у BlockBaseFlower). В neo горшок
+		// без BE — potted-блоки (FlowerPotBlock.fullPots/POTTED_*); восстановление = FlowerPotBlock.addPlant для
+		// GT6-цветов + выбор potted-варианта здесь. До этого — пустой горшок (декор жив, наполнение отложено).
 		set(aX, aY, aZ, Blocks.FLOWER_POT, 0, 2);
-		BlockEntity tTileEntity = WD.te(mWorld, mX+aX, mY+aY, mZ+aZ, T);
-		if (tTileEntity instanceof TileEntityFlowerPot) {
-			if (next1in2()) {
-				((TileEntityFlowerPot)tTileEntity).func_145964_a(ST.item(BlocksGT.POT_FLOWER_TILES[tIndex]), BlocksGT.POT_FLOWER_METAS[tIndex]);
-			} else {
-				if (next1in2()) {
-					((TileEntityFlowerPot)tTileEntity).func_145964_a(ST.item((Block)BlocksGT.FlowersA), next(BlocksGT.FlowersA.maxMeta()));
-				} else {
-					((TileEntityFlowerPot)tTileEntity).func_145964_a(ST.item((Block)BlocksGT.FlowersB), next(BlocksGT.FlowersB.maxMeta()));
-				}
-			}
-		}
 		return T;
 	}
 	public boolean pot(int aX, int aY, int aZ, Block aBlock, int aMeta) {

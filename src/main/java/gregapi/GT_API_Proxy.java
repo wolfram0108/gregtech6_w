@@ -1046,8 +1046,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// getPlayer()/getChunk(); getChunk() отдаёт LevelChunk напрямую, повторный getChunkFromChunkCoords(...) по x/z больше не нужен.
 	// tChunk.isTerrainPopulated (1.7.10 генерация-флаг) в neo не существует (impossible-1:1) — просматриваемые чанки ВСЕГДА
 	// FULL-статуса, проверка не нужна (опущена верно); chunkTileEntityMap → getBlockEntities().
+	// ⚠ КАНОН neo (ChunkWatchEvent.java:64-65): Watch = чанк лишь ПОСТАВЛЕН В ОЧЕРЕДЬ — «must NOT be used to send
+	// additional chunk-related data to the client as the client will not be aware of the chunk yet»; для данных — Sent.
+	// На Watch GT6-пакеты BE прилетали РАНЬШЕ чанка → клиент дропал их (блока ещё нет) → клиент-BE worldgen-MTE
+	// (камешки/палки) не создавался при ПОВТОРНОМ входе в мир → BER рисовать нечего (репорт игрока 2026-07-19).
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onChunkWatchEvent(ChunkWatchEvent.Watch aEvent) {
+	public void onChunkWatchEvent(ChunkWatchEvent.Sent aEvent) {
 		LevelChunk tChunk = aEvent.getChunk();
 		if (tChunk != null && tChunk.getBlockEntities() != null && tChunk.getBlockEntities().size() > 0) {
 			byte tIterations = 8;

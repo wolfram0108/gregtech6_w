@@ -261,6 +261,10 @@ public final class GT6QuadBuilder {
 		QuadBakingVertexConsumer tBuilder = new QuadBakingVertexConsumer();
 		tBuilder.setSprite(new Material.Baked(aSprite, false));
 		tBuilder.setDirection(Direction.UP);
+		// 1:1 vanilla block/cross-модель («затемнённые цветы», репорт игрока): "shade": false + "ambientocclusion": false —
+		// без направленного затенения по нормали (XZ-нормаль давала ×0.6-0.8) и без AO; 1.7.10 рисовал cross ровным светом.
+		tBuilder.setShade(false);
+		tBuilder.setAmbientOcclusion(false);
 		int[] tOrder = aReverse ? new int[]{3,2,1,0} : new int[]{0,1,2,3};
 		for (int idx = 0; idx < 4; idx++) {
 			int i = tOrder[idx];

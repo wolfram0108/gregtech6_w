@@ -89,7 +89,11 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		// Properties.of()-дефолт, что и остальные BlockBase-наследники (F9-мост твёрдости отложен туда же).
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром/call-site).
 		// F16: golden setStepSound(soundTypeGrass) — runtime-мутатор в neo невозможен, задаём в Properties.sound(GRASS) при ctor (1:1).
-		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(net.minecraft.world.level.block.SoundType.GRASS).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		// F16 noCollision (репорт игрока: трава под цветком → земля, цветок затемнён): 1.7.10 BlockFlower — без
+		// коллизии и isOpaqueCube=false; neo-эквивалент — Properties.noCollision() (hasCollision=false И canOcclude=false,
+		// BlockBehaviour:1078-1082, так собран vanilla DANDELION). Без него canOcclude=true → occlusion-форма непуста →
+		// faceShapeOccludes с полной верхней гранью травы = «свет заблокирован» → SpreadingSnowyDirtBlock убивал траву.
+		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().sound(net.minecraft.world.level.block.SoundType.GRASS).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // F3-render/meta: дефолт META=0
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;
@@ -205,19 +209,11 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
-		if (tTileEntity instanceof TileEntityFlowerPot) {
-			if (((TileEntityFlowerPot)tTileEntity).getFlowerPotItem() == null) {
-				((TileEntityFlowerPot)tTileEntity).func_145964_a(aItem, ST.meta(aStack));
-				// было TileEntity.markDirty() -> BlockEntity.setChanged() [BlockEntity.java:219]
-				tTileEntity.setChanged();
-				// было World.markBlockForUpdate(x,y,z) -> Level.setBlocksDirty(BlockPos,BlockState,BlockState)
-				// [Level.java:335], тот же приём, что уже принят в BlockBaseRail.func_150054_a (old==new, GT6 не
-				// отслеживает раздельно old/new BlockState в meta-модели).
-				if (!WD.set(aWorld, aX, aY, aZ, WD.block(aWorld, aX, aY, aZ), ST.meta(aStack), 2, F)) {BlockPos tPos = new BlockPos(aX, aY, aZ); BlockState tState = aWorld.getBlockState(tPos); aWorld.setBlocksDirty(tPos, tState, tState);}
-				if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
-			}
-			return T;
-		}
+		// PORT-TODO(F16, flower-pot): 1.7.10-ветка «посадить GT6-цветок в горшок» работала через TileEntityFlowerPot
+		// (compat-mirror класс, в РАНТАЙМЕ отсутствует → NoClassDefFoundError, краш игрока 2026-07-19 по ПКМ). В neo
+		// у горшка НЕТ BlockEntity — модель potted-блоков (FlowerPotBlock.fullPots + POTTED_*-варианты); восстановление
+		// = регистрация potted-вариантов GT6-цветов через FlowerPotBlock.addPlant. До этого клик по горшку — no-op.
+		if (tBlock == Blocks.FLOWER_POT) return F;
 
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {
 			aSide = SIDE_UP;

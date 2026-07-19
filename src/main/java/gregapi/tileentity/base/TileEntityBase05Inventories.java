@@ -115,6 +115,12 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	@Override public ItemStack removeItem(int aSlot, int aDecrement) {updateInventory(); if (mInventory[aSlot] == null || aDecrement <= 0) return NI; if (mInventory[aSlot].getCount() <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); if (allowZeroStacks(aSlot)) mInventory[aSlot].setCount(0); else mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].split(aDecrement); if (mInventory[aSlot].getCount() <= 0 && !allowZeroStacks(aSlot)) mInventory[aSlot] = NI; return rStack;}
 	@Override public ItemStack removeItemNoUpdate(int aSlot) {ItemStack rStack = mInventory[aSlot]; mInventory[aSlot] = null; return rStack;}
 	@Override public ItemStack getItem(int aSlot) {return mInventory[aSlot];}
+
+	/** F15/F-break (NPE игрока 2026-07-19 при ломании MTE): neo BlockEntity.preRemoveSideEffects (BlockEntity.java:264-268)
+	 *  сам вытряхивает любой Container через Containers.dropContents — НОВОЕ поведение движка (в 1.7.10 дроп содержимого
+	 *  делал ТОЛЬКО сам мод в breakBlock). GT6-инвентарь держит null-слоты (F15 null-модель) → vanilla dropItemStack NPE;
+	 *  плюс двойной дроп с GT6-путём (IMTE_BreakBlock.breakBlock → MultiTileEntityBlock.breakBlock:205). Дроп владеет GT6. */
+	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {/* дроп — GT6 breakBlock, не vanilla Container-вытряхивание */}
 	public String getInventoryName() {String rName = getCustomName(); if (UT.Code.stringValid(rName)) return rName; MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()); return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());}
 	@Override public int getContainerSize() {return mInventory==null?0:mInventory.length;}
 	@Override public void setItem(int aSlot, ItemStack aStack) {updateInventory(); mInventory[aSlot] = OM.get(aStack);}
