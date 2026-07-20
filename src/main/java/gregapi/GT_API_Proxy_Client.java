@@ -746,6 +746,166 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-TOOL-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// Ф3.0-ит.6 СУДЬЯ (гейт gt6chainprobe.flag): ТОЧНАЯ схема игрока — ванильный источник → драйн-ковер на huge wood pipe
+	// (26004, танк 1200mb) → цепь из 3 труб → Electric Mixer LV (20351). Плюс второй миксер с Air-Vent-ковером (IL.Cover_Vent)
+	// на восточной грани. Локализуем разрыв: вода→труба / труба→труба / труба→миксер; вент: collectable_air / funnelFill(Air) /
+	// наличие air-рецептов в RM.Mixer. Дампы в 2 срезах (~30с и ~60с — вент-цикл 360 тиков должен пройти дважды).
+	private int mChainPhase = 0; private int mChainTick = 0;
+	private net.minecraft.core.BlockPos[] mChainPipes; private net.minecraft.core.BlockPos mChainMixerPos, mVentMixerPos;
+	private void dumpChainState(net.minecraft.server.MinecraftServer aSrv, String aLabel) {
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		aSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerLevel tW = aSrv.getPlayerList().getPlayers().get(0).level();
+			StringBuilder tSB = new StringBuilder("[GT6-CHAIN-PROBE] ").append(aLabel).append(" SERVER_TIME=").append(gregapi.data.CS.SERVER_TIME);
+			if (mChainPipes != null) for (int i = 0; i < mChainPipes.length; i++) {
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tW.getBlockEntity(mChainPipes[i]);
+				if (tBE instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPF) {
+					tSB.append(" | труба").append(i+1).append(": танк=").append(tPF.mTanks.length > 0 ? String.valueOf(tPF.mTanks[0].getFluid()) : "-")
+						.append(" conn=").append(Integer.toBinaryString((int)probeNum(tBE, gregapi.tileentity.connectors.TileEntityBase09Connector.class, "mConnections") & 0xFF))
+						.append(" lastFrom=").append(tPF.mLastReceivedFrom.length > 0 ? tPF.mLastReceivedFrom[0] : -1)
+						.append(" cover5=").append(tPF.mCovers != null ? tPF.mCovers.mIDs[5] : -1);
+				} else tSB.append(" | труба").append(i+1).append(": be=").append(tBE == null ? "null" : tBE.getClass().getSimpleName());
+			}
+			net.minecraft.world.level.block.entity.BlockEntity tMBE = mChainMixerPos == null ? null : tW.getBlockEntity(mChainMixerPos);
+			if (tMBE instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tM) {
+				tSB.append(" | МИКСЕР: recipes=").append(tM.mRecipes == null ? "null" : tM.mRecipes.mNameInternal);
+				for (int i = 0; i < tM.mTanksInput.length; i++) tSB.append(" in").append(i).append("=").append(tM.mTanksInput[i].getFluid());
+				tSB.append(" simFill(вода,WEST=4)=").append(tM.funnelFill((byte)4, gregapi.data.FL.Water.make(1000), false));
+			} else tSB.append(" | МИКСЕР be=").append(tMBE == null ? "null" : tMBE.getClass().getSimpleName());
+			net.minecraft.world.level.block.entity.BlockEntity tVBE = mVentMixerPos == null ? null : tW.getBlockEntity(mVentMixerPos);
+			if (tVBE instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tV) {
+				tSB.append(" | ВЕНТ-МИКСЕР: cover5=").append(tV.mCovers != null ? tV.mCovers.mIDs[5] : -1);
+				for (int i = 0; i < tV.mTanksInput.length; i++) tSB.append(" in").append(i).append("=").append(tV.mTanksInput[i].getFluid());
+				tSB.append(" collectable_air(E)=").append(gregapi.util.WD.collectable_air(tW, mVentMixerPos.getX()+1, mVentMixerPos.getY(), mVentMixerPos.getZ()))
+					.append(" airExists=").append(gregapi.data.FL.Air.exists())
+					.append(" simFill(Air,EAST=5)=").append(gregapi.data.FL.Air.exists() ? tV.funnelFill((byte)5, gregapi.data.FL.Air.make(1000), false) : -1);
+				int tAirRecipes = 0;
+				if (gregapi.data.FL.Air.exists()) for (gregapi.recipes.Recipe tR : gregapi.data.RM.Mixer.mRecipeList)
+					if (tR.mFluidInputs != null) for (net.neoforged.neoforge.fluids.FluidStack tFS : tR.mFluidInputs)
+						if (tFS != null && tFS.getFluid() == gregapi.data.FL.Air.fluid()) { ++tAirRecipes; break; }
+				tSB.append(" air-рецептов-в-RM.Mixer=").append(tAirRecipes);
+			} else tSB.append(" | ВЕНТ-МИКСЕР be=").append(tVBE == null ? "null" : tVBE.getClass().getSimpleName());
+			o.println(tSB.toString());
+			// ДИАГ обратного рукопожатия: notify-back connect не выставил EAST-биты у труб 1-2 — зовём connect(EAST) вручную
+			// СПУСТЯ 30с (кэши соседей давно обновлены тиками). Успех = связь жива, корень в моменте установки (стухший кэш);
+			// провал = сломан сам connect. Срез-2 после этого судит прокач воды до миксера.
+			if (false && "СРЕЗ-1 (~30с)".equals(aLabel) && mChainPipes != null) { // ВЫКЛ: рукопожатие чинится в doBlockUpdate, ручной connect замаскировал бы судью
+				StringBuilder tFix = new StringBuilder("[GT6-CHAIN-PROBE] РУЧНОЙ-CONNECT:");
+				for (int i = 0; i < 2; i++) {
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tW.getBlockEntity(mChainPipes[i]);
+					if (tBE instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPF) {
+						Object tAdj = tPF.getAdjacentTileEntity((byte)5).mTileEntity;
+						boolean tOK = tPF.connect((byte)5, true);
+						tFix.append(" труба").append(i+1).append(": adjEAST=").append(tAdj == null ? "null" : tAdj.getClass().getSimpleName())
+							.append(" connect(EAST)=").append(tOK)
+							.append(" conn=").append(Integer.toBinaryString((int)probeNum(tBE, gregapi.tileentity.connectors.TileEntityBase09Connector.class, "mConnections") & 0xFF));
+					}
+				}
+				o.println(tFix.toString());
+			}
+		} catch (Throwable e) { o.println("[GT6-CHAIN-PROBE] дамп " + aLabel + " упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onChainProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mChainPhase >= 3) return;
+		if (!new java.io.File("gt6chainprobe.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mChainPhase = 3; return; }
+		tMC.options.pauseOnLostFocus = false;
+		if (tMC.screen instanceof net.minecraft.client.gui.screens.PauseScreen) tMC.setScreen(null);
+		++mChainTick;
+		if (mChainPhase == 2) {
+			if (mChainTick < 1500) return;
+			mChainPhase = 3;
+			dumpChainState(tSrv, "СРЕЗ-2 (~60с)");
+			return;
+		}
+		if (mChainPhase == 1) {
+			if (mChainTick < 900) return;
+			mChainPhase = 2;
+			dumpChainState(tSrv, "СРЕЗ-1 (~30с)");
+			return;
+		}
+		if (mChainTick < 300) return;
+		mChainPhase = 1;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		tSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tW = tP.level();
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			if (tReg == null) { o.println("[GT6-CHAIN-PROBE] реестр null"); return; }
+			net.minecraft.world.item.ItemStack tPipe = tReg.getItem(26004);   // Huge Wooden Fluid Pipe, танк 1200mb
+			net.minecraft.world.item.ItemStack tMixer = tReg.getItem(20351);  // Electric Mixer (LV)
+			if (!gregapi.util.ST.valid(tPipe) || !gregapi.util.ST.valid(tMixer)) { o.println("[GT6-CHAIN-PROBE] MTE#26004/#20351 невалиден: pipe=" + tPipe + " mixer=" + tMixer); return; }
+			// полигон: пол + карман воздуха; цепь вдоль X: миксер(x0) ← труба3(x1) ← труба2(x2) ← труба1(x3) ← вода(x4, замурована)
+			net.minecraft.core.BlockPos tBase = tP.blockPosition().offset(4, -1, 8);
+			for (int dx = -1; dx <= 6; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -1; dz <= 4; dz++)
+				tW.setBlock(tBase.offset(dx, dy, dz), (dy == 0 ? net.minecraft.world.level.block.Blocks.STONE : net.minecraft.world.level.block.Blocks.AIR).defaultBlockState(), 3);
+			tP.setShiftKeyDown(true);
+			mChainPipes = new net.minecraft.core.BlockPos[3];
+			// миксер — кликом в пол; трубы — НАПРАВЛЕННО, кликом в ВОСТОЧНУЮ грань предыдущего элемента
+			// (GT6-семантика onPlaced: труба соединяется с блоком, к которому её приставили, + соседями, уже соединёнными к ней)
+			net.minecraft.core.BlockPos tMFloor = tBase.offset(0, 0, 0);
+			tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tMixer.copy());
+			tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tMFloor.getX()+0.5, tMFloor.getY()+1.0, tMFloor.getZ()+0.5), net.minecraft.core.Direction.UP, tMFloor, false));
+			mChainMixerPos = tMFloor.above();
+			net.minecraft.core.BlockPos tPrev = mChainMixerPos;
+			for (int i = 0; i < 3; i++) {
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tPipe.copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tPrev.getX()+1.0, tPrev.getY()+0.5, tPrev.getZ()+0.5), net.minecraft.core.Direction.EAST, tPrev, false));
+				mChainPipes[i] = tPrev.east();
+				tPrev = mChainPipes[i];
+			}
+			tP.setShiftKeyDown(false);
+			// ДИАГ рукопожатия В МОМЕНТ установки: состояние делегатора EAST у труб 1-2 сразу после постановки цепи
+			for (int i = 0; i < 2; i++) {
+				net.minecraft.world.level.block.entity.BlockEntity tDBE = tW.getBlockEntity(mChainPipes[i]);
+				if (tDBE instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tDPF) {
+					gregapi.tileentity.delegate.DelegatorTileEntity<net.minecraft.world.level.block.entity.BlockEntity> tDel = tDPF.getAdjacentTileEntity((byte)5);
+					o.println("[GT6-CHAIN-PROBE] ДИАГ-УСТАНОВКА труба" + (i+1) + ": adjEAST=" + (tDel.mTileEntity == null ? "null" : tDel.mTileEntity.getClass().getSimpleName())
+						+ " sideOfTE=" + tDel.mSideOfTileEntity
+						+ " conn=" + Integer.toBinaryString((int)probeNum(tDBE, gregapi.tileentity.connectors.TileEntityBase09Connector.class, "mConnections") & 0xFF)
+						+ " (ждём 110000 = рукопожатие при установке)");
+				}
+			}
+			// замурованный ванильный источник восточнее трубы-1 (x4): стены x5/z±1/крышка, пол уже есть
+			net.minecraft.core.BlockPos tWaterPos = tBase.offset(4, 1, 0);
+			tW.setBlock(tBase.offset(5, 1, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tW.setBlock(tBase.offset(4, 1, 1), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tW.setBlock(tBase.offset(4, 1,-1), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tW.setBlock(tBase.offset(4, 2, 0), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			tW.setBlock(tWaterPos, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+			// драйн-ковер на ВОСТОЧНУЮ грань трубы-1 (движковый клик, как игрок)
+			net.minecraft.world.item.ItemStack tDrain = gregapi.data.IL.Cover_Drain.get(1);
+			if (gregapi.util.ST.valid(tDrain)) {
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tDrain);
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mChainPipes[2].getX()+1.0, mChainPipes[2].getY()+0.5, mChainPipes[2].getZ()+0.5), net.minecraft.core.Direction.EAST, mChainPipes[2], false));
+			} else o.println("[GT6-CHAIN-PROBE] IL.Cover_Drain невалиден");
+			// ВЕНТ-стенд: второй миксер южнее (z+3), Air-Vent-ковер на восточную грань, восточнее — воздух
+			net.minecraft.core.BlockPos tVFloor = tBase.offset(0, 0, 3);
+			tP.setShiftKeyDown(true);
+			tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tMixer.copy());
+			tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tVFloor.getX()+0.5, tVFloor.getY()+1.0, tVFloor.getZ()+0.5), net.minecraft.core.Direction.UP, tVFloor, false));
+			tP.setShiftKeyDown(false);
+			mVentMixerPos = tVFloor.above();
+			net.minecraft.world.item.ItemStack tVent = gregapi.data.IL.Cover_Vent.get(1);
+			if (gregapi.util.ST.valid(tVent)) {
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tVent);
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mVentMixerPos.getX()+1.0, mVentMixerPos.getY()+0.5, mVentMixerPos.getZ()+0.5), net.minecraft.core.Direction.EAST, mVentMixerPos, false));
+			} else o.println("[GT6-CHAIN-PROBE] IL.Cover_Vent невалиден");
+			o.println("[GT6-CHAIN-PROBE] стенд собран: миксер@" + mChainMixerPos.toShortString() + " трубы@" + mChainPipes[0].toShortString() + "/" + mChainPipes[1].toShortString() + "/" + mChainPipes[2].toShortString()
+				+ " вода@" + tWaterPos.toShortString() + " вент-миксер@" + mVentMixerPos.toShortString());
+			dumpChainState(tSrv, "СРЕЗ-0 (старт)");
+		} catch (Throwable e) { o.println("[GT6-CHAIN-PROBE] сборка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+
 	// A/GAP-1 СУДЬЯ-ДАМПЕР (гейт gt6blockdump.flag): порт-дескриптор 3D-объектов-В-МИРЕ. Ставит по 1 представителю КАЖДОГО
 	// уникального MTE-TE-класса (шкафы/трубы/провода/монетки/сундуки) в сетку, затем на КЛИЕНТЕ (живой BE, реальный BER-путь)
 	// собирает world-квады → descriptor.port.block.jsonl. Это порт-сторона паритета блоков-в-мире (item-форма 98.28% не покрывает

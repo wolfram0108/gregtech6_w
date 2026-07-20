@@ -124,7 +124,14 @@ public abstract class TileEntityBase09Connector extends TileEntityBase08Directio
 				onConnectionChange(oConnections);
 				checkCoverValidity();
 				doEnetUpdate();
-				if (aNotify) ((ITileEntityConnector)tDelegator.mTileEntity).connect(tDelegator.mSideOfTileEntity, F);
+				if (aNotify) {
+					// 1.7.10: notifyBlocksOfNeighborChange шёл СИНХРОННО до ответного connect — сосед успевал сбросить
+					// маркер «тут пусто» в кэше AdjacentTEBuffer и увидеть нас; neo CollectingNeighborUpdater откладывает
+					// neighborChanged до разворота стека, и ответный connect бьёт в стухший маркер (труба ставит только
+					// свой бит, цепь не собирается). Восстанавливаем синхронный контракт (ITileEntity.java:45) напрямую.
+					if (tDelegator.mTileEntity instanceof ITileEntity) ((ITileEntity)tDelegator.mTileEntity).onAdjacentBlockChange(tDelegator.mX, tDelegator.mY, tDelegator.mZ);
+					((ITileEntityConnector)tDelegator.mTileEntity).connect(tDelegator.mSideOfTileEntity, F);
+				}
 				if (hasMultiBlockMachineRelevantData()) ITileEntityMachineBlockUpdateable.Util.causeMachineUpdate(this, F);
 				return T;
 			}
