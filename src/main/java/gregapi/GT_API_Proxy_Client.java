@@ -906,6 +906,66 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-CHAIN-PROBE] сборка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// Ф3.0-ит.7 АУДИТ ЖИВОГО МИРА (гейт gt6pipeaudit.flag): раз в ~10с сканирует 3×3 чанка вокруг игрока и пишет
+	// ПРАВДУ о каждой жидкостной трубе: серверные И клиентские биты mConnections (ловит расхождение «картинка vs логика»),
+	// танк, коверы, блок у грани каждого ковра (source/flowing — ловит драйн у растёкшейся воды). Игрок просто играет
+	// свою схему — лог собирает её реальное состояние; воспроизводить вслепую больше не нужно.
+	private int mAuditTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onPipeAudit(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!new java.io.File("gt6pipeaudit.flag").exists()) return;
+		if (++mAuditTick % 200 != 0) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) return;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		final java.util.Map<net.minecraft.core.BlockPos, Byte> tClientBits = new java.util.HashMap<>();
+		try {
+			int tCX = tMC.player.blockPosition().getX() >> 4, tCZ = tMC.player.blockPosition().getZ() >> 4;
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: tMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet())
+					if (tE.getValue() instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPF)
+						tClientBits.put(tE.getKey().immutable(), tPF.getDirectionData());
+		} catch (Throwable e) { o.println("[GT6-PIPE-AUDIT] клиент-скан упал: " + e); }
+		tSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tW = tP.level();
+			int tCX = tP.blockPosition().getX() >> 4, tCZ = tP.blockPosition().getZ() >> 4;
+			int tCount = 0;
+			for (int dx = -1; dx <= 1 && tCount < 40; dx++) for (int dz = -1; dz <= 1 && tCount < 40; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: tW.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
+					if (!(tE.getValue() instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPF)) continue;
+					if (++tCount > 40) break;
+					net.minecraft.core.BlockPos tPos = tE.getKey();
+					Byte tCli = tClientBits.get(tPos);
+					StringBuilder tSB = new StringBuilder("[GT6-PIPE-AUDIT] труба@").append(tPos.toShortString())
+						.append(" srv-conn=").append(Integer.toBinaryString(tPF.getDirectionData() & 0xFF))
+						.append(" cli-conn=").append(tCli == null ? "нетBE" : Integer.toBinaryString(tCli & 0xFF))
+						.append(tCli != null && tCli != tPF.getDirectionData() ? " ⚠️РАСХОЖДЕНИЕ" : "")
+						.append(" танк=").append(tPF.mTanks.length > 0 ? String.valueOf(tPF.mTanks[0].getFluid()) : "-");
+					if (tPF.mCovers != null) for (byte s = 0; s < 6; s++) if (tPF.mCovers.mIDs[s] != 0) {
+						net.minecraft.core.BlockPos tSidePos = tPos.offset(gregapi.data.CS.OFFX[s], gregapi.data.CS.OFFY[s], gregapi.data.CS.OFFZ[s]);
+						tSB.append(" ковер[").append(s).append("]=").append(tPF.mCovers.mIDs[s])
+							.append(" заГранью=").append(tW.getBlockState(tSidePos).getBlock().getClass().getSimpleName())
+							.append("/meta=").append(gregapi.util.WD.meta(tW, tSidePos.getX(), tSidePos.getY(), tSidePos.getZ()))
+							.append("/source=").append(tW.getFluidState(tSidePos).isSource());
+					}
+					for (byte s = 0; s < 6; s++) {
+						net.minecraft.world.level.block.entity.BlockEntity tAdj = tW.getBlockEntity(tPos.offset(gregapi.data.CS.OFFX[s], gregapi.data.CS.OFFY[s], gregapi.data.CS.OFFZ[s]));
+						if (tAdj instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tM) {
+							tSB.append(" сосед[").append(s).append("]=машина(").append(tM.mRecipes == null ? "null" : tM.mRecipes.mNameInternal)
+								.append(" in0=").append(tM.mTanksInput.length > 0 ? String.valueOf(tM.mTanksInput[0].getFluid()) : "-").append(")");
+						}
+					}
+					o.println(tSB.toString());
+				}
+			if (tCount == 0) o.println("[GT6-PIPE-AUDIT] труб в 3×3 чанках вокруг игрока нет (SERVER_TIME=" + gregapi.data.CS.SERVER_TIME + ")");
+		} catch (Throwable e) { o.println("[GT6-PIPE-AUDIT] сервер-скан упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+
 	// A/GAP-1 СУДЬЯ-ДАМПЕР (гейт gt6blockdump.flag): порт-дескриптор 3D-объектов-В-МИРЕ. Ставит по 1 представителю КАЖДОГО
 	// уникального MTE-TE-класса (шкафы/трубы/провода/монетки/сундуки) в сетку, затем на КЛИЕНТЕ (живой BE, реальный BER-путь)
 	// собирает world-квады → descriptor.port.block.jsonl. Это порт-сторона паритета блоков-в-мире (item-форма 98.28% не покрывает
