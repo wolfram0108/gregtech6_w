@@ -970,6 +970,78 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PIPE-AUDIT] сервер-скан упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// Ф3.0-ит.9 СУДЬЯ ТУЛТИПА ЖИДКОСТИ (гейт gt6tooltipprobe.flag): фаза 0 — локальный стек (доказан: 11 строк);
+	// фаза 1 (при живом стенде chainprobe, ~тик 950) — сервер открывает GUI миксера движковым кликом;
+	// фаза 2 (~тик 1010) — читаем дисплей-стек ИЗ КЛИЕНТСКОГО МЕНЮ (полный путь игрока: серверный слот → синк →
+	// клиентский слот) и его NBT + getTooltipLines. Локализует потерю «информационных блоков» на синке.
+	private int mTooltipPhase = 0; private int mTooltipTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onTooltipProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mTooltipPhase >= 3) return;
+		if (!new java.io.File("gt6tooltipprobe.flag").exists()) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		++mTooltipTick;
+		if (mTooltipPhase == 0) {
+			mTooltipPhase = 1;
+			try {
+				net.minecraft.world.item.ItemStack tS = gregapi.data.FL.display(gregapi.data.FL.Water.make(12345), true, true);
+				o.println("[GT6-TOOLTIP-PROBE] локальный стек=" + tS + " nbt=" + (tS == null ? "-" : gregapi.code.ItemNBT.get(tS)));
+				if (tS != null) {
+					try {
+						java.util.List<Object> tL = new java.util.ArrayList<>();
+						((gregapi.item.ItemFluidDisplay)tS.getItem()).addInformation(tS, tMC.player, tL, true);
+						o.println("[GT6-TOOLTIP-PROBE] addInformation(" + tL.size() + " строк)=" + tL);
+					} catch (Throwable e) { o.println("[GT6-TOOLTIP-PROBE] addInformation КИНУЛ: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+					try {
+						java.util.List<net.minecraft.network.chat.Component> tLines = tS.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(tMC.level), tMC.player, net.minecraft.world.item.TooltipFlag.ADVANCED);
+						o.println("[GT6-TOOLTIP-PROBE] getTooltipLines(" + tLines.size() + " строк)");
+					} catch (Throwable e) { o.println("[GT6-TOOLTIP-PROBE] getTooltipLines КИНУЛ: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+				}
+			} catch (Throwable e) { o.println("[GT6-TOOLTIP-PROBE] фаза0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+			return;
+		}
+		if (mTooltipPhase == 1) {
+			if (mTooltipTick < 950 || mChainMixerPos == null || tSrv == null) { if (mTooltipTick > 1400) mTooltipPhase = 3; return; }
+			mTooltipPhase = 2;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+				net.minecraft.world.InteractionResult tR = tP.gameMode.useItemOn(tP, tP.level(), net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mChainMixerPos.getX()+0.5, mChainMixerPos.getY()+1.0, mChainMixerPos.getZ()+0.5), net.minecraft.core.Direction.UP, mChainMixerPos, false));
+				o.println("[GT6-TOOLTIP-PROBE] GUI миксера открыт=" + tR + " меню=" + tP.containerMenu.getClass().getSimpleName());
+			} catch (Throwable e) { o.println("[GT6-TOOLTIP-PROBE] открытие упало: " + e); } });
+			return;
+		}
+		// фаза 2: скан КАЖДЫЙ тик (гонка самозакрытия экрана, ит.3) — ловим дисплей-стек, как только меню донеслось;
+		// если к тику 1060 клиент так и в InventoryMenu — повторный клик (воркараунд гонки), финал к 1200.
+		if (mTooltipTick > 1200) { mTooltipPhase = 3; o.println("[GT6-TOOLTIP-PROBE] финал: дисплей-стек в клиент-меню НЕ пойман (меню=" + tMC.player.containerMenu.getClass().getSimpleName() + ")"); return; }
+		try {
+			if (mTooltipTick == 1060 && !(tMC.player.containerMenu instanceof gregapi.gui.ContainerCommon) && tSrv != null && mChainMixerPos != null) {
+				tSrv.execute(() -> { try {
+					net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+					tP.gameMode.useItemOn(tP, tP.level(), net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mChainMixerPos.getX()+0.5, mChainMixerPos.getY()+1.0, mChainMixerPos.getZ()+0.5), net.minecraft.core.Direction.UP, mChainMixerPos, false));
+					o.println("[GT6-TOOLTIP-PROBE] повторный клик миксера (гонка самозакрытия)");
+				} catch (Throwable e) {/**/} });
+				return;
+			}
+			for (net.minecraft.world.inventory.Slot tSl : tMC.player.containerMenu.slots) {
+				net.minecraft.world.item.ItemStack tS = tSl.getItem();
+				if (tS != null && !tS.isEmpty() && tS.getItem() instanceof gregapi.item.ItemFluidDisplay) {
+					mTooltipPhase = 3;
+					o.println("[GT6-TOOLTIP-PROBE] КЛИЕНТ-меню=" + tMC.player.containerMenu.getClass().getSimpleName()
+						+ " слот " + tSl.index + ": " + tS + " nbt=" + gregapi.code.ItemNBT.get(tS) + " мета=" + gregapi.util.ST.meta_(tS));
+					java.util.List<net.minecraft.network.chat.Component> tLines = tS.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(tMC.level), tMC.player, net.minecraft.world.item.TooltipFlag.ADVANCED);
+					o.println("[GT6-TOOLTIP-PROBE] КЛИЕНТ-тултип(" + tLines.size() + " строк)=" + tLines);
+					return;
+				}
+			}
+		} catch (Throwable e) { mTooltipPhase = 3; o.println("[GT6-TOOLTIP-PROBE] фаза2 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
+	}
+
 	// A/GAP-1 СУДЬЯ-ДАМПЕР (гейт gt6blockdump.flag): порт-дескриптор 3D-объектов-В-МИРЕ. Ставит по 1 представителю КАЖДОГО
 	// уникального MTE-TE-класса (шкафы/трубы/провода/монетки/сундуки) в сетку, затем на КЛИЕНТЕ (живой BE, реальный BER-путь)
 	// собирает world-квады → descriptor.port.block.jsonl. Это порт-сторона паритета блоков-в-мире (item-форма 98.28% не покрывает
