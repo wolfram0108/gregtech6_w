@@ -771,6 +771,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 				tSB.append(" | МИКСЕР: recipes=").append(tM.mRecipes == null ? "null" : tM.mRecipes.mNameInternal);
 				for (int i = 0; i < tM.mTanksInput.length; i++) tSB.append(" in").append(i).append("=").append(tM.mTanksInput[i].getFluid());
 				tSB.append(" simFill(вода,WEST=4)=").append(tM.funnelFill((byte)4, gregapi.data.FL.Water.make(1000), false));
+				if (tMBE instanceof net.minecraft.world.Container tC) for (int i = 0; i < tC.getContainerSize(); i++) {
+					net.minecraft.world.item.ItemStack tS = tC.getItem(i);
+					if (tS != null && !tS.isEmpty()) tSB.append(" слот").append(i).append("=").append(tS.getItem()).append("×").append(tS.getCount());
+				}
 			} else tSB.append(" | МИКСЕР be=").append(tMBE == null ? "null" : tMBE.getClass().getSimpleName());
 			net.minecraft.world.level.block.entity.BlockEntity tVBE = mVentMixerPos == null ? null : tW.getBlockEntity(mVentMixerPos);
 			if (tVBE instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tV) {

@@ -730,17 +730,25 @@ public enum FL {
 	
 	public static boolean exists(String aFluidName) {return aFluidName != null && fluid_(aFluidName) != null;}
 	
-	/** PORT-TODO(F5/F1/F8, `ItemFluidDisplay` meta->компонент, decisions/F5-fluids.md §6): дисплей-предмет
-	 *  жидкости в 1.7.10 кодировал жидкость через мета = числовой id (см. {@link #id()}); в neo id
-	 *  нестабилен между запусками (нет плотной гарантированной нумерации DeferredRegister), и мета как
-	 *  канал данных предмета вообще убрана (замена — компоненты). Правильная замена — в F1/F8
-	 *  (`ItemFluidDisplay`, вне области этого переходника); здесь — безопасный дефолт null. */
-	public static ItemStack display(Fluid aFluid) {return null;}
-	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize) {return null;}
-	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {return null;}
-	public static ItemStack display(FluidTankGT aTank, boolean aUseStackSize, boolean aLimitStackSize) {return null;}
-	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize) {return null;}
-	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {return null;}
+	// Дисплей-стек жидкости для GUI-слотов (1:1): мета = fluid-id, NBT f/a/h/s. Стек ТРАНЗИЕНТНЫЙ — пересоздаётся
+	// каждый серверный тик и исключён из сейва (canSave у машин), поэтому нестабильность registry-id между запусками
+	// безвредна; ItemFluidDisplay уже читает жидкость из меты (FL.fluid(ST.meta_)) — канал парный.
+	public static ItemStack display(Fluid aFluid) {return aFluid == null ? null : display(make(aFluid, 0), F, F, T);}
+	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize) {return display(aFluid, aUseStackSize, aLimitStackSize, T);}
+	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {return display(aFluid, aFluid == null ? 0 : aFluid.getAmount(), aUseStackSize, aLimitStackSize, aUseBucketSize);}
+	public static ItemStack display(FluidTankGT aTank, boolean aUseStackSize, boolean aLimitStackSize) {return display(aTank.getFluid(), aTank.amount(), aUseStackSize, aLimitStackSize);}
+	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize) {return display(aFluid, aAmount, aUseStackSize, aLimitStackSize, T);}
+	public static ItemStack display(FluidStack aFluid, long aAmount, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {
+		short aID = id(aFluid);
+		if (aID < 0) return null;
+		ItemStack rStack = IL.Display_Fluid.getWithMeta(Math.max(1, aUseStackSize ? aUseBucketSize ? aLimitStackSize ? UT.Code.bind7(aAmount / 1000) : aAmount / 1000 : aLimitStackSize ? UT.Code.bind7(aAmount) : aAmount : 1), aID);
+		if (rStack == null) return null;
+		CompoundTag tNBT = NBT.makeString("f", regName(aFluid));
+		if (aAmount != 0) NBT.setNumber(tNBT, "a", aAmount);
+		NBT.setNumber(tNBT, "h", temperature(aFluid));
+		NBT.setBoolean(tNBT, "s", gas(aFluid));
+		return NBT.set(rStack, tNBT);
+	}
 	
 	public static FluidStack[] waters(long aWater) {return waters(aWater, aWater, aWater);}
 	public static FluidStack[] waters(long aWater, long aDistilled) {return waters(aWater, aDistilled, aWater);}

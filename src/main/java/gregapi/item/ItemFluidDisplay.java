@@ -219,19 +219,38 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		//
 	}
 
-	// PORT-TODO(F3, render): 1.7.10 Fluid.getBlock()/getStillIcon()/Block.getIcon(int,int) — старый Forge Fluid-render API,
-	// в neo — атлас спрайтов через baked-модели/IClientFluidTypeExtensions. Иконка флюид-дисплея = still-текстура флюида →
-	// закрывается ВМЕСТЕ с фазой флюидов (Фаза C, п.2 вектора). До неё законно null (единственный отложенный item-рендер).
-	// Тип возврата IIcon (removed) → Identifier: иначе перечисление методов в resolveIcon → NoClassDefFoundError.
+	// Иконка = still-текстура жидкости (1:1 Fluid.getStillIcon): GT6-жидкости — из центра F5 (FluidGT.mTexture),
+	// ванильные/чужие — neo-канон IClientFluidTypeExtensions (клиент-класс → изолирован во вложенном холдере,
+	// грузится лениво только под CODE_CLIENT — dedicated-сервер его не трогает).
 	// @Override
 	public net.minecraft.resources.Identifier getIconFromDamage(int aMeta) {
+		return stillIcon(FL.fluid(aMeta));
+	}
+
+	// getIconIndex(ItemStack) проверяется resolveIcon ПЕРВЫМ — читаем мету родным каналом ST.meta_ (не damage).
+	public net.minecraft.resources.Identifier getIconIndex(ItemStack aStack) {
+		return stillIcon(FL.fluid(ST.meta_(aStack)));
+	}
+
+	private static net.minecraft.resources.Identifier stillIcon(net.minecraft.world.level.material.Fluid aFluid) {
+		if (aFluid == null) return null;
+		gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(aFluid);
+		if (tGT != null && tGT.mTexture != null) return tGT.mTexture.getIcon(0);
+		// ванильные жидкости: канонические still-текстуры движка (assets/minecraft/models/block/water.json → block/water_still)
+		if (aFluid.isSame(net.minecraft.world.level.material.Fluids.WATER)) return net.minecraft.resources.Identifier.withDefaultNamespace("block/water_still");
+		if (aFluid.isSame(net.minecraft.world.level.material.Fluids.LAVA))  return net.minecraft.resources.Identifier.withDefaultNamespace("block/lava_still");
 		return null;
 	}
 
-	// PORT-TODO(F3, render): 1.7.10 Fluid.getBlock()/Block.getRenderColor(int)/Fluid.getColor() — тот же
-	// удалённый Forge Fluid-render API, что и в getIconFromDamage выше; рендер = Фаза C.
+	// Тинт (1:1 Fluid.getColor): GT6-жидкости — mRGBa из центра F5 (FluidGT); ванильная вода — NORMAL_WATER_COLOR
+	// (OverworldBiomes.java:28, серый water_still без тинта был бы бесцветным); лава несёт цвет в текстуре.
 	// @Override
 	public int getColorFromItemStack(ItemStack aStack, int aRenderPass) {
+		net.minecraft.world.level.material.Fluid tFluid = FL.fluid(ST.meta_(aStack));
+		if (tFluid == null) return 16777215;
+		gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(tFluid);
+		if (tGT != null) return UT.Code.getRGBInt(tGT.getRGBa());
+		if (tFluid.isSame(net.minecraft.world.level.material.Fluids.WATER)) return 4159204;
 		return 16777215;
 	}
 	
