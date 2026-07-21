@@ -914,7 +914,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ПРАВДУ о каждой жидкостной трубе: серверные И клиентские биты mConnections (ловит расхождение «картинка vs логика»),
 	// танк, коверы, блок у грани каждого ковра (source/flowing — ловит драйн у растёкшейся воды). Игрок просто играет
 	// свою схему — лог собирает её реальное состояние; воспроизводить вслепую больше не нужно.
-	private int mAuditTick = 0; private boolean mWallResent = false; private int mWallTouchStep = 0; private net.minecraft.core.BlockPos mWallTouchPos = null;
+	private int mAuditTick = 0; private boolean mWallResent = false;
 	private static String wallTex(Object aBE) {
 		try { java.lang.reflect.Field f = aBE.getClass().getDeclaredField("mTextures"); f.setAccessible(true); Object v = f.get(aBE);
 			if (v == null) return "tex=NULL";
@@ -967,19 +967,6 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						// решающий замер: ручная досылка ОДНОЙ стене без клиент-BE; следующий срез покажет, появился ли BE
 						if (tCliAbsent && !mWallResent) { mWallResent = true; tWl.sendUpdateToPlayer(tP);
 							o.println("[GT6-PIPE-AUDIT] РУЧНАЯ ДОСЫЛКА sendUpdateToPlayer → стена@" + tE.getKey().toShortString() + " (следующий срез судит)"); }
-						// ит.12-судья «дыра следует за действием»: у первой стены трогаем соседа (поставить камень → сломать),
-						// сцены игрока 1:1; критерий — cli-BE стены остаётся зрелым во ВСЕХ срезах (не пересоздан пустым)
-						if (!tCliAbsent && mWallTouchStep < 2) {
-							for (byte tS = 2; tS < 6 && mWallTouchPos == null; tS++) {
-								net.minecraft.core.BlockPos tN = tE.getKey().offset(gregapi.data.CS.OFFX[tS], 0, gregapi.data.CS.OFFZ[tS]);
-								if (tW.getBlockState(tN).isAir()) mWallTouchPos = tN.immutable();
-							}
-							if (mWallTouchPos != null) {
-								if (mWallTouchStep == 0) { tW.setBlock(mWallTouchPos, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3); o.println("[GT6-PIPE-AUDIT] ит.12: камень ПОСТАВЛЕН рядом со стеной@" + tE.getKey().toShortString()); }
-								else { tW.destroyBlock(mWallTouchPos, false); o.println("[GT6-PIPE-AUDIT] ит.12: камень СЛОМАН рядом со стеной@" + tE.getKey().toShortString()); }
-								++mWallTouchStep;
-							}
-						}
 					} else if (tE.getValue() instanceof gregapi.tileentity.machines.MultiTileEntitySensorTE tSe) {
 						gregapi.tileentity.delegate.DelegatorTileEntity<net.minecraft.world.level.block.entity.BlockEntity> tD = tSe.getAdjacentTileEntity(tSe.mSecondFacing);
 						Long tCliDisp = tClientSensorDisp.get(tE.getKey());
