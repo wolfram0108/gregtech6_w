@@ -943,8 +943,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						tClientBits.put(tE.getKey().immutable(), tPF.getDirectionData());
 					else if (tE.getValue() instanceof gregapi.tileentity.machines.MultiTileEntitySensorTE)
 						tClientSensorDisp.put(tE.getKey().immutable(), (long)probeNum(tE.getValue(), gregapi.tileentity.machines.MultiTileEntitySensor.class, "mDisplayedNumber"));
-					else if (tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tWl)
-						tClientWalls.put(tE.getKey().immutable(), "design=" + tWl.mDesign + " " + wallTex(tWl));
+					else if (tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tWl) {
+						Long tLast = gregapi.render.MultiTileEntityBER.LAST_EXTRACT.get(tE.getKey());
+						tClientWalls.put(tE.getKey().immutable(), "design=" + tWl.mDesign + " " + wallTex(tWl)
+							+ " extract=" + (tLast == null ? "НИКОГДА" : (System.currentTimeMillis()-tLast) < 2000 ? "жив" : "УМЕР " + (System.currentTimeMillis()-tLast)/1000 + "с"));
+					}
 				}
 		} catch (Throwable e) { o.println("[GT6-PIPE-AUDIT] клиент-скан упал: " + e); }
 		tSrv.execute(() -> { try {

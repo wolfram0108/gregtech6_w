@@ -63,6 +63,8 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	// в едином BER: реестр класс→рендерер, extract/submit делегируются. Оба живых TESR GT6 (Chest/MassStorage) идут сюда.
 	@SuppressWarnings("rawtypes")
 	private static final java.util.Map<Class<?>, BlockEntityRenderer> SPECIAL_RENDERERS = new java.util.HashMap<>();
+	/** ВРЕМЕННЫЙ DIAG ит.13: время последнего extract per-стена (судья «выпала ли стена из renderableBlockEntities меша»). */
+	public static final java.util.concurrent.ConcurrentHashMap<BlockPos, Long> LAST_EXTRACT = new java.util.concurrent.ConcurrentHashMap<>();
 	public static void bindSpecialRenderer(Class<?> aTileEntityClass, @SuppressWarnings("rawtypes") BlockEntityRenderer aRenderer) {SPECIAL_RENDERERS.put(aTileEntityClass, aRenderer);}
 
 	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
@@ -121,6 +123,7 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		// Только MTE-блоки с render-объектом: руды(PrefixBlock/PrefixBlockTileEntity) и стабы(TileEntityLoaderStub, render-данных нет) → baked/пусто.
 		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) return;
 		BlockPos tPos = aBE.getBlockPos();
+		if (aBE instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) LAST_EXTRACT.put(tPos.immutable(), System.currentTimeMillis()); // ВРЕМЕННЫЙ DIAG ит.13
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 		try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
 		if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
