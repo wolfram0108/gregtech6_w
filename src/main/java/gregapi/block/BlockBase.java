@@ -68,6 +68,51 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	}
 	/** F3-render: текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} для GT6BlockModel (было RenderBlocks.setRenderBoundsFromBlock). */
 	public float[] getRenderBounds() {return mRenderBounds;}
+	// F-shape (класс «канал движка сместился»; зеркало моста MTE-иерархий MultiTileEntityBlock:296): 1.7.10-коллизия
+	// шла через vanilla-поверхность Block.addCollisionBoxesToList/getCollisionBoundingBoxFromPool (дефолт = статические
+	// bounds setBlockBounds + pos; подклассы переопределяли: Bars/Spike/LilyPad/Path/Leaves/Sapling/CFoamFresh).
+	// Оригинальный BlockBase их НЕ переопределял — поверхность жила на vanilla Block; в neo она УДАЛЕНА (VoxelShape)
+	// → дефолты восстановлены ЗДЕСЬ в корне иерархии, override-цепь подклассов работает как в 1.7.10.
+	/** 1:1-порт vanilla-дефолта Block.getCollisionBoundingBoxFromPool (recompSrc 1.7.10: статические bounds + pos). */
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
+		float[] tB = mRenderBounds;
+		return new AABB(aX+tB[0], aY+tB[1], aZ+tB[2], aX+tB[3], aY+tB[4], aZ+tB[5]);
+	}
+	/** 1:1-порт vanilla-дефолта Block.addCollisionBoxesToList (recompSrc 1.7.10 Block.java:661-669: pool + intersects). */
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, List aList, Entity aEntity) {
+		AABB tBox = getCollisionBoundingBoxFromPool(aWorld, aX, aY, aZ);
+		if (tBox != null && aAABB.intersects(tBox)) aList.add(tBox);
+	}
+	/** 1:1-порт vanilla-дефолта Block.setBlockBoundsBasedOnState (no-op: bounds статичны); подклассы переопределяют (Bars:186/LilyPad:128/Path:151). */
+	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {/**/}
+	// Мост neo №1: getCollisionShape ← addCollisionBoxesToList (список под-боксов, сущность из EntityCollisionContext —
+	// лодка LilyPad и т.п.; pool=null у подкласса → пустая коллизия = проходим, 1:1). Гейт hasCollision — блоки с
+	// Properties.noCollission не должны отвердеть. Кэш-ветка (EmptyBlockGetter при построении BlockState-кэша:
+	// снег/isFaceSturdy/suffocation) — статические bounds: зеркало 1.7.10, где эти проверки тоже читали статический
+	// mBoundingBox. dynamicShape НЕ нужен: entity-коллизия идёт context-перегрузом МИМО кэша (BlockBehaviour:678-679).
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		if (!hasCollision) return net.minecraft.world.phys.shapes.Shapes.empty();
+		if (aWorld instanceof Level tLevel) {
+			List<AABB> tList = new java.util.ArrayList<>();
+			addCollisionBoxesToList(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), new AABB(aPos.getX()-1, aPos.getY()-1, aPos.getZ()-1, aPos.getX()+2, aPos.getY()+2, aPos.getZ()+2), tList, aContext instanceof net.minecraft.world.phys.shapes.EntityCollisionContext tEntityContext ? tEntityContext.getEntity() : null);
+			net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.empty();
+			for (AABB tBox : tList) if (tBox != null) rShape = net.minecraft.world.phys.shapes.Shapes.or(rShape, net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ())));
+			return rShape;
+		}
+		float[] tB = mRenderBounds;
+		return tB[0] <= 0 && tB[1] <= 0 && tB[2] <= 0 && tB[3] >= 1 && tB[4] >= 1 && tB[5] >= 1 ? super.getCollisionShape(aState, aWorld, aPos, aContext) : net.minecraft.world.phys.shapes.Shapes.create(new AABB(tB[0], tB[1], tB[2], tB[3], tB[4], tB[5]));
+	}
+	// Мост neo №2: getShape (outline/таргетинг/raytrace) = 1:1 семантика 1.7.10 Block.collisionRayTrace (recompSrc:
+	// СНАЧАЛА setBlockBoundsBasedOnState, ЗАТЕМ статические bounds). Пустой результат (гонка render-мутации bounds)
+	// → полный куб, не empty: empty-outline делает блок неприцеливаемым.
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		try { setBlockBoundsBasedOnState(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); } catch (Throwable e) {/*чужой BlockGetter/гонка — статические bounds ниже*/}
+		float[] tB = mRenderBounds;
+		if (tB[0] <= 0 && tB[1] <= 0 && tB[2] <= 0 && tB[3] >= 1 && tB[4] >= 1 && tB[5] >= 1) return super.getShape(aState, aWorld, aPos, aContext);
+		net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.create(new AABB(tB[0], tB[1], tB[2], tB[3], tB[4], tB[5]));
+		return rShape.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : rShape;
+	}
 	/** F3-render диспетчер-канал 1.7.10 (RenderBlocks.renderBlockByRenderType): vanilla Block.getRenderType()==0 —
 	 *  стандартный куб; PILLAR-классы (BlockBaseBeam/Log/Bale) возвращают PILLAR_RENDER=31 → GT6BlockModel
 	 *  применяет поворот UV по оси укладки (1:1 renderBlockLog). Метод существовал на подклассах и до этого —

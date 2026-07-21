@@ -613,6 +613,41 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						+ " (ждали: залито>0, move>0, у B вода)");
 				} else o.println("[GT6-SEAM-FLMOVE] бочки не встали: " + tB1 + " / " + tB2);
 			} else o.println("[GT6-SEAM-FLMOVE] Barrel не найден в реестре");
+			// ================= КЛАСС BlockBase/PrefixBlock: коллизия+outline (полублок/решётка/кувшинка/шипы) =================
+			{
+				net.minecraft.world.level.block.Block tSlab = null, tBars = null, tLily = null, tSpike = null, tFullMeta = null;
+				for (net.minecraft.world.level.block.Block tBl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+					if (tBl instanceof gregapi.block.metatype.BlockMetaType tMT) {
+						float[] tBnd = tMT.getRenderBounds();
+						boolean tFull = tBnd[0] <= 0 && tBnd[1] <= 0 && tBnd[2] <= 0 && tBnd[3] >= 1 && tBnd[4] >= 1 && tBnd[5] >= 1;
+						if (!tFull && tSlab == null) tSlab = tBl;
+						if (tFull && tFullMeta == null) tFullMeta = tBl;
+					}
+					if (tBars  == null && tBl instanceof gregapi.block.misc.BlockBaseBars) tBars = tBl;
+					if (tLily  == null && tBl instanceof gregapi.block.misc.BlockBaseLilyPad) tLily = tBl;
+					if (tSpike == null && tBl instanceof gregapi.block.misc.BlockBaseSpike) tSpike = tBl;
+				}
+				int tCaseIdx = 0;
+				for (Object[] tCase : new Object[][] {{"полублок", tSlab}, {"решётка", tBars}, {"кувшинка", tLily}, {"шипы", tSpike}, {"полный-мета(контроль)", tFullMeta}}) {
+					net.minecraft.world.level.block.Block tBl = (net.minecraft.world.level.block.Block)tCase[1];
+					if (tBl == null) { o.println("[GT6-SEAM-BB] " + tCase[0] + ": не найден в реестре"); continue; }
+					net.minecraft.core.BlockPos tPBase = tRoot.offset(15, -1, 2*tCaseIdx++);
+					for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+						tW.setBlock(tPBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					tW.setBlock(tPBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					net.minecraft.core.BlockPos tPos = tPBase.above();
+					tW.setBlock(tPos, tBl.defaultBlockState(), 3);
+					net.minecraft.world.level.block.state.BlockState tSt = tW.getBlockState(tPos);
+					net.minecraft.world.phys.shapes.VoxelShape tColl = tSt.getCollisionShape(tW, tPos, net.minecraft.world.phys.shapes.CollisionContext.empty());
+					net.minecraft.world.phys.shapes.VoxelShape tCache = tSt.getCollisionShape(tW, tPos); // кэш-ветка (снег/sturdy)
+					net.minecraft.world.phys.shapes.VoxelShape tOutline = tSt.getShape(tW, tPos);
+					boolean tCollFull = !tColl.isEmpty() && tColl.bounds().getXsize() >= 0.999 && tColl.bounds().getYsize() >= 0.999 && tColl.bounds().getZsize() >= 0.999 && tColl.toAabbs().size() == 1;
+					o.println("[GT6-SEAM-BB] " + tCase[0] + " (" + tBl.getClass().getSimpleName() + "): collFull=" + tCollFull
+						+ " coll=" + tColl.toAabbs() + " | кэш=" + (tCache.isEmpty() ? "empty" : tCache.bounds().toString())
+						+ " | outline=" + (tOutline.isEmpty() ? "empty" : tOutline.bounds().toString())
+						+ " (ждали: полублок Y=0..0.5 coll+outline; решётка/кувшинка/шипы тонкие; контроль collFull=true)");
+				}
+			}
 			o.println("[GT6-SEAM-PROBE] ФАЗА 0 завершена (фаза 1 через ~8с)");
 		} catch (Throwable e) { o.println("[GT6-SEAM-PROBE] фаза 0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}

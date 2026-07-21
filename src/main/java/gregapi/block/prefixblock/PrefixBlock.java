@@ -678,6 +678,20 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX + mMinX, aY + mMinY, aZ + mMinZ, aX + mMaxX, aY + mMaxY, aZ + mMaxZ);}
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return new AABB(aX + mMinX, aY + mMinY, aZ + mMinZ, aX + mMaxX, aY + mMaxY, aZ + mMaxZ);}
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {setBlockBounds(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ);}
+	// F-shape (зеркало корней BlockBase/MTE — третий Block-корень без общего предка): neo-коллизия/outline из тех же
+	// статических bounds mMin*..mMax*, что 1.7.10-каналы выше (:678-680). Bounds финальны per-инстанс → позиция/мир не
+	// нужны, одна ветка обслуживает и живой мир, и BlockState-кэш (EmptyBlockGetter: снег/isFaceSturdy). Полный куб
+	// (руды/блоки 0..1) → super без изменений; неполные prefix-формы получают реальную коллизию и прицел-рамку.
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		if (!hasCollision) return net.minecraft.world.phys.shapes.Shapes.empty();
+		if (mMinX <= 0 && mMinY <= 0 && mMinZ <= 0 && mMaxX >= 1 && mMaxY >= 1 && mMaxZ >= 1) return super.getCollisionShape(aState, aWorld, aPos, aContext);
+		return net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
+	}
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		if (mMinX <= 0 && mMinY <= 0 && mMinZ <= 0 && mMaxX >= 1 && mMaxY >= 1 && mMaxZ >= 1) return super.getShape(aState, aWorld, aPos, aContext);
+		net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
+		return rShape.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : rShape;
+	}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return mBaseHardness < 0 ? -1 : mBaseHardness == 0 ? 0 : Math.max(1, mBaseHardness * (1+getHarvestLevel(WD.meta(aWorld, aX, aY, aZ))));}
 	// F3-render (отложенная фаза): super.getRenderType() удалён из neo (рендер data-driven) -> -1; см. MultiTileEntityBlock:436.
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
