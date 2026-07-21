@@ -1064,6 +1064,46 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { mTooltipPhase = 3; o.println("[GT6-TOOLTIP-PROBE] фаза2 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
+	// Ф3.0-ит.11 СУДЬЯ СТЕН (гейт gt6wallprobe.flag): «после перезахода стены прозрачны». Сравниваем ДВА пути рождения
+	// клиент-BE стены (Steel Wall 18009): установка предметом vs реконструкция синк-пакетом (getNewTileEntity из
+	// канонического NBT реестра — путь перезахода). У кого mTextures пуст — там разрыв.
+	private boolean mWallProbed = false; private int mWallTick = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onWallProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mWallProbed || !gregapi.data.CS.probeFlag("gt6wallprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null || ++mWallTick < 300) return;
+		mWallProbed = true;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		tSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tW = tP.level();
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			net.minecraft.core.BlockPos tBase = tP.blockPosition().offset(2, -1, -4);
+			for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+				tW.setBlock(tBase.offset(dx, dy, dz), (dy == 0 ? net.minecraft.world.level.block.Blocks.STONE : net.minecraft.world.level.block.Blocks.AIR).defaultBlockState(), 3);
+			tP.setShiftKeyDown(true);
+			tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(18009).copy()); // Steel Wall
+			tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tBase.getX()+0.5, tBase.getY()+1.0, tBase.getZ()+0.5), net.minecraft.core.Direction.UP, tBase, false));
+			tP.setShiftKeyDown(false);
+			net.minecraft.world.level.block.entity.BlockEntity tPlaced = tW.getBlockEntity(tBase.above());
+			net.minecraft.world.level.block.entity.BlockEntity tRecon = tReg.getNewTileEntity(tW, tBase.getX(), tBase.getY()+2, tBase.getZ(), (short)18009); // путь перезахода
+			java.util.function.Function<Object,String> tTex = (be) -> {
+				if (be == null) return "BE=null";
+				try { java.lang.reflect.Field f = be.getClass().getDeclaredField("mTextures"); f.setAccessible(true); Object v = f.get(be);
+					if (v == null) return "mTextures=NULL";
+					int tLen = java.lang.reflect.Array.getLength(v); Object t0 = tLen > 0 ? java.lang.reflect.Array.get(v, 0) : null;
+					return "mTextures.len=" + tLen + " [0]=" + (t0 == null ? "null" : "есть");
+				} catch (Throwable e) { return "поле mTextures не найдено в " + be.getClass().getSimpleName() + ": " + e; }
+			};
+			o.println("[GT6-WALL-PROBE] установка: " + (tPlaced == null ? "null" : tPlaced.getClass().getSimpleName()) + " " + tTex.apply(tPlaced));
+			o.println("[GT6-WALL-PROBE] реконструкция(getNewTileEntity 18009): " + (tRecon == null ? "null" : tRecon.getClass().getSimpleName()) + " " + tTex.apply(tRecon));
+		} catch (Throwable e) { o.println("[GT6-WALL-PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+
 	// A/GAP-1 СУДЬЯ-ДАМПЕР (гейт gt6blockdump.flag): порт-дескриптор 3D-объектов-В-МИРЕ. Ставит по 1 представителю КАЖДОГО
 	// уникального MTE-TE-класса (шкафы/трубы/провода/монетки/сундуки) в сетку, затем на КЛИЕНТЕ (живой BE, реальный BER-путь)
 	// собирает world-квады → descriptor.port.block.jsonl. Это порт-сторона паритета блоков-в-мире (item-форма 98.28% не покрывает
