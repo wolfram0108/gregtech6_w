@@ -179,16 +179,22 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	 * @param aRenderOverlayInWorld if the Icon Overlay is to be rendered InWorld. Used for Crates and Ores.
 	 */
 	// F13/F16/F16: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
-	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque) {
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aModIDOwner, String aNameInternal, SoundType aSoundType, boolean aOpaque, String aTool) {
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(aModIDOwner, gregapi.GT_API.sanitizeRegName(aNameInternal))));
 		if (!aOpaque) p = p.noOcclusion();
+		// F-harvest-tool (1:1 GT6, зеркало MultiTileEntityBlock.mkProps): блок с назначенным инструментом (mTool != "")
+		// дропает ТОЛЬКО правильным инструментом, не рукой (руды = кирка). В 1.7.10 это давал ForgeHooks.canHarvestBlock
+		// (getHarvestTool/getHarvestLevel — теперь через контракт IBlock + центр WD.harvestTool); в neo — флаг
+		// requiresCorrectToolForDrops → hasCorrectToolForDrops → MultiItemTool.isCorrectToolForDrops (GT6-инструмент)
+		// либо vanilla-кирка (isCorrectToolForDrops по тегам — руды без тегов дропают ТОЛЬКО GT6-инструментом).
+		if (aTool != null && !aTool.isEmpty()) p = p.requiresCorrectToolForDrops();
 		return p;
 	}
 	public PrefixBlock(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterialStack aHullMaterial, Class<? extends PrefixBlockItem> aItemClass, Drops aDrops, ITexture aTexture, Material aVanillaMaterial, SoundType aSoundType, String aTool, float aBaseHardness, float aBaseResistance, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ, boolean aGravity, boolean aBeaconBase, boolean aEnderDragonProof, boolean aWitherProof, boolean aOpaque, boolean aNormalCube, boolean aPlacementChecksTemperature, boolean aPlacementChecksAntimatter, boolean aCanBurn, boolean aCanExplode, boolean aRenderOverlayInWorld, boolean aCanGlow, boolean aCanLight, boolean aSpawnProof, OreDictMaterial... aMaterialList) {
 		// F12-followup (block-split): setId в Properties (neo Block.<init> требует ID). F16: sound(aSoundType) (step-звук).
 		// F13/F16: opaque/lightOpacity — 1.7.10 runtime-поля удалены; neo occlusion/свет из Properties → non-opaque блоки
 		// получают .noOcclusion() при ctor (иначе рендерятся solid + блокируют свет). aOpaque — ctor-param. mkProps ниже.
-		super(mkProps(aModIDOwner, aNameInternal, aSoundType, aOpaque));
+		super(mkProps(aModIDOwner, aNameInternal, aSoundType, aOpaque, aTool));
 		mPrefix = aPrefix;
 		mNameInternal = aNameInternal;
 		mMaterialList = (aMaterialList.length > 0 ? aMaterialList : OreDictMaterial.MATERIAL_ARRAY);

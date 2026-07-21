@@ -170,6 +170,15 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (aWorld instanceof Level tLevel) {
 			BlockEntity tBE = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+			// Порядок диспатча = 1:1 с 1.7.10 addCollisionBoxesToList: СНАЧАЛА список под-боксов (леса/верёвка = проходимая
+			// рама, трубы = рукава), фолбэк — broad-phase бокс. Зеркало MultiTileEntityBlock.getCollisionShape.
+			if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddCollisionBoxesToList tMulti) {
+				java.util.List<net.minecraft.world.phys.AABB> tList = new java.util.ArrayList<>();
+				tMulti.addCollisionBoxesToList(new net.minecraft.world.phys.AABB(aPos.getX()-1, aPos.getY()-1, aPos.getZ()-1, aPos.getX()+2, aPos.getY()+2, aPos.getZ()+2), tList, aContext instanceof net.minecraft.world.phys.shapes.EntityCollisionContext tEntityContext ? tEntityContext.getEntity() : null);
+				net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.empty();
+				for (net.minecraft.world.phys.AABB tBox : tList) if (tBox != null) rShape = net.minecraft.world.phys.shapes.Shapes.or(rShape, net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ())));
+				return rShape;
+			}
 			if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetCollisionBoundingBoxFromPool tC) {
 				net.minecraft.world.phys.AABB tBox = tC.getCollisionBoundingBoxFromPool();
 				return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));

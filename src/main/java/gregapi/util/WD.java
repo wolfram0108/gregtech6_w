@@ -398,7 +398,9 @@ public class WD {
 	 *  ярус инструмента требуется). Прямой маппинг STONE=1/IRON=2/DIAMOND=3, иначе 0. Используется в проверке «инструмент
 	 *  достаточно силён» (MultiItemTool.getDigSpeed:517, было degraded до 0 = любой инструмент копал любой блок). */
 	public static int harvestLevel(Block aBlock, int aMeta) {
-		if (aBlock instanceof gregapi.block.BlockBase tBlockBase) return tBlockBase.getHarvestLevel(aMeta);
+		// диспатч по КОНТРАКТУ IBlock (все GT6-иерархии: BlockBase/MTE-Block/Internal/Prefix/Rail — общего предка нет;
+		// прежний instanceof BlockBase был слеп к MTE → машины «без уровня» — класс «две Block-иерархии»)
+		if (aBlock instanceof gregapi.block.IBlock tBlock) return tBlock.getHarvestLevel(aMeta);
 		BlockState tState = aBlock.defaultBlockState();
 		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_DIAMOND_TOOL)) return 3;
 		if (tState.is(net.minecraft.tags.BlockTags.NEEDS_IRON_TOOL  )) return 2;
@@ -417,7 +419,10 @@ public class WD {
 	 *  инструмента "pickaxe"/"shovel"/"axe"...) удалён по ИМЕНИ; GT6-блок хранит ({@code BlockBase.getHarvestTool(meta)}),
 	 *  vanilla-блок → "" (как ядро инлайнит UT.java:1202, ItemBlockBase:109). Централизует инлайн {@code instanceof BlockBase}. */
 	public static String harvestTool(Block aBlock, int aMeta) {
-		return aBlock instanceof gregapi.block.BlockBase tBlockBase ? tBlockBase.getHarvestTool(aMeta) : "";
+		// диспатч по КОНТРАКТУ IBlock (см. harvestLevel выше: instanceof BlockBase был слеп к MTE/Prefix/Rail —
+		// ключ не «видел» машину своим блоком → canHarvestBlock=false → машина не добывалась ВООБЩЕ после
+		// requiresCorrectToolForDrops; поймано судьёй gt6seamprobe)
+		return aBlock instanceof gregapi.block.IBlock tBlock ? tBlock.getHarvestTool(aMeta) : "";
 	}
 	/** F-motion: 1.7.10 WD.motionX(Entity)/Y/Z (public поля) -> neo Vec3 getDeltaMovement()/setDeltaMovement (Entity.java).
 	 *  Покомпонентная запись обязана сохранять две другие оси -> централизуем здесь ОДИН раз (философия §2). */

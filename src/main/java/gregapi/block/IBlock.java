@@ -34,4 +34,11 @@ public interface IBlock {
 	 *  Единый контракт для ВСЕХ Block-иерархий GT6 (BlockBase/флюиды/MTE/rail/prefix — общего предка нет);
 	 *  читает GT6BlockModel.applyBounds (1.7.10 RenderBlocks.setRenderBoundsFromBlock) — под-боксы render-пассов. */
 	public float[] getRenderBounds();
+	/** F-tool (читают ЦЕНТРЫ WD.harvestTool/WD.harvestLevel): 1.7.10 Forge держал getHarvestTool(int)/getHarvestLevel(int)
+	 *  на САМОМ Block — каждая GT6-иерархия отвечала своими полями (BlockBase.mTool, MTE-Block.mTool, PrefixBlock.mTool,
+	 *  Rail=crowbar). neo эту точку удалил; контракт восстанавливает её на едином IBlock (общего Block-предка у иерархий
+	 *  нет — та же причина, что getRenderBounds выше). Носители перекрывают дефолт автоматически одноимёнными
+	 *  существующими методами; не-носители (жидкости, Internal — как в 1.7.10 без override) — дефолт «без инструмента». */
+	default String getHarvestTool(int aMeta) {return "";}
+	default int getHarvestLevel(int aMeta) {return 0;}
 }

@@ -358,6 +358,265 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PLACE-PROBE] фаза упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// ШОВ-СУДЬЯ (гейт gt6seamprobe.flag): механическая приёмка открытых швов A7/A8/A9/FL.move ОДНИМ заходом.
+	// Принцип: где возможно — РЕАЛЬНЫЙ движковый путь (useItemOn/destroyBlock/explode); для каналов-мостов критерий
+	// «neo-канал отдаёт то же, что TE-канал» (сам мост и есть предмет проверки). Фаза 0: постановка + мгновенные замеры;
+	// фаза 1 (~8с): отстоявшиеся (mDesign лесов после тиков, последствия взрыва).
+	private int mSeamProbePhase = 0; private int mSeamProbeTick = 0;
+	private net.minecraft.core.BlockPos mSeamAnvilPos, mSeamScaffoldPos, mSeamScaffoldPos2, mSeamRopePos, mSeamChestPos;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onSeamProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mSeamProbePhase >= 2) return;
+		if (!gregapi.data.CS.probeFlag("gt6seamprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mSeamProbePhase = 2; return; }
+		tMC.options.pauseOnLostFocus = false;
+		if (tMC.screen instanceof net.minecraft.client.gui.screens.PauseScreen) tMC.setScreen(null);
+		++mSeamProbeTick;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		if (mSeamProbePhase == 1) {
+			if (mSeamProbeTick < 460) return;
+			mSeamProbePhase = 2;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				// A8: mDesign лесов после тиков + коллизия (низ стопки design 2 = проходимая рама, НЕ полный куб)
+				for (net.minecraft.core.BlockPos tPos : new net.minecraft.core.BlockPos[] {mSeamScaffoldPos, mSeamScaffoldPos2, mSeamRopePos}) {
+					if (tPos == null) continue;
+					net.minecraft.world.level.block.state.BlockState tSt = tW.getBlockState(tPos);
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tW.getBlockEntity(tPos);
+					net.minecraft.world.phys.shapes.VoxelShape tShape = tSt.getCollisionShape(tW, tPos);
+					boolean tFull = !tShape.isEmpty() && tShape.bounds().getXsize() >= 0.999 && tShape.bounds().getYsize() >= 0.999 && tShape.bounds().getZsize() >= 0.999 && tShape.toAabbs().size() == 1;
+					o.println("[GT6-SEAM-A8] @" + tPos.toShortString() + " be=" + (tBE == null ? "null" : tBE.getClass().getSimpleName())
+						+ " design=" + (tBE instanceof gregtech.tileentity.tools.MultiTileEntityScaffold tSc ? String.valueOf(probeNum(tSc, gregtech.tileentity.tools.MultiTileEntityScaffold.class, "mDesign")) : "-")
+						+ " boxes=" + tShape.toAabbs().size() + " fullCube=" + tFull
+						+ " isLadder=" + tSt.isLadder(tW, tPos, tP)
+						+ " shape=" + tShape.toAabbs() + " (леса низ: ждали design=2, fullCube=false, boxes>1)");
+				}
+				// A9-взрыв: сундук после TNT-взрыва (IMTE_OnBlockExploded → дроп инвентаря)
+				if (mSeamChestPos != null) {
+					net.minecraft.world.level.block.state.BlockState tSt = tW.getBlockState(mSeamChestPos);
+					int tDrops = tW.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+						new net.minecraft.world.phys.AABB(mSeamChestPos).inflate(4)).size();
+					o.println("[GT6-SEAM-A9-EXPLODE] после взрыва: блок=" + tSt.getBlock().getClass().getSimpleName()
+						+ " дроп-сущностей-рядом=" + tDrops + " (ждали: блок снесён/цел по resistance, БЕЗ краша; при сносе дроп>0)");
+				}
+				o.println("[GT6-SEAM-PROBE] ФАЗА 1 завершена");
+			} catch (Throwable e) { o.println("[GT6-SEAM-PROBE] фаза 1 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		if (mSeamProbeTick < 300) return;
+		mSeamProbePhase = 1;
+		tSrv.execute(() -> { try {
+			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tW = tP.level();
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			if (tReg == null) { o.println("[GT6-SEAM-PROBE] реестр null"); return; }
+			// ---- хелпер-установка кликом (реальный путь) ----
+			java.util.function.BiFunction<net.minecraft.core.BlockPos, net.minecraft.world.item.ItemStack, net.minecraft.world.level.block.entity.BlockEntity> tPlace = (aBase, aStack) -> {
+				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(aBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(aBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, aStack.copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(aBase.getX()+0.5, aBase.getY()+1.0, aBase.getZ()+0.5), net.minecraft.core.Direction.UP, aBase, false));
+				tP.setShiftKeyDown(false);
+				return tW.getBlockEntity(aBase.above());
+			};
+			net.minecraft.core.BlockPos tRoot = tP.blockPosition();
+			// ================= A7: НАКОВАЛЬНЯ (бронза #32028) =================
+			net.minecraft.core.BlockPos tABase = tRoot.offset(3, -1, 0);
+			net.minecraft.world.level.block.entity.BlockEntity tABE = tPlace.apply(tABase, tReg.getItem(32028));
+			mSeamAnvilPos = tABase.above();
+			if (tABE instanceof gregtech.tileentity.tools.MultiTileEntityAnvil tAnvil) {
+				// RM.Anvil наполняется ЛЕНИВЫМИ хендлерами (Loader_Recipes_Handlers:157 rockGt→dustSmall×9;
+				// mRecipeList=0 на буте — НОРМА, findRecipe идёт в mRecipeMapHandlers c aLoop=T). Вход судьи —
+				// канонический rockGt (первый валидный материал).
+				o.println("[GT6-SEAM-A7] RM.Anvil: recipes=" + gregapi.data.RM.Anvil.mRecipeList.size() + " handlers=" + gregapi.data.RM.Anvil.mRecipeMapHandlers.size());
+				net.minecraft.world.item.ItemStack tInput = null;
+				for (gregapi.oredict.OreDictMaterial tMat : new gregapi.oredict.OreDictMaterial[] {gregapi.data.MT.Stone, gregapi.data.MT.STONES.GraniteBlack, gregapi.data.MT.Cu, gregapi.data.MT.Fe}) {
+					tInput = gregapi.data.OP.rockGt.mat(tMat, 1);
+					if (gregapi.util.ST.valid(tInput)) break;
+				}
+				if (!gregapi.util.ST.valid(tInput)) o.println("[GT6-SEAM-A7] rockGt не синтезирован — вход судьи недоступен");
+				else {
+					// (а) активация: положить входной предмет на наковальню РЕАЛЬНЫМ кликом по верху
+					tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tInput.copy());
+					net.minecraft.world.phys.BlockHitResult tTopHit = new net.minecraft.world.phys.BlockHitResult(
+						new net.minecraft.world.phys.Vec3(mSeamAnvilPos.getX()+0.25, mSeamAnvilPos.getY()+1.0, mSeamAnvilPos.getZ()+0.25), net.minecraft.core.Direction.UP, mSeamAnvilPos, false);
+					net.minecraft.world.InteractionResult tPut = tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tTopHit);
+					boolean tSlotGot = gregapi.util.ST.valid(tAnvil.getItem(0)) || gregapi.util.ST.valid(tAnvil.getItem(1));
+					o.println("[GT6-SEAM-A7] активация: положил " + tInput + " кликом result=" + tPut + " слот-получил=" + tSlotGot);
+					// (б) ковка: слот 0 = rockGt, молот, клик по верху → хендлер обязан породить рецепт
+					tAnvil.setItem(0, tInput.copy());
+					tAnvil.setItem(1, net.minecraft.world.item.ItemStack.EMPTY);
+					long tDuraBefore = tAnvil.mDurability;
+					int tInvBefore = 0; for (int i = 0; i < tP.getInventory().getContainerSize(); i++) if (gregapi.util.ST.valid(tP.getInventory().getItem(i))) tInvBefore++;
+					net.minecraft.world.item.ItemStack tHammer = gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.HARDHAMMER, gregapi.data.MT.Steel, gregapi.data.MT.Steel);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tHammer);
+					net.minecraft.world.InteractionResult tForge = tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND, tTopHit);
+					int tOutDrops = tW.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(mSeamAnvilPos).inflate(3)).size();
+					int tInvAfter = 0; for (int i = 0; i < tP.getInventory().getContainerSize(); i++) if (gregapi.util.ST.valid(tP.getInventory().getItem(i))) tInvAfter++;
+					o.println("[GT6-SEAM-A7] ковка: вход rockGt result=" + tForge + " durability " + tDuraBefore + "→" + tAnvil.mDurability + " (потрачена=" + (tAnvil.mDurability < tDuraBefore) + ")"
+						+ " слот0-после=" + tAnvil.getItem(0) + " инв-слотов " + tInvBefore + "→" + tInvAfter + " дроп-рядом=" + tOutDrops
+						+ " (ковка жива = durability потрачена И слот0 съеден И выход в инв/дропе)");
+					tP.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+				}
+			} else o.println("[GT6-SEAM-A7] наковальня #32028 не встала: be=" + (tABE == null ? "null" : tABE.getClass().getSimpleName()));
+			// ================= A8: ЛЕСА ×2 (стопка) + ВЕРЁВКА =================
+			short tScaffoldID = -1, tRopeID = 32011, tShelfID = -1, tBarrelID = -1;
+			for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+				if (tScaffoldID < 0 && tC.mCanonicalTileEntity instanceof gregtech.tileentity.tools.MultiTileEntityScaffold) tScaffoldID = tC.mID;
+				if (tShelfID    < 0 && tC.mCanonicalTileEntity instanceof gregapi.tileentity.inventories.MultiTileEntityBookShelf) tShelfID = tC.mID;
+				if (tBarrelID   < 0 && tC.mCanonicalTileEntity instanceof gregapi.tileentity.tank.TileEntityBase08Barrel) tBarrelID = tC.mID;
+			}
+			if (tScaffoldID >= 0) {
+				net.minecraft.core.BlockPos tSBase = tRoot.offset(3, -1, 3);
+				tPlace.apply(tSBase, tReg.getItem(tScaffoldID));
+				mSeamScaffoldPos = tSBase.above();
+				// второй — кликом по верху первого
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tScaffoldID).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(mSeamScaffoldPos.getX()+0.5, mSeamScaffoldPos.getY()+1.0, mSeamScaffoldPos.getZ()+0.5), net.minecraft.core.Direction.UP, mSeamScaffoldPos, false));
+				tP.setShiftKeyDown(false);
+				mSeamScaffoldPos2 = mSeamScaffoldPos.above();
+				o.println("[GT6-SEAM-A8] леса #" + tScaffoldID + " ×2 поставлены @" + mSeamScaffoldPos.toShortString() + " (замер формы — фаза 1, после тиков mDesign)");
+			} else o.println("[GT6-SEAM-A8] Scaffold не найден в реестре");
+			{ // верёвка: столб 2 камня, клик в бок верхнего
+				net.minecraft.core.BlockPos tRBase = tRoot.offset(3, -1, -3);
+				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tRBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(tRBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				net.minecraft.core.BlockPos tPillar = tRBase.above();
+				tW.setBlock(tPillar, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tRopeID).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tPillar.getX()+1.0, tPillar.getY()+0.5, tPillar.getZ()+0.5), net.minecraft.core.Direction.EAST, tPillar, false));
+				tP.setShiftKeyDown(false);
+				net.minecraft.core.BlockPos tRPos = tPillar.east();
+				mSeamRopePos = tW.getBlockEntity(tRPos) instanceof gregtech.tileentity.tools.MultiTileEntityRope ? tRPos : null;
+				o.println("[GT6-SEAM-A8] верёвка #32011: встала=" + (mSeamRopePos != null) + " @" + tRPos.toShortString());
+			}
+			// ================= A9: harvest-tool (дроп рукой vs ключом), SURVIVAL =================
+			{
+				net.minecraft.core.BlockPos tM1Base = tRoot.offset(6, -1, 0), tM2Base = tRoot.offset(6, -1, 3);
+				net.minecraft.world.level.block.entity.BlockEntity tM1 = tPlace.apply(tM1Base, tReg.getItem(20001));
+				net.minecraft.world.level.block.entity.BlockEntity tM2 = tPlace.apply(tM2Base, tReg.getItem(20001));
+				if (tM1 != null && tM2 != null) {
+					tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					net.minecraft.core.BlockPos tM1Pos = tM1Base.above(), tM2Pos = tM2Base.above();
+					net.minecraft.world.item.ItemStack tWrench = gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, gregapi.data.MT.Steel, gregapi.data.MT.Steel);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+					boolean tHandHarvest = tW.getBlockState(tM1Pos).canHarvestBlock(tW, tM1Pos, tP);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tWrench.copy());
+					boolean tToolHarvest = tW.getBlockState(tM1Pos).canHarvestBlock(tW, tM1Pos, tP);
+					// реальный слом: ключом (дроп ждём) и рукой (дропа не ждём)
+					tP.gameMode.destroyBlock(tM1Pos);
+					int tDropsTool = tW.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tM1Pos).inflate(3)).size();
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+					tP.gameMode.destroyBlock(tM2Pos);
+					int tDropsHand = tW.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tM2Pos).inflate(3)).size();
+					o.println("[GT6-SEAM-A9-HARVEST] машина: canHarvest рука=" + tHandHarvest + " ключ=" + tToolHarvest
+						+ " | слом ключом: дроп=" + tDropsTool + " | слом рукой: дроп=" + tDropsHand
+						+ " (канон: рука=false/0, ключ=true/>0)");
+					tP.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+				} else o.println("[GT6-SEAM-A9-HARVEST] машины не встали");
+			}
+			// ================= руды PrefixBlock: harvest-tool (рука vs кирка) =================
+			{
+				net.minecraft.world.item.ItemStack tOreStack = null;
+				for (net.minecraft.world.item.Item it : net.minecraft.core.registries.BuiltInRegistries.ITEM)
+					if (it instanceof gregapi.block.prefixblock.PrefixBlockItem) {
+						java.util.List<net.minecraft.world.item.ItemStack> tV = new java.util.ArrayList<>();
+						try { ((gregapi.block.prefixblock.PrefixBlockItem)it).getSubItems(it, null, tV); } catch (Throwable e) {/**/}
+						if (!tV.isEmpty()) { tOreStack = tV.get(0); break; }
+					}
+				if (tOreStack != null) {
+					net.minecraft.core.BlockPos tOBase = tRoot.offset(12, -1, 4);
+					net.minecraft.world.level.block.entity.BlockEntity tOBE = tPlace.apply(tOBase, tOreStack);
+					net.minecraft.core.BlockPos tOPos = tOBase.above();
+					net.minecraft.world.level.block.state.BlockState tOSt = tW.getBlockState(tOPos);
+					if (tOSt.getBlock() instanceof gregapi.block.prefixblock.PrefixBlock) {
+						tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+						tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+						boolean tHand = tOSt.canHarvestBlock(tW, tOPos, tP);
+						tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.PICKAXE, gregapi.data.MT.Steel, gregapi.data.MT.Steel));
+						boolean tPick = tOSt.canHarvestBlock(tW, tOPos, tP);
+						o.println("[GT6-SEAM-ORE] " + tOSt.getBlock().getClass().getSimpleName() + " harvestTool=" + gregapi.util.WD.harvestTool(tOSt.getBlock(), 0)
+							+ " canHarvest рука=" + tHand + " GT6-кирка=" + tPick + " (канон: рука=false, кирка=true)");
+						tP.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+					} else o.println("[GT6-SEAM-ORE] PrefixBlock не встал: " + tOSt.getBlock().getClass().getSimpleName() + " be=" + tOBE);
+				} else o.println("[GT6-SEAM-ORE] PrefixBlockItem не найден");
+			}
+			// ================= A9: горючесть/огонь/canEntityDestroy/weakPower (палка #32756) =================
+			{
+				net.minecraft.core.BlockPos tStBase = tRoot.offset(6, -1, -3);
+				net.minecraft.world.level.block.entity.BlockEntity tStick = tPlace.apply(tStBase, tReg.getItem(32756));
+				if (tStick != null) {
+					net.minecraft.core.BlockPos tStickPos = tStBase.above();
+					net.minecraft.world.level.block.state.BlockState tSt = tW.getBlockState(tStickPos);
+					int tFlam = tSt.getFlammability(tW, tStickPos, net.minecraft.core.Direction.NORTH);
+					int tFire = tSt.getFireSpreadSpeed(tW, tStickPos, net.minecraft.core.Direction.NORTH);
+					long tTEFlam = tStick instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetFlammability tF ? tF.getFlammability((byte)2, false) : Long.MIN_VALUE;
+					long tTEFire = tStick instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetFireSpreadSpeed tF ? tF.getFireSpreadSpeed((byte)2, false) : Long.MIN_VALUE;
+					boolean tCED = tSt.canEntityDestroy(tW, tStickPos, tP);
+					o.println("[GT6-SEAM-A9-FIRE] палка: neo flammability=" + tFlam + " (TE=" + tTEFlam + ") fireSpread=" + tFire + " (TE=" + tTEFire + ")"
+						+ " canEntityDestroy=" + tCED + " (критерий: neo==TE, оба канала доходят до IMTE)");
+				} else o.println("[GT6-SEAM-A9-FIRE] палка #32756 не встала");
+				// weakPower на любом MTE (мост shouldCheckWeakPower жив и не падает)
+				if (mSeamAnvilPos != null) {
+					boolean tWeak = tW.getBlockState(mSeamAnvilPos).shouldCheckWeakPower(tW, mSeamAnvilPos, net.minecraft.core.Direction.UP);
+					o.println("[GT6-SEAM-A9-REDSTONE] shouldCheckWeakPower(наковальня,UP)=" + tWeak + " (мост отвечает без краша)");
+				}
+			}
+			// ================= A9: книжная полка → сила зачарования =================
+			if (tShelfID >= 0) {
+				net.minecraft.core.BlockPos tShBase = tRoot.offset(9, -1, 0);
+				net.minecraft.world.level.block.entity.BlockEntity tShelf = tPlace.apply(tShBase, tReg.getItem(tShelfID));
+				if (tShelf instanceof gregapi.tileentity.inventories.MultiTileEntityBookShelf tBS) {
+					for (int i = 0; i < Math.min(12, tBS.getContainerSize()); i++) tBS.setItem(i, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BOOK));
+					net.minecraft.core.BlockPos tShPos = tShBase.above();
+					float tNeoBonus = tW.getBlockState(tShPos).getEnchantPowerBonus(tW, tShPos);
+					float tTEBonus = tBS.getEnchantPowerBonus();
+					o.println("[GT6-SEAM-A9-ENCHANT] полка #" + tShelfID + " (12 книг): neo=" + tNeoBonus + " TE=" + tTEBonus + " (критерий: neo==TE; книги ванильные — 0 допустим, если BOOKS_NORMAL их не числит)");
+				} else o.println("[GT6-SEAM-A9-ENCHANT] полка не встала: " + (tShelf == null ? "null" : tShelf.getClass().getSimpleName()));
+			} else o.println("[GT6-SEAM-A9-ENCHANT] BookShelf не найден в реестре");
+			// ================= A9: взрыв рядом с инвентарным MTE (сундук #32745 с предметом) =================
+			{
+				net.minecraft.core.BlockPos tCBase = tRoot.offset(9, -1, 4);
+				net.minecraft.world.level.block.entity.BlockEntity tChest = tPlace.apply(tCBase, tReg.getItem(32745));
+				if (tChest instanceof net.minecraft.world.Container tCC) {
+					tCC.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.OAK_LOG));
+					mSeamChestPos = tCBase.above();
+					tW.explode(null, mSeamChestPos.getX()+1.5, mSeamChestPos.getY()+0.5, mSeamChestPos.getZ()+0.5, 2.0F, net.minecraft.world.level.Level.ExplosionInteraction.TNT);
+					o.println("[GT6-SEAM-A9-EXPLODE] TNT 2.0 рядом с сундуком @" + mSeamChestPos.toShortString() + " (последствия — фаза 1)");
+				} else o.println("[GT6-SEAM-A9-EXPLODE] сундук #32745 не встал");
+			}
+			// ================= FL.move: бочка → бочка (drain-сторона F5-transfer) =================
+			if (tBarrelID >= 0) {
+				net.minecraft.core.BlockPos tB1Base = tRoot.offset(12, -1, 0), tB2Base = tRoot.offset(13, -1, 0);
+				net.minecraft.world.level.block.entity.BlockEntity tB1 = tPlace.apply(tB1Base, tReg.getItem(tBarrelID));
+				net.minecraft.world.level.block.entity.BlockEntity tB2 = tPlace.apply(tB2Base, tReg.getItem(tBarrelID));
+				if (tB1 instanceof net.neoforged.neoforge.fluids.capability.IFluidHandler tFH1 && tB2 instanceof net.neoforged.neoforge.fluids.capability.IFluidHandler tFH2) {
+					long tFilled = gregapi.data.FL.fill_(tFH1, (byte)1, gregapi.data.FL.Water.make(16000), true);
+					long tMoved = gregapi.data.FL.move(
+						new gregapi.tileentity.delegate.DelegatorTileEntity<>(tB1, (byte)5),
+						new gregapi.tileentity.delegate.DelegatorTileEntity<>(tB2, (byte)4));
+					o.println("[GT6-SEAM-FLMOVE] бочка #" + tBarrelID + ": залито=" + tFilled + " FL.move A→B=" + tMoved
+						+ " | A-танк0=" + tFH1.getFluidInTank(0) + " B-танк0=" + tFH2.getFluidInTank(0)
+						+ " (ждали: залито>0, move>0, у B вода)");
+				} else o.println("[GT6-SEAM-FLMOVE] бочки не встали: " + tB1 + " / " + tB2);
+			} else o.println("[GT6-SEAM-FLMOVE] Barrel не найден в реестре");
+			o.println("[GT6-SEAM-PROBE] ФАЗА 0 завершена (фаза 1 через ~8с)");
+		} catch (Throwable e) { o.println("[GT6-SEAM-PROBE] фаза 0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+	}
+
 	// Ф3.0-СУДЬЯ (F-useOn инструменты, гейт: файл gt6toolprobe.flag): проверка канала инструментов РЕАЛЬНЫМ клик-путём.
 	// ServerPlayerGameMode.useItemOn (:388 itemStack.onItemUseFirst → :395 state.useItemOn → :415 itemStack.useOn) — тот же
 	// метод, что при ServerboundUseItemOnPacket. Ставим MTE-машину, читаем mFacing, кликаем ключом в бок → мост

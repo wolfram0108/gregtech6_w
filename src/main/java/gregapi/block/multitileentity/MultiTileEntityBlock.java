@@ -296,10 +296,22 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// F-shape (класс «канал движка сместился», как F-tick/useOn): 1.7.10 getCollisionBoundingBoxFromPool/getSelectedBoundingBox
 	// (AABB) удалены — neo форма блока через VoxelShape (getCollisionShape=коллизия/снег, getShape=outline). БЕЗ моста MTE-блоки
 	// давали дефолтный ПОЛНЫЙ КУБ → снег ложился на камешки (SnowLayerBlock.canSurvive→isFaceFull(getCollisionShape,UP)),
-	// коллизия/outline полные (камешек непроходим). Мост: BE-AABB (абсолютная, box()=pos+bounds) → относительный VoxelShape
-	// (move(-pos)); null коллизия (напр. MTE-Rock) → Shapes.empty (проходим, снег не ляжет). Централизованно на весь MTE-слой.
+	// коллизия/outline полные (камешек непроходим). Порядок диспатча = 1:1 с 1.7.10-цепью (World.getCollidingBoundingBoxes →
+	// addCollisionBoxesToList): СНАЧАЛА IMTE_AddCollisionBoxesToList (список под-боксов; леса/верёвка = проходимая рама,
+	// трубы = рукава по mConnections, машины через базу TE04/TE06 = дефолтный полный бокс), фолбэк — broad-phase
+	// getCollisionBoundingBoxFromPool. Сущность (шифт-проверки Scaffold design 1) — из EntityCollisionContext (null для
+	// Empty-контекста = 1:1 с aEntity==null). BE-AABB абсолютные (box()=pos+bounds) → относительный VoxelShape (move(-pos));
+	// пустой список/null → Shapes.empty (проходим, снег не ляжет). Централизованно на весь MTE-слой.
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (!(aWorld instanceof Level tLevel)) return super.getCollisionShape(aState, aWorld, aPos, aContext);
+		BlockEntity tTileEntity = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		if (tTileEntity instanceof IMTE_AddCollisionBoxesToList tMulti) {
+			List<AABB> tList = new ArrayList<>();
+			tMulti.addCollisionBoxesToList(new AABB(aPos.getX()-1, aPos.getY()-1, aPos.getZ()-1, aPos.getX()+2, aPos.getY()+2, aPos.getZ()+2), tList, aContext instanceof net.minecraft.world.phys.shapes.EntityCollisionContext tEntityContext ? tEntityContext.getEntity() : null);
+			net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.empty();
+			for (AABB tBox : tList) if (tBox != null) rShape = net.minecraft.world.phys.shapes.Shapes.or(rShape, net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ())));
+			return rShape;
+		}
 		AABB tBox = getCollisionBoundingBoxFromPool(tLevel, aPos.getX(), aPos.getY(), aPos.getZ());
 		return tBox == null ? net.minecraft.world.phys.shapes.Shapes.empty() : net.minecraft.world.phys.shapes.Shapes.create(tBox.move(-aPos.getX(), -aPos.getY(), -aPos.getZ()));
 	}
