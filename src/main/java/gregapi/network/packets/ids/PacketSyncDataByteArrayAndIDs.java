@@ -85,6 +85,7 @@ public class PacketSyncDataByteArrayAndIDs extends PacketCoordinates {
 		if (aWorld != null) {
 			Block tBlock = getBlock(aWorld, mX, mY, mZ);
 			if (tBlock instanceof IBlockSyncDataAndIDs) ((IBlockSyncDataAndIDs)tBlock).receiveDataByteArray(aWorld, mX, mY, mZ, mData, aNetworkHandler, mID1, mID2);
+			else gregapi.data.CS.OUT.println("[GT6-SYNCIDS-DROP] @" + mX + "," + mY + "," + mZ + " ids=" + mID1 + "/" + mID2 + " блок=" + (tBlock == null ? "null" : tBlock.getClass().getSimpleName()) + " (пакет ДРОПНУТ)"); // ВРЕМЕННЫЙ DIAG ит.11
 		}
 	}
 }

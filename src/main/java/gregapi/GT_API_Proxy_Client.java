@@ -914,7 +914,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// ПРАВДУ о каждой жидкостной трубе: серверные И клиентские биты mConnections (ловит расхождение «картинка vs логика»),
 	// танк, коверы, блок у грани каждого ковра (source/flowing — ловит драйн у растёкшейся воды). Игрок просто играет
 	// свою схему — лог собирает её реальное состояние; воспроизводить вслепую больше не нужно.
-	private int mAuditTick = 0;
+	private int mAuditTick = 0; private boolean mWallResent = false;
+	private static String wallTex(Object aBE) {
+		try { java.lang.reflect.Field f = aBE.getClass().getDeclaredField("mTextures"); f.setAccessible(true); Object v = f.get(aBE);
+			if (v == null) return "tex=NULL";
+			int tLen = java.lang.reflect.Array.getLength(v); Object t0 = tLen > 0 ? java.lang.reflect.Array.get(v, 0) : null;
+			return "tex.len=" + tLen + "[0]=" + (t0 == null ? "null" : "есть");
+		} catch (Throwable e) { return "tex=EXC:" + e.getClass().getSimpleName(); }
+	}
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onPipeAudit(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (!gregapi.data.CS.probeFlag("gt6pipeaudit.flag")) return;
@@ -926,6 +933,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		final java.io.PrintStream o = gregapi.data.CS.OUT;
 		final java.util.Map<net.minecraft.core.BlockPos, Byte> tClientBits = new java.util.HashMap<>();
 		final java.util.Map<net.minecraft.core.BlockPos, Long> tClientSensorDisp = new java.util.HashMap<>();
+		final java.util.Map<net.minecraft.core.BlockPos, String> tClientWalls = new java.util.HashMap<>();
 		try {
 			int tCX = tMC.player.blockPosition().getX() >> 4, tCZ = tMC.player.blockPosition().getZ() >> 4;
 			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
@@ -935,6 +943,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						tClientBits.put(tE.getKey().immutable(), tPF.getDirectionData());
 					else if (tE.getValue() instanceof gregapi.tileentity.machines.MultiTileEntitySensorTE)
 						tClientSensorDisp.put(tE.getKey().immutable(), (long)probeNum(tE.getValue(), gregapi.tileentity.machines.MultiTileEntitySensor.class, "mDisplayedNumber"));
+					else if (tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tWl)
+						tClientWalls.put(tE.getKey().immutable(), "design=" + tWl.mDesign + " " + wallTex(tWl));
 				}
 		} catch (Throwable e) { o.println("[GT6-PIPE-AUDIT] клиент-скан упал: " + e); }
 		tSrv.execute(() -> { try {
@@ -948,6 +958,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					if (tE.getValue() instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tB) {
 						o.println("[GT6-PIPE-AUDIT] БОЧКА@" + tE.getKey().toShortString() + " (" + tB.getClass().getSimpleName() + ")"
 							+ " танк=" + tB.mTank.getFluid() + " ёмкость=" + tB.mTank.capacity());
+					} else if (tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tWl) {
+						boolean tCliAbsent = !tClientWalls.containsKey(tE.getKey());
+						o.println("[GT6-PIPE-AUDIT] СТЕНА@" + tE.getKey().toShortString()
+							+ " srv: design=" + tWl.mDesign + " " + wallTex(tWl)
+							+ " | cli: " + tClientWalls.getOrDefault(tE.getKey(), "BE ОТСУТСТВУЕТ"));
+						// решающий замер: ручная досылка ОДНОЙ стене без клиент-BE; следующий срез покажет, появился ли BE
+						if (tCliAbsent && !mWallResent) { mWallResent = true; tWl.sendUpdateToPlayer(tP);
+							o.println("[GT6-PIPE-AUDIT] РУЧНАЯ ДОСЫЛКА sendUpdateToPlayer → стена@" + tE.getKey().toShortString() + " (следующий срез судит)"); }
 					} else if (tE.getValue() instanceof gregapi.tileentity.machines.MultiTileEntitySensorTE tSe) {
 						gregapi.tileentity.delegate.DelegatorTileEntity<net.minecraft.world.level.block.entity.BlockEntity> tD = tSe.getAdjacentTileEntity(tSe.mSecondFacing);
 						Long tCliDisp = tClientSensorDisp.get(tE.getKey());
@@ -1845,6 +1863,14 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		if (!gregapi.data.CS.probeFlag("wgautoworld.flag")) return;
 		mAutoWorldTriggered = true;
 		try {
+			// Вход в СУЩЕСТВУЮЩИЙ мир (аудит мира игрока): имя папки сейва — в файле wgautoworld.world.
+			java.io.File tTargetFile = new java.io.File("wgautoworld.world");
+			if (tTargetFile.exists()) {
+				String tName = new String(java.nio.file.Files.readAllBytes(tTargetFile.toPath()), java.nio.charset.StandardCharsets.UTF_8).trim();
+				gregapi.data.CS.OUT.println("[GT6-AUTOWORLD] вход в существующий мир '" + tName + "' (WorldOpenFlows.openWorld:303)...");
+				tMC.createWorldOpenFlows().openWorld(tName, () -> gregapi.data.CS.OUT.println("[GT6-AUTOWORLD] вход в '" + tName + "' ОТМЕНЁН/провален"));
+				return;
+			}
 			java.io.File tOld = new java.io.File("saves/GT6WGTest");
 			if (tOld.exists()) deleteRecursive(tOld);
 			gregapi.data.CS.OUT.println("[GT6-AUTOWORLD] создаю свежий CREATIVE-мир GT6WGTest (программно, минуя диалоги)...");
