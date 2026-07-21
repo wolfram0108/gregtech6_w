@@ -514,8 +514,13 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					net.minecraft.world.item.ItemStack tWrench = gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, gregapi.data.MT.Steel, gregapi.data.MT.Steel);
 					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
 					boolean tHandHarvest = tW.getBlockState(tM1Pos).canHarvestBlock(tW, tM1Pos, tP);
+					float tProgHand = tW.getBlockState(tM1Pos).getDestroyProgress(tP, tW, tM1Pos);
 					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tWrench.copy());
 					boolean tToolHarvest = tW.getBlockState(tM1Pos).canHarvestBlock(tW, tM1Pos, tP);
+					float tProgWrench = tW.getBlockState(tM1Pos).getDestroyProgress(tP, tW, tM1Pos);
+					o.println("[GT6-SEAM-A9-HARDNESS] машина: destroyProgress рука=" + tProgHand + " (тиков=" + (tProgHand > 0 ? Math.round(1/tProgHand) : -1)
+						+ ") ключ=" + tProgWrench + " (тиков=" + (tProgWrench > 0 ? Math.round(1/tProgWrench) : -1)
+						+ ") (канон 1.7.10: рука МЕДЛЕННО h/100, ключ быстро h/30; было Infinity=мгновенно)");
 					// реальный слом: ключом (дроп ждём) и рукой (дропа не ждём)
 					tP.gameMode.destroyBlock(tM1Pos);
 					int tDropsTool = tW.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tM1Pos).inflate(3)).size();

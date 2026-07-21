@@ -616,7 +616,24 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override protected final boolean triggerEvent(BlockState aState, Level aWorld, BlockPos aPos, int aID, int aParam) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity == null || aTileEntity.triggerEvent(aID, aParam);}
 	// было getPlayerRelativeBlockHardness(EntityPlayer,World,x,y,z) -> BlockBehaviour.getDestroyProgress
 	// (BlockState,Player,BlockGetter,BlockPos) [BlockBehaviour.java:340]
-	@Override protected final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T); return aTileEntity instanceof IMTE_GetPlayerRelativeBlockHardness ? ((IMTE_GetPlayerRelativeBlockHardness)aTileEntity).getPlayerRelativeBlockHardness(aPlayer, super.getDestroyProgress(aState, aPlayer, aWorld, aPos)) : super.getDestroyProgress(aState, aPlayer, aWorld, aPos);}
+	// F-hardness (найдено по живому репорту «машины ломаются рукой»): БЫЛО — TE-гейт поверх super.getDestroyProgress,
+	// но super берёт state.getDestroySpeed = Properties.destroyTime, который mkProps НЕ задаёт (дефолт 0) → деление
+	// на 0 → Infinity → ЛЮБОЙ MTE ломался МГНОВЕННО чем угодно. 1.7.10-цепь слома: getPlayerRelativeBlockHardness
+	// (оригинал :298) поверх ForgeHooks.blockStrength с PER-TE hardness (getBlockHardness :299 → IMTE, mHardness из
+	// NBT_HARDNESS регистрации). СТАЛО 1:1: blockStrength по TE-hardness (h<0 → 0-неразрушим; digSpeed/h/(canHarvest
+	// ?30:100) — рука на машине-с-инструментом = /100 и полная твёрдость, как в 1.7.10) → затем TE-гейт
+	// IMTE_GetPlayerRelativeBlockHardness (TileEntityBase01Root:1108 allowInteraction → max(v,1e-4) | 0).
+	@Override protected final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
+		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		float tHardness = aTileEntity instanceof IMTE_GetBlockHardness ? ((IMTE_GetBlockHardness)aTileEntity).getBlockHardness() : 1.0F;
+		float tOriginal;
+		if (tHardness < 0) tOriginal = 0.0F;
+		else {
+			int tDivider = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
+			tOriginal = aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tDivider;
+		}
+		return aTileEntity instanceof IMTE_GetPlayerRelativeBlockHardness ? ((IMTE_GetPlayerRelativeBlockHardness)aTileEntity).getPlayerRelativeBlockHardness(aPlayer, tOriginal) : tOriginal;
+	}
 	// F13: движок-facing динамическая твёрдость (скорость добычи игроком) ПОДКЛЮЧЕНА выше через getDestroyProgress
 	// (стр. ~469, TE-диспетчер IMTE_GetPlayerRelativeBlockHardness). Этот getBlockHardness — внутренний GT6-хелпер
 	// (TE-твёрдость для собственной логики), не стаб; движок его не зовёт (у него getDestroyProgress).
