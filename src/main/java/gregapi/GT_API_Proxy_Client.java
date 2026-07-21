@@ -1617,17 +1617,21 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 
+	// Контракт оригинала: LAST_BROKEN_TILEENTITY живёт НЕ ДОЛЬШЕ тика — «Making sure it is being free'd up in order
+	// to prevent exploits or Garbage Collection mishaps» (GT_API_Proxy.onServerTick, оригинал :250). ThreadLocal:
+	// серверная чистка не видит КЛИЕНТСКУЮ копию, а в neo слом идёт клиент-предикшеном (MultiPlayerGameMode.destroyBlock
+	// → onDestroyedByPlayer) и ставит её на Render-потоке → WD.te вечно отдавал призрак сломанного BE → его
+	// ITileEntitySurface-opaque гасил грань соседнего блока до СЛЕДУЮЩЕГО слома (U3 «блуждающая дыра» стен).
+	// Зеркало той же строки оригинала на клиентском тике — жизненный цикл восстановлен 1:1.
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onClientTickFreeLastBrokenTileEntity(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		gregapi.data.CS.LAST_BROKEN_TILEENTITY.set(null);
+	}
+
 	// НАДЁЖНЫЙ МОСТ синка (пара к буферу NetworkHandler.PENDING): каждый клиент-тик доигрываем координатные
 	// GT6-пакеты, обогнавшие свой чанк при логине (иначе worldgen-MTE стартовой области оставались без клиент-BE).
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onPendingPackets(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		// U3-ит.15 КОРЕНЬ «блуждающей дыры» стен: контракт оригинала — LAST_BROKEN_TILEENTITY живёт НЕ ДОЛЬШЕ тика
-		// (GT_API_Proxy.onServerTick «Making sure it is being free'd up», оригинал :250). ThreadLocal: серверная чистка
-		// не видит КЛИЕНТСКУЮ копию, а в neo слом клиент-предикшеном (MultiPlayerGameMode.destroyBlock →
-		// onDestroyedByPlayer) ставит её на Render-потоке → WD.te вечно отдавал призрак сломанного BE → его
-		// ITileEntitySurface-opaque гасил грань соседней стены до СЛЕДУЮЩЕГО слома (дыра «блуждала» 1:1 репорту).
-		// Зеркалим ту же строку оригинала на клиентском тике — жизненный цикл восстановлен 1:1.
-		gregapi.data.CS.LAST_BROKEN_TILEENTITY.set(null);
 		gregapi.network.NetworkHandler.processPending(Minecraft.getInstance().level);
 	}
 
