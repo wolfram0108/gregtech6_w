@@ -1026,6 +1026,315 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-PIPE-AUDIT] сервер-скан упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// U3-ит.14 СУДЬЯ «БЛУЖДАЮЩЕЙ ДЫРЫ» (гейт gt6walljudge.flag): повторяет игрока 1:1 — ставит камень у стены,
+	// ломает его КЛИЕНТСКИМ путём (gameMode.destroyBlock = предикшен) + серверное эхо, затем 100 тиков различает
+	// три механизма: (а) стена выпала из renderableBlockEntities (возраст LAST_EXTRACT растёт); (б) buildRendererQuads
+	// кидает КАЖДЫЙ кадр (в BER глотается молча → тут вызываем вручную и ПЕЧАТАЕМ throwable); (в) BE подменён/убит
+	// (identityHashCode/isRemoved/наличие в карте чанка). Судит СЛОЙ СИМПТОМА (квады), не BE-уровень.
+	private int mWJTick = 0, mWJStep = 0, mWJWait = 0; private boolean mWJStackPrinted = false;
+	private net.minecraft.core.BlockPos mWJWall = null, mWJStone = null;
+	private void wjSample(net.minecraft.client.Minecraft aMC, String aTag) {
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.world.level.block.entity.BlockEntity tBE = aMC.level.getBlockEntity(mWJWall);
+			boolean tInMap = aMC.level.getChunk(mWJWall.getX() >> 4, mWJWall.getZ() >> 4).getBlockEntities().containsKey(mWJWall);
+			Long tLast = gregapi.render.MultiTileEntityBER.LAST_EXTRACT.get(mWJWall);
+			String tExtract = tLast == null ? "НИКОГДА" : (System.currentTimeMillis() - tLast) + "мс";
+			String tQuads = "-", tSides = "-", tExc = "";
+			net.minecraft.world.level.block.Block tBlock = aMC.level.getBlockState(mWJWall).getBlock();
+			if (tBE instanceof gregapi.render.IRenderedBlockObject tR && tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {
+				gregapi.render.GT6QuadBuilder tQB = new gregapi.render.GT6QuadBuilder();
+				try {
+					gregapi.render.GT6BlockModel.buildRendererQuads(tQB, tR, tBlock, aMC.level, mWJWall.getX(), mWJWall.getY(), mWJWall.getZ());
+					tQuads = String.valueOf(tQB.quads().size());
+				} catch (Throwable e) {
+					tExc = " ⚠️QUADS-EXC=" + e.getClass().getName() + ":" + e.getMessage();
+					if (!mWJStackPrinted) { mWJStackPrinted = true; e.printStackTrace(gregapi.data.CS.ERR); }
+				}
+				if (tBE instanceof gregapi.render.IRenderedBlockObjectSideCheck tSC) {
+					StringBuilder tSB = new StringBuilder(6);
+					for (byte s = 0; s < 6; s++) tSB.append(tSC.renderFullBlockSide(tBlock, null, s) ? '1' : '0');
+					tSides = tSB.toString();
+				}
+			}
+			o.println("[GT6-WALL-JUDGE] " + aTag + " стена@" + mWJWall.toShortString()
+				+ " BE=" + (tBE == null ? "NULL" : tBE.getClass().getSimpleName() + "#" + Integer.toHexString(System.identityHashCode(tBE)) + (tBE.isRemoved() ? "(REMOVED)" : ""))
+				+ " вКарте=" + tInMap + " extract=" + tExtract + " quads=" + tQuads + " грани(DUNSWE)=" + tSides + tExc
+				+ (tBE == null ? "" : " " + wallTex(tBE))
+				+ " камень=" + aMC.level.getBlockState(mWJStone).getBlock().getClass().getSimpleName());
+		} catch (Throwable e) { o.println("[GT6-WALL-JUDGE] замер упал: " + e); }
+	}
+	// v2 РАЗВЁРТКА: реальный путь майнинга игрока (startDestroyBlock/continueDestroyBlock = предикшен-секвенсы),
+	// ломаются СУЩЕСТВУЮЩИЕ безопасные соседи стен (полнокуб без BE; после наблюдения блок восстанавливается),
+	// после каждого слома — скан ВСЕХ стен 3×3 чанков на аномалию (extract умер / quads=0 / исключение / BE мёртв).
+	private final java.util.ArrayDeque<net.minecraft.core.BlockPos[]> mWJTargets = new java.util.ArrayDeque<>();
+	private net.minecraft.world.level.block.state.BlockState mWJRestore = null; private int mWJMineTicks = 0;
+	private void wjSweepAllWalls(net.minecraft.client.Minecraft aMC, String aTag) {
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		int tTotal = 0, tBad = 0;
+		try {
+			int tCX = aMC.player.blockPosition().getX() >> 4, tCZ = aMC.player.blockPosition().getZ() >> 4;
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: aMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
+					if (!(tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart)) continue;
+					++tTotal;
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tE.getValue();
+					Long tLast = gregapi.render.MultiTileEntityBER.LAST_EXTRACT.get(tE.getKey());
+					long tAge = tLast == null ? -1 : System.currentTimeMillis() - tLast;
+					String tWhy = null;
+					net.minecraft.world.level.block.Block tBlock = aMC.level.getBlockState(tE.getKey()).getBlock();
+					if (tBE.isRemoved()) tWhy = "BE-REMOVED";
+					else if (tAge < 0) tWhy = "extract-НИКОГДА";
+					else if (tAge > 2000) tWhy = "extract-УМЕР(" + tAge + "мс)";
+					else if (tBE instanceof gregapi.render.IRenderedBlockObject tR && tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {
+						gregapi.render.GT6QuadBuilder tQB = new gregapi.render.GT6QuadBuilder();
+						try { gregapi.render.GT6BlockModel.buildRendererQuads(tQB, tR, tBlock, aMC.level, tE.getKey().getX(), tE.getKey().getY(), tE.getKey().getZ());
+							if (tQB.isEmpty()) tWhy = "quads=0";
+						} catch (Throwable e) { tWhy = "QUADS-EXC=" + e.getClass().getSimpleName() + ":" + e.getMessage();
+							if (!mWJStackPrinted) { mWJStackPrinted = true; e.printStackTrace(gregapi.data.CS.ERR); } }
+					}
+					if (tWhy != null) { ++tBad; o.println("[GT6-WALL-JUDGE] " + aTag + " ⚠️АНОМАЛИЯ стена@" + tE.getKey().toShortString() + " " + tWhy); }
+				}
+		} catch (Throwable e) { o.println("[GT6-WALL-JUDGE] скан упал: " + e); }
+		o.println("[GT6-WALL-JUDGE] " + aTag + " скан стен: всего=" + tTotal + " аномалий=" + tBad);
+	}
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onWallHoleJudge(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mWJStep >= 99) return;
+		if (!gregapi.data.CS.probeFlag("gt6walljudge.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) return;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		++mWJTick;
+		if (mWJStep == 0) { // v3 (КОПИЯ мира!): цели — ВСЕ не-воздушные соседи стен, ВКЛЮЧАЯ MTE/GT6 (как копает игрок); день для контраста
+			if (mWJTick < 100) return;
+			java.util.HashSet<net.minecraft.core.BlockPos> tTaken = new java.util.HashSet<>();
+			int tCX = tMC.player.blockPosition().getX() >> 4, tCZ = tMC.player.blockPosition().getZ() >> 4;
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: tMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
+					if (!(tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart)) continue;
+					for (byte tS = 0; tS < 6 && mWJTargets.size() < 16; tS++) {
+						net.minecraft.core.BlockPos tN = tE.getKey().offset(gregapi.data.CS.OFFX[tS], gregapi.data.CS.OFFY[tS], gregapi.data.CS.OFFZ[tS]);
+						net.minecraft.world.level.block.state.BlockState tSt = tMC.level.getBlockState(tN);
+						// мир — КОПИЯ: ломаем всё, кроме бедрока и самих стен (стены игрок не ломал)
+						if (!tSt.isAir() && tSt.getDestroySpeed(tMC.level, tN) >= 0
+						 && !(tMC.level.getBlockEntity(tN) instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart)
+						 && tTaken.add(tN.immutable()))
+							mWJTargets.add(new net.minecraft.core.BlockPos[]{tE.getKey().immutable(), tN.immutable()});
+					}
+				}
+			if (mWJTargets.isEmpty()) { o.println("[GT6-WALL-JUDGE] v3: целей не найдено"); mWJStep = 99; return; }
+			o.println("[GT6-WALL-JUDGE] v3: целей=" + mWJTargets.size() + " (вкл. MTE-соседей), КОПИЯ мира, ломаю как игрок без восстановления");
+			wjSweepAllWalls(tMC, "БАЗА");
+			mWJStep = 1;
+		} else if (mWJStep == 1) { // взять следующую цель и начать реальный майнинг
+			net.minecraft.core.BlockPos[] tT = mWJTargets.poll();
+			if (tT == null) { o.println("[GT6-WALL-JUDGE] v3: развёртка завершена"); mWJStep = 99; return; }
+			mWJWall = tT[0]; mWJStone = tT[1];
+			mWJRestore = tMC.level.getBlockState(mWJStone); mWJMineTicks = 0;
+			if (mWJRestore.isAir()) { return; } // уже снесён предыдущими сломами
+			o.println("[GT6-WALL-JUDGE] v3: майню " + mWJRestore.getBlock().getClass().getSimpleName() + "@" + mWJStone.toShortString() + " у стены@" + mWJWall.toShortString());
+			try { tMC.gameMode.startDestroyBlock(mWJStone, net.minecraft.core.Direction.UP); } catch (Throwable e) { o.println("[GT6-WALL-JUDGE] startDestroy упал: " + e); }
+			mWJStep = 2;
+		} else if (mWJStep == 2) { // продолжать майнинг как игрок, пока блок не исчез
+			if (!tMC.level.getBlockState(mWJStone).isAir()) {
+				try { tMC.gameMode.continueDestroyBlock(mWJStone, net.minecraft.core.Direction.UP); } catch (Throwable e) {/**/}
+				if (++mWJMineTicks > 200) { o.println("[GT6-WALL-JUDGE] v3: блок не сломался за 200 тиков, пропуск"); tMC.gameMode.stopDestroyBlock(); mWJStep = 1; }
+				return;
+			}
+			o.println("[GT6-WALL-JUDGE] v3: сломан за " + mWJMineTicks + " тиков");
+			wjSample(tMC, "СРАЗУ-ПОСЛЕ");
+			mWJStep = 3; mWJWait = mWJTick;
+		} else if (mWJStep == 3) { // 30 тиков наблюдения: цель-стена подробно + общий скан + кадр
+			if ((mWJTick - mWJWait) % 10 != 0) return;
+			wjSample(tMC, "Т+" + (mWJTick - mWJWait));
+			wjSweepAllWalls(tMC, "Т+" + (mWJTick - mWJWait));
+			if (mWJTick - mWJWait >= 30) {
+				weShot(tMC, "wallsweep_" + (++mWJShots) + ".png");
+				mWJStep = 1;
+			}
+		}
+	}
+	private int mWJShots = 0;
+
+	// U3-ит.15 СТОРОЖ ЖИВОЙ СЕССИИ (гейт gt6wallwatch.flag): судья — САМ ИГРОК; сторож каждый тик следит за стенами
+	// в 3×3 чанках и в МОМЕНТ перехода стены в аномалию (quads=0 при открытых гранях / BE NULL/REMOVED/подменён /
+	// extract умер / mTextures дефолт) печатает полный дамп + включает движковый DEBUG_POS на неё. Дополнительно
+	// логирует КАЖДЫЙ слом блока, соседнего со стеной (что и где сломано). Игрок просто играет; увидел дыру → лог уже
+	// содержит механическую правду этой стены в этот момент.
+	private final java.util.HashMap<net.minecraft.core.BlockPos, String> mWWPrev = new java.util.HashMap<>();
+	private final java.util.HashMap<net.minecraft.core.BlockPos, net.minecraft.world.level.block.Block> mWWNeighbors = new java.util.HashMap<>();
+	private int mWWTick = 0;
+	private String wwState(net.minecraft.client.Minecraft aMC, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.entity.BlockEntity aBE) {
+		try {
+			if (aBE == null) return "BE-NULL";
+			if (aBE.isRemoved()) return "BE-REMOVED";
+			if (aBE instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) {
+				String tTex = wallTex(aBE);
+				if (tTex.contains("NULL") || tTex.contains("EXC")) return "TEX-" + tTex;
+			}
+			net.minecraft.world.level.block.Block tBlock = aMC.level.getBlockState(aPos).getBlock();
+			if (aBE instanceof gregapi.render.IRenderedBlockObject tR && tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {
+				boolean tAnyOpen = false;
+				if (aBE instanceof gregapi.render.IRenderedBlockObjectSideCheck tSC)
+					for (byte s = 0; s < 6 && !tAnyOpen; s++) tAnyOpen = tSC.renderFullBlockSide(tBlock, null, s);
+				gregapi.render.GT6QuadBuilder tQB = new gregapi.render.GT6QuadBuilder();
+				try { gregapi.render.GT6BlockModel.buildRendererQuads(tQB, tR, tBlock, aMC.level, aPos.getX(), aPos.getY(), aPos.getZ()); }
+				catch (Throwable e) { return "QUADS-EXC:" + e.getClass().getSimpleName(); }
+				if (tAnyOpen && tQB.isEmpty()) return "QUADS-0-ПРИ-ОТКРЫТЫХ-ГРАНЯХ";
+			}
+			return "OK#" + Integer.toHexString(System.identityHashCode(aBE));
+		} catch (Throwable e) { return "WATCH-EXC:" + e.getClass().getSimpleName(); }
+	}
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onWallWatch(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6wallwatch.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		try {
+			int tCX = tMC.player.blockPosition().getX() >> 4, tCZ = tMC.player.blockPosition().getZ() >> 4;
+			// 1) сломы соседей стен: позиция из mWWNeighbors стала воздухом → напечатать ЧТО сломано и состояние прилегающих стен
+			java.util.Iterator<java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.Block>> tIt = mWWNeighbors.entrySet().iterator();
+			while (tIt.hasNext()) {
+				java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.Block> tE = tIt.next();
+				if (tMC.level.getBlockState(tE.getKey()).isAir()) {
+					o.println("[GT6-WALL-WATCH] СЛОМ соседа@" + tE.getKey().toShortString() + " (был " + tE.getValue().getClass().getSimpleName() + ")");
+					tIt.remove();
+					for (byte s = 0; s < 6; s++) {
+						net.minecraft.core.BlockPos tW = tE.getKey().offset(gregapi.data.CS.OFFX[s], gregapi.data.CS.OFFY[s], gregapi.data.CS.OFFZ[s]);
+						net.minecraft.world.level.block.entity.BlockEntity tBE = tMC.level.getBlockEntity(tW);
+						if (tBE instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart)
+							o.println("[GT6-WALL-WATCH]   стена-рядом@" + tW.toShortString() + " → " + wwState(tMC, tW, tBE) + " " + wallTex(tBE)
+								+ " extract=" + ageStr(gregapi.render.MultiTileEntityBER.LAST_EXTRACT.get(tW)));
+					}
+				}
+			}
+			// 2) переходы состояния стен (раз в 5 тиков достаточно) + карта соседей
+			if (mWWTick % 5 == 0) for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: tMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
+					if (!(tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart)) continue;
+					net.minecraft.core.BlockPos tPos = tE.getKey().immutable();
+					String tNow = wwState(tMC, tPos, tE.getValue());
+					String tPrev = mWWPrev.put(tPos, tNow);
+					if (tPrev != null && !tPrev.equals(tNow) && !(tPrev.startsWith("OK") && tNow.startsWith("OK")))
+						o.println("[GT6-WALL-WATCH] ⚠️ПЕРЕХОД стена@" + tPos.toShortString() + ": " + tPrev + " → " + tNow
+							+ " extract=" + ageStr(gregapi.render.MultiTileEntityBER.LAST_EXTRACT.get(tPos)));
+					if (!tNow.startsWith("OK") && (tPrev == null || tPrev.startsWith("OK")))
+						gregapi.render.MultiTileEntityBER.DEBUG_POS = tPos; // движковая правда по аномальной стене
+					for (byte s = 0; s < 6; s++) {
+						net.minecraft.core.BlockPos tN = tPos.offset(gregapi.data.CS.OFFX[s], gregapi.data.CS.OFFY[s], gregapi.data.CS.OFFZ[s]);
+						net.minecraft.world.level.block.state.BlockState tSt = tMC.level.getBlockState(tN);
+						if (!tSt.isAir()) mWWNeighbors.putIfAbsent(tN.immutable(), tSt.getBlock());
+					}
+				}
+			++mWWTick;
+		} catch (Throwable e) { o.println("[GT6-WALL-WATCH] упал: " + e); }
+	}
+	private static String ageStr(Long aLast) {return aLast == null ? "НИКОГДА" : (System.currentTimeMillis() - aLast) + "мс";}
+
+	// U3-ит.14 СУДЬЯ-«ГЛАЗ» (гейт gt6walleye.flag): телепорт игрока напротив стены (за ломаемым соседом),
+	// скриншоты ДО слома / ПОСЛЕ (+40 тиков) → run/screenshots/walljudge_*.png; судит слой ЭКРАНА (пиксели),
+	// к которому quad-судья слеп (например, квады есть, но спрайт прозрачен в cutout).
+	private int mWETick = 0, mWEStep = 0, mWEWait = 0;
+	private net.minecraft.core.BlockPos mWEWall = null, mWETargetBlock = null;
+	private net.minecraft.world.level.block.state.BlockState mWETargetState = null;
+	private final java.util.ArrayList<Object[]> mWECarved = new java.util.ArrayList<>(); // {BlockPos, BlockState} выкопанного тоннеля — восстановить в конце
+	private void weShot(net.minecraft.client.Minecraft aMC, String aName) {
+		try { net.minecraft.client.Screenshot.grab(aMC.gameDirectory, aName, aMC.getMainRenderTarget(), 1, c -> gregapi.data.CS.OUT.println("[GT6-WALL-EYE] скриншот " + aName + ": " + c.getString())); }
+		catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-WALL-EYE] скриншот упал: " + e); }
+	}
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onWallEyeJudge(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mWEStep >= 9) return;
+		if (!gregapi.data.CS.probeFlag("gt6walleye.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) return;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		++mWETick;
+		if (mWEStep == 0) { // стена + горизонтальный сосед-полнокуб; смотровой тоннель 1×2×2 ВЫКАПЫВАЕМ сами (с восстановлением)
+			if (mWETick < 100) return;
+			int tCX = tMC.player.blockPosition().getX() >> 4, tCZ = tMC.player.blockPosition().getZ() >> 4;
+			outer:
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: tMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
+					if (!(tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart)) continue;
+					for (byte tS = 2; tS < 6; tS++) {
+						net.minecraft.core.BlockPos tN1 = tE.getKey().offset(gregapi.data.CS.OFFX[tS], 0, gregapi.data.CS.OFFZ[tS]);
+						net.minecraft.world.level.block.state.BlockState tSt = tMC.level.getBlockState(tN1);
+						if (tSt.isAir() || tSt.hasBlockEntity() || !tSt.isSolidRender() || tSt.getDestroySpeed(tMC.level, tN1) < 0
+						 || tSt.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock) continue;
+						net.minecraft.core.BlockPos tN2 = tN1.offset(gregapi.data.CS.OFFX[tS], 0, gregapi.data.CS.OFFZ[tS]);
+						net.minecraft.core.BlockPos tN3 = tN2.offset(gregapi.data.CS.OFFX[tS], 0, gregapi.data.CS.OFFZ[tS]);
+						// тоннель: N2,N2^,N3,N3^ — каждый либо воздух, либо безопасно выкапываемый (без BE, не MTE, не бедрок)
+						net.minecraft.core.BlockPos[] tTunnel = {tN2, tN2.above(), tN3, tN3.above()};
+						boolean tOK = true;
+						for (net.minecraft.core.BlockPos tT : tTunnel) {
+							net.minecraft.world.level.block.state.BlockState tTS = tMC.level.getBlockState(tT);
+							if (!tTS.isAir() && (tTS.hasBlockEntity() || tTS.getDestroySpeed(tMC.level, tT) < 0
+							 || tTS.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) { tOK = false; break; }
+						}
+						if (!tOK) continue;
+						mWEWall = tE.getKey().immutable(); mWETargetBlock = tN1.immutable(); mWETargetState = tSt;
+						for (net.minecraft.core.BlockPos tT : tTunnel) {
+							net.minecraft.world.level.block.state.BlockState tTS = tMC.level.getBlockState(tT);
+							if (!tTS.isAir()) mWECarved.add(new Object[]{tT.immutable(), tTS});
+						}
+						final net.minecraft.core.BlockPos tCam = tN3, tWall = mWEWall;
+						final java.util.ArrayList<Object[]> tCarve = new java.util.ArrayList<>(mWECarved);
+						tSrv.execute(() -> {
+							net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+							net.minecraft.server.level.ServerLevel tW = tP.level();
+							for (Object[] tC : tCarve) tW.setBlock((net.minecraft.core.BlockPos)tC[0], net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+							tP.teleportTo(tCam.getX()+0.5, tCam.getY(), tCam.getZ()+0.5);
+							tP.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, net.minecraft.world.phys.Vec3.atCenterOf(tWall));
+						});
+						o.println("[GT6-WALL-EYE] тоннель " + mWECarved.size() + " блоков, телепорт к стене@" + mWEWall.toShortString()
+							+ ", ломаемый сосед@" + mWETargetBlock.toShortString() + " (" + tSt.getBlock().getClass().getSimpleName() + ")");
+						mWEStep = 1; mWEWait = mWETick + 60;
+						break outer;
+					}
+				}
+			if (mWEWall == null && mWETick % 100 == 0) o.println("[GT6-WALL-EYE] подходящей стены не найдено (тик " + mWETick + ")");
+		} else if (mWEStep == 1) { // кадр ДО
+			if (mWETick < mWEWait) return;
+			weShot(tMC, "walljudge_before.png");
+			mWEStep = 2; mWEWait = mWETick + 5;
+		} else if (mWEStep == 2) { // слом как игрок
+			if (mWETick < mWEWait) return;
+			o.println("[GT6-WALL-EYE] ломаю соседа@" + mWETargetBlock.toShortString());
+			gregapi.render.MultiTileEntityBER.DEBUG_POS = mWEWall; // ит.14: печать правды движкового extract/submit
+			try { tMC.gameMode.startDestroyBlock(mWETargetBlock, net.minecraft.core.Direction.UP); } catch (Throwable e) { o.println("[GT6-WALL-EYE] слом упал: " + e); }
+			mWEStep = 3; mWEWait = mWETick + 20;
+		} else if (mWEStep == 3) { // кадр ПОСЛЕ (+20 тиков)
+			if (!tMC.level.getBlockState(mWETargetBlock).isAir()) { try { tMC.gameMode.continueDestroyBlock(mWETargetBlock, net.minecraft.core.Direction.UP); } catch (Throwable e) {/**/} return; }
+			if (mWETick < mWEWait) return;
+			weShot(tMC, "walljudge_after.png");
+			mWEStep = 4; mWEWait = mWETick + 40;
+		} else if (mWEStep == 4) { // контрольный кадр (+60 тиков) и восстановление мира
+			if (mWETick < mWEWait) return;
+			weShot(tMC, "walljudge_after2.png");
+			final java.util.ArrayList<Object[]> tCarve = new java.util.ArrayList<>(mWECarved);
+			final net.minecraft.core.BlockPos tTB = mWETargetBlock; final net.minecraft.world.level.block.state.BlockState tTS = mWETargetState;
+			tSrv.execute(() -> {
+				net.minecraft.server.level.ServerLevel tW = tSrv.getPlayerList().getPlayers().get(0).level();
+				tW.setBlock(tTB, tTS, 3);
+				for (Object[] tC : tCarve) tW.setBlock((net.minecraft.core.BlockPos)tC[0], (net.minecraft.world.level.block.state.BlockState)tC[1], 3);
+			});
+			o.println("[GT6-WALL-EYE] завершено: стена@" + mWEWall.toShortString() + ", мир восстановлен (" + (tCarve.size()+1) + " блоков)");
+			gregapi.render.MultiTileEntityBER.DEBUG_POS = null;
+			mWEStep = 9;
+		}
+	}
+
 	// Ф3.0-ит.9 СУДЬЯ ТУЛТИПА ЖИДКОСТИ (гейт gt6tooltipprobe.flag): фаза 0 — локальный стек (доказан: 11 строк);
 	// фаза 1 (при живом стенде chainprobe, ~тик 950) — сервер открывает GUI миксера движковым кликом;
 	// фаза 2 (~тик 1010) — читаем дисплей-стек ИЗ КЛИЕНТСКОГО МЕНЮ (полный путь игрока: серверный слот → синк →

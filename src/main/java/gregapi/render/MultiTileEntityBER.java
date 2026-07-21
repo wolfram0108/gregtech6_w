@@ -65,6 +65,9 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	private static final java.util.Map<Class<?>, BlockEntityRenderer> SPECIAL_RENDERERS = new java.util.HashMap<>();
 	/** ВРЕМЕННЫЙ DIAG ит.13: время последнего extract per-стена (судья «выпала ли стена из renderableBlockEntities меша»). */
 	public static final java.util.concurrent.ConcurrentHashMap<BlockPos, Long> LAST_EXTRACT = new java.util.concurrent.ConcurrentHashMap<>();
+	/** ВРЕМЕННЫЙ DIAG ит.14: позиция, для которой печатать ПРАВДУ движка (квады настоящего extract и submit), раз в ~1с. */
+	public static volatile BlockPos DEBUG_POS = null;
+	private static long sDebugExtractLast = 0, sDebugSubmitLast = 0;
 	public static void bindSpecialRenderer(Class<?> aTileEntityClass, @SuppressWarnings("rawtypes") BlockEntityRenderer aRenderer) {SPECIAL_RENDERERS.put(aTileEntityClass, aRenderer);}
 
 	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
@@ -120,13 +123,31 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		aState.mQuads = null;
 		aState.mSpecialRenderer = null; aState.mSpecialState = null;
 		Block tBlock = aBE.getBlockState().getBlock();
+		final boolean tDbg = DEBUG_POS != null && DEBUG_POS.equals(aBE.getBlockPos()) && System.currentTimeMillis() - sDebugExtractLast > 1000; // ВРЕМЕННЫЙ DIAG ит.14
+		if (tDbg) sDebugExtractLast = System.currentTimeMillis();
 		// Только MTE-блоки с render-объектом: руды(PrefixBlock/PrefixBlockTileEntity) и стабы(TileEntityLoaderStub, render-данных нет) → baked/пусто.
-		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) return;
+		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) {
+			if (tDbg) gregapi.data.CS.OUT.println("[GT6-BER-DIAG] extract ГЕЙТ-ВЫХОД@" + aBE.getBlockPos().toShortString() + " class=" + aBE.getClass().getSimpleName()
+				+ " lvl=" + (aBE.getLevel() != null) + " rendered=" + (aBE instanceof IRenderedBlockObject) + " block=" + tBlock.getClass().getSimpleName());
+			return;
+		}
 		BlockPos tPos = aBE.getBlockPos();
 		if (aBE instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) LAST_EXTRACT.put(tPos.immutable(), System.currentTimeMillis()); // ВРЕМЕННЫЙ DIAG ит.13
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 		try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
 		if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
+		if (tDbg) { // ВРЕМЕННЫЙ DIAG ит.14: вершины + фактическая нормаль (winding) каждого квада
+			StringBuilder tSB = new StringBuilder("[GT6-BER-DIAG] extract@").append(tPos.toShortString()).append(" quads=").append(aState.mQuads == null ? 0 : aState.mQuads.size());
+			if (aState.mQuads != null) for (BakedQuad tQ : aState.mQuads) {
+				tSB.append("\n  dir=").append(tQ.direction())
+					.append(" спрайт=").append(tQ.materialInfo().sprite().contents().name())
+					.append(" слой=").append(tQ.materialInfo().layer()).append(" тинт=").append(tQ.materialInfo().tintIndex())
+					.append(" UV:");
+				for (int i = 0; i < 4; i++) tSB.append(String.format(" (%.4f %.4f)",
+					net.minecraft.client.model.geom.builders.UVPair.unpackU(tQ.packedUV(i)), net.minecraft.client.model.geom.builders.UVPair.unpackV(tQ.packedUV(i))));
+			}
+			gregapi.data.CS.OUT.println(tSB.toString());
+		}
 		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
 		if (tSpecial != null) try {
 			aState.mSpecialRenderer = tSpecial;
@@ -140,6 +161,10 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 	@SuppressWarnings("unchecked")
 	public void submit(MTERenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
 		final List<BakedQuad> tQuads = aState.mQuads;
+		if (DEBUG_POS != null && DEBUG_POS.equals(aState.blockPos) && System.currentTimeMillis() - sDebugSubmitLast > 1000) { // ВРЕМЕННЫЙ DIAG ит.14
+			sDebugSubmitLast = System.currentTimeMillis();
+			gregapi.data.CS.OUT.println("[GT6-BER-DIAG] submit@" + aState.blockPos.toShortString() + " quads=" + (tQuads == null ? 0 : tQuads.size()) + " light=" + Integer.toHexString(aState.lightCoords));
+		}
 		if (tQuads != null && !tQuads.isEmpty()) {
 			final QuadInstance tQI = new QuadInstance(); // color=-1 (белый, не перетинтит baked-цвет quad'а); light из позиции блока
 			tQI.setLightCoords(aState.lightCoords);
