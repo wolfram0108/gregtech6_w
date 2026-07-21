@@ -130,6 +130,16 @@ stripRunMirror.configure { mustRunAfter tasks.named('classes') }
     tasks.matching { it.name == rn }.configureEach { dependsOn stripRunMirror }
 }
 
+// РУБИЛЬНИК отладочных проб (CS.probeFlag): файлы-флаги в run/ работают ТОЛЬКО при запуске с -Pgt6probes
+// (запуски оркестратора: `gradlew runClient -Pgt6probes …`). Обычный запуск игрока — пробы/автовход-в-мир
+// мертвы, даже если флаг случайно остался (класс сбоя «стухший флаг портит игровой запуск» закрыт механически).
+if (project.hasProperty('gt6probes')) {
+    ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
+        tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true') }
+    }
+    logger.lifecycle("[gt6probes] отладочные пробы ВКЛЮЧЕНЫ (-Dgt6.probes=true)")
+}
+
 // PRODUCTION-JAR: та же JPMS split-package беда, что в run*/test, но БЕЗ фикса ⇒ ломала запуск в реальном
 // (модульном) лаунчере. compat-mirror компилирует crutch-классы в net.minecraft.*/cpw.* — пакеты, которыми
 // в рантайме ВЛАДЕЮТ реальные модули (minecraft / FML). Когда они попадают в jar, automatic-module gregtech6

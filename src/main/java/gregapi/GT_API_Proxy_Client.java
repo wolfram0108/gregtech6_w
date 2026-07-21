@@ -166,7 +166,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private boolean mIconsProbed = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onClientTickProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if (!new java.io.File("gt6probe.flag").exists()) return; // debug визуал-паритета — по умолчанию ВЫКЛ (гейт флагом)
+		if (!gregapi.data.CS.probeFlag("gt6probe.flag")) return; // debug визуал-паритета — по умолчанию ВЫКЛ (гейт флагом)
 		if (mIconsProbed) return;
 		// Ждём ЗАГРУЖЕННЫЙ МИР: DataComponents предметов привязываются на world-load, в меню ItemStack/getDefaultInstance
 		// NPE-ит («Components not bound yet»). При входе игрока в мир (level!=null) components готовы, атлас стежен → probe истинный.
@@ -177,7 +177,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		// рендер-пути (тем же кодом getIcon/itemColor, что рисует update). СИММЕТРИЧЕН golden-дескриптору оригинала 1.7.10
 		// (оракул client, DumpRenderItems: getIcon().getIconName()+getColorFromItemStack per pass). Компаратор порт↔golden
 		// → visual-parity % + MISMATCH. Под флагом gt6inject.flag.
-		if (new java.io.File("gt6inject.flag").exists()) {
+		if (gregapi.data.CS.probeFlag("gt6inject.flag")) {
 			try { gregapi.render.GT6ItemModel.dumpItemDescriptors(); } catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-VP] полный дамп упал: " + e); }
 		}
 	}
@@ -189,7 +189,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onCandidateInject(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mCandidateInjected) return;
-		if (!new java.io.File("gt6inject.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6inject.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
@@ -300,7 +300,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onPlaceProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mPlaceProbePhase >= 1) return;
-		if (!new java.io.File("gt6placeprobe.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6placeprobe.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
@@ -375,7 +375,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onToolProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mToolProbePhase >= 4) return;
-		if (!new java.io.File("gt6toolprobe.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6toolprobe.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
@@ -812,7 +812,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onChainProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mChainPhase >= 3) return;
-		if (!new java.io.File("gt6chainprobe.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6chainprobe.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
@@ -917,7 +917,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private int mAuditTick = 0;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onPipeAudit(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if (!new java.io.File("gt6pipeaudit.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6pipeaudit.flag")) return;
 		if (++mAuditTick % 200 != 0) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
@@ -1000,7 +1000,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onTooltipProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mTooltipPhase >= 3) return;
-		if (!new java.io.File("gt6tooltipprobe.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6tooltipprobe.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
@@ -1073,7 +1073,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onWorldBlockDump(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mBlockDumpPhase >= 2) return;
-		if (!new java.io.File("gt6blockdump.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6blockdump.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
@@ -1133,7 +1133,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onGeomProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mGeomProbeDone) return;
-		if (!new java.io.File("gt6geomprobe.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6geomprobe.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		if (++mGeomProbeTick < 100) return;
@@ -1195,7 +1195,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onRockScan(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mRockScanPhase >= 1) return;
-		if (!new java.io.File("gt6inject.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6inject.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		if (++mRockScanTick < 420) return;
@@ -1227,7 +1227,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onStoneProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mStoneProbePhase >= 1) return;
-		if (!new java.io.File("gt6inject.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6inject.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
@@ -1298,7 +1298,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onFluidProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mFluidProbePhase >= 2) return;
-		if (!new java.io.File("gt6fluidprobe.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6fluidprobe.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		// B5-СУДЬЯ (цвет/рендер материал-жидкостей движком, клиент): render-type (translucent?), FluidGT-цвет+текстура,
@@ -1428,7 +1428,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onGuiProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mGuiProbePhase >= 4) return;
-		if (!new java.io.File("gt6guiprobe.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("gt6guiprobe.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
 		++mGuiProbeTick;
@@ -1580,7 +1580,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private boolean mFluidDiagDone = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onOreMaterialProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if (!new java.io.File("gt6probe.flag").exists()) return; // debug (ore/icons/engine-дамп + форс-открытие инвентаря) — ВЫКЛ по умолчанию
+		if (!gregapi.data.CS.probeFlag("gt6probe.flag")) return; // debug (ore/icons/engine-дамп + форс-открытие инвентаря) — ВЫКЛ по умолчанию
 		if (mOreProbeRuns >= 2) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) { mOreProbeTick = -1; return; }
@@ -1802,7 +1802,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		if (mAutoWorldTriggered) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (!(tMC.screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;
-		if (!new java.io.File("wgautoworld.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("wgautoworld.flag")) return;
 		mAutoWorldTriggered = true;
 		try {
 			java.io.File tOld = new java.io.File("saves/GT6WGTest");

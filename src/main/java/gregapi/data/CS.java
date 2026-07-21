@@ -899,6 +899,12 @@ public class CS {
 	XMAS_IN_DECEMBER = (new Date().getMonth()+1 == 12 && new Date().getDate() >=  5);//  6th of December, one day early then til end of month
 	/** This means that Client or Server specific Base Files are definitely existing and loaded! Not if the World is actually client side or server side! */
 	public static boolean CODE_UNCHECKED = T, CODE_CLIENT = F, CODE_SERVER = F;
+
+	/** Единый рубильник ОТЛАДОЧНЫХ проб/аудитов/автовхода-в-мир (не игровая механика). Активен ТОЛЬКО при запуске
+	 *  с -Pgt6probes (build.gradle пробрасывает -Dgt6.probes=true в run-задачи) — запуски оркестратора. Обычный
+	 *  `gradlew runClient` игрока проб не видит, даже если файлы-флаги случайно остались в run/ (класс сбоя
+	 *  «стухший флаг портит игровой запуск» закрыт механически, не гигиеной). */
+	public static boolean probeFlag(String aFlagFile) {return Boolean.getBoolean("gt6.probes") && new java.io.File(aFlagFile).exists();}
 	
 	/** Not really Constants, but they set using the Config and therefore should be constant. */
 	public static double HARDNESS_MULTIPLIER_SAND = 1.0, HARDNESS_MULTIPLIER_ROCK = 1.0, HARDNESS_MULTIPLIER_ORES = 1.0;

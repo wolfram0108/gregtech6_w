@@ -250,7 +250,7 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	private static final int STRESS_R = 8;
 	private static int sStressTarget = 0, sStressTick = 0;
 	private static void registerWorldgenStressProbe() {
-		if (!new java.io.File("wgstress.flag").exists()) return;
+		if (!gregapi.data.CS.probeFlag("wgstress.flag")) return;
 		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] флаг найден — headless worldgen-приёмка активна (R=" + STRESS_R + ")");
 		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) -> {
 			net.minecraft.server.level.ServerLevel tLvl = aEvent.getServer().overworld();
