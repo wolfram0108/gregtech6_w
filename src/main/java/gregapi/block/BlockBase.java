@@ -33,7 +33,6 @@ import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FallingBlock;
 import gregapi.block.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MobCategory;
@@ -140,7 +139,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public int getLightOpacity() {return LIGHT_OPACITY_MAX;}
 	public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(this);}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
-	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {return F;}
 	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {byte aMeta = WD.meta(aWorld, aX, aY, aZ); return canCreatureSpawn(aMeta) && isSideSolid(aMeta, SIDE_TOP);}
 	public boolean isFireSource(Level aWorld, int aX, int aY, int aZ, Direction aSide) {return isFireSource(WD.meta(aWorld, aX, aY, aZ));}

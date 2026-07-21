@@ -30,11 +30,9 @@ import gregapi.util.ST;
 import ic2.api.crops.CropCard;
 import ic2.api.crops.Crops;
 import ic2.api.crops.ICropTile;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.util.IIcon;
 
 public class GT_BaseCrop extends CropCard {
 	private String mName = "", mDiscoveredBy = "Gregorius Techneticies", mAttributes[];
@@ -154,9 +152,8 @@ public class GT_BaseCrop extends CropCard {
 		return maxSize();
 	}
 	
-	// @Override
-	public void registerSprites(IIconRegister iconRegister) {
-		textures = new IIcon[maxSize()];
-		for (int i = 1; i <= textures.length; i++) textures[i - 1] = iconRegister.registerIcon(RES_PATH_BLOCK + "crop/"+name()+"/"+i);
-	}
+	// F3 superseded-render: было registerSprites(IIconRegister){textures=new IIcon[]...} — 1.7.10 атлас-стежка мертва
+	// (F10 IC2-crop, ветка недостижима: IC2 не портирован, GT_BaseCrop не грузится). Тип-параметр IIconRegister и IIcon[]
+	// (mirror-классы, удалены из neo/production-jar) в сигнатуре ломали рефлексию → Object, тело снято.
+	public void registerSprites(Object iconRegister) {/**/}
 }

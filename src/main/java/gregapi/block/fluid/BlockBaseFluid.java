@@ -35,7 +35,6 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BlockItem;
@@ -43,7 +42,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.util.IIcon;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -416,8 +414,8 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	@Override public Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return FL.name(mFluid, F);} // было mFluid.getUnlocalizedName() (Forge Fluid) — FL.name(Fluid,boolean) центр (F5, см. BlockWaterlike)
 	public String getLocalizedName() {return FL.name(mFluid, T);} // было LH.get(mFluid.getUnlocalizedName()) — FL.name(...,T) уже включает LH-локализацию (FL.java:952)
-	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
-	public IIcon getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было mFluid.getStillIcon()/getFlowingIcon() — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
+	public void registerBlockIcons(Object aIconRegister) {/**/}
+	public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было mFluid.getStillIcon()/getFlowingIcon() — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
 	public int getRenderColor(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): было mFluid.getColor() — neo-тинт FluidTintSources.constant на FluidType; crash-only per /goal");}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): см. getRenderColor; crash-only per /goal");}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}

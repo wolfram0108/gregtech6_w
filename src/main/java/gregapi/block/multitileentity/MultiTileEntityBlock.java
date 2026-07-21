@@ -66,7 +66,6 @@ import net.minecraft.world.level.block.EntityBlock;
 import gregapi.block.MapColor;
 import gregapi.block.Material;
 import net.minecraft.client.particle.ParticleEngine;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.entity.Entity;
@@ -162,7 +161,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	 * @param aNormalCube if this Block is a normal Cube (for Redstone Stuff).
 	 */
 	// F16/F13: Properties при ctor — sound(step-звук) + noOcclusion для non-opaque (иначе рендер solid + свет блокируется). setId обязателен.
-	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(SoundType aSoundType, String aRegName, boolean aOpaque) {
+	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(SoundType aSoundType, String aRegName, boolean aOpaque, String aTool) {
 		// F-shape: dynamicShape() ОБЯЗАТЕЛЕН — иначе neo кэширует getCollisionShape (строит его раз с EmptyBlockGetter/
 		// BlockPos.ZERO, BlockBehaviour:916) → per-BE форма (getCollisionShape-мост ниже, MTE-Rock/трубы) игнорируется,
 		// снег/коллизия/isFaceSturdy берутся из статического кэша = полный куб. dynamicShape → кэш не строится → мост живёт.
@@ -172,6 +171,13 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// 1.7.10: у MTE твёрдый Material (machine/rock) — вода обтекала. forceSolidOn() (BlockBehaviour:473) => 1:1.
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
 		if (!aOpaque) p = p.noOcclusion();
+		// F-harvest-tool (1:1 GT6): блок с назначенным инструментом (mTool != "") дропает ТОЛЬКО правильным инструментом,
+		// не рукой. В 1.7.10 это давал ForgeHooks.canHarvestBlock(getHarvestTool/getHarvestLevel); в neo — флаг
+		// requiresCorrectToolForDrops → hasCorrectToolForDrops → mainhand.isCorrectToolForDrops (GT6-инструмент =
+		// MultiItemTool.isCorrectToolForDrops:503 проверяет getHarvestTool/level; рука = EMPTY = false). Без флага движок
+		// дропал любым/рукой (дефолт hasCorrectToolForDrops при !requiresCorrectToolForDrops = true) — нарушение канона.
+		// Блоки без инструмента (aTool пустой — ломаются голыми руками, 1:1) флаг НЕ получают.
+		if (aTool != null && !aTool.isEmpty()) p = p.requiresCorrectToolForDrops();
 		return p;
 	}
 	protected MultiTileEntityBlock(String aModID, String aNameOfVanillaMaterialField, Material aVanillaMaterial, SoundType aSoundType, String aTool, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, boolean aOpaque, boolean aNormalCube) {
@@ -179,7 +185,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// GT6, golden = gregtech:; совпадает с реестром ST.register→registerBlock ниже). Имя вычисляется тем же getName(...), что и mNameInternal (стр. ниже) → ключ совпадает.
 		// Конструкция идёт на RegisterEvent через GT_API.deferBlockInit (call-site getOrCreate/Loader_Others).
 		// F16: sound(aSoundType) (step-звук). F13/F16: non-opaque → .noOcclusion() (иначе рендер solid + свет блокируется). mkProps ниже.
-		super(mkProps(aSoundType, getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube), aOpaque));
+		super(mkProps(aSoundType, getName(aNameOfVanillaMaterialField, aVanillaMaterial, aSoundType, aTool, aHarvestLevelOffset, aHarvestLevelMinimum, aHarvestLevelMaximum, aOpaque, aNormalCube), aOpaque, aTool));
 		mMaterial = aVanillaMaterial;
 		if (GAPI.mStartedInit) throw new IllegalStateException("Blocks can only be initialised within preInit!");
 		
@@ -576,7 +582,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override public final boolean setBlockBounds(int aRenderPass, ItemStack aStack) {return F;}
 	@Override public final int getRenderPasses(ItemStack aStack) {return 0;}
 	@Override public final IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return null;}
-	public final void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public final void registerBlockIcons(Object aIconRegister) {/**/}
 	public final Identifier getIcon(BlockGetter aWorld, int aX, int aY, int aZ, int aSide) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
 	public final Identifier getIcon(int aSide, int aMetaData) {return Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);}
 	// F3-render (отложенная фаза): 1.7.10 Block.getRenderType()/super.getRenderType() удалён из neo (рендер

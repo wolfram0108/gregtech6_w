@@ -49,7 +49,6 @@ import micdoodle8.mods.galacticraft.api.item.IItemElectric;
 import micdoodle8.mods.galacticraft.core.energy.EnergyConfigHandler;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SnowLayerBlock;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -706,7 +705,7 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ItemStack getContainerItem(ItemStack aStack) {return null;}
 	public boolean doesContainerItemLeaveCraftingGrid(ItemStack aStack) {return F;}
 	public int getSpriteNumber() {return 0;}
-	public void registerIcons(IIconRegister aRegister) {/**/}
+	public void registerIcons(Object aRegister) {/**/}
 	// F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было itemIcon=Items.BREAD.getIconFromDamage(0) (фикс eating-particle 1.7.10) —
 	// и поле Item.itemIcon, и метод Item.getIconFromDamage(int) удалены в 26.1.2 целиком, замены нет до Фазы C.
 	public Identifier getIconFromDamage(int aMeta) {throw new UnsupportedOperationException("F3 dead-interface: 1.7.10 Item.getIconFromDamage(meta) удалён из neo (НЕ @Override; было itemIcon для eating-particle). MTEItemInternal — BlockItem, рендерится моделью блока; GT6ItemModel пропускает BlockItem'ы. Defensive throw.");}

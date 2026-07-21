@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.util.IIcon;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -175,7 +174,7 @@ public class BlockOcean extends BlockWaterlike {
 		return LIGHT_OPACITY_NONE;
 	}
 
-	@Override public IIcon getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — neo BakedModel-рендер, crash-only per /goal");} // см. BlockWaterlike.getIcon
+	@Override public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — neo BakedModel-рендер, crash-only per /goal");} // см. BlockWaterlike.getIcon
 	@Override public int getRenderColor(int aMeta) {return 0x00c0c0c0;}
 	@Override public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return 0x00c0c0c0;}
 }

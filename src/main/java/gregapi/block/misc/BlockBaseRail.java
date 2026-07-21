@@ -42,7 +42,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
@@ -175,7 +174,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	public int getLightOpacity() {return LIGHT_OPACITY_NONE;}
 	public Item getItemDropped(int par1, Random par2Random, int par3) {return Item.byBlock(this);}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
-	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public boolean canCreatureSpawn(MobCategory type, BlockGetter aWorld, int aX, int aY, int aZ) {return canCreatureSpawn(WD.meta(aWorld, aX, aY, aZ));}
 	@SuppressWarnings("unchecked") public void getSubBlocks(Item aItem, CreativeModeTab par2CreativeTabs, @SuppressWarnings("rawtypes") List aList) {aList.add(ST.make(aItem, 1, 0));}
 	public Identifier getIcon(int aSide, int aMeta) {return ((mPowerRail||mDetectorRail?(aMeta&8)!=0:aMeta>=6)?mIconSecondary:mIconPrimary).getIcon(0);}

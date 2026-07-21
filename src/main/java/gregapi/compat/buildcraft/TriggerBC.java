@@ -34,14 +34,13 @@ import gregapi.code.ArrayListNoNulls;
 import gregapi.data.LH;
 import gregapi.lang.LanguageHandler;
 import gregapi.util.UT;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.util.IIcon;
 import net.minecraft.core.Direction;
 
 public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	public final String mModID, mName;
-	public IIcon mIcon;
+	// F3 superseded-render: было IIcon mIcon (1.7.10 атлас-стежка, тип удалён в neo) — F10 BuildCraft-триггер, ветка мертва (BC не портирован).
+	public Object mIcon;
 	
 	public TriggerBC(String aModID, String aName, String aDesciption) {
 		mModID = aModID;
@@ -54,8 +53,9 @@ public abstract class TriggerBC implements ITriggerExternal, ITriggerProvider {
 	
 	
 	public String getUniqueTag() {return mModID + ":" + mName;}
-	public IIcon getIcon() {return mIcon;}
-	public void registerIcons(IIconRegister aIconRegister) {mIcon = aIconRegister.registerIcon(mModID + ":triggers/" + mName);}
+	public Object getIcon() {return mIcon;}
+	// F3 superseded-render: было registerIcons(IIconRegister) {mIcon = aIconRegister.registerIcon(...)} — 1.7.10 атлас-стежка мертва (F10 BuildCraft, ветка недостижима). Тип-параметр → Object (mirror-класс IIconRegister удалён из neo/production-jar, в сигнатуре ломал рефлексию).
+	public void registerIcons(Object aIconRegister) {/**/}
 	public int maxParameters() {return 0;}
 	public int minParameters() {return 0;}
 	public String getDescription() {return LanguageHandler.translate("bc.trigger."+mModID+"."+mName);}

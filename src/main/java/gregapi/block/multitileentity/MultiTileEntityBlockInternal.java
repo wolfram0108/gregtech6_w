@@ -36,7 +36,6 @@ import gregapi.util.WD;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -89,7 +88,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	}
 	
 	// @Override
-	public void registerBlockIcons(IIconRegister aIconRegister) {
+	public void registerBlockIcons(Object aIconRegister) {
 		for (MultiTileEntityClassContainer tClassContainer : mMultiTileEntityRegistry.mRegistry.values()) if (tClassContainer.mCanonicalTileEntity instanceof IMTE_RegisterIcons) ((IMTE_RegisterIcons)tClassContainer.mCanonicalTileEntity).registerIcons(aIconRegister);
 	}
 	

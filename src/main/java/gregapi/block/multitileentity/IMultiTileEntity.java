@@ -30,7 +30,6 @@ import gregapi.oredict.OreDictMaterialStack;
 import gregapi.tileentity.ITileEntitySpecificPlacementBehavior;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.particle.ParticleEngine;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -158,7 +157,7 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	public static interface IMTE_IsSealable                         extends IMultiTileEntity {public boolean isSealable(byte aSide);}
 	public static interface IMTE_OnOxygenRemoved                    extends IMultiTileEntity {public void onOxygenRemoved();}
 	public static interface IMTE_OnOxygenAdded                      extends IMultiTileEntity {public void onOxygenAdded();}
-	public static interface IMTE_RegisterIcons                      extends IMultiTileEntity {public void registerIcons(IIconRegister aIconRegister);}
+	public static interface IMTE_RegisterIcons                      extends IMultiTileEntity {public void registerIcons(Object aIconRegister);}
 	public static interface IMTE_AddHitEffects                      extends IMultiTileEntity {public boolean addHitEffects(Level aWorld, HitResult aTarget, ParticleEngine aRenderer);}
 	public static interface IMTE_AddDestroyEffects                  extends IMultiTileEntity {public boolean addDestroyEffects(int aMetaData, ParticleEngine aRenderer);}
 	

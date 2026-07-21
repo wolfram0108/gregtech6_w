@@ -29,7 +29,6 @@ import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.util.IIcon;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -200,7 +199,7 @@ public class BlockSwamp extends BlockWaterlike {
 	
 	// @Override
 	public int getLightOpacity(BlockGetter aWorld, int aX, int aY, int aZ) {if (WD.block(aWorld, aX, aY+1, aZ) != this || WD.meta(aWorld, aX, aY, aZ) > 0) return LIGHT_OPACITY_WATER; return LIGHT_OPACITY_MAX;}
-	@Override public IIcon getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — neo BakedModel-рендер, crash-only per /goal");} // см. BlockWaterlike.getIcon
+	@Override public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — neo BakedModel-рендер, crash-only per /goal");} // см. BlockWaterlike.getIcon
 	@Override public int getRenderColor(int aMeta) {return 0x0000ff00;}
 	
 	@Override

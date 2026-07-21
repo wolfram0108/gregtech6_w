@@ -54,7 +54,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.EntityBlock;
 import gregapi.block.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.entity.Entity;
@@ -284,7 +283,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	}
 	
 	// @Override
-	public void registerBlockIcons(IIconRegister aIconRegister) {/*
+	public void registerBlockIcons(Object aIconRegister) {/*
 		if (mPrefix.mIconIndexBlock >= 0) {
 			MT.NULL.mTextureSetsBlock.get(mPrefix.mIconIndexBlock).registerIcons(aIconRegister);
 			HashSet<IIconContainer> tSet = new HashSet<IIconContainer>();

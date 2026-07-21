@@ -34,14 +34,12 @@ import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
 import gregapi.block.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.util.IIcon;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -277,11 +275,11 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	@Override public Block getBlock() {return this;}
 	public final String getUnlocalizedName() {return FL.name(mFluid, F);}
 	public String getLocalizedName() {return FL.name(mFluid, T);}
-	public void registerBlockIcons(IIconRegister aIconRegister) {/**/}
+	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public int getRenderType() {return RendererBlockFluid.RENDER_ID;}
 	public int getRenderBlockPass() {return 1;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
-	public IIcon getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
+	public net.minecraft.resources.Identifier getIcon(int aSide, int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid icon): было Blocks.water.getIcon — 1.7.10 IIcon-атлас мёртв, реальный рендер RegisterFluidModelsEvent; crash-only per /goal");}
 	public int getRenderColor(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
 	
