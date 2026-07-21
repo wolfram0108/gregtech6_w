@@ -661,6 +661,155 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-SEAM-PROBE] фаза 0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// МАЙНИНГ-СУДЬЯ (гейт gt6mineprobe.flag): репорт игрока «ключом не сломать ВООБЩЕ ничего» при зелёном
+	// state.getDestroyProgress. Судит ЖИВОЙ путь ЛКМ: клиентский MultiPlayerGameMode.startDestroyBlock +
+	// continueDestroyBlock каждый тик (то, что делает зажатая ЛКМ) — с потиковой трассой прогресса и блока.
+	private int mMineProbePhase = 0; private int mMineProbeTick = 0;
+	private net.minecraft.core.BlockPos mMineMachinePos, mMineScaffoldPos;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onMineProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mMineProbePhase >= 4) return;
+		if (!gregapi.data.CS.probeFlag("gt6mineprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mMineProbePhase = 4; return; }
+		tMC.options.pauseOnLostFocus = false;
+		if (tMC.screen instanceof net.minecraft.client.gui.screens.PauseScreen) tMC.setScreen(null);
+		++mMineProbeTick;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		if (mMineProbePhase == 0) {
+			if (mMineProbeTick < 300) return;
+			mMineProbePhase = 1;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null) { o.println("[GT6-MINE] реестр null"); mMineProbePhase = 4; return; }
+				short tScaffoldID = -1;
+				for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations)
+					if (tC.mCanonicalTileEntity instanceof gregtech.tileentity.tools.MultiTileEntityScaffold) { tScaffoldID = tC.mID; break; }
+				net.minecraft.core.BlockPos tRoot = tP.blockPosition();
+				// пад: машина и леса рядом с игроком (реальный клик-путь установки)
+				net.minecraft.core.BlockPos tMBase = tRoot.offset(2, -1, 0), tSBase = tRoot.offset(2, -1, 2);
+				for (net.minecraft.core.BlockPos tB : new net.minecraft.core.BlockPos[] {tMBase, tSBase}) {
+					for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+						tW.setBlock(tB.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					tW.setBlock(tB, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				}
+				tP.setShiftKeyDown(true);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(20001).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tMBase.getX()+0.5, tMBase.getY()+1.0, tMBase.getZ()+0.5), net.minecraft.core.Direction.UP, tMBase, false));
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tScaffoldID).copy());
+				tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tSBase.getX()+0.5, tSBase.getY()+1.0, tSBase.getZ()+0.5), net.minecraft.core.Direction.UP, tSBase, false));
+				tP.setShiftKeyDown(false);
+				mMineMachinePos = tMBase.above(); mMineScaffoldPos = tSBase.above();
+				// ключ в руку, SURVIVAL — живая добыча
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, gregapi.data.MT.Steel, gregapi.data.MT.Steel));
+				tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				o.println("[GT6-MINE] установлено: машина @" + mMineMachinePos.toShortString() + " (" + tW.getBlockState(mMineMachinePos).getBlock().getClass().getSimpleName()
+					+ ") леса @" + mMineScaffoldPos.toShortString() + " (" + tW.getBlockState(mMineScaffoldPos).getBlock().getClass().getSimpleName() + "); ключ в руке, SURVIVAL");
+			} catch (Throwable e) { o.println("[GT6-MINE] фаза 0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		if (mMineProbePhase == 1) {
+			// живой майнинг МАШИНЫ: startDestroyBlock на t=320, continueDestroyBlock каждый тик, трасса каждые 10
+			if (mMineProbeTick < 320 || mMineMachinePos == null) return;
+			try {
+				if (mMineProbeTick == 320) {
+					boolean tStarted = tMC.gameMode.startDestroyBlock(mMineMachinePos, net.minecraft.core.Direction.UP);
+					o.println("[GT6-MINE] МАШИНА startDestroyBlock=" + tStarted
+						+ " cliProgress0=" + tMC.level.getBlockState(mMineMachinePos).getDestroyProgress(tMC.player, tMC.level, mMineMachinePos)
+						+ " рука=" + tMC.player.getMainHandItem().getItem());
+					return;
+				}
+				boolean tGone = tMC.level.getBlockState(mMineMachinePos).isAir();
+				if (tGone || mMineProbeTick >= 440) {
+					o.println("[GT6-MINE] МАШИНА итог: сломана=" + tGone + " за ~" + (mMineProbeTick-320) + " тиков (ждали ~30-45)");
+					tMC.gameMode.stopDestroyBlock();
+					mMineProbePhase = 2;
+					return;
+				}
+				tMC.gameMode.continueDestroyBlock(mMineMachinePos, net.minecraft.core.Direction.UP);
+				if (mMineProbeTick % 10 == 0) {
+					float tCliProg = (float)probeNum(tMC.gameMode, net.minecraft.client.multiplayer.MultiPlayerGameMode.class, "destroyProgress");
+					o.println("[GT6-MINE-TRACE] t" + (mMineProbeTick-320) + " cliDestroyProgress=" + tCliProg
+						+ " perTick=" + tMC.level.getBlockState(mMineMachinePos).getDestroyProgress(tMC.player, tMC.level, mMineMachinePos)
+						+ " блок=" + tMC.level.getBlockState(mMineMachinePos).getBlock().getClass().getSimpleName());
+				}
+			} catch (Throwable e) { o.println("[GT6-MINE] машина-фаза упала: " + e); mMineProbePhase = 2; }
+			return;
+		}
+		if (mMineProbePhase == 2) {
+			// живой майнинг ЛЕСОВ
+			if (mMineScaffoldPos == null) { mMineProbePhase = 4; return; }
+			try {
+				if (mMineProbeTick < 460) return;
+				if (mMineProbeTick == 460) {
+					boolean tStarted = tMC.gameMode.startDestroyBlock(mMineScaffoldPos, net.minecraft.core.Direction.UP);
+					o.println("[GT6-MINE] ЛЕСА startDestroyBlock=" + tStarted
+						+ " cliProgress0=" + tMC.level.getBlockState(mMineScaffoldPos).getDestroyProgress(tMC.player, tMC.level, mMineScaffoldPos));
+					return;
+				}
+				boolean tGone = tMC.level.getBlockState(mMineScaffoldPos).isAir();
+				if (tGone || mMineProbeTick >= 580) {
+					o.println("[GT6-MINE] ЛЕСА итог: сломаны=" + tGone + " за ~" + (mMineProbeTick-460) + " тиков");
+					tMC.gameMode.stopDestroyBlock();
+					mMineProbePhase = 3;
+					// камешек #32757 на место машины + ПУСТАЯ рука (проверка «руками не ломается»)
+					tSrv.execute(() -> { try {
+						net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+						net.minecraft.server.level.ServerLevel tW = tP.level();
+						gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+						tP.setShiftKeyDown(true);
+						tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(32757).copy());
+						net.minecraft.core.BlockPos tBase = mMineMachinePos.below();
+						tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+							new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tBase.getX()+0.5, tBase.getY()+1.0, tBase.getZ()+0.5), net.minecraft.core.Direction.UP, tBase, false));
+						tP.setShiftKeyDown(false);
+						tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+						o.println("[GT6-MINE] камешек поставлен @" + mMineMachinePos.toShortString() + " (" + tW.getBlockState(mMineMachinePos).getBlock().getClass().getSimpleName() + "), рука ПУСТАЯ");
+					} catch (Throwable e) { o.println("[GT6-MINE] камешек-постановка упала: " + e); } });
+					return;
+				}
+				tMC.gameMode.continueDestroyBlock(mMineScaffoldPos, net.minecraft.core.Direction.UP);
+				if (mMineProbeTick % 10 == 0) {
+					float tCliProg = (float)probeNum(tMC.gameMode, net.minecraft.client.multiplayer.MultiPlayerGameMode.class, "destroyProgress");
+					o.println("[GT6-MINE-TRACE] леса t" + (mMineProbeTick-460) + " cliDestroyProgress=" + tCliProg
+						+ " perTick=" + tMC.level.getBlockState(mMineScaffoldPos).getDestroyProgress(tMC.player, tMC.level, mMineScaffoldPos));
+				}
+			} catch (Throwable e) { o.println("[GT6-MINE] леса-фаза упала: " + e); mMineProbePhase = 4; }
+			return;
+		}
+		if (mMineProbePhase == 3) {
+			// живой майнинг КАМЕШКА пустой рукой (ждали слом за ~десятки тиков — «руками ломается» для без-инструментных)
+			if (mMineProbeTick < 600 || mMineMachinePos == null) return;
+			try {
+				if (mMineProbeTick == 600) {
+					boolean tStarted = tMC.gameMode.startDestroyBlock(mMineMachinePos, net.minecraft.core.Direction.UP);
+					o.println("[GT6-MINE] КАМЕШЕК-РУКОЙ startDestroyBlock=" + tStarted
+						+ " cliProgress0=" + tMC.level.getBlockState(mMineMachinePos).getDestroyProgress(tMC.player, tMC.level, mMineMachinePos));
+					return;
+				}
+				boolean tGone = tMC.level.getBlockState(mMineMachinePos).isAir();
+				if (tGone || mMineProbeTick >= 760) {
+					o.println("[GT6-MINE] КАМЕШЕК итог: сломан рукой=" + tGone + " за ~" + (mMineProbeTick-600) + " тиков");
+					tMC.gameMode.stopDestroyBlock();
+					o.println("[GT6-MINE] ГОТОВО");
+					mMineProbePhase = 4;
+					return;
+				}
+				tMC.gameMode.continueDestroyBlock(mMineMachinePos, net.minecraft.core.Direction.UP);
+				if (mMineProbeTick % 20 == 0) o.println("[GT6-MINE-TRACE] камешек t" + (mMineProbeTick-600)
+					+ " cliDestroyProgress=" + (float)probeNum(tMC.gameMode, net.minecraft.client.multiplayer.MultiPlayerGameMode.class, "destroyProgress")
+					+ " perTick=" + tMC.level.getBlockState(mMineMachinePos).getDestroyProgress(tMC.player, tMC.level, mMineMachinePos));
+			} catch (Throwable e) { o.println("[GT6-MINE] камешек-фаза упала: " + e); mMineProbePhase = 4; }
+			return;
+		}
+	}
+
 	// КАРАБКАНЬЕ-СУДЬЯ (гейт gt6climbprobe.flag): репорт игрока «по верёвке не карабкается, в леса не войти».
 	// Судит ПУТЬ ДВИЖКА, не мост: телепорт игрока ВНУТРЬ клетки → LivingEntity.onClimbable() (сервер И клиент —
 	// движение клиент-предиктивное) + фактические формы коллизии обеих сторон + design/BE обеих сторон.

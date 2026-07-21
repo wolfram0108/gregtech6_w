@@ -623,6 +623,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// NBT_HARDNESS регистрации). СТАЛО 1:1: blockStrength по TE-hardness (h<0 → 0-неразрушим; digSpeed/h/(canHarvest
 	// ?30:100) — рука на машине-с-инструментом = /100 и полная твёрдость, как в 1.7.10) → затем TE-гейт
 	// IMTE_GetPlayerRelativeBlockHardness (TileEntityBase01Root:1108 allowInteraction → max(v,1e-4) | 0).
+	private static long sLastDigZeroDiag = 0;
 	@Override protected final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		float tHardness = aTileEntity instanceof IMTE_GetBlockHardness ? ((IMTE_GetBlockHardness)aTileEntity).getBlockHardness() : 1.0F;
@@ -632,7 +633,30 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 			int tDivider = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
 			tOriginal = aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tDivider;
 		}
-		return aTileEntity instanceof IMTE_GetPlayerRelativeBlockHardness ? ((IMTE_GetPlayerRelativeBlockHardness)aTileEntity).getPlayerRelativeBlockHardness(aPlayer, tOriginal) : tOriginal;
+		float rResult = aTileEntity instanceof IMTE_GetPlayerRelativeBlockHardness ? ((IMTE_GetPlayerRelativeBlockHardness)aTileEntity).getPlayerRelativeBlockHardness(aPlayer, tOriginal) : tOriginal;
+		// [GT6-DIG-ZERO] диагностика живого мира (всегда активна, троттл 1с, только сервер): нулевой прогресс при
+		// НЕ-неразрушимом блоке = аномалия цепи (stats-null/unusable/quality<level/isMinable) — печатаем компоненты,
+		// чтобы лог игрока называл причину. В штатной игре не срабатывает (рука даёт >0).
+		if (rResult <= 0.0F && tHardness >= 0 && aWorld instanceof Level tLevel && !tLevel.isClientSide() && System.currentTimeMillis() - sLastDigZeroDiag > 1000) {
+			sLastDigZeroDiag = System.currentTimeMillis();
+			ItemStack tHand = aPlayer.getMainHandItem();
+			StringBuilder tSB = new StringBuilder("[GT6-DIG-ZERO] прогресс=0: блок=").append(aTileEntity == null ? "BE-null" : aTileEntity.getClass().getSimpleName())
+				.append(" hardness=").append(tHardness)
+				.append(" playerSpeed=").append(aPlayer.getDestroySpeed(aState, aPos))
+				.append(" harvestOK=").append(net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos))
+				.append(" рука=").append(tHand.isEmpty() ? "ПУСТО" : String.valueOf(tHand.getItem()) + "#" + gregapi.util.ST.meta_(tHand));
+			if (gregapi.util.ST.item_(tHand) instanceof gregapi.item.multiitem.MultiItemTool tTool) {
+				gregapi.item.multiitem.tools.IToolStats tStats = tTool.getToolStats(tHand);
+				tSB.append(" | инструмент: stats=").append(tStats == null ? "NULL(мета-лукап!)" : tStats.getClass().getSimpleName())
+					.append(" usable=").append(tTool.isItemStackUsable(tHand))
+					.append(" digSpeed=").append(tTool.getDigSpeed(tHand, aState.getBlock(), 0))
+					.append(" quality=").append(tStats == null ? "-" : String.valueOf(tStats.getBaseQuality() + tTool.getPrimaryMaterial(tHand).mToolQuality))
+					.append(" нужен-уровень=").append(WD.harvestLevel(aState.getBlock(), 0))
+					.append(" нужен-tool=").append(WD.harvestTool(aState.getBlock(), 0));
+			}
+			gregapi.data.CS.OUT.println(tSB.toString());
+		}
+		return rResult;
 	}
 	// F13: движок-facing динамическая твёрдость (скорость добычи игроком) ПОДКЛЮЧЕНА выше через getDestroyProgress
 	// (стр. ~469, TE-диспетчер IMTE_GetPlayerRelativeBlockHardness). Этот getBlockHardness — внутренний GT6-хелпер
