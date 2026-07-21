@@ -915,6 +915,27 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// танк, коверы, блок у грани каждого ковра (source/flowing — ловит драйн у растёкшейся воды). Игрок просто играет
 	// свою схему — лог собирает её реальное состояние; воспроизводить вслепую больше не нужно.
 	private int mAuditTick = 0; private boolean mWallResent = false; private int mWallTouchStep = 0; private net.minecraft.core.BlockPos mWallTouchPos = null;
+	/** ит.15: рефлексионный дамп буфера соседей (TileEntityBase02AdjacentTEBuffer.mBufferedTileEntities) — per-сторона:
+	 *  '·'=null, 'M'=маркер-this(«тут пусто»), иначе класс#identity(isDead/isRemoved). Ловит стухшую ссылку, держащую грань. */
+	private static String wallBuffer(Object aBE) {
+		try {
+			if (!(aBE instanceof gregapi.tileentity.base.TileEntityBase02AdjacentTEBuffer)) return "без-буфера(notick: живой WD.te каждый кадр)";
+			java.lang.reflect.Field f = gregapi.tileentity.base.TileEntityBase02AdjacentTEBuffer.class.getDeclaredField("mBufferedTileEntities");
+			f.setAccessible(true);
+			net.minecraft.world.level.block.entity.BlockEntity[] tBuf = (net.minecraft.world.level.block.entity.BlockEntity[])f.get(aBE);
+			StringBuilder tSB = new StringBuilder("буфер[");
+			for (byte s = 0; s < 6; s++) {
+				if (s > 0) tSB.append(' ');
+				net.minecraft.world.level.block.entity.BlockEntity tT = tBuf[s];
+				if (tT == null) tSB.append('·');
+				else if (tT == aBE) tSB.append('M');
+				else tSB.append(tT.getClass().getSimpleName()).append('#').append(Integer.toHexString(System.identityHashCode(tT)))
+					.append('(').append(tT instanceof gregapi.tileentity.ITileEntityUnloadable tU && tU.isDead() ? "DEAD" : "жив")
+					.append('/').append(tT.isRemoved() ? "REMOVED" : "вКарте?").append(')');
+			}
+			return tSB.append(']').toString();
+		} catch (Throwable e) { return "буфер=EXC:" + e.getClass().getSimpleName(); }
+	}
 	private static String wallTex(Object aBE) {
 		try { java.lang.reflect.Field f = aBE.getClass().getDeclaredField("mTextures"); f.setAccessible(true); Object v = f.get(aBE);
 			if (v == null) return "tex=NULL";
@@ -1238,6 +1259,101 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	}
 	private static String ageStr(Long aLast) {return aLast == null ? "НИКОГДА" : (System.currentTimeMillis() - aLast) + "мс";}
 
+	// U3-ит.15 СУДЬЯ v4 (гейт gt6wallplace.flag, КОПИЯ мира): авто-репро сценария игрока — ставим GT6-БЛОК (та же стена
+	// из реестра) НА стену РЕАЛЬНЫМ кликом (useItemOn по грани, как placeprobe), ждём синка, ломаем КЛИЕНТСКИМ майнингом;
+	// до/после печатаем буфер соседей стены (рефлексия) + грани + вкл. DEBUG_POS (движковые квады). Ловит стухший слот.
+	private int mWPTick = 0, mWPStep = 0, mWPWait = 0;
+	private net.minecraft.core.BlockPos mWPWall = null, mWPPlace = null;
+	private byte mWPSide = -1;
+	private void wpSample(net.minecraft.client.Minecraft aMC, String aTag) {
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.world.level.block.entity.BlockEntity tBE = aMC.level.getBlockEntity(mWPWall);
+			String tSides = "-";
+			net.minecraft.world.level.block.Block tBlock = aMC.level.getBlockState(mWPWall).getBlock();
+			if (tBE instanceof gregapi.render.IRenderedBlockObjectSideCheck tSC && tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {
+				StringBuilder tSB = new StringBuilder(6);
+				for (byte s = 0; s < 6; s++) tSB.append(tSC.renderFullBlockSide(tBlock, null, s) ? '1' : '0');
+				tSides = tSB.toString();
+			}
+			net.minecraft.world.level.block.state.BlockState tPlaceSt = aMC.level.getBlockState(mWPPlace);
+			net.minecraft.world.level.block.entity.BlockEntity tPlaceBE = aMC.level.getBlockEntity(mWPPlace);
+			o.println("[GT6-WALL-PLACE] " + aTag + " стена@" + mWPWall.toShortString()
+				+ " грани(DUNSWE)=" + tSides
+				+ " " + (tBE == null ? "BE-NULL" : wallBuffer(tBE))
+				+ " | место@" + mWPPlace.toShortString() + " блок=" + tPlaceSt.getBlock().getClass().getSimpleName()
+				+ " BE=" + (tPlaceBE == null ? "null" : tPlaceBE.getClass().getSimpleName() + "#" + Integer.toHexString(System.identityHashCode(tPlaceBE)) + (tPlaceBE.isRemoved() ? "(REMOVED)" : "")));
+		} catch (Throwable e) { o.println("[GT6-WALL-PLACE] замер упал: " + e); }
+	}
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onWallPlaceJudge(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mWPStep >= 9) return;
+		if (!gregapi.data.CS.probeFlag("gt6wallplace.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) return;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		++mWPTick;
+		if (mWPStep == 0) { // стена с горизонтальным воздушным соседом (куда встанет блок)
+			if (mWPTick < 100) return;
+			int tCX = tMC.player.blockPosition().getX() >> 4, tCZ = tMC.player.blockPosition().getZ() >> 4;
+			outer:
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: tMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
+					if (!(tE.getValue() instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart)) continue;
+					for (byte tS = 2; tS < 6; tS++) {
+						net.minecraft.core.BlockPos tN = tE.getKey().offset(gregapi.data.CS.OFFX[tS], 0, gregapi.data.CS.OFFZ[tS]);
+						if (tMC.level.getBlockState(tN).isAir()) { mWPWall = tE.getKey().immutable(); mWPPlace = tN.immutable(); mWPSide = tS; break outer; }
+					}
+				}
+			if (mWPWall == null) { if (mWPTick % 100 == 0) o.println("[GT6-WALL-PLACE] стены не найдено"); return; }
+			o.println("[GT6-WALL-PLACE] цель: стена@" + mWPWall.toShortString() + ", ставлю MTE-блок@" + mWPPlace.toShortString() + " (сторона " + mWPSide + ")");
+			wpSample(tMC, "БАЗА(до установки)");
+			// установка РЕАЛЬНЫМ кликом по грани стены (как игрок): предмет = та же стена из реестра
+			final net.minecraft.core.BlockPos tWall = mWPWall;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.world.level.block.entity.BlockEntity tSrvWall = tP.level().getBlockEntity(tWall);
+				if (!(tSrvWall instanceof gregapi.block.multitileentity.IMultiTileEntity tM)) { o.println("[GT6-WALL-PLACE] срв-стена не MTE"); return; }
+				net.minecraft.world.item.ItemStack tItem = gregapi.block.multitileentity.MultiTileEntityRegistry
+					.getRegistry(tM.getMultiTileEntityRegistryID()).getItem(tM.getMultiTileEntityID());
+				if (!gregapi.util.ST.valid(tItem)) { o.println("[GT6-WALL-PLACE] item невалиден"); return; }
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tItem);
+				net.minecraft.core.Direction tDir = net.minecraft.core.Direction.from3DDataValue(mWPSide); // грань стены к воздуху — на неё кликаем
+				net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(tWall).add(tDir.getUnitVec3().scale(0.5));
+				tP.gameMode.useItemOn(tP, tP.level(), tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(tHit, tDir, tWall, false));
+				o.println("[GT6-WALL-PLACE] клик установки выполнен (грань " + tDir + ")");
+			} catch (Throwable e) { o.println("[GT6-WALL-PLACE] установка упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			mWPStep = 1; mWPWait = mWPTick + 60;
+		} else if (mWPStep == 1) { // после установки и синка
+			if (mWPTick < mWPWait) return;
+			wpSample(tMC, "ПОСТАВЛЕН(+60т)");
+			gregapi.render.MultiTileEntityBER.DEBUG_POS = mWPWall;
+			mWPStep = 2;
+		} else if (mWPStep == 2) { // слом клиентским майнингом
+			if (!tMC.level.getBlockState(mWPPlace).isAir()) {
+				try { tMC.gameMode.startDestroyBlock(mWPPlace, net.minecraft.core.Direction.UP); tMC.gameMode.continueDestroyBlock(mWPPlace, net.minecraft.core.Direction.UP); } catch (Throwable e) {/**/}
+				return;
+			}
+			o.println("[GT6-WALL-PLACE] сломан клиентским майнингом");
+			wpSample(tMC, "СРАЗУ-ПОСЛЕ-СЛОМА");
+			mWPStep = 3; mWPWait = mWPTick;
+		} else if (mWPStep == 3) { // наблюдение 60 тиков
+			if ((mWPTick - mWPWait) % 10 != 0) return;
+			wpSample(tMC, "Т+" + (mWPTick - mWPWait));
+			if (mWPTick - mWPWait >= 60) {
+				weShot(tMC, "wallplace_final.png");
+				gregapi.render.MultiTileEntityBER.DEBUG_POS = null;
+				o.println("[GT6-WALL-PLACE] завершено");
+				mWPStep = 9;
+			}
+		}
+	}
+	private static net.minecraft.world.level.block.entity.BlockEntity tE2(net.minecraft.client.Minecraft aMC, net.minecraft.core.BlockPos aPos) {return aMC.level.getBlockEntity(aPos);}
+
 	// U3-ит.14 СУДЬЯ-«ГЛАЗ» (гейт gt6walleye.flag): телепорт игрока напротив стены (за ломаемым соседом),
 	// скриншоты ДО слома / ПОСЛЕ (+40 тиков) → run/screenshots/walljudge_*.png; судит слой ЭКРАНА (пиксели),
 	// к которому quad-судья слеп (например, квады есть, но спрайт прозрачен в cutout).
@@ -1505,6 +1621,13 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// GT6-пакеты, обогнавшие свой чанк при логине (иначе worldgen-MTE стартовой области оставались без клиент-BE).
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onPendingPackets(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		// U3-ит.15 КОРЕНЬ «блуждающей дыры» стен: контракт оригинала — LAST_BROKEN_TILEENTITY живёт НЕ ДОЛЬШЕ тика
+		// (GT_API_Proxy.onServerTick «Making sure it is being free'd up», оригинал :250). ThreadLocal: серверная чистка
+		// не видит КЛИЕНТСКУЮ копию, а в neo слом клиент-предикшеном (MultiPlayerGameMode.destroyBlock →
+		// onDestroyedByPlayer) ставит её на Render-потоке → WD.te вечно отдавал призрак сломанного BE → его
+		// ITileEntitySurface-opaque гасил грань соседней стены до СЛЕДУЮЩЕГО слома (дыра «блуждала» 1:1 репорту).
+		// Зеркалим ту же строку оригинала на клиентском тике — жизненный цикл восстановлен 1:1.
+		gregapi.data.CS.LAST_BROKEN_TILEENTITY.set(null);
 		gregapi.network.NetworkHandler.processPending(Minecraft.getInstance().level);
 	}
 
