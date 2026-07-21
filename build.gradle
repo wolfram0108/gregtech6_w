@@ -130,6 +130,24 @@ stripRunMirror.configure { mustRunAfter tasks.named('classes') }
     tasks.matching { it.name == rn }.configureEach { dependsOn stripRunMirror }
 }
 
+// PRODUCTION-JAR: та же JPMS split-package беда, что в run*/test, но БЕЗ фикса ⇒ ломала запуск в реальном
+// (модульном) лаунчере. compat-mirror компилирует crutch-классы в net.minecraft.*/cpw.* — пакеты, которыми
+// в рантайме ВЛАДЕЮТ реальные модули (minecraft / FML). Когда они попадают в jar, automatic-module gregtech6
+// «экспортирует» net.minecraft.client.renderer ⇒ split с модулем minecraft ⇒ FML ResolutionException при
+// загрузке мода (см. STATE.md ит.10). stripRunMirror чистит их ТОЛЬКО для dev-запусков, а `jar` от него не
+// зависел ⇒ костыль недетерминированно (в зависимости от порядка задач) попадал в production-jar.
+// Мираж по замыслу compileOnly («Аналог compileOnly dev-jar'ов оракула», см. §F10 выше) ⇒ его классы НЕ
+// должны быть в jar. Исключаем ровно тот набор, что стрипается для run/test (проверен десятками runClient с
+// полным рендером): net/minecraft (владеет модуль minecraft) + cpw (владеет FML). net/minecraftforge и прочие
+// mod-API-миражи (appeng/ic2/…) НЕ трогаем — ими в чистой сборке НИКАКОЙ модуль не владеет (безвредны), а
+// рантайм GT6 их shim'ы может звать (напр. IFluidBlock в CoverDrain); их снятие — задача F10 при реальной
+// интеграции конкретного мода, не здесь. Исключение на УРОВНЕ jar (не delete из build/classes) ⇒ не мутирует
+// общий вывод, не воюет с incremental и run-задачами.
+tasks.named('jar').configure {
+    exclude 'net/minecraft/**'
+    exclude 'cpw/**'
+}
+
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
 
