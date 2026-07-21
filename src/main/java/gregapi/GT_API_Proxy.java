@@ -1060,7 +1060,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			while (tIterations-->0) try {
 				for (Object tTileEntity : tChunk.getBlockEntities().values()) if (tTileEntity instanceof ITileEntitySynchronising) if (tSet.add(tTileEntity)) {((ITileEntitySynchronising)tTileEntity).sendUpdateToPlayer(aEvent.getPlayer()); if (tTileEntity instanceof gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) ++tWalls;}
 				tIterations = 0;
-				if (tWalls > 0) OUT.println("[GT6-CHUNKSENT] чанк " + tChunk.getPos() + ": отправлено стен=" + tWalls); // ВРЕМЕННЫЙ DIAG ит.11
+				OUT.println("[GT6-CHUNKSENT] чанк " + tChunk.getPos() + ": BE-карта=" + tChunk.getBlockEntities().size() + " синк-отправлено=" + tSet.size() + " стен=" + tWalls); // ВРЕМЕННЫЙ DIAG ит.11
 			} catch(ConcurrentModificationException e) {
 				if (tIterations <= 0) ERR.println("Failed to Iterate 8 times. Giving up on sending Data to Client!");
 			} catch(Throwable e) {
