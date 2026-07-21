@@ -521,8 +521,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					o.println("[GT6-SEAM-A9-HARDNESS] машина: destroyProgress рука=" + tProgHand + " (тиков=" + (tProgHand > 0 ? Math.round(1/tProgHand) : -1)
 						+ ") ключ=" + tProgWrench + " (тиков=" + (tProgWrench > 0 ? Math.round(1/tProgWrench) : -1)
 						+ ") (канон 1.7.10: рука МЕДЛЕННО h/100, ключ быстро h/30; было Infinity=мгновенно)");
-					// реальный слом: ключом (дроп ждём) и рукой (дропа не ждём)
+					// реальный слом: ключом (дроп ждём) и рукой (дропа не ждём); заодно износ (урон × per-TE hardness, 1:1)
+					long tWearBefore = ((gregapi.item.multiitem.MultiItemTool)gregapi.util.ST.item_(tP.getMainHandItem())).getToolDamage(tP.getMainHandItem());
 					tP.gameMode.destroyBlock(tM1Pos);
+					long tWearAfter = gregapi.util.ST.valid(tP.getMainHandItem()) && gregapi.util.ST.item_(tP.getMainHandItem()) instanceof gregapi.item.multiitem.MultiItemTool tMT2 ? tMT2.getToolDamage(tP.getMainHandItem()) : -1;
+					o.println("[GT6-SEAM-A9-WEAR] износ ключа при сломе машины: " + tWearBefore + "→" + tWearAfter
+						+ " (Δ=" + (tWearAfter - tWearBefore) + "; ждали Δ = урон-за-блок × hardness(TE), было ×0=без износа)");
 					int tDropsTool = tW.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tM1Pos).inflate(3)).size();
 					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
 					tP.gameMode.destroyBlock(tM2Pos);

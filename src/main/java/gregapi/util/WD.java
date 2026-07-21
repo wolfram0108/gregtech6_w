@@ -387,9 +387,13 @@ public class WD {
 	public static boolean canSeeSky(LevelAccessor aWorld, int aX, int aY, int aZ) {
 		return aWorld != null && aWorld.canSeeSky(new BlockPos(aX, aY, aZ));
 	}
-	/** F-world: 1.7.10 WD.hardness(Block, world,x,y,z) -> neo BlockState.getDestroySpeed(BlockGetter,BlockPos)
-	 *  (BlockBehaviour.java:636). Твёрдость конкретного блока — через его defaultBlockState. */
+	/** F-world/F-hardness: 1.7.10 WD.hardness(Block, world,x,y,z) = Block.getBlockHardness (Forge-точка per-position).
+	 *  GT6-иерархии (контракт IBlock: BlockBase per-meta / PrefixBlock per-material / MTE per-TE mHardness) — диспатч
+	 *  в их getBlockHardness; прежний путь через Properties.destroyTime был слеп к ним (у MTE destroyTime=0 → износ
+	 *  инструмента при добыче машин = 0). Vanilla-блок — его defaultBlockState (аргумент-блок важнее блока на позиции:
+	 *  вызыватели типа BlockMetaType.getBlockHardness спрашивают WD.hardness(Blocks.STONE, ...) с ЧУЖОЙ позиции). */
 	public static float hardness(Block aBlock, BlockGetter aWorld, int aX, int aY, int aZ) {
+		if (aBlock instanceof gregapi.block.IBlock tBlock && aWorld instanceof Level tLevel) return tBlock.getBlockHardness(tLevel, aX, aY, aZ);
 		return aBlock.defaultBlockState().getDestroySpeed(aWorld, new BlockPos(aX, aY, aZ));
 	}
 	/** F9-harvest-level ЦЕНТР: 1.7.10 Block.getHarvestLevel(int aMeta) (числовой требуемый уровень добычи 0=дерево/

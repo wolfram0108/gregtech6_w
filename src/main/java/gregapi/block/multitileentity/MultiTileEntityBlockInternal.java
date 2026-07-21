@@ -164,6 +164,9 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		return T;
 	}
 
+	// F-hardness: per-TE твёрдость для контракта IBlock (читает ЦЕНТР WD.hardness — износ инструмента; зеркало
+	// MultiTileEntityBlock:623; без этого IBlock-дефолт отдал бы Properties.destroyTime=0 → износ 0).
+	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {BlockEntity tBE = WD.te(aWorld, aX, aY, aZ, T); return tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetBlockHardness tH ? tH.getBlockHardness() : 1.0F;}
 	// F-hardness (зеркало MultiTileEntityBlock.getDestroyProgress — Properties.destroyTime не задан (0) → без моста
 	// МГНОВЕННЫЙ слом рукой): 1.7.10 blockStrength с PER-TE hardness (NBT_HARDNESS) → TE-гейт allowInteraction.
 	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {

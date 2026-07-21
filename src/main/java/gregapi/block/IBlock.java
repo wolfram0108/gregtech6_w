@@ -41,4 +41,13 @@ public interface IBlock {
 	 *  существующими методами; не-носители (жидкости, Internal — как в 1.7.10 без override) — дефолт «без инструмента». */
 	default String getHarvestTool(int aMeta) {return "";}
 	default int getHarvestLevel(int aMeta) {return 0;}
+	/** F-hardness (читает ЦЕНТР WD.hardness): 1.7.10 Block.getBlockHardness(World,x,y,z) — Forge-точка per-position
+	 *  твёрдости; GT6-иерархии несут свои значения (BlockBase-подклассы per-meta, PrefixBlock per-material,
+	 *  MTE-блоки per-TE mHardness из NBT_HARDNESS) — носители перекрывают дефолт автоматически одноимёнными
+	 *  методами. Дефолт = vanilla: destroyTime реального state на позиции. Потребитель — износ инструмента
+	 *  (MultiItemTool.onBlockDestroyed: урон × твёрдость, 1:1 оригинал). */
+	default float getBlockHardness(net.minecraft.world.level.Level aWorld, int aX, int aY, int aZ) {
+		net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(aX, aY, aZ);
+		return aWorld.getBlockState(tPos).getDestroySpeed(aWorld, tPos);
+	}
 }
