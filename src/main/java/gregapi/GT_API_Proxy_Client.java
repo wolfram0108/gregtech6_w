@@ -925,18 +925,40 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		if (tSrv == null) return;
 		final java.io.PrintStream o = gregapi.data.CS.OUT;
 		final java.util.Map<net.minecraft.core.BlockPos, Byte> tClientBits = new java.util.HashMap<>();
+		final java.util.Map<net.minecraft.core.BlockPos, Long> tClientSensorDisp = new java.util.HashMap<>();
 		try {
 			int tCX = tMC.player.blockPosition().getX() >> 4, tCZ = tMC.player.blockPosition().getZ() >> 4;
 			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
 				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
-					: tMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet())
+					: tMC.level.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
 					if (tE.getValue() instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPF)
 						tClientBits.put(tE.getKey().immutable(), tPF.getDirectionData());
+					else if (tE.getValue() instanceof gregapi.tileentity.machines.MultiTileEntitySensorTE)
+						tClientSensorDisp.put(tE.getKey().immutable(), (long)probeNum(tE.getValue(), gregapi.tileentity.machines.MultiTileEntitySensor.class, "mDisplayedNumber"));
+				}
 		} catch (Throwable e) { o.println("[GT6-PIPE-AUDIT] клиент-скан упал: " + e); }
 		tSrv.execute(() -> { try {
 			net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
 			net.minecraft.server.level.ServerLevel tW = tP.level();
 			int tCX = tP.blockPosition().getX() >> 4, tCZ = tP.blockPosition().getZ() >> 4;
+			// БОЧКИ (TileEntityBase08Barrel) и СЕНСОРЫ (MultiTileEntitySensorTE): наполнение + что видит сенсор.
+			for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
+					: tW.getChunk(tCX+dx, tCZ+dz).getBlockEntities().entrySet()) {
+					if (tE.getValue() instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tB) {
+						o.println("[GT6-PIPE-AUDIT] БОЧКА@" + tE.getKey().toShortString() + " (" + tB.getClass().getSimpleName() + ")"
+							+ " танк=" + tB.mTank.getFluid() + " ёмкость=" + tB.mTank.capacity());
+					} else if (tE.getValue() instanceof gregapi.tileentity.machines.MultiTileEntitySensorTE tSe) {
+						gregapi.tileentity.delegate.DelegatorTileEntity<net.minecraft.world.level.block.entity.BlockEntity> tD = tSe.getAdjacentTileEntity(tSe.mSecondFacing);
+						Long tCliDisp = tClientSensorDisp.get(tE.getKey());
+						o.println("[GT6-PIPE-AUDIT] СЕНСОР@" + tE.getKey().toShortString() + " (" + tSe.getClass().getSimpleName() + ")"
+							+ " srv: value=" + tSe.mCurrentValue + " max=" + tSe.mCurrentMax
+							+ " displayed=" + (long)probeNum(tSe, gregapi.tileentity.machines.MultiTileEntitySensor.class, "mDisplayedNumber")
+							+ " secondFacing=" + tSe.mSecondFacing
+							+ " цель=" + (tD.mTileEntity == null ? "null" : tD.mTileEntity.getClass().getSimpleName())
+							+ " | cli-displayed=" + (tCliDisp == null ? "нетBE" : String.valueOf(tCliDisp)));
+					}
+				}
 			int tCount = 0;
 			for (int dx = -1; dx <= 1 && tCount < 40; dx++) for (int dz = -1; dz <= 1 && tCount < 40; dz++)
 				for (java.util.Map.Entry<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tE
