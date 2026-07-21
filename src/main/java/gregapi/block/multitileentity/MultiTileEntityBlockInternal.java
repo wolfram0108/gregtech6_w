@@ -168,8 +168,10 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	// общего GT6-предка нет → мост дублируется, как useOn-мост на корнях-предметах). BE-AABB (абсолютная, box()=pos+bounds) →
 	// относительный VoxelShape; null коллизия (MTE-Rock) → empty (снег не ляжет, камешек проходим). getShape — маленький outline.
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
-		if (aWorld instanceof Level tLevel) {
-			BlockEntity tBE = WD.te(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		// БЕЗ гейта instanceof Level (зеркало MultiTileEntityBlock): движок зовёт и с chunk-BlockGetter
+		// (BlockCollisions.isSuffocating:90) — гейт отдавал полный куб → выталкивание из проходимых MTE.
+		if (aWorld != null) {
+			BlockEntity tBE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 			// Порядок диспатча = 1:1 с 1.7.10 addCollisionBoxesToList: СНАЧАЛА список под-боксов (леса/верёвка = проходимая
 			// рама, трубы = рукава), фолбэк — broad-phase бокс. Зеркало MultiTileEntityBlock.getCollisionShape.
 			if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddCollisionBoxesToList tMulti) {

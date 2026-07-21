@@ -652,6 +652,146 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) { o.println("[GT6-SEAM-PROBE] фаза 0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 	}
 
+	// КАРАБКАНЬЕ-СУДЬЯ (гейт gt6climbprobe.flag): репорт игрока «по верёвке не карабкается, в леса не войти».
+	// Судит ПУТЬ ДВИЖКА, не мост: телепорт игрока ВНУТРЬ клетки → LivingEntity.onClimbable() (сервер И клиент —
+	// движение клиент-предиктивное) + фактические формы коллизии обеих сторон + design/BE обеих сторон.
+	private int mClimbProbePhase = 0; private int mClimbProbeTick = 0;
+	private net.minecraft.core.BlockPos mClimbScaffoldPos, mClimbRopePos;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onClimbProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mClimbProbePhase >= 4) return;
+		if (!gregapi.data.CS.probeFlag("gt6climbprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		net.minecraft.server.MinecraftServer tSrv = tMC.getSingleplayerServer();
+		if (tSrv == null) { mClimbProbePhase = 4; return; }
+		tMC.options.pauseOnLostFocus = false;
+		if (tMC.screen instanceof net.minecraft.client.gui.screens.PauseScreen) tMC.setScreen(null);
+		++mClimbProbeTick;
+		final java.io.PrintStream o = gregapi.data.CS.OUT;
+		if (mClimbProbePhase == 0) {
+			if (mClimbProbeTick < 300) return;
+			mClimbProbePhase = 1;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null) { o.println("[GT6-CLIMB] реестр null"); mClimbProbePhase = 4; return; }
+				short tScaffoldID = -1;
+				for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations)
+					if (tC.mCanonicalTileEntity instanceof gregtech.tileentity.tools.MultiTileEntityScaffold) { tScaffoldID = tC.mID; break; }
+				net.minecraft.core.BlockPos tRoot = tP.blockPosition();
+				// леса: колонна ×3 реальными кликами
+				net.minecraft.core.BlockPos tSBase = tRoot.offset(4, -1, 8);
+				for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 5; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tSBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(tSBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tP.setShiftKeyDown(true);
+				for (int i = 0; i < 3; i++) {
+					net.minecraft.core.BlockPos tOn = tSBase.above(i);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tScaffoldID).copy());
+					tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tOn.getX()+0.5, tOn.getY()+1.0, tOn.getZ()+0.5), net.minecraft.core.Direction.UP, tOn, false));
+				}
+				mClimbScaffoldPos = tSBase.above();
+				// верёвка: каменный столб ×3, верёвки на восточную грань каждого уровня
+				net.minecraft.core.BlockPos tRBase = tRoot.offset(8, -1, 8);
+				for (int dx = -1; dx <= 2; dx++) for (int dy = 0; dy <= 5; dy++) for (int dz = -1; dz <= 1; dz++)
+					tW.setBlock(tRBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tW.setBlock(tRBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				for (int i = 1; i <= 3; i++) tW.setBlock(tRBase.above(i), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				for (int i = 1; i <= 3; i++) {
+					net.minecraft.core.BlockPos tPillar = tRBase.above(i);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(32011).copy());
+					tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tPillar.getX()+1.0, tPillar.getY()+0.5, tPillar.getZ()+0.5), net.minecraft.core.Direction.EAST, tPillar, false));
+				}
+				tP.setShiftKeyDown(false);
+				mClimbRopePos = tRBase.above(1).east();
+				tW.setBlock(mClimbRopePos.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3); // пол под верёвкой — иначе игрок проваливается сквозь тонкую коллизию
+				o.println("[GT6-CLIMB] построено: леса-колонна @" + mClimbScaffoldPos.toShortString() + " (блок=" + tW.getBlockState(mClimbScaffoldPos).getBlock().getClass().getSimpleName()
+					+ ") верёвка @" + mClimbRopePos.toShortString() + " (блок=" + tW.getBlockState(mClimbRopePos).getBlock().getClass().getSimpleName() + ")");
+			} catch (Throwable e) { o.println("[GT6-CLIMB] фаза 0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
+			return;
+		}
+		if (mClimbProbePhase == 1) {
+			// телепорт ПОСЛЕ тиков (design лесов должен отстояться: ранний TP попадал в design=3-полный-куб → выталкивание)
+			if (mClimbProbeTick < 380) return;
+			mClimbProbePhase = 2;
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				if (mClimbScaffoldPos != null) tP.teleportTo(mClimbScaffoldPos.getX()+0.5, mClimbScaffoldPos.getY()+0.05, mClimbScaffoldPos.getZ()+0.55);
+			} catch (Throwable e) { o.println("[GT6-CLIMB] телепорт-в-леса упал: " + e); } });
+			return;
+		}
+		if (mClimbProbePhase == 2) {
+			// ПОТИКОВАЯ клиент-трасса после TP: кто и когда толкает (pos/delta/onClimbable/suffocate-тест клетки)
+			if (mClimbProbeTick >= 381 && mClimbProbeTick <= 395 && mClimbScaffoldPos != null) {
+				try {
+					net.minecraft.world.phys.AABB tBB = tMC.player.getBoundingBox();
+					net.minecraft.world.phys.AABB tArea = new net.minecraft.world.phys.AABB(mClimbScaffoldPos.getX(), tBB.minY, mClimbScaffoldPos.getZ(), mClimbScaffoldPos.getX()+1.0, tBB.maxY, mClimbScaffoldPos.getZ()+1.0).deflate(1.0E-7);
+					o.println("[GT6-CLIMB-TRACE] t" + mClimbProbeTick + " pos=" + tMC.player.position() + " delta=" + tMC.player.getDeltaMovement()
+						+ " onClimbable=" + tMC.player.onClimbable()
+						+ " suffocateCell=" + tMC.level.collidesWithSuffocatingBlock(tMC.player, tArea)
+						+ " isSuffocating(cli)=" + tMC.level.getBlockState(mClimbScaffoldPos).isSuffocating(tMC.level, mClimbScaffoldPos)
+						+ " noPhysics=" + tMC.player.noPhysics);
+				} catch (Throwable e) { o.println("[GT6-CLIMB-TRACE] упала: " + e); }
+			}
+			if (mClimbProbeTick < 396) return;
+			mClimbProbePhase = 3;
+			try { // КЛИЕНТ-срез в лесах
+				net.minecraft.core.BlockPos tFeet = tMC.player.blockPosition();
+				net.minecraft.world.level.block.entity.BlockEntity tCBE = mClimbScaffoldPos == null ? null : tMC.level.getBlockEntity(mClimbScaffoldPos);
+				o.println("[GT6-CLIMB] ЛЕСА КЛИЕНТ: pos=" + tMC.player.position() + " feet=" + tFeet.toShortString()
+					+ " feet-блок=" + tMC.level.getBlockState(tFeet).getBlock().getClass().getSimpleName()
+					+ " onClimbable=" + tMC.player.onClimbable()
+					+ " cli-BE=" + (tCBE == null ? "null" : tCBE.getClass().getSimpleName())
+					+ " cli-design=" + (tCBE instanceof gregtech.tileentity.tools.MultiTileEntityScaffold tSc ? String.valueOf(probeNum(tSc, gregtech.tileentity.tools.MultiTileEntityScaffold.class, "mDesign")) : "-")
+					+ " cli-coll=" + (mClimbScaffoldPos == null ? "-" : tMC.level.getBlockState(mClimbScaffoldPos).getCollisionShape(tMC.level, mClimbScaffoldPos, net.minecraft.world.phys.shapes.CollisionContext.of(tMC.player)).toAabbs()));
+			} catch (Throwable e) { o.println("[GT6-CLIMB] клиент-срез лесов упал: " + e); }
+			tSrv.execute(() -> { try { // СЕРВЕР-срез в лесах → затем телепорт в верёвку
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				net.minecraft.core.BlockPos tFeet = tP.blockPosition();
+				net.minecraft.world.level.block.entity.BlockEntity tBE = mClimbScaffoldPos == null ? null : tW.getBlockEntity(mClimbScaffoldPos);
+				o.println("[GT6-CLIMB] ЛЕСА СЕРВЕР: pos=" + tP.position() + " feet=" + tFeet.toShortString()
+					+ " feet-блок=" + tW.getBlockState(tFeet).getBlock().getClass().getSimpleName()
+					+ " onClimbable=" + tP.onClimbable()
+					+ " srv-design=" + (tBE instanceof gregtech.tileentity.tools.MultiTileEntityScaffold tSc ? String.valueOf(probeNum(tSc, gregtech.tileentity.tools.MultiTileEntityScaffold.class, "mDesign")) : "-")
+					+ " srv-coll=" + (mClimbScaffoldPos == null ? "-" : tW.getBlockState(mClimbScaffoldPos).getCollisionShape(tW, mClimbScaffoldPos, net.minecraft.world.phys.shapes.CollisionContext.of(tP)).toAabbs())
+					+ " isLadder(feet)=" + tW.getBlockState(tFeet).isLadder(tW, tFeet, tP)
+					+ " isSuffocating(леса)=" + (mClimbScaffoldPos == null ? "-" : String.valueOf(tW.getBlockState(mClimbScaffoldPos).isSuffocating(tW, mClimbScaffoldPos))));
+				if (mClimbRopePos != null) tP.teleportTo(mClimbRopePos.getX()+0.35, mClimbRopePos.getY()+0.05, mClimbRopePos.getZ()+0.5);
+			} catch (Throwable e) { o.println("[GT6-CLIMB] сервер-срез лесов упал: " + e); } });
+			return;
+		}
+		if (mClimbProbePhase == 3) {
+			if (mClimbProbeTick < 404) return; // мерить сразу после TP в верёвку
+			mClimbProbePhase = 4;
+			try { // КЛИЕНТ-срез в верёвке
+				net.minecraft.core.BlockPos tFeet = tMC.player.blockPosition();
+				net.minecraft.world.level.block.entity.BlockEntity tCBE = mClimbRopePos == null ? null : tMC.level.getBlockEntity(mClimbRopePos);
+				o.println("[GT6-CLIMB] ВЕРЁВКА КЛИЕНТ: pos=" + tMC.player.position() + " feet=" + tFeet.toShortString()
+					+ " feet-блок=" + tMC.level.getBlockState(tFeet).getBlock().getClass().getSimpleName()
+					+ " onClimbable=" + tMC.player.onClimbable()
+					+ " cli-BE=" + (tCBE == null ? "null" : tCBE.getClass().getSimpleName()));
+			} catch (Throwable e) { o.println("[GT6-CLIMB] клиент-срез верёвки упал: " + e); }
+			tSrv.execute(() -> { try {
+				net.minecraft.server.level.ServerPlayer tP = tSrv.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tW = tP.level();
+				net.minecraft.core.BlockPos tFeet = tP.blockPosition();
+				o.println("[GT6-CLIMB] ВЕРЁВКА СЕРВЕР: pos=" + tP.position() + " feet=" + tFeet.toShortString()
+					+ " feet-блок=" + tW.getBlockState(tFeet).getBlock().getClass().getSimpleName()
+					+ " onClimbable=" + tP.onClimbable()
+					+ " isLadder(feet)=" + tW.getBlockState(tFeet).isLadder(tW, tFeet, tP)
+					+ " isLadder(rope)=" + (mClimbRopePos == null ? "-" : tW.getBlockState(mClimbRopePos).isLadder(tW, mClimbRopePos, tP)));
+				o.println("[GT6-CLIMB] ГОТОВО");
+			} catch (Throwable e) { o.println("[GT6-CLIMB] сервер-срез верёвки упал: " + e); } });
+			mClimbProbePhase = 4;
+			return;
+		}
+	}
+
 	// Ф3.0-СУДЬЯ (F-useOn инструменты, гейт: файл gt6toolprobe.flag): проверка канала инструментов РЕАЛЬНЫМ клик-путём.
 	// ServerPlayerGameMode.useItemOn (:388 itemStack.onItemUseFirst → :395 state.useItemOn → :415 itemStack.useOn) — тот же
 	// метод, что при ServerboundUseItemOnPacket. Ставим MTE-машину, читаем mFacing, кликаем ключом в бок → мост
