@@ -213,7 +213,23 @@ public class ST {
 	public static byte maxsize(ItemStack aStack) {return (byte)(aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? 64 : item_(aStack).getMaxStackSize(aStack));}
 	
 	public static ItemStack copy (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : copy_(aStack);}
-	public static ItemStack copy_(ItemStack aStack) {return aStack.copy();}
+	/** F15-size0 (BUG-015): 1.7.10 копия size0-стека сохраняла Item/NBT (GT6-слоты allowZeroStacks легально держат
+	 *  обнулённый стек как «тип запомнен, штук 0» — Масстораж slot(1) и т.п.); neo copy() гейтится isEmpty() и отдаёт
+	 *  EMPTY-синглтон → ST.amount от такого слота давал air-стек с count 0 → вечный цикл выдачи (сервер зависал).
+	 *  Восстановление контракта: временный подъём count у ЖИВОГО объекта (item в поле настоящий, isEmpty лишь из-за
+	 *  count<=0), копия, возврат. Однопоточно (server-thread), как все 1.7.10-мутации. Настоящий air/EMPTY не трогаем. */
+	public static ItemStack copy_(ItemStack aStack) {
+		if (aStack.getCount() <= 0 && aStack != ItemStack.EMPTY) {
+			int tOldCount = aStack.getCount();
+			aStack.setCount(1);
+			ItemStack rStack = aStack.copy();
+			aStack.setCount(tOldCount);
+			if (rStack == ItemStack.EMPTY) return rStack; // объект был настоящим air — копировать нечего
+			rStack.setCount(Math.max(0, tOldCount));
+			return rStack;
+		}
+		return aStack.copy();
+	}
 	
 	public static ItemStack name (ItemStack aStack, String aName) {return aStack == null || aName == null ? aStack : name_(aStack, aName);}
 	public static ItemStack name_(ItemStack aStack, String aName) {aStack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal(aName)); return aStack;}

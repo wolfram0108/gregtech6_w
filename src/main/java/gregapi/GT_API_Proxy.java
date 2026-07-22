@@ -656,6 +656,94 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-HAMMERPROBE] EXC " + e); e.printStackTrace(O); sHammerProbeCase = 99;}
 	}
 
+	// ========== [GT6-STORPROBE] ВРЕМЕННАЯ проба BUG-015 (гейт run/gt6storprobe.flag + -Pgt6probes) ==========
+	// Игрок: «изображение предмета не в центре, а сбоку; не работают кнопки выдачи». Проба реальным путём:
+	// установка Standard-масстоража useOn, вставка 64 слитков реальным ПКМ по фасаду, клики ПУСТОЙ рукой по
+	// зонам «1»/«4»/«64» (правые/левые колонки, пиксельные зоны PX 1.7.10) реальным gameMode.useItemOn с
+	// точным BlockHitResult; счёт выпавших слитков-сущностей. DIAG в onBlockActivated3 печатает гейт/координаты.
+	// В конце — телепорт-наведение игрока на фасад для скриншот-оценки дисплея. Снять при уборке фазы.
+	private static int sStorProbeTick = -1;
+	private static net.minecraft.core.BlockPos sStorProbePos = null;
+	private static byte sStorProbeFacing = -1;
+	private static int sStorProbeDropsSeen = 0;
+	/** сигнал клиенту: клик НАСТОЯЩИМ клиентским каналом MultiPlayerGameMode.useItemOn (полный путь клиент→пакет→сервер) */
+	public static volatile long sStorProbeClientClick = Long.MIN_VALUE;
+	public static volatile float sStorProbeClientU, sStorProbeClientV;
+	public static volatile byte sStorProbeClientFacing = -1;
+	// обратное преобразование к UT.Code.getFacingCoordsClicked: (u,v) грани -> локальный hit (x,y,z)
+	public static float[] gt6StorProbeUVToHit(byte aSide, float u, float v) {
+		switch (aSide) {
+		case 2: return new float[] {1-u, 1-v, 0};
+		case 3: return new float[] {u, 1-v, 1};
+		case 4: return new float[] {0, 1-v, u};
+		case 5: return new float[] {1, 1-v, 1-u};
+		default: return new float[] {0.5f, 0.5f, 0.5f};
+		}
+	}
+	private static void gt6StorProbeClick(net.minecraft.server.level.ServerPlayer aPlayer, float u, float v, String aZone) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		float[] tHit = gt6StorProbeUVToHit(sStorProbeFacing, u, v);
+		net.minecraft.world.phys.Vec3 tVec = new net.minecraft.world.phys.Vec3(sStorProbePos.getX() + tHit[0], sStorProbePos.getY() + tHit[1], sStorProbePos.getZ() + tHit[2]);
+		O.println("[GT6-STORPROBE] клик по зоне «" + aZone + "» (u=" + u + " v=" + v + ") -> hit " + tVec);
+		aPlayer.gameMode.useItemOn(aPlayer, aPlayer.level(), aPlayer.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND,
+			new net.minecraft.world.phys.BlockHitResult(tVec, net.minecraft.core.Direction.from3DDataValue(sStorProbeFacing), sStorProbePos, false));
+	}
+	public static void gt6StorProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sStorProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			if (sStorProbeTick == 200) {
+				O.println("========== [GT6-STORPROBE] BUG-015: массторадж реальным путём ==========");
+				MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				ItemStack tStorItem = null; int tFoundID = -1;
+				if (tReg != null) for (int i = 6000; i < 6200 && tStorItem == null; i++) {ItemStack t = tReg.getItem(i); if (t != null && !t.isEmpty()) {tStorItem = t; tFoundID = i;}}
+				if (tStorItem == null) {O.println("[GT6-STORPROBE] Standard-масстораж (6000..6199) не найден => FAIL"); sStorProbeTick = 99999; return;}
+				O.println("[GT6-STORPROBE] предмет масстоража id=" + tFoundID + ": " + tStorItem);
+				net.minecraft.core.BlockPos tBase = tPlayer.blockPosition().offset(3, 0, 0);
+				tLevel.setBlock(tBase, Blocks.STONE.defaultBlockState(), 3);
+				tLevel.setBlock(tBase.above(), Blocks.AIR.defaultBlockState(), 3);
+				tPlayer.getInventory().setItem(0, tStorItem); tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(tPlayer, net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tBase).add(0, 0.5, 0), net.minecraft.core.Direction.UP, tBase, false)));
+				sStorProbePos = tBase.above();
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sStorProbePos);
+				if (tBE instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFS) sStorProbeFacing = tFS.mFacing;
+				O.println("[GT6-STORPROBE] установка: " + sStorProbePos + " блок=" + tLevel.getBlockState(sStorProbePos).getBlock() + " BE=" + (tBE == null ? "NULL" : tBE.getClass().getSimpleName()) + " mFacing=" + sStorProbeFacing);
+				if (tBE == null || sStorProbeFacing < 2) {O.println("[GT6-STORPROBE] масстораж не встал/фасад не горизонтален => STOP"); sStorProbeTick = 99999;}
+			} else if (sStorProbeTick == 240) {
+				// вставка: 64 слитка железа реальным ПКМ по центру фасада
+				ItemStack tIngots = OP.ingot.mat(MT.Fe, 64);
+				tPlayer.getInventory().setItem(0, tIngots); tPlayer.getInventory().setSelectedSlot(0);
+				gt6StorProbeClick(tPlayer, 0.5f, 0.5f, "вставка 64 слитков");
+				O.println("[GT6-STORPROBE] после вставки: рука=" + tPlayer.getInventory().getItem(0));
+			} else if (sStorProbeTick == 280) {
+				// v3-изоляция: кнопка «1» (мелкая выдача) — НАСТОЯЩИМ клиентским каналом (полный человеческий путь);
+				// в v2 после клиентского клика «64» JVM умерла тихо — разграничиваем «клиентский путь» vs «крупная выдача»
+				tPlayer.getInventory().setItem(0, ItemStack.EMPTY); tPlayer.getInventory().setSelectedSlot(0);
+				sStorProbeClientU = 2/16f; sStorProbeClientV = 13/16f; sStorProbeClientFacing = sStorProbeFacing;
+				sStorProbeClientClick = sStorProbePos.asLong();
+				O.println("[GT6-STORPROBE] кнопка 1: сигнал КЛИЕНТУ на настоящий MultiPlayerGameMode.useItemOn");
+			} else if (sStorProbeTick == 320) {
+				// кнопка «64» (крупная выдача) — серверным каналом
+				tPlayer.getInventory().setItem(0, ItemStack.EMPTY); tPlayer.getInventory().setSelectedSlot(0);
+				gt6StorProbeClick(tPlayer, 14/16f, 7/16f, "кнопка 64 (серверный канал)");
+			} else if (sStorProbeTick == 300 || sStorProbeTick == 340) {
+				int tEntities = 0;
+				for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sStorProbePos).inflate(4)))
+					tEntities += tD.getItem().getCount();
+				int tExpect = sStorProbeTick == 300 ? 1 : 64;
+				O.println("[GT6-STORPROBE] счёт после клика: сущностей=" + tEntities + " (ожидание " + tExpect + ")" + (tEntities == tExpect ? "  => PASS" : "  => FAIL"));
+				sStorProbeDropsSeen = tEntities;
+				if (sStorProbeTick == 340) O.println("========== [GT6-STORPROBE] DONE ==========");
+			} else if (sStorProbeTick > 340 && sStorProbeTick % 200 == 0 && sStorProbeTick <= 2000) {
+				O.println("[GT6-STORPROBE] heartbeat: сервер жив, тик " + sStorProbeTick);
+			}
+		} catch (Throwable e) {O.println("[GT6-STORPROBE] EXC " + e); e.printStackTrace(O); sStorProbeTick = 99999;}
+	}
+
 	// ========== [GT6-MATPROBE] ВРЕМЕННАЯ проба BUG-012/013 (гейт run/gt6matprobe.flag + -Pgt6probes) ==========
 	// BUG-012: нож не срезает траву на «сено» (SHORT_GRASS/FERN=vine, TALL_GRASS/LARGE_FERN=plants в 1.7.10 —
 	// классификация WD.getMaterial проваливалась в rock). BUG-013: топор не берёт деревянные производные
@@ -997,6 +1085,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) gt6AnvilProbeTick(aEvent.getServer()); // [GT6-ANVILPROBE] временная проба BUG-011 (наковальня реальным useOn) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6hammerprobe.flag")) gt6HammerProbeTick(aEvent.getServer()); // [GT6-HAMMERPROBE] временная проба BUG-016 (молот по кобблстоуну реальным путём) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6matprobe.flag")) gt6MatProbeTick(aEvent.getServer()); // [GT6-MATPROBE] временная проба BUG-012/013 (классификация материалов + нож/топор реальным путём) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6storprobe.flag")) gt6StorProbeTick(aEvent.getServer()); // [GT6-STORPROBE] временная проба BUG-015 (массторадж: кнопки выдачи реальным кликом + дисплей) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {

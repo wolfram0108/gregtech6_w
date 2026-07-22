@@ -353,13 +353,22 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	// звал Block.onBlockActivated до Item.onItemUse) и useWithoutItem (пустая рука). Мостим ОБА в GT6-канал:
 	// true → SUCCESS/SUCCESS_SERVER (клик поглощён, установка не происходит — слиток уходит В штабель).
 	@Override protected net.minecraft.world.InteractionResult useItemOn(ItemStack aStack, BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.InteractionHand aHand, net.minecraft.world.phys.BlockHitResult aHit) {
-		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
+		// [GT6-STORPROBE-DIAG] временная диагностика BUG-015 — снять при уборке фазы
+		boolean tStorDiag = gregapi.data.CS.probeFlag("gt6storprobe.flag");
+		if (aHand == net.minecraft.world.InteractionHand.MAIN_HAND && bridgeBlockActivated(aWorld, aPos, aPlayer, aHit)) {
+			if (tStorDiag) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] Block.useItemOn: client=" + aWorld.isClientSide() + " pos=" + aPos + " -> bridge=T");
 			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+		}
+		if (tStorDiag) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] Block.useItemOn: client=" + aWorld.isClientSide() + " pos=" + aPos + " hand=" + aHand + " -> bridge=F, TRY_WITH_EMPTY_HAND");
 		return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
 	}
 	@Override protected net.minecraft.world.InteractionResult useWithoutItem(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
-		if (bridgeBlockActivated(aWorld, aPos, aPlayer, aHit))
+		boolean tStorDiag = gregapi.data.CS.probeFlag("gt6storprobe.flag");
+		if (bridgeBlockActivated(aWorld, aPos, aPlayer, aHit)) {
+			if (tStorDiag) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] Block.useWithoutItem: client=" + aWorld.isClientSide() + " pos=" + aPos + " -> bridge=T");
 			return aWorld.isClientSide() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.SUCCESS_SERVER;
+		}
+		if (tStorDiag) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] Block.useWithoutItem: client=" + aWorld.isClientSide() + " pos=" + aPos + " -> bridge=F, PASS");
 		return net.minecraft.world.InteractionResult.PASS;
 	}
 	private boolean bridgeBlockActivated(Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {

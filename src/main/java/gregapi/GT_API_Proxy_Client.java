@@ -2572,6 +2572,25 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] перезаход упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 			return;
 		}
+		// [GT6-STORPROBE] клиентская половина BUG-015: НАСТОЯЩИЙ ПКМ (MultiPlayerGameMode.useItemOn — тот же вызов,
+		// что человеческий клик) по зоне кнопки масстоража. Полный путь клиент→пакет→сервер. Снять при уборке.
+		if (gregapi.GT_API_Proxy.sStorProbeClientClick != Long.MIN_VALUE && gregapi.data.CS.probeFlag("gt6storprobe.flag")) {
+			long tPosLong = gregapi.GT_API_Proxy.sStorProbeClientClick;
+			gregapi.GT_API_Proxy.sStorProbeClientClick = Long.MIN_VALUE; // однократно
+			try {
+				net.minecraft.client.Minecraft tMC3 = Minecraft.getInstance();
+				if (tMC3.player != null && tMC3.gameMode != null) {
+					net.minecraft.core.BlockPos tPos = net.minecraft.core.BlockPos.of(tPosLong);
+					byte tFacing = gregapi.GT_API_Proxy.sStorProbeClientFacing;
+					float[] tHit = gregapi.GT_API_Proxy.gt6StorProbeUVToHit(tFacing, gregapi.GT_API_Proxy.sStorProbeClientU, gregapi.GT_API_Proxy.sStorProbeClientV);
+					net.minecraft.world.phys.Vec3 tVec = new net.minecraft.world.phys.Vec3(tPos.getX() + tHit[0], tPos.getY() + tHit[1], tPos.getZ() + tHit[2]);
+					gregapi.data.CS.OUT.println("[GT6-STORPROBE] клиент: useItemOn " + tVec + " рука=" + tMC3.player.getMainHandItem());
+					net.minecraft.world.InteractionResult tRes = tMC3.gameMode.useItemOn(tMC3.player, net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(tVec, net.minecraft.core.Direction.from3DDataValue(tFacing), tPos, false));
+					gregapi.data.CS.OUT.println("[GT6-STORPROBE] клиент: результат=" + tRes);
+				}
+			} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-STORPROBE] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.OUT);}
+		}
 		// [GT6-ATTACKPROBE] клиентская половина BUG-003: НАСТОЯЩАЯ атака (MultiPlayerGameMode.attack — тот же вызов, что
 		// ЛКМ игрока) по овце, id которой дал сервер. Полный путь клиент-предсказания GT6-инструмента. Снять при уборке.
 		if (gregapi.GT_API_Proxy.sAttackProbeEntityId >= 0 && gregapi.data.CS.probeFlag("gt6attackprobe.flag")) {

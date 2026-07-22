@@ -238,6 +238,8 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+		// [GT6-STORPROBE-DIAG] временная диагностика BUG-015 — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6storprobe.flag")) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] onBlockActivated3: server=" + isServerSide() + " aSide=" + aSide + " mFacing=" + mFacing + " mMode=" + mMode + " covered=" + isCovered(aSide) + " hit=(" + aHitX + "," + aHitY + "," + aHitZ + ") coords=" + java.util.Arrays.toString(UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ)) + " slotHas1=" + slotHas(1));
 		if (aSide != mFacing || (mMode & B[3]) != 0 || isCovered(aSide)) return F;
 		float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
 		if (tCoords[0] < PX_P[1] || tCoords[0] > PX_N[1] || tCoords[1] < PX_P[1] || tCoords[1] > PX_N[1]) return F;
@@ -272,6 +274,8 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 						}
 						updateInventory();
 						playCollect();
+						// [GT6-STORPROBE-DIAG] временная диагностика BUG-015 — снять при уборке фазы
+						if (gregapi.data.CS.probeFlag("gt6storprobe.flag")) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] выдача ЗАВЕРШЕНА, остаток в хранилище=" + (slotHas(1) ? slot(1).getCount() : 0));
 					}
 				} else {
 					if (ST.valid(aStack)) {
@@ -730,10 +734,13 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		public void submit(MTEMassStorageRenderState aState, PoseStack aPoseStack, SubmitNodeCollector aNodes, CameraRenderState aCamera) {
 			if (aState.mItem == null) return;
 			byte tFacing = aState.mStorageFacing;
-			// матрицы 1:1 с 1.7.10: центр грани +0.502 наружу, Y+0.625, сдвиг ±0.25 вбок; поворот 180°Z + компас;
-			// сплющивание по Z (2D-вид); fullbright (ориг lightmap 240/240).
+			// BUG-015: 1.7.10 рисовал GUI-предмет ОТ УГЛА (renderItemIntoGUI от (0,0), 16px * 1/32 = 0.5 блока),
+			// поэтому точка трансляции была сдвинута на −0.25 вбок и стояла на верхнем краю (Y=0.625) — чтобы ЦЕНТР
+			// предмета попал в (центр грани, Y=0.375). Neo ItemStackRenderState/FIXED рисует модель ЦЕНТРИРОВАННОЙ —
+			// дословный перенос углового сдвига смещал предмет на четверть блока вбок и вверх (репорт игрока
+			// «изображение предмета не в центре, а сбоку»). Транслируем сразу в ЦЕНТР предмета 1.7.10.
 			aPoseStack.pushPose();
-			aPoseStack.translate(0.5 + OFFX[tFacing]*0.502 - OFFZ[tFacing]*0.25, 0.625, 0.5 + OFFZ[tFacing]*0.502 + OFFX[tFacing]*0.25);
+			aPoseStack.translate(0.5 + OFFX[tFacing]*0.502, 0.375, 0.5 + OFFZ[tFacing]*0.502);
 			aPoseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180));
 			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[tFacing] * 90));
 			aPoseStack.scale(0.5f, 0.5f, 0.0001f);
