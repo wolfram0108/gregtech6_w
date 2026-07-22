@@ -706,11 +706,20 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tSBase.getX()+0.5, tSBase.getY()+1.0, tSBase.getZ()+0.5), net.minecraft.core.Direction.UP, tSBase, false));
 				tP.setShiftKeyDown(false);
 				mMineMachinePos = tMBase.above(); mMineScaffoldPos = tSBase.above();
-				// ключ в руку, SURVIVAL — живая добыча
-				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, gregapi.data.MT.Steel, gregapi.data.MT.Steel));
+				// ключ ИЗ КРЕАТИВ-ПУТИ (как берёт игрок): CreativeTabsGT.enumerate → материализованные стеки вкладки
+				net.minecraft.world.item.ItemStack tWrench = null;
+				gregapi.item.multiitem.MultiItemTool tMetaTool = gregapi.data.CS.ToolsGT.sMetaTool;
+				for (net.minecraft.world.item.ItemStack tS : gregapi.item.CreativeTabsGT.enumerate(tMetaTool, tMetaTool, null)) {
+					Object tStats = tMetaTool.getToolStats(tS);
+					if (tStats != null && tStats.getClass().getSimpleName().equals("GT_Tool_Wrench")) { tWrench = tS; break; }
+				}
+				boolean tCreativeSourced = tWrench != null;
+				if (tWrench == null) tWrench = tMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, gregapi.data.MT.Steel, gregapi.data.MT.Steel);
+				tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tWrench);
 				tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
 				o.println("[GT6-MINE] установлено: машина @" + mMineMachinePos.toShortString() + " (" + tW.getBlockState(mMineMachinePos).getBlock().getClass().getSimpleName()
-					+ ") леса @" + mMineScaffoldPos.toShortString() + " (" + tW.getBlockState(mMineScaffoldPos).getBlock().getClass().getSimpleName() + "); ключ в руке, SURVIVAL");
+					+ ") леса @" + mMineScaffoldPos.toShortString() + " (" + tW.getBlockState(mMineScaffoldPos).getBlock().getClass().getSimpleName()
+					+ "); ключ ИЗ КРЕАТИВ-ВКЛАДКИ=" + tCreativeSourced + " материал=" + tMetaTool.getPrimaryMaterial(tWrench) + ", SURVIVAL");
 			} catch (Throwable e) { o.println("[GT6-MINE] фаза 0 упала: " + e); e.printStackTrace(gregapi.data.CS.ERR); } });
 			return;
 		}

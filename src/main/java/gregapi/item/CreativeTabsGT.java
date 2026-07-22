@@ -260,7 +260,7 @@ public final class CreativeTabsGT {
 	/** Варианты для вкладки: getSubItems(Item,CreativeModeTab,List) у предмета либо getSubBlocks(...) у блока (порт сохранил
 	 *  эти методы); при отсутствии/пустоте — базовый стек. Рефлексия — потому что общего интерфейса нет (россыпь классов). */
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	private static List<ItemStack> enumerate(ItemLike aOwner, Item aItem, CreativeModeTab aTab) {
+	public static List<ItemStack> enumerate(ItemLike aOwner, Item aItem, CreativeModeTab aTab) {
 		List<ItemStack> tList = new ArrayList<>();
 		// MTE-предмет — ПРЯМОЙ вызов, не рефлексия: его класс несёт compat-интерфейсы (applecore/IC2), вырезанные из
 		// рантайма (stripRunMirror) → Class.getMethod перечисляет методы класса → NoClassDefFoundError → invokeSub молча
@@ -268,6 +268,22 @@ public final class CreativeTabsGT {
 		// Прямой virtual-вызов посторонние интерфейсы не резолвит. Прецедент ловушки: PrefixItem.registerIcons(Object).
 		if (aItem instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tMTE) {
 			try { tMTE.getSubItems(aItem, aTab, tList); } catch (Throwable e) {/* boot-safe */}
+			if (tList.isEmpty()) tList.add(new ItemStack(aItem));
+			return tList;
+		}
+		// МАТЕРИАЛИЗАЦИЯ инструментов (порт-поверхность, НЕ 1:1-шов: у Грега sMetaTool в креативе отсутствовал — его
+		// getSubItems-шаблоны БЕЗ материала (MT.NULL → качество 0, скорость 0) в 1.7.10 были display-only и в креатив
+		// не попадали). Вкладка Tools добавлена по запросу игрока (N6) → её предметы обязаны РАБОТАТЬ: каждому шаблону
+		// даём материал Steel/Steel полноценным getToolWithStats-NBT — та же фабрика, что у крафта (репорт игрока:
+		// «креативный ключ не ломает ничего» — шаблон без материала давал нулевую скорость копания).
+		if (aItem instanceof gregapi.item.multiitem.MultiItemTool tTool) {
+			List<ItemStack> tTemplates = new ArrayList<>();
+			try { tTool.getSubItems(aItem, aTab, tTemplates); } catch (Throwable e) {/* boot-safe */}
+			for (ItemStack tTemplate : tTemplates) {
+				ItemStack tReal = null;
+				try { tReal = tTool.getToolWithStats(gregapi.util.ST.meta_(tTemplate), 1, gregapi.data.MT.Steel, gregapi.data.MT.Steel); } catch (Throwable e) {/* boot-safe */}
+				tList.add(tReal != null && !tReal.isEmpty() ? tReal : tTemplate);
+			}
 			if (tList.isEmpty()) tList.add(new ItemStack(aItem));
 			return tList;
 		}
