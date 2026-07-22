@@ -56,6 +56,10 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 	public final boolean mIsWall, mIsSlab, mIsStair, mIsPrimary;
 	public final BlockMetaType mBlock;
 	public final BlockMetaType[] mSlabs;
+	/** BUG-010-мелочь (реестр отложенного №3): WATERLOGGED должен быть ТОЛЬКО у слэбов, но property добавляется в
+	 *  createBlockStateDefinition, вызываемом из super() ДО инициализации полей (mIsSlab ещё неизвестен). Флаг-контекст
+	 *  выставляется вокруг конструирования слэбов (mSlabs-массив ниже) — единственный путь создания слэбов. */
+	private static final ThreadLocal<boolean[]> SLAB_CTOR_CTX = ThreadLocal.withInitial(() -> new boolean[1]);
 	
 	public BlockMetaType(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aSoundType, String aNameInternal, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons) {
 		super(aItemClass == null ? ItemBlockMetaType.class : aItemClass, aNameInternal, aVanillaMaterial, aSoundType, aCount, aIcons);
@@ -71,19 +75,21 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 		mIsPrimary = T;
 		mBlock = this;
 		mOctantcount = 8;
-		registerDefaultState(defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.FALSE)); // BUG-010: явный дефолт (any() не гарантирует false)
 		mSide = SIDE_UNKNOWN;
 		mHarvestLevel = aHarvestLevel;
 		mHardnessMultiplier = aHardnessMultiplier;
 		mResistanceMultiplier = aResistanceMultiplier;
-		mSlabs = new BlockMetaType[] {
-		  makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_DOWN    , this)
-		, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_UP      , this)
-		, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_NORTH   , this)
-		, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_SOUTH   , this)
-		, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_WEST    , this)
-		, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_EAST    , this)
-		, null};
+		boolean[] tSlabCtx = SLAB_CTOR_CTX.get(); tSlabCtx[0] = true; // WATERLOGGED — только слэбам (см. SLAB_CTOR_CTX)
+		try {
+			mSlabs = new BlockMetaType[] {
+			  makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_DOWN    , this)
+			, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_UP      , this)
+			, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_NORTH   , this)
+			, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_SOUTH   , this)
+			, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_WEST    , this)
+			, makeSlab(aItemClass, aVanillaMaterial, aSoundType, aNameInternal, aDefaultLocalised, aMaterial, aResistanceMultiplier / 2, aHardnessMultiplier / 2, aHarvestLevel, maxMeta(), aIcons, SIDE_EAST    , this)
+			, null};
+		} finally {tSlabCtx[0] = false;}
 		mSlabs[SIDE_INVALID] = mSlabs[SIDE_DOWN];
 		// F12-followup (block-split): слэбы созданы ВНУТРИ конструктора (makeSlab), а не через call-site registerBlockLazy —
 		// их neo-Block-реестр никто не регистрирует → «intrusive holders were not registered» на freeze. Регистрируем каждый
@@ -186,12 +192,11 @@ public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.
 
 	// BUG-010 (запрос игрока, согласованное отклонение от 1.7.10: в 1.7.10 waterlogging не существовал): слэбы ведут
 	// себя как современные ванильные — ставятся В воду (вода остаётся, WATERLOGGED), ведро вынимает/заливает
-	// (дефолты SimpleWaterloggedBlock по property), вода тикает через updateShape. Property добавлен ВСЕМ
-	// BlockMetaType (createBlockStateDefinition зовётся до полей — mIsSlab ещё неизвестен); у полных блоков он
-	// просто всегда false (никто не ставит true: canPlaceLiquid гейтится mIsSlab).
+	// (дефолты SimpleWaterloggedBlock по property), вода тикает через updateShape. Property получают ТОЛЬКО слэбы
+	// (флаг-контекст SLAB_CTOR_CTX — mIsSlab на этом этапе ещё не присвоен); полные блоки — без лишнего property.
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {
 		super.createBlockStateDefinition(aBuilder);
-		aBuilder.add(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
+		if (SLAB_CTOR_CTX.get()[0]) aBuilder.add(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
 	}
 	@Override public boolean canPlaceLiquid(net.minecraft.world.entity.LivingEntity aUser, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.material.Fluid aFluid) {
 		return mIsSlab && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.canPlaceLiquid(aUser, aWorld, aPos, aState, aFluid);

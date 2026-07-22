@@ -108,7 +108,11 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		displacements.put(this, F);
 		LanguageHandler.set(getLocalizedName(), getLocalizedName()); // WAILA is retarded...
 		// Speaking of retarded, only allowing one type of Block per Fluid is retarded too! So I guess I gotta override all pre-existing Fluids with my Version to make sure shit works.
-		UT.Reflection.setField(Fluid.class, aFluid, "block", this);
+		// F5 (гигиена лога): 1.7.10 Forge-поле Fluid.block в neo-mirror отсутствует — рефлексия сыпала
+		// NoSuchFieldException-трейс на КАЖДУЮ регистрацию fluid-блока (×6 за старт, спам, репорт игрока).
+		// Связь fluid→block централизована заменой FL.BLOCKS (строки выше) и УЖЕ работает — сеттер оставлен
+		// 1:1-следом с выключенным логом (aLogErrors=F): если mirror однажды получит поле, канал оживёт сам.
+		UT.Reflection.setField(Fluid.class, aFluid, "block", this, F);
 	}
 	
 	// @Override

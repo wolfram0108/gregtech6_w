@@ -42,6 +42,17 @@ import static gregapi.data.TD.Properties.RANDOM_SMALL_GEM_ORE;
 public class Loader_Loot implements Runnable {
 	@Override
 	public void run() {
+		// F-loot deferred (гигиена лога): вся подсистема сундучного лута опирается на 1.7.10 chest-loot API
+		// (ChestGenHooks/WeightedRandomChestContent — в neo удалён, лут стал data-driven loot tables) — шов F-loot
+		// в реестре PORT-TODO. Без гейта каждый server-start сыпал каскад NoClassDefFoundError/NoSuchFieldException-
+		// трейсов (спам, репорт игрока). Проверка способности: mirror-класс жив И несёт ожидаемое поле; иначе —
+		// ОДНА видимая строка отложенности и выход. НЕ маскировка: отложенность остаётся видимой на каждом старте.
+		try {
+			ChestGenHooks.class.getDeclaredField("contents");
+		} catch (Throwable e) {
+			OUT.println("[GT6] F-loot: подсистема сундучного лута ОТЛОЖЕНА (1.7.10 ChestGenHooks удалён из neo, нужен порт на loot tables — шов F-loot, PORT-TODO).");
+			return;
+		}
 		new ChestGenHooksChestReplacer(ChestGenHooks.DUNGEON_CHEST       , 32745);
 		new ChestGenHooksChestReplacer(ChestGenHooks.MINESHAFT_CORRIDOR  ,   500);
 		new ChestGenHooksChestReplacer(ChestGenHooks.STRONGHOLD_LIBRARY  ,   508);
