@@ -1146,6 +1146,19 @@ public class ST {
 		return rString;
 	}
 	
+	// BUG-010: 1.7.10 ST.hide прятал предмет из NEI (codechicken.nei API — в neo мёртвый канал, catch глотал вызов
+	// молча) → 5 скрытых слэб-вариантов КАЖДОЙ метатип-семьи (BlockMetaType: UP/N/S/W/E) стали видимы в креативе/JEI
+	// (замер gt6slabprobe: 168 слэб-предметов, 140 лишних). Централизованная замена канала: реестр скрытых здесь,
+	// его уважает CreativeTabsGT (populate + onBuildContents — оба пути наполнения вкладок; JEI строит список оттуда).
+	// HIDDEN_BLOCKS отдельно: hide(Block) зовётся при КОНСТРУИРОВАНИИ блока (RegisterEvent<Block>), когда BlockItem ещё
+	// не зарегистрирован (make(block,...) дал бы air) — прячем сам Block, hidden() сверяет через BlockItem.getBlock.
+	public static final ItemStackSet<ItemStackContainer> HIDDEN_ITEMS  = hashset();
+	public static final java.util.Set<Block>             HIDDEN_BLOCKS = new java.util.HashSet<>();
+	public static boolean hidden(ItemStack aStack) {
+		if (aStack == null || aStack.isEmpty()) return F;
+		if (HIDDEN_ITEMS.contains(aStack, T)) return T;
+		return aStack.getItem() instanceof net.minecraft.world.item.BlockItem tBI && HIDDEN_BLOCKS.contains(tBI.getBlock());
+	}
 	public static void hide(Item aItem) {
 		for (int i = 0; i < 16; i++) hide(aItem, i);
 		hide(aItem, W);
@@ -1154,6 +1167,7 @@ public class ST {
 		hide(make(aItem, 1, aMeta));
 	}
 	public static void hide(Block aBlock) {
+		HIDDEN_BLOCKS.add(aBlock);
 		for (int i = 0; i < 16; i++) hide(aBlock, i);
 		hide(aBlock, W);
 	}
@@ -1161,6 +1175,7 @@ public class ST {
 		hide(make(aBlock, 1, aMeta));
 	}
 	public static void hide(ItemStack aStack) {
+		if (aStack != null && !aStack.isEmpty()) HIDDEN_ITEMS.add(aStack);
 		if (aStack != null) try {codechicken.nei.api.API.hideItem(aStack);} catch(Throwable e) {/**/}
 	}
 	

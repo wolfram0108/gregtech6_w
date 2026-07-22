@@ -146,6 +146,44 @@ public class BlockMetaType extends BlockBaseMeta {
 		gregapi.GT_API.deferItemInit(() -> {if (COMPAT_FR != null) COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W));});
 	}
 	
+	// BUG-010 (слэб «иногда полный куб», гоночный): bounds слэба СТАТИЧНЫ (формула конструктора :137-144), но
+	// setBlockBounds(pass)=true у BlockBaseMeta заявлял «bounds выставлены», НИЧЕГО не выставляя, а анти-протечка
+	// рендера (GT6BlockModel:142/164/195 — 1:1 контракт «false → сброс в полный куб» ОБЩЕГО Block-инстанса) сбрасывает
+	// поля после КАЖДОГО мешинга → следующий мешинг рисует слэб кубом (замер gt6slabprobe: те же 6 state'ов в одних
+	// прогонах полублоки, в других — кубы). В 1.7.10 поля Block никто не сбрасывал (статичный конструкторный bounds
+	// жил вечно). Фикс: слэб ПЕРЕВЫСТАВЛЯЕТ свои статичные bounds на каждом рендер-пассе (блок- и item-форма).
+	private void setSlabBounds() {
+		setBlockBounds(
+		mSide == SIDE_X_POS ? 0.5F : 0.0F,
+		mSide == SIDE_Y_POS ? 0.5F : 0.0F,
+		mSide == SIDE_Z_POS ? 0.5F : 0.0F,
+		mSide == SIDE_X_NEG ? 0.5F : 1.0F,
+		mSide == SIDE_Y_NEG ? 0.5F : 1.0F,
+		mSide == SIDE_Z_NEG ? 0.5F : 1.0F
+		);
+	}
+	// Рендер слэба вообще не должен зависеть от гоночных общих полей: bounds статичны → отдаём их напрямую.
+	private float[] mSlabRenderBounds = null;
+	@Override public float[] getRenderBounds() {
+		if (!mIsSlab) return super.getRenderBounds();
+		if (mSlabRenderBounds == null) mSlabRenderBounds = new float[] {
+			mSide == SIDE_X_POS ? 0.5F : 0.0F,
+			mSide == SIDE_Y_POS ? 0.5F : 0.0F,
+			mSide == SIDE_Z_POS ? 0.5F : 0.0F,
+			mSide == SIDE_X_NEG ? 0.5F : 1.0F,
+			mSide == SIDE_Y_NEG ? 0.5F : 1.0F,
+			mSide == SIDE_Z_NEG ? 0.5F : 1.0F};
+		return mSlabRenderBounds;
+	}
+	@Override public boolean setBlockBounds(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {
+		if (mIsSlab) setSlabBounds();
+		return super.setBlockBounds(aRenderPass, aStack);
+	}
+	@Override public boolean setBlockBounds(int aRenderPass, net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {
+		if (mIsSlab) setSlabBounds();
+		return super.setBlockBounds(aRenderPass, aWorld, aX, aY, aZ, aShouldSideBeRendered);
+	}
+
 	public void onBlockCreation(Class<? extends BlockItem> aItemClass, Material aVanillaMaterial, SoundType aSoundType, String aName, String aDefaultLocalised, OreDictMaterial aMaterial, float aResistanceMultiplier, float aHardnessMultiplier, int aHarvestLevel, int aCount, IIconContainer[] aIcons) {
 		//
 	}

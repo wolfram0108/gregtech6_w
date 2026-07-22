@@ -2556,6 +2556,54 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			}
 			return;
 		}
+		// [GT6-SLABPROBE] клиентская половина BUG-010: квады НАСТОЯЩЕЙ клиентской модели поставленного слэба
+		// (min/max Y вершин — то, что реально видит игрок) + счёт слэб-предметов в реестре. Снять при уборке.
+		if (gregapi.GT_API_Proxy.sSlabProbePos != Long.MIN_VALUE && gregapi.data.CS.probeFlag("gt6slabprobe.flag")) {
+			long tPacked = gregapi.GT_API_Proxy.sSlabProbePos;
+			try {
+				net.minecraft.client.Minecraft tMC2 = Minecraft.getInstance();
+				if (tMC2.level == null) return;
+				net.minecraft.core.BlockPos tBase = net.minecraft.core.BlockPos.of(tPacked);
+				if (tMC2.level.getBlockState(tBase).isAir()) return; // чанк ещё не доехал — повтор на следующем тике
+				gregapi.GT_API_Proxy.sSlabProbePos = Long.MIN_VALUE; // однократно
+				for (int tSlabIdx = 0; tSlabIdx < 6; tSlabIdx++) {
+					net.minecraft.core.BlockPos tPos = tBase.offset(tSlabIdx, 0, 0);
+					net.minecraft.world.level.block.state.BlockState tState = tMC2.level.getBlockState(tPos);
+					net.minecraft.client.renderer.block.dispatch.BlockStateModel tModel = tMC2.getModelManager().getBlockStateModelSet().get(tState); // BlockStateModelSet.get (BlockStateModelSet.java:20)
+					java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new java.util.ArrayList<>();
+					tModel.collectParts(tMC2.level, tPos, tState, net.minecraft.util.RandomSource.create(42), tParts);
+					float tMinY = Float.MAX_VALUE, tMaxY = -Float.MAX_VALUE, tMinX = Float.MAX_VALUE, tMaxX = -Float.MAX_VALUE; int tQuads = 0;
+					for (net.minecraft.client.renderer.block.dispatch.BlockStateModelPart tPart : tParts) {
+						java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tAll = new java.util.ArrayList<>(tPart.getQuads(null));
+						for (net.minecraft.core.Direction tD : net.minecraft.core.Direction.values()) tAll.addAll(tPart.getQuads(tD));
+						for (net.minecraft.client.resources.model.geometry.BakedQuad tQ : tAll) {
+							tQuads++;
+							for (org.joml.Vector3fc tVtx : new org.joml.Vector3fc[] {tQ.position0(), tQ.position1(), tQ.position2(), tQ.position3()}) {
+								tMinY = Math.min(tMinY, tVtx.y()); tMaxY = Math.max(tMaxY, tVtx.y());
+								tMinX = Math.min(tMinX, tVtx.x()); tMaxX = Math.max(tMaxX, tVtx.x());
+							}
+						}
+					}
+					boolean tHalf = tQuads > 0 && ((tMaxY - tMinY) <= 0.75F || (tMaxX - tMinX) <= 0.75F);
+					gregapi.data.CS.OUT.println("[GT6-SLABPROBE] клиент: вариант " + tSlabIdx + " state=" + tState.getBlock() + " квадов=" + tQuads
+						+ " X=[" + tMinX + ".." + tMaxX + "] Y=[" + tMinY + ".." + tMaxY + "]"
+						+ (tQuads == 0 ? "  => НЕТ КВАДОВ (missing model?)" : tHalf ? "  => полублок (рендер ок)" : "  => ПОЛНЫЙ КУБ (корень рендера)"));
+				}
+				int tSlabItems = 0, tHiddenExpected = 0;
+				for (net.minecraft.world.item.Item tI : net.minecraft.core.registries.BuiltInRegistries.ITEM)
+					if (net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tI).toString().contains(".slab.")) {tSlabItems++; if (!net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tI).toString().endsWith(".slab.0")) tHiddenExpected++;}
+				gregapi.data.CS.OUT.println("[GT6-SLABPROBE] клиент: слэб-предметов в реестре=" + tSlabItems + ", из них НЕ-DOWN (в 1.7.10 скрыты ST.hide, тут ST.hide=мёртвый NEI-канал)=" + tHiddenExpected);
+				gregapi.block.metatype.BlockMetaType tMT2 = (gregapi.block.metatype.BlockMetaType)gregapi.data.CS.BlocksGT.stones[0];
+				boolean tH1 = gregapi.util.ST.hidden(new net.minecraft.world.item.ItemStack(tMT2.mSlabs[1]));
+				boolean tH0 = gregapi.util.ST.hidden(new net.minecraft.world.item.ItemStack(tMT2.mSlabs[0]));
+				gregapi.data.CS.OUT.println("[GT6-SLABPROBE] клиент: фильтр hide: ST.hidden(slab.1)=" + tH1 + " (надо true) ST.hidden(slab.0)=" + tH0 + " (надо false)" + (tH1 && !tH0 ? "  => PASS" : "  => FAIL"));
+				gregapi.data.CS.OUT.println("========== [GT6-SLABPROBE] DONE ==========");
+			} catch (Throwable e) {
+				gregapi.GT_API_Proxy.sSlabProbePos = Long.MIN_VALUE;
+				gregapi.data.CS.OUT.println("[GT6-SLABPROBE] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.OUT);
+			}
+			return;
+		}
 		if (mAutoWorldTriggered) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (!(tMC.screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;

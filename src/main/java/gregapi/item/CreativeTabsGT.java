@@ -241,7 +241,8 @@ public final class CreativeTabsGT {
 	static void populate(List<Item> aMembers, CreativeModeTab aTab, CreativeModeTab.Output aOutput) {
 		if (aMembers == null) return;
 		for (Item tItem : aMembers) try {
-			for (ItemStack tStack : enumerate(tItem, tItem, aTab)) if (tStack != null && !tStack.isEmpty()) aOutput.accept(tStack);
+			// BUG-010: ST.hidden — центральная замена мёртвого NEI-канала ST.hide (скрытые слэб-варианты и пр.)
+			for (ItemStack tStack : enumerate(tItem, tItem, aTab)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack)) aOutput.accept(tStack);
 		} catch (Throwable e) {/* boot-safe */}
 	}
 
@@ -252,7 +253,7 @@ public final class CreativeTabsGT {
 				ItemLike tOwner = (ItemLike)tA[0];
 				Item tItem = tOwner.asItem();
 				if (tItem == null || tItem == Items.AIR) continue;
-				for (ItemStack tStack : enumerate(tOwner, tItem, null)) if (tStack != null && !tStack.isEmpty()) aEvent.accept(tStack);
+				for (ItemStack tStack : enumerate(tOwner, tItem, null)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack)) aEvent.accept(tStack); // BUG-010: фильтр скрытых (ST.hide)
 			} catch (Throwable e) {/* boot-safe: сбой одного назначения не рушит загрузку вкладок */}
 		}
 	}

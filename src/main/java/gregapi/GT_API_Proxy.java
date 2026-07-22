@@ -594,6 +594,31 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-FLOWERPROBE] EXC " + e); e.printStackTrace(O); sFlowerProbeCase = 99;}
 	}
 
+	// ========== [GT6-SLABPROBE] ВРЕМЕННАЯ проба BUG-010 (гейт run/gt6slabprobe.flag + -Pgt6probes) ==========
+	// Игрок: «слэбов в JEI в 5× больше оригинала; большинство выглядят как блоки; любые ставятся/выглядят полными».
+	// Сервер ставит DOWN-слэб первого BlockMetaType, клиент (хук в Proxy_Client) меряет НАСТОЯЩИЕ квады клиентской
+	// модели (min/max Y вершин — то, что реально видит игрок, без пикселей) + считает слэб-предметы в реестре.
+	// Снять при уборке фазы.
+	private static int sSlabProbeTick = -1;
+	public  static volatile long sSlabProbePos = Long.MIN_VALUE; // сигнал клиенту: BlockPos.asLong установленного слэба
+	public static void gt6SlabProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sSlabProbeTick++;
+		if (sSlabProbeTick != 200) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			O.println("========== [GT6-SLABPROBE] BUG-010: замер РЕАЛЬНОЙ клиентской модели слэба ==========");
+			if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-SLABPROBE] нет игрока => пропуск"); return;}
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.world.level.block.Block tStoneB = BlocksGT.stones[0];
+			if (!(tStoneB instanceof gregapi.block.metatype.BlockMetaType tMT) || tMT.mSlabs == null) {O.println("[GT6-SLABPROBE] stones[0] без слэбов => SKIP"); return;}
+			net.minecraft.core.BlockPos tPos = tPlayer.blockPosition().offset(3, 4, 3); // в воздухе — не зависеть от поверхности (снег и т.п.)
+			for (int i = 0; i < 6; i++) if (tMT.mSlabs[i] != null)
+				WD.set(tPlayer.level(), tPos.getX() + i, tPos.getY(), tPos.getZ(), tMT.mSlabs[i], 0, 3); // все 6 ориентаций подряд по X
+			O.println("[GT6-SLABPROBE] сервер: 6 слэб-вариантов " + tMT.mSlabs[0] + ".. поставлены от " + tPos + " -> сигнал клиенту");
+			sSlabProbePos = tPos.asLong();
+		} catch (Throwable e) {O.println("[GT6-SLABPROBE] EXC " + e); e.printStackTrace(O);}
+	}
+
 	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========
 	// Прогоняет в РЕАЛЬНОМ серверном мире (overworld) ДО сдачи: F13 мета-round-trip, дроп BUG-006, реестр урона BUG-004
 	// (тот самый getId(holder.value()), что падал в кодеке), распад листвы BUG-005 (tick-мост+мета), denull BUG-001.
@@ -696,6 +721,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6craftprobe.flag")) gt6CraftProbeTick(aEvent.getServer()); // [GT6-CRAFTPROBE] временная проба BUG-002 РЕАЛЬНЫМ путём (палка+кремень в живых крафт-слотах) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6attackprobe.flag")) gt6AttackProbeTick(aEvent.getServer()); // [GT6-ATTACKPROBE] временная проба BUG-003 РЕАЛЬНЫМ путём (клиентская атака ГТ-ножом по овце) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6flowerprobe.flag")) gt6FlowerProbeTick(aEvent.getServer()); // [GT6-FLOWERPROBE] временная проба BUG-008 РЕАЛЬНЫМ путём (слом мака SURVIVAL-каналом игрока) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6slabprobe.flag")) gt6SlabProbeTick(aEvent.getServer()); // [GT6-SLABPROBE] временная проба BUG-010 (клиентские квады модели слэба) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
