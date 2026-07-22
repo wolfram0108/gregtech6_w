@@ -835,9 +835,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// (BlocksGT.ore, материал MT.Fe) ставится реальным каналом placeBlock (как worldgen), замер state.getDestroyProgress
 	// (тот же вызов, что у движка при добыче: кирка/рука/контроль-камень), затем реальный слом gameMode.destroyBlock
 	// (SURVIVAL, полный пайплайн) — дроп + износ кирки (getToolDamage до/после, БЫЛО: износ от протухшей меты). Снять при уборке фазы.
-	private static int sOreProbeTick = -1;
+	private static int sOreProbeTick = -1, sOreProbeCase = 0;
 	private static net.minecraft.core.BlockPos sOreProbeOre = null, sOreProbeStone = null;
 	private static long sOreProbeDamageBefore = -1;
+	// матрица лута Drops 1:1 (оригинал Loader_Ores.java:77 = Drops(oreBroken, ore, oreRaw, 0, 1)):
+	// без чар -> битая руда; silk touch -> сам блок руды; fortune -> oreRaw с множителем 1+rnd(f+1)
+	private static final String[] ORE_CASES = {"кирка без чар -> битая руда", "silk-кирка -> сам блок руды", "fortuneIII-кирка -> oreRaw xN"};
 	public static void gt6OreProbeTick(net.minecraft.server.MinecraftServer aServer) {
 		sOreProbeTick++;
 		java.io.PrintStream O = gregapi.data.CS.OUT;
@@ -870,27 +873,41 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				O.println("[GT6-OREPROBE] progress/tick: кирка=" + tProgPick + " (тиков=" + tTicksPick + ")  рука=" + tProgHand + " (тиков=" + tTicksHand + ")  контроль-камень(рука)=" + tProgStone);
 				O.println("[GT6-OREPROBE] мгновенный слом (>=1/tick)? кирка=" + (tProgPick >= 1) + " рука=" + (tProgHand >= 1) + "  => " + (tProgPick < 1 && tProgPick > 0 && tProgHand < 1 ? "PASS (руда не исчезает с одного удара)" : "FAIL"));
 				sOreProbeDamageBefore = gregapi.item.multiitem.MultiItemTool.getToolDamage(tPlayer.getMainHandItem());
-			} else if (sOreProbeTick == 240) {
-				if (sOreProbeOre == null) return;
+			} else if (sOreProbeTick >= 240 && sOreProbeCase < ORE_CASES.length) {
+				int tPhase = (sOreProbeTick - 240) % 40;
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {sOreProbeTick = 9999; return;}
 				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
 				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
-				net.minecraft.world.level.GameType tOldMode = tPlayer.gameMode();
-				tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
-				tPlayer.gameMode.destroyBlock(sOreProbeOre);
-				tPlayer.setGameMode(tOldMode);
-			} else if (sOreProbeTick == 280) {
-				if (sOreProbeOre == null) return;
-				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
-				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
-				StringBuilder tDrops = new StringBuilder();
-				for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sOreProbeOre).inflate(4))) {
-					tDrops.append(tD.getItem()).append("; ");
-					tD.discard();
+				if (tPhase == 0) {
+					sOreProbeOre = tPlayer.blockPosition().offset(4, 1, 8 + sOreProbeCase); // свежая позиция на кейс, вне радиуса подбора
+					((gregapi.block.prefixblock.PrefixBlock)BlocksGT.ore).placeBlock(tLevel, sOreProbeOre.getX(), sOreProbeOre.getY(), sOreProbeOre.getZ(), SIDE_UNKNOWN, MT.Fe.mID, null, T, T);
+					ItemStack tPick = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.PICKAXE, MT.Steel, MT.Steel);
+					if (sOreProbeCase == 1) tPick.enchant(tLevel.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH), 1);
+					if (sOreProbeCase == 2) tPick.enchant(tLevel.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE), 3);
+					tPlayer.getInventory().setItem(0, tPick);
+					tPlayer.getInventory().setSelectedSlot(0);
+					sOreProbeDamageBefore = gregapi.item.multiitem.MultiItemTool.getToolDamage(tPick);
+					O.println("[GT6-OREPROBE] кейс «" + ORE_CASES[sOreProbeCase] + "»: руда " + sOreProbeOre + " = " + tLevel.getBlockState(sOreProbeOre) + " кирка=" + tPick);
+				} else if (tPhase == 10) {
+					net.minecraft.world.level.GameType tOldMode = tPlayer.gameMode();
+					tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tPlayer.gameMode.destroyBlock(sOreProbeOre);
+					tPlayer.setGameMode(tOldMode);
+				} else if (tPhase == 30) {
+					StringBuilder tDrops = new StringBuilder();
+					StringBuilder tJudge = new StringBuilder();
+					for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sOreProbeOre).inflate(4))) {
+						tDrops.append(tD.getItem()).append("; ");
+						tJudge.append(ST.regName(tD.getItem())).append(" x").append(tD.getItem().getCount()).append(";");
+						tD.discard();
+					}
+					String tJ = tJudge.toString();
+					boolean tPass = sOreProbeCase == 0 ? tJ.contains("ore.broken") : sOreProbeCase == 1 ? tJ.contains("ore.normal") : tJ.toLowerCase().contains("raw");
+					long tDamageAfter = gregapi.item.multiitem.MultiItemTool.getToolDamage(tPlayer.getMainHandItem());
+					O.println("[GT6-OREPROBE] кейс «" + ORE_CASES[sOreProbeCase] + "»: блок после=" + tLevel.getBlockState(sOreProbeOre) + "  дроп=" + (tDrops.length() == 0 ? "ПУСТО" : tDrops) + "  (regNames=" + tJ + ")  износ=" + (tDamageAfter - sOreProbeDamageBefore) + "  => " + (tPass ? "PASS" : "FAIL"));
+					sOreProbeCase++;
+					if (sOreProbeCase >= ORE_CASES.length) O.println("========== [GT6-OREPROBE] DONE ==========");
 				}
-				long tDamageAfter = gregapi.item.multiitem.MultiItemTool.getToolDamage(tPlayer.getMainHandItem());
-				O.println("[GT6-OREPROBE] реальный слом: блок после=" + tLevel.getBlockState(sOreProbeOre) + "  дроп=" + (tDrops.length() == 0 ? "ПУСТО" : tDrops));
-				O.println("[GT6-OREPROBE] износ кирки: до=" + sOreProbeDamageBefore + " после=" + tDamageAfter + " дельта=" + (tDamageAfter - sOreProbeDamageBefore) + "  => " + (tDamageAfter > sOreProbeDamageBefore ? "PASS (износ от живой твёрдости)" : "FAIL (износ 0 — протухшая твёрдость)"));
-				O.println("========== [GT6-OREPROBE] DONE ==========");
 			}
 		} catch (Throwable e) {O.println("[GT6-OREPROBE] EXC " + e); e.printStackTrace(O); sOreProbeTick = 9999;}
 	}
