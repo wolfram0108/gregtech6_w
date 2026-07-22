@@ -475,6 +475,55 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		O.println("========== [GT6-CRAFTPROBE] " + aLabel + " КОНЕЦ ==========");
 	}
 
+	// ========== [GT6-ATTACKPROBE] ВРЕМЕННАЯ проба BUG-003 РЕАЛЬНЫМ путём игрока (гейт run/gt6attackprobe.flag + -Pgt6probes) ==========
+	// Реальный путь: ЛКМ-атака ГТ-инструментом по мобу. Сервер: нож крафтится РЕАЛЬНЫМ путём (палка+кремень в живых
+	// крафт-слотах, как gt6craftprobe), кладётся в руку игрока, рядом спавнится овца. Клиент (хук в Proxy_Client):
+	// НАСТОЯЩИЙ Minecraft.gameMode.attack(player, sheep) — полный путь клиент-предсказания (onLeftClickEntity GT6 на
+	// ОБЕИХ сторонах) + серверный удар + doDamage (износ) + синк слота. PASS = овца ранена, нож изношен, соединение
+	// живо, исключений нет. Снять при уборке фазы.
+	private static int sAttackProbeTick = -1;
+	private static int sAttackProbeSheepId = -1;
+	public  static volatile int sAttackProbeEntityId = -1; // сигнал клиенту: id овцы для атаки (-1 = рано; -2 = клиент отработал)
+	public static void gt6AttackProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sAttackProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sAttackProbeTick == 200) {
+				O.println("========== [GT6-ATTACKPROBE] BUG-003: атака ГТ-ножом по овце РЕАЛЬНЫМ путём ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-ATTACKPROBE] нет игрока => пропуск"); return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				// нож — реальным крафт-путём (та же сетка, что у игрока)
+				net.minecraft.world.inventory.InventoryMenu tMenu = tPlayer.inventoryMenu;
+				tMenu.getSlot(1).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+				tMenu.getSlot(2).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FLINT));
+				net.minecraft.world.item.ItemStack tKnife = tMenu.getSlot(0).getItem().copy();
+				tMenu.getSlot(1).set(net.minecraft.world.item.ItemStack.EMPTY);
+				tMenu.getSlot(2).set(net.minecraft.world.item.ItemStack.EMPTY);
+				if (tKnife.isEmpty()) {O.println("[GT6-ATTACKPROBE] крафт ножа НЕ дал результата => FAIL (проба не валидна)"); return;}
+				tPlayer.getInventory().setItem(0, tKnife);
+				tPlayer.getInventory().setSelectedSlot(0);
+				O.println("[GT6-ATTACKPROBE] нож в руке: " + tKnife + " прочность-урон до атаки: " + gregapi.data.CS.ToolsGT.sMetaTool.getToolDamage(tKnife));
+				net.minecraft.world.entity.animal.sheep.Sheep tSheep = net.minecraft.world.entity.EntityType.SHEEP.spawn(tPlayer.level(), tPlayer.blockPosition().offset(1, 0, 1), net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
+				if (tSheep == null) {O.println("[GT6-ATTACKPROBE] овца не заспавнилась => FAIL (проба не валидна)"); return;}
+				tSheep.setNoAi(true); // не убежала до удара (подготовка МЕСТА; сам удар — целиком движковый путь)
+				O.println("[GT6-ATTACKPROBE] овца id=" + tSheep.getId() + " hp=" + tSheep.getHealth() + " -> сигнал клиенту на атаку");
+				sAttackProbeSheepId = tSheep.getId();
+				sAttackProbeEntityId = tSheep.getId();
+			} else if (sAttackProbeTick == 320) {
+				if (sAttackProbeSheepId < 0) return;
+				if (sAttackProbeEntityId != -2) {O.println("[GT6-ATTACKPROBE] клиент так и НЕ атаковал (нож не синкнулся?) => FAIL"); O.println("========== [GT6-ATTACKPROBE] DONE =========="); return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().isEmpty() ? null : aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.world.entity.Entity tEntity = aServer.overworld().getEntity(sAttackProbeSheepId);
+				float tHp = tEntity instanceof net.minecraft.world.entity.LivingEntity tL ? tL.getHealth() : -1;
+				long tToolDamage = tPlayer == null ? -1 : gregapi.data.CS.ToolsGT.sMetaTool.getToolDamage(tPlayer.getInventory().getItem(0));
+				boolean tConnected = tPlayer != null && tPlayer.connection.isAcceptingMessages();
+				O.println("[GT6-ATTACKPROBE] итог: овца hp=" + tHp + " (было 8.0) износ ножа=" + tToolDamage + " соединение живо=" + tConnected
+					+ ((tHp >= 0 && tHp < 8.0F) && tToolDamage > 0 && tConnected ? "  => PASS (урон прошёл, износ есть, дисконнекта нет)" : "  => FAIL"));
+				O.println("========== [GT6-ATTACKPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-ATTACKPROBE] EXC " + e); e.printStackTrace(O);}
+	}
+
 	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========
 	// Прогоняет в РЕАЛЬНОМ серверном мире (overworld) ДО сдачи: F13 мета-round-trip, дроп BUG-006, реестр урона BUG-004
 	// (тот самый getId(holder.value()), что падал в кодеке), распад листвы BUG-005 (tick-мост+мета), denull BUG-001.
@@ -575,6 +624,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6bugverify.flag")) gt6BugVerifyTick(aEvent.getServer()); // [GT6-BUGVERIFY] временная механическая проба фиксов BUG-001..010 — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6leafprobe.flag")) gt6LeafProbeTick(aEvent.getServer()); // [GT6-LEAFPROBE] временная проба BUG-005 РЕАЛЬНЫМ путём (дерево движком + рубка кодом топора) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6craftprobe.flag")) gt6CraftProbeTick(aEvent.getServer()); // [GT6-CRAFTPROBE] временная проба BUG-002 РЕАЛЬНЫМ путём (палка+кремень в живых крафт-слотах) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6attackprobe.flag")) gt6AttackProbeTick(aEvent.getServer()); // [GT6-ATTACKPROBE] временная проба BUG-003 РЕАЛЬНЫМ путём (клиентская атака ГТ-ножом по овце) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {

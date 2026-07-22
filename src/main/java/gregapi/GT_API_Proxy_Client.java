@@ -2532,6 +2532,30 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] перезаход упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 			return;
 		}
+		// [GT6-ATTACKPROBE] клиентская половина BUG-003: НАСТОЯЩАЯ атака (MultiPlayerGameMode.attack — тот же вызов, что
+		// ЛКМ игрока) по овце, id которой дал сервер. Полный путь клиент-предсказания GT6-инструмента. Снять при уборке.
+		if (gregapi.GT_API_Proxy.sAttackProbeEntityId >= 0 && gregapi.data.CS.probeFlag("gt6attackprobe.flag")) {
+			int tId = gregapi.GT_API_Proxy.sAttackProbeEntityId;
+			try {
+				net.minecraft.client.Minecraft tMC2 = Minecraft.getInstance();
+				// ждём, пока нож ДОЕДЕТ до клиентского слота (синк инвентаря) — атаковать воздухом бессмысленно
+				if (tMC2.player != null && tMC2.player.getMainHandItem().isEmpty()) return; // повтор на следующем тике
+				gregapi.GT_API_Proxy.sAttackProbeEntityId = -2; // однократно (-2: клиент отработал, сервер ждёт итога)
+				net.minecraft.world.entity.Entity tTarget = tMC2.level == null ? null : tMC2.level.getEntity(tId);
+				if (tMC2.player == null || tMC2.gameMode == null || tTarget == null) {
+					gregapi.data.CS.OUT.println("[GT6-ATTACKPROBE] клиент: цель/игрок недоступны (level=" + (tMC2.level != null) + " target=" + (tTarget != null) + ") => FAIL");
+				} else {
+					gregapi.data.CS.OUT.println("[GT6-ATTACKPROBE] клиент: gameMode.attack по " + tTarget + " предметом " + tMC2.player.getMainHandItem());
+					tMC2.gameMode.attack(tMC2.player, tTarget);
+					tMC2.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+					gregapi.data.CS.OUT.println("[GT6-ATTACKPROBE] клиент: атака выполнена БЕЗ исключения");
+				}
+			} catch (Throwable e) {
+				gregapi.data.CS.OUT.println("[GT6-ATTACKPROBE] клиент: КРАШ АТАКИ ВОСПРОИЗВЕДЁН => FAIL");
+				e.printStackTrace(gregapi.data.CS.OUT);
+			}
+			return;
+		}
 		if (mAutoWorldTriggered) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (!(tMC.screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;

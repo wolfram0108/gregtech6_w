@@ -143,7 +143,14 @@ public class DamageSources {
 	}
 
 	static DamageDefinition combatDefinition(String aType) {
-		return new DamageDefinition(aType, ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(MODID, "combat_" + sanitizePath(aType))), new DamageType(aType, DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, DEFAULT_EXHAUSTION, DamageEffects.HURT), Set.of(), null);
+		// BUG-003 (вылет атаки, damage_event): 1.7.10 DamageSourceCombat = new EntityDamageSource(aType, entity) с
+		// ВАНИЛЬНЫМИ msgId "player"/"mob" — neo-эквивалент 1:1: ванильные ключи DamageTypes.PLAYER_ATTACK (msgId
+		// "player", DamageTypes.java:92) / MOB_ATTACK (msgId "mob", :90), ВСЕГДА в реестре. Прежний самодельный ключ
+		// gregapi:combat_<type> в bootstrap не регистрировался -> resolveHolder падал в Holder.direct -> серверный удар
+		// слал ClientboundDamageEventPacket с holder вне реестра -> EncoderException -> дисконнект (краш игрока,
+		// воспроизведён пробой gt6attackprobe). Все вызыватели дерева передают только "player"/"mob".
+		ResourceKey<DamageType> tKey = "mob".equals(aType) ? net.minecraft.world.damagesource.DamageTypes.MOB_ATTACK : net.minecraft.world.damagesource.DamageTypes.PLAYER_ATTACK;
+		return new DamageDefinition(aType, tKey, new DamageType(aType, DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER, DEFAULT_EXHAUSTION, DamageEffects.HURT), Set.of(), null);
 	}
 
 	public static Component getDeathMessage(LivingEntity aPlayer, Entity aEntity, String aMessage) {
