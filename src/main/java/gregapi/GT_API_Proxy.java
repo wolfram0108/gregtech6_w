@@ -1060,6 +1060,60 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-STACKPROBE] EXC " + e); e.printStackTrace(O); sStackProbeTick = 9999;}
 	}
 
+	// ========== [GT6-REMAINPROBE] ВРЕМЕННАЯ проба BUG-022 РЕАЛЬНЫМ путём игрока (гейт run/gt6remainprobe.flag + -Pgt6probes) ==========
+	// Игрок: «инструменты-ингредиенты тратятся целиком вместо потери прочности». Корень: neo-модель остатка per-recipe
+	// (getRemainingItems), GT6-диспетчер её не переопределял → 1.7.10-канал hasContainerItem/getContainerItem мёртв.
+	// Судья: настоящий GT6-рецепт «пила + дубовая кнопка = планка» (Loader_Recipes_Vanilla:623) в ЖИВЫХ крафт-слотах
+	// inventoryMenu (приём gt6craftprobe) + РЕАЛЬНЫЙ клик ResultSlot (menu.clicked PICKUP — полный путь onTake →
+	// getRemainingItems). Замер: планка взята, пила осталась с износом, кнопка потрачена. Снять при уборке фазы.
+	private static int sRemainProbeTick = -1;
+	public static void gt6RemainProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sRemainProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sRemainProbeTick == 200) {
+				O.println("========== [GT6-REMAINPROBE] BUG-022: остаток инструмента в крафте реальным путём ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-REMAINPROBE] нет игрока => пропуск"); sRemainProbeTick = 9999; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				tPlayer.getInventory().clearContent();
+				ItemStack tSaw = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.SAW, MT.Steel, MT.Steel);
+				long tDamageBefore = gregapi.item.multiitem.MultiItemTool.getToolDamage(tSaw);
+				// изолированный шов — 1.7.10-канал ItemBase (тот, что зовёт мост):
+				boolean tHas = ((gregapi.item.ItemBase)tSaw.getItem()).hasContainerItem(tSaw);
+				ItemStack tCont = ((gregapi.item.ItemBase)tSaw.getItem()).getContainerItem(ST.copy(tSaw));
+				O.println("[GT6-REMAINPROBE] шов ItemBase-канала: hasContainerItem=" + tHas + " getContainerItem=" + tCont + " damage=" + (tCont == null ? "-" : gregapi.item.multiitem.MultiItemTool.getToolDamage(tCont)) + "  => " + (tHas && tCont != null ? "PASS" : "FAIL"));
+				// реальный путь: живые крафт-слоты 2×2 + реальный клик по результату
+				net.minecraft.world.inventory.InventoryMenu tMenu = tPlayer.inventoryMenu;
+				tMenu.getSlot(1).set(tSaw);
+				tMenu.getSlot(2).set(ST.make(Blocks.OAK_BUTTON, 1, 0));
+				ItemStack tResult = tMenu.getSlot(0).getItem();
+				O.println("[GT6-REMAINPROBE] сетка: пила+кнопка -> результат-слот=" + tResult);
+				tMenu.clicked(0, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, tPlayer); // ClickType переименован в ContainerInput (AbstractContainerMenu.java:319)
+				ItemStack tCarried = tMenu.getCarried();
+				StringBuilder tGrid = new StringBuilder();
+				ItemStack tSawAfter = ItemStack.EMPTY;
+				for (int i = 1; i <= 4; i++) {
+					ItemStack tS = tMenu.getSlot(i).getItem();
+					tGrid.append("slot").append(i).append('=').append(tS).append("; ");
+					if (!tS.isEmpty() && ST.regName(tS) != null && ST.regName(tS).contains("metatool")) tSawAfter = tS;
+				}
+				for (int i = 0; i < 36 && tSawAfter.isEmpty(); i++) { // 1.7.10-поведение отдало бы в инвентарь — ищем и там
+					ItemStack tS = tPlayer.getInventory().getItem(i);
+					if (!tS.isEmpty() && ST.regName(tS) != null && ST.regName(tS).contains("metatool")) tSawAfter = tS;
+				}
+				long tDamageAfter = tSawAfter.isEmpty() ? -1 : gregapi.item.multiitem.MultiItemTool.getToolDamage(tSawAfter);
+				O.println("[GT6-REMAINPROBE] после клика: взято=" + tCarried + "  сетка: " + tGrid + " пила-после=" + tSawAfter + " износ " + tDamageBefore + "->" + tDamageAfter);
+				boolean tPass = !tCarried.isEmpty() && ST.regName(tCarried) != null && ST.regName(tCarried).contains("plank") && !tSawAfter.isEmpty() && tDamageAfter > tDamageBefore;
+				O.println("[GT6-REMAINPROBE] планка взята И пила жива с износом? => " + (tPass ? "PASS" : "FAIL"));
+				// уборка
+				tMenu.setCarried(ItemStack.EMPTY);
+				for (int i = 0; i <= 4; i++) tMenu.getSlot(i).set(ItemStack.EMPTY);
+				tPlayer.getInventory().clearContent();
+				O.println("========== [GT6-REMAINPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-REMAINPROBE] EXC " + e); e.printStackTrace(O); sRemainProbeTick = 9999;}
+	}
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
@@ -1086,6 +1140,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer()); // [GT6-OREPROBE] временная проба BUG-020 (твёрдость/добыча руды PrefixBlock реальным путём) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6foodprobe.flag")) gt6FoodProbeTick(aEvent.getServer()); // [GT6-FOODPROBE] временная проба BUG-019 (еда реальным путём: useItem + жевание движком) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6stackprobe.flag")) gt6StackProbeTick(aEvent.getServer()); // [GT6-STACKPROBE] временная проба BUG-021 (размеры стака: шов getMaxStackSize + слияние add) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6remainprobe.flag")) gt6RemainProbeTick(aEvent.getServer()); // [GT6-REMAINPROBE] временная проба BUG-022 (остаток инструмента: живые крафт-слоты + реальный клик) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {

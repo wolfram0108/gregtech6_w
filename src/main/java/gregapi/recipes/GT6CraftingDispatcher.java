@@ -113,6 +113,32 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 		return ItemStack.EMPTY;
 	}
 
+	// BUG-022: 1.7.10 остаток крафта = per-item Forge-канал hasContainerItem/getContainerItem (SlotCrafting звал для
+	// КАЖДОГО слота; GT6-инструменты давали копию с износом doDamage(getToolDamagePerContainerCraft) — MultiItemTool:579,
+	// бутылки/каны/prefix — свои). В neo модель per-recipe (CraftingRecipe.getRemainingItems:22, дефолт читает только
+	// компонентный getCraftingRemainder — про GT6-канал не знает) → инструмент-ингредиент потреблялся целиком. Мост в
+	// ЕДИНОЙ воронке всех GT6-крафтов (F11-центр): GT6-предметы — через живой ItemBase-канал (:175, слепок 1.7.10),
+	// прочие — vanilla-семантика defaultCraftingReminder 1:1. Отклонение-форс движка: neo кладёт остаток обратно В СЕТКУ
+	// (ResultSlot:105), 1.7.10 doesContainerItemLeaveCraftingGrid=F отдавал в инвентарь — канала больше нет.
+	@Override
+	public net.minecraft.core.NonNullList<ItemStack> getRemainingItems(CraftingInput aGrid) {
+		net.minecraft.core.NonNullList<ItemStack> rRemaining = net.minecraft.core.NonNullList.withSize(aGrid.size(), ItemStack.EMPTY);
+		for (int i = 0; i < aGrid.size(); i++) {
+			ItemStack tStack = aGrid.getItem(i);
+			if (tStack.isEmpty()) continue;
+			if (tStack.getItem() instanceof gregapi.item.ItemBase tItem) {
+				if (tItem.hasContainerItem(tStack)) {
+					ItemStack tRemainder = tItem.getContainerItem(tStack);
+					if (gregapi.util.ST.valid(tRemainder)) rRemaining.set(i, tRemainder);
+				}
+			} else {
+				net.minecraft.world.item.ItemStackTemplate tRemainder = tStack.getCraftingRemainder();
+				if (tRemainder != null) rRemaining.set(i, tRemainder.create());
+			}
+		}
+		return rRemaining;
+	}
+
 	@Override
 	public RecipeSerializer<? extends CustomRecipe> getSerializer() {
 		return SERIALIZER;
