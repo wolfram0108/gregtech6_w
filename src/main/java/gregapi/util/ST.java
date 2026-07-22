@@ -1019,6 +1019,9 @@ public class ST {
 		// F5 (реализовано): наполненный fluid-контейнер — не ингредиент. FL.getFluid (реестр + динамич. GT6-ячейки) ловит жидкость;
 		// было instanceof IFluidHandlerItem.getCapacity>0 (интерфейс снят). Пустые контейнеры ловятся getCraftingRemainder ниже.
 		if (FL.getFluid(aStack, T) != null) return F;
+		// BUG-022 v2: симметрично ST.container — 1.7.10 звал полиморфный hasContainerItem (GT6-бутылки/каны/prefix),
+		// компонентный канал ниже покрывает только vanilla.
+		if (item_(aStack) instanceof gregapi.item.ItemBase tItemBase && tItemBase.hasContainerItem(aStack)) return F;
 		if (item_(aStack).getCraftingRemainder(aStack) != null) return F;
 		if (ItemsGT.CONTAINER_DURABILITY.contains(aStack, T)) return F;
 		if (IL.Cell_Empty.equal(aStack, F, T) || IL.SC2_Teapot_Empty.equal(aStack, F, T) || IL.SC2_Teacup_Empty.equal(aStack, F, T)) return T;
@@ -1031,6 +1034,12 @@ public class ST {
 		// Decrease Durability by 1 for these Items.
 		if (ItemsGT.CONTAINER_DURABILITY.contains(aStack, T)) return copyMeta(meta_(aStack) + 1, aStack);
 		// Use normal Container Item Mechanics.
+		// BUG-022 v2 (стол Грега): 1.7.10 здесь был ПОЛИМОРФНЫЙ Item-канал hasContainerItem/getContainerItem —
+		// GT6-инструменты (MultiItemTool:579) давали копию с износом; порт свёл к компонентному getCraftingRemainder
+		// (у GT6-предметов его нет) → инструмент-ингредиент ПРОПАДАЛ во всех вызывателях ST.container (в т.ч.
+		// MultiTileEntityAdvancedCraftingTable.consumeSlot:436). Живой ItemBase-канал восстановлен ПЕРВЫМ, компонентный
+		// (vanilla ведро и т.п.) — следом, 1:1 порядок оригинала.
+		if (item_(aStack) instanceof gregapi.item.ItemBase tItemBase && tItemBase.hasContainerItem(aStack)) return copy(tItemBase.getContainerItem(aStack));
 		if (item_(aStack).getCraftingRemainder(aStack) != null) return copy(item_(aStack).getCraftingRemainder(aStack).create());
 		// These are all special Cases, in which it is intended to have only GT Blocks outputting those Container Items.
 		if (IL.Cell_Empty.exists()) {

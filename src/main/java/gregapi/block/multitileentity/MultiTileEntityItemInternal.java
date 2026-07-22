@@ -289,6 +289,8 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		}
 	}
 	
+	// BUG-021 v2: мост neo per-stack канала на 1.7.10-хук ниже (per-MTE стак из класс-контейнера/IMTE_GetMaxStackSize).
+	@Override public int getMaxStackSize(ItemStack aStack) {return UT.Code.bindStack(getItemStackLimit(aStack));}
 	// @Override
 	public int getItemStackLimit(ItemStack aStack) {
 		MultiTileEntityClassContainer tContainer = mBlock.mMultiTileEntityRegistry.getClassContainer(aStack);

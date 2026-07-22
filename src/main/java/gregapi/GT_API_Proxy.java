@@ -1142,6 +1142,96 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-TOOLTIPPROBE] EXC " + e); e.printStackTrace(O); sTooltipProbeTick = 9999;}
 	}
 
+	// ========== [GT6-SMELTPROBE] ВРЕМЕННАЯ проба BUG-023 РЕАЛЬНЫМ путём (гейт run/gt6smeltprobe.flag + -Pgt6probes) ==========
+	// Игрок: «глиняные молды не обжигаются в печи» (PORT-TODO F11-smelting). Фикс: GT6SmeltingDispatcher (тип SMELTING)
+	// над GT6-реестром FurnaceRecipes. Судья: НАСТОЯЩАЯ ванильная печь (setBlock FURNACE), сырой молд + уголь в слоты,
+	// движок сам ищет рецепт и плавит (serverTick:170 quickCheck) — 250 тиков → замер выход-слота (Ceramic_Mold с NBT
+	// gt.mold). Швы: getSmeltingResult, getRecipeFor(SMELTING), propertySet FURNACE_INPUT (shift-гейт). Контроль:
+	// ванильная плавка (говядина→стейк) не задета. Снять при уборке фазы.
+	private static int sSmeltProbeTick = -1;
+	private static net.minecraft.core.BlockPos sSmeltProbeFurnace = null, sSmeltProbeFurnace2 = null;
+	public static void gt6SmeltProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sSmeltProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sSmeltProbeTick == 200) {
+				O.println("========== [GT6-SMELTPROBE] BUG-023: обжиг молда в НАСТОЯЩЕЙ печи ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-SMELTPROBE] нет игрока => пропуск"); sSmeltProbeTick = 9999; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				ItemStack tRawMold = IL.Ceramic_Ingot_Mold_Raw.get(1);
+				// изолированные швы:
+				ItemStack tExpect = gregapi.recipes.FurnaceRecipes.smelting().getSmeltingResult(tRawMold);
+				java.util.Optional<? extends net.minecraft.world.item.crafting.RecipeHolder<?>> tFound = tLevel.recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.SMELTING, new net.minecraft.world.item.crafting.SingleRecipeInput(tRawMold), tLevel);
+				boolean tGate = tLevel.recipeAccess().propertySet(net.minecraft.world.item.crafting.RecipePropertySet.FURNACE_INPUT).test(tRawMold);
+				O.println("[GT6-SMELTPROBE] швы: GT6-реестр=" + tExpect + "  getRecipeFor(SMELTING)=" + (tFound.isPresent() ? tFound.get().value().getClass().getSimpleName() : "ПУСТО") + "  shift-гейт FURNACE_INPUT=" + tGate);
+				O.println("[GT6-SMELTPROBE] швы => " + (ST.valid(tExpect) && tFound.isPresent() && tFound.get().value() instanceof gregapi.recipes.GT6SmeltingDispatcher && tGate ? "PASS" : "FAIL"));
+				// реальный путь: две печи — молд и ванильный контроль
+				sSmeltProbeFurnace  = tPlayer.blockPosition().offset(3, 1, 3);
+				sSmeltProbeFurnace2 = tPlayer.blockPosition().offset(3, 1, 5);
+				tLevel.setBlock(sSmeltProbeFurnace,  Blocks.FURNACE.defaultBlockState(), 3);
+				tLevel.setBlock(sSmeltProbeFurnace2, Blocks.FURNACE.defaultBlockState(), 3);
+				net.minecraft.world.level.block.entity.BlockEntity tBE1 = tLevel.getBlockEntity(sSmeltProbeFurnace);
+				net.minecraft.world.level.block.entity.BlockEntity tBE2 = tLevel.getBlockEntity(sSmeltProbeFurnace2);
+				if (tBE1 instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity tF1 && tBE2 instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity tF2) {
+					tF1.setItem(0, tRawMold); tF1.setItem(1, ST.make(Items.COAL, 4, 0));
+					tF2.setItem(0, ST.make(Items.BEEF, 1, 0)); tF2.setItem(1, ST.make(Items.COAL, 4, 0));
+					O.println("[GT6-SMELTPROBE] печи заряжены: молд+уголь / говядина+уголь (контроль); жду 250 тиков");
+				} else {O.println("[GT6-SMELTPROBE] BE печи не построился => FAIL"); sSmeltProbeTick = 9999;}
+			} else if (sSmeltProbeTick == 450) {
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				net.minecraft.world.level.block.entity.BlockEntity tBE1 = tLevel.getBlockEntity(sSmeltProbeFurnace);
+				net.minecraft.world.level.block.entity.BlockEntity tBE2 = tLevel.getBlockEntity(sSmeltProbeFurnace2);
+				ItemStack tOut1 = tBE1 instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity tF1 ? tF1.getItem(2) : ItemStack.EMPTY;
+				ItemStack tOut2 = tBE2 instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity tF2 ? tF2.getItem(2) : ItemStack.EMPTY;
+				String tNBT1 = tOut1.isEmpty() ? "-" : String.valueOf(gregapi.util.UT.NBT.getNBT(tOut1));
+				O.println("[GT6-SMELTPROBE] после 250 тиков: молд-печь выход=" + tOut1 + " NBT=" + tNBT1 + "  контроль-печь выход=" + tOut2);
+				boolean tPass1 = !tOut1.isEmpty() && IL.Ceramic_Mold.equal(tOut1, T, T) && tNBT1.contains("gt.mold");
+				boolean tPass2 = !tOut2.isEmpty() && ST.item_(tOut2) == Items.COOKED_BEEF.asItem();
+				O.println("[GT6-SMELTPROBE] молд обожжён (Ceramic_Mold + NBT gt.mold)? => " + (tPass1 ? "PASS" : "FAIL") + "   ванильный контроль (стейк)? => " + (tPass2 ? "PASS" : "FAIL"));
+				tLevel.setBlock(sSmeltProbeFurnace, Blocks.AIR.defaultBlockState(), 3);
+				tLevel.setBlock(sSmeltProbeFurnace2, Blocks.AIR.defaultBlockState(), 3);
+				O.println("========== [GT6-SMELTPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-SMELTPROBE] EXC " + e); e.printStackTrace(O); sSmeltProbeTick = 9999;}
+	}
+
+	// ========== [GT6-V2PROBE] ВРЕМЕННАЯ проба доработок BUG-021v2/022v2 (гейт run/gt6v2probe.flag + -Pgt6probes) ==========
+	// Фидбэк игрока: (021) «у Грега множество предметов со стаком <64» — мосты getMaxStackSize во всех 4 item-корнях
+	// (PrefixItem/PrefixBlockItem/ItemBlockBase/MTE-ItemInternal); (022) «в столе Грега нож и каталка пропадают» —
+	// восстановлен полиморфный 1.7.10-канал hasContainerItem/getContainerItem в ЦЕНТРЕ ST.container (стол зовёт его
+	// через consumeSlot:436). Судья: швы стаков (ротор=16, dense-casing=1, скрап=18, лог GT6 через ItemBlockBase) +
+	// ST.container ножа/каталки (копия с износом) + vanilla-регресс (ведро воды → пустое ведро). Снять при уборке фазы.
+	private static int sV2ProbeTick = -1;
+	public static void gt6V2ProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sV2ProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sV2ProbeTick == 200) {
+				O.println("========== [GT6-V2PROBE] BUG-021v2 (стаки префиксов) + BUG-022v2 (ST.container) ==========");
+				// 021 v2: per-stack размеры через мосты 4 корней
+				ItemStack tRotor = OP.rotor.mat(MT.Steel, 1);
+				ItemStack tCasing = OP.casingMachineDense.mat(MT.Steel, 1);
+				ItemStack tScrap = OP.scrapGt.mat(MT.Steel, 1);
+				int tR = tRotor == null ? -1 : tRotor.getMaxStackSize(), tC = tCasing == null ? -1 : tCasing.getMaxStackSize(), tS = tScrap == null ? -1 : tScrap.getMaxStackSize();
+				O.println("[GT6-V2PROBE] стаки: ротор=" + tR + " (ож.16)  dense-casing=" + tC + " (ож.1)  скрап=" + tS + " (ож.18)  => " + (tR == 16 && tC == 1 && tS == 18 ? "PASS" : "FAIL"));
+				// 022 v2: ST.container инструментов (канал стола Грега)
+				ItemStack tKnife = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.KNIFE, MT.Steel, MT.Steel);
+				ItemStack tPin = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.ROLLING_PIN, MT.Steel, MT.Steel);
+				ItemStack tKnifeC = ST.container(tKnife, F);
+				ItemStack tPinC = ST.container(tPin, F);
+				long tKnifeDmg = tKnifeC == null ? -1 : gregapi.item.multiitem.MultiItemTool.getToolDamage(tKnifeC);
+				long tPinDmg = tPinC == null ? -1 : gregapi.item.multiitem.MultiItemTool.getToolDamage(tPinC);
+				O.println("[GT6-V2PROBE] ST.container: нож=" + tKnifeC + " (износ " + tKnifeDmg + ")  каталка=" + tPinC + " (износ " + tPinDmg + ")  => " + (ST.valid(tKnifeC) && tKnifeDmg > 0 && ST.valid(tPinC) && tPinDmg > 0 ? "PASS (инструмент выживает с износом)" : "FAIL (пропадает)"));
+				// vanilla-регресс: ведро воды → пустое ведро
+				ItemStack tBucketC = ST.container(ST.make(Items.WATER_BUCKET, 1, 0), F);
+				O.println("[GT6-V2PROBE] vanilla-регресс: container(ведро воды)=" + tBucketC + "  => " + (ST.valid(tBucketC) && ST.item_(tBucketC) == Items.BUCKET.asItem() ? "PASS" : "FAIL"));
+				O.println("========== [GT6-V2PROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-V2PROBE] EXC " + e); e.printStackTrace(O); sV2ProbeTick = 9999;}
+	}
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
@@ -1170,6 +1260,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6stackprobe.flag")) gt6StackProbeTick(aEvent.getServer()); // [GT6-STACKPROBE] временная проба BUG-021 (размеры стака: шов getMaxStackSize + слияние add) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6remainprobe.flag")) gt6RemainProbeTick(aEvent.getServer()); // [GT6-REMAINPROBE] временная проба BUG-022 (остаток инструмента: живые крафт-слоты + реальный клик) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6tooltipprobe.flag")) gt6TooltipProbeTick(aEvent.getServer()); // [GT6-TOOLTIPPROBE] временная проба BUG-018 (тултип сэндвича реальным getTooltipLines) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6smeltprobe.flag")) gt6SmeltProbeTick(aEvent.getServer()); // [GT6-SMELTPROBE] временная проба BUG-023 (обжиг молда в настоящей печи) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6v2probe.flag")) gt6V2ProbeTick(aEvent.getServer()); // [GT6-V2PROBE] временная проба доработок BUG-021v2/022v2 (стаки префиксов + ST.container) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {

@@ -207,6 +207,8 @@ public class PrefixBlockItem extends BlockItem implements IItemUpdatable, IPrefi
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}
+	// BUG-021 v2: мост neo per-stack канала на 1.7.10-хук ниже (стак префикс-блоков = mDefaultStackSize, не 64).
+	@Override public int getMaxStackSize(ItemStack aStack) {return UT.Code.bindStack(getItemStackLimit(aStack));}
 	public int getItemStackLimit(ItemStack aStack) {return mBlock.mPrefix.mDefaultStackSize;}
 	@Override public OreDictMaterial getMaterial(int aMetaData) {return UT.Code.exists(aMetaData, mBlock.mMaterialList) ? mBlock.mMaterialList[aMetaData] : null;}
 	@Override public OreDictPrefix getPrefix(int aMetaData) {return mBlock.mPrefix;}

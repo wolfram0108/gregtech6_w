@@ -227,6 +227,9 @@ public class PrefixItem extends Item implements Runnable, IItemUpdatable, IPrefi
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public int getItemEnchantability() {return 0;}
+	// BUG-021 v2: мост neo per-stack канала (IItemExtension.getMaxStackSize) на 1.7.10-хук ниже — без него все
+	// префиксные предметы игнорировали mDefaultStackSize (жемчуг/платы/яйца и т.п. стакались по ItemBase-дефолту 64).
+	@Override public int getMaxStackSize(ItemStack aStack) {return UT.Code.bindStack(getItemStackLimit(aStack));}
 	public int getItemStackLimit(ItemStack aStack) {return mPrefix.mDefaultStackSize;}
 	@Override public OreDictItemData getOreDictItemData(ItemStack aStack) {return UT.Code.exists(ST.meta_(aStack), mMaterialList) ? new OreDictItemData(mPrefix, mMaterialList[ST.meta_(aStack)]) : null;}
 	@Override public OreDictMaterial getMaterial(int aMetaData) {return UT.Code.exists(aMetaData, mMaterialList) ? mMaterialList[aMetaData] : null;}

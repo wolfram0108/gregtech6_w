@@ -77,6 +77,7 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 
 	static {
 		SERIALIZERS.register("gt6_crafting_dispatcher", () -> SERIALIZER);
+		SERIALIZERS.register("gt6_smelting_dispatcher", () -> GT6SmeltingDispatcher.SERIALIZER); // F11-smelting (BUG-023): печь — тем же центральным реестром
 	}
 
 	/** F11: точка подписки на мод-шину, зеркало {@code GT6WorldgenFeature.register(IEventBus)} (F6-переходник,
