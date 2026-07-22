@@ -454,7 +454,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	public float getExplosionResistance(BlockState aState, BlockGetter aWorld, BlockPos aPos, Explosion aExplosion) {
 		OreDictMaterial aMaterial = getMetaMaterial(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
 		if (aMaterial != null && ((mCanExplode && aMaterial.contains(TD.Properties.EXPLOSIVE)) || (mCanBurn && aMaterial.contains(TD.Properties.FLAMMABLE) && mPrefix.contains(TD.Prefix.DUST_BASED)))) return 0;
-		return mBaseResistance * (1+getHarvestLevel(WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())));
+		// BUG-020: в 1.7.10 формула читала getBlockMetadata = bind4(mToolQuality материала) (placement :435 клал именно
+		// его в мету чанка). В порте числовой меты нет, а WD.meta даёт bind4(ID материала) = мусор → quality берётся из
+		// материала напрямую (мета чанка была его чистой производной — 1:1 по значению).
+		return mBaseResistance * (1+getHarvestLevel(aMaterial == null ? 0 : UT.Code.bind4(aMaterial.mToolQuality)));
 	}
 	
 	// было onBlockEventReceived(World,x,y,z,id,data) -> BlockBehaviour.triggerEvent(BlockState,Level,BlockPos,int,int)
@@ -485,6 +488,14 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		if (tTileEntity != null) LAST_BROKEN_TILEENTITY.set(tTileEntity);
 		aWorld.removeBlockEntity(new BlockPos(aX, aY, aZ)); // было aWorld.removeTileEntity(x,y,z) (1.7.10 World), neo Level.removeBlockEntity(BlockPos) [Level.java:688]
+	}
+	// BUG-020 (дроп руды): breakBlock выше — мёртвый 1.7.10-хук (никто не зовёт) → LAST_BROKEN_TILEENTITY не ставился →
+	// Drops.getDrops (:67 WD.te) на loot-этапе (BE уже снят движком) не находил материал. Мост тем же приёмом, что
+	// MultiTileEntityBlock.onDestroyedByPlayer:433 — LAST_BROKEN ставится ДО снятия блока, тик-конец его чистит (Proxy:911).
+	@Override public boolean onDestroyedByPlayer(BlockState aState, Level aWorld, BlockPos aPos, Player aPlayer, ItemStack aToolStack, boolean aWillHarvest, net.minecraft.world.level.material.FluidState aFluid) {
+		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
+		if (aTileEntity != null) LAST_BROKEN_TILEENTITY.set(aTileEntity);
+		return super.onDestroyedByPlayer(aState, aWorld, aPos, aPlayer, aToolStack, aWillHarvest, aFluid);
 	}
 	
 	@Override
@@ -649,6 +660,25 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		for (ItemStack tStack : tList) if (RNGSUS.nextFloat() <= aChance) WD.dropBlockAsItem(aWorld, aX, aY, aZ, tStack);
 	}
 	
+	// BUG-020 (дроп руды): GT6-хуки дропа выше (harvestBlock/dropBlockAsItemWithChance/getDrops) — мёртвые 1.7.10-имена;
+	// neo рождает дропы из loot-table, которой у PrefixBlock нет → дроп был ПУСТО (замер gt6oreprobe). Мост тем же приёмом,
+	// что BlockBase.getDrops:214 (neo getDrops(state,params) → GT6 mDrops), + silk/fortune из THIS_ENTITY — 1:1 семантика
+	// harvestBlock:648-650. Материал жив через LAST_BROKEN_TILEENTITY (onDestroyedByPlayer выше). dropResources дальше сам
+	// поднимает BlockDropsEvent → onBlockHarvestingEvent (unification/blockToSilk) — конвейер 1.7.10 HarvestDropsEvent цел.
+	@Override protected java.util.List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
+		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
+		if (tOrigin == null) return super.getDrops(aState, aParams);
+		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
+		int tFortune = 0; boolean tSilkTouch = F;
+		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
+		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) {
+			tFortune = EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE), tLiving);
+			tSilkTouch = EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), tLiving) > 0;
+		}
+		ArrayList<ItemStack> rDrops = mDrops.getDrops(this, tLevel, tX, tY, tZ, tFortune, tSilkTouch);
+		return rDrops == null ? java.util.Collections.emptyList() : rDrops;
+	}
 	public final ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aUnusableMetaData, int aFortune) {return mDrops.getDrops(this, aWorld, aX, aY, aZ, aFortune, F);}
 	public int getExpDrop(BlockGetter aWorld, int aMeta, int aFortune) {return mDrops.getExp(this);}
 	public int getRenderBlockPass() {return ITexture.Util.MC_ALPHA_BLENDING?1:0;}
@@ -690,7 +720,24 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.create(new AABB(mMinX, mMinY, mMinZ, mMaxX, mMaxY, mMaxZ));
 		return rShape.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : rShape;
 	}
-	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return mBaseHardness < 0 ? -1 : mBaseHardness == 0 ? 0 : Math.max(1, mBaseHardness * (1+getHarvestLevel(WD.meta(aWorld, aX, aY, aZ))));}
+	// F12/F9-hardness (BUG-020): в 1.7.10 getBlockHardness был @Override реального Forge-хука — движок звал его сам.
+	// В neo канал сместился в getDestroyProgress (Properties.destroyTime у PrefixBlock не задан = 0 → блок ломался
+	// мгновенно, mBaseHardness руд не участвовал). Мост тем же приёмом, что BlockBase:248 (vanilla-формула, 1:1).
+	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
+		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
+		float tHardness = getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ());
+		if (tHardness < 0) return 0.0F; // vanilla hardness < 0 = неразрушим
+		int tHarvest = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
+		return aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tHarvest;
+	}
+	// BUG-020 (второй операнд формулы): 1.7.10 getBlockMetadata = bind4(mToolQuality материала) — см. getExplosionResistance
+	// выше; quality из материала TE (WD.te внутри страхуется LAST_BROKEN_TILEENTITY → и harvest-путь после removeBlock жив).
+	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {
+		if (mBaseHardness < 0) return -1;
+		if (mBaseHardness == 0) return 0;
+		OreDictMaterial tMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
+		return Math.max(1, mBaseHardness * (1+getHarvestLevel(tMaterial == null ? 0 : UT.Code.bind4(tMaterial.mToolQuality))));
+	}
 	// F3-render (отложенная фаза): super.getRenderType() удалён из neo (рендер data-driven) -> -1; см. MultiTileEntityBlock:436.
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
 	public int getHarvestLevel(int aMaterialToolQuality) {return (int)UT.Code.bind_(mHarvestLevelMinimum, mHarvestLevelMaximum, mHarvestLevelOffset + aMaterialToolQuality);}

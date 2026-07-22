@@ -829,6 +829,72 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		O.println("========== [GT6-BUGVERIFY] DONE ==========");
 	}
 
+	// ========== [GT6-OREPROBE] ВРЕМЕННАЯ проба BUG-020 РЕАЛЬНЫМ путём игрока (гейт run/gt6oreprobe.flag + -Pgt6probes) ==========
+	// Игрок: «инструментами не добывается ни одна руда — блок исчезает от одного удара». Корень: PrefixBlock (класс ВСЕХ руд)
+	// не мостил getDestroyProgress (destroyTime=0 → мгновенный слом), mBaseHardness не участвовал. Судья: НАСТОЯЩАЯ руда
+	// (BlocksGT.ore, материал MT.Fe) ставится реальным каналом placeBlock (как worldgen), замер state.getDestroyProgress
+	// (тот же вызов, что у движка при добыче: кирка/рука/контроль-камень), затем реальный слом gameMode.destroyBlock
+	// (SURVIVAL, полный пайплайн) — дроп + износ кирки (getToolDamage до/после, БЫЛО: износ от протухшей меты). Снять при уборке фазы.
+	private static int sOreProbeTick = -1;
+	private static net.minecraft.core.BlockPos sOreProbeOre = null, sOreProbeStone = null;
+	private static long sOreProbeDamageBefore = -1;
+	public static void gt6OreProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sOreProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sOreProbeTick == 200) {
+				O.println("========== [GT6-OREPROBE] BUG-020: твёрдость/добыча руды PrefixBlock реальным путём ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-OREPROBE] нет игрока => пропуск"); sOreProbeTick = 9999; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				// стальная кирка ГТ в руку (канал ToolsGT — как крафт игрока)
+				ItemStack tPick = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.PICKAXE, MT.Steel, MT.Steel);
+				tPlayer.getInventory().setItem(0, tPick);
+				tPlayer.getInventory().setSelectedSlot(0);
+				O.println("[GT6-OREPROBE] кирка в руке: " + tPlayer.getMainHandItem());
+				// руда железа реальным каналом установки руд (placeBlock — тот же, что worldgen) + контроль-камень
+				sOreProbeOre   = tPlayer.blockPosition().offset(4, 1, 4);
+				sOreProbeStone = tPlayer.blockPosition().offset(4, 1, 6);
+				boolean tPlaced = ((gregapi.block.prefixblock.PrefixBlock)BlocksGT.ore).placeBlock(tLevel, sOreProbeOre.getX(), sOreProbeOre.getY(), sOreProbeOre.getZ(), SIDE_UNKNOWN, MT.Fe.mID, null, T, T);
+				tLevel.setBlock(sOreProbeStone, Blocks.STONE.defaultBlockState(), 3);
+				net.minecraft.world.level.block.state.BlockState tOreState = tLevel.getBlockState(sOreProbeOre);
+				O.println("[GT6-OREPROBE] руда поставлена=" + tPlaced + " state=" + tOreState + " материал=" + ((gregapi.block.prefixblock.PrefixBlock)BlocksGT.ore).getMetaMaterial(tLevel, sOreProbeOre.getX(), sOreProbeOre.getY(), sOreProbeOre.getZ()));
+				// изолированный шов — ровно тот вызов, что движок делает каждый тик добычи:
+				float tProgPick  = tOreState.getDestroyProgress(tPlayer, tLevel, sOreProbeOre);
+				tPlayer.getInventory().setSelectedSlot(1); // пустая рука
+				float tProgHand  = tOreState.getDestroyProgress(tPlayer, tLevel, sOreProbeOre);
+				float tProgStone = tLevel.getBlockState(sOreProbeStone).getDestroyProgress(tPlayer, tLevel, sOreProbeStone);
+				tPlayer.getInventory().setSelectedSlot(0);
+				int tTicksPick = tProgPick  > 0 ? (int)Math.ceil(1.0F/tProgPick) : -1;
+				int tTicksHand = tProgHand  > 0 ? (int)Math.ceil(1.0F/tProgHand) : -1;
+				O.println("[GT6-OREPROBE] progress/tick: кирка=" + tProgPick + " (тиков=" + tTicksPick + ")  рука=" + tProgHand + " (тиков=" + tTicksHand + ")  контроль-камень(рука)=" + tProgStone);
+				O.println("[GT6-OREPROBE] мгновенный слом (>=1/tick)? кирка=" + (tProgPick >= 1) + " рука=" + (tProgHand >= 1) + "  => " + (tProgPick < 1 && tProgPick > 0 && tProgHand < 1 ? "PASS (руда не исчезает с одного удара)" : "FAIL"));
+				sOreProbeDamageBefore = gregapi.item.multiitem.MultiItemTool.getToolDamage(tPlayer.getMainHandItem());
+			} else if (sOreProbeTick == 240) {
+				if (sOreProbeOre == null) return;
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				net.minecraft.world.level.GameType tOldMode = tPlayer.gameMode();
+				tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				tPlayer.gameMode.destroyBlock(sOreProbeOre);
+				tPlayer.setGameMode(tOldMode);
+			} else if (sOreProbeTick == 280) {
+				if (sOreProbeOre == null) return;
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				StringBuilder tDrops = new StringBuilder();
+				for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sOreProbeOre).inflate(4))) {
+					tDrops.append(tD.getItem()).append("; ");
+					tD.discard();
+				}
+				long tDamageAfter = gregapi.item.multiitem.MultiItemTool.getToolDamage(tPlayer.getMainHandItem());
+				O.println("[GT6-OREPROBE] реальный слом: блок после=" + tLevel.getBlockState(sOreProbeOre) + "  дроп=" + (tDrops.length() == 0 ? "ПУСТО" : tDrops));
+				O.println("[GT6-OREPROBE] износ кирки: до=" + sOreProbeDamageBefore + " после=" + tDamageAfter + " дельта=" + (tDamageAfter - sOreProbeDamageBefore) + "  => " + (tDamageAfter > sOreProbeDamageBefore ? "PASS (износ от живой твёрдости)" : "FAIL (износ 0 — протухшая твёрдость)"));
+				O.println("========== [GT6-OREPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-OREPROBE] EXC " + e); e.printStackTrace(O); sOreProbeTick = 9999;}
+	}
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
@@ -852,6 +918,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6flowerprobe.flag")) gt6FlowerProbeTick(aEvent.getServer()); // [GT6-FLOWERPROBE] временная проба BUG-008 РЕАЛЬНЫМ путём (слом мака SURVIVAL-каналом игрока) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6slabprobe.flag")) gt6SlabProbeTick(aEvent.getServer()); // [GT6-SLABPROBE] временная проба BUG-010 (клиентские квады модели слэба) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) gt6AnvilProbeTick(aEvent.getServer()); // [GT6-ANVILPROBE] временная проба BUG-011 (наковальня реальным useOn) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer()); // [GT6-OREPROBE] временная проба BUG-020 (твёрдость/добыча руды PrefixBlock реальным путём) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
