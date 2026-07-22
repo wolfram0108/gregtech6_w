@@ -216,6 +216,15 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			PENDING_SYNC.clear();
 			gregtech.blocks.fluids.BlockRiver.PLACEMENT_ALLOWED = false;
 		});
+		// Дедлок перезахода (jstack: Server thread мира-2 в getChunk->join): выгрузка чанков мира-1 идёт ПОСЛЕ
+		// ServerStopping -> реквесты добавляются ПОСЛЕ clear выше и переживают сервер. Вторая очистка — на ПОЛНОЙ
+		// остановке (ServerStopped), плюс фильтр stale-реквестов в drainStubs (не полагаться на тайминг очистки).
+		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent aEvent) -> {
+			STUB_QUEUE.clear();
+			CLIENT_STUB_QUEUE.clear();
+			WORLDGEN_MTE.clear();
+			PENDING_SYNC.clear();
+		});
 		registerWorldgenStressProbe();
 	}
 
@@ -422,6 +431,10 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	private static void drainStubs(java.util.Queue<ChunkReq> aQueue, int aQuota) {
 		ChunkReq tReq; int tM = 0;
 		while (tM < aQuota && (tReq = aQueue.poll()) != null) {
+			// stale-гейт (дедлок перезахода): реквест с level ОСТАНОВЛЕННОГО сервера -> getChunk уходит в вечный
+			// CompletableFuture.join (mainThreadProcessor мёртв, ServerChunkCache.getChunk:147-148). Скип, не дренаж.
+			if (tReq.level() instanceof net.minecraft.server.level.ServerLevel tSL
+			 && tSL.getServer() != net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()) continue;
 			try { reconstructChunkMTEs(tReq.level(), tReq.blockX() >> 4, tReq.blockZ() >> 4); tM++; }
 			catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 		}

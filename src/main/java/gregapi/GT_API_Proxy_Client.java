@@ -2517,6 +2517,46 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private boolean mAutoWorldTriggered = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onAutoWorldCreate(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		// [GT6-CRAFTPROBE-TAB] хвост класса BUG-002 (реестр отложенного №1): протухают ли КРЕАТИВ-стеки после
+		// перезахода. Реальный канал: rebuild вкладок тем же путём, что открытие креатив-инвентаря
+		// (CreativeModeTabs.tryRebuildTabContents), затем первый зачарованный стек search-вкладки: identity holder'а
+		// против КЛИЕНТСКОГО реестра + форс-encode SERVERBOUND креатив-пакета КЛИЕНТСКИМ кодеком (путь cheat-give).
+		if (gregapi.GT_API_Proxy.sCraftProbeStage == 3 && gregapi.data.CS.probeFlag("gt6craftprobe.flag")) {
+			gregapi.GT_API_Proxy.sCraftProbeStage = 4;
+			try {
+				net.minecraft.client.Minecraft tMC3 = Minecraft.getInstance();
+				if (tMC3.player == null || tMC3.getConnection() == null || tMC3.level == null) return;
+				net.minecraft.core.RegistryAccess tRegs = tMC3.getConnection().registryAccess();
+				boolean tRebuilt = net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(tMC3.level.enabledFeatures(), true, tRegs);
+				net.minecraft.world.item.ItemStack tFound = net.minecraft.world.item.ItemStack.EMPTY;
+				for (net.minecraft.world.item.ItemStack tS : net.minecraft.world.item.CreativeModeTabs.searchTab().getDisplayItems()) {
+					// именно GT-инструмент (носитель протухания: enchant вшит isItemStackUsable), не ванильная книга
+					if (tS.getItem() instanceof gregapi.item.multiitem.MultiItemTool
+					 && !tS.getOrDefault(net.minecraft.world.item.enchantment.EnchantmentHelper.getComponentType(tS), net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY).isEmpty()) {tFound = tS; break;}
+				}
+				if (tFound.isEmpty()) {
+					gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE-TAB] rebuilt=" + tRebuilt + ": зачарованных стеков в search-tab нет => SKIP (замер не валиден)");
+					return;
+				}
+				net.minecraft.world.item.enchantment.ItemEnchantments tEnch = tFound.getOrDefault(net.minecraft.world.item.enchantment.EnchantmentHelper.getComponentType(tFound), net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
+				net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tHolder = tEnch.keySet().iterator().next();
+				net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> tReg = tRegs.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+				int tId = tReg.getId(tHolder.value());
+				gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE-TAB] rebuilt=" + tRebuilt + " стек=" + tFound + " энчант=" + tHolder.getRegisteredName()
+					+ " getId(value) по КЛИЕНТСКОМУ реестру=" + tId + (tId < 0 ? "  => ПРОТУХ (identity не найдена)" : "  => ok"));
+				io.netty.buffer.ByteBuf tRaw = io.netty.buffer.Unpooled.buffer();
+				try {
+					net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket tPkt = new net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket(36, tFound.copy());
+					net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket.STREAM_CODEC.encode(new net.minecraft.network.RegistryFriendlyByteBuf(tRaw, tRegs), tPkt);
+					gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE-TAB] форс-encode creative-пакета клиентским кодеком: OK, " + tRaw.readableBytes() + " байт  => PASS (хвост чист)");
+				} catch (Throwable e) {
+					gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE-TAB] форс-encode creative-пакета: КРАШ  => FAIL (хвост ЖИВ)");
+					e.printStackTrace(gregapi.data.CS.OUT);
+				} finally {tRaw.release();}
+				gregapi.data.CS.OUT.println("========== [GT6-CRAFTPROBE-TAB] DONE ==========");
+			} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE-TAB] EXC " + e); e.printStackTrace(gregapi.data.CS.OUT);}
+			return;
+		}
 		// [GT6-CRAFTPROBE] перезаход для BUG-002: МИР-1 отработал (stage=1) -> сохранить+выйти в меню и войти в тот же
 		// мир повторно ШТАТНЫМ авто-хуком ниже (файл wgautoworld.world + сброс триггера). МИР-2 получит НОВЫЕ инстансы
 		// динреестров — условие протухшего holder в статическом mOutput. Снять при уборке фазы.
