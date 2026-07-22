@@ -363,6 +363,31 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			tLevel.scheduleTick(new net.minecraft.core.BlockPos(BV_LX, BV_LY, BV_LZ), tLeaf, 2);
 			O.println("[GT6-BUGVERIFY] BUG-005 leaf setup: Leaves_AB meta(read)=" + lm + " (нужно 8) scheduled decay tick -> проверка в PHASE B");
 		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-005 setup EXC " + e); e.printStackTrace(O);}
+		try { // BUG-010 ФОРМА СЛЭБА (геометрия, не скриншот): getShape/renderBounds — полкуба или полный куб?
+			net.minecraft.world.level.block.Block tStoneB = BlocksGT.stones[0];
+			if (tStoneB instanceof gregapi.block.metatype.BlockMetaType tMT && tMT.mSlabs != null && tMT.mSlabs.length > gregapi.data.CS.SIDE_DOWN && tMT.mSlabs[gregapi.data.CS.SIDE_DOWN] != null) {
+				net.minecraft.world.level.block.Block tSlab = tMT.mSlabs[gregapi.data.CS.SIDE_DOWN];
+				net.minecraft.core.BlockPos ps = new net.minecraft.core.BlockPos(BV_X+4, BV_Y, BV_Z);
+				WD.set(tLevel, BV_X+4, BV_Y, BV_Z, tSlab, 0, 3);
+				net.minecraft.world.phys.AABB bb = tLevel.getBlockState(ps).getShape(tLevel, ps).bounds();
+				boolean full = bb.minX<=0.01&&bb.minY<=0.01&&bb.minZ<=0.01&&bb.maxX>=0.99&&bb.maxY>=0.99&&bb.maxZ>=0.99;
+				float[] rb = ((gregapi.block.BlockBase)tSlab).getRenderBounds();
+				O.println("[GT6-BUGVERIFY] BUG-010 slab(DOWN) getShape Y=[" + (float)bb.minY + ".." + (float)bb.maxY + "] renderBounds=" + java.util.Arrays.toString(rb) + "  => " + (!full ? "PASS (НЕ полный куб — форма есть)" : "FAIL (полный куб)"));
+			} else O.println("[GT6-BUGVERIFY] BUG-010 slab: stones[0] не BlockMetaType/нет слэбов => SKIP (проверить иначе)");
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-010 EXC " + e); e.printStackTrace(O);}
+		try { // BUG-009 ОРИЕНТАЦИЯ ЛОГА (геометрия текстур, не скриншот): getIcon per side вертикаль(m0) vs горизонт(PILLAR_X)
+			gregapi.block.BlockBaseMeta tLogM = (gregapi.block.BlockBaseMeta) BlocksGT.Log1;
+			StringBuilder v = new StringBuilder(), h = new StringBuilder();
+			for (int s = 0; s < 6; s++) {
+				net.minecraft.resources.Identifier iv = tLogM.getIcon(s, 0), ih = tLogM.getIcon(s, gregapi.data.CS.PILLAR_X);
+				v.append(iv==null?"null":iv.getPath()).append(s<5?" | ":"");
+				h.append(ih==null?"null":ih.getPath()).append(s<5?" | ":"");
+			}
+			boolean differ = !v.toString().equals(h.toString());
+			O.println("[GT6-BUGVERIFY] BUG-009 log getIcon вертикаль(m0):  " + v);
+			O.println("[GT6-BUGVERIFY] BUG-009 log getIcon горизонт(m4):   " + h);
+			O.println("[GT6-BUGVERIFY] BUG-009 orient (грань-текстуры меняются с ориентацией + getRenderType=PILLAR даёт UV-поворот) => " + (differ ? "PASS" : "FAIL"));
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-009 EXC " + e); e.printStackTrace(O);}
 		O.println("========== [GT6-BUGVERIFY] PHASE A END ==========");
 	}
 	private static void gt6BugVerifyPhaseB(net.minecraft.server.MinecraftServer aServer) {
