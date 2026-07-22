@@ -750,7 +750,8 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			// «изображение предмета не в центре, а сбоку»). Транслируем сразу в ЦЕНТР предмета 1.7.10.
 			aPoseStack.pushPose();
 			aPoseStack.translate(0.5 + OFFX[tFacing]*0.502, 0.375, 0.5 + OFFZ[tFacing]*0.502);
-			aPoseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180));
+			// BUG-015 v4: rotZ(180) из 1.7.10 компенсировал y-вниз-ориентацию GUI-рендера (renderItemIntoGUI рисовал
+			// текстуру сверху-вниз); neo-модель уже y-вверх — дословный перенос переворачивал иконку вверх ногами.
 			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[tFacing] * 90));
 			aPoseStack.scale(0.5f, 0.5f, 0.0001f);
 			aState.mItem.submit(aPoseStack, aNodes, 0xF000F0 /* fullbright 240/240, ориг setLightmapTextureCoords */, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, 0);
