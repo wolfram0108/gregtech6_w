@@ -437,6 +437,14 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		return F;
 	}
 	
+	// BUG-024 (улов BUG-020): 1.7.10-хук ниже был мёртв — при взрыве LAST_BROKEN не ставился, блок сносил neo-дефолт
+	// (setBlock air + wasExploded), цепная детонация EXPLOSIVE/FLAMMABLE-руд не срабатывала. Мост тем же приёмом, что
+	// MultiTileEntityBlock:502. Порядок vanilla (BlockBehaviour.onExplosionHit:173-193): дропы через loot-канал ДО этого
+	// хука (BE ещё жив), затем удаление здесь. GT6-версия не звала super (1.7.10 onBlockDestroyedByExplosion) — 1:1.
+	@Override public void onBlockExploded(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, Explosion aExplosion) {
+		if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) OUT.println("[GT6-OREPROBE-DIAG] onBlockExploded мост вызван: " + aPos + " материал=" + getMetaMaterial(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())); // временная DIAG BUG-024 — снять при уборке фазы
+		onBlockExploded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aExplosion);
+	}
 	// @Override
 	public void onBlockExploded(Level aWorld, int aX, int aY, int aZ, Explosion aExplosion) {
 		if (aWorld.isClientSide()) return;
@@ -669,6 +677,10 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
+		// BUG-024: ванильный взрыв (DESTROY_WITH_DECAY) дропает через этот же loot-канал с EXPLOSION_RADIUS —
+		// в 1.7.10 шанс дропа от взрыва = 1/размер (Explosion.doExplosionB / ExplosionGT:175 dropBlockAsItemWithChance).
+		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
+		if (tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius) return java.util.Collections.emptyList();
 		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
 		int tFortune = 0; boolean tSilkTouch = F;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);

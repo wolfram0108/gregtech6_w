@@ -841,6 +841,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// матрица лута Drops 1:1 (оригинал Loader_Ores.java:77 = Drops(oreBroken, ore, oreRaw, 0, 1)):
 	// без чар -> битая руда; silk touch -> сам блок руды; fortune -> oreRaw с множителем 1+rnd(f+1)
 	private static final String[] ORE_CASES = {"кирка без чар -> битая руда", "silk-кирка -> сам блок руды", "fortuneIII-кирка -> oreRaw xN"};
+	private static int sOreProbeExplOres = 0;
+	private static final int[] OFFX_RING = {1,1,1,0,0,-1,-1,-1}, OFFZ_RING = {-1,0,1,-1,1,-1,0,1};
 	public static void gt6OreProbeTick(net.minecraft.server.MinecraftServer aServer) {
 		sOreProbeTick++;
 		java.io.PrintStream O = gregapi.data.CS.OUT;
@@ -906,8 +908,67 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					long tDamageAfter = gregapi.item.multiitem.MultiItemTool.getToolDamage(tPlayer.getMainHandItem());
 					O.println("[GT6-OREPROBE] кейс «" + ORE_CASES[sOreProbeCase] + "»: блок после=" + tLevel.getBlockState(sOreProbeOre) + "  дроп=" + (tDrops.length() == 0 ? "ПУСТО" : tDrops) + "  (regNames=" + tJ + ")  износ=" + (tDamageAfter - sOreProbeDamageBefore) + "  => " + (tPass ? "PASS" : "FAIL"));
 					sOreProbeCase++;
-					if (sOreProbeCase >= ORE_CASES.length) O.println("========== [GT6-OREPROBE] DONE ==========");
 				}
+			// [BUG-024] взрыв-кейсы: ванильный TNT (реальный ServerExplosion: onExplosionHit → loot-дроп с EXPLOSION_RADIUS → onBlockExploded-мост)
+			} else if (sOreProbeTick == 400) {
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				// прогон 4 доказал: с ДЕФОЛТНЫМ tnt_explosion_drop_decay=false движок не кладёт EXPLOSION_RADIUS →
+				// дроп 100% (как у ванильных блоков, 8/8) — корректно. Гейт 1/размер судим В decay-режиме:
+				tLevel.getGameRules().set(net.minecraft.world.level.gamerules.GameRules.TNT_EXPLOSION_DROP_DECAY, Boolean.TRUE, aServer);
+				sOreProbeOre = tPlayer.blockPosition().offset(10, 1, 10);
+				sOreProbeExplOres = 0;
+				tLevel.setBlock(sOreProbeOre.below(), Blocks.STONE.defaultBlockState(), 3); // опора под TNT
+				for (int i = 0; i < 8; i++) { // кольцо руд Fe вокруг будущего TNT
+					net.minecraft.core.BlockPos tP = sOreProbeOre.offset(OFFX_RING[i], 0, OFFZ_RING[i]);
+					if (((gregapi.block.prefixblock.PrefixBlock)BlocksGT.ore).placeBlock(tLevel, tP.getX(), tP.getY(), tP.getZ(), SIDE_UNKNOWN, MT.Fe.mID, null, T, T)) sOreProbeExplOres++;
+				}
+				net.minecraft.world.entity.item.PrimedTnt tTnt = new net.minecraft.world.entity.item.PrimedTnt(tLevel, sOreProbeOre.getX()+0.5, sOreProbeOre.getY(), sOreProbeOre.getZ()+0.5, null);
+				tTnt.setFuse(20);
+				tLevel.addFreshEntity(tTnt);
+				O.println("[GT6-OREPROBE] кейс «TNT(decay) vs кольцо 8 руд Fe»: руд поставлено=" + sOreProbeExplOres + " TNT fuse=20 центр=" + sOreProbeOre);
+			} else if (sOreProbeTick == 480) {
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				int tDestroyed = 0;
+				for (int i = 0; i < 8; i++) if (tLevel.getBlockState(sOreProbeOre.offset(OFFX_RING[i], 0, OFFZ_RING[i])).isAir()) tDestroyed++;
+				int tDropped = 0; StringBuilder tDrops = new StringBuilder();
+				for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sOreProbeOre).inflate(8))) {
+					String tR = ST.regName(tD.getItem());
+					if (tR != null && tR.contains("ore.")) {tDropped += tD.getItem().getCount(); tDrops.append(tR).append(" x").append(tD.getItem().getCount()).append(";");}
+					tD.discard();
+				}
+				// 1.7.10-шанс = 1/размер (TNT=4 → 25%) в decay-режиме; 100%-дроп = гейт EXPLOSION_RADIUS не работает
+				tLevel.getGameRules().set(net.minecraft.world.level.gamerules.GameRules.TNT_EXPLOSION_DROP_DECAY, Boolean.FALSE, aServer); // вернуть дефолт
+				O.println("[GT6-OREPROBE] кейс «TNT(decay) vs руды»: снесено=" + tDestroyed + "/8  дроп-руд=" + tDropped + " (" + tDrops + ")  => " + (tDestroyed > 0 && tDropped < tDestroyed ? "PASS (снос есть, дроп с шансом ~1/4, не 100%)" : "FAIL"));
+			} else if (sOreProbeTick == 500) {
+				// цепная детонация: руда EXPLOSIVE-материала (Phosphorus, mCanExplode руды = T) + TNT вплотную.
+				// Прогоны 4-5: взрыв руду не доставал (рельеф/вода на позиции) — строим арену: пол 3×3 + куб воздуха.
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				sOreProbeOre = tPlayer.blockPosition().offset(14, 1, 14);
+				for (int dx = -1; dx <= 2; dx++) for (int dz = -1; dz <= 1; dz++) {
+					tLevel.setBlock(sOreProbeOre.offset(dx, -1, dz), Blocks.STONE.defaultBlockState(), 3);
+					for (int dy = 0; dy <= 2; dy++) tLevel.setBlock(sOreProbeOre.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 3);
+				}
+				boolean tPlaced = ((gregapi.block.prefixblock.PrefixBlock)BlocksGT.ore).placeBlock(tLevel, sOreProbeOre.getX(), sOreProbeOre.getY(), sOreProbeOre.getZ(), SIDE_UNKNOWN, MT.Phosphorus.mID, null, T, T);
+				net.minecraft.world.entity.item.PrimedTnt tTnt = new net.minecraft.world.entity.item.PrimedTnt(tLevel, sOreProbeOre.getX()+1.5, sOreProbeOre.getY(), sOreProbeOre.getZ()+0.5, null);
+				tTnt.setFuse(20);
+				tLevel.addFreshEntity(tTnt);
+				// изолированный шов: взрывостойкость EXPLOSIVE-руды обязана быть 0 (гейт :464)
+				O.println("[GT6-OREPROBE] кейс «TNT vs фосфорная руда (EXPLOSIVE)»: руда=" + tPlaced + " " + tLevel.getBlockState(sOreProbeOre)
+					+ " resistance=" + ((gregapi.block.prefixblock.PrefixBlock)BlocksGT.ore).getExplosionResistance(tLevel.getBlockState(sOreProbeOre), tLevel, sOreProbeOre, null));
+			} else if (sOreProbeTick == 525) {
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				int tTntAlive = tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.PrimedTnt.class, new net.minecraft.world.phys.AABB(sOreProbeOre).inflate(6)).size();
+				O.println("[GT6-OREPROBE-DIAG] t+25 после спавна TNT (fuse 20): TNT-entity рядом=" + tTntAlive + " (0 = взорвался) руда=" + tLevel.getBlockState(sOreProbeOre) + " опора TNT=" + tLevel.getBlockState(sOreProbeOre.offset(1, -1, 0)));
+			} else if (sOreProbeTick == 580) {
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sOreProbeOre).inflate(8))) tD.discard();
+				O.println("[GT6-OREPROBE] кейс «фосфорная руда»: блок после=" + tLevel.getBlockState(sOreProbeOre) + " (air => снесена; вызов моста см. DIAG выше)");
+				O.println("========== [GT6-OREPROBE] DONE ==========");
 			}
 		} catch (Throwable e) {O.println("[GT6-OREPROBE] EXC " + e); e.printStackTrace(O); sOreProbeTick = 9999;}
 	}

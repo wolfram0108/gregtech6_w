@@ -215,6 +215,10 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
+		// BUG-024 (тот же шов, что PrefixBlock): ванильный взрыв дропает через loot-канал с EXPLOSION_RADIUS —
+		// 1.7.10-шанс дропа от взрыва = 1/размер; без гейта GT6-блоки дропались бы от TNT со 100%.
+		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
+		if (tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius) return java.util.Collections.emptyList();
 		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
 		int tFortune = 0;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
