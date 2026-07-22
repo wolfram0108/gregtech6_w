@@ -397,6 +397,12 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 		isItemStackUsable(aStack);
 	}
 	
+	// BUG-021: getItemStackLimit ниже — 1.7.10-имя движкового per-stack хука; в neo канал = IItemExtension
+	// .getMaxStackSize(ItemStack) (тот же per-stack контракт). Без моста вся динамика размера (энергия=1,
+	// fluid-контейнеры, getDefaultStackLimit наследников: MultiItemTool=1, RandomTools/Bottles/Bumbles) была
+	// мертва — предметы стакались по ItemBase-дефолту 64. Мост = точный аналог 1.7.10 @Override поверх
+	// vanilla-дефолта (ItemBase:57 mMaxStackSize).
+	@Override public int getMaxStackSize(ItemStack aStack) {return getItemStackLimit(aStack);}
 	// @Override
 	public int getItemStackLimit(ItemStack aStack) {
 		if (ItemNBT.has(aStack) && ItemNBT.get(aStack).contains(NBT_ENERGY)) return 1;

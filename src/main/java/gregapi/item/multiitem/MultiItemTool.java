@@ -85,9 +85,11 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 */
 	public MultiItemTool(String aModID, String aUnlocalized) {
 		super(aModID, aUnlocalized);
-		// item-base: инструменты не стакаются — в neo это следует из durability (предмет с DAMAGE-компонентом авто
-		// стакается до 1); runtime setMaxStackSize(1) удалён, не нужен (декларативно). Не заглушка.
-		// setMaxStackSize(1);
+		// BUG-021: прежний довод «стак=1 следует из durability декларативно» был НЕВЕРЕН — GT6-инструменты ведут
+		// прочность собственной NBT-системой (getToolDamage/doDamage), Properties.durability/DAMAGE-компонента у них
+		// нет → движок ничего не форсировал, инструменты стакались по 64. Восстановлено 1:1 (оригинал :88); жёсткий
+		// getItemStackLimit=1 ниже (:~754) достижим через мост MultiItem.getMaxStackSize.
+		setMaxStackSize(1);
 		/*
 		if (MD.BG2.mLoaded) try {
 			UT.Reflection.callPublicMethod(Class.forName("mods.battlegear2.api.weapons.WeaponRegistry"), "addTwoHanded", make(0));

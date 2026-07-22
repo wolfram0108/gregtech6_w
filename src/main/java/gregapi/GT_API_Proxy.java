@@ -1019,6 +1019,47 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-FOODPROBE] EXC " + e); e.printStackTrace(O); sFoodProbeTick = 9999;}
 	}
 
+	// ========== [GT6-STACKPROBE] ВРЕМЕННАЯ проба BUG-021 (гейт run/gt6stackprobe.flag + -Pgt6probes) ==========
+	// Игрок: «размер стака у многих предметов не перенесён (инструменты стакаются)». Корень: движковый per-stack канал
+	// getMaxStackSize(ItemStack) не был мостнут в MultiItem-диспетчер getItemStackLimit (мёртвое 1.7.10-имя) + у
+	// MultiItemTool вырезан setMaxStackSize(1) по неверному доводу. Судья: шов getMaxStackSize (кирка=1, сыр=64) +
+	// реальный путь слияния (Inventory.add двух предметов). Снять при уборке фазы.
+	private static int sStackProbeTick = -1;
+	public static void gt6StackProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sStackProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sStackProbeTick == 200) {
+				O.println("========== [GT6-STACKPROBE] BUG-021: размеры стака реальным путём ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-STACKPROBE] нет игрока => пропуск"); sStackProbeTick = 9999; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				ItemStack tPick1 = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.PICKAXE, MT.Steel, MT.Steel);
+				ItemStack tPick2 = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.PICKAXE, MT.Steel, MT.Steel);
+				ItemStack tFood1 = IL.Food_Cheese.get(1), tFood2 = IL.Food_Cheese.get(1);
+				O.println("[GT6-STACKPROBE] шов getMaxStackSize: кирка=" + tPick1.getMaxStackSize() + " сыр=" + tFood1.getMaxStackSize()
+					+ "  => " + (tPick1.getMaxStackSize() == 1 && tFood1.getMaxStackSize() == 64 ? "PASS" : "FAIL"));
+				// реальный путь: слияние инвентарным add
+				tPlayer.getInventory().clearContent();
+				tPlayer.getInventory().add(tPick1); tPlayer.getInventory().add(tPick2);
+				tPlayer.getInventory().add(tFood1); tPlayer.getInventory().add(tFood2);
+				int tSlot0 = tPlayer.getInventory().getItem(0).getCount(), tSlot1 = tPlayer.getInventory().getItem(1).getCount();
+				// кирки НЕ должны слиться (два слота по 1); сыр ДОЛЖЕН слиться (один слот count=2)
+				int tCheeseSlots = 0, tCheeseCount = 0, tPickSlots = 0;
+				for (int i = 0; i < 36; i++) {
+					ItemStack tS = tPlayer.getInventory().getItem(i);
+					if (tS.isEmpty()) continue;
+					String tR = ST.regName(tS);
+					if (tR != null && tR.contains("metatool")) tPickSlots++;
+					if (IL.Food_Cheese.equal(tS, T, T)) {tCheeseSlots++; tCheeseCount += tS.getCount();}
+				}
+				O.println("[GT6-STACKPROBE] реальный путь add: кирки в слотах=" + tPickSlots + " (ожидание 2 — не слились)  сыр: слотов=" + tCheeseSlots + " штук=" + tCheeseCount + " (ожидание 1 слот ×2)");
+				O.println("[GT6-STACKPROBE] => " + (tPickSlots == 2 && tCheeseSlots == 1 && tCheeseCount == 2 ? "PASS" : "FAIL"));
+				tPlayer.getInventory().clearContent();
+				O.println("========== [GT6-STACKPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-STACKPROBE] EXC " + e); e.printStackTrace(O); sStackProbeTick = 9999;}
+	}
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
@@ -1044,6 +1085,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) gt6AnvilProbeTick(aEvent.getServer()); // [GT6-ANVILPROBE] временная проба BUG-011 (наковальня реальным useOn) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer()); // [GT6-OREPROBE] временная проба BUG-020 (твёрдость/добыча руды PrefixBlock реальным путём) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6foodprobe.flag")) gt6FoodProbeTick(aEvent.getServer()); // [GT6-FOODPROBE] временная проба BUG-019 (еда реальным путём: useItem + жевание движком) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6stackprobe.flag")) gt6StackProbeTick(aEvent.getServer()); // [GT6-STACKPROBE] временная проба BUG-021 (размеры стака: шов getMaxStackSize + слияние add) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
