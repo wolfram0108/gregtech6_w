@@ -767,6 +767,16 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					o.println("[GT6-MINE] МАШИНА startDestroyBlock=" + tStarted
 						+ " cliProgress0=" + tMC.level.getBlockState(mMineMachinePos).getDestroyProgress(tMC.player, tMC.level, mMineMachinePos)
 						+ " рука=" + tMC.player.getMainHandItem().getItem());
+					// ТРЕЩИНЫ: точный повтор движкового breaking-вызова (BlockFeatureRenderer:150 — модель state,
+					// но аргументы-ПУСТЫШКИ EMPTY/ZERO/AIR) → parts>0 = оверлей трещин получит геометрию
+					try {
+						net.minecraft.world.level.block.state.BlockState tMSt = tMC.level.getBlockState(mMineMachinePos);
+						net.minecraft.client.renderer.block.dispatch.BlockStateModel tModel = tMC.getModelManager().getBlockStateModelSet().get(tMSt);
+						java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new java.util.ArrayList<>();
+						tModel.collectParts(net.minecraft.client.renderer.block.BlockAndTintGetter.EMPTY, net.minecraft.core.BlockPos.ZERO,
+							net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), net.minecraft.util.RandomSource.create(42), tParts);
+						o.println("[GT6-CRACK] breaking-модель машины: parts=" + tParts.size() + " (ждали >0 — куб-оверлей трещин)");
+					} catch (Throwable e) { o.println("[GT6-CRACK] проверка упала: " + e); }
 					return;
 				}
 				boolean tGone = tMC.level.getBlockState(mMineMachinePos).isAir();

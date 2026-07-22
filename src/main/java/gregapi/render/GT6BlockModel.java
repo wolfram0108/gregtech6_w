@@ -61,6 +61,23 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 
 	@Override
 	public void collectParts(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, RandomSource aRandom, List<BlockStateModelPart> aParts) {
+		// F3-render ТРЕЩИНЫ (репорт игрока «нет текстуры трещин при разрушении — не понятна длительность»):
+		// breaking-путь движка (LevelRenderer.submitBlockDestroyAnimation → BlockFeatureRenderer.
+		// renderBreakingBlockModelSubmits:150) зовёт collectParts С ПУСТЫШКАМИ (BlockAndTintGetter.EMPTY,
+		// BlockPos.ZERO, AIR-state) — vanilla-модели аргументы игнорируют (их квады статичны), наша динамическая
+		// модель на пустышках отдавала ПУСТО → трещин не было НИ У ОДНОГО GT6-блока (baked И MTE: у MTE
+		// getRenderShape=MODEL, движок берёт эту же модель для оверлея). UV трещин пересчитывает
+		// SheetedDecalTextureGenerator по ПОЗИЦИИ — спрайт не важен, важна геометрия: отдаём полный куб
+		// (машины/руды/большинство и есть куб; у не-кубов оверлей чуть шире формы — косметический хвост).
+		// Гейт: только AIR-state — обычный чанк-мешинг всегда передаёт реальный state.
+		if (aState.isAir()) {
+			GT6QuadBuilder tCrackQB = new GT6QuadBuilder();
+			tCrackQB.setBounds(null); // полный куб 0..1
+			net.minecraft.resources.Identifier tCrackIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
+			for (byte tSide = 0; tSide < 6; tSide++) tCrackQB.putFace(tSide, tCrackIcon, gregapi.data.CS.UNCOLOURED);
+			if (!tCrackQB.isEmpty()) aParts.add(new SimpleModelWrapper(tCrackQB.build(), true, mParticle));
+			return;
+		}
 		if (!(aState.getBlock() instanceof IRenderedBlock tRB)) return;
 		Block tBlock = aState.getBlock();
 		int tX = aPos.getX(), tY = aPos.getY(), tZ = aPos.getZ();
