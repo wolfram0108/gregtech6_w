@@ -973,6 +973,52 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-OREPROBE] EXC " + e); e.printStackTrace(O); sOreProbeTick = 9999;}
 	}
 
+	// ========== [GT6-FOODPROBE] ВРЕМЕННАЯ проба BUG-019 РЕАЛЬНЫМ путём игрока (гейт run/gt6foodprobe.flag + -Pgt6probes) ==========
+	// Игрок: «вся еда мода не считается едой». Корень: 1.7.10-хуки getMaxItemUseDuration/getItemUseAction/onEaten мёртвые,
+	// CONSUMABLE-компонента нет → getUseDuration=0 → жевание не стартовало. Судья: голодный SURVIVAL-игрок, сыр
+	// (IL.Food_Cheese) в руке, реальный канал gameMode.useItem (ПКМ) → движок сам тикает жевание → finishUsingItem →
+	// замер голода/насыщения/стека. Изолированные швы: getUseDuration>0, getUseAnimation. Контроль: не-еда duration=0.
+	// Снять при уборке фазы.
+	private static int sFoodProbeTick = -1;
+	private static int sFoodProbeHungerBefore = -1, sFoodProbeCountBefore = -1;
+	public static void gt6FoodProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sFoodProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sFoodProbeTick == 200) {
+				O.println("========== [GT6-FOODPROBE] BUG-019: еда мода реальным путём ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-FOODPROBE] нет игрока => пропуск"); sFoodProbeTick = 9999; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				ItemStack tFood = IL.Food_Cheese.get(4);
+				// изолированные швы — те самые вызовы движка:
+				int tDuration = tFood.getItem().getUseDuration(tFood, tPlayer);
+				Object tAnim = tFood.getItem().getUseAnimation(tFood);
+				ItemStack tNotFood = ST.make(Items.STICK, 1, 0);
+				O.println("[GT6-FOODPROBE] изолированный шов: сыр getUseDuration=" + tDuration + " getUseAnimation=" + tAnim + "  контроль-палка duration=" + tNotFood.getItem().getUseDuration(tNotFood, tPlayer));
+				O.println("[GT6-FOODPROBE] шов duration>0 и анимация EAT? => " + (tDuration > 0 && "EAT".equals(String.valueOf(tAnim)) ? "PASS" : "FAIL"));
+				// реальный путь: голод 6, сыр в руку, ПКМ серверным каналом
+				net.minecraft.world.level.GameType tOldMode = tPlayer.gameMode();
+				tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				tPlayer.getFoodData().setFoodLevel(6);
+				tPlayer.getInventory().setItem(0, tFood);
+				tPlayer.getInventory().setSelectedSlot(0);
+				sFoodProbeHungerBefore = tPlayer.getFoodData().getFoodLevel();
+				sFoodProbeCountBefore = tPlayer.getMainHandItem().getCount();
+				tPlayer.gameMode.useItem(tPlayer, tPlayer.level(), tPlayer.getMainHandItem(), InteractionHand.MAIN_HAND);
+				O.println("[GT6-FOODPROBE] useItem вызван: голод=" + sFoodProbeHungerBefore + " стек=" + sFoodProbeCountBefore + " isUsingItem=" + tPlayer.isUsingItem());
+			} else if (sFoodProbeTick == 320) {
+				if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				int tHungerAfter = tPlayer.getFoodData().getFoodLevel();
+				float tSaturation = tPlayer.getFoodData().getSaturationLevel();
+				int tCountAfter = tPlayer.getMainHandItem().getCount();
+				O.println("[GT6-FOODPROBE] реальный путь (120 тиков жевания): голод " + sFoodProbeHungerBefore + "->" + tHungerAfter + " насыщение=" + tSaturation + " стек " + sFoodProbeCountBefore + "->" + tCountAfter);
+				O.println("[GT6-FOODPROBE] съедено (голод вырос И стек -1)? => " + (tHungerAfter > sFoodProbeHungerBefore && tCountAfter == sFoodProbeCountBefore - 1 ? "PASS" : "FAIL"));
+				O.println("========== [GT6-FOODPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-FOODPROBE] EXC " + e); e.printStackTrace(O); sFoodProbeTick = 9999;}
+	}
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
@@ -997,6 +1043,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6slabprobe.flag")) gt6SlabProbeTick(aEvent.getServer()); // [GT6-SLABPROBE] временная проба BUG-010 (клиентские квады модели слэба) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) gt6AnvilProbeTick(aEvent.getServer()); // [GT6-ANVILPROBE] временная проба BUG-011 (наковальня реальным useOn) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) gt6OreProbeTick(aEvent.getServer()); // [GT6-OREPROBE] временная проба BUG-020 (твёрдость/добыча руды PrefixBlock реальным путём) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6foodprobe.flag")) gt6FoodProbeTick(aEvent.getServer()); // [GT6-FOODPROBE] временная проба BUG-019 (еда реальным путём: useItem + жевание движком) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
