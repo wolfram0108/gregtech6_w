@@ -96,14 +96,10 @@ public class GT_Tool_HardHammer extends ToolStats {
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		int rConversions = 0;
 		Recipe tRecipe;
-		// [GT6-HAMMERPROBE-DIAG] временная диагностика BUG-016 — снять при уборке фазы
-		boolean tHammerDiag = gregapi.data.CS.probeFlag("gt6hammerprobe.flag");
 		if (aBlock instanceof net.minecraft.world.level.block.EntityBlock || null == (tRecipe = RM.Hammer.findRecipe(null, null, T, Integer.MAX_VALUE, null, ZL_FS, ST.make(aBlock, 1, aMetaData)))) {
-			if (tHammerDiag) OUT.println("[GT6-HAMMERPROBE-DIAG] convertBlockDrops: byBlock=NULL (block=" + aBlock + ", EntityBlock=" + (aBlock instanceof net.minecraft.world.level.block.EntityBlock) + ") -> перебор дропов, их " + aDrops.size());
 			List<ItemStack> tDrops = ST.arraylist();
 			for (int i = 0; i < aDrops.size(); i++) {
 				tRecipe = RM.Hammer.findRecipe(null, null, T, Integer.MAX_VALUE, null, ZL_FS, ST.amount(1, aDrops.get(i)));
-				if (tHammerDiag) OUT.println("[GT6-HAMMERPROBE-DIAG] convertBlockDrops: поДропу " + aDrops.get(i) + " -> рецепт " + (tRecipe == null ? "NULL" : "НАЙДЕН"));
 				if (tRecipe != null) {
 					byte tStackSize = (byte)aDrops.get(i).getCount();
 					rConversions += tStackSize;
@@ -116,7 +112,6 @@ public class GT_Tool_HardHammer extends ToolStats {
 			}
 			aDrops.addAll(tDrops);
 		} else {
-			if (tHammerDiag) OUT.println("[GT6-HAMMERPROBE-DIAG] convertBlockDrops: byBlock НАЙДЕН для " + aBlock + ", выходов " + tRecipe.mOutputs.length);
 			aDrops.clear();
 			ItemStack[] tHammeringOutput = tRecipe.getOutputs(RNGSUS);
 			for (int k = 0; k < tHammeringOutput.length; k++) if (tHammeringOutput[k] != null) aDrops.add(tHammeringOutput[k]);

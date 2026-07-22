@@ -239,8 +239,6 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		// [GT6-STORPROBE-DIAG] временная диагностика BUG-015 — снять при уборке фазы
-		if (gregapi.data.CS.probeFlag("gt6storprobe.flag")) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] onBlockActivated3: server=" + isServerSide() + " aSide=" + aSide + " mFacing=" + mFacing + " mMode=" + mMode + " covered=" + isCovered(aSide) + " hit=(" + aHitX + "," + aHitY + "," + aHitZ + ") coords=" + java.util.Arrays.toString(UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ)) + " slotHas1=" + slotHas(1));
 		if (aSide != mFacing || (mMode & B[3]) != 0 || isCovered(aSide)) return F;
 		float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
 		if (tCoords[0] < PX_P[1] || tCoords[0] > PX_N[1] || tCoords[1] < PX_P[1] || tCoords[1] > PX_N[1]) return F;
@@ -277,8 +275,6 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 						}
 						updateInventory();
 						playCollect();
-						// [GT6-STORPROBE-DIAG] временная диагностика BUG-015 — снять при уборке фазы
-						if (gregapi.data.CS.probeFlag("gt6storprobe.flag")) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] выдача ЗАВЕРШЕНА, остаток(логич.)=" + (slotHas(1) ? ST.count(slot(1)) : -1) + " призрак=" + (slotHas(1) && ST.count(slot(1)) == 0));
 					}
 				} else {
 					if (ST.valid(aStack)) {

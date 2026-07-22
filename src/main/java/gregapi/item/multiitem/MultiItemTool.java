@@ -204,8 +204,6 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 */
 	public void onHarvestBlockEvent(ArrayList<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		IToolStats tStats = getToolStats(aStack);
-		// [GT6-HAMMERPROBE-DIAG] временная диагностика BUG-016 (гейт как у пробы) — снять при уборке фазы
-		if (gregapi.data.CS.probeFlag("gt6hammerprobe.flag")) gregapi.data.CS.OUT.println("[GT6-HAMMERPROBE-DIAG] onHarvestBlockEvent: block=" + aBlock + " stats=" + (tStats == null ? "NULL" : tStats.getClass().getSimpleName()) + " instaharvest=" + ST.instaharvest(aBlock, aMeta) + " usable=" + isItemStackUsable(aStack) + " digSpeed=" + getDigSpeed(aStack, aBlock, aMeta) + " дропов=" + aDrops.size());
 		if (tStats == null || ST.instaharvest(aBlock, aMeta) || !isItemStackUsable(aStack) || getDigSpeed(aStack, aBlock, aMeta) <= 0) {
 			doDamage(aStack, 0, aPlayer, T);
 			return;
