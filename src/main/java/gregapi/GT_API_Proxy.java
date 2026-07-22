@@ -656,6 +656,87 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-HAMMERPROBE] EXC " + e); e.printStackTrace(O); sHammerProbeCase = 99;}
 	}
 
+	// ========== [GT6-MATPROBE] ВРЕМЕННАЯ проба BUG-012/013 (гейт run/gt6matprobe.flag + -Pgt6probes) ==========
+	// BUG-012: нож не срезает траву на «сено» (SHORT_GRASS/FERN=vine, TALL_GRASS/LARGE_FERN=plants в 1.7.10 —
+	// классификация WD.getMaterial проваливалась в rock). BUG-013: топор не берёт деревянные производные
+	// (слэбы/двери/люки/заборы/лестницы = Material.wood в 1.7.10). Судья: (1) изолированный дамп классификации;
+	// (2) нож по траве реальным destroyBlock SURVIVAL -> дроп IL.Grass; (3) топор: getDestroySpeed(слэб/дверь) > 0
+	// (движковая величина — корень BUG-013) + реальный слом слэба -> дроп. Снять при уборке фазы.
+	private static int sMatProbeTick = -1, sMatProbeCase = 0;
+	private static net.minecraft.core.BlockPos sMatProbePos = null;
+	private static net.minecraft.world.item.ItemStack sMatProbeKnife = null, sMatProbeAxe = null;
+	private static final String[] MAT_CASES = {"нож+SHORT_GRASS -> IL.Grass", "нож+TALL_GRASS -> IL.Grass x2", "топор+OAK_SLAB -> слом+дроп"};
+	public static void gt6MatProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sMatProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sMatProbeTick == 200) {
+				O.println("========== [GT6-MATPROBE] BUG-012/013: классификация материалов + нож/топор реальным путём ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-MATPROBE] нет игрока => пропуск"); sMatProbeCase = 99; return;}
+				// изолированный шов: классификация WD.getMaterial по всем затронутым блокам
+				Object[][] tChecks = {
+					{Blocks.SHORT_GRASS, gregapi.block.Material.vine, "SHORT_GRASS=vine"}, {Blocks.FERN, gregapi.block.Material.vine, "FERN=vine"},
+					{Blocks.DEAD_BUSH, gregapi.block.Material.vine, "DEAD_BUSH=vine"}, {Blocks.TALL_GRASS, gregapi.block.Material.plants, "TALL_GRASS=plants"},
+					{Blocks.LARGE_FERN, gregapi.block.Material.plants, "LARGE_FERN=plants"}, {Blocks.LILY_PAD, gregapi.block.Material.plants, "LILY_PAD=plants"},
+					{Blocks.OAK_SLAB, gregapi.block.Material.wood, "OAK_SLAB=wood"}, {Blocks.SPRUCE_SLAB, gregapi.block.Material.wood, "SPRUCE_SLAB=wood"},
+					{Blocks.OAK_DOOR, gregapi.block.Material.wood, "OAK_DOOR=wood"}, {Blocks.OAK_TRAPDOOR, gregapi.block.Material.wood, "OAK_TRAPDOOR=wood"},
+					{Blocks.OAK_FENCE, gregapi.block.Material.wood, "OAK_FENCE=wood"}, {Blocks.OAK_FENCE_GATE, gregapi.block.Material.wood, "OAK_FENCE_GATE=wood"},
+					{Blocks.OAK_STAIRS, gregapi.block.Material.wood, "OAK_STAIRS=wood"}, {Blocks.OAK_PRESSURE_PLATE, gregapi.block.Material.wood, "OAK_PRESSURE_PLATE=wood"},
+					{Blocks.OAK_SIGN, gregapi.block.Material.wood, "OAK_SIGN=wood"}, {Blocks.IRON_DOOR, gregapi.block.Material.rock, "IRON_DOOR=НЕ wood (контроль)"},
+					{Blocks.OAK_BUTTON, gregapi.block.Material.rock, "OAK_BUTTON=НЕ wood (1.7.10 circuits, контроль)"}};
+				int tFails = 0;
+				for (Object[] tC : tChecks) {
+					boolean tOk = WD.getMaterial((net.minecraft.world.level.block.Block)tC[0]) == tC[1];
+					if (!tOk) tFails++;
+					O.println("[GT6-MATPROBE] классификация " + tC[2] + (tOk ? "  OK" : "  FAIL"));
+				}
+				O.println("[GT6-MATPROBE] изолированный шов: " + (tFails == 0 ? "ВСЕ OK" : tFails + " FAIL"));
+				// инструменты
+				sMatProbeKnife = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.KNIFE, MT.Steel, MT.WOODS.Spruce);
+				sMatProbeAxe   = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.AXE  , MT.Steel, MT.WOODS.Spruce);
+				// изолированный шов топора: движковая getDestroySpeed по слэбу/двери (корень BUG-013)
+				O.println("[GT6-MATPROBE] топор getDestroySpeed: OAK_SLAB=" + sMatProbeAxe.getDestroySpeed(Blocks.OAK_SLAB.defaultBlockState())
+					+ " OAK_DOOR=" + sMatProbeAxe.getDestroySpeed(Blocks.OAK_DOOR.defaultBlockState())
+					+ " (ожидание: обе > 0)");
+			} else if (sMatProbeTick >= 220 && sMatProbeCase < MAT_CASES.length) {
+				int tPhase = (sMatProbeTick - 220) % 40;
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {sMatProbeCase = 99; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				if (tPhase == 0) {
+					net.minecraft.world.item.ItemStack tTool = sMatProbeCase < 2 ? sMatProbeKnife.copy() : sMatProbeAxe.copy();
+					tPlayer.getInventory().setItem(0, tTool);
+					tPlayer.getInventory().setSelectedSlot(0);
+					sMatProbePos = tPlayer.blockPosition().offset(4, 1, 4 + sMatProbeCase); // вне радиуса подбора (урок flower-пробы)
+					if (sMatProbeCase == 0) {
+						tLevel.setBlock(sMatProbePos.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+						tLevel.setBlock(sMatProbePos, Blocks.SHORT_GRASS.defaultBlockState(), 3);
+					} else if (sMatProbeCase == 1) {
+						tLevel.setBlock(sMatProbePos.below(), Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+						net.minecraft.world.level.block.DoublePlantBlock.placeAt(tLevel, Blocks.TALL_GRASS.defaultBlockState(), sMatProbePos, 3);
+					} else {
+						tLevel.setBlock(sMatProbePos, Blocks.OAK_SLAB.defaultBlockState(), 3);
+					}
+					O.println("[GT6-MATPROBE] кейс «" + MAT_CASES[sMatProbeCase] + "»: блок " + tLevel.getBlockState(sMatProbePos) + " на " + sMatProbePos + ", в руке " + tPlayer.getMainHandItem());
+				} else if (tPhase == 10) {
+					net.minecraft.world.level.GameType tOldMode = tPlayer.gameMode();
+					tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tPlayer.gameMode.destroyBlock(sMatProbePos);
+					tPlayer.setGameMode(tOldMode);
+				} else if (tPhase == 30) {
+					StringBuilder tDrops = new StringBuilder();
+					for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sMatProbePos).inflate(4))) {
+						tDrops.append(tD.getItem()).append("; ");
+						tD.discard();
+					}
+					O.println("[GT6-MATPROBE] кейс «" + MAT_CASES[sMatProbeCase] + "»: дроп = " + (tDrops.length() == 0 ? "ПУСТО" : tDrops));
+					sMatProbeCase++;
+					if (sMatProbeCase >= MAT_CASES.length) O.println("========== [GT6-MATPROBE] DONE ==========");
+				}
+			}
+		} catch (Throwable e) {O.println("[GT6-MATPROBE] EXC " + e); e.printStackTrace(O); sMatProbeCase = 99;}
+	}
+
 	// ========== [GT6-SLABPROBE] ВРЕМЕННАЯ проба BUG-010 (гейт run/gt6slabprobe.flag + -Pgt6probes) ==========
 	// Игрок: «слэбов в JEI в 5× больше оригинала; большинство выглядят как блоки; любые ставятся/выглядят полными».
 	// Сервер ставит DOWN-слэб первого BlockMetaType, клиент (хук в Proxy_Client) меряет НАСТОЯЩИЕ квады клиентской
@@ -915,6 +996,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6slabprobe.flag")) gt6SlabProbeTick(aEvent.getServer()); // [GT6-SLABPROBE] временная проба BUG-010 (клиентские квады модели слэба) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) gt6AnvilProbeTick(aEvent.getServer()); // [GT6-ANVILPROBE] временная проба BUG-011 (наковальня реальным useOn) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6hammerprobe.flag")) gt6HammerProbeTick(aEvent.getServer()); // [GT6-HAMMERPROBE] временная проба BUG-016 (молот по кобблстоуну реальным путём) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6matprobe.flag")) gt6MatProbeTick(aEvent.getServer()); // [GT6-MATPROBE] временная проба BUG-012/013 (классификация материалов + нож/топор реальным путём) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {

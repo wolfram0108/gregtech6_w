@@ -537,10 +537,26 @@ public class WD {
 		if (tState.is(net.minecraft.tags.BlockTags.SAND))                                                        return gregapi.block.Material.sand;
 		if (aBlock == Blocks.DIRT || aBlock == Blocks.COARSE_DIRT || aBlock == Blocks.GRAVEL || aBlock == Blocks.FARMLAND || aBlock == Blocks.DIRT_PATH || aBlock == Blocks.ROOTED_DIRT || aBlock == Blocks.SOUL_SAND || aBlock == Blocks.SOUL_SOIL) return gregapi.block.Material.ground;
 		if (tState.is(net.minecraft.tags.BlockTags.LEAVES))                                                      return gregapi.block.Material.leaves;
-		if (tState.is(net.minecraft.tags.BlockTags.LOGS) || tState.is(net.minecraft.tags.BlockTags.PLANKS) || aBlock == Blocks.CRAFTING_TABLE || aBlock == Blocks.BOOKSHELF || aBlock == Blocks.CHEST || aBlock == Blocks.JUKEBOX || aBlock == Blocks.NOTE_BLOCK) return gregapi.block.Material.wood;
+		// BUG-013: производные деревянные блоки. 1.7.10: BlockWoodSlab/BlockDoor(wood)/trapdoor/fence/fence_gate/
+		// wooden_pressure_plate/BlockSign = Material.wood, деревянные лестницы наследуют материал донора-досок
+		// (Block.java:316,329,341 + BlockWoodSlab:22/BlockSign:25/BlockFenceGate:24 референса 1.7.10). Кнопки и
+		// ladder в 1.7.10 = Material.circuits — НЕ включены (1:1). FENCE_GATES без wooden-варианта: в ванили все ворота деревянные.
+		if (tState.is(net.minecraft.tags.BlockTags.LOGS) || tState.is(net.minecraft.tags.BlockTags.PLANKS)
+		 || tState.is(net.minecraft.tags.BlockTags.WOODEN_SLABS) || tState.is(net.minecraft.tags.BlockTags.WOODEN_STAIRS)
+		 || tState.is(net.minecraft.tags.BlockTags.WOODEN_DOORS) || tState.is(net.minecraft.tags.BlockTags.WOODEN_TRAPDOORS)
+		 || tState.is(net.minecraft.tags.BlockTags.WOODEN_FENCES) || tState.is(net.minecraft.tags.BlockTags.FENCE_GATES)
+		 || tState.is(net.minecraft.tags.BlockTags.WOODEN_PRESSURE_PLATES) || tState.is(net.minecraft.tags.BlockTags.ALL_SIGNS)
+		 || aBlock == Blocks.CRAFTING_TABLE || aBlock == Blocks.BOOKSHELF || aBlock == Blocks.CHEST || aBlock == Blocks.JUKEBOX || aBlock == Blocks.NOTE_BLOCK) return gregapi.block.Material.wood;
 		if (tState.is(net.minecraft.tags.BlockTags.WOOL_CARPETS))                                                return gregapi.block.Material.carpet;
 		if (tState.is(net.minecraft.tags.BlockTags.WOOL))                                                        return gregapi.block.Material.cloth;
-		if (tState.is(net.minecraft.tags.BlockTags.SAPLINGS) || tState.is(net.minecraft.tags.BlockTags.SMALL_FLOWERS) || tState.is(net.minecraft.tags.BlockTags.FLOWERS) || tState.is(net.minecraft.tags.BlockTags.CROPS) || aBlock == Blocks.SUGAR_CANE || aBlock == Blocks.SUNFLOWER) return gregapi.block.Material.plants;
+		// BUG-012: 1.7.10 BlockTallGrass (короткая трава/папоротник) и BlockDeadBush = Material.vine
+		// (BlockTallGrass:33/BlockDeadBush:23 референса 1.7.10) — гейт ножа/косы/меча принимает vine.
+		if (aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN || aBlock == Blocks.DEAD_BUSH)                 return gregapi.block.Material.vine;
+		// BUG-012: 1.7.10 BlockDoublePlant (все 6: подсолнух/сирень/высокая трава/большой папоротник/куст роз/пион)
+		// и BlockLilyPad (BlockBush:30) = Material.plants (BlockDoublePlant:37 референса 1.7.10).
+		if (tState.is(net.minecraft.tags.BlockTags.SAPLINGS) || tState.is(net.minecraft.tags.BlockTags.SMALL_FLOWERS) || tState.is(net.minecraft.tags.BlockTags.FLOWERS) || tState.is(net.minecraft.tags.BlockTags.CROPS)
+		 || aBlock == Blocks.SUGAR_CANE || aBlock == Blocks.SUNFLOWER || aBlock == Blocks.LILAC || aBlock == Blocks.ROSE_BUSH || aBlock == Blocks.PEONY
+		 || aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN || aBlock == Blocks.LILY_PAD)              return gregapi.block.Material.plants;
 		return gregapi.block.Material.rock;
 	}
 
