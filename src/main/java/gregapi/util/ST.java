@@ -216,13 +216,16 @@ public class ST {
 	public static byte maxsize(ItemStack aStack) {return (byte)(aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? 64 : item_(aStack).getMaxStackSize(aStack));}
 	
 	public static ItemStack copy (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : copy_(aStack);}
-	/** F15-size0 (BUG-015): 1.7.10 копия size0-стека сохраняла Item/NBT (GT6-слоты allowZeroStacks легально держат
-	 *  обнулённый стек как «тип запомнен, штук 0» — Масстораж slot(1) и т.п.); neo copy() гейтится isEmpty() и отдаёт
-	 *  EMPTY-синглтон → ST.amount от такого слота давал air-стек с count 0 → вечный цикл выдачи (сервер зависал).
-	 *  Восстановление контракта: временный подъём count у ЖИВОГО объекта (item в поле настоящий, isEmpty лишь из-за
-	 *  count<=0), копия, возврат. Однопоточно (server-thread), как все 1.7.10-мутации. Настоящий air/EMPTY не трогаем. */
+	/** F15-size0 ИНВАРИАНТ (BUG-015, см. decisions/F-size0-catalyst): в GT6-коде «ноль с памятью типа» хранится
+	 *  ТОЛЬКО как ZEROSIZE-призрак (count=1+маркер, писать через {@link #size_}) — такой стек копируется ШТАТНО.
+	 *  Физический count<=0 легален лишь как «потребление» (стек умер для движка: рука после траты и т.п.) и
+	 *  ШАБЛОНОМ КОПИИ БЫТЬ НЕ ДОЛЖЕН (neo copy()/getItem() на нём слепы: EMPTY/AIR — 1.7.10 копировал item/NBT
+	 *  всегда, на этом разрыве висел вечный цикл выдачи масстоража). Ветка ниже — НЕ рабочий путь, а аварийная
+	 *  подушка с сиреной: нарушение инварианта чинится в ВЫЗЫВАТЕЛЕ (маршрутизацией нуля в size_), не здесь. */
+	private static int sZeroCopyWarnings = 0;
 	public static ItemStack copy_(ItemStack aStack) {
 		if (aStack.getCount() <= 0 && aStack != ItemStack.EMPTY) {
+			if (sZeroCopyWarnings < 10) {sZeroCopyWarnings++; ERR.println("[GT6] НАРУШЕНИЕ ИНВАРИАНТА F15-size0: копия физически-нулевого стека (потреблённый стек как шаблон?) — почини вызывателя: ноль с памятью типа пишется через ST.size_ (ZEROSIZE-призрак). Аварийная подушка сработала (" + sZeroCopyWarnings + "/10 предупреждений):"); new Throwable().printStackTrace(ERR);}
 			int tOldCount = aStack.getCount();
 			aStack.setCount(1);
 			ItemStack rStack = aStack.copy();
