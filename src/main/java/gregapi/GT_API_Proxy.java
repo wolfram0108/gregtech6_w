@@ -674,6 +674,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// Судья: слиток лёг в слот 0/1 наковальни, сумма предметов (рука+слоты) сохранена, ничего не исчезло. Снять при уборке.
 	private static int sAnvilProbeTick = -1;
 	private static net.minecraft.core.BlockPos sAnvilPos = null;
+	public  static volatile long sAnvilProbeClientClick = Long.MIN_VALUE; // сигнал клиенту: кликнуть по верху наковальни (забор)
 	public static void gt6AnvilProbeTick(net.minecraft.server.MinecraftServer aServer) {
 		sAnvilProbeTick++;
 		java.io.PrintStream O = gregapi.data.CS.OUT;
@@ -720,6 +721,28 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				int tTotal = tInSlots + (tHand == null || tHand.isEmpty() ? 0 : tHand.getCount());
 				O.println("[GT6-ANVILPROBE] после клика: рука=" + tHand + " " + tSlots + " сумма=" + tTotal + "/4"
 					+ (tInSlots > 0 && tTotal == 4 ? "  => PASS (лёг, ничего не исчезло)" : tTotal < 4 ? "  => FAIL (ПРОПАЖА подтверждена)" : "  => FAIL (не ложится, но цел)"));
+			} else if (sAnvilProbeTick == 280) {
+				// Фаза C (репорт игрока раунда 3: «слот руки после укладки „занят“, не забирается; свежий слот работает
+				// один раз»): забор — рука КАК ОСТАЛАСЬ после укладки (НЕ чистим!), клик С КЛИЕНТА (настоящий путь с
+				// предиктом). Дамп обеих рук — серверной и клиентской — ловит рассинк инвентаря после ST.move.
+				if (sAnvilPos == null) return;
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.world.item.ItemStack tSrvHand = tPlayer.getInventory().getItem(0);
+				O.println("[GT6-ANVILPROBE-C] серверная рука ПОСЛЕ укладки: " + tSrvHand + " isEmpty=" + tSrvHand.isEmpty() + " @" + System.identityHashCode(tSrvHand) + " -> сигнал клиенту на клик-забор");
+				sAnvilProbeClientClick = sAnvilPos.asLong();
+			} else if (sAnvilProbeTick == 340) {
+				if (sAnvilPos == null) return;
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sAnvilPos);
+				String tSlots2 = "(BE не Container)"; int tInSlots2 = 0;
+				if (tBE instanceof net.minecraft.world.Container tC) {
+					tSlots2 = "slot0=" + tC.getItem(0) + " slot1=" + tC.getItem(1);
+					for (int i = 0; i <= 1; i++) if (tC.getItem(i) != null && !tC.getItem(i).isEmpty()) tInSlots2 += tC.getItem(i).getCount();
+				}
+				int tInv = tPlayer.getInventory().countItem(net.minecraft.world.item.Items.IRON_INGOT);
+				O.println("[GT6-ANVILPROBE-C] итог забора: у игрока слитков=" + tInv + " " + tSlots2 + " сумма=" + (tInv + tInSlots2) + "/4"
+					+ (tInv == 4 && tInSlots2 == 0 ? "  => PASS (забрал)" : (tInv + tInSlots2) < 4 ? "  => FAIL (ПРОПАЖА)" : "  => FAIL (НЕ ОТДАЁТ — репродукция репорта)"));
 				O.println("========== [GT6-ANVILPROBE] DONE ==========");
 			}
 		} catch (Throwable e) {O.println("[GT6-ANVILPROBE] EXC " + e); e.printStackTrace(O);}

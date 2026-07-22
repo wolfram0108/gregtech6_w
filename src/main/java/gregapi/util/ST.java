@@ -137,8 +137,13 @@ public class ST {
 	
 	public static boolean   valid(Block aBlock) {return aBlock != null && aBlock != NB;}
 	public static boolean invalid(Block aBlock) {return aBlock == null || aBlock == NB;}
-	public static boolean   valid(ItemStack aStack) {return aStack != null && aStack != ItemStack.EMPTY && aStack.getCount() >= 0 && item_(aStack) != null;}
-	public static boolean invalid(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() <  0 || item_(aStack) == null;}
+	public static boolean   valid(ItemStack aStack) {return aStack != null && !aStack.isEmpty() && item_(aStack) != null;} // F15 (BUG-011): зеркало invalid ниже — обнулённый split-объект НЕ «валидный предмет»
+	// F15 (BUG-011, «слот руки постоянно занят»): 1.7.10 пустота = null; neo пустота = isEmpty() (count<=0 ИЛИ air),
+	// причём обнулённый split-объект (например, рука после переноса стека) — НЕ синглтон ItemStack.EMPTY. Прежняя
+	// проверка «== EMPTY || count < 0» считала такой стек ВАЛИДНЫМ -> гейты типа onBlockActivated3 наковальни уходили
+	// в ветку «в руке предмет», и забор пустой рукой был недостижим. Size-0-катализаторы НЕ задеты: они физически
+	// count=1 + маркер ZEROSIZE (см. F-size0-catalyst выше, ST.size:198).
+	public static boolean invalid(ItemStack aStack) {return aStack == null || aStack.isEmpty() || item_(aStack) == null;}
 	
 	public static ItemStack validate(ItemStack aStack) {return valid(aStack)                         ? aStack : null;}
 	public static ItemStack valisize(ItemStack aStack) {return valid(aStack) && aStack.getCount() > 0 ? aStack : null;}

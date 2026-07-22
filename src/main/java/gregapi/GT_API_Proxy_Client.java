@@ -2604,6 +2604,23 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			}
 			return;
 		}
+		// [GT6-ANVILPROBE-C] клиентская половина: НАСТОЯЩИЙ клик игрока (MultiPlayerGameMode.useItemOn — с предиктом)
+		// по верху наковальни для ЗАБОРА; дамп КЛИЕНТСКОЙ руки ловит рассинк с серверной. Снять при уборке.
+		if (gregapi.GT_API_Proxy.sAnvilProbeClientClick != Long.MIN_VALUE && gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) {
+			long tPacked = gregapi.GT_API_Proxy.sAnvilProbeClientClick;
+			gregapi.GT_API_Proxy.sAnvilProbeClientClick = Long.MIN_VALUE;
+			try {
+				net.minecraft.client.Minecraft tMC2 = Minecraft.getInstance();
+				if (tMC2.player == null || tMC2.gameMode == null) return;
+				net.minecraft.core.BlockPos tPos = net.minecraft.core.BlockPos.of(tPacked);
+				net.minecraft.world.item.ItemStack tCliHand = tMC2.player.getMainHandItem();
+				gregapi.data.CS.OUT.println("[GT6-ANVILPROBE-C] КЛИЕНТСКАЯ рука перед кликом: " + tCliHand + " isEmpty=" + tCliHand.isEmpty() + " (рассинк с сервером = корень «слот занят»)");
+				net.minecraft.world.InteractionResult tR = tMC2.gameMode.useItemOn(tMC2.player, net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tPos).add(0.2, 0.5, 0.2), net.minecraft.core.Direction.UP, tPos, false));
+				gregapi.data.CS.OUT.println("[GT6-ANVILPROBE-C] клиентский клик выполнен: " + tR);
+			} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-ANVILPROBE-C] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.OUT);}
+			return;
+		}
 		if (mAutoWorldTriggered) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (!(tMC.screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;
