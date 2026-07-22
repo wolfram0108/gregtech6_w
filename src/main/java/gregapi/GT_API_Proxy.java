@@ -524,6 +524,76 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-ATTACKPROBE] EXC " + e); e.printStackTrace(O);}
 	}
 
+	// ========== [GT6-FLOWERPROBE] ВРЕМЕННАЯ проба BUG-008 РЕАЛЬНЫМ путём игрока (гейт run/gt6flowerprobe.flag + -Pgt6probes) ==========
+	// Реальный путь: сломать ванильный мак рукой в SURVIVAL -> должен выпасть предмет. Проба ломает НАСТОЯЩИМ каналом
+	// (ServerPlayerGameMode.destroyBlock: полный пайплайн listener'ов, лута и BlockDropsEvent), считает ItemEntity,
+	// и отдельно дампит каждый подозреваемый шов ИЗОЛИРОВАННО (лут-таблица / ILLEGAL_DROPS / blockToDrop / OM+ST.update),
+	// чтобы при пропаже дропа пальцем указать на едока. Снять при уборке фазы.
+	// Матрица кейсов: {пустая рука, ГТ-нож, ГТ-топор} × {мак, одуванчик} — игрок мог ломать С ИНСТРУМЕНТОМ в руке
+	// (ветка MultiItemTool.onHarvestBlockEvent/convertBlockDrops переписывает дропы). Счёт = сущности + дельта инвентаря.
+	private static int sFlowerProbeTick = -1, sFlowerProbeCase = 0;
+	private static net.minecraft.core.BlockPos sFlowerProbePos = null;
+	private static int sFlowerProbeInvBefore = 0;
+	private static net.minecraft.world.item.ItemStack sFlowerProbeKnife = null, sFlowerProbeAxe = null;
+	private static final String[] FLOWER_CASES = {"рука+мак", "рука+одуванчик", "нож+мак", "нож+одуванчик", "топор+мак", "топор+одуванчик", "рука+куст_роз", "топор+куст_роз"};
+	public static void gt6FlowerProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sFlowerProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sFlowerProbeTick == 160) {
+				O.println("========== [GT6-FLOWERPROBE] BUG-008: слом цветов реальным путём (SURVIVAL), матрица 6 кейсов ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-FLOWERPROBE] нет игрока => пропуск"); sFlowerProbeCase = 99; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				// инструменты — реальным крафт-путём (нож: палка+кремень; топор: кремень×3+палка "XX","XS")
+				net.minecraft.world.inventory.InventoryMenu tMenu = tPlayer.inventoryMenu;
+				tMenu.getSlot(1).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+				tMenu.getSlot(2).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FLINT));
+				sFlowerProbeKnife = tMenu.getSlot(0).getItem().copy();
+				tMenu.getSlot(1).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FLINT));
+				tMenu.getSlot(2).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FLINT));
+				tMenu.getSlot(3).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FLINT));
+				tMenu.getSlot(4).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+				sFlowerProbeAxe = tMenu.getSlot(0).getItem().copy();
+				tMenu.getSlot(1).set(net.minecraft.world.item.ItemStack.EMPTY); tMenu.getSlot(2).set(net.minecraft.world.item.ItemStack.EMPTY);
+				tMenu.getSlot(3).set(net.minecraft.world.item.ItemStack.EMPTY); tMenu.getSlot(4).set(net.minecraft.world.item.ItemStack.EMPTY);
+				O.println("[GT6-FLOWERPROBE] инструменты: нож=" + sFlowerProbeKnife + " топор=" + sFlowerProbeAxe);
+			} else if (sFlowerProbeTick >= 200 && sFlowerProbeCase < FLOWER_CASES.length) {
+				int tPhase = (sFlowerProbeTick - 200) % 40;
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().isEmpty() ? null : aServer.getPlayerList().getPlayers().get(0);
+				if (tPlayer == null) {sFlowerProbeCase = 99; return;}
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				boolean tIsRoseBush = sFlowerProbeCase >= 6;
+				net.minecraft.world.level.block.Block tFlower = tIsRoseBush ? net.minecraft.world.level.block.Blocks.ROSE_BUSH : (sFlowerProbeCase % 2 == 0) ? net.minecraft.world.level.block.Blocks.POPPY : net.minecraft.world.level.block.Blocks.DANDELION;
+				net.minecraft.world.item.Item tFlowerItem = tFlower.asItem();
+				if (tPhase == 0) {
+					// подготовка кейса: цветок + инструмент в руку + замер инвентаря
+					net.minecraft.world.item.ItemStack tTool = (sFlowerProbeCase < 2 || sFlowerProbeCase == 6) ? net.minecraft.world.item.ItemStack.EMPTY : (sFlowerProbeCase < 4) ? sFlowerProbeKnife.copy() : sFlowerProbeAxe.copy();
+					tPlayer.getInventory().setItem(0, tTool);
+					tPlayer.getInventory().setSelectedSlot(0);
+					sFlowerProbePos = tPlayer.blockPosition().offset(2, 0, sFlowerProbeCase); // свежая позиция на кейс
+					tLevel.setBlock(sFlowerProbePos.below(), net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+					if (tIsRoseBush) net.minecraft.world.level.block.DoublePlantBlock.placeAt(tLevel, tFlower.defaultBlockState(), sFlowerProbePos, 3);
+					else tLevel.setBlock(sFlowerProbePos, tFlower.defaultBlockState(), 3);
+					sFlowerProbeInvBefore = tPlayer.getInventory().countItem(tFlowerItem);
+				} else if (tPhase == 10) {
+					net.minecraft.world.level.GameType tOldMode = tPlayer.gameMode();
+					tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tPlayer.gameMode.destroyBlock(sFlowerProbePos);
+					tPlayer.setGameMode(tOldMode);
+				} else if (tPhase == 30) {
+					int tEntities = 0;
+					for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sFlowerProbePos).inflate(5)))
+						if (tD.getItem().getItem() == tFlowerItem) tEntities += tD.getItem().getCount();
+					int tInvDelta = tPlayer.getInventory().countItem(tFlowerItem) - sFlowerProbeInvBefore;
+					int tTotal = tEntities + tInvDelta;
+					O.println("[GT6-FLOWERPROBE] кейс «" + FLOWER_CASES[sFlowerProbeCase] + "»: сущностей=" + tEntities + " в инвентарь=" + tInvDelta + " ИТОГО=" + tTotal + (tTotal > 0 ? "  => PASS" : "  => FAIL (дроп съеден)"));
+					sFlowerProbeCase++;
+					if (sFlowerProbeCase >= FLOWER_CASES.length) O.println("========== [GT6-FLOWERPROBE] DONE ==========");
+				}
+			}
+		} catch (Throwable e) {O.println("[GT6-FLOWERPROBE] EXC " + e); e.printStackTrace(O); sFlowerProbeCase = 99;}
+	}
+
 	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========
 	// Прогоняет в РЕАЛЬНОМ серверном мире (overworld) ДО сдачи: F13 мета-round-trip, дроп BUG-006, реестр урона BUG-004
 	// (тот самый getId(holder.value()), что падал в кодеке), распад листвы BUG-005 (tick-мост+мета), denull BUG-001.
@@ -625,6 +695,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6leafprobe.flag")) gt6LeafProbeTick(aEvent.getServer()); // [GT6-LEAFPROBE] временная проба BUG-005 РЕАЛЬНЫМ путём (дерево движком + рубка кодом топора) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6craftprobe.flag")) gt6CraftProbeTick(aEvent.getServer()); // [GT6-CRAFTPROBE] временная проба BUG-002 РЕАЛЬНЫМ путём (палка+кремень в живых крафт-слотах) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6attackprobe.flag")) gt6AttackProbeTick(aEvent.getServer()); // [GT6-ATTACKPROBE] временная проба BUG-003 РЕАЛЬНЫМ путём (клиентская атака ГТ-ножом по овце) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6flowerprobe.flag")) gt6FlowerProbeTick(aEvent.getServer()); // [GT6-FLOWERPROBE] временная проба BUG-008 РЕАЛЬНЫМ путём (слом мака SURVIVAL-каналом игрока) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -1804,6 +1875,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// затем список ItemEntity синхронизируется обратно. isSilkTouching/fortuneLevel считаются через EnchantmentHelper по инструменту.
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onBlockHarvestingEvent(BlockDropsEvent aEvent) {
+		// [GT6-FLOWERPROBE-DIAG] временная диагностика BUG-008 (гейт как у пробы) — снять при уборке фазы
+		boolean tFlowerDiag = gregapi.data.CS.probeFlag("gt6flowerprobe.flag") && aEvent.getState().getBlock() == Blocks.POPPY;
+		if (tFlowerDiag) gregapi.data.CS.OUT.println("[GT6-FLOWERPROBE-DIAG] harvest ВХОД: дропов-сущностей=" + aEvent.getDrops().size() + " canceled=" + aEvent.isCanceled());
 		ArrayListNoNulls<ItemStack> aDropStacks = new ArrayListNoNulls<>();
 		for (ItemEntity tDropEntity : aEvent.getDrops()) aDropStacks.add(tDropEntity.getItem());
 
@@ -1903,6 +1977,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 		aEvent.getDrops().clear();
 		for (ItemStack tStack : aDropStacks) if (ST.valid(tStack)) aEvent.getDrops().add(new ItemEntity(aWorld, aX+0.5, aY+0.5, aZ+0.5, tStack));
+		if (tFlowerDiag) gregapi.data.CS.OUT.println("[GT6-FLOWERPROBE-DIAG] harvest ВЫХОД: стеков=" + aDropStacks + " дропов-сущностей=" + aEvent.getDrops().size());
 	}
 	
 	// EntityJoinLevelEvent.entity (1.7.10 через словарь-переименование) — приватное поле в neo, getEntity() (сверено, EntityEvent.java).
@@ -1912,7 +1987,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public void onEntitySpawningEvent(EntityJoinLevelEvent aEvent) {
 		if (aEvent.getEntity() instanceof ItemEntity && !aEvent.getEntity().level().isClientSide()) {
+			// [GT6-FLOWERPROBE-DIAG] временная диагностика BUG-008 — снять при уборке фазы
+			boolean tFlowerDiag = gregapi.data.CS.probeFlag("gt6flowerprobe.flag") && ST.item_(((ItemEntity)aEvent.getEntity()).getItem()) == Items.POPPY.asItem();
+			if (tFlowerDiag) gregapi.data.CS.OUT.println("[GT6-FLOWERPROBE-DIAG] entityJoin ВХОД: item=" + ((ItemEntity)aEvent.getEntity()).getItem() + " canceled=" + aEvent.isCanceled());
 			ItemStack aStack = ST.update(OM.get(((ItemEntity)aEvent.getEntity()).getItem()), aEvent.getEntity());
+			if (tFlowerDiag) gregapi.data.CS.OUT.println("[GT6-FLOWERPROBE-DIAG] entityJoin после OM/ST.update: aStack=" + aStack + " valid=" + ST.valid(aStack));
 			if (ST.valid(aStack) && aStack.getCount() > 0) {
 				Item aItem = ST.item_(aStack);
 				if (ST.meta_(aStack) == W || aItem == Items.GOLD_NUGGET) ST.meta(aStack, 0);
