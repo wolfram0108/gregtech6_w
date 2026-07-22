@@ -323,6 +323,12 @@ public class ST {
 	 *  прямые vanilla-твики (golden ST.forceProperMaxStacksizes 1:1) применяются в самом хендлере (не зависят от порядка загрузки).
 	 *  craftRemainder так НЕ применить — craftingRemainingItem у neo Item иммутабельное поле (не компонент), см. setContainerItem. */
 	public static void applyVanillaComponentOverrides(net.neoforged.neoforge.event.ModifyDefaultComponentsEvent aEvent) {
+		// BUG-021 v3 (тайминг): прежний носитель applyAllStackSizes — onModPostInit2Deferred (server-start), а ЭТО
+		// событие — mod-load (RegistrationEvents.init, ПОСЛЕ CommonSetup: CommonModLoader.java:74-78) → карта применялась
+		// ПУСТОЙ, все vanilla-стаки GT6 (жемчуг/пластинки/лёд/глина/… из OreDictPrefix.applyStackSizes) были мертвы.
+		// Конфиг stacksizes.cfg прочитан ещё в onModPreInit2 (GT_API:817) → наполняем карту ЗДЕСЬ, до применения.
+		// Повторный вызов на server-start (GT_API:1140, 1:1-место) остаётся — идемпотентен (та же величина).
+		gregapi.oredict.OreDictPrefix.applyAllStackSizes();
 		// форейн-мод override'ы (карта, если форейн-предмет присутствует)
 		for (java.util.Map.Entry<Item, Integer> tE : VANILLA_STACKSIZE_OVERRIDES.entrySet())
 			aEvent.modify(tE.getKey(), b -> b.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, tE.getValue()));

@@ -1232,6 +1232,55 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-V2PROBE] EXC " + e); e.printStackTrace(O); sV2ProbeTick = 9999;}
 	}
 
+	// ========== [GT6-STACKSCAN] ВРЕМЕННАЯ проба BUG-021v3 (гейт run/gt6stackscan.flag + -Pgt6probes) ==========
+	// Фидбэк игрока: «камни всё ещё по 64 — не все области поправлены». Механический детектор непокрытых областей:
+	// перебор ВСЕХ GT6-предметов реестра; ожидание = GT6-канал getItemStackLimit(stack) (рефлексией — наши классы),
+	// факт = stack.getMaxStackSize() (движковый канал). Расхождение = мост отсутствует в этом классе. Итог по классам.
+	private static int sStackScanTick = -1;
+	public static void gt6StackScanTick(net.minecraft.server.MinecraftServer aServer) {
+		sStackScanTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sStackScanTick == 200) {
+				O.println("========== [GT6-STACKSCAN] BUG-021v3: скан расхождений стака по всем GT6-предметам ==========");
+				java.util.Map<String, Integer> tBadByClass = new java.util.TreeMap<>();
+				java.util.Map<String, String> tExampleByClass = new java.util.TreeMap<>();
+				int tTotal = 0, tBad = 0;
+				for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+					String tName = String.valueOf(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem));
+					if (!tName.startsWith("gregtech:") && !tName.startsWith("gregapi:")) continue;
+					tTotal++;
+					ItemStack tStack = new ItemStack(tItem);
+					int tActual;
+					try {tActual = tStack.getMaxStackSize();} catch (Throwable e) {continue;}
+					Integer tExpected = null;
+					try {
+						java.lang.reflect.Method tM = tItem.getClass().getMethod("getItemStackLimit", ItemStack.class);
+						tExpected = (int)gregapi.util.UT.Code.bindStack(((Number)tM.invoke(tItem, tStack)).intValue());
+					} catch (NoSuchMethodException e) {/* нет GT6-канала — судим только мостнутые классы */} catch (Throwable e) {/* канал упал на дефолт-стеке — пропуск */}
+					if (tExpected != null && tExpected != tActual) {
+						tBad++;
+						String tClass = tItem.getClass().getSimpleName();
+						tBadByClass.merge(tClass, 1, Integer::sum);
+						tExampleByClass.putIfAbsent(tClass, tName + " ожидание=" + tExpected + " факт=" + tActual);
+					}
+				}
+				O.println("[GT6-STACKSCAN] GT6-предметов=" + tTotal + " расхождений=" + tBad);
+				for (java.util.Map.Entry<String, Integer> tE : tBadByClass.entrySet()) O.println("[GT6-STACKSCAN] НЕПОКРЫТЫЙ КЛАСС: " + tE.getKey() + " ×" + tE.getValue() + "  пример: " + tExampleByClass.get(tE.getKey()));
+				// v3: ванильные оверрайды (жемчуг/пластинки/лёд/… из OreDictPrefix.applyStackSizes) — ожидание из карты намерений
+				int tVanillaBad = 0, tVanillaTotal = 0;
+				for (java.util.Map.Entry<net.minecraft.world.item.Item, Integer> tE : ST.VANILLA_STACKSIZE_OVERRIDES.entrySet()) {
+					tVanillaTotal++;
+					int tActual = new ItemStack(tE.getKey()).getMaxStackSize();
+					if (tActual != tE.getValue()) {tVanillaBad++; if (tVanillaBad <= 8) O.println("[GT6-STACKSCAN] VANILLA-расхождение: " + ST.regName(tE.getKey()) + " ожидание=" + tE.getValue() + " факт=" + tActual);}
+				}
+				O.println("[GT6-STACKSCAN] vanilla-оверрайдов=" + tVanillaTotal + " расхождений=" + tVanillaBad);
+				O.println("[GT6-STACKSCAN] => " + (tBad == 0 && tVanillaBad == 0 ? "PASS (расхождений нет)" : "FAIL (области выше)"));
+				O.println("========== [GT6-STACKSCAN] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-STACKSCAN] EXC " + e); e.printStackTrace(O); sStackScanTick = 9999;}
+	}
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
@@ -1262,6 +1311,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6tooltipprobe.flag")) gt6TooltipProbeTick(aEvent.getServer()); // [GT6-TOOLTIPPROBE] временная проба BUG-018 (тултип сэндвича реальным getTooltipLines) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6smeltprobe.flag")) gt6SmeltProbeTick(aEvent.getServer()); // [GT6-SMELTPROBE] временная проба BUG-023 (обжиг молда в настоящей печи) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6v2probe.flag")) gt6V2ProbeTick(aEvent.getServer()); // [GT6-V2PROBE] временная проба доработок BUG-021v2/022v2 (стаки префиксов + ST.container) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6stackscan.flag")) gt6StackScanTick(aEvent.getServer()); // [GT6-STACKSCAN] временная проба BUG-021v3 (скан расхождений стака по всем GT6-предметам) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
