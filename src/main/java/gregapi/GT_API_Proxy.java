@@ -594,6 +594,68 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-FLOWERPROBE] EXC " + e); e.printStackTrace(O); sFlowerProbeCase = 99;}
 	}
 
+	// ========== [GT6-HAMMERPROBE] ВРЕМЕННАЯ проба BUG-016 РЕАЛЬНЫМ путём игрока (гейт run/gt6hammerprobe.flag + -Pgt6probes) ==========
+	// Игрок: «бил молотом из красного гранита по кобблстоуну — падает кобблстоун, а в 1.7.10 падают Камни (OP.rockGt)».
+	// ОРАКУЛ (recipes.jsonl живого 1.7.10): ванильный кобблстоун -> ГРАВИЙ (единственный рецепт); Камни падают из
+	// GT6-КАМНЕЙ: gt.stone.granite.red:0 -> :1 (кобл), gt.stone.granite.red:1 -> rockGt:8507 x4. Матрица из 3 кейсов
+	// зеркалит все пути: настоящий HardHammer (GraniteRed) в руке, слом НАСТОЯЩИМ каналом gameMode.destroyBlock (SURVIVAL).
+	// Судья per-кейс: ванильный кобл -> гравий; GraniteRed:0 -> кобл-вариант (мета 1); GraniteRed:1 -> Камни x4. Снять при уборке фазы.
+	private static int sHammerProbeTick = -1, sHammerProbeCase = 0;
+	private static net.minecraft.core.BlockPos sHammerProbePos = null;
+	private static final String[] HAMMER_CASES = {"ванильный кобблстоун -> гравий", "GraniteRed:0 -> кобл-вариант", "GraniteRed:1(COBBL) -> Камни x4"};
+	public static void gt6HammerProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sHammerProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sHammerProbeTick == 200) {
+				O.println("========== [GT6-HAMMERPROBE] BUG-016: молот (красный гранит) по камням реальным путём, 3 кейса ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-HAMMERPROBE] нет игрока => пропуск"); sHammerProbeCase = 99; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				// изолированные швы: рецепты молота напрямую из карты — по всем трём входам
+				ItemStack[] tProbes = {ST.make(Blocks.COBBLESTONE, 1, 0), ST.make(BlocksGT.GraniteRed, 1, 0), ST.make(BlocksGT.GraniteRed, 1, 1)};
+				for (ItemStack tIn : tProbes) {
+					gregapi.recipes.Recipe tR = RM.Hammer.findRecipe(null, null, T, Integer.MAX_VALUE, null, ZL_FS, tIn);
+					if (tR == null) O.println("[GT6-HAMMERPROBE] изолированный шов: findRecipe(" + tIn + ") = NULL");
+					else {
+						StringBuilder tOut = new StringBuilder();
+						for (ItemStack tS : tR.mOutputs) tOut.append(tS).append(' ');
+						O.println("[GT6-HAMMERPROBE] изолированный шов: findRecipe(" + tIn + ") -> " + tOut);
+					}
+				}
+				// молот игрока: настоящий HardHammer из красного гранита — в руку
+				ItemStack tHammer = ToolsGT.sMetaTool.getToolWithStats(ToolsGT.HARDHAMMER, MT.STONES.GraniteRed, MT.WOODS.Spruce);
+				tPlayer.getInventory().setItem(0, tHammer);
+				tPlayer.getInventory().setSelectedSlot(0);
+				O.println("[GT6-HAMMERPROBE] молот в руке: " + tPlayer.getMainHandItem());
+			} else if (sHammerProbeTick >= 220 && sHammerProbeCase < HAMMER_CASES.length) {
+				int tPhase = (sHammerProbeTick - 220) % 40;
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {sHammerProbeCase = 99; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				if (tPhase == 0) {
+					sHammerProbePos = tPlayer.blockPosition().offset(4, 1, 4 + sHammerProbeCase); // свежая позиция на кейс, вне радиуса подбора игроком (урок flower-пробы)
+					if (sHammerProbeCase == 0) tLevel.setBlock(sHammerProbePos, Blocks.COBBLESTONE.defaultBlockState(), 3);
+					else WD.set(tLevel, sHammerProbePos.getX(), sHammerProbePos.getY(), sHammerProbePos.getZ(), BlocksGT.GraniteRed, sHammerProbeCase == 1 ? 0 : 1, 3);
+					O.println("[GT6-HAMMERPROBE] кейс «" + HAMMER_CASES[sHammerProbeCase] + "»: блок поставлен " + sHammerProbePos + " = " + tLevel.getBlockState(sHammerProbePos));
+				} else if (tPhase == 10) {
+					net.minecraft.world.level.GameType tOldMode = tPlayer.gameMode();
+					tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tPlayer.gameMode.destroyBlock(sHammerProbePos);
+					tPlayer.setGameMode(tOldMode);
+				} else if (tPhase == 30) {
+					StringBuilder tDrops = new StringBuilder();
+					for (net.minecraft.world.entity.item.ItemEntity tD : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sHammerProbePos).inflate(4))) {
+						tDrops.append(tD.getItem()).append("; ");
+						tD.discard(); // очистить, чтобы не мешать следующему кейсу
+					}
+					O.println("[GT6-HAMMERPROBE] кейс «" + HAMMER_CASES[sHammerProbeCase] + "»: дроп = " + (tDrops.length() == 0 ? "ПУСТО" : tDrops));
+					sHammerProbeCase++;
+					if (sHammerProbeCase >= HAMMER_CASES.length) O.println("========== [GT6-HAMMERPROBE] DONE ==========");
+				}
+			}
+		} catch (Throwable e) {O.println("[GT6-HAMMERPROBE] EXC " + e); e.printStackTrace(O); sHammerProbeCase = 99;}
+	}
+
 	// ========== [GT6-SLABPROBE] ВРЕМЕННАЯ проба BUG-010 (гейт run/gt6slabprobe.flag + -Pgt6probes) ==========
 	// Игрок: «слэбов в JEI в 5× больше оригинала; большинство выглядят как блоки; любые ставятся/выглядят полными».
 	// Сервер ставит DOWN-слэб первого BlockMetaType, клиент (хук в Proxy_Client) меряет НАСТОЯЩИЕ квады клиентской
@@ -852,6 +914,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6flowerprobe.flag")) gt6FlowerProbeTick(aEvent.getServer()); // [GT6-FLOWERPROBE] временная проба BUG-008 РЕАЛЬНЫМ путём (слом мака SURVIVAL-каналом игрока) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6slabprobe.flag")) gt6SlabProbeTick(aEvent.getServer()); // [GT6-SLABPROBE] временная проба BUG-010 (клиентские квады модели слэба) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) gt6AnvilProbeTick(aEvent.getServer()); // [GT6-ANVILPROBE] временная проба BUG-011 (наковальня реальным useOn) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6hammerprobe.flag")) gt6HammerProbeTick(aEvent.getServer()); // [GT6-HAMMERPROBE] временная проба BUG-016 (молот по кобблстоуну реальным путём) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -2039,7 +2102,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 		Level aWorld = aEvent.getLevel();
 		int aX = aEvent.getPos().getX(), aY = aEvent.getPos().getY(), aZ = aEvent.getPos().getZ();
-		byte aBlockMeta = WD.meta(aWorld, aX, aY, aZ);
+		// F13-контракт (BUG-016): 1.7.10 HarvestDropsEvent.blockMetadata = мета РАЗРУШЕННОГО блока; в neo блок к этому
+		// моменту уже удалён из мира (meta(aWorld,...)=0 всегда) — мета берётся из снимка состояния события.
+		byte aBlockMeta = WD.meta(aEvent.getState());
 		Entity aHarvesterEntity = aEvent.getBreaker();
 		Holder<Enchantment> tSilkTouchHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH);
 		Holder<Enchantment> tFortuneHolder = aWorld.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);

@@ -204,6 +204,8 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	 */
 	public void onHarvestBlockEvent(ArrayList<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, int aX, int aY, int aZ, byte aMeta, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		IToolStats tStats = getToolStats(aStack);
+		// [GT6-HAMMERPROBE-DIAG] временная диагностика BUG-016 (гейт как у пробы) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6hammerprobe.flag")) gregapi.data.CS.OUT.println("[GT6-HAMMERPROBE-DIAG] onHarvestBlockEvent: block=" + aBlock + " stats=" + (tStats == null ? "NULL" : tStats.getClass().getSimpleName()) + " instaharvest=" + ST.instaharvest(aBlock, aMeta) + " usable=" + isItemStackUsable(aStack) + " digSpeed=" + getDigSpeed(aStack, aBlock, aMeta) + " дропов=" + aDrops.size());
 		if (tStats == null || ST.instaharvest(aBlock, aMeta) || !isItemStackUsable(aStack) || getDigSpeed(aStack, aBlock, aMeta) <= 0) {
 			doDamage(aStack, 0, aPlayer, T);
 			return;
@@ -504,7 +506,9 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return canHarvestBlock(aState.getBlock(), aStack);
 	}
 	@Override public boolean mineBlock(ItemStack aStack, Level aWorld, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.core.BlockPos aPos, net.minecraft.world.entity.LivingEntity aPlayer) {
-		return onBlockDestroyed(aStack, aWorld, aState.getBlock(), aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer);
+		// F13-контракт (BUG-016): в 1.7.10 onBlockDestroyed звался ДО removeBlock (мета ещё в мире); в neo mineBlock
+		// идёт ПОСЛЕ — мета берётся из снимка aState, не из мира (там уже воздух).
+		return onBlockDestroyed(aStack, aWorld, aState.getBlock(), aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer, WD.meta(aState));
 	}
 	public float getDigSpeed(ItemStack aStack, Block aBlock, int aMeta) {
 		if (aBlock == NB || WD.bedrock(aBlock)) return 0;
@@ -534,13 +538,15 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 	}
 
 	public boolean onBlockDestroyed(ItemStack aStack, Level aWorld, Block aBlock, int aX, int aY, int aZ, LivingEntity aPlayer) {
+		return onBlockDestroyed(aStack, aWorld, aBlock, aX, aY, aZ, aPlayer, WD.meta(aWorld, aX, aY, aZ)); // 1.7.10-сигнатура сохранена
+	}
+	public boolean onBlockDestroyed(ItemStack aStack, Level aWorld, Block aBlock, int aX, int aY, int aZ, LivingEntity aPlayer, byte aMeta) {
 		if (ST.instaharvest(aBlock) || UT.Entities.hasInfiniteItems(aPlayer)) return T;
 		if (!isItemStackUsable(aStack)) return F;
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return F;
 		if (TOOL_SOUNDS) UT.Sounds.play(tStats.getMiningSound(), 5, 1, aX, aY, aZ);
 		String aRegName = ST.regName(aBlock);
-		byte aMeta = WD.meta(aWorld, aX, aY, aZ);
 		boolean rReturn = (getDigSpeed(aStack, aBlock, aMeta) > 0);
 		// оригинал: * aBlock.getBlockHardness(aWorld,aX,aY,aZ). Способность ЕСТЬ — ЦЕНТР WD.hardness (уже
 		// через BlockState.getDestroySpeed, WD.java:360). Была ложная деградация до 1.0 — восстановлено 1:1.

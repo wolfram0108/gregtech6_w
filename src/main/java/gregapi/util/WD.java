@@ -795,6 +795,15 @@ public class WD {
 	// МОДЕЛЬ МЕТЫ п.4: числовой меты в neo больше нет — для IBlockExtendedMetaData (свои блоки, п.1) реальное
 	// значение, иначе 0 (не выдумываем числовую таблицу для ванильных блоков).
 	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {Block tB = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); return UT.Code.bind4(tB instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);}
+	/** F13-контракт: мета из СНИМКА BlockState (BlockDropsEvent.getState() / mineBlock aState). В neo removeBlock
+	 *  происходит ДО дропов и Item.mineBlock (в 1.7.10 — ПОСЛЕ), поэтому meta(aWorld,x,y,z) на harvest-путях читает
+	 *  уже ВОЗДУХ → мета 0 → протухшие рецепты молота (BUG-016) и dig-скорости. Каналом снимка контракт 1.7.10
+	 *  «мета разрушаемого блока» восстанавливается. META-свойство единое по equals для всех мета-семей
+	 *  (BlockBaseMeta.META и BlockBaseFlower.META равны: IntegerProperty "meta" 0..15). */
+	public static byte  meta (net.minecraft.world.level.block.state.BlockState aState) {
+		if (!(aState.getBlock() instanceof IBlockExtendedMetaData)) return 0;
+		return aState.hasProperty(gregapi.block.BlockBaseMeta.META) ? UT.Code.bind4(aState.getValue(gregapi.block.BlockBaseMeta.META)) : 0;
+	}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.hasChunkAt(new BlockPos(aX, aY, aZ)) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
