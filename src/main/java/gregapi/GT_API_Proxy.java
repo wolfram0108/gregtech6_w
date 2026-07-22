@@ -403,6 +403,78 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		return r;
 	}
 
+	// ========== [GT6-CRAFTPROBE] ВРЕМЕННАЯ проба BUG-002 РЕАЛЬНЫМ путём игрока (гейт run/gt6craftprobe.flag + -Pgt6probes) ==========
+	// Реальный триггер игрока: ПАЛКА+КРЕМЕНЬ в сетке 2×2 инвентаря -> вылет (EncoderException container_set_slot,
+	// «Can't find id for ... fire_aspect» по ИДЕНТИЧНОСТИ в реестре кодека). Проба идёт путём игрока: кладёт палку и
+	// кремень в НАСТОЯЩИЕ крафт-слоты inventoryMenu ЖИВОГО игрока (slotChangedCraftingGrid движка сам вычислит
+	// результат и пошлёт клиенту ClientboundContainerSetSlotPacket — тот самый путь краша), затем ФОРС-кодирует пакет
+	// результата тем же кодеком в RegistryFriendlyByteBuf(server.registryAccess()) и дампит идентичность holder'ов
+	// энчантов результата против реестра сервера. Снять при уборке фазы.
+	// Двухмировой сценарий (КЛЮЧЕВОЙ для BUG-002): data-init GT6 (рецепты + зачарование статических mOutput через
+	// isItemStackUsable) выполняется ОДИН раз за запуск, на первом server-start -> Holder.Reference из реестра МИРА-1
+	// заперт маркером "ench" в статическом mOutput. Перезаход (МИР-2, НОВЫЕ инстансы динреестров) -> крафт копирует
+	// протухший holder -> кодек ищет ПО ИДЕНТИЧНОСТИ -> «Can't find id» -> дисконнект (краш игрока). Проба: крафт в
+	// МИРЕ-1, программный перезаход (клиент-хук), тот же крафт в МИРЕ-2.
+	private static int sCraftProbeTick = -1;
+	public  static volatile int sCraftProbeStage = 0; // 0=мир-1; 1=мир-1 готов (сигнал клиенту на перезаход); -1=перезаход запущен; 2=мир-2; 3=всё
+	private static int sCraftProbeServerHash = 0;
+	public static void gt6CraftProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		int tServerHash = System.identityHashCode(aServer);
+		if (sCraftProbeServerHash == 0) sCraftProbeServerHash = tServerHash;
+		else if (sCraftProbeServerHash != tServerHash) {
+			sCraftProbeServerHash = tServerHash;
+			if (sCraftProbeStage == -1) {sCraftProbeStage = 2; sCraftProbeTick = -1;} // перезаход состоялся: счёт заново для мира-2
+		}
+		sCraftProbeTick++;
+		if (sCraftProbeTick != 200) return;
+		if (sCraftProbeStage == 0) {
+			gt6CraftProbeCraft(aServer, "МИР-1 (реестры те же, что у data-init)");
+			sCraftProbeStage = 1; // клиент-хук увидит и сделает перезаход
+		} else if (sCraftProbeStage == 2) {
+			gt6CraftProbeCraft(aServer, "МИР-2 (ПЕРЕЗАХОД: реестры новые, mOutput со старым holder)");
+			sCraftProbeStage = 3;
+			new java.io.File("wgautoworld.world").delete(); // не оставлять «вход в существующий мир» следующим запускам
+			gregapi.data.CS.OUT.println("========== [GT6-CRAFTPROBE] DONE-ALL ==========");
+		}
+	}
+	private static void gt6CraftProbeCraft(net.minecraft.server.MinecraftServer aServer, String aLabel) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-CRAFTPROBE] BUG-002: палка+кремень в 2×2 РЕАЛЬНОГО inventoryMenu — " + aLabel + " ==========");
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-CRAFTPROBE] нет игрока на сервере => пропуск"); return;}
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.world.inventory.InventoryMenu tMenu = tPlayer.inventoryMenu;
+			// сетка 2×2 inventoryMenu: слот 0 = результат, 1..4 = крафт; рецепт ножа "SX" (Loader_Tools:258) — палка слева, кремень справа
+			tMenu.getSlot(1).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+			tMenu.getSlot(2).set(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FLINT));
+			net.minecraft.world.item.ItemStack tResult = tMenu.getSlot(0).getItem();
+			O.println("[GT6-CRAFTPROBE] результат-слот: " + tResult + " компоненты: " + tResult.getComponentsPatch());
+			// дамп идентичности holder'ов энчантов результата vs server-реестр
+			net.minecraft.world.item.enchantment.ItemEnchantments tEnch = tResult.getOrDefault(net.minecraft.world.item.enchantment.EnchantmentHelper.getComponentType(tResult), net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
+			net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> tReg = aServer.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+			for (net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> tHolder : tEnch.keySet()) {
+				int tIdInReg = tReg.getId(tHolder.value());
+				O.println("[GT6-CRAFTPROBE] энчант " + tHolder.getRegisteredName() + " holder.value@" + System.identityHashCode(tHolder.value())
+					+ " реестр-инстанс@" + System.identityHashCode(tReg.getValue(net.minecraft.resources.Identifier.parse(tHolder.getRegisteredName())))
+					+ " getId(value)=" + tIdInReg + (tIdInReg < 0 ? "  => ИДЕНТИЧНОСТЬ НЕ НАЙДЕНА (крашнет кодек!)" : "  => ok"));
+			}
+			// форс-кодирование ТЕМ ЖЕ кодеком, что валил игрока
+			net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket tPacket = new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(tMenu.containerId, tMenu.getStateId(), 0, tResult.copy());
+			io.netty.buffer.ByteBuf tRaw = io.netty.buffer.Unpooled.buffer();
+			try {
+				net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket.STREAM_CODEC.encode(new net.minecraft.network.RegistryFriendlyByteBuf(tRaw, aServer.registryAccess()), tPacket);
+				O.println("[GT6-CRAFTPROBE] форс-encode container_set_slot: OK, " + tRaw.readableBytes() + " байт  => PASS");
+			} catch (Throwable e) {
+				O.println("[GT6-CRAFTPROBE] форс-encode container_set_slot: КРАШ ВОСПРОИЗВЕДЁН  => FAIL");
+				e.printStackTrace(O);
+			} finally {tRaw.release();}
+			// чистка: убрать ингредиенты из сетки (не оставлять игроку артефакты пробы)
+			tMenu.getSlot(1).set(net.minecraft.world.item.ItemStack.EMPTY);
+			tMenu.getSlot(2).set(net.minecraft.world.item.ItemStack.EMPTY);
+		} catch (Throwable e) {O.println("[GT6-CRAFTPROBE] EXC " + e); e.printStackTrace(O);}
+		O.println("========== [GT6-CRAFTPROBE] " + aLabel + " КОНЕЦ ==========");
+	}
+
 	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========
 	// Прогоняет в РЕАЛЬНОМ серверном мире (overworld) ДО сдачи: F13 мета-round-trip, дроп BUG-006, реестр урона BUG-004
 	// (тот самый getId(holder.value()), что падал в кодеке), распад листвы BUG-005 (tick-мост+мета), denull BUG-001.
@@ -502,6 +574,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				if (gregapi.data.CS.probeFlag("gt6bugverify.flag")) gt6BugVerifyTick(aEvent.getServer()); // [GT6-BUGVERIFY] временная механическая проба фиксов BUG-001..010 — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6leafprobe.flag")) gt6LeafProbeTick(aEvent.getServer()); // [GT6-LEAFPROBE] временная проба BUG-005 РЕАЛЬНЫМ путём (дерево движком + рубка кодом топора) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6craftprobe.flag")) gt6CraftProbeTick(aEvent.getServer()); // [GT6-CRAFTPROBE] временная проба BUG-002 РЕАЛЬНЫМ путём (палка+кремень в живых крафт-слотах) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {

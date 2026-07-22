@@ -2517,6 +2517,21 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	private boolean mAutoWorldTriggered = false;
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onAutoWorldCreate(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		// [GT6-CRAFTPROBE] перезаход для BUG-002: МИР-1 отработал (stage=1) -> сохранить+выйти в меню и войти в тот же
+		// мир повторно ШТАТНЫМ авто-хуком ниже (файл wgautoworld.world + сброс триггера). МИР-2 получит НОВЫЕ инстансы
+		// динреестров — условие протухшего holder в статическом mOutput. Снять при уборке фазы.
+		if (gregapi.GT_API_Proxy.sCraftProbeStage == 1 && gregapi.data.CS.probeFlag("gt6craftprobe.flag")) {
+			gregapi.GT_API_Proxy.sCraftProbeStage = -1;
+			try {
+				java.nio.file.Files.write(new java.io.File("wgautoworld.world").toPath(), "GT6WGTest".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+				mAutoWorldTriggered = false;
+				gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] клиент: сохранение и ПЕРЕЗАХОД в GT6WGTest...");
+				// disconnectFromWorld: штатный полный путь «сохранить + выйти в TitleScreen» (Minecraft.java:2218-2239);
+				// голый disconnectWithSavingScreen НЕ ставит TitleScreen -> клиент застревал на GenericMessageScreen
+				Minecraft.getInstance().disconnectFromWorld(net.minecraft.network.chat.Component.literal("GT6-CRAFTPROBE rejoin"));
+			} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-CRAFTPROBE] перезаход упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+			return;
+		}
 		if (mAutoWorldTriggered) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (!(tMC.screen instanceof net.minecraft.client.gui.screens.TitleScreen)) return;

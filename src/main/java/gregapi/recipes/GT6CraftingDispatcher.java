@@ -104,7 +104,11 @@ public final class GT6CraftingDispatcher extends CustomRecipe {
 		List<ICraftingRecipeGT> tList = CR.list();
 		for (int i = 0, j = tList.size(); i < j; i++) {
 			ICraftingRecipeGT tRecipe = tList.get(i);
-			if (tRecipe != null && tRecipe.matches(aGrid, CS.DW)) return tRecipe.getCraftingResult(aGrid);
+			// F8 (BUG-002): статический mOutput рецепта зачарован ОДИН раз на запуск (isItemStackUsable, гейт "ench") ->
+			// после перезахода в мир его Holder.Reference протухает (динреестры пересозданы) и валит сетевой кодек слота
+			// по идентичности. Освежаем holder'ы копии результата реестром ТЕКУЩЕГО сервера — единая воронка всех
+			// GT6-крафтов (F11-центр), см. UT.NBT.refreshEnchantments.
+			if (tRecipe != null && tRecipe.matches(aGrid, CS.DW)) return gregapi.util.UT.NBT.refreshEnchantments(tRecipe.getCraftingResult(aGrid));
 		}
 		return ItemStack.EMPTY;
 	}

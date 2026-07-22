@@ -2323,6 +2323,31 @@ public class UT {
 			return aStack;
 		}
 
+		/** F8 (enchant-registry, протухшие holder'ы — BUG-002): в 1.7.10 Enchantment был статическим синглтоном, и вшить
+		 *  его в долгоживущий стек было безопасно. В neo энчанты — ДИНАМИЧЕСКИЙ пер-серверный реестр: Holder.Reference,
+		 *  вшитый в статический стек (результат рецепта mOutput, зачарован один раз на запуск через isItemStackUsable с
+		 *  гейтом "ench"), после перезахода в мир не находится сетевым кодеком ПО ИДЕНТИЧНОСТИ (Registry.getId(value),
+		 *  Registry.java:151) -> EncoderException container_set_slot -> дисконнект. Пересобирает компонент энчантов
+		 *  holder'ами ТЕКУЩЕГО сервера по ResourceKey (тот же путь резолва, что addEnchantment выше). Holder без ключа
+		 *  или ключ вне реестра — переносится как есть. Нет сервера/энчантов — no-op. */
+		public static ItemStack refreshEnchantments(ItemStack aStack) {
+			if (aStack == null || aStack.isEmpty()) return aStack;
+			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
+			if (tServer == null) return aStack;
+			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
+			ItemEnchantments tOld = aStack.getOrDefault(tType, ItemEnchantments.EMPTY);
+			if (tOld.isEmpty()) return aStack;
+			net.minecraft.core.HolderLookup.RegistryLookup<Enchantment> tReg = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+			ItemEnchantments.Mutable tNew = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+			for (Holder<Enchantment> tHolder : tOld.keySet()) {
+				int tLevel = tOld.getLevel(tHolder);
+				Holder<Enchantment> tFresh = tHolder.unwrapKey().<Holder<Enchantment>>flatMap(k -> tReg.get(k).map(h -> h)).orElse(tHolder);
+				tNew.set(tFresh, tLevel);
+			}
+			aStack.set(tType, tNew.toImmutable());
+			return aStack;
+		}
+
 		/** было {@code aEnchantment.getTranslatedName(aLevel)} (1.7.10 Enchantment) — neo: имя энчанта с уровнем через
 		 *  static {@code Enchantment.getFullname(Holder<Enchantment>, level)} (neo Enchantment.java:185); ключ резолвим
 		 *  через server-реестр (тот же путь, что addEnchantment выше). Нет сервера => путь ключа как fallback. */
