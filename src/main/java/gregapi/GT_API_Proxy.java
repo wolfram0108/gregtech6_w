@@ -319,7 +319,63 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public  static       List<ITileEntityScheduledUpdate>   SCHEDULED_TILEENTITY_UPDATES   = new ArrayListNoNulls<>();
 	private static       List<ITileEntityScheduledUpdate>   SCHEDULED_TILEENTITY_UPDATES_2 = new ArrayListNoNulls<>();
 	
-	@SubscribeEvent(priority = EventPriority.LOWEST) 
+	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========
+	// Прогоняет в РЕАЛЬНОМ серверном мире (overworld) ДО сдачи: F13 мета-round-trip, дроп BUG-006, реестр урона BUG-004
+	// (тот самый getId(holder.value()), что падал в кодеке), распад листвы BUG-005 (tick-мост+мета), denull BUG-001.
+	// Снять при уборке фазы (как wall-судьи 794f8a15). BUG-003 (клиент-предикшен атаки) серверной пробой не воспроизводим.
+	private static int sBugVerifyTick = -1;
+	private static final int BV_X = 2, BV_Y = 210, BV_Z = 2, BV_LX = 14, BV_LY = 208, BV_LZ = 14;
+	public static void gt6BugVerifyTick(net.minecraft.server.MinecraftServer aServer) {
+		sBugVerifyTick++;
+		if (sBugVerifyTick == 40) gt6BugVerifyPhaseA(aServer);
+		else if (sBugVerifyTick == 90) gt6BugVerifyPhaseB(aServer);
+	}
+	private static void gt6BugVerifyPhaseA(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-BUGVERIFY] PHASE A ==========");
+		net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+		try { // F13 мета round-trip (BUG-009/010/006-type)
+			net.minecraft.world.level.block.Block tLog = BlocksGT.Log1;
+			WD.set(tLevel, BV_X, BV_Y, BV_Z, tLog, 5, 3);  int m1 = WD.meta(tLevel, BV_X, BV_Y, BV_Z);
+			WD.set(tLevel, BV_X, BV_Y, BV_Z, tLog, 11, 3); int m2 = WD.meta(tLevel, BV_X, BV_Y, BV_Z);
+			O.println("[GT6-BUGVERIFY] F13 meta round-trip Log1: set5->read" + m1 + " | set11->read" + m2 + "  => " + (m1==5 && m2==11 ? "PASS" : "FAIL"));
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] F13 meta EXC " + e); e.printStackTrace(O);}
+		try { // BUG-006 дроп simple-блока
+			net.minecraft.core.BlockPos p = new net.minecraft.core.BlockPos(BV_X, BV_Y, BV_Z);
+			java.util.List<ItemStack> drops = net.minecraft.world.level.block.Block.getDrops(tLevel.getBlockState(p), tLevel, p, null);
+			O.println("[GT6-BUGVERIFY] BUG-006 drops Log1: count=" + drops.size() + (drops.isEmpty()?"":" first="+drops.get(0)) + "  => " + (!drops.isEmpty() ? "PASS" : "FAIL"));
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-006 EXC " + e); e.printStackTrace(O);}
+		try { // BUG-004 типы урона в реестре + getId(holder.value()) НЕ кидает (это и был краш кодека)
+			net.minecraft.core.Registry<net.minecraft.world.damagesource.DamageType> reg = tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE);
+			gregapi.damage.DamageSources.GregTechDamageSource ds = gregapi.damage.DamageSources.getExplodingDamage();
+			int id = reg.getId(ds.typeHolder().value());
+			O.println("[GT6-BUGVERIFY] BUG-004 damage: getExplodingDamage holder getId=" + id + "  => " + (id >= 0 ? "PASS" : "FAIL"));
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-004 EXC (=был бы краш кодека!) " + e); e.printStackTrace(O);}
+		try { // BUG-001 denull с count-0 стеком (старый код писал null в NonNullList -> NPE)
+			net.minecraft.world.SimpleContainer inv = new net.minecraft.world.SimpleContainer(3);
+			ItemStack zero = new ItemStack(net.minecraft.world.item.Items.STICK, 1); zero.setCount(0);
+			inv.setItem(0, zero); ST.denull(inv);
+			O.println("[GT6-BUGVERIFY] BUG-001 denull(count=0): no NPE, slot0empty=" + inv.getItem(0).isEmpty() + "  => PASS");
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-001 denull THREW (=баг жив!) " + e);}
+		try { // BUG-005 листва: постановка decayable-меты БЕЗ опорных логов + scheduleTick (проверка в PHASE B)
+			net.minecraft.world.level.block.Block tLeaf = BlocksGT.Leaves_AB;
+			WD.set(tLevel, BV_LX, BV_LY, BV_LZ, tLeaf, 8, 3); int lm = WD.meta(tLevel, BV_LX, BV_LY, BV_LZ);
+			tLevel.scheduleTick(new net.minecraft.core.BlockPos(BV_LX, BV_LY, BV_LZ), tLeaf, 2);
+			O.println("[GT6-BUGVERIFY] BUG-005 leaf setup: Leaves_AB meta(read)=" + lm + " (нужно 8) scheduled decay tick -> проверка в PHASE B");
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-005 setup EXC " + e); e.printStackTrace(O);}
+		O.println("========== [GT6-BUGVERIFY] PHASE A END ==========");
+	}
+	private static void gt6BugVerifyPhaseB(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+		try { // BUG-005 tick-мост+мета: листва распалась?
+			net.minecraft.world.level.block.state.BlockState st = tLevel.getBlockState(new net.minecraft.core.BlockPos(BV_LX, BV_LY, BV_LZ));
+			O.println("[GT6-BUGVERIFY] BUG-005 leaf decay (tick-мост): after schedule -> block=" + st.getBlock() + " isAir=" + st.isAir() + "  => " + (st.isAir() ? "PASS" : "FAIL"));
+		} catch (Throwable e) {O.println("[GT6-BUGVERIFY] BUG-005 check EXC " + e); e.printStackTrace(O);}
+		O.println("========== [GT6-BUGVERIFY] DONE ==========");
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
 		TOOL_SOUNDS = TOOL_SOUNDS_SETTING;
@@ -335,6 +391,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			LAST_BROKEN_TILEENTITY.set(null);
 
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
+				if (gregapi.data.CS.probeFlag("gt6bugverify.flag")) gt6BugVerifyTick(aEvent.getServer()); // [GT6-BUGVERIFY] временная механическая проба фиксов BUG-001..010 — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
