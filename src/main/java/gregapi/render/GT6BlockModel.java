@@ -66,6 +66,14 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 
 	@Override
 	public void collectParts(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, RandomSource aRandom, List<BlockStateModelPart> aParts) {
+		// F-bounds-race: вся рендер-цепь — в bounds-контексте (BlockBase.RENDER_BOUNDS_CTX): пассовые setBlockBounds и
+		// анти-протечка пишут потоко-локальную копию, НЕ общие поля Block (см. BlockBase.setBlockBounds).
+		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
+		try {
+			collectParts0(aLevel, aPos, aState, aRandom, aParts);
+		} finally {tCtx[0] = tPrevCtx;}
+	}
+	private void collectParts0(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, RandomSource aRandom, List<BlockStateModelPart> aParts) {
 		// F3-render ТРЕЩИНЫ (репорт игрока «нет текстуры трещин» + уточнение «в оригинале трещины ложились ПРЯМО
 		// на поверхность трубы/камня/верёвки/куста»): breaking-путь движка (LevelRenderer.submitBlockDestroyAnimation
 		// → BlockFeatureRenderer.renderBreakingBlockModelSubmits:150) зовёт collectParts С ПУСТЫШКАМИ
@@ -150,6 +158,11 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	/** F3-render: ветвь рендер-объекта (getRenderPasses→setBlockBounds→getTexture→quads). Общий код collectParts (baked) и
 	 *  MultiTileEntityBER (BER, живой BE на main-thread). renderBlock=true → объект сам нарисовал, цикл не нужен. */
 	public static void buildRendererQuads(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
+		// F-bounds-race: скобки контекста и здесь — метод зовётся и напрямую (MultiTileEntityBER, main thread).
+		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
+		try {buildRendererQuads0(aQB, aRenderer, aBlock, aLevel, aX, aY, aZ);} finally {tCtx[0] = tPrevCtx;}
+	}
+	private static void buildRendererQuads0(GT6QuadBuilder aQB, IRenderedBlockObject aRenderer, Block aBlock, net.minecraft.world.level.BlockGetter aLevel, int aX, int aY, int aZ) {
 		if (aRenderer.renderBlock(aBlock, aQB, aLevel, aX, aY, aZ)) return;
 		boolean[] tSides = sides(aBlock, aRenderer instanceof IRenderedBlockObjectSideCheck ? (IRenderedBlockObjectSideCheck)aRenderer : null);
 		// КОНТРАКТ setBlockBounds (1:1 renderWorldBlock, ветвь рендер-объекта :146): false → полный куб, не стухшие bounds.
@@ -169,6 +182,11 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 	 *  либо block-level ветка {@code getRenderPasses(stack)/getTexture(pass,side,stack)} (руды/простые). SIDES_ITEM_RENDER = все грани true.
 	 *  Тот же {@link #face}/{@link GT6QuadBuilder} — один центр рендера, как один RendererBlockTextured у Грегориуса. */
 	public static void buildInventoryQuads(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {
+		// F-bounds-race: item-форма блока строится на Render thread — тоже в bounds-контексте.
+		boolean[] tCtx = gregapi.block.BlockBase.RENDER_BOUNDS_CTX.get(); boolean tPrevCtx = tCtx[0]; tCtx[0] = true;
+		try {buildInventoryQuads0(aQB, aBlock, aStack);} finally {tCtx[0] = tPrevCtx;}
+	}
+	private static void buildInventoryQuads0(GT6QuadBuilder aQB, Block aBlock, net.minecraft.world.item.ItemStack aStack) {
 		if (!(aBlock instanceof IRenderedBlock tRB)) return;
 		boolean[] tSides = {true, true, true, true, true, true}; // SIDES_ITEM_RENDER (без соседей → все грани)
 		IRenderedBlockObject tRenderer = tRB.passRenderingToObject(aStack);

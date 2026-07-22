@@ -64,11 +64,23 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	/** F-bounds: последние заданные bounds (1.7.10 мутировал Block.mBoundingBox); рендер-использование
 	 *  отложено на F3-клиент-проход. Хранит форму {minX,minY,minZ,maxX,maxY,maxZ}. */
 	protected float[] mRenderBounds = {0, 0, 0, 1, 1, 1};
+	/** F-bounds-race (системный фикс гонки рендера): 1.7.10 был однопоточен — мутация общих полей Block в рендер-цикле
+	 *  была безопасна. neo мешает чанки НЕСКОЛЬКИМИ worker-потоками с ОДНИМ Block-инстансом: пассовые setBlockBounds
+	 *  разных потоков и анти-протечка (сброс в куб) гонялись по одному полю → недетерминированные полные кубы у
+	 *  полу-форм (репорт игрока по слэбам) и порча shape-канала. Канал развязан: рендер-цепь (GT6BlockModel/BER —
+	 *  скобки {@code RENDER_BOUNDS_CTX}) пишет и читает ТОЛЬКО потоко-локальную копию; общие поля мутируются лишь вне
+	 *  рендер-контекста (конструкторы, серверная логика — 1:1 с 1.7.10) и питают shape-мосты. Реализации
+	 *  setBlockBounds(pass,...) сотен блоков не изменялись — центр один. */
+	public static final ThreadLocal<boolean[]> RENDER_BOUNDS_CTX = ThreadLocal.withInitial(() -> new boolean[1]);
+	private final ThreadLocal<float[]> mRenderBoundsTL = ThreadLocal.withInitial(() -> mRenderBounds.clone());
 	@Override public void setBlockBounds(float aMinX, float aMinY, float aMinZ, float aMaxX, float aMaxY, float aMaxZ) {
-		mRenderBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		float[] tBounds = new float[] {aMinX, aMinY, aMinZ, aMaxX, aMaxY, aMaxZ};
+		mRenderBoundsTL.set(tBounds);
+		if (!RENDER_BOUNDS_CTX.get()[0]) mRenderBounds = tBounds;
 	}
-	/** F3-render: текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} для GT6BlockModel (было RenderBlocks.setRenderBoundsFromBlock). */
-	public float[] getRenderBounds() {return mRenderBounds;}
+	/** F3-render: текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} для GT6BlockModel (было RenderBlocks.setRenderBoundsFromBlock).
+	 *  Читает потоко-локальную копию (см. F-bounds-race выше) — в рендер-потоке это значения ЕГО пассов, не чужих. */
+	public float[] getRenderBounds() {return mRenderBoundsTL.get();}
 	// F-shape (класс «канал движка сместился»; зеркало моста MTE-иерархий MultiTileEntityBlock:296): 1.7.10-коллизия
 	// шла через vanilla-поверхность Block.addCollisionBoxesToList/getCollisionBoundingBoxFromPool (дефолт = статические
 	// bounds setBlockBounds + pos; подклассы переопределяли: Bars/Spike/LilyPad/Path/Leaves/Sapling/CFoamFresh).
