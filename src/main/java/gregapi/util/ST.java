@@ -744,7 +744,10 @@ public class ST {
 		ItemStack tStack = aInv.removeItem(aSlotFrom, aCount);
 		if (tStack == null || tStack.getCount() <= 0) return 0;
 		aCount = Math.min(aCount, tStack.getCount());
-		if (aStackTo == null) aInv.setItem(aSlotTo, amount(aCount, aStackFrom)); else aStackTo.setCount(aStackTo.getCount()+(aCount));
+		// F15-size0 (BUG-011, предмет исчезал): neo removeItem = split ТОГО ЖЕ объекта — aStackFrom (снимок getItem)
+		// обнуляется, count-0 стек = EMPTY, amount/copy от него = air. В 1.7.10 decrStackSize оставлял Item у size-0
+		// стека и копия работала. Источник копии = tStack (реально изъятое removeItem, item/NBT те же).
+		if (aStackTo == null) aInv.setItem(aSlotTo, amount(aCount, tStack)); else aStackTo.setCount(aStackTo.getCount()+(aCount));
 		aInv.setChanged();
 		WD.mark(aInv);
 		return aCount;
@@ -767,7 +770,8 @@ public class ST {
 		ItemStack tStack = aFrom.removeItem(aSlotFrom, aCount);
 		if (tStack == null || tStack.getCount() <= 0) return 0;
 		aCount = Math.min(aCount, tStack.getCount());
-		if (aStackTo == null) aTo.setItem(aSlotTo, amount(aCount, aStackFrom)); else aStackTo.setCount(aStackTo.getCount()+(aCount));
+		// F15-size0 (BUG-011): см. move_(Container,...) выше — копия от tStack, не от обнулённого aStackFrom.
+		if (aStackTo == null) aTo.setItem(aSlotTo, amount(aCount, tStack)); else aStackTo.setCount(aStackTo.getCount()+(aCount));
 		aFrom.setChanged();
 		aTo  .setChanged();
 		WD.mark(aFrom);

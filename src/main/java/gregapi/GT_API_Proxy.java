@@ -668,6 +668,63 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-SLABPROBE-B] EXC " + e); e.printStackTrace(O);}
 	}
 
+	// ========== [GT6-ANVILPROBE] ВРЕМЕННАЯ проба BUG-011 РЕАЛЬНЫМ путём (гейт run/gt6anvilprobe.flag + -Pgt6probes) ==========
+	// Репорт: «предмет не ложится в слот наковальни, а исчезает». Проба: НАСТОЯЩАЯ наковальня (item из MTE-реестра,
+	// установка реальным useOn), затем ПКМ GT-слитком железа по верхней грани (реальный useOn -> onBlockActivated3).
+	// Судья: слиток лёг в слот 0/1 наковальни, сумма предметов (рука+слоты) сохранена, ничего не исчезло. Снять при уборке.
+	private static int sAnvilProbeTick = -1;
+	private static net.minecraft.core.BlockPos sAnvilPos = null;
+	public static void gt6AnvilProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sAnvilProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sAnvilProbeTick == 200) {
+				O.println("========== [GT6-ANVILPROBE] BUG-011: наковальня реальным путём ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-ANVILPROBE] нет игрока => пропуск"); return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				net.minecraft.world.item.ItemStack tAnvil = tReg == null ? null : tReg.getItem(32025); // Stone Anvil (Loader_MultiTileEntities:2187)
+				if (tAnvil == null || tAnvil.isEmpty()) {O.println("[GT6-ANVILPROBE] предмет наковальни (32025) не получен => FAIL (проба не валидна)"); return;}
+				net.minecraft.core.BlockPos tBase = tPlayer.blockPosition().offset(-4, 0, -4);
+				tLevel.setBlock(tBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tLevel.setBlock(tBase.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				tPlayer.getInventory().setItem(0, tAnvil); tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(tPlayer, net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tBase).add(0, 0.5, 0), net.minecraft.core.Direction.UP, tBase, false)));
+				sAnvilPos = tBase.above();
+				O.println("[GT6-ANVILPROBE] установка: на " + sAnvilPos + " встал " + tLevel.getBlockState(sAnvilPos).getBlock() + " BE=" + tLevel.getBlockEntity(sAnvilPos));
+			} else if (sAnvilProbeTick == 240) {
+				if (sAnvilPos == null) return;
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+				net.minecraft.world.item.ItemStack tIngot = gregapi.data.OP.ingot.mat(gregapi.data.MT.Fe, 4);
+				net.minecraft.world.level.block.entity.BlockEntity tBE0 = tLevel.getBlockEntity(sAnvilPos);
+				// DIAG рецепт-гейта размещения (условие onBlockActivated3:240)
+				try {
+					O.println("[GT6-ANVILPROBE] DIAG containsInput(ingot): Anvil=" + RM.Anvil.containsInput(tIngot, (gregapi.random.IHasWorldAndCoords)tBE0, NI)
+						+ " BendSmall=" + RM.AnvilBendSmall.containsInput(tIngot, (gregapi.random.IHasWorldAndCoords)tBE0, NI)
+						+ " BendBig=" + RM.AnvilBendBig.containsInput(tIngot, (gregapi.random.IHasWorldAndCoords)tBE0, NI));
+				} catch (Throwable e) {O.println("[GT6-ANVILPROBE] DIAG containsInput EXC " + e);}
+				O.println("[GT6-ANVILPROBE] в руке: " + tIngot + " -> ПКМ по верху наковальни (реальный канал gameMode.useItemOn)");
+				tPlayer.getInventory().setItem(0, tIngot); tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.gameMode.useItemOn(tPlayer, tLevel, tPlayer.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(sAnvilPos).add(0.2, 0.5, 0.2), net.minecraft.core.Direction.UP, sAnvilPos, false));
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sAnvilPos);
+				net.minecraft.world.item.ItemStack tHand = tPlayer.getInventory().getItem(0);
+				String tSlots = "(BE не Container)"; int tInSlots = 0;
+				if (tBE instanceof net.minecraft.world.Container tC) {
+					tSlots = "slot0=" + tC.getItem(0) + " slot1=" + tC.getItem(1);
+					for (int i = 0; i <= 1; i++) if (tC.getItem(i) != null && !tC.getItem(i).isEmpty()) tInSlots += tC.getItem(i).getCount();
+				}
+				int tTotal = tInSlots + (tHand == null || tHand.isEmpty() ? 0 : tHand.getCount());
+				O.println("[GT6-ANVILPROBE] после клика: рука=" + tHand + " " + tSlots + " сумма=" + tTotal + "/4"
+					+ (tInSlots > 0 && tTotal == 4 ? "  => PASS (лёг, ничего не исчезло)" : tTotal < 4 ? "  => FAIL (ПРОПАЖА подтверждена)" : "  => FAIL (не ложится, но цел)"));
+				O.println("========== [GT6-ANVILPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-ANVILPROBE] EXC " + e); e.printStackTrace(O);}
+	}
+
 	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========
 	// Прогоняет в РЕАЛЬНОМ серверном мире (overworld) ДО сдачи: F13 мета-round-trip, дроп BUG-006, реестр урона BUG-004
 	// (тот самый getId(holder.value()), что падал в кодеке), распад листвы BUG-005 (tick-мост+мета), denull BUG-001.
@@ -771,6 +828,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6attackprobe.flag")) gt6AttackProbeTick(aEvent.getServer()); // [GT6-ATTACKPROBE] временная проба BUG-003 РЕАЛЬНЫМ путём (клиентская атака ГТ-ножом по овце) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6flowerprobe.flag")) gt6FlowerProbeTick(aEvent.getServer()); // [GT6-FLOWERPROBE] временная проба BUG-008 РЕАЛЬНЫМ путём (слом мака SURVIVAL-каналом игрока) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6slabprobe.flag")) gt6SlabProbeTick(aEvent.getServer()); // [GT6-SLABPROBE] временная проба BUG-010 (клиентские квады модели слэба) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6anvilprobe.flag")) gt6AnvilProbeTick(aEvent.getServer()); // [GT6-ANVILPROBE] временная проба BUG-011 (наковальня реальным useOn) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
