@@ -1005,7 +1005,24 @@ public class WD {
 					} else if (IL.NeLi_Wart_Block_Crimson.equal(tBlock) || IL.NeLi_ShroomLight.equal(tBlock)) {
 						if (aTreeCapitator && Math.abs(i) <= 4 && Math.abs(k) <= 4) aWorld.destroyBlock(new BlockPos(aX+i, aY+j, aZ+k), T); // было aWorld.func_147480_a(x,y,z,drop)
 					} else {
-						if (WD.leaves(tBlock, aWorld, aX+i, aY+j, aZ+k)) aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), tBlock, 1+RNGSUS.nextInt(100)); // было aWorld.scheduleTick(new BlockPos(x, y, z), block, delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int) (ScheduledTickAccess.java:21)
+						if (WD.leaves(tBlock, aWorld, aX+i, aY+j, aZ+k)) {
+							// F-tree (BUG-005): в 1.7.10 scheduleBlockUpdate бил в updateTick листа, который САМ проверял опору и
+							// распадался (один канал). В neo 26.1.2 канал ВАНИЛЬНОЙ листвы расщеплён: scheduled tick лишь пересчитывает
+							// DISTANCE (LeavesBlock.tick:79-81), а распад живёт в randomTick:67-72 (decaying: DISTANCE==7 && !PERSISTENT).
+							// Причём scheduleTick для ванильного листа тут ВРЕДЕН: висящий pending-тик (1..100) ДЕДУПИТСЯ по (блок,поз)
+							// и блокирует каскадные delay-1 пересчёты DISTANCE от снесённых брёвен (LevelChunkTicks.schedule:52 —
+							// ticksPerPosition.add), замедляя распад ХУЖЕ ванили (замерено пробой gt6leafprobe: settle >100 тиков).
+							// -> ванильную листву НЕ scheduleTick, а форс-randomTick ТОЙ ЖЕ формулой задержки через центральную
+							// очередь сервер-тика (GT_API_Proxy.DELAYED_LEAF_DECAYS, исполнение движковыми state.tick+state.randomTick,
+							// недозревший DISTANCE добирается повторами там же). GT6-и-прочие листья — как в оригинале: scheduleTick,
+							// их updateTick распадает сам (tick-мост BlockBase -> updateTick2).
+							if (tBlock instanceof net.minecraft.world.level.block.LeavesBlock) {
+								if (aWorld instanceof net.minecraft.server.level.ServerLevel)
+									gregapi.GT_API_Proxy.DELAYED_LEAF_DECAYS.add(new Object[] {aWorld, new BlockPos(aX+i, aY+j, aZ+k), SERVER_TIME + 1 + RNGSUS.nextInt(100), 0});
+							} else {
+								aWorld.scheduleTick(new BlockPos(aX+i, aY+j, aZ+k), tBlock, 1+RNGSUS.nextInt(100)); // было aWorld.scheduleTick(new BlockPos(x, y, z), block, delay) — ScheduledTickAccess.scheduleTick(BlockPos,Block,int) (ScheduledTickAccess.java:21)
+							}
+						}
 					}
 				}
 			}

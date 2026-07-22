@@ -316,9 +316,93 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public  static final List<ITileEntityMobSpawnInhibitor> MOB_SPAWN_INHIBITORS           = new ArrayListNoNulls<>();
 	public  static       List<IHasWorldAndCoords>           DELAYED_BLOCK_UPDATES          = new ArrayListNoNulls<>();
 	private static       List<IHasWorldAndCoords>           DELAYED_BLOCK_UPDATES_2        = new ArrayListNoNulls<>();
+	/** F-tree (BUG-005): форс-распад ВАНИЛЬНОЙ листвы для WD.leafdecay — neo расщепил канал 1.7.10 updateTick
+	 *  (scheduled tick = пересчёт DISTANCE, распад = randomTick); записи {ServerLevel, BlockPos, Long срок(SERVER_TIME), Integer попытка}. */
+	public  static final List<Object[]>                     DELAYED_LEAF_DECAYS            = new ArrayListNoNulls<>();
 	public  static       List<ITileEntityScheduledUpdate>   SCHEDULED_TILEENTITY_UPDATES   = new ArrayListNoNulls<>();
 	private static       List<ITileEntityScheduledUpdate>   SCHEDULED_TILEENTITY_UPDATES_2 = new ArrayListNoNulls<>();
 	
+	// ========== [GT6-LEAFPROBE] ВРЕМЕННАЯ проба BUG-005 РЕАЛЬНЫМ путём игрока (гейт run/gt6leafprobe.flag + -Pgt6probes) ==========
+	// Урок ложных PASS: судья обязан идти путём игрока, не синтетикой. Здесь: НАСТОЯЩИЙ дуб выращивается ДВИЖКОМ
+	// (саженец + SaplingBlock.advanceTree — канал костной муки), рубится ДОСЛОВНО кодом топора-лесоруба
+	// (GT_Tool_Axe.convertBlockDrops:113-123 — скан ствола, цикл destroyBlock + WD.leafdecay(level,x,y,z,null,T,T)),
+	// затем считаются ОСТАВШИЕСЯ ванильные листья. PASS = 0 листьев через ~13с после рубки (форс-распад);
+	// FAIL = листья висят (ванильная randomTick-скорость = минуты). Снять при уборке фазы.
+	private static int sLeafProbeTick = -1;
+	private static net.minecraft.core.BlockPos sLeafProbeBase = null;
+	private static int sLeafProbeBefore = 0;
+	public static void gt6LeafProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sLeafProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = aServer.overworld();
+		try {
+			if (sLeafProbeTick == 60) {
+				O.println("========== [GT6-LEAFPROBE] PHASE A: выращивание НАСТОЯЩЕГО дуба движком ==========");
+				net.minecraft.core.BlockPos tSpawn = tLevel.getRespawnData().pos(); // spawn мира (LevelData.RespawnData.pos(), LevelData.java:30)
+				int tX = tSpawn.getX() + 24, tZ = tSpawn.getZ() + 24;
+				int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, tX, tZ);
+				// площадка (воздух 9×14×9 + земля 3×3) — подготовка МЕСТА; само дерево целиком порождает движок
+				for (int j = 0; j <= 13; j++) for (int i = -4; i <= 4; i++) for (int k = -4; k <= 4; k++)
+					tLevel.setBlock(new net.minecraft.core.BlockPos(tX+i, tY+j, tZ+k), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				for (int i = -1; i <= 1; i++) for (int k = -1; k <= 1; k++)
+					tLevel.setBlock(new net.minecraft.core.BlockPos(tX+i, tY-1, tZ+k), net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+				sLeafProbeBase = new net.minecraft.core.BlockPos(tX, tY, tZ);
+				tLevel.setBlock(sLeafProbeBase, net.minecraft.world.level.block.Blocks.OAK_SAPLING.defaultBlockState(), 3);
+				net.minecraft.world.level.block.SaplingBlock tSapling = (net.minecraft.world.level.block.SaplingBlock)net.minecraft.world.level.block.Blocks.OAK_SAPLING;
+				for (int t = 0; t < 200 && tLevel.getBlockState(sLeafProbeBase).getBlock() == tSapling; t++)
+					tSapling.advanceTree(tLevel, sLeafProbeBase, tLevel.getBlockState(sLeafProbeBase), tLevel.getRandom());
+				boolean tGrown = tLevel.getBlockState(sLeafProbeBase).is(net.minecraft.tags.BlockTags.LOGS);
+				sLeafProbeBefore = gt6LeafProbeCount(tLevel);
+				O.println("[GT6-LEAFPROBE] дерево выращено=" + tGrown + " база=" + sLeafProbeBase + " ванильных листьев вокруг=" + sLeafProbeBefore + (tGrown && sLeafProbeBefore > 0 ? "" : "  => FAIL (нет дерева/листьев — проба не валидна)"));
+			} else if (sLeafProbeTick == 120) {
+				if (sLeafProbeBase == null) return;
+				O.println("========== [GT6-LEAFPROBE] PHASE B: рубка ДОСЛОВНО кодом топора (GT_Tool_Axe:113-123) ==========");
+				int aX = sLeafProbeBase.getX(), aY = sLeafProbeBase.getY(), aZ = sLeafProbeBase.getZ(), tChopped = 0;
+				net.minecraft.world.level.block.Block aBlock = tLevel.getBlockState(sLeafProbeBase).getBlock();
+				int tY = aY, tH = tLevel.getHeight(), tCount = 0;
+				// Checking... (скан ствола вверх, GT_Tool_Axe:113-118; без бюджета прочности — прочность в игре подтверждена)
+				while (++tY < tH) {if (WD.block(tLevel, aX, tY, aZ) != aBlock) break; tCount++;}
+				// Harvesting... (GT_Tool_Axe:120-123)
+				while (--tY > aY && tCount-- > 0 && tLevel.destroyBlock(new net.minecraft.core.BlockPos(aX, tY, aZ), T)) {
+					tChopped++;
+					if (FAST_LEAF_DECAY) WD.leafdecay(tLevel, aX, tY, aZ, null, T, T);
+				}
+				if (tLevel.destroyBlock(new net.minecraft.core.BlockPos(aX, aY, aZ), T)) tChopped++; // нижний блок в игре ломает сам игрок
+				if (FAST_LEAF_DECAY) WD.leafdecay(tLevel, aX, aY, aZ, null, T, T);
+				O.println("[GT6-LEAFPROBE] FAST_LEAF_DECAY=" + FAST_LEAF_DECAY + " срублено=" + tChopped + " очередь форс-распада=" + DELAYED_LEAF_DECAYS.size() + " листьев сейчас=" + gt6LeafProbeCount(tLevel));
+			} else if (sLeafProbeTick == 200 || sLeafProbeTick == 380) {
+				if (sLeafProbeBase == null) return;
+				int tLeft = gt6LeafProbeCount(tLevel);
+				// диагностика: гистограмма DISTANCE оставшихся + разбивка «крона ствола (±4)» vs «дальше» (в ±8 могут
+				// попадать листья СОСЕДНИХ деревьев с легитимной опорой — их висение не дефект)
+				int[] tHist = new int[8]; int tNear = 0, tFar = 0; StringBuilder tSample = new StringBuilder();
+				for (int j = -1; j <= 13; j++) for (int i = -8; i <= 8; i++) for (int k = -8; k <= 8; k++) {
+					net.minecraft.world.level.block.state.BlockState tS = tLevel.getBlockState(sLeafProbeBase.offset(i, j, k));
+					if (tS.getBlock() instanceof net.minecraft.world.level.block.LeavesBlock) {
+						int d = tS.getValue(net.minecraft.world.level.block.LeavesBlock.DISTANCE);
+						boolean p = tS.getValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT);
+						tHist[d]++;
+						if (Math.abs(i) <= 4 && Math.abs(k) <= 4) tNear++; else tFar++;
+						if (tSample.length() < 600) tSample.append(" [").append(i).append(",").append(j).append(",").append(k).append(" d=").append(d).append(p?" P":"").append("]");
+					}
+				}
+				O.println("[GT6-LEAFPROBE] tick+" + (sLeafProbeTick-120) + " после рубки: листьев=" + tLeft + " (у ствола ±4: " + tNear + ", дальше: " + tFar + ") очередь=" + DELAYED_LEAF_DECAYS.size());
+				O.println("[GT6-LEAFPROBE]   DISTANCE-гистограмма d1..d7: " + tHist[1] + "/" + tHist[2] + "/" + tHist[3] + "/" + tHist[4] + "/" + tHist[5] + "/" + tHist[6] + "/" + tHist[7] + "  образцы:" + tSample);
+				if (sLeafProbeTick == 380) {
+					// вердикт по кроне НАШЕГО дуба: листья у ствола обязаны исчезнуть; d=7 без PERSISTENT где угодно = пропущенный распад
+					O.println("[GT6-LEAFPROBE] ВЕРДИКТ: " + (tNear == 0 && tHist[7] == 0 && sLeafProbeBefore > 0 ? "PASS (крона снесена, зависших d7 нет)" : "FAIL"));
+					O.println("========== [GT6-LEAFPROBE] DONE ==========");
+				}
+			}
+		} catch (Throwable e) {O.println("[GT6-LEAFPROBE] EXC " + e); e.printStackTrace(O);}
+	}
+	private static int gt6LeafProbeCount(net.minecraft.server.level.ServerLevel aLevel) {
+		int r = 0;
+		for (int j = -1; j <= 13; j++) for (int i = -8; i <= 8; i++) for (int k = -8; k <= 8; k++)
+			if (aLevel.getBlockState(sLeafProbeBase.offset(i, j, k)).getBlock() instanceof net.minecraft.world.level.block.LeavesBlock) r++;
+		return r;
+	}
+
 	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========
 	// Прогоняет в РЕАЛЬНОМ серверном мире (overworld) ДО сдачи: F13 мета-round-trip, дроп BUG-006, реестр урона BUG-004
 	// (тот самый getId(holder.value()), что падал в кодеке), распад листвы BUG-005 (tick-мост+мета), denull BUG-001.
@@ -417,6 +501,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				if (gregapi.data.CS.probeFlag("gt6bugverify.flag")) gt6BugVerifyTick(aEvent.getServer()); // [GT6-BUGVERIFY] временная механическая проба фиксов BUG-001..010 — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6leafprobe.flag")) gt6LeafProbeTick(aEvent.getServer()); // [GT6-LEAFPROBE] временная проба BUG-005 РЕАЛЬНЫМ путём (дерево движком + рубка кодом топора) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -626,6 +711,38 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					} catch(Throwable e) {
 						if (tTileEntity instanceof ITileEntityErrorable) ((ITileEntityErrorable)tTileEntity).setError("Delayed Block Update - " + e);
 						e.printStackTrace(ERR);
+					}
+				}
+
+				// F-tree (BUG-005): созревшие форс-распады ванильной листвы (кладёт WD.leafdecay) — исполняем ДВИЖКОВЫМИ
+				// каналами: state.tick (пересчёт DISTANCE, LeavesBlock.tick:79-81) + повторное чтение + state.randomTick
+				// (распад decaying-листа, LeavesBlock.randomTick:67-72). Никакой своей логики распада — только форс вызова
+				// того, что движок вызвал бы сам по случайным тикам (1.7.10: оба канала были ОДНИМ updateTick).
+				// Если лист уцелел (каскад DISTANCE от снесённых брёвен ещё не дошёл — он идёт волнами delay-1) — повтор
+				// через 8 тиков, максимум 40 попыток: настоящая опора (бревно соседнего дерева) исчерпает лимит и выпадет.
+				for (int i = 0; i < DELAYED_LEAF_DECAYS.size(); i++) {
+					Object[] tEntry = DELAYED_LEAF_DECAYS.get(i);
+					if (SERVER_TIME >= (Long)tEntry[2]) {
+						DELAYED_LEAF_DECAYS.remove(i--);
+						try {
+							ServerLevel tLevel = (ServerLevel)tEntry[0];
+							BlockPos tPos = (BlockPos)tEntry[1];
+							if (tLevel.isLoaded(tPos)) {
+								net.minecraft.world.level.block.state.BlockState tState = tLevel.getBlockState(tPos);
+								if (tState.getBlock() instanceof net.minecraft.world.level.block.LeavesBlock) {
+									tState.tick(tLevel, tPos, tLevel.getRandom());
+									tState = tLevel.getBlockState(tPos);
+									if (tState.getBlock() instanceof net.minecraft.world.level.block.LeavesBlock) {
+										tState.randomTick(tLevel, tPos, tLevel.getRandom());
+										tState = tLevel.getBlockState(tPos);
+										if (tState.getBlock() instanceof net.minecraft.world.level.block.LeavesBlock
+										 && !tState.getValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT)
+										 && (Integer)tEntry[3] < 40)
+											DELAYED_LEAF_DECAYS.add(new Object[] {tLevel, tPos, SERVER_TIME + 8, ((Integer)tEntry[3]) + 1});
+									}
+								}
+							}
+						} catch(Throwable e) {e.printStackTrace(ERR);}
 					}
 				}
 				
