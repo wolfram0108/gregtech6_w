@@ -35,15 +35,39 @@ import net.minecraft.resources.Identifier;
 /**
  * @author Gregorius Techneticies
  */
-public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi.render.IRenderedBlock {
+public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi.render.IRenderedBlock, gregapi.block.IBlockExtendedMetaData {
 	public IIconContainer[] mIcons;
 	/** For Creative Subsets, not actually important. */
 	private final byte mMaxMeta;
+
+	// F13 (BUG-006/009/010): семья BlockBaseMeta (логи/камни/листва/слэбы) не хранила мету → placed-блок всегда meta 0
+	// (WD.set:848 сохранял мету ТОЛЬКО для IBlockExtendedMetaData). Восстановлено ДОСЛОВНЫМ зеркалом уже работающего
+	// приёма BlockBaseFlower:75-76,145-152 / BlockFluidBaseGT: мета в BlockState-свойстве (4 бита = 0-15; WD.meta через
+	// Code.bind4). WD.set/WD.meta уже маршрутизируют в get/setExtendedMetaData; GT6BlockModel читает getExtendedMetaData.
+	public static final net.minecraft.world.level.block.state.properties.IntegerProperty META =
+		net.minecraft.world.level.block.state.properties.IntegerProperty.create("meta", 0, 15);
+	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(META);}
 
 	public BlockBaseMeta(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType, long aMaxMeta, IIconContainer[] aIcons) {
 		super(aItemClass, aNameInternal, aMaterial, aSoundType);
 		mMaxMeta = (byte)UT.Code.bind(1, 16, aMaxMeta);
 		mIcons = aIcons;
+		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // порядок: после super() (createBlockStateDefinition уже отработал в Block-конструкторе)
+	}
+
+	// Хранилище меты семьи — BlockState-свойство META. Читает любой BlockGetter; пишет Level/LevelAccessor (интерактив)
+	// ИЛИ ChunkAccess (ворлдген — логи/руды кладутся WD.set(ChunkAccess):872 → setExtendedMetaData(aChunk,...)).
+	@Override public short getExtendedMetaData(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {
+		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(new net.minecraft.core.BlockPos(aX, aY, aZ));
+		return (short)(tState.getBlock() == this ? tState.getValue(META).intValue() : 0);
+	}
+	@Override public void setExtendedMetaData(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
+		net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(aX, aY, aZ);
+		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(tPos);
+		if (tState.getBlock() != this) return;
+		net.minecraft.world.level.block.state.BlockState tNew = tState.setValue(META, (int)UT.Code.bind4(aMetaData));
+		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tLA) tLA.setBlock(tPos, tNew, 3);
+		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, net.minecraft.world.level.block.Block.UPDATE_ALL);
 	}
 
 	@Override public byte maxMeta() {return mMaxMeta;}
