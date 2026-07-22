@@ -22,6 +22,7 @@ package gregtech.tileentity.inventories;
 import static gregapi.data.CS.*;
 
 import gregapi.data.BI;
+import gregapi.util.ST;
 import gregapi.data.TD;
 import gregapi.old.Textures;
 import gregapi.render.BlockTextureDefault;
@@ -102,17 +103,18 @@ public class MultiTileEntityMassStorageBox extends MultiTileEntityMassStorage {
 			return BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[aIndex], mRGBa, mMaterial.contains(TD.Properties.GLOWING)), BlockTextureDefault.get(sOverlays[aIndex]), (mMode & B[3]) == 0 ? null : BlockTextureDefault.get(Textures.BlockIcons.DUCT_TAPE));
 		}
 		if (aSide == mFacing) {
-			return BlockTextureDefault.get(BI.decimalDigit(slot(1).getCount(), 4-aRenderPass), slot(1).getCount() < mMaxStorage ? CA_WHITE : CA_RED_255, F, T, T, T);
+			// F15-size0 (BUG-015 v2): ЛОГИЧЕСКИЙ счёт ST.count — ZEROSIZE-призрак показывает 0, не 1
+			return BlockTextureDefault.get(BI.decimalDigit(ST.count(slot(1)), 4-aRenderPass), ST.count(slot(1)) < mMaxStorage ? CA_WHITE : CA_RED_255, F, T, T, T);
 		}
 		return null;
 	}
-	
+
 	@Override
 	public boolean usesRenderPass2(int aRenderPass, boolean[] aShouldSideBeRendered) {
 		switch(aRenderPass) {
-		case 1: return slot(1).getCount() > 999;
-		case 2: return slot(1).getCount() > 99;
-		case 3: return slot(1).getCount() > 9;
+		case 1: return ST.count(slot(1)) > 999;
+		case 2: return ST.count(slot(1)) > 99;
+		case 3: return ST.count(slot(1)) > 9;
 		}
 		return T;
 	}
