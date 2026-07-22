@@ -737,8 +737,21 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				int tExpect = sStorProbeTick == 300 ? 1 : 64;
 				O.println("[GT6-STORPROBE] счёт после клика: сущностей=" + tEntities + " (ожидание " + tExpect + ")" + (tEntities == tExpect ? "  => PASS" : "  => FAIL"));
 				sStorProbeDropsSeen = tEntities;
-				if (sStorProbeTick == 340) O.println("========== [GT6-STORPROBE] DONE ==========");
-			} else if (sStorProbeTick > 340 && sStorProbeTick % 200 == 0 && sStorProbeTick <= 2000) {
+			} else if (sStorProbeTick == 360) {
+				// v2-репорт игрока: «вытащил все — обратно положить не могу». Хранилище сейчас ПУСТОЕ (призрак «тип
+				// запомнен, штук 0») — вставка 32 слитков реальным ПКМ обязана лечь.
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sStorProbePos);
+				O.println("[GT6-STORPROBE] призрак-состояние: slotHas=" + (tBE instanceof gregapi.tileentity.base.TileEntityBase05Inventories tInv0 && tInv0.slotHas(1)));
+				tPlayer.getInventory().setItem(0, OP.ingot.mat(MT.Fe, 32)); tPlayer.getInventory().setSelectedSlot(0);
+				gt6StorProbeClick(tPlayer, 0.5f, 0.5f, "вставка 32 в ПУСТОЕ хранилище (призрак)");
+			} else if (sStorProbeTick == 400) {
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sStorProbePos);
+				int tStored = tBE instanceof gregapi.tileentity.base.TileEntityBase05Inventories tInv && tInv.slotHas(1) ? ST.count(tInv.slot(1)) : -1;
+				ItemStack tHand = tPlayer.getInventory().getItem(0);
+				O.println("[GT6-STORPROBE] после вставки в призрак: рука=" + tHand + " хранилище(логич.)=" + tStored
+					+ (tStored == 32 && (tHand == null || tHand.isEmpty()) ? "  => PASS (вставка в опустошённое работает)" : "  => FAIL (репорт игрока воспроизводится)"));
+				O.println("========== [GT6-STORPROBE] DONE ==========");
+			} else if (sStorProbeTick > 400 && sStorProbeTick % 200 == 0 && sStorProbeTick <= 2000) {
 				O.println("[GT6-STORPROBE] heartbeat: сервер жив, тик " + sStorProbeTick);
 			}
 		} catch (Throwable e) {O.println("[GT6-STORPROBE] EXC " + e); e.printStackTrace(O); sStorProbeTick = 99999;}

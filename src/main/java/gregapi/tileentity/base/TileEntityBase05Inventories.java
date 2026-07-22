@@ -112,7 +112,10 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	@Override public void setChanged() {super.setChanged(); updateInventory();}
 	@Override public boolean isEmpty() {return invempty();}
 	@Override public void clearContent() {for (int i = 0; i < mInventory.length; i++) slotKill(i);}
-	@Override public ItemStack removeItem(int aSlot, int aDecrement) {updateInventory(); if (mInventory[aSlot] == null || aDecrement <= 0) return NI; if (mInventory[aSlot].getCount() <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); if (allowZeroStacks(aSlot)) mInventory[aSlot].setCount(0); else mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].split(aDecrement); if (mInventory[aSlot].getCount() <= 0 && !allowZeroStacks(aSlot)) mInventory[aSlot] = NI; return rStack;}
+	// F15-size0 (BUG-015 v2): allowZeroStacks-слот («тип запомнен, штук 0», 1.7.10 stackSize=0) хранится как
+	// ZEROSIZE-призрак (count=1+маркер, ST.size_(0)) — физический count=0 слеп для ВСЕХ neo-чтений (copy/getItem/equal).
+	// Логический размер — ST.count; изъятие из призрака = пусто (1.7.10 возвращал size0-стек = «ноль предметов»).
+	@Override public ItemStack removeItem(int aSlot, int aDecrement) {updateInventory(); if (mInventory[aSlot] == null || aDecrement <= 0 || ST.count(mInventory[aSlot]) <= 0) return NI; if (ST.count(mInventory[aSlot]) <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); if (allowZeroStacks(aSlot)) ST.size_(0, mInventory[aSlot]); else mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].split(aDecrement); if (mInventory[aSlot].getCount() <= 0 && !allowZeroStacks(aSlot)) mInventory[aSlot] = NI; return rStack;}
 	@Override public ItemStack removeItemNoUpdate(int aSlot) {ItemStack rStack = mInventory[aSlot]; mInventory[aSlot] = null; return rStack;}
 	@Override public ItemStack getItem(int aSlot) {return mInventory[aSlot];}
 
@@ -130,7 +133,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	public boolean allowZeroStacks(int aSlot) {return F;}
 	public ItemStack[] getInventory() {return mInventory;}
 	public void setInventory(ItemStack[] aInventory) {mInventory = aInventory;}
-	public void removeAllDroppableNullStacks() {for (int i = 0; i < mInventory.length; i++) if (canDrop(i) && mInventory[i] != null && mInventory[i].getCount() <= 0) mInventory[i] = NI;}
+	public void removeAllDroppableNullStacks() {for (int i = 0; i < mInventory.length; i++) if (canDrop(i) && mInventory[i] != null && ST.count(mInventory[i]) <= 0) mInventory[i] = NI;} // F15-size0: ZEROSIZE-призрак (физ. count=1) — тоже «мёртвый» стек, НЕ дропать (иначе дюп при ломании)
 	
 	public abstract boolean canDrop  (int aSlot);
 	public          boolean keepSlot (int aSlot) {return F;}
@@ -142,7 +145,7 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	// These Functions are intentionally duplicates of the Functions above.
 	@Override public int getSizeInventoryGUI() {return mInventory==null?0:mInventory.length;}
 	@Override public ItemStack getStackInSlotGUI(int aSlot) {return mInventory[aSlot];}
-	@Override public ItemStack decrStackSizeGUI(int aSlot, int aDecrement) {updateInventory(); if (mInventory[aSlot] == null || aDecrement <= 0) return NI; if (mInventory[aSlot].getCount() <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); if (allowZeroStacks(aSlot)) mInventory[aSlot].setCount(0); else mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].split(aDecrement); if (mInventory[aSlot].getCount() <= 0 && !allowZeroStacks(aSlot)) mInventory[aSlot] = NI; return rStack;}
+	@Override public ItemStack decrStackSizeGUI(int aSlot, int aDecrement) {updateInventory(); if (mInventory[aSlot] == null || aDecrement <= 0 || ST.count(mInventory[aSlot]) <= 0) return NI; if (ST.count(mInventory[aSlot]) <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); if (allowZeroStacks(aSlot)) ST.size_(0, mInventory[aSlot]); else mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].split(aDecrement); if (mInventory[aSlot].getCount() <= 0 && !allowZeroStacks(aSlot)) mInventory[aSlot] = NI; return rStack;}
 	@Override public ItemStack getStackInSlotOnClosingGUI(int aSlot) {ItemStack rStack = mInventory[aSlot]; mInventory[aSlot] = null; return rStack;}
 	@Override public void setInventorySlotContentsGUI(int aSlot, ItemStack aStack) {updateInventory(); mInventory[aSlot] = OM.get(aStack);}
 	@Override public String getInventoryNameGUI() {String rName = getCustomName(); if (UT.Code.stringValid(rName)) return rName; MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()); return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());}

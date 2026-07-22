@@ -201,6 +201,9 @@ public class ST {
 	// (neo не держит count<=0 без превращения в AIR/EMPTY). size() отдаёт 0 для маркированных → recipe-matching/consume/дамп
 	// видят логический 0. Совпадает со старым поведением size(AIR-катализатор)=0 → существующие вызыватели не затронуты.
 	public static byte      size (ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null || aStack.getCount() < 0 ? 0 : (gregapi.GT_API.ZEROSIZE.isBound() && aStack.has(gregapi.GT_API.ZEROSIZE.get()) ? 0 : UT.Code.bindByte(aStack.getCount()));}
+	/** F15-size0 (BUG-015 v2): ЛОГИЧЕСКИЙ count как int, без byte-клампа ST.size — читатель поля 1.7.10 stackSize
+	 *  для больших стеков (масстораж держит тысячи). ZEROSIZE-призрак («тип запомнен, штук 0») читается как 0. */
+	public static int count(ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || aStack.getCount() < 0 ? 0 : (gregapi.GT_API.ZEROSIZE.isBound() && aStack.has(gregapi.GT_API.ZEROSIZE.get()) ? 0 : aStack.getCount());}
 	public static ItemStack size (long aSize, ItemStack aStack) {return aStack == null || aStack == ItemStack.EMPTY || item_(aStack) == null ? null : size_(aSize, aStack);}
 	// aSize<=0 = GT6-катализатор: держим count=1 (иначе neo → EMPTY/AIR, идентичность теряется) + маркер ZEROSIZE; логический
 	// размер читается через ST.size(). aSize>=1 — обычный setCount + снять маркер (если стек переиспользуется).

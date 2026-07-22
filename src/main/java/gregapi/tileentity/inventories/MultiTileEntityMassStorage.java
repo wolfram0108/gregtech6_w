@@ -100,7 +100,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public void addToolTips(List<String> aList, ItemStack aStack, boolean aF3_H) {
-		if (slotHas(1)) aList.add(Chat.YELLOW + slot(1).getDisplayName() + Chat.GRAY + ": " + Chat.WHITE + slot(1).getCount());
+		if (slotHas(1)) aList.add(Chat.YELLOW + slot(1).getDisplayName() + Chat.GRAY + ": " + Chat.WHITE + ST.count(slot(1))); // F15-size0: логический счёт (призрак=0)
 		aList.add(Chat.CYAN + LH.get("gt.multitileentity.massstorage.tooltip.1") + UT.Code.makeString(mMaxStorage));
 		aList.add(Chat.CYAN + LH.get("gt.multitileentity.massstorage.tooltip.2"));
 		aList.add(Chat.DGRAY + LH.get(LH.TOOL_TO_TAKE_PINCERS));
@@ -157,16 +157,17 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 				return 10000;
 			}
 			if (slotHas(1)) {
-				for (int i = 0; i < 128 && slot(1).getCount() > Math.max(1, slot(1).getMaxStackSize()); i++) {
+				// F15-size0: логический счёт/запись через центры ST.count/ST.size_ (призрак «тип запомнен, штук 0»)
+				for (int i = 0; i < 128 && ST.count(slot(1)) > Math.max(1, slot(1).getMaxStackSize()); i++) {
 					ST.place(level, getBlockPos().getX()+OFFX[mFacing]+0.5, getBlockPos().getY()+OFFY[mFacing]+0.5, getBlockPos().getZ()+OFFZ[mFacing]+0.5, ST.amount(Math.max(1, slot(1).getMaxStackSize()), slot(1)));
-					slot(1).setCount(slot(1).getCount()-(Math.max(1, slot(1).getMaxStackSize())));
+					ST.size_(ST.count(slot(1))-(Math.max(1, slot(1).getMaxStackSize())), slot(1));
 				}
 				if (mPartialUnits > 0) {
 					ST.drop(level, getCoords(), getPartialStack());
 					mPartialUnits = 0;
 				}
-				if (slot(1).getCount() > 0) {
-					if (slot(1).getCount() <= Math.max(1, slot(1).getMaxStackSize())) {
+				if (ST.count(slot(1)) > 0) {
+					if (ST.count(slot(1)) <= Math.max(1, slot(1).getMaxStackSize())) {
 						ST.place(level, getBlockPos().getX()+OFFX[mFacing]+0.5, getBlockPos().getY()+OFFY[mFacing]+0.5, getBlockPos().getZ()+OFFZ[mFacing]+0.5, ST.copy(slot(1)));
 						slotKill(1);
 						updateClientData();
@@ -181,14 +182,14 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		}
 		if (aTool.equals(TOOL_ducttape)) {
 			if ((mMode & B[3]) != 0 || !slotHas(1)) return 0;
-			if (slot(1).getCount() > aRemainingDurability) {
+			if (ST.count(slot(1)) > aRemainingDurability) {
 				aChatReturn.add("Not enough Tape left to contain the Items!");
 				return 0;
 			}
 			mMode |= B[3];
 			updateClientData();
 			updateInventory();
-			return Math.max(100, slot(1).getCount());
+			return Math.max(100, ST.count(slot(1)));
 		}
 		if (aTool.equals(TOOL_scissors) || aTool.equals(TOOL_knife)) {
 			if ((mMode & B[3]) == 0) return 0;
@@ -222,7 +223,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		if (aTool.equals(TOOL_magnifyingglass)) {
 			if (aChatReturn != null) {
 				if (slotHas(1)) {
-					aChatReturn.add("Contains: " + slot(1).getCount() + " " + slot(1).getDisplayName());
+					aChatReturn.add("Contains: " + ST.count(slot(1)) + " " + slot(1).getDisplayName());
 				} else {
 					aChatReturn.add("Storage is empty");
 				}
@@ -264,9 +265,11 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 					if (tCoords[0] >= PX_P[ 4] && tCoords[0] <= PX_N[ 4]) {tAmount = -1;}
 				}
 				if (tAmount > 0) {
-					tAmount = Math.min(tAmount, slot(1).getCount());
+					// F15-size0: логический счёт/запись через центры (при полной выдаче слот становится ZEROSIZE-призраком
+					// «тип запомнен, штук 0» — 1:1 allowZeroStacks 1.7.10; сброс типа — только мягкий молот)
+					tAmount = Math.min(tAmount, ST.count(slot(1)));
 					if (tAmount > 0) {
-						slot(1).setCount(slot(1).getCount()-(tAmount));
+						ST.size_(ST.count(slot(1))-(tAmount), slot(1));
 						while (tAmount > 0) {
 							ItemStack tStack = ST.amount(Math.min(tAmount, Math.max(1, slot(1).getMaxStackSize())), slot(1));
 							tAmount -= tStack.getCount();
@@ -275,7 +278,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 						updateInventory();
 						playCollect();
 						// [GT6-STORPROBE-DIAG] временная диагностика BUG-015 — снять при уборке фазы
-						if (gregapi.data.CS.probeFlag("gt6storprobe.flag")) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] выдача ЗАВЕРШЕНА, остаток в хранилище=" + (slotHas(1) ? slot(1).getCount() : 0));
+						if (gregapi.data.CS.probeFlag("gt6storprobe.flag")) gregapi.data.CS.OUT.println("[GT6-STORPROBE-DIAG] выдача ЗАВЕРШЕНА, остаток(логич.)=" + (slotHas(1) ? ST.count(slot(1)) : -1) + " призрак=" + (slotHas(1) && ST.count(slot(1)) == 0));
 					}
 				} else {
 					if (ST.valid(aStack)) {
@@ -340,10 +343,10 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			boolean temp = F;
 			if (mInventoryChanged || aTimer % 100 == 0) {
 				if (slotHas(1)) {
-					if ((mMode & B[0]) != 0 && slot(1).getCount() > 0) {
+					if ((mMode & B[0]) != 0 && ST.count(slot(1)) > 0) {
 						if (ST.move(delegator(SIDE_BOTTOM), getAdjacentInventory(SIDE_BOTTOM)) > 0) temp = T;
 					} else // else, because if it already tried to emit normally, then it doesn't need to check a second time.
-					if ((mMode & B[2]) != 0 && slot(1).getCount() > mMaxStorage) {
+					if ((mMode & B[2]) != 0 && ST.count(slot(1)) > mMaxStorage) {
 						emitOverflow();
 					}
 				}
@@ -361,19 +364,19 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public boolean onTickCheck(long aTimer) {
-		return super.onTickCheck(aTimer) || (isFaceVisible() && (slotHas(1) ? slot(1).getCount() != oStacksize && (Math.abs(slot(1).getCount() - oStacksize) > 64 ? SERVER_TIME % 5 == 0 : SYNC_SECOND) : oStacksize != 0));
+		return super.onTickCheck(aTimer) || (isFaceVisible() && (slotHas(1) ? ST.count(slot(1)) != oStacksize && (Math.abs(ST.count(slot(1)) - oStacksize) > 64 ? SERVER_TIME % 5 == 0 : SYNC_SECOND) : oStacksize != 0));
 	}
-	
+
 	@Override
 	public void onTickChecked(long aTimer) {
 		super.onTickChecked(aTimer);
-		oStacksize = slotHas(1) ? slot(1).getCount() : 0;
+		oStacksize = slotHas(1) ? ST.count(slot(1)) : 0;
 	}
-	
+
 	@Override
 	public void setItem(int aSlot, ItemStack aStack) {
 		if (aSlot == 0) slot(aSlot, insertItems(OM.get(aStack), F));
-		if (aSlot == 1 && slotHas(aSlot)) removeItem(aSlot, aStack == null ? slot(aSlot).getCount() : slot(aSlot).getCount() - aStack.getCount());
+		if (aSlot == 1 && slotHas(aSlot)) removeItem(aSlot, aStack == null ? ST.count(slot(aSlot)) : ST.count(slot(aSlot)) - aStack.getCount());
 	}
 	
 	public int getMaxContent() {
@@ -402,35 +405,37 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		
 		int tMaxStorage = getMaxContent();
 		ItemStack tContent = slot(1);
-		
-		if (tContent.getCount() >= tMaxStorage) return aStack;
-		
+
+		// F15-size0: логический счёт/запись через центры — вставка в ZEROSIZE-призрак («тип запомнен, штук 0»)
+		// обязана работать 1:1 (репорт игрока: «вытащил все — обратно положить не могу»); ST.equal маркер не видит.
+		if (ST.count(tContent) >= tMaxStorage) return aStack;
+
 		if (ST.equal(aStack, tContent)) {
 			if (aCheckForNEI && aStack.getCount() == NEI_INFINITE) {
-				tContent.setCount(mMaxStorage);
+				ST.size_(mMaxStorage, tContent);
 				mPartialUnits = 0;
 				updateInventory();
 				return aStack;
 			}
 			ItemStack rStack = null;
-			if (aStack.getCount() + tContent.getCount() > tMaxStorage) rStack = ST.amount(aStack.getCount() + tContent.getCount() - tMaxStorage, aStack);
-			tContent.setCount(Math.min(tMaxStorage, tContent.getCount() + aStack.getCount()));
+			if (aStack.getCount() + ST.count(tContent) > tMaxStorage) rStack = ST.amount(aStack.getCount() + ST.count(tContent) - tMaxStorage, aStack);
+			ST.size_(Math.min(tMaxStorage, ST.count(tContent) + aStack.getCount()), tContent);
 			updateInventory();
-			if ((mMode & B[2]) != 0 && tContent.getCount() > mMaxStorage) emitOverflow();
+			if ((mMode & B[2]) != 0 && ST.count(tContent) > mMaxStorage) emitOverflow();
 			return rStack;
 		}
-		
+
 		if (updatePartialContent(getUnitAmount(aStack) * aStack.getCount())) {
-			if ((mMode & B[2]) != 0 && tContent.getCount() > mMaxStorage) emitOverflow();
+			if ((mMode & B[2]) != 0 && ST.count(tContent) > mMaxStorage) emitOverflow();
 			return null;
 		}
 		return aStack;
 	}
-	
+
 	public void emitOverflow() {
 		DelegatorTileEntity<Container> tTileEntity = getAdjacentInventory(SIDE_BOTTOM);
-		while (slotHas(1) && slot(1).getCount() > mMaxStorage) {
-			int tToBeMoved = UT.Code.bindStack(slot(1).getCount() - mMaxStorage);
+		while (slotHas(1) && ST.count(slot(1)) > mMaxStorage) {
+			int tToBeMoved = UT.Code.bindStack(ST.count(slot(1)) - mMaxStorage);
 			if (ST.move(delegator(SIDE_BOTTOM), tTileEntity, null, F, F, F, T, tToBeMoved, 1, tToBeMoved, 1) <= 0) break;
 		}
 	}
@@ -512,7 +517,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public IPacket getClientDataPacket(boolean aSendAll) {
-		int tStacksize = slotHas(1) ? slot(1).getCount() : -1;
+		int tStacksize = slotHas(1) ? ST.count(slot(1)) : -1; // F15-size0: клиент получает ЛОГИЧЕСКИЙ счёт (призрак=0)
 		short tMeta = slotHas(1) ? ST.meta_(slot(1)) : 0, tID = ST.id(slot(1));
 		return aSendAll ? getClientDataPacketByteArray(aSendAll, (byte)UT.Code.getR(mRGBa), (byte)UT.Code.getG(mRGBa), (byte)UT.Code.getB(mRGBa), getDirectionData(), mMode, UT.Code.toByteS(tID, 0), UT.Code.toByteS(tID, 1), UT.Code.toByteS(tMeta, 0), UT.Code.toByteS(tMeta, 1), UT.Code.toByteI(tStacksize, 0), UT.Code.toByteI(tStacksize, 1), UT.Code.toByteI(tStacksize, 2), UT.Code.toByteI(tStacksize, 3)) : tStacksize <= Short.MAX_VALUE ? getClientDataPacketShort(aSendAll, (short)tStacksize) : getClientDataPacketInteger(aSendAll, tStacksize);
 	}
@@ -522,18 +527,21 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 		mRGBa = UT.Code.getRGBInt(new short[] {UT.Code.unsignB(aData[0]), UT.Code.unsignB(aData[1]), UT.Code.unsignB(aData[2])});
 		setDirectionData(aData[3]);
 		mMode = aData[4];
-		slot(1, ST.make(UT.Code.combine(aData[5], aData[6]), UT.Code.combine(aData[9], aData[10], aData[11], aData[12]), UT.Code.combine(aData[7], aData[8])));
+		// F15-size0: клиентский слот при счёте 0 — тоже ZEROSIZE-призрак (иначе дисплей-предмет на фасаде пропадал бы)
+		int tCount = UT.Code.combine(aData[9], aData[10], aData[11], aData[12]);
+		ItemStack tStack = ST.make(UT.Code.combine(aData[5], aData[6]), 1, UT.Code.combine(aData[7], aData[8]));
+		slot(1, tStack == null ? null : ST.size_(tCount, tStack));
 		return T;
 	}
-	
+
 	@Override
 	public boolean receiveDataInteger(int aData, INetworkHandler aNetworkHandler) {
-		if (aData < 0) slotKill(1); else if (slotHas(1)) slot(1).setCount(aData);
+		if (aData < 0) slotKill(1); else if (slotHas(1)) ST.size_(aData, slot(1));
 		return T;
 	}
 	@Override
 	public boolean receiveDataShort(short aData, INetworkHandler aNetworkHandler) {
-		if (aData < 0) slotKill(1); else if (slotHas(1)) slot(1).setCount(aData);
+		if (aData < 0) slotKill(1); else if (slotHas(1)) ST.size_(aData, slot(1));
 		return T;
 	}
 	
@@ -545,14 +553,14 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override public void onExploded(Explosion aExplosion) {slotKill(1); super.onExploded(aExplosion);}
 	@Override public ItemStack[] getDefaultInventory(CompoundTag aNBT) {return new ItemStack[2];}
-	@Override public int getMaxStackSize() {return Math.min(slotHas(1) ? getMaxContent() - slot(1).getCount() : getMaxContent(), 64);}
+	@Override public int getMaxStackSize() {return Math.min(slotHas(1) ? getMaxContent() - ST.count(slot(1)) : getMaxContent(), 64);}
 	@Override public int[] getAccessibleSlotsFromSide2(byte aSide) {return ACCESSIBLE_SLOTS;}
-	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == 0 && (mMode & B[3]) == 0 && (!SIDES_BOTTOM[aSide] || (mMode & B[0]) == 0) && (!slotHas(1) || (slot(1).getCount() < getMaxContent() && allowInsertion(aStack)));}
-	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == 0 || (slotHas(1) && slot(1).getCount() > 0 && (mMode & B[3]) == 0);}
+	@Override public boolean canInsertItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == 0 && (mMode & B[3]) == 0 && (!SIDES_BOTTOM[aSide] || (mMode & B[0]) == 0) && (!slotHas(1) || (ST.count(slot(1)) < getMaxContent() && allowInsertion(aStack)));}
+	@Override public boolean canExtractItem2(int aSlot, ItemStack aStack, byte aSide) {return aSlot == 0 || (slotHas(1) && ST.count(slot(1)) > 0 && (mMode & B[3]) == 0);}
 	@Override public boolean allowZeroStacks(int aSlot) {return aSlot == 1 && ((mMode & B[1]) == 0 || mPartialUnits > 0);}
 	@Override public void adjacentInventoryUpdated(byte aSide, Container aTileEntity) {if (SIDES_BOTTOM[aSide]) updateInventory();}
-	@Override public long getAmountOfItemsInConnectedInventory(byte aSide, ItemStack aStack, long aStopCountingAtThisNumber) {return slotHas(1) && ST.equal(slot(1), aStack) ? slot(1).getCount() : 0;}
-	@Override public long getProgressValue(byte aSide) {return slotHas(1) ? slot(1).getCount() : 0;}
+	@Override public long getAmountOfItemsInConnectedInventory(byte aSide, ItemStack aStack, long aStopCountingAtThisNumber) {return slotHas(1) && ST.equal(slot(1), aStack) ? ST.count(slot(1)) : 0;}
+	@Override public long getProgressValue(byte aSide) {return slotHas(1) ? ST.count(slot(1)) : 0;}
 	@Override public long getProgressMax(byte aSide) {return mMaxStorage;}
 	@Override public boolean canDrop (int aSlot) {return !keepSlot(aSlot);}
 	@Override public boolean keepSlot(int aSlot) {return aSlot == 1 && (mMode & B[3]) != 0;}
@@ -582,9 +590,9 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	public int removeStackFromConnectedInventory(byte aSide, ItemStack aStack, boolean aOnlyRemoveIfItCanRemoveAllAtOnce) {
 		if ((mMode & B[3]) != 0) return 0;
 		if (slotHas(1) && ST.equal(slot(1), aStack)) {
-			if (aOnlyRemoveIfItCanRemoveAllAtOnce && slot(1).getCount() < aStack.getCount()) return 0;
-			int tAmount = Math.min(aStack.getCount(), slot(1).getCount());
-			slot(1).setCount(slot(1).getCount()-(tAmount));
+			if (aOnlyRemoveIfItCanRemoveAllAtOnce && ST.count(slot(1)) < aStack.getCount()) return 0;
+			int tAmount = Math.min(aStack.getCount(), ST.count(slot(1)));
+			ST.size_(ST.count(slot(1))-(tAmount), slot(1));
 			if ((mMode & B[1]) != 0 && mPartialUnits <= 0 && slotNull(1)) updateClientData();
 			updateInventory();
 			return tAmount;
@@ -681,16 +689,16 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	public boolean updatePartialContent() {
 		int tMaxStorage = getMaxContent();
 		ItemStack tContent = slot(1);
-		if (mPartialUnits > 0 && slotHas(1) && tContent.getCount() < tMaxStorage) {
+		if (mPartialUnits > 0 && slotHas(1) && ST.count(tContent) < tMaxStorage) {
 			OreDictItemData mData = OM.anydata_(tContent);
 			if (mData != null && mData.validPrefix()) {
 				long tTargetAmount = getUnitAmount(mData.mPrefix);
 				if (mPartialUnits >= tTargetAmount) {
 					ItemStack tStack = ST.amount(mPartialUnits / tTargetAmount, tContent);
-					if (tStack.getCount() > 0) {
+					if (tStack != null && tStack.getCount() > 0) {
 						mPartialUnits -= tTargetAmount * tStack.getCount();
-						if (tStack.getCount() + tContent.getCount() > tMaxStorage) mPartialUnits += tTargetAmount * (tStack.getCount() + tContent.getCount() - tMaxStorage);
-						tContent.setCount(Math.min(tMaxStorage, tContent.getCount() + tStack.getCount()));
+						if (tStack.getCount() + ST.count(tContent) > tMaxStorage) mPartialUnits += tTargetAmount * (tStack.getCount() + ST.count(tContent) - tMaxStorage);
+						ST.size_(Math.min(tMaxStorage, ST.count(tContent) + tStack.getCount()), tContent);
 						updateInventory();
 					}
 				}
@@ -725,9 +733,10 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			aState.mItem = null;
 			if (!aStorage.slotHas(1) || !aStorage.isFaceVisible()) return;
 			aState.mStorageFacing = aStorage.mFacing;
-			// FIXED-контекст = плоский показ стека (рамочный путь движка) — neo-носитель 1.7.10 renderItemIntoGUI-формы
+			// BUG-015 v2: GUI-контекст (не FIXED) = ИНВЕНТАРНАЯ иконка — noситель 1.7.10 renderItemIntoGUI-формы
+			// (блоки изометрией «как в JEI/креативе» — репорт игрока: «иконка ресурса не такая, как в JEI»)
 			aState.mItem = new net.minecraft.client.renderer.item.ItemStackRenderState();
-			net.minecraft.client.Minecraft.getInstance().getItemModelResolver().updateForTopItem(aState.mItem, aStorage.slot(1), net.minecraft.world.item.ItemDisplayContext.FIXED, aStorage.getLevel(), null, 0);
+			net.minecraft.client.Minecraft.getInstance().getItemModelResolver().updateForTopItem(aState.mItem, aStorage.slot(1), net.minecraft.world.item.ItemDisplayContext.GUI, aStorage.getLevel(), null, 0);
 		}
 
 		@Override
