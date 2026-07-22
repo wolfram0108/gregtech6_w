@@ -273,17 +273,18 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 					if (tStats.canPenetrate() && tSource instanceof gregapi.damage.DamageSources.GregTechDamageSource) ((gregapi.damage.DamageSources.GregTechDamageSource)tSource).setDamageBypassesArmor();
 					// Avoiding the Betweenlands Damage Cap of 40 in a fair way.
 					// Only Betweenlands Materials will avoid it. And maybe some super Lategame Materials.
-					// (tRealHit гейтит вход в hurtServer — тот требует ServerLevel, на клиенте вызывать нельзя.)
+					// 1.7.10 attackEntityFrom работал на ОБЕ стороны (клиент — предсказание). neo-эквивалент = hurtOrSimulate:
+					// сам диспатчит ServerLevel→hurtServer / ClientLevel→hurtClient (Entity.java:1835). Прямой каст (ServerLevel)level()
+					// на клиенте кидал ClassCastException (BUG-003) — tRealHit по формуле :268 истинен и на клиенте.
 					if (tRealHit && MD.BTL.mLoaded && aEntity.getClass().getName().startsWith("thebetweenlands") && getPrimaryMaterial(aStack).contains(TD.Properties.BETWEENLANDS)) {
-						net.minecraft.server.level.ServerLevel tServerLevel = (net.minecraft.server.level.ServerLevel)aEntity.level();
 						float tDamageToDeal = tFullDamage;
-						while (tDamageToDeal > 0 && aEntity.hurtServer(tServerLevel, tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
+						while (tDamageToDeal > 0 && aEntity.hurtOrSimulate(tSource, Math.min(tDamageToDeal, 12) / 0.3F)) {
 							tDamageToDeal -= 12;
 							if (tDamageToDeal > 0) aEntity.invulnerableTime = 0; // 1.7.10 hurtResistantTime=0 (было УРОНЕНО в порту) — сброс invuln-фреймов, чтобы следующий 12-урон прошёл (обход BTL-кэпа 40); invulnerableTime = переименованное поле
 						}
 						tRealHit &= (tDamageToDeal < tFullDamage);
 					} else if (tRealHit) {
-						tRealHit &= aEntity.hurtServer((net.minecraft.server.level.ServerLevel)aEntity.level(), tSource, tFullDamage);
+						tRealHit &= aEntity.hurtOrSimulate(tSource, tFullDamage);
 					}
 					// Only damage the Tool and perform its Specials, when you actually do hit the thing.
 					// So Serverside always, and Clientside only if the Mob isn't in its invulnerability Frames.

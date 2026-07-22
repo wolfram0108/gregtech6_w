@@ -1450,7 +1450,7 @@ public class ST {
 	public static void denull(Container aInv) {
 		if (aInv != null) for (int i = 0, j = aInv.getContainerSize(); i < j; i++) {
 			ItemStack tStack = aInv.getItem(i);
-			if (tStack != null && (tStack.getCount() == 0 || tStack.getItem() == null)) aInv.setItem(i, null);
+			if (tStack != null && (tStack.getCount() == 0 || tStack.getItem() == null)) aInv.setItem(i, ItemStack.EMPTY); // F15: neo Inventory=NonNullList, setItem(i,null) кидает NPE (было null — легальная очистка слота в 1.7.10)
 		}
 	}
 	

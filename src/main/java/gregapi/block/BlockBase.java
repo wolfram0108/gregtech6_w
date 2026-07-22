@@ -51,6 +51,7 @@ import net.minecraftforge.common.IPlantable;
 import net.minecraft.core.Direction;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 
 import static gregapi.data.CS.*;
@@ -192,6 +193,31 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	public int getLightOpacity() {return LIGHT_OPACITY_MAX;}
 	public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(this);}
+
+	// BUG-006: GT6 simple-блоки (логи/камни/листва/руды/трава/стекло/путь/cfoam) НЕ имеют loot-table → neo-дефолт
+	// getDrops(loot) отдавал ПУСТО → блоки не дропались НИЧЕМ. Мост neo getDrops(state,params) → GT6-хук
+	// getDrops(Level,x,y,z,meta,fortune) (тот же приём, что MTE.playerDestroy→harvestBlock, но через neo getDrops:
+	// сохраняет dropResources+BlockDropsEvent+onBlockHarvestingEvent — это 1:1 порт 1.7.10 HarvestDropsEvent:
+	// unification/leafdecay/silk/fortune). Блок уже air на этом хуке; meta не-IBlockExtendedMetaData семьи = 0 (F13-флэт).
+	@Override protected List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
+		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
+		if (tOrigin == null) return super.getDrops(aState, aParams);
+		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
+		int tFortune = 0;
+		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
+		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) tFortune = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE), tLiving);
+		ArrayList<ItemStack> rDrops = getDrops(tLevel, tX, tY, tZ, WD.meta(tLevel, tX, tY, tZ), tFortune);
+		return rDrops == null ? java.util.Collections.emptyList() : rDrops;
+	}
+	// 1.7.10 Block.getDrops(World,x,y,z,meta,fortune) дефолт: quantityDropped копий ST(getItemDropped,1,damageDropped).
+	// Наследники (BlockBaseLeaves/Stones/RockOres/Grass/Path/...) переопределяют; базовый = блок роняет себя (лог/камень/земля).
+	public ArrayList<ItemStack> getDrops(Level aWorld, int aX, int aY, int aZ, int aMeta, int aFortune) {
+		ArrayList<ItemStack> rDrops = ST.arraylist();
+		Item tItem = getItemDropped(aMeta, RNGSUS, aFortune);
+		if (tItem != null) for (int i = 0, j = quantityDropped(aMeta, aFortune, RNGSUS); i < j; i++) rDrops.add(ST.make(tItem, 1, damageDropped(aMeta)));
+		return rDrops;
+	}
 	public Item getItem(Level aWorld, int aX, int aY, int aZ) {return Item.byBlock(this);}
 	public void registerBlockIcons(Object aIconRegister) {/**/}
 	public boolean canSustainPlant(BlockGetter aWorld, int aX, int aY, int aZ, Direction aSide, IPlantable aPlant) {return F;}
@@ -262,7 +288,12 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public void onNeighborBlockChange2(Level aWorld, int aX, int aY, int aZ, Block aBlock) {/**/}
 	public void onBlockAdded2(Level aWorld, int aX, int aY, int aZ) {/**/}
 	
-	// @Override
+	// BUG-005: neo scheduled-tick канал = tick(BlockState,ServerLevel,BlockPos,RandomSource) (образец BlockFluidBaseGT:142).
+	// updateTick был СИРОТОЙ (1.7.10-сигнатура «// @Override», никто не звал) → распад листвы/рост саженцев/гравитация/
+	// мшистость всей семьи BlockBase были МЕРТВЫ (scheduleTick бил в неперекрытый neo tick()). Мост 1:1: java.util.Random из RandomSource.
+	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), new Random(aRandom.nextLong()));
+	}
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isClientSide() || checkGravity(aWorld, aX, aY, aZ)) return;
 		updateTick2(aWorld, aX, aY, aZ, aRandom);

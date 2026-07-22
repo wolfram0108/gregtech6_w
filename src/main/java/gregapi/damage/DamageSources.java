@@ -46,6 +46,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.MinecraftServer;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import static gregapi.data.CS.APRIL_FOOLS;
 import static gregapi.data.CS.F;
@@ -55,7 +57,10 @@ import static gregapi.data.CS.T;
  * @author Gregorius Techneticies
  */
 public class DamageSources {
-	private static final String MODID = "gregtech";
+	// BUG-004: namespace = gregapi (не gregtech) — датаген-провайдер DatapackBuiltinEntriesProvider выводит
+	// ТОЛЬКО Set.of(MD.GAPI.mID) (GT6WorldgenFeature:189), как и энчанты (data/gregapi/enchantment/). Иначе
+	// damage_type JSON не сгенерировался бы → типы урона не в реестре → краш кодека (см. resolveHolder ниже).
+	private static final String MODID = gregapi.data.CS.ModIDs.GAPI;
 	private static final float DEFAULT_EXHAUSTION = 0.3F;
 	private static final float ZERO_EXHAUSTION = 0.0F;
 
@@ -211,65 +216,43 @@ public class DamageSources {
 		}
 	}
 
-	private static final class TaggedDamageTypeHolder implements Holder<DamageType> {
-		private final ResourceKey<DamageType> mKey;
-		private final DamageType mType;
-		private final Set<TagKey<DamageType>> mTags = new LinkedHashSet<>();
-
-		TaggedDamageTypeHolder(DamageSources.Kind aKind) {
-			this(aKind.mKey, aKind.mType, aKind.mTags);
+	// BUG-004: GT6-типы урона теперь datapack-реестр DAMAGE_TYPE (bootstrap выше подключён в GT6WorldgenFeature.BUILDER).
+	// Holder БЕРЁМ ИЗ РЕЕСТРА (не самодельный) — иначе сетевой кодек ClientboundDamageEventPacket/container_set_slot не
+	// находит id (IdMap.getIdOrThrow ищет value() по идентичности) → EncoderException/дисконнект. Нет сервера/реестра
+	// (клиент-предсказание урона) — direct holder (в сеть на этом пути не кодируется).
+	static Holder<DamageType> resolveHolder(ResourceKey<DamageType> aKey, DamageType aFallbackType) {
+		MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
+		if (tServer != null) {
+			Optional<Holder.Reference<DamageType>> tOpt = tServer.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).get(aKey);
+			if (tOpt.isPresent()) return tOpt.get();
 		}
-
-		TaggedDamageTypeHolder(DamageDefinition aDefinition) {
-			this(aDefinition.mKey, aDefinition.mType, aDefinition.mTags);
-		}
-
-		private TaggedDamageTypeHolder(ResourceKey<DamageType> aKey, DamageType aType, Set<TagKey<DamageType>> aTags) {
-			mKey = aKey;
-			mType = aType;
-			mTags.addAll(aTags);
-		}
-
-		void add(TagKey<DamageType> aTag) {
-			mTags.add(aTag);
-			if (aTag == DamageTypeTags.BYPASSES_ARMOR) mTags.add(DamageTypeTags.BYPASSES_SHIELD);
-		}
-
-		@Override public DamageType value() {return mType;}
-		@Override public boolean isBound() {return T;}
-		@Override public boolean areComponentsBound() {return T;}
-		@Override public boolean is(Identifier aKey) {return mKey.identifier().equals(aKey);}
-		@Override public boolean is(ResourceKey<DamageType> aKey) {return mKey == aKey || (mKey.registry().equals(aKey.registry()) && mKey.identifier().equals(aKey.identifier()));}
-		@Override public boolean is(Predicate<ResourceKey<DamageType>> aPredicate) {return aPredicate.test(mKey);}
-		@Override public boolean is(TagKey<DamageType> aTag) {return mTags.contains(aTag);}
-		@Override public boolean is(Holder<DamageType> aHolder) {return aHolder.is(mKey);}
-		@Override public Stream<TagKey<DamageType>> tags() {return mTags.stream();}
-		@Override public DataComponentMap components() {return DataComponentMap.EMPTY;}
-		@Override public Either<ResourceKey<DamageType>, DamageType> unwrap() {return Either.left(mKey);}
-		@Override public Optional<ResourceKey<DamageType>> unwrapKey() {return Optional.of(mKey);}
-		@Override public Holder.Kind kind() {return Holder.Kind.REFERENCE;}
-		@Override public boolean canSerializeIn(HolderOwner<DamageType> aRegistry) {return T;}
+		return Holder.direct(aFallbackType);
 	}
 
 	public static class GregTechDamageSource extends DamageSource {
-		private final TaggedDamageTypeHolder mHolder;
+		// 1.7.10 DamageSource нёс теги как per-instance МУТАБЕЛЬНЫЕ флаги; движок в neo читает армор/эффекты/огонь/
+		// инвулу через source.is(tag) (LivingEntity:1928/1939 и др., НЕ type().is) → override is(TagKey) отдаёт этот
+		// локальный набор. Это ТОЧНОЕ 1:1 динамических setDamageBypassesArmor(...) без datapack-тегов у реестрового holder.
+		private final Set<TagKey<DamageType>> mTags;
 		private final Function<LivingEntity, Component> mDeathMessage;
 		private float mFoodExhaustion;
 
 		protected GregTechDamageSource(DamageSources.Kind aKind) {
-			this(new TaggedDamageTypeHolder(aKind), aKind.mTags.isEmpty() ? DEFAULT_EXHAUSTION : ZERO_EXHAUSTION, aKind.mDeathMessage, null, null);
+			this(resolveHolder(aKind.mKey, aKind.mType), aKind.mTags, aKind.mTags.isEmpty() ? DEFAULT_EXHAUSTION : ZERO_EXHAUSTION, aKind.mDeathMessage, null, null);
 		}
 
 		protected GregTechDamageSource(DamageDefinition aDefinition, Entity aCausingEntity) {
-			this(new TaggedDamageTypeHolder(aDefinition), DEFAULT_EXHAUSTION, aDefinition.mDeathMessage, aCausingEntity, aCausingEntity);
+			this(resolveHolder(aDefinition.mKey, aDefinition.mType), aDefinition.mTags, DEFAULT_EXHAUSTION, aDefinition.mDeathMessage, aCausingEntity, aCausingEntity);
 		}
 
-		private GregTechDamageSource(TaggedDamageTypeHolder aHolder, float aFoodExhaustion, Function<LivingEntity, Component> aDeathMessage, Entity aDirectEntity, Entity aCausingEntity) {
+		private GregTechDamageSource(Holder<DamageType> aHolder, Set<TagKey<DamageType>> aInitialTags, float aFoodExhaustion, Function<LivingEntity, Component> aDeathMessage, Entity aDirectEntity, Entity aCausingEntity) {
 			super(aHolder, aDirectEntity, aCausingEntity);
-			mHolder = aHolder;
+			mTags = new LinkedHashSet<>(aInitialTags);
 			mFoodExhaustion = aFoodExhaustion;
 			mDeathMessage = aDeathMessage;
 		}
+
+		@Override public boolean is(TagKey<DamageType> aTag) {return mTags.contains(aTag);}
 
 		@Override public float getFoodExhaustion() {return mFoodExhaustion;}
 
@@ -281,34 +264,34 @@ public class DamageSources {
 		public Component func_151519_b(LivingEntity aTarget) {return getLocalizedDeathMessage(aTarget);}
 
 		public GregTechDamageSource setDamageBypassesArmor() {
-			mHolder.add(DamageTypeTags.BYPASSES_ARMOR);
+			mTags.add(DamageTypeTags.BYPASSES_ARMOR); mTags.add(DamageTypeTags.BYPASSES_SHIELD); // add(ARMOR) в 1.7.10-зеркале тянул SHIELD
 			mFoodExhaustion = ZERO_EXHAUSTION;
 			return this;
 		}
 
 		public GregTechDamageSource setDamageIsAbsolute() {
-			mHolder.add(DamageTypeTags.BYPASSES_EFFECTS);
+			mTags.add(DamageTypeTags.BYPASSES_EFFECTS);
 			mFoodExhaustion = ZERO_EXHAUSTION;
 			return this;
 		}
 
 		public GregTechDamageSource setDamageAllowedInCreativeMode() {
-			mHolder.add(DamageTypeTags.BYPASSES_INVULNERABILITY);
+			mTags.add(DamageTypeTags.BYPASSES_INVULNERABILITY);
 			return this;
 		}
 
 		public GregTechDamageSource setFireDamage() {
-			mHolder.add(DamageTypeTags.IS_FIRE);
+			mTags.add(DamageTypeTags.IS_FIRE);
 			return this;
 		}
 
 		public GregTechDamageSource setProjectile() {
-			mHolder.add(DamageTypeTags.IS_PROJECTILE);
+			mTags.add(DamageTypeTags.IS_PROJECTILE);
 			return this;
 		}
 
 		public GregTechDamageSource setExplosion() {
-			mHolder.add(DamageTypeTags.IS_EXPLOSION);
+			mTags.add(DamageTypeTags.IS_EXPLOSION);
 			return this;
 		}
 

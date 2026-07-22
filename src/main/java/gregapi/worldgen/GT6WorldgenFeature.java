@@ -130,6 +130,9 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		// ENCHANT: та же датапак-точка (DatapackBuiltinEntriesProvider ниже) регистрирует 4 GT6-чара —
 		// центр gregapi/enchants/EnchantsGT6.java (стык, подключён интегратором).
 		.add(Registries.ENCHANTMENT, gregapi.enchants.EnchantsGT6::bootstrap)
+		// BUG-004: DAMAGE_TYPE — та же датапак-точка регистрирует 13 GT6-типов урона (exploded/spike/heat/frost/...).
+		// Раньше DamageSources.bootstrap был написан, но НЕ подключён → типы не в реестре → краш кодека при уроне.
+		.add(Registries.DAMAGE_TYPE, gregapi.damage.DamageSources::bootstrap)
 		.add(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ctx -> {
 			HolderSet<PlacedFeature> tPlaced = HolderSet.direct(ctx.lookup(Registries.PLACED_FEATURE).getOrThrow(GT6_WORLDGEN_PF));
 			ctx.register(ADD_GT6_WORLDGEN_OVERWORLD, new AddFeaturesBiomeModifier(
