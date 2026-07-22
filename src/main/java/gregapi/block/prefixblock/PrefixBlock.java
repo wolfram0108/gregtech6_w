@@ -442,7 +442,6 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// MultiTileEntityBlock:502. Порядок vanilla (BlockBehaviour.onExplosionHit:173-193): дропы через loot-канал ДО этого
 	// хука (BE ещё жив), затем удаление здесь. GT6-версия не звала super (1.7.10 onBlockDestroyedByExplosion) — 1:1.
 	@Override public void onBlockExploded(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, Explosion aExplosion) {
-		if (gregapi.data.CS.probeFlag("gt6oreprobe.flag")) OUT.println("[GT6-OREPROBE-DIAG] onBlockExploded мост вызван: " + aPos + " материал=" + getMetaMaterial(aWorld, aPos.getX(), aPos.getY(), aPos.getZ())); // временная DIAG BUG-024 — снять при уборке фазы
 		onBlockExploded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aExplosion);
 	}
 	// @Override
@@ -737,10 +736,7 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// мгновенно, mBaseHardness руд не участвовал). Мост тем же приёмом, что BlockBase:248 (vanilla-формула, 1:1).
 	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
-		float tHardness = getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ());
-		if (tHardness < 0) return 0.0F; // vanilla hardness < 0 = неразрушим
-		int tHarvest = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
-		return aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tHarvest;
+		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
 	}
 	// BUG-020 (второй операнд формулы): 1.7.10 getBlockMetadata = bind4(mToolQuality материала) — см. getExplosionResistance
 	// выше; quality из материала TE (WD.te внутри страхуется LAST_BROKEN_TILEENTITY → и harvest-путь после removeBlock жив).

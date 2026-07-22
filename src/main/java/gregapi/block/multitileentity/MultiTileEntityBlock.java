@@ -629,12 +629,7 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	@Override protected final float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
 		BlockEntity aTileEntity = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		float tHardness = aTileEntity instanceof IMTE_GetBlockHardness ? ((IMTE_GetBlockHardness)aTileEntity).getBlockHardness() : 1.0F;
-		float tOriginal;
-		if (tHardness < 0) tOriginal = 0.0F;
-		else {
-			int tDivider = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
-			tOriginal = aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tDivider;
-		}
+		float tOriginal = WD.destroyProgress(tHardness, aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
 		float rResult = aTileEntity instanceof IMTE_GetPlayerRelativeBlockHardness ? ((IMTE_GetPlayerRelativeBlockHardness)aTileEntity).getPlayerRelativeBlockHardness(aPlayer, tOriginal) : tOriginal;
 		// [GT6-DIG-ZERO] диагностика живого мира (всегда активна, троттл 1с, только сервер): нулевой прогресс при
 		// НЕ-неразрушимом блоке = аномалия цепи (stats-null/unusable/quality<level/isMinable) — печатаем компоненты,

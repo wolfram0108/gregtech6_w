@@ -251,10 +251,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// динамический хук. Подключаем GT6-getBlockHardness (субклассы дают vanilla/GT6-значения) по vanilla-формуле — 1:1.
 	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos) {
 		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
-		float tHardness = getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ());
-		if (tHardness < 0) return 0.0F; // vanilla hardness < 0 = неразрушим
-		int tHarvest = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
-		return aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tHarvest;
+		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
 	}
 	public float getBlockHardness(Level aWorld, int aX, int aY, int aZ) {return 1;}
 	@Override public Block getBlock() {return this;}

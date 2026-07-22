@@ -172,12 +172,7 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	@Override protected float getDestroyProgress(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.BlockGetter aWorld, BlockPos aPos) {
 		BlockEntity tBE = WD.te(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), T);
 		float tHardness = tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetBlockHardness tH ? tH.getBlockHardness() : 1.0F;
-		float tOriginal;
-		if (tHardness < 0) tOriginal = 0.0F;
-		else {
-			int tDivider = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
-			tOriginal = aPlayer.getDestroySpeed(aState, aPos) / tHardness / (float)tDivider;
-		}
+		float tOriginal = WD.destroyProgress(tHardness, aPlayer, aState, aWorld, aPos); // vanilla-формула — ЦЕНТР WD.destroyProgress
 		return tBE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetPlayerRelativeBlockHardness tP ? tP.getPlayerRelativeBlockHardness(aPlayer, tOriginal) : tOriginal;
 	}
 	// F-shape (см. MultiTileEntityBlock:265 — тот же приём для ВТОРОЙ MTE-блок-иерархии Internal; обе extends vanilla Block,

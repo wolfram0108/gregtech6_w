@@ -396,6 +396,15 @@ public class WD {
 		if (aBlock instanceof gregapi.block.IBlock tBlock && aWorld instanceof Level tLevel) return tBlock.getBlockHardness(tLevel, aX, aY, aZ);
 		return aBlock.defaultBlockState().getDestroySpeed(aWorld, new BlockPos(aX, aY, aZ));
 	}
+	/** F-hardness ЦЕНТР (ревизия захода №4 п.1): vanilla-формула прогресса добычи — 1.7.10
+	 *  ForgeHooks.blockStrength(hardness, player, world, x, y, z) в ОДНОМ месте. Была продублирована в 4 Block-корнях
+	 *  (BlockBase/PrefixBlock/MTE-Block/MTE-Internal — общего предка нет, но формула-то одна); корни зовут центр,
+	 *  добавляя свои гейты (MTE — per-TE IMTE_GetPlayerRelativeBlockHardness) поверх. hardness<0 = неразрушим. */
+	public static float destroyProgress(float aHardness, net.minecraft.world.entity.player.Player aPlayer, net.minecraft.world.level.block.state.BlockState aState, BlockGetter aWorld, BlockPos aPos) {
+		if (aHardness < 0) return 0.0F;
+		int tDivider = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(aPlayer, aState, aWorld, aPos) ? 30 : 100;
+		return aPlayer.getDestroySpeed(aState, aPos) / aHardness / (float)tDivider;
+	}
 	/** F9-harvest-level ЦЕНТР: 1.7.10 Block.getHarvestLevel(int aMeta) (числовой требуемый уровень добычи 0=дерево/
 	 *  1=камень/2=железо/3=алмаз) удалён по ИМЕНИ, но способность есть под tag-моделью neo. GT6-блок хранит свой уровень
 	 *  (BlockBase.getHarvestLevel(meta)); vanilla-блок — через neo tier-теги BlockTags.NEEDS_*_TOOL (тот же смысл: какой

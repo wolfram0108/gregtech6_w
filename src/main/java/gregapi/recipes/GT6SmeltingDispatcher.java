@@ -81,24 +81,19 @@ public final class GT6SmeltingDispatcher extends AbstractCookingRecipe {
 		super(new Recipe.CommonInfo(F), new AbstractCookingRecipe.CookingBookInfo(CookingBookCategory.MISC, ""), Ingredient.of(Items.BARRIER), new ItemStackTemplate(Items.FURNACE), 0.0F, 200);
 	}
 
-	private Ingredient mLazyInput = null;
-	private int mLazyInputSize = -1;
-
-	/** Ленивая ингредиент-витрина из ключей GT6-реестра; все потребители (propertySet-extractor
-	 *  {@code RecipeManager.forSingleInput:256}, placementInfo, display) идут через {@code input()}.
-	 *  Отклонение-форс движка: {@code RecipePropertySet} (shift-click-гейт) собирается на reload рецептов, который
-	 *  на ПЕРВОМ старте идёт до data-init → гейт слеп до следующей пересборки рецептов; ручная укладка в печь и
-	 *  сама плавка ({@code matches} live-lookup'ом) работают всегда. */
+	/** Ингредиент-витрина из ключей GT6-реестра, собирается НА КАЖДЫЙ запрос (ревизия захода №4 п.4: без
+	 *  кэш-эвристики — вызовы редки: propertySet-extractor {@code RecipeManager.forSingleInput:256} на reload,
+	 *  display книги; placementInfo кэшируется движком). Отклонение-форс движка: {@code RecipePropertySet}
+	 *  (shift-click-гейт) собирается на reload рецептов, который на ПЕРВОМ старте идёт до data-init → гейт слеп до
+	 *  следующей пересборки рецептов; ручная укладка в печь и сама плавка ({@code matches} live-lookup'ом) работают всегда. */
 	@Override public Ingredient input() {
-		int tSize = FurnaceRecipes.smelting().getSmeltingList().size();
-		if (mLazyInput == null || tSize != mLazyInputSize) {
-			mLazyInputSize = tSize;
-			java.util.LinkedHashSet<Item> tItems = new java.util.LinkedHashSet<>();
-			for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) if (!tKey.isEmpty()) tItems.add(tKey.getItem());
-			mLazyInput = tItems.isEmpty() ? Ingredient.of(Items.BARRIER) : Ingredient.of(tItems.stream());
-			if (tItems.isEmpty()) ERR.println("[GT6] GT6SmeltingDispatcher: реестр FurnaceRecipes пуст при запросе ингредиент-витрины (до data-init — штатно на первом reload)");
+		java.util.LinkedHashSet<Item> tItems = new java.util.LinkedHashSet<>();
+		for (ItemStack tKey : FurnaceRecipes.smelting().getSmeltingList().keySet()) if (!tKey.isEmpty()) tItems.add(tKey.getItem());
+		if (tItems.isEmpty()) {
+			ERR.println("[GT6] GT6SmeltingDispatcher: реестр FurnaceRecipes пуст при запросе ингредиент-витрины (до data-init — штатно на первом reload)");
+			return Ingredient.of(Items.BARRIER);
 		}
-		return mLazyInput;
+		return Ingredient.of(tItems.stream());
 	}
 
 	@Override public boolean matches(SingleRecipeInput aInput, Level aLevel) {

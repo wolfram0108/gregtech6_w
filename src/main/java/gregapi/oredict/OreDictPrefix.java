@@ -216,9 +216,14 @@ public final class OreDictPrefix implements IOreDictListenerEvent, ITagDataConta
 		for (OreDictPrefix tPrefix : VALUES) tPrefix.applyStackSizes();
 	}
 	
+	// Ревизия захода №4 п.3: applyStackSizes зовётся многократно (mod-load событие компонентов + server-start 1:1-место;
+	// в 1.7.10 — на каждый логин через PacketPrefix), а каждый вызов создавал НОВЫЙ анонимный слушатель → дубли в
+	// mListenersOre (эффект идемпотентен, но список рос). Флажок ставит слушатель один раз; addListenerInternal
+	// реплеит прошлые регистрации — семантика не меняется.
+	private boolean mStackSizeListenerApplied = F;
 	public OreDictPrefix applyStackSizes() {
 		if (contains(PREFIX_UNUSED)) return this;
-		if (this != OP.block && this != OP.stone && this != OP.scrapGt) addListener(new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {if (!aEvent.mStack.isDamageableItem() && aEvent.mStack.getMaxStackSize() > 1 && !ST.isGT_(aEvent.mStack)) ST.setMaxStackSize(aEvent.mStack.getItem(), aEvent.mPrefix.mDefaultStackSize);}});
+		if (!mStackSizeListenerApplied && this != OP.block && this != OP.stone && this != OP.scrapGt) {mStackSizeListenerApplied = T; addListener(new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {if (!aEvent.mStack.isDamageableItem() && aEvent.mStack.getMaxStackSize() > 1 && !ST.isGT_(aEvent.mStack)) ST.setMaxStackSize(aEvent.mStack.getItem(), aEvent.mPrefix.mDefaultStackSize);}});}
 		
 		ST.setMaxStackSize(Items.ENDER_PEARL, OP.gem.mDefaultStackSize);
 		ST.setMaxStackSize(Items.MUSIC_DISC_11, OP.record.mDefaultStackSize);
