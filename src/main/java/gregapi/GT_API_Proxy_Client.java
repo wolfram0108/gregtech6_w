@@ -563,6 +563,41 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					} else o.println("[GT6-SEAM-ORE] PrefixBlock не встал: " + tOSt.getBlock().getClass().getSimpleName() + " be=" + tOBE);
 				} else o.println("[GT6-SEAM-ORE] PrefixBlockItem не найден");
 			}
+			// ================= РУКА по верёвке/наковальне (материал НЕ требует инструмент → рука ломает /30 И дропает) =================
+			{
+				Object[][] tHandCases = {{"верёвка", (int)32011}, {"наковальня", (int)32028}};
+				int tHandIdx = 0;
+				for (Object[] tCase : tHandCases) {
+					int tID = (Integer)tCase[1];
+					net.minecraft.core.BlockPos tHBase = tRoot.offset(18, -1, 3*tHandIdx++);
+					net.minecraft.world.level.block.entity.BlockEntity tHBE;
+					if (tID == 32011) { // верёвка — на столб
+						for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -1; dz <= 1; dz++)
+							tW.setBlock(tHBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+						tW.setBlock(tHBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						net.minecraft.core.BlockPos tPillar = tHBase.above();
+						tW.setBlock(tPillar, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+						tP.setShiftKeyDown(true);
+						tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tReg.getItem(tID).copy());
+						tP.gameMode.useItemOn(tP, tW, tP.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND), net.minecraft.world.InteractionHand.MAIN_HAND,
+							new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tPillar.getX()+1.0, tPillar.getY()+0.5, tPillar.getZ()+0.5), net.minecraft.core.Direction.EAST, tPillar, false));
+						tP.setShiftKeyDown(false);
+						tHBE = tW.getBlockEntity(tPillar.east());
+					} else tHBE = tPlace.apply(tHBase, tReg.getItem(tID));
+					net.minecraft.core.BlockPos tHPos = tHBE == null ? null : tHBE.getBlockPos();
+					if (tHPos == null) { o.println("[GT6-SEAM-HAND] " + tCase[0] + " не встала"); continue; }
+					net.minecraft.world.level.block.state.BlockState tHSt = tW.getBlockState(tHPos);
+					tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+					boolean tHandOK = tHSt.canHarvestBlock(tW, tHPos, tP);
+					float tProg = tHSt.getDestroyProgress(tP, tW, tHPos);
+					tP.gameMode.destroyBlock(tHPos);
+					int tDrops = tW.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tHPos).inflate(2)).size();
+					o.println("[GT6-SEAM-HAND] " + tCase[0] + ": canHarvest-РУКОЙ=" + tHandOK + " progress=" + tProg + " (тиков=" + (tProg > 0 ? Math.round(1/tProg) : -1)
+						+ ") дроп-рукой=" + tDrops + " (канон 1.7.10: материал без setRequiresTool → рука /30 И дроп>0)");
+					tP.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+				}
+			}
 			// ================= A9: горючесть/огонь/canEntityDestroy/weakPower (палка #32756) =================
 			{
 				net.minecraft.core.BlockPos tStBase = tRoot.offset(6, -1, -3);
