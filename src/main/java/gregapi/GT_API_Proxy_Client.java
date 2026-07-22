@@ -598,6 +598,35 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 					tP.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
 				}
 			}
+			// ================= BlockBase-семья: материал-гейт дропа (порода=кирка, доска=рука) =================
+			{
+				net.minecraft.world.level.block.Block tStone = null, tPlank = null;
+				for (net.minecraft.world.level.block.Block tBl : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+					if (tStone == null && tBl instanceof gregapi.block.metatype.BlockStones) tStone = tBl;
+					if (tPlank == null && tBl instanceof gregapi.block.metatype.BlockBasePlanks) tPlank = tBl;
+					if (tStone != null && tPlank != null) break;
+				}
+				int tBBIdx = 0;
+				for (Object[] tCase : new Object[][] {{"порода(rock)", tStone, false}, {"доска(wood)", tPlank, true}}) {
+					net.minecraft.world.level.block.Block tBl = (net.minecraft.world.level.block.Block)tCase[1];
+					if (tBl == null) { o.println("[GT6-SEAM-BBGATE] " + tCase[0] + ": не найден"); continue; }
+					net.minecraft.core.BlockPos tGBase = tRoot.offset(21, -1, 3*tBBIdx++);
+					for (int dx = -1; dx <= 1; dx++) for (int dy = 0; dy <= 2; dy++) for (int dz = -1; dz <= 1; dz++)
+						tW.setBlock(tGBase.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					tW.setBlock(tGBase, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					net.minecraft.core.BlockPos tGPos = tGBase.above();
+					tW.setBlock(tGPos, tBl.defaultBlockState(), 3);
+					net.minecraft.world.level.block.state.BlockState tGSt = tW.getBlockState(tGPos);
+					tP.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.ItemStack.EMPTY);
+					boolean tHand = tGSt.canHarvestBlock(tW, tGPos, tP);
+					tP.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.PICKAXE, gregapi.data.MT.Steel, gregapi.data.MT.Steel));
+					boolean tPick = tGSt.canHarvestBlock(tW, tGPos, tP);
+					o.println("[GT6-SEAM-BBGATE] " + tCase[0] + " (" + tBl.getClass().getSimpleName() + "): canHarvest рука=" + tHand + " кирка=" + tPick
+						+ " (канон: порода рука=false/кирка=true; доска рука=true)");
+					tP.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+				}
+			}
 			// ================= A9: горючесть/огонь/canEntityDestroy/weakPower (палка #32756) =================
 			{
 				net.minecraft.core.BlockPos tStBase = tRoot.offset(6, -1, -3);
