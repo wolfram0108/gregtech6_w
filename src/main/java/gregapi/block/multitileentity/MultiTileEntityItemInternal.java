@@ -121,8 +121,13 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		Player tPlayer = gregapi.GT_API.api_proxy.getThePlayer();
 		if (tPlayer == null) return;
 		java.util.List tList = new java.util.ArrayList();
+		// BUG-018: 1.7.10-контракт vanilla Item.getTooltip — [0]=имя предмета, addInformation дописывает ПОСЛЕ него;
+		// GT6-код (сэндвич MultiTileEntitySandwich:109-112) легально вставляет add(1,…)/add(2,…) «сразу после имени».
+		// В neo имя в список не входит (рисуется отдельно через getName) → пустой список ронял IOOBE на каждом тултипе
+		// (глотался catch'ами ниже — спам-трейс + обрубленный тултип). Подкладываем имя в [0] и не выгружаем его.
+		tList.add(getItemStackDisplayName(aStack));
 		try {addInformation(aStack, tPlayer, tList, aFlag.isAdvanced());} catch (Throwable e) {/**/}
-		for (Object o : tList) if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));
+		for (int i = 1; i < tList.size(); i++) {Object o = tList.get(i); if (o != null) aBuilder.accept(o instanceof net.minecraft.network.chat.Component tC ? tC : net.minecraft.network.chat.Component.literal(o.toString()));}
 	}
 
 	// @Override

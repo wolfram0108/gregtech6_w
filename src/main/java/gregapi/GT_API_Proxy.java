@@ -1114,6 +1114,34 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		} catch (Throwable e) {O.println("[GT6-REMAINPROBE] EXC " + e); e.printStackTrace(O); sRemainProbeTick = 9999;}
 	}
 
+	// ========== [GT6-TOOLTIPPROBE] ВРЕМЕННАЯ проба BUG-018 РЕАЛЬНЫМ путём (гейт run/gt6tooltipprobe.flag + -Pgt6probes) ==========
+	// Сэндвич: addToolTips:111 делает aList.add(1,…) по 1.7.10-контракту «[0]=имя предмета»; в neo список пуст → IOOBE
+	// на КАЖДОМ построении тултипа (глотался catch — спам-трейс + обрубленный тултип; кандидат в «скрытый краш» 014).
+	// Судья: реальный канал ItemStack.getTooltipLines (тот же, что поиск креатива/JEI) на стеке сэндвича из реестра +
+	// контроль-машина. PASS = строка Food присутствует, исключений нет. Снять при уборке фазы.
+	private static int sTooltipProbeTick = -1;
+	public static void gt6TooltipProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sTooltipProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (sTooltipProbeTick == 200) {
+				O.println("========== [GT6-TOOLTIPPROBE] BUG-018: тултип сэндвича реальным каналом getTooltipLines ==========");
+				if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-TOOLTIPPROBE] нет игрока => пропуск"); sTooltipProbeTick = 9999; return;}
+				net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				ItemStack tSandwich = tReg == null ? ItemStack.EMPTY : tReg.getItem(32105);
+				O.println("[GT6-TOOLTIPPROBE] сэндвич из реестра: " + tSandwich);
+				java.util.List<net.minecraft.network.chat.Component> tLines = tSandwich.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(tPlayer.level()), tPlayer, net.minecraft.world.item.TooltipFlag.Default.NORMAL);
+				StringBuilder tAll = new StringBuilder();
+				for (net.minecraft.network.chat.Component tC : tLines) tAll.append('|').append(tC.getString());
+				boolean tFood = tAll.toString().contains("Food:");
+				O.println("[GT6-TOOLTIPPROBE] строк=" + tLines.size() + " содержимое=" + tAll);
+				O.println("[GT6-TOOLTIPPROBE] Food-строка на месте (add(1) в непустой список)? => " + (tFood ? "PASS" : "FAIL"));
+				O.println("========== [GT6-TOOLTIPPROBE] DONE ==========");
+			}
+		} catch (Throwable e) {O.println("[GT6-TOOLTIPPROBE] EXC " + e); e.printStackTrace(O); sTooltipProbeTick = 9999;}
+	}
+
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onServerTick(ServerTickEvent aEvent) {
@@ -1141,6 +1169,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6foodprobe.flag")) gt6FoodProbeTick(aEvent.getServer()); // [GT6-FOODPROBE] временная проба BUG-019 (еда реальным путём: useItem + жевание движком) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6stackprobe.flag")) gt6StackProbeTick(aEvent.getServer()); // [GT6-STACKPROBE] временная проба BUG-021 (размеры стака: шов getMaxStackSize + слияние add) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6remainprobe.flag")) gt6RemainProbeTick(aEvent.getServer()); // [GT6-REMAINPROBE] временная проба BUG-022 (остаток инструмента: живые крафт-слоты + реальный клик) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6tooltipprobe.flag")) gt6TooltipProbeTick(aEvent.getServer()); // [GT6-TOOLTIPPROBE] временная проба BUG-018 (тултип сэндвича реальным getTooltipLines) — снять при уборке фазы
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
