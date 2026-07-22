@@ -603,6 +603,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public  static volatile long sSlabProbePos = Long.MIN_VALUE; // сигнал клиенту: BlockPos.asLong установленного слэба
 	public static void gt6SlabProbeTick(net.minecraft.server.MinecraftServer aServer) {
 		sSlabProbeTick++;
+		if (sSlabProbeTick == 300) {gt6SlabProbePhaseB(aServer); return;}
 		if (sSlabProbeTick != 200) return;
 		java.io.PrintStream O = gregapi.data.CS.OUT;
 		try {
@@ -617,6 +618,54 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			O.println("[GT6-SLABPROBE] сервер: 6 слэб-вариантов " + tMT.mSlabs[0] + ".. поставлены от " + tPos + " -> сигнал клиенту");
 			sSlabProbePos = tPos.asLong();
 		} catch (Throwable e) {O.println("[GT6-SLABPROBE] EXC " + e); e.printStackTrace(O);}
+		if (sSlabProbeTick != -999) return; // (фаза B ниже переиспользует метод через отдельный тик)
+	}
+	// Фаза B (tick 300): УСТАНОВКА реальным путём item.useOn (полная цепь useOn->onItemUse->BlockBase->placeBlockAt):
+	// (1) клик сверху -> DOWN-слэб; (2) клик в боковую грань -> БОКОВОЙ вариант; (3) клик под воду -> WATERLOGGED;
+	// (4) коллизия поставленного = полкуба. Живой тест игрока показал: всегда DOWN + коллизия куба + вода исчезает.
+	private static void gt6SlabProbePhaseB(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			O.println("========== [GT6-SLABPROBE-B] установка/коллизия/вода реальным useOn ==========");
+			if (aServer.getPlayerList().getPlayers().isEmpty()) {O.println("[GT6-SLABPROBE-B] нет игрока => пропуск"); return;}
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			gregapi.block.metatype.BlockMetaType tMT = (gregapi.block.metatype.BlockMetaType)BlocksGT.stones[0];
+			net.minecraft.world.level.block.Block tSlab0 = tMT.mSlabs[0];
+			net.minecraft.core.BlockPos tB1 = tPlayer.blockPosition().offset(-4, 0, 0), tB2 = tB1.offset(0, 0, 3), tB3 = tB1.offset(0, 0, 6);
+			for (net.minecraft.core.BlockPos p : new net.minecraft.core.BlockPos[] {tB1, tB2, tB3}) {
+				tLevel.setBlock(p, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+				tLevel.setBlock(p.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			}
+			// (1) клик на ВЕРХ опоры, хит в центре
+			tPlayer.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(tSlab0)); tPlayer.getInventory().setSelectedSlot(0);
+			tPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(tPlayer, net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tB1).add(0, 0.5, 0), net.minecraft.core.Direction.UP, tB1, false)));
+			net.minecraft.world.level.block.Block tR1 = tLevel.getBlockState(tB1.above()).getBlock();
+			O.println("[GT6-SLABPROBE-B] (1) клик сверху: встал " + tR1 + (tR1 == tSlab0 ? "  => PASS (DOWN-слэб)" : "  => FAIL"));
+			// (4) коллизия поставленного
+			net.minecraft.world.phys.AABB tCol = tLevel.getBlockState(tB1.above()).getCollisionShape(tLevel, tB1.above()).bounds();
+			O.println("[GT6-SLABPROBE-B] (4) коллизия: Y=[" + (float)tCol.minY + ".." + (float)tCol.maxY + "]" + (tCol.maxY <= 0.55 ? "  => PASS (полкуба)" : "  => FAIL (куб)"));
+			// (2) клик в СЕВЕРНУЮ грань опоры, хит в центре грани -> слэб в клетке севернее, боковой вариант
+			net.minecraft.core.BlockPos tTarget2 = tB2.north();
+			tLevel.setBlock(tTarget2, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			tPlayer.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(tSlab0));
+			tPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(tPlayer, net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tB2.getX() + 0.5, tB2.getY() + 0.5, tB2.getZ()), net.minecraft.core.Direction.NORTH, tB2, false)));
+			net.minecraft.world.level.block.Block tR2 = tLevel.getBlockState(tTarget2).getBlock();
+			boolean tSideVariant = tR2 instanceof gregapi.block.metatype.BlockMetaType tR2MT && tR2MT.mIsSlab && tR2 != tSlab0;
+			O.println("[GT6-SLABPROBE-B] (2) клик в бок: встал " + tR2 + (tSideVariant ? "  => PASS (боковой вариант)" : "  => FAIL (не боковой)"));
+			// (3) вода: над опорой источник, клик на верх опоры -> слэб в воде, WATERLOGGED
+			tLevel.setBlock(tB3.above(), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+			tPlayer.getInventory().setItem(0, new net.minecraft.world.item.ItemStack(tSlab0));
+			tPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(tPlayer, net.minecraft.world.InteractionHand.MAIN_HAND,
+				new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tB3).add(0, 0.5, 0), net.minecraft.core.Direction.UP, tB3, false)));
+			net.minecraft.world.level.block.state.BlockState tS3 = tLevel.getBlockState(tB3.above());
+			boolean tWL = tS3.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && tS3.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
+			O.println("[GT6-SLABPROBE-B] (3) в воду: встал " + tS3.getBlock() + " WATERLOGGED=" + tWL + " fluid=" + tS3.getFluidState().getType()
+				+ (tS3.getBlock() instanceof gregapi.block.metatype.BlockMetaType && tWL ? "  => PASS (вода осталась)" : "  => FAIL"));
+			O.println("========== [GT6-SLABPROBE-B] DONE ==========");
+		} catch (Throwable e) {O.println("[GT6-SLABPROBE-B] EXC " + e); e.printStackTrace(O);}
 	}
 
 	// ========== [GT6-BUGVERIFY] ВРЕМЕННАЯ механическая проба фиксов BUG-001..010 (гейт run/gt6bugverify.flag + -Pgt6probes) ==========

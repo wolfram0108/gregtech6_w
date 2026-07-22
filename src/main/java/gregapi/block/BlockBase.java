@@ -343,9 +343,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		// адаптирована централизованно — коллизия формы с исключением размещающего + заменяемость цели, WD.java).
 		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 
-		// ItemBlock.placeBlockAt (Forge, удалён; neo BlockItem.place перестроен на BlockPlaceContext) -> прямой WD.set
-		// этого блока с вычисленной onBlockPlaced-метой (тот же итог: блок поставлен, звук, расход стека).
-		if (WD.set(aWorld, aX, aY, aZ, this, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aMeta), 3)) {
+		// 1:1 vanilla ItemBlock.onItemUse: завершение установки — КАНАЛ aItem.placeBlockAt (подклассы item'а его
+		// переопределяют: ItemBlockMetaType выбирает слэб-вариант по wrenching-стороне клика). Дефолт placeBlockAt =
+		// WD.set(getBlock(), aMeta, 3) — прежний итог для всех остальных. Прямой WD.set(this) здесь ОБХОДИЛ канал →
+		// оверрайд-выбор варианта был сиротой, слэб ставился всегда DOWN (BUG-010, живой тест игрока).
+		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, onBlockPlaced(aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, aMeta))) {
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);
 			aStack.setCount(aStack.getCount()-1);
 		}

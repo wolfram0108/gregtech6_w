@@ -49,7 +49,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 
-public class BlockMetaType extends BlockBaseMeta {
+public class BlockMetaType extends BlockBaseMeta implements net.minecraft.world.level.block.SimpleWaterloggedBlock {
 	public final float mHardnessMultiplier, mResistanceMultiplier;
 	public final int mHarvestLevel;
 	public final byte mSide, mOctantcount;
@@ -71,6 +71,7 @@ public class BlockMetaType extends BlockBaseMeta {
 		mIsPrimary = T;
 		mBlock = this;
 		mOctantcount = 8;
+		registerDefaultState(defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.FALSE)); // BUG-010: явный дефолт (any() не гарантирует false)
 		mSide = SIDE_UNKNOWN;
 		mHarvestLevel = aHarvestLevel;
 		mHardnessMultiplier = aHardnessMultiplier;
@@ -134,6 +135,7 @@ public class BlockMetaType extends BlockBaseMeta {
 		mHardnessMultiplier = aHardnessMultiplier;
 		mResistanceMultiplier = aResistanceMultiplier;
 		mSlabs = null;
+		registerDefaultState(defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.FALSE)); // BUG-010: явный дефолт (any() не гарантирует false)
 		setBlockBounds(
 		mSide == SIDE_X_POS ? 0.5F : 0.0F,
 		mSide == SIDE_Y_POS ? 0.5F : 0.0F,
@@ -162,6 +164,48 @@ public class BlockMetaType extends BlockBaseMeta {
 		mSide == SIDE_Z_NEG ? 0.5F : 1.0F
 		);
 	}
+	// BUG-010 (живой тест игрока: «коллизия целого блока»): shape-мосты BlockBase (getShape/getCollisionShape) читают
+	// гоночное поле mRenderBounds напрямую → слэбу нужна СТАТИЧНАЯ форма, не зависящая от полей вовсе.
+	private net.minecraft.world.phys.shapes.VoxelShape mSlabShape = null;
+	private net.minecraft.world.phys.shapes.VoxelShape slabShape() {
+		if (mSlabShape == null) mSlabShape = net.minecraft.world.phys.shapes.Shapes.create(new net.minecraft.world.phys.AABB(
+			mSide == SIDE_X_POS ? 0.5 : 0.0,
+			mSide == SIDE_Y_POS ? 0.5 : 0.0,
+			mSide == SIDE_Z_POS ? 0.5 : 0.0,
+			mSide == SIDE_X_NEG ? 0.5 : 1.0,
+			mSide == SIDE_Y_NEG ? 0.5 : 1.0,
+			mSide == SIDE_Z_NEG ? 0.5 : 1.0));
+		return mSlabShape;
+	}
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		return mIsSlab ? slabShape() : super.getShape(aState, aWorld, aPos, aContext);
+	}
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		return mIsSlab ? slabShape() : super.getCollisionShape(aState, aWorld, aPos, aContext);
+	}
+
+	// BUG-010 (запрос игрока, согласованное отклонение от 1.7.10: в 1.7.10 waterlogging не существовал): слэбы ведут
+	// себя как современные ванильные — ставятся В воду (вода остаётся, WATERLOGGED), ведро вынимает/заливает
+	// (дефолты SimpleWaterloggedBlock по property), вода тикает через updateShape. Property добавлен ВСЕМ
+	// BlockMetaType (createBlockStateDefinition зовётся до полей — mIsSlab ещё неизвестен); у полных блоков он
+	// просто всегда false (никто не ставит true: canPlaceLiquid гейтится mIsSlab).
+	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {
+		super.createBlockStateDefinition(aBuilder);
+		aBuilder.add(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
+	}
+	@Override public boolean canPlaceLiquid(net.minecraft.world.entity.LivingEntity aUser, net.minecraft.world.level.BlockGetter aWorld, net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.material.Fluid aFluid) {
+		return mIsSlab && net.minecraft.world.level.block.SimpleWaterloggedBlock.super.canPlaceLiquid(aUser, aWorld, aPos, aState, aFluid);
+	}
+	@Override protected net.minecraft.world.level.material.FluidState getFluidState(net.minecraft.world.level.block.state.BlockState aState) {
+		return aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)
+			? net.minecraft.world.level.material.Fluids.WATER.getSource(false) : super.getFluidState(aState);
+	}
+	@Override protected net.minecraft.world.level.block.state.BlockState updateShape(net.minecraft.world.level.block.state.BlockState aState, net.minecraft.world.level.LevelReader aWorld, net.minecraft.world.level.ScheduledTickAccess aTicks, net.minecraft.core.BlockPos aPos, net.minecraft.core.Direction aDir, net.minecraft.core.BlockPos aNeighbourPos, net.minecraft.world.level.block.state.BlockState aNeighbourState, net.minecraft.util.RandomSource aRandom) {
+		if (aState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && aState.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED))
+			aTicks.scheduleTick(aPos, net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.WATER.getTickDelay(aWorld));
+		return super.updateShape(aState, aWorld, aTicks, aPos, aDir, aNeighbourPos, aNeighbourState, aRandom);
+	}
+
 	// Рендер слэба вообще не должен зависеть от гоночных общих полей: bounds статичны → отдаём их напрямую.
 	private float[] mSlabRenderBounds = null;
 	@Override public float[] getRenderBounds() {
