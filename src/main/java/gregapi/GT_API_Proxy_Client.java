@@ -775,13 +775,26 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 						java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tParts = new java.util.ArrayList<>();
 						tModel.collectParts(net.minecraft.client.renderer.block.BlockAndTintGetter.EMPTY, net.minecraft.core.BlockPos.ZERO,
 							net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), net.minecraft.util.RandomSource.create(42), tParts);
-						o.println("[GT6-CRACK] breaking-модель машины: parts=" + tParts.size() + " (ждали >0 — куб-оверлей трещин)");
+						o.println("[GT6-CRACK] breaking-модель машины: parts=" + tParts.size() + " (ждали 0 — MTE-трещины эмитит BER по живым квадам)");
+						// полублок: breaking-модель обязана дать статические bounds (полбокса)
+						net.minecraft.world.level.block.Block tSlabB = null;
+						for (net.minecraft.world.level.block.Block tBl : net.minecraft.core.registries.BuiltInRegistries.BLOCK)
+							if (tBl instanceof gregapi.block.metatype.BlockMetaType tMT) { float[] b = tMT.getRenderBounds(); if (!(b[0] <= 0 && b[1] <= 0 && b[2] <= 0 && b[3] >= 1 && b[4] >= 1 && b[5] >= 1)) { tSlabB = tBl; break; } }
+						if (tSlabB != null) {
+							net.minecraft.client.renderer.block.dispatch.BlockStateModel tSM = tMC.getModelManager().getBlockStateModelSet().get(tSlabB.defaultBlockState());
+							java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> tSP = new java.util.ArrayList<>();
+							tSM.collectParts(net.minecraft.client.renderer.block.BlockAndTintGetter.EMPTY, net.minecraft.core.BlockPos.ZERO,
+								net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), net.minecraft.util.RandomSource.create(42), tSP);
+							o.println("[GT6-CRACK] breaking-модель полублока (" + tSlabB.getClass().getSimpleName() + "): parts=" + tSP.size() + " (ждали >0 — форма по статическим bounds)");
+						}
+						gregapi.render.MultiTileEntityBER.sCrackSubmits.set(0);
 					} catch (Throwable e) { o.println("[GT6-CRACK] проверка упала: " + e); }
 					return;
 				}
 				boolean tGone = tMC.level.getBlockState(mMineMachinePos).isAir();
 				if (tGone || mMineProbeTick >= 440) {
-					o.println("[GT6-MINE] МАШИНА итог: сломана=" + tGone + " за ~" + (mMineProbeTick-320) + " тиков (ждали ~30-45)");
+					o.println("[GT6-MINE] МАШИНА итог: сломана=" + tGone + " за ~" + (mMineProbeTick-320) + " тиков (ждали ~30-45)"
+						+ " | BER-crack-сабмитов за майнинг=" + gregapi.render.MultiTileEntityBER.sCrackSubmits.get() + " (ждали >0 — трещины ПО ПОВЕРХНОСТИ живых квадов)");
 					tMC.gameMode.stopDestroyBlock();
 					mMineProbePhase = 2;
 					return;
@@ -2544,11 +2557,13 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		net.minecraft.client.resources.model.sprite.Material.Baked tParticle = new net.minecraft.client.resources.model.sprite.Material.Baked(
 			// sprite-id БЕЗ "blocks/" префикса: atlas-source (assets/minecraft/atlases/blocks.json) кладёт textures/blocks/** с prefix:"" → gregtech:system/error (как GT6BlockModel:56). Прежний "blocks/system/error" не находился → "Failed to retrieve texture".
 			aEvent.getTextureGetter().apply(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "system/error")), false);
-		gregapi.render.GT6BlockModel tModel = new gregapi.render.GT6BlockModel(tParticle);
 		java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel> tMap = aEvent.getBakingResult().blockStateModels();
 		int tCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 			if (!(tBlock instanceof gregapi.render.IRenderedBlock)) continue;
+			// per-БЛОК инстанс (не общий): модель обязана знать владельца для breaking-пути движка
+			// (тот зовёт collectParts с AIR-state — форма трещин иначе неведома; GT6BlockModel.mOwner).
+			gregapi.render.GT6BlockModel tModel = new gregapi.render.GT6BlockModel(tParticle, tBlock);
 			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
 				tMap.put(tState, tModel); tCount++;
 			}

@@ -67,6 +67,8 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 
 	/** Диаг-счётчики судьи П2 (спец-рендер реально вызван движком). */
 	public static final java.util.concurrent.atomic.AtomicLong sSpecialExtract = new java.util.concurrent.atomic.AtomicLong(), sSpecialSubmit = new java.util.concurrent.atomic.AtomicLong(), sSpecialItemForm = new java.util.concurrent.atomic.AtomicLong();
+	/** Счётчик crack-decal сабмитов (судья трещин). */
+	public static final java.util.concurrent.atomic.AtomicLong sCrackSubmits = new java.util.concurrent.atomic.AtomicLong();
 
 	public static boolean hasSpecialRenderer(Class<?> aTileEntityClass) {return SPECIAL_RENDERERS.containsKey(aTileEntityClass);}
 
@@ -144,6 +146,19 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 			aNodes.submitCustomGeometry(aPoseStack, Sheets.cutoutBlockSheet(), (tPose, tBuffer) -> {
 				for (BakedQuad tQuad : tQuads) tBuffer.putBakedQuad(tPose, tQuad, tQI);
 			});
+			// F3-render ТРЕЩИНЫ по ЖИВОЙ геометрии (репорт игрока: «в оригинале трещины ложились прямо на поверхность
+			// трубы/камня/верёвки»): submitCustomGeometry crumbling не несёт (он только у submitModel,
+			// ModelFeatureRenderer:112) → эмитим сами ТЕ ЖЕ quads через SheetedDecalTextureGenerator (UV из позиции,
+			// как ванильный BE-crumbling) в DESTROY_TYPES[progress]. breakProgress кладёт движок
+			// (LevelRenderer:939-945 → extractRenderState → BlockEntityRenderState.breakProgress).
+			final net.minecraft.client.renderer.feature.ModelFeatureRenderer.CrumblingOverlay tBreak = aState.breakProgress;
+			if (tBreak != null) {
+				sCrackSubmits.incrementAndGet();
+				aNodes.submitCustomGeometry(aPoseStack, net.minecraft.client.resources.model.ModelBakery.DESTROY_TYPES.get(tBreak.progress()), (tPose, tBuffer) -> {
+					com.mojang.blaze3d.vertex.VertexConsumer tDecal = new com.mojang.blaze3d.vertex.SheetedDecalTextureGenerator(tBuffer, tBreak.cameraPose(), 1.0F);
+					for (BakedQuad tQuad : tQuads) tDecal.putBakedQuad(tPose, tQuad, tQI);
+				});
+			}
 		}
 		if (aState.mSpecialRenderer != null && aState.mSpecialState != null)
 			try {aState.mSpecialRenderer.submit(aState.mSpecialState, aPoseStack, aNodes, aCamera); sSpecialSubmit.incrementAndGet();} catch (Throwable e) {/* спец-рендер не должен ронять кадр */}

@@ -49,32 +49,43 @@ import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
  */
 public class GT6BlockModel implements DynamicBlockStateModel {
 	private final Material.Baked mParticle;
+	/** Блок-владелец (инъекция ModifyBakingResult даёт per-блок инстансы): нужен ТОЛЬКО breaking-пути движка —
+	 *  тот зовёт collectParts с AIR-state (см. ветку трещин), и форму оверлея иначе не узнать. null = куб-фолбэк. */
+	private final Block mOwner;
 
 	GT6BlockModel(MaterialBaker aBaker) {
 		net.minecraft.client.resources.model.ModelDebugName tDebugName = getClass()::toString;
 		// sprite-id без blocks/ префикса: atlas-source (assets/minecraft/atlases/blocks.json) кладёт textures/blocks/** с prefix:"" → gregtech:system/error.
 		mParticle = aBaker.get(new Material(Identifier.fromNamespaceAndPath("gregtech", "system/error")), tDebugName);
+		mOwner = null;
 	}
 
 	/** Путь ModelEvent.ModifyBakingResult: particle из готового спрайта (событие даёт textureGetter, не MaterialBaker). */
-	public GT6BlockModel(Material.Baked aParticle) {mParticle = aParticle;}
+	public GT6BlockModel(Material.Baked aParticle) {mParticle = aParticle; mOwner = null;}
+	public GT6BlockModel(Material.Baked aParticle, Block aOwner) {mParticle = aParticle; mOwner = aOwner;}
 
 	@Override
 	public void collectParts(BlockAndTintGetter aLevel, BlockPos aPos, BlockState aState, RandomSource aRandom, List<BlockStateModelPart> aParts) {
-		// F3-render ТРЕЩИНЫ (репорт игрока «нет текстуры трещин при разрушении — не понятна длительность»):
-		// breaking-путь движка (LevelRenderer.submitBlockDestroyAnimation → BlockFeatureRenderer.
-		// renderBreakingBlockModelSubmits:150) зовёт collectParts С ПУСТЫШКАМИ (BlockAndTintGetter.EMPTY,
-		// BlockPos.ZERO, AIR-state) — vanilla-модели аргументы игнорируют (их квады статичны), наша динамическая
-		// модель на пустышках отдавала ПУСТО → трещин не было НИ У ОДНОГО GT6-блока (baked И MTE: у MTE
-		// getRenderShape=MODEL, движок берёт эту же модель для оверлея). UV трещин пересчитывает
-		// SheetedDecalTextureGenerator по ПОЗИЦИИ — спрайт не важен, важна геометрия: отдаём полный куб
-		// (машины/руды/большинство и есть куб; у не-кубов оверлей чуть шире формы — косметический хвост).
+		// F3-render ТРЕЩИНЫ (репорт игрока «нет текстуры трещин» + уточнение «в оригинале трещины ложились ПРЯМО
+		// на поверхность трубы/камня/верёвки/куста»): breaking-путь движка (LevelRenderer.submitBlockDestroyAnimation
+		// → BlockFeatureRenderer.renderBreakingBlockModelSubmits:150) зовёт collectParts С ПУСТЫШКАМИ
+		// (BlockAndTintGetter.EMPTY, BlockPos.ZERO, AIR-state) — vanilla-модели аргументы игнорируют (их квады
+		// статичны), наша динамическая модель на пустышках отдавала ПУСТО → трещин не было. UV трещин пересчитывает
+		// SheetedDecalTextureGenerator по ПОЗИЦИИ — спрайт не важен, важна ГЕОМЕТРИЯ. Диспатч по mOwner:
+		// MTE (обе иерархии) → ПУСТО, их трещины эмитит MultiTileEntityBER по ЖИВЫМ квадам (surface-decal на
+		// трубе/камне/верёвке — 1:1 с 1.7.10 renderBlockUsingTexture по форме); куст/цветок (IRenderedCross) →
+		// крест; остальные (IBlock) → статические bounds (полублок = полбокса); неизвестный владелец → куб.
 		// Гейт: только AIR-state — обычный чанк-мешинг всегда передаёт реальный state.
 		if (aState.isAir()) {
+			if (mOwner instanceof gregapi.block.multitileentity.MultiTileEntityBlock || mOwner instanceof gregapi.block.multitileentity.MultiTileEntityBlockInternal) return;
 			GT6QuadBuilder tCrackQB = new GT6QuadBuilder();
-			tCrackQB.setBounds(null); // полный куб 0..1
 			net.minecraft.resources.Identifier tCrackIcon = gregapi.old.Textures.BlockIcons.CFOAM_HARDENED.getIcon(0);
-			for (byte tSide = 0; tSide < 6; tSide++) tCrackQB.putFace(tSide, tCrackIcon, gregapi.data.CS.UNCOLOURED);
+			if (mOwner instanceof IRenderedCross) {
+				tCrackQB.crossFace(tCrackIcon, gregapi.data.CS.UNCOLOURED);
+			} else {
+				tCrackQB.setBounds(mOwner instanceof gregapi.block.IBlock tIB ? tIB.getRenderBounds() : null);
+				for (byte tSide = 0; tSide < 6; tSide++) tCrackQB.putFace(tSide, tCrackIcon, gregapi.data.CS.UNCOLOURED);
+			}
 			if (!tCrackQB.isEmpty()) aParts.add(new SimpleModelWrapper(tCrackQB.build(), true, mParticle));
 			return;
 		}
