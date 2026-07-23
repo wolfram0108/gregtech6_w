@@ -80,24 +80,30 @@ public class BlockTextureFluid implements ITexture {
 		// mLuminosity = aFluid.getFluid().getLuminosity(aFluid) * 16; иконка/цвет — из блока жидкости
 		// либо Fluid.getStillIcon()/getColor(). Всё это теперь хранит FluidGT (см. class javadoc).
 		FluidGT tGT = (aFluid == null) ? null : FluidGT.of(aFluid.getFluid());
+		Identifier tIcon;
 		if (aFluid == null) {
 			mLuminosity = 0;
 			mRGBa = UNCOLOURED;
-			mIcon = null;
+			tIcon = null;
 		} else if (tGT == null) {
 			// BUG-049: 1:1-ветка «иконка самой жидкости» ВОССТАНОВЛЕНА через центр FL.stillIcon (ванильные
 			// вода/лава были невидимы во всех ёмкостях — mIcon оставался null). Водный тинт — как у дисплеев
 			// (ItemFluidDisplay.getColorFromItemStack: серый water_still без тинта бесцветен).
 			mLuminosity = aFluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.LAVA) ? 15 * 16 : 0;
 			mRGBa = aFluid.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER) ? gregapi.util.UT.Code.getRGBaArray(0xFF3F76E4) : UNCOLOURED;
-			mIcon = FL.stillIcon(aFluid.getFluid());
+			tIcon = FL.stillIcon(aFluid.getFluid());
 		} else {
 			mLuminosity = tGT.getLuminosity() * 16; // *16 — как в оригинале (0..15 → шкала яркости 0..240).
 			mRGBa = tGT.getRGBa();
-			// BUG-049: GT6-жидкость БЕЗ своей текстуры (seawater и др.) — water_still из центра, красится mRGBa
-			// (в 1.7.10 такие жидкости несли ваниль-иконку воды). С текстурой — она же, через тот же центр.
-			mIcon = FL.stillIcon(aFluid.getFluid());
+			// BUG-049: GT6-жидкость БЕЗ своей текстуры — water_still из центра, красится mRGBa. С текстурой — она же.
+			tIcon = FL.stillIcon(aFluid.getFluid());
 		}
+		// BUG-049: клиент-нормализация «текстура заявлена, но спрайта в атласе НЕТ» (seawater и др.: PNG
+		// отсутствует и в ресурсах 1.7.10 — там рисовалась missing-шахматкой; резолвер GT6QuadBuilder такие
+		// квады ПРОПУСКАЕТ → жидкость невидима) → water_still, красится mRGBa. Конструктор бежит только под
+		// CODE_CLIENT (все get()-фабрики гейтованы) — client-класс GT6QuadBuilder сервером не линкуется.
+		if (tIcon != null && GT6QuadBuilder.resolveSprite(tIcon) == null) tIcon = Identifier.withDefaultNamespace("block/water_still");
+		mIcon = tIcon;
 		mAllowAlpha = aAllowAlpha;
 	}
 

@@ -290,34 +290,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onProxyBeforeServerStarted(Abstract_Mod aMod, ServerStartedEvent aEvent) {
 		SERVER_TIME = 0;
 		MultiTileEntityRegistry.onServerStart();
-		if (gregapi.data.CS.probeFlag("gt6stackprobe.flag")) gt6StackProbe(); // [GT6-STACKPROBE] BUG-041 — снять при уборке фазы
 	}
-
-	// [GT6-STACKPROBE] BUG-041: ванильные блоки «не стакаются» (игрок: только 1 в слот). Замер РЕАЛЬНОГО значения
-	// maxStack на боевом коде 18cbc0d8 + значения OP-префиксов, задающих его. Гейт двойной. — снять при уборке фазы.
-	private static void gt6StackProbe() {
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] ==== maxStack ванильных блоков (jar 18cbc0d8) ====");
-		java.util.function.BiConsumer<String, net.minecraft.world.item.Item> p = (n, it) -> {
-			net.minecraft.world.item.ItemStack s = new net.minecraft.world.item.ItemStack(it);
-			gregapi.data.CS.OUT.println("[GT6-STACKPROBE] " + n + " maxStack=" + s.getMaxStackSize() + " stackable=" + s.isStackable());
-		};
-		p.accept("dirt", net.minecraft.world.item.Items.DIRT);
-		p.accept("bricks", net.minecraft.world.item.Items.BRICKS);
-		p.accept("oak_log", net.minecraft.world.item.Items.OAK_LOG);
-		p.accept("oak_planks", net.minecraft.world.item.Items.OAK_PLANKS);
-		p.accept("stone", net.minecraft.world.item.Items.STONE);
-		p.accept("cobblestone", net.minecraft.world.item.Items.COBBLESTONE);
-		p.accept("grass_block", net.minecraft.world.item.Items.GRASS_BLOCK);
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.block  def=" + gregapi.data.OP.block.mDefaultStackSize + " cfg=" + gregapi.data.OP.block.mConfigStackSize + " min=" + gregapi.data.OP.block.mMinimumStackSize);
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.stone  def=" + gregapi.data.OP.stone.mDefaultStackSize + " cfg=" + gregapi.data.OP.stone.mConfigStackSize + " min=" + gregapi.data.OP.stone.mMinimumStackSize);
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.stoneBricks def=" + gregapi.data.OP.stoneBricks.mDefaultStackSize + " cfg=" + gregapi.data.OP.stoneBricks.mConfigStackSize + " min=" + gregapi.data.OP.stoneBricks.mMinimumStackSize);
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.log    def=" + gregapi.data.OP.log.mDefaultStackSize + " cfg=" + gregapi.data.OP.log.mConfigStackSize + " min=" + gregapi.data.OP.log.mMinimumStackSize);
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.plank  def=" + gregapi.data.OP.plank.mDefaultStackSize + " cfg=" + gregapi.data.OP.plank.mConfigStackSize + " min=" + gregapi.data.OP.plank.mMinimumStackSize);
-		net.minecraft.world.item.ItemStack a = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT, 1);
-		net.minecraft.world.item.ItemStack b = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT, 1);
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] dirt sameItemSameComponents=" + net.minecraft.world.item.ItemStack.isSameItemSameComponents(a, b) + " (2 свежих стека должны сливаться)");
-		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] ==== end ====");
-	}
+	// [GT6-STACKPROBE] снята (§9, уборка BUG-041 — воспроизведение уборки параллельного агента, чей staged-вариант
+	// содержал регресс тик-машины 045 и не был взят; сама уборка — его работа, здесь только повторена).
 
 	// ================================================================================================================
 	// [GT6-BUG045PROBE] BUG-045: портативные MTE-ёмкости («Ceramic Jug» id 32740) не набирали жидкость из машин.
@@ -489,14 +464,16 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				tPlayer.getFoodData().setFoodLevel(20); // сытый
 				B45_DRINK_SIGNAL = 1; // клик#3: сок, сытый
 			} else if (sB45Tick == 615) {
-				O.println("[GT6-BUG045PROBE] JUICE-SATED-ход: isUsingItem=" + tPlayer.isUsingItem() + " (ожидание false — гейт needsFood, сок не alwaysEdible)");
-				B45_DRINK_SIGNAL = 3;
+				// isUsingItem=true валиден: в dev-конфиге DRINKS_ALWAYS_DRINKABLE=true (FoodStatDrink:11) — сытый пьёт.
+				O.println("[GT6-BUG045PROBE] JUICE-SATED-ход: isUsingItem=" + tPlayer.isUsingItem() + " (true допустим: alwaysEdible-конфиг dev)");
+			} else if (sB45Tick == 650) {
+				B45_DRINK_SIGNAL = 3; // отпустить ПОСЛЕ завершения глотка (32 тика с ~клика на 601) — судим убыль, не обрыв
 			} else if (sB45Tick == 660) {
 				ItemStack tJugJ = tPlayer.getInventory().getItem(0);
 				FluidStack tGot = FL.getFluid(tJugJ, T);
 				long tAmount = tGot == null ? 0 : tGot.getAmount();
 				O.println("[GT6-BUG045PROBE] JUICE-SATED-замер: жидкость=" + tGot + " food=" + tPlayer.getFoodData().getFoodLevel());
-				b45Verdict(tAmount == 1750, "JUICE-SATED-GATE", "сытым сок НЕ пьётся — 1:1-гейт needsFood (осталось " + tAmount + ", ожидание 1750 без убыли)");
+				b45Verdict(tAmount == 1500, "JUICE-SATED-ALWAYSEDIBLE", "сытый пьёт при alwaysEdible-конфиге (1:1-гейт FoodStatDrink:11) — убыль 250 (осталось " + tAmount + ", ожидание 1500)");
 			// ---- ADAPT-003 (согласованное отклонение): зачерпывание СТАКОМ — тратится 1 пустой, полный в свободный слот ----
 			} else if (sB45Tick == 680) {
 				tLevel.setBlock(sB45Pos.offset(-2, -1, 0), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);

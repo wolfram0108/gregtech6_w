@@ -193,6 +193,33 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
+	// [GT6-BUG049SCAN] Скан полноты множества жидкостей (гейт 045-флага; §6.1-шов, судьёй не является):
+	// перечисляет FLUID-реестр и печатает, у каких жидкостей заявленная текстура отсутствует в атласе
+	// (water_still-фолбэк BUG-049) и сколько не-GT6 — доказательство, что фолбэк совпадает с фактическим
+	// множеством (не-GT6 = только ванильные вода/лава). — снять при уборке фазы.
+	private boolean mB49FluidScanDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onB49FluidTextureScan(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mB49FluidScanDone || !gregapi.data.CS.probeFlag("gt6bug045probe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.player == null) return; // мир вошёл — атласы готовы
+		mB49FluidScanDone = true;
+		int tTotal = 0, tOwn = 0, tMissing = 0, tNoGT = 0;
+		StringBuilder tBroken = new StringBuilder(), tForeign = new StringBuilder();
+		for (net.minecraft.world.level.material.Fluid tFluid : net.minecraft.core.registries.BuiltInRegistries.FLUID) {
+			if (tFluid == net.minecraft.world.level.material.Fluids.EMPTY) continue;
+			tTotal++;
+			gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(tFluid);
+			if (tGT == null) {tNoGT++; tForeign.append(gregapi.data.FL.regName(tFluid)).append(" | "); continue;}
+			net.minecraft.resources.Identifier tIcon = tGT.mTexture == null ? null : tGT.mTexture.getIcon(0);
+			if (tIcon == null || gregapi.render.GT6QuadBuilder.resolveSprite(tIcon) == null) {tMissing++; tBroken.append(gregapi.data.FL.regName(tFluid)).append(" | ");}
+			else tOwn++;
+		}
+		gregapi.data.CS.OUT.println("[GT6-BUG049SCAN] жидкостей=" + tTotal + " gt6-со-спрайтом=" + tOwn + " gt6-БЕЗ-спрайта(water_still-фолбэк)=" + tMissing + " не-GT6=" + tNoGT);
+		gregapi.data.CS.OUT.println("[GT6-BUG049SCAN] фолбэк-жидкости: " + tBroken);
+		gregapi.data.CS.OUT.println("[GT6-BUG049SCAN] не-GT6 жидкости: " + tForeign);
+	}
+
 	// [GT6-BUG045PROBE] Клиентская половина DRINK-кейса (§2.4 LIVE-PROBE-MANUAL): по сигналу сервера кликаем
 	// СВОИМ клиентским каналом (MultiPlayerGameMode.useItem — полный человеческий путь клиент->пакет->сервер) и
 	// ДЕРЖИМ ПКМ (KeyMapping.setDown) — иначе Minecraft.handleKeybinds видит «пьёт без зажатой кнопки» и шлёт
