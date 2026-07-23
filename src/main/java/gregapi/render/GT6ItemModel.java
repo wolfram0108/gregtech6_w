@@ -200,86 +200,9 @@ public class GT6ItemModel implements ItemModel {
 		return r;
 	}
 
-	/**
-	 * Приёмочный СКАН РЕНДЕРА (гейт ②, «текстуры не пурпур»): для всех GT6-предметов (не BlockItem) проверяет, что иконка
-	 * резолвится в атласе (ITEMS, fallback BLOCKS) — не missing/пурпур. Пишет found/missing + примеры в gregtech.log.
-	 * Зовётся один раз на первом client-tick (атлас стежен). Автоматизирует визуальный гейт, не заменяя, но давая механику.
-	 */
-	public static void probeItemIcons() {
-		int tFound = 0, tMissing = 0, tNullIcon = 0, tTotal = 0;
-		java.util.List<String> tNullSamples = new java.util.ArrayList<>(), tMissSamples = new java.util.ArrayList<>(), tFoundSamples = new java.util.ArrayList<>();
-		java.util.Map<String,Integer> tNullByClass = new java.util.TreeMap<>();
-		// КОРЕНЬ-ПРОВЕРКА (once): наполнен ли material.mTextureSetsItems + работает ли TextureSetIconItem.getIcon.
-		try {
-			gregapi.oredict.OreDictMaterial tFe = gregapi.data.MT.Fe;
-			String tH = "Fe.mTextureSetsItems.size=" + tFe.mTextureSetsItems.size() + " INSTANCES_ITEM=" + gregapi.render.TextureSet.INSTANCES_ITEM.size();
-			if (!tFe.mTextureSetsItems.isEmpty()) { Object ic0 = tFe.mTextureSetsItems.get(0); tH += " ic0=" + ic0.getClass().getSimpleName() + " getIcon0=" + ic0.getClass().getMethod("getIcon", int.class).invoke(ic0, 0); }
-			gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] Fe-header: " + tH);
-			// РЕАЛЬНЫЙ рендер-путь (валидная meta): dust iron → getIconFromDamageForRenderPass(Fe.mID) → resolveSprite → не пурпур?
-			net.minecraft.world.item.Item tDust = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "gt.meta.dust"));
-			if (tDust instanceof gregapi.item.prefixitem.PrefixItem tDPI) {
-				Object ic = tDPI.getClass().getMethod("getIconFromDamageForRenderPass", int.class, int.class).invoke(tDPI, (int)tFe.mID, 0);
-				String tR = "dust-iron getIconFDR(Fe.mID=" + tFe.mID + ")=" + ic;
-				if (ic instanceof Identifier idi) { TextureAtlasSprite sp = GT6QuadBuilder.resolveSprite(idi, net.minecraft.data.AtlasIds.ITEMS); if (sp == null) sp = GT6QuadBuilder.resolveSprite(idi, net.minecraft.data.AtlasIds.BLOCKS); tR += " → sprite=" + (sp != null ? "VALID(не-пурпур)" : "PURPLE!"); }
-				gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] REAL-PATH: " + tR);
-			}
-		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] Fe-header EXC " + e); }
-		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
-			if (tKey == null || !(tKey.getNamespace().equals("gregtech") || tKey.getNamespace().equals("gregapi"))) continue;
-			if (tItem instanceof net.minecraft.world.item.BlockItem) continue;
-			tTotal++;
-			Identifier tIcon = null; String tErr = "";
-			try {
-				// ВАЛИДНЫЙ вариант через getSubItems (meta=0 у PrefixItem/MultiItem = невалидный материал → ложный null);
-				// берём первый creative-вариант (реальный dust=iron и т.п.), как его видит игрок.
-				ItemStack tStack = null;
-				try {
-					java.util.List<ItemStack> tList = new java.util.ArrayList<>();
-					java.lang.reflect.Method gsi = tItem.getClass().getMethod("getSubItems", net.minecraft.world.item.Item.class, net.minecraft.world.item.CreativeModeTab.class, java.util.List.class);
-					gsi.invoke(tItem, tItem, null, tList);
-					if (!tList.isEmpty()) tStack = tList.get(0);
-				} catch (Throwable e) {/* нет getSubItems — single-variant */}
-				if (tStack == null) tStack = new ItemStack(tItem);
-				tIcon = resolveIcon(tStack);
-			} catch (Throwable e) { tErr = "EXC:" + e.getClass().getSimpleName(); }
-			String tCls = tItem.getClass().getSimpleName();
-			// РЕШАЮЩАЯ проверка: retry с ЯВНО валидным материалом (iron) — если резолвится, дыры нет (probe meta=0 был артефакт).
-			if (tIcon == null && tItem instanceof gregapi.item.prefixitem.PrefixItem) {
-				try { tIcon = resolveIcon(gregapi.util.ST.make(tItem, 1, gregapi.data.MT.Fe.mID)); } catch (Throwable e) {}
-			}
-			if (tIcon == null) {
-				tNullIcon++; tNullByClass.merge(tCls + tErr, 1, Integer::sum);
-				if (tItem instanceof gregapi.item.prefixitem.PrefixItem tPI) {
-					if (tNullSamples.size() < 6) try {
-						gregapi.oredict.OreDictMaterial tFe = gregapi.data.MT.Fe;
-						int tIdx = tPI.mPrefix.mIconIndexItem;
-						String tD = "idx=" + tIdx + " FeTsiSz=" + tFe.mTextureSetsItems.size();
-						if (tIdx >= 0 && tIdx < tFe.mTextureSetsItems.size()) {
-							Object tIC = tFe.mTextureSetsItems.get(tIdx);
-							Object ic = tIC.getClass().getMethod("getIcon", int.class).invoke(tIC, 0);
-							tD += " IC=" + tIC.getClass().getSimpleName() + " getIcon0=" + ic;
-						} else tD += " OOB!";
-						tNullSamples.add("PFX:" + tKey.getPath() + "[" + tD + "]");
-					} catch (Throwable e) { tNullSamples.add("PFX:" + tKey.getPath() + "[EXC " + e.getClass().getSimpleName() + ":" + e.getMessage() + "]"); }
-				} else if (tNullSamples.size() < 8) tNullSamples.add(tKey.getPath() + "[" + tCls + "]" + tErr);
-				continue;
-			}
-			TextureAtlasSprite tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
-			if (tS == null) tS = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
-			if (tS != null) { tFound++; if (tFoundSamples.size() < 12) tFoundSamples.add(tKey.getPath() + "[" + tCls + "]→" + tIcon); }
-			else { tMissing++; if (tMissSamples.size() < 12) tMissSamples.add(tKey.getPath() + "[" + tCls + "]→" + tIcon); }
-		}
-		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] total=" + tTotal + " found=" + tFound + " missing(пурпур)=" + tMissing + " null-icon(не рисуется)=" + tNullIcon);
-		gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] NULL-по-классам: " + tNullByClass);
-		if (!tNullSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] NULL-детали: " + tNullSamples);
-		if (!tFoundSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] FOUND примеры: " + tFoundSamples);
-		if (!tMissSamples.isEmpty()) gregapi.data.CS.OUT.println("[GT6-RENDER-PROBE] MISSING-sprite примеры: " + tMissSamples);
-	}
-
 	// ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-	// ВИЗУАЛ-ПАРИТЕТ (Ф2, судья 1:1 с оригиналом). Заменяет недействительный probeItemIcons (140 предметов, метрика
-	// «непурпур»). Снимает ПОЛНЫЙ render-дескриптор КАЖДОГО креатив-варианта тем же кодом, что рисует update()
+	// ВИЗУАЛ-ПАРИТЕТ (Ф2, судья 1:1 с оригиналом, datagen-дамп для компаратора — не in-game проба).
+	// Снимает ПОЛНЫЙ render-дескриптор КАЖДОГО креатив-варианта тем же кодом, что рисует update()
 	// (iconForPass/itemColor/resolveSprite) → реально резолвнутый спрайт+тинт per pass. НЕ судит сам («found») —
 	// пишет ЧТО резолвится, чтобы компаратор сравнил с золотым дескриптором оригинала. Слепые зоны (throw) → "ERR", не "ok".
 	/** Дамп порт-дескриптора ВСЕХ GT6 item-вариантов (реальный креатив-набор через getSubItems). Файл gt6dump/descriptor.port.item.jsonl. */

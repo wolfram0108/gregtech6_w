@@ -225,7 +225,6 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 			WORLDGEN_MTE.clear();
 			PENDING_SYNC.clear();
 		});
-		registerWorldgenStressProbe();
 	}
 
 	// R1-живность: GT6-вода (River/Ocean/Swamp) заместила Blocks.WATER своим блоком → vanilla water-спаун молчит, т.к.
@@ -253,64 +252,6 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		return aPos.getY() >= tSea - 13 && aPos.getY() <= tSea
 			&& aLevel.getFluidState(aPos.below()).is(net.minecraft.tags.FluidTags.WATER)
 			&& aLevel.getFluidState(aPos.above()).is(net.minecraft.tags.FluidTags.WATER);
-	}
-
-	// ── F6-worldgen АВТОНОМНАЯ headless-приёмка (dev-диагностика; гейт: файл run/wgstress.flag, вне флага НЕ активна) ──
-	// Форс-генерирует сетку чанков на dedicated-сервере → реально бежит GT6-Feature + свет-движок (та же цепочка, что вешала
-	// клиент) → дампует руды/камни/флюиды/MTE + резолв материала руды (server-side BE mMetaData) в gregtech.log. Reproduce+verify
-	// дедлока И проверка генерации/материала БЕЗ клиента и ручных миров. Дедлок жив → сервер виснет до TIMEOUT (jstack); снят → «DONE».
-	private static final int STRESS_R = 8;
-	private static int sStressTarget = 0, sStressTick = 0;
-	private static void registerWorldgenStressProbe() {
-		if (!gregapi.data.CS.probeFlag("wgstress.flag")) return;
-		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] флаг найден — headless worldgen-приёмка активна (R=" + STRESS_R + ")");
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStartedEvent aEvent) -> {
-			net.minecraft.server.level.ServerLevel tLvl = aEvent.getServer().overworld();
-			for (int cx=-STRESS_R; cx<=STRESS_R; cx++) for (int cz=-STRESS_R; cz<=STRESS_R; cz++) tLvl.setChunkForced(cx, cz, true);
-			sStressTarget = (2*STRESS_R+1)*(2*STRESS_R+1);
-			gregapi.data.CS.OUT.println("[GT6-WGSTRESS] форс " + sStressTarget + " чанков (±" + STRESS_R + "), генерирую worldgen...");
-		});
-		net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.tick.ServerTickEvent.Post aEvent) -> {
-			if (sStressTarget <= 0) return;
-			if (++sStressTick % 20 != 0) return;
-			net.minecraft.server.level.ServerLevel tLvl = aEvent.getServer().overworld();
-			int tDone = 0;
-			for (int cx=-STRESS_R; cx<=STRESS_R; cx++) for (int cz=-STRESS_R; cz<=STRESS_R; cz++) if (tLvl.getChunkSource().getChunkNow(cx, cz) != null) tDone++;
-			gregapi.data.CS.OUT.println("[GT6-WGSTRESS] сгенерено " + tDone + "/" + sStressTarget);
-			if (tDone >= sStressTarget) { dumpWorldgenStress(tLvl); sStressTarget = 0; aEvent.getServer().halt(false); } // halt: детерминированное завершение прогона (лог полный, без внешнего kill)
-			else if (sStressTick > 20*150) { gregapi.data.CS.OUT.println("[GT6-WGSTRESS] TIMEOUT на " + tDone + "/" + sStressTarget + " — вероятен дедлок (снять jstack)"); sStressTarget = 0; aEvent.getServer().halt(false); }
-		});
-	}
-	private static void dumpWorldgenStress(net.minecraft.server.level.ServerLevel aLvl) {
-		int tOre=0, tOreMat=0, tOreNull=0, tStone=0, tFluid=0, tMTE=0, tBedrockOre=0;
-		java.util.HashMap<String,Integer> tMats = new java.util.HashMap<>();
-		java.util.HashMap<String,Integer> tMTEs = new java.util.HashMap<>(); // разбивка MTE по классам (флуид-спринги/rocks/resin-holes)
-		int tMinY=aLvl.getMinY(), tMaxY=aLvl.getSeaLevel()+8;
-		net.minecraft.core.BlockPos.MutableBlockPos tM = new net.minecraft.core.BlockPos.MutableBlockPos();
-		for (int cx=-STRESS_R; cx<=STRESS_R; cx++) for (int cz=-STRESS_R; cz<=STRESS_R; cz++)
-			for (int lx=0; lx<16; lx++) for (int lz=0; lz<16; lz++) for (int y=tMinY; y<=tMaxY; y++) {
-				tM.set((cx<<4)+lx, y, (cz<<4)+lz);
-				net.minecraft.world.level.block.Block tB = aLvl.getBlockState(tM).getBlock();
-				if (tB instanceof gregapi.block.prefixblock.PrefixBlock tPB) {
-					tOre++;
-					if (tB == gregapi.data.CS.BlocksGT.oreBedrock || tB == gregapi.data.CS.BlocksGT.oreSmallBedrock) tBedrockOre++;
-					gregapi.oredict.OreDictMaterial tMat = tPB.getMetaMaterial(aLvl.getBlockEntity(tM));
-					if (tMat==null) tOreNull++; else { tOreMat++; tMats.merge(tMat.mNameInternal,1,Integer::sum); }
-				} else if (tB instanceof gregapi.block.metatype.BlockStones) tStone++;
-				else if (tB instanceof gregapi.block.fluid.BlockBaseFluid) tFluid++;
-				else if (tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock) {
-					tMTE++;
-					net.minecraft.world.level.block.entity.BlockEntity tBE = aLvl.getBlockEntity(tM);
-					String tName; try { tName = ((gregapi.block.multitileentity.MultiTileEntityBlockInternal)tB).getUnlocalizedName(); } catch (Throwable e) { tName = tB.getClass().getSimpleName(); }
-					tMTEs.merge((tBE==null?"NULL-BE ":"OK ")+tName+(tBE==null?"":" ["+tBE.getClass().getSimpleName()+"]"), 1, Integer::sum);
-				}
-			}
-		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] === ДАМП (±"+STRESS_R+" чанков, Y["+tMinY+".."+tMaxY+"]) ===");
-		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] РУДЫ total="+tOre+" материал-резолв(сервер)="+tOreMat+" null="+tOreNull+" ИЗ НИХ бедрок-жилы="+tBedrockOre);
-		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] камень="+tStone+" флюид-блоки="+tFluid+" MTE="+tMTE);
-		tMTEs.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).forEach(e-> gregapi.data.CS.OUT.println("[GT6-WGSTRESS]   MTE "+e.getKey()+"="+e.getValue()));
-		tMats.entrySet().stream().sorted((a,b)->b.getValue()-a.getValue()).limit(15).forEach(e-> gregapi.data.CS.OUT.println("[GT6-WGSTRESS]   мат "+e.getKey()+"="+e.getValue()));
-		gregapi.data.CS.OUT.println("[GT6-WGSTRESS] DONE");
 	}
 
 	private static void onGatherDataStatic(GatherDataEvent.Client aEvent) {
