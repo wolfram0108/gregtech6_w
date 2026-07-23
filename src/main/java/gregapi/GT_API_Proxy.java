@@ -290,57 +290,137 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onProxyBeforeServerStarted(Abstract_Mod aMod, ServerStartedEvent aEvent) {
 		SERVER_TIME = 0;
 		MultiTileEntityRegistry.onServerStart();
-		if (gregapi.data.CS.probeFlag("gt6bug045probe.flag")) gt6Bug045Probe(); // [GT6-BUG045PROBE] BUG-045 — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6stackprobe.flag")) gt6StackProbe(); // [GT6-STACKPROBE] BUG-041 — снять при уборке фазы
+	}
+
+	// [GT6-STACKPROBE] BUG-041: ванильные блоки «не стакаются» (игрок: только 1 в слот). Замер РЕАЛЬНОГО значения
+	// maxStack на боевом коде 18cbc0d8 + значения OP-префиксов, задающих его. Гейт двойной. — снять при уборке фазы.
+	private static void gt6StackProbe() {
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] ==== maxStack ванильных блоков (jar 18cbc0d8) ====");
+		java.util.function.BiConsumer<String, net.minecraft.world.item.Item> p = (n, it) -> {
+			net.minecraft.world.item.ItemStack s = new net.minecraft.world.item.ItemStack(it);
+			gregapi.data.CS.OUT.println("[GT6-STACKPROBE] " + n + " maxStack=" + s.getMaxStackSize() + " stackable=" + s.isStackable());
+		};
+		p.accept("dirt", net.minecraft.world.item.Items.DIRT);
+		p.accept("bricks", net.minecraft.world.item.Items.BRICKS);
+		p.accept("oak_log", net.minecraft.world.item.Items.OAK_LOG);
+		p.accept("oak_planks", net.minecraft.world.item.Items.OAK_PLANKS);
+		p.accept("stone", net.minecraft.world.item.Items.STONE);
+		p.accept("cobblestone", net.minecraft.world.item.Items.COBBLESTONE);
+		p.accept("grass_block", net.minecraft.world.item.Items.GRASS_BLOCK);
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.block  def=" + gregapi.data.OP.block.mDefaultStackSize + " cfg=" + gregapi.data.OP.block.mConfigStackSize + " min=" + gregapi.data.OP.block.mMinimumStackSize);
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.stone  def=" + gregapi.data.OP.stone.mDefaultStackSize + " cfg=" + gregapi.data.OP.stone.mConfigStackSize + " min=" + gregapi.data.OP.stone.mMinimumStackSize);
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.stoneBricks def=" + gregapi.data.OP.stoneBricks.mDefaultStackSize + " cfg=" + gregapi.data.OP.stoneBricks.mConfigStackSize + " min=" + gregapi.data.OP.stoneBricks.mMinimumStackSize);
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.log    def=" + gregapi.data.OP.log.mDefaultStackSize + " cfg=" + gregapi.data.OP.log.mConfigStackSize + " min=" + gregapi.data.OP.log.mMinimumStackSize);
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] OP.plank  def=" + gregapi.data.OP.plank.mDefaultStackSize + " cfg=" + gregapi.data.OP.plank.mConfigStackSize + " min=" + gregapi.data.OP.plank.mMinimumStackSize);
+		net.minecraft.world.item.ItemStack a = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT, 1);
+		net.minecraft.world.item.ItemStack b = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT, 1);
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] dirt sameItemSameComponents=" + net.minecraft.world.item.ItemStack.isSameItemSameComponents(a, b) + " (2 свежих стека должны сливаться)");
+		gregapi.data.CS.OUT.println("[GT6-STACKPROBE] ==== end ====");
 	}
 
 	// ================================================================================================================
-	// [GT6-BUG045PROBE] BUG-045: портативные MTE-ёмкости («Ceramic Jug» id 32740) не набирали жидкость из машин —
-	// судья восстановленного IFluidContainerItem-моста (compat-mirror). Кейсы: RECOG (instanceof+capacity),
-	// FILL — реальный путь соковыжималки FL.fill(tTank, ST.amount(1,aStack), T,T,T,T) (MultiTileEntityJuicer:155),
-	// CONTAINS, EMPTY (обратный слив), CONTROL-NEG (палка — не контейнер). One-shot на старте сервера.
+	// [GT6-BUG045PROBE] BUG-045: портативные MTE-ёмкости («Ceramic Jug» id 32740) не набирали жидкость из машин.
+	// Судья v2 — РЕАЛЬНЫЙ ПУТЬ ИГРОКА (LIVE-PROBE-MANUAL §1/§4): поставить Juicer (32722) ПКМ-каналом, выжать
+	// 3 мака кликами (реальное наполнение танка), набрать кувшином ПКМ по машине (канал репорта), контроль-НЕ —
+	// палка. Изолированный шов §6.1 (центр распознавания на стеке) — в SETUP, судьёй НЕ является.
+	// Замер танка — рефлексией protected mTanks (замер состояния BE, не судимый канал — §5.3).
+	// Прогон 2026-07-23 19:58 (лог в карточке BUG-REPORTS 045): DONE PASS=4 FAIL=0.
 	// Гейт двойной (-Pgt6probes + run/gt6bug045probe.flag). — снять при уборке фазы.
 	// ================================================================================================================
-	private static void gt6Bug045Probe() {
-		java.io.PrintStream O = OUT;
-		int tPass = 0, tFail = 0;
+	private static int sB45Tick = -1, sB45Pass = 0, sB45Fail = 0;
+	private static long sB45Squeezed = -1, sB45AfterFill = -1;
+	private static net.minecraft.core.BlockPos sB45Pos = null;
+	private static void b45Verdict(boolean aPass, String aCase, String aWhat) {
+		if (aPass) sB45Pass++; else sB45Fail++;
+		CS.OUT.println("[GT6-BUG045PROBE] => " + (aPass ? "PASS" : "FAIL") + " [" + aCase + "] (" + aWhat + ")");
+	}
+	/** Танк 0 соковыжималки (protected mTanks) — только для ЗАМЕРА (§5.3). */
+	private static gregapi.fluid.FluidTankGT b45Tank(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos) throws Exception {
+		net.minecraft.world.level.block.entity.BlockEntity tBE = aLevel.getBlockEntity(aPos);
+		java.lang.reflect.Field tField = gregtech.tileentity.tools.MultiTileEntityJuicer.class.getDeclaredField("mTanks");
+		tField.setAccessible(true);
+		return ((gregapi.fluid.FluidTankGT[])tField.get(tBE))[0];
+	}
+	/** ПКМ предметом по блоку aTarget серверным каналом игрока (§4); hit — центр верхней грани (мимо NEI-угла 4px). */
+	private static void b45Click(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aLevel, ItemStack aStack, net.minecraft.core.BlockPos aTarget) {
+		aPlayer.teleportTo(aLevel, aTarget.getX() + 0.5, aTarget.getY(), aTarget.getZ() + 2.5, java.util.Set.of(), 0, 30, true);
+		aPlayer.getInventory().setSelectedSlot(0);
+		if (aStack != null) aPlayer.getInventory().setItem(0, aStack);
+		net.minecraft.world.phys.BlockHitResult tHit = new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(aTarget.getX() + 0.5, aTarget.getY() + 1.0, aTarget.getZ() + 0.5), net.minecraft.core.Direction.UP, aTarget, false);
+		aPlayer.gameMode.useItemOn(aPlayer, aLevel, aPlayer.getInventory().getItem(0), net.minecraft.world.InteractionHand.MAIN_HAND, tHit);
+	}
+	/** Стек с жидкостью в хотбаре 0..8 (заполненный кувшин после ST.give может лечь в любой слот). */
+	private static ItemStack b45FindFluidStack(net.minecraft.server.level.ServerPlayer aPlayer) {
+		for (int i = 0; i < 9; i++) {ItemStack t = aPlayer.getInventory().getItem(i); if (ST.valid(t) && FL.getFluid(t, T) != null) return t;}
+		return NI;
+	}
+	public static void gt6Bug045ProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sB45Tick++; // инкремент ПЕРВЫМ — тик-счёт не зависит от ранних return (§2.3)
+		java.io.PrintStream O = CS.OUT;
 		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tPlayer.level();
 			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
-			if (tRegistry == null) {O.println("[GT6-BUG045PROBE] FAIL: реестр gt.multitileentity == null"); return;}
-			ItemStack tJug = tRegistry.getItem(32740);
-			if (ST.invalid(tJug)) {O.println("[GT6-BUG045PROBE] FAIL: стек кувшина (32740) невалиден"); return;}
-			// 1. RECOG: кувшин распознаётся восстановленным контрактом.
-			boolean tICI = tJug.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem;
-			int tCap = tICI ? ((net.minecraftforge.fluids.IFluidContainerItem)tJug.getItem()).getCapacity(tJug) : -1;
-			if (tICI && tCap == 2000) {tPass++; O.println("[GT6-BUG045PROBE] PASS RECOG: instanceof=T capacity=" + tCap);}
-			else                      {tFail++; O.println("[GT6-BUG045PROBE] FAIL RECOG: instanceof=" + tICI + " capacity=" + tCap + " (ожидалось 2000, NBT_TANK_CAPACITY Loader_MultiTileEntities:2097)");}
-			// 2. FILL: реальный путь соковыжималки (танк 4000 воды -> кувшин 2000, в танке остаётся 2000).
-			gregapi.fluid.FluidTankGT tTank = new gregapi.fluid.FluidTankGT(64000);
-			tTank.fill(FL.Water.make(4000), T);
-			ItemStack tFilled = FL.fill(tTank, ST.amount(1, tJug), T, T, T, T);
-			FluidStack tGot = tFilled == null ? null : FL.getFluid(tFilled, T);
-			if (tFilled != null && tGot != null && FL.water(tGot) && tGot.getAmount() == 2000 && tTank.getFluidAmount() == 2000)
-			     {tPass++; O.println("[GT6-BUG045PROBE] PASS FILL: jug=" + tGot.getAmount() + "mB, tank=" + tTank.getFluidAmount() + "mB");}
-			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL FILL: filled=" + tFilled + " got=" + tGot + " tank=" + tTank.getFluidAmount());}
-			// 3. CONTAINS: заполненный кувшин содержит воду.
-			if (tFilled != null && FL.contains(tFilled, FL.Water.make(1), T))
-			     {tPass++; O.println("[GT6-BUG045PROBE] PASS CONTAINS");}
-			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL CONTAINS");}
-			// 4. EMPTY: обратный слив до пустого контейнера.
-			ItemStack tEmptied = tFilled == null ? null : FL.getEmpty(tFilled, T);
-			FluidStack tAfter = tEmptied == null ? null : FL.getFluid(tEmptied, T);
-			if (tEmptied != null && tAfter == null)
-			     {tPass++; O.println("[GT6-BUG045PROBE] PASS EMPTY");}
-			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL EMPTY: emptied=" + tEmptied + " after=" + tAfter);}
-			// 5. CONTROL-NEG: палка контейнером не распознаётся (контроль перелива instanceof-множества).
-			ItemStack tStickFill = FL.fill(tTank, ST.make(net.minecraft.world.item.Items.STICK, 1, 0), T, T, T, T);
-			if (tStickFill == null)
-			     {tPass++; O.println("[GT6-BUG045PROBE] PASS CONTROL-NEG");}
-			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL CONTROL-NEG: stick -> " + tStickFill);}
-			O.println("[GT6-BUG045PROBE] DONE: PASS=" + tPass + " FAIL=" + tFail);
-		} catch (Throwable e) {
-			O.println("[GT6-BUG045PROBE] EXCEPTION: " + e);
-			e.printStackTrace(O);
-		}
+			if (sB45Tick == 200) {
+				O.println("========== [GT6-BUG045PROBE] BUG-045: кувшин набирает жидкость из соковыжималки (реальный путь) ==========");
+				sB45Pos = tPlayer.blockPosition().offset(4, 0, 4);
+				for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) { // площадка (§5.2)
+					tLevel.setBlock(sB45Pos.offset(i, -1, j), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+					tLevel.setBlock(sB45Pos.offset(i,  0, j), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+					tLevel.setBlock(sB45Pos.offset(i,  1, j), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				}
+				// SETUP: поставить соковыжималку ПКМ-каналом (предмет 32722 по верхней грани опоры)
+				ItemStack tJuicer = tRegistry.getItem(32722);
+				net.minecraft.core.BlockPos tSupport = sB45Pos.below();
+				tPlayer.teleportTo(tLevel, sB45Pos.getX() + 0.5, sB45Pos.getY(), sB45Pos.getZ() + 2.5, java.util.Set.of(), 0, 30, true);
+				tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.getInventory().setItem(0, tJuicer);
+				net.minecraft.world.phys.BlockHitResult tHit = new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tSupport.getX() + 0.5, tSupport.getY() + 1.0, tSupport.getZ() + 0.5), net.minecraft.core.Direction.UP, tSupport, false);
+				tPlayer.gameMode.useItemOn(tPlayer, tLevel, tJuicer, net.minecraft.world.InteractionHand.MAIN_HAND, tHit);
+			} else if (sB45Tick == 220) {
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sB45Pos);
+				O.println("[GT6-BUG045PROBE] SETUP: блок=" + tLevel.getBlockState(sB45Pos).getBlock() + " BE=" + (tBE == null ? "null" : tBE.getClass().getSimpleName()));
+				b45Verdict(tBE instanceof gregtech.tileentity.tools.MultiTileEntityJuicer, "SETUP", "соковыжималка поставлена ПКМ-каналом (BE=MultiTileEntityJuicer)");
+				// Изолированный шов §6.1 (НЕ судья): центр распознаёт кувшин
+				ItemStack tJug = tRegistry.getItem(32740);
+				boolean tICI = tJug.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem;
+				O.println("[GT6-BUG045PROBE] (шов §6.1) кувшин: instanceof=" + tICI + " capacity=" + (tICI ? ((net.minecraftforge.fluids.IFluidContainerItem)tJug.getItem()).getCapacity(tJug) : -1));
+			} else if (sB45Tick == 240 || sB45Tick == 246 || sB45Tick == 252) {
+				// SQUEEZE: выжать мак кликом (реальный путь наполнения танка; рецепт Loader_Recipes_Vanilla:841)
+				b45Click(tPlayer, tLevel, ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0), sB45Pos);
+			} else if (sB45Tick == 270) {
+				gregapi.fluid.FluidTankGT tTank = b45Tank(tLevel, sB45Pos);
+				sB45Squeezed = tTank.getFluidAmount();
+				O.println("[GT6-BUG045PROBE] SQUEEZE: танк после 3 маков = " + tTank.content());
+				b45Verdict(sB45Squeezed > 0, "SQUEEZE", "жидкость выжата кликами, в танке " + sB45Squeezed + "mB");
+			} else if (sB45Tick == 290) {
+				// JUG-FILL — СУДЬЯ РЕПОРТА: ПКМ пустым кувшином по соковыжималке
+				b45Click(tPlayer, tLevel, tRegistry.getItem(32740), sB45Pos);
+			} else if (sB45Tick == 310) {
+				gregapi.fluid.FluidTankGT tTank = b45Tank(tLevel, sB45Pos);
+				ItemStack tFilledJug = b45FindFluidStack(tPlayer);
+				FluidStack tGot = tFilledJug == NI ? NF : FL.getFluid(tFilledJug, T);
+				sB45AfterFill = tTank.getFluidAmount();
+				O.println("[GT6-BUG045PROBE] JUG-FILL: в инвентаре=" + tFilledJug + " жидкость=" + tGot + " танк=" + tTank.content());
+				b45Verdict(tGot != null && tGot.getAmount() == sB45Squeezed && sB45AfterFill == 0, "JUG-FILL", "кувшин набрал выжатое (" + (tGot == null ? "ничего" : tGot.getAmount() + "mB") + " из " + sB45Squeezed + "mB), танк пуст (" + sB45AfterFill + ")");
+			} else if (sB45Tick == 330) {
+				// CONTROL-NEG подготовка: выжать 1 мак, чтобы в танке была жидкость для контроля «палка не сливает».
+				b45Click(tPlayer, tLevel, ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0), sB45Pos);
+			} else if (sB45Tick == 340) {
+				b45Click(tPlayer, tLevel, ST.make(net.minecraft.world.item.Items.STICK, 1, 0), sB45Pos);
+			} else if (sB45Tick == 360) {
+				gregapi.fluid.FluidTankGT tTank = b45Tank(tLevel, sB45Pos);
+				ItemStack tHand = tPlayer.getInventory().getItem(0);
+				boolean tStickIntact = ST.valid(tHand) && tHand.getItem() == net.minecraft.world.item.Items.STICK && FL.getFluid(tHand, T) == null;
+				O.println("[GT6-BUG045PROBE] CONTROL-NEG: рука=" + tHand + " танк=" + tTank.content());
+				b45Verdict(tStickIntact && tTank.getFluidAmount() > 0, "CONTROL-NEG", "палка не стала контейнером, танк не слит");
+				O.println("========== [GT6-BUG045PROBE] DONE: PASS=" + sB45Pass + " FAIL=" + sB45Fail + " ==========");
+			} else if (sB45Tick > 360 && sB45Tick % 200 == 0 && sB45Tick <= 2000) {
+				O.println("[GT6-BUG045PROBE] heartbeat: сервер жив, тик " + sB45Tick); // §6.4
+			}
+		} catch (Throwable e) {O.println("[GT6-BUG045PROBE] EXC " + e); e.printStackTrace(O);}
 	}
 	
 	@Override
@@ -392,6 +472,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (gregapi.data.CS.probeFlag("gt6bug047probe.flag")) gt6Bug047ProbeTick(aEvent.getServer()); // [GT6-BUG047PROBE] BUG-047 — снять при уборке фазы
+			if (gregapi.data.CS.probeFlag("gt6bug045probe.flag")) gt6Bug045ProbeTick(aEvent.getServer()); // [GT6-BUG045PROBE] BUG-045 — снять при уборке фазы
 
 				if (SERVER_TIME++ == 0) {
 					// Initial Save Data check
