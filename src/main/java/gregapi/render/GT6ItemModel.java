@@ -154,6 +154,10 @@ public class GT6ItemModel implements ItemModel {
 			List<BakedQuad> tQuads = tLayer.prepareQuadList();
 			tQuads.add(flatFace(tSprite, true, tColor));
 			tQuads.add(flatFace(tSprite, false, tColor));
+			// BUG-031: «толщина» плоского предмета — боковой ободок 1px по контуру спрайта (третья составляющая
+			// движкового алгоритма generated-модели, была утеряна: строились только перед+зад). Бар-оверлей
+			// прочности/заряда — GUI-декор поверх иконки, ободок ему не строим (1.7.10 рисовал бар плоским оверлеем).
+			if (!isBarOverlayIcon(tIcon)) addSideQuads(tQuads, tSprite, tColor);
 			tLayer.setParticleMaterial(new Material.Baked(tSprite, false));
 		}
 	}
@@ -452,6 +456,108 @@ public class GT6ItemModel implements ItemModel {
 			b.setColor(r, g, b8, 255); // тинт материала (белая проба подтвердила: цвет-механизм работает; корень — свет)
 			b.setNormal((float)n.x, (float)n.y, (float)n.z);
 			b.setUv(aSprite.getU(c[i][3] / 16f), aSprite.getV(c[i][4] / 16f));
+		}
+		return b.bakeQuad();
+	}
+
+	// ==================== BUG-031: боковой ободок «толщины» плоского предмета ====================
+	// Дословная транскрипция движкового ItemModelGenerator.bakeSideFaces/getSideFaces/checkTransition/isTransparent
+	// (neo-decompiled/.../cuboid/ItemModelGenerator.java:114-228): для КАЖДОГО непрозрачного пикселя спрайта, у которого
+	// сосед прозрачен, строится боковая грань толщиной 1px (z=7.5..8.5/16) по контуру силуэта — та самая «толщина»,
+	// отличающая ванильный плоский предмет от плоской картинки. Ваниль делает скан ОДИН раз при bake модели
+	// (ItemLayerKey.compute); этот мост зовётся на каждый кадр (per-frame render state) → результат скана кэшируется
+	// по спрайту (сами quad'ы дешёвые — печём по вызову, тинт материала запечён в вершины, как во flatFace).
+
+	/** Канон SideDirection (ItemModelGenerator.SideDirection:246-265): UP→Direction.UP, DOWN→DOWN, LEFT→EAST, RIGHT→WEST. */
+	private static final Direction[] SIDE_DIRS = {Direction.UP, Direction.DOWN, Direction.EAST, Direction.WEST};
+	/** Кэш пиксельного скана: имя спрайта → список граней {dirIdx, x, y} (union по всем кадрам анимации, как ваниль). */
+	private static final java.util.concurrent.ConcurrentHashMap<String, int[][]> sSideFaceCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+	private static void addSideQuads(List<BakedQuad> aOut, TextureAtlasSprite aSprite, int aColor) {
+		int[][] tFaces = sideFacesOf(aSprite);
+		net.minecraft.client.renderer.texture.SpriteContents tC = aSprite.contents();
+		float tXScale = 16.0F / tC.width(), tYScale = 16.0F / tC.height(); // bakeSideFaces:117-118
+		for (int[] tFace : tFaces) {
+			int tDir = tFace[0]; float x = tFace[1], y = tFace[2];
+			// UV (bakeSideFaces:124-135): подрез 0.1px от краёв пикселя; вертикальные грани — V перевёрнут
+			float u0 = x + 0.1F, u1 = x + 1.0F - 0.1F, v0, v1;
+			if (tDir <= 1) {v0 = y + 0.1F; v1 = y + 1.0F - 0.1F;} else {v0 = y + 1.0F - 0.1F; v1 = y + 0.1F;} // isHorizontal = UP|DOWN
+			// Геометрия (bakeSideFaces:137-186): границы строки в пикселях → масштаб → flip Y текстуры (y вниз) в модель (y вверх)
+			float tStartX = x, tStartY = y, tEndX = x, tEndY = y;
+			switch (tDir) {
+				case 0: tEndX = x + 1.0F; break;                                    // UP
+				case 1: tEndX = x + 1.0F; tStartY = y + 1.0F; tEndY = y + 1.0F; break; // DOWN
+				case 2: tEndY = y + 1.0F; break;                                    // LEFT (EAST)
+				default: tStartX = x + 1.0F; tEndX = x + 1.0F; tEndY = y + 1.0F;    // RIGHT (WEST)
+			}
+			tStartX *= tXScale; tEndX *= tXScale; tStartY *= tYScale; tEndY *= tYScale;
+			tStartY = 16.0F - tStartY; tEndY = 16.0F - tEndY;
+			float[] tFrom, tTo;
+			switch (tDir) {
+				case 0:  tFrom = new float[]{tStartX, tStartY, 7.5F}; tTo = new float[]{tEndX,   tStartY, 8.5F}; break; // UP
+				case 1:  tFrom = new float[]{tStartX, tEndY,   7.5F}; tTo = new float[]{tEndX,   tEndY,   8.5F}; break; // DOWN
+				case 2:  tFrom = new float[]{tStartX, tStartY, 7.5F}; tTo = new float[]{tStartX, tEndY,   8.5F}; break; // LEFT
+				default: tFrom = new float[]{tEndX,   tStartY, 7.5F}; tTo = new float[]{tEndX,   tEndY,   8.5F}; break; // RIGHT
+			}
+			aOut.add(sideQuad(aSprite, SIDE_DIRS[tDir], tFrom, tTo, u0 * tXScale, v0 * tYScale, u1 * tXScale, v1 * tYScale, aColor));
+		}
+	}
+
+	/** Пиксельный скан контура (getSideFaces/checkTransition/isTransparent :191-228), кэш по спрайту. */
+	private static int[][] sideFacesOf(TextureAtlasSprite aSprite) {
+		net.minecraft.client.renderer.texture.SpriteContents tC = aSprite.contents();
+		String tKey = tC.name().toString();
+		int[][] tCached = sSideFaceCache.get(tKey);
+		if (tCached != null) return tCached;
+		java.util.LinkedHashSet<Integer> tSet = new java.util.LinkedHashSet<>();
+		try {
+			int w = tC.width(), h = tC.height();
+			it.unimi.dsi.fastutil.ints.IntList tFrames = tC.getUniqueFrames();
+			for (int f = 0; f < tFrames.size(); f++) {
+				int tFrame = tFrames.getInt(f);
+				for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+					if (sideTransparent(tC, tFrame, x, y, w, h)) continue;
+					// checkTransition: сосед (x-stepX, y-stepY) прозрачен → грань (шаги Direction: UP=(0,1) → сосед (x,y-1) и т.д.)
+					if (sideTransparent(tC, tFrame, x,     y - 1, w, h)) tSet.add(sideKey(0, x, y)); // UP
+					if (sideTransparent(tC, tFrame, x,     y + 1, w, h)) tSet.add(sideKey(1, x, y)); // DOWN
+					if (sideTransparent(tC, tFrame, x - 1, y,     w, h)) tSet.add(sideKey(2, x, y)); // LEFT (EAST)
+					if (sideTransparent(tC, tFrame, x + 1, y,     w, h)) tSet.add(sideKey(3, x, y)); // RIGHT (WEST)
+				}
+			}
+		} catch (Throwable e) {tSet.clear();} // пиксели недоступны — предмет остаётся без ободка (перед/зад целы)
+		int[][] rFaces = new int[tSet.size()][]; int i = 0;
+		for (int tKey2 : tSet) rFaces[i++] = new int[]{tKey2 >>> 28, (tKey2 >>> 14) & 0x3FFF, tKey2 & 0x3FFF};
+		sSideFaceCache.put(tKey, rFaces);
+		return rFaces;
+	}
+	private static int sideKey(int aDir, int aX, int aY) {return (aDir << 28) | (aX << 14) | aY;}
+	private static boolean sideTransparent(net.minecraft.client.renderer.texture.SpriteContents aC, int aFrame, int aX, int aY, int aW, int aH) {
+		return aX < 0 || aY < 0 || aX >= aW || aY >= aH || aC.isTransparent(aFrame, aX, aY); // isTransparent :226-228 (вне спрайта = прозрачно)
+	}
+
+	/** Боковой quad по канону FaceBakery: порядок вершин FaceInfo (FaceInfo.java:14-48, MIN=from/MAX=to),
+	 *  UV по индексу вершины (CuboidFace.UVs:98-104: u→minU для 0,1 / maxU для 2,3; v→minV для 0,3 / maxV для 1,2).
+	 *  Прямой FaceInfo-порядок даёт тот же winding, что реверс в {@link #flatFace} (сверено по SOUTH-циклу). */
+	private static BakedQuad sideQuad(TextureAtlasSprite aSprite, Direction aDir, float[] aFrom, float[] aTo, float aMinU, float aMinV, float aMaxU, float aMaxV, int aColor) {
+		int r = (aColor >> 16) & 0xFF, g = (aColor >> 8) & 0xFF, b8 = aColor & 0xFF;
+		// FaceInfo: селектор from/to по осям для 4 вершин грани (1=to, 0=from)
+		int[][] tSel;
+		switch (aDir) {
+			case UP:   tSel = new int[][]{{0,1,0},{0,1,1},{1,1,1},{1,1,0}}; break;
+			case DOWN: tSel = new int[][]{{0,0,1},{0,0,0},{1,0,0},{1,0,1}}; break;
+			case WEST: tSel = new int[][]{{0,1,0},{0,0,0},{0,0,1},{0,1,1}}; break;
+			default:   tSel = new int[][]{{1,1,1},{1,0,1},{1,0,0},{1,1,0}}; break; // EAST
+		}
+		net.minecraft.world.phys.Vec3 n = aDir.getUnitVec3();
+		QuadBakingVertexConsumer b = new QuadBakingVertexConsumer();
+		b.setSprite(new Material.Baked(aSprite, false));
+		b.setDirection(aDir);
+		b.setLightEmission(15); // как flatFace: full-bright, единая яркость модели плоского предмета
+		for (int i = 0; i < 4; i++) {
+			b.addVertex((tSel[i][0] == 1 ? aTo[0] : aFrom[0]) / 16f, (tSel[i][1] == 1 ? aTo[1] : aFrom[1]) / 16f, (tSel[i][2] == 1 ? aTo[2] : aFrom[2]) / 16f);
+			b.setColor(r, g, b8, 255);
+			b.setNormal((float)n.x, (float)n.y, (float)n.z);
+			b.setUv(aSprite.getU((i == 0 || i == 1 ? aMinU : aMaxU) / 16f), aSprite.getV((i == 0 || i == 3 ? aMinV : aMaxV) / 16f));
 		}
 		return b.bakeQuad();
 	}

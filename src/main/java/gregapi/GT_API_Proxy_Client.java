@@ -224,6 +224,63 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		}
 	}
 
+	// [GT6-BUG031PROBE] BUG-031 боковой ободок плоских предметов: судья по каналу движка ItemModelResolver.updateForTopItem
+	// (тот же путь, каким рендер строит модель предмета) — замер quad'ов слоёв; эталон = ванильный iron_ingot (движковый
+	// ItemModelGenerator строит перед+зад+ободок). Контроль-НЕ-кейс: бар-слои инструмента в GUI остаются 2-quad. — снять при уборке фазы
+	private boolean mBug031Done = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onBug031Probe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mBug031Done || !gregapi.data.CS.probeFlag("gt6bug031probe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mBug031Done = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			O.println("========== [GT6-BUG031PROBE] BUG-031: боковой ободок плоских предметов ==========");
+			net.minecraft.world.item.ItemStack tVan    = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_INGOT);
+			net.minecraft.world.item.ItemStack tIngot  = gregapi.data.OP.ingot.mat(gregapi.data.MT.Steel, 1);
+			net.minecraft.world.item.ItemStack tGem    = gregapi.data.OP.gem.mat(gregapi.data.MT.Ruby, 1);
+			net.minecraft.world.item.ItemStack tWrench = gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.WRENCH, 1, gregapi.data.MT.Steel, gregapi.data.MT.Steel);
+			int[] rVan   = bug031Measure("ЭТАЛОН vanilla iron_ingot GUI", tVan,   net.minecraft.world.item.ItemDisplayContext.GUI,    O);
+			int[] rIngG  = bug031Measure("GT6 слиток Steel GUI",          tIngot, net.minecraft.world.item.ItemDisplayContext.GUI,    O);
+			int[] rIngW  = bug031Measure("GT6 слиток Steel GROUND",       tIngot, net.minecraft.world.item.ItemDisplayContext.GROUND, O);
+			int[] rGem   = bug031Measure("GT6 самоцвет Ruby GUI (2 пасса)", tGem, net.minecraft.world.item.ItemDisplayContext.GUI,    O);
+			int[] rWr    = bug031Measure("GT6 ключ Steel GUI (бар-слои)", tWrench, net.minecraft.world.item.ItemDisplayContext.GUI,   O);
+			O.println("[GT6-BUG031PROBE] калибровка канала: эталон движка боковых=" + rVan[2] + " => " + (rVan[2] > 0 ? "OK" : "КАНАЛ СЛЕП (замер невалиден)"));
+			O.println("[GT6-BUG031PROBE] GT6 слиток GUI: боковых=" + rIngG[2] + " (до фикса 0) => " + (rIngG[2] > 0 ? "PASS" : "FAIL"));
+			O.println("[GT6-BUG031PROBE] GT6 слиток GROUND: боковых=" + rIngW[2] + " => " + (rIngW[2] > 0 ? "PASS" : "FAIL"));
+			O.println("[GT6-BUG031PROBE] GT6 самоцвет (мульти-пасс): боковых=" + rGem[2] + ", слоёв=" + rGem[0] + " => " + (rGem[2] > 0 ? "PASS" : "FAIL"));
+			O.println("[GT6-BUG031PROBE] контроль-НЕ-кейс, ключ GUI: 2-quad слоёв (бары без ободка)=" + rWr[3] + ", слоёв с ободком=" + rWr[4] + " => " + (rWr[3] > 0 && rWr[4] > 0 ? "PASS" : "FAIL (бар получил ободок или база не получила)"));
+			O.println("========== [GT6-BUG031PROBE] DONE ==========");
+		} catch (Throwable e) {O.println("[GT6-BUG031PROBE] EXC " + e); e.printStackTrace(O);}
+	}
+	/** Возврат: {слоёв, всего quad'ов, боковых quad'ов (UP/DOWN/EAST/WEST), слоёв ровно-2-quad, слоёв с боковыми}. */
+	private static int[] bug031Measure(String aName, net.minecraft.world.item.ItemStack aStack, net.minecraft.world.item.ItemDisplayContext aCtx, java.io.PrintStream O) throws Throwable {
+		net.minecraft.client.renderer.item.ItemStackRenderState tState = new net.minecraft.client.renderer.item.ItemStackRenderState();
+		Minecraft.getInstance().getItemModelResolver().updateForTopItem(tState, aStack, aCtx, Minecraft.getInstance().level, null, 0);
+		java.lang.reflect.Field fLayers = net.minecraft.client.renderer.item.ItemStackRenderState.class.getDeclaredField("layers"); fLayers.setAccessible(true);
+		java.lang.reflect.Field fCount = net.minecraft.client.renderer.item.ItemStackRenderState.class.getDeclaredField("activeLayerCount"); fCount.setAccessible(true);
+		Object[] tLayers = (Object[]) fLayers.get(tState);
+		int tCount = fCount.getInt(tState), tTotal = 0, tSides = 0, tTwoQuadLayers = 0, tSideLayers = 0;
+		java.lang.reflect.Field fQuads = null;
+		StringBuilder tPerLayer = new StringBuilder();
+		for (int i = 0; i < tCount; i++) {
+			if (fQuads == null) {fQuads = tLayers[i].getClass().getDeclaredField("quads"); fQuads.setAccessible(true);}
+			@SuppressWarnings("unchecked") java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad> tQuads = (java.util.List<net.minecraft.client.resources.model.geometry.BakedQuad>) fQuads.get(tLayers[i]);
+			int tLayerSides = 0;
+			for (net.minecraft.client.resources.model.geometry.BakedQuad q : tQuads) {
+				net.minecraft.core.Direction d = q.direction();
+				if (d == net.minecraft.core.Direction.UP || d == net.minecraft.core.Direction.DOWN || d == net.minecraft.core.Direction.EAST || d == net.minecraft.core.Direction.WEST) tLayerSides++;
+			}
+			tTotal += tQuads.size(); tSides += tLayerSides;
+			if (tQuads.size() == 2 && tLayerSides == 0) tTwoQuadLayers++;
+			if (tLayerSides > 0) tSideLayers++;
+			tPerLayer.append(" [слой ").append(i).append(": quads=").append(tQuads.size()).append(", боковых=").append(tLayerSides).append("]");
+		}
+		O.println("[GT6-BUG031PROBE] " + aName + ": слоёв=" + tCount + ", всего quads=" + tTotal + ", боковых=" + tSides + tPerLayer);
+		return new int[]{tCount, tTotal, tSides, tTwoQuadLayers, tSideLayers};
+	}
+
 	// АВТОНОМНЫЙ вход в мир (переиспользуемый harness живых проб, гейт: файл run/wgautoworld.flag; вне флага НЕ активен):
 	// quickPlay упирается в диалог-подтверждение (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ
 	// создаём свежий CREATIVE-мир через штатный клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» →
