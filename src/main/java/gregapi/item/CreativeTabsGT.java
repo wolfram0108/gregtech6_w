@@ -112,7 +112,6 @@ public final class CreativeTabsGT {
 				new CreativeTab(tName, tLocal, null, tMeta); // ctor → registerOwnTab → попадёт в регистрацию ниже
 				++tShells;
 			} catch (Throwable e) {/* битая запись кэша не рушит остальные */}
-			gregapi.data.CS.OUT.println("[GT6-F16] шеллов вкладок из кэша: " + tShells + " (итого к регистрации: " + OWN_TABS.size() + ")");
 		} catch (Throwable e) {/* нет конфига — нет шеллов (первый запуск) */}
 	}
 
@@ -130,9 +129,7 @@ public final class CreativeTabsGT {
 				tCfg.mConfig.get(SHELL_CATEGORY, tE.getKey(), tTab.mMetaData + "|" + tLocal);
 			}
 			tCfg.mConfig.save();
-			gregapi.data.CS.OUT.println("[GT6-F16] кэш creative-вкладок: всего=" + OWN_TABS.size() + " новых=" + tNew
-				+ (tNew > 0 ? " (новые вкладки видимы со СЛЕДУЮЩЕГО запуска — реестр neo заморожен на буте)" : ""));
-		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-F16] запись кэша вкладок упала: " + e); }
+		} catch (Throwable e) {/* запись кэша вкладок недоступна -> восстановятся генератором на след. запуске */}
 	}
 
 	/** Вызывается из ctor {@link CreativeTab}: запоминает инстанс вкладки под её именем (реестр + holder для displayItems). */
