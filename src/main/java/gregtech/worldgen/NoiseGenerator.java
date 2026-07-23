@@ -54,15 +54,12 @@ public class NoiseGenerator {
 			tDimOffset = 0;
 		}
 		mOffsetY = 512 * tDimOffset;
-		// getSeed() есть у WorldGenLevel (WorldGenLevel.java:8) и ServerLevel (ServerLevel.java:1697), но не у
-		// базового Level; на практике aWorld в местах вызова (WorldgenObject.generate(WorldGenLevel aWorld,...) и
-		// далее) в рантайме — ServerLevel (единственный класс, одновременно являющийся Level и WorldGenLevel).
-		if (aWorld instanceof ServerLevel aServerLevel) {
-			mSeed = (int) aServerLevel.getSeed();
-		} else {
-			// F6 functional-adapted (в рантайме aWorld=ServerLevel, seed берётся; else — защитный дефолт 42 как в оригинале): aWorld не ServerLevel в этой точке вызова — источника seed нет,
-			// mSeed остаётся дефолтным полем (42), как в оригинале до присвоения из мира.
-		}
+		// F6-worldgen (BUG-033 fix #2): seed берётся ПРЯМО с WorldGenLevel — getSeed() объявлен на самом интерфейсе
+		// (WorldGenLevel.java:8), а не только на ServerLevel. Прежний `instanceof ServerLevel` был ЛОЖНЫМ допущением:
+		// в новом Feature.place-механизме aWorld — это WorldGenRegion (НЕ ServerLevel), поэтому ветка проваливалась в
+		// защитный дефолт mSeed=42 → узор слоёв был ОДИНАКОВ в любом мире независимо от сида. getSeed() на регионе даёт
+		// настоящий сид мира (WorldGenRegion делегирует его в ServerLevel).
+		mSeed = (int) aWorld.getSeed();
 	}
 	public NoiseGenerator setFrequency(float aFrequency) {
 		mFrequencyX = aFrequency;

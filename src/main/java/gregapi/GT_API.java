@@ -503,6 +503,27 @@ public class GT_API extends Abstract_Mod {
 		NeoForge.EVENT_BUS.addListener(this::onServerStarted);
 		NeoForge.EVENT_BUS.addListener(this::onServerStopping);
 		NeoForge.EVENT_BUS.addListener(this::onServerStopped);
+		// BUG-033 (КОРЕНЬ): отложенная item-init должна добежать ДО пре-генерации стартовой зоны — см. onLevelLoadEarlyItemInit.
+		NeoForge.EVENT_BUS.addListener(this::onLevelLoadEarlyItemInit);
+	}
+
+	/** BUG-033 fix (КОРЕНЬ стартовой зоны). Отложенная item-init ({@link #runDeferredItemInit}) наполняет реестр
+	 *  GT6-worldgen {@code GEN_GT} (через {@code Loader_Worldgen}, отложенный на server-start фиксом F12, т.к. зовёт
+	 *  {@code ST.make} — компоненты привязаны только post-bind). НО в порядке загрузки neo пре-генерация стартовой зоны
+	 *  идёт РАНЬШЕ, чем {@code ServerStartingEvent}, на котором отложка исполнялась: {@code MinecraftServer.loadLevel()}
+	 *  = {@code createLevels()} [здесь летит {@code LevelEvent.Load}] → {@code prepareLevels()} [«Preparing spawn area»,
+	 *  спавн-worldgen] → и лишь ПОТОМ {@code runServer()} шлёт {@code ServerStartingEvent} (сверено neo
+	 *  {@code MinecraftServer.java:403-411,733-739}). Итог прежнего порядка: {@code GEN_GT} пуст на спавне → стартовая
+	 *  зона рождалась ЧИСТОЙ ВАНИЛЬЮ (deepslate/руды/породы не замещались), а чанки исследования (генерятся уже после
+	 *  ServerStarting) — нормальные GT6. Живой замер (перепись загруженных чанков): спавн-блок {@code gt6=0}, вокруг GT6.
+	 *  <p>Фикс: доисполнить отложку на загрузке overworld-уровня — это в {@code createLevels()} (реестры уже заморожены
+	 *  {@code compositeAccess()} = post-bind), но ДО {@code prepareLevels()}. Тогда {@code GEN_GT} готов к пре-гену спавна.
+	 *  {@code runDeferredItemInit()} на {@code ServerStartingEvent} сохранён как страховка для отложек, добавленных ПОЗЖЕ
+	 *  (напр. во время самой пре-генерации) — та же центральная очередь, drain идемпотентен (пуста → no-op). */
+	public void onLevelLoadEarlyItemInit(net.neoforged.neoforge.event.level.LevelEvent.Load aEvent) {
+		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+			runDeferredItemInit();
+		}
 	}
 
 	/**

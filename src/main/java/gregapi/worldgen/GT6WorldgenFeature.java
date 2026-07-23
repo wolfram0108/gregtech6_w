@@ -153,7 +153,14 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 					tPF.getOrThrow(OrePlacements.ORE_DIAMOND), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_MEDIUM), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_LARGE), tPF.getOrThrow(OrePlacements.ORE_DIAMOND_BURIED),
 					tPF.getOrThrow(OrePlacements.ORE_LAPIS), tPF.getOrThrow(OrePlacements.ORE_LAPIS_BURIED),
 					tPF.getOrThrow(OrePlacements.ORE_COPPER), tPF.getOrThrow(OrePlacements.ORE_COPPER_LARGE),
-					tPF.getOrThrow(OrePlacements.ORE_EMERALD))));
+					tPF.getOrThrow(OrePlacements.ORE_EMERALD),
+					// BUG-033 fix #1 (F6 §4.2.1): ванильные STONE-блобы MC26 — granite/diorite/andesite/tuff. GT6 трактует их
+					// как «stone» и замещает своими слоями (они в StoneLayer.REPLACEABLE_BLOCKS), НО vanilla-фичи этих блобов
+					// исполнялись в том же шаге underground_ores и переживали GT6-проход → «отключённые породы» из репорта.
+					tPF.getOrThrow(OrePlacements.ORE_GRANITE_UPPER), tPF.getOrThrow(OrePlacements.ORE_GRANITE_LOWER),
+					tPF.getOrThrow(OrePlacements.ORE_DIORITE_UPPER), tPF.getOrThrow(OrePlacements.ORE_DIORITE_LOWER),
+					tPF.getOrThrow(OrePlacements.ORE_ANDESITE_UPPER), tPF.getOrThrow(OrePlacements.ORE_ANDESITE_LOWER),
+					tPF.getOrThrow(OrePlacements.ORE_TUFF))));
 			ctx.register(REMOVE_VANILLA_ORES_NETHER, RemoveFeaturesBiomeModifier.allSteps(
 				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_NETHER),
 				HolderSet.direct(
