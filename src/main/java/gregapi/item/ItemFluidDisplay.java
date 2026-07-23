@@ -238,13 +238,9 @@ public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItem
 	}
 
 	private static net.minecraft.resources.Identifier stillIcon(net.minecraft.world.level.material.Fluid aFluid) {
-		if (aFluid == null) return null;
-		gregapi.fluid.FluidGT tGT = gregapi.fluid.FluidGT.of(aFluid);
-		if (tGT != null && tGT.mTexture != null) return tGT.mTexture.getIcon(0);
-		// ванильные жидкости: канонические still-текстуры движка (assets/minecraft/models/block/water.json → block/water_still)
-		if (aFluid.isSame(net.minecraft.world.level.material.Fluids.WATER)) return net.minecraft.resources.Identifier.withDefaultNamespace("block/water_still");
-		if (aFluid.isSame(net.minecraft.world.level.material.Fluids.LAVA))  return net.minecraft.resources.Identifier.withDefaultNamespace("block/lava_still");
-		return null;
+		// BUG-049: локальная копия снята — единый резолвер still-иконки теперь в центре FL.stillIcon
+		// (жидкости без своей текстуры получают water_still вместо null — прежние ваниль-ветки покрыты).
+		return FL.stillIcon(aFluid);
 	}
 
 	// Тинт (1:1 Fluid.getColor): GT6-жидкости — mRGBa из центра F5 (FluidGT); ванильная вода — NORMAL_WATER_COLOR

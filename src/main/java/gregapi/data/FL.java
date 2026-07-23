@@ -1183,10 +1183,20 @@ public enum FL {
 		}
 		return NI;
 	}
-	
-	
-	
-	
+
+	/** F3/BUG-049: ЕДИНЫЙ резолвер still-иконки жидкости (1:1 смысл Fluid.getStillIcon из 1.7.10):
+	 *  GT6-жидкость — своя текстура из центра F5 (FluidGT.mTexture); ванильная лава — канонический спрайт
+	 *  движка; всё остальное БЕЗ своей текстуры (ванильная вода, GT6-воды типа seawater — в 1.7.10 они брали
+	 *  ваниль-иконку воды) — water_still, цвет даёт вызывающий (RGBa центра F5 / водный тинт).
+	 *  Потребители: ItemFluidDisplay.stillIcon (делегат) и BlockTextureFluid — копий не заводить. */
+	public static Identifier stillIcon(Fluid aFluid) {
+		if (aFluid == null) return null;
+		FluidGT tGT = FluidGT.of(aFluid);
+		if (tGT != null && tGT.mTexture != null) return tGT.mTexture.getIcon(0);
+		if (aFluid.isSame(Fluids.LAVA)) return Identifier.withDefaultNamespace("block/lava_still");
+		return Identifier.withDefaultNamespace("block/water_still");
+	}
+
 	/** Loads a FluidStack properly. */
 	public static FluidStack load (CompoundTag aNBT, String aTagName) {return aNBT == null ? null : load(aNBT.getCompoundOrEmpty(aTagName));}
 	/** Loads a FluidStack properly. */
