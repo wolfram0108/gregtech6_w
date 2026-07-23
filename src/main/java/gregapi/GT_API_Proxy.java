@@ -800,6 +800,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					O.println("[GT6-BUG025PROBE] тик " + sBug025Tick + ": бак=" + (tPipe.mTanks.length > 0 ? tPipe.mTanks[0].amount() + "mB fluid=" + tPipe.mTanks[0].get() : "нет бака") + " | котёл=" + tCaulSt.getBlock() + " уровень=" + tLvl);
 				}
 			}
+			else if (sBug025Tick == 450) {
+				// самопроверка команды /gt6drain на нашем сетапе (тот же метод, что зовёт команда) — убедиться, что дамп работает без ошибок
+				O.println("[GT6-BUG025PROBE] --- самопроверка /gt6drain на нашем сетапе ---");
+				gt6DrainMetrics(tPlayer.createCommandSourceStack());
+			}
 			else if (sBug025Tick == 460) {
 				net.minecraft.world.level.block.state.BlockState tCaulSt = tLevel.getBlockState(sBug025CauldronPos);
 				int tLvl = (tCaulSt.getBlock() == net.minecraft.world.level.block.Blocks.WATER_CAULDRON) ? tCaulSt.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL) : 0;
@@ -812,6 +817,52 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				O.println("[GT6-BUG025PROBE] heartbeat: сервер жив, тик " + sBug025Tick);
 			}
 		} catch (Throwable e) {O.println("[GT6-BUG025PROBE] EXC " + e); e.printStackTrace(O);}
+	}
+
+	// ================= [GT6-DRAINMETRICS] отладочная команда /gt6drain: дамп состояния всех труб/воды/Drain/котлов вокруг игрока (метрики РЕАЛЬНОГО сетапа игрока) — СНЯТЬ после диагностики =================
+	private static final String[] GT6_SIDE_NAMES = {"DOWN", "UP", "NORTH", "SOUTH", "WEST", "EAST"};
+	@SubscribeEvent
+	public void onRegisterGT6DrainCommand(net.neoforged.neoforge.event.RegisterCommandsEvent aEvent) {
+		aEvent.getDispatcher().register(net.minecraft.commands.Commands.literal("gt6drain").executes(ctx -> {gt6DrainMetrics(ctx.getSource()); return 1;}));
+	}
+	public static void gt6DrainMetrics(net.minecraft.commands.CommandSourceStack aSrc) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			net.minecraft.server.level.ServerPlayer tPlayer = aSrc.getPlayer();
+			if (tPlayer == null) { aSrc.sendSystemMessage(net.minecraft.network.chat.Component.literal("[GT6-DRAINMETRICS] нет игрока")); return; }
+			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel) tPlayer.level();
+			net.minecraft.core.BlockPos tC = tPlayer.blockPosition();
+			int R = 7;
+			O.println("========== [GT6-DRAINMETRICS] скан вокруг " + tC + " R=" + R + " ==========");
+			int tPipes = 0, tCauldrons = 0, tWaters = 0, tDrains = 0, tGtRivers = 0;
+			for (int dx = -R; dx <= R; dx++) for (int dy = -R; dy <= R; dy++) for (int dz = -R; dz <= R; dz++) {
+				net.minecraft.core.BlockPos tPos = tC.offset(dx, dy, dz);
+				net.minecraft.world.level.block.state.BlockState tSt = tLevel.getBlockState(tPos);
+				net.minecraft.world.level.block.Block tB = tSt.getBlock();
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tPos);
+				if (tBE instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe) {
+					tPipes++;
+					StringBuilder sb = new StringBuilder("ТРУБА @" + tPos + " cap=" + tPipe.mCapacity + "mB баков=" + tPipe.mTanks.length);
+					for (gregapi.fluid.FluidTankGT tT : tPipe.mTanks) sb.append(" {" + tT.amount() + "mB fluid=" + tT.get() + " FL.water=" + gregapi.data.FL.water(tT.get()) + "}");
+					sb.append(" подключено[");
+					for (byte s = 0; s < 6; s++) if (tPipe.connected(s)) sb.append(GT6_SIDE_NAMES[s] + " ");
+					sb.append("] ковры[");
+					if (tPipe.mCovers != null) for (byte s = 0; s < 6; s++) if (tPipe.mCovers.mBehaviours[s] != null) { sb.append(GT6_SIDE_NAMES[s] + ":" + tPipe.mCovers.mBehaviours[s].getClass().getSimpleName() + " "); if (tPipe.mCovers.mBehaviours[s] instanceof gregapi.cover.covers.CoverDrain) tDrains++; }
+					sb.append("] соседи[");
+					for (byte s = 0; s < 6; s++) sb.append(GT6_SIDE_NAMES[s].charAt(0) + "=" + gregapi.util.WD.block(tLevel, tPos.getX() + gregapi.data.CS.OFFX[s], tPos.getY() + gregapi.data.CS.OFFY[s], tPos.getZ() + gregapi.data.CS.OFFZ[s]) + " ");
+					sb.append("]");
+					O.println("[GT6-DRAINMETRICS] " + sb);
+					aSrc.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b" + sb));
+				}
+				if (tB == net.minecraft.world.level.block.Blocks.CAULDRON) { tCauldrons++; O.println("[GT6-DRAINMETRICS] КОТЁЛ пустой @" + tPos); aSrc.sendSystemMessage(net.minecraft.network.chat.Component.literal("§eКОТЁЛ пустой @" + tPos.getX() + "," + tPos.getY() + "," + tPos.getZ())); }
+				else if (tB == net.minecraft.world.level.block.Blocks.WATER_CAULDRON) { tCauldrons++; int lv = tSt.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL); O.println("[GT6-DRAINMETRICS] КОТЁЛ вода level=" + lv + " @" + tPos); aSrc.sendSystemMessage(net.minecraft.network.chat.Component.literal("§aКОТЁЛ вода level=" + lv + " @" + tPos.getX() + "," + tPos.getY() + "," + tPos.getZ())); }
+				else if (tB == net.minecraft.world.level.block.Blocks.WATER) { tWaters++; }
+				else if (tB == gregapi.data.CS.BlocksGT.River || tB == gregapi.data.CS.BlocksGT.Ocean || tB == gregapi.data.CS.BlocksGT.Swamp) { tGtRivers++; O.println("[GT6-DRAINMETRICS] GT6-жидкость " + tB + " @" + tPos); }
+			}
+			String tSum = "ИТОГО: труб=" + tPipes + " котлов=" + tCauldrons + " Drain-ковров=" + tDrains + " GT6-жидкостей=" + tGtRivers + " ванильн.воды=" + tWaters;
+			O.println("========== [GT6-DRAINMETRICS] " + tSum + " ==========");
+			aSrc.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6[GT6-DRAINMETRICS] " + tSum + " — полный дамп в logs/gregtech.log"));
+		} catch (Throwable e) {O.println("[GT6-DRAINMETRICS] EXC " + e); e.printStackTrace(O); aSrc.sendSystemMessage(net.minecraft.network.chat.Component.literal("[GT6-DRAINMETRICS] EXC " + e));}
 	}
 
 	// Было @SubscribeEvent onLivingUpdate(LivingUpdateEvent) — LivingUpdateEvent (net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent,
