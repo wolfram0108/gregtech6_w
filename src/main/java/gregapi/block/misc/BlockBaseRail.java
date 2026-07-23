@@ -131,6 +131,12 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		mIconPrimary = aIconPrimary;
 		mDetectorRail = aDetectorRail;
 		mPowerRail = aPowerRail;
+		// 1:1 vanilla RailBlock (RailBlock.java:25): БЕЗ registerDefaultState сырой дефолт boolean-property WATERLOGGED=true
+		// (stateDefinition.any() берёт первое значение) → каждый рельс, поставленный через WD.set/defaultBlockState
+		// (ItemBlockBase.placeBlockAt:147, GT6-мета-путь, НЕ getStateForPlacement), waterlogged → BaseRailBlock.getFluidState:306
+		// отдаёт WATER-источник → вода растекается по соседям (репорт игрока). 1.7.10 waterlogging не имел; WATERLOGGED тут
+		// вестигиальный (добавлен лишь чтобы state.getValue в getFluidState/updateShape не бросал, см. createBlockStateDefinition) → дефолт false.
+		registerDefaultState(this.stateDefinition.any().setValue(SHAPE_PROPERTY, RailShape.NORTH_SOUTH).setValue(WATERLOGGED, false));
 		if (aPowerRail) REDSTONE_SINKS.add(this);
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}
