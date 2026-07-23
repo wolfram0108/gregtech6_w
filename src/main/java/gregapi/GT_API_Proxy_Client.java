@@ -281,6 +281,71 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		return new int[]{tCount, tTotal, tSides, tTwoQuadLayers, tSideLayers};
 	}
 
+	// [GT6-BUG030PROBE] BUG-030 жидкости в креативе/JEI + тултип: судья по реальным каналам — содержимое вкладки
+	// Ingredients (тот же генератор, что читает креатив-GUI и JEI-панель: tryRebuildTabContents → getDisplayItems)
+	// + реальный тултип stack.getTooltipLines (канал BUG-018). — снять при уборке фазы
+	private boolean mBug030Done = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onBug030Probe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mBug030Done || !gregapi.data.CS.probeFlag("gt6bug030probe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mBug030Done = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			O.println("========== [GT6-BUG030PROBE] BUG-030: жидкости в креативе/JEI + тултип ==========");
+			// (1) реальный канал вкладок: перестройка содержимого тем же путём, что креатив-GUI (CreativeModeTabs.tryRebuildTabContents:2123)
+			net.minecraft.world.item.CreativeModeTabs.tryRebuildTabContents(tMC.level.enabledFeatures(), true, tMC.level.registryAccess());
+			net.minecraft.world.item.CreativeModeTab tTab = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getValue(net.minecraft.world.item.CreativeModeTabs.INGREDIENTS);
+			net.minecraft.world.item.Item tDisplay = gregapi.data.IL.Display_Fluid.getItem();
+			int tFluidDisplays = 0; boolean tWater = false, tHiddenLeak = false; net.minecraft.world.item.ItemStack tWaterStack = null;
+			for (net.minecraft.world.item.ItemStack tStack : tTab.getDisplayItems()) {
+				if (tStack.getItem() != tDisplay) continue;
+				tFluidDisplays++;
+				String tReg = gregapi.data.FL.regName(gregapi.data.FL.fluid(gregapi.util.ST.meta_(tStack)));
+				if ("water".equals(tReg)) {tWater = true; tWaterStack = tStack;}
+				if (gregapi.data.CS.FluidsGT.HIDDEN.contains(tReg)) tHiddenLeak = true;
+			}
+			O.println("[GT6-BUG030PROBE] вкладка Ingredients: дисплеев жидкостей=" + tFluidDisplays + ", вода=" + tWater + ", утечка HIDDEN=" + tHiddenLeak);
+			O.println("[GT6-BUG030PROBE] (1) перечисление => " + (tFluidDisplays > 10 && tWater && !tHiddenLeak ? "PASS" : "FAIL (до фикса: 0 дисплеев)"));
+			// §6.1 изолированный шов vs канал: прямой вызов getSubItems (мимо рефлексии invokeSub) — различает
+			// «перечислитель пуст» от «канал (getMethod на классе с compat-интерфейсами) молча упал»
+			java.util.List<net.minecraft.world.item.ItemStack> tDirect = new java.util.ArrayList<>();
+			try { ((gregapi.item.ItemFluidDisplay) tDisplay).getSubItems(tDisplay, null, tDirect); } catch (Throwable e) {O.println("[GT6-BUG030PROBE] прямой getSubItems УПАЛ: " + e);}
+			int tDirectFluids = 0; for (net.minecraft.world.item.ItemStack s : tDirect) if (s != null && s.getItem() == tDisplay) tDirectFluids++;
+			O.println("[GT6-BUG030PROBE] изолированный шов: прямой getSubItems -> всего=" + tDirect.size() + ", дисплеев жидкостей=" + tDirectFluids);
+			// анализ дублей по идентичности вкладки (item+компоненты): ключ = meta(SUBTYPE) + весь набор компонентов
+			java.util.HashMap<String, String> tSeen = new java.util.HashMap<>(); int tDups = 0;
+			for (net.minecraft.world.item.ItemStack s : tDirect) {
+				if (s == null || s.getItem() != tDisplay) continue;
+				String tKey2 = gregapi.util.ST.meta_(s) + "#" + s.getComponentsPatch();
+				String tDesc = "meta=" + gregapi.util.ST.meta_(s) + " comp=" + s.getComponentsPatch();
+				String tPrev = tSeen.put(tKey2, tDesc);
+				if (tPrev != null && tDups++ < 5) O.println("[GT6-BUG030PROBE] ДУБЛЬ: " + tDesc);
+			}
+			O.println("[GT6-BUG030PROBE] дублей среди дисплеев=" + tDups + " (уникальных=" + tSeen.size() + ")");
+			// (2) реальный тултип найденного дисплея воды (канал креатива/JEI при наведении)
+			if (tWaterStack != null) bug030Tooltip("вода из вкладки", tWaterStack, O);
+			// (3) реальный тултип машинного дисплея (слот машины: FL.display(FluidStack,T,T) с объёмом)
+			bug030Tooltip("машинный дисплей 1000mB воды", gregapi.data.FL.display(gregapi.data.FL.Water.make(1000), T, T), O);
+			O.println("========== [GT6-BUG030PROBE] DONE ==========");
+		} catch (Throwable e) {O.println("[GT6-BUG030PROBE] EXC " + e); e.printStackTrace(O);}
+	}
+	private static void bug030Tooltip(String aName, net.minecraft.world.item.ItemStack aStack, java.io.PrintStream O) {
+		if (aStack == null || aStack.isEmpty()) {O.println("[GT6-BUG030PROBE] " + aName + ": стек ПУСТ => FAIL"); return;}
+		java.util.List<net.minecraft.network.chat.Component> tLines = aStack.getTooltipLines(
+			net.minecraft.world.item.Item.TooltipContext.of(Minecraft.getInstance().level), Minecraft.getInstance().player, net.minecraft.world.item.TooltipFlag.NORMAL);
+		boolean tTemp = false, tState = false;
+		StringBuilder tAll = new StringBuilder();
+		for (net.minecraft.network.chat.Component tLine : tLines) {
+			String s = tLine.getString(); tAll.append(" | ").append(s);
+			if (s.contains("K (")) tTemp = true;                       // температура «... K (...°C)» (addInformation:130)
+			if (s.contains("Liquid") || s.contains("Gas") || s.contains("Plasma")) tState = true; // состояние (:135-142)
+		}
+		O.println("[GT6-BUG030PROBE] тултип (" + aName + "): строк=" + tLines.size() + tAll);
+		O.println("[GT6-BUG030PROBE] (" + aName + ") => " + (tLines.size() >= 3 && tTemp && tState ? "PASS (объём/температура/состояние на месте)" : "FAIL (богатый тултип не построился)"));
+	}
+
 	// АВТОНОМНЫЙ вход в мир (переиспользуемый harness живых проб, гейт: файл run/wgautoworld.flag; вне флага НЕ активен):
 	// quickPlay упирается в диалог-подтверждение (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ
 	// создаём свежий CREATIVE-мир через штатный клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» →

@@ -70,6 +70,12 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		// call-site (GT_API.onModPreInit2: IL.Display_Fluid.set(GT_API.ITEMS.register(name, ItemFluidDisplay::new))), т.к.
 		// конструкция должна идти на RegisterEvent (intrusive-holder нужен открытый реестр), не в preInit. Иначе двойная регистрация.
 		if (ConfigsGT.CLIENT.get(ConfigCategories.visibility, "HiddenGTFluidDisplay", F)) gregapi.GT_API.deferItemInit(() -> ST.hide(this));
+		// BUG-030: в 1.7.10 предмет был БЕЗ вкладки, но NEI-панель перечисляла его getSubItems независимо от вкладок
+		// (жидкости находились поиском). В neo канал креатив-поиска И JEI-панели ингредиентов = содержимое вкладок —
+		// без членства перечисление недостижимо ниоткуда. Минимальный мост: вкладка Ingredients (маппинг tabMisc,
+		// как прочие GT6-ингредиенты); перечисление — восстановленным getSubItems ниже; конфиг HiddenGTFluidDisplay
+		// (ST.hide → фильтр ST.hidden в CreativeTabsGT) продолжает скрывать целиком.
+		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.MISC);
 		ItemsGT.DEBUG_ITEMS.add(this);
 		ItemsGT.ILLEGAL_DROPS.add(this);
 		GarbageGT.BLACKLIST.add(this);
@@ -296,11 +302,18 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 	// @Override
 	@SuppressWarnings("unchecked")
 	public void getSubItems(Item aItem, CreativeModeTab aTab, @SuppressWarnings("rawtypes") List aList) {
-		// PORT-TODO(F3/F5, FluidRegistry.getMaxID): 1.7.10 FluidRegistry.getMaxID() (плотный int-id проход) —
-		// 0 замены в 3 корнях (neo Registry не даёт плотного max-id). Цикл и так не давал наблюдаемого эффекта:
-		// FL.display(Fluid) — уже задокументированный PORT-TODO-стаб (FL.java:742, decisions/F5-fluids.md §6,
-		// "вне области этого переходника"), всегда возвращал null -> tStack всегда null -> aList.add никогда не
-		// вызывался. Поведение (0 добавленных предметов из этой ветки) не изменилось. Рендер/creative-tab = Фаза C.
+		// BUG-030: восстановлен 1.7.10-цикл перечисления жидкостей (оригинал :278-287). Тогда: плотный проход
+		// FluidRegistry.getMaxID() + FL.fluid(i); в neo реестр не плотный → живой проход по BuiltInRegistries.FLUID
+		// (тот же registry-канал, что уже работает в FL.id/FL.fluid; FL.display давно реален, стаба нет).
+		// Modern-особенность: у текучей жидкости ДВА реестровых объекта (source+flowing), 1.7.10 знал ОДИН Fluid
+		// на жидкость → перечисляем только source-вариант (иначе каждый дисплей задвоится). Гейт скрытых — тот же
+		// FluidsGT.HIDDEN по 1.7.10-имени (FL.regName = FluidGT.nameOf, аналог tFluid.getName()).
+		for (Fluid tFluid : net.minecraft.core.registries.BuiltInRegistries.FLUID) {
+			if (tFluid == net.minecraft.world.level.material.Fluids.EMPTY || !tFluid.defaultFluidState().isSource()) continue;
+			if (FluidsGT.HIDDEN.contains(FL.regName(tFluid))) continue;
+			ItemStack tStack = FL.display(tFluid);
+			if (tStack != null) aList.add(tStack);
+		}
 		for (String tName : UT.Books.BOOK_LIST) aList.add(ST.book(tName));
 	}
 	

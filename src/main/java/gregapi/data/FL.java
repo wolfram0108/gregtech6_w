@@ -733,7 +733,12 @@ public enum FL {
 	// Дисплей-стек жидкости для GUI-слотов (1:1): мета = fluid-id, NBT f/a/h/s. Стек ТРАНЗИЕНТНЫЙ — пересоздаётся
 	// каждый серверный тик и исключён из сейва (canSave у машин), поэтому нестабильность registry-id между запусками
 	// безвредна; ItemFluidDisplay уже читает жидкость из меты (FL.fluid(ST.meta_)) — канал парный.
-	public static ItemStack display(Fluid aFluid) {return aFluid == null ? null : display(make(aFluid, 0), F, F, T);}
+	// BUG-030 (контракт-шов класса F15, но для жидкостей): 1.7.10 FluidStack с amount=0 легально НОСИЛ тип жидкости
+	// (идиома дисплея); neo FluidStack.typeHolder() при amount<=0 возвращает Fluids.EMPTY (FluidStack.java:233-235,
+	// isEmpty-нормализация) → make(aFluid,0) стирал тип → ВСЕ дисплеи перечисления схлопывались в один «empty»
+	// (meta=0, f=empty) и валили вкладку дублем. Носитель типа — amount=1; display-объём передаём явно 0 (NBT «a»
+	// не пишется, aAmount!=0-гейт ниже) — выход побайтово тот же, что у 1.7.10 display(Fluid).
+	public static ItemStack display(Fluid aFluid) {return aFluid == null ? null : display(make(aFluid, 1), 0, F, F, T);}
 	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize) {return display(aFluid, aUseStackSize, aLimitStackSize, T);}
 	public static ItemStack display(FluidStack aFluid, boolean aUseStackSize, boolean aLimitStackSize, boolean aUseBucketSize) {return display(aFluid, aFluid == null ? 0 : aFluid.getAmount(), aUseStackSize, aLimitStackSize, aUseBucketSize);}
 	public static ItemStack display(FluidTankGT aTank, boolean aUseStackSize, boolean aLimitStackSize) {return display(aTank.getFluid(), aTank.amount(), aUseStackSize, aLimitStackSize);}

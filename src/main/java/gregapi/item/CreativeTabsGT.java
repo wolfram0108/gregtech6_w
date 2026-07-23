@@ -180,21 +180,29 @@ public final class CreativeTabsGT {
 	 *  каждого предмета вкладки). */
 	static void populate(List<Item> aMembers, CreativeModeTab aTab, CreativeModeTab.Output aOutput) {
 		if (aMembers == null) return;
+		// BUG-030: ванильный сеттер вкладки КИДАЕТСЯ на дубле (IllegalArgumentException «already exists») и обрывал
+		// ВСЁ наполнение; 1.7.10-канал (NEI getSubItems) дубли терпел. Дедуп той же идентичностью, что у вкладки
+		// (ItemStackLinkedSet.TYPE_AND_TAG:9 — item+компоненты), ДО accept — остальные стеки доезжают.
+		java.util.Set<ItemStack> tSeen = net.minecraft.world.item.ItemStackLinkedSet.createTypeAndComponentsSet();
 		for (Item tItem : aMembers) try {
 			// BUG-010: ST.hidden — центральная замена мёртвого NEI-канала ST.hide (скрытые слэб-варианты и пр.)
-			for (ItemStack tStack : enumerate(tItem, tItem, aTab)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack)) aOutput.accept(tStack);
+			for (ItemStack tStack : enumerate(tItem, tItem, aTab)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack) && tSeen.add(tStack)) aOutput.accept(tStack);
 		} catch (Throwable e) {/* boot-safe */}
 	}
 
 	private static void onBuildContents(BuildCreativeModeTabContentsEvent aEvent) {
+		// BUG-030: дедуп идентичностью вкладки (см. populate) — дубль между/внутри назначений ронял всё наполнение вкладки.
+		java.util.Set<ItemStack> tSeen = net.minecraft.world.item.ItemStackLinkedSet.createTypeAndComponentsSet();
 		for (Object[] tA : ASSIGNMENTS) {
 			if (!tA[1].equals(aEvent.getTabKey())) continue;
 			try {
 				ItemLike tOwner = (ItemLike)tA[0];
 				Item tItem = tOwner.asItem();
 				if (tItem == null || tItem == Items.AIR) continue;
-				for (ItemStack tStack : enumerate(tOwner, tItem, null)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack)) aEvent.accept(tStack); // BUG-010: фильтр скрытых (ST.hide)
-			} catch (Throwable e) {/* boot-safe: сбой одного назначения не рушит загрузку вкладок */}
+				int tAccepted = 0; // [GT6-BUG030PROBE] DIAG-счётчик — снять при уборке фазы
+				for (ItemStack tStack : enumerate(tOwner, tItem, null)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack) && tSeen.add(tStack)) {aEvent.accept(tStack); tAccepted++;} // BUG-010: фильтр скрытых (ST.hide)
+				if (gregapi.data.CS.probeFlag("gt6bug030probe.flag") && tItem instanceof gregapi.item.ItemFluidDisplay) gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] onBuildContents(" + aEvent.getTabKey() + "): FluidDisplay принято " + tAccepted); // [GT6-BUG030PROBE] снять при уборке фазы
+			} catch (Throwable e) {if (gregapi.data.CS.probeFlag("gt6bug030probe.flag")) {gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] onBuildContents УПАЛ на " + tA[0].getClass().getSimpleName() + ": " + e);} /* boot-safe: сбой одного назначения не рушит загрузку вкладок */}
 		}
 	}
 
@@ -225,6 +233,15 @@ public final class CreativeTabsGT {
 				try { tReal = tTool.getToolWithStats(gregapi.util.ST.meta_(tTemplate), 1, gregapi.data.MT.Steel, gregapi.data.MT.Steel); } catch (Throwable e) {/* boot-safe */}
 				tList.add(tReal != null && !tReal.isEmpty() ? tReal : tTemplate);
 			}
+			if (tList.isEmpty()) tList.add(new ItemStack(aItem));
+			return tList;
+		}
+		// BUG-030: та же ловушка stripped-compat, что у MTE выше — ItemFluidDisplay несёт 1.7.10-интерфейс
+		// IFluidContainerItem → getMethod молча падает NoClassDefFoundError → вместо 679 дисплеев жидкостей
+		// вкладка получала один базовый стек. Прямой virtual-вызов интерфейсы не резолвит.
+		if (aItem instanceof gregapi.item.ItemFluidDisplay tFluidDisplay) {
+			try { tFluidDisplay.getSubItems(aItem, aTab, tList); } catch (Throwable e) {if (gregapi.data.CS.probeFlag("gt6bug030probe.flag")) {gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] enumerate(FluidDisplay) УПАЛ: " + e); e.printStackTrace(gregapi.data.CS.OUT);}} // [GT6-BUG030PROBE] DIAG — снять при уборке фазы
+			if (gregapi.data.CS.probeFlag("gt6bug030probe.flag")) gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] enumerate(FluidDisplay): " + tList.size() + " стеков"); // [GT6-BUG030PROBE] снять при уборке фазы
 			if (tList.isEmpty()) tList.add(new ItemStack(aItem));
 			return tList;
 		}
