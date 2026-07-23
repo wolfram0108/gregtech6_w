@@ -364,10 +364,8 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	}
 	private boolean bridgeBlockActivated(Level aWorld, BlockPos aPos, Player aPlayer, net.minecraft.world.phys.BlockHitResult aHit) {
 		net.minecraft.world.phys.Vec3 tHitVec = aHit.getLocation();
-		boolean rResult = onBlockActivated(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer, aHit.getDirection().get3DDataValue(),
+		return onBlockActivated(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), aPlayer, aHit.getDirection().get3DDataValue(),
 			(float)(tHitVec.x - aPos.getX()), (float)(tHitVec.y - aPos.getY()), (float)(tHitVec.z - aPos.getZ()));
-		if (gregapi.data.CS.probeFlag("gt6bug032probe.flag")) gregapi.data.CS.OUT.println("[GT6-BUG032PROBE][DIAG] bridgeBlockActivated " + (aWorld.isClientSide() ? "CLIENT" : "SERVER") + " side=" + aHit.getDirection().get3DDataValue() + " -> consume=" + rResult); // [GT6-BUG032PROBE] снять при уборке фазы
-		return rResult;
 	}
 
 	public final boolean onBlockActivated(Level aWorld, int aX, int aY, int aZ, Player aPlayer, int aSide, float aHitX, float aHitY, float aHitZ) {BlockEntity aTileEntity = WD.te(aWorld, aX, aY, aZ, T); if (aPlayer != null && IL.TC_Thaumometer.equal(aPlayer.getMainHandItem(), T, T) && (!(aTileEntity instanceof ITileEntityBookShelf) || !((ITileEntityBookShelf)aTileEntity).isShelfFace(UT.Code.side(aSide)))) return F; return aTileEntity instanceof IMTE_OnBlockActivated && ((IMTE_OnBlockActivated)aTileEntity).onBlockActivated(aPlayer, UT.Code.side(aSide), aHitX, aHitY, aHitZ);}

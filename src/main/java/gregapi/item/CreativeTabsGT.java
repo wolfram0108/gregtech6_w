@@ -199,10 +199,8 @@ public final class CreativeTabsGT {
 				ItemLike tOwner = (ItemLike)tA[0];
 				Item tItem = tOwner.asItem();
 				if (tItem == null || tItem == Items.AIR) continue;
-				int tAccepted = 0; // [GT6-BUG030PROBE] DIAG-счётчик — снять при уборке фазы
-				for (ItemStack tStack : enumerate(tOwner, tItem, null)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack) && tSeen.add(tStack)) {aEvent.accept(tStack); tAccepted++;} // BUG-010: фильтр скрытых (ST.hide)
-				if (gregapi.data.CS.probeFlag("gt6bug030probe.flag") && tItem instanceof gregapi.item.ItemFluidDisplay) gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] onBuildContents(" + aEvent.getTabKey() + "): FluidDisplay принято " + tAccepted); // [GT6-BUG030PROBE] снять при уборке фазы
-			} catch (Throwable e) {if (gregapi.data.CS.probeFlag("gt6bug030probe.flag")) {gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] onBuildContents УПАЛ на " + tA[0].getClass().getSimpleName() + ": " + e);} /* boot-safe: сбой одного назначения не рушит загрузку вкладок */}
+				for (ItemStack tStack : enumerate(tOwner, tItem, null)) if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack) && tSeen.add(tStack)) aEvent.accept(tStack); // BUG-010: фильтр скрытых (ST.hide)
+			} catch (Throwable e) {/* boot-safe: сбой одного назначения не рушит загрузку вкладок */}
 		}
 	}
 
@@ -240,8 +238,7 @@ public final class CreativeTabsGT {
 		// IFluidContainerItem → getMethod молча падает NoClassDefFoundError → вместо 679 дисплеев жидкостей
 		// вкладка получала один базовый стек. Прямой virtual-вызов интерфейсы не резолвит.
 		if (aItem instanceof gregapi.item.ItemFluidDisplay tFluidDisplay) {
-			try { tFluidDisplay.getSubItems(aItem, aTab, tList); } catch (Throwable e) {if (gregapi.data.CS.probeFlag("gt6bug030probe.flag")) {gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] enumerate(FluidDisplay) УПАЛ: " + e); e.printStackTrace(gregapi.data.CS.OUT);}} // [GT6-BUG030PROBE] DIAG — снять при уборке фазы
-			if (gregapi.data.CS.probeFlag("gt6bug030probe.flag")) gregapi.data.CS.OUT.println("[GT6-BUG030PROBE][DIAG] enumerate(FluidDisplay): " + tList.size() + " стеков"); // [GT6-BUG030PROBE] снять при уборке фазы
+			try { tFluidDisplay.getSubItems(aItem, aTab, tList); } catch (Throwable e) {/* boot-safe */}
 			if (tList.isEmpty()) tList.add(new ItemStack(aItem));
 			return tList;
 		}

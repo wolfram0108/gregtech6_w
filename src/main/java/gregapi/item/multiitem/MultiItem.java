@@ -203,7 +203,6 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	
 	// @Override
 	public boolean onItemUseFirst(ItemStack aStack, Player aPlayer, Level aWorld, int aX, int aY, int aZ, int aSide, float hitX, float hitY, float hitZ) {
-		if (gregapi.data.CS.probeFlag("gt6bug032probe.flag")) gregapi.data.CS.OUT.println("[GT6-BUG032PROBE][DIAG] MultiItem.onItemUseFirst " + (aWorld.isClientSide() ? "CLIENT" : "SERVER") + " side=" + aSide + " hit=(" + hitX + "," + hitY + "," + hitZ + ") behaviors=" + (mItemBehaviors.get(ST.meta_(aStack)) == null ? "null" : mItemBehaviors.get(ST.meta_(aStack)).size())); // [GT6-BUG032PROBE] снять при уборке фазы
 		if (MD.BbLC.owns(aWorld, aX, aY, aZ)) return F;
 		if (!aWorld.isClientSide()) useEnergy(TD.Energy.EU, aStack, 0, aPlayer, null, null, 0, 0, 0, T);
 		if (!isItemStackUsable(aStack)) return F;
