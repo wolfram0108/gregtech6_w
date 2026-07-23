@@ -97,6 +97,14 @@ public class GT6BlockModel implements DynamicBlockStateModel {
 			if (!tCrackQB.isEmpty()) aParts.add(new SimpleModelWrapper(tCrackQB.build(), true, mParticle));
 			return;
 		}
+		// F3-render рельсы: BlockBaseRail наследует vanilla BaseRailBlock (НЕ IRenderedBlock) — плоский рельс-quad по мете
+		// (1:1 vanilla renderBlockRail), форма/иконка из меты. Отдельная ветка, минуя box-цепочку IRenderedBlock ниже.
+		if (aState.getBlock() instanceof gregapi.block.misc.BlockBaseRail tRail) {
+			GT6QuadBuilder tRailQB = new GT6QuadBuilder();
+			RailRenderer.collectRailQuads(tRailQB, aLevel, aPos.getX(), aPos.getY(), aPos.getZ(), tRail);
+			if (!tRailQB.isEmpty()) aParts.add(new SimpleModelWrapper(tRailQB.build(), true, mParticle));
+			return;
+		}
 		if (!(aState.getBlock() instanceof IRenderedBlock tRB)) return;
 		Block tBlock = aState.getBlock();
 		int tX = aPos.getX(), tY = aPos.getY(), tZ = aPos.getZ();

@@ -59,7 +59,11 @@ public class GT6ItemModel implements ItemModel {
 			// ЦЕНТР item-рендера, воспроизводит RendererBlockTextured.renderInventoryBlock (референс): предмет-БЛОК → 3D-геометрия блока
 			// (canonical-TE/block-level, buildInventoryQuads); предмет-ПРЕДМЕТ (материал/MultiItem) → плоские иконки ПО РЕНДЕР-ПАССАМ с
 			// per-pass тинтом (getColorFromItemStack) — как ванильный мульти-пасс item-icon (PrefixItem: 2 пасса, pass0 тинт материала).
-			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
+			if (tItem instanceof net.minecraft.world.item.BlockItem tRailBI && tRailBI.getBlock() instanceof gregapi.block.misc.BlockBaseRail tRail) {
+				// Рельс — block-item без IRenderedBlock: flat-путь его иконку не резолвит (getIconIndex у ItemBlockBase нет).
+				// Рисуем плоскую straight-иконку рельса (мета 0) напрямую, как ванильный item рельса.
+				renderRailItem(aOutput, tRail, aCtx);
+			} else if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
 				renderBlockInventory(aOutput, aItem, tBI.getBlock(), aCtx);
 			} else {
 				renderFlatItem(aOutput, aItem, tItem, aCtx);
@@ -117,6 +121,25 @@ public class GT6ItemModel implements ItemModel {
 		tLayer.prepareQuadList().addAll(tBuilt);
 		tLayer.setUsesBlockLight(true);
 		try { tLayer.setParticleMaterial(new Material.Baked(tBuilt.get(0).materialInfo().sprite(), false)); } catch (Throwable e) {}
+	}
+
+	/** Рельс в инвентаре: плоская straight-иконка (мета 0, primary) — как ванильный item рельса. Иконка рельса в BLOCKS-атласе
+	 *  (iconsets/rail_*), потому резолв ITEMS→BLOCKS. Переиспользует flat-геометрию (front+back + боковой ободок BUG-031). */
+	private static void renderRailItem(ItemStackRenderState aOutput, gregapi.block.misc.BlockBaseRail aRail, ItemDisplayContext aCtx) {
+		Identifier tIcon = aRail.getIcon(0, 0);
+		if (tIcon == null) return;
+		TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
+		if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
+		if (tSprite == null) return;
+		aOutput.appendModelIdentityElement(tSprite.contents().name());
+		if (tSprite.contents().isAnimated()) aOutput.setAnimated();
+		ItemStackRenderState.LayerRenderState tLayer = aOutput.newLayer();
+		tLayer.setUsesBlockLight(false); // плоский предмет — full-bright (эталон ItemModelGenerator/GuiLight.FRONT)
+		List<BakedQuad> tQuads = tLayer.prepareQuadList();
+		tQuads.add(flatFace(tSprite, true, -1));
+		tQuads.add(flatFace(tSprite, false, -1));
+		addSideQuads(tQuads, tSprite, -1);
+		tLayer.setParticleMaterial(new Material.Baked(tSprite, false));
 	}
 
 	/** Предмет-ПРЕДМЕТ (материал/MultiItem): по РЕНДЕР-ПАССАМ getIcon(stack,pass) + тинт getColorFromItemStack(stack,pass). */

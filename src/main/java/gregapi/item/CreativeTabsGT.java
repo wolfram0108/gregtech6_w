@@ -167,9 +167,28 @@ public final class CreativeTabsGT {
 		createShellsFromCache(); // F16-shell: вкладки server-start-генератора (MTE) поднимаются из кэша ДО заморозки реестра
 		for (java.util.Map.Entry<String, CreativeTab> tE : OWN_TABS.entrySet()) try {
 			final CreativeTab tTab = tE.getValue();
+			// Гигиена (JEI «Item Group has no display items»): не регистрируем ЗАВЕДОМО пустую вкладку — Bumblebees
+			// (SHOW_BUMBLEBEES=F → все члены ST.hide, WIP-контент 1:1 с Грегом) и Impure Dusts (dustImpure без материалов
+			// DIRTY_DUSTS → 0 вариантов). Скрываем ТОЛЬКО когда у вкладки ЕСТЬ члены, но все дают hidden/empty (isTabEmpty);
+			// MTE-шеллы (члены доливаются на server-start, тут ещё пусты) НЕ трогаем. 1:1-семантика: вкладка появится,
+			// как только у неё будет хоть один нескрытый предмет.
+			if (isTabEmpty(tE.getKey())) continue;
 			aEvent.register(net.minecraft.core.registries.Registries.CREATIVE_MODE_TAB,
 				net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(tE.getKey())), () -> tTab);
 		} catch (Throwable e) {/* boot-safe: сбой одной вкладки не рушит загрузку */}
+	}
+
+	/** Вкладка ЗАВЕДОМО пуста: у неё ЕСТЬ члены, но ни один не даёт нескрытого варианта (populate-фильтр 1:1) —
+	 *  Bumblebees (все ST.hide), Impure Dusts (0 вариантов dustImpure). Пустой список членов = MTE-шелл (члены
+	 *  доливаются на server-start) → считаем НЕ пустой (не скрываем, иначе потеряем машинные вкладки). */
+	private static boolean isTabEmpty(String aName) {
+		List<Item> tMembers = OWN_TAB_MEMBERS.get(aName);
+		if (tMembers == null || tMembers.isEmpty()) return false; // шелл/нет членов — наполнится позже, не скрываем
+		for (Item tItem : tMembers) try {
+			for (ItemStack tStack : enumerate(tItem, tItem, null))
+				if (tStack != null && !tStack.isEmpty() && !gregapi.util.ST.hidden(tStack)) return false;
+		} catch (Throwable e) {return false;/* сбой перечисления → «не пусто», не скрываем ошибочно */}
+		return true;
 	}
 
 	/** F16: наполнение собственной GT-вкладки (client-only, из displayItems-генератора). Перечисляет getSubItems ВСЕХ членов

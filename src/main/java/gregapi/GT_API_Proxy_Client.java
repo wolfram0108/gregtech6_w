@@ -272,7 +272,8 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		java.util.Map<net.minecraft.world.level.block.state.BlockState, net.minecraft.client.renderer.block.dispatch.BlockStateModel> tMap = aEvent.getBakingResult().blockStateModels();
 		int tCount = 0;
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-			if (!(tBlock instanceof gregapi.render.IRenderedBlock)) continue;
+			// GT6BlockModel — и IRenderedBlock, и BlockBaseRail (рельсы: своя рельс-ветка в collectParts, плоский quad по мете).
+			if (!(tBlock instanceof gregapi.render.IRenderedBlock) && !(tBlock instanceof gregapi.block.misc.BlockBaseRail)) continue;
 			// per-БЛОК инстанс (не общий): модель обязана знать владельца для breaking-пути движка
 			// (тот зовёт collectParts с AIR-state — форма трещин иначе неведома; GT6BlockModel.mOwner).
 			gregapi.render.GT6BlockModel tModel = new gregapi.render.GT6BlockModel(tParticle, tBlock);
@@ -288,11 +289,26 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			net.minecraft.resources.Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null || !isGregNamespace(tKey.getNamespace())) continue;
-			// block-предмет инжектим только если его блок — IRenderedBlock (иначе оставляем дефолтную модель блока).
-			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && !(tBI.getBlock() instanceof gregapi.render.IRenderedBlock)) continue;
+			// block-предмет инжектим, если его блок — IRenderedBlock ИЛИ рельс (BlockBaseRail: GT6ItemModel рисует ему плоскую
+			// straight-иконку); прочие block-предметы оставляем дефолтной модели блока.
+			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && !(tBI.getBlock() instanceof gregapi.render.IRenderedBlock) && !(tBI.getBlock() instanceof gregapi.block.misc.BlockBaseRail)) continue;
 			tItemMap.put(tKey, tItemModel); tItemCount++;
 		}
-		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states, GT6ItemModel into " + tItemCount + " items.");
+		// Гигиена («Missing model for variant»): GT6-блоки с RenderShape.INVISIBLE (fluid-блоки river/ocean/swamp — сам блок
+		// невидим 1:1 к vanilla LiquidBlock, вода рисуется FluidState/F5-подсистемой) не имеют baked-модели → ModelManager сыпал
+		// предупреждение на КАЖДЫЙ их BlockState-вариант (48 шт). Кладём пустую модель (тот же GT6BlockModel: для не-IRenderedBlock
+		// collectParts отдаёт пусто) — движок находит модель, предупреждение уходит; визуал не меняется (блок и так INVISIBLE).
+		gregapi.render.GT6BlockModel tEmptyModel = new gregapi.render.GT6BlockModel(tParticle);
+		int tEmptyCount = 0;
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tBKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tBKey == null || !isGregNamespace(tBKey.getNamespace())) continue;
+			for (net.minecraft.world.level.block.state.BlockState tState : tBlock.getStateDefinition().getPossibleStates()) {
+				if (tMap.containsKey(tState) || tState.getRenderShape() != net.minecraft.world.level.block.RenderShape.INVISIBLE) continue;
+				tMap.put(tState, tEmptyModel); tEmptyCount++;
+			}
+		}
+		gregapi.data.CS.OUT.println("[GT6] F3-render: GT6BlockModel injected into " + tCount + " block-states, GT6ItemModel into " + tItemCount + " items, " + tEmptyCount + " invisible-block placeholders.");
 	}
 
 	private static boolean isGregNamespace(String aNs) {
