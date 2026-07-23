@@ -233,63 +233,6 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		aFile.delete();
 	}
 
-	// ═══ [GT6-BUG028PROBE] проба: полоска прочности/заряда — GUI-only? (снять при уборке фазы; гейт gt6bug028probe.flag). ═══
-	// Гонит РЕАЛЬНЫЙ вход движка GT6ItemModel.update() (тот, что зовёт движок для КАЖДОГО контекста показа) на настоящих
-	// материал'ных инструментах в GUI против THIRD/FIRST_PERSON/GROUND и считает слои render-state (activeLayerCount): бар-пассы
-	// (DURABILITY_BAR/ENERGY_BAR) должны быть в GUI и сняты в мире, база модели — жива везде. Судья механический; финал — глаз игрока.
-	private boolean mBug028Probed = false;
-	@net.neoforged.bus.api.SubscribeEvent
-	public void onBug028Probe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if (mBug028Probed) return;
-		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
-		if (tMC.level == null || tMC.player == null) return;         // ждём загрузки мира: атлас испечён, бар-иконки резолвятся
-		if (!gregapi.data.CS.probeFlag("gt6bug028probe.flag")) return;
-		mBug028Probed = true;
-		try {
-			gregapi.data.CS.OUT.println("[GT6-BUG028PROBE] === старт: полоска прочности/заряда — GUI-only? ===");
-			// Статический судья: центральный бар-реестр (DURABILITY_BAR ∪ ENERGY_BAR), на который опирается мост, резолвится полностью.
-			int tExpected = gregapi.old.Textures.ItemIcons.DURABILITY_BAR.length + gregapi.old.Textures.ItemIcons.ENERGY_BAR.length;
-			int tRegSize = bug028BarRegistry().size();
-			gregapi.data.CS.OUT.println("[GT6-BUG028PROBE] бар-реестр: " + tRegSize + "/" + tExpected + " иконок " + (tRegSize >= tExpected ? "PASS" : "FAIL(иконки не резолвнулись?)"));
-			gregapi.item.multiitem.MultiItemTool tMeta = gregapi.data.CS.ToolsGT.sMetaTool;
-			if (tMeta == null) { gregapi.data.CS.OUT.println("[GT6-BUG028PROBE] sMetaTool==null — пропуск"); return; }
-			net.minecraft.world.item.ItemStack tHammer = tMeta.getToolWithStats(gregapi.data.CS.ToolsGT.HARDHAMMER, 1, gregapi.data.MT.Steel, gregapi.data.MT.Steel);
-			net.minecraft.world.item.ItemStack tDrill  = tMeta.getToolWithStats(gregapi.data.CS.ToolsGT.MININGDRILL_LV, 1, gregapi.data.MT.Steel, gregapi.data.MT.Steel, 100000L, 32L, 50000L);
-			bug028ProbeOne("молот(durability)", tHammer, tMeta);
-			bug028ProbeOne("бур-LV(energy+durability)", tDrill, tMeta);
-			gregapi.data.CS.OUT.println("[GT6-BUG028PROBE] === конец ===");
-		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-BUG028PROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
-	}
-	private static java.util.Set<net.minecraft.resources.Identifier> bug028BarRegistry() {
-		java.util.HashSet<net.minecraft.resources.Identifier> tReg = new java.util.HashSet<>();
-		for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.DURABILITY_BAR) { net.minecraft.resources.Identifier i = c.getIcon(0); if (i != null) tReg.add(i); }
-		for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.ENERGY_BAR)     { net.minecraft.resources.Identifier i = c.getIcon(0); if (i != null) tReg.add(i); }
-		return tReg;
-	}
-	private void bug028ProbeOne(String aLabel, net.minecraft.world.item.ItemStack aStack, gregapi.item.multiitem.MultiItemTool aMeta) {
-		try {
-			java.util.Set<net.minecraft.resources.Identifier> tReg = bug028BarRegistry();
-			int tPasses = aMeta.getRenderPasses((int) gregapi.util.ST.meta_(aStack));
-			int tBarPasses = 0; StringBuilder tIcons = new StringBuilder();
-			for (int p = 0; p < tPasses; p++) { net.minecraft.resources.Identifier ic = aMeta.getIcon(aStack, p); tIcons.append(p).append(':').append(ic == null ? "null" : ic.getPath()).append(' '); if (ic != null && tReg.contains(ic)) tBarPasses++; }
-			int tGui    = bug028CountLayers(aStack, net.minecraft.world.item.ItemDisplayContext.GUI);
-			int tThird  = bug028CountLayers(aStack, net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND);
-			int tFirst  = bug028CountLayers(aStack, net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND);
-			int tGround = bug028CountLayers(aStack, net.minecraft.world.item.ItemDisplayContext.GROUND);
-			boolean tPass = tBarPasses > 0 && tGui > tThird && tThird >= 1 && tThird == tFirst && tThird == tGround;
-			gregapi.data.CS.OUT.println("[GT6-BUG028PROBE] " + aLabel + ": пассы=[" + tIcons.toString().trim() + "] бар-пассов=" + tBarPasses
-				+ " | слои GUI=" + tGui + " THIRD=" + tThird + " FIRST=" + tFirst + " GROUND=" + tGround
-				+ " | " + (tPass ? "PASS (бар в GUI, снят в мире, база жива)" : "FAIL"));
-		} catch (Throwable e) { gregapi.data.CS.OUT.println("[GT6-BUG028PROBE] " + aLabel + " упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); }
-	}
-	private static int bug028CountLayers(net.minecraft.world.item.ItemStack aStack, net.minecraft.world.item.ItemDisplayContext aCtx) throws Exception {
-		net.minecraft.client.renderer.item.ItemStackRenderState tState = new net.minecraft.client.renderer.item.ItemStackRenderState();
-		new gregapi.render.GT6ItemModel().update(tState, aStack, null, aCtx, null, null, 0); // resolver/level/owner не используются update()
-		java.lang.reflect.Field tF = net.minecraft.client.renderer.item.ItemStackRenderState.class.getDeclaredField("activeLayerCount");
-		tF.setAccessible(true);
-		return tF.getInt(tState);
-	}
-
 	// F5/F3-render (client): единый динамический FluidModel ВСЕМ GT6-жидкостям (замена «Missing FluidModel» на реальный
 	// рендер). GT6-жидкость = still/flow-текстура (mTexture, IIconContainer) + цвет (mRGBa, тинтит серый молтен). neo 26
 	// рендерит жидкости через FluidModel.Unbaked(still, flow, overlay, tintSource) на RegisterFluidModelsEvent (mod-bus).
