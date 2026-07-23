@@ -457,8 +457,48 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				long tAmount = tGot == null ? 0 : tGot.getAmount();
 				O.println("[GT6-BUG045PROBE] DRINK-замер: рука=" + tJugW + " жидкость=" + tGot + " food=" + tPlayer.getFoodData().getFoodLevel() + " isUsing=" + tPlayer.isUsingItem());
 				b45Verdict(tAmount == 750, "DRINK", "выпито 250mB из 1000 (осталось " + tAmount + ", ожидание 750)");
+			// ---- Матрица репорта «сок не пьётся» (production, jar 20:30): сок голодным / сок сытым / ключи реестра ----
+			} else if (sB45Tick == 510) {
+				// Подготовка (шов §2.3): свежий кувшин + FL.Juice 2000mB через восстановленный контракт; печать гейт-ключей.
+				ItemStack tJugJ = tRegistry.getItem(32740);
+				((net.minecraftforge.fluids.IFluidContainerItem)tJugJ.getItem()).fill(tJugJ, FL.Juice.make(2000), T);
+				tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.getInventory().setItem(0, tJugJ);
+				tPlayer.getFoodData().setFoodLevel(10);
+				FluidStack tIn = FL.getFluid(tJugJ, T);
+				String tKey = tIn == null ? "null" : FL.regName(tIn.getFluid());
+				java.util.Iterator<String> tIt = gregapi.data.CS.DrinksGT.REGISTER.keySet().iterator();
+				String tSample = ""; for (int i = 0; i < 3 && tIt.hasNext(); i++) tSample += tIt.next() + " | ";
+				O.println("[GT6-BUG045PROBE] JUICE-гейт: кувшин=" + tIn + " ключ-жидкости='" + tKey + "' REGISTER.size=" + gregapi.data.CS.DrinksGT.REGISTER.size()
+					+ " containsKey(ключ)=" + gregapi.data.CS.DrinksGT.REGISTER.containsKey(tKey)
+					+ " containsKey(water)=" + gregapi.data.CS.DrinksGT.REGISTER.containsKey("water")
+					+ " sample=[" + tSample + "]");
+			} else if (sB45Tick == 520) {
+				tPlayer.teleportTo(tLevel, sB45Pos.getX() + 2.5, sB45Pos.getY(), sB45Pos.getZ() + 0.5, java.util.Set.of(), 0, -85, true);
+				tPlayer.setXRot(-85);
+				B45_DRINK_SIGNAL = 1; // клик#2: сок, голодный
+			} else if (sB45Tick == 575) {
+				B45_DRINK_SIGNAL = 3;
+			} else if (sB45Tick == 580) {
+				ItemStack tJugJ = tPlayer.getInventory().getItem(0);
+				FluidStack tGot = FL.getFluid(tJugJ, T);
+				long tAmount = tGot == null ? 0 : tGot.getAmount();
+				O.println("[GT6-BUG045PROBE] JUICE-HUNGRY-замер: рука=" + tJugJ + " жидкость=" + tGot + " food=" + tPlayer.getFoodData().getFoodLevel());
+				b45Verdict(tAmount == 1750, "JUICE-HUNGRY", "сок выпит голодным (осталось " + tAmount + ", ожидание 1750)");
+			} else if (sB45Tick == 600) {
+				tPlayer.getFoodData().setFoodLevel(20); // сытый
+				B45_DRINK_SIGNAL = 1; // клик#3: сок, сытый
+			} else if (sB45Tick == 615) {
+				O.println("[GT6-BUG045PROBE] JUICE-SATED-ход: isUsingItem=" + tPlayer.isUsingItem() + " (ожидание false — гейт needsFood, сок не alwaysEdible)");
+				B45_DRINK_SIGNAL = 3;
+			} else if (sB45Tick == 660) {
+				ItemStack tJugJ = tPlayer.getInventory().getItem(0);
+				FluidStack tGot = FL.getFluid(tJugJ, T);
+				long tAmount = tGot == null ? 0 : tGot.getAmount();
+				O.println("[GT6-BUG045PROBE] JUICE-SATED-замер: жидкость=" + tGot + " food=" + tPlayer.getFoodData().getFoodLevel());
+				b45Verdict(tAmount == 1750, "JUICE-SATED-GATE", "сытым сок НЕ пьётся — 1:1-гейт needsFood (осталось " + tAmount + ", ожидание 1750 без убыли)");
 				O.println("========== [GT6-BUG045PROBE] DONE: PASS=" + sB45Pass + " FAIL=" + sB45Fail + " ==========");
-			} else if (sB45Tick > 490 && sB45Tick % 200 == 0 && sB45Tick <= 2000) {
+			} else if (sB45Tick > 660 && sB45Tick % 200 == 0 && sB45Tick <= 2000) {
 				O.println("[GT6-BUG045PROBE] heartbeat: сервер жив, тик " + sB45Tick); // §6.4
 			}
 		} catch (Throwable e) {O.println("[GT6-BUG045PROBE] EXC " + e); e.printStackTrace(O);}
