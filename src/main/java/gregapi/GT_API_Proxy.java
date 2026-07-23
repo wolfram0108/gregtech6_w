@@ -340,6 +340,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
+				if (gregapi.data.CS.probeFlag("gt6bug047probe.flag")) gt6Bug047ProbeTick(aEvent.getServer()); // [GT6-BUG047PROBE] BUG-047 — снять при уборке фазы
+
 				if (SERVER_TIME++ == 0) {
 					// Initial Save Data check
 					// DimensionManager неo-эквивалента не имеет (см. onWorldLoad выше) — реальный путь через сам ServerTickEvent.
@@ -644,6 +646,28 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (TICK_LOCK.isHeldByCurrentThread()) TICK_LOCK.unlock();
 			}
 		}
+	}
+
+	// [BUG-047] F-hook-removed → центральный мост: 1.7.10 Forge-хуки BlockRailBase.onMinecartPass/getRailMaxSpeed
+	// ВЫРЕЗАНЫ из NeoForge 26.1.2 (extensions-каталог: только IBaseRailBlockExtension — isFlexibleRail/canMakeSlopes/
+	// getRailDirection/isValidRailShape; клапан скорости захардкожен OldMinecartBehavior.getMaxSpeed:410-411 = 0.4,
+	// буст движок читает ТОЛЬКО с instanceof PoweredRailBlock — OldMinecartBehavior:115-116). Мост: EntityTickEvent.Post =
+	// раз в тик на сущность ПОСЛЕ движения — та же фаза, что 1.7.10 хвост EntityMinecart.func_145821_a (вызывал
+	// onMinecartPass после moveAlongTrack); позиция рельса — getCurrentBlockPosOrRailBelow (канал самого движка).
+	// getRailMaxSpeed-кламп восстанавливает per-rail скорости (медленные Al 0.2/Bronze 0.3 — 1:1).
+	// PORT-TODO(F-hook-removed): скорости рельсов ВЫШЕ движковых 0.4 (Ti 1.2 … Adamantium 4.0) недостижимы —
+	// кламп СМЕЩЕНИЯ захардкожен внутри OldMinecartBehavior.moveAlongTrack:208-211 (getMaxSpeed:410 = 0.4),
+	// per-rail переопределения в 26.1.2 нет; поднять при появлении хука/решении о патче. Реестр: DEFERRED-LEDGER.
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onMinecartPassBridge(EntityTickEvent.Post aEvent) {
+		if (!(aEvent.getEntity() instanceof net.minecraft.world.entity.vehicle.minecart.AbstractMinecart tCart) || tCart.level().isClientSide()) return;
+		BlockPos tRailPos = tCart.getCurrentBlockPosOrRailBelow();
+		if (!(WD.block(tCart.level(), tRailPos.getX(), tRailPos.getY(), tRailPos.getZ()) instanceof gregapi.block.misc.BlockBaseRail tRail)) return;
+		tRail.onMinecartPass(tCart.level(), tCart, tRailPos.getX(), tRailPos.getY(), tRailPos.getZ());
+		float tMax = tRail.getRailMaxSpeed(tCart.level(), tCart, tRailPos.getX(), tRailPos.getY(), tRailPos.getZ());
+		net.minecraft.world.phys.Vec3 tCartMotion = tCart.getDeltaMovement();
+		if (Math.abs(tCartMotion.x) > tMax || Math.abs(tCartMotion.z) > tMax)
+			tCart.setDeltaMovement(net.minecraft.util.Mth.clamp(tCartMotion.x, -tMax, tMax), tCartMotion.y, net.minecraft.util.Mth.clamp(tCartMotion.z, -tMax, tMax));
 	}
 
 	// Было @SubscribeEvent onLivingUpdate(LivingUpdateEvent) — LivingUpdateEvent (net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent,
@@ -1915,6 +1939,226 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 		// return at most 160 Smelts, without any fraction smelts.
 		return (int)UT.Code.bind(0, 32000, rFuelValue);
+	}
+
+	// ================================================================================================================
+	// [GT6-BUG047PROBE] BUG-047: рельсы GT6 — 11 кейсов реальными каналами игрока (LIVE-PROBE-MANUAL §4):
+	// TAG(вагонеточный isRail), DIR-EW/DIR-NS(мета по игроку), CORNER/SLOPE(выравнивание), WATER(waterlog),
+	// CART(поставить вагонетку), BOOST(бит питания + разгон), DETECT(детектор вкл/выкл), CROWBAR(смена меты ключом),
+	// DROP(дроп при потере опоры). Гейт двойной (-Pgt6probes + run/gt6bug047probe.flag). — снять при уборке фазы.
+	// ================================================================================================================
+	private static int sB47Tick = -1, sB47Case = 0, sB47Pass = 0, sB47Fail = 0;
+	private static net.minecraft.core.BlockPos sB47Base = null;
+	private static net.minecraft.world.entity.vehicle.minecart.AbstractMinecart sB47Cart = null;
+	private static final String[] B47_CASES = {"TAG", "DIR-EW", "DIR-NS", "CORNER", "SLOPE", "WATER", "CART", "BOOST", "DETECT", "CROWBAR", "DROP"};
+	private static void b47Verdict(boolean aPass, String aWhat) {
+		if (aPass) sB47Pass++; else sB47Fail++;
+		CS.OUT.println("[GT6-BUG047PROBE] => " + (aPass ? "PASS" : "FAIL") + " [" + B47_CASES[sB47Case] + "] (" + aWhat + ")");
+	}
+	/** Свежая площадка кейса: каменный пол 7×7 на y-1, воздух y..y+1 (изоляция — §5.2). */
+	private static void b47Pad(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos) {
+		for (int i = -3; i <= 3; i++) for (int j = -3; j <= 3; j++) {
+			aLevel.setBlock(aPos.offset(i, -1, j), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			aLevel.setBlock(aPos.offset(i,  0, j), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			aLevel.setBlock(aPos.offset(i,  1, j), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+	}
+	/** Установка предмета ПКМ по верхней грани опоры под aTarget — серверный канал игрока (§4), yaw задаёт направление.
+	 *  Явный setYRot после телепорта: живой клиент шлёт MovePlayerPacket со СВОИМ поворотом и гонкой перетирает
+	 *  серверный yaw телепорта (класс BUG-032, LIVE-PROBE-MANUAL §7) — вход пробы должен быть детерминирован. */
+	private static void b47Use(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.world.item.ItemStack aStack, net.minecraft.core.BlockPos aTarget, float aYaw) {
+		aPlayer.teleportTo(aLevel, aTarget.getX() + 0.5, aTarget.getY(), aTarget.getZ() + 2.5, java.util.Set.of(), aYaw, 0, true);
+		aPlayer.setYRot(aYaw); aPlayer.setYHeadRot(aYaw);
+		aPlayer.getInventory().setSelectedSlot(0);
+		aPlayer.getInventory().setItem(0, aStack);
+		net.minecraft.core.BlockPos tSupport = aTarget.below();
+		net.minecraft.world.phys.BlockHitResult tHit = new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tSupport.getX() + 0.5, tSupport.getY() + 1.0, tSupport.getZ() + 0.5), net.minecraft.core.Direction.UP, tSupport, false);
+		aPlayer.gameMode.useItemOn(aPlayer, aLevel, aStack, net.minecraft.world.InteractionHand.MAIN_HAND, tHit);
+	}
+	/** ПКМ предметом ПО САМОМУ блоку aTarget (вагонетка на рельс / ключ по рельсу). */
+	private static void b47UseOn(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.world.item.ItemStack aStack, net.minecraft.core.BlockPos aTarget) {
+		aPlayer.teleportTo(aLevel, aTarget.getX() + 0.5, aTarget.getY(), aTarget.getZ() + 2.5, java.util.Set.of(), 0, 30, true);
+		aPlayer.getInventory().setSelectedSlot(0);
+		aPlayer.getInventory().setItem(0, aStack);
+		net.minecraft.world.phys.BlockHitResult tHit = new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(aTarget.getX() + 0.5, aTarget.getY() + 0.1, aTarget.getZ() + 0.5), net.minecraft.core.Direction.UP, aTarget, false);
+		aPlayer.gameMode.useItemOn(aPlayer, aLevel, aStack, net.minecraft.world.InteractionHand.MAIN_HAND, tHit);
+	}
+	private static java.util.List<net.minecraft.world.entity.vehicle.minecart.AbstractMinecart> b47Carts(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aPos) {
+		return aLevel.getEntitiesOfClass(net.minecraft.world.entity.vehicle.minecart.AbstractMinecart.class, new net.minecraft.world.phys.AABB(aPos.getX()-1, aPos.getY()-1, aPos.getZ()-1, aPos.getX()+2, aPos.getY()+2, aPos.getZ()+2));
+	}
+	public static void gt6Bug047ProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sB47Tick++; // инкремент ПЕРВЫМ — тик-счёт не зависит от ранних return (§2.3)
+		java.io.PrintStream O = CS.OUT;
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tPlayer.level();
+			if (sB47Tick == 200) {
+				O.println("========== [GT6-BUG047PROBE] BUG-047: рельсы — мета/выравнивание/вода/вагонетка/буст/детектор/ключ/дроп ==========");
+				sB47Base = tPlayer.blockPosition().offset(10, 0, 0);
+				O.println("[GT6-BUG047PROBE] база " + sB47Base + "; рельсы: steel=" + gregapi.data.CS.BlocksGT.RailSteel + " booster=" + gregapi.data.CS.BlocksGT.RailSteelBooster + " detector=" + gregapi.data.CS.BlocksGT.RailSteelDetector);
+			} else if (sB47Tick >= 220 && sB47Case < B47_CASES.length) {
+				int tPhase = (sB47Tick - 220) % 60; // 60 тиков на кейс
+				net.minecraft.core.BlockPos p = sB47Base.offset(0, 0, sB47Case * 5); // свежая позиция на кейс (§5.2)
+				net.minecraft.world.level.block.Block tRailSteel = (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.RailSteel;
+				switch (sB47Case) {
+				case 0: // TAG: тег minecraft:rails + isRail (канал вагонетки BaseRailBlock.isRail:37-39)
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 10) b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 0);
+					if (tPhase == 55) {
+						net.minecraft.world.level.block.state.BlockState s = tLevel.getBlockState(p);
+						O.println("[GT6-BUG047PROBE] TAG: блок=" + s.getBlock() + " is(RAILS)=" + s.is(net.minecraft.tags.BlockTags.RAILS) + " isRail=" + net.minecraft.world.level.block.BaseRailBlock.isRail(s));
+						b47Verdict(s.getBlock() instanceof gregapi.block.misc.BlockBaseRail && net.minecraft.world.level.block.BaseRailBlock.isRail(s), "рельс поставлен и isRail=true (тег)");
+					}
+					break;
+				case 1: // DIR-EW: игрок смотрит вдоль X (yaw 90) → мета 1 / SHAPE=EAST_WEST
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 10) b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 90);
+					if (tPhase == 55) {
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						net.minecraft.world.level.block.state.BlockState s = tLevel.getBlockState(p);
+						O.println("[GT6-BUG047PROBE] DIR-EW: meta=" + m + " state=" + s);
+						b47Verdict(m == 1, "мета по игроку X-оси == 1 (EW), фактически " + m);
+					}
+					break;
+				case 2: // DIR-NS (контроль-НЕ-кейс §5.5: не «всегда одно и то же»)
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 10) b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 0);
+					if (tPhase == 55) {
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						O.println("[GT6-BUG047PROBE] DIR-NS: meta=" + m);
+						b47Verdict(m == 0 && tLevel.getBlockState(p).getBlock() instanceof gregapi.block.misc.BlockBaseRail, "мета по игроку Z-оси == 0 (NS)");
+					}
+					break;
+				case 3: // CORNER: рельсы на восток и юг, потом угловой → у углового SHAPE-угол (мета 6..9)
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 6)  b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p.east(), 90);
+					if (tPhase == 12) b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p.south(), 0);
+					if (tPhase == 18) b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 0);
+					if (tPhase == 55) {
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						O.println("[GT6-BUG047PROBE] CORNER: мета углового=" + m + " (сосед-восток " + WD.meta(tLevel, p.getX()+1, p.getY(), p.getZ()) + ", сосед-юг " + WD.meta(tLevel, p.getX(), p.getY(), p.getZ()+1) + ")");
+						b47Verdict(m >= 6 && m <= 9, "выравнивание в угол (мета 6..9), фактически " + m);
+					}
+					break;
+				case 4: // SLOPE: сосед-рельс на +1 по высоте → нижний становится ascending (мета 2..5)
+					if (tPhase == 0) {b47Pad(tLevel, p); tLevel.setBlock(p.east(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);}
+					if (tPhase == 6)  b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p.east().above(), 90);
+					if (tPhase == 12) b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 90);
+					if (tPhase == 55) {
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						O.println("[GT6-BUG047PROBE] SLOPE: нижний=" + tLevel.getBlockState(p) + " мета=" + m + " верхний=" + WD.meta(tLevel, p.getX()+1, p.getY()+1, p.getZ()));
+						b47Verdict(m >= 2 && m <= 5, "наклон к соседу-выше (мета 2..5), фактически " + m);
+					}
+					break;
+				case 5: // WATER: установка в воду-источник → WATERLOGGED=true, вода сохранена (не удалена)
+					if (tPhase == 0) {b47Pad(tLevel, p); tLevel.setBlock(p, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);}
+					if (tPhase == 10) b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 0);
+					if (tPhase == 55) {
+						net.minecraft.world.level.block.state.BlockState s = tLevel.getBlockState(p);
+						boolean tIsRail = s.getBlock() instanceof gregapi.block.misc.BlockBaseRail;
+						boolean tWL = tIsRail && s.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED) && s.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
+						boolean tFluid = s.getFluidState().is(net.minecraft.world.level.material.Fluids.WATER);
+						O.println("[GT6-BUG047PROBE] WATER: рельс=" + tIsRail + " WATERLOGGED=" + tWL + " fluid-вода=" + tFluid);
+						b47Verdict(tIsRail && tWL && tFluid, "рельс в воде waterlogged, вода сохранена");
+					}
+					break;
+				case 6: // CART: предмет-вагонетка ПКМ по рельсу → вагонетка появилась (MinecartItem.useOn требует isRail)
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 6)  b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 0);
+					if (tPhase == 12) b47UseOn(tPlayer, tLevel, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.MINECART), p);
+					if (tPhase == 55) {
+						java.util.List<net.minecraft.world.entity.vehicle.minecart.AbstractMinecart> tCarts = b47Carts(tLevel, p);
+						O.println("[GT6-BUG047PROBE] CART: вагонеток в зоне=" + tCarts.size());
+						b47Verdict(!tCarts.isEmpty(), "вагонетка ставится на рельс");
+						for (net.minecraft.world.entity.vehicle.minecart.AbstractMinecart c : tCarts) c.discard();
+					}
+					break;
+				case 7: // BOOST: ЛИНИЯ 10 бустеров + редстоун-блок → бит 8 по цепи; вагонетка с толчком 0.1 → разгон (мост onMinecartPass).
+					// v2 стенда: первый прогон мерил на ОДНОМ блоке рельса через 29 тиков — вагонетка укатывалась на камень и
+					// затухала vanilla comeOffTrack ×0.5/тик (замер дал ровно 0.1×2^-28) — артефакт замера (§5.1-класс), буст не
+					// был замерен вовсе. Критерий НЕ менялся (>0.15); замер перенесён на 4-й тик после толчка, вагонетка НА линии.
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 6) for (int i = 0; i < 10; i++) {
+						tLevel.setBlock(p.offset(0, -1, i), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3); // опора линии за пределами площадки
+						b47Use(tPlayer, tLevel, ST.make((net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.RailSteelBooster, 1, 0), p.offset(0, 0, i), 0);
+					}
+					if (tPhase == 14) tLevel.setBlock(p.west(), net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+					if (tPhase == 22) {
+						O.println("[GT6-BUG047PROBE] BOOST: мета линии [0]=" + WD.meta(tLevel, p.getX(), p.getY(), p.getZ()) + " [4]=" + WD.meta(tLevel, p.getX(), p.getY(), p.getZ()+4) + " (бит питания=" + ((WD.meta(tLevel, p.getX(), p.getY(), p.getZ()) & 8) != 0) + ")");
+						b47UseOn(tPlayer, tLevel, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.MINECART), p);
+					}
+					if (tPhase == 28) {
+						java.util.List<net.minecraft.world.entity.vehicle.minecart.AbstractMinecart> tCarts = b47Carts(tLevel, p);
+						if (!tCarts.isEmpty()) {sB47Cart = tCarts.get(0); sB47Cart.setDeltaMovement(0, 0, 0.1);} // вход пробы — толчок; судимый канал = тики движка+мост
+					}
+					if (tPhase == 32) {
+						double v = sB47Cart == null ? -1 : sB47Cart.getDeltaMovement().horizontalDistance();
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						O.println("[GT6-BUG047PROBE] BOOST: скорость на 4-м тике после толчка=" + v + " (вагонетка " + (sB47Cart == null ? "нет" : sB47Cart.blockPosition()) + ") мета[0]=" + m);
+						b47Verdict((m & 8) != 0 && v > 0.15, "бит питания есть и вагонетка разогналась (>0.15), фактически v=" + v);
+						if (sB47Cart != null) {sB47Cart.discard(); sB47Cart = null;}
+					}
+					break;
+				case 8: // DETECT: вагонетка на детекторе → бит 8 + сигнал; убрать → бит снят (scheduled tick — мост tick())
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 6)  b47Use(tPlayer, tLevel, ST.make((net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.RailSteelDetector, 1, 0), p, 0);
+					if (tPhase == 12) b47UseOn(tPlayer, tLevel, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.MINECART), p);
+					if (tPhase == 24) {
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						boolean tSignal = tLevel.hasNeighborSignal(p.above());
+						O.println("[GT6-BUG047PROBE] DETECT: с вагонеткой мета=" + m + " сигнал-соседу-сверху=" + tSignal);
+						b47Verdict((m & 8) != 0 && tSignal, "детектор активен под вагонеткой");
+						for (net.minecraft.world.entity.vehicle.minecart.AbstractMinecart c : b47Carts(tLevel, p)) c.discard();
+					}
+					if (tPhase == 55) {
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						O.println("[GT6-BUG047PROBE] DETECT: после удаления вагонетки мета=" + m);
+						b47Verdict((m & 8) == 0, "детектор погас после удаления вагонетки (scheduled tick)"); // кейс даёт ДВА вердикта
+					}
+					break;
+				case 9: // CROWBAR: ключ по рельсу NS → мета 0→1 (onToolClick, формула ((m/8)*8)+(((m%8)+1)%6))
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 6)  b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 0);
+					if (tPhase == 12) {
+						ItemStack tCrowbar = gregapi.data.CS.ToolsGT.sMetaTool == null ? null : gregapi.data.CS.ToolsGT.sMetaTool.getToolWithStats(gregapi.data.CS.ToolsGT.CROWBAR, MT.Steel, MT.WOODS.Spruce);
+						O.println("[GT6-BUG047PROBE] CROWBAR: инструмент=" + tCrowbar);
+						if (tCrowbar != null) b47UseOn(tPlayer, tLevel, tCrowbar, p);
+					}
+					if (tPhase == 55) {
+						byte m = WD.meta(tLevel, p.getX(), p.getY(), p.getZ());
+						O.println("[GT6-BUG047PROBE] CROWBAR: мета после клика=" + m);
+						b47Verdict(m == 1, "ключ повернул рельс (мета 0→1), фактически " + m);
+					}
+					break;
+				case 10: // DROP: слом опоры под рельсом → рельс снят vanilla-каналом и ВЫПАЛ предметом
+					if (tPhase == 0) b47Pad(tLevel, p);
+					if (tPhase == 6)  b47Use(tPlayer, tLevel, ST.make(tRailSteel, 1, 0), p, 0);
+					if (tPhase == 12) {
+						tPlayer.teleportTo(tLevel, p.getX() + 0.5, p.getY(), p.getZ() + 6.5, java.util.Set.of(), 0, 0, true); // подальше — робот не должен подобрать дроп (§5.1)
+						net.minecraft.world.level.GameType tOld = tPlayer.gameMode.getGameModeForPlayer();
+						tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+						tPlayer.gameMode.destroyBlock(p.below());
+						tPlayer.setGameMode(tOld);
+					}
+					if (tPhase == 55) {
+						boolean tGone = !(tLevel.getBlockState(p).getBlock() instanceof gregapi.block.misc.BlockBaseRail);
+						int tDrops = 0;
+						for (net.minecraft.world.entity.item.ItemEntity e : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(p.getX()-3, p.getY()-3, p.getZ()-3, p.getX()+4, p.getY()+3, p.getZ()+4)))
+							if (e.getItem().getItem() == net.minecraft.world.item.Item.byBlock(tRailSteel)) tDrops += e.getItem().getCount();
+						O.println("[GT6-BUG047PROBE] DROP: рельс снят=" + tGone + " дропов-рельсов=" + tDrops);
+						b47Verdict(tGone && tDrops >= 1, "рельс без опоры снят и выпал предметом");
+					}
+					break;
+				}
+				if (tPhase == 55) {
+					sB47Case++;
+					if (sB47Case >= B47_CASES.length) O.println("========== [GT6-BUG047PROBE] DONE: PASS=" + sB47Pass + " FAIL=" + sB47Fail + " ==========");
+				}
+			} else if (sB47Case >= B47_CASES.length && sB47Tick % 200 == 0 && sB47Tick <= 2600) {
+				O.println("[GT6-BUG047PROBE] heartbeat: сервер жив, тик " + sB47Tick); // §6.4
+			}
+		} catch (Throwable e) {O.println("[GT6-BUG047PROBE] EXC " + e); e.printStackTrace(O); sB47Case = 99;}
 	}
 
 }

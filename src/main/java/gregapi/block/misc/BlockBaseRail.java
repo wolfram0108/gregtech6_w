@@ -68,7 +68,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSealable, IBlockToolable {
+public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSealable, IBlockToolable, gregapi.block.IBlockExtendedMetaData {
 	public final String mNameInternal;
 	public final float mSpeed, mExplosionResistance;
 	public final IIconContainer mIconPrimary, mIconSecondary;
@@ -88,20 +88,24 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	}
 	@Override public float[] getRenderBounds() {return mRenderBounds;}
 
-	// F16 impossible-1:1-на-модели (neo BaseRailBlock через BlockState-Property, GT6-рельс через meta — несовместимы; см. onPlace выше): neo BaseRailBlock ре-абстрагирует
-	// getShapeProperty()/codec() (BaseRailBlock.java:47,152) под BlockState-Property модель формы рельса
-	// (RailShape); GT6 хранит форму через meta (WD.meta/WD.set), не через BlockState-property. createBlockStateDefinition
-	// вызывается ВНУТРИ Block-конструктора [Block.java:235-239] ДО инициализации полей mPowerRail/mDetectorRail
-	// (порядок super->createBlockStateDefinition->поля подкласса) - per-instance выбор STRAIGHT(6-знач.,
-	// PoweredRailBlock.SHAPE)/CURVED(10-знач., RailBlock.SHAPE) недостижим на этом этапе. Используем безусловно
-	// более широкий RailBlock.SHAPE [RailBlock.java:16] (10 значений, надмножество PoweredRailBlock.SHAPE) для ВСЕХ
-	// вариантов - безопасный супернабор (state.getValue никогда не бросает), ценой утраты vanilla-валидации
-	// "нет кривых у powered/detector rail" (GT6 всё равно не пишет в это state через WD.meta-модель, потери
-	// функциональности нет). WATERLOGGED [BaseRailBlock.java:28] регистрируется рядом по той же причине
-	// (getFluidState/updateShape тоже требуют его в state, иначе state.getValue бросает).
+	// BUG-047 МОСТ МЕТЫ (мета ↔ BlockState): GT6-код рельса весь ходит через WD.meta/WD.set (getIcon/onToolClick/
+	// детектор/скорость/буст/RailRenderer), а neo BaseRailBlock — через BlockState-Property (getShapeProperty,
+	// BaseRailBlock.java:152). Носителем меты делается САМ state: SHAPE (форма; порядок RailShape.java:6-15 ТОЧНО
+	// равен числовой мете 1.7.10: 0=NS,1=EW,2-5=подъёмы,6-9=углы) + POWERED (бит 8: питание booster/detector либо
+	// вариант разметки BlockRailRoad) — мост IBlockExtendedMetaData ниже. createBlockStateDefinition вызывается
+	// ВНУТРИ Block-конструктора [Block.java:235-239] ДО инициализации полей mPowerRail/mDetectorRail (порядок
+	// super->createBlockStateDefinition->поля подкласса) - per-instance выбор STRAIGHT(6-знач., PoweredRailBlock.SHAPE)/
+	// CURVED(10-знач., RailBlock.SHAPE) недостижим на этом этапе. Используем безусловно более широкий RailBlock.SHAPE
+	// [RailBlock.java:16] (10 значений, надмножество) для ВСЕХ вариантов — у straight-рельсов лишние углы недостижимы
+	// выравниванием (RailState гейтит !isStraight, RailState.java:163-179,247-263), но ПРЕДСТАВИМЫ (1:1 с квирком
+	// оригинала: крошбар straight-рельса циклит мету %10, включая «мусорные» 6/7). POWERED регистрируется у ВСЕХ
+	// вариантов по той же причине (у flexible-рельсов вестигиален, всегда false). WATERLOGGED [BaseRailBlock.java:28]
+	// обязателен (getFluidState/updateShape читают его из state).
 	private static final Property<RailShape> SHAPE_PROPERTY = RailBlock.SHAPE;
+	/** Канон DetectorRailBlock.java:32 (BlockStateProperties.POWERED — тот же property, что у vanilla powered/detector). */
+	public static final net.minecraft.world.level.block.state.properties.BooleanProperty POWERED = net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED;
 	@Override public Property<RailShape> getShapeProperty() {return SHAPE_PROPERTY;}
-	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {builder.add(SHAPE_PROPERTY, WATERLOGGED);}
+	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {builder.add(SHAPE_PROPERTY, POWERED, WATERLOGGED);} // тройка — канон DetectorRailBlock.java:190
 	// F16 impossible-1:1 (1.7.10 не имел codec-регистрации; neo codec — не data-driven для этого класса): 1.7.10 не имел codec-based регистрации (класс отсутствовал как
 	// override-точка) - neo Block.codec() [Block.java:126-129] переабстрагирован BaseRailBlock.codec()
 	// [BaseRailBlock.java:47], требует MapCodec<? extends BaseRailBlock>; GT6 регистрирует блоки процедурно
@@ -111,13 +115,48 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	// реальной (де)сериализации), живой neo-пример использования — MapCodec.unit(Supplier) [EmptyModel.java:33].
 	@Override public MapCodec<? extends BaseRailBlock> codec() {return MapCodec.unit(() -> this);}
 
+	// ------------------------------------------------------------------------------------------------------------
+	// BUG-047 мост IBlockExtendedMetaData: мета 1.7.10 ↔ SHAPE+POWERED. Раскладка 1:1 с оригиналом:
+	// straight (mPowerRail||mDetectorRail, вкл. BlockRailRoad): биты 0-2 = форма (RailShape.ordinal 0-7 — включая
+	//   «мусорные» углы 6/7 из крошбар-цикла %10, представимо), бит 8 = POWERED (питание либо вариант разметки рода).
+	//   Биекция на всех метах 0-15.
+	// flexible (обычный рельс): мета = форма 0-9 (RailShape.ordinal), POWERED вестигиален (false). Меты 10-15
+	//   в neo непредставимы (RailShape кончается на 9) → кламп к 9; у Грега это была мусор-мета от крошбара
+	//   на угле 9 (формула даёт 10) — деградация той же степени, но без выхода за enum.
+	// ------------------------------------------------------------------------------------------------------------
+	@Override public short getExtendedMetaData(BlockState aState) {
+		int tShape = aState.getValue(SHAPE_PROPERTY).ordinal();
+		if (mPowerRail || mDetectorRail) return (short)((tShape & 7) | (aState.getValue(POWERED) ? 8 : 0));
+		return (short)tShape;
+	}
+	@Override public BlockState getStateForExtendedMetaData(BlockState aBase, short aMetaData) {
+		int tMeta = aMetaData & 15;
+		if (mPowerRail || mDetectorRail) return aBase.setValue(SHAPE_PROPERTY, RailShape.values()[tMeta & 7]).setValue(POWERED, (tMeta & 8) != 0);
+		return aBase.setValue(SHAPE_PROPERTY, RailShape.values()[Math.min(tMeta, 9)]).setValue(POWERED, false);
+	}
+	@Override public short getExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ) {
+		BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ));
+		return tState.getBlock() == this ? getExtendedMetaData(tState) : 0;
+	}
+	// Зеркало приёма BlockBaseMeta.setExtendedMetaData:64-71 (прямые вызыватели вне WD.set; WD.set идёт атомарным путём).
+	@Override public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockState tState = aWorld.getBlockState(tPos);
+		if (tState.getBlock() != this) return;
+		BlockState tNew = getStateForExtendedMetaData(tState, aMetaData);
+		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tLA) tLA.setBlock(tPos, tNew, 3);
+		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, Block.UPDATE_ALL);
+	}
+
 	/** @param aSpeed is usually 0.4F */
 	public BlockBaseRail(Class<? extends ItemBlockBase> aItemClass, String aNameInternal, String aLocalName, boolean aPowerRail, boolean aDetectorRail, float aSpeed, float aExplosionResistance, int aHarvestLevel, IIconContainer aIconPrimary, IIconContainer aIconSecondary) {
 		// F16/F9 форс движка: neo BaseRailBlock(boolean,Properties) требует Properties [BaseRailBlock.java:41] -
 		// тот же Properties.of()-дефолт, что BlockBase уже использует (F9-мост твёрдости/материала отложен туда же).
 		// F12-followup (block-split): setId в Properties (иначе «Block id not set»); namespace=GAPI (совпадает с реестром,
 		// куда ST.register клал блок), ключ санитизирован. aNameInternal (поле ещё не присвоено на этой строке).
-		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		// BUG-047: noCollision() — 1:1 vanilla-рельс (Blocks.java:1548) и 1.7.10 BlockRailBase.getCollisionBoundingBoxFromPool=null;
+		// без него рельс порта был твёрдой 2px-плитой (коллизил вагонетку/игрока).
+		super(aPowerRail || aDetectorRail, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
 		mNameInternal = aNameInternal;
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.TRANSPORT);
 		// F12-followup (block-split): блок регистрирует registerBlockLazy на call-site; ЗДЕСЬ — только BlockItem через supplier.
@@ -131,12 +170,10 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		mIconPrimary = aIconPrimary;
 		mDetectorRail = aDetectorRail;
 		mPowerRail = aPowerRail;
-		// 1:1 vanilla RailBlock (RailBlock.java:25): БЕЗ registerDefaultState сырой дефолт boolean-property WATERLOGGED=true
-		// (stateDefinition.any() берёт первое значение) → каждый рельс, поставленный через WD.set/defaultBlockState
-		// (ItemBlockBase.placeBlockAt:147, GT6-мета-путь, НЕ getStateForPlacement), waterlogged → BaseRailBlock.getFluidState:306
-		// отдаёт WATER-источник → вода растекается по соседям (репорт игрока). 1.7.10 waterlogging не имел; WATERLOGGED тут
-		// вестигиальный (добавлен лишь чтобы state.getValue в getFluidState/updateShape не бросал, см. createBlockStateDefinition) → дефолт false.
-		registerDefaultState(this.stateDefinition.any().setValue(SHAPE_PROPERTY, RailShape.NORTH_SOUTH).setValue(WATERLOGGED, false));
+		// 1:1 vanilla RailBlock (RailBlock.java:25) / DetectorRailBlock.java:46: дефолт NS + не-powered + сухой
+		// (сырой дефолт boolean-property = true — без registerDefaultState рельс ставился waterlogged/powered).
+		// Вода при УСТАНОВКЕ В воду ставится отдельно в onItemUse (BUG-047, прецедент слэбов BUG-010).
+		registerDefaultState(this.stateDefinition.any().setValue(SHAPE_PROPERTY, RailShape.NORTH_SOUTH).setValue(POWERED, false).setValue(WATERLOGGED, false));
 		if (aPowerRail) REDSTONE_SINKS.add(this);
 		if (COMPAT_FR != null) gregapi.GT_API.deferItemInit(() -> COMPAT_FR.addToBackpacks("builder", ST.make(this, 1, W)));
 	}
@@ -334,12 +371,52 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	}
 	
 	// было onBlockAdded(World,x,y,z) -> BlockBehaviour.onPlace(BlockState,Level,BlockPos,BlockState,boolean) [BlockBehaviour.java:167].
-	// F13 functional-adapted (структурная несовместимость модели данных): 1.7.10 super.onBlockAdded (BlockRailBase) выравнивал
-	// форму рельса по соседям (func_150052_a); neo BaseRailBlock.onPlace работает через RailState/BlockState-Property, а этот
-	// класс хранит форму в meta (модели данных несовместимы — эквивалента super-вызова 1:1 нет). Форму GT6-рельс держит своей
-	// meta-логикой (updateNeighborsAt при соседских изменениях, см. выше); detector-логика сохранена без потерь. Не заглушка.
+	// BUG-047: 1:1 с оригиналом (BlockBaseRail 1.7.10:257-260) — super.onBlockAdded (выравнивание формы по соседям +
+	// для straight стартовый расчёт питания) БЫЛ ВЫБРОШЕН портом; с мостом меты (SHAPE = носитель) neo-эквивалент
+	// работает: updateState → updateDir(RailState, first=true) + для isStraight neighborChanged на себя
+	// (BaseRailBlock.java:64-77 ≡ 1.7.10 onBlockAdded: func_150052_a + if(field_150053_a) onNeighborBlockChange).
+	// Гард !oldState.is(...) — vanilla (мета-запись того же блока выравнивание НЕ перезапускает, 1:1 Chunk-семантика).
+	// Детектор-надстройка — 1:1 хвост оригинала. BlockRailRoad переопределяет NO-OP (разметка не выравнивается).
 	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
+		if (!aOldState.is(aState.getBlock())) updateState(aState, aWorld, aPos, aMovedByPiston);
 		if (mDetectorRail) func_150054_a(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
+	}
+
+	// BUG-047: neo-хук BaseRailBlock.updateState(BlockState,Level,BlockPos,Block) [BaseRailBlock.java:111-112, пустой в базе]
+	// = ТОЧКА вызова 1.7.10 func_150048_a из onNeighborBlockChange (расчёт бита питания power-рельса от редстоуна/цепочки).
+	// Порт нёс func_150048_a мёртвым (без вызывателя) — мост восстанавливает канал. Аргументы 1:1 vanilla 1.7.10:
+	// aMeta = полная мета, aData = field_150053_a(straight) ? meta&7 : meta.
+	@Override protected void updateState(BlockState aState, Level aWorld, BlockPos aPos, Block aBlock) {
+		int tMeta = WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
+		func_150048_a(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), tMeta, (mPowerRail || mDetectorRail) ? tMeta & 7 : tMeta, aBlock);
+	}
+
+	// BUG-047: neo scheduled-tick канал = tick(BlockState,ServerLevel,BlockPos,RandomSource) — приём BlockBase:310-312
+	// (updateTick без моста был сиротой → детектор никогда не гас: scheduleTick из func_150054_a бил в неперекрытый tick()).
+	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), new Random(aRandom.nextLong()));
+	}
+
+	// BUG-047: было hasComparatorInputOverride/getComparatorInputOverride (1.7.10) → neo hasAnalogOutputSignal/
+	// getAnalogOutputSignal (канон DetectorRailBlock.java:142,147; сигнатура с Direction — тело GT6 сторону игнорирует, 1:1).
+	@Override protected boolean hasAnalogOutputSignal(BlockState aState) {return hasComparatorInputOverride();}
+	@Override protected int getAnalogOutputSignal(BlockState aState, Level aWorld, BlockPos aPos, Direction aSide) {return getComparatorInputOverride(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), 0);}
+
+	// BUG-047 F12/F9-hardness: рельс ВНЕ BlockBase-иерархии → мост getDestroyProgress локально (зеркало
+	// MultiTileEntityBlockInternal:172-176; формула — ЦЕНТР WD.destroyProgress). Без моста Properties.destroyTime=0 →
+	// мгновенный слом рукой (getBlockHardness был мёртв).
+	@Override protected float getDestroyProgress(BlockState aState, Player aPlayer, BlockGetter aWorld, BlockPos aPos) {
+		if (!(aWorld instanceof Level tLevel)) return super.getDestroyProgress(aState, aPlayer, aWorld, aPos);
+		return WD.destroyProgress(getBlockHardness(tLevel, aPos.getX(), aPos.getY(), aPos.getZ()), aPlayer, aState, aWorld, aPos);
+	}
+
+	// BUG-047 дроп-мост (класс BUG-006, зеркало BlockBase.getDrops:215-231 — рельс вне той иерархии, loot-таблицы нет →
+	// neo-дефолт дропал ПУСТО, в т.ч. при потере опоры через vanilla neighborChanged→dropResources). 1.7.10-семантика
+	// рельса: quantityDropped=1 × getItemDropped=сам блок × damageDropped=0. Гейт взрыва — тот же шов BUG-024.
+	@Override protected List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
+		if (tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius) return java.util.Collections.emptyList();
+		return java.util.Collections.singletonList(ST.make(this, 1, 0));
 	}
 	
 	public boolean hasComparatorInputOverride() {return mDetectorRail;}
@@ -437,7 +514,15 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		// способность есть — коллизия формы с исключением размещающего + заменяемость цели; централизован в WD.java).
 		if (!(aPlayer).mayUseItemAt(new BlockPos(aX, aY, aZ), FORGE_DIR[aSide], aStack) || (aY == 255 && getMaterial().isSolid()) || !WD.canPlaceEntityOnSide(aWorld, this, aX, aY, aZ, F, aSide, aPlayer, aStack)) return F;
 
+		// BUG-047 waterlog: замещаемая вода-источник запоминается ДО установки (сам сет её затирает) — семантика
+		// vanilla getStateForPlacement (BaseRailBlock.java:138-144), приём — прецедент слэбов BUG-010 (ItemBlockMetaType:49-57).
+		BlockPos tPlacePos = new BlockPos(aX, aY, aZ);
+		boolean tWater = aWorld.getFluidState(tPlacePos).getType() == net.minecraft.world.level.material.Fluids.WATER;
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, SIDES_AXIS_X[UT.Code.getHorizontalForPlayerPlacing(aPlayer)] ? 1 : 0)) {
+			if (tWater) {
+				BlockState tPlaced = aWorld.getBlockState(tPlacePos);
+				if (tPlaced.getBlock() instanceof BlockBaseRail && tPlaced.hasProperty(WATERLOGGED)) aWorld.setBlock(tPlacePos, tPlaced.setValue(WATERLOGGED, Boolean.TRUE), 3);
+			}
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);
 			aStack.setCount(aStack.getCount()-1);
 		}

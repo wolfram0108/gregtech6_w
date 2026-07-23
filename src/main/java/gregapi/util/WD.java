@@ -830,11 +830,12 @@ public class WD {
 	/** F13-контракт: мета из СНИМКА BlockState (BlockDropsEvent.getState() / mineBlock aState). В neo removeBlock
 	 *  происходит ДО дропов и Item.mineBlock (в 1.7.10 — ПОСЛЕ), поэтому meta(aWorld,x,y,z) на harvest-путях читает
 	 *  уже ВОЗДУХ → мета 0 → протухшие рецепты молота (BUG-016) и dig-скорости. Каналом снимка контракт 1.7.10
-	 *  «мета разрушаемого блока» восстанавливается. META-свойство единое по equals для всех мета-семей
-	 *  (BlockBaseMeta.META и BlockBaseFlower.META равны: IntegerProperty "meta" 0..15). */
+	 *  «мета разрушаемого блока» восстанавливается. BUG-047: раскладка меты по свойствам — знание БЛОКА (META у
+	 *  мета-семей, SHAPE+POWERED у рельса) → делегат в IBlockExtendedMetaData.getExtendedMetaData(BlockState)
+	 *  (дефолт интерфейса = прежний META-хардкод, поведение семей 1:1). */
 	public static byte  meta (net.minecraft.world.level.block.state.BlockState aState) {
 		if (!(aState.getBlock() instanceof IBlockExtendedMetaData)) return 0;
-		return aState.hasProperty(gregapi.block.BlockBaseMeta.META) ? UT.Code.bind4(aState.getValue(gregapi.block.BlockBaseMeta.META)) : 0;
+		return UT.Code.bind4(((IBlockExtendedMetaData)aState.getBlock()).getExtendedMetaData(aState));
 	}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, boolean aLoadUnloadedChunks) {return aLoadUnloadedChunks || aWorld.hasChunkAt(new BlockPos(aX, aY, aZ)) ? meta((BlockGetter)aWorld, aX, aY, aZ) : 0;}
 	public static byte  meta (LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide, boolean aLoadUnloadedChunks) {return meta(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide], aLoadUnloadedChunks);}
@@ -897,9 +898,17 @@ public class WD {
 			return aWorld.setBlock(new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
 		}
 		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
-		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4): для своих блоков (IBlockExtendedMetaData) — канал
-		// setExtendedMetaData сохранён "как есть" после установки блока; для ванильных aMeta теряется (форс движка).
+		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4). BUG-047: 1.7.10 Chunk.func_150807_a писал блок+мету ОДНИМ
+		// сетом (onBlockAdded видел мету) — атомарный путь восстанавливает контракт: state-с-метой одним setBlock.
+		// База = текущий state при том же блоке (смена меты не трогает прочие свойства — WATERLOGGED и т.п., 1:1 с 1.7.10),
+		// иначе defaultBlockState. Равный state → setBlock сам вернёт false без мутации (гейт Chunk.java:623-625 1:1).
+		// TE-мета (PrefixBlock: getStateForExtendedMetaData=null) — прежний двухфазный путь. Для ванильных aMeta теряется (форс движка).
 		BlockPos tSetPos = new BlockPos(aX, aY, aZ);
+		if (aBlock instanceof IBlockExtendedMetaData) {
+			BlockState tCur = aWorld.getBlockState(tSetPos);
+			BlockState tNew = ((IBlockExtendedMetaData)aBlock).getStateForExtendedMetaData(tCur.getBlock() == aBlock ? tCur : aBlock.defaultBlockState(), Code.bind4(aMeta));
+			if (tNew != null) return aWorld.setBlock(tSetPos, tNew, (int)aFlags);
+		}
 		boolean rSet = aWorld.setBlock(tSetPos, aBlock.defaultBlockState(), (int)aFlags);
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);
@@ -921,6 +930,13 @@ public class WD {
 		// F6-worldgen: приёмник расширен LevelChunk->ChunkAccess (worldgen пишет напрямую в генерящийся ProtoChunk/
 		// ImposterProtoChunk, не в full-чанк). setBlockState/getPos/getBlockState — все на ChunkAccess.
 		BlockPos tChunkSetPos = aChunk.getPos().getBlockAt(aX, aY, aZ);
+		// BUG-047: атомарный путь «state-с-метой одним сетом» — зеркало WD.set(LevelAccessor) выше (1.7.10 Chunk-контракт);
+		// TE-мета (getStateForExtendedMetaData=null) — прежний двухфазный путь ниже.
+		if (aBlock instanceof IBlockExtendedMetaData) {
+			BlockState tCurChunk = aChunk.getBlockState(tChunkSetPos);
+			BlockState tNewChunk = ((IBlockExtendedMetaData)aBlock).getStateForExtendedMetaData(tCurChunk.getBlock() == aBlock ? tCurChunk : aBlock.defaultBlockState(), Code.bind4(aMeta));
+			if (tNewChunk != null) return aChunk.setBlockState(tChunkSetPos, tNewChunk, Block.UPDATE_ALL) != null;
+		}
 		boolean rSet = aChunk.setBlockState(tChunkSetPos, aBlock.defaultBlockState(), Block.UPDATE_ALL) != null;
 		if (aBlock instanceof IBlockExtendedMetaData) {
 			byte tNewMeta = Code.bind4(aMeta);

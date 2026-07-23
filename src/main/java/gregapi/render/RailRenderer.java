@@ -26,10 +26,10 @@ import net.minecraft.client.renderer.block.BlockAndTintGetter;
 /**
  * F3-render рельсов (client): воспроизведение vanilla {@code RenderBlocks.renderBlockRail} — плоский рельс-quad на
  * y=1/16 с иконкой рельса (straight/turned/active выбирает сам {@link gregapi.block.misc.BlockBaseRail#getIcon} по
- * мете), ориентация/наклон/угол — по мете. GT6 хранит форму рельса в МЕТЕ (не в BlockState-property: {@code onPlace}
- * ванильное выравнивание формы не зовёт), поэтому рендер процедурный и читает мету — тем же приёмом, что вся F3-render
- * ветка (см. {@link GT6BlockModel}). BlockBaseRail наследует vanilla {@code BaseRailBlock} и НЕ является IRenderedBlock,
- * потому обрабатывается отдельной веткой, а не box-цепочкой.
+ * мете), ориентация/наклон/угол — по мете. BUG-047: мета жива — мост IBlockExtendedMetaData рельса (мета ↔
+ * SHAPE+POWERED в BlockState, выравнивание vanilla updateDir), {@code WD.meta} здесь читает реальную форму.
+ * Рендер процедурный — тем же приёмом, что вся F3-render ветка (см. {@link GT6BlockModel}). BlockBaseRail наследует
+ * vanilla {@code BaseRailBlock} и НЕ является IRenderedBlock, потому обрабатывается отдельной веткой, а не box-цепочкой.
  * <p>Мета рельса (1:1 vanilla): 0=плоский N-S, 1=плоский E-W, 2/3=подъём восток/запад (E-W трек), 4/5=подъём
  * север/юг (N-S трек), 6..9=углы SE/SW/NW/NE (turned-иконка). Power/detector-рельсы углов не имеют (биты 0-2 —
  * направление, бит 3 — питание; getIcon по биту питания даёт active-иконку).
