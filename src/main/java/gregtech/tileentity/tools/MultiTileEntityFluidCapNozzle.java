@@ -39,7 +39,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.IFluidContainerItem;
 
 import java.util.List;
 
@@ -80,9 +80,11 @@ public class MultiTileEntityFluidCapNozzle extends TileEntityBase11AttachmentSma
 							ST.give(aPlayer, ST.container(ST.amount(1, aStack), T), T);
 							return T;
 						}
-						if (aStack.getItem() instanceof IFluidHandlerItem && aStack.getCount() == 1) {
+						// F5/BUG-045 (1:1): восстановленный IFluidContainerItem.drain(ItemStack,...) (compat-mirror; оригинал :83-87);
+						// прежний FluidUtil.getFluidHandler-путь был мёртв (capability для GT6-предметов не регистрируется).
+						if (aStack.getItem() instanceof IFluidContainerItem && aStack.getCount() == 1) {
 							UT.Sounds.send(SFX.MC_FIZZ, 1.0F, 2.0F, this, F);
-							net.neoforged.neoforge.fluids.FluidUtil.getFluidHandler(aStack).ifPresent(h -> h.drain(((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE));
+							((IFluidContainerItem)aStack.getItem()).drain(aStack, ((ITileEntityFunnelAccessible)tDelegator.mTileEntity).capnozzleFill(tDelegator.mSideOfTileEntity, tFluid, T), T);
 							return T;
 						}
 					}

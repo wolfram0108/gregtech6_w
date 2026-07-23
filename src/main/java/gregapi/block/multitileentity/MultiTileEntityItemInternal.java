@@ -67,7 +67,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.IFluidContainerItem;
 import vazkii.botania.api.item.IFlowerPlaceable;
 import vazkii.botania.api.subtile.SubTileEntity;
 
@@ -87,14 +87,11 @@ import static gregapi.data.CS.*;
 , @Optional.Interface(iface = "micdoodle8.mods.galacticraft.api.item.IItemElectric", modid = ModIDs.GC)
 , @Optional.Interface(iface = "vazkii.botania.api.item.IFlowerPlaceable", modid = ModIDs.BOTA)
 })
-// EVENTS/F5 impossible-1:1-на-модели (singleton Item не несёт per-stack capability без RegisterCapabilitiesEvent-регистрации FluidHandlerItem): implements-список НЕ содержит IFluidHandlerItem — 1.7.10
-// Forge IFluidContainerItem (getFluid/getCapacity/fill/drain, статичные ItemStack-arg методы) был механически
-// переименован в neo IFluidHandlerItem прошлым проходом, но это НЕ 1:1 замена (капабилити-контракт, item-bound,
-// getContainer()/getFluidInTank(int)/fill(FluidStack,FluidAction), @Deprecated(forRemoval),
-// neoforge-decompiled/.../IFluidHandlerItem.java:26) — этот класс физически не может реализовать getContainer()
-// (нет per-stack состояния, singleton Item). Тот же класс проблемы уже документирован GT_API_Proxy.java:890-898
-// (блок там тоже отключён). Восстановление — отдельный F5-редизайн (fluid transfer tail, STATE.md), не эта задача.
-public class MultiTileEntityItemInternal extends BlockItem implements squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
+// F5/BUG-045: 1.7.10 Forge IFluidContainerItem восстановлен как живой compat-mirror
+// (net/minecraftforge/fluids/IFluidContainerItem.java) — implements-список снова 1:1 с оригиналом
+// (:88), делегаты getFluid/getCapacity/fill/drain ниже оживлены (per-stack состояние несёт NBT стека:
+// TileEntityBase08FluidContainer.fill/drain сами пишут writeItemNBT обратно в стек).
+public class MultiTileEntityItemInternal extends BlockItem implements squeek.applecore.api.food.IEdible, IItemReactorRod, IItemUpdatable, IItemColorableRGB, IOreDictItemDataOverrideItem, IItemGT, IItemNoGTOverride, IFluidContainerItem, ISpecialElectricItem, IElectricItemManager, IItemEnergy, IItemElectric, IItemRottable, IFlowerPlaceable {
 	public final MultiTileEntityBlockInternal mBlock;
 
 	public MultiTileEntityItemInternal(Block aBlock) {
@@ -333,52 +330,47 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 		return rList.isEmpty() ? null : rList.size() > 1 ? new OreDictItemData(rList) : rList.get(0);
 	}
 	
-	// EVENTS/F5 impossible-1:1-на-модели (contract item-bound capability, не singleton Item): getFluid/getCapacity/fill/drain ниже — 1.7.10 Forge
-	// IFluidContainerItem-контракт (статичные ItemStack-arg методы), НЕ 1:1 совместим с neo IFluidHandlerItem
-	// (item-bound capability, getContainer()/getFluidInTank(int)/fill(FluidStack,FluidAction), deprecated-for-removal) —
-	// см. класс-level PORT-TODO выше и GT_API_Proxy.java:890-898 (тот же класс проблемы, там тоже отключено).
-	// Делегирование на tTileEntity отключено; F5-восстановление, не эта задача.
-	// @Override
+	@Override
 	public FluidStack getFluid(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-		// 	FluidStack rFluid = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).getFluid(aStack);
-		// 	updateItemStack(aStack);
-		// 	return rFluid;
-		// }
+		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidContainerItem) {
+			FluidStack rFluid = ((IFluidContainerItem)tTileEntityContainer.mTileEntity).getFluid(aStack);
+			updateItemStack(aStack);
+			return rFluid;
+		}
 		return NF;
 	}
 
-	// @Override
+	@Override
 	public int getCapacity(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-		// 	int rCapacity = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).getCapacity(aStack);
-		// 	updateItemStack(aStack);
-		// 	return rCapacity;
-		// }
+		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidContainerItem) {
+			int rCapacity = ((IFluidContainerItem)tTileEntityContainer.mTileEntity).getCapacity(aStack);
+			updateItemStack(aStack);
+			return rCapacity;
+		}
 		return 0;
 	}
 
-	// @Override
+	@Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-		// 	int tFilled = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).fill(aStack, aFluid, aDoFill);
-		// 	updateItemStack(aStack);
-		// 	return tFilled;
-		// }
+		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidContainerItem) {
+			int tFilled = ((IFluidContainerItem)tTileEntityContainer.mTileEntity).fill(aStack, aFluid, aDoFill);
+			updateItemStack(aStack);
+			return tFilled;
+		}
 		return 0;
 	}
-	
-	// @Override
+
+	@Override
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
-		// if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidHandlerItem) {
-		// 	FluidStack rFluid = ((IFluidHandlerItem)tTileEntityContainer.mTileEntity).drain(aStack, aMaxDrain, aDoDrain);
-		// 	updateItemStack(aStack);
-		// 	return rFluid;
-		// }
+		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IFluidContainerItem) {
+			FluidStack rFluid = ((IFluidContainerItem)tTileEntityContainer.mTileEntity).drain(aStack, aMaxDrain, aDoDrain);
+			updateItemStack(aStack);
+			return rFluid;
+		}
 		return NF;
 	}
 	
@@ -493,17 +485,16 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 	public ItemStack getRotten(ItemStack aStack) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemRottable) return ((IItemRottable)tTileEntityContainer.mTileEntity).getRotten(aStack);
-		// было RottingUtil.rotting(aStack, this) — this больше не IFluidHandlerItem (F5 item-capability, шов на class-level выше);
-		// 1-арг перегрузка делает тот же instanceof-чек сама (aStack.getItem() instanceof IFluidHandlerItem,
-		// IItemRottable.java:46) над тем же объектом (this==aStack.getItem() для этого типа) — тот же эффект, безопасно F.
-		return IItemRottable.RottingUtil.rotting(aStack);
+		// F5/BUG-045 (1:1): this снова IFluidContainerItem — восстановлена 2-арг перегрузка оригинала (:437).
+		return IItemRottable.RottingUtil.rotting(aStack, this);
 	}
 
 	@Override
 	public ItemStack getRotten(ItemStack aStack, Level aWorld, int aX, int aY, int aZ) {
 		MultiTileEntityContainer tTileEntityContainer = mBlock.mMultiTileEntityRegistry.getNewTileEntityContainer(aStack);
 		if (tTileEntityContainer != null && tTileEntityContainer.mTileEntity instanceof IItemRottable) return ((IItemRottable)tTileEntityContainer.mTileEntity).getRotten(aStack, aWorld, aX, aY, aZ);
-		return IItemRottable.RottingUtil.rotting(aStack, aWorld, aX, aY, aZ);
+		// F5/BUG-045 (1:1): this снова IFluidContainerItem — восстановлена 2-арг перегрузка оригинала (:444).
+		return IItemRottable.RottingUtil.rotting(aStack, this);
 	}
 	
 	

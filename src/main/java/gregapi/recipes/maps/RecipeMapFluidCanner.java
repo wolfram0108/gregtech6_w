@@ -30,7 +30,7 @@ import gregapi.util.UT;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.IFluidContainerItem;
 
 import java.util.Collection;
 
@@ -70,8 +70,8 @@ public class RecipeMapFluidCanner extends RecipeMap {
 		return rRecipe;
 	}
 	
-	// F5: 1.7.10 IFluidContainerItem.getCapacity(ItemStack) -> neo IFluidHandlerItem.getTankCapacity(0) (IItemRottable.java:64, тот же приём)
-	@Override public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aStack != null && (super.containsInput(aStack, aTileEntity, aSpecialSlot) || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getTankCapacity(0) > 0));}
+	// F5/BUG-045 (1:1): восстановленный IFluidContainerItem.getCapacity(ItemStack) (compat-mirror; оригинал :73).
+	@Override public boolean containsInput(ItemStack aStack, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return aStack != null && (super.containsInput(aStack, aTileEntity, aSpecialSlot) || (aStack.getItem() instanceof IFluidContainerItem && ((IFluidContainerItem)aStack.getItem()).getCapacity(aStack) > 0));}
 	@Override public boolean containsInput(FluidStack aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return T;}
 	@Override public boolean containsInput(Fluid aFluid, IHasWorldAndCoords aTileEntity, ItemStack aSpecialSlot) {return T;}
 }

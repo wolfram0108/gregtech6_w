@@ -56,7 +56,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerRegisterEvent;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.oredict.OreDictionary;
 import gregapi.oredict.OreDictionary.OreRegisterEvent;
 
@@ -678,12 +678,8 @@ public final class OreDictManager {
 			aStack = ST.amount(1, aStack);
 		}
 		if (!aData.mBlackListed) aData.mBlackListed = isBlacklisted(aStack);
-		// F4→F5: оригинал брал ёмкость Forge-методом IFluidContainerItem.getCapacity(ItemStack) (gregtech6/.../OreDictManager.java:659);
-		// в neo IFluidHandlerItem этого метода НЕТ (neoforge-decompiled/.../fluids/capability/IFluidHandlerItem.java — только getContainer()),
-		// ёмкость даёт унаследованный IFluidHandler.getTankCapacity(int) (IFluidHandler.java:60,92). "getCapacity()>0" 1:1 = "есть бак с положительной ёмкостью".
-		// F5 (реализовано): FL.getFluid(aStack,T) РАБОТАЕТ (FULL_TO_DATA-реестр + динамич. GT6-ячейки) — детекция «есть жидкость».
-		// Доп. ветка neo IFluidHandlerItem.getTankCapacity>0 покрывает capability-контейнеры. Проверка «это fluid-контейнер» функциональна.
-		if (!aData.mBlocked) aData.mBlocked = (aData.mBlackListed || ST.block(aStack) != NB || FL.getFluid(aStack, T) != null || (aStack.getItem() instanceof IFluidHandlerItem && ((IFluidHandlerItem)aStack.getItem()).getTanks() > 0 && ((IFluidHandlerItem)aStack.getItem()).getTankCapacity(0) > 0));
+		// F5/BUG-045 (1:1): восстановленный IFluidContainerItem.getCapacity(ItemStack) (compat-mirror; оригинал :659).
+		if (!aData.mBlocked) aData.mBlocked = (aData.mBlackListed || ST.block(aStack) != NB || FL.getFluid(aStack, T) != null || (aStack.getItem() instanceof IFluidContainerItem && ((IFluidContainerItem)aStack.getItem()).getCapacity(aStack) > 0));
 		sItemStack2DataMap.put(new ItemStackContainer(aStack), aData);
 		if (aData.validMaterial()) {
 			long tValidMaterialAmount = aData.mMaterial.mMaterial.contains(TD.Processing.UNRECYCLABLE)?0:aData.mMaterial.mAmount>=0?aData.mMaterial.mAmount:U;

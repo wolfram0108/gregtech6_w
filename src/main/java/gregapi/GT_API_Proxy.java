@@ -155,7 +155,7 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.IFluidContainerItem;
 import gregapi.recipes.ShapedOreRecipe;
 import gregapi.recipes.ShapelessOreRecipe;
 import thaumcraft.common.entities.monster.EntityBrainyZombie;
@@ -290,6 +290,57 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	public void onProxyBeforeServerStarted(Abstract_Mod aMod, ServerStartedEvent aEvent) {
 		SERVER_TIME = 0;
 		MultiTileEntityRegistry.onServerStart();
+		if (gregapi.data.CS.probeFlag("gt6bug045probe.flag")) gt6Bug045Probe(); // [GT6-BUG045PROBE] BUG-045 — снять при уборке фазы
+	}
+
+	// ================================================================================================================
+	// [GT6-BUG045PROBE] BUG-045: портативные MTE-ёмкости («Ceramic Jug» id 32740) не набирали жидкость из машин —
+	// судья восстановленного IFluidContainerItem-моста (compat-mirror). Кейсы: RECOG (instanceof+capacity),
+	// FILL — реальный путь соковыжималки FL.fill(tTank, ST.amount(1,aStack), T,T,T,T) (MultiTileEntityJuicer:155),
+	// CONTAINS, EMPTY (обратный слив), CONTROL-NEG (палка — не контейнер). One-shot на старте сервера.
+	// Гейт двойной (-Pgt6probes + run/gt6bug045probe.flag). — снять при уборке фазы.
+	// ================================================================================================================
+	private static void gt6Bug045Probe() {
+		java.io.PrintStream O = OUT;
+		int tPass = 0, tFail = 0;
+		try {
+			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			if (tRegistry == null) {O.println("[GT6-BUG045PROBE] FAIL: реестр gt.multitileentity == null"); return;}
+			ItemStack tJug = tRegistry.getItem(32740);
+			if (ST.invalid(tJug)) {O.println("[GT6-BUG045PROBE] FAIL: стек кувшина (32740) невалиден"); return;}
+			// 1. RECOG: кувшин распознаётся восстановленным контрактом.
+			boolean tICI = tJug.getItem() instanceof net.minecraftforge.fluids.IFluidContainerItem;
+			int tCap = tICI ? ((net.minecraftforge.fluids.IFluidContainerItem)tJug.getItem()).getCapacity(tJug) : -1;
+			if (tICI && tCap == 2000) {tPass++; O.println("[GT6-BUG045PROBE] PASS RECOG: instanceof=T capacity=" + tCap);}
+			else                      {tFail++; O.println("[GT6-BUG045PROBE] FAIL RECOG: instanceof=" + tICI + " capacity=" + tCap + " (ожидалось 2000, NBT_TANK_CAPACITY Loader_MultiTileEntities:2097)");}
+			// 2. FILL: реальный путь соковыжималки (танк 4000 воды -> кувшин 2000, в танке остаётся 2000).
+			gregapi.fluid.FluidTankGT tTank = new gregapi.fluid.FluidTankGT(64000);
+			tTank.fill(FL.Water.make(4000), T);
+			ItemStack tFilled = FL.fill(tTank, ST.amount(1, tJug), T, T, T, T);
+			FluidStack tGot = tFilled == null ? null : FL.getFluid(tFilled, T);
+			if (tFilled != null && tGot != null && FL.water(tGot) && tGot.getAmount() == 2000 && tTank.getFluidAmount() == 2000)
+			     {tPass++; O.println("[GT6-BUG045PROBE] PASS FILL: jug=" + tGot.getAmount() + "mB, tank=" + tTank.getFluidAmount() + "mB");}
+			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL FILL: filled=" + tFilled + " got=" + tGot + " tank=" + tTank.getFluidAmount());}
+			// 3. CONTAINS: заполненный кувшин содержит воду.
+			if (tFilled != null && FL.contains(tFilled, FL.Water.make(1), T))
+			     {tPass++; O.println("[GT6-BUG045PROBE] PASS CONTAINS");}
+			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL CONTAINS");}
+			// 4. EMPTY: обратный слив до пустого контейнера.
+			ItemStack tEmptied = tFilled == null ? null : FL.getEmpty(tFilled, T);
+			FluidStack tAfter = tEmptied == null ? null : FL.getFluid(tEmptied, T);
+			if (tEmptied != null && tAfter == null)
+			     {tPass++; O.println("[GT6-BUG045PROBE] PASS EMPTY");}
+			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL EMPTY: emptied=" + tEmptied + " after=" + tAfter);}
+			// 5. CONTROL-NEG: палка контейнером не распознаётся (контроль перелива instanceof-множества).
+			ItemStack tStickFill = FL.fill(tTank, ST.make(net.minecraft.world.item.Items.STICK, 1, 0), T, T, T, T);
+			if (tStickFill == null)
+			     {tPass++; O.println("[GT6-BUG045PROBE] PASS CONTROL-NEG");}
+			else {tFail++; O.println("[GT6-BUG045PROBE] FAIL CONTROL-NEG: stick -> " + tStickFill);}
+			O.println("[GT6-BUG045PROBE] DONE: PASS=" + tPass + " FAIL=" + tFail);
+		} catch (Throwable e) {
+			O.println("[GT6-BUG045PROBE] EXCEPTION: " + e);
+			e.printStackTrace(O);
+		}
 	}
 	
 	@Override
@@ -969,18 +1020,15 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							if (tBetweenlands) {
 								if (tStack.getItem() == Items.POTION) {
 									ST.set(tStack, IL.BTL_Tainted_Potion.get(1), F, F);
+								// F5/BUG-045 (1:1): блок восстановлен на живом compat-mirror IFluidContainerItem (оригинал :797-805);
+								// foreign-gated (Betweenlands в 26.1.2 отсутствует — ветка tBetweenlands мертва, но контракт 1:1).
+								} else if (tStack.getItem() instanceof IFluidContainerItem) {
+									FluidStack tFluid = ((IFluidContainerItem)tStack.getItem()).getFluid(tStack);
+									if (tFluid != null && !FL.Potion_Tainted.is(tFluid) && FluidsGT.POTION.contains(FL.regName(tFluid.getFluid()))) {
+										((IFluidContainerItem)tStack.getItem()).drain(tStack, Integer.MAX_VALUE, T);
+										((IFluidContainerItem)tStack.getItem()).fill(tStack, FL.Potion_Tainted.make(tFluid.getAmount()), T);
+									}
 								}
-								// EVENTS foreign-gated+impossible-1:1 (Betweenlands отсутствует; IFluidHandlerItem , capability-система переработана): fluid-in-item в neo
-								// (IFluidHandlerItem — @Deprecated(forRemoval), заменена ResourceHandler/ItemAccess; getFluid(ItemStack)/drain(..,bool)/
-								// fill(..,bool) более не существуют — реальные IFluidHandler.drain/fill принимают FluidAction, не boolean, сверено
-								// net.neoforged.neoforge.fluids.capability.IFluidHandler.java) — требует отдельного F#-решения, блок отключён.
-								// else if (tStack.getItem() instanceof IFluidHandlerItem) {
-								// 	FluidStack tFluid = ((IFluidHandlerItem)tStack.getItem()).getFluid(tStack);
-								// 	if (tFluid != null && !FL.Potion_Tainted.is(tFluid) && FluidsGT.POTION.contains(FL.regName(tFluid.getFluid()))) {
-								// 		((IFluidHandlerItem)tStack.getItem()).drain(tStack, Integer.MAX_VALUE, T);
-								// 		((IFluidHandlerItem)tStack.getItem()).fill(tStack, FL.Potion_Tainted.make(tFluid.getAmount()), T);
-								// 	}
-								// }
 								ItemStack tRotten = RottingUtil.rotting(tStack, aPlayer.level(), UT.Code.roundDown(aPlayer.getX()), UT.Code.roundDown(aPlayer.getY()), UT.Code.roundDown(aPlayer.getZ()));
 								if (ST.invalid(tRotten)) {tStack.setCount(0); aPlayer.getInventory().setItem(i, NI); continue;}
 								if (tStack != tRotten) ST.set(tStack, tRotten);
@@ -1294,7 +1342,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 			if (ST.valid(aStack)) {
 				// Preventing a Railcraft Crash with Fluid Container Items.
-				if (aStack.getItem() instanceof IFluidHandlerItem && !aPlayer.isShiftKeyDown() && aTileEntity != null && aTileEntity.getClass().getName().startsWith("mods.railcraft.common")) {
+				if (aStack.getItem() instanceof IFluidContainerItem && !aPlayer.isShiftKeyDown() && aTileEntity != null && aTileEntity.getClass().getName().startsWith("mods.railcraft.common")) {
 					aRightClickBlock.setCanceled(T);
 					return;
 				}

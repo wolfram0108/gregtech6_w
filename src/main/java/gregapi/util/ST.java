@@ -67,7 +67,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.EventHooks;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.IFluidContainerItem;
 import twilightforest.TFAchievementPage;
 
 import java.util.*;
@@ -1022,9 +1022,9 @@ public class ST {
 	public static boolean ingredable(ItemStack aStack) {
 		if (invalid(aStack)) return F;
 		if (item_(aStack) instanceof IItemGTContainerTool) return F;
-		// F5 (реализовано): наполненный fluid-контейнер — не ингредиент. FL.getFluid (реестр + динамич. GT6-ячейки) ловит жидкость;
-		// было instanceof IFluidHandlerItem.getCapacity>0 (интерфейс снят). Пустые контейнеры ловятся getCraftingRemainder ниже.
-		if (FL.getFluid(aStack, T) != null) return F;
+		// F5/BUG-045 (1:1): fluid-контейнер (и пустой тоже) — не ингредиент; восстановленный IFluidContainerItem
+		// (compat-mirror; оригинал :841). Реестровые наполненные контейнеры ловятся каналами ниже, как в оригинале.
+		if (item_(aStack) instanceof IFluidContainerItem tICI && tICI.getCapacity(aStack) > 0) return F;
 		// BUG-022 v2: симметрично ST.container — 1.7.10 звал полиморфный hasContainerItem (GT6-бутылки/каны/prefix),
 		// компонентный канал ниже покрывает только vanilla.
 		if (item_(aStack) instanceof gregapi.item.ItemBase tItemBase && tItemBase.hasContainerItem(aStack)) return F;
@@ -1060,9 +1060,17 @@ public class ST {
 			if (IL.SC2_Teacup_Empty.equal(aStack, F, T)) return NI;
 			if (IL.SC2_Teacup_Empty.equal(aStack, T, T)) return IL.SC2_Teacup_Empty.get(1);
 		}
-		// F5 (1:1): пустой контейнер после слива — через FL.getEmpty (реализован: FULL_TO_DATA-реестр + динамич. GT6-ячейки).
-		// Было instanceof IFluidHandlerItem.drain (порт снял интерфейс); FL.getEmpty делает тот же слив→пустой централизованно.
-		return FL.getEmpty(aStack, aCheckIFluidContainerItems);
+		// F5/BUG-045 (1:1): пустой контейнер после слива — восстановленный IFluidContainerItem (compat-mirror;
+		// оригинал :868-876 — drain до пустоты, guard count<=0, очистка пустого NBT).
+		if (aCheckIFluidContainerItems && item_(aStack) instanceof IFluidContainerItem tICI && tICI.getCapacity(aStack) > 0) {
+			ItemStack tStack = amount(1, aStack);
+			tICI.drain(tStack, Integer.MAX_VALUE, T);
+			if (tStack.getCount() <= 0) return NI;
+			CompoundTag tNBT = ItemNBT.get(tStack);
+			if (tNBT != null && tNBT.isEmpty()) ItemNBT.set(tStack, null);
+			return tStack;
+		}
+		return NI;
 	}
 	
 	public static ItemStack container(ItemStack aStack, boolean aCheckIFluidContainerItems, int aSize) {

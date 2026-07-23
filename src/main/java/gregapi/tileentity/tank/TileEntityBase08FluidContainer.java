@@ -56,7 +56,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.IFluidContainerItem;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import squeek.applecore.api.food.FoodValues;
 import thaumcraft.common.tiles.TileCrucible;
@@ -68,7 +68,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Paintable implements ITileEntityConnectedTank, IMTE_GetMaxStackSize, IMTE_OnlyPlaceableWhenSneaking, IMTE_OnItemRightClick, IMTE_OnItemUseFirst, IMTE_AddToolTips, IFluidHandlerItem {
+public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Paintable implements ITileEntityConnectedTank, IMTE_GetMaxStackSize, IMTE_OnlyPlaceableWhenSneaking, IMTE_OnItemRightClick, IMTE_OnItemUseFirst, IMTE_AddToolTips, IFluidContainerItem {
 	public FluidTankGT mTank = new FluidTankGT(1000);
 	public boolean mLiquidProof = T, mGasProof = F, mAcidProof = F, mPlasmaProof = F, mMagicProof = F;
 	public long mTemperatureMax = 0;
@@ -179,18 +179,17 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 	@Override public boolean onlyPlaceableWhenSneaking() {return T;}
 	@Override public boolean canDrop(int aInventorySlot) {return F;}
 	
-	// @Override
+	@Override
 	public FluidStack getFluid(ItemStack aStack) {
 		return mTank.getFluid();
 	}
-	
-	// @Override
+
+	@Override
 	public int getCapacity(ItemStack aStack) {
 		return mTank.getCapacity();
 	}
-	
-	@Override public ItemStack getContainer() {return NI;} // neo IFluidHandlerItem: TE-контейнер не имеет backing item-стека (честный дефолт, как ItemFluidDisplay)
-	// @Override
+
+	@Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		if (!isFluidAllowed(aFluid) || aStack.getCount() != 1) return 0;
 		int tFilled = mTank.fill(aFluid, aDoFill);
@@ -198,7 +197,7 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		return tFilled;
 	}
 	
-	// @Override
+	@Override
 	public FluidStack drain(ItemStack aStack, int aMaxDrain, boolean aDoDrain) {
 		if (aStack.getCount() != 1) return NF;
 		FluidStack tDrained = mTank.drain(aMaxDrain, aDoDrain);

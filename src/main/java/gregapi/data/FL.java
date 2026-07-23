@@ -20,6 +20,7 @@
 package gregapi.data;
 
 import gregapi.code.ArrayListNoNulls;
+import gregapi.code.ItemNBT;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ItemStackMap;
 import gregapi.fluid.FluidGT;
@@ -43,6 +44,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidContainerRegistry.FluidContainerData;
+import net.minecraftforge.fluids.IFluidContainerItem;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.IFluidTank;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -1089,12 +1091,13 @@ public enum FL {
 			return NI;
 		}
 		if (aIsNonCannerCheck && IL.GC_Canister.exists() && (IL.GC_Canister.equal(aStack, T, T) || ST.equal(ST.container(aStack, T), IL.GC_Canister.wild(1)))) return aStack;
-		// F5 (1:1): динамическая GT6-ячейка (MultiItem — жидкость в NBT/компоненте; было instanceof IFluidContainerItem).
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI && tMI.getCapacity(ST.amount(1, aStack)) > 0) {
-			ItemStack tOne = ST.amount(1, aStack); FluidStack tCur = tMI.getFluid(tOne);
-			if ((tCur == null || (equal(tCur, aFluid, T) && tCur.getAmount() < tMI.getCapacity(tOne))) && (aAllowPartialFilling || tMI.getCapacity(tOne) <= aFluid.getAmount())) {
+		// F5/BUG-045 (1:1): контейнер-предмет — восстановленный IFluidContainerItem (compat-mirror; оригинал :946).
+		// Множество 1:1 с оригиналом: ItemFluidDisplay, MTE-ёмкости (Кувшин и др.), TE-базы; НЕ MultiItem.
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidContainerItem tICI && tICI.getCapacity(ST.amount(1, aStack)) > 0) {
+			ItemStack tOne = ST.amount(1, aStack); FluidStack tCur = tICI.getFluid(tOne);
+			if ((tCur == null || (equal(tCur, aFluid) && tCur.getAmount() < tICI.getCapacity(tOne))) && (aAllowPartialFilling || tICI.getCapacity(tOne) <= aFluid.getAmount())) {
 				if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(aFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(aFluid) || acid(aFluid) || powerconducting(aFluid))) return aStack;
-				int tFilled = tMI.fill(tOne, aFluid, T); if (aRemoveFluidDirectly) aFluid.shrink(tFilled);
+				int tFilled = tICI.fill(tOne, aFluid, T); if (aRemoveFluidDirectly) aFluid.shrink(tFilled);
 				return tOne;
 			}
 		}
@@ -1125,12 +1128,12 @@ public enum FL {
 			return NI;
 		}
 		if (aIsNonCannerCheck && IL.GC_Canister.exists() && (IL.GC_Canister.equal(aStack, T, T) || ST.equal(ST.container(aStack, T), IL.GC_Canister.wild(1)))) return aStack;
-		// F5 (1:1): динамическая GT6-ячейка (MultiItem); слив из танка.
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI && tMI.getCapacity(ST.amount(1, aStack)) > 0) {
-			ItemStack tOne = ST.amount(1, aStack); FluidStack tCur = tMI.getFluid(tOne);
-			if ((tCur == null || (equal(tCur, aFluid, T) && tCur.getAmount() < tMI.getCapacity(tOne))) && (aAllowPartialFilling || tMI.getCapacity(tOne) <= aFluid.getAmount())) {
+		// F5/BUG-045 (1:1): контейнер-предмет — восстановленный IFluidContainerItem (оригинал :980); слив из танка.
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidContainerItem tICI && tICI.getCapacity(ST.amount(1, aStack)) > 0) {
+			ItemStack tOne = ST.amount(1, aStack); FluidStack tCur = tICI.getFluid(tOne);
+			if ((tCur == null || (equal(tCur, aFluid) && tCur.getAmount() < tICI.getCapacity(tOne))) && (aAllowPartialFilling || tICI.getCapacity(tOne) <= aFluid.getAmount())) {
 				if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(aFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(aFluid) || acid(aFluid) || powerconducting(aFluid))) return aStack;
-				int tFilled = tMI.fill(tOne, aFluid, T); if (aRemoveFluidDirectly) aTank.drain(tFilled, FluidAction.EXECUTE);
+				int tFilled = tICI.fill(tOne, aFluid, T); if (aRemoveFluidDirectly) aTank.drain(tFilled, FluidAction.EXECUTE);
 				return tOne;
 			}
 		}
@@ -1143,29 +1146,41 @@ public enum FL {
 		return ST.amount(1, tData.filledContainer);
 	}
 
-	/** F5 (1:1): содержит ли контейнер данную жидкость. FULL_TO_DATA-реестр (bookkeeping восстановлен) + динамические
-	 *  GT6-ячейки (MultiItem.getFluid — NBT/компонент-жидкость). Было `instanceof IFluidContainerItem` (порт снял интерфейс). */
+	/** F5/BUG-045 (1:1): содержит ли контейнер данную жидкость. IFluidContainerItem-ветка восстановлена
+	 *  (compat-mirror; оригинал :996-1001, aFluid.isFluidEqual -> центр equal с data-компонентами). */
 	public static boolean contains(ItemStack aStack, FluidStack aFluid, boolean aCheckIFluidContainerItems) {
 		if (ST.invalid(aStack) || aFluid == null) return F;
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI) {FluidStack tF = tMI.getFluid(ST.amount(1, aStack)); if (tF != null) return equal(tF, aFluid, T);}
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidContainerItem tICI && tICI.getCapacity(aStack) > 0) return equal(tICI.getFluid(ST.amount(1, aStack)), aFluid);
 		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
 		return tData != null && equal(tData.fluid, aFluid, T);
 	}
 
-	/** F5 (1:1): жидкость в контейнере. Динамические GT6-ячейки (MultiItem.getFluid) + FULL_TO_DATA-реестр (фикс-контейнеры). */
+	/** F5/BUG-045 (1:1): жидкость в контейнере. IFluidContainerItem-ветка восстановлена (compat-mirror;
+	 *  оригинал :1003-1012, drain-снимок + гейт универсальной ячейки IC2). */
 	public static FluidStack getFluid(ItemStack aStack, boolean aCheckIFluidContainerItems) {
 		if (ST.invalid(aStack)) return NF;
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI) {FluidStack tF = tMI.getFluid(ST.amount(1, aStack)); if (tF != null) return tF;}
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidContainerItem tICI && tICI.getCapacity(aStack) > 0) {
+			FluidStack rFluid = tICI.drain(ST.amount(1, aStack), Integer.MAX_VALUE, T);
+			if (IL.Cell_Universal_Fluid.equal(aStack, T, T) && (temperature(rFluid, DEF_ENV_TEMP) > MT.Sn.mMeltingPoint || !simple(rFluid) || acid(rFluid) || powerconducting(rFluid))) return NF;
+			return rFluid;
+		}
 		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
 		return tData == null ? NF : tData.fluid.copy();
 	}
 
-	/** F5 (1:1): пустой контейнер после слива. FULL_TO_DATA-реестр (фикс full->empty) + динамические GT6-ячейки (getContainerItem). */
+	/** F5/BUG-045 (1:1): пустой контейнер после слива. IFluidContainerItem-ветка восстановлена (compat-mirror;
+	 *  оригинал :1014-1025 — drain до пустоты + очистка пустого NBT; ItemNBT.set(null) = снятие CUSTOM_DATA). */
 	public static ItemStack getEmpty(ItemStack aStack, boolean aCheckIFluidContainerItems) {
 		if (ST.invalid(aStack)) return NI;
 		FluidContainerData tData = FULL_TO_DATA.get(new ItemStackContainer(aStack));
 		if (tData != null) return ST.amount(1, tData.emptyContainer);
-		if (aCheckIFluidContainerItems && aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI && tMI.getFluid(ST.amount(1, aStack)) != null) return tMI.getContainerItem(ST.amount(1, aStack));
+		if (aCheckIFluidContainerItems && aStack.getItem() instanceof IFluidContainerItem tICI && tICI.getCapacity(aStack) > 0) {
+			tICI.drain(aStack = ST.amount(1, aStack), Integer.MAX_VALUE, T);
+			CompoundTag tNBT = ItemNBT.get(aStack);
+			if (tNBT == null) return aStack;
+			if (tNBT.isEmpty()) ItemNBT.set(aStack, null);
+			return aStack;
+		}
 		return NI;
 	}
 	

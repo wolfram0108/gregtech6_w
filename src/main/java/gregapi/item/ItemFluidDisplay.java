@@ -44,8 +44,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fluids.IFluidContainerItem;
 
 import java.util.Collection;
 import java.util.List;
@@ -55,7 +54,7 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUpdatable, IItemGT {
+public class ItemFluidDisplay extends Item implements IFluidContainerItem, IItemUpdatable, IItemGT {
 	// F3-render: было IIcon (удалённый 1.7.10-класс) — поле мёртвое (нигде не читается); тип сменён на neo Identifier,
 	// чтобы убрать ссылку на removed-класс (иначе перечисление методов класса в GT6ItemModel.resolveIcon → NoClassDefFoundError).
 	protected net.minecraft.resources.Identifier mIcon;
@@ -357,7 +356,7 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		updateItemStack(aStack);
 	}
 	
-	// @Override
+	@Override
 	public FluidStack getFluid(ItemStack aStack) {
 		Fluid tFluid = FL.fluid(ST.meta_(aStack));
 		if (tFluid == null) return null;
@@ -369,35 +368,19 @@ public class ItemFluidDisplay extends Item implements IFluidHandlerItem, IItemUp
 		}
 		return rFluid == null ? FL.make(tFluid, 0) : rFluid;
 	}
-	
-	// @Override
+
+	@Override
 	public int getCapacity(ItemStack aStack) {
 		return Integer.MAX_VALUE;
 	}
-	
-	// @Override
+
+	@Override
 	public int fill(ItemStack aStack, FluidStack aFluid, boolean aDoFill) {
 		return 0;
 	}
-	
-	// @Override
+
+	@Override
 	public FluidStack drain(ItemStack aStack, int aDrain, boolean aDoDrain) {
 		return getFluid(aStack);
 	}
-
-	// F5: neo IFluidHandlerItem (neoforge-decompiled/.../fluids/capability/IFluidHandlerItem.java:26, extends
-	// IFluidHandler) — item-bound capability-обёртка (getContainer()/getFluidInTank(int)/fill(FluidStack,
-	// FluidAction)), НЕ 1:1 с 1.7.10 IFluidContainerItem (статичные ItemStack-arg методы выше — getFluid(ItemStack)/
-	// getCapacity(ItemStack)/fill(ItemStack,...)/drain(ItemStack,...) — те и остаются реальной по-стековой логикой,
-	// используемой везде, где GT6-код вызывает их явно со стеком). Тот же предел уже принят и задокументирован в
-	// IItemRottable.java (RottingUtil.rotting) — ItemFluidDisplay singleton Item, без per-stack состояния; методы
-	// ниже — компилятор-обязательные заглушки интерфейса, честно деградированы (без контекста стека).
-	@Override public int getTanks() {return 1;}
-	@Override public FluidStack getFluidInTank(int aTank) {return NF;}
-	@Override public int getTankCapacity(int aTank) {return Integer.MAX_VALUE;}
-	@Override public boolean isFluidValid(int aTank, FluidStack aStack) {return T;}
-	@Override public int fill(FluidStack aResource, FluidAction aAction) {return 0;}
-	@Override public FluidStack drain(FluidStack aResource, FluidAction aAction) {return NF;}
-	@Override public FluidStack drain(int aMaxDrain, FluidAction aAction) {return NF;}
-	@Override public ItemStack getContainer() {return NI;} // нет per-stack состояния (singleton Item) — честный дефолт
 }
