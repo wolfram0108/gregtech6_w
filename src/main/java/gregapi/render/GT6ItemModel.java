@@ -62,7 +62,7 @@ public class GT6ItemModel implements ItemModel {
 			if (tItem instanceof net.minecraft.world.item.BlockItem tBI && tBI.getBlock() instanceof IRenderedBlock) {
 				renderBlockInventory(aOutput, aItem, tBI.getBlock(), aCtx);
 			} else {
-				renderFlatItem(aOutput, aItem, tItem);
+				renderFlatItem(aOutput, aItem, tItem, aCtx);
 			}
 		} catch (Throwable e) {/* render-safe: сбой одного предмета не рушит рендер */}
 	}
@@ -120,11 +120,19 @@ public class GT6ItemModel implements ItemModel {
 	}
 
 	/** Предмет-ПРЕДМЕТ (материал/MultiItem): по РЕНДЕР-ПАССАМ getIcon(stack,pass) + тинт getColorFromItemStack(stack,pass). */
-	private static void renderFlatItem(ItemStackRenderState aOutput, ItemStack aStack, net.minecraft.world.item.Item aItem) {
+	private static void renderFlatItem(ItemStackRenderState aOutput, ItemStack aStack, net.minecraft.world.item.Item aItem, ItemDisplayContext aCtx) {
+		// BUG-028: полоски прочности/заряда (MultiItemTool.getIcon: последние 2 пасса = Textures.ItemIcons.DURABILITY_BAR/
+		// ENERGY_BAR) в 1.7.10 рисовались ТОЛЬКО в инвентаре/GUI — развилка «инвентарь vs предмет-в-мире» жила в самом рендер-
+		// движке 1.7.10, не в коде мода (getRenderPasses всегда возвращает base+2). Этот мост — движковый item-адаптер порта
+		// (аналог RenderItem), потому воспроизводим ту же развилку ЗДЕСЬ, централизованно: вне GUI (первое/третье лицо, земля,
+		// рамка) бар-оверлейные пассы пропускаем. Признак — иконка из центрального бар-реестра мода (НЕ index-математика «последние
+		// 2»: у PrefixItem пасс 1 — легальный слой материала, бар-иконок не отдаёт → его не заденем). Игрок подтвердил регресс.
+		boolean tSkipBars = (aCtx != ItemDisplayContext.GUI);
 		int tPasses = itemRenderPasses(aItem, aStack);
 		for (int tPass = 0; tPass < tPasses; tPass++) {
 			Identifier tIcon = iconForPass(aItem, aStack, tPass);
 			if (tIcon == null) { if (tPass == 0) return; else continue; }
+			if (tSkipBars && isBarOverlayIcon(tIcon)) continue; // GUI-only оверлей прочности/заряда — в мире (руки/земля/рамка) не рисуем
 			TextureAtlasSprite tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.ITEMS);
 			if (tSprite == null) tSprite = GT6QuadBuilder.resolveSprite(tIcon, net.minecraft.data.AtlasIds.BLOCKS);
 			if (tSprite == null) continue;
@@ -190,6 +198,24 @@ public class GT6ItemModel implements ItemModel {
 		try { java.lang.reflect.Method m = aItem.getClass().getMethod("getColorFromItemStack", ItemStack.class, int.class); Object c = m.invoke(aItem, aStack, aPass); if (c instanceof Integer ci) return ci; } catch (Throwable e) {}
 		return 0xFFFFFF;
 	}
+
+	// BUG-028: центральный набор бар-оверлейных иконок мода — Textures.ItemIcons.DURABILITY_BAR ∪ ENERGY_BAR (те же
+	// IIconContainer'ы, что отдаёт MultiItemTool.getIcon на последних 2 пассах). Не хардкод-строки и не index-эвристика — опора
+	// на существующий центральный реестр текстур. Ленивый кэш (иконки резолвятся лениво getIcon→run() после bake атласа; строим
+	// при первом рендере, идиома sBlockGuiTransforms); кэшируем только непустой (полностью резолвнутый) набор.
+	private static java.util.Set<Identifier> sBarOverlayIcons;
+	private static java.util.Set<Identifier> barOverlayIcons() {
+		if (sBarOverlayIcons != null) return sBarOverlayIcons;
+		java.util.HashSet<Identifier> tSet = new java.util.HashSet<>();
+		try {
+			for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.DURABILITY_BAR) { Identifier i = c.getIcon(0); if (i != null) tSet.add(i); }
+			for (gregapi.render.IIconContainer c : gregapi.old.Textures.ItemIcons.ENERGY_BAR)     { Identifier i = c.getIcon(0); if (i != null) tSet.add(i); }
+		} catch (Throwable e) {}
+		if (!tSet.isEmpty()) sBarOverlayIcons = tSet;
+		return tSet;
+	}
+	/** BUG-028: иконка пасса — бар-оверлей прочности/заряда (GUI-only)? Мембершип по центральному реестру мода. */
+	private static boolean isBarOverlayIcon(Identifier aIcon) { return aIcon != null && barOverlayIcons().contains(aIcon); }
 
 	/** Икона предмета: GT6 {@code getIconIndex(ItemStack)} (PrefixItem/MultiItem) → Identifier; иначе {@code getIconFromDamage(int)}.
 	 *  public — переиспользуется скан-оснасткой рендера (GT6RenderProbe) для приёмки «иконки не пурпур». */
