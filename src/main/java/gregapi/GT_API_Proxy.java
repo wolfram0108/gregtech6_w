@@ -751,10 +751,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		tMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
 	}
 
-	// ================= [GT6-BUG025PROBE] BUG-025 (котёл от трубы+Drain не наполняется: 1.7.10 числовая мета котла ↔ neo split-блоки CAULDRON/WATER_CAULDRON) — снять при уборке фазы =================
+	// ================= [GT6-BUG025PROBE] BUG-025 ПОЛНАЯ СВЯЗКА: труба(с водой) → котёл наполняется. Реальный путь: placeBlock трубы + connect к котлу + fill бака водой + onServerTickPre (тот же тик сервера, что зовёт distribute). Снять при уборке фазы =================
 	private static int sBug025Tick = -1;
 	private static boolean sBug025Done = false;
-	private static net.minecraft.core.BlockPos sBug025Pos = null;
+	private static net.minecraft.core.BlockPos sBug025PipePos = null, sBug025CauldronPos = null;
+	private static final byte BUG025_SIDE_EAST = 5; // OFFX[5]=+1 → котёл на восток от трубы
 	public static void gt6Bug025ProbeTick(net.minecraft.server.MinecraftServer aServer) {
 		sBug025Tick++;
 		java.io.PrintStream O = gregapi.data.CS.OUT;
@@ -763,46 +764,54 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
 			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel) tPlayer.level();
 			if (sBug025Tick == 200) {
-				net.minecraft.core.BlockPos tPos = tPlayer.blockPosition().offset(6, 0, -6);
-				tLevel.setBlockAndUpdate(tPos, net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState());
-				sBug025Pos = tPos;
-				O.println("========== [GT6-BUG025PROBE] старт: пустой котёл @ " + tPos + " ==========");
-				O.println("[GT6-BUG025PROBE] каналы = ТЕ ЖЕ, что зовёт труба (DelegatorTileEntity): WD.set(мир,x,y,z,WD.block,meta,3,F)=setMetaData; WD.meta(мир,x,y,z)=getMetaData");
+				net.minecraft.core.BlockPos tPipe = tPlayer.blockPosition().offset(6, 0, -6);
+				net.minecraft.core.BlockPos tCaul = tPipe.east();   // +X, GT6 side 5 (EAST) — котёл
+				net.minecraft.core.BlockPos tWater = tPipe.west();  // -X, GT6 side 4 (WEST) — вода (грань ковра-Drain)
+				net.minecraft.world.level.block.state.BlockState tStone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+				net.minecraft.world.level.block.state.BlockState tAir = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+				// платформа 4x3 + расчистка воздуха над ней
+				for (int dx = -2; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) { tLevel.setBlockAndUpdate(tPipe.offset(dx, -1, dz), tStone); tLevel.setBlockAndUpdate(tPipe.offset(dx, 0, dz), tAir); }
+				// «стакан» вокруг воды (кроме грани к трубе) — чтобы источник не растекался на котёл
+				tLevel.setBlockAndUpdate(tWater.west(), tStone); tLevel.setBlockAndUpdate(tWater.north(), tStone); tLevel.setBlockAndUpdate(tWater.south(), tStone); tLevel.setBlockAndUpdate(tWater.above(), tStone);
+				tLevel.setBlockAndUpdate(tWater, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState()); // источник воды (level=0)
+				tLevel.setBlockAndUpdate(tCaul, net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState()); // пустой котёл
+				gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				boolean tPlaced = tReg.mBlock.placeBlock(tLevel, tPipe.getX(), tPipe.getY(), tPipe.getZ(), gregapi.data.CS.SIDE_UNKNOWN, (short) 26004, null, false, true); // 26004 = Huge Wood Fluid Pipe (ёмкость 1200 >= 1000, чтобы Drain-налив 1000mB «всё-или-ничего» поместился — Large=600 был мал, отсюда прошлый FAIL)
+				sBug025PipePos = tPipe; sBug025CauldronPos = tCaul;
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tPipe);
+				O.println("========== [GT6-BUG025PROBE] ПОЛНАЯ СВЯЗКА (вода→Drain→труба→котёл): труба@" + tPipe + " placed=" + tPlaced + " BE=" + (tBE == null ? "null" : tBE.getClass().getSimpleName()) + "; вода@" + tWater + "; котёл@" + tCaul + " ==========");
 			}
 			else if (sBug025Tick == 210) {
-				// §6.1 контроль (воспроизводим СТАРЫЙ WD.set): для CAULDRON он ставил defaultBlockState() = пусто → уровень терялся
-				net.minecraft.core.BlockPos p = sBug025Pos;
-				tLevel.setBlock(p, net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState(), 3); // == что делал старый WD.set при setMetaData(3)
-				byte tOldMeta = gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter) tLevel, p.getX(), p.getY(), p.getZ());
-				O.println("[GT6-BUG025PROBE] §6.1 контроль (старый WD.set для запрошенного уровня 3): блок=" + tLevel.getBlockState(p).getBlock() + " getMetaData=" + tOldMeta + " [запрошен 3, получен 0 ⇒ уровень терялся, котёл пуст — механизм дефекта воспроизведён]");
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sBug025PipePos);
+				if (!(tBE instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe)) { O.println("[GT6-BUG025PROBE] FAIL: BE трубы не MultiTileEntityPipeFluid: " + tBE); O.println("========== [GT6-BUG025PROBE] DONE =========="); sBug025Done = true; return; }
+				O.println("[GT6-BUG025PROBE] FL.water: Water=" + gregapi.data.FL.water(gregapi.data.FL.Water.make(1000)) + " River_Water=" + gregapi.data.FL.water(gregapi.data.FL.River_Water.make(1000)) + " Ocean=" + gregapi.data.FL.water(gregapi.data.FL.Ocean.make(1000)) + " Dirty_Water=" + gregapi.data.FL.water(gregapi.data.FL.Dirty_Water.make(1000)));
+				// навешиваем НАСТОЯЩИЙ ковер-Drain на западную грань (к воде)
+				boolean tCover = tPipe.setCoverItem((byte) 4, gregapi.data.IL.Cover_Drain.get(1), tPlayer, true, true);
+				// подключаем к котлу (реальный канал connect = ключ/установка вплотную)
+				boolean tConn = tPipe.connect(BUG025_SIDE_EAST, true);
+				O.println("[GT6-BUG025PROBE] Drain-ковер на WEST=" + tCover + " (hasCovers=" + tPipe.hasCovers() + "); connect(EAST→котёл)=" + tConn + " connected(EAST)=" + tPipe.connected(BUG025_SIDE_EAST) + "; блок у WEST=" + tPipe.getBlockAtSide((byte) 4));
+				O.println("[GT6-BUG025PROBE] ДАЛЕЕ — НАТУРАЛЬНЫЙ тик: Drain сам набирает воду из источника, труба сама льёт в котёл. Наблюдаем...");
 			}
-			else if (sBug025Tick == 220) { gt6Bug025Judge(tLevel, O, 3, "A наполнение пустого котла →3"); }
-			else if (sBug025Tick == 230) { tLevel.setBlock(sBug025Pos, net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState(), 3); gt6Bug025Judge(tLevel, O, 1, "B частичный уровень →1"); }
-			else if (sBug025Tick == 240) { gt6Bug025Judge(tLevel, O, 3, "C долив WATER_CAULDRON 1→3"); }
-			else if (sBug025Tick == 250) {
-				gt6Bug025Judge(tLevel, O, 0, "D слив →0 (обратно пустой CAULDRON)");
+			else if (sBug025Tick >= 240 && sBug025Tick <= 440 && (sBug025Tick - 240) % 40 == 0) {
+				net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(sBug025PipePos);
+				if (tBE instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe) {
+					net.minecraft.world.level.block.state.BlockState tCaulSt = tLevel.getBlockState(sBug025CauldronPos);
+					int tLvl = (tCaulSt.getBlock() == net.minecraft.world.level.block.Blocks.WATER_CAULDRON) ? tCaulSt.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL) : 0;
+					O.println("[GT6-BUG025PROBE] тик " + sBug025Tick + ": бак=" + (tPipe.mTanks.length > 0 ? tPipe.mTanks[0].amount() + "mB fluid=" + tPipe.mTanks[0].get() : "нет бака") + " | котёл=" + tCaulSt.getBlock() + " уровень=" + tLvl);
+				}
+			}
+			else if (sBug025Tick == 460) {
+				net.minecraft.world.level.block.state.BlockState tCaulSt = tLevel.getBlockState(sBug025CauldronPos);
+				int tLvl = (tCaulSt.getBlock() == net.minecraft.world.level.block.Blocks.WATER_CAULDRON) ? tCaulSt.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL) : 0;
+				boolean tPass = tCaulSt.getBlock() == net.minecraft.world.level.block.Blocks.WATER_CAULDRON && tLvl >= 1;
+				O.println("[GT6-BUG025PROBE] ИТОГ полной связки: котёл=" + tCaulSt + " уровень=" + tLvl + " => " + (tPass ? "PASS (вода дошла источник→Drain→труба→котёл БЕЗ ручного вмешательства!)" : "FAIL (котёл пуст — вода не дошла по натуральной цепи)"));
 				O.println("========== [GT6-BUG025PROBE] DONE ==========");
 				sBug025Done = true;
 			}
-			else if (sBug025Tick > 300 && sBug025Tick % 200 == 0 && sBug025Tick <= 2000 && sBug025Done) {
+			else if (sBug025Tick > 500 && sBug025Tick % 200 == 0 && sBug025Tick <= 2200 && sBug025Done) {
 				O.println("[GT6-BUG025PROBE] heartbeat: сервер жив, тик " + sBug025Tick);
 			}
 		} catch (Throwable e) {O.println("[GT6-BUG025PROBE] EXC " + e); e.printStackTrace(O);}
-	}
-	private static void gt6Bug025Judge(net.minecraft.server.level.ServerLevel tLevel, java.io.PrintStream O, int aSetLevel, String aName) {
-		net.minecraft.core.BlockPos p = sBug025Pos;
-		int x = p.getX(), y = p.getY(), z = p.getZ();
-		// РЕАЛЬНЫЙ канал записи (1:1 DelegatorTileEntity.setMetaData): WD.set(мир, x,y,z, ТЕКУЩИЙ блок, meta, 3, F)
-		net.minecraft.world.level.block.Block tCur = gregapi.util.WD.block((net.minecraft.world.level.BlockGetter) tLevel, x, y, z);
-		gregapi.util.WD.set(tLevel, x, y, z, tCur, aSetLevel, 3, false);
-		// РЕАЛЬНЫЙ канал чтения (1:1 DelegatorTileEntity.getMetaData): WD.meta
-		byte tReadMeta = gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter) tLevel, x, y, z);
-		net.minecraft.world.level.block.state.BlockState tSt = tLevel.getBlockState(p);
-		net.minecraft.world.level.block.Block tB = tSt.getBlock();
-		int tStateLevel = (tB == net.minecraft.world.level.block.Blocks.WATER_CAULDRON) ? tSt.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL) : 0;
-		net.minecraft.world.level.block.Block tExpectBlock = aSetLevel <= 0 ? net.minecraft.world.level.block.Blocks.CAULDRON : net.minecraft.world.level.block.Blocks.WATER_CAULDRON;
-		boolean tPass = tB == tExpectBlock && tReadMeta == aSetLevel && tStateLevel == (aSetLevel <= 0 ? 0 : aSetLevel);
-		O.println("[GT6-BUG025PROBE] " + aName + ": setMetaData(" + aSetLevel + ") → блок=" + tB + " LEVEL=" + tStateLevel + " getMetaData=" + tReadMeta + " (распознаётся трубой=" + (tB == net.minecraft.world.level.block.Blocks.CAULDRON || tB == net.minecraft.world.level.block.Blocks.WATER_CAULDRON) + ") => " + (tPass ? "PASS" : "FAIL") + " (ждали блок=" + (aSetLevel <= 0 ? "CAULDRON" : "WATER_CAULDRON") + " уровень=" + aSetLevel + ")");
 	}
 
 	// Было @SubscribeEvent onLivingUpdate(LivingUpdateEvent) — LivingUpdateEvent (net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent,
