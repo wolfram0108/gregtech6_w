@@ -819,7 +819,14 @@ public class WD {
 	public static Block block(LevelAccessor aWorld, int aX, int aY, int aZ, byte aSide) {return block(aWorld, aX+OFFX[aSide], aY+OFFY[aSide], aZ+OFFZ[aSide]);}
 	// МОДЕЛЬ МЕТЫ п.4: числовой меты в neo больше нет — для IBlockExtendedMetaData (свои блоки, п.1) реальное
 	// значение, иначе 0 (не выдумываем числовую таблицу для ванильных блоков).
-	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {Block tB = aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock(); return UT.Code.bind4(tB instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);}
+	public static byte  meta (BlockGetter aWorld, int aX, int aY, int aZ) {
+		BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ)); Block tB = tState.getBlock();
+		// BUG-025: 1.7.10-котёл (один блок, мета 0-3 = уровень воды) движок (1.13+) разложил на CAULDRON(пусто, без
+		// свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3) — читаем уровень из split-блока, чтобы
+		// GT6-код (труба) видел мету котла как в 1.7.10 (getBlockMetadata давал 0-3). Пусто = 0 (ниже, дефолт).
+		if (tB == Blocks.WATER_CAULDRON) return UT.Code.bind4(tState.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL));
+		return UT.Code.bind4(tB instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);
+	}
 	/** F13-контракт: мета из СНИМКА BlockState (BlockDropsEvent.getState() / mineBlock aState). В neo removeBlock
 	 *  происходит ДО дропов и Item.mineBlock (в 1.7.10 — ПОСЛЕ), поэтому meta(aWorld,x,y,z) на harvest-путях читает
 	 *  уже ВОЗДУХ → мета 0 → протухшие рецепты молота (BUG-016) и dig-скорости. Каналом снимка контракт 1.7.10
@@ -876,6 +883,18 @@ public class WD {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
 			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)
+		}
+		// BUG-025: движок (1.13+) разложил 1.7.10-котёл (один блок, мета 0-3 = уровень воды) на РАЗНЫЕ реестровые блоки:
+		// CAULDRON(пусто, БЕЗ свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3). Универсальный мост ниже
+		// (setBlock defaultBlockState) уровень не выражал → setMetaData(3) ставил пустой CAULDRON, теряя воду (котёл от
+		// трубы+Drain не наполнялся). Централизованный перевод «числовая мета котла ↔ split-блок+LEVEL» — здесь, в ЕДИНОМ
+		// WD-центре записи (1:1 семантика 1.7.10 setBlockMetadataWithNotify на котле): 0→пусто, 1-3→WATER_CAULDRON.LEVEL.
+		if (aBlock == Blocks.CAULDRON || aBlock == Blocks.WATER_CAULDRON) {
+			byte tLevel = Code.bind4(aMeta);
+			BlockState tCauldron = tLevel <= 0
+				? Blocks.CAULDRON.defaultBlockState()
+				: Blocks.WATER_CAULDRON.defaultBlockState().setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, (int) Math.min(net.minecraft.world.level.block.LayeredCauldronBlock.MAX_FILL_LEVEL, tLevel));
+			return aWorld.setBlock(new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
 		}
 		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
 		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4): для своих блоков (IBlockExtendedMetaData) — канал

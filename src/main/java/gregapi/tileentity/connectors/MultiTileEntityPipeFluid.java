@@ -48,7 +48,6 @@ import gregapi.util.CR;
 import gregapi.util.UT;
 import gregapi.util.WD;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.Container;
@@ -346,8 +345,12 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			if (isCovered(tSide) && mCovers.mBehaviours[tSide].interceptFluidDrain(tSide, mCovers, tSide, aTank.get())) continue;
 			
 			Block tBlock = aAdjacentOther[tSide].getBlock();
-			// Filling up Cauldrons from Vanilla. Yes I need to check for both to make this work. Some Mods override the Cauldron in a bad way.
-			if ((tBlock == Blocks.CAULDRON || tBlock instanceof CauldronBlock) && aTank.has(334) && FL.water(aTank.get())) {
+			// Filling up Cauldrons from Vanilla. BUG-025: движок (1.13+) разложил 1.7.10-котёл на CAULDRON(пусто)/
+			// WATER_CAULDRON(LEVEL 1-3) — распознаём ОБА (было `instanceof CauldronBlock` = лишь пустой в neo → долив
+			// частичного котла не работал; оригинал 1.7.10 `Blocks.cauldron || instanceof BlockCauldron` = котёл ЛЮБОГО
+			// уровня 0-3, тогда один блок). Уровень читается/пишется через getMetaData/setMetaData → WD.meta/WD.set, где
+			// централизованный перевод меты↔split-блок (см. WD.java). Логика switch ниже — 1:1 с оригиналом, не тронута.
+			if ((tBlock == Blocks.CAULDRON || tBlock == Blocks.WATER_CAULDRON) && aTank.has(334) && FL.water(aTank.get())) {
 				switch(aAdjacentOther[tSide].getMetaData()) {
 				case 0:
 					if (aTank.drainAll(1000)) {aAdjacentOther[tSide].setMetaData(3); break;}
@@ -511,8 +514,9 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 		}
 		if (mCapacity >= 334) {
 			Block tBlock = aDelegator.getBlock();
-			// Yes I need to check for both to make this work. Some Mods override the Cauldron in a bad way.
-			if (tBlock == Blocks.CAULDRON || tBlock instanceof CauldronBlock) return T;
+			// BUG-025: распознаём и пустой CAULDRON, и наполненный WATER_CAULDRON (см. distribute выше и WD-центры) —
+			// иначе после наполнения (CAULDRON→WATER_CAULDRON) труба переставала считать котёл валидной целью подключения.
+			if (tBlock == Blocks.CAULDRON || tBlock == Blocks.WATER_CAULDRON) return T;
 		}
 		return F;
 	}
