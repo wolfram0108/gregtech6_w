@@ -676,10 +676,8 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
-		// BUG-024: ванильный взрыв (DESTROY_WITH_DECAY) дропает через этот же loot-канал с EXPLOSION_RADIUS —
-		// в 1.7.10 шанс дропа от взрыва = 1/размер (Explosion.doExplosionB / ExplosionGT:175 dropBlockAsItemWithChance).
-		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
-		if (tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius) return java.util.Collections.emptyList();
+		// BUG-024: гейт дропа от взрыва — ЦЕНТР WD.explosionDropDenied (1.7.10 Explosion.doExplosionB / ExplosionGT:175; консолидация, копии искоренены).
+		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
 		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
 		int tFortune = 0; boolean tSilkTouch = F;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);

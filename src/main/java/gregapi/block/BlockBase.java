@@ -216,10 +216,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
 		if (tOrigin == null) return super.getDrops(aState, aParams);
-		// BUG-024 (тот же шов, что PrefixBlock): ванильный взрыв дропает через loot-канал с EXPLOSION_RADIUS —
-		// 1.7.10-шанс дропа от взрыва = 1/размер; без гейта GT6-блоки дропались бы от TNT со 100%.
-		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
-		if (tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius) return java.util.Collections.emptyList();
+		// BUG-024: гейт дропа от взрыва — ЦЕНТР WD.explosionDropDenied (консолидация, копии искоренены).
+		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList();
 		int tX = net.minecraft.util.Mth.floor(tOrigin.x), tY = net.minecraft.util.Mth.floor(tOrigin.y), tZ = net.minecraft.util.Mth.floor(tOrigin.z);
 		int tFortune = 0;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
@@ -308,7 +306,7 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// updateTick был СИРОТОЙ (1.7.10-сигнатура «// @Override», никто не звал) → распад листвы/рост саженцев/гравитация/
 	// мшистость всей семьи BlockBase были МЕРТВЫ (scheduleTick бил в неперекрытый neo tick()). Мост 1:1: java.util.Random из RandomSource.
 	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
-		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), new Random(aRandom.nextLong()));
+		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
 	public final void updateTick(Level aWorld, int aX, int aY, int aZ, Random aRandom) {
 		if (aWorld.isClientSide() || checkGravity(aWorld, aX, aY, aZ)) return;

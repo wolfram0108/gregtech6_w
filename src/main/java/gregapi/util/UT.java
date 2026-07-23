@@ -1417,6 +1417,11 @@ public class UT {
 		public static byte   bind7    (long   aBoundValue) {return (byte) Math.max(0, Math.min(       127, aBoundValue));}
 		public static short  bind8    (long   aBoundValue) {return (short)Math.max(0, Math.min(       255, aBoundValue));}
 		public static short  bind15   (long   aBoundValue) {return (short)Math.max(0, Math.min(     32767, aBoundValue));}
+
+		/** ЦЕНТР конвертации генераторов случайности (консолидация BUG-047-ревизии): neo-каналы (tick/randomTick/
+		 *  worldgen) дают RandomSource, дословный GT6-код 1.7.10 хочет java.util.Random — единый мост (seed от
+		 *  nextLong, энтропия канала сохранена). Один приём на весь мод, копии по иерархиям искоренены. */
+		public static java.util.Random random(net.minecraft.util.RandomSource aRandom) {return new java.util.Random(aRandom.nextLong());}
 		public static int    bind16   (long   aBoundValue) {return (int)  Math.max(0, Math.min(     65535, aBoundValue));}
 		public static int    bind24   (long   aBoundValue) {return (int)  Math.max(0, Math.min(  16777215, aBoundValue));}
 		public static int    bind31   (long   aBoundValue) {return (int)  Math.max(0, Math.min(2147483647, aBoundValue));}

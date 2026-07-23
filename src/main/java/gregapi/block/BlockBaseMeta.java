@@ -57,15 +57,18 @@ public abstract class BlockBaseMeta extends BlockBaseSealable implements gregapi
 
 	// Хранилище меты семьи — BlockState-свойство META. Читает любой BlockGetter; пишет Level/LevelAccessor (интерактив)
 	// ИЛИ ChunkAccess (ворлдген — логи/руды кладутся WD.set(ChunkAccess):872 → setExtendedMetaData(aChunk,...)).
+	// Консолидация (BUG-047-ревизия): раскладка меты по свойствам живёт в ОДНОМ месте — каналах
+	// get/getStateForExtendedMetaData(BlockState) интерфейса (дефолт = META); геттер/сеттер только маршрутизируют.
 	@Override public short getExtendedMetaData(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {
 		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(new net.minecraft.core.BlockPos(aX, aY, aZ));
-		return (short)(tState.getBlock() == this ? tState.getValue(META).intValue() : 0);
+		return tState.getBlock() == this ? getExtendedMetaData(tState) : 0;
 	}
 	@Override public void setExtendedMetaData(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
 		net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(aX, aY, aZ);
 		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(tPos);
 		if (tState.getBlock() != this) return;
-		net.minecraft.world.level.block.state.BlockState tNew = tState.setValue(META, (int)UT.Code.bind4(aMetaData));
+		net.minecraft.world.level.block.state.BlockState tNew = getStateForExtendedMetaData(tState, aMetaData);
+		if (tNew == null) return;
 		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tLA) tLA.setBlock(tPos, tNew, 3);
 		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, net.minecraft.world.level.block.Block.UPDATE_ALL);
 	}

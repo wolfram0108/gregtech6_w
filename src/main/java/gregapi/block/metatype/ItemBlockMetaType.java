@@ -47,14 +47,11 @@ public class ItemBlockMetaType extends ItemBlockBase implements IItemUpdatable {
 		byte tSide = UT.Code.getSideWrenching((byte)aSide, aHitX, aHitY, aHitZ);
 		if (tSide == aSide || tSide == OPOS[aSide]) tSide = OPOS[tSide];
 		// BUG-010 (запрос игрока): установка слэба В воду — вода остаётся (WATERLOGGED, как современный ванильный слэб).
+		// Приём — ЦЕНТР WD.waterlog (консолидация BUG-047-ревизии; снимок «была ли вода» — ДО установки).
 		BlockPos tPos = new BlockPos(aX, aY, aZ);
 		boolean tWater = aWorld.getFluidState(tPos).getType() == net.minecraft.world.level.material.Fluids.WATER;
 		if (!WD.set(aWorld, aX, aY, aZ, ((BlockMetaType)mPlaceable).mBlock.mSlabs[tSide], aMetaData, 3)) return F;
-		if (tWater) {
-			net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(tPos);
-			if (tState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED))
-				aWorld.setBlock(tPos, tState.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
-		}
+		if (tWater) WD.waterlog(aWorld, aX, aY, aZ);
 		return T;
 	}
 	

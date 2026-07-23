@@ -880,6 +880,24 @@ public class WD {
 		return aWorld.getBlockState(tPos).canBeReplaced();
 	}
 
+	/** ЦЕНТР гейта дропа от взрыва (BUG-024; консолидация BUG-047-ревизии — были копии в BlockBase/PrefixBlock/
+	 *  BlockBaseRail): ванильный взрыв дропает через loot-канал с EXPLOSION_RADIUS — 1.7.10-шанс дропа от взрыва
+	 *  = 1/размер (Explosion.doExplosionA), без гейта GT6-блоки дропались бы от TNT со 100%. true = дроп подавить. */
+	public static boolean explosionDropDenied(net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
+		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
+		return tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius;
+	}
+
+	/** ЦЕНТР waterlog-приёма (BUG-010 слэбы / BUG-047 рельсы; семантика vanilla getStateForPlacement для
+	 *  waterloggable-блоков): установка блока В воду — источник сохраняется как WATERLOGGED=true. Звать ПОСЛЕ
+	 *  установки блока; решение «была ли вода» вызыватель снимает ДО неё (сам сет воду затирает). */
+	public static boolean waterlog(LevelAccessor aWorld, int aX, int aY, int aZ) {
+		BlockPos tPos = new BlockPos(aX, aY, aZ);
+		BlockState tState = aWorld.getBlockState(tPos);
+		if (!tState.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)) return F;
+		return aWorld.setBlock(tPos, tState.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.TRUE), 3);
+	}
+
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)

@@ -394,7 +394,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	// BUG-047: neo scheduled-tick канал = tick(BlockState,ServerLevel,BlockPos,RandomSource) — приём BlockBase:310-312
 	// (updateTick без моста был сиротой → детектор никогда не гас: scheduleTick из func_150054_a бил в неперекрытый tick()).
 	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
-		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), new Random(aRandom.nextLong()));
+		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
 
 	// BUG-047: было hasComparatorInputOverride/getComparatorInputOverride (1.7.10) → neo hasAnalogOutputSignal/
@@ -414,8 +414,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 	// neo-дефолт дропал ПУСТО, в т.ч. при потере опоры через vanilla neighborChanged→dropResources). 1.7.10-семантика
 	// рельса: quantityDropped=1 × getItemDropped=сам блок × damageDropped=0. Гейт взрыва — тот же шов BUG-024.
 	@Override protected List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
-		Float tExplosionRadius = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS);
-		if (tExplosionRadius != null && RNGSUS.nextFloat() >= 1.0F / tExplosionRadius) return java.util.Collections.emptyList();
+		if (WD.explosionDropDenied(aParams)) return java.util.Collections.emptyList(); // гейт взрыва — ЦЕНТР (BUG-024)
 		return java.util.Collections.singletonList(ST.make(this, 1, 0));
 	}
 	
@@ -519,10 +518,7 @@ public class BlockBaseRail extends BaseRailBlock implements IBlockBase, IBlockSe
 		BlockPos tPlacePos = new BlockPos(aX, aY, aZ);
 		boolean tWater = aWorld.getFluidState(tPlacePos).getType() == net.minecraft.world.level.material.Fluids.WATER;
 		if (aItem.placeBlockAt(aStack, aPlayer, aWorld, aX, aY, aZ, aSide, aHitX, aHitY, aHitZ, SIDES_AXIS_X[UT.Code.getHorizontalForPlayerPlacing(aPlayer)] ? 1 : 0)) {
-			if (tWater) {
-				BlockState tPlaced = aWorld.getBlockState(tPlacePos);
-				if (tPlaced.getBlock() instanceof BlockBaseRail && tPlaced.hasProperty(WATERLOGGED)) aWorld.setBlock(tPlacePos, tPlaced.setValue(WATERLOGGED, Boolean.TRUE), 3);
-			}
+			if (tWater) WD.waterlog(aWorld, aX, aY, aZ); // приём — ЦЕНТР WD.waterlog (BUG-010/BUG-047)
 			WD.playStepSound(aWorld, aX+0.5F, aY+0.5F, aZ+0.5F, this);
 			aStack.setCount(aStack.getCount()-1);
 		}

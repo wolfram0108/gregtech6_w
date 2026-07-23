@@ -140,7 +140,7 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	// onBlockAdded (Forge BlockFluidBase) планировал первый тик — neo onPlace 1:1.
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, java.util.Random aRandom) {/* переопределяют BlockBaseFluid/Ocean/River/Swamp */}
 	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
-		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), new java.util.Random(aRandom.nextLong()));
+		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), gregapi.util.UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
 	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {
 		onBlockAdded(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
