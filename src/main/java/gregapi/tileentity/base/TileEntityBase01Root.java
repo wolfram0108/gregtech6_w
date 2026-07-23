@@ -1175,6 +1175,11 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 		net.minecraft.world.entity.player.Player tPlayer = net.minecraft.client.Minecraft.getInstance().player;
 		ItemStack tHeld = tPlayer == null ? null : tPlayer.getMainHandItem();
 		if (ST.valid(tHeld) && isUsingWrenchingOverlay(tHeld, tSide)) {
+			// BUG-029: 1:1 с оригиналом (TileEntityBase01Root:999) — при держании ключа/кусачек тонкий коннектор
+			// отдаёт ПОЛНЫЙ бокс и для рамки, и для прицела (getSelectedBoundingBoxFromPool/setBlockBoundsBasedOnState
+			// читают FORCE_FULL_SELECTION_BOXES; блок dynamicShape() → форма живая, флаг действует сразу). Порт эту
+			// строку потерял → коннектор всегда тонкий → рамку невозможно удержать на неподключённом проводе. Восстановлено.
+			FORCE_FULL_SELECTION_BOXES = T;
 			byte tConnections = 0;
 			for (byte i = 0; i < 6; i++) if (isConnectedWrenchingOverlay(tHeld, i)) tConnections |= (byte)(1 << i);
 			gregapi.render.RenderHelper.drawWrenchOverlay(aEvent, tConnections, tSide);
