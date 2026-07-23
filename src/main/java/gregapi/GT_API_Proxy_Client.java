@@ -193,6 +193,29 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
+	// [GT6-BUG045PROBE] Клиентская половина DRINK-кейса (§2.4 LIVE-PROBE-MANUAL): по сигналу сервера кликаем
+	// СВОИМ клиентским каналом (MultiPlayerGameMode.useItem — полный человеческий путь клиент->пакет->сервер) и
+	// ДЕРЖИМ ПКМ (KeyMapping.setDown) — иначе Minecraft.handleKeybinds видит «пьёт без зажатой кнопки» и шлёт
+	// release, обрывая питьё (наблюдалось: isUsingItem=true на клике, false до finishUsingItem). — снять при уборке фазы.
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onB45DrinkProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6bug045probe.flag")) return;
+		int tSignal = gregapi.GT_API_Proxy.B45_DRINK_SIGNAL;
+		if (tSignal != 1 && tSignal != 3) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tSignal == 3) {
+			tMC.options.keyUse.setDown(false);
+			gregapi.GT_API_Proxy.B45_DRINK_SIGNAL = 0;
+			return;
+		}
+		if (tMC.player == null || tMC.gameMode == null) return;
+		if (tMC.player.getMainHandItem().isEmpty()) return; // ждать синка предмета в клиентский слот (§2.4)
+		tMC.options.keyUse.setDown(true);
+		tMC.gameMode.useItem(tMC.player, net.minecraft.world.InteractionHand.MAIN_HAND);
+		gregapi.GT_API_Proxy.B45_DRINK_SIGNAL = 2;
+		gregapi.data.CS.OUT.println("[GT6-BUG045PROBE] (клиент) ПКМ кликнут и зажат, isUsingItem=" + tMC.player.isUsingItem());
+	}
+
 	// АВТОНОМНЫЙ вход в мир (переиспользуемый harness живых проб, гейт: файл run/wgautoworld.flag; вне флага НЕ активен):
 	// quickPlay упирается в диалог-подтверждение (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ
 	// создаём свежий CREATIVE-мир через штатный клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» →

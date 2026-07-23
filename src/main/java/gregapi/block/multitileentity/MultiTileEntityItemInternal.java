@@ -62,6 +62,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
@@ -471,6 +472,38 @@ public class MultiTileEntityItemInternal extends BlockItem implements squeek.app
 			return rStack;
 		}
 		return aStack;
+	}
+
+	// F13/BUG-048: мост движок->мод для use-цепочки предмета. 4 метода выше — 1.7.10-имена (в neo Item их нет,
+	// движок их не звал — питьё из Кувшина/Кубка/Термоса и еда Сэндвича были мертвы); живые neo-хуки ниже
+	// делегируют в них 1:1. Паттерн «начать пить» = TE-делегат сам зовёт startUsingItem (LivingEntity.java:3529),
+	// хук возвращает CONSUME — как ванильный Item.use с BLOCKS_ATTACKS (Item.java:216-218). Замена стека
+	// возвратом (контракт 1.7.10 onItemRightClick) -> setItemInHand + SUCCESS; иначе PASS (1.7.10 не различал,
+	// мутации in-place уже применены). MAIN_HAND в TE-делегате 1:1 (1.7.10 offhand не имел).
+	@Override
+	public InteractionResult use(Level aWorld, Player aPlayer, InteractionHand aHand) {
+		ItemStack aStack = aPlayer.getItemInHand(aHand);
+		ItemStack rStack = onItemRightClick(aStack, aWorld, aPlayer);
+		if (rStack != aStack) {aPlayer.setItemInHand(aHand, rStack); return InteractionResult.SUCCESS;}
+		if (aPlayer.isUsingItem()) return InteractionResult.CONSUME;
+		return InteractionResult.PASS;
+	}
+
+	@Override
+	public int getUseDuration(ItemStack aStack, LivingEntity aEntity) {
+		return getMaxItemUseDuration(aStack); // было Item.getMaxItemUseDuration(ItemStack) (1.7.10) -> neo Item.getUseDuration(ItemStack,LivingEntity) (Item.java:328)
+	}
+
+	@Override
+	public ItemUseAnimation getUseAnimation(ItemStack aStack) {
+		return getItemUseAction(aStack); // было Item.getItemUseAction(ItemStack) (1.7.10) -> neo Item.getUseAnimation(ItemStack) (Item.java:317)
+	}
+
+	@Override
+	public ItemStack finishUsingItem(ItemStack aStack, Level aWorld, LivingEntity aEntity) {
+		// было Item.onEaten(ItemStack,World,EntityPlayer) (1.7.10) -> neo Item.finishUsingItem(ItemStack,Level,LivingEntity)
+		// (Item.java:232); 1.7.10 звал только для игрока — Player-гейт, не-игрок падает в super (Consumable-путь, у MTE пуст).
+		return aEntity instanceof Player tPlayer ? onEaten(aStack, aWorld, tPlayer) : super.finishUsingItem(aStack, aWorld, aEntity);
 	}
 	
 	@Override

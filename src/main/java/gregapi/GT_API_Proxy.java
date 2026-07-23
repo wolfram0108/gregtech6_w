@@ -325,12 +325,18 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// 3 мака кликами (реальное наполнение танка), набрать кувшином ПКМ по машине (канал репорта), контроль-НЕ —
 	// палка. Изолированный шов §6.1 (центр распознавания на стеке) — в SETUP, судьёй НЕ является.
 	// Замер танка — рефлексией protected mTanks (замер состояния BE, не судимый канал — §5.3).
-	// Прогон 2026-07-23 19:58 (лог в карточке BUG-REPORTS 045): DONE PASS=4 FAIL=0.
+	// Прогон 2026-07-23 19:58 (лог в карточке BUG-REPORTS 045): DONE PASS=4 FAIL=0 (SETUP..CONTROL-NEG).
+	// + BUG-048 (питьё из руки мертво — use-цепочка Item не мостилась): кейсы SCOOP (зачерпнуть воду из мира
+	// ПКМ-в-воздух) и DRINK (выпить 250mB, движок сам зовёт finishUsingItem) — канал gameMode.useItem (§4).
 	// Гейт двойной (-Pgt6probes + run/gt6bug045probe.flag). — снять при уборке фазы.
 	// ================================================================================================================
 	private static int sB45Tick = -1, sB45Pass = 0, sB45Fail = 0;
 	private static long sB45Squeezed = -1, sB45AfterFill = -1;
 	private static net.minecraft.core.BlockPos sB45Pos = null;
+	/** Сигнал сервер->клиент для DRINK (§2.4, полный человеческий путь): 1=кликнуть ПКМ и ДЕРЖАТЬ (keyUse.setDown —
+	 *  иначе Minecraft.handleKeybinds видит «пьёт без зажатой ПКМ» и шлёт release, обрывая питьё), 2=клиент держит,
+	 *  3=отпустить, 0=покой. */
+	public static volatile int B45_DRINK_SIGNAL = 0;
 	private static void b45Verdict(boolean aPass, String aCase, String aWhat) {
 		if (aPass) sB45Pass++; else sB45Fail++;
 		CS.OUT.println("[GT6-BUG045PROBE] => " + (aPass ? "PASS" : "FAIL") + " [" + aCase + "] (" + aWhat + ")");
@@ -416,8 +422,43 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				boolean tStickIntact = ST.valid(tHand) && tHand.getItem() == net.minecraft.world.item.Items.STICK && FL.getFluid(tHand, T) == null;
 				O.println("[GT6-BUG045PROBE] CONTROL-NEG: рука=" + tHand + " танк=" + tTank.content());
 				b45Verdict(tStickIntact && tTank.getFluidAmount() > 0, "CONTROL-NEG", "палка не стала контейнером, танк не слит");
+			// ---- BUG-048: питьё/зачерпывание из руки (use-цепочка Item; каналы §4: gameMode.useItem = ПКМ в воздух) ----
+			} else if (sB45Tick == 380) {
+				// SCOOP-подготовка: блок-источник воды в нише площадки; кувшин НОВЫЙ (пустой) в руку.
+				tLevel.setBlock(sB45Pos.offset(2, -1, 0), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+				tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.getInventory().setItem(0, tRegistry.getItem(32740));
+			} else if (sB45Tick == 390) {
+				// SCOOP: игрок над водой, взгляд вниз, ПКМ в воздух -> Item.use -> onItemRightClick -> canPickUpFluids-ветка.
+				tPlayer.teleportTo(tLevel, sB45Pos.getX() + 2.5, sB45Pos.getY(), sB45Pos.getZ() + 0.5, java.util.Set.of(), 0, 85, true);
+				tPlayer.setYRot(0); tPlayer.setYHeadRot(0); tPlayer.setXRot(85);
+				tPlayer.gameMode.useItem(tPlayer, tLevel, tPlayer.getInventory().getItem(0), net.minecraft.world.InteractionHand.MAIN_HAND);
+			} else if (sB45Tick == 410) {
+				ItemStack tJugW = tPlayer.getInventory().getItem(0);
+				FluidStack tGot = FL.getFluid(tJugW, T);
+				O.println("[GT6-BUG045PROBE] SCOOP: рука=" + tJugW + " жидкость=" + tGot + " блок-вода=" + tLevel.getBlockState(sB45Pos.offset(2, -1, 0)).getBlock());
+				b45Verdict(tGot != null && FL.water(tGot) && tGot.getAmount() == 1000, "SCOOP", "кувшин зачерпнул 1000mB воды ПКМ-в-воздух (фактически " + (tGot == null ? "ничего" : tGot.getAmount() + "mB") + ")");
+			} else if (sB45Tick == 430) {
+				// DRINK: голодный игрок, взгляд в небо (мимо MOP-веток). Клик — КЛИЕНТСКИМ каналом (§2.4: полный
+				// человеческий путь клиент->пакет->сервер + зажатая ПКМ; серверный useItem рвался — живой клиент,
+				// увидев синк «пьёт» без зажатой ПКМ, слал release: репро-прогон 21:0x, isUsingItem=true -> обрыв).
+				tPlayer.getFoodData().setFoodLevel(10);
+				tPlayer.teleportTo(tLevel, sB45Pos.getX() + 2.5, sB45Pos.getY(), sB45Pos.getZ() + 0.5, java.util.Set.of(), 0, -85, true);
+				tPlayer.setXRot(-85);
+				B45_DRINK_SIGNAL = 1;
+				O.println("[GT6-BUG045PROBE] DRINK: сигнал клиенту (клик+держать ПКМ), duration=" + tPlayer.getInventory().getItem(0).getItem().getUseDuration(tPlayer.getInventory().getItem(0), tPlayer));
+			} else if (sB45Tick == 450) {
+				O.println("[GT6-BUG045PROBE] DRINK-ход: isUsingItem=" + tPlayer.isUsingItem() + " сигнал=" + B45_DRINK_SIGNAL);
+			} else if (sB45Tick == 485) {
+				B45_DRINK_SIGNAL = 3; // отпустить ПКМ (питьё уже должно было завершиться движком, 32 тика)
+			} else if (sB45Tick == 490) {
+				ItemStack tJugW = tPlayer.getInventory().getItem(0);
+				FluidStack tGot = FL.getFluid(tJugW, T);
+				long tAmount = tGot == null ? 0 : tGot.getAmount();
+				O.println("[GT6-BUG045PROBE] DRINK-замер: рука=" + tJugW + " жидкость=" + tGot + " food=" + tPlayer.getFoodData().getFoodLevel() + " isUsing=" + tPlayer.isUsingItem());
+				b45Verdict(tAmount == 750, "DRINK", "выпито 250mB из 1000 (осталось " + tAmount + ", ожидание 750)");
 				O.println("========== [GT6-BUG045PROBE] DONE: PASS=" + sB45Pass + " FAIL=" + sB45Fail + " ==========");
-			} else if (sB45Tick > 360 && sB45Tick % 200 == 0 && sB45Tick <= 2000) {
+			} else if (sB45Tick > 490 && sB45Tick % 200 == 0 && sB45Tick <= 2000) {
 				O.println("[GT6-BUG045PROBE] heartbeat: сервер жив, тик " + sB45Tick); // §6.4
 			}
 		} catch (Throwable e) {O.println("[GT6-BUG045PROBE] EXC " + e); e.printStackTrace(O);}
