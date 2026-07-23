@@ -469,9 +469,11 @@ public class ContainerCommon extends AbstractContainerMenu {
 	 * ({@code interceptClick}/{@code slotClick} на TE) и гейтинг Holo/Armor-слотов — 1:1 из оригинала;
 	 * дальше маршрут отдаётся движку ({@code super.clicked}, делает то же, что раньше делал
 	 * {@code super.slotClick} в единственном РЕАЛЬНО достижимом пути оригинала). Оригинал (`gregtech6/.../
-	 * ContainerCommon.java:343-345`) возвращал carried-стек из {@code slotClick(...)} как результат метода
-	 * ({@code ItemStack rStack = mTileEntity.slotClick(...); return rStack;}) — neo {@code clicked} void,
-	 * «то, что в руке» передаётся через {@code setCarried(ItemStack)} (`AbstractContainerMenu.java:779`).
+	 * ContainerCommon.java:343-345`) возвращал результат {@code slotClick(...)} как значение ванильного
+	 * {@code Container.slotClick} — это была СЕТЕВАЯ СВЕРКА транзакции, а НЕ команда курсору: сам курсор
+	 * ({@code aPlayer.inventory.itemStack}) мутировался только явными {@code setItemStack(...)} ВНУТРИ {@code slotClick}.
+	 * Поэтому neo-мост курсор из возврата НЕ выставляет (см. BUG-027 в {@link #clicked}); TE-{@code slotClick} сам
+	 * зовёт {@code setCarried(...)} где надо, а {@code broadcastChanges()} синхронизирует его на клиент.
 	 */
 	@Override
 	public void clicked(int aIndex, int aMouse, ContainerInput aType, Player aPlayer) {
@@ -481,8 +483,12 @@ public class ContainerCommon extends AbstractContainerMenu {
 
 		try {
 			if (aSlot instanceof Slot_Base && mTileEntity.interceptClick(mGUIID, (Slot_Base)aSlot, aIndex, aSlot.getSlotIndex(), aPlayer, aShift == 1, aMouse != 0, aMouse, aShift)) {
-				ItemStack rStack = mTileEntity.slotClick(mGUIID, (Slot_Base)aSlot, aIndex, aSlot.getSlotIndex(), aPlayer, aShift == 1, aMouse != 0, aMouse, aShift);
-				setCarried(ST.nn(rStack)); // F15-мост: было `return rStack` (1.7.10 carried-стек) → neo setCarried
+				// BUG-027: slotClick САМ мутирует курсор через setCarried там, где надо (1.7.10: aPlayer.inventory.setItemStack;
+				// напр. MultiTileEntityAdvancedCraftingTable.slotClick:642/647). Его ВОЗВРАТ — 1.7.10 sync-значение ванильного
+				// Container.slotClick (сетевая сверка транзакции), НЕ императив «поставить это в руку»: ветки, не менявшие курсор,
+				// возвращали null = «курсор не трогали». Прежний setCarried(ST.nn(rStack)) для них делал setCarried(EMPTY) и
+				// СТИРАЛ предмет с курсора (клик по выходу крафта на пустой сетке / по служебным кнопкам стола Грега, invSlot 31/32).
+				mTileEntity.slotClick(mGUIID, (Slot_Base)aSlot, aIndex, aSlot.getSlotIndex(), aPlayer, aShift == 1, aMouse != 0, aMouse, aShift);
 				broadcastChanges();
 				return;
 			}

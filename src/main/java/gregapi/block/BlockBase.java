@@ -210,7 +210,8 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// getDrops(loot) отдавал ПУСТО → блоки не дропались НИЧЕМ. Мост neo getDrops(state,params) → GT6-хук
 	// getDrops(Level,x,y,z,meta,fortune) (тот же приём, что MTE.playerDestroy→harvestBlock, но через neo getDrops:
 	// сохраняет dropResources+BlockDropsEvent+onBlockHarvestingEvent — это 1:1 порт 1.7.10 HarvestDropsEvent:
-	// unification/leafdecay/silk/fortune). Блок уже air на этом хуке; meta не-IBlockExtendedMetaData семьи = 0 (F13-флэт).
+	// unification/leafdecay/silk/fortune). Блок уже air на этом хуке → мету берём из СНИМКА aState (WD.meta(BlockState),
+	// фикс BUG-016/BUG-026), а НЕ из мира: WD.meta(мир) вернул бы 0 и вся BlockBaseMeta-семья дропала бы вариант .0.
 	@Override protected List<ItemStack> getDrops(BlockState aState, net.minecraft.world.level.storage.loot.LootParams.Builder aParams) {
 		net.minecraft.server.level.ServerLevel tLevel = aParams.getLevel();
 		net.minecraft.world.phys.Vec3 tOrigin = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN);
@@ -223,7 +224,9 @@ public abstract class BlockBase extends Block implements IBlockBase {
 		int tFortune = 0;
 		net.minecraft.world.entity.Entity tEntity = aParams.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY);
 		if (tEntity instanceof net.minecraft.world.entity.LivingEntity tLiving) tFortune = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentLevel(tLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(net.minecraft.world.item.enchantment.Enchantments.FORTUNE), tLiving);
-		ArrayList<ItemStack> rDrops = getDrops(tLevel, tX, tY, tZ, WD.meta(tLevel, tX, tY, tZ), tFortune);
+		// BUG-026 (тот же F13-класс, что BUG-016): сухое/заплесневелое/сгнившее сено давало мокрый Grass Bale (вариант .0),
+		// т.к. WD.meta(мир) читал уже-air = 0. Мета из снимка aState — тот же готовый мост WD.meta(BlockState) (WD.java:828).
+		ArrayList<ItemStack> rDrops = getDrops(tLevel, tX, tY, tZ, WD.meta(aState), tFortune);
 		return rDrops == null ? java.util.Collections.emptyList() : rDrops;
 	}
 	// 1.7.10 Block.getDrops(World,x,y,z,meta,fortune) дефолт: quantityDropped копий ST(getItemDropped,1,damageDropped).

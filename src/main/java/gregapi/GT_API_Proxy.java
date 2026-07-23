@@ -340,6 +340,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
+				if (gregapi.data.CS.probeFlag("gt6bug2627probe.flag")) gt6Bug2627ProbeTick(aEvent.getServer()); // [GT6-BUG2627PROBE] BUG-026+027 — снять при уборке фазы
+
 				if (SERVER_TIME++ == 0) {
 					// Initial Save Data check
 					// DimensionManager неo-эквивалента не имеет (см. onWorldLoad выше) — реальный путь через сам ServerTickEvent.
@@ -645,7 +647,109 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 		}
 	}
-	
+
+	// ================= [GT6-BUG2627PROBE] BUG-026 (сухое сено дропает мокрое) + BUG-027 (клик по выходу/служебному слоту стола Грега стирает курсор) — снять при уборке фазы =================
+	private static int sBug2627Tick = -1;
+	private static boolean sBug2627Done = false;
+	private static net.minecraft.core.BlockPos sBug2627BalePos = null, sBug2627TablePos = null;
+	public static void gt6Bug2627ProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sBug2627Tick++;                                   // инкремент ПЕРВЫМ — тик-счёт не зависит от ранних return
+		java.io.PrintStream O = gregapi.data.CS.OUT;      // весь вывод — в gregtech.log
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;   // ждать входа игрока
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel) tPlayer.level();
+
+			if (sBug2627Tick == 200) {
+				O.println("========== [GT6-BUG2627PROBE] старт (BUG-026 сено, BUG-027 курсор стола Грега) ==========");
+			}
+			// ---- BUG-026: сухой тюк (META=1) должен дропать сухой тюк, не мокрый ----
+			else if (sBug2627Tick == 220) {
+				net.minecraft.core.BlockPos tPos = tPlayer.blockPosition().offset(5, 0, 5);
+				tLevel.setBlockAndUpdate(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+				net.minecraft.world.level.block.state.BlockState tDry = gregapi.data.CS.BlocksGT.BalesGrass.defaultBlockState().setValue(gregapi.block.BlockBaseMeta.META, 1); // .1 = Dry Grass Bale
+				tLevel.setBlock(tPos, tDry, 3);
+				sBug2627BalePos = tPos;
+				O.println("[GT6-BUG2627PROBE] BUG-026: поставлен Dry Grass Bale (META=1) @ " + tPos + " state=" + tLevel.getBlockState(tPos));
+				net.minecraft.world.level.GameType tOld = tPlayer.gameMode.getGameModeForPlayer();
+				tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+				boolean tBroke = tPlayer.gameMode.destroyBlock(tPos);                       // реальный путь игрока (§4: слом блока)
+				tPlayer.setGameMode(tOld == null ? net.minecraft.world.level.GameType.CREATIVE : tOld);
+				O.println("[GT6-BUG2627PROBE] BUG-026: destroyBlock=" + tBroke + ", @pos теперь: " + tLevel.getBlockState(tPos));
+			}
+			else if (sBug2627Tick == 235) {
+				boolean tGotDry = false, tGotWet = false, tGotOther = false;
+				net.minecraft.world.item.Item tBaleItem = gregapi.util.ST.item_(gregapi.util.ST.make(gregapi.data.CS.BlocksGT.BalesGrass, 1, 0));
+				for (net.minecraft.world.entity.item.ItemEntity e : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(sBug2627BalePos).inflate(4))) {
+					net.minecraft.world.item.ItemStack s = e.getItem();
+					int m = gregapi.util.ST.meta(s);
+					O.println("[GT6-BUG2627PROBE] BUG-026 дроп: " + s + " item=" + gregapi.util.ST.item_(s) + " meta=" + m + " (0=мокрое Grass Bale, 1=сухое Dry Grass Bale)");
+					if (gregapi.util.ST.item_(s) == tBaleItem) { if (m == 1) tGotDry = true; else if (m == 0) tGotWet = true; else tGotOther = true; }
+				}
+				byte tWorldMetaNow = gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter) tLevel, sBug2627BalePos.getX(), sBug2627BalePos.getY(), sBug2627BalePos.getZ());
+				O.println("[GT6-BUG2627PROBE] BUG-026 §6.1 контроль (воспроизводим старый канал): WD.meta(МИР после слома)=" + tWorldMetaNow + " (=0, т.к. блок уже air → старый код ронял вариант .0 = мокрое); судья выше идёт через снимок aState");
+				O.println("[GT6-BUG2627PROBE] BUG-026 => " + (tGotDry ? "PASS (дроп сухого тюка META=1)" : tGotWet ? "FAIL (выпал мокрый Grass Bale META=0 — протухшая мета)" : tGotOther ? "FAIL (иной вариант тюка)" : "FAIL (тюк не дропнулся вовсе)"));
+			}
+			// ---- BUG-027: установить стол Грега, открыть GUI, кликнуть по слотам-ловушкам с предметом на курсоре ----
+			else if (sBug2627Tick == 250) {
+				gt6Bug2627PlaceAndOpenTable(tPlayer, tLevel, O);
+			}
+			else if (sBug2627Tick == 265) {
+				gt6Bug2627ClickCursorTest(tPlayer, O);
+				O.println("========== [GT6-BUG2627PROBE] DONE ==========");
+				sBug2627Done = true;
+			}
+			else if (sBug2627Tick > 300 && sBug2627Tick % 200 == 0 && sBug2627Tick <= 2000 && sBug2627Done) {
+				O.println("[GT6-BUG2627PROBE] heartbeat: сервер жив, тик " + sBug2627Tick);
+			}
+		} catch (Throwable e) {O.println("[GT6-BUG2627PROBE] EXC " + e); e.printStackTrace(O);}
+	}
+	private static void gt6Bug2627PlaceAndOpenTable(net.minecraft.server.level.ServerPlayer tPlayer, net.minecraft.server.level.ServerLevel tLevel, java.io.PrintStream O) {
+		net.minecraft.core.BlockPos tPos = tPlayer.blockPosition().offset(-5, 0, 5);
+		int x = tPos.getX(), y = tPos.getY(), z = tPos.getZ();
+		tLevel.setBlockAndUpdate(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		if (tReg == null) { O.println("[GT6-BUG2627PROBE] BUG-027: реестр gt.multitileentity null"); return; }
+		boolean tPlaced = tReg.mBlock.placeBlock(tLevel, x, y, z, gregapi.data.CS.SIDE_UNKNOWN, (short) 5009, null, false, true); // 5009 = Bronze Advanced Crafting Table (Loader_MultiTileEntities:137)
+		sBug2627TablePos = tPos;
+		net.minecraft.world.level.block.entity.BlockEntity tBE = tLevel.getBlockEntity(tPos);
+		O.println("[GT6-BUG2627PROBE] BUG-027: стол placeBlock=" + tPlaced + " @ " + tPos + " BE=" + (tBE == null ? "null" : tBE.getClass().getSimpleName()));
+		if (tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) {
+			tRoot.openGUI(tPlayer, 0);                                                    // реальный канал открытия GUI (тот, что зовёт ПКМ по столу)
+			O.println("[GT6-BUG2627PROBE] BUG-027: openGUI(0) → containerMenu=" + tPlayer.containerMenu.getClass().getSimpleName());
+		} else O.println("[GT6-BUG2627PROBE] BUG-027: BE не TileEntityBase01Root — GUI не открыть");
+	}
+	private static void gt6Bug2627ClickCursorTest(net.minecraft.server.level.ServerPlayer tPlayer, java.io.PrintStream O) {
+		if (!(tPlayer.containerMenu instanceof gregapi.gui.ContainerCommon tMenu)) { O.println("[GT6-BUG2627PROBE] BUG-027: containerMenu не ContainerCommon (" + tPlayer.containerMenu.getClass().getSimpleName() + ") — стол не открыт"); return; }
+		// §6.1 контроль (воспроизводим СТАРЫЙ мост изолированно): TE.slotClick для слота-ловушки возвращает null →
+		// прежний setCarried(ST.nn(null))=EMPTY стирал курсор. Это репродукция механизма дефекта В ЭТОМ ЖЕ прогоне.
+		gregapi.gui.Slot_Base tTrap = (gregapi.gui.Slot_Base) tMenu.getSlot(34);
+		net.minecraft.world.item.ItemStack tRawRet = tMenu.mTileEntity.slotClick(tMenu.mGUIID, tTrap, 34, tTrap.getSlotIndex(), tPlayer, false, false, 0, 0);
+		net.minecraft.world.item.ItemStack tOldWouldSet = gregapi.util.ST.nn(tRawRet);
+		O.println("[GT6-BUG2627PROBE] BUG-027 §6.1 контроль: TE.slotClick(слот-ловушка invSlot=" + tTrap.getSlotIndex() + ") вернул " + tRawRet + " → СТАРЫЙ мост сделал бы setCarried(ST.nn)=" + tOldWouldSet + (tOldWouldSet.isEmpty() ? " [EMPTY ⇒ курсор стирался — механизм дефекта воспроизведён]" : ""));
+		// A: клик по слоту ВЫХОДА крафта (контейнер-индекс 33 = Slot_Holo invSlot 31) при ПУСТОЙ сетке → slotClick вернёт null
+		net.minecraft.world.item.ItemStack tA = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 5);
+		tMenu.setCarried(tA.copy());
+		tMenu.clicked(33, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, tPlayer);   // реальный канал: то, что зовёт пакет-хендлер клика
+		net.minecraft.world.item.ItemStack tAfterA = tMenu.getCarried();
+		boolean tPassA = tAfterA.getItem() == net.minecraft.world.item.Items.DIAMOND && tAfterA.getCount() == 5;
+		O.println("[GT6-BUG2627PROBE] BUG-027 A (выход крафта, пустая сетка): курсор до=5×diamond после=" + tAfterA + " => " + (tPassA ? "PASS (сохранился)" : "FAIL (стёрт мостом)"));
+		// B: клик по СЛУЖЕБНОЙ кнопке (контейнер-индекс 34 = Slot_Holo invSlot 32, flush) → slotClick ВСЕГДА null
+		net.minecraft.world.item.ItemStack tB = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 5);
+		tMenu.setCarried(tB.copy());
+		tMenu.clicked(34, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, tPlayer);
+		net.minecraft.world.item.ItemStack tAfterB = tMenu.getCarried();
+		boolean tPassB = tAfterB.getItem() == net.minecraft.world.item.Items.DIAMOND && tAfterB.getCount() == 5;
+		O.println("[GT6-BUG2627PROBE] BUG-027 B (служебная кнопка flush): курсор до=5×diamond после=" + tAfterB + " => " + (tPassB ? "PASS (сохранился)" : "FAIL (стёрт мостом)"));
+		// C (контроль-регресс): клик по ОБЫЧНОМУ пустому слоту сетки (индекс 1 = invSlot 0, НЕ интерцептится) — предмет с курсора должен ЛЕЧЬ в слот
+		net.minecraft.world.item.ItemStack tC = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 5);
+		tMenu.setCarried(tC.copy());
+		tMenu.clicked(1, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, tPlayer);
+		net.minecraft.world.item.ItemStack tSlot1 = tMenu.getSlot(1).getItem(), tAfterC = tMenu.getCarried();
+		O.println("[GT6-BUG2627PROBE] BUG-027 C (контроль: обычный слот сетки): слот1=" + tSlot1 + " курсор=" + tAfterC + " => " + ((tSlot1.getItem() == net.minecraft.world.item.Items.DIAMOND && tAfterC.isEmpty()) ? "PASS (обычный клик кладёт как раньше)" : "WARN (проверить — обычный клик не сработал штатно)"));
+		tMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+	}
+
 	// Было @SubscribeEvent onLivingUpdate(LivingUpdateEvent) — LivingUpdateEvent (net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent,
 	// 1.7.10) в neo не существует (сверено: net.neoforged.neoforge.event.entity.living.LivingEvent.java содержит только LivingJumpEvent/
 	// LivingVisibilityEvent). Реальный per-tick хук для любой Entity (в т.ч. LivingEntity) — EntityTickEvent.Post, "fired once per game tick,
