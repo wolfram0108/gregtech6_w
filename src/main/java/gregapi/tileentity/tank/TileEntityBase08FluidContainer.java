@@ -276,9 +276,21 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 		return F;
 	}
 	
+	/** ADAPT-003 (согласованное отклонение, требование игрока 2026-07-23; журнал ADAPTATIONS.md): зачерпывание работает и СО СТАКОМ
+	 *  пустых ёмкостей — тратится 1 из стака, полный уходит в свободный слот (ведро-механика vanilla).
+	 *  Оригинальный гейт 1.7.10 (:275) требовал ровно 1 в руке; centrally здесь — накрывает все ёмкости. */
+	private ItemStack scoopResult(Player aPlayer, ItemStack aStack, ItemStack aTarget) {
+		if (aTarget != aStack && FL.getFluid(aTarget, T) != null) {
+			aStack.shrink(1);
+			ST.give(aPlayer, aTarget, T);
+		}
+		return aStack;
+	}
+
 	@Override
 	public ItemStack onItemRightClick(MultiTileEntityItemInternal aItem, ItemStack aStack, Level aWorld, Player aPlayer) {
-		if (canPickUpFluids() && aStack.getCount() == 1) {
+		if (canPickUpFluids() && aStack.getCount() >= 1) {
+			ItemStack aTarget = aStack.getCount() == 1 ? aStack : ST.amount(1, aStack);
 			HitResult tTarget = WD.getMOP(aWorld, aPlayer, T);
 			// было World.canMineBlock(EntityPlayer,x,y,z) (1.7.10) -> neo Level.mayInteract(Entity,BlockPos) (Level.java:887)
 			if (tTarget != null && tTarget.getType() == HitResult.Type.BLOCK && aWorld.mayInteract(aPlayer, ((BlockHitResult)tTarget).getBlockPos())) {
@@ -286,43 +298,43 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
 					if (WD.meta(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ()) == 0) {
 						if (WD.infiniteWater(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ())) {
-							aItem.fill(aStack, FL.Water.make(1000), T);
+							aItem.fill(aTarget, FL.Water.make(1000), T);
 						} else {
-							if (aItem.fill(aStack, FL.Water.make(1000), F) == 1000) {
+							if (aItem.fill(aTarget, FL.Water.make(1000), F) == 1000) {
 								WD.set(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), NB, 0, 3);
-								aItem.fill(aStack, FL.Water.make(1000), T);
+								aItem.fill(aTarget, FL.Water.make(1000), T);
 							}
 						}
 					}
-					return aStack;
+					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock == Blocks.LAVA || tBlock == Blocks.LAVA) {
-					if (WD.meta(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ()) == 0 && aItem.fill(aStack, FL.Lava.make(1000), F) == 1000) {
+					if (WD.meta(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ()) == 0 && aItem.fill(aTarget, FL.Lava.make(1000), F) == 1000) {
 						WD.set(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), NB, 0, 3);
-						aItem.fill(aStack, FL.Lava.make(1000), T);
+						aItem.fill(aTarget, FL.Lava.make(1000), T);
 					}
-					return aStack;
+					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock == BlocksGT.River || WD.waterstream(tBlock)) {
-					aItem.fill(aStack, FL.Water.make(1000), T);
-					return aStack;
+					aItem.fill(aTarget, FL.Water.make(1000), T);
+					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock == BlocksGT.Ocean) {
-					aItem.fill(aStack, FL.Ocean.make(1000), T);
-					return aStack;
+					aItem.fill(aTarget, FL.Ocean.make(1000), T);
+					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock == BlocksGT.Swamp) {
-					aItem.fill(aStack, FL.Dirty_Water.make(1000), T);
-					return aStack;
+					aItem.fill(aTarget, FL.Dirty_Water.make(1000), T);
+					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				if (tBlock instanceof IFluidBlock) {
 					FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), F);
-					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
+					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aTarget, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
-						aItem.fill(aStack, tDrained, T);
+						aItem.fill(aTarget, tDrained, T);
 						((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), T);
 					}
-					return aStack;
+					return scoopResult(aPlayer, aStack, aTarget);
 				}
 				
 				// было tTarget.blockX/Y/Z += OFFX/Y/Z[sideHit] (сдвиг на соседний блок по стороне удара); neo BlockPos immutable -> переприсвоить BlockHitResult на relative(getDirection())
@@ -331,12 +343,12 @@ public abstract class TileEntityBase08FluidContainer extends TileEntityBase07Pai
 				
 				if (tBlock instanceof IFluidBlock) {
 					FluidStack tDrained = ((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), F);
-					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aStack, tDrained, F) == tDrained.getAmount()) {
+					if (tDrained != null && tDrained.getAmount() > 0 && aItem.fill(aTarget, tDrained, F) == tDrained.getAmount()) {
 						// Forge fucked up the Fluid Draining Function, meaning if you insert true for doDrain it will ALWAYS return a null Fluid for the finite Fluid Blocks. That's why I take the result from the simulation instead of the actual draining.
-						aItem.fill(aStack, tDrained, T);
+						aItem.fill(aTarget, tDrained, T);
 						((IFluidBlock)tBlock).drain(aWorld, ((BlockHitResult)tTarget).getBlockPos().getX(), ((BlockHitResult)tTarget).getBlockPos().getY(), ((BlockHitResult)tTarget).getBlockPos().getZ(), T);
 					}
-					return aStack;
+					return scoopResult(aPlayer, aStack, aTarget);
 				}
 			}
 		}

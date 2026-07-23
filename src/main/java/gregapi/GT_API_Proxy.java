@@ -497,8 +497,32 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				long tAmount = tGot == null ? 0 : tGot.getAmount();
 				O.println("[GT6-BUG045PROBE] JUICE-SATED-замер: жидкость=" + tGot + " food=" + tPlayer.getFoodData().getFoodLevel());
 				b45Verdict(tAmount == 1750, "JUICE-SATED-GATE", "сытым сок НЕ пьётся — 1:1-гейт needsFood (осталось " + tAmount + ", ожидание 1750 без убыли)");
+			// ---- ADAPT-003 (согласованное отклонение): зачерпывание СТАКОМ — тратится 1 пустой, полный в свободный слот ----
+			} else if (sB45Tick == 680) {
+				tLevel.setBlock(sB45Pos.offset(-2, -1, 0), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+				// SURVIVAL на время кейса: в CREATIVE живой клиент авторитетен над инвентарём и перетирает
+				// серверный setItem стека (ServerboundSetCreativeModeSlot) — вход кейса недетерминирован.
+				tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+			} else if (sB45Tick == 690) {
+				for (int i = 0; i < 9; i++) tPlayer.getInventory().setItem(i, ItemStack.EMPTY); // чистый хотбар (F15: neo NonNullList не принимает null — NI ронял ветку NPE)
+				tPlayer.getInventory().setSelectedSlot(0);
+				tPlayer.getInventory().setItem(0, ST.amount(3, tRegistry.getItem(32740))); // СТАК из 3 пустых кувшинов
+				tPlayer.teleportTo(tLevel, sB45Pos.getX() - 1.5, sB45Pos.getY(), sB45Pos.getZ() + 0.5, java.util.Set.of(), 0, 85, true);
+				tPlayer.setYRot(0); tPlayer.setYHeadRot(0); tPlayer.setXRot(85);
+				ItemStack tPre = tPlayer.getInventory().getItem(0);
+				O.println("[GT6-BUG045PROBE] SCOOP-STACK DIAG до клика: рука=" + tPre + " count=" + (ST.valid(tPre) ? tPre.getCount() : 0) + " жидкость=" + FL.getFluid(tPre, T)); // §6.3 вход
+				tPlayer.gameMode.useItem(tPlayer, tLevel, tPlayer.getInventory().getItem(0), net.minecraft.world.InteractionHand.MAIN_HAND);
+			} else if (sB45Tick == 710) {
+				ItemStack tHand = tPlayer.getInventory().getItem(0);
+				ItemStack tFull = NI; int tFullSlot = -1;
+				for (int i = 1; i < 36; i++) {ItemStack t = tPlayer.getInventory().getItem(i); if (ST.valid(t) && FL.getFluid(t, T) != null) {tFull = t; tFullSlot = i; break;}}
+				FluidStack tGot = tFull == NI ? NF : FL.getFluid(tFull, T);
+				O.println("[GT6-BUG045PROBE] SCOOP-STACK: рука=" + tHand + " (count=" + (ST.valid(tHand) ? tHand.getCount() : 0) + ", жидкость=" + FL.getFluid(tHand, T) + ") полный в слоте " + tFullSlot + ": " + tGot);
+				b45Verdict(ST.valid(tHand) && tHand.getCount() == 2 && FL.getFluid(tHand, T) == null && tGot != null && FL.water(tGot) && tGot.getAmount() == 1000,
+					"SCOOP-STACK", "из стака 3 потрачен 1 (осталось " + (ST.valid(tHand) ? tHand.getCount() : 0) + " пустых), полный 1000mB в свободном слоте");
+				tPlayer.setGameMode(net.minecraft.world.level.GameType.CREATIVE); // вернуть режим мира пробы
 				O.println("========== [GT6-BUG045PROBE] DONE: PASS=" + sB45Pass + " FAIL=" + sB45Fail + " ==========");
-			} else if (sB45Tick > 660 && sB45Tick % 200 == 0 && sB45Tick <= 2000) {
+			} else if (sB45Tick > 710 && sB45Tick % 200 == 0 && sB45Tick <= 2000) {
 				O.println("[GT6-BUG045PROBE] heartbeat: сервер жив, тик " + sB45Tick); // §6.4
 			}
 		} catch (Throwable e) {O.println("[GT6-BUG045PROBE] EXC " + e); e.printStackTrace(O);}
