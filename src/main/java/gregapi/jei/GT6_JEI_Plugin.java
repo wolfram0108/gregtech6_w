@@ -167,6 +167,25 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 		}
 	}
 
+	/** BUG-030 v2 (репорт игрока: «старый пласт жидкостей остался дублем»): JEI сам регистрирует ВСЕ source-жидкости
+	 *  реестра родным ингредиент-типом FLUID_STACK ({@code FluidStackListFactory.create}: Registry.listElements →
+	 *  filter isSource — тот же набор ~679, что GT6-дисплеи) → панель ингредиентов показывала жидкости ДВАЖДЫ.
+	 *  NEI 1.7.10 жидкостного ингредиент-типа НЕ имел — пласт был один, GT6-дисплеи (с богатым тултипом
+	 *  ItemFluidDisplay.addInformation). Снимаем родной пласт JEI целиком — 1:1 с NEI-видом; рецепт-категории GT6
+	 *  показывают жидкости display-предметами ({@code FL.display}), FLUID_STACK-ингредиенты им не нужны. */
+	@Override
+	public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime aRuntime) {
+		try {
+			mezz.jei.api.runtime.IIngredientManager tManager = aRuntime.getIngredientManager();
+			java.util.Collection<net.neoforged.neoforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK));
+			if (!tFluids.isEmpty()) tManager.removeIngredientsAtRuntime(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, tFluids);
+			OUT.println("[GT6-JEI] родной FLUID_STACK-пласт снят из панели: было " + tFluids.size() + ", осталось " + tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK).size() + " (жидкости показывает GT6-дисплей, как NEI 1.7.10)");
+		} catch (Throwable e) {
+			ERR.println("JEI: не удалось снять родной FLUID_STACK-пласт (дубль жидкостей останется в панели).");
+			e.printStackTrace(ERR);
+		}
+	}
+
 	@Override
 	public void registerRecipeCatalysts(IRecipeCatalystRegistration aRegistration) {
 		for (Map.Entry<RecipeMap, RecipeType<Recipe>> tEntry : mTypes.entrySet()) {

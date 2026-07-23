@@ -329,6 +329,11 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			// (3) реальный тултип машинного дисплея (слот машины: FL.display(FluidStack,T,T) с объёмом)
 			bug030Tooltip("машинный дисплей 1000mB воды", gregapi.data.FL.display(gregapi.data.FL.Water.make(1000), T, T), O);
 			O.println("========== [GT6-BUG030PROBE] DONE ==========");
+			// BUG-030 v2: JEI откладывает старт рантайма до первого ScreenEvent.Init (см. StartEventObserver.register:
+			// подписка на ScreenEvent$Init$Pre) — открываем инвентарь, как это делает живой игрок; после этого
+			// GT6_JEI_Plugin.onRuntimeAvailable печатает маркер снятия FLUID_STACK-пласта.
+			tMC.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(tMC.player));
+			O.println("[GT6-BUG030PROBE] инвентарь открыт (триггер старта JEI-рантайма)");
 		} catch (Throwable e) {O.println("[GT6-BUG030PROBE] EXC " + e); e.printStackTrace(O);}
 	}
 	private static void bug030Tooltip(String aName, net.minecraft.world.item.ItemStack aStack, java.io.PrintStream O) {
