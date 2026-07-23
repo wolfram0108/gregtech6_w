@@ -64,6 +64,7 @@ public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Direc
 	
 	@Override
 	public long onToolClick2(String aTool, long aRemainingDurability, long aQuality, Entity aPlayer, List<String> aChatReturn, Container aPlayerInventory, boolean aSneaking, ItemStack aStack, byte aSide, float aHitX, float aHitY, float aHitZ) {
+		if (gregapi.data.CS.probeFlag("gt6bug032probe.flag")) gregapi.data.CS.OUT.println("[GT6-BUG032PROBE][DIAG] onToolClick2 " + (isClientSide() ? "CLIENT" : "SERVER") + " tool=" + aTool + " side=" + aSide + " hit=(" + aHitX + "," + aHitY + "," + aHitZ + ") target=" + UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ) + " valid=" + getValidSides()[UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ)] + " mFacing=" + mFacing); // [GT6-BUG032PROBE] снять при уборке фазы
 		if (isClientSide()) return 0;
 		if (getFacingTool() != null && aTool.equals(getFacingTool())) {byte aTargetSide = UT.Code.getSideWrenching(aSide, aHitX, aHitY, aHitZ); if (getValidSides()[aTargetSide]) {byte oFacing = mFacing; mFacing = aTargetSide; updateClientData(); causeBlockUpdate(); onFacingChange(oFacing); return 10000;}}
 		return 0;

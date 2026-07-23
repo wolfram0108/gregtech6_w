@@ -58,6 +58,7 @@ public class Behavior_Tool extends AbstractBehaviorDefault {
 //      if (aPlayer != null && SIDES_VALID[aSide] && !(aPlayer instanceof FakePlayer) && UT.Worlds.isSideObstructed(aWorld, aX, aY, aZ, aSide)) return !aWorld.isClientSide();
 		List<String> tChatReturn = new ArrayListNoNulls<>();
 		long tDamage = IBlockToolable.Util.onToolClick(mToolName, Long.MAX_VALUE, (aItem instanceof MultiItemTool ? ((MultiItemTool)aItem).getHarvestLevel(aStack, mToolName) : 1), aPlayer, tChatReturn, aPlayer==null?null:aPlayer.getInventory(), aPlayer!=null&&aPlayer.isShiftKeyDown(), aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
+		if (gregapi.data.CS.probeFlag("gt6bug032probe.flag")) gregapi.data.CS.OUT.println("[GT6-BUG032PROBE][DIAG] Behavior_Tool." + mToolName + " " + (aWorld.isClientSide() ? "CLIENT" : "SERVER") + " side=" + aSide + " tDamage=" + tDamage); // [GT6-BUG032PROBE] снять при уборке фазы
 		UT.Entities.sendchat(aPlayer, tChatReturn, F);
 		if (tDamage > 0) {
 			if (mDamage > 0) ((MultiItemTool)aItem).doDamage(aStack, UT.Code.units(tDamage, 10000, mDamage, T), aPlayer, F);

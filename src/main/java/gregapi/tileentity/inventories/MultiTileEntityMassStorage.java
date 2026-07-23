@@ -239,6 +239,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
+		if (gregapi.data.CS.probeFlag("gt6bug032probe.flag")) gregapi.data.CS.OUT.println("[GT6-BUG032PROBE][DIAG] MassStorage.onBlockActivated3 " + (isClientSide() ? "CLIENT" : "SERVER") + " side=" + aSide + " mFacing=" + mFacing + " hit=(" + aHitX + "," + aHitY + "," + aHitZ + ")"); // [GT6-BUG032PROBE] снять при уборке фазы
 		if (aSide != mFacing || (mMode & B[3]) != 0 || isCovered(aSide)) return F;
 		float[] tCoords = UT.Code.getFacingCoordsClicked(aSide, aHitX, aHitY, aHitZ);
 		if (tCoords[0] < PX_P[1] || tCoords[0] > PX_N[1] || tCoords[1] < PX_P[1] || tCoords[1] > PX_N[1]) return F;

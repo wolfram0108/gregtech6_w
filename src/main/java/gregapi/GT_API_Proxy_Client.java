@@ -193,6 +193,37 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
+	// [GT6-BUG032PROBE] клиентская половина: чтение mFacing клиент-TE (синк) + клик ключом ПОЛНЫМ человеческим путём — снять при уборке фазы
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onBug032Probe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6bug032probe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null) return;
+		net.minecraft.core.BlockPos tPos = gregapi.GT_API_Proxy.sBug032ClientCheckPos;
+		if (tPos != null) {
+			gregapi.GT_API_Proxy.sBug032ClientCheckPos = null;
+			net.minecraft.world.level.block.entity.BlockEntity tTE = tMC.level.getBlockEntity(tPos);
+			gregapi.data.CS.OUT.println("[GT6-BUG032PROBE] КЛИЕНТ @ " + tPos + ": " + (tTE instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFS
+				? "mFacing=" + tFS.mFacing + " (синк виден)" : "TE не FacingSingle: " + tTE));
+		}
+		net.minecraft.core.BlockPos tClick = gregapi.GT_API_Proxy.sBug032ClientClickPos;
+		if (tClick != null && tMC.player != null && tMC.gameMode != null) {
+			if (tMC.player.getMainHandItem().isEmpty()) return; // ждать синка ключа в клиентский слот (§2.4), повтор на следующем тике
+			gregapi.GT_API_Proxy.sBug032ClientClickPos = null;
+			byte tFront = gregapi.GT_API_Proxy.sBug032ClientClickFront;
+			double tX, tY = tClick.getY() + 0.1, tZ; // угол 0.1/0.1 — как серверные кейсы B/C
+			switch (tFront) {
+				case 2: tX = tClick.getX() + 0.1; tZ = tClick.getZ();       break;
+				case 3: tX = tClick.getX() + 0.1; tZ = tClick.getZ() + 1.0; break;
+				case 4: tX = tClick.getX();       tZ = tClick.getZ() + 0.1; break;
+				default: tX = tClick.getX() + 1.0; tZ = tClick.getZ() + 0.1; break;
+			}
+			net.minecraft.world.phys.BlockHitResult tHit = new net.minecraft.world.phys.BlockHitResult(new net.minecraft.world.phys.Vec3(tX, tY, tZ), net.minecraft.core.Direction.from3DDataValue(tFront), tClick, false);
+			net.minecraft.world.InteractionResult tRes = tMC.gameMode.useItemOn(tMC.player, net.minecraft.world.InteractionHand.MAIN_HAND, tHit);
+			gregapi.data.CS.OUT.println("[GT6-BUG032PROBE] КЛИЕНТ клик мышиным путём @ " + tClick + " грань " + tFront + " -> " + tRes);
+		}
+	}
+
 	// АВТОНОМНЫЙ вход в мир (переиспользуемый harness живых проб, гейт: файл run/wgautoworld.flag; вне флага НЕ активен):
 	// quickPlay упирается в диалог-подтверждение (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ
 	// создаём свежий CREATIVE-мир через штатный клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» →
