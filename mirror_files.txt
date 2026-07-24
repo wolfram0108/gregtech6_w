@@ -133,6 +133,7 @@ D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\util\IIcon.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\texture\IIconRegister.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\client\renderer\RenderBlocks.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\ChestGenHooks.java
+D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\common\WeightedRandomChestContent.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\fluids\IFluidBlock.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraftforge\fluids\FluidContainerRegistry.java
 D:\Temp\MC_NEW\gregtech6_w\src\compat-mirror\java\net\minecraft\tileentity\TileEntityFlowerPot.java

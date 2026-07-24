@@ -38,7 +38,7 @@ import ic2.api.crops.Crops;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.util.WeightedRandomChestContent;
+import net.minecraftforge.common.WeightedRandomChestContent;
 import net.minecraftforge.common.ChestGenHooks;
 import net.neoforged.neoforge.fluids.FluidStack;
 

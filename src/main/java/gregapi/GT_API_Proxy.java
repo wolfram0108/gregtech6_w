@@ -341,6 +341,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			LAST_BROKEN_TILEENTITY.set(null);
 
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
+				// [GT6-LOOTPROBE] BUG-039 — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6lootprobe.flag")) gt6LootProbeTick(aEvent.getServer());
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -1950,6 +1952,107 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 		// return at most 160 Smelts, without any fraction smelts.
 		return (int)UT.Code.bind(0, 32000, rFuelValue);
+	}
+
+	// [GT6-LOOTPROBE] BUG-039 (F-loot): живой стенд — снять при уборке фазы. Гейт §2.1 (-Pgt6probes + run/gt6lootprobe.flag).
+	private static int sLootProbeTick = -1, sLootProbeCase = 0;
+	private static final String[] LOOT_PROBE_CASES = {"BAG: ПКМ мешком Bag_Loot_Gems по земле -> дроп самоцветов", "CHEST: ванильный сундук + LootTable simple_dungeon -> открытие -> GT-предметы внутри", "CONTROL-NEG: чужая таблица village_plains БЕЗ пула gregtech6:*"};
+	@SuppressWarnings("resource")
+	public static void gt6LootProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sLootProbeTick++;
+		java.io.PrintStream O = OUT;
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			net.minecraft.core.BlockPos tBase = tPlayer.blockPosition();
+			if (sLootProbeTick == 200) {
+				O.println("========== [GT6-LOOTPROBE] BUG-039: GT6-лут (мешки + инъекция в структурные сундуки) ==========");
+				// изолированный шов §6.1: пулы gregtech6:* инъектированы в ванильные таблицы?
+				for (String tCat : new String[] {"dungeonChest", "mineshaftCorridor", "strongholdLibrary", "villageBlacksmith", "bonusChest"}) {
+					net.minecraft.world.level.storage.loot.LootTable tT = aServer.reloadableRegistries().getLootTable(
+						net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE,
+							net.minecraft.resources.Identifier.withDefaultNamespace(
+								"dungeonChest".equals(tCat) ? "chests/simple_dungeon" :
+								"mineshaftCorridor".equals(tCat) ? "chests/abandoned_mineshaft" :
+								"strongholdLibrary".equals(tCat) ? "chests/stronghold_library" :
+								"villageBlacksmith".equals(tCat) ? "chests/village/village_weaponsmith" : "chests/spawn_bonus_chest")));
+					O.println("[GT6-LOOTPROBE] шов-инъекция " + tCat + ": pool=" + (tT != null && tT.getPool("gregtech6:" + tCat) != null ? "ЕСТЬ" : "НЕТ"));
+				}
+				// изолированный шов: getOneItem gt.*-категории (буфер Loader_Loot)
+				for (String tCat : new String[] {"gt.gems", "gt.misc", "gt.books"}) {
+					net.minecraft.world.item.ItemStack tOne = net.minecraftforge.common.ChestGenHooks.getOneItem(tCat, RNGSUS);
+					O.println("[GT6-LOOTPROBE] шов-getOneItem " + tCat + ": " + (tOne == null ? "null" : tOne.getCount() + "x " + tOne.getHoverName().getString()));
+				}
+			} else if (sLootProbeTick >= 220 && sLootProbeCase < LOOT_PROBE_CASES.length) {
+				int tPhase = (sLootProbeTick - 220) % 60;
+				net.minecraft.core.BlockPos tPos = tBase.offset(5, 0, 5 + 3 * sLootProbeCase);
+				if (tPhase == 0) O.println("[GT6-LOOTPROBE] кейс " + sLootProbeCase + ": " + LOOT_PROBE_CASES[sLootProbeCase]);
+				if (sLootProbeCase == 0) {
+					// §7: выдача стека только в SURVIVAL (creative-клиент перетирает серверный setItem)
+					if (tPhase == 0) {
+						tPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+						WD.set(tLevel, tPos.getX(), tPos.getY() - 1, tPos.getZ(), net.minecraft.world.level.block.Blocks.STONE, 0, 3);
+						tPlayer.getInventory().setItem(0, IL.Bag_Loot_Gems.get(1));
+						tPlayer.getInventory().setSelectedSlot(0);
+					}
+					if (tPhase == 20) {
+						net.minecraft.world.item.ItemStack tHand = tPlayer.getMainHandItem();
+						O.println("[GT6-LOOTPROBE] DIAG рука до клика: " + (tHand.isEmpty() ? "ПУСТО" : tHand.getHoverName().getString()));
+						tPlayer.gameMode.useItemOn(tPlayer, tLevel, tHand, net.minecraft.world.InteractionHand.MAIN_HAND,
+							new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tPos.below()), net.minecraft.core.Direction.UP, tPos.below(), false));
+					}
+					if (tPhase == 50) {
+						java.util.List<net.minecraft.world.entity.item.ItemEntity> tDrops = tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(4));
+						for (net.minecraft.world.entity.item.ItemEntity tDrop : tDrops) O.println("[GT6-LOOTPROBE] дроп-сущность: " + tDrop.getItem().getCount() + "x " + tDrop.getItem().getHoverName().getString());
+						O.println("[GT6-LOOTPROBE] кейс BAG => " + (tDrops.isEmpty() ? "FAIL (ожидание: >=1 дроп самоцветов gt.flawless/gt.gems x2)" : "PASS"));
+						for (net.minecraft.world.entity.item.ItemEntity tDrop : tDrops) tDrop.discard();
+						sLootProbeCase++;
+					}
+				} else if (sLootProbeCase == 1) {
+					if (tPhase == 0) {
+						WD.set(tLevel, tPos.getX(), tPos.getY(), tPos.getZ(), net.minecraft.world.level.block.Blocks.CHEST, 0, 3);
+						if (tLevel.getBlockEntity(tPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity tChest)
+							tChest.setLootTable(net.minecraft.world.level.storage.loot.BuiltInLootTables.SIMPLE_DUNGEON, tPos.asLong());
+					}
+					if (tPhase == 20) {
+						// реальный путь данжен-сундука: открытие игроком -> unpackLootTable наполняет по таблице (vanilla+GT-пул)
+						tPlayer.gameMode.useItemOn(tPlayer, tLevel, tPlayer.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND,
+							new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tPos), net.minecraft.core.Direction.UP, tPos, false));
+					}
+					if (tPhase == 50) {
+						int tGT = 0, tAll = 0;
+						if (tLevel.getBlockEntity(tPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity tChest) {
+							for (int i = 0; i < tChest.getContainerSize(); i++) {
+								net.minecraft.world.item.ItemStack tStack = tChest.getItem(i);
+								if (tStack.isEmpty()) continue;
+								tAll++;
+								String tId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tStack.getItem()).toString();
+								O.println("[GT6-LOOTPROBE] сундук слот " + i + ": " + tStack.getCount() + "x " + tId);
+								// неймспейс GT6-предметов в реестре — "gregtech:" (факт прогона run1: gregtech:gt.meta.*/gt.multiitem.*)
+							if (tId.startsWith("gregtech:")) tGT++;
+							}
+						}
+						tPlayer.closeContainer();
+						O.println("[GT6-LOOTPROBE] кейс CHEST => " + (tGT > 0 ? "PASS" : "FAIL") + " (GT-предметов " + tGT + " из " + tAll + "; ожидание >=1: p(0 GT)~1e-6 при живом пуле)");
+						sLootProbeCase++;
+					}
+				} else if (sLootProbeCase == 2) {
+					if (tPhase == 20) {
+						net.minecraft.world.level.storage.loot.LootTable tT = aServer.reloadableRegistries().getLootTable(
+							net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE,
+								net.minecraft.resources.Identifier.withDefaultNamespace("chests/village/village_plains_house")));
+						boolean tLeak = false;
+						if (tT != null) for (String tCat : new String[] {"dungeonChest", "villageBlacksmith", "bonusChest"}) if (tT.getPool("gregtech6:" + tCat) != null) tLeak = true;
+						O.println("[GT6-LOOTPROBE] кейс CONTROL-NEG => " + (tLeak ? "FAIL (перелив: наш пул в чужой таблице)" : "PASS (village_plains_house без пулов gregtech6:*)"));
+						sLootProbeCase++;
+						O.println("========== [GT6-LOOTPROBE] DONE ==========");
+					}
+				}
+			} else if (sLootProbeCase >= LOOT_PROBE_CASES.length && sLootProbeTick % 200 == 0 && sLootProbeTick <= 2000) {
+				O.println("[GT6-LOOTPROBE] heartbeat: сервер жив, тик " + sLootProbeTick);
+			}
+		} catch (Throwable e) {O.println("[GT6-LOOTPROBE] EXC " + e); e.printStackTrace(O); sLootProbeCase = 99;}
 	}
 
 }

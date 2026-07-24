@@ -1281,11 +1281,15 @@ public class ST {
 				// gregtech.worldgen.TwilightTreasureReplacer (вне границ этого шва) — мост через checked cast, пока
 				// сосед не починен отдельным заходом.
 				TwilightTreasureReplacer.generate((net.minecraft.world.Container)aInv, aLoot);
+			} else if (!LOOT_TABLES_VANILLA.contains(aLoot)) {
+				// BUG-039 (F-loot): GT6-категории (gt.gems/gt.misc/...) — содержимое целиком в буфере shim-ChestGenHooks
+				// (net.minecraftforge.common; заполняет Loader_Loot). Строка 1:1 с оригиналом 1.7.10.
+				net.minecraftforge.common.WeightedRandomChestContent.generateChestContents(aRandom, net.minecraftforge.common.ChestGenHooks.getItems(aLoot, aRandom), aInv, net.minecraftforge.common.ChestGenHooks.getCount(aLoot, aRandom));
 			} else {
-				// F-loot: было WeightedRandomChestContent.generateChestContents(aRandom, ChestGenHooks.getItems(aLoot, aRandom),
-				// aInv, ChestGenHooks.getCount(aLoot, aRandom)) — ChestGenHooks/WeightedRandomChestContent удалены (neo loot
-				// data-driven). aLoot (1.7.10-имя) → индекс в LOOT_TABLES_VANILLA → VANILLA_LOOT_KEYS (1:1 порядок, см. generateOneVanillaLoot)
-				// → LootTable.fill(Container, LootParams(CHEST), seed). Дефолт SIMPLE_DUNGEON для неизвестного имени.
+				// F-loot: ванильные 1.7.10-имена таблиц → индекс в LOOT_TABLES_VANILLA → VANILLA_LOOT_KEYS (1:1 порядок,
+				// см. generateOneVanillaLoot) → LootTable.fill(Container, LootParams(CHEST), seed) — vanilla-часть
+				// data-driven; GT-добавки уже инъектированы в таблицу пулом gregtech6:<категория> (shim-ChestGenHooks).
+				// Дефолт SIMPLE_DUNGEON для неизвестного имени.
 				net.minecraft.server.MinecraftServer tServer = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
 				if (tServer != null) {
 					net.minecraft.server.level.ServerLevel tLevel = tServer.overworld();

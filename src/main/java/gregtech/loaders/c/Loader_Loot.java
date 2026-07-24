@@ -31,8 +31,8 @@ import gregtech.worldgen.TwilightTreasureReplacer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.util.WeightedRandomChestContent;
 import net.minecraftforge.common.ChestGenHooks;
+import net.minecraftforge.common.WeightedRandomChestContent;
 import twilightforest.TFTreasure;
 
 import static gregapi.data.CS.*;
@@ -42,21 +42,9 @@ import static gregapi.data.TD.Properties.RANDOM_SMALL_GEM_ORE;
 public class Loader_Loot implements Runnable {
 	@Override
 	public void run() {
-		// F-loot deferred (гигиена лога): ОТЛОЖЕНО именно GT6-СПЕЦИФИЧНОЕ наполнение лута — весь этот Loader_Loot
-		// (мешки Bag_Loot_*/Bottle_Loot/Book_Loot_*, категории gt.gems/gt.misc/gt.seeds/gt.bottles/... и подмешивание
-		// предметов Грега в ванильные структурные сундуки) опирается на 1.7.10 chest-loot API (ChestGenHooks/
-		// WeightedRandomChestContent — в neo удалён, лут стал data-driven loot tables). ВАЖНО: ванильный dungeon-лут в
-		// GT6-сундуках/книжных полках УЖЕ работает через отдельный мост ST.generateLoot (neo LootTable.fill) — отложено
-		// НЕ «всё», а только специфичное содержимое Грега. Шов F-loot в реестре PORT-TODO, тикет BUG-033. Без гейта каждый
-		// server-start сыпал каскад NoClassDefFoundError/NoSuchFieldException-трейсов (спам, репорт игрока). Проверка
-		// способности: mirror-класс жив И несёт ожидаемое поле; иначе — ОДНА видимая строка отложенности и выход.
-		// НЕ маскировка: отложенность остаётся видимой на каждом старте.
-		try {
-			ChestGenHooks.class.getDeclaredField("contents");
-		} catch (Throwable e) {
-			OUT.println("[GT6] F-loot: GT6-специфичное наполнение лута ОТЛОЖЕНО (Loader_Loot на 1.7.10 ChestGenHooks; ванильный dungeon-мост ST.generateLoot работает). Порт на neo loot tables — BUG-033/шов F-loot, PORT-TODO.");
-			return;
-		}
+		// BUG-039 (F-loot): гейт отложенности СНЯТ — 1.7.10 chest-loot API воспроизведён центрально в shim
+		// net.minecraftforge.common.ChestGenHooks/WeightedRandomChestContent (буфер + инъекция LootPool в
+		// data-driven таблицы движка + getOneItem для мешков/книг/Unboxinator). Этот файл — 1:1 с оригиналом.
 		new ChestGenHooksChestReplacer(ChestGenHooks.DUNGEON_CHEST       , 32745);
 		new ChestGenHooksChestReplacer(ChestGenHooks.MINESHAFT_CORRIDOR  ,   500);
 		new ChestGenHooksChestReplacer(ChestGenHooks.STRONGHOLD_LIBRARY  ,   508);

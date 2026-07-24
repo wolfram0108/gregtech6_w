@@ -27,9 +27,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
-import net.minecraft.util.WeightedRandomChestContent;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ChestGenHooks;
+import net.minecraftforge.common.WeightedRandomChestContent;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
