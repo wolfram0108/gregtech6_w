@@ -372,7 +372,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 			// 1.7.10 renderTileEntityAt: интерполяция крышки + кубическая кривая — дословно.
 			double tLidAngle = 1 - (aChest.oLidAngle + (aChest.mLidAngle - aChest.oLidAngle) * aPartialTick); tLidAngle = -(((1 - tLidAngle*tLidAngle*tLidAngle) * Math.PI) / 2);
 			aState.mLidAngleRad = (float)tLidAngle;
-			aState.mChestFacing = aChest.mFacing;
+			aState.mChestFacing = aChest.level==null ? ITEM_CHEST_FACING : aChest.mFacing; // BUG-038: item-форма (detached-TE) — калибруемый facing, чтобы сундук смотрел замком к камере
 			aState.mChestRGBa = aChest.mRGBa;
 			aState.mChestTextures = mResources.get(aChest.mTextureName);
 		}

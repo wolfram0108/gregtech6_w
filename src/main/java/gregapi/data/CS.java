@@ -644,6 +644,9 @@ public class CS {
 	 *  которого нет в neo baked-quad пайплайне → в инвентаре машины смотрели не передней гранью. Калибруется одним
 	 *  значением {SIDE_LEFT/FRONT/RIGHT/BACK}; влияет ТОЛЬКО на выбор текстур item-формы, не на мир/размещение. */
 	public static byte                      ITEM_MACHINE_FACING = SIDE_LEFT;
+	/** BUG-038: то же для item-формы СУНДУКА (свой рендерер MultiTileEntityRendererChest, поворот модели по mFacing,
+	 *  а не FACING_ROTATIONS — потому здесь мировая сторона 0..5, не псевдо-facing). Калибруется отдельным числом. */
+	public static byte                      ITEM_CHEST_FACING = 2;
 	
 	/** Converts Sides to a Top-Bottom-Side Value, this limits the Range to a Number between [0 and 2] */
 	public static final byte[]              FACES_TBS = { 0, 1, 2, 2, 2, 2, 2, 2};
