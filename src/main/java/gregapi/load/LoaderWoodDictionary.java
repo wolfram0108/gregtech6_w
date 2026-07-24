@@ -175,8 +175,10 @@ public class LoaderWoodDictionary implements Runnable {
 			new WoodEntry(ST.make(BlocksGT.Log1FireProof, 1, 3), null, new PlankEntry(ST.make(BlocksGT.PlanksFireProof  , 1,15), ST.make(((BlockMetaType)BlocksGT.PlanksFireProof   ).mSlabs[0], 1,15), MT.WOODS.Frozen,   0), 1, 50, 1, 2, 3, OP.dust.mat(MT.Ice, 1)                      , MT.WOODS.Frozen, MT.Ice         , null, 0, 0);
 			
 			// Rubber Tree Beams
-			BeamEntry tRubberBeam = new BeamEntry(ST.make(BlocksGT.Beam2, 1, 2), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 3), 1, 300, 2, 4, 5, MT.WoodRubber, OP.stickLong.mat(MT.WoodRubber, 1), 1, 2);
-			new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 2), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 3), 1, 300, 2, 4, 5);
+			// F4-flattening (как :57-65): оригинал брал PLANKS.get(Blocks.planks, 3) = jungle (planks meta 3); neo расщепил
+			// planks на *_PLANKS-блоки (все под meta 0). OAK_PLANKS meta 3 нет → PLANKS.get==null → BeamEntry(beam,null) → NPE.
+			BeamEntry tRubberBeam = new BeamEntry(ST.make(BlocksGT.Beam2, 1, 2), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0), 1, 300, 2, 4, 5, MT.WoodRubber, OP.stickLong.mat(MT.WoodRubber, 1), 1, 2);
+			new BeamEntry(ST.make(BlocksGT.Beam2FireProof, 1, 2), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0), 1, 300, 2, 4, 5);
 			
 			// IC2 Rubber Trees
 			if (MD.IC2.mLoaded) {
@@ -904,19 +906,21 @@ public class LoaderWoodDictionary implements Runnable {
 			new WoodEntry(ST.make(MD.EtFu, "bark2"         , 1, 0), WoodDictionary.BEAMS.get(BlocksGT.Beam2, 0));
 			new WoodEntry(ST.make(MD.EtFu, "bark2"         , 1, 1), WoodDictionary.BEAMS.get(BlocksGT.Beam2, 1));
 			
+			// F4-flattening (как :57-65): оригинал брал PLANKS.get(Blocks.planks, 0..5) = oak/spruce/birch/jungle/acacia/darkoak;
+			// neo расщепил planks на *_PLANKS (все под meta 0) → OAK_PLANKS meta 1..5 == null → BeamEntry(beam,null) → NPE.
 			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 0));
-			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 1), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 1));
-			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 2), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 2));
-			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 3), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 3));
-			new BeamEntry(ST.make(MD.EtFu, "log2_stripped" , 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 4));
-			new BeamEntry(ST.make(MD.EtFu, "log2_stripped" , 1, 1), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 5));
-			
+			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 1), WoodDictionary.PLANKS.get(Blocks.SPRUCE_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 2), WoodDictionary.PLANKS.get(Blocks.BIRCH_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "log_stripped"  , 1, 3), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "log2_stripped" , 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "log2_stripped" , 1, 1), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
+
 			new BeamEntry(ST.make(MD.EtFu, "wood_stripped" , 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 0));
-			new BeamEntry(ST.make(MD.EtFu, "wood_stripped" , 1, 1), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 1));
-			new BeamEntry(ST.make(MD.EtFu, "wood_stripped" , 1, 2), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 2));
-			new BeamEntry(ST.make(MD.EtFu, "wood_stripped" , 1, 3), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 3));
-			new BeamEntry(ST.make(MD.EtFu, "wood2_stripped", 1, 0), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 4));
-			new BeamEntry(ST.make(MD.EtFu, "wood2_stripped", 1, 1), WoodDictionary.PLANKS.get(Blocks.OAK_PLANKS, 5));
+			new BeamEntry(ST.make(MD.EtFu, "wood_stripped" , 1, 1), WoodDictionary.PLANKS.get(Blocks.SPRUCE_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "wood_stripped" , 1, 2), WoodDictionary.PLANKS.get(Blocks.BIRCH_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "wood_stripped" , 1, 3), WoodDictionary.PLANKS.get(Blocks.JUNGLE_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "wood2_stripped", 1, 0), WoodDictionary.PLANKS.get(Blocks.ACACIA_PLANKS, 0));
+			new BeamEntry(ST.make(MD.EtFu, "wood2_stripped", 1, 1), WoodDictionary.PLANKS.get(Blocks.DARK_OAK_PLANKS, 0));
 		}
 		// Chisel Planks
 		if (MD.CHSL.mLoaded) {
