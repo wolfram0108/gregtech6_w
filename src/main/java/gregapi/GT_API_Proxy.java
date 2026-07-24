@@ -1612,23 +1612,35 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					}
 				}
 
-				// EVENTS functional-adapted (реальный подбор — через ItemEntityPickupEvent.Post handler; pre-симуляция «спросить моды» не нужна): gregapi.util.ST (не мой файл) не содержит метода
-				// ST.entity(Entity,ItemStack) — уже отсутствует независимо от event-порта (грепнуто, gregapi/util/ST.java). Старый
-				// cpw.mods.fml.common.gameevent.EntityItemPickupEvent синтетический трюк ("симулировать подбор, спросить другие моды")
-				// в neo заменяется ItemEntityPickupEvent.Pre(Player,ItemEntity)+TriState canPickup() (сверено, ItemEntityPickupEvent.java),
-				// но без ST.entity() как источника временного ItemEntity перенос недоделываем — требует отдельного решения по ST.java.
-				if (F && tCanCollect && !aDropStacks.isEmpty()) {
+				// BUG-040: восстановлен 1:1 механизм 1.7.10 «инструмент собирает срезанный дроп сразу в инвентарь»
+				// (оригинал onHarvestDrops:1342-1369). Прежняя заглушка «F &&» снята — её обоснование («ST.entity(Entity,
+				// ItemStack) отсутствует») было ошибкой грепа: метод ЕСТЬ (ST.java:614, тип ItemEntity, не старый
+				// EntityItem — потому и промахнулся греп). Синтетический ItemEntity (ST.entity_ НЕ спавнит в мир —
+				// ST.java:615, без addFreshEntity → дюпа нет) постится в ItemEntityPickupEvent.Pre — 1:1-аналог 1.7.10
+				// EntityItemPickupEvent («спросить другие моды, не перехватят ли подбор», сверено ItemEntityPickupEvent.java).
+				// Маппинг движка (F-адаптация на его уровне): Result.ALLOW → canPickup()==TriState.TRUE; isDead → isRemoved().
+				// Строки оригинала isDead=F/=T опущены: ST.entity-синтетик по дефолту не removed и в мир не добавлен
+				// (эфемерен, GC) — поведение тождественно. Не перехватил никто → ST.add кладёт в инвентарь игрока (+звук).
+				if (tCanCollect && !aDropStacks.isEmpty()) {
 					boolean aCollectSound = T;
 					aDrops = aDropStacks.iterator();
 					while (aDrops.hasNext()) {
 						ItemStack aDrop = aDrops.next();
 						if (ST.valid(aDrop)) {
 							aDrop = ST.update(aDrop, aWorld, aX, aY, aZ);
-							if (ST.add(aHarvester, aDrop)) {
-								aDrops.remove();
-								if (aCollectSound) {
-									UT.Sounds.send(SFX.MC_COLLECT, 0.2F, ((RNGSUS.nextFloat()-RNGSUS.nextFloat())*0.7F+1.0F)*2.0F, aHarvester);
-									aCollectSound = F;
+							ItemEntity tEntity = ST.entity(aHarvester, aDrop);
+							if (tEntity != null) {
+								ItemEntityPickupEvent.Pre tEvent = new ItemEntityPickupEvent.Pre(aHarvester, tEntity);
+								ST.set(aDrop, tEvent.getItemEntity().getItem(), T, T);
+								NeoForge.EVENT_BUS.post(tEvent);
+								if (tEvent.canPickup() == TriState.TRUE || tEntity.isRemoved() || aDrop.getCount() <= 0 || ST.invalid(aDrop)) {
+									aDrops.remove();
+								} else if (ST.add(aHarvester, aDrop)) {
+									aDrops.remove();
+									if (aCollectSound) {
+										UT.Sounds.send(SFX.MC_COLLECT, 0.2F, ((RNGSUS.nextFloat()-RNGSUS.nextFloat())*0.7F+1.0F)*2.0F, aHarvester);
+										aCollectSound = F;
+									}
 								}
 							}
 						}
