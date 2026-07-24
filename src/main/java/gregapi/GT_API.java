@@ -507,19 +507,21 @@ public class GT_API extends Abstract_Mod {
 		NeoForge.EVENT_BUS.addListener(this::onLevelLoadEarlyItemInit);
 	}
 
-	/** BUG-033 fix (КОРЕНЬ стартовой зоны). Отложенная item-init ({@link #runDeferredItemInit}) наполняет реестр
-	 *  GT6-worldgen {@code GEN_GT} (через {@code Loader_Worldgen}, отложенный на server-start фиксом F12, т.к. зовёт
-	 *  {@code ST.make} — компоненты привязаны только post-bind). НО в порядке загрузки neo пре-генерация стартовой зоны
-	 *  идёт РАНЬШЕ, чем {@code ServerStartingEvent}, на котором отложка исполнялась: {@code MinecraftServer.loadLevel()}
-	 *  = {@code createLevels()} [здесь летит {@code LevelEvent.Load}] → {@code prepareLevels()} [«Preparing spawn area»,
-	 *  спавн-worldgen] → и лишь ПОТОМ {@code runServer()} шлёт {@code ServerStartingEvent} (сверено neo
-	 *  {@code MinecraftServer.java:403-411,733-739}). Итог прежнего порядка: {@code GEN_GT} пуст на спавне → стартовая
-	 *  зона рождалась ЧИСТОЙ ВАНИЛЬЮ (deepslate/руды/породы не замещались), а чанки исследования (генерятся уже после
-	 *  ServerStarting) — нормальные GT6. Живой замер (перепись загруженных чанков): спавн-блок {@code gt6=0}, вокруг GT6.
-	 *  <p>Фикс: доисполнить отложку на загрузке overworld-уровня — это в {@code createLevels()} (реестры уже заморожены
-	 *  {@code compositeAccess()} = post-bind), но ДО {@code prepareLevels()}. Тогда {@code GEN_GT} готов к пре-гену спавна.
-	 *  {@code runDeferredItemInit()} на {@code ServerStartingEvent} сохранён как страховка для отложек, добавленных ПОЗЖЕ
-	 *  (напр. во время самой пре-генерации) — та же центральная очередь, drain идемпотентен (пуста → no-op). */
+	/** BUG-033 fix (КОРЕНЬ стартовой зоны) + F12 refinement. **ЕДИНАЯ авторитетная точка исполнения отложенной
+	 *  item-init** ({@link #runDeferredItemInit}, наполняет в т.ч. worldgen-реестр {@code GEN_GT} через
+	 *  {@code Loader_Worldgen}). Прежде F12 держал drain на {@code ServerStartingEvent}, но в порядке загрузки neo
+	 *  пре-генерация стартовой зоны идёт РАНЬШЕ: {@code MinecraftServer.loadLevel()} = {@code createLevels()} [здесь
+	 *  летит {@code LevelEvent.Load}] → {@code prepareLevels()} [«Preparing spawn area», спавн-worldgen] → и лишь ПОТОМ
+	 *  {@code runServer()} шлёт {@code ServerStartingEvent} (сверено neo {@code MinecraftServer.java:403-411,733-739}).
+	 *  Итог прежнего порядка: {@code GEN_GT} пуст на спавне → стартовая зона рождалась ЧИСТОЙ ВАНИЛЬЮ (deepslate/руды/
+	 *  породы не замещались), чанки исследования (после ServerStarting) — нормальные GT6.
+	 *  <p>Фикс: drain на загрузке overworld-уровня — это в {@code createLevels()} (реестры уже заморожены
+	 *  {@code compositeAccess()} = post-bind, ST.make валиден), но ДО {@code prepareLevels()}. Тогда {@code GEN_GT}
+	 *  готов к пре-гену спавна. **Это ЕДИНСТВЕННЫЙ drain** — точка ПОЗЖЕ (ServerStarting) убрана: очередь наполняется
+	 *  только на mod-load (все {@code deferItemInit} в конструкторах/загрузчиках, ДО загрузки уровня), к
+	 *  {@code LevelEvent.Load} она полна, drain её осушает целиком, после ничего не добавляется → ServerStarting-вызов
+	 *  был доказанным no-op (живой полный тест игрока на версии с обоими вызовами это подтвердил: всё — рецепты/вкладки/
+	 *  предметы/генерация — работает при drain'е на LevelEvent.Load, т.е. этот момент пост-bind для ВСЕХ отложек). */
 	public void onLevelLoadEarlyItemInit(net.neoforged.neoforge.event.level.LevelEvent.Load aEvent) {
 		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
 			runDeferredItemInit();
@@ -1202,10 +1204,11 @@ public class GT_API extends Abstract_Mod {
 	
 	@Override
 	public void onModServerStarting2(ServerStartingEvent aEvent) {
-		// F1/F12/F16 item-model: отложенный stack-init предметов (OreDict-данные+рецепты) выполняется ЗДЕСЬ (server-start,
-		// пост-bind: Holder.components привязаны через ReloadableServerResources) — не в onLoad (тот pre-bind, «Components not bound»).
-		runDeferredItemInit();
-		// F16-shell: генератор вкладок (MTE-загрузчик) отработал строкой выше → фиксируем полный набор собственных
+		// F1/F12/F16 item-model: отложенный stack-init предметов (OreDict-данные+рецепты) — ЕДИНАЯ точка исполнения перенесена
+		// на ЗАГРУЗКУ уровня ({@link #onLevelLoadEarlyItemInit}, LevelEvent.Load), т.к. пре-генерация стартовой зоны
+		// (prepareLevels) идёт РАНЬШЕ ServerStartingEvent и потребляет worldgen-реестр (BUG-033). LevelEvent.Load — тоже
+		// пост-bind (createLevels, compositeAccess заморожены), но ДО prepareLevels. К этому моменту очередь уже осушена.
+		// F16-shell: генератор вкладок (MTE-загрузчик) отработал в drain выше по времени → фиксируем полный набор собственных
 		// вкладок в конфиг-кэш; на СЛЕДУЮЩЕМ буте createShellsFromCache поднимет их до заморозки реестра CreativeModeTab.
 		gregapi.item.CreativeTabsGT.writeShellCache();
 		for (ICompat tCompat : ICompat.COMPAT_CLASSES) try {tCompat.onServerStarting(aEvent);} catch(Throwable e) {e.printStackTrace(ERR);}
