@@ -111,11 +111,12 @@ public class MultiTileEntityMassStorageLogistics extends MultiTileEntityMassStor
 	@Override
 	public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
 		if (!aShouldSideBeRendered[aSide]) return null;
+		byte tF = level==null?ITEM_MASSSTORAGE_FACING:mFacing; // BUG-038: item-форма (detached-TE) — калибруемый facing
 		if (aRenderPass == 0) {
-			int aIndex = aSide<2?aSide:aSide==mFacing?2:aSide==OPOS[mFacing]?3:4;
+			int aIndex = aSide<2?aSide:aSide==tF?2:aSide==OPOS[tF]?3:4;
 			return BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[aIndex], mRGBa, mMaterial.contains(TD.Properties.GLOWING)), BlockTextureDefault.get(sOverlays[aIndex]), (mMode & B[3]) == 0 ? null : BlockTextureDefault.get(Textures.BlockIcons.DUCT_TAPE));
 		}
-		if (aSide == mFacing) {
+		if (aSide == tF) {
 			// F15-size0 (BUG-015 v2): ЛОГИЧЕСКИЙ счёт ST.count — ZEROSIZE-призрак показывает 0, не 1
 			if (ST.count(slot(1)) >= mMaxStorage) switch(aRenderPass) {
 			case 1: return null;

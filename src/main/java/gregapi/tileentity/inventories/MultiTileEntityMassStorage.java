@@ -728,7 +728,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			BlockEntityRenderer.super.extractRenderState(aStorage, aState, aPartialTick, aCameraPos, aBreakProgress);
 			aState.mItem = null;
 			if (!aStorage.slotHas(1) || !aStorage.isFaceVisible()) return;
-			aState.mStorageFacing = aStorage.mFacing;
+			aState.mStorageFacing = aStorage.level==null ? ITEM_MASSSTORAGE_FACING : aStorage.mFacing; // BUG-038: item-форма (detached-TE) — калибруемый facing предмет-дисплея
 			// BUG-015 v2: GUI-контекст (не FIXED) = ИНВЕНТАРНАЯ иконка — noситель 1.7.10 renderItemIntoGUI-формы
 			// (блоки изометрией «как в JEI/креативе» — репорт игрока: «иконка ресурса не такая, как в JEI»)
 			aState.mItem = new net.minecraft.client.renderer.item.ItemStackRenderState();

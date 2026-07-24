@@ -647,6 +647,9 @@ public class CS {
 	/** BUG-038: то же для item-формы СУНДУКА (свой рендерер MultiTileEntityRendererChest, поворот модели по mFacing,
 	 *  а не FACING_ROTATIONS — потому здесь мировая сторона 0..5, не псевдо-facing). Калибруется отдельным числом. */
 	public static byte                      ITEM_CHEST_FACING = 2;
+	/** BUG-038: то же для item-формы MASS STORAGE (getTexture2 через aSide==mFacing + BER-дисплей предмета; формула
+	 *  поворота COMPASS_FROM_SIDE*90 БЕЗ -180 сундука → отдельное число). Мировая сторона 0..5. */
+	public static byte                      ITEM_MASSSTORAGE_FACING = 2;
 	
 	/** Converts Sides to a Top-Bottom-Side Value, this limits the Range to a Number between [0 and 2] */
 	public static final byte[]              FACES_TBS = { 0, 1, 2, 2, 2, 2, 2, 2};
