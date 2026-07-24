@@ -152,14 +152,20 @@ public class ToolCompat {
 					tBark = null;
 				}
 			}
+			// F4-flattening (BUG-042): ванильные брёвна (oak/spruce/birch/jungle/acacia/dark_oak) в neo = отдельный блок
+			// породы + AXIS-ориентация. Балку (БЛОК + породу) берём из ЦЕНТРА WoodDictionary (log→WoodEntry→mBeamEntry.mBeam,
+			// LoaderWoodDictionary:51-56) — маппинг не дублируем в хардкод; ориентацию читаем из AXIS. 1:1 восстановление
+			// 1.7.10 «Beam, порода|ориентация» (прежде ловились только OAK_LOG/ACACIA_LOG, остальные 4 уходили в дженерик Wood Beam).
+			if (!rReturn && (aBlock == Blocks.OAK_LOG || aBlock == Blocks.SPRUCE_LOG || aBlock == Blocks.BIRCH_LOG
+					|| aBlock == Blocks.JUNGLE_LOG || aBlock == Blocks.ACACIA_LOG || aBlock == Blocks.DARK_OAK_LOG)) {
+				gregapi.wooddict.WoodEntry tWood = gregapi.wooddict.WoodDictionary.WOODS.get(aBlock, 0);
+				if (tWood != null && tWood.mBeamEntry != null && ST.valid(tWood.mBeamEntry.mBeam)) {
+					ItemStack tBeam = tWood.mBeamEntry.mBeam;
+					rReturn = WD.set(aWorld, aX, aY, aZ, ST.block_(tBeam), pillarFromAxis(aWorld, aX, aY, aZ) | (ST.meta_(tBeam) & PILLAR_DATA), 3);
+				}
+			}
 			if (!rReturn && BlocksGT.Beam1 != null) {
-				if (aBlock == Blocks.OAK_LOG || aBlock == Blocks.SPRUCE_LOG || aBlock == Blocks.BIRCH_LOG || aBlock == Blocks.JUNGLE_LOG) {
-					// F4-flattening (BUG-042): 1.7.10 Blocks.log (мета 0-3 = oak/spruce/birch/jungle) расщеплён neo на отдельные
-					// блоки → порода = идентичность блока (Beam1: 0=Oak/1=Spruce/2=Birch/3=Jungle, сверено LoaderWoodDictionary:51-54),
-					// ориентация = AXIS. 1:1 восстановление 1.7.10 «Beam1, aMeta(=порода|ориентация)» (прежде ловился только OAK_LOG).
-					int tSpecies = (aBlock == Blocks.SPRUCE_LOG) ? 1 : (aBlock == Blocks.BIRCH_LOG) ? 2 : (aBlock == Blocks.JUNGLE_LOG) ? 3 : 0;
-					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, pillarFromAxis(aWorld, aX, aY, aZ) | tSpecies, 3);
-				} else if (IL.EtFu_Bark_Oak.equal(aBlock)) {
+				if (IL.EtFu_Bark_Oak.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, aMeta, 3);
 				} else if (IL.TF_Log_Darkwood.equal(aBlock) && (aMeta & 3) != 3) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam1, aMeta, 3);
@@ -186,12 +192,7 @@ public class ToolCompat {
 				}
 			}
 			if (!rReturn && BlocksGT.Beam2 != null) {
-				if (aBlock == Blocks.ACACIA_LOG || aBlock == Blocks.DARK_OAK_LOG) {
-					// F4-flattening (BUG-042): 1.7.10 Blocks.log2 (мета 0-1 = acacia/dark_oak) → Beam2 0/1 (сверено
-					// LoaderWoodDictionary:55-56), ориентация = AXIS. 1:1 восстановление 1.7.10 «Beam2, aMeta» (прежде ловился только ACACIA_LOG; dark_oak уходил в дженерик Wood Beam).
-					int tSpecies = (aBlock == Blocks.DARK_OAK_LOG) ? 1 : 0;
-					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, pillarFromAxis(aWorld, aX, aY, aZ) | tSpecies, 3);
-				} else if (IL.EtFu_Bark_Acacia.equal(aBlock)) {
+				if (IL.EtFu_Bark_Acacia.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, aMeta, 3);
 				} else if (IL.IC2_Log_Rubber.equal(aBlock) || IL.MFR_Log_Rubber.equal(aBlock)) {
 					rReturn = WD.set(aWorld, aX, aY, aZ, BlocksGT.Beam2, 2, 3);
