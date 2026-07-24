@@ -569,12 +569,15 @@ public class WD {
 		if (tState.is(net.minecraft.tags.BlockTags.WOOL))                                                        return gregapi.block.Material.cloth;
 		// BUG-012: 1.7.10 BlockTallGrass (короткая трава/папоротник) и BlockDeadBush = Material.vine
 		// (BlockTallGrass:33/BlockDeadBush:23 референса 1.7.10) — гейт ножа/косы/меча принимает vine.
-		if (aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN || aBlock == Blocks.DEAD_BUSH)                 return gregapi.block.Material.vine;
+		// ADAPT-006: Blocks.BUSH (нов. контент 26.1.2, в 1.7.10 не было) — в ту же группу «короткая трава», режется ножом в сено.
+		// ADAPT-007: Blocks.SHORT_DRY_GRASS (нов. контент, одноблочный) — сюда же; спец-дроп сухого сена в harvestGrass.
+		if (aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN || aBlock == Blocks.DEAD_BUSH || aBlock == Blocks.BUSH || aBlock == Blocks.SHORT_DRY_GRASS) return gregapi.block.Material.vine;
 		// BUG-012: 1.7.10 BlockDoublePlant (все 6: подсолнух/сирень/высокая трава/большой папоротник/куст роз/пион)
 		// и BlockLilyPad (BlockBush:30) = Material.plants (BlockDoublePlant:37 референса 1.7.10).
 		if (tState.is(net.minecraft.tags.BlockTags.SAPLINGS) || tState.is(net.minecraft.tags.BlockTags.SMALL_FLOWERS) || tState.is(net.minecraft.tags.BlockTags.FLOWERS) || tState.is(net.minecraft.tags.BlockTags.CROPS)
 		 || aBlock == Blocks.SUGAR_CANE || aBlock == Blocks.SUNFLOWER || aBlock == Blocks.LILAC || aBlock == Blocks.ROSE_BUSH || aBlock == Blocks.PEONY
-		 || aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN || aBlock == Blocks.LILY_PAD)              return gregapi.block.Material.plants;
+		 // ADAPT-007: Blocks.TALL_DRY_GRASS (нов. контент, двублочный) — в ту же группу, что TALL_GRASS/LARGE_FERN.
+		 || aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN || aBlock == Blocks.LILY_PAD || aBlock == Blocks.TALL_DRY_GRASS) return gregapi.block.Material.plants;
 		return gregapi.block.Material.rock;
 	}
 

@@ -116,11 +116,20 @@ public abstract class ToolStats implements IToolStats {
 	// с оригиналом (ToolStats.java:111-145): tallgrass meta1(grass)/2(fern)->SHORT_GRASS/FERN; double_plant meta2/3->TALL_GRASS/
 	// LARGE_FERN. Мод-ветки (TF/Aether/BoP) — F10 (вне scope CHARTER), сохранены 1:1, мёртвы без мода (IL.*.equal=F / MD.BoP.mLoaded=F).
 	public boolean harvestGrass(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
-		if (aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN) {
+		// ADAPT-006: Blocks.BUSH (нов. контент 26.1.2, в 1.7.10 не было) присоединён к ветке «короткой травы» — режется ножом в Grass.
+		if (aBlock == Blocks.SHORT_GRASS || aBlock == Blocks.FERN || aBlock == Blocks.BUSH) {
 			aDrops.add(IL.Grass.get(1+RNGSUS.nextInt(1+aFortune))); return T;
 		}
 		if (aBlock == Blocks.TALL_GRASS || aBlock == Blocks.LARGE_FERN) {
 			aDrops.add(IL.Grass.get(2+RNGSUS.nextInt(1+aFortune)+RNGSUS.nextInt(1+aFortune))); return T;
+		}
+		// ADAPT-007: Blocks.SHORT/TALL_DRY_GRASS (нов. контент 26.1.2) — срез ножом даёт сразу СУХОЕ сено (IL.Grass_Dry, не мокрое Grass).
+		// Порции по аналогии: одноблочный SHORT — одна (как SHORT_GRASS); двублочный TALL — двойная (как TALL_GRASS).
+		if (aBlock == Blocks.SHORT_DRY_GRASS) {
+			aDrops.add(IL.Grass_Dry.get(1+RNGSUS.nextInt(1+aFortune))); return T;
+		}
+		if (aBlock == Blocks.TALL_DRY_GRASS) {
+			aDrops.add(IL.Grass_Dry.get(2+RNGSUS.nextInt(1+aFortune)+RNGSUS.nextInt(1+aFortune))); return T;
 		}
 		if (IL.TF_Tall_Grass.equal(aBlock)) {
 			switch(aMetaData) {
@@ -249,8 +258,9 @@ public abstract class ToolStats implements IToolStats {
 	@Override
 	public void afterBreaking(ItemStack aStack, Player aPlayer) {
 		// If you work so hard that your Tool breaks, you should probably take a break yourself. :P
+		// ADAPT-002: Mining Fatigue при поломке инструмента ослаблен III→I (amplifier 2→0) по запросу игрока. Weakness 1:1 (III).
 		UT.Entities.applyPotion(aPlayer, MobEffects.WEAKNESS.value()      ,  300, 2, F);
-		UT.Entities.applyPotion(aPlayer, MobEffects.MINING_FATIGUE.value(), 1200, 2, F);
+		UT.Entities.applyPotion(aPlayer, MobEffects.MINING_FATIGUE.value(), 1200, 0, F);
 	}
 
 	public IIconContainer getIcon(boolean aIsToolHead, ItemStack aStack) {
