@@ -908,6 +908,11 @@ public class CS {
 	
 	/** Not really Constants, but they set using the Config and therefore should be constant. */
 	public static double HARDNESS_MULTIPLIER_SAND = 1.0, HARDNESS_MULTIPLIER_ROCK = 1.0, HARDNESS_MULTIPLIER_ORES = 1.0;
+	/** ADAPT-005 (нововведение по запросу игрока, ADAPTATIONS.md): уровень света ГОРЯЩИХ топочных машин (burning box'ы
+	 *  и родственные классы горения). Оригинал 1.7.10 света НЕ давал (IMTE_GetLightValue у генераторов отсутствовал) —
+	 *  0 в конфиге возвращает строгое 1:1. Дефолт 13 = ванильная горящая печь. ЦЕНТР класса: новые «горящие» машины
+	 *  подключаются этим же полем (IMTE_GetLightValue -> mBurning ? BURNING_BOX_LIGHT_VALUE : 0), не своими константами. */
+	public static int BURNING_BOX_LIGHT_VALUE = 13;
 	/** Those are the values derived directly by the Configuration File. DO NOT USE THEM, USE THE VALUES ABOVE INSTEAD!!! */
 	public static double CONFIG_HARDNESS_MULTIPLIER_SAND = 1.0, CONFIG_HARDNESS_MULTIPLIER_ROCK = 1.0, CONFIG_HARDNESS_MULTIPLIER_ORES = 1.0;
 	/** Tree Growth Time Multiplier. */

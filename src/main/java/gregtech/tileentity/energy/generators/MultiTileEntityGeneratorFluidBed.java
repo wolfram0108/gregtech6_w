@@ -62,7 +62,8 @@ import net.neoforged.neoforge.fluids.IFluidTank;
 /**
  * @author Gregorius Techneticies
  */
-public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSingle implements IFluidHandler, ITileEntityTapAccessible, ITileEntityFunnelAccessible, ITileEntityEnergy, ITileEntityRunningActively, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnEntityCollidedWithBlock {
+// ADAPT-005: + IMTE_GetLightValue — горящий бокс светит как ванильная печь (конфиг machines/burning_box_light_value, 0=1:1)
+public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSingle implements IFluidHandler, ITileEntityTapAccessible, ITileEntityFunnelAccessible, ITileEntityEnergy, ITileEntityRunningActively, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnEntityCollidedWithBlock, gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetLightValue {
 	private static int FLAME_RANGE = 2;
 	
 	protected short mEfficiency = 10000;
@@ -214,8 +215,11 @@ public class MultiTileEntityGeneratorFluidBed extends TileEntityBase09FacingSing
 	}
 	
 	@Override public boolean onTickCheck(long aTimer) {return mBurning != oBurning || super.onTickCheck(aTimer);}
-	@Override public void onTickResetChecks(long aTimer, boolean aIsServerSide) {super.onTickResetChecks(aTimer, aIsServerSide); oBurning = mBurning;}
-	@Override public void setVisualData(byte aData) {mBurning = ((aData & 1) != 0);}
+	@Override public void onTickResetChecks(long aTimer, boolean aIsServerSide) {super.onTickResetChecks(aTimer, aIsServerSide); if (oBurning != mBurning) updateLightValue(); oBurning = mBurning;} // ADAPT-005: пересчёт света (сервер)
+	@Override public void setVisualData(byte aData) {boolean tBurning = ((aData & 1) != 0); if (tBurning != mBurning) {mBurning = tBurning; updateLightValue();} else mBurning = tBurning;} // ADAPT-005: пересчёт света (клиент)
+
+	// ADAPT-005 (нововведение по запросу игрока, ADAPTATIONS.md): в 1.7.10 горящий бокс света НЕ давал; конфиг 0 = 1:1
+	@Override public int getLightValue() {return mBurning ? BURNING_BOX_LIGHT_VALUE : 0;}
 	
 	@Override public byte getVisualData() {return (byte)(mBurning?1:0);}
 	@Override public byte getDefaultSide() {return SIDE_FRONT;}

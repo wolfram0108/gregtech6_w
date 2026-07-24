@@ -369,12 +369,21 @@ public class WD {
 	 *  {@code getBlockEntity} и так неблокирующий (чтение из карты BE). */
 	public static BlockEntity teNonForcing(BlockGetter aWorld, int aX, int aY, int aZ) {
 		// КРИТ: getChunk(cx,cz,FULL,false) НЕ неблокирующий — requireChunk=false лишь «вернуть null вместо throw», но
-		// main-thread-future + join ОСТАЁТСЯ → на off-thread (light-поток при генерации) всё равно дедлок. Единственный
-		// истинно неблокирующий доступ — ServerChunkCache.getChunkNow(cx,cz): читает карту загруженных FULL-чанков, БЕЗ join
-		// (null для ещё-генерируемого ProtoChunk → запечённый дефолт света; BE-свет пересчитается после FULL). jstack подтвердил.
+		// main-thread-future + join ОСТАЁТСЯ → на off-thread (light-поток при генерации) всё равно дедлок.
+		// КРИТ-2 (ADAPT-005, живая проба): getChunkNow НЕ годится — у него жёсткий гейт «только main-поток»
+		// (ServerChunkCache.getChunkNow:183 `Thread.currentThread() != mainThread -> null`), а BlockLightEngine.getEmission
+		// зовёт нас именно С LIGHT-ПОТОКА → BE всегда null → динамический свет BE (IMTE_GetLightValue) на сервере МЁРТВ.
+		// Правильный путь — лок-фри цепь самого chunk-движка: chunkMap.getVisibleChunkIfPresent (ChunkMap.java:255, public)
+		// → ChunkHolder.getLatestChunk (GenerationChunkHolder.java:263 — AtomicReference + future.getNow, БЕЗ thread-гейта
+		// и БЕЗ join; getChunkForLighting НЕ годится — у давно-FULL чанка futures промежуточных стадий сброшены → null).
+		// Для ещё-генерируемого чанка вернёт ProtoChunk (не LevelChunk) → null → запечённый дефолт (анти-дедлок сохранён).
+		// BE читаем из карты чанка (getBlockEntities().get) — чистое чтение без side-effect-создания BE с чужого потока.
 		if (aWorld instanceof net.minecraft.server.level.ServerLevel tSL) {
-			net.minecraft.world.level.chunk.LevelChunk tChunk = tSL.getChunkSource().getChunkNow(aX >> 4, aZ >> 4);
-			return tChunk == null ? null : tChunk.getBlockEntity(new BlockPos(aX, aY, aZ));
+			net.minecraft.server.level.ChunkHolder tHolder = tSL.getChunkSource().chunkMap.getVisibleChunkIfPresent(net.minecraft.world.level.ChunkPos.pack(aX >> 4, aZ >> 4));
+			net.minecraft.world.level.chunk.ChunkAccess tChunk = tHolder == null ? null : tHolder.getLatestChunk();
+			// FULL-чанк может прийти обёрнутым в ImposterProtoChunk — разворачиваем (getWrapped:255).
+			if (tChunk instanceof net.minecraft.world.level.chunk.ImposterProtoChunk tIPC) tChunk = tIPC.getWrapped();
+			return tChunk instanceof net.minecraft.world.level.chunk.LevelChunk tLC ? tLC.getBlockEntities().get(new BlockPos(aX, aY, aZ)) : null;
 		}
 		return aWorld == null ? null : aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
 	}
