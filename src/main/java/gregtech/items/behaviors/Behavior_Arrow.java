@@ -26,6 +26,7 @@ import gregapi.data.TD;
 import gregapi.item.IItemProjectile.EntityProjectile;
 import gregapi.item.multiitem.MultiItem;
 import gregapi.item.multiitem.behaviors.IBehavior.AbstractBehaviorDefault;
+import gregapi.util.ST;
 import gregapi.util.UT;
 import gregapi.util.UT.Enchantments;
 import gregtech.entities.projectiles.EntityArrow_Material;
@@ -68,7 +69,7 @@ public class Behavior_Arrow extends AbstractBehaviorDefault {
 			Enchantments.applyBullshitA((LivingEntity)aEntity, aPlayer, aStack);
 			Enchantments.applyBullshitB(aPlayer, aEntity, aStack);
 			if (!UT.Entities.hasInfiniteItems(aPlayer)) aStack.setCount(aStack.getCount()-1);
-			if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ItemStack.EMPTY);
+			if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY
 			return F;
 		}
 		return F;

@@ -27,6 +27,7 @@ import gregapi.old.Textures;
 import gregapi.render.*;
 import gregapi.tileentity.ITileEntityTapFillable;
 import gregapi.tileentity.tank.TileEntityBase10FluidContainerSyncSmall;
+import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.player.Player;
@@ -71,9 +72,9 @@ public class MultiTileEntityMeasuringPot extends TileEntityBase10FluidContainerS
 	
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
-		// BUG-050/F15: 1.7.10 getCurrentEquippedItem()==null (пустая рука) -> neo getMainHandItem().isEmpty()
+		// BUG-050/F15-граница: 1.7.10 getCurrentEquippedItem()==null (пустая рука) -> ST.n(getMainHandItem())==null (центр перевода)
 		// (getMainHandItem НИКОГДА не null, отдаёт EMPTY) — с ==null ветка настройки лимита была мертва.
-		if (aPlayer.getMainHandItem().isEmpty() && SIDES_HORIZONTAL[aSide]) {
+		if (ST.n(aPlayer.getMainHandItem()) == null && SIDES_HORIZONTAL[aSide]) {
 			if (isClientSide()) return T;
 			if (aHitY > PX_P[4]) {
 				if (aHitY > PX_P[6]) {

@@ -293,7 +293,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 								ItemStack tStack = insertItems(aPlayer.getInventory().getItem(i), F);
 								if (tStack == null) {
 									temp = T;
-									aPlayer.getInventory().setItem(i, ItemStack.EMPTY); // F15: neo Inventory=NonNullList, setItem(i,null) кидает NPE (было null в 1.7.10)
+									aPlayer.getInventory().setItem(i, ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY (setItem(null) на NonNullList кидает NPE)
 									continue;
 								}
 								if (tStack.getCount() < aPlayer.getInventory().getItem(i).getCount()) {
