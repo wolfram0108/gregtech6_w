@@ -238,7 +238,7 @@ public class MultiTileEntityBoilerTank extends TileEntityBase09FacingSingle impl
 		return FL.water(aFluid) ? mTanks[0].fill(aFluid, aDoFill) : 0;
 	}
 	
-	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]]), aSide!=mFacing?null:BlockTextureDefault.get(BI.BAROMETER), aSide!=mFacing?null:BlockTextureDefault.get(BI.BAROMETER_SCALE[mBarometer], CA_RED_64)) : null;}
+	@Override public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {byte tF = level==null?ITEM_MACHINE_FACING:mFacing; return aShouldSideBeRendered[aSide] ? BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[FACES_TBS[aSide]], mRGBa), BlockTextureDefault.get(sOverlays[FACES_TBS[aSide]]), aSide!=tF?null:BlockTextureDefault.get(BI.BAROMETER), aSide!=tF?null:BlockTextureDefault.get(BI.BAROMETER_SCALE[mBarometer], CA_RED_64)) : null;}
 	
 	@Override public void onEntityCollidedWithBlock(Entity aEntity) {if (mEnergy+mTanks[1].amount()/STEAM_PER_EU > 2000) UT.Entities.applyHeatDamage(aEntity, Math.min(10.0F, (mEnergy+mTanks[1].amount()/2) / 2000.0F));}
 	@Override public AABB getCollisionBoundingBoxFromPool() {return box(PX_P[2], PX_P[2], PX_P[2], PX_N[2], PX_N[2], PX_N[2]);}

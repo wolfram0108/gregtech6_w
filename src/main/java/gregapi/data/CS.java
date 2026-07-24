@@ -639,6 +639,11 @@ public class CS {
 	
 	/** Those are not representing actual directions! They are for the "FACING_ROTATIONS" Array-Map */
 	public static final byte                SIDE_LEFT = 2, SIDE_FRONT = 3, SIDE_RIGHT = 4, SIDE_BACK = 5;
+	/** BUG-038: псевдо-facing для ИТЕМ-формы машин (detached-TE, level==null). Компенсирует потерянный при порте
+	 *  1.7.10-поворот item-геометрии IRenderedBlock (RendererBlockTextured.renderInventoryBlock: glRotatef(90,0,1,0)),
+	 *  которого нет в neo baked-quad пайплайне → в инвентаре машины смотрели не передней гранью. Калибруется одним
+	 *  значением {SIDE_LEFT/FRONT/RIGHT/BACK}; влияет ТОЛЬКО на выбор текстур item-формы, не на мир/размещение. */
+	public static byte                      ITEM_MACHINE_FACING = SIDE_LEFT;
 	
 	/** Converts Sides to a Top-Bottom-Side Value, this limits the Range to a Number between [0 and 2] */
 	public static final byte[]              FACES_TBS = { 0, 1, 2, 2, 2, 2, 2, 2};
