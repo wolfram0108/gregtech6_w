@@ -343,6 +343,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				// [GT6-LOOTPROBE] BUG-039 — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6lootprobe.flag")) gt6LootProbeTick(aEvent.getServer());
+				// [GT6-MTEAUDIT] BUG-057 — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -1952,6 +1954,161 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 		// return at most 160 Smelts, without any fraction smelts.
 		return (int)UT.Code.bind(0, 32000, rFuelValue);
+	}
+
+	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
+	// Гейт §2.1 (-Pgt6probes + run/gt6mteauditprobe.flag). Фазы: C=аудит зоны игрока (сломанные блоки репро-мира),
+	// A=телепорт в свежие чанки + аудит (ожидание: здоровые BE), затем saveAllChunks + relog (двухмировой приём BUG-002),
+	// B=аудит той же свежей зоны после перезахода. A(real>0) -> B(NULL/stub) = детерминированная репродукция «со временем».
+	private static int sMTEAuditTick = -1, sMTEAuditPhase = 0, sMTEAuditWait = 0, sMTEAuditServerHash = 0, sMTEAuditSession = 0;
+	private static net.minecraft.core.BlockPos sMTEAuditFreshPos = null;
+	private static int[] sMTEAuditCountsA = null;
+	public static volatile int sMTEAuditClientCmd = 0; // 0=нет, 1=клиент-скан, 2=relog
+	public static volatile String sMTEAuditScanLabel = "";
+	@SuppressWarnings("resource")
+	public static void gt6MTEAuditProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = OUT;
+		int tHash = System.identityHashCode(aServer);
+		if (sMTEAuditServerHash == 0) sMTEAuditServerHash = tHash;
+		else if (sMTEAuditServerHash != tHash) {
+			sMTEAuditServerHash = tHash; sMTEAuditSession++; sMTEAuditTick = -1; sMTEAuditWait = 0;
+			O.println("[GT6-MTEAUDIT] НОВАЯ СЕССИЯ СЕРВЕРА #" + sMTEAuditSession + " (relog состоялся), фаза " + sMTEAuditPhase + " -> 7");
+			if (sMTEAuditPhase == 6) sMTEAuditPhase = 7;
+		}
+		sMTEAuditTick++;
+		try {
+			if (sMTEAuditPhase < 10 && sMTEAuditTick > 9000) {O.println("[GT6-MTEAUDIT] EXC timeout: фаза " + sMTEAuditPhase + " не завершилась за 9000 тиков сессии"); sMTEAuditPhase = 10; return;}
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			if (sMTEAuditPhase == 0 && sMTEAuditTick >= 200) {
+				O.println("========== [GT6-MTEAUDIT] BUG-057: аудит BE MTE-семьи (мир=" + tLevel.getServer().getWorldData().getLevelName() + ") ==========");
+				gt6MTEAuditScan("PHASE-C(зона игрока)", tLevel, tPlayer.blockPosition());
+				sMTEAuditScanLabel = "PHASE-C"; sMTEAuditClientCmd = 1;
+				sMTEAuditPhase = 1; sMTEAuditWait = 0;
+			} else if (sMTEAuditPhase == 1) {
+				if (sMTEAuditClientCmd == 0 && ++sMTEAuditWait > 60) {
+					int tFX = tPlayer.blockPosition().getX() + 4096, tFZ = tPlayer.blockPosition().getZ();
+					sMTEAuditFreshPos = new net.minecraft.core.BlockPos(tFX, 250, tFZ);
+					tPlayer.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+					tPlayer.teleportTo(tLevel, tFX + 0.5, 250, tFZ + 0.5, java.util.Set.of(), 0, 0, true);
+					O.println("[GT6-MTEAUDIT] телепорт в свежую зону " + sMTEAuditFreshPos.toShortString() + ", жду генерацию чанков...");
+					sMTEAuditPhase = 2; sMTEAuditWait = 0;
+				}
+			} else if (sMTEAuditPhase == 2) {
+				if (tLevel.getChunkSource().getChunkNow(sMTEAuditFreshPos.getX() >> 4, sMTEAuditFreshPos.getZ() >> 4) != null) {
+					int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, sMTEAuditFreshPos.getX(), sMTEAuditFreshPos.getZ());
+					sMTEAuditFreshPos = new net.minecraft.core.BlockPos(sMTEAuditFreshPos.getX(), tY, sMTEAuditFreshPos.getZ());
+					tPlayer.teleportTo(tLevel, sMTEAuditFreshPos.getX() + 0.5, tY + 1, sMTEAuditFreshPos.getZ() + 0.5, java.util.Set.of(), 0, 0, true);
+					O.println("[GT6-MTEAUDIT] свежая зона готова, поверхность y=" + tY + "; прогрев 300 тиков (отложка вордгена)...");
+					sMTEAuditPhase = 3; sMTEAuditWait = 0;
+				} else if (++sMTEAuditWait > 1200) {O.println("[GT6-MTEAUDIT] EXC чанк свежей зоны не сгенерировался за 1200 тиков"); sMTEAuditPhase = 10;}
+			} else if (sMTEAuditPhase == 3) {
+				if (++sMTEAuditWait >= 300) {
+					sMTEAuditCountsA = gt6MTEAuditScan("PHASE-A(свежие чанки)", tLevel, sMTEAuditFreshPos);
+					sMTEAuditScanLabel = "PHASE-A"; sMTEAuditClientCmd = 1;
+					sMTEAuditPhase = 4; sMTEAuditWait = 0;
+				}
+			} else if (sMTEAuditPhase == 4) {
+				if (sMTEAuditClientCmd == 0 && ++sMTEAuditWait > 40) {
+					boolean tRC = aServer.saveAllChunks(false, true, true);
+					O.println("[GT6-MTEAUDIT] saveAllChunks(false,true,true) => " + tRC + "; relog через 40 тиков");
+					sMTEAuditPhase = 5; sMTEAuditWait = 0;
+				}
+			} else if (sMTEAuditPhase == 5) {
+				if (++sMTEAuditWait > 40) {
+					O.println("[GT6-MTEAUDIT] сигнал клиенту: relog в тот же мир");
+					sMTEAuditClientCmd = 2;
+					sMTEAuditPhase = 6; sMTEAuditWait = 0;
+				}
+			} else if (sMTEAuditPhase == 6) {
+				if (++sMTEAuditWait > 2400) {O.println("[GT6-MTEAUDIT] EXC relog не состоялся за 2400 тиков"); sMTEAuditPhase = 10;}
+			} else if (sMTEAuditPhase == 7) {
+				if (++sMTEAuditWait > 100) {
+					tPlayer.teleportTo(tLevel, sMTEAuditFreshPos.getX() + 0.5, 250, sMTEAuditFreshPos.getZ() + 0.5, java.util.Set.of(), 0, 0, true);
+					O.println("[GT6-MTEAUDIT] сессия-2: телепорт назад в свежую зону " + sMTEAuditFreshPos.toShortString());
+					sMTEAuditPhase = 8; sMTEAuditWait = 0;
+				}
+			} else if (sMTEAuditPhase == 8) {
+				boolean tReady = tLevel.getChunkSource().getChunkNow(sMTEAuditFreshPos.getX() >> 4, sMTEAuditFreshPos.getZ() >> 4) != null;
+				if (tReady && ++sMTEAuditWait > 200) {
+					int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, sMTEAuditFreshPos.getX(), sMTEAuditFreshPos.getZ());
+					tPlayer.teleportTo(tLevel, sMTEAuditFreshPos.getX() + 0.5, tY + 1, sMTEAuditFreshPos.getZ() + 0.5, java.util.Set.of(), 0, 0, true);
+					int[] tB = gt6MTEAuditScan("PHASE-B(та же зона после save+relog)", tLevel, sMTEAuditFreshPos);
+					int[] tA = sMTEAuditCountsA;
+					if (tA != null) {
+						boolean tRepro = tA[1] > 0 && (tB[3] > 0 || tB[2] > 0 || tB[1] < tA[1]);
+						O.println("[GT6-MTEAUDIT] ВЕРДИКТ save+relog: A(blocks=" + tA[0] + " real=" + tA[1] + " stub=" + tA[2] + " NULL=" + tA[3] + ") -> B(blocks=" + tB[0] + " real=" + tB[1] + " stub=" + tB[2] + " NULL=" + tB[3] + ") => " + (tRepro ? "РЕПРО: BE потеряны/застряли после save+relog" : "потери не видно"));
+					}
+					sMTEAuditScanLabel = "PHASE-B"; sMTEAuditClientCmd = 1;
+					sMTEAuditPhase = 9; sMTEAuditWait = 0;
+				} else if (!tReady && ++sMTEAuditWait > 1200) {O.println("[GT6-MTEAUDIT] EXC чанк свежей зоны не загрузился после relog"); sMTEAuditPhase = 10;}
+			} else if (sMTEAuditPhase == 9) {
+				if (sMTEAuditClientCmd == 0 && ++sMTEAuditWait > 20) {
+					O.println("========== [GT6-MTEAUDIT] DONE ==========");
+					sMTEAuditPhase = 10; sMTEAuditWait = 0;
+				}
+			} else if (sMTEAuditPhase == 10 && sMTEAuditTick % 200 == 0 && sMTEAuditWait++ < 10) {
+				O.println("[GT6-MTEAUDIT] heartbeat: сервер жив, тик " + sMTEAuditTick);
+			}
+		} catch (Throwable e) {O.println("[GT6-MTEAUDIT] EXC " + e); e.printStackTrace(O); sMTEAuditPhase = 10;}
+	}
+
+	/** [GT6-MTEAUDIT] скан ±32 блока по горизонтали (вся высота) вокруг центра: каждый MTE-блок классифицируется по BE
+	 *  (real IMultiTileEntity / TileEntityLoaderStub / NULL / other). Работает на ServerLevel И ClientLevel (Level-обобщён,
+	 *  BE берутся из map чанка НАПРЯМУЮ — без ленивого создания через Level.getBlockEntity). Снять при уборке фазы. */
+	public static int[] gt6MTEAuditScan(String aLabel, net.minecraft.world.level.Level aLevel, net.minecraft.core.BlockPos aCenter) {
+		java.io.PrintStream O = OUT;
+		int tR = 32, tBlocks = 0, tReal = 0, tStub = 0, tNull = 0, tOther = 0, tMissChunks = 0;
+		int tSampleN = 0, tSampleS = 0, tSampleR = 0;
+		java.util.Map<String, int[]> tPerBlock = new java.util.TreeMap<>();
+		StringBuilder tSamples = new StringBuilder();
+		for (int tCX = (aCenter.getX() - tR) >> 4; tCX <= (aCenter.getX() + tR) >> 4; tCX++)
+		for (int tCZ = (aCenter.getZ() - tR) >> 4; tCZ <= (aCenter.getZ() + tR) >> 4; tCZ++) {
+			net.minecraft.world.level.chunk.ChunkAccess tCA = aLevel.getChunk(tCX, tCZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+			if (!(tCA instanceof net.minecraft.world.level.chunk.LevelChunk tChunk)) {tMissChunks++; continue;}
+			java.util.Map<net.minecraft.core.BlockPos, net.minecraft.world.level.block.entity.BlockEntity> tBEs = tChunk.getBlockEntities();
+			net.minecraft.world.level.chunk.LevelChunkSection[] tSecs = tChunk.getSections();
+			for (int tSI = 0; tSI < tSecs.length; tSI++) {
+				if (tSecs[tSI].hasOnlyAir()) continue;
+				int tSY = tChunk.getSectionYFromSectionIndex(tSI) << 4;
+				for (int tY = 0; tY < 16; tY++) for (int tZ = 0; tZ < 16; tZ++) for (int tX = 0; tX < 16; tX++) {
+					net.minecraft.world.level.block.state.BlockState tState = tSecs[tSI].getBlockState(tX, tY, tZ);
+					if (!(tState.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) continue;
+					tBlocks++;
+					net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos((tCX << 4) + tX, tSY + tY, (tCZ << 4) + tZ);
+					String tName = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tState.getBlock()).getPath();
+					String tShort = tName.length() > 30 ? tName.substring(24) : tName; // gt.block.multitileentity.XXX -> XXX...
+					int[] tCnt = tPerBlock.computeIfAbsent(tShort, k -> new int[4]);
+					tCnt[0]++;
+					net.minecraft.world.level.block.entity.BlockEntity tBE = tBEs.get(tPos);
+					if (tBE == null) {
+						tNull++; tCnt[1]++;
+						if (tSampleN++ < 6) tSamples.append("[GT6-MTEAUDIT] ").append(aLabel).append(" SAMPLE BE=NULL @").append(tPos.toShortString()).append(" блок=").append(tShort).append('\n');
+					} else if (tBE instanceof gregapi.tileentity.base.TileEntityLoaderStub tStubBE) {
+						tStub++; tCnt[2]++;
+						if (tSampleS++ < 6) {
+							net.minecraft.nbt.CompoundTag tNBT = tStubBE.mLoadedNBT;
+							tSamples.append("[GT6-MTEAUDIT] ").append(aLabel).append(" SAMPLE BE=STUB @").append(tPos.toShortString()).append(" блок=").append(tShort)
+								.append(tNBT == null ? " mLoadedNBT=null" : " ключи=" + tNBT.keySet() + " reg=" + tNBT.getShort(NBT_MTE_REG).orElse((short)-1) + " id=" + tNBT.getShort(NBT_MTE_ID).orElse((short)-1)).append('\n');
+						}
+					} else if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity tMTE) {
+						tReal++; tCnt[3]++;
+						if (tSampleR++ < 4) tSamples.append("[GT6-MTEAUDIT] ").append(aLabel).append(" SAMPLE BE=REAL @").append(tPos.toShortString()).append(' ').append(tBE.getClass().getSimpleName()).append(" reg=").append(tMTE.getMultiTileEntityRegistryID()).append(" id=").append(tMTE.getMultiTileEntityID()).append('\n');
+					} else tOther++;
+				}
+			}
+		}
+		O.println("[GT6-MTEAUDIT] " + aLabel + " центр=" + aCenter.toShortString() + " r=" + tR + " чанков-мимо=" + tMissChunks);
+		O.println("[GT6-MTEAUDIT] " + aLabel + " ИТОГ: MTE-блоков=" + tBlocks + " BE: real=" + tReal + " stub=" + tStub + " NULL=" + tNull + " other=" + tOther);
+		int tLines = 0;
+		for (java.util.Map.Entry<String, int[]> tE : tPerBlock.entrySet()) {
+			if (tLines++ >= 14) {O.println("[GT6-MTEAUDIT]   ... (ещё " + (tPerBlock.size() - 14) + " типов блоков)"); break;}
+			int[] tC = tE.getValue();
+			O.println("[GT6-MTEAUDIT]   " + tE.getKey() + ": блоков=" + tC[0] + " (NULL=" + tC[1] + " stub=" + tC[2] + " real=" + tC[3] + ")");
+		}
+		O.print(tSamples);
+		return new int[]{tBlocks, tReal, tStub, tNull, tOther};
 	}
 
 	// [GT6-LOOTPROBE] BUG-039 (F-loot): живой стенд — снять при уборке фазы. Гейт §2.1 (-Pgt6probes + run/gt6lootprobe.flag).

@@ -193,11 +193,33 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
+	// [GT6-MTEAUDIT] BUG-057, клиентская половина (§2.4): 1=скан клиентских BE той же зоны, 2=relog (двухмировой приём
+	// BUG-002: disconnectFromWorld + перевзвод автовхода wgautoworld). Снять при уборке фазы.
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onMTEAuditClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) return;
+		int tCmd = gregapi.GT_API_Proxy.sMTEAuditClientCmd;
+		if (tCmd == 0) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		try {
+			if (tCmd == 1) {
+				if (tMC.level == null || tMC.player == null) return; // повтор на следующем тике
+				gregapi.GT_API_Proxy.sMTEAuditClientCmd = 0;
+				gregapi.GT_API_Proxy.gt6MTEAuditScan(gregapi.GT_API_Proxy.sMTEAuditScanLabel + "-CLIENT", tMC.level, tMC.player.blockPosition());
+			} else if (tCmd == 2) {
+				gregapi.GT_API_Proxy.sMTEAuditClientCmd = 0;
+				mAutoWorldTriggered = false; // перевзвод автовхода: на TitleScreen wgautoworld снова войдёт в мир из wgautoworld.world
+				gregapi.data.CS.OUT.println("[GT6-MTEAUDIT] клиент: relog (disconnectFromWorld -> автоперевход)");
+				tMC.disconnectFromWorld(net.minecraft.network.chat.Component.literal("[GT6-MTEAUDIT] relog"));
+			}
+		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-MTEAUDIT] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+	}
+
 	// АВТОНОМНЫЙ вход в мир (переиспользуемый harness живых проб, гейт: файл run/wgautoworld.flag; вне флага НЕ активен):
 	// quickPlay упирается в диалог-подтверждение (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ
 	// создаём свежий CREATIVE-мир через штатный клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» →
 	// «Создать», минует ВСЕ диалоги), либо входим в существующий мир по имени из wgautoworld.world. Ноль ручных действий.
-	private boolean mAutoWorldTriggered = false;
+	private static boolean mAutoWorldTriggered = false; // [GT6-MTEAUDIT] static: перевзвод relog-пробой BUG-057 — вернуть instance при уборке фазы
 	@net.neoforged.bus.api.SubscribeEvent
 	public void onAutoWorldCreate(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mAutoWorldTriggered) return;

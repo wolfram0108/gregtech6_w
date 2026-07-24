@@ -47,4 +47,16 @@ public class TileEntityLoaderStub extends TileEntityBase01Root {
 	@Override protected void loadAdditional(ValueInput input) {
 		mLoadedNBT = input.read(MapCodec.assumeMapUnsafe(CompoundTag.CODEC)).orElseGet(UT.NBT::make);
 	}
+
+	/** LOAD-путь БЕЗ ПОТЕРЬ (корень BUG-057): чанк может сохраниться РАНЬШЕ, чем реконструкция стаба добежит
+	 *  (очередь server-tick с квотой; транзитные/граничные чанки выгружаются раньше; при save/shutdown тик не идёт).
+	 *  Базовый {@code saveAdditional} прогонял GT6-мост {@code writeToNBT}, который для стаба писал только id/x/y/z —
+	 *  {@code gt.mte.reg}/{@code gt.mte.id} и все данные MTE стирались с диска НАВСЕГДА (блок навсегда прозрачен).
+	 *  Стаб — прозрачный переносчик: возвращает захваченный NBT на диск ровно как прочитал (идемпотентный round-trip). */
+	@Override protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+		if (mLoadedNBT == null) {super.saveAdditional(output); return;}
+		output.store(mLoadedNBT);
+		// [GT6-MTEAUDIT] DIAG BUG-057 — снять при уборке фазы
+		if (probeFlag("gt6mteauditprobe.flag")) OUT.println("[GT6-MTEAUDIT-DIAG] стаб персистирован БЕЗ потерь @" + getBlockPos().toShortString());
+	}
 }

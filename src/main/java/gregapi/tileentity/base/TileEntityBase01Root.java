@@ -249,6 +249,10 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	@Override
 	protected void saveAdditional(ValueOutput output) {
 		super.saveAdditional(output);
+		// [GT6-MTEAUDIT] DIAG (§6.3) BUG-057 — снять при уборке фазы: если на диск уходит НЕреконструированный стаб,
+		// базовый writeToNBT пишет только id/x/y/z -> gt.mte.reg/gt.mte.id стираются = потеря identity навсегда.
+		if (this instanceof TileEntityLoaderStub && gregapi.data.CS.probeFlag("gt6mteauditprobe.flag"))
+			gregapi.data.CS.OUT.println("[GT6-MTEAUDIT-DIAG] СОХРАНЯЕТСЯ СТАБ @" + getBlockPos().toShortString() + " — identity будет стёрта (mLoadedNBT " + (((TileEntityLoaderStub)this).mLoadedNBT == null ? "null" : "ЕСТЬ, но не пишется") + ")");
 		CompoundTag tNBT = UT.NBT.make();
 		writeToNBT(tNBT);
 		output.store(tNBT);
