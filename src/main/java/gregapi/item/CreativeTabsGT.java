@@ -259,7 +259,16 @@ public final class CreativeTabsGT {
 			return tList;
 		}
 		invokeSub(aItem, "getSubItems", aItem, aTab, tList);
-		if (tList.isEmpty() && aOwner instanceof net.minecraft.world.level.block.Block tBlock) invokeSub(tBlock, "getSubBlocks", aItem, aTab, tList);
+		// getSubBlocks-fallback: 1.7.10-vanilla перечислял getSubBlocks у КАЖДОГО блока во вкладке. Block достаём из aOwner
+		// (ванильные вкладки: assign передаёт сам блок) ЛИБО из BlockItem (собственные GT-вкладки: OWN_TAB_MEMBERS хранит Item —
+		// owner уже Item, «блочность» только через BlockItem.getBlock()). Без второго звена блочный член собственной вкладки
+		// без getSubItems-на-Item (напр. BlockLongDist* = BlockBaseMeta) дал бы 1 стек вместо всех метавариантов.
+		if (tList.isEmpty()) {
+			net.minecraft.world.level.block.Block tBlock =
+				(aOwner instanceof net.minecraft.world.level.block.Block b) ? b :
+				(aItem instanceof net.minecraft.world.item.BlockItem bi) ? bi.getBlock() : null;
+			if (tBlock != null) invokeSub(tBlock, "getSubBlocks", aItem, aTab, tList);
+		}
 		if (tList.isEmpty()) tList.add(new ItemStack(aItem));
 		return tList;
 	}

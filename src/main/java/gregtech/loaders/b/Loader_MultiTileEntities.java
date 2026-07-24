@@ -913,11 +913,13 @@ public class Loader_MultiTileEntities implements Runnable {
 		aMat = MT.DATA.Electric_T[7];   aRegistry.add("Long Distance Transformer Endpoint ("+VN[7]+")"      , "Long Distance Transport"             , 10067, 10060, aClass, aMat.mToolQuality, 16, aMachine     , UT.NBT.make(NBT_MATERIAL, aMat, NBT_HARDNESS,   4.0F, NBT_RESISTANCE,   4.0F, NBT_INPUT, V[7], NBT_OUTPUT, V[7], NBT_WASTE_ENERGY, F, NBT_ENERGY_ACCEPTED, TD.Energy.EU, NBT_ENERGY_EMITTED, TD.Energy.EU), "WMW", "MxM", "WMW", 'M', aRegistry.getItem(10047), 'W', OP.cableGt04.dat(MT.AnnealedCopper));
 		aMat = MT.DATA.Electric_T[8];   aRegistry.add("Long Distance Transformer Endpoint ("+VN[8]+")"      , "Long Distance Transport"             , 10068, 10060, aClass, aMat.mToolQuality, 16, aMachine     , UT.NBT.make(NBT_MATERIAL, aMat, NBT_HARDNESS,   4.0F, NBT_RESISTANCE,   4.0F, NBT_INPUT, V[8], NBT_OUTPUT, V[8], NBT_WASTE_ENERGY, F, NBT_ENERGY_ACCEPTED, TD.Energy.EU, NBT_ENERGY_EMITTED, TD.Energy.EU), "WMW", "MxM", "WMW", 'M', aRegistry.getItem(10048), 'W', OP.cableGt04.dat(MT.AnnealedCopper));
 		
-		// F16: golden — MTE-registry категория-вкладка 10060 «Long Distance Transport»; маршрутизируем в TOOLS_AND_UTILITIES (transport).
-		gregapi.item.CreativeTabsGT.assign(BlocksGT.LongDistPipe01, gregapi.item.CreativeTabsGT.TRANSPORT);
-		gregapi.item.CreativeTabsGT.assign(BlocksGT.LongDistWire01, gregapi.item.CreativeTabsGT.TRANSPORT);
-		
-		
+		// F16 (1:1): трубы/провода Long Distance — в СОБСТВЕННУЮ MTE-вкладку 10060 «Long Distance Transport», где эндпоинты
+		// (оригинал: BlocksGT.LongDist*.setCreativeTab(aRegistry.mCreativeTabs.get((short)10060))). joinOwnTab = neo-эквивалент
+		// setCreativeTab(собственная вкладка); НЕ ванильная TRANSPORT (это была бы другая вкладка → раздел без труб/проводов).
+		gregapi.item.CreativeTabsGT.joinOwnTab(net.minecraft.world.item.Item.byBlock(BlocksGT.LongDistPipe01), aRegistry.mCreativeTabs.get((short)10060));
+		gregapi.item.CreativeTabsGT.joinOwnTab(net.minecraft.world.item.Item.byBlock(BlocksGT.LongDistWire01), aRegistry.mCreativeTabs.get((short)10060));
+
+
 		// BC Lasers
 		aClass = MultiTileEntityLaserBuildcraft.class;
 		aMat = MT.DATA.Electric_T[1];   aRegistry.add("Buildcraft Assembly Laser ("               +VN[1]+")", "Lasers"                              , 10071, 10071, aClass, aMat.mToolQuality, 16, aMachine     , UT.NBT.make(NBT_MATERIAL, aMat, NBT_HARDNESS,   4.0F, NBT_RESISTANCE,   4.0F, NBT_INPUT, V[1], NBT_OUTPUT, V[1]*RF_PER_EU, NBT_WASTE_ENERGY, F, NBT_ENERGY_ACCEPTED, TD.Energy.EU, NBT_ENERGY_EMITTED, TD.Energy.RF), "CWC", "PDP", "wfh", 'P', OP.plateTriple.dat(aMat), 'C', OD_CIRCUITS[1], 'W', MT.DATA.CABLES_04[1], 'D', OP.gemFlawless.dat(ANY.Diamond));
