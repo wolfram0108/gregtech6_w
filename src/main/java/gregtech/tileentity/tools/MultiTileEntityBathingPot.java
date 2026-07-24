@@ -218,7 +218,7 @@ public class MultiTileEntityBathingPot extends TileEntityBase07Paintable impleme
 				slotKill(i);
 				return T;
 			}
-			ItemStack aStack = aPlayer.getMainHandItem(), tStack = ST.container(ST.amount(1, aStack), T);
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack = ST.container(ST.amount(1, aStack), T); // F15-граница: движок EMPTY -> GT6 null
 			FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 			
 			if (aStack != null && tFluid != null && FL.fillAll_(this, SIDE_ANY, tFluid, T)) {

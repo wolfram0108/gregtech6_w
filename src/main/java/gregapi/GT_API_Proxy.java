@@ -980,7 +980,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 									}
 								}
 								ItemStack tRotten = RottingUtil.rotting(tStack, aPlayer.level(), UT.Code.roundDown(aPlayer.getX()), UT.Code.roundDown(aPlayer.getY()), UT.Code.roundDown(aPlayer.getZ()));
-								if (ST.invalid(tRotten)) {tStack.setCount(0); aPlayer.getInventory().setItem(i, NI); continue;}
+								if (ST.invalid(tRotten)) {tStack.setCount(0); aPlayer.getInventory().setItem(i, ST.nn(NI)); continue;} // F15-граница: setItem(null) на NonNullList кидает NPE
 								if (tStack != tRotten) ST.set(tStack, tRotten);
 							}
 							// You can't detect properly when you pick things up out of a Chest, so part of the Inventory scan it is!

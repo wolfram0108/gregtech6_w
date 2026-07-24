@@ -180,7 +180,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (aSide != mFacing) return F;
 		if (isServerSide()) {
-			ItemStack aStack = aPlayer.getMainHandItem();
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
 			if (aStack == null) {
 				if (slotHas(1)) {
 					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), slot(1));
@@ -196,7 +196,7 @@ public abstract class MultiTileEntityGeneratorSolid extends TileEntityBase09Faci
 			} else if (!slotHas(0)) {
 				if (canInsertItem2(0, aStack, SIDE_INSIDE)) {
 					slot(0, aStack);
-					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), null);
+					aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ST.nn(NI)); // F15-граница: GT6 null -> движок EMPTY (setItem(null) на NonNullList кидает NPE, глотался catch(Throwable) -> печь и рука делили один ItemStack = BUG-046)
 					return T;
 				}
 			} else if (ST.equal(aStack, slot(0))) {

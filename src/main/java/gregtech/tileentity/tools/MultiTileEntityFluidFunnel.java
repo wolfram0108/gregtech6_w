@@ -67,7 +67,7 @@ public class MultiTileEntityFluidFunnel extends TileEntityBase11AttachmentSmall 
 	@Override
 	public boolean onBlockActivated3(Player aPlayer, byte aSide, float aHitX, float aHitY, float aHitZ) {
 		if (isServerSide()) {
-			ItemStack aStack = aPlayer.getMainHandItem();
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
 			if (aStack != null) {
 				FluidStack tFluid = FL.getFluid(ST.amount(1, aStack), T);
 				if (!FL.gas(tFluid, T) && tFluid.getAmount() > 0 && (mAcidProof || !FL.acid(tFluid))) {

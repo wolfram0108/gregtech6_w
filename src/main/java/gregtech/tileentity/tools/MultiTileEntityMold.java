@@ -298,7 +298,7 @@ public class MultiTileEntityMold extends TileEntityBase07Paintable implements IT
 		if (tOutputStack != null) {
 			OreDictItemData tData = OM.anyassociation(tOutputStack);
 			if (tData != null) for (Advancement tAchievement : tData.mMaterial.mMaterial.mAchievementsForCreation) ST.achieve(aPlayer, tAchievement);
-			ItemStack aStack = aPlayer.getMainHandItem();
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()); // F15-граница: движок EMPTY -> GT6 null (тело 1:1 рассуждает null-семантикой)
 			if (aStack == null) {
 				aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), tOutputStack);
 				slotKill(0);

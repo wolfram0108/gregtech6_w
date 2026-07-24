@@ -102,7 +102,7 @@ public class MultiTileEntitySapBag extends TileEntityBase09FacingSingle implemen
 				slotKill(0);
 				return T;
 			}
-			ItemStack aStack = aPlayer.getMainHandItem(), tStack;
+			ItemStack aStack = ST.n(aPlayer.getMainHandItem()), tStack; // F15-граница: движок EMPTY -> GT6 null
 			if (aStack != null) if ((tStack = FL.fill(mTank, ST.amount(1, aStack), T, T, T, T)) != null) {
 				aStack.setCount(aStack.getCount()-1);
 				ST.give(aPlayer, tStack, T);

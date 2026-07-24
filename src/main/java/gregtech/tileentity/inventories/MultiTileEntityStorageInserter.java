@@ -48,20 +48,21 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 		if (!UT.Entities.isPlayer(aPlayer)) return T;
 		ArrayListNoNulls<MultiTileEntityMassStorage> tList = new ArrayListNoNulls<>();
 		int tX = getOffsetX(aSide), tY = getOffsetY(aSide), tZ = getOffsetZ(aSide);
-		boolean tDirectionsToGo[] = new boolean[] {T,T,T,T}, tOnlyHand = (aPlayer.getInventory().getSelectedItem() != null);
+		// F15-граница: getSelectedItem() в neo отдаёт EMPTY вместо null 1.7.10 -> все null-гейты руки в этом файле через ST.n
+		boolean tDirectionsToGo[] = new boolean[] {T,T,T,T}, tOnlyHand = (ST.n(aPlayer.getInventory().getSelectedItem()) != null);
 		for (int i = 0; i <= 6 && checkColumn(aPlayer, tX, --tY, tZ, tList, tOnlyHand); i++) if (i == 6) return T;
 		for (int i = 0; i < 50 && UT.Code.containsBoolean(T, tDirectionsToGo); i++) {
-			if (tOnlyHand && aPlayer.getInventory().getSelectedItem() == null) break;
+			if (tOnlyHand && ST.n(aPlayer.getInventory().getSelectedItem()) == null) break;
 			if (tDirectionsToGo[0] && checkColumn(aPlayer, tX+i, tY, tZ  , tList, tOnlyHand)) tDirectionsToGo[0] = F;
-			if (tOnlyHand && aPlayer.getInventory().getSelectedItem() == null) break;
+			if (tOnlyHand && ST.n(aPlayer.getInventory().getSelectedItem()) == null) break;
 			if (tDirectionsToGo[1] && checkColumn(aPlayer, tX-i, tY, tZ  , tList, tOnlyHand)) tDirectionsToGo[1] = F;
-			if (tOnlyHand && aPlayer.getInventory().getSelectedItem() == null) break;
+			if (tOnlyHand && ST.n(aPlayer.getInventory().getSelectedItem()) == null) break;
 			if (tDirectionsToGo[2] && checkColumn(aPlayer, tX  , tY, tZ+i, tList, tOnlyHand)) tDirectionsToGo[2] = F;
-			if (tOnlyHand && aPlayer.getInventory().getSelectedItem() == null) break;
+			if (tOnlyHand && ST.n(aPlayer.getInventory().getSelectedItem()) == null) break;
 			if (tDirectionsToGo[3] && checkColumn(aPlayer, tX  , tY, tZ-i, tList, tOnlyHand)) tDirectionsToGo[3] = F;
 		}
 		for (MultiTileEntityMassStorage tTileEntity : tList) {
-			if (tOnlyHand && aPlayer.getInventory().getSelectedItem() == null) break;
+			if (tOnlyHand && ST.n(aPlayer.getInventory().getSelectedItem()) == null) break;
 			tryInsert(aPlayer, tTileEntity, tOnlyHand);
 		}
 		ST.update(aPlayer);
@@ -83,7 +84,7 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 						temp = F;
 						if (((MultiTileEntityMassStorage)tTileEntity).slotHas(1)) {
 							tryInsert(aPlayer, (MultiTileEntityMassStorage)tTileEntity, aOnlyHand);
-							if (aOnlyHand && aPlayer.getInventory().getSelectedItem() == null) return temp;
+							if (aOnlyHand && ST.n(aPlayer.getInventory().getSelectedItem()) == null) return temp;
 						} else {
 							aList.add((MultiTileEntityMassStorage)tTileEntity);
 						}
@@ -95,10 +96,11 @@ public class MultiTileEntityStorageInserter extends TileEntityBase07Paintable im
 	}
 	
 	public void tryInsert(Player aPlayer, MultiTileEntityMassStorage aStorage, boolean aOnlyHand) {
-		if (aPlayer.getInventory().getSelectedItem() != null) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), aStorage.insertItems(aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()), T));
+		// F15-граница: чтение null-гейтов через ST.n; запись insertItems (возвращает GT6-null при полной вставке) через ST.nn (setItem(null) на NonNullList кидает NPE)
+		if (ST.n(aPlayer.getInventory().getSelectedItem()) != null) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ST.nn(aStorage.insertItems(aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot()), T)));
 		if (!aOnlyHand) for (int i = 9; i < net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE; i++) {
-			if (aPlayer.getInventory().getItem(i) != null && !ST.nonautoinsert(aPlayer.getInventory().getItem(i)) && (aStorage.slotHas(1) || aPlayer.getInventory().getItem(i).getMaxStackSize() > 1)) {
-				aPlayer.getInventory().setItem(i, aStorage.insertItems(aPlayer.getInventory().getItem(i), F));
+			if (ST.n(aPlayer.getInventory().getItem(i)) != null && !ST.nonautoinsert(aPlayer.getInventory().getItem(i)) && (aStorage.slotHas(1) || aPlayer.getInventory().getItem(i).getMaxStackSize() > 1)) {
+				aPlayer.getInventory().setItem(i, ST.nn(aStorage.insertItems(aPlayer.getInventory().getItem(i), F)));
 			}
 		}
 	}

@@ -3325,7 +3325,7 @@ public class UT {
 			if (hasInfiniteItems(aPlayer)) return T;
 			ItemStack aStack = aPlayer.getInventory().getItem(aPlayer.getInventory().getSelectedSlot());
 			if (ST.invalid(aStack)) return F;
-			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), NI);}
+			if (aStack.getCount() != NEI_INFINITE) {aStack.setCount(aStack.getCount()-1); if (aStack.getCount() <= 0) aPlayer.getInventory().setItem(aPlayer.getInventory().getSelectedSlot(), ST.nn(NI));} // F15-граница: setItem(null) на NonNullList кидает NPE
 			ST.give(aPlayer, ST.container(aStack, T), F);
 			return T;
 		}
