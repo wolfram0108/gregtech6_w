@@ -112,10 +112,10 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 					if (WD.liquid_finite(tBlock)) {
 						if (tAbove == tBlock) {
 							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, UT.Code.bind4(getMetaDataAtSide(SIDE_UP)+8), 3);
-							{if (level instanceof net.minecraft.server.level.ServerLevel tSL) tBlock.defaultBlockState().randomTick(tSL, new net.minecraft.core.BlockPos(getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()), tSL.getRandom());}
+							((gregapi.block.fluid.BlockFluidBaseGT)tBlock).onBlockAdded(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()); // было tBlock.updateTick(...) → порт-транскрипция randomTick оказалась no-op (дефолт neo randomTick пуст, BlockBehaviour:334); течение — через ЕДИНЫЙ центральный планировщик тика блока (тот же, что зовёт постановка/сосед-апдейт)
 						} else if (WD.liquid(tAbove) || WD.air(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tAbove)) {
 							WD.set(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ(), tBlock, 7, 3);
-							{if (level instanceof net.minecraft.server.level.ServerLevel tSL) tBlock.defaultBlockState().randomTick(tSL, new net.minecraft.core.BlockPos(getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()), tSL.getRandom());}
+							((gregapi.block.fluid.BlockFluidBaseGT)tBlock).onBlockAdded(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ()); // было tBlock.updateTick(...) → порт-транскрипция randomTick оказалась no-op (дефолт neo randomTick пуст, BlockBehaviour:334); течение — через ЕДИНЫЙ центральный планировщик тика блока (тот же, что зовёт постановка/сосед-апдейт)
 						}
 					} else {
 						if (tAbove == tBlock) {

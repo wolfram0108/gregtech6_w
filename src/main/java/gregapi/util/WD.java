@@ -1118,19 +1118,19 @@ public class WD {
 		return F;
 	}
 	
+	// F5 (единый центр жидкостей): в Forge «личностью жидкости» был интерфейс IFluidBlock на общем предке
+	// BlockFluidBase (→ BlockFluidClassic/BlockFluidFinite). Порт воспроизвёл иерархию своими классами
+	// (decisions/F5-fluids.md §5): ЕДИНЫЙ маркер GT6-жидкости — BlockFluidBaseGT, его наследники BlockWaterlike
+	// (classic) / BlockBaseFluid (finite). GT6-жидкости IFluidBlock/LiquidBlock НЕ несут → классификаторы ниже
+	// спрашивают этот живой центр (тот же приём, что WD.getMaterial:530). LiquidBlock=ваниль, IFluidBlock=чужие моды (интероп).
 	public static boolean liquid(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof IFluidBlock;}
+	public static boolean liquid(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT || aBlock instanceof IFluidBlock;} // было BlockLiquid || IFluidBlock; BlockFluidBaseGT = GT6-жидкости (IFluidBlock не несут)
 
 	public static boolean liquid_classic(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_classic(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	// F5: Forge net.minecraftforge.fluids.BlockFluidClassic удалён — модовые «классические» (бесконечный
-	// источник) жидкости в neo наследуют LiquidBlock (как ваниль). Проверки LiquidBlock достаточно 1:1.
-	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock;}
+	public static boolean liquid_classic(Block aBlock) {return aBlock instanceof LiquidBlock || aBlock instanceof BlockWaterlike;} // было BlockLiquid || BlockFluidClassic; BlockWaterlike = classic-стиль GT6
 
 	public static boolean liquid_finite(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_finite(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
-	// F5 impossible-1:1 (neo не имеет модели finite-fluid-блока, все LiquidBlock бесконечны): Forge net.minecraftforge.fluids.BlockFluidFinite (жидкости с конечным
-	// объёмом на блок) удалён, у neo модели «конечной» жидкости-блока нет (все LiquidBlock-стиль/бесконечные).
-	// Деградация до F (ни один блок не «finite» в модели neo) — НЕ тихо, до появления neo-аналога.
-	public static boolean liquid_finite(Block aBlock) {return F;}
+	public static boolean liquid_finite(Block aBlock) {return aBlock instanceof gregapi.block.fluid.BlockBaseFluid;} // было BlockFluidFinite; BlockBaseFluid = finite-стиль GT6 (единственный вызыватель — MultiTileEntityFluidSpring)
 
 	public static boolean liquid_borken(LevelAccessor aWorld, int aX, int aY, int aZ) {return liquid_borken(aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getBlock());} // было aWorld.getBlock(x,y,z)
 	public static boolean liquid_borken(Block aBlock) {return !(aBlock instanceof IItemGT) && liquid_classic(aBlock);}
