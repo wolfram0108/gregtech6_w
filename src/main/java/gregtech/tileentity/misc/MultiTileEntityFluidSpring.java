@@ -48,6 +48,10 @@ import static gregapi.data.CS.*;
 public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntities implements IMTE_OnRegistration, ITileEntitySurface, IMTE_IsSideSolid, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetLightOpacity, IMTE_SyncDataShort {
 	public FluidStack mFluid = FL.Water.make(1);
 	public boolean mActive = F;
+	// ADAPT-004 (нововведение по запросу игрока, ADAPTATIONS.md): конфиг-множитель темпа produce. Читается ОДИН раз
+	// на mod-load в Loader_Worldgen (рядом с tInfiniteOil/Gas). Применяется при produce (не в worldgen-NBT) → живо
+	// действует на ВСЕ родники (старые+новые). Дефолт 1.0 → делитель == amount → поведение строго 1:1 с оригиналом.
+	public static double PRODUCTION_MULTIPLIER = 1.0;
 	
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
@@ -101,7 +105,8 @@ public class MultiTileEntityFluidSpring extends TileEntityBase04MultiTileEntitie
 		if (aIsServerSide) {
 			boolean tProduce = F;
 			if (mActive) {
-				tProduce = (rng(mFluid.getAmount()) == 0);
+				// ADAPT-004: делитель шанса = amount/множитель → шанс = множитель/amount; кламп делителя ≥1 (шанс не выше 1/тик).
+				tProduce = (rng((int) Math.max(1, Math.round(mFluid.getAmount() / PRODUCTION_MULTIPLIER))) == 0);
 			} else if (SERVER_TIME % 20 == 1 && !WD.liquid(getBlockAtSide(SIDE_UP))) {
 				tProduce = mActive = T;
 			}

@@ -55,7 +55,10 @@ public class Loader_Worldgen implements Runnable {
 		boolean
 		tInfiniteOil = ConfigsGT.WORLDGEN.get(ConfigCategories.general, "GenerateInfiniteOilSources", T),
 		tInfiniteGas = ConfigsGT.WORLDGEN.get(ConfigCategories.general, "GenerateInfiniteGasSources", T);
-		
+		// ADAPT-004 (нововведение, ADAPTATIONS.md): конфиг-множитель темпа produce родников. Кламп >0 против деления на 0.
+		// Дефолт 1.0 → делитель == amount → produce строго 1:1. Применяется в MultiTileEntityFluidSpring.onTick (живо на все родники).
+		gregtech.tileentity.misc.MultiTileEntityFluidSpring.PRODUCTION_MULTIPLIER = Math.max(0.0001, ConfigsGT.WORLDGEN.get(ConfigCategories.general, "FluidSourceProductionMultiplier", 1.0));
+
 		new WorldgenStoneLayers("stonelayers", T, GEN_GT, GEN_ENVM_GT, GEN_A97_GT, GEN_CW2_AquaCavern_GT, GEN_CW2_Caveland_GT, GEN_CW2_Cavenia_GT, GEN_CW2_Cavern_GT, GEN_CW2_Caveworld_GT); // MUST BE FIRST
 		
 		StoneLayer.DEEPSLATE = new StoneLayer(BlocksGT.Slate, MT.STONES.Deepslate, IL.EtFu_Deepslate.block(), 0, IL.EtFu_Deepslate_Cobble.block(), 0
