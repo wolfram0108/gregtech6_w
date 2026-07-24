@@ -525,6 +525,15 @@ public class GT_API extends Abstract_Mod {
 	public void onLevelLoadEarlyItemInit(net.neoforged.neoforge.event.level.LevelEvent.Load aEvent) {
 		if (aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel && tLevel.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
 			runDeferredItemInit();
+			// BUG-054: гейт shift-click ванильной печи (RecipePropertySet.FURNACE_INPUT → AbstractFurnaceMenu.canSmelt:142)
+			// собирается движком на loadLevel ДО этой data-init (FurnaceRecipes ещё пуст → GT6SmeltingDispatcher.input()
+			// отдаёт плейсхолдер BARRIER) → ванильная печь не признаёт GT6-обжигаемое, shift не кладёт его во входной слот.
+			// Пересобираем propertySet ПОСЛЕ наполнения FurnaceRecipes: input() теперь непуст → forSingleInput(SMELTING)
+			// (RecipeManager:257, свежий input(), не кэш) собирает GT6-входы → canSmelt(GT6)=true. ТОТ ЖЕ вызов, что движок
+			// делает на reload (MinecraftServer.java:356,1588), идемпотентен. Топливо (isFuel) не затронуто — оно идёт через
+			// FurnaceFuelBurnTimeEvent, независимо от propertySet. Сама плавка/ручная укладка работали и до фикса (matches live-lookup).
+			net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
+			if (tServer != null) tServer.getRecipeManager().finalizeRecipeLoading(tLevel.enabledFeatures());
 		}
 	}
 
