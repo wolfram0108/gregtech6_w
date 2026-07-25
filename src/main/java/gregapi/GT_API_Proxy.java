@@ -2178,20 +2178,25 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tPos), net.minecraft.core.Direction.UP, tPos, false));
 					}
 					if (tPhase == 50) {
-						int tGT = 0, tAll = 0;
+						int tGT = 0, tAll = 0, tBare = 0;
 						if (tLevel.getBlockEntity(tPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity tChest) {
 							for (int i = 0; i < tChest.getContainerSize(); i++) {
 								net.minecraft.world.item.ItemStack tStack = tChest.getItem(i);
 								if (tStack.isEmpty()) continue;
 								tAll++;
 								String tId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tStack.getItem()).toString();
-								O.println("[GT6-LOOTPROBE] сундук слот " + i + ": " + tStack.getCount() + "x " + tId);
+								O.println("[GT6-LOOTPROBE] сундук слот " + i + ": " + tStack.getCount() + "x " + tId + " «" + tStack.getHoverName().getString() + "» patch=" + (tStack.getComponentsPatch().isEmpty() ? "ПУСТ" : "есть"));
 								// неймспейс GT6-предметов в реестре — "gregtech:" (факт прогона run1: gregtech:gt.meta.*/gt.multiitem.*)
-							if (tId.startsWith("gregtech:")) tGT++;
+								if (tId.startsWith("gregtech:")) {
+									tGT++;
+									// identity GT6-стека живёт в data-компонентах: пустой патч = «голый» дефолт
+									// (живой репорт: стек монет выглядел 64 сундуками, gt.meta.* — «Empty»-пустышки)
+									if (tStack.getComponentsPatch().isEmpty()) tBare++;
+								}
 							}
 						}
 						tPlayer.closeContainer();
-						O.println("[GT6-LOOTPROBE] кейс CHEST => " + (tGT > 0 ? "PASS" : "FAIL") + " (GT-предметов " + tGT + " из " + tAll + "; ожидание >=1: p(0 GT)~1e-6 при живом пуле)");
+						O.println("[GT6-LOOTPROBE] кейс CHEST => " + (tGT > 0 && tBare == 0 ? "PASS" : "FAIL") + " (GT-предметов " + tGT + " из " + tAll + ", ГОЛЫХ без identity " + tBare + "; ожидание: GT>=1 И голых=0)");
 						sLootProbeCase++;
 					}
 				} else if (sLootProbeCase == 2) {

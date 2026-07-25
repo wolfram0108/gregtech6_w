@@ -288,11 +288,26 @@ public class ChestGenHooks {
 		if (tVanillaWeight != null) tPool.add(EmptyLootItem.emptyItem().setWeight(tVanillaWeight));
 		for (WeightedRandomChestContent tContent : aHook.contents) {
 			if (tContent.theItemId == null || tContent.theItemId.isEmpty()) continue;
-			tPool.add(LootItem.lootTableItem(tContent.theItemId.getItem())
-				.setWeight(Math.max(1, tContent.itemWeight))
-				.apply(SetItemCountFunction.setCount(UniformGenerator.between(
-					tContent.theMinimumChanceToGenerateItem, Math.max(tContent.theMinimumChanceToGenerateItem, tContent.theMaximumChanceToGenerateItem)))));
+			net.minecraft.world.level.storage.loot.entries.LootPoolSingletonContainer.Builder<?> tItem =
+				LootItem.lootTableItem(tContent.theItemId.getItem())
+					.setWeight(Math.max(1, tContent.itemWeight))
+					.apply(SetItemCountFunction.setCount(UniformGenerator.between(
+						tContent.theMinimumChanceToGenerateItem, Math.max(tContent.theMinimumChanceToGenerateItem, tContent.theMaximumChanceToGenerateItem))));
+			// Identity GT6-предметов живёт в data-компонентах стека (мета MultiItem, реестр/ID MultiTileEntity —
+			// монеты/мешки/книги/сундуки), а LootItem.lootTableItem несёт только тип Item: без переноса патча
+			// выпадали «голые» дефолты (стек монет → «сундуки», gt.meta.* → «Empty»-пустышки; живой репорт игрока).
+			// Переносим ВЕСЬ DataComponentPatch стека штатными SetComponentsFunction (по компоненту — публичный API).
+			for (Map.Entry<net.minecraft.core.component.DataComponentType<?>, java.util.Optional<?>> tComp : tContent.theItemId.getComponentsPatch().entrySet()) {
+				if (tComp.getValue().isEmpty()) continue; // удаление компонента loot-функцией не выражается; у буфер-стеков не встречается
+				applyComponent(tItem, tComp.getKey(), tComp.getValue().get());
+			}
+			tPool.add(tItem);
 		}
 		aTable.addPool(tPool.build());
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> void applyComponent(net.minecraft.world.level.storage.loot.entries.LootPoolSingletonContainer.Builder<?> aEntry, net.minecraft.core.component.DataComponentType<T> aType, Object aValue) {
+		aEntry.apply(net.minecraft.world.level.storage.loot.functions.SetComponentsFunction.setComponent(aType, (T)aValue));
 	}
 }
