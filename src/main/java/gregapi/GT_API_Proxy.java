@@ -1986,48 +1986,120 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				O.println("[GT6-DUNGEONPROBE] область якорь±5 прогрета (тик " + sDgTick + "), скан...");
 				sDgPhase = 2;
 			} else if (sDgPhase == 2) {
-				int tY0 = gregapi.util.WD.remapY(tLevel, 20);
-				int tCellChunks = 0; long tStonesTotal = 0, tLampsTotal = 0, tMTETotal = 0;
+				// ==== ДЕТАЛЬНЫЙ АУДИТ ДВИЖКОВЫХ ДАННЫХ ПО ВСЕМ ОБЪЕКТАМ ДАНЖА ====
+				// Дифференциатор данж-кладки: BlockStones мета>0 (порода WorldgenStone = мета 0/STONE).
+				final int tY0 = gregapi.util.WD.remapY(tLevel, 20), tYLo = tY0 - 12, tYHi = tY0 + 14, R = 5, N = 2*R+1;
+				long[][] tBrick = new long[N][N]; long[][] tLamp = new long[N][N]; long[][] tMte = new long[N][N];
+				long tGlassGlow = 0, tConcrete = 0, tLootCrates = 0, tBedrockOre = 0, tBedrockOreSmall = 0;
+				java.util.TreeMap<String, Integer> tBEByClass = new java.util.TreeMap<>();
 				java.util.ArrayList<Long> tKeys = new java.util.ArrayList<>();
-				java.util.TreeSet<String> tMTEKinds = new java.util.TreeSet<>();
-				StringBuilder tTable = new StringBuilder();
-				for (int ci = -5; ci <= 5; ci++) for (int cj = -5; cj <= 5; cj++) {
+				int tLootTagged = 0, tWithInv = 0;
+				StringBuilder tBEDump = new StringBuilder();
+				for (int ci = -R; ci <= R; ci++) for (int cj = -R; cj <= R; cj++) {
 					net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tAnchorCX + ci, tAnchorCZ + cj);
 					if (tChunk == null) continue;
-					long tStones = 0, tLamps = 0, tMTE = 0;
 					int tBX = (tAnchorCX + ci) << 4, tBZ = (tAnchorCZ + cj) << 4;
-					for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tY0 - 12; y <= tY0 + 14; y++) {
-						net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(new BlockPos(tBX + x, y, tBZ + z)).getBlock();
-						if (tBlock instanceof gregapi.block.metatype.BlockStones) tStones++;
-						else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) tLamps++;
+					for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
+						for (int y = tYLo; y <= tYHi; y++) {
+							net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(new BlockPos(tBX + x, y, tBZ + z)).getBlock();
+							if (tBlock instanceof gregapi.block.metatype.BlockStones) {if (gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter)tChunk, tBX+x, y, tBZ+z) > 0) tBrick[ci+R][cj+R]++;}
+							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) tLamp[ci+R][cj+R]++;
+							else if (tBlock == BlocksGT.GlowGlass) tGlassGlow++;
+							else if (tBlock == BlocksGT.Concrete) tConcrete++;
+						}
+						// бедрок-жила (комната MiningBedrock): дно мира
+						for (int y = gregapi.util.WD.minY(tLevel); y <= gregapi.util.WD.minY(tLevel)+2; y++) {
+							net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(new BlockPos(tBX + x, y, tBZ + z)).getBlock();
+							if (tBlock == BlocksGT.oreBedrock) tBedrockOre++; else if (tBlock == BlocksGT.oreSmallBedrock) tBedrockOreSmall++;
+						}
 					}
 					for (BlockEntity tBE : tChunk.getBlockEntities().values()) {
 						if (!(tBE instanceof gregapi.block.multitileentity.IMultiTileEntity)) continue;
-						if (tBE.getBlockPos().getY() < tY0 - 12 || tBE.getBlockPos().getY() > tY0 + 14) continue;
-						tMTE++; tMTEKinds.add(tBE.getClass().getSimpleName());
+						int tBEY = tBE.getBlockPos().getY();
+						if (tBEY < gregapi.util.WD.minY(tLevel)+8 && !(tBEY >= tYLo)) {} // шахтные MTE у дна тоже считаем
+						else if (tBEY < tYLo || tBEY > tYHi) continue;
+						tMte[ci+R][cj+R]++;
+						String tCls = tBE.getClass().getSimpleName();
+						tBEByClass.merge(tCls, 1, Integer::sum);
+						if ("MultiTileEntityLootCrate".equals(tCls)) tLootCrates++; // по имени: CONTENT-класс, импорт из gregapi = утечка слоя
 						if (tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) {
 							CompoundTag tNBT = new CompoundTag();
 							tRoot.writeToNBT(tNBT);
 							long tKey = tNBT.getLongOr(NBT_KEY, 0);
 							if (tKey != 0) tKeys.add(tKey);
+							String tLootF = tNBT.getStringOr("gt.dungeonloot.front", tNBT.getStringOr("gt.dungeonloot", ""));
+							int tInvSize = tNBT.getListOrEmpty(NBT_INV_LIST).size();
+							if (!tLootF.isEmpty()) tLootTagged++;
+							if (tInvSize > 0) tWithInv++;
+							// дамп содержательных BE (лут/ключ/инвентарь/жидкость)
+							if (!tLootF.isEmpty() || tKey != 0 || tInvSize > 0 || tNBT.contains("gt.tank"))
+								tBEDump.append(String.format("  BE %s @(%d,%d,%d)%s%s%s%s%n", tCls, tBE.getBlockPos().getX(), tBEY, tBE.getBlockPos().getZ(),
+									tLootF.isEmpty() ? "" : " loot=" + tLootF, tKey == 0 ? "" : " key=" + tKey,
+									tInvSize == 0 ? "" : " inv=" + tInvSize, tNBT.contains("gt.tank") ? " tank+" : ""));
 						}
 					}
-					if (tStones >= 100) tCellChunks++;
-					tStonesTotal += tStones; tLampsTotal += tLamps; tMTETotal += tMTE;
-					if (tStones + tLamps + tMTE > 0) tTable.append(String.format("  чанк(%+d,%+d): stones=%d lamps=%d mte=%d%n", ci, cj, tStones, tLamps, tMTE));
 				}
-				O.println("[GT6-DUNGEONPROBE] ==== СКАН области якорь±5, Y-окно [" + (tY0-12) + ".." + (tY0+14) + "] ====");
-				O.print(tTable);
-				O.println("[GT6-DUNGEONPROBE] ИТОГО: stones=" + tStonesTotal + " lamps=" + tLampsTotal + " mte=" + tMTETotal + " | чанков-клеток(stones>=100)=" + tCellChunks + " | MTE-классы: " + tMTEKinds);
-				boolean tMultiChunk = tCellChunks >= 3 && tStonesTotal >= 1000;
+				// ASCII-карта клеток данжа (K=кладка+лампы, k=кладка, .=пусто); клетка = кирпичи меты>0 >= 200
+				StringBuilder tMap = new StringBuilder("[GT6-DUNGEONPROBE] карта области (X→вправо, Z→вниз, центр=якорь):\n");
+				int tCells = 0; long tBrickTotal = 0, tLampTotal = 0, tMteTotal = 0;
+				boolean[][] tIsCell = new boolean[N][N];
+				for (int cj = 0; cj < N; cj++) {tMap.append("  ");
+					for (int ci = 0; ci < N; ci++) {
+						boolean tCell = tBrick[ci][cj] >= 200; tIsCell[ci][cj] = tCell; if (tCell) tCells++;
+						tBrickTotal += tBrick[ci][cj]; tLampTotal += tLamp[ci][cj]; tMteTotal += tMte[ci][cj];
+						tMap.append(tCell ? (tLamp[ci][cj] > 0 ? 'K' : 'k') : '.');
+					} tMap.append('\n');}
+				O.println("[GT6-DUNGEONPROBE] ==== АУДИТ области якорь±" + R + ", Y-окно [" + tYLo + ".." + tYHi + "] ====");
+				O.print(tMap);
+				for (int ci = 0; ci < N; ci++) for (int cj = 0; cj < N; cj++) if (tIsCell[ci][cj] || tLamp[ci][cj] + tMte[ci][cj] > 0)
+					O.println(String.format("[GT6-DUNGEONPROBE]  клетка(%+d,%+d): кладка=%d лампы=%d mte=%d", ci-R, cj-R, tBrick[ci][cj], tLamp[ci][cj], tMte[ci][cj]));
+				// Судья швов: каждая пара смежных клеток обязана иметь ОБРАБОТАННУЮ границу (проём/дверь/кладка) в зоне
+				// прохода (середина 6..9, Y0+1..3) с обеих сторон — сырой камень по всему сечению = клетка не построилась.
+				int tSeams = 0, tSeamsBad = 0;
+				for (int ci = 0; ci < N; ci++) for (int cj = 0; cj < N; cj++) if (tIsCell[ci][cj]) {
+					int tCellX = (tAnchorCX+ci-R)<<4, tCellZ = (tAnchorCZ+cj-R)<<4;
+					if (ci+1 < N && tIsCell[ci+1][cj]) {
+						tSeams++;
+						int[] tXs = new int[8], tZs = new int[8];
+						for (int m = 0; m < 4; m++) {tXs[m] = tCellX+15; tZs[m] = tCellZ+6+m; tXs[4+m] = tCellX+16; tZs[4+m] = tCellZ+6+m;}
+						if (seamRaw(tLevel, tY0, tXs, tZs)) {tSeamsBad++; O.println("[GT6-DUNGEONPROBE]  ШОВ-ПРОВАЛ X между клетками ("+(ci-R)+","+(cj-R)+")-("+(ci+1-R)+","+(cj-R)+")");}
+					}
+					if (cj+1 < N && tIsCell[ci][cj+1]) {
+						tSeams++;
+						int[] tXs = new int[8], tZs = new int[8];
+						for (int m = 0; m < 4; m++) {tXs[m] = tCellX+6+m; tZs[m] = tCellZ+15; tXs[4+m] = tCellX+6+m; tZs[4+m] = tCellZ+16;}
+						if (seamRaw(tLevel, tY0, tXs, tZs)) {tSeamsBad++; O.println("[GT6-DUNGEONPROBE]  ШОВ-ПРОВАЛ Z между клетками ("+(ci-R)+","+(cj-R)+")-("+(ci-R)+","+(cj+1-R)+")");}
+					}
+				}
+				O.println("[GT6-DUNGEONPROBE] BE-классы данжа: " + tBEByClass);
+				O.print(tBEDump);
 				long tKeyMin = Long.MAX_VALUE, tKeyMax = Long.MIN_VALUE;
 				for (long tK : tKeys) {tKeyMin = Math.min(tKeyMin, tK); tKeyMax = Math.max(tKeyMax, tK);}
-				boolean tKeysOk = tKeys.isEmpty() || (tKeyMax - tKeyMin) < 5; // ключи одного данжа = {id..id-4}
-				O.println("[GT6-DUNGEONPROBE] ключи сейфов/дверей (" + tKeys.size() + " шт): " + tKeys + (tKeys.isEmpty() ? "" : " span=" + (tKeyMax - tKeyMin)));
-				O.println("[GT6-DUNGEONPROBE] ВЕРДИКТ: многочанковость=" + (tMultiChunk ? "PASS" : "FAIL") + " | согласованность ключей=" + (tKeysOk ? "PASS" : "FAIL") + " => " + (tMultiChunk && tKeysOk ? "PASS" : "FAIL"));
+				boolean tKeysOk = tKeys.isEmpty() || (tKeyMax - tKeyMin) < 5;
+				O.println("[GT6-DUNGEONPROBE] ключи (" + tKeys.size() + "): " + tKeys + (tKeys.isEmpty() ? "" : " span=" + (tKeyMax - tKeyMin)));
+				O.println("[GT6-DUNGEONPROBE] ИТОГО: клеток=" + tCells + " кладка=" + tBrickTotal + " лампы=" + tLampTotal + " mte=" + tMteTotal
+					+ " glowglass=" + tGlassGlow + " concrete=" + tConcrete + " | лут-тегов=" + tLootTagged + " с-инвентарём=" + tWithInv + " loot-crates=" + tLootCrates
+					+ " | бедрок-руда=" + tBedrockOre + "+" + tBedrockOreSmall + "(small) | швов=" + tSeams + " провалов=" + tSeamsBad);
+				boolean tPass = tCells >= 3 && tLampTotal > 0 && tSeamsBad == 0 && tKeysOk && tLootTagged > 0;
+				O.println("[GT6-DUNGEONPROBE] ВЕРДИКТ: клетки>=3=" + (tCells >= 3 ? "PASS" : "FAIL") + " | швы=" + (tSeamsBad == 0 ? "PASS" : "FAIL")
+					+ " | ключи=" + (tKeysOk ? "PASS" : "FAIL") + " | лут=" + (tLootTagged > 0 ? "PASS" : "FAIL") + " => " + (tPass ? "PASS" : "FAIL"));
 				sDgPhase = 10;
 			}
 		} catch (Throwable e) {O.println("[GT6-DUNGEONPROBE] EXC " + e); e.printStackTrace(ERR); sDgPhase = 10;}
+	}
+	// [GT6-DUNGEONPROBE] судья шва: провал (true), если ВСЕ переданные колонны в зоне прохода (Y0+1..3) — сырой
+	// мир (порода BlockStones меты 0 / ваниль), т.е. ни воздуха, ни кладки (мета>0), ни ламп/стекла/MTE/поршней двери.
+	private static boolean seamRaw(net.minecraft.server.level.ServerLevel aLevel, int aY0, int[] aXs, int[] aZs) {
+		for (int i = 0; i < aXs.length; i++) for (int y = aY0+1; y <= aY0+3; y++) {
+			net.minecraft.world.level.block.state.BlockState tState = aLevel.getBlockState(new BlockPos(aXs[i], y, aZs[i]));
+			net.minecraft.world.level.block.Block tBlock = tState.getBlock();
+			if (tState.isAir()) return false;
+			if (tBlock instanceof gregapi.block.metatype.BlockStones && gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter)aLevel, aXs[i], y, aZs[i]) > 0) return false;
+			if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP || tBlock == BlocksGT.GlowGlass || tBlock == BlocksGT.Concrete
+			 || tBlock == net.minecraft.world.level.block.Blocks.PISTON || tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON || tBlock == net.minecraft.world.level.block.Blocks.MOVING_PISTON
+			 || tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) return false;
+		}
+		return true;
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
