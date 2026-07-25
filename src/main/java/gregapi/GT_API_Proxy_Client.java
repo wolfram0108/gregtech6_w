@@ -196,6 +196,35 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
+	// [GT6-DUNGEONPROBE] фаза 3 («сундуки открываются одновременно»), клиентская половина: дамп крышек всех
+	// клиентских MTE-сундуков вокруг игрока (mUsingPlayers/mLidAngle per-BE). Снять при уборке захода #39.
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onDungeonChestClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6dungeonprobe.flag")) return;
+		if (gregapi.GT_API_Proxy.sDgChestClientCmd == 0) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		gregapi.GT_API_Proxy.sDgChestClientCmd = 0;
+		try {
+			int tTotal = 0, tOpen = 0;
+			net.minecraft.core.BlockPos tP = tMC.player.blockPosition();
+			for (int cx = (tP.getX()-48)>>4; cx <= (tP.getX()+48)>>4; cx++) for (int cz = (tP.getZ()-48)>>4; cz <= (tP.getZ()+48)>>4; cz++) {
+				net.minecraft.world.level.chunk.LevelChunk tC = tMC.level.getChunkSource().getChunkNow(cx, cz);
+				if (tC == null) continue;
+				for (net.minecraft.world.level.block.entity.BlockEntity tBE : tC.getBlockEntities().values())
+					if (tBE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest) {
+						tTotal++;
+						byte tUsing = ((Number)gregapi.util.UT.Reflection.getFieldContent(tBE, "mUsingPlayers")).byteValue();
+						float tLid = ((Number)gregapi.util.UT.Reflection.getFieldContent(tBE, "mLidAngle")).floatValue();
+						boolean tIsOpen = tUsing > 0 || tLid > 0;
+						if (tIsOpen) tOpen++;
+						gregapi.data.CS.OUT.println("[GT6-DUNGEONPROBE] клиент-сундук @" + tBE.getBlockPos().toShortString() + " using=" + tUsing + " lid=" + String.format("%.2f", tLid));
+					}
+			}
+			gregapi.data.CS.OUT.println("[GT6-DUNGEONPROBE] фаза3-КЛИЕНТ: сундуков=" + tTotal + " с-открытой-крышкой=" + tOpen + " => " + (tOpen <= 1 ? "PASS (только открытый)" : "FAIL (синхронное открытие!)"));
+		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-DUNGEONPROBE] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+	}
+
 	// [GT6-MTEAUDIT] BUG-057, клиентская половина (§2.4): 1=скан клиентских BE той же зоны, 2=relog (двухмировой приём
 	// BUG-002: disconnectFromWorld + перевзвод автовхода wgautoworld). Снять при уборке фазы.
 	@net.neoforged.bus.api.SubscribeEvent

@@ -2000,7 +2000,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// (формула якоря 1:1: abs(cx)%(MaxSize+4)==(MaxSize+4)/2; cx=27 при MaxSize=7, блок 432 — за порогом 256+112);
 	// 1=ожидание генерации области якорь±5; 2=скан Y-окна данжа (remapY(20)) per-chunk: BlockStones-стены, лампы,
 	// MTE-BE, ключи сейфов (gt.key из BE-NBT) → вердикт: данж многочанковый, клетки согласованы; 10=DONE.
-	private static int sDgTick = -1, sDgPhase = 0;
+	private static int sDgTick = -1, sDgPhase = 0, sDgChestWait = 0;
+	public static volatile int sDgChestClientCmd = 0; // 1 = клиент-скан сундуков (крышки), выставляет проба; клиент сбрасывает
 	public static void gt6DungeonProbeTick(net.minecraft.server.MinecraftServer aServer) {
 		java.io.PrintStream O = OUT;
 		final int tAnchorCX = 27, tAnchorCZ = 27;
@@ -2205,7 +2206,26 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				O.println("[GT6-DUNGEONPROBE] ВЕРДИКТ: клетки>=3=" + (tCells >= 3 ? "PASS" : "FAIL") + " | швы=" + (tSeamsBad == 0 ? "PASS" : "FAIL")
 					+ " | ключи=" + (tKeysOk ? "PASS" : "FAIL") + " | лут=" + (tLootTagged > 0 ? "PASS" : "FAIL")
 					+ " | лампы-горят=" + (tLampsOk ? "PASS" : "FAIL") + " => " + (tPass ? "PASS" : "FAIL"));
-				sDgPhase = 10;
+				sDgPhase = 3; sDgChestWait = 0;
+			} else if (sDgPhase == 3) {
+				// ФАЗА 3 (репорт «сундуки открываются одновременно»): server открывает ОДИН сундук программно,
+				// клиент-хук дампит крышки ВСЕХ клиентских сундуков области — лишние открывшиеся = дефект канала.
+				if (++sDgChestWait == 1) {
+					gregapi.block.multitileentity.example.MultiTileEntityChest tFirst = null;
+					outer2:
+					for (int ci = -5; ci <= 5; ci++) for (int cj = -5; cj <= 5; cj++) {
+						net.minecraft.world.level.chunk.LevelChunk tC = tLevel.getChunkSource().getChunkNow(tAnchorCX + ci, tAnchorCZ + cj);
+						if (tC == null) continue;
+						for (BlockEntity tBE : tC.getBlockEntities().values()) if (tBE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest tMC) {tFirst = tMC; break outer2;}
+					}
+					if (tFirst == null) {O.println("[GT6-DUNGEONPROBE] фаза3: сундуков нет — пропуск"); sDgPhase = 10; return;}
+					tFirst.openInventoryGUI();
+					O.println("[GT6-DUNGEONPROBE] фаза3: сервер 'открыл' сундук @" + tFirst.getBlockPos().toShortString() + " (mUsingPlayers=1) — ждём синка");
+				} else if (sDgChestWait == 40) {
+					sDgChestClientCmd = 1; // клиент дампит крышки
+				} else if (sDgChestWait > 100) {
+					sDgPhase = 10;
+				}
 			}
 		} catch (Throwable e) {O.println("[GT6-DUNGEONPROBE] EXC " + e); e.printStackTrace(ERR); sDgPhase = 10;}
 	}
