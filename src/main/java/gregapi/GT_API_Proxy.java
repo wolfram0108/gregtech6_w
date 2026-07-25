@@ -2084,9 +2084,10 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	}
 	// [GT6-WATERPROBE] FLORA-скан: подводная растительность (kelp/seagrass/кораллы) + водная живность вокруг центра —
 	// судья регресса «в GT6-воде пропала флора/фауна» (vanilla-фичи требуют is(Blocks.WATER)). Снять при уборке фазы.
-	private static void gt6WaterProbeFlora(String aLabel, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aCenter) {
+	private static void gt6WaterProbeFlora(String aLabel, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aCenter) {gt6WaterProbeFlora(aLabel, aLevel, aCenter, 48);}
+	private static void gt6WaterProbeFlora(String aLabel, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aCenter, int aR) {
 		int tKelp = 0, tSeagrass = 0, tCoral = 0, tSea = aLevel.getSeaLevel();
-		for (int x = aCenter.getX() - 48; x <= aCenter.getX() + 48; x++) for (int z = aCenter.getZ() - 48; z <= aCenter.getZ() + 48; z++) {
+		for (int x = aCenter.getX() - aR; x <= aCenter.getX() + aR; x++) for (int z = aCenter.getZ() - aR; z <= aCenter.getZ() + aR; z++) {
 			if (!aLevel.hasChunkAt(new net.minecraft.core.BlockPos(x, tSea, z))) continue;
 			for (int y = tSea - 24; y <= tSea; y++) {
 				net.minecraft.world.level.block.state.BlockState tS = aLevel.getBlockState(new net.minecraft.core.BlockPos(x, y, z));
@@ -2101,7 +2102,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				e -> e instanceof net.minecraft.world.entity.Mob && e.isInWater())) {
 			tFauna.merge(tE.getType().toShortString(), 1, Integer::sum);
 		}
-		OUT.println("[GT6-WATERPROBE] FLORA " + aLabel + " (±48, y " + (tSea - 24) + ".." + tSea + "): kelp=" + tKelp
+		OUT.println("[GT6-WATERPROBE] FLORA " + aLabel + " (±" + aR + ", y " + (tSea - 24) + ".." + tSea + "): kelp=" + tKelp
 			+ " seagrass=" + tSeagrass + " coral=" + tCoral + " | водной живности=" + tFauna.values().stream().mapToInt(Integer::intValue).sum() + " " + tFauna);
 	}
 
@@ -2118,9 +2119,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (sWaterProbePhase == 0 && sWaterProbeTick >= 100) {
 				O.println("========== [GT6-WATERPROBE] замер нагрузки растекания вод ==========");
 				sWaterProbeOn = true;
-				// Приоритет ТЁПЛЫХ океанов (кораллы warm + kelp/seagrass lukewarm = маркеры флора-судьи); фолбэк — остальные ранее дырявые.
+				// Приоритет СТРОГО warm_ocean (кораллы — единственный их биом), затем lukewarm (kelp/seagrass), затем cold-фолбэк.
 				com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tFound =
-					tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.WARM_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.LUKEWARM_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_LUKEWARM_OCEAN), tPlayer.blockPosition(), 6400, 32, 64);
+					tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.WARM_OCEAN), tPlayer.blockPosition(), 10000, 64, 64);
+				if (tFound == null) tFound =
+					tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.LUKEWARM_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_LUKEWARM_OCEAN), tPlayer.blockPosition(), 6400, 32, 64);
 				if (tFound == null) tFound =
 					tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.COLD_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_COLD_OCEAN), tPlayer.blockPosition(), 6400, 32, 64); // П2-судья: ранее ДЫРЯВЫЕ океаны (до П2 тут GT6-воды не было — прогон 2)
 				if (tFound == null) {O.println("[GT6-WATERPROBE] EXC океан не найден в радиусе 6400"); sWaterProbePhase = 99; return;}
@@ -2135,7 +2138,12 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (++sWaterProbeWait >= 200) {O.println("[GT6-WATERPROBE] === фаза CALM (свежесгенерированное море), 60с ==="); gt6WaterProbeReset(); sWaterProbePhase = 2; sWaterProbeWait = 0;}
 			} else if (sWaterProbePhase == 2) {
 				if (++sWaterProbeWait % 20 == 0) gt6WaterProbePrint("CALM", tLevel);
-				if (sWaterProbeWait >= 600) {gt6WaterProbeFlora("после-генерации", tLevel, tPlayer.blockPosition()); sWaterProbePhase = 3; sWaterProbeWait = 0;}
+				// CORAL-режим (прогон 9, разовый): расширенный скан ±96 сразу после генерации и DONE (CARVE/CONVERT/MANGROVE уже PASS в прогонах 7-8)
+				if (sWaterProbeWait >= 300) {
+					gt6WaterProbeFlora("после-генерации", tLevel, tPlayer.blockPosition(), 96);
+					O.println("========== [GT6-WATERPROBE] DONE ==========");
+					sWaterProbePhase = 5; sWaterProbeWait = 0;
+				}
 			} else if (sWaterProbePhase == 3) {
 				// вырез: полость 24×10×24 ПОД КОЛОНКОЙ С GT6-ВОДОЙ — скан ±32 вокруг точки телепорта,
 				// берём колонку с МАКСИМАЛЬНОЙ глубиной подряд идущей GT6-воды (BlockWaterlike) от поверхности вниз
@@ -2177,6 +2185,38 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (++sWaterProbeWait % 20 == 0) gt6WaterProbePrint("CONVERT", tLevel);
 				if (sWaterProbeWait >= 1200) {
 					gt6WaterProbeFlora("финал (после шторма/конверсии)", tLevel, tPlayer.blockPosition());
+					// фаза MANGROVE: судья тег-фикса лягушек — телепорт в мангры, ждём конверсию болота, проверяем
+					// FROGS_SPAWNABLE_ON на конвертированной GT6-грязи (Diggables) + считаем лягушек/головастиков
+					com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tM =
+						tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.MANGROVE_SWAMP), tPlayer.blockPosition(), 10000, 64, 64);
+					if (tM == null) {
+						O.println("[GT6-WATERPROBE] мангры не найдены в радиусе 10000 — FROG-судья пропущен");
+						O.println("========== [GT6-WATERPROBE] DONE ==========");
+						sWaterProbePhase = 5; sWaterProbeWait = 0;
+					} else {
+						sWaterProbePos = tM.getFirst();
+						tPlayer.teleportTo(tLevel, sWaterProbePos.getX() + 0.5, tLevel.getSeaLevel() + 30, sWaterProbePos.getZ() + 0.5, java.util.Set.of(), 0, 60, true);
+						O.println("[GT6-WATERPROBE] === фаза MANGROVE @" + sWaterProbePos.getX() + "," + sWaterProbePos.getZ() + ": прогрев 500 тиков (генерация + конверсия болота) ===");
+						sWaterProbePhase = 8; sWaterProbeWait = 0;
+					}
+				}
+			} else if (sWaterProbePhase == 8) {
+				if (++sWaterProbeWait >= 500) {
+					int tSea = tLevel.getSeaLevel(), tDig = 0, tDigTag = 0, tSwampWater = 0;
+					for (int x = sWaterProbePos.getX() - 48; x <= sWaterProbePos.getX() + 48; x++) for (int z = sWaterProbePos.getZ() - 48; z <= sWaterProbePos.getZ() + 48; z++) {
+						if (!tLevel.hasChunkAt(new net.minecraft.core.BlockPos(x, tSea, z))) continue;
+						for (int y = tSea - 8; y <= tSea + 8; y++) {
+							net.minecraft.world.level.block.state.BlockState tS = tLevel.getBlockState(new net.minecraft.core.BlockPos(x, y, z));
+							if (tS.getBlock() == BlocksGT.Diggables) {tDig++; if (tS.is(net.minecraft.tags.BlockTags.FROGS_SPAWNABLE_ON)) tDigTag++;}
+							else if (tS.getBlock() instanceof gregtech.blocks.fluids.BlockSwamp) tSwampWater++;
+						}
+					}
+					int tFrogs = tLevel.getEntities((net.minecraft.world.entity.Entity)null,
+						new net.minecraft.world.phys.AABB(sWaterProbePos).inflate(64, 40, 64),
+						e -> e.getType() == net.minecraft.world.entity.EntityType.FROG || e.getType() == net.minecraft.world.entity.EntityType.TADPOLE).size();
+					O.println("[GT6-WATERPROBE] MANGROVE-судья: GT6-болотной воды=" + tSwampWater + " GT6-грязи(Diggables)=" + tDig
+						+ " из них в теге FROGS_SPAWNABLE_ON=" + tDigTag + " | лягушек/головастиков=" + tFrogs
+						+ " => " + (tDig > 0 && tDigTag == tDig ? "PASS (тег-фикс жив на конвертированной грязи)" : (tDig == 0 ? "INFO: конверсия ещё не дала грязи в зоне" : "FAIL (грязь без тега)")));
 					O.println("========== [GT6-WATERPROBE] DONE ==========");
 					sWaterProbePhase = 5; sWaterProbeWait = 0;
 				}
