@@ -146,7 +146,12 @@ public class ChestGenHooks {
 		return chestInfo.get(aCategory);
 	}
 
-	/** 1:1 (референс :109-134): count стеков из source; больше maxStackSize — сплит по 1. */
+	/** 1:1 (референс :109-134): count стеков из source; больше maxStackSize — сплит по 1.
+	 *  BUG-060 (класс BUG-002 «протухший Holder»): шаблоны contents создаются на data-init ПЕРВОГО мира сессии;
+	 *  энчанты 1.21+ — пер-серверный datapack-реестр → Holder'ы шаблона протухают при смене мира → краш-энкод
+	 *  container_set_content при открытии GUI с таким предметом. Freshen ЗДЕСЬ — единственная точка, через
+	 *  которую идут ВСЕ выдачи шаблонов (getOneItem всех вызывателей: сейфы/мешки/Unboxinator/Twilight/stats-loot
+	 *  + generateChestContents); повторный freshen в ST.generateLoot идемпотентен. */
 	public static ItemStack[] generateStacks(Random aRandom, ItemStack aSource, int aMin, int aMax) {
 		int tCount = aMin + (aMax > aMin ? aRandom.nextInt(aMax - aMin + 1) : 0);
 		ItemStack[] rStacks;
@@ -155,12 +160,12 @@ public class ChestGenHooks {
 		} else if (tCount > aSource.getMaxStackSize()) {
 			rStacks = new ItemStack[tCount];
 			for (int i = 0; i < tCount; i++) {
-				rStacks[i] = aSource.copy();
+				rStacks[i] = gregapi.util.UT.NBT.freshenEnchantments(aSource.copy());
 				rStacks[i].setCount(1);
 			}
 		} else {
 			rStacks = new ItemStack[1];
-			rStacks[0] = aSource.copy();
+			rStacks[0] = gregapi.util.UT.NBT.freshenEnchantments(aSource.copy());
 			rStacks[0].setCount(tCount);
 		}
 		return rStacks;
