@@ -246,8 +246,19 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 	
 	@Override public boolean canDrop(int aInventorySlot) {return T;}
 	@Override public String getTileEntityName() {return "gt.multitileentity.chest";}
-	@Override public void openInventoryGUI () {mUsingPlayers++; if (mIsTrapped) causeBlockUpdate();}
-	@Override public void closeInventoryGUI() {mUsingPlayers--; if (mIsTrapped) causeBlockUpdate();}
+	@Override public void openInventoryGUI () {mUsingPlayers++; lidtrace("open" ); if (mIsTrapped) causeBlockUpdate();}
+	@Override public void closeInventoryGUI() {mUsingPlayers--; lidtrace("close"); if (mIsTrapped) causeBlockUpdate();}
+
+	// [GT6-LIDTRACE] BUG-059 (крышки в среде игрока; dev-канал доказан чистым): телеметрия каждого сдвига
+	// счётчика крышки с вызывателем — читается из gregtech.log игрока. Снять при уборке захода #39.
+	private void lidtrace(String aWhat) {
+		try {
+			StackTraceElement[] tST = new Throwable().getStackTrace();
+			StackTraceElement tC = tST.length > 2 ? tST[2] : null;
+			OUT.println("[GT6-LIDTRACE] " + (isClientSide() ? "CLIENT" : "SERVER") + " " + aWhat + " @" + getBlockPos().toShortString() + " using=" + mUsingPlayers
+				+ " <- " + (tC == null ? "?" : tC.getClassName().substring(tC.getClassName().lastIndexOf('.') + 1) + "." + tC.getMethodName() + ":" + tC.getLineNumber()));
+		} catch (Throwable ignored) {/**/}
+	}
 	@Override public float getExplosionResistance2() {return mResistance;}
 	@Override public float getBlockHardness() {return mHardness;}
 	@Override public int getComparatorInputOverride(byte aSide) {return AbstractContainerMenu.getRedstoneSignalFromContainer((Container)this);}
@@ -279,10 +290,17 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 		aList.add(LH.Chat.DGRAY + LH.get(LH.TOOL_TO_TAKE_PINCERS));
 	}
 	
-	@Override public boolean receiveDataByte(byte aData, INetworkHandler aNetworkHandler) {mUsingPlayers = aData; return T;}
-	
+	@Override public boolean receiveDataByte(byte aData, INetworkHandler aNetworkHandler) {
+		// [GT6-LIDTRACE] BUG-059 — снять при уборке захода #39
+		if (aData != mUsingPlayers) OUT.println("[GT6-LIDTRACE] " + (isClientSide() ? "CLIENT" : "SERVER") + " rcvByte @" + getBlockPos().toShortString() + " using " + mUsingPlayers + "->" + aData);
+		mUsingPlayers = aData; return T;
+	}
+
 	@Override
 	public boolean receiveDataByteArray(byte[] aData, INetworkHandler aNetworkHandler) {
+		// [GT6-LIDTRACE] BUG-059 — снять при уборке захода #39
+		if (aData[1] != mUsingPlayers) OUT.println("[GT6-LIDTRACE] " + (isClientSide() ? "CLIENT" : "SERVER") + " rcvArr @" + getBlockPos().toShortString() + " len=" + aData.length
+			+ " using " + mUsingPlayers + "->" + aData[1] + " facing->" + (aData[0] & 7) + " invsize->" + UT.Code.unsignB(aData[2]));
 		mFacing = (byte)(aData[0] & 7);
 		mUsingPlayers = aData[1];
 		if (UT.Code.unsignB(aData[2]) != getContainerSize()) setInventory(new ItemStack[UT.Code.unsignB(aData[2])]);

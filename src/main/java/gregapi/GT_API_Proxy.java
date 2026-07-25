@@ -345,6 +345,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
 				// [GT6-DUNGEONPROBE] заход #39 (данжи per-chunk) — снять при уборке захода
 				if (gregapi.data.CS.probeFlag("gt6dungeonprobe.flag")) gt6DungeonProbeTick(aEvent.getServer());
+				// [GT6-DUNGEONPROBE] BUG-059 (крышки, мир test09) — снять при уборке захода
+				if (gregapi.data.CS.probeFlag("gt6chestprobe.flag")) gt6ChestProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -1992,6 +1994,108 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				}
 			}
 		}
+	}
+
+	// [GT6-DUNGEONPROBE] BUG-059 (крышки сундуков, мир игрока test09) — снять при уборке захода #39.
+	// Гейт: -Pgt6probes + run/gt6chestprobe.flag; мир: run/wgautoworld.world=test09 (вход харнесом wgautoworld).
+	// Сценарий игрока 1:1: (1) открыть сундук у комода (mDungeonLootName!=пусто, id 2010) → крышки ДРУГИХ сундуков
+	// (id 11, у крафт-стола) анимируются; (2) открыть сундук id 11 → его крышка не открывается никогда.
+	// Замер: сервер openGUI по реальному пути; клиент-дампы (using/lid/инстанс-чанка/тикер) до/во время/после.
+	private static int sCpTick = -1, sCpStep = 0, sCpWait = 0;
+	private static BlockEntity sCpA = null, sCpB = null;
+	private static final java.util.List<BlockEntity> sCpChests = new java.util.ArrayList<>();
+	public static volatile int sChestProbeClientCmd = 0; // 1 = клиент-дамп сундуков; клиент сбрасывает
+	public static void gt6ChestProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = OUT;
+		sCpTick++;
+		try {
+			if (sCpStep < 10 && sCpTick > 9000) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE EXC timeout на шаге " + sCpStep); sCpStep = 10; return;}
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			if (sCpStep == 0 && sCpTick == 100) {
+				// репродукция живёт в мастерской данжа test09 — телепорт на сохранённую позицию игрока (скан после прогрузки)
+				O.println("[GT6-DUNGEONPROBE] CHESTPROBE: телепорт к мастерской (-93,-21,1187)");
+				tPlayer.teleportTo(tLevel, -93.5, -21.0, 1187.5, java.util.Set.of(), 0, 0, true);
+				return;
+			}
+			if (sCpStep == 0 && sCpTick >= 300) {
+				BlockPos tP = tPlayer.blockPosition();
+				O.println("========== [GT6-DUNGEONPROBE] CHESTPROBE BUG-059 v2 (мир=" + aServer.getWorldData().getLevelName() + ", игрок @" + tP.toShortString() + ") ==========");
+				for (int cx = (tP.getX()-16)>>4; cx <= (tP.getX()+16)>>4; cx++) for (int cz = (tP.getZ()-16)>>4; cz <= (tP.getZ()+16)>>4; cz++) {
+					net.minecraft.world.level.chunk.LevelChunk tC = tLevel.getChunkSource().getChunkNow(cx, cz);
+					if (tC == null) continue;
+					for (BlockEntity tBE : tC.getBlockEntities().values())
+						if (tBE instanceof gregapi.block.multitileentity.IMultiTileEntity && tBE instanceof gregapi.tileentity.ITileEntityGUI && tBE.getBlockPos().distSqr(tP) <= 8*8) {
+							sCpChests.add(tBE);
+							// A = сейф (репродукция игрока: «сундук у комода» = Mechanical Safe id 2010 НА комоде)
+							if (sCpA == null && tBE.getClass().getSimpleName().contains("Safe")) sCpA = tBE;
+						}
+				}
+				if (sCpChests.isEmpty()) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: GUI-BE рядом нет — стоп"); sCpStep = 10; return;}
+				for (BlockEntity tBE : sCpChests) {
+					gregapi.block.multitileentity.IMultiTileEntity tMTE = (gregapi.block.multitileentity.IMultiTileEntity)tBE;
+					Object tLoot = null; try {tLoot = gregapi.util.UT.Reflection.getFieldContent(tBE, "mDungeonLootName");} catch (Throwable ignored) {/**/}
+					O.println("[GT6-DUNGEONPROBE] CHESTPROBE BE @" + tBE.getBlockPos().toShortString() + " " + tBE.getClass().getSimpleName() + " mteID=" + tMTE.getMultiTileEntityID()
+						+ " id@" + Integer.toHexString(System.identityHashCode(tBE)) + " loot='" + tLoot + "'"
+						+ " level-BE==chunk-BE?" + (tLevel.getBlockEntity(tBE.getBlockPos()) == tBE));
+				}
+				if (sCpA == null) sCpA = sCpChests.get(0);
+				for (BlockEntity tBE : sCpChests) if (tBE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest) {sCpB = tBE; break;}
+				O.println("[GT6-DUNGEONPROBE] CHESTPROBE: A(сейф)=" + sCpA.getBlockPos().toShortString() + " " + sCpA.getClass().getSimpleName()
+					+ " B(сундук)=" + (sCpB == null ? "нет" : sCpB.getBlockPos().toShortString()));
+				sCpStep = 1; sCpWait = 0;
+			} else if (sCpStep >= 1 && sCpStep < 10) {
+				sCpWait++;
+				gregapi.tileentity.ITileEntityGUI tA = (gregapi.tileentity.ITileEntityGUI)sCpA;
+				gregapi.tileentity.ITileEntityGUI tB = (gregapi.tileentity.ITileEntityGUI)sCpB;
+				if (sCpStep == 1 && sCpWait == 40) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: baseline-дамп"); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 1 && sCpWait >= 80) {
+					// РЕАЛЬНЫЙ клик игрока (не openGUI напрямую!): useItemOn по грани mFacing сейфа →
+					// onBlockActivated3 → generateDungeonLoot (лут pyramidJungleChest цел в test09) → openGUI
+					BlockPos tAP = sCpA.getBlockPos();
+					byte tFacing = sCpA instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFS ? tFS.mFacing : 3;
+					net.minecraft.core.Direction tDir = FORGE_DIR[tFacing];
+					Object tLootPre = sCpA instanceof gregapi.tileentity.inventories.MultiTileEntitySafe tSf1 ? tSf1.mDungeonLootName : "?";
+					O.println("[GT6-DUNGEONPROBE] CHESTPROBE: РЕАЛЬНЫЙ КЛИК A-СЕЙФ @" + tAP.toShortString() + " грань=" + tDir + " loot-до='" + tLootPre + "'");
+					net.minecraft.world.InteractionResult tRes = tPlayer.gameMode.useItemOn(tPlayer, tLevel, tPlayer.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND,
+						new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tAP).add(tDir.getStepX()*0.5, tDir.getStepY()*0.5, tDir.getStepZ()*0.5), tDir, tAP, false));
+					Object tLootPost = sCpA instanceof gregapi.tileentity.inventories.MultiTileEntitySafe tSf2 ? tSf2.mDungeonLootName : "?";
+					O.println("[GT6-DUNGEONPROBE] CHESTPROBE: клик result=" + tRes + " loot-после='" + tLootPost + "'");
+					sCpStep = 2; sCpWait = 0;
+				}
+				else if (sCpStep == 2 && (sCpWait == 60 || sCpWait == 140 || sCpWait == 200)) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 2 && sCpWait >= 260) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: closeContainer A-СЕЙФ"); tPlayer.closeContainer(); sCpStep = 3; sCpWait = 0;}
+				else if (sCpStep == 3 && (sCpWait == 20 || sCpWait == 60)) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 3 && sCpWait >= 100) {
+					if (tB == null) {sCpStep = 5; sCpWait = 0; return;}
+					O.println("[GT6-DUNGEONPROBE] CHESTPROBE: openGUI B-СУНДУК (после сейфа) @" + sCpB.getBlockPos().toShortString()); tB.openGUI(tPlayer); sCpStep = 4; sCpWait = 0;
+				}
+				else if (sCpStep == 4 && (sCpWait == 30 || sCpWait == 60 || sCpWait == 120)) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 4 && sCpWait >= 180) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: closeContainer B-СУНДУК"); tPlayer.closeContainer(); sCpStep = 5; sCpWait = 0;}
+				else if (sCpStep == 5 && sCpWait == 40) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				// === сценарий «переключение меню БЕЗ закрытия» (игрок кликает подряд): B открыт → сразу A-сейф ===
+				else if (sCpStep == 5 && sCpWait >= 80) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: openGUI B-СУНДУК (для переключения)"); tB.openGUI(tPlayer); sCpStep = 6; sCpWait = 0;}
+				else if (sCpStep == 6 && sCpWait == 60) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 6 && sCpWait >= 100) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: ПЕРЕКЛЮЧЕНИЕ B->A (openGUI сейфа БЕЗ closeContainer)"); tA.openGUI(tPlayer); sCpStep = 7; sCpWait = 0;}
+				else if (sCpStep == 7 && (sCpWait == 60 || sCpWait == 120)) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 7 && sCpWait >= 160) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: closeContainer после переключения"); tPlayer.closeContainer(); sCpStep = 8; sCpWait = 0;}
+				else if (sCpStep == 8 && sCpWait == 40) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 8 && sCpWait >= 80) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE: openGUI B-СУНДУК (повторно после переключения — крышка обязана открыться)"); tB.openGUI(tPlayer); sCpStep = 9; sCpWait = 0;}
+				else if (sCpStep == 9 && (sCpWait == 60 || sCpWait == 120)) {dumpChestServerUsing(O, tPlayer); sChestProbeClientCmd = 1;}
+				else if (sCpStep == 9 && sCpWait >= 160) {tPlayer.closeContainer(); O.println("[GT6-DUNGEONPROBE] CHESTPROBE: DONE"); sCpStep = 10;}
+			}
+		} catch (Throwable e) {O.println("[GT6-DUNGEONPROBE] CHESTPROBE EXC " + e); e.printStackTrace(ERR); sCpStep = 10;}
+	}
+	// [GT6-DUNGEONPROBE] CHESTPROBE: серверный срез счётчиков всех отслеживаемых сундуков + containerMenu игрока
+	private static void dumpChestServerUsing(java.io.PrintStream O, net.minecraft.server.level.ServerPlayer aPlayer) {
+		StringBuilder tSB = new StringBuilder("[GT6-DUNGEONPROBE] CHESTPROBE server: menu=").append(aPlayer.containerMenu.getClass().getSimpleName());
+		if (aPlayer.containerMenu instanceof gregapi.gui.ContainerCommon tCC && tCC.mTileEntity instanceof BlockEntity tMBE) tSB.append(" menu.TE@").append(tMBE.getBlockPos().toShortString());
+		for (BlockEntity tBE : sCpChests) {
+			Object tUsing = null; try {tUsing = gregapi.util.UT.Reflection.getFieldContent(tBE, "mUsingPlayers");} catch (Throwable ignored) {/**/}
+			tSB.append(" | @").append(tBE.getBlockPos().toShortString()).append(" using=").append(tUsing == null ? "-" : tUsing);
+		}
+		O.println(tSB);
 	}
 
 	// [GT6-DUNGEONPROBE] заход #39 (данжи per-chunk «переигрывание с маской записи»): живой стенд генерации — снять при

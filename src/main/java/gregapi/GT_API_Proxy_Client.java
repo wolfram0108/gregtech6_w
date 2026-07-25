@@ -228,6 +228,43 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-DUNGEONPROBE] клиент EXC " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 	}
 
+	// [GT6-DUNGEONPROBE] CHESTPROBE BUG-059 (мир test09), клиентская половина: дамп всех клиентских сундуков
+	// вокруг игрока — using/lid, тот ли инстанс в чанке, зарегистрирован ли тикер (анимация крышки живёт в onTick).
+	// Снять при уборке захода #39.
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onChestProbeClient(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (!gregapi.data.CS.probeFlag("gt6chestprobe.flag")) return;
+		if (gregapi.GT_API_Proxy.sChestProbeClientCmd == 0) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		gregapi.GT_API_Proxy.sChestProbeClientCmd = 0;
+		try {
+			StringBuilder tHead = new StringBuilder("[GT6-DUNGEONPROBE] CHESTPROBE клиент: menu=").append(tMC.player.containerMenu.getClass().getSimpleName());
+			if (tMC.player.containerMenu instanceof gregapi.gui.ContainerCommon tCC && tCC.mTileEntity instanceof net.minecraft.world.level.block.entity.BlockEntity tMBE)
+				tHead.append(" menu.TE@").append(tMBE.getBlockPos().toShortString())
+					.append(" тот-же-инстанс-что-в-чанке?").append(tMC.level.getBlockEntity(tMBE.getBlockPos()) == tMBE);
+			gregapi.data.CS.OUT.println(tHead);
+			net.minecraft.core.BlockPos tP = tMC.player.blockPosition();
+			for (int cx = (tP.getX()-16)>>4; cx <= (tP.getX()+16)>>4; cx++) for (int cz = (tP.getZ()-16)>>4; cz <= (tP.getZ()+16)>>4; cz++) {
+				net.minecraft.world.level.chunk.LevelChunk tC = tMC.level.getChunkSource().getChunkNow(cx, cz);
+				if (tC == null) continue;
+				Object tTickers = gregapi.util.UT.Reflection.getFieldContent(tC, "tickersInLevel");
+				for (net.minecraft.world.level.block.entity.BlockEntity tBE : new java.util.ArrayList<>(tC.getBlockEntities().values()))
+					if (tBE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest && tBE.getBlockPos().distSqr(tP) <= 16*16) {
+						byte tUsing = ((Number)gregapi.util.UT.Reflection.getFieldContent(tBE, "mUsingPlayers")).byteValue();
+						float tLid = ((Number)gregapi.util.UT.Reflection.getFieldContent(tBE, "mLidAngle")).floatValue();
+						String tTick = tTickers instanceof java.util.Map<?,?> tMap ? String.valueOf(tMap.containsKey(tBE.getBlockPos())) : "?";
+						gregapi.data.CS.OUT.println("[GT6-DUNGEONPROBE] CHESTPROBE клиент-сундук @" + tBE.getBlockPos().toShortString()
+							+ " mteID=" + ((gregapi.block.multitileentity.IMultiTileEntity)tBE).getMultiTileEntityID()
+							+ " id@" + Integer.toHexString(System.identityHashCode(tBE))
+							+ " using=" + tUsing + " lid=" + String.format("%.2f", tLid)
+							+ " level-BE==chunk-BE?" + (tMC.level.getBlockEntity(tBE.getBlockPos()) == tBE)
+							+ " ticker?" + tTick + " removed?" + tBE.isRemoved());
+					}
+			}
+		} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-DUNGEONPROBE] CHESTPROBE клиент EXC " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+	}
+
 	// [GT6-MTEAUDIT] BUG-057, клиентская половина (§2.4): 1=скан клиентских BE той же зоны, 2=relog (двухмировой приём
 	// BUG-002: disconnectFromWorld + перевзвод автовхода wgautoworld). Снять при уборке фазы.
 	@net.neoforged.bus.api.SubscribeEvent
