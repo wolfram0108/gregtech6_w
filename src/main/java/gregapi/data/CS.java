@@ -1755,6 +1755,29 @@ public class CS {
 		
 		public static final Block[] POT_FLOWER_TILES = {Blocks.CACTUS, Blocks.BROWN_MUSHROOM, Blocks.RED_MUSHROOM, Blocks.DANDELION, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY};
 		public static final byte [] POT_FLOWER_METAS = {0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
+
+		/** F16 flower-pot ЗАКРЫТ: 1.7.10 «горшок + TileEntityFlowerPot.func_145964_a(растение, мета)» — в neo горшок
+		 *  без BE, наполненный горшок = отдельный POTTED_*-блок. ЕДИНСТВЕННЫЙ центр выбора potted-варианта для
+		 *  1.7.10-пары (блок, мета); порядок мет POPPY — 1:1 референс BlockFlower.field_149859_a (poppy, blueOrchid,
+		 *  allium, houstonia, tulipRed, tulipOrange, tulipWhite, tulipPink, oxeyeDaisy). null = нет potted-эквивалента. */
+		public static Block potted(Block aPlant, long aMeta) {
+			if (aPlant == Blocks.CACTUS        ) return Blocks.POTTED_CACTUS;
+			if (aPlant == Blocks.BROWN_MUSHROOM) return Blocks.POTTED_BROWN_MUSHROOM;
+			if (aPlant == Blocks.RED_MUSHROOM  ) return Blocks.POTTED_RED_MUSHROOM;
+			if (aPlant == Blocks.DANDELION     ) return Blocks.POTTED_DANDELION;
+			if (aPlant == Blocks.POPPY) switch ((int)aMeta) {
+				case  1: return Blocks.POTTED_BLUE_ORCHID;
+				case  2: return Blocks.POTTED_ALLIUM;
+				case  3: return Blocks.POTTED_AZURE_BLUET;
+				case  4: return Blocks.POTTED_RED_TULIP;
+				case  5: return Blocks.POTTED_ORANGE_TULIP;
+				case  6: return Blocks.POTTED_WHITE_TULIP;
+				case  7: return Blocks.POTTED_PINK_TULIP;
+				case  8: return Blocks.POTTED_OXEYE_DAISY;
+				default: return Blocks.POTTED_POPPY;
+			}
+			return null;
+		}
 		
 		public static final Block[] FLOWER_TILES = {Blocks.DANDELION, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY, Blocks.POPPY};
 		public static final byte [] FLOWER_METAS = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8};

@@ -42,7 +42,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.tileentity.TileEntityFlowerPot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
@@ -383,9 +382,11 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	public static boolean setFlowerPot(WorldGenLevel aWorld, int aX, int aY, int aZ, DungeonData aData, Random aRandom) {
 		int tIndex = aRandom.nextInt(BlocksGT.POT_FLOWER_TILES.length);
-		WD.set(aWorld, aX, aY, aZ, Blocks.FLOWER_POT, 0, 2);
-		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
-		if (tTileEntity instanceof TileEntityFlowerPot) ((TileEntityFlowerPot)tTileEntity).func_145964_a(Item.byBlock(BlocksGT.POT_FLOWER_TILES[tIndex]), BlocksGT.POT_FLOWER_METAS[tIndex]);
+		// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 «FLOWER_POT + TileEntityFlowerPot.func_145964_a» — в neo горшок
+		// без BE, наполненный горшок = POTTED_*-блок; выбор — центр BlocksGT.potted (контент POT_FLOWER_TILES/METAS 1:1).
+		// Прежний путь через mirror-класс был JPMS-миной (NCDFE при генерации данжа).
+		Block tPotted = BlocksGT.potted(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
+		WD.set(aWorld, aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT : tPotted, 0, 2);
 		return T;
 	}
 	

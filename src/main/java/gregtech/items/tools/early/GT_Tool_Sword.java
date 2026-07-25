@@ -33,7 +33,7 @@ import gregapi.block.Material;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.stats.AchievementList;
+import net.minecraftforge.common.AchievementList;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.BlockDropsEvent;
 

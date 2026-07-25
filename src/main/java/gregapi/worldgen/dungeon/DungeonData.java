@@ -40,7 +40,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.tileentity.TileEntityFlowerPot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.ChestGenHooks;
@@ -328,11 +327,14 @@ public class DungeonData extends WorldAndCoords {
 	}
 	
 	public boolean pot(int aX, int aY, int aZ) {
-		// PORT-TODO(F16, flower-pot): 1.7.10 наполнял горшок через TileEntityFlowerPot (compat-mirror, в рантайме
-		// класса НЕТ → NoClassDefFoundError на первом же instanceof, как краш ПКМ у BlockBaseFlower). В neo горшок
-		// без BE — potted-блоки (FlowerPotBlock.fullPots/POTTED_*); восстановление = FlowerPotBlock.addPlant для
-		// GT6-цветов + выбор potted-варианта здесь. До этого — пустой горшок (декор жив, наполнение отложено).
-		set(aX, aY, aZ, Blocks.FLOWER_POT, 0, 2);
+		int tIndex = next(BlocksGT.POT_FLOWER_TILES.length);
+		// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 наполнял горшок через TileEntityFlowerPot-BE — в neo наполненный
+		// горшок = POTTED_*-блок; выбор — центр BlocksGT.potted (контент POT_FLOWER_TILES/METAS 1:1 оригинала).
+		// FORCED-ADAPTATION: ветки GT6-цветов оригинала (50%: FlowersA/FlowersB по next1in2) требуют СВОИХ
+		// potted-блоков + моделей (несоразмерно декоративной фиче; регистрация N блоков ради горшков в данжах) —
+		// деградация принята: ванильное растение того же ролла; наполненность горшков данжа 1:1, видовой состав сужен.
+		Block tPotted = BlocksGT.potted(BlocksGT.POT_FLOWER_TILES[tIndex], BlocksGT.POT_FLOWER_METAS[tIndex]);
+		set(aX, aY, aZ, tPotted == null ? Blocks.FLOWER_POT : tPotted, 0, 2);
 		return T;
 	}
 	public boolean pot(int aX, int aY, int aZ, Block aBlock, int aMeta) {

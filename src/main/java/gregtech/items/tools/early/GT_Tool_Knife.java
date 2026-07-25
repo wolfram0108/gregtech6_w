@@ -27,7 +27,7 @@ import gregapi.old.Textures;
 import gregapi.render.IIconContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.stats.AchievementList;
+import net.minecraftforge.common.AchievementList;
 
 import static gregapi.data.CS.T;
 import static gregapi.data.CS.TOOL_knife;

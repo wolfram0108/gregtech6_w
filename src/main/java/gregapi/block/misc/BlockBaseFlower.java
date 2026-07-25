@@ -45,7 +45,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.tileentity.TileEntityFlowerPot;
 import net.minecraft.resources.Identifier;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.level.BlockGetter;
@@ -211,10 +210,11 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		Block tBlock = WD.block(aWorld, aX, aY, aZ);
 		BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, T);
 		
-		// PORT-TODO(F16, flower-pot): 1.7.10-ветка «посадить GT6-цветок в горшок» работала через TileEntityFlowerPot
-		// (compat-mirror класс, в РАНТАЙМЕ отсутствует → NoClassDefFoundError, краш игрока 2026-07-19 по ПКМ). В neo
-		// у горшка НЕТ BlockEntity — модель potted-блоков (FlowerPotBlock.fullPots + POTTED_*-варианты); восстановление
-		// = регистрация potted-вариантов GT6-цветов через FlowerPotBlock.addPlant. До этого клик по горшку — no-op.
+		// F16 flower-pot ЗАКРЫТ РЕШЕНИЕМ (BUG-039 v4, FORCED-ADAPTATION): 1.7.10-ветка «посадить GT6-цветок в горшок»
+		// работала через TileEntityFlowerPot-BE (mirror-класс, в рантайме NCDFE — был краш ПКМ 2026-07-19). В neo
+		// наполненный горшок = отдельный POTTED_*-блок: для GT6-цветов потребовалась бы регистрация N собственных
+		// potted-блоков + моделей — несоразмерно декоративной фиче. Деградация принята: GT6-цветы в горшок не
+		// сажаются (no-op, ваниль сажается ванилью); данжен-горшки наполняются центром BlocksGT.potted.
 		if (tBlock == Blocks.FLOWER_POT) return F;
 
 		if (tBlock == Blocks.SNOW && (WD.meta(aWorld, aX, aY, aZ) & 7) < 1) {

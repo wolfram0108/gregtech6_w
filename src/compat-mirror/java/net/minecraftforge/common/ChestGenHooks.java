@@ -49,10 +49,14 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
  *  из GT_API.onLevelLoadEarlyItemInit ПОСЛЕ runDeferredItemInit. Идемпотентность — именованный pool
  *  ({@code gregtech6:<категория>}, LootTable.getPool/addPool отвергает дубликат).
  *
- *  <p>REPLACE/read-путь ванильных категорий (getItems: ChestReplacer подменял ванильные сундуки на GT6-сундуки,
- *  Compat_IC2 менял iridium→scrapbox) — движок не даёт прочитать data-driven таблицу как взвешенный список без
- *  LootContext; re-экспрессия в IGlobalLootModifier отдельным заходом → видимый PORT-TODO-сбой, не тихий no-op.
- *  См. decisions/F-loot-chestgen-map.md. */
+ *  <p>REPLACE/read-путь ванильных категорий — ЗАКРЫТ РЕШЕНИЕМ (FORCED-ADAPTATION, BUG-039 v4): канал 1.7.10
+ *  (подмена ванильного сундука на GT6-сундук В МОМЕНТ генерации его лута) в neo исчез — лут ленивый
+ *  (наполнение при первом открытии), у генерации структур пер-сундук-хука нет, подмена при открытии ломала бы
+ *  UX (сундук меняется под открытым GUI). Деградация принята: ванильные структурные сундуки остаются
+ *  ванильными (GT-лут в них уже есть ADD-путём); trapped-фича GT6-сундуков в структурах не переносится.
+ *  Compat_IC2 (iridium→scrapbox) — вернуться ТОЛЬКО при реальной интеграции IC2 (F10; мода для 26.1.2 нет).
+ *  {@link #getItems(Random)} для ванильных категорий оставлен throw — СТРАЖ от нового использования мёртвого
+ *  канала, не отложенность. См. decisions/F-loot-chestgen-map.md §6.9. */
 public class ChestGenHooks {
 	public static final String
 		MINESHAFT_CORRIDOR       = "mineshaftCorridor",

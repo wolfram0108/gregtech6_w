@@ -19,7 +19,6 @@
 
 package gregapi.item.multiitem.behaviors;
 
-import cpw.mods.fml.common.registry.GameData;
 import gregapi.code.ItemStackContainer;
 import gregapi.code.ModData;
 import gregapi.data.IL;
@@ -85,7 +84,9 @@ public class Behavior_Unlock_Item_Aspects extends AbstractBehaviorDefault {
 					// Prevent 16 Bit Integer Overflows because some Thaumcraft UIs use short instead of int...
 					COMPAT_TC.validate();
 					// Unlock all Aspects for Items that match the Mods for this Behavior.
-					Iterator<Item> tIterator = GameData.getItemRegistry().iterator();
+					// BUG-039 v4 (аудит JPMS-mirror): cpw GameData.getItemRegistry() (stripped-mirror, NCDFE в рантайме)
+					// → neo BuiltInRegistries.ITEM — тот же полный перебор предметов (приём Loader_ItemIterator, F12).
+					Iterator<Item> tIterator = net.minecraft.core.registries.BuiltInRegistries.ITEM.iterator();
 					while (tIterator.hasNext()) {
 						ItemStack tStack = ST.make(tIterator.next(), 1, W);
 						if (ST.valid(tStack)) {

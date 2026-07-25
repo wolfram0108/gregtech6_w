@@ -21,8 +21,8 @@ package gregapi;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantments;
 
-import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.client.registry.RenderingRegistry;
+
+
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -107,7 +107,10 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	
 	@Override
 	public int addArmor(String aPrefix) {
-		try {return RenderingRegistry.addNewArmourRendererPrefix(aPrefix);} catch(Throwable e) {/**/}
+		// BUG-039 v4 (аудит JPMS-mirror): 1.7.10 RenderingRegistry.addNewArmourRendererPrefix (кастомный слой
+		// armor-текстуры) удалён вместе со всей моделью armor-рендера (neo: humanoid-слои через equipment assets,
+		// см. ItemArmorBase/F13); mirror-класс cpw.* JPMS-вырезан из рантайма (вызов кидал NoClassDefFoundError в
+		// пустой catch). Вызывателей метода 0 (греп) — возвращаемый индекс neo-рендером не потребляется.
 		return 0;
 	}
 
@@ -366,28 +369,21 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		return T;
 	}
 
-	// @Override
-	@SuppressWarnings("deprecation")
-	public void onProxyAfterPreInit(Abstract_Mod aMod, FMLCommonSetupEvent aEvent) {
-		/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): было {@code RenderingRegistry.registerEntityRenderingHandler}
-		 *  (`cpw.mods.fml.client.registry`, F10-зеркало compile-only) с {@code new RenderFallingBlock()} —
-		 *  в 26.1.2 {@code FallingBlockRenderer} требует {@code EntityRendererProvider.Context} и
-		 *  регистрируется через {@code EntityRenderersEvent.RegisterRenderers} (decisions/F3-render.md §2.5/§6),
-		 *  НЕ через этот пре-инит хук FML common setup. Заглушка сохраняет вызов центра (F10-зеркало)
-		 *  с нейтральным held-объектом. */
-		RenderingRegistry.registerEntityRenderingHandler(PrefixBlockFallingEntity.class, null);
-		/** F3 superseded-render (GT6BlockModel/ItemModel пайплайн; старый getIcon/immediate-mode мёртв, 0 вызовов neo): {@code RenderingRegistry.registerBlockHandler}/{@code getNextAvailableRenderId}
-		 *  (F10-зеркало) — старый render-id диспетчер blockstate-рендера удалён целиком (decisions/F3-render.md §1,3);
-		 *  замена — {@code DynamicBlockStateModel}/{@code RegisterBlockStateModels} (там же §2.1). {@link RendererBlockFluid}/
-		 *  {@link RendererBlockTextured} держат серверную поверхность (см. их class javadoc) — id тут заведомо no-op (0). */
-		RenderingRegistry.registerBlockHandler(new RendererBlockFluid(0));
-		RenderingRegistry.registerBlockHandler(new RendererBlockTextured(0));
-		/** PORT-TODO(F3/F5 граница, baked-рендер клиента): {@code net.minecraftforge.fluids.FluidRegistry}
-		 *  (старый Forge-кастом-жидкостный API) удалён целиком — F5 ({@code gregapi.fluid}/{@code FL}) уже
-		 *  закрыт другим заходом и не использует эту точку (см. {@link RendererBlockFluid} class javadoc,
-		 *  "F5 закрыт, сюда не лезем"); эта строка — осиротевший межшовный мост, не переносится. */
+	// BUG-039 v4 (аудит JPMS-mirror): метод БЫЛ мёртвым сиротой — сигнатура (FMLCommonSetupEvent) не совпадала с
+	// базовой Abstract_Proxy.onProxyAfterPreInit(Abstract_Mod, FMLPreInitializationEvent), @Override был
+	// закомментирован → Abstract_Mod:167 его никогда не звал; OptiFine-детект и сезонная листва были потеряны
+	// молча. Сигнатура исправлена, канал жив. RenderingRegistry-заглушки (registerEntityRenderingHandler/
+	// registerBlockHandler — F3-суперсид GT6BlockModel-пайплайном, no-op по замыслу) СНЯТЫ: их mirror-класс
+	// cpw.* JPMS-вырезан из рантайма, исполнение кидало бы NoClassDefFoundError (см. decisions/F3-render.md §1,2.1,2.5).
+	@Override
+	public void onProxyAfterPreInit(Abstract_Mod aMod, gregapi.api.FMLPreInitializationEvent aEvent) {
 		// Check if OptiFine is loaded in order to disable some GT Render Hooks to fix Glitches.
-		ITexture.Util.OPTIFINE_LOADED = FMLClientHandler.instance().hasOptifine();
+		// 1:1-мост: 1.7.10 FMLClientHandler.hasOptifine() = детект Class.forName("Config") (FMLClientHandler:272-286,
+		// референс) — FML-обёртка удалена, сам детект воспроизведён; + net.optifine.Config (современный путь OF).
+		boolean tOptifine = F;
+		try {Class.forName("Config", false, GT_API_Proxy_Client.class.getClassLoader()); tOptifine = T;} catch(Throwable e) {/**/}
+		if (!tOptifine) try {Class.forName("net.optifine.Config", false, GT_API_Proxy_Client.class.getClassLoader()); tOptifine = T;} catch(Throwable e) {/**/}
+		ITexture.Util.OPTIFINE_LOADED = tOptifine;
 		
 		if (XMAS_IN_JULY) {
 			// Christmas in July! Go look it up, it is an actual thing!

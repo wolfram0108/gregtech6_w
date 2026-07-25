@@ -47,7 +47,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.tileentity.TileEntityFlowerPot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
@@ -309,13 +308,11 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 					if (WD.meta(aWorld, aX+i, aY+j, aZ+k) == 12) return new BlockPos(aX+i, aY+j, aZ+k);
 					continue;
 				}
-				if (tBlock == Blocks.FLOWER_POT) {
-					BlockEntity tTileEntity = WD.te(aWorld, aX+i, aY+j, aZ+k, F);
-					if (tTileEntity instanceof TileEntityFlowerPot) {
-						if (Block.byItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem()) == Blocks.CACTUS) return new BlockPos(aX+i, aY+j, aZ+k);
-					}
-					continue;
-				}
+				// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 читал содержимое горшка из TileEntityFlowerPot-BE
+				// (mirror, NCDFE в рантайме) — в neo содержимое = сам POTTED_*-блок. 1:1: кактус в горшке найден,
+				// любой другой горшок — мимо (continue оригинала).
+				if (tBlock == Blocks.POTTED_CACTUS) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock instanceof net.minecraft.world.level.block.FlowerPotBlock) continue;
 			}
 			return null;
 		case 100:
@@ -616,13 +613,14 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 	public static boolean checkFlowers(Level aWorld, int aX, int aY, int aZ) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ, F);
 		if (aBlock == NB) return F;
-		if (aBlock == Blocks.FLOWER_POT) {
-			BlockEntity tTileEntity = WD.te(aWorld, aX, aY, aZ, F);
-			if (tTileEntity instanceof TileEntityFlowerPot) {
-				aBlock = Block.byItem(((TileEntityFlowerPot)tTileEntity).getFlowerPotItem());
-				return aBlock == Blocks.DANDELION || aBlock == Blocks.POPPY;
-			}
-			return F;
+		// F16 flower-pot ЗАКРЫТ (BUG-039 v4): 1.7.10 читал содержимое горшка из TileEntityFlowerPot-BE (mirror,
+		// NCDFE в рантайме) — в neo содержимое = сам POTTED_*-блок. 1:1 «dandelion или red_flower в горшке»:
+		// 1.7.10 POPPY-блок = все 9 расщеплённых red_flower (F4-flattening) → их potted-варианты.
+		if (aBlock instanceof net.minecraft.world.level.block.FlowerPotBlock) {
+			return aBlock == Blocks.POTTED_DANDELION || aBlock == Blocks.POTTED_POPPY || aBlock == Blocks.POTTED_BLUE_ORCHID
+				|| aBlock == Blocks.POTTED_ALLIUM || aBlock == Blocks.POTTED_AZURE_BLUET || aBlock == Blocks.POTTED_RED_TULIP
+				|| aBlock == Blocks.POTTED_ORANGE_TULIP || aBlock == Blocks.POTTED_WHITE_TULIP || aBlock == Blocks.POTTED_PINK_TULIP
+				|| aBlock == Blocks.POTTED_OXEYE_DAISY;
 		}
 		if (aBlock == Blocks.SUNFLOWER) {
 			byte tMeta = WD.meta(aWorld, aX, aY, aZ);

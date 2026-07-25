@@ -19,7 +19,6 @@
 
 package gregtech;
 
-import cpw.mods.fml.client.registry.RenderingRegistry;
 import gregapi.api.FMLPreInitializationEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -51,7 +50,10 @@ import static gregapi.data.CS.*;
 public class GT_Client extends GT_Proxy {
 	private final PlayerModelRenderer mPlayerRenderer = new PlayerModelRenderer(mSupporterListSilver, mSupporterListGold);
 	
-	public int addArmor(String aPrefix) {return RenderingRegistry.addNewArmourRendererPrefix(aPrefix);}
+	// BUG-039 v4 (аудит JPMS-mirror): RenderingRegistry.addNewArmourRendererPrefix — API armor-слоёв 1.7.10 удалён
+	// (neo: equipment assets, ItemArmorBase/F13); mirror cpw.* JPMS-вырезан из рантайма (вызов без catch = краш
+	// NoClassDefFoundError). Вызывателей 0 (греп) — индекс neo-рендером не потребляется.
+	public int addArmor(String aPrefix) {return 0;}
 	
 	public GT_Client() {super();}
 	
