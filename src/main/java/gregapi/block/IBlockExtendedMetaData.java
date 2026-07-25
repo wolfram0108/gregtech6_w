@@ -25,8 +25,24 @@ import net.minecraft.world.level.BlockGetter;
  * @author Gregorius Techneticies
  */
 public interface IBlockExtendedMetaData {
-	public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData);
-	public short getExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ);
+	/** Консолидация (заход #39, снятие дубля-зеркала): маршрутизация мета↔BlockState для семей с META-свойством
+	 *  живёт ЗДЕСЬ — один код на всех носителей приёма (BlockBaseMeta/BlockBaseBars/BlockBaseFlower; их прежние
+	 *  дословные копии друг друга удалены). Переопределяют только носители ИНОЙ раскладки: TE-мета (PrefixBlock),
+	 *  мета в других свойствах (BlockBaseRail: SHAPE+POWERED), жидкости (BlockFluidBaseGT: LEVEL).
+	 *  Пишет Level/LevelAccessor (интерактив) ИЛИ ChunkAccess (ворлдген — WD.set(ChunkAccess):872). */
+	public default void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
+		net.minecraft.core.BlockPos tPos = new net.minecraft.core.BlockPos(aX, aY, aZ);
+		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(tPos);
+		if (tState.getBlock() != this) return;
+		net.minecraft.world.level.block.state.BlockState tNew = getStateForExtendedMetaData(tState, aMetaData);
+		if (tNew == null) return;
+		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tLA) tLA.setBlock(tPos, tNew, 3);
+		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, net.minecraft.world.level.block.Block.UPDATE_ALL);
+	}
+	public default short getExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ) {
+		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(new net.minecraft.core.BlockPos(aX, aY, aZ));
+		return tState.getBlock() == this ? getExtendedMetaData(tState) : 0;
+	}
 
 	/** F13-снимок (BUG-016/BUG-047): мета из BlockState без чтения мира (harvest-пути: в neo removeBlock идёт ДО дропов).
 	 *  Дефолт покрывает семьи с META-свойством (BlockBaseMeta/BlockBaseFlower/BlockFluidBaseGT — их META равны по equals:

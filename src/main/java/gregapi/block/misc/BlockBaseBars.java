@@ -63,25 +63,10 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	public final OreDictMaterial mMat;
 
 	// F13 (заход данжей #39, живой тест «заборы не повёрнуты»): мета баров = битмаска горизонтальных соединений
-	// (1=N,2=S,4=W,8=E — весь класс оперирует ею через WD.set/WD.meta, рендер BarRenderer(mMeta)), но семья висела
-	// на BlockBaseSealable МИМО BlockBaseMeta → IBlockExtendedMetaData не реализован → WD.set ронял мету в 0
-	// (столбики вместо пролётов). Подключение — ДОСЛОВНОЕ зеркало уже работающего приёма семьи
-	// (BlockBaseMeta.java:44-73 / BlockBaseFlower): мета в BlockState-свойстве META, дефолты интерфейса покрывают
-	// getStateForExtendedMetaData/getExtendedMetaData(BlockState).
+	// (1=N,2=S,4=W,8=E — весь класс оперирует ею через WD.set/WD.meta, рендер BarRenderer(mMeta)); хранение —
+	// BlockState-свойство META, маршрутизация get/setExtendedMetaData — дефолты IBlockExtendedMetaData
+	// (консолидация захода #39: прежнее дословное зеркало BlockBaseMeta удалено, один код на всех носителей).
 	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(gregapi.block.BlockBaseMeta.META);}
-	@Override public short getExtendedMetaData(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {
-		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ));
-		return tState.getBlock() == this ? getExtendedMetaData(tState) : 0;
-	}
-	@Override public void setExtendedMetaData(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
-		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		net.minecraft.world.level.block.state.BlockState tState = aWorld.getBlockState(tPos);
-		if (tState.getBlock() != this) return;
-		net.minecraft.world.level.block.state.BlockState tNew = getStateForExtendedMetaData(tState, aMetaData);
-		if (tNew == null) return;
-		if (aWorld instanceof net.minecraft.world.level.LevelAccessor tLA) tLA.setBlock(tPos, tNew, 3);
-		else if (aWorld instanceof net.minecraft.world.level.chunk.ChunkAccess tChunk) tChunk.setBlockState(tPos, tNew, net.minecraft.world.level.block.Block.UPDATE_ALL);
-	}
 
 	public BlockBaseBars(String aNameInternal, OreDictMaterial aMat, Material aVanillaMaterial, SoundType aSoundType) {
 		super(null, aNameInternal, aVanillaMaterial, aSoundType);

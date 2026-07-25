@@ -140,20 +140,9 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 	@Override public byte maxMeta() {return mMaxMeta;}
 	public Identifier getIcon(int aSide, int aMeta) {return mIcons[aMeta % mIcons.length].getIcon(0);}
 
-	// F3-render/meta (IBlockExtendedMetaData): вариант цветка в blockstate-property META (WD.set/WD.meta маршрутизируют сюда).
-	// Консолидация (BUG-047-ревизия): раскладка меты — в каналах интерфейса (дефолт = META), тут только маршрутизация.
-	@Override public short getExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ) {
-		BlockState tState = aWorld.getBlockState(new BlockPos(aX, aY, aZ));
-		return tState.getBlock() == this ? getExtendedMetaData(tState) : 0;
-	}
-	@Override public void setExtendedMetaData(BlockGetter aWorld, int aX, int aY, int aZ, short aMetaData) {
-		if (!(aWorld instanceof Level tLevel)) return;
-		BlockPos tPos = new BlockPos(aX, aY, aZ);
-		BlockState tState = tLevel.getBlockState(tPos);
-		if (tState.getBlock() != this) return;
-		BlockState tNew = getStateForExtendedMetaData(tState, aMetaData);
-		if (tNew != null) tLevel.setBlock(tPos, tNew, 3);
-	}
+	// F3-render/meta (IBlockExtendedMetaData): вариант цветка в blockstate-property META; get/setExtendedMetaData —
+	// дефолты интерфейса (консолидация захода #39: зеркало удалено; прежний локальный сеттер гейтился на Level —
+	// дефолт шире и вернее 1:1: пишет и LevelAccessor-регион, и ChunkAccess ворлдгена, как остальная семья).
 	// F3-render (IRenderedCross): текстура cross-модели per-мета (getIcon уже per-мета из mIcons); GT6BlockModel рисует X-форму.
 	@Override public Identifier getCrossIcon(BlockGetter aWorld, int aX, int aY, int aZ) {
 		if (mIcons == null || mIcons.length == 0) return null;
