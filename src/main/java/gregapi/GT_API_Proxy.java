@@ -343,6 +343,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				// [GT6-MTEAUDIT] BUG-057 — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
+				// [GT6-WIREPROBE] верификационный стенд «Связка №1 — электрические провода EU» (Ф3.1) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6wireprobe.flag")) gt6WireProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -2147,5 +2149,221 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		return new int[]{tBlocks, tReal, tStub, tNull, tOther};
 	}
 
+	// ========== [GT6-WIREPROBE] ВРЕМЕННАЯ проба «Связка №1 — электрические провода EU» (Ф3.1, гейт run/gt6wireprobe.flag + -Pgt6probes) ==========
+	// Верификационный стенд: судит ВНУТРЕННИЕ счётчики провода (mTransferredAmperes/mWattageLast/mBurnCounter)
+	// против семантики оригинала MultiTileEntityWireElectric.transferElectricity/addToEnergyTransferred (1.7.10,
+	// перенесено дословно — сверено построчно, расхождений нет, только engine-swap типов). Источник/приёмник —
+	// реальные MTE «Battery Box» (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox): их внутренние поля
+	// mEnergy/mBatteryCount/mChargeableCount/mStopped/mOutput выставляются НАПРЯМУЮ как СЕТАП (аналог «дать
+	// инструмент как скрафченный», LIVE-PROBE-MANUAL.md §4) — это обходит ТОЛЬКО инвентарную бухгалтерию
+	// батарейного бокса (подсчёт вставленных предметов-батарей: mBatteryCount/mChargeableCount в оригинале
+	// пересчитываются из содержимого слотов, тут — задаются как факт «батарей вставлено N»), НЕ судимый канал.
+	// Судимый канал остаётся ПОЛНОСТЬЮ реальным: engine тикает BatteryBox.onTick2 (реальный getTicker) ->
+	// ITileEntityEnergy.Util.emitEnergyToNetwork -> emitEnergyToSide -> insertEnergyInto -> провод
+	// WireElectric.doEnergyInjection -> transferElectricity -> addToEnergyTransferred (провод считает свой
+	// mTransferredAmperes/mTransferredWattage/mBurnCounter) -> ... -> BatteryBox.doInject (приёмник накапливает
+	// mEnergy) — ни один из ЭТИХ методов из пробы не вызывается напрямую, только реальные тики решают.
+	// Три параллельные линии (свежие позиции, разнесены по Z, общий провод — 1x Tin Wire id=28050, mLoss=2
+	// согласно Loader_MultiTileEntities.java:1918, но в СУДЬЕ используется ТОЛЬКО живое значение, прочитанное
+	// из BE): NORM (32В/1A — норма для провода 32В/1A), OVERVOLT (тот же источник, mOutput принудительно=64В —
+	// перегрев по напряжению), OVERAMP (32В, но mBatteryCount=2A — перегрев по амперажу). Снять при уборке фазы.
+	private static int sWireProbeTick = -1;
+	private static final int WIRE_L = 6;
+	private static final int WIRE_ID = 28050;   // 1x Tin Wire (MT.Sn) — Loader_MultiTileEntities.java:1918 (mVoltage=V[1]=32, mAmperage=1, mLoss=2)
+	private static final int BATBOX_ID = 10081; // Battery Box (LV) — Loader_MultiTileEntities.java:895 (mInput=mOutput=V[1]=32, NBT_ENERGY_EMITTED=EU)
+	private static boolean sWireSetupOk = F;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sWireSrcNorm, sWireSinkNorm, sWireSrcOver, sWireSinkOver, sWireSrcAmp, sWireSinkAmp;
+	private static final gregapi.tileentity.connectors.MultiTileEntityWireElectric[] sWireChainNorm = new gregapi.tileentity.connectors.MultiTileEntityWireElectric[WIRE_L];
+	private static final gregapi.tileentity.connectors.MultiTileEntityWireElectric[] sWireChainOver = new gregapi.tileentity.connectors.MultiTileEntityWireElectric[WIRE_L];
+	private static final gregapi.tileentity.connectors.MultiTileEntityWireElectric[] sWireChainAmp  = new gregapi.tileentity.connectors.MultiTileEntityWireElectric[WIRE_L];
+	private static final net.minecraft.core.BlockPos[] sWireChainOverPos = new net.minecraft.core.BlockPos[WIRE_L];
+	private static final net.minecraft.core.BlockPos[] sWireChainAmpPos  = new net.minecraft.core.BlockPos[WIRE_L];
+	private static long sWireNormE0 = -1, sWireNormE1 = -1;
+	private static long sWireMLoss, sWireMVoltage, sWireMAmperage; // прочитано из живого BE, НЕ предположено (судья использует ТОЛЬКО эти поля)
+
+	/** Установка одного MTE-блока реальным каналом игрока (шаблон gt6storprobe: item.useOn(UseOnContext), сверено с git bb3c0ad3). */
+	private static net.minecraft.world.level.block.entity.BlockEntity gt6WireProbePlace(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aClickedPos, net.minecraft.core.Direction aFace, net.minecraft.world.item.ItemStack aItem) {
+		aPlayer.getInventory().setItem(0, aItem); aPlayer.getInventory().setSelectedSlot(0);
+		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(aClickedPos).add(aFace.getStepX()*0.5, aFace.getStepY()*0.5, aFace.getStepZ()*0.5);
+		aPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(tHit, aFace, aClickedPos, false)));
+		return aLevel.getBlockEntity(aClickedPos.relative(aFace));
+	}
+
+	/** Строит одну линию: анкер(STONE) -> источник(BatBox) -> WIRE_L проводов -> приёмник(BatBox). aChainPosOut может быть null, если позиции не нужны (линия не должна гореть). Возвращает {источник, приёмник}. */
+	private static Object[] gt6WireProbeBuildRow(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aAnchor,
+			net.minecraft.world.item.ItemStack aSrcItem, net.minecraft.world.item.ItemStack aSinkItem, net.minecraft.world.item.ItemStack aWireItem,
+			gregapi.tileentity.connectors.MultiTileEntityWireElectric[] aChainOut, net.minecraft.core.BlockPos[] aChainPosOut) {
+		net.minecraft.core.Direction tEast = net.minecraft.core.Direction.EAST;
+		// расчистка полосы под линию: aAnchor (i=0) — STONE (клик-цель для установки источника на i=1),
+		// i=1..WIRE_L+2 (источник+провода+приёмник) — AIR; пол снизу везде — сетап, не судимый канал.
+		// ВАЖНО: клик по AIR-позиции неверен — BlockPlaceContext.replaceClicked=true для воздуха, и MTE
+		// встанет ПРЯМО в кликнутую точку, а не по aClickedPos.relative(aFace) — anchor обязан быть STONE.
+		for (int i = 0; i <= WIRE_L + 2; i++) {
+			net.minecraft.core.BlockPos tP = aAnchor.relative(tEast, i);
+			aLevel.setBlock(tP, i == 0 ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState(), 3);
+			aLevel.setBlock(tP.below(), Blocks.STONE.defaultBlockState(), 3);
+		}
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.world.level.block.entity.BlockEntity tSrcBE = gt6WireProbePlace(aPlayer, aLevel, aAnchor, tEast, aSrcItem);
+		if (!(tSrcBE instanceof gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tSrc)) {
+			O.println("[GT6-WIREPROBE] DIAG источник не встал @" + aAnchor.relative(tEast) + " BE=" + (tSrcBE == null ? "null" : tSrcBE.getClass().getSimpleName()) + " блок=" + aLevel.getBlockState(aAnchor.relative(tEast)).getBlock());
+			return new Object[]{null, null};
+		}
+		tSrc.setPrimaryFacing(SIDE_EAST); // эмиссия — на восток, в линию проводов
+		net.minecraft.core.BlockPos tCursor = aAnchor.relative(tEast);
+		for (int i = 0; i < WIRE_L; i++) {
+			net.minecraft.world.level.block.entity.BlockEntity tWireBE = gt6WireProbePlace(aPlayer, aLevel, tCursor, tEast, aWireItem);
+			if (!(tWireBE instanceof gregapi.tileentity.connectors.MultiTileEntityWireElectric tWire)) {
+				O.println("[GT6-WIREPROBE] DIAG провод[" + i + "] не встал @" + tCursor.relative(tEast) + " BE=" + (tWireBE == null ? "null" : tWireBE.getClass().getSimpleName()) + " блок=" + aLevel.getBlockState(tCursor.relative(tEast)).getBlock() + " стек-остаток=" + aWireItem.getCount());
+				return new Object[]{tSrc, null};
+			}
+			aChainOut[i] = tWire;
+			tCursor = tCursor.relative(tEast);
+			if (aChainPosOut != null) aChainPosOut[i] = tCursor;
+		}
+		net.minecraft.world.level.block.entity.BlockEntity tSinkBE = gt6WireProbePlace(aPlayer, aLevel, tCursor, tEast, aSinkItem);
+		if (!(tSinkBE instanceof gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tSink)) {
+			O.println("[GT6-WIREPROBE] DIAG приёмник не встал @" + tCursor.relative(tEast) + " BE=" + (tSinkBE == null ? "null" : tSinkBE.getClass().getSimpleName()) + " блок=" + aLevel.getBlockState(tCursor.relative(tEast)).getBlock());
+			return new Object[]{tSrc, null};
+		}
+		tSink.setPrimaryFacing(SIDE_EAST); // isInput = aSide != mFacing -> принимает с ЛЮБОЙ стороны, кроме east; провод подходит с запада
+		// принудительная связность обоих концов реальным API connect() (тем же методом, что дёргает гайковёрт/
+		// авто-разводка при ином порядке постройки) — сеттинг топологии, НЕ обход передачи энергии
+		aChainOut[0].connect(SIDE_WEST, T);
+		aChainOut[WIRE_L-1].connect(SIDE_EAST, T);
+		return new Object[]{tSrc, tSink};
+	}
+
+	/** Сетап-поля источников/приёмников — КАЖДЫЙ тик, ДО реального BatteryBox.onTick2 (наш дispatch — Pre-фаза, манифест §2.2). Обходит только инвентарную бухгалтерию (mBatteryCount/mChargeableCount считались бы из слотов), не передачу энергии. */
+	private static void gt6WireProbeApplyFields() {
+		if (!sWireSetupOk) return;
+		// NORM: 32В/1A — норма (<= mVoltage и <= mAmperage провода)
+		sWireSrcNorm.mEnergy = 1_000_000_000L; sWireSrcNorm.mBatteryCount = 1; sWireSrcNorm.mChargeableCount = 0; sWireSrcNorm.mStopped = F; sWireSrcNorm.mMode = 0;
+		sWireSinkNorm.mChargeableCount = 1000; sWireSinkNorm.mBatteryCount = 0; sWireSinkNorm.mStopped = F;
+		// OVERVOLT: тот же LV-бокс, но mOutput принудительно 64В (>32В провода) — перегрев по напряжению, приёмник не задет (64-2×6=52<=его getEnergySizeInputMax=64)
+		sWireSrcOver.mEnergy = 1_000_000_000L; sWireSrcOver.mOutput = 64; sWireSrcOver.mBatteryCount = 1; sWireSrcOver.mChargeableCount = 0; sWireSrcOver.mStopped = F; sWireSrcOver.mMode = 0;
+		sWireSinkOver.mChargeableCount = 1000; sWireSinkOver.mBatteryCount = 0; sWireSinkOver.mStopped = F;
+		// OVERAMP: 32В (норма по напряжению) но mBatteryCount=2A (>1A провода) — перегрев по амперажу
+		sWireSrcAmp.mEnergy = 1_000_000_000L; sWireSrcAmp.mBatteryCount = 2; sWireSrcAmp.mChargeableCount = 0; sWireSrcAmp.mStopped = F; sWireSrcAmp.mMode = 0;
+		sWireSinkAmp.mChargeableCount = 1000; sWireSinkAmp.mBatteryCount = 0; sWireSinkAmp.mStopped = F;
+	}
+
+	private static void gt6WireProbePrintBurn(String aLabel, net.minecraft.server.level.ServerLevel aLevel, gregapi.tileentity.connectors.MultiTileEntityWireElectric[] aChain, net.minecraft.core.BlockPos[] aPos, java.io.PrintStream O) {
+		StringBuilder tLine = new StringBuilder();
+		for (int i = 0; i < aChain.length; i++) {
+			boolean tFire = aPos[i] != null && aLevel.getBlockState(aPos[i]).is(Blocks.FIRE);
+			tLine.append(tFire ? "FIRE" : String.valueOf(aChain[i].mBurnCounter)).append(' ');
+		}
+		O.println("[GT6-WIREPROBE] " + aLabel + " тик " + sWireProbeTick + " mBurnCounter/FIRE по проводам: " + tLine);
+	}
+
+	public static void gt6WireProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sWireProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			gt6WireProbeApplyFields(); // сетап КАЖДЫЙ тик ДО реального тика — см. комментарий метода
+
+			if (sWireProbeTick == 200) {
+				O.println("========== [GT6-WIREPROBE] Связка №1 — электрические провода EU (Ф3.1) ==========");
+				MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null || tReg.getClassContainer(WIRE_ID) == null || tReg.getClassContainer(BATBOX_ID) == null) {
+					O.println("[GT6-WIREPROBE] EXC: реестр/ID не найдены (провод=" + WIRE_ID + " batbox=" + BATBOX_ID + ") => FAIL"); sWireProbeTick = 999999; return;
+				}
+				O.println("[GT6-WIREPROBE] ID подтверждены: провод=" + tReg.getClassContainer(WIRE_ID).mClass.getSimpleName() + "(" + WIRE_ID + ") batbox=" + tReg.getClassContainer(BATBOX_ID).mClass.getSimpleName() + "(" + BATBOX_ID + ")");
+
+				net.minecraft.core.BlockPos tBase = tPlayer.blockPosition().offset(4, 0, 4);
+				// MultiTileEntityItemInternal.onItemUse ВСЕГДА делает aStack.setCount(aStack.getCount()-1) на успешной
+				// установке (без разбора creative/survival, в отличие от ванильного BlockItem.place) — стек провода на
+				// линию обязан иметь count>=WIRE_L, иначе 2-я..N-я установка в цикле молча вернёт F (count==0 гейт).
+				// Каждая линия — СВОЙ стек (иначе одна линия проест стек другой построчно).
+
+				Object[] tRowNorm = gt6WireProbeBuildRow(tPlayer, tLevel, tBase,                tReg.getItem(BATBOX_ID), tReg.getItem(BATBOX_ID), tReg.getItem(WIRE_ID, WIRE_L + 2), sWireChainNorm, null);
+				sWireSrcNorm  = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tRowNorm[0];
+				sWireSinkNorm = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tRowNorm[1];
+
+				Object[] tRowOver = gt6WireProbeBuildRow(tPlayer, tLevel, tBase.offset(0, 0, 3), tReg.getItem(BATBOX_ID), tReg.getItem(BATBOX_ID), tReg.getItem(WIRE_ID, WIRE_L + 2), sWireChainOver, sWireChainOverPos);
+				sWireSrcOver  = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tRowOver[0];
+				sWireSinkOver = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tRowOver[1];
+
+				Object[] tRowAmp = gt6WireProbeBuildRow(tPlayer, tLevel, tBase.offset(0, 0, 6), tReg.getItem(BATBOX_ID), tReg.getItem(BATBOX_ID), tReg.getItem(WIRE_ID, WIRE_L + 2), sWireChainAmp, sWireChainAmpPos);
+				sWireSrcAmp  = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tRowAmp[0];
+				sWireSinkAmp = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tRowAmp[1];
+
+				if (sWireSrcNorm == null || sWireSinkNorm == null || sWireChainNorm[WIRE_L-1] == null
+				 || sWireSrcOver == null || sWireSinkOver == null || sWireChainOver[WIRE_L-1] == null
+				 || sWireSrcAmp  == null || sWireSinkAmp  == null || sWireChainAmp [WIRE_L-1] == null) {
+					O.println("[GT6-WIREPROBE] EXC: постройка линии не удалась (null в цепочке) => FAIL"); sWireProbeTick = 999999; return;
+				}
+
+				sWireMLoss = sWireChainNorm[0].mLoss; sWireMVoltage = sWireChainNorm[0].mVoltage; sWireMAmperage = sWireChainNorm[0].mAmperage;
+				O.println("[GT6-WIREPROBE] живые параметры провода (из BE, не предположены): mLoss=" + sWireMLoss + " mVoltage=" + sWireMVoltage + " mAmperage=" + sWireMAmperage);
+				O.println("[GT6-WIREPROBE] NORM: src.mOutput=" + sWireSrcNorm.mOutput + " src.mFacing=" + sWireSrcNorm.mFacing + " sink.mFacing=" + sWireSinkNorm.mFacing);
+				O.println("[GT6-WIREPROBE] OVERVOLT: src.mOutput(будет форсирован)=64 (> mVoltage=" + sWireMVoltage + " провода)");
+				O.println("[GT6-WIREPROBE] OVERAMP: src.mOutput=32, mBatteryCount(будет форсирован)=2 (> mAmperage=" + sWireMAmperage + " провода)");
+
+				sWireSetupOk = T;
+				gt6WireProbeApplyFields(); // применить сразу в этом же тике — реальный onTick2 источников идёт ПОСЛЕ нашего Pre-хука в этом же тике
+			} else if (sWireSetupOk) {
+				if (sWireProbeTick == 220) {
+					sWireNormE0 = sWireSinkNorm.mEnergy;
+					O.println("[GT6-WIREPROBE] NORM E0 (тик 220): sink.mEnergy=" + sWireNormE0);
+				} else if (sWireProbeTick >= 210 && sWireProbeTick <= 270 && sWireProbeTick % 10 == 0) {
+					gt6WireProbePrintBurn("OVERVOLT", tLevel, sWireChainOver, sWireChainOverPos, O);
+					gt6WireProbePrintBurn("OVERAMP",  tLevel, sWireChainAmp,  sWireChainAmpPos,  O);
+				}
+				if (sWireProbeTick == 280) {
+					sWireNormE1 = sWireSinkNorm.mEnergy;
+					long tDeltaTicks = 280 - 220;
+					long tExpectedVoltageAtSink = sWireSrcNorm.mOutput - sWireMLoss * WIRE_L;
+					long tExpectedAmperes = 1;
+					long tExpectedDelta = tExpectedVoltageAtSink * tExpectedAmperes * tDeltaTicks;
+					long tActualDelta = sWireNormE1 - sWireNormE0;
+					O.println("[GT6-WIREPROBE] ===== КЕЙС 1 NORM =====");
+					O.println("[GT6-WIREPROBE] NORM E1 (тик 280): sink.mEnergy=" + sWireNormE1 + "; дельта за " + tDeltaTicks + " тиков=" + tActualDelta + " (ожидание=(" + sWireSrcNorm.mOutput + "-" + sWireMLoss + "×" + WIRE_L + ")×" + tExpectedAmperes + "×" + tDeltaTicks + "=" + tExpectedDelta + ")");
+					O.println("[GT6-WIREPROBE] NORM дельта энергии: " + (tActualDelta == tExpectedDelta ? "=> PASS" : "=> FAIL (ожидалось " + tExpectedDelta + ", получено " + tActualDelta + ")"));
+					long tNormBurnSum = 0; StringBuilder tBurnLine = new StringBuilder();
+					for (int i = 0; i < WIRE_L; i++) {tBurnLine.append(sWireChainNorm[i].mBurnCounter).append(' '); tNormBurnSum += sWireChainNorm[i].mBurnCounter;}
+					O.println("[GT6-WIREPROBE] NORM mBurnCounter по проводам: " + tBurnLine + "(ожидание все 0)");
+					O.println("[GT6-WIREPROBE] NORM burn: " + (tNormBurnSum == 0 ? "=> PASS" : "=> FAIL (ожидалось 0, получено сумма=" + tNormBurnSum + ")"));
+					long tExpectedWattageLast = tExpectedVoltageAtSink * tExpectedAmperes;
+					long tActualWattageLast = sWireChainNorm[WIRE_L-1].mWattageLast;
+					O.println("[GT6-WIREPROBE] NORM провод[последний].mWattageLast=" + tActualWattageLast + " (ожидание=напряжение-после-потерь×амперы=" + tExpectedWattageLast + ")");
+					O.println("[GT6-WIREPROBE] NORM mWattageLast: " + (tActualWattageLast == tExpectedWattageLast ? "=> PASS" : "=> FAIL (ожидалось " + tExpectedWattageLast + ", получено " + tActualWattageLast + ")"));
+
+					O.println("[GT6-WIREPROBE] ===== КЕЙС 2 OVERVOLT =====");
+					boolean tOverIgnited = F; int tOverBurning = 0; StringBuilder tOverLine = new StringBuilder();
+					for (int i = 0; i < WIRE_L; i++) {
+						boolean tFire = tLevel.getBlockState(sWireChainOverPos[i]).is(Blocks.FIRE);
+						if (tFire) tOverIgnited = T; else if (sWireChainOver[i].mBurnCounter >= 16) tOverBurning++;
+						tOverLine.append(tFire ? "FIRE" : String.valueOf(sWireChainOver[i].mBurnCounter)).append(' ');
+					}
+					O.println("[GT6-WIREPROBE] OVERVOLT состояние проводов (тик 280): " + tOverLine);
+					O.println("[GT6-WIREPROBE] OVERVOLT возгорание: " + ((tOverIgnited || tOverBurning > 0) ? "=> PASS (провод перегорел/загорелся от превышения mVoltage)" : "=> FAIL (ожидался mBurnCounter>=16 либо FIRE к тику 280)"));
+
+					O.println("[GT6-WIREPROBE] ===== КЕЙС 3 OVERAMP =====");
+					boolean tAmpIgnited = F; int tAmpBurning = 0; StringBuilder tAmpLine = new StringBuilder();
+					for (int i = 0; i < WIRE_L; i++) {
+						boolean tFire = tLevel.getBlockState(sWireChainAmpPos[i]).is(Blocks.FIRE);
+						if (tFire) tAmpIgnited = T; else if (sWireChainAmp[i].mBurnCounter >= 16) tAmpBurning++;
+						tAmpLine.append(tFire ? "FIRE" : String.valueOf(sWireChainAmp[i].mBurnCounter)).append(' ');
+					}
+					O.println("[GT6-WIREPROBE] OVERAMP состояние проводов (тик 280): " + tAmpLine);
+					O.println("[GT6-WIREPROBE] OVERAMP возгорание: " + ((tAmpIgnited || tAmpBurning > 0) ? "=> PASS (провод перегорел/загорелся от превышения mAmperage)" : "=> FAIL (ожидался mBurnCounter>=16 либо FIRE к тику 280)"));
+
+					O.println("[GT6-WIREPROBE] ===== КЕЙС 4 CONTROL-NEG =====");
+					long tNormBurnSum2 = 0;
+					for (int i = 0; i < WIRE_L; i++) tNormBurnSum2 += sWireChainNorm[i].mBurnCounter;
+					O.println("[GT6-WIREPROBE] CONTROL-NEG (линия NORM после того, как OVERVOLT/OVERAMP отгорели): сумма mBurnCounter=" + tNormBurnSum2 + " (ожидание 0 — перелив возгорания на соседнюю линию не должен случиться)");
+					O.println("[GT6-WIREPROBE] CONTROL-NEG: " + (tNormBurnSum2 == 0 ? "=> PASS" : "=> FAIL (ожидалось 0, получено " + tNormBurnSum2 + ")"));
+
+					O.println("========== [GT6-WIREPROBE] DONE ==========");
+				}
+			}
+			if (sWireProbeTick > 280 && sWireProbeTick % 200 == 0 && sWireProbeTick <= 2000) O.println("[GT6-WIREPROBE] heartbeat: сервер жив, тик " + sWireProbeTick);
+		} catch (Throwable e) {O.println("[GT6-WIREPROBE] EXC " + e); e.printStackTrace(O); sWireProbeTick = 999999;}
+	}
 
 }
