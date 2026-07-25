@@ -343,6 +343,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				// [GT6-MTEAUDIT] BUG-057 — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
+				// [GT6-DUNGEONPROBE] заход #39 (данжи per-chunk) — снять при уборке захода
+				if (gregapi.data.CS.probeFlag("gt6dungeonprobe.flag")) gt6DungeonProbeTick(aEvent.getServer());
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -1952,6 +1954,80 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 		// return at most 160 Smelts, without any fraction smelts.
 		return (int)UT.Code.bind(0, 32000, rFuelValue);
+	}
+
+	// [GT6-DUNGEONPROBE] заход #39 (данжи per-chunk «переигрывание с маской записи»): живой стенд генерации — снять при
+	// уборке захода. Гейт §2.1 (-Pgt6probes + run/gt6dungeonprobe.flag). Требует стендового Probability=1 в
+	// worldgenerationnew.cfg (штатный конфиг Грега; вернуть 100 после стенда). Фазы: 0=телепорт к расчётному якорю
+	// (формула якоря 1:1: abs(cx)%(MaxSize+4)==(MaxSize+4)/2; cx=27 при MaxSize=7, блок 432 — за порогом 256+112);
+	// 1=ожидание генерации области якорь±5; 2=скан Y-окна данжа (remapY(20)) per-chunk: BlockStones-стены, лампы,
+	// MTE-BE, ключи сейфов (gt.key из BE-NBT) → вердикт: данж многочанковый, клетки согласованы; 10=DONE.
+	private static int sDgTick = -1, sDgPhase = 0;
+	public static void gt6DungeonProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		java.io.PrintStream O = OUT;
+		final int tAnchorCX = 27, tAnchorCZ = 27;
+		sDgTick++;
+		try {
+			if (sDgPhase < 10 && sDgTick > 12000) {O.println("[GT6-DUNGEONPROBE] EXC timeout: фаза " + sDgPhase + " не завершилась за 12000 тиков"); sDgPhase = 10; return;}
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			if (sDgPhase == 0 && sDgTick >= 100) {
+				int tX = (tAnchorCX << 4) + 8, tZ = (tAnchorCZ << 4) + 8;
+				int tY = tLevel.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, tX, tZ) + 2;
+				tPlayer.teleportTo(tLevel, tX + 0.5, tY, tZ + 0.5, java.util.Set.of(), 0, 0, true);
+				O.println("[GT6-DUNGEONPROBE] телепорт к якорю чанк(" + tAnchorCX + "," + tAnchorCZ + ") = (" + tX + ", " + tY + ", " + tZ + "); remapY(20)=" + gregapi.util.WD.remapY(tLevel, 20));
+				sDgPhase = 1;
+			} else if (sDgPhase == 1) {
+				boolean tReady = true;
+				for (int i = -5; i <= 5 && tReady; i++) for (int j = -5; j <= 5 && tReady; j++)
+					if (tLevel.getChunkSource().getChunkNow(tAnchorCX + i, tAnchorCZ + j) == null) tReady = false;
+				if (!tReady) return;
+				O.println("[GT6-DUNGEONPROBE] область якорь±5 прогрета (тик " + sDgTick + "), скан...");
+				sDgPhase = 2;
+			} else if (sDgPhase == 2) {
+				int tY0 = gregapi.util.WD.remapY(tLevel, 20);
+				int tCellChunks = 0; long tStonesTotal = 0, tLampsTotal = 0, tMTETotal = 0;
+				java.util.ArrayList<Long> tKeys = new java.util.ArrayList<>();
+				java.util.TreeSet<String> tMTEKinds = new java.util.TreeSet<>();
+				StringBuilder tTable = new StringBuilder();
+				for (int ci = -5; ci <= 5; ci++) for (int cj = -5; cj <= 5; cj++) {
+					net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tAnchorCX + ci, tAnchorCZ + cj);
+					if (tChunk == null) continue;
+					long tStones = 0, tLamps = 0, tMTE = 0;
+					int tBX = (tAnchorCX + ci) << 4, tBZ = (tAnchorCZ + cj) << 4;
+					for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tY0 - 12; y <= tY0 + 14; y++) {
+						net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(new BlockPos(tBX + x, y, tBZ + z)).getBlock();
+						if (tBlock instanceof gregapi.block.metatype.BlockStones) tStones++;
+						else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) tLamps++;
+					}
+					for (BlockEntity tBE : tChunk.getBlockEntities().values()) {
+						if (!(tBE instanceof gregapi.block.multitileentity.IMultiTileEntity)) continue;
+						if (tBE.getBlockPos().getY() < tY0 - 12 || tBE.getBlockPos().getY() > tY0 + 14) continue;
+						tMTE++; tMTEKinds.add(tBE.getClass().getSimpleName());
+						if (tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) {
+							CompoundTag tNBT = new CompoundTag();
+							tRoot.writeToNBT(tNBT);
+							long tKey = tNBT.getLongOr(NBT_KEY, 0);
+							if (tKey != 0) tKeys.add(tKey);
+						}
+					}
+					if (tStones >= 100) tCellChunks++;
+					tStonesTotal += tStones; tLampsTotal += tLamps; tMTETotal += tMTE;
+					if (tStones + tLamps + tMTE > 0) tTable.append(String.format("  чанк(%+d,%+d): stones=%d lamps=%d mte=%d%n", ci, cj, tStones, tLamps, tMTE));
+				}
+				O.println("[GT6-DUNGEONPROBE] ==== СКАН области якорь±5, Y-окно [" + (tY0-12) + ".." + (tY0+14) + "] ====");
+				O.print(tTable);
+				O.println("[GT6-DUNGEONPROBE] ИТОГО: stones=" + tStonesTotal + " lamps=" + tLampsTotal + " mte=" + tMTETotal + " | чанков-клеток(stones>=100)=" + tCellChunks + " | MTE-классы: " + tMTEKinds);
+				boolean tMultiChunk = tCellChunks >= 3 && tStonesTotal >= 1000;
+				long tKeyMin = Long.MAX_VALUE, tKeyMax = Long.MIN_VALUE;
+				for (long tK : tKeys) {tKeyMin = Math.min(tKeyMin, tK); tKeyMax = Math.max(tKeyMax, tK);}
+				boolean tKeysOk = tKeys.isEmpty() || (tKeyMax - tKeyMin) < 5; // ключи одного данжа = {id..id-4}
+				O.println("[GT6-DUNGEONPROBE] ключи сейфов/дверей (" + tKeys.size() + " шт): " + tKeys + (tKeys.isEmpty() ? "" : " span=" + (tKeyMax - tKeyMin)));
+				O.println("[GT6-DUNGEONPROBE] ВЕРДИКТ: многочанковость=" + (tMultiChunk ? "PASS" : "FAIL") + " | согласованность ключей=" + (tKeysOk ? "PASS" : "FAIL") + " => " + (tMultiChunk && tKeysOk ? "PASS" : "FAIL"));
+				sDgPhase = 10;
+			}
+		} catch (Throwable e) {O.println("[GT6-DUNGEONPROBE] EXC " + e); e.printStackTrace(ERR); sDgPhase = 10;}
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.

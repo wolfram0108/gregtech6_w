@@ -1038,8 +1038,12 @@ public class WD {
 	}
 	
 	/** F-worldgen: 1.7.10 {@code World.getSeed()} -> neo только {@code ServerLevel.getSeed()}:1697 (у базового Level
-	 *  сида нет). Детерм.-per-chunk random — worldgen (сервер), где aWorld всегда ServerLevel; клиент (нет worldgen) -> 0. */
-	public static long seed(LevelAccessor aWorld) {return aWorld instanceof net.minecraft.server.level.ServerLevel tSL ? tSL.getSeed() : 0L;}
+	 *  сида нет). Детерм.-per-chunk random — worldgen (сервер), где aWorld всегда ServerLevel; клиент (нет worldgen) -> 0.
+	 *  ДЕФЕКТ-ФИКС (заход данжей #39): из Feature-фазы приходит {@code WorldGenRegion} — НЕ ServerLevel → прежний гейт
+	 *  давал seed=0 (детерминизм внутри мира сохранялся — 0 одинаков для всех чанков, — но seed мира терялся). Реальный
+	 *  канал: {@code WorldGenLevel.getSeed()} ({@code WorldGenLevel.java:8}; {@code WorldGenRegion.getSeed():367}
+	 *  возвращает {@code level.getSeed()}); ServerLevel сам реализует WorldGenLevel — один гейт кроет оба. */
+	public static long seed(LevelAccessor aWorld) {return aWorld instanceof net.minecraft.world.level.WorldGenLevel tWGL ? tWGL.getSeed() : 0L;}
 	public static Random random(LevelAccessor aWorld, long aChunkX, long aChunkZ) {return random(seed(aWorld) ^ WD.dimensionId(aWorld), aChunkX >> 4, aChunkZ >> 4);}
 	public static Random random(long aSeed, long aChunkX, long aChunkZ) {
 		// Seed is XOR-ed with the Dimension ID to prevent multiple Dimensions from being identical in Ore Generation.

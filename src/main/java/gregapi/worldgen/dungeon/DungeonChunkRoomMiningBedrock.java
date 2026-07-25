@@ -38,7 +38,13 @@ public class DungeonChunkRoomMiningBedrock extends DungeonChunkRoomEmpty {
 		if (aData.mTags.contains(WorldgenDungeonGT.TAG_MINING_BEDROCK) || !super.generate(aData)) return F;
 		aData.mTags.add(WorldgenDungeonGT.TAG_MINING_BEDROCK);
 		OreDictMaterial tMaterial = UT.Code.select(MT.Redstone, MT.Redstone, MT.S, MT.Fe2O3, MT.MnO2, MT.Apatite, OREMATS.Molybdenite, MT.OREMATS.Bauxite, MT.OREMATS.Sphalerite, MT.OREMATS.Tetrahedrite, MT.OREMATS.Cassiterite, MT.OREMATS.Garnierite, MT.OREMATS.Galena);
-		if (!WorldgenOresBedrock.generateVein(tMaterial, aData.mWorld, WD.dimensionId(aData.mWorld), aData.mX, aData.mZ, aData.mRandom)) return F;
+		// F6-worldgen (данжи per-chunk): generateVein читает дно СВОЕЙ клетки и пишет бедрок-руду НАПРЯМУЮ (мимо
+		// aData) — при переигрывании чужим чанком клетка недоступна (регион ±1 чанк) → зовёт только клетка-владелец
+		// (mWrite). Для остальных результат детерминирован инвариантом дна: bedrock_floor на minY всегда бедрок
+		// (SurfaceRuleData.java:280), не-бедрок-генераторы данж отсёк проверкой дна текущего чанка в
+		// WorldgenDungeonGT.generate → согласованный «успех» во всех переигрываниях. Расхождение Random внутри
+		// клетки (generateVein потребляет aData.mRandom только у владельца) изолировано клеточным Random.
+		if (aData.mWrite && !WorldgenOresBedrock.generateVein(tMaterial, aData.mWorld, WD.dimensionId(aData.mWorld), aData.mX, aData.mZ, aData.mRandom)) return F;
 		
 		boolean tBrass = aData.next1in2();
 		

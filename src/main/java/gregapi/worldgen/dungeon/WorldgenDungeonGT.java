@@ -142,35 +142,59 @@ public class WorldgenDungeonGT extends WorldgenObject {
 	
 	@Override
 	public boolean generate(WorldGenLevel aWorld, ChunkAccess aChunk, int aDimType, int aMinX, int aMinZ, int aMaxX, int aMaxZ, Random aRandom, Biome[][] aBiomes, Set<String> aBiomeNames) {
-		// F6-worldgen DEADLOCK (ОТКЛЮЧЕНО, ОТЛОЖЕНО #39): вся данж-подсистема (DungeonData/DungeonChunk*) портирована «Level-based»
-		// (WorldAndCoords держит полный ServerLevel через aWorld.getLevel()) → ЛЮБОй её доступ к миру (WD.opq/WD.block/getBlockState)
-		// форсирует ServerChunkCache.getChunk(текущий генерируемый чанк).join → light-подобный реентрантный дедлок входа в мир
-		// (jstack: DungeonChunkPillar.generate→WD.opq→Level.getBlockState→getChunk.join). Интермиттентно (данжи редкие). Данжи —
-		// отдельный заход ПОСЛЕ машин/труб/геометрии (#39); их корректная работа в Feature.place требует ПОЛНОГО ре-порта всего
-		// доступа данж-подсистемы на WorldGenLevel (регион), а не ServerLevel. До тех пор — skip (данжи не генерируются, контролируемая отложенность).
-		if (true) return F;
-		if (aRandom.nextInt(mProbability) != 0 || checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
-		if (Math.abs(aMinZ) < 256+mMaxSize*16 && Math.abs(aMinX) < 256+mMaxSize*16) return F;
-		if ((GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD) && (Math.abs(aMinX) < 256+mMaxSize*16 || Math.abs(aMinZ) < 256+mMaxSize*16)) return F;
-		// F6-Y-scale (КОРЕНЬ «данжи не генерятся»): бедрок MC26 на getMinY() (был Y=0) — проверка бедрока в центре якорится к дну мира.
-		if (Math.abs(aMinX/16)%(mMaxSize+4) != (mMaxSize+4)/2 || Math.abs(aMinZ/16)%(mMaxSize+4) != (mMaxSize+4)/2 || !WD.bedrock(aWorld, aMinX+8, WD.minY(aWorld), aMinZ+8)) return F;
-		
+		// F6-worldgen (данжи per-chunk, снятие отложки #39). Два форса среды против схемы 1.7.10 «якорный чанк рисует
+		// весь данж разом»: (1) фиче разрешена запись только ±1 чанк от генерируемого (neo ChunkPyramid.java:29-35
+		// blockStateWriteRadius(1), WorldGenRegion.ensureCanWrite:225) — данж же занимает до 9×9 чанков; (2) прежний
+		// разворот региона в ServerLevel давал реентрантный дедлок getChunk().join. МЕХАНИЗМ: каждый чанк данж-области
+		// детерминированно ПЕРЕИГРЫВАЕТ весь данж (общий tRandom от якоря — WD.random по seed мира, воспроизводим из
+		// любого чанка) и физически пишет ТОЛЬКО клетку своего чанка (маска DungeonData.mWrite). Межклеточное состояние
+		// (mGeneratedKeys/mTags/layout/цепочка Random клеток) воспроизводится идентично во всех чанках области, потому
+		// что ни выбор комнат, ни Random-потребление от мира не зависят (аудит architecture/dungeons.md: возвраты
+		// generate комнат безусловны, кроме generateVein — детерминизирован в DungeonChunkRoomMiningBedrock).
+		//
+		// ВНИМАНИЕ: aRandom (общий чанковый Random воркген-контейнера) для данж-решений НЕПРИГОДЕН — его состояние на
+		// входе зависит от Random-потребления предыдущих воркгенов чанка и НЕвоспроизводимо из соседнего чанка. Данж
+		// сидит на собственном tRandom от якоря (соль отделяет поток данжа от рудных WD.random тех же координат).
+		if (checkForMajorWorldgen(aWorld, aMinX, aMinZ, aMaxX, aMaxZ)) return F;
+		// Инвариант дна (замена прежнего чтения бедрока под ЯКОРЕМ, при переигрывании недоступного): генератор MC26
+		// кладёт бедрок на minY всегда (SurfaceRules verticalGradient "bedrock_floor" bottom()..aboveBottom(5) —
+		// SurfaceRuleData.java:280) → проверка дна ТЕКУЩЕГО чанка (всегда доступен) даёт тот же ответ, что дала бы
+		// якорная: T на канонических генераторах, F на суперфлэт-подобных (интент Грега — отсечь миры без бедрока).
+		if (!WD.bedrock(aWorld, aMinX+8, WD.minY(aWorld), aMinZ+8)) return F;
+
 		MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
-		
+
 		if (tRegistry == null) return F;
-		
+
+		// Поиск якоря, чья область может накрывать текущий чанк: формула якоря 1:1 (период mMaxSize+4 > радиуса
+		// области (2+mMaxSize)/2 → максимум один кандидат на ось в окне).
+		int tCurChunkX = aMinX >> 4, tCurChunkZ = aMinZ >> 4, tReach = (2+mMaxSize)/2;
+		int tAnchorChunkX = Integer.MIN_VALUE, tAnchorChunkZ = Integer.MIN_VALUE;
+		for (int i = -tReach; i <= tReach && tAnchorChunkX == Integer.MIN_VALUE; i++) if (Math.abs(tCurChunkX+i)%(mMaxSize+4) == (mMaxSize+4)/2) tAnchorChunkX = tCurChunkX+i;
+		for (int j = -tReach; j <= tReach && tAnchorChunkZ == Integer.MIN_VALUE; j++) if (Math.abs(tCurChunkZ+j)%(mMaxSize+4) == (mMaxSize+4)/2) tAnchorChunkZ = tCurChunkZ+j;
+		if (tAnchorChunkX == Integer.MIN_VALUE || tAnchorChunkZ == Integer.MIN_VALUE) return F;
+		int tAnchorMinX = tAnchorChunkX << 4, tAnchorMinZ = tAnchorChunkZ << 4;
+
+		// Пороги данжа 1:1, но на ЯКОРНЫХ координатах (одинаковый вердикт из каждого чанка области).
+		if (Math.abs(tAnchorMinZ) < 256+mMaxSize*16 && Math.abs(tAnchorMinX) < 256+mMaxSize*16) return F;
+		if ((GENERATE_STREETS && WD.dimensionId(aWorld) == DIM_OVERWORLD) && (Math.abs(tAnchorMinX) < 256+mMaxSize*16 || Math.abs(tAnchorMinZ) < 256+mMaxSize*16)) return F;
+
+		// Собственный детерминированный Random данжа: WD.random-центр (двойной Random Грега) по seed мира ^ dim ^ соль.
+		Random tRandom = WD.random(WD.seed(aWorld) ^ WD.dimensionId(aWorld) ^ "gt.dungeon".hashCode(), tAnchorChunkX, tAnchorChunkZ);
+		if (tRandom.nextInt(mProbability) != 0) return F;
+
 		// F6 §4.1: окно глубины данжа [mMinY..mMaxY] (старый мир) растягивается sea-anchored под MC26.
 		int tRMinY = WD.remapY(aWorld, mMinY), tRMaxY = WD.remapY(aWorld, mMaxY);
-		int tOffsetY = tRMinY + aRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), tColor = aRandom.nextInt(16);
+		int tOffsetY = tRMinY + tRandom.nextInt(Math.max(1, tRMaxY-tRMinY)), tColor = tRandom.nextInt(16);
 		
 		BlockStones
-		tPrimaryBlock   = (BlockStones)BlocksGT.stones[aRandom.nextInt(BlocksGT.stones.length)],
-		tSecondaryBlock = (BlockStones)BlocksGT.stones[aRandom.nextInt(BlocksGT.stones.length)];
-		
+		tPrimaryBlock   = (BlockStones)BlocksGT.stones[tRandom.nextInt(BlocksGT.stones.length)],
+		tSecondaryBlock = (BlockStones)BlocksGT.stones[tRandom.nextInt(BlocksGT.stones.length)];
+
 		HashSetNoNulls<BlockPos> tLightUpdateCoords = new HashSetNoNulls<>();
 		HashSetNoNulls<TagData> tTags = new HashSetNoNulls<>(mTags);
-		
-		byte[][] tRoomLayout = new byte[2+mMinSize+aRandom.nextInt(1+mMaxSize-mMinSize)][2+mMinSize+aRandom.nextInt(1+mMaxSize-mMinSize)];
+
+		byte[][] tRoomLayout = new byte[2+mMinSize+tRandom.nextInt(1+mMaxSize-mMinSize)][2+mMinSize+tRandom.nextInt(1+mMaxSize-mMinSize)];
 		
 		boolean[] tGeneratedKeys = new boolean[5];
 		
@@ -181,24 +205,33 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		if (!(mPortalMyst     && MD.MYST.mLoaded)) tTags.add(TAG_PORTAL_MYST);
 		
 		long[] tKeyIDs = new long[tGeneratedKeys.length];
-		tKeyIDs[0] = 1+Math.max(RNGSUS.nextInt(1000000), System.nanoTime());
+		// F6-worldgen (детерминизация ключей): было 1+Math.max(RNGSUS.nextInt(1000000), System.nanoTime()) — nanoTime
+		// давал МЕЖ-данжевую уникальность ID, но невоспроизводим между переигрываниями чанков области. Дет-эквивалент:
+		// long от якорного tRandom (>>>1 — неотрицательный) — тот же масштаб уникальности (2^63), разные данжи → разные
+		// якоря → разные потоки → разные ID; семантика «ключ подходит только своему данжу» сохранена.
+		tKeyIDs[0] = 1+(tRandom.nextLong()>>>1);
 		for (int i = 1; i < tKeyIDs.length; i++) tKeyIDs[i] = tKeyIDs[i-1]-1;
 		ItemStack[] tKeyStacks = new ItemStack[tKeyIDs.length];
-		for (int i = 0; i < tKeyIDs.length; i++) tKeyStacks[i] = IL.KEYS[aRandom.nextInt(IL.KEYS.length)].getWithNameAndNBT(1, "Key #"+(i+1), UT.NBT.makeLong(NBT_KEY, tKeyIDs[i]));
-		
-		aMinX -= (tRoomLayout   .length / 2) * 16;
-		aMinZ -= (tRoomLayout[0].length / 2) * 16;
-		
-		for (int i = 0; i < tRoomLayout.length; i++) for (int j = 0; j < tRoomLayout[i].length; j++) WD.set(aWorld, aMinX+8+i*16, WD.maxY(aWorld)-1, aMinZ+8+j*16, NB, 0, 3); // F6-Y-scale: маркер у потолка (был 254 = старый 255-1) → maxY-1.
-		
+		for (int i = 0; i < tKeyIDs.length; i++) tKeyStacks[i] = IL.KEYS[tRandom.nextInt(IL.KEYS.length)].getWithNameAndNBT(1, "Key #"+(i+1), UT.NBT.makeLong(NBT_KEY, tKeyIDs[i]));
+
+		// База области = якорь минус пол-layout (1:1 прежнему aMinX -= (len/2)*16, но от якоря).
+		int tBaseX = tAnchorMinX - (tRoomLayout   .length / 2) * 16;
+		int tBaseZ = tAnchorMinZ - (tRoomLayout[0].length / 2) * 16;
+		// Клетка текущего чанка в layout; вне области — данжа в этом чанке нет.
+		int tCellI = tCurChunkX - (tBaseX >> 4), tCellJ = tCurChunkZ - (tBaseZ >> 4);
+		if (tCellI < 0 || tCellI >= tRoomLayout.length || tCellJ < 0 || tCellJ >= tRoomLayout[0].length) return F;
+
+		// Маркер у потолка (F6-Y-scale: был 254) — запись, значит только клетка-владелец (маска per-chunk).
+		WD.set(aWorld, tBaseX+8+tCellI*16, WD.maxY(aWorld)-1, tBaseZ+8+tCellJ*16, NB, 0, 3);
+
 		for (int i = 0, j = 0, k = -1, l = 0; k >= -IMPORTANT_ROOM_COUNT && l < 10000; l++) {
-			i = 1+aRandom.nextInt(tRoomLayout   .length-2);
-			j = 1+aRandom.nextInt(tRoomLayout[i].length-2);
+			i = 1+tRandom.nextInt(tRoomLayout   .length-2);
+			j = 1+tRandom.nextInt(tRoomLayout[i].length-2);
 			if (tRoomLayout[i][j] == 0) {tRoomLayout[i][j] = (byte)k--;}
 		}
-		
+
 		int tRoomCount = 0;
-		while (tRoomCount < 2) for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] == 0) if (aRandom.nextInt(mRoomChance) == 0) {tRoomLayout[i][j] = (byte)(1+aRandom.nextInt(ROOM_ID_COUNT)); tRoomCount++;}
+		while (tRoomCount < 2) for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] == 0) if (tRandom.nextInt(mRoomChance) == 0) {tRoomLayout[i][j] = (byte)(1+tRandom.nextInt(ROOM_ID_COUNT)); tRoomCount++;}
 		
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] != 0) {
 			int a = i, b = j;
@@ -208,7 +241,14 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		
 		@SuppressWarnings("unchecked")
 		java.util.Map<gregapi.oredict.OreDictMaterial, net.minecraft.world.item.ItemStack> tCoinMap = (java.util.Map<gregapi.oredict.OreDictMaterial, net.minecraft.world.item.ItemStack>)UT.Reflection.getFieldContent("gregtech.tileentity.placeables.MultiTileEntityCoin", "COIN_MAP", T, T);
-		net.minecraft.world.item.ItemStack tCoinStack = tCoinMap == null ? null : tCoinMap.get(UT.Code.select(MT.NULL, MT.Cu, MT.Cu, MT.Cu, MT.Ag, MT.Ag, MT.Au, MT.Au, MT.Pt));
+		// F6-worldgen (детерминизация): no-index-форма UT.Code.select сидит на глобальном RNGSUS (UT.java:1333) —
+		// невоспроизводима между переигрываниями (материал монет разошёлся бы по клеткам одного данжа). Явная
+		// индексация от якорного tRandom — то же распределение Cu×3/Ag×2/Au×2/Pt×1, один материал на весь данж
+		// (1:1-интент); индексная перегрузка select здесь неприменима (ambiguous с varargs-формой из-за боксинга).
+		// Бросок ВНЕ тернарника — потребление tRandom безусловно (инвариант переигрывания).
+		gregapi.oredict.OreDictMaterial[] tCoinMats = {MT.Cu, MT.Cu, MT.Cu, MT.Ag, MT.Ag, MT.Au, MT.Au, MT.Pt};
+		gregapi.oredict.OreDictMaterial tCoinMat = tCoinMats[tRandom.nextInt(tCoinMats.length)];
+		net.minecraft.world.item.ItemStack tCoinStack = tCoinMap == null ? null : tCoinMap.get(tCoinMat);
 		CompoundTag tCoin = tCoinStack == null ? null : gregapi.code.ItemNBT.get(tCoinStack); // getTagCompound()->ItemNBT.get (neo NBT через DataComponents)
 		if (tCoin == null) tCoin = UT.NBT.make(); else tCoin = (CompoundTag)tCoin.copy();
 		
@@ -264,21 +304,28 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			}
 		}
 		
+		// Layout финализирован (обе волны чистки прошли). Пустая клетка текущего чанка → этому чанку данж ничего
+		// не пишет, переигрывание не нужно (Keys/Tags вне данж-клеток не потребляются) — ранний выход.
+		if (tRoomLayout[tCellI][tCellJ] == 0) return F;
+
+		// Оба клеточных цикла — 1:1 (порядок значим: комнаты мутируют mGeneratedKeys/mTags, коридоры их читают).
+		// Каждая клетка ПЕРЕИГРЫВАЕТСЯ во всех чанках области; физически пишет лишь клетка текущего чанка
+		// (aWrite=(i,j)==(tCellI,tCellJ) — маска DungeonData.mWrite). markUnsaved — запись → только владелец.
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] > 0) {
-			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
-			
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
+
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
-			
-			DungeonData aData = new DungeonData(aWorld, aMinX+i*16, tOffsetY, aMinZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(aRandom.nextLong()), tCoin);
-			
+
+			DungeonData aData = new DungeonData(aWorld, tBaseX+i*16, tOffsetY, tBaseZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(tRandom.nextLong()), tCoin, i == tCellI && j == tCellJ);
+
 			switch(tRoomLayout[i][j]) {
 			case ROOM_ID_COUNT:
 				if (aData.mConnectionCount == 1) {
 					// Generate a random Dead End
 					List<IDungeonChunk> tList = new ArrayListNoNulls<>(DEAD_END);
 					while (T) {
-						try {if (tList.remove(aRandom.nextInt(tList.size())).generate(aData)) break;} catch(Throwable e) {e.printStackTrace(ERR);}
+						try {if (tList.remove(tRandom.nextInt(tList.size())).generate(aData)) break;} catch(Throwable e) {e.printStackTrace(ERR);}
 						try {if (tList.isEmpty() && ROOM_EMPTY              .generate(aData)) break;} catch(Throwable e) {e.printStackTrace(ERR);}
 					}
 					break;
@@ -286,42 +333,36 @@ public class WorldgenDungeonGT extends WorldgenObject {
 				// Generate a random Normal Room
 				List<IDungeonChunk> tList = new ArrayListNoNulls<>(ROOMS);
 				while (T) {
-					try {if (tList.remove(aRandom.nextInt(tList.size())).generate(aData)) break;} catch(Throwable e) {e.printStackTrace(ERR);}
+					try {if (tList.remove(tRandom.nextInt(tList.size())).generate(aData)) break;} catch(Throwable e) {e.printStackTrace(ERR);}
 					try {if (tList.isEmpty() && ROOM_EMPTY              .generate(aData)) break;} catch(Throwable e) {e.printStackTrace(ERR);}
 				}
 				break;
 			}
-			
-			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
+
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
 		}
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] < 0) {
-			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
-			
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
+
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
-			
-			DungeonData aData = new DungeonData(aWorld, aMinX+i*16, tOffsetY, aMinZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(aRandom.nextLong()), tCoin);
-			
+
+			DungeonData aData = new DungeonData(aWorld, tBaseX+i*16, tOffsetY, tBaseZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(tRandom.nextLong()), tCoin, i == tCellI && j == tCellJ);
+
 			switch(tRoomLayout[i][j]) {
 			case -128: try {if (tConnectionCount == 4) CORRIDOR4.generate(aData); else if (tConnectionCount == 3) CORRIDOR3.generate(aData); else CORRIDOR.generate(aData);} catch(Throwable e) {e.printStackTrace(ERR);} break;
 			case   -2: try {ENTRANCE.generate(aData);} catch(Throwable e) {e.printStackTrace(ERR);} break;
 			case   -1: try {BARRACKS.generate(aData);} catch(Throwable e) {e.printStackTrace(ERR);} break;
 			}
-			
-			aWorld.getChunk((aMinX >> 4) + i, (aMinZ >> 4) + j).markUnsaved();
+
+			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
 		}
-		for (BlockPos tCoords : tLightUpdateCoords) {
-			// F-lighting: 1.7.10 World.setLightValue(EnumSkyBlock,x,y,z,15) — ручная установка блок-света удалена из neo
-			// (свет полностью управляется LevelLightEngine, вычисляется из эмиссии блоков; прямого сеттера нет). Прежний
-			// форс «15» был предподсветкой источников — в neo обеспечивается самими светящимися блоками + движком света;
-			// здесь оставляем лишь пересчёт в точке (checkBlock), значение движок выведет сам.
-			aWorld.getLightEngine().checkBlock(tCoords);
-			for (byte tSide : ALL_SIDES_MIDDLE) {
-				// F-lighting: 1.7.10 World.func_147451_t (принудительный пересчёт света в точке) -> neo LevelLightEngine.checkBlock(BlockPos) (LevelLightEngine.java).
-				aWorld.getLightEngine().checkBlock(new BlockPos(tCoords.getX()+OFFX[tSide], tCoords.getY()+OFFY[tSide], tCoords.getZ()+OFFZ[tSide]));
-				WD.update(   aWorld, tCoords.getX()+OFFX[tSide], tCoords.getY()+OFFY[tSide], tCoords.getZ()+OFFZ[tSide]);
-			}
-		}
+		// F6-worldgen (пост-световой цикл 1.7.10 СНЯТ): (1) в пирамиде MC26 шаги INITIALIZE_LIGHT/LIGHT идут ПОСЛЕ
+		// FEATURES (ChunkPyramid.java:36-37) — свет чанка полностью пересчитывается движком после фич, ручной
+		// checkBlock из воркгена холост; (2) WD.update внутри цикла кастует мир к Level (WD.java:816
+		// sendBlockUpdated) — на WorldGenRegion это ClassCastException, а клиент-апдейты из генерации бессмысленны:
+		// чанк ещё не отправлен ни одному клиенту (тот же класс решения, что ADAPT-009 П1 — холостые апдейты).
+		// tLightUpdateCoords продолжает собираться клеткой-владельцем (структура DungeonData 1:1) — потребителей нет.
 		return T;
 	}
 	

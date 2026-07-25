@@ -31,7 +31,6 @@ import gregapi.data.IL;
 import gregapi.data.OP;
 import gregapi.fluid.FluidTankGT;
 import gregapi.oredict.OreDictMaterial;
-import gregapi.random.WorldAndCoords;
 import gregapi.util.ST;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
@@ -52,7 +51,25 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public class DungeonData extends WorldAndCoords {
+// F6-worldgen (данжи per-chunk, снятие Level-пленника): в 1.7.10 DungeonData extends WorldAndCoords (носитель
+// полного World — populate-фаза это позволяла). В neo данж-код исполняется в Feature-фазе, где мир = WorldGenRegion,
+// а разворот в ServerLevel (прежний super(aWorld.getLevel())) давал реентрантный дедлок getChunk().join (см.
+// WorldgenDungeonGT.generate). WorldAndCoords — gameplay-база (BlockEntity и пр.), её тип менять нельзя → DungeonData
+// (единственный центр данж-подсистемы: ВСЕ чтения/записи комнат идут через него — аудит: прямых WD.set/placeBlock
+// мимо aData в комнатах ноль) объявляет носитель сам: mWorld = WorldGenLevel-регион. WD-центры и IBlockPlacable
+// принимают LevelAccessor — комнаты не тронуты.
+//
+// Маска записи mWrite (механизм per-chunk «переигрывание»): движок разрешает фиче писать только ±1 чанк от
+// генерируемого (neo ChunkPyramid.java:33 blockStateWriteRadius(1), WorldGenRegion.ensureCanWrite:225), а данж —
+// до 9×9 чанков. Каждый чанк области ПЕРЕИГРЫВАЕТ весь данж детерминированно (общий Random от якоря — см.
+// WorldgenDungeonGT), но ФИЗИЧЕСКИ пишет только клетку своего чанка: mWrite=T только у неё. Гейт стоит в приватных
+// низах place/rotate НИЖЕ вычисления аргументов — потребление Random (next() в аргументах) идентично в пишущем и
+// переигрывающем режимах, иначе клетки разошлись бы. Подавленная запись возвращает T («успех») — возвраты set
+// нигде не ветвят поток комнат (аудит architecture/dungeons.md).
+public class DungeonData {
+	public final WorldGenLevel mWorld;
+	public final int mX, mY, mZ;
+	public final boolean mWrite;
 	public final MultiTileEntityRegistry mMTERegistryGT;
 	public final BlockStones mPrimary, mSecondary;
 	public final byte mColor, mColorInversed, mRoomLayout[][];
@@ -65,9 +82,9 @@ public class DungeonData extends WorldAndCoords {
 	public final WorldgenDungeonGT mStructure;
 	public final CompoundTag mCoin;
 	public final Random mRandom;
-	
-	public DungeonData(WorldGenLevel aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<BlockPos> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, CompoundTag aCoin) {
-		super(aWorld.getLevel(), aX, aY, aZ); // WorldAndCoords держит полный Level (общая gameplay-база); worldgen-приёмник WorldGenLevel -> итоговый ServerLevel через getLevel(). Данжи — Level-based (отложенная подсистема).
+
+	public DungeonData(WorldGenLevel aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<BlockPos> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, CompoundTag aCoin, boolean aWrite) {
+		mWorld = aWorld; mX = aX; mY = aY; mZ = aZ; mWrite = aWrite;
 		mStructure = aStructure;
 		mPrimary = aPrimaryBlock;
 		mSecondary = aSecondaryBlock;
@@ -87,6 +104,19 @@ public class DungeonData extends WorldAndCoords {
 		mRandom = aRandom;
 	}
 	
+	// Низы записи (ЕДИНСТВЕННЫЕ точки, где данж-подсистема физически трогает мир) — гейт маски mWrite.
+	// Вызывать ТОЛЬКО с уже вычисленными аргументами: next() потребляется в выражениях аргументов вызывателя,
+	// поэтому Random-цепочка идентична при mWrite=T и mWrite=F (инвариант переигрывания).
+	private boolean place(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, short aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
+		return !mWrite || aBlock.placeBlock(mWorld, aX, aY, aZ, aSide, aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
+	}
+	private boolean place(Block aBlock, int aX, int aY, int aZ, int aMeta, int aFlags) {
+		return !mWrite || WD.set(mWorld, aX, aY, aZ, aBlock, aMeta, aFlags);
+	}
+	private void rotate(int aX, int aY, int aZ) {
+		if (mWrite) WD.rotateBlock(mWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен низом place выше)
+	}
+
 	public int next(int aNumber) {return mRandom.nextInt(aNumber);}
 	/** Gives a random positive StackSize */
 	public int nextStack() {return 1+mRandom.nextInt(64);}
@@ -156,13 +186,13 @@ public class DungeonData extends WorldAndCoords {
 	public boolean colored    (int aX, int aY, int aZ) {return set(aX, aY, aZ, BlocksGT.Concrete, mColor, 2);}
 	
 	public boolean lamp(int aX, int aY, int aZ, Block aPrimary, Block aSecondary, int aGenerateRedstoneBrick) {
-		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
+		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // маска: свет чинит только клетка-владелец
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
 		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 	}
 	
 	public boolean lamp(int aX, int aY, int aZ, int aGenerateRedstoneBrick) {
-		mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ));
+		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // маска: свет чинит только клетка-владелец
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
 		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
 	}
@@ -170,69 +200,69 @@ public class DungeonData extends WorldAndCoords {
 	public boolean coins(int aX, int aY, int aZ) {
 		for (int i = 0; i < 16; i++) mCoin.putByte("gt.coin.stacksize."+i, (byte)(next1in3() ? next(8) : 0));
 		mCoin.putByte("gt.coin.stacksize."+next(16), (byte)(1+next(8)));
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)32700, mCoin, T, T);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)32700, mCoin, T, T);
 	}
 	
 	public boolean set(int aX, int aY, int aZ, long aMeta) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, null, T, T);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, null, T, T);
 	}
 	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, null, T, T);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, null, T, T);
 	}
 	public boolean set(int aX, int aY, int aZ, long aMeta, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
 	}
 	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
 	}
 	public boolean set(int aX, int aY, int aZ, long aMeta, CompoundTag aNBT) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, T, T);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, aNBT, T, T);
 	}
 	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, T, T);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, aNBT, T, T);
 	}
 	public boolean set(int aX, int aY, int aZ, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
 	public boolean set(int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return mMTERegistryGT.mBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
+		return place(mMTERegistryGT.mBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
 	
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long[] aMetas) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMetas[next(aMetas.length)], null, T, T);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMetas[next(aMetas.length)], null, T, T);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, OreDictMaterial... aMaterials) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, aMaterials[next(aMaterials.length)].mID, null, T, T);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, aMaterials[next(aMaterials.length)].mID, null, T, T);
 	}
 	public boolean set(IBlockPlacable[] aBlocks, int aX, int aY, int aZ, long[] aMetas) {
-		return aBlocks[next(aBlocks.length)].placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMetas[next(aMetas.length)], null, T, T);
+		return place(aBlocks[next(aBlocks.length)], mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMetas[next(aMetas.length)], null, T, T);
 	}
 	public boolean set(IBlockPlacable[] aBlocks, int aX, int aY, int aZ, OreDictMaterial... aMaterials) {
-		return aBlocks[next(aBlocks.length)].placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, aMaterials[next(aMaterials.length)].mID, null, T, T);
+		return place(aBlocks[next(aBlocks.length)], mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, aMaterials[next(aMaterials.length)].mID, null, T, T);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, null, T, T);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, null, T, T);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, null, T, T);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, null, T, T);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, null, aCauseBlockUpdates, aForcePlacement);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta, CompoundTag aNBT) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, T, T);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, aNBT, T, T);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, T, T);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, aNBT, T, T);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, SIDE_UNKNOWN, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,SIDE_UNKNOWN, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
 	public boolean set(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, long aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return aBlock.placeBlock(mWorld, mX+aX, mY+aY, mZ+aZ, aSide, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ,aSide, (short)aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
 	
 	public boolean obsidian(int aX, int aY, int aZ, boolean aGravity) {
@@ -343,17 +373,17 @@ public class DungeonData extends WorldAndCoords {
 	}
 	
 	public boolean set(int aX, int aY, int aZ, Block aBlock) {
-		return WD.set(mWorld, mX+aX, mY+aY, mZ+aZ, aBlock, 0, 2);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ, 0, 2);
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock, int aMeta) {
-		return WD.set(mWorld, mX+aX, mY+aY, mZ+aZ, aBlock, aMeta, 2);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ, aMeta, 2);
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags) {
-		return WD.set(mWorld, mX+aX, mY+aY, mZ+aZ, aBlock, aMeta, aFlags);
+		return place(aBlock, mX+aX, mY+aY, mZ+aZ, aMeta, aFlags);
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock, int aMeta, int aFlags, int aRotationCount) {
 		if (!set(aX, aY, aZ, aBlock, aMeta, aFlags)) return F;
-		while (aRotationCount-->0) WD.rotateBlock(mWorld, mX+aX, mY+aY, mZ+aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен set выше)
+		while (aRotationCount-->0) rotate(mX+aX, mY+aY, mZ+aZ);
 		return T;
 	}
 	public boolean set(int aX, int aY, int aZ, Block aBlock1, int aMeta1, Block aBlock2, int aMeta2) {
