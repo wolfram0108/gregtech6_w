@@ -135,12 +135,19 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		.add(Registries.DAMAGE_TYPE, gregapi.damage.DamageSources::bootstrap)
 		.add(NeoForgeRegistries.Keys.BIOME_MODIFIERS, ctx -> {
 			HolderSet<PlacedFeature> tPlaced = HolderSet.direct(ctx.lookup(Registries.PLACED_FEATURE).getOrThrow(GT6_WORLDGEN_PF));
+			// ADAPT-009/флора: шаг UNDERGROUND_ORES → TOP_LAYER_MODIFICATION = ВОССТАНОВЛЕНИЕ порядка 1.7.10
+			// (Forge IWorldGenerator вызывался ПОСЛЕ ВСЕЙ ванильной populate-фазы). На UNDERGROUND_ORES GT6-вода
+			// замещала Blocks.WATER ДО ванильной VEGETAL_DECORATION → kelp/seagrass/coral-фичи (все требуют
+			// is(Blocks.WATER): KelpFeature:26, SeagrassFeature:30, CoralFeature:39 референса) не генерились ВООБЩЕ.
+			// Теперь флора садится в ванильную воду, затем GT6 замещает воду ВОКРУГ неё (скан идёт сквозь
+			// не-opaque растения). ⚠️ Синхронно с Java-источником правлены сгенерённые json
+			// (src/generated/resources/data/gregapi/neoforge/biome_modifier/add_gt6_worldgen_*.json) — рантайм читает ИХ.
 			ctx.register(ADD_GT6_WORLDGEN_OVERWORLD, new AddFeaturesBiomeModifier(
-				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_OVERWORLD), tPlaced, Decoration.UNDERGROUND_ORES));
+				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_OVERWORLD), tPlaced, Decoration.TOP_LAYER_MODIFICATION));
 			ctx.register(ADD_GT6_WORLDGEN_NETHER, new AddFeaturesBiomeModifier(
-				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_NETHER), tPlaced, Decoration.UNDERGROUND_ORES));
+				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_NETHER), tPlaced, Decoration.TOP_LAYER_MODIFICATION));
 			ctx.register(ADD_GT6_WORLDGEN_END, new AddFeaturesBiomeModifier(
-				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_END), tPlaced, Decoration.UNDERGROUND_ORES));
+				ctx.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_END), tPlaced, Decoration.TOP_LAYER_MODIFICATION));
 			// F6 §4.2.2: убрать ванильные руды MC26 (allSteps — авторитетная сигнатура javap RemoveFeaturesBiomeModifier). Ключи — OrePlacements (одна фича покрывает stone+deepslate-вариант руды).
 			var tPF = ctx.lookup(Registries.PLACED_FEATURE);
 			ctx.register(REMOVE_VANILLA_ORES_OVERWORLD, RemoveFeaturesBiomeModifier.allSteps(
@@ -246,6 +253,10 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.TROPICAL_FISH);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.SQUID);
 		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.GLOW_SQUID);
+		// ADAPT-009/фауна: дельфин (warm/lukewarm-океаны 1.13+, вошли в BIOMES_OCEAN) — его
+		// checkSurfaceAgeableWaterCreatureSpawnRules:74 хардкодит above.is(Blocks.WATER), как и рыбы.
+		// Drowned/Guardian мостить НЕ нужно — их правила целиком на FluidTags.WATER (Drowned.java:139, Guardian.java:307).
+		addGT6WaterSpawn(aEvent, net.minecraft.world.entity.EntityType.DOLPHIN);
 	}
 
 	private static <T extends net.minecraft.world.entity.Entity> void addGT6WaterSpawn(net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent aEvent, net.minecraft.world.entity.EntityType<T> aType) {

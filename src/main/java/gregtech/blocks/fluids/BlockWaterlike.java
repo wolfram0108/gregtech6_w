@@ -285,8 +285,14 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
 	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
-	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
-	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
+	// ADAPT-009/флора: блок с водным FluidState (kelp/seagrass/коралл/waterlogged — содержат воду В СЕБЕ) для
+	// GT6-воды = «вода», НЕ цель вытеснения. Расширение того же 1.7.10-принципа «жидкость не вытесняет жидкость»
+	// (isLiquid-гейт ниже) на water-контейнеры, которых в 1.7.10 не существовало (waterlogging — 1.13+); без гейта
+	// растекание сносило всю подводную растительность (canDisplace: material растений не blocksMovement). Тот же
+	// приём, что B4-waterlog в flowTo. Vanilla-вода поведение не меняет (и так isLiquid).
+	private boolean holdsWater(BlockGetter aWorld, int aX, int aY, int aZ) {return aWorld.getBlockState(new BlockPos(aX, aY, aZ)).getFluidState().is(net.minecraft.tags.FluidTags.WATER);}
+	public boolean canDisplace(BlockGetter aWorld, int aX, int aY, int aZ) {return !holdsWater(aWorld, aX, aY, aZ) && !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.canDisplace(aWorld, aX, aY, aZ);}
+	public boolean displaceIfPossible(Level aWorld, int aX, int aY, int aZ) {return !holdsWater(aWorld, aX, aY, aZ) && !WD.getMaterial(WD.block(aWorld, aX, aY, aZ)).isLiquid() && super.displaceIfPossible(aWorld, aX, aY, aZ);}
 	public boolean canCollideCheck(int aMeta, boolean aFullHit) {return aFullHit && aMeta == 0;}
 	public boolean getBlocksMovement(BlockGetter aWorld, int aX, int aY, int aZ) {return !mEffects.isEmpty();}
 	public boolean isNormalCube() {return F;}
