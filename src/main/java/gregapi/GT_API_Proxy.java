@@ -2096,7 +2096,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				O.println("========== [GT6-WATERPROBE] замер нагрузки растекания вод ==========");
 				sWaterProbeOn = true;
 				com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tFound =
-					tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_OCEAN), tPlayer.blockPosition(), 6400, 32, 64); // только биомы, где WorldgenOcean реально генерит GT6-океан (BIOMES_OCEAN порта)
+					tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.COLD_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_COLD_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.LUKEWARM_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_LUKEWARM_OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.WARM_OCEAN), tPlayer.blockPosition(), 6400, 32, 64); // П2-судья: ранее ДЫРЯВЫЕ океаны (до П2 тут GT6-воды не было — прогон 2)
 				if (tFound == null) {O.println("[GT6-WATERPROBE] EXC океан не найден в радиусе 6400"); sWaterProbePhase = 99; return;}
 				int tX = tFound.getFirst().getX(), tZ = tFound.getFirst().getZ();
 				tPlayer.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
