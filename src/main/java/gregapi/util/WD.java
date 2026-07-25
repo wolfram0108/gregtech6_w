@@ -952,6 +952,13 @@ public class WD {
 		return rSet;
 	}
 
+	/** Стейт-канал ЦЕНТРА записи (заход данжей #39): для случаев, где 1.7.10 выражал состояние ОТДЕЛЬНЫМ реестровым
+	 *  блоком, а движок 1.13+ разложил его в blockstate-свойство того же блока (lit_redstone_lamp → REDSTONE_LAMP[LIT];
+	 *  тот же класс разложения, что котёл BUG-025 выше). Числовой меты у таких состояний нет — мета-каналом не выразить. */
+	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, BlockState aState, long aFlags) {
+		return aWorld.setBlock(new BlockPos(aX, aY, aZ), aState, (int)aFlags);
+	}
+
 	public static boolean set(ChunkAccess aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {
 		// было aChunk.func_150807_a(localX,y,localZ,block,meta) — neo: ChunkAccess.setBlockState(BlockPos,BlockState,flags)
 		// (LevelChunk.java:270 / ChunkAccess) хочет МИРОВОЙ BlockPos (маскирует &15 внутри себя, используя абсолютные

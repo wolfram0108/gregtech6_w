@@ -304,20 +304,20 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			}
 		}
 		
-		// Layout финализирован (обе волны чистки прошли). Пустая клетка текущего чанка → этому чанку данж ничего
-		// не пишет, переигрывание не нужно (Keys/Tags вне данж-клеток не потребляются) — ранний выход.
-		if (tRoomLayout[tCellI][tCellJ] == 0) return F;
+		// Ранний выход по пустой клетке ЗАПРЕЩЁН: комнаты пишут и в соседние клетки (FarmMobs: башни-платформы ±16
+		// в клетках-нулях и коридорах) — чанк ЛЮБОЙ клетки layout обязан переиграть данж, чтобы записать то, что
+		// в него кладут соседи (координатный гейт низов DungeonData). Вне layout выход уже был (проверка границ выше).
 
-		// Оба клеточных цикла — 1:1 (порядок значим: комнаты мутируют mGeneratedKeys/mTags, коридоры их читают).
-		// Каждая клетка ПЕРЕИГРЫВАЕТСЯ во всех чанках области; физически пишет лишь клетка текущего чанка
-		// (aWrite=(i,j)==(tCellI,tCellJ) — маска DungeonData.mWrite). markUnsaved — запись → только владелец.
+		// Оба клеточных цикла — 1:1 (порядок значим: комнаты мутируют mGeneratedKeys/mTags, коридоры их читают;
+		// FarmMobs кладёт башню в клетку коридора, коридор вырезает себя в ней ПОЗЖЕ — порядок записей воспроизводится
+		// внутри каждого чанка координатным гейтом низов DungeonData). markUnsaved — только свой чанк.
 		for (int i = 1; i < tRoomLayout.length-1; i++) for (int j = 1; j < tRoomLayout[i].length-1; j++) if (tRoomLayout[i][j] > 0) {
 			if (i == tCellI && j == tCellJ) aWorld.getChunk((tBaseX >> 4) + i, (tBaseZ >> 4) + j).markUnsaved();
 
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
 
-			DungeonData aData = new DungeonData(aWorld, tBaseX+i*16, tOffsetY, tBaseZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(tRandom.nextLong()), tCoin, i == tCellI && j == tCellJ);
+			DungeonData aData = new DungeonData(aWorld, tBaseX+i*16, tOffsetY, tBaseZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(tRandom.nextLong()), tCoin, tCurChunkX, tCurChunkZ);
 
 			switch(tRoomLayout[i][j]) {
 			case ROOM_ID_COUNT:
@@ -347,7 +347,7 @@ public class WorldgenDungeonGT extends WorldgenObject {
 			int tConnectionCount = 0;
 			for (byte tSide : ALL_SIDES_HORIZONTAL) if (tRoomLayout[i+OFFX[tSide]][j+OFFZ[tSide]] != 0) tConnectionCount++;
 
-			DungeonData aData = new DungeonData(aWorld, tBaseX+i*16, tOffsetY, tBaseZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(tRandom.nextLong()), tCoin, i == tCellI && j == tCellJ);
+			DungeonData aData = new DungeonData(aWorld, tBaseX+i*16, tOffsetY, tBaseZ+j*16, this, tPrimaryBlock, tSecondaryBlock, tRegistry, tLightUpdateCoords, tTags, tKeyIDs, tKeyStacks, tGeneratedKeys, tRoomLayout, i, j, tConnectionCount, tColor, new Random(tRandom.nextLong()), tCoin, tCurChunkX, tCurChunkZ);
 
 			switch(tRoomLayout[i][j]) {
 			case -128: try {if (tConnectionCount == 4) CORRIDOR4.generate(aData); else if (tConnectionCount == 3) CORRIDOR3.generate(aData); else CORRIDOR.generate(aData);} catch(Throwable e) {e.printStackTrace(ERR);} break;

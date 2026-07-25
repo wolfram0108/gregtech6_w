@@ -69,7 +69,10 @@ import static gregapi.data.CS.*;
 public class DungeonData {
 	public final WorldGenLevel mWorld;
 	public final int mX, mY, mZ;
+	/** Владение клеткой: клетка совпадает с генерируемым чанком (гейт generateVein/light-координат). */
 	public final boolean mWrite;
+	/** Координатный гейт записи (см. низы place/rotate): чанк, который сейчас генерируется. */
+	public final int mChunkX, mChunkZ;
 	public final MultiTileEntityRegistry mMTERegistryGT;
 	public final BlockStones mPrimary, mSecondary;
 	public final byte mColor, mColorInversed, mRoomLayout[][];
@@ -83,8 +86,9 @@ public class DungeonData {
 	public final CompoundTag mCoin;
 	public final Random mRandom;
 
-	public DungeonData(WorldGenLevel aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<BlockPos> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, CompoundTag aCoin, boolean aWrite) {
-		mWorld = aWorld; mX = aX; mY = aY; mZ = aZ; mWrite = aWrite;
+	public DungeonData(WorldGenLevel aWorld, int aX, int aY, int aZ, WorldgenDungeonGT aStructure, BlockStones aPrimaryBlock, BlockStones aSecondaryBlock, MultiTileEntityRegistry aRegistry, HashSetNoNulls<BlockPos> aLightUpdateCoords, HashSetNoNulls<TagData> aTags, long[] aKeyIDs, ItemStack[] aKeyStacks, boolean[] aGeneratedKeys, byte[][] aRoomLayout, int aRoomX, int aRoomZ, int aConnectionCount, int aColor, Random aRandom, CompoundTag aCoin, int aChunkX, int aChunkZ) {
+		mWorld = aWorld; mX = aX; mY = aY; mZ = aZ; mChunkX = aChunkX; mChunkZ = aChunkZ;
+		mWrite = (aX >> 4) == aChunkX && (aZ >> 4) == aChunkZ;
 		mStructure = aStructure;
 		mPrimary = aPrimaryBlock;
 		mSecondary = aSecondaryBlock;
@@ -104,17 +108,25 @@ public class DungeonData {
 		mRandom = aRandom;
 	}
 	
-	// Низы записи (ЕДИНСТВЕННЫЕ точки, где данж-подсистема физически трогает мир) — гейт маски mWrite.
-	// Вызывать ТОЛЬКО с уже вычисленными аргументами: next() потребляется в выражениях аргументов вызывателя,
-	// поэтому Random-цепочка идентична при mWrite=T и mWrite=F (инвариант переигрывания).
+	// Низы записи (ЕДИНСТВЕННЫЕ точки, где данж-подсистема физически трогает мир) — КООРДИНАТНЫЙ гейт маски:
+	// позицию пишет ТОЛЬКО тот чанк, которому она принадлежит (не «автор»-клетка!). Причина: комнаты пишут и в
+	// СОСЕДНИЕ клетки (FarmMobs строит башни-платформы ±16 в клетках-нулях и коридорах, коридор вырезает себя в
+	// башне ПОЗЖЕ — порядок «комнаты → коридоры» у Грега значим). Гейт по автору дал бы гонку порядка генерации
+	// чанков (ферма, сгенерированная позже коридора, затирала бы его проход); координатный гейт воспроизводит
+	// ПОЛНЫЙ порядок записей 1.7.10 внутри каждого чанка. Вызывать ТОЛЬКО с уже вычисленными аргументами: next()
+	// потребляется в выражениях аргументов вызывателя, поэтому Random-цепочка идентична во всех переигрываниях.
+	private boolean owned(int aX, int aZ) {return (aX >> 4) == mChunkX && (aZ >> 4) == mChunkZ;}
 	private boolean place(IBlockPlacable aBlock, int aX, int aY, int aZ, byte aSide, short aMeta, CompoundTag aNBT, boolean aCauseBlockUpdates, boolean aForcePlacement) {
-		return !mWrite || aBlock.placeBlock(mWorld, aX, aY, aZ, aSide, aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
+		return !owned(aX, aZ) || aBlock.placeBlock(mWorld, aX, aY, aZ, aSide, aMeta, aNBT, aCauseBlockUpdates, aForcePlacement);
 	}
 	private boolean place(Block aBlock, int aX, int aY, int aZ, int aMeta, int aFlags) {
-		return !mWrite || WD.set(mWorld, aX, aY, aZ, aBlock, aMeta, aFlags);
+		return !owned(aX, aZ) || WD.set(mWorld, aX, aY, aZ, aBlock, aMeta, aFlags);
+	}
+	private boolean place(net.minecraft.world.level.block.state.BlockState aState, int aX, int aY, int aZ, int aFlags) {
+		return !owned(aX, aZ) || WD.set(mWorld, aX, aY, aZ, aState, aFlags);
 	}
 	private void rotate(int aX, int aY, int aZ) {
-		if (mWrite) WD.rotateBlock(mWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен низом place выше)
+		if (owned(aX, aZ)) WD.rotateBlock(mWorld, aX, aY, aZ, FORGE_DIR[SIDE_Y_POS]); // F-tool-rotation центр (блок уже поставлен низом place выше)
 	}
 
 	public int next(int aNumber) {return mRandom.nextInt(aNumber);}
@@ -185,16 +197,23 @@ public class DungeonData {
 	public boolean glassglow  (int aX, int aY, int aZ) {return set(aX, aY, aZ, BlocksGT.GlowGlass, mColor, 2);}
 	public boolean colored    (int aX, int aY, int aZ) {return set(aX, aY, aZ, BlocksGT.Concrete, mColor, 2);}
 	
+	// F6-worldgen (лампы данжа ГОРЯТ, заход #39): 1.7.10 ставил при aGenerateRedstoneBrick!=0 ОТДЕЛЬНЫЙ блок
+	// Blocks.lit_redstone_lamp (ориг. DungeonData.java:160/166), а лампы «без своего кирпича» (ветка 0 — коридоры,
+	// узором смежные с RSTBR) зажигал пост-цикл нотификаций WorldgenDungeonGT (в neo снят: Level-каст + LIGHT после
+	// FEATURES). Движок 1.13+ разложил lit-блок в свойство REDSTONE_LAMP[LIT] — числовой метой не выразить → стейт-канал
+	// WD.set(state). Итоговое состояние мира 1.7.10 = обе ветки горят; стабильность держит RSTBR-мост сигнала
+	// (BlockStones.getSignal:754 = 15, 1:1 ориг. :733) — лампа без сигнала штатно потухнет при первом апдейте (тот же
+	// self-healing, что в 1.7.10).
 	public boolean lamp(int aX, int aY, int aZ, Block aPrimary, Block aSecondary, int aGenerateRedstoneBrick) {
 		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // маска: свет чинит только клетка-владелец
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
-		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
+		return place(Blocks.REDSTONE_LAMP.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneLampBlock.LIT, Boolean.TRUE), mX+aX, mY+aY, mZ+aZ, 2);
 	}
-	
+
 	public boolean lamp(int aX, int aY, int aZ, int aGenerateRedstoneBrick) {
 		if (mWrite) mLightUpdateCoords.add(new BlockPos(mX+aX, mY+aY, mZ+aZ)); // маска: свет чинит только клетка-владелец
 		if (aGenerateRedstoneBrick != 0) redstoned(aX, aY+aGenerateRedstoneBrick, aZ);
-		return set(aX, aY, aZ, aGenerateRedstoneBrick == 0 ? Blocks.REDSTONE_LAMP : Blocks.REDSTONE_LAMP, 0, 2);
+		return place(Blocks.REDSTONE_LAMP.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneLampBlock.LIT, Boolean.TRUE), mX+aX, mY+aY, mZ+aZ, 2);
 	}
 	
 	public boolean coins(int aX, int aY, int aZ) {

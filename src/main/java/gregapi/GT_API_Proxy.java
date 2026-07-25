@@ -1991,6 +1991,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				final int tY0 = gregapi.util.WD.remapY(tLevel, 20), tYLo = tY0 - 12, tYHi = tY0 + 14, R = 5, N = 2*R+1;
 				long[][] tBrick = new long[N][N]; long[][] tLamp = new long[N][N]; long[][] tMte = new long[N][N];
 				long tGlassGlow = 0, tConcrete = 0, tLootCrates = 0, tBedrockOre = 0, tBedrockOreSmall = 0;
+				long tLampsLit = 0, tLampsUnlit = 0, tLampsUnlitPowered = 0, tLampsGlowing = 0; // судья ламп (заход: лампы должны ГОРЕТЬ от RSTBR)
 				java.util.TreeMap<String, Integer> tBEByClass = new java.util.TreeMap<>();
 				java.util.ArrayList<Long> tKeys = new java.util.ArrayList<>();
 				int tLootTagged = 0, tWithInv = 0;
@@ -2001,9 +2002,29 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					int tBX = (tAnchorCX + ci) << 4, tBZ = (tAnchorCZ + cj) << 4;
 					for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
 						for (int y = tYLo; y <= tYHi; y++) {
-							net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(new BlockPos(tBX + x, y, tBZ + z)).getBlock();
+							net.minecraft.world.level.block.state.BlockState tScanState = tChunk.getBlockState(new BlockPos(tBX + x, y, tBZ + z));
+							net.minecraft.world.level.block.Block tBlock = tScanState.getBlock();
 							if (tBlock instanceof gregapi.block.metatype.BlockStones) {if (gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter)tChunk, tBX+x, y, tBZ+z) > 0) tBrick[ci+R][cj+R]++;}
-							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) tLamp[ci+R][cj+R]++;
+							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) {
+								tLamp[ci+R][cj+R]++;
+								BlockPos tLampPos = new BlockPos(tBX + x, y, tBZ + z);
+								if (tScanState.getValueOrElse(net.minecraft.world.level.block.RedstoneLampBlock.LIT, Boolean.FALSE)) tLampsLit++;
+								else {
+									// Незажжённая лампа: дефект = ТОЛЬКО при живом сигнале рядом (должна гореть, но не горит).
+									// Без сигнала — честное равновесие 1:1 (грегова шероховатость: PortalNether:54 заливает пол
+									// незераком ПОВЕРХ питающего кирпича lamp(...,-1) базовой RoomPortal — в 1.7.10 такая лампа
+									// гасла при первом соседском апдейте так же).
+									tLampsUnlit++;
+									if (tLevel.hasNeighborSignal(tLampPos)) tLampsUnlitPowered++;
+									StringBuilder tNb = new StringBuilder();
+									for (net.minecraft.core.Direction tDir : net.minecraft.core.Direction.values()) tNb.append(' ').append(tDir.getSerializedName().charAt(0)).append('=').append(tLevel.getBlockState(tLampPos.relative(tDir)).getBlock().getClass().getSimpleName()).append('/').append(gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter)tLevel, tLampPos.relative(tDir).getX(), tLampPos.relative(tDir).getY(), tLampPos.relative(tDir).getZ()));
+									O.println("[GT6-DUNGEONPROBE]  UNLIT-ЛАМПА @" + tLampPos.toShortString() + " сигнал=" + tLevel.hasNeighborSignal(tLampPos) + " соседи:" + tNb);
+								}
+								// свет от лампы: макс блок-свет по 6 смежным позициям > 0 = движок реально светит
+								int tBr = 0;
+								for (net.minecraft.core.Direction tDir : net.minecraft.core.Direction.values()) tBr = Math.max(tBr, tLevel.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, tLampPos.relative(tDir)));
+								if (tBr > 0) tLampsGlowing++;
+							}
 							else if (tBlock == BlocksGT.GlowGlass) tGlassGlow++;
 							else if (tBlock == BlocksGT.Concrete) tConcrete++;
 						}
@@ -2078,11 +2099,14 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				boolean tKeysOk = tKeys.isEmpty() || (tKeyMax - tKeyMin) < 5;
 				O.println("[GT6-DUNGEONPROBE] ключи (" + tKeys.size() + "): " + tKeys + (tKeys.isEmpty() ? "" : " span=" + (tKeyMax - tKeyMin)));
 				O.println("[GT6-DUNGEONPROBE] ИТОГО: клеток=" + tCells + " кладка=" + tBrickTotal + " лампы=" + tLampTotal + " mte=" + tMteTotal
-					+ " glowglass=" + tGlassGlow + " concrete=" + tConcrete + " | лут-тегов=" + tLootTagged + " с-инвентарём=" + tWithInv + " loot-crates=" + tLootCrates
+					+ " glassglow=" + tGlassGlow + " concrete=" + tConcrete + " | лут-тегов=" + tLootTagged + " с-инвентарём=" + tWithInv + " loot-crates=" + tLootCrates
 					+ " | бедрок-руда=" + tBedrockOre + "+" + tBedrockOreSmall + "(small) | швов=" + tSeams + " провалов=" + tSeamsBad);
-				boolean tPass = tCells >= 3 && tLampTotal > 0 && tSeamsBad == 0 && tKeysOk && tLootTagged > 0;
+				O.println("[GT6-DUNGEONPROBE] ЛАМПЫ: lit=" + tLampsLit + " unlit=" + tLampsUnlit + " (из них ПОД СИГНАЛОМ=" + tLampsUnlitPowered + ") светят(блок-свет рядом>0)=" + tLampsGlowing);
+				boolean tLampsOk = tLampTotal > 0 && tLampsUnlitPowered == 0 && tLampsLit*10 >= tLampTotal*9; // >=90% lit, 0 негорящих под сигналом
+				boolean tPass = tCells >= 3 && tSeamsBad == 0 && tKeysOk && tLootTagged > 0 && tLampsOk;
 				O.println("[GT6-DUNGEONPROBE] ВЕРДИКТ: клетки>=3=" + (tCells >= 3 ? "PASS" : "FAIL") + " | швы=" + (tSeamsBad == 0 ? "PASS" : "FAIL")
-					+ " | ключи=" + (tKeysOk ? "PASS" : "FAIL") + " | лут=" + (tLootTagged > 0 ? "PASS" : "FAIL") + " => " + (tPass ? "PASS" : "FAIL"));
+					+ " | ключи=" + (tKeysOk ? "PASS" : "FAIL") + " | лут=" + (tLootTagged > 0 ? "PASS" : "FAIL")
+					+ " | лампы-горят=" + (tLampsOk ? "PASS" : "FAIL") + " => " + (tPass ? "PASS" : "FAIL"));
 				sDgPhase = 10;
 			}
 		} catch (Throwable e) {O.println("[GT6-DUNGEONPROBE] EXC " + e); e.printStackTrace(ERR); sDgPhase = 10;}
