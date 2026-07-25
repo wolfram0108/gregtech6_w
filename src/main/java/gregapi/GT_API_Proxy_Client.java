@@ -196,16 +196,6 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		try { gregapi.worldgen.GT6WorldgenFeature.drainClientStubs(); } catch (Throwable e) { e.printStackTrace(gregapi.data.CS.ERR); }
 	}
 
-	// [GT6-WATERPROBE] клиентский FPS-репортер (раз в 2с; клиентская доля лагов воды = ремеш секций) — снять при уборке фазы
-	private static int sWaterProbeClientTick = 0;
-	@net.neoforged.bus.api.SubscribeEvent
-	public void onWaterProbeClientFps(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
-		if ((++sWaterProbeClientTick % 40) != 0) return;
-		if (!gregapi.GT_API_Proxy.sWaterProbeOn) return;
-		if (Minecraft.getInstance().level == null) return;
-		gregapi.data.CS.OUT.println("[GT6-WATERPROBE-CLIENT] fps=" + Minecraft.getInstance().getFps());
-	}
-
 	// [GT6-MTEAUDIT] BUG-057, клиентская половина (§2.4): 1=скан клиентских BE той же зоны, 2=relog (двухмировой приём
 	// BUG-002: disconnectFromWorld + перевзвод автовхода wgautoworld). Снять при уборке фазы.
 	@net.neoforged.bus.api.SubscribeEvent
