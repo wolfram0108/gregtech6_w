@@ -2325,17 +2325,20 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// 4 линии (свежие позиции, разнесены по Z на 5 блоков — упреждает fire-spread между деревянными GAS/HOT трубами):
 	// NORM (Cu-труба id26102, gasProof=T — вода, чистый перенос), GAS (Wood-труба id26002, gasProof=F — природный газ,
 	// ожидается утечка FL.gas :296), GAS-CONTROL (Cu-труба gasProof=T, тот же газ — утечки быть не должно),
-	// HOT (Wood-труба id26002, mMaxTemperature=340K — лава, ожидается перегрев :320-327). Кислотный кейс — SKIP
-	// (в 3 корнях+живом реестре нет ни одной ЗАРЕГИСТРИРОВАННОЙ GT6 кислотной жидкости: FluidsGT.ACID — статический
-	// список ИМЁН чужих модов CS.java:1572 {"sulfuricacid","hydrochloricacid",...}, ни одно из этих имён не создаётся
-	// в FL.java нигде (grep "acid"/"Acid" в FL.java даёт только сами методы FL.acid(...), не регистрацию жидкости);
-	// сторонние моды в этом dev-окружении не установлены — run/mods отсутствует). Снять при уборке фазы.
+	// HOT (Wood-труба id26002, mMaxTemperature=340K — лава, ожидается перегрев :320-327).
+	// ACID (поправка игрока 2026-07-25 — прежний SKIP был ЛОЖНЫМ ГРЕПОМ: статический список FluidsGT.ACID это чужие
+	// моды, но FL.java:1312 (ориг. :1118) ДИНАМИЧЕСКИ добавляет туда жидкость КАЖДОГО материала с TD.Properties.ACID
+	// при её создании — H2SO4/HNO3/HCl/AquaRegia суть СОБСТВЕННЫЕ кислоты Грега): колонна Cu-труб (mAcidProof=F) БЕЗ
+	// бочек — серная кислота заливается прямо в трубу[0], дальше только реальный onServerTickPre: разъедание
+	// GarbageGT.trash(tTank,16) по 16mb/тик + 1%/тик setToAir (ориг. :307-317) => детерминированный исход «кислота
+	// в системе = 0». Контроль — само-обнаруженная в реестре acidProof-труба (скан канонических TE 26000..26399):
+	// кислота в ней НЕ убывает; нет такой трубы в реестре => честный SKIP контроля с печатью. Снять при уборке фазы.
 	private static int sFPProbeTick = -1;
 	private static final int FP_L = 6;
 	private static final int PIPE_NORM_ID = 26102; // Medium Copper Fluid Pipe (gasProof=T,acidProof=F) — Loader_MultiTileEntities.java:1855 (aID=26100 +2=medium)
 	private static final int PIPE_WOOD_ID = 26002; // Medium Wood   Fluid Pipe (gasProof=F,acidProof=F,maxTemp=340) — Loader_MultiTileEntities.java:1850 (aID=26000 +2=medium)
 	private static final int BARREL_ID    = 32102; // Bronze Drum (gasProof=T,acidProof=F,capacity=64000) — Loader_MultiTileEntities.java:2155
-	private static final long FP_WATER = 4000, FP_GAS = 3000, FP_LAVA = 500;
+	private static final long FP_WATER = 4000, FP_GAS = 3000, FP_LAVA = 500, FP_ACID = 2000;
 	private static boolean sFPSetupOk = F;
 	private static gregapi.tileentity.tank.TileEntityBase08Barrel sFPSrcNorm, sFPSinkNorm, sFPSrcGas, sFPSinkGas, sFPSrcGasCtl, sFPSinkGasCtl, sFPSrcHot, sFPSinkHot;
 	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPNorm   = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
@@ -2343,6 +2346,11 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPGasCtl = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
 	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPHot    = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
 	private static final net.minecraft.core.BlockPos[] sFPHotPos = new net.minecraft.core.BlockPos[FP_L];
+	// [GT6-FLUIDPIPEPROBE] ACID-кейс (поправка игрока): колонны строятся каркасом GT6ProbeStand.line
+	private static gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPAcid, sFPAcidCtl; // ctl==null => контроль SKIP
+	private static net.minecraft.core.BlockPos[] sFPAcidPos;
+	private static int sFPAcidCtlId = -1, sFPAcidZeroTick = -1;
+	private static boolean sFPAcidClassOk = F, sFPAcidWaterNegOk = F, sFPAcidEverAir = F;
 	private static long sFPCapNorm, sFPMaxTempNorm, sFPCapWood, sFPMaxTempWood; // живые параметры труб (прочитаны из BE, НЕ предположены)
 	private static long sFPTotal0Norm, sFPTotal0Gas, sFPTotal0GasCtl; // начальная консервация по цепи
 	private static long sFPAccumTransferredNorm = 0;
@@ -2459,6 +2467,24 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				sFPSrcGasCtl.mTank.setFluid(FL.Gas_Natural.make(FP_GAS)); sFPSrcGasCtl.mMode |= B[0];
 				// HOT: источник НЕ используется как эмиттер (риск преждевременного meltdown бочки от лавы, TileEntityBase08Barrel.java:168) — лава заливается ПРЯМО в трубу[0] на след. тике
 
+				// ACID: колонна Cu-труб БЕЗ бочек (каркас GT6ProbeStand.line; анкер-STONE каркас ставит сам)
+				sFPAcidPos = new net.minecraft.core.BlockPos[FP_L];
+				sFPAcid = gregapi.probe.GT6ProbeStand.line(tLevel, tPlayer, tBase.offset(0, 0, 20), net.minecraft.core.Direction.UP, FP_L, PIPE_NORM_ID,
+					gregapi.tileentity.connectors.MultiTileEntityPipeFluid.class, "GT6-FLUIDPIPEPROBE");
+				if (sFPAcid[FP_L-1] == null) {O.println("[GT6-FLUIDPIPEPROBE] EXC: постройка ACID-колонны не удалась => FAIL"); sFPProbeTick = 999999; return;}
+				for (int i = 0; i < FP_L; i++) sFPAcidPos[i] = tBase.offset(0, 0, 20).above(i + 1);
+				// ACID-CONTROL: само-обнаружение acidProof-трубы сканом канонических TE реестра (не выдумывать ID)
+				for (int tId = 26000; tId < 26400 && sFPAcidCtlId < 0; tId++)
+					if (tReg.getClassContainer(tId) != null
+					 && gregapi.block.multitileentity.MultiTileEntityRegistry.getCanonicalTileEntity("gt.multitileentity", tId) instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tP
+					 && tP.mAcidProof) sFPAcidCtlId = tId;
+				if (sFPAcidCtlId >= 0) {
+					sFPAcidCtl = gregapi.probe.GT6ProbeStand.line(tLevel, tPlayer, tBase.offset(0, 0, 25), net.minecraft.core.Direction.UP, FP_L, sFPAcidCtlId,
+						gregapi.tileentity.connectors.MultiTileEntityPipeFluid.class, "GT6-FLUIDPIPEPROBE");
+					if (sFPAcidCtl[FP_L-1] == null) sFPAcidCtl = null;
+					O.println("[GT6-FLUIDPIPEPROBE] ACID-CONTROL: найдена acidProof-труба id=" + sFPAcidCtlId + (sFPAcidCtl == null ? " (постройка не удалась — контроль SKIP)" : " (" + sFPAcidCtl[0].getClass().getSimpleName() + ", mAcidProof=" + sFPAcidCtl[0].mAcidProof + ")"));
+				} else O.println("[GT6-FLUIDPIPEPROBE] ACID-CONTROL: в реестре 26000..26399 не найдено ни одной acidProof-трубы — контроль SKIP (честно)");
+
 				sFPTotal0Norm   = gt6FluidPipeProbeSum(sFPSrcNorm,   sFPSinkNorm,   sFPNorm);
 				sFPTotal0Gas    = gt6FluidPipeProbeSum(sFPSrcGas,    sFPSinkGas,    sFPGas);
 				sFPTotal0GasCtl = gt6FluidPipeProbeSum(sFPSrcGasCtl, sFPSinkGasCtl, sFPGasCtl);
@@ -2472,12 +2498,32 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					// труба реагирует САМА через свой реальный onServerTickPre (оригинал :320-327).
 					sFPHot[0].mTanks[0].setFluid(FL.Lava.make(FP_LAVA));
 					O.println("[GT6-FLUIDPIPEPROBE] HOT: залито " + FP_LAVA + "mb лавы в трубу[0] линии HOT напрямую (temperature обновится на ближайшем реальном onServerTickPre трубы)");
+					// ACID: сетап-заливка серной кислоты Грега (MT.H2SO4, TD.Properties.ACID -> FluidsGT.ACID динамически, FL.java:1312)
+					net.neoforged.neoforge.fluids.FluidStack tAcid = gregapi.data.MT.H2SO4.liquid(gregapi.data.CS.U, T);
+					tAcid.setAmount((int) FP_ACID);
+					sFPAcidClassOk = FL.acid(tAcid);
+					sFPAcidWaterNegOk = !FL.acid(FL.Water.make(1));
+					sFPAcid[0].mTanks[0].setFluid(tAcid);
+					O.println("[GT6-FLUIDPIPEPROBE] ACID: залито " + FP_ACID + "mb '" + FL.name(tAcid, F) + "' в трубу[0] ACID-колонны; FL.acid(H2SO4)=" + sFPAcidClassOk + " FL.acid(вода)=" + !sFPAcidWaterNegOk);
+					if (sFPAcidCtl != null) {
+						net.neoforged.neoforge.fluids.FluidStack tAcid2 = gregapi.data.MT.H2SO4.liquid(gregapi.data.CS.U, T);
+						tAcid2.setAmount((int) FP_ACID);
+						sFPAcidCtl[0].mTanks[0].setFluid(tAcid2);
+						O.println("[GT6-FLUIDPIPEPROBE] ACID-CONTROL: залито " + FP_ACID + "mb в acidProof-трубу[0] контрольной колонны");
+					}
 				}
 				// накопление СРАЗУ после setup (тик 200, когда auto-output бита0 уже включён нашим сетапом в ТОМ ЖЕ тике) —
 				// не с 211: перенос по цепочке может начаться уже на тиках 201-210 (недетерминировано rng-порядком целей
 				// в distribute() — сверено 2 прогона, окно 211 давало то +80, то -243 к приросту приёмника; ловилось
 				// именно смещённым окном, не багом — расширение окна устраняет false-negative замера).
 				if (sFPProbeTick >= 201 && sFPProbeTick <= 900) sFPAccumTransferredNorm += sFPNorm[FP_L-1].mTransferredAmount;
+				// ACID: наблюдение каждый тик — момент полного разъедания (сумма=0) + «труба когда-либо стала AIR» (1%/тик setToAir)
+				if (sFPProbeTick >= 211 && sFPProbeTick <= 900) {
+					long tAcidSum = 0;
+					for (gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe : sFPAcid) if (tPipe != null) for (gregapi.fluid.FluidTankGT tTank : tPipe.mTanks) tAcidSum += tTank.amount();
+					if (tAcidSum == 0 && sFPAcidZeroTick < 0) sFPAcidZeroTick = sFPProbeTick;
+					for (net.minecraft.core.BlockPos tPos : sFPAcidPos) if (tLevel.getBlockState(tPos).isAir()) sFPAcidEverAir = T;
+				}
 				// HOT: непрерывное наблюдение FIRE КАЖДЫЙ тик окна (не разовый замер — эффект setOnFire() кратковременный, §7 манифеста)
 				if (sFPProbeTick >= 201 && sFPProbeTick <= 900) {
 					boolean tTickSelfFire = F, tTickNeighborFire = F;
@@ -2541,6 +2587,18 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					O.println("[GT6-FLUIDPIPEPROBE] ===== КЕЙС 4 CONTROL-NEG =====");
 					O.println("[GT6-FLUIDPIPEPROBE] CONTROL-NEG (линия NORM после кейсов GAS/HOT на соседних линиях): сумма=" + tTotalNow + " (ожидание=" + sFPTotal0Norm + " — перелив воздействия GAS/HOT на соседнюю линию не должен случиться)");
 					O.println("[GT6-FLUIDPIPEPROBE] CONTROL-NEG: " + (tTotalNow == sFPTotal0Norm ? "=> PASS" : "=> FAIL (ожидалось " + sFPTotal0Norm + ", получено " + tTotalNow + ")"));
+
+					O.println("[GT6-FLUIDPIPEPROBE] ===== КЕЙС 5 ACID (поправка игрока: кислоты Грега, не чужих модов) =====");
+					long tAcidFinal = 0;
+					for (gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe : sFPAcid) if (tPipe != null) for (gregapi.fluid.FluidTankGT tTank : tPipe.mTanks) tAcidFinal += tTank.amount();
+					O.println("[GT6-FLUIDPIPEPROBE] ACID (д1) классификация FL.acid(H2SO4) через ДИНАМИЧЕСКОЕ наполнение FluidsGT.ACID (FL.java:1312): " + (sFPAcidClassOk ? "=> PASS" : "=> FAIL (ожидалось true — жидкость материала с TD.Properties.ACID обязана классифицироваться кислотой)"));
+					O.println("[GT6-FLUIDPIPEPROBE] ACID (д2) контроль классификации FL.acid(вода)=false: " + (sFPAcidWaterNegOk ? "=> PASS" : "=> FAIL (вода классифицирована кислотой — классификация слишком широка)"));
+					O.println("[GT6-FLUIDPIPEPROBE] ACID (д3) разъедание не-acidProof трубы (ориг. :307-317 trash 16mb/тик + 1%/тик setToAir): залито=" + FP_ACID + "mb осталось=" + tAcidFinal + "mb; сумма достигла 0 на тике " + sFPAcidZeroTick + "; труба растворялась в AIR хотя бы раз=" + sFPAcidEverAir + " " + (tAcidFinal == 0 ? "=> PASS (кислота полностью разъедена)" : "=> FAIL (ожидалось 0 к тику 900 — 2000mb/16mb за тик = ~125 тиков, окно 690)"));
+					if (sFPAcidCtl != null) {
+						long tAcidCtlFinal = 0;
+						for (gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe : sFPAcidCtl) if (tPipe != null) for (gregapi.fluid.FluidTankGT tTank : tPipe.mTanks) tAcidCtlFinal += tTank.amount();
+						O.println("[GT6-FLUIDPIPEPROBE] ACID (д4) CONTROL acidProof-труба id=" + sFPAcidCtlId + " держит кислоту без потерь: залито=" + FP_ACID + " осталось=" + tAcidCtlFinal + " " + (tAcidCtlFinal == FP_ACID ? "=> PASS" : "=> FAIL (ожидалось " + FP_ACID + ", получено " + tAcidCtlFinal + ")"));
+					} else O.println("[GT6-FLUIDPIPEPROBE] ACID (д4) CONTROL: SKIP — acidProof-труба в реестре не найдена/не встала (см. печать постройки)");
 
 					O.println("========== [GT6-FLUIDPIPEPROBE] DONE ==========");
 				}
