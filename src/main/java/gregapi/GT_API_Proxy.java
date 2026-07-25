@@ -2167,6 +2167,25 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					for (net.minecraft.world.item.ItemStack tS : tLootInv.mInventory) if (tS != null && !tS.isEmpty()) tLootCount++;
 					O.println("[GT6-DUNGEONPROBE] лут-пул '" + tLoot + "': ok=" + tLootOk + " предметов=" + tLootCount + (tLootOk && tLootCount > 0 ? " PASS" : " FAIL"));
 				}
+				// Судья лута СУНДУКА (волна 3, «почти все сундуки пустые»): fill на ЖИВОМ BE-Container данжа —
+				// ловит null-контракт getItem инвентарной базы (в отличие от судьи пулов на DummyInventory).
+				{
+					gregapi.block.multitileentity.example.MultiTileEntityChest tChestBE = null;
+					outer:
+					for (int ci = -R; ci <= R; ci++) for (int cj = -R; cj <= R; cj++) {
+						net.minecraft.world.level.chunk.LevelChunk tC = tLevel.getChunkSource().getChunkNow(tAnchorCX + ci, tAnchorCZ + cj);
+						if (tC == null) continue;
+						for (BlockEntity tBE : tC.getBlockEntities().values()) if (tBE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest tMC && tBE.getBlockPos().getY() >= tYLo && tBE.getBlockPos().getY() <= tYHi) {tChestBE = tMC; break outer;}
+					}
+					if (tChestBE == null) O.println("[GT6-DUNGEONPROBE] сундук-судья: MTE-сундук в области не найден (лайаут без сундуков?)");
+					else {
+						int tBefore = 0, tAfter = 0;
+						for (int i = 0; i < tChestBE.getContainerSize(); i++) if (!tChestBE.getItem(i).isEmpty()) tBefore++;
+						boolean tOk = gregapi.util.ST.generateLoot(RNGSUS, "dungeonChest", tChestBE);
+						for (int i = 0; i < tChestBE.getContainerSize(); i++) if (!tChestBE.getItem(i).isEmpty()) tAfter++;
+						O.println("[GT6-DUNGEONPROBE] сундук-судья @" + tChestBE.getBlockPos().toShortString() + ": fill-в-BE ok=" + tOk + " слотов до=" + tBefore + " после=" + tAfter + ((tOk && tAfter > tBefore) ? " PASS" : " FAIL"));
+					}
+				}
 				O.println("[GT6-DUNGEONPROBE] BE-классы данжа: " + tBEByClass);
 				O.print(tBEDump);
 				long tKeyMin = Long.MAX_VALUE, tKeyMax = Long.MIN_VALUE;

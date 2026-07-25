@@ -117,7 +117,13 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	// Логический размер — ST.count; изъятие из призрака = пусто (1.7.10 возвращал size0-стек = «ноль предметов»).
 	@Override public ItemStack removeItem(int aSlot, int aDecrement) {updateInventory(); if (mInventory[aSlot] == null || aDecrement <= 0 || ST.count(mInventory[aSlot]) <= 0) return NI; if (ST.count(mInventory[aSlot]) <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); if (allowZeroStacks(aSlot)) ST.size_(0, mInventory[aSlot]); else mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].split(aDecrement); if (mInventory[aSlot].getCount() <= 0 && !allowZeroStacks(aSlot)) mInventory[aSlot] = NI; return rStack;}
 	@Override public ItemStack removeItemNoUpdate(int aSlot) {ItemStack rStack = mInventory[aSlot]; mInventory[aSlot] = null; return rStack;}
-	@Override public ItemStack getItem(int aSlot) {return mInventory[aSlot];}
+	// F-loot (заход данжей #39, живой тест «почти все сундуки пустые»): neo-контракт Container.getItem — НИКОГДА
+	// не null (движок зовёт .isEmpty() без гейта: LootTable.getAvailableSlots:206; тот же класс и фикс, что
+	// DummyInventory волны 1). Прежний 1.7.10-возврат null ронял NPE внутри LootTable.fill(this) у сундуков данжа
+	// (MultiTileEntityChest.generateDungeonLoot передаёт Container=сам BE) → generateLoot=F → сундук пуст навсегда.
+	// Контракт бьёт и по ванильным потребителям (хопперы/компараторы) ЛЮБОГО GT-инвентаря. Внутреннее хранение
+	// mInventory остаётся null-able (1:1 — весь GT-код работает с ним напрямую и через ST.valid/invalid, EMPTY-aware).
+	@Override public ItemStack getItem(int aSlot) {return mInventory[aSlot] == null ? ItemStack.EMPTY : mInventory[aSlot];}
 
 	/** F15/F-break (NPE игрока 2026-07-19 при ломании MTE): neo BlockEntity.preRemoveSideEffects (BlockEntity.java:264-268)
 	 *  сам вытряхивает любой Container через Containers.dropContents — НОВОЕ поведение движка (в 1.7.10 дроп содержимого
