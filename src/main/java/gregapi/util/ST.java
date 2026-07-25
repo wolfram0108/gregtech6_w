@@ -1295,6 +1295,9 @@ public class ST {
 			for (int i = 0, j = aInv.getContainerSize(); i < j; i++) {
 				ItemStack tStack = aInv.getItem(i);
 				if (invalid(tStack)) continue;
+				// F8 протухшие enchant-holder'ы шаблонов GT-лута (класс BUG-002) — пере-резолв по текущему серверу
+				// (краш энкода сундука «Can't find id for sharpness» при смене мира в сессии; см. UT.NBT.freshenEnchantments).
+				UT.NBT.freshenEnchantments(tStack);
 				if (IL.TC_Gold_Coin.exists()) {
 					if (item_(tStack) == Items.GOLD_NUGGET) {
 						set(tStack, IL.TC_Gold_Coin.get(tStack.getCount()));

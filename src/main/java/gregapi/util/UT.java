@@ -2309,6 +2309,34 @@ public class UT {
 		// заменяет существующую запись ИЛИ добавляет новую — 1:1 замена ручного скана списка "найти id,
 		// обновить lvl, иначе добавить". Каст (byte)aLevel сохраняет ОРИГИНАЛЬНУЮ 1.7.10-усечку уровня
 		// (исходный код тоже писал lvl как (byte)aLevel, несмотря на short-поле) — не улучшение, воспроизведение.
+		/** F8 (enchant-registry, класс «протухший Holder» BUG-002; живой тест данжей #39: краш энкода
+		 *  container_set_content «Can't find id for sharpness» при открытии сундука): шаблоны GT-лута
+		 *  (инструменты/мечи) зачаровываются на data-init ПЕРВОГО мира сессии — Holder.Reference из его
+		 *  datapack-реестра протухает при смене мира, пакет-кодек не находит id. Пере-резолв компонента
+		 *  по ResourceKey в реестре ТЕКУЩЕГО сервера; direct-holder'ы (без ключа) сохраняются как есть.
+		 *  Сохранённые в NBT стеки не страдают (NBT-загрузка резолвит по текущему реестру) — протухание
+		 *  живёт только в памяти сессии (шаблоны лут-буферов). */
+		public static ItemStack freshenEnchantments(ItemStack aStack) {
+			if (ST.invalid(aStack)) return aStack;
+			MinecraftServer tServer = ServerLifecycleHooks.getCurrentServer();
+			if (tServer == null) return aStack;
+			DataComponentType<ItemEnchantments> tType = EnchantmentHelper.getComponentType(aStack);
+			ItemEnchantments tOld = aStack.get(tType);
+			if (tOld == null || tOld.isEmpty()) return aStack;
+			net.minecraft.core.HolderLookup.RegistryLookup<Enchantment> tLookup = tServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+			ItemEnchantments.Mutable tNew = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+			for (Holder<Enchantment> tHolder : tOld.keySet()) {
+				int tLevel = tOld.getLevel(tHolder);
+				java.util.Optional<net.minecraft.resources.ResourceKey<Enchantment>> tKey = tHolder.unwrapKey();
+				if (tKey.isPresent()) {
+					java.util.Optional<Holder.Reference<Enchantment>> tFresh = tLookup.get(tKey.get());
+					if (tFresh.isPresent()) tNew.set(tFresh.get(), tLevel);
+				} else tNew.set(tHolder, tLevel);
+			}
+			aStack.set(tType, tNew.toImmutable());
+			return aStack;
+		}
+
 		public static ItemStack addEnchantment(ItemStack aStack, ResourceKey<Enchantment> aEnchantment, long aLevel) {
 			// F8 (enchant-registry, форс движка): энчанты стали registry-driven Holder — резолвим ключ через
 			// server-реестр (в 1.7.10 был статический объект Enchantment.X). Нет сервера => энчантовать нечем.
