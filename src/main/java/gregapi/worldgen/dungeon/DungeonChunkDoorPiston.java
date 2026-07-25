@@ -28,6 +28,22 @@ import static gregapi.data.CS.*;
  * @author Gregorius Techneticies
  */
 public class DungeonChunkDoorPiston implements IDungeonChunk {
+	// F13/равновесие (живой тест: «дверь срабатывает со второго раза»): Грег генерит дверь ЗАКРЫТОЙ при горящих
+	// факелах-инверторах → липкие поршни обязаны стоять ВЫДВИНУТЫМИ (в 1.7.10 их доводил пост-цикл нотификаций
+	// генерации; в neo генерация апдейтов не шлёт — поршень стоял втянутым до первого сигнального перепада, и
+	// первый оборот крутилки лишь досылал его в равновесие вместо открытия). Ставим равновесие явно: база
+	// EXTENDED=true + голова PISTON_HEAD(STICKY) в соседней по facing позиции (по коду конструкции там воздух).
+	// Мета 1.7.10 = сторона (Direction-ординал) — как в F13-мосте WD.
+	private static void piston(DungeonData aData, int aX, int aY, int aZ, int aMeta1710) {
+		net.minecraft.core.Direction tFacing = net.minecraft.core.Direction.from3DDataValue(aMeta1710 & 7);
+		aData.set(aX, aY, aZ, Blocks.STICKY_PISTON.defaultBlockState()
+			.setValue(net.minecraft.world.level.block.piston.PistonBaseBlock.FACING, tFacing)
+			.setValue(net.minecraft.world.level.block.piston.PistonBaseBlock.EXTENDED, Boolean.TRUE), 2);
+		aData.set(aX + tFacing.getStepX(), aY + tFacing.getStepY(), aZ + tFacing.getStepZ(), Blocks.PISTON_HEAD.defaultBlockState()
+			.setValue(net.minecraft.world.level.block.piston.PistonHeadBlock.FACING, tFacing)
+			.setValue(net.minecraft.world.level.block.piston.PistonHeadBlock.TYPE, net.minecraft.world.level.block.state.properties.PistonType.STICKY), 2);
+	}
+
 	@Override
 	public boolean generate(DungeonData aData) {
 		if (aData.mRoomLayout[aData.mRoomX+1][aData.mRoomZ] != 0) {
@@ -90,10 +106,10 @@ public class DungeonChunkDoorPiston implements IDungeonChunk {
 			
 			aData.set    (11, 2,  9, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_X_POS, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
 			aData.set    (15, 2,  6, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_X_NEG, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
-			aData.set    (13, 1,  5, Blocks.STICKY_PISTON, 3, 2);
-			aData.set    (13, 1, 10, Blocks.STICKY_PISTON, 2, 2);
-			aData.set    (13, 2,  5, Blocks.STICKY_PISTON, 3, 2);
-			aData.set    (13, 2, 10, Blocks.STICKY_PISTON, 2, 2);
+			piston(aData, 13, 1,  5, 3);
+			piston(aData, 13, 1, 10, 2);
+			piston(aData, 13, 2,  5, 3);
+			piston(aData, 13, 2, 10, 2);
 			aData.set    (12, 3,  6, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    (12, 3,  9, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    (14, 3,  6, Blocks.REDSTONE_WIRE, 0, 2);
@@ -168,10 +184,10 @@ public class DungeonChunkDoorPiston implements IDungeonChunk {
 			
 			aData.set    ( 0, 2,  9, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_X_POS, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
 			aData.set    ( 4, 2,  6, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_X_NEG, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
-			aData.set    ( 2, 1,  5, Blocks.STICKY_PISTON, 3, 2);
-			aData.set    ( 2, 1, 10, Blocks.STICKY_PISTON, 2, 2);
-			aData.set    ( 2, 2,  5, Blocks.STICKY_PISTON, 3, 2);
-			aData.set    ( 2, 2, 10, Blocks.STICKY_PISTON, 2, 2);
+			piston(aData, 2, 1,  5, 3);
+			piston(aData, 2, 1, 10, 2);
+			piston(aData, 2, 2,  5, 3);
+			piston(aData, 2, 2, 10, 2);
 			aData.set    ( 3, 3,  6, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    ( 3, 3,  9, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    ( 1, 3,  6, Blocks.REDSTONE_WIRE, 0, 2);
@@ -246,10 +262,10 @@ public class DungeonChunkDoorPiston implements IDungeonChunk {
 			
 			aData.set    ( 6, 2, 11, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_Z_POS, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
 			aData.set    ( 9, 2, 15, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_Z_NEG, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
-			aData.set    ( 5, 1, 13, Blocks.STICKY_PISTON, 5, 2);
-			aData.set    (10, 1, 13, Blocks.STICKY_PISTON, 4, 2);
-			aData.set    ( 5, 2, 13, Blocks.STICKY_PISTON, 5, 2);
-			aData.set    (10, 2, 13, Blocks.STICKY_PISTON, 4, 2);
+			piston(aData, 5, 1, 13, 5);
+			piston(aData, 10, 1, 13, 4);
+			piston(aData, 5, 2, 13, 5);
+			piston(aData, 10, 2, 13, 4);
 			aData.set    ( 6, 3, 12, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    ( 9, 3, 12, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    ( 6, 3, 14, Blocks.REDSTONE_WIRE, 0, 2);
@@ -324,10 +340,10 @@ public class DungeonChunkDoorPiston implements IDungeonChunk {
 			
 			aData.set    ( 6, 2,  0, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_Z_POS, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
 			aData.set    ( 9, 2,  4, SIDE_UNKNOWN, 32111, UT.NBT.make(NBT_FACING, SIDE_Z_NEG, NBT_COLOR, DYES_INT[aData.mColor], NBT_PAINTED, T));
-			aData.set    ( 5, 1,  2, Blocks.STICKY_PISTON, 5, 2);
-			aData.set    (10, 1,  2, Blocks.STICKY_PISTON, 4, 2);
-			aData.set    ( 5, 2,  2, Blocks.STICKY_PISTON, 5, 2);
-			aData.set    (10, 2,  2, Blocks.STICKY_PISTON, 4, 2);
+			piston(aData, 5, 1,  2, 5);
+			piston(aData, 10, 1,  2, 4);
+			piston(aData, 5, 2,  2, 5);
+			piston(aData, 10, 2,  2, 4);
 			aData.set    ( 6, 3,  3, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    ( 9, 3,  3, Blocks.REDSTONE_WIRE, 0, 2);
 			aData.set    ( 6, 3,  1, Blocks.REDSTONE_WIRE, 0, 2);

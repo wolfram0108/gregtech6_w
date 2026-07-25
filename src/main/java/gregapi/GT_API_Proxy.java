@@ -345,6 +345,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
 				// [GT6-DUNGEONPROBE] заход #39 (данжи per-chunk) — снять при уборке захода
 				if (gregapi.data.CS.probeFlag("gt6dungeonprobe.flag")) gt6DungeonProbeTick(aEvent.getServer());
+				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -1956,6 +1957,43 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		return (int)UT.Code.bind(0, 32000, rFuelValue);
 	}
 
+	// F6-worldgen redstone-wake (данжи #39, живой тест «дверь срабатывает со второго раза»): в 1.7.10 редстоун-цепи
+	// данжа оживлял flags=3 факелов при populate (нотификации соседей); WorldGenRegion апдейтов не шлёт ВООБЩЕ →
+	// провода рождаются POWER=0 и цепь двери мертва до первого пинка (движковый postprocess обновляет только ФОРМУ —
+	// LevelChunk.postProcessGeneration:590 updateFromNeighbourShapes, setBlock без бита UPDATE_NEIGHBORS). Эквивалент
+	// 1:1: при ПЕРВОЙ загрузке (генерации) чанка данж-области будим цепь — нотификация соседей каждой редстоун-позиции
+	// Y-окна данжа. Данж-чанк детерминирован якорной формулой (WorldgenDungeonGT.isDungeonAreaChunk); очередь на
+	// серверный тик (в момент ChunkEvent.Load соседние чанки могут быть не готовы). PRODUCTION-механизм (не проба).
+	private static final java.util.concurrent.ConcurrentLinkedQueue<Object[]> sDgRedstoneWake = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	@net.neoforged.bus.api.SubscribeEvent
+	public void onChunkLoadDungeonRedstoneWake(net.neoforged.neoforge.event.level.ChunkEvent.Load aEvent) {
+		if (!(aEvent.getLevel() instanceof net.minecraft.server.level.ServerLevel tLevel)) return;
+		if (!aEvent.isNewChunk()) return; // только свежесгенерённые (у загруженных состояние уже пересчитано прошлой сессией)
+		net.minecraft.world.level.ChunkPos tPos = aEvent.getChunk().getPos();
+		if (!gregapi.worldgen.dungeon.WorldgenDungeonGT.isDungeonAreaChunk(tLevel, tPos.x(), tPos.z())) return;
+		sDgRedstoneWake.add(new Object[] {tLevel, tPos});
+	}
+	private static void gt6DungeonRedstoneWakeTick() {
+		for (int n = 0; n < 4; n++) {
+			Object[] tWake = sDgRedstoneWake.poll();
+			if (tWake == null) return;
+			net.minecraft.server.level.ServerLevel tLevel = (net.minecraft.server.level.ServerLevel)tWake[0];
+			net.minecraft.world.level.ChunkPos tPos = (net.minecraft.world.level.ChunkPos)tWake[1];
+			net.minecraft.world.level.chunk.LevelChunk tChunk = tLevel.getChunkSource().getChunkNow(tPos.x(), tPos.z());
+			if (tChunk == null) {sDgRedstoneWake.add(tWake); return;} // ещё не FULL — попробуем следующим тиком
+			int tY0 = gregapi.util.WD.remapY(tLevel, 20);
+			for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) for (int y = tY0-12; y <= tY0+14; y++) {
+				BlockPos tBP = new BlockPos((tPos.x() << 4) + x, y, (tPos.z() << 4) + z);
+				net.minecraft.world.level.block.Block tBlock = tChunk.getBlockState(tBP).getBlock();
+				if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WIRE || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH
+				 || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH || tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON
+				 || tBlock == net.minecraft.world.level.block.Blocks.PISTON || tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_LAMP) {
+					tLevel.updateNeighborsAt(tBP, tBlock, null);
+				}
+			}
+		}
+	}
+
 	// [GT6-DUNGEONPROBE] заход #39 (данжи per-chunk «переигрывание с маской записи»): живой стенд генерации — снять при
 	// уборке захода. Гейт §2.1 (-Pgt6probes + run/gt6dungeonprobe.flag). Требует стендового Probability=1 в
 	// worldgenerationnew.cfg (штатный конфиг Грега; вернуть 100 после стенда). Фазы: 0=телепорт к расчётному якорю
@@ -1993,6 +2031,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				long tGlassGlow = 0, tConcrete = 0, tLootCrates = 0, tBedrockOre = 0, tBedrockOreSmall = 0;
 				long tLampsLit = 0, tLampsUnlit = 0, tLampsUnlitPowered = 0, tLampsGlowing = 0; // судья ламп (заход: лампы должны ГОРЕТЬ от RSTBR)
 				long tWallTorches = 0, tFloorTorches = 0, tPistons = 0, tPistonsHoriz = 0, tFrames = 0, tFramesEyed = 0, tCocoa = 0, tCocoaAttached = 0, tDoorHalves = 0, tButtons = 0, tButtonsWall = 0, tBedHalves = 0; // судьи F13-legacy-meta
+				long tPistonsExt = 0, tPistonHeads = 0, tBars = 0, tBarsConnected = 0, tWiresLive = 0, tWiresDead = 0; // судьи волны 2
 				java.util.TreeMap<String, Integer> tBEByClass = new java.util.TreeMap<>();
 				java.util.ArrayList<Long> tKeys = new java.util.ArrayList<>();
 				int tLootTagged = 0, tWithInv = 0;
@@ -2029,9 +2068,27 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							else if (tBlock == BlocksGT.GlowGlass) tGlassGlow++;
 							else if (tBlock == BlocksGT.Concrete) tConcrete++;
 							// Судьи F13-legacy-meta моста (повороты ванильных):
-							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH) tWallTorches++;
+							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH) {
+								tWallTorches++;
+								O.println("[GT6-DUNGEONPROBE]  ФАКЕЛ @" + (tBX+x) + "," + y + "," + (tBZ+z) + " facing=" + tScanState.getValue(net.minecraft.world.level.block.RedstoneWallTorchBlock.FACING)
+									+ " lit=" + tScanState.getValueOrElse(net.minecraft.world.level.block.RedstoneWallTorchBlock.LIT, Boolean.FALSE));
+							}
+							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WIRE) {
+								int tPow = tScanState.getValueOrElse(net.minecraft.world.level.block.RedStoneWireBlock.POWER, 0);
+								if (tPow == 0) tWiresDead++; else tWiresLive++;
+							}
 							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH) tFloorTorches++;
-							else if (tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON) {tPistons++; if (tScanState.getValue(net.minecraft.world.level.block.DirectionalBlock.FACING).getAxis().isHorizontal()) tPistonsHoriz++;}
+							else if (tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON) {
+								tPistons++;
+								if (tScanState.getValue(net.minecraft.world.level.block.DirectionalBlock.FACING).getAxis().isHorizontal()) tPistonsHoriz++;
+								if (tScanState.getValueOrElse(net.minecraft.world.level.block.piston.PistonBaseBlock.EXTENDED, Boolean.FALSE)) tPistonsExt++;
+								BlockPos tPPos = new BlockPos(tBX + x, y, tBZ + z);
+								O.println("[GT6-DUNGEONPROBE]  ПОРШЕНЬ @" + tPPos.toShortString() + " facing=" + tScanState.getValue(net.minecraft.world.level.block.DirectionalBlock.FACING)
+									+ " ext=" + tScanState.getValueOrElse(net.minecraft.world.level.block.piston.PistonBaseBlock.EXTENDED, Boolean.FALSE)
+									+ " сигнал=" + tLevel.hasNeighborSignal(tPPos) + " сигнал-над=" + tLevel.hasNeighborSignal(tPPos.above()));
+							}
+							else if (tBlock == net.minecraft.world.level.block.Blocks.PISTON_HEAD) tPistonHeads++;
+							else if (tBlock instanceof gregapi.block.misc.BlockBaseBars) {tBars++; if (gregapi.util.WD.meta((net.minecraft.world.level.BlockGetter)tChunk, tBX+x, y, tBZ+z) > 0) tBarsConnected++;}
 							else if (tBlock == net.minecraft.world.level.block.Blocks.END_PORTAL_FRAME) {tFrames++; if (tScanState.getValueOrElse(net.minecraft.world.level.block.EndPortalFrameBlock.HAS_EYE, Boolean.FALSE)) tFramesEyed++;}
 							else if (tBlock == net.minecraft.world.level.block.Blocks.COCOA) {tCocoa++; if (tLevel.getBlockState(new BlockPos(tBX+x, y, tBZ+z).relative(tScanState.getValue(net.minecraft.world.level.block.CocoaBlock.FACING))).is(net.minecraft.world.level.block.Blocks.JUNGLE_LOG)) tCocoaAttached++;}
 							else if (tBlock instanceof net.minecraft.world.level.block.DoorBlock) {tDoorHalves++;}
@@ -2103,7 +2160,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					}
 				}
 				// Судья лут-канала (живой сервер: ваниль-ветка ST.generateLoot — фикс DummyInventory null→EMPTY):
-				for (String tLoot : new String[] {"strongholdLibrary", "dungeonChest", "mineshaftCorridor", "villageBlacksmith"}) {
+				for (String tLoot : new String[] {"strongholdLibrary", "dungeonChest", "mineshaftCorridor", "villageBlacksmith", "bonusChest", "pyramidJungleChest", "strongholdCorridor", "pyramidDesertyChest"}) {
 					gregapi.dummies.DummyInventory tLootInv = new gregapi.dummies.DummyInventory(27);
 					boolean tLootOk = gregapi.util.ST.generateLoot(RNGSUS, tLoot, tLootInv);
 					int tLootCount = 0;
@@ -2123,6 +2180,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				O.println("[GT6-DUNGEONPROBE] F13-МОСТ: наст.факелы=" + tWallTorches + " стоячие=" + tFloorTorches + " | поршни=" + tPistons + " горизонт=" + tPistonsHoriz
 					+ " | кнопки=" + tButtons + " настенных=" + tButtonsWall + " | двер.половин=" + tDoorHalves + " кроват.половин=" + tBedHalves
 					+ " | End-рамки=" + tFrames + " с глазом=" + tFramesEyed + " | какао=" + tCocoa + " на джунгл.бревне=" + tCocoaAttached);
+				O.println("[GT6-DUNGEONPROBE] ВОЛНА2: поршни выдвинуты=" + tPistonsExt + "/" + tPistons + " голов=" + tPistonHeads + " | бары=" + tBars + " с коннектами=" + tBarsConnected + " | провода: под током=" + tWiresLive + " мёртвых=" + tWiresDead);
 				boolean tLampsOk = tLampTotal > 0 && tLampsUnlitPowered == 0 && tLampsLit*10 >= tLampTotal*9; // >=90% lit, 0 негорящих под сигналом
 				boolean tPass = tCells >= 3 && tSeamsBad == 0 && tKeysOk && tLootTagged > 0 && tLampsOk;
 				O.println("[GT6-DUNGEONPROBE] ВЕРДИКТ: клетки>=3=" + (tCells >= 3 ? "PASS" : "FAIL") + " | швы=" + (tSeamsBad == 0 ? "PASS" : "FAIL")

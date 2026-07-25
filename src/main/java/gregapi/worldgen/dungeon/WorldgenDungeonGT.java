@@ -134,9 +134,31 @@ public class WorldgenDungeonGT extends WorldgenObject {
 		if (!getConfigFile().get(mCategory, "Room.Farming.Mobs"      , T)) mTags.add(TAG_FARM_MOBS);
 		if (!getConfigFile().get(mCategory, "Room.Farming.Crop"      , T)) mTags.add(TAG_FARM_CROP);
 		if (!getConfigFile().get(mCategory, "Room.Farming.Fish"      , T)) mTags.add(TAG_FARM_FISH);
+		INSTANCE = this; // redstone-wake (isDungeonAreaChunk); боевая регистрация одна — Loader_Worldgen
 	}
 	
 	public WorldgenDungeonGT() {this(null, F, 100, 3, 7, 20, 20, 6, F, F, F, F, F, F, F, F);}
+
+	/** Единственная боевая регистрация (Loader_Worldgen); для redstone-wake (см. isDungeonAreaChunk). */
+	public static WorldgenDungeonGT INSTANCE = null;
+
+	/** F6-worldgen redstone-wake: принадлежит ли чанк потенциальной данж-области (зеркало порогов generate:
+	 *  якорная формула + координатные пороги + probability от якорного tRandom). Нужен слушателю первой загрузки
+	 *  чанка (GT_API_Proxy): в 1.7.10 редстоун-цепи данжа оживлял flags=3 при постановке факелов (нотификации
+	 *  соседей в populate), WorldGenRegion апдейтов не шлёт вовсе → провода рождаются с POWER=0 и цепь двери
+	 *  мертва до первого пинка. Ложноположительный ответ безвреден (скан впустую). */
+	public static boolean isDungeonAreaChunk(net.minecraft.server.level.ServerLevel aLevel, int aChunkX, int aChunkZ) {
+		WorldgenDungeonGT tGen = INSTANCE;
+		if (tGen == null) return F;
+		int tReach = (2+tGen.mMaxSize)/2, tAX = Integer.MIN_VALUE, tAZ = Integer.MIN_VALUE;
+		for (int i = -tReach; i <= tReach && tAX == Integer.MIN_VALUE; i++) if (Math.abs(aChunkX+i)%(tGen.mMaxSize+4) == (tGen.mMaxSize+4)/2) tAX = aChunkX+i;
+		for (int j = -tReach; j <= tReach && tAZ == Integer.MIN_VALUE; j++) if (Math.abs(aChunkZ+j)%(tGen.mMaxSize+4) == (tGen.mMaxSize+4)/2) tAZ = aChunkZ+j;
+		if (tAX == Integer.MIN_VALUE || tAZ == Integer.MIN_VALUE) return F;
+		int tAnchorMinX = tAX << 4, tAnchorMinZ = tAZ << 4;
+		if (Math.abs(tAnchorMinZ) < 256+tGen.mMaxSize*16 && Math.abs(tAnchorMinX) < 256+tGen.mMaxSize*16) return F;
+		Random tRandom = WD.random(WD.seed(aLevel) ^ WD.dimensionId(aLevel) ^ "gt.dungeon".hashCode(), tAX, tAZ);
+		return tRandom.nextInt(tGen.mProbability) == 0;
+	}
 	
 	public static final int ROOM_ID_COUNT = 1, IMPORTANT_ROOM_COUNT = 2;
 	

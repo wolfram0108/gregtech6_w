@@ -975,7 +975,11 @@ public class WD {
 	// CocoaBlock.FACING указывает НА опору (canSurvive: pos.relative(FACING) — CocoaBlock.java:63-67) → opposite.
 	private static final Direction[] DIR_1710_TORCH   = {Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH}; // мета 1..4 (факелы/кнопки: опора сзади)
 	private static final Direction[] DIR_1710_HORIZ   = {Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.EAST}; // мета&3 (кровати/End-рамки/наковальня)
-	private static final Direction[] DIR_1710_DOOR    = {Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH}; // мета&3 нижней половины двери
+	// Дверь: полотно закрытой neo-двери лежит у кромки, ПРОТИВОПОЛОЖНОЙ FACING (петли сзади). Выверка (живой тест
+	// «дверь висит с щелью»): дверь казарм мета 1 в проёме слаб-стены z=5 (панель mSlabs[SIDE_Z_NEG] занимает
+	// z∈[0,0.5]) — полотно обязано прижаться к северной кромке → FACING=SOUTH; парная дверь мета 3 у стены
+	// z=10 (панель z∈[0.5,1]) → полотно юг → FACING=NORTH. Полный цикл: 0=E,1=S,2=W,3=N.
+	private static final Direction[] DIR_1710_DOOR    = {Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTH}; // мета&3 нижней половины двери
 	private static final Direction[] DIR_1710_COMPASS = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}; // компас (какао)
 
 	/** F13-legacy-meta МОСТ: 1.7.10-мета ванильного блока → BlockState (или подмена блока: настенный факел, вид бревна,

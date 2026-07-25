@@ -391,6 +391,11 @@ public class DungeonData {
 		return pot(aX, aY, aZ);
 	}
 	
+	/** Стейт-канал (зеркало WD.set(state) — для состояний, не выразимых метой: равновесие поршней двери и т.п.). */
+	public boolean set(int aX, int aY, int aZ, net.minecraft.world.level.block.state.BlockState aState, int aFlags) {
+		return place(aState, mX+aX, mY+aY, mZ+aZ, aFlags);
+	}
+
 	public boolean set(int aX, int aY, int aZ, Block aBlock) {
 		return place(aBlock, mX+aX, mY+aY, mZ+aZ, 0, 2);
 	}
