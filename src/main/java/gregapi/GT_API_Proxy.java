@@ -2141,6 +2141,24 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					net.minecraft.world.item.ItemStack tOne = net.minecraftforge.common.ChestGenHooks.getOneItem(tCat, RNGSUS);
 					O.println("[GT6-LOOTPROBE] шов-getOneItem " + tCat + ": " + (tOne == null ? "null" : tOne.getCount() + "x " + tOne.getHoverName().getString()));
 				}
+				// изолированный шов: репойнт ST.generateOneVanillaLoot -> центр shim (v3, дубль-паттерн убран)
+				net.minecraft.world.item.ItemStack tVan = ST.generateOneVanillaLoot();
+				O.println("[GT6-LOOTPROBE] шов-generateOneVanillaLoot: " + (tVan == null ? "null" : tVan.getCount() + "x " + tVan.getHoverName().getString()));
+				// PARITY-ДАМП (v3): сериализация инъектированного пула штатным codec — механическая сверка
+				// весов/counts/rolls против дословных addLoot-строк Loader_Loot (скриптом по логу)
+				try {
+					net.minecraft.world.level.storage.loot.LootTable tDT = aServer.reloadableRegistries().getLootTable(
+						net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE,
+							net.minecraft.resources.Identifier.withDefaultNamespace("chests/simple_dungeon")));
+					net.minecraft.world.level.storage.loot.LootPool tGP = tDT == null ? null : tDT.getPool("gregtech6:dungeonChest");
+					if (tGP == null) O.println("[GT6-LOOTPROBE] PARITY-DUMP: пул НЕ НАЙДЕН");
+					else {
+						com.mojang.serialization.DataResult<com.google.gson.JsonElement> tJson =
+							net.minecraft.world.level.storage.loot.LootPool.CODEC.encodeStart(
+								aServer.registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE), tGP);
+						O.println("[GT6-LOOTPROBE] PARITY-DUMP gregtech6:dungeonChest = " + tJson.result().map(Object::toString).orElseGet(() -> "ENCODE-FAIL " + tJson.error().map(Object::toString).orElse("?")));
+					}
+				} catch (Throwable e) {O.println("[GT6-LOOTPROBE] PARITY-DUMP EXC " + e);}
 			} else if (sLootProbeTick >= 220 && sLootProbeCase < LOOT_PROBE_CASES.length) {
 				int tPhase = (sLootProbeTick - 220) % 60;
 				net.minecraft.core.BlockPos tPos = tBase.offset(5, 0, 5 + 3 * sLootProbeCase);

@@ -20,7 +20,6 @@
 package gregapi.tileentity.tools;
 import gregapi.fluid.FluidTankInfo;
 
-import cpw.mods.fml.common.FMLCommonHandler;
 import gregapi.data.FL;
 import gregapi.data.IL;
 import gregapi.data.LH;
@@ -351,10 +350,11 @@ public class MultiTileEntityAdvancedCraftingTable extends TileEntityBase09Facing
 		MultiItemTool.LAST_TOOL_COORDS_BEFORE_DAMAGE = getCoords();
 		
 		// F-mod-lifecycle: 1.7.10 FMLCommonHandler.firePlayerCraftingEvent(player, crafted, InventoryCrafting) —
-		// FMLCommonHandler удалён (compat-mirror no-op, событие в neo не публикуется). neo CraftingInput не имеет
-		// ctor (только CraftingInput.of/EMPTY) — прежний `new CraftingInput(null,3,3)` невалиден; матрица зеркалом
-		// отбрасывается -> CraftingInput.EMPTY (реальная 3x3-передача — отдельный шов при возврате крафт-события).
-		try {FMLCommonHandler.instance().firePlayerCraftingEvent(aPlayer, ST.copy(slot(31)), net.minecraft.world.item.crafting.CraftingInput.EMPTY);} catch(Throwable e) {e.printStackTrace(ERR);}
+		// FMLCommonHandler удалён, событие в neo не публикуется (нет ни шины, ни слушателей — вызов был бы чистым
+		// no-op). BUG-039-аудит: сам вызов СНЯТ — mirror-класс cpw.* JPMS-вырезан из рантайм-jar (build.gradle:156),
+		// линковка кидала NoClassDefFoundError в catch на КАЖДОМ крафте (тихий лог-спам). Восстановление хука для
+		// других модов — вместе с реальной 3x3-передачей (CraftingInput.of вместо EMPTY), отдельный шов при возврате
+		// крафт-события.
 		
 		ItemStack[] tRecipeStacks = {ST.amount(1, slot(21)), ST.amount(1, slot(22)), ST.amount(1, slot(23)), ST.amount(1, slot(24)), ST.amount(1, slot(25)), ST.amount(1, slot(26)), ST.amount(1, slot(27)), ST.amount(1, slot(28)), ST.amount(1, slot(29))};
 		
