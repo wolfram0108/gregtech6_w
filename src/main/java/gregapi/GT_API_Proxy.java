@@ -2000,7 +2000,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	// (формула якоря 1:1: abs(cx)%(MaxSize+4)==(MaxSize+4)/2; cx=27 при MaxSize=7, блок 432 — за порогом 256+112);
 	// 1=ожидание генерации области якорь±5; 2=скан Y-окна данжа (remapY(20)) per-chunk: BlockStones-стены, лампы,
 	// MTE-BE, ключи сейфов (gt.key из BE-NBT) → вердикт: данж многочанковый, клетки согласованы; 10=DONE.
-	private static int sDgTick = -1, sDgPhase = 0, sDgChestWait = 0;
+	private static int sDgTick = -1, sDgPhase = 0, sDgChestWait = 0, sDgChestStep = 0;
+	private static BlockEntity sDgChestFirst = null;
 	public static volatile int sDgChestClientCmd = 0; // 1 = клиент-скан сундуков (крышки), выставляет проба; клиент сбрасывает
 	public static void gt6DungeonProbeTick(net.minecraft.server.MinecraftServer aServer) {
 		java.io.PrintStream O = OUT;
@@ -2208,22 +2209,51 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					+ " | лампы-горят=" + (tLampsOk ? "PASS" : "FAIL") + " => " + (tPass ? "PASS" : "FAIL"));
 				sDgPhase = 3; sDgChestWait = 0;
 			} else if (sDgPhase == 3) {
-				// ФАЗА 3 (репорт «сундуки открываются одновременно»): server открывает ОДИН сундук программно,
-				// клиент-хук дампит крышки ВСЕХ клиентских сундуков области — лишние открывшиеся = дефект канала.
-				if (++sDgChestWait == 1) {
-					gregapi.block.multitileentity.example.MultiTileEntityChest tFirst = null;
+				// ФАЗА 3 (репродукция игрока: «3 сундука мастерской — открытие одного поднимает крышки остальных,
+				// после этого крышки не открываются никогда»): РЕАЛЬНЫЙ путь openGUI(player) (openMenu → пакет →
+				// клиент-фабрика → конструкторы обеих сторон) → клиент-дамп → закрытие → ПОВТОРНОЕ открытие → дамп.
+				if (sDgChestFirst == null && ++sDgChestWait >= 1) {
 					outer2:
 					for (int ci = -5; ci <= 5; ci++) for (int cj = -5; cj <= 5; cj++) {
 						net.minecraft.world.level.chunk.LevelChunk tC = tLevel.getChunkSource().getChunkNow(tAnchorCX + ci, tAnchorCZ + cj);
 						if (tC == null) continue;
-						for (BlockEntity tBE : tC.getBlockEntities().values()) if (tBE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest tMC) {tFirst = tMC; break outer2;}
+						for (BlockEntity tBE : tC.getBlockEntities().values()) if (tBE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest tMC) {sDgChestFirst = tMC; break outer2;}
 					}
-					if (tFirst == null) {O.println("[GT6-DUNGEONPROBE] фаза3: сундуков нет — пропуск"); sDgPhase = 10; return;}
-					tFirst.openInventoryGUI();
-					O.println("[GT6-DUNGEONPROBE] фаза3: сервер 'открыл' сундук @" + tFirst.getBlockPos().toShortString() + " (mUsingPlayers=1) — ждём синка");
-				} else if (sDgChestWait == 40) {
-					sDgChestClientCmd = 1; // клиент дампит крышки
-				} else if (sDgChestWait > 100) {
+					if (sDgChestFirst == null) {O.println("[GT6-DUNGEONPROBE] фаза3: сундуков нет — пропуск"); sDgPhase = 10; return;}
+					sDgChestWait = 0; sDgChestStep = 1;
+				}
+				if (sDgChestFirst == null) return;
+				sDgChestWait++;
+				gregapi.block.multitileentity.example.MultiTileEntityChest tChest = (gregapi.block.multitileentity.example.MultiTileEntityChest)sDgChestFirst;
+				byte tSrvUsing = ((Number)gregapi.util.UT.Reflection.getFieldContent(tChest, "mUsingPlayers")).byteValue();
+				if (sDgChestStep == 1 && sDgChestWait >= 5) {
+					// Игрок ОБЯЗАН стоять рядом: stillValid (дистанция ≤8) иначе закрывает меню в тот же тик
+					// (артефакт прогонов 15-16: containerMenu=InventoryMenu, using «0» = +1/-1 в одном тике).
+					BlockPos tCP = tChest.getBlockPos();
+					tPlayer.teleportTo(tLevel, tCP.getX() + 2.5, tCP.getY() + 1.0, tCP.getZ() + 0.5, java.util.Set.of(), 0, 0, true);
+					O.println("[GT6-DUNGEONPROBE] фаза3: телепорт к сундуку; openGUI#1 @" + tCP.toShortString());
+					tChest.openGUI(tPlayer); sDgChestStep = 2; sDgChestWait = 0;
+				} else if (sDgChestStep == 2 && sDgChestWait == 140) {
+					O.println("[GT6-DUNGEONPROBE] фаза3: после openGUI#1: containerMenu=" + tPlayer.containerMenu.getClass().getSimpleName()
+						+ " menu.mTE==chest?" + (tPlayer.containerMenu instanceof gregapi.gui.ContainerCommon tCC && tCC.mTileEntity == tChest) + " server-using=" + tSrvUsing);
+				} else if (sDgChestStep == 2 && sDgChestWait == 160) {
+					O.println("[GT6-DUNGEONPROBE] фаза3: server-using при открытом GUI#1 = " + tSrvUsing);
+					sDgChestClientCmd = 1; // дамп при открытом GUI
+				} else if (sDgChestStep == 2 && sDgChestWait == 220) {
+					O.println("[GT6-DUNGEONPROBE] фаза3: closeContainer (server-using до=" + tSrvUsing + ")");
+					tPlayer.closeContainer(); sDgChestStep = 3; sDgChestWait = 0;
+				} else if (sDgChestStep == 3 && sDgChestWait == 30) {
+					O.println("[GT6-DUNGEONPROBE] фаза3: server-using после close = " + tSrvUsing);
+					sDgChestClientCmd = 1; // дамп после закрытия
+				} else if (sDgChestStep == 3 && sDgChestWait == 60) {
+					O.println("[GT6-DUNGEONPROBE] фаза3: openGUI#2 (повторное; server-using до=" + tSrvUsing + ")");
+					tChest.openGUI(tPlayer); sDgChestStep = 4; sDgChestWait = 0;
+				} else if (sDgChestStep == 4 && sDgChestWait == 100) {
+					O.println("[GT6-DUNGEONPROBE] фаза3: server-using при открытом GUI#2 = " + tSrvUsing);
+					sDgChestClientCmd = 1; // финальный дамп
+				} else if (sDgChestStep == 4 && sDgChestWait >= 160) {
+					tPlayer.closeContainer();
+					O.println("[GT6-DUNGEONPROBE] фаза3: DONE (server-using финально=" + tSrvUsing + ")");
 					sDgPhase = 10;
 				}
 			}

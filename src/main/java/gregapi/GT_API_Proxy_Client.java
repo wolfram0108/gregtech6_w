@@ -207,6 +207,9 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 		gregapi.GT_API_Proxy.sDgChestClientCmd = 0;
 		try {
 			int tTotal = 0, tOpen = 0;
+			gregapi.data.CS.OUT.println("[GT6-DUNGEONPROBE] клиент: containerMenu=" + tMC.player.containerMenu.getClass().getSimpleName()
+				+ (tMC.player.containerMenu instanceof gregapi.gui.ContainerCommon tCC && tCC.mTileEntity instanceof net.minecraft.world.level.block.entity.BlockEntity tMBE
+					? " menu.TE@" + tMBE.getBlockPos().toShortString() + " тот-же-инстанс-что-в-чанке?" + (tMC.level.getBlockEntity(tMBE.getBlockPos()) == tMBE) : ""));
 			net.minecraft.core.BlockPos tP = tMC.player.blockPosition();
 			for (int cx = (tP.getX()-48)>>4; cx <= (tP.getX()+48)>>4; cx++) for (int cz = (tP.getZ()-48)>>4; cz <= (tP.getZ()+48)>>4; cz++) {
 				net.minecraft.world.level.chunk.LevelChunk tC = tMC.level.getChunkSource().getChunkNow(cx, cz);
