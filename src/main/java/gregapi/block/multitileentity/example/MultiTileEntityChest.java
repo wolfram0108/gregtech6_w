@@ -430,8 +430,12 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 		}
 
 		public void submit(SubmitNodeCollector aNodes, PoseStack aPoseStack, Identifier aTexture, float aLidAngle, int aLight, int aColor) {
-			mKnob.xRot = mLid.xRot = aLidAngle;
 			aNodes.submitCustomGeometry(aPoseStack, net.minecraft.client.renderer.rendertype.RenderTypes.entityCutout(aTexture), (tPose, tBuffer) -> {
+				// BUG-059: угол крышки ставится ВНУТРИ отложенной лямбды отрисовки. Модель одна (static) на все
+				// сундуки; постановка угла снаружи (в момент submit) означала «в кадре все крышки рисуются углом
+				// последнего сундука» — открытие одного анимировало все крышки комнаты / свой угол терялся.
+				// 1.7.10 был immediate-mode (записал угол → тут же нарисовал) — возвращаем ту же семантику.
+				mKnob.xRot = mLid.xRot = aLidAngle;
 				PoseStack tStack = new PoseStack();
 				tStack.mulPose(tPose.pose());
 				mRoot.render(tStack, tBuffer, aLight, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, aColor);
