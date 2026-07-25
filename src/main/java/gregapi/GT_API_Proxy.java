@@ -347,6 +347,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6wireprobe.flag")) gt6WireProbeTick(aEvent.getServer());
 				// [GT6-FLUIDPIPEPROBE] верификационный стенд «Связка №2 — жидкостные трубы» (Ф3.1) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6fluidpipeprobe.flag")) gt6FluidPipeProbeTick(aEvent.getServer());
+				// [GT6-ITEMPIPEPROBE] верификационный стенд «Связка №3 — предметные трубы» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6itempipeprobe.flag")) gt6ItemPipeProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -2605,6 +2607,250 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 			if (sFPProbeTick > 900 && sFPProbeTick % 200 == 0 && sFPProbeTick <= 2500) O.println("[GT6-FLUIDPIPEPROBE] heartbeat: сервер жив, тик " + sFPProbeTick);
 		} catch (Throwable e) {O.println("[GT6-FLUIDPIPEPROBE] EXC " + e); e.printStackTrace(O); sFPProbeTick = 999999;}
+	}
+
+	// ========== [GT6-ITEMPIPEPROBE] ВРЕМЕННАЯ проба «Связка №3 — предметные трубы» (Ф3.1, гейт run/gt6itempipeprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// Судимый канал ПОЛНОСТЬЮ реальный: труба тикает через РЕАЛЬНЫЙ MultiTileEntityPipeItem.onServerTickPre
+	// (SERVER_TICK_PRE/PR2, сверено построчно с оригиналом gregtech6/.../MultiTileEntityPipeItem.java — расхождений
+	// в control-flow НЕТ, только engine-swap типов: TileEntity->BlockEntity, IInventory/ISidedInventory->
+	// Container/WorldlyContainer, NBTTagCompound->CompoundTag с getX().orElse(...), TileEntityHopper/Dispenser->
+	// HopperBlockEntity/DispenserBlockEntity, ISidedInventory.getAccessibleSlotsFromSide->WorldlyContainer.getSlotsForFace(FORGE_DIR[...]))
+	// -> scanPipes/sortByValuesAcending (:201, выбор БЛИЖАЙШЕЙ цели по возрастанию суммы mStepSize пути) ->
+	// sendItemStack -> insertItemStackIntoTileEntity (:224-241) -> ST.move; ни один из этих методов пробой не
+	// вызывается напрямую — только реальные тики решают. Сетап-закладка стека в слот[0] трубы (аналог «дать
+	// инструмент как скрафченный», §4 манифеста) НЕ трогает mLastReceivedFrom (TileEntityBase05Inventories.java:93
+	// slot(i,stack) — чистый сеттер mInventory[i]=stack, без побочных эффектов) — остаётся SIDE_UNDEFINED ==
+	// oLastReceivedFrom, гейт :195 равенства выполняется, перенос идёт (документированный в задаче допустимый сетап).
+	// Три ГОРИЗОНТАЛЬНЫЕ линии (свежие позиции, разнос по Z=6 >=5 — упреждает CONTROL-NEG-перелив): NEAREST
+	// (ближний сундук — ветка на север от p[1], дальний — продолжение линии на восток от p[последний]; сортировка
+	// scanPipes по возрастанию суммы mStepSize пути отдаёт предпочтение БЛИЖНЕМУ), FILTER (та же топология +
+	// CoverFilterItem на северной стороне p[1]; эталон фильтра — сетап напрямую в CoverData.mNBTs, тем же приёмом,
+	// что использует сам CoverFilterItem.onCoverClickedRight, §4 манифеста; судится ФИЛЬТРАЦИЯ транспорта
+	// insertItemStackIntoTileEntity:231-233, не постановка кавера — сама постановка кавера идёт через реальный
+	// публичный API ITileEntityCoverable.setCoverItem), DISABLED-SIDE (mDisabledOutputs на северной стороне p[1]
+	// выставлен напрямую — тот же эффект, что даёт обезьяний ключ в onToolClick2:136-146).
+	// ID НЕ выдуманы, оба грепом источника: труба — "Brass Item Pipe" medium id=25002 (Loader_MultiTileEntities.java:1827
+	// addItemPipes(25000,...) + MultiTileEntityPipeItem.addItemPipes аID+2=medium, :77) — поправка: в этой сборке
+	// GT6 НЕТ отдельного медного (Cu) яруса предметных труб (только сплавы: Brass/Constantan/CobaltBrass/Ge/
+	// ArsenicCopper/...), задание ошибочно предполагало "медную" (по аналогии с Cu-трубой FLUIDPIPEPROBE) — взят
+	// САМЫЙ ПЕРВЫЙ зарегистрированный ярус (Brass), функционально идентичный любому другому; сундук — "Mossy Stone
+	// Chest" id=32745 (Loader_MultiTileEntities.java:152, aRegistry.add("Mossy Stone Chest","Chests",32745,...,
+	// MultiTileEntityChest.class,...)). Оба ID подтверждены В РАНТАЙМЕ через getClassContainer()!=null (см. build).
+	// Снять при уборке фазы.
+	private static final int ITEMPIPE_L = 6, ITEMPIPE_NEAR_IDX = 1;
+	private static final int PIPE_ID  = 25002; // Brass Item Pipe (medium) — см. комментарий блока выше
+	private static final int CHEST_ID = 32745; // Mossy Stone Chest — Loader_MultiTileEntities.java:152
+	private static final String IP_M = "GT6-ITEMPIPEPROBE";
+	private static int sIPProbeTick = -1;
+	private static net.minecraft.server.level.ServerPlayer sIPPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sIPSeq;
+	private static gregapi.tileentity.connectors.MultiTileEntityPipeItem[] sIPNearChain, sIPFilterChain, sIPDisChain;
+	private static gregapi.block.multitileentity.example.MultiTileEntityChest sIPNearNear, sIPNearFar, sIPFilterNear, sIPFilterFar, sIPDisNear, sIPDisFar;
+	private static long sIPStepSize, sIPCapacity;                       // живые параметры трубы (из BE, не предположены)
+	private static long sIPNear0, sIPFilter0, sIPDis0;                  // консервация: заложенное количество предметов по линии (константа всё время пробы)
+	private static long sIPNear400Near, sIPNear400Far, sIPDis400Near, sIPDis400Far; // снимок на тике 400 для CONTROL-NEG (сверка на тике 650)
+	private static int  sIPArrivalTick = -1;
+	private static long sIPArrivalServerTime = -1;                      // RATE: проба-тик и живой SERVER_TIME первого появления в ближнем сундуке NEAREST
+	private static int  sIPConserveSamples = 0, sIPConserveFails = 0;   // CASE4: жёсткая консервация на каждом тике окна 210..650, по всем 3 линиям
+
+	/** Сумма предметов во всех слотах сундука (консервация; каркас {@link gregapi.probe.GT6ProbeStand#slotCount}). */
+	private static long gt6ItemPipeProbeChestSum(gregapi.block.multitileentity.example.MultiTileEntityChest aChest) {
+		if (aChest == null) return 0;
+		long rSum = 0;
+		for (int i = 0; i < aChest.invsize(); i++) rSum += gregapi.probe.GT6ProbeStand.slotCount(aChest, i);
+		return rSum;
+	}
+	/** Сумма предметов во всех слотах всех труб цепи (консервация). */
+	private static long gt6ItemPipeProbeChainSum(gregapi.tileentity.connectors.MultiTileEntityPipeItem[] aChain) {
+		long rSum = 0;
+		for (gregapi.tileentity.connectors.MultiTileEntityPipeItem tP : aChain) if (tP != null) for (int i = 0; i < tP.invsize(); i++) rSum += gregapi.probe.GT6ProbeStand.slotCount(tP, i);
+		return rSum;
+	}
+	/** Полная очистка сундука (F15: только ItemStack.EMPTY, никогда null — см. §7 манифеста «чистка слотов»). */
+	private static void gt6ItemPipeProbeClearChest(gregapi.block.multitileentity.example.MultiTileEntityChest aChest) {
+		for (int i = 0; i < aChest.invsize(); i++) gregapi.probe.GT6ProbeStand.slotSet(aChest, i, ItemStack.EMPTY);
+	}
+	/** Первый непустой стек в сундуке (проверка ТИПА предмета, не только количества — R8 «молчаливая потеря семантики»). */
+	private static ItemStack gt6ItemPipeProbeFirstStack(gregapi.block.multitileentity.example.MultiTileEntityChest aChest) {
+		for (int i = 0; i < aChest.invsize(); i++) {ItemStack tStack = aChest.slot(i); if (tStack != null && !tStack.isEmpty()) return tStack;}
+		return ItemStack.EMPTY;
+	}
+
+	/** Одна горизонтальная линия на каркасе: анкер -> ITEMPIPE_L труб (восток); ближний сундук — ветка на север от
+	 *  p[ITEMPIPE_NEAR_IDX]; дальний сундук — продолжение линии на восток от p[последний]. Топология/финальная
+	 *  конфигурация (disabled-bit, cover-фильтр) — здесь; постройка/анкер/свежие стеки/верификация класса — каркас
+	 *  {@link gregapi.probe.GT6ProbeStand#line}/{@link gregapi.probe.GT6ProbeStand#place}. */
+	private static Object[] gt6ItemPipeProbeRow(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aBase, boolean aDisableNearOutput, boolean aInstallFilter) {
+		net.minecraft.core.Direction tEast = net.minecraft.core.Direction.EAST;
+		gregapi.probe.GT6ProbeStand.solidPad(aLevel, aBase.below(), ITEMPIPE_L + 3, 1); // пол — гигиена, не судимый канал
+		gregapi.tileentity.connectors.MultiTileEntityPipeItem[] tChain = gregapi.probe.GT6ProbeStand.line(
+			aLevel, sIPPlayer, aBase, tEast, ITEMPIPE_L, PIPE_ID, gregapi.tileentity.connectors.MultiTileEntityPipeItem.class, IP_M);
+		if (tChain[ITEMPIPE_L-1] == null) return new Object[]{tChain, null, null};
+		net.minecraft.core.BlockPos tNearAnchor = aBase.relative(tEast, ITEMPIPE_NEAR_IDX + 1); // позиция p[ITEMPIPE_NEAR_IDX]
+		net.minecraft.core.BlockPos tFarAnchor  = aBase.relative(tEast, ITEMPIPE_L);             // позиция p[последний]
+		gregapi.block.multitileentity.example.MultiTileEntityChest tNear = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sIPPlayer, tNearAnchor, net.minecraft.core.Direction.NORTH, gregapi.probe.GT6ProbeStand.mteStack(CHEST_ID),
+			gregapi.block.multitileentity.example.MultiTileEntityChest.class, IP_M, "ближний сундук");
+		gregapi.block.multitileentity.example.MultiTileEntityChest tFar = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sIPPlayer, tFarAnchor, tEast, gregapi.probe.GT6ProbeStand.mteStack(CHEST_ID),
+			gregapi.block.multitileentity.example.MultiTileEntityChest.class, IP_M, "дальний сундук");
+		if (tNear == null || tFar == null) return new Object[]{tChain, tNear, tFar};
+		// принудительная связность реальным API connect() (тем же методом, что дёргает гайковёрт/авто-разводка) — сеттинг топологии, НЕ обход переноса
+		tChain[ITEMPIPE_NEAR_IDX].connect(SIDE_NORTH, T);
+		tChain[ITEMPIPE_L-1].connect(SIDE_EAST, T);
+		if (aDisableNearOutput) tChain[ITEMPIPE_NEAR_IDX].mDisabledOutputs ^= B[SIDE_NORTH]; // эффект обезьяньего ключа, оригинал onToolClick2:136-146
+		if (aInstallFilter) tChain[ITEMPIPE_NEAR_IDX].setCoverItem(SIDE_NORTH, IL.Cover_Filter_Item.get(1), null, T, T); // реальный публичный API постановки кавера (ITileEntityCoverable)
+		return new Object[]{tChain, tNear, tFar};
+	}
+
+	/** Тик 200: постройка трёх линий + чтение живых параметров трубы. Любой обрыв -> RuntimeException -> Seq печатает EXC. */
+	private static void gt6ItemPipeProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = sIPPlayer.level();
+		O.println("========== [" + IP_M + "] Связка №3 — предметные трубы (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		if (tReg == null || tReg.getClassContainer(PIPE_ID) == null || tReg.getClassContainer(CHEST_ID) == null) throw new RuntimeException("реестр/ID не найдены (труба=" + PIPE_ID + " сундук=" + CHEST_ID + ")");
+		O.println("[" + IP_M + "] ID подтверждены: труба=" + tReg.getClassContainer(PIPE_ID).mClass.getSimpleName() + "(" + PIPE_ID + ") сундук=" + tReg.getClassContainer(CHEST_ID).mClass.getSimpleName() + "(" + CHEST_ID + ")");
+
+		net.minecraft.core.BlockPos tBaseNear   = sIPPlayer.blockPosition().offset(4, 0, 4);
+		net.minecraft.core.BlockPos tBaseFilter = tBaseNear.offset(0, 0, 6);
+		net.minecraft.core.BlockPos tBaseDis    = tBaseNear.offset(0, 0, 12);
+
+		Object[] tRowNear   = gt6ItemPipeProbeRow(tLevel, tBaseNear,   F, F);
+		Object[] tRowFilter = gt6ItemPipeProbeRow(tLevel, tBaseFilter, F, T);
+		Object[] tRowDis    = gt6ItemPipeProbeRow(tLevel, tBaseDis,    T, F);
+		sIPNearChain   = (gregapi.tileentity.connectors.MultiTileEntityPipeItem[]) tRowNear[0];   sIPNearNear   = (gregapi.block.multitileentity.example.MultiTileEntityChest) tRowNear[1];   sIPNearFar   = (gregapi.block.multitileentity.example.MultiTileEntityChest) tRowNear[2];
+		sIPFilterChain = (gregapi.tileentity.connectors.MultiTileEntityPipeItem[]) tRowFilter[0]; sIPFilterNear = (gregapi.block.multitileentity.example.MultiTileEntityChest) tRowFilter[1]; sIPFilterFar = (gregapi.block.multitileentity.example.MultiTileEntityChest) tRowFilter[2];
+		sIPDisChain    = (gregapi.tileentity.connectors.MultiTileEntityPipeItem[]) tRowDis[0];    sIPDisNear    = (gregapi.block.multitileentity.example.MultiTileEntityChest) tRowDis[1];    sIPDisFar    = (gregapi.block.multitileentity.example.MultiTileEntityChest) tRowDis[2];
+		if (sIPNearNear == null || sIPNearFar == null || sIPFilterNear == null || sIPFilterFar == null || sIPDisNear == null || sIPDisFar == null)
+			throw new RuntimeException("постройка линии не удалась (null сундук в цепочке)");
+
+		sIPStepSize = sIPNearChain[0].mStepSize; sIPCapacity = sIPNearChain[0].invsize();
+		O.println("[" + IP_M + "] живые параметры трубы (из BE, не предположены): mStepSize=" + sIPStepSize + " invsize(capacity)=" + sIPCapacity + " (один и тот же ярус на всех 3 линиях)");
+		O.println("[" + IP_M + "] сундук invsize=" + sIPNearNear.invsize());
+
+		gregapi.cover.CoverData tFilterCovers = sIPFilterChain[ITEMPIPE_NEAR_IDX].getCoverData();
+		tFilterCovers.mNBTs[SIDE_NORTH] = ST.save("gt.filter.item", Blocks.COBBLESTONE);
+		O.println("[" + IP_M + "] FILTER: кавер CoverFilterItem установлен на p[" + ITEMPIPE_NEAR_IDX + "] сторона NORTH, эталон=Cobblestone (mVisuals=" + tFilterCovers.mVisuals[SIDE_NORTH] + "=whitelist, insertItemStackIntoTileEntity:231-233)");
+		O.println("[" + IP_M + "] DISABLED-SIDE: p[" + ITEMPIPE_NEAR_IDX + "].mDisabledOutputs=" + sIPDisChain[ITEMPIPE_NEAR_IDX].mDisabledOutputs + " (бит NORTH=" + B[SIDE_NORTH] + " выставлен)");
+	}
+
+	/** Тик 210: закладка стека A=16×Cobblestone в слот[0] трубы p[0] каждой линии (сетап-канал, §4 манифеста — TileEntityBase05Inventories.slot(i,stack) чистый сеттер, mLastReceivedFrom не трогает). */
+	private static void gt6ItemPipeProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gregapi.probe.GT6ProbeStand.slotSet(sIPNearChain[0],   0, ST.make(Blocks.COBBLESTONE, 16, 0));
+		gregapi.probe.GT6ProbeStand.slotSet(sIPFilterChain[0], 0, ST.make(Blocks.COBBLESTONE, 16, 0));
+		gregapi.probe.GT6ProbeStand.slotSet(sIPDisChain[0],    0, ST.make(Blocks.COBBLESTONE, 16, 0));
+		sIPNear0   = gt6ItemPipeProbeChestSum(sIPNearNear)   + gt6ItemPipeProbeChestSum(sIPNearFar)   + gt6ItemPipeProbeChainSum(sIPNearChain);
+		sIPFilter0 = gt6ItemPipeProbeChestSum(sIPFilterNear) + gt6ItemPipeProbeChestSum(sIPFilterFar) + gt6ItemPipeProbeChainSum(sIPFilterChain);
+		sIPDis0    = gt6ItemPipeProbeChestSum(sIPDisNear)    + gt6ItemPipeProbeChestSum(sIPDisFar)    + gt6ItemPipeProbeChainSum(sIPDisChain);
+		O.println("[" + IP_M + "] заложено (тик 210, слот[0] трубы p[0]): NEAREST=" + sIPNear0 + " FILTER=" + sIPFilter0 + " DISABLED-SIDE=" + sIPDis0 + " (по 16×Cobblestone)");
+	}
+
+	/** Окно 210..650, КАЖДЫЙ тик: (а) жёсткая консервация по всем 3 линиям (CASE4); (б) первое появление предмета
+	 *  в ближнем сундуке NEAREST — RATE, мягкий судья (только печать тика+SERVER_TIME%10, оригинал :194). */
+	private static void gt6ItemPipeProbeConserveCheck() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tNear   = gt6ItemPipeProbeChestSum(sIPNearNear)   + gt6ItemPipeProbeChestSum(sIPNearFar)   + gt6ItemPipeProbeChainSum(sIPNearChain);
+		long tFilter = gt6ItemPipeProbeChestSum(sIPFilterNear) + gt6ItemPipeProbeChestSum(sIPFilterFar) + gt6ItemPipeProbeChainSum(sIPFilterChain);
+		long tDis    = gt6ItemPipeProbeChestSum(sIPDisNear)    + gt6ItemPipeProbeChestSum(sIPDisFar)    + gt6ItemPipeProbeChainSum(sIPDisChain);
+		sIPConserveSamples++;
+		if (tNear != sIPNear0 || tFilter != sIPFilter0 || tDis != sIPDis0) {
+			sIPConserveFails++;
+			O.println("[" + IP_M + "] DIAG консервация нарушена на тике " + sIPProbeTick + ": NEAREST=" + tNear + "(ожид." + sIPNear0 + ") FILTER=" + tFilter + "(ожид." + sIPFilter0 + ") DISABLED-SIDE=" + tDis + "(ожид." + sIPDis0 + ")");
+		}
+		if (sIPArrivalTick < 0 && gt6ItemPipeProbeChestSum(sIPNearNear) > 0) {
+			sIPArrivalTick = sIPProbeTick; sIPArrivalServerTime = SERVER_TIME;
+			O.println("[" + IP_M + "] RATE: первое появление предмета в ближнем сундуке NEAREST — проба-тик=" + sIPArrivalTick + " SERVER_TIME=" + sIPArrivalServerTime + " SERVER_TIME%10=" + (sIPArrivalServerTime % 10) + " (перенос только на кратных 10 тиках, оригинал onServerTickPre:194)");
+		}
+	}
+
+	/** Тик 400: КЕЙС 1 NEAREST, КЕЙС 3 DISABLED-SIDE, КЕЙС 2(а) FILTER — эталон A прошёл. */
+	private static void gt6ItemPipeProbeJudge400() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + IP_M + "] ===== КЕЙС 1 NEAREST =====");
+		long tNearNearSum = gt6ItemPipeProbeChestSum(sIPNearNear), tNearFarSum = gt6ItemPipeProbeChestSum(sIPNearFar), tNearChainSum = gt6ItemPipeProbeChainSum(sIPNearChain);
+		ItemStack tNearFirst = gt6ItemPipeProbeFirstStack(sIPNearNear);
+		O.println("[" + IP_M + "] NEAREST: ближний=" + tNearNearSum + "(" + (tNearFirst.isEmpty()?"пусто":tNearFirst.getItem()) + ") дальний=" + tNearFarSum + " в трубах=" + tNearChainSum + " (заложено=" + sIPNear0 + ")");
+		sIPSeq.judge("NEAREST (а) ближний сундук получил весь стек", tNearNearSum == sIPNear0, sIPNear0, tNearNearSum);
+		sIPSeq.judge("NEAREST (б) тип предмета в ближнем = Cobblestone", !tNearFirst.isEmpty() && tNearFirst.is(Blocks.COBBLESTONE.asItem()), "cobblestone", tNearFirst.isEmpty()?"пусто":tNearFirst.getItem());
+		sIPSeq.judge("NEAREST (в) дальний сундук пуст (сортировка scanPipes :201 предпочла ближний)", tNearFarSum == 0, 0, tNearFarSum);
+		sIPSeq.conserve("NEAREST (г) консервация", sIPNear0, () -> tNearNearSum + tNearFarSum + tNearChainSum);
+		sIPNear400Near = tNearNearSum; sIPNear400Far = tNearFarSum;
+
+		O.println("[" + IP_M + "] ===== КЕЙС 3 DISABLED-SIDE =====");
+		long tDisNearSum = gt6ItemPipeProbeChestSum(sIPDisNear), tDisFarSum = gt6ItemPipeProbeChestSum(sIPDisFar), tDisChainSum = gt6ItemPipeProbeChainSum(sIPDisChain);
+		ItemStack tDisFarFirst = gt6ItemPipeProbeFirstStack(sIPDisFar);
+		O.println("[" + IP_M + "] DISABLED-SIDE: ближний(вывод отключён)=" + tDisNearSum + " дальний=" + tDisFarSum + "(" + (tDisFarFirst.isEmpty()?"пусто":tDisFarFirst.getItem()) + ") в трубах=" + tDisChainSum + " (заложено=" + sIPDis0 + ")");
+		sIPSeq.judge("DISABLED-SIDE (а) ближний сундук пуст (эмиссия в его сторону отключена, гейт insertItemStackIntoTileEntity:225)", tDisNearSum == 0, 0, tDisNearSum);
+		sIPSeq.judge("DISABLED-SIDE (б) дальний сундук получил весь стек", tDisFarSum == sIPDis0, sIPDis0, tDisFarSum);
+		sIPSeq.conserve("DISABLED-SIDE (в) консервация", sIPDis0, () -> tDisNearSum + tDisFarSum + tDisChainSum);
+		sIPDis400Near = tDisNearSum; sIPDis400Far = tDisFarSum;
+
+		O.println("[" + IP_M + "] ===== КЕЙС 2(а) FILTER — эталон A (Cobblestone, совпадает с фильтром) =====");
+		long tFilterNearSum1 = gt6ItemPipeProbeChestSum(sIPFilterNear), tFilterFarSum1 = gt6ItemPipeProbeChestSum(sIPFilterFar);
+		ItemStack tFilterNearFirst = gt6ItemPipeProbeFirstStack(sIPFilterNear);
+		O.println("[" + IP_M + "] FILTER фаза A: ближний(фильтрованный)=" + tFilterNearSum1 + "(" + (tFilterNearFirst.isEmpty()?"пусто":tFilterNearFirst.getItem()) + ") дальний=" + tFilterFarSum1 + " (заложено=" + sIPFilter0 + ")");
+		sIPSeq.judge("FILTER (а1) A прошёл whitelist в ближний фильтрованный сундук", tFilterNearSum1 == sIPFilter0, sIPFilter0, tFilterNearSum1);
+		sIPSeq.judge("FILTER (а2) дальний пуст (A не ушёл мимо фильтра)", tFilterFarSum1 == 0, 0, tFilterFarSum1);
+
+		O.println("[" + IP_M + "] RATE (мягкий судья, только печать): mStepSize=" + sIPStepSize + " invsize=" + sIPCapacity + " первое появление в ближнем NEAREST на проба-тике=" + sIPArrivalTick + " SERVER_TIME=" + sIPArrivalServerTime + " SERVER_TIME%10=" + (sIPArrivalServerTime < 0 ? "?(не зафиксировано)" : String.valueOf(sIPArrivalServerTime % 10)) + " (ожидание 0 — оригинал onServerTickPre:194)");
+	}
+
+	/** Тик 410: очистка сундуков FILTER-линии + закладка B=16×Dirt (не совпадает с эталоном фильтра). */
+	private static void gt6ItemPipeProbeSetupFilterB() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gt6ItemPipeProbeClearChest(sIPFilterNear);
+		gt6ItemPipeProbeClearChest(sIPFilterFar);
+		gregapi.probe.GT6ProbeStand.slotSet(sIPFilterChain[0], 0, ST.make(Blocks.DIRT, 16, 0));
+		O.println("[" + IP_M + "] FILTER фаза B: сундуки очищены, заложен B=16×Dirt в p[0] (эталон фильтра — Cobblestone, не совпадает)");
+	}
+
+	/** Тик 600: КЕЙС 2(б) FILTER — эталон B не проходит whitelist в фильтрованный сундук. */
+	private static void gt6ItemPipeProbeJudge600() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + IP_M + "] ===== КЕЙС 2(б) FILTER — эталон B (Dirt, НЕ совпадает с фильтром) =====");
+		long tFilterNearSum2 = gt6ItemPipeProbeChestSum(sIPFilterNear), tFilterFarSum2 = gt6ItemPipeProbeChestSum(sIPFilterFar), tFilterChainSum2 = gt6ItemPipeProbeChainSum(sIPFilterChain);
+		ItemStack tFilterFarFirst = gt6ItemPipeProbeFirstStack(sIPFilterFar);
+		O.println("[" + IP_M + "] FILTER фаза B: ближний(фильтрованный)=" + tFilterNearSum2 + " дальний=" + tFilterFarSum2 + "(" + (tFilterFarFirst.isEmpty()?"пусто":tFilterFarFirst.getItem()) + ") в трубах=" + tFilterChainSum2 + " (заложено=" + sIPFilter0 + ")");
+		sIPSeq.judge("FILTER (б1) B НЕ попал в фильтрованный ближний сундук", tFilterNearSum2 == 0, 0, tFilterNearSum2);
+		sIPSeq.judge("FILTER (б2) B ушёл дальше — в дальний сундук (не застрял, консервация линии цела)", tFilterFarSum2 == sIPFilter0, sIPFilter0, tFilterFarSum2);
+		sIPSeq.judge("FILTER (б3) тип предмета в дальнем = Dirt", !tFilterFarFirst.isEmpty() && tFilterFarFirst.is(Blocks.DIRT.asItem()), "dirt", tFilterFarFirst.isEmpty()?"пусто":tFilterFarFirst.getItem());
+	}
+
+	/** Тик 650: КЕЙС 5 CONTROL-NEG (линии не повлияли друг на друга за время работы FILTER-фазы Б) + итог CASE4 CONSERVE + DONE. */
+	private static void gt6ItemPipeProbeJudge650() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + IP_M + "] ===== КЕЙС 5 CONTROL-NEG =====");
+		long tNearNearNow = gt6ItemPipeProbeChestSum(sIPNearNear), tNearFarNow = gt6ItemPipeProbeChestSum(sIPNearFar);
+		long tDisNearNow  = gt6ItemPipeProbeChestSum(sIPDisNear),  tDisFarNow  = gt6ItemPipeProbeChestSum(sIPDisFar);
+		O.println("[" + IP_M + "] CONTROL-NEG NEAREST снимок-тик400=(" + sIPNear400Near + "," + sIPNear400Far + ") сейчас=(" + tNearNearNow + "," + tNearFarNow + ")");
+		sIPSeq.judge("CONTROL-NEG NEAREST не изменилась за время работы FILTER-фазы Б", tNearNearNow == sIPNear400Near && tNearFarNow == sIPNear400Far, sIPNear400Near + "/" + sIPNear400Far, tNearNearNow + "/" + tNearFarNow);
+		O.println("[" + IP_M + "] CONTROL-NEG DISABLED-SIDE снимок-тик400=(" + sIPDis400Near + "," + sIPDis400Far + ") сейчас=(" + tDisNearNow + "," + tDisFarNow + ")");
+		sIPSeq.judge("CONTROL-NEG DISABLED-SIDE не изменилась", tDisNearNow == sIPDis400Near && tDisFarNow == sIPDis400Far, sIPDis400Near + "/" + sIPDis400Far, tDisNearNow + "/" + tDisFarNow);
+
+		O.println("[" + IP_M + "] ===== КЕЙС 4 CONSERVE (жёсткий судья) =====");
+		O.println("[" + IP_M + "] консервация держалась на " + (sIPConserveSamples - sIPConserveFails) + "/" + sIPConserveSamples + " замерах (тики 210..650, каждый тик, все 3 линии одновременно)");
+		sIPSeq.judge("CONSERVE консервация держалась на каждом замере", sIPConserveFails == 0, 0, sIPConserveFails);
+
+		sIPSeq.done();
+	}
+
+	public static void gt6ItemPipeProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sIPProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sIPPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sIPSeq == null) {
+			sIPSeq = new gregapi.probe.GT6ProbeStand.Seq(IP_M)
+				.at(200, GT_API_Proxy::gt6ItemPipeProbeBuild)
+				.at(210, GT_API_Proxy::gt6ItemPipeProbeLoad)
+				.window(210, 650, GT_API_Proxy::gt6ItemPipeProbeConserveCheck)
+				.at(400, GT_API_Proxy::gt6ItemPipeProbeJudge400)
+				.at(410, GT_API_Proxy::gt6ItemPipeProbeSetupFilterB)
+				.at(600, GT_API_Proxy::gt6ItemPipeProbeJudge600)
+				.at(650, GT_API_Proxy::gt6ItemPipeProbeJudge650);
+		}
+		sIPSeq.tick(sIPProbeTick);
 	}
 
 }
