@@ -32,7 +32,12 @@ public class DummyInventory implements Container {
 	
 	public int getContainerSize() {return mInventory.length;}
 	public boolean isEmpty() {for (int i = 0; i < mInventory.length; i++) if (mInventory[i] != null) return F; return T;}
-	public ItemStack getItem(int aSlot) {return mInventory[aSlot];}
+	// F-loot (заход данжей #39, живой тест «полки пустые»): neo-контракт Container.getItem — НИКОГДА не null
+	// (движок зовёт .isEmpty() без гейта: LootTable.getAvailableSlots:206 `container.getItem(i).isEmpty()`).
+	// Прежний 1.7.10-возврат null ронял NPE внутри LootTable.fill → ST.generateLoot ловил и возвращал F →
+	// ВСЯ ваниль-ветка лута (полки/сундуки данжа по 1.7.10-именам пулов) молча умирала. Внутреннее хранение
+	// mInventory остаётся null-able (1:1 — потребители вроде BookShelf итерируют его напрямую по контракту 1.7.10).
+	public ItemStack getItem(int aSlot) {return mInventory[aSlot] == null ? ItemStack.EMPTY : mInventory[aSlot];}
 	public ItemStack removeItem(int aSlot, int aDecrement) {if (mInventory[aSlot] == null) return null; if (mInventory[aSlot].getCount() <= aDecrement) {ItemStack tStack = ST.copy(mInventory[aSlot]); mInventory[aSlot] = NI; return tStack;} ItemStack rStack = mInventory[aSlot].split(aDecrement); if (mInventory[aSlot].getCount() <= 0) mInventory[aSlot] = NI; return rStack;}
 	public ItemStack removeItemNoUpdate(int aSlot) {ItemStack rStack = mInventory[aSlot]; mInventory[aSlot] = null; return rStack;}
 	public void setItem(int aSlot, ItemStack aStack) {mInventory[aSlot] = aStack;}

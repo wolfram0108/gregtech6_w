@@ -927,6 +927,13 @@ public class WD {
 				: Blocks.WATER_CAULDRON.defaultBlockState().setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, (int) Math.min(net.minecraft.world.level.block.LayeredCauldronBlock.MAX_FILL_LEVEL, tLevel));
 			return aWorld.setBlock(new BlockPos(aX, aY, aZ), tCauldron, (int) aFlags);
 		}
+		// F13-legacy-meta МОСТ (заход данжей #39, живой тест: «повороты — повсеместная проблема»): worldgen GT6 ставит
+		// ванильные направленные блоки ДОСЛОВНЫМИ метами 1.7.10, а у neo-модели меты нет — прежний путь давал
+		// дефолт-стейт (поршни вниз, кнопки в воздухе, двери/кровати/рамки без ориентации). Разбор ниже.
+		{
+			BlockState tLegacy = legacyVanillaState(aWorld, aX, aY, aZ, aBlock, aMeta);
+			if (tLegacy != null) return aWorld.setBlock(new BlockPos(aX, aY, aZ), tLegacy, (int)aFlags);
+		}
 		// было aWorld.setBlock(x,y,z,block,meta,flags) — neo: LevelWriter.setBlock(BlockPos,BlockState,flags) (LevelWriter.java:10).
 		// Числовой меты у BlockState нет (МОДЕЛЬ МЕТЫ п.1/4). BUG-047: 1.7.10 Chunk.func_150807_a писал блок+мету ОДНИМ
 		// сетом (onBlockAdded видел мету) — атомарный путь восстанавливает контракт: state-с-метой одним setBlock.
@@ -957,6 +964,86 @@ public class WD {
 	 *  тот же класс разложения, что котёл BUG-025 выше). Числовой меты у таких состояний нет — мета-каналом не выразить. */
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, BlockState aState, long aFlags) {
 		return aWorld.setBlock(new BlockPos(aX, aY, aZ), aState, (int)aFlags);
+	}
+
+	// F13-legacy-meta МОСТ (заход данжей #39): карты направлений 1.7.10. Выверены ГЕОМЕТРИЕЙ данж-конструкций Грега
+	// (перекрёстная сверка, architecture/dungeons.md §8): факел меты 4 @(13,4,6) крепится ровно к smooth(13,4,7) —
+	// опора с юга, торчит на север; кнопки казарм метами 3/4 сидят на стенах z=5/z=10; кровати «head» метой 8+f
+	// строго в facing-направлении от «foot»; все 8 End-рамок мет 4-7 смотрят внутрь портала 2×2 (и несут глаз, бит4);
+	// поршни дверей метами 2/3/4/5 смотрят на дверные колонны (порядок SIDE 1.7.10 = Direction-ординалы);
+	// какао: COMPASS_FROM_SIDE (CS.java:685 — компас 0=N,1=E,2=S,3=W), мета = сторона плода ОТ ствола, а neo
+	// CocoaBlock.FACING указывает НА опору (canSurvive: pos.relative(FACING) — CocoaBlock.java:63-67) → opposite.
+	private static final Direction[] DIR_1710_TORCH   = {Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH}; // мета 1..4 (факелы/кнопки: опора сзади)
+	private static final Direction[] DIR_1710_HORIZ   = {Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.EAST}; // мета&3 (кровати/End-рамки/наковальня)
+	private static final Direction[] DIR_1710_DOOR    = {Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH}; // мета&3 нижней половины двери
+	private static final Direction[] DIR_1710_COMPASS = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}; // компас (какао)
+
+	/** F13-legacy-meta МОСТ: 1.7.10-мета ванильного блока → BlockState (или подмена блока: настенный факел, вид бревна,
+	 *  двойные растения — в 1.7.10 варианты жили в мете ОДНОГО блока, движок разложил их в отдельные блоки).
+	 *  null = семья не легаси-мостится (обычный путь WD.set). Маппинги — см. комментарий у карт выше. */
+	private static BlockState legacyVanillaState(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta) {
+		int tMeta = (int)aMeta;
+		// Поршни: мета&7 = сторона (SIDE-порядок 1.7.10 = Direction-ординалы: 0D,1U,2N,3S,4W,5E).
+		if (aBlock == Blocks.PISTON || aBlock == Blocks.STICKY_PISTON)
+			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.DirectionalBlock.FACING, Direction.from3DDataValue(tMeta & 7));
+		// Редстоун-факел: меты 1-4 = НАСТЕННЫЙ (в neo — отдельный блок REDSTONE_WALL_TORCH); 0/5 = стоячий (дефолт).
+		if (aBlock == Blocks.REDSTONE_TORCH) {
+			int tSide = tMeta & 7;
+			if (tSide >= 1 && tSide <= 4) return Blocks.REDSTONE_WALL_TORCH.defaultBlockState().setValue(net.minecraft.world.level.block.RedstoneWallTorchBlock.FACING, DIR_1710_TORCH[tSide-1]);
+			return Blocks.REDSTONE_TORCH.defaultBlockState();
+		}
+		// Кнопки: меты 1-4 = настенные (та же карта, что факелы); прочие — дефолт-путь.
+		if (aBlock instanceof net.minecraft.world.level.block.ButtonBlock && (tMeta & 7) >= 1 && (tMeta & 7) <= 4)
+			return aBlock.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.ButtonBlock.FACE, net.minecraft.world.level.block.state.properties.AttachFace.WALL)
+				.setValue(net.minecraft.world.level.block.ButtonBlock.FACING, DIR_1710_TORCH[(tMeta & 7)-1]);
+		// Двери: мета<8 = нижняя половина (facing в мете); мета>=8 = верхняя (в мете только петля; facing/open
+		// читаем из УЖЕ поставленной нижней — 1.7.10 хранил их только внизу, порядок постановки низ→верх).
+		if (aBlock instanceof net.minecraft.world.level.block.DoorBlock) {
+			if (tMeta < 8) return aBlock.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER)
+				.setValue(net.minecraft.world.level.block.DoorBlock.FACING, DIR_1710_DOOR[tMeta & 3]);
+			BlockState tLower = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ));
+			BlockState rDoor = aBlock.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.DoorBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER)
+				.setValue(net.minecraft.world.level.block.DoorBlock.HINGE, (tMeta & 1) == 0 ? net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT : net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT);
+			if (tLower.getBlock() == aBlock) rDoor = rDoor.setValue(net.minecraft.world.level.block.DoorBlock.FACING, tLower.getValue(net.minecraft.world.level.block.DoorBlock.FACING)).setValue(net.minecraft.world.level.block.DoorBlock.OPEN, tLower.getValue(net.minecraft.world.level.block.DoorBlock.OPEN));
+			return rDoor;
+		}
+		// Кровати: бит8 = изголовье; facing (мета&3) одинаков у обеих половин (neo: HEAD в facing-направлении от FOOT).
+		if (aBlock instanceof net.minecraft.world.level.block.BedBlock)
+			return aBlock.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.BedBlock.PART, (tMeta & 8) != 0 ? net.minecraft.world.level.block.state.properties.BedPart.HEAD : net.minecraft.world.level.block.state.properties.BedPart.FOOT)
+				.setValue(net.minecraft.world.level.block.BedBlock.FACING, DIR_1710_HORIZ[tMeta & 3]);
+		// Рамка End-портала: мета&3 facing + бит4 = вставленный глаз.
+		if (aBlock == Blocks.END_PORTAL_FRAME)
+			return Blocks.END_PORTAL_FRAME.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.EndPortalFrameBlock.FACING, DIR_1710_HORIZ[tMeta & 3])
+				.setValue(net.minecraft.world.level.block.EndPortalFrameBlock.HAS_EYE, (tMeta & 4) != 0);
+		// Бревно 1.7.10 (один блок log): мета&3 = вид (0=дуб,1=ель,2=берёза,3=джунгли), мета&12 = ось (0=Y,4=X,8=Z).
+		// Порт-флатнеровка в OAK_LOG теряла вид — а какао выживает ТОЛЬКО на джунглевом бревне (SUPPORTS_COCOA).
+		if (aBlock == Blocks.OAK_LOG && tMeta != 0) {
+			Block tLog = switch (tMeta & 3) {case 1 -> Blocks.SPRUCE_LOG; case 2 -> Blocks.BIRCH_LOG; case 3 -> Blocks.JUNGLE_LOG; default -> Blocks.OAK_LOG;};
+			Direction.Axis tAxis = switch (tMeta & 12) {case 4 -> Direction.Axis.X; case 8 -> Direction.Axis.Z; default -> Direction.Axis.Y;};
+			return tLog.defaultBlockState().setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, tAxis);
+		}
+		// Двойные растения 1.7.10 (один блок double_plant): мета&7 = вид, бит8 = верхняя половина.
+		if (aBlock == Blocks.SUNFLOWER && tMeta != 0) {
+			Block tPlant = switch (tMeta & 7) {case 1 -> Blocks.LILAC; case 2 -> Blocks.TALL_GRASS; case 3 -> Blocks.LARGE_FERN; case 4 -> Blocks.ROSE_BUSH; case 5 -> Blocks.PEONY; default -> Blocks.SUNFLOWER;};
+			return tPlant.defaultBlockState().setValue(net.minecraft.world.level.block.DoublePlantBlock.HALF, (tMeta & 8) != 0 ? net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER : net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER);
+		}
+		// Какао: мета&3 = компас-сторона плода ОТ ствола → neo FACING (НА опору) = opposite; возраст = мета>>2 (0..2).
+		if (aBlock == Blocks.COCOA)
+			return Blocks.COCOA.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.CocoaBlock.FACING, DIR_1710_COMPASS[tMeta & 3].getOpposite())
+				.setValue(net.minecraft.world.level.block.CocoaBlock.AGE, Math.min(2, tMeta >> 2));
+		// Грядка: мета = влажность (1.7.10 clamp 7).
+		if (aBlock == Blocks.FARMLAND && tMeta != 0)
+			return Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmlandBlock.MOISTURE, Math.min(net.minecraft.world.level.block.FarmlandBlock.MAX_MOISTURE, tMeta));
+		// Наковальня: мета&3 = горизонтальный facing (повреждение из меты>>2 в данже не встречается).
+		if (aBlock instanceof net.minecraft.world.level.block.AnvilBlock)
+			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.AnvilBlock.FACING, DIR_1710_HORIZ[tMeta & 3]);
+		return null;
 	}
 
 	public static boolean set(ChunkAccess aChunk, int aX, int aY, int aZ, Block aBlock, long aMeta) {

@@ -47,8 +47,13 @@ public class DungeonChunkRoomMiningBedrock extends DungeonChunkRoomEmpty {
 		if (aData.mWrite && !WorldgenOresBedrock.generateVein(tMaterial, aData.mWorld, WD.dimensionId(aData.mWorld), aData.mX, aData.mZ, aData.mRandom)) return F;
 		
 		boolean tBrass = aData.next1in2();
-		
-		for (int tY = 5-aData.mY; tY < 0; tY++) {
+
+		// F6-Y-scale (живой тест: «шахта заполнена породой»): абсолютные уровни низа шахты в 1.7.10 писались от
+		// бедрока Y=0 («5-aData.mY» = прокоп от абс Y=5 до комнаты; лифт/динамиты/руда на абс Y=0..7). В MC26 дно
+		// на getMinY() (-64) → прежняя математика давала мёртвый цикл прокопа (5-mY>0 при mY<0) и низ шахты в толще
+		// породы на Y≈3. Якорим все абсолютные уровни к дну мира (тот же приём, что WorldgenOresBedrock.generateVein:197).
+		final int tFloor = WD.minY(aData.mWorld);
+		for (int tY = tFloor+5-aData.mY; tY < 0; tY++) {
 			for (int tX =  0; tX <= 15; tX++) for (int tZ =  0; tZ <= 15; tZ++) {
 				if (tX ==  0) {
 					aData.bricks(tX, tY, tZ);
@@ -118,25 +123,25 @@ public class DungeonChunkRoomMiningBedrock extends DungeonChunkRoomEmpty {
 		
 		for (int tX =  5; tX <= 10; tX++) for (int tZ =  5; tZ <= 10; tZ++) {
 			if ((tX !=  5 && tX != 10) || (tZ !=  5 && tZ != 10)) {
-				aData.air   (tX, 4-aData.mY, tZ);
+				aData.air   (tX, tFloor+4-aData.mY, tZ);
 			}
 		}
 		
 		for (int tX =  6; tX <=  9; tX++) for (int tZ =  6; tZ <=  9; tZ++) {
-			aData.air   (tX, 3-aData.mY, tZ);
+			aData.air   (tX, tFloor+3-aData.mY, tZ);
 		}
 		
-		aData.set   ( 6, 3-aData.mY,  6, 32104, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
-		aData.set   ( 6, 3-aData.mY,  9, 32713, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
-		aData.set   ( 9, 3-aData.mY,  6, 32713, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
-		aData.set   ( 9, 3-aData.mY,  9, 32712, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
+		aData.set   ( 6, tFloor+3-aData.mY,  6, 32104, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
+		aData.set   ( 6, tFloor+3-aData.mY,  9, 32713, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
+		aData.set   ( 9, tFloor+3-aData.mY,  6, 32713, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
+		aData.set   ( 9, tFloor+3-aData.mY,  9, 32712, UT.NBT.make(NBT_FACING, SIDE_Y_POS, NBT_MODE, T));
 		
 		int[] tStart = {1, 11}, tEnd = {4, 14};
 		for (int a = 0; a < 2; a++) for (int b = 0; b < 2; b++) {
 			for (int i = tStart[a]; i <= tEnd[a]; i++) for (int j = tStart[b]; j <= tEnd[b]; j++) {
-				if (aData.next3in4()) {aData.set(BlocksGT.blockRaw, i, 5-aData.mY, j, tMaterial.mID);
-				if (aData.next2in3()) {aData.set(BlocksGT.blockRaw, i, 6-aData.mY, j, tMaterial.mID);
-				if (aData.next1in2()) {aData.set(BlocksGT.blockRaw, i, 7-aData.mY, j, tMaterial.mID);
+				if (aData.next3in4()) {aData.set(BlocksGT.blockRaw, i, tFloor+5-aData.mY, j, tMaterial.mID);
+				if (aData.next2in3()) {aData.set(BlocksGT.blockRaw, i, tFloor+6-aData.mY, j, tMaterial.mID);
+				if (aData.next1in2()) {aData.set(BlocksGT.blockRaw, i, tFloor+7-aData.mY, j, tMaterial.mID);
 				}}}
 			}
 		}

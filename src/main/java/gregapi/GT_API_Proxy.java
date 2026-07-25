@@ -1992,6 +1992,7 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				long[][] tBrick = new long[N][N]; long[][] tLamp = new long[N][N]; long[][] tMte = new long[N][N];
 				long tGlassGlow = 0, tConcrete = 0, tLootCrates = 0, tBedrockOre = 0, tBedrockOreSmall = 0;
 				long tLampsLit = 0, tLampsUnlit = 0, tLampsUnlitPowered = 0, tLampsGlowing = 0; // судья ламп (заход: лампы должны ГОРЕТЬ от RSTBR)
+				long tWallTorches = 0, tFloorTorches = 0, tPistons = 0, tPistonsHoriz = 0, tFrames = 0, tFramesEyed = 0, tCocoa = 0, tCocoaAttached = 0, tDoorHalves = 0, tButtons = 0, tButtonsWall = 0, tBedHalves = 0; // судьи F13-legacy-meta
 				java.util.TreeMap<String, Integer> tBEByClass = new java.util.TreeMap<>();
 				java.util.ArrayList<Long> tKeys = new java.util.ArrayList<>();
 				int tLootTagged = 0, tWithInv = 0;
@@ -2027,6 +2028,15 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 							}
 							else if (tBlock == BlocksGT.GlowGlass) tGlassGlow++;
 							else if (tBlock == BlocksGT.Concrete) tConcrete++;
+							// Судьи F13-legacy-meta моста (повороты ванильных):
+							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_WALL_TORCH) tWallTorches++;
+							else if (tBlock == net.minecraft.world.level.block.Blocks.REDSTONE_TORCH) tFloorTorches++;
+							else if (tBlock == net.minecraft.world.level.block.Blocks.STICKY_PISTON) {tPistons++; if (tScanState.getValue(net.minecraft.world.level.block.DirectionalBlock.FACING).getAxis().isHorizontal()) tPistonsHoriz++;}
+							else if (tBlock == net.minecraft.world.level.block.Blocks.END_PORTAL_FRAME) {tFrames++; if (tScanState.getValueOrElse(net.minecraft.world.level.block.EndPortalFrameBlock.HAS_EYE, Boolean.FALSE)) tFramesEyed++;}
+							else if (tBlock == net.minecraft.world.level.block.Blocks.COCOA) {tCocoa++; if (tLevel.getBlockState(new BlockPos(tBX+x, y, tBZ+z).relative(tScanState.getValue(net.minecraft.world.level.block.CocoaBlock.FACING))).is(net.minecraft.world.level.block.Blocks.JUNGLE_LOG)) tCocoaAttached++;}
+							else if (tBlock instanceof net.minecraft.world.level.block.DoorBlock) {tDoorHalves++;}
+							else if (tBlock instanceof net.minecraft.world.level.block.ButtonBlock) {tButtons++; if (tScanState.getValueOrElse(net.minecraft.world.level.block.ButtonBlock.FACE, net.minecraft.world.level.block.state.properties.AttachFace.FLOOR) == net.minecraft.world.level.block.state.properties.AttachFace.WALL) tButtonsWall++;}
+							else if (tBlock instanceof net.minecraft.world.level.block.BedBlock) tBedHalves++;
 						}
 						// бедрок-жила (комната MiningBedrock): дно мира
 						for (int y = gregapi.util.WD.minY(tLevel); y <= gregapi.util.WD.minY(tLevel)+2; y++) {
@@ -2092,6 +2102,14 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 						if (seamRaw(tLevel, tY0, tXs, tZs)) {tSeamsBad++; O.println("[GT6-DUNGEONPROBE]  ШОВ-ПРОВАЛ Z между клетками ("+(ci-R)+","+(cj-R)+")-("+(ci-R)+","+(cj+1-R)+")");}
 					}
 				}
+				// Судья лут-канала (живой сервер: ваниль-ветка ST.generateLoot — фикс DummyInventory null→EMPTY):
+				for (String tLoot : new String[] {"strongholdLibrary", "dungeonChest", "mineshaftCorridor", "villageBlacksmith"}) {
+					gregapi.dummies.DummyInventory tLootInv = new gregapi.dummies.DummyInventory(27);
+					boolean tLootOk = gregapi.util.ST.generateLoot(RNGSUS, tLoot, tLootInv);
+					int tLootCount = 0;
+					for (net.minecraft.world.item.ItemStack tS : tLootInv.mInventory) if (tS != null && !tS.isEmpty()) tLootCount++;
+					O.println("[GT6-DUNGEONPROBE] лут-пул '" + tLoot + "': ok=" + tLootOk + " предметов=" + tLootCount + (tLootOk && tLootCount > 0 ? " PASS" : " FAIL"));
+				}
 				O.println("[GT6-DUNGEONPROBE] BE-классы данжа: " + tBEByClass);
 				O.print(tBEDump);
 				long tKeyMin = Long.MAX_VALUE, tKeyMax = Long.MIN_VALUE;
@@ -2102,6 +2120,9 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 					+ " glassglow=" + tGlassGlow + " concrete=" + tConcrete + " | лут-тегов=" + tLootTagged + " с-инвентарём=" + tWithInv + " loot-crates=" + tLootCrates
 					+ " | бедрок-руда=" + tBedrockOre + "+" + tBedrockOreSmall + "(small) | швов=" + tSeams + " провалов=" + tSeamsBad);
 				O.println("[GT6-DUNGEONPROBE] ЛАМПЫ: lit=" + tLampsLit + " unlit=" + tLampsUnlit + " (из них ПОД СИГНАЛОМ=" + tLampsUnlitPowered + ") светят(блок-свет рядом>0)=" + tLampsGlowing);
+				O.println("[GT6-DUNGEONPROBE] F13-МОСТ: наст.факелы=" + tWallTorches + " стоячие=" + tFloorTorches + " | поршни=" + tPistons + " горизонт=" + tPistonsHoriz
+					+ " | кнопки=" + tButtons + " настенных=" + tButtonsWall + " | двер.половин=" + tDoorHalves + " кроват.половин=" + tBedHalves
+					+ " | End-рамки=" + tFrames + " с глазом=" + tFramesEyed + " | какао=" + tCocoa + " на джунгл.бревне=" + tCocoaAttached);
 				boolean tLampsOk = tLampTotal > 0 && tLampsUnlitPowered == 0 && tLampsLit*10 >= tLampTotal*9; // >=90% lit, 0 негорящих под сигналом
 				boolean tPass = tCells >= 3 && tSeamsBad == 0 && tKeysOk && tLootTagged > 0 && tLampsOk;
 				O.println("[GT6-DUNGEONPROBE] ВЕРДИКТ: клетки>=3=" + (tCells >= 3 ? "PASS" : "FAIL") + " | швы=" + (tSeamsBad == 0 ? "PASS" : "FAIL")

@@ -68,5 +68,19 @@ class DungeonMteProbeTest {
 		((gregapi.tileentity.base.TileEntityBase01Root)tSafe.mTileEntity).writeToNBT(tOut);
 		assertTrue(tOut.getLongOr(NBT_KEY, 0L) == 12345L,
 			"[GT6-DUNGEONPROBE] сейф 3010 потерял NBT_KEY при writeToNBT (BUG-057-класс): " + tOut.get(NBT_KEY));
+
+		// Живой тест «в шкафах одна книга»: лут-канал полок = ST.generateLoot по 1.7.10-именам пулов (ваниль-ветка
+		// через ServerLifecycleHooks.getCurrentServer — в ЭТОМ тест-контексте сервер туда не регистрируется, ветка
+		// молча пропускается → судить пулы здесь нельзя; честный судья — живая проба [GT6-DUNGEONPROBE], фаза 2).
+		if (net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer() != null) {
+			for (String tLoot : new String[] {"strongholdLibrary", "dungeonChest", "mineshaftCorridor", "strongholdCrossing", "villageBlacksmith"}) {
+				gregapi.dummies.DummyInventory tInv = new gregapi.dummies.DummyInventory(27);
+				boolean tOk = gregapi.util.ST.generateLoot(gregapi.data.CS.RNGSUS, tLoot, tInv);
+				int tCount = 0;
+				for (net.minecraft.world.item.ItemStack tStack : tInv.mInventory) if (tStack != null && !tStack.isEmpty()) tCount++;
+				System.out.println("[GT6-DUNGEONPROBE] лут-пул '" + tLoot + "': generateLoot=" + tOk + " предметов=" + tCount);
+				assertTrue(tOk && tCount > 0, "[GT6-DUNGEONPROBE] лут-пул '" + tLoot + "' пуст (ok=" + tOk + ", count=" + tCount + ") — полки данжа будут пустыми");
+			}
+		} else System.out.println("[GT6-DUNGEONPROBE] лут-судья пропущен: getCurrentServer=null в тест-контексте (судит живая проба)");
 	}
 }
