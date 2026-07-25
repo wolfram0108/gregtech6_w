@@ -65,14 +65,10 @@ public class BlockSwamp extends BlockWaterlike {
 		PLACEMENT_ALLOWED = T;
 
 		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — см. BlockOcean
-			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ)); // было func_147451_t(x,y,z) — см. BlockOcean
-			WD.update(aWorld, aX, aY, aZ);
+			// ADAPT-009: холостые re-light + клиент-апдейт каждого тика воды сняты — обоснование см. BlockOcean.updateTick
 			if (aY > WD.minY(aWorld)) { // F6-Y-scale: было aY > 0, дно neo = getMinY()
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
-				} else {
-					aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY-1, aZ));
-					WD.update(aWorld, aX, aY-1, aZ);
 				}
 			}
 		} else {

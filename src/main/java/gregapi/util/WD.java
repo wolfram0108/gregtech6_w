@@ -812,6 +812,11 @@ public class WD {
 		// было ((Level)aWorld).markBlockForUpdate(x,y,z) — neo: Level.sendBlockUpdated(pos,old,new,flags)
 		// (Level.java:333); старое/новое состояние не отслеживались раздельно, тот же приём уже применён в
 		// GT_API_Proxy.java:1316 (getBlockState дважды, flags=3=UPDATE_ALL).
+		// [GT6-WATERPROBE] счёт клиент-апдейтов (уникальные секции = прокси клиентского ремеша) — снять при уборке фазы
+		if (gregapi.GT_API_Proxy.sWaterProbeOn && aWorld instanceof net.minecraft.server.level.ServerLevel) {
+			gregapi.GT_API_Proxy.sWPUpd++;
+			synchronized (gregapi.GT_API_Proxy.sWPSections) {gregapi.GT_API_Proxy.sWPSections.add(net.minecraft.core.SectionPos.asLong(aX >> 4, aY >> 4, aZ >> 4));}
+		}
 		BlockPos tUpdPos = new BlockPos(aX, aY, aZ);
 		BlockState tUpdState = ((Level)aWorld).getBlockState(tUpdPos);
 		((Level)aWorld).sendBlockUpdated(tUpdPos, tUpdState, tUpdState, 3);
@@ -911,6 +916,8 @@ public class WD {
 	}
 
 	public static boolean set(LevelAccessor aWorld, int aX, int aY, int aZ, Block aBlock, long aMeta, long aFlags, boolean aRemoveGrassBelow) {
+		// [GT6-WATERPROBE] счёт блок-записей — снять при уборке фазы
+		if (gregapi.GT_API_Proxy.sWaterProbeOn) gregapi.GT_API_Proxy.sWPSet++;
 		if (aRemoveGrassBelow) {
 			Block tBlock = aWorld.getBlockState(new BlockPos(aX, aY-1, aZ)).getBlock(); // было aWorld.getBlock(x,y-1,z)
 			if (tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM) aWorld.setBlock(new BlockPos(aX, aY-1, aZ), Blocks.DIRT.defaultBlockState(), (int)aFlags); // было aWorld.setBlock(x,y-1,z,Blocks.DIRT,0,flags)

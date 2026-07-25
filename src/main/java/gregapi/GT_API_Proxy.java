@@ -343,6 +343,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			if (aEvent instanceof ServerTickEvent.Pre) { // было aEvent.phase == ServerTickEvent.START — neo раскладывает START/END на Pre/Post (сверено, ServerTickEvent.java)
 				// [GT6-MTEAUDIT] BUG-057 — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
+				// [GT6-WATERPROBE] замер нагрузки растекания вод — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6waterprobe.flag")) gt6WaterProbeTick(aEvent.getServer());
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
 				if (SERVER_TIME++ == 0) {
@@ -2050,6 +2052,111 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				O.println("[GT6-MTEAUDIT] heartbeat: сервер жив, тик " + sMTEAuditTick);
 			}
 		} catch (Throwable e) {O.println("[GT6-MTEAUDIT] EXC " + e); e.printStackTrace(O); sMTEAuditPhase = 10;}
+	}
+
+	// [GT6-WATERPROBE] Замер нагрузки растекания GT6-вод (Ocean/River/Swamp) — снять при уборке фазы.
+	// Гейт §2.1 (-Pgt6probes + run/gt6waterprobe.flag). Сценарий: телепорт к океану (свежая генерация = фаза CALM, 60с),
+	// затем вырез полости 24×10×24 под дном (эмуляция карвера/шахты MC26) = фаза CARVE (90с). Счётчики каждые 20 тиков:
+	// updateTick по классам вод, суммарное время в updateTick, WD.update (клиент-пакеты; уникальные секции = прокси
+	// клиентского ремеша), WD.set, pendingTicks очереди, период серверного тика (avg/max).
+	public static volatile boolean sWaterProbeOn = false;
+	public static long sWPOcean = 0, sWPRiver = 0, sWPSwamp = 0, sWPWaterOther = 0, sWPFinite = 0, sWPNanos = 0, sWPUpd = 0, sWPSet = 0;
+	public static final java.util.HashSet<Long> sWPSections = new java.util.HashSet<>();
+	private static int sWaterProbeTick = -1, sWaterProbePhase = 0, sWaterProbeWait = 0;
+	private static long sWPLastNano = 0, sWPPeriodSum = 0, sWPPeriodMax = 0; private static int sWPPeriodN = 0;
+	private static net.minecraft.core.BlockPos sWaterProbePos = null;
+	private static void gt6WaterProbeReset() {
+		sWPOcean = sWPRiver = sWPSwamp = sWPWaterOther = sWPFinite = sWPNanos = sWPUpd = sWPSet = 0;
+		synchronized (sWPSections) {sWPSections.clear();}
+		sWPPeriodSum = sWPPeriodMax = 0; sWPPeriodN = 0;
+	}
+	private static void gt6WaterProbePrint(String aPhase, net.minecraft.server.level.ServerLevel aLevel) {
+		int tSect; synchronized (sWPSections) {tSect = sWPSections.size(); sWPSections.clear();}
+		long tTicks = sWPOcean + sWPRiver + sWPSwamp + sWPWaterOther + sWPFinite;
+		OUT.println("[GT6-WATERPROBE] " + aPhase + " t=" + sWaterProbeTick
+			+ " | updateTick/с=" + tTicks + " (ocean=" + sWPOcean + " river=" + sWPRiver + " swamp=" + sWPSwamp + " прочие=" + (sWPWaterOther + sWPFinite) + ")"
+			+ " | время=" + (sWPNanos / 1000000) + "мс"
+			+ " | WD.update=" + sWPUpd + " (секций=" + tSect + ") WD.set=" + sWPSet
+			+ " | pendingTicks=" + aLevel.getBlockTicks().count()
+			+ " | период тика avg=" + (sWPPeriodN > 0 ? (sWPPeriodSum / sWPPeriodN / 1000000) : 0) + "мс max=" + (sWPPeriodMax / 1000000) + "мс");
+		sWPOcean = sWPRiver = sWPSwamp = sWPWaterOther = sWPFinite = sWPNanos = sWPUpd = sWPSet = 0;
+		sWPPeriodSum = sWPPeriodMax = 0; sWPPeriodN = 0;
+	}
+	public static void gt6WaterProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sWaterProbeTick++;
+		java.io.PrintStream O = OUT;
+		long tNow = System.nanoTime();
+		if (sWPLastNano != 0) {long tP = tNow - sWPLastNano; sWPPeriodSum += tP; sWPPeriodN++; if (tP > sWPPeriodMax) sWPPeriodMax = tP;}
+		sWPLastNano = tNow;
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+			if (sWaterProbePhase == 0 && sWaterProbeTick >= 100) {
+				O.println("========== [GT6-WATERPROBE] замер нагрузки растекания вод ==========");
+				sWaterProbeOn = true;
+				com.mojang.datafixers.util.Pair<net.minecraft.core.BlockPos, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> tFound =
+					tLevel.findClosestBiome3d(h -> h.is(net.minecraft.world.level.biome.Biomes.OCEAN) || h.is(net.minecraft.world.level.biome.Biomes.DEEP_OCEAN), tPlayer.blockPosition(), 6400, 32, 64); // только биомы, где WorldgenOcean реально генерит GT6-океан (BIOMES_OCEAN порта)
+				if (tFound == null) {O.println("[GT6-WATERPROBE] EXC океан не найден в радиусе 6400"); sWaterProbePhase = 99; return;}
+				int tX = tFound.getFirst().getX(), tZ = tFound.getFirst().getZ();
+				tPlayer.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+				tPlayer.getAbilities().flying = true; tPlayer.onUpdateAbilities();
+				tPlayer.teleportTo(tLevel, tX + 0.5, tLevel.getSeaLevel() + 25, tZ + 0.5, java.util.Set.of(), 0, 60, true);
+				O.println("[GT6-WATERPROBE] океан найден @" + tX + "," + tZ + " (" + tFound.getSecond().getRegisteredName() + "); телепорт, прогрев 200 тиков");
+				sWaterProbePos = new net.minecraft.core.BlockPos(tX, tLevel.getSeaLevel(), tZ);
+				sWaterProbePhase = 1; sWaterProbeWait = 0;
+			} else if (sWaterProbePhase == 1) {
+				if (++sWaterProbeWait >= 200) {O.println("[GT6-WATERPROBE] === фаза CALM (свежесгенерированное море), 60с ==="); gt6WaterProbeReset(); sWaterProbePhase = 2; sWaterProbeWait = 0;}
+			} else if (sWaterProbePhase == 2) {
+				if (++sWaterProbeWait % 20 == 0) gt6WaterProbePrint("CALM", tLevel);
+				if (sWaterProbeWait >= 600) {sWaterProbePhase = 3; sWaterProbeWait = 0;}
+			} else if (sWaterProbePhase == 3) {
+				// вырез: полость 24×10×24 ПОД КОЛОНКОЙ С GT6-ВОДОЙ — скан ±32 вокруг точки телепорта,
+				// берём колонку с МАКСИМАЛЬНОЙ глубиной подряд идущей GT6-воды (BlockWaterlike) от поверхности вниз
+				int cx = 0, cz = 0, tBot = 0, tBestDepth = -1;
+				for (int sx = sWaterProbePos.getX() - 32; sx <= sWaterProbePos.getX() + 32; sx += 4)
+				for (int sz = sWaterProbePos.getZ() - 32; sz <= sWaterProbePos.getZ() + 32; sz += 4) {
+					int tDepth = 0, tY = tLevel.getSeaLevel();
+					while (tY > WD.minY(tLevel) + 14 && tLevel.getBlockState(new net.minecraft.core.BlockPos(sx, tY - 1, sz)).getBlock() instanceof gregtech.blocks.fluids.BlockWaterlike) {tDepth++; tY--;}
+					if (tDepth > tBestDepth) {tBestDepth = tDepth; cx = sx; cz = sz; tBot = tY;}
+				}
+				net.minecraft.world.level.block.state.BlockState tAbove = tLevel.getBlockState(new net.minecraft.core.BlockPos(cx, tBot, cz));
+				net.minecraft.world.level.block.state.BlockState tFloor = tLevel.getBlockState(new net.minecraft.core.BlockPos(cx, tBot - 1, cz));
+				O.println("[GT6-WATERPROBE] CARVE-колонка @" + cx + "," + cz + ": GT6-вода глубиной " + tBestDepth + " (низ воды y=" + tBot + ", над вырезом=" + tAbove.getBlock() + ", дно=" + tFloor.getBlock() + ")");
+				if (tBestDepth <= 0) {O.println("[GT6-WATERPROBE] EXC GT6-вода вокруг точки телепорта не найдена — вырез отменён"); sWaterProbePhase = 99; return;}
+				int tCount = 0;
+				for (int x = cx - 12; x < cx + 12; x++) for (int y = tBot - 10; y < tBot; y++) for (int z = cz - 12; z < cz + 12; z++) {
+					if (tLevel.setBlock(new net.minecraft.core.BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3)) tCount++;
+				}
+				O.println("[GT6-WATERPROBE] === фаза CARVE: вырез 24x10x24 @" + cx + "," + (tBot - 10) + ".." + (tBot - 1) + "," + cz + " (" + tCount + " setBlock), 90с ===");
+				gt6WaterProbeReset();
+				sWaterProbePhase = 4; sWaterProbeWait = 0;
+			} else if (sWaterProbePhase == 4) {
+				if (++sWaterProbeWait % 20 == 0) gt6WaterProbePrint("CARVE", tLevel);
+				if (sWaterProbeWait >= 1800) {sWaterProbePhase = 6; sWaterProbeWait = 0;}
+			} else if (sWaterProbePhase == 6) {
+				// фаза CONVERT: пятно ванильной воды 16×3×16 внутри GT6-океана = дословная эмуляция границы
+				// «GT6-океан ↔ ванильный океан-биом» (cold/lukewarm/warm_ocean не в BIOMES_OCEAN) — замер фронта конверсии
+				int cx = sWaterProbePos.getX() - 24, cz = sWaterProbePos.getZ() - 24, tTop = tLevel.getSeaLevel() - 1;
+				int tCount = 0;
+				for (int x = cx - 8; x < cx + 8; x++) for (int y = tTop - 3; y < tTop; y++) for (int z = cz - 8; z < cz + 8; z++) {
+					net.minecraft.core.BlockPos tP = new net.minecraft.core.BlockPos(x, y, z);
+					if (tLevel.getBlockState(tP).getBlock() instanceof gregtech.blocks.fluids.BlockWaterlike
+					 && tLevel.setBlock(tP, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3)) tCount++;
+				}
+				O.println("[GT6-WATERPROBE] === фаза CONVERT: пятно vanilla-воды 16x3x16 @" + cx + "," + (tTop - 3) + ".." + (tTop - 1) + "," + cz + " (" + tCount + " setBlock) внутри GT6-океана, 60с ===");
+				gt6WaterProbeReset();
+				sWaterProbePhase = 7; sWaterProbeWait = 0;
+			} else if (sWaterProbePhase == 7) {
+				if (++sWaterProbeWait % 20 == 0) gt6WaterProbePrint("CONVERT", tLevel);
+				if (sWaterProbeWait >= 1200) {
+					O.println("========== [GT6-WATERPROBE] DONE ==========");
+					sWaterProbePhase = 5; sWaterProbeWait = 0;
+				}
+			} else if (sWaterProbePhase >= 5 && sWaterProbePhase != 99 && sWaterProbePhase != 6 && sWaterProbePhase != 7 && sWaterProbeTick % 200 == 0 && sWaterProbeWait++ < 10) {
+				O.println("[GT6-WATERPROBE] heartbeat: сервер жив, тик " + sWaterProbeTick);
+			}
+		} catch (Throwable e) {O.println("[GT6-WATERPROBE] EXC " + e); e.printStackTrace(O); sWaterProbePhase = 99;}
 	}
 
 	/** [GT6-MTEAUDIT] скан ±32 блока по горизонтали (вся высота) вокруг центра: каждый MTE-блок классифицируется по BE

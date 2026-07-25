@@ -140,6 +140,18 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 	// onBlockAdded (Forge BlockFluidBase) планировал первый тик — neo onPlace 1:1.
 	public void updateTick(Level aWorld, int aX, int aY, int aZ, java.util.Random aRandom) {/* переопределяют BlockBaseFluid/Ocean/River/Swamp */}
 	@Override protected void tick(BlockState aState, net.minecraft.server.level.ServerLevel aWorld, BlockPos aPos, net.minecraft.util.RandomSource aRandom) {
+		// [GT6-WATERPROBE] счёт+хронометраж updateTick жидкостей — снять при уборке фазы
+		if (gregapi.GT_API_Proxy.sWaterProbeOn) {
+			if      (this instanceof gregtech.blocks.fluids.BlockOcean) gregapi.GT_API_Proxy.sWPOcean++;
+			else if (this instanceof gregtech.blocks.fluids.BlockRiver) gregapi.GT_API_Proxy.sWPRiver++;
+			else if (this instanceof gregtech.blocks.fluids.BlockSwamp) gregapi.GT_API_Proxy.sWPSwamp++;
+			else if (this instanceof BlockBaseFluid)                    gregapi.GT_API_Proxy.sWPFinite++;
+			else                                                        gregapi.GT_API_Proxy.sWPWaterOther++;
+			long t0 = System.nanoTime();
+			updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), gregapi.util.UT.Code.random(aRandom));
+			gregapi.GT_API_Proxy.sWPNanos += System.nanoTime() - t0;
+			return;
+		}
 		updateTick(aWorld, aPos.getX(), aPos.getY(), aPos.getZ(), gregapi.util.UT.Code.random(aRandom)); // конвертер — ЦЕНТР UT.Code.random
 	}
 	@Override protected void onPlace(BlockState aState, Level aWorld, BlockPos aPos, BlockState aOldState, boolean aMovedByPiston) {

@@ -70,14 +70,17 @@ public class BlockOcean extends BlockWaterlike {
 		PLACEMENT_ALLOWED = UPDATE_TICK = T;
 
 		if (aWorld.hasChunksAt(aX-33, aY-33, aZ-33, aX+33, aY+33, aZ+33)) { // было doChunksNearChunkExist(x,y,z,33) — LevelReader.hasChunksAt(x0,y0,z0,x1,y1,z1) тот же checkChunksExist-инлайн
-			aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY, aZ)); // было func_147451_t(x,y,z) (relight Sky+Block) — LevelLightEngine.checkBlock(BlockPos)
-			WD.update(aWorld, aX, aY, aZ);
+			// ADAPT-009 (лаги воды у моря, замер [GT6-WATERPROBE]): холостые func_147451_t (re-light) + WD.update
+			// (markBlockForUpdate) КАЖДЫЙ тик КАЖДОГО блока воды — СНЯТЫ. В 1.7.10 оба были дешёвыми; в neo это
+			// 2 light-enqueue + SectionBlocksUpdate-пакет → клиент ремешил 150-260 секций/с у моря (главный корень
+			// лагов). Реальные изменения сигналятся сами: neo setBlock чинит свет и шлёт клиенту (флаги WD.set).
+			// Тот же приём у самого Грега в BlockWaterlike.updateFlow: «Here was an else Block that only caused huge
+			// amounts of Network Lag with no purpose». Свет-хак getLightOpacity, ради которого стоял re-light, в
+			// порте не существует (PORT-TODO-заглушка LIGHT_OPACITY_NONE ниже). Каскад тика вниз по колонне —
+			// механика (питает над-логику Ocean/River/Swamp), ОСТАВЛЕН 1:1.
 			if (aY > WD.minY(aWorld)) { // F6-Y-scale: было aY > 0, дно neo = getMinY()
 				if (WD.block(aWorld, aX, aY-1, aZ) == this) {
 					aWorld.scheduleTick(new BlockPos(aX, aY-1, aZ), this, tickRate);
-				} else {
-					aWorld.getLightEngine().checkBlock(new BlockPos(aX, aY-1, aZ));
-					WD.update(aWorld, aX, aY-1, aZ);
 				}
 			}
 		} else {
