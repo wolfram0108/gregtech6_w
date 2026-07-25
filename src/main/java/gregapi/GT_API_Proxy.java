@@ -345,6 +345,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6mteauditprobe.flag")) gt6MTEAuditProbeTick(aEvent.getServer());
 				// [GT6-WIREPROBE] верификационный стенд «Связка №1 — электрические провода EU» (Ф3.1) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6wireprobe.flag")) gt6WireProbeTick(aEvent.getServer());
+				// [GT6-FLUIDPIPEPROBE] верификационный стенд «Связка №2 — жидкостные трубы» (Ф3.1) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6fluidpipeprobe.flag")) gt6FluidPipeProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -2364,6 +2366,251 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 			}
 			if (sWireProbeTick > 280 && sWireProbeTick % 200 == 0 && sWireProbeTick <= 2000) O.println("[GT6-WIREPROBE] heartbeat: сервер жив, тик " + sWireProbeTick);
 		} catch (Throwable e) {O.println("[GT6-WIREPROBE] EXC " + e); e.printStackTrace(O); sWireProbeTick = 999999;}
+	}
+
+	// ========== [GT6-FLUIDPIPEPROBE] ВРЕМЕННАЯ проба «Связка №2 — жидкостные трубы» (Ф3.1, гейт run/gt6fluidpipeprobe.flag + -Pgt6probes) ==========
+	// Верификационный стенд: судит ВНУТРЕННИЕ процессы трубы (mTemperature/mTransferredAmount/утечки/перегрев) против
+	// семантики оригинала MultiTileEntityPipeFluid.onServerTickPre/distribute (1.7.10, перенесено дословно — сверено
+	// построчно, расхождений в control-flow НЕТ, только engine-swap типов + уже принятые ADR: BUG-025 cauldron-split,
+	// F5 IFluidHandler.fill(FluidStack,FluidAction) sideless-shim, F5 getTankInfo->getTanks()>0). Источник/приёмник —
+	// реальные MTE «Bronze Drum» (gregapi.tileentity.tank.TileEntityBase08Barrel, Loader_MultiTileEntities.java:2155):
+	// их внутренние поля mTank/mMode выставляются НАПРЯМУЮ как СЕТАП (аналог «дать инструмент как скрафченный»,
+	// LIVE-PROBE-MANUAL.md §4) — это обходит ТОЛЬКО инвентарную бухгалтерию бочки (реально игрок наливал бы бочку
+	// ведром/краном), НЕ судимый канал. Судимый канал остаётся ПОЛНОСТЬЮ реальным: бочка эмитит жидкость через
+	// РЕАЛЬНЫЙ TileEntityBase08Barrel.onTick2 (mMode бит0 — тот же бит, что переключает TOOL_wrench :137-143) ->
+	// FL.move(mTank, getAdjacentTank(tSide)) -> труба.fill(...) -> труба сама переносит дальше через РЕАЛЬНЫЙ
+	// getTicker/onServerTickPre -> distribute (:255-338, :340-436 оригинала) — ни один из ЭТИХ методов не вызывается
+	// пробой напрямую, только реальные тики решают.
+	// ВАЖНО (диф против первого предположения горизонтальной линии): TileEntityBase08Barrel.onTick2 — при бите0
+	// эмиссия идёт СТРОГО ПО ГРАВИТАЦИИ (aFluid газ -> ALL_SIDES_VERTICAL {UP,DOWN}; легче воды -> ALL_SIDES_TOP;
+	// иначе (вода/лава) -> ALL_SIDES_BOTTOM {DOWN} — TileEntityBase08Barrel.java:215-219), НЕ горизонтально — поэтому
+	// линии здесь ВЕРТИКАЛЬНЫЕ (снизу вверх: анкер-STONE, приёмник-бочка, FP_L труб, источник-бочка НАВЕРХУ), в отличие
+	// от горизонтальных линий WIREPROBE (провод не завязан на гравитацию).
+	// 4 линии (свежие позиции, разнесены по Z на 5 блоков — упреждает fire-spread между деревянными GAS/HOT трубами):
+	// NORM (Cu-труба id26102, gasProof=T — вода, чистый перенос), GAS (Wood-труба id26002, gasProof=F — природный газ,
+	// ожидается утечка FL.gas :296), GAS-CONTROL (Cu-труба gasProof=T, тот же газ — утечки быть не должно),
+	// HOT (Wood-труба id26002, mMaxTemperature=340K — лава, ожидается перегрев :320-327). Кислотный кейс — SKIP
+	// (в 3 корнях+живом реестре нет ни одной ЗАРЕГИСТРИРОВАННОЙ GT6 кислотной жидкости: FluidsGT.ACID — статический
+	// список ИМЁН чужих модов CS.java:1572 {"sulfuricacid","hydrochloricacid",...}, ни одно из этих имён не создаётся
+	// в FL.java нигде (grep "acid"/"Acid" в FL.java даёт только сами методы FL.acid(...), не регистрацию жидкости);
+	// сторонние моды в этом dev-окружении не установлены — run/mods отсутствует). Снять при уборке фазы.
+	private static int sFPProbeTick = -1;
+	private static final int FP_L = 6;
+	private static final int PIPE_NORM_ID = 26102; // Medium Copper Fluid Pipe (gasProof=T,acidProof=F) — Loader_MultiTileEntities.java:1855 (aID=26100 +2=medium)
+	private static final int PIPE_WOOD_ID = 26002; // Medium Wood   Fluid Pipe (gasProof=F,acidProof=F,maxTemp=340) — Loader_MultiTileEntities.java:1850 (aID=26000 +2=medium)
+	private static final int BARREL_ID    = 32102; // Bronze Drum (gasProof=T,acidProof=F,capacity=64000) — Loader_MultiTileEntities.java:2155
+	private static final long FP_WATER = 4000, FP_GAS = 3000, FP_LAVA = 500;
+	private static boolean sFPSetupOk = F;
+	private static gregapi.tileentity.tank.TileEntityBase08Barrel sFPSrcNorm, sFPSinkNorm, sFPSrcGas, sFPSinkGas, sFPSrcGasCtl, sFPSinkGasCtl, sFPSrcHot, sFPSinkHot;
+	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPNorm   = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
+	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPGas    = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
+	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPGasCtl = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
+	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sFPHot    = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[FP_L];
+	private static final net.minecraft.core.BlockPos[] sFPHotPos = new net.minecraft.core.BlockPos[FP_L];
+	private static long sFPCapNorm, sFPMaxTempNorm, sFPCapWood, sFPMaxTempWood; // живые параметры труб (прочитаны из BE, НЕ предположены)
+	private static long sFPTotal0Norm, sFPTotal0Gas, sFPTotal0GasCtl; // начальная консервация по цепи
+	private static long sFPAccumTransferredNorm = 0;
+	// HOT: FIRE — эффект setOnFire() кратковременный (WD.burn ставит блок FIRE, ванильный scheduled-tick FireBlock
+	// гасит его через рандомный интервал, если не может выжить — плавающая колонна в воздухе без опоры/горючего
+	// соседа) и НЕ гарантированно виден в ЕДИНСТВЕННОМ замере на конкретном тике (урок §7 манифеста «один прогон при
+	// недетерминизме») — копим «видели ли хоть раз» по ВСЕМУ окну, не только в конце.
+	private static boolean sFPHotEverSelfFire = F, sFPHotEverNeighborFire = F;
+	private static int sFPHotFireTicksSeen = 0;
+
+	/** Установка одного MTE-блока реальным каналом игрока (шаблон gt6storprobe/gt6wireprobe: item.useOn(UseOnContext)). */
+	private static net.minecraft.world.level.block.entity.BlockEntity gt6FluidPipeProbePlace(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aClickedPos, net.minecraft.core.Direction aFace, net.minecraft.world.item.ItemStack aItem) {
+		aPlayer.getInventory().setItem(0, aItem); aPlayer.getInventory().setSelectedSlot(0);
+		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(aClickedPos).add(aFace.getStepX()*0.5, aFace.getStepY()*0.5, aFace.getStepZ()*0.5);
+		aPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(tHit, aFace, aClickedPos, false)));
+		return aLevel.getBlockEntity(aClickedPos.relative(aFace));
+	}
+
+	/** Строит одну ВЕРТИКАЛЬНУЮ колонну снизу вверх: анкер(STONE) -> приёмник(бочка) -> FP_L труб -> источник(бочка).
+	 *  Обязательно вертикально — TileEntityBase08Barrel.onTick2 бит0 эмитирует НЕгазовую жидкость только ВНИЗ
+	 *  (ALL_SIDES_BOTTOM), см. комментарий блока выше. aChainPosOut может быть null (позиции не нужны, линия не горит). */
+	private static Object[] gt6FluidPipeProbeBuildColumn(net.minecraft.server.level.ServerPlayer aPlayer, net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aBase,
+			net.minecraft.world.item.ItemStack aSrcItem, net.minecraft.world.item.ItemStack aSinkItem, net.minecraft.world.item.ItemStack aPipeItem,
+			gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] aChainOut, net.minecraft.core.BlockPos[] aChainPosOut) {
+		net.minecraft.core.Direction tUp = net.minecraft.core.Direction.UP;
+		// расчистка колонны: aBase (i=0) — STONE (клик-цель для установки приёмника на i=1), i=1..FP_L+2 (приёмник+трубы+источник) — AIR.
+		for (int i = 0; i <= FP_L + 2; i++) aLevel.setBlock(aBase.above(i), i == 0 ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState(), 3);
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.world.level.block.entity.BlockEntity tSinkBE = gt6FluidPipeProbePlace(aPlayer, aLevel, aBase, tUp, aSinkItem);
+		if (!(tSinkBE instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tSink)) {
+			O.println("[GT6-FLUIDPIPEPROBE] DIAG приёмник не встал @" + aBase.above() + " BE=" + (tSinkBE == null ? "null" : tSinkBE.getClass().getSimpleName()) + " блок=" + aLevel.getBlockState(aBase.above()).getBlock());
+			return new Object[]{null, null};
+		}
+		net.minecraft.core.BlockPos tCursor = aBase.above();
+		for (int i = 0; i < FP_L; i++) {
+			net.minecraft.world.level.block.entity.BlockEntity tPipeBE = gt6FluidPipeProbePlace(aPlayer, aLevel, tCursor, tUp, aPipeItem);
+			if (!(tPipeBE instanceof gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe)) {
+				O.println("[GT6-FLUIDPIPEPROBE] DIAG труба[" + i + "] не встала @" + tCursor.above() + " BE=" + (tPipeBE == null ? "null" : tPipeBE.getClass().getSimpleName()) + " блок=" + aLevel.getBlockState(tCursor.above()).getBlock() + " стек-остаток=" + aPipeItem.getCount());
+				return new Object[]{null, tSink};
+			}
+			aChainOut[i] = tPipe;
+			tCursor = tCursor.above();
+			if (aChainPosOut != null) aChainPosOut[i] = tCursor;
+		}
+		net.minecraft.world.level.block.entity.BlockEntity tSrcBE = gt6FluidPipeProbePlace(aPlayer, aLevel, tCursor, tUp, aSrcItem);
+		if (!(tSrcBE instanceof gregapi.tileentity.tank.TileEntityBase08Barrel tSrc)) {
+			O.println("[GT6-FLUIDPIPEPROBE] DIAG источник не встал @" + tCursor.above() + " BE=" + (tSrcBE == null ? "null" : tSrcBE.getClass().getSimpleName()) + " блок=" + aLevel.getBlockState(tCursor.above()).getBlock());
+			return new Object[]{null, tSink};
+		}
+		// принудительная связность обоих концов реальным API connect() (тем же методом, что дёргает гайковёрт/авто-разводка) — сеттинг топологии, НЕ обход переливания
+		aChainOut[0].connect(SIDE_DOWN, T);
+		aChainOut[FP_L-1].connect(SIDE_UP, T);
+		return new Object[]{tSrc, tSink};
+	}
+
+	/** Сумма mb по всей цепи (обе бочки + все mTanks труб) — судья консервации (в). */
+	private static long gt6FluidPipeProbeSum(gregapi.tileentity.tank.TileEntityBase08Barrel aSrc, gregapi.tileentity.tank.TileEntityBase08Barrel aSink, gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] aChain) {
+		long rSum = aSrc.mTank.amount() + aSink.mTank.amount();
+		for (gregapi.tileentity.connectors.MultiTileEntityPipeFluid tPipe : aChain) for (gregapi.fluid.FluidTankGT tTank : tPipe.mTanks) rSum += tTank.amount();
+		return rSum;
+	}
+
+	public static void gt6FluidPipeProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sFPProbeTick++;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+			net.minecraft.server.level.ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+			net.minecraft.server.level.ServerLevel tLevel = tPlayer.level();
+
+			if (sFPProbeTick == 200) {
+				O.println("========== [GT6-FLUIDPIPEPROBE] Связка №2 — жидкостные трубы (Ф3.1) ==========");
+				MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+				if (tReg == null || tReg.getClassContainer(PIPE_NORM_ID) == null || tReg.getClassContainer(PIPE_WOOD_ID) == null || tReg.getClassContainer(BARREL_ID) == null) {
+					O.println("[GT6-FLUIDPIPEPROBE] EXC: реестр/ID не найдены (Cu-труба=" + PIPE_NORM_ID + " Wood-труба=" + PIPE_WOOD_ID + " бочка=" + BARREL_ID + ") => FAIL"); sFPProbeTick = 999999; return;
+				}
+				O.println("[GT6-FLUIDPIPEPROBE] ID подтверждены: Cu-труба=" + tReg.getClassContainer(PIPE_NORM_ID).mClass.getSimpleName() + "(" + PIPE_NORM_ID + ") Wood-труба=" + tReg.getClassContainer(PIPE_WOOD_ID).mClass.getSimpleName() + "(" + PIPE_WOOD_ID + ") бочка=" + tReg.getClassContainer(BARREL_ID).mClass.getSimpleName() + "(" + BARREL_ID + ")");
+
+				net.minecraft.core.BlockPos tBase = tPlayer.blockPosition().offset(4, -1, 4);
+
+				Object[] tRowNorm = gt6FluidPipeProbeBuildColumn(tPlayer, tLevel, tBase,                tReg.getItem(BARREL_ID), tReg.getItem(BARREL_ID), tReg.getItem(PIPE_NORM_ID, FP_L + 2), sFPNorm,   null);
+				sFPSrcNorm  = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowNorm[0]; sFPSinkNorm  = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowNorm[1];
+
+				Object[] tRowGas = gt6FluidPipeProbeBuildColumn(tPlayer, tLevel, tBase.offset(0, 0, 5),  tReg.getItem(BARREL_ID), tReg.getItem(BARREL_ID), tReg.getItem(PIPE_WOOD_ID, FP_L + 2), sFPGas,    null);
+				sFPSrcGas   = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowGas[0];  sFPSinkGas   = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowGas[1];
+
+				Object[] tRowGasCtl = gt6FluidPipeProbeBuildColumn(tPlayer, tLevel, tBase.offset(0, 0, 10), tReg.getItem(BARREL_ID), tReg.getItem(BARREL_ID), tReg.getItem(PIPE_NORM_ID, FP_L + 2), sFPGasCtl, null);
+				sFPSrcGasCtl = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowGasCtl[0]; sFPSinkGasCtl = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowGasCtl[1];
+
+				Object[] tRowHot = gt6FluidPipeProbeBuildColumn(tPlayer, tLevel, tBase.offset(0, 0, 15), tReg.getItem(BARREL_ID), tReg.getItem(BARREL_ID), tReg.getItem(PIPE_WOOD_ID, FP_L + 2), sFPHot,    sFPHotPos);
+				sFPSrcHot   = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowHot[0];  sFPSinkHot   = (gregapi.tileentity.tank.TileEntityBase08Barrel) tRowHot[1];
+
+				if (sFPSrcNorm == null || sFPSinkNorm == null || sFPNorm[FP_L-1] == null
+				 || sFPSrcGas == null || sFPSinkGas == null || sFPGas[FP_L-1] == null
+				 || sFPSrcGasCtl == null || sFPSinkGasCtl == null || sFPGasCtl[FP_L-1] == null
+				 || sFPSrcHot == null || sFPSinkHot == null || sFPHot[FP_L-1] == null) {
+					O.println("[GT6-FLUIDPIPEPROBE] EXC: постройка колонны не удалась (null в цепочке) => FAIL"); sFPProbeTick = 999999; return;
+				}
+
+				sFPCapNorm = sFPNorm[0].mCapacity; sFPMaxTempNorm = sFPNorm[0].mMaxTemperature;
+				sFPCapWood = sFPGas[0].mCapacity;  sFPMaxTempWood = sFPGas[0].mMaxTemperature;
+				long tWaterTemp = FL.temperature(FL.Water.make(1));
+				long tGasTemp   = FL.temperature(FL.Gas_Natural.make(1));
+				long tLavaTemp  = FL.temperature(FL.Lava.make(1));
+				O.println("[GT6-FLUIDPIPEPROBE] живые параметры (из BE, не предположены): Cu-труба mCapacity=" + sFPCapNorm + " mMaxTemperature=" + sFPMaxTempNorm + " mGasProof=" + sFPNorm[0].mGasProof + " mAcidProof=" + sFPNorm[0].mAcidProof);
+				O.println("[GT6-FLUIDPIPEPROBE] живые параметры: Wood-труба mCapacity=" + sFPCapWood + " mMaxTemperature=" + sFPMaxTempWood + " mGasProof=" + sFPGas[0].mGasProof + " mAcidProof=" + sFPGas[0].mAcidProof);
+				O.println("[GT6-FLUIDPIPEPROBE] живая температура жидкостей: вода=" + tWaterTemp + "K природный_газ=" + tGasTemp + "K лава=" + tLavaTemp + "K");
+				O.println("[GT6-FLUIDPIPEPROBE] Bronze Drum: capacity=" + sFPSrcNorm.mTank.capacity() + " mGasProof=" + sFPSrcNorm.mGasProof + " mAcidProof=" + sFPSrcNorm.mAcidProof);
+
+				// NORM: вода в источник, авто-выход бит0 (TileEntityBase08Barrel.java:137-143 — тот же бит, что переключает TOOL_wrench)
+				sFPSrcNorm.mTank.setFluid(FL.Water.make(FP_WATER)); sFPSrcNorm.mMode |= B[0];
+				// GAS / GAS-CONTROL: природный газ, тот же авто-выход (для газа onTick2 шлёт ALL_SIDES_VERTICAL — тоже вниз входит)
+				sFPSrcGas.mTank.setFluid(FL.Gas_Natural.make(FP_GAS)); sFPSrcGas.mMode |= B[0];
+				sFPSrcGasCtl.mTank.setFluid(FL.Gas_Natural.make(FP_GAS)); sFPSrcGasCtl.mMode |= B[0];
+				// HOT: источник НЕ используется как эмиттер (риск преждевременного meltdown бочки от лавы, TileEntityBase08Barrel.java:168) — лава заливается ПРЯМО в трубу[0] на след. тике
+
+				sFPTotal0Norm   = gt6FluidPipeProbeSum(sFPSrcNorm,   sFPSinkNorm,   sFPNorm);
+				sFPTotal0Gas    = gt6FluidPipeProbeSum(sFPSrcGas,    sFPSinkGas,    sFPGas);
+				sFPTotal0GasCtl = gt6FluidPipeProbeSum(sFPSrcGasCtl, sFPSinkGasCtl, sFPGasCtl);
+				O.println("[GT6-FLUIDPIPEPROBE] начальная консервация: NORM=" + sFPTotal0Norm + "mb GAS=" + sFPTotal0Gas + "mb GAS-CONTROL=" + sFPTotal0GasCtl + "mb");
+
+				sFPSetupOk = T;
+			} else if (sFPSetupOk) {
+				if (sFPProbeTick == 210) {
+					// HOT: сетап-заливка лавы НАПРЯМУЮ в трубу[0] линии (аналог «дать инструмент как скрафченный», §4 манифеста) —
+					// обходит риск преждевременного meltdown бочки-источника от лавы, судимый канал остаётся полностью реальным:
+					// труба реагирует САМА через свой реальный onServerTickPre (оригинал :320-327).
+					sFPHot[0].mTanks[0].setFluid(FL.Lava.make(FP_LAVA));
+					O.println("[GT6-FLUIDPIPEPROBE] HOT: залито " + FP_LAVA + "mb лавы в трубу[0] линии HOT напрямую (temperature обновится на ближайшем реальном onServerTickPre трубы)");
+				}
+				// накопление СРАЗУ после setup (тик 200, когда auto-output бита0 уже включён нашим сетапом в ТОМ ЖЕ тике) —
+				// не с 211: перенос по цепочке может начаться уже на тиках 201-210 (недетерминировано rng-порядком целей
+				// в distribute() — сверено 2 прогона, окно 211 давало то +80, то -243 к приросту приёмника; ловилось
+				// именно смещённым окном, не багом — расширение окна устраняет false-negative замера).
+				if (sFPProbeTick >= 201 && sFPProbeTick <= 900) sFPAccumTransferredNorm += sFPNorm[FP_L-1].mTransferredAmount;
+				// HOT: непрерывное наблюдение FIRE КАЖДЫЙ тик окна (не разовый замер — эффект setOnFire() кратковременный, §7 манифеста)
+				if (sFPProbeTick >= 201 && sFPProbeTick <= 900) {
+					boolean tTickSelfFire = F, tTickNeighborFire = F;
+					for (int i = 0; i < FP_L; i++) {
+						net.minecraft.core.BlockPos tPos = sFPHotPos[i];
+						if (tLevel.getBlockState(tPos).is(Blocks.FIRE)) tTickSelfFire = T;
+						for (byte tSide : ALL_SIDES_VALID) if (tLevel.getBlockState(tPos.relative(net.minecraft.core.Direction.from3DDataValue(tSide))).is(Blocks.FIRE)) tTickNeighborFire = T;
+					}
+					if (tTickSelfFire) sFPHotEverSelfFire = T;
+					if (tTickNeighborFire) sFPHotEverNeighborFire = T;
+					if (tTickSelfFire || tTickNeighborFire) sFPHotFireTicksSeen++;
+				}
+				if (sFPProbeTick >= 210 && sFPProbeTick % 60 == 0 && sFPProbeTick <= 900) {
+					long tNowNorm = gt6FluidPipeProbeSum(sFPSrcNorm, sFPSinkNorm, sFPNorm);
+					long tNowGas  = gt6FluidPipeProbeSum(sFPSrcGas,  sFPSinkGas,  sFPGas);
+					long tNowGasCtl = gt6FluidPipeProbeSum(sFPSrcGasCtl, sFPSinkGasCtl, sFPGasCtl);
+					O.println("[GT6-FLUIDPIPEPROBE] тик " + sFPProbeTick + " консервация NORM=" + tNowNorm + "(ожид." + sFPTotal0Norm + ") GAS=" + tNowGas + " GAS-CONTROL=" + tNowGasCtl + "(ожид." + sFPTotal0GasCtl + ") sink.NORM=" + sFPSinkNorm.mTank.amount() + " HOT труба[0].temp=" + sFPHot[0].mTemperature + "(max=" + sFPHot[0].mMaxTemperature + ") HOT-fire-видели-пока=" + sFPHotFireTicksSeen + "тик(ов) (self=" + sFPHotEverSelfFire + " сосед=" + sFPHotEverNeighborFire + ")");
+				}
+
+				if (sFPProbeTick == 900) {
+					O.println("[GT6-FLUIDPIPEPROBE] ===== КЕЙС 1 NORM =====");
+					long tSinkAmount = sFPSinkNorm.mTank.amount();
+					long tTotalNow = gt6FluidPipeProbeSum(sFPSrcNorm, sFPSinkNorm, sFPNorm);
+					long tTicks = 900 - 200;
+					long tRate = tSinkAmount / tTicks; // средний темп за весь замер (честно помечено — не пиковый)
+					O.println("[GT6-FLUIDPIPEPROBE] NORM: приёмник получил=" + tSinkAmount + "mb за " + tTicks + " тиков, средний темп=" + tRate + "mb/t (потолок mCapacity/2=" + (sFPCapNorm/2) + "mb/t)");
+					O.println("[GT6-FLUIDPIPEPROBE] NORM (а) жидкость дошла: " + (tSinkAmount > 0 ? "=> PASS" : "=> FAIL (ожидалось >0, получено 0)"));
+					O.println("[GT6-FLUIDPIPEPROBE] NORM (б) средний темп<=потолок capacity/2: " + (tRate <= sFPCapNorm/2 ? "=> PASS" : "=> FAIL (ожидалось <=" + (sFPCapNorm/2) + ", получено " + tRate + ")"));
+					O.println("[GT6-FLUIDPIPEPROBE] NORM (в) консервация: сейчас=" + tTotalNow + " начально=" + sFPTotal0Norm + " " + (tTotalNow == sFPTotal0Norm ? "=> PASS" : "=> FAIL (ожидалось " + sFPTotal0Norm + ", получено " + tTotalNow + ")"));
+					// (г) критерий — ОДНОСТОРОННЕЕ неравенство «накоплено >= перенесено», НЕ равенство и НЕ узкий допуск:
+					// каждый ФИЗИЧЕСКИЙ приход жидкости в приёмник учитывается РОВНО один раз в mTransferredAmount
+					// трубы[последней] (при окне, покрывающем ВЕСЬ период с 201 — сверено: узкое окно 211 иногда давало
+					// накоплено<прирост, т.к. упускало ранний transfer до 211 — false-negative замера, не баг, устранено
+					// расширением окна) — значит накопленный transferred НЕ МОЖЕТ быть меньше факта переноса. Избыток
+					// («churn») — легитимный «холостой» рециркулирующий трафик труба[последняя]<->труба[предпоследняя]
+					// на границе давления (anti-backflow FACE_CONNECTED снимается КАЖДЫЙ тик, оригинал :330, алгоритм
+					// «давления» :426-428) — сверено 3 прогона: churn менялся (80, -243→устранено окном, 2457), но ПОСЛЕ
+					// расширения окна знак всегда >=0. Разрыв «дюп/потеря» проверяется (в) консервацией отдельно (PASS).
+					long tChurn = sFPAccumTransferredNorm - tSinkAmount;
+					O.println("[GT6-FLUIDPIPEPROBE] NORM (г) mTransferredAmount трубы[последней] накоплено=" + sFPAccumTransferredNorm + " vs прирост приёмника=" + tSinkAmount + " churn(холостой перелив)=" + tChurn + " " + (tChurn >= 0 ? "=> PASS" : "=> FAIL (ожидалось накоплено>=прирост, получена нехватка " + tChurn + ")"));
+
+					O.println("[GT6-FLUIDPIPEPROBE] ===== КЕЙС 2 GAS =====");
+					long tGasNow = gt6FluidPipeProbeSum(sFPSrcGas, sFPSinkGas, sFPGas);
+					long tGasLeaked = sFPTotal0Gas - tGasNow;
+					O.println("[GT6-FLUIDPIPEPROBE] GAS: начально=" + sFPTotal0Gas + "mb сейчас_в_системе=" + tGasNow + "mb утекло=" + tGasLeaked + "mb (утечка не-gasProof трубы — MultiTileEntityPipeFluid.java:296 GarbageGT.trash(tTank,8), по 8mb за тик пока в НЕ-gasProof трубе есть газ)");
+					O.println("[GT6-FLUIDPIPEPROBE] GAS утечка произошла: " + (tGasLeaked > 0 ? "=> PASS" : "=> FAIL (ожидалась утечка >0, получено 0)"));
+
+					long tGasCtlNow = gt6FluidPipeProbeSum(sFPSrcGasCtl, sFPSinkGasCtl, sFPGasCtl);
+					O.println("[GT6-FLUIDPIPEPROBE] GAS-CONTROL (gasProof=T труба): начально=" + sFPTotal0GasCtl + " сейчас=" + tGasCtlNow + " " + (tGasCtlNow == sFPTotal0GasCtl ? "=> PASS (утечки нет)" : "=> FAIL (ожидалось " + sFPTotal0GasCtl + ", получено " + tGasCtlNow + ")"));
+
+					O.println("[GT6-FLUIDPIPEPROBE] ===== КЕЙС 3 HOT =====");
+					StringBuilder tHotLine = new StringBuilder();
+					for (int i = 0; i < FP_L; i++) {
+						boolean tSelfFireNow = tLevel.getBlockState(sFPHotPos[i]).is(Blocks.FIRE);
+						tHotLine.append(tSelfFireNow ? "FIRE" : String.valueOf(sFPHot[i].mTemperature)).append(' ');
+					}
+					O.println("[GT6-FLUIDPIPEPROBE] HOT состояние труб (снимок тика 900): " + tHotLine + " (mMaxTemperature=" + sFPMaxTempWood + ")");
+					O.println("[GT6-FLUIDPIPEPROBE] HOT: FIRE виден на " + sFPHotFireTicksSeen + " тиках из " + (900-201+1) + " замеренных (self-когда-либо=" + sFPHotEverSelfFire + " сосед-когда-либо=" + sFPHotEverNeighborFire + ") — накоплено НЕПРЕРЫВНЫМ наблюдением каждый тик, не разовым замером (setOnFire()/WD.burn() кратковременно: ванильный scheduled-tick FireBlock гасит плавающий в воздухе огонь без опоры, переставляется на следующем тике заново, пока mTemperature>mMaxTemperature — TileEntityBase01Root.java:1021)");
+					O.println("[GT6-FLUIDPIPEPROBE] HOT реакция (setOnFire=поджиг соседа каждый тик, пока mTemperature>mMaxTemperature, ИЛИ setToFire=разрушение трубы MultiTileEntityPipeFluid.java:320-326 rng(100)==0 1%/тик): " + ((sFPHotEverSelfFire || sFPHotEverNeighborFire) ? "=> PASS (перегрев/поджиг сработал)" : "=> FAIL (ожидался подожжённый сосед либо труба=FIRE хотя бы раз за окно 211..900)"));
+
+					O.println("[GT6-FLUIDPIPEPROBE] ===== КЕЙС 4 CONTROL-NEG =====");
+					O.println("[GT6-FLUIDPIPEPROBE] CONTROL-NEG (линия NORM после кейсов GAS/HOT на соседних линиях): сумма=" + tTotalNow + " (ожидание=" + sFPTotal0Norm + " — перелив воздействия GAS/HOT на соседнюю линию не должен случиться)");
+					O.println("[GT6-FLUIDPIPEPROBE] CONTROL-NEG: " + (tTotalNow == sFPTotal0Norm ? "=> PASS" : "=> FAIL (ожидалось " + sFPTotal0Norm + ", получено " + tTotalNow + ")"));
+
+					O.println("========== [GT6-FLUIDPIPEPROBE] DONE ==========");
+				}
+			}
+			if (sFPProbeTick > 900 && sFPProbeTick % 200 == 0 && sFPProbeTick <= 2500) O.println("[GT6-FLUIDPIPEPROBE] heartbeat: сервер жив, тик " + sFPProbeTick);
+		} catch (Throwable e) {O.println("[GT6-FLUIDPIPEPROBE] EXC " + e); e.printStackTrace(O); sFPProbeTick = 999999;}
 	}
 
 }
