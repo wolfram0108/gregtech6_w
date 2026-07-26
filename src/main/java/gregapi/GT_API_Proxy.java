@@ -351,6 +351,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6itempipeprobe.flag")) gt6ItemPipeProbeTick(aEvent.getServer());
 				// [GT6-ENERGYCHAINPROBE] верификационный стенд «Связка №4 — энерго-лестница» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6energychainprobe.flag")) gt6EnergyChainProbeTick(aEvent.getServer());
+				// [GT6-CRUCIBLEPROBE] верификационный стенд «Связка №5 — тигельный цикл» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6crucibleprobe.flag")) gt6CrucibleProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -3258,6 +3260,327 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(1200, GT_API_Proxy::gt6EnergyChainProbeJudgeFinal);
 		}
 		sECPSeq.tick(sECPProbeTick);
+	}
+
+	// ========== [GT6-CRUCIBLEPROBE] ВРЕМЕННАЯ проба «Связка №5 — тигельный цикл» (Ф3.1, гейт run/gt6crucibleprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// Цель: доказать ЧИСЛОМ реальную цепь топливо->HU->тигель(нагрев)->плавка->заливка в форму->слиток, КАЖДОЕ
+	// звено — реальный GT6-конвертор, тикающий штатно (ни один судимый метод пробой не вызывается напрямую).
+	// Этап А (разведка кода, ВЫЧИТАНА, не угадана — оба класса, порт=оригинал посимвольно 1:1, только engine-swap
+	// TileEntity->BlockEntity / World->Level / NBTTagCompound->CompoundTag+getXOr):
+	// (1) HU-приём: MultiTileEntityCrucible implements ITileEntityEnergy (гл. набор HU/KU/CU/VIS_IGNIS,
+	//     ENERGYTYPES:699/717(порт)); isEnergyAcceptingFrom всегда T (без side-гейта) :703/721; getEnergySizeInputMin=1
+	//     :706/724 — НЕДОНАПРЯЖЕНИЯ (урок связки №4) тут НЕТ, любой пакет размером >=1 проходит Root.doEnergyInjection
+	//     (TileEntityBase01Root.java:886 ориг./:717, посимвольно 1:1). Канал прихода — НЕ прямая грань контроллера,
+	//     а СТЕНА MultiTileEntityMultiBlockPart(mode=ONLY_ENERGY_IN): TileEntityBase01Root:729-747(ориг.) даёт
+	//     ЛЮБОМУ TileEntity общий проброс doEnergyInjection(aPart,...)->doEnergyInjection(...) (aPart игнорируется),
+	//     а сама стена (MultiTileEntityMultiBlockPart.java:542-547) гейтует по mMode ПЕРЕД проброс в контроллер —
+	//     только стены нижнего кольца (Y=0 относительно контроллера, mode=ONLY_ENERGY_IN, тултип
+	//     "Energy IN from Bottom Layer") пропускают HU; средний слой (ONLY_CRUCIBLE) и верхний (ONLY_ITEM_FLUID)
+	//     блокируют (mMode содержит бит NO_ENERGY_IN). doInject (не doEnergyInjection!) — конкретная реализация
+	//     контроллера :704/722: HU -> mEnergy += size*amount.
+	// (2) Температурная модель: onServerTickPost :184-384(ориг.)/202-402(порт) — tRequiredEnergy=1+weight/100
+	//     (KG_PER_ENERGY=100, weight=mMaterial.getWeight(U*100)+содержимое), tConversions=mEnergy/tRequiredEnergy;
+	//     если !=0: mEnergy-=conversions*tRequiredEnergy, mTemperature+=conversions (каждая "конверсия"=+1K).
+	//     Остывание к envTemp — только через mCooldown<=0 раз в 10 тиков ±1K (:363/381); разрушение (лава+урон)
+	//     при mTemperature>getTemperatureMax(SIDE_INSIDE)=mMaterial.mMeltingPoint*1.10 (HEAT_RESISTANCE_BONUS=1.10).
+	// (3) Вместимость: MAX_AMOUNT=16*3*3*3*U (:79/97); закладка — addMaterialStacks(List<OreDictMaterialStack>,
+	//     aTemperature) :386-408(ориг.)/404-426(порт), правит-но реальный канал закладки — предмет через слот(0)
+	//     (WD.suck из 2x3x2 объёма над центром, :204/222) ИЛИ клик/жидкость по верхнему слою (onBlockActivated3);
+	//     пробой сетап-обходом (units напрямую, разрешено заданием) вызывается addMaterialStacks САМ (тот же метод,
+	//     каким пользуется вся реальная логика — не синтетика внутренностей, а официальный публичный API закладки).
+	// (4) Плавка: mTemperature>=tMaterial.mMeltingPoint -> при пересечении порога конверсия в mTargetSmelting (для
+	//     чистого металла Sn по умолчанию = сам Sn, OreDictMaterial.java:289 mTargetSmelting=OM.stack(this,U)) —
+	//     видимый эффект чистого металла: mDisplayedFluid=mMaterial.mID при T>=melt (:350/368), иначе -1.
+	// (5) Заливка в Mold: MultiTileEntityMold.onBlockActivated3 (:267-294) — реальный клик ПУСТОЙ РУКОЙ по ВЕРХНЕЙ
+	//     грани формы; клик у центра грани -> getSideWrenching(UP,0.5,_,0.5)=UP=SIDES_VERTICAL -> цикл по всем 4
+	//     горизонтальным соседям, у первого ITileEntityCrucible вызывается fillMoldAtSide(this,...) — стена среднего
+	//     слоя (mode=ONLY_CRUCIBLE, тултип "Molds usable at second Layer of Walls") пробрасывает в контроллер
+	//     (wall :700-706 гейт NO_CRUCIBLE), контроллер (:565-573 ориг./547-555... фактически :565/583(порт)
+	//     fillMoldAtSide) находит расплавленный (T>=melt, mTargetSmelting.mMaterial==себе) компонент и зовёт
+	//     aMold.fillMold(...) (Mold.java:246-264) — тот пишет mContent формы и её mTemperature=T контроллера.
+	//     Слиток рождается в Mold.onServerTickPost (:178-204(порт)) когда mTemperature формы падает НИЖЕ mMeltingPoint
+	//     (естественное остывание -5K/тик, :160(порт)) — tPrefix.mat(material, amount/tPrefix.mAmount) в slot(0);
+	//     повторный клик пустой рукой по форме -> pickUpItem (:296-322(порт)) кладёт слиток в руку игрока — РЕАЛЬНЫЙ
+	//     человеческий канал получения предмета, тот же метод, что вызывает физический клик игрока.
+	// (6) Счётчики для судей: mTemperature/mEnergy контроллера (reflection), mContent (List<OreDictMaterialStack>,
+	//     ищем запись материала Sn по .mMaterial==MT.Sn), mDisplayedFluid (короткий ID материала или -1).
+	// Тир крышки: "Large Titanium Crucible" (id 17306, Loader_MultiTileEntities.java:1273 ориг./1277 порт,
+	// NBT_DESIGN=18006 -> mWalls=18006 "Titanium Wall" :1149/1153) выбран НАРОЧНО вместо StainlessSteel/Steel —
+	// Ti.mGramPerCubicCentimeter=4.54 (MT.java titanium():411) вдвое легче стали (~7.9), тигель прогревается
+	// быстрее при равном притоке HU — конструктивный выбор тира, не изменение механики (крышка/тигель — тот же
+	// класс MultiTileEntityCrucible для ЛЮБОГО зарегистрированного тира). Плавимый металл — MT.Sn (Tin, MT.java:126
+	// tin(): mMeltingPoint=505K) — низкая точка плавления, задание явно предложило "олово/свинец"; Pb (лежит выше
+	// по melt) не проверялся, Sn взят как более быстрый кейс. Горелка — Brick Burning Box id=1199 (тот же класс и
+	// параметры, что верифицированы в ENERGYCHAINPROBE, mRate=16 HU/тик, mEfficiency=2500); ВОСЕМЬ штук ставятся под
+	// ВСЕМИ 8 кольцевыми ячейками нижнего слоя (полное использование "Energy IN from Bottom Layer", не хак) ради
+	// реалистичного времени прогрева (1 горелка нагревала бы тигель до 505K по формуле ~11-12 тыс. тиков — не хак,
+	// а недооснащённая печь; 8 горелок = ~130 HU/тик суммарно, прогрев до 505K ожидается за ~800-1000 тиков).
+	// Форма — Mold (Stone) id=1050; mShape пробой выставляется в bitmask формы OP.ingot (i=0 паттерн из статического
+	// блока MultiTileEntityMold.java:687-695, скопирован дословно) — сетап-обход "форма уже прорезана долотом",
+	// РЕАЛЬНЫЙ канал (клик по верхней грани) остаётся судимым. Снять при уборке фазы.
+	private static final int CRP_CRUCIBLE_ID = 17306; // Large Titanium Crucible — :1273(ориг.)/1277(порт), NBT_DESIGN=18006
+	private static final int CRP_WALL_ID     = 18006; // Titanium Wall — :1149(ориг.)/1153(порт)
+	private static final int CRP_GEN_ID      = 1199;  // Brick Burning Box (Solid) — тот же генератор, что ENERGYCHAINPROBE
+	private static final int CRP_MOLD_ID     = 1050;  // Mold (Stone) — :347(ориг.)/348(порт)
+	private static final String CRP_M = "GT6-CRUCIBLEPROBE";
+	// 8 кольцевых XZ-смещений 3x3 вокруг центра (1,1) — checkStructure2 i,j∈[-1,1] исключая (0,0), ориг./порт :112-131
+	private static final int[] CRP_RING_DX = {0,1,2,0,2,0,1,2};
+	private static final int[] CRP_RING_DZ = {0,0,0,1,1,2,2,2};
+	// Для каждой горелки — направление НАРУЖУ от кольца 3x3 (в свободную, расчищенную зону footprint), чтобы
+	// front-face гейт (mFacing, MultiTileEntityGeneratorSolid.java:111-114) НЕ упирался в соседнюю горелку/центр.
+	private static final byte[] CRP_RING_OUTWARD = {SIDE_WEST, SIDE_NORTH, SIDE_EAST, SIDE_WEST, SIDE_EAST, SIDE_WEST, SIDE_SOUTH, SIDE_EAST};
+	private static final long CRP_SEED_SN = 2 * U; // 2 единицы Sn — больше, чем требует форма слитка (U), остаток проверяет CONSERVE
+	private static final int CRP_INGOT_SHAPE =
+		  (1<<0)|(1<<1)|(1<<2)
+		| (1<<5)|(1<<6)|(1<<7)
+		| (1<<10)|(1<<11)|(1<<12)
+		| (1<<15)|(1<<16)|(1<<17)
+		| (1<<20)|(1<<21)|(1<<22); // паттерн i=0 из MultiTileEntityMold.java:687-695 (OP.ingot), скопирован дословно
+
+	private static int sCRPProbeTick = -1;
+	private static ServerPlayer sCRPPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sCRPSeq;
+
+	private static gregtech.tileentity.multiblocks.MultiTileEntityCrucible sCRPHotCrucible, sCRPColdCrucible;
+	private static gregtech.tileentity.tools.MultiTileEntityMold sCRPHotMold;
+	private static final gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] sCRPHotGens = new gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[CRP_RING_DX.length];
+	private static BlockPos sCRPHotBase, sCRPColdBase;
+	private static long sCRPHotTemp0, sCRPHotEnergy0, sCRPColdTemp0;
+	private static long sCRPSnBeforePour, sCRPSnAfterPour;
+
+	/** Расчищает объём постройки в AIR (не судимый канал, гигиена как solidPad в других стендах). */
+	private static void gt6CrucibleProbeClearFootprint(ServerLevel aLevel, BlockPos aBase) {
+		for (int x = -1; x <= 4; x++) for (int y = -3; y <= 3; y++) for (int z = -1; z <= 3; z++)
+			aLevel.setBlock(aBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+	}
+
+	/** Сумма количества материала aMat в mContent контроллера (reflection, читает публичные поля OreDictMaterialStack). */
+	@SuppressWarnings("unchecked")
+	private static long gt6CrucibleProbeContentAmount(Object aCrucible, Object aMat) {
+		Object tRaw = gregapi.probe.GT6ProbeStand.fld(aCrucible, "mContent");
+		if (!(tRaw instanceof List)) return 0;
+		long rSum = 0;
+		for (OreDictMaterialStack tStack : (List<OreDictMaterialStack>) tRaw) if (tStack != null && tStack.mMaterial == aMat) rSum += tStack.mAmount;
+		return rSum;
+	}
+
+	/** Строит один тигель-риг: 3x3x3 стен + контроллер в центре нижнего слоя ("hollow of walls with opening on
+	 *  top", MultiTileEntityCrucible.java:112-131 checkStructure2, 1:1 ориг./порт). aBase — угол (min X,min Z) на
+	 *  высоте контроллера (pattern-y=0). aPlaceGens — поставить горелки под ВСЕМИ 8 кольцевыми ячейками нижнего
+	 *  слоя (Energy IN); aPlaceMold — поставить форму у восточной кольцевой ячейки СРЕДНЕГО слоя (Y+1, "Molds
+	 *  usable at second Layer of Walls"). */
+	private static Object[] gt6CrucibleProbeBuildRig(ServerLevel aLevel, BlockPos aBase, String aLabel, boolean aPlaceGens, boolean aPlaceMold) {
+		gt6CrucibleProbeClearFootprint(aLevel, aBase);
+		Map<Character, Object> tLegend = new HashMap<>();
+		tLegend.put('W', CRP_WALL_ID);
+		tLegend.put('C', CRP_CRUCIBLE_ID);
+		String[] tLayers = {"WWW\nWCW\nWWW", "WWW\nW.W\nWWW", "WWW\nW.W\nWWW"};
+		Map<Character, List<BlockEntity>> tBuilt = gregapi.probe.GT6ProbeStand.pattern(aLevel, sCRPPlayer, aBase, tLayers, tLegend, CRP_M);
+		List<BlockEntity> tControllers = tBuilt.get('C');
+		if (tControllers == null || tControllers.isEmpty() || !(tControllers.get(0) instanceof gregtech.tileentity.multiblocks.MultiTileEntityCrucible)) throw new RuntimeException(aLabel + ": контроллер тигля не встал");
+		gregtech.tileentity.multiblocks.MultiTileEntityCrucible tController = (gregtech.tileentity.multiblocks.MultiTileEntityCrucible) tControllers.get(0);
+
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] tGens = new gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[CRP_RING_DX.length];
+		if (aPlaceGens) for (int i = 0; i < CRP_RING_DX.length; i++) {
+			BlockPos tGenAnchor = aBase.offset(CRP_RING_DX[i], -2, CRP_RING_DZ[i]);
+			gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick tGen = gregapi.probe.GT6ProbeStand.place(aLevel, sCRPPlayer, tGenAnchor, net.minecraft.core.Direction.UP,
+				gregapi.probe.GT6ProbeStand.mteStack(CRP_GEN_ID), gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick.class, CRP_M, aLabel + "-горелка[" + i + "]");
+			if (tGen == null) throw new RuntimeException(aLabel + ": горелка[" + i + "] не встала");
+			// Front-face гейт горелки (MultiTileEntityGeneratorSolid.java:111-114 — refuel-цикл требует !hasCollide&&oxygen
+			// ПЕРЕД mFacing, тот же приём, что ECP gt6EnergyChainProbeBuildGenBoiler): реальным API setPrimaryFacing
+			// (TileEntityBase09FacingSingle.java:90, тот же метод, что дёргает гайковёрт) разворачиваем НАРУЖУ от кольца
+			// (не в соседнюю горелку/анкер центра), затем расчищаем эту клетку в AIR — иначе горелки в плотной 8-упаковке
+			// гаснут после первого заряда mEnergy (сосед/анкер блокирует refuel).
+			tGen.setPrimaryFacing(CRP_RING_OUTWARD[i]);
+			net.minecraft.core.BlockPos tGenPos = tGenAnchor.above();
+			net.minecraft.core.Direction tGenFront = FORGE_DIR[tGen.mFacing];
+			aLevel.setBlock(tGenPos.relative(tGenFront), Blocks.AIR.defaultBlockState(), 3);
+			tGens[i] = tGen;
+		}
+
+		gregtech.tileentity.tools.MultiTileEntityMold tMold = null;
+		if (aPlaceMold) {
+			BlockPos tMoldAnchor = aBase.offset(3, 0, 1); // восток от кольцевой стены (2,1,1) среднего слоя
+			tMold = gregapi.probe.GT6ProbeStand.place(aLevel, sCRPPlayer, tMoldAnchor, net.minecraft.core.Direction.UP,
+				gregapi.probe.GT6ProbeStand.mteStack(CRP_MOLD_ID), gregtech.tileentity.tools.MultiTileEntityMold.class, CRP_M, aLabel + "-форма");
+			if (tMold == null) throw new RuntimeException(aLabel + ": форма не встала");
+		}
+		return new Object[]{tController, tGens, tMold};
+	}
+
+	/** Тик 200: построить HOT (с горелками+формой) и COLD (голые стены, без горелок — "тигель без горелки"). */
+	private static void gt6CrucibleProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + CRP_M + "] Связка №5 — тигельный цикл (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		ServerLevel tLevel = sCRPPlayer.level();
+		sCRPHotBase  = sCRPPlayer.blockPosition().offset(4, 0, 4);
+		sCRPColdBase = sCRPPlayer.blockPosition().offset(4, 0, 20);
+
+		Object[] tHot = gt6CrucibleProbeBuildRig(tLevel, sCRPHotBase, "HOT", T, T);
+		sCRPHotCrucible = (gregtech.tileentity.multiblocks.MultiTileEntityCrucible) tHot[0];
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] tHotGens = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[]) tHot[1];
+		System.arraycopy(tHotGens, 0, sCRPHotGens, 0, tHotGens.length);
+		sCRPHotMold = (gregtech.tileentity.tools.MultiTileEntityMold) tHot[2];
+
+		Object[] tCold = gt6CrucibleProbeBuildRig(tLevel, sCRPColdBase, "COLD", F, F);
+		sCRPColdCrucible = (gregtech.tileentity.multiblocks.MultiTileEntityCrucible) tCold[0];
+
+		O.println("[" + CRP_M + "] построено: HOT контроллер=" + sCRPHotCrucible.getClass().getSimpleName() + "@" + sCRPHotBase.offset(1,0,1) + " (8 горелок + форма) ; COLD контроллер=" + sCRPColdCrucible.getClass().getSimpleName() + "@" + sCRPColdBase.offset(1,0,1) + " (без горелок)");
+		O.println("[" + CRP_M + "] живые параметры (из BE): горелка.mRate=" + gregapi.probe.GT6ProbeStand.fldLong(sCRPHotGens[0], "mRate") + " горелка.mEfficiency=" + gregapi.probe.GT6ProbeStand.fldLong(sCRPHotGens[0], "mEfficiency") + "; тигель.getEnergySizeInputMin(HU)=" + sCRPHotCrucible.getEnergySizeInputMin(TD.Energy.HU, SIDE_ANY) + " тигель.getTemperatureMax=" + sCRPHotCrucible.getTemperatureMax(SIDE_ANY) + "K (безопасно выше Sn.melt=" + MT.Sn.mMeltingPoint + "K)");
+	}
+
+	/** Тик 210: разжечь ВСЕ 8 горелок HOT (топливо), засеять HOT тигель оловом (сетап-обход "units напрямую",
+	 *  разрешён заданием — судимый канал остаётся реальный тик onServerTickPost), выставить форме bitmask слитка
+	 *  (сетап-обход "долото уже применено"). COLD НЕ трогается вовсе ("тигель без горелки"). */
+	private static void gt6CrucibleProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		for (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick tGen : sCRPHotGens) {
+			gregapi.probe.GT6ProbeStand.fldSet(tGen, "mBurning", T);
+			gregapi.probe.GT6ProbeStand.slotSet(tGen, 0, ST.make(Items.COAL, 32, 0));
+		}
+		long tEnvTemp = WD.envTemp(sCRPPlayer.level(), sCRPHotBase.getX()+1, sCRPHotBase.getY(), sCRPHotBase.getZ()+1);
+		boolean tAdded = sCRPHotCrucible.addMaterialStacks(Arrays.asList(OM.stack(MT.Sn, CRP_SEED_SN)), tEnvTemp);
+		gregapi.probe.GT6ProbeStand.fldSet(sCRPHotMold, "mShape", CRP_INGOT_SHAPE);
+		sCRPHotTemp0 = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mTemperature");
+		sCRPHotEnergy0 = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mEnergy");
+		O.println("[" + CRP_M + "] тик 210 загрузка: 8 горелок HOT разожжены (32 угля каждая), Sn засеяно=" + tAdded + " (" + CRP_SEED_SN + " единиц, envTemp=" + tEnvTemp + "K), форма.mShape=форма-слитка; HOT temp0=" + sCRPHotTemp0 + "K energy0=" + sCRPHotEnergy0);
+	}
+
+	/** Тик 220: снимок ДО нагрева (HOT) и базовая точка COLD. */
+	private static void gt6CrucibleProbeSampleEarly() {
+		sCRPHotTemp0 = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mTemperature");
+		sCRPHotEnergy0 = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mEnergy");
+		sCRPColdTemp0 = gregapi.probe.GT6ProbeStand.fldLong(sCRPColdCrucible, "mTemperature");
+		gregapi.data.CS.OUT.println("[" + CRP_M + "] тик 220 ранний снимок: HOT temp0=" + sCRPHotTemp0 + "K energy0=" + sCRPHotEnergy0 + "; COLD temp0=" + sCRPColdTemp0 + "K");
+	}
+
+	/** Тик 900: ФАЗА HEAT — тигель греется, скорость сверена с формулой tRequiredEnergy=1+weight/100 (:353 ориг./371
+	 *  порт) и теоретическим потолком притока HU (8 горелок × mRate за окно), теоретический потолок — тот же приём,
+	 *  что в ENERGYCHAINPROBE 4b (не точное предсказание тика-в-тик, а верхняя граница "не из ничего"). */
+	@SuppressWarnings("unchecked")
+	private static void gt6CrucibleProbeJudgeHeat() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tTemp1 = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mTemperature");
+		long tEnergy1 = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mEnergy");
+		long tDeltaT = tTemp1 - sCRPHotTemp0;
+		Object tMat = gregapi.probe.GT6ProbeStand.fld(sCRPHotCrucible, "mMaterial");
+		double tWeight = ((gregapi.oredict.OreDictMaterial) tMat).getWeight(U * 100) + OM.weight((List<OreDictMaterialStack>) gregapi.probe.GT6ProbeStand.fld(sCRPHotCrucible, "mContent"));
+		long tRequiredEnergy = 1 + (long) (tWeight / gregtech.tileentity.multiblocks.MultiTileEntityCrucible.KG_PER_ENERGY);
+		long tRate = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotGens[0], "mRate");
+		int tTicksElapsed = 900 - 220;
+		long tMaxHU = tRate * sCRPHotGens.length * tTicksElapsed;
+		long tCeilConversions = tMaxHU / tRequiredEnergy;
+		O.println("[" + CRP_M + "] ===== ФАЗА HEAT (тик 900, окно 220..900) =====");
+		O.println("[" + CRP_M + "] HEAT: temp0=" + sCRPHotTemp0 + "K temp1=" + tTemp1 + "K (дельта=" + tDeltaT + "K); energy0=" + sCRPHotEnergy0 + " energy1=" + tEnergy1 + "; weight(живой)=" + tWeight + "кг tRequiredEnergy(живой)=" + tRequiredEnergy + " HU/K; потолок притока=" + tRate + "×" + sCRPHotGens.length + "×" + tTicksElapsed + "=" + tMaxHU + " HU => потолок конверсий=" + tCeilConversions + "K");
+		sCRPSeq.judge("HEAT температура тигля растёт (реальный нагрев от горелок)", tDeltaT > 0, ">0", tDeltaT);
+		sCRPSeq.judge("HEAT скорость нагрева в пределах теоретического потолка притока HU (формула :353/371, не из ничего)", tDeltaT <= tCeilConversions, "<=" + tCeilConversions, tDeltaT);
+	}
+
+	/** Тик 3200 (большой запас после ФИКСА front-face горелок — см. CRP_RING_OUTWARD): ФАЗА MELT — при
+	 *  T>=Sn.mMeltingPoint контроллер показывает расплав (mDisplayedFluid=Sn.mID, :350/368). */
+	private static void gt6CrucibleProbeJudgeMelt() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tTemp = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mTemperature");
+		int tDisplayedFluid = gregapi.probe.GT6ProbeStand.fldInt(sCRPHotCrucible, "mDisplayedFluid");
+		sCRPSnBeforePour = gt6CrucibleProbeContentAmount(sCRPHotCrucible, MT.Sn);
+		O.println("[" + CRP_M + "] ===== ФАЗА MELT (тик 3200) =====");
+		O.println("[" + CRP_M + "] MELT: тигель.mTemperature=" + tTemp + "K (порог Sn.mMeltingPoint=" + MT.Sn.mMeltingPoint + "K); mDisplayedFluid=" + tDisplayedFluid + " (ожидание Sn.mID=" + MT.Sn.mID + "); Sn в содержимом=" + sCRPSnBeforePour + " (засеяно=" + CRP_SEED_SN + ")");
+		sCRPSeq.judge("MELT температура достигла точки плавления Sn", tTemp >= MT.Sn.mMeltingPoint, ">=" + MT.Sn.mMeltingPoint, tTemp);
+		sCRPSeq.judge("MELT тигель показывает расплав нужного материала (mDisplayedFluid==Sn.mID)", tDisplayedFluid == MT.Sn.mID, MT.Sn.mID, tDisplayedFluid);
+		sCRPSeq.judge("MELT единицы Sn сохранены в содержимом (units, не потеряны при конверсии self->self)", sCRPSnBeforePour == CRP_SEED_SN, CRP_SEED_SN, sCRPSnBeforePour);
+	}
+
+	/** Тик 1350: ПОКМ пустой рукой по верхней грани формы (реальный канал Mold.onBlockActivated3, клик у центра
+	 *  грани -> цикл по горизонтальным соседям -> находит стену среднего слоя -> fillMoldAtSide). */
+	private static void gt6CrucibleProbePour() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		sCRPPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+		sCRPPlayer.getInventory().setItem(0, ItemStack.EMPTY);
+		sCRPPlayer.getInventory().setSelectedSlot(0);
+		BlockPos tMoldPos = sCRPHotBase.offset(3, 1, 1);
+		gregapi.probe.GT6ProbeStand.teleportLook(sCRPPlayer, tMoldPos.getX() + 0.5, tMoldPos.getY() + 1.0, tMoldPos.getZ() + 0.5, 0F, 90F);
+		net.minecraft.world.InteractionResult tResult = gregapi.probe.GT6ProbeStand.clickBlock(sCRPPlayer, tMoldPos, net.minecraft.core.Direction.UP);
+		Object tMoldContent = gregapi.probe.GT6ProbeStand.fld(sCRPHotMold, "mContent");
+		O.println("[" + CRP_M + "] ===== ФАЗА POUR (тик 3250, клик пустой рукой по верху формы @" + tMoldPos + ") =====");
+		O.println("[" + CRP_M + "] POUR: клик вернул=" + tResult + "; форма.mContent=" + (tMoldContent == null ? "null (заливка не удалась)" : tMoldContent) + " форма.mTemperature=" + gregapi.probe.GT6ProbeStand.fldLong(sCRPHotMold, "mTemperature") + "K");
+		sCRPSeq.judge("POUR форма приняла расплав (mContent != null сразу после клика)", tMoldContent != null, "!= null", tMoldContent);
+	}
+
+	/** Тик 3400 (150 тиков после POUR — запас над расчётным временем остывания формы ниже Sn.mMeltingPoint,
+	 *  естественное охлаждение -5K/тик, Mold.java:160 порт; форма после заливки ~1000K, нужно ~100 тиков): второй
+	 *  клик пустой рукой по форме — форма уже остыла, в slot(0) уже слиток -> pickUpItem кладёт его в руку игрока
+	 *  (реальный канал получения предмета). */
+	private static void gt6CrucibleProbePickup() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		sCRPSnAfterPour = gt6CrucibleProbeContentAmount(sCRPHotCrucible, MT.Sn);
+		BlockPos tMoldPos = sCRPHotBase.offset(3, 1, 1);
+		net.minecraft.world.InteractionResult tResult = gregapi.probe.GT6ProbeStand.clickBlock(sCRPPlayer, tMoldPos, net.minecraft.core.Direction.UP);
+		gregapi.data.CS.OUT.println("[" + CRP_M + "] тик 3400 PICKUP: форма.mTemperature=" + gregapi.probe.GT6ProbeStand.fldLong(sCRPHotMold, "mTemperature") + "K клик вернул=" + tResult + "; Sn в тигле после заливки=" + sCRPSnAfterPour + " (расход=" + (sCRPSnBeforePour - sCRPSnAfterPour) + ", ожидание=" + gregtech.tileentity.multiblocks.MultiTileEntityCrucible.KG_PER_ENERGY + "..U)");
+	}
+
+	/** Тик 3450: финальные судьи — POUR (слиток в руке игрока), CONSERVE (единицы по цепи закладка->слиток,
+	 *  включая промежуточное состояние формы — расплав ЕЩЁ в форме, если PICKUP почему-то опередил остывание),
+	 *  COLD (без горелки — не греется/не плавит), CONTROL-NEG (COLD не задет HOT-нагревом) + DONE. */
+	@SuppressWarnings("unchecked")
+	private static void gt6CrucibleProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + CRP_M + "] ===== ФИНАЛ (тик 3450) =====");
+
+		ItemStack tHandStack = sCRPPlayer.getInventory().getItem(0);
+		OreDictItemData tHandData = OM.anydata_(tHandStack);
+		boolean tGotIngot = tHandData != null && tHandData.mPrefix == OP.ingot && tHandData.mMaterial != null && tHandData.mMaterial.mMaterial == MT.Sn;
+		O.println("[" + CRP_M + "] POUR-финал: рука игрока=" + tHandStack + " (ожидание: 1x Sn Ingot)");
+		sCRPSeq.judge("POUR слиток Sn получен игроком реальным каналом (клик->pickUpItem)", tGotIngot, "Sn Ingot x>=1", tHandStack);
+
+		// CONSERVE считает ВЕСЬ путь закладка->расплав->слиток: остаток в тигле + слиток в руке игрока + то, что
+		// ЕЩЁ сидит в форме (расплав mContent ИЛИ уже остывший слиток в slot(0), не подобранный) — ничего не должно
+		// потеряться на любом промежуточном шаге цепи, независимо от точного момента PICKUP.
+		long tSnRemaining = gt6CrucibleProbeContentAmount(sCRPHotCrucible, MT.Sn);
+		long tIngotUnits = tGotIngot ? tHandStack.getCount() * OP.ingot.mAmount : 0;
+		long tMoldUnits = 0;
+		Object tMoldContent = gregapi.probe.GT6ProbeStand.fld(sCRPHotMold, "mContent");
+		if (tMoldContent instanceof OreDictMaterialStack tMoldStack && tMoldStack.mMaterial == MT.Sn) tMoldUnits += tMoldStack.mAmount;
+		ItemStack tMoldSlotStack = sCRPHotMold.slot(0);
+		// F15-гейт судьи: slot(0) отдаёт null-able 1:1-инвентарь — OM.anydata_ на null падает NPE (был EXC прогона 3)
+		OreDictItemData tMoldSlotData = ST.valid(tMoldSlotStack) ? OM.anydata_(tMoldSlotStack) : null;
+		if (tMoldSlotData != null && tMoldSlotData.mPrefix == OP.ingot && tMoldSlotData.mMaterial != null && tMoldSlotData.mMaterial.mMaterial == MT.Sn) tMoldUnits += tMoldSlotStack.getCount() * OP.ingot.mAmount;
+		long tConserveTotal = tSnRemaining + tIngotUnits + tMoldUnits;
+		O.println("[" + CRP_M + "] CONSERVE: засеяно=" + CRP_SEED_SN + " units; осталось в тигле=" + tSnRemaining + " + слиток в руке(" + (tGotIngot ? tHandStack.getCount() : 0) + "×" + OP.ingot.mAmount + ")=" + tIngotUnits + " + ещё в форме=" + tMoldUnits + " (mContent=" + tMoldContent + " slot0=" + tMoldSlotStack + ") => сумма=" + tConserveTotal);
+		sCRPSeq.judge("CONSERVE единицы материала сохранены по всей цепи закладка->расплав->слиток", tConserveTotal == CRP_SEED_SN, CRP_SEED_SN, tConserveTotal);
+
+		sCRPPlayer.setGameMode(net.minecraft.world.level.GameType.CREATIVE); // вернуть режим (§9 гигиена, как в др. пробах)
+
+		long tColdTempFinal = gregapi.probe.GT6ProbeStand.fldLong(sCRPColdCrucible, "mTemperature");
+		int tColdDisplayedFluid = gregapi.probe.GT6ProbeStand.fldInt(sCRPColdCrucible, "mDisplayedFluid");
+		long tColdSn = gt6CrucibleProbeContentAmount(sCRPColdCrucible, MT.Sn);
+		long tColdDeltaT = tColdTempFinal - sCRPColdTemp0;
+		O.println("[" + CRP_M + "] COLD: temp0=" + sCRPColdTemp0 + "K tempFinal=" + tColdTempFinal + "K (дельта=" + tColdDeltaT + "K, HOT дельта была намного больше); mDisplayedFluid=" + tColdDisplayedFluid + " Sn-содержимое=" + tColdSn);
+		sCRPSeq.judge("COLD тигель без горелки НЕ нагрелся (дельта в узкой полосе, в отличие от HOT)", Math.abs(tColdDeltaT) <= 5, "<=5", tColdDeltaT);
+		sCRPSeq.judge("COLD тигель без горелки НЕ расплавил металл (mDisplayedFluid=-1, металла не было)", tColdDisplayedFluid == -1 && tColdSn == 0, "-1 и 0", tColdDisplayedFluid + "/" + tColdSn);
+
+		long tHotTempFinal = gregapi.probe.GT6ProbeStand.fldLong(sCRPHotCrucible, "mTemperature");
+		O.println("[" + CRP_M + "] CONTROL-NEG: HOT (реальный приток HU) tempFinal=" + tHotTempFinal + "K против COLD (без притока) tempFinal=" + tColdTempFinal + "K — разница подтверждает, что нагрев причинно связан с горелками, а не с общим тиком/окружением");
+		sCRPSeq.judge("CONTROL-NEG HOT нагрелся значительно сильнее COLD (соседние структуры не задеты общим эффектом)", tHotTempFinal - tColdTempFinal > 50, ">50", tHotTempFinal - tColdTempFinal);
+
+		sCRPSeq.done();
+	}
+
+	public static void gt6CrucibleProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sCRPProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sCRPPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sCRPSeq == null) {
+			sCRPSeq = new gregapi.probe.GT6ProbeStand.Seq(CRP_M)
+				.at(200, GT_API_Proxy::gt6CrucibleProbeBuild)
+				.at(210, GT_API_Proxy::gt6CrucibleProbeLoad)
+				.at(220, GT_API_Proxy::gt6CrucibleProbeSampleEarly)
+				.at(900, GT_API_Proxy::gt6CrucibleProbeJudgeHeat)
+				.at(3200, GT_API_Proxy::gt6CrucibleProbeJudgeMelt)
+				.at(3250, GT_API_Proxy::gt6CrucibleProbePour)
+				.at(3400, GT_API_Proxy::gt6CrucibleProbePickup)
+				.at(3450, GT_API_Proxy::gt6CrucibleProbeJudgeFinal);
+		}
+		sCRPSeq.tick(sCRPProbeTick);
 	}
 
 }
