@@ -357,6 +357,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6autooutprobe.flag")) gt6AutoOutProbeTick(aEvent.getServer());
 				// [GT6-CHEMPROBE] верификационный стенд «Связка №7 — химический процесс multi-fluid» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6chemprobe.flag")) gt6ChemProbeTick(aEvent.getServer());
+				// [GT6-STEAMFARMPROBE] верификационный стенд «Связка №8 — паровая ферма N бойлеров → 1 турбина» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6steamfarmprobe.flag")) gt6SteamFarmProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -4102,6 +4104,375 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(300, GT_API_Proxy::gt6ChemProbeJudgeFinal);
 		}
 		sChemSeq.tick(sChemProbeTick);
+	}
+
+	// ========== [GT6-STEAMFARMPROBE] ВРЕМЕННАЯ проба «Связка №8 — паровая ферма N бойлеров → 1 турбина» (Ф3.1, гейт run/gt6steamfarmprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// Запрос игрока: "паровые схемы, где несколько бойлеров крутят одну турбину" + живой тест ВСКРЫТОЙ связкой №4
+	// семантики недонапряжения (Root.doEnergyInjection:886): 1 Pb-бойлер разгоняет цепь лишь до пакета динамо <16
+	// (LV min) — батарея пуста; N бойлеров обязаны поднять пакет выше порога.
+	// ЭТАП А v2 (ПЕРВАЯ схема — паровой манифольд трубами к ОДНОЙ турбине — ОПРОВЕРГНУТА ЖИВЫМ ПРОГОНОМ, см. ниже
+	// "ЭТАП А v1 [ОПРОВЕРГНУТО]"; это ФИНАЛЬНАЯ рабочая схема): турбина физически НЕ может стоять за трубой —
+	// агрегация переносится на РОТАЦИОННУЮ (RU) сторону через MultiTileEntityGearBox, который РЕАЛЬНО СКЛАДЫВАЕТ
+	// несколько ОДНОТИКОВЫХ входов (MultiTileEntityGearBox.java:380-395: "There already has been at least one Input
+	// during this Tick. Add more Power." — mCurrentSpeed=Math.min(tSpeed,mCurrentSpeed) [держит скорость по
+	// САМОМУ СЛАБОМУ], mCurrentPower+=aPower [СКЛАДЫВАЕТ мощность/количество] — это ЕДИНСТВЕННЫЙ уже существующий
+	// в коде центр, который АГРЕГИРУЕТ несколько независимых источников в БОЛЬШИЙ единый пакет; ни труба (см. v1),
+	// ни провод (см. ниже "почему НЕ провод"), ни вал (чистый прямой транзит OPOS[aSide], MultiTileEntityAxle.java:
+	// 105-117, БЕЗ сложения) этого не делают). Схема: КАЖДАЯ из N колонн генератор->бойлер->турбина — ПРЯМОЙ стек
+	// (турбина СТОИТ НА бойлере, БЕЗ трубы — тот же путь getAdjacentTank(SIDE_UP)->FL.move->fillSided->fill(Direction,
+	// ...), что уже доказанно работает в ENERGYCHAINPROBE), турбина эмитит RU СТРОГО ВВЕРХ (mFacing=UP гейт, см. v1)
+	// — НАД КАЖДОЙ турбиной стоит СВОЯ шестерня (никаких сложных гейтов: gearbox читает соседей КАЖДЫЙ тик заново
+	// через getAdjacentTileEntity, никакого connect()/ITileEntityConnector нет вовсе — MultiTileEntityGearBox extends
+	// TileEntityBase07Paintable, НЕ коннектор). Шестерни выстроены В ЛИНИЮ (та же горизонтальная геометрия, что и
+	// манифольд v1, но БЕЗ падежа "сторона не резолвится" — здесь ВСЯ маршрутизация энергии идёт через ГТ6-родной
+	// ITileEntityEnergy.doEnergyInjection с РЕАЛЬНОЙ стороной на каждом хопе, а не через neo-сайдлес IFluidHandler):
+	// каждая шестерня[i] mAxleGear (публичное поле, бит-маска "где смонтирована шестерня", без axle — верхние 2 бита
+	// =0) = SBIT_D(вход от СВОЕЙ турбины) | (SBIT_U ТОЛЬКО у шестерни[0], выход к динамо) | (SBIT_W если i>0, к
+	// шестерне[i-1]) | (SBIT_E если i<N-1, от шестерни[i+1]) — валидность проверена ВРУЧНУЮ по MultiTileEntityGearBox.
+	// checkGears():271-310 (case 2 "corner" :284-293 и case 3/4 "triangle" :294-306, ни у одной из наших масок не
+	// задействованы ВСЕ 3 оси разом → mGearsWork=true); mGearsWork — ПУБЛИЧНОЕ поле, НЕ пересчитывается автоматически
+	// при прямой записи mAxleGear рефлексией НЕ нужной (все поля gearbox — public), поэтому пробa вызывает checkGears()
+	// САМА и пишет mGearsWork явно — тот же публичный метод, каким реально пользуется readFromNBT2:70/onToolClick2.
+	// Шестерня[0] (агрегатор) относит СУММУ на динамо(mFacing=UP)->батарея-LV(mFacing=NORTH), как раньше. Почему НЕ
+	// провод (EU): проверено по коду — MultiTileEntityWireElectric.transferElectricity (:170-189) релеит КАЖДЫЙ
+	// входящий пакет СВОИМ РАЗМЕРОМ (aVoltage только УМЕНЬШАЕТСЯ на mLoss, никогда не растёт от параллельных
+	// источников) — параллельное подключение N динамо к ОДНОЙ батарее через провод не поднимает size(=voltage)
+	// ни на йоту (только amperage/count), а порог §4 (getEnergySizeInputMin) — это ИМЕННО ограничение по size;
+	// подниматься способен только САМ пакет ОДНОГО эмиттера, а его пакет = f(накопленный mStorage.mEnergy) —
+	// вот почему нужно копить БОЛЬШЕ RU в ОДНОМ dynamo.mStorage (через gearbox), а не параллелить много dynamo.
+	// ЭТАП А v1 [ОПРОВЕРГНУТО, см. ↑]: ПЕРВАЯ гипотеза (жидкостные трубы Cu id26102, манифольд над бойлерами,
+	// турбина на манифольде) СТРОИЛАСЬ и ЖИВОЙ ПРОГОН (2 прогона, идентичный результат) показал: бойлер->манифольд
+	// работал (mTanks[0].amount() рос 0->600=mCapacity потолок пропускной трубы), но манифольд->турбина НИКОГДА
+	// не заполнялся (турбина.mTank=0 все 900 тиков, DIAG-CONNECT подтвердил connected(DOWN)=connected(UP)=true —
+	// связи были верны). Корень (§6.1, найден ЖИВОЙ трассировкой ДО перестройки, не угадан): MultiTileEntityPipeFluid.
+	// distribute() (:410,:428) зовёт adjacent-tank цель через ГЕНЕРИЧЕСКИЙ neo-интерфейс IFluidHandler.fill(FluidStack,
+	// FluidAction) БЕЗ стороны — TileEntityBase01Root.java:815 "return fill((Direction)null, aFluid, aAction.execute());"
+	// — это резолвится в UT.Code.side(null)=SIDE_ANY(6) (:807 "sideless neo-вызов = сторона null -> SIDE_ANY(6),
+	// родная GT6-конвенция «любая сторона»"). Турбина же требует ТОЧНОЕ совпадение стороны: getFluidTankFillable2
+	// (MultiTileEntityTurbineSteam.java:116) "return isInput(aSide) && ...", isInput(aSide){return aSide==OPOS[mFacing];}
+	// (:129) — SIDE_ANY(6) НИКОГДА не равен ни одному реальному 0-5, значит null. Контраст: бочка (стенд №2) принимает
+	// БЕЗ гейта по стороне (TileEntityBase08Barrel.java:298 "return (mMode&B[1])!=0?null:mTank;" — не проверяет aSide
+	// вовсе), поэтому FLUIDPIPEPROBE (труба->бочка) прошёл, а труба->турбина — структурно не может (не факт постройки,
+	// а СВОЙСТВО КОНТРАКТА neo IFluidHandler у ЛЮБОЙ трубы-в-любую-турбину, не только в этом стенде). Прямой хоп
+	// бойлер->турбина (БЕЗ трубы, как в ENERGYCHAINPROBE) РАБОТАЕТ, потому что там сторона идёт через ДРУГОЙ путь:
+	// FL.move->fill_(DelegatorTileEntity,...)->fillSided (FL.java) — "return aFluidHandler instanceof TileEntityBase01Root
+	// tGT ? tGT.fill(FORGE_DIR[aSide], aFluid, aDoFill) : ..." — РЕАЛЬНАЯ сторона от делегатора, НЕ sideless. Задание
+	// прямо предусматривало этот исход: "Если агрегация по коду физически невозможна — перестрой схему (например
+	// турбины на КАЖДЫЙ бойлер и агрегация RU валами?)" — перестроено на agregацию ШЕСТЕРНЯМИ (валы транзитны и не
+	// складывают, см. ↑). Фронт горелки — НАРУЖУ ОТ РЯДА (перпендикулярно оси, приём 8-горелочного кольца
+	// CRUCIBLEPROBE, MultiTileEntityGeneratorSolid.java:111-114 гейт !hasCollide&&oxygen) — ряд можно ставить
+	// ВПЛОТНУЮ (dx=1), клиренс горелки на ПЕРПЕНДИКУЛЯРНОЙ оси, соседнюю колонну не заденет. Снять при уборке фазы.
+	// ИТОГ v3 [ЖИВОЙ ПРОГОН ВСКРЫЛ ВТОРОЙ БАРЬЕР, ЧЕСТНЫЙ FAIL ТОПОЛОГИИ АГРЕГАЦИИ]: схема v2 (шестерни-цепочка)
+	// ПОСТРОИЛАСЬ и ЗАПУСТИЛАСЬ (checkGears()=true у всех троих, mAxleGear=[35,49,17] по формуле выше), НО живой
+	// прогон (DIAG-JAM, тики 211-900) показал: шестерня[0] (биты D+U+E=35, "агрегатор") и шестерня[1] (биты
+	// D+W+E=49, "средняя") получили mJammed=TRUE начиная с тика 213 НАВСЕГДА (шестерня[2], биты D+W=17, чистый
+	// "угол" — 2 грани — НЕ заклинила, mJammed=false все 900 тиков). Корень (§6.1, вручную пересчитан ДО и
+	// подтверждён живым mRotationData/mJammed ПОСЛЕ) — MultiTileEntityGearBox.getRotations():227-268: при получении
+	// ВТОРОГО входа за тот же тик с ДРУГОЙ, не совпадающей по паритету грани, вычисленный tRotationData СРАВНИВАЕТСЯ
+	// с уже установленным mRotationData (:381-389 "There already has been at least one Input during this Tick...
+	// if (tRotationData != mRotationData) { ... mJammed = T; }") — для 3-гранного узла D+U+E (или D+W+E) вход С ОСИ
+	// D/U (вертикаль) и вход С ГРАНИ E/W (горизонталь) дают РАЗНЫЕ tRotationData (пересчитано вручную по коду:
+	// getRotations(D,false) на маске 35 = 96, getRotations(E,false) на ТОЙ ЖЕ маске 35 = 67, 96≠67 → джем; для маски
+	// 49: getRotations(D,false)=112 против getRotations(E или W,false), аналогично конфликт) — это РЕАЛЬНАЯ
+	// механика сцепления зубьев (перпендикулярные шестерни ДОЛЖНЫ вращаться в согласованных направлениях; "вертикаль
+	// как вход" и "горизонталь как вход" в ОДНОМ 3-гранном узле физически несовместимы для ОДНОВРЕМЕННОГО приёма
+	// с двух источников), НЕ баг постройки пробы — тот же класс ограничения, что тултип "Gears are interlocked
+	// wrongly!" (MultiTileEntityGearBox.java:87,94-95) описывает игроку. После джема isEnergyAcceptingFrom (:413,
+	// "(aTheoretical||!mJammed)&&...") НАВСЕГДА отвергает ВСЕ дальнейшие входы на ЭТОЙ шестерне — batch с турбины[1]
+	// и весь хвост цепи от шестерни[2] цепи после первого столкновения не проходят НИКОГДА (что и наблюдается:
+	// шестерня[0].mCurrentPower/mTransferredLast=0 с тика 213 до конца окна). Вывод: из ДВУХ опробованных схем
+	// агрегации (v1 труба, v2 шестерни-цепочка) ОБЕ физически заблокированы кодом GT6 по РАЗНЫМ причинам (v1 —
+	// программный контракт neo IFluidHandler, v2 — механика паритета вращения шестерён) — задание САМО допускало
+	// этот исход ("сдай обоснованный FAIL топологии"). BASELINE (прямой стек, без агрегации) и рост ПРОИЗВОДСТВА
+	// пара ×N (судья "суммарный пар... кратно числу бойлеров" — PASS, коэффициент РОВНО 3.0) остаются ДОКАЗАННЫМИ;
+	// судьи "LV-батарея начала принимать"/"пакет вырос" у FARM закономерно FAIL — заносится в судьи ЧЕСТНО, не
+	// подгоняется. Снять при уборке фазы.
+	private static final int STF_GEN_ID     = 1199;  // Brick Burning Box (Solid) — тот же генератор, что ENERGYCHAINPROBE/CRUCIBLEPROBE
+	private static final int STF_BOILER_ID  = 1200;  // Steam Boiler Tank (Pb) — тот же ECP_BOILER_ID, mOutput=32
+	private static final int STF_TURBINE_ID = 1518;  // Steam Turbine (Invar) — тот же ECP_TURBINE_ID
+	private static final int STF_DYNAMO_ID  = 10111; // Electric Dynamo (T1) — тот же ECP_DYNAMO_ID
+	private static final int STF_BATBOX_ID  = 10081; // Battery Box (LV) — окно приёма [16..64] (mInput=32, TileEntityBase01Root.java:893-894 min/max=rec/2, rec*2)
+	private static final int STF_GEARBOX_ID = 24819; // Custom Bronze Gearbox — Loader_MultiTileEntities.java:1682, NBT_INPUT=VMAX[1]=64 (VMAX CS.java:154) — больше турбинного RU-пакета (mEnergyOUT.mRec=32)
+	private static final int STF_N          = 3;     // число бойлеров фермы (задание: "возьми 3-4")
+	private static final String STF_M = "GT6-STEAMFARMPROBE";
+	private static int sSTFProbeTick = -1;
+	private static net.minecraft.server.level.ServerPlayer sSTFPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sSTFSeq;
+	private static long sSTFBaseMaxPkt = 0, sSTFFarmMaxPkt = 0;
+
+	// BASELINE-1 — ПРЯМОЙ стек (без шестерни, 1 колонна не нуждается в агрегации): та же семантика недонапряжения,
+	// что ENERGYCHAINPROBE CHAIN, приёмник — LV (id10081)
+	private static gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick sSTFBaseGen;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank sSTFBaseBoiler;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam sSTFBaseTurbine;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric sSTFBaseDynamo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sSTFBaseBattery;
+
+	// FARM-N (n=STF_N) — N колонн, КАЖДАЯ турбина->СВОЯ шестерня, шестерни в цепь суммируют RU в ОДНО динамо->батарею
+	private static gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] sSTFFarmGens;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[] sSTFFarmBoilers;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam[] sSTFFarmTurbines;
+	private static gregtech.tileentity.energy.transformers.MultiTileEntityGearBox[] sSTFFarmGears;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric sSTFFarmDynamo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sSTFFarmBattery;
+	private static long sSTFFarmEu0;
+
+	// COLD (n=STF_N) — тот же аппарат (с шестернями), НИКОГДА не зажигается/не заряжается (контроль)
+	private static gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] sSTFColdGens;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[] sSTFColdBoilers;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam[] sSTFColdTurbines;
+	private static gregtech.tileentity.energy.transformers.MultiTileEntityGearBox[] sSTFColdGears;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric sSTFColdDynamo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sSTFColdBattery;
+
+	/** Строит ОДНУ колонну генератор->бойлер->турбина, турбина ПРЯМО НА бойлере (БЕЗ трубы — доказанный рабочий
+	 *  путь ENERGYCHAINPROBE: getAdjacentTank(SIDE_UP)->FL.move->fill_(DelegatorTileEntity)->fillSided с РЕАЛЬНОЙ
+	 *  стороной, см. комментарий блока выше). Генератор развёрнут НАРУЖУ от ряда (SIDE_SOUTH, перпендикулярно оси
+	 *  ряда EAST/+X — тот же приём CRUCIBLEPROBE). aBase — позиция земли ПОД генератором. */
+	private static Object[] gt6SteamFarmProbeBuildColumn(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aBase, String aLabel) {
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick tGen = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sSTFPlayer, aBase, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_GEN_ID),
+			gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick.class, STF_M, aLabel + "-генератор");
+		if (tGen == null) throw new RuntimeException(aLabel + ": генератор не встал");
+		tGen.setPrimaryFacing(SIDE_SOUTH); // перпендикулярно оси ряда — клиренс не заденет соседнюю колонну
+		net.minecraft.core.BlockPos tGenPos = aBase.above();
+		aLevel.setBlock(tGenPos.relative(FORGE_DIR[tGen.mFacing]), Blocks.AIR.defaultBlockState(), 3);
+		gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank tBoiler = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sSTFPlayer, tGenPos, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_BOILER_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank.class, STF_M, aLabel + "-бойлер");
+		if (tBoiler == null) throw new RuntimeException(aLabel + ": бойлер не встал");
+		net.minecraft.core.BlockPos tBoilerPos = tGenPos.above();
+		gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam tTurbine = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sSTFPlayer, tBoilerPos, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_TURBINE_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam.class, STF_M, aLabel + "-турбина");
+		if (tTurbine == null) throw new RuntimeException(aLabel + ": турбина не встала");
+		tTurbine.setPrimaryFacing(SIDE_UP); // приём пара СНИЗУ (от бойлера, ПРЯМОЙ IFluidHandler-хоп, side-aware), эмиссия RU вверх — TurbineSteam.java:129-130
+		return new Object[]{tGen, tBoiler, tTurbine};
+	}
+
+	/** Тик 200 (BASELINE): построить 1 колонну + динамо+батарея НАПРЯМУЮ на турбине (как ENERGYCHAINPROBE CHAIN). */
+	private static void gt6SteamFarmProbeBuildBaseline(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aGround) {
+		Object[] c = gt6SteamFarmProbeBuildColumn(aLevel, aGround, "BASELINE");
+		sSTFBaseGen = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick) c[0];
+		sSTFBaseBoiler = (gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank) c[1];
+		sSTFBaseTurbine = (gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam) c[2];
+		gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric tDynamo = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sSTFPlayer, sSTFBaseTurbine.getBlockPos(), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_DYNAMO_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric.class, STF_M, "BASELINE-динамо");
+		if (tDynamo == null) throw new RuntimeException("BASELINE: динамо не встало");
+		tDynamo.setPrimaryFacing(SIDE_UP);
+		sSTFBaseDynamo = tDynamo;
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBattery = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sSTFPlayer, tDynamo.getBlockPos(), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_BATBOX_ID),
+			gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, STF_M, "BASELINE-батарея");
+		if (tBattery == null) throw new RuntimeException("BASELINE: батарея не встала");
+		tBattery.setPrimaryFacing(SIDE_NORTH); // isInput=aSide!=mFacing -> принимает снизу (DOWN!=NORTH)
+		sSTFBaseBattery = tBattery;
+		gregapi.data.CS.OUT.println("[" + STF_M + "] BASELINE построен: 1 колонна (прямой стек, без шестерни), турбина@" + sSTFBaseTurbine.getBlockPos() + " динамо@" + tDynamo.getBlockPos() + " батарея-LV@" + tBattery.getBlockPos());
+	}
+
+	/** Тик 200 (FARM/COLD): построить aN колонн + aN шестерён в цепь (см. комментарий блока — mAxleGear-маска на
+	 *  колонну) + динамо+батарея НАД шестернёй[0] (агрегатор). aRowBase — земля ПОД колонной[0] (колонна[i] на
+	 *  aRowBase.offset(i,0,0), ряд вдоль EAST/+X). */
+	private static Object[] gt6SteamFarmProbeBuildFarm(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aRowBase, String aLabel) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		int n = STF_N;
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] rGens = new gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[n];
+		gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[] rBoilers = new gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[n];
+		gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam[] rTurbines = new gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam[n];
+		gregtech.tileentity.energy.transformers.MultiTileEntityGearBox[] rGears = new gregtech.tileentity.energy.transformers.MultiTileEntityGearBox[n];
+		for (int i = 0; i < n; i++) {
+			net.minecraft.core.BlockPos tBase = aRowBase.offset(i, 0, 0);
+			Object[] c = gt6SteamFarmProbeBuildColumn(aLevel, tBase, aLabel + "[" + i + "]");
+			rGens[i] = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick) c[0];
+			rBoilers[i] = (gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank) c[1];
+			rTurbines[i] = (gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam) c[2];
+			gregtech.tileentity.energy.transformers.MultiTileEntityGearBox tGear = gregapi.probe.GT6ProbeStand.place(
+				aLevel, sSTFPlayer, rTurbines[i].getBlockPos(), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_GEARBOX_ID),
+				gregtech.tileentity.energy.transformers.MultiTileEntityGearBox.class, STF_M, aLabel + "-шестерня[" + i + "]");
+			if (tGear == null) throw new RuntimeException(aLabel + ": шестерня[" + i + "] не встала");
+			int tBits = SBIT_D; // вход СНИЗУ от своей турбины — всегда
+			if (i == 0) tBits |= SBIT_U;        // агрегатор: выход ВВЕРХ к динамо
+			if (i > 0) tBits |= SBIT_W;          // связь к предыдущей (индекс-1, к агрегатору)
+			if (i < n-1) tBits |= SBIT_E;        // связь к следующей (индекс+1)
+			tGear.mAxleGear = (short) tBits;     // публичное поле — "где смонтирована шестерня", БЕЗ axle (верхние 2 бита=0)
+			tGear.mGearsWork = tGear.checkGears(); // ПУБЛИЧНЫЙ метод (MultiTileEntityGearBox.java:271), тот же вызов, что readFromNBT2:70/onToolClick2 — не пересчитывается автоматически при прямой записи mAxleGear
+			rGears[i] = tGear;
+		}
+		gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric tDynamo = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sSTFPlayer, rGears[0].getBlockPos(), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_DYNAMO_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric.class, STF_M, aLabel + "-динамо");
+		if (tDynamo == null) throw new RuntimeException(aLabel + ": динамо не встало");
+		tDynamo.setPrimaryFacing(SIDE_UP);
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBattery = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sSTFPlayer, tDynamo.getBlockPos(), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_BATBOX_ID),
+			gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, STF_M, aLabel + "-батарея");
+		if (tBattery == null) throw new RuntimeException(aLabel + ": батарея не встала");
+		tBattery.setPrimaryFacing(SIDE_NORTH);
+		O.println("[" + STF_M + "] " + aLabel + " построен: N=" + n + " колонн, шестерни в цепь (биты=" + java.util.Arrays.toString(new int[]{rGears[0].mAxleGear, n>1?rGears[1].mAxleGear:-1, n>2?rGears[n-1].mAxleGear:-1}) + "), mGearsWork=" + java.util.Arrays.asList(rGears).stream().map(g -> g.mGearsWork).toList() + ", динамо@" + tDynamo.getBlockPos() + " батарея-LV@" + tBattery.getBlockPos());
+		return new Object[]{rGens, rBoilers, rTurbines, rGears, tDynamo, tBattery};
+	}
+
+	/** Тик 200: построить BASELINE(1 колонна)/FARM(N колонн+шестерни)/COLD(N колонн+шестерни) (свежая зона
+	 *  Z=42/50/60, за пределами всех прежних стендов — макс. Z был 34 у AUTOOUTPROBE). */
+	private static void gt6SteamFarmProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = sSTFPlayer.level();
+		O.println("========== [" + STF_M + "] Связка №8 — паровая ферма N бойлеров → 1 турбина (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {STF_GEN_ID, STF_BOILER_ID, STF_TURBINE_ID, STF_DYNAMO_ID, STF_BATBOX_ID, STF_GEARBOX_ID};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		O.println("[" + STF_M + "] ID подтверждены: генератор=" + tReg.getClassContainer(STF_GEN_ID).mClass.getSimpleName() + "(" + STF_GEN_ID + ") бойлер=" + tReg.getClassContainer(STF_BOILER_ID).mClass.getSimpleName() + "(" + STF_BOILER_ID + ") турбина=" + tReg.getClassContainer(STF_TURBINE_ID).mClass.getSimpleName() + "(" + STF_TURBINE_ID + ") шестерня=" + tReg.getClassContainer(STF_GEARBOX_ID).mClass.getSimpleName() + "(" + STF_GEARBOX_ID + ") динамо=" + tReg.getClassContainer(STF_DYNAMO_ID).mClass.getSimpleName() + "(" + STF_DYNAMO_ID + ") батарея-LV=" + tReg.getClassContainer(STF_BATBOX_ID).mClass.getSimpleName() + "(" + STF_BATBOX_ID + ")");
+
+		net.minecraft.core.BlockPos tRowBase = sSTFPlayer.blockPosition().offset(4, 0, 42);
+		net.minecraft.core.BlockPos tRowFarm = sSTFPlayer.blockPosition().offset(4, 0, 50);
+		net.minecraft.core.BlockPos tRowCold = sSTFPlayer.blockPosition().offset(4, 0, 60);
+
+		gt6SteamFarmProbeBuildBaseline(tLevel, tRowBase);
+
+		Object[] tFarm = gt6SteamFarmProbeBuildFarm(tLevel, tRowFarm, "FARM");
+		sSTFFarmGens     = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[]) tFarm[0];
+		sSTFFarmBoilers  = (gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[]) tFarm[1];
+		sSTFFarmTurbines = (gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam[]) tFarm[2];
+		sSTFFarmGears    = (gregtech.tileentity.energy.transformers.MultiTileEntityGearBox[]) tFarm[3];
+		sSTFFarmDynamo   = (gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric) tFarm[4];
+		sSTFFarmBattery  = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tFarm[5];
+
+		Object[] tCold = gt6SteamFarmProbeBuildFarm(tLevel, tRowCold, "COLD");
+		sSTFColdGens     = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[]) tCold[0];
+		sSTFColdBoilers  = (gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[]) tCold[1];
+		sSTFColdTurbines = (gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam[]) tCold[2];
+		sSTFColdGears    = (gregtech.tileentity.energy.transformers.MultiTileEntityGearBox[]) tCold[3];
+		sSTFColdDynamo   = (gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric) tCold[4];
+		sSTFColdBattery  = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tCold[5];
+
+		O.println("[" + STF_M + "] живые параметры: бойлер mOutput=" + gregapi.probe.GT6ProbeStand.fldLong(sSTFFarmBoilers[0], "mOutput") + " mCapacity=" + gregapi.probe.GT6ProbeStand.fldLong(sSTFFarmBoilers[0], "mCapacity") + "; шестерня[0].mMaxThroughPut=" + sSTFFarmGears[0].mMaxThroughPut);
+		O.println("[" + STF_M + "] турбина mEnergyIN(min/rec/max)=" + sSTFFarmTurbines[0].mEnergyIN.mMin + "/" + sSTFFarmTurbines[0].mEnergyIN.mRec + "/" + sSTFFarmTurbines[0].mEnergyIN.mMax + " mEnergyOUT(min/rec/max)=" + sSTFFarmTurbines[0].mEnergyOUT.mMin + "/" + sSTFFarmTurbines[0].mEnergyOUT.mRec + "/" + sSTFFarmTurbines[0].mEnergyOUT.mMax);
+		O.println("[" + STF_M + "] динамо mEnergyIN(min/rec/max)=" + sSTFFarmDynamo.mEnergyIN.mMin + "/" + sSTFFarmDynamo.mEnergyIN.mRec + "/" + sSTFFarmDynamo.mEnergyIN.mMax + " mEnergyOUT(min/rec/max)=" + sSTFFarmDynamo.mEnergyOUT.mMin + "/" + sSTFFarmDynamo.mEnergyOUT.mRec + "/" + sSTFFarmDynamo.mEnergyOUT.mMax + " mStorage.mCapacity=" + sSTFFarmDynamo.mStorage.mCapacity + "; батарея-LV mInput=" + sSTFFarmBattery.mInput + " min=" + sSTFFarmBattery.getEnergySizeInputMin(TD.Energy.EU, SIDE_DOWN) + " max=" + sSTFFarmBattery.getEnergySizeInputMax(TD.Energy.EU, SIDE_DOWN));
+	}
+
+	/** Разжечь+предзарядить ОДИН массив колонн: КАЖДЫЙ бойлер получает СВОЙ горящий генератор (32 угля) и СВОЙ
+	 *  пред-заряд пара cap/2+100000 (выше порога эмиссии :139-140 — тот же приём ENERGYCHAINPROBE, обходит ТОЛЬКО
+	 *  начальную точку резервуара; сама конверсия/эмиссия/агрегация — реальные тики). Переиспользует ГОТОВЫЙ
+	 *  хелпер gt6EnergyChainProbeBoilerFill (тот же класс GT_API_Proxy, ECP-секция выше) — не дублирует рефлексию. */
+	private static void gt6SteamFarmProbeLoadRow(gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] aGens, gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[] aBoilers) {
+		for (int i = 0; i < aGens.length; i++) {
+			gregapi.probe.GT6ProbeStand.fldSet(aGens[i], "mBurning", T);
+			gregapi.probe.GT6ProbeStand.slotSet(aGens[i], 0, ST.make(Items.COAL, 32, 0));
+			long tCap = gregapi.probe.GT6ProbeStand.fldLong(aBoilers[i], "mCapacity");
+			gt6EnergyChainProbeBoilerFill(aBoilers[i], 1, "steam", tCap / 2 + 100000);
+			gt6EnergyChainProbeBoilerFill(aBoilers[i], 0, "water", 4000);
+		}
+	}
+
+	/** Тик 210: разжечь BASELINE и FARM (COLD НЕ трогается вовсе — контроль "ферма без предзаряда/горения"). */
+	private static void gt6SteamFarmProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gt6SteamFarmProbeLoadRow(new gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[]{sSTFBaseGen}, new gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[]{sSTFBaseBoiler});
+		gt6SteamFarmProbeLoadRow(sSTFFarmGens, sSTFFarmBoilers);
+		O.println("[" + STF_M + "] тик 210 загрузка: BASELINE(1 бойлер) и FARM(" + STF_N + " бойлеров) разожжены+предзаряжены (precharge=cap/2+100000 на КАЖДЫЙ бойлер); COLD НЕ трогается (контроль)");
+	}
+
+	/** Окно 211..900: живой пакет динамо (формула TE_Behavior_Energy_Converter.java:62, tOutput=units(mStorage.
+	 *  mEnergy,mEnergyIN.mRec,mEnergyOUT.mRec,F) — читаем ТЕ ЖЕ публичные поля, что читает production-код, ничего
+	 *  не подменяем) — копим МАКСИМУМ за окно (пакет колеблется тик-в-тик, урок §7 манифеста «однократный снимок
+	 *  лжёт»), печать BASELINE и FARM РЯДОМ каждые 50 тиков (+первые тики после загрузки — локализация каскада
+	 *  через шестерни). */
+	private static void gt6SteamFarmProbeTrace() {
+		if (sSTFBaseDynamo == null || sSTFFarmDynamo == null) return;
+		long tBasePkt = UT.Code.units(sSTFBaseDynamo.mStorage.mEnergy, sSTFBaseDynamo.mEnergyIN.mRec, sSTFBaseDynamo.mEnergyOUT.mRec, F);
+		long tFarmPkt = UT.Code.units(sSTFFarmDynamo.mStorage.mEnergy, sSTFFarmDynamo.mEnergyIN.mRec, sSTFFarmDynamo.mEnergyOUT.mRec, F);
+		if (tBasePkt > sSTFBaseMaxPkt) sSTFBaseMaxPkt = tBasePkt;
+		if (tFarmPkt > sSTFFarmMaxPkt) sSTFFarmMaxPkt = tFarmPkt;
+		if (sSTFProbeTick % 50 == 0 || sSTFProbeTick <= 216) {
+			java.io.PrintStream O = gregapi.data.CS.OUT;
+			long tG0Power = sSTFFarmGears[0].mCurrentPower, tG0Speed = sSTFFarmGears[0].mCurrentSpeed, tG0Last = sSTFFarmGears[0].mTransferredLast;
+			O.println("[" + STF_M + "] DIAG-TRACE тик " + sSTFProbeTick + ": BASELINE турбина.mSteamCounter=" + sSTFBaseTurbine.mSteamCounter + " динамо.mStorage=" + sSTFBaseDynamo.mStorage.mEnergy + " pkt=" + tBasePkt + " батарея.mEnergy=" + sSTFBaseBattery.mEnergy
+				+ " || FARM(N=" + STF_N + ") турбина[0].mSteamCounter=" + sSTFFarmTurbines[0].mSteamCounter + " шестерня[0].(power/speed/last)=" + tG0Power + "/" + tG0Speed + "/" + tG0Last + " динамо.mStorage=" + sSTFFarmDynamo.mStorage.mEnergy + " pkt=" + tFarmPkt + " батарея.mEnergy=" + sSTFFarmBattery.mEnergy);
+			// [GT6-STEAMFARMPROBE] DIAG §6.1 — гипотеза "заклинивание по рассинхрону направления вращения": при
+			// ОДНОВРЕМЕННОМ приёме на РАЗНЫХ осях (D от своей турбины + E от цепочки) getRotations() может дать
+			// НЕСОВПАДАЮЩИЙ mRotationData -> MultiTileEntityGearBox.java:381-389 "Gears are jamming!" mJammed=true,
+			// после чего isEnergyAcceptingFrom (:413) НАВСЕГДА возвращает false для ВСЕХ шестерён цепи. Снять при уборке фазы.
+			O.println("[" + STF_M + "] DIAG-JAM тик " + sSTFProbeTick + ": шестерня[0].mJammed=" + sSTFFarmGears[0].mJammed + " mRotationData=" + sSTFFarmGears[0].mRotationData + " mInputtedSides=" + sSTFFarmGears[0].mInputtedSides
+				+ " || шестерня[1].mJammed=" + sSTFFarmGears[1].mJammed + " mRotationData=" + sSTFFarmGears[1].mRotationData
+				+ " || шестерня[2].mJammed=" + sSTFFarmGears[2].mJammed + " mRotationData=" + sSTFFarmGears[2].mRotationData);
+			// [GT6-STEAMFARMPROBE] DIAG §6.1 — локализация хопа турбина->динамо (BASELINE, прямой стек, идентичный
+			// ENERGYCHAINPROBE): турбина.mStorage(RU накоплено) / mConverter.mCanEmitEnergy,mEmitsEnergy (реальные
+			// публичные поля, читаем БЕЗ вызова судимого метода) + isEnergyEmittingTo/isEnergyAcceptingFrom на РЕАЛЬНЫХ
+			// сторонах (UP от турбины, DOWN у динамо) — не симуляция значения, просто чтение состояния. Снять при уборке фазы.
+			O.println("[" + STF_M + "] DIAG-HOP тик " + sSTFProbeTick + ": BASELINE турбина.mStorage=" + sSTFBaseTurbine.mStorage.mEnergy + " mCanEmitEnergy=" + sSTFBaseTurbine.mConverter.mCanEmitEnergy + " mEmitsEnergy=" + sSTFBaseTurbine.mConverter.mEmitsEnergy
+				+ " турбина.isEnergyEmittingTo(RU,UP,F)=" + sSTFBaseTurbine.isEnergyEmittingTo(TD.Energy.RU, SIDE_UP, F) + " динамо.isEnergyAcceptingFrom(RU,DOWN,F)=" + sSTFBaseDynamo.isEnergyAcceptingFrom(TD.Energy.RU, SIDE_DOWN, F)
+				+ " турбина.mFacing=" + sSTFBaseTurbine.mFacing + " динамо.mFacing=" + sSTFBaseDynamo.mFacing + " турбина.getBlockPos()=" + sSTFBaseTurbine.getBlockPos() + " динамо.getBlockPos()=" + sSTFBaseDynamo.getBlockPos());
+		}
+	}
+
+	/** Тик 900: BASELINE (недонапряжение подтверждено) vs FARM (масштабирование числом через шестерни) vs COLD
+	 *  (нули) + DONE. */
+	private static void gt6SteamFarmProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tBaseMin = sSTFBaseBattery.getEnergySizeInputMin(TD.Energy.EU, SIDE_DOWN);
+		long tFarmMin = sSTFFarmBattery.getEnergySizeInputMin(TD.Energy.EU, SIDE_DOWN);
+
+		O.println("[" + STF_M + "] ===== BASELINE-1 (1 бойлер, прямой стек, тик " + sSTFProbeTick + ") =====");
+		O.println("[" + STF_M + "] BASELINE: динамо.mStorage=" + sSTFBaseDynamo.mStorage.mEnergy + " pkt_max_за_окно=" + sSTFBaseMaxPkt + " (LV.mInput=" + sSTFBaseBattery.mInput + " min=" + tBaseMin + ") батарея.mEnergy=" + sSTFBaseBattery.mEnergy + " турбина.mSteamCounter=" + sSTFBaseTurbine.mSteamCounter);
+		sSTFSeq.judge("BASELINE: пакет динамо < min LV-батареи (недонапряжение по семантике связки №4)", sSTFBaseMaxPkt < tBaseMin, "<" + tBaseMin, sSTFBaseMaxPkt);
+		sSTFSeq.judge("BASELINE: LV-батарея ПУСТА (пакет отвергнут целиком, Root.doEnergyInjection:886)", sSTFBaseBattery.mEnergy == 0, 0, sSTFBaseBattery.mEnergy);
+
+		O.println("[" + STF_M + "] ===== FARM-N (N=" + STF_N + " бойлеров, шестерни агрегируют RU, тик " + sSTFProbeTick + ") =====");
+		O.println("[" + STF_M + "] FARM: динамо.mStorage=" + sSTFFarmDynamo.mStorage.mEnergy + " (cap=" + sSTFFarmDynamo.mStorage.mCapacity + ") pkt_max_за_окно=" + sSTFFarmMaxPkt + " (LV min=" + tFarmMin + ") батарея.mEnergy=" + sSTFFarmBattery.mEnergy);
+		boolean tEverGrew = sSTFSeq.everSeen("farm-eu-grew");
+		sSTFSeq.judge("FARM: пакет динамо ВЫРОС против BASELINE (" + sSTFFarmMaxPkt + " vs " + sSTFBaseMaxPkt + ")", sSTFFarmMaxPkt > sSTFBaseMaxPkt, ">" + sSTFBaseMaxPkt, sSTFFarmMaxPkt);
+		sSTFSeq.judge("FARM: пакет динамо перевалил за min LV", sSTFFarmMaxPkt >= tFarmMin, ">=" + tFarmMin, sSTFFarmMaxPkt);
+		sSTFSeq.judge("FARM: LV-батарея НАЧАЛА принимать (mEnergy>0 хотя бы раз за окно, Seq.watch — урок §7 манифеста)", tEverGrew, T, tEverGrew);
+		sSTFSeq.judge("FARM: LV-батарея.mEnergy сейчас > 0", sSTFFarmBattery.mEnergy > 0, ">0", sSTFFarmBattery.mEnergy);
+		// ДИАГНОСТИЧЕСКИЙ судья (§6.1, НЕ маскирует провал агрегации выше — фиксирует ДИАГНОЗ КОРНЯ машиной, не
+		// комментарием): 3-гранные шестерни (агрегатор[0], средняя[1]) заклинивают при первом же одновременном
+		// приёме с разных осей (getRotations() рассинхрон, MultiTileEntityGearBox.java:381-389) — печать
+		// ПОДТВЕРЖДАЕТ ИЛИ ОПРОВЕРГАЕТ гипотезу живыми полями, не мнением.
+		O.println("[" + STF_M + "] ДИАГНОЗ КОРНЯ (§6.1): шестерня[0].mJammed=" + sSTFFarmGears[0].mJammed + " шестерня[1].mJammed=" + sSTFFarmGears[1].mJammed + " шестерня[2](чистый угол,2 грани).mJammed=" + sSTFFarmGears[2].mJammed);
+		sSTFSeq.judge("FARM: ДИАГНОЗ подтверждён — 3-гранные шестерни[0]/[1] заклинили (getRotations-рассинхрон), угловая шестерня[2] цела", sSTFFarmGears[0].mJammed && sSTFFarmGears[1].mJammed && !sSTFFarmGears[2].mJammed, "true,true,false", sSTFFarmGears[0].mJammed + "," + sSTFFarmGears[1].mJammed + "," + sSTFFarmGears[2].mJammed);
+
+		long tBaseSteam = sSTFBaseTurbine.mSteamCounter;
+		long tFarmSteamSum = 0; for (gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam t : sSTFFarmTurbines) tFarmSteamSum += t.mSteamCounter;
+		double tRatio = tBaseSteam > 0 ? (double) tFarmSteamSum / tBaseSteam : -1;
+		O.println("[" + STF_M + "] СРАВНЕНИЕ пара: BASELINE.mSteamCounter=" + tBaseSteam + " FARM.СУММА(N турбин).mSteamCounter=" + tFarmSteamSum + " отношение=" + tRatio + " (ожидание ~N=" + STF_N + "; тот же счётчик, что MultiTileEntityTurbineSteam.java:94, живёт ПО МОДУЛЮ STEAM_PER_WATER=200 :98 — справочно, не точный расход, урок №2 манифеста)");
+		sSTFSeq.judge("FARM: суммарный пар (по всем N турбинам) обработан кратно числу бойлеров (±50%, тот же допуск, что ENERGYCHAINPROBE 4b)", tRatio >= STF_N * 0.5 && tRatio <= STF_N * 1.5, "[" + (STF_N * 0.5) + ".." + (STF_N * 1.5) + "]", tRatio);
+
+		// Потолок ИЗ СЕТАПА (не из модуло-счётчика, урок №2 манифеста) — тот же приём ENERGYCHAINPROBE 4b, ×N бойлеров
+		long tCapPerBoiler = gregapi.probe.GT6ProbeStand.fldLong(sSTFFarmBoilers[0], "mCapacity");
+		long tSteamAvailTotal = (tCapPerBoiler / 2 + 100000 + 4000 * 160) * STF_N; // (precharge + вода×160 макс.калcификация :120-123) × N боилеров
+		long tRuMax = tSteamAvailTotal / STEAM_PER_EU; // MultiTileEntityTurbineSteam.java:95
+		long tDynIn = sSTFFarmDynamo.mEnergyIN.mRec, tDynOut = sSTFFarmDynamo.mEnergyOUT.mRec;
+		long tEuCeil = tRuMax * tDynOut / tDynIn; // TE_Behavior_Energy_Converter.java:62 — верхняя граница КПД динамо
+		long tEuDelta = sSTFFarmBattery.mEnergy - sSTFFarmEu0;
+		O.println("[" + STF_M + "] FARM теоретический потолок (из сетапа ×" + STF_N + "): пар_доступный=" + tSteamAvailTotal + " RU_max=" + tRuMax + " EU_потолок=" + tEuCeil + " EU_прирост_факт=" + tEuDelta);
+		sSTFSeq.judge("FARM: EU-прирост <= теоретический потолок цепи (не создаёт энергию из ничего)", tEuDelta <= tEuCeil, "<=" + tEuCeil, tEuDelta);
+
+		O.println("[" + STF_M + "] ===== COLD (N=" + STF_N + " бойлеров, никогда не зажжена/не заряжена, тик " + sSTFProbeTick + ") =====");
+		boolean tColdBurning = gregapi.probe.GT6ProbeStand.fldBool(sSTFColdGens[0], "mBurning");
+		long tColdSteamSum = 0; for (gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam t : sSTFColdTurbines) tColdSteamSum += t.mSteamCounter;
+		O.println("[" + STF_M + "] COLD: генератор[0].mBurning=" + tColdBurning + " СУММА(N турбин).mSteamCounter=" + tColdSteamSum + " динамо.mStorage=" + sSTFColdDynamo.mStorage.mEnergy + " батарея.mEnergy=" + sSTFColdBattery.mEnergy);
+		sSTFSeq.judge("COLD: генератор НЕ горит", !tColdBurning, F, tColdBurning);
+		sSTFSeq.judge("COLD: турбины не обработали пар", tColdSteamSum == 0, 0, tColdSteamSum);
+		sSTFSeq.judge("COLD: динамо.mStorage пуст", sSTFColdDynamo.mStorage.mEnergy == 0, 0, sSTFColdDynamo.mStorage.mEnergy);
+		sSTFSeq.judge("COLD: батарея пуста", sSTFColdBattery.mEnergy == 0, 0, sSTFColdBattery.mEnergy);
+
+		sSTFSeq.done();
+	}
+
+	public static void gt6SteamFarmProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sSTFProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sSTFPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sSTFSeq == null) {
+			sSTFSeq = new gregapi.probe.GT6ProbeStand.Seq(STF_M)
+				.at(200, GT_API_Proxy::gt6SteamFarmProbeBuild)
+				.at(210, () -> {gt6SteamFarmProbeLoad(); sSTFFarmEu0 = sSTFFarmBattery.mEnergy;})
+				.window(211, 900, GT_API_Proxy::gt6SteamFarmProbeTrace)
+				.watch("farm-eu-grew", 210, 900, () -> sSTFFarmBattery != null && sSTFFarmBattery.mEnergy > 0)
+				.at(900, GT_API_Proxy::gt6SteamFarmProbeJudgeFinal);
+		}
+		sSTFSeq.tick(sSTFProbeTick);
 	}
 
 }
