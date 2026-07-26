@@ -176,6 +176,8 @@ public abstract class TileEntityBase10EnergyBatBox extends TileEntityBase09Facin
 	
 	@Override
 	public long doInject(TagData aEnergyType, byte aSide, long aSize, long aAmount, boolean aDoInject) {
+		// [GT6-ENERGYCHAINPROBE] §6.3 DIAG вход доInject — снять при уборке фазы Ф3.1
+		if (gregapi.data.CS.probeFlag("gt6energychainprobe.flag")) gregapi.data.CS.OUT.println("[GT6-ENERGYCHAINPROBE] DIAG-DOINJECT ВХОД @" + getBlockPos().toShortString() + " type=" + aEnergyType + " side=" + aSide + " size=" + aSize + " amount=" + aAmount + " doInject=" + aDoInject + " receivable=" + mReceivablePower + " max=" + getEnergySizeInputMax(aEnergyType, aSide) + " mEnergy=" + mEnergy);
 		if (mReceivablePower <= 0) return 0;
 		aSize = Math.abs(aSize);
 		if (aSize > getEnergySizeInputMax(aEnergyType, aSide)) {

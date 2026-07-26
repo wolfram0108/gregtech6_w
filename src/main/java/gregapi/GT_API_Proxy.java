@@ -349,6 +349,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6fluidpipeprobe.flag")) gt6FluidPipeProbeTick(aEvent.getServer());
 				// [GT6-ITEMPIPEPROBE] верификационный стенд «Связка №3 — предметные трубы» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6itempipeprobe.flag")) gt6ItemPipeProbeTick(aEvent.getServer());
+				// [GT6-ENERGYCHAINPROBE] верификационный стенд «Связка №4 — энерго-лестница» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6energychainprobe.flag")) gt6EnergyChainProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -2851,6 +2853,411 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(650, GT_API_Proxy::gt6ItemPipeProbeJudge650);
 		}
 		sIPSeq.tick(sIPProbeTick);
+	}
+
+	// ========== [GT6-ENERGYCHAINPROBE] ВРЕМЕННАЯ проба «Связка №4 — энерго-лестница» (Ф3.1, гейт run/gt6energychainprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// Цель: доказать ЧИСЛОМ реальную конверсию топливо→HU→Steam→RU→EU→RU, КАЖДОЕ звено — реальный конвертор
+	// GT6, тикающий штатным onTick2 (никакой судимый метод пробой не вызывается напрямую). Судимые каналы:
+	// MultiTileEntityGeneratorSolid.onTick2 (:100-176, HU из рецепта FM.Furnace) -> ITileEntityEnergy.Util.
+	// emitEnergyToNetwork (ITileEntityEnergy.java:229) -> MultiTileEntityBoilerTank.doInject/onTick2 (:112-152,
+	// Steam из HU+воды) -> FL.move(getAdjacentTank(SIDE_UP)) -> MultiTileEntityTurbineSteam.doConversion (:87-109,
+	// RU из Steam) -> TE_Behavior_Energy_Converter.doConversion (:61-94, эмиссия) -> MultiTileEntityDynamoElectric
+	// (наследует TileEntityBase10EnergyConverter, EU из RU) -> TileEntityBase10EnergyBatBox.doInject (:185-199).
+	// Топология (этап А, разведка кода, ВЫЧИТАНА, не угадана): генератор эмитит HU ТОЛЬКО вверх
+	// (MultiTileEntityGeneratorSolid.java:270 isEnergyEmittingTo: SIDES_TOP[aSide]); бойлер принимает HU с ЛЮБОЙ
+	// стороны (:250 isEnergyAcceptingFrom = isEnergyType, side-гейта нет) и эмитит пар ТОЛЬКО вверх (:143
+	// getAdjacentTank(SIDE_UP), хардкод, не по mFacing); турбина принимает Steam на OPOS[mFacing] и эмитит RU на
+	// mFacing (:129-130) — при mFacing=UP принимает снизу и эмитит вверх; динамо симметрично: RU на OPOS[mFacing],
+	// EU на mFacing (:35-36) — при mFacing=UP тот же вертикальный проход. Итог: ВЕРТИКАЛЬНЫЙ СТОЛБ генератор->
+	// бойлер->турбина(mFacing=UP)->динамо(mFacing=UP)->батарея(приёмник), facing турбины/динамо выставлен ПОСЛЕ
+	// установки реальным API setPrimaryFacing (тот же метод, что дёргает гайковёрт, TileEntityBase09FacingSingle.
+	// java:88) — топология, не обход передачи (манифест §4). Подбор тиров (этап А, чтобы избежать "чёрной дыры"
+	// потери энергии на несовпадении размеров пакетов): TE_Behavior_Energy_Stats.doInject (:56-66) отвергает пакет
+	// РАЗМЕРОМ МЕНЬШЕ receiver.mMin, но эмиттер (TE_Behavior_Energy_Converter.java:79-90) считает это "успехом"
+	// (расходует mStorage), даже если receiver ничего не получил — ПРОВЕРЕНО по коду: mEnergyOUT.mMin для Invar-
+	// турбины (id1518, NBT_OUTPUT=32→min=16, Loader_MultiTileEntities.java:797) РОВНО = mEnergyIN.mMin динамо T1
+	// (id10111, NBT_INPUT=32→min=16, :950); динамо-T1 mEnergyOUT.mMin=11 (NBT_OUTPUT=22→11) << mInput/2=4 батареи
+	// ULV (id10080, mInput=V[0]=8, TileEntityBase10EnergyBatBox.java:724 getEnergySizeInputMin=recommended/2) — все
+	// пороги цепи согласованы конструктором GT6, потерь на границах не будет. Бойлер (Pb, id1200, NBT_OUTPUT_SU=
+	// 16×STEAM_PER_EU=32) эмитит пар соседу только когда mTanks[1].amount()>capacity/2 (:139, capacity=mOutput×
+	// 10000=320000 — рассчитано на промышленный приток HU, недостижимо с нуля за окно пробы одним генератором) —
+	// сетап-обход ТОЛЬКО начальной точки резервуара (пред-заряд пара чуть ниже порога излучения, аналог "вода в
+	// танк" из задания), сама эмиссия/конверсия ниже по цепи — реальные тики. Формула бойлера (:117-124): пар =
+	// вода_расход×mEfficiency×160/10000, mEfficiency∈[5000,10000] (калcификация :119-122) ⇒ пар∈[вода×80,вода×160].
+	// Формула турбины (:95): RU=Steam/STEAM_PER_EU (точно, без округления вниз кроме целочисленного пола). Формула
+	// генератора (:104,156): HU=min(mRate,mEnergy)/тик эмиссия; накопление=рецепт.getAbsoluteTotalPower()×
+	// mEfficiency/10000 (Recipe.java:723-724, UT.Code.units). Дифф порт/оригинал всех 5 классов задания — построчно
+	// идентичен (только engine-swap типов TileEntity->BlockEntity, NBTTagCompound->CompoundTag+getXOr, World->Level,
+	// IFluidHandler forge->neoforge; см. параллельное чтение файлов в отчёте агента) — расхождений в control-flow
+	// НЕТ. Снять при уборке фазы.
+	private static final int ECP_GEN_ID         = 1199;  // Brick Burning Box (Solid) — Loader_MultiTileEntities.java:520, mEfficiency=2500 mRate=16 HU/т
+	private static final int ECP_BOILER_ID      = 1200;  // Steam Boiler Tank (Pb) — :554, NBT_OUTPUT_SU=16×STEAM_PER_EU=32 (mOutput)
+	private static final int ECP_TURBINE_ID     = 1518;  // Steam Turbine (Invar) — :797, NBT_INPUT=48×STEAM_PER_EU=96 NBT_OUTPUT=32 (тир согласован с динамо T1)
+	private static final int ECP_DYNAMO_ID      = 10111; // Electric Dynamo (T1) — :950, NBT_INPUT=32 NBT_OUTPUT=22
+	private static final int ECP_BATBOX_RECV_ID = 10080; // Battery Box (ULV) — :894 i=0, mInput=8, окно приёма [min=4..max=16].
+	// РАЗБОР ФИНАЛЬНЫЙ (§6.3-принты доказали): живая цепь даёт пакет РОВНО 14 EU (турбина: steam-storage 64 →
+	// tOutput=units(64,96,32)=21 RU; динамо: units(21,32,22)=14 EU; DIAG-DOCONV ×1018 storage=21 tOutput=14).
+	// Root.doEnergyInjection:886 (ориг. :717, посимвольно 1:1): пакет < getEnergySizeInputMin приёмника
+	// «съедается» БЕЗ зачисления (return aAmount мимо doInject) — семантика НЕДОНАПРЯЖЕНИЯ GT6. LV-батарея
+	// (min=16) глотала пакет-14 впустую каждый тик — потому «эмиссия есть, приёмник пуст». ULV (min=4≤14≤max=16)
+	// принимает. Промежуточная замена ULV→LV была ошибкой ревизии оркестратора (страх oversize 44>16 —
+	// нереализуем: живой поток фиксирован на 14, ибо один Pb-бойлер физически не разгоняет турбину до
+	// рекомендованных 96 steam-storage; «раскормить» цепь = связка №8 «N бойлеров на турбину»).
+	private static final int ECP_BATBOX_SRC_ID  = 10081; // Battery Box (LV) — :894 i=1, тот же ID, что в WIREPROBE (mInput=mOutput=32)
+	private static final int ECP_MOTOR_ID       = 10021; // Electric Motor (T1) — :850, NBT_INPUT=32 NBT_OUTPUT=16
+	private static final int ECP_AXLE_ID        = 24800; // Small Wooden Axle — Loader_MultiTileEntities.java:1667, mSpeed=VMAX[0] mPower=1, коннектор без порога размера
+	private static final String ECP_M = "GT6-ENERGYCHAINPROBE";
+	private static int sECPProbeTick = -1;
+	private static net.minecraft.server.level.ServerPlayer sECPPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sECPSeq;
+
+	// ISO (фаза 4a — генератор+бойлер изолированно, без турбины)
+	private static gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick sECPIsoGen;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank sECPIsoBoiler;
+	private static long sECPIsoWater0, sECPIsoFuel0;
+	// COLD (control-neg — тот же генератор+бойлер, НИКОГДА не разжигается/не кормится)
+	private static gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick sECPColdGen;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank sECPColdBoiler;
+	private static long sECPColdWater0;
+	// CHAIN (фаза 4b — полная цепь генератор+бойлер+турбина+динамо+батарея-приёмник)
+	private static gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick sECPChainGen;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank sECPChainBoiler;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam sECPChainTurbine;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric sECPChainDynamo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sECPChainBatBox;
+	private static long sECPChainEu0, sECPChainSteamCounter0;
+	// MOTOR (фаза 4c — батарея-источник+мотор+вал, независимая горизонтальная линия)
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sECPMotorSrc;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityMotorElectric sECPMotor;
+	private static gregapi.tileentity.connectors.MultiTileEntityAxle sECPAxle;
+	private static net.minecraft.core.BlockPos sECPMotorPos; // DIAG: для сверки захваченной ссылки sECPMotor с реально тикающим BE по координатам (§6.1) — снять при уборке фазы
+
+	/** Прямой доступ к mTanks[aIndex] бойлера (caraCass fill()/tankAmount() бьют только в индекс 0 через singular
+	 *  mTank — у бойлера ЕГО НЕТ, только массив mTanks[вода=0,пар=1]; читаем массив через caraCass fld()). */
+	private static gregapi.fluid.FluidTankGT gt6EnergyChainProbeBoilerTank(Object aBoiler, int aIndex) {
+		Object tArr = gregapi.probe.GT6ProbeStand.fld(aBoiler, "mTanks");
+		return (tArr instanceof gregapi.fluid.FluidTankGT[] tTanks && aIndex < tTanks.length) ? tTanks[aIndex] : null;
+	}
+	private static long gt6EnergyChainProbeBoilerAmount(Object aBoiler, int aIndex) {
+		gregapi.fluid.FluidTankGT t = gt6EnergyChainProbeBoilerTank(aBoiler, aIndex);
+		return t == null ? 0 : t.amount();
+	}
+	private static void gt6EnergyChainProbeBoilerFill(Object aBoiler, int aIndex, String aFluidName, long aMB) {
+		gregapi.fluid.FluidTankGT t = gt6EnergyChainProbeBoilerTank(aBoiler, aIndex);
+		if (t != null) t.setFluid(gregapi.data.FL.make(aFluidName, aMB));
+	}
+
+	/** Один "генератор+бойлер" (общий кирпич ISO/COLD/CHAIN): анкер -> генератор (face UP) -> бойлер (face UP,
+	 *  прямо на генераторе). Перед-грань генератора (реальный гейт onTick2 :113-114 hasCollide/oxygen) расчищена
+	 *  в AIR по ЖИВОМУ mFacing (публичное поле TileEntityBase09FacingSingle.java:45) — не судимый канал, топология. */
+	private static Object[] gt6EnergyChainProbeBuildGenBoiler(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aGround, String aLabel) {
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick tGen = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sECPPlayer, aGround, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(ECP_GEN_ID),
+			gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick.class, ECP_M, aLabel + "-генератор");
+		if (tGen == null) return new Object[]{null, null};
+		net.minecraft.core.BlockPos tGenPos = aGround.above();
+		net.minecraft.core.Direction tFront = FORGE_DIR[tGen.mFacing];
+		aLevel.setBlock(tGenPos.relative(tFront), Blocks.AIR.defaultBlockState(), 3);
+		gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank tBoiler = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sECPPlayer, tGenPos, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(ECP_BOILER_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank.class, ECP_M, aLabel + "-бойлер");
+		return new Object[]{tGen, tBoiler};
+	}
+
+	/** Тик 200: постройка ISO/COLD/CHAIN (вертикальные столбы) + MOTOR (горизонтальная линия). Любой обрыв ->
+	 *  RuntimeException -> Seq печатает EXC. */
+	private static void gt6EnergyChainProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = sECPPlayer.level();
+		O.println("========== [" + ECP_M + "] Связка №4 — энерго-лестница (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {ECP_GEN_ID, ECP_BOILER_ID, ECP_TURBINE_ID, ECP_DYNAMO_ID, ECP_BATBOX_RECV_ID, ECP_BATBOX_SRC_ID, ECP_MOTOR_ID, ECP_AXLE_ID};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		O.println("[" + ECP_M + "] ID подтверждены: генератор=" + tReg.getClassContainer(ECP_GEN_ID).mClass.getSimpleName() + "(" + ECP_GEN_ID + ") бойлер=" + tReg.getClassContainer(ECP_BOILER_ID).mClass.getSimpleName() + "(" + ECP_BOILER_ID + ") турбина=" + tReg.getClassContainer(ECP_TURBINE_ID).mClass.getSimpleName() + "(" + ECP_TURBINE_ID + ") динамо=" + tReg.getClassContainer(ECP_DYNAMO_ID).mClass.getSimpleName() + "(" + ECP_DYNAMO_ID + ") батарея-ULV=" + tReg.getClassContainer(ECP_BATBOX_RECV_ID).mClass.getSimpleName() + "(" + ECP_BATBOX_RECV_ID + ") батарея-LV=" + tReg.getClassContainer(ECP_BATBOX_SRC_ID).mClass.getSimpleName() + "(" + ECP_BATBOX_SRC_ID + ") мотор=" + tReg.getClassContainer(ECP_MOTOR_ID).mClass.getSimpleName() + "(" + ECP_MOTOR_ID + ") вал=" + tReg.getClassContainer(ECP_AXLE_ID).mClass.getSimpleName() + "(" + ECP_AXLE_ID + ")");
+
+		net.minecraft.core.BlockPos tBaseIso   = sECPPlayer.blockPosition().offset(4, 0,  4);
+		net.minecraft.core.BlockPos tBaseCold  = sECPPlayer.blockPosition().offset(4, 0, 10);
+		net.minecraft.core.BlockPos tBaseChain = sECPPlayer.blockPosition().offset(4, 0, 16);
+		net.minecraft.core.BlockPos tBaseMotor = sECPPlayer.blockPosition().offset(4, 0, 22);
+
+		Object[] tIso  = gt6EnergyChainProbeBuildGenBoiler(tLevel, tBaseIso,   "ISO");
+		Object[] tCold = gt6EnergyChainProbeBuildGenBoiler(tLevel, tBaseCold,  "COLD");
+		Object[] tChn  = gt6EnergyChainProbeBuildGenBoiler(tLevel, tBaseChain, "CHAIN");
+		sECPIsoGen   = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick) tIso[0];  sECPIsoBoiler   = (gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank) tIso[1];
+		sECPColdGen  = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick) tCold[0]; sECPColdBoiler  = (gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank) tCold[1];
+		sECPChainGen = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick) tChn[0];  sECPChainBoiler = (gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank) tChn[1];
+		if (sECPIsoBoiler == null || sECPColdBoiler == null || sECPChainBoiler == null) throw new RuntimeException("постройка генератор+бойлер не удалась (null в цепочке)");
+
+		net.minecraft.core.BlockPos tChainBoilerPos = tBaseChain.above().above();
+		sECPChainTurbine = gregapi.probe.GT6ProbeStand.place(tLevel, sECPPlayer, tChainBoilerPos, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(ECP_TURBINE_ID), gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam.class, ECP_M, "CHAIN-турбина");
+		if (sECPChainTurbine == null) throw new RuntimeException("турбина не встала");
+		sECPChainTurbine.setPrimaryFacing(SIDE_UP); // приём Steam снизу (OPOS[UP]=DOWN, от бойлера), эмиссия RU вверх — TurbineSteam.java:129-130
+		net.minecraft.core.BlockPos tTurbinePos = tChainBoilerPos.above();
+		sECPChainDynamo = gregapi.probe.GT6ProbeStand.place(tLevel, sECPPlayer, tTurbinePos, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(ECP_DYNAMO_ID), gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric.class, ECP_M, "CHAIN-динамо");
+		if (sECPChainDynamo == null) throw new RuntimeException("динамо не встало");
+		sECPChainDynamo.setPrimaryFacing(SIDE_UP); // приём RU снизу, эмиссия EU вверх — DynamoElectric.java:35-36
+		net.minecraft.core.BlockPos tDynamoPos = tTurbinePos.above();
+		sECPChainBatBox = gregapi.probe.GT6ProbeStand.place(tLevel, sECPPlayer, tDynamoPos, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(ECP_BATBOX_RECV_ID), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, ECP_M, "CHAIN-батарея-приёмник");
+		if (sECPChainBatBox == null) throw new RuntimeException("батарея-приёмник не встала");
+		sECPChainBatBox.setPrimaryFacing(SIDE_NORTH); // isInput=aSide!=mFacing (:232) -> принимает снизу (DOWN!=NORTH)
+
+		sECPMotorSrc = gregapi.probe.GT6ProbeStand.place(tLevel, sECPPlayer, tBaseMotor, net.minecraft.core.Direction.EAST,
+			gregapi.probe.GT6ProbeStand.mteStack(ECP_BATBOX_SRC_ID), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, ECP_M, "MOTOR-батарея-источник");
+		if (sECPMotorSrc == null) throw new RuntimeException("батарея-источник (MOTOR) не встала");
+		sECPMotorSrc.setPrimaryFacing(SIDE_EAST); // эмиссия EU на восток, к мотору
+		net.minecraft.core.BlockPos tSrcPos = tBaseMotor.relative(net.minecraft.core.Direction.EAST);
+		sECPMotor = gregapi.probe.GT6ProbeStand.place(tLevel, sECPPlayer, tSrcPos, net.minecraft.core.Direction.EAST,
+			gregapi.probe.GT6ProbeStand.mteStack(ECP_MOTOR_ID), gregtech.tileentity.energy.converters.MultiTileEntityMotorElectric.class, ECP_M, "MOTOR-мотор");
+		if (sECPMotor == null) throw new RuntimeException("мотор не встал");
+		sECPMotor.setPrimaryFacing(SIDE_EAST); // приём EU с запада (isInput=aSide!=mFacing), эмиссия RU на восток к валу
+		net.minecraft.core.BlockPos tMotorPos = tSrcPos.relative(net.minecraft.core.Direction.EAST);
+		sECPMotorPos = tMotorPos;
+		sECPAxle = gregapi.probe.GT6ProbeStand.place(tLevel, sECPPlayer, tMotorPos, net.minecraft.core.Direction.EAST,
+			gregapi.probe.GT6ProbeStand.mteStack(ECP_AXLE_ID), gregapi.tileentity.connectors.MultiTileEntityAxle.class, ECP_M, "MOTOR-вал");
+		if (sECPAxle == null) throw new RuntimeException("вал не встал");
+		boolean tAxleConnected = sECPAxle.connect(SIDE_WEST, T); // принять RU с запада (от мотора) — реальный API connect(), как WIREPROBE/ITEMPIPEPROBE (топология, не обход передачи)
+		O.println("[" + ECP_M + "] DIAG-MOTOR: вал.connect(WEST,true) вернул=" + tAxleConnected + "; вал.isEnergyAcceptingFrom(RU,WEST,F)=" + sECPAxle.isEnergyAcceptingFrom(TD.Energy.RU, SIDE_WEST, F) + " мотор.isEnergyEmittingTo(RU,EAST,F)=" + sECPMotor.isEnergyEmittingTo(TD.Energy.RU, SIDE_EAST, F));
+
+		O.println("[" + ECP_M + "] живые параметры (из BE, не предположены): генератор mRate=" + gregapi.probe.GT6ProbeStand.fldLong(sECPIsoGen, "mRate") + " mEfficiency=" + gregapi.probe.GT6ProbeStand.fldLong(sECPIsoGen, "mEfficiency") + "; бойлер mOutput=" + gregapi.probe.GT6ProbeStand.fldLong(sECPIsoBoiler, "mOutput") + " mCapacity=" + gregapi.probe.GT6ProbeStand.fldLong(sECPIsoBoiler, "mCapacity"));
+		O.println("[" + ECP_M + "] турбина(CHAIN) mEnergyIN(min/rec/max)=" + sECPChainTurbine.mConverter.mEnergyIN.mMin + "/" + sECPChainTurbine.mConverter.mEnergyIN.mRec + "/" + sECPChainTurbine.mConverter.mEnergyIN.mMax + " mEnergyOUT(min/rec/max)=" + sECPChainTurbine.mConverter.mEnergyOUT.mMin + "/" + sECPChainTurbine.mConverter.mEnergyOUT.mRec + "/" + sECPChainTurbine.mConverter.mEnergyOUT.mMax);
+		O.println("[" + ECP_M + "] динамо(CHAIN) mEnergyIN.mMin=" + sECPChainDynamo.mConverter.mEnergyIN.mMin + " mEnergyOUT(min/rec/max)=" + sECPChainDynamo.mConverter.mEnergyOUT.mMin + "/" + sECPChainDynamo.mConverter.mEnergyOUT.mRec + "/" + sECPChainDynamo.mConverter.mEnergyOUT.mMax + "; батарея-приёмник mInput=" + sECPChainBatBox.mInput);
+		O.println("[" + ECP_M + "] мотор(MOTOR) mEnergyIN.mMin=" + sECPMotor.mConverter.mEnergyIN.mMin + " mEnergyOUT(min/rec/max)=" + sECPMotor.mConverter.mEnergyOUT.mMin + "/" + sECPMotor.mConverter.mEnergyOUT.mRec + "/" + sECPMotor.mConverter.mEnergyOUT.mMax + "; батарея-источник mOutput=" + sECPMotorSrc.mOutput + "; вал mSpeed/mPower=" + sECPAxle.mSpeed + "/" + sECPAxle.mPower);
+	}
+
+	/** Тик 210: разжечь ISO+CHAIN (топливо+вода), НЕ трогать COLD (кроме воды — отличие ТОЛЬКО в горении), пред-
+	 *  зарядить паровой буфер CHAIN чуть ниже порога излучения соседу (см. комментарий блока выше — сетап резервуара,
+	 *  не обход конверсии/эмиссии). */
+	private static void gt6EnergyChainProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gregapi.probe.GT6ProbeStand.fldSet(sECPIsoGen, "mBurning", T);
+		gregapi.probe.GT6ProbeStand.slotSet(sECPIsoGen, 0, ST.make(Items.COAL, 32, 0));
+		gt6EnergyChainProbeBoilerFill(sECPIsoBoiler, 0, "water", 4000);
+		sECPIsoWater0 = gt6EnergyChainProbeBoilerAmount(sECPIsoBoiler, 0);
+		sECPIsoFuel0  = gregapi.probe.GT6ProbeStand.slotCount(sECPIsoGen, 0);
+
+		gt6EnergyChainProbeBoilerFill(sECPColdBoiler, 0, "water", 4000); // воду даём тоже — единственное отличие COLD от ISO есть mBurning/топливо
+		sECPColdWater0 = gt6EnergyChainProbeBoilerAmount(sECPColdBoiler, 0);
+
+		gregapi.probe.GT6ProbeStand.fldSet(sECPChainGen, "mBurning", T);
+		gregapi.probe.GT6ProbeStand.slotSet(sECPChainGen, 0, ST.make(Items.COAL, 32, 0));
+		gt6EnergyChainProbeBoilerFill(sECPChainBoiler, 0, "water", 4000);
+		long tChainCap = gregapi.probe.GT6ProbeStand.fldLong(sECPChainBoiler, "mCapacity"); // живое поле этого экземпляра = mOutput×10000 (:79)
+		// предзаряд ВЫШЕ порога эмиссии (:139-140 бойлер отдаёт вверх только излишек сверх cap/2): +100000 даёт
+		// устойчивый поток пара с первого тика — производство бойлера судится фазой 4a, 4b судит КОНВЕРСИЮ цепи
+		// (прежний "чуть ниже порога" оставлял турбине капельный приток — артефакт замера, не дефект порта)
+		long tPrecharge = tChainCap / 2 + 100000;
+		gt6EnergyChainProbeBoilerFill(sECPChainBoiler, 1, "steam", tPrecharge);
+		sECPChainEu0 = sECPChainBatBox.mEnergy;
+		sECPChainSteamCounter0 = sECPChainTurbine.mSteamCounter;
+
+		O.println("[" + ECP_M + "] тик 210 загрузка: ISO вода0=" + sECPIsoWater0 + " топливо0=" + sECPIsoFuel0 + "; COLD вода0=" + sECPColdWater0 + " (НЕ разожжён, топлива нет); CHAIN cap=" + tChainCap + " пред-заряд_пара=" + tPrecharge + " (порог излучения :139 = cap/2=" + (tChainCap / 2) + ") eu0=" + sECPChainEu0 + " steamCounter0=" + sECPChainSteamCounter0);
+	}
+
+	/** Каждый тик (окно 200..1300): держим батарею-источник MOTOR заряженной (сетап-обход ТОЛЬКО инвентарной
+	 *  бухгалтерии батарей, как в WIREPROBE gt6WireProbeApplyFields — не передачи). */
+	private static void gt6EnergyChainProbeApplyMotorSrcFields() {
+		if (sECPMotorSrc == null) return;
+		sECPMotorSrc.mEnergy = 1_000_000_000L; sECPMotorSrc.mBatteryCount = 1; sECPMotorSrc.mChargeableCount = 0; sECPMotorSrc.mStopped = F; sECPMotorSrc.mMode = 0;
+		// CHAIN-приёмник: mReceivablePower строится из mChargeableCount (:153), без форса = 0 → doInject молча
+		// возвращает 0 (:179) → динамо не изливается → ПОДПОР всей цепи (турбина съела 103mb и встала — корень
+		// FAIL 4b прогона run6/final1). Тот же сетап-обход «батареи вставлены», что у WIREPROBE-приёмника.
+		if (sECPChainBatBox != null) {sECPChainBatBox.mChargeableCount = 1000; sECPChainBatBox.mBatteryCount = 0; sECPChainBatBox.mStopped = F;}
+	}
+
+	/** DIAG (§6.1, лестница хопов): каждый стык прогоняется ВРУЧНУЮ из пробы на живых BE (форс накопителя →
+	 *  реальный публичный Util.emitEnergyToNetwork → чтение приёмника) — изолирует мёртвый хоп. Приём DIAG-MOTOR
+	 *  («РЕАЛЬНЫЙ emitEnergyToNetwork вызванный ИЗ ПРОБЫ»); не судимый канал, только диагностика. Снять при уборке фазы. */
+	private static void gt6EnergyChainProbeDiagChainHops() {
+		if (sECPChainTurbine == null || sECPChainDynamo == null || sECPChainBatBox == null) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		// ХОП 1: турбина -RU-> динамо
+		sECPChainTurbine.mStorage.mEnergy = 96;
+		long tP1 = gregapi.tileentity.energy.ITileEntityEnergy.Util.emitEnergyToNetwork(TD.Energy.RU, 32, 1, sECPChainTurbine);
+		O.println("[" + ECP_M + "] DIAG-CHAIN-HOP1 турбина(форс storage=96)-RU(32×1)->сеть: пакетов=" + tP1 + " динамо.mStorage ПОСЛЕ=" + sECPChainDynamo.mStorage.mEnergy);
+		// ХОП 2: динамо -EU-> батарея
+		sECPChainDynamo.mStorage.mEnergy = 64;
+		long tEu0 = sECPChainBatBox.mEnergy;
+		long tP2 = gregapi.tileentity.energy.ITileEntityEnergy.Util.emitEnergyToNetwork(TD.Energy.EU, 22, 1, sECPChainDynamo);
+		O.println("[" + ECP_M + "] DIAG-CHAIN-HOP2 динамо(форс storage=64)-EU(22×1)->сеть: пакетов=" + tP2 + " батарея.mEnergy " + tEu0 + "->" + sECPChainBatBox.mEnergy + " (receivable=" + sECPChainBatBox.mReceivablePower + ")");
+		sECPChainTurbine.mStorage.mEnergy = 0; sECPChainDynamo.mStorage.mEnergy = 0; // вернуть как было — дальше живой цикл
+		// §6.1 identity-проверка ТРОЙКИ CHAIN (класс «протухшая ссылка», память gt6-mismatch-flood-not-orphans):
+		// пересозданный движком BE стартует с mEnergy=0/receivable=0 — форсы и ручные хопы уходят в мёртвую копию
+		net.minecraft.world.level.block.entity.BlockEntity tFreshT = sECPPlayer.level().getBlockEntity(sECPChainTurbine.getBlockPos());
+		net.minecraft.world.level.block.entity.BlockEntity tFreshD = sECPPlayer.level().getBlockEntity(sECPChainDynamo.getBlockPos());
+		net.minecraft.world.level.block.entity.BlockEntity tFreshB = sECPPlayer.level().getBlockEntity(sECPChainBatBox.getBlockPos());
+		O.println("[" + ECP_M + "] DIAG-CHAIN-IDENTITY: турбина СОВПАДАЕТ=" + (tFreshT == sECPChainTurbine) + " динамо СОВПАДАЕТ=" + (tFreshD == sECPChainDynamo) + " батарея СОВПАДАЕТ=" + (tFreshB == sECPChainBatBox)
+			+ (tFreshB instanceof gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tFB ? " СВЕЖАЯ батарея.mEnergy=" + tFB.mEnergy + " .mReceivablePower=" + tFB.mReceivablePower + " .mChargeableCount=" + tFB.mChargeableCount : " свежая батарея НЕ BatBox: " + (tFreshB == null ? "null" : tFreshB.getClass().getSimpleName())));
+	}
+
+	/** DIAG (§6.1): по-тиковая трасса стыка CHAIN турбина→динамо→батарея (тики 211..240) + полные IN/OUT-тройки
+	 *  обоих конверторов на первом тике — ищем, где именно глохнет RU/EU (гипотеза: реальный пакет турбины >
+	 *  входного максимума динамо, симуляция size=16 этот случай не кроет). Снять при уборке фазы. */
+	private static void gt6EnergyChainProbeDiagChainTrace() {
+		if (sECPChainTurbine == null || sECPChainDynamo == null || sECPChainBatBox == null) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (sECPProbeTick == 211) {
+			O.println("[" + ECP_M + "] DIAG-CHAIN-TRACE тройки: турбина IN(steam)=" + sECPChainTurbine.mConverter.mEnergyIN.mMin + "/" + sECPChainTurbine.mConverter.mEnergyIN.mRec + "/" + sECPChainTurbine.mConverter.mEnergyIN.mMax
+				+ " OUT(RU)=" + sECPChainTurbine.mConverter.mEnergyOUT.mMin + "/" + sECPChainTurbine.mConverter.mEnergyOUT.mRec + "/" + sECPChainTurbine.mConverter.mEnergyOUT.mMax
+				+ "; динамо IN(RU)=" + sECPChainDynamo.mConverter.mEnergyIN.mMin + "/" + sECPChainDynamo.mConverter.mEnergyIN.mRec + "/" + sECPChainDynamo.mConverter.mEnergyIN.mMax
+				+ " OUT(EU)=" + sECPChainDynamo.mConverter.mEnergyOUT.mMin + "/" + sECPChainDynamo.mConverter.mEnergyOUT.mRec + "/" + sECPChainDynamo.mConverter.mEnergyOUT.mMax);
+		}
+		O.println("[" + ECP_M + "] DIAG-CHAIN-TRACE тик " + sECPProbeTick + ": турбина.mTank=" + sECPChainTurbine.mTank.amount() + " турбина.mStorage=" + sECPChainTurbine.mStorage.mEnergy + " турбина.canEmit=" + sECPChainTurbine.mConverter.mCanEmitEnergy
+			+ " динамо.mStorage=" + sECPChainDynamo.mStorage.mEnergy + " динамо.canEmit=" + sECPChainDynamo.mConverter.mCanEmitEnergy
+			+ " батарея.mChargeableCount=" + sECPChainBatBox.mChargeableCount + " батарея.mReceivablePower=" + sECPChainBatBox.mReceivablePower + " батарея.mEnergy=" + sECPChainBatBox.mEnergy
+			+ " ТИХИЙ-ПЕРЕГРУЗ: турбина.mExplosionPrevention=" + gregapi.probe.GT6ProbeStand.fldLong(sECPChainTurbine, "mExplosionPrevention") + " динамо.mExplosionPrevention=" + gregapi.probe.GT6ProbeStand.fldLong(sECPChainDynamo, "mExplosionPrevention")
+			+ " турбина.emits=" + sECPChainTurbine.mConverter.mEmitsEnergy + " динамо.emits=" + sECPChainDynamo.mConverter.mEmitsEnergy);
+	}
+
+	/** DIAG (§6.1): по-тиковая трассировка 211..225 — стабильно ли держится src.mBatteryCount ПОСЛЕ форсирования
+	 *  через реальный BE-тик (наш Pre-хук форсирует ДО тика, здесь читаем ПОСЛЕ). Снять при уборке фазы. */
+	private static void gt6EnergyChainProbeDiagMotorTrace() {
+		if (sECPMotorSrc == null || sECPMotor == null || sECPAxle == null) return;
+		gregapi.data.CS.OUT.println("[" + ECP_M + "] DIAG-MOTOR-TRACE тик " + sECPProbeTick + ": src.mBatteryCount=" + sECPMotorSrc.mBatteryCount + " src.mChargeableCount=" + sECPMotorSrc.mChargeableCount + " src.mEmitsEnergy=" + sECPMotorSrc.mEmitsEnergy + " src.mEnergy=" + sECPMotorSrc.mEnergy + " мотор.mStorage.mEnergy=" + sECPMotor.mStorage.mEnergy + " мотор.mConverter.mCanEmitEnergy=" + sECPMotor.mConverter.mCanEmitEnergy + " мотор.mConverter.mEmitsEnergy=" + sECPMotor.mConverter.mEmitsEnergy + " вал.mTransferredLast=" + sECPAxle.mTransferredLast + " вал.mTransferredEnergy=" + sECPAxle.mTransferredEnergy + " вал.mTimer=" + gregapi.probe.GT6ProbeStand.fldLong(sECPAxle, "mTimer") + " мотор.mTimer=" + gregapi.probe.GT6ProbeStand.fldLong(sECPMotor, "mTimer") + " src.mTimer=" + gregapi.probe.GT6ProbeStand.fldLong(sECPMotorSrc, "mTimer"));
+	}
+
+	/** DIAG (§6.1 локализация): почему EU из батареи-источника не доходит до mStorage мотора — печать живых
+	 *  булевых гейтов ОБОИХ концов + прямой вызов реальных публичных isEnergy* методов (не судимый канал, только
+	 *  диагностика; сам перенос энергии этими вызовами НЕ подменяется). Снять при уборке фазы. */
+	private static void gt6EnergyChainProbeDiagMotor() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + ECP_M + "] DIAG-MOTOR: src.mActive=" + sECPMotorSrc.mActive + " src.mBatteryCount=" + sECPMotorSrc.mBatteryCount + " src.mChargeableCount=" + sECPMotorSrc.mChargeableCount + " src.mStopped=" + sECPMotorSrc.mStopped + " src.mFacing=" + sECPMotorSrc.mFacing + " src.mEmitsEnergy=" + sECPMotorSrc.mEmitsEnergy + " src.mEnergyTypeOut=" + sECPMotorSrc.mEnergyTypeOut);
+		O.println("[" + ECP_M + "] DIAG-MOTOR: src.isEnergyEmittingTo(EU,EAST,F)=" + sECPMotorSrc.isEnergyEmittingTo(TD.Energy.EU, SIDE_EAST, F) + " src.isEnergyEmittingTo(EU,EAST,T)=" + sECPMotorSrc.isEnergyEmittingTo(TD.Energy.EU, SIDE_EAST, T));
+		O.println("[" + ECP_M + "] DIAG-MOTOR: motor.mFacing=" + sECPMotor.mFacing + " motor.mStopped=" + gregapi.probe.GT6ProbeStand.fldBool(sECPMotor, "mStopped") + " motor.mConverter.mEnergyIN.mType=" + sECPMotor.mConverter.mEnergyIN.mType + " motor.mConverter.mWasteEnergy=" + sECPMotor.mConverter.mWasteEnergy + " motor.mStorage.mEnergy=" + sECPMotor.mStorage.mEnergy + " motor.mStorage.mCapacity=" + sECPMotor.mStorage.mCapacity);
+		O.println("[" + ECP_M + "] DIAG-MOTOR: motor.isEnergyAcceptingFrom(EU,WEST,F)=" + sECPMotor.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_WEST, F) + " motor.isEnergyType(EU,WEST,F)=" + sECPMotor.isEnergyType(TD.Energy.EU, SIDE_WEST, F) + " motor.getEnergySizeInputMin(EU,WEST)=" + sECPMotor.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST));
+		long tSim = sECPMotor.doEnergyInjection(TD.Energy.EU, SIDE_WEST, 32, 1, F); // симуляция (aDoInject=F) — не меняет состояние, только проверка гейта
+		O.println("[" + ECP_M + "] DIAG-MOTOR: СИМУЛЯЦИЯ motor.doEnergyInjection(EU,WEST,size=32,amount=1,doInject=F)=" + tSim + " (ожидание >0, если гейт открыт)");
+		gregapi.tileentity.delegate.DelegatorTileEntity<net.minecraft.world.level.block.entity.BlockEntity> tAdjSrc = sECPMotorSrc.getAdjacentTileEntity(SIDE_EAST);
+		gregapi.tileentity.delegate.DelegatorTileEntity<net.minecraft.world.level.block.entity.BlockEntity> tAdjMotor = sECPMotor.getAdjacentTileEntity(SIDE_WEST);
+		O.println("[" + ECP_M + "] DIAG-MOTOR: src.getAdjacentTileEntity(EAST).mTileEntity=" + (tAdjSrc.mTileEntity == null ? "null" : tAdjSrc.mTileEntity.getClass().getSimpleName()) + " (ожидание MultiTileEntityMotorElectric); motor.getAdjacentTileEntity(WEST).mTileEntity=" + (tAdjMotor.mTileEntity == null ? "null" : tAdjMotor.mTileEntity.getClass().getSimpleName()) + " (ожидание TileEntityBase10EnergyBatBox-наследник)");
+		long tReal = gregapi.tileentity.energy.ITileEntityEnergy.Util.emitEnergyToNetwork(TD.Energy.EU, sECPMotorSrc.mOutput, 1, sECPMotorSrc);
+		O.println("[" + ECP_M + "] DIAG-MOTOR: РЕАЛЬНЫЙ emitEnergyToNetwork(EU,size=" + sECPMotorSrc.mOutput + ",amount=1) вызванный ИЗ ПРОБЫ (не БЕ-тик) вернул=" + tReal + "; мотор.mStorage.mEnergy ПОСЛЕ=" + sECPMotor.mStorage.mEnergy);
+		// §6.1: сверка "протухшей ссылки" — тот ли объект BE тикает по факту, что мы захватили при постройке (память gt6-mismatch-flood-not-orphans/gt6-eye-report-n1-n6)
+		net.minecraft.world.level.block.entity.BlockEntity tFreshBE = sECPPlayer.level().getBlockEntity(sECPMotorPos);
+		O.println("[" + ECP_M + "] DIAG-MOTOR: свежий getBlockEntity(motorPos)=" + (tFreshBE == null ? "null" : tFreshBE.getClass().getSimpleName() + "@" + System.identityHashCode(tFreshBE)) + " захваченный sECPMotor@" + System.identityHashCode(sECPMotor) + " СОВПАДАЕТ=" + (tFreshBE == sECPMotor) + (tFreshBE instanceof gregtech.tileentity.energy.converters.MultiTileEntityMotorElectric tFreshMotor ? " свежий.mStorage.mEnergy=" + tFreshMotor.mStorage.mEnergy : ""));
+	}
+
+	/** Тик 260: ФАЗА 4c — батарея-источник -> мотор -> вал (EU->RU), независимая от прогрева котла линия.
+	 *  ВАЖНО (урок §7 манифеста «кратковременные эффекты — Seq.watch»): MultiTileEntityAxle.transferRotations
+	 *  (:105-117) обнуляет mTransferredEnergy обратно в семантике "реле" — реальный ненулевой перенос
+	 *  регистрируется только на mTimer<1/oRotationDir==0 первом вызове ЛИБО когда canEmitEnergyTo(противоположная
+	 *  сторона)==true (эстафета ДАЛЬШЕ); тупиковый вал (ничего не подключено на дальней стороне) после первого
+	 *  тика КАЖДЫЙ следующий вызов передаёт aPower=0 в addToEnergyTransferred (:114,116) — однократный снимок в
+	 *  конце окна лжёт (тот же класс дефекта, что HOT в FLUIDPIPEPROBE). Читаем через Seq.watch(окно 205..259),
+	 *  проба видит mTransferredEnergy>0 ИЛИ mRotationDir!=0 (последнее выставляется БЕЗУСЛОВНО на каждом реальном
+	 *  вызове :110, до гейта эстафеты) — если проба видела ХОТЯ БЫ РАЗ, реальная передача была. */
+	private static void gt6EnergyChainProbeJudge4c() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + ECP_M + "] ===== ФАЗА 4c: батарея-источник → мотор → вал (EU→RU) =====");
+		long tRu = sECPAxle.mTransferredLast;
+		long tMotorOutMax = sECPMotor.mConverter.mEnergyOUT.mMax;
+		boolean tEverTransferred = sECPSeq.everSeen("4c-ru");
+		O.println("[" + ECP_M + "] 4c: вал.mTransferredLast(снимок сейчас)=" + tRu + " вал.mRotationDir(сейчас)=" + sECPAxle.mRotationDir + " everSeen(4c-ru, окно 205..259)=" + tEverTransferred + " (мотор mEnergyOUT min/rec/max=" + sECPMotor.mConverter.mEnergyOUT.mMin + "/" + sECPMotor.mConverter.mEnergyOUT.mRec + "/" + tMotorOutMax + "; мотор.mStorage.mEnergy=" + sECPMotor.mStorage.mEnergy + " mConverter.mEmitsEnergy=" + sECPMotor.mConverter.mEmitsEnergy + ")");
+		sECPSeq.judge("4c мотор эмитирует RU на вал (реальная эмиссия дошла хотя бы раз в окне)", tEverTransferred, T, tEverTransferred);
+		sECPSeq.judge("4c RU-эмиссия в пределах mEnergyOUT.mMax мотора (снимок не превышает потолок)", tRu <= tMotorOutMax, "<=" + tMotorOutMax, tRu);
+	}
+
+	/** Тик 500: ФАЗА 4a — горелка+топливо → бойлер с водой, ИЗОЛИРОВАННО (без турбины сверху). */
+	private static void gt6EnergyChainProbeJudge4a() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + ECP_M + "] ===== ФАЗА 4a: горелка+топливо → бойлер с водой (HU→Steam, изолировано) =====");
+		long tWaterNow = gt6EnergyChainProbeBoilerAmount(sECPIsoBoiler, 0);
+		long tSteamNow = gt6EnergyChainProbeBoilerAmount(sECPIsoBoiler, 1);
+		long tFuelNow  = gregapi.probe.GT6ProbeStand.slotCount(sECPIsoGen, 0);
+		long tWaterConsumed = sECPIsoWater0 - tWaterNow;
+		long tFuelConsumed  = sECPIsoFuel0 - tFuelNow;
+		boolean tBurning = gregapi.probe.GT6ProbeStand.fldBool(sECPIsoGen, "mBurning");
+		long tGenEnergy = gregapi.probe.GT6ProbeStand.fldLong(sECPIsoGen, "mEnergy");
+		long tBoilerEnergy = gregapi.probe.GT6ProbeStand.fldLong(sECPIsoBoiler, "mEnergy");
+		Object tLastRecipe = gregapi.probe.GT6ProbeStand.fld(sECPIsoGen, "mLastRecipe");
+		O.println("[" + ECP_M + "] 4a: топливо0=" + sECPIsoFuel0 + " сейчас=" + tFuelNow + " (расход=" + tFuelConsumed + "); вода0=" + sECPIsoWater0 + " сейчас=" + tWaterNow + " (расход=" + tWaterConsumed + "); пар=" + tSteamNow + "; mBurning=" + tBurning + " генератор.mEnergy=" + tGenEnergy + " бойлер.mEnergy=" + tBoilerEnergy + " mLastRecipe=" + tLastRecipe);
+		sECPSeq.judge("4a топливо расходуется (реальное горение)", tFuelConsumed > 0, ">0", tFuelConsumed);
+		sECPSeq.judge("4a вода расходуется (реальная конверсия)", tWaterConsumed > 0, ">0", tWaterConsumed);
+		sECPSeq.judge("4a пар произведён", tSteamNow > 0, ">0", tSteamNow);
+		if (tWaterConsumed > 0) {
+			long tExpMin = tWaterConsumed * 80;  // MultiTileEntityBoilerTank.java:120-123 — mEfficiency∈[5000,10000] (калcификация), пар=вода×mEfficiency×160/10000 ⇒ [вода×80..вода×160]
+			long tExpMax = tWaterConsumed * 160;
+			sECPSeq.judge("4a пар в формульных пределах [вода×80..160] (калcификация :120-123)", tSteamNow >= tExpMin && tSteamNow <= tExpMax, "[" + tExpMin + ".." + tExpMax + "]", tSteamNow);
+		}
+	}
+
+	/** Тик 1200: CONTROL-NEG (COLD — без розжига/топлива, ничего не тикает без входа) + ФАЗА 4b (полная цепь
+	 *  Steam→RU→EU) + DONE. */
+	/** DIAG (§6.1): состояние CHAIN на середине окна — почему EU в батарее-приёмнике не растёт, хотя турбина
+	 *  обрабатывает пар. Снять при уборке фазы. */
+	private static void gt6EnergyChainProbeDiagChain() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tSteamNow = gt6EnergyChainProbeBoilerAmount(sECPChainBoiler, 1);
+		O.println("[" + ECP_M + "] DIAG-CHAIN: бойлер.tank1(пар)=" + tSteamNow + " (порог :139=" + (gregapi.probe.GT6ProbeStand.fldLong(sECPChainBoiler, "mCapacity") / 2) + ") турбина.mTank(вход)=" + sECPChainTurbine.mTank.amount() + " турбина.mSteamCounter=" + sECPChainTurbine.mSteamCounter + " турбина.mStorage.mEnergy=" + sECPChainTurbine.mStorage.mEnergy + " турбина.mConverter.mCanEmitEnergy=" + sECPChainTurbine.mConverter.mCanEmitEnergy + " турбина.mConverter.mEmitsEnergy=" + sECPChainTurbine.mConverter.mEmitsEnergy + " турбина.mFacing=" + sECPChainTurbine.mFacing);
+		O.println("[" + ECP_M + "] DIAG-CHAIN: динамо.mFacing=" + sECPChainDynamo.mFacing + " динамо.mStorage.mEnergy=" + sECPChainDynamo.mStorage.mEnergy + " динамо.mConverter.mCanEmitEnergy=" + sECPChainDynamo.mConverter.mCanEmitEnergy + " динамо.mConverter.mEmitsEnergy=" + sECPChainDynamo.mConverter.mEmitsEnergy + " батарея-приёмник.mEnergy=" + sECPChainBatBox.mEnergy + " батарея-приёмник.mFacing=" + sECPChainBatBox.mFacing);
+		long tSim = sECPChainDynamo.doEnergyInjection(TD.Energy.RU, SIDE_DOWN, 16, 1, F);
+		O.println("[" + ECP_M + "] DIAG-CHAIN: СИМУЛЯЦИЯ динамо.doEnergyInjection(RU,DOWN,size=16,amount=1,doInject=F)=" + tSim + " (ожидание >0, если гейт открыт)");
+	}
+
+	private static void gt6EnergyChainProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + ECP_M + "] ===== CONTROL-NEG: COLD (без розжига/топлива) =====");
+		long tColdWaterNow = gt6EnergyChainProbeBoilerAmount(sECPColdBoiler, 0);
+		long tColdSteamNow = gt6EnergyChainProbeBoilerAmount(sECPColdBoiler, 1);
+		boolean tColdBurning = gregapi.probe.GT6ProbeStand.fldBool(sECPColdGen, "mBurning");
+		O.println("[" + ECP_M + "] COLD (тик 1200): mBurning=" + tColdBurning + " вода0=" + sECPColdWater0 + " сейчас=" + tColdWaterNow + " пар=" + tColdSteamNow);
+		sECPSeq.judge("COLD не горит (mBurning=false, розжига не было)", !tColdBurning, F, tColdBurning);
+		sECPSeq.judge("COLD вода не тронута (нет входа — ничего не тикает)", tColdWaterNow == sECPColdWater0, sECPColdWater0, tColdWaterNow);
+		sECPSeq.judge("COLD пар не произведён", tColdSteamNow == 0, 0, tColdSteamNow);
+
+		O.println("[" + ECP_M + "] ===== ФАЗА 4b: бойлер → турбина → динамо → батарея (Steam→RU→EU, полная цепь) =====");
+		long tEuNow = sECPChainBatBox.mEnergy;
+		long tSteamCounterNow = sECPChainTurbine.mSteamCounter;
+		long tEuDelta = tEuNow - sECPChainEu0;
+		long tSteamDelta = tSteamCounterNow - sECPChainSteamCounter0; // ВНИМАНИЕ: mSteamCounter %= STEAM_PER_WATER(200) при переливе (:98-106 дистиллят) — дельта занижена при переполнении за окно, судья по ней — мягкий, не точный расход
+		boolean tEuEverSeen = sECPSeq.everSeen("4b-eu");
+		boolean tDynStorageEverSeen = sECPSeq.everSeen("4b-dynamo-storage");
+		boolean tTurbineStorageEverSeen = sECPSeq.everSeen("4b-turbine-storage");
+		O.println("[" + ECP_M + "] 4b: батарея-приёмник.mEnergy: было=" + sECPChainEu0 + " стало=" + tEuNow + " (прирост=" + tEuDelta + ", everSeen>0 за окно=" + tEuEverSeen + "); турбина.mSteamCounter: было=" + sECPChainSteamCounter0 + " стало=" + tSteamCounterNow + " (обработано пара=" + tSteamDelta + "мб, возможен перелив-обёртка :105); DIAG everSeen динамо.mStorage>0=" + tDynStorageEverSeen + " турбина.mStorage>0=" + tTurbineStorageEverSeen);
+		sECPSeq.judge("4b EU в приёмнике выросло хотя бы раз в окне (Seq.watch, урок §7 манифеста)", tEuEverSeen, T, tEuEverSeen);
+		sECPSeq.judge("4b турбина реально обработала пар (mSteamCounter вырос)", tSteamDelta > 0, ">0", tSteamDelta);
+		if (tSteamDelta > 0) {
+			// МЕРА ПАРА ИСПРАВЛЕНА: mSteamCounter-дельта живёт ПО МОДУЛЮ STEAM_PER_WATER (:105, обёртка была
+			// помечена в судье с первого прогона) — реального пара в ~50 раз больше, прежний «потолок 63» был
+			// сломанной линейкой (ложный FAIL при честном приросте 10242). Честная верхняя граница считается
+			// из СЕТАПА (доступный пар системы = предзаряд cap/2+100000 + макс-производство вода×160), а не из
+			// обёрнутого счётчика; дельта counter остаётся справочной печатью.
+			long tSteamAvail = gregapi.probe.GT6ProbeStand.fldLong(sECPChainBoiler, "mCapacity") / 2 + 100000 + 4000 * 160;
+			long tRuMax = tSteamAvail / STEAM_PER_EU; // MultiTileEntityTurbineSteam.java:95 — RU не больше, чем весь пар мог дать
+			long tDynIn = sECPChainDynamo.mConverter.mEnergyIN.mRec, tDynOut = sECPChainDynamo.mConverter.mEnergyOUT.mRec;
+			long tEuCeil = tRuMax * tDynOut / tDynIn; // TE_Behavior_Energy_Converter.java:62 — верхняя граница КПД динамо (tOutput=mStorage×mEnergyOUT.mRec/mEnergyIN.mRec)
+			O.println("[" + ECP_M + "] 4b теоретический потолок (из сетапа, не из модуло-счётчика): пар_доступный=" + tSteamAvail + " RU_max=" + tRuMax + " EU_потолок=RU_max×" + tDynOut + "/" + tDynIn + "=" + tEuCeil);
+			sECPSeq.judge("4b EU-прирост <= теоретический потолок цепи (не создаёт энергию из ничего)", tEuDelta <= tEuCeil, "<=" + tEuCeil, tEuDelta);
+		}
+		sECPSeq.done();
+	}
+
+	public static void gt6EnergyChainProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sECPProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sECPPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sECPSeq == null) {
+			sECPSeq = new gregapi.probe.GT6ProbeStand.Seq(ECP_M)
+				.at(200, GT_API_Proxy::gt6EnergyChainProbeBuild)
+				.at(210, GT_API_Proxy::gt6EnergyChainProbeLoad)
+				.window(211, 225, GT_API_Proxy::gt6EnergyChainProbeDiagMotorTrace)
+				.window(211, 240, GT_API_Proxy::gt6EnergyChainProbeDiagChainTrace) // [GT6-ENERGYCHAINPROBE] §6.1-трасса стыка турбина→динамо→батарея — снять при уборке фазы
+				// хоп-лестница СНЯТА с таймлайна: её ручные инъекции ЗАГРЯЗНЯЛИ watch «4b-eu» (ложный PASS от
+				// собственного вброса 22 EU) — метод gt6EnergyChainProbeDiagChainHops остаётся в арсенале, не зарегистрирован
+				.window(200, 1300, GT_API_Proxy::gt6EnergyChainProbeApplyMotorSrcFields)
+				.watch("4c-ru", 205, 259, () -> sECPAxle != null && (sECPAxle.mTransferredEnergy > 0 || sECPAxle.mRotationDir != 0))
+				.watch("4b-eu", 210, 1199, () -> sECPChainBatBox != null && sECPChainBatBox.mEnergy > 0)
+				.watch("4b-dynamo-storage", 210, 1199, () -> sECPChainDynamo != null && sECPChainDynamo.mStorage.mEnergy > 0)
+				.watch("4b-turbine-storage", 210, 1199, () -> sECPChainTurbine != null && sECPChainTurbine.mStorage.mEnergy > 0)
+				.at(230, GT_API_Proxy::gt6EnergyChainProbeDiagMotor)
+				.at(260, GT_API_Proxy::gt6EnergyChainProbeJudge4c)
+				.at(500, GT_API_Proxy::gt6EnergyChainProbeJudge4a)
+				.at(700, GT_API_Proxy::gt6EnergyChainProbeDiagChain)
+				.at(1200, GT_API_Proxy::gt6EnergyChainProbeJudgeFinal);
+		}
+		sECPSeq.tick(sECPProbeTick);
 	}
 
 }
