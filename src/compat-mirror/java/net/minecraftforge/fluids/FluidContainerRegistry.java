@@ -30,6 +30,12 @@ import java.util.List;
 public class FluidContainerRegistry {
 	private static final List<FluidContainerData> DATA = new ArrayList<>();
 
+	/** 1:1 Forge (эталон {@code FluidContainerRegistry.java:78}): маркер «пустой тары нет» — именно ВЕДРО.
+	 *  Потребители отличают его по предмету, поэтому подменять его на что-то другое нельзя.
+	 *  Стек строится ЛЕНИВО: класс зеркала грузится раньше ванильных реестров, а {@code new ItemStack(...)}
+	 *  в статике на этой фазе роняет инициализацию всего мода (ExceptionInInitializerError). */
+	private static ItemStack nullEmptyContainer() {return new ItemStack(net.minecraft.world.item.Items.BUCKET);}
+
 	public static FluidContainerData registerFluidContainer(FluidContainerData aData) {
 		if (aData != null) {
 			DATA.add(aData);
@@ -55,7 +61,13 @@ public class FluidContainerRegistry {
 		public FluidContainerData(FluidStack aFluid, ItemStack aFilledContainer, ItemStack aEmptyContainer, boolean aAllowNullEmptyContainer) {
 			fluid = aFluid;
 			filledContainer = aFilledContainer;
-			emptyContainer = aAllowNullEmptyContainer && aEmptyContainer == null ? null : aEmptyContainer;
+			// 1:1 Forge (эталон gt6-oracle-dumper/.../FluidContainerRegistry.java:377): при ОТСУТСТВУЮЩЕЙ пустой таре
+			// поле НЕ обнуляется, а получает маркер NULL_EMPTYCONTAINER — и маркер этот, что важно, ВЕДРО (:78).
+			// На него завязан потребитель: Loader_Recipes_Foreign видит «пустая тара == ведро» и берёт тару из ПОЛНОГО
+			// контейнера (ST.container(filledContainer)) — так рождается рецепт наполнения бутылки напитком.
+			// Зеркало хранило null, потребитель отсекал такие записи гардом — терялось 232 рецепта наполнения
+			// (замер 2026-07-27: добавлено 284, пропущено 232), то есть вся линейка GT6-напитков и зелий.
+			emptyContainer = aEmptyContainer == null ? nullEmptyContainer() : aEmptyContainer;
 		}
 	}
 

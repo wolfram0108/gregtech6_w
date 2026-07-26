@@ -154,7 +154,7 @@ public final class PortDump {
         tFloor.put("localization.csv", 99.95);     // факт 99.996
         tFloor.put("itemdata.csv", 99.90);         // факт 99.939
         tFloor.put("recipemaps.csv", 98.90);       // факт 98.947
-        tFloor.put("recipes.jsonl", 99.30);        // факт 99.343; floor шума golden ±0.03 п.п.
+        tFloor.put("recipes.jsonl", 99.38);        // факт 99.421; floor шума golden ±0.03 п.п.
         List<String> tFailed = new ArrayList<>();
         for (Map.Entry<String, Double> e : tFloor.entrySet()) {
             Double tGot = aFact.get(e.getKey());
