@@ -365,6 +365,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6mclprobe.flag")) gt6MclProbeTick(aEvent.getServer());
 				// [GT6-BATBOXPROBE] верификационный стенд «Связка №11 — накопители энергии» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6batboxprobe.flag")) gt6BatBoxProbeTick(aEvent.getServer());
+				// [GT6-REACTORPROBE] верификационный стенд «Связка №12 — ядерная энергетика» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6reactorprobe.flag")) gt6ReactorProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -6143,6 +6145,471 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(BBP_T_JUDGE, GT_API_Proxy::gt6BatBoxProbeJudgeFinal);
 		}
 		sBbpSeq.tick(sBbpProbeTick);
+	}
+
+	// ========== [GT6-REACTORPROBE] ВРЕМЕННЫЙ стенд «Связка №12 — ядерная энергетика» (Ф3.1, гейт run/gt6reactorprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана; судимый канал — ТОЛЬКО реальные onServerTickPost() реакторов,
+	// зарегистрированных в GT_API_Proxy.SERVER_TICK_POST/PO2T; ни один судимый метод пробой не вызывается напрямую):
+	//   ФОРМА СТРУКТУРЫ: реактор — НЕ мультиблок-каркас, а ОДИНОЧНЫЙ блок со слотами под стержни (1x1 — 1 слот,
+	//     MultiTileEntityReactorCore1x1.java:351 getDefaultInventory=new ItemStack[1]; 2x2 — 4 слота, Core2x2:413).
+	//     «Сборка» строится соседством: ядра обмениваются нейтронами с ГОРИЗОНТАЛЬНЫМИ соседями-ядрами
+	//     (Core1x1:57-60 / Core2x2:58-61 getAdjacentTileEntity(SIDE_Z_NEG/Z_POS/X_NEG/X_POS) + SIDES_HORIZONTAL-гейт).
+	//   ВСТАВКА СТЕРЖНЯ: ПКМ по ВЕРХНЕЙ грани предметом IItemReactorRod (Core.java:211-225 / Core1x1:252-265);
+	//     слот 2x2 выбирается хит-точкой: tSlot = aHitX<0.5 ? aHitZ<0.5?0:1 : aHitZ<0.5?2:3 (Core2x2:284).
+	//     ЛЮБАЯ вставка ставит mStopped=T (Core1x1:258) — реактор включается мягким молотом (Core:186-192).
+	//   ВЫРАБОТКА (1x1, каждые 20 тиков SERVER_TIME%20==19 — Core1x1:53): rod.getReactorRodNeutronEmission
+	//     добавляет СОБСТВЕННЫЕ нейтроны на свой же слот (RodNuclear:198 mNeutronCounts[aSlot]+=tNeutronSelf) и
+	//     возвращает эмиссию соседям tEmission=tNeutronOther+divup(max(o-tNeutronSelf,0),tNeutronDiv) (:199).
+	//     Каждый тик: oNeutronCounts[0]=mNeutronCounts[0] (Core1x1:84), rod.getReactorRodNeutronReaction добавляет
+	//     mEnergy += oNeutronCounts[aSlot] (RodNuclear:206) и жжёт прочность (:216-218, loss=100 при o<=max, ×4 если
+	//     moderated). На тике %20==18 счётчик слота обнуляется (Core1x1:197 mNeutronCounts-=oNeutronCounts).
+	//   НАГРЕВ/ОХЛАЖДЕНИЕ (Core1x1:102-168): tDivider=6 для Na, 3 для Sn, иначе 1; oEnergy=прирост HU за тик (:107).
+	//     Конверсия по теплоносителю: distw -> tE=mEnergy/EU_PER_WATER(80), пар=tE×STEAM_PER_WATER(160),
+	//     mEnergy-=80×израсходованная вода (:116-120; CS.java:242,246). Прочие: Coolant_IC2 20, Sn 40, Na 30,
+	//     HDO 40, D2O 50, T2O 60, LiCl 15, CO2 20, He 30, Thorium_Salt 2560000 (CS.java:222-242).
+	//   НЕДОСТАТОК ОХЛАЖДЕНИЯ (Core1x1:110-183): пустой танк при oEnergy>0 (или нехватка теплоносителя/переполнение
+	//     выходного танка) => tIsExploding=T => slotKill(0) + звук + радиация. САМ ВЗРЫВ ЗАКОММЕНТИРОВАН — «explode(8)»
+	//     Core1x1:172 и «explode(10)» Core2x2:199; ПРОВЕРЕНО ПО ОРИГИНАЛУ 1.7.10 (gregtech6/.../Core1x1.java:171-172 —
+	//     тот же закомментированный TODO), то есть блоки стенда физически не рушатся. Радиация ограничена
+	//     tStrength=tCalc-расстояние (:91), tCalc=divup(Σнейтронов,256) — при наших числах ≤5, стенд стоит в 40..64
+	//     блоках от игрока => 0. Соседние площадки не задеваются.
+	//   ВЫХОД: горячий теплоноситель эмитится в mFacing (Core:140 FL.move(mTanks[1], getAdjacentTank(mFacing)));
+	//     холодный сливается в mSecondFacing только при переполнении >половины (:139) — стенд держит уровень ниже.
+	//     Потребитель — та же цепь, что доказана связкой №4: пар -> Steam Turbine (mFacing=UP: приём снизу
+	//     OPOS[mFacing], TurbineSteam:128-129) -> Electric Dynamo -> Battery Box (обязан быть ПРАЙМЛЕН реальной
+	//     предметной батареей, иначе mReceivablePower=0 — урок связки №11).
+	//   ПОБОЧНЫЕ ПРОДУКТЫ: истощение топлива -> ST.meta(aStack, mDepleted) (RodNuclear:221-225), для U-235 (9221)
+	//     mDepleted=NBT_VALUE=9321 (Loader_MultiTileEntities.java:750). Бридинг: RodBreeder принимает нейтроны только
+	//     от НЕмодерированного топлива и лишь сверх mNeutronLoss (Breeder.getReactorRodNeutronReflection), при
+	//     исчерпании mDurability превращается в продукт (Li-бридер 9430 -> Tritium Enriched Rod 9431, Loader:785,790).
+	//     Модерируют distw/HDO/D2O/T2O (RodNuclear:209-215) => для бридинга стенд берёт расплавленное олово (Sn).
+	// ЛОВУШКИ ЗАМЕРА (§7 манифеста):
+	//   1) ПОЗИТИВНЫЙ КОНТРОЛЬ у КАЖДОГО судьи, включая COLD (реактор ON/OFF, топливо, теплоноситель, открытость цепи).
+	//   2) mEnergy/oEnergy/mNeutronCounts НЕ обнуляются в конце тика — долгоживущие поля; приросты снимаются КАЖДЫЙ
+	//      тик (шаг 1 не кратен периоду 20), «холодные» линии судятся по МАКСИМУМУ за окно, а не по финальному нулю.
+	//   3) Входы (стержни, теплоноситель) кладутся на тике 204, реактор включается ТОЛЬКО на 208 — «входы ДО питания».
+	//   4) Стенд стоит в 40..64 блоках от игрока по X/Z (свободная зона: прочие площадки заняты до z≈+27, x≈+30).
+	// Снять при уборке фазы.
+	private static final int RXP_CORE1X1 = 9300, RXP_CORE2X2 = 9200;                  // Loader_MultiTileEntities.java:734-739
+	private static final int RXP_ROD_U235 = 9221, RXP_ROD_REFLECTOR = 9203;           // :750, :744
+	private static final int RXP_ROD_NQ522 = 9261, RXP_ROD_BREEDER_LI = 9430;         // :763, :785
+	private static final int RXP_DEPLETED_U235 = 9321, RXP_PRODUCT_TRITIUM = 9431;    // :768 (NBT_VALUE у 9221), :790
+	private static final int RXP_TURBINE = 1518, RXP_DYNAMO = 10111, RXP_BATBOX = 10081, RXP_BAT_ITEM = 14001;
+	private static final String RXP_M = "GT6-REACTORPROBE";
+	private static final int RXP_T_BUILD = 200, RXP_T_REFRESH = 202, RXP_T_LOAD = 204, RXP_T_IGNITE = 208, RXP_T_ZERO = 212, RXP_T_TO = 801, RXP_T_JUDGE = 802;
+	private static final long RXP_DISTW_MB = 20000, RXP_TIN_MB = 20000, RXP_DEPLETE_DUR = 1500, RXP_BREED_DUR = 500;
+
+	private static int sRxpProbeTick = -1;
+	private static ServerPlayer sRxpPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sRxpSeq;
+
+	private static gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1 sRxpRun, sRxpOut, sRxpColdOff, sRxpColdNoFuel, sRxpStarve, sRxpDeplete;
+	private static gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2 sRxpReflect, sRxpNoReflect, sRxpBreed;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam sRxpTurbine;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric sRxpDynamo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sRxpBatBox;
+	private static BlockPos sRxpRunPos, sRxpOutPos, sRxpColdOffPos, sRxpColdNoFuelPos, sRxpStarvePos, sRxpDepletePos, sRxpReflectPos, sRxpNoReflectPos, sRxpBreedPos, sRxpTurbinePos, sRxpDynamoPos, sRxpBatPos;
+	private static boolean sRxpRunIgnitedByHammer = F, sRxpRunRodInserted = F, sRxpReflectSlotsOk = F;
+	private static int sRxpRunSlotMeta0 = -1, sRxpRunStoppedAfterInsert = -1;
+
+	// нули (тик RXP_T_ZERO) и «последние» значения (обновляются трекером КАЖДЫЙ тик окна — судья читает их, чтобы
+	// не разъехаться на тик с суммами, §7 «шаг замера»)
+	private static long sRxpRunWater0, sRxpRunSteam0, sRxpRunEnergy0;
+	private static long sRxpRunWaterLast, sRxpRunSteamLast, sRxpRunEnergyLast, sRxpRunNeutronLast;
+	private static long sRxpRunHuSum, sRxpRunNeutronSum;
+	private static long sRxpBatEu0;
+	private static long sRxpColdOffNeutronMax, sRxpColdOffEnergyMax, sRxpColdOffSteamMax;
+	private static long sRxpColdNfNeutronMax, sRxpColdNfEnergyMax, sRxpColdNfSteamMax;
+	private static long sRxpStarveEnergyMax, sRxpReflectNeutronLast, sRxpNoReflectNeutronLast;
+	private static long sRxpTurbineSteamMax, sRxpTurbineStorageMax, sRxpTurbineCounterMax;
+	private static final MclGrow sRxpRunSteamGrow = new MclGrow(), sRxpBatGrow = new MclGrow(), sRxpRunEnergyGrow = new MclGrow();
+
+	/** БЕ из мира по позиции. Прогон 1 вскрыл: постановка блока НАД ядром (турбина линии OUT) пересоздаёт BlockEntity
+	 *  ядра — захваченная при постройке ссылка протухает и показывает пустые слоты, пока живой BE в мире работает
+	 *  (тот же класс, что DIAG-IDENTITY связки №4). Все замеры идут через свежий BE. */
+	private static <T> T gt6ReactorProbeFresh(BlockPos aPos, Class<T> aClass) {
+		net.minecraft.world.level.block.entity.BlockEntity tBE = sRxpPlayer.level().getBlockEntity(aPos);
+		return aClass.isInstance(tBE) ? aClass.cast(tBE) : null;
+	}
+
+	/** Расчистка объёма постройки в AIR + каменная опора (гигиена, не судимый канал — приём CRUCIBLEPROBE/MCLPROBE). */
+	private static void gt6ReactorProbePrepareSite(ServerLevel aLevel, BlockPos aBase) {gt6ReactorProbePrepareSite(aLevel, aBase, 2);}
+	private static void gt6ReactorProbePrepareSite(ServerLevel aLevel, BlockPos aBase, int aLenZ) {
+		for (int x = -1; x <= 2; x++) for (int y = 0; y <= 5; y++) for (int z = -1; z <= aLenZ; z++) aLevel.setBlock(aBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+		gregapi.probe.GT6ProbeStand.solidPad(aLevel, aBase.offset(-1, 0, -1), 4, aLenZ + 2);
+	}
+
+	/** Ставит ядро реактора реальным каналом игрока и разворачивает его выход (setPrimaryFacing — тот же метод, что
+	 *  дёргает гайковёрт, TileEntityBase09FacingSingle.java:90). */
+	private static <T extends gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore> T gt6ReactorProbePlaceCore(ServerLevel aLevel, BlockPos aBase, int aCoreId, Class<T> aClass, byte aFacing, String aLabel) {return gt6ReactorProbePlaceCore(aLevel, aBase, aCoreId, aClass, aFacing, aLabel, 2);}
+	private static <T extends gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore> T gt6ReactorProbePlaceCore(ServerLevel aLevel, BlockPos aBase, int aCoreId, Class<T> aClass, byte aFacing, String aLabel, int aLenZ) {
+		gt6ReactorProbePrepareSite(aLevel, aBase, aLenZ);
+		T tCore = gregapi.probe.GT6ProbeStand.place(aLevel, sRxpPlayer, aBase, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(aCoreId), aClass, RXP_M, aLabel);
+		if (tCore == null) throw new RuntimeException(aLabel + ": ядро id=" + aCoreId + " не встало");
+		tCore.setPrimaryFacing(aFacing);
+		return tCore;
+	}
+
+	/** Стержень как предмет из реестра; aDurability>0 — занижение остатка ресурса через NBT предмета (RodNuclear:50
+	 *  читает NBT_DURABILITY, иначе NBT_MAXDURABILITY): вход стенда, аналог «дать инструмент как скрафченный» (§4). */
+	private static net.minecraft.world.item.ItemStack gt6ReactorProbeRod(int aRodId, long aDurability) {
+		net.minecraft.world.item.ItemStack tRod = gregapi.probe.GT6ProbeStand.mteStack(aRodId);
+		if (ST.invalid(tRod)) throw new RuntimeException("стержень id=" + aRodId + " не выдан реестром");
+		if (aDurability > 0) {
+			net.minecraft.nbt.CompoundTag tNBT = gregapi.code.ItemNBT.has(tRod) ? gregapi.code.ItemNBT.get(tRod) : UT.NBT.make();
+			UT.NBT.setNumber(tNBT, NBT_DURABILITY, aDurability);
+			UT.NBT.set(tRod, tNBT); // обратная запись обязательна: ItemNBT.get отдаёт detached-копию
+		}
+		return tRod;
+	}
+
+	/** РЕАЛЬНЫЙ канал игрока «ПКМ стержнем по верхней грани ядра» (§4 манифеста + Core2x2:284 адресация слота
+	 *  хит-точкой). Серверный gameMode.useItemOn дистанцию не проверяет (§7). */
+	private static void gt6ReactorProbeInsertRod(ServerLevel aLevel, BlockPos aCorePos, net.minecraft.world.item.ItemStack aRod, double aHitX, double aHitZ, String aLabel) {
+		sRxpPlayer.getInventory().setItem(0, aRod); sRxpPlayer.getInventory().setSelectedSlot(0);
+		net.minecraft.world.phys.Vec3 tHit = new net.minecraft.world.phys.Vec3(aCorePos.getX() + aHitX, aCorePos.getY() + 1.0D, aCorePos.getZ() + aHitZ);
+		net.minecraft.world.InteractionResult tRes = sRxpPlayer.gameMode.useItemOn(sRxpPlayer, aLevel, sRxpPlayer.getMainHandItem(), net.minecraft.world.InteractionHand.MAIN_HAND,
+			new net.minecraft.world.phys.BlockHitResult(tHit, net.minecraft.core.Direction.UP, aCorePos, false));
+		gregapi.data.CS.OUT.println("[" + RXP_M + "] вставка " + aLabel + " @" + aCorePos.toShortString() + " hit=(" + aHitX + "," + aHitZ + ") результат=" + tRes);
+	}
+
+	/** РЕАЛЬНЫЙ канал игрока «мягкий молот по ядру» (Core:186-192, путь Behavior_Tool.onItemUseFirst:57-60 ->
+	 *  IBlockToolable.Util.onToolClick). Возвращает T, если ядро включилось. */
+	private static boolean gt6ReactorProbeIgnite(gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore aCore, String aLabel) {
+		if (!aCore.mStopped) { // молот — ТУМБЛЕР (Core:187 mStopped=!mStopped): по уже включённому ядру он бы ВЫКЛЮЧИЛ его
+			gregapi.data.CS.OUT.println("[" + RXP_M + "] запуск " + aLabel + ": ядро уже ON (стержень не вставлялся, mStopped дефолтный F) — молотом не щёлкаем, иначе тумблер выключил бы его");
+			return T;
+		}
+		gregapi.probe.GT6ProbeStand.giveTool(sRxpPlayer, gregapi.data.CS.ToolsGT.SOFTHAMMER, gregapi.data.MT.Pb, gregapi.data.MT.WOODS.Spruce);
+		net.minecraft.world.InteractionResult tRes = gregapi.probe.GT6ProbeStand.clickBlock(sRxpPlayer, aCore.getBlockPos(), net.minecraft.core.Direction.UP);
+		boolean rOk = !aCore.mStopped;
+		gregapi.data.CS.OUT.println("[" + RXP_M + "] запуск " + aLabel + " мягким молотом: результат=" + tRes + " mStopped=" + aCore.mStopped + (rOk ? "" : " => молот не сработал, включаю логическим каналом setStateOnOff (ITileEntitySwitchableOnOff)"));
+		if (!rOk) aCore.setStateOnOff(T);
+		return rOk;
+	}
+
+	/** Меты всех слотов ядра по ФАКТИЧЕСКОМУ размеру инвентаря (1x1 — один слот, Core1x1:351; 2x2 — четыре, Core2x2:413). */
+	private static String gt6ReactorProbeSlots(gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore aCore) {
+		StringBuilder tSB = new StringBuilder();
+		for (int i = 0; i < aCore.invsize(); i++) tSB.append(i == 0 ? "" : ",").append(aCore.slotHas(i) ? String.valueOf(ST.meta(aCore.slot(i))) : "пусто");
+		return tSB.toString();
+	}
+
+	private static void gt6ReactorProbeDumpCore(String aLabel, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore aCore) {
+		if (aCore == null) {gregapi.data.CS.OUT.println("[" + RXP_M + "] параметры " + aLabel + ": НЕ ПОСТРОЕН"); return;}
+		gregapi.data.CS.OUT.println("[" + RXP_M + "] параметры " + aLabel + " @" + aCore.getBlockPos().toShortString() + ": mStopped=" + aCore.mStopped + " mRunning=" + aCore.mRunning + " mFacing=" + aCore.mFacing + " mSecondFacing=" + aCore.mSecondFacing
+			+ " слоты=[" + gt6ReactorProbeSlots(aCore) + "]"
+			+ " танк_вход=" + aCore.mTanks[0].amount() + "mb(" + gregapi.data.FL.name(aCore.mTanks[0].getFluid(), F) + ") танк_выход=" + aCore.mTanks[1].amount() + "mb"
+			+ " нейтроны(o)=[" + aCore.oNeutronCounts[0] + "," + aCore.oNeutronCounts[1] + "," + aCore.oNeutronCounts[2] + "," + aCore.oNeutronCounts[3] + "] mEnergy=" + aCore.mEnergy + " oEnergy=" + aCore.oEnergy);
+	}
+
+	/** Тик 200: постройка всех девяти линий + печать ЖИВЫХ параметров BE. */
+	private static void gt6ReactorProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sRxpPlayer.level();
+		O.println("========== [" + RXP_M + "] Связка №12 — ядерная энергетика (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {RXP_CORE1X1, RXP_CORE2X2, RXP_ROD_U235, RXP_ROD_REFLECTOR, RXP_ROD_NQ522, RXP_ROD_BREEDER_LI, RXP_DEPLETED_U235, RXP_PRODUCT_TRITIUM, RXP_TURBINE, RXP_DYNAMO, RXP_BATBOX, RXP_BAT_ITEM};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		StringBuilder tSB = new StringBuilder("[" + RXP_M + "] ID подтверждены:");
+		for (int tId : tIds) tSB.append(" ").append(tId).append("=").append(tReg.getClassContainer(tId).mClass.getSimpleName());
+		O.println(tSB.toString());
+		O.println("[" + RXP_M + "] живые константы теплоносителей (CS.java): EU_PER_WATER=" + EU_PER_WATER + " STEAM_PER_WATER=" + STEAM_PER_WATER + " EU_PER_TIN=" + EU_PER_TIN + " EU_PER_SODIUM=" + EU_PER_SODIUM + " EU_PER_COOLANT=" + EU_PER_COOLANT);
+		net.minecraft.world.level.block.entity.BlockEntity tProtoU = tReg.getNewTileEntity(gregapi.probe.GT6ProbeStand.mteStack(RXP_ROD_U235));
+		net.minecraft.world.level.block.entity.BlockEntity tProtoNq = tReg.getNewTileEntity(gregapi.probe.GT6ProbeStand.mteStack(RXP_ROD_NQ522));
+		net.minecraft.world.level.block.entity.BlockEntity tProtoBr = tReg.getNewTileEntity(gregapi.probe.GT6ProbeStand.mteStack(RXP_ROD_BREEDER_LI));
+		if (tProtoU instanceof gregtech.tileentity.energy.reactors.MultiTileEntityReactorRodNuclear tRodU)
+			O.println("[" + RXP_M + "] живые параметры U-235 (9221): self=" + tRodU.mNeutronSelf + " other=" + tRodU.mNeutronOther + " div=" + tRodU.mNeutronDiv + " max=" + tRodU.mNeutronMax + " durability=" + tRodU.mDurability + " depleted=" + tRodU.mDepleted);
+		if (tProtoNq instanceof gregtech.tileentity.energy.reactors.MultiTileEntityReactorRodNuclear tRodNq)
+			O.println("[" + RXP_M + "] живые параметры Naquadria (9261): self=" + tRodNq.mNeutronSelf + " other=" + tRodNq.mNeutronOther + " div=" + tRodNq.mNeutronDiv + " max=" + tRodNq.mNeutronMax + " durability=" + tRodNq.mDurability + " depleted=" + tRodNq.mDepleted);
+		if (tProtoBr instanceof gregtech.tileentity.energy.reactors.MultiTileEntityReactorRodBreeder tRodBr)
+			O.println("[" + RXP_M + "] живые параметры Li-бридер (9430): loss=" + tRodBr.mNeutronLoss + " durability=" + tRodBr.mDurability + " product=" + tRodBr.mProduct);
+
+		BlockPos tP = sRxpPlayer.blockPosition();
+		sRxpRun        = gt6ReactorProbePlaceCore(tLevel, tP.offset(40, 0, 40), RXP_CORE1X1, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class, SIDE_NORTH, "RUN");
+		// OUT: выход пара ВБОК (на юг), а НЕ вверх — верхняя грань ядра обязана остаться свободной, иначе GT6 глушит
+		// ПКМ загрузки стержня: TileEntityBase04MultiTileEntities.java:153 checkObstruction(...)||onBlockActivated2(...)
+		// — заслонённая грань поглощает клик БЕЗ действия (оригинал 1.7.10 :150-162, посимвольно то же). Вскрыто прогоном 1-2.
+		sRxpOut        = gt6ReactorProbePlaceCore(tLevel, tP.offset(40, 0, 46), RXP_CORE1X1, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class, SIDE_SOUTH, "OUT", 5);
+		sRxpColdOff    = gt6ReactorProbePlaceCore(tLevel, tP.offset(40, 0, 52), RXP_CORE1X1, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class, SIDE_NORTH, "COLD-OFF");
+		sRxpColdNoFuel = gt6ReactorProbePlaceCore(tLevel, tP.offset(40, 0, 58), RXP_CORE1X1, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class, SIDE_NORTH, "COLD-NOFUEL");
+		sRxpStarve     = gt6ReactorProbePlaceCore(tLevel, tP.offset(40, 0, 64), RXP_CORE1X1, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class, SIDE_NORTH, "STARVE");
+		sRxpReflect    = gt6ReactorProbePlaceCore(tLevel, tP.offset(48, 0, 40), RXP_CORE2X2, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2.class, SIDE_NORTH, "REFLECT");
+		sRxpNoReflect  = gt6ReactorProbePlaceCore(tLevel, tP.offset(48, 0, 46), RXP_CORE2X2, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2.class, SIDE_NORTH, "NOREFLECT");
+		sRxpDeplete    = gt6ReactorProbePlaceCore(tLevel, tP.offset(48, 0, 52), RXP_CORE1X1, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class, SIDE_NORTH, "DEPLETE");
+		sRxpBreed      = gt6ReactorProbePlaceCore(tLevel, tP.offset(48, 0, 58), RXP_CORE2X2, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2.class, SIDE_NORTH, "BREED");
+
+		// OUT: ядро(mFacing=SOUTH) -> паровая турбина(SOUTH: приём с севера OPOS[mFacing], TurbineSteam:128) -> динамо(SOUTH)
+		// -> батарея LV(mFacing=SOUTH: isInput=aSide!=mFacing, значит принимает с севера от динамо) — цепь связки №4, положенная набок
+		sRxpTurbine = gregapi.probe.GT6ProbeStand.place(tLevel, sRxpPlayer, sRxpOut.getBlockPos(), net.minecraft.core.Direction.SOUTH,
+			gregapi.probe.GT6ProbeStand.mteStack(RXP_TURBINE), gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam.class, RXP_M, "OUT-турбина");
+		if (sRxpTurbine == null) throw new RuntimeException("OUT: турбина не встала");
+		sRxpTurbine.setPrimaryFacing(SIDE_SOUTH);
+		sRxpDynamo = gregapi.probe.GT6ProbeStand.place(tLevel, sRxpPlayer, sRxpTurbine.getBlockPos(), net.minecraft.core.Direction.SOUTH,
+			gregapi.probe.GT6ProbeStand.mteStack(RXP_DYNAMO), gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric.class, RXP_M, "OUT-динамо");
+		if (sRxpDynamo == null) throw new RuntimeException("OUT: динамо не встало");
+		sRxpDynamo.setPrimaryFacing(SIDE_SOUTH);
+		sRxpBatBox = gregapi.probe.GT6ProbeStand.place(tLevel, sRxpPlayer, sRxpDynamo.getBlockPos(), net.minecraft.core.Direction.SOUTH,
+			gregapi.probe.GT6ProbeStand.mteStack(RXP_BATBOX), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, RXP_M, "OUT-батарея");
+		if (sRxpBatBox == null) throw new RuntimeException("OUT: батарея не встала");
+		sRxpBatBox.setPrimaryFacing(SIDE_SOUTH); // isInput = aSide != mFacing -> приём с севера от динамо
+
+		sRxpRunPos = sRxpRun.getBlockPos(); sRxpOutPos = sRxpOut.getBlockPos(); sRxpColdOffPos = sRxpColdOff.getBlockPos(); sRxpColdNoFuelPos = sRxpColdNoFuel.getBlockPos();
+		sRxpStarvePos = sRxpStarve.getBlockPos(); sRxpDepletePos = sRxpDeplete.getBlockPos(); sRxpReflectPos = sRxpReflect.getBlockPos(); sRxpNoReflectPos = sRxpNoReflect.getBlockPos();
+		sRxpBreedPos = sRxpBreed.getBlockPos(); sRxpTurbinePos = sRxpTurbine.getBlockPos(); sRxpDynamoPos = sRxpDynamo.getBlockPos(); sRxpBatPos = sRxpBatBox.getBlockPos();
+
+		O.println("[" + RXP_M + "] топология: RUN " + sRxpRun.getBlockPos().toShortString() + "; OUT " + sRxpOut.getBlockPos().toShortString() + "->турбина " + sRxpTurbine.getBlockPos().toShortString() + "->динамо " + sRxpDynamo.getBlockPos().toShortString() + "->батарея " + sRxpBatBox.getBlockPos().toShortString()
+			+ "; COLD-OFF " + sRxpColdOff.getBlockPos().toShortString() + "; COLD-NOFUEL " + sRxpColdNoFuel.getBlockPos().toShortString() + "; STARVE " + sRxpStarve.getBlockPos().toShortString()
+			+ "; REFLECT " + sRxpReflect.getBlockPos().toShortString() + "; NOREFLECT " + sRxpNoReflect.getBlockPos().toShortString() + "; DEPLETE " + sRxpDeplete.getBlockPos().toShortString() + "; BREED " + sRxpBreed.getBlockPos().toShortString());
+		O.println("[" + RXP_M + "] турбина mEnergyIN(min/rec/max)=" + sRxpTurbine.mConverter.mEnergyIN.mMin + "/" + sRxpTurbine.mConverter.mEnergyIN.mRec + "/" + sRxpTurbine.mConverter.mEnergyIN.mMax
+			+ " mEnergyOUT=" + sRxpTurbine.mConverter.mEnergyOUT.mMin + "/" + sRxpTurbine.mConverter.mEnergyOUT.mRec + "/" + sRxpTurbine.mConverter.mEnergyOUT.mMax
+			+ "; динамо mEnergyIN=" + sRxpDynamo.mConverter.mEnergyIN.mMin + "/" + sRxpDynamo.mConverter.mEnergyIN.mRec + "/" + sRxpDynamo.mConverter.mEnergyIN.mMax
+			+ " mEnergyOUT=" + sRxpDynamo.mConverter.mEnergyOUT.mMin + "/" + sRxpDynamo.mConverter.mEnergyOUT.mRec + "/" + sRxpDynamo.mConverter.mEnergyOUT.mMax
+			+ "; батарея mInput=" + sRxpBatBox.mInput + " окно=[" + sRxpBatBox.getEnergySizeInputMin(TD.Energy.EU, SIDE_DOWN) + ".." + sRxpBatBox.getEnergySizeInputMax(TD.Energy.EU, SIDE_DOWN) + "]");
+	}
+
+	/** Тик 204: ВХОДЫ — стержни реальным ПКМ + теплоноситель в танк (сетап резервуара, аналог связки №4). */
+	private static void gt6ReactorProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sRxpPlayer.level();
+
+		gt6ReactorProbeInsertRod(tLevel, sRxpRunPos,     gt6ReactorProbeRod(RXP_ROD_U235, 0), 0.25, 0.25, "RUN U-235");
+		sRxpRunRodInserted = sRxpRun.slotHas(0); sRxpRunSlotMeta0 = ST.meta(sRxpRun.slot(0)); sRxpRunStoppedAfterInsert = sRxpRun.mStopped ? 1 : 0;
+		gt6ReactorProbeInsertRod(tLevel, sRxpOutPos,     gt6ReactorProbeRod(RXP_ROD_U235, 0), 0.25, 0.25, "OUT U-235");
+		gt6ReactorProbeInsertRod(tLevel, sRxpColdOffPos, gt6ReactorProbeRod(RXP_ROD_U235, 0), 0.25, 0.25, "COLD-OFF U-235");
+		gt6ReactorProbeInsertRod(tLevel, sRxpStarvePos,  gt6ReactorProbeRod(RXP_ROD_U235, 0), 0.25, 0.25, "STARVE U-235");
+		gt6ReactorProbeInsertRod(tLevel, sRxpDepletePos, gt6ReactorProbeRod(RXP_ROD_U235, RXP_DEPLETE_DUR), 0.25, 0.25, "DEPLETE U-235(остаток " + RXP_DEPLETE_DUR + ")");
+		// COLD-NOFUEL: стержень НЕ кладём — это и есть единственное отличие от RUN
+
+		// 2x2: слот 0 = топливо, слоты 1 и 2 = отражатели (Core2x2:66-67 отражают в слот 0), слот 3 пуст
+		gt6ReactorProbeInsertRod(tLevel, sRxpReflectPos,   gt6ReactorProbeRod(RXP_ROD_U235, 0),      0.25, 0.25, "REFLECT слот0 U-235");
+		gt6ReactorProbeInsertRod(tLevel, sRxpReflectPos,   gt6ReactorProbeRod(RXP_ROD_REFLECTOR, 0), 0.25, 0.75, "REFLECT слот1 отражатель");
+		gt6ReactorProbeInsertRod(tLevel, sRxpReflectPos,   gt6ReactorProbeRod(RXP_ROD_REFLECTOR, 0), 0.75, 0.25, "REFLECT слот2 отражатель");
+		gt6ReactorProbeInsertRod(tLevel, sRxpNoReflectPos, gt6ReactorProbeRod(RXP_ROD_U235, 0),      0.25, 0.25, "NOREFLECT слот0 U-235");
+		sRxpReflectSlotsOk = ST.meta(sRxpReflect.slot(0)) == RXP_ROD_U235 && ST.meta(sRxpReflect.slot(1)) == RXP_ROD_REFLECTOR && ST.meta(sRxpReflect.slot(2)) == RXP_ROD_REFLECTOR && !sRxpReflect.slotHas(3);
+		// BREED: Naquadria + два Li-бридера с заниженным остатком; теплоноситель Sn (НЕ модерирует => бридинг возможен)
+		gt6ReactorProbeInsertRod(tLevel, sRxpBreedPos, gt6ReactorProbeRod(RXP_ROD_NQ522, 0),                 0.25, 0.25, "BREED слот0 Naquadria");
+		gt6ReactorProbeInsertRod(tLevel, sRxpBreedPos, gt6ReactorProbeRod(RXP_ROD_BREEDER_LI, RXP_BREED_DUR), 0.25, 0.75, "BREED слот1 Li-бридер(остаток " + RXP_BREED_DUR + ")");
+		gt6ReactorProbeInsertRod(tLevel, sRxpBreedPos, gt6ReactorProbeRod(RXP_ROD_BREEDER_LI, RXP_BREED_DUR), 0.75, 0.25, "BREED слот2 Li-бридер(остаток " + RXP_BREED_DUR + ")");
+
+		sRxpRun.mTanks[0].setFluid(gregapi.data.FL.DistW.make(RXP_DISTW_MB));
+		sRxpOut.mTanks[0].setFluid(gregapi.data.FL.DistW.make(RXP_DISTW_MB));
+		sRxpColdOff.mTanks[0].setFluid(gregapi.data.FL.DistW.make(RXP_DISTW_MB));
+		sRxpColdNoFuel.mTanks[0].setFluid(gregapi.data.FL.DistW.make(RXP_DISTW_MB));
+		sRxpDeplete.mTanks[0].setFluid(gregapi.data.FL.DistW.make(RXP_DISTW_MB));
+		sRxpReflect.mTanks[0].setFluid(gregapi.data.FL.DistW.make(RXP_DISTW_MB));
+		sRxpNoReflect.mTanks[0].setFluid(gregapi.data.FL.DistW.make(RXP_DISTW_MB));
+		sRxpBreed.mTanks[0].setFluid(gregapi.data.FL.amount(gregapi.data.MT.Sn.mLiquid, RXP_TIN_MB));
+		// STARVE: танк ОСТАЁТСЯ ПУСТЫМ — это и есть проверяемый недостаток охлаждения
+		gt6BatBoxProbeLoadBattery(sRxpBatBox, RXP_BAT_ITEM, F, "OUT-батарея LV (пустая предметная батарея — прайм mChargeableCount, урок связки №11)");
+		O.println("[" + RXP_M + "] входы разложены: теплоноситель залит (RUN/OUT/COLD-OFF/COLD-NOFUEL/DEPLETE/REFLECT/NOREFLECT = " + RXP_DISTW_MB + "mb DistW, BREED = " + RXP_TIN_MB + "mb Sn, STARVE = ПУСТО); реакторы ещё ВЫКЛЮЧЕНЫ (вставка стержня ставит mStopped=T)");
+	}
+
+	/** Тик 202 (ДО раскладки входов): ПЕРЕЗАХВАТ живых BE из мира (см. gt6ReactorProbeFresh) + DIAG идентичности —
+	 *  иначе теплоноситель льётся в протухший объект, а стержень уходит в живой (расхождение прогона 1). */
+	private static void gt6ReactorProbeRefresh() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		StringBuilder tSB = new StringBuilder("[" + RXP_M + "] DIAG-IDENTITY (ссылка постройки == живой BE в мире?):");
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1 tRun = gt6ReactorProbeFresh(sRxpRunPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1 tOut = gt6ReactorProbeFresh(sRxpOutPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1 tCo  = gt6ReactorProbeFresh(sRxpColdOffPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1 tCnf = gt6ReactorProbeFresh(sRxpColdNoFuelPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1 tSt  = gt6ReactorProbeFresh(sRxpStarvePos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1 tDep = gt6ReactorProbeFresh(sRxpDepletePos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2 tRef = gt6ReactorProbeFresh(sRxpReflectPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2 tNrf = gt6ReactorProbeFresh(sRxpNoReflectPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2.class);
+		gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2 tBrd = gt6ReactorProbeFresh(sRxpBreedPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore2x2.class);
+		gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam tTur = gt6ReactorProbeFresh(sRxpTurbinePos, gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam.class);
+		gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric tDyn = gt6ReactorProbeFresh(sRxpDynamoPos, gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric.class);
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBat = gt6ReactorProbeFresh(sRxpBatPos, gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class);
+		tSB.append(" RUN=").append(tRun == sRxpRun).append(" OUT=").append(tOut == sRxpOut).append(" COLD-OFF=").append(tCo == sRxpColdOff).append(" COLD-NOFUEL=").append(tCnf == sRxpColdNoFuel)
+		   .append(" STARVE=").append(tSt == sRxpStarve).append(" DEPLETE=").append(tDep == sRxpDeplete).append(" REFLECT=").append(tRef == sRxpReflect).append(" NOREFLECT=").append(tNrf == sRxpNoReflect)
+		   .append(" BREED=").append(tBrd == sRxpBreed).append(" турбина=").append(tTur == sRxpTurbine).append(" динамо=").append(tDyn == sRxpDynamo).append(" батарея=").append(tBat == sRxpBatBox);
+		O.println(tSB.toString());
+		if (tRun != null) sRxpRun = tRun; if (tOut != null) sRxpOut = tOut; if (tCo != null) sRxpColdOff = tCo; if (tCnf != null) sRxpColdNoFuel = tCnf;
+		if (tSt != null) sRxpStarve = tSt; if (tDep != null) sRxpDeplete = tDep; if (tRef != null) sRxpReflect = tRef; if (tNrf != null) sRxpNoReflect = tNrf;
+		if (tBrd != null) sRxpBreed = tBrd; if (tTur != null) sRxpTurbine = tTur; if (tDyn != null) sRxpDynamo = tDyn; if (tBat != null) sRxpBatBox = tBat;
+	}
+
+	/** Тик 208: РЕАЛЬНЫЙ запуск мягким молотом — только после того, как входы уже лежат (§7 «энергия после входов»). */
+	private static void gt6ReactorProbeIgniteAll() {
+		sRxpRunIgnitedByHammer = gt6ReactorProbeIgnite(sRxpRun, "RUN");
+		gt6ReactorProbeIgnite(sRxpOut, "OUT");
+		gt6ReactorProbeIgnite(sRxpColdNoFuel, "COLD-NOFUEL");
+		gt6ReactorProbeIgnite(sRxpStarve, "STARVE");
+		gt6ReactorProbeIgnite(sRxpReflect, "REFLECT");
+		gt6ReactorProbeIgnite(sRxpNoReflect, "NOREFLECT");
+		gt6ReactorProbeIgnite(sRxpDeplete, "DEPLETE");
+		gt6ReactorProbeIgnite(sRxpBreed, "BREED");
+		// COLD-OFF НЕ включаем — единственное отличие от RUN
+		gregapi.data.CS.OUT.println("[" + RXP_M + "] COLD-OFF оставлен ВЫКЛЮЧЕННЫМ намеренно: mStopped=" + sRxpColdOff.mStopped);
+		gt6ReactorProbeDumpCore("RUN", sRxpRun); gt6ReactorProbeDumpCore("OUT", sRxpOut);
+		gt6ReactorProbeDumpCore("COLD-OFF", sRxpColdOff); gt6ReactorProbeDumpCore("COLD-NOFUEL", sRxpColdNoFuel);
+		gt6ReactorProbeDumpCore("STARVE", sRxpStarve); gt6ReactorProbeDumpCore("REFLECT", sRxpReflect);
+		gt6ReactorProbeDumpCore("NOREFLECT", sRxpNoReflect); gt6ReactorProbeDumpCore("DEPLETE", sRxpDeplete);
+		gt6ReactorProbeDumpCore("BREED", sRxpBreed);
+	}
+
+	/** Тик 212: нули (состояние ПОСЛЕ реакторного тика 211, до первого учтённого прироста). */
+	private static void gt6ReactorProbeZero() {
+		sRxpRunWater0 = sRxpRun.mTanks[0].amount(); sRxpRunSteam0 = sRxpRun.mTanks[1].amount(); sRxpRunEnergy0 = sRxpRun.mEnergy;
+		sRxpRunWaterLast = sRxpRunWater0; sRxpRunSteamLast = sRxpRunSteam0; sRxpRunEnergyLast = sRxpRunEnergy0;
+		sRxpBatEu0 = sRxpBatBox.mEnergy;
+		gregapi.data.CS.OUT.println("[" + RXP_M + "] тик " + sRxpProbeTick + " нули: RUN вода=" + sRxpRunWater0 + " пар=" + sRxpRunSteam0 + " mEnergy=" + sRxpRunEnergy0 + " нейтроны=" + sRxpRun.oNeutronCounts[0]
+			+ "; батарея mEnergy=" + sRxpBatEu0 + " mChargeableCount=" + sRxpBatBox.mChargeableCount + " mReceivablePower=" + sRxpBatBox.mReceivablePower);
+	}
+
+	/** Каждый тик окна 213..801: суммы, максимумы, «последние» значения (шаг 1 тик — ловит ВСЕ фазы 20-тикового цикла). */
+	private static void gt6ReactorProbeTrack() {
+		sRxpRunHuSum += sRxpRun.oEnergy; sRxpRunNeutronSum += sRxpRun.oNeutronCounts[0];
+		sRxpRunWaterLast = sRxpRun.mTanks[0].amount(); sRxpRunSteamLast = sRxpRun.mTanks[1].amount();
+		sRxpRunEnergyLast = sRxpRun.mEnergy; sRxpRunNeutronLast = sRxpRun.oNeutronCounts[0];
+		sRxpRunSteamGrow.sample(sRxpRunSteamLast); sRxpRunEnergyGrow.sample(sRxpRunEnergyLast);
+		sRxpBatGrow.sample(sRxpBatBox.mEnergy);
+		if (sRxpColdOff.oNeutronCounts[0] > sRxpColdOffNeutronMax) sRxpColdOffNeutronMax = sRxpColdOff.oNeutronCounts[0];
+		if (sRxpColdOff.mEnergy > sRxpColdOffEnergyMax) sRxpColdOffEnergyMax = sRxpColdOff.mEnergy;
+		if (sRxpColdOff.mTanks[1].amount() > sRxpColdOffSteamMax) sRxpColdOffSteamMax = sRxpColdOff.mTanks[1].amount();
+		if (sRxpColdNoFuel.oNeutronCounts[0] > sRxpColdNfNeutronMax) sRxpColdNfNeutronMax = sRxpColdNoFuel.oNeutronCounts[0];
+		if (sRxpColdNoFuel.mEnergy > sRxpColdNfEnergyMax) sRxpColdNfEnergyMax = sRxpColdNoFuel.mEnergy;
+		if (sRxpColdNoFuel.mTanks[1].amount() > sRxpColdNfSteamMax) sRxpColdNfSteamMax = sRxpColdNoFuel.mTanks[1].amount();
+		if (sRxpStarve.mEnergy > sRxpStarveEnergyMax) sRxpStarveEnergyMax = sRxpStarve.mEnergy;
+		sRxpReflectNeutronLast = sRxpReflect.oNeutronCounts[0]; sRxpNoReflectNeutronLast = sRxpNoReflect.oNeutronCounts[0];
+		if (sRxpTurbine.mTank.amount() > sRxpTurbineSteamMax) sRxpTurbineSteamMax = sRxpTurbine.mTank.amount();
+		if (sRxpTurbine.mStorage.mEnergy > sRxpTurbineStorageMax) sRxpTurbineStorageMax = sRxpTurbine.mStorage.mEnergy;
+		// прогон 4 (§7 «замер поля, обнуляемого в конце тика»): mTank турбины опустошается ТЕМ ЖЕ тиком конверсии
+		// (TurbineSteam.java:96 mTank.setEmpty()), а mStorage тратится конвертером — на Pre-фазе оба всегда 0.
+		// Долгоживущий след приёма пара — mSteamCounter (:93 += tSteam, остаток по STEAM_PER_WATER :103).
+		if (sRxpTurbine.mSteamCounter > sRxpTurbineCounterMax) sRxpTurbineCounterMax = sRxpTurbine.mSteamCounter;
+	}
+
+	/** Разреженная трасса (шаг 37 — взаимно прост с 20-тиковым циклом реактора, §7 манифеста). */
+	private static void gt6ReactorProbeTrace() {
+		if ((sRxpProbeTick - RXP_T_ZERO) % 37 != 0) return;
+		gregapi.data.CS.OUT.println("[" + RXP_M + "] трасса тик " + sRxpProbeTick
+			+ " | RUN нейтроны=" + sRxpRun.oNeutronCounts[0] + " mEnergy=" + sRxpRun.mEnergy + " oEnergy=" + sRxpRun.oEnergy + " вода=" + sRxpRun.mTanks[0].amount() + " пар=" + sRxpRun.mTanks[1].amount() + " mRunning=" + sRxpRun.mRunning
+			+ " | OUT нейтроны=" + sRxpOut.oNeutronCounts[0] + " пар_ядра=" + sRxpOut.mTanks[1].amount() + " турбина(tank/storage)=" + sRxpTurbine.mTank.amount() + "/" + sRxpTurbine.mStorage.mEnergy + " динамо=" + sRxpDynamo.mStorage.mEnergy + " батарея=" + sRxpBatBox.mEnergy
+			+ " | COLD-OFF н=" + sRxpColdOff.oNeutronCounts[0] + "/E=" + sRxpColdOff.mEnergy + " | COLD-NOFUEL н=" + sRxpColdNoFuel.oNeutronCounts[0] + "/E=" + sRxpColdNoFuel.mEnergy
+			+ " | STARVE слот=" + sRxpStarve.slotHas(0) + "/E=" + sRxpStarve.mEnergy + " | REFLECT н0=" + sRxpReflect.oNeutronCounts[0] + " NOREFLECT н0=" + sRxpNoReflect.oNeutronCounts[0]
+			+ " | DEPLETE мета=" + ST.meta(sRxpDeplete.slot(0)) + " | BREED н=[" + sRxpBreed.oNeutronCounts[0] + "," + sRxpBreed.oNeutronCounts[1] + "," + sRxpBreed.oNeutronCounts[2] + "] меты=[" + ST.meta(sRxpBreed.slot(1)) + "," + ST.meta(sRxpBreed.slot(2)) + "]");
+	}
+
+	/** Тик 802: вердикты. Все ожидания — из ЖИВЫХ полей BE и формул кода с file:line. */
+	private static void gt6ReactorProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + RXP_M + "] ИТОГИ (окно " + (RXP_T_ZERO + 1) + ".." + RXP_T_TO + ", " + (RXP_T_TO - RXP_T_ZERO) + " живых тиков) ==========");
+
+		// ---------- STRUCTURE ----------
+		int tSelf = 0, tOther = 0, tDiv = 0, tMax = 0;
+		net.minecraft.world.level.block.entity.BlockEntity tProto = MultiTileEntityRegistry.getRegistry("gt.multitileentity").getNewTileEntity(gregapi.probe.GT6ProbeStand.mteStack(RXP_ROD_U235));
+		if (tProto instanceof gregtech.tileentity.energy.reactors.MultiTileEntityReactorRodNuclear tRod) {tSelf = tRod.mNeutronSelf; tOther = tRod.mNeutronOther; tDiv = tRod.mNeutronDiv; tMax = tRod.mNeutronMax;}
+		O.println("[" + RXP_M + "] STRUCTURE числа: RUN слот0 занят=" + sRxpRunRodInserted + " мета=" + sRxpRunSlotMeta0 + " (ожидание " + RXP_ROD_U235 + ") mStopped_после_вставки=" + sRxpRunStoppedAfterInsert
+			+ " запуск_молотом=" + sRxpRunIgnitedByHammer + " mStopped_сейчас=" + sRxpRun.mStopped + "; REFLECT слоты=[" + ST.meta(sRxpReflect.slot(0)) + "," + ST.meta(sRxpReflect.slot(1)) + "," + ST.meta(sRxpReflect.slot(2)) + "," + ST.meta(sRxpReflect.slot(3)) + "]"
+			+ "; U-235 живые параметры self/other/div/max=" + tSelf + "/" + tOther + "/" + tDiv + "/" + tMax);
+		sRxpSeq.judge("STRUCTURE POSITIVE-CONTROL: реестр отдал ядра и стержни, ядра встали как MTE нужных классов, параметры топлива прочитаны из живого BE", tSelf > 0 && tMax > 0 && sRxpRun != null && sRxpReflect != null, "self>0 и max>0", tSelf + "/" + tMax);
+		sRxpSeq.judge("STRUCTURE-INSERT: РЕАЛЬНЫЙ ПКМ стержнем по верхней грани заполнил слот 0 (Core1x1:252-265)", sRxpRunRodInserted && sRxpRunSlotMeta0 == RXP_ROD_U235, "слот занят, мета " + RXP_ROD_U235, sRxpRunRodInserted + "/" + sRxpRunSlotMeta0);
+		sRxpSeq.judge("STRUCTURE-SAFE: вставка стержня переводит ядро в OFF (Core1x1:258 mStopped=T)", sRxpRunStoppedAfterInsert == 1, 1, sRxpRunStoppedAfterInsert);
+		sRxpSeq.judge("STRUCTURE-SLOTS2x2: четыре слота 2x2 адресуются хит-точкой (Core2x2:284) — слот0 топливо, слоты1/2 отражатели, слот3 пуст", sRxpReflectSlotsOk, "9221/9203/9203/пусто", ST.meta(sRxpReflect.slot(0)) + "/" + ST.meta(sRxpReflect.slot(1)) + "/" + ST.meta(sRxpReflect.slot(2)) + "/" + (sRxpReflect.slotHas(3) ? ST.meta(sRxpReflect.slot(3)) : "пусто"));
+		sRxpSeq.judge("STRUCTURE-ON: ядро признано собранным и запущено (mStopped=F, Core:186-192 мягкий молот)", !sRxpRun.mStopped, F, sRxpRun.mStopped);
+
+		// ---------- RUN ----------
+		long tRunSteamDelta = sRxpRunSteamLast - sRxpRunSteam0, tRunWaterDelta = sRxpRunWater0 - sRxpRunWaterLast, tRunEnergyDelta = sRxpRunEnergyLast - sRxpRunEnergy0;
+		O.println("[" + RXP_M + "] RUN числа: нейтроны(последние)=" + sRxpRunNeutronLast + " (ожидание self=" + tSelf + "); Σнейтронов=" + sRxpRunNeutronSum + " ΣHU=" + sRxpRunHuSum
+			+ "; вода " + sRxpRunWater0 + "->" + sRxpRunWaterLast + " (расход=" + tRunWaterDelta + "); пар " + sRxpRunSteam0 + "->" + sRxpRunSteamLast + " (прирост=" + tRunSteamDelta + ")"
+			+ "; mEnergy " + sRxpRunEnergy0 + "->" + sRxpRunEnergyLast + " (Δ=" + tRunEnergyDelta + "); mRunning=" + sRxpRun.mRunning + "; приросты пара: " + sRxpRunSteamGrow);
+		boolean tRunPc = !sRxpRun.mStopped && sRxpRun.slotHas(0) && sRxpRun.mTanks[0].has() && ST.meta(sRxpRun.slot(0)) == RXP_ROD_U235;
+		sRxpSeq.judge("RUN POSITIVE-CONTROL: ядро ON, топливо в слоте, теплоноситель в танке — стенд способен показать успех", tRunPc, T, tRunPc);
+		sRxpSeq.judge("RUN-NEUTRONS: одиночное ядро набирает РОВНО собственную эмиссию стержня (RodNuclear:198 mNeutronCounts+=tNeutronSelf, соседей нет)", sRxpRunNeutronLast == tSelf && tSelf > 0, tSelf, sRxpRunNeutronLast);
+		sRxpSeq.judge("RUN-ACTIVE: ядро в рабочем состоянии живыми тиками (mRunning, Core1x1:96)", sRxpRun.mRunning, T, sRxpRun.mRunning);
+		sRxpSeq.judge("RUN-STEAM: выработка реально идёт — пар накапливался шагами живых тиков", tRunSteamDelta > 0 && sRxpRunSteamGrow.mSteps > 0, ">0 шагов", "Δ=" + tRunSteamDelta + ", шагов=" + sRxpRunSteamGrow.mSteps);
+		sRxpSeq.judge("RUN-FUEL-BURN: теплоноситель реально расходуется", tRunWaterDelta > 0, ">0", tRunWaterDelta);
+
+		// ---------- HEAT ----------
+		long tHuExpected = 80L * tRunWaterDelta + tRunEnergyDelta;
+		O.println("[" + RXP_M + "] HEAT числа: ΣHU(oEnergy по тикам)=" + sRxpRunHuSum + " против Σнейтронов=" + sRxpRunNeutronSum + " (tDivider=1 для DistW, Core1x1:102-105); баланс 80×вода+ΔmEnergy=" + (80L * tRunWaterDelta) + "+" + tRunEnergyDelta + "=" + tHuExpected
+			+ "; STARVE: mEnergy_max=" + sRxpStarveEnergyMax + " слот_занят_сейчас=" + sRxpStarve.slotHas(0) + " стержень_был=" + sRxpSeq.everSeen("STARVE-стержень-был") + " блок_жив=" + (sRxpPlayer.level().getBlockEntity(sRxpStarve.getBlockPos()) == sRxpStarve));
+		sRxpSeq.judge("HEAT-RATE: нагрев за окно РОВНО равен числу поглощённых нейтронов (RodNuclear:206 mEnergy+=oNeutronCounts, делитель DistW=1)", sRxpRunHuSum == sRxpRunNeutronSum && sRxpRunHuSum > 0, sRxpRunNeutronSum, sRxpRunHuSum);
+		boolean tStarvePc = sRxpSeq.everSeen("STARVE-стержень-был") && sRxpStarve.mTanks[0].isEmpty() && !sRxpStarve.mStopped;
+		sRxpSeq.judge("HEAT-STARVE POSITIVE-CONTROL: ядро было заряжено топливом и включено, отличие от RUN ровно одно — пустой танк теплоносителя", tStarvePc, T, tStarvePc);
+		sRxpSeq.judge("HEAT-STARVE: без охлаждения ядро уничтожает топливо (Core1x1:170-183 slotKill(0)) и НЕ рушит блок (explode закомментирован :172, как в оригинале 1.7.10)",
+			!sRxpStarve.slotHas(0) && sRxpPlayer.level().getBlockEntity(sRxpStarve.getBlockPos()) == sRxpStarve, "слот пуст, блок жив", "слот_занят=" + sRxpStarve.slotHas(0) + ", блок_жив=" + (sRxpPlayer.level().getBlockEntity(sRxpStarve.getBlockPos()) == sRxpStarve));
+
+		// ---------- CONSERVE ----------
+		sRxpSeq.judge("CONSERVE-STEAM: пар == " + STEAM_PER_WATER + "×израсходованная вода (Core1x1:118)", tRunSteamDelta == (long) STEAM_PER_WATER * tRunWaterDelta, (long) STEAM_PER_WATER * tRunWaterDelta, tRunSteamDelta);
+		sRxpSeq.judge("CONSERVE-HU: ΣHU == " + EU_PER_WATER + "×вода + остаток в ядре (энергия не создаётся из ничего, Core1x1:117-119)", sRxpRunHuSum == tHuExpected, tHuExpected, sRxpRunHuSum);
+
+		// ---------- COLD ----------
+		O.println("[" + RXP_M + "] COLD числа: COLD-OFF (топливо+вода, ядро ВЫКЛЮЧЕНО) нейтроны_max=" + sRxpColdOffNeutronMax + " mEnergy_max=" + sRxpColdOffEnergyMax + " пар_max=" + sRxpColdOffSteamMax + " слот_занят=" + sRxpColdOff.slotHas(0) + " mStopped=" + sRxpColdOff.mStopped
+			+ "; COLD-NOFUEL (вода+ядро ВКЛЮЧЕНО, топлива нет) нейтроны_max=" + sRxpColdNfNeutronMax + " mEnergy_max=" + sRxpColdNfEnergyMax + " пар_max=" + sRxpColdNfSteamMax + " слот_занят=" + sRxpColdNoFuel.slotHas(0) + " mStopped=" + sRxpColdNoFuel.mStopped);
+		boolean tColdOffPc = sRxpColdOff.slotHas(0) && sRxpColdOff.mTanks[0].has() && sRxpColdOff.mStopped;
+		sRxpSeq.judge("COLD-OFF POSITIVE-CONTROL: линия идентична RUN (то же топливо, тот же теплоноситель), отличие ровно одно — ядро выключено", tColdOffPc, T, tColdOffPc);
+		sRxpSeq.judge("COLD-OFF: выключенное ядро не вырабатывает НИЧЕГО (ни нейтронов, ни HU, ни пара)", sRxpColdOffNeutronMax == 0 && sRxpColdOffEnergyMax == 0 && sRxpColdOffSteamMax == 0, "0/0/0", sRxpColdOffNeutronMax + "/" + sRxpColdOffEnergyMax + "/" + sRxpColdOffSteamMax);
+		boolean tColdNfPc = !sRxpColdNoFuel.slotHas(0) && sRxpColdNoFuel.mTanks[0].has() && !sRxpColdNoFuel.mStopped;
+		sRxpSeq.judge("COLD-NOFUEL POSITIVE-CONTROL: ядро ВКЛЮЧЕНО и залито теплоносителем, отличие от RUN ровно одно — нет топлива", tColdNfPc, T, tColdNfPc);
+		sRxpSeq.judge("COLD-NOFUEL: без топлива процесс не идёт (ни нейтронов, ни HU, ни пара)", sRxpColdNfNeutronMax == 0 && sRxpColdNfEnergyMax == 0 && sRxpColdNfSteamMax == 0, "0/0/0", sRxpColdNfNeutronMax + "/" + sRxpColdNfEnergyMax + "/" + sRxpColdNfSteamMax);
+
+		// ---------- ГЕОМЕТРИЯ НЕЙТРОНОВ (2x2 с отражателями) ----------
+		long tFix = tSelf + 2L * (tOther + UT.Code.divup(Math.max(0, 0), Math.max(tDiv, 1))); // «сухая» нижняя граница первого цикла
+		O.println("[" + RXP_M + "] REFLECT числа: REFLECT н0=" + sRxpReflectNeutronLast + " против контроля NOREFLECT н0=" + sRxpNoReflectNeutronLast
+			+ " (формула Core2x2:63-70: н0 = self + 2×эмиссия, эмиссия = other + divup(max(н0-self,0), div) — RodNuclear:199, отражатель возвращает aNeutrons как есть; первый цикл даёт " + tFix + ", неподвижная точка при self=" + tSelf + " other=" + tOther + " div=" + tDiv + " = 160)"
+			+ "; REFLECT mEnergy=" + sRxpReflect.mEnergy + " NOREFLECT mEnergy=" + sRxpNoReflect.mEnergy);
+		boolean tReflectPc = !sRxpReflect.mStopped && sRxpReflect.slotHas(0) && sRxpReflect.slotHas(1) && sRxpReflect.slotHas(2) && sRxpReflect.mTanks[0].has()
+			&& !sRxpNoReflect.mStopped && sRxpNoReflect.slotHas(0) && !sRxpNoReflect.slotHas(1) && sRxpNoReflect.mTanks[0].has();
+		sRxpSeq.judge("REFLECT POSITIVE-CONTROL: обе 2x2-сборки включены и залиты, отличие ровно одно — наличие отражателей в слотах 1/2", tReflectPc, T, tReflectPc);
+		sRxpSeq.judge("REFLECT-GEOMETRY: отражатели поднимают нейтронный поток сборки до неподвижной точки формулы (160 при self=32 other=32 div=4)", sRxpReflectNeutronLast == 160, 160, sRxpReflectNeutronLast);
+		sRxpSeq.judge("REFLECT-КОНТРОЛЬ (NOREFLECT): та же 2x2 без отражателей держит РОВНО собственную эмиссию стержня", sRxpNoReflectNeutronLast == tSelf, tSelf, sRxpNoReflectNeutronLast);
+
+		// ---------- ВЫХОД В ПОТРЕБИТЕЛЬ ----------
+		long tBatDelta = sRxpBatBox.mEnergy - sRxpBatEu0;
+		O.println("[" + RXP_M + "] OUT числа: ядро нейтроны=" + sRxpOut.oNeutronCounts[0] + " mEnergy=" + sRxpOut.mEnergy + " пар_в_ядре=" + sRxpOut.mTanks[1].amount() + " вода=" + sRxpOut.mTanks[0].amount()
+			+ "; турбина mTank_max=" + sRxpTurbineSteamMax + " mStorage_max=" + sRxpTurbineStorageMax + " mSteamCounter=" + sRxpTurbine.mSteamCounter + " mSteamCounter_max=" + sRxpTurbineCounterMax + " излучала_RU=" + sRxpSeq.everSeen("OUT-турбина-излучает")
+			+ "; динамо mStorage=" + sRxpDynamo.mStorage.mEnergy + "; батарея " + sRxpBatEu0 + "->" + sRxpBatBox.mEnergy + " (Δ=" + tBatDelta + ") mChargeableCount=" + sRxpBatBox.mChargeableCount + " mReceivablePower=" + sRxpBatBox.mReceivablePower + "; приросты батареи: " + sRxpBatGrow);
+		O.println("[" + RXP_M + "] OUT DIAG-IDENTITY на вердикте: ядро_живо=" + (gt6ReactorProbeFresh(sRxpOutPos, gregtech.tileentity.energy.reactors.MultiTileEntityReactorCore1x1.class) == sRxpOut)
+			+ " турбина_жива=" + (gt6ReactorProbeFresh(sRxpTurbinePos, gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam.class) == sRxpTurbine)
+			+ " динамо_живо=" + (gt6ReactorProbeFresh(sRxpDynamoPos, gregtech.tileentity.energy.converters.MultiTileEntityDynamoElectric.class) == sRxpDynamo)
+			+ " батарея_жива=" + (gt6ReactorProbeFresh(sRxpBatPos, gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class) == sRxpBatBox));
+		boolean tOutPc = !sRxpOut.mStopped && sRxpOut.slotHas(0) && sRxpOut.mTanks[0].has() && sRxpOut.mFacing == SIDE_SOUTH
+			&& sRxpTurbine.isInput(OPOS[SIDE_SOUTH]) && sRxpBatBox.mChargeableCount > 0 && sRxpBatBox.mReceivablePower > 0 && sRxpBatBox.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_NORTH, F);
+		sRxpSeq.judge("OUT POSITIVE-CONTROL: ядро ON с топливом и водой, выход развёрнут в турбину, батарея-приёмник открыта и праймлена реальной предметной батареей", tOutPc, T, tOutPc);
+		// признак взят ИЗ КОДА ПРИЁМНИКА (§7): mSteamCounter — единственное поле турбины, переживающее тик конверсии
+		// (mTank опустошается на :96, mStorage тратит конвертер), плюс факт излучения RU, невозможный без пара.
+		sRxpSeq.judge("OUT-STEAM-DELIVERED: пар ядра реально дошёл до турбины (её счётчик принятого пара ненулевой и/или турбина излучала RU)",
+			sRxpTurbineCounterMax > 0 || sRxpSeq.everSeen("OUT-турбина-излучает"), ">0 либо излучение", sRxpTurbineCounterMax + "/" + sRxpSeq.everSeen("OUT-турбина-излучает"));
+		sRxpSeq.judge("OUT-EU: цепь замкнута числом — батарея реально набрала EU живыми тиками (реактор->пар->турбина->динамо->батарея)", tBatDelta > 0 && sRxpBatGrow.mSteps > 0, ">0 шагов роста", "Δ=" + tBatDelta + ", шагов=" + sRxpBatGrow.mSteps);
+
+		// ---------- ПОБОЧНЫЕ ПРОДУКТЫ / ИСТОЩЕНИЕ ----------
+		int tDepMeta = ST.meta(sRxpDeplete.slot(0)), tBrMeta1 = ST.meta(sRxpBreed.slot(1)), tBrMeta2 = ST.meta(sRxpBreed.slot(2));
+		O.println("[" + RXP_M + "] DEPLETE/BREED числа: DEPLETE слот0 мета=" + tDepMeta + " (стартовая 9221, ожидание " + RXP_DEPLETED_U235 + ") занят=" + sRxpDeplete.slotHas(0) + " mStopped=" + sRxpDeplete.mStopped
+			+ "; BREED нейтроны=[" + sRxpBreed.oNeutronCounts[0] + "," + sRxpBreed.oNeutronCounts[1] + "," + sRxpBreed.oNeutronCounts[2] + "] меты бридеров=[" + tBrMeta1 + "," + tBrMeta2 + "] (стартовая 9430, ожидание " + RXP_PRODUCT_TRITIUM + ") теплоноситель=" + gregapi.data.FL.name(sRxpBreed.mTanks[0].getFluid(), F) + " " + sRxpBreed.mTanks[0].amount() + "mb");
+		boolean tDepPc = sRxpDeplete.slotHas(0) && !sRxpDeplete.mStopped && sRxpDeplete.mTanks[0].has();
+		sRxpSeq.judge("DEPLETE POSITIVE-CONTROL: ядро ON, стержень с заниженным остатком ресурса в слоте, теплоноситель есть", tDepPc, T, tDepPc);
+		sRxpSeq.judge("DEPLETE: истощённое топливо превращается в отработанный стержень (RodNuclear:221-225 ST.meta(aStack, mDepleted))", tDepMeta == RXP_DEPLETED_U235, RXP_DEPLETED_U235, tDepMeta);
+		boolean tBrPc = !sRxpBreed.mStopped && sRxpBreed.slotHas(0) && sRxpBreed.slotHas(1) && sRxpBreed.mTanks[0].has() && sRxpBreed.oNeutronCounts[0] > 0;
+		sRxpSeq.judge("BREED POSITIVE-CONTROL: 2x2 ON, Naquadria даёт нейтроны, бридеры в слотах 1/2, теплоноситель Sn (НЕ модерирует — иначе бридинг невозможен по коду)", tBrPc, T, tBrPc);
+		sRxpSeq.judge("BREED: бридер набрал нейтроны и превратился в обогащённый стержень (RodBreeder.getReactorRodNeutronReaction ST.meta(aStack, mProduct))", tBrMeta1 == RXP_PRODUCT_TRITIUM || tBrMeta2 == RXP_PRODUCT_TRITIUM, RXP_PRODUCT_TRITIUM, tBrMeta1 + "/" + tBrMeta2);
+
+		sRxpSeq.done();
+	}
+
+	public static void gt6ReactorProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sRxpProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sRxpPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sRxpSeq == null) {
+			sRxpSeq = new gregapi.probe.GT6ProbeStand.Seq(RXP_M)
+				.at(RXP_T_BUILD, GT_API_Proxy::gt6ReactorProbeBuild)
+				.at(RXP_T_REFRESH, GT_API_Proxy::gt6ReactorProbeRefresh)
+				.at(RXP_T_LOAD, GT_API_Proxy::gt6ReactorProbeLoad)
+				.at(RXP_T_IGNITE, GT_API_Proxy::gt6ReactorProbeIgniteAll)
+				.at(RXP_T_ZERO, GT_API_Proxy::gt6ReactorProbeZero)
+				.window(RXP_T_ZERO + 1, RXP_T_TO, GT_API_Proxy::gt6ReactorProbeTrack)
+				.window(RXP_T_ZERO + 1, RXP_T_TO, GT_API_Proxy::gt6ReactorProbeTrace)
+				// кратковременные факты копим по окну (§7): стержень STARVE исчезает в первом же цикле
+				.watch("STARVE-стержень-был", RXP_T_IGNITE, RXP_T_TO, () -> sRxpStarve != null && sRxpStarve.slotHas(0))
+				.watch("RUN-эмиссия-пара",    RXP_T_ZERO,   RXP_T_TO, () -> sRxpRun != null && sRxpRun.mTanks[1].has())
+				.watch("OUT-турбина-излучает", RXP_T_ZERO,  RXP_T_TO, () -> sRxpTurbine != null && sRxpTurbine.mConverter.mEmitsEnergy)
+				.at(RXP_T_JUDGE, GT_API_Proxy::gt6ReactorProbeJudgeFinal);
+		}
+		sRxpSeq.tick(sRxpProbeTick);
 	}
 
 }
