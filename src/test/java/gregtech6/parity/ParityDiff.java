@@ -84,7 +84,14 @@ public final class ParityDiff {
         StringBuilder sb = new StringBuilder();
         while (m.find()) {
             String flat = FLATTEN.get("minecraft:" + m.group(1) + "." + m.group(2));
-            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(flat != null ? flat + ":0" : m.group()));
+            if (flat != null) {m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(flat + ":0")); continue;}
+            // Джокер семьи (мета 32767 = «любой подтип»): конкретной пары в карте Mojang нет и быть не может,
+            // но ИМЯ семьи движок всё равно сменил — 1.7.10 звал её «stained_glass», neo знает только членов,
+            // и GT6-порт называет семью первым из них. Нормализуем обе стороны к имени базы (пара «.0»),
+            // СОХРАНЯЯ мету-джокер: «любое цветное стекло» в обоих дампах должно читаться одинаково.
+            // Подменить подтип это не может — джокер остаётся джокером, а конкретные меты идут веткой выше.
+            String base = m.group(2).equals("32767") ? FLATTEN.get("minecraft:" + m.group(1) + ".0") : null;
+            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(base != null ? base + ":32767" : m.group()));
         }
         m.appendTail(sb);
         return sb.toString();

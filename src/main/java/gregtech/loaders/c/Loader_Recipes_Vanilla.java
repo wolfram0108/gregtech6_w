@@ -521,7 +521,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Sharpening   .addRecipe1(T, 16,  64, ST.make(Blocks.GLASS_PANE, 1, W), lens.mat(MT.Glass, 1));
 		
 		RM.Lathe        .addRecipe1(T, 16,  16, ST.make(Blocks.GLASS_PANE, 1, W), lens.mat(MT.Glass, 1), dustSmall.mat(MT.Glass, 1));
-		RM.Lathe        .addRecipe1(T, 16,  16, ST.make(Blocks.STONE, 1, 0), stickLong.mat(MT.Stone, 1));
+		RM.Lathe        .addRecipe1(T, 16,  16, ST.make(Blocks.STONE, 1, W), stickLong.mat(MT.Stone, 1));
 		RM.Lathe        .addRecipe1(T, 16,  32, IL.Module_Stone_Generator     .get(0), stickLong.mat(MT.Stone, 1));
 		RM.Lathe        .addRecipe1(T, 16,  32, IL.Module_Basalt_Generator    .get(0), stickLong.mat(MT.STONES.Basalt, 1));
 		RM.Lathe        .addRecipe1(T, 16,  32, IL.Module_Blackstone_Generator.get(0), stickLong.mat(MT.STONES.Blackstone, 1));
@@ -530,7 +530,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		
 		RM.smash(ST.make(Blocks.BROWN_MUSHROOM_BLOCK , 1, W), ST.make(Blocks.BROWN_MUSHROOM, 1, 0));
 		RM.smash(ST.make(Blocks.RED_MUSHROOM_BLOCK   , 1, W), ST.make(Blocks.RED_MUSHROOM, 1, 0));
-		RM.smash(ST.make(Blocks.QUARTZ_BLOCK, 1, 0), gem.mat(MT.NetherQuartz, 4));
+		RM.smash(ST.make(Blocks.QUARTZ_BLOCK, 1, W), gem.mat(MT.NetherQuartz, 4));
 		RM.smash(ST.make(Blocks.STONE_SLAB    , 1, 7), gem.mat(MT.NetherQuartz, 4));
 		RM.smash(ST.make(Blocks.QUARTZ_STAIRS        , 1, W), gem.mat(MT.NetherQuartz, 6));
 		RM.smash(ST.make(Blocks.QUARTZ_SLAB, 1, 0), gem.mat(MT.NetherQuartz, 2));
@@ -543,15 +543,15 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.smash(IL.Module_Basalt_Generator.get(          0), IL.NeLi_Basalt.get(1, IL.NePl_Basalt.get(1, ST.make(BlocksGT.Basalt, 1, BlockStones.COBBL))));
 		RM.smash(IL.Module_Blackstone_Generator.get(      0), IL.NeLi_Blackstone.get(1, IL.NePl_Blackstone.get(1, ST.make(BlocksGT.Basalt, 1, BlockStones.COBBL))));
 		RM.smash(ST.make(Blocks.COBBLESTONE          , 1, 0), ST.make(Blocks.GRAVEL, 1, 0));
-		RM.smash(ST.make(Blocks.SANDSTONE, 1, 0), ST.make(Blocks.SAND, 1, 0));
+		RM.smash(ST.make(Blocks.SANDSTONE, 1, W), ST.make(Blocks.SAND, 1, 0));
 		RM.smash(ST.make(Blocks.ICE                  , 1, W), OM.dust(MT.Ice));
 		RM.smash(ST.make(Blocks.PACKED_ICE           , 1, W), OM.dust(MT.Ice, 2*U));
 		RM.smash(ST.make(Blocks.TERRACOTTA        , 1, W), OM.dust(MT.Clay, 2*U));
-		RM.smash(ST.make(Blocks.WHITE_TERRACOTTA, 1, 0), OM.dust(MT.Clay, 2*U));
+		RM.smash(ST.make(Blocks.WHITE_TERRACOTTA, 1, W), OM.dust(MT.Clay, 2*U));
 		RM.smash(ST.make(Blocks.GLASS                , 1, W), OM.dust(MT.Glass, U*9));
-		RM.smash(ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), OM.dust(MT.Glass, U*9));
+		RM.smash(ST.make(Blocks.WHITE_STAINED_GLASS, 1, W), OM.dust(MT.Glass, U*9));
 		RM.smash(ST.make(Blocks.GLASS_PANE           , 1, W), OM.dust(MT.Glass, U));
-		RM.smash(ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, 0), OM.dust(MT.Glass, U));
+		RM.smash(ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, W), OM.dust(MT.Glass, U));
 		
 		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.BRICKS        , 1, W), ST.make(Items.BRICK, 3, 0));
 		RM.Hammer .addRecipe1(T, 16,  16, ST.make(Blocks.STONE_SLAB  , 1, 4), ST.make(Items.BRICK, 3, 0));
@@ -600,7 +600,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.sawing(16,  16, F, 100, ST.make(Blocks.BRICKS               , 1, 0), ST.make(Blocks.BRICK_SLAB, 2, 0));
 		RM.sawing(16,  16, F, 100, ST.make(Blocks.STONE_BRICKS, 1, 0), ST.make(Blocks.STONE_BRICK_SLAB, 2, 0));
 		RM.sawing(16,  16, F, 100, ST.make(Blocks.NETHER_BRICKS              , 1, 0), ST.make(Blocks.NETHER_BRICK_SLAB, 2, 0));
-		RM.sawing(16,  16, F, 100, ST.make(Blocks.QUARTZ_BLOCK, 1, 0), ST.make(Blocks.QUARTZ_SLAB, 2, 0));
+		RM.sawing(16,  16, F, 100, ST.make(Blocks.QUARTZ_BLOCK, 1, W), ST.make(Blocks.QUARTZ_SLAB, 2, 0));
 		RM.sawing(16,  16, F, 100, ST.make(Blocks.OAK_BUTTON             , 1, W), IL.Plank.get(1));
 		RM.sawing(16,  32, F, 100, ST.make(Blocks.OAK_PRESSURE_PLATE     , 1, W), IL.Plank.get(2));
 		RM.sawing(16,  32, F, 100, ST.make(Items.OAK_SIGN                       , 1, W), IL.Plank.get(2), OM.dust(MT.Wood, stick.mAmount / 3));
@@ -672,9 +672,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		}
 		
 		RM.Mortar       .addRecipe1(T, 16, 32, ST.make(Blocks.GLASS             , 1, W), OM.dust(MT.Glass, U*9));
-		RM.Mortar       .addRecipe1(T, 16, 32, ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), OM.dust(MT.Glass, U*9));
+		RM.Mortar       .addRecipe1(T, 16, 32, ST.make(Blocks.WHITE_STAINED_GLASS, 1, W), OM.dust(MT.Glass, U*9));
 		RM.Mortar       .addRecipe1(T, 16, 32, ST.make(Blocks.GLASS_PANE        , 1, W), OM.dust(MT.Glass, U));
-		RM.Mortar       .addRecipe1(T, 16, 32, ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, 0), OM.dust(MT.Glass, U));
+		RM.Mortar       .addRecipe1(T, 16, 32, ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, W), OM.dust(MT.Glass, U));
 		RM.Mortar       .addRecipe1(T, 16, 32, ST.make(Items.BONE, 1, W), IL.Dye_Bonemeal.get(2)); if (IL.WiMo_Thick_Bone.exists())
 		RM.Mortar       .addRecipe1(T, 16, 64, IL.WiMo_Thick_Bone.get(1), IL.Dye_Bonemeal.get(4));
 		RM.Mortar       .addRecipe1(T, 16, 16, ST.make(Items.FLINT, 1, W), dust.mat(MT.Flint, 1));
@@ -690,7 +690,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.COBWEB, 1, W), ST.make(Items.STRING, 1, 0));
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Items.SUGAR_CANE, 1, W), IL.Remains_Plant.get(1));
 		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.COBBLESTONE, 1, W), OM.dust(MT.Stone, U*9));
-		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.STONE, 1, 0), OM.dust(MT.Stone, U*9));
+		RM.Shredder     .addRecipe1(T, 16, 16, ST.make(Blocks.STONE, 1, W), OM.dust(MT.Stone, U*9));
 		RM.Shredder     .addRecipe1(T, 16, 16, IL.Module_Stone_Generator.get(0), OM.dust(MT.Stone));
 		RM.Shredder     .addRecipe1(T, 16, 16, IL.Module_Basalt_Generator.get(0), OM.dust(MT.STONES.Basalt));
 		RM.Shredder     .addRecipe1(T, 16, 16, IL.Module_Blackstone_Generator.get(0), OM.dust(MT.STONES.Blackstone));
@@ -736,9 +736,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), plantGtFiber.mat(MT.DATA.Dye_Materials[15-i], 4), ST.make(Blocks.WHITE_WOOL, 1, i));
 		}
 		
-		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_TERRACOTTA, 1, 0), MT.Cl.fluid(U20, T), NF, ST.make(Blocks.TERRACOTTA, 1, 0));
-		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), MT.Cl.fluid(U20, T), NF, ST.make(Blocks.GLASS        , 1, 0));
-		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, 0), MT.Cl.fluid(U50, T), NF, ST.make(Blocks.GLASS_PANE   , 1, 0));
+		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_TERRACOTTA, 1, W), MT.Cl.fluid(U20, T), NF, ST.make(Blocks.TERRACOTTA, 1, 0));
+		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS, 1, W), MT.Cl.fluid(U20, T), NF, ST.make(Blocks.GLASS        , 1, 0));
+		RM.Bath         .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, W), MT.Cl.fluid(U50, T), NF, ST.make(Blocks.GLASS_PANE   , 1, 0));
 		
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), plantGtFiber.mat(MT.Cu, 4), ST.make(Blocks.WHITE_WOOL, 1, 1, "ORANGE WOOOOOOL!!!"));
 		RM.Loom         .addRecipe2(T, 16,   16, ST.tag(0), ST.make(Items.STRING, 4, W), ST.make(Blocks.WHITE_WOOL, 1, 0));
@@ -769,7 +769,7 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		for (OreDictMaterial tMat2 : ANY.Fe.mToThis) if (tMat2 != MT.Enori)
 		RM.RollBender   .addRecipe1(T, 16,  256, plateCurved.mat(tMat2, 3), ST.make(Items.BUCKET, 1, 0));
 		
-		RM.Chisel       .addRecipe1(T, 16,   16, ST.make(Blocks.STONE, 1, 0), ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
+		RM.Chisel       .addRecipe1(T, 16,   16, ST.make(Blocks.STONE, 1, W), ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 		RM.Chisel       .addRecipe1(T, 16,   16, ST.make(Blocks.STONE_BRICKS, 1, 0), ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0));
 		
 		
@@ -927,9 +927,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.ic2_extractor(ST.make(Blocks.CACTUS, 1, W), IL.Dye_Cactus.get(2));
 		}
 		
-		RM.ic2_compressor(ST.make(Blocks.POPPY, 8, 0), IL.IC2_Plantball.get(1));
-		RM.ic2_compressor(ST.make(Blocks.DANDELION, 8, 0), IL.IC2_Plantball.get(1));
-		RM.ic2_compressor(ST.make(Blocks.SUNFLOWER, 8, 0), IL.IC2_Plantball.get(1));
+		RM.ic2_compressor(ST.make(Blocks.POPPY, 8, W), IL.IC2_Plantball.get(1));
+		RM.ic2_compressor(ST.make(Blocks.DANDELION, 8, W), IL.IC2_Plantball.get(1));
+		RM.ic2_compressor(ST.make(Blocks.SUNFLOWER, 8, W), IL.IC2_Plantball.get(1));
 		
 		RM.pulverizing(ST.make(Items.SUGAR_CANE, 1, W), IL.Remains_Plant.get(1), T);
 		
@@ -937,9 +937,9 @@ public class Loader_Recipes_Vanilla implements Runnable {
 		RM.biomass(ST.make(Blocks.RED_MUSHROOM_BLOCK, 8, W));
 		RM.biomass(ST.make(Blocks.BROWN_MUSHROOM, 8, W));
 		RM.biomass(ST.make(Blocks.RED_MUSHROOM, 8, W));
-		RM.biomass(ST.make(Blocks.POPPY, 8, 0));
-		RM.biomass(ST.make(Blocks.DANDELION, 8, 0));
-		RM.biomass(ST.make(Blocks.SUNFLOWER, 8, 0));
+		RM.biomass(ST.make(Blocks.POPPY, 8, W));
+		RM.biomass(ST.make(Blocks.DANDELION, 8, W));
+		RM.biomass(ST.make(Blocks.SUNFLOWER, 8, W));
 		RM.biomass(ST.make(Blocks.MELON, 1, W));
 		RM.biomass(ST.make(Blocks.PUMPKIN, 2, W));
 		RM.biomass(ST.make(Blocks.CACTUS, 8, W));

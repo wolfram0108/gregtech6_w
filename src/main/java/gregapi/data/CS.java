@@ -1863,6 +1863,23 @@ public class CS {
 		/** 1.7.10 {@code anvil:0..2} (степень повреждения). */
 		public static final Block[] ANVIL = {Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL};
 
+		// Каменно-земляные семьи: в 1.7.10 это были подтипы ОДНОГО блока, и рецепты звали их джокером
+		// (например «любой камень»). Порядок — карта Mojang, как и у цветовых рядов.
+		/** 1.7.10 {@code stone:0..6}. */
+		public static final Block[] STONE = {Blocks.STONE, Blocks.GRANITE, Blocks.POLISHED_GRANITE, Blocks.DIORITE, Blocks.POLISHED_DIORITE, Blocks.ANDESITE, Blocks.POLISHED_ANDESITE};
+		/** 1.7.10 {@code sand:0..1}. */
+		public static final Block[] SAND = {Blocks.SAND, Blocks.RED_SAND};
+		/** 1.7.10 {@code dirt:0..2}. */
+		public static final Block[] DIRT = {Blocks.DIRT, Blocks.COARSE_DIRT, Blocks.PODZOL};
+		/** 1.7.10 {@code sandstone:0..2}. */
+		public static final Block[] SANDSTONE = {Blocks.SANDSTONE, Blocks.CHISELED_SANDSTONE, Blocks.CUT_SANDSTONE};
+		/** 1.7.10 {@code quartz_block:0..2}. */
+		public static final Block[] QUARTZ_BLOCK = {Blocks.QUARTZ_BLOCK, Blocks.CHISELED_QUARTZ_BLOCK, Blocks.QUARTZ_PILLAR};
+		/** 1.7.10 {@code stonebrick:0..3}. */
+		public static final Block[] STONE_BRICKS = {Blocks.STONE_BRICKS, Blocks.MOSSY_STONE_BRICKS, Blocks.CRACKED_STONE_BRICKS, Blocks.CHISELED_STONE_BRICKS};
+		/** 1.7.10 {@code coal:0..1}. */
+		public static final Item[] COAL = {Items.COAL, Items.CHARCOAL};
+
 		/**
 		 * Семейства, где мета = подтип И В СТЕКЕ, И В МИРЕ (цвет/вид никуда не девается при установке блока).
 		 */
@@ -1876,6 +1893,15 @@ public class CS {
 		 */
 		private static final Block[][] STACK_ONLY_FAMILIES = {ANVIL};
 		private static final Item [][] ITEM_FAMILIES  = {DYE, FISH, COOKED_FISH, SKULL};
+		/**
+		 * Семьи, которые нужны ТОЛЬКО для понимания джокера ({@link #sameFamily}), но НЕ для подстановки по мете.
+		 * Причина осторожности: подстановка меняла бы результат {@code ST.make(Blocks.STONE, 1, 1)} с камня на
+		 * гранит во ВСЕХ вызывателях, а замер дампа показывает, что ненулевой меты у этих блоков в данных порта
+		 * нет вовсе — то есть чинить там нечего, а риск задеть чужой смысл меты есть. Джокер же («любой камень»)
+		 * встречается в рецептах и без такой подстановки не работает.
+		 */
+		private static final Block[][] WILDCARD_ONLY_BLOCK_FAMILIES = {STONE, SAND, DIRT, SANDSTONE, QUARTZ_BLOCK, STONE_BRICKS};
+		private static final Item [][] WILDCARD_ONLY_ITEM_FAMILIES  = {COAL};
 
 		/**
 		 * Ищем блок среди ВСЕХ членов семьи, не только среди глав. В 1.7.10 семья была ОДНИМ блоком, и мета
@@ -1920,6 +1946,52 @@ public class CS {
 			for (Block[] tFamily : WORLD_FAMILIES     ) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
 			for (Block[] tFamily : STACK_ONLY_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
 			return null;
+		}
+
+		/**
+		 * Два предмета — члены ОДНОГО расщеплённого семейства?
+		 *
+		 * <p>Нужен центру сравнения стеков ({@code ST.equal_}) для 1.7.10-джокера: там, где оригинал писал
+		 * {@code ST.make(Blocks.stained_glass, 1, W)} — «ЛЮБОЕ цветное стекло» — в neo семья расщеплена, и
+		 * один стек всю её не выражает. Вместо размножения рецепта на 16 копий (раздуло бы реестр и разошлось
+		 * бы с эталоном) джокер остаётся ОДНОЙ записью, а понимание «джокер главы = любой член семьи» живёт
+		 * здесь, в тех же картах. Проверять этот путь имеет смысл только когда мета одного из стеков — {@code W}.</p>
+		 */
+		public static boolean sameFamily(Item aItem1, Item aItem2) {
+			if (aItem1 == null || aItem2 == null || aItem1 == aItem2) return F;
+			for (Item[] tFamily : ITEM_FAMILIES              ) if (contains(tFamily, aItem1) && contains(tFamily, aItem2)) return T;
+			for (Item[] tFamily : WILDCARD_ONLY_ITEM_FAMILIES) if (contains(tFamily, aItem1) && contains(tFamily, aItem2)) return T;
+			Block tBlock1 = Block.byItem(aItem1), tBlock2 = Block.byItem(aItem2);
+			if (tBlock1 == null || tBlock2 == null) return F;
+			for (Block[] tFamily : WORLD_FAMILIES               ) if (contains(tFamily, tBlock1) && contains(tFamily, tBlock2)) return T;
+			for (Block[] tFamily : STACK_ONLY_FAMILIES          ) if (contains(tFamily, tBlock1) && contains(tFamily, tBlock2)) return T;
+			for (Block[] tFamily : WILDCARD_ONLY_BLOCK_FAMILIES ) if (contains(tFamily, tBlock1) && contains(tFamily, tBlock2)) return T;
+			return F;
+		}
+		private static boolean contains(Object[] aFamily, Object aMember) {for (Object m : aFamily) if (m == aMember) return T; return F;}
+
+		/**
+		 * Все члены семьи джокера как стеки (мета 0, размер 1) — либо пустой список, если вещь не из семьи.
+		 * Нужен индексу рецептов: поиск идёт по хеш-бакету «предмет+мета», поэтому один джокер-стек обязан
+		 * попасть в бакеты ВСЕХ членов, иначе цветной вариант просто не найдёт рецепт (сравнение стеков до
+		 * этого места не доходит). Сам рецепт при этом остаётся один — расширяется только индекс.
+		 */
+		public static java.util.List<ItemStack> familyStacks(ItemStack aStack) {
+			if (aStack == null) return java.util.Collections.emptyList();
+			Item tItem = aStack.getItem();
+			for (Item[] tFamily : ITEM_FAMILIES              ) if (contains(tFamily, tItem)) return stacksOf(tFamily);
+			for (Item[] tFamily : WILDCARD_ONLY_ITEM_FAMILIES) if (contains(tFamily, tItem)) return stacksOf(tFamily);
+			Block tBlock = Block.byItem(tItem);
+			if (tBlock == null) return java.util.Collections.emptyList();
+			for (Block[] tFamily : WORLD_FAMILIES              ) if (contains(tFamily, tBlock)) return stacksOf(tFamily);
+			for (Block[] tFamily : STACK_ONLY_FAMILIES         ) if (contains(tFamily, tBlock)) return stacksOf(tFamily);
+			for (Block[] tFamily : WILDCARD_ONLY_BLOCK_FAMILIES) if (contains(tFamily, tBlock)) return stacksOf(tFamily);
+			return java.util.Collections.emptyList();
+		}
+		private static java.util.List<ItemStack> stacksOf(Object[] aFamily) {
+			java.util.List<ItemStack> rList = new java.util.ArrayList<>(aFamily.length);
+			for (Object tMember : aFamily) rList.add(tMember instanceof Item tI ? new ItemStack(tI) : new ItemStack((Block)tMember));
+			return rList;
 		}
 
 		/** Обратное чтение: номер варианта внутри семьи (1.7.10-мета) либо −1, если вещь не из семейства.

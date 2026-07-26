@@ -6103,6 +6103,16 @@ public final class GT6Probes {
 		sFlatSeq.judge("OREDICT blockGlassRed НЕ содержит жёлтое",
 			!gt6FlattenProbeOreHas("blockGlassRed", net.minecraft.world.item.Items.YELLOW_STAINED_GLASS), "нет", gt6FlattenProbeOreDump("blockGlassRed"));
 
+		// ── джокер семьи в рецептах: 1.7.10 писал «любое цветное стекло» одной записью (мета W). Проверяем
+		// РЕАЛЬНЫМ поиском рецепта — тем же, которым ищет машина: ванна «цветное стекло + хлор → чистое стекло».
+		net.neoforged.neoforge.fluids.FluidStack[] tChlorine = new net.neoforged.neoforge.fluids.FluidStack[]{gregapi.data.FL.make("chlorine", 1000)};
+		gregapi.recipes.Recipe tRed   = gregapi.data.RM.Bath.findRecipe(null, null, T, Long.MAX_VALUE, null, tChlorine, ST.make(net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS  , 1, 0));
+		gregapi.recipes.Recipe tWhite = gregapi.data.RM.Bath.findRecipe(null, null, T, Long.MAX_VALUE, null, tChlorine, ST.make(net.minecraft.world.level.block.Blocks.WHITE_STAINED_GLASS, 1, 0));
+		gregapi.recipes.Recipe tBrick = gregapi.data.RM.Bath.findRecipe(null, null, T, Long.MAX_VALUE, null, tChlorine, ST.make(net.minecraft.world.level.block.Blocks.BRICKS            , 1, 0));
+		sFlatSeq.judge("ванна принимает КРАСНОЕ стекло (джокер семьи)", tRed   != null, "рецепт есть", tRed);
+		sFlatSeq.judge("POSITIVE-CONTROL: принимает белое"            , tWhite != null, "рецепт есть", tWhite);
+		sFlatSeq.judge("NEGATIVE-CONTROL: кирпич не принимает"        , tBrick == null, "рецепта нет", tBrick);
+
 		sFlatSeq.done();
 	}
 

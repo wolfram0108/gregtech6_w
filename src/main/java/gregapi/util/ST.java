@@ -98,7 +98,13 @@ public class ST {
 	
 	public static boolean equal (ItemStack aStack1, ItemStack aStack2) {return equal(aStack1, aStack2, F);}
 	public static boolean equal (ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return aStack1 != null && aStack2 != null && equal_(aStack1, aStack2, aIgnoreNBT);}
-	public static boolean equal_(ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return item_(aStack1) == item_(aStack2) && equal(meta_(aStack1), meta_(aStack2)) && (aIgnoreNBT || (((nbt_(aStack1) == null) == (nbt_(aStack2) == null)) && (nbt_(aStack1) == null || nbt_(aStack1).equals(nbt_(aStack2)))));}
+	// F4-flatten, джокер семьи: 1.7.10 писал «любой подтип» ОДНИМ стеком с метой W (stained_glass:W = любое
+	// цветное стекло). В neo семья — разные Item, поэтому один стек её не покрывает, и сравнение «предмет в
+	// предмет» проваливалось: машина принимала только тот вариант, что назван (белый). Понимание «джокер +
+	// член той же семьи = совпадение» держит центр карт CS.Flattened; путь дешёвый — включается лишь когда
+	// предметы РАЗНЫЕ и у одного из стеков мета равна W (в горячем сравнении это редкость).
+	public static boolean equal_(ItemStack aStack1, ItemStack aStack2, boolean aIgnoreNBT) {return (item_(aStack1) == item_(aStack2) ? equal(meta_(aStack1), meta_(aStack2)) : equalWildcardFamily(aStack1, aStack2)) && (aIgnoreNBT || (((nbt_(aStack1) == null) == (nbt_(aStack2) == null)) && (nbt_(aStack1) == null || nbt_(aStack1).equals(nbt_(aStack2)))));}
+	private static boolean equalWildcardFamily(ItemStack aStack1, ItemStack aStack2) {return (meta_(aStack1) == W || meta_(aStack2) == W) && CS.Flattened.sameFamily(item_(aStack1), item_(aStack2));}
 	
 	public static boolean equal (ItemStack aStack, Item  aItem                             ) {return aStack != null && aItem  != null && equal_(aStack, aItem );}
 	public static boolean equal (ItemStack aStack, Block aBlock                            ) {return aStack != null && aBlock != null && equal_(aStack, aBlock);}

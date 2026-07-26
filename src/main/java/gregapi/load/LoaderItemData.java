@@ -521,8 +521,8 @@ public class LoaderItemData implements Runnable {
 		OM.reg("bucketMilk"                         , ST.make(Items.MILK_BUCKET, 1, W));
 		OM.reg("bottleMilk"                         , ST.make(MD.MFR, "milkbottle", 1, 0));
 		OM.reg(OD.glowstone                         , ST.make(Blocks.GLOWSTONE, 1, W));
-		OM.reg(OD.dirt                              , ST.make(Blocks.DIRT, 1, 0));
-		OM.reg(OD.sand                              , ST.make(Blocks.SAND, 1, 0));
+		OM.reg(OD.dirt                              , ST.make(Blocks.DIRT, 1, W));
+		OM.reg(OD.sand                              , ST.make(Blocks.SAND, 1, W));
 		OM.reg(OD.gravel                            , ST.make(Blocks.GRAVEL, 1, W));
 		OM.reg(OD.soulsand                          , ST.make(Blocks.SOUL_SAND, 1, W));
 		OM.reg(OD.itemGrassTall                     , ST.make(Blocks.DEAD_BUSH, 1, 1));
@@ -572,10 +572,10 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.itemMoss                          , ST.make(MD.BTL, "groundStuff", 1, 38));
 		OM.reg(OD.itemMoss                          , ST.make(MD.BoP, "moss", 1, 0));
 		OM.reg(OD.itemMoss                          , ST.make(MD.TF, "tile.TFPlant", 1, 3));
-		OM.reg(OD.blockGlass                        , ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0));
+		OM.reg(OD.blockGlass                        , ST.make(Blocks.WHITE_STAINED_GLASS, 1, W));
 		OM.reg(OD.blockGlassColorless               , ST.make(Blocks.GLASS, 1, W));
 		OM.reg(OD.blockGlassColorless               , ST.make(MD.CHSL, "glass", 1, W));
-		OM.reg(OD.paneGlass                         , ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, 0));
+		OM.reg(OD.paneGlass                         , ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, W));
 		OM.reg(OD.paneGlassColorless                , ST.make(Blocks.GLASS_PANE, 1, W));
 		OM.reg(OD.paneGlassColorless                , ST.make(MD.CHSL, "glass_pane", 1, W));
 		OM.reg(OD.paneGlass                         , ST.make(MD.CHSL, "stained_glass_pane_brown", 1, W));
@@ -731,7 +731,7 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.craftingAnvil                     , ST.make(Blocks.ANVIL, 1, 0));
 		OM.reg(OD.craftingAnvil                     , ST.make(MD.RC, "anvil", 1, 0));
 		OM.reg(OD.craftingHardenedClay              , ST.make(Blocks.TERRACOTTA, 1, W));
-		OM.reg(OD.craftingHardenedClay              , ST.make(Blocks.WHITE_TERRACOTTA, 1, 0));
+		OM.reg(OD.craftingHardenedClay              , ST.make(Blocks.WHITE_TERRACOTTA, 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamalmondSapling", 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamappleSapling", 1, W));
 		OM.reg(OP.treeSapling                       , ST.make(MD.HaC, "pamapricotSapling", 1, W));
@@ -1293,13 +1293,13 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OP.stoneMossy                                    , ST.make(Blocks.MOSSY_COBBLESTONE      , 1, W));
 		OM.reg(OP.stoneCobble                                   , ST.make(Blocks.MOSSY_COBBLESTONE      , 1, W));
 		OM.reg(OP.stoneCobble                                   , ST.make(Blocks.COBBLESTONE            , 1, W));
-		OM.reg(OP.stoneSmooth                                   , ST.make(Blocks.STONE, 1, 0));
-		OM.reg(OP.stoneBricks                                   , ST.make(Blocks.STONE_BRICKS, 1, 0));
+		OM.reg(OP.stoneSmooth                                   , ST.make(Blocks.STONE, 1, W));
+		OM.reg(OP.stoneBricks                                   , ST.make(Blocks.STONE_BRICKS, 1, W));
 		OM.reg(OP.stoneMossy                                    , ST.make(Blocks.MOSSY_STONE_BRICKS, 1, 0));
 		OM.reg(OP.stoneMossyBricks                              , ST.make(Blocks.MOSSY_STONE_BRICKS, 1, 0));
 		OM.reg(OP.stoneCracked                                  , ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0));
 		OM.reg(OP.stoneChiseled                                 , ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
-		OM.reg(OP.stone, MT.Sand                                , ST.make(Blocks.SANDSTONE, 1, 0));
+		OM.reg(OP.stone, MT.Sand                                , ST.make(Blocks.SANDSTONE, 1, W));
 		OM.reg(OP.stone, MT.Bedrock                             , ST.make(Blocks.BEDROCK                , 1, W));
 		OM.reg(OP.stone, MT.Netherrack                          , ST.make(Blocks.NETHERRACK             , 1, W));
 		OM.reg(OP.stone, MT.NetherBrick                         , ST.make(Blocks.NETHER_BRICKS           , 1, W));
@@ -2475,7 +2475,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Items.CLAY_BALL                      , 1, W), MT.Clay               ,  U * 1);
 		OM.data(ST.make(Blocks.CLAY                          , 1, W), MT.Clay               ,  U * 4);
 		OM.data(ST.make(Blocks.TERRACOTTA                 , 1, W), MT.Ceramic            ,  U * 4);
-		OM.data(ST.make(Blocks.WHITE_TERRACOTTA, 1, 0), MT.Ceramic            ,  U * 4);
+		OM.data(ST.make(Blocks.WHITE_TERRACOTTA, 1, W), MT.Ceramic            ,  U * 4);
 		OM.data(ST.make(Blocks.FLOWER_POT                    , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Items.FLOWER_POT                     , 1, W), MT.Brick              ,  U * 3);
 		OM.data(ST.make(Blocks.BRICKS                   , 1, W), MT.Brick              ,  U * 4);
@@ -2487,7 +2487,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.NETHER_BRICK_STAIRS           , 1, W), MT.NetherBrick        ,  U * 3);
 		OM.data(ST.make(Blocks.NETHER_BRICK_SLAB, 1, 0), MT.NetherBrick        ,  U * 2);
 		OM.data(ST.make(Blocks.NETHER_BRICK_FENCE            , 1, W), MT.NetherBrick        ,  U * 3);
-		OM.data(ST.make(Blocks.QUARTZ_BLOCK, 1, 0), MT.NetherQuartz       ,  U * 4);
+		OM.data(ST.make(Blocks.QUARTZ_BLOCK, 1, W), MT.NetherQuartz       ,  U * 4);
 		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 7), MT.NetherQuartz       ,  U * 4);
 		OM.data(ST.make(Blocks.QUARTZ_STAIRS                 , 1, W), MT.NetherQuartz       ,  U * 6);
 		OM.data(ST.make(Blocks.QUARTZ_SLAB, 1, 0), MT.NetherQuartz       ,  U * 2);
@@ -2515,9 +2515,9 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.ANVIL                         , 1, 2), ANY.Fe                ,  U *20);
 		OM.data(ST.make(Blocks.HOPPER                        , 1, W), ANY.Fe                ,  U * 5 , ANY.Wood, U * 4);
 		OM.data(ST.make(Blocks.TRIPWIRE_HOOK                 , 1, W), ANY.Fe                ,  OP.ring.mAmount * 2, ANY.Wood, U);
-		OM.data(ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), MT.Glass              ,  U*9);
+		OM.data(ST.make(Blocks.WHITE_STAINED_GLASS, 1, W), MT.Glass              ,  U*9);
 		OM.data(ST.make(Blocks.GLASS                         , 1, W), MT.Glass              ,  U*9);
-		OM.data(ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, 0), MT.Glass              ,  U);
+		OM.data(ST.make(Blocks.WHITE_STAINED_GLASS_PANE, 1, W), MT.Glass              ,  U);
 		OM.data(ST.make(Blocks.GLASS_PANE                    , 1, W), MT.Glass              ,  U);
 		OM.data(ST.make(Items.CLOCK                          , 1, W), MT.Au                 ,  U * 4, MT.Redstone, U);
 		OM.data(ST.make(Items.COMPASS                        , 1, W), ANY.Fe                ,  U * 4, MT.Redstone, U);
@@ -2529,7 +2529,7 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.LEVER                         , 1, W), ANY.Stone             ,  U * 1, ANY.Wood, U2);
 		OM.data(ST.make(Blocks.SAND, 1, 0), MT.Sand               ,  U * 9);
 		OM.data(ST.make(Blocks.RED_SAND, 1, 0)                          , MT.Sand               ,  U * 9, MT.Fe2O3, U);
-		OM.data(ST.make(Blocks.SANDSTONE, 1, 0), MT.Sand               ,  U * 9);
+		OM.data(ST.make(Blocks.SANDSTONE, 1, W), MT.Sand               ,  U * 9);
 		OM.data(ST.make(Blocks.STONE_STAIRS                  , 1, W), ANY.Stone             ,  U4*27);
 		OM.data(ST.make(Blocks.STONE_BRICK_STAIRS            , 1, W), ANY.Stone             ,  U4*27);
 		OM.data(ST.make(Blocks.COBBLESTONE_WALL              , 1, W), ANY.Stone             ,  U * 9);
@@ -2553,10 +2553,10 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Blocks.STONE_SLAB                    , 1,13), ANY.Stone             ,  U2* 9);
 		OM.data(ST.make(Blocks.STONE_SLAB             , 1, 5), ANY.Stone             ,  U * 9);
 		OM.data(ST.make(Blocks.STONE_SLAB             , 1,13), ANY.Stone             ,  U * 9);
-		OM.data(ST.make(Blocks.STONE, 1, 0), ANY.Stone             ,  U * 9);
+		OM.data(ST.make(Blocks.STONE, 1, W), ANY.Stone             ,  U * 9);
 		OM.data(ST.make(Blocks.FURNACE                       , 1, W), ANY.Stone             ,  U * 8);
 		OM.data(ST.make(Blocks.FURNACE                   , 1, W), ANY.Stone             ,  U * 8);
-		OM.data(ST.make(Blocks.STONE_BRICKS, 1, 0), ANY.Stone             ,  U * 9);
+		OM.data(ST.make(Blocks.STONE_BRICKS, 1, W), ANY.Stone             ,  U * 9);
 		OM.data(ST.make(Blocks.COBBLESTONE                   , 1, W), ANY.Stone             ,  U * 9);
 		OM.data(ST.make(Blocks.MOSSY_COBBLESTONE             , 1, W), ANY.Stone             ,  U * 9);
 		OM.data(ST.make(Blocks.STONE_BUTTON                  , 1, W), ANY.Stone             ,  U * 1);
@@ -2661,6 +2661,6 @@ public class LoaderItemData implements Runnable {
 		OM.data(ST.make(Items.COD                           , 1,63), MT.FishRaw            ,  U * 1, MT.Bone, U3, MT.FishOil, U2, MT.Os, U72);
 		OM.data(ST.make(Items.COD                           , 1,64), MT.FishRaw            ,  U * 1, MT.Bone, U3, MT.FishOil, U2, MT.Zn, U72);
 		}
-		OM.data(ST.make(Items.COD, 1, 0), MT.FishRaw            ,  U * 2, MT.Bone, U9, MT.FishOil, U * 1);
+		OM.data(ST.make(Items.COD, 1, W), MT.FishRaw            ,  U * 2, MT.Bone, U9, MT.FishOil, U * 1);
 	}
 }

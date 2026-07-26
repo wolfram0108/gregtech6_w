@@ -214,7 +214,7 @@ public class Loader_Recipes_Other implements Runnable {
 			RM.Bath             .addRecipe1(T,  0,   16,              aEvent.mStack , tWater, NF, ST.make(Items.PAPER, 1, 0));
 		}});
 		addListener(stick.dat(ANY.WoodNormal), new IOreDictListenerEvent() {@Override public void onOreRegistration(OreDictRegistrationContainer aEvent) {
-			RM.Loom         .addRecipe2(T, 16,   16, ST.make(Blocks.WHITE_WOOL, 1, 0), ST.amount(8, aEvent.mStack), ST.make(Items.PAINTING, 1, 0));
+			RM.Loom         .addRecipe2(T, 16,   16, ST.make(Blocks.WHITE_WOOL, 1, W), ST.amount(8, aEvent.mStack), ST.make(Items.PAINTING, 1, 0));
 			RM.Loom         .addRecipe2(T, 16,   16, ST.make(Items.LEATHER, 1, W), ST.amount(8, aEvent.mStack), ST.make(Items.ITEM_FRAME, 1, 0));
 		}});
 		}};
@@ -427,7 +427,7 @@ public class Loader_Recipes_Other implements Runnable {
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.DIRT, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.GRASS_BLOCK, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.PODZOL, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.MYCELIUM, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.GLASS               , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
-		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
+		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.WHITE_STAINED_GLASS, 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.SAND, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.COBBLESTONE         , 1, W), FL.Mana_TE.make(1), NF, ST.make(Blocks.MOSSY_COBBLESTONE, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.STONE_BRICKS, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.MOSSY_STONE_BRICKS, 1, 0));
 		RM.Bath             .addRecipe1(T,  0,   16, ST.make(Blocks.STONE, 1, 0), FL.Mana_TE.make(1), NF, ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));

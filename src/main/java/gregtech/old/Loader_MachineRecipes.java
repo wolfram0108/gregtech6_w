@@ -59,7 +59,7 @@ public class Loader_MachineRecipes implements Runnable {
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Paper, 8)        , ST.make(Items.COMPASS, 1, W)        , NF                        , ST.make(Items.MAP, 1, 0)         , 100,  8);
 //      RA.addAssemblerRecipe(ST.make(MD.FR, "sturdyMachine", 1, 0), OM.get(OP.gem, MT.Diamond, 4)       , MT.Water.getFluid(5000)   , IL.FR_Casing_Hardened.get(1)     ,  64, 32);
 //      RA.addAssemblerRecipe(OM.get(OP.ingot, MT.Bronze, 8)       , ST.tag(8)                           , NF                        , IL.FR_Casing_Sturdy.get(1)       ,  32, 16);
-//      RA.addAssemblerRecipe(OM.get(OP.stick, MT.Wood, 1)         , ST.make(Blocks.WHITE_WOOL, 1, 0)          , MT.Creosote.getFluid(1000), ST.make(Blocks.TORCH, 6, 0)      , 400,  1);
+//      RA.addAssemblerRecipe(OM.get(OP.stick, MT.Wood, 1)         , ST.make(Blocks.WHITE_WOOL, 1, W)          , MT.Creosote.getFluid(1000), ST.make(Blocks.TORCH, 6, 0)      , 400,  1);
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Rubber, 3)       , ST.makeIC2("carbonMesh", 3)         , MT.Glue.getFluid(300)     , IL.Duct_Tape.get(1)              , 100, 64);
 //      RA.addAssemblerRecipe(OM.get(OP.plate, MT.Paper, 3)        , ST.make(Items.LEATHER, 1, W)        , MT.Glue.getFluid( 20)     , ST.make(Items.BOOK, 1, 0)        ,  32,  8);
 //      RA.addAssemblerRecipe(IL.Paper_Printed_Pages.get(1)        , ST.make(Items.LEATHER, 1, W)        , MT.Glue.getFluid( 20)     , ST.make(Items.WRITTEN_BOOK, 1, 0),  32,  8);
@@ -90,7 +90,7 @@ public class Loader_MachineRecipes implements Runnable {
 		RA.addVacuumFreezerRecipe(ST.mkic("reactorCoolantSix"   , 1, W), ST.mkic("reactorCoolantSix"   , 1), 600);
 		
 		if (!ConfigsGT.RECIPES.get(ConfigCategories.Recipes.disabledrecipes, "torchesFromCoal", F))
-		RA.addAssemblerRecipe(IL.Stick.get(1), ST.make(Items.COAL, 1, 0), IL.Torch.get(4), 400, 1);
+		RA.addAssemblerRecipe(IL.Stick.get(1), ST.make(Items.COAL, 1, W), IL.Torch.get(4), 400, 1);
 		RA.addAssemblerRecipe(IL.Stick.get(3), ST.tag(3), ST.make(Blocks.OAK_FENCE, 1, 0), 300, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.Fe, 2), ST.make(Blocks.TRIPWIRE_HOOK, 1, 0), 400, 4);
 		RA.addAssemblerRecipe(IL.Stick.get(2), OM.get(OP.ring, MT.WroughtIron, 2), ST.make(Blocks.TRIPWIRE_HOOK, 1, 0), 400, 4);

@@ -248,7 +248,7 @@ public class Compat_Recipes_IndustrialCraft extends CompatMods {
 			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Sn, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
 			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Steel, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
 			UT.removeSimpleIC2MachineRecipe(OP.plate.mat(MT.Bronze, 1), ic2.api.recipe.Recipes.metalformerExtruding.getRecipes(), NI);
-			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.WHITE_WOOL, 1, 0), ic2.api.recipe.Recipes.extractor.getRecipes(), NI);
+			UT.removeSimpleIC2MachineRecipe(ST.make(Blocks.WHITE_WOOL, 1, W), ic2.api.recipe.Recipes.extractor.getRecipes(), NI);
 			UT.removeSimpleIC2MachineRecipe(IL.IC2_Energium_Dust.get(1), ic2.api.recipe.Recipes.compressor.getRecipes(), NI);
 			UT.removeSimpleIC2MachineRecipe(IL.IC2_Fuel_Rod_Empty.get(1), ic2.api.recipe.Recipes.macerator.getRecipes(), NI);
 			UT.removeSimpleIC2MachineRecipe(ST.mkic("reactorDepletedUraniumSimple", 1), ic2.api.recipe.Recipes.centrifuge.getRecipes(), NI);

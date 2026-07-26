@@ -637,6 +637,17 @@ public class Recipe {
 				Collection<Recipe> tList = mRecipeItemMap.get(tStack);
 				if (tList == null) mRecipeItemMap.put(tStack, tList = new HashSet<>(1));
 				tList.add(aRecipe);
+				// F4-flatten, джокер семьи: поиск рецепта идёт по ХЕШ-ИНДЕКСУ (item+meta), поэтому до сравнения
+				// стеков дело не доходит вовсе — в 1.7.10 семья была ОДНИМ предметом, и бакет «предмет+W» покрывал
+				// все подтипы, а в neo красное стекло ищет СВОЙ бакет и рецепта не находит (живой стенд поймал:
+				// «ванна принимает красное стекло» FAIL при исправном сравнении). Рецепт остаётся ОДИН — шире
+				// становится только индекс: кладём его в бакеты всех членов семьи. Карты — центр CS.Flattened.
+				if (ST.meta_(aStack) == W) for (ItemStack tMember : CS.Flattened.familyStacks(aStack)) {
+					ItemStackContainer tKey = new ItemStackContainer(tMember);
+					Collection<Recipe> tMemberList = mRecipeItemMap.get(tKey);
+					if (tMemberList == null) mRecipeItemMap.put(tKey, tMemberList = new HashSet<>(1));
+					tMemberList.add(aRecipe);
+				}
 			}
 			return aRecipe;
 		}

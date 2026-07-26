@@ -319,7 +319,7 @@ public class Compat_Recipes_Ganys extends CompatMods {
 			
 			CR.remove(OP.nugget.mat(MT.Blaze, 1), NI, NI, OP.nugget.mat(MT.Blaze, 1), NI, NI, OP.nugget.mat(MT.Blaze, 1));
 			
-			RM.Mixer.addRecipe2(T, 16, 32, ST.make(MD.GaNe, "spookyFlour", 2, 0), ST.make(Blocks.SAND, 1, 0), ST.make(Blocks.SOUL_SAND, 2, 0));
+			RM.Mixer.addRecipe2(T, 16, 32, ST.make(MD.GaNe, "spookyFlour", 2, 0), ST.make(Blocks.SAND, 1, W), ST.make(Blocks.SOUL_SAND, 2, 0));
 		}
 		if (MD.GaEn.mLoaded) {OUT.println("GT_Mod: Doing Recipes for Ganys End.");
 			//
