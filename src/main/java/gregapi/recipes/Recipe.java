@@ -913,14 +913,20 @@ public class Recipe {
 		
 		if (aOptimize) {
 			for (int i = 0; i < aInputs.length; i++) if (aInputs[i] != NI && ST.meta_(aInputs[i]) != W) for (int j = 0; j < aOutputs.length; j++) {
+				// F-size0-catalyst (Ф4 шаг 3): в 1.7.10 «stackSize -= ...» мог дать РОВНО 0, и стек при этом оставался
+				// стеком того же предмета — так GT6 выражает катализатор (форма/мольд не тратится). В neo setCount(0)
+				// превращает стек в EMPTY, то есть в ВОЗДУХ: рецепт «камень + форма блока -> камень» вырождался во
+				// вход-воздух с выходом null и, из-за проверки коллизий, НАВСЕГДА занимал место настоящих рецептов
+				// этой формы (замер: 934 не созданных рецепта экструдера). Идём через центр логического размера
+				// ST.size_/ST.size, который держит ноль маркером ZEROSIZE.
 				if (aOutputs[j] != null && ST.equal_(aInputs[i], aOutputs[j], F)) {
-					if (aInputs[i].getCount() >= aOutputs[j].getCount()) {
-						aInputs[i].setCount(aInputs[i].getCount()-(aOutputs[j].getCount()));
-						l = Math.min(aInputs [i].getCount(), l);
+					if (ST.size(aInputs[i]) >= ST.size(aOutputs[j])) {
+						ST.size_(ST.size(aInputs[i])-ST.size(aOutputs[j]), aInputs[i]);
+						l = Math.min(ST.size(aInputs [i]), l);
 						aOutputs[j] = NI;
 					} else {
-						aOutputs[j].setCount(aOutputs[j].getCount()-(aInputs[i].getCount()));
-						l = Math.min(aOutputs[i].getCount(), l);
+						ST.size_(ST.size(aOutputs[j])-ST.size(aInputs[i]), aOutputs[j]);
+						l = Math.min(ST.size(aOutputs[i]), l);
 					}
 				}
 			}
