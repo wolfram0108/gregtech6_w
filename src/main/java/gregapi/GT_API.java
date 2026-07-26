@@ -232,6 +232,11 @@ public class GT_API extends Abstract_Mod {
 	// без ConcurrentModification; список опустошается полностью, включая добавленное во время выполнения.
 	public static void runDeferredItemInit() {
 		sDeferredItemInitRunning = true;
+		// F4 роль-B: ванильные записи словаря, которые в 1.7.10 заводил сам Forge ДО модов
+		// (OreDictionary.initVanillaEntries — там же улики и границы переноса). Зовём в самом начале окна,
+		// потому что весь stack-based контент GT6 регистрируется ниже по этой очереди и обязан видеть
+		// уже наполненный ванильный словарь — ровно тот порядок, что был в 1.7.10.
+		try {gregapi.oredict.OreDictionary.initVanillaEntries();} catch(Throwable e) {e.printStackTrace(ERR);}
 		try {while (!DEFERRED_ITEM_INIT.isEmpty()) {Runnable tInit = DEFERRED_ITEM_INIT.remove(0); try {tInit.run();} catch(Throwable e) {e.printStackTrace(ERR);}}}
 		finally {sDeferredItemInitRunning = false;}
 	}

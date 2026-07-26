@@ -81,6 +81,11 @@ public final class PortDump {
         gregapi.GT_API.runDeferredItemInit();
 
         Files.createDirectories(DUMP);
+        // Путь печатаем абсолютным: рабочий каталог тест-JVM — build/minecraft-junit/, поэтому относительный
+        // build/dump материализуется как build/minecraft-junit/build/dump и «теряется» при поиске глазами.
+        // Дамп переживает прогон — по нему разбор расхождений идёт оффлайн (analysis/tools/parity_report.py).
+        System.out.println("[port-dump] дамп порта: " + DUMP.toAbsolutePath());
+        System.out.println("[port-dump] golden:     " + ORACLE.toAbsolutePath());
         int nMat = dumpMaterials();
         int nPre = dumpPrefixes();
         int nFl = dumpFluids();
@@ -91,31 +96,70 @@ public final class PortDump {
         dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
-        double tMat = report("materials.csv");
-        double tPre = report("prefixes.csv");
-        report("fluids.csv", 1, 1, 5); // игнор col1=fluidId (нео-артефакт 2× id) + col5=rgba (материал-флюид-цвет избыточен с
+        Map<String, Double> tFact = new java.util.LinkedHashMap<>();
+        tFact.put("materials.csv", report("materials.csv"));
+        tFact.put("prefixes.csv", report("prefixes.csv"));
+        tFact.put("fluids.csv", report("fluids.csv", 1, 1, 5)); // игнор col1=fluidId (нео-артефакт 2× id) + col5=rgba (материал-флюид-цвет избыточен с
         // materials.csv mRGBaLiquid 99.95%; potion.* цвета — neo-vanilla зелья ≠ 1.7.10, F-potion-data инхерентно, порт корректен)
-        report("mte.csv", 4);           // ключ = все 4 колонки (нет стабильного одиночного ключа)
-        report("tools.csv", 1);
-        report("tool_types.csv", 1);
-        report("tags.csv", 1);
-        report("tag_links.csv", 2);     // ключ = object+objectType
-        report("worldgen_veins.csv", 1);
-        report("worldgen_layers.csv", 1);
-        reportCI("oredict.csv", 1);      // CI: neo lowercase ResourceLocation-имена (camelCase gt.meta.* невозможен)
-        reportCI("unification.csv", 1);
-        report("localization.csv", 1);
-        reportCI("itemdata.csv", 1, new int[]{6}); // игнор col6 unificationTarget: ленивый недетерминир. кэш (getStack_:630), несемантичен как fluidId
-        reportEngine("engine_items.csv"); // GT6-регистрация (искл. vanilla minecraft: neo 1.21 ≠ 1.7.10 count+класс-имена, инхерентно)
-        reportEngine("engine_blocks.csv");
-        report("recipemaps.csv", 1, 20);
-        reportJsonl("recipes.jsonl"); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
-        // РЕГРЕСС-ГЕЙТ: судья валидировал core-scalar-данные (~99.8%); текущий full-паритет coreOnly — materials 85.19% / prefixes
-        // 46.58% (остаток = content-зависимые fluid/registeredCounts, см. STATE). Порог = текущий floor: тест ПАДАЕТ при регрессе
-        // core-данных. Поднимать floor по мере закрытия контент-слоя (рост fluid/registered паритета).
-        if (tMat < 85.0) throw new AssertionError("РЕГРЕСС material-паритета: " + tMat + "% < 85.0% (core-данные сломаны)");
-        if (tPre < 46.0) throw new AssertionError("РЕГРЕСС prefix-паритета: " + tPre + "% < 46.0% (core-данные сломаны)");
-        System.out.println("[parity] РЕГРЕСС-ГЕЙТ ОК: materials " + tMat + "% >= 85.0, prefixes " + tPre + "% >= 46.0");
+        tFact.put("mte.csv", report("mte.csv", 4));           // ключ = все 4 колонки (нет стабильного одиночного ключа)
+        tFact.put("tools.csv", report("tools.csv", 1));
+        tFact.put("tool_types.csv", report("tool_types.csv", 1));
+        tFact.put("tags.csv", report("tags.csv", 1));
+        tFact.put("tag_links.csv", report("tag_links.csv", 2));     // ключ = object+objectType
+        tFact.put("worldgen_veins.csv", report("worldgen_veins.csv", 1));
+        tFact.put("worldgen_layers.csv", report("worldgen_layers.csv", 1));
+        tFact.put("oredict.csv", reportCI("oredict.csv", 1));      // CI: neo lowercase ResourceLocation-имена (camelCase gt.meta.* невозможен)
+        tFact.put("unification.csv", reportCI("unification.csv", 1));
+        tFact.put("localization.csv", report("localization.csv", 1));
+        tFact.put("itemdata.csv", reportCI("itemdata.csv", 1, new int[]{6})); // игнор col6 unificationTarget: ленивый недетерминир. кэш (getStack_:630), несемантичен как fluidId
+        tFact.put("engine_items.csv", reportEngine("engine_items.csv")); // GT6-регистрация (искл. vanilla minecraft: neo 1.21 ≠ 1.7.10 count+класс-имена, инхерентно)
+        tFact.put("engine_blocks.csv", reportEngine("engine_blocks.csv"));
+        tFact.put("recipemaps.csv", report("recipemaps.csv", 1, 20));
+        tFact.put("recipes.jsonl", reportJsonl("recipes.jsonl")); // config-паритет; recipeCount(col20) trigger-недетерминирован в golden (60s-лимит)
+        gate(tFact);
+    }
+
+    /**
+     * РЕГРЕСС-ГЕЙТ по ВСЕМ наборам (обновлён 2026-07-26 живым замером, Ф4 шаг 2).
+     *
+     * <p>Прежний гейт стерёг только materials≥85 / prefixes≥46 — пороги от замера на УРЕЗАННОЙ сборке
+     * ({@code -PcoreOnly}, контент-слой не компилировался). На полной сборке факт — 99.955 / 96.581, то есть
+     * гейт проспал бы обвал в 14 и 50 процентных пунктов и остальные 16 наборов целиком. Пороги ниже —
+     * фактический floor живого прогона за вычетом запаса на инхерентный шум.</p>
+     *
+     * <p><b>Запас (почему не «ровно факт»):</b> у рецептов golden сам по себе плавает на ±0.03 % (гонка
+     * порядка OreDict-событий внутри 1.7.10, TOOLING §A3) — требовать точное число нельзя, иначе гейт
+     * начнёт падать на шуме. Остальные наборы детерминированы, им дан минимальный запас 0.05 п.п.
+     * Порог поднимается по мере закрытия расхождений — он обязан догонять факт, а не отставать от него.</p>
+     */
+    private static void gate(Map<String, Double> aFact) {
+        Map<String, Double> tFloor = new java.util.LinkedHashMap<>();
+        tFloor.put("materials.csv", 99.90);        // факт 99.955 (1 расхождение: имя жидкости «molten hsla» → «molten_hsla»)
+        tFloor.put("prefixes.csv", 96.95);         // факт 97.009 (было 96.581 до закрытия block-flatten + ванильных записей Forge)
+        tFloor.put("fluids.csv", 100.0);
+        tFloor.put("mte.csv", 100.0);
+        tFloor.put("tools.csv", 100.0);
+        tFloor.put("tool_types.csv", 100.0);
+        tFloor.put("tags.csv", 100.0);
+        tFloor.put("tag_links.csv", 100.0);
+        tFloor.put("worldgen_veins.csv", 100.0);
+        tFloor.put("worldgen_layers.csv", 100.0);
+        tFloor.put("engine_items.csv", 100.0);
+        tFloor.put("engine_blocks.csv", 100.0);
+        tFloor.put("oredict.csv", 99.95);          // факт 99.957 (0 пропавших записей — ванильный набор Forge восстановлен)
+        tFloor.put("unification.csv", 99.95);      // факт 99.974
+        tFloor.put("localization.csv", 99.95);     // факт 99.996
+        tFloor.put("itemdata.csv", 99.90);         // факт 99.939
+        tFloor.put("recipemaps.csv", 98.90);       // факт 98.947
+        tFloor.put("recipes.jsonl", 99.00);        // факт 99.060; floor шума golden ±0.03 п.п.
+        List<String> tFailed = new ArrayList<>();
+        for (Map.Entry<String, Double> e : tFloor.entrySet()) {
+            Double tGot = aFact.get(e.getKey());
+            if (tGot == null) {tFailed.add(e.getKey() + ": НЕ ИЗМЕРЕН (набор пропал из прогона)"); continue;}
+            if (tGot < e.getValue()) tFailed.add(String.format("%s: %.3f%% < %.2f%%", e.getKey(), tGot, e.getValue()));
+        }
+        if (!tFailed.isEmpty()) throw new AssertionError("РЕГРЕСС ПАРИТЕТА (" + tFailed.size() + " наборов): " + String.join(" | ", tFailed));
+        System.out.println("[parity] РЕГРЕСС-ГЕЙТ ОК: все " + tFloor.size() + " наборов не ниже своего floor.");
     }
 
     // ------------------------------------------------------------------ materials.csv (зеркало DumpMaterials)

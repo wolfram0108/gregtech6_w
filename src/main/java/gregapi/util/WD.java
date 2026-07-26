@@ -837,6 +837,12 @@ public class WD {
 		// свойства уровня) / WATER_CAULDRON(LayeredCauldronBlock, LEVEL 1-3) — читаем уровень из split-блока, чтобы
 		// GT6-код (труба) видел мету котла как в 1.7.10 (getBlockMetadata давал 0-3). Пусто = 0 (ниже, дефолт).
 		if (tB == Blocks.WATER_CAULDRON) return UT.Code.bind4(tState.getValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL));
+		// F4-flatten, обратная сторона моста записи (legacyVanillaState): у расщеплённых семейств (шерсть/ковёр/
+		// стекло/панели/терракота/tallgrass) подтип теперь выражен САМИМ блоком, а 1.7.10-код спрашивает его метой.
+		// Без этого чтения мост односторонний: записали красное стекло — прочли 0 («белое»), и сравнения вида
+		// «а не нужного ли уже цвета блок» (Behavior_Spray_Color.colorize:167) всегда ложны. Карты — тот же центр.
+		int tFlat = gregapi.data.CS.Flattened.metaOf(tB);
+		if (tFlat >= 0) return UT.Code.bind4(tFlat);
 		return UT.Code.bind4(tB instanceof IBlockExtendedMetaData ? ((IBlockExtendedMetaData)tB).getExtendedMetaData(aWorld, aX, aY, aZ) : 0);
 	}
 	/** F13-контракт: мета из СНИМКА BlockState (BlockDropsEvent.getState() / mineBlock aState). В neo removeBlock
@@ -1047,6 +1053,14 @@ public class WD {
 		// Наковальня: мета&3 = горизонтальный facing (повреждение из меты>>2 в данже не встречается).
 		if (aBlock instanceof net.minecraft.world.level.block.AnvilBlock)
 			return aBlock.defaultBlockState().setValue(net.minecraft.world.level.block.AnvilBlock.FACING, DIR_1710_HORIZ[tMeta & 3]);
+		// F4-flatten: цветные семейства (шерсть/ковёр/стекло/панели/терракота) и tallgrass — в 1.7.10 подтип жил
+		// в мете ОДНОГО блока, движок расщепил их на отдельные блоки. Карты — тот же центр CS.Flattened, что у
+		// вещей в стеке (ST.make_), объявлены там ОДИН раз. Берём worldBlock (не block): семейства, где мета
+		// блока значила не подтип (череп — положение, наковальня — поворот), разобраны ветками ВЫШЕ и сюда не
+		// доходят. Без этого Behavior_Spray_Color (WD.set(..., WHITE_STAINED_GLASS, ~mColor & 15, 3)) красил
+		// всё в белое: имя блока — белое, а мета в мире не значит ничего.
+		Block tFlat = gregapi.data.CS.Flattened.worldBlock(aBlock, tMeta);
+		if (tFlat != null) return tFlat.defaultBlockState();
 		return null;
 	}
 

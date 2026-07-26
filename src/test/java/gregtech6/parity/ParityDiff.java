@@ -52,7 +52,10 @@ public final class ParityDiff {
     // Применяется СИММЕТРИЧНО к обеим сторонам: golden (1.7.10) -> neo, порт (уже neo) без изменений. Тот же класс
     // семантик-нормализации, что уже принятые CI-lowercase / ignore registry-id (см. gt6-mojang-datafix-identity-judge).
     private static final Map<String, String> FLATTEN = loadFlattening();
-    private static final java.util.regex.Pattern VANILLA_TOKEN = java.util.regex.Pattern.compile("minecraft:([a-z_0-9]+):(\\d+):");
+    // Граница токена справа — lookahead, а не съеденный символ: в рецептах после меты идёт ":count"
+    // (minecraft:planks:0:1), в CSV токен кончается на '|', ',' или конце строки (minecraft:stained_glass:14).
+    // Один паттерн покрывает оба формата, результат для рецептов побайтно тот же, что до расширения.
+    private static final java.util.regex.Pattern VANILLA_TOKEN = java.util.regex.Pattern.compile("minecraft:([a-z_0-9]+):(\\d+)(?=[:|,\\s]|$)");
 
     private static Map<String, String> loadFlattening() {
         Map<String, String> m = new java.util.HashMap<>();
@@ -67,15 +70,21 @@ public final class ParityDiff {
         return m;
     }
 
-    /** Заменить vanilla-item токены minecraft:<name>:<meta>:<count> на flat-имя (meta->0), если <name>.<meta> есть в карте Mojang.
-     *  Флюиды (name:amount, без второго ':') и GT-предметы (не minecraft:) не трогаются. */
+    /** Заменить vanilla-item токены minecraft:<name>:<meta> на flat-имя (meta->0), если <name>.<meta> есть в карте Mojang.
+     *  Флюиды (name:amount, без второго ':') и GT-предметы (не minecraft:) не трогаются.
+     *  <p>Применяется и к CSV-наборам (oredict/unification/itemdata), не только к рецептам: 1.7.10-дамп пишет
+     *  {@code blockglassred,minecraft:stained_glass:14}, порт — {@code minecraft:red_stained_glass:0}. Это ОДНА
+     *  И ТА ЖЕ вещь под именем, которое сменил движок, а не разошедшиеся данные; без нормализации судья
+     *  насчитывал такие пары как расхождение (128 «отличий» в oredict, из них десятки — чистый ренейм).
+     *  Скрыть реальный дефект нормализация не может: она отображает golden-имя в neo-имя ТОГО ЖЕ подтипа,
+     *  поэтому подстановка не того цвета (white вместо red) остаётся видимой.</p> */
     static String flattenVanilla(String line) {
         if (FLATTEN.isEmpty() || line.indexOf("minecraft:") < 0) return line;
         java.util.regex.Matcher m = VANILLA_TOKEN.matcher(line);
         StringBuilder sb = new StringBuilder();
         while (m.find()) {
             String flat = FLATTEN.get("minecraft:" + m.group(1) + "." + m.group(2));
-            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(flat != null ? flat + ":0:" : m.group()));
+            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(flat != null ? flat + ":0" : m.group()));
         }
         m.appendTail(sb);
         return sb.toString();
@@ -171,7 +180,7 @@ public final class ParityDiff {
         for (int c : ignoreCols) ignore.add(c);
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {
-            String trimmed = line.strip();
+            String trimmed = flattenVanilla(line.strip()); // vanilla-ренейм движка — не расхождение данных (см. flattenVanilla)
             if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
             String[] cols = trimmed.split(",", -1);
             String key = keyColumns >= cols.length ? trimmed : String.join("", Arrays.copyOfRange(cols, 0, keyColumns));
@@ -217,7 +226,7 @@ public final class ParityDiff {
         for (int c : ignoreCols) ignore.add(c);
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {
-            String low = line.strip().toLowerCase();
+            String low = flattenVanilla(line.strip()).toLowerCase(); // flatten ДО lowercase — как в fromLinesFlattenCI
             if (low.isEmpty() || low.startsWith("#")) continue;
             String[] cols = low.split(",", -1);
             String key = keyColumns >= cols.length ? low : String.join("", Arrays.copyOfRange(cols, 0, keyColumns));
@@ -255,7 +264,7 @@ public final class ParityDiff {
     public static ParitySet fromCsv(Path file, int keyColumns) {
         Map<String, String> map = new LinkedHashMap<>();
         for (String line : readLines(file)) {
-            String trimmed = line.strip();
+            String trimmed = flattenVanilla(line.strip()); // см. flattenVanilla: ренейм движка ≠ расхождение данных
             if (trimmed.isEmpty() || trimmed.startsWith("#")) {
                 continue;
             }

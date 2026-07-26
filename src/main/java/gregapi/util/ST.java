@@ -528,8 +528,15 @@ public class ST {
 	
 	// F1-meta: neo ItemStack(ItemLike,int,int) 3-арг ctor с метой удалён (flattening) — мета хранится
 	// компонентом DAMAGE (та же F1-модель, что центр meta_:188 setDamageValue). 2-арг ctor + setDamageValue.
-	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
-	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
+	// F4-flatten (DEFERRED-LEDGER «block-flatten»): у ВАНИЛЬНОЙ вещи 1.7.10 подтип жил в мете (dye:1 = красный
+	// краситель, stained_glass:14 = красное стекло), а движок 1.13 расщепил семейства на отдельные предметы.
+	// Компонент SUBTYPE ванильная вещь не читает → без резолва на выходе всегда ПЕРВЫЙ член семьи с мёртвой
+	// метой (улика из дампа: bath «стекло+красный краситель» → white_stained_glass:14). Центр карт — CS.Flattened
+	// (там же обоснование и границы); здесь — единственная точка подстановки для вещей в стеке, поэтому все
+	// 477 мест-вызывателей чинятся разом и остаются verbatim-1:1. Мета варианту НЕ ставится: она уже выражена
+	// самим предметом. Не-семейные вещи (GT-мета-предметы, инструменты с износом, wildcard W) идут прежним путём.
+	public static ItemStack make_(Item  aItem , long aSize, long aMeta) {Item  tFlat = CS.Flattened.item (aItem , aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack rStack = new ItemStack(aItem , UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
+	public static ItemStack make_(Block aBlock, long aSize, long aMeta) {Block tFlat = CS.Flattened.block(aBlock, aMeta); if (tFlat != null) return new ItemStack(tFlat, UT.Code.bindInt(aSize)); ItemStack rStack = new ItemStack(aBlock, UT.Code.bindInt(aSize)); meta_(rStack, UT.Code.bindShort(aMeta)); return rStack;}
 	public static ItemStack make(ModData aModID, String aItem, long aSize) {
 		if (!aModID.mLoaded || UT.Code.stringInvalid(aItem) || !GAPI_POST.mStartedPreInit) return null;
 		ItemStack

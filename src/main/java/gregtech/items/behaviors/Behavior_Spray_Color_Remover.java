@@ -102,9 +102,12 @@ public class Behavior_Spray_Color_Remover extends AbstractBehaviorDefault {
 		if (aDelegator.mTileEntity instanceof ITileEntityDecolorable) return ((ITileEntityDecolorable)aDelegator.mTileEntity).removePaint(aDelegator.mSideOfTileEntity);
 		Block aBlock = aDelegator.getBlock();
 		if (aBlock instanceof IBlockDecolorable) return ((IBlockDecolorable)aBlock).removePaint(aWorld, aDelegator.mX, aDelegator.mY, aDelegator.mZ, aDelegator.mSideOfTileEntity);
-		if (aBlock == Blocks.WHITE_TERRACOTTA) return aDelegator.setBlock(Blocks.TERRACOTTA);
-		if (aBlock == Blocks.WHITE_STAINED_GLASS_PANE) return aDelegator.setBlock(Blocks.GLASS_PANE);
-		if (aBlock == Blocks.WHITE_STAINED_GLASS) return aDelegator.setBlock(Blocks.GLASS);
+		// F4-flatten: 1.7.10 сравнивал с блоком-семьёй (stained_glass = все 16 оттенков), в neo семья расщеплена —
+		// сравниваем с ГЛАВОЙ семьи через центр CS.Flattened, иначе краска смывается только с белого варианта.
+		Block tHead = gregapi.data.CS.Flattened.headOf(aBlock);
+		if (aBlock == Blocks.WHITE_TERRACOTTA          || tHead == Blocks.WHITE_TERRACOTTA         ) return aDelegator.setBlock(Blocks.TERRACOTTA);
+		if (aBlock == Blocks.WHITE_STAINED_GLASS_PANE  || tHead == Blocks.WHITE_STAINED_GLASS_PANE ) return aDelegator.setBlock(Blocks.GLASS_PANE);
+		if (aBlock == Blocks.WHITE_STAINED_GLASS       || tHead == Blocks.WHITE_STAINED_GLASS      ) return aDelegator.setBlock(Blocks.GLASS);
 		if (aBlock == BlocksGT.Grass) return aDelegator.setBlock(Blocks.GRASS_BLOCK);
 		return F;
 	}

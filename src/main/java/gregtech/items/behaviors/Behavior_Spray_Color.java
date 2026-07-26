@@ -148,7 +148,11 @@ public class Behavior_Spray_Color extends AbstractBehaviorDefault {
 	
 	private boolean colorize(Level aWorld, int aX, int aY, int aZ, byte aSide) {
 		Block aBlock = WD.block(aWorld, aX, aY, aZ);
-		if (aBlock != NB && (mAllowedVanillaBlocks.contains(aBlock) || aBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.WOOL) || IL.TE_Rockwool.block() == aBlock || aBlock == BlocksGT.Grass)) {
+		// F4-flatten: список выше перечисляет ОДИН блок на семью, потому что в 1.7.10 он и был всей семьёй
+		// (stained_glass = все 16 оттенков). После расщепления «перекрасить уже цветное» перестало проходить
+		// проверку — поймано живым стендом GT6-FLATTENPROBE (REPAINT красное→жёлтое: осталось красным).
+		// Спрашиваем принадлежность цветовой семье у центра CS.Flattened, а не перечисляем 16 оттенков здесь.
+		if (aBlock != NB && (mAllowedVanillaBlocks.contains(aBlock) || gregapi.data.CS.Flattened.isColored(aBlock) || aBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.WOOL) || IL.TE_Rockwool.block() == aBlock || aBlock == BlocksGT.Grass)) {
 			if (aBlock == Blocks.TERRACOTTA  ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_TERRACOTTA, ~mColor & 15, 3);
 			if (aBlock == Blocks.GLASS_PANE     ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_STAINED_GLASS_PANE   , ~mColor & 15, 3);
 			if (aBlock == Blocks.GLASS          ) return WD.set(aWorld, aX, aY, aZ, Blocks.WHITE_STAINED_GLASS        , ~mColor & 15, 3);

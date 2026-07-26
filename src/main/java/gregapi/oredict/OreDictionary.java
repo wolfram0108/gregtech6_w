@@ -1,6 +1,7 @@
 package gregapi.oredict;
 
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -97,6 +98,117 @@ public class OreDictionary {
 	/** Forge {@code getOreNames()}: все зарегистрированные имена. */
 	public static String[] getOreNames() {
 		return sOres.keySet().toArray(new String[0]);
+	}
+
+	private static boolean sHasInit = false;
+
+	/**
+	 * Роль-B переходника F4: ВАНИЛЬНЫЕ записи словаря, которые в 1.7.10 заводил САМ Forge
+	 * ({@code OreDictionary.initVanillaEntries}, эталон
+	 * {@code gt6-oracle-dumper/build/tmp/recompSrc/net/minecraftforge/oredict/OreDictionary.java:59-190}) —
+	 * ещё до загрузки модов. NeoForge словаря не имеет вовсе, поэтому вместе с хранилищем (роль-A) сюда
+	 * переносится и этот стартовый набор: без него GT6 видит ПОЛУПУСТОЙ ванильный словарь.
+	 *
+	 * <p><b>Улики, что это не догадка, а недостающая часть.</b> Судья паритета (2026-07-26) показал ровно
+	 * форму этой дыры: в порте нет {@code oreIron}, {@code blockQuartz} и по 16 записей
+	 * {@code blockGlass<Цвет>} / {@code paneGlass<Цвет>} — все они рождались ИМЕННО здесь (остальные
+	 * ванильные имена — {@code stickWood}, {@code cropWheat}, {@code record}, {@code stairWood}… — в порте
+	 * есть, потому что их дублирует своими стеками сам GT6). Отсюда же счётчики префиксов
+	 * {@code blockGlass/paneGlass} 16→0, {@code record} 12→0, {@code stair} 6→0.</p>
+	 *
+	 * <p><b>Перенос 1:1 с поправкой на расщепление семейств.</b> Там, где 1.7.10 обходился одной
+	 * wildcard-записью ({@code new ItemStack(Blocks.log, 1, WILDCARD_VALUE)} = «любое бревно»), в neo нет
+	 * ни меты, ни единого блока-семьи — значит члены перечисляются поимённо, тем же приёмом, что уже принят
+	 * в {@code LoaderWoodDictionary:45-56}. Цветовые ряды берутся из центра {@code CS.Flattened} (объявлены
+	 * там один раз), а {@code ST.make(глава, 1, мета)} сам подставит нужный вариант — карты общие, копий нет.
+	 * Порядок цветов {@code dyes[]} и инверсия {@code 15 - i} для стекла — дословно из Forge-исходника
+	 * ({@code :154-186}), не из памяти: у красителя и стекла ряды идут навстречу друг другу.</p>
+	 *
+	 * <p>Идемпотентно ({@code sHasInit}) — как {@code hasInit} у Forge; повторные и пересекающиеся с GT6
+	 * записи дополнительно снимает дедуп {@link #registerOre} (тот же hash-бакет, что у оригинала).
+	 * Блок {@code replacements}/{@code exclusions} Forge-оригинала ({@code :136-190}) сюда НЕ переносится:
+	 * он обслуживал автозамену ингредиентов в ванильных верстак-рецептах, а не словарь (роль-A/B), и в порте
+	 * за крафт отвечает свой диспетчер (F11).</p>
+	 */
+	public static void initVanillaEntries() {
+		if (sHasInit) return;
+		sHasInit = true;
+
+		// дерево: 1.7.10 log/log2/planks/wooden_slab/sapling/leaves/leaves2 — по одному блоку с метой-породой
+		for (net.minecraft.world.level.block.Block tLog : new net.minecraft.world.level.block.Block[]{Blocks.OAK_LOG, Blocks.SPRUCE_LOG, Blocks.BIRCH_LOG, Blocks.JUNGLE_LOG, Blocks.ACACIA_LOG, Blocks.DARK_OAK_LOG}) registerOre("logWood", ST.make(tLog, 1, 0));
+		for (net.minecraft.world.level.block.Block tPlank : new net.minecraft.world.level.block.Block[]{Blocks.OAK_PLANKS, Blocks.SPRUCE_PLANKS, Blocks.BIRCH_PLANKS, Blocks.JUNGLE_PLANKS, Blocks.ACACIA_PLANKS, Blocks.DARK_OAK_PLANKS}) registerOre("plankWood", ST.make(tPlank, 1, 0));
+		for (net.minecraft.world.level.block.Block tSlab : new net.minecraft.world.level.block.Block[]{Blocks.OAK_SLAB, Blocks.SPRUCE_SLAB, Blocks.BIRCH_SLAB, Blocks.JUNGLE_SLAB, Blocks.ACACIA_SLAB, Blocks.DARK_OAK_SLAB}) registerOre("slabWood", ST.make(tSlab, 1, 0));
+		for (net.minecraft.world.level.block.Block tStair : new net.minecraft.world.level.block.Block[]{Blocks.OAK_STAIRS, Blocks.SPRUCE_STAIRS, Blocks.BIRCH_STAIRS, Blocks.JUNGLE_STAIRS, Blocks.ACACIA_STAIRS, Blocks.DARK_OAK_STAIRS}) registerOre("stairWood", ST.make(tStair, 1, 0));
+		registerOre("stickWood", ST.make(net.minecraft.world.item.Items.STICK, 1, 0));
+		for (net.minecraft.world.level.block.Block tSap : new net.minecraft.world.level.block.Block[]{Blocks.OAK_SAPLING, Blocks.SPRUCE_SAPLING, Blocks.BIRCH_SAPLING, Blocks.JUNGLE_SAPLING, Blocks.ACACIA_SAPLING, Blocks.DARK_OAK_SAPLING}) registerOre("treeSapling", ST.make(tSap, 1, 0));
+		for (net.minecraft.world.level.block.Block tLeaf : new net.minecraft.world.level.block.Block[]{Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES, Blocks.JUNGLE_LEAVES, Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES}) registerOre("treeLeaves", ST.make(tLeaf, 1, 0));
+
+		// руды и блоки-хранилища (1.7.10 quartz_ore = НЕЗЕРСКИЙ кварц)
+		registerOre("oreGold"      , ST.make(Blocks.GOLD_ORE        , 1, 0));
+		registerOre("oreIron"      , ST.make(Blocks.IRON_ORE        , 1, 0));
+		registerOre("oreLapis"     , ST.make(Blocks.LAPIS_ORE       , 1, 0));
+		registerOre("oreDiamond"   , ST.make(Blocks.DIAMOND_ORE     , 1, 0));
+		registerOre("oreRedstone"  , ST.make(Blocks.REDSTONE_ORE    , 1, 0));
+		registerOre("oreEmerald"   , ST.make(Blocks.EMERALD_ORE     , 1, 0));
+		registerOre("oreQuartz"    , ST.make(Blocks.NETHER_QUARTZ_ORE, 1, 0));
+		registerOre("oreCoal"      , ST.make(Blocks.COAL_ORE        , 1, 0));
+		registerOre("blockGold"    , ST.make(Blocks.GOLD_BLOCK      , 1, 0));
+		registerOre("blockIron"    , ST.make(Blocks.IRON_BLOCK      , 1, 0));
+		registerOre("blockLapis"   , ST.make(Blocks.LAPIS_BLOCK     , 1, 0));
+		registerOre("blockDiamond" , ST.make(Blocks.DIAMOND_BLOCK   , 1, 0));
+		registerOre("blockRedstone", ST.make(Blocks.REDSTONE_BLOCK  , 1, 0));
+		registerOre("blockEmerald" , ST.make(Blocks.EMERALD_BLOCK   , 1, 0));
+		registerOre("blockQuartz"  , ST.make(Blocks.QUARTZ_BLOCK    , 1, 0));
+		registerOre("blockCoal"    , ST.make(Blocks.COAL_BLOCK      , 1, 0));
+
+		// стекло: бесцветное + весь цветной ряд (1.7.10 — одна wildcard-запись stained_glass:W)
+		registerOre("blockGlassColorless", ST.make(Blocks.GLASS     , 1, 0));
+		registerOre("blockGlass"         , ST.make(Blocks.GLASS     , 1, 0));
+		for (int i = 0; i < gregapi.data.CS.Flattened.STAINED_GLASS.length; i++) registerOre("blockGlass", ST.make(gregapi.data.CS.Flattened.STAINED_GLASS[i], 1, 0));
+		registerOre("paneGlassColorless" , ST.make(Blocks.GLASS_PANE, 1, 0));
+		registerOre("paneGlass"          , ST.make(Blocks.GLASS_PANE, 1, 0));
+		for (int i = 0; i < gregapi.data.CS.Flattened.STAINED_GLASS_PANE.length; i++) registerOre("paneGlass", ST.make(gregapi.data.CS.Flattened.STAINED_GLASS_PANE[i], 1, 0));
+
+		// слитки/самородки/камни/пыли/еда (1.7.10 gemLapis = dye:4)
+		registerOre("ingotIron"      , ST.make(net.minecraft.world.item.Items.IRON_INGOT    , 1, 0));
+		registerOre("ingotGold"      , ST.make(net.minecraft.world.item.Items.GOLD_INGOT    , 1, 0));
+		registerOre("ingotBrick"     , ST.make(net.minecraft.world.item.Items.BRICK         , 1, 0));
+		registerOre("ingotBrickNether", ST.make(net.minecraft.world.item.Items.NETHER_BRICK , 1, 0));
+		registerOre("nuggetGold"     , ST.make(net.minecraft.world.item.Items.GOLD_NUGGET   , 1, 0));
+		registerOre("gemDiamond"     , ST.make(net.minecraft.world.item.Items.DIAMOND       , 1, 0));
+		registerOre("gemEmerald"     , ST.make(net.minecraft.world.item.Items.EMERALD       , 1, 0));
+		registerOre("gemQuartz"      , ST.make(net.minecraft.world.item.Items.QUARTZ        , 1, 0));
+		registerOre("dustRedstone"   , ST.make(net.minecraft.world.item.Items.REDSTONE      , 1, 0));
+		registerOre("dustGlowstone"  , ST.make(net.minecraft.world.item.Items.GLOWSTONE_DUST, 1, 0));
+		registerOre("gemLapis"       , ST.make(net.minecraft.world.item.Items.LAPIS_LAZULI  , 1, 0));
+		registerOre("slimeball"      , ST.make(net.minecraft.world.item.Items.SLIME_BALL    , 1, 0));
+		registerOre("glowstone"      , ST.make(Blocks.GLOWSTONE     , 1, 0));
+		registerOre("cropWheat"      , ST.make(net.minecraft.world.item.Items.WHEAT         , 1, 0));
+		registerOre("cropPotato"     , ST.make(net.minecraft.world.item.Items.POTATO        , 1, 0));
+		registerOre("cropCarrot"     , ST.make(net.minecraft.world.item.Items.CARROT        , 1, 0));
+		registerOre("stone"          , ST.make(Blocks.STONE         , 1, 0));
+		registerOre("cobblestone"    , ST.make(Blocks.COBBLESTONE   , 1, 0));
+		// 1.7.10 sandstone:W = гладкий/резной/обычный; sand:W = обычный + красный
+		registerOre("sandstone"      , ST.make(Blocks.SANDSTONE         , 1, 0));
+		registerOre("sandstone"      , ST.make(Blocks.CHISELED_SANDSTONE, 1, 0));
+		registerOre("sandstone"      , ST.make(Blocks.CUT_SANDSTONE     , 1, 0));
+		registerOre("sand"           , ST.make(Blocks.SAND              , 1, 0));
+		registerOre("sand"           , ST.make(Blocks.RED_SAND          , 1, 0));
+
+		// пластинки (1.7.10 record_*; в neo music_disc_*)
+		for (net.minecraft.world.item.Item tRecord : new net.minecraft.world.item.Item[]{
+			net.minecraft.world.item.Items.MUSIC_DISC_13, net.minecraft.world.item.Items.MUSIC_DISC_CAT, net.minecraft.world.item.Items.MUSIC_DISC_BLOCKS, net.minecraft.world.item.Items.MUSIC_DISC_CHIRP,
+			net.minecraft.world.item.Items.MUSIC_DISC_FAR, net.minecraft.world.item.Items.MUSIC_DISC_MALL, net.minecraft.world.item.Items.MUSIC_DISC_MELLOHI, net.minecraft.world.item.Items.MUSIC_DISC_STAL,
+			net.minecraft.world.item.Items.MUSIC_DISC_STRAD, net.minecraft.world.item.Items.MUSIC_DISC_WARD, net.minecraft.world.item.Items.MUSIC_DISC_11, net.minecraft.world.item.Items.MUSIC_DISC_WAIT}) registerOre("record", ST.make(tRecord, 1, 0));
+
+		// красители и цвет-именованные ряды: порядок Forge (dye:0 = Black … dye:15 = White), стекло/панель — навстречу (15 - i)
+		final String[] tDyes = {"Black", "Red", "Green", "Brown", "Blue", "Purple", "Cyan", "LightGray", "Gray", "Pink", "Lime", "Yellow", "LightBlue", "Magenta", "Orange", "White"};
+		for (int i = 0; i < 16; i++) {
+			registerOre("dye"                , ST.make(gregapi.data.CS.Flattened.DYE[i], 1, 0));
+			registerOre("dye"       + tDyes[i], ST.make(gregapi.data.CS.Flattened.DYE[i], 1, 0));
+			registerOre("blockGlass"+ tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS     [15-i], 1, 0));
+			registerOre("paneGlass" + tDyes[i], ST.make(gregapi.data.CS.Flattened.STAINED_GLASS_PANE[15-i], 1, 0));
+		}
 	}
 
 	/**

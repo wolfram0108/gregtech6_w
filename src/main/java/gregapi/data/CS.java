@@ -60,6 +60,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.NbtIo;
@@ -1791,7 +1792,151 @@ public class CS {
 		
 		@Deprecated public static BlockBase Sapling = Saplings_AB, Leaves = Leaves_AB;
 	}
-	
+
+	/**
+	 * F4-flatten ЦЕНТР: 1.7.10-пара «представитель семейства + мета» → neo-вариант.
+	 *
+	 * <p><b>Зачем.</b> В 1.7.10 подтип ванильной вещи жил в МЕТЕ одного предмета/блока
+	 * ({@code stained_glass:14} = красное стекло, {@code dye:1} = красный краситель). Движок 1.13 «The
+	 * Flattening» расщепил каждое такое семейство на отдельные предметы. Порт же продолжал звать первого
+	 * члена семьи и вешать мету: {@code ST.make_} кладёт её в компонент {@link gregapi.GT_API#SUBTYPE}
+	 * ({@code ST.java:198}), а ванильная вещь этот компонент НЕ ЧИТАЕТ — значит на выходе всегда белое
+	 * стекло / чернильный мешок, а мета мертва. Замер 2026-07-26: 1125 вхождений мёртвой меты в дампе
+	 * данных, 477 мест в коде, 15 семейств (DEFERRED-LEDGER, запись «block-flatten»).</p>
+	 *
+	 * <p><b>Почему здесь и в такой форме.</b> Это продолжение приёма {@link BlocksGT#potted(Block, long)} —
+	 * там точно так же 1.7.10-пара (блок, мета) отображается в neo-блок. Один дом на все семейства: карты
+	 * объявлены ЗДЕСЬ ровно один раз, а зовут их два уже существующих центра — {@code ST.make_} (вещи в
+	 * стеке) и {@code WD.legacyVanillaState} (блоки в мире). Правка центра чинит все 477 мест разом, а
+	 * исходник GT6 остаётся verbatim-1:1 — переписывать места поимённо значило бы размазать адаптацию по
+	 * файлам вопреки закону захода (PORTING-LAW) и философии «адаптируем централизованно, не пофайлово».</p>
+	 *
+	 * <p><b>Откуда порядок.</b> Из карты Mojang {@code ItemStackTheFlatteningFix} (ресурс
+	 * {@code flattening.txt}, лежит в проекте) — не из памяти: порядок неочевиден и у семейств РАЗНЫЙ
+	 * ({@code wool:0} = белая, а {@code dye:0} = ЧЁРНЫЙ краситель, {@code dye:15} = костная мука).
+	 * Имена 1.13 промежуточные и в 26.1.2 переименованы ещё раз — каждая константа ниже проверена грепом
+	 * по {@code neo-decompiled} ({@code rose_red}→{@code RED_DYE}, {@code cactus_green}→{@code GREEN_DYE},
+	 * {@code dandelion_yellow}→{@code YELLOW_DYE}, {@code clownfish}→{@code TROPICAL_FISH},
+	 * {@code grass}→{@code SHORT_GRASS}); существование каждой сверх того стережёт компилятор.</p>
+	 *
+	 * <p><b>Границы (сознательно НЕ покрыто).</b> {@code W} (wildcard 32767) — не подтип, а «любой»:
+	 * резолв его не трогает, семантика «любого» — отдельный ход через теги. Зелья ({@code POTION}, 89 мест)
+	 * — в neo не предметы-варианты, а компоненты: инхерентно, отмечено F-potion-data. Плиты
+	 * ({@code stone_slab}, 31 место) — у них мета несёт И материал, И половину блока (бит 8), а оригинал
+	 * местами зовёт {@code double_stone_slab}: требует отдельной сверки, здесь не гадаем. Инструменты и
+	 * прочие вещи с износом мете-подтипу не подлежат — их тут нет, значит резолв их не касается.</p>
+	 */
+	public static class Flattened {
+		/** {@code Items.dye:0..15} — ВНИМАНИЕ: 0 = чёрный (чернила), 15 = белый (костная мука). */
+		public static final Item[] DYE = {
+			Items.INK_SAC, Items.RED_DYE, Items.GREEN_DYE, Items.COCOA_BEANS, Items.LAPIS_LAZULI, Items.PURPLE_DYE, Items.CYAN_DYE, Items.LIGHT_GRAY_DYE,
+			Items.GRAY_DYE, Items.PINK_DYE, Items.LIME_DYE, Items.YELLOW_DYE, Items.LIGHT_BLUE_DYE, Items.MAGENTA_DYE, Items.ORANGE_DYE, Items.BONE_MEAL};
+		/** {@code Items.fish:0..3}; меты 4+ давали моды (MaCu/ENCHIRIDION) — neo-эквивалента нет, не покрыто. */
+		public static final Item[] FISH = {Items.COD, Items.SALMON, Items.TROPICAL_FISH, Items.PUFFERFISH};
+		/** {@code Items.cooked_fish:0..1}. */
+		public static final Item[] COOKED_FISH = {Items.COOKED_COD, Items.COOKED_SALMON};
+
+		/** Цветовой порядок 1.7.10 (общий для wool/carpet/stained_glass/panes/terracotta): 0 = белый … 15 = чёрный. */
+		public static final Block[] WOOL = {
+			Blocks.WHITE_WOOL, Blocks.ORANGE_WOOL, Blocks.MAGENTA_WOOL, Blocks.LIGHT_BLUE_WOOL, Blocks.YELLOW_WOOL, Blocks.LIME_WOOL, Blocks.PINK_WOOL, Blocks.GRAY_WOOL,
+			Blocks.LIGHT_GRAY_WOOL, Blocks.CYAN_WOOL, Blocks.PURPLE_WOOL, Blocks.BLUE_WOOL, Blocks.BROWN_WOOL, Blocks.GREEN_WOOL, Blocks.RED_WOOL, Blocks.BLACK_WOOL};
+		public static final Block[] CARPET = {
+			Blocks.WHITE_CARPET, Blocks.ORANGE_CARPET, Blocks.MAGENTA_CARPET, Blocks.LIGHT_BLUE_CARPET, Blocks.YELLOW_CARPET, Blocks.LIME_CARPET, Blocks.PINK_CARPET, Blocks.GRAY_CARPET,
+			Blocks.LIGHT_GRAY_CARPET, Blocks.CYAN_CARPET, Blocks.PURPLE_CARPET, Blocks.BLUE_CARPET, Blocks.BROWN_CARPET, Blocks.GREEN_CARPET, Blocks.RED_CARPET, Blocks.BLACK_CARPET};
+		public static final Block[] STAINED_GLASS = {
+			Blocks.WHITE_STAINED_GLASS, Blocks.ORANGE_STAINED_GLASS, Blocks.MAGENTA_STAINED_GLASS, Blocks.LIGHT_BLUE_STAINED_GLASS, Blocks.YELLOW_STAINED_GLASS, Blocks.LIME_STAINED_GLASS, Blocks.PINK_STAINED_GLASS, Blocks.GRAY_STAINED_GLASS,
+			Blocks.LIGHT_GRAY_STAINED_GLASS, Blocks.CYAN_STAINED_GLASS, Blocks.PURPLE_STAINED_GLASS, Blocks.BLUE_STAINED_GLASS, Blocks.BROWN_STAINED_GLASS, Blocks.GREEN_STAINED_GLASS, Blocks.RED_STAINED_GLASS, Blocks.BLACK_STAINED_GLASS};
+		public static final Block[] STAINED_GLASS_PANE = {
+			Blocks.WHITE_STAINED_GLASS_PANE, Blocks.ORANGE_STAINED_GLASS_PANE, Blocks.MAGENTA_STAINED_GLASS_PANE, Blocks.LIGHT_BLUE_STAINED_GLASS_PANE, Blocks.YELLOW_STAINED_GLASS_PANE, Blocks.LIME_STAINED_GLASS_PANE, Blocks.PINK_STAINED_GLASS_PANE, Blocks.GRAY_STAINED_GLASS_PANE,
+			Blocks.LIGHT_GRAY_STAINED_GLASS_PANE, Blocks.CYAN_STAINED_GLASS_PANE, Blocks.PURPLE_STAINED_GLASS_PANE, Blocks.BLUE_STAINED_GLASS_PANE, Blocks.BROWN_STAINED_GLASS_PANE, Blocks.GREEN_STAINED_GLASS_PANE, Blocks.RED_STAINED_GLASS_PANE, Blocks.BLACK_STAINED_GLASS_PANE};
+		/** 1.7.10 {@code stained_hardened_clay} → neo {@code *_TERRACOTTA}. */
+		public static final Block[] TERRACOTTA = {
+			Blocks.WHITE_TERRACOTTA, Blocks.ORANGE_TERRACOTTA, Blocks.MAGENTA_TERRACOTTA, Blocks.LIGHT_BLUE_TERRACOTTA, Blocks.YELLOW_TERRACOTTA, Blocks.LIME_TERRACOTTA, Blocks.PINK_TERRACOTTA, Blocks.GRAY_TERRACOTTA,
+			Blocks.LIGHT_GRAY_TERRACOTTA, Blocks.CYAN_TERRACOTTA, Blocks.PURPLE_TERRACOTTA, Blocks.BLUE_TERRACOTTA, Blocks.BROWN_TERRACOTTA, Blocks.GREEN_TERRACOTTA, Blocks.RED_TERRACOTTA, Blocks.BLACK_TERRACOTTA};
+		/** 1.7.10 {@code tallgrass:0..2}. */
+		public static final Block[] TALLGRASS = {Blocks.DEAD_BUSH, Blocks.SHORT_GRASS, Blocks.FERN};
+		/** 1.7.10 {@code Items.skull:0..5} — GT6 зовёт черепа именно как ПРЕДМЕТ (дроп мобов
+		 *  {@code Override_Drops:774-789}, данные {@code LoaderItemData:2472}, {@code ST.skull(player)} с метой 3);
+		 *  у БЛОКА черепа мета 1.7.10 значила положение (пол/стена), а тип жил в TileEntitySkull — поэтому
+		 *  семейство только предметное. */
+		public static final Item[] SKULL = {Items.SKELETON_SKULL, Items.WITHER_SKELETON_SKULL, Items.ZOMBIE_HEAD, Items.PLAYER_HEAD, Items.CREEPER_HEAD, Items.DRAGON_HEAD};
+		/** 1.7.10 {@code anvil:0..2} (степень повреждения). */
+		public static final Block[] ANVIL = {Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL};
+
+		/**
+		 * Семейства, где мета = подтип И В СТЕКЕ, И В МИРЕ (цвет/вид никуда не девается при установке блока).
+		 */
+		/** Цветовые семьи (16 оттенков): ими оперируют краскопульты — «покрасить» и «смыть краску». */
+		private static final Block[][] COLOR_FAMILIES = {WOOL, CARPET, STAINED_GLASS, STAINED_GLASS_PANE, TERRACOTTA};
+		private static final Block[][] WORLD_FAMILIES = {WOOL, CARPET, STAINED_GLASS, STAINED_GLASS_PANE, TERRACOTTA, TALLGRASS};
+		/**
+		 * Семейства, где мета = подтип ТОЛЬКО В СТЕКЕ. У блока в мире та же мета значила ДРУГОЕ, поэтому
+		 * подставлять по ней вариант нельзя: у наковальни биты 0-1 — поворот (их разбирает ветка
+		 * {@code AnvilBlock} в {@code WD.legacyVanillaState}), и лишь биты 2-3 — износ.
+		 */
+		private static final Block[][] STACK_ONLY_FAMILIES = {ANVIL};
+		private static final Item [][] ITEM_FAMILIES  = {DYE, FISH, COOKED_FISH, SKULL};
+
+		/**
+		 * Ищем блок среди ВСЕХ членов семьи, не только среди глав. В 1.7.10 семья была ОДНИМ блоком, и мета
+		 * задавала подтип целиком, поэтому «взять красное стекло и поставить мету 4» законно значило «жёлтое
+		 * стекло». Ровно на это опирается перекраска уже окрашенного блока
+		 * ({@code Behavior_Spray_Color.colorize:167} — {@code WD.set(..., WD.block(...), ~mColor & 15, 3, F)}):
+		 * там на входе не глава семьи, а текущий цветной блок. Поиск только по главе оставил бы этот путь
+		 * сломанным (перекрасить красное стекло в жёлтое было бы нельзя).
+		 */
+		private static Block find(Block[][] aFamilies, Block aBlock, long aMeta) {
+			for (Block[] tFamily : aFamilies) for (Block tMember : tFamily) if (tMember == aBlock) return aMeta < tFamily.length ? tFamily[(int)aMeta] : null;
+			return null;
+		}
+
+		/** Вариант для ВЕЩИ В СТЕКЕ; {@code null} = вещь не из семейства либо мета вне семьи (вызыватель оставляет всё как было). */
+		public static Block block(Block aBlock, long aMeta) {
+			if (aMeta <= 0 || aMeta == W) return null;
+			Block rBlock = find(WORLD_FAMILIES, aBlock, aMeta);
+			return rBlock != null ? rBlock : find(STACK_ONLY_FAMILIES, aBlock, aMeta);
+		}
+
+		/** Вариант для БЛОКА В МИРЕ — только семейства, где мета и там означает подтип (см. {@link #STACK_ONLY_FAMILIES}). */
+		public static Block worldBlock(Block aBlock, long aMeta) {
+			if (aMeta <= 0 || aMeta == W) return null;
+			return find(WORLD_FAMILIES, aBlock, aMeta);
+		}
+
+		/**
+		 * Блок — любой оттенок цветовой семьи? Нужен там, где 1.7.10-код перечислял ОДИН блок семьи, потому что
+		 * он и был всей семьёй: списки «что можно красить» ({@code Behavior_Spray_Color:147}) и «с чего смывать»
+		 * ({@code Behavior_Spray_Color_Remover:105-107}). Живой стенд поймал ровно это: покрасить чистое стекло
+		 * можно, а перекрасить уже красное — нет, потому что в списке стоял только {@code WHITE_STAINED_GLASS}.
+		 */
+		public static boolean isColored(Block aBlock) {
+			for (Block[] tFamily : COLOR_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return T;
+			return F;
+		}
+
+		/** Глава семьи блока (тот вариант, что в 1.7.10 был блоком-семьёй) либо {@code null}. Позволяет сравнивать
+		 *  «это стекло/панель/терракота вообще» одной проверкой, не перечисляя 16 оттенков в каждом вызывателе. */
+		public static Block headOf(Block aBlock) {
+			for (Block[] tFamily : WORLD_FAMILIES     ) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
+			for (Block[] tFamily : STACK_ONLY_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
+			return null;
+		}
+
+		/** Обратное чтение: номер варианта внутри семьи (1.7.10-мета) либо −1, если вещь не из семейства.
+		 *  Нужен там, где GT6 сравнивает «а не нужного ли уже подтипа этот блок» ({@code colorize:167}). */
+		public static int metaOf(Block aBlock) {
+			for (Block[] tFamily : WORLD_FAMILIES     ) for (int i = 0; i < tFamily.length; i++) if (tFamily[i] == aBlock) return i;
+			for (Block[] tFamily : STACK_ONLY_FAMILIES) for (int i = 0; i < tFamily.length; i++) if (tFamily[i] == aBlock) return i;
+			return -1;
+		}
+		/** Вариант предмета по 1.7.10-мете; {@code null} — см. {@link #block}. */
+		public static Item item(Item aItem, long aMeta) {
+			if (aMeta <= 0 || aMeta == W) return null;
+			for (Item[] tFamily : ITEM_FAMILIES) if (tFamily[0] == aItem) return aMeta < tFamily.length ? tFamily[(int)aMeta] : null;
+			return null;
+		}
+	}
+
 	public static class ArmorsGT {
 		/** The List of Hazmat Armors */
 		public static final ItemStackSet<ItemStackContainer>

@@ -220,6 +220,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6fusionprobe.flag")) gt6FusionProbeTick(aEvent.getServer());
 	// [GT6-LOGICOMPUTEPROBE] верификационный стенд «Связка №14 — логистика + компьютер» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6logicomputeprobe.flag")) gt6LogiComputeProbeTick(aEvent.getServer());
+	// [GT6-FLATTENPROBE] стенд «F4-flatten: расщеплённые ванильные семейства» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6flattenprobe.flag")) gt6FlattenProbeTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -5998,5 +6000,117 @@ public final class GT6Probes {
 				.at(LCP_T_DONE, GT6Probes::gt6LogiProbeDone);
 		}
 		sLcpSeq.tick(sLcpProbeTick);
+	}
+
+	// ============================================================================================================
+	// [GT6-FLATTENPROBE] стенд «F4-flatten: расщеплённые ванильные семейства» — снять при уборке фазы.
+	// Судит ИДЕНТИЧНОСТЬ объекта (какой блок реально стоит в мире, что реально лежит в словаре), не картинку.
+	// Реальный путь игрока: спрей-краска через ServerPlayer.gameMode.useItemOn (GT6ProbeStand.clickBlock).
+	// Позитивный контроль встроен в саму схему: два РАЗНЫХ спрея обязаны дать РАЗНЫЕ блоки — если стенд
+	// показывает PASS на обоих, значит он различает цвета, а не «видит что угодно». Плюс COLD (некрашеное
+	// стекло) — если бы стенд красил сам себя, COLD бы упал.
+	// ============================================================================================================
+	private static final String FLAT_M = "GT6-FLATTENPROBE";
+	private static int sFlatTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sFlatSeq = null;
+	private static net.minecraft.server.level.ServerPlayer sFlatPlayer = null;
+	private static net.minecraft.core.BlockPos sFlatGlass = null, sFlatWool = null, sFlatRepaint = null, sFlatCold = null, sFlatDecolor = null;
+
+	public static void gt6FlattenProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sFlatTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sFlatPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sFlatSeq == null) {
+			sFlatSeq = new gregapi.probe.GT6ProbeStand.Seq(FLAT_M)
+				.at(20, GT6Probes::gt6FlattenProbeBuild)
+				.at(40, GT6Probes::gt6FlattenProbePaint)
+				.at(60, GT6Probes::gt6FlattenProbeJudge);
+		}
+		sFlatSeq.tick(sFlatTick);
+	}
+
+	private static void gt6FlattenProbeBuild() {
+		net.minecraft.server.level.ServerLevel tLevel = sFlatPlayer.level();
+		net.minecraft.core.BlockPos tBase = sFlatPlayer.blockPosition().offset(2, 0, 2);
+		sFlatGlass   = tBase;
+		sFlatWool    = tBase.offset(1, 0, 0);
+		sFlatRepaint = tBase.offset(2, 0, 0);
+		sFlatCold    = tBase.offset(3, 0, 0);
+		sFlatDecolor = tBase.offset(4, 0, 0);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-1, -1, -1), 8, 4);
+		tLevel.setBlock(sFlatGlass  , net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState()             , 3);
+		tLevel.setBlock(sFlatWool   , net.minecraft.world.level.block.Blocks.WHITE_WOOL.defaultBlockState()        , 3);
+		// уже окрашенный блок: проверяем ПЕРЕКРАСКУ (путь colorize:167 — на входе не глава семьи, а текущий цвет)
+		tLevel.setBlock(sFlatRepaint, net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS.defaultBlockState() , 3);
+		tLevel.setBlock(sFlatCold   , net.minecraft.world.level.block.Blocks.GLASS.defaultBlockState()             , 3);
+		// смывка краски: 1.7.10 сравнивал с блоком-семьёй, поэтому цветное стекло обязано «раскрашиваться» обратно в чистое
+		tLevel.setBlock(sFlatDecolor, net.minecraft.world.level.block.Blocks.BLUE_STAINED_GLASS.defaultBlockState(), 3);
+		// вплотную к площадке: сервер молча роняет useItemOn вне дистанции достижения (урок BUG-032)
+		gregapi.probe.GT6ProbeStand.teleportLook(sFlatPlayer, tBase.getX() + 0.5, tBase.getY() + 1.0, tBase.getZ() - 1.5, 0.0F, 0.0F);
+		gregapi.data.CS.OUT.println("[" + FLAT_M + "] построено: стекло " + sFlatGlass + ", шерсть " + sFlatWool + ", перекраска " + sFlatRepaint + ", COLD " + sFlatCold);
+	}
+
+	/** Свежий спрей на КАЖДЫЙ клик: баллон расходуется и мутирует стек (полный → использованный), поэтому
+	 *  переиспользование одного стека смешало бы кейсы (урок каркаса №1 про count--). */
+	private static void gt6FlattenProbeSpray(int aDyeIndex, net.minecraft.core.BlockPos aPos) {
+		sFlatPlayer.getInventory().setItem(0, gregapi.data.IL.SPRAY_CAN_DYES[aDyeIndex].get(1));
+		sFlatPlayer.getInventory().setSelectedSlot(0);
+		gregapi.probe.GT6ProbeStand.clickBlock(sFlatPlayer, aPos, net.minecraft.core.Direction.UP);
+	}
+
+	private static void gt6FlattenProbePaint() {
+		// mColor = индекс баллона, цвет блока = ~mColor & 15 (Behavior_Spray_Color.colorize) — то есть 15 - индекс.
+		gt6FlattenProbeSpray(gregapi.data.CS.DYE_INDEX_Red   , sFlatGlass);   // ожидание: RED_STAINED_GLASS
+		gt6FlattenProbeSpray(gregapi.data.CS.DYE_INDEX_Red   , sFlatWool);    // ожидание: RED_WOOL
+		gt6FlattenProbeSpray(gregapi.data.CS.DYE_INDEX_Yellow, sFlatRepaint); // красное → ожидание: YELLOW_STAINED_GLASS
+		// смывка краски с СИНЕГО стекла (не белого!) — ожидание: чистое GLASS
+		sFlatPlayer.getInventory().setItem(0, gregapi.data.IL.Spray_Color_Remover.get(1));
+		sFlatPlayer.getInventory().setSelectedSlot(0);
+		gregapi.probe.GT6ProbeStand.clickBlock(sFlatPlayer, sFlatDecolor, net.minecraft.core.Direction.UP);
+		// sFlatCold не трогаем вовсе
+	}
+
+	private static void gt6FlattenProbeJudge() {
+		net.minecraft.server.level.ServerLevel tLevel = sFlatPlayer.level();
+		net.minecraft.world.level.block.Block tGlass   = tLevel.getBlockState(sFlatGlass  ).getBlock();
+		net.minecraft.world.level.block.Block tWool    = tLevel.getBlockState(sFlatWool   ).getBlock();
+		net.minecraft.world.level.block.Block tRepaint = tLevel.getBlockState(sFlatRepaint).getBlock();
+		net.minecraft.world.level.block.Block tCold    = tLevel.getBlockState(sFlatCold   ).getBlock();
+
+		sFlatSeq.judge("PAINT стекло → красное"      , tGlass   == net.minecraft.world.level.block.Blocks.RED_STAINED_GLASS   , "red_stained_glass"   , tGlass);
+		sFlatSeq.judge("PAINT шерсть → красная"      , tWool    == net.minecraft.world.level.block.Blocks.RED_WOOL            , "red_wool"            , tWool);
+		sFlatSeq.judge("REPAINT красное → жёлтое"    , tRepaint == net.minecraft.world.level.block.Blocks.YELLOW_STAINED_GLASS, "yellow_stained_glass", tRepaint);
+		sFlatSeq.judge("COLD некрашеное осталось стеклом", tCold == net.minecraft.world.level.block.Blocks.GLASS              , "glass"               , tCold);
+		net.minecraft.world.level.block.Block tDecolor = tLevel.getBlockState(sFlatDecolor).getBlock();
+		sFlatSeq.judge("DECOLOR синее стекло → чистое"   , tDecolor == net.minecraft.world.level.block.Blocks.GLASS           , "glass"               , tDecolor);
+		// позитивный контроль различения: два разных баллона дали РАЗНЫЕ блоки (иначе судья слеп к цвету)
+		sFlatSeq.judge("POSITIVE-CONTROL два цвета различимы", tGlass != tRepaint, "разные блоки", tGlass + " / " + tRepaint);
+
+		// обратная сторона моста: 1.7.10-код спрашивает подтип метой — она обязана вернуть номер цвета
+		byte tMetaGlass = gregapi.util.WD.meta(tLevel, sFlatGlass.getX(), sFlatGlass.getY(), sFlatGlass.getZ());
+		sFlatSeq.judge("META читает цвет обратно", tMetaGlass == 14, 14, tMetaGlass);
+
+		// словарь: ванильные записи Forge (initVanillaEntries) — цветной ряд и красители
+		sFlatSeq.judge("OREDICT blockGlassRed содержит красное стекло",
+			gt6FlattenProbeOreHas("blockGlassRed", net.minecraft.world.item.Items.RED_STAINED_GLASS), "есть", gt6FlattenProbeOreDump("blockGlassRed"));
+		sFlatSeq.judge("OREDICT dyeRed содержит красный краситель",
+			gt6FlattenProbeOreHas("dyeRed", net.minecraft.world.item.Items.RED_DYE), "есть", gt6FlattenProbeOreDump("dyeRed"));
+		sFlatSeq.judge("OREDICT oreIron содержит железную руду",
+			gt6FlattenProbeOreHas("oreIron", net.minecraft.world.item.Items.IRON_ORE), "есть", gt6FlattenProbeOreDump("oreIron"));
+		// негативный контроль словаря: в красном ряду не должно быть ЖЁЛТОГО стекла (иначе проверка «содержит» бессмысленна)
+		sFlatSeq.judge("OREDICT blockGlassRed НЕ содержит жёлтое",
+			!gt6FlattenProbeOreHas("blockGlassRed", net.minecraft.world.item.Items.YELLOW_STAINED_GLASS), "нет", gt6FlattenProbeOreDump("blockGlassRed"));
+
+		sFlatSeq.done();
+	}
+
+	private static boolean gt6FlattenProbeOreHas(String aName, net.minecraft.world.item.Item aItem) {
+		for (net.minecraft.world.item.ItemStack tStack : gregapi.oredict.OreDictionary.getOres(aName, F)) if (tStack.getItem() == aItem) return T;
+		return F;
+	}
+	private static String gt6FlattenProbeOreDump(String aName) {
+		StringBuilder rOut = new StringBuilder();
+		for (net.minecraft.world.item.ItemStack tStack : gregapi.oredict.OreDictionary.getOres(aName, F)) rOut.append(rOut.length() == 0 ? "" : "|").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tStack.getItem()));
+		return rOut.length() == 0 ? "<пусто>" : rOut.toString();
 	}
 }
