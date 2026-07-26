@@ -361,6 +361,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6steamfarmprobe.flag")) gt6SteamFarmProbeTick(aEvent.getServer());
 				// [GT6-BIGMULTIPROBE] верификационный стенд «Связка №9 — многоблоки» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6bigmultiprobe.flag")) gt6BigMultiProbeTick(aEvent.getServer());
+				// [GT6-MCLPROBE] верификационный стенд «Связка №10 — MU/CU/LU» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6mclprobe.flag")) gt6MclProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -5178,6 +5180,502 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(900, GT_API_Proxy::gt6BigMultiProbeJudgeFinal);
 		}
 		sBMPSeq.tick(sBMPProbeTick);
+	}
+
+	// ========== [GT6-MCLPROBE] ВРЕМЕННЫЙ стенд «Связка №10 — MU/CU/LU» (Ф3.1, гейт run/gt6mclprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана; судимый канал — ТОЛЬКО реальные тики onTick2()/doConversion()/
+	// doWork(), ни один судимый метод пробой не вызывается напрямую):
+	// ВИДЫ ЭНЕРГИИ (TD.java:108,116,124): CU="ENERGY.CRYO", LU="ENERGY.LIGHT", MU="ENERGY.MAGNETIC". CU входит в
+	// TD.Energy.ALL_SIZE_IRRELEVANT (TD.java:221) -> пакет идёт как size=1/amount=tOutput и НЕ проверяется на
+	// нижний порог размера (TileEntityBase01Root.java:886 doEnergyInjection); MU и LU — обычные (size=tOutput,
+	// amount=mMultiplier), пакет НИЖЕ getEnergySizeInputMin приёмника «съедается» без зачисления (тот же :886).
+	// ИСТОЧНИКИ/ПОТРЕБИТЕЛИ (полный список по грепу NBT_ENERGY_EMITTED/NBT_ENERGY_ACCEPTED в Loader_MultiTileEntities.java):
+	//   MU: эмитят Electromagnet 10031-10035 (:866-870, EU->MU) и Flux Magnet 11031-11035 (:873-877, RF->MU);
+	//       принимают Polarizer 20221-20225 (:1422-1426, RM.Polarizer, ACCEPTED_SIDES=SBIT_U|SBIT_D) и Magnetic
+	//       Separator 20301-20305 (:1474-1478, RM.MagneticSeparator, ACCEPTED_SIDES=SBIT_U). Обратного конвертора
+	//       MU->* в порте НЕТ (грепом ACCEPTED=MU найдены только эти две машины) — потребление судится машиной.
+	//   CU: эмитят Thermoelectric Cooler 10161-10165 (:989-993, EU->CU + HU вторым типом) и Thermofluxic Cooler
+	//       11161-11165 (:996-1000, RF->CU+HU); принимают Cryo Distillation Tower 1231 (многоблок), Freezer
+	//       20561-20565 (:1625-1629, RM.Freezer, SIDES=SBIT_B), Cryo Mixer 20571-20575 (:1632-1636, RM.CryoMixer,
+	//       SIDES=SBIT_D). Обратного конвертора CU->* НЕТ.
+	//   LU: эмитят Electric CO2 Laser 10101-10105 (:934-938, EU->LU), Flux Laser 11101-11105 (:941-945, RF->LU),
+	//       Crystal Charger 10130+i (:974-975); принимают Laser Absorber 10151-10155 (:980-984, LU->EU — ЕДИНСТВЕННЫЙ
+	//       обратный конвертор среди трёх видов), Quantum Energizer 10121-10125 (:966-970, LU->QU), Laser Engraver
+	//       20281-20285 и Laser Welder (:1487-1498).
+	// ТОПОЛОГИЯ (вычитана из кода конверторов, НЕ подобрана):
+	//   MU: Electromagnet — TileEntityBase11Bipolar (MultiTileEntityMagnetElectric.java:34): doBipolar(mFacing,
+	//       OPOS[mFacing]) — эмиссия ВДОЛЬ ОСИ mFacing в ОБЕ стороны (+tOutput вперёд, -tOutput назад,
+	//       TE_Behavior_Energy_Converter.java:125-126), вход — все стороны ВНЕ этой оси (:63-64 isInput/isOutput).
+	//       => магнит с mFacing=UP: MU вниз (отрицательный пакет) на сепаратор, EU принимает с севера от батареи.
+	//       Сепаратор ACCEPTED_SIDES=SBIT_U|SBIT_A=66 => FACE_CONNECTED[FACING_ROTATIONS[mFacing][SIDE_UP]=1][66]=T
+	//       при ЛЮБОМ mFacing (CS.java:561-570 — строка [1] равна 1 во всех вариантах) — facing машины не важен.
+	//       Знак пакета сепаратору безразличен: MultiTileEntityBasicMachine.doInject:496-497 берёт Math.abs, а
+	//       MU НЕ входит в TD.Energy.ALL_ALTERNATING (TD.java:219 — там только KU), поэтому doActive:820 не требует
+	//       смены полярности.
+	//   CU: Thermoelectric Cooler — TileEntityBase11Twotypes (:34): doTwinType(mFacing, OPOS[mFacing]) — CU вперёд,
+	//       HU назад (TileEntityBase11Twotypes.java:65,78-79), вход — вне оси mFacing (:77).
+	//       => кулер с mFacing=UP: CU вверх в Cryo Mixer (ACCEPTED_SIDES=SBIT_D|SBIT_A=65 => относительная сторона
+	//       DOWN, FACING_ROTATIONS[*][SIDE_DOWN]=0 при любом facing), HU вниз в камень, EU с севера от батареи.
+	//   LU: горизонтальная линия на восток: батарея-источник(mFacing=EAST, эмиссия только на mFacing,
+	//       TileEntityBase10EnergyBatBox:246) -> CO2-лазер(mFacing=EAST: isInput=aSide!=mFacing принимает EU
+	//       с запада, isOutput=aSide==mFacing эмитит LU на восток, TileEntityBase10EnergyConverter:176-177) ->
+	//       Laser Absorber(mFacing=EAST: isInput=mFacing==OPOS[aSide] принимает ТОЛЬКО с ЗАДА=запад,
+	//       MultiTileEntityLaserAbsorberElectric.java:35-36, эмитит EU вперёд) -> батарея-приёмник ULV.
+	// СОГЛАСОВАНИЕ ТИРОВ (пороги вычитаны, не подобраны; readEnergyBehavior TileEntityBase10EnergyConverter:74-77
+	// даёт min=rec/2, max=rec*2; MultiTileEntityBasicMachine:131 даёт mInputMin=mInput/2, mInputMax=mInput*2):
+	//   MU: батарея LV 10081 (mOutput=V[1]=32) -> магнит T1 10031 (IN 16/32/64, OUT 8/16/32) -> пакет MU
+	//       units(32,32,16)=16 -> сепаратор T1 20301 (mInput=32 => окно [16..64]) — 16 ровно на нижней границе,
+	//       это конструкция GT6 (mMin=rec/2 источника == mInputMin приёмника того же тира).
+	//   CU: батарея MV 10082 (mOutput=V[2]=128) -> кулер T2 10162 (IN 64/128/256, OUT CU 16/32/64) -> пакет CU
+	//       size=1/amount=units(128,128,32)=32 -> Cryo Mixer T1 20571 (mInput=32 => mInputMin=16<=32). Кулер T1
+	//       (OUT=8) НЕДОСТАТОЧЕН: 8 < mInputMin(16) миксера T1 => doWork:786 не пустил бы процесс.
+	//   LU: батарея LV 10081 -> лазер T1 10101 (IN 16/32/64, OUT LU 8/16/32) -> пакет LU units(32,32,16)=16 ->
+	//       абсорбер T1 10151 (IN LU 16/32/64, OUT EU 8/16/32) -> пакет EU units(16,32,16)=8 -> батарея ULV 10080
+	//       (mInput=V[0]=8 => окно [4..16], TileEntityBase01Root:893-894).
+	// ЛОВУШКИ ЗАМЕРА (обе вычитаны, обе описаны в §7 манифеста):
+	//   1) mStorage конверторов ЖИВЁТ РОВНО ОДИН ТИК (у магнита/кулера/лазера NBT_WASTE_ENERGY=T =>
+	//      TE_Behavior_Energy_Converter:94,133 обнуляет накопитель в конце doConversion) — судить по нему нельзя;
+	//      живой свидетель эмиссии — mConverter.mEmitsEnergy (взводится ТОЛЬКО когда приёмник реально взял пакет,
+	//      :88-90,127-129), ловится watch-окном по ВСЕМ тикам.
+	//   2) mEnergy МАШИНЫ тоже обнуляется каждый тик (MultiTileEntityBasicMachine.doWork:796 mEnergy-=mInputMax),
+	//      поэтому на Pre-фазе он может быть виден как 0 при живом потоке — долгоживущие свидетели: mRunning/mActive
+	//      (:788,787) и ПРИРОСТЫ mProgress (:818 mProgress+=min(mInputMax,mEnergy)). Для LU долгоживущий свидетель —
+	//      монотонный mEnergy батареи-приёмника.
+	//   3) Пустая батарея-приёмник НЕ принимает (TileEntityBase10EnergyBatBox:181 doInject возвращает 0 при
+	//      mReceivablePower<=0, а mReceivablePower=mChargeableCount*mInput*2 :153) — праймится КАЖДЫЙ тик и в RUN,
+	//      и в COLD (иначе COLD-ноль был бы ложным — ловушка связки №8).
+	// КРИТЕРИИ (объявлены ДО прогона, не меняются; P — пакет по формулам кода из ЖИВЫХ полей BE):
+	//   POSITIVE-CONTROL: приёмник открыт (isEnergyAcceptingFrom=T), источник эмитит на нужную сторону
+	//      (isEnergyEmittingTo=T), приёмник не mStopped, и P попадает в приёмное окно [InputMin..InputMax]
+	//      (для CU окно не применяется — size-irrelevant). Тот же контроль отдельно для COLD-приёмника.
+	//   RUN: за окно живых тиков видели эмиссию источника (mEmitsEnergy) И приёмник потребил: для машин —
+	//      mActive/mRunning были T и был хотя бы один ПРИРОСТ mProgress; для LU — mEnergy батареи-приёмника вырос.
+	//   CONSERVE: MU/CU — max(прирост mProgress) == min(mInputMax, P); LU — все приросты mEnergy батареи равны
+	//      РОВНО P_EU (min==max==P_EU).
+	//   COLD: та же топология, но батарея-источник пуста (mEnergy=0, mBatteryCount=0) => ни эмиссии, ни прироста,
+	//      ни активности; входы машин заряжены ТАК ЖЕ, как в RUN (единственное отличие — энергия).
+	// Снять при уборке фазы.
+	private static final int MCL_MAGNET_ID    = 10031; // Electromagnet (T1) — Loader_MultiTileEntities.java:866, IN=32 EU, OUT=16 MU, WASTE_ENERGY=T
+	private static final int MCL_SEPARATOR_ID = 20301; // Magnetic Separator (T1) — :1474, ACCEPTED=MU, mInput=32, RM.MagneticSeparator, ACCEPTED_SIDES=SBIT_U
+	private static final int MCL_COOLER_ID    = 10162; // Thermoelectric Cooler (T2) — :990, IN=128 EU, OUT=32 CU (+HU), WASTE_ENERGY=T
+	private static final int MCL_CRYOMIXER_ID = 20571; // Cryo Mixer (T1) — :1632, ACCEPTED=CU, mInput=32, RM.CryoMixer, ACCEPTED_SIDES=SBIT_D
+	private static final int MCL_LASER_ID     = 10101; // Electric CO2 Laser (T1) — :934, IN=32 EU, OUT=16 LU, WASTE_ENERGY=T
+	private static final int MCL_ABSORBER_ID  = 10151; // Laser Absorber (T1) — :980, ACCEPTED=LU IN=32, EMITTED=EU OUT=16
+	private static final int MCL_BAT_ULV_ID   = 10080; // Battery Box (ULV) — :894 i=0, mInput=mOutput=V[0]=8
+	private static final int MCL_BAT_LV_ID    = 10081; // Battery Box (LV)  — :894 i=1, mInput=mOutput=V[1]=32
+	private static final int MCL_BAT_MV_ID    = 10082; // Battery Box (MV)  — :894 i=2, mInput=mOutput=V[2]=128
+	private static final String MCL_M = "GT6-MCLPROBE";
+	// ПОРЯДОК СЕТАПА (исправлено по прогону run1, дефект БЫЛ В СТЕНДЕ, не в порте): входы машин обязаны лежать в
+	// слотах/танках ДО первой подачи энергии. MultiTileEntityBasicMachine.doActive:805 ищет рецепт только когда
+	// (mIgnited>0 || mInventoryChanged || !mRunning || aTimer%1200==5); doWork:788 ставит mRunning=T уже при ПЕРВОМ
+	// тике с энергией — если вход в этот момент пуст, рецепт не находится и следующая попытка будет лишь через
+	// 1200 тиков BE. В run1 батареи праймились с тика 201, а входы клались на 210 => сепаратор/миксер «завелись
+	// вхолостую» (mRunning=490 тиков, mEnergy приходила, но mMaxProgress=0). Теперь: загрузка 202, подача с 210.
+	private static final int MCL_T_BUILD = 200, MCL_T_LOAD = 202, MCL_T_POWER = 210, MCL_T_FROM = 211, MCL_T_TO = 700, MCL_T_JUDGE = 710;
+
+	private static int sMclProbeTick = -1;
+	private static ServerPlayer sMclPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sMclSeq;
+
+	private static gregtech.tileentity.energy.converters.MultiTileEntityMagnetElectric sMclMuMagnetRun, sMclMuMagnetCold;
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine sMclMuSepRun, sMclMuSepCold;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sMclMuBatRun, sMclMuBatCold;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityCoolerElectric sMclCuCoolerRun, sMclCuCoolerCold;
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine sMclCuMixRun, sMclCuMixCold;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sMclCuBatRun, sMclCuBatCold;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityLaserElectric sMclLuLaserRun, sMclLuLaserCold;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityLaserAbsorberElectric sMclLuAbsRun, sMclLuAbsCold;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sMclLuBatSrcRun, sMclLuBatSrcCold, sMclLuBatRecvRun, sMclLuBatRecvCold;
+	private static gregapi.recipes.Recipe sMclMuRecipe, sMclCuRecipe;
+	private static int sMclMuActiveTicks = 0, sMclMuRunningTicks = 0, sMclMuColdActiveTicks = 0, sMclCuActiveTicks = 0, sMclCuRunningTicks = 0, sMclCuColdActiveTicks = 0;
+	private static long sMclLuRecv0 = -1, sMclLuColdRecv0 = -1;
+
+	/** Трекер положительных приростов наблюдаемого счётчика (mProgress машины / mEnergy батареи): копит число шагов,
+	 *  минимальный/максимальный/суммарный прирост, максимум самого значения и число «сбросов» (Δ<0 = завершённый цикл
+	 *  рецепта, MultiTileEntityBasicMachine.doActive:848 mProgress-=mMaxProgress). Замер идёт КАЖДЫЙ тик окна —
+	 *  шаг не может оказаться кратным периоду процесса (§7 манифеста). */
+	private static final class MclGrow {
+		long mPrev = -1, mMin = Long.MAX_VALUE, mMax = 0, mSum = 0, mValueMax = 0; int mSteps = 0, mDrops = 0;
+		void sample(long aValue) {
+			if (aValue > mValueMax) mValueMax = aValue;
+			if (mPrev >= 0) {
+				if (aValue > mPrev) {long tD = aValue - mPrev; mSteps++; mSum += tD; if (tD < mMin) mMin = tD; if (tD > mMax) mMax = tD;}
+				else if (aValue < mPrev) mDrops++;
+			}
+			mPrev = aValue;
+		}
+		@Override public String toString() {return "шагов=" + mSteps + " Δmin=" + (mSteps == 0 ? 0 : mMin) + " Δmax=" + mMax + " Σ=" + mSum + " max(значение)=" + mValueMax + " сбросов=" + mDrops;}
+	}
+	private static final MclGrow sMclMuProg = new MclGrow(), sMclMuEn = new MclGrow(), sMclMuColdProg = new MclGrow(), sMclMuColdEn = new MclGrow();
+	private static final MclGrow sMclCuProg = new MclGrow(), sMclCuEn = new MclGrow(), sMclCuColdProg = new MclGrow(), sMclCuColdEn = new MclGrow();
+	private static final MclGrow sMclLuRecv = new MclGrow(), sMclLuColdRecv = new MclGrow();
+
+	/** Расчистка объёма постройки в AIR + каменная опора (гигиена, не судимый канал — приём CRUCIBLEPROBE/BIGMULTIPROBE). */
+	private static void gt6MclProbePrepareSite(ServerLevel aLevel, BlockPos aBase) {
+		for (int x = -2; x <= 6; x++) for (int y = 0; y <= 5; y++) for (int z = -2; z <= 2; z++) aLevel.setBlock(aBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+		gregapi.probe.GT6ProbeStand.solidPad(aLevel, aBase.offset(-1, 0, -1), 8, 3);
+	}
+
+	/** Живой скан RM.MagneticSeparator.mRecipeList: чисто-предметный рецепт (без жидкостей) с mEUt<=16 — тир T1
+	 *  сепаратора (mInput=32, checkRecipe:775 mMinEnergy=mEUt*партий, :778 подтягивает до mInputMin=16). Берётся
+	 *  рецепт с МИНИМАЛЬНЫМ mDuration (короткий цикл = больше наблюдаемых завершений в окне). */
+	private static gregapi.recipes.Recipe gt6MclProbeFindMuRecipe() {
+		gregapi.recipes.Recipe rFound = null;
+		int tCandidates = 0;
+		for (gregapi.recipes.Recipe tR : RM.MagneticSeparator.mRecipeList) {
+			if (!tR.mEnabled || tR.mFakeRecipe || tR.mHidden) continue;
+			if (tR.mEUt > 16 || tR.mEUt <= 0) continue;
+			if (tR.mFluidInputs != null && tR.mFluidInputs.length > 0) continue;
+			if (tR.mInputs == null || tR.mInputs.length != 1 || ST.invalid(tR.mInputs[0])) continue;
+			if (tR.mOutputs == null || tR.mOutputs.length < 1) continue;
+			tCandidates++;
+			if (rFound == null || tR.mDuration < rFound.mDuration) rFound = tR;
+		}
+		gregapi.data.CS.OUT.println("[" + MCL_M + "] живой скан RM.MagneticSeparator.mRecipeList: всего=" + RM.MagneticSeparator.mRecipeList.size() + " кандидатов(EUt<=16, без жидкостей, 1 предмет)=" + tCandidates + " выбран=" + (rFound == null ? "(нет)" : rFound.mInputs[0] + " EUt=" + rFound.mEUt + " duration=" + rFound.mDuration + " выходы=" + java.util.Arrays.toString(rFound.mOutputs)));
+		return rFound;
+	}
+
+	/** Живой скан RM.CryoMixer.mRecipeList: рецепт с mEUt<=16, не более 1 предмета и не более 2 жидкостей на входе
+	 *  (Cryo Mixer T1 — mInput=32, mParallelDuration=T), минимальный mDuration. */
+	private static gregapi.recipes.Recipe gt6MclProbeFindCuRecipe() {
+		gregapi.recipes.Recipe rFound = null;
+		int tCandidates = 0;
+		for (gregapi.recipes.Recipe tR : RM.CryoMixer.mRecipeList) {
+			if (!tR.mEnabled || tR.mFakeRecipe || tR.mHidden) continue;
+			if (tR.mEUt > 16 || tR.mEUt <= 0) continue;
+			if (tR.mInputs != null && tR.mInputs.length > 1) continue;
+			if (tR.mFluidInputs == null || tR.mFluidInputs.length < 1 || tR.mFluidInputs.length > 2) continue;
+			tCandidates++;
+			if (rFound == null || tR.mDuration < rFound.mDuration) rFound = tR;
+		}
+		gregapi.data.CS.OUT.println("[" + MCL_M + "] живой скан RM.CryoMixer.mRecipeList: всего=" + RM.CryoMixer.mRecipeList.size() + " кандидатов(EUt<=16, <=1 предмет, 1-2 жидкости)=" + tCandidates + " выбран=" + (rFound == null ? "(нет)" : "EUt=" + rFound.mEUt + " duration=" + rFound.mDuration + " item_in=" + (rFound.mInputs != null && rFound.mInputs.length > 0 ? rFound.mInputs[0] : "(нет)") + " fluids_in=" + java.util.Arrays.toString(rFound.mFluidInputs)));
+		return rFound;
+	}
+
+	/** MU-столб: опора -> Magnetic Separator -> Electromagnet(mFacing=UP) -> Battery Box LV к северу от магнита.
+	 *  Возвращает {сепаратор, магнит, батарея}. */
+	private static Object[] gt6MclProbeBuildMu(ServerLevel aLevel, BlockPos aBase, String aLabel) {
+		gt6MclProbePrepareSite(aLevel, aBase);
+		gregapi.tileentity.machines.MultiTileEntityBasicMachine tSep = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, aBase, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_SEPARATOR_ID), gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, MCL_M, aLabel + "-MU-сепаратор");
+		if (tSep == null) throw new RuntimeException(aLabel + ": Magnetic Separator не встал");
+		BlockPos tSepPos = aBase.above();
+		gregtech.tileentity.energy.converters.MultiTileEntityMagnetElectric tMag = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, tSepPos, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_MAGNET_ID), gregtech.tileentity.energy.converters.MultiTileEntityMagnetElectric.class, MCL_M, aLabel + "-MU-магнит");
+		if (tMag == null) throw new RuntimeException(aLabel + ": Electromagnet не встал");
+		tMag.setPrimaryFacing(SIDE_UP); // биполярная ось = вертикаль: MU вверх(+) и вниз(-) в сепаратор; EU принимается с горизонталей
+		BlockPos tMagPos = tSepPos.above();
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBat = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, tMagPos, net.minecraft.core.Direction.NORTH,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_BAT_LV_ID), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, MCL_M, aLabel + "-MU-батарея");
+		if (tBat == null) throw new RuntimeException(aLabel + ": батарея LV (MU) не встала");
+		tBat.setPrimaryFacing(SIDE_SOUTH); // эмиссия EU на юг = в магнит
+		return new Object[]{tSep, tMag, tBat};
+	}
+
+	/** CU-столб: опора -> Thermoelectric Cooler(mFacing=UP) -> Cryo Mixer -> Battery Box MV к северу от кулера.
+	 *  Возвращает {миксер, кулер, батарея}. */
+	private static Object[] gt6MclProbeBuildCu(ServerLevel aLevel, BlockPos aBase, String aLabel) {
+		gt6MclProbePrepareSite(aLevel, aBase);
+		gregtech.tileentity.energy.converters.MultiTileEntityCoolerElectric tCooler = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, aBase, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_COOLER_ID), gregtech.tileentity.energy.converters.MultiTileEntityCoolerElectric.class, MCL_M, aLabel + "-CU-кулер");
+		if (tCooler == null) throw new RuntimeException(aLabel + ": Thermoelectric Cooler не встал");
+		tCooler.setPrimaryFacing(SIDE_UP); // CU вперёд (вверх, в миксер), HU назад (вниз, в камень), EU с горизонталей
+		BlockPos tCoolerPos = aBase.above();
+		gregapi.tileentity.machines.MultiTileEntityBasicMachine tMix = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, tCoolerPos, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_CRYOMIXER_ID), gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, MCL_M, aLabel + "-CU-криомиксер");
+		if (tMix == null) throw new RuntimeException(aLabel + ": Cryo Mixer не встал");
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBat = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, tCoolerPos, net.minecraft.core.Direction.NORTH,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_BAT_MV_ID), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, MCL_M, aLabel + "-CU-батарея");
+		if (tBat == null) throw new RuntimeException(aLabel + ": батарея MV (CU) не встала");
+		tBat.setPrimaryFacing(SIDE_SOUTH); // эмиссия EU на юг = в кулер
+		return new Object[]{tMix, tCooler, tBat};
+	}
+
+	/** LU-линия на восток: опора -> Battery Box LV(источник) -> Electric CO2 Laser -> Laser Absorber -> Battery Box ULV(приёмник).
+	 *  Возвращает {батарея-источник, лазер, абсорбер, батарея-приёмник}. */
+	private static Object[] gt6MclProbeBuildLu(ServerLevel aLevel, BlockPos aBase, String aLabel) {
+		gt6MclProbePrepareSite(aLevel, aBase);
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tSrc = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, aBase, net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_BAT_LV_ID), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, MCL_M, aLabel + "-LU-батарея-источник");
+		if (tSrc == null) throw new RuntimeException(aLabel + ": батарея LV (LU-источник) не встала");
+		tSrc.setPrimaryFacing(SIDE_EAST);
+		BlockPos tSrcPos = aBase.above();
+		gregtech.tileentity.energy.converters.MultiTileEntityLaserElectric tLaser = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, tSrcPos, net.minecraft.core.Direction.EAST,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_LASER_ID), gregtech.tileentity.energy.converters.MultiTileEntityLaserElectric.class, MCL_M, aLabel + "-LU-лазер");
+		if (tLaser == null) throw new RuntimeException(aLabel + ": Electric CO2 Laser не встал");
+		tLaser.setPrimaryFacing(SIDE_EAST); // приём EU с запада (isInput=aSide!=mFacing), эмиссия LU на восток
+		BlockPos tLaserPos = tSrcPos.relative(net.minecraft.core.Direction.EAST);
+		gregtech.tileentity.energy.converters.MultiTileEntityLaserAbsorberElectric tAbs = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, tLaserPos, net.minecraft.core.Direction.EAST,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_ABSORBER_ID), gregtech.tileentity.energy.converters.MultiTileEntityLaserAbsorberElectric.class, MCL_M, aLabel + "-LU-абсорбер");
+		if (tAbs == null) throw new RuntimeException(aLabel + ": Laser Absorber не встал");
+		tAbs.setPrimaryFacing(SIDE_EAST); // приём LU ТОЛЬКО с зада (запад), эмиссия EU на восток
+		BlockPos tAbsPos = tLaserPos.relative(net.minecraft.core.Direction.EAST);
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tRecv = gregapi.probe.GT6ProbeStand.place(aLevel, sMclPlayer, tAbsPos, net.minecraft.core.Direction.EAST,
+			gregapi.probe.GT6ProbeStand.mteStack(MCL_BAT_ULV_ID), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, MCL_M, aLabel + "-LU-батарея-приёмник");
+		if (tRecv == null) throw new RuntimeException(aLabel + ": батарея ULV (LU-приёмник) не встала");
+		tRecv.setPrimaryFacing(SIDE_EAST); // isInput=aSide!=mFacing -> принимает с запада, от абсорбера
+		return new Object[]{tSrc, tLaser, tAbs, tRecv};
+	}
+
+	/** Тик 200: постройка RUN+COLD всех трёх видов + живой скан рецептов + печать ЖИВЫХ параметров BE. */
+	private static void gt6MclProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sMclPlayer.level();
+		O.println("========== [" + MCL_M + "] Связка №10 — MU / CU / LU (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {MCL_MAGNET_ID, MCL_SEPARATOR_ID, MCL_COOLER_ID, MCL_CRYOMIXER_ID, MCL_LASER_ID, MCL_ABSORBER_ID, MCL_BAT_ULV_ID, MCL_BAT_LV_ID, MCL_BAT_MV_ID};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		StringBuilder tSB = new StringBuilder("[" + MCL_M + "] ID подтверждены:");
+		for (int tId : tIds) tSB.append(" ").append(tId).append("=").append(tReg.getClassContainer(tId).mClass.getSimpleName());
+		O.println(tSB.toString());
+
+		BlockPos tP = sMclPlayer.blockPosition();
+		Object[] tMuRun  = gt6MclProbeBuildMu(tLevel, tP.offset(4, 0,  4), "RUN");
+		Object[] tMuCold = gt6MclProbeBuildMu(tLevel, tP.offset(4, 0, 10), "COLD");
+		Object[] tCuRun  = gt6MclProbeBuildCu(tLevel, tP.offset(4, 0, 16), "RUN");
+		Object[] tCuCold = gt6MclProbeBuildCu(tLevel, tP.offset(4, 0, 22), "COLD");
+		Object[] tLuRun  = gt6MclProbeBuildLu(tLevel, tP.offset(4, 0, 28), "RUN");
+		Object[] tLuCold = gt6MclProbeBuildLu(tLevel, tP.offset(4, 0, 34), "COLD");
+
+		sMclMuSepRun     = (gregapi.tileentity.machines.MultiTileEntityBasicMachine) tMuRun[0];
+		sMclMuMagnetRun  = (gregtech.tileentity.energy.converters.MultiTileEntityMagnetElectric) tMuRun[1];
+		sMclMuBatRun     = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tMuRun[2];
+		sMclMuSepCold    = (gregapi.tileentity.machines.MultiTileEntityBasicMachine) tMuCold[0];
+		sMclMuMagnetCold = (gregtech.tileentity.energy.converters.MultiTileEntityMagnetElectric) tMuCold[1];
+		sMclMuBatCold    = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tMuCold[2];
+		sMclCuMixRun     = (gregapi.tileentity.machines.MultiTileEntityBasicMachine) tCuRun[0];
+		sMclCuCoolerRun  = (gregtech.tileentity.energy.converters.MultiTileEntityCoolerElectric) tCuRun[1];
+		sMclCuBatRun     = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tCuRun[2];
+		sMclCuMixCold    = (gregapi.tileentity.machines.MultiTileEntityBasicMachine) tCuCold[0];
+		sMclCuCoolerCold = (gregtech.tileentity.energy.converters.MultiTileEntityCoolerElectric) tCuCold[1];
+		sMclCuBatCold    = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tCuCold[2];
+		sMclLuBatSrcRun  = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tLuRun[0];
+		sMclLuLaserRun   = (gregtech.tileentity.energy.converters.MultiTileEntityLaserElectric) tLuRun[1];
+		sMclLuAbsRun     = (gregtech.tileentity.energy.converters.MultiTileEntityLaserAbsorberElectric) tLuRun[2];
+		sMclLuBatRecvRun = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tLuRun[3];
+		sMclLuBatSrcCold = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tLuCold[0];
+		sMclLuLaserCold  = (gregtech.tileentity.energy.converters.MultiTileEntityLaserElectric) tLuCold[1];
+		sMclLuAbsCold    = (gregtech.tileentity.energy.converters.MultiTileEntityLaserAbsorberElectric) tLuCold[2];
+		sMclLuBatRecvCold= (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tLuCold[3];
+
+		sMclMuRecipe = gt6MclProbeFindMuRecipe();
+		sMclCuRecipe = gt6MclProbeFindCuRecipe();
+
+		O.println("[" + MCL_M + "] топология MU: сепаратор@" + sMclMuSepRun.getBlockPos() + " магнит@" + sMclMuMagnetRun.getBlockPos() + "(mFacing=" + sMclMuMagnetRun.mFacing + ") батарея@" + sMclMuBatRun.getBlockPos() + "(mFacing=" + sMclMuBatRun.mFacing + "); COLD сепаратор@" + sMclMuSepCold.getBlockPos());
+		O.println("[" + MCL_M + "] топология CU: миксер@" + sMclCuMixRun.getBlockPos() + " кулер@" + sMclCuCoolerRun.getBlockPos() + "(mFacing=" + sMclCuCoolerRun.mFacing + ") батарея@" + sMclCuBatRun.getBlockPos() + "(mFacing=" + sMclCuBatRun.mFacing + "); COLD миксер@" + sMclCuMixCold.getBlockPos());
+		O.println("[" + MCL_M + "] топология LU: батарея-ист@" + sMclLuBatSrcRun.getBlockPos() + " лазер@" + sMclLuLaserRun.getBlockPos() + "(mFacing=" + sMclLuLaserRun.mFacing + ") абсорбер@" + sMclLuAbsRun.getBlockPos() + "(mFacing=" + sMclLuAbsRun.mFacing + ") батарея-приём@" + sMclLuBatRecvRun.getBlockPos() + "(mFacing=" + sMclLuBatRecvRun.mFacing + "); COLD батарея-приём@" + sMclLuBatRecvCold.getBlockPos());
+		O.println("[" + MCL_M + "] живые параметры MU: магнит IN(min/rec/max)=" + sMclMuMagnetRun.mConverter.mEnergyIN.mMin + "/" + sMclMuMagnetRun.mConverter.mEnergyIN.mRec + "/" + sMclMuMagnetRun.mConverter.mEnergyIN.mMax + " тип=" + sMclMuMagnetRun.mConverter.mEnergyIN.mType
+			+ " OUT=" + sMclMuMagnetRun.mConverter.mEnergyOUT.mMin + "/" + sMclMuMagnetRun.mConverter.mEnergyOUT.mRec + "/" + sMclMuMagnetRun.mConverter.mEnergyOUT.mMax + " тип=" + sMclMuMagnetRun.mConverter.mEnergyOUT.mType + " waste=" + sMclMuMagnetRun.mConverter.mWasteEnergy
+			+ "; сепаратор mInputMin/mInput/mInputMax=" + sMclMuSepRun.mInputMin + "/" + sMclMuSepRun.mInput + "/" + sMclMuSepRun.mInputMax + " accepted=" + sMclMuSepRun.mEnergyTypeAccepted + " mEnergyInputs=" + sMclMuSepRun.mEnergyInputs + " mFacing=" + sMclMuSepRun.mFacing + " mEfficiency=" + sMclMuSepRun.mEfficiency + " mParallel=" + sMclMuSepRun.mParallel + "; батарея mOutput=" + sMclMuBatRun.mOutput);
+		O.println("[" + MCL_M + "] живые параметры CU: кулер IN=" + sMclCuCoolerRun.mConverter.mEnergyIN.mMin + "/" + sMclCuCoolerRun.mConverter.mEnergyIN.mRec + "/" + sMclCuCoolerRun.mConverter.mEnergyIN.mMax + " тип=" + sMclCuCoolerRun.mConverter.mEnergyIN.mType
+			+ " OUT=" + sMclCuCoolerRun.mConverter.mEnergyOUT.mMin + "/" + sMclCuCoolerRun.mConverter.mEnergyOUT.mRec + "/" + sMclCuCoolerRun.mConverter.mEnergyOUT.mMax + " тип=" + sMclCuCoolerRun.mConverter.mEnergyOUT.mType + " OUT2=" + sMclCuCoolerRun.mEnergyOUT2.mType + " waste=" + sMclCuCoolerRun.mConverter.mWasteEnergy + " sizeIrrelevant=" + sMclCuCoolerRun.mConverter.mSizeIrrelevant
+			+ "; миксер mInputMin/mInput/mInputMax=" + sMclCuMixRun.mInputMin + "/" + sMclCuMixRun.mInput + "/" + sMclCuMixRun.mInputMax + " accepted=" + sMclCuMixRun.mEnergyTypeAccepted + " mEnergyInputs=" + sMclCuMixRun.mEnergyInputs + " mFacing=" + sMclCuMixRun.mFacing + " mEfficiency=" + sMclCuMixRun.mEfficiency + " mParallel=" + sMclCuMixRun.mParallel + " mParallelDuration=" + sMclCuMixRun.mParallelDuration + "; батарея mOutput=" + sMclCuBatRun.mOutput);
+		O.println("[" + MCL_M + "] живые параметры LU: лазер IN=" + sMclLuLaserRun.mConverter.mEnergyIN.mMin + "/" + sMclLuLaserRun.mConverter.mEnergyIN.mRec + "/" + sMclLuLaserRun.mConverter.mEnergyIN.mMax
+			+ " OUT=" + sMclLuLaserRun.mConverter.mEnergyOUT.mMin + "/" + sMclLuLaserRun.mConverter.mEnergyOUT.mRec + "/" + sMclLuLaserRun.mConverter.mEnergyOUT.mMax + " тип=" + sMclLuLaserRun.mConverter.mEnergyOUT.mType
+			+ "; абсорбер IN=" + sMclLuAbsRun.mConverter.mEnergyIN.mMin + "/" + sMclLuAbsRun.mConverter.mEnergyIN.mRec + "/" + sMclLuAbsRun.mConverter.mEnergyIN.mMax + " тип=" + sMclLuAbsRun.mConverter.mEnergyIN.mType
+			+ " OUT=" + sMclLuAbsRun.mConverter.mEnergyOUT.mMin + "/" + sMclLuAbsRun.mConverter.mEnergyOUT.mRec + "/" + sMclLuAbsRun.mConverter.mEnergyOUT.mMax + " тип=" + sMclLuAbsRun.mConverter.mEnergyOUT.mType
+			+ "; батарея-ист mOutput=" + sMclLuBatSrcRun.mOutput + "; батарея-приём mInput=" + sMclLuBatRecvRun.mInput + " окно=[" + sMclLuBatRecvRun.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST) + ".." + sMclLuBatRecvRun.getEnergySizeInputMax(TD.Energy.EU, SIDE_WEST) + "]");
+	}
+
+	/** Заливает входы рецепта в машину (RUN и COLD одинаково — отличие сборок ТОЛЬКО в энергии). aBatches — во сколько
+	 *  раз множить вход; для жидкостей режется ёмкостью танка (приём BIGMULTIPROBE:4964-4970). */
+	private static void gt6MclProbeLoadMachine(gregapi.tileentity.machines.MultiTileEntityBasicMachine aMachine, gregapi.recipes.Recipe aRecipe, int aBatches, String aLabel) {
+		if (aMachine == null || aRecipe == null) return;
+		int tBatches = aBatches;
+		if (aRecipe.mFluidInputs != null) for (int i = 0; i < aRecipe.mFluidInputs.length && i < aMachine.mTanksInput.length; i++) if (aRecipe.mFluidInputs[i] != null) {
+			long tCap = aMachine.mTanksInput[i].capacity(aRecipe.mFluidInputs[i].getFluid());
+			while (tBatches > 1 && (long)aRecipe.mFluidInputs[i].getAmount() * tBatches > tCap) tBatches--;
+		}
+		if (aRecipe.mInputs != null && aRecipe.mInputs.length > 0 && ST.valid(aRecipe.mInputs[0])) {
+			long tCount = (long)aRecipe.mInputs[0].getCount() * tBatches;
+			if (tCount > aRecipe.mInputs[0].getMaxStackSize()) tCount = aRecipe.mInputs[0].getMaxStackSize();
+			gregapi.probe.GT6ProbeStand.slotSet(aMachine, 0, ST.amount(tCount, ST.copy(aRecipe.mInputs[0])));
+		}
+		if (aRecipe.mFluidInputs != null) for (int i = 0; i < aRecipe.mFluidInputs.length && i < aMachine.mTanksInput.length; i++) if (aRecipe.mFluidInputs[i] != null) {
+			aMachine.mTanksInput[i].setFluid(aRecipe.mFluidInputs[i].copyWithAmount(aRecipe.mFluidInputs[i].getAmount() * tBatches));
+		}
+		gregapi.data.CS.OUT.println("[" + MCL_M + "] загрузка " + aLabel + ": партий=" + tBatches + " слот0=" + gregapi.probe.GT6ProbeStand.slotCount(aMachine, 0)
+			+ " танки_входа=" + (aMachine.mTanksInput.length > 0 ? aMachine.mTanksInput[0].amount() : 0) + "/" + (aMachine.mTanksInput.length > 1 ? aMachine.mTanksInput[1].amount() : 0) + " mEnergy=" + aMachine.mEnergy);
+	}
+
+	/** Тик 210: входы машин (RUN+COLD одинаково) + фиксация нулевых точек батарей-приёмников. */
+	private static void gt6MclProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (sMclMuRecipe == null) O.println("[" + MCL_M + "] ВНИМАНИЕ: рецепт MU (Magnetic Separator) не найден живым сканом — MU-машина будет судиться без рецепта");
+		if (sMclCuRecipe == null) O.println("[" + MCL_M + "] ВНИМАНИЕ: рецепт CU (Cryo Mixer) не найден живым сканом — CU-машина будет судиться без рецепта");
+		gt6MclProbeLoadMachine(sMclMuSepRun,  sMclMuRecipe, 64, "MU-RUN-сепаратор");
+		gt6MclProbeLoadMachine(sMclMuSepCold, sMclMuRecipe, 64, "MU-COLD-сепаратор");
+		gt6MclProbeLoadMachine(sMclCuMixRun,  sMclCuRecipe, 64, "CU-RUN-миксер");
+		gt6MclProbeLoadMachine(sMclCuMixCold, sMclCuRecipe, 64, "CU-COLD-миксер");
+		sMclLuRecv0 = sMclLuBatRecvRun.mEnergy;
+		sMclLuColdRecv0 = sMclLuBatRecvCold.mEnergy;
+		O.println("[" + MCL_M + "] тик " + sMclProbeTick + " нулевые точки LU: батарея-приём RUN mEnergy0=" + sMclLuRecv0 + " COLD mEnergy0=" + sMclLuColdRecv0);
+	}
+
+	/** §6.3 DIAG (НЕ судья, только диагностика): показывает, какую RecipeMap реально получила машина (ловушка F16
+	 *  MTE-canonical-init, MultiTileEntityBasicMachine.java:530 — при промахе lookup остаётся дефолт RM.Furnace :112)
+	 *  и что отвечает её собственный checkRecipe(F,F) — «нашёл/не нашёл/нашёл но не может» (коды :675-680), без
+	 *  применения рецепта. Снять при уборке фазы. */
+	private static void gt6MclProbeDiagRecipes() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gregapi.tileentity.machines.MultiTileEntityBasicMachine[] tMs = {sMclMuSepRun, sMclCuMixRun};
+		String[] tNames = {"MU-сепаратор", "CU-миксер"};
+		for (int i = 0; i < tMs.length; i++) {
+			gregapi.tileentity.machines.MultiTileEntityBasicMachine tM = tMs[i];
+			if (tM == null) continue;
+			int tCode = tM.checkRecipe(F, F);
+			O.println("[" + MCL_M + "] DIAG-RECIPE " + tNames[i] + ": mRecipes=" + tM.mRecipes.mNameInternal + " (список=" + tM.mRecipes.mRecipeList.size() + ", minItems=" + tM.mRecipes.mMinimalInputItems + " minFluids=" + tM.mRecipes.mMinimalInputFluids + " minAll=" + tM.mRecipes.mMinimalInputs + ")"
+				+ " checkRecipe(F,F)=" + tCode + " (0=не найден,1=найден-но-требования,3=найден-и-мог-бы) mCouldUseRecipe=" + tM.mCouldUseRecipe
+				+ " слот0=" + gregapi.probe.GT6ProbeStand.slotCount(tM, 0) + " танки=" + (tM.mTanksInput.length > 0 ? tM.mTanksInput[0].amount() : 0) + "/" + (tM.mTanksInput.length > 1 ? tM.mTanksInput[1].amount() : 0)
+				+ " mEnergy=" + tM.mEnergy + " mRunning=" + tM.mRunning + " mActive=" + tM.mActive + " mMaxProgress=" + tM.mMaxProgress + " mMinEnergy=" + tM.mMinEnergy + " mInventoryChanged=" + tM.mInventoryChanged);
+		}
+	}
+
+	/** Каждый тик окна: сетап-обход ТОЛЬКО инвентарной бухгалтерии батарей (приём ENERGYCHAINPROBE:3071-3077).
+	 *  RUN-источники «заряжены», COLD-источники ПУСТЫ (единственное отличие сборок), приёмники LU открыты В ОБЕИХ
+	 *  сборках (иначе COLD-ноль был бы ложным — ловушка §7/связка №8). */
+	private static void gt6MclProbeApplyBatteryFields() {
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tHot = {sMclMuBatRun, sMclCuBatRun, sMclLuBatSrcRun};
+		for (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tB : tHot) if (tB != null) {tB.mEnergy = 1_000_000_000L; tB.mBatteryCount = 1; tB.mChargeableCount = 0; tB.mStopped = F; tB.mMode = 0;}
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tCold = {sMclMuBatCold, sMclCuBatCold, sMclLuBatSrcCold};
+		for (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tB : tCold) if (tB != null) {tB.mEnergy = 0; tB.mBatteryCount = 0; tB.mChargeableCount = 0; tB.mStopped = F; tB.mMode = 0;}
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tRecv = {sMclLuBatRecvRun, sMclLuBatRecvCold};
+		for (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tB : tRecv) if (tB != null) {tB.mChargeableCount = 1000; tB.mBatteryCount = 0; tB.mStopped = F; tB.mMode = 0;}
+	}
+
+	/** Каждый тик окна: снятие приростов и счётчиков активности (шаг 1 тик — окно ловит ВСЕ фазы процесса). */
+	private static void gt6MclProbeTrack() {
+		if (sMclMuSepRun  != null) {sMclMuProg.sample(sMclMuSepRun.mProgress);  sMclMuEn.sample(sMclMuSepRun.mEnergy);  if (sMclMuSepRun.mActive) sMclMuActiveTicks++;  if (sMclMuSepRun.mRunning) sMclMuRunningTicks++;}
+		if (sMclMuSepCold != null) {sMclMuColdProg.sample(sMclMuSepCold.mProgress); sMclMuColdEn.sample(sMclMuSepCold.mEnergy); if (sMclMuSepCold.mActive) sMclMuColdActiveTicks++;}
+		if (sMclCuMixRun  != null) {sMclCuProg.sample(sMclCuMixRun.mProgress);  sMclCuEn.sample(sMclCuMixRun.mEnergy);  if (sMclCuMixRun.mActive) sMclCuActiveTicks++;  if (sMclCuMixRun.mRunning) sMclCuRunningTicks++;}
+		if (sMclCuMixCold != null) {sMclCuColdProg.sample(sMclCuMixCold.mProgress); sMclCuColdEn.sample(sMclCuMixCold.mEnergy); if (sMclCuMixCold.mActive) sMclCuColdActiveTicks++;}
+		if (sMclLuBatRecvRun  != null) sMclLuRecv.sample(sMclLuBatRecvRun.mEnergy);
+		if (sMclLuBatRecvCold != null) sMclLuColdRecv.sample(sMclLuBatRecvCold.mEnergy);
+	}
+
+	/** Разреженная трасса (шаг 37 тиков — взаимно прост с периодами процессов, §7 манифеста). */
+	private static void gt6MclProbeTrace() {
+		if ((sMclProbeTick - MCL_T_FROM) % 37 != 0) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + MCL_M + "] трасса тик " + sMclProbeTick
+			+ " | MU: магнит.storage=" + sMclMuMagnetRun.mStorage.mEnergy + " emits=" + sMclMuMagnetRun.mConverter.mEmitsEnergy + " canEmit=" + sMclMuMagnetRun.mConverter.mCanEmitEnergy + " сеп.mEnergy=" + sMclMuSepRun.mEnergy + " mProgress=" + sMclMuSepRun.mProgress + "/" + sMclMuSepRun.mMaxProgress + " mMinEnergy=" + sMclMuSepRun.mMinEnergy + " active=" + sMclMuSepRun.mActive + " running=" + sMclMuSepRun.mRunning + " out0=" + gregapi.probe.GT6ProbeStand.slotCount(sMclMuSepRun, RM.MagneticSeparator.mInputItemsCount)
+			+ " | CU: кулер.storage=" + sMclCuCoolerRun.mStorage.mEnergy + " emits=" + sMclCuCoolerRun.mConverter.mEmitsEnergy + " микс.mEnergy=" + sMclCuMixRun.mEnergy + " mProgress=" + sMclCuMixRun.mProgress + "/" + sMclCuMixRun.mMaxProgress + " mMinEnergy=" + sMclCuMixRun.mMinEnergy + " active=" + sMclCuMixRun.mActive + " running=" + sMclCuMixRun.mRunning
+			+ " | LU: лазер.emits=" + sMclLuLaserRun.mConverter.mEmitsEnergy + " абс.storage=" + sMclLuAbsRun.mStorage.mEnergy + " абс.emits=" + sMclLuAbsRun.mConverter.mEmitsEnergy + " абс.canEmit=" + sMclLuAbsRun.mConverter.mCanEmitEnergy + " батарея-приём.mEnergy=" + sMclLuBatRecvRun.mEnergy + " receivable=" + sMclLuBatRecvRun.mReceivablePower
+			+ " | COLD: сеп.mEnergy=" + sMclMuSepCold.mEnergy + " микс.mEnergy=" + sMclCuMixCold.mEnergy + " батарея-приём.mEnergy=" + sMclLuBatRecvCold.mEnergy);
+	}
+
+	/** Дамп материального баланса машины (ТОЛЬКО печать, ни один судья от него не зависит): вход/выходные слоты,
+	 *  входные/выходные танки, mOutputBlocked. Нужен, чтобы отличить «процесс шёл, но лут вероятностный/пустой» от
+	 *  «процесс не шёл» — вход списывается в checkRecipe->isRecipeInputEqual(aApplyRecipe=T) в НАЧАЛЕ цикла. */
+	private static void gt6MclProbeDumpMachine(gregapi.tileentity.machines.MultiTileEntityBasicMachine aM, gregapi.recipes.Recipe.RecipeMap aMap, String aLabel) {
+		if (aM == null) return;
+		StringBuilder tOut = new StringBuilder();
+		long tOutSum = 0;
+		for (int i = 0; i < aMap.mOutputItemsCount; i++) {int tC = gregapi.probe.GT6ProbeStand.slotCount(aM, aMap.mInputItemsCount + i); tOutSum += tC; tOut.append(i == 0 ? "" : ",").append(tC);}
+		StringBuilder tTanksIn = new StringBuilder(), tTanksOut = new StringBuilder();
+		for (int i = 0; i < aM.mTanksInput .length; i++) tTanksIn .append(i == 0 ? "" : ",").append(aM.mTanksInput [i].amount());
+		for (int i = 0; i < aM.mTanksOutput.length; i++) tTanksOut.append(i == 0 ? "" : ",").append(aM.mTanksOutput[i].amount());
+		int tEntities = 0; StringBuilder tDrops = new StringBuilder();
+		for (net.minecraft.world.entity.item.ItemEntity tE : aM.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(aM.getBlockPos()).inflate(6))) {
+			tEntities++; if (tEntities <= 4) tDrops.append(tEntities == 1 ? "" : ", ").append(tE.getItem());
+		}
+		gregapi.data.CS.OUT.println("[" + MCL_M + "] баланс " + aLabel + ": вход_слоты=" + gregapi.probe.GT6ProbeStand.slotCount(aM, 0) + " выход_слоты=[" + tOut + "] (сумма=" + tOutSum + ")"
+			+ " танки_вход=[" + tTanksIn + "] танки_выход=[" + tTanksOut + "] mOutputBlocked=" + aM.mOutputBlocked + " mSuccessful=" + aM.mSuccessful + " mProgress=" + aM.mProgress + "/" + aM.mMaxProgress
+			+ " дроп-сущностей_в_радиусе_6=" + tEntities + (tEntities > 0 ? " [" + tDrops + "]" : ""));
+	}
+
+	/** Тик 710: вердикты. Все ожидания — из ЖИВЫХ полей BE и формул кода (UT.Code.units, те же аргументы, что в
+	 *  TE_Behavior_Energy_Converter:99/62 и MultiTileEntityBasicMachine.doActive:818). */
+	private static void gt6MclProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + MCL_M + "] ИТОГИ (окно " + MCL_T_FROM + ".." + MCL_T_TO + ", " + (MCL_T_TO - MCL_T_FROM + 1) + " живых тиков) ==========");
+		gt6MclProbeDumpMachine(sMclMuSepRun,  RM.MagneticSeparator, "MU-RUN-сепаратор");
+		gt6MclProbeDumpMachine(sMclMuSepCold, RM.MagneticSeparator, "MU-COLD-сепаратор");
+		gt6MclProbeDumpMachine(sMclCuMixRun,  RM.CryoMixer,         "CU-RUN-миксер");
+		gt6MclProbeDumpMachine(sMclCuMixCold, RM.CryoMixer,         "CU-COLD-миксер");
+
+		// ---------- MU ----------
+		long tPmu = UT.Code.units(sMclMuBatRun.mOutput, sMclMuMagnetRun.mConverter.mEnergyIN.mRec, sMclMuMagnetRun.mConverter.mEnergyOUT.mRec, F);
+		long tMuGrowExp = Math.min(sMclMuSepRun.mInputMax, tPmu);
+		O.println("[" + MCL_M + "] MU числа: пакет P=units(бат.mOutput=" + sMclMuBatRun.mOutput + ", магнит.IN.rec=" + sMclMuMagnetRun.mConverter.mEnergyIN.mRec + ", магнит.OUT.rec=" + sMclMuMagnetRun.mConverter.mEnergyOUT.mRec + ")=" + tPmu
+			+ "; окно приёма сепаратора=[" + sMclMuSepRun.getEnergySizeInputMin(TD.Energy.MU, SIDE_UP) + ".." + sMclMuSepRun.getEnergySizeInputMax(TD.Energy.MU, SIDE_UP) + "]; ожидаемый прирост mProgress=min(mInputMax," + tPmu + ")=" + tMuGrowExp
+			+ "; RUN mProgress: " + sMclMuProg + "; RUN mEnergy: " + sMclMuEn + "; activeTicks=" + sMclMuActiveTicks + " runningTicks=" + sMclMuRunningTicks + " mMaxProgress=" + sMclMuSepRun.mMaxProgress + " выход_слот=" + gregapi.probe.GT6ProbeStand.slotCount(sMclMuSepRun, RM.MagneticSeparator.mInputItemsCount)
+			+ "; COLD mProgress: " + sMclMuColdProg + "; COLD mEnergy: " + sMclMuColdEn + "; COLD activeTicks=" + sMclMuColdActiveTicks);
+		boolean tMuPcRun  = sMclMuSepRun.isEnergyAcceptingFrom(TD.Energy.MU, SIDE_UP, F) && sMclMuMagnetRun.isEnergyEmittingTo(TD.Energy.MU, SIDE_DOWN, F) && !sMclMuSepRun.mStopped
+			&& tPmu >= sMclMuSepRun.getEnergySizeInputMin(TD.Energy.MU, SIDE_UP) && tPmu <= sMclMuSepRun.getEnergySizeInputMax(TD.Energy.MU, SIDE_UP);
+		boolean tMuPcCold = sMclMuSepCold.isEnergyAcceptingFrom(TD.Energy.MU, SIDE_UP, F) && sMclMuMagnetCold.isEnergyEmittingTo(TD.Energy.MU, SIDE_DOWN, F) && !sMclMuSepCold.mStopped;
+		sMclSeq.judge("MU POSITIVE-CONTROL: приёмник открыт, источник эмитит вниз, пакет в окне (и COLD-приёмник так же открыт)", tMuPcRun && tMuPcCold, "оба true", tMuPcRun + "/" + tMuPcCold);
+		sMclSeq.judge("MU RUN: магнит излучал MU, сепаратор потреблял (активность+прирост прогресса)", sMclSeq.everSeen("MU-магнит-эмиссия") && sMclMuProg.mSteps > 0 && sMclMuActiveTicks > 0 && sMclMuRunningTicks > 0,
+			"emits=T, шагов>0, active>0", "emits=" + sMclSeq.everSeen("MU-магнит-эмиссия") + ", шагов=" + sMclMuProg.mSteps + ", active=" + sMclMuActiveTicks + ", running=" + sMclMuRunningTicks);
+		sMclSeq.judge("MU CONSERVE: max(прирост mProgress) == min(mInputMax, P)", sMclMuProg.mSteps > 0 && sMclMuProg.mMax == tMuGrowExp, tMuGrowExp, sMclMuProg.mMax);
+		sMclSeq.judge("MU COLD: без питания ни энергии, ни прогресса, ни активности", sMclMuColdEn.mValueMax == 0 && sMclMuColdProg.mValueMax == 0 && sMclMuColdActiveTicks == 0 && !sMclSeq.everSeen("MU-COLD-магнит-эмиссия"),
+			"0/0/0/false", sMclMuColdEn.mValueMax + "/" + sMclMuColdProg.mValueMax + "/" + sMclMuColdActiveTicks + "/" + sMclSeq.everSeen("MU-COLD-магнит-эмиссия"));
+
+		// ---------- CU ----------
+		long tPcu = UT.Code.units(sMclCuBatRun.mOutput, sMclCuCoolerRun.mConverter.mEnergyIN.mRec, sMclCuCoolerRun.mConverter.mEnergyOUT.mRec, F);
+		long tCuGrowExp = Math.min(sMclCuMixRun.mInputMax, tPcu);
+		O.println("[" + MCL_M + "] CU числа: пакет P=units(бат.mOutput=" + sMclCuBatRun.mOutput + ", кулер.IN.rec=" + sMclCuCoolerRun.mConverter.mEnergyIN.mRec + ", кулер.OUT.rec=" + sMclCuCoolerRun.mConverter.mEnergyOUT.mRec + ")=" + tPcu
+			+ " (CU size-irrelevant: пакет идёт size=1/amount=" + tPcu + ", нижний порог размера не применяется — TD.java:221, Root:886); ожидаемый прирост mProgress=" + tCuGrowExp
+			+ "; RUN mProgress: " + sMclCuProg + "; RUN mEnergy: " + sMclCuEn + "; activeTicks=" + sMclCuActiveTicks + " runningTicks=" + sMclCuRunningTicks + " mMaxProgress=" + sMclCuMixRun.mMaxProgress + " выход_слот=" + gregapi.probe.GT6ProbeStand.slotCount(sMclCuMixRun, RM.CryoMixer.mInputItemsCount)
+			+ "; COLD mProgress: " + sMclCuColdProg + "; COLD mEnergy: " + sMclCuColdEn + "; COLD activeTicks=" + sMclCuColdActiveTicks);
+		boolean tCuPcRun  = sMclCuMixRun.isEnergyAcceptingFrom(TD.Energy.CU, SIDE_DOWN, F) && sMclCuCoolerRun.isEnergyEmittingTo(TD.Energy.CU, SIDE_UP, F) && !sMclCuMixRun.mStopped && tPcu >= sMclCuMixRun.mInputMin;
+		boolean tCuPcCold = sMclCuMixCold.isEnergyAcceptingFrom(TD.Energy.CU, SIDE_DOWN, F) && sMclCuCoolerCold.isEnergyEmittingTo(TD.Energy.CU, SIDE_UP, F) && !sMclCuMixCold.mStopped;
+		sMclSeq.judge("CU POSITIVE-CONTROL: приёмник открыт снизу, кулер эмитит вверх, приток>=mInputMin (и COLD-приёмник так же открыт)", tCuPcRun && tCuPcCold, "оба true", tCuPcRun + "/" + tCuPcCold);
+		sMclSeq.judge("CU RUN: кулер излучал CU, миксер потреблял (активность+прирост прогресса)", sMclSeq.everSeen("CU-кулер-эмиссия") && sMclCuProg.mSteps > 0 && sMclCuActiveTicks > 0 && sMclCuRunningTicks > 0,
+			"emits=T, шагов>0, active>0", "emits=" + sMclSeq.everSeen("CU-кулер-эмиссия") + ", шагов=" + sMclCuProg.mSteps + ", active=" + sMclCuActiveTicks + ", running=" + sMclCuRunningTicks);
+		sMclSeq.judge("CU CONSERVE: max(прирост mProgress) == min(mInputMax, P)", sMclCuProg.mSteps > 0 && sMclCuProg.mMax == tCuGrowExp, tCuGrowExp, sMclCuProg.mMax);
+		sMclSeq.judge("CU COLD: без питания ни энергии, ни прогресса, ни активности", sMclCuColdEn.mValueMax == 0 && sMclCuColdProg.mValueMax == 0 && sMclCuColdActiveTicks == 0 && !sMclSeq.everSeen("CU-COLD-кулер-эмиссия"),
+			"0/0/0/false", sMclCuColdEn.mValueMax + "/" + sMclCuColdProg.mValueMax + "/" + sMclCuColdActiveTicks + "/" + sMclSeq.everSeen("CU-COLD-кулер-эмиссия"));
+
+		// ---------- LU ----------
+		long tPlu = UT.Code.units(sMclLuBatSrcRun.mOutput, sMclLuLaserRun.mConverter.mEnergyIN.mRec, sMclLuLaserRun.mConverter.mEnergyOUT.mRec, F);
+		long tPluEu = UT.Code.units(tPlu, sMclLuAbsRun.mConverter.mEnergyIN.mRec, sMclLuAbsRun.mConverter.mEnergyOUT.mRec, F);
+		long tLuDelta = sMclLuBatRecvRun.mEnergy - sMclLuRecv0, tLuColdDelta = sMclLuBatRecvCold.mEnergy - sMclLuColdRecv0;
+		O.println("[" + MCL_M + "] LU числа: пакет LU=units(бат.mOutput=" + sMclLuBatSrcRun.mOutput + ", лазер.IN.rec=" + sMclLuLaserRun.mConverter.mEnergyIN.mRec + ", лазер.OUT.rec=" + sMclLuLaserRun.mConverter.mEnergyOUT.mRec + ")=" + tPlu
+			+ "; окно абсорбера=[" + sMclLuAbsRun.getEnergySizeInputMin(TD.Energy.LU, SIDE_WEST) + ".." + sMclLuAbsRun.getEnergySizeInputMax(TD.Energy.LU, SIDE_WEST) + "]; пакет EU=units(" + tPlu + ", абс.IN.rec=" + sMclLuAbsRun.mConverter.mEnergyIN.mRec + ", абс.OUT.rec=" + sMclLuAbsRun.mConverter.mEnergyOUT.mRec + ")=" + tPluEu
+			+ "; окно батареи-приёмника=[" + sMclLuBatRecvRun.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST) + ".." + sMclLuBatRecvRun.getEnergySizeInputMax(TD.Energy.EU, SIDE_WEST) + "]"
+			+ "; RUN батарея-приём mEnergy " + sMclLuRecv0 + "->" + sMclLuBatRecvRun.mEnergy + " (Δ=" + tLuDelta + "), приросты: " + sMclLuRecv
+			+ "; COLD батарея-приём mEnergy " + sMclLuColdRecv0 + "->" + sMclLuBatRecvCold.mEnergy + " (Δ=" + tLuColdDelta + "), приросты: " + sMclLuColdRecv);
+		boolean tLuPcRun = sMclLuAbsRun.isEnergyAcceptingFrom(TD.Energy.LU, SIDE_WEST, F) && sMclLuLaserRun.isEnergyEmittingTo(TD.Energy.LU, SIDE_EAST, F)
+			&& tPlu >= sMclLuAbsRun.getEnergySizeInputMin(TD.Energy.LU, SIDE_WEST) && tPlu <= sMclLuAbsRun.getEnergySizeInputMax(TD.Energy.LU, SIDE_WEST)
+			&& sMclLuBatRecvRun.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_WEST, F) && sMclLuBatRecvRun.mReceivablePower > 0
+			&& tPluEu >= sMclLuBatRecvRun.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST) && tPluEu <= sMclLuBatRecvRun.getEnergySizeInputMax(TD.Energy.EU, SIDE_WEST);
+		boolean tLuPcCold = sMclLuAbsCold.isEnergyAcceptingFrom(TD.Energy.LU, SIDE_WEST, F) && sMclLuBatRecvCold.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_WEST, F) && sMclLuBatRecvCold.mReceivablePower > 0;
+		sMclSeq.judge("LU POSITIVE-CONTROL: абсорбер и батарея-приёмник открыты, оба пакета в окнах (и COLD-приёмник так же открыт)", tLuPcRun && tLuPcCold, "оба true", tLuPcRun + "/" + tLuPcCold);
+		sMclSeq.judge("LU RUN: лазер излучал LU, абсорбер излучал EU, батарея-приёмник накопила", sMclSeq.everSeen("LU-лазер-эмиссия") && sMclSeq.everSeen("LU-абсорбер-эмиссия") && tLuDelta > 0 && sMclLuRecv.mSteps > 0,
+			"emits=T/T, Δ>0", "лазер=" + sMclSeq.everSeen("LU-лазер-эмиссия") + ", абс=" + sMclSeq.everSeen("LU-абсорбер-эмиссия") + ", Δ=" + tLuDelta + ", шагов=" + sMclLuRecv.mSteps);
+		sMclSeq.judge("LU CONSERVE: КАЖДЫЙ прирост mEnergy батареи == пакет EU по формуле", sMclLuRecv.mSteps > 0 && sMclLuRecv.mMin == tPluEu && sMclLuRecv.mMax == tPluEu, tPluEu + "/" + tPluEu, (sMclLuRecv.mSteps == 0 ? 0 : sMclLuRecv.mMin) + "/" + sMclLuRecv.mMax);
+		sMclSeq.judge("LU COLD: без питания батарея-приёмник пуста, эмиссии нет", tLuColdDelta == 0 && sMclLuColdRecv.mValueMax == 0 && !sMclSeq.everSeen("LU-COLD-лазер-эмиссия") && !sMclSeq.everSeen("LU-COLD-абсорбер-эмиссия"),
+			"Δ=0, эмиссий нет", "Δ=" + tLuColdDelta + ", лазер=" + sMclSeq.everSeen("LU-COLD-лазер-эмиссия") + ", абс=" + sMclSeq.everSeen("LU-COLD-абсорбер-эмиссия"));
+
+		sMclSeq.done();
+	}
+
+	public static void gt6MclProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sMclProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sMclPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sMclSeq == null) {
+			sMclSeq = new gregapi.probe.GT6ProbeStand.Seq(MCL_M)
+				.at(MCL_T_BUILD, GT_API_Proxy::gt6MclProbeBuild)
+				.at(MCL_T_LOAD, GT_API_Proxy::gt6MclProbeLoad)
+				.at(MCL_T_FROM + 4, GT_API_Proxy::gt6MclProbeDiagRecipes) // §6.3 DIAG (не судья): почему машина взяла/не взяла рецепт — снять при уборке фазы
+				.window(MCL_T_POWER, MCL_T_TO, GT_API_Proxy::gt6MclProbeApplyBatteryFields)
+				.window(MCL_T_FROM, MCL_T_TO, GT_API_Proxy::gt6MclProbeTrack)
+				.window(MCL_T_FROM, MCL_T_TO, GT_API_Proxy::gt6MclProbeTrace)
+				// живые свидетели эмиссии: mEmitsEnergy взводится ТОЛЬКО когда приёмник реально взял пакет
+				// (TE_Behavior_Energy_Converter:88-90,127-129) и перевычисляется КАЖДЫЙ тик — копим по окну
+				.watch("MU-магнит-эмиссия",       MCL_T_FROM, MCL_T_TO, () -> sMclMuMagnetRun   != null && sMclMuMagnetRun.mConverter.mEmitsEnergy)
+				.watch("MU-COLD-магнит-эмиссия",  MCL_T_FROM, MCL_T_TO, () -> sMclMuMagnetCold  != null && sMclMuMagnetCold.mConverter.mEmitsEnergy)
+				.watch("CU-кулер-эмиссия",        MCL_T_FROM, MCL_T_TO, () -> sMclCuCoolerRun   != null && sMclCuCoolerRun.mConverter.mEmitsEnergy)
+				.watch("CU-COLD-кулер-эмиссия",   MCL_T_FROM, MCL_T_TO, () -> sMclCuCoolerCold  != null && sMclCuCoolerCold.mConverter.mEmitsEnergy)
+				.watch("LU-лазер-эмиссия",        MCL_T_FROM, MCL_T_TO, () -> sMclLuLaserRun    != null && sMclLuLaserRun.mConverter.mEmitsEnergy)
+				.watch("LU-абсорбер-эмиссия",     MCL_T_FROM, MCL_T_TO, () -> sMclLuAbsRun      != null && sMclLuAbsRun.mConverter.mEmitsEnergy)
+				.watch("LU-COLD-лазер-эмиссия",   MCL_T_FROM, MCL_T_TO, () -> sMclLuLaserCold   != null && sMclLuLaserCold.mConverter.mEmitsEnergy)
+				.watch("LU-COLD-абсорбер-эмиссия",MCL_T_FROM, MCL_T_TO, () -> sMclLuAbsCold     != null && sMclLuAbsCold.mConverter.mEmitsEnergy)
+				.at(MCL_T_JUDGE, GT_API_Proxy::gt6MclProbeJudgeFinal);
+		}
+		sMclSeq.tick(sMclProbeTick);
 	}
 
 }
