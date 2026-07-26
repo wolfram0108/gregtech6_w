@@ -355,6 +355,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6crucibleprobe.flag")) gt6CrucibleProbeTick(aEvent.getServer());
 				// [GT6-AUTOOUTPROBE] верификационный стенд «Связка №6 — авто-вывод машин + каверы в работе» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6autooutprobe.flag")) gt6AutoOutProbeTick(aEvent.getServer());
+				// [GT6-CHEMPROBE] верификационный стенд «Связка №7 — химический процесс multi-fluid» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6chemprobe.flag")) gt6ChemProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -3857,6 +3859,249 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(400, GT_API_Proxy::gt6AutoOutProbeJudgePumpAndFinal);
 		}
 		sAOPSeq.tick(sAOPProbeTick);
+	}
+
+	// ========== [GT6-CHEMPROBE] ВРЕМЕННАЯ проба «Связка №7 — химический процесс multi-fluid» (Ф3.1, гейт run/gt6chemprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана — судимый канал ТОЛЬКО checkRecipe()/doActive() реальными тиками, ни один
+	// судимый метод пробой не вызывается напрямую):
+	// (а) Базовая машина ест жидкости рецепта через MultiTileEntityBasicMachine.java: mTanksInput/mTanksOutput — публичные
+	//     массивы FluidTankGT (:106), размер = mRecipes.mInputFluidCount/mOutputFluidCount (константа RecipeMap, не рецепта).
+	//     checkRecipe() (:688-783) матчит рецепт ДВУХФАЗНО: (1) mRecipes.findRecipe(...,mTanksInput,tInputs) (:717) ищет
+	//     кандидат БЕЗ проверки количеств (Recipe.java findRecipeInternal:489, isRecipeInputEqual(F,T,...) внутри —
+	//     aDontCheckStackSizes=T, матчит только по ТИПУ жидкости/предмета); (2) строгая проверка isRecipeInputEqual
+	//     (aApplyRecipe,F,mTanksInput,tInputs) (:743, IFluidTank[]-оверлоад Recipe.java:822-840) — количества проверяются
+	//     СТРОГО (aDontCheckStackSizes=F); если хоть одной жидкости не хватает — возврат FALSE ДО единого drain()
+	//     (проверочный цикл проходит ПОЛНОСТЬЮ раньше первого списания, Recipe.java:826-830) => FOUND_RECIPE_BUT_DID_
+	//     NOT_MEET_REQUIREMENTS, НИЧЕГО не списано (all-or-nothing, не частичное списание). При успехе — drain() КАЖДОЙ
+	//     жидкости РОВНО на tFluid.getAmount() (:835), выходы кладутся в первый подходящий/пустой mTanksOutput[j]
+	//     (MultiTileEntityBasicMachine.java:822-840). mParallel=4 (Mixer ULV, NBT_PARALLEL) не искажает тест: первая же
+	//     consume-попытка (:743) списывает РОВНО 1×рецепт (aDecreaseStacksizeBySuccess=aApplyRecipe), вторая попытка
+	//     добрать ещё 3× (:749, isRecipeInputEqual(int,...) Recipe.java:842-863) находит уже пустые танки (мы даём РОВНО
+	//     1× объём) => tMaxProcessCount=1+0=1 — итог точно 1× выход, несмотря на mParallel=4.
+	// (б) РЕАЛЬНЫЙ рецепт (RM.Mixer, 2 жидкости на входе + предмет-катализатор, жидкость на выходе) — Loader_Recipes_Chem.
+	//     java:53: RM.Mixer.addRecipe1(T, 16, 112, OM.dust(MT.Ca), FL.array(MT.CO2.gas(U*3,T), FL.mul(tWater,3)),
+	//     MT.H.gas(U*2,F), OM.dust(MT.CaCO3,U*5)) (tWater = первая итерация FL.waters(1000), :37 = FL.Water — обычная
+	//     вода). ДОСЛОВНО: вход = 1×Calcium Dust + CO2(газ, U*3 материал-единиц) + Water(3000mb = 1000mb×3); выход =
+	//     H2(газ, U*2 материал-единиц) + 5×Calcite Dust (CaCO3); EUt=16; duration=112 тиков. Точные mb читаются ЖИВЫМ
+	//     сканом RM.Mixer.mRecipeList (gt6ChemProbeFindRecipe()), НЕ пересчитываются вручную (U-конверсия зависит от
+	//     mGasUnit/mLiquidUnit конкретного материала, OreDictMaterial.java:1333-1348) — константы из памяти запрещены.
+	// (в) Машина этого RM — "Mixer (ULV)" id=20181, класс MultiTileEntityBasicMachine (НЕ ...Electric!) — Loader_
+	//     MultiTileEntities.java:1396, NBT_ENERGY_ACCEPTED=TD.Energy.RU (кинетическая, не EU), NBT_RECIPEMAP=RM.Mixer,
+	//     NBT_INPUT=32 (mInputMin=16 mInputMax=64). Энергия — сетап-обход бухгалтерии (тот же приём, что ECP/AOP:
+	//     mEnergy — ПУБЛИЧНОЕ поле самого базового класса, MultiTileEntityBasicMachine.java:103) — судимый канал
+	//     checkRecipe()/doActive() остаётся реальным, обходится только доставка RU по сети (топология, не рецептный шов).
+	// (г) Дифф порт/оригинал MultiTileEntityBasicMachine.checkRecipe/doActive, Recipe.isRecipeInputEqual(IFluidTank[]) —
+	//     построчно 1:1 с gregtech6/ (engine-swap TileEntity->BlockEntity, IFluidHandler forge->neoforge, FluidStack.
+	//     getAmount()/shrink вместо прямого .amount, drain(int,boolean)->drain(int,FluidAction)); расхождений в
+	//     control-flow нет (см. отчёт агента). Снять при уборке фазы.
+	private static final int CHEM_MIXER_ID = 20181; // Mixer (ULV) — Loader_MultiTileEntities.java:1396, класс MultiTileEntityBasicMachine
+	private static final String CHEM_M = "GT6-CHEMPROBE";
+	private static int sChemProbeTick = -1;
+	private static ServerPlayer sChemPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sChemSeq;
+
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine sChemRun, sChemNeg, sChemCold;
+	private static ItemStack sChemItemIn, sChemItemOut;
+	private static FluidStack sChemFluidCO2, sChemFluidWater, sChemFluidH2;
+	private static long sChemRecipeDuration, sChemRecipeEUt;
+	private static int sChemOutSlot;
+
+	private static long sChemNegCO2_0, sChemNegWater0, sChemNegItemIn0;
+	private static long sChemColdCO2_0, sChemColdWater0, sChemColdItemIn0;
+
+	private static boolean sChemRunSeenActive = F;
+	private static int sChemRunDoneTick = -1;
+
+	/** Живой скан RM.Mixer.mRecipeList — находит РОВНО тот рецепт из Loader_Recipes_Chem.java:53 (Ca-дуст + CO2-газ +
+	 *  вода -> H2-газ + CaCO3-дуст), по ТИПАМ жидкостей/предмета (не по mb — те читаются ПОСЛЕ, живыми полями рецепта). */
+	private static gregapi.recipes.Recipe gt6ChemProbeFindRecipe() {
+		// F-идентификация по FL.regName(Fluid) (та же строковая связка, что mRecipeFluidMap.get(FL.regName(...)) в
+		// findRecipeInternal:523 — доказанно рабочий канал движка), а НЕ по типу предмета-катализатора: item-вход
+		// проходит OreDictManager.setStackArray_ (унификацию) внутри конструктора Recipe (aUnificate=T во всех
+		// addRecipeN-обёртках) — унифицированный экземпляр может отличаться identity/типом от свежего OM.dust(MT.Ca)
+		// в пробе (другой мод с тем же OreDict-тегом может быть "предпочтён"); предмет читается ИЗ найденного рецепта
+		// (живое поле), не сверяется заранее.
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.world.level.material.Fluid tCO2Fluid = MT.CO2.gas(1, T).getFluid();
+		net.minecraft.world.level.material.Fluid tWaterFluid = FL.Water.make(1).getFluid();
+		net.minecraft.world.level.material.Fluid tH2Fluid = MT.H.gas(1, T).getFluid();
+		String tCO2Name = FL.regName(tCO2Fluid), tWaterName = FL.regName(tWaterFluid), tH2Name = FL.regName(tH2Fluid);
+		gregapi.recipes.Recipe rFound = null;
+		int tCandidates = 0;
+		for (gregapi.recipes.Recipe tR : RM.Mixer.mRecipeList) {
+			if (tR.mFluidInputs.length != 2) continue;
+			boolean tHasCO2 = F, tHasWater = F;
+			for (FluidStack tF : tR.mFluidInputs) if (tF != null) {
+				if (tCO2Name.equals(FL.regName(tF.getFluid()))) tHasCO2 = T;
+				if (tWaterName.equals(FL.regName(tF.getFluid()))) tHasWater = T;
+			}
+			if (!tHasCO2 || !tHasWater) continue;
+			tCandidates++;
+			if (tCandidates <= 5) O.println("[" + CHEM_M + "] DIAG кандидат #" + tCandidates + ": item_in=" + (tR.mInputs.length > 0 ? tR.mInputs[0] : "(нет)") + " item_out=" + (tR.mOutputs.length > 0 ? tR.mOutputs[0] : "(нет)") + " fluid_out.length=" + tR.mFluidOutputs.length + " fluid_out0=" + (tR.mFluidOutputs.length > 0 ? tR.mFluidOutputs[0] : "(нет)"));
+			if (rFound == null && tR.mFluidOutputs.length == 1 && tR.mFluidOutputs[0] != null && tH2Name.equals(FL.regName(tR.mFluidOutputs[0].getFluid()))) rFound = tR;
+		}
+		O.println("[" + CHEM_M + "] живой скан RM.Mixer.mRecipeList: всего=" + RM.Mixer.mRecipeList.size() + " CO2(" + tCO2Name + ")+Water(" + tWaterName + ")-кандидатов=" + tCandidates + " найден(H2=" + tH2Name + ")=" + (rFound != null));
+		return rFound;
+	}
+
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine gt6ChemProbeBuildMixer(ServerLevel aLevel, BlockPos aGround, String aLabel) {
+		gregapi.tileentity.machines.MultiTileEntityBasicMachine tM = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sChemPlayer, aGround, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(CHEM_MIXER_ID),
+			gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, CHEM_M, aLabel + "-микшер");
+		if (tM == null) throw new RuntimeException(aLabel + ": микшер не встал");
+		return tM;
+	}
+
+	/** Тик 200: постройка RUN/NEG/COLD (одинаковая схема, разное наполнение в load()) + живой скан рецепта. */
+	private static void gt6ChemProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sChemPlayer.level();
+		O.println("========== [" + CHEM_M + "] Связка №7 — химический процесс multi-fluid (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		if (tReg == null || tReg.getClassContainer(CHEM_MIXER_ID) == null) throw new RuntimeException("реестр/ID не найден: " + CHEM_MIXER_ID);
+		O.println("[" + CHEM_M + "] ID подтверждён: микшер=" + tReg.getClassContainer(CHEM_MIXER_ID).mClass.getSimpleName() + "(" + CHEM_MIXER_ID + ")");
+
+		gregapi.recipes.Recipe tRecipe = gt6ChemProbeFindRecipe();
+		if (tRecipe == null) throw new RuntimeException("рецепт RM.Mixer (Ca+CO2+H2O->CaCO3+H2, Loader_Recipes_Chem.java:53) не найден живым сканом");
+		if (tRecipe.mInputs.length != 1 || tRecipe.mOutputs.length != 1) throw new RuntimeException("найденный рецепт имеет неожиданную форму item_in.length=" + tRecipe.mInputs.length + " item_out.length=" + tRecipe.mOutputs.length + " (ожидалось 1/1)");
+		sChemItemIn  = ST.copy(tRecipe.mInputs[0]);
+		sChemItemOut = ST.copy(tRecipe.mOutputs[0]);
+		net.minecraft.world.level.material.Fluid tCO2Fluid = MT.CO2.gas(1, T).getFluid();
+		for (FluidStack tF : tRecipe.mFluidInputs) if (tF != null) {
+			if (tF.getFluid() == tCO2Fluid) sChemFluidCO2 = tF.copy(); else sChemFluidWater = tF.copy();
+		}
+		sChemFluidH2 = tRecipe.mFluidOutputs[0].copy();
+		sChemRecipeDuration = tRecipe.mDuration;
+		sChemRecipeEUt = tRecipe.mEUt;
+		sChemOutSlot = RM.Mixer.mInputItemsCount;
+		O.println("[" + CHEM_M + "] рецепт ДОСЛОВНО (живой скан RM.Mixer.mRecipeList, Loader_Recipes_Chem.java:53): item_in=" + sChemItemIn
+			+ " fluid_in=[" + sChemFluidCO2 + " (" + sChemFluidCO2.getAmount() + "mb), " + sChemFluidWater + " (" + sChemFluidWater.getAmount() + "mb)]"
+			+ " -> fluid_out=" + sChemFluidH2 + " (" + sChemFluidH2.getAmount() + "mb) item_out=" + sChemItemOut
+			+ " EUt=" + sChemRecipeEUt + " duration=" + sChemRecipeDuration + " outSlot=" + sChemOutSlot);
+
+		BlockPos tBaseRun  = sChemPlayer.blockPosition().offset(4, 0, 4);
+		BlockPos tBaseNeg  = sChemPlayer.blockPosition().offset(4, 0, 10);
+		BlockPos tBaseCold = sChemPlayer.blockPosition().offset(4, 0, 16);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBaseRun,  4, 1);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBaseNeg,  4, 1);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBaseCold, 4, 1);
+
+		sChemRun  = gt6ChemProbeBuildMixer(tLevel, tBaseRun,  "RUN");
+		sChemNeg  = gt6ChemProbeBuildMixer(tLevel, tBaseNeg,  "NEG");
+		sChemCold = gt6ChemProbeBuildMixer(tLevel, tBaseCold, "COLD");
+
+		O.println("[" + CHEM_M + "] живые параметры машины (RUN): mInput=" + sChemRun.mInput + " mInputMin=" + sChemRun.mInputMin + " mInputMax=" + sChemRun.mInputMax
+			+ " mTanksInput.length=" + sChemRun.mTanksInput.length + " mTanksOutput.length=" + sChemRun.mTanksOutput.length + " mEnergyTypeAccepted=" + sChemRun.mEnergyTypeAccepted + " mParallel=" + sChemRun.mParallel);
+	}
+
+	/** Тик 210: сетап-закладка ДОСЛОВНАЯ по рецепту (RUN — точно; NEG — CO2 наполовину; COLD — точно, но без энергии). */
+	private static void gt6ChemProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gregapi.probe.GT6ProbeStand.slotSet(sChemRun, 0, ST.copy(sChemItemIn));
+		sChemRun.mTanksInput[0].setFluid(sChemFluidCO2.copy());
+		sChemRun.mTanksInput[1].setFluid(sChemFluidWater.copy());
+		sChemRun.mEnergy = 1_000_000_000L; // сетап-обход бухгалтерии RU (тот же приём, что ECP/AOP) — судимый канал checkRecipe()/doActive() реальный
+
+		FluidStack tHalfCO2 = sChemFluidCO2.copyWithAmount(sChemFluidCO2.getAmount() / 2);
+		gregapi.probe.GT6ProbeStand.slotSet(sChemNeg, 0, ST.copy(sChemItemIn));
+		sChemNeg.mTanksInput[0].setFluid(tHalfCO2);
+		sChemNeg.mTanksInput[1].setFluid(sChemFluidWater.copy());
+		sChemNeg.mEnergy = 1_000_000_000L; // энергии хватает — недостача ТОЛЬКО в жидкости (PARTIAL-NEG)
+
+		gregapi.probe.GT6ProbeStand.slotSet(sChemCold, 0, ST.copy(sChemItemIn));
+		sChemCold.mTanksInput[0].setFluid(sChemFluidCO2.copy());
+		sChemCold.mTanksInput[1].setFluid(sChemFluidWater.copy());
+		// sChemCold.mEnergy остаётся 0 по умолчанию — COLD, судимый канал doWork()/doInactive()
+
+		sChemNegCO2_0   = sChemNeg.mTanksInput[0].amount();  sChemNegWater0   = sChemNeg.mTanksInput[1].amount();  sChemNegItemIn0  = gregapi.probe.GT6ProbeStand.slotCount(sChemNeg,  0);
+		sChemColdCO2_0  = sChemCold.mTanksInput[0].amount(); sChemColdWater0  = sChemCold.mTanksInput[1].amount(); sChemColdItemIn0 = gregapi.probe.GT6ProbeStand.slotCount(sChemCold, 0);
+
+		O.println("[" + CHEM_M + "] тик " + sChemProbeTick + " загрузка: RUN CO2=" + sChemRun.mTanksInput[0].amount() + " Water=" + sChemRun.mTanksInput[1].amount() + " item=" + gregapi.probe.GT6ProbeStand.slotCount(sChemRun, 0) + " mEnergy=" + sChemRun.mEnergy
+			+ "; NEG CO2=" + sChemNegCO2_0 + " (половина от " + sChemFluidCO2.getAmount() + ") Water=" + sChemNegWater0 + " item=" + sChemNegItemIn0
+			+ "; COLD CO2=" + sChemColdCO2_0 + " Water=" + sChemColdWater0 + " item=" + sChemColdItemIn0 + " mEnergy=" + sChemCold.mEnergy);
+	}
+
+	/** Тик 224 (14 тиков после загрузки): RECIPE-RUN (1) — рецепт распознан и реально ПРОГРЕССИРУЕТ (не мгновенно). */
+	private static void gt6ChemProbeJudgeStarted() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + CHEM_M + "] ===== RECIPE-RUN (1) старт+прогресс (тик " + sChemProbeTick + ") =====");
+		O.println("[" + CHEM_M + "] RUN mMaxProgress=" + sChemRun.mMaxProgress + " mProgress=" + sChemRun.mProgress + " mCurrentRecipe!=null=" + (sChemRun.mCurrentRecipe != null) + " mRunning=" + sChemRun.mRunning);
+		sChemSeq.judge("RUN: рецепт распознан и запущен (mMaxProgress>0)", sChemRun.mMaxProgress > 0, ">0", sChemRun.mMaxProgress);
+		sChemSeq.judge("RUN: прогресс идёт реальными тиками (0<mProgress<=mMaxProgress, не мгновенно)", sChemRun.mProgress > 0 && sChemRun.mProgress <= sChemRun.mMaxProgress, "(0.." + sChemRun.mMaxProgress + "]", sChemRun.mProgress);
+	}
+
+	/** Окно 211..299: следит за переходом RUN "активна -> простаивает" (первый тик ПОСЛЕ активной фазы) — факт. длительность
+	 *  (урок §7 манифеста: однократный снимок в конце лжёт, копим первый переход через непрерывное наблюдение). */
+	private static void gt6ChemProbeTrackRun() {
+		if (sChemRun == null) return;
+		if (sChemRun.mMaxProgress > 0) sChemRunSeenActive = T;
+		else if (sChemRunSeenActive && sChemRunDoneTick < 0) sChemRunDoneTick = sChemProbeTick;
+	}
+
+	/** Тик 300: RECIPE-RUN (2,3,4) + CONSERVE + PARTIAL-NEG + COLD + DONE. */
+	private static void gt6ChemProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+
+		O.println("[" + CHEM_M + "] ===== RECIPE-RUN (2,3,4): списание/выход/длительность (тик " + sChemProbeTick + ") =====");
+		long tRunItemIn  = gregapi.probe.GT6ProbeStand.slotCount(sChemRun, 0);
+		long tRunItemOut = gregapi.probe.GT6ProbeStand.slotCount(sChemRun, sChemOutSlot);
+		long tRunCO2     = sChemRun.mTanksInput[0].amount();
+		long tRunWater   = sChemRun.mTanksInput[1].amount();
+		long tRunH2Out   = 0; for (gregapi.fluid.FluidTankGT tT : sChemRun.mTanksOutput) tRunH2Out += tT.amount();
+		long tFactualTicks = sChemRunDoneTick < 0 ? -1 : (sChemRunDoneTick - 210);
+		O.println("[" + CHEM_M + "] RUN финал: itemIn(слот0)=" + tRunItemIn + " itemOut(слот" + sChemOutSlot + ")=" + tRunItemOut + " CO2=" + tRunCO2 + " Water=" + tRunWater + " H2out(сумма танков)=" + tRunH2Out
+			+ " mMaxProgress=" + sChemRun.mMaxProgress + " mProgress=" + sChemRun.mProgress + " факт._тиков=" + tFactualTicks + " (рецепт duration=" + sChemRecipeDuration + " EUt=" + sChemRecipeEUt + ")");
+		sChemSeq.judge("RUN (2а) предмет-катализатор Ca списан РОВНО", tRunItemIn == 0, 0, tRunItemIn);
+		sChemSeq.judge("RUN (2б) CO2 списан РОВНО (mb-в-mb)", tRunCO2 == 0, 0, tRunCO2);
+		sChemSeq.judge("RUN (2в) Water списан РОВНО (mb-в-mb)", tRunWater == 0, 0, tRunWater);
+		sChemSeq.judge("RUN (3а) H2 выход РОВНО по рецепту", tRunH2Out == sChemFluidH2.getAmount(), sChemFluidH2.getAmount(), tRunH2Out);
+		sChemSeq.judge("RUN (3б) CaCO3 выход РОВНО по рецепту", tRunItemOut == sChemItemOut.getCount(), sChemItemOut.getCount(), tRunItemOut);
+		sChemSeq.judge("RUN (4) длительность в пределах рецептной (0<факт<=duration=" + sChemRecipeDuration + ")", tFactualTicks > 0 && tFactualTicks <= sChemRecipeDuration, "(0.." + sChemRecipeDuration + "]", tFactualTicks);
+		sChemSeq.judge("CONSERVE: баланс до/после точно по рецепту (ничего не исчезло/не задвоилось сверх преобразования)",
+			tRunItemIn == 0 && tRunCO2 == 0 && tRunWater == 0 && tRunH2Out == sChemFluidH2.getAmount() && tRunItemOut == sChemItemOut.getCount(),
+			"вход(0,0,0)->выход(" + sChemFluidH2.getAmount() + "," + sChemItemOut.getCount() + ")",
+			"вход(" + tRunItemIn + "," + tRunCO2 + "," + tRunWater + ")->выход(" + tRunH2Out + "," + tRunItemOut + ")");
+
+		O.println("[" + CHEM_M + "] ===== PARTIAL-NEG (тик " + sChemProbeTick + ") =====");
+		long tNegItemIn  = gregapi.probe.GT6ProbeStand.slotCount(sChemNeg, 0);
+		long tNegItemOut = gregapi.probe.GT6ProbeStand.slotCount(sChemNeg, sChemOutSlot);
+		long tNegCO2     = sChemNeg.mTanksInput[0].amount();
+		long tNegWater   = sChemNeg.mTanksInput[1].amount();
+		O.println("[" + CHEM_M + "] NEG: CO2=" + tNegCO2 + " (было " + sChemNegCO2_0 + ", половина от " + sChemFluidCO2.getAmount() + ") Water=" + tNegWater + " (было " + sChemNegWater0 + ") item=" + tNegItemIn + " (было " + sChemNegItemIn0 + ") mMaxProgress=" + sChemNeg.mMaxProgress);
+		sChemSeq.judge("NEG: рецепт НЕ стартовал (mMaxProgress==0, CO2 вдвое меньше нужного)", sChemNeg.mMaxProgress == 0, 0, sChemNeg.mMaxProgress);
+		sChemSeq.judge("NEG: CO2 не списан (недостающая жидкость цела)", tNegCO2 == sChemNegCO2_0, sChemNegCO2_0, tNegCO2);
+		sChemSeq.judge("NEG: Water не списан (полная жидкость тоже цела — all-or-nothing)", tNegWater == sChemNegWater0, sChemNegWater0, tNegWater);
+		sChemSeq.judge("NEG: предмет-катализатор цел", tNegItemIn == sChemNegItemIn0, sChemNegItemIn0, tNegItemIn);
+		sChemSeq.judge("NEG: выход пуст (ничего не произведено)", tNegItemOut == 0, 0, tNegItemOut);
+
+		O.println("[" + CHEM_M + "] ===== COLD (тик " + sChemProbeTick + ") =====");
+		long tColdItemIn  = gregapi.probe.GT6ProbeStand.slotCount(sChemCold, 0);
+		long tColdItemOut = gregapi.probe.GT6ProbeStand.slotCount(sChemCold, sChemOutSlot);
+		long tColdCO2     = sChemCold.mTanksInput[0].amount();
+		long tColdWater   = sChemCold.mTanksInput[1].amount();
+		O.println("[" + CHEM_M + "] COLD: mEnergy=" + sChemCold.mEnergy + " CO2=" + tColdCO2 + " (было " + sChemColdCO2_0 + ") Water=" + tColdWater + " (было " + sChemColdWater0 + ") item=" + tColdItemIn + " (было " + sChemColdItemIn0 + ") mMaxProgress=" + sChemCold.mMaxProgress);
+		sChemSeq.judge("COLD: без энергии рецепт НЕ стартовал", sChemCold.mMaxProgress == 0, 0, sChemCold.mMaxProgress);
+		sChemSeq.judge("COLD: CO2 цел", tColdCO2 == sChemColdCO2_0, sChemColdCO2_0, tColdCO2);
+		sChemSeq.judge("COLD: Water цел", tColdWater == sChemColdWater0, sChemColdWater0, tColdWater);
+		sChemSeq.judge("COLD: предмет-катализатор цел", tColdItemIn == sChemColdItemIn0, sChemColdItemIn0, tColdItemIn);
+		sChemSeq.judge("COLD: выход пуст", tColdItemOut == 0, 0, tColdItemOut);
+
+		sChemSeq.done();
+	}
+
+	public static void gt6ChemProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sChemProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sChemPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sChemSeq == null) {
+			sChemSeq = new gregapi.probe.GT6ProbeStand.Seq(CHEM_M)
+				.at(200, GT_API_Proxy::gt6ChemProbeBuild)
+				.at(210, GT_API_Proxy::gt6ChemProbeLoad)
+				.at(224, GT_API_Proxy::gt6ChemProbeJudgeStarted)
+				.window(211, 299, GT_API_Proxy::gt6ChemProbeTrackRun)
+				.at(300, GT_API_Proxy::gt6ChemProbeJudgeFinal);
+		}
+		sChemSeq.tick(sChemProbeTick);
 	}
 
 }
