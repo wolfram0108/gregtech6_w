@@ -363,6 +363,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6bigmultiprobe.flag")) gt6BigMultiProbeTick(aEvent.getServer());
 				// [GT6-MCLPROBE] верификационный стенд «Связка №10 — MU/CU/LU» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6mclprobe.flag")) gt6MclProbeTick(aEvent.getServer());
+				// [GT6-BATBOXPROBE] верификационный стенд «Связка №11 — накопители энергии» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6batboxprobe.flag")) gt6BatBoxProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -5676,6 +5678,471 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(MCL_T_JUDGE, GT_API_Proxy::gt6MclProbeJudgeFinal);
 		}
 		sMclSeq.tick(sMclProbeTick);
+	}
+
+	// ========== [GT6-BATBOXPROBE] ВРЕМЕННЫЙ стенд «Связка №11 — накопители энергии» (Ф3.1, гейт run/gt6batboxprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана; судимый канал — ТОЛЬКО реальные тики onTick2() ящиков/конвертора;
+	// ни один судимый метод пробой не вызывается напрямую):
+	//   ОКНО ПРИЁМА: TileEntityBase01Root.java:893-894 (getEnergySizeInputMin=rec/2, Max=rec*2), BatBox переопределяет
+	//     getEnergySizeInputRecommended=mInput (TileEntityBase10EnergyBatBox.java:211) => окно = [mInput/2 .. mInput*2].
+	//   НЕДОНАПРЯЖЕНИЕ: Root.doEnergyInjection:886 — пакет РАЗМЕРОМ МЕНЬШЕ getEnergySizeInputMin возвращает aAmount
+	//     БЕЗ вызова doInject: отправитель считает пакет принятым и СПИСЫВАЕТ энергию, приёмник не зачисляет ничего.
+	//   ПЕРЕНАПРЯЖЕНИЕ: BatBox.doInject:183-185 — aSize > getEnergySizeInputMax => overcharge(aSize,type)+return aAmount.
+	//     Тот же итог (энергия пропала), но ДРУГАЯ ветка: сюда попадают лишь ПОСЛЕ гейта mReceivablePower>0 (:181).
+	//     Root.overcharge:630-645 при OVERCHARGE_EXPLOSIONS=F и OVERCHARGE_BREAKING=F (дефолты CS.java:910,
+	//     GT_API.java:952,957) блок НЕ рушит — только звук+DEB; живые значения обоих флагов печатаются в билд-DIAG.
+	//   ЁМКОСТЬ ПРИЁМА ЗА ТИК: mReceivablePower = mChargeableCount * mInput * 2 (:153, пересчёт в КОНЦЕ каждого onTick2),
+	//     тратится внутри doInject (:191). mChargeableCount/mBatteryCount считаются ТОЛЬКО при (mBatteryCount<0 ||
+	//     mChargeableCount<0 || mInventoryChanged) (:128) по РЕАЛЬНЫМ предметным батареям в слотах через
+	//     IItemEnergy.canEnergyInjection/canEnergyExtraction (:132-133). Поэтому стенд праймит ящики НЕ форсом полей
+	//     (как связки №4/№10), а НАСТОЯЩИМИ предметами-батареями — MTE-предметами класса TileEntityBase08Battery
+	//     (gregapi/tileentity/energy/TileEntityBase08Battery.java:227-231 canEnergy*), и именно эта бухгалтерия судится.
+	//   ОТДАЧА: mActive=(mEnergy>=mOutput) (:126); при !mStopped эмитится tOutput=(mMode==0?mBatteryCount:min(mMode,
+	//     mBatteryCount)) пакетов размера mOutput (:143-147), mEnergy-=mOutput*принятые. Эмиссия ТОЛЬКО на mFacing
+	//     (isOutput:235), приём — со ВСЕХ сторон кроме mFacing (isInput:234).
+	//   ОБМЕН С ПРЕДМЕТНЫМИ БАТАРЕЯМИ (:108-124), раз в 20 тиков (SERVER_TIME%20==1), полоса = bind3(mEnergy/
+	//     (mInput*40*invsize())): case 0/1 — ящик ТЯНЕТ из предметов (mEnergy += mOutput*doEnergyExtraction(...,40/20)),
+	//     case 6/7 — ящик ЗАРЯЖАЕТ предметы (mEnergy -= mInput*doEnergyInjection(...,20/40)), case 2..5 — мёртвая зона.
+	//     Ёмкость ящика = mInput*320*invsize() (:187-188,218).
+	//   СОГЛАСОВАНИЕ ТИРОВ (V[] = CS.java:155 {8,32,128,512,2048,8192,32768,131072,...}; ящик 10080+i имеет
+	//     mInput=mOutput=V[i], Loader_MultiTileEntities.java:895, NBT_INV_SIZE=4; предметная батарея 1400x имеет
+	//     NBT_INPUT=V[x] => mSizeRec=V[x], mSizeMin=V[x]/2 (и =1, если <=8), mSizeMax=V[x]*2, TileEntityBase08Battery:62-66):
+	//     PAIR/COLD: LV(32)->LV(32), пакет 32 в окне [16..64];  UNDER: ULV(8)->MV(128), пакет 8 НИЖЕ окна [64..256];
+	//     UNDERPC: MV(128)->MV(128), пакет 128 в окне (позитивный контроль ТОГО ЖЕ приёмника);
+	//     OVER: HV(512)->ULV(8), пакет 512 ВЫШЕ окна [4..16];  OVERPC: ULV(8)->ULV(8), пакет 8 в окне.
+	//   ВЫСОКИЕ ТИРЫ: предметные EU-батареи в порте есть только до EV (V[4]=2048, mSizeMax=4096;
+	//     Loader_MultiTileEntities.java:1013-1044) => ящики тира 5+ (V[5]=8192) НЕЛЬЗЯ праймить (mChargeableCount=0
+	//     => mReceivablePower=0 => doInject:181 возвращает 0). Это конструкция GT6 (тот же код в оригинале), поэтому
+	//     высокий тир судится ЕДИНСТВЕННЫМ реально существующим высоким накопителем — ZPM (14999, QU, ёмкость 2e12,
+	//     :1107) в ZPM Decharger (Electric) 11171 (:1005, ACCEPTED=QU, EMITTED=EU, V[7]=131072, INV_SIZE=1).
+	//   CRYSTAL CHARGER: 10130+i (:974) — тот же класс TileEntityBase10EnergyBatBox, но mEnergyType=mEnergyTypeOut=LU
+	//     (NBT_ENERGY_EMITTED=LU, читается BatBox:67). Кормится LU от Electric CO2 Laser 10101 (:934, EU 32 -> LU 16),
+	//     который кормится EU от ящика LV — та же связка, что доказана в №10. Предметный LU-накопитель — Red Energium
+	//     Crystal T1 14501 (:1084, NBT_INPUT=V[1]=32 => окно предмета [16..64], ёмкость V[1]*400000).
+	// ЛОВУШКИ ЗАМЕРА (§7 манифеста):
+	//   1) ПОЗИТИВНЫЙ КОНТРОЛЬ у КАЖДОГО судьи, включая COLD: приёмник праймлен настоящей предметной батареей и
+	//      открыт (isEnergyAcceptingFrom=T, mReceivablePower>0) — иначе нулевой результат ничего не доказывает
+	//      (ровно провал связки №8). У BOUNDS-судей позитивный контроль — ОТДЕЛЬНОЙ линией того же тира приёмника.
+	//   2) mEnergy ящика НЕ обнуляется в конце тика (в отличие от mStorage конверторов) — долгоживущее поле, судить
+	//      по нему можно; приросты снимаются КАЖДЫЙ тик (шаг 1 не может быть кратен периоду процесса), трасса — 37.
+	//   3) Вход (предметные батареи) кладётся на тике 202, энергия начинает течь с первого же тика ящика — порядок
+	//      «входы ДО питания» соблюдён по построению (энергия источника сама берётся из его предметной батареи).
+	// Снять при уборке фазы.
+	private static final int BBP_BOX_ULV = 10080, BBP_BOX_LV = 10081, BBP_BOX_MV = 10082, BBP_BOX_HV = 10083, BBP_BOX_EV = 10084, BBP_BOX_T6 = 10086;
+	private static final int BBP_BAT_ULV = 14000, BBP_BAT_LV = 14001, BBP_BAT_MV = 14002, BBP_BAT_HV = 14003, BBP_BAT_EV = 14004;
+	private static final int BBP_CHARGER = 10131, BBP_CRYSTAL = 14501, BBP_LASER = 10101;
+	private static final int BBP_ZPMDECH = 11171, BBP_ZPM = 14999;
+	private static final String BBP_M = "GT6-BATBOXPROBE";
+	private static final int BBP_T_BUILD = 200, BBP_T_LOAD = 202, BBP_T_FROM = 210, BBP_T_TO = 800, BBP_T_JUDGE = 810;
+
+	private static int sBbpProbeTick = -1;
+	private static ServerPlayer sBbpPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sBbpSeq;
+
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sBbpPairSrc, sBbpPairRecv, sBbpColdSrc, sBbpColdRecv;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sBbpUnderSrc, sBbpUnderRecv, sBbpUnderPcSrc, sBbpUnderPcRecv;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sBbpOverSrc, sBbpOverRecv, sBbpOverPcSrc, sBbpOverPcRecv;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sBbpItemDis, sBbpItemChg, sBbpZpmDech, sBbpHiOk, sBbpHiNo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sBbpChargerSrc, sBbpCharger, sBbpChargerItem;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityLaserElectric sBbpLaser;
+	private static BlockPos sBbpOverRecvPos;
+
+	// нулевые точки (снимаются на тике BBP_T_LOAD, ДО первого живого обмена)
+	private static long sBbpPairSrcE0, sBbpPairSrcI0, sBbpPairRecvE0, sBbpPairRecvI0;
+	private static long sBbpColdRecvE0, sBbpColdRecvI0;
+	private static long sBbpUnderSrcE0, sBbpUnderSrcI0, sBbpUnderRecvE0, sBbpUnderPcRecvE0;
+	private static long sBbpOverSrcE0, sBbpOverSrcI0, sBbpOverRecvE0, sBbpOverPcRecvE0;
+	private static long sBbpItemDisE0, sBbpItemDisI0, sBbpItemChgE0, sBbpItemChgI0;
+	private static long sBbpZpmE0, sBbpZpmI0, sBbpChargerE0, sBbpChargerItemE0, sBbpChargerItemI0;
+	private static int sBbpItemDisBand0, sBbpItemChgBand0, sBbpChargerItemBand0, sBbpZpmBand0;
+
+	// трекеры приростов — ПЕРЕИСПОЛЬЗУЕТСЯ MclGrow связки №10 (шаги/Δmin/Δmax/Σ/max/сбросы), новой сущности не заводим
+	private static final MclGrow sBbpPairRecvGrow = new MclGrow(), sBbpColdRecvGrow = new MclGrow();
+	private static final MclGrow sBbpUnderRecvGrow = new MclGrow(), sBbpUnderPcRecvGrow = new MclGrow();
+	private static final MclGrow sBbpOverRecvGrow = new MclGrow(), sBbpOverPcRecvGrow = new MclGrow();
+	private static final MclGrow sBbpItemDisGrow = new MclGrow(), sBbpItemChgItemGrow = new MclGrow();
+	private static final MclGrow sBbpZpmBoxGrow = new MclGrow(), sBbpChargerGrow = new MclGrow(), sBbpChargerCrystalGrow = new MclGrow();
+
+	/** Суммарная энергия ПРЕДМЕТНЫХ батарей внутри накопителя — публичный логический канал самого накопителя
+	 *  (TileEntityBase10EnergyBatBox.java:212 getEnergyStored суммирует IItemEnergy.getEnergyStored по инвентарю). */
+	private static long gt6BatBoxProbeItemEnergy(gregapi.tileentity.energy.TileEntityBase10EnergyBatBox aBox) {
+		return aBox == null ? -1 : aBox.getEnergyStored(aBox.mEnergyType, SIDE_ANY);
+	}
+	/** Полоса обмена с предметными батареями: bind3(mEnergy/(mInput*40*invsize())) — BatBox:110/117. */
+	private static int gt6BatBoxProbeBand(gregapi.tileentity.energy.TileEntityBase10EnergyBatBox aBox) {
+		return aBox == null ? -1 : UT.Code.bind3(aBox.mEnergy / (aBox.mInput * 40 * aBox.invsize()));
+	}
+	/** Ёмкость накопителя: mInput*320*invsize() — BatBox:187-188,218. */
+	private static long gt6BatBoxProbeCap(gregapi.tileentity.energy.TileEntityBase10EnergyBatBox aBox) {
+		return aBox == null ? 0 : aBox.mInput * 320 * aBox.invsize();
+	}
+
+	/** Расчистка объёма линии в AIR + каменная опора (гигиена, не судимый канал — приём CRUCIBLEPROBE/MCLPROBE). */
+	private static void gt6BatBoxProbePrepareSite(ServerLevel aLevel, BlockPos aBase, int aLen) {
+		for (int x = -1; x <= aLen + 1; x++) for (int y = 0; y <= 3; y++) for (int z = -1; z <= 1; z++) aLevel.setBlock(aBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+		gregapi.probe.GT6ProbeStand.solidPad(aLevel, aBase.offset(-1, 0, -1), aLen + 3, 3);
+	}
+
+	/** Установка накопителя реальным каналом игрока + выставление mFacing реальным API setPrimaryFacing (тот же
+	 *  метод, что дёргает гайковёрт, TileEntityBase09FacingSingle.java:90) — топология, не обход передачи. */
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox gt6BatBoxProbePlaceBox(ServerLevel aLevel, BlockPos aAnchor, net.minecraft.core.Direction aFace, int aBoxId, byte aFacing, String aLabel) {
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBox = gregapi.probe.GT6ProbeStand.place(aLevel, sBbpPlayer, aAnchor, aFace,
+			gregapi.probe.GT6ProbeStand.mteStack(aBoxId), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, BBP_M, aLabel);
+		if (tBox == null) throw new RuntimeException(aLabel + ": накопитель id=" + aBoxId + " не встал");
+		tBox.setPrimaryFacing(aFacing);
+		return tBox;
+	}
+
+	/** Кладёт НАСТОЯЩУЮ предметную батарею (MTE-предмет класса TileEntityBase08Battery) в слот 0 накопителя и метит
+	 *  инвентарь изменённым — единственный канал, которым ящик пересчитывает mBatteryCount/mChargeableCount
+	 *  (BatBox:128). Аналог «дать инструмент как скрафченный» (§4 манифеста): это ВХОД стенда, судимый канал (обмен
+	 *  энергией в onTick2) не подменяется. aFull=T — предмет выдан заряженным под завязку (ровно такой же полностью
+	 *  заряженный вариант креативная вкладка отдаёт через TileEntityBase08Battery.getSubItems:110-116). */
+	private static void gt6BatBoxProbeLoadBattery(gregapi.tileentity.energy.TileEntityBase10EnergyBatBox aBox, int aItemId, boolean aFull, String aLabel) {
+		if (aBox == null) return;
+		net.minecraft.world.item.ItemStack tStack = gregapi.probe.GT6ProbeStand.mteStack(aItemId);
+		if (ST.invalid(tStack)) throw new RuntimeException(aLabel + ": предметная батарея id=" + aItemId + " не выдана реестром");
+		if (!(tStack.getItem() instanceof gregapi.item.IItemEnergy tEnergyItem)) throw new RuntimeException(aLabel + ": предмет id=" + aItemId + " не IItemEnergy, а " + tStack.getItem().getClass().getSimpleName());
+		long tCap = tEnergyItem.getEnergyCapacity(aBox.mEnergyType, tStack);
+		if (aFull) tStack = tEnergyItem.setEnergyStored(aBox.mEnergyType, tStack, tCap);
+		gregapi.probe.GT6ProbeStand.slotSet(aBox, 0, tStack);
+		aBox.updateInventory();
+		gregapi.data.CS.OUT.println("[" + BBP_M + "] загрузка " + aLabel + ": предмет id=" + aItemId + " тип_ящика=" + aBox.mEnergyType + " ёмкость_предмета=" + tCap
+			+ " энергия_предмета=" + tEnergyItem.getEnergyStored(aBox.mEnergyType, tStack)
+			+ " окно_предмета=[" + tEnergyItem.getEnergySizeInputMin(aBox.mEnergyType, tStack) + ".." + tEnergyItem.getEnergySizeInputMax(aBox.mEnergyType, tStack) + "]"
+			+ " canInject(mInput=" + aBox.mInput + ")=" + tEnergyItem.canEnergyInjection(aBox.mEnergyType, tStack, aBox.mInput)
+			+ " canExtract(mOutput=" + aBox.mOutput + ")=" + tEnergyItem.canEnergyExtraction(aBox.mEnergyType, tStack, aBox.mOutput));
+	}
+
+	/** Пара «источник -> приёмник» вдоль +X: опора -> ящик-источник (mFacing=EAST, эмиссия на восток) -> ящик-приёмник
+	 *  (mFacing=EAST, значит принимает со ВСЕХ сторон кроме востока, в т.ч. с запада от источника, BatBox:234-235). */
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] gt6BatBoxProbeBuildPair(ServerLevel aLevel, BlockPos aBase, int aSrcId, int aRecvId, String aLabel) {
+		gt6BatBoxProbePrepareSite(aLevel, aBase, 2);
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tSrc = gt6BatBoxProbePlaceBox(aLevel, aBase, net.minecraft.core.Direction.UP, aSrcId, SIDE_EAST, aLabel + "-источник");
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tRecv = gt6BatBoxProbePlaceBox(aLevel, tSrc.getBlockPos(), net.minecraft.core.Direction.EAST, aRecvId, SIDE_EAST, aLabel + "-приёмник");
+		return new gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[]{tSrc, tRecv};
+	}
+
+	/** Одиночный накопитель (для обмена с предметными батареями): опора -> ящик, mFacing=EAST в ВОЗДУХ — соседа нет,
+	 *  эмиссия физически некому (EnergyCompat.insertEnergyInto:143 при aReceiver==null возвращает 0), потерь нет. */
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox gt6BatBoxProbeBuildSolo(ServerLevel aLevel, BlockPos aBase, int aBoxId, String aLabel) {
+		gt6BatBoxProbePrepareSite(aLevel, aBase, 1);
+		return gt6BatBoxProbePlaceBox(aLevel, aBase, net.minecraft.core.Direction.UP, aBoxId, SIDE_EAST, aLabel);
+	}
+
+	/** DIAG-печать живых параметров накопителя (не судья). */
+	private static void gt6BatBoxProbeDumpBox(String aLabel, gregapi.tileentity.energy.TileEntityBase10EnergyBatBox aBox) {
+		if (aBox == null) {gregapi.data.CS.OUT.println("[" + BBP_M + "] параметры " + aLabel + ": НЕ ПОСТРОЕН"); return;}
+		gregapi.data.CS.OUT.println("[" + BBP_M + "] параметры " + aLabel + " @" + aBox.getBlockPos().toShortString() + ": mInput=" + aBox.mInput + " mOutput=" + aBox.mOutput + " invsize=" + aBox.invsize()
+			+ " окно_приёма=[" + aBox.getEnergySizeInputMin(aBox.mEnergyType, SIDE_WEST) + ".." + aBox.getEnergySizeInputMax(aBox.mEnergyType, SIDE_WEST) + "] ёмкость=" + gt6BatBoxProbeCap(aBox)
+			+ " тип_вход=" + aBox.mEnergyType + " тип_выход=" + aBox.mEnergyTypeOut + " mFacing=" + aBox.mFacing + " mMode=" + aBox.mMode + " mStopped=" + aBox.mStopped
+			+ " mBatteryCount=" + aBox.mBatteryCount + " mChargeableCount=" + aBox.mChargeableCount + " mReceivablePower=" + aBox.mReceivablePower + " mEnergy=" + aBox.mEnergy);
+	}
+
+	/** Тик 200: постройка всех линий + печать ЖИВЫХ параметров BE. */
+	private static void gt6BatBoxProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sBbpPlayer.level();
+		O.println("========== [" + BBP_M + "] Связка №11 — накопители энергии (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {BBP_BOX_ULV, BBP_BOX_LV, BBP_BOX_MV, BBP_BOX_HV, BBP_BOX_EV, BBP_BOX_T6, BBP_BAT_ULV, BBP_BAT_LV, BBP_BAT_MV, BBP_BAT_HV, BBP_BAT_EV, BBP_CHARGER, BBP_CRYSTAL, BBP_LASER, BBP_ZPMDECH, BBP_ZPM};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		StringBuilder tSB = new StringBuilder("[" + BBP_M + "] ID подтверждены:");
+		for (int tId : tIds) tSB.append(" ").append(tId).append("=").append(tReg.getClassContainer(tId).mClass.getSimpleName());
+		O.println(tSB.toString());
+		O.println("[" + BBP_M + "] живые флаги перегруза: OVERCHARGE_EXPLOSIONS=" + OVERCHARGE_EXPLOSIONS + " OVERCHARGE_BREAKING=" + OVERCHARGE_BREAKING + " (при обоих F блок не рушится — Root.overcharge:630-645)");
+
+		BlockPos tP = sBbpPlayer.blockPosition();
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tPair    = gt6BatBoxProbeBuildPair(tLevel, tP.offset( 4, 0,  4), BBP_BOX_LV , BBP_BOX_LV , "PAIR");
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tCold    = gt6BatBoxProbeBuildPair(tLevel, tP.offset( 4, 0, 10), BBP_BOX_LV , BBP_BOX_LV , "COLD");
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tUnder   = gt6BatBoxProbeBuildPair(tLevel, tP.offset( 4, 0, 16), BBP_BOX_ULV, BBP_BOX_MV , "UNDER");
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tUnderPc = gt6BatBoxProbeBuildPair(tLevel, tP.offset( 4, 0, 22), BBP_BOX_MV , BBP_BOX_MV , "UNDERPC");
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tOver    = gt6BatBoxProbeBuildPair(tLevel, tP.offset( 4, 0, 28), BBP_BOX_HV , BBP_BOX_ULV, "OVER");
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[] tOverPc  = gt6BatBoxProbeBuildPair(tLevel, tP.offset(12, 0,  4), BBP_BOX_ULV, BBP_BOX_ULV, "OVERPC");
+		sBbpPairSrc     = tPair[0];    sBbpPairRecv     = tPair[1];
+		sBbpColdSrc     = tCold[0];    sBbpColdRecv     = tCold[1];
+		sBbpUnderSrc    = tUnder[0];   sBbpUnderRecv    = tUnder[1];
+		sBbpUnderPcSrc  = tUnderPc[0]; sBbpUnderPcRecv  = tUnderPc[1];
+		sBbpOverSrc     = tOver[0];    sBbpOverRecv     = tOver[1];   sBbpOverRecvPos = sBbpOverRecv.getBlockPos();
+		sBbpOverPcSrc   = tOverPc[0];  sBbpOverPcRecv   = tOverPc[1];
+
+		sBbpItemDis     = gt6BatBoxProbeBuildSolo(tLevel, tP.offset(12, 0, 10), BBP_BOX_LV , "ITEMDIS-ящик");
+		sBbpItemChg     = gt6BatBoxProbeBuildSolo(tLevel, tP.offset(12, 0, 16), BBP_BOX_LV , "ITEMCHG-ящик");
+		sBbpZpmDech     = gt6BatBoxProbeBuildSolo(tLevel, tP.offset(12, 0, 22), BBP_ZPMDECH, "ZPM-дечарджер");
+		sBbpChargerItem = gt6BatBoxProbeBuildSolo(tLevel, tP.offset(12, 0, 28), BBP_CHARGER, "CHARGERITEM-зарядник");
+		// ГРАНИЦА ТИРОВ (ЗАМЕР, не вывод из головы): ящик EV (mInput=V[4]=2048) ещё праймится САМОЙ ВЫСОКОЙ существующей
+		// в порте EU-предметной батареей (14004 EV, mSizeMax=4096), а ящик тира 6 (mInput=V[6]=32768) — уже НЕТ.
+		sBbpHiOk = gt6BatBoxProbeBuildSolo(tLevel, tP.offset(20, 0, 10), BBP_BOX_EV, "HITIER-OK-ящик(EV)");
+		sBbpHiNo = gt6BatBoxProbeBuildSolo(tLevel, tP.offset(20, 0, 16), BBP_BOX_T6, "HITIER-NO-ящик(тир6)");
+
+		// CHARGER: опора -> ящик LV (EU-источник) -> Electric CO2 Laser (EU->LU) -> Crystal Charger (приёмник LU)
+		BlockPos tChargerBase = tP.offset(20, 0, 4);
+		gt6BatBoxProbePrepareSite(tLevel, tChargerBase, 3);
+		sBbpChargerSrc = gt6BatBoxProbePlaceBox(tLevel, tChargerBase, net.minecraft.core.Direction.UP, BBP_BOX_LV, SIDE_EAST, "CHARGER-батарея-источник");
+		sBbpLaser = gregapi.probe.GT6ProbeStand.place(tLevel, sBbpPlayer, sBbpChargerSrc.getBlockPos(), net.minecraft.core.Direction.EAST,
+			gregapi.probe.GT6ProbeStand.mteStack(BBP_LASER), gregtech.tileentity.energy.converters.MultiTileEntityLaserElectric.class, BBP_M, "CHARGER-лазер");
+		if (sBbpLaser == null) throw new RuntimeException("CHARGER: Electric CO2 Laser не встал");
+		sBbpLaser.setPrimaryFacing(SIDE_EAST); // приём EU с запада (isInput=aSide!=mFacing), эмиссия LU на восток — TileEntityBase10EnergyConverter:176-177
+		sBbpCharger = gt6BatBoxProbePlaceBox(tLevel, sBbpLaser.getBlockPos(), net.minecraft.core.Direction.EAST, BBP_CHARGER, SIDE_EAST, "CHARGER-зарядник");
+
+		O.println("[" + BBP_M + "] топология: PAIR " + sBbpPairSrc.getBlockPos().toShortString() + "->" + sBbpPairRecv.getBlockPos().toShortString()
+			+ "; COLD " + sBbpColdSrc.getBlockPos().toShortString() + "->" + sBbpColdRecv.getBlockPos().toShortString()
+			+ "; UNDER " + sBbpUnderSrc.getBlockPos().toShortString() + "->" + sBbpUnderRecv.getBlockPos().toShortString()
+			+ "; UNDERPC " + sBbpUnderPcSrc.getBlockPos().toShortString() + "->" + sBbpUnderPcRecv.getBlockPos().toShortString()
+			+ "; OVER " + sBbpOverSrc.getBlockPos().toShortString() + "->" + sBbpOverRecv.getBlockPos().toShortString()
+			+ "; OVERPC " + sBbpOverPcSrc.getBlockPos().toShortString() + "->" + sBbpOverPcRecv.getBlockPos().toShortString()
+			+ "; ITEMDIS " + sBbpItemDis.getBlockPos().toShortString() + "; ITEMCHG " + sBbpItemChg.getBlockPos().toShortString()
+			+ "; ZPM " + sBbpZpmDech.getBlockPos().toShortString() + "; CHARGERITEM " + sBbpChargerItem.getBlockPos().toShortString()
+			+ "; CHARGER " + sBbpChargerSrc.getBlockPos().toShortString() + "->" + sBbpLaser.getBlockPos().toShortString() + "->" + sBbpCharger.getBlockPos().toShortString());
+		gt6BatBoxProbeDumpBox("PAIR-источник",     sBbpPairSrc);   gt6BatBoxProbeDumpBox("PAIR-приёмник",     sBbpPairRecv);
+		gt6BatBoxProbeDumpBox("UNDER-источник",    sBbpUnderSrc);  gt6BatBoxProbeDumpBox("UNDER-приёмник",    sBbpUnderRecv);
+		gt6BatBoxProbeDumpBox("OVER-источник",     sBbpOverSrc);   gt6BatBoxProbeDumpBox("OVER-приёмник",     sBbpOverRecv);
+		gt6BatBoxProbeDumpBox("ZPM-дечарджер",     sBbpZpmDech);   gt6BatBoxProbeDumpBox("CHARGER-зарядник",  sBbpCharger);
+		O.println("[" + BBP_M + "] лазер: IN(min/rec/max)=" + sBbpLaser.mConverter.mEnergyIN.mMin + "/" + sBbpLaser.mConverter.mEnergyIN.mRec + "/" + sBbpLaser.mConverter.mEnergyIN.mMax + " тип=" + sBbpLaser.mConverter.mEnergyIN.mType
+			+ " OUT=" + sBbpLaser.mConverter.mEnergyOUT.mMin + "/" + sBbpLaser.mConverter.mEnergyOUT.mRec + "/" + sBbpLaser.mConverter.mEnergyOUT.mMax + " тип=" + sBbpLaser.mConverter.mEnergyOUT.mType + " mFacing=" + sBbpLaser.mFacing);
+	}
+
+	/** Тик 202: РЕАЛЬНЫЕ предметные батареи в слоты + пред-заряд резервуара ТОЛЬКО тех ящиков, где судится заряд
+	 *  предмета (сетап резервуара, аналог пред-заряда пара в связке №4; сама передача энергии предмету — живой тик). */
+	private static void gt6BatBoxProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gt6BatBoxProbeLoadBattery(sBbpPairSrc     , BBP_BAT_LV , T, "PAIR-источник (заряженная LV)");
+		gt6BatBoxProbeLoadBattery(sBbpPairRecv    , BBP_BAT_LV , F, "PAIR-приёмник (пустая LV — прайм mChargeableCount)");
+		gt6BatBoxProbeLoadBattery(sBbpColdSrc     , BBP_BAT_LV , F, "COLD-источник (ПУСТАЯ LV — единственное отличие от PAIR)");
+		gt6BatBoxProbeLoadBattery(sBbpColdRecv    , BBP_BAT_LV , F, "COLD-приёмник (пустая LV — прайм, иначе нулевой итог был бы ложным)");
+		gt6BatBoxProbeLoadBattery(sBbpUnderSrc    , BBP_BAT_ULV, T, "UNDER-источник (заряженная ULV)");
+		gt6BatBoxProbeLoadBattery(sBbpUnderRecv   , BBP_BAT_MV , F, "UNDER-приёмник (пустая MV — прайм)");
+		gt6BatBoxProbeLoadBattery(sBbpUnderPcSrc  , BBP_BAT_MV , T, "UNDERPC-источник (заряженная MV)");
+		gt6BatBoxProbeLoadBattery(sBbpUnderPcRecv , BBP_BAT_MV , F, "UNDERPC-приёмник (пустая MV — прайм)");
+		gt6BatBoxProbeLoadBattery(sBbpOverSrc     , BBP_BAT_HV , T, "OVER-источник (заряженная HV)");
+		gt6BatBoxProbeLoadBattery(sBbpOverRecv    , BBP_BAT_ULV, F, "OVER-приёмник (пустая ULV — прайм)");
+		gt6BatBoxProbeLoadBattery(sBbpOverPcSrc   , BBP_BAT_ULV, T, "OVERPC-источник (заряженная ULV)");
+		gt6BatBoxProbeLoadBattery(sBbpOverPcRecv  , BBP_BAT_ULV, F, "OVERPC-приёмник (пустая ULV — прайм)");
+		gt6BatBoxProbeLoadBattery(sBbpItemDis     , BBP_BAT_LV , T, "ITEMDIS (заряженная LV — ящик обязан РАЗРЯДИТЬ её в себя)");
+		gt6BatBoxProbeLoadBattery(sBbpItemChg     , BBP_BAT_LV , F, "ITEMCHG (пустая LV — ящик обязан ЗАРЯДИТЬ её)");
+		gt6BatBoxProbeLoadBattery(sBbpZpmDech     , BBP_ZPM    , T, "ZPM-дечарджер (заряженный ZPM, QU)");
+		gt6BatBoxProbeLoadBattery(sBbpChargerSrc  , BBP_BAT_LV , T, "CHARGER-батарея-источник (заряженная LV)");
+		gt6BatBoxProbeLoadBattery(sBbpCharger     , BBP_CRYSTAL, F, "CHARGER-зарядник (пустой кристалл LU — прайм mChargeableCount)");
+		gt6BatBoxProbeLoadBattery(sBbpChargerItem , BBP_CRYSTAL, F, "CHARGERITEM-зарядник (пустой кристалл LU — его и заряжаем)");
+		gt6BatBoxProbeLoadBattery(sBbpHiOk        , BBP_BAT_EV , F, "HITIER-OK (ящик EV + пустая EV-батарея — граница «ещё праймится»)");
+		gt6BatBoxProbeLoadBattery(sBbpHiNo        , BBP_BAT_EV , F, "HITIER-NO (ящик тира 6 + та же EV-батарея — граница «уже не праймится»)");
+		sBbpItemChg.mEnergy     = gt6BatBoxProbeCap(sBbpItemChg);
+		sBbpChargerItem.mEnergy = gt6BatBoxProbeCap(sBbpChargerItem);
+
+		sBbpPairSrcE0   = sBbpPairSrc.mEnergy;   sBbpPairSrcI0     = gt6BatBoxProbeItemEnergy(sBbpPairSrc);
+		sBbpPairRecvE0  = sBbpPairRecv.mEnergy;  sBbpPairRecvI0    = gt6BatBoxProbeItemEnergy(sBbpPairRecv);
+		sBbpColdRecvE0  = sBbpColdRecv.mEnergy;  sBbpColdRecvI0    = gt6BatBoxProbeItemEnergy(sBbpColdRecv);
+		sBbpUnderSrcE0  = sBbpUnderSrc.mEnergy;  sBbpUnderSrcI0    = gt6BatBoxProbeItemEnergy(sBbpUnderSrc);
+		sBbpUnderRecvE0 = sBbpUnderRecv.mEnergy; sBbpUnderPcRecvE0 = sBbpUnderPcRecv.mEnergy;
+		sBbpOverSrcE0   = sBbpOverSrc.mEnergy;   sBbpOverSrcI0     = gt6BatBoxProbeItemEnergy(sBbpOverSrc);
+		sBbpOverRecvE0  = sBbpOverRecv.mEnergy;  sBbpOverPcRecvE0  = sBbpOverPcRecv.mEnergy;
+		sBbpItemDisE0   = sBbpItemDis.mEnergy;   sBbpItemDisI0     = gt6BatBoxProbeItemEnergy(sBbpItemDis);
+		sBbpItemChgE0   = sBbpItemChg.mEnergy;   sBbpItemChgI0     = gt6BatBoxProbeItemEnergy(sBbpItemChg);
+		sBbpZpmE0       = sBbpZpmDech.mEnergy;   sBbpZpmI0         = gt6BatBoxProbeItemEnergy(sBbpZpmDech);
+		sBbpChargerE0   = sBbpCharger.mEnergy;
+		sBbpChargerItemE0 = sBbpChargerItem.mEnergy; sBbpChargerItemI0 = gt6BatBoxProbeItemEnergy(sBbpChargerItem);
+		O.println("[" + BBP_M + "] тик " + sBbpProbeTick + " нули (ящик/предмет): PAIR ист=" + sBbpPairSrcE0 + "/" + sBbpPairSrcI0 + " приём=" + sBbpPairRecvE0 + "/" + sBbpPairRecvI0
+			+ "; COLD приём=" + sBbpColdRecvE0 + "/" + sBbpColdRecvI0 + "; UNDER ист=" + sBbpUnderSrcE0 + "/" + sBbpUnderSrcI0 + " приём=" + sBbpUnderRecvE0
+			+ "; UNDERPC приём=" + sBbpUnderPcRecvE0 + "; OVER ист=" + sBbpOverSrcE0 + "/" + sBbpOverSrcI0 + " приём=" + sBbpOverRecvE0 + "; OVERPC приём=" + sBbpOverPcRecvE0
+			+ "; ITEMDIS=" + sBbpItemDisE0 + "/" + sBbpItemDisI0 + "; ITEMCHG=" + sBbpItemChgE0 + "/" + sBbpItemChgI0 + " (пред-заряд до ёмкости)"
+			+ "; ZPM=" + sBbpZpmE0 + "/" + sBbpZpmI0 + "; CHARGER=" + sBbpChargerE0 + "; CHARGERITEM=" + sBbpChargerItemE0 + "/" + sBbpChargerItemI0 + " (пред-заряд до ёмкости)");
+	}
+
+	/** Тик 212: полосы обмена на старте живого окна (BatBox:110/117) + пересчитанная ящиками бухгалтерия предметов. */
+	private static void gt6BatBoxProbeDiagBands() {
+		sBbpItemDisBand0 = gt6BatBoxProbeBand(sBbpItemDis);
+		sBbpItemChgBand0 = gt6BatBoxProbeBand(sBbpItemChg);
+		sBbpChargerItemBand0 = gt6BatBoxProbeBand(sBbpChargerItem);
+		sBbpZpmBand0 = gt6BatBoxProbeBand(sBbpZpmDech);
+		gregapi.data.CS.OUT.println("[" + BBP_M + "] DIAG-полосы тик " + sBbpProbeTick + " (0/1=ящик тянет из предмета, 6/7=ящик заряжает предмет, 2..5=мёртвая зона): ITEMDIS=" + sBbpItemDisBand0
+			+ " ITEMCHG=" + sBbpItemChgBand0 + " CHARGERITEM=" + sBbpChargerItemBand0 + " ZPM=" + sBbpZpmBand0);
+		gt6BatBoxProbeDumpBox("PAIR-источник",    sBbpPairSrc);    gt6BatBoxProbeDumpBox("PAIR-приёмник",     sBbpPairRecv);
+		gt6BatBoxProbeDumpBox("COLD-источник",    sBbpColdSrc);    gt6BatBoxProbeDumpBox("COLD-приёмник",     sBbpColdRecv);
+		gt6BatBoxProbeDumpBox("UNDER-приёмник",   sBbpUnderRecv);  gt6BatBoxProbeDumpBox("UNDERPC-приёмник",  sBbpUnderPcRecv);
+		gt6BatBoxProbeDumpBox("OVER-приёмник",    sBbpOverRecv);   gt6BatBoxProbeDumpBox("OVERPC-приёмник",   sBbpOverPcRecv);
+		gt6BatBoxProbeDumpBox("ITEMDIS",          sBbpItemDis);    gt6BatBoxProbeDumpBox("ITEMCHG",           sBbpItemChg);
+		gt6BatBoxProbeDumpBox("ZPM-дечарджер",    sBbpZpmDech);    gt6BatBoxProbeDumpBox("CHARGERITEM",       sBbpChargerItem);
+		// ЗАМЕРЕННЫЙ факт границы тиров (не судья — печать): mReceivablePower>0 у EV и ==0 у тира 6 при ОДНОЙ И ТОЙ ЖЕ
+		// самой высокой EU-батарее порта (Loader_MultiTileEntities.java:1013-1044 — выше EV предметных EU-батарей нет).
+		gt6BatBoxProbeDumpBox("HITIER-OK(ящик EV + батарея EV)",     sBbpHiOk);
+		gt6BatBoxProbeDumpBox("HITIER-NO(ящик тир6 + батарея EV)",   sBbpHiNo);
+	}
+
+	/** Каждый тик окна: снятие приростов (шаг 1 тик — окно ловит ВСЕ фазы процесса, §7 манифеста). */
+	private static void gt6BatBoxProbeTrack() {
+		if (sBbpPairRecv     != null) sBbpPairRecvGrow      .sample(sBbpPairRecv.mEnergy);
+		if (sBbpColdRecv     != null) sBbpColdRecvGrow      .sample(sBbpColdRecv.mEnergy);
+		if (sBbpUnderRecv    != null) sBbpUnderRecvGrow     .sample(sBbpUnderRecv.mEnergy);
+		if (sBbpUnderPcRecv  != null) sBbpUnderPcRecvGrow   .sample(sBbpUnderPcRecv.mEnergy);
+		if (sBbpOverRecv     != null) sBbpOverRecvGrow      .sample(sBbpOverRecv.mEnergy);
+		if (sBbpOverPcRecv   != null) sBbpOverPcRecvGrow    .sample(sBbpOverPcRecv.mEnergy);
+		if (sBbpItemDis      != null) sBbpItemDisGrow       .sample(sBbpItemDis.mEnergy);
+		if (sBbpItemChg      != null) sBbpItemChgItemGrow   .sample(gt6BatBoxProbeItemEnergy(sBbpItemChg));
+		if (sBbpZpmDech      != null) sBbpZpmBoxGrow        .sample(sBbpZpmDech.mEnergy);
+		if (sBbpCharger      != null) sBbpChargerGrow       .sample(sBbpCharger.mEnergy);
+		if (sBbpChargerItem  != null) sBbpChargerCrystalGrow.sample(gt6BatBoxProbeItemEnergy(sBbpChargerItem));
+	}
+
+	/** Разреженная трасса (шаг 37 тиков — взаимно прост с периодом обмена предметами 20, §7 манифеста). */
+	private static void gt6BatBoxProbeTrace() {
+		if ((sBbpProbeTick - BBP_T_FROM) % 37 != 0) return;
+		gregapi.data.CS.OUT.println("[" + BBP_M + "] трасса тик " + sBbpProbeTick
+			+ " | PAIR ист(ящик/предмет/emits)=" + sBbpPairSrc.mEnergy + "/" + gt6BatBoxProbeItemEnergy(sBbpPairSrc) + "/" + sBbpPairSrc.mEmitsEnergy + " приём(ящик/receivable)=" + sBbpPairRecv.mEnergy + "/" + sBbpPairRecv.mReceivablePower
+			+ " | COLD ист=" + sBbpColdSrc.mEnergy + "/" + sBbpColdSrc.mEmitsEnergy + " приём=" + sBbpColdRecv.mEnergy + "/" + sBbpColdRecv.mReceivablePower
+			+ " | UNDER ист(ящик/предмет/emits)=" + sBbpUnderSrc.mEnergy + "/" + gt6BatBoxProbeItemEnergy(sBbpUnderSrc) + "/" + sBbpUnderSrc.mEmitsEnergy + " приём=" + sBbpUnderRecv.mEnergy + "/" + sBbpUnderRecv.mReceivablePower + " | UNDERPC приём=" + sBbpUnderPcRecv.mEnergy
+			+ " | OVER ист(ящик/предмет/emits)=" + sBbpOverSrc.mEnergy + "/" + gt6BatBoxProbeItemEnergy(sBbpOverSrc) + "/" + sBbpOverSrc.mEmitsEnergy + " приём=" + sBbpOverRecv.mEnergy + "/" + sBbpOverRecv.mReceivablePower + " | OVERPC приём=" + sBbpOverPcRecv.mEnergy
+			+ " | ITEMDIS(ящик/предмет/полоса)=" + sBbpItemDis.mEnergy + "/" + gt6BatBoxProbeItemEnergy(sBbpItemDis) + "/" + gt6BatBoxProbeBand(sBbpItemDis)
+			+ " | ITEMCHG=" + sBbpItemChg.mEnergy + "/" + gt6BatBoxProbeItemEnergy(sBbpItemChg) + "/" + gt6BatBoxProbeBand(sBbpItemChg)
+			+ " | ZPM=" + sBbpZpmDech.mEnergy + "/" + gt6BatBoxProbeItemEnergy(sBbpZpmDech) + "/" + gt6BatBoxProbeBand(sBbpZpmDech)
+			+ " | CHARGER(лазер.emits/зарядник)=" + sBbpLaser.mConverter.mEmitsEnergy + "/" + sBbpCharger.mEnergy + " | CHARGERITEM=" + sBbpChargerItem.mEnergy + "/" + gt6BatBoxProbeItemEnergy(sBbpChargerItem) + "/" + gt6BatBoxProbeBand(sBbpChargerItem));
+	}
+
+	/** Тик 810: вердикты. Все ожидания — из ЖИВЫХ полей BE и формул кода с file:line. */
+	private static void gt6BatBoxProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + BBP_M + "] ИТОГИ (окно " + BBP_T_FROM + ".." + BBP_T_TO + ", " + (BBP_T_TO - BBP_T_FROM + 1) + " живых тиков) ==========");
+
+		// ---------- PAIR: LV -> LV, пакет в окне ----------
+		long tPairP = sBbpPairSrc.mOutput;
+		long tPairMin = sBbpPairRecv.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST), tPairMax = sBbpPairRecv.getEnergySizeInputMax(TD.Energy.EU, SIDE_WEST);
+		long tPairSrcE = sBbpPairSrc.mEnergy, tPairSrcI = gt6BatBoxProbeItemEnergy(sBbpPairSrc);
+		long tPairRecvE = sBbpPairRecv.mEnergy, tPairRecvI = gt6BatBoxProbeItemEnergy(sBbpPairRecv);
+		long tPairLost = (sBbpPairSrcE0 - tPairSrcE) + (sBbpPairSrcI0 - tPairSrcI);
+		long tPairGained = (tPairRecvE - sBbpPairRecvE0) + (tPairRecvI - sBbpPairRecvI0);
+		O.println("[" + BBP_M + "] PAIR числа: пакет P=источник.mOutput=" + tPairP + "; окно приёмника=[" + tPairMin + ".." + tPairMax + "]; источник ящик " + sBbpPairSrcE0 + "->" + tPairSrcE + " предмет " + sBbpPairSrcI0 + "->" + tPairSrcI + " (убыло=" + tPairLost + ")"
+			+ "; приёмник ящик " + sBbpPairRecvE0 + "->" + tPairRecvE + " предмет " + sBbpPairRecvI0 + "->" + tPairRecvI + " (прибыло=" + tPairGained + "); приросты приёмника: " + sBbpPairRecvGrow
+			+ "; источник mBatteryCount=" + sBbpPairSrc.mBatteryCount + " приёмник mChargeableCount=" + sBbpPairRecv.mChargeableCount + " mReceivablePower=" + sBbpPairRecv.mReceivablePower + " эмиссия видена=" + sBbpSeq.everSeen("PAIR-эмиссия"));
+		boolean tPairPc = sBbpPairRecv.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_WEST, F) && sBbpPairRecv.mReceivablePower > 0 && sBbpPairRecv.mChargeableCount > 0
+			&& sBbpPairSrc.isEnergyEmittingTo(TD.Energy.EU, SIDE_EAST, F) && sBbpPairSrc.mBatteryCount > 0 && !sBbpPairRecv.mStopped && tPairP >= tPairMin && tPairP <= tPairMax;
+		sBbpSeq.judge("PAIR POSITIVE-CONTROL: приёмник открыт с запада и праймлен реальной предметной батареей, источник эмитит на восток, пакет в окне", tPairPc, T, tPairPc);
+		sBbpSeq.judge("PAIR CHARGE: накопитель реально набрал энергию живыми тиками", tPairRecvE > sBbpPairRecvE0 && sBbpPairRecvGrow.mSteps > 0, ">0 шагов роста", "Δ=" + (tPairRecvE - sBbpPairRecvE0) + ", шагов=" + sBbpPairRecvGrow.mSteps);
+		sBbpSeq.judge("PAIR DISCHARGE: источник реально отдал (эмиссия принята хотя бы раз + собственный запас убыл)", sBbpSeq.everSeen("PAIR-эмиссия") && tPairLost > 0, "emits=T и убыло>0", "emits=" + sBbpSeq.everSeen("PAIR-эмиссия") + ", убыло=" + tPairLost);
+		sBbpSeq.judge("PAIR CONSERVE: КАЖДЫЙ прирост приёмника == пакет источника mOutput", sBbpPairRecvGrow.mSteps > 0 && sBbpPairRecvGrow.mMin == tPairP && sBbpPairRecvGrow.mMax == tPairP, tPairP + "/" + tPairP, (sBbpPairRecvGrow.mSteps == 0 ? 0 : sBbpPairRecvGrow.mMin) + "/" + sBbpPairRecvGrow.mMax);
+		sBbpSeq.judge("PAIR CONSERVE-БАЛАНС: убыло у источника == прибыло у приёмника (энергия не создаётся из ничего)", tPairLost == tPairGained, tPairLost, tPairGained);
+
+		// ---------- COLD ----------
+		long tColdRecvE = sBbpColdRecv.mEnergy, tColdRecvI = gt6BatBoxProbeItemEnergy(sBbpColdRecv);
+		O.println("[" + BBP_M + "] COLD числа: источник ящик=" + sBbpColdSrc.mEnergy + " предмет=" + gt6BatBoxProbeItemEnergy(sBbpColdSrc) + " mActive=" + sBbpColdSrc.mActive + " эмиссия видена=" + sBbpSeq.everSeen("COLD-эмиссия")
+			+ "; приёмник ящик " + sBbpColdRecvE0 + "->" + tColdRecvE + " предмет " + sBbpColdRecvI0 + "->" + tColdRecvI + "; приросты: " + sBbpColdRecvGrow
+			+ "; приёмник mChargeableCount=" + sBbpColdRecv.mChargeableCount + " mReceivablePower=" + sBbpColdRecv.mReceivablePower);
+		boolean tColdPc = sBbpColdRecv.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_WEST, F) && sBbpColdRecv.mReceivablePower > 0 && sBbpColdRecv.mChargeableCount > 0 && !sBbpColdRecv.mStopped
+			&& sBbpColdSrc.mOutput >= sBbpColdRecv.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST) && sBbpColdSrc.mOutput <= sBbpColdRecv.getEnergySizeInputMax(TD.Energy.EU, SIDE_WEST);
+		sBbpSeq.judge("COLD POSITIVE-CONTROL: приёмник открыт и праймлен, пакет источника попал бы в окно (отличие от PAIR — только ПУСТАЯ предметная батарея источника)", tColdPc, T, tColdPc);
+		sBbpSeq.judge("COLD: без источника энергии ничего не растёт (ни эмиссии, ни прироста)", !sBbpSeq.everSeen("COLD-эмиссия") && tColdRecvE == sBbpColdRecvE0 && sBbpColdRecvGrow.mValueMax == 0 && tColdRecvI == sBbpColdRecvI0,
+			"emits=false, Δ=0", "emits=" + sBbpSeq.everSeen("COLD-эмиссия") + ", Δящик=" + (tColdRecvE - sBbpColdRecvE0) + ", max=" + sBbpColdRecvGrow.mValueMax + ", Δпредмет=" + (tColdRecvI - sBbpColdRecvI0));
+
+		// ---------- BOUNDS: НЕДОНАПРЯЖЕНИЕ (Root.doEnergyInjection:886) ----------
+		long tUnderP = sBbpUnderSrc.mOutput;
+		long tUnderMin = sBbpUnderRecv.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST), tUnderMax = sBbpUnderRecv.getEnergySizeInputMax(TD.Energy.EU, SIDE_WEST);
+		long tUnderLost = (sBbpUnderSrcE0 - sBbpUnderSrc.mEnergy) + (sBbpUnderSrcI0 - gt6BatBoxProbeItemEnergy(sBbpUnderSrc));
+		O.println("[" + BBP_M + "] UNDER числа: пакет P=" + tUnderP + " НИЖЕ окна приёмника [" + tUnderMin + ".." + tUnderMax + "]; приёмник mEnergy " + sBbpUnderRecvE0 + "->" + sBbpUnderRecv.mEnergy + " приросты: " + sBbpUnderRecvGrow
+			+ "; приёмник mChargeableCount=" + sBbpUnderRecv.mChargeableCount + " mReceivablePower=" + sBbpUnderRecv.mReceivablePower
+			+ "; источник эмиссия видена=" + sBbpSeq.everSeen("UNDER-эмиссия") + " убыло у источника=" + tUnderLost
+			+ "; КОНТРОЛЬ UNDERPC (тот же тир приёмника, пакет " + sBbpUnderPcSrc.mOutput + " в окне): mEnergy " + sBbpUnderPcRecvE0 + "->" + sBbpUnderPcRecv.mEnergy + " приросты: " + sBbpUnderPcRecvGrow);
+		boolean tUnderPc = sBbpUnderRecv.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_WEST, F) && sBbpUnderRecv.mReceivablePower > 0 && sBbpUnderRecv.mChargeableCount > 0 && !sBbpUnderRecv.mStopped
+			&& sBbpUnderSrc.isEnergyEmittingTo(TD.Energy.EU, SIDE_EAST, F) && sBbpUnderSrc.mBatteryCount > 0 && tUnderP < tUnderMin;
+		sBbpSeq.judge("BOUNDS-UNDER POSITIVE-CONTROL: приёмник открыт и праймлен, источник эмитит — единственная преграда это размер пакета (" + tUnderP + " < min " + tUnderMin + ")", tUnderPc, T, tUnderPc);
+		sBbpSeq.judge("BOUNDS-UNDER: приёмник не зачислил НИЧЕГО, а источник списал энергию («принят, но не зачислен», Root.doEnergyInjection:886)",
+			sBbpUnderRecv.mEnergy == sBbpUnderRecvE0 && sBbpUnderRecvGrow.mValueMax == 0 && sBbpSeq.everSeen("UNDER-эмиссия") && tUnderLost > 0,
+			"приёмник Δ=0 при emits=T и убыли источника>0", "Δ=" + (sBbpUnderRecv.mEnergy - sBbpUnderRecvE0) + ", max=" + sBbpUnderRecvGrow.mValueMax + ", emits=" + sBbpSeq.everSeen("UNDER-эмиссия") + ", убыло=" + tUnderLost);
+		sBbpSeq.judge("BOUNDS-UNDER КОНТРОЛЬ (UNDERPC): ТОТ ЖЕ тир приёмника от согласованного источника накапливает", sBbpUnderPcRecv.mEnergy > sBbpUnderPcRecvE0 && sBbpUnderPcRecvGrow.mSteps > 0,
+			">0", "Δ=" + (sBbpUnderPcRecv.mEnergy - sBbpUnderPcRecvE0) + ", шагов=" + sBbpUnderPcRecvGrow.mSteps);
+		sBbpSeq.judge("BOUNDS-UNDER КОНТРОЛЬ CONSERVE: каждый прирост UNDERPC == пакет " + sBbpUnderPcSrc.mOutput, sBbpUnderPcRecvGrow.mSteps > 0 && sBbpUnderPcRecvGrow.mMin == sBbpUnderPcSrc.mOutput && sBbpUnderPcRecvGrow.mMax == sBbpUnderPcSrc.mOutput,
+			sBbpUnderPcSrc.mOutput + "/" + sBbpUnderPcSrc.mOutput, (sBbpUnderPcRecvGrow.mSteps == 0 ? 0 : sBbpUnderPcRecvGrow.mMin) + "/" + sBbpUnderPcRecvGrow.mMax);
+
+		// ---------- BOUNDS: ПЕРЕНАПРЯЖЕНИЕ (BatBox.doInject:183-185) ----------
+		long tOverP = sBbpOverSrc.mOutput;
+		long tOverMin = sBbpOverRecv.getEnergySizeInputMin(TD.Energy.EU, SIDE_WEST), tOverMax = sBbpOverRecv.getEnergySizeInputMax(TD.Energy.EU, SIDE_WEST);
+		long tOverLost = (sBbpOverSrcE0 - sBbpOverSrc.mEnergy) + (sBbpOverSrcI0 - gt6BatBoxProbeItemEnergy(sBbpOverSrc));
+		net.minecraft.world.level.block.entity.BlockEntity tOverFresh = sBbpPlayer.level().getBlockEntity(sBbpOverRecvPos);
+		O.println("[" + BBP_M + "] OVER числа: пакет P=" + tOverP + " ВЫШЕ окна приёмника [" + tOverMin + ".." + tOverMax + "]; приёмник mEnergy " + sBbpOverRecvE0 + "->" + sBbpOverRecv.mEnergy + " приросты: " + sBbpOverRecvGrow
+			+ "; приёмник mChargeableCount=" + sBbpOverRecv.mChargeableCount + " mReceivablePower=" + sBbpOverRecv.mReceivablePower + " mExplosionStrength=" + sBbpOverRecv.mExplosionStrength
+			+ "; блок приёмника жив=" + (tOverFresh == sBbpOverRecv) + " (свежий BE=" + (tOverFresh == null ? "null" : tOverFresh.getClass().getSimpleName()) + ")"
+			+ "; источник эмиссия видена=" + sBbpSeq.everSeen("OVER-эмиссия") + " убыло у источника=" + tOverLost
+			+ "; КОНТРОЛЬ OVERPC (тот же тир приёмника, пакет " + sBbpOverPcSrc.mOutput + " в окне): mEnergy " + sBbpOverPcRecvE0 + "->" + sBbpOverPcRecv.mEnergy + " приросты: " + sBbpOverPcRecvGrow);
+		boolean tOverPcCtl = tOverFresh == sBbpOverRecv && sBbpOverRecv.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_WEST, F) && sBbpOverRecv.mReceivablePower > 0 && sBbpOverRecv.mChargeableCount > 0 && !sBbpOverRecv.mStopped
+			&& sBbpOverSrc.isEnergyEmittingTo(TD.Energy.EU, SIDE_EAST, F) && sBbpOverSrc.mBatteryCount > 0 && tOverP > tOverMax;
+		sBbpSeq.judge("BOUNDS-OVER POSITIVE-CONTROL: приёмник жив, открыт и праймлен — единственная преграда это размер пакета (" + tOverP + " > max " + tOverMax + ")", tOverPcCtl, T, tOverPcCtl);
+		sBbpSeq.judge("BOUNDS-OVER: приёмник не зачислил НИЧЕГО (ветка overcharge, BatBox.doInject:183-185), источник списал энергию",
+			sBbpOverRecv.mEnergy == sBbpOverRecvE0 && sBbpOverRecvGrow.mValueMax == 0 && sBbpSeq.everSeen("OVER-эмиссия") && tOverLost > 0,
+			"приёмник Δ=0 при emits=T и убыли источника>0", "Δ=" + (sBbpOverRecv.mEnergy - sBbpOverRecvE0) + ", max=" + sBbpOverRecvGrow.mValueMax + ", emits=" + sBbpSeq.everSeen("OVER-эмиссия") + ", убыло=" + tOverLost);
+		sBbpSeq.judge("BOUNDS-OVER КОНТРОЛЬ (OVERPC): ТОТ ЖЕ тир приёмника от согласованного источника накапливает", sBbpOverPcRecv.mEnergy > sBbpOverPcRecvE0 && sBbpOverPcRecvGrow.mSteps > 0,
+			">0", "Δ=" + (sBbpOverPcRecv.mEnergy - sBbpOverPcRecvE0) + ", шагов=" + sBbpOverPcRecvGrow.mSteps);
+		sBbpSeq.judge("BOUNDS-OVER КОНТРОЛЬ CONSERVE: каждый прирост OVERPC == пакет " + sBbpOverPcSrc.mOutput, sBbpOverPcRecvGrow.mSteps > 0 && sBbpOverPcRecvGrow.mMin == sBbpOverPcSrc.mOutput && sBbpOverPcRecvGrow.mMax == sBbpOverPcSrc.mOutput,
+			sBbpOverPcSrc.mOutput + "/" + sBbpOverPcSrc.mOutput, (sBbpOverPcRecvGrow.mSteps == 0 ? 0 : sBbpOverPcRecvGrow.mMin) + "/" + sBbpOverPcRecvGrow.mMax);
+
+		// ---------- ПРЕДМЕТНЫЕ БАТАРЕИ ВНУТРИ ЯЩИКА (BatBox:108-124) ----------
+		long tDisE = sBbpItemDis.mEnergy, tDisI = gt6BatBoxProbeItemEnergy(sBbpItemDis);
+		O.println("[" + BBP_M + "] ITEMDIS числа: ящик " + sBbpItemDisE0 + "->" + tDisE + " (Δ=" + (tDisE - sBbpItemDisE0) + ") предмет " + sBbpItemDisI0 + "->" + tDisI + " (Δ=" + (tDisI - sBbpItemDisI0) + ")"
+			+ "; полоса0=" + sBbpItemDisBand0 + " полоса_сейчас=" + gt6BatBoxProbeBand(sBbpItemDis) + " mBatteryCount=" + sBbpItemDis.mBatteryCount + " mChargeableCount=" + sBbpItemDis.mChargeableCount + "; приросты ящика: " + sBbpItemDisGrow);
+		boolean tDisPc = sBbpItemDis.mBatteryCount > 0 && sBbpItemDisBand0 <= 1 && sBbpItemDisI0 > 0;
+		sBbpSeq.judge("ITEM-DISCHARGE POSITIVE-CONTROL: ящик распознал предметную батарею как источник (mBatteryCount>0), стартовая полоса 0/1 = «тянуть из предмета», предмет заряжен", tDisPc, T, tDisPc);
+		sBbpSeq.judge("ITEM-DISCHARGE: энергия реально перетекла из предметной батареи в ящик", tDisE > sBbpItemDisE0 && tDisI < sBbpItemDisI0, "Δящик>0 и Δпредмет<0", "Δящик=" + (tDisE - sBbpItemDisE0) + ", Δпредмет=" + (tDisI - sBbpItemDisI0));
+		sBbpSeq.judge("ITEM-DISCHARGE CONSERVE: прирост ящика == убыль предмета", (tDisE - sBbpItemDisE0) == (sBbpItemDisI0 - tDisI), (sBbpItemDisI0 - tDisI), (tDisE - sBbpItemDisE0));
+
+		long tChgE = sBbpItemChg.mEnergy, tChgI = gt6BatBoxProbeItemEnergy(sBbpItemChg);
+		O.println("[" + BBP_M + "] ITEMCHG числа: ящик " + sBbpItemChgE0 + "->" + tChgE + " (Δ=" + (tChgE - sBbpItemChgE0) + ") предмет " + sBbpItemChgI0 + "->" + tChgI + " (Δ=" + (tChgI - sBbpItemChgI0) + ")"
+			+ "; полоса0=" + sBbpItemChgBand0 + " полоса_сейчас=" + gt6BatBoxProbeBand(sBbpItemChg) + " mChargeableCount=" + sBbpItemChg.mChargeableCount + "; приросты предмета: " + sBbpItemChgItemGrow);
+		boolean tChgPc = sBbpItemChg.mChargeableCount > 0 && sBbpItemChgBand0 >= 6;
+		sBbpSeq.judge("ITEM-CHARGE POSITIVE-CONTROL: ящик распознал предметную батарею как заряжаемую (mChargeableCount>0) и стартовал в полосе 6/7 = «заряжать предмет»", tChgPc, T, tChgPc);
+		sBbpSeq.judge("ITEM-CHARGE: энергия реально перетекла из ящика в предметную батарею", tChgI > sBbpItemChgI0 && tChgE < sBbpItemChgE0, "Δпредмет>0 и Δящик<0", "Δпредмет=" + (tChgI - sBbpItemChgI0) + ", Δящик=" + (tChgE - sBbpItemChgE0));
+		sBbpSeq.judge("ITEM-CHARGE CONSERVE: прирост предмета == убыль ящика", (tChgI - sBbpItemChgI0) == (sBbpItemChgE0 - tChgE), (sBbpItemChgE0 - tChgE), (tChgI - sBbpItemChgI0));
+
+		// ---------- ZPM (высокий тир, QU) ----------
+		long tZpmE = sBbpZpmDech.mEnergy, tZpmI = gt6BatBoxProbeItemEnergy(sBbpZpmDech);
+		O.println("[" + BBP_M + "] ZPM числа: дечарджер " + sBbpZpmE0 + "->" + tZpmE + " (Δ=" + (tZpmE - sBbpZpmE0) + ") ZPM " + sBbpZpmI0 + "->" + tZpmI + " (Δ=" + (tZpmI - sBbpZpmI0) + ")"
+			+ "; тип_вход=" + sBbpZpmDech.mEnergyType + " тип_выход=" + sBbpZpmDech.mEnergyTypeOut + " mInput=" + sBbpZpmDech.mInput + " mOutput=" + sBbpZpmDech.mOutput + " invsize=" + sBbpZpmDech.invsize()
+			+ " mBatteryCount=" + sBbpZpmDech.mBatteryCount + " mChargeableCount=" + sBbpZpmDech.mChargeableCount + " полоса0=" + sBbpZpmBand0 + " полоса_сейчас=" + gt6BatBoxProbeBand(sBbpZpmDech) + "; приросты дечарджера: " + sBbpZpmBoxGrow);
+		boolean tZpmPc = sBbpZpmDech.mBatteryCount > 0 && sBbpZpmDech.mEnergyType == TD.Energy.QU && sBbpZpmI0 > 0 && sBbpZpmBand0 <= 1;
+		sBbpSeq.judge("ZPM POSITIVE-CONTROL: дечарджер распознал ZPM как источник QU (mBatteryCount>0, тип QU), ZPM заряжен, стартовая полоса «тянуть»", tZpmPc, T, tZpmPc);
+		sBbpSeq.judge("ZPM DISCHARGE: QU реально перетекла из ZPM в дечарджер", tZpmE > sBbpZpmE0 && tZpmI < sBbpZpmI0, "Δдечарджер>0 и ΔZPM<0", "Δдечарджер=" + (tZpmE - sBbpZpmE0) + ", ΔZPM=" + (tZpmI - sBbpZpmI0));
+		sBbpSeq.judge("ZPM CONSERVE: прирост дечарджера == убыль ZPM", (tZpmE - sBbpZpmE0) == (sBbpZpmI0 - tZpmI), (sBbpZpmI0 - tZpmI), (tZpmE - sBbpZpmE0));
+
+		// ---------- CRYSTAL CHARGER (LU) ----------
+		long tLuP = UT.Code.units(sBbpChargerSrc.mOutput, sBbpLaser.mConverter.mEnergyIN.mRec, sBbpLaser.mConverter.mEnergyOUT.mRec, F);
+		long tChMin = sBbpCharger.getEnergySizeInputMin(TD.Energy.LU, SIDE_WEST), tChMax = sBbpCharger.getEnergySizeInputMax(TD.Energy.LU, SIDE_WEST);
+		O.println("[" + BBP_M + "] CHARGER числа: пакет LU=units(бат.mOutput=" + sBbpChargerSrc.mOutput + ", лазер.IN.rec=" + sBbpLaser.mConverter.mEnergyIN.mRec + ", лазер.OUT.rec=" + sBbpLaser.mConverter.mEnergyOUT.mRec + ")=" + tLuP
+			+ "; окно зарядника=[" + tChMin + ".." + tChMax + "]; зарядник mEnergy " + sBbpChargerE0 + "->" + sBbpCharger.mEnergy + " приросты: " + sBbpChargerGrow
+			+ "; mChargeableCount=" + sBbpCharger.mChargeableCount + " mReceivablePower=" + sBbpCharger.mReceivablePower + " лазер эмиссия видена=" + sBbpSeq.everSeen("CHARGER-лазер-эмиссия"));
+		boolean tChPc = sBbpCharger.isEnergyAcceptingFrom(TD.Energy.LU, SIDE_WEST, F) && sBbpCharger.mReceivablePower > 0 && sBbpCharger.mChargeableCount > 0 && !sBbpCharger.mStopped
+			&& sBbpLaser.isEnergyEmittingTo(TD.Energy.LU, SIDE_EAST, F) && tLuP >= tChMin && tLuP <= tChMax;
+		sBbpSeq.judge("CHARGER POSITIVE-CONTROL: зарядник открыт для LU с запада и праймлен реальным кристаллом, лазер эмитит на восток, пакет в окне", tChPc, T, tChPc);
+		sBbpSeq.judge("CHARGER CHARGE: зарядник реально набрал LU живыми тиками", sBbpCharger.mEnergy > sBbpChargerE0 && sBbpChargerGrow.mSteps > 0 && sBbpSeq.everSeen("CHARGER-лазер-эмиссия"),
+			">0 шагов роста", "Δ=" + (sBbpCharger.mEnergy - sBbpChargerE0) + ", шагов=" + sBbpChargerGrow.mSteps + ", лазер=" + sBbpSeq.everSeen("CHARGER-лазер-эмиссия"));
+		sBbpSeq.judge("CHARGER CONSERVE: КАЖДЫЙ прирост зарядника == пакет LU по формуле конвертора", sBbpChargerGrow.mSteps > 0 && sBbpChargerGrow.mMin == tLuP && sBbpChargerGrow.mMax == tLuP, tLuP + "/" + tLuP, (sBbpChargerGrow.mSteps == 0 ? 0 : sBbpChargerGrow.mMin) + "/" + sBbpChargerGrow.mMax);
+
+		long tCiE = sBbpChargerItem.mEnergy, tCiI = gt6BatBoxProbeItemEnergy(sBbpChargerItem);
+		O.println("[" + BBP_M + "] CHARGERITEM числа: зарядник " + sBbpChargerItemE0 + "->" + tCiE + " (Δ=" + (tCiE - sBbpChargerItemE0) + ") кристалл " + sBbpChargerItemI0 + "->" + tCiI + " (Δ=" + (tCiI - sBbpChargerItemI0) + ")"
+			+ "; полоса0=" + sBbpChargerItemBand0 + " полоса_сейчас=" + gt6BatBoxProbeBand(sBbpChargerItem) + " mChargeableCount=" + sBbpChargerItem.mChargeableCount + "; приросты кристалла: " + sBbpChargerCrystalGrow);
+		boolean tCiPc = sBbpChargerItem.mChargeableCount > 0 && sBbpChargerItemBand0 >= 6 && sBbpChargerItem.mEnergyType == TD.Energy.LU;
+		sBbpSeq.judge("CHARGERITEM POSITIVE-CONTROL: зарядник распознал кристалл как заряжаемый (mChargeableCount>0, тип LU) и стартовал в полосе заряда", tCiPc, T, tCiPc);
+		sBbpSeq.judge("CHARGERITEM CHARGE: LU реально перетекла из зарядника в кристалл", tCiI > sBbpChargerItemI0 && tCiE < sBbpChargerItemE0, "Δкристалл>0 и Δзарядник<0", "Δкристалл=" + (tCiI - sBbpChargerItemI0) + ", Δзарядник=" + (tCiE - sBbpChargerItemE0));
+		sBbpSeq.judge("CHARGERITEM CONSERVE: прирост кристалла == убыль зарядника", (tCiI - sBbpChargerItemI0) == (sBbpChargerItemE0 - tCiE), (sBbpChargerItemE0 - tCiE), (tCiI - sBbpChargerItemI0));
+
+		sBbpSeq.done();
+	}
+
+	public static void gt6BatBoxProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sBbpProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sBbpPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sBbpSeq == null) {
+			sBbpSeq = new gregapi.probe.GT6ProbeStand.Seq(BBP_M)
+				.at(BBP_T_BUILD, GT_API_Proxy::gt6BatBoxProbeBuild)
+				.at(BBP_T_LOAD, GT_API_Proxy::gt6BatBoxProbeLoad)
+				.at(BBP_T_FROM + 2, GT_API_Proxy::gt6BatBoxProbeDiagBands)
+				.window(BBP_T_FROM, BBP_T_TO, GT_API_Proxy::gt6BatBoxProbeTrack)
+				.window(BBP_T_FROM, BBP_T_TO, GT_API_Proxy::gt6BatBoxProbeTrace)
+				// mEmitsEnergy ящика взводится ТОЛЬКО когда приёмник вернул >0 принятых пакетов (BatBox:146) и
+				// перевычисляется каждый тик — копим по окну (§7 манифеста, кратковременные эффекты)
+				.watch("PAIR-эмиссия",          BBP_T_FROM, BBP_T_TO, () -> sBbpPairSrc  != null && sBbpPairSrc.mEmitsEnergy)
+				.watch("COLD-эмиссия",          BBP_T_FROM, BBP_T_TO, () -> sBbpColdSrc  != null && sBbpColdSrc.mEmitsEnergy)
+				.watch("UNDER-эмиссия",         BBP_T_FROM, BBP_T_TO, () -> sBbpUnderSrc != null && sBbpUnderSrc.mEmitsEnergy)
+				.watch("OVER-эмиссия",          BBP_T_FROM, BBP_T_TO, () -> sBbpOverSrc  != null && sBbpOverSrc.mEmitsEnergy)
+				.watch("CHARGER-лазер-эмиссия", BBP_T_FROM, BBP_T_TO, () -> sBbpLaser    != null && sBbpLaser.mConverter.mEmitsEnergy)
+				.at(BBP_T_JUDGE, GT_API_Proxy::gt6BatBoxProbeJudgeFinal);
+		}
+		sBbpSeq.tick(sBbpProbeTick);
 	}
 
 }
