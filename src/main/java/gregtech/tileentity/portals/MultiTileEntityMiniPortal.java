@@ -31,6 +31,7 @@ import gregapi.tileentity.base.TileEntityBase04MultiTileEntities;
 import gregapi.tileentity.data.ITileEntitySurface;
 import gregapi.tileentity.delegate.DelegatorTileEntity;
 import gregapi.tileentity.delegate.ITileEntityDelegating;
+import gregapi.data.FL;
 import gregapi.util.UT;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.Entity;
@@ -463,7 +464,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public int fill(Direction from, FluidStack resource, boolean doFill) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(resource, doFill ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return UT.Code.bindInt(FL.fill(tTileEntity, resource, doFill));
 		}
 		return 0;
 	}
@@ -471,7 +472,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public FluidStack drain(Direction from, FluidStack resource, boolean doDrain) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(resource, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, resource, doDrain);
 		}
 		return null;
 	}
@@ -479,7 +480,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public FluidStack drain(Direction from, int maxDrain, boolean doDrain) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(maxDrain, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, maxDrain, doDrain);
 		}
 		return null;
 	}
@@ -488,7 +489,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public boolean canFill(Direction from, Fluid fluid) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(new FluidStack(fluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0;
+			if (tTileEntity.mTileEntity != null) return FL.canFill(tTileEntity, fluid);
 		}
 		return F;
 	}
@@ -496,7 +497,7 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 	public boolean canDrain(Direction from, Fluid fluid) {
 		if (mTarget != null) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
-			if (tTileEntity.mTileEntity != null) return !tTileEntity.mTileEntity.drain(new FluidStack(fluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).isEmpty();
+			if (tTileEntity.mTileEntity != null) return FL.canDrain(tTileEntity, fluid);
 		}
 		return F;
 	}

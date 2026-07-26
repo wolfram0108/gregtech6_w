@@ -186,7 +186,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		if ((mModes & EXTENDER_TANK) != 0 && (aSide == mFacing || allowInput(aFluid))) {
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, aFluid)) return 0;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(aFluid, aDoFill ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return UT.Code.bindInt(FL.fill(tTileEntity, aFluid, aDoFill));
 		}
 		return 0;
 	}
@@ -196,7 +196,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		if ((mModes & EXTENDER_TANK) != 0 && (aSide == mFacing || allowInput(aFluid))) {
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, aFluid)) return null;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(aFluid, aDoDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, aFluid, aDoDrain);
 		}
 		return null;
 	}
@@ -206,7 +206,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, null)) return null;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return (aSide == mFacing || allowInput(tTileEntity.mTileEntity.drain(aToDrain, F ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE))) ? tTileEntity.mTileEntity.drain(aToDrain, aDoDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE) : null;
+			if (tTileEntity.mTileEntity != null) return (aSide == mFacing || allowInput(FL.drain(tTileEntity, aToDrain, F))) ? FL.drain(tTileEntity, aToDrain, aDoDrain) : null;
 		}
 		return null;
 	}
@@ -217,7 +217,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		if ((mModes & EXTENDER_TANK) != 0 && (aSide == mFacing || allowInput(aFluid))) {
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0;
+			if (tTileEntity.mTileEntity != null) return FL.canFill(tTileEntity, aFluid);
 		}
 		return F;
 	}
@@ -227,7 +227,7 @@ public class MultiTileEntityFilter extends MultiTileEntityExtender implements IT
 		if ((mModes & EXTENDER_TANK) != 0 && (aSide == mFacing || allowInput(aFluid))) {
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return !tTileEntity.mTileEntity.drain(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).isEmpty();
+			if (tTileEntity.mTileEntity != null) return FL.canDrain(tTileEntity, aFluid);
 		}
 		return F;
 	}

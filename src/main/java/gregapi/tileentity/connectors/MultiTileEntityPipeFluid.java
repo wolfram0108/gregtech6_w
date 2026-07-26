@@ -404,10 +404,11 @@ public class MultiTileEntityPipeFluid extends TileEntityBase10ConnectorRendered 
 			// No Tank? Nothing to do then.
 			if (aAdjacentTanks[tSide] == null) continue;
 			// Check if the Tank can be filled with this Fluid.
-			// F5: 1.7.10 IFluidHandler.fill(ForgeDirection,FluidStack,boolean) -> neo IFluidHandler.fill(FluidStack,
-			// FluidAction) без стороны (IFluidHandler.java:117 — сторона уже разрешена на этапе получения этой
-			// ссылки, capability lookup), boolean doFill=false -> FluidAction.SIMULATE (IFluidHandler.java:41-51).
-			if (aAdjacentTanks[tSide].mTileEntity.fill(aTank.make(1), IFluidHandler.FluidAction.SIMULATE) > 0 || aAdjacentTanks[tSide].mTileEntity.fill(aTank.get(Long.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0) {
+			// F5: 1.7.10 звал fill(getForgeSideOfTileEntity(), aFluid, F) — СО СТОРОНОЙ. Здесь mTileEntity — сырой
+			// BE делегата, а не capability-handle, поэтому сайдлес neo-fill терял сторону (SIDE_ANY) и приёмник со
+			// сторонним гейтом входа отсеивался на скане кандидатов (BUG-062). Сторону несёт FL.fill (fillSided,
+			// FL.java:923) — тот же канал, что и execute-путь ниже.
+			if (FL.fill(aAdjacentTanks[tSide], aTank.make(1), F) > 0 || FL.fill(aAdjacentTanks[tSide], aTank.get(Long.MAX_VALUE), F) > 0) {
 				// Add to a random Position in the List.
 				tTanks.add(rng(tTanks.size()+1), aAdjacentTanks[tSide]);
 				// One more Target.

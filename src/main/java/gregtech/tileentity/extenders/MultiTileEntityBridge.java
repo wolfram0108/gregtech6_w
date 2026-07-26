@@ -258,7 +258,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, aFluid)) return 0;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(aFluid, doFill ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return UT.Code.bindInt(FL.fill(tTileEntity, aFluid, doFill));
 		}
 		return 0;
 	}
@@ -268,7 +268,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, aFluid)) return null;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(aFluid, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, aFluid, doDrain);
 		}
 		return null;
 	}
@@ -278,7 +278,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, null)) return null;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.drain(maxDrain, doDrain ? IFluidHandler.FluidAction.EXECUTE : IFluidHandler.FluidAction.SIMULATE);
+			if (tTileEntity.mTileEntity != null) return FL.drain(tTileEntity, maxDrain, doDrain);
 		}
 		return null;
 	}
@@ -288,7 +288,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidFill(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return tTileEntity.mTileEntity.fill(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE) > 0;
+			if (tTileEntity.mTileEntity != null) return FL.canFill(tTileEntity, aFluid);
 		}
 		return F;
 	}
@@ -298,7 +298,7 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 			byte aSide = UT.Code.side(aDirection);
 			if (hasCovers() && SIDES_VALID[aSide] && mCovers.mBehaviours[aSide] != null && mCovers.mBehaviours[aSide].interceptFluidDrain(aSide, mCovers, aSide, FL.make(aFluid, 1))) return F;
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(aSide), F, T);
-			if (tTileEntity.mTileEntity != null) return !tTileEntity.mTileEntity.drain(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).isEmpty();
+			if (tTileEntity.mTileEntity != null) return FL.canDrain(tTileEntity, aFluid);
 		}
 		return F;
 	}

@@ -950,6 +950,25 @@ public enum FL {
 		return rInfo;
 	}
 
+	// F5-capability canFill/canDrain (четвёртая пара ТОГО ЖЕ шва, что fillSided:923/drainSided:959/getTankInfo:944):
+	// 1.7.10 IFluidHandler.canFill(ForgeDirection,Fluid)/canDrain(...) в neo-API нет вовсе. GT6-TE несут свои
+	// side-aware canFill/canDrain (TileEntityBase01Root:780,786, делегаты getFluidTankFillable/Drainable(side)) —
+	// маршрутизируем side ТУДА (instanceof GT6-TE); ванильному neo-хендлеру side неприменим -> пробный
+	// SIMULATE-fill/drain на MAX (единственный sideless-эквивалент вопроса «примет ли/отдаст ли»).
+	public static boolean canFill(IFluidHandler aFluidHandler, byte aSide, Fluid aFluid) {
+		if (aFluidHandler == null || aFluid == null) return F;
+		if (aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT) return tGT.canFill(FORGE_DIR[aSide], aFluid);
+		return aFluidHandler.fill(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), FluidAction.SIMULATE) > 0;
+	}
+	public static boolean canFill (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && canFill(tHandler, aDelegator.mSideOfTileEntity, aFluid);}
+	public static boolean canDrain(IFluidHandler aFluidHandler, byte aSide, Fluid aFluid) {
+		if (aFluidHandler == null || aFluid == null) return F;
+		if (aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT) return tGT.canDrain(FORGE_DIR[aSide], aFluid);
+		FluidStack tDrained = aFluidHandler.drain(new FluidStack(aFluid.builtInRegistryHolder(), Integer.MAX_VALUE), FluidAction.SIMULATE);
+		return tDrained != null && !tDrained.isEmpty();
+	}
+	public static boolean canDrain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, Fluid aFluid) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && canDrain(tHandler, aDelegator.mSideOfTileEntity, aFluid);}
+
 	// F5-transfer drain-сторона (зеркало fillSided:916 — тот же шов, вторая половина): 1.7.10 side-aware
 	// IFluidHandler.drain(ForgeDirection,...) -> neo sideless drain(...,FluidAction). GT6-TE несут свой side-aware
 	// drain (TileEntityBase01Root:758,767, делегат getFluidTankDrainable(side)) — маршрутизируем side ТУДА
@@ -962,6 +981,11 @@ public enum FL {
 	private static FluidStack drainSided(IFluidHandler aFluidHandler, byte aSide, FluidStack aFluid, boolean aDoDrain) {
 		return aFluidHandler instanceof gregapi.tileentity.base.TileEntityBase01Root tGT ? tGT.drain(FORGE_DIR[aSide], aFluid, aDoDrain) : aFluidHandler.drain(aFluid, aDoDrain ? FluidAction.EXECUTE : FluidAction.SIMULATE);
 	}
+	// Публичный сторононесущий drain-канал (зеркало публичной fill-семьи:945). В 1.7.10 его не было: там прямой
+	// вызов aDelegator.mTileEntity.drain(getForgeSideOfTileEntity(),...) сам нёс сторону, в neo тот же вызов её
+	// теряет (SIDE_ANY). Ретрансляторы (Extender/Bridge/Filter/MiniPortal) обязаны ходить ЧЕРЕЗ этот центр.
+	public static FluidStack drain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, FluidStack aFluid, boolean aDoDrain) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler && aFluid != null ? drainSided(tHandler, aDelegator.mSideOfTileEntity, aFluid, aDoDrain) : null;}
+	public static FluidStack drain (@SuppressWarnings("rawtypes") DelegatorTileEntity aDelegator, int aMaxDrain, boolean aDoDrain) {return aDelegator != null && aDelegator.mTileEntity instanceof IFluidHandler tHandler ? drainSided(tHandler, aDelegator.mSideOfTileEntity, aMaxDrain, aDoDrain) : null;}
 	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move (aFrom, aTo, Long.MAX_VALUE);}
 	public static long move_(@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo) {return move_(aFrom, aTo, Long.MAX_VALUE);}
 	public static long move (@SuppressWarnings("rawtypes") DelegatorTileEntity aFrom, @SuppressWarnings("rawtypes") DelegatorTileEntity aTo, long aMaxMoved) {return aFrom != null && aFrom.mTileEntity instanceof IFluidHandler && aTo != null && aTo.mTileEntity instanceof IFluidHandler ? move_(aFrom, aTo, aMaxMoved) : 0;}
