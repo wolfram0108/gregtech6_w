@@ -367,6 +367,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6batboxprobe.flag")) gt6BatBoxProbeTick(aEvent.getServer());
 				// [GT6-REACTORPROBE] верификационный стенд «Связка №12 — ядерная энергетика» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6reactorprobe.flag")) gt6ReactorProbeTick(aEvent.getServer());
+				// [GT6-FUSIONPROBE] верификационный стенд «Связка №13 — термоядерный синтез» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6fusionprobe.flag")) gt6FusionProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -6610,6 +6612,475 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(RXP_T_JUDGE, GT_API_Proxy::gt6ReactorProbeJudgeFinal);
 		}
 		sRxpSeq.tick(sRxpProbeTick);
+	}
+
+	// ========== [GT6-FUSIONPROBE] ВРЕМЕННЫЙ стенд «Связка №13 — термоядерный синтез» (Ф3.1, гейт run/gt6fusionprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана; судимый канал — ТОЛЬКО реальные тики onTick2()/doWork()/doActive()
+	// контроллера, onTick2() зарядников и трансформатора; ни один судимый метод пробой не вызывается напрямую):
+	//   ФОРМА СТРУКТУРЫ (MultiTileEntityFusionReactor.checkStructure2:47-127). Центр многоблока —
+	//     tX=getOffsetXN(mFacing,2), tZ=getOffsetZN(mFacing,2) (TileEntityBase01Root:294,296 => X-OFFX[mFacing]*2),
+	//     то есть КОНТРОЛЛЕР стоит в 2 блоках от центра со стороны mFacing. Слои по Y: tY-2 .. tY+2.
+	//     а) КУБ 5x5x5 вокруг центра (:54-70): i*i+j*j+k*k<4 (ровно 27 клеток 3x3x3) — процессоры 18200/18201/18202
+	//        в количестве 3/12/12 (:52,72 счётчики tVersatile/tLogic/tControl); i*i+j*j+k*k>6 ИЛИ 4 горизонтальные
+	//        осевые клетки на расстоянии 2 при j==0 (:65) — стены 18008; остальное (:67) — вентиляция 18299.
+	//        Клетка самого контроллера проходит проверку досрочно (ITileEntityMultiBlockController:49 tTileEntity==aController).
+	//     б) «РУКИ» (:74-89): по 2 стены 18008 на расстоянии 3 и 4 в КАЖДОМ горизонтальном направлении, КРОМЕ mFacing.
+	//     в) ОКТАГОНЫ 19x19 (:93-125, таблица OCTAGONS:131-191, отсчёт от угла tX-9,tZ-9):
+	//        OCTAGONS[0] — внешнее кольцо: tY-1 (18003, ONLY_ITEM_FLUID), tY (18003; 4 середины плоских граней —
+	//        design 2 / ONLY_ENERGY_OUT, остальные — design mActive?6:5 / ONLY_ENERGY_IN), tY+1 (18003, ONLY_ITEM_FLUID);
+	//        OCTAGONS[1]: tY-2/tY+2 = 18003 ONLY_ITEM_FLUID, tY-1/tY+1 = 18003 NOTHING, tY = 18045 (иридиевая катушка);
+	//        OCTAGONS[2]: tY-2/tY+2 = 18003 ONLY_ITEM_FLUID, tY-1/tY+1 = 18045, tY = 18002 (нерж. стена).
+	//        Итоговые количества сходятся с подсказкой самого блока (:195-197: 144 катушки, 576 вольфрам-стен,
+	//        50 вентиляций, 36 нерж-стен, 53 оцинк-стен, 3+12+12 процессоров) — стенд печатает ЖИВОЙ пересчёт.
+	//   ЭНЕРГЕТИКА (Loader_MultiTileEntities.java:1246 — NBT реактора 17198):
+	//     NBT_ENERGY_ACCEPTED=TU (ВРЕМЯ!) => MultiTileEntityBasicMachine.onTick2:460 mEnergy++ КАЖДЫЙ тик; при
+	//     mInputMin=1 doWork:786 пускает doActive с aEnergy=min(mInputMax,mEnergy)=1 => прогресс идёт РОВНО 1/тик.
+	//     NBT_ENERGY_ACCEPTED_2=LU => mEnergyTypeCharged=LU (:155); doInject:502-505 при mChargeRequirement>0
+	//     вычитает aSize*aAmount ЛАЗЕРНОЙ энергии и НЕ зачисляет её в mEnergy. NBT_SPECIAL_IS_START_ENERGY=T =>
+	//     checkRecipe:760 ставит mChargeRequirement=tRecipe.mSpecialValue, а doActive:814 НЕ пускает процесс,
+	//     пока mChargeRequirement>0 — это и есть «порог запуска».
+	//     NBT_ENERGY_EMITTED=EU, mEUt рецептов ОТРИЦАТЕЛЬНЫЙ => checkRecipe:766-769 mOutputEnergy=-mEUt=8192,
+	//     mMaxProgress=mDuration, mMinEnergy=0; doActive:817 каждый тик синтеза зовёт doOutputEnergy, а тот
+	//     (MultiTileEntityFusionReactor:233-236) шлёт ОДИН пакет 8192 EU в блок на расстоянии 10 от ЦЕНТРА по
+	//     горизонтали (ALL_SIDES_HORIZONTAL={2,3,4,5} — сперва север), возвращаясь на первом принявшем.
+	//     mInputMax=16384 => doInject:498 объявляет перегрузом ЛЮБОЙ пакет крупнее 16384 (overcharge), поэтому
+	//     источник LU обязан быть с пакетом <=16384.
+	//   ТОПЛИВО (RM.java:146 — карта RM.Fusion: 2 предметных входа/6 выходов/мин.1, 2 жидкостных входа/6 выходов,
+	//     мин.входов 2; Loader_Recipes_Other.java:949-966 — 18 рецептов, mSpecialValue=duration*8192*16 LU).
+	//     Подаётся как обычный вход машины: предмет-селектор ST.tag(n) в слот 0 и 1-2 газа/жидкости в mTanksInput;
+	//     физически игрок наливает через любую стену ONLY_ITEM_FLUID (MultiTileEntityMultiBlockPart:363-368 fill ->
+	//     контроллер getFluidTankFillable2) — getFluidInputTarget/getItemInputTarget реактора равны null (:238-239),
+	//     то есть АВТО-подачи у него нет вовсе, только «снаружи внутрь».
+	//   ИСТОЧНИК LU (реальный, тир в тир): Large Crystal Charger T5 10145 (Loader:975, класс
+	//     MultiTileEntityCrystalChargerLarge -> TileEntityBase10EnergyBatBox, NBT_ENERGY_EMITTED=LU => :67
+	//     mEnergyType=mEnergyTypeOut=LU, mInput=mOutput=V[5]=8192, NBT_INV_SIZE=16). Эмитит ТОЛЬКО на mFacing
+	//     (:235 isOutput) tOutput=mBatteryCount пакетов размера mOutput (:143-147) => 16 кристаллов = 131072 LU/тик,
+	//     буфер пополняется из ПРЕДМЕТНЫХ кристаллов раз в 20 тиков (:110-112). Предметный накопитель LU —
+	//     Red Energium Crystal T5 14505 (Loader:1088, MultiTileEntityBatteryLU8192, ёмкость V[5]*400000).
+	//     16 зарядников по периметру = 2097152 LU/тик, пакет 8192 <= mInputMax реактора 16384 (перегруза нет).
+	//   ПРИЁМНИК EU (без потерь, чтобы баланс был ТОЧНЫМ): Transformer (EV-IV) 10044 (Loader:886, класс
+	//     MultiTileEntityTransformerElectric -> TileEntityBase11Bidirectional: :64 isInput(aSide)=aSide==mFacing,
+	//     то есть вход СПЕРЕДИ, выход во все прочие стороны; NBT_INPUT=V[5]=8192, NBT_OUTPUT=V[4]=2048,
+	//     NBT_MULTIPLIER=4, NBT_WASTE_ENERGY=F) => принимает пакет 8192 и отдаёт 4 пакета по 2048 БЕЗ потерь ->
+	//     Large Battery Box (EV) 10094 (mInput=2048, окно [1024..4096], NBT_INV_SIZE=16), праймленный 16 ПУСТЫМИ
+	//     предметными батареями EV 14004 (mChargeableCount=16 => mReceivablePower=65536 > 8192; пустые — чтобы
+	//     ветка «ящик тянет из предметов» (:111-112) не подмешивала энергию в замер).
+	// ЛОВУШКИ ЗАМЕРА (§7 манифеста):
+	//   1) ПОЗИТИВНЫЙ КОНТРОЛЬ у КАЖДОГО судьи, включая COLD: структура признана, рецепт найден, кольцо открыто для
+	//      LU, зарядники заряжены и смотрят в кольцо, приёмник EU праймлен и открыт.
+	//   2) mEnergy реактора обнуляется в КОНЦЕ каждого doWork (:796) — судить по нему нельзя; долгоживущие свидетели:
+	//      mChargeRequirement, mProgress, mMaxProgress, mActive и mEnergy ящика-приёмника. Замер КАЖДЫЙ тик (шаг 1 не
+	//      кратен ни периоду 20 обмена ящика, ни длительности рецепта), трасса — каждые 13 тиков.
+	//   3) Входы (селектор + газы) кладутся В ТОМ ЖЕ тике, что и контроллер, ДО его первого BE-тика — иначе doActive:805
+	//      завёл бы машину вхолостую и следующая попытка рецепта была бы лишь через 1200 тиков (урок связки №10).
+	//   4) Порог судится ТРЕМЯ отдельными кейсами: COLD (лазеров нет вовсе), BELOW (0<mChargeRequirement<стартового),
+	//      ABOVE (mChargeRequirement<=0). Признаки взяты из doActive:814, а не из ожидания.
+	//   5) Стенд стоит в 45 блоках по -X/-Z от игрока (площадки прошлых связок заняты по +X/+Z и в 50..58/33..57).
+	// Снять при уборке фазы.
+	private static final int FSP_REACTOR = 17198;                                   // Loader_MultiTileEntities.java:1246
+	private static final int FSP_W_GALV = 18008, FSP_W_SS = 18002, FSP_W_TS = 18003; // :1150, :1151, :1154
+	private static final int FSP_COIL = 18045, FSP_VENT = 18299;                     // :1176, :1188
+	private static final int FSP_CPU_V = 18200, FSP_CPU_L = 18201, FSP_CPU_C = 18202;// :1189, :1190, :1191
+	private static final int FSP_CHARGER = 10145, FSP_CRYSTAL = 14505;               // :975 (i=5), :1088
+	private static final int FSP_TRAFO = 10044, FSP_BOX_EV = 10094, FSP_BAT_EV = 14004; // :886, :895, батарея EV
+	private static final String FSP_M = "GT6-FUSIONPROBE";
+	private static final int FSP_T_SITE = 198, FSP_T_BUILD_FROM = 200, FSP_T_BUILD_TO = 219, FSP_T_FINISH = 221;
+	private static final int FSP_T_COLD_FROM = 223, FSP_T_COLD_JUDGE = 268, FSP_T_POWER = 270;
+	private static final int FSP_T_TO = 800, FSP_T_JUDGE = 802, FSP_BUILD_PER_TICK = 80, FSP_BATCHES = 3;
+
+	private static int sFspProbeTick = -1;
+	private static ServerPlayer sFspPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sFspSeq;
+
+	private static BlockPos sFspCenter, sFspCtrlPos, sFspTrafoPos, sFspBoxPos, sFspInPartPos, sFspOutPartPos;
+	private static gregtech.tileentity.multiblocks.MultiTileEntityFusionReactor sFspReactor;
+	private static gregtech.tileentity.energy.transformers.MultiTileEntityTransformerElectric sFspTrafo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sFspBox;
+	private static final java.util.List<Object[]> sFspQueue = new java.util.ArrayList<>();
+	private static final java.util.List<gregapi.tileentity.energy.TileEntityBase10EnergyBatBox> sFspChargers = new java.util.ArrayList<>();
+	private static int sFspQueueIdx = 0, sFspPlaced = 0, sFspFailed = 0;
+	private static final java.util.Map<Integer, Integer> sFspPlanCount = new java.util.TreeMap<>();
+	private static gregapi.recipes.Recipe sFspRecipe;
+
+	private static long sFspStartEnergy0 = -1, sFspChargeReqMin = Long.MAX_VALUE, sFspChargerLu0 = -1, sFspProgressMax = 0, sFspMaxProgressSeen = 0;
+	private static long sFspColdReq0 = -1, sFspColdReqLast = -1, sFspColdProgMax = 0, sFspColdBoxMax = 0;
+	private static boolean sFspColdActiveSeen = F;
+	private static int sFspTicksBelow = 0, sFspBadBelow = 0, sFspFusionTicks = 0;
+	private static int sFspChargedTick = -1, sFspFirstProgressTick = -1, sFspOutSeenTick = -1;
+	private static String sFspOutName = "(нет)";
+	private static long sFspOutAmount = 0;
+	private static final MclGrow sFspProgGrow = new MclGrow(), sFspBoxGrow = new MclGrow();
+
+	/** Суммарный ЖИВОЙ запас LU зарядника: буфер блока + энергия предметных кристаллов в его слотах
+	 *  (TileEntityBase10EnergyBatBox:212 getEnergyStored суммирует IItemEnergy.getEnergyStored). */
+	private static long gt6FusionProbeChargerLu() {
+		long rSum = 0;
+		for (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBox : sFspChargers) if (tBox != null) rSum += tBox.mEnergy + tBox.getEnergyStored(TD.Energy.LU, SIDE_ANY);
+		return rSum;
+	}
+
+	/** Живой скан RM.Fusion.mRecipeList: энерговыделяющий рецепт (mEUt<0) с ДЕЙСТВИТЕЛЬНЫМИ жидкостями на входе и
+	 *  выходе (FL.valid — не «error»-жидкость), минимальная mDuration (короткий цикл укладывается в окно стенда,
+	 *  а mSpecialValue=duration*8192*16 у него же минимальный). Печатается весь список кандидатов. */
+	private static gregapi.recipes.Recipe gt6FusionProbeFindRecipe() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gregapi.recipes.Recipe rFound = null;
+		int tCandidates = 0;
+		for (gregapi.recipes.Recipe tR : RM.Fusion.mRecipeList) {
+			if (!tR.mEnabled || tR.mFakeRecipe || tR.mHidden) continue;
+			if (tR.mEUt >= 0) continue;
+			if (tR.mInputs == null || tR.mInputs.length < 1 || ST.invalid(tR.mInputs[0])) continue;
+			if (tR.mFluidInputs == null || tR.mFluidInputs.length < 1) continue;
+			if (tR.mFluidOutputs == null || tR.mFluidOutputs.length < 1) continue;
+			boolean tBad = F;
+			for (FluidStack tF : tR.mFluidInputs ) if (tF == null || !FL.valid(tF.getFluid())) tBad = T;
+			for (FluidStack tF : tR.mFluidOutputs) if (tF == null || !FL.valid(tF.getFluid())) tBad = T;
+			if (tBad) continue;
+			tCandidates++;
+			O.println("[" + FSP_M + "] кандидат: EUt=" + tR.mEUt + " duration=" + tR.mDuration + " старт=" + tR.mSpecialValue + " LU; item_in=" + tR.mInputs[0]
+				+ " fluid_in=" + java.util.Arrays.toString(tR.mFluidInputs) + " -> fluid_out=" + java.util.Arrays.toString(tR.mFluidOutputs));
+			if (rFound == null || tR.mDuration < rFound.mDuration) rFound = tR;
+		}
+		O.println("[" + FSP_M + "] живой скан RM.Fusion.mRecipeList: всего=" + RM.Fusion.mRecipeList.size() + " годных=" + tCandidates
+			+ " выбран=" + (rFound == null ? "(нет)" : "duration=" + rFound.mDuration + " EUt=" + rFound.mEUt + " старт=" + rFound.mSpecialValue + " LU"));
+		return rFound;
+	}
+
+	/** Расчистка площадки: весь объём (±11 по X/Z, ±3 по Y от центра) — камень. Анкер под КАЖДУЮ клетку постройки
+	 *  заведомо твёрдый, а лишний камень в непроверяемых клетках структуре безразличен (checkStructure2 смотрит
+	 *  только перечисленные координаты). Гигиена, не судимый канал — приём CRUCIBLEPROBE/MCLPROBE/BIGMULTIPROBE. */
+	private static void gt6FusionProbePrepareSite(ServerLevel aLevel, BlockPos aC) {
+		for (int x = -11; x <= 11; x++) for (int z = -11; z <= 11; z++) for (int y = -3; y <= 3; y++)
+			aLevel.setBlock(aC.offset(x, y, z), Blocks.STONE.defaultBlockState(), 2);
+	}
+
+	private static void gt6FusionProbeEnqueue(java.util.List<Object[]> aList, BlockPos aPos, int aId) {
+		aList.add(new Object[]{aPos, aId});
+		sFspPlanCount.merge(aId, 1, Integer::sum);
+	}
+
+	/** Полный план структуры ДОСЛОВНО по checkStructure2 (mFacing=SIDE_X_NEG => центр в 2 блоках восточнее
+	 *  контроллера, «руки» строятся во все стороны, кроме X_NEG). Клетка контроллера из плана исключена —
+	 *  контроллер ставится ПОСЛЕДНИМ, чтобы его onTickFirst2 (TileEntityBase10MultiBlockBase:112-115 ->
+	 *  MultiTileEntityBasicMachine:448-453 checkStructure(T)) увидел уже готовую сборку. Порядок сборки —
+	 *  снизу вверх, чтобы анкер клика всегда был твёрдым. */
+	private static void gt6FusionProbePlanStructure(BlockPos aC) {
+		sFspQueue.clear(); sFspPlanCount.clear(); sFspQueueIdx = 0;
+		java.util.List<Object[]> tCells = new java.util.ArrayList<>();
+		int tX = aC.getX(), tY = aC.getY(), tZ = aC.getZ();
+
+		int tCpuSeen = 0;
+		for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
+			int tSq = i*i + j*j + k*k;
+			int tId;
+			if (tSq < 4) {tId = (tCpuSeen < 3 ? FSP_CPU_V : tCpuSeen < 15 ? FSP_CPU_L : FSP_CPU_C); tCpuSeen++;}
+			else if (tSq > 6 || (j == 0 && (((i == -2 || i == 2) && k == 0) || ((k == -2 || k == 2) && i == 0)))) tId = FSP_W_GALV;
+			else tId = FSP_VENT;
+			if (i == -2 && j == 0 && k == 0) continue; // клетка контроллера (mFacing=SIDE_X_NEG)
+			gt6FusionProbeEnqueue(tCells, new BlockPos(tX+i, tY+j, tZ+k), tId);
+		}
+		gt6FusionProbeEnqueue(tCells, new BlockPos(tX+3, tY, tZ  ), FSP_W_GALV);
+		gt6FusionProbeEnqueue(tCells, new BlockPos(tX+4, tY, tZ  ), FSP_W_GALV);
+		gt6FusionProbeEnqueue(tCells, new BlockPos(tX  , tY, tZ-3), FSP_W_GALV);
+		gt6FusionProbeEnqueue(tCells, new BlockPos(tX  , tY, tZ-4), FSP_W_GALV);
+		gt6FusionProbeEnqueue(tCells, new BlockPos(tX  , tY, tZ+3), FSP_W_GALV);
+		gt6FusionProbeEnqueue(tCells, new BlockPos(tX  , tY, tZ+4), FSP_W_GALV);
+
+		boolean[][][] tOct = gregtech.tileentity.multiblocks.MultiTileEntityFusionReactor.OCTAGONS;
+		int bx = tX-9, bz = tZ-9;
+		for (int i = 0; i < 19; i++) for (int j = 0; j < 19; j++) {
+			if (tOct[0][i][j]) {
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY-1, bz+j), FSP_W_TS);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY  , bz+j), FSP_W_TS);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY+1, bz+j), FSP_W_TS);
+			}
+			if (tOct[1][i][j]) {
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY-2, bz+j), FSP_W_TS);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY-1, bz+j), FSP_W_TS);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY  , bz+j), FSP_COIL);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY+1, bz+j), FSP_W_TS);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY+2, bz+j), FSP_W_TS);
+			}
+			if (tOct[2][i][j]) {
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY-2, bz+j), FSP_W_TS);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY-1, bz+j), FSP_COIL);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY  , bz+j), FSP_W_SS);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY+1, bz+j), FSP_COIL);
+				gt6FusionProbeEnqueue(tCells, new BlockPos(bx+i, tY+2, bz+j), FSP_W_TS);
+			}
+		}
+		tCells.sort((a, b) -> Integer.compare(((BlockPos)a[0]).getY(), ((BlockPos)b[0]).getY()));
+		sFspQueue.addAll(tCells);
+	}
+
+	/** Тик 198: площадка + план структуры + подтверждение ID реестром. */
+	private static void gt6FusionProbeSite() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + FSP_M + "] Связка №13 — ТЕРМОЯДЕРНЫЙ СИНТЕЗ (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		ServerLevel tLevel = sFspPlayer.level();
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {FSP_REACTOR, FSP_W_GALV, FSP_W_SS, FSP_W_TS, FSP_COIL, FSP_VENT, FSP_CPU_V, FSP_CPU_L, FSP_CPU_C, FSP_CHARGER, FSP_CRYSTAL, FSP_TRAFO, FSP_BOX_EV, FSP_BAT_EV};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		StringBuilder tSB = new StringBuilder("[" + FSP_M + "] ID подтверждены:");
+		for (int tId : tIds) tSB.append(" ").append(tId).append("=").append(tReg.getClassContainer(tId).mClass.getSimpleName());
+		O.println(tSB.toString());
+
+		sFspCenter = sFspPlayer.blockPosition().offset(-45, 8, -45);
+		gt6FusionProbePrepareSite(tLevel, sFspCenter);
+		gt6FusionProbePlanStructure(sFspCenter);
+		O.println("[" + FSP_M + "] центр многоблока=" + sFspCenter.toShortString() + " (игрок @" + sFspPlayer.blockPosition().toShortString() + "); клеток в плане=" + sFspQueue.size()
+			+ " по типам=" + sFspPlanCount + " (подсказка блока MultiTileEntityFusionReactor:195-197: 144 катушки, 576 вольфрам-стен, 50 вентиляций, 36 нерж-стен, 53 оцинк-стены, 3+12+12 процессоров)");
+	}
+
+	/** Тики 200..219: установка частей реальным каналом игрока (useOn), пачками по FSP_BUILD_PER_TICK. */
+	private static void gt6FusionProbeBuildStep() {
+		if (sFspQueueIdx >= sFspQueue.size()) return;
+		ServerLevel tLevel = sFspPlayer.level();
+		int tEnd = Math.min(sFspQueue.size(), sFspQueueIdx + FSP_BUILD_PER_TICK);
+		for (; sFspQueueIdx < tEnd; sFspQueueIdx++) {
+			Object[] tCell = sFspQueue.get(sFspQueueIdx);
+			BlockPos tPos = (BlockPos) tCell[0];
+			int tId = ((Integer) tCell[1]).intValue();
+			gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart = gregapi.probe.GT6ProbeStand.place(tLevel, sFspPlayer, tPos.below(), net.minecraft.core.Direction.UP,
+				gregapi.probe.GT6ProbeStand.mteStack(tId), gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart.class, FSP_M, "часть id=" + tId + "@" + tPos.toShortString());
+			if (tPart == null) sFspFailed++; else sFspPlaced++;
+		}
+		if (sFspQueueIdx >= sFspQueue.size()) gregapi.data.CS.OUT.println("[" + FSP_M + "] постройка завершена на тике " + sFspSeq.currentTick() + ": поставлено=" + sFspPlaced + " не встало=" + sFspFailed + " из " + sFspQueue.size());
+	}
+
+	/** Тик 221: контроллер ПОСЛЕДНИМ + топливо/селектор В ТОМ ЖЕ тике (входы ДО первого BE-тика, урок связки №10)
+	 *  + приёмник EU (трансформатор без потерь -> большой ящик EV с пустыми предметными батареями). */
+	private static void gt6FusionProbeFinish() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sFspPlayer.level();
+		if (sFspQueueIdx < sFspQueue.size()) throw new RuntimeException("постройка не завершена: " + sFspQueueIdx + "/" + sFspQueue.size());
+		int tX = sFspCenter.getX(), tY = sFspCenter.getY(), tZ = sFspCenter.getZ();
+
+		sFspCtrlPos = new BlockPos(tX-2, tY, tZ);
+		sFspReactor = gregapi.probe.GT6ProbeStand.place(tLevel, sFspPlayer, sFspCtrlPos.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(FSP_REACTOR), gregtech.tileentity.multiblocks.MultiTileEntityFusionReactor.class, FSP_M, "контроллер реактора");
+		if (sFspReactor == null) throw new RuntimeException("контроллер термоядерного реактора не встал @" + sFspCtrlPos);
+		sFspReactor.setPrimaryFacing(SIDE_X_NEG);
+
+		sFspRecipe = gt6FusionProbeFindRecipe();
+		if (sFspRecipe == null) throw new RuntimeException("рецепт RM.Fusion не найден живым сканом");
+		// F15-size0: вход рецепта — ZEROSIZE-призрак (физ. count=1 + маркер, логический размер 0 = катализатор,
+		// ST.java:200-212). Копия такого стека В СЛОТЕ была бы «мёртвой»: ST.count=0 => removeAllDroppableNullStacks
+		// (TileEntityBase05Inventories:142) обнулил бы слот сразу после применения рецепта (прогон run1 — так и вышло).
+		// Игрок кладёт НАСТОЯЩИЙ программируемый селектор (физ. 1, без маркера) — ST.size(1, ...) снимает маркер;
+		// рецепт его НЕ расходует (Recipe.checkStacksEqual:783 вычитает ST.size(входа)=0 — как stackSize=0 в 1.7.10).
+		net.minecraft.world.item.ItemStack tSelector = ST.size(1, ST.copy(sFspRecipe.mInputs[0]));
+		if (ST.invalid(tSelector)) throw new RuntimeException("селектор рецепта не собран из " + sFspRecipe.mInputs[0]);
+		gregapi.probe.GT6ProbeStand.slotSet(sFspReactor, 0, tSelector);
+		StringBuilder tIn = new StringBuilder();
+		for (int i = 0; i < sFspRecipe.mFluidInputs.length && i < sFspReactor.mTanksInput.length; i++) {
+			FluidStack tF = sFspRecipe.mFluidInputs[i].copy();
+			tF.setAmount(tF.getAmount() * FSP_BATCHES);
+			sFspReactor.mTanksInput[i].setFluid(tF);
+			tIn.append(i == 0 ? "" : " + ").append(FL.name(tF, F)).append(" ").append(tF.getAmount()).append("mb");
+		}
+		sFspReactor.updateInventory();
+
+		sFspTrafoPos = new BlockPos(tX, tY, tZ-10);
+		sFspBoxPos   = new BlockPos(tX, tY, tZ-11);
+		sFspTrafo = gregapi.probe.GT6ProbeStand.place(tLevel, sFspPlayer, sFspTrafoPos.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(FSP_TRAFO), gregtech.tileentity.energy.transformers.MultiTileEntityTransformerElectric.class, FSP_M, "трансформатор EV-IV");
+		if (sFspTrafo == null) throw new RuntimeException("трансформатор не встал @" + sFspTrafoPos);
+		sFspTrafo.setPrimaryFacing(SIDE_Z_POS); // вход СПЕРЕДИ (Bidirectional:64) — фронт смотрит на реактор (юг)
+		sFspBox = gregapi.probe.GT6ProbeStand.place(tLevel, sFspPlayer, sFspBoxPos.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(FSP_BOX_EV), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, FSP_M, "большой ящик EV");
+		if (sFspBox == null) throw new RuntimeException("ящик-приёмник не встал @" + sFspBoxPos);
+		sFspBox.setPrimaryFacing(SIDE_Z_NEG); // приём со ВСЕХ сторон кроме фронта (BatBox:234) — с юга от трансформатора
+		long tEmpty = gt6FusionProbeLoadBatteries(sFspBox, FSP_BAT_EV, F);
+
+		sFspInPartPos  = new BlockPos(tX-9, tY, tZ-1);
+		sFspOutPartPos = new BlockPos(tX, tY, tZ-9);
+		O.println("[" + FSP_M + "] контроллер@" + sFspCtrlPos.toShortString() + " mFacing=" + sFspReactor.mFacing + " (SIDE_X_NEG=" + SIDE_X_NEG + "); вход рецепта: селектор " + tSelector
+			+ " (логический размер ST.count=" + ST.count(tSelector) + ", в слоте 0: " + sFspReactor.slot(0) + ") + " + tIn);
+		O.println("[" + FSP_M + "] живые параметры реактора: mInputMin/mInput/mInputMax=" + sFspReactor.mInputMin + "/" + sFspReactor.mInput + "/" + sFspReactor.mInputMax
+			+ " accepted=" + sFspReactor.mEnergyTypeAccepted + " charged=" + sFspReactor.mEnergyTypeCharged + " emitted=" + sFspReactor.mEnergyTypeEmitted
+			+ " mSpecialIsStartEnergy=" + sFspReactor.mSpecialIsStartEnergy + " mNoConstantEnergy=" + sFspReactor.mNoConstantEnergy + " mParallel=" + sFspReactor.mParallel
+			+ " танков вход/выход=" + sFspReactor.mTanksInput.length + "/" + sFspReactor.mTanksOutput.length + " карта=" + sFspReactor.mRecipes.mNameInternal);
+		O.println("[" + FSP_M + "] приёмник EU: трансформатор@" + sFspTrafoPos.toShortString() + " IN(min/rec/max)=" + sFspTrafo.mConverter.mEnergyIN.mMin + "/" + sFspTrafo.mConverter.mEnergyIN.mRec + "/" + sFspTrafo.mConverter.mEnergyIN.mMax
+			+ " OUT(min/rec/max)=" + sFspTrafo.mConverter.mEnergyOUT.mMin + "/" + sFspTrafo.mConverter.mEnergyOUT.mRec + "/" + sFspTrafo.mConverter.mEnergyOUT.mMax + " множитель=" + sFspTrafo.mConverter.mMultiplier
+			+ " waste=" + sFspTrafo.mConverter.mWasteEnergy + "; ящик@" + sFspBoxPos.toShortString() + " mInput=" + sFspBox.mInput + " окно=[" + sFspBox.getEnergySizeInputMin(TD.Energy.EU, SIDE_Z_POS) + ".." + sFspBox.getEnergySizeInputMax(TD.Energy.EU, SIDE_Z_POS)
+			+ "] invsize=" + sFspBox.invsize() + " энергия предметных батарей=" + tEmpty + " mEnergy=" + sFspBox.mEnergy);
+	}
+
+	/** Кладёт настоящие предметные батареи/кристаллы во ВСЕ слоты накопителя (вход стенда, аналог «дать как
+	 *  скрафченный» §4 манифеста; судимый канал — обмен энергией в onTick2 — не подменяется). Возвращает суммарно
+	 *  заложенную энергию. */
+	private static long gt6FusionProbeLoadBatteries(gregapi.tileentity.energy.TileEntityBase10EnergyBatBox aBox, int aItemId, boolean aFull) {
+		long rStored = 0;
+		for (int i = 0; i < aBox.invsize(); i++) {
+			net.minecraft.world.item.ItemStack tStack = gregapi.probe.GT6ProbeStand.mteStack(aItemId);
+			if (ST.invalid(tStack)) throw new RuntimeException("предметная батарея id=" + aItemId + " не выдана реестром");
+			if (!(tStack.getItem() instanceof gregapi.item.IItemEnergy tE)) throw new RuntimeException("предмет id=" + aItemId + " не IItemEnergy, а " + tStack.getItem().getClass().getSimpleName());
+			if (aFull) tStack = tE.setEnergyStored(aBox.mEnergyType, tStack, tE.getEnergyCapacity(aBox.mEnergyType, tStack));
+			gregapi.probe.GT6ProbeStand.slotSet(aBox, i, tStack);
+			rStored += tE.getEnergyStored(aBox.mEnergyType, tStack);
+		}
+		aBox.updateInventory();
+		return rStored;
+	}
+
+	private static void gt6FusionProbePlaceCharger(ServerLevel aLevel, BlockPos aPos, byte aFacing) {
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBox = gregapi.probe.GT6ProbeStand.place(aLevel, sFspPlayer, aPos.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(FSP_CHARGER), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, FSP_M, "зарядник@" + aPos.toShortString());
+		if (tBox == null) throw new RuntimeException("зарядник не встал @" + aPos);
+		tBox.setPrimaryFacing(aFacing);
+		gt6FusionProbeLoadBatteries(tBox, FSP_CRYSTAL, T);
+		sFspChargers.add(tBox);
+	}
+
+	/** Тик 268: судья COLD — структура собрана, топливо в танках, лазеров НЕТ. */
+	private static void gt6FusionProbeJudgeCold() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tIn  = (gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) sFspPlayer.level().getBlockEntity(sFspInPartPos);
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tOut = (gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) sFspPlayer.level().getBlockEntity(sFspOutPartPos);
+		boolean tInOk  = tIn  != null && tIn.getTarget(F) == sFspReactor && tIn.isEnergyAcceptingFrom(TD.Energy.LU, SIDE_X_NEG, F);
+		boolean tOutOk = tOut != null && tOut.getTarget(F) == sFspReactor;
+		O.println("[" + FSP_M + "] СТРУКТУРА: mStructureOkay=" + sFspReactor.mStructureOkay + " частей поставлено=" + sFspPlaced + "/" + sFspQueue.size() + " не встало=" + sFspFailed
+			+ "; кольцевая часть-вход@" + sFspInPartPos.toShortString() + " target==реактор:" + tInOk + " mMode=" + (tIn == null ? "нет" : String.valueOf(tIn.mMode)) + " (ONLY_ENERGY_IN=" + gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN + ")"
+			+ "; часть-выход@" + sFspOutPartPos.toShortString() + " target==реактор:" + tOutOk + " mMode=" + (tOut == null ? "нет" : String.valueOf(tOut.mMode)) + " (ONLY_ENERGY_OUT=" + gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart.ONLY_ENERGY_OUT + ")");
+		O.println("[" + FSP_M + "] COLD числа (тики " + FSP_T_COLD_FROM + ".." + FSP_T_COLD_JUDGE + ", лазеров НЕТ): mChargeRequirement " + sFspColdReq0 + " -> " + sFspColdReqLast
+			+ " (стартовая по рецепту " + (sFspRecipe == null ? -1 : sFspRecipe.mSpecialValue) + "); mMaxProgress=" + sFspReactor.mMaxProgress + " max(mProgress)=" + sFspColdProgMax
+			+ " mActive_виден=" + sFspColdActiveSeen + " mRunning=" + sFspReactor.mRunning + " max(mEnergy ящика)=" + sFspColdBoxMax
+			+ " вход_танк0=" + sFspReactor.mTanksInput[0].amount() + " вход_танк1=" + (sFspReactor.mTanksInput.length > 1 ? sFspReactor.mTanksInput[1].amount() : 0) + " слот0=" + sFspReactor.slot(0));
+
+		sFspSeq.judge("STRUCTURE: контроллер ПРИЗНАЛ форму (mStructureOkay) — 19x19 октагоны + куб 5x5x5 + руки, всё поставлено реальным useOn",
+			sFspReactor.mStructureOkay && sFspFailed == 0, "mStructureOkay=T, не встало 0", sFspReactor.mStructureOkay + ", не встало " + sFspFailed);
+		sFspSeq.judge("STRUCTURE-PARTS: части кольца привязаны к ЭТОМУ контроллеру и несут режимы ONLY_ENERGY_IN / ONLY_ENERGY_OUT (checkStructure2:97-99)",
+			tInOk && tOutOk && tIn.mMode == gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart.ONLY_ENERGY_IN && tOut.mMode == gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart.ONLY_ENERGY_OUT,
+			"обе части привязаны и в своих режимах", tInOk + "/" + tOutOk + " mMode=" + (tIn == null ? "нет" : tIn.mMode) + "/" + (tOut == null ? "нет" : tOut.mMode));
+		boolean tColdPc = sFspReactor.mStructureOkay && sFspReactor.mMaxProgress > 0 && sFspReactor.mCurrentRecipe != null && sFspReactor.mTanksInput[0].has() && tInOk;
+		sFspSeq.judge("COLD POSITIVE-CONTROL: структура признана, рецепт найден и заряжен (mMaxProgress>0), топливо в танках, кольцо ОТКРЫТО для LU — не хватает ТОЛЬКО лазеров",
+			tColdPc, T, tColdPc + " (mMaxProgress=" + sFspReactor.mMaxProgress + " recipe=" + (sFspReactor.mCurrentRecipe != null) + ")");
+		sFspSeq.judge("COLD: без лазерной энергии порог не убывает и синтез не идёт (doActive:814 — процесс заблокирован, пока mChargeRequirement>0)",
+			sFspColdReq0 > 0 && sFspColdReqLast == sFspColdReq0 && sFspColdProgMax == 0 && !sFspColdActiveSeen,
+			"порог неизменен, прогресс 0, mActive никогда не T", sFspColdReq0 + "->" + sFspColdReqLast + ", прогресс " + sFspColdProgMax + ", active " + sFspColdActiveSeen);
+		sFspSeq.judge("COLD-EU: холодный реактор НИЧЕГО не выдал наружу (ящик-приёмник пуст)", sFspColdBoxMax == 0, 0, sFspColdBoxMax);
+	}
+
+	/** Тик 270: 16 больших кристалл-зарядников по периметру кольца + заряженные кристаллы. */
+	private static void gt6FusionProbePower() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sFspPlayer.level();
+		int tX = sFspCenter.getX(), tY = sFspCenter.getY(), tZ = sFspCenter.getZ();
+		for (int d : new int[]{-2, -1, 1, 2}) {
+			gt6FusionProbePlaceCharger(tLevel, new BlockPos(tX-10, tY, tZ+d), SIDE_X_POS);
+			gt6FusionProbePlaceCharger(tLevel, new BlockPos(tX+10, tY, tZ+d), SIDE_X_NEG);
+			gt6FusionProbePlaceCharger(tLevel, new BlockPos(tX+d, tY, tZ-10), SIDE_Z_POS);
+			gt6FusionProbePlaceCharger(tLevel, new BlockPos(tX+d, tY, tZ+10), SIDE_Z_NEG);
+		}
+		sFspChargerLu0 = gt6FusionProbeChargerLu();
+		sFspStartEnergy0 = sFspReactor.mChargeRequirement;
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tOne = sFspChargers.get(0);
+		O.println("[" + FSP_M + "] лазерное питание подано на тике " + sFspSeq.currentTick() + ": зарядников=" + sFspChargers.size() + " суммарный запас LU=" + sFspChargerLu0
+			+ "; один зарядник: mInput/mOutput=" + tOne.mInput + "/" + tOne.mOutput + " invsize=" + tOne.invsize() + " тип_вх/вых=" + tOne.mEnergyType + "/" + tOne.mEnergyTypeOut
+			+ " mBatteryCount=" + tOne.mBatteryCount + " mFacing=" + tOne.mFacing + "; порог реактора mChargeRequirement=" + sFspStartEnergy0
+			+ " (ожидаемый поток " + (16L * 8192L * sFspChargers.size()) + " LU/тик => ~" + (sFspStartEnergy0 / Math.max(1, 16L * 8192L * sFspChargers.size())) + " тиков заряда)");
+	}
+
+	/** Замер КАЖДЫЙ тик окна (шаг 1 не кратен ни 20, ни длительности рецепта). */
+	private static void gt6FusionProbeTrack() {
+		if (sFspReactor == null) return;
+		int tTick = sFspSeq.currentTick();
+		long tReq = sFspReactor.mChargeRequirement, tProg = sFspReactor.mProgress;
+		if (tTick < FSP_T_POWER) {
+			if (sFspColdReq0 < 0) sFspColdReq0 = tReq;
+			sFspColdReqLast = tReq;
+			if (tProg > sFspColdProgMax) sFspColdProgMax = tProg;
+			if (sFspReactor.mActive) sFspColdActiveSeen = T;
+			if (sFspBox != null && sFspBox.mEnergy > sFspColdBoxMax) sFspColdBoxMax = sFspBox.mEnergy;
+			return;
+		}
+		sFspProgGrow.sample(tProg);
+		if (sFspBox != null) sFspBoxGrow.sample(sFspBox.mEnergy);
+		if (tReq < sFspChargeReqMin) sFspChargeReqMin = tReq;
+		if (tProg > sFspProgressMax) sFspProgressMax = tProg;
+		// mMaxProgress обнуляется по завершении партии (doActive:850) — судить по ЖИВОМУ максимуму за окно, а не по полю на вердикте
+		if (sFspReactor.mMaxProgress > sFspMaxProgressSeen) sFspMaxProgressSeen = sFspReactor.mMaxProgress;
+		if (sFspReactor.mActive) sFspFusionTicks++;
+		if (tReq > 0 && tReq < sFspStartEnergy0) {sFspTicksBelow++; if (tProg != 0 || sFspReactor.mActive) sFspBadBelow++;}
+		if (tReq <= 0 && sFspChargedTick < 0) sFspChargedTick = tTick;
+		if (tProg > 0 && sFspFirstProgressTick < 0) sFspFirstProgressTick = tTick;
+		if (sFspOutSeenTick < 0) for (gregapi.fluid.FluidTankGT tTank : sFspReactor.mTanksOutput) if (tTank.has()) {
+			sFspOutSeenTick = tTick; sFspOutName = FL.name(tTank.getFluid(), F); sFspOutAmount = tTank.amount(); break;
+		}
+		if (tTick % 13 == 0) gregapi.data.CS.OUT.println("[" + FSP_M + "] трасса t=" + tTick + " порог=" + tReq + " прогресс=" + tProg + "/" + sFspReactor.mMaxProgress
+			+ " active=" + sFspReactor.mActive + " running=" + sFspReactor.mRunning + " LU_зарядников=" + gt6FusionProbeChargerLu() + " EU_ящика=" + (sFspBox == null ? -1 : sFspBox.mEnergy)
+			+ " вых_танк0=" + sFspReactor.mTanksOutput[0].amount() + " вх_танк0=" + sFspReactor.mTanksInput[0].amount() + " селектор=" + ST.count(sFspReactor.slot(0)));
+		// вердикт выносится, когда продукт вышел И реактор успел взяться за следующую партию (не позднее жёсткого FSP_T_JUDGE)
+		if (sFspOutSeenTick > 0 && tTick >= sFspOutSeenTick + 40 && !sFspSeq.isDone()) gt6FusionProbeJudge();
+	}
+
+	/** Итоговый судья. */
+	private static void gt6FusionProbeJudge() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tLuNow = gt6FusionProbeChargerLu(), tLuSpent = sFspChargerLu0 - tLuNow;
+		long tReqDrop = sFspStartEnergy0 - sFspChargeReqMin;
+		long tBoxEu = sFspBox == null ? -1 : sFspBox.mEnergy;
+		StringBuilder tOutTanks = new StringBuilder();
+		for (int i = 0; i < sFspReactor.mTanksOutput.length; i++) tOutTanks.append(i == 0 ? "" : ", ").append(FL.name(sFspReactor.mTanksOutput[i].getFluid(), F)).append(":").append(sFspReactor.mTanksOutput[i].amount());
+		O.println("[" + FSP_M + "] ИТОГ числа: порог " + sFspStartEnergy0 + " -> мин " + sFspChargeReqMin + " (достигнут на тике " + sFspChargedTick + "); первый прирост прогресса на тике " + sFspFirstProgressTick
+			+ "; тиков «ниже порога»=" + sFspTicksBelow + " из них с нарушением=" + sFspBadBelow + "; тиков синтеза (mActive)=" + sFspFusionTicks
+			+ "; прогресс: " + sFspProgGrow + " max=" + sFspProgressMax + " max(mMaxProgress за окно)=" + sFspMaxProgressSeen + " mMaxProgress на вердикте=" + sFspReactor.mMaxProgress
+			+ " селектор в слоте 0=" + sFspReactor.slot(0) + " (логический размер " + ST.count(sFspReactor.slot(0)) + ")"
+			+ "; LU зарядников " + sFspChargerLu0 + " -> " + tLuNow + " (потрачено " + tLuSpent + ", падение порога " + tReqDrop + ")"
+			+ "; EU ящика=" + tBoxEu + " приросты: " + sFspBoxGrow + "; выходные танки=[" + tOutTanks + "]; продукт впервые на тике " + sFspOutSeenTick + " (" + sFspOutName + " " + sFspOutAmount + "mb)");
+
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tIn = (gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) sFspPlayer.level().getBlockEntity(sFspInPartPos);
+		boolean tChargersOk = T;
+		for (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBox : sFspChargers) if (tBox == null || tBox.mBatteryCount <= 0 || !tBox.isEnergyEmittingTo(TD.Energy.LU, tBox.mFacing, F)) tChargersOk = F;
+		boolean tPc = sFspReactor.mStructureOkay && sFspRecipe != null && tChargersOk
+			&& tIn != null && tIn.isEnergyAcceptingFrom(TD.Energy.LU, SIDE_X_NEG, F) && tIn.getEnergySizeInputMax(TD.Energy.LU, SIDE_X_NEG) >= 8192
+			&& sFspBox != null && sFspBox.mChargeableCount > 0 && sFspBox.mReceivablePower > 0 && sFspBox.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_Z_POS, F)
+			&& sFspTrafo != null && sFspTrafo.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_Z_POS, T);
+		O.println("[" + FSP_M + "] POSITIVE-CONTROL детали: зарядники_ок=" + tChargersOk + " кольцо_принимает_LU=" + (tIn != null && tIn.isEnergyAcceptingFrom(TD.Energy.LU, SIDE_X_NEG, F))
+			+ " окно_кольца_max=" + (tIn == null ? -1 : tIn.getEnergySizeInputMax(TD.Energy.LU, SIDE_X_NEG)) + " трансформатор_принимает=" + (sFspTrafo != null && sFspTrafo.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_Z_POS, T))
+			+ " ящик mChargeableCount=" + (sFspBox == null ? -1 : sFspBox.mChargeableCount) + " mReceivablePower=" + (sFspBox == null ? -1 : sFspBox.mReceivablePower));
+		sFspSeq.judge("POSITIVE-CONTROL: стенд СПОСОБЕН показать успех — структура признана, рецепт есть, 16 зарядников заряжены и смотрят в кольцо, кольцо принимает LU пакетом 8192<=окна, приёмник EU праймлен и открыт",
+			tPc, T, tPc);
+		sFspSeq.judge("START-BELOW: пока 0 < mChargeRequirement < стартового — синтез НЕ идёт (прогресс 0, mActive=F) на ВСЕХ таких тиках",
+			sFspTicksBelow > 0 && sFspBadBelow == 0, "тиков>0, нарушений 0", sFspTicksBelow + " тиков, " + sFspBadBelow + " нарушений");
+		sFspSeq.judge("START-ABOVE: порог набран (mChargeRequirement<=0) и ТОЛЬКО после этого пошёл прогресс",
+			sFspChargedTick > 0 && sFspFirstProgressTick > 0 && sFspFirstProgressTick >= sFspChargedTick,
+			"порог достигнут раньше первого прогресса", "порог t=" + sFspChargedTick + ", прогресс t=" + sFspFirstProgressTick);
+		sFspSeq.judge("RUN: синтез идёт ЖИВЫМИ тиками — прогресс рос по-тиково и цикл дошёл до конца (сброс mProgress-=mMaxProgress, doActive:848)",
+			sFspProgGrow.mSteps > 0 && sFspMaxProgressSeen > 0 && sFspProgressMax >= sFspMaxProgressSeen - 1 && sFspProgGrow.mDrops > 0,
+			"шагов>0, max(прогресс)>=max(mMaxProgress)-1=" + (sFspMaxProgressSeen - 1) + ", сбросов>0", sFspProgGrow.mSteps + "/" + sFspProgressMax + "/" + sFspProgGrow.mDrops);
+		sFspSeq.judge("PRODUCT: продукт синтеза лежит в выходном танке реактора и это ИМЕННО продукт рецепта",
+			sFspOutSeenTick > 0 && sFspRecipe.mFluidOutputs.length > 0 && FL.regName(sFspReactor.mTanksOutput[0].getFluid()) != null
+				&& FL.regName(sFspReactor.mTanksOutput[0].getFluid()).equals(FL.regName(sFspRecipe.mFluidOutputs[0])),
+			FL.name(sFspRecipe.mFluidOutputs[0], F), FL.name(sFspReactor.mTanksOutput[0].getFluid(), F) + " " + sFspReactor.mTanksOutput[0].amount() + "mb");
+		sFspSeq.judge("OUT-EU: реактор реально выдал энергию наружу — ящик-приёмник набрал EU через электрический интерфейс кольца",
+			tBoxEu > 0 && sFspBoxGrow.mSteps > 0, ">0 и шаги роста", tBoxEu + ", шагов " + sFspBoxGrow.mSteps);
+		sFspSeq.judge("CONSERVE-LU: сколько LU ушло из зарядников — ровно на столько упал порог (энергия не появилась и не исчезла)",
+			tLuSpent == tReqDrop, tReqDrop, tLuSpent);
+		sFspSeq.judge("CONSERVE-PROGRESS: прогресс растёт РОВНО на 1 за тик (mEnergy=1 от TU-времени, doWork:786-787 aEnergy=min(mInputMax,mEnergy))",
+			sFspProgGrow.mSteps > 0 && sFspProgGrow.mMin == 1 && sFspProgGrow.mMax == 1, "Δmin=Δmax=1", (sFspProgGrow.mSteps == 0 ? 0 : sFspProgGrow.mMin) + ".." + sFspProgGrow.mMax);
+		sFspSeq.judge("CONSERVE-EU: каждый прирост ящика РОВНО 8192 (=-mEUt рецепта, трансформатор без потерь) и приростов НЕ БОЛЬШЕ, чем тиков синтеза",
+			sFspBoxGrow.mSteps > 0 && sFspBoxGrow.mMin == 8192 && sFspBoxGrow.mMax == 8192 && sFspBoxGrow.mSteps <= sFspFusionTicks,
+			"Δ=8192, шагов<=" + sFspFusionTicks, (sFspBoxGrow.mSteps == 0 ? 0 : sFspBoxGrow.mMin) + ".." + sFspBoxGrow.mMax + ", шагов " + sFspBoxGrow.mSteps);
+		sFspSeq.done();
+	}
+
+	public static void gt6FusionProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sFspProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sFspPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sFspSeq == null) {
+			sFspSeq = new gregapi.probe.GT6ProbeStand.Seq(FSP_M)
+				.at(FSP_T_SITE, GT_API_Proxy::gt6FusionProbeSite)
+				.window(FSP_T_BUILD_FROM, FSP_T_BUILD_TO, GT_API_Proxy::gt6FusionProbeBuildStep)
+				.at(FSP_T_FINISH, GT_API_Proxy::gt6FusionProbeFinish)
+				.window(FSP_T_COLD_FROM, FSP_T_TO, GT_API_Proxy::gt6FusionProbeTrack)
+				.at(FSP_T_COLD_JUDGE, GT_API_Proxy::gt6FusionProbeJudgeCold)
+				.at(FSP_T_POWER, GT_API_Proxy::gt6FusionProbePower)
+				.at(FSP_T_JUDGE, GT_API_Proxy::gt6FusionProbeJudge);
+		}
+		sFspSeq.tick(sFspProbeTick);
 	}
 
 }
