@@ -134,6 +134,11 @@ stripRunMirror.configure { mustRunAfter tasks.named('classes') }
 // (запуски оркестратора: `gradlew runClient -Pgt6probes …`). Обычный запуск игрока — пробы/автовход-в-мир
 // мертвы, даже если флаг случайно остался (класс сбоя «стухший флаг портит игровой запуск» закрыт механически).
 if (project.hasProperty('gt6probes')) {
+    // Каталог верификационных СТЕНДОВ фазы Ф3.1 (связки №1-14 + каркас GT6ProbeStand).
+    // Тот же приём, что src/compat-mirror/java выше: дополнительный srcDir, подключаемый ОДНОЙ строкой.
+    // В обычной сборке (jar игрока) стенды НЕ КОМПИЛИРУЮТСЯ ВООБЩЕ — их нет в classpath, значит нет и в jar.
+    // Стенды автономны: подписываются на события сами (@EventBusSubscriber), production-код о них не знает.
+    sourceSets.main.java.srcDir('src/probes/java')
     ['runClient', 'runData', 'runServer', 'runGameTestServer'].each { rn ->
         tasks.matching { it.name == rn }.configureEach { it.jvmArgs('-Dgt6.probes=true') }
     }
