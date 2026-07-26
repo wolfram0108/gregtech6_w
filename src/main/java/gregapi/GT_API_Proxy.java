@@ -369,6 +369,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6reactorprobe.flag")) gt6ReactorProbeTick(aEvent.getServer());
 				// [GT6-FUSIONPROBE] верификационный стенд «Связка №13 — термоядерный синтез» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6fusionprobe.flag")) gt6FusionProbeTick(aEvent.getServer());
+				// [GT6-LOGICOMPUTEPROBE] верификационный стенд «Связка №14 — логистика + компьютер» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6logicomputeprobe.flag")) gt6LogiComputeProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -7081,6 +7083,719 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(FSP_T_JUDGE, GT_API_Proxy::gt6FusionProbeJudge);
 		}
 		sFspSeq.tick(sFspProbeTick);
+	}
+
+	// ========== [GT6-LOGICOMPUTEPROBE] ВРЕМЕННЫЙ стенд «Связка №14 — ЛОГИСТИКА + КОМПЬЮТЕР» (Ф3.1, гейт run/gt6logicomputeprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана; судимый канал — ТОЛЬКО реальные тики
+	// MultiTileEntityLogisticsCore.onServerTickPre() / MultiTileEntityBasicMachine.doWork() и РЕАЛЬНЫЙ клик игрока
+	// по свитчу; ни один судимый метод пробой не вызывается напрямую):
+	//   СТРУКТУРА ЯДРА (MultiTileEntityLogisticsCore.checkStructure2:109-147). Центр многоблока —
+	//     tX=getOffsetXN(mFacing,2) (TileEntityBase01Root => X-OFFX[mFacing]*2): при mFacing=SIDE_X_NEG контроллер
+	//     стоит в 2 блоках ЗАПАДНЕЕ центра, в середине западной грани куба 5x5x5. Клетки (i,j,k in -2..2), s=i²+j²+k²:
+	//       s<4  (27 клеток 3x3x3) — процессоры: 18200 версатильный (+1 к КАЖДОМУ счётчику), 18201 логика (+4),
+	//             18202 контроль (+4), 18203 хранение (+4), 18204 конверсия (+4) ЛИБО 18008 стена («cheapstake», :132-133);
+	//       s>6  (44 клетки) — стены 18008 c mMode = ONLY_LOGISTICS & ONLY_ENERGY_IN (:138) => логистика И приём энергии;
+	//       иначе (54 клетки, из них 1 занята контроллером => 53) — вентиляция 18299, mMode = ONLY_LOGISTICS (:140)
+	//             => NO_ENERGY_IN выставлен, энергию вентиляция НЕ принимает (питание только через стены s>6).
+	//     Клетка самого контроллера проходит досрочно (ITileEntityMultiBlockController:49 tTileEntity==aController).
+	//     Итог :144 — структура засчитана, только если все четыре счётчика > 0.
+	//   ПЛАН СТЕНДА (27 клеток ядра): 1x18200 + 1x18201 + 2x18202 + 3x18203 + 20x18008 =>
+	//     ЖИВАЯ формула кода даёт mCPU_Logic=1+4=5, mCPU_Control=1+8=9, mCPU_Storage=1+12=13, mCPU_Conversion=1+0=1.
+	//     Числа РАЗНЫЕ по типам — это и есть проверка по-типового подсчёта, а не «27 одинаковых».
+	//   ЭНЕРГЕТИКА ЯДРА (:216, :504-505, :680-699): работа идёт только при mEnergy >= 128 + mCPU_Logic*64*mCPU_Conversion
+	//     (=448 для нашего плана); doInject перестаёт принимать выше 128 + mCPU_Logic*256*mCPU_Conversion (=1408);
+	//     окно пакета [getEnergySizeInputMin=256 .. getEnergySizeInputMax=1024], пакет крупнее => explode(6);
+	//     КАЖДЫЙ тик списывается 20+L+C+S+Cv (=48) EU (:504), плюс :565/:485 mEnergy -= tMoved (РОВНО 1 EU за предмет)
+	//     и :525 divup(tMoved,250) за жидкости. Источник: Large Battery Box (HV) 10093 (Loader:895, mOutput=V[3]=512
+	//     ∈ [256..1024], NBT_INV_SIZE=16, эмитит tOutput=mBatteryCount пакетов ТОЛЬКО на mFacing,
+	//     TileEntityBase10EnergyBatBox:143-147/:235), заряженный 16 предметными батареями HV 14003 (Loader:1016).
+	//   СЕТЬ (:267-449): скан стартует со ВСЕХ BE внутри куба 5x5x5, реализующих ITileEntityLogistics (стены/вентиляция
+	//     делегируют canLogistics контроллеру, MultiTileEntityMultiBlockPart:693-698), и расширяется по соседям
+	//     (:437-444) с ЖЁСТКИМ радиусом: chebyshev-расстояние КАНДИДАТА от центра <= mCPU_Control+2 (=11).
+	//     Побочно :440 oCPU_Control = max(расстояние-2) — ЖИВОЕ свидетельство фактически использованного радиуса.
+	//     Логистический провод 24901 (MultiTileEntityWireLogistics, canLogistics = connected(side)) продлевает сеть.
+	//   ТОЧКИ ВВОДА/ВЫВОДА (:297-434): каверы AbstractCoverAttachmentLogistics на любом узле сети; сосед кавера
+	//     (getAdjacentTileEntity) и есть склад. Generic Import 1097 / Generic Export 1096 (MultiItemTechnological:112-113)
+	//     при mValues=0 попадают в *Generic-списки (:409-431, tDefault=0 -> ветка default).
+	//   ПЕРЕНОС (:451-500, :557-609): за ОДИН SYNC_SECOND (CS.SYNC_SECOND = SERVER_TIME%20==0, GT_API_Proxy:373)
+	//     ядро делает не более mCPU_Logic успешных операций (:451), каждая — цикл j<mCPU_Conversion (:596) из
+	//     ST.move(...,64,1,64,1) (ST.java:637 — ОДНА пара слотов, <=64 предметов за вызов).
+	//     ПОТОЛОК СТЕНДА = mCPU_Logic * mCPU_Conversion * 64 = 5*1*64 = 320 предметов в секунду.
+	//   НОСИТЕЛИ ДАННЫХ: USB-стик 32001 (OD_USB_STICKS[1]) и USB-HDD 32021 (OD_USB_DRIVES[1]),
+	//     MultiItemTechnological:792/815. Единственный ЖИВОЙ производитель данных — Scanner (Visuals) 20283
+	//     (Loader:1463, NBT_RECIPEMAP=RM.ScannerVisuals, NBT_INPUT=512): RecipeMapScannerVisuals.findRecipe:184-193
+	//     на паре «любой блок + USB 1.0 стик» выдаёт стик с NBT_USB_DATA{gt.canvas.block=id блока, gt.canvas.meta}
+	//     и NBT_USB_TIER=1. ЗАПИСЬ на HDD — РЕАЛЬНЫЙ ПКМ игрока по свитчу (TileEntityBase08DataSwitch:74-91
+	//     onBlockActivated3 -> setUSBData). MultiTileEntityHDDSwitch:58-93 — 16 «файлов» в ОДНОМ приводе, номер
+	//     файла = mMode; MultiTileEntityUSBSwitch:58-85 — 16 РАЗНЫХ стиков, номер стика = mMode.
+	//     Оба метода в порте несут шов F8 (тег захватывается один раз и коммитится ItemNBT.set) — стенд судит именно
+	//     то, что этот шов не теряет данные: читает NBT САМОГО ПРЕДМЕТА, а не возврат геттера.
+	// ЛОВУШКИ ЗАМЕРА (§7 манифеста):
+	//   1) ПОЗИТИВНЫЙ КОНТРОЛЬ у КАЖДОГО судьи, включая COLD: холодное ядро в конце прогона получает энергию и
+	//      НАЧИНАЕТ возить — то есть стенд заведомо СПОСОБЕН показать успех, не хватало ровно энергии.
+	//   2) oCPU_* обнуляются в начале КАЖДОГО SYNC_SECOND (:211-214) — судить одиночным замером нельзя, копим max.
+	//   3) шаг замера = 1 тик (взаимно прост с периодом 20), трасса — каждые 13 тиков.
+	//   4) энергия подаётся ПОСЛЕДНЕЙ, после того как склады наполнены и каверы стоят (урок связки №10).
+	//   5) вход сканера кладётся ДО его питания, авто-вывод сканера выключен (mDisabledItemOutput, тот же публичный
+	//      флаг, что и обезьяний ключ, MultiTileEntityBasicMachine:390-401) — иначе продукт улетел бы дропом (связка №10).
+	//   6) клик по свитчу: игрок телепортируется вплотную (isUseableByPlayerGUI требует <=8 блоков,
+	//      TileEntityBase05Inventories:161) и переводится в SURVIVAL (живой CREATIVE-клиент перетирает setItem, ADAPT-003);
+	//      грань клика (верх) заведомо открыта (заслонённая грань поглощает клик, связка №12).
+	// Снять при уборке фазы.
+	private static final int LCP_CORE = 17997, LCP_WALL = 18008, LCP_VENT = 18299;              // Loader:1285, :1150, :1188
+	private static final int LCP_CPU_V = 18200, LCP_CPU_L = 18201, LCP_CPU_C = 18202, LCP_CPU_S = 18203; // :1189..:1192
+	private static final int LCP_WIRE = 24901, LCP_CHEST = 32745;                               // :1823, :152
+	private static final int LCP_BOX_HV = 10093, LCP_BAT_HV = 14003;                            // :895 (i=3), :1016
+	private static final int LCP_USBSW = 19000, LCP_HDDSW = 19001, LCP_SCANNER = 20283;         // :1136, :1137, :1463
+	private static final String LCP_M = "GT6-LOGICOMPUTEPROBE";
+	private static final int LCP_SRC_SLOTS = 16, LCP_FAR_SLOTS = 8, LCP_STACK = 64;
+	private static final int LCP_WIRES = 10, LCP_DST_WIRE = 2, LCP_NEAR_WIRE = 6, LCP_FAR_WIRE = 9; // провода в C+(3+idx,0,0): idx 0..9 => дистанции 3..12
+	private static final int LCP_EXP_L = 5, LCP_EXP_C = 9, LCP_EXP_S = 13, LCP_EXP_V = 1;       // ожидания по формуле checkStructure2 для плана ядра
+	private static final long LCP_EXP_UPKEEP = 20 + LCP_EXP_L + LCP_EXP_C + LCP_EXP_S + LCP_EXP_V; // :504
+	private static final long LCP_EXP_THRESHOLD = 128L + LCP_EXP_L * 64L * LCP_EXP_V;           // :216
+	private static final long LCP_PRIME_LOW = LCP_EXP_UPKEEP * 9;                               // 432 < порога 448: энергия ЕСТЬ, работа НЕ идёт
+	private static final long LCP_PRIME_HIGH = 60000;
+	private static final int LCP_IDLE_TICKS = 8, LCP_ITEM_WINDOW = 40;
+
+	private static final int LCP_T_SITE = 198, LCP_T_BUILD_FROM = 200, LCP_T_BUILD_TO = 219, LCP_T_CTRL = 222, LCP_T_NET = 226, LCP_T_COVERS = 230;
+	private static final int LCP_T_DATA_BUILD = 234, LCP_T_DATA_SEAM = 236, LCP_T_DATA_IN = 238, LCP_T_POWER = 240;
+	private static final int LCP_T_TRACK_FROM = 241, LCP_T_TRACK_TO = 566;
+	private static final int LCP_T_D1 = 330, LCP_T_D2 = 334, LCP_T_D3 = 338, LCP_T_SCAN2 = 342, LCP_T_D4 = 430, LCP_T_D5 = 434, LCP_T_D6 = 438, LCP_T_D7 = 442, LCP_T_D8 = 446;
+	private static final int LCP_T_COLD_JUDGE = 460, LCP_T_PRIME_LOW = 470, LCP_T_JUDGE_IDLE = 490, LCP_T_PRIME_HIGH = 500, LCP_T_JUDGE_ITEM = 542;
+	private static final int LCP_T_JUDGE_HOT = 560, LCP_T_DONE = 566;
+	private static final int LCP_BUILD_PER_TICK = 40;
+
+	private static int sLcpProbeTick = -1;
+	private static ServerPlayer sLcpPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sLcpSeq;
+	private static BlockPos sLcpHot, sLcpCold, sLcpData;
+	private static gregtech.tileentity.multiblocks.MultiTileEntityLogisticsCore sLcpHotCore, sLcpColdCore;
+	private static gregapi.block.multitileentity.example.MultiTileEntityChest sLcpSrc, sLcpDst, sLcpNear, sLcpFar, sLcpColdSrc, sLcpColdDst;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sLcpHotBox, sLcpScanBox;
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric sLcpScanner;
+	private static gregtech.tileentity.computer.MultiTileEntityHDDSwitch sLcpHdd, sLcpHddCold;
+	private static gregtech.tileentity.computer.MultiTileEntityUSBSwitch sLcpUsb;
+	private static gregapi.tileentity.connectors.MultiTileEntityWireLogistics[] sLcpWires;
+	private static final java.util.List<Object[]> sLcpQueue = new java.util.ArrayList<>();
+	private static final java.util.Map<Integer, Integer> sLcpPlan = new java.util.TreeMap<>();
+	private static int sLcpQueueIdx = 0, sLcpPlaced = 0, sLcpFailed = 0;
+
+	// ЛОГИСТИКА — накопители замера
+	private static long sLcpSrc0 = -1, sLcpNear0 = -1, sLcpFar0 = -1, sLcpColdSrc0 = -1;
+	private static int sLcpConserveBad = 0, sLcpFarBad = 0, sLcpColdBad = 0, sLcpColdSamples = 0, sLcpHotSamples = 0;
+	private static int sLcpCtrlMax = 0, sLcpLogicMax = 0, sLcpConvMax = 0;
+	private static long sLcpBoxBatMax = 0; private static boolean sLcpBoxEmitSeen = F;
+	private static final MclGrow sLcpDstGrow = new MclGrow(), sLcpColdDstGrow = new MclGrow();
+	private static int sLcpFirstMoveTick = -1;
+	private static final java.util.List<long[]> sLcpIdle = new java.util.ArrayList<>();
+	private static long sLcpItemE0 = -1, sLcpItemD0 = -1, sLcpItemE1 = -1, sLcpItemD1 = -1;
+	private static long sLcpHotEnergyMax = 0;
+	private static boolean sLcpCoversOk = F, sLcpBoxOk = F;
+
+	// ДАННЫЕ — накопители замера
+	private static ItemStack sLcpStick1 = ItemStack.EMPTY, sLcpStick2 = ItemStack.EMPTY;
+	private static int sLcpScanBlock1 = -1, sLcpScanBlock2 = -1;
+	private static String sLcpSeamOut = "(не звался)";
+	private static boolean sLcpD1 = F, sLcpD2 = F, sLcpD3a = F, sLcpD3b = F, sLcpD4 = F, sLcpD5a = F, sLcpD5b = F;
+	private static boolean sLcpD6a = F, sLcpD6b = F, sLcpD6c = F, sLcpD7a = F, sLcpD7b = F, sLcpD8a = F, sLcpD8b = F;
+	private static String sLcpDataDiag = "";
+
+	/** Сумма ЛОГИЧЕСКИХ размеров всех стеков сундука (ST.count через публичный slot(), каркас GT6ProbeStand). */
+	private static long gt6LogiProbeChestSum(gregapi.block.multitileentity.example.MultiTileEntityChest aChest) {
+		if (aChest == null) return 0;
+		long rSum = 0;
+		for (int i = 0; i < aChest.invsize(); i++) rSum += gregapi.probe.GT6ProbeStand.slotCount(aChest, i);
+		return rSum;
+	}
+
+	/** Сумма только тех стеков, что равны образцу (ST.equal с игнором NBT) — ловит «приехало не то». */
+	private static long gt6LogiProbeChestSumOf(gregapi.block.multitileentity.example.MultiTileEntityChest aChest, ItemStack aLike) {
+		if (aChest == null) return 0;
+		long rSum = 0;
+		for (int i = 0; i < aChest.invsize(); i++) {ItemStack tS = aChest.slot(i); if (ST.valid(tS) && ST.equal(tS, aLike, T)) rSum += ST.count(tS);}
+		return rSum;
+	}
+
+	/** Полный план 5x5x5 ядра ДОСЛОВНО по checkStructure2 (mFacing=SIDE_X_NEG => центр в 2 блоках восточнее
+	 *  контроллера). Клетка контроллера из плана исключена — он ставится ПОСЛЕДНИМ, чтобы onTickFirst2 увидел
+	 *  готовую сборку. Порядок обхода ядра фиксирован (i,j,k по возрастанию), первые 7 клеток — процессоры. */
+	private static void gt6LogiProbePlan(BlockPos aC) {
+		int[] tCorePlan = {LCP_CPU_V, LCP_CPU_L, LCP_CPU_C, LCP_CPU_C, LCP_CPU_S, LCP_CPU_S, LCP_CPU_S};
+		int tCoreSeen = 0;
+		java.util.List<Object[]> tCells = new java.util.ArrayList<>();
+		int tX = aC.getX(), tY = aC.getY(), tZ = aC.getZ();
+		for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) for (int k = -2; k <= 2; k++) {
+			int tSq = i*i + j*j + k*k;
+			int tId;
+			if (tSq < 4) {tId = (tCoreSeen < tCorePlan.length ? tCorePlan[tCoreSeen] : LCP_WALL); tCoreSeen++;}
+			else if (tSq > 6) tId = LCP_WALL;
+			else tId = LCP_VENT;
+			if (i == -2 && j == 0 && k == 0) continue; // клетка контроллера (mFacing=SIDE_X_NEG)
+			tCells.add(new Object[]{new BlockPos(tX+i, tY+j, tZ+k), tId});
+			sLcpPlan.merge(tId, 1, Integer::sum);
+		}
+		tCells.sort((a, b) -> Integer.compare(((BlockPos)a[0]).getY(), ((BlockPos)b[0]).getY()));
+		sLcpQueue.addAll(tCells);
+	}
+
+	/** Расчистка площадки камнем (гигиена, не судимый канал — приём FUSIONPROBE/CRUCIBLEPROBE). */
+	private static void gt6LogiProbePrepareSite(ServerLevel aLevel, BlockPos aC, int aX0, int aX1, int aZ0, int aZ1, int aY0, int aY1) {
+		for (int x = aX0; x <= aX1; x++) for (int z = aZ0; z <= aZ1; z++) for (int y = aY0; y <= aY1; y++)
+			aLevel.setBlock(aC.offset(x, y, z), Blocks.STONE.defaultBlockState(), 2);
+	}
+
+	private static void gt6LogiProbeSite() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + LCP_M + "] Связка №14 — ЛОГИСТИКА + КОМПЬЮТЕР (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		ServerLevel tLevel = sLcpPlayer.level();
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {LCP_CORE, LCP_WALL, LCP_VENT, LCP_CPU_V, LCP_CPU_L, LCP_CPU_C, LCP_CPU_S, LCP_WIRE, LCP_CHEST, LCP_BOX_HV, LCP_BAT_HV, LCP_USBSW, LCP_HDDSW, LCP_SCANNER};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		StringBuilder tSB = new StringBuilder("[" + LCP_M + "] ID подтверждены:");
+		for (int tId : tIds) tSB.append(" ").append(tId).append("=").append(tReg.getClassContainer(tId).mClass.getSimpleName());
+		O.println(tSB.toString());
+		O.println("[" + LCP_M + "] предметы: стик=" + IL.USB_Stick_1.get(1) + " HDD=" + IL.USB_HDD_1.get(1)
+			+ " кавер-импорт=" + IL.Cover_Logistics_Generic_Import.get(1) + " кавер-экспорт=" + IL.Cover_Logistics_Generic_Export.get(1));
+
+		BlockPos tP = sLcpPlayer.blockPosition();
+		sLcpHot  = tP.offset(40, 8, -40);
+		sLcpCold = tP.offset(40, 8, -58);
+		sLcpData = tP.offset(40, 8, -72);
+		gt6LogiProbePrepareSite(tLevel, sLcpHot , -4, 18, -6, 6, -4, 4);
+		gt6LogiProbePrepareSite(tLevel, sLcpCold, -4,  6, -6, 6, -4, 4);
+		gt6LogiProbePrepareSite(tLevel, sLcpData, -3, 11, -3, 5, -2, 3);
+		gt6LogiProbePlan(sLcpHot);
+		gt6LogiProbePlan(sLcpCold);
+		O.println("[" + LCP_M + "] центр ГОРЯЧЕГО ядра=" + sLcpHot.toShortString() + " центр ХОЛОДНОГО=" + sLcpCold.toShortString()
+			+ " площадка данных=" + sLcpData.toShortString() + " (игрок @" + tP.toShortString() + "); клеток в плане=" + sLcpQueue.size() + " по типам=" + sLcpPlan
+			+ " (подсказка блока MultiTileEntityLogisticsCore:150-152: 44 оцинк-стены + 27 процессоров + 53 вентиляции)");
+		O.println("[" + LCP_M + "] ОЖИДАНИЯ ДО ПРОГОНА (из формул кода): L=" + LCP_EXP_L + " C=" + LCP_EXP_C + " S=" + LCP_EXP_S + " Cv=" + LCP_EXP_V
+			+ "; порог работы=" + LCP_EXP_THRESHOLD + " EU; расход=" + LCP_EXP_UPKEEP + " EU/тик; радиус сети=" + (LCP_EXP_C + 2)
+			+ "; потолок переноса=" + (LCP_EXP_L * LCP_EXP_V * 64) + " предметов/сек");
+	}
+
+	private static void gt6LogiProbeBuildStep() {
+		if (sLcpQueueIdx >= sLcpQueue.size()) return;
+		ServerLevel tLevel = sLcpPlayer.level();
+		int tEnd = Math.min(sLcpQueue.size(), sLcpQueueIdx + LCP_BUILD_PER_TICK);
+		for (; sLcpQueueIdx < tEnd; sLcpQueueIdx++) {
+			Object[] tCell = sLcpQueue.get(sLcpQueueIdx);
+			BlockPos tPos = (BlockPos) tCell[0];
+			int tId = ((Integer) tCell[1]).intValue();
+			gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, tPos.below(), net.minecraft.core.Direction.UP,
+				gregapi.probe.GT6ProbeStand.mteStack(tId), gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart.class, LCP_M, "часть id=" + tId + "@" + tPos.toShortString());
+			if (tPart == null) sLcpFailed++; else sLcpPlaced++;
+		}
+		if (sLcpQueueIdx >= sLcpQueue.size()) gregapi.data.CS.OUT.println("[" + LCP_M + "] постройка каркасов завершена на тике " + sLcpSeq.currentTick() + ": поставлено=" + sLcpPlaced + " не встало=" + sLcpFailed + " из " + sLcpQueue.size());
+	}
+
+	/** Тик 222: оба контроллера ПОСЛЕДНИМИ + фиксированная ориентация (реальный API setPrimaryFacing). */
+	private static void gt6LogiProbeControllers() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sLcpPlayer.level();
+		if (sLcpQueueIdx < sLcpQueue.size()) throw new RuntimeException("постройка не завершена: " + sLcpQueueIdx + "/" + sLcpQueue.size());
+		BlockPos tHotCtrl = sLcpHot.offset(-2, 0, 0), tColdCtrl = sLcpCold.offset(-2, 0, 0);
+		sLcpHotCore = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, tHotCtrl.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CORE), gregtech.tileentity.multiblocks.MultiTileEntityLogisticsCore.class, LCP_M, "ГОРЯЧЕЕ ядро");
+		if (sLcpHotCore == null) throw new RuntimeException("горячий контроллер не встал @" + tHotCtrl);
+		sLcpHotCore.setPrimaryFacing(SIDE_X_NEG);
+		sLcpColdCore = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, tColdCtrl.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CORE), gregtech.tileentity.multiblocks.MultiTileEntityLogisticsCore.class, LCP_M, "ХОЛОДНОЕ ядро");
+		if (sLcpColdCore == null) throw new RuntimeException("холодный контроллер не встал @" + tColdCtrl);
+		sLcpColdCore.setPrimaryFacing(SIDE_X_NEG);
+		O.println("[" + LCP_M + "] контроллеры: горячий@" + tHotCtrl.toShortString() + " mFacing=" + sLcpHotCore.mFacing
+			+ ", холодный@" + tColdCtrl.toShortString() + " mFacing=" + sLcpColdCore.mFacing + " (SIDE_X_NEG=" + SIDE_X_NEG + ")");
+	}
+
+	/** Тик 226: проверка признания структуры обоими ядрами + постройка сети (провода, сундуки). */
+	private static void gt6LogiProbeNetwork() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sLcpPlayer.level();
+		O.println("[" + LCP_M + "] ЖИВЫЕ параметры ГОРЯЧЕГО ядра: структура=" + sLcpHotCore.mStructureOkay + " L=" + sLcpHotCore.mCPU_Logic + " C=" + sLcpHotCore.mCPU_Control
+			+ " S=" + sLcpHotCore.mCPU_Storage + " Cv=" + sLcpHotCore.mCPU_Conversion + " ёмкость=" + sLcpHotCore.getEnergyCapacity(TD.Energy.EU, SIDE_ANY)
+			+ " окно пакета=[" + sLcpHotCore.getEnergySizeInputMin(TD.Energy.EU, SIDE_ANY) + ".." + sLcpHotCore.getEnergySizeInputMax(TD.Energy.EU, SIDE_ANY) + "]");
+		O.println("[" + LCP_M + "] ЖИВЫЕ параметры ХОЛОДНОГО ядра: структура=" + sLcpColdCore.mStructureOkay + " L=" + sLcpColdCore.mCPU_Logic + " C=" + sLcpColdCore.mCPU_Control
+			+ " S=" + sLcpColdCore.mCPU_Storage + " Cv=" + sLcpColdCore.mCPU_Conversion);
+
+		// Провода: цепочка на восток от вентиляции в центре восточной грани (клетка s=4).
+		BlockPos tVent = sLcpHot.offset(2, 0, 0);
+		sLcpWires = gregapi.probe.GT6ProbeStand.line(tLevel, sLcpPlayer, tVent, net.minecraft.core.Direction.EAST, LCP_WIRES, LCP_WIRE,
+			gregapi.tileentity.connectors.MultiTileEntityWireLogistics.class, LCP_M);
+		StringBuilder tW = new StringBuilder();
+		for (int i = 0; i < LCP_WIRES; i++) tW.append(i == 0 ? "" : ", ").append("w[").append(i).append("]@dist").append(3 + i).append("=")
+			.append(sLcpWires[i] == null ? "НЕТ" : ("связи X-=" + sLcpWires[i].connected(SIDE_X_NEG) + "/X+=" + sLcpWires[i].connected(SIDE_X_POS)));
+		O.println("[" + LCP_M + "] провода: " + tW);
+
+		// Сундуки: SRC у стены куба (s=8), DST у провода на дистанции 5, FAR у провода на дистанции 12 (ВНЕ радиуса).
+		sLcpSrc = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpHot.offset(2, -1, 3), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CHEST), gregapi.block.multitileentity.example.MultiTileEntityChest.class, LCP_M, "SRC");
+		sLcpDst = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpHot.offset(3 + LCP_DST_WIRE, -1, 1), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CHEST), gregapi.block.multitileentity.example.MultiTileEntityChest.class, LCP_M, "DST");
+		sLcpNear = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpHot.offset(3 + LCP_NEAR_WIRE, -1, 1), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CHEST), gregapi.block.multitileentity.example.MultiTileEntityChest.class, LCP_M, "NEAR");
+		sLcpFar = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpHot.offset(3 + LCP_FAR_WIRE, -1, 1), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CHEST), gregapi.block.multitileentity.example.MultiTileEntityChest.class, LCP_M, "FAR");
+		sLcpColdSrc = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpCold.offset(2, -1, 3), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CHEST), gregapi.block.multitileentity.example.MultiTileEntityChest.class, LCP_M, "COLD-SRC");
+		sLcpColdDst = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpCold.offset(2, -1, -3), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_CHEST), gregapi.block.multitileentity.example.MultiTileEntityChest.class, LCP_M, "COLD-DST");
+		if (sLcpSrc == null || sLcpDst == null || sLcpNear == null || sLcpFar == null || sLcpColdSrc == null || sLcpColdDst == null) throw new RuntimeException("сундуки не встали: SRC/DST/NEAR/FAR/COLD-SRC/COLD-DST = " + sLcpSrc + "/" + sLcpDst + "/" + sLcpNear + "/" + sLcpFar + "/" + sLcpColdSrc + "/" + sLcpColdDst);
+		O.println("[" + LCP_M + "] сундуки: SRC@" + sLcpSrc.getBlockPos().toShortString() + " DST@" + sLcpDst.getBlockPos().toShortString()
+			+ " NEAR@" + sLcpNear.getBlockPos().toShortString() + " FAR@" + sLcpFar.getBlockPos().toShortString() + " COLD-SRC@" + sLcpColdSrc.getBlockPos().toShortString() + " COLD-DST@" + sLcpColdDst.getBlockPos().toShortString()
+			+ " (слотов в сундуке=" + sLcpSrc.invsize() + ")");
+	}
+
+	private static boolean gt6LogiProbeCover(gregapi.cover.ITileEntityCoverable aTE, byte aSide, ItemStack aCover, gregapi.cover.ICover aExpected, String aLabel) {
+		aTE.setCoverItem(aSide, aCover, null, F, T); // aForce=F => проходит РЕАЛЬНУЮ проверку interceptCoverPlacement (узел обязан быть ITileEntityLogistics)
+		gregapi.cover.CoverData tData = aTE.getCoverData();
+		boolean rOk = tData != null && tData.mBehaviours[aSide] == aExpected;
+		gregapi.data.CS.OUT.println("[" + LCP_M + "] кавер " + aLabel + " сторона=" + aSide + " -> " + (rOk ? "УСТАНОВЛЕН" : "НЕ УСТАНОВЛЕН")
+			+ " (behaviour=" + (tData == null ? "нет CoverData" : String.valueOf(tData.mBehaviours[aSide])) + ", value=" + (tData == null ? -1 : tData.mValues[aSide]) + ")");
+		return rOk;
+	}
+
+	/** Тик 230: каверы на узлах сети + наполнение складов. Энергия НЕ подаётся (урок связки №10). */
+	private static void gt6LogiProbeCovers() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sLcpPlayer.level();
+		ItemStack tImp = IL.Cover_Logistics_Generic_Import.get(1), tExp = IL.Cover_Logistics_Generic_Export.get(1);
+		if (ST.invalid(tImp) || ST.invalid(tExp)) throw new RuntimeException("предметы каверов логистики не выданы: " + tImp + " / " + tExp);
+
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tSrcWall = (gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) tLevel.getBlockEntity(sLcpHot.offset(2, 0, 2));
+		boolean tC1 = gt6LogiProbeCover(tSrcWall, SIDE_Z_POS, tImp, gregapi.cover.covers.CoverLogisticsGenericImport.INSTANCE, "SRC-импорт на стене куба " + sLcpHot.offset(2, 0, 2).toShortString());
+		boolean tC2 = gt6LogiProbeCover(sLcpWires[LCP_DST_WIRE], SIDE_Z_POS, tExp, gregapi.cover.covers.CoverLogisticsGenericExport.INSTANCE, "DST-экспорт на проводе дистанции " + (3 + LCP_DST_WIRE));
+		// NEAR — ПОЗИТИВНЫЙ КОНТРОЛЬ к судье RANGE: тот же тип кавера (импорт) на том же носителе (провод), внутри радиуса.
+		boolean tC3a = gt6LogiProbeCover(sLcpWires[LCP_NEAR_WIRE], SIDE_Z_POS, tImp.copy(), gregapi.cover.covers.CoverLogisticsGenericImport.INSTANCE, "NEAR-импорт на проводе дистанции " + (3 + LCP_NEAR_WIRE) + " (ВНУТРИ радиуса " + (LCP_EXP_C + 2) + ")");
+		boolean tC3 = gt6LogiProbeCover(sLcpWires[LCP_FAR_WIRE], SIDE_Z_POS, tImp.copy(), gregapi.cover.covers.CoverLogisticsGenericImport.INSTANCE, "FAR-импорт на проводе дистанции " + (3 + LCP_FAR_WIRE) + " (ВНЕ радиуса " + (LCP_EXP_C + 2) + ")") && tC3a;
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tColdIn  = (gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) tLevel.getBlockEntity(sLcpCold.offset(2, 0, 2));
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tColdOut = (gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) tLevel.getBlockEntity(sLcpCold.offset(2, 0, -2));
+		boolean tC4 = gt6LogiProbeCover(tColdIn , SIDE_Z_POS, tImp.copy(), gregapi.cover.covers.CoverLogisticsGenericImport.INSTANCE, "COLD-импорт");
+		boolean tC5 = gt6LogiProbeCover(tColdOut, SIDE_Z_NEG, tExp.copy(), gregapi.cover.covers.CoverLogisticsGenericExport.INSTANCE, "COLD-экспорт");
+		sLcpCoversOk = tC1 && tC2 && tC3 && tC4 && tC5;
+
+		for (int i = 0; i < LCP_SRC_SLOTS; i++) {
+			gregapi.probe.GT6ProbeStand.slotSet(sLcpSrc    , i, ST.make(Blocks.COBBLESTONE, LCP_STACK, 0));
+			gregapi.probe.GT6ProbeStand.slotSet(sLcpColdSrc, i, ST.make(Blocks.COBBLESTONE, LCP_STACK, 0));
+		}
+		for (int i = 0; i < LCP_FAR_SLOTS; i++) {
+			gregapi.probe.GT6ProbeStand.slotSet(sLcpFar , i, ST.make(Blocks.DIRT, LCP_STACK, 0));
+			gregapi.probe.GT6ProbeStand.slotSet(sLcpNear, i, ST.make(Blocks.SAND, LCP_STACK, 0));
+		}
+		sLcpSrc.updateInventory(); sLcpDst.updateInventory(); sLcpNear.updateInventory(); sLcpFar.updateInventory(); sLcpColdSrc.updateInventory(); sLcpColdDst.updateInventory();
+		sLcpSrc0 = gt6LogiProbeChestSum(sLcpSrc); sLcpNear0 = gt6LogiProbeChestSum(sLcpNear); sLcpFar0 = gt6LogiProbeChestSum(sLcpFar); sLcpColdSrc0 = gt6LogiProbeChestSum(sLcpColdSrc);
+		O.println("[" + LCP_M + "] склады наполнены: SRC=" + sLcpSrc0 + " булыжника, NEAR=" + sLcpNear0 + " песка, FAR=" + sLcpFar0 + " земли, DST=" + gt6LogiProbeChestSum(sLcpDst)
+			+ ", COLD-SRC=" + sLcpColdSrc0 + ", COLD-DST=" + gt6LogiProbeChestSum(sLcpColdDst) + "; все каверы встали=" + sLcpCoversOk);
+	}
+
+	private static long gt6LogiProbeLoadBatteries(gregapi.tileentity.energy.TileEntityBase10EnergyBatBox aBox, int aItemId) {
+		long rStored = 0;
+		for (int i = 0; i < aBox.invsize(); i++) {
+			ItemStack tStack = gregapi.probe.GT6ProbeStand.mteStack(aItemId);
+			if (ST.invalid(tStack)) throw new RuntimeException("предметная батарея id=" + aItemId + " не выдана реестром");
+			if (!(tStack.getItem() instanceof gregapi.item.IItemEnergy tE)) throw new RuntimeException("предмет id=" + aItemId + " не IItemEnergy, а " + tStack.getItem().getClass().getSimpleName());
+			tStack = tE.setEnergyStored(aBox.mEnergyType, tStack, tE.getEnergyCapacity(aBox.mEnergyType, tStack));
+			gregapi.probe.GT6ProbeStand.slotSet(aBox, i, tStack);
+			rStored += tE.getEnergyStored(aBox.mEnergyType, tStack);
+		}
+		aBox.updateInventory();
+		return rStored;
+	}
+
+	/** Тик 234: компьютерная секция — сканер (БЕЗ питания), USB-свитч, два HDD-свитча (второй БЕЗ привода = COLD). */
+	private static void gt6LogiProbeDataBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sLcpPlayer.level();
+		sLcpScanner = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpData.offset(0, -1, 0), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_SCANNER), gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric.class, LCP_M, "сканер");
+		if (sLcpScanner == null) throw new RuntimeException("сканер не встал");
+		sLcpScanner.setPrimaryFacing(SIDE_Z_POS);
+		sLcpScanner.mDisabledItemOutput = T; // иначе продукт улетел бы дропом мимо слотов (канон ST.moveAll aEjectItems=T, урок связки №10)
+		sLcpHdd = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpData.offset(3, -1, 0), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_HDDSW), gregtech.tileentity.computer.MultiTileEntityHDDSwitch.class, LCP_M, "HDD-свитч");
+		sLcpUsb = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpData.offset(5, -1, 0), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_USBSW), gregtech.tileentity.computer.MultiTileEntityUSBSwitch.class, LCP_M, "USB-свитч");
+		sLcpHddCold = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, sLcpData.offset(7, -1, 0), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_HDDSW), gregtech.tileentity.computer.MultiTileEntityHDDSwitch.class, LCP_M, "HDD-свитч БЕЗ привода");
+		if (sLcpHdd == null || sLcpUsb == null || sLcpHddCold == null) throw new RuntimeException("свитчи не встали: " + sLcpHdd + "/" + sLcpUsb + "/" + sLcpHddCold);
+		for (BlockPos tP : new BlockPos[]{sLcpHdd.getBlockPos().above(), sLcpUsb.getBlockPos().above(), sLcpHddCold.getBlockPos().above()}) tLevel.setBlock(tP, Blocks.AIR.defaultBlockState(), 3);
+		ItemStack tHdd = IL.USB_HDD_1.get(1);
+		if (ST.invalid(tHdd)) throw new RuntimeException("USB HDD 1.0 не выдан");
+		gregapi.probe.GT6ProbeStand.slotSet(sLcpHdd, 0, tHdd);
+		sLcpHdd.updateInventory();
+		O.println("[" + LCP_M + "] компьютер: сканер@" + sLcpScanner.getBlockPos().toShortString() + " mFacing=" + sLcpScanner.mFacing
+			+ " mInput/mInputMin/mInputMax=" + sLcpScanner.mInput + "/" + sLcpScanner.mInputMin + "/" + sLcpScanner.mInputMax
+			+ " карта=" + sLcpScanner.mRecipes.mNameInternal + " слотов вход/выход=" + sLcpScanner.mRecipes.mInputItemsCount + "/" + sLcpScanner.mRecipes.mOutputItemsCount
+			+ "; HDD-свитч@" + sLcpHdd.getBlockPos().toShortString() + " привод в слоте0=" + sLcpHdd.slot(0)
+			+ "; USB-свитч@" + sLcpUsb.getBlockPos().toShortString() + " слотов=" + sLcpUsb.invsize()
+			+ "; HDD-свитч-COLD@" + sLcpHddCold.getBlockPos().toShortString() + " привод в слоте0=" + sLcpHddCold.slot(0));
+	}
+
+	/** Тик 236: §6.1 изолированный шов — прямой вызов карты рецептов сканера (ДИАГНОСТИКА, не судья). */
+	private static void gt6LogiProbeDataSeam() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		try {
+			gregapi.recipes.Recipe tR = RM.ScannerVisuals.findRecipe(sLcpScanner, null, F, sLcpScanner.mInputMax, sLcpScanner.slot(sLcpScanner.mRecipes.mInputItemsCount + sLcpScanner.mRecipes.mOutputItemsCount),
+				ZL_FS, ST.make(Blocks.STONE, 1, 0), IL.USB_Stick_1.get(1));
+			sLcpSeamOut = tR == null ? "null" : ("выход0=" + tR.mOutputs[0] + " nbt=" + ItemNBT.get(tR.mOutputs[0]) + " duration=" + tR.mDuration + " EUt=" + tR.mEUt);
+		} catch (Throwable e) {sLcpSeamOut = "ИСКЛЮЧЕНИЕ " + e;}
+		O.println("[" + LCP_M + "] §6.1 изолированный шов RM.ScannerVisuals.findRecipe(камень + USB 1.0 стик) => " + sLcpSeamOut);
+	}
+
+	/** Тик 238: входы сканера — ДО подачи питания (урок связки №10). */
+	private static void gt6LogiProbeDataIn() {
+		sLcpScanBlock1 = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(Blocks.STONE);
+		gregapi.probe.GT6ProbeStand.slotSet(sLcpScanner, 0, ST.make(Blocks.STONE, 1, 0));
+		gregapi.probe.GT6ProbeStand.slotSet(sLcpScanner, 1, IL.USB_Stick_1.get(1));
+		sLcpScanner.updateInventory();
+		gregapi.data.CS.OUT.println("[" + LCP_M + "] вход сканера #1: слот0=" + sLcpScanner.slot(0) + " слот1=" + sLcpScanner.slot(1) + " (id блока камня=" + sLcpScanBlock1 + ")");
+	}
+
+	/** Тик 240: энергия — ПОСЛЕДНЕЙ. Ящик HV в стену куба (s>6 => ONLY_ENERGY_IN) и ящик HV в ЗАДНЮЮ грань сканера. */
+	private static void gt6LogiProbePower() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sLcpPlayer.level();
+		BlockPos tWall = sLcpHot.offset(2, -2, 2), tBoxPos = sLcpHot.offset(3, -2, 2);
+		sLcpHotBox = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, tBoxPos.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_BOX_HV), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, LCP_M, "ящик HV логистики");
+		if (sLcpHotBox == null) throw new RuntimeException("ящик HV не встал @" + tBoxPos);
+		sLcpHotBox.setPrimaryFacing(SIDE_X_NEG); // эмиссия ТОЛЬКО на mFacing (BatBox:235 isOutput) — в стену куба
+		long tHotStored = gt6LogiProbeLoadBatteries(sLcpHotBox, LCP_BAT_HV);
+
+		byte tBack = FACING_TO_SIDE[sLcpScanner.mFacing][SIDE_BACK];
+		BlockPos tScanBoxPos = sLcpScanner.getBlockPos().relative(FORGE_DIR[tBack]);
+		sLcpScanBox = gregapi.probe.GT6ProbeStand.place(tLevel, sLcpPlayer, tScanBoxPos.below(), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(LCP_BOX_HV), gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, LCP_M, "ящик HV сканера");
+		if (sLcpScanBox == null) throw new RuntimeException("ящик HV сканера не встал @" + tScanBoxPos);
+		sLcpScanBox.setPrimaryFacing(OPOS[tBack]);
+		long tScanStored = gt6LogiProbeLoadBatteries(sLcpScanBox, LCP_BAT_HV);
+
+		gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart tPart = (gregapi.tileentity.multiblocks.MultiTileEntityMultiBlockPart) tLevel.getBlockEntity(tWall);
+		// ВНИМАНИЕ (§7 «замер ещё не вычисленного поля»): mBatteryCount у ящика равен -1 до его ПЕРВОГО тика
+		// (TileEntityBase10EnergyBatBox:52 объявление, :127-137 пересчёт в onTick2) — здесь его мерить нельзя,
+		// он снимается в трассе (sLcpBoxBatMax) вместе с фактом эмиссии (mEmitsEnergy, :146).
+		sLcpBoxOk = tPart != null && tPart.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_X_POS, F) && tHotStored > 0;
+		O.println("[" + LCP_M + "] питание подано: ящик логистики@" + tBoxPos.toShortString() + " mFacing=" + sLcpHotBox.mFacing + " mOutput=" + sLcpHotBox.mOutput
+			+ " заряд предметных батарей=" + tHotStored + "; стена@" + tWall.toShortString() + " принимает EU=" + (tPart != null && tPart.isEnergyAcceptingFrom(TD.Energy.EU, SIDE_X_POS, F))
+			+ " окно=[" + (tPart == null ? -1 : tPart.getEnergySizeInputMin(TD.Energy.EU, SIDE_X_POS)) + ".." + (tPart == null ? -1 : tPart.getEnergySizeInputMax(TD.Energy.EU, SIDE_X_POS)) + "]"
+			+ "; ящик сканера@" + tScanBoxPos.toShortString() + " (задняя грань сканера=" + tBack + ") заряд=" + tScanStored);
+	}
+
+	/** Каждый тик 241..566: замер обеих площадок (шаг 1 тик — взаимно прост с периодом 20). */
+	private static void gt6LogiProbeTrack() {
+		int tT = sLcpSeq.currentTick();
+		long tSrc = gt6LogiProbeChestSum(sLcpSrc), tDst = gt6LogiProbeChestSum(sLcpDst), tNear = gt6LogiProbeChestSum(sLcpNear), tFar = gt6LogiProbeChestSum(sLcpFar);
+		sLcpHotSamples++;
+		if (tSrc + tNear + tDst != sLcpSrc0 + sLcpNear0) sLcpConserveBad++;
+		if (tFar != sLcpFar0) sLcpFarBad++;
+		sLcpDstGrow.sample(tDst);
+		if (tDst > 0 && sLcpFirstMoveTick < 0) sLcpFirstMoveTick = tT;
+		if (sLcpHotBox != null) {if (sLcpHotBox.mBatteryCount > sLcpBoxBatMax) sLcpBoxBatMax = sLcpHotBox.mBatteryCount; if (sLcpHotBox.mEmitsEnergy) sLcpBoxEmitSeen = T;}
+		if (sLcpHotCore.oCPU_Control > sLcpCtrlMax) sLcpCtrlMax = sLcpHotCore.oCPU_Control;
+		if (sLcpHotCore.oCPU_Logic > sLcpLogicMax) sLcpLogicMax = sLcpHotCore.oCPU_Logic;
+		if (sLcpHotCore.oCPU_Conversion > sLcpConvMax) sLcpConvMax = sLcpHotCore.oCPU_Conversion;
+		if (sLcpHotCore.mEnergy > sLcpHotEnergyMax) sLcpHotEnergyMax = sLcpHotCore.mEnergy;
+
+		long tColdSrc = gt6LogiProbeChestSum(sLcpColdSrc), tColdDst = gt6LogiProbeChestSum(sLcpColdDst);
+		sLcpColdDstGrow.sample(tColdDst);
+		if (tT < LCP_T_COLD_JUDGE) {
+			sLcpColdSamples++;
+			if (sLcpColdCore.mEnergy != 0 || tColdDst != 0 || tColdSrc != sLcpColdSrc0) sLcpColdBad++;
+		}
+		if (tT >= LCP_T_PRIME_LOW && tT <= LCP_T_PRIME_LOW + LCP_IDLE_TICKS) sLcpIdle.add(new long[]{tT, sLcpColdCore.mEnergy, tColdDst});
+		if (tT == LCP_T_PRIME_HIGH) {sLcpItemE0 = sLcpColdCore.mEnergy; sLcpItemD0 = tColdDst;}
+		if (tT == LCP_T_PRIME_HIGH + LCP_ITEM_WINDOW) {sLcpItemE1 = sLcpColdCore.mEnergy; sLcpItemD1 = tColdDst;}
+
+		if (tT % 13 == 0) gregapi.data.CS.OUT.println("[" + LCP_M + "] t=" + tT + " ГОРЯЧЕЕ: SRC=" + tSrc + " DST=" + tDst + " NEAR=" + tNear + " FAR=" + tFar
+			+ " mEnergy=" + sLcpHotCore.mEnergy + " oL/oC/oCv=" + sLcpHotCore.oCPU_Logic + "/" + sLcpHotCore.oCPU_Control + "/" + sLcpHotCore.oCPU_Conversion
+			+ " ящик=" + (sLcpHotBox == null ? -1 : sLcpHotBox.mEnergy) + " бат=" + (sLcpHotBox == null ? -1 : sLcpHotBox.mBatteryCount) + " эмиссия=" + (sLcpHotBox != null && sLcpHotBox.mEmitsEnergy)
+			+ " | ХОЛОДНОЕ: SRC=" + tColdSrc + " DST=" + tColdDst + " mEnergy=" + sLcpColdCore.mEnergy
+			+ " | СКАНЕР: mEnergy=" + (sLcpScanner == null ? -1 : sLcpScanner.mEnergy) + " прогресс=" + (sLcpScanner == null ? -1 : sLcpScanner.mProgress) + "/" + (sLcpScanner == null ? -1 : sLcpScanner.mMaxProgress)
+			+ " слоты=[" + (sLcpScanner == null ? "" : sLcpScanner.slot(0) + ", " + sLcpScanner.slot(1) + ", " + sLcpScanner.slot(2) + ", " + sLcpScanner.slot(3)) + "]");
+	}
+
+	/** Реальный ПКМ игрока по свитчу: SURVIVAL + телепорт вплотную + DIAG руки ДО клика (§4, ловушки §7). */
+	private static net.minecraft.world.InteractionResult gt6LogiProbeClickSwitch(net.minecraft.world.level.block.entity.BlockEntity aSwitch, ItemStack aHeld, String aLabel) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		BlockPos tPos = aSwitch.getBlockPos();
+		net.minecraft.world.level.GameType tOld = sLcpPlayer.gameMode.getGameModeForPlayer();
+		sLcpPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+		gregapi.probe.GT6ProbeStand.teleportLook(sLcpPlayer, tPos.getX() + 0.5, tPos.getY() + 1.0, tPos.getZ() + 2.5, 0.0F, 30.0F);
+		sLcpPlayer.getInventory().setItem(0, aHeld); sLcpPlayer.getInventory().setSelectedSlot(0);
+		O.println("[" + LCP_M + "] DIAG рука ДО клика (" + aLabel + "): " + sLcpPlayer.getMainHandItem() + " nbt=" + ItemNBT.get(sLcpPlayer.getMainHandItem())
+			+ " дистанция²=" + sLcpPlayer.distanceToSqr(tPos.getX() + 0.5, tPos.getY() + 0.5, tPos.getZ() + 0.5));
+		net.minecraft.world.InteractionResult tR = gregapi.probe.GT6ProbeStand.clickBlock(sLcpPlayer, tPos, net.minecraft.core.Direction.UP);
+		sLcpPlayer.setGameMode(tOld);
+		O.println("[" + LCP_M + "] клик (" + aLabel + ") => " + tR);
+		return tR;
+	}
+
+	private static CompoundTag gt6LogiProbeStickData(ItemStack aStack) {
+		if (ST.invalid(aStack) || !ItemNBT.has(aStack)) return null;
+		CompoundTag tNBT = ItemNBT.get(aStack);
+		return tNBT == null || !tNBT.contains(NBT_USB_DATA) ? null : tNBT.getCompoundOrEmpty(NBT_USB_DATA);
+	}
+
+	private static ItemStack gt6LogiProbeTakeScanned() {
+		for (int i = sLcpScanner.mRecipes.mInputItemsCount; i < sLcpScanner.mRecipes.mInputItemsCount + sLcpScanner.mRecipes.mOutputItemsCount; i++) {
+			ItemStack tS = sLcpScanner.slot(i);
+			// ЗАБРАТЬ предмет из слота — ТОЛЬКО GT-каналом slotKill (mInventory[i]=null). Запись ItemStack.EMPTY
+			// оставила бы в слоте НЕ-null стек нулевого размера: slotHas(j)=true (TileEntityBase05Inventories:100)
+			// -> canOutput:637-639 объявляет выход занятым чужим предметом -> FOUND_RECIPE_BUT_DID_NOT_MEET_REQUIREMENTS
+			// и следующий рецепт НИКОГДА не стартует (ровно это сорвало второй скан в прогоне run1).
+			if (ST.valid(tS) && OM.is(OD_USB_STICKS[1], tS) && gt6LogiProbeStickData(tS) != null) {ItemStack rOut = tS.copy(); sLcpScanner.slotKill(i); sLcpScanner.updateInventory(); return rOut;}
+		}
+		return ItemStack.EMPTY;
+	}
+
+	/** Тик 330: судья D1 — ЖИВОЙ сканер записал данные на носитель. */
+	private static void gt6LogiProbeD1() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		sLcpStick1 = gt6LogiProbeTakeScanned();
+		CompoundTag tData = gt6LogiProbeStickData(sLcpStick1);
+		sLcpD1 = tData != null && tData.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock1;
+		O.println("[" + LCP_M + "] D1 сканер#1: стик=" + sLcpStick1 + " data=" + tData + " ожидался gt.canvas.block=" + sLcpScanBlock1
+			+ " tier=" + (ST.valid(sLcpStick1) && ItemNBT.has(sLcpStick1) ? ItemNBT.get(sLcpStick1).getByteOr(NBT_USB_TIER, (byte)-1) : -1)
+			+ "; слоты сканера=[" + sLcpScanner.slot(0) + ", " + sLcpScanner.slot(1) + ", " + sLcpScanner.slot(2) + ", " + sLcpScanner.slot(3) + "]"
+			+ " mProgress=" + sLcpScanner.mProgress + "/" + sLcpScanner.mMaxProgress + " mEnergy=" + sLcpScanner.mEnergy);
+	}
+
+	/** Тик 334: судья D2 — РЕАЛЬНЫЙ клик игрока стиком по HDD-свитчу пишет данные в NBT САМОГО ПРИВОДА. */
+	private static void gt6LogiProbeD2() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (ST.invalid(sLcpStick1)) {O.println("[" + LCP_M + "] D2 пропущен: стик #1 не получен"); return;}
+		sLcpHdd.setStateMode((byte)0);
+		gt6LogiProbeClickSwitch(sLcpHdd, sLcpStick1.copy(), "запись стика #1 в файл 0 HDD");
+		ItemStack tDrive = sLcpHdd.slot(0);
+		CompoundTag tOuter = ST.valid(tDrive) && ItemNBT.has(tDrive) ? ItemNBT.get(tDrive) : null;
+		CompoundTag tDriveData = tOuter == null ? null : tOuter.getCompoundOrEmpty(NBT_USB_DRIVE);
+		CompoundTag tFile0 = tDriveData == null || !tDriveData.contains(NBT_USB_DATA + 0) ? null : tDriveData.getCompoundOrEmpty(NBT_USB_DATA + 0);
+		sLcpD2 = tFile0 != null && tFile0.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock1 && tDriveData.getByteOr(NBT_USB_TIER + 0, (byte)-1) == 1;
+		O.println("[" + LCP_M + "] D2 привод ПОСЛЕ клика: предмет=" + tDrive + " nbt=" + tOuter + "; файл0=" + tFile0 + " tier0=" + (tDriveData == null ? -1 : tDriveData.getByteOr(NBT_USB_TIER + 0, (byte)-1)));
+	}
+
+	/** Тик 338: судьи D3 — чтение через ITileEntityUSBPort (тот же канал, что дёргают машины) + изоляция файлов. */
+	private static void gt6LogiProbeD3() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		sLcpHdd.setStateMode((byte)0);
+		CompoundTag tRead0 = sLcpHdd.getUSBData(SIDE_Y_POS, 1);
+		sLcpHdd.setStateMode((byte)1);
+		CompoundTag tRead1 = sLcpHdd.getUSBData(SIDE_Y_POS, 1);
+		sLcpD3a = tRead0 != null && tRead0.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock1;
+		sLcpD3b = (tRead1 == null || tRead1.isEmpty());
+		O.println("[" + LCP_M + "] D3 чтение: mMode=0 -> " + tRead0 + "; mMode=1 -> " + tRead1);
+	}
+
+	/** Тик 342: второй скан ДРУГОГО блока — вход кладётся, питание у сканера уже есть (машина простаивала пустой). */
+	private static void gt6LogiProbeScan2() {
+		sLcpScanBlock2 = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getId(Blocks.GLASS);
+		gregapi.probe.GT6ProbeStand.slotSet(sLcpScanner, 0, ST.make(Blocks.GLASS, 1, 0));
+		gregapi.probe.GT6ProbeStand.slotSet(sLcpScanner, 1, IL.USB_Stick_1.get(1));
+		sLcpScanner.slotKill(2); sLcpScanner.slotKill(3); // выходные слоты — РОВНО null (см. комментарий в gt6LogiProbeTakeScanned)
+		sLcpScanner.updateInventory();
+		gregapi.data.CS.OUT.println("[" + LCP_M + "] вход сканера #2: слот0=" + sLcpScanner.slot(0) + " слот1=" + sLcpScanner.slot(1)
+			+ " выходы=[" + sLcpScanner.slot(2) + ", " + sLcpScanner.slot(3) + "] slotHas=[" + sLcpScanner.slotHas(2) + ", " + sLcpScanner.slotHas(3) + "] (id блока стекла=" + sLcpScanBlock2 + ")");
+	}
+
+	private static void gt6LogiProbeD4() {
+		sLcpStick2 = gt6LogiProbeTakeScanned();
+		CompoundTag tData = gt6LogiProbeStickData(sLcpStick2);
+		sLcpD4 = tData != null && tData.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock2;
+		gregapi.data.CS.OUT.println("[" + LCP_M + "] D4 сканер#2: стик=" + sLcpStick2 + " data=" + tData + " ожидался gt.canvas.block=" + sLcpScanBlock2);
+	}
+
+	/** Тик 434: судьи D5 — ПЕРЕНОС содержимого второго стика в ФАЙЛ 1 того же привода; файл 0 не тронут. */
+	private static void gt6LogiProbeD5() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (ST.invalid(sLcpStick2)) {O.println("[" + LCP_M + "] D5 пропущен: стик #2 не получен"); return;}
+		sLcpHdd.setStateMode((byte)1);
+		gt6LogiProbeClickSwitch(sLcpHdd, sLcpStick2.copy(), "запись стика #2 в файл 1 HDD");
+		CompoundTag tR1 = sLcpHdd.getUSBData(SIDE_Y_POS, 1);
+		sLcpHdd.setStateMode((byte)0);
+		CompoundTag tR0 = sLcpHdd.getUSBData(SIDE_Y_POS, 1);
+		sLcpD5a = tR1 != null && tR1.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock2;
+		sLcpD5b = tR0 != null && tR0.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock1;
+		O.println("[" + LCP_M + "] D5 два файла в ОДНОМ приводе: файл1=" + tR1 + " (ожидался " + sLcpScanBlock2 + "), файл0=" + tR0 + " (ожидался " + sLcpScanBlock1 + "); предмет=" + sLcpHdd.slot(0));
+	}
+
+	/** Тик 438: судьи D6 — USB-свитч переключает 16 РАЗНЫХ носителей. */
+	private static void gt6LogiProbeD6() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (ST.invalid(sLcpStick1) || ST.invalid(sLcpStick2)) {O.println("[" + LCP_M + "] D6 пропущен: нет обоих стиков"); return;}
+		gregapi.probe.GT6ProbeStand.slotSet(sLcpUsb, 5, sLcpStick1.copy());
+		gregapi.probe.GT6ProbeStand.slotSet(sLcpUsb, 9, sLcpStick2.copy());
+		sLcpUsb.updateInventory();
+		sLcpUsb.setStateMode((byte)5); CompoundTag t5 = sLcpUsb.getUSBData(SIDE_Y_POS, 1);
+		sLcpUsb.setStateMode((byte)9); CompoundTag t9 = sLcpUsb.getUSBData(SIDE_Y_POS, 1);
+		sLcpUsb.setStateMode((byte)2); CompoundTag t2 = sLcpUsb.getUSBData(SIDE_Y_POS, 1);
+		sLcpD6a = t5 != null && t5.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock1;
+		sLcpD6b = t9 != null && t9.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock2;
+		sLcpD6c = (t2 == null || t2.isEmpty());
+		O.println("[" + LCP_M + "] D6 USB-свитч: слот5 -> " + t5 + "; слот9 -> " + t9 + "; слот2 (пустой) -> " + t2);
+	}
+
+	/** Тик 442: судьи D7 — стирание файла ЧИСТЫМ стиком (реальный клик), соседний файл цел. */
+	private static void gt6LogiProbeD7() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		sLcpHdd.setStateMode((byte)1);
+		gt6LogiProbeClickSwitch(sLcpHdd, IL.USB_Stick_1.get(1), "стирание файла 1 ЧИСТЫМ стиком");
+		CompoundTag tR1 = sLcpHdd.getUSBData(SIDE_Y_POS, 1);
+		sLcpHdd.setStateMode((byte)0);
+		CompoundTag tR0 = sLcpHdd.getUSBData(SIDE_Y_POS, 1);
+		sLcpD7a = (tR1 == null || tR1.isEmpty());
+		sLcpD7b = tR0 != null && tR0.getIntOr(NBT_CANVAS_BLOCK, -1) == sLcpScanBlock1;
+		O.println("[" + LCP_M + "] D7 стирание: файл1=" + tR1 + " (ожидался пустым), файл0=" + tR0 + " (ожидался " + sLcpScanBlock1 + "); предмет=" + sLcpHdd.slot(0));
+	}
+
+	/** Тик 446: судьи D8 — COLD носителя: свитч БЕЗ привода не принимает и не отдаёт данные. */
+	private static void gt6LogiProbeD8() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (ST.invalid(sLcpStick1)) {O.println("[" + LCP_M + "] D8 пропущен: нет стика"); return;}
+		sLcpHddCold.setStateMode((byte)0);
+		gt6LogiProbeClickSwitch(sLcpHddCold, sLcpStick1.copy(), "COLD: запись в свитч БЕЗ привода");
+		CompoundTag tRead = sLcpHddCold.getUSBData(SIDE_Y_POS, 1);
+		boolean tWrite = sLcpHddCold.setUSBData(SIDE_Y_POS, 1, gt6LogiProbeStickData(sLcpStick1));
+		sLcpD8a = (tRead == null);
+		sLcpD8b = !tWrite;
+		sLcpDataDiag = "слот0 свитча-COLD=" + sLcpHddCold.slot(0) + " getUSBData=" + tRead + " setUSBData вернул=" + tWrite;
+		O.println("[" + LCP_M + "] D8 COLD носителя: " + sLcpDataDiag);
+	}
+
+	private static void gt6LogiProbePrimeLow() {
+		sLcpColdCore.mEnergy = LCP_PRIME_LOW;
+		gregapi.data.CS.OUT.println("[" + LCP_M + "] ХОЛОДНОМУ ядру выдано " + LCP_PRIME_LOW + " EU (НИЖЕ порога " + LCP_EXP_THRESHOLD + ") — энергия есть, работы быть не должно");
+	}
+
+	private static void gt6LogiProbePrimeHigh() {
+		sLcpColdCore.mEnergy = LCP_PRIME_HIGH;
+		gregapi.data.CS.OUT.println("[" + LCP_M + "] ХОЛОДНОМУ ядру выдано " + LCP_PRIME_HIGH + " EU (ВЫШЕ порога) — позитивный контроль COLD + учёт EU за предмет");
+	}
+
+	private static void gt6LogiProbeJudgeCold() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + LCP_M + "] ИТОГ COLD: замеров=" + sLcpColdSamples + " нарушений=" + sLcpColdBad + " (mEnergy!=0 ИЛИ DST!=0 ИЛИ SRC!=" + sLcpColdSrc0 + ")"
+			+ "; холодное ядро: структура=" + sLcpColdCore.mStructureOkay + " L/C/S/Cv=" + sLcpColdCore.mCPU_Logic + "/" + sLcpColdCore.mCPU_Control + "/" + sLcpColdCore.mCPU_Storage + "/" + sLcpColdCore.mCPU_Conversion
+			+ " oCPU_Control=" + sLcpColdCore.oCPU_Control);
+		sLcpSeq.judge("COLD: обесточенное ядро (mEnergy=0) при ПОЛНОСТЬЮ готовой сети (структура признана, каверы стоят, склад полон) не двигает НИЧЕГО",
+			sLcpColdSamples > 0 && sLcpColdBad == 0 && sLcpColdCore.mStructureOkay, "замеров>0 и 0 нарушений при признанной структуре", sLcpColdSamples + " замеров, " + sLcpColdBad + " нарушений, структура=" + sLcpColdCore.mStructureOkay);
+	}
+
+	private static void gt6LogiProbeJudgeIdle() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		StringBuilder tSB = new StringBuilder();
+		int tGood = 0, tBad = 0, tMoved = 0;
+		for (int i = 1; i < sLcpIdle.size(); i++) {
+			long tPrev = sLcpIdle.get(i-1)[1], tNow = sLcpIdle.get(i)[1];
+			tSB.append(i == 1 ? "" : ", ").append(tPrev).append("->").append(tNow);
+			if (tNow > 0 && tPrev - tNow == LCP_EXP_UPKEEP) tGood++; else if (tNow > 0) tBad++;
+			if (sLcpIdle.get(i)[2] != 0) tMoved++;
+		}
+		O.println("[" + LCP_M + "] ИТОГ ENERGY-IDLE: трасса mEnergy [" + tSB + "]; шагов ровно по " + LCP_EXP_UPKEEP + " EU=" + tGood + ", иных=" + tBad + ", тиков с движением=" + tMoved);
+		sLcpSeq.judge("ENERGY-IDLE: холостой расход РОВНО " + LCP_EXP_UPKEEP + " EU/тик (=20+L+C+S+Cv, :504) и НИ ОДНОГО переноса, пока запас ниже порога " + LCP_EXP_THRESHOLD,
+			tGood > 0 && tBad == 0 && tMoved == 0, "шагов>0 по " + LCP_EXP_UPKEEP + ", иных 0, движения 0", tGood + "/" + tBad + "/" + tMoved);
+	}
+
+	private static void gt6LogiProbeJudgeItem() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tDe = sLcpItemE0 - sLcpItemE1, tDi = sLcpItemD1 - sLcpItemD0, tExpect = LCP_EXP_UPKEEP * LCP_ITEM_WINDOW + tDi;
+		O.println("[" + LCP_M + "] ИТОГ ENERGY-ITEM: за " + LCP_ITEM_WINDOW + " тиков mEnergy " + sLcpItemE0 + "->" + sLcpItemE1 + " (Δ=" + tDe + "), перенесено предметов " + tDi
+			+ ", ожидание = " + LCP_EXP_UPKEEP + "*" + LCP_ITEM_WINDOW + " + " + tDi + " = " + tExpect);
+		sLcpSeq.judge("POSITIVE-CONTROL COLD: то же холодное ядро, получив энергию ВЫШЕ порога, НАЧАЛО возить — стенд заведомо способен показать успех, не хватало ровно энергии",
+			tDi > 0, ">0 предметов", tDi);
+		sLcpSeq.judge("ENERGY-ITEM: расход = холостой (" + LCP_EXP_UPKEEP + "/тик) + РОВНО 1 EU за каждый перенесённый предмет (:565 mEnergy -= tMoved)",
+			tDe == tExpect, tExpect, tDe);
+	}
+
+	private static void gt6LogiProbeJudgeHot() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		long tSrc = gt6LogiProbeChestSum(sLcpSrc), tDst = gt6LogiProbeChestSum(sLcpDst), tNear = gt6LogiProbeChestSum(sLcpNear), tFar = gt6LogiProbeChestSum(sLcpFar);
+		long tDstCobble = gt6LogiProbeChestSumOf(sLcpDst, ST.make(Blocks.COBBLESTONE, 1, 0)), tDstSand = gt6LogiProbeChestSumOf(sLcpDst, ST.make(Blocks.SAND, 1, 0)), tDstDirt = gt6LogiProbeChestSumOf(sLcpDst, ST.make(Blocks.DIRT, 1, 0));
+		long tCeil = (long)LCP_EXP_L * LCP_EXP_V * 64;
+		O.println("[" + LCP_M + "] ИТОГ ГОРЯЧЕЕ: SRC " + sLcpSrc0 + "->" + tSrc + ", NEAR " + sLcpNear0 + "->" + tNear + ", DST 0->" + tDst
+			+ " (булыжника " + tDstCobble + ", песка " + tDstSand + ", земли " + tDstDirt + "), FAR " + sLcpFar0 + "->" + tFar
+			+ "; прирост DST: " + sLcpDstGrow + "; первый перенос на тике " + sLcpFirstMoveTick
+			+ "; замеров=" + sLcpHotSamples + " нарушений баланса=" + sLcpConserveBad + " нарушений FAR=" + sLcpFarBad
+			+ "; max(oCPU_Logic)=" + sLcpLogicMax + " max(oCPU_Control)=" + sLcpCtrlMax + " max(oCPU_Conversion)=" + sLcpConvMax
+			+ "; max(mEnergy)=" + sLcpHotEnergyMax + " ящик=" + (sLcpHotBox == null ? -1 : sLcpHotBox.mEnergy) + " max(mBatteryCount)=" + sLcpBoxBatMax + " эмиссия наблюдалась=" + sLcpBoxEmitSeen);
+
+		boolean tStruct = sLcpHotCore.mStructureOkay && sLcpColdCore.mStructureOkay
+			&& sLcpHotCore.mCPU_Logic == LCP_EXP_L && sLcpHotCore.mCPU_Control == LCP_EXP_C && sLcpHotCore.mCPU_Storage == LCP_EXP_S && sLcpHotCore.mCPU_Conversion == LCP_EXP_V;
+		sLcpSeq.judge("STRUCTURE: оба ядра признали сборку 5x5x5 и по-типовой подсчёт процессоров совпал с формулой checkStructure2 (L/C/S/Cv)",
+			tStruct, "T и " + LCP_EXP_L + "/" + LCP_EXP_C + "/" + LCP_EXP_S + "/" + LCP_EXP_V,
+			sLcpHotCore.mStructureOkay + "&" + sLcpColdCore.mStructureOkay + " и " + sLcpHotCore.mCPU_Logic + "/" + sLcpHotCore.mCPU_Control + "/" + sLcpHotCore.mCPU_Storage + "/" + sLcpHotCore.mCPU_Conversion);
+
+		boolean tPc = sLcpCoversOk && sLcpBoxOk && sLcpBoxEmitSeen && sLcpBoxBatMax > 0 && sLcpSrc0 == (long)LCP_SRC_SLOTS * LCP_STACK
+			&& sLcpNear0 == (long)LCP_FAR_SLOTS * LCP_STACK && sLcpFar0 == (long)LCP_FAR_SLOTS * LCP_STACK
+			&& sLcpWires != null && sLcpWires[LCP_WIRES-1] != null && sLcpHotEnergyMax >= LCP_EXP_THRESHOLD;
+		sLcpSeq.judge("POSITIVE-CONTROL: стенд СПОСОБЕН показать успех — 6 каверов встали через реальную проверку, провода собраны, склады полны, стена куба принимает EU, ящик реально эмитировал, запас ядра переваливал порог " + LCP_EXP_THRESHOLD,
+			tPc, T, "каверы=" + sLcpCoversOk + " питание=" + sLcpBoxOk + " эмиссия=" + sLcpBoxEmitSeen + " бат=" + sLcpBoxBatMax + " SRC0=" + sLcpSrc0 + " NEAR0=" + sLcpNear0 + " FAR0=" + sLcpFar0 + " max(mEnergy)=" + sLcpHotEnergyMax);
+
+		sLcpSeq.judge("NETWORK: сеть собрана и ядро её признало — узел на дистанции " + (2 + LCP_EXP_C) + " был просканирован (oCPU_Control достиг mCPU_Control=" + LCP_EXP_C + "), доставка идёт ЧЕРЕЗ провода",
+			sLcpCtrlMax == LCP_EXP_C && tDstCobble > 0, LCP_EXP_C + " и DST>0", sLcpCtrlMax + " и DST=" + tDstCobble);
+
+		sLcpSeq.judge("RUN: доставка идёт ЖИВЫМИ тиками — прирост DST наблюдался не менее чем в 2 разных секундах, каждый шаг в пределах потолка " + tCeil + " (=L*Cv*64)",
+			sLcpDstGrow.mSteps >= 2 && sLcpDstGrow.mMax <= tCeil && sLcpDstGrow.mMax > 0,
+			"шагов>=2 и Δmax в (0.." + tCeil + "]", sLcpDstGrow.mSteps + " шагов, Δmax=" + sLcpDstGrow.mMax);
+
+		sLcpSeq.judge("CONSERVE: на КАЖДОМ из " + sLcpHotSamples + " замеров SRC+NEAR+DST = " + (sLcpSrc0 + sLcpNear0) + " (предметы не появились и не исчезли) и в DST нет ничего, кроме булыжника и песка",
+			sLcpHotSamples > 0 && sLcpConserveBad == 0 && tDstDirt == 0 && tDst == tDstCobble + tDstSand,
+			"0 нарушений, земли 0", sLcpConserveBad + " нарушений, земли " + tDstDirt);
+
+		sLcpSeq.judge("RANGE: ТОТ ЖЕ кавер-импорт на ТОМ ЖЕ проводе внутри радиуса (дистанция " + (3 + LCP_NEAR_WIRE) + ") опустошает склад, а за пределом радиуса (дистанция " + (3 + LCP_FAR_WIRE) + " > " + (2 + LCP_EXP_C) + ", :439) склад не тронут НИ РАЗУ",
+			tDstSand > 0 && tNear < sLcpNear0 && sLcpFarBad == 0 && tFar == sLcpFar0,
+			"NEAR опустошается, FAR=" + sLcpFar0 + " и 0 нарушений", "NEAR " + sLcpNear0 + "->" + tNear + " (в DST песка " + tDstSand + "), FAR=" + tFar + " и " + sLcpFarBad + " нарушений");
+
+		sLcpSeq.judge("DATA-WRITE (сканер): ЖИВАЯ машина Scanner (Visuals) записала на USB-стик данные отсканированного блока",
+			sLcpD1, "gt.canvas.block=" + sLcpScanBlock1, sLcpD1);
+		sLcpSeq.judge("DATA-WRITE (свитч): РЕАЛЬНЫЙ ПКМ стиком по HDD-свитчу перенёс данные в NBT САМОГО ПРИВОДА (файл 0, tier 1) — шов F8 не теряет запись",
+			sLcpD2, T, sLcpD2);
+		sLcpSeq.judge("DATA-READ: ITileEntityUSBPort.getUSBData отдаёт записанное для выбранного файла и null для пустого",
+			sLcpD3a && sLcpD3b, "файл0=данные, файл1=null", sLcpD3a + "/" + sLcpD3b);
+		sLcpSeq.judge("DATA-TRANSFER: второй стик (другой блок) лёг в файл 1 ТОГО ЖЕ привода, файл 0 остался прежним — 16 независимых файлов",
+			sLcpD4 && sLcpD5a && sLcpD5b, "скан2 ок, файл1=стекло, файл0=камень", sLcpD4 + "/" + sLcpD5a + "/" + sLcpD5b);
+		sLcpSeq.judge("DATA-SWITCH: USB-свитч отдаёт данные ИМЕННО того носителя, что выбран mMode (слот5/слот9), и null для пустого слота",
+			sLcpD6a && sLcpD6b && sLcpD6c, "слот5=камень, слот9=стекло, слот2=null", sLcpD6a + "/" + sLcpD6b + "/" + sLcpD6c);
+		sLcpSeq.judge("DATA-ERASE: клик ЧИСТЫМ стиком стирает выбранный файл и НЕ трогает соседний",
+			sLcpD7a && sLcpD7b, "файл1=пусто, файл0=камень", sLcpD7a + "/" + sLcpD7b);
+		sLcpSeq.judge("COLD-DATA: свитч БЕЗ носителя не отдаёт данные и отвергает запись (setUSBData=false) — без носителя не происходит ничего",
+			sLcpD8a && sLcpD8b, "read=null, write=false", sLcpD8a + "/" + sLcpD8b);
+	}
+
+	private static void gt6LogiProbeDone() {sLcpSeq.done();}
+
+	public static void gt6LogiComputeProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sLcpProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sLcpPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sLcpSeq == null) {
+			sLcpSeq = new gregapi.probe.GT6ProbeStand.Seq(LCP_M)
+				.at(LCP_T_SITE, GT_API_Proxy::gt6LogiProbeSite)
+				.window(LCP_T_BUILD_FROM, LCP_T_BUILD_TO, GT_API_Proxy::gt6LogiProbeBuildStep)
+				.at(LCP_T_CTRL, GT_API_Proxy::gt6LogiProbeControllers)
+				.at(LCP_T_NET, GT_API_Proxy::gt6LogiProbeNetwork)
+				.at(LCP_T_COVERS, GT_API_Proxy::gt6LogiProbeCovers)
+				.at(LCP_T_DATA_BUILD, GT_API_Proxy::gt6LogiProbeDataBuild)
+				.at(LCP_T_DATA_SEAM, GT_API_Proxy::gt6LogiProbeDataSeam)
+				.at(LCP_T_DATA_IN, GT_API_Proxy::gt6LogiProbeDataIn)
+				.at(LCP_T_POWER, GT_API_Proxy::gt6LogiProbePower)
+				.window(LCP_T_TRACK_FROM, LCP_T_TRACK_TO, GT_API_Proxy::gt6LogiProbeTrack)
+				.at(LCP_T_D1, GT_API_Proxy::gt6LogiProbeD1)
+				.at(LCP_T_D2, GT_API_Proxy::gt6LogiProbeD2)
+				.at(LCP_T_D3, GT_API_Proxy::gt6LogiProbeD3)
+				.at(LCP_T_SCAN2, GT_API_Proxy::gt6LogiProbeScan2)
+				.at(LCP_T_D4, GT_API_Proxy::gt6LogiProbeD4)
+				.at(LCP_T_D5, GT_API_Proxy::gt6LogiProbeD5)
+				.at(LCP_T_D6, GT_API_Proxy::gt6LogiProbeD6)
+				.at(LCP_T_D7, GT_API_Proxy::gt6LogiProbeD7)
+				.at(LCP_T_D8, GT_API_Proxy::gt6LogiProbeD8)
+				.at(LCP_T_COLD_JUDGE, GT_API_Proxy::gt6LogiProbeJudgeCold)
+				.at(LCP_T_PRIME_LOW, GT_API_Proxy::gt6LogiProbePrimeLow)
+				.at(LCP_T_JUDGE_IDLE, GT_API_Proxy::gt6LogiProbeJudgeIdle)
+				.at(LCP_T_PRIME_HIGH, GT_API_Proxy::gt6LogiProbePrimeHigh)
+				.at(LCP_T_JUDGE_ITEM, GT_API_Proxy::gt6LogiProbeJudgeItem)
+				.at(LCP_T_JUDGE_HOT, GT_API_Proxy::gt6LogiProbeJudgeHot)
+				.at(LCP_T_DONE, GT_API_Proxy::gt6LogiProbeDone);
+		}
+		sLcpSeq.tick(sLcpProbeTick);
 	}
 
 }

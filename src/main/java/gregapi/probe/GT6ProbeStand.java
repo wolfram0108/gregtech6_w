@@ -218,11 +218,16 @@ public final class GT6ProbeStand {
 	public static long tankAmount(Object aBE, int aIndex) {gregapi.fluid.FluidTankGT t = findTank(aBE, aIndex); return t == null ? 0 : t.amount();}
 
 	/** Слоты — ТОЛЬКО через публичный логический канал BE (TileEntityBase01Root.slot(i[,stack])), НЕ через
-	 *  голую рефлексию по mInventory. F15: на вход — только ItemStack.EMPTY, никогда null. */
+	 *  голую рефлексию по mInventory.
+	 *  ⚠️ ОЧИСТКА идёт через slotKill, а НЕ записью ItemStack.EMPTY (дефект каркаса, найден стендом №14):
+	 *  GT рассуждает о пустоте в null (TileEntityBase05Inventories:98 slotKill, :99 slotHas = mInventory!=null),
+	 *  поэтому записанный EMPTY — это НЕ-null, слот считается ЗАНЯТЫМ, и выход машины блокируется навсегда
+	 *  (MultiTileEntityBasicMachine:637-639 canOutput → FOUND_RECIPE_BUT_DID_NOT_MEET_REQUIREMENTS — рецепт
+	 *  не стартует НИКОГДА). Стенд №14 потерял на этом прогон: второй скан молча не запускался.
+	 *  F15 не нарушается: null в neo-слот мы не пишем — обнуление делает сам GT своим методом. */
 	public static void slotSet(net.minecraft.world.level.block.entity.BlockEntity aBE, int aIndex, net.minecraft.world.item.ItemStack aStack) {
-		net.minecraft.world.item.ItemStack tSafe = aStack == null ? net.minecraft.world.item.ItemStack.EMPTY : aStack;
-		if (aBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) tRoot.slot(aIndex, tSafe);
-		else O.println("[GT6PROBESTAND] DIAG slotSet: BE не поддерживает slot() — " + aBE.getClass().getSimpleName());
+		if (!(aBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot)) {O.println("[GT6PROBESTAND] DIAG slotSet: BE не поддерживает slot() — " + aBE.getClass().getSimpleName()); return;}
+		if (aStack == null || aStack.isEmpty()) tRoot.slotKill(aIndex); else tRoot.slot(aIndex, aStack);
 	}
 	public static int slotCount(net.minecraft.world.level.block.entity.BlockEntity aBE, int aIndex) {
 		if (aBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) return gregapi.util.ST.count(tRoot.slot(aIndex));
