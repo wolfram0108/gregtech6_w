@@ -359,6 +359,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6chemprobe.flag")) gt6ChemProbeTick(aEvent.getServer());
 				// [GT6-STEAMFARMPROBE] верификационный стенд «Связка №8 — паровая ферма N бойлеров → 1 турбина» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6steamfarmprobe.flag")) gt6SteamFarmProbeTick(aEvent.getServer());
+				// [GT6-BIGMULTIPROBE] верификационный стенд «Связка №9 — многоблоки» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6bigmultiprobe.flag")) gt6BigMultiProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -4571,6 +4573,570 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(900, GT_API_Proxy::gt6SteamFarmProbeJudgeFinal);
 		}
 		sSTFSeq.tick(sSTFProbeTick);
+	}
+
+	// ========== [GT6-BIGMULTIPROBE] ВРЕМЕННЫЙ стенд «Связка №9 — многоблоки» (Ф3.1, гейт run/gt6bigmultiprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана — судимый канал ТОЛЬКО реальные тики checkStructure()/onTick2()/doConversion(),
+	// ни один судимый метод пробой не вызывается напрямую):
+	// СБОРКА A — генерация: MultiTileEntityLargeBoiler->MultiTileEntityLargeTurbineSteam->MultiTileEntityLargeDynamo.
+	// (а) Бойлер (MultiTileEntityLargeBoiler.java): checkStructure2:96-140 — controller стоит НА ГРАНИ 3x3 (front-center,
+	//     tX=getOffsetXN(mFacing) :98, tZ=getOffsetZN(mFacing); controller.pos=(tX,tY,tZ+1) для mFacing=SOUTH, auto-pass
+	//     внутри checkAndSetTarget при tTileEntity==aController, ITileEntityMultiBlockController.java:49). Слой tY-1 —
+	//     3x3 "Heat Transmitter" (id=18101, mode=ONLY_ENERGY_IN, :104-112); слой tY — 3x3 mBoilerWalls (id читается из
+	//     NBT_DESIGN самого предмета, :77, mode=ONLY_FLUID_IN, :114-122); слои tY+1/tY+2 — периметр-8 (не центр!)
+	//     mBoilerWalls (:125-135, "pipe hole" колонна), ПЛЮС центр tY+2 ОБЯЗАТЕЛЕН отдельной проверкой (:124, design=1,
+	//     "крыша"); центр tY+1 НЕ проверяется вовсе — открытая шахта (одна клетка). Конверсия onTick2:176-266: пока
+	//     tConversions=min(mTanks[1].capacity()/2560, mEnergy/80, mTanks[0].amount())>0 — вода жгётся 1:1 на 80 HU,
+	//     пар копится; эмиссия начинается ТОЛЬКО когда mTanks[1].amount()>capacity()/2 (:203-256) — цель эмиссии №1
+	//     (индекс 0 массива tDelegators) СТРОГО ВВЕРХ на getY()+3 (:214, т.е. на 1 блок выше "крыши") — генерик
+	//     IFluidHandler.fill(...), side НЕ проверяется приёмником (см. ниже). Приёмник HU — ЛЮБАЯ сторона (:368
+	//     isEnergyAcceptingFrom без гейта по aSide, тот же приём, что CRUCIBLEPROBE).
+	// (б) Турбина (MultiTileEntityLargeTurbine.java:60-91 + LargeTurbineSteam.java): controller — ЛЮБАЯ из 6 граней
+	//     (getValidSides=SIDES_VALID, :137), структура 3x3xN вдоль ОСИ mFacing, controller — ОДИН из концов (глубина
+	//     4, :62-70), центр ДАЛЬНЕГО торца = ONLY_ENERGY_OUT (:77-97). Приём пара — ПРЯМО на controller БЕЗ гейта по
+	//     стороне (getFluidTankFillable2 :161 "!mStopped && FL.steam(...)", side не проверяется вовсе) — можно ставить
+	//     controller НЕПОСРЕДСТВЕННО на позицию эмиссии бойлера (getY()+3). Эмиссия RU — getEmittingTileEntity()/
+	//     getEmittingSide() (:131-132) находят СОСЕДА дальнего торца в направлении OPOS[mFacing] — доказано читаемым
+	//     кодом emitEnergyToSide->insertEnergyInto (ITileEntityEnergy.java:248-280): aSideInto=OPOS[aSideOutOf]=mFacing
+	//     (двойной OPOS отменяется) => приёмник (динамо) должен иметь ТОТ ЖЕ mFacing, что турбина (TileEntityBase11
+	//     MultiBlockConverter.java:156,174 isInput(aSide)=aSide==mFacing).
+	// (в) Динамо (MultiTileEntityLargeDynamo.java): структура идентична турбине геометрически, НО средние 2 слоя
+	//     ОБЯЗАНЫ быть id=18040 "Large Copper Coil" (:69, тернарный "не min/max торец X/Y/Z оси mFacing"->18040,
+	//     иначе mDynamoWalls), торцевые слои — mDynamoWalls (design из NBT). Эмиссия EU — тот же приём (getEmitting*),
+	//     приёмник (батарея) на getY()+доп.1 c mFacing≠mFacing_динамо (TileEntityBase10EnergyBatBox: isInput=aSide!=
+	//     mFacing, тот же приём, что STEAMFARMPROBE `battery.setPrimaryFacing(SIDE_NORTH)`).
+	// (г) Геометрия схемы (упрощение автора порта, БЕЗ смены механики): mFacing=SOUTH у бойлера (единств. горизонт.,
+	//     getValidSides=SIDES_HORIZONTAL), mFacing=DOWN у турбины/динамо (валидно — SIDES_VALID покрывает все 6),
+	//     ОБЕ структуры ставятся строго ВЕРТИКАЛЬНО друг на друга — тот же принцип "controller на существующем BE
+	//     соседа как анкор", что STEAMFARMPROBE (турбина/динамо/батарея прямым стеком на боилере/турбине). Топливо —
+	//     4 Brick Burning Box (id=1199, тот же генератор всех проб) под кольцом теплопередатчиков; пред-заряд пара
+	//     ТОЛЬКО начальной точки резервуара (cap/2+100000, тот же приём PIPEV1 BUG-062/STEAMFARMPROBE) — ОБЯЗАТЕЛЕН,
+	//     иначе порог эмиссии (capacity/2, реально ОГРОМНЫЙ: mOutput(8192)*10000/2=40960000) недостижим горелками за
+	//     разумное окно теста; вода (4000 unit) — РЕАЛЬНЫЙ реагент конверсии, не пред-заряжена сверх нормы.
+	// (д) ДВА поля-ловушки замера в хвосте цепи (вычитаны, оба уже описаны в ENERGYCHAINPROBE, Связка №4):
+	//     1) НАКОПИТЕЛИ турбины/динамо ЖИВУТ РОВНО ОДИН ТИК: у обоих NBT_WASTE_ENERGY=T (:1258,:1263) =>
+	//        TE_Behavior_Energy_Converter:94 в КОНЦЕ каждого doConversion делает mStorage.mEnergy=max(0,storage-
+	//        mEnergyIN.mMax) => на Pre-фазе (наш зонд) ВСЕГДА 0. Судить «динамо.mStorage вырос» НЕЛЬЗЯ — поле
+	//        физически не может расти между тиками. Долгоживущий свидетель EU — mEnergy БАТАРЕИ (монотонный),
+	//        живой свидетель RU — mConverter.mCanEmitEnergy динамо, накопленный watch-окном по ВСЕМ тикам.
+	//     2) ПУСТАЯ батарея НЕ ПРИНИМАЕТ: TileEntityBase10EnergyBatBox:181 doInject возвращает 0 при
+	//        mReceivablePower<=0, а mReceivablePower=mChargeableCount*mInput*2 (:153) строится ТОЛЬКО из
+	//        заряжаемых предметов-батарей в инвентаре ящика => пустой ящик = глухой конец, подпор всей цепи.
+	//        Сетап-обход ТОЛЬКО инвентарной бухгалтерии (mChargeableCount=1000, mBatteryCount=0 — чтобы ящик
+	//        не изливал дальше) КАЖДЫЙ тик окна — дословно приём ENERGYCHAINPROBE (:3071-3077), не передача.
+	// СБОРКА B — многоблочный эквивалент одноблочной машины: MultiTileEntityMixer (3x3x2, checkStructure2:48-76,
+	//     controller front-center-bottom :49, id=18002 "Stainless Steel Wall" ВЕЗДЕ — HARD-CODED в самом коде
+	//     оригинала (не NBT_DESIGN, в отличие от боилера/турбины/динамо)); "Large Batch Mixer" (id=17102, Loader_
+	//     MultiTileEntities.java:1238) — NBT_RECIPEMAP=RM.Mixer, ТОТ ЖЕ recipemap, что уже доказан на одноблочной
+	//     "Mixer (ULV)" в CHEMPROBE (Связка №7, Loader_Recipes_Chem.java:53) — рецепт живьём переиспользован через
+	//     {@link #gt6ChemProbeFindRecipe()} (централизация: ОДИН скан рецепта на весь файл, не дублируется). Базовый
+	//     класс TileEntityBase10MultiBlockMachine extends MultiTileEntityBasicMachine (:48) — ВСЕ поля/методы (mTanksInput,
+	//     mEnergy, checkRecipe/doActive) ИДЕНТИЧНЫ одноблочной машине; единственное отличие — doWork() гейтуется
+	//     checkStructure(F) (MultiTileEntityBasicMachine.java:786). Дифф порт/оригинал задействованных методов — построчно
+	//     1:1 с gregtech6/ (engine-swap TileEntity->BlockEntity, IFluidHandler forge->neoforge, World->Level; расхождений
+	//     в control-flow нет).
+	//     ТРИ микшера: RUN (РОВНО 1 партия — дословный паритет с одноблочной машиной, судится CONSERVE),
+	//     MULTI (BMP_MULTI_BATCHES партий — судится RUN «живыми тиками»), COLD (без энергии — негатив).
+	//     Почему RUN не годится для критерия RUN: doWork:787 даёт doActive ровно min(mInputMax,mEnergy)=mInputMax=4096
+	//     RU за тик (NBT_INPUT_MAX=4096, :1238), а на ОДНУ партию mMaxProgress=units(mEUt*duration*N,mEfficiency,10000)
+	//     =16*112*1=1792 (checkRecipe:771-773, mParallelDuration=T, mEfficiency=10000 по умолчанию :101) => 1792<=4096:
+	//     весь цикл mProgress 0->завершение укладывается В ОДИН тик машины, и Pre-фаза зонда физически не может
+	//     застать mMaxProgress>0 (прогон run4: выход РОВНО по рецепту, но mMaxProgress ни разу не пойман окном
+	//     211..900 каждый тик). Это НЕ дефект — свойство тира машины против дешёвого рецепта. MULTI берёт N=12
+	//     партий (предел САМОЙ машины: canOutput:652 min(mParallel=256, 64/выход(5))=12) => mMaxProgress=16*112*12=
+	//     21504 > 4096 => процесс ОБЯЗАН длиться ceil(21504/4096)=6 тиков, наблюдаем живьём. Снять при уборке фазы.
+	private static final int BMP_BOILER_ID      = 17201; // Stainless Steel Boiler Main Barometer — Loader_MultiTileEntities.java:1252, NBT_DESIGN=18022, NBT_OUTPUT_SU=4096*STEAM_PER_EU=8192 (mOutput)
+	// СОГЛАСОВАНИЕ ТИРОВ (вычитано, не подобрано) — пороги приёма GT6 отвергают пакет и ВНЕ [min..max] (нижняя
+	// граница «съедается» без зачисления, Root.doEnergyInjection:886; верхняя = overcharge/overload):
+	//   боилер 17201 mOutput=8192 пар/тик -> турбина 17211 mEnergyIN(STEAM)=6144/12288/24576, конверсия стартует при
+	//   mTanks[0]>=min*2=12288 (LargeTurbineSteam:147) => tSteam>=12288 => mStorage+=tSteam/2>=6144 =>
+	//   tOutput=units(storage,IN.mRec=12288,OUT.mRec=4096)=storage/3>=2048 == турбина mEnergyOUT(RU).mMin(4096/2) —
+	//   РОВНО порог: GT6 сконструировал гейт конверсии так, что всякая состоявшаяся конверсия ГАРАНТИРОВАННО даёт
+	//   излучаемый пакет (потому «waste energy» :94 обнуляет накопитель каждый тик и это НЕ мешает).
+	//   RU-пакет 2048..2730 -> динамо 17221 mEnergyIN(RU)=2048/4096/8192 (:1263) — попадает в окно;
+	//   динамо tOutput=units(storage,4096,3072)=storage*3/4 = 1536..2047 EU == mEnergyOUT(EU).mMin(3072/2)=1536 и выше.
+	//   Приёмник EU обязан иметь окно [mInput/2..mInput*2] (TileEntityBase01Root:893-894), накрывающее 1536..2047 =>
+	//   Battery Box (EV) mInput=V[4]=2048 -> [1024..4096]. LV (32 -> [16..64]) пакет 1536 ПЕРЕЖИГАЕТ (overcharge :184).
+	// СТАРШИЙ тир боилера (17204 Adamantium, mOutput=262144) НЕДОПУСТИМ с этой турбиной: пакет пара 262144 > tank
+	// cap(mEnergyIN.mMax*4=98304) заполняет танк целиком, tSteam=98304 => storage=49152 => tOutput=16384 >
+	// mEnergyOUT.mMax=8192 и при mLimitConsumption=F (NBT_LIMIT_CONSUMPTION у паровой турбины НЕ выставлен, :1258)
+	// TE_Behavior_Energy_Converter:74 отдаёт mOverloaded=T -> overload() -> взрыв. Тир-пара 17201/17211 — штатная.
+	private static final int BMP_TURBINE_ID     = 17211; // Magnalium Steam Turbine Main Housing — :1258, NBT_DESIGN=18022
+	private static final int BMP_DYNAMO_ID      = 17221; // Stainless Steel Dynamo Main Housing — :1263, NBT_DESIGN=18022
+	private static final int BMP_WALL_ID        = 18022; // Dense Stainless Steel Wall — :1163 (стена турбины/динамо, Magnalium/Stainless тир)
+	private static final int BMP_BOILER_WALL_ID = 18022; // Dense Stainless Steel Wall — NBT_DESIGN боилера 17201 (:1252)
+	private static final int BMP_HEAT_ID        = 18101; // Heat Transmitter (Invar) — :1180
+	private static final int BMP_COIL_ID        = 18040; // Large Copper Coil — :1171 (средние 2 слоя динамо)
+	private static final int BMP_GEN_ID         = 1199;  // Brick Burning Box (Solid) — тот же генератор всех проб
+	private static final int BMP_BATBOX_ID      = 10084; // Battery Box (EV) — :895 i=4, mInput=V[4]=2048, окно приёма [1024..4096] (см. согласование тиров выше)
+	private static final int BMP_MIXER_ID       = 17102; // Large Batch Mixer — Loader_MultiTileEntities.java:1238, NBT_RECIPEMAP=RM.Mixer
+	private static final int BMP_MIXER_WALL_ID  = 18002; // Stainless Steel Wall — MultiTileEntityMixer.java:53-71 (id HARD-CODED в оригинале, не NBT_DESIGN)
+	private static final int BMP_MULTI_BATCHES  = 12;    // партий рецепта в MULTI-микшер: canOutput:652 режет mParallel(256) до 64/выход(5)=12 — предел САМОЙ машины
+	private static final String BMP_M = "GT6-BIGMULTIPROBE";
+
+	private static int sBMPProbeTick = -1;
+	private static ServerPlayer sBMPPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sBMPSeq;
+
+	// СБОРКА A — HOT (топливо+вода) и COLD (без топлива) башни бойлер->турбина->динамо->батарея
+	private static gregtech.tileentity.multiblocks.MultiTileEntityLargeBoiler sBMPHotBoiler, sBMPColdBoiler;
+	private static gregtech.tileentity.multiblocks.MultiTileEntityLargeTurbineSteam sBMPHotTurbine, sBMPColdTurbine;
+	private static gregtech.tileentity.multiblocks.MultiTileEntityLargeDynamo sBMPHotDynamo, sBMPColdDynamo;
+	private static gregapi.tileentity.energy.TileEntityBase10EnergyBatBox sBMPHotBattery, sBMPColdBattery;
+	private static final gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] sBMPHotGens = new gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[4];
+	private static net.minecraft.core.BlockPos sBMPHotBase, sBMPColdBase;
+	private static long sBMPHotWater0, sBMPHotDynamoEnergy0, sBMPHotSteam0, sBMPHotBattery0;
+	private static int sBMPHotBurnStartTick = -1;
+
+	// СБОРКА B — RUN (1 партия, паритет+CONSERVE), MULTI (N партий, живые тики), COLD (без энергии) многоблочный Mixer
+	private static gregtech.tileentity.multiblocks.MultiTileEntityMixer sBMPMixerRun, sBMPMixerMulti, sBMPMixerCold;
+	private static ItemStack sBMPMixerItemIn, sBMPMixerItemOut;
+	private static FluidStack sBMPMixerCO2, sBMPMixerWater, sBMPMixerH2;
+	private static int sBMPMixerOutSlot;
+	private static long sBMPMixerRecipeDuration;
+	private static boolean sBMPMixerRunSeenActive = F;
+	private static int sBMPMixerRunDoneTick = -1;
+	// MULTI: непрерывное наблюдение живого прогресса (шаг 1 тик — окно ловит ВСЕ фазы, урок §7 манифеста)
+	private static long sBMPMultiMaxProgressSeen = 0, sBMPMultiProgressSeen = 0, sBMPMultiProgressPrev = -1;
+	private static int sBMPMultiActiveTicks = 0, sBMPMultiGrowSteps = 0;
+	private static int sBMPMultiBatchesLoaded = 0;
+
+	/** Расчистка объёма постройки в AIR (гигиена, не судимый канал — тот же приём, что CRUCIBLEPROBE). aBase — позиция
+	 *  КОНТРОЛЛЕРА бойлера; охватывает горелки (Y-3) до батареи (Y+11) с запасом. */
+	private static void gt6BigMultiProbeClearTowerFootprint(ServerLevel aLevel, net.minecraft.core.BlockPos aBase) {
+		for (int x = -3; x <= 3; x++) for (int y = -4; y <= 14; y++) for (int z = -6; z <= 3; z++)
+			aLevel.setBlock(aBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+	}
+
+	/** Строит одну башню бойлер(mFacing=SOUTH)->турбина(mFacing=DOWN)->динамо(mFacing=DOWN)->батарея-LV; aBX/aBY/aBZ —
+	 *  позиция КОНТРОЛЛЕРА бойлера. aPlaceGens — поставить+развернуть 4 горелки под кольцом теплопередатчиков (HOT);
+	 *  без них — COLD (та же топология, тот же приём "тигель без горелки", CRUCIBLEPROBE). Возвращает
+	 *  {boiler,turbine,dynamo,battery,gens[]}. */
+	private static Object[] gt6BigMultiProbeBuildTower(ServerLevel aLevel, int aBX, int aBY, int aBZ, String aLabel, boolean aPlaceGens) {
+		net.minecraft.core.BlockPos tBoilerPos = new net.minecraft.core.BlockPos(aBX, aBY, aBZ);
+		gt6BigMultiProbeClearTowerFootprint(aLevel, tBoilerPos);
+
+		// --- Бойлер: контроллер + facing SOUTH ---
+		gregtech.tileentity.multiblocks.MultiTileEntityLargeBoiler tBoiler = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(aBX, aBY-1, aBZ), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(BMP_BOILER_ID),
+			gregtech.tileentity.multiblocks.MultiTileEntityLargeBoiler.class, BMP_M, aLabel + "-бойлер");
+		if (tBoiler == null) throw new RuntimeException(aLabel + ": бойлер не встал");
+		tBoiler.setPrimaryFacing(SIDE_SOUTH);
+		int tX = aBX, tZ = aBZ - 1; // MultiTileEntityLargeBoiler.java:98: tX=getOffsetXN(SOUTH)=X-OFFX[SOUTH]=X ; tZ=getOffsetZN(SOUTH)=Z-OFFZ[SOUTH]=Z-1
+
+		Map<Character, Object> tBoilerLegend = new HashMap<>();
+		tBoilerLegend.put('H', BMP_HEAT_ID);
+		tBoilerLegend.put('W', BMP_BOILER_WALL_ID);
+		String[] tBoilerLayers = {
+			"HHH\nHHH\nHHH",  // Y=aBY-1: кольцо теплопередатчиков (checkStructure2:104-112)
+			"WWW\nWWW\nW W",  // Y=aBY  : кольцо стен — контроллер уже стоит на месте (tX,aBY,tZ+1) — пропуск
+			"WWW\nW W\nWWW",  // Y=aBY+1: "pipe hole" колонна — центр ОТКРЫТ (checkStructure2:126-134, i=1 центр не проверяет)
+			"WWW\nWWW\nWWW"   // Y=aBY+2: "крыша" — центр ОБЯЗАТЕЛЕН (checkStructure2:124, design=1)
+		};
+		gregapi.probe.GT6ProbeStand.pattern(aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tX-1, aBY-1, tZ-1), tBoilerLayers, tBoilerLegend, BMP_M);
+		// pattern() при постройке "крыши" (Y=aBY+2, центр) авто-анкерит STONE НИЖЕ цели (GT6ProbeStand.pattern:132-133) —
+		// это ровно клетка шахты (tX,aBY+1,tZ), которую checkStructure2:102 требует ОТКРЫТОЙ (getAir). Побочный эффект
+		// нашей же техники постройки (не порт-код) — расчищаем обратно в AIR.
+		aLevel.setBlock(new net.minecraft.core.BlockPos(tX, aBY+1, tZ), Blocks.AIR.defaultBlockState(), 3);
+
+		// --- Турбина: контроллер ПРЯМО НАД "крышей" бойлера (tX,aBY+3,tZ), facing DOWN (пар принимается БЕЗ гейта
+		//     по стороне — MultiTileEntityLargeTurbineSteam.java:161) ---
+		int tTY = aBY + 3;
+		gregtech.tileentity.multiblocks.MultiTileEntityLargeTurbineSteam tTurbine = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tX, tTY-1, tZ), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(BMP_TURBINE_ID),
+			gregtech.tileentity.multiblocks.MultiTileEntityLargeTurbineSteam.class, BMP_M, aLabel + "-турбина");
+		if (tTurbine == null) throw new RuntimeException(aLabel + ": турбина не встала");
+		tTurbine.setPrimaryFacing(SIDE_DOWN);
+		Map<Character, Object> tWallLegend = new HashMap<>();
+		tWallLegend.put('W', BMP_WALL_ID); // Magnalium/Stainless-тир, НЕЗАВИСИМ от BMP_BOILER_WALL_ID (см. BMP_BOILER_ID)
+		String[] tTurbineLayers = {
+			"WWW\nW W\nWWW",  // Y=tTY  : кольцо — контроллер в ГЕОМЕТРИЧЕСКОМ ЦЕНТРЕ (mFacing=DOWN, без XZ-смещения)
+			"WWW\nWWW\nWWW",  // Y=tTY+1
+			"WWW\nWWW\nWWW",  // Y=tTY+2
+			"WWW\nWWW\nWWW"   // Y=tTY+3: верх, центр = ONLY_ENERGY_OUT (тот же id стены, роль ставится ПОСЛЕ структурного матча)
+		};
+		gregapi.probe.GT6ProbeStand.pattern(aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tX-1, tTY, tZ-1), tTurbineLayers, tWallLegend, BMP_M);
+
+		// --- Динамо: контроллер ПРЯМО НАД крышей турбины (tX,tTY+4,tZ), facing DOWN (isInput=aSide==mFacing; приходящая
+		//     сторона от турбины = OPOS[OPOS[mFacing_турбины]] = mFacing_турбины = DOWN — двойной OPOS отменяется,
+		//     ITileEntityEnergy.java:248-280 emitEnergyToSide->insertEnergyInto) ---
+		int tDY = tTY + 4;
+		gregtech.tileentity.multiblocks.MultiTileEntityLargeDynamo tDynamo = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tX, tDY-1, tZ), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(BMP_DYNAMO_ID),
+			gregtech.tileentity.multiblocks.MultiTileEntityLargeDynamo.class, BMP_M, aLabel + "-динамо");
+		if (tDynamo == null) throw new RuntimeException(aLabel + ": динамо не встало");
+		tDynamo.setPrimaryFacing(SIDE_DOWN);
+		Map<Character, Object> tCoilLegend = new HashMap<>(tWallLegend);
+		tCoilLegend.put('C', BMP_COIL_ID);
+		String[] tDynamoLayers = {
+			"WWW\nW W\nWWW",  // Y=tDY  : кольцо, контроллер в центре
+			"CCC\nCCC\nCCC",  // Y=tDY+1: катушки (MultiTileEntityLargeDynamo.java:69, средние слои = 18040)
+			"CCC\nCCC\nCCC",  // Y=tDY+2
+			"WWW\nWWW\nWWW"   // Y=tDY+3: верх, центр = ONLY_ENERGY_OUT
+		};
+		gregapi.probe.GT6ProbeStand.pattern(aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tX-1, tDY, tZ-1), tDynamoLayers, tCoilLegend, BMP_M);
+
+		// --- Батарея-LV: ПРЯМО НАД крышей динамо (tX,tDY+4,tZ) — приём с DOWN (isInput=aSide!=mFacing, тот же приём STEAMFARMPROBE) ---
+		int tBatY = tDY + 4;
+		gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBattery = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tX, tBatY-1, tZ), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(BMP_BATBOX_ID),
+			gregapi.tileentity.energy.TileEntityBase10EnergyBatBox.class, BMP_M, aLabel + "-батарея");
+		if (tBattery == null) throw new RuntimeException(aLabel + ": батарея не встала");
+		tBattery.setPrimaryFacing(SIDE_NORTH);
+
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] tGens = new gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[4];
+		if (aPlaceGens) {
+			int[] tGX = {tX-1, tX+1, tX-1, tX+1};
+			int[] tGZ = {tZ-1, tZ-1, tZ,   tZ};
+			byte[] tGFacing = {SIDE_WEST, SIDE_EAST, SIDE_WEST, SIDE_EAST};
+			for (int i = 0; i < 4; i++) {
+				gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick tGen = gregapi.probe.GT6ProbeStand.place(
+					aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tGX[i], aBY-3, tGZ[i]), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(BMP_GEN_ID),
+					gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick.class, BMP_M, aLabel + "-горелка[" + i + "]");
+				if (tGen == null) throw new RuntimeException(aLabel + ": горелка[" + i + "] не встала");
+				tGen.setPrimaryFacing(tGFacing[i]);
+				net.minecraft.core.BlockPos tGenPos = new net.minecraft.core.BlockPos(tGX[i], aBY-2, tGZ[i]);
+				aLevel.setBlock(tGenPos.relative(FORGE_DIR[tGen.mFacing]), Blocks.AIR.defaultBlockState(), 3);
+				tGens[i] = tGen;
+			}
+		}
+		return new Object[]{tBoiler, tTurbine, tDynamo, tBattery, tGens};
+	}
+
+	/** Строит многоблочный Mixer (3x3x2, checkStructure2:48-76, facing=SOUTH, стена id=18002 HARD-CODED в оригинале).
+	 *  aMX/aMY/aMZ — позиция КОНТРОЛЛЕРА. */
+	private static gregtech.tileentity.multiblocks.MultiTileEntityMixer gt6BigMultiProbeBuildMixer(ServerLevel aLevel, int aMX, int aMY, int aMZ, String aLabel) {
+		net.minecraft.core.BlockPos tBase = new net.minecraft.core.BlockPos(aMX, aMY, aMZ);
+		for (int x = -2; x <= 3; x++) for (int y = -1; y <= 3; y++) for (int z = -3; z <= 1; z++)
+			aLevel.setBlock(tBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+
+		gregtech.tileentity.multiblocks.MultiTileEntityMixer tMixer = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(aMX, aMY-1, aMZ), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(BMP_MIXER_ID),
+			gregtech.tileentity.multiblocks.MultiTileEntityMixer.class, BMP_M, aLabel + "-микшер");
+		if (tMixer == null) throw new RuntimeException(aLabel + ": микшер не встал");
+		tMixer.setPrimaryFacing(SIDE_SOUTH);
+		int tX = aMX - 1, tZ = aMZ - 2; // MultiTileEntityMixer.java:49: tX=getOffsetXN(SOUTH)-1=X-1 ; tZ=getOffsetZN(SOUTH)-1=Z-1-1=Z-2
+
+		Map<Character, Object> tLegend = new HashMap<>();
+		tLegend.put('M', BMP_MIXER_WALL_ID);
+		String[] tLayers = {
+			"MMM\nMMM\nM M",  // Y=aMY  : низ — контроллер сидит на месте (tX+1,aMY,tZ+2) — пропуск
+			"MMM\nMMM\nMMM"   // Y=aMY+1: верх (весь ONLY_ITEM_FLUID_IN, центр = ONLY_ENERGY_IN — тот же id)
+		};
+		gregapi.probe.GT6ProbeStand.pattern(aLevel, sBMPPlayer, new net.minecraft.core.BlockPos(tX, aMY, tZ), tLayers, tLegend, BMP_M);
+		return tMixer;
+	}
+
+	/** Тик 200: построить ОБЕ башни (HOT/COLD) + ОБА Mixer'а (RUN/COLD), считать рецепт живым сканом (переиспользован
+	 *  {@link #gt6ChemProbeFindRecipe()} — централизация, один скан на весь файл). */
+	private static void gt6BigMultiProbeBuildAll() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + BMP_M + "] Связка №9 — МНОГОБЛОКИ (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		ServerLevel tLevel = sBMPPlayer.level();
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {BMP_BOILER_ID, BMP_TURBINE_ID, BMP_DYNAMO_ID, BMP_WALL_ID, BMP_BOILER_WALL_ID, BMP_HEAT_ID, BMP_COIL_ID, BMP_GEN_ID, BMP_BATBOX_ID, BMP_MIXER_ID, BMP_MIXER_WALL_ID};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		O.println("[" + BMP_M + "] ID подтверждены: боилер=" + tReg.getClassContainer(BMP_BOILER_ID).mClass.getSimpleName() + " турбина=" + tReg.getClassContainer(BMP_TURBINE_ID).mClass.getSimpleName()
+			+ " динамо=" + tReg.getClassContainer(BMP_DYNAMO_ID).mClass.getSimpleName() + " микшер=" + tReg.getClassContainer(BMP_MIXER_ID).mClass.getSimpleName());
+
+		net.minecraft.core.BlockPos tBase = sBMPPlayer.blockPosition().offset(6, 5, 100);
+		sBMPHotBase  = new net.minecraft.core.BlockPos(tBase.getX(),    tBase.getY(), tBase.getZ());
+		sBMPColdBase = new net.minecraft.core.BlockPos(tBase.getX()+14, tBase.getY(), tBase.getZ());
+
+		Object[] tHot = gt6BigMultiProbeBuildTower(tLevel, sBMPHotBase.getX(), sBMPHotBase.getY(), sBMPHotBase.getZ(), "HOT", T);
+		sBMPHotBoiler  = (gregtech.tileentity.multiblocks.MultiTileEntityLargeBoiler) tHot[0];
+		sBMPHotTurbine = (gregtech.tileentity.multiblocks.MultiTileEntityLargeTurbineSteam) tHot[1];
+		sBMPHotDynamo  = (gregtech.tileentity.multiblocks.MultiTileEntityLargeDynamo) tHot[2];
+		sBMPHotBattery = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tHot[3];
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[] tHotGens = (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[]) tHot[4];
+		System.arraycopy(tHotGens, 0, sBMPHotGens, 0, tHotGens.length);
+
+		Object[] tCold = gt6BigMultiProbeBuildTower(tLevel, sBMPColdBase.getX(), sBMPColdBase.getY(), sBMPColdBase.getZ(), "COLD", F);
+		sBMPColdBoiler  = (gregtech.tileentity.multiblocks.MultiTileEntityLargeBoiler) tCold[0];
+		sBMPColdTurbine = (gregtech.tileentity.multiblocks.MultiTileEntityLargeTurbineSteam) tCold[1];
+		sBMPColdDynamo  = (gregtech.tileentity.multiblocks.MultiTileEntityLargeDynamo) tCold[2];
+		sBMPColdBattery = (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox) tCold[3];
+
+		O.println("[" + BMP_M + "] построено (A): HOT бойлер@" + sBMPHotBoiler.getBlockPos() + " турбина@" + sBMPHotTurbine.getBlockPos() + " динамо@" + sBMPHotDynamo.getBlockPos() + " батарея@" + sBMPHotBattery.getBlockPos()
+			+ " (4 горелки); COLD бойлер@" + sBMPColdBoiler.getBlockPos() + " (0 горелок)");
+		O.println("[" + BMP_M + "] живые параметры: бойлер.mOutput=" + sBMPHotBoiler.mOutput + " бойлер.mTanks[1].capacity=" + sBMPHotBoiler.mTanks[1].capacity()
+			+ " турбина.mEnergyIN(min/rec/max)=" + sBMPHotTurbine.mEnergyIN.mMin + "/" + sBMPHotTurbine.mEnergyIN.mRec + "/" + sBMPHotTurbine.mEnergyIN.mMax
+			+ " турбина.mEnergyOUT(RU min/rec/max)=" + sBMPHotTurbine.mEnergyOUT.mMin + "/" + sBMPHotTurbine.mEnergyOUT.mRec + "/" + sBMPHotTurbine.mEnergyOUT.mMax
+			+ " динамо.mEnergyIN(RU min/rec/max)=" + sBMPHotDynamo.mEnergyIN.mMin + "/" + sBMPHotDynamo.mEnergyIN.mRec + "/" + sBMPHotDynamo.mEnergyIN.mMax
+			+ " динамо.mEnergyOUT(EU min/rec/max)=" + sBMPHotDynamo.mEnergyOUT.mMin + "/" + sBMPHotDynamo.mEnergyOUT.mRec + "/" + sBMPHotDynamo.mEnergyOUT.mMax
+			+ " динамо.mStorage.mCapacity=" + sBMPHotDynamo.mStorage.mCapacity + " батарея.mInput=" + sBMPHotBattery.mInput
+			+ " батарея.окно_приёма=[" + sBMPHotBattery.getEnergySizeInputMin(TD.Energy.EU, SIDE_DOWN) + ".." + sBMPHotBattery.getEnergySizeInputMax(TD.Energy.EU, SIDE_DOWN) + "]");
+
+		net.minecraft.core.BlockPos tMixerRunBase   = sBMPPlayer.blockPosition().offset(6,  1, 130);
+		net.minecraft.core.BlockPos tMixerMultiBase = sBMPPlayer.blockPosition().offset(20, 1, 130);
+		net.minecraft.core.BlockPos tMixerColdBase  = sBMPPlayer.blockPosition().offset(34, 1, 130);
+		sBMPMixerRun   = gt6BigMultiProbeBuildMixer(tLevel, tMixerRunBase.getX(),   tMixerRunBase.getY(),   tMixerRunBase.getZ(),   "RUN");
+		sBMPMixerMulti = gt6BigMultiProbeBuildMixer(tLevel, tMixerMultiBase.getX(), tMixerMultiBase.getY(), tMixerMultiBase.getZ(), "MULTI");
+		sBMPMixerCold  = gt6BigMultiProbeBuildMixer(tLevel, tMixerColdBase.getX(),  tMixerColdBase.getY(),  tMixerColdBase.getZ(),  "COLD");
+
+		gregapi.recipes.Recipe tRecipe = gt6ChemProbeFindRecipe();
+		if (tRecipe == null) throw new RuntimeException("рецепт RM.Mixer (Ca+CO2+H2O->CaCO3+H2, Loader_Recipes_Chem.java:53) не найден живым сканом");
+		if (tRecipe.mInputs.length != 1 || tRecipe.mOutputs.length != 1) throw new RuntimeException("найденный рецепт неожиданной формы item_in.length=" + tRecipe.mInputs.length + " item_out.length=" + tRecipe.mOutputs.length);
+		sBMPMixerItemIn  = ST.copy(tRecipe.mInputs[0]);
+		sBMPMixerItemOut = ST.copy(tRecipe.mOutputs[0]);
+		net.minecraft.world.level.material.Fluid tCO2Fluid = MT.CO2.gas(1, T).getFluid();
+		for (FluidStack tF : tRecipe.mFluidInputs) if (tF != null) {
+			if (tF.getFluid() == tCO2Fluid) sBMPMixerCO2 = tF.copy(); else sBMPMixerWater = tF.copy();
+		}
+		sBMPMixerH2 = tRecipe.mFluidOutputs[0].copy();
+		sBMPMixerRecipeDuration = tRecipe.mDuration;
+		sBMPMixerOutSlot = RM.Mixer.mInputItemsCount;
+		O.println("[" + BMP_M + "] построено (B): RUN микшер@" + sBMPMixerRun.getBlockPos() + " MULTI микшер@" + sBMPMixerMulti.getBlockPos() + " COLD микшер@" + sBMPMixerCold.getBlockPos()
+			+ "; рецепт (живой скан): item_in=" + sBMPMixerItemIn + " fluid_in=[" + sBMPMixerCO2 + ", " + sBMPMixerWater + "] -> fluid_out=" + sBMPMixerH2 + " item_out=" + sBMPMixerItemOut + " duration=" + sBMPMixerRecipeDuration + " outSlot=" + sBMPMixerOutSlot);
+		O.println("[" + BMP_M + "] живые параметры микшера: mInputMin/mInput/mInputMax=" + sBMPMixerRun.mInputMin + "/" + sBMPMixerRun.mInput + "/" + sBMPMixerRun.mInputMax
+			+ " mParallel=" + sBMPMixerRun.mParallel + " mParallelDuration=" + sBMPMixerRun.mParallelDuration + " mEfficiency=" + sBMPMixerRun.mEfficiency
+			+ " танк_входа.capacity=" + sBMPMixerRun.mTanksInput[0].capacity() + " (партий MULTI=" + BMP_MULTI_BATCHES + ")");
+	}
+
+	/** Тик 210: HOT — разжечь 4 горелки + предзарядить пар выше capacity/2 (эмиссия начинается СРАЗУ, тот же приём
+	 *  PIPEV1 BUG-062) + реальная вода (реагент продолжающейся конверсии); COLD НЕ трогается. Mixer RUN/COLD —
+	 *  закладка ДОСЛОВНО по рецепту (тот же приём CHEMPROBE), RUN получает энергию, COLD — нет. */
+	private static void gt6BigMultiProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		for (gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick tGen : sBMPHotGens) {
+			gregapi.probe.GT6ProbeStand.fldSet(tGen, "mBurning", T);
+			gregapi.probe.GT6ProbeStand.slotSet(tGen, 0, ST.make(Items.COAL, 32, 0));
+		}
+		sBMPHotBoiler.mTanks[1].setFluid(FL.Steam.make(sBMPHotBoiler.mTanks[1].capacity()/2 + 100000));
+		sBMPHotBoiler.mTanks[0].setFluid(FL.Water.make(4000));
+		sBMPHotWater0 = sBMPHotBoiler.mTanks[0].amount();
+		sBMPHotSteam0 = sBMPHotBoiler.mTanks[1].amount();
+		sBMPHotDynamoEnergy0 = sBMPHotDynamo.mStorage.mEnergy;
+		sBMPHotBattery0 = sBMPHotBattery.mEnergy;
+		sBMPHotBurnStartTick = sBMPProbeTick;
+
+		gregapi.probe.GT6ProbeStand.slotSet(sBMPMixerRun, 0, ST.copy(sBMPMixerItemIn));
+		sBMPMixerRun.mTanksInput[0].setFluid(sBMPMixerCO2.copy());
+		sBMPMixerRun.mTanksInput[1].setFluid(sBMPMixerWater.copy());
+		sBMPMixerRun.mEnergy = 1_000_000_000L; // сетап-обход бухгалтерии RU (тот же приём CHEMPROBE) — судимый канал checkRecipe()/doActive() реальный
+
+		// MULTI: N партий одного и того же рецепта — mMaxProgress растёт ×N (checkRecipe:773 mParallelDuration=T) и
+		// процесс ОБЯЗАН длиться несколько тиков (см. шапку). Число партий урезаем ёмкостью танков, если та меньше.
+		// Ёмкость танка входа — АДАПТИВНАЯ ПО ЖИДКОСТИ (FluidTankGT:404,410-414: mAdjustableCapacity из RecipeMap,
+		// ×mParallel*2); capacity() БЕЗ аргумента у пустого танка отдаёт всего mCapacity=1000 (:411 aFluid==null),
+		// поэтому клампить по нему НЕЛЬЗЯ — спрашиваем capacity(Fluid) конкретной жидкости.
+		long tCapCO2 = sBMPMixerMulti.mTanksInput[0].capacity(sBMPMixerCO2.getFluid()), tCapWater = sBMPMixerMulti.mTanksInput[1].capacity(sBMPMixerWater.getFluid());
+		int tBatches = BMP_MULTI_BATCHES;
+		while (tBatches > 1 && (sBMPMixerCO2.getAmount() * (long)tBatches > tCapCO2 || sBMPMixerWater.getAmount() * (long)tBatches > tCapWater)) tBatches--;
+		sBMPMultiBatchesLoaded = tBatches;
+		gregapi.probe.GT6ProbeStand.slotSet(sBMPMixerMulti, 0, ST.amount(sBMPMixerItemIn.getCount() * (long)tBatches, ST.copy(sBMPMixerItemIn)));
+		sBMPMixerMulti.mTanksInput[0].setFluid(sBMPMixerCO2.copyWithAmount(sBMPMixerCO2.getAmount() * tBatches));
+		sBMPMixerMulti.mTanksInput[1].setFluid(sBMPMixerWater.copyWithAmount(sBMPMixerWater.getAmount() * tBatches));
+		sBMPMixerMulti.mEnergy = 1_000_000_000L;
+
+		gregapi.probe.GT6ProbeStand.slotSet(sBMPMixerCold, 0, ST.copy(sBMPMixerItemIn));
+		sBMPMixerCold.mTanksInput[0].setFluid(sBMPMixerCO2.copy());
+		sBMPMixerCold.mTanksInput[1].setFluid(sBMPMixerWater.copy());
+		// sBMPMixerCold.mEnergy остаётся 0 по умолчанию — COLD
+
+		O.println("[" + BMP_M + "] тик " + sBMPProbeTick + " загрузка: HOT 4 горелки разожжены (32 угля каждая), бойлер.пар0=" + sBMPHotSteam0 + "(cap=" + sBMPHotBoiler.mTanks[1].capacity() + ") бойлер.вода0=" + sBMPHotWater0 + " батарея0=" + sBMPHotBattery0
+			+ "; Mixer RUN item=" + sBMPMixerItemIn + " CO2=" + sBMPMixerCO2.getAmount() + "mb Water=" + sBMPMixerWater.getAmount() + "mb mEnergy=" + sBMPMixerRun.mEnergy
+			+ "; Mixer MULTI партий=" + tBatches + "/" + BMP_MULTI_BATCHES + " (ёмкость танков по жидкости: CO2=" + tCapCO2 + " Water=" + tCapWater + ") item=" + gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerMulti, 0) + " CO2=" + sBMPMixerMulti.mTanksInput[0].amount() + "mb Water=" + sBMPMixerMulti.mTanksInput[1].amount() + "mb"
+			+ "; Mixer COLD mEnergy=" + sBMPMixerCold.mEnergy);
+	}
+
+	/** КАЖДЫЙ тик окна: сетап-обход ТОЛЬКО инвентарной бухгалтерии батарей-приёмников (дословно приём
+	 *  ENERGYCHAINPROBE gt6EnergyChainProbeApplyMotorSrcFields:3071-3077) — без него mReceivablePower=
+	 *  mChargeableCount*mInput*2 (TileEntityBase10EnergyBatBox:153) равен 0, doInject:181 молча возвращает 0,
+	 *  динамо не изливается и вся цепь стоит под подпором. mBatteryCount=0 — чтобы ящик НЕ изливал дальше
+	 *  (его mEnergy остаётся монотонным свидетелем EU). Обе башни (HOT/COLD) — симметрично, иначе ноль COLD
+	 *  был бы тривиальным. Не передача, только бухгалтерия. */
+	private static void gt6BigMultiProbeApplyBatteryFields() {
+		if (sBMPHotBattery  != null) {sBMPHotBattery.mChargeableCount  = 1000; sBMPHotBattery.mBatteryCount  = 0; sBMPHotBattery.mStopped  = F;}
+		if (sBMPColdBattery != null) {sBMPColdBattery.mChargeableCount = 1000; sBMPColdBattery.mBatteryCount = 0; sBMPColdBattery.mStopped = F;}
+	}
+
+	/** ДИАГНОСТИКА (read-only, снять при уборке): построчно печатает ФАКТИЧЕСКОЕ содержимое всех клеток, требуемых
+	 *  MultiTileEntityLargeBoiler.checkStructure2 (:96-140), для локализации, какая именно клетка не совпала —
+	 *  порт-код (checkStructure2) НЕ трогается и НЕ вызывается напрямую, только чтение level.getBlockState/getBlockEntity. */
+	private static void gt6BigMultiProbeDiagScanBoiler(gregtech.tileentity.multiblocks.MultiTileEntityLargeBoiler aBoiler, String aLabel) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sBMPPlayer.level();
+		net.minecraft.core.BlockPos tPos = aBoiler.getBlockPos();
+		int bX = tPos.getX(), bY = tPos.getY(), bZ = tPos.getZ();
+		O.println("[" + BMP_M + "] DIAG-BOILER-SCAN(" + aLabel + "): контроллер@" + tPos + " mFacing=" + aBoiler.mFacing + " (SOUTH=" + SIDE_SOUTH + ") mBoilerWalls=" + aBoiler.mBoilerWalls + " (ожидание=" + BMP_BOILER_WALL_ID + ")");
+		int tX = bX, tZ = bZ - 1; // формула checkStructure2:98 при mFacing=SOUTH
+		for (int dy = -1; dy <= 2; dy++) {
+			int wy = bY + dy;
+			StringBuilder sb = new StringBuilder("[" + BMP_M + "] DIAG-BOILER-SCAN(" + aLabel + ") Y=" + wy + " (dy=" + dy + "): ");
+			for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) {
+				net.minecraft.core.BlockPos p = new net.minecraft.core.BlockPos(tX+dx, wy, tZ+dz);
+				net.minecraft.world.level.block.entity.BlockEntity be = tLevel.getBlockEntity(p);
+				String tag = (p.getX()==bX && p.getY()==bY && p.getZ()==bZ) ? "[CTRL]" : "";
+				sb.append("(").append(dx).append(",").append(dz).append(")=").append(tLevel.getBlockState(p).getBlock()).append("/").append(be==null?"null":be.getClass().getSimpleName()).append(tag).append(" ");
+			}
+			O.println(sb.toString());
+		}
+	}
+
+	/** Окно 211..900: живые числа HOT-башни каждые 13 тиков (взаимно просто с любым коротким периодом процесса —
+	 *  урок манифеста §7 "шаг не кратен периоду процесса") + первые тики. */
+	private static void gt6BigMultiProbeTrace() {
+		if (sBMPHotBoiler == null) return;
+		if (sBMPProbeTick % 13 == 0 || sBMPProbeTick <= 214) {
+			gregapi.data.CS.OUT.println("[" + BMP_M + "] DIAG-TOWER тик " + sBMPProbeTick + ": HOT бойлер.вода=" + sBMPHotBoiler.mTanks[0].amount() + " бойлер.пар=" + sBMPHotBoiler.mTanks[1].amount() + " бойлер.HU=" + sBMPHotBoiler.mEnergy
+				+ " || турбина.mTanks[0](пар-вход)=" + sBMPHotTurbine.mTanks[0].amount() + " турбина.mSteamCounter=" + sBMPHotTurbine.mSteamCounter + " турбина.mStorage(RU)=" + sBMPHotTurbine.mStorage.mEnergy
+				+ " турбина.canEmit/emits=" + sBMPHotTurbine.mConverter.mCanEmitEnergy + "/" + sBMPHotTurbine.mConverter.mEmitsEnergy
+				+ " || динамо.mStorage(EU)=" + sBMPHotDynamo.mStorage.mEnergy + " динамо.canEmit/emits=" + sBMPHotDynamo.mConverter.mCanEmitEnergy + "/" + sBMPHotDynamo.mConverter.mEmitsEnergy
+				+ " батарея.mEnergy=" + sBMPHotBattery.mEnergy + " батарея.receivable=" + sBMPHotBattery.mReceivablePower
+				+ " || COLD батарея.mEnergy=" + sBMPColdBattery.mEnergy);
+		}
+	}
+
+	/** Окно 211..900: следит за переходом Mixer RUN "активен->простаивает" (первый тик ПОСЛЕ активной фазы) — фактическая
+	 *  длительность (урок §7 манифеста, тот же приём CHEMPROBE gt6ChemProbeTrackRun). */
+	private static void gt6BigMultiProbeMixerTrack() {
+		if (sBMPMixerRun == null) return;
+		if (sBMPMixerRun.mMaxProgress > 0) sBMPMixerRunSeenActive = T;
+		else if (sBMPMixerRunSeenActive && sBMPMixerRunDoneTick < 0) sBMPMixerRunDoneTick = sBMPProbeTick;
+	}
+
+	/** Окно 211..900, КАЖДЫЙ тик: непрерывное наблюдение живого прогресса MULTI-микшера — сколько тиков он был
+	 *  активен и РОС ли mProgress между соседними наблюдениями (шаг 1 тик — кратности периоду в принципе нет,
+	 *  урок §7 манифеста). Только чтение публичных полей, судимый канал (doWork/doActive) не трогается. */
+	private static void gt6BigMultiProbeMultiTrack() {
+		if (sBMPMixerMulti == null) return;
+		if (sBMPMixerMulti.mMaxProgress > 0) {
+			sBMPMultiActiveTicks++;
+			if (sBMPMixerMulti.mMaxProgress > sBMPMultiMaxProgressSeen) sBMPMultiMaxProgressSeen = sBMPMixerMulti.mMaxProgress;
+			if (sBMPMixerMulti.mProgress > sBMPMultiProgressSeen) sBMPMultiProgressSeen = sBMPMixerMulti.mProgress;
+			if (sBMPMultiProgressPrev >= 0 && sBMPMixerMulti.mProgress > sBMPMultiProgressPrev) sBMPMultiGrowSteps++;
+			sBMPMultiProgressPrev = sBMPMixerMulti.mProgress;
+			gregapi.data.CS.OUT.println("[" + BMP_M + "] DIAG-MULTI тик " + sBMPProbeTick + ": mProgress=" + sBMPMixerMulti.mProgress + "/" + sBMPMixerMulti.mMaxProgress
+				+ " itemIn=" + gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerMulti, 0) + " itemOut=" + gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerMulti, sBMPMixerOutSlot)
+				+ " CO2=" + sBMPMixerMulti.mTanksInput[0].amount() + " Water=" + sBMPMixerMulti.mTanksInput[1].amount());
+		}
+	}
+
+	/** Тик 900: судьи ОБЕИХ сборок (STRUCTURE/RUN/CONSERVE/COLD) + DONE. */
+	@SuppressWarnings("unchecked")
+	private static void gt6BigMultiProbeJudgeFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		final int LOAD_TICK = 210;
+
+		O.println("[" + BMP_M + "] ===== СБОРКА A (генерация) — СТРУКТУРА (тик " + sBMPProbeTick + ") =====");
+		boolean tHotBoilerOk = sBMPHotBoiler.checkStructure(F), tHotTurbineOk = sBMPHotTurbine.checkStructure(F), tHotDynamoOk = sBMPHotDynamo.checkStructure(F);
+		boolean tColdBoilerOk = sBMPColdBoiler.checkStructure(F), tColdTurbineOk = sBMPColdTurbine.checkStructure(F), tColdDynamoOk = sBMPColdDynamo.checkStructure(F);
+		O.println("[" + BMP_M + "] HOT: бойлер.checkStructure=" + tHotBoilerOk + " турбина.checkStructure=" + tHotTurbineOk + " динамо.checkStructure=" + tHotDynamoOk);
+		O.println("[" + BMP_M + "] COLD: бойлер.checkStructure=" + tColdBoilerOk + " турбина.checkStructure=" + tColdTurbineOk + " динамо.checkStructure=" + tColdDynamoOk);
+		sBMPSeq.judge("A-STRUCTURE: ВСЕ ТРИ контроллера HOT-башни признали структуру собранной", tHotBoilerOk && tHotTurbineOk && tHotDynamoOk, T, tHotBoilerOk+","+tHotTurbineOk+","+tHotDynamoOk);
+		sBMPSeq.judge("A-STRUCTURE: ВСЕ ТРИ контроллера COLD-башни ТОЖЕ признали структуру (одна геометрия, топливо ни при чём)", tColdBoilerOk && tColdTurbineOk && tColdDynamoOk, T, tColdBoilerOk+","+tColdTurbineOk+","+tColdDynamoOk);
+
+		O.println("[" + BMP_M + "] ===== СБОРКА A — RUN (тик " + sBMPProbeTick + ") =====");
+		long tWater1 = sBMPHotBoiler.mTanks[0].amount();
+		long tWaterConsumed = sBMPHotWater0 - tWater1;
+		long tSteam1 = sBMPHotBoiler.mTanks[1].amount();
+		long tSteamCounter = sBMPHotTurbine.mSteamCounter;
+		long tDynamoEnergy1 = sBMPHotDynamo.mStorage.mEnergy;
+		long tDynamoGrew = tDynamoEnergy1 - sBMPHotDynamoEnergy0;
+		long tBatteryGrew = sBMPHotBattery.mEnergy - sBMPHotBattery0;
+		boolean tTurbineEverEmitted = sBMPSeq.everSeen("A-турбина-RU"), tDynamoEverEmitted = sBMPSeq.everSeen("A-динамо-EU");
+		O.println("[" + BMP_M + "] HOT числа: вода0=" + sBMPHotWater0 + " вода1=" + tWater1 + " (расход=" + tWaterConsumed + "); пар0=" + sBMPHotSteam0 + " пар1=" + tSteam1
+			+ "; турбина.mSteamCounter=" + tSteamCounter + " турбина_излучала_RU(за окно)=" + tTurbineEverEmitted
+			+ "; динамо.mStorage: 0=" + sBMPHotDynamoEnergy0 + " 1=" + tDynamoEnergy1 + " (прирост=" + tDynamoGrew + " — поле обнуляется КАЖДЫЙ тик, mWasteEnergy=T, :94; не судится)"
+			+ " динамо_излучало_EU(за окно)=" + tDynamoEverEmitted + "; батарея.mEnergy: 0=" + sBMPHotBattery0 + " 1=" + sBMPHotBattery.mEnergy + " (прирост=" + tBatteryGrew + ")");
+		sBMPSeq.judge("A-RUN: вода реально расходуется (реальная конверсия H2O->пар, MultiTileEntityLargeBoiler.java:180-188)", tWaterConsumed > 0, ">0", tWaterConsumed);
+		sBMPSeq.judge("A-RUN: турбина реально обработала пар (mSteamCounter>0, доехал через прямой IFluidHandler-хоп бойлер->турбина)", tSteamCounter > 0, ">0", tSteamCounter);
+		sBMPSeq.judge("A-RUN: турбина реально ИЗЛУЧАЛА RU (mConverter.mEmitsEnergy пойман живьём за окно — пакет принят динамо, TE_Behavior_Energy_Converter:88-90)", tTurbineEverEmitted, T, tTurbineEverEmitted);
+		sBMPSeq.judge("A-RUN: динамо реально ИЗЛУЧАЛО EU (mConverter.mEmitsEnergy пойман живьём — значит RU дошло турбина->динамо и EU принято батареей)", tDynamoEverEmitted, T, tDynamoEverEmitted);
+		sBMPSeq.judge("A-RUN: батарея реально НАКОПИЛА EU (монотонный долгоживущий приёмник конца цепи топливо->HU->пар->RU->EU)", tBatteryGrew > 0, ">0", tBatteryGrew);
+
+		O.println("[" + BMP_M + "] ===== СБОРКА A — CONSERVE (потолок из известных входов, тик " + sBMPProbeTick + ") =====");
+		long tTicksElapsed = sBMPProbeTick - sBMPHotBurnStartTick;
+		long tHURate = gregapi.probe.GT6ProbeStand.fldLong(sBMPHotGens[0], "mRate");
+		long tHUCeiling = tHURate * sBMPHotGens.length * tTicksElapsed;
+		long tHUImpliedConsumed = tWaterConsumed * 80; // MultiTileEntityLargeBoiler.java:180-188: 1 конверсия = 1 вода + 80 HU
+		// Потолок EU из ВСЕГО пара, что физически мог покинуть бойлер за окно: (пар0-пар1) уже лежавший + произведённый
+		// из воды (:187 units(conv,10000,mEfficiency*160) <= conv*160, ибо mEfficiency<=10000 :83). Пар -> RU: /2
+		// (LargeTurbineSteam:150). RU -> EU: units(RU, динамо.IN.mRec, динамо.OUT.mRec) (TE_Behavior_Energy_Converter:62).
+		long tSteamCeiling = Math.max(0, sBMPHotSteam0 - tSteam1) + tWaterConsumed * 160;
+		long tEUCeiling = UT.Code.units(tSteamCeiling / 2, sBMPHotDynamo.mEnergyIN.mRec, sBMPHotDynamo.mEnergyOUT.mRec, F);
+		O.println("[" + BMP_M + "] CONSERVE: HU_потолок=" + tHURate + "×" + sBMPHotGens.length + "×" + tTicksElapsed + "=" + tHUCeiling + " HU_подразумевается_расход(вода×80)=" + tHUImpliedConsumed
+			+ "; пар_потолок=(" + sBMPHotSteam0 + "-" + tSteam1 + ")+" + tWaterConsumed + "×160=" + tSteamCeiling + " -> EU_потолок=" + tEUCeiling + " батарея_прирост=" + tBatteryGrew);
+		sBMPSeq.judge("A-CONSERVE: подразумеваемый расход HU не превышает реальный потолок притока горелок (не из ничего)", tHUImpliedConsumed <= tHUCeiling, "<=" + tHUCeiling, tHUImpliedConsumed);
+		sBMPSeq.judge("A-CONSERVE: прирост EU батареи не превышает потолок из всего ушедшего пара (пар/2 -> units(RU,IN.rec,OUT.rec)) — не из ничего", tBatteryGrew <= tEUCeiling, "<=" + tEUCeiling, tBatteryGrew);
+
+		O.println("[" + BMP_M + "] ===== СБОРКА A — COLD (тик " + sBMPProbeTick + ") =====");
+		long tColdWater = sBMPColdBoiler.mTanks[0].amount(), tColdSteam = sBMPColdBoiler.mTanks[1].amount(), tColdHU = sBMPColdBoiler.mEnergy;
+		long tColdSteamCounter = sBMPColdTurbine.mSteamCounter, tColdDynamoEnergy = sBMPColdDynamo.mStorage.mEnergy;
+		O.println("[" + BMP_M + "] COLD числа: бойлер вода=" + tColdWater + " пар=" + tColdSteam + " HU=" + tColdHU + "; турбина.mSteamCounter=" + tColdSteamCounter + "; динамо.mStorage=" + tColdDynamoEnergy + "; батарея.mEnergy=" + sBMPColdBattery.mEnergy + " (receivable=" + sBMPColdBattery.mReceivablePower + ", т.е. приёмник ОТКРЫТ так же, как у HOT)");
+		sBMPSeq.judge("A-COLD: без топлива бойлер НЕ накопил HU/пар/не тронул воду", tColdWater == 0 && tColdSteam == 0 && tColdHU == 0, "0,0,0", tColdWater+","+tColdSteam+","+tColdHU);
+		sBMPSeq.judge("A-COLD: без топлива турбина/динамо НЕ обработали ничего", tColdSteamCounter == 0 && tColdDynamoEnergy == 0, "0,0", tColdSteamCounter+","+tColdDynamoEnergy);
+		sBMPSeq.judge("A-COLD: батарея COLD-башни пуста (приёмник открыт тем же сетапом — ноль от ОТСУТСТВИЯ топлива, не от закрытого приёмника)", sBMPColdBattery.mEnergy == 0, 0, sBMPColdBattery.mEnergy);
+
+		O.println("[" + BMP_M + "] ===== СБОРКА B (Mixer многоблок) — СТРУКТУРА (тик " + sBMPProbeTick + ") =====");
+		boolean tMixerRunOk = sBMPMixerRun.checkStructure(F), tMixerMultiOk = sBMPMixerMulti.checkStructure(F), tMixerColdOk = sBMPMixerCold.checkStructure(F);
+		O.println("[" + BMP_M + "] RUN.checkStructure=" + tMixerRunOk + " MULTI.checkStructure=" + tMixerMultiOk + " COLD.checkStructure=" + tMixerColdOk);
+		sBMPSeq.judge("B-STRUCTURE: ВСЕ ТРИ контроллера Mixer признали структуру собранной", tMixerRunOk && tMixerMultiOk && tMixerColdOk, T, tMixerRunOk+","+tMixerMultiOk+","+tMixerColdOk);
+
+		O.println("[" + BMP_M + "] ===== СБОРКА B — RUN живыми тиками (MULTI, " + sBMPMultiBatchesLoaded + " партий, тик " + sBMPProbeTick + ") =====");
+		long tMultiItemIn  = gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerMulti, 0);
+		long tMultiItemOut = gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerMulti, sBMPMixerOutSlot);
+		long tMultiCO2     = sBMPMixerMulti.mTanksInput[0].amount();
+		long tMultiWater   = sBMPMixerMulti.mTanksInput[1].amount();
+		long tMultiH2Out   = 0; for (gregapi.fluid.FluidTankGT tT : sBMPMixerMulti.mTanksOutput) tMultiH2Out += tT.amount();
+		long tMultiIterations = sBMPMixerItemOut.getCount() <= 0 ? 0 : tMultiItemOut / sBMPMixerItemOut.getCount();
+		O.println("[" + BMP_M + "] MULTI: активных тиков=" + sBMPMultiActiveTicks + " шагов_роста_mProgress=" + sBMPMultiGrowSteps + " max(mMaxProgress)=" + sBMPMultiMaxProgressSeen + " max(mProgress)=" + sBMPMultiProgressSeen
+			+ " | itemIn=" + tMultiItemIn + " itemOut=" + tMultiItemOut + " (итераций=" + tMultiIterations + ") CO2=" + tMultiCO2 + " Water=" + tMultiWater + " H2out=" + tMultiH2Out);
+		sBMPSeq.judge("B-RUN: процесс на структуре идёт ЖИВЫМИ ТИКАМИ (mMaxProgress>0 пойман минимум в 2 разных тиках окна)", sBMPMultiActiveTicks >= 2, ">=2", sBMPMultiActiveTicks);
+		sBMPSeq.judge("B-RUN: числа РАСТУТ (mProgress строго увеличивался между соседними тиками минимум 1 раз)", sBMPMultiGrowSteps >= 1, ">=1", sBMPMultiGrowSteps);
+		sBMPSeq.judge("B-RUN: партия доведена до конца — выход = число итераций × рецепт (H2 РОВНО " + sBMPMixerH2.getAmount() + "×итераций)", tMultiIterations >= 2 && tMultiH2Out == sBMPMixerH2.getAmount() * tMultiIterations, ">=2 итераций и H2=" + sBMPMixerH2.getAmount() + "×N", tMultiIterations + " итераций, H2=" + tMultiH2Out);
+		sBMPSeq.judge("B-RUN: входы списаны РОВНО под число итераций (item/CO2/Water = загружено - итерации×рецепт)",
+			tMultiItemIn == (long)sBMPMultiBatchesLoaded * sBMPMixerItemIn.getCount() - tMultiIterations * sBMPMixerItemIn.getCount()
+			&& tMultiCO2 == (long)sBMPMultiBatchesLoaded * sBMPMixerCO2.getAmount() - tMultiIterations * sBMPMixerCO2.getAmount()
+			&& tMultiWater == (long)sBMPMultiBatchesLoaded * sBMPMixerWater.getAmount() - tMultiIterations * sBMPMixerWater.getAmount(),
+			((long)sBMPMultiBatchesLoaded - tMultiIterations) + "×(" + sBMPMixerItemIn.getCount() + "," + sBMPMixerCO2.getAmount() + "," + sBMPMixerWater.getAmount() + ")",
+			tMultiItemIn + "," + tMultiCO2 + "," + tMultiWater);
+
+		O.println("[" + BMP_M + "] ===== СБОРКА B — CONSERVE, паритет с одноблочной машиной (RUN, 1 партия, тик " + sBMPProbeTick + ") =====");
+		long tRunItemIn  = gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerRun, 0);
+		long tRunItemOut = gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerRun, sBMPMixerOutSlot);
+		long tRunCO2     = sBMPMixerRun.mTanksInput[0].amount();
+		long tRunWater   = sBMPMixerRun.mTanksInput[1].amount();
+		long tRunH2Out   = 0; for (gregapi.fluid.FluidTankGT tT : sBMPMixerRun.mTanksOutput) tRunH2Out += tT.amount();
+		long tFactualTicks = sBMPMixerRunDoneTick < 0 ? -1 : (sBMPMixerRunDoneTick - LOAD_TICK);
+		O.println("[" + BMP_M + "] RUN: itemIn=" + tRunItemIn + " itemOut=" + tRunItemOut + " CO2=" + tRunCO2 + " Water=" + tRunWater + " H2out=" + tRunH2Out + " mMaxProgress=" + sBMPMixerRun.mMaxProgress + " факт._тиков(seen-active)=" + tFactualTicks + " (рецепт duration=" + sBMPMixerRecipeDuration + "; ОДНА партия укладывается в 1 тик машины — см. шапку, потому RUN судится на MULTI)");
+		sBMPSeq.judge("B-CONSERVE: катализатор списан РОВНО", tRunItemIn == 0, 0, tRunItemIn);
+		sBMPSeq.judge("B-CONSERVE: CO2 списан РОВНО (mb-в-mb)", tRunCO2 == 0, 0, tRunCO2);
+		sBMPSeq.judge("B-CONSERVE: Water списан РОВНО (mb-в-mb)", tRunWater == 0, 0, tRunWater);
+		sBMPSeq.judge("B-CONSERVE: H2 выход РОВНО по рецепту", tRunH2Out == sBMPMixerH2.getAmount(), sBMPMixerH2.getAmount(), tRunH2Out);
+		sBMPSeq.judge("B-CONSERVE: CaCO3 выход РОВНО по рецепту", tRunItemOut == sBMPMixerItemOut.getCount(), sBMPMixerItemOut.getCount(), tRunItemOut);
+
+		O.println("[" + BMP_M + "] ===== СБОРКА B — COLD (тик " + sBMPProbeTick + ") =====");
+		long tCMixerItemIn = gregapi.probe.GT6ProbeStand.slotCount(sBMPMixerCold, 0);
+		long tCMixerCO2 = sBMPMixerCold.mTanksInput[0].amount(), tCMixerWater = sBMPMixerCold.mTanksInput[1].amount();
+		O.println("[" + BMP_M + "] COLD: mEnergy=" + sBMPMixerCold.mEnergy + " item=" + tCMixerItemIn + " CO2=" + tCMixerCO2 + " Water=" + tCMixerWater + " mMaxProgress=" + sBMPMixerCold.mMaxProgress);
+		sBMPSeq.judge("B-COLD: без энергии рецепт НЕ стартовал", sBMPMixerCold.mMaxProgress == 0, 0, sBMPMixerCold.mMaxProgress);
+		sBMPSeq.judge("B-COLD: входы целы (ничего не списано без энергии)", tCMixerItemIn == sBMPMixerItemIn.getCount() && tCMixerCO2 == sBMPMixerCO2.getAmount() && tCMixerWater == sBMPMixerWater.getAmount(), "цело", tCMixerItemIn+","+tCMixerCO2+","+tCMixerWater);
+
+		sBMPSeq.done();
+	}
+
+	public static void gt6BigMultiProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sBMPProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sBMPPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sBMPSeq == null) {
+			sBMPSeq = new gregapi.probe.GT6ProbeStand.Seq(BMP_M)
+				.at(200, GT_API_Proxy::gt6BigMultiProbeBuildAll)
+				.at(205, () -> {gt6BigMultiProbeDiagScanBoiler(sBMPHotBoiler, "HOT"); gt6BigMultiProbeDiagScanBoiler(sBMPColdBoiler, "COLD");}) // ДИАГНОСТИКА (снять при уборке) — ДО загрузки/возможного взрыва
+				.at(210, GT_API_Proxy::gt6BigMultiProbeLoad)
+				.window(201, 900, GT_API_Proxy::gt6BigMultiProbeApplyBatteryFields) // сетап-обход инвентарной бухгалтерии батарей (приём ENERGYCHAINPROBE:3071-3077)
+				.window(211, 900, GT_API_Proxy::gt6BigMultiProbeTrace)
+				.window(211, 900, GT_API_Proxy::gt6BigMultiProbeMixerTrack)
+				.window(211, 900, GT_API_Proxy::gt6BigMultiProbeMultiTrack)
+				// живые свидетели эмиссии: mEmitsEnergy ставится в T ТОЛЬКО когда приёмник реально взял пакет
+				// (TE_Behavior_Energy_Converter:88-90) и перевычисляется КАЖДЫЙ тик — ловим накоплением по окну
+				.watch("A-турбина-RU", 211, 899, () -> sBMPHotTurbine != null && sBMPHotTurbine.mConverter.mEmitsEnergy)
+				.watch("A-динамо-EU",  211, 899, () -> sBMPHotDynamo  != null && sBMPHotDynamo.mConverter.mEmitsEnergy)
+				.at(900, GT_API_Proxy::gt6BigMultiProbeJudgeFinal);
+		}
+		sBMPSeq.tick(sBMPProbeTick);
 	}
 
 }
