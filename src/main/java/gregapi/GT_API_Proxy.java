@@ -4406,6 +4406,92 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		}
 	}
 
+	// ================================================================================================================
+	// [GT6-STEAMFARMPROBE] BUG-062 ЖИВОЙ СУДЬЯ v1 (восстановленная топология по заданию — прежде ОПРОВЕРГНУТА
+	// живым прогоном, см. комментарий блока "ЭТАП А v1 [ОПРОВЕРГНУТО]" выше ~:4143-4164): манифольд бойлер ->
+	// STF_PIPE_L труб (Cu, PIPE_NORM_ID=26102, переиспользован из FLUIDPIPEPROBE, GT_API_Proxy.java:2350) -> турбина.
+	// Прежний прогон: турбина.mTank=0 все 900 тиков — корень MultiTileEntityPipeFluid.distribute() кандидат-чек
+	// (:411, сейчас уже сторононесущий) звал приёмник СAЙДЛЕС-вызовом (BUG-062), а турбина отвергает пакет без
+	// точной стороны (isInput(aSide)=aSide==OPOS[mFacing], MultiTileEntityTurbineSteam.java:129). Фикс 39c668c8
+	// вернул сторону через FL.fill (fillSided) — этот кейс ЖИВЬЁМ доказывает/опровергает результат фикса числами.
+	// ЕДИНСТВЕННЫЙ судья (объявлен ДО прогона, порог не двигать): турбина.mTank.amount()>0 хотя бы раз за окно
+	// 211..900 (Seq.watch — транзиент короток: doConversion:88-108 опустошает mTank ЦЕЛИКОМ в ТОТ ЖЕ тик, когда
+	// накопленное превышает getEnergySizeInputMin()*2, однократный замер в конце лжёт, манифест §7). Труба[последняя]
+	// .mTanks[0] наполнялась — печатается для протокола (доказывает, что бойлер сварил пар И труба его понесла),
+	// НЕ судит вердикт. Турбина смотрит входом ВНИЗ (mFacing=UP -> OPOS[UP]=DOWN, тот же приём, что BASELINE/FARM
+	// прямой стек выше) — манифольд физически СВЕРХУ бойлера (боилер эмитит СТРОГО SIDE_UP, MultiTileEntityBoilerTank.
+	// java:143, не зависит от mFacing) и СНИЗУ турбины. Свежая зона Z=70 (макс. Z был 60 у COLD). Снять при уборке фазы.
+	// ================================================================================================================
+	private static final int STF_PIPE_L = 3; // число сегментов трубы в манифольде (задание: "труба", не 1 блок)
+	private static gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick sSTFPipeV1Gen;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank sSTFPipeV1Boiler;
+	private static final gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] sSTFPipeV1Pipes = new gregapi.tileentity.connectors.MultiTileEntityPipeFluid[STF_PIPE_L];
+	private static gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam sSTFPipeV1Turbine;
+	private static long sSTFPipeV1MaxTurbineTank = 0, sSTFPipeV1MaxPipeTank = 0;
+	private static int sSTFPipeV1FirstNonZeroTick = -1;
+
+	/** Тик 200: построить PIPEV1 — бойлер -> STF_PIPE_L труб Cu -> турбина (см. комментарий блока выше). Тот же
+	 *  приём постройки колонны, что gt6SteamFarmProbeBuildColumn (генератор перпендикулярно оси, расчистка фронта
+	 *  горелки), но турбина НЕ на бойлере напрямую — манифольд {@link gregapi.probe.GT6ProbeStand#line} между ними. */
+	private static void gt6SteamFarmProbeBuildPipeV1() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		net.minecraft.server.level.ServerLevel tLevel = sSTFPlayer.level();
+		net.minecraft.core.BlockPos tBase = sSTFPlayer.blockPosition().offset(4, 0, 70);
+		gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick tGen = gregapi.probe.GT6ProbeStand.place(
+			tLevel, sSTFPlayer, tBase, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_GEN_ID),
+			gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick.class, STF_M, "PIPEV1-генератор");
+		if (tGen == null) throw new RuntimeException("PIPEV1: генератор не встал");
+		tGen.setPrimaryFacing(SIDE_SOUTH); // перпендикулярно оси ряда — тот же приём, что gt6SteamFarmProbeBuildColumn
+		net.minecraft.core.BlockPos tGenPos = tBase.above();
+		tLevel.setBlock(tGenPos.relative(FORGE_DIR[tGen.mFacing]), Blocks.AIR.defaultBlockState(), 3);
+		gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank tBoiler = gregapi.probe.GT6ProbeStand.place(
+			tLevel, sSTFPlayer, tGenPos, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_BOILER_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank.class, STF_M, "PIPEV1-бойлер");
+		if (tBoiler == null) throw new RuntimeException("PIPEV1: бойлер не встал");
+		net.minecraft.core.BlockPos tBoilerPos = tGenPos.above();
+		gregapi.tileentity.connectors.MultiTileEntityPipeFluid[] tPipes = gregapi.probe.GT6ProbeStand.line(
+			tLevel, sSTFPlayer, tBoilerPos, net.minecraft.core.Direction.UP, STF_PIPE_L, PIPE_NORM_ID,
+			gregapi.tileentity.connectors.MultiTileEntityPipeFluid.class, STF_M);
+		for (int i = 0; i < STF_PIPE_L; i++) {
+			if (tPipes[i] == null) throw new RuntimeException("PIPEV1: труба[" + i + "] не встала");
+			sSTFPipeV1Pipes[i] = tPipes[i];
+		}
+		gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam tTurbine = gregapi.probe.GT6ProbeStand.place(
+			tLevel, sSTFPlayer, sSTFPipeV1Pipes[STF_PIPE_L-1].getBlockPos(), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(STF_TURBINE_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityTurbineSteam.class, STF_M, "PIPEV1-турбина");
+		if (tTurbine == null) throw new RuntimeException("PIPEV1: турбина не встала");
+		tTurbine.setPrimaryFacing(SIDE_UP); // вход СНИЗУ (OPOS[UP]=DOWN, MultiTileEntityTurbineSteam.java:129) — со стороны манифольда
+		// явное восстановление концевых связей (тот же приём FLUIDPIPEPROBE :2416-2417): нижний конец обычно уже
+		// авто-связан onPlaced() (боилер существовал на момент клика трубы[0]), верхний — НЕТ (турбина появилась
+		// ПОСЛЕ трубы[последняя], а турбина не ITileEntityConnector — её onPlaced на связность трубы не влияет).
+		sSTFPipeV1Pipes[0].connect(SIDE_DOWN, T);
+		sSTFPipeV1Pipes[STF_PIPE_L-1].connect(SIDE_UP, T);
+		sSTFPipeV1Gen = tGen; sSTFPipeV1Boiler = tBoiler; sSTFPipeV1Turbine = tTurbine;
+		O.println("[" + STF_M + "] PIPEV1 построен (BUG-062 живой судья): бойлер@" + tBoilerPos + " труб=" + STF_PIPE_L + "(Cu id=" + PIPE_NORM_ID + ") турбина@" + tTurbine.getBlockPos()
+			+ " connected(труба[0].DOWN)=" + sSTFPipeV1Pipes[0].connected(SIDE_DOWN) + " connected(труба[посл].UP)=" + sSTFPipeV1Pipes[STF_PIPE_L-1].connected(SIDE_UP));
+	}
+
+	/** Тик 210: разжечь+предзарядить PIPEV1 (переиспользован gt6SteamFarmProbeLoadRow — тот же центр, что BASELINE/FARM). */
+	private static void gt6SteamFarmProbePipeV1Load() {
+		gt6SteamFarmProbeLoadRow(new gregtech.tileentity.energy.generators.MultiTileEntityGeneratorBrick[]{sSTFPipeV1Gen}, new gregtech.tileentity.energy.converters.MultiTileEntityBoilerTank[]{sSTFPipeV1Boiler});
+		gregapi.data.CS.OUT.println("[" + STF_M + "] PIPEV1 тик 210 загрузка: генератор разожжён+бойлер предзаряжен (precharge=cap/2+100000)");
+	}
+
+	/** Окно 211..900: живые числа PIPEV1 каждые 50 тиков (+первые тики, +каждые 10 тиков пока турбина.mTank>0 —
+	 *  транзиент короток, doConversion:88-108 опустошает mTank в тот же тик выше порога) — max-накопление обоих
+	 *  танков (урок §7 манифеста «однократный замер лжёт», тот же приём sSTFBaseMaxPkt/sSTFFarmMaxPkt выше). */
+	private static void gt6SteamFarmProbePipeV1Trace() {
+		if (sSTFPipeV1Turbine == null) return;
+		long tTurbineTank = sSTFPipeV1Turbine.mTank.amount();
+		long tPipeTank = sSTFPipeV1Pipes[STF_PIPE_L-1].mTanks[0].amount();
+		if (tTurbineTank > sSTFPipeV1MaxTurbineTank) sSTFPipeV1MaxTurbineTank = tTurbineTank;
+		if (tPipeTank > sSTFPipeV1MaxPipeTank) sSTFPipeV1MaxPipeTank = tPipeTank;
+		if (tTurbineTank > 0 && sSTFPipeV1FirstNonZeroTick < 0) sSTFPipeV1FirstNonZeroTick = sSTFProbeTick;
+		if (sSTFProbeTick % 50 == 0 || sSTFProbeTick <= 216 || (tTurbineTank > 0 && sSTFProbeTick % 10 == 0)) {
+			gregapi.data.CS.OUT.println("[" + STF_M + "] DIAG-PIPEV1 тик " + sSTFProbeTick + ": труба[посл].mTanks[0]=" + tPipeTank + " турбина.mTank=" + tTurbineTank + " турбина.mSteamCounter=" + sSTFPipeV1Turbine.mSteamCounter);
+		}
+	}
+
 	/** Тик 900: BASELINE (недонапряжение подтверждено) vs FARM (масштабирование числом через шестерни) vs COLD
 	 *  (нули) + DONE. */
 	private static void gt6SteamFarmProbeJudgeFinal() {
@@ -4457,6 +4543,13 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		sSTFSeq.judge("COLD: динамо.mStorage пуст", sSTFColdDynamo.mStorage.mEnergy == 0, 0, sSTFColdDynamo.mStorage.mEnergy);
 		sSTFSeq.judge("COLD: батарея пуста", sSTFColdBattery.mEnergy == 0, 0, sSTFColdBattery.mEnergy);
 
+		O.println("[" + STF_M + "] ===== PIPEV1 (BUG-062 живой судья — восстановленная топология v1: бойлер->" + STF_PIPE_L + " труб(Cu)->турбина, тик " + sSTFProbeTick + ") =====");
+		boolean tPipeV1TurbineFilled = sSTFSeq.everSeen("pipev1-turbine-filled");
+		boolean tPipeV1PipeFilled = sSTFSeq.everSeen("pipev1-pipe-filled");
+		O.println("[" + STF_M + "] PIPEV1: турбина.mTank max_за_окно=" + sSTFPipeV1MaxTurbineTank + " (видели>0 хотя бы раз=" + tPipeV1TurbineFilled + ", первый ненулевой тик=" + sSTFPipeV1FirstNonZeroTick + ") труба[последняя].mTanks[0] max_за_окно=" + sSTFPipeV1MaxPipeTank + " (видели>0=" + tPipeV1PipeFilled + ") турбина.mSteamCounter=" + sSTFPipeV1Turbine.mSteamCounter);
+		sSTFSeq.judge("PIPEV1 (BUG-062 ЕДИНСТВЕННЫЙ судья): турбина.mTank>0 хотя бы раз за окно 211..900 — пар дошёл трубой до турбины", tPipeV1TurbineFilled, T, tPipeV1TurbineFilled);
+		O.println("[" + STF_M + "] PIPEV1 протокол (справочно, НЕ судит вердикт): труба[последняя] наполнялась=" + tPipeV1PipeFilled + " (доказывает, что бойлер сварил пар И труба его понесла, а не только 'бойлер не сварил')");
+
 		sSTFSeq.done();
 	}
 
@@ -4467,9 +4560,14 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		if (sSTFSeq == null) {
 			sSTFSeq = new gregapi.probe.GT6ProbeStand.Seq(STF_M)
 				.at(200, GT_API_Proxy::gt6SteamFarmProbeBuild)
+				.at(200, GT_API_Proxy::gt6SteamFarmProbeBuildPipeV1) // BUG-062 живой судья v1 (см. комментарий блока)
 				.at(210, () -> {gt6SteamFarmProbeLoad(); sSTFFarmEu0 = sSTFFarmBattery.mEnergy;})
+				.at(210, GT_API_Proxy::gt6SteamFarmProbePipeV1Load)
 				.window(211, 900, GT_API_Proxy::gt6SteamFarmProbeTrace)
+				.window(211, 900, GT_API_Proxy::gt6SteamFarmProbePipeV1Trace)
 				.watch("farm-eu-grew", 210, 900, () -> sSTFFarmBattery != null && sSTFFarmBattery.mEnergy > 0)
+				.watch("pipev1-turbine-filled", 211, 900, () -> sSTFPipeV1Turbine != null && sSTFPipeV1Turbine.mTank.amount() > 0)
+				.watch("pipev1-pipe-filled", 211, 900, () -> sSTFPipeV1Pipes[STF_PIPE_L-1] != null && sSTFPipeV1Pipes[STF_PIPE_L-1].mTanks[0].amount() > 0)
 				.at(900, GT_API_Proxy::gt6SteamFarmProbeJudgeFinal);
 		}
 		sSTFSeq.tick(sSTFProbeTick);
