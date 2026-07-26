@@ -222,6 +222,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6logicomputeprobe.flag")) gt6LogiComputeProbeTick(aEvent.getServer());
 	// [GT6-FLATTENPROBE] стенд «F4-flatten: расщеплённые ванильные семейства» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6flattenprobe.flag")) gt6FlattenProbeTick(aEvent.getServer());
+	// [GT6-CONTAINERPROBE] стенд «полиморфный канал контейнер-предмета» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6containerprobe.flag")) gt6ContainerProbeTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6102,6 +6104,49 @@ public final class GT6Probes {
 			!gt6FlattenProbeOreHas("blockGlassRed", net.minecraft.world.item.Items.YELLOW_STAINED_GLASS), "нет", gt6FlattenProbeOreDump("blockGlassRed"));
 
 		sFlatSeq.done();
+	}
+
+	// ============================================================================================================
+	// [GT6-CONTAINERPROBE] стенд «полиморфный канал контейнер-предмета» (Ф4 шаг 3) — снять при уборке фазы.
+	// Дефект: ST.ingredable/ST.container спрашивали контейнер только у ItemBase, а PrefixItem (химические
+	// пробирки, ячейки) наследуется от Item напрямую — канал терялся. Следствие в данных: 1479 рецептов плавки
+	// НАПОЛНЕННЫХ пробирок против одного в эталоне (машина плавила пробирку вместе с содержимым).
+	// Судим по РЕАЛЬНОМУ реестру рецептов живого запуска (тот же RM.Melter, что спрашивает машина) и по
+	// реальному ответу ST.container. Позитивный контроль: ПУСТАЯ пробирка плавиться обязана — если бы стенд
+	// «не находил ничего вообще», этот кейс бы упал.
+	// ============================================================================================================
+	private static final String CONT_M = "GT6-CONTAINERPROBE";
+	private static int sContTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sContSeq = null;
+
+	public static void gt6ContainerProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sContTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (sContSeq == null) sContSeq = new gregapi.probe.GT6ProbeStand.Seq(CONT_M).at(20, GT6Probes::gt6ContainerProbeJudge);
+		sContSeq.tick(sContTick);
+	}
+
+	private static void gt6ContainerProbeJudge() {
+		net.minecraft.world.item.ItemStack tEmpty  = gregapi.data.OP.chemtube.mat(gregapi.data.MT.Empty, 1);
+		net.minecraft.world.item.ItemStack tFilled = gregapi.data.OP.chemtube.mat(gregapi.data.MT.Fe   , 1);
+		sContSeq.judge("пробирки собраны", gregapi.util.ST.valid(tEmpty) && gregapi.util.ST.valid(tFilled), "обе валидны",
+			gregapi.util.ST.valid(tEmpty) + "/" + gregapi.util.ST.valid(tFilled));
+		if (!gregapi.util.ST.valid(tEmpty) || !gregapi.util.ST.valid(tFilled)) {sContSeq.done(); return;}
+
+		// канал контейнера: у наполненной пробирки тара — пустая пробирка; у самой пустой тары нет
+		net.minecraft.world.item.ItemStack tContainer = gregapi.util.ST.container(tFilled, T);
+		sContSeq.judge("контейнер наполненной = пустая пробирка",
+			gregapi.util.ST.valid(tContainer) && gregapi.util.ST.item_(tContainer) == gregapi.util.ST.item_(tEmpty), "пустая пробирка",
+			gregapi.util.ST.valid(tContainer) ? gregapi.util.ST.item_(tContainer) : "нет");
+		sContSeq.judge("наполненная НЕ ингредиент (есть тара)", !gregapi.util.ST.ingredable(tFilled), false, gregapi.util.ST.ingredable(tFilled));
+		sContSeq.judge("пустая — обычный ингредиент",           gregapi.util.ST.ingredable(tEmpty) , true , gregapi.util.ST.ingredable(tEmpty));
+
+		// реестр рецептов живого запуска: тем же путём, которым рецепт ищет сама машина
+		gregapi.recipes.Recipe tFilledRecipe = gregapi.data.RM.Melter.findRecipe(null, null, T, Long.MAX_VALUE, null, gregapi.data.CS.ZL_FS, tFilled);
+		gregapi.recipes.Recipe tEmptyRecipe  = gregapi.data.RM.Melter.findRecipe(null, null, T, Long.MAX_VALUE, null, gregapi.data.CS.ZL_FS, tEmpty );
+		sContSeq.judge("плавильня НЕ берёт наполненную пробирку", tFilledRecipe == null, "нет рецепта", tFilledRecipe);
+		sContSeq.judge("POSITIVE-CONTROL: пустую пробирку берёт", tEmptyRecipe  != null, "есть рецепт", tEmptyRecipe);
+		sContSeq.done();
 	}
 
 	private static boolean gt6FlattenProbeOreHas(String aName, net.minecraft.world.item.Item aItem) {

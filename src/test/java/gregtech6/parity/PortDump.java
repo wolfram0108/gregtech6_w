@@ -84,6 +84,9 @@ public final class PortDump {
         // Путь печатаем абсолютным: рабочий каталог тест-JVM — build/minecraft-junit/, поэтому относительный
         // build/dump материализуется как build/minecraft-junit/build/dump и «теряется» при поиске глазами.
         // Дамп переживает прогон — по нему разбор расхождений идёт оффлайн (analysis/tools/parity_report.py).
+        // Гейт проб включён и здесь (build.gradle, блок parityFull): диагностику фазы ЗАГРУЗКИ снимать этим
+        // прогоном дешевле, чем клиентом — флаг кладётся рядом, в рабочий каталог тест-JVM.
+        System.out.println("[port-dump] гейт проб: gt6.probes=" + System.getProperty("gt6.probes") + " (флаги — в " + Path.of("").toAbsolutePath() + ")");
         System.out.println("[port-dump] дамп порта: " + DUMP.toAbsolutePath());
         System.out.println("[port-dump] golden:     " + ORACLE.toAbsolutePath());
         int nMat = dumpMaterials();

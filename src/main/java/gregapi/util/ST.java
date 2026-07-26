@@ -1026,6 +1026,33 @@ public class ST {
 		return aInvertFilter;
 	}
 	
+	/**
+	 * ЕДИНАЯ ТОЧКА полиморфного канала «контейнер-предмет» (BUG-022, добита 2026-07-26).
+	 *
+	 * <p>В 1.7.10 {@code hasContainerItem/getContainerItem} были методами САМОГО {@code Item}, поэтому
+	 * {@code item_(aStack).hasContainerItem(aStack)} спрашивал любой GT6-предмет. В neo этих методов у
+	 * {@code Item} нет, и GT6-реализации живут в ПЯТИ несвязанных корнях без общего предка:
+	 * {@code ItemBase} (и его MultiItem*), {@code PrefixItem}, {@code ItemFluidDisplay},
+	 * {@code MultiTileEntityItemInternal}, {@code PrefixBlockItem}. Прежняя правка спрашивала только
+	 * {@code ItemBase} — остальные четыре корня канал теряли.</p>
+	 *
+	 * <p><b>Улика (Ф4 шаг 3).</b> Судья паритета: у порта 1479 рецептов плавки химических пробирок против
+	 * ОДНОГО в эталоне (+ столько же в melter = 2958 записей, 39 % всех расхождений рецептов). Пробирка —
+	 * {@code PrefixItem}, её контейнер (пустая пробирка) не спрашивался, поэтому наполненная пробирка
+	 * считалась обычным ингредиентом и попадала в общий генератор плавки
+	 * ({@code Loader_OreProcessing}). Живая диагностика подтвердила: контейнер префикса на момент события
+	 * УЖЕ установлен — значит дело было не в тайминге, а в том, что его никто не спрашивал.</p>
+	 */
+	private static ItemStack gtContainerItem(ItemStack aStack) {
+		Item tItem = item_(aStack);
+		if (tItem instanceof gregapi.item.ItemBase                                  tI) return tI.getContainerItem(aStack);
+		if (tItem instanceof gregapi.item.prefixitem.PrefixItem                     tI) return tI.getContainerItem(aStack);
+		if (tItem instanceof gregapi.item.ItemFluidDisplay                          tI) return tI.getContainerItem(aStack);
+		if (tItem instanceof gregapi.block.prefixblock.PrefixBlockItem              tI) return tI.getContainerItem(aStack);
+		if (tItem instanceof gregapi.block.multitileentity.MultiTileEntityItemInternal tI) return tI.getContainerItem(aStack);
+		return null;
+	}
+
 	public static boolean ingredable(ItemStack aStack) {
 		if (invalid(aStack)) return F;
 		if (item_(aStack) instanceof IItemGTContainerTool) return F;
@@ -1033,8 +1060,8 @@ public class ST {
 		// (compat-mirror; оригинал :841). Реестровые наполненные контейнеры ловятся каналами ниже, как в оригинале.
 		if (item_(aStack) instanceof IFluidContainerItem tICI && tICI.getCapacity(aStack) > 0) return F;
 		// BUG-022 v2: симметрично ST.container — 1.7.10 звал полиморфный hasContainerItem (GT6-бутылки/каны/prefix),
-		// компонентный канал ниже покрывает только vanilla.
-		if (item_(aStack) instanceof gregapi.item.ItemBase tItemBase && tItemBase.hasContainerItem(aStack)) return F;
+		// компонентный канал ниже покрывает только vanilla. Спрашиваем ВСЕ GT-корни через единую точку выше.
+		if (gtContainerItem(aStack) != null) return F;
 		if (item_(aStack).getCraftingRemainder(aStack) != null) return F;
 		if (ItemsGT.CONTAINER_DURABILITY.contains(aStack, T)) return F;
 		if (IL.Cell_Empty.equal(aStack, F, T) || IL.SC2_Teapot_Empty.equal(aStack, F, T) || IL.SC2_Teacup_Empty.equal(aStack, F, T)) return T;
@@ -1052,7 +1079,8 @@ public class ST {
 		// (у GT6-предметов его нет) → инструмент-ингредиент ПРОПАДАЛ во всех вызывателях ST.container (в т.ч.
 		// MultiTileEntityAdvancedCraftingTable.consumeSlot:436). Живой ItemBase-канал восстановлен ПЕРВЫМ, компонентный
 		// (vanilla ведро и т.п.) — следом, 1:1 порядок оригинала.
-		if (item_(aStack) instanceof gregapi.item.ItemBase tItemBase && tItemBase.hasContainerItem(aStack)) return copy(tItemBase.getContainerItem(aStack));
+		ItemStack tGTContainer = gtContainerItem(aStack); // все GT-корни разом (см. gtContainerItem)
+		if (tGTContainer != null) return copy(tGTContainer);
 		if (item_(aStack).getCraftingRemainder(aStack) != null) return copy(item_(aStack).getCraftingRemainder(aStack).create());
 		// These are all special Cases, in which it is intended to have only GT Blocks outputting those Container Items.
 		if (IL.Cell_Empty.exists()) {

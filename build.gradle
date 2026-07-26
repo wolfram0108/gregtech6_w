@@ -96,6 +96,10 @@ if (project.hasProperty('parityFull')) {
     tasks.named('stripMcMirrorFull').configure { mustRunAfter tasks.named('classes') }
     tasks.named('test').configure {
         dependsOn stripMirrorFull
+        // Тот же рубильник проб, что у runClient (CS.probeFlag = свойство + файл-флаг): полный прогон грузит
+        // ВЕСЬ мод за ~40 с, поэтому диагностику фазы ЗАГРУЗКИ (кто и почему регистрирует рецепт) дешевле
+        // снимать здесь, а не поднимая клиент. Флаги кладутся в рабочий каталог тест-JVM (build/minecraft-junit).
+        systemProperty 'gt6.probes', 'true'
         // Полностью прогруженный GT6 (тысячи предметов/рецептов + дампы) не влезает в дефолтный heap → OutOfMemoryError
         // в Server thread, обрывающий отложенный init до генерации дампа. Поднимаем память тест-JVM.
         maxHeapSize = '6G'
