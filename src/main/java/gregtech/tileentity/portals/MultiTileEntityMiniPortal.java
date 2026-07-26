@@ -501,9 +501,15 @@ public abstract class MultiTileEntityMiniPortal extends TileEntityBase04MultiTil
 		}
 		return F;
 	}
-	// PORT-TODO(F-fluid-relay-tankinfo): 1.7.10 getTankInfo(Direction)→FluidTankInfo[] — neo IFluidHandler: getTanks/getFluidInTank/getTankCapacity (модель сменилась). Реальный fill/drain-релей работает; агрегат-запрос tank-info пуст (deprecated путь, вызывателей в neo нет).
+	// Ретрансляция tank-info к цели 1:1 (оригинал :509-515 звал mTileEntity.getTankInfo(getForgeSideOfTileEntity())).
+	// Прежняя заглушка ZL_FLUIDTANKINFO опиралась на неверную посылку «вызывателей в neo нет»: их держит центр
+	// шва FL.getTankInfo (FL.java:944) — сенсоры Fluidometer/Bucketometer, BasicMachine:705, WD-скан.
 	@Override
 	public FluidTankInfo[] getTankInfo(Direction from) {
+		if (mTarget != null) {
+			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[UT.Code.side(from)]);
+			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
+		}
 		return ZL_FLUIDTANKINFO;
 	}
 

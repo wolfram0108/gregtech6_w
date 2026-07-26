@@ -227,7 +227,8 @@ public class MultiTileEntityLongDistancePipelineFluid extends TileEntityBase09Fa
 	public FluidTankInfo[] getTankInfo(Direction aSide) {
 		if (checkTarget()) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = mTarget.getAdjacentTank(OPOS[mTarget.mFacing]);
-			if (tTileEntity.mTileEntity != null) return ZL_FLUIDTANKINFO;
+			// 1:1 с оригиналом :227-233 (звал getTankInfo(getForgeSideOfTileEntity())); сторону несёт центр FL:944.
+			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 		}
 		return ZL_FLUIDTANKINFO;
 	}

@@ -1651,14 +1651,14 @@ public class WD {
 			
 			try {if (aTileEntity instanceof IFluidHandler) {
 				rEUAmount+=V[3];
-				// F5: 1.7.10 IFluidHandler.getTankInfo(ForgeDirection)->FluidTankInfo[] удалён -> neo sideless
-				// getTanks()/getFluidInTank(i)/getTankCapacity(i) (IFluidHandler.java:60/81/92; side-параметр снят
-				// движком — neo-capability side-specific при получении, не per-call). F15: getFluidInTank даёт EMPTY,
-				// не null -> isEmpty(); в FL.name пустой бак -> null для "" (1:1 с оригиналом fluid==null->"").
-				IFluidHandler tHandler = (IFluidHandler)aTileEntity;
-				for (int i = 0; i < tHandler.getTanks(); i++) {
-					net.neoforged.neoforge.fluids.FluidStack tFluid = tHandler.getFluidInTank(i);
-					rList.add("Tank " + i + ": " + (tFluid.isEmpty()?0:tFluid.getAmount()) + " / " + tHandler.getTankCapacity(i) + " " + FL.name(tFluid.isEmpty()?null:tFluid, T));
+				// F5: 1.7.10 IFluidHandler.getTankInfo(ForgeDirection) удалён из neo — сторону к GT6-TE несёт
+				// ЦЕНТР шва FL.getTankInfo(handler, side) (FL.java:944), тот же, которым ходят все прочие
+				// вызыватели (сенсоры, BasicMachine:705). Ручной sideless-обход getTanks/getFluidInTank здесь
+				// был И дублем центра, И потерей стороны (скан показывал танки «любой стороны» вместо видимой).
+				// F15: пустой бак -> null для FL.name (1:1 с оригиналом fluid==null->"").
+				gregapi.fluid.FluidTankInfo[] tTanks = FL.getTankInfo((IFluidHandler)aTileEntity, aSide);
+				if (tTanks != null) for (byte i = 0; i < tTanks.length; i++) {
+					rList.add("Tank " + i + ": " + (tTanks[i].fluid==null||tTanks[i].fluid.isEmpty()?0:tTanks[i].fluid.getAmount()) + " / " + tTanks[i].capacity + " " + FL.name(tTanks[i].fluid==null||tTanks[i].fluid.isEmpty()?null:tTanks[i].fluid, T));
 				}
 			}} catch(Throwable e) {e.printStackTrace(ERR);}
 			

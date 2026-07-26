@@ -306,7 +306,8 @@ public class MultiTileEntityBridge extends TileEntityBase07Paintable implements 
 	public FluidTankInfo[] getTankInfo(Direction aDirection) {
 		if ((mModes & EXTENDER_TANK) != 0) {
 			DelegatorTileEntity<IFluidHandler> tTileEntity = getAdjacentTank(getExtenderTargetSide(UT.Code.side(aDirection)), F, T);
-			if (tTileEntity.mTileEntity != null) return ZL_FLUIDTANKINFO;
+			// 1:1 с оригиналом :311 (getTankInfo(getForgeSideOfTileEntity())); сторону несёт центр шва FL:944.
+			if (tTileEntity.mTileEntity != null) return FL.getTankInfo(tTileEntity.mTileEntity, tTileEntity.mSideOfTileEntity);
 		}
 		return ZL_FLUIDTANKINFO;
 	}
