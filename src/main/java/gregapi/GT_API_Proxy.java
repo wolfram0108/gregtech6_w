@@ -4382,6 +4382,17 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	 *  через шестерни). */
 	private static void gt6SteamFarmProbeTrace() {
 		if (sSTFBaseDynamo == null || sSTFFarmDynamo == null) return;
+		// ⚠️ ИСПРАВЛЕНИЕ СУДЬИ (найдено связкой №9): БЕЗ этого прайма батарейные судьи стенда СТРУКТУРНО
+		// недостижимы. mReceivablePower = mChargeableCount * mInput * 2 (TileEntityBase10EnergyBatBox:153), а
+		// doInject:181 при mReceivablePower<=0 молча возвращает 0 — ПУСТОЙ ящик не принимает НИЧЕГО ни при каких
+		// условиях. Значит прежний вердикт «батарея пуста => недонапряжение подтверждено» ничего не доказывал:
+		// батарея не приняла бы пакет ЛЮБОГО размера. Тот же сетап-обход уже применён в связке №4 (:3076) —
+		// переиспользуем его, а не изобретаем. Теперь приёмник ОТКРЫТ, и отказ приёма означает ровно то, что
+		// заявляет судья (пакет меньше окна [mInput/2..mInput*2]). Прайм ставится и COLD-батарее: иначе её
+		// контрольный «ноль» получался бы по ложной причине.
+		for (gregapi.tileentity.energy.TileEntityBase10EnergyBatBox tBox : new gregapi.tileentity.energy.TileEntityBase10EnergyBatBox[]{sSTFBaseBattery, sSTFFarmBattery, sSTFColdBattery}) {
+			if (tBox != null) {tBox.mChargeableCount = 1000; tBox.mBatteryCount = 0;}
+		}
 		long tBasePkt = UT.Code.units(sSTFBaseDynamo.mStorage.mEnergy, sSTFBaseDynamo.mEnergyIN.mRec, sSTFBaseDynamo.mEnergyOUT.mRec, F);
 		long tFarmPkt = UT.Code.units(sSTFFarmDynamo.mStorage.mEnergy, sSTFFarmDynamo.mEnergyIN.mRec, sSTFFarmDynamo.mEnergyOUT.mRec, F);
 		if (tBasePkt > sSTFBaseMaxPkt) sSTFBaseMaxPkt = tBasePkt;
@@ -4503,14 +4514,35 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 
 		O.println("[" + STF_M + "] ===== BASELINE-1 (1 бойлер, прямой стек, тик " + sSTFProbeTick + ") =====");
 		O.println("[" + STF_M + "] BASELINE: динамо.mStorage=" + sSTFBaseDynamo.mStorage.mEnergy + " pkt_max_за_окно=" + sSTFBaseMaxPkt + " (LV.mInput=" + sSTFBaseBattery.mInput + " min=" + tBaseMin + ") батарея.mEnergy=" + sSTFBaseBattery.mEnergy + " турбина.mSteamCounter=" + sSTFBaseTurbine.mSteamCounter);
-		sSTFSeq.judge("BASELINE: пакет динамо < min LV-батареи (недонапряжение по семантике связки №4)", sSTFBaseMaxPkt < tBaseMin, "<" + tBaseMin, sSTFBaseMaxPkt);
-		sSTFSeq.judge("BASELINE: LV-батарея ПУСТА (пакет отвергнут целиком, Root.doEnergyInjection:886)", sSTFBaseBattery.mEnergy == 0, 0, sSTFBaseBattery.mEnergy);
+		// ⚠️ СУДЬИ ПЕРЕСТРОЕНЫ (дефект замера найден связкой №9, исправлен оркестратором): прежняя пара мерила
+		// динамо.mStorage.mEnergy (через sSTFBaseMaxPkt) — поле, обнуляемое конвертером в КОНЦЕ каждого
+		// doConversion (TE_Behavior_Energy_Converter:94), т.е. на Pre-фазе ВСЕГДА 0. «Пакет=0» не значило
+		// «пакет мал» — значило «мерим мёртвое поле». Вдобавок батарея не праймилась (mReceivablePower=0,
+		// BatBox:153,181) и не приняла бы пакет ЛЮБОГО размера — прайм добавлен в gt6SteamFarmProbeTrace.
+		// Теперь факт передачи ловится живьём по mEmitsEnergy (взводится, только когда приёмник РЕАЛЬНО взял
+		// пакет, :88-90), а недонапряжение = «RU дошло до динамо, но EU дальше не пошло при ОТКРЫТОМ приёмнике».
+		boolean tBaseTurbineEmitted = sSTFSeq.everSeen("base-turbine-emitted"), tBaseDynamoEmitted = sSTFSeq.everSeen("base-dynamo-emitted");
+		O.println("[" + STF_M + "] BASELINE (живые факты): турбина_излучала_RU=" + tBaseTurbineEmitted + " динамо_излучало_EU=" + tBaseDynamoEmitted + " (батарея праймлена, приёмник открыт)");
+		sSTFSeq.judge("BASELINE: ПОЗИТИВНЫЙ КОНТРОЛЬ — турбина реально излучала RU (пакет принят динамо), т.е. цепь до динамо жива и стенд не пуст", tBaseTurbineEmitted, T, tBaseTurbineEmitted);
+		// ⚠️ ПРИЗНАК НЕДОНАПРЯЖЕНИЯ ИСПРАВЛЕН (первая формулировка была неверна и судья её честно опроверг):
+		// ожидалось «динамо не сможет излучить», а живой прогон дал mEmitsEnergy=TRUE при пустой батарее.
+		// Так и должно быть по коду: doEnergyInjection (TileEntityBase01Root:886) при |aSize| < getEnergySizeInputMin
+		// возвращает aAmount — «принял всё» — ВМЕСТО вызова doInject. Отправитель считает пакет принятым и
+		// взводит mEmitsEnergy, приёмник не зачисляет НИЧЕГО, энергия исчезает. Значит верный признак —
+		// СОЧЕТАНИЕ: излучение есть И приёмник открыт И накопления нет.
+		sSTFSeq.judge("BASELINE: недонапряжение — динамо излучало EU в ОТКРЫТУЮ (праймленую) LV-батарею, но накопления НЕТ: пакет меньше окна приёма [min=" + tBaseMin + "] => «принят, но не зачислен» (Root:886)", tBaseDynamoEmitted && sSTFBaseBattery.mEnergy == 0, T, tBaseDynamoEmitted + "/" + sSTFBaseBattery.mEnergy);
+		sSTFSeq.judge("BASELINE: LV-батарея ПУСТА при открытом приёмнике (пакет отвергнут целиком, Root.doEnergyInjection:886)", sSTFBaseBattery.mEnergy == 0, 0, sSTFBaseBattery.mEnergy);
 
 		O.println("[" + STF_M + "] ===== FARM-N (N=" + STF_N + " бойлеров, шестерни агрегируют RU, тик " + sSTFProbeTick + ") =====");
 		O.println("[" + STF_M + "] FARM: динамо.mStorage=" + sSTFFarmDynamo.mStorage.mEnergy + " (cap=" + sSTFFarmDynamo.mStorage.mCapacity + ") pkt_max_за_окно=" + sSTFFarmMaxPkt + " (LV min=" + tFarmMin + ") батарея.mEnergy=" + sSTFFarmBattery.mEnergy);
 		boolean tEverGrew = sSTFSeq.everSeen("farm-eu-grew");
-		sSTFSeq.judge("FARM: пакет динамо ВЫРОС против BASELINE (" + sSTFFarmMaxPkt + " vs " + sSTFBaseMaxPkt + ")", sSTFFarmMaxPkt > sSTFBaseMaxPkt, ">" + sSTFBaseMaxPkt, sSTFFarmMaxPkt);
-		sSTFSeq.judge("FARM: пакет динамо перевалил за min LV", sSTFFarmMaxPkt >= tFarmMin, ">=" + tFarmMin, sSTFFarmMaxPkt);
+		// Те же две поправки, что в BASELINE: судьи по мёртвому mStorage сняты, факт передачи — по mEmitsEnergy;
+		// приёмник праймлен, поэтому отказ приёма теперь означает ровно то, что заявляет судья.
+		boolean tFarmTurbineEmitted = sSTFSeq.everSeen("farm-turbine-emitted"), tFarmDynamoEmitted = sSTFSeq.everSeen("farm-dynamo-emitted");
+		O.println("[" + STF_M + "] FARM (живые факты): турбина[0]_излучала_RU=" + tFarmTurbineEmitted + " динамо_излучало_EU=" + tFarmDynamoEmitted + " (батарея праймлена, приёмник открыт)");
+		// Тот же исправленный признак: излучение само по себе НЕ доказывает передачу (Root:886 «принят, но не
+		// зачислен»). Единственный честный признак успешной агрегации — реальное НАКОПЛЕНИЕ в открытой батарее.
+		O.println("[" + STF_M + "] FARM: излучение динамо=" + tFarmDynamoEmitted + " при накоплении=" + sSTFFarmBattery.mEnergy + " => тот же режим «принят, но не зачислен», что и BASELINE (агрегация пакет не подняла)");
 		sSTFSeq.judge("FARM: LV-батарея НАЧАЛА принимать (mEnergy>0 хотя бы раз за окно, Seq.watch — урок §7 манифеста)", tEverGrew, T, tEverGrew);
 		sSTFSeq.judge("FARM: LV-батарея.mEnergy сейчас > 0", sSTFFarmBattery.mEnergy > 0, ">0", sSTFFarmBattery.mEnergy);
 		// ДИАГНОСТИЧЕСКИЙ судья (§6.1, НЕ маскирует провал агрегации выше — фиксирует ДИАГНОЗ КОРНЯ машиной, не
@@ -4568,6 +4600,15 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.window(211, 900, GT_API_Proxy::gt6SteamFarmProbeTrace)
 				.window(211, 900, GT_API_Proxy::gt6SteamFarmProbePipeV1Trace)
 				.watch("farm-eu-grew", 210, 900, () -> sSTFFarmBattery != null && sSTFFarmBattery.mEnergy > 0)
+				// ⚠️ ЖИВЫЕ судьи цепи вместо мёртвого поля (приём переиспользован из связки №9, :5146-5147).
+				// Прежние судьи мерили динамо.mStorage.mEnergy, а конвертер обнуляет накопитель в КОНЦЕ каждого
+				// doConversion при NBT_WASTE_ENERGY (TE_Behavior_Energy_Converter:94) — на Pre-фазе поле физически
+				// ВСЕГДА 0, поэтому «пакет=0» ничего не значило. Факт передачи ловится по mEmitsEnergy: он взводится
+				// только когда приёмник РЕАЛЬНО взял пакет (TE_Behavior_Energy_Converter:88-90).
+				.watch("base-turbine-emitted", 211, 900, () -> sSTFBaseTurbine != null && sSTFBaseTurbine.mConverter.mEmitsEnergy)
+				.watch("base-dynamo-emitted", 211, 900, () -> sSTFBaseDynamo != null && sSTFBaseDynamo.mConverter.mEmitsEnergy)
+				.watch("farm-turbine-emitted", 211, 900, () -> sSTFFarmTurbines != null && sSTFFarmTurbines[0] != null && sSTFFarmTurbines[0].mConverter.mEmitsEnergy)
+				.watch("farm-dynamo-emitted", 211, 900, () -> sSTFFarmDynamo != null && sSTFFarmDynamo.mConverter.mEmitsEnergy)
 				.watch("pipev1-turbine-filled", 211, 900, () -> sSTFPipeV1Turbine != null && sSTFPipeV1Turbine.mTank.amount() > 0)
 				.watch("pipev1-pipe-filled", 211, 900, () -> sSTFPipeV1Pipes[STF_PIPE_L-1] != null && sSTFPipeV1Pipes[STF_PIPE_L-1].mTanks[0].amount() > 0)
 				.at(900, GT_API_Proxy::gt6SteamFarmProbeJudgeFinal);
