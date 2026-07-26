@@ -353,6 +353,8 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				if (gregapi.data.CS.probeFlag("gt6energychainprobe.flag")) gt6EnergyChainProbeTick(aEvent.getServer());
 				// [GT6-CRUCIBLEPROBE] верификационный стенд «Связка №5 — тигельный цикл» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
 				if (gregapi.data.CS.probeFlag("gt6crucibleprobe.flag")) gt6CrucibleProbeTick(aEvent.getServer());
+				// [GT6-AUTOOUTPROBE] верификационный стенд «Связка №6 — авто-вывод машин + каверы в работе» (Ф3.1, на каркасе GT6ProbeStand) — снять при уборке фазы
+				if (gregapi.data.CS.probeFlag("gt6autooutprobe.flag")) gt6AutoOutProbeTick(aEvent.getServer());
 				gt6DungeonRedstoneWakeTick();
 				SYNC_SECOND = (SERVER_TIME % 20 == 0);
 
@@ -3581,6 +3583,280 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 				.at(3450, GT_API_Proxy::gt6CrucibleProbeJudgeFinal);
 		}
 		sCRPSeq.tick(sCRPProbeTick);
+	}
+
+	// ========== [GT6-AUTOOUTPROBE] ВРЕМЕННАЯ проба «Связка №6 — авто-вывод машин + каверы в работе» (Ф3.1, гейт run/gt6autooutprobe.flag + -Pgt6probes, на каркасе GT6ProbeStand) ==========
+	// ЭТАП А (разведка кода, ВЫЧИТАНА, не угадана — все сборки судятся РЕАЛЬНЫМ тиком, ни один судимый метод пробой
+	// не вызывается напрямую):
+	// (а) БОЧКА, бит mMode B[0] "auto-fill vertically adjacent Tanks depending on Gravity": onToolClick2 переключает
+	//     это обезьяним ключом (TileEntityBase08Barrel.java:137-143); onTick2 эмиссия — внутри блока :162-224, сама
+	//     ветка :214-219: не запечатанная бочка (mMode&B[1]==0) с !mMagicProof/!mAcidProof/!mPlasmaProof/!mGasProof/
+	//     allowFluid-жидкостью и mMode&B[0]!=0 -> tSides = gas?ALL_SIDES_VERTICAL:lighter?ALL_SIDES_TOP:ALL_SIDES_BOTTOM
+	//     (CS.java:722-724; вода не gas и не "lighter" -> BOTTOM={SIDE_DOWN=0}) -> FL.move(mTank,getAdjacentTank(tSide))
+	//     БЕЗ явного лимита (2-арг. overload FL.move(IFluidTank,DelegatorTileEntity), FL.java:972,974 -> aMaxMoved=
+	//     Long.MAX_VALUE) -> переносит ВЕСЬ доступный объём за ОДИН тик (ограничено только capacity приёмника) —
+	//     инстант-заливка, НЕ метрируемый темп. Уже освоено стендом №2 (FLUIDPIPEPROBE NORM: `sFPSrcNorm.mTank.
+	//     setFluid(...); sFPSrcNorm.mMode |= B[0];`, GT_API_Proxy.java:2470) — здесь короткий прямой регресс
+	//     бочка-над-бочкой (без трубы-посредника, приёмник — соседняя бочка напрямую).
+	// (б) БАЗОВАЯ ЭЛЕКТРО-МАШИНА, авто-вывод предметов: MultiTileEntityBasicMachine.java поля mItemAutoOutput/
+	//     mItemOutputs/mDisabledItemOutput (публичные, :99); onTick2 (:456-473) вызывает doOutputFluids БЕЗУСЛОВНО
+	//     каждый тик (:464), но НЕ doOutputItems напрямую — вывод предметов идёт через doWork(:785-798)->doActive
+	//     (:800-892): блок авто-вывода предметов (:872-889) стоит ВНЕ секции "mMaxProgress>0" -> выполняется КАЖДЫЙ
+	//     тик, пока энергии хватает (mEnergy>=mInputMin&&mEnergy>=mMinEnergy, :786), НЕЗАВИСИМО от того, обрабатывается
+	//     ли рецепт. Триггер (:878): output-слоты НЕ пусты И (mIgnited>0||mInventoryChanged||!mRunning||mOutputBlocked
+	//     ==1||aTimer%200==5); "!mRunning" читает СТАРОЕ (пред-тиковое) значение — doWork выставляет mRunning=T ПОСЛЕ
+	//     возврата doActive (:787-788) -> на ПЕРВЫЙ тик с достаточной энергией триггер срабатывает гарантированно.
+	//     doOutputItems (:993-997) -> ST.moveAll(delegator(tAutoOutput),getItemOutputTarget) с aMaxMove=64 (ST.java:
+	//     661) -> ПЕРЕНОС ВСЕГО СТЕКА ЗА ОДИН ТИК (в отличие от кавера — не метрируемый темп). Обезьяний ключ
+	//     переключает mDisabledItemOutput тем же публичным полем (:390-401 monkeywrench), здесь выставляется напрямую
+	//     (топология, не судимый канал). Тир: "Electrolyzer" (ULV) id=20091 — MultiTileEntityBasicMachineElectric,
+	//     Loader_MultiTileEntities.java:1340, NBT_ENERGY_ACCEPTED=EU, NBT_RECIPEMAP=RM.Electrolyzer (RM.java:123:
+	//     input/output/min items=2/6/1), NBT_INV_SIDE_AUTO_OUT=SIDE_RIGHT, NBT_INV_SIDE_OUT=SBIT_R|SBIT_L — авто-
+	//     вывод ВКЛЮЧЁН по умолчанию у реальной зарегистрированной машины (NBT_INV_DISABLED_OUT не задан -> false) —
+	//     живая машина как она есть, не выдуманная конфигурация; мировая сторона вывода вычисляется ЖИВЫМ кодом
+	//     (FACING_TO_SIDE[mFacing][mItemAutoOutput], :570/995), не предполагается.
+	// (в) КАВЕР-НАСОС CoverPump (gregapi/cover/covers/CoverPump.java): onTickPre (:67-76) СЕРВЕР-СТОРОНА, раз в 20
+	//     тиков (SERVER_TIME%20==5, "L/sec" из тултипа :81), tThroughput=mThroughput (:45,47-49, public final,
+	//     задаётся конструктором предмета-кавера); mVisuals[aSide]==0 — умолчание для ТАНКА (не трубы: onCoverPlaced
+	//     :52-55 ставит visual=1(IN) ТОЛЬКО для MultiTileEntityPipeFluid) -> режим OUT: FL.move(delegator(aSide)
+	//     [ЭТОТ танк] -> getAdjacentTank(aSide) [сосед], tThroughput) — 3-арг. overload С явным лимитом (FL.java:967)
+	//     -> МЕТРИРУЕМЫЙ перенос (в отличие от бочки-гравитации выше). Диспетчер кавер-тиков — TileEntityBase06Covers.
+	//     java:202 (mCovers.tickPre внутри final onTick, тот же центр, что уже верифицирован CoverFilterItem в
+	//     ITEMPIPEPROBE FILTER-кейсе). Предмет насоса: IL.PUMPS[0] "Compact Electric Pump (ULV)", id=12020,
+	//     MultiItemTechnological.java:51, mThroughput=250<<(2*0)=250 (250mb за цикл/20 тиков). Установлен НА БОЧКЕ
+	//     (не на трубе) реальным публичным API setCoverItem (ITileEntityCoverable.java:35, тот же метод, что
+	//     ITEMPIPEPROBE FILTER-кейс).
+	// (г) Судьи — каркас (slotCount/tankAmount/conserve): CONSERVE — сумма источник+приёмник неизменна на каждом
+	//     замере; COLD-контроли — те же постройки БЕЗ включённого бита/кавера/авто-вывода, ничего не движется.
+	// Дифф порт/оригинал задействованных методов (TileEntityBase08Barrel.onTick2, MultiTileEntityBasicMachine.
+	// doActive/doOutputItems, CoverPump.onTickPre) — построчно 1:1 с оригиналом gregtech6/.../*.java (engine-swap
+	// TileEntity->BlockEntity, IFluidHandler forge->neoforge, World->Level, NBTTagCompound->CompoundTag+getXOr;
+	// расхождений в control-flow нет). Снять при уборке фазы.
+	private static final int AOP_ELECTRO_ID = 20091; // Electrolyzer (ULV), MultiTileEntityBasicMachineElectric — Loader_MultiTileEntities.java:1340
+	private static final int AOP_CHEST_ID   = 32745; // Mossy Stone Chest — тот же ID, что ITEMPIPEPROBE (Loader_MultiTileEntities.java:152)
+	private static final int AOP_BARREL_ID  = 32102; // Bronze Drum — тот же ID, что FLUIDPIPEPROBE (capacity=64000, gasProof=T)
+	private static final long AOP_WATER_TOP     = 20000; // засев верхней бочки BARREL-OUT (< capacity 64000)
+	private static final long AOP_WATER_PUMPSRC = 20000; // засев бочки-источника COVER-PUMP
+	private static final String AOP_M = "GT6-AUTOOUTPROBE";
+	private static int sAOPProbeTick = -1;
+	private static ServerPlayer sAOPPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sAOPSeq;
+
+	// MACHINE-OUT
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric sAOPMachineHot, sAOPMachineCold;
+	private static gregapi.block.multitileentity.example.MultiTileEntityChest sAOPMachineHotChest, sAOPMachineColdChest;
+	private static int sAOPMachineHotOutSlot, sAOPMachineColdOutSlot;
+	private static long sAOPMachineHotSum0, sAOPMachineColdSum0;
+
+	// COVER-PUMP
+	private static gregapi.tileentity.tank.TileEntityBase08Barrel sAOPPumpSrcHot, sAOPPumpTgtHot, sAOPPumpSrcCold, sAOPPumpTgtCold;
+	private static long sAOPPumpHotSum0, sAOPPumpColdSum0;
+	private static int sAOPPumpThroughput;
+	private static long sAOPPumpLoadServerTime;
+
+	// BARREL-OUT
+	private static gregapi.tileentity.tank.TileEntityBase08Barrel sAOPBarrelTopHot, sAOPBarrelBotHot, sAOPBarrelTopCold, sAOPBarrelBotCold;
+	private static long sAOPBarrelHotSum0, sAOPBarrelColdSum0;
+
+	/** Сумма предметов во всех слотах сундука (консервация; каркас {@link gregapi.probe.GT6ProbeStand#slotCount}). */
+	private static long gt6AutoOutProbeChestSum(gregapi.block.multitileentity.example.MultiTileEntityChest aChest) {
+		if (aChest == null) return 0;
+		long rSum = 0;
+		for (int i = 0; i < aChest.invsize(); i++) rSum += gregapi.probe.GT6ProbeStand.slotCount(aChest, i);
+		return rSum;
+	}
+
+	/** Один "машина+сундук": анкер -> машина (face UP) -> фикс. ориентация SOUTH (реальный API setPrimaryFacing, тот
+	 *  же, что дёргает гайковёрт) -> живой расчёт мировой стороны авто-вывода (FACING_TO_SIDE[mFacing][mItemAutoOutput],
+	 *  MultiTileEntityBasicMachine.java:570/995) -> сундук на этой стороне. aEnableOutput=F -> COLD-контроль
+	 *  (mDisabledItemOutput=T явно, тот же публичный флаг, что переключает обезьяний ключ, :390-401). */
+	private static Object[] gt6AutoOutProbeBuildMachine(ServerLevel aLevel, BlockPos aGround, boolean aEnableOutput, String aLabel) {
+		gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric tMachine = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sAOPPlayer, aGround, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(AOP_ELECTRO_ID),
+			gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric.class, AOP_M, aLabel + "-машина");
+		if (tMachine == null) throw new RuntimeException(aLabel + ": машина не встала");
+		tMachine.setPrimaryFacing(SIDE_SOUTH);
+		tMachine.mDisabledItemOutput = !aEnableOutput;
+		byte tOutSide = FACING_TO_SIDE[tMachine.mFacing][tMachine.mItemAutoOutput];
+		BlockPos tMachinePos = aGround.above();
+		gregapi.block.multitileentity.example.MultiTileEntityChest tChest = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sAOPPlayer, tMachinePos, FORGE_DIR[tOutSide], gregapi.probe.GT6ProbeStand.mteStack(AOP_CHEST_ID),
+			gregapi.block.multitileentity.example.MultiTileEntityChest.class, AOP_M, aLabel + "-сундук");
+		if (tChest == null) throw new RuntimeException(aLabel + ": сундук не встал (сторона авто-вывода=" + tOutSide + ")");
+		return new Object[]{tMachine, tChest, tOutSide};
+	}
+
+	/** Пара бочек для COVER-PUMP: источник(anchor) -> приёмник(East от источника). aInstallCover=T -> реальный
+	 *  публичный setCoverItem(EAST, IL.PUMPS[0]="Compact Electric Pump (ULV)", mThroughput=250) на источнике. */
+	private static Object[] gt6AutoOutProbeBuildPumpPair(ServerLevel aLevel, BlockPos aGround, boolean aInstallCover, String aLabel) {
+		gregapi.tileentity.tank.TileEntityBase08Barrel tSrc = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sAOPPlayer, aGround, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(AOP_BARREL_ID),
+			gregapi.tileentity.tank.TileEntityBase08Barrel.class, AOP_M, aLabel + "-источник");
+		if (tSrc == null) throw new RuntimeException(aLabel + ": источник-бочка не встала");
+		BlockPos tSrcPos = aGround.above();
+		gregapi.tileentity.tank.TileEntityBase08Barrel tTgt = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sAOPPlayer, tSrcPos, net.minecraft.core.Direction.EAST, gregapi.probe.GT6ProbeStand.mteStack(AOP_BARREL_ID),
+			gregapi.tileentity.tank.TileEntityBase08Barrel.class, AOP_M, aLabel + "-приёмник");
+		if (tTgt == null) throw new RuntimeException(aLabel + ": приёмник-бочка не встала");
+		if (aInstallCover) tSrc.setCoverItem(SIDE_EAST, IL.PUMPS[0].get(1), null, T, T);
+		return new Object[]{tSrc, tTgt};
+	}
+
+	/** Столб бочек для BARREL-OUT: нижняя(приёмник, на анкере) -> верхняя(источник, над нижней). aEnableBit=T ->
+	 *  верхняя.mMode|=B[0] (тот же бит, что верифицирован FLUIDPIPEPROBE NORM, GT_API_Proxy.java:2470). */
+	private static Object[] gt6AutoOutProbeBuildBarrelColumn(ServerLevel aLevel, BlockPos aGround, boolean aEnableBit, String aLabel) {
+		gregapi.tileentity.tank.TileEntityBase08Barrel tBottom = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sAOPPlayer, aGround, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(AOP_BARREL_ID),
+			gregapi.tileentity.tank.TileEntityBase08Barrel.class, AOP_M, aLabel + "-нижняя(приёмник)");
+		if (tBottom == null) throw new RuntimeException(aLabel + ": нижняя бочка не встала");
+		BlockPos tBottomPos = aGround.above();
+		gregapi.tileentity.tank.TileEntityBase08Barrel tTop = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sAOPPlayer, tBottomPos, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(AOP_BARREL_ID),
+			gregapi.tileentity.tank.TileEntityBase08Barrel.class, AOP_M, aLabel + "-верхняя(источник)");
+		if (tTop == null) throw new RuntimeException(aLabel + ": верхняя бочка не встала");
+		if (aEnableBit) tTop.mMode |= B[0];
+		return new Object[]{tTop, tBottom};
+	}
+
+	/** Тик 200: постройка HOT+COLD троек (MACHINE-OUT, COVER-PUMP, BARREL-OUT) + чтение живых параметров.
+	 *  Любой обрыв -> RuntimeException -> Seq печатает EXC. */
+	private static void gt6AutoOutProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = sAOPPlayer.level();
+		O.println("========== [" + AOP_M + "] Связка №6 — авто-вывод машин + каверы в работе (Ф3.1, на каркасе GT6ProbeStand) ==========");
+		MultiTileEntityRegistry tReg = MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		int[] tIds = {AOP_ELECTRO_ID, AOP_CHEST_ID, AOP_BARREL_ID};
+		for (int tId : tIds) if (tReg == null || tReg.getClassContainer(tId) == null) throw new RuntimeException("реестр/ID не найден: " + tId);
+		O.println("[" + AOP_M + "] ID подтверждены: машина=" + tReg.getClassContainer(AOP_ELECTRO_ID).mClass.getSimpleName() + "(" + AOP_ELECTRO_ID + ") сундук=" + tReg.getClassContainer(AOP_CHEST_ID).mClass.getSimpleName() + "(" + AOP_CHEST_ID + ") бочка=" + tReg.getClassContainer(AOP_BARREL_ID).mClass.getSimpleName() + "(" + AOP_BARREL_ID + ")");
+
+		BlockPos tBaseMachineHot  = sAOPPlayer.blockPosition().offset(4, 0, 4);
+		BlockPos tBaseMachineCold = sAOPPlayer.blockPosition().offset(4, 0, 10);
+		BlockPos tBasePumpHot     = sAOPPlayer.blockPosition().offset(4, 0, 16);
+		BlockPos tBasePumpCold    = sAOPPlayer.blockPosition().offset(4, 0, 22);
+		BlockPos tBaseBarrelHot   = sAOPPlayer.blockPosition().offset(4, 0, 28);
+		BlockPos tBaseBarrelCold  = sAOPPlayer.blockPosition().offset(4, 0, 34);
+
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBaseMachineHot,  4, 1); // пол — гигиена, не судимый канал
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBaseMachineCold, 4, 1);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBasePumpHot,     4, 1);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBasePumpCold,    4, 1);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBaseBarrelHot,   2, 1);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBaseBarrelCold,  2, 1);
+
+		Object[] tMachineHot  = gt6AutoOutProbeBuildMachine(tLevel, tBaseMachineHot,  T, "MACHINE-OUT HOT");
+		Object[] tMachineCold = gt6AutoOutProbeBuildMachine(tLevel, tBaseMachineCold, F, "MACHINE-OUT COLD");
+		sAOPMachineHot  = (gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric) tMachineHot[0];  sAOPMachineHotChest  = (gregapi.block.multitileentity.example.MultiTileEntityChest) tMachineHot[1];
+		sAOPMachineCold = (gregapi.tileentity.machines.MultiTileEntityBasicMachineElectric) tMachineCold[0]; sAOPMachineColdChest = (gregapi.block.multitileentity.example.MultiTileEntityChest) tMachineCold[1];
+
+		Object[] tPumpHot  = gt6AutoOutProbeBuildPumpPair(tLevel, tBasePumpHot,  T, "COVER-PUMP HOT");
+		Object[] tPumpCold = gt6AutoOutProbeBuildPumpPair(tLevel, tBasePumpCold, F, "COVER-PUMP COLD");
+		sAOPPumpSrcHot  = (gregapi.tileentity.tank.TileEntityBase08Barrel) tPumpHot[0];  sAOPPumpTgtHot  = (gregapi.tileentity.tank.TileEntityBase08Barrel) tPumpHot[1];
+		sAOPPumpSrcCold = (gregapi.tileentity.tank.TileEntityBase08Barrel) tPumpCold[0]; sAOPPumpTgtCold = (gregapi.tileentity.tank.TileEntityBase08Barrel) tPumpCold[1];
+
+		Object[] tBarrelHot  = gt6AutoOutProbeBuildBarrelColumn(tLevel, tBaseBarrelHot,  T, "BARREL-OUT HOT");
+		Object[] tBarrelCold = gt6AutoOutProbeBuildBarrelColumn(tLevel, tBaseBarrelCold, F, "BARREL-OUT COLD");
+		sAOPBarrelTopHot  = (gregapi.tileentity.tank.TileEntityBase08Barrel) tBarrelHot[0];  sAOPBarrelBotHot  = (gregapi.tileentity.tank.TileEntityBase08Barrel) tBarrelHot[1];
+		sAOPBarrelTopCold = (gregapi.tileentity.tank.TileEntityBase08Barrel) tBarrelCold[0]; sAOPBarrelBotCold = (gregapi.tileentity.tank.TileEntityBase08Barrel) tBarrelCold[1];
+
+		if (sAOPMachineHotChest == null || sAOPMachineColdChest == null) throw new RuntimeException("MACHINE-OUT: постройка не удалась (сундук null)");
+		if (sAOPPumpTgtHot == null || sAOPPumpTgtCold == null) throw new RuntimeException("COVER-PUMP: постройка не удалась (бочка null)");
+		if (sAOPBarrelBotHot == null || sAOPBarrelBotCold == null) throw new RuntimeException("BARREL-OUT: постройка не удалась (бочка null)");
+
+		gregapi.cover.covers.CoverPump tPumpBehavior = (gregapi.cover.covers.CoverPump) sAOPPumpSrcHot.getCoverData().mBehaviours[SIDE_EAST];
+		if (tPumpBehavior == null) throw new RuntimeException("COVER-PUMP HOT: кавер не встал на источнике (mBehaviours[EAST]==null)");
+		sAOPPumpThroughput = tPumpBehavior.mThroughput;
+
+		sAOPMachineHotOutSlot  = sAOPMachineHot.mRecipes.mInputItemsCount;
+		sAOPMachineColdOutSlot = sAOPMachineCold.mRecipes.mInputItemsCount;
+		O.println("[" + AOP_M + "] живые параметры (из BE, не предположены): машина.mFacing=" + sAOPMachineHot.mFacing + " машина.mItemAutoOutput=" + sAOPMachineHot.mItemAutoOutput
+			+ " (мировая сторона=" + FACING_TO_SIDE[sAOPMachineHot.mFacing][sAOPMachineHot.mItemAutoOutput] + ") outSlot=" + sAOPMachineHotOutSlot + " mRecipes.mOutputItemsCount=" + sAOPMachineHot.mRecipes.mOutputItemsCount
+			+ "; кавер-насос.mThroughput=" + sAOPPumpThroughput + "; бочка.mTank.capacity()=" + sAOPBarrelTopHot.mTank.capacity());
+	}
+
+	/** Тик 210: сетап-закладка (готовый результат в выходном слоте машины напрямую, жидкость в бочках-источниках) —
+	 *  судимый канал остаётся реальный: доставка идёт только штатными тиками ниже по цепи. */
+	private static void gt6AutoOutProbeLoad() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		gregapi.probe.GT6ProbeStand.slotSet(sAOPMachineHot,  sAOPMachineHotOutSlot,  ST.make(Blocks.COBBLESTONE, 16, 0));
+		gregapi.probe.GT6ProbeStand.slotSet(sAOPMachineCold, sAOPMachineColdOutSlot, ST.make(Blocks.COBBLESTONE, 16, 0));
+		sAOPMachineHot.mEnergy  = 1_000_000_000L; // сетап-обход бухгалтерии энергии (тот же приём, что ECP sECPMotorSrc.mEnergy) — судимый канал doActive()/doOutputItems() остаётся реальным
+		sAOPMachineCold.mEnergy = 1_000_000_000L;
+		sAOPMachineHotSum0  = gregapi.probe.GT6ProbeStand.slotCount(sAOPMachineHot,  sAOPMachineHotOutSlot)  + gt6AutoOutProbeChestSum(sAOPMachineHotChest);
+		sAOPMachineColdSum0 = gregapi.probe.GT6ProbeStand.slotCount(sAOPMachineCold, sAOPMachineColdOutSlot) + gt6AutoOutProbeChestSum(sAOPMachineColdChest);
+
+		gregapi.probe.GT6ProbeStand.fill(sAOPPumpSrcHot,  "water", AOP_WATER_PUMPSRC);
+		gregapi.probe.GT6ProbeStand.fill(sAOPPumpSrcCold, "water", AOP_WATER_PUMPSRC);
+		sAOPPumpHotSum0  = sAOPPumpSrcHot.mTank.amount()  + sAOPPumpTgtHot.mTank.amount();
+		sAOPPumpColdSum0 = sAOPPumpSrcCold.mTank.amount() + sAOPPumpTgtCold.mTank.amount();
+		sAOPPumpLoadServerTime = SERVER_TIME;
+
+		gregapi.probe.GT6ProbeStand.fill(sAOPBarrelTopHot,  "water", AOP_WATER_TOP);
+		gregapi.probe.GT6ProbeStand.fill(sAOPBarrelTopCold, "water", AOP_WATER_TOP);
+		sAOPBarrelHotSum0  = sAOPBarrelTopHot.mTank.amount()  + sAOPBarrelBotHot.mTank.amount();
+		sAOPBarrelColdSum0 = sAOPBarrelTopCold.mTank.amount() + sAOPBarrelBotCold.mTank.amount();
+
+		O.println("[" + AOP_M + "] тик 210 загрузка: MACHINE-OUT HOT/COLD слот=" + sAOPMachineHotOutSlot + "/" + sAOPMachineColdOutSlot + " (по 16×Cobblestone); "
+			+ "COVER-PUMP HOT/COLD source=" + AOP_WATER_PUMPSRC + "mb (sum0=" + sAOPPumpHotSum0 + "/" + sAOPPumpColdSum0 + "), SERVER_TIME=" + sAOPPumpLoadServerTime + "; "
+			+ "BARREL-OUT HOT/COLD верхняя=" + AOP_WATER_TOP + "mb (sum0=" + sAOPBarrelHotSum0 + "/" + sAOPBarrelColdSum0 + ")");
+	}
+
+	/** Тик 260 (50 тиков после загрузки — с запасом на первый триггерящий тик doActive()): MACHINE-OUT + BARREL-OUT,
+	 *  оба HOT+COLD (оба мгновенные one-shot переносы по коду, см. комментарий блока выше). */
+	private static void gt6AutoOutProbeJudgeMachineAndBarrel() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + AOP_M + "] ===== MACHINE-OUT (тик 260) =====");
+		long tHotSlot = gregapi.probe.GT6ProbeStand.slotCount(sAOPMachineHot, sAOPMachineHotOutSlot);
+		long tHotChest = gt6AutoOutProbeChestSum(sAOPMachineHotChest);
+		long tColdSlot = gregapi.probe.GT6ProbeStand.slotCount(sAOPMachineCold, sAOPMachineColdOutSlot);
+		long tColdChest = gt6AutoOutProbeChestSum(sAOPMachineColdChest);
+		O.println("[" + AOP_M + "] MACHINE-OUT HOT: слот=" + tHotSlot + " сундук=" + tHotChest + " (заложено=" + sAOPMachineHotSum0 + "); COLD: слот=" + tColdSlot + " сундук=" + tColdChest + " (заложено=" + sAOPMachineColdSum0 + ", авто-вывод выключен явно)");
+		sAOPSeq.judge("MACHINE-OUT HOT: результат уехал из машины БЕЗ кликов (слот опустел)", tHotSlot == 0, 0, tHotSlot);
+		sAOPSeq.judge("MACHINE-OUT HOT: результат пришёл в приёмник целиком", tHotChest == sAOPMachineHotSum0, sAOPMachineHotSum0, tHotChest);
+		sAOPSeq.conserve("MACHINE-OUT HOT: консервация", sAOPMachineHotSum0, () -> tHotSlot + tHotChest);
+		sAOPSeq.judge("MACHINE-OUT COLD: авто-вывод выключен -> слот НЕ опустел", tColdSlot == sAOPMachineColdSum0, sAOPMachineColdSum0, tColdSlot);
+		sAOPSeq.judge("MACHINE-OUT COLD: приёмник пуст (ничего не двигалось)", tColdChest == 0, 0, tColdChest);
+
+		O.println("[" + AOP_M + "] ===== BARREL-OUT (тик 260) =====");
+		long tBarrelHotTop = sAOPBarrelTopHot.mTank.amount(), tBarrelHotBot = sAOPBarrelBotHot.mTank.amount();
+		long tBarrelColdTop = sAOPBarrelTopCold.mTank.amount(), tBarrelColdBot = sAOPBarrelBotCold.mTank.amount();
+		O.println("[" + AOP_M + "] BARREL-OUT HOT: верхняя=" + tBarrelHotTop + " нижняя=" + tBarrelHotBot + " (сумма0=" + sAOPBarrelHotSum0 + "); COLD: верхняя=" + tBarrelColdTop + " нижняя=" + tBarrelColdBot + " (сумма0=" + sAOPBarrelColdSum0 + ", бит НЕ выставлен)");
+		sAOPSeq.judge("BARREL-OUT HOT: верхняя бочка стекла вниз (гравитация, TileEntityBase08Barrel.java:214-219)", tBarrelHotTop == 0 && tBarrelHotBot == AOP_WATER_TOP, "верх=0 низ=" + AOP_WATER_TOP, "верх=" + tBarrelHotTop + " низ=" + tBarrelHotBot);
+		sAOPSeq.conserve("BARREL-OUT HOT: консервация mb", sAOPBarrelHotSum0, () -> tBarrelHotTop + tBarrelHotBot);
+		sAOPSeq.judge("BARREL-OUT COLD: бит не выставлен -> ничего не стекло", tBarrelColdTop == AOP_WATER_TOP && tBarrelColdBot == 0, "верх=" + AOP_WATER_TOP + " низ=0", "верх=" + tBarrelColdTop + " низ=" + tBarrelColdBot);
+	}
+
+	/** Тик 400 (190 тиков после загрузки — до 9-10 циклов кавера каждые 20 тиков): COVER-PUMP HOT+COLD + финальный
+	 *  CONSERVE + DONE. */
+	private static void gt6AutoOutProbeJudgePumpAndFinal() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("[" + AOP_M + "] ===== COVER-PUMP (тик 400) =====");
+		long tElapsed = SERVER_TIME - sAOPPumpLoadServerTime;
+		long tCeilEvents = tElapsed / 20 + 2; // запас против модуло-выравнивания SERVER_TIME%20==5 (CoverPump.java:68)
+		long tCeiling = tCeilEvents * sAOPPumpThroughput;
+		long tHotSrc = sAOPPumpSrcHot.mTank.amount(), tHotTgt = sAOPPumpTgtHot.mTank.amount();
+		long tColdSrc = sAOPPumpSrcCold.mTank.amount(), tColdTgt = sAOPPumpTgtCold.mTank.amount();
+		O.println("[" + AOP_M + "] COVER-PUMP HOT: источник=" + tHotSrc + " приёмник=" + tHotTgt + " (сумма0=" + sAOPPumpHotSum0 + "); прошло=" + tElapsed + " тиков => потолок циклов=" + tCeilEvents + " x mThroughput(" + sAOPPumpThroughput + ")=" + tCeiling);
+		O.println("[" + AOP_M + "] COVER-PUMP COLD (без кавера): источник=" + tColdSrc + " приёмник=" + tColdTgt + " (сумма0=" + sAOPPumpColdSum0 + ")");
+		sAOPSeq.judge("COVER-PUMP HOT: жидкость перекачивается сама (приёмник > 0)", tHotTgt > 0, ">0", tHotTgt);
+		sAOPSeq.judge("COVER-PUMP HOT: темп в пределах формулы кавера (<= потолок циклов x mThroughput)", tHotTgt <= tCeiling, "<=" + tCeiling, tHotTgt);
+		sAOPSeq.conserve("COVER-PUMP HOT: консервация mb", sAOPPumpHotSum0, () -> tHotSrc + tHotTgt);
+		sAOPSeq.judge("COVER-PUMP COLD: без кавера -> ничего не перекачано", tColdTgt == 0 && tColdSrc == AOP_WATER_PUMPSRC, "источник=" + AOP_WATER_PUMPSRC + " приёмник=0", "источник=" + tColdSrc + " приёмник=" + tColdTgt);
+
+		sAOPSeq.done();
+	}
+
+	public static void gt6AutoOutProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sAOPProbeTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sAOPPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sAOPSeq == null) {
+			sAOPSeq = new gregapi.probe.GT6ProbeStand.Seq(AOP_M)
+				.at(200, GT_API_Proxy::gt6AutoOutProbeBuild)
+				.at(210, GT_API_Proxy::gt6AutoOutProbeLoad)
+				.at(260, GT_API_Proxy::gt6AutoOutProbeJudgeMachineAndBarrel)
+				.at(400, GT_API_Proxy::gt6AutoOutProbeJudgePumpAndFinal);
+		}
+		sAOPSeq.tick(sAOPProbeTick);
 	}
 
 }
