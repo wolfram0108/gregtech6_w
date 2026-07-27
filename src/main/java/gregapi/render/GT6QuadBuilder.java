@@ -49,6 +49,12 @@ public final class GT6QuadBuilder {
 	/** Текущие render-bounds {minX,minY,minZ,maxX,maxY,maxZ} (1.7.10 RenderBlocks.setRenderBoundsFromBlock, обновляется per-pass). */
 	private final float[] mBounds = {0, 0, 0, 1, 1, 1};
 	private boolean mFullCube = true;
+	/** BUG-063 (граница отрисовки): суммарные bounds ФАКТИЧЕСКИ выданных граней — единственное место, где известно,
+	 *  сколько геометрии GT6 реально занимает. Считать статикой нельзя: у GT6 боксы вычисляются в рантайме
+	 *  (замер: из 785 объявлений box(...) числовых лишь 8 — тигель/турбина; трубы, коннекторы и каверы задают
+	 *  границы выражениями). Копится тут, читается {@link MultiTileEntityBER#getRenderBoundingBox}. */
+	private final float[] mDrawn = {0, 0, 0, 1, 1, 1};
+	private boolean mDrawnAny = false;
 	/** F3-render PILLAR: 1.7.10 RenderBlocks.uvRotate{Bottom,Top,East,West,North,South} → per-face поворот UV;
 	 *  индекс = Direction.get3DDataValue (DOWN,UP,NORTH,SOUTH,WEST,EAST). Реализован вариант 1 — единственный,
 	 *  который ставит vanilla renderBlockLog (RenderBlocks:4435-4446, PILLAR-блоки GT6: брёвна/балки/тюки). */
@@ -83,7 +89,20 @@ public final class GT6QuadBuilder {
 		// full-cube грань — cull-aware (сосед скроет её); sub-cube (спайк/бар/провод) — всегда видима.
 		if (mFullCube) mQuads.addCulledFace(tDir, tQuad); else mQuads.addUnculledFace(tQuad);
 		mAll.add(tQuad);
+		// BUG-063: границы копим по РЕАЛЬНО выданной грани (а не по каждому объявленному боксу) — тогда рамка
+		// отсечения совпадает с тем, что видит игрок, и не раздувается проходами, у которых текстуры не нашлось.
+		if (mDrawnAny) {
+			for (int i = 0; i < 3; i++) if (mBounds[i] < mDrawn[i]) mDrawn[i] = mBounds[i];
+			for (int i = 3; i < 6; i++) if (mBounds[i] > mDrawn[i]) mDrawn[i] = mBounds[i];
+		} else {
+			System.arraycopy(mBounds, 0, mDrawn, 0, 6);
+			mDrawnAny = true;
+		}
 	}
+
+	/** BUG-063: суммарные bounds выданных граней {minX,minY,minZ,maxX,maxY,maxZ} в локальных координатах блока,
+	 *  либо null, если не выдано ни одной грани. */
+	public float[] drawnBounds() {return mDrawnAny ? mDrawn : null;}
 
 	public QuadCollection build() {return mQuads.build();}
 	public List<BakedQuad> quads() {return mAll;}

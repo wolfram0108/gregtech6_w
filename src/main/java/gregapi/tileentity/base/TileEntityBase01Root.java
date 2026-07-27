@@ -123,6 +123,13 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	
 	/** This Variable is for forcing the Selection Box to be full. */
 	public boolean FORCE_FULL_SELECTION_BOXES = F;
+
+	/** BUG-063, ТОЛЬКО КЛИЕНТ: рамка отсечения отрисовки, снятая с последнего построенного кадра
+	 *  ({@link gregapi.render.MultiTileEntityBER#extractRenderState}). В 1.7.10 геометрия MTE жила в мэше чанка и
+	 *  отсекалась целой секцией 16³, поэтому вопроса не было; в neo рисунок BE отсекается по его собственной рамке,
+	 *  умолчание которой — куб 1×1×1, а геометрия GT6 выходит за свой блок (тигель 3×3×3 из контроллера, лопасти
+	 *  турбины, коннекторы труб). Не сохраняется и не синхронизируется: чисто визуальный кэш. */
+	public net.minecraft.world.phys.AABB mRenderAABB = null;
 	
 	/** If this TileEntity is ticking at all */
 	public final boolean mIsTicking;

@@ -58,6 +58,29 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		return net.minecraft.client.Minecraft.getInstance().options.renderDistance().get() * 16;
 	}
 
+	/** BUG-063 (репорт игрока: «как только центральный нижний блок выходит за границы экрана, весь тигель сразу
+	 *  пропадает»): neo отсекает рисунок BE по ЭТОЙ рамке ({@code BlockEntityRenderDispatcher:90}), а её умолчание —
+	 *  куб самого блока ({@code IBlockEntityRendererExtension:20-22}). У GT6 геометрия за свой блок выходит штатно
+	 *  (тигель рисует всю структуру 3×3×3 из контроллера — {@code MultiTileEntityCrucible:648-653}; лопасти турбины,
+	 *  коннекторы труб), а в 1.7.10 такого узла не было вовсе: MTE рисовались мэшем чанка и отсекались секцией 16³
+	 *  ({@code RendererBlockTextured implements ISimpleBlockRenderingHandler}), TESR же имели дефолт INFINITE
+	 *  ({@code recompSrc TileEntity:399-420}). Рамку НЕ ЗАДАЁМ константой — у GT6 боксы вычисляются в рантайме;
+	 *  берём ФАКТИЧЕСКУЮ геометрию прошлого кадра ({@link gregapi.render.GT6QuadBuilder#drawnBounds}), а пока она
+	 *  неизвестна — один кадр без отсечения, чтобы extract состоялся и рамка стала известна (дистанция при этом
+	 *  по-прежнему режет: фрустум проверяется ДО shouldRender). Приём канонический: так же объявляют рамку маяк
+	 *  (луч в небо), сундук (крышка) и поршень ({@code BeaconRenderer:221}, {@code ChestRenderer:136}, {@code PistonHeadRenderer:96}). */
+	@Override
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	public net.minecraft.world.phys.AABB getRenderBoundingBox(TileEntityBase01Root aBE) {
+		net.minecraft.world.phys.AABB rBox = aBE.mRenderAABB;
+		BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
+		if (tSpecial != null) try {
+			net.minecraft.world.phys.AABB tSpecialBox = tSpecial.getRenderBoundingBox(aBE);
+			rBox = rBox == null ? tSpecialBox : (tSpecialBox == null ? rBox : rBox.minmax(tSpecialBox));
+		} catch (Throwable e) {/* чужая рамка не должна ронять кадр */}
+		return rBox == null ? net.minecraft.world.phys.AABB.INFINITE : rBox;
+	}
+
 	// F3-render спец-рендеры (1.7.10 ClientRegistry.bindTileEntitySpecialRenderer = vanilla-диспетчер по КЛАССУ TE;
 	// в neo BER регистрируется по BlockEntityType, а у всех MTE он ОДИН — MTE_TYPE) → диспетч по классу живёт здесь,
 	// в едином BER: реестр класс→рендерер, extract/submit делегируются. Оба живых TESR GT6 (Chest/MassStorage) идут сюда.
@@ -120,12 +143,21 @@ public class MultiTileEntityBER implements BlockEntityRenderer<TileEntityBase01R
 		aState.mQuads = null;
 		aState.mSpecialRenderer = null; aState.mSpecialState = null;
 		Block tBlock = aBE.getBlockState().getBlock();
+		// BUG-063: рамку отсечения ставим ДО гейта — иначе у тех, кого гейт отсеивает (руды рисует baked-модель,
+		// стабы не рисуют ничего), она навсегда осталась бы неизвестной, а неизвестная = «не отсекать» (см.
+		// getRenderBoundingBox). Их геометрия — обычный куб блока, что здесь и объявляется.
+		aBE.mRenderAABB = new net.minecraft.world.phys.AABB(aBE.getBlockPos());
 		// Только MTE-блоки с render-объектом: руды(PrefixBlock/PrefixBlockTileEntity) и стабы(TileEntityLoaderStub, render-данных нет) → baked/пусто.
 		if (aBE.getLevel() == null || !(aBE instanceof IRenderedBlockObject tRenderer) || !(tBlock instanceof MultiTileEntityBlock)) return;
 		BlockPos tPos = aBE.getBlockPos();
 		GT6QuadBuilder tQB = new GT6QuadBuilder();
 		try { GT6BlockModel.buildRendererQuads(tQB, tRenderer, tBlock, aBE.getLevel(), tPos.getX(), tPos.getY(), tPos.getZ()); } catch (Throwable e) {/* render-логика конкретного MTE не должна ронять кадр */}
 		if (!tQB.isEmpty()) aState.mQuads = tQB.quads();
+		// BUG-063: рамка = ФАКТИЧЕСКИ нарисованное этим BE (quads строятся в локальных координатах блока → сдвигаем в мир).
+		float[] tDrawn = tQB.drawnBounds();
+		if (tDrawn != null) aBE.mRenderAABB = new net.minecraft.world.phys.AABB(
+			  tPos.getX() + Math.min(tDrawn[0], 0F), tPos.getY() + Math.min(tDrawn[1], 0F), tPos.getZ() + Math.min(tDrawn[2], 0F)
+			, tPos.getX() + Math.max(tDrawn[3], 1F), tPos.getY() + Math.max(tDrawn[4], 1F), tPos.getZ() + Math.max(tDrawn[5], 1F));
 		@SuppressWarnings("rawtypes") BlockEntityRenderer tSpecial = SPECIAL_RENDERERS.get(aBE.getClass());
 		if (tSpecial != null) try {
 			aState.mSpecialRenderer = tSpecial;
