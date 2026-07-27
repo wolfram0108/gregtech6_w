@@ -538,6 +538,23 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return IL.TC_Block_Air.equal(aBlock) || MD.CARP.owns(aBlock) || getDigSpeed(aStack, aBlock, (byte)0) > 0;
 	}
 
+	/**
+	 * ПРИЗНАЁТ ЛИ ЭТОТ ИНСТРУМЕНТ БЛОК СВОИМ — без учёта уровня и без учёта того, хватит ли сил.
+	 *
+	 * <p>Отличие от {@link #canHarvestBlock}: тот отвечает «добудет ли ПРЯМО СЕЙЧАС» и потому включает порог
+	 * качества ({@code getDigSpeed} возвращает 0 слабому инструменту). Здесь спрашивается только правило самого
+	 * инструмента ({@code IToolStats.isMinableBlock} — то же, чем GT6 решает это в игре): «это вообще по моей
+	 * части?». Ровно это нужно витринам-тултипам, которые обязаны показать значок инструмента независимо от
+	 * того, что игрок держит в руке.
+	 *
+	 * <p>Канал заведён здесь, а не у потребителя: правило принадлежит инструменту, и лазить снаружи в его
+	 * {@code getToolStats(...).isMinableBlock(...)} — обход инкапсуляции. Во всём моде такого обращения нет.
+	 */
+	public final boolean isMinableBlock(ItemStack aStack, Block aBlock, byte aMeta) {
+		IToolStats tStats = getToolStats(aStack);
+		return tStats != null && tStats.isMinableBlock(aBlock, aMeta);
+	}
+
 	public final int getHarvestLevel(ItemStack aStack, String aToolClass) {
 		IToolStats tStats = getToolStats(aStack);
 		if (tStats == null) return -1;

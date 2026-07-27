@@ -192,9 +192,9 @@ public class Compat_Jade implements IWailaPlugin {
 			for (gregapi.code.ItemStackContainer tContainer : ToolsGT.list(aToolType)) {
 				ItemStack tStack = tContainer.toStack();
 				if (tStack == null || tStack.isEmpty()) continue;
-				if (!(tStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool tTool)) continue;
-				gregapi.item.multiitem.tools.IToolStats tStats = tTool.getToolStats(tStack);
-				if (tStats != null && tStats.isMinableBlock(aState.getBlock(), (byte)tMeta)) return true;
+				// спрашиваем САМ ИНСТРУМЕНТ его же методом, а не лезем в его IToolStats снаружи
+				if (tStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool tTool
+				 && tTool.isMinableBlock(tStack, aState.getBlock(), (byte)tMeta)) return true;
 			}
 		} catch (Throwable e) {/* реестр ещё не наполнен либо мира нет */}
 		return false;
@@ -221,7 +221,6 @@ public class Compat_Jade implements IWailaPlugin {
 	public enum GT6HarvestLevelProvider implements IBlockComponentProvider {
 		INSTANCE;
 
-		private static final String LANG_LEVEL = "gt.lang.tooltip.harvest.level";
 		private final Identifier mUID = Identifier.fromNamespaceAndPath(MD.GT.mID, "harvest_level");
 
 		@Override
@@ -234,7 +233,7 @@ public class Compat_Jade implements IWailaPlugin {
 				if (WD.getMaterial(tBlock).isToolNotRequired()) return; // берётся рукой — требования нет, строка была бы шумом
 				int tNeeded = WD.harvestLevel(tWorld, tPos.getX(), tPos.getY(), tPos.getZ());
 				String tName = LH.getHarvestLevelMaterial(tNeeded);
-				aTooltip.add(Component.literal(LH.Chat.DGRAY + LH.get(LANG_LEVEL, "Requires Tier") + ": " + LH.Chat.WHITE
+				aTooltip.add(Component.literal(LH.Chat.DGRAY + LH.get(LH.TOOL_HARVEST_TIER, "Requires Tier") + ": " + LH.Chat.WHITE
 					+ tNeeded + (tName.isEmpty() ? "" : " (" + tName + ")")));
 			} catch (Throwable e) {/* мира/данных ещё нет — строки просто не будет */}
 		}

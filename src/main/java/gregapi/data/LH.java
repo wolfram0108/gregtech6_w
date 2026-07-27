@@ -153,6 +153,10 @@ public class LH {
 	, TOOL_TO_REMOVE_SHOVEL = "gt.lang.use.shovel.to.empty"
 	, TOOL_TO_CHANGE_DESIGN_CHISEL = "gt.lang.use.chisel.to.switch.design"
 	, TOOL_TO_HARVEST = "gt.lang.tool.to.harvest"
+	// Требуемый ТИР добычи отдельной строкой — нужен витрине тултип-модов (Jade): формат оригинала печатает
+	// уровень только начиная с 2 и всегда вместе с названием инструмента, а витрине нужен один лишь тир.
+	// Ключ живёт здесь, как и все остальные строки мода: россыпь строковых литералов по плагинам — не наш путь.
+	, TOOL_HARVEST_TIER = "gt.lang.tooltip.harvest.level"
 	, TOOL_TO_TAKE_PINCERS = "gt.lang.use.pincers.to.take"
 	, TOOL_HINT_USE_SNEAK = "gt.lang.tool.hint.use.sneak"
 	, WEAPON_SNEAK_RIGHTCLICK_TO_RELOAD = "gt.weapon.sneak.rightclick.reload"
