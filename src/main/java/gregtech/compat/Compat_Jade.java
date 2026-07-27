@@ -29,10 +29,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Block;
 
-import net.neoforged.neoforge.event.EventHooks;
 
 import snownee.jade.addon.harvest.HarvestToolProvider;
 import snownee.jade.addon.harvest.ToolHandler;
@@ -43,7 +41,6 @@ import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 import snownee.jade.api.config.IPluginConfig;
-import snownee.jade.api.theme.IThemeHelper;
 
 import gregapi.data.CS;
 import gregapi.data.CS.ToolsGT;
@@ -133,8 +130,16 @@ public class Compat_Jade implements IWailaPlugin {
 
 		@Override
 		public ItemStack test(BlockState aState, Level aWorld, BlockPos aPos) {
-			String tNeeded = harvestToolOf(aState, aWorld, aPos);
-			if (tNeeded == null || !tNeeded.equals(mToolType)) return ItemStack.EMPTY;
+			// ⭐ СПРАШИВАЕМ КАЖДЫЙ ИНСТРУМЕНТ, А НЕ БЛОК. Прежняя редакция сравнивала тип из getHarvestTool блока —
+			// и врала: у блока строка ОДНА, а в GT6 решает каждый инструмент сам своим isMinableBlock. Ключ берёт
+			// поршни, решётки, хопперы и всё, что подходит по его правилу (GT_Tool_Wrench.isMinableBlock:73-81) —
+			// поэтому у бочки, объявляющей «axe», ключ тоже законно работает (проверено в живом оригинале 1.7.10).
+			// Теперь иконок ровно столько, сколько инструментов реально берут блок, и они не зависят от руки.
+			if (!anyToolOfTypeMines(mToolType, aState, aWorld, aPos)) return ItemStack.EMPTY;
+			// ЧУЖОЙ БЛОК — ЧУЖАЯ ВИТРИНА. На не-GT6 блоках вмешиваемся, только если Jade сам ничего не показал:
+			// совок/лопата GT6 формально берут и ванильную траву, но дописывать свои значки в витрину, которую
+			// Jade уже нарисовал, — вторжение в чужую шкалу (поймано позитивным контролем судьи на Grass Block).
+			if (!(aState.getBlock() instanceof gregapi.block.IBlock) && vanillaJadeAlreadyShowed(aState, aWorld, aPos)) return ItemStack.EMPTY;
 			// СПРАШИВАЕМ САМ JADE, а не гадаем по тегу: если его собственный обработчик этого типа уже ответил,
 			// второй такой же значок был бы дублем — молчим. Прежняя проверка «есть ли ванильный тег» была КОПИЕЙ
 			// его политики и на ней же ошиблась: у мелкой руды тег есть, но Jade намеренно пропускает блоки,
@@ -166,6 +171,35 @@ public class Compat_Jade implements IWailaPlugin {
 		public Identifier getUid() {return mUID;}
 	}
 
+	/** Нарисовал ли Jade витрину этого блока СВОИМИ силами. Спрашиваем только ЕГО обработчики (перебрать все
+	 *  нельзя — среди них мы сами, вышла бы рекурсия). */
+	private static boolean vanillaJadeAlreadyShowed(BlockState aState, Level aWorld, BlockPos aPos) {
+		for (java.util.Map.Entry<Identifier, ToolHandler> tE : HarvestToolProvider.TOOL_HANDLERS.entrySet()) {
+			if (tE.getKey().getNamespace().equals(MD.GT.mID)) continue; // наш — пропускаем
+			try {if (!tE.getValue().test(aState, aWorld, aPos).isEmpty()) return true;} catch (Throwable e) {/* чужой упал — не наша беда */}
+		}
+		return false;
+	}
+
+	/**
+	 * Берёт ли блок ХОТЬ ОДИН инструмент этого типа — спрашиваем сами инструменты их же методом
+	 * {@code IToolStats.isMinableBlock}, тем самым, которым GT6 решает это в игре. Источник инструментов —
+	 * реестр {@link ToolsGT#list}, поэтому перечислять вручную нечего: появится новый инструмент — попадёт сюда сам.
+	 */
+	private static boolean anyToolOfTypeMines(String aToolType, BlockState aState, Level aWorld, BlockPos aPos) {
+		try {
+			int tMeta = gregapi.util.WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ());
+			for (gregapi.code.ItemStackContainer tContainer : ToolsGT.list(aToolType)) {
+				ItemStack tStack = tContainer.toStack();
+				if (tStack == null || tStack.isEmpty()) continue;
+				if (!(tStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool tTool)) continue;
+				gregapi.item.multiitem.tools.IToolStats tStats = tTool.getToolStats(tStack);
+				if (tStats != null && tStats.isMinableBlock(aState.getBlock(), (byte)tMeta)) return true;
+			}
+		} catch (Throwable e) {/* реестр ещё не наполнен либо мира нет */}
+		return false;
+	}
+
 	/**
 	 * Какой инструмент нужен блоку — через ЦЕНТР {@code WD.harvestTool}, а не перебором {@code instanceof}:
 	 * центр диспетчеризует по контракту {@code IBlock} и потому знает ВСЕ GT6-иерархии (прежний ручной перебор
@@ -180,54 +214,41 @@ public class Compat_Jade implements IWailaPlugin {
 	}
 
 	/**
-	 * BUG-070 п.2/п.3 — СТРОКА УРОВНЯ ДОБЫЧИ. Показывает то, чего у Jade нет ни для одного мода: какой уровень
-	 * инструмента блок требует (вся шкала GT6 0..15, а не три ванильные ступени) и что на этот счёт даёт
-	 * предмет в руке.
+	 * BUG-070 — СТРОКА ТРЕБУЕМОГО УРОВНЯ. Ровно одна вещь, которой у Jade нет ни для одного мода: какого тира
+	 * инструмент нужен блоку по шкале GT6 0..15, а не по трём ванильным ступеням.
 	 *
-	 * <p><b>Ни одной собственной формулировки.</b> Первая строка — тот же центр {@code LH.getToolTipHarvest},
-	 * которым GT6 рисует эту же справку в тултипе предмета ({@code ItemBlockBase:123}): игрок видит один и тот
-	 * же текст в обоих местах. Величины — существующие центры: {@code WD.harvestTool} (тип),
-	 * {@code WD.harvestLevel(world,x,y,z)} (требуемый уровень В ЭТОЙ ПОЗИЦИИ), {@code WD.toolLevel} (ярус того,
-	 * что в руке). Ни новых сущностей, ни второй копии шкалы.
+	 * <p><b>Что здесь СОЗНАТЕЛЬНО не показывается</b> (по разбору с игроком 2026-07-27):
+	 * <ul>
+	 * <li><b>название инструмента</b> — его несёт ИКОНКА, которую Jade кладёт в строку названия блока
+	 *     ({@code HarvestToolProvider:114} — {@code tooltip.append(0, …)}); текстом это был бы дубль;</li>
+	 * <li><b>значок соответствия</b> — его ставит сам Jade по тому же вердикту, что решает судьбу дропа
+	 *     ({@code CommonProxy:127} → {@code doPlayerHarvestCheck} → наш мост). Свой значок был бы вторым;</li>
+	 * <li><b>ярус того, что в руке, числом</b> — «In Hand: 3» игроку ничего не говорит, а ✔/✕ от Jade говорит;</li>
+	 * <li><b>раскраска строки</b> — раскрашивать по «будет ли дроп» вводило в заблуждение: у мягких блоков дроп
+	 *     есть с чем угодно, включая руку, и зелёный читался как «инструмент подходит».</li>
+	 * </ul>
 	 *
-	 * <p><b>Право судит движок, а не эта строка.</b> Значок ✔/✕ ставится по ответу
-	 * {@code EventHooks.doPlayerHarvestCheck} — то есть по тому же событию, которым игра решает судьбу дропа
-	 * (наш слушатель — {@code GT_API_Proxy.onPlayerHarvestCheckEvent}). Собственного правила здесь нет: витрина
-	 * не имеет права разойтись с механикой.
+	 * <p>Тир печатается СЛОВОМ через центр {@link LH#getHarvestLevelMaterial} — ту же таблицу, которой GT6
+	 * подписывает уровень в тултипе предмета. У блоков, что берутся рукой, строки нет вовсе: требования нет.
 	 */
 	public enum GT6HarvestLevelProvider implements IBlockComponentProvider {
 		INSTANCE;
 
-		private static final String LANG_IN_HAND = "gt.lang.tooltip.harvest.inhand";
-		private static final String LANG_LEVEL   = "gt.lang.tooltip.harvest.level";
+		private static final String LANG_LEVEL = "gt.lang.tooltip.harvest.level";
 		private final Identifier mUID = Identifier.fromNamespaceAndPath(MD.GT.mID, "harvest_level");
 
 		@Override
 		public void appendTooltip(ITooltip aTooltip, BlockAccessor aAccessor, IPluginConfig aConfig) {
-			BlockState tState = aAccessor.getBlockState();
-			Block tBlock = tState.getBlock();
+			Block tBlock = aAccessor.getBlockState().getBlock();
 			if (!(tBlock instanceof gregapi.block.IBlock)) return; // чужие блоки не наше дело: их шкала ванильная
 			Level tWorld = aAccessor.getLevel();
 			BlockPos tPos = aAccessor.getPosition();
 			try {
-				int tMeta = WD.meta(tWorld, tPos.getX(), tPos.getY(), tPos.getZ());
-				String tTool = WD.harvestTool(tBlock, tMeta);
+				if (WD.getMaterial(tBlock).isToolNotRequired()) return; // берётся рукой — требования нет, строка была бы шумом
 				int tNeeded = WD.harvestLevel(tWorld, tPos.getX(), tPos.getY(), tPos.getZ());
-				aTooltip.add(Component.literal(LH.getToolTipHarvest(WD.getMaterial(tBlock), tTool, tNeeded)));
-
-				// «что в руке» — только там, где инструмент вообще требуется (иначе строка ни о чём: копается рукой)
-				if (WD.getMaterial(tBlock).isToolNotRequired()) return;
-				Player tPlayer = aAccessor.getPlayer();
-				if (tPlayer == null) return;
-				int tHave = WD.toolLevel(tPlayer.getMainHandItem(), tTool);
-				boolean tCan = EventHooks.doPlayerHarvestCheck(tPlayer, tState, tWorld, tPos);
-				// ЧИСЛО ТРЕБУЕМОГО УРОВНЯ — здесь, а не в строке выше: оригинальный формат GT6 печатает его только
-				// при уровне > 1 (LH.getToolTipHarvest:281 — ветка switch недостижима для 0/1, так и в 1.7.10).
-				// Формат оригинала не трогаем (переносим механизм, не улучшаем), а недостающее число даём своей строкой.
-				String tText = LH.get(LANG_LEVEL, "Level") + ": " + tNeeded + " · " + LH.get(LANG_IN_HAND, "In Hand")
-					+ ": " + (tHave < 0 ? "-" : String.valueOf(tHave)) + " " + (tCan ? "✔" : "✘");
-				IThemeHelper tTheme = IThemeHelper.get();
-				aTooltip.add(tCan ? tTheme.success(tText) : tTheme.danger(tText));
+				String tName = LH.getHarvestLevelMaterial(tNeeded);
+				aTooltip.add(Component.literal(LH.Chat.DGRAY + LH.get(LANG_LEVEL, "Requires Tier") + ": " + LH.Chat.WHITE
+					+ tNeeded + (tName.isEmpty() ? "" : " (" + tName + ")")));
 			} catch (Throwable e) {/* мира/данных ещё нет — строки просто не будет */}
 		}
 

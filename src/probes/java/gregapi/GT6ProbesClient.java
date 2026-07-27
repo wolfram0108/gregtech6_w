@@ -420,15 +420,24 @@ public final class GT6ProbesClient {
 				boolean tNeedsTool = true;
 				try {tNeedsTool = !gregapi.util.WD.getMaterial(tBlock).isToolNotRequired();} catch (Throwable e) {/* считаем, что требуется */}
 				if (tNeedsTool && tAnswered.isEmpty()) tWhy.add("П1: инструмент не показан НИКЕМ — тултип останется пустым");
-				// П2/П3 ПО ФАКТУ: в собранном тултипе обязана быть наша строка с требуемым уровнем и тем, что в руке.
-				// Это то, что игрок видит глазами, — и в отличие от значка Jade наша строка не гаснет в креативе
-				// (гейт HarvestToolProvider:82 закрывает от креатива только ЕГО собственную витрину).
-				if (tNeedsTool && !tLine.contains(String.valueOf(tClientLevel))) tWhy.add("П2: в тултипе нет требуемого уровня " + tClientLevel + " · собрано: «" + tLine + "»");
-				if (tNeedsTool && !tLine.contains("✔") && !tLine.contains("✘")) tWhy.add("П3: в тултипе нет признака соответствия (✔/✘) · собрано: «" + tLine + "»");
-				// ДУБЛЬ — это когда значок нарисуют ДВАЖДЫ, то есть ответили и Jade, и мы. Судить по наличию тега
-				// нельзя: тег есть и у блоков, которые Jade намеренно пропускает (мгновенно ломающиеся), — там наш
-				// ответ единственный и правильный. Прежняя формулировка судила признак вместо следствия.
-				if (tOurs && tVanillaAnswered) tWhy.add("П1: ответили и Jade, и мы — значок инструмента задвоится: " + tAnswered);
+				// П2 ПО ФАКТУ: в собранном тултипе обязан быть требуемый тир. Это то, что игрок видит глазами,
+				// и в отличие от значка Jade наша строка не гаснет в креативе (гейт HarvestToolProvider:82
+				// закрывает от креатива только ЕГО собственную витрину).
+				if (tNeedsTool && !tLine.contains(String.valueOf(tClientLevel))) tWhy.add("П2: в тултипе нет требуемого тира " + tClientLevel + " · собрано: «" + tLine + "»");
+				// П3 — НЕ наша строка: значок соответствия ставит сам Jade по вердикту движка. Наша задача обратная —
+				// НЕ дублировать его. Поэтому судим отсутствие: своего ✔/✘ и своего «In Hand» в тултипе быть не должно.
+				if (tLine.contains("In Hand")) tWhy.add("П3: вернулся убранный «In Hand» — дубль витрины Jade · собрано: «" + tLine + "»");
+				// ДУБЛЬ — это ОДИН И ТОТ ЖЕ инструмент, показанный дважды, а не «Jade и мы ответили вместе».
+				// Разные типы — это не дубль, а заказ игрока: «иконка инструмента всегда, всех подходящих».
+				// У мрамора законно отвечают кирка (Jade), молот и зубило (наши) — все трое его реально берут.
+				// Сравниваем ТИПЫ: наш UID — «tool/<тип>», у Jade — просто «<тип>».
+				java.util.List<String> tDup = new java.util.ArrayList<>();
+				for (String tA : tAnswered) {
+					if (!tA.startsWith("gregtech")) continue;
+					String tType = tA.substring(tA.lastIndexOf('/') + 1);
+					for (String tB : tAnswered) if (!tB.startsWith("gregtech") && tB.endsWith(":" + tType)) tDup.add(tType);
+				}
+				if (!tDup.isEmpty()) tWhy.add("П1: один и тот же инструмент показан дважды: " + tDup + " · ответили " + tAnswered);
 				if (tServerLvl >= 0 && tClientLevel != tServerLvl) tWhy.add("П2: уровень на клиенте " + tClientLevel + " != серверного " + tServerLvl + " — витрина врёт");
 				if (tClientLevel < 0) tWhy.add("П2: уровень не вычислен");
 				// П3 судится ТОЛЬКО когда в руке предмет нужного класса (tHeldLevel >= 0). При чужом классе правило

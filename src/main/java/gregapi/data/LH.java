@@ -271,6 +271,26 @@ public class LH {
 	
 	public static final String getToolTipBlastResistance(Block aBlock, double aResistance) {return Chat.WHITE + get(LH.TOOLTIP_BLASTRESISTANCE) + Chat.ORANGE + ((int)aResistance) + "." + (((int)(aResistance * 10)) % 10) + (aResistance < 4 ? Chat.BLINKING_RED + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_TERRIBLE) : aResistance < 12 ? Chat.RED + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_GHAST) : aResistance < 16 ? Chat.YELLOW + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_CREEPER) : aResistance <= 40 ? Chat.GREEN + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_TNT) : aResistance < 3330 || COMPAT_IC2 == null || COMPAT_IC2.isExplosionWhitelisted(aBlock) ? Chat.GREEN + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_DYNAMITE) : Chat.BLINKING_CYAN + " " + get(LH.TOOLTIP_BLAST_RESISTANCE_NOT_NUKE));}
 	
+	/**
+	 * Материал-ЭТАЛОН требуемого уровня добычи, локализованный: 1=камень, 2=железо, 3=алмаз, 4=незерит,
+	 * 5=адамантий, 6..14 — имени нет, 15+ — бесконечность. Пустая строка = имени для этого уровня не предусмотрено.
+	 *
+	 * <p>Таблица эта — не новая: она дословно та же, что внутри {@link #getToolTipHarvest} (ветки {@code case 1..5}
+	 * и {@code default}). Вынесена сюда, чтобы у интеграции с тултип-модами (витрина уровня добычи в Jade) НЕ
+	 * появилась вторая копия — числа 0..15 игроку ничего не говорят, а «Нетеритовый» говорит. Второй копии этой
+	 * таблицы в дереве быть не должно.
+	 */
+	public static final String getHarvestLevelMaterial(int aHarvestLevel) {
+		switch (aHarvestLevel) {
+		case  1: return MT.Stone.getLocal();
+		case  2: return MT.Fe.getLocal();
+		case  3: return MT.Diamond.getLocal();
+		case  4: return MT.Netherite.getLocal();
+		case  5: return MT.Ad.getLocal();
+		default: return aHarvestLevel > 14 ? MT.Infinity.getLocal() : "";
+		}
+	}
+
 	public static final String getToolTipHarvest(Material aMaterial, String aHarvestTool, int aHarvestLevel) {
 		if (aMaterial.isAdventureModeExempt()) {
 			if (UT.Code.stringValid(aHarvestTool))
