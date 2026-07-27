@@ -537,6 +537,18 @@ public class WD {
 		// несут собственный Material (water/lava/gas/материал). Без этой ветки getMaterial возвращал fallback (rock) →
 		// isLiquid()=false → декор-guard'ы worldgen (rocks/lily/stone-layers `!isLiquid()`) садили декор на воду.
 		if (aBlock instanceof gregapi.block.fluid.BlockFluidBaseGT) return ((gregapi.block.fluid.BlockFluidBaseGT)aBlock).getMaterial();
+		// РЕПОРТ ИГРОКА («батарейный бокс/бочку/тигель ломаю киркой, и они выпадают»): у GT6 материал блока —
+		// не украшение, а ДЕЙСТВУЮЩЕЕ правило. Инструменты решают «мой ли это блок» именно по нему:
+		// GT_Tool_Pickaxe.isMinableBlock = `harvestTool==pickaxe ИЛИ материал rock/iron/anvil/glass/ice` (1:1 с
+		// оригиналом :55). Эти три иерархии несут СВОЙ Material, но не наследуют BlockBase (машины — Block,
+		// цветы — FlowerBlock, рельсы — BaseRailBlock), поэтому проваливались в разбор ванильных блоков и
+		// получали fallback `rock` (последняя строка метода) — то есть КИРКА СЧИТАЛА МАШИНУ КАМНЕМ и законно её
+		// добывала, хотя блок объявляет инструментом гаечный ключ. Замер до фикса (проба gt6harvestprobe, блок
+		// machine.stone.wrench): GT6-кирка isCorrectToolForDrops=true, скорость 2.0. В 1.7.10 такого не было —
+		// там `aBlock.getMaterial()` был методом самого блока и возвращал MaterialMachines.
+		if (aBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock) return ((gregapi.block.multitileentity.MultiTileEntityBlock)aBlock).getMaterial();
+		if (aBlock instanceof gregapi.block.misc.BlockBaseFlower) return ((gregapi.block.misc.BlockBaseFlower)aBlock).getMaterial();
+		if (aBlock instanceof gregapi.block.misc.BlockBaseRail) return ((gregapi.block.misc.BlockBaseRail)aBlock).getMaterial();
 		net.minecraft.world.level.block.state.BlockState tState = aBlock.defaultBlockState();
 		if (tState.isAir())                                                                                      return gregapi.block.Material.air;
 		if (aBlock == Blocks.WATER || aBlock == Blocks.BUBBLE_COLUMN)                                            return gregapi.block.Material.water;

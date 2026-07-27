@@ -234,6 +234,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
 	// [GT6-JADEPROBE] стенд «MODCOMPAT-001: инструменты GT6 в тултипе Jade» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6jadeprobe.flag")) gt6JadeProbeTick(aEvent.getServer());
+	// [GT6-HARVESTPROBE] «чем добывается машина» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6harvestprobe.flag")) gt6HarvestProbeTick(aEvent.getServer());
 	// [GT6-DEMO] демо-площадка приёмки игроком (не судья — строит мир) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6demo.flag")) gt6DemoTick(aEvent.getServer());
 	}
@@ -6740,6 +6742,49 @@ public final class GT6Probes {
 	}
 
 	/** Тик 400: принимаем вердикт клиента и судим. */
+	// ========== [GT6-HARVESTPROBE] «GT6-киркой ломается батарейный бокс и ВЫПАДАЕТ» — снять при уборке фазы ==========
+	// Инвентаризация фактов, не судья: печатаем ровно те значения, из которых движок решает право на дроп, и
+	// сверяем их с правилом САМОЙ GT6-кирки (GT_Tool_Pickaxe.isMinableBlock: harvestTool==pickaxe ИЛИ материал
+	// rock/iron/anvil/glass/ice — правило 1:1 из оригинала).
+	public static void gt6HarvestProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sHarvestProbeDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (aServer.getTickCount() < 200) return;
+		sHarvestProbeDone = true;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = tPlayer.level();
+		O.println("========== [GT6-HARVESTPROBE] чем и почему добывается машина ==========");
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		BlockPos tAnchor = tPlayer.blockPosition().offset(3, 0, 3);
+		BlockEntity tBE = gregapi.probe.GT6ProbeStand.place(tLevel, tPlayer, tAnchor, net.minecraft.core.Direction.UP, tReg.getItem(10080), BlockEntity.class, "GT6-HARVESTPROBE", "батарейный бокс");
+		if (tBE == null) {O.println("[GT6-HARVESTPROBE] бокс не встал — замер невозможен"); return;}
+		BlockPos tPos = tBE.getBlockPos();
+		net.minecraft.world.level.block.state.BlockState tState = tLevel.getBlockState(tPos);
+		net.minecraft.world.level.block.Block tBlock = tState.getBlock();
+		int tMeta = gregapi.util.WD.meta(tLevel, tPos.getX(), tPos.getY(), tPos.getZ());
+		O.println("[GT6-HARVESTPROBE] блок=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock)
+			+ " мета=" + tMeta
+			+ " harvestTool=" + gregapi.util.WD.harvestTool(tBlock, tMeta)
+			+ " harvestLevel=" + gregapi.util.WD.harvestLevel(tBlock, tMeta)
+			+ " материал=" + gregapi.util.WD.getMaterial(tBlock) + " (тот же центр, что читает правило GT6-кирки)"
+			+ " requiresCorrectToolForDrops=" + tState.requiresCorrectToolForDrops());
+		// перебираем ИНСТРУМЕНТЫ GT6 и смотрим, что о них думает движок на этом блоке
+		for (String tType : new String[]{gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_wrench}) {
+			for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(tType)) {
+				net.minecraft.world.item.ItemStack tTool = tC.toStack();
+				if (tTool == null || tTool.isEmpty()) continue;
+				tPlayer.getInventory().setItem(0, tTool); tPlayer.getInventory().setSelectedSlot(0);
+				O.println("[GT6-HARVESTPROBE] " + tType + " (" + tTool.getHoverName().getString() + "): isCorrectToolForDrops=" + tTool.isCorrectToolForDrops(tState)
+					+ " destroySpeed=" + tTool.getDestroySpeed(tState)
+					+ " hasCorrectToolForDrops(игрок)=" + tPlayer.hasCorrectToolForDrops(tState)
+					+ " canHarvestBlock(блок)=" + tState.canHarvestBlock(tLevel, tPos, tPlayer));
+				break; // первого экземпляра типа достаточно
+			}
+		}
+		O.println("========== [GT6-HARVESTPROBE] DONE ==========");
+	}
+	private static boolean sHarvestProbeDone = false;
+
 	private static void gt6UVProbeVerdict() {
 		String tVerdict = sUVPClientVerdict;
 		sUVPSeq.judge("клиент отдал вердикт (иначе замер не состоялся)", tVerdict != null, "не null", String.valueOf(tVerdict));
