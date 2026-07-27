@@ -474,6 +474,11 @@ public class GT_API extends Abstract_Mod {
 		// подписки (decisions/F5-fluids.md §3, gregapi/fluid/FluidGT.java; закрывает прежний долг F12↔F5 wiring).
 		gregapi.fluid.FluidGT.FLUID_TYPES.register(aModBus);
 		gregapi.fluid.FluidGT.FLUIDS.register(aModBus);
+		// F5-capability (MODCOMPAT-001 П2): регистрация Capabilities.Fluid.BLOCK для ВСЕЙ GT6-TE-иерархии —
+		// возврат стандартного канала, который в 1.7.10 давал `implements IFluidHandler` на самих TE
+		// (gregapi/fluid/GT6FluidCapability.java). Без неё танки GT6 снаружи не существуют: ни чужие насосы/
+		// трубы, ни тултип-моды их не видят.
+		gregapi.fluid.GT6FluidCapability.register(aModBus);
 		// F-attachment: центральный DeferredRegister Entity-attachment-типов (EntityFoodTracker) — тот же
 		// мод-бас, единая точка подписки (gregapi/player/EntityFoodTracker.java; замена 1.7.10
 		// IExtendedEntityProperties, ни один другой файл эту регистрацию не дублирует).

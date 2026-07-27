@@ -749,7 +749,15 @@ public abstract class TileEntityBase01Root extends BlockEntity implements ITileE
 	protected IFluidTank getFluidTankFillable(byte aSide, FluidStack aFluidToFill) {return null;}
 	protected IFluidTank getFluidTankDrainable(byte aSide, FluidStack aFluidToDrain) {return null;}
 	protected IFluidTank[] getFluidTanks(byte aSide) {return ZL_FT;}
-	
+
+	/** MODCOMPAT-001 П2 (F5-capability): те же side-aware танки, что видит внутренний тракт, — наружу, для
+	 *  регистрации {@code Capabilities.Fluid.BLOCK} ({@link gregapi.fluid.GT6FluidCapability}). Отдельный
+	 *  публичный вход, потому что {@link #getFluidTanks(byte)} protected и переопределяется наследниками
+	 *  (в т.ч. ковер-оверрайдом {@code TileEntityBase06Covers:375}) — капа обязана видеть ровно результат
+	 *  этой цепочки, а не свою копию правил. {@code null} = sideless-запрос = {@code SIDE_ANY}, родная
+	 *  GT6-конвенция (та же, что у унаследованных neo-мостов ниже). */
+	public final IFluidTank[] getFluidTanksForCapability(Direction aDirection) {return getFluidTanks(UT.Code.side(aDirection));}
+
 	public int fill(Direction aDirection, FluidStack aFluid, boolean aDoFill) {
 		if (aFluid == null || aFluid.getAmount() <= 0) return 0;
 		IFluidTank tTank = getFluidTankFillable(UT.Code.side(aDirection), aFluid);

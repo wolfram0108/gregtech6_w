@@ -228,6 +228,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6uvprobe.flag")) gt6UVProbeTick(aEvent.getServer());
 	// [GT6-MAPCOLORPROBE] стенд «MODCOMPAT-002: блоки GT6 невидимы на карте» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6mapcolorprobe.flag")) gt6MapColorProbeTick(aEvent.getServer());
+	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6249,6 +6251,101 @@ public final class GT6Probes {
 		if (!tOkay) return;
 		sUVPTargetPos = sUVPCrucible.getBlockPos();
 		O.println("[" + UVP_M + "] замер передан клиенту: цель " + sUVPTargetPos + " (модель+квады живут только на клиенте)");
+	}
+
+	// ========== [GT6-FLUIDCAPPROBE] MODCOMPAT-001 П2 «жидкость GT6 не видна снаружи» — снять при уборке фазы ==========
+	// В 1.7.10 танки GT6 торчали наружу через СТАНДАРТНЫЙ Forge `implements IFluidHandler` на самих TE — любой
+	// чужой насос/труба/тултип-мод читал их без единой строчки про GT6. В neo интерфейс на BlockEntity сам по себе
+	// не значит ничего: снаружи видно только ЗАРЕГИСТРИРОВАННУЮ capability, а регистрации в порте не было (grep по
+	// RegisterCapabilitiesEvent = 0). Судья спрашивает капу ТЕМ ЖЕ вызовом, что и чужой мод —
+	// `level.getCapability(Capabilities.Fluid.BLOCK, pos, side)` — и проверяет не «поля совпали», а что через капу
+	// РЕАЛЬНО видно содержимое и что через неё можно налить и слить.
+	private static final String FCP_M = "GT6-FLUIDCAPPROBE";
+	private static final int FCP_BARREL_ID = 32102; // Bronze Drum — тот же ID, что у FLUIDPIPEPROBE (Loader_MultiTileEntities:2155)
+	private static int sFCPTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sFCPSeq;
+
+	public static void gt6FluidCapProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sFCPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sFCPSeq == null) sFCPSeq = new gregapi.probe.GT6ProbeStand.Seq(FCP_M).at(200, () -> gt6FluidCapProbeRun(tPlayer));
+		sFCPSeq.tick(sFCPTick);
+	}
+
+	private static void gt6FluidCapProbeRun(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + FCP_M + "] MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity ==========");
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tBase = aPlayer.blockPosition().offset(4, 0, 4);
+		for (int x = -1; x <= 2; x++) for (int y = -1; y <= 2; y++) for (int z = -1; z <= 2; z++)
+			tLevel.setBlock(tBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		BlockEntity tBE = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tBase.below(), net.minecraft.core.Direction.UP,
+			tReg.getItem(FCP_BARREL_ID), BlockEntity.class, FCP_M, "бочка");
+		sFCPSeq.judge("бочка встала (иначе судить нечего)", tBE instanceof gregapi.tileentity.base.TileEntityBase01Root, "TileEntityBase01Root", tBE == null ? "null" : tBE.getClass().getSimpleName());
+		if (!(tBE instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot)) {sFCPSeq.done(); return;}
+		BlockPos tPos = tBE.getBlockPos();
+
+		// Наливаем ВНУТРЕННИМ путём GT6 (реальный tract), чтобы дальше проверить, видно ли это СНАРУЖИ.
+		net.neoforged.neoforge.fluids.FluidStack tWater = gregapi.data.FL.Water.make(3000);
+		int tFilled = tRoot.fill((net.minecraft.core.Direction)null, tWater, T);
+		sFCPSeq.judge("внутренний тракт налил воду в бочку (предпосылка замера)", tFilled > 0, "> 0", tFilled);
+
+		// ── ГЛАВНОЕ: спрашиваем капу ТАК ЖЕ, как чужой мод ────────────────────────────────────────────────
+		net.neoforged.neoforge.transfer.ResourceHandler<net.neoforged.neoforge.transfer.fluid.FluidResource> tCap =
+			tLevel.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Fluid.BLOCK, tPos, net.minecraft.core.Direction.UP);
+		if (tCap == null) { // диагностика ровно тех трёх причин, по которым капа может не отдаться
+			net.minecraft.world.level.block.entity.BlockEntityType<?> tType = tBE.getType();
+			net.neoforged.neoforge.fluids.IFluidTank[] tTanks = tRoot.getFluidTanksForCapability(null);
+			O.println("[" + FCP_M + "] DIAG: тип BE=" + tType + " MTE_TYPE=" + gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE
+				+ " совпадают=" + (tType == gregapi.tileentity.base.TileEntityBase01Root.MTE_TYPE)
+				+ "; танков со стороны=" + (tTanks == null ? "null" : tTanks.length)
+				+ (tTanks != null && tTanks.length > 0 ? " класс[0]=" + tTanks[0].getClass().getSimpleName() : ""));
+		}
+		sFCPSeq.judge("КАПА ЖИДКОСТЕЙ ОТДАЁТСЯ снаружи (MODCOMPAT-001 П2)", tCap != null, "не null", tCap == null ? "null — блок снаружи «без танков»" : tCap.getClass().getSimpleName());
+		if (tCap == null) {sFCPSeq.done(); return;}
+
+		sFCPSeq.judge("капа показывает хотя бы один танк", tCap.size() > 0, "> 0", tCap.size());
+		long tSeen = 0; String tSeenFluid = "<нет>";
+		for (int i = 0; i < tCap.size(); i++) if (!tCap.getResource(i).isEmpty()) {tSeen += tCap.getAmountAsLong(i); tSeenFluid = String.valueOf(tCap.getResource(i).getFluid());}
+		sFCPSeq.judge("через капу ВИДНО налитое (объём совпал с внутренним)", tSeen == tFilled, tFilled, tSeen + " (" + tSeenFluid + ")");
+
+		// Извлечение через капу — путь чужого насоса: транзакция + commit.
+		long tBefore = tSeen;
+		int tExtracted;
+		try (net.neoforged.neoforge.transfer.transaction.Transaction tTx = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+			tExtracted = tCap.extract(net.neoforged.neoforge.transfer.fluid.FluidResource.of(tWater), 1000, tTx);
+			tTx.commit();
+		}
+		long tAfterInside = gt6FluidCapProbeInsideAmount(tRoot);
+		sFCPSeq.judge("через капу можно СЛИТЬ (чужой насос)", tExtracted == 1000, 1000, tExtracted);
+		sFCPSeq.judge("слив через капу дошёл до ВНУТРЕННЕГО танка (не фантом)", tAfterInside == tBefore - 1000, tBefore - 1000, tAfterInside);
+
+		// Наполнение через капу — путь чужой трубы.
+		int tInserted;
+		try (net.neoforged.neoforge.transfer.transaction.Transaction tTx = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+			tInserted = tCap.insert(net.neoforged.neoforge.transfer.fluid.FluidResource.of(tWater), 500, tTx);
+			tTx.commit();
+		}
+		sFCPSeq.judge("через капу можно НАЛИТЬ (чужая труба)", tInserted == 500, 500, tInserted);
+		sFCPSeq.judge("налив через капу дошёл до ВНУТРЕННЕГО танка", gt6FluidCapProbeInsideAmount(tRoot) == tAfterInside + 500, tAfterInside + 500, gt6FluidCapProbeInsideAmount(tRoot));
+
+		// NEGATIVE-CONTROL: у блока без танков капы быть не должно — иначе судья «видит» её везде.
+		BlockPos tStonePos = tBase.offset(2, 0, 2);
+		tLevel.setBlock(tStonePos, Blocks.STONE.defaultBlockState(), 3);
+		Object tNone = tLevel.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Fluid.BLOCK, tStonePos, net.minecraft.core.Direction.UP);
+		sFCPSeq.judge("NEGATIVE-CONTROL: у ванильного камня капы НЕТ", tNone == null, "null", String.valueOf(tNone));
+		sFCPSeq.done();
+	}
+
+	/** Сколько реально лежит во внутреннем танке (тот же side-aware путь, что видит сам GT6). */
+	private static long gt6FluidCapProbeInsideAmount(gregapi.tileentity.base.TileEntityBase01Root aRoot) {
+		long rSum = 0;
+		net.neoforged.neoforge.fluids.IFluidTank[] tTanks = aRoot.getFluidTanksForCapability(null);
+		if (tTanks != null) for (net.neoforged.neoforge.fluids.IFluidTank tTank : tTanks) if (tTank != null && tTank.getFluid() != null) rSum += tTank.getFluid().getAmount();
+		return rSum;
 	}
 
 	// ========== [GT6-MAPCOLORPROBE] MODCOMPAT-002 «блоки GT6 невидимы на карте» (Ф4) — снять при уборке фазы ==========
