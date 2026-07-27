@@ -186,6 +186,8 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 		// МАТЕРИАЛ (1.7.10 EntityPlayer.canHarvestBlock → Material.isToolNotRequired), не строка инструмента: руды на
 		// Material.rock (требует) → только кирка; мягкие prefix-блоки (материалы без setRequiresTool) — рука дропает /30.
 		if (aTool != null && !aTool.isEmpty() && aVanillaMaterial != null && !aVanillaMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
+		// MODCOMPAT-002: цвет на карте — тот же 1.7.10-дефолт «из материала», см. BlockBase.mapColorOf.
+		p = gregapi.block.BlockBase.mapColorOf(p, aVanillaMaterial);
 		return p;
 	}
 	public PrefixBlock(String aModIDOwner, String aModIDTextures, String aNameInternal, OreDictPrefix aPrefix, OreDictMaterialStack aHullMaterial, Class<? extends PrefixBlockItem> aItemClass, Drops aDrops, ITexture aTexture, Material aVanillaMaterial, SoundType aSoundType, String aTool, float aBaseHardness, float aBaseResistance, int aHarvestLevelOffset, int aHarvestLevelMinimum, int aHarvestLevelMaximum, double aMinX, double aMinY, double aMinZ, double aMaxX, double aMaxY, double aMaxZ, boolean aGravity, boolean aBeaconBase, boolean aEnderDragonProof, boolean aWitherProof, boolean aOpaque, boolean aNormalCube, boolean aPlacementChecksTemperature, boolean aPlacementChecksAntimatter, boolean aCanBurn, boolean aCanExplode, boolean aRenderOverlayInWorld, boolean aCanGlow, boolean aCanLight, boolean aSpawnProof, OreDictMaterial... aMaterialList) {

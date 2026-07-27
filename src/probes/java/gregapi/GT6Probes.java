@@ -226,6 +226,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6containerprobe.flag")) gt6ContainerProbeTick(aEvent.getServer());
 	// [GT6-UVPROBE] стенд «BUG-061: UV за границами спрайта при render-bounds вне куба» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6uvprobe.flag")) gt6UVProbeTick(aEvent.getServer());
+	// [GT6-MAPCOLORPROBE] стенд «MODCOMPAT-002: блоки GT6 невидимы на карте» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6mapcolorprobe.flag")) gt6MapColorProbeTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6247,6 +6249,76 @@ public final class GT6Probes {
 		if (!tOkay) return;
 		sUVPTargetPos = sUVPCrucible.getBlockPos();
 		O.println("[" + UVP_M + "] замер передан клиенту: цель " + sUVPTargetPos + " (модель+квады живут только на клиенте)");
+	}
+
+	// ========== [GT6-MAPCOLORPROBE] MODCOMPAT-002 «блоки GT6 невидимы на карте» (Ф4) — снять при уборке фазы ==========
+	// В 1.7.10 цвет блока на карте приходил САМ: ванильный Block.getMapColor(meta) = getMaterial().getMaterialMapColor()
+	// (`recompSrc/net/minecraft/block/Block.java:232-235`), и GT6 его нигде не переопределял, кроме MultiTileEntityBlock:155.
+	// В neo дефолт другой — MapColor.NONE (`BlockBehaviour.java:970`), то есть «пропустить блок»: руды/камни/растения и
+	// ВСЕ жидкости GT6 исчезали и с ванильной карты, и с миникарт.
+	// Судья идёт по РЕАЛЬНОМУ реестру и спрашивает РЕАЛЬНЫЙ движковый метод getMapColor(state, level, pos) — тот самый,
+	// что зовёт картограф. Контроль: ванильный камень обязан иметь цвет (иначе судья меряет не то), воздух обязан НЕ иметь.
+	private static final String MCP_M = "GT6-MAPCOLORPROBE";
+	private static int sMCPTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sMCPSeq;
+
+	public static void gt6MapColorProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sMCPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sMCPSeq == null) sMCPSeq = new gregapi.probe.GT6ProbeStand.Seq(MCP_M).at(200, () -> gt6MapColorProbeScan(tPlayer));
+		sMCPSeq.tick(sMCPTick);
+	}
+
+	private static void gt6MapColorProbeScan(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + MCP_M + "] MODCOMPAT-002: цвет блоков GT6 на карте ==========");
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tPos = aPlayer.blockPosition();
+		int tTotal = 0, tNone = 0, tFluids = 0, tFluidsNone = 0, tOres = 0, tOresNone = 0, tNoneLegit = 0;
+		java.util.List<String> tBad = new java.util.ArrayList<>();
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			boolean tIsNone;
+			try {
+				tIsNone = tBlock.defaultBlockState().getMapColor(tLevel, tPos) == net.minecraft.world.level.material.MapColor.NONE;
+			} catch (Throwable e) {continue;}
+			tTotal++;
+			if (tIsNone) {
+				tNone++;
+				// «Нет цвета» законно ровно тогда, когда 1.7.10-материал блока сам нёс airColor (индекс 0 = NONE):
+				// так было у Material.glass (`Material.java:33`) и Material.circuits (`:31`) — стекло и рельсы GT6
+				// и в ОРИГИНАЛЕ на карте не рисовались. Судим по факту оригинала, а не по ожиданию «всё должно иметь цвет».
+				// Материал спрашиваем ПУБЛИЧНЫМ getMaterial() — он есть у всех GT6-иерархий (BlockBase:… ,
+				// BlockBaseRail:81, MultiTileEntityBlock:116), в отличие от protected-поля. Иначе рельсы и базовый
+				// MTE ложно попадали в «незаконные» просто потому, что судья не смог прочитать их материал.
+				gregapi.block.Material tMat = null;
+				try {
+					Object tRaw = tBlock.getClass().getMethod("getMaterial").invoke(tBlock);
+					if (tRaw instanceof gregapi.block.Material tM) tMat = tM;
+				} catch (Throwable e) {/* не GT6-иерархия либо метода нет — останется null = «не доказано» */}
+				boolean tLegit = tMat != null && tMat.getMaterialMapColor() == gregapi.block.MapColor.airColor;
+				if (tLegit) tNoneLegit++; else if (tBad.size() < 12) tBad.add(tID.toString());
+			}
+			if (tBlock instanceof gregapi.block.fluid.BlockBaseFluid) {tFluids++; if (tIsNone) tFluidsNone++;}
+			if (tBlock instanceof gregapi.block.prefixblock.PrefixBlock) {tOres++; if (tIsNone) tOresNone++;}
+		}
+		O.println("[" + MCP_M + "] блоков GT6 в реестре: " + tTotal + " (жидкостей " + tFluids + ", prefix-блоков " + tOres + ")");
+		O.println("[" + MCP_M + "] без цвета: " + tNone + ", из них ЗАКОННО (материал 1.7.10 сам нёс airColor): " + tNoneLegit + ", НЕзаконно: " + (tNone - tNoneLegit));
+		if (!tBad.isEmpty()) O.println("[" + MCP_M + "] незаконные (первые): " + String.join(", ", tBad));
+
+		// Контроль ДО судейства: судья обязан уметь различать «есть цвет» и «нет цвета».
+		boolean tStoneOk = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState().getMapColor(tLevel, tPos) != net.minecraft.world.level.material.MapColor.NONE;
+		boolean tAirNone = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState().getMapColor(tLevel, tPos) == net.minecraft.world.level.material.MapColor.NONE;
+		sMCPSeq.judge("POSITIVE-CONTROL: ванильный камень ИМЕЕТ цвет карты", tStoneOk, true, tStoneOk);
+		sMCPSeq.judge("NEGATIVE-CONTROL: воздух НЕ имеет цвета карты", tAirNone, true, tAirNone);
+		sMCPSeq.judge("реестр GT6 не пуст (иначе замер бессмыслен)", tTotal > 100, "> 100", tTotal);
+
+		sMCPSeq.judge("ЖИДКОСТИ GT6: все имеют цвет на карте (MODCOMPAT-002)", tFluids > 0 && tFluidsNone == 0, "0 без цвета из " + tFluids, tFluidsNone);
+		sMCPSeq.judge("PREFIX-БЛОКИ (руды/породы): все имеют цвет", tOres > 0 && tOresNone == 0, "0 без цвета из " + tOres, tOresNone);
+		sMCPSeq.judge("ВСЕ блоки GT6: каждый бесцветный БЫЛ бесцветен и в 1.7.10 (материал с airColor)", tNone == tNoneLegit, "0 незаконных", (tNone - tNoneLegit) + " из " + tNone + " бесцветных");
+		sMCPSeq.done();
 	}
 
 	/** Тик 400: принимаем вердикт клиента и судим. */

@@ -91,7 +91,10 @@ public abstract class BlockBaseFlower extends FlowerBlock implements IBlockBase,
 		// коллизии и isOpaqueCube=false; neo-эквивалент — Properties.noCollision() (hasCollision=false И canOcclude=false,
 		// BlockBehaviour:1078-1082, так собран vanilla DANDELION). Без него canOcclude=true → occlusion-форма непуста →
 		// faceShapeOccludes с полной верхней гранью травы = «свет заблокирован» → SpreadingSnowyDirtBlock убивал траву.
-		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().sound(net.minecraft.world.level.block.SoundType.GRASS).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))));
+		// MODCOMPAT-002: цвет на карте. 1.7.10 BlockFlower наследовал Material.plants (BlockFlower.java:26), а тот
+		// несёт foliageColor — то есть цветы на карте были цвета листвы. В neo дефолт «нет цвета», задаём явно тем
+		// же мостом и из того же материала, что остальные иерархии (см. BlockBase.mapColorOf).
+		super(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY, gregapi.block.BlockBase.mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().noCollision().sound(net.minecraft.world.level.block.SoundType.GRASS).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal)))), gregapi.block.Material.plants));
 		registerDefaultState(getStateDefinition().any().setValue(META, 0)); // F3-render/meta: дефолт META=0
 		mMaxMeta = (byte)(UT.Code.bind4(aMaxMeta-1)+1);
 		mIcons = aIcons;

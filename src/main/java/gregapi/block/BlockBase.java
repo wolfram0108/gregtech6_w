@@ -149,7 +149,24 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	private static net.minecraft.world.level.block.state.BlockBehaviour.Properties mkProps(String aNameInternal, Material aMaterial, SoundType aSoundType) {
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().sound(aSoundType).lightLevel(BlockBase::lightOf).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aNameInternal))));
 		if (aMaterial != null && !aMaterial.isToolNotRequired()) p = p.requiresCorrectToolForDrops();
+		p = mapColorOf(p, aMaterial);
 		return p;
+	}
+
+	/**
+	 * MODCOMPAT-002 (блоки GT6 невидимы на карте). В 1.7.10 цвет блока на карте приходил САМ СОБОЙ: ванильный
+	 * {@code Block.getMapColor(int)} возвращал {@code getMaterial().getMaterialMapColor()}
+	 * (`recompSrc/net/minecraft/block/Block.java:232-235`), и GT6 его нигде не переопределял, кроме
+	 * {@code MultiTileEntityBlock:155}. В neo дефолт другой — {@code state -> MapColor.NONE}
+	 * (`BlockBehaviour.java:970`), то есть «пропустить блок», отчего руды/камни/растения и все жидкости GT6
+	 * пропадали и с ванильной карты, и с миникарт. Возвращаем ровно 1.7.10-дефолт: цвет берётся из того же
+	 * материала тем же мостом {@code MapColor.toNeo()} (F9-bridge), что уже используют MTE-блоки — приём и
+	 * источник переиспользованы, не заведены заново.
+	 */
+	public static net.minecraft.world.level.block.state.BlockBehaviour.Properties mapColorOf(net.minecraft.world.level.block.state.BlockBehaviour.Properties aProps, Material aMaterial) {
+		if (aMaterial == null) return aProps;
+		gregapi.block.MapColor tColor = aMaterial.getMaterialMapColor();
+		return tColor == null ? aProps : aProps.mapColor(tColor.toNeo());
 	}
 	public BlockBase(Class<? extends BlockItem> aItemClass, String aNameInternal, Material aMaterial, SoundType aSoundType) {
 		// F16/F9 форс движка: neo `Block` immutable (данные в Properties ДО super). setStepSound встроен в Properties.sound;
