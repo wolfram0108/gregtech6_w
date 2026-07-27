@@ -299,7 +299,20 @@ public final class GT6QuadBuilder {
 	 *  При full-cube (0..1) сводится к прежнему поведению (u,v = 0..16). */
 	private static float[][] corners(Direction aDir, float[] b) {
 		float x0 = b[0], y0 = b[1], z0 = b[2], x1 = b[3], y1 = b[4], z1 = b[5];
-		float u0x = x0*16, u1x = x1*16, u0z = z0*16, u1z = z1*16, v0y = (1-y0)*16, v1y = (1-y1)*16;
+		// ГРАНИЦЫ ВНЕ КУБА → UV ПОЛНЫЕ, а не интерполированные. 1.7.10 делает это в КАЖДОЙ из шести renderFaceXXX
+		// (RenderBlocks:7224-7234 YNeg, :7332 YPos, :7440 ZNeg, :7571-7581 ZPos, :7687 XNeg, :7803 XPos) парой
+		// «if (renderMinA < 0 || renderMaxA > 1) {d = getMinU/V(); d' = getMaxU/V();}»: интерполяция за пределами
+		// 0..1 увела бы координату ЗА СПРАЙТ, и движок сэмплил бы соседей по атласу. GT6 опирается на это всерьёз —
+		// лопасти турбины рисуются боксом −0.999..1.999 (MultiTileEntityLargeTurbine:117-119), стенки тигля
+		// −0.999..3.0 (MultiTileEntityCrucible:648-653), луч лазера −0.99..1.99, ErrorRenderer −0.25..1.25.
+		// БЕЗ этой страховки было ровно то, что видел игрок (BUG-061): «турбина показывает кусок атласа вместо
+		// лопастей, дыры на тиглях». Геометрию НЕ трогаем — вершины остаются на фактических границах, полными
+		// становятся только UV, то есть подставляем 0..1 вместо фактических границ ТОЛЬКО в текстурные координаты.
+		float tx0 = x0, tx1 = x1, ty0 = y0, ty1 = y1, tz0 = z0, tz1 = z1;
+		if (x0 < 0 || x1 > 1) {tx0 = 0; tx1 = 1;}
+		if (y0 < 0 || y1 > 1) {ty0 = 0; ty1 = 1;}
+		if (z0 < 0 || z1 > 1) {tz0 = 0; tz1 = 1;}
+		float u0x = tx0*16, u1x = tx1*16, u0z = tz0*16, u1z = tz1*16, v0y = (1-ty0)*16, v1y = (1-ty1)*16;
 		switch (aDir) {
 		case DOWN:  return new float[][]{{x0,y0,z0, u0x,u0z},{x0,y0,z1, u0x,u1z},{x1,y0,z1, u1x,u1z},{x1,y0,z0, u1x,u0z}};
 		case UP:    return new float[][]{{x0,y1,z1, u0x,u1z},{x0,y1,z0, u0x,u0z},{x1,y1,z0, u1x,u0z},{x1,y1,z1, u1x,u1z}};

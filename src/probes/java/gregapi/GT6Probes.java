@@ -224,6 +224,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6flattenprobe.flag")) gt6FlattenProbeTick(aEvent.getServer());
 	// [GT6-CONTAINERPROBE] стенд «полиморфный канал контейнер-предмета» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6containerprobe.flag")) gt6ContainerProbeTick(aEvent.getServer());
+	// [GT6-UVPROBE] стенд «BUG-061: UV за границами спрайта при render-bounds вне куба» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6uvprobe.flag")) gt6UVProbeTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6167,5 +6169,95 @@ public final class GT6Probes {
 		StringBuilder rOut = new StringBuilder();
 		for (net.minecraft.world.item.ItemStack tStack : gregapi.oredict.OreDictionary.getOres(aName, F)) rOut.append(rOut.length() == 0 ? "" : "|").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tStack.getItem()));
 		return rOut.length() == 0 ? "<пусто>" : rOut.toString();
+	}
+
+	// ========== [GT6-UVPROBE] BUG-061 «текстуры многоблоков нарушены» (Ф4, на каркасе GT6ProbeStand) — снять при уборке фазы ==========
+	// Репро игрока: «турбина показывает кусок атласа вместо лопастей, дыры на тиглях».
+	// Корень (сверен с оригиналом): 1.7.10 в КАЖДОЙ из шести RenderBlocks.renderFaceXXX страхует случай «render-bounds
+	// вышли за куб» — «if (renderMinA < 0 || renderMaxA > 1) {UV = getMinU/V()..getMaxU/V();}» (:7224-7234 и др.), иначе
+	// интерполяция уводит координату ЗА СПРАЙТ и движок сэмплит соседей по атласу. GT6 опирается на это всерьёз:
+	// лопасти турбины — бокс −0.999..1.999 (MultiTileEntityLargeTurbine:117-119), стенки тигля −0.999..3.0
+	// (MultiTileEntityCrucible:648-653). Порт страховку не воспроизвёл (GT6QuadBuilder.corners).
+	//
+	// СУДЬЯ идёт РЕАЛЬНЫМ путём рендера: та же модель из ModelManager, тот же DynamicBlockStateModel.collectParts
+	// с живыми level/pos/state, что зовёт рендерер секции; читаются РЕАЛЬНЫЕ квады (BakedQuad.packedUV) и реальные
+	// границы их спрайта. Судится не картинка, а координата: лежит ли UV внутри своего тайла атласа.
+	//
+	// Контроль (иначе судья слеп — урок «судья без позитивного контроля не судья»):
+	//  · REPRO-CHECK — среди квадов тигля ЕСТЬ вершины вне куба 0..1. Без этого стенд проверял бы не тот случай.
+	//  · POSITIVE     — обычный полный блок (ванильный камень) проходит ту же проверку.
+	//  · SENSITIVITY  — пересчёт той же грани по СТАРОЙ формуле (bounds*16 без страховки) даёт UV ВНЕ спрайта,
+	//                   то есть проверка способна выдать FAIL, а не только PASS.
+	private static final String UVP_M = "GT6-UVPROBE";
+	private static final int UVP_CRUCIBLE_ID = 17306; // Large Titanium Crucible — тот же тир, что CRUCIBLEPROBE
+	private static final int UVP_WALL_ID     = 18006; // Titanium Wall
+	private static int sUVPTick = -1;
+	private static ServerPlayer sUVPPlayer;
+	private static gregapi.probe.GT6ProbeStand.Seq sUVPSeq;
+	private static BlockPos sUVPBase;
+	private static gregtech.tileentity.multiblocks.MultiTileEntityCrucible sUVPCrucible;
+	/** Мост «сервер построил → клиент судит»: клиентская половина в {@link GT6ProbesClient}. */
+	public static volatile BlockPos sUVPTargetPos = null, sUVPControlPos = null;
+	public static volatile String sUVPClientVerdict = null;
+
+	public static void gt6UVProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sUVPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sUVPPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sUVPSeq == null) sUVPSeq = new gregapi.probe.GT6ProbeStand.Seq(UVP_M)
+			.at(200, GT6Probes::gt6UVProbeBuild)
+			.at(240, GT6Probes::gt6UVProbeHandoff)
+			.at(600, GT6Probes::gt6UVProbeVerdict);
+		sUVPSeq.tick(sUVPTick);
+	}
+
+	/** Тик 200: строим тигель 3x3x3 (стены + контроллер в центре нижнего слоя) — та же схема, что CRUCIBLEPROBE,
+	 *  тем же каркасом pattern; рядом кладём ванильный камень для позитивного контроля. */
+	private static void gt6UVProbeBuild() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + UVP_M + "] BUG-061: UV за границами спрайта при render-bounds вне куба ==========");
+		ServerLevel tLevel = sUVPPlayer.level();
+		sUVPBase = sUVPPlayer.blockPosition().offset(4, 0, 4);
+		for (int x = -1; x <= 4; x++) for (int y = -2; y <= 4; y++) for (int z = -1; z <= 4; z++)
+			tLevel.setBlock(sUVPBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+
+		Map<Character, Object> tLegend = new HashMap<>();
+		tLegend.put('W', UVP_WALL_ID);
+		tLegend.put('C', UVP_CRUCIBLE_ID);
+		String[] tLayers = {"WWW\nWCW\nWWW", "WWW\nW.W\nWWW", "WWW\nW.W\nWWW"};
+		Map<Character, List<BlockEntity>> tBuilt = gregapi.probe.GT6ProbeStand.pattern(tLevel, sUVPPlayer, sUVPBase, tLayers, tLegend, UVP_M);
+		List<BlockEntity> tControllers = tBuilt.get('C');
+		if (tControllers == null || tControllers.isEmpty() || !(tControllers.get(0) instanceof gregtech.tileentity.multiblocks.MultiTileEntityCrucible tCrucible)) throw new RuntimeException("контроллер тигля не встал");
+
+		BlockPos tControlPos = sUVPBase.offset(-1, 0, -1);
+		tLevel.setBlock(tControlPos, Blocks.STONE.defaultBlockState(), 3);
+		sUVPCrucible = tCrucible;
+		sUVPControlPos = tControlPos;
+		O.println("[" + UVP_M + "] построено: контроллер тигля " + tCrucible.getBlockPos() + ", контрольный камень " + tControlPos);
+	}
+
+	/** Тик 240: подтверждаем структуру и только тогда отдаём координаты клиенту. checkStructure — РЕАЛЬНЫЙ канал
+	 *  мода (его же зовёт таймер контроллера каждые 600 тиков и клик строительной палочкой), здесь он лишь
+	 *  избавляет стенд от 30-секундного ожидания; судимый канал (UV) им не затрагивается. */
+	private static void gt6UVProbeHandoff() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		sUVPCrucible.checkStructure(T);
+		boolean tOkay = sUVPCrucible.mStructureOkay;
+		sUVPSeq.judge("структура тигля признана контроллером (иначе bounds остаются кубом и случай НЕ воспроизведён)", tOkay, true, tOkay);
+		if (!tOkay) return;
+		sUVPTargetPos = sUVPCrucible.getBlockPos();
+		O.println("[" + UVP_M + "] замер передан клиенту: цель " + sUVPTargetPos + " (модель+квады живут только на клиенте)");
+	}
+
+	/** Тик 400: принимаем вердикт клиента и судим. */
+	private static void gt6UVProbeVerdict() {
+		String tVerdict = sUVPClientVerdict;
+		sUVPSeq.judge("клиент отдал вердикт (иначе замер не состоялся)", tVerdict != null, "не null", String.valueOf(tVerdict));
+		if (tVerdict != null) for (String tLine : tVerdict.split("\n")) {
+			// формат строки: "имя судьи|ожидание|факт|PASS|FAIL"
+			String[] tParts = tLine.split("\\|", 4);
+			if (tParts.length == 4) sUVPSeq.judge(tParts[0], "PASS".equals(tParts[3]), tParts[1], tParts[2]);
+		}
+		sUVPSeq.done();
 	}
 }
