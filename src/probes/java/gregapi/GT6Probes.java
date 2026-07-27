@@ -234,6 +234,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
 	// [GT6-JADEPROBE] стенд «MODCOMPAT-001: инструменты GT6 в тултипе Jade» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6jadeprobe.flag")) gt6JadeProbeTick(aEvent.getServer());
+	// [GT6-DEMO] демо-площадка приёмки игроком (не судья — строит мир) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6demo.flag")) gt6DemoTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6255,6 +6257,126 @@ public final class GT6Probes {
 		if (!tOkay) return;
 		sUVPTargetPos = sUVPCrucible.getBlockPos();
 		O.println("[" + UVP_M + "] замер передан клиенту: цель " + sUVPTargetPos + " (модель+квады живут только на клиенте)");
+	}
+
+	// ========== [GT6-DEMO] ДЕМО-ПЛОЩАДКА ДЛЯ ПРИЁМКИ ИГРОКОМ — снять при уборке фазы ==========
+	// Не судья: ничего не проверяет, а СТРОИТ мир, в котором игрок за пару минут глазами оценит все фиксы
+	// сессии. Каждый сектор — отдельный пункт приёмки; координаты печатаются в лог, набор предметов кладётся
+	// в инвентарь. Гейт как у прочих проб (-Pgt6probes + run/gt6demo.flag), в jar игрока не попадает.
+	private static final String DEMO_M = "GT6-DEMO";
+	private static final int DEMO_CRUCIBLE_ID = 17306, DEMO_WALL_ID = 18006, DEMO_MACHINE_ID = 10080, DEMO_BARREL_ID = 32102, DEMO_PIPE_ID = 4200;
+	private static int sDemoTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sDemoSeq;
+
+	public static void gt6DemoTick(net.minecraft.server.MinecraftServer aServer) {
+		sDemoTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sDemoSeq == null) sDemoSeq = new gregapi.probe.GT6ProbeStand.Seq(DEMO_M)
+			.at(200, () -> gt6DemoBuild(tPlayer))
+			.at(260, () -> gt6DemoFinish(tPlayer));
+		sDemoSeq.tick(sDemoTick);
+	}
+
+	private static BlockPos sDemoOrigin;
+
+	private static void gt6DemoBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(6, 0, 6);
+		sDemoOrigin = tO;
+		O.println("========== [" + DEMO_M + "] ДЕМО-ПЛОЩАДКА ПРИЁМКИ, центр " + tO + " ==========");
+
+		// Ровная платформа 32x32 из ванильного камня — чтобы GT6-блоки на карте были видны на нейтральном фоне.
+		for (int x = -4; x <= 28; x++) for (int z = -4; z <= 28; z++) {
+			tLevel.setBlock(tO.offset(x, -1, z), Blocks.STONE.defaultBlockState(), 2);
+			for (int y = 0; y <= 6; y++) tLevel.setBlock(tO.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+		}
+
+		// ── СЕКТОР 1 (x=0..2): ТИГЕЛЬ 3x3x3 — BUG-061, текстуры (были дыры) ───────────────────────────────
+		Map<Character, Object> tLegend = new HashMap<>();
+		tLegend.put('W', DEMO_WALL_ID); tLegend.put('C', DEMO_CRUCIBLE_ID);
+		gregapi.probe.GT6ProbeStand.pattern(tLevel, aPlayer, tO, new String[]{"WWW\nWCW\nWWW", "WWW\nW.W\nWWW", "WWW\nW.W\nWWW"}, tLegend, DEMO_M);
+		BlockEntity tCrucibleBE = tLevel.getBlockEntity(tO.offset(1, 0, 1));
+		if (tCrucibleBE instanceof gregtech.tileentity.multiblocks.MultiTileEntityCrucible tCru) {
+			tCru.checkStructure(T);
+			O.println("[" + DEMO_M + "] 1) ТИГЕЛЬ (текстуры, BUG-061) @ " + tO.offset(1, 0, 1) + " структура=" + tCru.mStructureOkay);
+		}
+
+		// ── СЕКТОР 2 (x=6): МАШИНА — Jade должен показать ГАЕЧНЫЙ КЛЮЧ ────────────────────────────────────
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(6, -1, 1), net.minecraft.core.Direction.UP, tReg.getItem(DEMO_MACHINE_ID), BlockEntity.class, DEMO_M, "машина");
+		O.println("[" + DEMO_M + "] 2) МАШИНА (Jade: гаечный ключ) @ " + tO.offset(6, 0, 1));
+
+		// ── СЕКТОР 3 (x=10): БОЧКА С ВОДОЙ — Jade должен показать ЖИДКОСТЬ ───────────────────────────────
+		BlockEntity tBarrel = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(10, -1, 1), net.minecraft.core.Direction.UP, tReg.getItem(DEMO_BARREL_ID), BlockEntity.class, DEMO_M, "бочка");
+		if (tBarrel instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) {
+			int tFilled = tRoot.fill((net.minecraft.core.Direction)null, gregapi.data.FL.Water.make(48000), T);
+			O.println("[" + DEMO_M + "] 3) БОЧКА С ВОДОЙ (Jade: жидкость) @ " + tO.offset(10, 0, 1) + " налито=" + tFilled);
+		}
+
+		// ── СЕКТОР 4 (x=14..18): ЖИДКОСТИ GT6 — цвет на карте (MODCOMPAT-002) ────────────────────────────
+		net.minecraft.world.level.block.Block[] tFluids = {
+			  gregapi.data.CS.BlocksGT.River, gregapi.data.CS.BlocksGT.Ocean, gregapi.data.CS.BlocksGT.Swamp
+			, gregapi.data.CS.BlocksGT.OilHeavy, gregapi.data.CS.BlocksGT.GasNatural};
+		for (int i = 0; i < tFluids.length; i++) if (tFluids[i] != null) {
+			for (int dx = 0; dx < 3; dx++) for (int dz = 0; dz < 3; dz++) {
+				tLevel.setBlock(tO.offset(14 + i * 4 + dx, -1, dz), tFluids[i].defaultBlockState(), 2);
+			}
+		}
+		O.println("[" + DEMO_M + "] 4) ЛУЖИ ЖИДКОСТЕЙ GT6 (карта) @ x=" + (tO.getX() + 14) + ".." + (tO.getX() + 30) + ", z=" + tO.getZ());
+
+		// ── СЕКТОР 5 (z=6): ПОРОДЫ/РУДЫ GT6 — цвет на карте + инструмент в Jade ──────────────────────────
+		// Ряд z+6: РУДЫ (кирка). Ряд z+9: прочие GT6-блоки — дерево/листва (топор), чтобы в Jade был виден и он.
+		int tPlaced = 0, tPlacedMisc = 0;
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null) continue;
+			String tPath = tID.getPath();
+			if (tPlaced < 14 && tPath.startsWith("gt.meta.ore.normal")) {
+				tLevel.setBlock(tO.offset(tPlaced * 2, 0, 6), tBlock.defaultBlockState(), 2);
+				tPlaced++;
+			} else if (tPlacedMisc < 14 && (tPath.startsWith("gt.block.log") || tPath.startsWith("gt.block.beam") || tPath.startsWith("gt.block.planks") || tPath.startsWith("gt.block.leaves") || tPath.startsWith("gt.block.stone"))) {
+				tLevel.setBlock(tO.offset(tPlacedMisc * 2, 0, 9), tBlock.defaultBlockState(), 2);
+				tPlacedMisc++;
+			}
+		}
+		O.println("[" + DEMO_M + "] 5) РУДЫ GT6 (карта + Jade-кирка) @ z=" + (tO.getZ() + 6) + ", поставлено " + tPlaced
+			+ "; ДЕРЕВО/КАМЕНЬ GT6 (Jade-топор) @ z=" + (tO.getZ() + 9) + ", поставлено " + tPlacedMisc);
+	}
+
+	private static void gt6DemoFinish(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		// Набор для ручной проверки: цветное стекло (джокер семьи), красители, GT6-инструменты, зачарованный меч.
+		java.util.List<net.minecraft.world.item.ItemStack> tKit = new java.util.ArrayList<>();
+		tKit.add(new net.minecraft.world.item.ItemStack(Blocks.RED_STAINED_GLASS, 16));
+		tKit.add(new net.minecraft.world.item.ItemStack(Blocks.WHITE_STAINED_GLASS, 16));
+		tKit.add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.RED_DYE, 16));
+		for (String tType : new String[]{gregapi.data.CS.TOOL_wrench, gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_crowbar}) {
+			for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(tType)) {
+				net.minecraft.world.item.ItemStack tStack = tC.toStack();
+				if (tStack != null && !tStack.isEmpty()) {tKit.add(tStack); break;}
+			}
+		}
+		for (net.minecraft.world.item.ItemStack tStack : tKit) aPlayer.getInventory().add(tStack);
+
+		// Зачарованный меч с GT6-чарой — проверка ИМЕНИ чары в тултипе (было «enchantment.gregapi.…»).
+		try {
+			net.minecraft.world.item.ItemStack tSword = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_SWORD);
+			net.minecraft.core.HolderLookup.RegistryLookup<net.minecraft.world.item.enchantment.Enchantment> tLookup =
+				aPlayer.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+			for (net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> tKey : new java.util.ArrayList<>(java.util.List.of(
+					gregapi.enchants.Enchantment_EnderDamage.KEY, gregapi.enchants.Enchantment_WerewolfDamage.KEY,
+					gregapi.enchants.Enchantment_SlimeDamage.KEY, gregapi.enchants.Enchantment_Radioactivity.KEY))) {
+				tLookup.get(tKey).ifPresent(tHolder -> tSword.enchant(tHolder, 1));
+			}
+			aPlayer.getInventory().add(tSword);
+			O.println("[" + DEMO_M + "] 6) МЕЧ С 4 ЧАРАМИ GT6 выдан (проверить ИМЕНА в тултипе)");
+		} catch (Throwable e) {O.println("[" + DEMO_M + "] меч с чарами не выдан: " + e);}
+
+		aPlayer.teleportTo(sDemoOrigin.getX() + 8.5, sDemoOrigin.getY() + 1, sDemoOrigin.getZ() - 3.5);
+		O.println("[" + DEMO_M + "] ГОТОВО. Игрок телепортирован к площадке; набор предметов в инвентаре.");
+		sDemoSeq.done();
 	}
 
 	// ========== [GT6-JADEPROBE] MODCOMPAT-001: инструменты GT6 в тултипе Jade — снять при уборке фазы ==========
