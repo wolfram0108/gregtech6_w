@@ -6781,6 +6781,29 @@ public final class GT6Probes {
 				break; // первого экземпляра типа достаточно
 			}
 		}
+		// РЕПОРТ ИГРОКА: «положил 4 батареи в бокс и разрушил — выпал только бокс, батареи исчезли».
+		// Кладём предметы в машину, ломаем её РЕАЛЬНЫМ путём (ключом, как игрок) и считаем, что реально выпало.
+		if (tBE instanceof net.minecraft.world.Container tCont && tCont.getContainerSize() > 0) {
+			net.minecraft.world.item.ItemStack tCargo = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.REDSTONE, 7);
+			tCont.setItem(0, tCargo.copy());
+			O.println("[GT6-HARVESTPROBE] в машину положено: " + tCont.getItem(0).getCount() + "x " + tCont.getItem(0).getHoverName().getString() + " (слот 0 из " + tCont.getContainerSize() + ")");
+			for (net.minecraft.world.entity.item.ItemEntity tOld : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(6))) tOld.discard();
+			for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(gregapi.data.CS.TOOL_wrench)) {
+				net.minecraft.world.item.ItemStack tTool = tC.toStack();
+				if (tTool == null || tTool.isEmpty()) continue;
+				tPlayer.getInventory().setItem(0, tTool); tPlayer.getInventory().setSelectedSlot(0);
+				break;
+			}
+			tPlayer.gameMode.destroyBlock(tPos); // реальный путь игрока
+			int tMachines = 0, tCargoOut = 0; StringBuilder tWhat = new StringBuilder();
+			for (net.minecraft.world.entity.item.ItemEntity tItem : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(6))) {
+				net.minecraft.world.item.ItemStack tS = tItem.getItem();
+				tWhat.append(tWhat.length() == 0 ? "" : ", ").append(tS.getCount()).append("x ").append(tS.getHoverName().getString());
+				if (tS.getItem() == net.minecraft.world.item.Items.REDSTONE) tCargoOut += tS.getCount(); else tMachines++;
+			}
+			O.println("[GT6-HARVESTPROBE] после слома КЛЮЧОМ выпало: " + (tWhat.length() == 0 ? "<НИЧЕГО>" : tWhat));
+			O.println("[GT6-HARVESTPROBE] ИТОГ: сама машина " + (tMachines > 0 ? "ВЫПАЛА" : "не выпала") + ", содержимое " + tCargoOut + "/7 " + (tCargoOut == 7 ? "(верно)" : "(ПОТЕРЯНО)"));
+		} else O.println("[GT6-HARVESTPROBE] у бокса нет Container — содержимое проверить нечем");
 		O.println("========== [GT6-HARVESTPROBE] DONE ==========");
 	}
 	private static boolean sHarvestProbeDone = false;

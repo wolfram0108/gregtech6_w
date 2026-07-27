@@ -129,7 +129,18 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	 *  сам вытряхивает любой Container через Containers.dropContents — НОВОЕ поведение движка (в 1.7.10 дроп содержимого
 	 *  делал ТОЛЬКО сам мод в breakBlock). GT6-инвентарь держит null-слоты (F15 null-модель) → vanilla dropItemStack NPE;
 	 *  плюс двойной дроп с GT6-путём (IMTE_BreakBlock.breakBlock → MultiTileEntityBlock.breakBlock:205). Дроп владеет GT6. */
-	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {/* дроп — GT6 breakBlock, не vanilla Container-вытряхивание */}
+	/** РЕПОРТ ИГРОКА («положил 4 батареи в батарейный бокс и разрушил его — выпал только бокс, батареи исчезли;
+	 *  касается всех машин GT6»): вытряхивание содержимого было потеряно ЦЕЛИКОМ — с обеих сторон сразу.
+	 *  Ванильное (Containers.dropContents) заглушено здесь осознанно (см. выше: null-слоты GT6 роняют его NPE, и
+	 *  был бы двойной дроп), а GT6-путь `MultiTileEntityBlock.breakBlock → IMTE_BreakBlock.breakBlock` остался БЕЗ
+	 *  ВЫЗЫВАТЕЛЯ: в 1.7.10 его звал движковый `Block.breakBlock(World,x,y,z,Block,meta)`, а в neo такого хука нет
+	 *  (замер: 0 вызовов `breakBlock(aWorld…)` по всему дереву, `onRemove`/`affectNeighborsAfterRemoval` у MTE-блока
+	 *  не переопределены). Тело дропа при этом ЦЕЛО и 1:1 (breakBlock() ниже, со своими правилами canDrop/breakDrop/
+	 *  debug-стеков) — не хватало только моста. Мост здесь: этот хук движок зовёт ровно там, где ваниль вытряхивает
+	 *  содержимое, поэтому дроп по-прежнему принадлежит GT6, а не ванили. */
+	@Override public void preRemoveSideEffects(net.minecraft.core.BlockPos aPos, net.minecraft.world.level.block.state.BlockState aState) {
+		try {breakBlock();} catch (Throwable e) {e.printStackTrace(gregapi.data.CS.ERR);} // дроп содержимого не должен ронять удаление блока
+	}
 	public String getInventoryName() {String rName = getCustomName(); if (UT.Code.stringValid(rName)) return rName; MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(getMultiTileEntityRegistryID()); return tRegistry==null?getClass().getName():tRegistry.getLocal(getMultiTileEntityID());}
 	@Override public int getContainerSize() {return mInventory==null?0:mInventory.length;}
 	@Override public void setItem(int aSlot, ItemStack aStack) {updateInventory(); mInventory[aSlot] = OM.get(aStack);}
