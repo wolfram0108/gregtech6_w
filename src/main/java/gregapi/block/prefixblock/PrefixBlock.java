@@ -749,6 +749,14 @@ public class PrefixBlock extends Block implements Runnable, EntityBlock, IBlockS
 	// F3-render (отложенная фаза): super.getRenderType() удалён из neo (рендер data-driven) -> -1; см. MultiTileEntityBlock:436.
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?-1:RendererBlockTextured.INSTANCE.mRenderID;}
 	public int getHarvestLevel(int aMaterialToolQuality) {return (int)UT.Code.bind_(mHarvestLevelMinimum, mHarvestLevelMaximum, mHarvestLevelOffset + aMaterialToolQuality);}
+	/** BUG-071: величина, которую 1.7.10 держал в мете ЭТОГО блока, — {@code bind4(материал.mToolQuality)}
+	 *  (оригинал :435 клал её в мету при установке, движок потом звал getHarvestLevel(мета)). В порте мета prefix-блока
+	 *  занята ID материала (PrefixBlockTileEntity.mMetaData), поэтому величину берём из самого материала по позиции —
+	 *  результат тот же, что в 1.7.10, и остаётся ОДНА формула уровня (метод выше). Материал из BE: getMetaMaterial. */
+	@Override public int getHarvestLevel(BlockGetter aWorld, int aX, int aY, int aZ) {
+		OreDictMaterial tMaterial = getMetaMaterial(aWorld, aX, aY, aZ);
+		return getHarvestLevel(tMaterial == null ? 0 : UT.Code.bind4(tMaterial.mToolQuality));
+	}
 	public int tickRate(Level aWorld) {return 2;}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {return getRenderColor(getMetaDataValue(aWorld, aX, aY, aZ));}
 	public int getLightOpacity() {return mOpaque?255:0;}

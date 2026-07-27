@@ -41,6 +41,18 @@ public interface IBlock {
 	 *  существующими методами; не-носители (жидкости, Internal — как в 1.7.10 без override) — дефолт «без инструмента». */
 	default String getHarvestTool(int aMeta) {return "";}
 	default int getHarvestLevel(int aMeta) {return 0;}
+	/** BUG-071 (пер-материальность уровня): в 1.7.10 движок звал {@code getHarvestLevel(мета блока)}, и мета несла
+	 *  ОСМЫСЛЕННУЮ величину — у prefix-блока это {@code bind4(материал.mToolQuality)} (PrefixBlock:435 оригинала),
+	 *  у MTE-блока {@code mBlockMetaData} класса (= {@code mToolQuality} материала машины, Loader_MultiTileEntities:895).
+	 *  В порте канал меты занят ДРУГИМ (ID материала / подтип в BE), а на harvest-путях мета вырождается в 0
+	 *  (IBlockExtendedMetaData:49) — связь «материал → требуемый уровень» терялась целиком.
+	 *  Здесь контракт восстанавливает точку, которую 1.7.10 имел даром: «уровень блока В ЭТОЙ ПОЗИЦИИ». Дефолт —
+	 *  прежнее поведение (уровень по мете порта); иерархии, у которых мета занята под другое, перекрывают его и
+	 *  отдают 1.7.10-величину сами (знание о своей мете остаётся в блоке, как и было у Грегориуса).
+	 *  Читает ЦЕНТР {@link gregapi.util.WD#harvestLevel(net.minecraft.world.level.BlockGetter,int,int,int)}. */
+	default int getHarvestLevel(net.minecraft.world.level.BlockGetter aWorld, int aX, int aY, int aZ) {
+		return getHarvestLevel(gregapi.util.WD.meta(aWorld, aX, aY, aZ));
+	}
 	/** F-hardness (читает ЦЕНТР WD.hardness): 1.7.10 Block.getBlockHardness(World,x,y,z) — Forge-точка per-position
 	 *  твёрдости; GT6-иерархии несут свои значения (BlockBase-подклассы per-meta, PrefixBlock per-material,
 	 *  MTE-блоки per-TE mHardness из NBT_HARDNESS) — носители перекрывают дефолт автоматически одноимёнными

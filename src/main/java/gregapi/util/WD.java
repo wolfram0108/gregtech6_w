@@ -419,6 +419,16 @@ public class WD {
 	 *  (BlockBase.getHarvestLevel(meta)); vanilla-блок — через neo tier-теги BlockTags.NEEDS_*_TOOL (тот же смысл: какой
 	 *  ярус инструмента требуется). Прямой маппинг STONE=1/IRON=2/DIAMOND=3, иначе 0. Используется в проверке «инструмент
 	 *  достаточно силён» (MultiItemTool.getDigSpeed:517, было degraded до 0 = любой инструмент копал любой блок). */
+	/** BUG-071 ЦЕНТР (позиционный): требуемый уровень блока В ЭТОЙ ПОЗИЦИИ. Нужен потому, что мета порта у части
+	 *  иерархий занята под другое (prefix — ID материала, MTE — подтип в BE) и на harvest-путях вырождается в 0,
+	 *  а 1.7.10 держал в мете именно ТРЕБУЕМОЕ КАЧЕСТВО и звал getHarvestLevel(мета). Диспетчер тонкий: величину
+	 *  знает сам блок (контракт {@link gregapi.block.IBlock#getHarvestLevel(BlockGetter,int,int,int)}), ванильным —
+	 *  прежний путь через tier-теги. Потребители — мосты добычи (право и скорость) в GT_API_Proxy. */
+	public static int harvestLevel(BlockGetter aWorld, int aX, int aY, int aZ) {
+		Block tBlock = block(aWorld, aX, aY, aZ);
+		if (tBlock instanceof gregapi.block.IBlock tGT) return tGT.getHarvestLevel(aWorld, aX, aY, aZ);
+		return harvestLevel(tBlock, meta(aWorld, aX, aY, aZ));
+	}
 	public static int harvestLevel(Block aBlock, int aMeta) {
 		// диспатч по КОНТРАКТУ IBlock (все GT6-иерархии: BlockBase/MTE-Block/Internal/Prefix/Rail — общего предка нет;
 		// прежний instanceof BlockBase был слеп к MTE → машины «без уровня» — класс «две Block-иерархии»)
@@ -440,6 +450,45 @@ public class WD {
 	/** F-tool ЦЕНТР: 1.7.10 {@code Block.getHarvestTool(int aMeta)} (Forge-точка на vanilla Block, строка-тип
 	 *  инструмента "pickaxe"/"shovel"/"axe"...) удалён по ИМЕНИ; GT6-блок хранит ({@code BlockBase.getHarvestTool(meta)}),
 	 *  vanilla-блок → "" (как ядро инлайнит UT.java:1202, ItemBlockBase:109). Централизует инлайн {@code instanceof BlockBase}. */
+	/** BUG-071 ЦЕНТР: уровень ИНСТРУМЕНТА для заданного класса — 1:1 {@code Item.getHarvestLevel(stack, toolClass)}
+	 *  из 1.7.10 (recompSrc {@code Item.java:1457-1461}: карта {@code toolClasses} класс→уровень, {@code -1} если класс
+	 *  предмету чужой). Инструменты GT6 отвечают своим методом (тот же, что и в оригинале). У ванильных предметов в neo
+	 *  карты классов больше нет: принадлежность классу выражена ТЕГОМ предмета, а числового яруса нет вовсе (заменён
+	 *  тегами {@code INCORRECT_FOR_*_TOOL}) — поэтому ярус спрашиваем У ДВИЖКА эталонными блоками (needs_stone/iron/
+	 *  diamond), а не таблицей констант. Ответ кэшируем по предмету: набор ванильных ярусов за игру не меняется. */
+	public static int toolLevel(ItemStack aStack, String aToolClass) {
+		if (ST.invalid(aStack) || !UT.Code.stringValid(aToolClass)) return -1;
+		if (aStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool tTool) return tTool.getHarvestLevel(aStack, aToolClass);
+		if (!vanillaToolClassMatches(aStack, aToolClass)) return -1;
+		return vanillaToolTier(aStack);
+	}
+	/** Принадлежность ванильного предмета классу инструмента (1.7.10: наличие ключа в {@code toolClasses}). */
+	private static boolean vanillaToolClassMatches(ItemStack aStack, String aToolClass) {
+		switch (aToolClass) {
+		case TOOL_pickaxe: return aStack.is(net.minecraft.tags.ItemTags.PICKAXES);
+		case TOOL_axe    : return aStack.is(net.minecraft.tags.ItemTags.AXES);
+		case TOOL_shovel : return aStack.is(net.minecraft.tags.ItemTags.SHOVELS);
+		case TOOL_hoe    : return aStack.is(net.minecraft.tags.ItemTags.HOES);
+		case TOOL_sword  : return aStack.is(net.minecraft.tags.ItemTags.SWORDS);
+		case TOOL_shears : return aStack.getItem() == net.minecraft.world.item.Items.SHEARS;
+		default          : return F; // wrench/crowbar/cutter/… — ванильных носителей этих классов не существует
+		}
+	}
+	/** Числовой ярус ванильного инструмента (0..3) — спрашиваем движок эталонами, кэш по предмету. */
+	private static final Map<net.minecraft.world.item.Item, Integer> VANILLA_TOOL_TIERS = new HashMap<>();
+	private static int vanillaToolTier(ItemStack aStack) {
+		Integer tCached = VANILLA_TOOL_TIERS.get(aStack.getItem());
+		if (tCached != null) return tCached;
+		int rTier = 0;
+		try {
+			if (aStack.isCorrectToolForDrops(Blocks.IRON_ORE.defaultBlockState()))    rTier = 1; // needs_stone_tool
+			if (aStack.isCorrectToolForDrops(Blocks.DIAMOND_ORE.defaultBlockState())) rTier = 2; // needs_iron_tool
+			if (aStack.isCorrectToolForDrops(Blocks.OBSIDIAN.defaultBlockState()))    rTier = 3; // needs_diamond_tool
+		} catch (Throwable e) {/* эталон недоступен — остаётся 0 */}
+		VANILLA_TOOL_TIERS.put(aStack.getItem(), rTier);
+		return rTier;
+	}
+
 	public static String harvestTool(Block aBlock, int aMeta) {
 		// диспатч по КОНТРАКТУ IBlock (см. harvestLevel выше: instanceof BlockBase был слеп к MTE/Prefix/Rail —
 		// ключ не «видел» машину своим блоком → canHarvestBlock=false → машина не добывалась ВООБЩЕ после

@@ -582,6 +582,24 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 	public final String getHarvestTool(int aMeta) {return mTool;}
 	public final boolean isToolEffective(String aType, int aMeta) {return getHarvestTool(aMeta).equals(aType);}
 	public final int getHarvestLevel(int aMeta) {return (int)UT.Code.bind_(mHarvestLevelMinimum, mHarvestLevelMaximum, mHarvestLevelOffset + aMeta);}
+	/** BUG-071: величина, которую 1.7.10 держал в мете ЭТОГО блока, — {@code mBlockMetaData} класса MTE
+	 *  (при регистрации туда кладут {@code материал.mToolQuality}: Loader_MultiTileEntities:895 и далее).
+	 *  В порте мета блока стейтом не выражается (IBlockExtendedMetaData:49 → 0), поэтому берём её из класса,
+	 *  который стоит В ЭТОЙ ПОЗИЦИИ: BE знает свой реестр и ID. Формула уровня остаётся ОДНА (метод выше). */
+	@Override public int getHarvestLevel(BlockGetter aWorld, int aX, int aY, int aZ) {
+		return getHarvestLevel(blockMetaDataAt(aWorld, aX, aY, aZ));
+	}
+	/** 1.7.10-мета MTE-блока в позиции: {@code mBlockMetaData} его класса (0, если BE ещё нет — как пустая мета). */
+	public static int blockMetaDataAt(BlockGetter aWorld, int aX, int aY, int aZ) {
+		try {
+			BlockEntity tTileEntity = aWorld.getBlockEntity(new BlockPos(aX, aY, aZ));
+			if (!(tTileEntity instanceof IMultiTileEntity tMTE)) return 0;
+			MultiTileEntityRegistry tRegistry = MultiTileEntityRegistry.getRegistry(tMTE.getMultiTileEntityRegistryID());
+			if (tRegistry == null) return 0;
+			MultiTileEntityClassContainer tClass = tRegistry.getClassContainer(tMTE.getMultiTileEntityID());
+			return tClass == null ? 0 : tClass.mBlockMetaData;
+		} catch (Throwable e) {return 0;}
+	}
 	// было canHarvestBlock(EntityPlayer,meta) -> IBlockExtension.canHarvestBlock(BlockState,BlockGetter,BlockPos,Player)
 	// [IBlockExtension.java:215], дефолт EventHooks.doPlayerHarvestCheck(...) (сам же дефолт интерфейса) - тот же
 	// приём, что вызывался через super раньше (ноль GT6-specific логики в этом методе, чистая passthrough-точка).

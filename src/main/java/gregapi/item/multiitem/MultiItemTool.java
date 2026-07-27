@@ -230,6 +230,14 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (aBlock == NB || WD.bedrock(aBlock)) return aDefault;
 		// Things that are normally harvested instantly, like Torches for example.
 		if (ST.instaharvest(aBlock, aMeta)) return Float.MAX_VALUE;
+		// BUG-071 ВТОРОЕ ЗВЕНО (первое — право на дроп, GT_API_Proxy.onPlayerHarvestCheckEvent): недостаточный уровень
+		// инструмента в 1.7.10 давал НУЛЕВУЮ скорость (getDigSpeed:482 оригинала: quality < block.getHarvestLevel(meta)
+		// → 0), то есть блок не разрушался вовсе, а не «ломался без дропа». Здесь то же сравнение, но уровень берётся
+		// ПОЗИЦИОННЫМ центром WD.harvestLevel(world,x,y,z): у prefix/MTE мета порта занята другим и на пути
+		// getDestroySpeed(stack,state) вырождается в 0 (см. javadoc центра). Событие BreakSpeed позицию несёт.
+		IToolStats tStatsLevel = getToolStats(aStack);
+		if (tStatsLevel == null || tStatsLevel.getBaseQuality() + getPrimaryMaterial(aStack).mToolQuality
+			< UT.Code.bind4(WD.harvestLevel(aPlayer.level(), aX, aY, aZ))) return 0;
 		// special case for Obsidian to be mined faster with higher Quality Pickaxes.
 		if (OD.obsidian.is(ST.make(aBlock, 1, aMeta))) aDefault *= Math.max(1, getPrimaryMaterial(aStack).mToolQuality - 2);
 		// and now the basic Tool Stats.

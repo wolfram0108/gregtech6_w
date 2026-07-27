@@ -1471,7 +1471,36 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 		if (BLAST_RESISTANT_MOB_SPAWNERS) aEvent.getAffectedBlocks().removeIf(p -> aEvent.getLevel().getBlockState(p).getBlock() == net.minecraft.world.level.block.Blocks.SPAWNER);
 	}
 	
-	@SubscribeEvent(priority = EventPriority.LOWEST) 
+	// BUG-071 ПАРНАЯ ПОЛОВИНА МОСТА ДОБЫЧИ (к onBlockBreakSpeedEvent ниже): ПРАВО на дроп.
+	// Дословный перенос Forge 1.7.10 ForgeHooks.canHarvestBlock (recompSrc ForgeHooks.java:95-116) — тот самый метод,
+	// которым 1.7.10 и решал вопрос: материал без требования → можно; нет стека/типа → ванильный вердикт; уровень
+	// инструмента < 0 (класс предмету чужой) → ванильный вердикт; иначе сравнение УРОВНЕЙ.
+	// Почему это вообще понадобилось: в neo правило считается БЕЗ позиции (Item.isCorrectToolForDrops(stack,state)),
+	// а у GT6 подтип блока живёт в BlockEntity — на этом пути мета вырождается в 0, и требуемый уровень становился
+	// нулевым для ВСЕХ руд и машин (BUG-071, замер gt6harvestprobe). Событие HarvestCheck позицию несёт (PlayerEvent
+	// .HarvestCheck:getPos), и движок ходит именно через него: ServerPlayerGameMode:291 → BlockState.canHarvestBlock
+	// (level,pos,player) → IBlockExtension:216 → EventHooks.doPlayerHarvestCheck. Одна точка на весь мод — как и
+	// соседний BreakSpeed-мост, который Грегориус завёл ровно для такой же цели (скорость).
+	// Трогаем ТОЛЬКО блоки GT6 (контракт IBlock): чужие блоки судит движок, как и раньше.
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	public void onPlayerHarvestCheckEvent(PlayerEvent.HarvestCheck aEvent) {
+		try {
+			net.minecraft.world.level.block.state.BlockState tState = aEvent.getTargetBlock();
+			Block tBlock = tState.getBlock();
+			if (!(tBlock instanceof gregapi.block.IBlock)) return;
+			if (WD.getMaterial(tBlock).isToolNotRequired()) {aEvent.setCanHarvest(T); return;} // :97-100
+			net.minecraft.core.BlockPos tPos = aEvent.getPos();
+			net.minecraft.world.level.BlockGetter tWorld = aEvent.getLevel();
+			ItemStack tStack = aEvent.getEntity().getMainHandItem();
+			String tTool = WD.harvestTool(tBlock, WD.meta(tWorld, tPos.getX(), tPos.getY(), tPos.getZ()));
+			if (ST.invalid(tStack) || !UT.Code.stringValid(tTool)) return; // :102-107 — ванильный вердикт как есть
+			int tToolLevel = WD.toolLevel(tStack, tTool);
+			if (tToolLevel < 0) return;                                    // :109-113 — класс чужой → ванильный вердикт
+			aEvent.setCanHarvest(tToolLevel >= WD.harvestLevel(tWorld, tPos.getX(), tPos.getY(), tPos.getZ())); // :115
+		} catch (Throwable e) {/* право на дроп не должно ронять разрушение блока */}
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
 	@SuppressWarnings("unlikely-arg-type")
 	// PlayerEvent.BreakSpeed (1.7.10: block/x/y/z/metadata/newSpeed поля) в neo несёт только getState()/getOriginalSpeed()/
 	// getNewSpeed()+setNewSpeed()/getPosition() (Optional<BlockPos>) (сверено, PlayerEvent.java) — есть настоящий public setNewSpeed(),

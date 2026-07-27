@@ -238,6 +238,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6harvestprobe.flag")) gt6HarvestProbeTick(aEvent.getServer());
 	// [GT6-DEMO] демо-площадка приёмки игроком (не судья — строит мир) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6demo.flag")) gt6DemoTick(aEvent.getServer());
+	// [GT6-TOOLMATRIX] BUG-071: матрица «блок × инструмент» — право добычи и скорость по КАЖДОМУ типу — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6toolmatrixprobe.flag")) gt6ToolMatrixTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6830,9 +6832,259 @@ public final class GT6Probes {
 			O.println("[GT6-HARVESTPROBE] класс " + tCls + " (id" + tID + "): содержимое " + tOut + "/5 " + (tOut == 5 ? "OK" : "ПОТЕРЯНО"));
 		}
 		O.println("[GT6-HARVESTPROBE] ПОКРЫТИЕ КЛАССА: проверено видов " + (tOK + tFail) + ", целых " + tOK + ", с потерей " + tFail + (tFail == 0 ? "" : " -> " + tBad));
+
+		// ===== BUG-070/П3: ЗАВИСИТ ЛИ ТРЕБУЕМЫЙ УРОВЕНЬ РУДЫ ОТ ЕЁ МАТЕРИАЛА =====
+		// В 1.7.10 prefix-блок ставился С МЕТОЙ = bind4(material.mToolQuality) (PrefixBlock:435 оригинала), и движок
+		// звал getHarvestLevel(эта мета) → уровень был ПЕР-МАТЕРИАЛЬНЫМ. В порте мета prefix-блока = ID материала в
+		// BlockEntity, а стейтом она не выражается (IBlockExtendedMetaData:49 «TE-мета (PrefixBlock) стейтом не
+		// выражается → 0»). Замеряем, что из этого выходит: ставим руды материалов с РАЗНЫМ mToolQuality реальным
+		// путём и печатаем требуемый уровень + вердикт движка для GT6-кирок разного качества.
+		gt6HarvestOreLevels(O, tLevel, tPlayer);
 		O.println("========== [GT6-HARVESTPROBE] DONE ==========");
 	}
 	private static boolean sHarvestProbeDone = false;
+
+	/** BUG-070/П3: пер-материальность требуемого уровня у prefix-блоков (руды). Ставим руду РЕАЛЬНЫМ путём (стек с
+	 *  метой = ID материала, как её ставит игрок/ворлдген) и печатаем: что видит центр WD.harvestLevel, каким уровень
+	 *  БЫЛ БЫ по правилу 1.7.10 (getHarvestLevel(bind4(mToolQuality))), и что решает движок для GT6-кирок. */
+	private static void gt6HarvestOreLevels(java.io.PrintStream O, ServerLevel aLevel, ServerPlayer aPlayer) {
+		O.println("---------- [GT6-HARVESTPROBE] BUG-070/П3: уровень руды vs её материал ----------");
+		gregapi.block.prefixblock.PrefixBlock tOre = null;
+		try {
+			Object tO = gregapi.data.CS.BlocksGT.ore;
+			if (tO instanceof gregapi.block.prefixblock.PrefixBlock tP) tOre = tP;
+		} catch (Throwable e) {/* поле могло не заполниться */}
+		if (tOre == null) {O.println("[GT6-HARVESTPROBE] блок обычной руды не найден — замер невозможен"); return;}
+		O.println("[GT6-HARVESTPROBE] блок руды=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tOre)
+			+ " (offset/min/max уровня — поля самого блока; формула bind_(min,max,offset+X))");
+
+		// выбираем ТРИ материала с РАЗНЫМ mToolQuality, которые эта руда реально генерирует (гейт самого GT6)
+		java.util.List<gregapi.oredict.OreDictMaterial> tPick = new java.util.ArrayList<>();
+		int[] tWant = {0, 2, 4};
+		for (int tQ : tWant) {
+			for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+				if (tMat == null || tMat.mToolQuality != tQ) continue;
+				try { if (!tOre.mPrefix.isGeneratingItem(tMat)) continue; } catch (Throwable e) {continue;}
+				if (tPick.contains(tMat)) continue;
+				tPick.add(tMat); break;
+			}
+		}
+		if (tPick.size() < 2) {O.println("[GT6-HARVESTPROBE] не нашлось материалов с разным качеством — замер невозможен"); return;}
+
+		java.util.Set<Integer> tLevels = new java.util.HashSet<>();
+		java.util.Set<Integer> tExpected = new java.util.HashSet<>();
+		for (gregapi.oredict.OreDictMaterial tMat : tPick) {
+			BlockPos tP = aPlayer.blockPosition().offset(9, 0, 9);
+			net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(tOre, 1, tMat.mID);
+			BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(aLevel, aPlayer, tP, net.minecraft.core.Direction.UP, tStack, BlockEntity.class, "GT6-HARVESTPROBE", "руда " + tMat.mNameInternal);
+			if (tTE == null) {O.println("[GT6-HARVESTPROBE] руда " + tMat.mNameInternal + " не встала — пропуск"); continue;}
+			BlockPos tOrePos = tTE.getBlockPos();
+			net.minecraft.world.level.block.state.BlockState tSt = aLevel.getBlockState(tOrePos);
+			int tMetaWorld = gregapi.util.WD.meta(aLevel, tOrePos.getX(), tOrePos.getY(), tOrePos.getZ());
+			int tMetaState = gregapi.util.WD.meta(tSt);
+			int tLevelNow  = gregapi.util.WD.harvestLevel(tSt.getBlock(), tMetaState); // ровно то, что читает getDigSpeed на движковом пути
+			int tLevel1710 = tOre.getHarvestLevel(gregapi.util.UT.Code.bind4(tMat.mToolQuality));   // правило оригинала: мета блока = bind4(quality)
+			tLevels.add(tLevelNow); tExpected.add(tLevel1710);
+			StringBuilder tTools = new StringBuilder();
+			for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(gregapi.data.CS.TOOL_pickaxe)) {
+				net.minecraft.world.item.ItemStack tTool = tC.toStack();
+				if (tTool == null || tTool.isEmpty()) continue;
+				tTools.append(tTools.length() == 0 ? "" : "; ").append(tTool.getHoverName().getString())
+					.append(" correct=").append(tTool.isCorrectToolForDrops(tSt))
+					.append(" speed=").append(String.format(java.util.Locale.ROOT, "%.1f", tTool.getDestroySpeed(tSt)));
+				if (tTools.length() > 200) break;
+			}
+			O.println("[GT6-HARVESTPROBE] руда " + tMat.mNameInternal + " (mToolQuality=" + tMat.mToolQuality + ", ID=" + tMat.mID + ")"
+				+ ": мета-в-мире=" + tMetaWorld + " мета-из-состояния=" + tMetaState
+				+ " | требуемый уровень СЕЙЧАС=" + tLevelNow + " | по правилу 1.7.10 было бы=" + tLevel1710
+				+ " | материал-в-BE=" + (tOre.getMetaMaterial(aLevel, tOrePos.getX(), tOrePos.getY(), tOrePos.getZ()) == null ? "null" : tOre.getMetaMaterial(aLevel, tOrePos.getX(), tOrePos.getY(), tOrePos.getZ()).mNameInternal));
+			if (tTools.length() > 0) O.println("[GT6-HARVESTPROBE]    кирки GT6: " + tTools);
+			aLevel.setBlock(tOrePos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		}
+		// ПОЗИТИВНЫЙ КОНТРОЛЬ: у ванильного обсидиана уровень обязан быть 3 — значит центр WD.harvestLevel сам по себе жив
+		O.println("[GT6-HARVESTPROBE] POSITIVE-CONTROL ванильный обсидиан: уровень="
+			+ gregapi.util.WD.harvestLevel(net.minecraft.world.level.block.Blocks.OBSIDIAN, 0) + " (ожидание 3)");
+		O.println("[GT6-HARVESTPROBE] ВЕРДИКТ: материалов проверено " + tPick.size()
+			+ ", различных требуемых уровней СЕЙЧАС=" + tLevels.size() + " " + tLevels
+			+ ", различных по правилу 1.7.10=" + tExpected.size() + " " + tExpected
+			+ " → " + (tLevels.size() > 1 ? "уровень пер-материальный (дефекта нет)" : "УРОВЕНЬ ОДИН НА ВСЕ МАТЕРИАЛЫ (связь «материал → уровень» потеряна)"));
+	}
+
+	// ========== [GT6-TOOLMATRIX] BUG-071: МАТРИЦА «блок × инструмент» ==========
+	// Заказ игрока: «выбираешь пул блоков, которые разрушаются только определёнными инструментами, и набор
+	// инструментов, и проверяешь на каждом». Пул НЕ перечисляется руками: типы инструментов берутся из реестра GT6
+	// (ToolsGT), а блок-представитель под каждый тип ищется по самому GT6 (getHarvestTool) — обходом реестра MTE
+	// и prefix-руд. Ванильные блоки-эталоны уровня добавлены отдельно (0/1/2/3), чтобы шкала имела опору.
+	// Для каждой пары снимаются ТРИ движковых ответа (право/скорость/право-с-позицией) и сверяются с правилом 1.7.10:
+	// добыть можно, если СОВПАЛ ТИП инструмента И уровень инструмента >= уровня блока (ForgeHooks.canHarvestBlock).
+	private static boolean sToolMatrixDone = false;
+	public static void gt6ToolMatrixTick(net.minecraft.server.MinecraftServer aServer) {
+		if (sToolMatrixDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		if (aServer.getTickCount() < 200) return;
+		sToolMatrixDone = true;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		java.io.PrintStream O = OUT;
+		O.println("========== [GT6-TOOLMATRIX] BUG-071: право добычи по КАЖДОМУ типу инструмента ==========");
+		try {
+			java.util.List<Object[]> tBlocks = toolMatrixBlocks(O, tLevel, tPlayer); // {метка, ItemStack-для-установки, ожидаемый тип, ожидаемый уровень}
+			java.util.List<Object[]> tTools  = toolMatrixTools(O, tLevel);           // {метка, ItemStack, тип, уровень}
+			O.println("[GT6-TOOLMATRIX] блоков в пуле: " + tBlocks.size() + ", инструментов в наборе: " + tTools.size()
+				+ " → пар: " + (tBlocks.size() * tTools.size()));
+			int tAgree = 0, tDisagree = 0;
+			StringBuilder tBad = new StringBuilder();
+			for (Object[] tB : tBlocks) {
+				String tBLabel = (String)tB[0]; net.minecraft.world.item.ItemStack tPlaceStack = (net.minecraft.world.item.ItemStack)tB[1];
+				String tBTool = (String)tB[2]; int tBLevel = (Integer)tB[3];
+				BlockPos tP = tPlayer.blockPosition().offset(12, 0, 12);
+				net.minecraft.world.level.block.state.BlockState tState;
+				BlockPos tPos;
+				if (tPlaceStack == null) { // ванильный эталон ставим напрямую блоком-состоянием (свой путь у ванили — сам движок)
+					tPos = tP; tState = ((net.minecraft.world.level.block.Block)tB[4]).defaultBlockState();
+					tLevel.setBlock(tPos, tState, 3);
+				} else {
+					BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(tLevel, tPlayer, tP, net.minecraft.core.Direction.UP, tPlaceStack, BlockEntity.class, "GT6-TOOLMATRIX", tBLabel);
+					if (tTE == null) {O.println("[GT6-TOOLMATRIX] " + tBLabel + ": НЕ ВСТАЛ — пропуск"); continue;}
+					tPos = tTE.getBlockPos(); tState = tLevel.getBlockState(tPos);
+				}
+				O.println("[GT6-TOOLMATRIX] --- блок " + tBLabel + " (нужен инструмент «" + tBTool + "», уровень " + tBLevel + ")");
+				for (Object[] tT : tTools) {
+					String tTLabel = (String)tT[0]; net.minecraft.world.item.ItemStack tTool = (net.minecraft.world.item.ItemStack)tT[1];
+					String tTType = (String)tT[2]; int tTLevel = (Integer)tT[3];
+					tPlayer.getInventory().setItem(0, tTool.copy()); tPlayer.getInventory().setSelectedSlot(0);
+					boolean tCorrect, tHarvest; float tSpeed;
+					try {
+						tCorrect = tTool.isCorrectToolForDrops(tState);
+						tSpeed   = tTool.getDestroySpeed(tState);
+						tHarvest = tState.canHarvestBlock(tLevel, tPos, tPlayer); // ровно путь дропа (ServerPlayerGameMode:291)
+					} catch (Throwable e) {O.println("[GT6-TOOLMATRIX]    " + tTLabel + ": EXC " + e); continue;}
+					// СУДИМ НАБЛЮДАЕМОЕ: «реально добыл с дропом» = блок ломается (speed > 0) И право на дроп есть.
+					// Ожидание строим по ОРИГИНАЛУ, а не по своей реализации, и судим ТОЛЬКО однозначные случаи:
+					//  · материал блока не требует инструмента (ForgeHooks:97-100) — добыть можно чем угодно;
+					//  · GT6-инструмент, который сам считает блок неподходящим (GT_Tool_*.isMinableBlock, второе звено
+					//    1.7.10: ToolStats.getMiningSpeed = isMinableBlock ? 1 : 0) — добыть нельзя;
+					//  · GT6-инструмент, который блок ПРИЗНАЁТ своим (ключ признаёт все машины, молот — камень и руду
+					//    по префиксам имён — это КАНОН GT6, а не совпадение строк типа): судим ПОРОГ ПО УРОВНЮ.
+					// Ванильный инструмент чужого класса 1.7.10 отправлял в ванильный вердикт (:109-113) — исход зависит
+					// от флага requiresCorrectToolForDrops, к шкале уровней отношения не имеет: печатаем, но НЕ судим.
+					boolean tEffective = (tSpeed > 0) && tHarvest;
+					boolean tNoToolNeeded = false, tGTMinable = false, tIsGTTool = false;
+					try {
+						tNoToolNeeded = gregapi.util.WD.getMaterial(tState.getBlock()).isToolNotRequired();
+						if (tTool.getItem() instanceof gregapi.item.multiitem.MultiItemTool tMIT) {
+							tIsGTTool = true;
+							gregapi.item.multiitem.tools.IToolStats tStats = tMIT.getToolStats(tTool);
+							tGTMinable = tStats != null && tStats.isMinableBlock(tState.getBlock(), (byte)gregapi.util.WD.meta(tLevel, tPos.getX(), tPos.getY(), tPos.getZ()));
+						}
+					} catch (Throwable e) {/* правила инструмента недоступны — уходим в «не судим» */}
+					// ДВА ЗВЕНА НЕЗАВИСИМЫ, и порядок важен (первая версия судьи их перепутала):
+					//  · скорость — ToolStats.getMiningSpeed:89-91 оригинала: isMinableBlock ? 1 : 0. GT6-инструмент,
+					//    не признающий блок своим, даёт НОЛЬ — блок не сломать, что бы ни говорило право на дроп;
+					//  · право — ForgeHooks:97-100: материал без требования инструмента → дроп есть. На скорость не влияет.
+					// Отсюда: для GT6-инструмента решает isMinableBlock + порог уровня; «материал без требования»
+					// применимо лишь к ванильному инструменту (у него скорость от движка и всегда > 0).
+					Boolean tExpectObj;
+					if (tIsGTTool)          tExpectObj = tGTMinable ? (Boolean)(tTLevel >= tBLevel) : Boolean.FALSE;
+					else if (tNoToolNeeded) tExpectObj = Boolean.TRUE;                       // ванильный + материал без требования
+					else if (tTType.equals(tBTool)) tExpectObj = (Boolean)(tTLevel >= tBLevel); // ванильный СВОЕГО класса
+					else                    tExpectObj = null;                               // ванильный чужого класса — не судим
+					boolean tExpect = tExpectObj != null && tExpectObj;
+					boolean tOk = (tExpectObj == null) || (tEffective == tExpect);
+					if (tExpectObj == null) {O.println("[GT6-TOOLMATRIX]    " + tTLabel + " [" + tTType + ", ур." + tTLevel + "]: добыл=" + tEffective
+						+ " (canHarvest=" + tHarvest + " speed=" + String.format(java.util.Locale.ROOT, "%.1f", tSpeed) + ") | НЕ СУДИМ: ванильный инструмент чужого класса"); tAgree++; continue;}
+					if (tOk) tAgree++; else {tDisagree++; if (tBad.length() < 4000) tBad.append("\n[GT6-TOOLMATRIX]    РАСХОЖДЕНИЕ: ").append(tBLabel).append(" × ").append(tTLabel)
+						.append(" — реально добыл ").append(tEffective).append(", по правилу 1.7.10 ожидалось ").append(tExpect)
+						.append(" (тип блока «").append(tBTool).append("» vs тип инструмента «").append(tTType).append("», уровень блока ").append(tBLevel).append(" vs инструмента ").append(tTLevel).append(")");}
+					O.println("[GT6-TOOLMATRIX]    " + tTLabel + " [" + tTType + ", ур." + tTLevel + "]: добыл=" + tEffective
+						+ " (canHarvest=" + tHarvest + " correct=" + tCorrect + " speed=" + String.format(java.util.Locale.ROOT, "%.1f", tSpeed) + ")"
+						+ " | ожидание 1.7.10=" + tExpect + (tOk ? "" : "  <<< РАСХОЖДЕНИЕ"));
+				}
+				tLevel.setBlock(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			}
+			O.println(tBad.toString());
+			O.println("[GT6-TOOLMATRIX] ИТОГ: пар проверено " + (tAgree + tDisagree) + ", совпало с правилом 1.7.10 " + tAgree + ", разошлось " + tDisagree);
+		} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] стенд упал: " + e); e.printStackTrace(ERR);}
+		O.println("========== [GT6-TOOLMATRIX] DONE ==========");
+	}
+
+	/** Пул блоков: по одному представителю на КАЖДЫЙ тип инструмента, найденному в самом GT6 (getHarvestTool),
+	 *  плюс ванильные эталоны уровня 0..3. Каждый элемент: {метка, стек-для-установки|null, нужный тип, нужный уровень, блок-для-ванили}. */
+	private static java.util.List<Object[]> toolMatrixBlocks(java.io.PrintStream O, ServerLevel aLevel, ServerPlayer aPlayer) {
+		java.util.List<Object[]> r = new java.util.ArrayList<>();
+		// 1) MTE-блоки: обходим реестр и берём ПЕРВЫЙ встреченный блок под каждый ещё не покрытый тип инструмента
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		java.util.Set<String> tSeen = new java.util.HashSet<>();
+		if (tReg != null) for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+			try {
+				if (tC == null || tC.mBlock == null) continue;
+				String tTool = tC.mBlock.getHarvestTool(tC.mBlockMetaData);
+				if (tTool == null || !tSeen.add(tTool)) continue;
+				int tLevel = tC.mBlock.getHarvestLevel(tC.mBlockMetaData); // правило 1.7.10: мета блока = качество материала
+				r.add(new Object[]{"MTE#" + tC.mID + " (" + tTool + ")", tReg.getItem(tC.mID), tTool, tLevel, null});
+			} catch (Throwable e) {/* класс без блока/имени — пропуск */}
+		}
+		// 2) prefix-руды трёх материалов с РАЗНЫМ качеством (главный случай BUG-071)
+		try {
+			Object tO = gregapi.data.CS.BlocksGT.ore;
+			if (tO instanceof gregapi.block.prefixblock.PrefixBlock tOre) {
+				for (int tQ : new int[]{0, 2, 4}) for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (tMat == null || tMat.mToolQuality != tQ) continue;
+					try { if (!tOre.mPrefix.isGeneratingItem(tMat)) continue; } catch (Throwable e) {continue;}
+					r.add(new Object[]{"руда " + tMat.mNameInternal + " (кач." + tQ + ")", gregapi.util.ST.make(tOre, 1, tMat.mID),
+						tOre.getHarvestTool(0), tOre.getHarvestLevel(gregapi.util.UT.Code.bind4(tMat.mToolQuality)), null});
+					break;
+				}
+			}
+		} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] руды в пул не попали: " + e);}
+		// 3) ванильные эталоны шкалы 0..3 — опора, без них числа инструментов не с чем сверить
+		r.add(new Object[]{"ваниль STONE (ур.0)"      , null, gregapi.data.CS.TOOL_pickaxe, 0, net.minecraft.world.level.block.Blocks.STONE});
+		r.add(new Object[]{"ваниль IRON_ORE (ур.1)"   , null, gregapi.data.CS.TOOL_pickaxe, 1, net.minecraft.world.level.block.Blocks.IRON_ORE});
+		r.add(new Object[]{"ваниль DIAMOND_ORE (ур.2)", null, gregapi.data.CS.TOOL_pickaxe, 2, net.minecraft.world.level.block.Blocks.DIAMOND_ORE});
+		r.add(new Object[]{"ваниль OBSIDIAN (ур.3)"   , null, gregapi.data.CS.TOOL_pickaxe, 3, net.minecraft.world.level.block.Blocks.OBSIDIAN});
+		return r;
+	}
+
+	/** Набор инструментов: по одному экземпляру каждого типа GT6 из реестра ToolsGT + ванильная лесенка ярусов.
+	 *  Уровень GT6-инструмента — его же метод getHarvestLevel; ванильного — спрашиваем У ДВИЖКА по эталонным блокам
+	 *  (число ступеней, которые инструмент проходит), а не таблицей: в neo числового яруса больше нет, только теги. */
+	private static java.util.List<Object[]> toolMatrixTools(java.io.PrintStream O, ServerLevel aLevel) {
+		java.util.List<Object[]> r = new java.util.ArrayList<>();
+		String[] tTypes = {gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_wrench, gregapi.data.CS.TOOL_crowbar, gregapi.data.CS.TOOL_cutter,
+			gregapi.data.CS.TOOL_axe, gregapi.data.CS.TOOL_shovel, gregapi.data.CS.TOOL_saw, gregapi.data.CS.TOOL_knife, gregapi.data.CS.TOOL_shears,
+			gregapi.data.CS.TOOL_hammer, gregapi.data.CS.TOOL_screwdriver, gregapi.data.CS.TOOL_file, gregapi.data.CS.TOOL_chisel, gregapi.data.CS.TOOL_scoop};
+		for (String tType : tTypes) {
+			try {
+				for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(tType)) {
+					net.minecraft.world.item.ItemStack tTool = tC.toStack();
+					if (tTool == null || tTool.isEmpty()) continue;
+					int tLevel = -1;
+					if (tTool.getItem() instanceof gregapi.item.multiitem.MultiItemTool tMIT) tLevel = tMIT.getHarvestLevel(tTool, tType);
+					r.add(new Object[]{"GT6 " + tTool.getHoverName().getString(), tTool, tType, tLevel});
+					break; // одного представителя типа достаточно
+				}
+			} catch (Throwable e) {/* тип без зарегистрированных инструментов */}
+		}
+		// ванильная лесенка: уровень спрашиваем у движка эталонами (0=любой, 1=IRON_ORE, 2=DIAMOND_ORE, 3=OBSIDIAN)
+		net.minecraft.world.item.Item[] tVanilla = {net.minecraft.world.item.Items.WOODEN_PICKAXE, net.minecraft.world.item.Items.STONE_PICKAXE,
+			net.minecraft.world.item.Items.IRON_PICKAXE, net.minecraft.world.item.Items.DIAMOND_PICKAXE,
+			net.minecraft.world.item.Items.IRON_AXE, net.minecraft.world.item.Items.IRON_SHOVEL, net.minecraft.world.item.Items.SHEARS};
+		String[] tVanillaType = {gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_pickaxe,
+			gregapi.data.CS.TOOL_axe, gregapi.data.CS.TOOL_shovel, gregapi.data.CS.TOOL_shears};
+		for (int i = 0; i < tVanilla.length; i++) {
+			net.minecraft.world.item.ItemStack tTool = new net.minecraft.world.item.ItemStack(tVanilla[i]);
+			r.add(new Object[]{"ваниль " + tTool.getHoverName().getString(), tTool, tVanillaType[i], vanillaToolLevel(tTool)});
+		}
+		return r;
+	}
+
+	/** Ярус ванильного инструмента ЧИСЛОМ — спрашиваем сам движок эталонными блоками (в neo числового яруса нет). */
+	private static int vanillaToolLevel(net.minecraft.world.item.ItemStack aStack) {
+		int r = 0;
+		if (aStack.isCorrectToolForDrops(net.minecraft.world.level.block.Blocks.IRON_ORE.defaultBlockState())) r = 1;
+		if (aStack.isCorrectToolForDrops(net.minecraft.world.level.block.Blocks.DIAMOND_ORE.defaultBlockState())) r = 2;
+		if (aStack.isCorrectToolForDrops(net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState())) r = 3;
+		return r;
+	}
 
 	private static void gt6UVProbeVerdict() {
 		String tVerdict = sUVPClientVerdict;
