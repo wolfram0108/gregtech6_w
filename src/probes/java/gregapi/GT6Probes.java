@@ -6957,6 +6957,26 @@ public final class GT6Probes {
 		ServerLevel tLevel = aPlayer.level();
 		BlockPos tO = aPlayer.blockPosition().offset(4, 0, 4);
 		O.println("========== [" + YARD_M + "] ПОЛИГОН ДОБЫЧИ (BUG-071), центр " + tO + " ==========");
+		// УСЛОВИЯ ПРИЁМКИ: полигон нужен для проверки ДОБЫЧИ, а не для выживания — мобы и ночь только мешают.
+		// Режим остаётся ВЫЖИВАНИЕМ (в креативе право на дроп движок не проверяет), но мир делаем мирным:
+		// сложность PEACEFUL, вечный полдень, спавн мобов выключен, погода выключена, уже сидящие враги убраны.
+		try {
+			net.minecraft.server.MinecraftServer tServer = tLevel.getServer();
+			if (tServer != null) {
+				tServer.setDifficulty(net.minecraft.world.Difficulty.PEACEFUL, true);
+				// время/погода/правила — ШТАТНЫМИ командами: в 26.1 время суток ушло под clock-manager, и угадывать
+				// его внутренний API смысла нет, а команды — стабильный контракт движка.
+				net.minecraft.commands.CommandSourceStack tSrc = tServer.createCommandSourceStack();
+				for (String tCmd : new String[]{"time set noon", "weather clear 1000000",
+					"gamerule advance_time false", "gamerule advance_weather false", "gamerule spawn_monsters false"})
+					try {tServer.getCommands().performPrefixedCommand(tSrc, tCmd);} catch (Throwable e) {O.println("[" + YARD_M + "] команда «" + tCmd + "» не прошла: " + e);}
+			}
+			int tKilled = 0;
+			for (net.minecraft.world.entity.Entity tEntity : tLevel.getEntities(aPlayer, new net.minecraft.world.phys.AABB(tO).inflate(128)))
+				if (tEntity instanceof net.minecraft.world.entity.monster.Monster) {tEntity.discard(); tKilled++;}
+			aPlayer.setHealth(aPlayer.getMaxHealth());
+			O.println("[" + YARD_M + "] условия: PEACEFUL, полдень, спавн мобов и погода выключены, убрано враждебных рядом: " + tKilled);
+		} catch (Throwable e) {O.println("[" + YARD_M + "] не удалось выставить мирные условия: " + e);}
 		// ровная площадка: пол из камня, воздух над ним
 		for (int x = -2; x <= 40; x++) for (int z = -2; z <= 12; z++) {
 			tLevel.setBlock(tO.offset(x, -1, z), Blocks.STONE.defaultBlockState(), 2);
@@ -7013,6 +7033,32 @@ public final class GT6Probes {
 				tRow++;
 			}
 		} catch (Throwable e) {O.println("[" + YARD_M + "] руды не встали: " + e);}
+
+		// ── РЯД ШИПОВ (BUG-072): ОДИН блок, но два материала в мете — бит 8 переключает mMat1/mMat2 ───────
+		// Ставим оба варианта и кладём их в инвентарь: игроку нужно проверить и добычу (уровень своего
+		// материала), и то, что шип встаёт нужной стороной и даёт при разрушении СВОЙ вариант, а не первый.
+		try {
+			int tZS = tRow * 2, tColS = 2;
+			StringBuilder tSpikes = new StringBuilder();
+			for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+				if (!(tBlock instanceof gregapi.block.misc.BlockBaseSpike tSpike)) continue;
+				for (int tMeta : new int[]{0, 8}) { // 0 = первый материал, 8 = второй (BlockBaseSpike:70,72)
+					net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(tBlock, 1, tMeta);
+					if (gregapi.probe.GT6ProbeStand.placeBlock(tLevel, aPlayer, tO.offset(tColS, -1, tZS), net.minecraft.core.Direction.UP, tStack, YARD_M, "шип#" + tMeta) != null) {
+						tSpikes.append(tSpikes.length() == 0 ? "" : ", ").append(tMeta == 0 ? tSpike.mMat1.mNameInternal : tSpike.mMat2.mNameInternal)
+							.append("(мета ").append(tMeta).append(", тир ").append(tSpike.getHarvestLevel(tMeta)).append(") @x+").append(tColS);
+						tColS += 2;
+					}
+					tGive.add(gregapi.util.ST.make(tBlock, 8, tMeta)); // в инвентарь — ставить и ломать самому
+				}
+				break; // одного вида шипов достаточно: иерархия общая
+			}
+			if (tSpikes.length() > 0) {
+				gt6ToolYardSign(tLevel, tO.offset(0, 0, tZS), "ШИПЫ (BUG-072)", "мета 0 и мета 8", "разные материалы");
+				O.println("[" + YARD_M + "] ряд " + tRow + " ШИПЫ: " + tSpikes + " — в инвентаре есть оба варианта, проверьте ориентацию и дроп");
+				tRow++;
+			} else O.println("[" + YARD_M + "] шипы не встали — проверять нечем");
+		} catch (Throwable e) {O.println("[" + YARD_M + "] шипы не встали: " + e);}
 
 		// ── РЯД ВАНИЛЬНЫХ ЭТАЛОНОВ: чтобы шкала была с чем сравнить ──────────────────────────────────────
 		net.minecraft.world.level.block.Block[] tVanilla = {Blocks.STONE, Blocks.IRON_ORE, Blocks.DIAMOND_ORE, Blocks.OBSIDIAN};
