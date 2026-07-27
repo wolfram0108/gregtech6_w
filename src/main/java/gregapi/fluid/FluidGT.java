@@ -104,7 +104,11 @@ public class FluidGT {
 	private static Map<Fluid, FluidGT> BY_FLUID_CACHE;
 
 	public final String mName;
-	/** PORT-TODO(F3, рендер жидкостей): RegisterFluidModelsEvent/tint подключаются отдельно. */
+	/** F3-render (СДЕЛАНО, не долг): текстуру жидкости в мире рисует не это поле, а
+	 *  {@code FluidModel.Unbaked(still, flow, overlay, tintSource)}, регистрируемый на
+	 *  {@code RegisterFluidModelsEvent} — {@code GT_API_Proxy_Client.onRegisterFluidModels:204}
+	 *  (в логе: «F3-render: FluidModel зарегистрированы для N GT6-жидкостей»). Поле остаётся как
+	 *  1:1-носитель имени текстуры для GT6-кода, который его читает. */
 	public final IIconContainer mTexture;
 
 	private short[] mRGBa;
