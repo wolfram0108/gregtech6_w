@@ -65,18 +65,41 @@ public final class GT6ProbeStand {
 			net.minecraft.server.level.ServerLevel aLevel, net.minecraft.server.level.ServerPlayer aPlayer,
 			net.minecraft.core.BlockPos aAnchorPos, net.minecraft.core.Direction aFace, net.minecraft.world.item.ItemStack aItem,
 			Class<T> aExpectedClass, String aMarker, String aLabel) {
-		if (aLevel.getBlockEntity(aAnchorPos) == null) aLevel.setBlock(aAnchorPos, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3); // твёрдый анкер
-		net.minecraft.core.BlockPos tTarget = aAnchorPos.relative(aFace);
-		aLevel.setBlock(tTarget, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3); // расчистка цели под установку
-		aPlayer.getInventory().setItem(0, aItem); aPlayer.getInventory().setSelectedSlot(0);
-		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(aAnchorPos).add(aFace.getStepX()*0.5, aFace.getStepY()*0.5, aFace.getStepZ()*0.5);
-		aPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(tHit, aFace, aAnchorPos, false)));
+		net.minecraft.core.BlockPos tTarget = clickWith(aLevel, aPlayer, aAnchorPos, aFace, aItem);
 		net.minecraft.world.level.block.entity.BlockEntity tBE = aLevel.getBlockEntity(tTarget);
 		if (!aExpectedClass.isInstance(tBE)) {
 			O.println("[" + aMarker + "] DIAG " + aLabel + " не встал @" + tTarget + " BE=" + (tBE == null ? "null" : tBE.getClass().getSimpleName()) + " блок=" + aLevel.getBlockState(tTarget).getBlock());
 			return null;
 		}
 		return aExpectedClass.cast(tBE);
+	}
+
+	/** То же самое для блоков БЕЗ BlockEntity (дерево, листва, камень GT6): путь установки тот же — стек в руку и
+	 *  {@code useOn} — но верификация по БЛОКУ, а не по BE (иначе {@link #place} отбрасывает верно поставленный
+	 *  блок только потому, что у него нет BE). Возвращает поставленную позицию либо null. */
+	public static net.minecraft.core.BlockPos placeBlock(
+			net.minecraft.server.level.ServerLevel aLevel, net.minecraft.server.level.ServerPlayer aPlayer,
+			net.minecraft.core.BlockPos aAnchorPos, net.minecraft.core.Direction aFace, net.minecraft.world.item.ItemStack aItem,
+			String aMarker, String aLabel) {
+		net.minecraft.core.BlockPos tTarget = clickWith(aLevel, aPlayer, aAnchorPos, aFace, aItem);
+		if (aLevel.getBlockState(tTarget).isAir()) {
+			O.println("[" + aMarker + "] DIAG " + aLabel + " не встал @" + tTarget + " (осталось пусто)");
+			return null;
+		}
+		return tTarget;
+	}
+
+	/** Общий приём установки (один на оба варианта выше): твёрдый анкер → расчистка цели → стек в руку → useOn. */
+	private static net.minecraft.core.BlockPos clickWith(
+			net.minecraft.server.level.ServerLevel aLevel, net.minecraft.server.level.ServerPlayer aPlayer,
+			net.minecraft.core.BlockPos aAnchorPos, net.minecraft.core.Direction aFace, net.minecraft.world.item.ItemStack aItem) {
+		if (aLevel.getBlockEntity(aAnchorPos) == null) aLevel.setBlock(aAnchorPos, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3); // твёрдый анкер
+		net.minecraft.core.BlockPos tTarget = aAnchorPos.relative(aFace);
+		aLevel.setBlock(tTarget, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3); // расчистка цели под установку
+		aPlayer.getInventory().setItem(0, aItem); aPlayer.getInventory().setSelectedSlot(0);
+		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(aAnchorPos).add(aFace.getStepX()*0.5, aFace.getStepY()*0.5, aFace.getStepZ()*0.5);
+		aPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(tHit, aFace, aAnchorPos, false)));
+		return tTarget;
 	}
 
 	/** Линия из aN однотипных MTE вдоль aDir: каждая клетка кликается ПО ПРЕДЫДУЩЕЙ (walk, тот же приём,

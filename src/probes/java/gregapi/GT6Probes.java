@@ -6316,33 +6316,95 @@ public final class GT6Probes {
 		}
 
 		// ── СЕКТОР 4 (x=14..18): ЖИДКОСТИ GT6 — цвет на карте (MODCOMPAT-002) ────────────────────────────
+		// BUG-067 («потом 3 пустых, там нет жидкостей»): лужи ставились одним setBlock в толще платформы — без чаши
+		// и без меты источника они растекались/исчезали. Теперь: КАМЕННАЯ ЧАША с бортиками, жидкость кладётся через
+		// центр GT6 (WD.set с метой 0 = полный источник — тот же канал, которым её ставит вордген), и КАЖДАЯ лужа
+		// проверяется по факту: что реально стоит в мире после установки.
 		net.minecraft.world.level.block.Block[] tFluids = {
 			  gregapi.data.CS.BlocksGT.River, gregapi.data.CS.BlocksGT.Ocean, gregapi.data.CS.BlocksGT.Swamp
 			, gregapi.data.CS.BlocksGT.OilHeavy, gregapi.data.CS.BlocksGT.GasNatural};
-		for (int i = 0; i < tFluids.length; i++) if (tFluids[i] != null) {
-			for (int dx = 0; dx < 3; dx++) for (int dz = 0; dz < 3; dz++) {
-				tLevel.setBlock(tO.offset(14 + i * 4 + dx, -1, dz), tFluids[i].defaultBlockState(), 2);
+		String[] tFluidNames = {"River", "Ocean", "Swamp", "OilHeavy", "GasNatural"};
+		StringBuilder tPools = new StringBuilder();
+		for (int i = 0; i < tFluids.length; i++) {
+			int tX0 = 14 + i * 4;
+			if (tFluids[i] == null) {tPools.append(tPools.length() == 0 ? "" : ", ").append(tFluidNames[i]).append("=НЕТ БЛОКА"); continue;}
+			// чаша: дно и бортики из камня, внутри 3x3 пусто на глубину 1
+			for (int dx = -1; dx <= 3; dx++) for (int dz = -1; dz <= 3; dz++) {
+				tLevel.setBlock(tO.offset(tX0 + dx, -2, dz), Blocks.STONE.defaultBlockState(), 2);
+				boolean tRim = dx < 0 || dx > 2 || dz < 0 || dz > 2;
+				tLevel.setBlock(tO.offset(tX0 + dx, -1, dz), tRim ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState(), 2);
 			}
+			// заливка: мета 0 = источник (канал WD.set — тот же, которым жидкости ставит вордген GT6).
+			// flags=2 (только клиент, без обновления соседей): прошлый прогон с flags=3 дал River/Ocean/Swamp = 0/9 —
+			// обновление соседей запускало разлив прямо в момент постройки, и водоподобные исчезали.
+			boolean tSet = T;
+			for (int dx = 0; dx < 3; dx++) for (int dz = 0; dz < 3; dz++)
+				tSet &= gregapi.util.WD.set(tLevel, tO.getX() + tX0 + dx, tO.getY() - 1, tO.getZ() + dz, tFluids[i], 0, 2, F);
+			// проверка СВОЕЙ работы: сколько клеток из 9 реально заняты этой жидкостью, и что стоит вместо неё
+			int tFilled = 0; String tInstead = "";
+			for (int dx = 0; dx < 3; dx++) for (int dz = 0; dz < 3; dz++) {
+				net.minecraft.world.level.block.Block tGot = tLevel.getBlockState(tO.offset(tX0 + dx, -1, dz)).getBlock();
+				if (tGot == tFluids[i]) tFilled++; else if (tInstead.isEmpty()) tInstead = String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tGot));
+			}
+			tPools.append(tPools.length() == 0 ? "" : ", ").append(tFluidNames[i]).append('(').append(tFluids[i].getClass().getSimpleName()).append(")=")
+				.append(tFilled).append("/9").append(tFilled == 9 ? "" : " [set=" + tSet + ", вместо неё " + tInstead + "]");
 		}
-		O.println("[" + DEMO_M + "] 4) ЛУЖИ ЖИДКОСТЕЙ GT6 (карта) @ x=" + (tO.getX() + 14) + ".." + (tO.getX() + 30) + ", z=" + tO.getZ());
+		O.println("[" + DEMO_M + "] 4) ЛУЖИ ЖИДКОСТЕЙ GT6 (карта) @ x=" + (tO.getX() + 14) + ".." + (tO.getX() + 30) + ", z=" + tO.getZ() + " — " + tPools);
 
 		// ── СЕКТОР 5 (z=6): ПОРОДЫ/РУДЫ GT6 — цвет на карте + инструмент в Jade ──────────────────────────
-		// Ряд z+6: РУДЫ (кирка). Ряд z+9: прочие GT6-блоки — дерево/листва (топор), чтобы в Jade был виден и он.
+		// BUG-067: прежняя версия ставила `setBlock(defaultBlockState())` — мимо канала меты GT6, поэтому подтип
+		// оставался 0 = MT.Empty (PrefixBlock:201), а игрок видел «Any Sub-Block of this one» и текстуру-заглушку.
+		// Теперь блок ставится ТЕМ ЖЕ путём, что у игрока: стек нужного подтипа (ST.make(block,1,мета) — как сам
+		// PrefixBlock делает свои стеки, :285) кладётся в руку и применяется useOn (GT6ProbeStand.place).
+		// Ряд z+6: РУДЫ (кирка). Ряд z+9: прочие GT6-блоки — дерево/листва/камень (топор), чтобы в Jade был виден и он.
 		int tPlaced = 0, tPlacedMisc = 0;
+		StringBuilder tOreNames = new StringBuilder(), tMiscNames = new StringBuilder();
 		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
 			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tID == null) continue;
 			String tPath = tID.getPath();
-			if (tPlaced < 14 && tPath.startsWith("gt.meta.ore.normal")) {
-				tLevel.setBlock(tO.offset(tPlaced * 2, 0, 6), tBlock.defaultBlockState(), 2);
-				tPlaced++;
-			} else if (tPlacedMisc < 14 && (tPath.startsWith("gt.block.log") || tPath.startsWith("gt.block.beam") || tPath.startsWith("gt.block.planks") || tPath.startsWith("gt.block.leaves") || tPath.startsWith("gt.block.stone"))) {
-				tLevel.setBlock(tO.offset(tPlacedMisc * 2, 0, 9), tBlock.defaultBlockState(), 2);
-				tPlacedMisc++;
-			}
+			boolean tIsOre = tPath.startsWith("gt.meta.ore.normal");
+			boolean tIsMisc = tPath.startsWith("gt.block.log.") || tPath.startsWith("gt.block.planks.") || tPath.startsWith("gt.block.leaves.") || tPath.startsWith("gt.block.stone");
+			if (!tIsOre && !tIsMisc) continue;
+			if (tIsOre && tPlaced >= 14) continue;
+			if (tIsMisc && tPlacedMisc >= 14) continue;
+
+			// Какой подтип ставить. У PrefixBlock мета = МАТЕРИАЛ, и годится не любая: гейт «префикс реально делает
+			// такой предмет» — тот же `mPrefix.isGeneratingItem`, которым сам PrefixBlock строит свои стеки
+			// (PrefixBlock:279,284). Без него берётся первый попавшийся не-Empty материал — так в прошлом прогоне
+			// во ВСЕ 14 руд попал `Photon` (руды из него не существует → блок и выглядел «непрогруженным»).
+			int tMeta = -1;
+			if (tBlock instanceof gregapi.block.prefixblock.PrefixBlock tPrefix) {
+				// ⚠ мета руды = ID МАТЕРИАЛА, а не порядковый номер: список индексирован по ID, и первые номера
+				// заняты экзотикой (ID 1 = Photon — им и заполнился прошлый прогон). Поэтому идём по ВСЕМУ списку.
+				for (int m = 1; m < tPrefix.mMaterialList.length && tMeta < 0; m++) {
+					gregapi.oredict.OreDictMaterial tMat = tPrefix.mMaterialList[m];
+					if (tMat != null && tMat != gregapi.data.MT.Empty && tPrefix.mPrefix.isGeneratingItem(tMat)) tMeta = m;
+				}
+			} else tMeta = 0; // у обычных блоков GT6 (дерево/листва/камень) мета 0 — нормальный первый подтип, не wildcard
+			if (tMeta < 0) continue;
+			net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(tBlock, 1, tMeta);
+			if (tStack == null || tStack.isEmpty()) continue;
+
+			// Ставим ТЕМ ЖЕ путём, что игрок. У руд есть BlockEntity, у дерева/камня — нет, поэтому вариант проверки
+			// разный (иначе верно поставленное дерево отбрасывалось бы только из-за отсутствия BE — так и вышло: 0 шт.).
+			int tIdx = tIsOre ? tPlaced : tPlacedMisc;
+			BlockPos tAnchor = tO.offset(tIdx * 2, -1, tIsOre ? 6 : 9);
+			BlockPos tAt = tIsOre
+				? (gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tAnchor, net.minecraft.core.Direction.UP, tStack, BlockEntity.class, DEMO_M, tPath + "#" + tMeta) instanceof BlockEntity tBE ? tBE.getBlockPos() : null)
+				: gregapi.probe.GT6ProbeStand.placeBlock(tLevel, aPlayer, tAnchor, net.minecraft.core.Direction.UP, tStack, DEMO_M, tPath + "#" + tMeta);
+			if (tAt == null) continue;
+			// Механическая проверка СВОЕЙ работы: подтип реально записан в мир (иначе игроку опять покажут не то).
+			int tRealMeta = gregapi.util.WD.meta(tLevel, tAt.getX(), tAt.getY(), tAt.getZ());
+			String tWhat = tBlock instanceof gregapi.block.prefixblock.PrefixBlock tP
+				? String.valueOf(tP.getMetaMaterial(tRealMeta) == null ? "null" : tP.getMetaMaterial(tRealMeta).mNameInternal)
+				: gregapi.util.ST.make(tBlock, 1, tRealMeta).getHoverName().getString();
+			String tLine = tPath + "#" + tRealMeta + "=" + tWhat + (tRealMeta == tMeta ? "" : " ⚠ХОТЕЛ#" + tMeta);
+			if (tIsOre) {tPlaced++;  tOreNames .append(tOreNames .length() == 0 ? "" : ", ").append(tLine);}
+			else        {tPlacedMisc++; tMiscNames.append(tMiscNames.length() == 0 ? "" : ", ").append(tLine);}
 		}
-		O.println("[" + DEMO_M + "] 5) РУДЫ GT6 (карта + Jade-кирка) @ z=" + (tO.getZ() + 6) + ", поставлено " + tPlaced
-			+ "; ДЕРЕВО/КАМЕНЬ GT6 (Jade-топор) @ z=" + (tO.getZ() + 9) + ", поставлено " + tPlacedMisc);
+		O.println("[" + DEMO_M + "] 5) РУДЫ GT6 (карта + Jade-кирка) @ z=" + (tO.getZ() + 6) + ", поставлено " + tPlaced + ": " + tOreNames);
+		O.println("[" + DEMO_M + "] 5b) ДЕРЕВО/КАМЕНЬ GT6 (Jade-топор) @ z=" + (tO.getZ() + 9) + ", поставлено " + tPlacedMisc + ": " + tMiscNames);
 	}
 
 	private static void gt6DemoFinish(ServerPlayer aPlayer) {
