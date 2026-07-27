@@ -1959,40 +1959,44 @@ public class CS {
 		 */
 		public static boolean sameFamily(Item aItem1, Item aItem2) {
 			if (aItem1 == null || aItem2 == null || aItem1 == aItem2) return F;
-			for (Item[] tFamily : ITEM_FAMILIES              ) if (contains(tFamily, aItem1) && contains(tFamily, aItem2)) return T;
-			for (Item[] tFamily : WILDCARD_ONLY_ITEM_FAMILIES) if (contains(tFamily, aItem1) && contains(tFamily, aItem2)) return T;
-			Block tBlock1 = Block.byItem(aItem1), tBlock2 = Block.byItem(aItem2);
-			if (tBlock1 == null || tBlock2 == null) return F;
-			for (Block[] tFamily : WORLD_FAMILIES               ) if (contains(tFamily, tBlock1) && contains(tFamily, tBlock2)) return T;
-			for (Block[] tFamily : STACK_ONLY_FAMILIES          ) if (contains(tFamily, tBlock1) && contains(tFamily, tBlock2)) return T;
-			for (Block[] tFamily : WILDCARD_ONLY_BLOCK_FAMILIES ) if (contains(tFamily, tBlock1) && contains(tFamily, tBlock2)) return T;
-			return F;
+			Item tHead = headItemOf(aItem1);
+			return tHead != null && tHead == headItemOf(aItem2);
 		}
-		private static boolean contains(Object[] aFamily, Object aMember) {for (Object m : aFamily) if (m == aMember) return T; return F;}
 
 		/**
-		 * Все члены семьи джокера как стеки (мета 0, размер 1) — либо пустой список, если вещь не из семьи.
-		 * Нужен индексу рецептов: поиск идёт по хеш-бакету «предмет+мета», поэтому один джокер-стек обязан
-		 * попасть в бакеты ВСЕХ членов, иначе цветной вариант просто не найдёт рецепт (сравнение стеков до
-		 * этого места не доходит). Сам рецепт при этом остаётся один — расширяется только индекс.
+		 * Глава семьи как ПРЕДМЕТ (то, чем вся семья была в 1.7.10) либо {@code null} — вещь не расщеплена.
+		 *
+		 * <p>Примитив, на котором стоят и {@link #sameFamily}, и джокер-ключ карт ({@code ItemStackMap.get}):
+		 * там, где 1.7.10 писал «предмет + мета {@code W}» и этим покрывал ВСЕ подтипы, neo-эквивалент —
+		 * «глава семьи + {@code W}». Держим его здесь, в тех же картах, чтобы понимание «джокер = вся семья»
+		 * не расползлось по вызывателям.</p>
+		 *
+		 * <p>Ответ должен быть дешёвым: его спрашивает поиск рецепта на каждый вход машины (Recipe:505),
+		 * поэтому перебор семейств делается ОДИН раз, лениво, и дальше это обычный поиск по хешу. Лениво —
+		 * потому что {@code Block.asItem()} требует уже заполненного реестра предметов, а класс грузится раньше.</p>
+		 *
+		 * <p>Не путать с {@link #headOf(Block)}: тот отвечает про БЛОК В МИРЕ и по построению видит только
+		 * семейства, где мета и в мире означает подтип. Здесь речь о ВЕЩИ В СТЕКЕ, поэтому участвуют все
+		 * семейства, включая те, что заведены исключительно ради джокера ({@link #WILDCARD_ONLY_BLOCK_FAMILIES}).
+		 * Множества разные — это два разных вопроса, а не две копии одного.</p>
 		 */
-		public static java.util.List<ItemStack> familyStacks(ItemStack aStack) {
-			if (aStack == null) return java.util.Collections.emptyList();
-			Item tItem = aStack.getItem();
-			for (Item[] tFamily : ITEM_FAMILIES              ) if (contains(tFamily, tItem)) return stacksOf(tFamily);
-			for (Item[] tFamily : WILDCARD_ONLY_ITEM_FAMILIES) if (contains(tFamily, tItem)) return stacksOf(tFamily);
-			Block tBlock = Block.byItem(tItem);
-			if (tBlock == null) return java.util.Collections.emptyList();
-			for (Block[] tFamily : WORLD_FAMILIES              ) if (contains(tFamily, tBlock)) return stacksOf(tFamily);
-			for (Block[] tFamily : STACK_ONLY_FAMILIES         ) if (contains(tFamily, tBlock)) return stacksOf(tFamily);
-			for (Block[] tFamily : WILDCARD_ONLY_BLOCK_FAMILIES) if (contains(tFamily, tBlock)) return stacksOf(tFamily);
-			return java.util.Collections.emptyList();
+		public static Item headItemOf(Item aItem) {
+			if (aItem == null) return null;
+			java.util.Map<Item, Item> tHeads = HEADS;
+			if (tHeads == null) {
+				tHeads = new java.util.IdentityHashMap<>();
+				// putIfAbsent, а не put: вещь может числиться в двух семьях (например DEAD_BUSH — и в TALLGRASS),
+				// и порядок перебора обязан остаться прежним — выигрывает первое совпадение, как в find/headOf.
+				for (Item [][] tFamilies : new Item [][][] {ITEM_FAMILIES , WILDCARD_ONLY_ITEM_FAMILIES }) for (Item [] tFamily : tFamilies) for (Item  tMember : tFamily) tHeads.putIfAbsent(tMember, tFamily[0]);
+				for (Block[][] tFamilies : new Block[][][] {WORLD_FAMILIES, STACK_ONLY_FAMILIES, WILDCARD_ONLY_BLOCK_FAMILIES}) for (Block[] tFamily : tFamilies) for (Block tMember : tFamily) {
+					Item tMemberItem = tMember.asItem(), tHeadItem = tFamily[0].asItem();
+					if (tMemberItem != Items.AIR && tHeadItem != Items.AIR) tHeads.putIfAbsent(tMemberItem, tHeadItem);
+				}
+				HEADS = tHeads;
+			}
+			return tHeads.get(aItem);
 		}
-		private static java.util.List<ItemStack> stacksOf(Object[] aFamily) {
-			java.util.List<ItemStack> rList = new java.util.ArrayList<>(aFamily.length);
-			for (Object tMember : aFamily) rList.add(tMember instanceof Item tI ? new ItemStack(tI) : new ItemStack((Block)tMember));
-			return rList;
-		}
+		private static java.util.Map<Item, Item> HEADS = null;
 
 		/** Обратное чтение: номер варианта внутри семьи (1.7.10-мета) либо −1, если вещь не из семейства.
 		 *  Нужен там, где GT6 сравнивает «а не нужного ли уже подтипа этот блок» ({@code colorize:167}). */

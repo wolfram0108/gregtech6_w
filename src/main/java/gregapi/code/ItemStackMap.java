@@ -100,6 +100,37 @@ public class ItemStackMap<K extends ItemStackContainer, V> extends HashMap<ItemS
 		}
 		return containsKey(aStack);
 	}
+	/**
+	 * F4-flatten, джокер семьи. В 1.7.10 ныне расщеплённое семейство было ОДНИМ предметом, и ключ
+	 * «предмет + мета {@code W}» покрывал все его подтипы разом — на это опираются и поиск рецепта
+	 * ({@code Recipe.findRecipeInternal:505} — второй запрос по {@code W}), и данные предметов
+	 * ({@code OreDictManager:723}), и NEI-перенаправления. В neo подтипы стали РАЗНЫМИ предметами,
+	 * поэтому джокер-запись семьи лежит под её главой, а спрашивают её любым членом: красное стекло
+	 * должно найти то, что положено под белым.
+	 *
+	 * <p>Вход в ветку — только промах по точному ключу, и только на картах, где джокеры вообще есть
+	 * ({@code mHasWildcards}), так что горячий путь поиска рецептов не дорожает. Ключ при записи НЕ
+	 * трогаем: 1:1 с оригиналом кладём то, что дал вызыватель.</p>
+	 */
+	@Override
+	public V get(Object aKey) {
+		V rValue = super.get(aKey);
+		if (rValue == null && mHasWildcards && aKey instanceof ItemStackContainer tKey && tKey.mMetaData == W) {
+			Item tHead = Flattened.headItemOf(tKey.mItem);
+			if (tHead != null && tHead != tKey.mItem) return super.get(new ItemStackContainer(tHead, 1, W));
+		}
+		return rValue;
+	}
+	/** Джокер семьи — см. {@link #get(Object)}: «есть ли запись» обязано отвечать так же, как «дай запись». */
+	@Override
+	public boolean containsKey(Object aKey) {
+		if (super.containsKey(aKey)) return T;
+		if (mHasWildcards && aKey instanceof ItemStackContainer tKey && tKey.mMetaData == W) {
+			Item tHead = Flattened.headItemOf(tKey.mItem);
+			if (tHead != null && tHead != tKey.mItem) return super.containsKey(new ItemStackContainer(tHead, 1, W));
+		}
+		return F;
+	}
 	public V get(IItemContainer aStack) {
 		return get(new ItemStackContainer(aStack.get(1)));
 	}
