@@ -6804,6 +6804,32 @@ public final class GT6Probes {
 			O.println("[GT6-HARVESTPROBE] после слома КЛЮЧОМ выпало: " + (tWhat.length() == 0 ? "<НИЧЕГО>" : tWhat));
 			O.println("[GT6-HARVESTPROBE] ИТОГ: сама машина " + (tMachines > 0 ? "ВЫПАЛА" : "не выпала") + ", содержимое " + tCargoOut + "/7 " + (tCargoOut == 7 ? "(верно)" : "(ПОТЕРЯНО)"));
 		} else O.println("[GT6-HARVESTPROBE] у бокса нет Container — содержимое проверить нечем");
+
+		// ПОКРЫТИЕ КЛАССА (гейт самопроверки: правка общая, но проверен был только бокс): идём по реестру MTE и
+		// берём по ОДНОМУ представителю каждого класса BE с инвентарём — сундуки, сейфы, полки, трубы, бочки.
+		// Для каждого: положить предмет → сломать ключом реальным путём → посчитать выпавшее.
+		java.util.Set<String> tSeen = new java.util.HashSet<>();
+		int tOK = 0, tFail = 0; StringBuilder tBad = new StringBuilder();
+		for (int tID = 0; tID <= 33000 && tSeen.size() < 12; tID++) {
+			net.minecraft.world.item.ItemStack tItem;
+			try {tItem = tReg.getItem(tID);} catch (Throwable e) {continue;}
+			if (tItem == null || tItem.isEmpty()) continue;
+			BlockPos tA = tPlayer.blockPosition().offset(6, 0, 6);
+			BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(tLevel, tPlayer, tA, net.minecraft.core.Direction.UP, tItem, BlockEntity.class, "GT6-HARVESTPROBE", "id" + tID);
+			if (tTE == null) continue;
+			String tCls = tTE.getClass().getSimpleName();
+			if (!(tTE instanceof net.minecraft.world.Container tC2) || tC2.getContainerSize() <= 0 || !tSeen.add(tCls)) {tLevel.setBlock(tTE.getBlockPos(), Blocks.AIR.defaultBlockState(), 3); continue;}
+			BlockPos tP2 = tTE.getBlockPos();
+			tC2.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.REDSTONE, 5));
+			for (net.minecraft.world.entity.item.ItemEntity tOld : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tP2).inflate(6))) tOld.discard();
+			tPlayer.gameMode.destroyBlock(tP2);
+			int tOut = 0;
+			for (net.minecraft.world.entity.item.ItemEntity tIt : tLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tP2).inflate(6)))
+				if (tIt.getItem().getItem() == net.minecraft.world.item.Items.REDSTONE) tOut += tIt.getItem().getCount();
+			if (tOut == 5) tOK++; else {tFail++; tBad.append(tBad.length() == 0 ? "" : ", ").append(tCls).append("=").append(tOut).append("/5");}
+			O.println("[GT6-HARVESTPROBE] класс " + tCls + " (id" + tID + "): содержимое " + tOut + "/5 " + (tOut == 5 ? "OK" : "ПОТЕРЯНО"));
+		}
+		O.println("[GT6-HARVESTPROBE] ПОКРЫТИЕ КЛАССА: проверено видов " + (tOK + tFail) + ", целых " + tOK + ", с потерей " + tFail + (tFail == 0 ? "" : " -> " + tBad));
 		O.println("========== [GT6-HARVESTPROBE] DONE ==========");
 	}
 	private static boolean sHarvestProbeDone = false;
