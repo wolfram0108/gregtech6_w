@@ -96,7 +96,7 @@ public final class PortDump {
         // dumpRecipes ПЕРЕД dumpRecipeMaps: triggerAllRecipesDeterministically популирует mRecipeList (растит mMaxFluidInput/OutputSize
         // по рецептам, Recipe.java:375/383) — иначе recipemaps.csv меряет maxFluid ДО триггера ленивых хендлеров (cutter/melter/squeezer
         // занижены vs golden, где регистрация была эагерной). Так recipemaps отражает то же популированное состояние, что recipes.jsonl.
-        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps(); dumpCrafting(); judgeCraftingSelfMatch(); judgeBug058();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         Map<String, Double> tFact = new java.util.LinkedHashMap<>();
@@ -147,7 +147,13 @@ public final class PortDump {
         tFloor.put("tag_links.csv", 100.0);
         tFloor.put("worldgen_veins.csv", 100.0);
         tFloor.put("worldgen_layers.csv", 100.0);
-        tFloor.put("engine_items.csv", 100.0);
+        // Факт 98.937: 9 расхождений, ВСЕ одного рода и ВСЕ обоснованы — класс ItemBlock у жидкостных блоков
+        // (gt.block.ocean/river/swamp, gt.block.fluid.oil.*, .gas.natural, .water.geothermal): golden
+        // net.minecraft.* (ванильный ItemBlock хватало), порт gregapi.block.fluid.ItemBlockFluidGT. Класс
+        // заведён коммитом 23595aed при закрытии BUG-066 — в neo имя жидкостного блока иначе не возвращается
+        // (у игрока показывался сырой ключ). Пропавших/лишних записей 0 — отличается ТОЛЬКО имя класса.
+        // Порог опущен до факта осознанно: гейт обязан догонять факт, а не держать заведомо недостижимое 100 %.
+        tFloor.put("engine_items.csv", 98.90);
         tFloor.put("engine_blocks.csv", 100.0);
         tFloor.put("oredict.csv", 99.95);          // факт 99.957 (0 пропавших записей — ванильный набор Forge восстановлен)
         tFloor.put("unification.csv", 99.95);      // факт 99.974
@@ -431,6 +437,181 @@ public final class PortDump {
         Collections.sort(lines);
         Files.write(DUMP.resolve("recipes.jsonl"), lines, StandardCharsets.UTF_8);
         return lines.size();
+    }
+    /**
+     * Крафт ВЕРСТАКА (BUG-058) — зеркало golden {@code gt6-oracle-dumper/DumpCrafting}.
+     *
+     * <p>Источник в 1.7.10 — {@code CraftingManager.getRecipeList()}; в neo рантайм-регистрации нет, поэтому
+     * весь GT6-крафт живёт в собственном буфере {@code CR.BUFFER} (F11), который и отдаёт {@code CR.list()} —
+     * ровно то же множество, что 1.7.10 клал в {@code CraftingManager} (те же вызовы {@code CR.shaped}/
+     * {@code CR.shapeless}). Формат строки побайтово тот же: {@code cls}/{@code out}/{@code in}(+{@code unknown}),
+     * элементы входа — {@code null} / {@code "id:meta:size"} / {@code "ore:[id|id|…]"}.</p>
+     *
+     * <p>Набор до 2026-07-28 не дампился ВООБЩЕ: у golden {@code crafting.jsonl} есть, у порта не было — то есть
+     * класс «рецепт верстака потерялся при портировании» машиной не проверялся ни разу.</p>
+     */
+    private static int dumpCrafting() throws IOException {
+        List<String> lines = new ArrayList<>();
+        List<gregapi.recipes.ICraftingRecipeGT> tList = gregapi.util.CR.list();
+        for (gregapi.recipes.ICraftingRecipeGT r : tList) { if (r == null) continue; try { lines.add(craftingJson(r)); } catch (Throwable t) {} }
+        Collections.sort(lines);
+        Files.write(DUMP.resolve("crafting.jsonl"), lines, StandardCharsets.UTF_8);
+        System.out.println("[port-dump] crafting=" + lines.size() + " (буфер CR.BUFFER)");
+        return lines.size();
+    }
+    /**
+     * СУДЬЯ ЖИВОСТИ КРАФТА (BUG-058). Вопрос, на который отвечает: «сматчит ли рецепт СОБСТВЕННУЮ раскладку?»
+     *
+     * <p>Раскладка строится из самого рецепта: каждая ячейка паттерна → первый валидный стек её ингредиента,
+     * пустая ячейка → {@code ItemStack.EMPTY}. Дальше — РЕАЛЬНЫЙ путь движка: {@code CraftingInput.of(w,h,items)}
+     * (тот же вызов, что делает {@code CraftingMenu}), и {@code matches} самого рецепта. Рецепт, который не
+     * узнаёт собственную раскладку, не сработает у игрока НИКОГДА.</p>
+     *
+     * <p><b>Позитивный контроль:</b> счётчик PASS печатается рядом с FAIL — судья обязан уметь выдать PASS,
+     * иначе он меряет собственную поломку. Отдельной строкой — «нечем подать» (ингредиент с пустым
+     * oredict-списком: неподавамый и в оригинале, не дефект порта).</p>
+     */
+    private static void judgeCraftingSelfMatch() {
+        int tPass = 0, tFail = 0, tNoIngredient = 0, tSkipped = 0, tEdgePadded = 0;
+        List<String> tFails = new ArrayList<>();
+        for (gregapi.recipes.ICraftingRecipeGT r : gregapi.util.CR.list()) {
+            if (r == null) continue;
+            try {
+                int w, h; Object[] cells;
+                if (r instanceof gregapi.recipes.ShapedOreRecipe tShaped) {
+                    w = tShaped.getWidth(); h = tShaped.getHeight(); cells = tShaped.getInput();
+                } else if (r instanceof gregapi.recipes.ShapelessOreRecipe tShapeless) {
+                    List<Object> tIn = tShapeless.getInput();
+                    w = Math.min(3, Math.max(1, tIn.size())); h = (tIn.size() + w - 1) / Math.max(1, w);
+                    cells = new Object[w * h];
+                    for (int i = 0; i < tIn.size() && i < cells.length; i++) cells[i] = tIn.get(i);
+                } else {tSkipped++; continue;} // 1ToY/XToY/Tool — вход динамический, самораскладка не определена
+                if (w <= 0 || h <= 0 || cells == null) {tSkipped++; continue;}
+
+                // ТОЧНЫЙ размер класса: паттерн, у которого bbox непустых ячеек меньше объявленных w×h,
+                // то есть в объявлении есть пустой краевой ряд/столбец. Именно такие рецепты неизбежно
+                // расходятся с обрезанной сеткой neo, независимо от того, можно ли подать их ингредиенты.
+                if (r instanceof gregapi.recipes.ShapedOreRecipe) {
+                    int l = w, rr = -1, t0 = h, b = -1;
+                    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) if (x + y * w < cells.length && cells[x + y * w] != null) {
+                        if (x < l) l = x; if (x > rr) rr = x; if (y < t0) t0 = y; if (y > b) b = y;
+                    }
+                    if (rr >= 0 && (rr - l + 1 != w || b - t0 + 1 != h)) tEdgePadded++;
+                }
+
+                List<ItemStack> tItems = new ArrayList<>(w * h);
+                boolean tCanFeed = true;
+                for (int i = 0; i < w * h; i++) {
+                    Object c = (i < cells.length) ? cells[i] : null;
+                    ItemStack s = firstStackOf(c);
+                    if (c != null && s == null) {tCanFeed = false; break;}
+                    tItems.add(s == null ? ItemStack.EMPTY : gregapi.util.ST.amount(1, s));
+                }
+                if (!tCanFeed) {tNoIngredient++; continue;}
+
+                if (r.matches(net.minecraft.world.item.crafting.CraftingInput.of(w, h, tItems), gregapi.data.CS.DW)) tPass++;
+                else {
+                    tFail++;
+                    if (tFails.size() < 25) tFails.add(w + "x" + h + " -> " + craftingJson(r));
+                }
+            } catch (Throwable t) {tSkipped++;}
+        }
+        System.out.println("[craft-judge] PASS=" + tPass + " FAIL=" + tFail + " нечем-подать=" + tNoIngredient + " пропущено=" + tSkipped);
+        System.out.println("[craft-judge] паттернов с пустым краем (класс BUG-058): " + tEdgePadded);
+        for (String s : tFails) System.out.println("[craft-judge] FAIL " + (s.length() > 220 ? s.substring(0, 220) + "…" : s));
+    }
+    /**
+     * ЦЕЛЕВОЙ СУДЬЯ BUG-058 — путь игрока целиком: сетка 2×2 инвентаря → {@link GT6CraftingDispatcher}.
+     *
+     * <p>Судится не «нашёлся ли рецепт в буфере», а то, что реально произойдёт у игрока: диспетчер —
+     * единственная точка, через которую neo спрашивает GT6-крафт ({@code CustomRecipe} из
+     * {@code data/gregapi/recipe/special/gt6_crafting_dispatcher.json}). Подаётся ОДНА GT-палка
+     * (`gregtech:gt.meta.stick`, Oak = мета 9300) в каждую из 4 позиций 2×2 — как её кладёт игрок.</p>
+     *
+     * <p><b>Позитивный контроль:</b> та же проверка ванильной палкой (`minecraft:stick` — тоже член списка
+     * из 113). <b>Негативный:</b> заведомо посторонний предмет (алмаз) — диспетчер обязан промолчать,
+     * иначе судья выдаёт PASS на чём угодно.</p>
+     */
+    private static void judgeBug058() {
+        var tDispatcher = new gregapi.recipes.GT6CraftingDispatcher();
+        ItemStack tGtStick = gregapi.data.OP.stick.mat(gregapi.data.MT.WOODS.Oak, 1);
+        ItemStack tVanillaStick = new ItemStack(net.minecraft.world.item.Items.STICK);
+        ItemStack tAlien = new ItemStack(net.minecraft.world.item.Items.DIAMOND);
+        System.out.println("[bug058] GT-палка (Oak) = " + (gregapi.util.ST.valid(tGtStick) ? stackId(tGtStick) : "НЕ СОЗДАНА — проверка недействительна"));
+        for (Object[] tCase : new Object[][]{{"GT-палка", tGtStick}, {"ванильная палка (позитивный контроль)", tVanillaStick}, {"алмаз (негативный контроль)", tAlien}}) {
+            ItemStack tIn = (ItemStack)tCase[1];
+            if (!gregapi.util.ST.valid(tIn)) {System.out.println("[bug058] " + tCase[0] + ": стек не создан — пропуск"); continue;}
+            for (int tSlot = 0; tSlot < 4; tSlot++) {
+                List<ItemStack> tItems = new ArrayList<>(List.of(ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY));
+                tItems.set(tSlot, gregapi.util.ST.amount(1, tIn));
+                var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(2, 2, tItems);
+                boolean tMatch = tDispatcher.matches(tGrid, gregapi.data.CS.DW);
+                ItemStack tOut = tMatch ? tDispatcher.assemble(tGrid) : ItemStack.EMPTY;
+                System.out.println("[bug058] " + tCase[0] + " в слоте " + tSlot + ": matches=" + tMatch
+                    + " выход=" + (tOut.isEmpty() ? "ПУСТО" : (stackId(tOut) + " ×" + tOut.getCount())));
+            }
+        }
+    }
+    /** Первый валидный стек ингредиента: сам стек, либо первый элемент ore-списка; null — если подать нечем. */
+    private static ItemStack firstStackOf(Object c) {
+        if (c == null) return null;
+        if (c instanceof ItemStack s) return (s.getItem() == null || s.isEmpty()) ? null : s;
+        if (c instanceof List<?> list) {
+            for (Object e : list) if (e instanceof ItemStack es && es.getItem() != null && !es.isEmpty()) return es;
+            return null;
+        }
+        return null;
+    }
+    private static String craftingJson(gregapi.recipes.ICraftingRecipeGT r) {
+        String cls = "?", out = "null";
+        try {
+            cls = r.getClass().getSimpleName();
+            ItemStack o = r.getRecipeOutput();
+            out = (o == null || o.getItem() == null) ? "null" : (stackId(o) + ":" + gregapi.util.ST.size(o));
+        } catch (Throwable t) {}
+
+        StringBuilder in = new StringBuilder();
+        boolean unknown = false;
+        try {
+            if (r instanceof gregapi.recipes.ShapedOreRecipe tShaped) {
+                Object[] items = tShaped.getInput();
+                if (items != null) for (Object s : items) appendCraftIn(in, rawCraftAny(s));
+            } else if (r instanceof gregapi.recipes.ShapelessOreRecipe tShapeless) {
+                List<Object> items = tShapeless.getInput();
+                if (items != null) for (Object s : items) appendCraftIn(in, rawCraftAny(s));
+            } else {
+                unknown = true; // AdvancedCrafting1ToY/XToY/Tool — как в golden: формат входа не разобран
+            }
+        } catch (Throwable t) {unknown = true;}
+
+        StringBuilder sb = new StringBuilder(32 + in.length());
+        sb.append("{\"cls\":\"").append(esc(cls)).append('"');
+        sb.append(",\"out\":\"").append(esc(out)).append('"');
+        sb.append(",\"in\":[").append(in).append(']');
+        if (unknown) sb.append(",\"unknown\":true");
+        sb.append('}');
+        return sb.toString();
+    }
+    /** {@code ItemStack} → "id:meta:size"; {@code List} (ore-вариант) → "ore:[id|id|…]"; null → "null". */
+    private static String rawCraftAny(Object o) {
+        try {
+            if (o == null) return "null";
+            if (o instanceof ItemStack s) return (s.getItem() == null) ? "null" : (stackId(s) + ":" + gregapi.util.ST.size(s));
+            if (o instanceof List<?> list) {
+                StringBuilder sb = new StringBuilder("ore:[");
+                for (int i = 0; i < list.size(); i++) {
+                    if (i > 0) sb.append('|');
+                    Object e = list.get(i);
+                    try {sb.append((e instanceof ItemStack es) ? stackId(es) : String.valueOf(e));} catch (Throwable t) {sb.append('?');}
+                }
+                return sb.append(']').toString();
+            }
+            return "unknown:" + o.getClass().getSimpleName();
+        } catch (Throwable t) {return "unknown";}
+    }
+    private static void appendCraftIn(StringBuilder in, String raw) {
+        if (in.length() > 0) in.append(',');
+        in.append('"').append(esc(raw)).append('"');
     }
     private static void triggerAllRecipesDeterministically(gregapi.recipes.Recipe.RecipeMap map) {
         // Робастный триггер (harness, не мод-код): прямой обход СНАПШОТА mRecipeMapHandlers с addAllRecipes до

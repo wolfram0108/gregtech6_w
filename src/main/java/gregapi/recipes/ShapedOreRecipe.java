@@ -64,8 +64,6 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 		} else {
 			while (tIdx < aRecipe.length && aRecipe[tIdx] instanceof String) {String tRow = (String)aRecipe[tIdx++]; tWidth = tRow.length(); tShape.append(tRow); tHeight++;}
 		}
-		mWidth = tWidth; mHeight = tHeight;
-
 		// Карта символ→ингредиент из оставшихся пар (Character, ingredient).
 		Map<Character, Object> tMap = new HashMap<>();
 		for (; tIdx < aRecipe.length; tIdx += 2) {
@@ -78,9 +76,42 @@ public class ShapedOreRecipe implements ICraftingRecipeGT {
 			else throw new IllegalArgumentException("Invalid shaped ore recipe ingredient: " + tIn);
 		}
 
-		mInput = new Object[mWidth * mHeight];
+		Object[] tCells = new Object[tWidth * tHeight];
 		char[] tChars = tShape.toString().toCharArray();
-		for (int i = 0; i < tChars.length; i++) mInput[i] = tMap.get(tChars[i]); // ' ' отсутствует в карте → null (пусто)
+		for (int i = 0; i < tChars.length && i < tCells.length; i++) tCells[i] = tMap.get(tChars[i]); // ' ' отсутствует в карте → null (пусто)
+
+		// F11 (BUG-058) — ПУСТЫЕ КРАЯ ПАТТЕРНА ОБРЕЗАЮТСЯ ТЕМ ЖЕ ПРИЁМОМ, ЧТО ДВИЖОК ПРИМЕНЯЕТ К СЕТКЕ.
+		//
+		// 1.7.10: matches звался на ПОЛНОЙ сетке 3×3, и Forge искал паттерн ПЕРЕБОРОМ СМЕЩЕНИЙ —
+		//   `for (x = 0; x <= 3-width; x++) for (y = 0; y <= 3-height; y++) checkMatch(inv, x, y, …)`
+		//   (Forge-1.7.10 ShapedOreRecipe.java:174-190, checkMatch:196-248: вне окна паттерна слот обязан быть пуст).
+		//   Поэтому объявление с пустым краем — например `"  "`/`" S"` (Loader_Recipes_Woods.java:134,
+		//   конверсия любой деревянной палки в ванильную) — совпадало нормально.
+		// neo: движок отдаёт в matches УЖЕ ОБРЕЗАННУЮ сетку — bounding box непустых слотов
+		//   (CraftingInput.ofPositioned, neo-decompiled/.../CraftingInput.java:36-77: newWidth = right-left+1),
+		//   а смещение (left/top) остаётся снаружи и рецепту не передаётся. Перебор смещений здесь
+		//   невоспроизводим и не нужен — его роль исполняет сама обрезка.
+		// Следствие без этой нормализации: паттерн 2×2 с одним ингредиентом сравнивался с сеткой 1×1 и
+		//   `aGrid.width() != mWidth` отсекал рецепт НАВСЕГДА. Замер судьёй самораскладки: таких паттернов
+		//   в буфере 2983, из них 898 проверяемых давали FAIL.
+		// Приём взят у самого движка (философия §4 «адаптируем на уровне движка, централизованно»), правка —
+		//   в ЕДИНСТВЕННОМ центре shaped-крафта GT6: AdvancedCraftingShaped наследует этот класс.
+		int tLeft = tWidth, tRight = -1, tTop = tHeight, tBottom = -1;
+		for (int y = 0; y < tHeight; y++) for (int x = 0; x < tWidth; x++) if (tCells[x + y*tWidth] != null) {
+			if (x < tLeft  ) tLeft   = x;
+			if (x > tRight ) tRight  = x;
+			if (y < tTop   ) tTop    = y;
+			if (y > tBottom) tBottom = y;
+		}
+		if (tRight < 0 || (tRight-tLeft+1 == tWidth && tBottom-tTop+1 == tHeight)) {
+			// паттерн целиком пуст либо краёв нет — оставляем как объявлено
+			mWidth = tWidth; mHeight = tHeight; mInput = tCells;
+		} else {
+			int tNewWidth = tRight-tLeft+1, tNewHeight = tBottom-tTop+1;
+			Object[] tCropped = new Object[tNewWidth * tNewHeight];
+			for (int y = 0; y < tNewHeight; y++) for (int x = 0; x < tNewWidth; x++) tCropped[x + y*tNewWidth] = tCells[(x+tLeft) + (y+tTop)*tWidth];
+			mWidth = tNewWidth; mHeight = tNewHeight; mInput = tCropped;
+		}
 	}
 
 	@Override
