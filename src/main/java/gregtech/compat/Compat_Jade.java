@@ -201,19 +201,6 @@ public class Compat_Jade implements IWailaPlugin {
 	}
 
 	/**
-	 * Какой инструмент нужен блоку — через ЦЕНТР {@code WD.harvestTool}, а не перебором {@code instanceof}:
-	 * центр диспетчеризует по контракту {@code IBlock} и потому знает ВСЕ GT6-иерархии (прежний ручной перебор
-	 * трёх классов был слеп к рельсам и внутренним блокам — тот же класс дефекта, что чинил BUG-071).
-	 * Мета берётся из мира: у GT6 подтип блока живёт в BlockEntity, а не в BlockState.
-	 */
-	private static String harvestToolOf(BlockState aState, Level aWorld, BlockPos aPos) {
-		try {
-			return WD.harvestTool(aState.getBlock(), WD.meta(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()));
-		} catch (Throwable e) {/* не GT6-блок либо мира ещё нет */}
-		return null;
-	}
-
-	/**
 	 * BUG-070 — СТРОКА ТРЕБУЕМОГО УРОВНЯ. Ровно одна вещь, которой у Jade нет ни для одного мода: какого тира
 	 * инструмент нужен блоку по шкале GT6 0..15, а не по трём ванильным ступеням.
 	 *
