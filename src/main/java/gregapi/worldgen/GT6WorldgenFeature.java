@@ -204,6 +204,11 @@ public class GT6WorldgenFeature extends Feature<NoneFeatureConfiguration> {
 	private void onGatherData(GatherDataEvent.Client aEvent) {
 		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<DatapackBuiltinEntriesProvider>) aOutput ->
 			new DatapackBuiltinEntriesProvider(aOutput, aEvent.getLookupProvider(), BUILDER, Set.of(MD.GAPI.mID)));
+		// F12-harvest: перенос GT6-данных о добыче (getHarvestTool/getHarvestLevel — те же методы, что в 1.7.10)
+		// в ванильные теги — единственный канал, который в neo слушают и движок, и тултип-моды.
+		// Та же датаген-точка, отдельного события не заводим (gregapi/data/GT6HarvestTags.java).
+		aEvent.getGenerator().addProvider(true, (DataProvider.Factory<gregapi.data.GT6HarvestTags>) aOutput ->
+			new gregapi.data.GT6HarvestTags(aOutput, aEvent.getLookupProvider()));
 	}
 
 	/** F6: центральная точка подписки, вызывается ОДИН раз из {@code GT_API}-конструктора (тот же мод-бас,

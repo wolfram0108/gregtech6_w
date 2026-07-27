@@ -1,0 +1,18 @@
+{
+  "values": [
+    "gregtech:gt.block.multitileentity.iron.stone.shovel.0.0.15.false.false",
+    "gregtech:gt.meta.storage.dust",
+    "gregtech:gt.block.diggable",
+    "gregtech:gt.block.grass",
+    "gregtech:gt.block.paths",
+    "gregtech:gt.block.sands",
+    "gregtech:gt.meta.ore.normal.gravel",
+    "gregtech:gt.meta.ore.normal.sand",
+    "gregtech:gt.meta.ore.normal.redsand",
+    "gregtech:gt.meta.ore.small.gravel",
+    "gregtech:gt.meta.ore.small.sand",
+    "gregtech:gt.meta.ore.small.redsand",
+    "gregtech:gt.meta.ore.normal.mud",
+    "gregtech:gt.meta.ore.small.mud"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "values": [
+    "gregtech:gt.block.concrete.reinforced.slab.0",
+    "gregtech:gt.block.concrete.reinforced.slab.1",
+    "gregtech:gt.block.concrete.reinforced.slab.2",
+    "gregtech:gt.block.concrete.reinforced.slab.3",
+    "gregtech:gt.block.concrete.reinforced.slab.4",
+    "gregtech:gt.block.concrete.reinforced.slab.5",
+    "gregtech:gt.block.concrete.reinforced",
+    "gregtech:gt.block.bars.titanium",
+    "gregtech:gt.stone.granite.black.slab.0",
+    "gregtech:gt.stone.granite.black.slab.1",
+    "gregtech:gt.stone.granite.black.slab.2",
+    "gregtech:gt.stone.granite.black.slab.3",
+    "gregtech:gt.stone.granite.black.slab.4",
+    "gregtech:gt.stone.granite.black.slab.5",
+    "gregtech:gt.stone.granite.black",
+    "gregtech:gt.meta.ore.normal.blackgranite",
+    "gregtech:gt.meta.ore.small.blackgranite",
+    "gregtech:gt.stone.granite.red.slab.0",
+    "gregtech:gt.stone.granite.red.slab.1",
+    "gregtech:gt.stone.granite.red.slab.2",
+    "gregtech:gt.stone.granite.red.slab.3",
+    "gregtech:gt.stone.granite.red.slab.4",
+    "gregtech:gt.stone.granite.red.slab.5",
+    "gregtech:gt.stone.granite.red",
+    "gregtech:gt.meta.ore.normal.redgranite",
+    "gregtech:gt.meta.ore.small.redgranite"
+  ]
+}

@@ -230,6 +230,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6mapcolorprobe.flag")) gt6MapColorProbeTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
+	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6251,6 +6253,71 @@ public final class GT6Probes {
 		if (!tOkay) return;
 		sUVPTargetPos = sUVPCrucible.getBlockPos();
 		O.println("[" + UVP_M + "] замер передан клиенту: цель " + sUVPTargetPos + " (модель+квады живут только на клиенте)");
+	}
+
+	// ========== [GT6-HARVESTTAGPROBE] MODCOMPAT-001 П1/П3 «Currently Harvestable / Effective Tool» — снять при уборке фазы ==========
+	// В 1.7.10 «каким инструментом и какого уровня» спрашивалось МЕТОДАМИ блока (getHarvestTool/getHarvestLevel),
+	// которые GT6 переопределял. В neo этих методов нет: и скорость, и право на дроп решают ТЕГИ. Порт записал
+	// потерю как no-op (GT_API:436-440) — следствие живое: для ванильных инструментов и тултип-модов блоки GT6
+	// «ничем не добываются». Теги теперь генерируются из ТЕХ ЖЕ методов (gregapi/data/GT6HarvestTags.java).
+	// Судья проверяет не файлы, а ПОВЕДЕНИЕ движка: тот самый вызов, которым и ваниль, и Jade решают вопрос.
+	private static final String HTP_M = "GT6-HARVESTTAGPROBE";
+	private static int sHTPTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sHTPSeq;
+
+	public static void gt6HarvestTagProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sHTPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sHTPSeq == null) sHTPSeq = new gregapi.probe.GT6ProbeStand.Seq(HTP_M).at(200, () -> gt6HarvestTagProbeRun(tPlayer));
+		sHTPSeq.tick(sHTPTick);
+	}
+
+	private static void gt6HarvestTagProbeRun(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + HTP_M + "] MODCOMPAT-001 П1/П3: инструмент и добываемость блоков GT6 ==========");
+		int tPick = 0, tAxe = 0, tShovel = 0, tNeeds = 0, tTotal = 0;
+		net.minecraft.world.level.block.Block tSampleStone = null, tSampleWood = null;
+		for (net.minecraft.world.level.block.Block tBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(gregapi.data.CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			net.minecraft.world.level.block.state.BlockState tState = tBlock.defaultBlockState();
+			tTotal++;
+			if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE)) {tPick++; if (tSampleStone == null) tSampleStone = tBlock;}
+			if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE   )) {tAxe++;  if (tSampleWood  == null) tSampleWood  = tBlock;}
+			if (tState.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_SHOVEL)) tShovel++;
+			if (tState.is(net.minecraft.tags.BlockTags.NEEDS_STONE_TOOL) || tState.is(net.minecraft.tags.BlockTags.NEEDS_IRON_TOOL) || tState.is(net.minecraft.tags.BlockTags.NEEDS_DIAMOND_TOOL)) tNeeds++;
+		}
+		O.println("[" + HTP_M + "] блоков GT6 " + tTotal + ": кирка=" + tPick + " топор=" + tAxe + " лопата=" + tShovel + "; с требованием уровня=" + tNeeds);
+
+		// Контроль здоровья замера: ванильные блоки обязаны остаться в тегах (наш файл ДОПОЛНЯЕТ, а не заменяет).
+		sHTPSeq.judge("POSITIVE-CONTROL: ванильный камень по-прежнему в mineable/pickaxe (тег не затёрт)",
+			net.minecraft.world.level.block.Blocks.STONE.defaultBlockState().is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE), true, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState().is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE));
+		sHTPSeq.judge("POSITIVE-CONTROL: ванильное бревно по-прежнему в mineable/axe",
+			net.minecraft.world.level.block.Blocks.OAK_LOG.defaultBlockState().is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE), true, net.minecraft.world.level.block.Blocks.OAK_LOG.defaultBlockState().is(net.minecraft.tags.BlockTags.MINEABLE_WITH_AXE));
+		sHTPSeq.judge("EFFECTIVE TOOL: блоки GT6 попали в ванильные теги инструмента (П3)", tPick + tAxe + tShovel > 500, "> 500", tPick + tAxe + tShovel);
+		sHTPSeq.judge("уровень инструмента размечен (needs_*_tool)", tNeeds > 0, "> 0", tNeeds);
+
+		// ГЛАВНОЕ — поведение движка: тем же вызовом, что и ваниль/Jade, спрашиваем «добываемо ли тем, что в руке».
+		if (tSampleStone == null) {sHTPSeq.judge("нашёлся GT6-блок под кирку (иначе судить нечего)", false, "не null", "null"); sHTPSeq.done(); return;}
+		net.minecraft.world.level.block.state.BlockState tState = tSampleStone.defaultBlockState();
+		O.println("[" + HTP_M + "] образец под кирку: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tSampleStone));
+		boolean tByHand    = gt6HarvestTagProbeCorrect(aPlayer, net.minecraft.world.item.ItemStack.EMPTY, tState);
+		boolean tByPickaxe = gt6HarvestTagProbeCorrect(aPlayer, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE), tState);
+		boolean tByShovel  = gt6HarvestTagProbeCorrect(aPlayer, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_SHOVEL), tState);
+		sHTPSeq.judge("CURRENTLY HARVESTABLE: алмазная кирка — ДА (П1)", tByPickaxe, true, tByPickaxe);
+		sHTPSeq.judge("NEGATIVE-CONTROL: алмазная ЛОПАТА на том же блоке — НЕТ (иначе тег ничего не значит)", !tByShovel, false, tByShovel);
+		O.println("[" + HTP_M + "] рукой=" + tByHand + " (справочно: зависит от requiresCorrectToolForDrops блока)");
+		sHTPSeq.done();
+	}
+
+	/** Тот же вызов, которым движок и тултип-моды решают «добываемо ли тем, что в руке». */
+	private static boolean gt6HarvestTagProbeCorrect(ServerPlayer aPlayer, net.minecraft.world.item.ItemStack aTool, net.minecraft.world.level.block.state.BlockState aState) {
+		net.minecraft.world.item.ItemStack tOld = aPlayer.getMainHandItem();
+		aPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, aTool);
+		boolean r = aPlayer.hasCorrectToolForDrops(aState);
+		aPlayer.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, tOld);
+		return r;
 	}
 
 	// ========== [GT6-FLUIDCAPPROBE] MODCOMPAT-001 П2 «жидкость GT6 не видна снаружи» — снять при уборке фазы ==========
