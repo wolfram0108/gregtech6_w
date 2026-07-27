@@ -219,6 +219,20 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	public int damageDropped(int aMeta) {return aMeta;}
 	public int quantityDropped(int aMeta, int aFortune, Random aRandom) {return 1;}
 	public ItemStack createStackedBlock(int aMeta) {return ST.make(this, 1, damageDropped(aMeta));}
+
+	// BUG-066 (репорт игрока: «любая балка это oak, хотя текстура и дроп от правильного дерева»): в neo предмет
+	// «этого блока» — единый канал getCloneItemStack (IBlockExtension), и от него зависит ВСЁ, что показывают о
+	// блоке: имя и иконка в тултипе/Jade, средний клик. Его дефолт — `new ItemStack(this)`, то есть подтип 0
+	// (BlockBehaviour:393), поэтому балка любой породы представлялась дубовой, хотя в мире мета верная (оттого и
+	// текстура с дропом были правильными). В 1.7.10 этот канал существовал и был подтип-зависимым —
+	// `createStackedBlock(meta)` через `damageDropped` (оригинал BlockBase:82,84); тело перенесено 1:1 (строка выше),
+	// но мост в движок к нему подключён не был. Подключаем ЗДЕСЬ, в корне иерархии — одним местом на брёвна, балки,
+	// доски, плиты, камни и листву (тот же приём, что уже применён точечно: BlockBaseSpike:137, MultiTileEntityBlock:506).
+	@Override public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader aLevel, net.minecraft.core.BlockPos aPos, BlockState aState, boolean aIncludeData, Player aPlayer) {
+		ItemStack rStack = createStackedBlock(WD.meta(aLevel, aPos.getX(), aPos.getY(), aPos.getZ()));
+		return rStack == null || rStack.isEmpty() ? super.getCloneItemStack(aLevel, aPos, aState, aIncludeData, aPlayer) : rStack;
+	}
+
 	public int getDamageValue(Level aWorld, int aX, int aY, int aZ) {return WD.meta(aWorld, aX, aY, aZ);}
 	public int getLightOpacity() {return LIGHT_OPACITY_MAX;}
 	public Item getItemDropped(int aMeta, Random aRandom, int aFortune) {return Item.byBlock(this);}
