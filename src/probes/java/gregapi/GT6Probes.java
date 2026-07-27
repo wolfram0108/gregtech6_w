@@ -240,6 +240,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6demo.flag")) gt6DemoTick(aEvent.getServer());
 	// [GT6-TOOLMATRIX] BUG-071: матрица «блок × инструмент» — право добычи и скорость по КАЖДОМУ типу — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6toolmatrixprobe.flag")) gt6ToolMatrixTick(aEvent.getServer());
+	// [GT6-TOOLYARD] BUG-071: ПОЛИГОН для ЖИВОЙ приёмки игроком (не судья — строит мир и выдаёт инструменты) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6toolyard.flag")) gt6ToolYardTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6908,6 +6910,163 @@ public final class GT6Probes {
 			+ ", различных требуемых уровней СЕЙЧАС=" + tLevels.size() + " " + tLevels
 			+ ", различных по правилу 1.7.10=" + tExpected.size() + " " + tExpected
 			+ " → " + (tLevels.size() > 1 ? "уровень пер-материальный (дефекта нет)" : "УРОВЕНЬ ОДИН НА ВСЕ МАТЕРИАЛЫ (связь «материал → уровень» потеряна)"));
+	}
+
+	// ========== [GT6-TOOLYARD] BUG-071: ПОЛИГОН ЖИВОЙ ПРИЁМКИ (заказ игрока) ==========
+	// НЕ судья: стенд строит площадку и выдаёт инструменты, а вердикт выносит игрок руками. То же, что проверяет
+	// матрица gt6toolmatrixprobe, но глазами: каждый ряд — ОДИН тип инструмента, в ряду два блока (низкий тир и
+	// высокий), перед рядом табличка с подписью. В инвентаре — по два инструмента каждого типа (слабый и сильный)
+	// плюс ванильная лесенка. Ожидание простое: слабым инструментом высокий тир НЕ добывается, сильным — да;
+	// чужим типом не добывается ничто. Блоки ставятся ТЕМ ЖЕ путём, что у игрока (урок BUG-067: площадка, которая
+	// ставит объекты не как игра, показывает игроку СВОИ артефакты как дефекты мода).
+	private static int sYardTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sYardSeq = null;
+	private static final String YARD_M = "GT6-TOOLYARD";
+	public static void gt6ToolYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sYardTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sYardSeq == null) sYardSeq = new gregapi.probe.GT6ProbeStand.Seq(YARD_M).at(200, () -> gt6ToolYardBuild(tPlayer));
+		sYardSeq.tick(sYardTick);
+	}
+
+	private static void gt6ToolYardBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = aPlayer.blockPosition().offset(4, 0, 4);
+		O.println("========== [" + YARD_M + "] ПОЛИГОН ДОБЫЧИ (BUG-071), центр " + tO + " ==========");
+		// ровная площадка: пол из камня, воздух над ним
+		for (int x = -2; x <= 40; x++) for (int z = -2; z <= 12; z++) {
+			tLevel.setBlock(tO.offset(x, -1, z), Blocks.STONE.defaultBlockState(), 2);
+			for (int y = 0; y <= 5; y++) tLevel.setBlock(tO.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+		}
+
+		java.util.List<net.minecraft.world.item.ItemStack> tGive = new java.util.ArrayList<>();
+		int tRow = 0;
+
+		// ── РЯДЫ 1..N: MTE-блоки, по одному ряду на ТИП инструмента, в ряду низкий и высокий тир ─────────
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		java.util.Map<String, gregapi.block.multitileentity.MultiTileEntityClassContainer[]> tByTool = new java.util.LinkedHashMap<>();
+		if (tReg != null) for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+			try {
+				if (tC == null || tC.mBlock == null) continue;
+				String tTool = tC.mBlock.getHarvestTool(tC.mBlockMetaData);
+				if (tTool == null || tTool.isEmpty()) continue;
+				gregapi.block.multitileentity.MultiTileEntityClassContainer[] tPair = tByTool.computeIfAbsent(tTool, k -> new gregapi.block.multitileentity.MultiTileEntityClassContainer[2]);
+				int tLevel2 = tC.mBlock.getHarvestLevel(tC.mBlockMetaData);
+				if (tPair[0] == null || tLevel2 < tPair[0].mBlock.getHarvestLevel(tPair[0].mBlockMetaData)) tPair[0] = tC; // самый низкий тир
+				if (tPair[1] == null || tLevel2 > tPair[1].mBlock.getHarvestLevel(tPair[1].mBlockMetaData)) tPair[1] = tC; // самый высокий
+			} catch (Throwable e) {/* класс без блока — пропуск */}
+		}
+		for (java.util.Map.Entry<String, gregapi.block.multitileentity.MultiTileEntityClassContainer[]> tE : tByTool.entrySet()) {
+			gregapi.block.multitileentity.MultiTileEntityClassContainer tLow = tE.getValue()[0], tHigh = tE.getValue()[1];
+			if (tLow == null) continue;
+			int tLowLvl = tLow.mBlock.getHarvestLevel(tLow.mBlockMetaData), tHighLvl = tHigh.mBlock.getHarvestLevel(tHigh.mBlockMetaData);
+			int tZ = tRow * 2;
+			gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(2, -1, tZ), net.minecraft.core.Direction.UP, tReg.getItem(tLow.mID),  BlockEntity.class, YARD_M, "низкий " + tE.getKey());
+			if (tHighLvl != tLowLvl) gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(4, -1, tZ), net.minecraft.core.Direction.UP, tReg.getItem(tHigh.mID), BlockEntity.class, YARD_M, "высокий " + tE.getKey());
+			gt6ToolYardSign(tLevel, tO.offset(0, 0, tZ), tE.getKey(), "тир " + tLowLvl, tHighLvl != tLowLvl ? "и тир " + tHighLvl : "(один тир)");
+			O.println("[" + YARD_M + "] ряд " + tRow + " «" + tE.getKey() + "»: низкий тир " + tLowLvl + " @" + tO.offset(2, 0, tZ) + (tHighLvl != tLowLvl ? ", высокий тир " + tHighLvl + " @" + tO.offset(4, 0, tZ) : ""));
+			tRow++;
+		}
+
+		// ── РЯД РУД: тот же тип инструмента (кирка), но РАЗНЫЕ материалы → разные тиры ────────────────────
+		try {
+			Object tOreObj = gregapi.data.CS.BlocksGT.ore;
+			if (tOreObj instanceof gregapi.block.prefixblock.PrefixBlock tOre) {
+				int tZ = tRow * 2, tCol = 2;
+				StringBuilder tOres = new StringBuilder();
+				for (int tQ : new int[]{0, 2, 4, 6}) for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (tMat == null || tMat.mToolQuality != tQ) continue;
+					try { if (!tOre.mPrefix.isGeneratingItem(tMat)) continue; } catch (Throwable e) {continue;}
+					if (gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(tCol, -1, tZ), net.minecraft.core.Direction.UP,
+						gregapi.util.ST.make(tOre, 1, tMat.mID), BlockEntity.class, YARD_M, "руда " + tMat.mNameInternal) != null) {
+						tOres.append(tOres.length() == 0 ? "" : ", ").append(tMat.mNameInternal).append(" тир ").append(tOre.getHarvestLevel(gregapi.util.UT.Code.bind4(tMat.mToolQuality))).append(" @x+").append(tCol);
+						tCol += 2;
+					}
+					break;
+				}
+				gt6ToolYardSign(tLevel, tO.offset(0, 0, tZ), "РУДЫ (кирка)", "тиры по материалу", "слева слабее");
+				O.println("[" + YARD_M + "] ряд " + tRow + " РУДЫ: " + tOres);
+				tRow++;
+			}
+		} catch (Throwable e) {O.println("[" + YARD_M + "] руды не встали: " + e);}
+
+		// ── РЯД ВАНИЛЬНЫХ ЭТАЛОНОВ: чтобы шкала была с чем сравнить ──────────────────────────────────────
+		net.minecraft.world.level.block.Block[] tVanilla = {Blocks.STONE, Blocks.IRON_ORE, Blocks.DIAMOND_ORE, Blocks.OBSIDIAN};
+		int tZV = tRow * 2;
+		for (int i = 0; i < tVanilla.length; i++) tLevel.setBlock(tO.offset(2 + i * 2, 0, tZV), tVanilla[i].defaultBlockState(), 3);
+		gt6ToolYardSign(tLevel, tO.offset(0, 0, tZV), "ВАНИЛЬ (эталон)", "камень/жел.руда", "алмаз.руда/обсидиан");
+		O.println("[" + YARD_M + "] ряд " + tRow + " ВАНИЛЬНЫЕ ЭТАЛОНЫ: камень(0), железная руда(1), алмазная руда(2), обсидиан(3)");
+
+		// ── ИНСТРУМЕНТЫ В ИНВЕНТАРЬ: по каждому типу слабый и сильный ────────────────────────────────────
+		// Тир GT6-инструмента задаёт МАТЕРИАЛ (getHarvestLevel = baseQuality + material.mToolQuality). Берём один
+		// готовый экземпляр типа (его мета = ToolID, ST.make(this,1,aID) в MultiItemTool.addTool) и пересобираем
+		// его из слабого и сильного материала — так тип остаётся ровно тем же, меняется только тир.
+		// ТРИ градации, а не две: с одним лишь «самым сильным» (качество 15) граница нигде не видна — он берёт всё.
+		// Средний нужен, чтобы ступень была наглядной: он берёт тир 3, но НЕ берёт тир 5.
+		gregapi.oredict.OreDictMaterial tWeak = null, tMid = null, tStrong = null;
+		for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+			if (tMat == null || tMat.mToolQuality <= 0) continue;
+			if (tMat.mToolQuality == 1 && tWeak   == null) tWeak   = tMat;
+			if (tMat.mToolQuality == 3 && tMid    == null) tMid    = tMat;
+			if (tStrong == null || tMat.mToolQuality > tStrong.mToolQuality) tStrong = tMat;
+		}
+		O.println("[" + YARD_M + "] материалы инструментов: слабый=" + (tWeak == null ? "?" : tWeak.mNameInternal + "(тир " + tWeak.mToolQuality + ")")
+			+ ", средний=" + (tMid == null ? "?" : tMid.mNameInternal + "(тир " + tMid.mToolQuality + ")")
+			+ ", сильный=" + (tStrong == null ? "?" : tStrong.mNameInternal + "(тир " + tStrong.mToolQuality + ")"));
+		for (String tType : new String[]{gregapi.data.CS.TOOL_pickaxe, gregapi.data.CS.TOOL_wrench, gregapi.data.CS.TOOL_crowbar,
+			gregapi.data.CS.TOOL_cutter, gregapi.data.CS.TOOL_axe, gregapi.data.CS.TOOL_shovel, gregapi.data.CS.TOOL_shears,
+			gregapi.data.CS.TOOL_saw, gregapi.data.CS.TOOL_hammer, gregapi.data.CS.TOOL_scoop}) {
+			try {
+				for (gregapi.code.ItemStackContainer tC : gregapi.data.CS.ToolsGT.list(tType)) {
+					net.minecraft.world.item.ItemStack tSample = tC.toStack();
+					if (tSample == null || tSample.isEmpty() || !(tSample.getItem() instanceof gregapi.item.multiitem.MultiItemTool tMIT)) continue;
+					int tToolID = gregapi.util.ST.meta_(tSample);
+					net.minecraft.world.item.ItemStack tW = tWeak   == null ? null : tMIT.getToolWithStats(tToolID, 1, tWeak,   tWeak);
+					net.minecraft.world.item.ItemStack tM = tMid    == null ? null : tMIT.getToolWithStats(tToolID, 1, tMid,    tMid);
+					net.minecraft.world.item.ItemStack tS = tStrong == null ? null : tMIT.getToolWithStats(tToolID, 1, tStrong, tStrong);
+					if (tW != null) tGive.add(tW);
+					if (tM != null) tGive.add(tM);
+					if (tS != null) tGive.add(tS);
+					// печатаем РЕАЛЬНЫЕ тиры выданных инструментов — игроку нужно знать, чем что должно браться
+					O.println("[" + YARD_M + "]   «" + tType + "»: слабый ур." + (tW == null ? "-" : tMIT.getHarvestLevel(tW, tType))
+						+ ", средний ур." + (tM == null ? "-" : tMIT.getHarvestLevel(tM, tType))
+						+ ", сильный ур." + (tS == null ? "-" : tMIT.getHarvestLevel(tS, tType)));
+					break;
+				}
+			} catch (Throwable e) {/* тип без инструментов */}
+		}
+		// ванильные: лесенка кирок (эталон шкалы) + ножницы/топор/лопата — иначе ряды, где GT6-инструмента этого типа
+		// в реестре не оказалось (ножницы), проверить нечем
+		for (net.minecraft.world.item.Item tVanillaTool : new net.minecraft.world.item.Item[]{
+			net.minecraft.world.item.Items.WOODEN_PICKAXE, net.minecraft.world.item.Items.DIAMOND_PICKAXE,
+			net.minecraft.world.item.Items.SHEARS, net.minecraft.world.item.Items.IRON_AXE, net.minecraft.world.item.Items.IRON_SHOVEL})
+			tGive.add(new net.minecraft.world.item.ItemStack(tVanillaTool));
+		int tSlot = 0, tGiven = 0;
+		for (net.minecraft.world.item.ItemStack tStack : tGive) {
+			if (tStack == null || tStack.isEmpty() || tSlot > 35) continue;
+			aPlayer.getInventory().setItem(tSlot++, tStack); tGiven++;
+		}
+		aPlayer.setGameMode(net.minecraft.world.level.GameType.SURVIVAL); // ⚠ в креативе право на дроп не проверяется вовсе
+		O.println("[" + YARD_M + "] выдано инструментов: " + tGiven + " (слабые и сильные пары + ванильные кирки), режим переключён в ВЫЖИВАНИЕ");
+		O.println("[" + YARD_M + "] КАК ПРОВЕРЯТЬ: в каждом ряду левый блок — низкий тир, правый — высокий. Слабым инструментом");
+		O.println("[" + YARD_M + "]   высокий тир не должен добываться (или ломаться без дропа), сильным — должен. Чужим типом — ничто.");
+		O.println("========== [" + YARD_M + "] ПОЛИГОН ГОТОВ ==========");
+	}
+
+	/** Подпись ряда: обычная табличка — игроку должно быть понятно в мире, без чтения лога. */
+	private static void gt6ToolYardSign(ServerLevel aLevel, BlockPos aPos, String aLine1, String aLine2, String aLine3) {
+		try {
+			aLevel.setBlock(aPos, Blocks.OAK_SIGN.defaultBlockState(), 3);
+			if (aLevel.getBlockEntity(aPos) instanceof net.minecraft.world.level.block.entity.SignBlockEntity tSign) {
+				net.minecraft.world.level.block.entity.SignText tText = new net.minecraft.world.level.block.entity.SignText()
+					.setMessage(0, net.minecraft.network.chat.Component.literal(aLine1))
+					.setMessage(1, net.minecraft.network.chat.Component.literal(aLine2))
+					.setMessage(2, net.minecraft.network.chat.Component.literal(aLine3));
+				tSign.setText(tText, true);
+			}
+		} catch (Throwable e) {/* табличка — удобство, её отсутствие не ломает полигон */}
 	}
 
 	// ========== [GT6-TOOLMATRIX] BUG-071: МАТРИЦА «блок × инструмент» ==========
