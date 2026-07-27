@@ -7168,21 +7168,42 @@ public final class GT6Probes {
 	// Для каждой пары снимаются ТРИ движковых ответа (право/скорость/право-с-позицией) и сверяются с правилом 1.7.10:
 	// добыть можно, если СОВПАЛ ТИП инструмента И уровень инструмента >= уровня блока (ForgeHooks.canHarvestBlock).
 	private static boolean sToolMatrixDone = false;
+	// ⭐ ПОЛНЫЙ ПЕРЕБОР (мандат игрока 2026-07-27: «паритет по КАЖДОМУ блоку и инструменту»). Прежняя редакция брала
+	// по одному блоку-представителю на тип инструмента — 14 блоков — и потому дала 280/280 при живом дефекте:
+	// пары «ключ × деревянная бочка» в пуле просто не было. Полнота, доказанная выборкой, — не полнота.
+	// Обход идёт БАТЧАМИ ПО ТИКАМ: пул измеряется тысячами блоков, а всё в одном тике вешает сервер и будит watchdog.
+	private static java.util.List<Object[]> sMatrixBlocks = null, sMatrixTools = null;
+	private static int sMatrixIndex = 0, sMatrixAgree = 0, sMatrixDisagree = 0, sMatrixSkipped = 0;
+	private static final java.util.TreeMap<String, int[]> sMatrixByReason = new java.util.TreeMap<>(); // причина → {сколько}
+	private static final java.util.List<String> sMatrixNotPlaced = new java.util.ArrayList<>(); // образцы не вставших блоков
+	private static final StringBuilder sMatrixBad = new StringBuilder();
+	private static final int MATRIX_BATCH = 25; // блоков за тик; при 25 инструментах это ~600 пар/тик
+
 	public static void gt6ToolMatrixTick(net.minecraft.server.MinecraftServer aServer) {
 		if (sToolMatrixDone || aServer.getPlayerList().getPlayers().isEmpty()) return;
 		if (aServer.getTickCount() < 200) return;
-		sToolMatrixDone = true;
 		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
 		ServerLevel tLevel = tPlayer.level();
 		java.io.PrintStream O = OUT;
-		O.println("========== [GT6-TOOLMATRIX] BUG-071: право добычи по КАЖДОМУ типу инструмента ==========");
+		if (sMatrixBlocks == null) {
+			O.println("========== [GT6-TOOLMATRIX] ПОЛНЫЙ ПАРИТЕТ добычи: КАЖДЫЙ блок × КАЖДЫЙ инструмент ==========");
+			try {
+				sMatrixBlocks = toolMatrixBlocks(O, tLevel, tPlayer);
+				sMatrixTools  = toolMatrixTools(O, tLevel);
+			} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] пул не собрался: " + e); e.printStackTrace(ERR); sToolMatrixDone = true; return;}
+			O.println("[GT6-TOOLMATRIX] блоков в пуле: " + sMatrixBlocks.size() + ", инструментов в наборе: " + sMatrixTools.size()
+				+ " → пар: " + ((long)sMatrixBlocks.size() * sMatrixTools.size()) + "; идём батчами по " + MATRIX_BATCH + " блоков за тик");
+		}
+		java.util.List<Object[]> tTools = sMatrixTools;
+		int tBatchEnd = Math.min(sMatrixIndex + MATRIX_BATCH, sMatrixBlocks.size());
+		java.util.List<Object[]> tBlocks = sMatrixBlocks.subList(sMatrixIndex, tBatchEnd);
+		boolean tLast = tBatchEnd >= sMatrixBlocks.size();
+		if (sMatrixIndex > 0 && sMatrixIndex % 500 == 0) O.println("[GT6-TOOLMATRIX] ... обработано блоков " + sMatrixIndex + "/" + sMatrixBlocks.size()
+			+ ", расхождений пока " + sMatrixDisagree);
+		sMatrixIndex = tBatchEnd;
 		try {
-			java.util.List<Object[]> tBlocks = toolMatrixBlocks(O, tLevel, tPlayer); // {метка, ItemStack-для-установки, ожидаемый тип, ожидаемый уровень}
-			java.util.List<Object[]> tTools  = toolMatrixTools(O, tLevel);           // {метка, ItemStack, тип, уровень}
-			O.println("[GT6-TOOLMATRIX] блоков в пуле: " + tBlocks.size() + ", инструментов в наборе: " + tTools.size()
-				+ " → пар: " + (tBlocks.size() * tTools.size()));
-			int tAgree = 0, tDisagree = 0;
-			StringBuilder tBad = new StringBuilder();
+			int tAgree = sMatrixAgree, tDisagree = sMatrixDisagree;
+			StringBuilder tBad = sMatrixBad;
 			for (Object[] tB : tBlocks) {
 				String tBLabel = (String)tB[0]; net.minecraft.world.item.ItemStack tPlaceStack = (net.minecraft.world.item.ItemStack)tB[1];
 				String tBTool = (String)tB[2]; int tBLevel = (Integer)tB[3];
@@ -7193,19 +7214,37 @@ public final class GT6Probes {
 					tPos = tP; tState = ((net.minecraft.world.level.block.Block)tB[4]).defaultBlockState();
 					tLevel.setBlock(tPos, tState, 3);
 				} else {
-					BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(tLevel, tPlayer, tP, net.minecraft.core.Direction.UP, tPlaceStack, BlockEntity.class, "GT6-TOOLMATRIX", tBLabel);
-					if (tTE == null) {O.println("[GT6-TOOLMATRIX] " + tBLabel + ": НЕ ВСТАЛ — пропуск"); continue;}
-					tPos = tTE.getBlockPos(); tState = tLevel.getBlockState(tPos);
+					// ⚠ ВЕРИФИКАЦИЯ ПО БЛОКУ, А НЕ ПО BlockEntity. Прежняя редакция звала place(..., BlockEntity.class),
+					// и все блоки БЕЗ BE (весь BlockBase, часть префиксов) считались «не вставшими» — 3208 штук молча
+					// выпадали из проверки, хотя реально вставали. Каркас для таких даёт placeBlock (GT6ProbeStand:80).
+					net.minecraft.core.BlockPos tPlaced = gregapi.probe.GT6ProbeStand.placeBlock(tLevel, tPlayer, tP, net.minecraft.core.Direction.UP, tPlaceStack, "GT6-TOOLMATRIX", tBLabel);
+					// блок не встал реальным путём — считаем и запоминаем КАТЕГОРИЮ: непоставленный блок = дыра в покрытии,
+					// и молча её проглотить нельзя (иначе «паритет» опять окажется про подмножество)
+					if (tPlaced == null) {sMatrixSkipped++;
+						sMatrixByReason.computeIfAbsent("НЕ ВСТАЛ (не проверен): " + (tBLabel.startsWith("MTE") ? "MTE" : tBLabel.startsWith("BlockBase") ? "BlockBase" : "prefix"), k -> new int[1])[0]++;
+						if (sMatrixNotPlaced.size() < 20) sMatrixNotPlaced.add(tBLabel);
+						continue;}
+					tPos = tPlaced; tState = tLevel.getBlockState(tPos);
 				}
-				O.println("[GT6-TOOLMATRIX] --- блок " + tBLabel + " (нужен инструмент «" + tBTool + "», уровень " + tBLevel + ")");
+				// при полном переборе построчная печать каждой пары взорвала бы лог (десятки тысяч строк) —
+				// печатаются ТОЛЬКО расхождения, совпадения идут в счётчик
 				for (Object[] tT : tTools) {
 					String tTLabel = (String)tT[0]; net.minecraft.world.item.ItemStack tTool = (net.minecraft.world.item.ItemStack)tT[1];
 					String tTType = (String)tT[2]; int tTLevel = (Integer)tT[3];
 					tPlayer.getInventory().setItem(0, tTool.copy()); tPlayer.getInventory().setSelectedSlot(0);
-					boolean tCorrect, tHarvest; float tSpeed;
+					boolean tCorrect, tHarvest; float tSpeed, tRawStack = -1, tPlayerSpeed = -1, tHardness = -1;
 					try {
 						tCorrect = tTool.isCorrectToolForDrops(tState);
-						tSpeed   = tTool.getDestroySpeed(tState);
+						// РАЗЛОЖЕНИЕ ПО ЗВЕНЬЯМ — чтобы не гадать, где рвётся цепь:
+						//   сырой ответ предмета → скорость игрока (сюда входит событие BreakSpeed) → твёрдость → прогресс
+						try {tRawStack = tTool.getDestroySpeed(tState);} catch (Throwable e) {/* нет ответа */}
+						try {tPlayerSpeed = tPlayer.getDestroySpeed(tState, tPos);} catch (Throwable e) {/* нет ответа */}
+						try {tHardness = tState.getDestroySpeed(tLevel, tPos);} catch (Throwable e) {/* нет ответа */}
+						// СКОРОСТЬ БЕРЁМ ТЕМ ЖЕ ПУТЁМ, ЧТО И ИГРА. getDestroySpeed(stack,state) — сырой ответ предмета
+						// БЕЗ позиции, а движок решает через getDestroyProgress: туда входит PlayerEvent.BreakSpeed,
+						// то есть позиционное звено GT6 (GT_API_Proxy.onBlockBreakSpeedEvent). Судить по сырому ответу —
+						// значит судить не тот канал: у MTE/prefix уровень живёт в BlockEntity и без позиции вырождается.
+						tSpeed   = tState.getDestroyProgress(tPlayer, tLevel, tPos);
 						tHarvest = tState.canHarvestBlock(tLevel, tPos, tPlayer); // ровно путь дропа (ServerPlayerGameMode:291)
 					} catch (Throwable e) {O.println("[GT6-TOOLMATRIX]    " + tTLabel + ": EXC " + e); continue;}
 					// СУДИМ НАБЛЮДАЕМОЕ: «реально добыл с дропом» = блок ломается (speed > 0) И право на дроп есть.
@@ -7233,59 +7272,207 @@ public final class GT6Probes {
 					//  · право — ForgeHooks:97-100: материал без требования инструмента → дроп есть. На скорость не влияет.
 					// Отсюда: для GT6-инструмента решает isMinableBlock + порог уровня; «материал без требования»
 					// применимо лишь к ванильному инструменту (у него скорость от движка и всегда > 0).
+					// ⛔ ОЖИДАНИЕ ПЕРЕПИСАНО 2026-07-27 ПО ЦИТАТАМ ОРИГИНАЛА (прежнее было СТРОЖЕ него — 3174 ложных FAIL).
+					// Правило 1.7.10 состоит из ДВУХ независимых величин, и «тип инструмента» участвует ТОЛЬКО в первой:
+					//  1) ЛОМАЕТСЯ ЛИ БЛОК. У MTE — почти всегда: TileEntityBase01Root:943 оригинала (в порте :1127)
+					//     возвращает Math.max(aOriginal, 0.0001F), то есть даже «чужой» инструмент ломает MTE, просто
+					//     мучительно долго; ноль отдаётся лишь когда allowInteraction=false (запертый сейф — это канон).
+					//     У блоков БЕЗ BE скорость даёт ToolStats.getMiningSpeed:89 — isMinableBlock ? 1 : 0.
+					//  2) ПРАВО НА ДРОП. ForgeHooks.canHarvestBlock:95-116: материал без требования → true; иначе
+					//     toolLevel >= уровня блока, где toolLevel = Item.getHarvestLevel(stack, класс). И вот ключевое:
+					//     MultiItemTool.getHarvestLevel:492 оригинала ПАРАМЕТР КЛАССА НЕ ИСПОЛЬЗУЕТ — любой GT6-инструмент
+					//     отвечает своим качеством на вопрос про любой класс. Значит право у GT6-инструмента от типа
+					//     НЕ ЗАВИСИТ, только от качества. Это канон Грегориуса, а не дефект порта.
+					// ⚠ ВАЖНАЯ ПОПРАВКА: минимум 0.0001 (TileEntityBase01Root:943) применяется НЕ ко всем MTE, а только
+					// к тем BE, что реализуют IMTE_GetPlayerRelativeBlockHardness — в ОРИГИНАЛЕ ровно так же
+					// (MultiTileEntityBlock:298: instanceof ? хук : super). Таких классов единицы (сейф, бункер,
+					// C-Foam, рендер-коннектор). Для всех прочих действует ванильная формула, где нулевая скорость
+					// инструмента даёт нулевой прогресс — то есть тип инструмента ДЕЙСТВИТЕЛЬНО решает, ломается ли блок.
+					boolean tHasHardnessHook = false, tAllowed = true, tUnbreakable = false, tInstant = false;
+					try {
+						net.minecraft.world.level.block.entity.BlockEntity tBE2 = tLevel.getBlockEntity(tPos);
+						tHasHardnessHook = tBE2 instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetPlayerRelativeBlockHardness;
+						if (tBE2 instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot) tAllowed = tRoot.allowInteraction(tPlayer);
+						// ТВЁРДОСТЬ БЕРЁМ ИЗ ХУКА BE, А НЕ ЗАПЕЧЁННУЮ. У GT6 её отдаёт IMTE_GetBlockHardness
+						// (родник: getBlockHardness()=-1 — неразрушим, и в оригинале так же, FluidSpring:155).
+						// Отрицательная — не ломается ничем; ноль — ломается мгновенно чем угодно (ванильное правило).
+						if (tBE2 instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_GetBlockHardness tHard) {
+							float tH = tHard.getBlockHardness();
+							tUnbreakable = tH < 0; tInstant = tH == 0;
+						}
+					} catch (Throwable e) {/* нет BE — ванильный путь */}
 					Boolean tExpectObj;
-					if (tIsGTTool)          tExpectObj = tGTMinable ? (Boolean)(tTLevel >= tBLevel) : Boolean.FALSE;
+					if (!tAllowed || tUnbreakable) tExpectObj = Boolean.FALSE;               // запертый сейф / родник (hardness<0) — не ломается ничем
+					else if (tInstant)      tExpectObj = (Boolean)(tNoToolNeeded || tTLevel >= tBLevel); // hardness 0 — ломается мгновенно, решает только право
+					// ДВЕ НЕЗАВИСИМЫЕ ВЕЛИЧИНЫ — развожу их окончательно, по цитатам оригинала:
+					//  ЛОМАЕТСЯ: скорость GT6-инструмента = 0, если он не признаёт блок своим ЛИБО не дотягивает уровнем
+					//    (getDigSpeed:482). НО если BE реализует IMTE_GetPlayerRelativeBlockHardness, хук поднимает любой
+					//    ноль до 0.0001 (TileEntityBase01Root:943) — и блок ломается всегда, просто очень долго.
+					//    Такие BE — трубы/коннекторы, сейф, бункер, C-Foam: TileEntityBase10ConnectorRendered:55 и др.
+					//  ПРАВО: ForgeHooks.canHarvestBlock:97-116 — материал без требования → true; иначе уровень >= уровня
+					//    блока (класс инструмента не участвует: MultiItemTool.getHarvestLevel:492 игнорирует параметр).
+					else if (tIsGTTool)     tExpectObj = (Boolean)((tHasHardnessHook || (tGTMinable && tTLevel >= tBLevel))
+					                                            && (tNoToolNeeded || tTLevel >= tBLevel));
 					else if (tNoToolNeeded) tExpectObj = Boolean.TRUE;                       // ванильный + материал без требования
 					else if (tTType.equals(tBTool)) tExpectObj = (Boolean)(tTLevel >= tBLevel); // ванильный СВОЕГО класса
 					else                    tExpectObj = null;                               // ванильный чужого класса — не судим
 					boolean tExpect = tExpectObj != null && tExpectObj;
 					boolean tOk = (tExpectObj == null) || (tEffective == tExpect);
-					if (tExpectObj == null) {O.println("[GT6-TOOLMATRIX]    " + tTLabel + " [" + tTType + ", ур." + tTLevel + "]: добыл=" + tEffective
-						+ " (canHarvest=" + tHarvest + " speed=" + String.format(java.util.Locale.ROOT, "%.1f", tSpeed) + ") | НЕ СУДИМ: ванильный инструмент чужого класса"); tAgree++; continue;}
-					if (tOk) tAgree++; else {tDisagree++; if (tBad.length() < 4000) tBad.append("\n[GT6-TOOLMATRIX]    РАСХОЖДЕНИЕ: ").append(tBLabel).append(" × ").append(tTLabel)
-						.append(" — реально добыл ").append(tEffective).append(", по правилу 1.7.10 ожидалось ").append(tExpect)
-						.append(" (тип блока «").append(tBTool).append("» vs тип инструмента «").append(tTType).append("», уровень блока ").append(tBLevel).append(" vs инструмента ").append(tTLevel).append(")");}
-					O.println("[GT6-TOOLMATRIX]    " + tTLabel + " [" + tTType + ", ур." + tTLevel + "]: добыл=" + tEffective
-						+ " (canHarvest=" + tHarvest + " correct=" + tCorrect + " speed=" + String.format(java.util.Locale.ROOT, "%.1f", tSpeed) + ")"
-						+ " | ожидание 1.7.10=" + tExpect + (tOk ? "" : "  <<< РАСХОЖДЕНИЕ"));
+					if (tExpectObj == null) {tAgree++; continue;} // ванильный инструмент чужого класса — правило 1.7.10 отдаёт ванильный вердикт
+					if (tOk) tAgree++;
+					else {
+						tDisagree++;
+						// ГРУППИРОВКА ПРИЧИН: при полном переборе список расхождений нечитаем поштучно, а чинить надо
+						// корни. Ключ причины — что именно разошлось, без имён конкретных блоков.
+						String tReason = (tEffective ? "ЛИШНЕЕ ПРАВО: добыл, хотя не должен" : "ПОТЕРЯ: не добыл, хотя должен")
+							+ " · " + (tIsGTTool ? (tGTMinable ? "GT6-инструмент признаёт блок своим, порог уровня" : "GT6-инструмент НЕ признаёт блок своим (isMinableBlock=false)")
+							                     : (tNoToolNeeded ? "ванильный, материал без требования" : "ванильный своего класса, порог уровня"));
+						sMatrixByReason.computeIfAbsent(tReason, k -> new int[1])[0]++;
+						if (tBad.length() < 20000) tBad.append("\n[GT6-TOOLMATRIX]    РАСХОЖДЕНИЕ: ").append(tBLabel).append(" × ").append(tTLabel)
+							.append(" — реально добыл ").append(tEffective).append(", по правилу 1.7.10 ожидалось ").append(tExpect)
+							.append(" (блок: тип «").append(tBTool).append("» ур.").append(tBLevel)
+							.append(" | инструмент: тип «").append(tTType).append("» ур.").append(tTLevel)
+							.append(" | canHarvest=").append(tHarvest).append(" correct=").append(tCorrect)
+							.append(" | прогресс=").append(String.format(java.util.Locale.ROOT, "%.5f", tSpeed))
+							.append(" стек-скорость=").append(String.format(java.util.Locale.ROOT, "%.2f", tRawStack))
+							.append(" скорость-игрока=").append(String.format(java.util.Locale.ROOT, "%.2f", tPlayerSpeed))
+							.append(" твёрдость=").append(String.format(java.util.Locale.ROOT, "%.2f", tHardness)).append(")");
+					}
 				}
 				tLevel.setBlock(tPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 			}
-			O.println(tBad.toString());
-			O.println("[GT6-TOOLMATRIX] ИТОГ: пар проверено " + (tAgree + tDisagree) + ", совпало с правилом 1.7.10 " + tAgree + ", разошлось " + tDisagree);
-		} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] стенд упал: " + e); e.printStackTrace(ERR);}
+			sMatrixAgree = tAgree; sMatrixDisagree = tDisagree;
+		} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] батч упал: " + e); e.printStackTrace(ERR);}
+		if (!tLast) return;
+		sToolMatrixDone = true;
+		gt6ToolFactBreak(tLevel, tPlayer, O); // ФАКТ, а не формула — см. ниже
+		O.println(sMatrixBad.toString());
+		O.println("[GT6-TOOLMATRIX] ПРИЧИНЫ РАСХОЖДЕНИЙ (что чинить):");
+		for (java.util.Map.Entry<String, int[]> tR : sMatrixByReason.entrySet()) O.println("[GT6-TOOLMATRIX]   " + tR.getValue()[0] + " × " + tR.getKey());
+		if (!sMatrixNotPlaced.isEmpty()) O.println("[GT6-TOOLMATRIX] образцы НЕ ВСТАВШИХ (дыра в покрытии): " + sMatrixNotPlaced);
+		O.println("[GT6-TOOLMATRIX] ИТОГ: блоков " + sMatrixBlocks.size() + " (не встало " + sMatrixSkipped + "), инструментов " + sMatrixTools.size()
+			+ "; пар проверено " + (sMatrixAgree + sMatrixDisagree) + ", совпало с правилом 1.7.10 " + sMatrixAgree + ", РАЗОШЛОСЬ " + sMatrixDisagree);
 		O.println("========== [GT6-TOOLMATRIX] DONE ==========");
+	}
+
+	/**
+	 * [GT6-TOOLFACT] ПРЯМОЙ ЗАМЕР РАЗРУШЕНИЯ — без единой формулы и без моего ожидания.
+	 *
+	 * <p><b>Зачем отдельно от матрицы.</b> Матрица сверяет наблюдаемое с ПРАВИЛОМ, которое я вывел из исходников
+	 * 1.7.10. Игрок справедливо заметил: правило пишу я, значит подгонкой можно получить любой результат. Здесь
+	 * правила нет вообще — блок ставится, инструмент берётся в руку, блок ЛОМАЕТСЯ настоящим путём игрока
+	 * ({@code ServerPlayerGameMode.destroyBlock} — тот же вызов, что при клике), и печатается ФАКТ: исчез ли блок
+	 * и что реально выпало. Спорить с этим нельзя: это то же самое, что видит игрок в игре.
+	 *
+	 * <p>Цель — случай из репорта: «на стенде бочки ломаются и дропаются ключом». Берутся ВСЕ Mass-Storage-блоки
+	 * (бочки/ящики) и трубы, каждый × весь набор инструментов.
+	 */
+	private static void gt6ToolFactBreak(ServerLevel aLevel, ServerPlayer aPlayer, java.io.PrintStream O) {
+		O.println("========== [GT6-TOOLFACT] ПРЯМОЕ РАЗРУШЕНИЕ: что РЕАЛЬНО ломается и что выпадает ==========");
+		try {
+			gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+			java.util.List<Object[]> tTargets = new java.util.ArrayList<>(); // {метка, стек}
+			if (tReg != null) for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
+				try {
+					if (tC == null || tC.mBlock == null) continue;
+					String tCN = tC.mClass.getSimpleName();
+					if (!tCN.contains("MassStorage") && !tCN.contains("PipeFluid")) continue;
+					if (tTargets.size() >= 6) break; // по нескольку представителей — этого хватает, вывод должен читаться
+					tTargets.add(new Object[]{"MTE#" + tC.mID + " «" + tCN + "» инстр=" + tC.mBlock.getHarvestTool(tC.mBlockMetaData)
+						+ " ур=" + tC.mBlock.getHarvestLevel(tC.mBlockMetaData), tReg.getItem(tC.mID)});
+				} catch (Throwable e) {/* пропуск */}
+			}
+			java.util.List<Object[]> tTools = toolMatrixTools(O, aLevel);
+			for (Object[] tT : tTargets) {
+				String tLabel = (String)tT[0];
+				O.println("[GT6-TOOLFACT] --- " + tLabel);
+				for (Object[] tTool : tTools) {
+					String tTLabel = (String)tTool[0]; net.minecraft.world.item.ItemStack tStack = (net.minecraft.world.item.ItemStack)tTool[1];
+					BlockPos tP = aPlayer.blockPosition().offset(14, 0, 14);
+					net.minecraft.core.BlockPos tPos = gregapi.probe.GT6ProbeStand.placeBlock(aLevel, aPlayer, tP, net.minecraft.core.Direction.UP, ((net.minecraft.world.item.ItemStack)tT[1]).copy(), "GT6-TOOLFACT", tLabel);
+					if (tPos == null) {O.println("[GT6-TOOLFACT]    " + tTLabel + ": блок не встал — пропуск"); continue;}
+					aPlayer.getInventory().setItem(0, tStack.copy()); aPlayer.getInventory().setSelectedSlot(0);
+					// ⚠ ВСЕ УЛИКИ СНИМАЮТСЯ ДО РАЗРУШЕНИЯ. Первая редакция читала их после destroyBlock — то есть
+					// по ВОЗДУХУ, и печатала нули: замер, который меряет уже исчезнувший блок, врёт молча.
+					net.minecraft.world.level.block.state.BlockState tSt = aLevel.getBlockState(tPos);
+					float tProgress = 0; try {tProgress = tSt.getDestroyProgress(aPlayer, aLevel, tPos);} catch (Throwable e) {/* 0 */}
+					float tRaw = -1, tPl = -1; boolean tMin = false; int tQual = -1;
+					try {tRaw = tStack.getDestroySpeed(tSt);} catch (Throwable e) {/* нет */}
+					try {tPl = aPlayer.getDestroySpeed(tSt, tPos);} catch (Throwable e) {/* нет */}
+					try {
+						if (tStack.getItem() instanceof gregapi.item.multiitem.MultiItemTool tMIT) {
+							gregapi.item.multiitem.tools.IToolStats tS = tMIT.getToolStats(tStack);
+							if (tS != null) {tMin = tS.isMinableBlock(tSt.getBlock(), (byte)gregapi.util.WD.meta(aLevel, tPos.getX(), tPos.getY(), tPos.getZ())); tQual = tS.getBaseQuality() + tMIT.getPrimaryMaterial(tStack).mToolQuality;}
+						}
+					} catch (Throwable e) {/* не GT6-инструмент */}
+					// вычищаем всё, что валяется рядом, чтобы дроп не спутать с чужим
+					for (net.minecraft.world.entity.item.ItemEntity tE : aLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(6))) tE.discard();
+					boolean tBroke = false;
+					try {tBroke = aPlayer.gameMode.destroyBlock(tPos);} catch (Throwable e) {O.println("[GT6-TOOLFACT]    " + tTLabel + ": EXC " + e);}
+					StringBuilder tDrops = new StringBuilder();
+					for (net.minecraft.world.entity.item.ItemEntity tE : aLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(6)))
+						tDrops.append(tDrops.length() == 0 ? "" : ", ").append(tE.getItem().getCount()).append("×").append(tE.getItem().getHoverName().getString());
+					O.println(String.format("[GT6-TOOLFACT]    %-34s прогресс/тик=%-9.5f сломал=%-5s | стек=%-6.2f игрок=%-6.2f свой?=%-5s кач=%-3d выпало: %s",
+						tTLabel, tProgress, tBroke, tRaw, tPl, tMin, tQual, tDrops.length() == 0 ? "НИЧЕГО" : tDrops));
+					for (net.minecraft.world.entity.item.ItemEntity tE : aLevel.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(tPos).inflate(6))) tE.discard();
+					aLevel.setBlock(tPos, Blocks.AIR.defaultBlockState(), 3);
+				}
+			}
+		} catch (Throwable e) {O.println("[GT6-TOOLFACT] упал: " + e); e.printStackTrace(ERR);}
+		O.println("========== [GT6-TOOLFACT] DONE ==========");
 	}
 
 	/** Пул блоков: по одному представителю на КАЖДЫЙ тип инструмента, найденному в самом GT6 (getHarvestTool),
 	 *  плюс ванильные эталоны уровня 0..3. Каждый элемент: {метка, стек-для-установки|null, нужный тип, нужный уровень, блок-для-ванили}. */
 	private static java.util.List<Object[]> toolMatrixBlocks(java.io.PrintStream O, ServerLevel aLevel, ServerPlayer aPlayer) {
 		java.util.List<Object[]> r = new java.util.ArrayList<>();
-		// 1) MTE-блоки: обходим реестр и берём ПЕРВЫЙ встреченный блок под каждый ещё не покрытый тип инструмента
+		// 1) MTE-блоки: ВСЕ регистрации реестра, а не по одной на тип инструмента. Именно здесь пряталась пара
+		//    «ключ × деревянная бочка»: прежняя выборка брала первый блок на тип и такие случаи не видела.
 		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
-		java.util.Set<String> tSeen = new java.util.HashSet<>();
+		int tMTE = 0;
 		if (tReg != null) for (gregapi.block.multitileentity.MultiTileEntityClassContainer tC : tReg.mRegistrations) {
 			try {
 				if (tC == null || tC.mBlock == null) continue;
 				String tTool = tC.mBlock.getHarvestTool(tC.mBlockMetaData);
-				if (tTool == null || !tSeen.add(tTool)) continue;
+				if (tTool == null) continue;
 				int tLevel = tC.mBlock.getHarvestLevel(tC.mBlockMetaData); // правило 1.7.10: мета блока = качество материала
-				r.add(new Object[]{"MTE#" + tC.mID + " (" + tTool + ")", tReg.getItem(tC.mID), tTool, tLevel, null});
+				r.add(new Object[]{"MTE#" + tC.mID + " «" + tC.mClass.getSimpleName() + "» (" + tTool + ")", tReg.getItem(tC.mID), tTool, tLevel, null});
+				tMTE++;
 			} catch (Throwable e) {/* класс без блока/имени — пропуск */}
 		}
-		// 2) prefix-руды трёх материалов с РАЗНЫМ качеством (главный случай BUG-071)
+		// 2) prefix-блоки: ВСЕ префиксы, у которых есть блок, × ВСЕ материалы, которые для них генерируются.
+		//    Уровень пер-материален (BUG-071), поэтому каждая пара «префикс × материал» — отдельный случай.
+		int tPrefix = 0;
 		try {
-			Object tO = gregapi.data.CS.BlocksGT.ore;
-			if (tO instanceof gregapi.block.prefixblock.PrefixBlock tOre) {
-				for (int tQ : new int[]{0, 2, 4}) for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
-					if (tMat == null || tMat.mToolQuality != tQ) continue;
-					try { if (!tOre.mPrefix.isGeneratingItem(tMat)) continue; } catch (Throwable e) {continue;}
-					r.add(new Object[]{"руда " + tMat.mNameInternal + " (кач." + tQ + ")", gregapi.util.ST.make(tOre, 1, tMat.mID),
-						tOre.getHarvestTool(0), tOre.getHarvestLevel(gregapi.util.UT.Code.bind4(tMat.mToolQuality)), null});
-					break;
+			for (java.lang.reflect.Field tF : gregapi.data.CS.BlocksGT.class.getFields()) {
+				Object tO;
+				try {tO = tF.get(null);} catch (Throwable e) {continue;}
+				if (!(tO instanceof gregapi.block.prefixblock.PrefixBlock tPB)) continue;
+				for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (tMat == null) continue;
+					try {if (!tPB.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
+					r.add(new Object[]{tF.getName() + " «" + tMat.mNameInternal + "» (кач." + tMat.mToolQuality + ")", gregapi.util.ST.make(tPB, 1, tMat.mID),
+						tPB.getHarvestTool(0), tPB.getHarvestLevel(gregapi.util.UT.Code.bind4(tMat.mToolQuality)), null});
+					tPrefix++;
 				}
 			}
-		} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] руды в пул не попали: " + e);}
+		} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] prefix-блоки в пул не попали: " + e);}
+		// 3) BlockBase-семейства: ВСЕ блоки реестра, реализующие IBlockBase, × все их меты (у них подтип живёт в мете).
+		int tBase = 0;
+		try {
+			for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+				if (!(tB instanceof gregapi.block.BlockBase tBB)) continue;
+				int tMax = Math.max(1, Math.min(16, tBB.maxMeta()));
+				for (int tM = 0; tM < tMax; tM++) {
+					String tTool = tBB.getHarvestTool(tM);
+					if (tTool == null) continue;
+					r.add(new Object[]{"BlockBase " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB) + "#" + tM,
+						gregapi.util.ST.make(tB, 1, tM), tTool, tBB.getHarvestLevel(tM), null});
+					tBase++;
+				}
+			}
+		} catch (Throwable e) {O.println("[GT6-TOOLMATRIX] BlockBase в пул не попали: " + e);}
+		O.println("[GT6-TOOLMATRIX] пул собран ПОЛНЫМ обходом: MTE " + tMTE + " + prefix×материал " + tPrefix + " + BlockBase×мета " + tBase + " + ваниль 4");
 		// 3) ванильные эталоны шкалы 0..3 — опора, без них числа инструментов не с чем сверить
 		r.add(new Object[]{"ваниль STONE (ур.0)"      , null, gregapi.data.CS.TOOL_pickaxe, 0, net.minecraft.world.level.block.Blocks.STONE});
 		r.add(new Object[]{"ваниль IRON_ORE (ур.1)"   , null, gregapi.data.CS.TOOL_pickaxe, 1, net.minecraft.world.level.block.Blocks.IRON_ORE});

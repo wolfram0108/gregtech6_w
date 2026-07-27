@@ -98,7 +98,14 @@ public final class GT6ProbeStand {
 		aLevel.setBlock(tTarget, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3); // расчистка цели под установку
 		aPlayer.getInventory().setItem(0, aItem); aPlayer.getInventory().setSelectedSlot(0);
 		net.minecraft.world.phys.Vec3 tHit = net.minecraft.world.phys.Vec3.atCenterOf(aAnchorPos).add(aFace.getStepX()*0.5, aFace.getStepY()*0.5, aFace.getStepZ()*0.5);
-		aPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(tHit, aFace, aAnchorPos, false)));
+		// ПРИСЕД НА ВРЕМЯ УСТАНОВКИ: часть MTE ставится ТОЛЬКО в приседе (IMTE_OnlyPlaceableWhenSneaking —
+		// батареи и т.п., в оригинале ровно так же: TileEntityBase08Battery:54). Стенд без приседа их не ставил,
+		// и 443 блока молча выпадали из проверки как «не встали».
+		boolean tWasSneaking = aPlayer.isShiftKeyDown();
+		aPlayer.setShiftKeyDown(true);
+		try {
+			aPlayer.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(aPlayer, net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(tHit, aFace, aAnchorPos, false)));
+		} finally {aPlayer.setShiftKeyDown(tWasSneaking);}
 		return tTarget;
 	}
 
