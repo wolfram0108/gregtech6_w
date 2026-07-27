@@ -286,6 +286,23 @@ public abstract class BlockWaterlike extends BlockFluidBaseGT implements IBlock,
 	public int getRenderColor(int aMeta) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
 	public int colorMultiplier(BlockGetter aWorld, int aX, int aY, int aZ) {throw new UnsupportedOperationException("PORT-TODO(F3, fluid tint): neo-тинт FluidTintSources; crash-only per /goal");}
 	
+	// BUG-068 (F3-render, item-форма): предмет реки/океана/болота показывался пурпурной заглушкой — у него не было НИКАКОЙ
+	// модели. Канал item-модели GT6 инжектится только блокам-IRenderedBlock (GT_API_Proxy_Client:258), а JSON-моделей в моде
+	// нет вовсе. Сам канал теперь объявлен в общем предке (BlockFluidBaseGT) — как в 1.7.10 один RendererBlockFluid обслуживал
+	// ОБЕ жидкостные иерархии; здесь остаётся ровно то, что у водоподобных СВОЁ, — текстура.
+	// 1:1 оригинала (:200-201): getIcon → Blocks.water.getIcon, т.е. ВАНИЛЬНАЯ вода (НЕ иконка своей жидкости, в отличие от
+	// BlockBaseFluid), getRenderColor → 0x00ffffff, т.е. без собственного тинта. В 1.7.10 сам спрайт воды был синим, в 26.1 он
+	// серый и цвет даёт движок — поэтому «как ванильная вода» выражаем существующим центром BlockTextureFluid: для не-GT6
+	// жидкости он отдаёт block/water_still + ванильный водный тинт (BlockTextureFluid:92-94, ветка заведена в BUG-049).
+	// Через mFluid брать нельзя: у океана/болота своей жидкости в GT6 нет вовсе (seawater/waterdirty — чужие имена, FL.create
+	// на них не зовётся ни в оригинале, ни в порте), а у реки своя текстура riverwater есть, но она — иконка ЖИДКОСТИ (ёмкости
+	// и дисплеи), блок же в 1.7.10 рисовался ванильной водой.
+	private gregapi.render.ITexture mRenderTexture = null;
+	@Override public gregapi.render.ITexture renderTexture() {
+		if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(net.minecraft.world.level.material.Fluids.WATER, T);
+		return mRenderTexture;
+	}
+
 	public int getFireSpreadSpeed(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
 	public int getFlammability(BlockGetter aWorld, int aX, int aY, int aZ, Direction aDirection) {return 0;}
 	// ADAPT-009/флора: блок с водным FluidState (kelp/seagrass/коралл/waterlogged — содержат воду В СЕБЕ) для

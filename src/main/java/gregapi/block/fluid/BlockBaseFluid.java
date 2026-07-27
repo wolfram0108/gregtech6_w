@@ -63,7 +63,7 @@ import static gregapi.data.CS.*;
  * (см. его javadoc). Тела GT6-собственных методов (updateTick/tryToFlowVerticallyInto/updateFluidBlocks/...) —
  * 1:1, только API-свод.
  */
-public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside, gregapi.render.IRenderedBlock {
+public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT, IBlockOnHeadInside {
 	public static int FLUID_UPDATE_FLAGS = 2;
 	
 	public final String mNameInternal;
@@ -429,12 +429,13 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 	public int getRenderBlockPass() {return 1;}
 
 	// F3-render (флюид-блок ВИДИМ): было мёртвый getRenderType()=RendererBlockFluid.RENDER_ID (1.7.10) + getIcon/getRenderColor
-	// кидали PORT-TODO → флюид-блок (нефть/газ/гео-вода worldgen'а) НЕ рисовался (прозрачный). Реализуем IRenderedBlock — та же
-	// централизованная модель GT6BlockModel, что у всех грег-блоков (onModifyBakingResult инжектит её каждому IRenderedBlock).
+	// кидали PORT-TODO → флюид-блок (нефть/газ/гео-вода worldgen'а) НЕ рисовался (прозрачный). Канал IRenderedBlock (та же
+	// централизованная модель GT6BlockModel, что у всех грег-блоков) объявлен ОДИН РАЗ в общем предке BlockFluidBaseGT —
+	// как в 1.7.10 один RendererBlockFluid обслуживал обе жидкостные иерархии. Здесь остаётся только СВОЁ:
 	// Текстура+цвет флюида — из центра F5 (BlockTextureFluid → FluidGT.of(mFluid): still-иконка + mRGBa + свечение). Одна текстура
 	// на все грани/один проход, полный куб. Кэшируем (mFluid final). alpha=T (флюид полупрозрачный, если слой это позволит).
 	private gregapi.render.ITexture mRenderTexture = null;
-	public gregapi.render.ITexture renderTexture() {if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(mFluid, T); return mRenderTexture;}
+	@Override public gregapi.render.ITexture renderTexture() {if (mRenderTexture == null && CODE_CLIENT) mRenderTexture = gregapi.render.BlockTextureFluid.get(mFluid, T); return mRenderTexture;}
 
 	/** было shouldSideBeRendered(IBlockAccess,x,y,z,side) (:348-356 оригинала) — тело 1:1, world-aware
 	 *  (координаты СОСЕДА). Читает {@link gregapi.render.RendererBlockFluid} — neo skipRendering потерял
@@ -449,13 +450,9 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		if (tTileEntity instanceof ITileEntitySurface) return !((ITileEntitySurface)tTileEntity).isSurfaceOpaque(OPOS[aSide]);
 		return T;
 	}
-	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, ItemStack aStack) {return renderTexture();}
-	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return renderTexture();}
-	@Override public boolean usesRenderPass(int aRenderPass, ItemStack aStack) {return aRenderPass == 0;}
-	@Override public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return aRenderPass == 0;}
-	@Override public boolean setBlockBounds(int aRenderPass, ItemStack aStack) {return F;}
 	// высота поверхности 1:1 Forge BlockFluidBase.getFluidHeightForRender: сверху жидкость → полный куб,
-	// иначе quanta/quantaPerBlock(8) * 0.875 (кванты живут в мете, getQuantaValue).
+	// иначе quanta/quantaPerBlock(8) * 0.875 (кванты живут в мете, getQuantaValue). Единственная ветка рендера, которая у
+	// этой иерархии СВОЯ (у водоподобных мировой меш не строится вовсе — RenderShape.INVISIBLE); остальное — общий предок.
 	@Override public boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {
 		Block tAbove = WD.block(aWorld, aX, aY - mDensityDir, aZ);
 		float tHeight = tAbove == this || tAbove instanceof BlockFluidBaseGT || WD.getMaterial(tAbove).isLiquid()
@@ -463,10 +460,6 @@ public class BlockBaseFluid extends BlockFluidBaseGT implements IBlock, IItemGT,
 		setBlockBounds(0, 0, 0, 1, tHeight, 1);
 		return T;
 	}
-	@Override public int getRenderPasses(ItemStack aStack) {return 1;}
-	@Override public int getRenderPasses(BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return 1;}
-	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(ItemStack aStack) {return null;}
-	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 	public int getLightOpacity() {return LIGHT_OPACITY_WATER;}
 	
 	// F-fire мост: было Forge Block.getFlammability/getFireSpreadSpeed(IBlockAccess,x,y,z,side) — в neo канал огня

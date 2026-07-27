@@ -53,7 +53,7 @@ import static gregapi.data.CS.*;
  * тик целиком в Ocean/River/Swamp и никогда не зовёт {@code super.updateTick}) не портирован — не выдумываем
  * мёртвый код.
  */
-public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.block.IBlockExtendedMetaData {
+public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.block.IBlockExtendedMetaData, gregapi.render.IRenderedBlock {
 	/** было Forge {@code BlockFluidBase.displacements} + статический {@code defaultDisplacements}
 	 *  (wooden_door/iron_door/standing_sign/wall_sign/reeds -> false). F5 данные-дефолт (door/sign/reeds не вытесняются жидкостью — набор блоков, не заглушка):
 	 *  1.7.10 знал ОДИН блок на дверь/вывеску; neo расщепил на блок-на-древесину (нет 1:1 отображения без
@@ -276,4 +276,33 @@ public abstract class BlockFluidBaseGT extends Block implements IBlock, gregapi.
 		net.minecraft.world.phys.Vec3 vec = ((BlockFluidBaseGT)tBlock).getFlowVector(aWorld, aX, aY, aZ);
 		return vec.x == 0.0D && vec.z == 0.0D ? -1000.0D : Math.atan2(vec.z, vec.x) - Math.PI / 2D;
 	}
+
+	// ================================ F3-render: РЕНДЕР ОБЕИХ ЖИДКОСТНЫХ ИЕРАРХИЙ — ЗДЕСЬ ================================
+	// В 1.7.10 рендер жидкостных блоков был ЦЕНТРАЛИЗОВАН у самого Грегориуса: и BlockWaterlike (:197), и BlockBaseFluid
+	// отдавали ОДИН и тот же getRenderType() = RendererBlockFluid.RENDER_ID — один ISimpleBlockRenderingHandler на обе
+	// иерархии, ровно потому, что у них общий предок (Forge BlockFluidBase). Порт восстановил neo-эквивалент этого канала
+	// (IRenderedBlock → GT6BlockModel/GT6ItemModel) ТОЛЬКО у BlockBaseFluid — водоподобные (река/океан/болото) остались вне
+	// канала: onModifyBakingResult (GT_API_Proxy_Client:258) инжектит item-модель лишь блокам-IRenderedBlock, а JSON-моделей
+	// в моде нет вовсе (мод процедурный) → у их BlockItem не было НИКАКОЙ модели → пурпурная заглушка (BUG-068).
+	// Приём восстановления — тот же, что был у Грега: канал объявлен ОДИН РАЗ, в общем предке, и обслуживает обе иерархии.
+	// Различие между ними ровно одно и живёт в потомке — какая текстура (renderTexture): у BlockBaseFluid своя жидкость
+	// (mFluid.getStillIcon 1.7.10), у BlockWaterlike ВАНИЛЬНАЯ вода (1.7.10 :200 getIcon → Blocks.water.getIcon).
+	// МИРОВОЙ рендер этим не задевается: у водоподобных getRenderShape()==INVISIBLE, а движок собирает модельные квады
+	// только для RenderShape.MODEL (SectionCompiler.java:106 декомпила) — вода как рисовалась vanilla FluidRenderer'ом по
+	// getFluidState (F5-B), так и рисуется. У BlockBaseFluid RenderShape дефолтный (MODEL) — его мировой рендер как был.
+
+	/** Текстура жидкости для обеих веток рендера (мир + item-форма). Клиент-only: {@code BlockTextureFluid.get} под {@code CODE_CLIENT}. */
+	public abstract gregapi.render.ITexture renderTexture();
+
+	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, net.minecraft.world.item.ItemStack aStack) {return renderTexture();}
+	@Override public gregapi.render.ITexture getTexture(int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered, BlockGetter aWorld, int aX, int aY, int aZ) {return renderTexture();}
+	@Override public boolean usesRenderPass(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {return aRenderPass == 0;}
+	@Override public boolean usesRenderPass(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return aRenderPass == 0;}
+	@Override public boolean setBlockBounds(int aRenderPass, net.minecraft.world.item.ItemStack aStack) {return F;}
+	/** дефолт — полный куб; квантовую высоту поверхности переопределяет {@link BlockBaseFluid} (мировой рендер своей жидкости). */
+	@Override public boolean setBlockBounds(int aRenderPass, BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return F;}
+	@Override public int getRenderPasses(net.minecraft.world.item.ItemStack aStack) {return 1;}
+	@Override public int getRenderPasses(BlockGetter aWorld, int aX, int aY, int aZ, boolean[] aShouldSideBeRendered) {return 1;}
+	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(net.minecraft.world.item.ItemStack aStack) {return null;}
+	@Override public gregapi.render.IRenderedBlockObject passRenderingToObject(BlockGetter aWorld, int aX, int aY, int aZ) {return null;}
 }

@@ -254,6 +254,88 @@ public final class GT6ProbesClient {
 		O.println("========== [GT6-JADECLIENT] DONE ==========");
 	}
 
+	// [GT6-ITEMMODELPROBE] BUG-068: судья ITEM-МОДЕЛИ. Игрок видит у предмета воды GT6 пурпурную заглушку — это признак
+	// «модели нет вовсе» (JSON-моделей в моде НЕТ, все модели инжектируются рантаймом; ModelManager.getItemModel:90-97 на
+	// промахе пишет «Missing item model» и отдаёт missing-модель). Судится НЕ картинка, а ДАННЫЕ рендера, и берутся они
+	// ровно тем вызовом, которым их берёт GUI/Jade: ItemModelResolver.updateForTopItem (ItemModelResolver.java:41-49).
+	// Признак предмета без модели — particle-материал из missing-модели (minecraft:missingno) либо пустой render-state.
+	// Замер идёт В МИРЕ: на TitleScreen ItemStack ещё нельзя построить («Components not bound yet» —
+	// Holder$Reference.components:273, реестровые компоненты предметов связываются при загрузке мира). Снять при уборке фазы.
+	private static boolean mItemModelDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onItemModelProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mItemModelDone || !gregapi.data.CS.probeFlag("gt6itemmodelprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null || tMC.getModelManager() == null) return;
+		mItemModelDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-ITEMMODELPROBE] BUG-068: есть ли у предмета модель (реальный путь GUI/Jade) ==========");
+		StringBuilder tOut = new StringBuilder();
+		int tPass = 0, tFail = 0;
+		// ЦЕЛЬ репорта + позитивные контроли. Ожидание для водоподобных — ванильная вода (1.7.10 BlockWaterlike:200
+		// getIcon → Blocks.water.getIcon), для нефти — своя текстура жидкости, для камня — ванильная модель движка.
+		Object[][] tCases = {
+			{"ЦЕЛЬ река  (BUG-068)"      , gregapi.data.CS.BlocksGT.River   , "block/water_still"},
+			{"ЦЕЛЬ океан (BUG-068)"      , gregapi.data.CS.BlocksGT.Ocean   , "block/water_still"},
+			{"ЦЕЛЬ болото (BUG-068)"     , gregapi.data.CS.BlocksGT.Swamp   , "block/water_still"},
+			{"POSITIVE-CONTROL нефть"    , gregapi.data.CS.BlocksGT.OilHeavy, null},
+			{"POSITIVE-CONTROL ванильный камень", net.minecraft.world.level.block.Blocks.STONE, null},
+		};
+		for (Object[] tCase : tCases) {
+			String tLabel = (String)tCase[0];
+			net.minecraft.world.level.block.Block tBlock = (net.minecraft.world.level.block.Block)tCase[1];
+			String tWantSprite = (String)tCase[2];
+			if (tBlock == null) {itemModelLine(tOut, tLabel, "блок существует", "БЛОКА НЕТ (null)", false); tFail++; continue;}
+			net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(tBlock, 1, 0); // центр мода (тот же, что у nameprobe)
+			String tSprite = itemModelSprite(tStack);
+			boolean tOk = tSprite != null && !tSprite.contains("missingno") && (tWantSprite == null || tSprite.contains(tWantSprite));
+			itemModelLine(tOut, tLabel + " " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock),
+				tWantSprite == null ? "модель есть, спрайт не missingno" : "спрайт " + tWantSprite, String.valueOf(tSprite), tOk);
+			if (tOk) tPass++; else tFail++;
+		}
+		// SENSITIVITY: судья обязан УМЕТЬ дать FAIL — подсовываем стек с заведомо несуществующей моделью.
+		// Без этой строки «все PASS» ничего не доказывают (урок: судья без контроля — не судья).
+		net.minecraft.world.item.ItemStack tBogus = gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.STONE, 1, 0);
+		tBogus.set(net.minecraft.core.component.DataComponents.ITEM_MODEL, net.minecraft.resources.Identifier.fromNamespaceAndPath("gregtech", "probe_nonexistent_model"));
+		String tBogusSprite = itemModelSprite(tBogus);
+		boolean tSensOk = tBogusSprite == null || tBogusSprite.contains("missingno");
+		itemModelLine(tOut, "SENSITIVITY: предмет с несуществующей моделью", "missingno / пусто", String.valueOf(tBogusSprite), tSensOk);
+		if (tSensOk) tPass++; else tFail++;
+		// РЕГРЕСС-КОНТРОЛЬ мирового рендера: водоподобные обязаны остаться INVISIBLE (их рисует vanilla FluidRenderer по
+		// getFluidState — SectionCompiler.java:99-106), у нефти — обычная модель. Иначе фикс item-формы задел бы мир.
+		for (net.minecraft.world.level.block.Block tBlock : new net.minecraft.world.level.block.Block[]{
+				gregapi.data.CS.BlocksGT.River, gregapi.data.CS.BlocksGT.Ocean, gregapi.data.CS.BlocksGT.Swamp}) {
+			if (tBlock == null) continue;
+			net.minecraft.world.level.block.state.BlockState tState = tBlock.defaultBlockState();
+			boolean tOk = tState.getRenderShape() == net.minecraft.world.level.block.RenderShape.INVISIBLE && !tState.getFluidState().isEmpty();
+			itemModelLine(tOut, "REGRESS: мировой рендер " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock) + " не задет",
+				"INVISIBLE + FluidState воды", tState.getRenderShape() + " + fluid=" + (tState.getFluidState().isEmpty() ? "НЕТ" : String.valueOf(net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(tState.getFluidState().getType()))), tOk);
+			if (tOk) tPass++; else tFail++;
+		}
+		if (gregapi.data.CS.BlocksGT.OilHeavy != null) {
+			net.minecraft.world.level.block.state.BlockState tOil = gregapi.data.CS.BlocksGT.OilHeavy.defaultBlockState();
+			boolean tOk = tOil.getRenderShape() == net.minecraft.world.level.block.RenderShape.MODEL;
+			itemModelLine(tOut, "REGRESS: мировой рендер нефти не задет", "MODEL", String.valueOf(tOil.getRenderShape()), tOk);
+			if (tOk) tPass++; else tFail++;
+		}
+		O.println(tOut.toString());
+		O.println("[GT6-ITEMMODELPROBE] ИТОГ: PASS=" + tPass + " FAIL=" + tFail);
+		O.println("========== [GT6-ITEMMODELPROBE] DONE ==========");
+	}
+	/** Спрайт, которым движок реально нарисует предмет: тот же путь, что у GUI (updateForTopItem → particle-материал слоя). */
+	private static String itemModelSprite(net.minecraft.world.item.ItemStack aStack) {
+		try {
+			net.minecraft.client.renderer.item.ItemStackRenderState tState = new net.minecraft.client.renderer.item.ItemStackRenderState();
+			Minecraft.getInstance().getItemModelResolver().updateForTopItem(tState, aStack, net.minecraft.world.item.ItemDisplayContext.GUI, null, null, 0);
+			if (tState.isEmpty()) return null;
+			net.minecraft.client.resources.model.sprite.Material.Baked tMat = tState.pickParticleMaterial(net.minecraft.util.RandomSource.create(42L));
+			return tMat == null ? "<слой есть, particle нет>" : tMat.sprite().contents().name().toString();
+		} catch (Throwable e) {return "EXC " + e;}
+	}
+	private static void itemModelLine(StringBuilder aOut, String aName, String aExpected, String aActual, boolean aPass) {
+		aOut.append("[GT6-ITEMMODELPROBE] ").append(aName).append(" | ожидание: ").append(aExpected).append(" | факт: ").append(aActual).append(" | ").append(aPass ? "PASS" : "FAIL").append('\n');
+	}
+
 	// АВТОНОМНЫЙ вход в мир (переиспользуемый harness живых проб, гейт: файл run/wgautoworld.flag; вне флага НЕ активен):
 	// quickPlay упирается в диалог-подтверждение (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ
 	// создаём свежий CREATIVE-мир через штатный клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» →
