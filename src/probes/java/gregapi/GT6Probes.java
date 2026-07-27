@@ -242,6 +242,29 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6toolmatrixprobe.flag")) gt6ToolMatrixTick(aEvent.getServer());
 	// [GT6-TOOLYARD] BUG-071: ПОЛИГОН для ЖИВОЙ приёмки игроком (не судья — строит мир и выдаёт инструменты) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6toolyard.flag")) gt6ToolYardTick(aEvent.getServer());
+	// [GT6-JADELEVEL] BUG-070: СЕРВЕРНАЯ половина судьи витрины — снимает ЭТАЛОН уровней на серверном потоке
+		if (gregapi.data.CS.probeFlag("gt6jadelevelprobe.flag")) gt6JadeLevelServerTick(aEvent.getServer());
+	}
+
+	// [GT6-JADELEVEL] BUG-070, СЕРВЕРНАЯ половина. Клиентский судья сверяет показанный уровень с эталоном — но снимать
+	// эталон ИЗ клиентского потока нельзя: первый прогон читал серверный мир напрямую и получил 0 там, где сервер на
+	// самом деле знает 4 (BlockEntity чужому потоку не отдаётся). Поэтому эталон снимается ЗДЕСЬ, на серверном тике,
+	// и кладётся в статику — в одиночной игре обе половины живут в одной JVM. Снять при уборке фазы.
+	public static final java.util.concurrent.ConcurrentHashMap<Long, Integer> sJadeLevelExpect = new java.util.concurrent.ConcurrentHashMap<>();
+	private static int sJadeLevelTick = -1;
+	public static void gt6JadeLevelServerTick(net.minecraft.server.MinecraftServer aServer) {
+		sJadeLevelTick++;
+		if (sJadeLevelTick % 40 != 0 || aServer.getPlayerList().getPlayers().isEmpty()) return;
+		ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		ServerLevel tLevel = tPlayer.level();
+		BlockPos tCenter = tPlayer.blockPosition();
+		int tCount = 0;
+		for (int dx = -40; dx <= 40; dx++) for (int dy = -6; dy <= 6; dy++) for (int dz = -40; dz <= 40; dz++) {
+			BlockPos tPos = tCenter.offset(dx, dy, dz);
+			if (!(tLevel.getBlockState(tPos).getBlock() instanceof gregapi.block.IBlock)) continue;
+			try {sJadeLevelExpect.put(tPos.asLong(), gregapi.util.WD.harvestLevel(tLevel, tPos.getX(), tPos.getY(), tPos.getZ())); tCount++;} catch (Throwable e) {/* блок без уровня */}
+		}
+		if (tCount > 0 && sJadeLevelTick % 400 == 0) OUT.println("[GT6-JADELEVEL] сервер: эталон снят для " + tCount + " GT6-блоков вокруг игрока");
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.

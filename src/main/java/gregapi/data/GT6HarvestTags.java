@@ -120,7 +120,10 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 		return 0;
 	}
 
-	private static TagKey<Block> mineableTag(String aTool) {
+	/** Ванильный тег «копается этим инструментом» по GT6-типу инструмента, либо null, если ванильного тега нет.
+	 *  Публичный, потому что ту же связь читает верификационная оснастка (судья витрины BUG-070): ей надо знать,
+	 *  разметил ли блок ЭТОТ механизм. Второй копии этой таблицы в дереве быть не должно. */
+	public static TagKey<Block> mineableTag(String aTool) {
 		if (aTool == null) return null;
 		if (aTool.equals(CS.TOOL_pickaxe)) return BlockTags.MINEABLE_WITH_PICKAXE;
 		if (aTool.equals(CS.TOOL_axe    )) return BlockTags.MINEABLE_WITH_AXE;

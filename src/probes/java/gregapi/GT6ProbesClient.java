@@ -254,6 +254,199 @@ public final class GT6ProbesClient {
 		O.println("========== [GT6-JADECLIENT] DONE ==========");
 	}
 
+	// [GT6-JADELEVEL] BUG-070: СУДЬЯ ВИТРИНЫ ДОБЫЧИ В JADE. Игрок просил три вещи: тип инструмента, требуемый уровень
+	// (любой, а не только ванильные три ступени) и соответствие того, что в руке. Судится НЕ картинка, а данные ровно
+	// тех вызовов, из которых Jade строит тултип, и ровно на той стороне, где он его строит, — на КЛИЕНТЕ:
+	//   П1 · тип инструмента — HarvestToolProvider.getTool(state, level, pos) (HarvestToolProvider.java:55-64);
+	//        сверх того спрашиваем ПОШТУЧНО каждый обработчик: чей ответ сделал список непустым. Это встроенный
+	//        контроль дефекта — у блока с уровнем выше 3 ванильный обработчик обязан молчать (тега нет,
+	//        GT6HarvestTags:80), и если бы не наш, список остался бы пустым, как и было в репорте игрока.
+	//   П2 · требуемый уровень — WD.harvestLevel(level,x,y,z) на КЛИЕНТЕ против того же значения на СЕРВЕРЕ
+	//        (интегрированный сервер того же мира). Это судит настоящий клиентский риск: у GT6 подтип живёт в BE,
+	//        и если он не доехал до клиента, витрина покажет 0 при честной механике.
+	//   П3 · соответствие в руке — EventHooks.doPlayerHarvestCheck: то же событие, которым игра решает судьбу дропа
+	//        (наш слушатель GT_API_Proxy.onPlayerHarvestCheckEvent). Витрина не имеет права разойтись с механикой:
+	//        сверяем ответ события с арифметикой «ярус в руке >= требуемый уровень».
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильный камень — обязан обслуживаться ванильным обработчиком и НЕ нашим.
+	// Кейсы берутся из мира вокруг игрока (полигон gt6toolyard даёт и низкие тиры, и высокие). Снять при уборке фазы.
+	private static boolean mJadeLevelDone = false;
+	private static int mJadeLevelWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJadeLevelProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJadeLevelDone || !gregapi.data.CS.probeFlag("gt6jadelevelprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+
+		// собираем кейсы: по одному представителю на пару (инструмент, требуемый уровень) — так в выборку попадают
+		// и блоки внутри ванильной шкалы, и те, что выше неё (ради которых всё и делается)
+		net.minecraft.core.BlockPos tCenter = tMC.player.blockPosition();
+		java.util.LinkedHashMap<String, net.minecraft.core.BlockPos> tCases = new java.util.LinkedHashMap<>();
+		for (int dx = -40; dx <= 40; dx++) for (int dy = -6; dy <= 6; dy++) for (int dz = -40; dz <= 40; dz++) {
+			net.minecraft.core.BlockPos tPos = tCenter.offset(dx, dy, dz);
+			net.minecraft.world.level.block.Block tB = tMC.level.getBlockState(tPos).getBlock();
+			if (!(tB instanceof gregapi.block.IBlock)) continue;
+			try {
+				int tMeta = gregapi.util.WD.meta(tMC.level, tPos.getX(), tPos.getY(), tPos.getZ());
+				String tTool = gregapi.util.WD.harvestTool(tB, tMeta);
+				if (tTool == null || tTool.isEmpty()) continue;
+				tCases.putIfAbsent(tTool + "/" + gregapi.util.WD.harvestLevel(tMC.level, tPos.getX(), tPos.getY(), tPos.getZ()), tPos);
+			} catch (Throwable e) {/* блок ещё не догрузился */}
+		}
+		// ЖДЁМ ГОТОВНОСТИ МИРА, а не «первых четырёх блоков». Прошлый прогон судил на 1-м тике после входа и дал два
+		// FAIL, которые оказались артефактом момента: чанки только что сгенерированы, BE-подтип ещё ехал на клиент,
+		// инвентарь пуст. Условие готовности: полигон построен (есть блок с уровнем ВЫШЕ ванильной шкалы — ради них
+		// всё и делается) и в руке есть инструмент (иначе П3 нечем судить). Критерии вердикта при этом НЕ меняются.
+		boolean tHasHighTier = false;
+		for (String tKey : tCases.keySet()) try {if (Integer.parseInt(tKey.substring(tKey.indexOf('/') + 1)) > 3) {tHasHighTier = true; break;}} catch (Throwable e) {/* ключ без числа */}
+		boolean tHasTool = !tMC.player.getMainHandItem().isEmpty();
+		if ((!tHasHighTier || !tHasTool) && mJadeLevelWaited++ < 3600) return;
+		mJadeLevelDone = true;
+		if (!tHasHighTier) O.println("[GT6-JADELEVEL] ⚠ блока с уровнем выше 3 в мире не нашлось — главный случай НЕ проверен (нужен полигон gt6toolyard)");
+		if (!tHasTool) O.println("[GT6-JADELEVEL] ⚠ рука пуста — П3 судится вырожденно");
+
+		O.println("========== [GT6-JADELEVEL] BUG-070: витрина добычи в Jade (замер НА КЛИЕНТЕ) ==========");
+		// эталон берём из СЕРВЕРНОЙ половины (снят на серверном тике). Читать серверный мир отсюда нельзя: в первом
+		// прогоне это дало 0 там, где сервер знает 4, — BlockEntity чужому потоку не отдаётся, и «расхождение» было
+		// дефектом замера, а не витрины.
+		java.util.Map<Long, Integer> tExpect = gregapi.GT6Probes.sJadeLevelExpect;
+		O.println("[GT6-JADELEVEL] эталон уровня: серверная половина, снято позиций " + tExpect.size());
+		// РЕЖИМ ИГРЫ — обязателен в протоколе: в КРЕАТИВЕ Jade намеренно гасит свою витрину добычи
+		// (HarvestToolProvider:82, гейт MC_HARVEST_TOOL_CREATIVE), и замер в креативе ничего не доказывает.
+		O.println("[GT6-JADELEVEL] режим игрока: " + (tMC.player.isCreative() ? "КРЕАТИВ — витрина Jade намеренно погашена, замер значка недействителен" : tMC.player.isSpectator() ? "НАБЛЮДАТЕЛЬ" : "ВЫЖИВАНИЕ (верно)"));
+		try {
+			O.println("[GT6-JADELEVEL] обработчиков инструментов у Jade: " + snownee.jade.addon.harvest.HarvestToolProvider.TOOL_HANDLERS.size()
+				+ ", из них наших: " + snownee.jade.addon.harvest.HarvestToolProvider.TOOL_HANDLERS.keySet().stream().filter(k -> k.getNamespace().startsWith("gregtech")).count());
+		} catch (Throwable e) {O.println("[GT6-JADELEVEL] Jade недоступен: " + e); O.println("========== [GT6-JADELEVEL] DONE =========="); return;}
+
+		int tPass = 0, tFail = 0;
+		// ПОЛНОТА КЛАССА, а не выборки: обходим ВЕСЬ реестр блоков и собираем типы инструментов, которые GT6-блоки
+		// реально требуют. Каждый такой тип обязан быть покрыт каким-то обработчиком Jade (нашим или его собственным),
+		// иначе для целого семейства блоков витрина останется пустой — и обнаружится это только жалобой игрока.
+		// Инструмент от меты не зависит (BlockBase:191, PrefixBlock:715, MultiTileEntityBlock:582 — константа),
+		// поэтому спрашиваем с метой 0.
+		java.util.TreeMap<String, Integer> tDemanded = new java.util.TreeMap<>();
+		for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			if (!(tB instanceof gregapi.block.IBlock)) continue;
+			try {String t = gregapi.util.WD.harvestTool(tB, 0); if (t != null && !t.isEmpty()) tDemanded.merge(t, 1, Integer::sum);} catch (Throwable e) {/* блок без канала */}
+		}
+		java.util.Set<String> tCovered = new java.util.TreeSet<>();
+		try {
+			for (net.minecraft.resources.Identifier tUID : snownee.jade.addon.harvest.HarvestToolProvider.TOOL_HANDLERS.keySet()) {
+				String tPath = tUID.getPath();
+				tCovered.add(tPath.startsWith("tool/") ? tPath.substring(5) : tPath); // наши — «tool/<тип>», его — просто «<тип>»
+			}
+		} catch (Throwable e) {/* Jade недоступен */}
+		java.util.List<String> tUncovered = new java.util.ArrayList<>();
+		for (java.util.Map.Entry<String, Integer> tD : tDemanded.entrySet()) if (!tCovered.contains(tD.getKey())) tUncovered.add(tD.getKey() + "×" + tD.getValue());
+		O.println("[GT6-JADELEVEL] ПОЛНОТА: типов инструмента требуют блоки — " + tDemanded.size() + " " + tDemanded.keySet()
+			+ ", обработчиков на типы — " + tCovered.size());
+		if (tUncovered.isEmpty()) {tPass++; O.println("[GT6-JADELEVEL] ПОЛНОТА -> PASS (непокрытых типов нет)");}
+		else {tFail++; O.println("[GT6-JADELEVEL] ПОЛНОТА -> FAIL · нет обработчика для типов: " + tUncovered + " — у этих блоков витрина будет пустой");}
+
+		java.util.List<Object[]> tAll = new java.util.ArrayList<>();
+		for (java.util.Map.Entry<String, net.minecraft.core.BlockPos> tE : tCases.entrySet()) tAll.add(new Object[]{tE.getKey(), tE.getValue(), Boolean.FALSE});
+		// позитивный контроль — ванильный блок: его витрину рисует Jade сам, нашего обработчика там быть не должно
+		tAll.add(new Object[]{"POSITIVE-CONTROL ванильный камень", tCenter.offset(0, -1, 0), Boolean.TRUE});
+
+		for (Object[] tCase : tAll) {
+			String tLabel = (String) tCase[0];
+			net.minecraft.core.BlockPos tPos = (net.minecraft.core.BlockPos) tCase[1];
+			boolean tControl = (Boolean) tCase[2];
+			net.minecraft.world.level.block.state.BlockState tState = tMC.level.getBlockState(tPos);
+			net.minecraft.world.level.block.Block tBlock = tState.getBlock();
+			boolean tIsGT = tBlock instanceof gregapi.block.IBlock;
+			if (tControl && tIsGT) {O.println("[GT6-JADELEVEL] контроль пропущен: под игроком GT6-блок, а не ванильный — переставьте площадку"); continue;}
+
+			int tMeta = 0, tClientLevel = -1, tServerLvl = -1, tHeldLevel = -1;
+			String tTool = "";
+			try {
+				tMeta = gregapi.util.WD.meta(tMC.level, tPos.getX(), tPos.getY(), tPos.getZ());
+				tTool = gregapi.util.WD.harvestTool(tBlock, tMeta);
+				tClientLevel = gregapi.util.WD.harvestLevel(tMC.level, tPos.getX(), tPos.getY(), tPos.getZ());
+				Integer tFromServer = tExpect.get(tPos.asLong());
+				if (tFromServer != null) tServerLvl = tFromServer;
+				tHeldLevel = gregapi.util.WD.toolLevel(tMC.player.getMainHandItem(), tTool);
+			} catch (Throwable e) {/* останутся -1 */}
+
+			// П1: чей обработчик отдал инструмент
+			java.util.List<String> tAnswered = new java.util.ArrayList<>();
+			try {
+				for (java.util.Map.Entry<net.minecraft.resources.Identifier, snownee.jade.addon.harvest.ToolHandler> tH : snownee.jade.addon.harvest.HarvestToolProvider.TOOL_HANDLERS.entrySet())
+					if (!tH.getValue().test(tState, tMC.level, tPos).isEmpty()) tAnswered.add(tH.getKey().toString());
+			} catch (Throwable e) {tAnswered.add("EXC " + e);}
+			boolean tOurs = tAnswered.stream().anyMatch(s -> s.startsWith("gregtech"));
+			boolean tVanillaAnswered = tAnswered.stream().anyMatch(s -> !s.startsWith("gregtech"));
+			// тег именно СВОЕГО инструмента (через тот же центр, которым размечает мод) — «чужой» тег ни о чём не говорит
+			net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> tTagOfTool = gregapi.data.GT6HarvestTags.mineableTag(tTool);
+			boolean tHasVanillaTag = tTagOfTool != null && tState.is(tTagOfTool);
+
+			// П3: право по мнению движка против арифметики уровней
+			boolean tEngineSaysCan = false;
+			try {tEngineSaysCan = net.neoforged.neoforge.event.EventHooks.doPlayerHarvestCheck(tMC.player, tState, tMC.level, tPos);} catch (Throwable e) {/* останется false */}
+			boolean tArithmeticSaysCan = tHeldLevel >= 0 && tHeldLevel >= tClientLevel;
+
+			// улики для разбора FAIL: разметил ли блок наш механизм тегов и есть ли вообще предметы такого типа
+			int tRegistrySize = -1;
+			try {tRegistrySize = gregapi.data.CS.ToolsGT.list(tTool).size();} catch (Throwable e) {/* тип неизвестен реестру */}
+
+			// П2/П3 ПО ФАКТУ СТРОКИ, а не по величинам: собираем тултип РЕАЛЬНЫМ путём Jade — теми же провайдерами,
+			// что он вызывает при наведении, — и читаем получившийся текст. Иначе «строка есть» не доказано ничем:
+			// величины могут быть верны, а провайдер не зарегистрирован или отключён конфигом.
+			String tLine = "";
+			try {
+				snownee.jade.impl.Tooltip tTip = new snownee.jade.impl.Tooltip();
+				snownee.jade.api.BlockAccessor tAcc = new snownee.jade.impl.BlockAccessorImpl.Builder()
+					.level(tMC.level).player(tMC.player).blockState(tState)
+					.blockEntity(() -> tMC.level.getBlockEntity(tPos))
+					.hit(new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(tPos), net.minecraft.core.Direction.UP, tPos, false))
+					.showDetails(false).serverConnected(false).serverData(null).build();
+				snownee.jade.api.config.IPluginConfig tCfg = snownee.jade.api.config.IWailaConfig.get().plugin();
+				for (snownee.jade.api.IComponentProvider<snownee.jade.api.BlockAccessor> tProv
+					: snownee.jade.impl.WailaClientRegistration.instance().getBlockProviders(tBlock, p -> true))
+					try {tProv.appendTooltip(tTip, tAcc, tCfg);} catch (Throwable e) {/* чужой провайдер упал — не наша беда */}
+				tLine = String.valueOf(tTip.getNarration()).replace("\n", " | ");
+			} catch (Throwable e) {tLine = "<СБОРКА ТУЛТИПА УПАЛА: " + e + ">";}
+
+			java.util.List<String> tWhy = new java.util.ArrayList<>();
+			if (tControl) {
+				if (!tVanillaAnswered) tWhy.add("ванильный блок остался без витрины (обработчик Jade не ответил)");
+				if (tOurs) tWhy.add("на ванильный блок ответил НАШ обработчик — вторжение в чужую шкалу");
+			} else {
+				// ТРЕБУЕТ ли блок инструмента вообще. Для блока, который берётся рукой, Jade НАМЕРЕННО не рисует значок
+				// (SimpleToolHandler:44 — skipInstaBreakingBlock), и сам GT6 в тултипе пишет «Hand-Harvestable»
+				// (LH.getToolTipHarvest:275). Требовать витрину там, где инструмент не нужен, — ожидание строже
+				// оригинала: ровно на этом судья BUG-071 уже ошибался один раз.
+				boolean tNeedsTool = true;
+				try {tNeedsTool = !gregapi.util.WD.getMaterial(tBlock).isToolNotRequired();} catch (Throwable e) {/* считаем, что требуется */}
+				if (tNeedsTool && tAnswered.isEmpty()) tWhy.add("П1: инструмент не показан НИКЕМ — тултип останется пустым");
+				// П2/П3 ПО ФАКТУ: в собранном тултипе обязана быть наша строка с требуемым уровнем и тем, что в руке.
+				// Это то, что игрок видит глазами, — и в отличие от значка Jade наша строка не гаснет в креативе
+				// (гейт HarvestToolProvider:82 закрывает от креатива только ЕГО собственную витрину).
+				if (tNeedsTool && !tLine.contains(String.valueOf(tClientLevel))) tWhy.add("П2: в тултипе нет требуемого уровня " + tClientLevel + " · собрано: «" + tLine + "»");
+				if (tNeedsTool && !tLine.contains("✔") && !tLine.contains("✘")) tWhy.add("П3: в тултипе нет признака соответствия (✔/✘) · собрано: «" + tLine + "»");
+				// ДУБЛЬ — это когда значок нарисуют ДВАЖДЫ, то есть ответили и Jade, и мы. Судить по наличию тега
+				// нельзя: тег есть и у блоков, которые Jade намеренно пропускает (мгновенно ломающиеся), — там наш
+				// ответ единственный и правильный. Прежняя формулировка судила признак вместо следствия.
+				if (tOurs && tVanillaAnswered) tWhy.add("П1: ответили и Jade, и мы — значок инструмента задвоится: " + tAnswered);
+				if (tServerLvl >= 0 && tClientLevel != tServerLvl) tWhy.add("П2: уровень на клиенте " + tClientLevel + " != серверного " + tServerLvl + " — витрина врёт");
+				if (tClientLevel < 0) tWhy.add("П2: уровень не вычислен");
+				// П3 судится ТОЛЬКО когда в руке предмет нужного класса (tHeldLevel >= 0). При чужом классе правило
+				// 1.7.10 (ForgeHooks.canHarvestBlock:109-113) отдаёт ВАНИЛЬНЫЙ вердикт, а не false — сравнивать
+				// движок с арифметикой «ярус >= уровня» там нельзя: это ожидание строже оригинала.
+				if (tNeedsTool && tHeldLevel >= 0 && tEngineSaysCan != tArithmeticSaysCan) tWhy.add("П3: движок говорит " + tEngineSaysCan + ", а по уровням " + tArithmeticSaysCan + " — витрина разойдётся с механикой");
+			}
+			boolean tOK = tWhy.isEmpty();
+			if (tOK) tPass++; else tFail++;
+			O.println(String.format("[GT6-JADELEVEL] %-28s %-46s мета=%-5d уровень: клиент=%-3d сервер=%-3d инстр=%-12s в руке=%-3d право(движок)=%-5s ванил.тег=%-5s предметов=%-3d ответили=%s%n"
+				+ "                               строка Jade: «%s» -> %s%s",
+				tLabel, net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock), tMeta, tClientLevel, tServerLvl, tTool, tHeldLevel, tEngineSaysCan,
+				tHasVanillaTag, tRegistrySize, tAnswered.isEmpty() ? "<НИКТО>" : tAnswered, tLine, tOK ? "PASS" : "FAIL", tOK ? "" : " · " + String.join("; ", tWhy)));
+		}
+		O.println("[GT6-JADELEVEL] ИТОГ: PASS " + tPass + ", FAIL " + tFail + " (кейсов из мира " + tCases.size() + ")");
+		O.println("========== [GT6-JADELEVEL] DONE ==========");
+	}
+
 	// [GT6-ITEMMODELPROBE] BUG-068: судья ITEM-МОДЕЛИ. Игрок видит у предмета воды GT6 пурпурную заглушку — это признак
 	// «модели нет вовсе» (JSON-моделей в моде НЕТ, все модели инжектируются рантаймом; ModelManager.getItemModel:90-97 на
 	// промахе пишет «Missing item model» и отдаёт missing-модель). Судится НЕ картинка, а ДАННЫЕ рендера, и берутся они
