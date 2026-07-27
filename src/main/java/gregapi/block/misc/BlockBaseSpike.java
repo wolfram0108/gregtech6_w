@@ -58,11 +58,21 @@ import java.util.List;
 
 import static gregapi.data.CS.*;
 
-public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlockOnWalkOver, IBlockToolable, IRenderedBlock {
+public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlockOnWalkOver, IBlockToolable, IRenderedBlock, gregapi.block.IBlockExtendedMetaData {
 	public final OreDictMaterial mMat1, mMat2;
-	
+
+	// BUG-072 (тот же класс, что BUG-071): у шипа ВСЯ его суть живёт в мете 0..15 — младшие биты это сторона
+	// установки (onBlockPlaced ниже), бит 8 это ВТОРОЙ материал (рецепты :72-73, OM.data :84, getHarvestLevel ниже).
+	// Канала меты у этой иерархии не было вовсе: BlockBase контракт IBlockExtendedMetaData не реализует, поэтому
+	// WD.meta(...) отдавал 0 ВСЕГДА — шип вёл себя как подтип 0 (ориентация «низ», дроп первого варианта, уровень
+	// добычи от первого материала). Приём взят готовый — тот же, которым канал возвращён решёткам
+	// (BlockBaseBars:62,69): хранение в BlockState-свойстве META, маршрутизация get/setExtendedMetaData — дефолты
+	// интерфейса. Своей сущности не заводим.
+	@Override protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.state.BlockState> aBuilder) {super.createBlockStateDefinition(aBuilder); aBuilder.add(gregapi.block.BlockBaseMeta.META);}
+
 	public BlockBaseSpike(String aNameInternal, OreDictMaterial aMat1, OreDictMaterial aMat2) {
 		super(null, aNameInternal, Material.iron, SoundType.METAL);
+		registerDefaultState(getStateDefinition().any().setValue(gregapi.block.BlockBaseMeta.META, 0)); // после super — как BlockBaseBars:73
 		gregapi.item.CreativeTabsGT.assign(this, gregapi.item.CreativeTabsGT.REDSTONE);
 		mMat1 = aMat1; mMat2 = aMat2;
 		// F12-followup (block-split): рецепты/OM.data используют ST.make → server-start → deferItemInit.

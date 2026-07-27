@@ -6903,6 +6903,28 @@ public final class GT6Probes {
 			if (tTools.length() > 0) O.println("[GT6-HARVESTPROBE]    кирки GT6: " + tTools);
 			aLevel.setBlock(tOrePos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 		}
+		// ===== BUG-072: ШИПЫ — та же болезнь «мета вне BlockState», третья иерархия того же класса =====
+		// Ставим шип ВТОРОГО материала (мета 8: бит 8 = mMat2, рецепт BlockBaseSpike:72) и смотрим, доходит ли мета
+		// до мира. До фикса канала не было вовсе (BlockBase не реализует IBlockExtendedMetaData) → мета 0, шип вёл
+		// себя как первый материал.
+		try {
+			for (net.minecraft.world.level.block.Block tSpikeBlock : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+				if (!(tSpikeBlock instanceof gregapi.block.misc.BlockBaseSpike tSpike)) continue;
+				BlockPos tSP = aPlayer.blockPosition().offset(11, 0, 11);
+				net.minecraft.core.BlockPos tAt = gregapi.probe.GT6ProbeStand.placeBlock(aLevel, aPlayer, tSP, net.minecraft.core.Direction.UP,
+					gregapi.util.ST.make(tSpikeBlock, 1, 8), "GT6-HARVESTPROBE", "шип второго материала");
+				if (tAt == null) {O.println("[GT6-HARVESTPROBE] шип не встал — пропуск"); break;}
+				int tSpikeMeta = gregapi.util.WD.meta(aLevel, tAt.getX(), tAt.getY(), tAt.getZ());
+				O.println("[GT6-HARVESTPROBE] ШИПЫ (BUG-072) " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tSpikeBlock)
+					+ ": ставили мету 8 (второй материал), в мире мета=" + tSpikeMeta
+					+ " | уровень СЕЙЧАС=" + gregapi.util.WD.harvestLevel(aLevel, tAt.getX(), tAt.getY(), tAt.getZ())
+					+ " | материалы: mMat1=" + tSpike.mMat1.mNameInternal + "(кач." + tSpike.mMat1.mToolQuality + ") mMat2=" + tSpike.mMat2.mNameInternal + "(кач." + tSpike.mMat2.mToolQuality + ")"
+					+ " | " + (tSpikeMeta >= 8 ? "мета ДОШЛА (второй материал)" : "МЕТА ПОТЕРЯНА (шип считается первым материалом)"));
+				aLevel.setBlock(tAt, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				break;
+			}
+		} catch (Throwable e) {O.println("[GT6-HARVESTPROBE] замер шипов упал: " + e);}
+
 		// ПОЗИТИВНЫЙ КОНТРОЛЬ: у ванильного обсидиана уровень обязан быть 3 — значит центр WD.harvestLevel сам по себе жив
 		O.println("[GT6-HARVESTPROBE] POSITIVE-CONTROL ванильный обсидиан: уровень="
 			+ gregapi.util.WD.harvestLevel(net.minecraft.world.level.block.Blocks.OBSIDIAN, 0) + " (ожидание 3)");
