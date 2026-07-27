@@ -676,7 +676,10 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 					.append(" usable=").append(tTool.isItemStackUsable(tHand))
 					.append(" digSpeed=").append(tTool.getDigSpeed(tHand, aState.getBlock(), 0))
 					.append(" quality=").append(tStats == null ? "-" : String.valueOf(tStats.getBaseQuality() + tTool.getPrimaryMaterial(tHand).mToolQuality))
-					.append(" нужен-уровень=").append(WD.harvestLevel(aState.getBlock(), 0))
+					// BUG-071: уровень берём ПОЗИЦИОННЫМ центром. Прежний вызов по мете 0 после восстановления
+					// пер-материальности печатал бы ноль для любой машины — диагностика вводила бы в заблуждение
+					// ровно там, где её и читают («почему не ломается»).
+					.append(" нужен-уровень=").append(WD.harvestLevel(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()))
 					.append(" нужен-tool=").append(WD.harvestTool(aState.getBlock(), 0));
 			}
 			gregapi.data.CS.OUT.println(tSB.toString());
