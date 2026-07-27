@@ -204,7 +204,16 @@ public class EnchantsGT6 {
 	 *  `Util.java:133-135`) — используется, чтобы {@code LH.add} регистрировал английский текст под
 	 *  ТЕМ ключом, который движок реально ищет (оригинальный плоский ключ {@code "enchantment.damage.*"}
 	 *  структурно недостижим в data-driven модели — движко-шов, не потеря видимого результата: то же
-	 *  английское имя чара, что и в оригинале). */
+	 *  английское имя чара, что и в оригинале).
+	 *
+	 *  <p>⚠️ Одного {@code LH.add} здесь НЕДОСТАТОЧНО, и это проверено замером (Ф4, хвост локализации):
+	 *  имя чара рисует ВАНИЛЬНЫЙ движок через {@code Component.translatable(description)} из JSON
+	 *  ({@code src/generated/.../enchantment/disjunction.json}), то есть читает таблицу {@code Language},
+	 *  а не {@code BACKUPMAP} GT6 (рантайм-инъекции в живую таблицу в neo нет — см. LanguageHandler.set).
+	 *  Плюс сам {@code bootstrap} в игре не выполняется вовсе: рантайм читает СГЕНЕРЁННЫЙ json, Java-код —
+	 *  только datagen (тот же класс, что biome_modifier в ADAPT-009). Поэтому видимые имена всех четырёх
+	 *  чар лежат в {@code assets/gregtech6/lang/en_us.json} — единственном месте, откуда их берёт движок;
+	 *  правя ключи или {@code KEY}, править и там. */
 	private static String descriptionId(ResourceKey<Enchantment> key) {
 		return Util.makeDescriptionId("enchantment", key.identifier());
 	}

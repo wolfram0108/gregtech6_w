@@ -1,4 +1,9 @@
 {
   "block.gregtech6.test_block": "Test Block",
-  "itemGroup.gregtech6": "GregTech 6"
+  "itemGroup.gregtech6": "GregTech 6",
+
+  "enchantment.gregapi.disjunction": "Disjunction",
+  "enchantment.gregapi.werebane": "Werebane",
+  "enchantment.gregapi.dissolving": "Dissolving",
+  "enchantment.gregapi.radioactivity": "Radioactivity"
 }
