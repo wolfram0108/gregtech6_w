@@ -232,6 +232,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
+	// [GT6-JADEPROBE] стенд «MODCOMPAT-001: инструменты GT6 в тултипе Jade» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6jadeprobe.flag")) gt6JadeProbeTick(aEvent.getServer());
 	}
 
 	// [GT6-MTEAUDIT] BUG-057 (MTE-блоки со временем прозрачны): живой аудит BE — снять при уборке фазы.
@@ -6253,6 +6255,74 @@ public final class GT6Probes {
 		if (!tOkay) return;
 		sUVPTargetPos = sUVPCrucible.getBlockPos();
 		O.println("[" + UVP_M + "] замер передан клиенту: цель " + sUVPTargetPos + " (модель+квады живут только на клиенте)");
+	}
+
+	// ========== [GT6-JADEPROBE] MODCOMPAT-001: инструменты GT6 в тултипе Jade — снять при уборке фазы ==========
+	// Судья спрашивает НАСТОЯЩИЙ Jade ровно тем вызовом, которым он рисует строку «Effective Tool»:
+	// HarvestToolProvider.getTool(state, level, pos) (HarvestToolProvider:60-70 ветки 26.1-neoforge).
+	// Проверяем, что для машины GT6 (её инструмент — ГАЕЧНЫЙ КЛЮЧ, Loader_MultiTileEntities:102 TOOL_wrench)
+	// Jade отдаёт именно ключ GT6, а не пусто и не ванильную кирку.
+	private static final String JDP_M = "GT6-JADEPROBE";
+	private static final int JDP_MACHINE_ID = 10080; // Battery Box (LV) — блок-контейнер aMachine (Loader_MultiTileEntities:895), инструмент TOOL_wrench
+	private static int sJDPTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sJDPSeq;
+
+	public static void gt6JadeProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sJDPTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sJDPSeq == null) sJDPSeq = new gregapi.probe.GT6ProbeStand.Seq(JDP_M).at(200, () -> gt6JadeProbeRun(tPlayer));
+		sJDPSeq.tick(sJDPTick);
+	}
+
+	private static void gt6JadeProbeRun(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [" + JDP_M + "] MODCOMPAT-001: инструменты GT6 в тултипе Jade ==========");
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tBase = aPlayer.blockPosition().offset(4, 0, -4);
+		for (int x = -1; x <= 2; x++) for (int y = -1; y <= 2; y++) for (int z = -1; z <= 2; z++)
+			tLevel.setBlock(tBase.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+		BlockEntity tMachine = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tBase.below(), net.minecraft.core.Direction.UP,
+			tReg.getItem(JDP_MACHINE_ID), BlockEntity.class, JDP_M, "машина");
+		sJDPSeq.judge("машина встала (иначе судить нечего)", tMachine != null, "не null", tMachine == null ? "null" : tMachine.getClass().getSimpleName());
+		if (tMachine == null) {sJDPSeq.done(); return;}
+		BlockPos tPos = tMachine.getBlockPos();
+		net.minecraft.world.level.block.state.BlockState tState = tLevel.getBlockState(tPos);
+
+		// Какой инструмент требует САМ GT6 — источник истины для сверки.
+		String tGT6Tool = tState.getBlock() instanceof gregapi.block.multitileentity.MultiTileEntityBlock tM ? tM.getHarvestTool(0) : "<не MTE>";
+		O.println("[" + JDP_M + "] блок=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tState.getBlock()) + " инструмент по GT6=" + tGT6Tool);
+		sJDPSeq.judge("машина требует ГАЕЧНЫЙ КЛЮЧ (предпосылка: это не киркой добываемый блок)", gregapi.data.CS.TOOL_wrench.equals(tGT6Tool), gregapi.data.CS.TOOL_wrench, tGT6Tool);
+
+		// ГЛАВНОЕ: тот же вызов, которым Jade строит строку тултипа.
+		java.util.List<net.minecraft.world.item.ItemStack> tTools;
+		try {
+			tTools = snownee.jade.addon.harvest.HarvestToolProvider.getTool(tState, tLevel, tPos);
+		} catch (Throwable e) {
+			sJDPSeq.judge("Jade доступен в рантайме (иначе замер невозможен)", false, "без EXC", String.valueOf(e));
+			sJDPSeq.done(); return;
+		}
+		StringBuilder tNames = new StringBuilder();
+		for (net.minecraft.world.item.ItemStack tStack : tTools) tNames.append(tNames.length() == 0 ? "" : ", ").append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tStack.getItem())).append('#').append(gregapi.util.ST.meta_(tStack));
+		O.println("[" + JDP_M + "] Jade отдал инструментов " + tTools.size() + ": " + (tNames.length() == 0 ? "<пусто>" : tNames));
+
+		sJDPSeq.judge("JADE ПОКАЗЫВАЕТ инструмент для машины (было пусто — ванильного тега для ключа нет)", !tTools.isEmpty(), "не пусто", tTools.size());
+		boolean tIsGT6Tool = F;
+		for (net.minecraft.world.item.ItemStack tStack : tTools) if (gregapi.data.CS.ToolsGT.contains(gregapi.data.CS.TOOL_wrench, tStack)) tIsGT6Tool = T;
+		sJDPSeq.judge("и это именно ГАЕЧНЫЙ КЛЮЧ GT6 (сверено реестром ToolsGT, не по имени)", tIsGT6Tool, true, tIsGT6Tool);
+
+		// POSITIVE-CONTROL: на ванильном камне Jade по-прежнему показывает ванильную кирку (мы ничего не сломали).
+		BlockPos tStonePos = tBase.offset(2, 0, 2);
+		tLevel.setBlock(tStonePos, Blocks.STONE.defaultBlockState(), 3);
+		java.util.List<net.minecraft.world.item.ItemStack> tVanilla = snownee.jade.addon.harvest.HarvestToolProvider.getTool(Blocks.STONE.defaultBlockState(), tLevel, tStonePos);
+		sJDPSeq.judge("POSITIVE-CONTROL: на ванильном камне Jade показывает инструмент", !tVanilla.isEmpty(), "не пусто", tVanilla.size());
+
+		// NEGATIVE-CONTROL: у воздуха инструмента быть не должно — иначе судья «видит» их всюду.
+		java.util.List<net.minecraft.world.item.ItemStack> tAir = snownee.jade.addon.harvest.HarvestToolProvider.getTool(Blocks.AIR.defaultBlockState(), tLevel, tBase.above(2));
+		sJDPSeq.judge("NEGATIVE-CONTROL: у воздуха инструментов нет", tAir.isEmpty(), "пусто", tAir.size());
+		sJDPSeq.done();
 	}
 
 	// ========== [GT6-HARVESTTAGPROBE] MODCOMPAT-001 П1/П3 «Currently Harvestable / Effective Tool» — снять при уборке фазы ==========

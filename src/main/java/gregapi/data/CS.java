@@ -2054,6 +2054,10 @@ public class CS {
 		private static ItemStackSet<ItemStackContainer> get(String aToolType) {ItemStackSet<ItemStackContainer> rSet = TOOL_LISTS.get(aToolType); if (rSet == null) TOOL_LISTS.put(aToolType, rSet = ST.hashset()); return rSet;}
 		public static boolean contains(String aToolType, ItemStack aStack) {return get(aToolType).contains(aStack, T);}
 		public static boolean contains(String aToolType, ItemStackContainer aStack) {return get(aToolType).contains(aStack, T);}
+		/** Предметы, являющиеся инструментом такого типа. Тот же реестр, что и {@link #contains}, только на чтение
+		 *  списком — нужен интеграции с тултип-модами: у GT6 инструменты СВОИ (гаечный ключ на машинах, лом, кусачки),
+		 *  и показать их можно, лишь имея сами стеки (gregtech/compat/Compat_Jade.java). Новых сущностей не заводим. */
+		public static java.util.Collection<ItemStackContainer> list(String aToolType) {return java.util.Collections.unmodifiableCollection(get(aToolType));}
 		public static boolean add(String aToolType, ItemStackContainer aStack) {if (TOOL_LIST.add(aStack)) return get(aToolType).add(aStack); return F;}
 		public static boolean add(ItemStackContainer aStack, String aToolType) {if (TOOL_LIST.add(aStack)) return get(aToolType).add(aStack); return F;}
 		public static boolean add(String aToolType, ItemStack aStack) {if (TOOL_LIST.add(aStack)) return get(aToolType).add(aStack); return F;}

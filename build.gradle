@@ -175,6 +175,15 @@ repositories {
         url = 'https://maven.blamejared.com/'
         content { includeGroup 'mezz.jei' }
     }
+
+    // Jade (тултип «на что смотрю») — нужен ТОЛЬКО для компиляции плагина совместимости
+    // (gregtech/compat/Compat_Jade.java): у GT6 свои инструменты добычи (гаечный ключ/лом/кусачки/…),
+    // и Jade умеет принимать их через HarvestToolProvider.registerHandler — но для этого надо
+    // реализовать его интерфейс ToolHandler, то есть иметь API на compile-classpath.
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
 }
 
 base {
@@ -285,6 +294,15 @@ dependencies {
     compileOnly "mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${jei_minecraft_version}-neoforge-api:${jei_version}"
     localRuntime "mezz.jei:jei-${jei_minecraft_version}-neoforge:${jei_version}"
+
+    // Jade — ТОЛЬКО compileOnly: плагин совместимости (gregtech/compat/Compat_Jade.java) реализует его
+    // интерфейс ToolHandler, чтобы показывать НАСТОЯЩИЕ инструменты GT6 (гаечный ключ на машинах, лом, кусачки),
+    // которых ванильными тегами выразить нельзя. В jar игрока Jade не тянется; без Jade класс плагина просто
+    // не загружается (Jade сам ищет @WailaPlugin), поэтому production-код на него НЕ ссылается.
+    compileOnly "maven.modrinth:jade:${jade_version}"
+    // localRuntime — чтобы стенд gt6jadeprobe мог спросить РЕАЛЬНЫЙ Jade тем же вызовом, каким он рисует
+    // тултип (HarvestToolProvider.getTool). На jar игрока не влияет: localRuntime — только dev-запуски.
+    localRuntime "maven.modrinth:jade:${jade_version}"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar

@@ -63,22 +63,41 @@ public class GT6HarvestTags extends TagsProvider<Block> {
 
 	@Override
 	protected void addTags(HolderLookup.Provider aProvider) {
-		int tTagged = 0, tSkipped = 0;
+		int tTagged = 0, tSkipped = 0, tOverScale = 0;
 		for (Block tBlock : BuiltInRegistries.BLOCK) {
 			net.minecraft.resources.Identifier tID = BuiltInRegistries.BLOCK.getKey(tBlock);
 			if (tID == null || !(tID.getNamespace().equals(CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
 			String tTool = harvestToolOf(tBlock);
 			TagKey<Block> tMineable = mineableTag(tTool);
 			if (tMineable == null) {tSkipped++; continue;} // GT6-специфичный инструмент — ванильного тега нет, не выдумываем
-			getOrCreateRawBuilder(tMineable).addElement(tID);
 			int tLevel = harvestLevelOf(tBlock);
-			if (tLevel > 0 && tLevel < NEEDS_BY_LEVEL.length && NEEDS_BY_LEVEL[tLevel] != null) {
+			// ГРАНИЦА ШКАЛ. У GT6 уровень 0..15 (+9999 у бедрок-класса), ванильных ступеней ТРИ: камень(1)/железо(2)/
+			// алмаз(3). Всё, что ВЫШЕ 3, ванильной системой не выражается — и если просто «не поставить needs_*», блок
+			// останется в mineable/* без единого требования, то есть ЛЮБАЯ ванильная кирка получит право на дроп там,
+			// где GT6 требует уровень выше алмазного. Это ОСЛАБЛЕНИЕ канона (замер: таких блоков 5, включая уровень
+			// 9999). Правильный перенос — не давать таким блокам ванильный mineable-тег вовсе: ванильным инструментом
+			// их и не добыть, ровно как в GT6. Свои инструменты GT6 судит собственной логикой (MultiItemTool.getDigSpeed).
+			if (tLevel >= NEEDS_BY_LEVEL.length) {tOverScale++; continue;}
+			getOrCreateRawBuilder(tMineable).addElement(tID);
+			if (tLevel > 0 && NEEDS_BY_LEVEL[tLevel] != null) {
 				@SuppressWarnings("unchecked") TagKey<Block> tNeeds = (TagKey<Block>) NEEDS_BY_LEVEL[tLevel];
 				getOrCreateRawBuilder(tNeeds).addElement(tID);
 			}
 			tTagged++;
 		}
-		CS.OUT.println("GT6 F12-harvest: размечено блоков тегами добычи " + tTagged + ", пропущено (не-ванильный инструмент) " + tSkipped);
+		CS.OUT.println("GT6 F12-harvest: размечено блоков тегами добычи " + tTagged + ", пропущено: не-ванильный инструмент " + tSkipped + ", уровень выше ванильной шкалы " + tOverScale);
+		// ДИАГНОСТИКА ГРАНИЦЫ ШКАЛ: у GT6 уровень добычи 0..15, ванильных тегов ТРИ (камень/железо/алмаз).
+		// Всё, что выше 3, в ванильной системе не выражается — надо знать, сколько таких, прежде чем полагаться на теги.
+		java.util.Map<Integer, Integer> tHist = new java.util.TreeMap<>();
+		java.util.Map<String, Integer> tTools = new java.util.TreeMap<>();
+		for (Block tBlock : BuiltInRegistries.BLOCK) {
+			net.minecraft.resources.Identifier tID = BuiltInRegistries.BLOCK.getKey(tBlock);
+			if (tID == null || !(tID.getNamespace().equals(CS.ModIDs.GT) || tID.getNamespace().equals("gregtech"))) continue;
+			tHist.merge(harvestLevelOf(tBlock), 1, Integer::sum);
+			tTools.merge(String.valueOf(harvestToolOf(tBlock)), 1, Integer::sum);
+		}
+		CS.OUT.println("GT6 F12-harvest DIAG уровни(GT6->кол-во): " + tHist);
+		CS.OUT.println("GT6 F12-harvest DIAG инструменты: " + tTools);
 	}
 
 	/** Инструмент блока — ЕГО ЖЕ 1.7.10-метод; мета 0, потому что тег вешается на блок целиком. */
