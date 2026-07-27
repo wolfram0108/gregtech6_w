@@ -474,9 +474,11 @@ public class WD {
 		default          : return F; // wrench/crowbar/cutter/… — ванильных носителей этих классов не существует
 		}
 	}
-	/** Числовой ярус ванильного инструмента (0..3) — спрашиваем движок эталонами, кэш по предмету. */
+	/** Числовой ярус ванильного инструмента (0..3) — спрашиваем движок эталонами, кэш по предмету.
+	 *  Публичный, потому что ту же величину показывают стенды (`gt6toolmatrixprobe`/`gt6toolyard`): второй копии
+	 *  этой лесенки в дереве быть не должно — она была заведена дважды и сведена сюда. */
 	private static final Map<net.minecraft.world.item.Item, Integer> VANILLA_TOOL_TIERS = new HashMap<>();
-	private static int vanillaToolTier(ItemStack aStack) {
+	public static int vanillaToolTier(ItemStack aStack) {
 		Integer tCached = VANILLA_TOOL_TIERS.get(aStack.getItem());
 		if (tCached != null) return tCached;
 		int rTier = 0;

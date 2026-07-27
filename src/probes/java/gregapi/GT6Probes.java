@@ -7236,13 +7236,11 @@ public final class GT6Probes {
 		return r;
 	}
 
-	/** Ярус ванильного инструмента ЧИСЛОМ — спрашиваем сам движок эталонными блоками (в neo числового яруса нет). */
+	/** Ярус ванильного инструмента ЧИСЛОМ — берётся из ЦЕНТРА {@code WD.vanillaToolTier}. Своей копии лесенки здесь
+	 *  быть не должно: она была написана дважды (стенд + центр) и сведена в одно место при разборе гейта. Величина
+	 *  для судьи независима от проверяемого моста — это опрос движка эталонными блоками, а не вердикт GT6. */
 	private static int vanillaToolLevel(net.minecraft.world.item.ItemStack aStack) {
-		int r = 0;
-		if (aStack.isCorrectToolForDrops(net.minecraft.world.level.block.Blocks.IRON_ORE.defaultBlockState())) r = 1;
-		if (aStack.isCorrectToolForDrops(net.minecraft.world.level.block.Blocks.DIAMOND_ORE.defaultBlockState())) r = 2;
-		if (aStack.isCorrectToolForDrops(net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState())) r = 3;
-		return r;
+		return gregapi.util.WD.vanillaToolTier(aStack);
 	}
 
 	private static void gt6UVProbeVerdict() {

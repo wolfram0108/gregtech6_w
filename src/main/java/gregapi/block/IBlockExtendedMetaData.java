@@ -45,8 +45,13 @@ public interface IBlockExtendedMetaData {
 	}
 
 	/** F13-снимок (BUG-016/BUG-047): мета из BlockState без чтения мира (harvest-пути: в neo removeBlock идёт ДО дропов).
-	 *  Дефолт покрывает семьи с META-свойством (BlockBaseMeta/BlockBaseFlower/BlockFluidBaseGT — их META равны по equals:
-	 *  IntegerProperty "meta" 0..15); TE-мета (PrefixBlock) стейтом не выражается → 0 (как прежний хардкод WD.meta(BlockState):837).
+	 *  Дефолт покрывает семьи с META-свойством `IntegerProperty "meta" 0..15` (BlockBaseMeta и наследники, BlockBaseBars —
+	 *  они добавляют ИМЕННО BlockBaseMeta.META); TE-мета (PrefixBlock) стейтом не выражается → 0 (как прежний хардкод
+	 *  WD.meta(BlockState):837).
+	 *  ⚠ УТОЧНЕНО при разборе BUG-071: у BlockFluidBaseGT свойство называется `gt6_meta` (FLUID_META) — по equals с
+	 *  BlockBaseMeta.META оно НЕ совпадает, поэтому здесь жидкости дают 0. Мировой путь у них свой
+	 *  (getExtendedMetaData(BlockGetter,…) читает FLUID_META), а harvest-снимок жидкостям не нужен — их не ломают
+	 *  инструментом; прежняя формулировка «их META равны по equals» была неверна.
 	 *  Носители меты в ДРУГИХ свойствах (BlockBaseRail: SHAPE+POWERED) переопределяют. */
 	public default short getExtendedMetaData(net.minecraft.world.level.block.state.BlockState aState) {
 		return aState.hasProperty(gregapi.block.BlockBaseMeta.META) ? (short)(int)aState.getValue(gregapi.block.BlockBaseMeta.META) : 0;
