@@ -171,6 +171,16 @@ public class MultiTileEntityBlock extends Block implements IBlock, IItemGT, IBlo
 		// 1.7.10: у MTE твёрдый Material (machine/rock) — вода обтекала. forceSolidOn() (BlockBehaviour:473) => 1:1.
 		net.minecraft.world.level.block.state.BlockBehaviour.Properties p = net.minecraft.world.level.block.state.BlockBehaviour.Properties.of().dynamicShape().forceSolidOn().sound(aSoundType).setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.Identifier.fromNamespaceAndPath(gregapi.data.CS.ModIDs.GT, gregapi.GT_API.sanitizeRegName(aRegName))));
 		if (!aOpaque) p = p.noOcclusion();
+		// BUG-064 (Jade молчал про инструмент на машинах): в 1.7.10 твёрдость блока спрашивалась ПОЗИЦИОННО —
+		// getBlockHardness(World,x,y,z) (оригинал :299), и GT6 отдавал её из TE, а дефолтом при отсутствии
+		// IMTE_GetBlockHardness было 1.0F. В neo позиционного канала нет: BlockState.getDestroySpeed финален и
+		// возвращает статический Properties.destroyTime (BlockBehaviour:636-638), который здесь не задавался —
+		// то есть СНАРУЖИ любая машина GT6 выглядела «ломается мгновенно». На этом и молчал Jade: его ванильный
+		// обработчик пропускает блок, если `!requiresCorrectToolForDrops && getDestroySpeed == 0`
+		// (исходники Jade 26.1-neoforge, SimpleToolHandler:45-47). Ставим ТО ЖЕ дефолтное значение GT6 (1.0F);
+		// точная per-TE твёрдость по-прежнему живёт в getDestroyProgress ниже и от этого поля не зависит —
+		// он считает прогресс сам (WD.destroyProgress по TE-hardness) и super не зовёт.
+		p = p.destroyTime(1.0F);
 		// F-harvest-tool (1:1 GT6, ИСПРАВЛЕНО по репорту игрока «верёвки/наковальни должны ломаться руками»):
 		// в 1.7.10 гейт «нужен ли инструмент для харвеста» решал МАТЕРИАЛ (EntityPlayer.canHarvestBlock →
 		// Material.isToolNotRequired), а НЕ строка getHarvestTool — она задавала лишь ЭФФЕКТИВНЫЙ инструмент.

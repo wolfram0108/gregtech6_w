@@ -479,6 +479,12 @@ public class GT_API extends Abstract_Mod {
 		// (gregapi/fluid/GT6FluidCapability.java). Без неё танки GT6 снаружи не существуют: ни чужие насосы/
 		// трубы, ни тултип-моды их не видят.
 		gregapi.fluid.GT6FluidCapability.register(aModBus);
+		// Тот же класс потери для ПРЕДМЕТОВ: в 1.7.10 базовые TE объявляли IInventory/ISidedInventory, и этого
+		// хватало чужой воронке/трубе/тултип-моду; в neo снаружи виден только зарегистрированный
+		// Capabilities.Item.BLOCK, а регистрации не было (grep = 0). Ванильные Container/WorldlyContainer у TE
+		// перенесены 1:1 — здесь они лишь объявляются наружу штатными обёртками движка
+		// (gregapi/tileentity/GT6ItemCapability.java).
+		gregapi.tileentity.GT6ItemCapability.register(aModBus);
 		// F-attachment: центральный DeferredRegister Entity-attachment-типов (EntityFoodTracker) — тот же
 		// мод-бас, единая точка подписки (gregapi/player/EntityFoodTracker.java; замена 1.7.10
 		// IExtendedEntityProperties, ни один другой файл эту регистрацию не дублирует).

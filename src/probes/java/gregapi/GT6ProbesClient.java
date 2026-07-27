@@ -195,6 +195,65 @@ public final class GT6ProbesClient {
 		O.println("========== [GT6-NAMEPROBE] DONE ==========");
 	}
 
+	// [GT6-JADECLIENT] BUG-064: почему в ИГРЕ нет строки инструмента, хотя прежний стенд давал 6/6.
+	// Прежний судья считал на СЕРВЕРНОЙ стороне, а тултип рисуется на КЛИЕНТСКОЙ — здесь замер идёт ровно там,
+	// где смотрит игрок, и по тем же вызовам, что делает Jade (исходники, ветка 26.1-neoforge):
+	//   · инструмент  — HarvestToolProvider.getTool(state, level, pos), HarvestToolProvider.java:118-131;
+	//   · содержимое  — level.getCapability(Capabilities.Item.BLOCK, …), CommonProxy.java:290-297.
+	// Это инвентаризация фактов, а не судья. Снять при уборке фазы.
+	private static boolean mJadeClientDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJadeClientProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJadeClientDone || !gregapi.data.CS.probeFlag("gt6jadeclient.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		// ищем ЛЮБУЮ машину GT6 среди клиентских BE рядом с игроком
+		net.minecraft.core.BlockPos tCenter = tMC.player.blockPosition();
+		net.minecraft.core.BlockPos tFound = null, tAnyMTE = null;
+		for (int dx = -24; dx <= 24 && tFound == null; dx++) for (int dy = -8; dy <= 8 && tFound == null; dy++) for (int dz = -24; dz <= 24 && tFound == null; dz++) {
+			net.minecraft.core.BlockPos tPos = tCenter.offset(dx, dy, dz);
+			net.minecraft.world.level.block.Block tB = tMC.level.getBlockState(tPos).getBlock();
+			if (!(tB instanceof gregapi.block.multitileentity.MultiTileEntityBlock)) continue;
+			if (tAnyMTE == null) tAnyMTE = tPos;
+			// целимся именно в МАШИНУ (её инструмент — гаечный ключ GT6), а не в первый попавшийся MTE-блок:
+			// прошлый замер попал на декоративный камень, у которого инструмент ванильный, и вопрос остался открыт
+			net.minecraft.resources.Identifier tID = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB);
+			if (tID != null && tID.getPath().contains(".machine.")) tFound = tPos;
+		}
+		if (tFound == null) tFound = tAnyMTE;
+		if (tFound == null) return; // машины рядом ещё нет — ждём (её ставит демо-проба)
+		mJadeClientDone = true;
+
+		net.minecraft.world.level.block.state.BlockState tState = tMC.level.getBlockState(tFound);
+		net.minecraft.world.level.block.Block tBlock = tState.getBlock();
+		net.minecraft.world.level.block.entity.BlockEntity tBE = tMC.level.getBlockEntity(tFound);
+		O.println("========== [GT6-JADECLIENT] BUG-064: замер НА КЛИЕНТЕ @" + tFound + " ==========");
+		O.println("[GT6-JADECLIENT] блок=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBlock)
+			+ " BE=" + (tBE == null ? "НЕТ (клиентский BE не реконструирован!)" : tBE.getClass().getSimpleName()));
+		O.println("[GT6-JADECLIENT] requiresCorrectToolForDrops=" + tState.requiresCorrectToolForDrops()
+			+ " (при false строка рисуется только если включена опция «Effective Tool»)");
+		int tMeta = gregapi.util.WD.meta(tMC.level, tFound.getX(), tFound.getY(), tFound.getZ());
+		String tTool = tBlock instanceof gregapi.block.multitileentity.MultiTileEntityBlock tM ? tM.getHarvestTool(tMeta) : "<не MTE>";
+		O.println("[GT6-JADECLIENT] мета на клиенте=" + tMeta + ", инструмент по GT6=" + tTool);
+		try {
+			O.println("[GT6-JADECLIENT] обработчиков инструментов в Jade: " + snownee.jade.addon.harvest.HarvestToolProvider.TOOL_HANDLERS.size()
+				+ " (наших GT6: " + snownee.jade.addon.harvest.HarvestToolProvider.TOOL_HANDLERS.keySet().stream().filter(k -> k.getNamespace().startsWith("gregtech")).count() + ")");
+			java.util.List<net.minecraft.world.item.ItemStack> tTools = snownee.jade.addon.harvest.HarvestToolProvider.getTool(tState, tMC.level, tFound);
+			StringBuilder tNames = new StringBuilder();
+			for (net.minecraft.world.item.ItemStack tS : tTools) tNames.append(tNames.length() == 0 ? "" : ", ").append(tS.getHoverName().getString());
+			O.println("[GT6-JADECLIENT] Jade.getTool НА КЛИЕНТЕ отдал: " + tTools.size() + (tTools.isEmpty() ? " <ПУСТО — вот дефект>" : " (" + tNames + ")"));
+		} catch (Throwable e) {O.println("[GT6-JADECLIENT] Jade недоступен/EXC: " + e);}
+		// содержимое инвентаря — тем же каналом, которым его ищет Jade
+		try {
+			Object tHandler = tMC.level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, tFound, tState, tBE, null);
+			O.println("[GT6-JADECLIENT] капа инвентаря (Capabilities.Item.BLOCK): " + (tHandler == null ? "НЕТ" : tHandler.getClass().getSimpleName()
+				+ ", слотов " + ((net.neoforged.neoforge.transfer.ResourceHandler<?>)tHandler).size()));
+		} catch (Throwable e) {O.println("[GT6-JADECLIENT] капа инвентаря EXC: " + e);}
+		O.println("[GT6-JADECLIENT] Container у BE: " + (tBE instanceof net.minecraft.world.Container tC ? "да, слотов " + tC.getContainerSize() : "нет"));
+		O.println("========== [GT6-JADECLIENT] DONE ==========");
+	}
+
 	// АВТОНОМНЫЙ вход в мир (переиспользуемый harness живых проб, гейт: файл run/wgautoworld.flag; вне флага НЕ активен):
 	// quickPlay упирается в диалог-подтверждение (некому кликнуть) → до генерации не доходит. Здесь на TitleScreen САМИ
 	// создаём свежий CREATIVE-мир через штатный клиентский API createFreshLevel (тот же путь, что кнопка «Создать мир» →
