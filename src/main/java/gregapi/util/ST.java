@@ -1584,11 +1584,16 @@ public class ST {
 	/** Loads an ItemStack properly. */
 	public static ItemStack load(CompoundTag aNBT, ItemStack aDefault) {
 		if (aNBT == null || aNBT.isEmpty()) return null;
-		ItemStack rStack = make(Item.byId(aNBT.getShortOr("id",(short)0)), aNBT.getIntOr("Count",0), aNBT.getShortOr("Damage",(short)0));
+		// BUG-077: Count<=0 — это «ноль с памятью типа» (1.7.10 писал stackSize=0). Собрать стек с нулём в neo
+		// нельзя (получится EMPTY, идентичность потеряется), поэтому строим на 1 и помечаем ZEROSIZE-призраком
+		// через центр size_ — ровно то представление, которым GT6-код пользуется в рантайме (ST.count даст 0).
+		int tCount = aNBT.getIntOr("Count", 0);
+		ItemStack rStack = make(Item.byId(aNBT.getShortOr("id",(short)0)), tCount <= 0 ? 1 : tCount, aNBT.getShortOr("Damage",(short)0));
 		if (rStack == null) if (aNBT.contains("od")) {
-			rStack = OreDictManager.INSTANCE.getStack(aNBT.getStringOr("od",""), aNBT.getIntOr("Count",0));
+			rStack = OreDictManager.INSTANCE.getStack(aNBT.getStringOr("od",""), tCount <= 0 ? 1 : tCount);
 			if (rStack == null) return aDefault == null ? null : update_(OM.get_(aDefault));
 		} else return aDefault == null ? null : update_(OM.get_(aDefault));
+		if (tCount <= 0) size_(0, rStack);
 		// Has to use setTagCompound instead of putting it into make()
 		// because it would delete certain Tags on load, making stuff like unscanned Forestry Bees unstackable.
 		// But update_() will still delete a completely empty NBT later on.
@@ -1709,7 +1714,17 @@ public class ST {
 		CompoundTag rNBT = UT.NBT.make();
 		aStack = OM.get_(aStack);
 		rNBT.putShort("id", id(aStack));
-		UT.NBT.setNumber(rNBT, "Count", aStack.getCount());
+		// BUG-077 (бесконечный генератор предметов): пишем ЛОГИЧЕСКИЙ размер, а не физический count.
+		// «Ноль с памятью типа» (масстораж после опустошения, катализаторы) в neo хранится ZEROSIZE-призраком —
+		// count=1 + компонент-маркер, потому что neo не держит count<=0. Формат этой записи 1:1 с 1.7.10
+		// (id/Count/Damage/tag/od) и про компоненты НЕ знает: маркер в NBT не попадал, а Count уходил как 1.
+		// После перезахода в мир призрак оживал настоящим предметом — предмет из ничего. Логический count
+		// (ST.count) отдаёт 0 ровно там, где 1.7.10 писал stackSize=0; обратно призрак собирает ST.load.
+		// Ноль пишется ЯВНО (putInt): UT.NBT.setNumber опускает нулевые значения, и «ноль с памятью типа»
+		// держался бы на соглашении «ключа нет = 0». Соглашение верное, но неявное — при чтении чужим
+		// парсером отсутствие Count читается как 1. Пишем 0 буквально, как это делал 1.7.10.
+		int tLogicalCount = count(aStack);
+		if (tLogicalCount <= 0) rNBT.putInt("Count", 0); else UT.NBT.setNumber(rNBT, "Count", tLogicalCount);
 		UT.NBT.setNumber(rNBT, "Damage", meta_(aStack));
 		if (ItemNBT.has(aStack)) rNBT.put("tag", ItemNBT.get(aStack));
 		OreDictItemData tData = OM.anyassociation_(aStack);
