@@ -230,6 +230,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6mapcolorprobe.flag")) gt6MapColorProbeTick(aEvent.getServer());
 	// [GT6-FLUIDCAPPROBE] стенд «MODCOMPAT-001 П2: стандартный канал жидкостей на BlockEntity» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
+	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6juiceprobe.flag")) gt6JuiceProbeTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
 	// [GT6-JADEPROBE] стенд «MODCOMPAT-001: инструменты GT6 в тултипе Jade» — снять при уборке фазы
@@ -7530,5 +7532,132 @@ public final class GT6Probes {
 			if (tParts.length == 4) sUVPSeq.judge(tParts[0], "PASS".equals(tParts[3]), tParts[1], tParts[2]);
 		}
 		sUVPSeq.done();
+	}
+
+	// ============================================================================================================
+	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска» — снять при уборке фазы.
+	// Судит ИДЕНТИЧНОСТЬ объекта: какая жидкость РЕАЛЬНО легла в бак машины и в каком объёме, а не картинку.
+	// Реальный путь игрока: ПКМ цветком по верхней грани Соковыжималки через ServerPlayer.gameMode.useItemOn
+	// (GT6ProbeStand.clickBlock) — тот самый канал, о котором репорт («отправить цветок в соковыжималку»).
+	// Каждому цветку — СВОЯ машина: бак один (RM.Juicer OUT-FLUID=1), и canOutput запрещает лить вторую
+	// краску поверх первой; на одной машине второй кейс дал бы ложный FAIL.
+	// Позитивный контроль двойной: (а) два разных цветка обязаны дать РАЗНЫЕ жидкости — иначе судья слеп
+	// к содержимому; (б) COLD-кейс (булыжник вместо цветка) обязан оставить бак пустым — иначе судья
+	// «видит краску» всегда. Клик идёт в ЦЕНТР верхней грани: угол 4×4 px — это NEI-кнопка (onBlockActivated3:134),
+	// попадание туда вернуло бы T без обработки рецепта.
+	// ============================================================================================================
+	private static final String JUICE_M = "GT6-JUICEPROBE";
+	private static final int JUICE_MTE_ID = 32722; // Juicer (Ceramic), Loader_MultiTileEntities:2188
+	private static int sJuiceTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sJuiceSeq = null;
+	private static net.minecraft.server.level.ServerPlayer sJuicePlayer = null;
+	private static final net.minecraft.core.BlockPos[] sJuicePos = new net.minecraft.core.BlockPos[4];
+	private static final net.minecraft.world.level.block.entity.BlockEntity[] sJuiceBE = new net.minecraft.world.level.block.entity.BlockEntity[4];
+	private static final String[] sJuiceAfter = new String[4];
+
+	public static void gt6JuiceProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sJuiceTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sJuicePlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sJuiceSeq == null) {
+			sJuiceSeq = new gregapi.probe.GT6ProbeStand.Seq(JUICE_M)
+				.at(20, GT6Probes::gt6JuiceProbeBuild)
+				.at(40, GT6Probes::gt6JuiceProbeAct)
+				.at(60, GT6Probes::gt6JuiceProbeJudge);
+		}
+		sJuiceSeq.tick(sJuiceTick);
+	}
+
+	private static void gt6JuiceProbeBuild() {
+		net.minecraft.server.level.ServerLevel tLevel = sJuicePlayer.level();
+		net.minecraft.core.BlockPos tBase = sJuicePlayer.blockPosition().offset(2, 0, 2);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-1, -1, -1), 8, 4);
+		for (int i = 0; i < sJuicePos.length; i++) {
+			sJuicePos[i] = tBase.offset(i, 0, 0);
+			sJuiceBE[i] = gregapi.probe.GT6ProbeStand.place(tLevel, sJuicePlayer, tBase.offset(i, -1, 0), net.minecraft.core.Direction.UP,
+				gregapi.probe.GT6ProbeStand.mteStack(JUICE_MTE_ID), gregtech.tileentity.tools.MultiTileEntityJuicer.class, JUICE_M, "соковыжималка#" + i);
+		}
+		// вплотную к площадке: сервер молча роняет useItemOn вне дистанции достижения (урок BUG-032)
+		gregapi.probe.GT6ProbeStand.teleportLook(sJuicePlayer, tBase.getX() + 0.5, tBase.getY() + 1.0, tBase.getZ() - 1.5, 0.0F, 0.0F);
+		gregapi.data.CS.OUT.println("[" + JUICE_M + "] построено соковыжималок: " + sJuicePos.length + " @" + tBase);
+	}
+
+	/** Свежий стек на КАЖДЫЙ клик: путь рецепта расходует вход (isRecipeInputEqual с aDoIt=T мутирует стек). */
+	private static void gt6JuiceProbeUse(int aIndex, net.minecraft.world.level.block.Block aFlower) {
+		if (sJuiceBE[aIndex] == null) return;
+		sJuicePlayer.getInventory().setItem(0, gregapi.util.ST.make(aFlower, 1, 0));
+		sJuicePlayer.getInventory().setSelectedSlot(0);
+		gregapi.probe.GT6ProbeStand.clickBlock(sJuicePlayer, sJuicePos[aIndex], net.minecraft.core.Direction.UP);
+		sJuiceAfter[aIndex] = gt6JuiceProbeTankOf(sJuiceBE[aIndex]);
+	}
+
+	/** Содержимое бака[0] как «имя_жидкости:объём» — идентичность, а не факт «что-то есть». */
+	private static String gt6JuiceProbeTankOf(net.minecraft.world.level.block.entity.BlockEntity aBE) {
+		Object tArr = gregapi.probe.GT6ProbeStand.fld(aBE, "mTanks");
+		if (!(tArr instanceof gregapi.fluid.FluidTankGT[] tTanks)) return "нет поля mTanks";
+		if (tTanks.length == 0) return "нет танков";
+		net.neoforged.neoforge.fluids.FluidStack tFluid = tTanks[0].getFluid();
+		if (tFluid == null || tFluid.getAmount() <= 0) return "пусто";
+		return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
+	}
+
+	private static void gt6JuiceProbeAct() {
+		gt6JuiceProbeUse(0, net.minecraft.world.level.block.Blocks.POPPY);     // ожидание dye.flower.red:144
+		gt6JuiceProbeUse(1, net.minecraft.world.level.block.Blocks.DANDELION); // ожидание dye.flower.yellow:144
+		gt6JuiceProbeUse(2, net.minecraft.world.level.block.Blocks.LILAC);     // double_plant, 2 порции => magenta:288
+		gt6JuiceProbeUse(3, net.minecraft.world.level.block.Blocks.COBBLESTONE); // COLD: рецепта нет => бак пуст
+	}
+
+	private static void gt6JuiceProbeJudge() {
+		for (int i = 0; i < sJuiceBE.length; i++) {
+			sJuiceSeq.judge("машина#" + i + " встала", sJuiceBE[i] != null, "MultiTileEntityJuicer", sJuiceBE[i]);
+		}
+		sJuiceSeq.judge("мак → красная цветочная краска"     , "dye.flower.red:144"    .equals(sJuiceAfter[0]), "dye.flower.red:144"    , sJuiceAfter[0]);
+		sJuiceSeq.judge("одуванчик → жёлтая цветочная краска", "dye.flower.yellow:144" .equals(sJuiceAfter[1]), "dye.flower.yellow:144" , sJuiceAfter[1]);
+		sJuiceSeq.judge("сирень (double_plant) → магента ×2" , "dye.flower.magenta:288".equals(sJuiceAfter[2]), "dye.flower.magenta:288", sJuiceAfter[2]);
+		sJuiceSeq.judge("COLD булыжник → бак пуст"           , "пусто"                 .equals(sJuiceAfter[3]), "пусто"                 , sJuiceAfter[3]);
+		// позитивный контроль различения: два цветка обязаны дать РАЗНЫЕ жидкости, иначе судья слеп к содержимому
+		sJuiceSeq.judge("POSITIVE-CONTROL два цветка различимы",
+			sJuiceAfter[0] != null && !sJuiceAfter[0].equals(sJuiceAfter[1]), "разные жидкости", sJuiceAfter[0] + " / " + sJuiceAfter[1]);
+		// ── ПОЛНОТА КЛАССА (урок BUG-080: список берётся ИЗ КОДА, не из головы). Обходим ОБЕ карты целиком,
+		// собирая рецепты по ОПРЕДЕЛЕНИЮ («жидкостный выход — цветочная краска»), и по каждому спрашиваем ТЕМ ЖЕ
+		// каналом, которым спрашивает машина (findRecipe по его собственному входу): рецепт обязан находиться,
+		// и у найденного жидкостный выход обязан быть непустым. Это покрывает и Пресс (RM.Squeezer), у которого
+		// в порте нет ручного варианта, и все 13 цветов, а не три примера.
+		gt6JuiceProbeSweep("RM.Juicer"  , gregapi.data.RM.Juicer);
+		gt6JuiceProbeSweep("RM.Squeezer", gregapi.data.RM.Squeezer);
+		sJuiceSeq.done();
+	}
+
+	/** Обход одной карты рецептов: все записи с цветочной краской на выходе судятся поиском по своему входу. */
+	private static void gt6JuiceProbeSweep(String aName, gregapi.recipes.Recipe.RecipeMap aMap) {
+		int tTotal = 0, tNotFound = 0, tEmptyOut = 0;
+		String tFirstBad = null;
+		for (gregapi.recipes.Recipe tRecipe : aMap.mRecipeList) {
+			if (tRecipe == null || tRecipe.mFluidOutputs == null) continue;
+			boolean tFlower = false;
+			for (net.neoforged.neoforge.fluids.FluidStack tFluid : tRecipe.mFluidOutputs) {
+				if (tFluid != null && tFluid.getFluid() != null && gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()).startsWith("dye.flower.")) {tFlower = true; break;}
+			}
+			if (!tFlower || tRecipe.mInputs == null || tRecipe.mInputs.length == 0 || tRecipe.mInputs[0] == null) continue;
+			tTotal++;
+			net.minecraft.world.item.ItemStack tInput = tRecipe.mInputs[0].copy();
+			gregapi.recipes.Recipe tFound = aMap.findRecipe(null, null, gregapi.data.CS.F, gregapi.data.CS.V[1], null, gregapi.data.CS.ZL_FS, tInput);
+			if (tFound == null) {
+				tNotFound++;
+				if (tFirstBad == null) tFirstBad = "не найден по входу " + tInput;
+			} else {
+				net.neoforged.neoforge.fluids.FluidStack[] tOut = tFound.getFluidOutputs();
+				boolean tHas = false;
+				for (net.neoforged.neoforge.fluids.FluidStack tFluid : tOut) if (tFluid != null && tFluid.getAmount() > 0) {tHas = true; break;}
+				if (!tHas) {
+					tEmptyOut++;
+					if (tFirstBad == null) tFirstBad = "пустой жидкостный выход у входа " + tInput;
+				}
+			}
+		}
+		sJuiceSeq.judge("ПОЛНОТА " + aName + ": цветочных рецептов найдено", tTotal > 0, "> 0", tTotal);
+		sJuiceSeq.judge("ПОЛНОТА " + aName + ": все находятся поиском (" + tTotal + ")", tNotFound == 0, 0, tNotFound + (tFirstBad == null ? "" : " · пример: " + tFirstBad));
+		sJuiceSeq.judge("ПОЛНОТА " + aName + ": у всех непустой жидкостный выход", tEmptyOut == 0, 0, tEmptyOut + (tFirstBad == null ? "" : " · пример: " + tFirstBad));
 	}
 }
