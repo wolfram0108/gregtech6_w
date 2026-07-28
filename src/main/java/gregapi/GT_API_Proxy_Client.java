@@ -446,7 +446,7 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 			OreDictItemData tData = OM.anydata_(aEvent.getItemStack());
 
 			if (ItemNBT.get(aEvent.getItemStack()) == null) {
-				if (aBlock == Blocks.DIRT && aBlockMeta == 1) {
+				if (aBlock == Blocks.COARSE_DIRT) {
 					aToolTip.set(0, aToolTip.get(0).replaceAll("Dirt", "Coarse Dirt"));
 				}
 				if (MD.RC.mLoaded && "Railcraft:part.plate".equalsIgnoreCase(aRegName)) {

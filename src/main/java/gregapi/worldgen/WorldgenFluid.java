@@ -54,7 +54,7 @@ public class WorldgenFluid extends WorldgenBlob {
 		if (tTargetedBlock == NB || WD.air(aWorld, aX, aY, aZ, tTargetedBlock)) {
 			return mAllowToGenerateinVoid && WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		}
-		if (tTargetedBlock == Blocks.DIRT || tTargetedBlock == Blocks.SOUL_SAND || WD.ore_stone(tTargetedBlock, (byte)WD.meta(aWorld, aX, aY, aZ))) {
+		if (gregapi.data.CS.Flattened.headOf(tTargetedBlock) == Blocks.DIRT || tTargetedBlock == Blocks.SOUL_SAND || WD.ore_stone(tTargetedBlock, (byte)WD.meta(aWorld, aX, aY, aZ))) {
 			return WD.set(aWorld, aX, aY, aZ, mBlock, mBlockMeta, 0);
 		}
 		return F;

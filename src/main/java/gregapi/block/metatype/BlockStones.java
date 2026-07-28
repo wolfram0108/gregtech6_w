@@ -658,7 +658,7 @@ public class BlockStones extends BlockMetaType implements IOreDictListenerEvent,
 			Block tBlock = WD.block(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2]);
 			if (tBlock == Blocks.COBBLESTONE && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], Blocks.MOSSY_COBBLESTONE, 0, 3)) return;
 			byte tMeta = WD.meta(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2]);
-			if (tBlock == Blocks.STONE_BRICKS && (tMeta == 0 || tMeta == 2) && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], Blocks.STONE_BRICKS, 1, 3)) return;
+			if ((tBlock == Blocks.STONE_BRICKS || tBlock == Blocks.CRACKED_STONE_BRICKS) && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], Blocks.STONE_BRICKS, 1, 3)) return;
 			if (tBlock instanceof BlockStones && MOSSABLE[tMeta] && WD.set(aWorld, aX+tOffs[0], aY+tOffs[1], aZ+tOffs[2], tBlock, MOSS_MAPPINGS[tMeta], 3)) return;
 		}
 	}

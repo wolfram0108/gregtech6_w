@@ -60,7 +60,7 @@ public class WorldgenTurf extends WorldgenObject {
 				tBlock = WD.block(aWorld, tX+i, tY, tZ+j);
 				if (tBlock == BlocksGT.Diggables && 2 == WD.meta(aWorld, tX+i, tY, tZ+j)) {tGenerated++; continue;}
 				if (!WD.opaque(tBlock)) {if (tGenerated > 0) break; continue;}
-				if (tBlock == Blocks.DIRT) {
+				if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.DIRT) {
 					if (tGenerated <= 0 && (WD.getMaterial(tLastBlock) == Material.wood || WD.getMaterial(tLastBlock) == Material.gourd)) continue;
 				} else {
 					if (tGenerated > 0) {

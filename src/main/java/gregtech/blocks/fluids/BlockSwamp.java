@@ -102,7 +102,7 @@ public class BlockSwamp extends BlockWaterlike {
 				} else if (tBlock == Blocks.WATER || tBlock == Blocks.WATER) {
 					tList.add(new BlockPos(aX+OFFX[tSide], aY+OFFY[tSide], aZ+OFFZ[tSide]));
 					if (tMeta == 0) tSwampCounter++;
-				} else if (tBlock == Blocks.SAND || tBlock == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || tBlock == BlocksGT.Grass || tBlock == BlocksGT.Diggables || tBlock == BlocksGT.Sands || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand || tBlock == BlocksGT.oreMud || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreSmallMud || IL.EtFu_Dirt.equal(tBlock)) {
+				} else if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.SAND || gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || tBlock == BlocksGT.Grass || tBlock == BlocksGT.Diggables || tBlock == BlocksGT.Sands || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand || tBlock == BlocksGT.oreMud || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreSmallMud || IL.EtFu_Dirt.equal(tBlock)) {
 					tDirt = T;
 				} else if (IL.TF_Mazestone.equal(tBlock)) {
 					// prevent flooding the Twilight Mazes.
@@ -142,7 +142,7 @@ public class BlockSwamp extends BlockWaterlike {
 		
 		if (tDirt) for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
 			tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k);
-			if (tBlock == Blocks.SAND || tBlock == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || IL.EtFu_Dirt.equal(tBlock)) {WD.set(aWorld, aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
+			if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.SAND || gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || IL.EtFu_Dirt.equal(tBlock)) {WD.set(aWorld, aX+i, aY+j, aZ+k, BlocksGT.Diggables, 0, 2); continue;}
 			if (tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreRedSand) {BlocksGT.oreMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 			if (tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSmallRedSand) {BlocksGT.oreSmallMud.placeBlock(aWorld, aX+i, aY+j, aZ+k, SIDE_UNKNOWN, ((IBlockExtendedMetaData)tBlock).getExtendedMetaData(aWorld, aX+i, aY+j, aZ+k), null, T, T); continue;}
 		}

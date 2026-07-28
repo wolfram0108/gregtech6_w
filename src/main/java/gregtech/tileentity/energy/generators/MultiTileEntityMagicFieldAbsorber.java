@@ -85,7 +85,7 @@ public class MultiTileEntityMagicFieldAbsorber extends TileEntityBase09FacingSin
 				Block tBlock = getBlockAtSide(SIDE_TOP);
 				if (tBlock == Blocks.DRAGON_EGG) {
 					mActive = T; mOutput = 64; mEnergyTypeEmitted = TD.Energy.QU;
-				} else if (tBlock == Blocks.SKELETON_SKULL) {
+				} else if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.SKELETON_SKULL) {
 					mActive = T; mOutput = 1; mEnergyTypeEmitted = TD.Energy.TU; // I can't forsee this getting OP as heck. XD
 				} else if (IL.TF_Trophy.equal(tBlock)) {
 					switch(WD.meta(level, getBlockPos().getX(), getBlockPos().getY()+1, getBlockPos().getZ())) {

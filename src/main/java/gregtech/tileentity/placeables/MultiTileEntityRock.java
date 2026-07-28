@@ -203,7 +203,7 @@ public class MultiTileEntityRock extends TileEntityBase03MultiTileEntities imple
 		if (tBlock == Blocks.NETHERRACK || tBlock == Blocks.NETHER_BRICKS || tBlock == Blocks.SOUL_SAND) {
 			mTexture = BlockTextureCopied.get(Blocks.NETHERRACK, SIDE_ANY, 0); return 1;
 		}
-		if (tBlock == Blocks.SANDSTONE || tBlock == Blocks.SAND || IL.AETHER_Sand.equal(tBlock)) {
+		if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.SANDSTONE || gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.SAND || IL.AETHER_Sand.equal(tBlock)) {
 			mTexture = BlockTextureCopied.get(Blocks.SANDSTONE, SIDE_FRONT, 0); return 1;
 		}
 		if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.GRAVEL) {

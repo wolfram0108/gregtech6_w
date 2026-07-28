@@ -119,7 +119,7 @@ public class ToolCompat {
 			// построение контекста неоправданно сложно для события, которое в GT6 существовало ЛИШЬ ради шанса другим модам отменить/переопределить вспашку;
 			// саму вспашку GT6 реализует напрямую ниже. Хук совместимости с другими модами (отмена события) НЕ реализован — деградация видима здесь.
 			{
-				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
+				if (SIDES_TOP_HORIZONTAL[aSide] && !WD.hasCollide(aWorld, aX, aY+1, aZ) && (aBlock == Blocks.GRASS_BLOCK || gregapi.data.CS.Flattened.headOf(aBlock) == Blocks.DIRT || aBlock == BlocksGT.Grass || IL.EtFu_Path.equal(aBlock) || IL.BoP_Grass_Origin.equal(aBlock) || IL.BoP_Grass_Long.equal(aBlock))) {
 					WD.playStepSound(aWorld, aX + 0.5F, aY + 0.5F, aZ + 0.5F, Blocks.FARMLAND);
 					if (!aWorld.isClientSide()) WD.set(aWorld, aX, aY, aZ, Blocks.FARMLAND, 0, 3);
 					return 10000;

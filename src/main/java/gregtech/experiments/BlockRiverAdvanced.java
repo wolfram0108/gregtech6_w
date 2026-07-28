@@ -83,7 +83,7 @@ public class BlockRiverAdvanced extends BlockWaterlike {
 		// We are going down? Carve out Dirt, Gravel, Sand and the likes.
 		if (SIDES_BOTTOM[aFlow] && SIDES_HORIZONTAL[aSource]) {
 			Block tBlock = WD.block(aWorld, aX+OFFX[aSource], aY-1, aZ+OFFZ[aSource]);
-			if (tBlock == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || tBlock == Blocks.SAND || tBlock == Blocks.GRAVEL || tBlock == Blocks.SNOW) {
+			if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK || tBlock == Blocks.MYCELIUM || tBlock == Blocks.SAND || tBlock == Blocks.GRAVEL || tBlock == Blocks.SNOW) {
 				WD.set(aWorld, aX              , aY  , aZ              , NB  , 0, 3, T);
 				if (aBlocks[aSource] == this)
 				WD.set(aWorld, aX+OFFX[aSource], aY  , aZ+OFFZ[aSource], this, 1+aFlow        , 3, T);

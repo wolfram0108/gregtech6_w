@@ -61,7 +61,7 @@ public class GT_Tool_Club extends GT_Tool_HardHammer {
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		Block aDrop = aDrops.size() == 1 ? ST.block(aDrops.get(0)) : NB;
 		if (aDrop == NB) aDrop = aBlock;
-		if (aDrop == Blocks.STONE || aDrop == Blocks.COBBLESTONE || aDrop == Blocks.MOSSY_COBBLESTONE || aDrop == Blocks.STONE_BRICKS || aDrop == Blocks.STONE_BRICK_STAIRS || aDrop == Blocks.COBBLESTONE_WALL || aDrop == Blocks.STONE_BUTTON || aDrop == Blocks.STONE_PRESSURE_PLATE) {
+		if (aDrop == Blocks.STONE || aDrop == Blocks.COBBLESTONE || aDrop == Blocks.MOSSY_COBBLESTONE || gregapi.data.CS.Flattened.headOf(aDrop) == Blocks.STONE_BRICKS || aDrop == Blocks.STONE_BRICK_STAIRS || aDrop == Blocks.COBBLESTONE_WALL || aDrop == Blocks.STONE_BUTTON || aDrop == Blocks.STONE_PRESSURE_PLATE) {
 			aDrops.clear();
 			aDrops.add(OP.rockGt.mat(MT.Stone, 1+RNGSUS.nextInt(4)));
 			return 0;

@@ -523,7 +523,7 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		if (ST.instaharvest(aBlock, aMeta)) return 10;
 		if (!isItemStackUsable(aStack)) return 0;
 		// Required because a combination of Twilight Forest and Block Metadata Extenders can fuck this up and give me values like 49 for vanilla Blocks.
-		if (aMeta > 15 && (aBlock == Blocks.DIRT || aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.STONE)) aMeta = 0;
+		if (aMeta > 15 && (gregapi.data.CS.Flattened.headOf(aBlock) == Blocks.DIRT || aBlock == Blocks.GRASS_BLOCK || aBlock == Blocks.STONE)) aMeta = 0;
 		float tMultiplier = 1.0F;
 		OreDictMaterial tMaterial = getPrimaryMaterial(aStack);
 		if ((IL.TF_Mazestone.equal(aBlock) || IL.TF_Mazehedge.equal(aBlock) || IL.TF_Towerwood.equal(aBlock)) && tMaterial.contains(TD.Properties.MAZEBREAKER)) tMultiplier *= 40;

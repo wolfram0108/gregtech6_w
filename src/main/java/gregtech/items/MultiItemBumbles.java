@@ -276,7 +276,7 @@ public class MultiItemBumbles extends MultiItemRandomWithCompat implements IItem
 				Block tBlock = WD.block(aWorld, aX+i, aY+j, aZ+k, F);
 				if (tBlock == Blocks.MOSSY_COBBLESTONE || tBlock == Blocks.COBBLESTONE || tBlock == Blocks.STONE) return new BlockPos(aX+i, aY+j, aZ+k);
 				byte tMeta = WD.meta(aWorld, aX+i, aY+j, aZ+k);
-				if (tBlock == Blocks.STONE_BRICKS && tMeta == 1) return new BlockPos(aX+i, aY+j, aZ+k);
+				if (tBlock == Blocks.MOSSY_STONE_BRICKS) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (tBlock instanceof BlockStones && (BlockStones.SPAWNABLE[tMeta] || BlockStones.MOSSY[tMeta])) return new BlockPos(aX+i, aY+j, aZ+k);
 				if (WD.stone(tBlock, tMeta)) return new BlockPos(aX+i, aY+j, aZ+k);;
 			}

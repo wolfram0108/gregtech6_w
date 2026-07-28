@@ -1962,6 +1962,11 @@ public class CS {
 		public static Block headOf(Block aBlock) {
 			for (Block[] tFamily : WORLD_FAMILIES     ) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
 			for (Block[] tFamily : STACK_ONLY_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
+			// Джокерные семьи (камень/земля/песок/песчаник/кварц/каменный кирпич): подстановка по мете им запрещена
+			// намеренно (см. WILDCARD_ONLY_BLOCK_FAMILIES), но ПРИНАДЛЕЖНОСТЬ семье знать надо — в 1.7.10 это был
+			// один блок, и сравнение `aBlock == Blocks.dirt` ловило все подтипы. Ответ на «кто глава» подстановки не
+			// делает, поэтому список безопасно спрашивать и здесь. Ровно так же поступает headItemOf для предметов.
+			for (Block[] tFamily : WILDCARD_ONLY_BLOCK_FAMILIES) for (Block tMember : tFamily) if (tMember == aBlock) return tFamily[0];
 			return null;
 		}
 

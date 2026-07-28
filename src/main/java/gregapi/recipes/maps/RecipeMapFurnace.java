@@ -67,7 +67,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 				if (tOutput.getItem() == Items.BRICK || tOutput.getItem() == Items.NETHER_BRICK || tOutput.getItem() == Items.CLAY_BALL || tOutput.getItem() == Items.INK_SAC) {
 					// Bricks and Dyes are 0.05 XP
 					rXP = FL.XP.make(tOutput.getCount());
-				} else if (tOutput.getItem() == Items.COAL) {
+				} else if (gregapi.data.CS.Flattened.headItemOf(tOutput.getItem()) == Items.COAL) {
 					// Coal/Charcoal is giving 0.10 XP
 					rXP = FL.XP.make(tOutput.getCount() * 2L);
 				} else if (IL.EtFu_Chorus_Popped.equal(tOutput)) {
@@ -81,7 +81,7 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 					rXP = FL.XP.make(tOutput.getCount());
 				} else {
 					Block tBlock = ST.block(tOutput);
-					if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.STONE || tBlock == Blocks.STONE_BRICKS || tBlock instanceof BlockStones) {
+					if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.STONE || gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.STONE_BRICKS || tBlock instanceof BlockStones) {
 						// Stone should not give XP, especially not because of the Cobble Generator Upgrades.
 						// GT6 Stone is also not allowed due to easily recycleable Recipes.
 					// 1.7.10 `Blocks.stained_hardened_clay` = любой цвет (мета); в neo 16 блоков — глава семьи через CS.Flattened

@@ -71,7 +71,7 @@ public class WorldgenBlackSand extends WorldgenObject {
 				// F6: `Blocks.DIRT/gravel/sand/clay` — старые 1.7.10-имена полей (нижний регистр); реальные
 				// поля neo — `Blocks.DIRT/GRAVEL/SAND/CLAY` (`Blocks.java:85,322,342,2099`), то же переименование,
 				// что применено волной 1 по всему остальному дереву.
-				if ((tBlock == Blocks.DIRT && tMeta < 2) || tBlock == Blocks.GRAVEL || tBlock == Blocks.SAND || tBlock == Blocks.CLAY || tBlock == BlocksGT.oreSmallGravel || tBlock == BlocksGT.oreGravel || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreRedSand) {
+				if ((tBlock == Blocks.DIRT || tBlock == Blocks.COARSE_DIRT) || tBlock == Blocks.GRAVEL || tBlock == Blocks.SAND || tBlock == Blocks.CLAY || tBlock == BlocksGT.oreSmallGravel || tBlock == BlocksGT.oreGravel || tBlock == BlocksGT.oreSmallSand || tBlock == BlocksGT.oreSand || tBlock == BlocksGT.oreSmallRedSand || tBlock == BlocksGT.oreRedSand) {
 					// F6 (1:1): не забирать дёрн под деревьями/кустами/растениями. WD.getMaterial(Block) РЕАЛИЗОВАН
 					// (vanilla-классификация, WD.java:474) — стух-тег снят.
 					if (tGenerated <= 0 && (WD.getMaterial(tLastBlock) == gregapi.block.Material.wood || WD.getMaterial(tLastBlock) == gregapi.block.Material.gourd)) continue;

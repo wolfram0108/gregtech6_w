@@ -61,7 +61,7 @@ public class BlockOcean extends BlockWaterlike {
 
 	// @Override
 	public void onNeighborBlockChange(Level aWorld, int aX, int aY, int aZ, Block aBlock) {
-		if (aBlock == Blocks.DIRT && WD.block(aWorld, aX, aY-1, aZ) == Blocks.GRASS_BLOCK) WD.set(aWorld, aX, aY-1, aZ, Blocks.DIRT, 1, 2);
+		if (gregapi.data.CS.Flattened.headOf(aBlock) == Blocks.DIRT && WD.block(aWorld, aX, aY-1, aZ) == Blocks.GRASS_BLOCK) WD.set(aWorld, aX, aY-1, aZ, Blocks.DIRT, 1, 2);
 		super.onNeighborBlockChange(aWorld, aX, aY, aZ, aBlock);
 	}
 

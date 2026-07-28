@@ -62,7 +62,7 @@ public class GT_Tool_Chisel extends ToolStats {
 			aDrops.add(ST.make(Blocks.CHISELED_STONE_BRICKS, 1, 0));
 			return 0;
 		}
-		if (aBlock == Blocks.STONE_BRICKS) {
+		if (gregapi.data.CS.Flattened.headOf(aBlock) == Blocks.STONE_BRICKS) {
 			aDrops.clear();
 			switch(aMetaData) {
 			case  0: aDrops.add(ST.make(Blocks.CRACKED_STONE_BRICKS, 1, 0)); break;

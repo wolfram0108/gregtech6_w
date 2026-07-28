@@ -66,7 +66,7 @@ public class WorldgenPit extends WorldgenObject {
 				tBlock = WD.block(aWorld, tX+i, tY, tZ+j);
 				if (tBlock == mBlock && mMeta == WD.meta(aWorld, tX+i, tY, tZ+j)) {tGenerated++; continue;}
 				if (!WD.opaque(tBlock)) {if (tGenerated > 0) break; continue;}
-				if (tBlock == Blocks.DIRT) {
+				if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.DIRT) {
 					if (tGenerated <= 0 && (WD.getMaterial(tLastBlock) == Material.wood || WD.getMaterial(tLastBlock) == Material.leaves || WD.getMaterial(tLastBlock) == Material.gourd)) continue;
 				} else if (tBlock != Blocks.SAND && tBlock != Blocks.CLAY && tBlock != BlocksGT.oreSand && tBlock != BlocksGT.oreSmallSand && tBlock != BlocksGT.oreRedSand && tBlock != BlocksGT.oreSmallRedSand) {
 					if (tGenerated > 0) {

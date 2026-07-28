@@ -174,15 +174,15 @@ public class WorldgenHives extends WorldgenObject {
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_White     ,   700, aRandom) || rResult;
 					if (tContact == Blocks.MYCELIUM)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Pink      ,   800, aRandom) || rResult;
-					if (tContact == Blocks.SAND && WD.meta(aWorld, tX, tY, tZ) == 1)
+					if (tContact == Blocks.RED_SAND)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Red       ,   900, aRandom) || rResult;
-					if (tContact == Blocks.SANDSTONE || WD.getMaterial(tContact) == Material.sand)
+					if (gregapi.data.CS.Flattened.headOf(tContact) == Blocks.SANDSTONE || WD.getMaterial(tContact) == Material.sand)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Yellow    ,   900, aRandom) || rResult;
 					if (tContact == Blocks.GRAVEL || WD.getMaterial(tContact) == Material.rock)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_LightGray ,   500, aRandom) || rResult;
 					if (tContact == Blocks.GRASS_BLOCK || WD.getMaterial(tContact) == Material.grass)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, 0xffdd99          ,     0, aRandom) || rResult;
-					if (tContact == Blocks.DIRT || WD.getMaterial(tContact) == Material.ground)
+					if (gregapi.data.CS.Flattened.headOf(tContact) == Blocks.DIRT || WD.getMaterial(tContact) == Material.ground)
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Brown     ,     0, aRandom) || rResult;
 					// Lets make the magical Bumbles the Default if all else fails, so technically they are obtainable, even though I literally just made sure they can't spawn under the big Mushrooms. XD
 					return placeHive(tRegistry, aDimType, aWorld, tX, tY-1, tZ, DYE_INT_Purple    ,   200, aRandom) || rResult;

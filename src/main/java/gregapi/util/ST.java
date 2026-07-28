@@ -1221,7 +1221,7 @@ public class ST {
 		// getBurnTime (выше, строка ~1090) читает data-driven fuel-registry, где vanilla деревянные инструменты уже
 		// несут burn-time 200 → return rFuelValue сработал бы раньше. Отдельная instanceof-проверка не нужна.
 		if (tItem == Items.STICK) return 100;
-		if (tItem == Items.COAL) return 1600;
+		if (CS.Flattened.headItemOf(tItem) == Items.COAL) return 1600;
 		if (tItem == Items.BLAZE_ROD) return 2400;
 		if (tItem == Items.LAVA_BUCKET) return 20000;
 		Block tBlock = block_(tItem);
@@ -1522,7 +1522,7 @@ public class ST {
 		// всё равно удалены). Оригинал (no-op в neo): achieve(buildHoe) для ItemHoe / buildSword / buildBetter?Pickaxe.
 
 		if (MD.MC.owns(aRegName)) {
-			if (aItem == Items.COOKED_COD) {
+			if (CS.Flattened.headItemOf(aItem) == Items.COOKED_COD) {
 				// FORCED-ADAPTATION(F18): achieve(aPlayer, AchievementList.cookFish);
 			} else
 			if (aItem == Items.BREAD) {

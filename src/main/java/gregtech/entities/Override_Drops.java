@@ -721,7 +721,7 @@ public class Override_Drops {
 				// Give Meat more variety! :D
 				if (MOBS_DROP_MEAT && !OD.listAllmeatsubstitute.is(tStack)) {
 					if (RNGSUS.nextInt(3) == 0 && (OM.is("listAllmeatraw", tStack) || OM.is("listAllmeatcooked", tStack))) tIntestinesAmount++;
-					if (ST.item_(tStack) == Items.COD) {
+					if (gregapi.data.CS.Flattened.headItemOf(ST.item_(tStack)) == Items.COD) {
 						if (aBurn) ST.set(tStack, RM.get_smelting(tStack), F, F); break;
 					}
 					if (ST.item_(tStack) == Items.PORKCHOP) {

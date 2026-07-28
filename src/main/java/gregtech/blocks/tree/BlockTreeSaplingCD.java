@@ -97,7 +97,7 @@ public class BlockTreeSaplingCD extends BlockBaseSapling {
 				if (i*i + j*j <= 30) for (int k = 0; k <= 3; k++) {
 					Block tBlock = WD.block(aWorld, aX+i, aY-k, aZ+j, T);
 					if (WD.air(aWorld, aX+i, aY-k, aZ+j, tBlock)) continue;
-					if (tBlock == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK) WD.set(aWorld, aX+i, aY-k, aZ+j, Blocks.DIRT, 2, 3, F);
+					if (gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.DIRT || tBlock == Blocks.GRASS_BLOCK) WD.set(aWorld, aX+i, aY-k, aZ+j, Blocks.DIRT, 2, 3, F);
 					break;
 				}
 			}
