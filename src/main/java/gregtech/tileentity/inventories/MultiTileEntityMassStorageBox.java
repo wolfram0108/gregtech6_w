@@ -98,7 +98,7 @@ public class MultiTileEntityMassStorageBox extends MultiTileEntityMassStorage {
 	@Override
 	public ITexture getTexture2(Block aBlock, int aRenderPass, byte aSide, boolean[] aShouldSideBeRendered) {
 		if (!aShouldSideBeRendered[aSide]) return null;
-		byte tF = level==null?ITEM_MASSSTORAGE_FACING:mFacing; // BUG-038: item-форма (detached-TE) — калибруемый facing
+		byte tF = mFacing; // BUG-078: item-facing подставляет центр MultiTileEntityRegistry.applyItemFacing (величина — getItemFacing) // BUG-038: item-форма (detached-TE) — калибруемый facing
 		if (aRenderPass == 0) {
 			int aIndex = aSide<2?aSide:aSide==tF?2:aSide==OPOS[tF]?3:4;
 			return BlockTextureMulti.get(BlockTextureDefault.get(sColoreds[aIndex], mRGBa, mMaterial.contains(TD.Properties.GLOWING)), BlockTextureDefault.get(sOverlays[aIndex]), (mMode & B[3]) == 0 ? null : BlockTextureDefault.get(Textures.BlockIcons.DUCT_TAPE));

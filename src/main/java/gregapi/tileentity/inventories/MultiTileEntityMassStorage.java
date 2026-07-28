@@ -70,6 +70,12 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 	public long mPartialUnits = 0;
 	public byte mMode = 0;
 	
+	/** BUG-078: у витрины иная раскладка граней ({@code aSide == mFacing} + собственный BER, без
+	 *  {@code FACING_ROTATIONS}), поэтому item-facing свой — величина откалибрована живым глазом (BUG-038)
+	 *  и лежит ОДИН раз, здесь. Подставляет её общий центр {@code MultiTileEntityRegistry.applyItemFacing};
+	 *  прежняя россыпь `level==null?ITEM_MASSSTORAGE_FACING:mFacing` по четырём подклассам и BER снята. */
+	@Override public byte getItemFacing() {return ITEM_MASSSTORAGE_FACING;}
+
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);
@@ -728,7 +734,7 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			BlockEntityRenderer.super.extractRenderState(aStorage, aState, aPartialTick, aCameraPos, aBreakProgress);
 			aState.mItem = null;
 			if (!aStorage.slotHas(1) || !aStorage.isFaceVisible()) return;
-			aState.mStorageFacing = aStorage.level==null ? ITEM_MASSSTORAGE_FACING : aStorage.mFacing; // BUG-038: item-форма (detached-TE) — калибруемый facing предмет-дисплея
+			aState.mStorageFacing = aStorage.mFacing; // BUG-078: для item-формы facing уже подставлен центром applyItemFacing // BUG-038: item-форма (detached-TE) — калибруемый facing предмет-дисплея
 			// BUG-015 v2: GUI-контекст (не FIXED) = ИНВЕНТАРНАЯ иконка — noситель 1.7.10 renderItemIntoGUI-формы
 			// (блоки изометрией «как в JEI/креативе» — репорт игрока: «иконка ресурса не такая, как в JEI»)
 			aState.mItem = new net.minecraft.client.renderer.item.ItemStackRenderState();

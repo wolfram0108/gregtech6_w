@@ -45,6 +45,23 @@ import static gregapi.data.CS.*;
  */
 public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Directional implements IMTE_OnPlaced, IMTE_AddToolTips {
 	public byte mFacing = getDefaultSide();
+
+	/**
+	 * BUG-074/078: ЕДИНСТВЕННЫЙ источник псевдо-facing для item-формы (detached-TE, {@code level == null}).
+	 *
+	 * <p>1.7.10 крутил item-геометрию целиком ({@code RendererBlockTextured.renderInventoryBlock:57-59},
+	 * {@code glRotatef(90,0,1,0)}); в neo этого поворота нет, и семьи, выбирающие текстуру ПО {@code mFacing},
+	 * показывали в инвентаре не ту грань. Компенсация — подстановка псевдо-facing в момент рождения
+	 * detached-TE ({@code MultiTileEntityRegistry.applyItemFacing}), а величина берётся ЗДЕСЬ.</p>
+	 *
+	 * <p>Дефолт {@code ITEM_MACHINE_FACING} годится для семей с раскладкой {@code FACING_ROTATIONS}
+	 * (машины, бойлеры, генераторы, турбины, динамо). Семья с ИНОЙ формулой переопределяет метод — так
+	 * поступает {@code MultiTileEntityMassStorage} ({@code aSide == mFacing} + собственный BER, потому и
+	 * значение своё). Оба числа эмпирические, откалиброваны живым глазом игрока (BUG-038), и оба лежат
+	 * по одному разу: константа в {@code CS}, выбор — в переопределении этого метода. Россыпи по
+	 * {@code getTexture2} больше нет.</p>
+	 */
+	public byte getItemFacing() {return ITEM_MACHINE_FACING;}
 	
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {

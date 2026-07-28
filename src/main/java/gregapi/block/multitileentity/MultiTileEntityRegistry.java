@@ -252,6 +252,20 @@ public class MultiTileEntityRegistry {
 	public BlockEntity getNewTileEntity(int aID)                                                 {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(null  ,  0,  0,  0, aID, null); return tContainer == null ? null : tContainer.mTileEntity;}
 	public BlockEntity getNewTileEntity(Level aWorld, int aX, int aY, int aZ, int aID)           {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(aWorld, aX, aY, aZ, aID, null); return tContainer == null ? null : tContainer.mTileEntity;}
 	
+	/**
+	 * BUG-074/078 — ЕДИНСТВЕННАЯ точка компенсации item-facing для detached-TE (форма предмета, мира нет).
+	 *
+	 * <p>Путей рождения такого TE ровно два, и оба зовут этот метод: обычный item-рендер
+	 * ({@code MultiTileEntityBlockInternal.passRenderingToObject}) и BER-ветка для предметов со своим
+	 * рендерером ({@code MultiTileEntityBER.extractArgument} — сундук, масстораж). Величину задаёт сам TE
+	 * ({@code TileEntityBase09FacingSingle.getItemFacing}), поэтому семья с иной раскладкой граней меняет
+	 * ОДНО переопределение, а не строку в каждом {@code getTexture2}.</p>
+	 */
+	public static BlockEntity applyItemFacing(BlockEntity aTileEntity) {
+		if (aTileEntity instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFacingTE) tFacingTE.mFacing = tFacingTE.getItemFacing();
+		return aTileEntity;
+	}
+
 	public BlockEntity getNewTileEntity(ItemStack aStack)                                        {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(null  ,  0,  0,  0, ST.meta_(aStack), ItemNBT.get(aStack)); return tContainer == null ? null : tContainer.mTileEntity;}
 	public BlockEntity getNewTileEntity(Level aWorld, int aX, int aY, int aZ, ItemStack aStack)  {MultiTileEntityContainer tContainer =  getNewTileEntityContainer(aWorld, aX, aY, aZ, ST.meta_(aStack), ItemNBT.get(aStack)); return tContainer == null ? null : tContainer.mTileEntity;}
 	

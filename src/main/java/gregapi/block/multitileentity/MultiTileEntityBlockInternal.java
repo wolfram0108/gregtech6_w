@@ -99,10 +99,11 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 		// Прежняя правка (BUG-038) ставила подмену `level==null?ITEM_MACHINE_FACING:mFacing` внутрь getTexture2
 		// каждого класса — россыпь, которая закрыла 11 классов из 82 и оставила остальные перевёрнутыми
 		// (репорт игрока 2026-07-28: мультиблочные бойлеры, турбины, динамо). Здесь та же компенсация сделана
-		// ОДИН раз, на входе в item-рендер: это единственная точка, где рождается detached-TE для предмета
-		// (второй держатель, MultiTileEntityBlock:634, отдаёт null; вызыватель один — GT6BlockModel:200).
+		// вынесена в ЦЕНТР MultiTileEntityRegistry.applyItemFacing, а величину задаёт сам TE (getItemFacing).
+		// Путей рождения detached-TE ровно два, и оба зовут этот центр: здесь (обычный item-рендер,
+		// вызыватель GT6BlockModel:200) и MultiTileEntityBER.extractArgument (предметы со своим рендерером).
 		// TE создаётся заново на каждый вызов и в мир не попадает, поэтому подмена поля никого не задевает.
-		if (tTileEntity instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFacingTE) tFacingTE.mFacing = ITEM_MACHINE_FACING;
+		MultiTileEntityRegistry.applyItemFacing(tTileEntity);
 		return tTileEntity instanceof IRenderedBlockObject ? (IRenderedBlockObject)tTileEntity : null;
 	}
 	
