@@ -749,6 +749,16 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			// BUG-015 v4: rotZ(180) из 1.7.10 компенсировал y-вниз-ориентацию GUI-рендера (renderItemIntoGUI рисовал
 			// текстуру сверху-вниз); neo-модель уже y-вверх — дословный перенос переворачивал иконку вверх ногами.
 			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[tFacing] * 90));
+			// BUG-075: витрина показывает GUI-форму содержимого, а GUI-разворот БЛОКА в двух движках разный:
+			//   1.7.10 RenderItem.renderItemIntoGUI:37-38 — glRotatef(210, X) + glRotatef( 45, Y)
+			//   neo     assets/minecraft/models/block/block.json, display.gui — rotation [30, 225, 0]
+			// разница по Y ровно 225-45 = 180°, поэтому у блоков витрина смотрела обратной стороной
+			// (репорт игрока: «предметы верно, а значки блоков перевёрнуты на 180»).
+			// Плоские предметы (item/generated) GUI-разворота по Y не имеют — их этот поворот отзеркалил бы,
+			// поэтому компенсация только для блочных моделей. Признак блочности берётся у самой модели:
+			// usesBlockLight = gui_light "side" (ModelRenderProperties:16 — getTopGuiLight().lightLikeBlock()),
+			// а не по instanceof BlockItem: у части блоков (факел, рельсы) модель плоская, и им поворот не нужен.
+			if (aState.mItem.usesBlockLight()) aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180));
 			aPoseStack.scale(0.5f, 0.5f, 0.0001f);
 			aState.mItem.submit(aPoseStack, aNodes, 0xF000F0 /* fullbright 240/240, ориг setLightmapTextureCoords */, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, 0);
 			aPoseStack.popPose();
