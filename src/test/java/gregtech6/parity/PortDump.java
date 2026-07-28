@@ -138,7 +138,14 @@ public final class PortDump {
     private static void gate(Map<String, Double> aFact) {
         Map<String, Double> tFloor = new java.util.LinkedHashMap<>();
         tFloor.put("materials.csv", 99.90);        // факт 99.955 (1 расхождение: имя жидкости «molten hsla» → «molten_hsla»)
-        tFloor.put("prefixes.csv", 96.95);         // факт 97.009 (было 96.581 до закрытия block-flatten + ванильных записей Forge)
+        // факт 96.795 после ADAPT-001. Просадка на 0.214 п.п. = РОВНО ОДНА запись из 468 и она разобрана:
+        // префикс `item` golden=1411 → порт=1412, потому что адаптация завела новый OreDict-тег
+        // `OD.itemLeafLitter` (сухая листва 26.1.2, в 1.7.10 такого ингредиента не существовало).
+        // Пропавших и лишних записей 0 — состав префиксов не пострадал, отличается только счётчик.
+        // Это осознанное расхождение с оригиналом, ради которого и заведён журнал адаптаций; порог опущен
+        // до факта, как раньше для engine_items.csv. Запас 0.045 п.п. — меньше одной записи (0.214 п.п.),
+        // поэтому ЛЮБАЯ следующая потеря по-прежнему роняет гейт.
+        tFloor.put("prefixes.csv", 96.75);         // было 96.95 при факте 97.009 (до ADAPT-001)
         tFloor.put("fluids.csv", 100.0);
         tFloor.put("mte.csv", 100.0);
         tFloor.put("tools.csv", 100.0);
@@ -574,6 +581,11 @@ public final class PortDump {
      * {@code OD.itemLeafLitter}, поэтому попутно проверяется, что тег реально навешен на ванильный предмет
      * ({@code LoaderItemData}) — без этого диспетчер промолчит.</p>
      *
+     * <p><b>Главное требование адаптации:</b> из листвы должен получаться ТОТ ЖЕ предмет, что из сухой травы
+     * ({@code IL.Tool_Fire_Starter}, мета 5014), а не новый. Отдельный предмет оправдан только когда
+     * отличается качество (штатные варианты различаются шансом поджига 50 % / 55 %); листва — тот же класс
+     * трута, что трава, поэтому третий ID был бы дублем сущности. Судья сравнивает мету выхода с травяной.</p>
+     *
      * <p><b>Позитивный контроль:</b> штатный вариант из сухой травы (1 палка + 1 {@code IL.Grass_Dry},
      * форма «S / GS») — он существовал и до адаптации, значит судья обязан находить и его. <b>Негативный:</b>
      * 2 палки + 2 алмаза — диспетчер обязан промолчать, иначе PASS выдаётся на чём угодно.</p>
@@ -588,13 +600,18 @@ public final class PortDump {
             + " · сухая трава=" + (gregapi.util.ST.valid(tGrass) ? stackId(tGrass) : "НЕ СОЗДАНА")
             + " · тег itemLeafLitter навешен на N предметов: " + gregapi.oredict.OreDictManager.INSTANCE.getOres(gregapi.data.OD.itemLeafLitter, false).size());
         // 2×2: «SL / LS» — 2 палки + 2 листвы (диагонали), ровно как в рецепте
-        judgeAdapt001Case("листва 2×2 (целевой рецепт)", tDispatcher, List.of(tStick, tLeaf, tLeaf, tStick));
+        ItemStack tFromLeaves = judgeAdapt001Case("листва 2×2 (целевой рецепт)", tDispatcher, List.of(tStick, tLeaf, tLeaf, tStick));
         // позитивный контроль: штатный травяной вариант «S_ / GS» в той же сетке 2×2
-        judgeAdapt001Case("сухая трава (позитивный контроль)", tDispatcher, List.of(tStick, ItemStack.EMPTY, tGrass, tStick));
+        ItemStack tFromGrass  = judgeAdapt001Case("сухая трава (позитивный контроль)", tDispatcher, List.of(tStick, ItemStack.EMPTY, tGrass, tStick));
         // негативный контроль
         judgeAdapt001Case("алмазы вместо листвы (негативный контроль)", tDispatcher, List.of(tStick, tAlien, tAlien, tStick));
+        // ГЛАВНОЕ: из листвы получается ТОТ ЖЕ предмет, что из сена — новый ID не заводится
+        boolean tSame = !tFromLeaves.isEmpty() && !tFromGrass.isEmpty() && stackId(tFromLeaves).equals(stackId(tFromGrass));
+        System.out.println("[adapt001] ТОТ ЖЕ предмет, что из сена: " + (tSame ? "ДА" : "НЕТ")
+            + " (листва=" + (tFromLeaves.isEmpty() ? "ПУСТО" : stackId(tFromLeaves))
+            + " трава=" + (tFromGrass.isEmpty() ? "ПУСТО" : stackId(tFromGrass)) + ")");
     }
-    private static void judgeAdapt001Case(String aLabel, gregapi.recipes.GT6CraftingDispatcher aDispatcher, List<ItemStack> aItems) {
+    private static ItemStack judgeAdapt001Case(String aLabel, gregapi.recipes.GT6CraftingDispatcher aDispatcher, List<ItemStack> aItems) {
         List<ItemStack> tItems = new ArrayList<>();
         for (ItemStack s : aItems) tItems.add(s == null || s.isEmpty() ? ItemStack.EMPTY : gregapi.util.ST.amount(1, s));
         var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(2, 2, tItems);
@@ -602,6 +619,7 @@ public final class PortDump {
         ItemStack tOut = tMatch ? aDispatcher.assemble(tGrid) : ItemStack.EMPTY;
         System.out.println("[adapt001] " + aLabel + ": matches=" + tMatch
             + " выход=" + (tOut.isEmpty() ? "ПУСТО" : (stackId(tOut) + " ×" + tOut.getCount() + " «" + tOut.getHoverName().getString() + "»")));
+        return tOut;
     }
 
     private static void judgeBug073() {
