@@ -516,6 +516,9 @@ public class LoaderItemData implements Runnable {
 		OM.reg(OD.bookEnchanted                     , ST.make(Items.ENCHANTED_BOOK, 1, W));
 		OM.reg(OD.craftingFirestarter               , ST.make(Items.FIRE_CHARGE, 1, W));
 		OM.reg(OD.craftingFirestarter               , ST.make(Items.FLINT_AND_STEEL, 1, W));
+		// ADAPT-001: ванильная сухая листва получает GT6-тег трута — ровно тем же приёмом, что строки выше.
+		// Рецепт Fire Starter ссылается на ТЕГ, а не на minecraft:leaf_litter напрямую (правило централизации).
+		OM.reg(OD.itemLeafLitter                    , ST.make(Items.LEAF_LITTER, 1, W));
 		OM.reg("bucketWater"                        , ST.make(Items.WATER_BUCKET, 1, W));
 		OM.reg("bucketLava"                         , ST.make(Items.LAVA_BUCKET, 1, W));
 		OM.reg("bucketMilk"                         , ST.make(Items.MILK_BUCKET, 1, W));

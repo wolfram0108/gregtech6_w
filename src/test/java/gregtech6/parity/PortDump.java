@@ -96,7 +96,7 @@ public final class PortDump {
         // dumpRecipes ПЕРЕД dumpRecipeMaps: triggerAllRecipesDeterministically популирует mRecipeList (растит mMaxFluidInput/OutputSize
         // по рецептам, Recipe.java:375/383) — иначе recipemaps.csv меряет maxFluid ДО триггера ленивых хендлеров (cutter/melter/squeezer
         // занижены vs golden, где регистрация была эагерной). Так recipemaps отражает то же популированное состояние, что recipes.jsonl.
-        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps(); dumpCrafting(); judgeCraftingSelfMatch(); judgeBug058(); judgeBug073(); judgeJeiToolLookup();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps(); dumpCrafting(); judgeCraftingSelfMatch(); judgeBug058(); judgeBug073(); judgeAdapt001(); judgeJeiToolLookup();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         Map<String, Double> tFact = new java.util.LinkedHashMap<>();
@@ -566,6 +566,44 @@ public final class PortDump {
      * <b>Холодный контроль:</b> печатается число рецептов на каждую электро-мету; до фикса оно было 0
      * (слушатели не создавались вовсе), и судья физически не мог выдать PASS.</p>
      */
+    /**
+     * СУДЬЯ ADAPT-001 — путь игрока для нового трута из сухой листвы: сетка 2×2 → {@link gregapi.recipes.GT6CraftingDispatcher}.
+     *
+     * <p>Судится не наличие записи в буфере, а то, что реально произойдёт у игрока: 2 палки + 2
+     * {@code minecraft:leaf_litter} в форме «SL / LS» обязаны дать Fire Starter. Рецепт ссылается на ТЕГ
+     * {@code OD.itemLeafLitter}, поэтому попутно проверяется, что тег реально навешен на ванильный предмет
+     * ({@code LoaderItemData}) — без этого диспетчер промолчит.</p>
+     *
+     * <p><b>Позитивный контроль:</b> штатный вариант из сухой травы (1 палка + 1 {@code IL.Grass_Dry},
+     * форма «S / GS») — он существовал и до адаптации, значит судья обязан находить и его. <b>Негативный:</b>
+     * 2 палки + 2 алмаза — диспетчер обязан промолчать, иначе PASS выдаётся на чём угодно.</p>
+     */
+    private static void judgeAdapt001() {
+        var tDispatcher = new gregapi.recipes.GT6CraftingDispatcher();
+        ItemStack tStick = new ItemStack(net.minecraft.world.item.Items.STICK);
+        ItemStack tLeaf  = new ItemStack(net.minecraft.world.item.Items.LEAF_LITTER);
+        ItemStack tGrass = gregapi.data.IL.Grass_Dry.get(1);
+        ItemStack tAlien = new ItemStack(net.minecraft.world.item.Items.DIAMOND);
+        System.out.println("[adapt001] листва=" + (gregapi.util.ST.valid(tLeaf) ? stackId(tLeaf) : "НЕ СОЗДАНА")
+            + " · сухая трава=" + (gregapi.util.ST.valid(tGrass) ? stackId(tGrass) : "НЕ СОЗДАНА")
+            + " · тег itemLeafLitter навешен на N предметов: " + gregapi.oredict.OreDictManager.INSTANCE.getOres(gregapi.data.OD.itemLeafLitter, false).size());
+        // 2×2: «SL / LS» — 2 палки + 2 листвы (диагонали), ровно как в рецепте
+        judgeAdapt001Case("листва 2×2 (целевой рецепт)", tDispatcher, List.of(tStick, tLeaf, tLeaf, tStick));
+        // позитивный контроль: штатный травяной вариант «S_ / GS» в той же сетке 2×2
+        judgeAdapt001Case("сухая трава (позитивный контроль)", tDispatcher, List.of(tStick, ItemStack.EMPTY, tGrass, tStick));
+        // негативный контроль
+        judgeAdapt001Case("алмазы вместо листвы (негативный контроль)", tDispatcher, List.of(tStick, tAlien, tAlien, tStick));
+    }
+    private static void judgeAdapt001Case(String aLabel, gregapi.recipes.GT6CraftingDispatcher aDispatcher, List<ItemStack> aItems) {
+        List<ItemStack> tItems = new ArrayList<>();
+        for (ItemStack s : aItems) tItems.add(s == null || s.isEmpty() ? ItemStack.EMPTY : gregapi.util.ST.amount(1, s));
+        var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(2, 2, tItems);
+        boolean tMatch = aDispatcher.matches(tGrid, gregapi.data.CS.DW);
+        ItemStack tOut = tMatch ? aDispatcher.assemble(tGrid) : ItemStack.EMPTY;
+        System.out.println("[adapt001] " + aLabel + ": matches=" + tMatch
+            + " выход=" + (tOut.isEmpty() ? "ПУСТО" : (stackId(tOut) + " ×" + tOut.getCount() + " «" + tOut.getHoverName().getString() + "»")));
+    }
+
     private static void judgeBug073() {
         int[] tElectric = {100, 110, 140};              // дрель LV, бензопила LV, дисковая пила LV
         var tDispatcher = new gregapi.recipes.GT6CraftingDispatcher();

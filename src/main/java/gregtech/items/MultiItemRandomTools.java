@@ -397,6 +397,15 @@ public class MultiItemRandomTools extends MultiItemRandomWithCompat implements I
 		
 		IL.Tool_Fire_Starter_Bark          .set(addItem(5015, "Fire Starter"                     , "(Made with Dry Tree Bark)"                   , new OreDictItemData(ANY.Wood, U), new Behavior_Lighter(5500), TC.stack(TC.IGNIS, 1), TC.stack(TC.ARBOR, 2), OD.craftingFirestarter));
 		CR.shaped(IL.Tool_Fire_Starter_Bark.get(1)  , CR.DEF_NCC_MIR, "S ", "GS", 'S', OP.stick.dat(ANY.Wood), 'G', OD.itemBarkDry);
+
+		// ADAPT-001 (адаптация, НЕ 1:1): третий вариант трута — из ванильной сухой листвы 26.1.2, которой в
+		// 1.7.10 не существовало. Заведён ТЕМ ЖЕ приёмом, что вариант Bark выше: свой предмет со своей подписью
+		// (GT6 держит по предмету на материал, чтобы тултип не врал), тот же Behavior_Lighter, тот же
+		// OD.craftingFirestarter. Шанс поджига 5000 = 50 % — как у сухой травы: листва того же класса трута
+		// (лёгкий растительный), а кора остаётся лучшей (5500). Форма 2×2 — по прямому запросу игрока
+		// (2 палки + 2 листа), у двух других вариантов ингредиентов два, поэтому там диагональ.
+		IL.Tool_Fire_Starter_Leaves        .set(addItem(5016, "Fire Starter"                     , "(Made with Dry Leaves)"                      , new OreDictItemData(ANY.Wood, U), new Behavior_Lighter(5000), TC.stack(TC.IGNIS, 1), TC.stack(TC.ARBOR, 1), TC.stack(TC.HERBA, 1), OD.craftingFirestarter));
+		CR.shaped(IL.Tool_Fire_Starter_Leaves.get(1), CR.DEF_NCC_MIR, "SL", "LS", 'S', OP.stick.dat(ANY.Wood), 'L', OD.itemLeafLitter);
 		
 		
 		IL.Pellet_Wood                     .set(addItem(5999, "Wood Pellet"                      , ""                                            , new OreDictItemData(ANY.Wood, U), TICKS_PER_SMELT, TC.stack(TC.POTENTIA, 1)));
