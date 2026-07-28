@@ -28,7 +28,6 @@ import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.AbstractRecipeCategory;
@@ -321,13 +320,24 @@ public final class GT6_JEI_RecipeCategory extends AbstractRecipeCategory<Recipe>
 			// FluidStack[]-код этого порта, gregapi/recipes/Recipe.java:373/382 и др.: пустых слотов
 			// это FluidStack[]-хранилище не EMPTY-заполняет, а оставляет настоящим Java null — в отличие
 			// от ItemStack, где F15 заменил null на EMPTY).
+			// BUG-082: жидкость подаётся ТЕМ ЖЕ приёмом, что в 1.7.10 — предметом-дисплеем GT6, а не родным
+			// ингредиентом JEI. Прежняя подача (addIngredient(FLUID_STACK, ...)) теряла ВСЁ, что несёт дисплей:
+			// замер живой витрины дал в слоте тултип из ОДНОЙ строки «fluid.steam» (сырой ключ локализации!)
+			// против 11 строк дисплея — имя, Amount, Worth, формула, Temperature, State, Density, Viscosity,
+			// описание. Заодно исчезал объём: JEI рисует FluidStack долей от чужой ёмкости, поэтому малое
+			// количество выглядело «неполным», тогда как у дисплея объём — ЧИСЛО стопки (FL.java:751).
+			// Аргументы 1:1 с оригиналом, включая ведёрный масштаб КАЖДОЙ карты (mUseBucketSizeIn/Out).
 			for (int i = 0; i < aRecipe.mFluidInputs.length && i < mMap.mInputFluidCount; i++) {
 				FluidStack tFluid = aRecipe.mFluidInputs[i];
-				if (tFluid != null) aBuilder.addInputSlot(53 - (i%3)*18, 63 - (i/3)*18).addIngredient(NeoForgeTypes.FLUID_STACK, tFluid);
+				if (tFluid == null) continue;
+				ItemStack tDisplay = gregapi.data.FL.display(tFluid, true, false, mMap.mUseBucketSizeIn);
+				if (tDisplay != null) aBuilder.addInputSlot(53 - (i%3)*18, 63 - (i/3)*18).addItemStack(tDisplay);
 			}
 			for (int i = 0; i < aRecipe.mFluidOutputs.length && i < mMap.mOutputFluidCount; i++) {
 				FluidStack tFluid = aRecipe.mFluidOutputs[i];
-				if (tFluid != null) aBuilder.addOutputSlot(107 + (i%3)*18, 63 - (i/3)*18).addIngredient(NeoForgeTypes.FLUID_STACK, tFluid);
+				if (tFluid == null) continue;
+				ItemStack tDisplay = gregapi.data.FL.display(tFluid, true, false, mMap.mUseBucketSizeOut);
+				if (tDisplay != null) aBuilder.addOutputSlot(107 + (i%3)*18, 63 - (i/3)*18).addItemStack(tDisplay);
 			}
 		} catch (Throwable e) {
 			ERR.println("JEI: RecipeMap '" + mMap.mNameInternal + "' failed to lay out a recipe, skipping its slots.");

@@ -836,6 +836,154 @@ public final class GT6ProbesClient {
 		} catch (Throwable e) {O.println("[GT6-JEICRAFT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 		O.println("========== [GT6-JEICRAFT] DONE ==========");
 	}
+	// [GT6-FLUIDJEI] BUG-082 (жидкости в рецептах: нет свойств/описания/объёма; малое количество «неполно») — снять при уборке фазы.
+	// ЗАМЕР, НЕ СУДЬЯ: диагноз в карточку не пишется, пока нет фактов (прямой урок BUG-055, где девять верных цитат
+	// дали неверный вывод). Снимается то, что РЕАЛЬНО видит игрок: раскладка строится тем же вызовом, которым её
+	// строит витрина (IRecipeManager.createRecipeLayoutDrawable), из слотов берётся отображаемый ингредиент
+	// (IRecipeSlotView.getDisplayedIngredient), а тултип — тем же рендерером, которым JEI рисует подсказку
+	// (IIngredientManager.getIngredientRenderer(...).getTooltip(...)). Рядом печатается тултип GT6-дисплея той же
+	// жидкости (FL.display) — эталон «как в панели и как в NEI 1.7.10».
+	private static boolean mFluidJeiDone = false;
+	private static int mFluidJeiWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onFluidJeiProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mFluidJeiDone || !gregapi.data.CS.probeFlag("gt6fluidjei.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.jei.GT6_JEI_Plugin.sRuntime;
+		if (tRT == null) {   // JEI грузит плагины ЛЕНИВО — по открытию GUI (ловушка M-12), поэтому открываем инвентарь
+			if (++mFluidJeiWaited == 100) {
+				gregapi.data.CS.OUT.println("[GT6-FLUIDJEI] JEI ещё не поднялся — открываю инвентарь (его стартовое событие)");
+				try {tMC.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(tMC.player));} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-FLUIDJEI] экран не открылся: " + e);}
+			}
+			if (mFluidJeiWaited % 400 == 0) gregapi.data.CS.OUT.println("[GT6-FLUIDJEI] жду runtime JEI... тиков " + mFluidJeiWaited);
+			if (mFluidJeiWaited > 24000) {mFluidJeiDone = true; gregapi.data.CS.OUT.println("[GT6-FLUIDJEI] runtime JEI не появился — ЗАМЕР НЕ СОСТОЯЛСЯ");}
+			return;
+		}
+		mFluidJeiDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-FLUIDJEI] BUG-082: что показывает витрина в слоте ЖИДКОСТИ ==========");
+		try {
+			mezz.jei.api.recipe.IRecipeManager tRM = tRT.getRecipeManager();
+			mezz.jei.api.recipe.IFocusGroup tEmpty = tRT.getJeiHelpers().getFocusFactory().getEmptyFocusGroup();
+			mezz.jei.api.runtime.IIngredientManager tIM = tRT.getIngredientManager();
+
+			// Типы категорий GT6 лежат в приватной статике плагина — берём ВСЕ, чтобы не гадать, где жидкости.
+			java.lang.reflect.Field tField = gregapi.jei.GT6_JEI_Plugin.class.getDeclaredField("sTypesByName");
+			tField.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			java.util.Map<String, mezz.jei.api.recipe.RecipeType<gregapi.recipes.Recipe>> tTypes =
+				(java.util.Map<String, mezz.jei.api.recipe.RecipeType<gregapi.recipes.Recipe>>)tField.get(null);
+			O.println("[GT6-FLUIDJEI] категорий GT6 в витрине: " + tTypes.size());
+
+			int tShown = 0, tSlotsFluid = 0, tSlotsItem = 0, tSlotsDisplay = 0, tPass = 0, tFail = 0;
+			java.util.List<String> tFails = new java.util.ArrayList<>();
+			// Берём рецепты с ЖИДКОСТЯМИ и разбираем первые несколько подробно — важны и БОЛЬШОЙ, и МАЛЫЙ объём
+			// (жалоба игрока: «которых выходит мало, показывается неполностью»).
+			for (java.util.Map.Entry<String, mezz.jei.api.recipe.RecipeType<gregapi.recipes.Recipe>> tEntry : new java.util.TreeMap<>(tTypes).entrySet()) {
+				if (tShown >= 6) break;
+				java.util.List<gregapi.recipes.Recipe> tRecipes;
+				try {tRecipes = tRM.createRecipeLookup(tEntry.getValue()).get().toList();} catch (Throwable e) {continue;}
+				for (gregapi.recipes.Recipe tRecipe : tRecipes) {
+					if (tShown >= 6) break;
+					if (!fluidJeiHasFluid(tRecipe)) continue;
+					mezz.jei.api.recipe.category.IRecipeCategory<gregapi.recipes.Recipe> tCat = tRM.getRecipeCategory(tEntry.getValue());
+					java.util.Optional<mezz.jei.api.gui.IRecipeLayoutDrawable<gregapi.recipes.Recipe>> tDraw =
+						tRM.createRecipeLayoutDrawable(tCat, tRecipe, tEmpty);
+					if (tDraw.isEmpty()) continue;
+					tShown++;
+					// Сколько жидкостей несут ДАННЫЕ рецепта — эталон для сверки с тем, что дошло до раскладки.
+					int tDataFluids = 0;
+					if (tRecipe.mFluidInputs  != null) for (net.neoforged.neoforge.fluids.FluidStack f : tRecipe.mFluidInputs ) if (f != null) tDataFluids++;
+					if (tRecipe.mFluidOutputs != null) for (net.neoforged.neoforge.fluids.FluidStack f : tRecipe.mFluidOutputs) if (f != null) tDataFluids++;
+					O.println("[GT6-FLUIDJEI] --- категория '" + tEntry.getKey() + "' рецепт #" + tShown + " · жидкостей в ДАННЫХ: " + tDataFluids + " ---");
+					int tFluidSlotsHere = 0;
+					for (mezz.jei.api.gui.ingredient.IRecipeSlotView tSlot : tDraw.get().getRecipeSlotsView().getSlotViews()) {
+						java.util.Optional<mezz.jei.api.ingredients.ITypedIngredient<?>> tOpt = tSlot.getDisplayedIngredient();
+						if (tOpt.isEmpty()) continue;
+						mezz.jei.api.ingredients.ITypedIngredient<?> tIng = tOpt.get();
+						// Тип определяем по КЛАССУ ЗНАЧЕНИЯ, а не по toString ингредиент-типа: первый прогон
+						// принял все жидкостные слоты за предметные, потому что в toString типа слова «fluid» нет.
+						Object tValue = tIng.getIngredient();
+						boolean tIsFluid = tValue instanceof net.neoforged.neoforge.fluids.FluidStack;
+						if (tIsFluid) {tSlotsFluid++; tFluidSlotsHere++;} else tSlotsItem++;
+						if (!tIsFluid) continue;   // предметные слоты не тема этого замера
+						O.println("[GT6-FLUIDJEI]   слот " + tSlot.getRole() + " | класс значения: " + tValue.getClass().getName());
+						O.println("[GT6-FLUIDJEI]   значение: " + tValue);
+						fluidJeiPrintTooltip(O, tIM, tValue, "    тултип В РЕЦЕПТЕ");
+					}
+					// РАЗДЕЛЕНИЕ ДВУХ ВЕРСИЙ: слот не создан вовсе (данные до раскладки не дошли) ИЛИ создан, но беден.
+					if (tFluidSlotsHere == 0 && tDataFluids > 0) O.println("[GT6-FLUIDJEI]   (сырых FluidStack-слотов нет — жидкости должны идти дисплеями, проверяется ниже)");
+					// СУДЬЯ (после фикса BUG-082): жидкость обязана прийти ДИСПЛЕЕМ GT6 со всем, что он несёт.
+					int tDisplaysHere = 0;
+					for (mezz.jei.api.gui.ingredient.IRecipeSlotView tSlot : tDraw.get().getRecipeSlotsView().getSlotViews()) {
+						java.util.Optional<mezz.jei.api.ingredients.ITypedIngredient<?>> tOpt = tSlot.getDisplayedIngredient();
+						if (tOpt.isEmpty()) continue;
+						Object tValue = tOpt.get().getIngredient();
+						if (!(tValue instanceof net.minecraft.world.item.ItemStack tStack)) continue;
+						if (!(tStack.getItem() instanceof gregapi.item.ItemFluidDisplay)) continue;
+						tDisplaysHere++; tSlotsDisplay++;
+						java.util.List<net.minecraft.network.chat.Component> tLines;
+						try {
+							mezz.jei.api.ingredients.IIngredientRenderer<net.minecraft.world.item.ItemStack> tR = tIM.getIngredientRenderer(tStack);
+							tLines = tR.getTooltip(tStack, net.minecraft.world.item.TooltipFlag.NORMAL);
+						} catch (Throwable e) {tLines = null;}
+						String tName = tLines == null || tLines.isEmpty() ? "" : tLines.get(0).getString();
+						boolean tHasAmount = false;
+						if (tLines != null) for (net.minecraft.network.chat.Component c : tLines) if (c.getString().contains("Amount:")) tHasAmount = true;
+						boolean tRawKey = tName.startsWith("fluid.") || tName.startsWith("block.") || tName.startsWith("item.");
+						// Судится ТО, на что жаловался игрок: имя человеческое, объём есть, описание не пустое.
+						boolean tOk = !tRawKey && tHasAmount && tLines != null && tLines.size() >= 3;
+						if (tOk) tPass++; else {tFail++; if (tFails.size() < 10) tFails.add(tEntry.getKey() + " слот " + tSlot.getRole() + " имя='" + tName + "' Amount=" + tHasAmount + " строк=" + (tLines == null ? "null" : tLines.size()));}
+						O.println("[GT6-FLUIDJEI]   слот " + tSlot.getRole() + " ДИСПЛЕЙ стек=" + tStack.getCount() + " | имя='" + tName + "' | Amount=" + tHasAmount + " | строк тултипа=" + (tLines == null ? "null" : tLines.size()) + " | " + (tOk ? "PASS" : "FAIL"));
+						if (tDisplaysHere == 1 && tLines != null) for (int i = 0; i < tLines.size(); i++) O.println("[GT6-FLUIDJEI]      [" + i + "] " + tLines.get(i).getString());
+					}
+				}
+			}
+			O.println("[GT6-FLUIDJEI] слотов разобрано: сырых FluidStack " + tSlotsFluid + ", ДИСПЛЕЕВ GT6 " + tSlotsDisplay + ", прочих предметных " + (tSlotsItem - tSlotsDisplay));
+			// НЕГАТИВНЫЙ КОНТРОЛЬ: судья обязан уметь дать FAIL. Подсовываем сырой FluidStack — то, что лежало
+			// в слоте ДО фикса: у него имя = ключ локализации и никакого Amount.
+			try {
+				net.neoforged.neoforge.fluids.FluidStack tRaw = gregapi.data.FL.Water.make(144);
+				mezz.jei.api.ingredients.IIngredientRenderer<net.neoforged.neoforge.fluids.FluidStack> tR = tIM.getIngredientRenderer(tRaw);
+				java.util.List<net.minecraft.network.chat.Component> tLines = tR.getTooltip(tRaw, net.minecraft.world.item.TooltipFlag.NORMAL);
+				boolean tPoor = tLines == null || tLines.size() < 3;
+				O.println("[GT6-FLUIDJEI] НЕГАТИВНЫЙ КОНТРОЛЬ (сырой FluidStack, как было до фикса): строк " + (tLines == null ? "null" : tLines.size())
+					+ " | судья обязан считать это бедным: " + (tPoor ? "PASS" : "FAIL — критерий не отличает"));
+				if (tPoor) tPass++; else tFail++;
+			} catch (Throwable e) {O.println("[GT6-FLUIDJEI] негативный контроль не снят: " + e); tFail++;}
+			// ПРЕДПОСЫЛКА: если дисплеев не нашлось вовсе — судить нечего, «0 FAIL» было бы ложным зелёным.
+			if (tSlotsDisplay == 0) {O.println("[GT6-FLUIDJEI] ⛔ ДИСПЛЕЕВ В СЛОТАХ НЕТ — судья не отработал, вердикт недействителен"); tFail++;}
+			for (String s : tFails) O.println("[GT6-FLUIDJEI]   расхождение: " + s);
+			O.println("[GT6-FLUIDJEI] ИТОГ: PASS=" + tPass + " FAIL=" + tFail);
+
+			// ЭТАЛОН: тултип GT6-дисплея той же жидкости — то, что показывает панель и показывал NEI 1.7.10.
+			for (gregapi.data.FL tFL : new gregapi.data.FL[]{gregapi.data.FL.Water, gregapi.data.FL.Lava}) try {
+				net.minecraft.world.item.ItemStack tDisplay = gregapi.data.FL.display(tFL.make(144), true, true);
+				O.println("[GT6-FLUIDJEI] ЭТАЛОН GT6-дисплей " + tFL + " (144 mB): стек=" + tDisplay);
+				fluidJeiPrintTooltip(O, tIM, tDisplay, "    тултип ДИСПЛЕЯ");
+			} catch (Throwable e) {O.println("[GT6-FLUIDJEI] эталон " + tFL + " не снят: " + e);}
+		} catch (Throwable e) {O.println("[GT6-FLUIDJEI] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+		O.println("========== [GT6-FLUIDJEI] DONE ==========");
+	}
+	/** Есть ли в рецепте жидкость вообще (иначе слот разбирать нечего). */
+	private static boolean fluidJeiHasFluid(gregapi.recipes.Recipe aRecipe) {
+		if (aRecipe == null) return false;
+		if (aRecipe.mFluidInputs  != null) for (net.neoforged.neoforge.fluids.FluidStack f : aRecipe.mFluidInputs ) if (f != null) return true;
+		if (aRecipe.mFluidOutputs != null) for (net.neoforged.neoforge.fluids.FluidStack f : aRecipe.mFluidOutputs) if (f != null) return true;
+		return false;
+	}
+	/** Тултип ТЕМ ЖЕ путём, которым его рисует витрина: рендерер ингредиента из менеджера JEI. */
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static void fluidJeiPrintTooltip(java.io.PrintStream aOut, mezz.jei.api.runtime.IIngredientManager aIM, Object aIngredient, String aLabel) {
+		try {
+			mezz.jei.api.ingredients.IIngredientRenderer tRenderer = aIM.getIngredientRenderer(aIngredient);
+			java.util.List<net.minecraft.network.chat.Component> tLines = tRenderer.getTooltip(aIngredient, net.minecraft.world.item.TooltipFlag.NORMAL);
+			aOut.println("[GT6-FLUIDJEI] " + aLabel + ": строк " + (tLines == null ? "null" : String.valueOf(tLines.size())));
+			if (tLines != null) for (int i = 0; i < tLines.size(); i++) aOut.println("[GT6-FLUIDJEI]      [" + i + "] " + tLines.get(i).getString());
+		} catch (Throwable e) {aOut.println("[GT6-FLUIDJEI] " + aLabel + ": НЕ СНЯТ (" + e + ")");}
+	}
+
 	// [GT6-ITEMFACINGPROBE] BUG-078 «остаток централизации»: судья ИДЕНТИЧНОСТИ item-facing — снять при уборке фазы.
 	// Гейт §2.1 (-Pgt6probes + run/gt6itemfacingprobe.flag). Судится НЕ картинка (визуальных судей не строим), а ФАКТ:
 	// какая грань реально стоит в detached-TE, рождённом ТЕМ ЖЕ вызовом, которым его рождает движок. Путей рождения два,

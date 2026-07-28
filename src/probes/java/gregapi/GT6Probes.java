@@ -244,6 +244,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6harvestprobe.flag")) gt6HarvestProbeTick(aEvent.getServer());
 	// [GT6-DEMO] демо-площадка приёмки игроком (не судья — строит мир) — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6demo.flag")) gt6DemoTick(aEvent.getServer());
+	// [GT6-FLUIDYARD] BUG-082: чистый полигон жидкостей (не судья — строит мир) — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6fluidyard.flag")) gt6FluidYardTick(aEvent.getServer());
 	// [GT6-TOOLMATRIX] BUG-071: матрица «блок × инструмент» — право добычи и скорость по КАЖДОМУ типу — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6toolmatrixprobe.flag")) gt6ToolMatrixTick(aEvent.getServer());
 	// [GT6-TOOLYARD] BUG-071: ПОЛИГОН для ЖИВОЙ приёмки игроком (не судья — строит мир и выдаёт инструменты) — снять при уборке фазы
@@ -6294,6 +6296,111 @@ public final class GT6Probes {
 		O.println("[" + UVP_M + "] замер передан клиенту: цель " + sUVPTargetPos + " (модель+квады живут только на клиенте)");
 	}
 
+	// ========== [GT6-FLUIDYARD] BUG-082: ОДНА МАШИНА С ЧЕТЫРЬМЯ ЖИДКОСТЯМИ — снять при уборке фазы ==========
+	// Не судья: даёт пользователю ровно два способа контроля — (1) открыть интерфейс машины и увидеть
+	// жидкости внутри неё, (2) взять машину в руку и посмотреть её рецепты в JEI.
+	// Ставится ОДНА машина, внутри неё ЧЕТЫРЕ РАЗНЫЕ жидкости в объёмах 235 / 1256 / 1000 / 8000 mB
+	// (неполные вёдра — это и есть предмет проверки). Ничего больше на площадке не строится.
+	private static final String FY_M = "GT6-FLUIDYARD";
+	private static final int FY_X = 1000, FY_Y = 70, FY_Z = 1000;   // фиксированное место, чистая площадка
+	/** Четыре жидкости и их объёмы: неполное ведро, полтора ведра с хвостом, ровно ведро, восемь вёдер. */
+	private static final long[] FY_AMOUNTS = {235, 1256, 1000, 8000};
+	private static int sFYTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sFYSeq;
+
+	public static void gt6FluidYardTick(net.minecraft.server.MinecraftServer aServer) {
+		sFYTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		final ServerPlayer tPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sFYSeq == null) sFYSeq = new gregapi.probe.GT6ProbeStand.Seq(FY_M)
+			.at(200, () -> gt6FluidYardBuild(tPlayer))
+			.at(260, () -> gt6FluidYardFinish(tPlayer));
+		sFYSeq.tick(sFYTick);
+	}
+
+	private static void gt6FluidYardBuild(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		BlockPos tO = new BlockPos(FY_X, FY_Y, FY_Z);
+		O.println("========== [" + FY_M + "] BUG-082: полигон жидкостей, центр " + tO + " ==========");
+
+		// ПОЛНАЯ ОЧИСТКА объёма: площадка каждый раз строится с нуля в одном и том же месте.
+		for (int x = -8; x <= 24; x++) for (int z = -8; z <= 24; z++) {
+			for (int y = 0; y <= 12; y++) tLevel.setBlock(tO.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+			tLevel.setBlock(tO.offset(x, -1, z), Blocks.STONE.defaultBlockState(), 2);
+		}
+
+		gregapi.block.multitileentity.MultiTileEntityRegistry tReg = gregapi.block.multitileentity.MultiTileEntityRegistry.getRegistry("gt.multitileentity");
+
+		// Нужна ОДНА машина, внутрь которой влезут ЧЕТЫРЕ разные жидкости, — значит у неё должно быть
+		// не меньше четырёх внутренних ёмкостей (вход + выход по карте рецептов). Ищем такую с наибольшим
+		// числом ёмкостей; мультиблоки исключены (они наследуют тот же класс, но требуют структуры).
+		short tBestID = -1; int tBestTanks = 0; String tBestName = "", tBestMap = "";
+		for (Short tID : new java.util.TreeSet<>(tReg.mRegistry.keySet())) {
+			net.minecraft.world.item.ItemStack tStack = tReg.getItem(tID);
+			if (tStack == null || tStack.isEmpty() || gregapi.util.ST.hidden(tStack)) continue;
+			BlockEntity tProbe = tReg.getNewTileEntity(tStack);
+			if (!(tProbe instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tBM)) continue;
+			if (tProbe instanceof gregapi.tileentity.multiblocks.TileEntityBase10MultiBlockMachine) continue;
+			if (tBM.mRecipes == null) continue;
+			int tTanks = tBM.mRecipes.mInputFluidCount + tBM.mRecipes.mOutputFluidCount;
+			if (tTanks <= tBestTanks) continue;
+			tBestID = tID; tBestTanks = tTanks; tBestName = tStack.getHoverName().getString(); tBestMap = tBM.mRecipes.mNameInternal;
+			if (tBestTanks >= FY_AMOUNTS.length) break;   // четырёх достаточно, дальше не ищем
+		}
+		if (tBestID < 0) {O.println("[" + FY_M + "] ⛔ машина с жидкостными ёмкостями не найдена"); return;}
+		O.println("[" + FY_M + "] выбрана машина: " + tBestName + " [карта " + tBestMap + ", ёмкостей " + tBestTanks + "]");
+
+		BlockEntity tAt = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.below(),
+			net.minecraft.core.Direction.UP, tReg.getItem(tBestID), BlockEntity.class, FY_M, tBestName);
+		if (!(tAt instanceof gregapi.tileentity.machines.MultiTileEntityBasicMachine tLive)) {
+			O.println("[" + FY_M + "] ⛔ машина не встала"); return;
+		}
+		sFYMachinePos = tAt.getBlockPos();
+		sFYMachineItem = tReg.getItem(tBestID);
+
+		// ЧЕТЫРЕ РАЗНЫЕ жидкости в объёмах 235 / 1256 / 1000 / 8000 mB. Ёмкости перебираются подряд:
+		// сначала входные, потом выходные — то есть жидкости лежат внутри ОДНОЙ машины.
+		gregapi.data.FL[] tFluids = {gregapi.data.FL.Water, gregapi.data.FL.Lava, gregapi.data.FL.DistW, gregapi.data.FL.Steam};
+		java.util.List<gregapi.fluid.FluidTankGT> tTanks = new java.util.ArrayList<>();
+		if (tLive.mTanksInput  != null) for (gregapi.fluid.FluidTankGT t : tLive.mTanksInput ) if (t != null) tTanks.add(t);
+		if (tLive.mTanksOutput != null) for (gregapi.fluid.FluidTankGT t : tLive.mTanksOutput) if (t != null) tTanks.add(t);
+		StringBuilder tFilled = new StringBuilder();
+		int tPoured = 0;
+		for (int i = 0; i < tTanks.size() && i < FY_AMOUNTS.length; i++) {
+			// ёмкость обязана вместить объём, иначе часть жидкости не влезет и замер будет о другом
+			tTanks.get(i).setCapacity(Math.max(FY_AMOUNTS[i], 16000));
+			tTanks.get(i).setFluid(tFluids[i].make(FY_AMOUNTS[i]));
+			tFilled.append(tFilled.length() == 0 ? "" : ", ").append(tFluids[i]).append(' ').append(FY_AMOUNTS[i]).append(" mB");
+			tPoured++;
+		}
+		tLive.setChanged();
+		tLevel.sendBlockUpdated(sFYMachinePos, tLevel.getBlockState(sFYMachinePos), tLevel.getBlockState(sFYMachinePos), 3);
+		O.println("[" + FY_M + "] машина @ " + sFYMachinePos + "; жидкостей внутри " + tPoured + "/" + FY_AMOUNTS.length + ": " + tFilled);
+		if (tPoured < FY_AMOUNTS.length) O.println("[" + FY_M + "] ⛔ ёмкостей меньше четырёх (" + tTanks.size() + ") — влезло " + tPoured);
+	}
+	private static BlockPos sFYMachinePos;
+	private static net.minecraft.world.item.ItemStack sFYMachineItem;
+
+	private static void gt6FluidYardFinish(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		if (sFYMachinePos == null) {O.println("[" + FY_M + "] машины нет — завершаю"); sFYSeq.done(); return;}
+		// Та же машина в руку: второй способ контроля — её рецепты в JEI (клавиша R).
+		if (sFYMachineItem != null && !sFYMachineItem.isEmpty()) aPlayer.getInventory().add(sFYMachineItem.copy());
+		// Встать ВПЛОТНУЮ перед машиной и смотреть на неё: 2 блока южнее, взгляд на север.
+		aPlayer.teleportTo(sFYMachinePos.getX() + 0.5, sFYMachinePos.getY(), sFYMachinePos.getZ() + 2.5);
+		aPlayer.snapTo(sFYMachinePos.getX() + 0.5, sFYMachinePos.getY(), sFYMachinePos.getZ() + 2.5, 180.0F, 0.0F);
+		O.println("[" + FY_M + "] стоите перед машиной @ " + sFYMachinePos + ", она же в инвентаре");
+		O.println("[" + FY_M + "] контроль 1: ПКМ по машине → интерфейс → жидкости внутри (235 / 1256 / 1000 / 8000 mB)");
+		O.println("[" + FY_M + "] контроль 2: машина в руку → JEI → R → навести на слот жидкости в рецепте");
+		try {
+			net.minecraft.server.MinecraftServer tServer = aPlayer.level().getServer();
+			tServer.getPlayerList().saveAll();
+			O.println("[" + FY_M + "] СОХРАНЕНИЕ: " + (tServer.saveEverything(true, true, true) ? "OK" : "НЕ УДАЛОСЬ"));
+		} catch (Throwable e) {O.println("[" + FY_M + "] сохранение упало: " + e);}
+		sFYSeq.done();
+	}
+
 	// ========== [GT6-DEMO] ДЕМО-ПЛОЩАДКА ДЛЯ ПРИЁМКИ ИГРОКОМ — снять при уборке фазы ==========
 	// Не судья: ничего не проверяет, а СТРОИТ мир, в котором игрок за пару минут глазами оценит все фиксы
 	// сессии. Каждый сектор — отдельный пункт приёмки; координаты печатаются в лог, набор предметов кладётся
@@ -6456,10 +6563,40 @@ public final class GT6Probes {
 		gregapi.probe.GT6ProbeStand.placeBlock(tLevel, aPlayer, tO.offset(-2, -1, 12), net.minecraft.core.Direction.UP, tVanilla, DEMO_M, "ванильный сундук (эталон)");
 		O.println("[" + DEMO_M + "] 7) ГРАНЬ ITEM-ФОРМЫ (BUG-078) @ z=" + (tO.getZ() + 12) + "/" + (tO.getZ() + 15) + "/" + (tO.getZ() + 18)
 			+ " — ванильный сундук-эталон @ " + tO.offset(-2, 0, 12));
+
+		// ── СЕКТОР 8 (z=21): BUG-082 — ЖИДКОСТИ В РЕЦЕПТАХ. Машины с жидкостными рецептами: миксер и
+		// электролизёр. Оценка идёт в JEI (клавиша R по машине), поэтому структура мультиблока не нужна —
+		// нужен сам предмет в руке и блок в мире. Рядом бочка с водой: сверить показ жидкости в мире и в рецепте.
+		int tMachines = 0;
+		StringBuilder tMachineNames = new StringBuilder();
+		for (Short tID : new java.util.TreeSet<>(tReg.mRegistry.keySet())) {
+			if (tMachines >= 2) break;
+			net.minecraft.world.item.ItemStack tStack = tReg.getItem(tID);
+			if (tStack == null || tStack.isEmpty()) continue;
+			BlockEntity tProbe = tReg.getNewTileEntity(tStack);
+			boolean tWanted = tProbe instanceof gregtech.tileentity.multiblocks.MultiTileEntityMixer
+			               || tProbe instanceof gregtech.tileentity.multiblocks.MultiTileEntityElectrolyzer;
+			if (!tWanted) continue;
+			BlockEntity tAt = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(tMachines * 3, -1, 21),
+				net.minecraft.core.Direction.UP, tReg.getItem(tID), BlockEntity.class, DEMO_M, "машина#" + tID);
+			if (tAt == null) continue;
+			sDemoFluidKit.add(tReg.getItem(tID, 2));
+			tMachineNames.append(tMachineNames.length() == 0 ? "" : ", ").append(tStack.getHoverName().getString())
+				.append(" (").append(tProbe.getClass().getSimpleName()).append(", id=").append(tID).append(')');
+			tMachines++;
+		}
+		// Бочка с водой рядом — жидкость, видимая в мире, для сверки с тем, что показывает рецепт.
+		BlockEntity tFluidBarrel = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tO.offset(8, -1, 21),
+			net.minecraft.core.Direction.UP, tReg.getItem(DEMO_BARREL_ID), BlockEntity.class, DEMO_M, "бочка воды");
+		if (tFluidBarrel instanceof gregapi.tileentity.base.TileEntityBase01Root tRoot2) tRoot2.fill((net.minecraft.core.Direction)null, gregapi.data.FL.Water.make(16000), T);
+		O.println("[" + DEMO_M + "] 8) ЖИДКОСТИ В РЕЦЕПТАХ (BUG-082) @ z=" + (tO.getZ() + 21) + ", машин " + tMachines + "/2: " + tMachineNames);
+		O.println("[" + DEMO_M + "]    как смотреть: взять машину в руки → JEI → клавиша R (рецепты). В слоте жидкости обязаны быть имя, Amount, температура, состояние");
 	}
 
 	/** Ряд сектора 7: N представителей семьи ставятся в мир путём игрока, те же предметы копятся для выдачи в руки. */
 	private static final java.util.List<net.minecraft.world.item.ItemStack> sDemoFacingKit = new java.util.ArrayList<>();
+	/** Сектор 8 (BUG-082): машины с жидкостными рецептами — их предметы выдаются в руки для просмотра в JEI. */
+	private static final java.util.List<net.minecraft.world.item.ItemStack> sDemoFluidKit = new java.util.ArrayList<>();
 	private static void gt6DemoFacingRow(ServerLevel aLevel, ServerPlayer aPlayer, gregapi.block.multitileentity.MultiTileEntityRegistry aReg,
 			BlockPos aOrigin, int aZ, String aTitle, int aWant, boolean aDistinctByClass, java.util.function.Predicate<BlockEntity> aFilter) {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
@@ -6519,6 +6656,10 @@ public final class GT6Probes {
 		// переживает только корректный выход; сундук лежит в чанке — он останется в мире при любом исходе.
 		int tKitToHand = 0;
 		for (net.minecraft.world.item.ItemStack tStack : sDemoFacingKit) if (aPlayer.getInventory().add(tStack.copy())) tKitToHand++;
+		// Сектор 8 (BUG-082): машины с жидкостными рецептами — в руки, чтобы открыть их рецепты в JEI.
+		int tFluidToHand = 0;
+		for (net.minecraft.world.item.ItemStack tStack : sDemoFluidKit) if (aPlayer.getInventory().add(tStack.copy())) tFluidToHand++;
+		O.println("[" + DEMO_M + "] 8) МАШИНЫ BUG-082 в инвентарь: " + tFluidToHand);
 		BlockPos tStorePos = sDemoOrigin.offset(-2, 0, 15);
 		aPlayer.level().setBlock(tStorePos, Blocks.CHEST.defaultBlockState(), 3);
 		int tKitToChest = 0;
