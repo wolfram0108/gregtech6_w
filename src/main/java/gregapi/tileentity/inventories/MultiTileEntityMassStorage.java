@@ -749,17 +749,28 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			// BUG-015 v4: rotZ(180) из 1.7.10 компенсировал y-вниз-ориентацию GUI-рендера (renderItemIntoGUI рисовал
 			// текстуру сверху-вниз); neo-модель уже y-вверх — дословный перенос переворачивал иконку вверх ногами.
 			aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(COMPASS_FROM_SIDE[tFacing] * 90));
-			// BUG-075: витрина показывает GUI-форму содержимого, а GUI-разворот БЛОКА в двух движках разный:
-			//   1.7.10 RenderItem.renderItemIntoGUI:37-38 — glRotatef(210, X) + glRotatef( 45, Y)
-			//   neo     assets/minecraft/models/block/block.json, display.gui — rotation [30, 225, 0]
-			// разница по Y ровно 225-45 = 180°, поэтому у блоков витрина смотрела обратной стороной
-			// (репорт игрока: «предметы верно, а значки блоков перевёрнуты на 180»).
-			// Плоские предметы (item/generated) GUI-разворота по Y не имеют — их этот поворот отзеркалил бы,
-			// поэтому компенсация только для блочных моделей. Признак блочности берётся у самой модели:
-			// usesBlockLight = gui_light "side" (ModelRenderProperties:16 — getTopGuiLight().lightLikeBlock()),
-			// а не по instanceof BlockItem: у части блоков (факел, рельсы) модель плоская, и им поворот не нужен.
-			if (aState.mItem.usesBlockLight()) aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180));
-			aPoseStack.scale(0.5f, 0.5f, 0.0001f);
+			// BUG-075. Витрина показывает GUI-ФОРМУ содержимого, а её оба движка строят по-разному, причём
+			// ПО-РАЗНОМУ ДЛЯ БЛОКА И ДЛЯ ПЛОСКОГО ПРЕДМЕТА. Факты 1.7.10 (внешняя цепочка витрины :723-729 и
+			// RenderItem.renderItemIntoGUI):
+			//   внешняя витрина        : glRotatef(180,Z) · glRotatef(compass*90,Y) · glScalef(1/32, 1/32, -0.0001)
+			//   ветка 3D-блока (:36-38,49): glScalef(1,1,-1) · glRotatef(210,X) · glRotatef(45,Y) · glRotatef(-90,Y)
+			//   ветка спрайта  (renderIcon): ни зеркала, ни поворотов — иконка 16x16 в экранной плоскости
+			// Отсюда в оригинале: у БЛОКА внешнее зеркало по Z гасилось внутренним (два минуса), у ПЛОСКОГО
+			// предмета внутреннего зеркала не было и он оставался ЗЕРКАЛЬНЫМ по Z.
+			//
+			// Порт потерял знак: стояло +0.0001 для обоих. У блоков это случайно совпало с оригиналом, у
+			// предметов дало расхождение — репорт игрока 2026-07-28: «предметы отражены».
+			// Знак восстановлен 1:1 и ровно там, где он был в оригинале, — только для плоских моделей.
+			//
+			// Признак блочности берётся у самой модели: usesBlockLight = gui_light "side"
+			// (ModelRenderProperties:16 — getTopGuiLight().lightLikeBlock()), а НЕ instanceof BlockItem:
+			// у факела, рельсов и растений модель плоская, и вести себя они должны как предметы.
+			boolean tBlockModel = aState.mItem.usesBlockLight();
+			// Доворот блочной модели: neo-трансформа block.json display.gui даёт [30, 225, 0], цепочка 1.7.10 —
+			// другой набор углов (см. выше). Величина ЭМПИРИЧЕСКАЯ (репорт игрока «блоки перевёрнуты на 180»),
+			// как и соседние компенсаторы витрины; калибруется ОДНИМ числом MASSSTORAGE_DISPLAY_BLOCK_YAW.
+			if (tBlockModel && MASSSTORAGE_DISPLAY_BLOCK_YAW != 0) aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(MASSSTORAGE_DISPLAY_BLOCK_YAW));
+			aPoseStack.scale(0.5f, 0.5f, tBlockModel ? 0.0001f : -0.0001f);
 			aState.mItem.submit(aPoseStack, aNodes, 0xF000F0 /* fullbright 240/240, ориг setLightmapTextureCoords */, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, 0);
 			aPoseStack.popPose();
 		}

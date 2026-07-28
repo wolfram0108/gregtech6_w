@@ -658,7 +658,14 @@ public class CS {
 	/** BUG-038: то же для item-формы MASS STORAGE (getTexture2 через aSide==mFacing + BER-дисплей предмета; формула
 	 *  поворота COMPASS_FROM_SIDE*90 БЕЗ -180 сундука → отдельное число). Мировая сторона 0..5. */
 	public static byte                      ITEM_MASSSTORAGE_FACING = 2;
-	
+	/** BUG-075: доворот БЛОЧНОЙ модели в витрине MassStorage (градусы вокруг Y). GUI-форму блока движки строят
+	 *  разными цепочками: neo — display.gui блока [30, 225, 0]; 1.7.10 — внешняя цепочка витрины
+	 *  (MultiTileEntityMassStorage:723-729) плюс ветка 3D-блока в RenderItem.renderItemIntoGUI:36-38,49.
+	 *  Величина ЭМПИРИЧЕСКАЯ (репорт игрока «блоки перевёрнуты на 180»), как ITEM_MACHINE_FACING и соседи;
+	 *  калибруется одним числом. 0 — доворот выключен. Плоских предметов НЕ касается: у них своя ветка,
+	 *  им восстановлено зеркало по Z, как в оригинале. */
+	public static float                     MASSSTORAGE_DISPLAY_BLOCK_YAW = 180;
+
 	/** Converts Sides to a Top-Bottom-Side Value, this limits the Range to a Number between [0 and 2] */
 	public static final byte[]              FACES_TBS = { 0, 1, 2, 2, 2, 2, 2, 2};
 	/** Side->Opposite Mappings. */
