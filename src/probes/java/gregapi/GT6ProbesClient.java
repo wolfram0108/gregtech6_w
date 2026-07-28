@@ -646,6 +646,50 @@ public final class GT6ProbesClient {
 		O.println("========== [GT6-RECIPEGUI] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
 	}
 
+	// ================= [GT6-RECIPEGUI-B] BUG-056 ЧАСТЬ Б: кнопка в GUI интерфейсной машины =================
+	// В 1.7.10 игрок открывал машину и одним кликом получал ВЕСЬ список её рецептов — кнопку рисовал мод NEI
+	// поверх любого GuiContainer, GT6 лишь отдавал ему имя категории (ContainerClient.mNEI). В 26.1.2 JEI
+	// кнопку в рамке GUI НЕ рисует, то есть функция была утрачена; теперь её выполняет сам мод
+	// (ContainerClient.addRecipeButton). Судится РЕЗУЛЬТАТ для игрока, а не картинка: открыт ли экран машины,
+	// ЕСТЬ ли на нём кнопка, и ПЕРЕКЛЮЧАЕТ ли нажатие на экран рецептов JEI.
+	// Серверная половина (GT6Probes.gt6RecipeGuiServerTick) ставит машину и жмёт по ней ПКМ.
+	private static boolean mRecipeGuiBDone = false;
+	private static int mRecipeGuiBWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onRecipeGuiBProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mRecipeGuiBDone || !gregapi.data.CS.probeFlag("gt6recipegui.flag")) return;
+		net.minecraft.client.Minecraft tMC = net.minecraft.client.Minecraft.getInstance();
+		if (tMC == null) return;
+		// ждём, пока СЕРВЕР откроет игроку GUI машины (ПКМ на 40-м серверном тике)
+		if (!(tMC.screen instanceof gregapi.gui.ContainerClient tScreen)) {
+			if (++mRecipeGuiBWaited > 24000) {mRecipeGuiBDone = true; gregapi.data.CS.OUT.println("[GT6-RECIPEGUI-B] GUI машины так и не открылся — судья НЕ отработал");}
+			return;
+		}
+		mRecipeGuiBDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		int tPass = 0, tFail = 0;
+		O.println("========== [GT6-RECIPEGUI-B] кнопка «показать рецепты» в GUI машины ==========");
+		O.println("[GT6-RECIPEGUI-B] открыт экран: " + tScreen.getClass().getSimpleName() + " · mNEI='" + tScreen.mNEI + "'");
+		boolean tHasName = tScreen.mNEI != null && !tScreen.mNEI.isEmpty();
+		O.println("[GT6-RECIPEGUI-B] у экрана есть имя категории => " + (tHasName ? "PASS" : "FAIL"));
+		if (tHasName) tPass++; else tFail++;
+		// РЕАЛЬНЫЙ ЖЕСТ ИГРОКА 1.7.10: клик мышью по СТРЕЛКЕ ПРОГРЕССА (её область — leftPos+78, topPos+24,
+		// поле 20×18, ровно куда её рисует ContainerClientBasicMachine.drawGuiContainerBackgroundLayer2).
+		// 26.1.2: mouseClicked(MouseButtonEvent, boolean) — событие несёт координаты и кнопку (0 = ЛКМ).
+		double tClickX = tScreen.getLeft() + 78 + 10, tClickY = tScreen.getTop() + 24 + 9;
+		O.println("[GT6-RECIPEGUI-B] кликаю по стрелке прогресса @(" + (int)tClickX + "," + (int)tClickY + ")");
+		try {
+			tScreen.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(tClickX, tClickY,
+				new net.minecraft.client.input.MouseButtonInfo(0, 0)), false);
+		} catch (Throwable e) {O.println("[GT6-RECIPEGUI-B] клик по прогрессу упал: " + e);}
+		net.minecraft.client.gui.screens.Screen tAfter = tMC.screen;
+		boolean tSwitched = tAfter != null && !(tAfter instanceof gregapi.gui.ContainerClient);
+		O.println("[GT6-RECIPEGUI-B] после клика по прогрессу экран = " + (tAfter == null ? "null" : tAfter.getClass().getSimpleName())
+			+ " (ушли из GUI машины = " + tSwitched + ") => " + (tSwitched ? "PASS" : "FAIL"));
+		if (tSwitched) tPass++; else tFail++;
+		O.println("========== [GT6-RECIPEGUI-B] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
+	}
+
 	// ================= [GT6-JUICEJEI] BUG-055 хвост: видит ли ЖИВОЙ JEI категории Соковыжималки и Пресса =================
 	// Спрашиваем не код регистрации, а саму витрину: пересоздаём тот же RecipeType, что строит
 	// GT6_JEI_Plugin:124 (RecipeType.create(MD.GT.mID, map.mNameNEI, Recipe.class)), и просим у JEI список рецептов.

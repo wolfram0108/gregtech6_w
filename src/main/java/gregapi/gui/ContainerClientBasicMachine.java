@@ -41,6 +41,26 @@ public class ContainerClientBasicMachine extends ContainerClient {
 	protected void drawGuiContainerForegroundLayer(int par1, int par2) {
 		drawString(fontRendererObj, mContainer.mTileEntity.hasCustomInventoryNameGUI()?mContainer.mTileEntity.getInventoryNameGUI():LH.get(mRecipes.mNameInternal), 8,  4, 4210752);
 	}
+
+	/** Область стрелки прогресса в координатах экрана — ровно та, куда её рисует
+	 *  {@link #drawGuiContainerBackgroundLayer2} (все ветки switch стартуют с {@code x+78, y+24},
+	 *  поле 20×18). Вынесена отдельно, чтобы отрисовка и зона клика не разъехались. */
+	protected boolean isOverProgressBar(double aMouseX, double aMouseY) {
+		int tX = leftPos + 78, tY = topPos + 24;
+		return aMouseX >= tX && aMouseX < tX + 20 && aMouseY >= tY && aMouseY < tY + 18;
+	}
+
+	/**
+	 * BUG-056 часть Б: клик по СТРЕЛКЕ ПРОГРЕССА открывает список рецептов этой машины — ровно тот жест,
+	 * которым это делалось в 1.7.10 (там его обрабатывал оверлей мода NEI, см.
+	 * {@link ContainerClient#openRecipesForThisGUI}). Клик обрабатывается только если попали в стрелку и
+	 * экран рецептов реально открылся; иначе управление уходит дальше по штатной цепочке.
+	 */
+	@Override
+	public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent aEvent, boolean aDoubleClick) {
+		if (isOverProgressBar(aEvent.x(), aEvent.y()) && openRecipesForThisGUI()) return true;
+		return super.mouseClicked(aEvent, aDoubleClick);
+	}
 	
 	@Override
 	protected void drawGuiContainerBackgroundLayer2(float par1, int par2, int par3) {

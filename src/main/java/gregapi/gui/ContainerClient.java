@@ -99,6 +99,29 @@ public class ContainerClient extends AbstractContainerScreen<ContainerCommon> {
 		topPos  = (height - ySize) / 2;
 	}
 
+	/**
+	 * BUG-056 часть Б: открыть список рецептов ЭТОЙ машины — то, что в 1.7.10 давал клик по ПРОГРЕСС-БАРУ.
+	 *
+	 * <p><b>Почему это восстановление функции, а не новая фича.</b> Обработку клика в 1.7.10 делал НЕ GT6,
+	 * а мод NEI — своим оверлеем поверх любого {@code GuiContainer}: игрок жал на стрелку прогресса и
+	 * получал весь список рецептов машины (уточнение игрока 2026-07-28). GT6 лишь отдавал имя категории
+	 * полем {@link #mNEI} ({@code ContainerClientBasicMachine:37}, 1:1 с оригиналом {@code :39}).
+	 * В 26.1.2 роль NEI занял JEI, но клик по прогрессу он не обрабатывает — функция была УТРАЧЕНА.
+	 * Раз эквивалента в новой версии нет, её выполняет сам мод (указание игрока: «функцию нужно выполнить
+	 * или заменить на новую, если она не существует в новой версии»).</p>
+	 *
+	 * <p>Централизация: сама ОТКРЫВАЛКА живёт здесь, в базовом классе всей иерархии GUI, и ведёт в тот же
+	 * центр, что иконка безынтерфейсных машин — {@code GT6_JEI_Plugin.showRecipeCategory(mNEI)}, ключ
+	 * прежний {@code mNameNEI}. Где именно кликать, знает подкласс: у машинного GUI это область
+	 * прогресс-бара ({@link ContainerClientBasicMachine#mouseClicked}).</p>
+	 *
+	 * @return {@code true}, если экран рецептов открыт (клик считается обработанным)
+	 */
+	public boolean openRecipesForThisGUI() {
+		if (!NEI || !gregapi.util.UT.Code.stringValid(mNEI)) return F;
+		return gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(mNEI);
+	}
+
 	// Заглушка null-реконструкции (ContainerCommon.createFromNetwork, mTileEntity==null) = 1.7.10-семантика
 	// «GUI не открылся»: закрываем на первом тике (vanilla containerTick пуст — закрытия по stillValid клиент не делает).
 	@Override protected void containerTick() {

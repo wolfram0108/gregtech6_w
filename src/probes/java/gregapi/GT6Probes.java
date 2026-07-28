@@ -234,6 +234,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6juiceprobe.flag")) gt6JuiceProbeTick(aEvent.getServer());
 	// [GT6-KUPROBE] стенд «кинетическая энергия KU: производство, знакопеременность, потребление» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6kuprobe.flag")) gt6KuProbeTick(aEvent.getServer());
+	// [GT6-RECIPEGUI] BUG-056 часть Б: серверная половина — ставит машину и ОТКРЫВАЕТ её GUI игроку (реальный ПКМ)
+		if (gregapi.data.CS.probeFlag("gt6recipegui.flag")) gt6RecipeGuiServerTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
 	// [GT6-JADEPROBE] стенд «MODCOMPAT-001: инструменты GT6 в тултипе Jade» — снять при уборке фазы
@@ -7534,6 +7536,57 @@ public final class GT6Probes {
 			if (tParts.length == 4) sUVPSeq.judge(tParts[0], "PASS".equals(tParts[3]), tParts[1], tParts[2]);
 		}
 		sUVPSeq.done();
+	}
+
+	// ============================================================================================================
+	// [GT6-RECIPEGUI] BUG-056 часть Б, СЕРВЕРНАЯ половина: поставить интерфейсную машину и открыть её GUI
+	// игроку РЕАЛЬНЫМ путём (ПКМ по блоку). Клиентская половина (GT6ProbesClient) затем судит, есть ли на
+	// открытом экране кнопка «показать рецепты» и срабатывает ли она. Разделение обязательно: GUI открывает
+	// СЕРВЕР (меню приходит пакетом), а виджеты живут на КЛИЕНТЕ.
+	// ============================================================================================================
+	private static final String RGUI_M = "GT6-RECIPEGUI-SRV";
+	private static final int RGUI_MACHINE_ID = 20071; // Squeezer (Bronze) — интерфейсная машина с RecipeMap
+	private static int sRGuiTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sRGuiSeq = null;
+	private static net.minecraft.server.level.ServerPlayer sRGuiPlayer = null;
+	private static net.minecraft.core.BlockPos sRGuiPos = null;
+
+	public static void gt6RecipeGuiServerTick(net.minecraft.server.MinecraftServer aServer) {
+		sRGuiTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sRGuiPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sRGuiSeq == null) {
+			sRGuiSeq = new gregapi.probe.GT6ProbeStand.Seq(RGUI_M)
+				.at(30, GT6Probes::gt6RecipeGuiBuild)
+				.at(40, GT6Probes::gt6RecipeGuiOpen);
+		}
+		sRGuiSeq.tick(sRGuiTick);
+	}
+
+	private static void gt6RecipeGuiBuild() {
+		net.minecraft.server.level.ServerLevel tLevel = sRGuiPlayer.level();
+		net.minecraft.core.BlockPos tBase = sRGuiPlayer.blockPosition().offset(-4, 0, 4);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-1, -1, -1), 4, 4);
+		for (int x = -1; x < 3; x++) for (int z = -1; z < 3; z++) for (int y = 0; y < 3; y++)
+			tLevel.setBlock(tBase.offset(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		gregapi.probe.GT6ProbeStand.teleportLook(sRGuiPlayer, tBase.getX() + 0.5, tBase.getY(), tBase.getZ() + 1.5, 0.0F, 0.0F);
+		net.minecraft.world.level.block.entity.BlockEntity tBE = gregapi.probe.GT6ProbeStand.place(
+			tLevel, sRGuiPlayer, tBase.offset(0, -1, 0), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(RGUI_MACHINE_ID),
+			gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, RGUI_M, "машина-с-GUI");
+		sRGuiPos = tBE == null ? null : tBase;
+		gregapi.data.CS.OUT.println("[" + RGUI_M + "] машина с GUI встала: " + (tBE != null) + " @" + tBase);
+	}
+
+	/** Открытие GUI — РЕАЛЬНЫМ путём игрока: пустая рука + ПКМ по машине (как в игре). */
+	private static void gt6RecipeGuiOpen() {
+		if (sRGuiPos == null) {gregapi.data.CS.OUT.println("[" + RGUI_M + "] машина не встала — GUI не открыть"); sRGuiSeq.done(); return;}
+		sRGuiPlayer.getInventory().setItem(0, net.minecraft.world.item.ItemStack.EMPTY);
+		sRGuiPlayer.getInventory().setSelectedSlot(0);
+		gregapi.probe.GT6ProbeStand.clickBlock(sRGuiPlayer, sRGuiPos, net.minecraft.core.Direction.UP);
+		gregapi.data.CS.OUT.println("[" + RGUI_M + "] ПКМ по машине выполнен; меню игрока = "
+			+ (sRGuiPlayer.containerMenu == null ? "null" : sRGuiPlayer.containerMenu.getClass().getSimpleName()));
+		sRGuiSeq.done();
 	}
 
 	// ============================================================================================================
