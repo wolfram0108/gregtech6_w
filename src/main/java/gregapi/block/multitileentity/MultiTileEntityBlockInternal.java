@@ -88,6 +88,21 @@ public class MultiTileEntityBlockInternal extends Block implements IBlock, IItem
 	@Override
 	public IRenderedBlockObject passRenderingToObject(ItemStack aStack) {
 		BlockEntity tTileEntity = mMultiTileEntityRegistry.getNewTileEntity(aStack);
+		// BUG-074 (продолжение BUG-038) — ЕДИНСТВЕННОЕ место компенсации item-facing для ВСЕГО MTE-контента.
+		//
+		// 1.7.10 крутил item-геометрию целиком: RendererBlockTextured.renderInventoryBlock:57-59 —
+		// glRotatef(90,0,1,0) вокруг центра, одинаково для любого IRenderedBlock. В neo этого поворота нет
+		// (item-камера строит кадр из baked-квадов), и повторять его слепо нельзя: простым блокам он не нужен
+		// и сломал бы им иконку (разбор BUG-038). Затронуты только те, кто ВЫБИРАЕТ ТЕКСТУРУ ПО mFacing:
+		// у detached-TE (level==null) mFacing = getDefaultSide() = SIDE_FRONT, а видима в кадре другая грань.
+		//
+		// Прежняя правка (BUG-038) ставила подмену `level==null?ITEM_MACHINE_FACING:mFacing` внутрь getTexture2
+		// каждого класса — россыпь, которая закрыла 11 классов из 82 и оставила остальные перевёрнутыми
+		// (репорт игрока 2026-07-28: мультиблочные бойлеры, турбины, динамо). Здесь та же компенсация сделана
+		// ОДИН раз, на входе в item-рендер: это единственная точка, где рождается detached-TE для предмета
+		// (второй держатель, MultiTileEntityBlock:634, отдаёт null; вызыватель один — GT6BlockModel:200).
+		// TE создаётся заново на каждый вызов и в мир не попадает, поэтому подмена поля никого не задевает.
+		if (tTileEntity instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFacingTE) tFacingTE.mFacing = ITEM_MACHINE_FACING;
 		return tTileEntity instanceof IRenderedBlockObject ? (IRenderedBlockObject)tTileEntity : null;
 	}
 	
