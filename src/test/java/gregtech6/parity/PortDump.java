@@ -96,7 +96,7 @@ public final class PortDump {
         // dumpRecipes ПЕРЕД dumpRecipeMaps: triggerAllRecipesDeterministically популирует mRecipeList (растит mMaxFluidInput/OutputSize
         // по рецептам, Recipe.java:375/383) — иначе recipemaps.csv меряет maxFluid ДО триггера ленивых хендлеров (cutter/melter/squeezer
         // занижены vs golden, где регистрация была эагерной). Так recipemaps отражает то же популированное состояние, что recipes.jsonl.
-        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps(); dumpCrafting(); judgeCraftingSelfMatch(); judgeBug058();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps(); dumpCrafting(); judgeCraftingSelfMatch(); judgeBug058(); judgeBug073();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         Map<String, Double> tFact = new java.util.LinkedHashMap<>();
@@ -550,6 +550,115 @@ public final class PortDump {
                 System.out.println("[bug058] " + tCase[0] + " в слоте " + tSlot + ": matches=" + tMatch
                     + " выход=" + (tOut.isEmpty() ? "ПУСТО" : (stackId(tOut) + " ×" + tOut.getCount())));
             }
+        }
+    }
+    /**
+     * ЦЕЛЕВОЙ СУДЬЯ BUG-073 — путь игрока для ЭЛЕКТРОинструментов: сетка 3×3 → {@link gregapi.recipes.GT6CraftingDispatcher}.
+     *
+     * <p>Судится не «есть ли рецепт в буфере» (это уже меряет сверка состава), а то, что произойдёт у игрока:
+     * раскладка собирается из самого рецепта дрели/бензопилы/дисковой пилы и подаётся в диспетчер — единственную
+     * точку, через которую neo спрашивает GT6-крафт. Проверяется ИДЕНТИЧНОСТЬ выхода: на столе обязан появиться
+     * {@code gt.metatool.01} с ТОЙ ЖЕ метой, что у рецепта.</p>
+     *
+     * <p><b>Позитивный контроль:</b> тот же прогон для инструмента, который работал и ДО фикса (первая мета &lt; 100,
+     * напр. пила/кирка) — если он не проходит, судья меряет собственную поломку, а не дефект.
+     * <b>Негативный:</b> в готовой раскладке один слот подменяется алмазом — диспетчер обязан промолчать.
+     * <b>Холодный контроль:</b> печатается число рецептов на каждую электро-мету; до фикса оно было 0
+     * (слушатели не создавались вовсе), и судья физически не мог выдать PASS.</p>
+     */
+    private static void judgeBug073() {
+        int[] tElectric = {100, 110, 140};              // дрель LV, бензопила LV, дисковая пила LV
+        var tDispatcher = new gregapi.recipes.GT6CraftingDispatcher();
+        java.util.Map<Integer, gregapi.recipes.ShapedOreRecipe> tByMeta = new java.util.LinkedHashMap<>();
+        java.util.Map<Integer, Integer> tCount = new java.util.LinkedHashMap<>();
+        Integer tControlMeta = null;
+        for (gregapi.recipes.ICraftingRecipeGT r : gregapi.util.CR.list()) {
+            if (!(r instanceof gregapi.recipes.ShapedOreRecipe tShaped)) continue;
+            try {
+                ItemStack o = tShaped.getRecipeOutput();
+                if (o == null || o.getItem() == null) continue;
+                var k = BuiltInRegistries.ITEM.getKey(o.getItem());
+                if (k == null || !k.toString().endsWith("gt.metatool.01")) continue;
+                int tMeta = (int)gregapi.util.ST.meta_(o);
+                tCount.merge(tMeta, 1, Integer::sum);
+                tByMeta.putIfAbsent(tMeta, tShaped);
+                if (tMeta < 100 && tControlMeta == null) tControlMeta = tMeta;   // позитивный контроль: не-электро
+            } catch (Throwable t) {}
+        }
+        StringBuilder tCold = new StringBuilder();
+        for (int m : tElectric) tCold.append(" мета=").append(m).append(":").append(tCount.getOrDefault(m, 0));
+        System.out.println("[bug073] рецептов в буфере —" + tCold + " (до фикса каждое было 0: цикл по батареям не выполнялся)");
+
+        java.util.List<Integer> tCases = new ArrayList<>();
+        for (int m : tElectric) tCases.add(m);
+        if (tControlMeta != null) tCases.add(tControlMeta);
+        for (int tMeta : tCases) {
+            String tTag = tMeta < 100 ? ("мета=" + tMeta + " (ПОЗИТИВНЫЙ КОНТРОЛЬ, работал и до фикса)") : ("мета=" + tMeta);
+            var tShaped = tByMeta.get(tMeta);
+            if (tShaped == null) {System.out.println("[bug073] " + tTag + ": рецепта в буфере НЕТ — FAIL"); continue;}
+            try {
+                int w = tShaped.getWidth(), h = tShaped.getHeight();
+                Object[] cells = tShaped.getInput();
+                List<ItemStack> tItems = new ArrayList<>(w * h);
+                boolean tCanFeed = true;
+                for (int i = 0; i < w * h; i++) {
+                    Object c = (i < cells.length) ? cells[i] : null;
+                    ItemStack s = firstStackOf(c);
+                    if (c != null && s == null) {tCanFeed = false; break;}
+                    tItems.add(s == null ? ItemStack.EMPTY : gregapi.util.ST.amount(1, s));
+                }
+                if (!tCanFeed) {System.out.println("[bug073] " + tTag + ": нечем подать ингредиент — не судится"); continue;}
+
+                // ДВА кейса. Разряженная батарея — законный вход: собранный инструмент тогда ОБЯЗАН быть
+                // «(Empty)» с нечётной метой (`EnergyStat.makeTool(..., unusableMeta, usableMeta, usableMeta)`,
+                // MultiItemTool:409 = оригинал :383; локализация golden: «Mining Drill (LV) (Empty) · You need to
+                // recharge it»). Поэтому идентичность инструмента судится по ПАРЕ мет (`getUsableMeta`), а точное
+                // равенство требуется во втором кейсе — с заряженной батареей, как её кладёт игрок.
+                for (int tCase = 0; tCase < 2; tCase++) {
+                    List<ItemStack> tFeed = new ArrayList<>(tItems.size());
+                    for (ItemStack s : tItems) tFeed.add(s.copy());
+                    if (tCase == 1) {   // зарядить все источники энергии в раскладке (кроме самих инструментов)
+                        for (int i = 0; i < tFeed.size(); i++) {
+                            ItemStack s = tFeed.get(i);
+                            if (s.isEmpty() || !(s.getItem() instanceof gregapi.item.IItemEnergy tE)) continue;
+                            if (s.getItem() instanceof gregapi.item.IItemGTContainerTool) continue;
+                            for (gregapi.code.TagData tET : tE.getEnergyTypes(s)) {
+                                ItemStack tCharged = tE.setEnergyStored(tET, s, tE.getEnergyCapacity(tET, s));
+                                if (tCharged != null && !tCharged.isEmpty()) tFeed.set(i, tCharged);
+                            }
+                        }
+                    }
+                    var tGrid = net.minecraft.world.item.crafting.CraftingInput.of(w, h, tFeed);
+                    boolean tMatch = tDispatcher.matches(tGrid, gregapi.data.CS.DW);
+                    ItemStack tOut = tMatch ? tDispatcher.assemble(tGrid) : ItemStack.EMPTY;
+                    int tOutMeta = tOut.isEmpty() ? -1 : (int)gregapi.util.ST.meta_(tOut);
+                    boolean tSamePair = tOutMeta >= 0 && (tOutMeta - (tOutMeta % 2)) == tMeta;   // getUsableMeta
+                    boolean tOk = tCase == 0 ? tSamePair : (tOutMeta == tMeta);
+                    System.out.println("[bug073] " + tTag + " " + w + "x" + h
+                        + (tCase == 0 ? " [батарея как есть]" : " [батарея заряжена]")
+                        + ": matches=" + tMatch + " выход=" + (tOut.isEmpty() ? "ПУСТО" : (stackId(tOut) + " ×" + tOut.getCount()))
+                        + " → " + (tOk ? "PASS" : "FAIL") + (tCase == 0 && tSamePair && tOutMeta != tMeta ? " (тот же инструмент, состояние Empty — ожидаемо)" : ""));
+                    if (!tOk) for (gregapi.recipes.ICraftingRecipeGT rr : gregapi.util.CR.list()) {
+                        if (rr == null || !rr.matches(tGrid, gregapi.data.CS.DW)) continue;
+                        ItemStack tDecl = rr.getRecipeOutput();
+                        System.out.println("[bug073]   ответил: " + rr.getClass().getSimpleName()
+                            + " объявленный=" + (tDecl == null || tDecl.getItem() == null ? "null" : stackId(tDecl))
+                            + " фактический=" + (rr.getCraftingResult(tGrid).isEmpty() ? "ПУСТО" : stackId(rr.getCraftingResult(tGrid))));
+                        break;
+                    }
+                }
+                // негативный контроль: портим один непустой слот заведомо посторонним предметом
+                int tSpoil = -1;
+                for (int i = 0; i < tItems.size(); i++) if (!tItems.get(i).isEmpty()) {tSpoil = i; break;}
+                if (tSpoil >= 0) {
+                    List<ItemStack> tBad = new ArrayList<>(tItems);
+                    tBad.set(tSpoil, new ItemStack(net.minecraft.world.item.Items.DIAMOND));
+                    var tBadGrid = net.minecraft.world.item.crafting.CraftingInput.of(w, h, tBad);
+                    boolean tBadMatch = tDispatcher.matches(tBadGrid, gregapi.data.CS.DW);
+                    System.out.println("[bug073] " + tTag + " негативный контроль (слот " + tSpoil + " → алмаз): matches="
+                        + tBadMatch + " → " + (tBadMatch ? "FAIL (сматчил мусор)" : "PASS (промолчал)"));
+                }
+            } catch (Throwable t) {System.out.println("[bug073] " + tTag + ": исключение " + t);}
         }
     }
     /** Первый валидный стек ингредиента: сам стек, либо первый элемент ore-списка; null — если подать нечем. */

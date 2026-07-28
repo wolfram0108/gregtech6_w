@@ -204,7 +204,18 @@ public class Loader_Tools implements Runnable {
 		
 		
 		}); // конец отложенного addTool/NEI-блока
-		gregapi.GT_API.deferItemInit(new Runnable() {@SuppressWarnings({"rawtypes", "unchecked"})
+		// BUG-073 (F12 oredict-timing, ФАЗА): оригинал вешает этот блок на `GAPI.mBeforePostInit` (1.7.10 :204), т.е.
+		// исполняет его ПОСЛЕ Init-фазы — а батареи `gt:re-battery1..3` попадают в словарь именно в Init
+		// (`Loader_MultiTileEntities` → `IL.set(..., "gt:re-battery1")`, :1014). Порт откладывал блок напрямую в
+		// `deferItemInit` из PreInit (`GT6_Main:190`), а очередь строго FIFO (`GT_API.runDeferredItemInit` → `remove(0)`),
+		// и Init-загрузчики кладутся в неё позже (`GT6_Main:325`) → на момент исполнения словарь ПУСТ, цикл
+		// `for (ItemStack tBattery : OreDictManager.getOres("gt:re-battery1", F))` (:359) не делает ни одной итерации,
+		// и 15 типов ЭЛЕКТРОинструментов (дрель/бензопила/дисковая пила/электроключ/…) не получают слушателей вовсе —
+		// 22 176 рецептов не рождаются. Ошибок в логе нет по той же причине: `CR.shaped` для них не зовётся.
+		// Лечение — ТОТ ЖЕ приём, что уже применён в `Abstract_Mod:270` и `GT_API.onModPostInit2:1159`: фазу оригинала
+		// сохраняем (вешаемся на `mBeforePostInit`), а исполнение откладываем до пост-bind окна. Порядок в очереди
+		// становится 1:1 с 1.7.10: [Init-загрузчики] → [этот блок] → [PostInit] → [compat/afterPostInit].
+		GAPI.mBeforePostInit.add(() -> GT_API.deferItemInit(new Runnable() {@SuppressWarnings({"rawtypes", "unchecked"})
 		@Override public void run() {
 		
 		CR.shapeless(ToolsGT.sMetaTool.getToolWithStats(ToolsGT.FLINT_AND_TINDER, 1, MT.Steel, MT.Flint), CR.DEF    , new Object[] {ST.make(Items.FLINT_AND_STEEL, 1, 0)});
@@ -379,9 +390,9 @@ public class Loader_Tools implements Runnable {
 		
 		toolHeadDrill      .addListener(new OreProcessing_Tool(JACKHAMMER_HV_Normal, tCategory + "JackhammerHV"   ,F,T,-1,V[3], MT.Blue  , new String[][] {{"SVS", "XWX", "YSY"}}, null, plateCurved.dat(MT.DATA.Electric_T[3]), spring.dat(MT.DATA.Electric_T[3]), null, tBattery, IL.PISTONS[3], tCondition));
 		}
-		}});
+		}})); // BUG-073: закрываем deferItemInit ВНУТРИ обёртки mBeforePostInit (фаза оригинала + пост-bind окно)
 	}
-	
+
 	public static class OreProcessing_Tool implements IOreDictListenerEvent {
 		private final ICondition<OreDictMaterial> mCondition;
 		private final String[][] mToolRecipes, mToolHeadRecipes;
