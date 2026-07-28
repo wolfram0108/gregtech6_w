@@ -119,6 +119,12 @@ public class GT_API_Proxy_Client extends GT_API_Proxy {
 	// один `GT6BlockModel` тип. Две точки: (1) RegisterBlockStateModels — тип для blockstate-JSON (fallback);
 	// (2) ModifyBakingResult — рантайм-инъекция модели ВСЕМ GT6-блокам (IRenderedBlock) БЕЗ JSON — процедурный
 	// мод (сотни блоков динамически) не может держать тысячи статичных JSON; централизация 1:1 (одна модель на весь мод).
+	/** BUG-056: клиентская половина «открыть все рецепты машины» — делегирует единственному центру
+	 *  JEI-совместимости ({@link gregapi.jei.GT6_JEI_Plugin#showRecipeCategory}), который держит живой
+	 *  рантайм и карту «имя категории → тип». Ключ тот же {@code mNameNEI}, которым 1.7.10 звал NEI. */
+	@Override
+	public boolean openRecipeGui(String aNameNEI) {return gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(aNameNEI);}
+
 	@Override
 	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {
 		aModBus.addListener(this::onRegisterBlockStateModels);

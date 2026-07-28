@@ -586,6 +586,66 @@ public final class GT6ProbesClient {
 	// из витрины креатива тем же центром, что наполняет её игре (CreativeTabsGT.enumerate).
 	// ПОЗИТИВНЫЙ КОНТРОЛЬ встроен: ванильный верстак (RecipeTypes.CRAFTING) обязан отвечать на ванильные
 	// предметы — если и он молчит, судья меряет собственную поломку, а не GT6.
+	// ================= [GT6-RECIPEGUI] BUG-056: иконка «показать все рецепты машины» =================
+	// Два слоя дефекта, мёртвые НЕЗАВИСИМО друг от друга (см. карточку BUG-056):
+	//   (1) сама иконка не рисовалась: BI.nei() отдаёт текстуру только при CS.NEI, а взвести флаг мог лишь
+	//       NEI-плагин 1.7.10 (NEI_GT_API_Config), который в 26.1.2 никем не инстанцируется;
+	//   (2) клик не работал: RecipeMap.openNEI() звал codechicken.nei.recipe.GuiCraftingRecipe — класс есть
+	//       только в src/compat-mirror, в проде это NoClassDefFoundError, молча съеденный catch(Throwable).
+	// Судятся ФАКТЫ, не картинка (визуальных судей не строим): взведён ли флаг, СТРОИТСЯ ли текстура,
+	// и открывается ли экран рецептов по тому же ключу mNameNEI, которым 1.7.10 звал NEI.
+	// Список карт взят ИЗ КОДА — все 8 вызывателей openNEI(), а не «семь машин по памяти».
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: несуществующее имя категории обязано дать false, иначе судья говорит «да» на всё.
+	private static boolean mRecipeGuiDone = false;
+	private static int mRecipeGuiWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onRecipeGuiProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mRecipeGuiDone || !gregapi.data.CS.probeFlag("gt6recipegui.flag")) return;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.jei.GT6_JEI_Plugin.sRuntime;
+		net.minecraft.client.Minecraft tMC = net.minecraft.client.Minecraft.getInstance();
+		if (tRT == null || tMC == null || tMC.player == null) {
+			if (++mRecipeGuiWaited == 100 && tMC != null && tMC.player != null) {
+				try {tMC.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(tMC.player));} catch (Throwable e) {/**/}
+			}
+			if (mRecipeGuiWaited > 24000) {mRecipeGuiDone = true; gregapi.data.CS.OUT.println("[GT6-RECIPEGUI] runtime JEI не появился — судья НЕ отработал");}
+			return;
+		}
+		mRecipeGuiDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-RECIPEGUI] BUG-056: иконка и клик «показать рецепты» ==========");
+		int tPass = 0, tFail = 0;
+		// СЛОЙ 1: флаг и сама текстура
+		boolean tFlag = gregapi.data.CS.NEI;
+		O.println("[GT6-RECIPEGUI] CS.NEI (гейт иконки) = " + tFlag + " => " + (tFlag ? "PASS" : "FAIL"));
+		if (tFlag) tPass++; else tFail++;
+		gregapi.render.ITexture tIcon = null;
+		try {tIcon = gregapi.data.BI.nei();} catch (Throwable e) {O.println("[GT6-RECIPEGUI] BI.nei() бросил " + e);}
+		O.println("[GT6-RECIPEGUI] BI.nei() строит текстуру = " + (tIcon != null) + " => " + (tIcon != null ? "PASS" : "FAIL"));
+		if (tIcon != null) tPass++; else tFail++;
+		// СЛОЙ 2: открытие экрана по ключу mNameNEI — все 8 вызывателей openNEI() из кода
+		gregapi.recipes.Recipe.RecipeMap[] tMaps = {
+			gregapi.data.RM.Anvil, gregapi.data.RM.Bath, gregapi.data.RM.Sharpening, gregapi.data.RM.Juicer,
+			gregapi.data.RM.Mixer, gregapi.data.RM.Mortar, gregapi.data.RM.Sifting, gregapi.data.RM.BedrockOreList};
+		String[] tNames = {"Наковальня", "Ванна", "Точило", "Соковыжималка", "Миска", "Ступка", "Стол просеивания", "Список руд коренной породы"};
+		for (int i = 0; i < tMaps.length; i++) {
+			boolean tOk = false;
+			try {tOk = gregapi.jei.GT6_JEI_Plugin.showRecipeCategory(tMaps[i].mNameNEI);} catch (Throwable e) {O.println("[GT6-RECIPEGUI] " + tNames[i] + " бросил " + e);}
+			O.println("[GT6-RECIPEGUI] открыть рецепты: " + tNames[i] + " (" + tMaps[i].mNameNEI + ") = " + tOk + " => " + (tOk ? "PASS" : "FAIL"));
+			if (tOk) tPass++; else tFail++;
+		}
+		// путь целиком, как его зовёт сама машина (MultiTileEntityJuicer:164 mRecipes.openNEI())
+		boolean tViaRecipeMap = false;
+		try {tViaRecipeMap = gregapi.data.RM.Juicer.openNEI();} catch (Throwable e) {O.println("[GT6-RECIPEGUI] openNEI() бросил " + e);}
+		O.println("[GT6-RECIPEGUI] RecipeMap.openNEI() (путь самой машины) = " + tViaRecipeMap + " => " + (tViaRecipeMap ? "PASS" : "FAIL"));
+		if (tViaRecipeMap) tPass++; else tFail++;
+		// негативный контроль
+		boolean tBogus = true;
+		try {tBogus = gregapi.jei.GT6_JEI_Plugin.showRecipeCategory("gt.recipe.заведомо.нет.такой");} catch (Throwable e) {/**/}
+		O.println("[GT6-RECIPEGUI] НЕГАТИВНЫЙ КОНТРОЛЬ (несуществующая категория) = " + tBogus + " => " + (!tBogus ? "PASS" : "FAIL"));
+		if (!tBogus) tPass++; else tFail++;
+		O.println("========== [GT6-RECIPEGUI] DONE (pass=" + tPass + " fail=" + tFail + ") ==========");
+	}
+
 	// ================= [GT6-JUICEJEI] BUG-055 хвост: видит ли ЖИВОЙ JEI категории Соковыжималки и Пресса =================
 	// Спрашиваем не код регистрации, а саму витрину: пересоздаём тот же RecipeType, что строит
 	// GT6_JEI_Plugin:124 (RecipeType.create(MD.GT.mID, map.mNameNEI, Recipe.class)), и просим у JEI список рецептов.
@@ -595,7 +655,7 @@ public final class GT6ProbesClient {
 	@net.neoforged.bus.api.SubscribeEvent
 	public static void onJuiceJeiProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
 		if (mJuiceJeiDone || !gregapi.data.CS.probeFlag("gt6juiceprobe.flag")) return;
-		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.GT6ProbeJeiPlugin.RUNTIME;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.jei.GT6_JEI_Plugin.sRuntime;
 		net.minecraft.client.Minecraft tMC = net.minecraft.client.Minecraft.getInstance();
 		if (tRT == null || tMC == null || tMC.player == null) {
 			// JEI поднимается лениво — его стартовое событие даёт открытие GUI (урок GT6-JEICRAFT)
@@ -648,7 +708,7 @@ public final class GT6ProbesClient {
 		if (mJeiCraftDone || !gregapi.data.CS.probeFlag("gt6jeicraft.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
-		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.GT6ProbeJeiPlugin.RUNTIME;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.jei.GT6_JEI_Plugin.sRuntime;
 		if (tRT == null) {
 			// JEI грузит плагины ЛЕНИВО, по событию открытия GUI (mezz.jei.neoforge.startup.StartEventObserver):
 			// одного входа в мир мало — в логе висел только «Sending ConfigManager». Открываем инвентарь один раз,

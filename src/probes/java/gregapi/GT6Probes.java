@@ -7574,6 +7574,10 @@ public final class GT6Probes {
 		if (sKuSeq == null) {
 			sKuSeq = new gregapi.probe.GT6ProbeStand.Seq(KU_M)
 				.at(20, GT6Probes::gt6KuProbeBuild)
+				// COLD-пара строится ОТДЕЛЬНЫМ тиком: телепорт игрока и последующий useOn в ОДНОМ тике
+				// ненадёжны — позиция ещё не применена, и установка молча проваливается (клетка остаётся AIR).
+				// Ловилось как «то RUN не встал, то COLD» от прогона к прогону.
+				.at(26, GT6Probes::gt6KuProbeBuildCold)
 				.window(25, 500, GT6Probes::gt6KuProbeFeed)
 				// знакопеременность нельзя судить одним замером в конце: обе фазы поршня видны только по ходу
 				.watch("поршень в ФАЗЕ +", 25, 500, () -> sKuEngine != null && gregapi.probe.GT6ProbeStand.fldInt(sKuEngine, "mPiston") <= 1)
@@ -7591,19 +7595,28 @@ public final class GT6Probes {
 		net.minecraft.server.level.ServerLevel tLevel = sKuPlayer.level();
 		net.minecraft.core.BlockPos tBase = sKuPlayer.blockPosition().offset(3, 0, -3);
 		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-1, -1, -1), 8, 6);
+		// та же гигиена, что в JUICEPROBE: мир между прогонами не сбрасывается, база едет за игроком
+		for (int x = -1; x < 7; x++) for (int z = -1; z < 5; z++) for (int y = 0; y < 3; y++)
+			tLevel.setBlock(tBase.offset(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, tBase.getX() + 0.5, tBase.getY() + 1.0, tBase.getZ() + 2.5, 0.0F, 0.0F);
 
-		sKuEngine     = gt6KuProbeBuildPair(tLevel, tBase                 , "RUN");
-		sKuMachine    = sKuLastMachine;
-		sKuEngineCold = gt6KuProbeBuildPair(tLevel, tBase.offset(3, 0, 0) , "COLD");
-		sKuMachineCold= sKuLastMachine;
-		// судьи знака смотрят на RUN-машину: вернём игрока в горизонталь, чтобы дальнейшие клики (если будут) были штатными
-		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, tBase.getX() + 0.5, tBase.getY() + 1.0, tBase.getZ() + 2.5, 0.0F, 0.0F);
+		sKuBase = tBase;
+		sKuEngine  = gt6KuProbeBuildPair(tLevel, tBase, "RUN");
+		sKuMachine = sKuLastMachine;
+		if (sKuMachine != null) gregapi.probe.GT6ProbeStand.slotSet(sKuMachine, 0, gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0));
+		gregapi.data.CS.OUT.println("[" + KU_M + "] построено RUN @" + tBase + ": движок=" + (sKuEngine != null) + " машина=" + (sKuMachine != null));
+	}
 
-		if (sKuMachine != null)     gregapi.probe.GT6ProbeStand.slotSet(sKuMachine    , 0, gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0));
+	private static net.minecraft.core.BlockPos sKuBase = null;
+
+	/** COLD-пара — ОТДЕЛЬНЫМ тиком: телепорт игрока и последующий {@code useOn} в одном тике ненадёжны. */
+	private static void gt6KuProbeBuildCold() {
+		if (sKuBase == null) return;
+		net.minecraft.core.BlockPos tCold = sKuBase.offset(3, 0, 0);
+		sKuEngineCold  = gt6KuProbeBuildPair(sKuPlayer.level(), tCold, "COLD");
+		sKuMachineCold = sKuLastMachine;
 		if (sKuMachineCold != null) gregapi.probe.GT6ProbeStand.slotSet(sKuMachineCold, 0, gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0));
-		gregapi.data.CS.OUT.println("[" + KU_M + "] построено @" + tBase + ": движок RUN=" + (sKuEngine != null) + " машина RUN=" + (sKuMachine != null)
-			+ " · движок COLD=" + (sKuEngineCold != null) + " машина COLD=" + (sKuMachineCold != null));
+		gregapi.data.CS.OUT.println("[" + KU_M + "] построено COLD @" + tCold + ": движок=" + (sKuEngineCold != null) + " машина=" + (sKuMachineCold != null));
 	}
 
 	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine sKuLastMachine = null;
@@ -7619,12 +7632,15 @@ public final class GT6Probes {
 	private static gregtech.tileentity.energy.converters.MultiTileEntityEngineSteam gt6KuProbeBuildPair(
 			net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aBase, String aLabel) {
 		sKuLastMachine = null;
-		// 1) машина на площадке
+		// 1) машина на площадке. Игрок ставится ВПЛОТНУЮ и на ТВЁРДОЕ непосредственно перед установкой:
+		// после расчистки рабочего слоя он иначе оказывается в воздухе и падает, а установка в падении
+		// молча не проходит (клетка остаётся AIR — ровно так RUN-пресс «не вставал», пока COLD вставал).
+		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, aBase.getX() + 0.5, aBase.getY(), aBase.getZ() + 1.5, 0.0F, 0.0F);
 		sKuLastMachine = gregapi.probe.GT6ProbeStand.place(
 			aLevel, sKuPlayer, aBase.offset(0, -1, 0), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(KU_SQUEEZER_ID),
 			gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, KU_M, aLabel + "-пресс");
 		// 2) взгляд ВВЕРХ → движок встанет mFacing = DOWN и будет бить KU вниз, в верхнюю грань машины
-		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, aBase.getX() + 0.5, aBase.getY() + 1.0, aBase.getZ() + 2.5, 0.0F, -90.0F);
+		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, aBase.getX() + 0.5, aBase.getY(), aBase.getZ() + 1.5, 0.0F, -90.0F);
 		gregtech.tileentity.energy.converters.MultiTileEntityEngineSteam tEngine = gregapi.probe.GT6ProbeStand.place(
 			aLevel, sKuPlayer, aBase, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(KU_ENGINE_ID),
 			gregtech.tileentity.energy.converters.MultiTileEntityEngineSteam.class, KU_M, aLabel + "-движок");
@@ -7729,6 +7745,12 @@ public final class GT6Probes {
 		net.minecraft.server.level.ServerLevel tLevel = sJuicePlayer.level();
 		net.minecraft.core.BlockPos tBase = sJuicePlayer.blockPosition().offset(2, 0, 2);
 		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-1, -1, -1), 8, 4);
+		// ГИГИЕНА СЕТАПА (не судимый канал): база отсчёта — позиция игрока, а она от прогона к прогону
+		// смещается (стенд сам телепортирует игрока и мир GT6WGTest не сбрасывается). Из-за этого новые
+		// постройки попадали на старые, и место под COLD-пресс оказывалось занятым — судья давал ложный FAIL
+		// «машина не встала». Расчищаем рабочий слой явно, чтобы прогон был воспроизводим.
+		for (int x = -1; x < 7; x++) for (int z = -1; z < 4; z++) for (int y = 0; y < 3; y++)
+			tLevel.setBlock(tBase.offset(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 		for (int i = 0; i < sJuicePos.length; i++) {
 			sJuicePos[i] = tBase.offset(i, 0, 0);
 			sJuiceBE[i] = gregapi.probe.GT6ProbeStand.place(tLevel, sJuicePlayer, tBase.offset(i, -1, 0), net.minecraft.core.Direction.UP,

@@ -641,7 +641,13 @@ public class Recipe {
 			return aRecipe;
 		}
 		
-		public boolean openNEI   (                  ) {try {codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui(mNameNEI          ); return T;} catch(Throwable e) {/**/} return F;}
+		// BUG-056: 1.7.10 звал мод NEI напрямую — `codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui(mNameNEI)`.
+		// В 26.1.2 мода NEI нет и быть не может: его классы живут только в src/compat-mirror (зеркало для
+		// компиляции), поэтому в проде вызов давал NoClassDefFoundError, молча проглатывался catch(Throwable)
+		// и метод ВСЕГДА возвращал false — иконка «показать рецепты» была мертва. Роль NEI занял JEI; открытие
+		// экрана — клиентское действие, поэтому идёт через прокси (общий код не тянет client-only классы).
+		// Ключ прежний: mNameNEI, та же строка, которой карта звалась в NEI.
+		public boolean openNEI   (                  ) {try {return gregapi.GT_API.api_proxy != null && gregapi.GT_API.api_proxy.openRecipeGui(mNameNEI);} catch(Throwable e) {/**/} return F;}
 		public boolean guiRecipes(Object... aOutputs) {try {codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui(mNameNEI, aOutputs); return T;} catch(Throwable e) {/**/} return F;}
 		public boolean guiUsesNEI(Object... aInputs ) {try {codechicken.nei.recipe.GuiUsageRecipe   .openRecipeGui(mNameNEI, aInputs ); return T;} catch(Throwable e) {/**/} return F;}
 		

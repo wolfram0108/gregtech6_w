@@ -70,6 +70,25 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 
 	/** RecipeMap -> её уникальный JEI-RecipeType. Заполняется в {@link #registerCategories}, читается в {@link #registerRecipes}/{@link #registerRecipeCatalysts}. */
 	private final Map<RecipeMap, RecipeType<Recipe>> mTypes = new LinkedHashMap<>();
+
+	/** BUG-056: живой рантайм JEI — единственная дверь, через которую можно ОТКРЫТЬ экран рецептов.
+	 *  JEI отдаёт его один раз ({@link #onRuntimeAvailable}); держим здесь, потому что этот класс и есть
+	 *  центр JEI-совместимости (см. docstring класса), а не заводим второй держатель. */
+	public static volatile mezz.jei.api.runtime.IJeiRuntime sRuntime = null;
+	/** BUG-056: {@code RecipeMap.mNameNEI} -> тип категории. Тем же ключом, которым 1.7.10 звал NEI
+	 *  ({@code GuiCraftingRecipe.openRecipeGui(mNameNEI)}), теперь открывается JEI-категория. Статическая,
+	 *  потому что зовущая сторона ({@code RecipeMap.openNEI}) экземпляра плагина не видит. */
+	private static final Map<String, RecipeType<Recipe>> sTypesByName = new java.util.concurrent.ConcurrentHashMap<>();
+	/** BUG-056: открыть экран рецептов по имени карты. Возвращает {@code false}, если JEI не поднялся или
+	 *  такой категории нет — ровно та же семантика, что у мёртвого NEI-вызова (он тоже отдавал false). */
+	public static boolean showRecipeCategory(String aNameNEI) {
+		mezz.jei.api.runtime.IJeiRuntime tRuntime = sRuntime;
+		if (tRuntime == null || aNameNEI == null) return F;
+		RecipeType<Recipe> tType = sTypesByName.get(aNameNEI);
+		if (tType == null) return F;
+		try {tRuntime.getRecipesGui().showTypes(java.util.List.of(tType)); return T;}
+		catch (Throwable e) {ERR.println("JEI: не удалось открыть категорию '" + aNameNEI + "'"); e.printStackTrace(ERR); return F;}
+	}
 	/** RecipeMap -> её видимые рецепты ({@code mEnabled && !mHidden}, gregapi/recipes/Recipe.java:564), посчитанные ОДИН раз в {@link #registerCategories} и переиспользуемые в {@link #registerRecipes} (не плодим параллельный пересчёт). */
 	private final Map<RecipeMap, List<Recipe>> mRecipes = new LinkedHashMap<>();
 	/** Ф1.3-crafting-jei: F11-буфер {@code CR.list()}, отфильтрованный до {@link ShapedOreRecipe}/{@link ShapelessOreRecipe}-наследников
@@ -109,6 +128,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	@Override
 	public void registerCategories(IRecipeCategoryRegistration aRegistration) {
 		mTypes.clear();
+		sTypesByName.clear();
 		mRecipes.clear();
 		mCraftingRecipes = Collections.emptyList();
 		IGuiHelper tGuiHelper = aRegistration.getJeiHelpers().getGuiHelper();
@@ -123,6 +143,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				if (tRecipeList.isEmpty()) continue;
 				RecipeType<Recipe> tType = RecipeType.create(MD.GT.mID, tMap.mNameNEI, Recipe.class);
 				mTypes.put(tMap, tType);
+				sTypesByName.put(tMap.mNameNEI, tType); // BUG-056: тем же ключом, что звал NEI 1.7.10
 				mRecipes.put(tMap, tRecipeList);
 				tCategories.add(new GT6_JEI_RecipeCategory(tMap, tType, tGuiHelper));
 			} catch (Throwable e) {
@@ -130,6 +151,13 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 				e.printStackTrace(ERR);
 			}
 		}
+
+		// BUG-056: просмотрщик рецептов ЕСТЬ — значит иконку «показать рецепты» рисовать можно.
+		// В 1.7.10 этот же флаг взводил NEI-плагин GT6 (NEI_GT_API_Config.loadConfig/run), потому что NEI был
+		// ОПЦИОНАЛЬНЫМ модом; в 26.1.2 таким же опциональным модом является JEI, и факт «плагин загрузился»
+		// — точный аналог. Взводим здесь, а не по ModList: важно не наличие мода в списке, а то, что
+		// категории реально построены и есть что открывать.
+		gregapi.data.CS.NEI = T;
 
 		// Ф1.3-crafting-jei: крафт-верстак GT6 (F11-буфер) — своя категория, см. GT6_JEI_CraftingCategory
 		// javadoc. Показываются только Shaped/ShapelessOreRecipe-наследники (1:1 с тем, что NEI мог отрисовать).
@@ -180,6 +208,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	 *  показывают жидкости display-предметами ({@code FL.display}), FLUID_STACK-ингредиенты им не нужны. */
 	@Override
 	public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime aRuntime) {
+		sRuntime = aRuntime; // BUG-056: единственная дверь к экрану рецептов, см. showRecipeCategory
 		try {
 			mezz.jei.api.runtime.IIngredientManager tManager = aRuntime.getIngredientManager();
 			java.util.Collection<net.neoforged.neoforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK));

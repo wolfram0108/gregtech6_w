@@ -307,6 +307,15 @@ public abstract class GT_API_Proxy extends Abstract_Proxy {
 	 * через {@code RegisterBlockStateModels} (decisions/F3-render.md §2.1). Централизация 1:1 — один тип на весь мод.
 	 */
 	public void registerClientModels(net.neoforged.bus.api.IEventBus aModBus) {/* server: no-op */}
+
+	/**
+	 * BUG-056: открыть игроку экран «все рецепты этой машины». В 1.7.10 это делал сам мод NEI
+	 * ({@code GuiCraftingRecipe.openRecipeGui(mNameNEI)}, вызывалось из {@code RecipeMap.openNEI}); в 26.1.2
+	 * его роль занял JEI, и открытие экрана — сугубо КЛИЕНТСКОЕ действие. Общий код (RecipeMap) не должен
+	 * видеть client-only классы JEI, поэтому вызов идёт через прокси — тем же приёмом, что
+	 * {@link #registerClientModels}. Сервер: no-op, как и раньше возвращаем false.
+	 */
+	public boolean openRecipeGui(String aNameNEI) {return false;}
 	
 	// DimensionManager (1.7.10 Forge) neo-эквивалента не имеет (не найден ни в neo-decompiled, ни в neoforge-decompiled, ни в fml-decompiled) —
 	// реальный neo-путь к текущему save-root: ServerLevel.getServer().getWorldPath(LevelResource.ROOT) (сверено, MinecraftServer.java:2058 + LevelResource.java:16).
