@@ -247,6 +247,32 @@ public final class GT6ProbeStand {
 	}
 	public static long tankAmount(Object aBE, int aIndex) {gregapi.fluid.FluidTankGT t = findTank(aBE, aIndex); return t == null ? 0 : t.amount();}
 
+	/** Содержимое танка как «имя:объём» — ЕДИНЫЙ формат идентичности жидкости для всех стендов.
+	 *  Судить «в баке что-то есть» недостаточно: краска не отличима от воды по одному лишь объёму,
+	 *  поэтому судьи сравнивают именно эту строку. Формат совпадает с дампом паритета
+	 *  ({@code PortDump.recFluids}: {@code FluidGT.nameOf(...) + ":" + amount}), чтобы ожидание стенда
+	 *  можно было брать прямо из golden-дампа, не переписывая руками. */
+	public static String tankContent(gregapi.fluid.FluidTankGT aTank) {
+		if (aTank == null) return "нет танка";
+		net.neoforged.neoforge.fluids.FluidStack tFluid = aTank.getFluid();
+		if (tFluid == null || tFluid.getFluid() == null || tFluid.getAmount() <= 0) return "пусто";
+		return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
+	}
+	/** То же по BE — танк ищется тем же {@link #findTank} (поля {@code mTank}/{@code mTanks}). */
+	public static String tankContent(Object aBE, int aIndex) {
+		if (aBE == null) return "нет BE";
+		return tankContent(findTank(aBE, aIndex));
+	}
+	/** То же для ВЫХОДНЫХ танков машины: у {@code MultiTileEntityBasicMachine} они лежат отдельным
+	 *  полем {@code mTanksOutput} (:106), которого не знает {@link #findTank}. */
+	public static String outTankContent(Object aBE, int aIndex) {
+		if (aBE == null) return "нет BE";
+		Object tArr = fld(aBE, "mTanksOutput");
+		if (!(tArr instanceof gregapi.fluid.FluidTankGT[] tTanks)) return "нет поля mTanksOutput";
+		if (aIndex >= tTanks.length) return "нет выходных танков";
+		return tankContent(tTanks[aIndex]);
+	}
+
 	/** Слоты — ТОЛЬКО через публичный логический канал BE (TileEntityBase01Root.slot(i[,stack])), НЕ через
 	 *  голую рефлексию по mInventory.
 	 *  ⚠️ ОЧИСТКА идёт через slotKill, а НЕ записью ItemStack.EMPTY (дефект каркаса, найден стендом №14):

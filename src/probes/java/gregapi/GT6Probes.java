@@ -7658,17 +7658,9 @@ public final class GT6Probes {
 		sKuSteamFed += Math.max(0, 12800 - tBefore); // сколько реально долили = сколько движок съел с прошлого раза
 	}
 
-	private static String gt6KuProbeOutTank(gregapi.tileentity.machines.MultiTileEntityBasicMachine aBE) {
-		if (aBE == null) return "машина не встала";
-		if (aBE.mTanksOutput == null || aBE.mTanksOutput.length == 0) return "нет выходных танков";
-		net.neoforged.neoforge.fluids.FluidStack tFluid = aBE.mTanksOutput[0].getFluid();
-		if (tFluid == null || tFluid.getAmount() <= 0) return "пусто";
-		return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
-	}
-
 	private static void gt6KuProbeJudge() {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
-		String tRun = gt6KuProbeOutTank(sKuMachine), tCold = gt6KuProbeOutTank(sKuMachineCold);
+		String tRun = gregapi.probe.GT6ProbeStand.outTankContent(sKuMachine, 0), tCold = gregapi.probe.GT6ProbeStand.outTankContent(sKuMachineCold, 0);
 		long tEngineEnergy = sKuEngine == null ? -1 : gregapi.probe.GT6ProbeStand.fldLong(sKuEngine, "mEnergy");
 		long tColdEnergy   = sKuEngineCold == null ? -1 : gregapi.probe.GT6ProbeStand.fldLong(sKuEngineCold, "mEnergy");
 
@@ -7753,17 +7745,8 @@ public final class GT6Probes {
 		sJuicePlayer.getInventory().setItem(0, gregapi.util.ST.make(aFlower, 1, 0));
 		sJuicePlayer.getInventory().setSelectedSlot(0);
 		gregapi.probe.GT6ProbeStand.clickBlock(sJuicePlayer, sJuicePos[aIndex], net.minecraft.core.Direction.UP);
-		sJuiceAfter[aIndex] = gt6JuiceProbeTankOf(sJuiceBE[aIndex]);
-	}
-
-	/** Содержимое бака[0] как «имя_жидкости:объём» — идентичность, а не факт «что-то есть». */
-	private static String gt6JuiceProbeTankOf(net.minecraft.world.level.block.entity.BlockEntity aBE) {
-		Object tArr = gregapi.probe.GT6ProbeStand.fld(aBE, "mTanks");
-		if (!(tArr instanceof gregapi.fluid.FluidTankGT[] tTanks)) return "нет поля mTanks";
-		if (tTanks.length == 0) return "нет танков";
-		net.neoforged.neoforge.fluids.FluidStack tFluid = tTanks[0].getFluid();
-		if (tFluid == null || tFluid.getAmount() <= 0) return "пусто";
-		return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
+		// идентичность жидкости, а не факт «что-то есть» — формат общий для всех стендов (GT6ProbeStand.tankContent)
+		sJuiceAfter[aIndex] = gregapi.probe.GT6ProbeStand.tankContent(sJuiceBE[aIndex], 0);
 	}
 
 	private static void gt6JuiceProbeAct() {
@@ -7811,15 +7794,6 @@ public final class GT6Probes {
 		return "ничего не вычислено";
 	}
 
-	/** Содержимое ВЫХОДНОГО бака базовой машины как «имя:объём». */
-	private static String gt6JuiceProbeOutTank(gregapi.tileentity.machines.MultiTileEntityBasicMachine aBE) {
-		if (aBE == null) return "машина не встала";
-		if (aBE.mTanksOutput == null || aBE.mTanksOutput.length == 0) return "нет выходных танков";
-		net.neoforged.neoforge.fluids.FluidStack tFluid = aBE.mTanksOutput[0].getFluid();
-		if (tFluid == null || tFluid.getAmount() <= 0) return "пусто";
-		return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
-	}
-
 	private static void gt6JuiceProbeJudge() {
 		for (int i = 0; i < sJuiceBE.length; i++) {
 			sJuiceSeq.judge("машина#" + i + " встала", sJuiceBE[i] != null, "MultiTileEntityJuicer", sJuiceBE[i]);
@@ -7846,7 +7820,7 @@ public final class GT6Probes {
 		// (gregtech6/.../MultiTileEntityBasicMachine.java:815, TD.java:219), то есть это правило GT6, а не порт.
 		// Статически выставленная энергия пульсацию вала не воспроизводит — поэтому судить бак здесь было бы
 		// замером не того: полная кинетическая цепь (мотор даёт RU, машине нужен KU) — отдельная подсистема.
-		String tElecCold = gt6JuiceProbeOutTank(sJuiceElecCold);
+		String tElecCold = gregapi.probe.GT6ProbeStand.outTankContent(sJuiceElecCold, 0);
 		String tPrepared = gt6JuiceProbeOutputFluids(sJuiceElec);
 		sJuiceSeq.judge("ПРЕСС (кинетический) встал"            , sJuiceElec != null, "MultiTileEntityBasicMachine", sJuiceElec);
 		sJuiceSeq.judge("ПРЕСС: цветок принят как рецепт"       , sJuiceElec != null && sJuiceElec.mCurrentRecipe != null, "рецепт найден", sJuiceElec == null ? "нет машины" : String.valueOf(sJuiceElec.mCurrentRecipe));
