@@ -178,19 +178,43 @@ public abstract class BlockBaseSpike extends BlockBaseSealable implements IBlock
 		return ToolCompat.onToolClick(this, aTool, aRemainingDurability, aQuality, aPlayer, aChatReturn, aPlayerInventory, aSneaking, aStack, aWorld, aSide, aX, aY, aZ, aHitX, aHitY, aHitZ);
 	}
 	
-	// @Override
-	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
-		switch(WD.meta(aWorld, aX, aY, aZ) & 7) {
-		case SIDE_X_POS: return new AABB(aX+0.4, aY    , aZ    , aX+1  , aY+1  , aZ+1  );
-		case SIDE_Y_POS: return new AABB(aX    , aY+0.4, aZ    , aX+1  , aY+1  , aZ+1  );
-		case SIDE_Z_POS: return new AABB(aX    , aY    , aZ+0.4, aX+1  , aY+1  , aZ+1  );
-		case SIDE_X_NEG: return new AABB(aX    , aY    , aZ    , aX+0.6, aY+1  , aZ+1  );
-		case SIDE_Y_NEG: return new AABB(aX    , aY    , aZ    , aX+1  , aY+0.6, aZ+1  );
-		case SIDE_Z_NEG: return new AABB(aX    , aY    , aZ    , aX+1  , aY+1  , aZ+0.6);
-		default: return new AABB(aX+0.125, aY+0.125, aZ+0.125, aX+0.875, aY+0.875, aZ+0.875);
+	/**
+	 * BUG-076: форма шипа ИЗ СОСТОЯНИЯ (сторона крепления — младшие 3 бита меты, живут в BlockState-свойстве META).
+	 *
+	 * <p>Причина та же, что у решёток: neo строит BlockState-кэш формы на {@code EmptyBlockGetter}
+	 * ({@code BlockBehaviour:916}), где мира нет, а 1.7.10-канал {@link #getCollisionBoundingBoxFromPool}
+	 * читает мету ИЗ МИРА — в кэше это давало полный куб (замер: все 5 классов шипов). Координаты берутся
+	 * из {@link #localBox(byte)} — единственного источника на класс, его же использует мировой канал.</p>
+	 *
+	 * <p>Outline оригинала — всегда полный куб (`:201` {@code getSelectedBoundingBoxFromPool}), поэтому из
+	 * состояния отдаётся форма только для коллизии; для прицела возвращается {@code null} и мосты идут
+	 * прежним путём (полный куб), как в 1.7.10.</p>
+	 */
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape shapeFromState(net.minecraft.world.level.block.state.BlockState aState, boolean aCollision) {
+		if (!aCollision) return null;
+		return net.minecraft.world.phys.shapes.Shapes.create(localBox((byte)(getExtendedMetaData(aState) & 7)));
+	}
+
+	/** ЕДИНСТВЕННЫЙ источник формы шипа, локальные координаты 0..1 (1:1 оригинал `:182-190`). */
+	private static AABB localBox(byte aSide) {
+		switch (aSide) {
+		case SIDE_X_POS: return new AABB(0.4  , 0    , 0    , 1    , 1    , 1    );
+		case SIDE_Y_POS: return new AABB(0    , 0.4  , 0    , 1    , 1    , 1    );
+		case SIDE_Z_POS: return new AABB(0    , 0    , 0.4  , 1    , 1    , 1    );
+		case SIDE_X_NEG: return new AABB(0    , 0    , 0    , 0.6  , 1    , 1    );
+		case SIDE_Y_NEG: return new AABB(0    , 0    , 0    , 1    , 0.6  , 1    );
+		case SIDE_Z_NEG: return new AABB(0    , 0    , 0    , 1    , 1    , 0.6  );
+		default        : return new AABB(0.125, 0.125, 0.125, 0.875, 0.875, 0.875);
 		}
 	}
-	
+
+	// @Override
+	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
+		// BUG-076: координаты — из общего localBox(сторона), здесь только перенос в мировые.
+		return localBox((byte)(WD.meta(aWorld, aX, aY, aZ) & 7)).move(aX, aY, aZ);
+	}
+
+
 	// @Override
 	// было super.addCollisionBoxesToList(...) (1.7.10 Block, УДАЛЁН из neo целиком). Дефолт inline-порт 1:1 вместо
 	// super-вызова (Block.java:661-669 recompSrc), тот же приём, что уже принят в MultiTileEntityBlock/BlockBaseLilyPad.

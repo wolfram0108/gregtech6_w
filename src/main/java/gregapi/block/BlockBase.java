@@ -99,13 +99,35 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	}
 	/** 1:1-порт vanilla-дефолта Block.setBlockBoundsBasedOnState (no-op: bounds статичны); подклассы переопределяют (Bars:186/LilyPad:128/Path:151). */
 	public void setBlockBoundsBasedOnState(BlockGetter aWorld, int aX, int aY, int aZ) {/**/}
+	/**
+	 * BUG-076 — ФОРМА ИЗ СОСТОЯНИЯ. Хук для семей, у которых геометрия зависит от подтипа блока
+	 * (решётки: биты соединений; шипы: сторона крепления). Такие семьи в 1.7.10 читали мету ИЗ МИРА
+	 * (`setBlockBoundsBasedOnState`/`getCollisionBoundingBoxFromPool` принимали World+координаты), и порт
+	 * это сохранил дословно. В neo этого мало: движок строит BlockState-кэш формы ОДИН раз на
+	 * {@code EmptyBlockGetter}/{@code BlockPos.ZERO} ({@code BlockBehaviour:916}), где мира нет — мостами
+	 * ниже это уходило в статические {@code mRenderBounds} = полный куб, и тонкая решётка снаружи вела
+	 * себя как сплошной блок (замер: 11 классов из 13 в этой ветке).
+	 *
+	 * <p>Мета при этом ДОСТУПНА и без мира — она живёт в самом {@code BlockState}
+	 * ({@code IBlockExtendedMetaData.getExtendedMetaData(BlockState)}, F13-снимок, заведён для BUG-016/047).
+	 * Поэтому семья возвращает форму отсюда, и кэш становится ВЕРНЫМ — в отличие от приёма брата
+	 * ({@code MultiTileEntityBlock:165} гасит кэш через {@code dynamicShape()}, что там неизбежно: форма
+	 * MTE живёт в BlockEntity, а его в кэш-контексте нет).
+	 *
+	 * @param aCollision {@code true} — коллизия (физическое препятствие), {@code false} — outline/прицел.
+	 * @return форма в локальных координатах 0..1 либо {@code null} — «формы из состояния нет», мосты идут прежним путём.
+	 */
+	protected net.minecraft.world.phys.shapes.VoxelShape shapeFromState(BlockState aState, boolean aCollision) {return null;}
+
 	// Мост neo №1: getCollisionShape ← addCollisionBoxesToList (список под-боксов, сущность из EntityCollisionContext —
 	// лодка LilyPad и т.п.; pool=null у подкласса → пустая коллизия = проходим, 1:1). Гейт hasCollision — блоки с
 	// Properties.noCollission не должны отвердеть. Кэш-ветка (EmptyBlockGetter при построении BlockState-кэша:
-	// снег/isFaceSturdy/suffocation) — статические bounds: зеркало 1.7.10, где эти проверки тоже читали статический
-	// mBoundingBox. dynamicShape НЕ нужен: entity-коллизия идёт context-перегрузом МИМО кэша (BlockBehaviour:678-679).
+	// снег/isFaceSturdy/suffocation) — сначала форма ИЗ СОСТОЯНИЯ (shapeFromState), и лишь если её нет —
+	// статические bounds: зеркало 1.7.10, где эти проверки тоже читали статический mBoundingBox.
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getCollisionShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
 		if (!hasCollision) return net.minecraft.world.phys.shapes.Shapes.empty();
+		net.minecraft.world.phys.shapes.VoxelShape tFromState = shapeFromState(aState, T);
+		if (tFromState != null) return tFromState;
 		if (aWorld instanceof Level tLevel) {
 			List<AABB> tList = new java.util.ArrayList<>();
 			addCollisionBoxesToList(tLevel, aPos.getX(), aPos.getY(), aPos.getZ(), new AABB(aPos.getX()-1, aPos.getY()-1, aPos.getZ()-1, aPos.getX()+2, aPos.getY()+2, aPos.getZ()+2), tList, aContext instanceof net.minecraft.world.phys.shapes.EntityCollisionContext tEntityContext ? tEntityContext.getEntity() : null);
@@ -120,6 +142,11 @@ public abstract class BlockBase extends Block implements IBlockBase {
 	// СНАЧАЛА setBlockBoundsBasedOnState, ЗАТЕМ статические bounds). Пустой результат (гонка render-мутации bounds)
 	// → полный куб, не empty: empty-outline делает блок неприцеливаемым.
 	@Override protected net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState aState, BlockGetter aWorld, BlockPos aPos, net.minecraft.world.phys.shapes.CollisionContext aContext) {
+		// BUG-076: форма из состояния — единственный путь, который верен и в кэше (мира нет), и в живом мире.
+		// Семьи, которым нужна ещё и мировая логика (у решётки — «игрок держит такой же блок в руке → полный
+		// куб для удобства достройки»), решают это внутри своей реализации хука.
+		net.minecraft.world.phys.shapes.VoxelShape tFromState = shapeFromState(aState, F);
+		if (tFromState != null) return tFromState.isEmpty() ? net.minecraft.world.phys.shapes.Shapes.block() : tFromState;
 		try { setBlockBoundsBasedOnState(aWorld, aPos.getX(), aPos.getY(), aPos.getZ()); } catch (Throwable e) {/*чужой BlockGetter/гонка — статические bounds ниже*/}
 		float[] tB = mRenderBounds;
 		if (tB[0] <= 0 && tB[1] <= 0 && tB[2] <= 0 && tB[3] >= 1 && tB[4] >= 1 && tB[5] >= 1) return super.getShape(aState, aWorld, aPos, aContext);

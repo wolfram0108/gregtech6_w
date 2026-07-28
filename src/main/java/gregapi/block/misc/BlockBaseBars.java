@@ -170,6 +170,45 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	public ItemStack getPickBlock(HitResult aTarget, Level aWorld, int aX, int aY, int aZ, Player aPlayer) {return ST.make(this, 1, 0);}
 	
 	public AABB getCollisionBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {return null;}
+
+	/**
+	 * BUG-076: форма решётки ИЗ СОСТОЯНИЯ (мета соединений 1=Z-,2=Z+,4=X-,8=X+ живёт в BlockState-свойстве META).
+	 *
+	 * <p>Тот же набор боксов, что у 1.7.10-каналов ниже, — ЕДИНСТВЕННЫЙ источник геометрии на класс:
+	 * {@code addCollisionBoxesToList} и {@code setBlockBoundsBasedOnState} тоже читают его, поэтому вторая
+	 * копия координат не заводится. Коллизия — пластины 2px по занятым сторонам (1:1 оригинал `:197-200`),
+	 * outline — 1px-пластина при одиночном соединении и полный куб иначе (1:1 оригинал `:165-169`).</p>
+	 *
+	 * <p>Мировую оговорку оригинала («игрок держит такой же блок в руке ближе 5 блоков → полный куб, чтобы
+	 * было куда целиться при достройке», `:158-162`) здесь воспроизвести нельзя — мира в кэш-контексте нет.
+	 * Она осталась в {@link #setBlockBoundsBasedOnState}, но для outline теперь не применяется: цена ей —
+	 * удобство прицеливания, тогда как ошибка формы ломает саму проходимость. Осознанное отклонение.</p>
+	 */
+	@Override protected net.minecraft.world.phys.shapes.VoxelShape shapeFromState(net.minecraft.world.level.block.state.BlockState aState, boolean aCollision) {
+		byte tMeta = UT.Code.bind4(getExtendedMetaData(aState));
+		if (aCollision) {
+			net.minecraft.world.phys.shapes.VoxelShape rShape = net.minecraft.world.phys.shapes.Shapes.empty();
+			for (AABB tBox : collisionBoxes(tMeta)) rShape = net.minecraft.world.phys.shapes.Shapes.or(rShape, net.minecraft.world.phys.shapes.Shapes.create(tBox));
+			return rShape;
+		}
+		switch (tMeta) {
+		case  1: return net.minecraft.world.phys.shapes.Shapes.create(new AABB(0        , 0, 0        , 1        , 1, PX_P[ 1]));
+		case  2: return net.minecraft.world.phys.shapes.Shapes.create(new AABB(0        , 0, PX_P[15] , 1        , 1, 1       ));
+		case  4: return net.minecraft.world.phys.shapes.Shapes.create(new AABB(0        , 0, 0        , PX_P[ 1] , 1, 1       ));
+		case  8: return net.minecraft.world.phys.shapes.Shapes.create(new AABB(PX_P[15] , 0, 0        , 1        , 1, 1       ));
+		default: return net.minecraft.world.phys.shapes.Shapes.block();
+		}
+	}
+
+	/** ЕДИНСТВЕННЫЙ источник боксов коллизии решётки, локальные координаты 0..1 (1:1 оригинал `:197-200`). */
+	private static java.util.List<AABB> collisionBoxes(byte aMeta) {
+		java.util.List<AABB> rList = new java.util.ArrayList<>(4);
+		if ((aMeta & 1) != 0) rList.add(new AABB(0        , 0, 0        , 1        , 1, PX_P[ 2]));
+		if ((aMeta & 2) != 0) rList.add(new AABB(0        , 0, PX_P[14] , 1        , 1, 1       ));
+		if ((aMeta & 4) != 0) rList.add(new AABB(0        , 0, 0        , PX_P[ 2] , 1, 1       ));
+		if ((aMeta & 8) != 0) rList.add(new AABB(PX_P[14] , 0, 0        , 1        , 1, 1       ));
+		return rList;
+	}
 	
 	// @Override
 	public AABB getSelectedBoundingBoxFromPool(Level aWorld, int aX, int aY, int aZ) {
@@ -211,13 +250,13 @@ public abstract class BlockBaseBars extends BlockBaseSealable implements IRender
 	@SuppressWarnings("unchecked")
 	public void addCollisionBoxesToList(Level aWorld, int aX, int aY, int aZ, AABB aAABB, @SuppressWarnings("rawtypes") List aList, Entity aEntity) {
 		if (aEntity instanceof ItemEntity || aEntity instanceof ExperienceOrb || aEntity instanceof Projectile) return;
+		// BUG-076: боксы берутся из ЕДИНСТВЕННОГО источника collisionBoxes(мета) — того же, что питает
+		// shapeFromState; здесь они лишь переносятся в мировые координаты. Z- = 1, Z+ = 2, X- = 4, X+ = 8.
 		byte tMeta = WD.meta(aWorld, aX, aY, aZ);
-		AABB tBox;
-		// Z- = 1, Z+ = 2, X- = 4, X+ = 8
-		if ((tMeta & 1) != 0) {tBox = new AABB(aX         , aY, aZ         , aX+1       , aY+1, aZ+PX_P[ 2]); if (aAABB.intersects(tBox)) aList.add(tBox);}
-		if ((tMeta & 2) != 0) {tBox = new AABB(aX         , aY, aZ+PX_P[14], aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
-		if ((tMeta & 4) != 0) {tBox = new AABB(aX         , aY, aZ         , aX+PX_P[ 2], aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
-		if ((tMeta & 8) != 0) {tBox = new AABB(aX+PX_P[14], aY, aZ         , aX+1       , aY+1, aZ+1       ); if (aAABB.intersects(tBox)) aList.add(tBox);}
+		for (AABB tLocal : collisionBoxes(tMeta)) {
+			AABB tBox = tLocal.move(aX, aY, aZ);
+			if (aAABB.intersects(tBox)) aList.add(tBox);
+		}
 	}
 	
 	public int getRenderType() {return RendererBlockTextured.INSTANCE==null?23:RendererBlockTextured.INSTANCE.mRenderID;}
