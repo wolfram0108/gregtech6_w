@@ -6440,6 +6440,49 @@ public final class GT6Probes {
 		}
 		O.println("[" + DEMO_M + "] 5) РУДЫ GT6 (карта + Jade-кирка) @ z=" + (tO.getZ() + 6) + ", поставлено " + tPlaced + ": " + tOreNames);
 		O.println("[" + DEMO_M + "] 5b) ДЕРЕВО/КАМЕНЬ GT6 (Jade-топор) @ z=" + (tO.getZ() + 9) + ", поставлено " + tPlacedMisc + ": " + tMiscNames);
+
+		// ── СЕКТОР 7 (z=12/15/18): ГРАНЬ ITEM-ФОРМЫ — BUG-078, приёмка ГЛАЗОМ ─────────────────────────────
+		// Что смотреть: у блока в РУКЕ (инвентарь/креатив/JEI) и у него же В МИРЕ грань обязана быть та, что
+		// была до правки. Механически это уже доказано (M-19, PASS 2416/FAIL 0), картинку судит игрок.
+		// Представители берутся ИЗ РЕЕСТРА по классу TE, а не по ID из головы: ID — данные, они меняются.
+		// Сундуки — семья ОДНОГО класса, разнятся материалом (Lead/Bronze/…): отбор по классу дал бы 1 штуку,
+		// поэтому здесь берём разные ID. У машин и масстоража наоборот: разнообразие несут именно классы.
+		gt6DemoFacingRow(tLevel, aPlayer, tReg, tO, 12, "СУНДУКИ",  4, F, tTE -> tTE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest);
+		gt6DemoFacingRow(tLevel, aPlayer, tReg, tO, 15, "МАССТОРАЖ", 4, T, tTE -> tTE instanceof gregapi.tileentity.inventories.MultiTileEntityMassStorage);
+		gt6DemoFacingRow(tLevel, aPlayer, tReg, tO, 18, "МАШИНЫ",   6, T, tTE -> tTE instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle
+			&& !(tTE instanceof gregapi.tileentity.inventories.MultiTileEntityMassStorage));
+		// Ванильный сундук РЯДОМ с эталоном сравнения: как выглядит правильно повёрнутый сундук в руке.
+		net.minecraft.world.item.ItemStack tVanilla = new net.minecraft.world.item.ItemStack(Blocks.CHEST, 1);
+		gregapi.probe.GT6ProbeStand.placeBlock(tLevel, aPlayer, tO.offset(-2, -1, 12), net.minecraft.core.Direction.UP, tVanilla, DEMO_M, "ванильный сундук (эталон)");
+		O.println("[" + DEMO_M + "] 7) ГРАНЬ ITEM-ФОРМЫ (BUG-078) @ z=" + (tO.getZ() + 12) + "/" + (tO.getZ() + 15) + "/" + (tO.getZ() + 18)
+			+ " — ванильный сундук-эталон @ " + tO.offset(-2, 0, 12));
+	}
+
+	/** Ряд сектора 7: N представителей семьи ставятся в мир путём игрока, те же предметы копятся для выдачи в руки. */
+	private static final java.util.List<net.minecraft.world.item.ItemStack> sDemoFacingKit = new java.util.ArrayList<>();
+	private static void gt6DemoFacingRow(ServerLevel aLevel, ServerPlayer aPlayer, gregapi.block.multitileentity.MultiTileEntityRegistry aReg,
+			BlockPos aOrigin, int aZ, String aTitle, int aWant, boolean aDistinctByClass, java.util.function.Predicate<BlockEntity> aFilter) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		StringBuilder tNames = new StringBuilder();
+		int tPlaced = 0;
+		java.util.Set<String> tSeenClasses = new java.util.HashSet<>();
+		for (Short tID : new java.util.TreeSet<>(aReg.mRegistry.keySet())) {
+			if (tPlaced >= aWant) break;
+			net.minecraft.world.item.ItemStack tStack = aReg.getItem(tID);
+			if (tStack == null || tStack.isEmpty() || gregapi.util.ST.hidden(tStack)) continue;
+			BlockEntity tProbe = aReg.getNewTileEntity(tStack);
+			if (tProbe == null || !aFilter.test(tProbe)) continue;
+			// разные КЛАССЫ, а не 4 расцветки одного: иначе ряд не покажет, что приём общий для семьи.
+			// Для семьи одного класса (сундуки) правило снимается — там разнообразие несёт материал.
+			if (aDistinctByClass && !tSeenClasses.add(tProbe.getClass().getSimpleName())) continue;
+			BlockEntity tAt = gregapi.probe.GT6ProbeStand.place(aLevel, aPlayer, aOrigin.offset(tPlaced * 3, -1, aZ),
+				net.minecraft.core.Direction.UP, aReg.getItem(tID), BlockEntity.class, DEMO_M, aTitle + "#" + tID);
+			if (tAt == null) continue;
+			sDemoFacingKit.add(aReg.getItem(tID, 4));
+			tNames.append(tNames.length() == 0 ? "" : ", ").append(tStack.getHoverName().getString()).append(" (").append(tProbe.getClass().getSimpleName()).append(", id=").append(tID).append(')');
+			tPlaced++;
+		}
+		O.println("[" + DEMO_M + "]    ряд «" + aTitle + "» @ z=" + (aOrigin.getZ() + aZ) + ", поставлено " + tPlaced + "/" + aWant + ": " + tNames);
 	}
 
 	private static void gt6DemoFinish(ServerPlayer aPlayer) {
@@ -6471,8 +6514,34 @@ public final class GT6Probes {
 			O.println("[" + DEMO_M + "] 6) МЕЧ С 4 ЧАРАМИ GT6 выдан (проверить ИМЕНА в тултипе)");
 		} catch (Throwable e) {O.println("[" + DEMO_M + "] меч с чарами не выдан: " + e);}
 
+		// СЕКТОР 7 (BUG-078): те же блоки, что стоят в мире, — В РУКИ, чтобы сравнить «в руке» и «в мире».
+		// Кладём ДВАЖДЫ: в инвентарь и в ванильный сундук-склад у площадки. Инвентарь живёт в playerdata и
+		// переживает только корректный выход; сундук лежит в чанке — он останется в мире при любом исходе.
+		int tKitToHand = 0;
+		for (net.minecraft.world.item.ItemStack tStack : sDemoFacingKit) if (aPlayer.getInventory().add(tStack.copy())) tKitToHand++;
+		BlockPos tStorePos = sDemoOrigin.offset(-2, 0, 15);
+		aPlayer.level().setBlock(tStorePos, Blocks.CHEST.defaultBlockState(), 3);
+		int tKitToChest = 0;
+		if (aPlayer.level().getBlockEntity(tStorePos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity tStore) {
+			for (net.minecraft.world.item.ItemStack tStack : sDemoFacingKit) {
+				if (tKitToChest >= tStore.getContainerSize()) break;
+				tStore.setItem(tKitToChest++, tStack.copy());
+			}
+			tStore.setChanged();
+		}
+		O.println("[" + DEMO_M + "] 7) НАБОР BUG-078: в инвентарь " + tKitToHand + " видов, в сундук-склад @ " + tStorePos + " — " + tKitToChest + " видов");
+
 		aPlayer.teleportTo(sDemoOrigin.getX() + 8.5, sDemoOrigin.getY() + 1, sDemoOrigin.getZ() - 3.5);
 		O.println("[" + DEMO_M + "] ГОТОВО. Игрок телепортирован к площадке; набор предметов в инвентаре.");
+
+		// Мир и playerdata СОХРАНЯЮТСЯ ПРИНУДИТЕЛЬНО: площадка строится для теста ИГРОКА в отдельном запуске,
+		// а стенд глушится жёстко — без явного сохранения и постройка, и выданный набор пропали бы вместе с JVM.
+		try {
+			net.minecraft.server.MinecraftServer tServer = aPlayer.level().getServer();
+			tServer.getPlayerList().saveAll();
+			boolean tSaved = tServer.saveEverything(true, true, true);
+			O.println("[" + DEMO_M + "] СОХРАНЕНИЕ мира и playerdata: " + (tSaved ? "OK" : "НЕ УДАЛОСЬ — площадка не переживёт выход"));
+		} catch (Throwable e) {O.println("[" + DEMO_M + "] сохранение упало: " + e);}
 		sDemoSeq.done();
 	}
 
