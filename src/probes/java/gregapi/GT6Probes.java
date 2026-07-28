@@ -232,6 +232,8 @@ public final class GT6Probes {
 		if (gregapi.data.CS.probeFlag("gt6fluidcapprobe.flag")) gt6FluidCapProbeTick(aEvent.getServer());
 	// [GT6-JUICEPROBE] стенд «BUG-055: цветок → краска в Соковыжималке» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6juiceprobe.flag")) gt6JuiceProbeTick(aEvent.getServer());
+	// [GT6-KUPROBE] стенд «кинетическая энергия KU: производство, знакопеременность, потребление» — снять при уборке фазы
+		if (gregapi.data.CS.probeFlag("gt6kuprobe.flag")) gt6KuProbeTick(aEvent.getServer());
 	// [GT6-HARVESTTAGPROBE] стенд «MODCOMPAT-001 П1/П3: Currently Harvestable + Effective Tool» — снять при уборке фазы
 		if (gregapi.data.CS.probeFlag("gt6harvesttagprobe.flag")) gt6HarvestTagProbeTick(aEvent.getServer());
 	// [GT6-JADEPROBE] стенд «MODCOMPAT-001: инструменты GT6 в тултипе Jade» — снять при уборке фазы
@@ -7532,6 +7534,168 @@ public final class GT6Probes {
 			if (tParts.length == 4) sUVPSeq.judge(tParts[0], "PASS".equals(tParts[3]), tParts[1], tParts[2]);
 		}
 		sUVPSeq.done();
+	}
+
+	// ============================================================================================================
+	// [GT6-KUPROBE] стенд «КИНЕТИЧЕСКАЯ ЭНЕРГИЯ (KU) — производство, знакопеременность, потребление».
+	// Пробел покрытия: KU в порте не проверялась НИ РАЗУ (связки Ф3.1 закрыли HU/SU/RU/EU, но не KU).
+	// Она отличается от прочих типов принципиально: это ЗНАКОПЕРЕМЕННАЯ энергия (TD.java:219
+	// ALL_ALTERNATING = {KU}). Паровой движок гонит поршень (MultiTileEntityEngineSteam:113-116 mPiston 0..3)
+	// и меняет ЗНАК пакета: `mPiston > 1 ? -tOutput : tOutput` (:146). Приёмник пишет знак в mStateNew
+	// (MultiTileEntityBasicMachine:507), а выгрузка результата разрешена ТОЛЬКО на переходе «был +, стал −»
+	// (:820 `mStateOld && !mStateNew`). Значит машина на KU физически не может завершить цикл без живого
+	// пульсирующего привода — именно это здесь и судится.
+	//
+	// Цепь (реальные блоки, реальные тики): пар → Strong Steam Engine (1350) → передняя грань → Squeezer (20071).
+	// Тир выбран расчётом, а не наугад: машине нужен пакет в окне [mInputMin=16 .. mInputMax=64]
+	// (BasicMachine:103,131 от NBT_INPUT=32), а движок выдаёт tOutput = mOutput*(mState+1)/16; у обычного
+	// Steam Engine mOutput=16/STEAM_PER_EU=8 → максимум 16 (впритык и только на состоянии перегрева),
+	// у Strong mOutput=64/STEAM_PER_EU=32 → 2*(mState+1), то есть 18..64 в рабочем диапазоне.
+	// Пар заливается в бак движка как СЕТАП резервуара (тот же приём, что предзаряд бойлера в ECP);
+	// судимый канал — производство KU, её знак и потребление машиной — остаётся полностью живым.
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: COLD-связка без пара обязана остаться без краски; плюс проверяется, что пар
+	// РЕАЛЬНО расходуется (иначе движок «работал из ничего» и замер недействителен).
+	// ============================================================================================================
+	private static final String KU_M = "GT6-KUPROBE";
+	private static final int KU_ENGINE_ID   = 1350;  // Strong Steam Engine (Pb) — Loader_MultiTileEntities.java:600
+	private static final int KU_SQUEEZER_ID = 20071; // Squeezer (Bronze), RM.Squeezer — :1328
+	private static final long KU_TARGET_ENERGY = 32000L; // середина рабочего диапазона (mState≈16 из 32; при 62000+ движок глохнет от перегрева, :152-157)
+	private static int sKuTick = -1;
+	private static gregapi.probe.GT6ProbeStand.Seq sKuSeq = null;
+	private static net.minecraft.server.level.ServerPlayer sKuPlayer = null;
+	private static gregtech.tileentity.energy.converters.MultiTileEntityEngineSteam sKuEngine = null, sKuEngineCold = null;
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine sKuMachine = null, sKuMachineCold = null;
+	private static long sKuSteamFed = 0;
+
+	public static void gt6KuProbeTick(net.minecraft.server.MinecraftServer aServer) {
+		sKuTick++;
+		if (aServer.getPlayerList().getPlayers().isEmpty()) return;
+		sKuPlayer = aServer.getPlayerList().getPlayers().get(0);
+		if (sKuSeq == null) {
+			sKuSeq = new gregapi.probe.GT6ProbeStand.Seq(KU_M)
+				.at(20, GT6Probes::gt6KuProbeBuild)
+				.window(25, 500, GT6Probes::gt6KuProbeFeed)
+				// знакопеременность нельзя судить одним замером в конце: обе фазы поршня видны только по ходу
+				.watch("поршень в ФАЗЕ +", 25, 500, () -> sKuEngine != null && gregapi.probe.GT6ProbeStand.fldInt(sKuEngine, "mPiston") <= 1)
+				.watch("поршень в ФАЗЕ −", 25, 500, () -> sKuEngine != null && gregapi.probe.GT6ProbeStand.fldInt(sKuEngine, "mPiston") >  1)
+				.watch("движок активен"  , 25, 500, () -> sKuEngine != null && gregapi.probe.GT6ProbeStand.fldBool(sKuEngine, "mActive"))
+				.watch("машина получала KU", 25, 500, () -> sKuMachine != null && sKuMachine.mEnergy > 0)
+				.watch("у машины был знак +", 25, 500, () -> sKuMachine != null && sKuMachine.mStateNew)
+				.watch("у машины был знак −", 25, 500, () -> sKuMachine != null && !sKuMachine.mStateNew && sKuMachine.mStateOld)
+				.at(520, GT6Probes::gt6KuProbeJudge);
+		}
+		sKuSeq.tick(sKuTick);
+	}
+
+	private static void gt6KuProbeBuild() {
+		net.minecraft.server.level.ServerLevel tLevel = sKuPlayer.level();
+		net.minecraft.core.BlockPos tBase = sKuPlayer.blockPosition().offset(3, 0, -3);
+		gregapi.probe.GT6ProbeStand.solidPad(tLevel, tBase.offset(-1, -1, -1), 8, 6);
+		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, tBase.getX() + 0.5, tBase.getY() + 1.0, tBase.getZ() + 2.5, 0.0F, 0.0F);
+
+		sKuEngine     = gt6KuProbeBuildPair(tLevel, tBase                 , "RUN");
+		sKuMachine    = sKuLastMachine;
+		sKuEngineCold = gt6KuProbeBuildPair(tLevel, tBase.offset(3, 0, 0) , "COLD");
+		sKuMachineCold= sKuLastMachine;
+		// судьи знака смотрят на RUN-машину: вернём игрока в горизонталь, чтобы дальнейшие клики (если будут) были штатными
+		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, tBase.getX() + 0.5, tBase.getY() + 1.0, tBase.getZ() + 2.5, 0.0F, 0.0F);
+
+		if (sKuMachine != null)     gregapi.probe.GT6ProbeStand.slotSet(sKuMachine    , 0, gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0));
+		if (sKuMachineCold != null) gregapi.probe.GT6ProbeStand.slotSet(sKuMachineCold, 0, gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0));
+		gregapi.data.CS.OUT.println("[" + KU_M + "] построено @" + tBase + ": движок RUN=" + (sKuEngine != null) + " машина RUN=" + (sKuMachine != null)
+			+ " · движок COLD=" + (sKuEngineCold != null) + " машина COLD=" + (sKuMachineCold != null));
+	}
+
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine sKuLastMachine = null;
+
+	/** Пара «машина + движок НАД ней, смотрящий вниз».
+	 *  Топология выведена из регистрации, а не подобрана: Squeezer принимает энергию ТОЛЬКО одной стороной —
+	 *  `NBT_ENERGY_ACCEPTED_SIDES, SBIT_U` (Loader_MultiTileEntities:1328; SBIT_U=2, CS.java), то есть сверху;
+	 *  а движок отдаёт KU только в свою переднюю грань (EngineSteam:232 `aSide == mFacing`). Значит движок
+	 *  обязан стоять НАД машиной с mFacing = DOWN. Facing при установке задаётся ВЗГЛЯДОМ игрока
+	 *  (`UT.Code.getSideForPlayerPlacing`: `getXRot() <= -65 → SIDE_DOWN`, UT.java:1616) — поэтому перед
+	 *  установкой движка игрок разворачивается вверх. Первая редакция стенда ставила движок сбоку и получила
+	 *  честный FAIL «машина не приняла KU»: энергия шла в грань, которой у Squeezer нет входа. */
+	private static gregtech.tileentity.energy.converters.MultiTileEntityEngineSteam gt6KuProbeBuildPair(
+			net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aBase, String aLabel) {
+		sKuLastMachine = null;
+		// 1) машина на площадке
+		sKuLastMachine = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sKuPlayer, aBase.offset(0, -1, 0), net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(KU_SQUEEZER_ID),
+			gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, KU_M, aLabel + "-пресс");
+		// 2) взгляд ВВЕРХ → движок встанет mFacing = DOWN и будет бить KU вниз, в верхнюю грань машины
+		gregapi.probe.GT6ProbeStand.teleportLook(sKuPlayer, aBase.getX() + 0.5, aBase.getY() + 1.0, aBase.getZ() + 2.5, 0.0F, -90.0F);
+		gregtech.tileentity.energy.converters.MultiTileEntityEngineSteam tEngine = gregapi.probe.GT6ProbeStand.place(
+			aLevel, sKuPlayer, aBase, net.minecraft.core.Direction.UP, gregapi.probe.GT6ProbeStand.mteStack(KU_ENGINE_ID),
+			gregtech.tileentity.energy.converters.MultiTileEntityEngineSteam.class, KU_M, aLabel + "-движок");
+		if (tEngine == null) return null;
+		byte tFacing = (byte) gregapi.probe.GT6ProbeStand.fldInt(tEngine, "mFacing");
+		gregapi.data.CS.OUT.println("[" + KU_M + "] " + aLabel + ": машина @" + aBase + ", движок @" + aBase.above()
+			+ " mFacing=" + tFacing + " (" + net.minecraft.core.Direction.from3DDataValue(tFacing) + ", нужен DOWN=0)");
+		// DIAG: прямой опрос предикатов энергосети — отвечает «почему не течёт» без гаданий
+		if (sKuLastMachine != null) {
+			boolean tEmits  = tEngine.isEnergyEmittingTo(gregapi.data.TD.Energy.KU, gregapi.data.CS.SIDE_DOWN, true);
+			boolean tAccept = sKuLastMachine.isEnergyAcceptingFrom(gregapi.data.TD.Energy.KU, gregapi.data.CS.SIDE_UP, true);
+			gregapi.data.CS.OUT.println("[" + KU_M + "] " + aLabel + " DIAG-ЭНЕРГОСЕТЬ: движок.isEnergyEmittingTo(KU, DOWN)=" + tEmits
+				+ " · машина.isEnergyAcceptingFrom(KU, UP)=" + tAccept
+				+ " · машина mEnergyInputs=" + gregapi.probe.GT6ProbeStand.fldInt(sKuLastMachine, "mEnergyInputs")
+				+ " mFacing=" + gregapi.probe.GT6ProbeStand.fldInt(sKuLastMachine, "mFacing")
+				+ " mInputMin=" + sKuLastMachine.mInputMin + " mInputMax=" + sKuLastMachine.mInputMax);
+		}
+		return tEngine;
+	}
+
+	/** Сетап резервуара: держим бак пара непустым, пока движок не набрал рабочую энергию. Выше 62000 он
+	 *  глохнет от перегрева (EngineSteam:152-157), поэтому подача прекращается по достижении цели. */
+	private static void gt6KuProbeFeed() {
+		if (sKuEngine == null) return;
+		long tEnergy = gregapi.probe.GT6ProbeStand.fldLong(sKuEngine, "mEnergy");
+		if (tEnergy >= KU_TARGET_ENERGY) return;
+		gregapi.fluid.FluidTankGT tTank = (gregapi.probe.GT6ProbeStand.fld(sKuEngine, "mTank") instanceof gregapi.fluid.FluidTankGT t) ? t : null;
+		if (tTank == null) return;
+		long tBefore = tTank.amount();
+		gregapi.probe.GT6ProbeStand.fill(sKuEngine, "steam", 12800); // ёмкость = STEAM_PER_WATER(200) × mOutput(32) × 2
+		sKuSteamFed += Math.max(0, 12800 - tBefore); // сколько реально долили = сколько движок съел с прошлого раза
+	}
+
+	private static String gt6KuProbeOutTank(gregapi.tileentity.machines.MultiTileEntityBasicMachine aBE) {
+		if (aBE == null) return "машина не встала";
+		if (aBE.mTanksOutput == null || aBE.mTanksOutput.length == 0) return "нет выходных танков";
+		net.neoforged.neoforge.fluids.FluidStack tFluid = aBE.mTanksOutput[0].getFluid();
+		if (tFluid == null || tFluid.getAmount() <= 0) return "пусто";
+		return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
+	}
+
+	private static void gt6KuProbeJudge() {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		String tRun = gt6KuProbeOutTank(sKuMachine), tCold = gt6KuProbeOutTank(sKuMachineCold);
+		long tEngineEnergy = sKuEngine == null ? -1 : gregapi.probe.GT6ProbeStand.fldLong(sKuEngine, "mEnergy");
+		long tColdEnergy   = sKuEngineCold == null ? -1 : gregapi.probe.GT6ProbeStand.fldLong(sKuEngineCold, "mEnergy");
+
+		O.println("[" + KU_M + "] диагностика: движок mEnergy=" + tEngineEnergy + " mState=" + gregapi.probe.GT6ProbeStand.fldInt(sKuEngine, "mState")
+			+ " mPiston=" + gregapi.probe.GT6ProbeStand.fldInt(sKuEngine, "mPiston") + " mActive=" + gregapi.probe.GT6ProbeStand.fldBool(sKuEngine, "mActive")
+			+ " пара скормлено=" + sKuSteamFed + " | машина mEnergy=" + (sKuMachine == null ? -1 : sKuMachine.mEnergy)
+			+ " mProgress=" + (sKuMachine == null ? -1 : sKuMachine.mProgress) + "/" + (sKuMachine == null ? -1 : sKuMachine.mMaxProgress)
+			+ " stateNew=" + (sKuMachine != null && sKuMachine.mStateNew) + " stateOld=" + (sKuMachine != null && sKuMachine.mStateOld)
+			+ " бак=" + tRun + " | COLD движок mEnergy=" + tColdEnergy + " бак=" + tCold);
+
+		sKuSeq.judge("движок и машина встали (RUN)", sKuEngine != null && sKuMachine != null, "оба", sKuEngine + " / " + sKuMachine);
+		sKuSeq.judge("движок ПРОИЗВЁЛ KU из пара" , tEngineEnergy > 0, "> 0", tEngineEnergy);
+		sKuSeq.judge("пар РЕАЛЬНО расходуется"    , sKuSteamFed > 0, "> 0 mb", sKuSteamFed);
+		sKuSeq.judge("движок работал (mActive)"   , sKuSeq.everSeen("движок активен"), "видели", sKuSeq.everSeen("движок активен"));
+		// суть KU: обе фазы поршня и ОБА знака пакета у приёмника
+		sKuSeq.judge("ЗНАКОПЕРЕМЕННОСТЬ: поршень прошёл обе фазы",
+			sKuSeq.everSeen("поршень в ФАЗЕ +") && sKuSeq.everSeen("поршень в ФАЗЕ −"), "обе фазы",
+			sKuSeq.everSeen("поршень в ФАЗЕ +") + " / " + sKuSeq.everSeen("поршень в ФАЗЕ −"));
+		sKuSeq.judge("машина ПРИНИМАЛА KU"        , sKuSeq.everSeen("машина получала KU"), "видели", sKuSeq.everSeen("машина получала KU"));
+		sKuSeq.judge("у машины сменился ЗНАК (+ → −)",
+			sKuSeq.everSeen("у машины был знак +") && sKuSeq.everSeen("у машины был знак −"), "оба знака",
+			sKuSeq.everSeen("у машины был знак +") + " / " + sKuSeq.everSeen("у машины был знак −"));
+		// ГЛАВНОЕ: цикл на знакопеременной энергии доведён до конца — то, что невозможно при статическом питании
+		sKuSeq.judge("ЦИКЛ ЗАВЕРШЁН: краска в баке", "dye.flower.red:288".equals(tRun), "dye.flower.red:288", tRun);
+		sKuSeq.judge("COLD (без пара): движок мёртв", tColdEnergy == 0, 0, tColdEnergy);
+		sKuSeq.judge("COLD (без пара): краски нет"  , "пусто".equals(tCold), "пусто", tCold);
+		sKuSeq.done();
 	}
 
 	// ============================================================================================================
