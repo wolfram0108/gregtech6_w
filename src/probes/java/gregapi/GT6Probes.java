@@ -7563,7 +7563,8 @@ public final class GT6Probes {
 			sJuiceSeq = new gregapi.probe.GT6ProbeStand.Seq(JUICE_M)
 				.at(20, GT6Probes::gt6JuiceProbeBuild)
 				.at(40, GT6Probes::gt6JuiceProbeAct)
-				.at(60, GT6Probes::gt6JuiceProbeJudge);
+				// электрическому прессу нужен запас реальных тиков на checkRecipe→doActive→выгрузку в бак
+				.at(240, GT6Probes::gt6JuiceProbeJudge);
 		}
 		sJuiceSeq.tick(sJuiceTick);
 	}
@@ -7606,6 +7607,53 @@ public final class GT6Probes {
 		gt6JuiceProbeUse(1, net.minecraft.world.level.block.Blocks.DANDELION); // ожидание dye.flower.yellow:144
 		gt6JuiceProbeUse(2, net.minecraft.world.level.block.Blocks.LILAC);     // double_plant, 2 порции => magenta:288
 		gt6JuiceProbeUse(3, net.minecraft.world.level.block.Blocks.COBBLESTONE); // COLD: рецепта нет => бак пуст
+		gt6JuiceProbeBuildElectric(sJuicePlayer.level(), sJuicePlayer.blockPosition().offset(2, 0, 2));
+	}
+
+	// ── ЭЛЕКТРИЧЕСКАЯ соковыжималка (Squeezer 20071, MultiTileEntityBasicMachine, RM.Squeezer): вторая половина
+	// репорта («Пресс»). Ручного варианта у неё в порте нет, поэтому судится штатный машинный цикл: цветок в
+	// слот входа → реальные тики checkRecipe()/doActive() → краска в ВЫХОДНОМ баке. Энергия выставляется полем
+	// (сетап-обход бухгалтерии — тот же приём, что у CHEMPROBE/ECP/AOP); судимый канал остаётся реальным.
+	private static final int JUICE_SQUEEZER_ID = 20071; // Squeezer (Bronze), Loader_MultiTileEntities.java:1328
+	private static gregapi.tileentity.machines.MultiTileEntityBasicMachine sJuiceElec = null, sJuiceElecCold = null;
+
+	private static void gt6JuiceProbeBuildElectric(net.minecraft.server.level.ServerLevel aLevel, net.minecraft.core.BlockPos aBase) {
+		// вплотную к ряду прессов: сервер молча роняет useItemOn вне дистанции достижения (урок BUG-032 —
+		// на первом прогоне COLD-пресс «не встал» именно поэтому, RUN стоял ближе к игроку)
+		gregapi.probe.GT6ProbeStand.teleportLook(sJuicePlayer, aBase.getX() + 1.0, aBase.getY() + 1.0, aBase.getZ() + 1.0, 0.0F, 0.0F);
+		sJuiceElec     = gregapi.probe.GT6ProbeStand.place(aLevel, sJuicePlayer, aBase.offset(0, -1, 2), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(JUICE_SQUEEZER_ID), gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, JUICE_M, "пресс-RUN");
+		sJuiceElecCold = gregapi.probe.GT6ProbeStand.place(aLevel, sJuicePlayer, aBase.offset(1, -1, 2), net.minecraft.core.Direction.UP,
+			gregapi.probe.GT6ProbeStand.mteStack(JUICE_SQUEEZER_ID), gregapi.tileentity.machines.MultiTileEntityBasicMachine.class, JUICE_M, "пресс-COLD");
+		if (sJuiceElec != null) {
+			gregapi.probe.GT6ProbeStand.slotSet(sJuiceElec, 0, gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0));
+			sJuiceElec.mEnergy = 1_000_000_000L;
+		}
+		// COLD: тот же цветок, но БЕЗ энергии — если краска появится и здесь, судья не различает работу и её отсутствие
+		if (sJuiceElecCold != null) {
+			gregapi.probe.GT6ProbeStand.slotSet(sJuiceElecCold, 0, gregapi.util.ST.make(net.minecraft.world.level.block.Blocks.POPPY, 1, 0));
+			sJuiceElecCold.mEnergy = 0;
+		}
+	}
+
+	/** ВЫЧИСЛЕННЫЙ жидкостный выход текущего цикла (mOutputFluids) — то, что машина уже приготовила к выгрузке. */
+	private static String gt6JuiceProbeOutputFluids(gregapi.tileentity.machines.MultiTileEntityBasicMachine aBE) {
+		if (aBE == null) return "машина не встала";
+		Object tArr = gregapi.probe.GT6ProbeStand.fld(aBE, "mOutputFluids");
+		if (!(tArr instanceof net.neoforged.neoforge.fluids.FluidStack[] tOut)) return "нет поля mOutputFluids";
+		for (net.neoforged.neoforge.fluids.FluidStack tFluid : tOut)
+			if (tFluid != null && tFluid.getFluid() != null && tFluid.getAmount() > 0)
+				return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
+		return "ничего не вычислено";
+	}
+
+	/** Содержимое ВЫХОДНОГО бака базовой машины как «имя:объём». */
+	private static String gt6JuiceProbeOutTank(gregapi.tileentity.machines.MultiTileEntityBasicMachine aBE) {
+		if (aBE == null) return "машина не встала";
+		if (aBE.mTanksOutput == null || aBE.mTanksOutput.length == 0) return "нет выходных танков";
+		net.neoforged.neoforge.fluids.FluidStack tFluid = aBE.mTanksOutput[0].getFluid();
+		if (tFluid == null || tFluid.getAmount() <= 0) return "пусто";
+		return gregapi.fluid.FluidGT.nameOf(tFluid.getFluid()) + ":" + tFluid.getAmount();
 	}
 
 	private static void gt6JuiceProbeJudge() {
@@ -7626,6 +7674,40 @@ public final class GT6Probes {
 		// в порте нет ручного варианта, и все 13 цветов, а не три примера.
 		gt6JuiceProbeSweep("RM.Juicer"  , gregapi.data.RM.Juicer);
 		gt6JuiceProbeSweep("RM.Squeezer", gregapi.data.RM.Squeezer);
+
+		// ── ПРЕСС (кинетический Squeezer): судим то, что относится к делу — принял ли он цветок как рецепт и
+		// ВЫЧИСЛИЛ ли красочный выход. Завершающая выгрузка в бак у KU-машины требует ЗНАКОПЕРЕМЕННОГО привода:
+		// MultiTileEntityBasicMachine:820 пускает выгрузку только при `mStateOld && !mStateNew`, если тип энергии
+		// входит в TD.Energy.ALL_ALTERNATING (TD.java:219 — там ровно KU). Обе строки 1:1 с оригиналом
+		// (gregtech6/.../MultiTileEntityBasicMachine.java:815, TD.java:219), то есть это правило GT6, а не порт.
+		// Статически выставленная энергия пульсацию вала не воспроизводит — поэтому судить бак здесь было бы
+		// замером не того: полная кинетическая цепь (мотор даёт RU, машине нужен KU) — отдельная подсистема.
+		String tElecCold = gt6JuiceProbeOutTank(sJuiceElecCold);
+		String tPrepared = gt6JuiceProbeOutputFluids(sJuiceElec);
+		sJuiceSeq.judge("ПРЕСС (кинетический) встал"            , sJuiceElec != null, "MultiTileEntityBasicMachine", sJuiceElec);
+		sJuiceSeq.judge("ПРЕСС: цветок принят как рецепт"       , sJuiceElec != null && sJuiceElec.mCurrentRecipe != null, "рецепт найден", sJuiceElec == null ? "нет машины" : String.valueOf(sJuiceElec.mCurrentRecipe));
+		sJuiceSeq.judge("ПРЕСС: вычислен красочный выход"       , tPrepared.startsWith("dye.flower.red:"), "dye.flower.red:*", tPrepared);
+		sJuiceSeq.judge("ПРЕСС COLD (без энергии) цикл не начат", sJuiceElecCold != null && sJuiceElecCold.mCurrentRecipe == null, "рецепт не запущен", sJuiceElecCold == null ? "машина не встала" : String.valueOf(sJuiceElecCold.mCurrentRecipe) + " бак=" + tElecCold);
+		if (sJuiceElec != null) {
+			StringBuilder tDiag = new StringBuilder();
+			tDiag.append("mProgress=").append(sJuiceElec.mProgress).append(" mMaxProgress=").append(sJuiceElec.mMaxProgress)
+			     .append(" энергия=").append(sJuiceElec.mEnergy).append(" рецептКарта=").append(sJuiceElec.mRecipes == null ? "null" : sJuiceElec.mRecipes.mNameInternal)
+			     .append(" текущийРецепт=").append(sJuiceElec.mCurrentRecipe == null ? "null" : "есть");
+			tDiag.append(" | входныеТанки=").append(sJuiceElec.mTanksInput == null ? -1 : sJuiceElec.mTanksInput.length);
+			if (sJuiceElec.mTanksInput != null) for (int i = 0; i < sJuiceElec.mTanksInput.length; i++)
+				tDiag.append(" in[").append(i).append("]=").append(sJuiceElec.mTanksInput[i].amount());
+			tDiag.append(" | выходныеТанки=").append(sJuiceElec.mTanksOutput == null ? -1 : sJuiceElec.mTanksOutput.length);
+			if (sJuiceElec.mTanksOutput != null) for (int i = 0; i < sJuiceElec.mTanksOutput.length; i++) {
+				net.neoforged.neoforge.fluids.FluidStack tF = sJuiceElec.mTanksOutput[i].getFluid();
+				tDiag.append(" out[").append(i).append("]=").append(tF == null || tF.getAmount() <= 0 ? "пусто"
+					: gregapi.fluid.FluidGT.nameOf(tF.getFluid()) + ":" + tF.getAmount());
+			}
+			tDiag.append(" | слоты:");
+			for (int i = 0; i < 6; i++) {
+				try {tDiag.append(" [").append(i).append("]=").append(gregapi.probe.GT6ProbeStand.slotCount(sJuiceElec, i));} catch (Throwable e) {break;}
+			}
+			gregapi.data.CS.OUT.println("[" + JUICE_M + "] ПРЕСС диагностика: " + tDiag);
+		}
 		sJuiceSeq.done();
 	}
 

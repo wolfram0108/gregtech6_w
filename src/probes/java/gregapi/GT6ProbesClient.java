@@ -586,6 +586,61 @@ public final class GT6ProbesClient {
 	// из витрины креатива тем же центром, что наполняет её игре (CreativeTabsGT.enumerate).
 	// ПОЗИТИВНЫЙ КОНТРОЛЬ встроен: ванильный верстак (RecipeTypes.CRAFTING) обязан отвечать на ванильные
 	// предметы — если и он молчит, судья меряет собственную поломку, а не GT6.
+	// ================= [GT6-JUICEJEI] BUG-055 хвост: видит ли ЖИВОЙ JEI категории Соковыжималки и Пресса =================
+	// Спрашиваем не код регистрации, а саму витрину: пересоздаём тот же RecipeType, что строит
+	// GT6_JEI_Plugin:124 (RecipeType.create(MD.GT.mID, map.mNameNEI, Recipe.class)), и просим у JEI список рецептов.
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильная категория CRAFTING обязана быть непустой — иначе лукап сломан и замер недействителен.
+	private static boolean mJuiceJeiDone = false;
+	private static int mJuiceJeiWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJuiceJeiProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJuiceJeiDone || !gregapi.data.CS.probeFlag("gt6juiceprobe.flag")) return;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.GT6ProbeJeiPlugin.RUNTIME;
+		net.minecraft.client.Minecraft tMC = net.minecraft.client.Minecraft.getInstance();
+		if (tRT == null || tMC == null || tMC.player == null) {
+			// JEI поднимается лениво — его стартовое событие даёт открытие GUI (урок GT6-JEICRAFT)
+			if (++mJuiceJeiWaited == 100 && tMC != null && tMC.player != null) {
+				try {tMC.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(tMC.player));} catch (Throwable e) {/**/}
+			}
+			if (mJuiceJeiWaited > 24000) {mJuiceJeiDone = true; gregapi.data.CS.OUT.println("[GT6-JUICEJEI] runtime JEI не появился — судья НЕ отработал");}
+			return;
+		}
+		mJuiceJeiDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-JUICEJEI] живой опрос витрины JEI: Соковыжималка и Пресс ==========");
+		try {
+			var tRM = tRT.getRecipeManager();
+			int tCtrl = 0;
+			try {tCtrl = (int) tRM.createRecipeLookup(mezz.jei.api.constants.RecipeTypes.CRAFTING).get().count();} catch (Throwable e) {O.println("[GT6-JUICEJEI] контроль упал: " + e);}
+			O.println("[GT6-JUICEJEI] ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильных CRAFTING-рецептов в витрине = " + tCtrl
+				+ (tCtrl > 0 ? " — лукап рабочий" : " — ⛔ ЛУКАП СЛОМАН, замер ниже недействителен"));
+			gt6JuiceJeiAsk(O, tRM, gregapi.data.RM.Juicer  , "Соковыжималка");
+			gt6JuiceJeiAsk(O, tRM, gregapi.data.RM.Squeezer, "Пресс");
+		} catch (Throwable e) {
+			O.println("[GT6-JUICEJEI] исключение: " + e);
+			e.printStackTrace(gregapi.data.CS.OUT);
+		}
+		O.println("========== [GT6-JUICEJEI] DONE ==========");
+	}
+
+	private static void gt6JuiceJeiAsk(java.io.PrintStream aOut, mezz.jei.api.recipe.IRecipeManager aRM, gregapi.recipes.Recipe.RecipeMap aMap, String aLabel) {
+		try {
+			mezz.jei.api.recipe.RecipeType<gregapi.recipes.Recipe> tType =
+				mezz.jei.api.recipe.RecipeType.create(gregapi.data.MD.GT.mID, aMap.mNameNEI, gregapi.recipes.Recipe.class);
+			java.util.List<gregapi.recipes.Recipe> tList = aRM.createRecipeLookup(tType).get().toList();
+			int tFlower = 0;
+			for (gregapi.recipes.Recipe r : tList) {
+				if (r == null || r.mFluidOutputs == null) continue;
+				for (net.neoforged.neoforge.fluids.FluidStack f : r.mFluidOutputs)
+					if (f != null && f.getFluid() != null && gregapi.fluid.FluidGT.nameOf(f.getFluid()).startsWith("dye.flower.")) {tFlower++; break;}
+			}
+			aOut.println("[GT6-JUICEJEI] " + aLabel + " (" + aMap.mNameNEI + "): витрина отдаёт " + tList.size()
+				+ " рецептов, из них цветочных " + tFlower + " => " + (tList.size() > 0 && tFlower > 0 ? "PASS" : "FAIL"));
+		} catch (Throwable e) {
+			aOut.println("[GT6-JUICEJEI] " + aLabel + ": категории НЕТ в витрине (" + e + ") => FAIL");
+		}
+	}
+
 	private static boolean mJeiCraftDone = false;
 	private static int mJeiCraftWaited = 0;
 	@net.neoforged.bus.api.SubscribeEvent

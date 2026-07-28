@@ -131,8 +131,16 @@ public class GT_API_Post extends Abstract_Mod {
 	public void onServerStopped   (ServerStoppedEvent  aEvent) {onModServerStopped(aEvent);}
 
 	@Override
-	public void onModPreInit2(FMLPreInitializationEvent aEvent) {} // F12 boot-timing: data-init перенесён в onModInit2 (setup, пост-bind) — стеки (ST.make) нельзя создавать в preInit (Holder.components не привязаны, Holder.java:273)
-	// F12: тело бывшего onModPreInit2 (blacklists/Loaders/byproducts) вызывается из onModInit2, где реестр привязан. Порядок GT6-init сохранён (эта часть — первой в onModInit2).
+	// F12 boot-timing: тело data-init нельзя ИСПОЛНЯТЬ в preInit (ST.make: Holder.components не привязаны, Holder.java:273),
+	// поэтому оно отложено. Но ПОСТАНОВКА в очередь остаётся здесь, на preInit — и это существенно (BUG-081).
+	// В 1.7.10 порядок «цели унификации → addItems мультипредметов» держался РАЗНЫМИ ФАЗАМИ Forge: цели ставил
+	// onModPreInit2 (оригинал GT_API_Post:77,118 — new LoaderUnificationTargets().run()), а MultiItemRandom.addItems
+	// читал их уже в @Init. Когда порт свёл оба в ОДНУ отложенную очередь, относительный порядок стал зависеть от
+	// того, кто раньше позвал deferItemInit; постановка с onModInit2 уводила цели ЗА addItems, и OP.stick.mat(MT.Blaze)
+	// возвращал null (OreDictManager:572 — после начала Init фолбэк на генерацию отключён, берётся только цель).
+	// Ставим в очередь на той же фазе, что и оригинал: FIFO тогда воспроизводит порядок 1.7.10 (preInit → init).
+	public void onModPreInit2(FMLPreInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(this::onModPreInit2Deferred);}
+	// F12: тело бывшего onModPreInit2 (blacklists/Loaders/byproducts) исполняется из очереди, где реестр привязан.
 	private void onModPreInit2Deferred() {
 		// Fixing Items of certain Mods.
 		// F12 impossible-1:1 (foreign-item maxDamage/hasSubtypes immutable в neo, пост-хок сеттеров нет): Item.setMaxDamage(int)/
@@ -230,7 +238,9 @@ public class GT_API_Post extends Abstract_Mod {
 	@Override
 	public void onModInit2(FMLInitializationEvent aEvent) {gregapi.GT_API.deferItemInit(this::onModInit2Deferred);} // F1/F12/F16: ВЕСЬ Init-data-init (loaders/recipes/associations — ST.make) отложен на server-start (post-bind); onModInit2(CommonSetup) НЕ пост-bind. НЕ в паритет-данных.
 	private void onModInit2Deferred() {
-		onModPreInit2Deferred(); // бывший preInit-data-init (blacklists/loaders)
+		// бывший preInit-data-init (blacklists/loaders/цели унификации) поставлен в очередь ОТДЕЛЬНО, на фазе
+		// preInit (см. onModPreInit2) — к этому моменту он уже исполнен. Вызов отсюда убран: он возвращал
+		// цели унификации ЗА addItems мультипредметов и ронял вход рецепта в null (BUG-081).
 		new LoaderWoodDictionary().run();
 		
 		// Atum violates the "Items have to be created in preInit" Rule...
