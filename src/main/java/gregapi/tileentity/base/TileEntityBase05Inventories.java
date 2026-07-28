@@ -123,7 +123,17 @@ public abstract class TileEntityBase05Inventories extends TileEntityBase04MultiT
 	// (MultiTileEntityChest.generateDungeonLoot передаёт Container=сам BE) → generateLoot=F → сундук пуст навсегда.
 	// Контракт бьёт и по ванильным потребителям (хопперы/компараторы) ЛЮБОГО GT-инвентаря. Внутреннее хранение
 	// mInventory остаётся null-able (1:1 — весь GT-код работает с ним напрямую и через ST.valid/invalid, EMPTY-aware).
-	@Override public ItemStack getItem(int aSlot) {return mInventory[aSlot] == null ? ItemStack.EMPTY : mInventory[aSlot];}
+	// BUG-078 (стык с Jade): наружу ZEROSIZE-призрак («тип помню, штук 0») отдаётся ПУСТЫМ слотом.
+	// getItem — ванильный контракт Container для ЧУЖИХ читателей (Jade-провайдер содержимого, хопперы,
+	// компараторы); физически призрак хранится как count=1 + маркер, и всякий, кто читает count напрямую,
+	// видел единицу — Jade так и писал «1 шт.» у пустого хранилища. Логический размер даёт ST.count.
+	// Внутренний GT6-код это не затрагивает: он ходит в mInventory напрямую и через slot(...)/slotHas(...),
+	// поэтому память типа (витрина, режимы, выдача) остаётся на месте — снаружи же ноль честно выглядит нулём.
+	@Override public ItemStack getItem(int aSlot) {
+		ItemStack tStack = mInventory[aSlot];
+		if (tStack == null) return ItemStack.EMPTY;
+		return allowZeroStacks(aSlot) && ST.count(tStack) <= 0 ? ItemStack.EMPTY : tStack;
+	}
 
 	/** F15/F-break (NPE игрока 2026-07-19 при ломании MTE): neo BlockEntity.preRemoveSideEffects (BlockEntity.java:264-268)
 	 *  сам вытряхивает любой Container через Containers.dropContents — НОВОЕ поведение движка (в 1.7.10 дроп содержимого
