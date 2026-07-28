@@ -765,12 +765,22 @@ public abstract class MultiTileEntityMassStorage extends TileEntityBase09FacingS
 			// Признак блочности берётся у самой модели: usesBlockLight = gui_light "side"
 			// (ModelRenderProperties:16 — getTopGuiLight().lightLikeBlock()), а НЕ instanceof BlockItem:
 			// у факела, рельсов и растений модель плоская, и вести себя они должны как предметы.
-			boolean tBlockModel = aState.mItem.usesBlockLight();
-			// Доворот блочной модели: neo-трансформа block.json display.gui даёт [30, 225, 0], цепочка 1.7.10 —
-			// другой набор углов (см. выше). Величина ЭМПИРИЧЕСКАЯ (репорт игрока «блоки перевёрнуты на 180»),
-			// как и соседние компенсаторы витрины; калибруется ОДНИМ числом MASSSTORAGE_DISPLAY_BLOCK_YAW.
-			if (tBlockModel && MASSSTORAGE_DISPLAY_BLOCK_YAW != 0) aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(MASSSTORAGE_DISPLAY_BLOCK_YAW));
-			aPoseStack.scale(0.5f, 0.5f, tBlockModel ? 0.0001f : -0.0001f);
+			// ⛔ Ветка «зеркало по Z для плоских» СНЯТА как бездействующая: отражение вдоль оси взгляда не меняет
+			// проекцию на экран (координаты x,y сохраняются), у сплющенной до 0.0001 модели это тождество.
+			// Живая проверка игроком: знак Z вернули — «изменений не вижу, предметы так же отражены».
+			//
+			// Источник отражения — снятый в BUG-015 v4 (d502c870) поворот `glRotatef(180, 0,0,1)`. Вокруг Z он
+			// разворачивает картинку в её же плоскости, то есть отражает СРАЗУ ПО ДВУМ осям — и по Y, и по X.
+			// Снимали его по причине, относящейся только к Y («в 1.7.10 компенсировал y-вниз GUI-рендера, neo-модель
+			// уже y-вверх» — верно, вертикаль после этого стала правильной), но вместе с Y ушло и отражение по X.
+			// Горизонталь осталась зеркальной и всплыла позже, на несимметричных иконках.
+			//
+			// Возвращаем недостающую половину как ПОВОРОТ вокруг Y на 180°, а не как scale(-1,1,1): для плоской
+			// модели это та же зеркальность по горизонтали, но поворот не меняет хиральность и не ломает
+			// отбраковку граней. Блочной модели тот же доворот нужен по замеру игрока («блоки перевёрнуты на 180»),
+			// поэтому ветки не разделяются — величина одна на всю витрину и калибруется одним числом.
+			if (MASSSTORAGE_DISPLAY_YAW != 0) aPoseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(MASSSTORAGE_DISPLAY_YAW));
+			aPoseStack.scale(0.5f, 0.5f, 0.0001f);
 			aState.mItem.submit(aPoseStack, aNodes, 0xF000F0 /* fullbright 240/240, ориг setLightmapTextureCoords */, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, 0);
 			aPoseStack.popPose();
 		}
