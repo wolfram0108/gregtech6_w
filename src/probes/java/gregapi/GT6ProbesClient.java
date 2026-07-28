@@ -577,4 +577,122 @@ public final class GT6ProbesClient {
 		if (tKids != null) for (java.io.File tK : tKids) deleteRecursive(tK);
 		aFile.delete();
 	}
+
+	// ================= [GT6-JEICRAFT] BUG-079/BUG-073: ЖИВОЙ СУДЬЯ ВИТРИНЫ КРАФТА =================
+	// Игрок 2026-07-28: «я не видел, чтобы ты запускал игру и реально проверял крафты… когда полностью
+	// закончишь и подтвердишь ВСЕ крафты, тогда и сообщай». Судится не наш буфер и не наши данные, а САМА
+	// витрина: спрашиваем живой JEI тем же лукапом, которым он отвечает игроку на «покажи крафты этого
+	// предмета» — IRecipeManager.createRecipeLookup(type).limitFocus(focus(OUTPUT, стек)). Предметы берутся
+	// из витрины креатива тем же центром, что наполняет её игре (CreativeTabsGT.enumerate).
+	// ПОЗИТИВНЫЙ КОНТРОЛЬ встроен: ванильный верстак (RecipeTypes.CRAFTING) обязан отвечать на ванильные
+	// предметы — если и он молчит, судья меряет собственную поломку, а не GT6.
+	private static boolean mJeiCraftDone = false;
+	private static int mJeiCraftWaited = 0;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onJeiCraftProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mJeiCraftDone || !gregapi.data.CS.probeFlag("gt6jeicraft.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.jei.GT6_JEI_Plugin.RUNTIME;
+		if (tRT == null) {
+			// JEI грузит плагины ЛЕНИВО, по событию открытия GUI (mezz.jei.neoforge.startup.StartEventObserver):
+			// одного входа в мир мало — в логе висел только «Sending ConfigManager». Открываем инвентарь один раз,
+			// это ровно то действие игрока, после которого витрина оживает.
+			if (++mJeiCraftWaited == 100) {
+				gregapi.data.CS.OUT.println("[GT6-JEICRAFT] JEI ещё не поднялся — открываю инвентарь (его стартовое событие)");
+				try {tMC.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(tMC.player));} catch (Throwable e) {gregapi.data.CS.OUT.println("[GT6-JEICRAFT] экран не открылся: " + e);}
+			}
+			if (mJeiCraftWaited % 400 == 0) gregapi.data.CS.OUT.println("[GT6-JEICRAFT] жду runtime JEI... тиков " + mJeiCraftWaited);
+			if (mJeiCraftWaited > 24000) {mJeiCraftDone = true; gregapi.data.CS.OUT.println("[GT6-JEICRAFT] runtime JEI не появился — судья НЕ отработал");}
+			return;
+		}
+		mJeiCraftDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-JEICRAFT] живой опрос витрины JEI ==========");
+		try {
+			var tRM = tRT.getRecipeManager();
+			var tFF = tRT.getJeiHelpers().getFocusFactory();
+
+			// позитивный контроль ДО основного замера: умеет ли лукап вообще находить рецепты
+			int tCtrl = countRecipes(tRM, tFF, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.STICK));
+			int tCtrl2 = countRecipes(tRM, tFF, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHEST));
+			O.println("[GT6-JEICRAFT] ПОЗИТИВНЫЙ КОНТРОЛЬ: палка=" + tCtrl + " рецептов, сундук=" + tCtrl2
+				+ (tCtrl > 0 && tCtrl2 > 0 ? " — лукап рабочий" : " — ⛔ ЛУКАП СЛОМАН, замер ниже недействителен"));
+
+			// ОЖИДАНИЕ по буферу: какие подтипы GT6 вообще обещаны как выход крафта. Расхождение «буфер обещает —
+			// витрина не показывает» и есть остаточный дефект видимости; без этой сверки «без крафта» неотличимо
+			// от «не крафтится by design» (руда, цветок, жидкостный дисплей).
+			java.util.Set<String> tPromised = new java.util.HashSet<>();
+			for (gregapi.recipes.ICraftingRecipeGT r : gregapi.util.CR.list()) {
+				if (!(r instanceof gregapi.recipes.ShapedOreRecipe || r instanceof gregapi.recipes.ShapelessOreRecipe)) continue;
+				try {
+					net.minecraft.world.item.ItemStack o = r.getRecipeOutput();
+					if (o != null && o.getItem() != null && !o.isEmpty()) tPromised.add(subtypeOf(o));
+				} catch (Throwable t) {}
+			}
+			int tPromisedMissing = 0;
+			java.util.List<String> tPromisedExamples = new java.util.ArrayList<>();
+			java.util.Map<String, int[]> tPromisedFamily = new java.util.TreeMap<>();
+
+			int tTotal = 0, tWithout = 0, tTools = 0, tToolsWithout = 0;
+			java.util.Map<String, int[]> tByFamily = new java.util.TreeMap<>();
+			java.util.List<String> tMissing = new java.util.ArrayList<>();
+			for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+				var tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
+				if (tKey == null) continue;
+				String tNs = tKey.getNamespace();
+				if (!tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
+				boolean tIsTool = tItem instanceof gregapi.item.multiitem.MultiItemTool;
+				for (net.minecraft.world.item.ItemStack tStack : gregapi.item.CreativeTabsGT.enumerate(tItem, tItem, null)) {
+					if (tStack == null || tStack.isEmpty() || gregapi.util.ST.hidden(tStack)) continue;
+					tTotal++;
+					if (tIsTool) tTools++;
+					int tN = countRecipes(tRM, tFF, tStack);
+					if (tN == 0) {
+						tWithout++;
+						if (tIsTool) tToolsWithout++;
+						int[] tRow = tByFamily.computeIfAbsent(tKey.toString(), k -> new int[1]);
+						tRow[0]++;
+						if (tIsTool && tMissing.size() < 12) tMissing.add(tStack.getHoverName().getString() + " (" + tKey + ":" + gregapi.util.ST.meta_(tStack) + ")");
+						if (tPromised.contains(subtypeOf(tStack))) {   // буфер обещал рецепт, а витрина молчит
+							tPromisedMissing++;
+							tPromisedFamily.computeIfAbsent(tKey.toString(), k -> new int[1])[0]++;
+							if (tPromisedExamples.size() < 10) tPromisedExamples.add(tKey + ":" + gregapi.util.ST.meta_(tStack) + " «" + tStack.getHoverName().getString() + "»");
+						}
+					}
+				}
+			}
+			O.println("[GT6-JEICRAFT] предметов витрины GT опрошено: " + tTotal + " · БЕЗ единого крафта в JEI: " + tWithout);
+			O.println("[GT6-JEICRAFT] ИНСТРУМЕНТЫ: " + tTools + " · без крафта: " + tToolsWithout
+				+ (tToolsWithout == 0 ? "  ← ВСЕ ИНСТРУМЕНТЫ ПОКАЗЫВАЮТ КРАФТ" : "  ← ОСТАЛИСЬ БЕЗ КРАФТА"));
+			for (String s : tMissing) O.println("[GT6-JEICRAFT]   инструмент без крафта: " + s);
+			O.println("[GT6-JEICRAFT] ⭐ БУФЕР ОБЕЩАЛ, ВИТРИНА НЕ ПОКАЗАЛА: " + tPromisedMissing
+				+ (tPromisedMissing == 0 ? "  ← видимость полная" : "  ← остаточный дефект видимости"));
+			for (var e : tPromisedFamily.entrySet()) O.println("[GT6-JEICRAFT]   [обещано-нет] семья " + e.getKey() + ": " + e.getValue()[0]);
+			for (String s : tPromisedExamples) O.println("[GT6-JEICRAFT]   [обещано-нет] пример: " + s);
+			for (var e : tByFamily.entrySet()) O.println("[GT6-JEICRAFT]   семья " + e.getKey() + ": без крафта " + e.getValue()[0]);
+		} catch (Throwable e) {O.println("[GT6-JEICRAFT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
+		O.println("========== [GT6-JEICRAFT] DONE ==========");
+	}
+	/** Подтип предмета по ДЕЙСТВУЮЩЕМУ правилу (тот же центр, что у заявки JEI) — чтобы «обещание буфера»
+	 *  сравнивалось с витриной ровно так, как их сравнивает сам JEI. */
+	private static String subtypeOf(net.minecraft.world.item.ItemStack aStack) {
+		String tBase = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem()) + ":" + gregapi.util.ST.meta_(aStack);
+		boolean tNbt = !(aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI) || tMI.identityIncludesNBT();
+		if (!tNbt) return tBase;
+		try {
+			var t = aStack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+			return tBase + "|" + (t == null ? "-" : t.copyTag().toString());
+		} catch (Throwable e) {return tBase + "|?";}
+	}
+	/** Сколько рецептов витрина отдаст на «покажи крафты» этого предмета: наша GT6-категория + ванильный верстак. */
+	private static int countRecipes(mezz.jei.api.recipe.IRecipeManager aRM, mezz.jei.api.recipe.IFocusFactory aFF, net.minecraft.world.item.ItemStack aStack) {
+		int r = 0;
+		try {
+			var tFocus = java.util.List.of(aFF.createFocus(mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT, mezz.jei.api.constants.VanillaTypes.ITEM_STACK, aStack));
+			r += (int)aRM.createRecipeLookup(gregapi.jei.GT6_JEI_CraftingCategory.TYPE).limitFocus(tFocus).get().count();
+			r += (int)aRM.createRecipeLookup(mezz.jei.api.constants.RecipeTypes.CRAFTING).limitFocus(tFocus).get().count();
+		} catch (Throwable e) {/* один предмет не должен ронять весь замер */}
+		return r;
+	}
 }
