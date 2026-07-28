@@ -705,6 +705,11 @@ public class MultiItemTool extends MultiItem implements IItemGTHandTool, IItemGT
 		return T;
 	}
 	
+	/** У инструмента NBT — это СОСТОЯНИЕ (материал, прочность, заряд), а не личность: витрина отдаёт его голым
+	 *  ({@link #getSubItems}), выход рецепта — со статистикой. Личность, как и в 1.7.10, = мета. Разбор и замер —
+	 *  в javadoc {@link MultiItem#identityIncludesNBT()} и в карточке BUG-079. */
+	@Override public boolean identityIncludesNBT() {return F;}
+
 	public boolean isUsableMeta(short aMeta) {
 		return aMeta % 2 == 0;
 	}

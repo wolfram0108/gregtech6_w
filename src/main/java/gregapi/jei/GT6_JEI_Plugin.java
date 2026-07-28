@@ -88,7 +88,7 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	public void registerItemSubtypes(mezz.jei.api.registration.ISubtypeRegistration aRegistration) {
 		if (!gregapi.GT_API.SUBTYPE.isBound()) return;
 		net.minecraft.core.component.DataComponentType<?> tSubtype = gregapi.GT_API.SUBTYPE.get();
-		int tCount = 0;
+		int tCount = 0, tMetaOnly = 0;
 		for (net.minecraft.world.item.Item tItem : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
 			Identifier tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(tItem);
 			if (tKey == null) continue;
@@ -96,9 +96,21 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 			if (!tNs.equals(ModIDs.GT) && !tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
 			// SUBTYPE (мета 1.7.10) + CUSTOM_DATA (ItemNBT-центр F8: монеты/батареи/сундуки различаются NBT-материалом,
 			// не метой — 1.7.10 NEI различал их по NBT; без заявки — «389 duplicate items» Coins)
-			try {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, net.minecraft.core.component.DataComponents.CUSTOM_DATA); tCount++;} catch (Throwable e) {/**/}
+			try {
+				if (subtypeUsesNBT(tItem)) {aRegistration.registerFromDataComponentTypes(tItem, tSubtype, net.minecraft.core.component.DataComponents.CUSTOM_DATA); tCount++;}
+				else {aRegistration.registerFromDataComponentTypes(tItem, tSubtype); tMetaOnly++;}
+			} catch (Throwable e) {/**/}
 		}
-		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA подтипы заявлены для " + tCount + " предметов.");
+		OUT.println("[GT6-JEI] SUBTYPE+CUSTOM_DATA подтипы заявлены для " + tCount + " предметов, только SUBTYPE — для " + tMetaOnly + " (инструменты).");
+	}
+
+	/**
+	 * Спрашиваем сам предмет, входит ли NBT в его ЛИЧНОСТЬ ({@link gregapi.item.multiitem.MultiItem#identityIncludesNBT()}) —
+	 * своей политики витрина не заводит (BUG-079; урок BUG-070: копия чужой политики расходится на исключениях).
+	 * Не-GT6-предметы и всё, что вне иерархии {@code MultiItem}, сохраняют прежнее поведение (NBT в личности).
+	 */
+	public static boolean subtypeUsesNBT(net.minecraft.world.item.Item aItem) {
+		return !(aItem instanceof gregapi.item.multiitem.MultiItem tMulti) || tMulti.identityIncludesNBT();
 	}
 
 	@Override

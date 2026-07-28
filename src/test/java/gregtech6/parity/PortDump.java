@@ -96,7 +96,7 @@ public final class PortDump {
         // dumpRecipes ПЕРЕД dumpRecipeMaps: triggerAllRecipesDeterministically популирует mRecipeList (растит mMaxFluidInput/OutputSize
         // по рецептам, Recipe.java:375/383) — иначе recipemaps.csv меряет maxFluid ДО триггера ленивых хендлеров (cutter/melter/squeezer
         // занижены vs golden, где регистрация была эагерной). Так recipemaps отражает то же популированное состояние, что recipes.jsonl.
-        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps(); dumpCrafting(); judgeCraftingSelfMatch(); judgeBug058(); judgeBug073();
+        dumpOreDict(); dumpUnification(); dumpLocalization(); dumpItemData(); dumpEngine(); dumpRecipes(); dumpRecipeMaps(); dumpCrafting(); judgeCraftingSelfMatch(); judgeBug058(); judgeBug073(); judgeJeiToolLookup();
         System.out.println("[port-dump] materials=" + nMat + " prefixes=" + nPre + " fluids=" + nFl);
 
         Map<String, Double> tFact = new java.util.LinkedHashMap<>();
@@ -660,6 +660,101 @@ public final class PortDump {
                 }
             } catch (Throwable t) {System.out.println("[bug073] " + tTag + ": исключение " + t);}
         }
+    }
+    /**
+     * СУДЬЯ ВИДИМОСТИ КРАФТА В JEI (репорт игрока 2026-07-28: «большинство инструментов не имеют крафтов в JEI»).
+     *
+     * <p>Вопрос: найдёт ли JEI рецепт, если игрок ткнул в предмет ИЗ ВИТРИНЫ? JEI сопоставляет ингредиенты по
+     * подтипу — набору ЗАЯВЛЕННЫХ компонентов ({@code registerItemSubtypes}). Плагин заявляет
+     * {@code SUBTYPE + CUSTOM_DATA}, то есть мету И ВЕСЬ NBT. Судья эмулирует ровно это правило:
+     * витринный стек ({@code getSubItems}) против выходов буфера {@code CR.list()}.</p>
+     *
+     * <p>Считается две величины: находимость по правилу «мета + CUSTOM_DATA» (как сейчас у JEI) и по правилу
+     * «только мета» (как различал 1.7.10/NEI). Расхождение этих чисел И ЕСТЬ размер дефекта.</p>
+     *
+     * <p><b>Позитивный контроль:</b> та же проверка для НЕ-инструментов ({@code gt.meta.plate} и соседи) —
+     * если и там ноль, судья меряет собственную поломку, а не витрину инструментов.</p>
+     */
+    private static void judgeJeiToolLookup() {
+        // 1. витрина ЦЕЛИКОМ — тем же центром, которым её наполняет игра (CreativeTabsGT.enumerate:226),
+        //    по ВСЕМ GT-предметам реестра: класс судится по определению, а не по семье из жалобы.
+        List<ItemStack> tShowcase = new ArrayList<>();
+        for (net.minecraft.world.item.Item tItem : BuiltInRegistries.ITEM) {
+            var tKey = BuiltInRegistries.ITEM.getKey(tItem);
+            if (tKey == null) continue;
+            String tNs = tKey.getNamespace();
+            if (!tNs.equals("gregtech") && !tNs.equals("gregapi")) continue;
+            try {
+                for (ItemStack s : gregapi.item.CreativeTabsGT.enumerate(tItem, tItem, null))
+                    if (s != null && !s.isEmpty() && !gregapi.util.ST.hidden(s)) tShowcase.add(s);
+            } catch (Throwable t) {}
+        }
+        if (tShowcase.isEmpty()) {System.out.println("[jei-lookup] витрина пуста — проверка недействительна"); return;}
+
+        // 2. выходы буфера, видимые категории JEI (тот же фильтр, что GT6_JEI_Plugin:135)
+        java.util.Set<String> tByMetaOnly = new java.util.HashSet<>();
+        java.util.Set<String> tByMetaAndNbt = new java.util.HashSet<>();
+        for (gregapi.recipes.ICraftingRecipeGT r : gregapi.util.CR.list()) {
+            if (!(r instanceof gregapi.recipes.ShapedOreRecipe || r instanceof gregapi.recipes.ShapelessOreRecipe)) continue;
+            try {
+                ItemStack o = r.getRecipeOutput();
+                if (o == null || o.getItem() == null || o.isEmpty()) continue;
+                tByMetaOnly.add(stackId(o));
+                tByMetaAndNbt.add(subtypeKey(o));
+            } catch (Throwable t) {}
+        }
+
+        int tFoundMeta = 0, tFoundNbt = 0;
+        List<String> tLost = new ArrayList<>();
+        java.util.Map<String, int[]> tByFamily = new java.util.TreeMap<>();   // предмет -> {потеряно, всего с крафтом}
+        for (ItemStack s : tShowcase) {
+            boolean tM = tByMetaOnly.contains(stackId(s));
+            boolean tN = tByMetaAndNbt.contains(subtypeKey(s));
+            if (tM) tFoundMeta++;
+            if (tN) tFoundNbt++;
+            if (tM) {
+                var tKey = BuiltInRegistries.ITEM.getKey(s.getItem());
+                int[] tRow = tByFamily.computeIfAbsent(tKey == null ? "?" : tKey.toString(), k -> new int[2]);
+                tRow[1]++;
+                if (!tN) {tRow[0]++; if (tLost.size() < 6) tLost.add(stackId(s) + " витрина-NBT=" + nbtOf(s));}
+            }
+        }
+        System.out.println("[jei-lookup] витрина GT целиком: " + tShowcase.size()
+            + " · крафт находится по правилу JEI (мета+CUSTOM_DATA): " + tFoundNbt
+            + " · нашёлся бы по правилу 1.7.10 (только мета): " + tFoundMeta
+            + " → ПОТЕРЯНО ИЗ-ЗА NBT: " + (tFoundMeta - tFoundNbt));
+        for (java.util.Map.Entry<String, int[]> e : tByFamily.entrySet())
+            if (e.getValue()[0] > 0) System.out.println("[jei-lookup]   семья " + e.getKey() + ": потеряно " + e.getValue()[0] + " из " + e.getValue()[1]);
+        for (String s : tLost) System.out.println("[jei-lookup]   пример: " + s);
+
+        // позитивный контроль: не-инструменты (у них витринный стек и выход рецепта совпадают целиком)
+        int tCtrlTotal = 0, tCtrlFound = 0;
+        for (gregapi.recipes.ICraftingRecipeGT r : gregapi.util.CR.list()) {
+            if (tCtrlTotal >= 200) break;
+            if (!(r instanceof gregapi.recipes.ShapedOreRecipe)) continue;
+            try {
+                ItemStack o = r.getRecipeOutput();
+                if (o == null || o.getItem() == null || o.isEmpty()) continue;
+                if (o.getItem() instanceof gregapi.item.multiitem.MultiItemTool) continue;
+                tCtrlTotal++;
+                if (tByMetaAndNbt.contains(subtypeKey(o))) tCtrlFound++;
+            } catch (Throwable t) {}
+        }
+        System.out.println("[jei-lookup] ПОЗИТИВНЫЙ КОНТРОЛЬ (не-инструменты): " + tCtrlFound + "/" + tCtrlTotal
+            + (tCtrlFound == tCtrlTotal ? " — судья способен выдать «находится»" : " — ВНИМАНИЕ: судья сломан"));
+    }
+    /** Ключ подтипа по ДЕЙСТВУЮЩЕМУ правилу — спрашиваем сам предмет (`MultiItem.identityIncludesNBT`), тот же
+     *  центр, которым пользуется заявка JEI. Своей копии политики судья не держит, иначе замерит вчерашнее
+     *  правило. Класс плагина не трогаем намеренно: он тянет JEI-API, которого нет в тестовом classpath. */
+    private static String subtypeKey(ItemStack s) {
+        boolean tNbt = !(s.getItem() instanceof gregapi.item.multiitem.MultiItem tMulti) || tMulti.identityIncludesNBT();
+        return tNbt ? (stackId(s) + "|" + nbtOf(s)) : stackId(s);
+    }
+    private static String nbtOf(ItemStack s) {
+        try {
+            var t = s.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+            return t == null ? "-" : t.copyTag().toString();
+        } catch (Throwable e) {return "?";}
     }
     /** Первый валидный стек ингредиента: сам стек, либо первый элемент ore-списка; null — если подать нечем. */
     private static ItemStack firstStackOf(Object c) {

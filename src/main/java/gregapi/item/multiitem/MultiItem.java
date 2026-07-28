@@ -546,6 +546,21 @@ public abstract class MultiItem extends ItemBase implements IItemEnergy {
 	public Item getEmptyItem(ItemStack itemStack) {return this;}
 	public int getTier(ItemStack aStack) {return UT.Code.tierMax(getEnergySizeInputMax(TD.Energy.EU, aStack));}
 	public int getItemEnchantability() {return 0;}
+	/**
+	 * Входит ли NBT в ЛИЧНОСТЬ предмета (в отличие от его состояния) — для внешних витрин, сопоставляющих
+	 * предметы с выходами рецептов (JEI: {@code registerItemSubtypes}).
+	 *
+	 * <p>В 1.7.10 личность = {@code item + damage} (мета), NBT в сравнение NEI не входил. В neo компоненты
+	 * заявляются явно, и части семей GT6 NBT действительно нужен: монеты/батареи/сундуки различаются
+	 * NBT-материалом, а не метой (без заявки — «duplicate items»). Поэтому дефолт здесь — {@code T}.</p>
+	 *
+	 * <p>Семья, у которой NBT несёт СОСТОЯНИЕ, а не личность, переопределяет метод — так поступает
+	 * {@link MultiItemTool}: витрина отдаёт инструмент голым ({@code getSubItems}: {@code ST.make(this,1,i)}),
+	 * а выход рецепта построен {@code getToolWithStats(...)} и несёт материал/прочность/ёмкость. При NBT
+	 * в личности это разные подтипы, и крафт инструмента в витрине не находится вовсе.</p>
+	 */
+	public boolean identityIncludesNBT() {return T;}
+
 	public boolean isBookEnchantable(ItemStack aStack, ItemStack aBook) {return F;}
 	public boolean getIsRepairable(ItemStack aStack, ItemStack aMaterial) {return F;}
 	public boolean canProvideEnergy(ItemStack aStack) {return T;}
