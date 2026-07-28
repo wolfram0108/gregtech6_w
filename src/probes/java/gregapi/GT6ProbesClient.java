@@ -836,6 +836,107 @@ public final class GT6ProbesClient {
 		} catch (Throwable e) {O.println("[GT6-JEICRAFT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 		O.println("========== [GT6-JEICRAFT] DONE ==========");
 	}
+	// [GT6-ITEMFACINGPROBE] BUG-078 «остаток централизации»: судья ИДЕНТИЧНОСТИ item-facing — снять при уборке фазы.
+	// Гейт §2.1 (-Pgt6probes + run/gt6itemfacingprobe.flag). Судится НЕ картинка (визуальных судей не строим), а ФАКТ:
+	// какая грань реально стоит в detached-TE, рождённом ТЕМ ЖЕ вызовом, которым его рождает движок. Путей рождения два,
+    // и проба идёт обоими: обычный item-рендер (MultiTileEntityBlockInternal.passRenderingToObject) и BER-ветка для
+	// предметов со своим рендерером (MultiTileEntityBER.SPECIAL_ITEM_FORM.extractArgument — сундук, масстораж).
+	// Ожидание для каждого MTE: mFacing == его же getItemFacing(). Плюс ПОЛНОТА класса: носитель поля mFacing,
+	// не реализующий контракт IMTE_ItemFacing, — дыра (центр его не увидит), таких должно быть 0.
+	private static boolean mItemFacingDone = false;
+	@net.neoforged.bus.api.SubscribeEvent
+	public static void onItemFacingProbe(net.neoforged.neoforge.client.event.ClientTickEvent.Post aEvent) {
+		if (mItemFacingDone || !gregapi.data.CS.probeFlag("gt6itemfacingprobe.flag")) return;
+		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
+		if (tMC.level == null || tMC.player == null) return;
+		mItemFacingDone = true;
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		O.println("========== [GT6-ITEMFACINGPROBE] BUG-078: грань item-формы подставляет ЕДИНЫЙ центр ==========");
+		int tPass = 0, tFail = 0, tSeen = 0, tNoField = 0;
+		java.util.Map<String, int[]> tByClass = new java.util.TreeMap<>();
+		java.util.List<String> tFails = new java.util.ArrayList<>(), tGaps = new java.util.ArrayList<>();
+		try {
+			// Реестры MTE лежат в приватной статике — стенду нужен ПОЛНЫЙ обход, а не выборка «по памяти».
+			java.lang.reflect.Field tField = gregapi.block.multitileentity.MultiTileEntityRegistry.class.getDeclaredField("NAMED_REGISTRIES");
+			tField.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			java.util.Map<String, gregapi.block.multitileentity.MultiTileEntityRegistry> tRegistries =
+				(java.util.Map<String, gregapi.block.multitileentity.MultiTileEntityRegistry>)tField.get(null);
+			O.println("[GT6-ITEMFACINGPROBE] реестров MTE: " + tRegistries.size());
+			for (gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry : tRegistries.values()) {
+				for (Short tID : new java.util.TreeSet<>(tRegistry.mRegistry.keySet())) {
+					net.minecraft.world.item.ItemStack tStack = tRegistry.getItem(tID);
+					if (tStack == null || tStack.isEmpty()) continue;
+					// ПУТЬ A — обычный item-рендер; ПУТЬ B — BER-ветка. Какой из них живой, решает сам MTE.
+					Object tRendered = tRegistry.mBlock.passRenderingToObject(tStack);
+					net.minecraft.world.level.block.entity.BlockEntity tTE =
+						tRendered instanceof net.minecraft.world.level.block.entity.BlockEntity tBE ? tBE
+						: gregapi.render.MultiTileEntityBER.SPECIAL_ITEM_FORM.extractArgument(tStack);
+					if (tTE == null) continue;
+					Byte tActual = itemFacingOf(tTE);
+					if (tActual == null) {tNoField++; continue;}   // грани нет вовсе — подставлять нечего
+					tSeen++;
+					String tClass = tTE.getClass().getSimpleName();
+					int[] tRow = tByClass.computeIfAbsent(tClass, k -> new int[2]);
+					if (tTE instanceof gregapi.block.multitileentity.IMultiTileEntity.IMTE_ItemFacing tFacing) {
+						boolean tOk = tActual.byteValue() == tFacing.getItemFacing();
+						if (tOk) {tPass++; tRow[0]++;} else {
+							tFail++; tRow[1]++;
+							if (tFails.size() < 12) tFails.add(tClass + " id=" + tID + " ожидание=" + tFacing.getItemFacing() + " факт=" + tActual);
+						}
+					} else {
+						// Дыра полноты: у TE есть грань, но центр его не видит — ровно этим и болел сундук до BUG-078.
+						tFail++; tRow[1]++;
+						if (tGaps.size() < 12) tGaps.add(tClass + " id=" + tID + " (поле mFacing есть, контракта IMTE_ItemFacing НЕТ)");
+					}
+				}
+			}
+			// SENSITIVITY: судья обязан УМЕТЬ дать FAIL. Берём тот же сундук, но рождаем его БЕЗ центра — грань обязана
+			// остаться дефолтной (3) и разойтись с getItemFacing(). Без этой строки «всё PASS» ничего не доказывает.
+			gregapi.block.multitileentity.MultiTileEntityRegistry tChestReg = null; short tChestID = 0;
+			for (gregapi.block.multitileentity.MultiTileEntityRegistry tRegistry : tRegistries.values()) {
+				for (Short tID : new java.util.TreeSet<>(tRegistry.mRegistry.keySet())) {
+					net.minecraft.world.level.block.entity.BlockEntity tTE = tRegistry.getNewTileEntity(tRegistry.getItem(tID));
+					if (tTE instanceof gregapi.block.multitileentity.example.MultiTileEntityChest) {tChestReg = tRegistry; tChestID = tID; break;}
+				}
+				if (tChestReg != null) break;
+			}
+			if (tChestReg == null) {
+				O.println("[GT6-ITEMFACINGPROBE] SENSITIVITY: сундук в реестрах не найден — контроль НЕ выполнен | FAIL");
+				tFail++;
+			} else {
+				net.minecraft.world.level.block.entity.BlockEntity tRaw = tChestReg.getNewTileEntity(tChestReg.getItem(tChestID));
+				Byte tRawFacing = itemFacingOf(tRaw);
+				byte tWant = ((gregapi.block.multitileentity.IMultiTileEntity.IMTE_ItemFacing)tRaw).getItemFacing();
+				boolean tSensOk = tRawFacing != null && tRawFacing.byteValue() != tWant;
+				O.println("[GT6-ITEMFACINGPROBE] SENSITIVITY: сундук БЕЗ центра | ожидание: грань дефолтная (≠" + tWant + ") | факт: " + tRawFacing + " | " + (tSensOk ? "PASS" : "FAIL"));
+				if (tSensOk) tPass++; else tFail++;
+				// ПОЗИТИВНЫЙ КОНТРОЛЬ: тот же сундук, но реальным путём движка — обязан прийти к своей величине.
+				net.minecraft.world.level.block.entity.BlockEntity tLive = gregapi.render.MultiTileEntityBER.SPECIAL_ITEM_FORM.extractArgument(tChestReg.getItem(tChestID));
+				Byte tLiveFacing = tLive == null ? null : itemFacingOf(tLive);
+				boolean tLiveOk = tLiveFacing != null && tLiveFacing.byteValue() == gregapi.data.CS.ITEM_CHEST_FACING;
+				O.println("[GT6-ITEMFACINGPROBE] ЦЕЛЬ BUG-078: сундук путём движка (BER) | ожидание: " + gregapi.data.CS.ITEM_CHEST_FACING + " | факт: " + tLiveFacing + " | " + (tLiveOk ? "PASS" : "FAIL"));
+				if (tLiveOk) tPass++; else tFail++;
+			}
+		} catch (Throwable e) {O.println("[GT6-ITEMFACINGPROBE] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR); tFail++;}
+		for (String s : tGaps ) O.println("[GT6-ITEMFACINGPROBE]   ⛔ ДЫРА ПОЛНОТЫ: " + s);
+		for (String s : tFails) O.println("[GT6-ITEMFACINGPROBE]   расхождение: " + s);
+		for (java.util.Map.Entry<String, int[]> e : tByClass.entrySet())
+			O.println("[GT6-ITEMFACINGPROBE]   " + e.getKey() + ": PASS=" + e.getValue()[0] + " FAIL=" + e.getValue()[1]);
+		O.println("[GT6-ITEMFACINGPROBE] detached-TE с гранью опрошено: " + tSeen + " · без поля грани пропущено: " + tNoField);
+		O.println("[GT6-ITEMFACINGPROBE] ИТОГ: PASS=" + tPass + " FAIL=" + tFail);
+		O.println("========== [GT6-ITEMFACINGPROBE] DONE ==========");
+	}
+	/** Фактическая грань TE: поле у семей своё (база — public, сундук — protected), потому берётся по цепочке классов. */
+	private static Byte itemFacingOf(Object aTileEntity) {
+		for (Class<?> tClass = aTileEntity.getClass(); tClass != null; tClass = tClass.getSuperclass()) try {
+			java.lang.reflect.Field tField = tClass.getDeclaredField("mFacing");
+			tField.setAccessible(true);
+			return Byte.valueOf(tField.getByte(aTileEntity));
+		} catch (NoSuchFieldException e) {/* ищем выше по цепочке */} catch (Throwable e) {return null;}
+		return null;
+	}
+
 	/** Сколько рецептов витрина отдаст на «покажи крафты» этого предмета: наша GT6-категория + ванильный верстак. */
 	private static int countRecipes(mezz.jei.api.recipe.IRecipeManager aRM, mezz.jei.api.recipe.IFocusFactory aFF, net.minecraft.world.item.ItemStack aStack) {
 		int r = 0;

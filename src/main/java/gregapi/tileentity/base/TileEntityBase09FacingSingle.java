@@ -21,6 +21,7 @@ package gregapi.tileentity.base;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_AddToolTips;
+import gregapi.block.multitileentity.IMultiTileEntity.IMTE_ItemFacing;
 import gregapi.block.multitileentity.IMultiTileEntity.IMTE_OnPlaced;
 import gregapi.block.multitileentity.MultiTileEntityContainer;
 import gregapi.data.CS.*;
@@ -43,26 +44,18 @@ import static gregapi.data.CS.*;
 /**
  * @author Gregorius Techneticies
  */
-public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Directional implements IMTE_OnPlaced, IMTE_AddToolTips {
+public abstract class TileEntityBase09FacingSingle extends TileEntityBase08Directional implements IMTE_OnPlaced, IMTE_AddToolTips, IMTE_ItemFacing {
 	public byte mFacing = getDefaultSide();
 
 	/**
-	 * BUG-074/078: ЕДИНСТВЕННЫЙ источник псевдо-facing для item-формы (detached-TE, {@code level == null}).
-	 *
-	 * <p>1.7.10 крутил item-геометрию целиком ({@code RendererBlockTextured.renderInventoryBlock:57-59},
-	 * {@code glRotatef(90,0,1,0)}); в neo этого поворота нет, и семьи, выбирающие текстуру ПО {@code mFacing},
-	 * показывали в инвентаре не ту грань. Компенсация — подстановка псевдо-facing в момент рождения
-	 * detached-TE ({@code MultiTileEntityRegistry.applyItemFacing}), а величина берётся ЗДЕСЬ.</p>
-	 *
-	 * <p>Дефолт {@code ITEM_MACHINE_FACING} годится для семей с раскладкой {@code FACING_ROTATIONS}
-	 * (машины, бойлеры, генераторы, турбины, динамо). Семья с ИНОЙ формулой переопределяет метод — так
-	 * поступает {@code MultiTileEntityMassStorage} ({@code aSide == mFacing} + собственный BER, потому и
-	 * значение своё). Оба числа эмпирические, откалиброваны живым глазом игрока (BUG-038), и оба лежат
-	 * по одному разу: константа в {@code CS}, выбор — в переопределении этого метода. Россыпи по
-	 * {@code getTexture2} больше нет.</p>
+	 * BUG-074/078: приём item-facing централизован — величина живёт в контракте {@code IMTE_ItemFacing}
+	 * (дефолт {@code ITEM_MACHINE_FACING} для семей с раскладкой {@code FACING_ROTATIONS}: машины, бойлеры,
+	 * генераторы, турбины, динамо), подстановку делает {@code MultiTileEntityRegistry.applyItemFacing},
+	 * а ЗДЕСЬ — только доступ к собственному полю грани. Семья с иной формулой переопределяет
+	 * {@code getItemFacing()} — так поступают {@code MultiTileEntityMassStorage} и {@code MultiTileEntityChest}.
 	 */
-	public byte getItemFacing() {return ITEM_MACHINE_FACING;}
-	
+	@Override public void setItemFacing(byte aFacing) {mFacing = aFacing;}
+
 	@Override
 	public void readFromNBT2(CompoundTag aNBT) {
 		super.readFromNBT2(aNBT);

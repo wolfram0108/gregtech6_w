@@ -258,11 +258,15 @@ public class MultiTileEntityRegistry {
 	 * <p>Путей рождения такого TE ровно два, и оба зовут этот метод: обычный item-рендер
 	 * ({@code MultiTileEntityBlockInternal.passRenderingToObject}) и BER-ветка для предметов со своим
 	 * рендерером ({@code MultiTileEntityBER.extractArgument} — сундук, масстораж). Величину задаёт сам TE
-	 * ({@code TileEntityBase09FacingSingle.getItemFacing}), поэтому семья с иной раскладкой граней меняет
+	 * ({@code IMTE_ItemFacing.getItemFacing}), поэтому семья с иной раскладкой граней меняет
 	 * ОДНО переопределение, а не строку в каждом {@code getTexture2}.</p>
+	 *
+	 * <p>Получатели отбираются по КОНТРАКТУ {@code IMTE_ItemFacing}, а не по месту в иерархии: сундук
+	 * носит собственную грань вне {@code TileEntityBase09FacingSingle} (как и в оригинале), и отбор по
+	 * классу базы проходил мимо него — приём приходилось повторять руками в его рендер-состоянии.</p>
 	 */
 	public static BlockEntity applyItemFacing(BlockEntity aTileEntity) {
-		if (aTileEntity instanceof gregapi.tileentity.base.TileEntityBase09FacingSingle tFacingTE) tFacingTE.mFacing = tFacingTE.getItemFacing();
+		if (aTileEntity instanceof IMultiTileEntity.IMTE_ItemFacing tFacingTE) tFacingTE.setItemFacing(tFacingTE.getItemFacing());
 		return aTileEntity;
 	}
 

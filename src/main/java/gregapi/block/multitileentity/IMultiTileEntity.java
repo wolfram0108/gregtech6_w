@@ -160,7 +160,28 @@ public interface IMultiTileEntity extends ITileEntitySpecificPlacementBehavior {
 	public static interface IMTE_RegisterIcons                      extends IMultiTileEntity {public void registerIcons(Object aIconRegister);}
 	public static interface IMTE_AddHitEffects                      extends IMultiTileEntity {public boolean addHitEffects(Level aWorld, HitResult aTarget, ParticleEngine aRenderer);}
 	public static interface IMTE_AddDestroyEffects                  extends IMultiTileEntity {public boolean addDestroyEffects(int aMetaData, ParticleEngine aRenderer);}
-	
+
+	/**
+	 * BUG-074/078 — контракт «у меня есть грань, которую надо подменить у ФОРМЫ ПРЕДМЕТА» (detached-TE, {@code level == null}).
+	 *
+	 * <p>1.7.10 компенсировал это ГЕОМЕТРИЕЙ и одной строкой на всех: {@code glRotatef(90,0,1,0)} в
+	 * {@code RendererBlockTextured.renderInventoryBlock:58}. Под ту же строку попадал и сундук — его item-форма
+	 * рисуется через {@code renderItem} ({@code MultiTileEntityChest:323}), который зовётся оттуда же ({@code :78}).
+	 * В neo baked-quad пайплайне этого поворота нет, поэтому компенсация делается подстановкой псевдо-facing
+	 * в момент рождения detached-TE — ЕДИНСТВЕННЫМ центром {@code MultiTileEntityRegistry.applyItemFacing}.</p>
+	 *
+	 * <p>Отбор получателей идёт по ЭТОМУ контракту, а не по месту в иерархии: носитель грани не обязан
+	 * жить под {@code TileEntityBase09FacingSingle} (сундук наследует {@code TileEntityBase05Inventories}
+	 * и держит своё поле {@code mFacing} — так же, как в оригинале). Величину задаёт сам TE через
+	 * {@code getItemFacing()}, поэтому семья с иной раскладкой граней меняет ОДНО переопределение.</p>
+	 */
+	public static interface IMTE_ItemFacing extends IMultiTileEntity {
+		/** Величина псевдо-facing для item-формы. Дефолт годится семьям с раскладкой {@code FACING_ROTATIONS} (машины, бойлеры, генераторы, турбины, динамо). */
+		public default byte getItemFacing() {return gregapi.data.CS.ITEM_MACHINE_FACING;}
+		/** Ставит величину в собственное поле грани. Реализуется носителем поля — оно у семей разное. */
+		public void setItemFacing(byte aFacing);
+	}
+
 	public static interface IMTE_SyncDataByte extends IMultiTileEntity {
 		/**
 		 * If you have something that causes a Crash here, the Connection gets terminated.

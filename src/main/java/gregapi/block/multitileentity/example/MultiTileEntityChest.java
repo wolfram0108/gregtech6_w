@@ -75,10 +75,17 @@ import static gregapi.data.CS.*;
  * 
  * An example implementation of a Chest with my MultiTileEntity System.
  */
-public class MultiTileEntityChest extends TileEntityBase05Inventories implements IMTE_IsProvidingWeakPower, IMTE_IsProvidingStrongPower, IItemColorableRGB, ITileEntityDecolorable, ITileEntitySurface, IMTE_OnRegistrationClient, IMTE_OnRegistrationFirstClient, IMTE_SyncDataByte, IMTE_AddToolTips, IMTE_SetBlockBoundsBasedOnState, IMTE_GetSubItems, IMTE_SyncDataByteArray, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetComparatorInputOverride, IMTE_GetSelectedBoundingBoxFromPool, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnPlaced, IMTE_OnToolClick {
+public class MultiTileEntityChest extends TileEntityBase05Inventories implements IMTE_IsProvidingWeakPower, IMTE_IsProvidingStrongPower, IItemColorableRGB, ITileEntityDecolorable, ITileEntitySurface, IMTE_OnRegistrationClient, IMTE_OnRegistrationFirstClient, IMTE_SyncDataByte, IMTE_AddToolTips, IMTE_SetBlockBoundsBasedOnState, IMTE_GetSubItems, IMTE_SyncDataByteArray, IMTE_GetExplosionResistance, IMTE_GetBlockHardness, IMTE_GetComparatorInputOverride, IMTE_GetSelectedBoundingBoxFromPool, IMTE_GetCollisionBoundingBoxFromPool, IMTE_OnPlaced, IMTE_OnToolClick, IMTE_ItemFacing {
 	protected boolean mIsPainted = F, mIsTrapped = F;
 	protected int mRGBa = UNCOLORED;
 	protected byte mFacing = 3, mUsingPlayers = 0, oUsingPlayers = 0;
+
+	/** BUG-078: сундук крутит СВОЮ модель по {@code mFacing} (формула {@code COMPASS_FROM_SIDE*90 - 180}, мировая
+	 *  сторона 0..5, а не псевдо-facing {@code FACING_ROTATIONS}), поэтому величина item-формы своя — откалибрована
+	 *  живым глазом (BUG-038) и лежит ОДИН раз, в {@code CS}. Подставляет её общий центр
+	 *  {@code MultiTileEntityRegistry.applyItemFacing} — тот же, что у машин и масстоража. */
+	@Override public byte getItemFacing() {return ITEM_CHEST_FACING;}
+	@Override public void setItemFacing(byte aFacing) {mFacing = aFacing;}
 	protected float mLidAngle = 0, oLidAngle = 0, mHardness = 6, mResistance = 3;
 	protected OreDictMaterial mMaterial = MT.NULL;
 	
@@ -372,7 +379,7 @@ public class MultiTileEntityChest extends TileEntityBase05Inventories implements
 			// 1.7.10 renderTileEntityAt: интерполяция крышки + кубическая кривая — дословно.
 			double tLidAngle = 1 - (aChest.oLidAngle + (aChest.mLidAngle - aChest.oLidAngle) * aPartialTick); tLidAngle = -(((1 - tLidAngle*tLidAngle*tLidAngle) * Math.PI) / 2);
 			aState.mLidAngleRad = (float)tLidAngle;
-			aState.mChestFacing = aChest.level==null ? ITEM_CHEST_FACING : aChest.mFacing; // BUG-038: item-форма (detached-TE) — калибруемый facing, чтобы сундук смотрел замком к камере
+			aState.mChestFacing = aChest.mFacing; // BUG-078: для item-формы facing уже подставлен центром applyItemFacing (величина — getItemFacing) // BUG-038: item-форма (detached-TE) — калибруемый facing, чтобы сундук смотрел замком к камере
 			aState.mChestRGBa = aChest.mRGBa;
 			aState.mChestTextures = mResources.get(aChest.mTextureName);
 		}
