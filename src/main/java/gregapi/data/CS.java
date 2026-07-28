@@ -1893,7 +1893,16 @@ public class CS {
 		 */
 		/** Цветовые семьи (16 оттенков): ими оперируют краскопульты — «покрасить» и «смыть краску». */
 		private static final Block[][] COLOR_FAMILIES = {WOOL, CARPET, STAINED_GLASS, STAINED_GLASS_PANE, TERRACOTTA};
-		private static final Block[][] WORLD_FAMILIES = {WOOL, CARPET, STAINED_GLASS, STAINED_GLASS_PANE, TERRACOTTA, TALLGRASS};
+		/** {@code Blocks.sapling:0..5} — порядок пород 1.7.10: дуб, ель, берёза, джунгли, акация, тёмный дуб. */
+		public static final Block[] SAPLING = {
+			Blocks.OAK_SAPLING, Blocks.SPRUCE_SAPLING, Blocks.BIRCH_SAPLING, Blocks.JUNGLE_SAPLING, Blocks.ACACIA_SAPLING, Blocks.DARK_OAK_SAPLING};
+		/** {@code Blocks.leaves:0..3} — дуб, ель, берёза, джунгли (акация и тёмный дуб жили в отдельном {@code leaves2}). */
+		public static final Block[] LEAVES = {
+			Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES, Blocks.JUNGLE_LEAVES};
+		/** {@code Blocks.leaves2:0..1} — акация, тёмный дуб. Отдельная семья, как и в 1.7.10. */
+		public static final Block[] LEAVES2 = {Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES};
+
+		private static final Block[][] WORLD_FAMILIES = {WOOL, CARPET, STAINED_GLASS, STAINED_GLASS_PANE, TERRACOTTA, TALLGRASS, SAPLING, LEAVES, LEAVES2};
 		/**
 		 * Семейства, где мета = подтип ТОЛЬКО В СТЕКЕ. У блока в мире та же мета значила ДРУГОЕ, поэтому
 		 * подставлять по ней вариант нельзя: у наковальни биты 0-1 — поворот (их разбирает ветка

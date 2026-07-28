@@ -593,7 +593,7 @@ public final class GT6ProbesClient {
 		if (mJeiCraftDone || !gregapi.data.CS.probeFlag("gt6jeicraft.flag")) return;
 		net.minecraft.client.Minecraft tMC = Minecraft.getInstance();
 		if (tMC.level == null || tMC.player == null) return;
-		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.jei.GT6_JEI_Plugin.RUNTIME;
+		mezz.jei.api.runtime.IJeiRuntime tRT = gregapi.GT6ProbeJeiPlugin.RUNTIME;
 		if (tRT == null) {
 			// JEI грузит плагины ЛЕНИВО, по событию открытия GUI (mezz.jei.neoforge.startup.StartEventObserver):
 			// одного входа в мир мало — в логе висел только «Sending ConfigManager». Открываем инвентарь один раз,

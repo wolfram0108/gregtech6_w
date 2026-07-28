@@ -84,7 +84,8 @@ public class RecipeMapFurnace extends RecipeMapNonGTRecipes {
 					if (tBlock == Blocks.COBBLESTONE || tBlock == Blocks.STONE || tBlock == Blocks.STONE_BRICKS || tBlock instanceof BlockStones) {
 						// Stone should not give XP, especially not because of the Cobble Generator Upgrades.
 						// GT6 Stone is also not allowed due to easily recycleable Recipes.
-					} else if (tBlock == Blocks.TERRACOTTA || tBlock == Blocks.WHITE_TERRACOTTA) {
+					// 1.7.10 `Blocks.stained_hardened_clay` = любой цвет (мета); в neo 16 блоков — глава семьи через CS.Flattened
+				} else if (tBlock == Blocks.TERRACOTTA || gregapi.data.CS.Flattened.headOf(tBlock) == Blocks.WHITE_TERRACOTTA) {
 						// Hardened Clay is 0.10 XP
 						rXP = FL.XP.make(tOutput.getCount() * 2L);
 					} else if (tBlock == Blocks.BRICKS || tBlock == Blocks.NETHER_BRICKS) {

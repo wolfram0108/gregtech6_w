@@ -178,14 +178,8 @@ public final class GT6_JEI_Plugin implements IModPlugin {
 	 *  NEI 1.7.10 жидкостного ингредиент-типа НЕ имел — пласт был один, GT6-дисплеи (с богатым тултипом
 	 *  ItemFluidDisplay.addInformation). Снимаем родной пласт JEI целиком — 1:1 с NEI-видом; рецепт-категории GT6
 	 *  показывают жидкости display-предметами ({@code FL.display}), FLUID_STACK-ингредиенты им не нужны. */
-	/** Живой runtime JEI — ЕДИНСТВЕННЫЙ способ спросить готовую витрину «а что ты показываешь игроку».
-	 *  Нужен живому судье крафта (проба {@code gt6jeicraft}): он спрашивает не наши данные, а сам JEI,
-	 *  тем же лукапом, каким витрина отвечает на «покажи крафты этого предмета». Больше нигде не читается. */
-	public static volatile mezz.jei.api.runtime.IJeiRuntime RUNTIME = null;
-
 	@Override
 	public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime aRuntime) {
-		RUNTIME = aRuntime;
 		try {
 			mezz.jei.api.runtime.IIngredientManager tManager = aRuntime.getIngredientManager();
 			java.util.Collection<net.neoforged.neoforge.fluids.FluidStack> tFluids = new java.util.ArrayList<>(tManager.getAllIngredients(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK));

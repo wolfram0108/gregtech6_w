@@ -1225,8 +1225,12 @@ public class ST {
 		if (tItem == Items.BLAZE_ROD) return 2400;
 		if (tItem == Items.LAVA_BUCKET) return 20000;
 		Block tBlock = block_(tItem);
-		if (tBlock == Blocks.OAK_SAPLING) return 100;
-		if (tBlock == Blocks.OAK_SLAB) return 150;
+		// 1.7.10 `Blocks.sapling`/`wooden_slab` — ОДИН блок с метой-породой, т.е. время горения было у ЛЮБОЙ породы.
+		// В neo семьи расщеплены на блоки по породам; сравнение с дубовым оставило бы ель/берёзу/джунгли/акацию/
+		// тёмный дуб без времени горения. Признак семьи берём ванильными тегами — тем же приёмом, каким порт уже
+		// определяет древесные семьи в WD (`BlockTags.LEAVES`/`SAPLINGS`/`WOODEN_SLABS`, WD.java:620-640).
+		if (tBlock != null && tBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.SAPLINGS)) return 100;
+		if (tBlock != null && tBlock.defaultBlockState().is(net.minecraft.tags.BlockTags.WOODEN_SLABS)) return 150;
 		if (tBlock == Blocks.COAL_BLOCK) return 16000;
 		// F9: 1.7.10 WD.getMaterial(tBlock)==Material.wood → 300. neo убрал Material — эквивалент «дерево» = SoundType.WOOD
 		// (тот же приём, что WD block-sound-центр). tBlock валиден (block_(tItem)!=NB проверять не нужно: NB.defaultBlockState — air, sound!=WOOD).

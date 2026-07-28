@@ -84,12 +84,18 @@ public class GT_Tool_BranchCutter extends ToolStats {
 	public int convertBlockDrops(List<ItemStack> aDrops, ItemStack aStack, Player aPlayer, Block aBlock, long aAvailableDurability, int aX, int aY, int aZ, byte aMetaData, int aFortune, boolean aSilkTouch, BlockDropsEvent aEvent) {
 		// F-harvest: 1.7.10 HarvestDropsEvent.dropChance (шанс выпадения ванильного дропа) удалён — neo BlockDropsEvent
 		// роняет getDrops() всегда (dropChance=1.0 эквивалент), а кастомный дроп задаётся aDrops ниже -> буст-строка no-op.
-		if (aBlock == Blocks.OAK_LEAVES) {
+		// 1.7.10: `Blocks.leaves` = дуб/ель/берёза/джунгли (мета 0-3), `Blocks.leaves2` = акация/тёмный дуб.
+		// В neo обе семьи расщеплены на отдельные блоки, а мета блока в мире больше не несёт породу — сравнение
+		// с одним членом ловило только дуб/акацию и всегда роняло ДУБОВЫЙ саженец. Породу берём из положения
+		// блока в семье (центр CS.Flattened), им же `ST.make` подставит саженец нужной породы.
+		Block tLeavesHead = gregapi.data.CS.Flattened.headOf(aBlock);
+		if (tLeavesHead == Blocks.OAK_LEAVES) {
 			aDrops.clear();
-			if ((aMetaData & 3) == 0 && RNGSUS.nextInt(9) <= aFortune * 2) aDrops.add(IL.Food_Apple_Red.get(1)); else aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, aMetaData & 3));
-		} else if (aBlock == Blocks.ACACIA_LEAVES) {
+			int tWood = gregapi.data.CS.Flattened.metaOf(aBlock);
+			if (tWood == 0 && RNGSUS.nextInt(9) <= aFortune * 2) aDrops.add(IL.Food_Apple_Red.get(1)); else aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, tWood));
+		} else if (tLeavesHead == Blocks.ACACIA_LEAVES) {
 			aDrops.clear();
-			aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, (aMetaData & 3) + 4));
+			aDrops.add(ST.make(Blocks.OAK_SAPLING, 1, gregapi.data.CS.Flattened.metaOf(aBlock) + 4));
 		} else if (aBlock == Blocks.VINE) {
 			aDrops.clear();
 			aDrops.add(ST.make(Blocks.VINE, 1, 0));

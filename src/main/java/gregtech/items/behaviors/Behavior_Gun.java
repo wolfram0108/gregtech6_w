@@ -209,7 +209,8 @@ public class Behavior_Gun extends AbstractBehaviorDefault {
 				tPower-=2000;
 				continue;
 			}
-			if (aBlock == Blocks.WHITE_WOOL || WD.getMaterial(aBlock) == Material.carpet) {
+			// 1.7.10 `Blocks.wool` = любой цвет (мета); в neo семья расщеплена — сравниваем с ГЛАВОЙ через CS.Flattened
+			if (gregapi.data.CS.Flattened.headOf(aBlock) == Blocks.WHITE_WOOL || WD.getMaterial(aBlock) == Material.carpet) {
 				if (tFireAspect > 1) {
 					WD.set(aPlayer.level(), aCoord.getX(), aCoord.getY(), aCoord.getZ(), NB, 0, 3);
 					WD.fire(aPlayer.level(), aCoord, F);
