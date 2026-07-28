@@ -718,8 +718,7 @@ public final class PortDump {
                 //  (б) предмет, чья личность включает NBT (батарея с зарядом, книга-мануал) — витрина показывает
                 //      ВАРИАНТ СОСТОЯНИЯ, а крафтится базовый. Отсутствие рецепта именно у варианта — не потеря:
                 //      замер подтверждает, что базовый вариант той же меты свой рецепт находит.
-                boolean tIdentityHasNbt = !(s.getItem() instanceof gregapi.item.multiitem.MultiItem tMI) || tMI.identityIncludesNBT();
-                if (tIdentityHasNbt && !"-".equals(nbtOf(s))) {tStateVariant++; continue;}
+                if (gregapi.util.ST.identityIncludesNBT(s.getItem()) && !"-".equals(nbtOf(s))) {tStateVariant++; continue;}
             }
             if (tM) {
                 var tKey = BuiltInRegistries.ITEM.getKey(s.getItem());
@@ -768,17 +767,14 @@ public final class PortDump {
         System.out.println("[jei-lookup] ПОЗИТИВНЫЙ КОНТРОЛЬ (не-инструменты): " + tCtrlFound + "/" + tCtrlTotal
             + (tCtrlFound == tCtrlTotal ? " — судья способен выдать «находится»" : " — ВНИМАНИЕ: судья сломан"));
     }
-    /** Ключ подтипа по ДЕЙСТВУЮЩЕМУ правилу — спрашиваем сам предмет (`MultiItem.identityIncludesNBT`), тот же
-     *  центр, которым пользуется заявка JEI. Своей копии политики судья не держит, иначе замерит вчерашнее
-     *  правило. Класс плагина не трогаем намеренно: он тянет JEI-API, которого нет в тестовом classpath. */
-    private static String subtypeKey(ItemStack s) {
-        boolean tNbt = !(s.getItem() instanceof gregapi.item.multiitem.MultiItem tMulti) || tMulti.identityIncludesNBT();
-        return tNbt ? (stackId(s) + "|" + nbtOf(s)) : stackId(s);
-    }
+    /** Ключ подтипа берём из ЦЕНТРА `ST.identityKey` — того же, которым пользуется заявка JEI.
+     *  Своей копии правила судья не держит, иначе замерит вчерашнюю политику и покажет ложную зелень. */
+    private static String subtypeKey(ItemStack s) {return gregapi.util.ST.identityKey(s);}
+    /** NBT для ПЕЧАТИ (диагностика) — через тот же центр, которым мод читает NBT предмета (`ItemNBT`, F8). */
     private static String nbtOf(ItemStack s) {
         try {
-            var t = s.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
-            return t == null ? "-" : t.copyTag().toString();
+            net.minecraft.nbt.CompoundTag t = gregapi.code.ItemNBT.get(s);
+            return t == null ? "-" : t.toString();
         } catch (Throwable e) {return "?";}
     }
     /** Первый валидный стек ингредиента: сам стек, либо первый элемент ore-списка; null — если подать нечем. */

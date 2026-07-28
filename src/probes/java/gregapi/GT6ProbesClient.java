@@ -627,7 +627,7 @@ public final class GT6ProbesClient {
 				if (!(r instanceof gregapi.recipes.ShapedOreRecipe || r instanceof gregapi.recipes.ShapelessOreRecipe)) continue;
 				try {
 					net.minecraft.world.item.ItemStack o = r.getRecipeOutput();
-					if (o != null && o.getItem() != null && !o.isEmpty()) tPromised.add(subtypeOf(o));
+					if (o != null && o.getItem() != null && !o.isEmpty()) tPromised.add(gregapi.util.ST.identityKey(o));
 				} catch (Throwable t) {}
 			}
 			int tPromisedMissing = 0;
@@ -654,7 +654,7 @@ public final class GT6ProbesClient {
 						int[] tRow = tByFamily.computeIfAbsent(tKey.toString(), k -> new int[1]);
 						tRow[0]++;
 						if (tIsTool && tMissing.size() < 12) tMissing.add(tStack.getHoverName().getString() + " (" + tKey + ":" + gregapi.util.ST.meta_(tStack) + ")");
-						if (tPromised.contains(subtypeOf(tStack))) {   // буфер обещал рецепт, а витрина молчит
+						if (tPromised.contains(gregapi.util.ST.identityKey(tStack))) {   // буфер обещал рецепт, а витрина молчит
 							tPromisedMissing++;
 							tPromisedFamily.computeIfAbsent(tKey.toString(), k -> new int[1])[0]++;
 							if (tPromisedExamples.size() < 10) tPromisedExamples.add(tKey + ":" + gregapi.util.ST.meta_(tStack) + " «" + tStack.getHoverName().getString() + "»");
@@ -673,17 +673,6 @@ public final class GT6ProbesClient {
 			for (var e : tByFamily.entrySet()) O.println("[GT6-JEICRAFT]   семья " + e.getKey() + ": без крафта " + e.getValue()[0]);
 		} catch (Throwable e) {O.println("[GT6-JEICRAFT] упал: " + e); e.printStackTrace(gregapi.data.CS.ERR);}
 		O.println("========== [GT6-JEICRAFT] DONE ==========");
-	}
-	/** Подтип предмета по ДЕЙСТВУЮЩЕМУ правилу (тот же центр, что у заявки JEI) — чтобы «обещание буфера»
-	 *  сравнивалось с витриной ровно так, как их сравнивает сам JEI. */
-	private static String subtypeOf(net.minecraft.world.item.ItemStack aStack) {
-		String tBase = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem()) + ":" + gregapi.util.ST.meta_(aStack);
-		boolean tNbt = !(aStack.getItem() instanceof gregapi.item.multiitem.MultiItem tMI) || tMI.identityIncludesNBT();
-		if (!tNbt) return tBase;
-		try {
-			var t = aStack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
-			return tBase + "|" + (t == null ? "-" : t.copyTag().toString());
-		} catch (Throwable e) {return tBase + "|?";}
 	}
 	/** Сколько рецептов витрина отдаст на «покажи крафты» этого предмета: наша GT6-категория + ванильный верстак. */
 	private static int countRecipes(mezz.jei.api.recipe.IRecipeManager aRM, mezz.jei.api.recipe.IFocusFactory aFF, net.minecraft.world.item.ItemStack aStack) {

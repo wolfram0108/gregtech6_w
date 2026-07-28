@@ -202,7 +202,35 @@ public class ST {
 	public static short     meta_(ItemStack aStack) {return gregapi.GT_API.SUBTYPE.isBound() ? (short)(int)aStack.getOrDefault(gregapi.GT_API.SUBTYPE.get(), 0) : 0;}
 	public static ItemStack meta (ItemStack aStack, long aMeta) {return aStack == null ? null : meta_(aStack, aMeta);}
 	public static ItemStack meta_(ItemStack aStack, long aMeta) {int tMeta = (short)aMeta; if (gregapi.GT_API.SUBTYPE.isBound()) {if (tMeta != 0) aStack.set(gregapi.GT_API.SUBTYPE.get(), tMeta); else aStack.remove(gregapi.GT_API.SUBTYPE.get());} return aStack;}
-	
+
+	/**
+	 * BUG-079, ЕДИНСТВЕННЫЙ ответ на вопрос «что делает предмет ОТДЕЛЬНЫМ предметом для внешней витрины».
+	 *
+	 * <p>В 1.7.10 личность = {@code item + damage} (мета); NBT в сравнение NEI не входил. В neo компоненты
+	 * заявляются явно ({@code registerItemSubtypes}), и часть семей GT6 без NBT схлопывается в дубли —
+	 * монеты/батареи/сундуки различаются NBT-материалом. Поэтому решение принадлежит самому предмету:
+	 * {@link gregapi.item.multiitem.MultiItem#identityIncludesNBT()} (дефолт «да»,
+	 * {@code MultiItemTool} — «нет»: у инструмента NBT это состояние, а не личность).</p>
+	 *
+	 * <p>Держать это правило у себя не должен НИКТО, кроме этого метода: его спрашивают и заявка JEI
+	 * ({@code GT6_JEI_Plugin.registerItemSubtypes}), и судьи паритета ({@code PortDump}, проба
+	 * {@code gt6jeicraft}). Копия политики расходится с оригиналом на исключениях — урок BUG-070.</p>
+	 */
+	public static boolean identityIncludesNBT(net.minecraft.world.item.Item aItem) {
+		return !(aItem instanceof gregapi.item.multiitem.MultiItem tMulti) || tMulti.identityIncludesNBT();
+	}
+
+	/** Ключ личности стека для внешней витрины: предмет + мета, плюс NBT — но только если он в личности
+	 *  ({@link #identityIncludesNBT}). Тем же ключом витрина сопоставляет предмет с выходом рецепта. */
+	public static String identityKey(ItemStack aStack) {
+		if (aStack == null || aStack.getItem() == null) return "null";
+		var tKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(aStack.getItem());
+		String rKey = (tKey == null ? "" : tKey.toString()) + ":" + meta_(aStack);
+		if (!identityIncludesNBT(aStack.getItem())) return rKey;
+		net.minecraft.nbt.CompoundTag tNBT = gregapi.code.ItemNBT.get(aStack);
+		return rKey + "|" + (tNBT == null ? "-" : tNBT.toString());
+	}
+
 	// F-size0-catalyst: логический размер. GT6 size-0-стек (катализатор) хранится в neo как count=1 + маркер GT_API.ZEROSIZE
 	// (neo не держит count<=0 без превращения в AIR/EMPTY). size() отдаёт 0 для маркированных → recipe-matching/consume/дамп
 	// видят логический 0. Совпадает со старым поведением size(AIR-катализатор)=0 → существующие вызыватели не затронуты.
