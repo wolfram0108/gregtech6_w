@@ -42,12 +42,24 @@ public class ContainerClientBasicMachine extends ContainerClient {
 		drawString(fontRendererObj, mContainer.mTileEntity.hasCustomInventoryNameGUI()?mContainer.mTileEntity.getInventoryNameGUI():LH.get(mRecipes.mNameInternal), 8,  4, 4210752);
 	}
 
-	/** Область стрелки прогресса в координатах экрана — ровно та, куда её рисует
-	 *  {@link #drawGuiContainerBackgroundLayer2} (все ветки switch стартуют с {@code x+78, y+24},
-	 *  поле 20×18). Вынесена отдельно, чтобы отрисовка и зона клика не разъехались. */
+	/**
+	 * Зона клика «показать рецепты» вокруг стрелки прогресса — взята ДОСЛОВНО ИЗ ОРИГИНАЛА, а не из
+	 * собственной прикидки по отрисовке.
+	 *
+	 * <p>1.7.10, {@code gregapi/NEI_RecipeMap.java:70}:
+	 * {@code transferRects.add(new RecipeTransferRect(new Rectangle(70-sOffsetX, 24-sOffsetY, 36, 18), …))}
+	 * при {@code sOffsetX = 5, sOffsetY = 11} ({@code :66}) — то есть в координатах САМОГО GUI зона равна
+	 * {@code (70, 24)} размером {@code 36×18}. Те же числа после вычета оффсета видны в проверках
+	 * {@code :420}/{@code :425} как {@code Rectangle(65, 13, 36, 18)}.</p>
+	 *
+	 * <p>⚠️ Зона ШИРЕ самой стрелки: стрелка рисуется с {@code x+78} шириной 20
+	 * ({@link #drawGuiContainerBackgroundLayer2}), а кликабельны 36 пикселей начиная с {@code x+70}.
+	 * Первая моя редакция брала границы из отрисовки (78, 20 px) и была уже оригинальной — игрок,
+	 * кликнув по краю зоны, рецептов бы не получил.</p>
+	 */
 	protected boolean isOverProgressBar(double aMouseX, double aMouseY) {
-		int tX = leftPos + 78, tY = topPos + 24;
-		return aMouseX >= tX && aMouseX < tX + 20 && aMouseY >= tY && aMouseY < tY + 18;
+		int tX = leftPos + 70, tY = topPos + 24;
+		return aMouseX >= tX && aMouseX < tX + 36 && aMouseY >= tY && aMouseY < tY + 18;
 	}
 
 	/**

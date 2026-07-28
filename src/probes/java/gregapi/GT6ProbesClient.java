@@ -676,8 +676,11 @@ public final class GT6ProbesClient {
 		// РЕАЛЬНЫЙ ЖЕСТ ИГРОКА 1.7.10: клик мышью по СТРЕЛКЕ ПРОГРЕССА (её область — leftPos+78, topPos+24,
 		// поле 20×18, ровно куда её рисует ContainerClientBasicMachine.drawGuiContainerBackgroundLayer2).
 		// 26.1.2: mouseClicked(MouseButtonEvent, boolean) — событие несёт координаты и кнопку (0 = ЛКМ).
-		double tClickX = tScreen.getLeft() + 78 + 10, tClickY = tScreen.getTop() + 24 + 9;
-		O.println("[GT6-RECIPEGUI-B] кликаю по стрелке прогресса @(" + (int)tClickX + "," + (int)tClickY + ")");
+		// зона по ОРИГИНАЛУ (NEI_RecipeMap:70 — Rectangle(70,24,36,18) в координатах GUI); бьём по ЛЕВОМУ
+		// краю зоны (+2 px), а не по центру: центр попадал бы и в мою прежнюю, УЖЕ, зону — такой судья
+		// не отличил бы верную ширину от заниженной
+		double tClickX = tScreen.getLeft() + 70 + 2, tClickY = tScreen.getTop() + 24 + 9;
+		O.println("[GT6-RECIPEGUI-B] кликаю по ЛЕВОМУ КРАЮ зоны рецептов @(" + (int)tClickX + "," + (int)tClickY + ") — оригинал NEI_RecipeMap:70 (70,24,36×18)");
 		try {
 			tScreen.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(tClickX, tClickY,
 				new net.minecraft.client.input.MouseButtonInfo(0, 0)), false);
