@@ -8872,9 +8872,9 @@ public final class GT6Probes {
 	private static int sGravTick = -1;
 	private static gregapi.probe.GT6ProbeStand.Seq sGravSeq;
 	private static BlockPos sGravOrigin = null;
-	private static BlockPos sGravGT = null, sGravSand = null, sGravCold = null;
-	private static int sGravMeta = -1;
-	private static int sGravEntitiesSeen = 0;
+	private static BlockPos sGravSand = null, sGravCold = null;
+	private static net.minecraft.world.level.block.Block sGravColdBlock = null;
+	private static int sGravEntitiesSeen = 0, sGravVanillaSeen = 0;
 	private static int sGravFloorY = 0;
 
 	public static void gt6GravityProbeTick(net.minecraft.server.MinecraftServer aServer) {
@@ -8887,8 +8887,64 @@ public final class GT6Probes {
 			// сущность живёт считанные тики — ловим её ОКНОМ, а не одним замером (урок FLUIDPIPEPROBE)
 			.window(101, 140, () -> gt6GravCountEntities(tPlayer))
 			.at(160, () -> gt6GravMeasure(tPlayer))
+			.at(180, () -> gt6GravSaveLoad(tPlayer))   // переживает ли летящий блок выход из игры
 			.at(200, () -> gt6GravYard(tPlayer));   // двор для ГЛАЗ игрока — приёмку визуального судит он, не стенд
 		sGravSeq.tick(sGravTick);
+	}
+
+	/**
+	 * Переживает ли блок, застигнутый В ПОЛЁТЕ, выход из игры. 1.7.10 сохранял падающий блок базовым
+	 * writeEntityToNBT (приватное поле блока), в neo то же поле недоступно и хранит визуал-гравий — поэтому
+	 * настоящий блок пишется своим ключом. Если бы это не работало, после перезахода сущность не знала бы,
+	 * что несёт, и на приземлении встал бы гравий (или полетел ClassCastException).
+	 * Судим ПРЯМО: гоняем сущность через тот же save/load, что и движок, и смотрим, что восстановилось.
+	 */
+	private static void gt6GravSaveLoad(ServerPlayer aPlayer) {
+		java.io.PrintStream O = gregapi.data.CS.OUT;
+		ServerLevel tLevel = aPlayer.level();
+		GravCase tC = null;
+		for (GravCase c : sGravCases) if (c.mIsPrefix) {tC = c; break;}
+		if (tC == null || !(tC.mBlock instanceof gregapi.block.IBlockPlacable tPlacable)) return;
+
+		gregapi.block.prefixblock.PrefixBlockFallingEntity tEnt = new gregapi.block.prefixblock.PrefixBlockFallingEntity(
+			tLevel, sGravOrigin.getX() + 0.5, sGravOrigin.getY() + 6.5, sGravOrigin.getZ() + 0.5,
+			tPlacable, gregapi.util.ST.make(tC.mBlock, 1, tC.mSub));
+		net.minecraft.world.level.block.Block tBefore = tEnt.getBlockState().getBlock(); // визуал (обязан быть гравием)
+
+		net.minecraft.util.ProblemReporter.Collector tRep = new net.minecraft.util.ProblemReporter.Collector();
+		net.minecraft.world.level.storage.TagValueOutput tOut =
+			net.minecraft.world.level.storage.TagValueOutput.createWithContext(tRep, tLevel.registryAccess());
+		tEnt.save(tOut);
+		net.minecraft.nbt.CompoundTag tTag = tOut.buildResult();
+
+		gregapi.block.prefixblock.PrefixBlockFallingEntity tBack = new gregapi.block.prefixblock.PrefixBlockFallingEntity(
+			gregapi.GT_API.METABLOCK_FALLING.get(), tLevel);
+		tBack.load(net.minecraft.world.level.storage.TagValueInput.create(tRep, tLevel.registryAccess(), tTag));
+
+		net.minecraft.world.level.block.Block tRestored = null;
+		int tRestoredSub = -1;
+		try {
+			java.lang.reflect.Field tF = gregapi.block.prefixblock.PrefixBlockFallingEntity.class.getDeclaredField("mBlockState");
+			tF.setAccessible(true);
+			Object tSt = tF.get(tBack);
+			if (tSt instanceof net.minecraft.world.level.block.state.BlockState tBS) tRestored = tBS.getBlock();
+			java.lang.reflect.Field tS = gregapi.block.prefixblock.PrefixBlockFallingEntity.class.getDeclaredField("mStack");
+			tS.setAccessible(true);
+			Object tStk = tS.get(tBack);
+			if (tStk instanceof net.minecraft.world.item.ItemStack tIS) tRestoredSub = gregapi.util.ST.meta_(tIS);
+		} catch (Throwable e) {O.println("[" + GRAV_M + "] save/load: поле недоступно — " + e);}
+
+		O.println("[" + GRAV_M + "] save/load сущности: несла " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tC.mBlock)
+			+ " подтип " + tC.mSub + " → восстановлено " + (tRestored == null ? "НИЧЕГО" : String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tRestored)))
+			+ " подтип " + tRestoredSub + " | визуал до записи: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBefore));
+
+		sGravSeq.judge("визуал падающего блока — гравий (1:1 оригинала func_145805_f)",
+			tBefore == net.minecraft.world.level.block.Blocks.GRAVEL, "gravel", String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBefore)));
+		sGravSeq.judge("блок, застигнутый В ПОЛЁТЕ, переживает выход из игры (реальный блок восстановлен)",
+			tRestored == tC.mBlock, String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tC.mBlock)),
+			tRestored == null ? "ничего" : String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tRestored)));
+		sGravSeq.judge("материал переживает выход из игры", tRestoredSub == tC.mSub, "подтип " + tC.mSub, "подтип " + tRestoredSub);
+		tEnt.discard(); tBack.discard();
 	}
 
 	/** Двор визуальной приёмки: четыре руды разных материалов на подпорках + песок для сравнения.
@@ -8937,110 +8993,188 @@ public final class GT6Probes {
 	}
 
 	/** Три колонки: дроблёная руда GT6 (испытуемый), песок (позитивный контроль), обычная руда GT6 (холодный). */
+	/** Один испытуемый: блок + подтип, которым его ставили, и то, что нашли после падения. */
+	private static final class GravCase {
+		net.minecraft.world.level.block.Block mBlock;
+		boolean mIsPrefix;          // иерархия: PrefixBlock (руды) или BlockBase (пески/копаемое/шипы)
+		int     mSub;               // PrefixBlock — ID материала; BlockBase — мета
+		String  mName;
+		BlockPos mStart;            // где реально встал
+		int mFoundY = -1, mFoundSub = -1;
+		boolean mGravity;           // объявленная гравитация — ожидание судьи
+	}
+	private static final java.util.List<GravCase> sGravCases = new java.util.ArrayList<>();
+
+	/** Подтип на месте: у руд материал живёт в TileEntity (getMetaDataValue), у BlockBase — в мете состояния. */
+	private static int gt6GravSubAt(ServerLevel aLevel, GravCase aCase, int aX, int aY, int aZ) {
+		return aCase.mIsPrefix
+			? ((gregapi.block.prefixblock.PrefixBlock)aCase.mBlock).getMetaDataValue(aLevel, aX, aY, aZ)
+			: gregapi.util.WD.meta(aLevel, aX, aY, aZ);
+	}
+
+	/**
+	 * СПИСОК ИСПЫТУЕМЫХ БЕРЁТСЯ ИЗ РЕЕСТРА, не из головы: обходим все блоки и отбираем те, что САМИ объявляют
+	 * гравитацию — PrefixBlock.mGravity (руды) и IBlockBase.useGravity(мета) (пески/копаемое/шипы). Иначе список
+	 * пришлось бы перечислять руками, а он молча разъедется с кодом.
+	 */
+	private static void gt6GravCollect(java.io.PrintStream O) {
+		sGravCases.clear();
+		for (net.minecraft.world.level.block.Block tB : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+			String tKey = String.valueOf(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tB));
+			if (!tKey.startsWith("gregtech:")) continue;
+			if (tB instanceof gregapi.block.prefixblock.PrefixBlock tP) {
+				if (!tP.mGravity) continue;
+				int tSub = -1;
+				for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+					if (tMat == null) continue;
+					try {if (!tP.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
+					tSub = tMat.mID; break;
+				}
+				if (tSub < 0) {O.println("[" + GRAV_M + "] пропуск " + tKey + ": ни одного материала — ставить нечего"); continue;}
+				GravCase tC = new GravCase(); tC.mBlock = tB; tC.mIsPrefix = T; tC.mSub = tSub; tC.mName = tKey; tC.mGravity = T;
+				sGravCases.add(tC);
+			} else if (tB instanceof gregapi.block.IBlockBase tBB) {
+				for (int tMeta = 0; tMeta < 16; tMeta++) {
+					boolean tUse; try {tUse = tBB.useGravity((byte)tMeta);} catch (Throwable e) {break;}
+					if (!tUse) continue;
+					GravCase tC = new GravCase(); tC.mBlock = tB; tC.mIsPrefix = F; tC.mSub = tMeta; tC.mName = tKey + "#" + tMeta; tC.mGravity = T;
+					sGravCases.add(tC); break; // одного представителя семьи достаточно: ветка кода одна на все меты
+				}
+			}
+		}
+		O.println("[" + GRAV_M + "] испытуемых собрано ИЗ РЕЕСТРА: " + sGravCases.size()
+			+ " (руды " + sGravCases.stream().filter(c -> c.mIsPrefix).count()
+			+ ", пески/копаемое/шипы " + sGravCases.stream().filter(c -> !c.mIsPrefix).count() + ")");
+	}
+
 	private static void gt6GravBuild(ServerPlayer aPlayer) {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
 		ServerLevel tLevel = aPlayer.level();
-		sGravOrigin = aPlayer.blockPosition().offset(0, 0, 7);
-		Object tBrokenRaw = gregapi.data.CS.BlocksGT.oreBroken, tOreRaw = gregapi.data.CS.BlocksGT.ore;
-		if (!(tBrokenRaw instanceof gregapi.block.prefixblock.PrefixBlock tBroken)) {
-			sGravSeq.judge("блок дроблёной руды существует", false, "PrefixBlock", String.valueOf(tBrokenRaw)); sGravSeq.done(); return;
-		}
-		O.println("[" + GRAV_M + "] испытуемый=" + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tBroken)
-			+ " mGravity=" + tBroken.mGravity);
-		sGravSeq.judge("у дроблёной руды гравитация включена (иначе сценарий бессмыслен)", tBroken.mGravity, "true", String.valueOf(tBroken.mGravity));
+		sGravOrigin = aPlayer.blockPosition().offset(-6, 0, 8);
+		sGravFloorY = sGravOrigin.getY();
+		gt6GravCollect(O);
+		sGravSeq.judge("список испытуемых непуст (иначе судить нечего)", !sGravCases.isEmpty(), "> 0", String.valueOf(sGravCases.size()));
+		if (sGravCases.isEmpty()) {sGravSeq.done(); return;}
 
-		// материал, который эта руда реально порождает — чтобы мета была настоящей, а не выдуманной
-		sGravMeta = -1;
-		for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
-			if (tMat == null) continue;
-			try {if (!tBroken.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
-			sGravMeta = tMat.mID; O.println("[" + GRAV_M + "] материал руды: " + tMat.mNameInternal + " (мета " + sGravMeta + ")"); break;
-		}
-		if (sGravMeta < 0) {sGravSeq.judge("нашёлся материал для дроблёной руды", false, "любой", "нет"); sGravSeq.done(); return;}
-
-		// Площадка: пол на -1, всё до +6 расчищено. ⚠️ GT6ProbeStand.place ставит блок НЕ в переданную точку,
-		// а на клетку ОТ неё по направлению (это якорь, по которому кликают), и сам подкладывает в якорь камень
-		// (GT6ProbeStand:80-110). Первая редакция стенда этого не учла: якорь остался опорой под рудой, выбивалось
-		// пустое место ниже — и судья краснел на исправном коде. Поэтому: якорь = ОПОРА, её и выбиваем.
-		for (int dx = -2; dx <= 6; dx++) for (int dz = -2; dz <= 2; dz++) {
+		// Раскладка: колонки через 2 по X, ряды через 3 по Z. Пол на -1, всё выше расчищено.
+		// ⚠️ GT6ProbeStand.place ставит блок НЕ в переданную точку, а на клетку ОТ неё по направлению (это якорь,
+		// по которому кликают), и сам подкладывает в якорь камень (GT6ProbeStand:80-110). Первая редакция стенда
+		// этого не учла — выбивалось пустое место ниже блока, и судья краснел на исправном коде. Якорь = ОПОРА.
+		final int tPerRow = 8;
+		int tRows = (sGravCases.size() + 2 + tPerRow) / tPerRow + 1;
+		for (int dx = -2; dx <= tPerRow * 2 + 2; dx++) for (int dz = -2; dz <= tRows * 3 + 2; dz++) {
 			tLevel.setBlock(sGravOrigin.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
 			for (int dy = 0; dy <= 6; dy++) tLevel.setBlock(sGravOrigin.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 		}
-		BlockPos tAnchorGT = sGravOrigin.offset(0, 3, 0), tAnchorSand = sGravOrigin.offset(2, 3, 0), tAnchorCold = sGravOrigin.offset(4, 3, 0);
-		for (BlockPos tA : new BlockPos[]{tAnchorGT, tAnchorSand, tAnchorCold})
-			tLevel.setBlock(tA, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
 
-		BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tAnchorGT, net.minecraft.core.Direction.UP,
-			gregapi.util.ST.make(tBroken, 1, sGravMeta), BlockEntity.class, GRAV_M, "дроблёная руда (испытуемый)");
-		sGravGT   = tTE != null ? tTE.getBlockPos() : tAnchorGT.above();   // реальная позиция, а не предполагаемая
+		int i = 0;
+		for (GravCase tC : sGravCases) {
+			BlockPos tAnchor = sGravOrigin.offset((i % tPerRow) * 2, 3, (i / tPerRow) * 3);
+			i++;
+			tLevel.setBlock(tAnchor, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			net.minecraft.world.item.ItemStack tStack = gregapi.util.ST.make(tC.mBlock, 1, tC.mSub);
+			if (tC.mIsPrefix) {
+				BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tAnchor, net.minecraft.core.Direction.UP, tStack, BlockEntity.class, GRAV_M, tC.mName);
+				tC.mStart = tTE != null ? tTE.getBlockPos() : null;
+			} else {
+				tC.mStart = gregapi.probe.GT6ProbeStand.placeBlock(tLevel, aPlayer, tAnchor, net.minecraft.core.Direction.UP, tStack, GRAV_M, tC.mName);
+			}
+			if (tC.mStart == null) tC.mStart = tAnchor.above();
+		}
+
+		// КОНТРОЛИ (без них зелёный ничего не значит)
+		int tCtl = ((sGravCases.size() + tPerRow - 1) / tPerRow) * tPerRow;
+		BlockPos tAnchorSand = sGravOrigin.offset((tCtl % tPerRow) * 2, 3, (tCtl / tPerRow) * 3);
+		tLevel.setBlock(tAnchorSand, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
 		sGravSand = tAnchorSand.above();
 		tLevel.setBlock(sGravSand, net.minecraft.world.level.block.Blocks.SAND.defaultBlockState(), 3);
-		sGravCold = tAnchorCold.above();
-		if (tOreRaw instanceof gregapi.block.prefixblock.PrefixBlock tOre) {
-			BlockEntity tColdTE = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tAnchorCold, net.minecraft.core.Direction.UP,
-				gregapi.util.ST.make(tOre, 1, sGravMeta), BlockEntity.class, GRAV_M, "обычная руда (холодный контроль)");
-			if (tColdTE != null) sGravCold = tColdTE.getBlockPos();
-			O.println("[" + GRAV_M + "] холодный контроль: " + net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(tOre) + " mGravity=" + tOre.mGravity);
+
+		sGravCold = null;
+		if (gregapi.data.CS.BlocksGT.ore instanceof gregapi.block.prefixblock.PrefixBlock tOre && !tOre.mGravity) {
+			BlockPos tAnchorCold = sGravOrigin.offset(((tCtl + 1) % tPerRow) * 2, 3, ((tCtl + 1) / tPerRow) * 3);
+			tLevel.setBlock(tAnchorCold, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+			int tSub = -1;
+			for (gregapi.oredict.OreDictMaterial tMat : gregapi.oredict.OreDictMaterial.MATERIAL_ARRAY) {
+				if (tMat == null) continue;
+				try {if (!tOre.mPrefix.isGeneratingItem(tMat)) continue;} catch (Throwable e) {continue;}
+				tSub = tMat.mID; break;
+			}
+			BlockEntity tTE = gregapi.probe.GT6ProbeStand.place(tLevel, aPlayer, tAnchorCold, net.minecraft.core.Direction.UP,
+				gregapi.util.ST.make(tOre, 1, tSub), BlockEntity.class, GRAV_M, "ХОЛОДНЫЙ контроль " + tOre);
+			sGravCold = tTE != null ? tTE.getBlockPos() : tAnchorCold.above();
+			sGravColdBlock = tOre;
 		}
-		sGravFloorY = sGravOrigin.getY();
-		O.println("[" + GRAV_M + "] площадка @ " + sGravOrigin + " | руда " + sGravGT + " | песок " + sGravSand + " | холодная руда " + sGravCold
-			+ " | пол Y=" + (sGravFloorY - 1) + ", лететь " + (sGravGT.getY() - sGravFloorY) + " клеток");
+		O.println("[" + GRAV_M + "] площадка @ " + sGravOrigin + " | пол Y=" + (sGravFloorY - 1)
+			+ " | колонок " + sGravCases.size() + " + песок(позитивный) + руда без гравитации(холодный)");
 	}
 
 	/** Выбиваем опору тем же путём, что игрок киркой — destroyBlock (он и рассылает соседям уведомление). */
 	private static void gt6GravKnockOut(ServerPlayer aPlayer) {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
 		ServerLevel tLevel = aPlayer.level();
-		if (sGravGT == null) return;
-		for (BlockPos tP : new BlockPos[]{sGravGT, sGravSand, sGravCold}) if (tP != null) tLevel.destroyBlock(tP.below(), false);
-		O.println("[" + GRAV_M + "] опора выбита под всеми тремя колонками (destroyBlock, путь игрока)");
+		int n = 0;
+		for (GravCase tC : sGravCases) if (tC.mStart != null) {tLevel.destroyBlock(tC.mStart.below(), false); n++;}
+		if (sGravSand != null) {tLevel.destroyBlock(sGravSand.below(), false); n++;}
+		if (sGravCold != null) {tLevel.destroyBlock(sGravCold.below(), false); n++;}
+		O.println("[" + GRAV_M + "] опора выбита под " + n + " колонками (destroyBlock, путь игрока)");
 	}
 
-	/** Живёт ли падающая сущность вообще (диагностика, не вердикт): вердикт даёт положение блока. */
+	/** Живут ли падающие сущности вообще (диагностика, не вердикт): вердикт даёт положение блока.
+	 *  Считаем ОБА вида — свою (руды) и ванильную (пески/копаемое/шипы идут через FallingBlockEntity.fall). */
 	private static void gt6GravCountEntities(ServerPlayer aPlayer) {
 		if (sGravOrigin == null) return;
-		int tN = aPlayer.level().getEntitiesOfClass(gregapi.block.prefixblock.PrefixBlockFallingEntity.class,
-			net.minecraft.world.phys.AABB.encapsulatingFullBlocks(sGravOrigin.offset(-3, -2, -3), sGravOrigin.offset(7, 5, 3))).size();
-		if (tN > sGravEntitiesSeen) sGravEntitiesSeen = tN;
+		net.minecraft.world.phys.AABB tBox = net.minecraft.world.phys.AABB.encapsulatingFullBlocks(
+			sGravOrigin.offset(-4, -3, -4), sGravOrigin.offset(24, 8, 24));
+		int tOwn = aPlayer.level().getEntitiesOfClass(gregapi.block.prefixblock.PrefixBlockFallingEntity.class, tBox).size();
+		int tAll = aPlayer.level().getEntitiesOfClass(net.minecraft.world.entity.item.FallingBlockEntity.class, tBox).size();
+		if (tOwn > sGravEntitiesSeen) sGravEntitiesSeen = tOwn;
+		if (tAll - tOwn > sGravVanillaSeen) sGravVanillaSeen = tAll - tOwn;
 	}
 
 	private static void gt6GravMeasure(ServerPlayer aPlayer) {
 		java.io.PrintStream O = gregapi.data.CS.OUT;
 		ServerLevel tLevel = aPlayer.level();
-		if (sGravGT == null) {sGravSeq.done(); return;}
-		net.minecraft.world.level.block.Block tBroken = (net.minecraft.world.level.block.Block)gregapi.data.CS.BlocksGT.oreBroken;
-		net.minecraft.world.level.block.Block tOre    = gregapi.data.CS.BlocksGT.ore instanceof net.minecraft.world.level.block.Block b ? b : null;
+		if (sGravCases.isEmpty()) {sGravSeq.done(); return;}
 
-		// Куда делся испытуемый: обходим ВЕСЬ столбец от точки старта до пола.
-		// Материал читаем через getMetaDataValue (он же кладётся в дроп и в стек) — мета BlockState у руды
-		// несёт не материал, а уровень добычи (bind4(mToolQuality)), сравнивать её с ID материала бессмысленно.
-		int tFoundY = -1, tFoundMat = -1;
-		for (int tY = sGravGT.getY(); tY >= sGravFloorY - 1; tY--) {
-			if (gregapi.util.WD.block(tLevel, sGravGT.getX(), tY, sGravGT.getZ()) == tBroken) {
-				tFoundY = tY;
-				tFoundMat = ((gregapi.block.prefixblock.PrefixBlock)tBroken).getMetaDataValue(tLevel, sGravGT.getX(), tY, sGravGT.getZ());
-				break;
+		// Куда делся каждый испытуемый: обходим ВЕСЬ его столбец от точки старта до пола.
+		int tFell = 0, tStuck = 0, tLost = 0, tSubOK = 0, tSubBad = 0;
+		StringBuilder tRows = new StringBuilder(), tBad = new StringBuilder();
+		for (GravCase tC : sGravCases) {
+			if (tC.mStart == null) continue;
+			for (int tY = tC.mStart.getY(); tY >= sGravFloorY - 1; tY--) {
+				if (gregapi.util.WD.block(tLevel, tC.mStart.getX(), tY, tC.mStart.getZ()) == tC.mBlock) {
+					tC.mFoundY = tY; tC.mFoundSub = gt6GravSubAt(tLevel, tC, tC.mStart.getX(), tY, tC.mStart.getZ()); break;
+				}
 			}
+			boolean tOK = tC.mFoundY >= 0 && tC.mFoundY < tC.mStart.getY();
+			if (tOK) tFell++; else if (tC.mFoundY < 0) tLost++; else tStuck++;
+			if (tOK) {if (tC.mFoundSub == tC.mSub) tSubOK++; else tSubBad++;}
+			tRows.append(String.format("  %-42s %s Y:%d→%s подтип:%d→%d%n", tC.mName, tOK ? "УПАЛ " : tC.mFoundY < 0 ? "ПРОПАЛ" : "ВИСИТ",
+				tC.mStart.getY(), tC.mFoundY < 0 ? "нет" : String.valueOf(tC.mFoundY), tC.mSub, tC.mFoundSub));
+			if (!tOK || tC.mFoundSub != tC.mSub) tBad.append(tBad.length() == 0 ? "" : "; ").append(tC.mName);
 		}
-		// песок: где он теперь в своём столбце
+
 		int tSandY = -1;
-		for (int tY = sGravSand.getY(); tY >= sGravFloorY - 1; tY--)
+		if (sGravSand != null) for (int tY = sGravSand.getY(); tY >= sGravFloorY - 1; tY--)
 			if (gregapi.util.WD.block(tLevel, sGravSand.getX(), tY, sGravSand.getZ()) == net.minecraft.world.level.block.Blocks.SAND) {tSandY = tY; break;}
-		boolean tSandFell = tSandY >= 0 && tSandY < sGravSand.getY();
-		boolean tColdStay = tOre != null && gregapi.util.WD.block(tLevel, sGravCold.getX(), sGravCold.getY(), sGravCold.getZ()) == tOre;
+		boolean tSandFell = tSandY >= 0 && sGravSand != null && tSandY < sGravSand.getY();
+		boolean tColdStay = sGravCold != null && sGravColdBlock != null
+			&& gregapi.util.WD.block(tLevel, sGravCold.getX(), sGravCold.getY(), sGravCold.getZ()) == sGravColdBlock;
 
-		O.println("========== [" + GRAV_M + "] замер ==========");
-		O.println("  дроблёная руда: ставилась Y=" + sGravGT.getY() + " → найдена Y=" + (tFoundY < 0 ? "НИГДЕ" : String.valueOf(tFoundY))
-			+ " (пол Y=" + (sGravFloorY - 1) + ") | материал поставленный=" + sGravMeta + " найденный=" + tFoundMat);
-		O.println("  песок: ставился Y=" + sGravSand.getY() + " → найден Y=" + (tSandY < 0 ? "НИГДЕ" : String.valueOf(tSandY)));
-		O.println("  обычная руда осталась на месте (Y=" + sGravCold.getY() + "): " + tColdStay);
-		O.println("  падающих сущностей GT6 замечено (пик за окно 101-140): " + sGravEntitiesSeen);
+		O.println("========== [" + GRAV_M + "] замер: ВСЕ гравитационные блоки GT6 ==========");
+		O.print(tRows);
+		O.println("  итог: упало " + tFell + " из " + sGravCases.size() + " | зависло " + tStuck + " | пропало " + tLost
+			+ " | подтип сохранён " + tSubOK + ", потерян " + tSubBad);
+		O.println("  сущностей замечено: своих (руды) " + sGravEntitiesSeen + ", ванильных (пески/копаемое/шипы) " + sGravVanillaSeen);
+		if (tBad.length() > 0) O.println("  ПРОБЛЕМНЫЕ: " + tBad);
 
-		sGravSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильный песок упал (сценарий способен ронять)", tSandFell, "Y < " + sGravSand.getY(), tSandY < 0 ? "песок пропал" : "Y=" + tSandY);
-		sGravSeq.judge("дроблёная руда GT6 УПАЛА (оказалась ниже, чем её ставили)", tFoundY >= 0 && tFoundY < sGravGT.getY(),
-			"Y < " + sGravGT.getY(), tFoundY < 0 ? "блок пропал" : "Y=" + tFoundY);
-		sGravSeq.judge("МАТЕРИАЛ сохранился при падении (блок остался той же рудой)", tFoundMat == sGravMeta, "материал " + sGravMeta, "материал " + tFoundMat);
-		sGravSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: обычная руда (без гравитации) осталась на месте", tColdStay, "на месте", tColdStay ? "на месте" : "сдвинулась/пропала");
+		sGravSeq.judge("ПОЗИТИВНЫЙ КОНТРОЛЬ: ванильный песок упал (сценарий способен ронять)", tSandFell,
+			"Y < " + (sGravSand == null ? "?" : sGravSand.getY()), tSandY < 0 ? "песок пропал" : "Y=" + tSandY);
+		sGravSeq.judge("ХОЛОДНЫЙ КОНТРОЛЬ: руда без гравитации осталась на месте (судья умеет говорить «нет»)", tColdStay,
+			"на месте", tColdStay ? "на месте" : "сдвинулась/пропала");
+		sGravSeq.judge("УПАЛИ ВСЕ гравитационные блоки GT6, без исключений", tFell == sGravCases.size(),
+			"упало " + sGravCases.size() + " из " + sGravCases.size(), "упало " + tFell + " (зависло " + tStuck + ", пропало " + tLost + ")");
+		sGravSeq.judge("ПОДТИП (материал/мета) сохранён у всех упавших", tSubBad == 0, "0 потерь", tSubBad + " потерь");
 		// done() НЕ здесь: он закрывает последовательность, и шаг постройки двора приёмки (тик 200) не отработал бы.
 	}
 }
